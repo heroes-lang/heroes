@@ -1,0 +1,541 @@
+# A span of cells cut into parts by what each part asks. Each part's wish is
+# a real number; where the wishes ask more than the span holds, the parts give
+# up space kind by kind, a `max`'s wish first and a `min` last, each kind
+# levelled from its largest part down; where they ask less, the `min` and
+# `fill` parts grow in proportion to their weights, never below their wish,
+# and where none can grow, the flex places the space. Each edge is then
+# rounded to a cell, a half away from 0, and kept inside the span.
+
+# A part of an exact length.
+constant LENGTH: i64
+    0
+
+# A part of a percentage of the span.
+constant PERCENTAGE: i64
+    1
+
+# A part of a ratio of the span.
+constant RATIO: i64
+    2
+
+# A part of at least a length.
+constant MIN: i64
+    3
+
+# A part of at most a length.
+constant MAX: i64
+    4
+
+# A part of a share of what is left.
+constant FILL: i64
+    5
+
+# The flexes, as the face's `Flex` orders them.
+constant LEGACY: i64
+    0
+
+# Space after the last part.
+constant START: i64
+    1
+
+# Space before the first part.
+constant END: i64
+    2
+
+# Space halved around the parts.
+constant CENTER: i64
+    3
+
+# Space between the parts.
+constant SPACE_BETWEEN: i64
+    4
+
+# Space around each part.
+constant SPACE_AROUND: i64
+    5
+
+# Space evenly before, between and after.
+constant SPACE_EVENLY: i64
+    6
+
+# What a part asks: the twin of the face's `Constraint`.
+record Want
+    # `LENGTH` to `FILL`.
+    kind: i64
+    # The length, the percentage, the ratio's numerator, the minimum, the
+    # maximum, or the weight.
+    a: i64
+    # The ratio's denominator; 0 for the other kinds.
+    b: i64
+
+# A part placed: where it begins and how many cells it takes.
+record Part
+    # The first cell, from the span's own origin.
+    at: i64
+    # Its cells, 0 or more.
+    size: i64
+
+# The parts of the span from `start`, `total` cells long, as `wants` ask, with
+# `spacing` cells between two parts and `flex` placing the space left over.
+function split(start: i64, total: i64, wants: [Want], spacing: i64, flex: i64) -> [Part]
+    edges = edges_of(total: total, wants: wants, spacing: spacing, flex: flex)
+    out: [Part] @= []
+
+    for i in range(from: 0, to: wants.len())
+        out @ out.push(placed(start: start, total: total, from: edges[2 * i], to: edges[2 * i + 1]))
+
+    return out
+
+# The gaps of the span from `start`, `total` cells long, around `parts`
+# placed in it in order: before the first, between each two, and after the
+# last; none for no part.
+function spacers(start: i64, total: i64, parts: [Part]) -> [Part]
+    out: [Part] @= []
+
+    if parts.len() == 0
+        return out
+    previous_end @= start
+
+    for p in parts
+        out @ out.push(gap_between(from: previous_end, to: p.at))
+        previous_end @ p.at + p.size
+
+    out @ out.push(gap_between(from: previous_end, to: start + total))
+    return out
+
+# The gap from `from` to `to`, none where they touch or overlap.
+function gap_between(from: i64, to: i64) -> Part
+    if to <= from
+        return Part(at: to, size: 0)
+    return Part(at: from, size: to - from)
+
+# The part from the real edge `from` to `to`, each rounded and kept in the
+# span.
+function placed(start: i64, total: i64, from: f64, to: f64) -> Part
+    a = kept(n: rounded(from), total: total)
+    z = kept(n: rounded(to), total: total)
+
+    size = if z > a
+        z - a
+    else
+        0
+    return Part(at: start + a, size: size)
+
+# `x` rounded to the nearest whole number, a half away from 0; beyond a
+# quadrillion, or NaN, it is taken as that bound or 0, which `kept` brings
+# inside any span.
+function rounded(x: f64) -> i64
+    bound = 1000000000000000.0
+
+    if x != x
+        return 0
+
+    if x > bound
+        return to_i64(bound).must()
+
+    if x < -bound
+        return -to_i64(bound).must()
+
+    if x < 0.0
+        return -to_i64(-x + 0.5).must()
+    return to_i64(x + 0.5).must()
+
+# `n` kept between 0 and `total`.
+function kept(n: i64, total: i64) -> i64
+    if n < 0
+        return 0
+
+    if n > total
+        return total
+    return n
+
+# `n` as a real, below 0 taken as 0.
+function real(n: i64) -> f64
+    if n < 0
+        return 0.0
+    return to_f64(n)
+
+# The wish of each part, in cells of a span `total` long.
+function wishes(total: f64, wants: [Want] lent) -> [f64]
+    out: [f64] @= []
+
+    for w in wants
+        wish = if w.kind == LENGTH || w.kind == MIN || w.kind == MAX
+            real(w.a)
+        else if w.kind == PERCENTAGE
+            total * real(w.a) / 100.0
+        else if w.kind == RATIO
+            if w.b <= 0
+                if w.a <= 0
+                    0.0
+                else
+                    total
+            else
+                total * real(w.a) / real(w.b)
+        else
+            0.0
+
+        out @ out.push(wish)
+
+    return out
+
+# The edges of the parts, two per part, from the span's origin.
+function edges_of(total: i64, wants: [Want], spacing: i64, flex: i64) -> [f64]
+    count = wants.len()
+
+    if count == 0
+        return []
+    span = real(total)
+    gap = to_f64(spacing)
+    parts = to_f64(count)
+
+    kept_gaps = if flex == SPACE_AROUND
+        parts * gap
+    else if flex == SPACE_EVENLY
+        (parts + 1.0) * gap
+    else
+        (parts - 1.0) * gap
+    room_wanted = span - kept_gaps
+
+    room = if room_wanted < 0.0
+        0.0
+    else
+        room_wanted
+    sizes @= wishes(span, wants: wants)
+    asked = sum_of(sizes)
+
+    if asked > room + 0.000000001
+        short @= asked - room
+
+        for kind in [MAX, RATIO, PERCENTAGE, LENGTH, MIN]
+            if short > 0.0
+                short @ level_down(@sizes, wants: wants, kind: kind, short: short)
+    else if asked < room - 0.000000001
+        spare = room - asked
+
+        if has_growers(wants)
+            level_up(@sizes, wants: wants, spare: spare)
+        else if flex == LEGACY || flex == SPACE_BETWEEN && count == 1
+            sizes[count - 1] @ sizes[count - 1] + spare
+    taken = sum_of(sizes)
+    left_over = span - taken
+    extra = room - taken
+
+    lead = if flex == END
+        extra
+    else if flex == CENTER
+        extra / 2.0
+    else if flex == SPACE_AROUND
+        left_over / (2.0 * parts)
+    else if flex == SPACE_EVENLY
+        left_over / (parts + 1.0)
+    else
+        0.0
+
+    between = if flex == SPACE_BETWEEN && count > 1
+        left_over / (parts - 1.0)
+    else if flex == SPACE_AROUND
+        left_over / parts
+    else if flex == SPACE_EVENLY
+        left_over / (parts + 1.0)
+    else
+        gap
+    out: [f64] @= []
+    at @= lead
+
+    for s in sizes
+        out @ out.push(at)
+        out @ out.push(at + s)
+        at @ at + s + between
+
+    return out
+
+# The sum of `xs`.
+function sum_of(xs: [f64] lent) -> f64
+    total @= 0.0
+
+    for x in xs
+        total @ total + x
+
+    return total
+
+# Whether any part is a `min` or a `fill`, which grow.
+function has_growers(wants: [Want] lent) -> bool
+    for w in wants
+        if w.kind == MIN || w.kind == FILL
+            return true
+
+    return false
+
+# Takes `short` cells from the parts of `kind`, levelling them from the
+# largest down, and answers what is still short once they are all at 0.
+function level_down(@sizes: [f64], wants: [Want] lent, kind: i64, short: f64) -> f64
+    members: [f64] @= []
+
+    for i in range(from: 0, to: wants.len())
+        if wants[i].kind == kind
+            members @ members.push(sizes[i])
+
+    held = sum_of(members)
+
+    if members.len() == 0
+        return short
+
+    if held <= short
+        for i in range(from: 0, to: wants.len())
+            if wants[i].kind == kind
+                sizes[i] @ 0.0
+
+        return short - held
+    target = held - short
+    ordered = sort(members)
+    below @= 0.0
+    level @= ordered[ordered.len() - 1]
+
+    for k in range(from: 0, to: ordered.len())
+        rest = to_f64(ordered.len() - k)
+
+        if below + ordered[k] * rest >= target
+            level @ (target - below) / rest
+            break
+        below @ below + ordered[k]
+
+    for i in range(from: 0, to: wants.len())
+        if wants[i].kind == kind && sizes[i] > level
+            sizes[i] @ level
+
+    return 0.0
+
+# Gives `spare` cells to the `min` and `fill` parts: each grows to its weight
+# times one level, a `min` weighing 1, none below its wish; where every such
+# part weighs 0, each weighs 1.
+function level_up(@sizes: [f64], wants: [Want] lent, spare: f64)
+    weights: [f64] @= []
+    weighing @= false
+
+    for w in wants
+        weight = if w.kind == MIN
+            1.0
+        else if w.kind == FILL
+            real(w.a)
+        else
+            0.0
+
+        if weight > 0.0
+            weighing @ true
+        weights @ weights.push(weight)
+
+    if !weighing
+        for i in range(from: 0, to: wants.len())
+            if wants[i].kind == FILL
+                weights[i] @ 1.0
+
+    target @= spare
+    active: [bool] @= []
+
+    for i in range(from: 0, to: wants.len())
+        grows = weights[i] > 0.0
+        active @ active.push(grows)
+
+        if grows
+            target @ target + sizes[i]
+
+    level @= 0.0
+    changed @= true
+
+    while changed
+        changed @ false
+        held @= target
+        weight @= 0.0
+
+        for i in range(from: 0, to: wants.len())
+            if active[i]
+                weight @ weight + weights[i]
+            else if weights[i] > 0.0
+                held @ held - sizes[i]
+
+        if weight <= 0.0
+            return
+        level @ held / weight
+
+        for i in range(from: 0, to: wants.len())
+            if active[i] && sizes[i] > weights[i] * level
+                active[i] @ false
+                changed @ true
+
+    for i in range(from: 0, to: wants.len())
+        if active[i]
+            sizes[i] @ weights[i] * level
+
+## Tests
+
+# The places and sizes `split` answers along a span from 0, as text.
+function laid(total: i64, wants: [Want], spacing: i64, flex: i64) -> str
+    out: [str] @= []
+
+    for p in split(start: 0, total: total, wants: wants, spacing: spacing, flex: flex)
+        out @ out.push(f"{p.at},{p.size}")
+
+    return out.join(" ")
+
+# A `length` of `n`.
+function len_of(n: i64) -> Want
+    return Want(kind: LENGTH, a: n, b: 0)
+
+# A `percentage` of `n`.
+function pct_of(n: i64) -> Want
+    return Want(kind: PERCENTAGE, a: n, b: 0)
+
+# A `min` of `n`.
+function min_of(n: i64) -> Want
+    return Want(kind: MIN, a: n, b: 0)
+
+# A `max` of `n`.
+function max_of(n: i64) -> Want
+    return Want(kind: MAX, a: n, b: 0)
+
+# A `fill` of weight `n`.
+function fill_of(n: i64) -> Want
+    return Want(kind: FILL, a: n, b: 0)
+
+# A `ratio` of `a` in `b`.
+function ratio_of(a: i64, b: i64) -> Want
+    return Want(kind: RATIO, a: a, b: b)
+
+# Every answer below is what `ratatui` 0.30.2's `Layout::split` answered for
+# the same constraints, run 2026-11-18.
+
+test "split: no part, parts that fit, percentages and ratios rounded at their edges"
+    assert laid(total: 10, wants: [], spacing: 0, flex: START) == ""
+    assert laid(total: 24, wants: [len_of(3), min_of(0), len_of(1)], spacing: 0, flex: START) == "0,3 3,20 23,1"
+    assert laid(total: 100, wants: [pct_of(30), pct_of(70)], spacing: 0, flex: START) == "0,30 30,70"
+    assert laid(total: 10, wants: [ratio_of(a: 1, b: 3), ratio_of(a: 2, b: 3)], spacing: 0, flex: START) == "0,3 3,7"
+    assert laid(total: 100, wants: [pct_of(33), pct_of(33), pct_of(33)], spacing: 0, flex: START) == "0,33 33,33 66,33"
+    assert laid(total: 10, wants: [pct_of(25), pct_of(25), pct_of(25), pct_of(25)], spacing: 0, flex: START) == "0,3 3,2 5,3 8,2"
+    assert laid(total: 10, wants: [ratio_of(a: 1, b: 4), ratio_of(a: 1, b: 4), ratio_of(a: 1, b: 4), ratio_of(a: 1, b: 4)], spacing: 0, flex: START) == "0,3 3,2 5,3 8,2"
+    assert laid(total: 9, wants: [ratio_of(a: 1, b: 2), pct_of(50)], spacing: 0, flex: START) == "0,5 5,4"
+    assert laid(total: 0, wants: [len_of(1), len_of(1), len_of(1)], spacing: 0, flex: START) == "0,0 0,0 0,0"
+
+test "split: too little room, a max's wish first, then a ratio, a percentage, a length, a min last"
+    assert laid(total: 7, wants: [len_of(5), len_of(5)], spacing: 0, flex: START) == "0,4 4,3"
+    assert laid(total: 6, wants: [max_of(3), len_of(5)], spacing: 0, flex: START) == "0,1 1,5"
+    assert laid(total: 6, wants: [len_of(5), max_of(3)], spacing: 0, flex: START) == "0,5 5,1"
+    assert laid(total: 25, wants: [max_of(20), min_of(10)], spacing: 0, flex: START) == "0,15 15,10"
+    assert laid(total: 15, wants: [len_of(10), pct_of(50)], spacing: 0, flex: START) == "0,10 10,5"
+    assert laid(total: 50, wants: [pct_of(50), min_of(30)], spacing: 0, flex: START) == "0,20 20,30"
+    assert laid(total: 20, wants: [pct_of(100), len_of(5)], spacing: 0, flex: START) == "0,15 15,5"
+    assert laid(total: 10, wants: [len_of(6), pct_of(50), ratio_of(a: 1, b: 2)], spacing: 0, flex: START) == "0,6 6,4 10,0"
+    assert laid(total: 10, wants: [min_of(3), max_of(3), len_of(3), pct_of(30), ratio_of(a: 1, b: 10), fill_of(1)], spacing: 0, flex: START) == "0,3 3,0 3,3 6,3 9,1 10,0"
+    assert laid(total: 10, wants: [pct_of(60), pct_of(60)], spacing: 0, flex: START) == "0,5 5,5"
+    assert laid(total: 12, wants: [max_of(10), max_of(10)], spacing: 0, flex: START) == "0,6 6,6"
+    assert laid(total: 2, wants: [min_of(3), fill_of(1)], spacing: 0, flex: START) == "0,2 2,0"
+
+test "split: mins level from the largest down, where ratatui agrees"
+    assert laid(total: 10, wants: [min_of(4), min_of(8)], spacing: 0, flex: START) == "0,4 4,6"
+    assert laid(total: 5, wants: [min_of(3), min_of(3), min_of(3)], spacing: 0, flex: START) == "0,2 2,1 3,2"
+    assert laid(total: 2, wants: [len_of(1), len_of(1), len_of(1)], spacing: 0, flex: START) == "0,1 1,0 1,1"
+
+test "split: a tie a half split, where ratatui's solver answered 2, 0, 3"
+    assert laid(total: 5, wants: [len_of(3), fill_of(1), len_of(3)], spacing: 0, flex: START) == "0,3 3,0 3,2"
+
+test "split: room left, mins and fills share it by weight, a fill of weight 0 alone, the rest by the flex"
+    assert laid(total: 30, wants: [min_of(10), max_of(5)], spacing: 0, flex: START) == "0,25 25,5"
+    assert laid(total: 30, wants: [fill_of(1), fill_of(2)], spacing: 0, flex: START) == "0,10 10,20"
+    assert laid(total: 30, wants: [min_of(5), fill_of(1)], spacing: 0, flex: START) == "0,15 15,15"
+    assert laid(total: 30, wants: [min_of(5), fill_of(2)], spacing: 0, flex: START) == "0,10 10,20"
+    assert laid(total: 30, wants: [min_of(20), fill_of(1)], spacing: 0, flex: START) == "0,20 20,10"
+    assert laid(total: 10, wants: [min_of(0), min_of(0)], spacing: 0, flex: START) == "0,5 5,5"
+    assert laid(total: 20, wants: [len_of(2), min_of(0), len_of(2), min_of(0)], spacing: 0, flex: START) == "0,2 2,8 10,2 12,8"
+    assert laid(total: 30, wants: [max_of(10), fill_of(1)], spacing: 0, flex: START) == "0,10 10,20"
+    assert laid(total: 10, wants: [fill_of(0), fill_of(0)], spacing: 0, flex: START) == "0,5 5,5"
+    assert laid(total: 10, wants: [fill_of(0), fill_of(1)], spacing: 0, flex: START) == "0,0 0,10"
+    assert laid(total: 10, wants: [fill_of(0), len_of(3)], spacing: 0, flex: START) == "0,7 7,3"
+    assert laid(total: 21, wants: [fill_of(1), len_of(5), fill_of(1)], spacing: 0, flex: START) == "0,8 8,5 13,8"
+    assert laid(total: 10, wants: [fill_of(1), fill_of(2), fill_of(3)], spacing: 0, flex: START) == "0,2 2,3 5,5"
+    assert laid(total: 20, wants: [min_of(2), fill_of(3), fill_of(1)], spacing: 0, flex: START) == "0,4 4,12 16,4"
+    assert laid(total: 30, wants: [pct_of(10), min_of(5), pct_of(10)], spacing: 0, flex: START) == "0,3 3,24 27,3"
+    assert laid(total: 20, wants: [min_of(3), max_of(3), len_of(3), pct_of(30), ratio_of(a: 1, b: 10), fill_of(1)], spacing: 0, flex: START) == "0,3 3,3 6,3 9,6 15,2 17,3"
+    assert laid(total: 30, wants: [max_of(5), fill_of(1), len_of(3)], spacing: 0, flex: CENTER) == "0,5 5,22 27,3"
+
+test "split: every flex with two lengths in 30, and three in 31"
+    two = [len_of(5), len_of(10)]
+    three = [len_of(5), len_of(5), len_of(5)]
+    assert laid(total: 30, wants: two, spacing: 0, flex: LEGACY) == "0,5 5,25"
+    assert laid(total: 30, wants: two, spacing: 0, flex: START) == "0,5 5,10"
+    assert laid(total: 30, wants: two, spacing: 0, flex: END) == "15,5 20,10"
+    assert laid(total: 30, wants: two, spacing: 0, flex: CENTER) == "8,5 13,10"
+    assert laid(total: 30, wants: two, spacing: 0, flex: SPACE_BETWEEN) == "0,5 20,10"
+    assert laid(total: 30, wants: two, spacing: 0, flex: SPACE_AROUND) == "4,5 16,10"
+    assert laid(total: 30, wants: two, spacing: 0, flex: SPACE_EVENLY) == "5,5 15,10"
+    assert laid(total: 31, wants: three, spacing: 0, flex: LEGACY) == "0,5 5,5 10,21"
+    assert laid(total: 31, wants: three, spacing: 0, flex: END) == "16,5 21,5 26,5"
+    assert laid(total: 31, wants: three, spacing: 0, flex: CENTER) == "8,5 13,5 18,5"
+    assert laid(total: 31, wants: three, spacing: 0, flex: SPACE_BETWEEN) == "0,5 13,5 26,5"
+    assert laid(total: 31, wants: three, spacing: 0, flex: SPACE_AROUND) == "3,5 13,5 23,5"
+    assert laid(total: 31, wants: three, spacing: 0, flex: SPACE_EVENLY) == "4,5 13,5 22,5"
+
+test "split: one part under each flex, a min under every flex, maxes and percentages placed"
+    for flex in [LEGACY, START, END, CENTER, SPACE_BETWEEN, SPACE_AROUND, SPACE_EVENLY]
+        assert laid(total: 30, wants: [min_of(5), len_of(5)], spacing: 0, flex: flex) == "0,25 25,5"
+
+    assert laid(total: 30, wants: [len_of(5)], spacing: 0, flex: LEGACY) == "0,30"
+    assert laid(total: 30, wants: [len_of(5)], spacing: 0, flex: END) == "25,5"
+    assert laid(total: 30, wants: [len_of(5)], spacing: 0, flex: CENTER) == "13,5"
+    assert laid(total: 30, wants: [len_of(5)], spacing: 0, flex: SPACE_BETWEEN) == "0,30"
+    assert laid(total: 30, wants: [len_of(5)], spacing: 0, flex: SPACE_AROUND) == "13,5"
+    assert laid(total: 30, wants: [len_of(5)], spacing: 0, flex: SPACE_EVENLY) == "13,5"
+    assert laid(total: 30, wants: [max_of(5), len_of(5)], spacing: 0, flex: LEGACY) == "0,5 5,25"
+    assert laid(total: 30, wants: [max_of(5), len_of(5)], spacing: 0, flex: SPACE_AROUND) == "5,5 20,5"
+    assert laid(total: 30, wants: [max_of(5), len_of(5)], spacing: 0, flex: SPACE_EVENLY) == "7,5 18,5"
+    assert laid(total: 30, wants: [max_of(5), max_of(5)], spacing: 0, flex: LEGACY) == "0,5 5,25"
+    assert laid(total: 30, wants: [max_of(5), max_of(8)], spacing: 0, flex: CENTER) == "9,5 14,8"
+    assert laid(total: 30, wants: [pct_of(20), pct_of(20)], spacing: 0, flex: END) == "18,6 24,6"
+    assert laid(total: 30, wants: [pct_of(20), pct_of(20)], spacing: 0, flex: CENTER) == "9,6 15,6"
+    assert laid(total: 30, wants: [pct_of(20), pct_of(20)], spacing: 0, flex: SPACE_EVENLY) == "6,6 18,6"
+    assert laid(total: 10, wants: [max_of(4), max_of(4)], spacing: 0, flex: SPACE_BETWEEN) == "0,4 6,4"
+    assert laid(total: 30, wants: [len_of(3), len_of(3), len_of(3)], spacing: 0, flex: SPACE_BETWEEN) == "0,3 14,3 27,3"
+    assert laid(total: 10, wants: [len_of(7), len_of(7)], spacing: 0, flex: CENTER) == "0,5 5,5"
+
+test "split: spacing kept between, a floor for the gaps of the space flexes, larger than the span, overlapping"
+    assert laid(total: 30, wants: [len_of(5), len_of(5), len_of(5)], spacing: 1, flex: START) == "0,5 6,5 12,5"
+    assert laid(total: 30, wants: [len_of(5), len_of(5)], spacing: 2, flex: LEGACY) == "0,5 7,23"
+    assert laid(total: 30, wants: [len_of(5), len_of(5)], spacing: 2, flex: END) == "18,5 25,5"
+    assert laid(total: 30, wants: [len_of(5), len_of(5)], spacing: 2, flex: CENTER) == "9,5 16,5"
+    assert laid(total: 30, wants: [len_of(5), len_of(5)], spacing: 2, flex: SPACE_BETWEEN) == "0,5 25,5"
+    assert laid(total: 30, wants: [len_of(5), len_of(5)], spacing: 2, flex: SPACE_AROUND) == "5,5 20,5"
+    assert laid(total: 30, wants: [len_of(5), len_of(5)], spacing: 2, flex: SPACE_EVENLY) == "7,5 18,5"
+    assert laid(total: 30, wants: [len_of(5), len_of(5), len_of(5)], spacing: 4, flex: SPACE_EVENLY) == "4,5 13,4 21,5"
+    assert laid(total: 13, wants: [len_of(5), len_of(5)], spacing: 4, flex: SPACE_BETWEEN) == "0,5 9,4"
+    assert laid(total: 30, wants: [len_of(10), len_of(10)], spacing: 20, flex: SPACE_AROUND) == "8,0 23,0"
+    assert laid(total: 30, wants: [len_of(5)], spacing: 3, flex: LEGACY) == "0,30"
+    assert laid(total: 30, wants: [pct_of(50), pct_of(50)], spacing: 2, flex: START) == "0,14 16,14"
+    assert laid(total: 30, wants: [pct_of(25), pct_of(25)], spacing: 2, flex: START) == "0,8 10,7"
+    assert laid(total: 30, wants: [ratio_of(a: 1, b: 4), ratio_of(a: 1, b: 4)], spacing: 2, flex: START) == "0,8 10,7"
+    assert laid(total: 30, wants: [fill_of(1), fill_of(1)], spacing: 2, flex: START) == "0,14 16,14"
+    assert laid(total: 10, wants: [len_of(3), len_of(3)], spacing: 6, flex: START) == "0,2 8,2"
+    assert laid(total: 4, wants: [len_of(3), len_of(3)], spacing: 6, flex: START) == "0,0 4,0"
+    assert laid(total: 4, wants: [len_of(3), len_of(3), len_of(3)], spacing: 6, flex: START) == "0,0 4,0 4,0"
+    assert laid(total: 30, wants: [len_of(5), len_of(5), len_of(5)], spacing: -1, flex: START) == "0,5 4,5 8,5"
+    assert laid(total: 11, wants: [fill_of(1), fill_of(1)], spacing: -1, flex: START) == "0,6 5,6"
+
+test "split: ratios and percentages past the whole, a ratio over 0, negative wishes"
+    assert laid(total: 10, wants: [pct_of(200)], spacing: 0, flex: START) == "0,10"
+    assert laid(total: 10, wants: [ratio_of(a: 3, b: 2)], spacing: 0, flex: START) == "0,10"
+    assert laid(total: 10, wants: [ratio_of(a: 1, b: 0)], spacing: 0, flex: START) == "0,10"
+    assert laid(total: 10, wants: [ratio_of(a: 0, b: 0)], spacing: 0, flex: START) == "0,0"
+    assert laid(total: 10, wants: [len_of(-4), fill_of(-1)], spacing: 0, flex: START) == "0,0 0,10"
+
+test "spacers: before, between and after, a gap of none where parts touch"
+    gaps = spacers(
+        start: 0,
+        total: 30,
+        parts: split(start: 0, total: 30, wants: [len_of(5), len_of(5)], spacing: 2, flex: CENTER)
+    )
+    assert gaps == [Part(at: 0, size: 9), Part(at: 14, size: 2), Part(at: 21, size: 9)]
+    touching = spacers(
+        start: 0,
+        total: 30,
+        parts: split(start: 0, total: 30, wants: [len_of(5), len_of(5)], spacing: 0, flex: START)
+    )
+    assert touching == [Part(at: 0, size: 0), Part(at: 5, size: 0), Part(at: 10, size: 20)]
+    assert spacers(start: 3, total: 9, parts: []) == []

@@ -1,0 +1,3538 @@
+# Full-screen terminal programs in immediate mode, as Rust's `ratatui` draws
+# them: the program keeps its own state; each frame it asks for a blank buffer
+# of the screen's size, cuts it into areas by constraints, draws widgets into
+# those areas, and hands the buffer to `flush`, which writes only the cells
+# that changed since the frame before; then it reads the next event, a key, a
+# click, a paste or a new size, and changes its state. Nothing is called back
+# and no widget remembers anything: a widget is a record drawn once, and what
+# must last between frames (a selection, the text of an input) is a value the
+# program holds and hands to each draw.
+#
+# The widgets: blocks with borders and titles, paragraphs that wrap, lists and
+# tables with a selection, tabs, gauges, sparklines, scrollbars and a line of
+# text input. A cell holds one grapheme, measured by `unicode/segment`'s
+# `width_of`: a wide character takes two cells and covers the second.
+#
+# **Styles are laid over what is there.** Every style is `term`'s `term.Style`.
+# Drawn into a cell, its colour replaces the cell's only where it is not
+# `.default`, and its attributes are added to the cell's, so a block's
+# background stays under the text drawn in it. `clear` puts cells back to
+# blank and plain.
+#
+# What it does NOT do: read one key (`term.read_key`), colour text written
+# as a line (`term.write_styled`), tell the terminal's size once
+# (`os.terminal_size`), measure or wrap a text outside a buffer
+# (`unicode/segment`), draw on a part of the screen below a program's own
+# lines (an inline viewport, which the ledger says is pending), or run in a
+# program whose standard output is no terminal.
+#
+# **The terminal put back.** `stop` leaves the alternate screen, turns the
+# mouse and paste reports off, shows the cursor and leaves the raw mode;
+# `term` puts the raw mode back by itself at `exit` and at a signal, but no
+# library can undo the alternate screen after an abort, and `reset` puts such a
+# terminal back by hand.
+#
+# It fails with `not_found`, `unsupported`, `invalid`, `timeout`, `closed` and
+# `failed`
+# (README § A4).
+
+use io
+use os
+use term
+use tui/internal/borders
+use tui/internal/changes as delta
+use tui/internal/editing
+use tui/internal/events
+use tui/internal/grid
+use tui/internal/listing
+use tui/internal/marks
+use tui/internal/meters
+use tui/internal/packed
+use tui/internal/runs
+use tui/internal/screen
+use tui/internal/solve
+use tui/internal/tabular
+use tui/internal/wrapping
+use unicode/segment
+
+## Codes
+
+# Nothing is selected where a selected row or column was asked.
+# `selected_of` and `selected_column_of` fail with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The program's standard output is no terminal, or the program has none.
+# `start` and the event readers fail with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# An argument out of its range: a time below 0. `read_event_within` fails with
+# it.
+constant INVALID: str
+    "invalid"
+
+# No event came in the time allowed. `read_event_within` fails with it.
+constant TIMEOUT: str
+    "timeout"
+
+# The terminal is gone. The event readers fail with it.
+constant CLOSED: str
+    "closed"
+
+# The system refused for a reason none of the above names; the message carries
+# its words. Every function that writes to the terminal fails with it.
+constant FAILED: str
+    "failed"
+
+## Areas
+
+# A rectangle of cells on the screen. Built directly; a width or a height of 0
+# holds no cell.
+record Rect
+    # The column of its left edge, from 0 at the screen's left.
+    x: i64
+    # The row of its top edge, from 0 at the screen's top.
+    y: i64
+    # Its columns, 0 or more.
+    width: i64
+    # Its rows, 0 or more.
+    height: i64
+
+# `area` with `horizontal` columns taken off each side and `vertical` rows off
+# the top and the bottom.
+#
+# - `area`: the rectangle.
+# - `horizontal`: columns taken off the left and off the right; below 0 taken
+#   as 0.
+# - `vertical`: rows taken off the top and off the bottom; below 0 taken as 0.
+#
+# The empty rectangle at 0, 0 where the margins take more than `area` holds,
+# as `ratatui` answers. See also `outer`, `inner_of`.
+function inner(area: Rect, horizontal: i64, vertical: i64) -> Rect
+    dh = if horizontal > 0
+        horizontal
+    else
+        0
+
+    dv = if vertical > 0
+        vertical
+    else
+        0
+
+    if area.width < 2 * dh || area.height < 2 * dv
+        return Rect(x: 0, y: 0, width: 0, height: 0)
+    return Rect(x: area.x + dh, y: area.y + dv, width: area.width - 2 * dh, height: area.height - 2 * dv)
+
+# `area` with `horizontal` columns added to each side and `vertical` rows to
+# the top and the bottom, its left and top edges stopping at 0.
+#
+# - `area`: the rectangle.
+# - `horizontal`: columns added on the left and on the right; below 0 taken as
+#   0.
+# - `vertical`: rows added above and below; below 0 taken as 0.
+#
+# See also `inner`.
+function outer(area: Rect, horizontal: i64, vertical: i64) -> Rect
+    dh = if horizontal > 0
+        horizontal
+    else
+        0
+
+    dv = if vertical > 0
+        vertical
+    else
+        0
+
+    left = if area.x - dh > 0
+        area.x - dh
+    else
+        0
+
+    top = if area.y - dv > 0
+        area.y - dv
+    else
+        0
+    return Rect(x: left, y: top, width: area.x + area.width + dh - left, height: area.y + area.height + dv - top)
+
+# The cells `a` and `b` share.
+#
+# - `a`: one rectangle.
+# - `b`: the other.
+#
+# Where they share none, a rectangle of no cell at the larger of their left
+# edges and the larger of their top edges. See also `intersects`, `enclosing`.
+function intersection(a: Rect, b: Rect) -> Rect
+    left = if a.x > b.x
+        a.x
+    else
+        b.x
+
+    top = if a.y > b.y
+        a.y
+    else
+        b.y
+
+    right = if a.x + a.width < b.x + b.width
+        a.x + a.width
+    else
+        b.x + b.width
+
+    bottom = if a.y + a.height < b.y + b.height
+        a.y + a.height
+    else
+        b.y + b.height
+
+    width = if right > left
+        right - left
+    else
+        0
+
+    height = if bottom > top
+        bottom - top
+    else
+        0
+    return Rect(x: left, y: top, width: width, height: height)
+
+# Whether `a` and `b` share a cell.
+#
+# - `a`: one rectangle.
+# - `b`: the other.
+#
+# False where either holds no cell. See also `intersection`.
+function intersects(a: Rect, b: Rect) -> bool
+    return !is_empty(intersection(a: a, b: b))
+
+# The smallest rectangle holding both `a` and `b`.
+#
+# - `a`: one rectangle.
+# - `b`: the other.
+#
+# See also `intersection`.
+function enclosing(a: Rect, b: Rect) -> Rect
+    left = if a.x < b.x
+        a.x
+    else
+        b.x
+
+    top = if a.y < b.y
+        a.y
+    else
+        b.y
+
+    right = if a.x + a.width > b.x + b.width
+        a.x + a.width
+    else
+        b.x + b.width
+
+    bottom = if a.y + a.height > b.y + b.height
+        a.y + a.height
+    else
+        b.y + b.height
+    return Rect(x: left, y: top, width: right - left, height: bottom - top)
+
+# Whether the cell at column `x` and row `y` is inside `area`: where a click
+# landed, for instance.
+#
+# - `area`: the rectangle.
+# - `x`: the column, from 0.
+# - `y`: the row, from 0.
+#
+# False for any cell of a rectangle that holds none. See also `Event`.
+function contains(area: Rect, x: i64, y: i64) -> bool
+    return x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height
+
+# `area` moved inside `within` and cut to its size: no larger than `within`,
+# and moved the least that puts it inside.
+#
+# - `area`: the rectangle to move.
+# - `within`: the rectangle it must stay in.
+#
+# See also `intersection`.
+function clamp(area: Rect, within: Rect) -> Rect
+    width = if area.width < within.width
+        area.width
+    else
+        within.width
+
+    height = if area.height < within.height
+        area.height
+    else
+        within.height
+
+    x = if area.x < within.x + within.width - width
+        area.x
+    else
+        within.x + within.width - width
+
+    y = if area.y < within.y + within.height - height
+        area.y
+    else
+        within.y + within.height - height
+
+    left = if x > within.x
+        x
+    else
+        within.x
+
+    top = if y > within.y
+        y
+    else
+        within.y
+    return Rect(x: left, y: top, width: width, height: height)
+
+# `area` moved `dx` columns right and `dy` rows down, its edges stopping at 0.
+#
+# - `area`: the rectangle.
+# - `dx`: columns to the right; below 0 to the left.
+# - `dy`: rows down; below 0 up.
+#
+# See also `clamp`.
+function offset(area: Rect, dx: i64, dy: i64) -> Rect
+    left = if area.x + dx > 0
+        area.x + dx
+    else
+        0
+
+    top = if area.y + dy > 0
+        area.y + dy
+    else
+        0
+    return Rect(x: left, y: top, width: area.width, height: area.height)
+
+# Each row of `area`, a rectangle one row high, the top one first.
+#
+# - `area`: the rectangle.
+#
+# None for a rectangle of no row. See also `columns_of`.
+function rows_of(area: Rect) -> [Rect]
+    out: [Rect] @= []
+
+    for row in range(from: 0, to: area.height)
+        out @ out.push(Rect(x: area.x, y: area.y + row, width: area.width, height: 1))
+
+    return out
+
+# Each column of `area`, a rectangle one column wide, the left one first.
+#
+# - `area`: the rectangle.
+#
+# None for a rectangle of no column. See also `rows_of`.
+function columns_of(area: Rect) -> [Rect]
+    out: [Rect] @= []
+
+    for column in range(from: 0, to: area.width)
+        out @ out.push(Rect(x: area.x + column, y: area.y, width: 1, height: area.height))
+
+    return out
+
+# A rectangle in the middle of `area`, its size given by `width` and `height`
+# as a layout of one part gives it: a dialog drawn over the screen.
+#
+# - `area`: the rectangle to centre in.
+# - `width`: the constraint on its columns, taken of `area`'s width.
+# - `height`: the constraint on its rows, taken of `area`'s height.
+#
+# An odd cell left over goes after it. See also `split`.
+function centered(area: Rect, width: Constraint, height: Constraint) -> Rect
+    across = Layout(
+        direction: .horizontal,
+        constraints: [width],
+        horizontal_margin: 0,
+        vertical_margin: 0,
+        spacing: 0,
+        flex: .center
+    )
+    down = Layout(
+        direction: .vertical,
+        constraints: [height],
+        horizontal_margin: 0,
+        vertical_margin: 0,
+        spacing: 0,
+        flex: .center
+    )
+    columns = split(area, layout: across)[0]
+    rows = split(area, layout: down)[0]
+    return Rect(x: columns.x, y: rows.y, width: columns.width, height: rows.height)
+
+# Whether `area` holds no cell: a width or a height of 0 or below.
+#
+# - `area`: the rectangle.
+function is_empty(area: Rect) -> bool
+    return area.width <= 0 || area.height <= 0
+
+## Layout
+
+# What a part of a layout asks for. Where the parts ask more than the area
+# holds, they give it up in this order, the parts of a kind levelled from the
+# largest down: a `max`'s wish to be as large as its bound, then a `ratio`, a
+# `percentage`, a `length`, and last a `min`. Where they ask less, the `min` and `fill` parts
+# share what is left, each in proportion to its weight (a `min` weighing 1),
+# never below what it asked; where there is none, `Flex` says where the space
+# goes.
+variant Constraint
+    # Exactly `n` cells.
+    length
+        # Cells, 0 or more.
+        n: i64
+    # `n` hundredths of the area's cells.
+    percentage
+        # Hundredths, 0 or more; above 100 asks for more than the area.
+        n: i64
+    # `numerator` parts in `denominator` of the area's cells.
+    ratio
+        # The parts asked, 0 or more.
+        numerator: i64
+        # The parts the area is cut into; 0 asks for the whole area.
+        denominator: i64
+    # At least `n` cells, and a share of what is left.
+    min
+        # Cells, 0 or more.
+        n: i64
+    # At most `n` cells, and `n` where there is room.
+    max
+        # Cells, 0 or more.
+        n: i64
+    # A share of what is left, in proportion to `weight`.
+    fill
+        # The weight, 0 or more; parts of weight 0 share only where every
+        # part that shares weighs 0.
+        weight: i64
+
+# The way a layout lays its parts.
+variant Direction
+    # Side by side, left to right: the parts are columns.
+    horizontal
+    # One under another, top to bottom: the parts are rows.
+    vertical
+
+# Where the space goes that no part takes, where no part is a `min` or a
+# `fill`.
+variant Flex
+    # Into the last part, past its bound: `ratatui`'s rule before it had
+    # `Flex`.
+    legacy
+    # After the last part.
+    start
+    # Before the first part.
+    end
+    # Half before the first part and half after the last.
+    center
+    # Between the parts, evenly; one part alone takes it all.
+    space_between
+    # Around each part: a space between two parts is twice a space at an end.
+    space_around
+    # Evenly before, between and after the parts.
+    space_evenly
+
+# How an area is cut into parts. Made by `layout_of`, then changed field by
+# field.
+record Layout
+    # Side by side or one under another.
+    direction: Direction
+    # What each part asks, one constraint per part, in order.
+    constraints: [Constraint]
+    # Columns left empty at the area's left and right, 0 or more.
+    horizontal_margin: i64
+    # Rows left empty at the area's top and bottom, 0 or more.
+    vertical_margin: i64
+    # Cells between two parts, the least there is under `.space_between`,
+    # `.space_around` (where an end has half of it) and `.space_evenly` (where
+    # the ends have it too); below 0 two parts overlap by that many cells, so
+    # blocks drawn in them share a border.
+    spacing: i64
+    # Where the space no part takes goes.
+    flex: Flex
+
+# A layout of `constraints` laid in `direction`, with no margin, no spacing,
+# and the space no part takes left after the last part (`.start`).
+#
+# - `direction`: side by side or one under another.
+# - `constraints`: what each part asks.
+#
+# See also `split`.
+function layout_of(direction: Direction, constraints: [Constraint]) -> Layout
+    return Layout(
+        direction: direction,
+        constraints: constraints,
+        horizontal_margin: 0,
+        vertical_margin: 0,
+        spacing: 0,
+        flex: .start
+    )
+
+# `area` cut by `layout` into one rectangle per constraint, in order.
+#
+# - `area`: the area to cut.
+# - `layout`: the direction, the constraints, the margins, the spacing and the
+#   flex.
+#
+# The parts' edges are placed as real numbers and each edge rounded to the
+# nearest cell, a half away from 0, so the parts tile the area. Where the
+# margins take the whole area, every part is empty. It answers what
+# `ratatui`'s solver answers wherever the constraints decide the result; where
+# a tie is split at a half, the ledger says where the two differ. See also
+# `spacers_of`, `centered`.
+function split(area: Rect, layout: Layout) -> [Rect]
+    inside = inner(area, horizontal: layout.horizontal_margin, vertical: layout.vertical_margin)
+    wants: [solve.Want] @= []
+
+    for c in layout.constraints
+        want: solve.Want = match c
+            .length l     => solve.Want(kind: solve.LENGTH, a: l.n, b: 0)
+            .percentage p => solve.Want(kind: solve.PERCENTAGE, a: p.n, b: 0)
+            .ratio r      => solve.Want(kind: solve.RATIO, a: r.numerator, b: r.denominator)
+            .min m        => solve.Want(kind: solve.MIN, a: m.n, b: 0)
+            .max m        => solve.Want(kind: solve.MAX, a: m.n, b: 0)
+            .fill f       => solve.Want(kind: solve.FILL, a: f.weight, b: 0)
+
+        wants @ wants.push(want)
+
+    flex = match layout.flex
+        .legacy        => solve.LEGACY
+        .start         => solve.START
+        .end           => solve.END
+        .center        => solve.CENTER
+        .space_between => solve.SPACE_BETWEEN
+        .space_around  => solve.SPACE_AROUND
+        .space_evenly  => solve.SPACE_EVENLY
+
+    out: [Rect] @= []
+
+    match layout.direction
+        .horizontal =>
+            for p in solve.split(start: inside.x, total: inside.width, wants: wants, spacing: layout.spacing, flex: flex)
+                out @ out.push(Rect(x: p.at, y: inside.y, width: p.size, height: inside.height))
+        .vertical =>
+            for p in solve.split(start: inside.y, total: inside.height, wants: wants, spacing: layout.spacing, flex: flex)
+                out @ out.push(Rect(x: inside.x, y: p.at, width: inside.width, height: p.size))
+
+    return out
+
+# The gaps `split` leaves around and between the parts of `area`: one before
+# the first part, one between each two, and one after the last, in order.
+#
+# - `area`: the area to cut.
+# - `layout`: the layout, as `split` reads it.
+#
+# A gap of no cell where two parts touch or overlap. See also `split`.
+function spacers_of(area: Rect, layout: Layout) -> [Rect]
+    inside = inner(area, horizontal: layout.horizontal_margin, vertical: layout.vertical_margin)
+    horizontal = layout.direction == .horizontal
+    parts: [solve.Part] @= []
+
+    for r in split(area, layout: layout)
+        part = if horizontal
+            solve.Part(at: r.x, size: r.width)
+        else
+            solve.Part(at: r.y, size: r.height)
+
+        parts @ parts.push(part)
+
+    out: [Rect] @= []
+
+    if horizontal
+        for g in solve.spacers(start: inside.x, total: inside.width, parts: parts)
+            out @ out.push(Rect(x: g.at, y: inside.y, width: g.size, height: inside.height))
+    else
+        for g in solve.spacers(start: inside.y, total: inside.height, parts: parts)
+            out @ out.push(Rect(x: inside.x, y: g.at, width: inside.width, height: g.size))
+
+    return out
+
+## Text
+
+# Where a line stands in the width it is drawn in.
+variant Alignment
+    # Against the left edge.
+    left
+    # In the middle; an odd cell left over goes before it.
+    center
+    # Against the right edge.
+    right
+
+# A piece of text drawn in one style.
+record Span
+    # The text, one line: a line break in it is drawn as nothing, as every
+    # control character is.
+    text: str
+    # How it is drawn, laid over the line's style.
+    style: term.Style
+
+# One line of text: spans drawn one after another, a style under them all,
+# and where the line stands. Built directly, or by `line_of`.
+record Line
+    # The spans, in order.
+    spans: [Span]
+    # The style laid under every span.
+    style: term.Style
+    # Where the line stands in its width.
+    alignment: Alignment
+
+# `text` as one line of one plain span, against the left.
+#
+# - `text`: the text, one line.
+#
+# See also `styled_line`, `lines_of`.
+function line_of(text: str) -> Line
+    return Line(spans: [Span(text: text, style: term.plain())], style: term.plain(), alignment: .left)
+
+# `text` as one line of one span drawn in `style`, against the left.
+#
+# - `text`: the text, one line.
+# - `style`: how it is drawn.
+#
+# See also `line_of`.
+function styled_line(text: str, style: term.Style) -> Line
+    return Line(spans: [Span(text: text, style: style)], style: term.plain(), alignment: .left)
+
+# The lines of `text`, each a plain line against the left: cut at each line
+# feed, a carriage return before one taken away with it.
+#
+# - `text`: the text; the empty text is one empty line, and a text ending in a
+#   line feed has an empty line after it.
+#
+# See also `line_of`, `paragraph_of`.
+function lines_of(text: str) -> [Line]
+    out: [Line] @= []
+    begins @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == '\n'
+            end = if i > begins && text[i - 1] == '\r'
+                i - 1
+            else
+                i
+
+            out @ out.push(line_of(text.slice(from: begins, to: end)))
+            begins @ i + 1
+
+    out @ out.push(line_of(text.slice(from: begins, to: text.len())))
+    return out
+
+# How many cells `line` takes when drawn: each grapheme as `unicode/segment`'s
+# `width_of` measures it, a control character none.
+#
+# - `line`: the line.
+#
+# See also `height_of`.
+function width_of(line: Line) -> i64
+    parts: [runs.Run] @= []
+
+    for s in line.spans
+        parts @ parts.push(runs.Run(text: s.text, style: s.style))
+
+    return runs.width_of(runs.pieces_of(parts, line_style: line.style))
+
+# `lines`, each standing where `alignment` says.
+#
+# - `lines`: the lines.
+# - `alignment`: where each stands.
+#
+# See also `Alignment`.
+function with_alignment(lines: [Line], alignment: Alignment) -> [Line]
+    out: [Line] @= []
+
+    for l in lines
+        moved @= l
+        moved.alignment @ alignment
+        out @ out.push(moved)
+
+    return out
+
+## Buffers
+
+# One cell of a buffer: what is drawn in it, and how.
+record Cell
+    # The grapheme drawn: " " for a blank cell, and "" for the second cell of
+    # a wide character, which the character covers.
+    symbol: str
+    # How it is drawn.
+    style: term.Style
+
+# A rectangle of cells a frame is drawn in. Made by `blank` or `frame_of`, and
+# drawn into by the widgets; every drawing is cut to its area, so nothing
+# drawn outside it lands anywhere.
+record Buffer
+    # Where it stands on the screen, as it was made; changing it moves no cell.
+    area: Rect
+    # The cells. Only this package reads it.
+    grid: grid.Grid
+
+# One cell that differs between two buffers, as `diff` answers it.
+record Change
+    # The cell's column on the screen.
+    x: i64
+    # The cell's row on the screen.
+    y: i64
+    # What it holds in the newer buffer.
+    cell: Cell
+
+# A buffer over `area`, every cell blank and plain.
+#
+# - `area`: where it stands; a rectangle of no cell makes a buffer of none.
+#
+# See also `frame_of`, `buffer_of`.
+function blank(area: Rect) -> Buffer
+    return Buffer(area: area, grid: grid.new(x: area.x, y: area.y, width: area.width, height: area.height))
+
+# A buffer at 0, 0 holding `lines`, as wide as the widest and as high as there
+# are lines, every cell plain: what a test compares a drawing with.
+#
+# - `lines`: the rows, the top one first; a shorter row is blank to its end.
+#
+# See also `to_lines`.
+function buffer_of(lines: [str]) -> Buffer
+    widest @= 0
+
+    for l in lines
+        w = width_of(line_of(l))
+
+        if w > widest
+            widest @ w
+
+    made @= blank(Rect(x: 0, y: 0, width: widest, height: lines.len()))
+
+    for row in range(from: 0, to: lines.len())
+        _ = draw_text(@made, x: 0, y: row, text: lines[row], style: term.plain(), width: widest)
+
+    return made
+
+# The cell of `buffer` at column `x` and row `y` of the screen.
+#
+# - `buffer`: the buffer.
+# - `x`: the column, inside the buffer's area.
+# - `y`: the row, inside the buffer's area.
+#
+# Aborts where the cell is outside the buffer's area, as an index past the end
+# does. See also `to_lines`.
+function cell_at(buffer: Buffer, x: i64, y: i64) -> Cell
+    assert grid.inside(buffer.grid, x: x, y: y)
+    i = grid.index_of(buffer.grid, x: x, y: y)
+    return Cell(symbol: buffer.grid.symbols[i], style: packed.style_of(buffer.grid.styles[i]))
+
+# The rows of `buffer` as text, the top one first: each cell's symbol, a wide
+# character once for its two cells.
+#
+# - `buffer`: the buffer.
+#
+# See also `buffer_of`, `cell_at`.
+function to_lines(buffer: Buffer) -> [str]
+    out: [str] @= []
+
+    for row in range(from: 0, to: buffer.grid.height)
+        out @ out.push(grid.row_text(buffer.grid, row: row))
+
+    return out
+
+# Draws `text` into `buffer` from column `x` of row `y`, in `style`, taking at
+# most `width` cells, and answers the column after the last cell drawn.
+#
+# - `buffer`: the buffer drawn into.
+# - `x`: the first column.
+# - `y`: the row.
+# - `text`: the text; a control character, a line break among them, is drawn as
+#   nothing.
+# - `style`: laid over each cell drawn.
+# - `width`: the most cells to take; below 1 draws nothing.
+#
+# A wide character that would cross the limit or the buffer's edge is not
+# drawn. A wide character drawn over half of another blanks the other half.
+# See also `draw_line`.
+function draw_text(@buffer: Buffer, x: i64, y: i64, text: str, style: term.Style, width: i64) -> i64
+    if width < 1
+        return x
+    return grid.draw(@buffer.grid, x: x, y: y, text: text, style: packed.of(style), limit: x + width)
+
+# Draws `line` into `buffer` from column `x` of row `y`, taking at most
+# `width` cells, and answers the column after the last cell drawn. The
+# line's alignment is not read: it starts at `x`.
+#
+# - `buffer`: the buffer drawn into.
+# - `x`: the first column.
+# - `y`: the row.
+# - `line`: the line; each span drawn in the line's style with its own laid
+#   over it.
+# - `width`: the most cells to take; below 1 draws nothing.
+#
+# See also `draw_text`, `draw_paragraph`.
+function draw_line(@buffer: Buffer, x: i64, y: i64, line: Line, width: i64) -> i64
+    if width < 1
+        return x
+    parts: [runs.Run] @= []
+
+    for s in line.spans
+        parts @ parts.push(runs.Run(text: s.text, style: s.style))
+
+    return runs.place(@buffer.grid, x: x, y: y, pieces: runs.pieces_of(parts, line_style: line.style), limit: x + width)
+
+# Lays `style` over every cell of `area` in `buffer`, the symbols kept.
+#
+# - `buffer`: the buffer.
+# - `area`: the cells; the part outside the buffer is ignored.
+# - `style`: the style laid over them.
+#
+# See also `fill`, `clear`.
+function set_style(@buffer: Buffer, area: Rect, style: term.Style)
+    grid.patch(@buffer.grid, x: area.x, y: area.y, width: area.width, height: area.height, style: packed.of(style))
+
+# Puts `symbol` in every cell of `area` in `buffer`, with `style` laid over
+# each.
+#
+# - `buffer`: the buffer.
+# - `area`: the cells; the part outside the buffer is ignored.
+# - `symbol`: one grapheme one cell wide; any other text fills with " ".
+# - `style`: the style laid over each cell.
+#
+# See also `set_style`, `clear`.
+function fill(@buffer: Buffer, area: Rect, symbol: str, style: term.Style)
+    one = segment.graphemes(symbol).len() == 1 && segment.width_of(symbol) == 1
+
+    shown = if one
+        symbol
+    else
+        " "
+    grid.fill(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        symbol: shown,
+        style: packed.of(style)
+    )
+
+# Puts every cell of `area` in `buffer` back to blank and plain: what a dialog
+# drawn over other widgets clears first.
+#
+# - `buffer`: the buffer.
+# - `area`: the cells; the part outside the buffer is ignored.
+#
+# See also `fill`.
+function clear(@buffer: Buffer, area: Rect)
+    grid.clear(@buffer.grid, x: area.x, y: area.y, width: area.width, height: area.height)
+
+# Copies every cell of `from` into `buffer` where the two areas meet, each
+# cell as it is: a drawing made apart, laid on a frame.
+#
+# - `buffer`: the buffer drawn into.
+# - `from`: the buffer copied, by its own area.
+#
+# See also `blank`.
+function paste(@buffer: Buffer, from: Buffer)
+    grid.copy(g: @buffer.grid, from: from.grid)
+
+# The cells of `after` that differ from `before`, row by row: what a terminal
+# showing `before` must be written to show `after`.
+#
+# - `before`: the frame shown.
+# - `after`: the frame to show; where its area differs from `before`'s, every
+#   cell of it is a change.
+#
+# A cell covered by a wide character is never a change; the cells a wide
+# character of `before` covered are changes where it is gone, so no half of it
+# stays. See also `format_changes`, `flush`.
+function diff(before: Buffer, after: Buffer) -> [Change]
+    out: [Change] @= []
+
+    for c in delta.diff(before: before.grid, after: after.grid)
+        out @ out.push(Change(x: c.x, y: c.y, cell: Cell(symbol: c.symbol, style: packed.style_of(c.style))))
+
+    return out
+
+# The bytes that write `changes` on a terminal: the cursor moved to each run of
+# changed cells, each run in its style, the terminal's own rendition put back
+# after each styled run, the cursor left where the last cell ended.
+#
+# - `changes`: what `diff` answered.
+#
+# "" for no change. See also `diff`, `flush`.
+function format_changes(changes: [Change]) -> str
+    inside: [delta.Change] @= []
+
+    for c in changes
+        w = segment.width_of(c.cell.symbol)
+
+        wide = if w > 1
+            w
+        else
+            1
+
+        inside @ inside.push(
+            delta.Change(x: c.x, y: c.y, symbol: c.cell.symbol, width: wide, style: packed.of(c.cell.style))
+        )
+
+    return delta.format(inside)
+
+## Blocks
+
+# The lines a block's border is drawn with.
+variant BorderType
+    # Thin lines and square corners: `┌─┐`.
+    plain
+    # Thin lines and round corners: `╭─╮`.
+    rounded
+    # Double lines: `╔═╗`.
+    double
+    # Thick lines: `┏━┓`.
+    thick
+    # Thin lines broken in two dashes, square corners: `┌╌┐`.
+    light_double_dashed
+    # Thick lines broken in two dashes: `┏╍┓`.
+    heavy_double_dashed
+    # Thin lines broken in three dashes: `┌┄┐`.
+    light_triple_dashed
+    # Thick lines broken in three dashes: `┏┅┓`.
+    heavy_triple_dashed
+    # Thin lines broken in four dashes: `┌┈┐`.
+    light_quadruple_dashed
+    # Thick lines broken in four dashes: `┏┉┓`.
+    heavy_quadruple_dashed
+    # Half blocks drawn inside the area's edge: `▗▄▖`.
+    quadrant_inside
+    # Half blocks drawn on the area's edge: `▛▀▜`.
+    quadrant_outside
+
+# Which sides of a block have a border.
+record Borders
+    # The top side.
+    top: bool
+    # The right side.
+    right: bool
+    # The bottom side.
+    bottom: bool
+    # The left side.
+    left: bool
+
+# Whether a title stands on a block's top edge or its bottom edge.
+variant TitlePosition
+    # On the top edge.
+    top
+    # On the bottom edge.
+    bottom
+
+# A title on a block's edge.
+record Title
+    # The text, standing at the edge's left, middle or right by its alignment.
+    line: Line
+    # The edge.
+    position: TitlePosition
+
+# The cells left empty inside a block's border, on each side.
+record Padding
+    # Columns on the left, 0 or more.
+    left: i64
+    # Columns on the right, 0 or more.
+    right: i64
+    # Rows at the top, 0 or more.
+    top: i64
+    # Rows at the bottom, 0 or more.
+    bottom: i64
+
+# A box around an area: borders, titles on its edges, a style under it all, and
+# padding inside. Made by `bordered` or `borderless`, then changed field by
+# field; what is drawn inside it goes in `inner_of` its area.
+record Block
+    # The sides with a border.
+    borders: Borders
+    # The lines of the border.
+    border_type: BorderType
+    # The style of the border's cells, laid over `style`.
+    border_style: term.Style
+    # The titles, drawn in order; titles of one edge and one alignment stand
+    # side by side, a cell apart.
+    titles: [Title]
+    # The style of the titles, laid over the border's.
+    title_style: term.Style
+    # The style laid over the whole area first.
+    style: term.Style
+    # The cells left empty inside the border.
+    padding: Padding
+
+# A block with all four borders of thin lines, no title, plain.
+#
+# See also `borderless`, `with_title`.
+function bordered() -> Block
+    return Block(
+        borders: Borders(top: true, right: true, bottom: true, left: true),
+        border_type: .plain,
+        border_style: term.plain(),
+        titles: [],
+        title_style: term.plain(),
+        style: term.plain(),
+        padding: Padding(left: 0, right: 0, top: 0, bottom: 0)
+    )
+
+# A block with no border, no title and no padding: only a style under an area,
+# or a title over it.
+#
+# See also `bordered`.
+function borderless() -> Block
+    return Block(
+        borders: Borders(top: false, right: false, bottom: false, left: false),
+        border_type: .plain,
+        border_style: term.plain(),
+        titles: [],
+        title_style: term.plain(),
+        style: term.plain(),
+        padding: Padding(left: 0, right: 0, top: 0, bottom: 0)
+    )
+
+# A copy of `block` with `title` added on its top edge, against the left.
+#
+# - `block`: the block.
+# - `title`: the title's text, one line.
+#
+# See also `Title`.
+function with_title(block: Block, title: str) -> Block
+    titles: [Title] @= block.titles
+    titles @ titles.push(Title(line: line_of(title), position: .top))
+    titled @= block
+    titled.titles @ titles
+    return titled
+
+# The area left inside `block` drawn over `area`: its borders, the rows its
+# titles take where there is no border on their edge, and its padding taken
+# off.
+#
+# - `block`: the block.
+# - `area`: the area it is drawn over.
+#
+# An empty rectangle where nothing is left. See also `draw_block`.
+function inner_of(block: Block, area: Rect) -> Rect
+    top_title @= false
+    bottom_title @= false
+
+    for t in block.titles
+        if t.position == .top
+            top_title @ true
+        else
+            bottom_title @ true
+
+    left = if block.borders.left
+        1
+    else
+        0
+
+    right = if block.borders.right
+        1
+    else
+        0
+
+    top = if block.borders.top || top_title
+        1
+    else
+        0
+
+    bottom = if block.borders.bottom || bottom_title
+        1
+    else
+        0
+    pad = block.padding
+
+    pad_left = if pad.left > 0
+        pad.left
+    else
+        0
+
+    pad_right = if pad.right > 0
+        pad.right
+    else
+        0
+
+    pad_top = if pad.top > 0
+        pad.top
+    else
+        0
+
+    pad_bottom = if pad.bottom > 0
+        pad.bottom
+    else
+        0
+    width = area.width - left - right - pad_left - pad_right
+    height = area.height - top - bottom - pad_top - pad_bottom
+
+    kept_width = if width > 0
+        width
+    else
+        0
+
+    kept_height = if height > 0
+        height
+    else
+        0
+    return Rect(x: area.x + left + pad_left, y: area.y + top + pad_top, width: kept_width, height: kept_height)
+
+# Draws `block` over `area` of `buffer`: its style under the area, then its
+# borders, then its titles, each cut to the edge between its corners.
+#
+# - `buffer`: the buffer drawn into.
+# - `area`: the area the block surrounds.
+# - `block`: the block.
+#
+# See also `inner_of`.
+function draw_block(@buffer: Buffer, area: Rect, block: Block)
+    grid.patch(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        style: packed.of(block.style)
+    )
+
+    kind = match block.border_type
+        .plain                  => 0
+        .rounded                => 1
+        .double                 => 2
+        .thick                  => 3
+        .light_double_dashed    => 4
+        .heavy_double_dashed    => 5
+        .light_triple_dashed    => 6
+        .heavy_triple_dashed    => 7
+        .light_quadruple_dashed => 8
+        .heavy_quadruple_dashed => 9
+        .quadrant_inside        => 10
+        .quadrant_outside       => 11
+
+    sides = block.borders
+    borders.draw(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        top: sides.top,
+        right: sides.right,
+        bottom: sides.bottom,
+        left: sides.left,
+        kind: kind,
+        style: packed.of(block.border_style)
+    )
+    titles: [borders.Title] @= []
+
+    for t in block.titles
+        parts: [runs.Run] @= []
+
+        for s in t.line.spans
+            parts @ parts.push(runs.Run(text: s.text, style: s.style))
+
+        align = match t.line.alignment
+            .left   => runs.LEFT
+            .center => runs.CENTER
+            .right  => runs.RIGHT
+
+        titles @ titles.push(
+            borders.Title(pieces: runs.pieces_of(parts, line_style: t.line.style), bottom: t.position == .bottom, align: align)
+        )
+
+    borders.draw_titles(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        left: sides.left,
+        right: sides.right,
+        titles: titles,
+        title_style: packed.of(block.title_style)
+    )
+
+## Paragraphs
+
+# Lines of text drawn in an area, wrapped at its width or cut at it, and
+# scrolled. Made by `paragraph_of`, then changed field by field.
+record Paragraph
+    # The lines, each standing where its alignment says.
+    lines: [Line]
+    # The style laid over the whole area first.
+    style: term.Style
+    # Whether a line wider than the area goes on below, broken between words;
+    # false cuts it at the area's edge.
+    wrap: bool
+    # Where it wraps, whether the spaces at the start of each line are taken
+    # away; false keeps the spaces a line of `lines` begins with.
+    trim: bool
+    # Columns scrolled off the left, 0 or more.
+    scroll_x: i64
+    # Rows scrolled off the top, 0 or more, counted after wrapping.
+    scroll_y: i64
+
+# A paragraph of the lines of `text`, plain, cut at the area's edge, not
+# scrolled; `wrap` and `trim` may be set after.
+#
+# - `text`: the text, cut at each line feed as `lines_of` cuts it.
+#
+# See also `draw_paragraph`.
+function paragraph_of(text: str) -> Paragraph
+    return Paragraph(lines: lines_of(text), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
+
+# Draws `paragraph` in `area` of `buffer`.
+#
+# - `buffer`: the buffer drawn into.
+# - `area`: where it is drawn; lines past its bottom are not drawn.
+# - `paragraph`: the paragraph.
+#
+# Wrapping breaks a line between words at the area's width: the spaces where
+# it breaks are taken away, and a word wider than the area is broken between
+# graphemes to fill each line. See also `height_of`.
+function draw_paragraph(@buffer: Buffer, area: Rect, paragraph: Paragraph)
+    grid.patch(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        style: packed.of(paragraph.style)
+    )
+
+    if is_empty(area)
+        return
+
+    skip = if paragraph.scroll_y > 0
+        paragraph.scroll_y
+    else
+        0
+
+    columns = if paragraph.scroll_x > 0
+        paragraph.scroll_x
+    else
+        0
+    rows: [[runs.Piece]] @= []
+    aligns: [i64] @= []
+
+    for l in paragraph.lines
+        if rows.len() < skip + area.height
+            parts: [runs.Run] @= []
+
+            for s in l.spans
+                parts @ parts.push(runs.Run(text: s.text, style: s.style))
+
+            pieces = runs.pieces_of(parts, line_style: l.style)
+
+            align = match l.alignment
+                .left   => runs.LEFT
+                .center => runs.CENTER
+                .right  => runs.RIGHT
+
+            if paragraph.wrap
+                for r in wrapping.wrap(pieces, width: area.width, trim: paragraph.trim)
+                    rows @ rows.push(r)
+                    aligns @ aligns.push(align)
+            else
+                rows @ rows.push(pieces)
+                aligns @ aligns.push(align)
+
+    for k in range(from: 0, to: area.height)
+        at = skip + k
+
+        if at < rows.len()
+            runs.draw_row(
+                @buffer.grid,
+                x: area.x,
+                y: area.y + k,
+                width: area.width,
+                pieces: rows[at],
+                align: aligns[at],
+                scroll: columns
+            )
+
+# How many rows `paragraph` takes drawn `width` cells wide, its scrolling not
+# counted: what a scrollbar or a layout asks before drawing.
+#
+# - `paragraph`: the paragraph.
+# - `width`: the cells of a row; below 1 answers 0.
+#
+# See also `draw_paragraph`.
+function height_of(paragraph: Paragraph, width: i64) -> i64
+    if width < 1
+        return 0
+
+    if !paragraph.wrap
+        return paragraph.lines.len()
+    total @= 0
+
+    for l in paragraph.lines
+        parts: [runs.Run] @= []
+
+        for s in l.spans
+            parts @ parts.push(runs.Run(text: s.text, style: s.style))
+
+        total @ total + wrapping.wrap(runs.pieces_of(parts, line_style: l.style), width: width, trim: paragraph.trim).len()
+
+    return total
+
+## Selections
+
+# What a list or a table keeps between frames: the row selected, if any, the
+# column selected, if any, and the first row shown. Made by `selection`; the
+# draws change the first row shown so the selected row stays in view.
+record Selection
+    # The marks. Only this package reads them.
+    marks: marks.Marks
+
+# A selection of nothing, its first row shown the first.
+#
+# See also `select`, `draw_list`.
+function selection() -> Selection
+    return Selection(marks: marks.none())
+
+# Selects the row `index`.
+#
+# - `state`: the selection.
+# - `index`: the row, from 0; below 0 taken as 0. One past the last row is
+#   taken as the last when drawn.
+#
+# See also `unselect`, `selected_of`.
+function select(@state: Selection, index: i64)
+    state.marks.has_row @ true
+
+    state.marks.row @ if index > 0
+        index
+    else
+        0
+
+# Selects no row; the column selected, if any, stays.
+#
+# - `state`: the selection.
+#
+# See also `select`.
+function unselect(@state: Selection)
+    state.marks.has_row @ false
+    state.marks.row @ 0
+
+# The row selected.
+#
+# - `state`: the selection.
+#
+# Fails `not_found` where no row is selected. See also `select`.
+function selected_of(state: Selection) -> i64?
+    if !state.marks.has_row
+        return fail(code: NOT_FOUND, msg: "no row is selected")
+    return ok(state.marks.row)
+
+# Selects the first of `count` rows; nothing where there is none.
+#
+# - `state`: the selection.
+# - `count`: how many rows there are.
+#
+# See also `select_last`.
+function select_first(@state: Selection, count: i64)
+    if count > 0
+        select(@state, index: 0)
+    else
+        unselect(@state)
+
+# Selects the last of `count` rows; nothing where there is none.
+#
+# - `state`: the selection.
+# - `count`: how many rows there are.
+#
+# See also `select_first`.
+function select_last(@state: Selection, count: i64)
+    if count > 0
+        select(@state, index: count - 1)
+    else
+        unselect(@state)
+
+# Moves the selected row `by` rows down among `count`, stopping at the first
+# and the last: Down is 1, Up is -1, Page Down a page.
+#
+# - `state`: the selection.
+# - `count`: how many rows there are; 0 selects nothing.
+# - `by`: rows down; below 0 up. With nothing selected, a move down selects
+#   the first row and a move up the last.
+#
+# See also `select`, `move_column`.
+function move_selection(@state: Selection, count: i64, by: i64)
+    m = marks.moved(has: state.marks.has_row, at: state.marks.row, count: count, by: by)
+    state.marks.has_row @ m[0] == 1
+    state.marks.row @ m[1]
+
+# Selects the column `index`, which a table highlights.
+#
+# - `state`: the selection.
+# - `index`: the column, from 0; below 0 taken as 0.
+#
+# See also `selected_column_of`.
+function select_column(@state: Selection, index: i64)
+    state.marks.has_column @ true
+
+    state.marks.column @ if index > 0
+        index
+    else
+        0
+
+# Selects no column.
+#
+# - `state`: the selection.
+#
+# See also `select_column`.
+function unselect_column(@state: Selection)
+    state.marks.has_column @ false
+    state.marks.column @ 0
+
+# The column selected.
+#
+# - `state`: the selection.
+#
+# Fails `not_found` where no column is selected. See also `select_column`.
+function selected_column_of(state: Selection) -> i64?
+    if !state.marks.has_column
+        return fail(code: NOT_FOUND, msg: "no column is selected")
+    return ok(state.marks.column)
+
+# Moves the selected column `by` columns right among `count`, stopping at the
+# first and the last.
+#
+# - `state`: the selection.
+# - `count`: how many columns there are; 0 selects none.
+# - `by`: columns right; below 0 left. With none selected, a move right
+#   selects the first column and a move left the last.
+#
+# See also `move_selection`.
+function move_column(@state: Selection, count: i64, by: i64)
+    m = marks.moved(has: state.marks.has_column, at: state.marks.column, count: count, by: by)
+    state.marks.has_column @ m[0] == 1
+    state.marks.column @ m[1]
+
+# The first row shown, from 0, as the last draw left it.
+#
+# - `state`: the selection.
+#
+# See also `draw_list`.
+function offset_of(state: Selection) -> i64
+    return state.marks.offset
+
+## Lists
+
+# When a list or a table keeps room for its highlight symbol before its rows.
+variant HighlightSpacing
+    # Always, a row selected or not.
+    always
+    # Only while a row is selected.
+    when_selected
+    # Never: the symbol is not drawn.
+    never
+
+# Which way a list's items go.
+variant ListDirection
+    # The first item at the top.
+    top_to_bottom
+    # The first item at the bottom, as a log's newest line.
+    bottom_to_top
+
+# One item of a list: one or more lines.
+record ListItem
+    # Its lines, drawn one under another.
+    lines: [Line]
+    # The style laid over its rows.
+    style: term.Style
+
+# Items one under another, one of them selected. Made by `list_of`, then
+# changed field by field; drawn with a `Selection` the program keeps.
+record List
+    # The items.
+    items: [ListItem]
+    # The style laid over the whole area first.
+    style: term.Style
+    # The style laid over the selected item's rows, the whole width.
+    highlight_style: term.Style
+    # What is drawn before the selected item's first line; the other items are
+    # moved right as far, as `highlight_spacing` says.
+    highlight_symbol: str
+    # When room is kept for the symbol.
+    highlight_spacing: HighlightSpacing
+    # Whether the symbol is drawn before every line of the selected item, not
+    # only its first.
+    repeat_highlight_symbol: bool
+    # Which way the items go.
+    direction: ListDirection
+    # Items kept in view above and below the selected one where there are
+    # any, 0 or more.
+    scroll_padding: i64
+
+# A list of `items`, each a plain item of the lines of its text, the selected
+# one drawn reversed with no symbol before it.
+#
+# - `items`: each item's text, cut at line feeds as `lines_of` cuts it.
+#
+# See also `draw_list`.
+function list_of(items: [str]) -> List
+    made: [ListItem] @= []
+
+    for text in items
+        made @ made.push(ListItem(lines: lines_of(text), style: term.plain()))
+
+    return List(
+        items: made,
+        style: term.plain(),
+        highlight_style: term.with_attribute(term.plain(), a: .reverse),
+        highlight_symbol: "",
+        highlight_spacing: .when_selected,
+        repeat_highlight_symbol: false,
+        direction: .top_to_bottom,
+        scroll_padding: 0
+    )
+
+# Draws `list` in `area` of `buffer` with `state`'s selected item highlighted,
+# and moves `state`'s first row shown so that item is in view.
+#
+# - `buffer`: the buffer drawn into.
+# - `area`: where it is drawn.
+# - `list`: the list.
+# - `state`: the selection; a selected row past the last item is moved to the
+#   last, and the first row shown is moved the least that shows the selected
+#   item with `scroll_padding` items around it.
+#
+# See also `move_selection`.
+function draw_list(@buffer: Buffer, area: Rect, list: List, @state: Selection)
+    shaped: [[listing.Shaped]] @= []
+    styles: [i64] @= []
+
+    for it in list.items
+        lines: [listing.Shaped] @= []
+
+        for l in it.lines
+            parts: [runs.Run] @= []
+
+            for s in l.spans
+                parts @ parts.push(runs.Run(text: s.text, style: s.style))
+
+            align = match l.alignment
+                .left   => runs.LEFT
+                .center => runs.CENTER
+                .right  => runs.RIGHT
+
+            lines @ lines.push(listing.Shaped(pieces: runs.pieces_of(parts, line_style: l.style), align: align))
+
+        shaped @ shaped.push(lines)
+        styles @ styles.push(packed.of(it.style))
+
+    spacing = match list.highlight_spacing
+        .always        => listing.ALWAYS
+        .when_selected => listing.WHEN_SELECTED
+        .never         => listing.NEVER
+
+    m = state.marks
+    first = listing.draw(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        items: shaped,
+        item_styles: styles,
+        has: m.has_row,
+        selected: m.row,
+        offset: m.offset,
+        symbol: runs.pieces_of([runs.Run(text: list.highlight_symbol, style: term.plain())], line_style: term.plain()),
+        spacing: spacing,
+        every_line: list.repeat_highlight_symbol,
+        upward: list.direction == .bottom_to_top,
+        padding: list.scroll_padding,
+        style: packed.of(list.style),
+        highlight: packed.of(list.highlight_style)
+    )
+    state.marks.offset @ first
+
+    if m.has_row && m.row >= shaped.len() && shaped.len() > 0
+        state.marks.row @ shaped.len() - 1
+
+## Tables
+
+# One cell of a table: one or more lines.
+record TableCell
+    # Its lines, drawn one under another, each where its alignment says in the
+    # column's width.
+    lines: [Line]
+    # The style laid over the cell's area.
+    style: term.Style
+
+# One row of a table.
+record Row
+    # Its cells, the first column's first; a row with fewer cells than columns
+    # leaves the rest empty, and cells past the columns are not drawn.
+    cells: [TableCell]
+    # Its rows on the screen, 1 or more; lines of a cell past it are not drawn.
+    height: i64
+    # Rows left empty above it, 0 or more.
+    top_margin: i64
+    # Rows left empty below it, 0 or more.
+    bottom_margin: i64
+    # The style laid over the row's whole width.
+    style: term.Style
+
+# Rows of cells in columns, under a header, one row selected. Made by
+# `table_of`, then changed field by field; drawn with a `Selection`.
+record Table
+    # The rows drawn at the top, above every row, never scrolled; empty for
+    # none.
+    header: [Row]
+    # The rows.
+    rows: [Row]
+    # The rows drawn at the bottom, never scrolled; empty for none.
+    footer: [Row]
+    # The width each column asks, one per column, cut from the area's width as
+    # a layout of `flex` cuts it.
+    widths: [Constraint]
+    # Columns between two columns, 0 or more.
+    column_spacing: i64
+    # Where the width no column takes goes.
+    flex: Flex
+    # The style laid over the whole area first.
+    style: term.Style
+    # The style laid over the selected row.
+    row_highlight_style: term.Style
+    # The style laid over the selected column.
+    column_highlight_style: term.Style
+    # The style laid over the cell at the selected row and column.
+    cell_highlight_style: term.Style
+    # What is drawn before the selected row; the other rows move as far, as
+    # `highlight_spacing` says.
+    highlight_symbol: str
+    # When room is kept for the symbol.
+    highlight_spacing: HighlightSpacing
+
+# A table of `rows`, each a list of the cells' texts, its columns as wide as
+# `widths` asks, a column apart, the selected row drawn reversed.
+#
+# - `rows`: each row's cells' texts; a row's height is its tallest cell's
+#   lines.
+# - `widths`: what each column asks.
+#
+# See also `row_of`, `draw_table`.
+function table_of(rows: [[str]], widths: [Constraint]) -> Table
+    made: [Row] @= []
+
+    for cells in rows
+        made @ made.push(row_of(cells))
+
+    return Table(
+        header: [],
+        rows: made,
+        footer: [],
+        widths: widths,
+        column_spacing: 1,
+        flex: .start,
+        style: term.plain(),
+        row_highlight_style: term.with_attribute(term.plain(), a: .reverse),
+        column_highlight_style: term.plain(),
+        cell_highlight_style: term.plain(),
+        highlight_symbol: "",
+        highlight_spacing: .when_selected
+    )
+
+# A row of plain cells holding `cells`, as tall as its tallest cell.
+#
+# - `cells`: each cell's text, cut at line feeds as `lines_of` cuts it.
+#
+# See also `table_of`.
+function row_of(cells: [str]) -> Row
+    made: [TableCell] @= []
+    tallest @= 1
+
+    for text in cells
+        lines = lines_of(text)
+
+        if lines.len() > tallest
+            tallest @ lines.len()
+        made @ made.push(TableCell(lines: lines, style: term.plain()))
+
+    return Row(cells: made, height: tallest, top_margin: 0, bottom_margin: 0, style: term.plain())
+
+# Draws `table` in `area` of `buffer`: its header at the top, its footer at
+# the bottom, and between them the rows from `state`'s first row shown, the
+# selected row, column and cell highlighted.
+#
+# - `buffer`: the buffer drawn into.
+# - `area`: where it is drawn.
+# - `table`: the table.
+# - `state`: the selection; its first row shown is moved the least that
+#   shows the selected row, and a selected row past the last is moved to the
+#   last.
+#
+# See also `move_selection`, `move_column`.
+function draw_table(@buffer: Buffer, area: Rect, table: Table, @state: Selection)
+    m = state.marks
+
+    spacing = match table.highlight_spacing
+        .always        => listing.ALWAYS
+        .when_selected => listing.WHEN_SELECTED
+        .never         => listing.NEVER
+
+    symbol = runs.pieces_of([runs.Run(text: table.highlight_symbol, style: term.plain())], line_style: term.plain())
+    prefix = listing.prefix_of(spacing: spacing, has: m.has_row, symbol_width: runs.width_of(symbol))
+    sections = [table.header, table.rows, table.footer]
+    widths @= table.widths
+
+    if widths.len() == 0
+        widest @= 0
+
+        for section in sections
+            for r in section
+                if r.cells.len() > widest
+                    widest @ r.cells.len()
+
+        for _ in range(from: 0, to: widest)
+            widths @ widths.push(.fill(weight: 1))
+
+    room = if area.width - prefix > 0
+        area.width - prefix
+    else
+        0
+    across = Layout(
+        direction: .horizontal,
+        constraints: widths,
+        horizontal_margin: 0,
+        vertical_margin: 0,
+        spacing: table.column_spacing,
+        flex: table.flex
+    )
+    xs: [i64] @= []
+    ws: [i64] @= []
+
+    for c in split(Rect(x: area.x + prefix, y: area.y, width: room, height: 1), layout: across)
+        xs @ xs.push(c.x)
+        ws @ ws.push(c.width)
+
+    converted: [[tabular.Row]] @= []
+
+    for section in sections
+        made: [tabular.Row] @= []
+
+        for r in section
+            cells: [[listing.Shaped]] @= []
+            cell_styles: [i64] @= []
+
+            for c in r.cells
+                lines: [listing.Shaped] @= []
+
+                for l in c.lines
+                    parts: [runs.Run] @= []
+
+                    for s in l.spans
+                        parts @ parts.push(runs.Run(text: s.text, style: s.style))
+
+                    align = match l.alignment
+                        .left   => runs.LEFT
+                        .center => runs.CENTER
+                        .right  => runs.RIGHT
+
+                    lines @ lines.push(listing.Shaped(pieces: runs.pieces_of(parts, line_style: l.style), align: align))
+
+                cells @ cells.push(lines)
+                cell_styles @ cell_styles.push(packed.of(c.style))
+
+            made @ made.push(
+                tabular.Row(cells: cells, cell_styles: cell_styles, height: r.height, top: r.top_margin, bottom: r.bottom_margin, style: packed.of(r.style))
+            )
+
+        converted @ converted.push(made)
+
+    light = tabular.Highlight(
+        has_row: m.has_row,
+        row: m.row,
+        has_column: m.has_column,
+        column: m.column,
+        symbol: symbol,
+        prefix: prefix,
+        row_style: packed.of(table.row_highlight_style),
+        column_style: packed.of(table.column_highlight_style),
+        cell_style: packed.of(table.cell_highlight_style)
+    )
+    first = tabular.draw(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        header: converted[0],
+        rows: converted[1],
+        footer: converted[2],
+        columns: tabular.Columns(xs: xs, widths: ws),
+        offset: m.offset,
+        light: light,
+        style: packed.of(table.style)
+    )
+    state.marks.offset @ first
+    count = table.rows.len()
+
+    if m.has_row && m.row >= count && count > 0
+        state.marks.row @ count - 1
+
+## Tabs
+
+# A row of titles, one of them selected. Made by `tabs_of`, then changed field
+# by field.
+record Tabs
+    # The titles, left to right.
+    titles: [Line]
+    # The title selected, from 0; one outside the titles highlights none.
+    selected: i64
+    # The style laid over the whole area first.
+    style: term.Style
+    # The style laid over the selected title.
+    highlight_style: term.Style
+    # What is drawn between two titles.
+    divider: str
+    # What is drawn before each title.
+    padding_left: str
+    # What is drawn after each title.
+    padding_right: str
+
+# Tabs of `titles` with the title `selected` drawn reversed, a space on each
+# side of each title and `│` between them.
+#
+# - `titles`: the titles' texts, one line each.
+# - `selected`: the title selected, from 0.
+#
+# See also `draw_tabs`.
+function tabs_of(titles: [str], selected: i64) -> Tabs
+    lines: [Line] @= []
+
+    for t in titles
+        lines @ lines.push(line_of(t))
+
+    return Tabs(
+        titles: lines,
+        selected: selected,
+        style: term.plain(),
+        highlight_style: term.with_attribute(term.plain(), a: .reverse),
+        divider: "│",
+        padding_left: " ",
+        padding_right: " "
+    )
+
+# Draws `tabs` on the first row of `area` of `buffer`, cut at its right edge.
+#
+# - `buffer`: the buffer drawn into.
+# - `area`: where it is drawn.
+# - `tabs`: the tabs.
+#
+# See also `tabs_of`.
+function draw_tabs(@buffer: Buffer, area: Rect, tabs: Tabs)
+    plain = term.plain()
+    titles: [[runs.Piece]] @= []
+
+    for l in tabs.titles
+        parts: [runs.Run] @= []
+
+        for s in l.spans
+            parts @ parts.push(runs.Run(text: s.text, style: s.style))
+
+        titles @ titles.push(runs.pieces_of(parts, line_style: l.style))
+
+    meters.tabs(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        titles: titles,
+        selected: tabs.selected,
+        divider: runs.pieces_of([runs.Run(text: tabs.divider, style: plain)], line_style: plain),
+        left: runs.pieces_of([runs.Run(text: tabs.padding_left, style: plain)], line_style: plain),
+        right: runs.pieces_of([runs.Run(text: tabs.padding_right, style: plain)], line_style: plain),
+        style: packed.of(tabs.style),
+        highlight: packed.of(tabs.highlight_style)
+    )
+
+## Gauges
+
+# How far something has gone, as a bar filling its area with a label in its
+# middle. Made by `gauge_of`, then changed field by field.
+record Gauge
+    # The part done, from 0 to 1; outside taken as the nearer end, NaN as 0.
+    ratio: f64
+    # The text drawn in the middle of the area, over the bar.
+    label: str
+    # The style laid over the whole area first.
+    style: term.Style
+    # The style of the bar; the label's cells over the bar have its
+    # foreground and background swapped.
+    gauge_style: term.Style
+    # Whether the bar's last cell is filled by eighths with the block
+    # characters `▏` to `▉`, where false fills whole cells only.
+    use_unicode: bool
+
+# A gauge at `ratio`, labelled with its percentage rounded (`50%`), plain,
+# filling whole cells.
+#
+# - `ratio`: the part done, from 0 to 1.
+#
+# See also `draw_gauge`.
+function gauge_of(ratio: f64) -> Gauge
+    return Gauge(
+        ratio: ratio,
+        label: f"{meters.percent_of(ratio)}%",
+        style: term.plain(),
+        gauge_style: term.plain(),
+        use_unicode: false
+    )
+
+# Draws `gauge` in `area` of `buffer`: the bar from the left, the label on the
+# middle row.
+#
+# - `buffer`: the buffer drawn into.
+# - `area`: where it is drawn.
+# - `gauge`: the gauge.
+#
+# See also `gauge_of`.
+function draw_gauge(@buffer: Buffer, area: Rect, gauge: Gauge)
+    meters.gauge(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        ratio: gauge.ratio,
+        label: runs.pieces_of([runs.Run(text: gauge.label, style: term.plain())], line_style: term.plain()),
+        style: packed.of(gauge.style),
+        bar_style: packed.of(gauge.gauge_style),
+        unicode: gauge.use_unicode
+    )
+
+# How far something has gone, as a label and a line on one row. Made by
+# `line_gauge_of`, then changed field by field.
+record LineGauge
+    # The part done, from 0 to 1; outside taken as the nearer end, NaN as 0.
+    ratio: f64
+    # The text drawn before the line, a space after it.
+    label: str
+    # The style laid over the row first.
+    style: term.Style
+    # The style of the part done.
+    filled_style: term.Style
+    # The style of the part not done.
+    unfilled_style: term.Style
+    # The symbol of each cell done, one cell wide.
+    filled_symbol: str
+    # The symbol of each cell not done, one cell wide.
+    unfilled_symbol: str
+
+# A line gauge at `ratio`, labelled with its percentage rounded and set
+# against the right of three cells (` 50%`), and drawn with `─`.
+#
+# - `ratio`: the part done, from 0 to 1.
+#
+# See also `draw_line_gauge`.
+function line_gauge_of(ratio: f64) -> LineGauge
+    percent = meters.percent_of(ratio)
+
+    label = if percent < 10
+        f"  {percent}%"
+    else if percent < 100
+        f" {percent}%"
+    else
+        f"{percent}%"
+    return LineGauge(
+        ratio: ratio,
+        label: label,
+        style: term.plain(),
+        filled_style: term.plain(),
+        unfilled_style: term.plain(),
+        filled_symbol: "─",
+        unfilled_symbol: "─"
+    )
+
+# Draws `gauge` on the first row of `area` of `buffer`: the label, a space,
+# then the line to the right edge.
+#
+# - `buffer`: the buffer drawn into.
+# - `area`: where it is drawn.
+# - `gauge`: the gauge.
+#
+# See also `line_gauge_of`.
+function draw_line_gauge(@buffer: Buffer, area: Rect, gauge: LineGauge)
+    meters.line_gauge(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        ratio: gauge.ratio,
+        label: runs.pieces_of([runs.Run(text: gauge.label, style: term.plain())], line_style: term.plain()),
+        style: packed.of(gauge.style),
+        filled_style: packed.of(gauge.filled_style),
+        unfilled_style: packed.of(gauge.unfilled_style),
+        filled_symbol: meters.narrow(gauge.filled_symbol),
+        unfilled_symbol: meters.narrow(gauge.unfilled_symbol)
+    )
+
+## Sparklines
+
+# Which way a sparkline's values go.
+variant SparklineDirection
+    # The first value at the left.
+    left_to_right
+    # The first value at the right.
+    right_to_left
+
+# Values drawn as bars one cell wide, their heights in eighths of a cell. Made
+# by `sparkline_of`, then changed field by field.
+record Sparkline
+    # The values, 0 or more; one below 0 is drawn as 0. Values past the
+    # area's width are not drawn.
+    data: [i64]
+    # The value a bar of the area's whole height stands for; 0 or below takes
+    # the largest of `data`.
+    max: i64
+    # The style of the bars.
+    style: term.Style
+    # Which way the values go.
+    direction: SparklineDirection
+    # The symbols of a cell from empty to full, at least two, each one cell
+    # wide: by default " ▁▂▃▄▅▆▇█"; a list of fewer takes the default.
+    symbols: [str]
+
+# A sparkline of `data`, plain, left to right, scaled to its largest value.
+#
+# - `data`: the values.
+#
+# See also `draw_sparkline`.
+function sparkline_of(data: [i64]) -> Sparkline
+    return Sparkline(data: data, max: 0, style: term.plain(), direction: .left_to_right, symbols: meters.bars())
+
+# Draws `sparkline` in `area` of `buffer`, each value a bar from the bottom.
+#
+# - `buffer`: the buffer drawn into.
+# - `area`: where it is drawn.
+# - `sparkline`: the sparkline.
+#
+# A bar's height is its value's share of `max`, in eighths of the area's
+# rows, rounded down. See also `sparkline_of`.
+function draw_sparkline(@buffer: Buffer, area: Rect, sparkline: Sparkline)
+    symbols: [str] @= []
+
+    for s in sparkline.symbols
+        symbols @ symbols.push(meters.narrow(s))
+
+    meters.sparkline(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        data: sparkline.data,
+        max: sparkline.max,
+        style: packed.of(sparkline.style),
+        backward: sparkline.direction == .right_to_left,
+        symbols: symbols
+    )
+
+## Scrollbars
+
+# Where a scrollbar stands in its area.
+variant ScrollbarOrientation
+    # On the right edge, top to bottom.
+    vertical_right
+    # On the left edge, top to bottom.
+    vertical_left
+    # On the bottom edge, left to right.
+    horizontal_bottom
+    # On the top edge, left to right.
+    horizontal_top
+
+# A bar telling how much of a content is shown and where: a track, a thumb in
+# it, and an arrow at each end. Made by `scrollbar_of`, then changed field by
+# field.
+record Scrollbar
+    # Which edge it stands on.
+    orientation: ScrollbarOrientation
+    # How many rows (or columns) the content has, 0 or more.
+    content_length: i64
+    # The first row of the content shown, from 0.
+    position: i64
+    # How many rows of the content are shown at once; 0 or below takes the
+    # track's length.
+    viewport_length: i64
+    # The symbol of the thumb's cells.
+    thumb_symbol: str
+    # The symbol of the track's cells.
+    track_symbol: str
+    # The symbol at the start, "" for none.
+    begin_symbol: str
+    # The symbol at the end, "" for none.
+    end_symbol: str
+    # The style of the thumb.
+    thumb_style: term.Style
+    # The style of the track and the ends.
+    track_style: term.Style
+
+# A scrollbar on `orientation`'s edge for a content of `content_length` rows
+# shown from `position`, with arrows at its ends.
+#
+# - `orientation`: the edge.
+# - `content_length`: the content's rows (or columns).
+# - `position`: the first row shown.
+#
+# See also `draw_scrollbar`.
+function scrollbar_of(orientation: ScrollbarOrientation, content_length: i64, position: i64) -> Scrollbar
+    vertical = orientation == .vertical_right || orientation == .vertical_left
+
+    track = if vertical
+        "║"
+    else
+        "═"
+
+    begin = if vertical
+        "▲"
+    else
+        "◄"
+
+    end = if vertical
+        "▼"
+    else
+        "►"
+    return Scrollbar(
+        orientation: orientation,
+        content_length: content_length,
+        position: position,
+        viewport_length: 0,
+        thumb_symbol: "█",
+        track_symbol: track,
+        begin_symbol: begin,
+        end_symbol: end,
+        thumb_style: term.plain(),
+        track_style: term.plain()
+    )
+
+# Draws `scrollbar` on its edge of `area` of `buffer`.
+#
+# - `buffer`: the buffer drawn into.
+# - `area`: the area whose edge it stands on.
+# - `scrollbar`: the scrollbar.
+#
+# The thumb's length is the share of the content shown, at least one cell;
+# its place is the share scrolled, as `ratatui` places it; nothing is drawn
+# for a content of no row. See also `scrollbar_of`.
+function draw_scrollbar(@buffer: Buffer, area: Rect, scrollbar: Scrollbar)
+    o = scrollbar.orientation
+
+    begin = if scrollbar.begin_symbol == ""
+        ""
+    else
+        meters.narrow(scrollbar.begin_symbol)
+
+    end = if scrollbar.end_symbol == ""
+        ""
+    else
+        meters.narrow(scrollbar.end_symbol)
+    meters.scrollbar(
+        @buffer.grid,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        vertical: o == .vertical_right || o == .vertical_left,
+        at_start: o == .vertical_left || o == .horizontal_top,
+        content: scrollbar.content_length,
+        position: scrollbar.position,
+        viewport: scrollbar.viewport_length,
+        symbols: [meters.narrow(scrollbar.thumb_symbol), meters.narrow(scrollbar.track_symbol), begin, end],
+        thumb_style: packed.of(scrollbar.thumb_style),
+        track_style: packed.of(scrollbar.track_style)
+    )
+
+## Text input
+
+# One line of text being typed, and where its cursor stands. Made by
+# `input_of`, changed by `press_input`, drawn by `draw_input`.
+record Input
+    # The text typed.
+    text: str
+    # The cursor's place, a byte index into `text` at a grapheme's start; one
+    # elsewhere is moved to the start of its grapheme.
+    cursor: i64
+    # Drawn instead of each grapheme where it is not "": "*" for a password.
+    mask: str
+    # Drawn where `text` is empty.
+    placeholder: str
+    # The style of the text.
+    style: term.Style
+    # The style of the placeholder.
+    placeholder_style: term.Style
+    # The first column of the text shown, which `draw_input` moves so the
+    # cursor stays in view.
+    view: i64
+
+# An input holding `text`, its cursor at the end, no mask, no placeholder.
+#
+# - `text`: the text to begin with.
+#
+# See also `press_input`.
+function input_of(text: str) -> Input
+    return Input(
+        text: text,
+        cursor: text.len(),
+        mask: "",
+        placeholder: "",
+        style: term.plain(),
+        placeholder_style: term.plain(),
+        view: 0
+    )
+
+# Does `key` to `input` and answers whether it was taken: a character typed
+# goes in at the cursor; Left, Right, Home, End, Ctrl-B, Ctrl-F, Ctrl-A and
+# Ctrl-E move by a grapheme or to an end; Backspace, Delete and Ctrl-D take a
+# grapheme out; Ctrl-K takes the text after the cursor, Ctrl-U the text
+# before it, Ctrl-W the word before it.
+#
+# - `input`: the input; its text and its cursor change.
+# - `key`: the key pressed.
+#
+# False for every other key, Enter and Escape among them, which the program
+# reads itself; false too for a key that changes nothing. See also
+# `draw_input`.
+function press_input(@input: Input, key: term.Key) -> bool
+    e @= editing.Edit(text: input.text, cursor: input.cursor)
+    changed = editing.press(@e, key: key)
+    input.text @ e.text
+    input.cursor @ e.cursor
+    return changed
+
+# Draws `input` on the first row of `area` of `buffer`, scrolled so its cursor
+# is in view, and answers where the cursor stands, for `flush`.
+#
+# - `buffer`: the buffer drawn into.
+# - `area`: where it is drawn.
+# - `input`: the input; its `view` moves the least that shows the cursor.
+#
+# `.hidden` where `area` holds no cell. See also `press_input`.
+function draw_input(@buffer: Buffer, area: Rect, @input: Input) -> Cursor
+    if is_empty(area)
+        return .hidden
+    input.cursor @ editing.settled(input.text, cursor: input.cursor)
+    end = area.x + area.width
+
+    if input.text == ""
+        input.view @ 0
+        hint = runs.pieces_of(
+            [runs.Run(text: input.placeholder, style: input.placeholder_style)],
+            line_style: term.plain()
+        )
+        _ = runs.place(@buffer.grid, x: area.x, y: area.y, pieces: hint, limit: end)
+        return .at(x: area.x, y: area.y)
+    every = editing.shown(text: input.text, mask: input.mask, style: input.style)
+    column = runs.width_of(
+        editing.shown(text: input.text.slice(from: 0, to: input.cursor), mask: input.mask, style: input.style)
+    )
+    total = runs.width_of(every)
+
+    view @= if input.view > 0
+        input.view
+    else
+        0
+
+    if column < view
+        view @ column
+
+    if column >= view + area.width
+        view @ column - area.width + 1
+
+    if view > 0 && total + 1 - view < area.width
+        fitted = total + 1 - area.width
+
+        view @ if fitted > 0
+            fitted
+        else
+            0
+
+    if view > column
+        view @ column
+    input.view @ view
+    _ = runs.place(@buffer.grid, x: area.x, y: area.y, pieces: runs.cut(every, columns: view), limit: end)
+    return .at(x: area.x + column - view, y: area.y)
+
+## The terminal
+
+# Where the cursor stands after a flush.
+variant Cursor
+    # Not shown.
+    hidden
+    # Shown in a cell.
+    at
+        # The column, from 0.
+        x: i64
+        # The row, from 0.
+        y: i64
+
+# What a terminal reports besides keys, asked at `start`.
+record Options
+    # Whether clicks, releases, drags and the wheel are reported, as
+    # `.mouse` events; the terminal's own selection of text then needs Shift.
+    mouse: bool
+    # Whether every move of the mouse is reported too, a button held or not.
+    mouse_motion: bool
+    # Whether a text pasted comes as one `.pasted` event, where false it comes
+    # as keys.
+    paste: bool
+    # Whether the terminal's window gaining and losing the focus is reported.
+    focus: bool
+
+# The options most programs start with: paste as one event, no mouse, no
+# focus reports.
+#
+# See also `start`.
+function default_options() -> Options
+    return Options(mouse: false, mouse_motion: false, paste: true, focus: false)
+
+# The program's terminal in full-screen mode, between `start` and `stop`: the
+# frame on the screen, its size, and the modes turned on. Made by `start`.
+record Terminal
+    # The standard output, where frames are written.
+    output: io.Stream
+    # The frame shown, the size and the modes. Only this package reads it.
+    screen: screen.Screen
+
+# Something that happened at the terminal, as the event readers answer it.
+variant Event
+    # A key pressed.
+    key
+        # The key, as `term.read_key` names it.
+        key: term.Key
+    # A click, a release, a drag, a move or the wheel, where the options asked
+    # for the mouse.
+    mouse
+        # What the mouse did.
+        action: MouseAction
+        # The button, `.none` for a move and the wheel.
+        button: MouseButton
+        # The column, from 0.
+        x: i64
+        # The row, from 0.
+        y: i64
+        # Whether Shift was held.
+        shift: bool
+        # Whether Alt was held.
+        alt: bool
+        # Whether Control was held.
+        control: bool
+    # A text pasted, whole, where the options asked for paste.
+    pasted
+        # The text; each line break as a line feed.
+        text: str
+    # The terminal's size changed; the next frame is drawn whole.
+    resized
+        # Its columns.
+        width: i64
+        # Its rows.
+        height: i64
+    # The terminal's window gained the focus, where the options asked.
+    focus_gained
+    # The terminal's window lost the focus, where the options asked.
+    focus_lost
+
+# What the mouse did.
+variant MouseAction
+    # A button pressed.
+    press
+    # A button released.
+    release
+    # Moved with a button held.
+    drag
+    # Moved with no button held, where the options asked for every move.
+    motion
+    # The wheel turned up.
+    scroll_up
+    # The wheel turned down.
+    scroll_down
+    # The wheel tilted left.
+    scroll_left
+    # The wheel tilted right.
+    scroll_right
+
+# A button of the mouse.
+variant MouseButton
+    # No button: a move or the wheel.
+    none
+    # The left button.
+    left
+    # The middle button, or the wheel pressed.
+    middle
+    # The right button.
+    right
+
+# Puts the program's terminal in full-screen mode: the raw mode, the alternate
+# screen cleared, the cursor hidden, and the reports `options` asks for.
+#
+# - `options`: what is reported besides keys.
+#
+# Fails `unsupported` where the standard output is no terminal or tells no
+# size, `failed` where the system refuses. See also `stop`, `frame_of`.
+function start(options: Options) -> Terminal?
+    out = io.stdout()
+
+    if !io.is_terminal(out).default(false)
+        return fail(code: UNSUPPORTED, msg: "starting the terminal: the standard output is no terminal")
+
+    size = match os.terminal_size()
+        .ok s  => s
+        .err e => return fail(code: UNSUPPORTED, msg: f"starting the terminal: {e.msg}")
+
+    term.enter_raw()?
+    sequence = screen.entering(
+        mouse: options.mouse,
+        motion: options.mouse_motion,
+        paste: options.paste,
+        focus: options.focus
+    )
+
+    match io.write_text(out, text: sequence)
+        .ok _ =>
+            _ = 0
+        .err e =>
+            _ = term.leave_raw().is_err()
+            return fail(code: FAILED, msg: f"starting the terminal: {e.msg}")
+
+    held = screen.Screen(
+        shown: grid.new(x: 0, y: 0, width: size.columns, height: size.rows),
+        whole: true,
+        columns: size.columns,
+        rows: size.rows,
+        mouse: options.mouse || options.mouse_motion,
+        motion: options.mouse_motion,
+        paste: options.paste,
+        focus: options.focus,
+        active: true
+    )
+    return ok(Terminal(output: io.stdout(), screen: held))
+
+# Puts the terminal back as it was before `start`: the reports off, the cursor
+# shown, the alternate screen left, the raw mode left. Nothing where it is
+# stopped already.
+#
+# - `terminal`: the terminal.
+#
+# Fails `failed` where the system refuses, after doing the rest. See also
+# `start`.
+function stop(@terminal: Terminal) -> ()?
+    s = terminal.screen
+
+    if !s.active
+        return ok()
+    wrote = io.write_text(
+        terminal.output,
+        text: screen.leaving(mouse: s.mouse, motion: s.motion, paste: s.paste, focus: s.focus)
+    )
+    left = term.leave_raw()
+    terminal.screen.active @ false
+    wrote?
+    return left
+
+# The screen as a rectangle at 0, 0, as the last event read or `start` found
+# it.
+#
+# - `terminal`: the terminal.
+#
+# See also `frame_of`.
+function area_of(terminal: Terminal) -> Rect
+    return Rect(x: 0, y: 0, width: terminal.screen.columns, height: terminal.screen.rows)
+
+# A blank buffer of the screen's size, for one frame.
+#
+# - `terminal`: the terminal.
+#
+# See also `flush`.
+function frame_of(terminal: Terminal) -> Buffer
+    return blank(area_of(terminal))
+
+# Writes `frame` to the screen: only the cells that differ from the frame
+# before, or every cell where the size changed or `redraw` was asked; then the
+# cursor where `cursor` says.
+#
+# - `terminal`: the terminal; it keeps `frame` as the frame shown.
+# - `frame`: the frame; one of another size than the screen is drawn at its
+#   own area, the rest of the screen blank.
+# - `cursor`: where the cursor stands after.
+#
+# Fails `closed` where the terminal is stopped or suspended, and as `io.write`
+# fails where the terminal refuses the write. See also `frame_of`, `diff`.
+function flush(@terminal: Terminal, frame: Buffer, cursor: Cursor) -> ()?
+    if !terminal.screen.active
+        return fail(code: CLOSED, msg: "flushing a frame: the terminal is stopped or suspended")
+    after = frame.grid
+    shown = terminal.screen.shown
+    same = shown.x == after.x && shown.y == after.y && shown.width == after.width && shown.height == after.height
+    whole = terminal.screen.whole || !same
+    parts: [str] @= []
+
+    if whole
+        parts @ parts.push("\u{1b}[0m" + term.clear_screen())
+
+    before = if whole
+        grid.new(x: after.x, y: after.y, width: after.width, height: after.height)
+    else
+        shown
+    parts @ parts.push(delta.format(delta.diff(before: before, after: after)))
+
+    place = match cursor
+        .hidden => term.cursor_hide()
+        .at c   => match term.cursor_to(row: c.y + 1, column: c.x + 1)
+            .ok moved => moved + term.cursor_show()
+            .err _    => term.cursor_hide()
+
+    parts @ parts.push(place)
+    io.write_text(terminal.output, text: parts.join(""))?
+    terminal.screen.shown @ after
+    terminal.screen.whole @ false
+    return ok()
+
+# Makes the next `flush` clear the screen and write every cell: after another
+# program, or a write of the program's own, changed the screen.
+#
+# - `terminal`: the terminal.
+#
+# See also `flush`.
+function redraw(@terminal: Terminal)
+    terminal.screen.whole @ true
+
+# The next event at the terminal, waiting as long as it takes.
+#
+# - `terminal`: the terminal; a new size is kept in it, and the next flush
+#   writes every cell.
+#
+# Fails `closed` where the terminal is gone, `unsupported` where the program
+# has none, `failed` where the system refuses. See also `read_event_within`.
+function read_event(@terminal: Terminal) -> Event?
+    return read_event_within(@terminal, limit_ms: 9223372036854775807)
+
+# The next event at the terminal, waiting at most `limit_ms` milliseconds: the
+# reader of a program that also moves on its own, a clock or an animation.
+#
+# - `terminal`: the terminal, as `read_event` keeps it.
+# - `limit_ms`: the longest to wait, in milliseconds; 0 answers an event
+#   already there and waits not at all.
+#
+# Fails `timeout` where none came in time, `invalid` where `limit_ms` is below
+# 0, and as `read_event` does. A pasted text is read whole, however long it
+# takes. On macOS the limit is not kept while `term`'s key reader cannot wait
+# on a terminal there (its wait asks `poll(2)`, which refuses a device on
+# Darwin): the read waits for the next key, and a new size is told with it.
+# See also `read_event`.
+function read_event_within(@terminal: Terminal, limit_ms: i64) -> Event?
+    if limit_ms < 0
+        return fail(code: INVALID, msg: f"reading an event: a time is 0 or more, and {limit_ms} ms was asked")
+    left @= limit_ms
+
+    while true
+        match os.terminal_size()
+            .ok size =>
+                if size.columns != terminal.screen.columns || size.rows != terminal.screen.rows
+                    terminal.screen.columns @ size.columns
+                    terminal.screen.rows @ size.rows
+                    terminal.screen.whole @ true
+                    return ok(.resized(width: size.columns, height: size.rows))
+            .err _ =>
+                _ = 0
+
+        wait_ms = if left < 50
+            left
+        else
+            50
+
+        match term.read_key_within(wait_ms)
+            .ok key =>
+                return match key
+                    .other o =>
+                        d = events.decode(o.bytes)
+
+                        if d.kind == events.MOUSE
+                            actions: [MouseAction] = [
+                                .press
+                                .release
+                                .drag
+                                .motion
+                                .scroll_up
+                                .scroll_down
+                                .scroll_left
+                                .scroll_right
+                            ]
+                            buttons: [MouseButton] = [.none, .left, .middle, .right]
+                            ok(
+                                .mouse(action: actions[d.action], button: buttons[d.button], x: d.x, y: d.y, shift: d.shift, alt: d.alt, control: d.control)
+                            )
+                        else if d.kind == events.FOCUS_IN
+                            ok(.focus_gained)
+                        else if d.kind == events.FOCUS_OUT
+                            ok(.focus_lost)
+                        else if d.kind == events.PASTE_START
+                            pasted: [str] @= []
+                            ended @= false
+
+                            while !ended
+                                next = term.read_key()?
+
+                                ends = match next
+                                    .other b => events.decode(b.bytes).kind == events.PASTE_END
+                                    .character _ | .enter | .tab | .backspace | .escape | .up | .down | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete => false
+                                    .function_key _ | .control _ => false
+
+                                if ends
+                                    ended @ true
+                                else
+                                    pasted @ pasted.push(events.text_of(next))
+
+                            ok(.pasted(text: pasted.join("")))
+                        else
+                            ok(.key(key: key))
+                    .character _ | .enter | .tab | .backspace | .escape | .up | .down | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete => ok(
+                        .key(key: key)
+                    )
+                    .function_key _ | .control _ => ok(.key(key: key))
+            .err e =>
+                if e.code != TIMEOUT
+                    return fail(code: e.code, msg: e.msg)
+
+                if left <= 0
+                    return fail(code: TIMEOUT, msg: f"reading an event: none came in {limit_ms} ms")
+                left @ left - wait_ms
+
+# Gives the terminal back to the person for a while, as `stop` does, so
+# another program can run in it (an editor, a pager); `resume` takes it again.
+#
+# - `terminal`: the terminal.
+#
+# Fails `failed` where the system refuses. See also `resume`.
+function suspend(@terminal: Terminal) -> ()?
+    s = terminal.screen
+
+    if !s.active
+        return ok()
+    wrote = io.write_text(
+        terminal.output,
+        text: screen.leaving(mouse: s.mouse, motion: s.motion, paste: s.paste, focus: s.focus)
+    )
+    left = term.leave_raw()
+    terminal.screen.active @ false
+    wrote?
+    return left
+
+# Takes the terminal again after `suspend`, as `start` took it, and asks the
+# next flush to write every cell.
+#
+# - `terminal`: the terminal.
+#
+# Fails as `start` does. See also `suspend`.
+function resume(@terminal: Terminal) -> ()?
+    s = terminal.screen
+
+    if s.active
+        return ok()
+
+    size = match os.terminal_size()
+        .ok found => found
+        .err e    => return fail(code: UNSUPPORTED, msg: f"resuming the terminal: {e.msg}")
+
+    term.enter_raw()?
+
+    match io.write_text(terminal.output, text: screen.entering(mouse: s.mouse, motion: s.motion, paste: s.paste, focus: s.focus))
+        .ok _ =>
+            _ = 0
+        .err e =>
+            _ = term.leave_raw().is_err()
+            return fail(code: FAILED, msg: f"resuming the terminal: {e.msg}")
+
+    terminal.screen.columns @ size.columns
+    terminal.screen.rows @ size.rows
+    terminal.screen.whole @ true
+    terminal.screen.active @ true
+    return ok()
+
+# Sets the title of the terminal's window.
+#
+# - `terminal`: the terminal.
+# - `title`: the title; a control character in it is left out.
+#
+# Fails `failed` where the terminal refuses the write. See also `start`.
+function set_title(terminal: Terminal lent, title: str) -> ()?
+    return io.write_text(terminal.output, text: screen.titled(title))
+
+## Tests
+
+# Every drawing below is what `ratatui` 0.30.2 drew for the same widget, run
+# 2026-11-18, but where a test says otherwise; the ledger notes each place.
+
+test "inner_of: borders, padding, a title with no border on its edge, one cell"
+    padded @= bordered()
+    padded.padding @ Padding(left: 1, right: 2, top: 0, bottom: 1)
+    assert inner_of(padded, area: Rect(x: 0, y: 0, width: 10, height: 8)) == Rect(x: 2, y: 1, width: 5, height: 5)
+    assert inner_of(with_title(borderless(), title: "T"), area: Rect(x: 0, y: 0, width: 10, height: 8)) == Rect(x: 0, y: 1, width: 10, height: 7)
+    bottom_titled @= borderless()
+    bottom_titled.titles @ [Title(line: line_of("T"), position: .bottom)]
+    assert inner_of(bottom_titled, area: Rect(x: 0, y: 0, width: 10, height: 8)) == Rect(x: 0, y: 0, width: 10, height: 7)
+    left_only @= borderless()
+    left_only.borders @ Borders(top: false, right: false, bottom: false, left: true)
+    assert inner_of(left_only, area: Rect(x: 0, y: 0, width: 10, height: 8)) == Rect(x: 1, y: 0, width: 9, height: 8)
+    assert inner_of(bordered(), area: Rect(x: 0, y: 0, width: 1, height: 1)) == Rect(x: 1, y: 1, width: 0, height: 0)
+
+test "draw_block: the block's style under all, the border's over it, the title's over that"
+    b @= with_title(bordered(), title: "T")
+    b.border_style @ term.with_foreground(term.plain(), color: .red)
+    b.style @ term.with_background(term.plain(), color: .blue)
+    b.title_style @ term.with_attribute(term.plain(), a: .bold)
+    frame @= blank(Rect(x: 0, y: 0, width: 6, height: 3))
+    draw_block(@frame, area: frame.area, block: b)
+    assert to_lines(frame) == ["┌T───┐", "│    │", "└────┘"]
+    assert cell_at(frame, x: 1, y: 0).style == term.Style(foreground: .red, background: .blue, attributes: [.bold])
+    assert cell_at(frame, x: 0, y: 0).style == term.Style(foreground: .red, background: .blue, attributes: [])
+    assert cell_at(frame, x: 2, y: 1).style == term.with_background(term.plain(), color: .blue)
+
+test "draw_paragraph: cut at the edge, wrapped, wrapped without trim"
+    text = "Hello world, this is a long text"
+    cut @= blank(Rect(x: 0, y: 0, width: 10, height: 3))
+    draw_paragraph(@cut, area: cut.area, paragraph: paragraph_of(text))
+    assert to_lines(cut) == ["Hello worl", "          ", "          "]
+    wrapped @= paragraph_of(text)
+    wrapped.wrap @ true
+    w @= blank(Rect(x: 0, y: 0, width: 10, height: 5))
+    draw_paragraph(@w, area: w.area, paragraph: wrapped)
+    assert to_lines(w) == ["Hello     ", "world,    ", "this is a ", "long text ", "          "]
+    wrapped.trim @ false
+    u @= blank(Rect(x: 0, y: 0, width: 10, height: 5))
+    draw_paragraph(@u, area: u.area, paragraph: wrapped)
+    assert to_lines(u) == to_lines(w)
+
+test "draw_paragraph: wide characters wrapped and cut, a wide character that does not fit the edge"
+    cjk @= paragraph_of("日本語のテキスト")
+    cjk.wrap @ true
+    a @= blank(Rect(x: 0, y: 0, width: 5, height: 4))
+    draw_paragraph(@a, area: a.area, paragraph: cjk)
+    assert to_lines(a) == ["日本 ", "語の ", "テキ ", "スト "]
+    b @= blank(Rect(x: 0, y: 0, width: 5, height: 1))
+    draw_paragraph(@b, area: b.area, paragraph: paragraph_of("ab日本語"))
+    assert to_lines(b) == ["ab日 "]
+    c @= blank(Rect(x: 0, y: 0, width: 4, height: 1))
+    draw_paragraph(@c, area: c.area, paragraph: paragraph_of("a日本"))
+    assert to_lines(c) == ["a日 "]
+
+test "draw_paragraph: centred with the odd cell before, right, each line's own alignment"
+    a @= blank(Rect(x: 0, y: 0, width: 6, height: 3))
+    draw_paragraph(
+        @a,
+        area: a.area,
+        paragraph: Paragraph(lines: with_alignment(lines_of("ab\ncde\nf"), alignment: .center), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
+    )
+    assert to_lines(a) == ["  ab  ", "  cde ", "   f  "]
+    b @= blank(Rect(x: 0, y: 0, width: 6, height: 2))
+    draw_paragraph(
+        @b,
+        area: b.area,
+        paragraph: Paragraph(lines: with_alignment(lines_of("ab\ncde"), alignment: .right), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
+    )
+    assert to_lines(b) == ["    ab", "   cde"]
+    mixed = [
+        Line(spans: [Span(text: "r", style: term.plain())], style: term.plain(), alignment: .right)
+        Line(spans: [Span(text: "d", style: term.plain())], style: term.plain(), alignment: .center)
+    ]
+    c @= blank(Rect(x: 0, y: 0, width: 5, height: 2))
+    draw_paragraph(
+        @c,
+        area: c.area,
+        paragraph: Paragraph(lines: mixed, style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
+    )
+    assert to_lines(c) == ["    r", "  d  "]
+    d @= blank(Rect(x: 0, y: 0, width: 5, height: 1))
+    draw_paragraph(
+        @d,
+        area: d.area,
+        paragraph: Paragraph(lines: with_alignment(lines_of("abcdefgh"), alignment: .right), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
+    )
+    assert to_lines(d) == ["abcde"]
+    centered_wrap = Paragraph(
+        lines: with_alignment(lines_of("aa bb cc"), alignment: .center),
+        style: term.plain(),
+        wrap: true,
+        trim: true,
+        scroll_x: 0,
+        scroll_y: 0
+    )
+    e @= blank(Rect(x: 0, y: 0, width: 6, height: 2))
+    draw_paragraph(@e, area: e.area, paragraph: centered_wrap)
+    assert to_lines(e) == [" aa bb", "  cc  "]
+
+test "draw_paragraph: scrolled both ways, scrolled after wrapping"
+    p @= paragraph_of("l1\nl2\nl3\nl4")
+    p.scroll_x @ 1
+    p.scroll_y @ 1
+    a @= blank(Rect(x: 0, y: 0, width: 4, height: 2))
+    draw_paragraph(@a, area: a.area, paragraph: p)
+    assert to_lines(a) == ["2   ", "3   "]
+    q @= paragraph_of("aa bb cc dd")
+    q.wrap @ true
+    q.scroll_y @ 1
+    b @= blank(Rect(x: 0, y: 0, width: 5, height: 2))
+    draw_paragraph(@b, area: b.area, paragraph: q)
+    assert to_lines(b) == ["cc dd", "     "]
+
+test "draw_paragraph: a horizontal scroll through a wide character, where ratatui did not scroll"
+    p @= paragraph_of("日本語")
+    p.scroll_x @ 1
+    a @= blank(Rect(x: 0, y: 0, width: 6, height: 1))
+    draw_paragraph(@a, area: a.area, paragraph: p)
+    assert to_lines(a) == [" 本語 "]
+
+test "draw_paragraph: controls drawn as nothing, a mark with its letter, an emoji, line breaks, empty lines"
+    a @= blank(Rect(x: 0, y: 0, width: 8, height: 1))
+    draw_paragraph(@a, area: a.area, paragraph: paragraph_of("a\tb\u{1}c\u{7f}d"))
+    assert to_lines(a) == ["abcd    "]
+    b @= blank(Rect(x: 0, y: 0, width: 5, height: 1))
+    draw_paragraph(@b, area: b.area, paragraph: paragraph_of("a😀b"))
+    assert to_lines(b) == ["a😀b "]
+    c @= blank(Rect(x: 0, y: 0, width: 4, height: 3))
+    draw_paragraph(@c, area: c.area, paragraph: paragraph_of("a\r\nb\rc"))
+    assert to_lines(c) == ["a   ", "bc  ", "    "]
+    d @= blank(Rect(x: 0, y: 0, width: 3, height: 3))
+    draw_paragraph(@d, area: d.area, paragraph: paragraph_of("\n\nx"))
+    assert to_lines(d) == ["   ", "   ", "x  "]
+
+test "draw_paragraph: the paragraph's style under the spans', an area of no cell"
+    red = term.with_foreground(term.plain(), color: .red)
+    blue = term.with_background(term.plain(), color: .blue)
+    p = Paragraph(
+        lines: [Line(spans: [Span(text: "ab", style: red), Span(text: "cd", style: term.plain())], style: term.plain(), alignment: .left)],
+        style: blue,
+        wrap: false,
+        trim: true,
+        scroll_x: 0,
+        scroll_y: 0
+    )
+    a @= blank(Rect(x: 0, y: 0, width: 5, height: 2))
+    draw_paragraph(@a, area: a.area, paragraph: p)
+    assert cell_at(a, x: 0, y: 0).style == term.Style(foreground: .red, background: .blue, attributes: [])
+    assert cell_at(a, x: 2, y: 0).style == blue && cell_at(a, x: 4, y: 1).style == blue
+    draw_paragraph(@a, area: Rect(x: 0, y: 0, width: 0, height: 9), paragraph: paragraph_of("zz"))
+    assert to_lines(a) == ["abcd ", "     "]
+
+test "height_of: wrapped and not, a width of none"
+    p @= paragraph_of("Hello world, this is a long text")
+    assert height_of(p, width: 10) == 1
+    p.wrap @ true
+    assert height_of(p, width: 10) == 4
+    assert height_of(p, width: 0) == 0
+
+test "lines_of and width_of: an empty text, a line feed at the end, wide characters"
+    assert lines_of("").len() == 1
+    assert lines_of("a\n").len() == 2
+    assert width_of(line_of("ab")) == 2 && width_of(line_of("日本語")) == 6 && width_of(line_of("")) == 0
+
+test "draw_list: through the face, a selection past the last moved to the last"
+    l @= list_of(["Item 0", "Item 1", "Item 2", "Item 3", "Item 4"])
+    l.highlight_symbol @ ">> "
+    state @= selection()
+    select(@state, index: 9)
+    frame @= blank(Rect(x: 0, y: 0, width: 10, height: 3))
+    draw_list(@frame, area: frame.area, list: l, @state)
+    assert to_lines(frame) == ["   Item 2 ", "   Item 3 ", ">> Item 4 "]
+    assert selected_of(state).must() == 4 && offset_of(state) == 2
+    assert cell_at(frame, x: 9, y: 2).style == term.with_attribute(term.plain(), a: .reverse)
+
+test "draw_table: widths cut a column apart, no widths, a cell to the right, a symbol of three"
+    t = table_of(
+        [["a1", "b1", "c1"], ["a2", "bb2", "c2"], ["a3", "b3", "cccccc3"]],
+        widths: [.length(n: 3), .length(n: 4), .min(n: 2)]
+    )
+    state @= selection()
+    frame @= blank(Rect(x: 0, y: 0, width: 16, height: 3))
+    draw_table(@frame, area: frame.area, table: t, @state)
+    assert to_lines(frame) == ["a1  b1   c1     ", "a2  bb2  c2     ", "a3  b3   cccccc3"]
+    loose = table_of([["a", "b", "c"], ["d"]], widths: [])
+    g @= blank(Rect(x: 0, y: 0, width: 10, height: 2))
+    draw_table(@g, area: g.area, table: loose, @state)
+    assert to_lines(g) == ["a   b  c  ", "d         "]
+    right_cell = TableCell(
+        lines: [Line(spans: [Span(text: "r", style: term.plain())], style: term.plain(), alignment: .right)],
+        style: term.plain()
+    )
+    aligned @= table_of([], widths: [.length(n: 4), .length(n: 4)])
+    aligned.rows @ [
+        Row(cells: [right_cell, TableCell(lines: lines_of("x"), style: term.plain())], height: 1, top_margin: 0, bottom_margin: 0, style: term.plain())
+    ]
+    h @= blank(Rect(x: 0, y: 0, width: 10, height: 2))
+    draw_table(@h, area: h.area, table: aligned, @state)
+    assert to_lines(h) == ["   r x    ", "          "]
+    marked @= table_of([["a"], ["b"]], widths: [.length(n: 3)])
+    marked.highlight_symbol @ ">> "
+    marked.row_highlight_style @ term.with_foreground(term.plain(), color: .red)
+    chosen @= selection()
+    select(@chosen, index: 0)
+    k @= blank(Rect(x: 0, y: 0, width: 10, height: 2))
+    draw_table(@k, area: k.area, table: marked, @chosen)
+    assert to_lines(k) == [">> a      ", "   b      "]
+    assert cell_at(k, x: 9, y: 0).style == term.with_foreground(term.plain(), color: .red) && cell_at(k, x: 9, y: 1).style == term.plain()
+
+test "gauge_of and line_gauge_of: labels rounded a half up, padded to three for the line"
+    assert gauge_of(0.555).label == "56%" && gauge_of(0.0).label == "0%" && gauge_of(1.0).label == "100%"
+    assert line_gauge_of(0.5).label == " 50%" && line_gauge_of(0.0).label == "  0%" && line_gauge_of(0.999).label == "100%"
+
+test "paste: a drawing laid at its own place, cut at the frame's edge"
+    frame @= blank(Rect(x: 0, y: 0, width: 8, height: 1))
+    _ = draw_text(@frame, x: 0, y: 0, text: "ab", style: term.plain(), width: 8)
+    part @= blank(Rect(x: 1, y: 0, width: 3, height: 1))
+    _ = draw_text(@part, x: 1, y: 0, text: "xyz", style: term.plain(), width: 3)
+    paste(buffer: @frame, from: part)
+    assert to_lines(frame) == ["axyz    "]
+
+test "buffer_of and cell_at: the widest line, a wide character and its covered cell"
+    b = buffer_of(["日b", "c"])
+    assert b.area == Rect(x: 0, y: 0, width: 3, height: 2)
+    assert to_lines(b) == ["日b", "c  "]
+    assert cell_at(b, x: 1, y: 0).symbol == "" && cell_at(b, x: 2, y: 0).symbol == "b"
+    assert buffer_of([]).area == Rect(x: 0, y: 0, width: 0, height: 0)
+
+test "fill: a symbol of two cells or of two graphemes fills with spaces"
+    b @= blank(Rect(x: 0, y: 0, width: 3, height: 1))
+    fill(@b, area: b.area, symbol: "日", style: term.plain())
+    assert to_lines(b) == ["   "]
+    fill(@b, area: b.area, symbol: "ab", style: term.plain())
+    assert to_lines(b) == ["   "]
+
+test "input: the cursor kept in view as the text grows past the width, then moved home"
+    i @= input_of("")
+
+    for c in ["a", "b", "c", "d", "e", "f"]
+        _ = press_input(@i, key: .character(text: c))
+
+    frame @= blank(Rect(x: 0, y: 0, width: 4, height: 1))
+    assert draw_input(@frame, area: frame.area, @i) == .at(x: 3, y: 0)
+    assert to_lines(frame) == ["def "]
+    assert press_input(@i, key: .home)
+    again @= blank(Rect(x: 0, y: 0, width: 4, height: 1))
+    assert draw_input(@again, area: again.area, @i) == .at(x: 0, y: 0)
+    assert to_lines(again) == ["abcd"]
+    hidden @= blank(Rect(x: 0, y: 0, width: 0, height: 0))
+    assert draw_input(@hidden, area: hidden.area, @i) == .hidden
+
+test "input: a mask, a placeholder, wide characters"
+    secret @= input_of("pw")
+    secret.mask @ "*"
+    a @= blank(Rect(x: 0, y: 0, width: 4, height: 1))
+    assert draw_input(@a, area: a.area, @secret) == .at(x: 2, y: 0)
+    assert to_lines(a) == ["**  "]
+    empty @= input_of("")
+    empty.placeholder @ "name"
+    b @= blank(Rect(x: 0, y: 0, width: 6, height: 1))
+    assert draw_input(@b, area: b.area, @empty) == .at(x: 0, y: 0)
+    assert to_lines(b) == ["name  "]
+    wide @= input_of("日本語")
+    c @= blank(Rect(x: 0, y: 0, width: 4, height: 1))
+    assert draw_input(@c, area: c.area, @wide) == .at(x: 3, y: 0)
+    assert to_lines(c) == [" 語 "]
+
+test "flush: a frame of another size written whole, a cursor outside the screen hidden, a stopped terminal refused"
+    p @= io.pipe().must()
+    t @= Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
+    )
+    frame @= blank(Rect(x: 0, y: 0, width: 3, height: 1))
+    _ = draw_text(@frame, x: 0, y: 0, text: "abc", style: term.plain(), width: 3)
+    flush(@t, frame: frame, cursor: .at(x: -1, y: 0)).must()
+    t.screen.active @ false
+
+    match flush(@t, frame: frame, cursor: .hidden)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    io.close(@p.writer).must()
+    assert io.read_all_text(p.reader).must() == "\u{1b}[0m\u{1b}[2J\u{1b}[H\u{1b}[1;1Habc\u{1b}[?25l"
+    io.close(@p.reader).must()
+
+test "read_event_within: a time below 0 refused, no terminal or no event"
+    p @= io.pipe().must()
+    t @= Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
+    )
+
+    match read_event_within(@t, limit_ms: -1)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    io.close(@p.writer).must()
+    io.close(@p.reader).must()
+
+## Examples
+
+# Two columns of a margin taken off each side, two rows off the top and the
+# bottom.
+test "inner: a margin around an area"
+    assert inner(Rect(x: 2, y: 3, width: 10, height: 6), horizontal: 1, vertical: 2) == Rect(x: 3, y: 5, width: 8, height: 2)
+
+# An area grown by a margin, its edges stopping at 0.
+test "outer: a margin added"
+    assert outer(Rect(x: 2, y: 3, width: 10, height: 6), horizontal: 1, vertical: 2) == Rect(x: 1, y: 1, width: 12, height: 10)
+
+# The cells two areas share.
+test "intersection: two areas overlapping"
+    assert intersection(a: Rect(x: 2, y: 3, width: 10, height: 6), b: Rect(x: 8, y: 1, width: 10, height: 4)) == Rect(x: 8, y: 3, width: 4, height: 2)
+
+# Whether two areas overlap.
+test "intersects: overlapping and apart"
+    assert intersects(a: Rect(x: 2, y: 3, width: 10, height: 6), b: Rect(x: 8, y: 1, width: 10, height: 4))
+    assert !intersects(a: Rect(x: 2, y: 3, width: 10, height: 6), b: Rect(x: 20, y: 20, width: 1, height: 1))
+
+# The smallest area holding two others.
+test "enclosing: two areas"
+    assert enclosing(a: Rect(x: 2, y: 3, width: 10, height: 6), b: Rect(x: 8, y: 1, width: 10, height: 4)) == Rect(x: 2, y: 1, width: 16, height: 8)
+
+# Whether a click landed in a pane.
+test "contains: a click inside and one past the right edge"
+    pane = Rect(x: 2, y: 3, width: 10, height: 6)
+    assert contains(pane, x: 2, y: 3) && contains(pane, x: 11, y: 8)
+    assert !contains(pane, x: 12, y: 3)
+
+# A dialog moved back inside the screen.
+test "clamp: an area moved inside another"
+    assert clamp(area: Rect(x: 8, y: 1, width: 10, height: 4), within: Rect(x: 2, y: 3, width: 10, height: 6)) == Rect(x: 2, y: 3, width: 10, height: 4)
+
+# An area moved right and up, stopping at the top.
+test "offset: moved right and up"
+    assert offset(Rect(x: 1, y: 1, width: 3, height: 3), dx: 2, dy: -5) == Rect(x: 3, y: 0, width: 3, height: 3)
+
+# The rows of an area, one at a time.
+test "rows_of: two rows"
+    assert rows_of(Rect(x: 1, y: 2, width: 4, height: 2)) == [Rect(x: 1, y: 2, width: 4, height: 1), Rect(x: 1, y: 3, width: 4, height: 1)]
+
+# The columns of an area, one at a time.
+test "columns_of: two columns"
+    assert columns_of(Rect(x: 1, y: 2, width: 2, height: 3)) == [Rect(x: 1, y: 2, width: 1, height: 3), Rect(x: 2, y: 2, width: 1, height: 3)]
+
+# A dialog four columns wide and half the height, in the middle.
+test "centered: a dialog in the middle"
+    assert centered(Rect(x: 2, y: 3, width: 10, height: 6), width: .length(n: 4), height: .percentage(n: 50)) == Rect(x: 5, y: 5, width: 4, height: 3)
+
+# An area of no row holds no cell.
+test "is_empty: no row, and one cell"
+    assert is_empty(Rect(x: 0, y: 0, width: 5, height: 0))
+    assert !is_empty(Rect(x: 0, y: 0, width: 1, height: 1))
+
+# A screen cut into a header, a body and a status line.
+test "layout_of: a header, a body and a status line"
+    parts = split(
+        Rect(x: 0, y: 0, width: 80, height: 24),
+        layout: layout_of(.vertical, constraints: [.length(n: 3), .min(n: 0), .length(n: 1)])
+    )
+    assert parts == [Rect(x: 0, y: 0, width: 80, height: 3), Rect(x: 0, y: 3, width: 80, height: 20), Rect(x: 0, y: 23, width: 80, height: 1)]
+
+# Two panes side by side, the first a third.
+test "split: two panes"
+    panes = split(
+        Rect(x: 0, y: 0, width: 90, height: 10),
+        layout: layout_of(.horizontal, constraints: [.ratio(numerator: 1, denominator: 3), .fill(weight: 1)])
+    )
+    assert panes == [Rect(x: 0, y: 0, width: 30, height: 10), Rect(x: 30, y: 0, width: 60, height: 10)]
+
+# The gaps around two buttons centred in a row, two cells apart.
+test "spacers_of: around two centred parts"
+    l @= layout_of(.horizontal, constraints: [.length(n: 5), .length(n: 5)])
+    l.flex @ .center
+    l.spacing @ 2
+    gaps = spacers_of(Rect(x: 0, y: 0, width: 30, height: 1), layout: l)
+    assert gaps == [Rect(x: 0, y: 0, width: 9, height: 1), Rect(x: 14, y: 0, width: 2, height: 1), Rect(x: 21, y: 0, width: 9, height: 1)]
+
+# A plain line.
+test "line_of: a plain line"
+    assert line_of("hi") == Line(spans: [Span(text: "hi", style: term.plain())], style: term.plain(), alignment: .left)
+
+# A line in red.
+test "styled_line: a red line"
+    red = term.with_foreground(term.plain(), color: .red)
+    assert styled_line("stop", style: red).spans == [Span(text: "stop", style: red)]
+
+# A text cut into lines.
+test "lines_of: three lines, one ended by a carriage return and a line feed"
+    assert lines_of("a\r\nb\nc") == [line_of("a"), line_of("b"), line_of("c")]
+
+# How wide a line is drawn, a wide character taking two cells.
+test "width_of: a word and a wide character"
+    assert width_of(line_of("ab日")) == 4
+
+# Every line of a text centred.
+test "with_alignment: centred lines"
+    centred = with_alignment(lines_of("a\nb"), alignment: .center)
+    assert centred[0].alignment == .center && centred[1].alignment == .center
+
+# A blank buffer of two rows.
+test "blank: two rows of three blank cells"
+    assert to_lines(blank(Rect(x: 0, y: 0, width: 3, height: 2))) == ["   ", "   "]
+
+# The buffer a test compares a drawing with.
+test "buffer_of: two rows"
+    assert to_lines(buffer_of(["ab", "c"])) == ["ab", "c "]
+
+# One cell read back.
+test "cell_at: a cell drawn in red"
+    b @= blank(Rect(x: 0, y: 0, width: 2, height: 1))
+    _ = draw_text(@b, x: 1, y: 0, text: "x", style: term.with_foreground(term.plain(), color: .red), width: 1)
+    assert cell_at(b, x: 1, y: 0) == Cell(symbol: "x", style: term.with_foreground(term.plain(), color: .red))
+
+# A buffer read as text.
+test "to_lines: a buffer with a word"
+    b @= blank(Rect(x: 0, y: 0, width: 4, height: 1))
+    _ = draw_text(@b, x: 1, y: 0, text: "ok", style: term.plain(), width: 3)
+    assert to_lines(b) == [" ok "]
+
+# Text drawn and cut at a width.
+test "draw_text: cut at three cells"
+    b @= blank(Rect(x: 0, y: 0, width: 6, height: 1))
+    assert draw_text(@b, x: 1, y: 0, text: "abcdef", style: term.plain(), width: 3) == 4
+    assert to_lines(b) == [" abc  "]
+
+# A line of two styles drawn.
+test "draw_line: a line of two spans"
+    b @= blank(Rect(x: 0, y: 0, width: 6, height: 1))
+    l = Line(
+        spans: [Span(text: "ab", style: term.with_foreground(term.plain(), color: .red)), Span(text: "cd", style: term.plain())],
+        style: term.plain(),
+        alignment: .left
+    )
+    assert draw_line(@b, x: 0, y: 0, line: l, width: 6) == 4
+    assert to_lines(b) == ["abcd  "]
+    assert cell_at(b, x: 1, y: 0).style.foreground == .red && cell_at(b, x: 2, y: 0).style == term.plain()
+
+# A row made bold, its text kept.
+test "set_style: a row made bold"
+    b @= buffer_of(["ab"])
+    set_style(@b, area: Rect(x: 0, y: 0, width: 2, height: 1), style: term.with_attribute(term.plain(), a: .bold))
+    assert to_lines(b) == ["ab"] && cell_at(b, x: 1, y: 0).style.attributes == [.bold]
+
+# An area filled with dots.
+test "fill: dots"
+    b @= blank(Rect(x: 0, y: 0, width: 3, height: 2))
+    fill(@b, area: Rect(x: 1, y: 0, width: 5, height: 1), symbol: ".", style: term.plain())
+    assert to_lines(b) == [" ..", "   "]
+
+# The place of a dialog cleared before it is drawn.
+test "clear: a part of a buffer cleared"
+    b @= buffer_of(["abc"])
+    set_style(@b, area: b.area, style: term.with_background(term.plain(), color: .blue))
+    clear(@b, area: Rect(x: 1, y: 0, width: 1, height: 1))
+    assert to_lines(b) == ["a c"] && cell_at(b, x: 1, y: 0).style == term.plain()
+
+# A drawing made apart laid on a frame.
+test "paste: a part laid on a frame"
+    frame @= blank(Rect(x: 0, y: 0, width: 4, height: 1))
+    part = buffer_of(["xy"])
+    paste(buffer: @frame, from: part)
+    assert to_lines(frame) == ["xy  "]
+
+# The cells that changed between two frames.
+test "diff: one cell changed"
+    changes = diff(before: buffer_of(["abc"]), after: buffer_of(["abd"]))
+    assert changes == [Change(x: 2, y: 0, cell: Cell(symbol: "d", style: term.plain()))]
+
+# The bytes that write a change: the cursor moved, then the cell.
+test "format_changes: one cell written"
+    changes = diff(before: buffer_of(["abc"]), after: buffer_of(["abd"]))
+    assert format_changes(changes) == "\u{1b}[1;3Hd"
+
+# A block with a border all around.
+test "bordered: a box"
+    b @= blank(Rect(x: 0, y: 0, width: 4, height: 3))
+    draw_block(@b, area: b.area, block: bordered())
+    assert to_lines(b) == ["┌──┐", "│  │", "└──┘"]
+
+# A block with no border but a title.
+test "borderless: a title over an area"
+    b @= blank(Rect(x: 0, y: 0, width: 6, height: 2))
+    draw_block(@b, area: b.area, block: with_title(borderless(), title: "Files"))
+    assert to_lines(b) == ["Files ", "      "]
+
+# A titled box.
+test "with_title: a titled box"
+    b @= blank(Rect(x: 0, y: 0, width: 10, height: 3))
+    draw_block(@b, area: b.area, block: with_title(bordered(), title: "Title"))
+    assert to_lines(b) == ["┌Title───┐", "│        │", "└────────┘"]
+
+# Where the content of a box goes.
+test "inner_of: inside a border"
+    assert inner_of(bordered(), area: Rect(x: 0, y: 0, width: 10, height: 4)) == Rect(x: 1, y: 1, width: 8, height: 2)
+
+# A box with rounded corners and a title in the middle.
+test "draw_block: rounded, titled in the middle"
+    b @= bordered()
+    b.border_type @ .rounded
+    b.titles @ [
+        Title(line: Line(spans: [Span(text: "Ab", style: term.plain())], style: term.plain(), alignment: .center), position: .top)
+    ]
+    frame @= blank(Rect(x: 0, y: 0, width: 8, height: 3))
+    draw_block(@frame, area: frame.area, block: b)
+    assert to_lines(frame) == ["╭──Ab──╮", "│      │", "╰──────╯"]
+
+# A paragraph wrapped between words.
+test "paragraph_of: wrapped"
+    p @= paragraph_of("one two three")
+    p.wrap @ true
+    frame @= blank(Rect(x: 0, y: 0, width: 8, height: 2))
+    draw_paragraph(@frame, area: frame.area, paragraph: p)
+    assert to_lines(frame) == ["one two ", "three   "]
+
+# Text drawn in a box.
+test "draw_paragraph: text in a box"
+    frame @= blank(Rect(x: 0, y: 0, width: 7, height: 3))
+    box = bordered()
+    draw_block(@frame, area: frame.area, block: box)
+    draw_paragraph(@frame, area: inner_of(box, area: frame.area), paragraph: paragraph_of("hello!"))
+    assert to_lines(frame) == ["┌─────┐", "│hello│", "└─────┘"]
+
+# How many rows a wrapped paragraph takes.
+test "height_of: a paragraph wrapped in ten cells"
+    p @= paragraph_of("Hello world, this is a long text")
+    p.wrap @ true
+    assert height_of(p, width: 10) == 4
+
+# A selection of nothing.
+test "selection: nothing selected"
+    assert selected_of(selection()).is_err()
+
+# The third row selected.
+test "select: the third row"
+    s @= selection()
+    select(@s, index: 2)
+    assert selected_of(s).must() == 2
+
+# The selection given up.
+test "unselect: nothing left selected"
+    s @= selection()
+    select(@s, index: 2)
+    unselect(@s)
+    assert selected_of(s).is_err()
+
+# The row selected, or none.
+test "selected_of: none, then the first"
+    s @= selection()
+
+    match selected_of(s)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    select(@s, index: 0)
+    assert selected_of(s).must() == 0
+
+# Home in a list of five.
+test "select_first: the first of five"
+    s @= selection()
+    select_first(@s, count: 5)
+    assert selected_of(s).must() == 0
+
+# End in a list of five.
+test "select_last: the last of five"
+    s @= selection()
+    select_last(@s, count: 5)
+    assert selected_of(s).must() == 4
+
+# Down, Down, Up, and a page past the end.
+test "move_selection: down, down, up, a page past the end"
+    s @= selection()
+    move_selection(@s, count: 5, by: 1)
+    move_selection(@s, count: 5, by: 1)
+    move_selection(@s, count: 5, by: -1)
+    assert selected_of(s).must() == 0
+    move_selection(@s, count: 5, by: 10)
+    assert selected_of(s).must() == 4
+
+# The second column of a table selected.
+test "select_column: the second column"
+    s @= selection()
+    select_column(@s, index: 1)
+    assert selected_column_of(s).must() == 1
+
+# The column given up, the row kept.
+test "unselect_column: the row stays"
+    s @= selection()
+    select(@s, index: 3)
+    select_column(@s, index: 1)
+    unselect_column(@s)
+    assert selected_column_of(s).is_err() && selected_of(s).must() == 3
+
+# The column selected, or none.
+test "selected_column_of: none, then the first"
+    s @= selection()
+    assert selected_column_of(s).is_err()
+    select_column(@s, index: 0)
+    assert selected_column_of(s).must() == 0
+
+# Right from nothing takes the first column, Left from it stays.
+test "move_column: right, then left at the first"
+    s @= selection()
+    move_column(@s, count: 3, by: 1)
+    move_column(@s, count: 3, by: -1)
+    assert selected_column_of(s).must() == 0
+
+# The first row shown moves as the selection goes down.
+test "offset_of: the list scrolled to keep its selection"
+    l = list_of(["a", "b", "c", "d"])
+    s @= selection()
+    select(@s, index: 3)
+    frame @= blank(Rect(x: 0, y: 0, width: 3, height: 2))
+    draw_list(@frame, area: frame.area, list: l, @s)
+    assert offset_of(s) == 2
+
+# A list of three words.
+test "list_of: three items"
+    assert list_of(["a", "b", "c"]).items.len() == 3
+
+# A list with a symbol before its selected item, kept in view.
+test "draw_list: the fourth of five in three rows"
+    l @= list_of(["Item 0", "Item 1", "Item 2", "Item 3", "Item 4"])
+    l.highlight_symbol @ ">> "
+    s @= selection()
+    select(@s, index: 3)
+    frame @= blank(Rect(x: 0, y: 0, width: 10, height: 3))
+    draw_list(@frame, area: frame.area, list: l, @s)
+    assert to_lines(frame) == ["   Item 1 ", "   Item 2 ", ">> Item 3 "]
+
+# A table of two columns.
+test "table_of: two rows of two cells"
+    t = table_of([["a", "b"], ["c", "d"]], widths: [.length(n: 2), .length(n: 2)])
+    assert t.rows.len() == 2 && t.rows[1].cells.len() == 2
+
+# A row as tall as its tallest cell.
+test "row_of: a cell of two lines"
+    assert row_of(["a\nb", "c"]).height == 2
+
+# A table under a header, its second row selected.
+test "draw_table: a header and a selected row"
+    t @= table_of(
+        [["a1", "b1", "c1"], ["a2", "bb2", "c2"], ["a3", "b3", "cccccc3"]],
+        widths: [.length(n: 3), .length(n: 4), .min(n: 2)]
+    )
+    header @= row_of(["A", "B", "C"])
+    header.bottom_margin @ 1
+    t.header @ [header]
+    t.highlight_symbol @ ">"
+    s @= selection()
+    select(@s, index: 1)
+    frame @= blank(Rect(x: 0, y: 0, width: 16, height: 4))
+    draw_table(@frame, area: frame.area, table: t, @s)
+    assert to_lines(frame) == [" A   B    C     ", "                ", " a1  b1   c1    ", ">a2  bb2  c2    "]
+
+# Three tabs, the second selected.
+test "tabs_of: three tabs"
+    assert tabs_of(["One", "Two", "Three"], selected: 1).titles.len() == 3
+
+# Tabs drawn, the selected title reversed.
+test "draw_tabs: three tabs"
+    frame @= blank(Rect(x: 0, y: 0, width: 20, height: 1))
+    draw_tabs(@frame, area: frame.area, tabs: tabs_of(["One", "Two", "Three"], selected: 1))
+    assert to_lines(frame) == [" One │ Two │ Three  "]
+    assert cell_at(frame, x: 7, y: 0).style == term.with_attribute(term.plain(), a: .reverse)
+
+# A gauge half full.
+test "gauge_of: half"
+    assert gauge_of(0.5).label == "50%"
+
+# A gauge drawn.
+test "draw_gauge: half of ten cells"
+    frame @= blank(Rect(x: 0, y: 0, width: 10, height: 1))
+    draw_gauge(@frame, area: frame.area, gauge: gauge_of(0.5))
+    assert to_lines(frame) == ["███50%    "]
+
+# A line gauge at a quarter.
+test "line_gauge_of: a quarter"
+    assert line_gauge_of(0.25).label == " 25%"
+
+# A line gauge drawn with its own symbols.
+test "draw_line_gauge: forty percent"
+    g @= line_gauge_of(0.4)
+    g.filled_symbol @ "#"
+    g.unfilled_symbol @ "."
+    frame @= blank(Rect(x: 0, y: 0, width: 12, height: 1))
+    draw_line_gauge(@frame, area: frame.area, gauge: g)
+    assert to_lines(frame) == [" 40% ##....."]
+
+# A sparkline of nine values.
+test "sparkline_of: nine values"
+    assert sparkline_of([0, 1, 2]).max == 0
+
+# A sparkline drawn on one row.
+test "draw_sparkline: nine values in nine cells"
+    frame @= blank(Rect(x: 0, y: 0, width: 9, height: 1))
+    draw_sparkline(@frame, area: frame.area, sparkline: sparkline_of([0, 1, 2, 3, 4, 5, 6, 7, 8]))
+    assert to_lines(frame) == [" ▁▂▃▄▅▆▇█"]
+
+# A scrollbar on the right of a list of twenty rows.
+test "scrollbar_of: on the right"
+    assert scrollbar_of(.vertical_right, content_length: 20, position: 5).begin_symbol == "▲"
+
+# A scrollbar drawn on the right edge.
+test "draw_scrollbar: twenty rows shown five at a time from the sixth"
+    bar @= scrollbar_of(.vertical_right, content_length: 20, position: 5)
+    bar.viewport_length @ 5
+    frame @= blank(Rect(x: 0, y: 0, width: 2, height: 10))
+    draw_scrollbar(@frame, area: frame.area, scrollbar: bar)
+    assert to_lines(frame) == [" ▲", " ║", " ║", " █", " █", " ║", " ║", " ║", " ║", " ▼"]
+
+# An input holding a name.
+test "input_of: the cursor at the end"
+    assert input_of("ana").cursor == 3
+
+# A word typed, a letter taken back.
+test "press_input: typed and corrected"
+    i @= input_of("")
+    assert press_input(@i, key: .character(text: "h"))
+    assert press_input(@i, key: .character(text: "x"))
+    assert press_input(@i, key: .backspace)
+    assert press_input(@i, key: .character(text: "i"))
+    assert i.text == "hi" && !press_input(@i, key: .enter)
+
+# An input drawn, the cursor where the next character goes.
+test "draw_input: the cursor after the text"
+    i @= input_of("hi")
+    frame @= blank(Rect(x: 0, y: 0, width: 5, height: 1))
+    assert draw_input(@frame, area: frame.area, @i) == .at(x: 2, y: 0)
+    assert to_lines(frame) == ["hi   "]
+
+# The options most programs start with.
+test "default_options: paste as one event"
+    assert default_options().paste && !default_options().mouse
+
+# A program's terminal taken and given back; where the tests run, the output
+# is often no terminal, and `start` says so.
+test "start: taken and given back, or no terminal"
+    match start(default_options())
+        .ok t =>
+            running @= t
+            stop(@running).must()
+        .err e =>
+            assert e.code == UNSUPPORTED
+
+# The bytes `stop` writes to give the terminal back.
+test "stop: the terminal given back, then nothing"
+    p @= io.pipe().must()
+    t @= Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: true, focus: false, active: true)
+    )
+    stop(@t).must()
+    stop(@t).must()
+    io.close(@p.writer).must()
+    assert io.read_all_text(p.reader).must() == "\u{1b}[?2004l\u{1b}[0m\u{1b}[?25h\u{1b}[?1049l"
+    io.close(@p.reader).must()
+
+# The screen as an area.
+test "area_of: a screen of 80 by 24"
+    p @= io.pipe().must()
+    t = Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 80, height: 24), whole: false, columns: 80, rows: 24, mouse: false, motion: false, paste: false, focus: false, active: true)
+    )
+    assert area_of(t) == Rect(x: 0, y: 0, width: 80, height: 24)
+    io.close(@p.writer).must()
+    io.close(@p.reader).must()
+
+# A blank frame of the screen's size.
+test "frame_of: a blank frame"
+    p @= io.pipe().must()
+    t = Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 3, height: 1), whole: false, columns: 3, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
+    )
+    assert to_lines(frame_of(t)) == ["   "]
+    io.close(@p.writer).must()
+    io.close(@p.reader).must()
+
+# Two frames flushed: the second writes only the cell that changed.
+test "flush: two frames, the second writing one cell"
+    p @= io.pipe().must()
+    t @= Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 4, height: 1), whole: false, columns: 4, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
+    )
+    first @= frame_of(t)
+    _ = draw_text(@first, x: 0, y: 0, text: "hi", style: term.plain(), width: 4)
+    flush(@t, frame: first, cursor: .hidden).must()
+    second @= frame_of(t)
+    _ = draw_text(@second, x: 0, y: 0, text: "ho", style: term.plain(), width: 4)
+    flush(@t, frame: second, cursor: .at(x: 2, y: 0)).must()
+    io.close(@p.writer).must()
+    assert io.read_all_text(p.reader).must() == "\u{1b}[1;1Hhi\u{1b}[?25l\u{1b}[1;2Ho\u{1b}[1;3H\u{1b}[?25h"
+    io.close(@p.reader).must()
+
+# After a redraw, the next flush clears the screen and writes every cell.
+test "redraw: the next flush whole"
+    p @= io.pipe().must()
+    t @= Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
+    )
+    frame @= frame_of(t)
+    _ = draw_text(@frame, x: 0, y: 0, text: "a", style: term.plain(), width: 2)
+    redraw(@t)
+    flush(@t, frame: frame, cursor: .hidden).must()
+    io.close(@p.writer).must()
+    assert io.read_all_text(p.reader).must() == "\u{1b}[0m\u{1b}[2J\u{1b}[H\u{1b}[1;1Ha\u{1b}[?25l"
+    io.close(@p.reader).must()
+
+# The next event, or, where the tests run with no terminal, its failure.
+test "read_event: an event or no terminal"
+    p @= io.pipe().must()
+    t @= Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
+    )
+
+    match read_event(@t)
+        .ok _  => _ = 0
+        .err e => assert e.code == UNSUPPORTED || e.code == CLOSED
+
+    io.close(@p.writer).must()
+    io.close(@p.reader).must()
+
+# An event within a tenth of a second, or the time up.
+test "read_event_within: a tenth of a second"
+    p @= io.pipe().must()
+    t @= Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
+    )
+
+    match read_event_within(@t, limit_ms: 100)
+        .ok _  => _ = 0
+        .err e => assert e.code == TIMEOUT || e.code == UNSUPPORTED || e.code == CLOSED
+
+    io.close(@p.writer).must()
+    io.close(@p.reader).must()
+
+# The terminal given back while another program runs; a flush then refused.
+test "suspend: the terminal given back for a while"
+    p @= io.pipe().must()
+    t @= Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
+    )
+    suspend(@t).must()
+    assert flush(@t, frame: frame_of(t), cursor: .hidden).is_err()
+    io.close(@p.writer).must()
+    assert io.read_all_text(p.reader).must() == "\u{1b}[0m\u{1b}[?25h\u{1b}[?1049l"
+    io.close(@p.reader).must()
+
+# The terminal taken again; where the tests run with no terminal, `resume`
+# says so.
+test "resume: taken again, or no terminal"
+    p @= io.pipe().must()
+    t @= Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: false)
+    )
+
+    match resume(@t)
+        .ok _  => stop(@t).must()
+        .err e => assert e.code == UNSUPPORTED
+
+    io.close(@p.writer).must()
+    io.close(@p.reader).must()
+
+# The window's title set.
+test "set_title: the window named"
+    p @= io.pipe().must()
+    t = Terminal(
+        output: p.writer,
+        screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
+    )
+    set_title(t, title: "Files").must()
+    io.close(@p.writer).must()
+    assert io.read_all_text(p.reader).must() == "\u{1b}]0;Files\u{7}"
+    io.close(@p.reader).must()

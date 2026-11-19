@@ -1,0 +1,609 @@
+# The small widgets drawn into a grid: tabs, the gauge, the line gauge, the
+# sparkline and the scrollbar.
+
+use term
+use tui/internal/grid
+use tui/internal/packed
+use tui/internal/runs
+use unicode/segment
+
+# The eighths of a cell, from none to whole, the block characters a gauge
+# fills its last cell with.
+function eighths() -> [str]
+    return ["", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"]
+
+# The sparkline's symbols from empty to full.
+function bars() -> [str]
+    return [" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+
+# `s` where it is one grapheme one cell wide, else a space.
+function narrow(s: str) -> str
+    if segment.graphemes(s).len() == 1 && segment.width_of(s) == 1
+        return s
+    return " "
+
+# `ratio` kept from 0 to 1, NaN taken as 0.
+function kept_ratio(ratio: f64) -> f64
+    if ratio != ratio || ratio < 0.0
+        return 0.0
+
+    if ratio > 1.0
+        return 1.0
+    return ratio
+
+# `x`, 0 or more and below a quadrillion, rounded a half up.
+function round_up_half(x: f64) -> i64
+    return to_i64(x + 0.5).must()
+
+# The percentage `ratio` stands for, rounded a half up: 0 to 100.
+function percent_of(ratio: f64) -> i64
+    return round_up_half(kept_ratio(ratio) * 100.0)
+
+# Draws tabs on the row `y` from `x` to `x + width`: each title between its
+# paddings, the selected title highlighted, the divider between two titles.
+function tabs(@g: grid.Grid, x: i64, y: i64, width: i64, height: i64, titles: [[runs.Piece]], selected: i64, divider: [runs.Piece], left: [runs.Piece], right: [runs.Piece], style: i64, highlight: i64)
+    grid.patch(@g, x: x, y: y, width: width, height: height, style: style)
+
+    if width <= 0 || height <= 0
+        return
+    end = x + width
+    at @= x
+
+    for i in range(from: 0, to: titles.len())
+        if at < end
+            at @ runs.place(@g, x: at, y: y, pieces: left, limit: end)
+            begin = at
+            at @ runs.place(@g, x: at, y: y, pieces: titles[i], limit: end)
+
+            if i == selected
+                grid.patch(@g, x: begin, y: y, width: at - begin, height: 1, style: highlight)
+            at @ runs.place(@g, x: at, y: y, pieces: right, limit: end)
+
+            if i < titles.len() - 1
+                at @ runs.place(@g, x: at, y: y, pieces: divider, limit: end)
+
+# Draws a gauge: the area in `style` then `bar_style`, filled from the left to
+# `ratio`, whole cells or eighths, and `label` on the middle row, its cells
+# over the bar in the bar's colours swapped.
+function gauge(@g: grid.Grid, x: i64, y: i64, width: i64, height: i64, ratio: f64, label: [runs.Piece], style: i64, bar_style: i64, unicode: bool)
+    grid.patch(@g, x: x, y: y, width: width, height: height, style: style)
+    grid.patch(@g, x: x, y: y, width: width, height: height, style: bar_style)
+
+    if width <= 0 || height <= 0
+        return
+    filled = kept_ratio(ratio) * to_f64(width)
+
+    whole = if unicode
+        to_i64(filled).must()
+    else
+        round_up_half(filled)
+
+    part = if unicode && whole < width
+        round_up_half((filled - to_f64(whole)) * 8.0)
+    else
+        0
+
+    for row in range(from: y, to: y + height)
+        for column in range(from: x, to: x + whole)
+            if grid.inside(g, x: column, y: row)
+                grid.put(@g, x: column, y: row, symbol: "█", width: 1, style: packed.PLAIN)
+
+        if part > 0 && grid.inside(g, x: x + whole, y: row)
+            grid.put(@g, x: x + whole, y: row, symbol: eighths()[part], width: 1, style: packed.PLAIN)
+
+    label_width = runs.width_of(label)
+
+    label_x = if label_width < width
+        x + (width - label_width) / 2
+    else
+        x
+    label_y = y + (height - 1) / 2
+    end = runs.place(@g, x: label_x, y: label_y, pieces: label, limit: x + width)
+    under = packed.over(under: style, top: bar_style)
+
+    for column in range(from: label_x, to: end)
+        if column < x + whole && grid.inside(g, x: column, y: label_y)
+            i = grid.index_of(g, x: column, y: label_y)
+
+            if g.symbols[i] != ""
+                own = g.styles[i]
+                grid.restyle(@g, x: column, y: label_y, style: packed.swapped(packed.over(under: under, top: own)))
+
+# Draws a line gauge on the row `y`: `label`, a space, then the line to the
+# right edge, its first `ratio` cells, rounded down, in `filled_symbol`.
+function line_gauge(@g: grid.Grid, x: i64, y: i64, width: i64, height: i64, ratio: f64, label: [runs.Piece], style: i64, filled_style: i64, unfilled_style: i64, filled_symbol: str, unfilled_symbol: str)
+    grid.patch(@g, x: x, y: y, width: width, height: height, style: style)
+
+    if width <= 0 || height <= 0
+        return
+    end = x + width
+    after = runs.place(@g, x: x, y: y, pieces: label, limit: end)
+
+    begin = if runs.width_of(label) > 0
+        after + 1
+    else
+        x
+
+    if begin >= end
+        return
+    length = end - begin
+    done = to_i64(kept_ratio(ratio) * to_f64(length)).must()
+
+    for k in range(from: 0, to: length)
+        symbol = if k < done
+            filled_symbol
+        else
+            unfilled_symbol
+
+        cell_style = if k < done
+            filled_style
+        else
+            unfilled_style
+
+        if grid.inside(g, x: begin + k, y: y)
+            grid.put(@g, x: begin + k, y: y, symbol: symbol, width: 1, style: cell_style)
+
+# The eighths of `height` rows a value `v` of `top` reaches, rounded down.
+function reach(v: i64, top: i64, height: i64) -> i64
+    units = height * 8
+
+    if v >= top
+        return units
+
+    if v <= 0
+        return 0
+
+    if top <= 1000000000000 && units <= 1000000
+        return v * units / top
+    return to_i64(to_f64(v) / to_f64(top) * to_f64(units)).must()
+
+# Draws a sparkline: each value a bar one cell wide from the bottom, its
+# height its share of `max` (the largest value where `max` is 0 or below),
+# the first value at the left or, `backward`, at the right.
+function sparkline(@g: grid.Grid, x: i64, y: i64, width: i64, height: i64, data: [i64], max: i64, style: i64, backward: bool, symbols: [str])
+    grid.patch(@g, x: x, y: y, width: width, height: height, style: style)
+
+    if width <= 0 || height <= 0
+        return
+
+    levels = if symbols.len() >= 2
+        symbols
+    else
+        bars()
+    top @= max
+
+    if top <= 0
+        top @ 0
+
+        for v in data
+            if v > top
+                top @ v
+
+    if top <= 0
+        return
+
+    shown = if data.len() < width
+        data.len()
+    else
+        width
+    last_level = levels.len() - 1
+
+    for i in range(from: 0, to: shown)
+        units = reach(v: data[i], top: top, height: height)
+
+        column = if backward
+            x + width - 1 - i
+        else
+            x + i
+
+        for row in range(from: 0, to: height)
+            cell_units_wanted = units - row * 8
+
+            cell_units = if cell_units_wanted > 8
+                8
+            else if cell_units_wanted < 0
+                0
+            else
+                cell_units_wanted
+            symbol = levels[cell_units * last_level / 8]
+
+            if grid.inside(g, x: column, y: y + height - 1 - row)
+                grid.put(@g, x: column, y: y + height - 1 - row, symbol: symbol, width: 1, style: packed.PLAIN)
+
+# Draws a scrollbar along one edge of the rectangle: `vertical` on its left or
+# right column, else on its top or bottom row, `at_start` the left or the
+# top. Nothing for a content of no row.
+function scrollbar(@g: grid.Grid, x: i64, y: i64, width: i64, height: i64, vertical: bool, at_start: bool, content: i64, position: i64, viewport: i64, symbols: [str], thumb_style: i64, track_style: i64)
+    if content <= 0 || width <= 0 || height <= 0
+        return
+
+    length = if vertical
+        height
+    else
+        width
+
+    begin_room = if symbols[2] != ""
+        1
+    else
+        0
+
+    end_room = if symbols[3] != ""
+        1
+    else
+        0
+    track = length - begin_room - end_room
+
+    shown = if viewport > 0
+        viewport
+    else
+        length
+
+    thumb = if track > 0
+        between(n: round_up_half(to_f64(track) * to_f64(shown) / to_f64(content + shown - 1)), low: 1, high: track)
+    else
+        0
+    at = between(n: position, low: 0, high: content - 1)
+
+    start = if content > 1 && track > thumb
+        round_up_half(to_f64(at) / to_f64(content - 1) * to_f64(track - thumb))
+    else
+        0
+
+    for k in range(from: 0, to: length)
+        on_track = k >= begin_room && k < length - end_room
+        on_thumb = on_track && k - begin_room >= start && k - begin_room < start + thumb
+
+        symbol = if k < begin_room
+            symbols[2]
+        else if !on_track
+            symbols[3]
+        else if on_thumb
+            symbols[0]
+        else
+            symbols[1]
+
+        cell_style = if on_thumb
+            thumb_style
+        else
+            track_style
+
+        cx = if !vertical
+            x + k
+        else if at_start
+            x
+        else
+            x + width - 1
+
+        cy = if vertical
+            y + k
+        else if at_start
+            y
+        else
+            y + height - 1
+
+        if grid.inside(g, x: cx, y: cy)
+            grid.put(@g, x: cx, y: cy, symbol: symbol, width: 1, style: cell_style)
+
+# `n` kept between `low` and `high`, `high` at least `low`.
+function between(n: i64, low: i64, high: i64) -> i64
+    if n < low
+        return low
+
+    if n > high
+        return high
+    return n
+
+## Tests
+
+# `text` as plain pieces.
+function plain(text: str) -> [runs.Piece]
+    return runs.pieces_of([runs.Run(text: text, style: term.plain())], line_style: term.plain())
+
+# The rows of `g`.
+function rows(g: grid.Grid lent) -> [str]
+    out: [str] @= []
+
+    for row in range(from: 0, to: g.height)
+        out @ out.push(grid.row_text(g, row: row))
+
+    return out
+
+# A gauge `width` by `height` at `ratio`, its label `label`.
+function gauged(ratio: f64, label: str, width: i64, height: i64, unicode: bool) -> [str]
+    g @= grid.new(x: 0, y: 0, width: width, height: height)
+    gauge(
+        @g,
+        x: 0,
+        y: 0,
+        width: width,
+        height: height,
+        ratio: ratio,
+        label: plain(label),
+        style: packed.PLAIN,
+        bar_style: packed.PLAIN,
+        unicode: unicode
+    )
+    return rows(g)
+
+# A line gauge `width` wide at `ratio`, its label `label`, its symbols given.
+function lined(ratio: f64, label: str, width: i64, filled: str, unfilled: str) -> str
+    g @= grid.new(x: 0, y: 0, width: width, height: 1)
+    line_gauge(
+        @g,
+        x: 0,
+        y: 0,
+        width: width,
+        height: 1,
+        ratio: ratio,
+        label: plain(label),
+        style: 0,
+        filled_style: 0,
+        unfilled_style: 0,
+        filled_symbol: filled,
+        unfilled_symbol: unfilled
+    )
+    return grid.row_text(g, row: 0)
+
+# A sparkline of `data` `width` by `height`.
+function sparked(data: [i64], max: i64, width: i64, height: i64, backward: bool) -> [str]
+    g @= grid.new(x: 0, y: 0, width: width, height: height)
+    sparkline(
+        @g,
+        x: 0,
+        y: 0,
+        width: width,
+        height: height,
+        data: data,
+        max: max,
+        style: 0,
+        backward: backward,
+        symbols: []
+    )
+    return rows(g)
+
+# A horizontal scrollbar of no arrows, `#` its thumb and `-` its track.
+function scrolled(content: i64, position: i64, viewport: i64, length: i64) -> str
+    g @= grid.new(x: 0, y: 0, width: length, height: 1)
+    scrollbar(
+        @g,
+        x: 0,
+        y: 0,
+        width: length,
+        height: 1,
+        vertical: false,
+        at_start: false,
+        content: content,
+        position: position,
+        viewport: viewport,
+        symbols: ["#", "-", "", ""],
+        thumb_style: 0,
+        track_style: 0
+    )
+    return grid.row_text(g, row: 0)
+
+# Every drawing below is what `ratatui` 0.30.2 drew for the same widget, run
+# 2026-11-18, but where a test says otherwise.
+
+test "tabs: paddings, dividers and the selected title highlighted alone, cut at the edge"
+    g @= grid.new(x: 0, y: 0, width: 20, height: 1)
+    tabs(
+        @g,
+        x: 0,
+        y: 0,
+        width: 20,
+        height: 1,
+        titles: [plain("One"), plain("Two"), plain("Three")],
+        selected: 1,
+        divider: plain("│"),
+        left: plain(" "),
+        right: plain(" "),
+        style: 0,
+        highlight: packed.reversed()
+    )
+    assert rows(g) == [" One │ Two │ Three  "]
+    assert g.styles[6] == 0 && g.styles[7] == packed.reversed() && g.styles[9] == packed.reversed() && g.styles[10] == 0
+    h @= grid.new(x: 0, y: 0, width: 12, height: 1)
+    tabs(
+        @h,
+        x: 0,
+        y: 0,
+        width: 12,
+        height: 1,
+        titles: [plain("Alpha"), plain("Beta"), plain("Gamma")],
+        selected: 9,
+        divider: plain("│"),
+        left: plain(" "),
+        right: plain(" "),
+        style: 0,
+        highlight: packed.reversed()
+    )
+    assert rows(h) == [" Alpha │ Bet"]
+    k @= grid.new(x: 0, y: 0, width: 10, height: 1)
+    tabs(
+        @k,
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 1,
+        titles: [plain("A"), plain("B")],
+        selected: 0,
+        divider: plain("|"),
+        left: plain("["),
+        right: plain("]"),
+        style: 0,
+        highlight: 0
+    )
+    assert rows(k) == ["[A]|[B]   "]
+
+test "gauge: whole cells rounded, a label in the middle row, at 0, the bar under the label's next cell, where ratatui left it blank"
+    assert gauged(0.5, label: "50%", width: 10, height: 1, unicode: false) == ["███50%    "]
+    assert gauged(0.7, label: "70!", width: 10, height: 3, unicode: false) == ["███████   ", "███70!█   ", "███████   "]
+    assert gauged(0.0, label: "0%", width: 6, height: 1, unicode: false) == ["  0%  "]
+    assert gauged(0.45, label: "", width: 10, height: 1, unicode: false) == ["█████     "]
+    assert gauged(0.35, label: "", width: 10, height: 1, unicode: false) == ["████      "]
+    assert gauged(0.25, label: "", width: 10, height: 1, unicode: false) == ["███       "]
+    assert gauged(0.4, label: "", width: 8, height: 1, unicode: false) == ["███     "]
+
+test "gauge: full, where ratatui left the cell after the label blank, and a ratio outside or NaN"
+    assert gauged(1.0, label: "100%", width: 6, height: 1, unicode: false) == ["█100%█"]
+    assert gauged(0.96, label: "", width: 10, height: 1, unicode: false) == ["██████████"]
+    assert gauged(7.0, label: "", width: 3, height: 1, unicode: false) == ["███"]
+    assert gauged(-1.0, label: "", width: 3, height: 1, unicode: false) == ["   "]
+    assert gauged(0.0 / 0.0, label: "", width: 3, height: 1, unicode: false) == ["   "]
+
+test "gauge: eighths in the last cell"
+    assert gauged(0.06, label: "", width: 2, height: 1, unicode: true) == ["▏ "]
+    assert gauged(0.19, label: "", width: 2, height: 1, unicode: true) == ["▍ "]
+    assert gauged(0.31, label: "", width: 2, height: 1, unicode: true) == ["▋ "]
+    assert gauged(0.44, label: "", width: 2, height: 1, unicode: true) == ["▉ "]
+    assert gauged(0.56, label: "", width: 2, height: 1, unicode: true) == ["█▏"]
+    assert gauged(0.94, label: "", width: 2, height: 1, unicode: true) == ["█▉"]
+    assert gauged(0.45, label: "", width: 10, height: 1, unicode: true) == ["████▌     "]
+    assert gauged(0.555, label: "56%", width: 7, height: 1, unicode: true) == ["██56%  "]
+
+test "gauge: the label over the bar in its colours swapped, beside it as the bar"
+    red_on_blue = packed.of(term.with_background(term.with_foreground(term.plain(), color: .red), color: .blue))
+    g @= grid.new(x: 0, y: 0, width: 10, height: 1)
+    gauge(
+        @g,
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 1,
+        ratio: 0.5,
+        label: plain("50%"),
+        style: 0,
+        bar_style: red_on_blue,
+        unicode: false
+    )
+    assert rows(g) == ["███50%    "]
+    assert g.styles[2] == red_on_blue && g.styles[3] == packed.swapped(red_on_blue) && g.styles[4] == packed.swapped(red_on_blue) && g.styles[5] == red_on_blue
+
+test "line_gauge: the label, a space, the line rounded down, no room for it"
+    assert lined(0.5, label: " 50%", width: 20, filled: "─", unfilled: "─") == " 50% ───────────────"
+    assert lined(0.25, label: "Hi", width: 12, filled: "─", unfilled: "─") == "Hi ─────────"
+    assert lined(0.4, label: " 40%", width: 12, filled: "#", unfilled: ".") == " 40% ##....."
+    assert lined(0.3, label: " 30%", width: 10, filled: "#", unfilled: ".") == " 30% #...."
+    assert lined(0.66, label: " 66%", width: 9, filled: "#", unfilled: ".") == " 66% ##.."
+    assert lined(1.0, label: "100%", width: 5, filled: "#", unfilled: ".") == "100% "
+    assert lined(0.999, label: "100%", width: 10, filled: "#", unfilled: ".") == "100% ####."
+    assert lined(0.5, label: "", width: 4, filled: "#", unfilled: ".") == "##.."
+
+test "sparkline: one row, two rows, a max, right to left, too many values, zeros, three rows"
+    assert sparked([0, 1, 2, 3, 4, 5, 6, 7, 8], max: 0, width: 9, height: 1, backward: false) == [" ▁▂▃▄▅▆▇█"]
+    assert sparked([0, 1, 2, 3, 4, 5, 6, 7, 8], max: 0, width: 9, height: 2, backward: false) == ["     ▂▄▆█", " ▂▄▆█████"]
+    assert sparked([1, 2, 3], max: 6, width: 3, height: 1, backward: false) == ["▁▂▄"]
+    assert sparked([1, 2, 8], max: 0, width: 5, height: 1, backward: true) == ["  █▂▁"]
+    assert sparked([8, 1, 2, 3, 4, 5], max: 0, width: 3, height: 1, backward: false) == ["█▁▂"]
+    assert sparked([0, 0], max: 0, width: 2, height: 1, backward: false) == ["  "]
+    assert sparked([3, 10, 1, 7], max: 0, width: 4, height: 3, backward: false) == [" █  ", " █ █", "▇█▂█"]
+    assert sparked([-5, 9223372036854775807], max: 0, width: 2, height: 1, backward: false) == [" █"]
+
+test "scrollbar: the thumb's length and place as ratatui drew them"
+    assert scrolled(content: 3, position: 0, viewport: 0, length: 6) == "#####-"
+    assert scrolled(content: 3, position: 2, viewport: 0, length: 6) == "-#####"
+    assert scrolled(content: 6, position: 0, viewport: 0, length: 6) == "###---"
+    assert scrolled(content: 6, position: 3, viewport: 0, length: 6) == "--###-"
+    assert scrolled(content: 10, position: 0, viewport: 0, length: 6) == "##----"
+    assert scrolled(content: 10, position: 4, viewport: 0, length: 6) == "--##--"
+    assert scrolled(content: 10, position: 9, viewport: 0, length: 6) == "----##"
+    assert scrolled(content: 7, position: 0, viewport: 3, length: 6) == "##----"
+    assert scrolled(content: 7, position: 6, viewport: 3, length: 6) == "----##"
+    assert scrolled(content: 1, position: 0, viewport: 0, length: 6) == "######"
+    assert scrolled(content: 2, position: 1, viewport: 1, length: 4) == "--##"
+    assert scrolled(content: 50, position: 25, viewport: 0, length: 10) == "----##----"
+    assert scrolled(content: 50, position: 49, viewport: 5, length: 10) == "---------#"
+    assert scrolled(content: 0, position: 0, viewport: 0, length: 5) == "     "
+
+test "scrollbar: arrows at the ends, each edge"
+    g @= grid.new(x: 0, y: 0, width: 1, height: 10)
+    scrollbar(
+        @g,
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 10,
+        vertical: true,
+        at_start: false,
+        content: 20,
+        position: 5,
+        viewport: 5,
+        symbols: ["█", "║", "▲", "▼"],
+        thumb_style: 0,
+        track_style: 0
+    )
+    assert rows(g) == ["▲", "║", "║", "█", "█", "║", "║", "║", "║", "▼"]
+    h @= grid.new(x: 0, y: 0, width: 1, height: 10)
+    scrollbar(
+        @h,
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 10,
+        vertical: true,
+        at_start: false,
+        content: 20,
+        position: 19,
+        viewport: 0,
+        symbols: ["█", "║", "▲", "▼"],
+        thumb_style: 0,
+        track_style: 0
+    )
+    assert rows(h) == ["▲", "║", "║", "║", "║", "║", "█", "█", "█", "▼"]
+    k @= grid.new(x: 0, y: 0, width: 4, height: 3)
+    scrollbar(
+        @k,
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 3,
+        vertical: true,
+        at_start: true,
+        content: 10,
+        position: 3,
+        viewport: 0,
+        symbols: ["█", "║", "▲", "▼"],
+        thumb_style: 0,
+        track_style: 0
+    )
+    assert rows(k) == ["▲   ", "█   ", "▼   "]
+    m @= grid.new(x: 0, y: 0, width: 4, height: 3)
+    scrollbar(
+        @m,
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 3,
+        vertical: false,
+        at_start: true,
+        content: 10,
+        position: 3,
+        viewport: 0,
+        symbols: ["█", "═", "◄", "►"],
+        thumb_style: 0,
+        track_style: 0
+    )
+    assert rows(m) == ["◄█═►", "    ", "    "]
+    n @= grid.new(x: 0, y: 0, width: 1, height: 12)
+    scrollbar(
+        @n,
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 12,
+        vertical: true,
+        at_start: false,
+        content: 100,
+        position: 50,
+        viewport: 10,
+        symbols: ["█", "║", "▲", "▼"],
+        thumb_style: 0,
+        track_style: 0
+    )
+    assert rows(n) == ["▲", "║", "║", "║", "║", "║", "█", "║", "║", "║", "║", "▼"]
+
+test "narrow: one cell kept, a wide character, two characters and nothing become a space"
+    assert narrow("#") == "#"
+    assert narrow("日") == " "
+    assert narrow("ab") == " "
+    assert narrow("") == " "

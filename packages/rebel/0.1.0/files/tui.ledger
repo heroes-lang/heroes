@@ -1,0 +1,403 @@
+# The ledger of `tui`: what a full-screen terminal program can do, one block
+# per capability, and what Rebel answers. The lists are this machine's,
+# 2026-11-18, fetched into the scratch folder and read, never their source:
+# Rust's `ratatui` 0.30.2 (the reference, the author's choice of 2026-11-17),
+# its crates `ratatui`, `ratatui-core` and `ratatui-widgets` read from
+# `cargo doc` (106 types and traits, 178 constants, their methods read from
+# each type's page); Go's `github.com/charmbracelet/bubbletea` 1.3.10 (74
+# functions, 24 types) and `github.com/rivo/tview` 0.42.0 (27 types, 567
+# functions and 539 methods), read by `go doc -all`; Python's `textual` 8.2.8
+# (its `widgets`, `containers`, `events`, `geometry` and `App`, read by
+# `dir()`). The expected values of the tests are what `ratatui` 0.30.2
+# answered for the same input, run 2026-11-18 (`rebel-scratch/tui/rs`); a
+# block's `note` says where this package decided otherwise, and why.
+# `tview`'s methods are named by the widget they belong to; its setters and
+# getters of a colour or a style stand in the block of the style they set.
+
+capability tui/rect  a rectangle of cells, its edges and whether it is empty
+  heroes  tui.Rect, tui.is_empty
+  go      tview.Box.SetRect, tview.Box.GetRect, tview.Box.GetInnerRect
+  rust    ratatui::layout::Rect, Rect::new, Rect::area, Rect::left, Rect::right, Rect::top, Rect::bottom, Rect::is_empty, Rect::as_position, Rect::as_size, ratatui::layout::Position, ratatui::layout::Size, ratatui::layout::Offset
+  python  textual.geometry.Region, textual.geometry.Size, textual.geometry.Offset
+  note    columns and rows as `i64`, where `ratatui` holds `u16`; a rectangle's cell count is its width times its height, so no function answers it
+
+capability tui/rect-margins  a rectangle shrunk or grown by margins
+  heroes  tui.inner, tui.outer
+  go      tview.Box.SetBorderPadding
+  rust    Rect::inner, Rect::outer, ratatui::layout::Margin
+  python  textual.geometry.Region.shrink, textual.geometry.Region.grow, textual.geometry.Spacing
+  note    margins that do not fit answer the empty rectangle at 0, 0, as `ratatui` answers
+
+capability tui/rect-meet  two rectangles met, joined, and asked whether they meet
+  heroes  tui.intersection, tui.intersects, tui.enclosing
+  go      -
+  rust    Rect::intersection, Rect::intersects, Rect::union
+  python  textual.geometry.Region.intersection, textual.geometry.Region.overlaps, textual.geometry.Region.union
+  note    `union` is a word another language keeps as a keyword, so the smallest rectangle holding both is `enclosing`
+
+capability tui/rect-contains  whether a cell is inside a rectangle: where a click landed
+  heroes  tui.contains
+  go      tview.Box.InRect, tview.Box.InInnerRect
+  rust    Rect::contains
+  python  textual.geometry.Region.contains, textual.geometry.Region.contains_point, textual.App.get_widget_at
+
+capability tui/rect-move  a rectangle moved, or moved inside another
+  heroes  tui.offset, tui.clamp
+  go      -
+  rust    Rect::offset, Rect::clamp, Rect::resize, ops Add and Sub of an Offset
+  python  textual.geometry.Region.translate, textual.geometry.Region.clip
+  note    a size is changed by building the record anew, so `Rect::resize` has no function of its own
+
+capability tui/rect-rows-columns  a rectangle's rows, its columns, its cells
+  heroes  tui.rows_of, tui.columns_of
+  go      -
+  rust    Rect::rows, Rect::columns, Rect::positions, ratatui::layout::Rows, ratatui::layout::Columns, ratatui::layout::Positions
+  python  -
+  note    a cell's place is its row's `y` and its column's `x`, so `positions` is the two loops
+
+capability tui/rect-centered  a rectangle in the middle of another
+  heroes  tui.centered
+  go      tview.Modal
+  rust    Rect::centered, Rect::centered_horizontally, Rect::centered_vertically
+  python  textual.containers.Center, textual.containers.Middle, textual.containers.CenterMiddle
+  note    one function for both directions: a constraint of `.percentage(n: 100)` keeps a direction whole
+
+capability tui/layout-split  an area cut into parts side by side or one under another
+  heroes  tui.layout_of, tui.split, tui.Layout, tui.Direction
+  go      tview.Flex, tview.NewFlex, tview.Flex.AddItem, tview.Flex.SetDirection, tview.Flex.ResizeItem, tview.Flex.RemoveItem, tview.Flex.Clear, tview.Flex.GetItem, tview.Flex.GetItemCount, tview.Flex.SetFullScreen, tview.Grid, tview.NewGrid, tview.Grid.SetRows, tview.Grid.SetColumns, tview.Grid.AddItem, tview.Grid.SetSize, tview.Grid.SetMinSize, tview.Grid.SetOffset, tview.Grid.GetOffset, tview.Grid.RemoveItem, tview.Grid.Clear
+  rust    ratatui::layout::Layout, Layout::new, Layout::default, Layout::horizontal, Layout::vertical, Layout::direction, Layout::constraints, Layout::split, Layout::areas, Layout::try_areas, Layout::init_cache, Rect::layout, Rect::layout_vec, Rect::try_layout, ratatui::layout::Direction
+  python  textual.containers.Horizontal, textual.containers.Vertical, textual.containers.HorizontalGroup, textual.containers.VerticalGroup, textual.containers.Grid, textual.containers.ItemGrid, textual.containers.Container, textual.layout
+  note    `ratatui` places the edges with a linear solver (Cassowary) and rounds each; this package places them by the order its documentation gives and rounds each edge half away from 0, and answers as `ratatui` did on every case of the tests but one: where two parts of one kind must give up space and the split is a half, `ratatui` (`len3 fill1 len3` in 5) answered 2, 0, 3 and this package 3, 0, 2. `tview`'s grid of fixed rows and columns is two layouts, one inside the other
+
+capability tui/layout-constraints  what a part asks: a length, a percentage, a ratio, a minimum, a maximum, a share
+  heroes  tui.Constraint
+  go      tview.Flex.AddItem (a fixed size or a proportion), tview.Grid.SetRows, tview.Grid.SetColumns
+  rust    ratatui::layout::Constraint, Constraint::from_lengths, Constraint::from_percentages, Constraint::from_ratios, Constraint::from_mins, Constraint::from_maxes, Constraint::from_fills
+  python  textual's CSS units for width and height (cells, %, fr, auto, min-width, max-width)
+  note    the order a part gives up space: a maximum's wish, then a ratio, a percentage, a length, and a minimum last, as `ratatui` answered (`max3 len5` in 6 is 1, 5); `ratatui`'s `from_*` builders are a list of one case, written as a list here
+
+capability tui/layout-flex  where the space no part takes goes
+  heroes  tui.Flex
+  go      -
+  rust    ratatui::layout::Flex
+  python  textual's CSS align and content-align
+  note    `.start` by default, as `ratatui`'s `Layout::default()` answered
+
+capability tui/layout-spacing  space between parts, or parts overlapping to share a border
+  heroes  tui.Layout.spacing
+  go      tview.Grid.SetGap
+  rust    Layout::spacing, ratatui::layout::Spacing
+  python  textual's CSS grid-gutter
+  note    a negative spacing overlaps, as `Spacing::Overlap` does
+
+capability tui/layout-margin  margins around a layout's parts
+  heroes  tui.Layout.horizontal_margin, tui.Layout.vertical_margin
+  go      tview.Box.SetBorderPadding
+  rust    Layout::margin, Layout::horizontal_margin, Layout::vertical_margin
+  python  textual's CSS margin and padding
+
+capability tui/layout-spacers  the gaps between a layout's parts
+  heroes  tui.spacers_of
+  go      -
+  rust    Layout::split_with_spacers, Layout::spacers
+  python  -
+
+capability tui/text-styled  text in spans of styles, lines of spans
+  heroes  tui.Span, tui.Line, tui.line_of, tui.styled_line, tui.lines_of
+  go      tview's colour tags ([red]text[-]), tview.Escape, tview.Unescape, tview.TranslateANSI, tview.ANSIWriter, tview.TextView.SetDynamicColors
+  rust    ratatui::text::Span, ratatui::text::Line, ratatui::text::Text, ratatui::text::StyledGrapheme, ratatui::text::ToSpan, ratatui::text::ToLine, ratatui::text::ToText, ratatui::style::Styled, Span::raw, Span::styled, Span::content, Line::raw, Line::styled, Line::spans, Line::push_span, Line::iter, Line::styled_graphemes, Text::raw, Text::styled, Text::lines, Text::push_line, Text::push_span, Text::height
+  python  textual.content.Content, rich.text.Text
+  note    a `Text` is a list of lines here; text with colour tags or escape sequences is not read, a program builds its spans; a line break inside a span is drawn as nothing, as every control character, where `ratatui` cuts a `Text` at it
+
+capability tui/text-width  how many cells a line takes
+  heroes  tui.width_of
+  go      tview.TaggedStringWidth
+  rust    Line::width, Span::width, Text::width, ratatui::buffer::CellWidth
+  python  rich.cells.cell_len
+  note    measured by `unicode/segment.width_of`, grapheme by grapheme
+
+capability tui/text-alignment  where a line stands in its width
+  heroes  tui.Alignment, tui.with_alignment
+  go      tview.TextView.SetTextAlign, tview.Box.SetTitleAlign, tview.Table.SetCell's alignment
+  rust    ratatui::layout::HorizontalAlignment, ratatui::layout::Alignment, Line::alignment, Line::left_aligned, Line::centered, Line::right_aligned, Text::alignment, Text::centered, Text::left_aligned, Text::right_aligned, Paragraph::alignment, Paragraph::centered, Paragraph::left_aligned, Paragraph::right_aligned, Span::into_centered_line, Span::into_left_aligned_line, Span::into_right_aligned_line
+  python  textual's CSS text-align
+  note    each line has its own alignment and a paragraph none, so a line never inherits; `with_alignment` sets it on many. A centred line's odd cell goes before it, as `ratatui` answered (`cde` in 6 starts at 2)
+
+capability tui/text-vertical-alignment  where text stands in an area's height
+  heroes  pending
+  go      -
+  rust    ratatui::layout::VerticalAlignment
+  python  textual's CSS content-align vertical
+
+capability tui/style  colour, background and attributes of a cell, laid over what is there
+  heroes  term.Style, term.Color, term.Attribute, tui.set_style
+  go      tview.Theme, tview.Box.SetBackgroundColor, tview.Box.SetBorderColor, tview.Box.SetBorderAttributes, tview.Box.SetTitleColor, and every widget's Set*Color, Set*Style and Get*Style
+  rust    ratatui::style::Style, ratatui::style::Color, ratatui::style::Modifier, ratatui::style::Stylize, Style::patch, Style::fg, Style::bg, Style::add_modifier, Style::has_modifier, Buffer::set_style, Line::patch_style, Span::patch_style
+  python  textual's CSS color, background and text-style; rich.style.Style
+  note    `term`'s style, a colour of `.default` keeping the cell's: `ratatui`'s unset colour. A style here adds attributes and never takes one away, so `Style::remove_modifier`, `reset` and the `not_*` methods have no counterpart, and `Color::Reset` is reached by `tui.clear`
+
+capability tui/style-underline-color  the colour of an underline apart from the text's
+  heroes  pending
+  go      -
+  rust    Style::underline_color
+  python  -
+
+capability tui/buffer  a buffer of cells a frame is drawn in
+  heroes  tui.Buffer, tui.Cell, tui.blank, tui.cell_at, tui.to_lines, tui.buffer_of
+  go      tcell's Screen under tview.Application.SetScreen, tview.Box.Draw
+  rust    ratatui::buffer::Buffer, ratatui::buffer::Cell, Buffer::empty, Buffer::filled, Buffer::with_lines, Buffer::area, Buffer::content, Buffer::cell, Buffer::cell_mut, Buffer::get, Buffer::get_mut, Buffer::index_of, Buffer::pos_of, Buffer::resize, Buffer::reset, Cell::new, Cell::symbol, Cell::set_symbol, Cell::set_char, Cell::style, Cell::set_style, Cell::set_fg, Cell::set_bg, Cell::reset, Cell::set_skip, Cell::set_diff_option, Cell::merge_symbol, ratatui::backend::TestBackend
+  python  textual.strip.Strip, rich.segment.Segment, textual.App.export_screenshot, textual.App.save_screenshot, textual.App.run_test
+  note    a cell covered by a wide character holds "" where `ratatui`'s holds " ", so `to_lines` reads as the screen shows; a buffer is made anew each frame, so `resize` and `reset` are `blank`; a buffer is its own test backend, so a drawing is tested with no terminal
+
+capability tui/buffer-draw-text  text and styled lines written into a buffer, cut at a width
+  heroes  tui.draw_text, tui.draw_line
+  go      tview.Print, tview.PrintSimple, tview.PrintJoinedSemigraphics
+  rust    Buffer::set_string, Buffer::set_stringn, Buffer::set_line, Buffer::set_span, Line::render, Span::render, Text::render
+  python  -
+  note    a wide character written over half of another blanks the other half, where `ratatui` leaves the half standing (`日本` with `x` at column 1 kept `日`)
+
+capability tui/buffer-fill-clear  an area filled with a symbol, or put back to blank
+  heroes  tui.fill, tui.clear
+  go      tview.Box.Clear
+  rust    ratatui::widgets::Fill, ratatui::widgets::Clear, Buffer::filled
+  python  -
+
+capability tui/buffer-merge  a drawing made apart laid on a frame
+  heroes  tui.paste
+  go      -
+  rust    Buffer::merge
+  python  -
+
+capability tui/diff  the cells that changed between two frames, and the bytes that write them
+  heroes  tui.diff, tui.format_changes
+  go      bubbletea's renderer (its frames are strings, diffed by line, none of it public)
+  rust    Buffer::diff, Buffer::diff_iter, ratatui::buffer::BufferDiff, ratatui::buffer::CellDiffOption, Terminal::flush, Backend::draw
+  python  textual's compositor (none of it public)
+  note    `ratatui`'s answers held on every case of the tests; where a wide character of the frame before is gone, the cells it covered are changes here too, where `ratatui` writes only its first cell and counts on the terminal to clear the second
+
+capability tui/terminal-start-stop  the terminal taken in full-screen mode, and put back
+  heroes  tui.start, tui.stop, tui.Terminal, tui.Options, tui.default_options
+  go      bubbletea.NewProgram, bubbletea.Program.Run, bubbletea.Program.Start, bubbletea.Program.StartReturningModel, bubbletea.Program.Quit, bubbletea.Program.Kill, bubbletea.Program.Wait, bubbletea.Quit, bubbletea.QuitMsg, bubbletea.WithAltScreen, bubbletea.EnterAltScreen, bubbletea.ExitAltScreen, bubbletea.Program.EnterAltScreen, bubbletea.Program.ExitAltScreen, tview.NewApplication, tview.Application.Run, tview.Application.Stop, tview.Application.SetScreen
+  rust    ratatui::init, ratatui::try_init, ratatui::init_with_options, ratatui::try_init_with_options, ratatui::restore, ratatui::try_restore, ratatui::run, ratatui::DefaultTerminal, ratatui::Terminal, Terminal::new, Terminal::with_options, ratatui::TerminalOptions, ratatui::backend::CrosstermBackend
+  python  textual.app.App, App.run, App.run_async, App.exit, App.return_code, App.return_value
+  note    always the alternate screen and the standard output, as `ratatui::init` takes them
+
+capability tui/frame-draw  a frame drawn and only its changes written
+  heroes  tui.frame_of, tui.flush
+  go      bubbletea.Model.View, tview.Application.Draw, tview.Application.ForceDraw, tview.Application.QueueUpdateDraw, tview.Application.QueueUpdate, tview.Application.SetBeforeDrawFunc, tview.Application.SetAfterDrawFunc, tview.Application.GetBeforeDrawFunc, tview.Application.GetAfterDrawFunc, tview.Application.Sync, tview.Box.SetDrawFunc, tview.Box.GetDrawFunc
+  rust    Terminal::draw, Terminal::try_draw, ratatui::Frame, Frame::area, Frame::render_widget, Frame::render_stateful_widget, Frame::buffer_mut, Frame::count, ratatui::CompletedFrame, Terminal::get_frame, Terminal::current_buffer_mut, Terminal::swap_buffers, Terminal::apply_buffer, Terminal::apply_buffer_with_cursor, ratatui::widgets::Widget, ratatui::widgets::StatefulWidget
+  python  textual.App.refresh, textual.widget.Widget.render, textual.App.batch_update
+  note    `ratatui`'s closure over a frame is a buffer the program draws into and hands to `flush`; a widget is a record and its draw a function, the language having no interfaces
+
+capability tui/redraw  the whole screen written again
+  heroes  tui.redraw
+  go      bubbletea.ClearScreen, tview.Application.Sync
+  rust    Terminal::clear
+  python  textual.App.refresh
+
+capability tui/cursor  the cursor shown at a cell, or hidden
+  heroes  tui.Cursor, tui.flush
+  go      bubbletea.HideCursor, bubbletea.ShowCursor
+  rust    Frame::set_cursor_position, Frame::set_cursor, Terminal::show_cursor, Terminal::hide_cursor, Terminal::set_cursor_position, Terminal::set_cursor, Terminal::get_cursor_position, Terminal::get_cursor
+  python  textual.events.CursorPosition
+  note    where the cursor stands is said with each frame, so it is never left where a widget drew
+
+capability tui/size  the screen's size, and told when it changes
+  heroes  tui.area_of, tui.Event.resized
+  go      bubbletea.WindowSize, bubbletea.WindowSizeMsg
+  rust    Terminal::size, Terminal::autoresize, Terminal::resize, ratatui::backend::WindowSize
+  python  textual.events.Resize, textual.App.size
+  note    the size is asked of the system while an event is awaited, every 50 ms, so a change comes as `.resized` on Windows too, where no signal tells it; pixels, which few terminals report, are not read. On Darwin `term`'s key reader cannot wait a limited time on a terminal (`hero_term.c` waits with `poll(2)`, which answers POLLNVAL for a device there, measured 2026-11-18 in a pseudo-terminal), so a new size is told with the next key until that is repaired
+
+capability tui/inline  a program drawn in a few rows below the shell's lines, and lines printed above it
+  heroes  pending
+  go      bubbletea's renderer without the alternate screen, bubbletea.Println, bubbletea.Printf, bubbletea.Program.Println, bubbletea.Program.Printf
+  rust    ratatui::Viewport, Terminal::insert_before
+  python  textual.App.run's inline, textual.App.is_inline
+
+capability tui/suspend  the terminal given back for another program, then taken again
+  heroes  tui.suspend, tui.resume
+  go      bubbletea.Suspend, bubbletea.SuspendMsg, bubbletea.ResumeMsg, bubbletea.Program.ReleaseTerminal, bubbletea.Program.RestoreTerminal, bubbletea.Exec, bubbletea.ExecProcess, bubbletea.ExecCommand, bubbletea.ExecCallback, tview.Application.Suspend
+  rust    -
+  python  textual.App.suspend, textual.App.action_suspend_process
+  note    the other program is run by `process`; suspending the process itself (Ctrl-Z) is the shell's, after `suspend`
+
+capability tui/title  the terminal window's title
+  heroes  tui.set_title
+  go      bubbletea.SetWindowTitle, bubbletea.Program.SetWindowTitle
+  rust    -
+  python  textual.App.title, textual.App.sub_title
+
+capability tui/events  the next key, click, paste, size or focus, waiting or within a time
+  heroes  tui.read_event, tui.read_event_within, tui.Event
+  go      bubbletea.Msg, bubbletea.KeyMsg, bubbletea.Key, bubbletea.KeyType, bubbletea.Key.String, bubbletea.Tick, bubbletea.Every, tview.Application.SetInputCapture, tview.Application.GetInputCapture, tview.Box.InputHandler, tview.Box.SetInputCapture, tview.Application.QueueEvent
+  rust    the `crossterm` events `ratatui` re-exports: event::read, event::poll, Event, KeyEvent
+  python  textual.events.Key, textual.events.Timer, textual.App.set_interval, textual.App.set_timer, textual.App.BINDINGS, textual.App.bind
+  note    a key is `term.Key`, read by `term`; a key with a modifier `term` names nothing for comes as `term.Key.other` with its bytes. A program that ticks reads within a time and draws again at `timeout`; on Darwin the time is not kept until the runtime's defect above is repaired (`term.read_key_within(200)` in a pseudo-terminal answered only when a key came), and Escape alone waits for the next key for the same reason. Driven in a pseudo-terminal on this Mac (2026-11-18, `rebel-scratch/tui/drive.py` over the driver, the screen read back by `pyte`): keys, a click, the wheel, a filter typed, a paste, a resize, the raw mode and every report put back after
+
+capability tui/mouse  clicks, releases, drags, moves and the wheel
+  heroes  tui.Event.mouse, tui.MouseAction, tui.MouseButton, tui.Options.mouse, tui.Options.mouse_motion
+  go      bubbletea.MouseMsg, bubbletea.MouseEvent, bubbletea.MouseEvent.IsWheel, bubbletea.MouseAction, bubbletea.MouseButton, bubbletea.MouseEventType, bubbletea.WithMouseCellMotion, bubbletea.WithMouseAllMotion, bubbletea.EnableMouseCellMotion, bubbletea.EnableMouseAllMotion, bubbletea.DisableMouse, bubbletea.Program.EnableMouseCellMotion, bubbletea.Program.EnableMouseAllMotion, bubbletea.Program.DisableMouseCellMotion, bubbletea.Program.DisableMouseAllMotion, tview.Application.EnableMouse, tview.Application.SetMouseCapture, tview.Application.GetMouseCapture, tview.MouseAction, tview.Box.MouseHandler, tview.Box.SetMouseCapture, tview.Box.GetMouseCapture, tview.Box.WrapMouseHandler
+  rust    crossterm's MouseEvent, EnableMouseCapture
+  python  textual.events.MouseDown, MouseUp, MouseMove, MouseScrollUp, MouseScrollDown, MouseScrollLeft, MouseScrollRight, Click, MouseCapture, MouseRelease, Enter, Leave
+  note    SGR reports (mode 1006), so a click past column 223 is read; buttons beyond the third are read as `.none`
+
+capability tui/paste  a text pasted read whole
+  heroes  tui.Event.pasted, tui.Options.paste
+  go      bubbletea.EnableBracketedPaste, bubbletea.DisableBracketedPaste, bubbletea.WithoutBracketedPaste, tview.Application.EnablePaste, tview.Box.PasteHandler, tview.Box.WrapPasteHandler
+  rust    crossterm's EnableBracketedPaste, Event::Paste
+  python  textual.events.Paste
+
+capability tui/focus-report  the window gaining or losing the focus
+  heroes  tui.Event.focus_gained, tui.Event.focus_lost, tui.Options.focus
+  go      bubbletea.FocusMsg, bubbletea.BlurMsg, bubbletea.WithReportFocus, bubbletea.EnableReportFocus, bubbletea.DisableReportFocus
+  rust    crossterm's EnableFocusChange, Event::FocusGained, Event::FocusLost
+  python  textual.events.AppFocus, textual.events.AppBlur
+
+capability tui/block  a box with borders, titles, a style and padding
+  heroes  tui.Block, tui.bordered, tui.borderless, tui.with_title, tui.inner_of, tui.draw_block, tui.Borders, tui.BorderType, tui.Title, tui.TitlePosition, tui.Padding
+  go      tview.Box, tview.NewBox, tview.Box.SetBorder, tview.Box.SetTitle, tview.Box.GetTitle, tview.Box.SetTitleAlign, tview.Box.SetBorderStyle, tview.Frame, tview.NewFrame, tview.Frame.AddText, tview.Frame.SetBorders, tview.Frame.Clear, tview.Frame.SetPrimitive, tview.Frame.GetPrimitive
+  rust    ratatui::widgets::Block, Block::new, Block::bordered, Block::borders, Block::border_type, Block::border_style, Block::border_set, Block::title, Block::title_top, Block::title_bottom, Block::title_alignment, Block::title_position, Block::title_style, Block::style, Block::padding, Block::inner, ratatui::widgets::Borders, ratatui::widgets::BorderType, ratatui::widgets::block::TitlePosition, ratatui::widgets::Padding, ratatui::symbols::border::Set, ratatui::symbols::line::Set, ratatui::border
+  python  textual's CSS border, border-title-align, border-subtitle, padding; textual.widget.Widget.border_title, border_subtitle
+  note    every border type of `ratatui` and its symbols as it drew them; titles cut between the corners, a cell apart
+
+capability tui/block-merge  borders of blocks that touch merged into one line
+  heroes  pending
+  go      tview.PrintJoinedSemigraphics
+  rust    Block::merge_borders, ratatui::symbols::merge::MergeStrategy
+  python  -
+
+capability tui/block-shadow  a shadow or a dimmed area under a block
+  heroes  pending
+  go      -
+  rust    Block::shadow, ratatui::widgets::block::Shadow, ratatui::widgets::block::Dimmed, ratatui::widgets::block::dimmed, ratatui::widgets::block::CellEffect, ratatui::widgets::block::BlockExt
+  python  textual's CSS opacity and tint
+
+capability tui/paragraph  text drawn, wrapped between words or cut, and scrolled
+  heroes  tui.Paragraph, tui.paragraph_of, tui.draw_paragraph, tui.height_of
+  go      tview.TextView, tview.NewTextView, tview.TextView.SetText, tview.TextView.GetText, tview.TextView.SetWrap, tview.TextView.SetWordWrap, tview.TextView.ScrollTo, tview.TextView.ScrollToBeginning, tview.TextView.ScrollToEnd, tview.TextView.GetScrollOffset, tview.TextView.SetScrollable, tview.TextView.SetMaxLines, tview.TextView.GetOriginalLineCount, tview.TextView.GetWrappedLineCount, tview.TextView.Write, tview.TextView.BatchWriter, tview.TextView.Clear, tview.TextViewWriter, tview.WordWrap
+  rust    ratatui::widgets::Paragraph, Paragraph::new, Paragraph::wrap, ratatui::widgets::Wrap, Paragraph::scroll, Paragraph::style, Paragraph::line_count, Paragraph::line_width
+  python  textual.widgets.Static, textual.widgets.Label, textual.widgets.Log, textual.widgets.RichLog, textual.containers.VerticalScroll
+  note    `ratatui`'s answers held where words are a space apart. Its wrapper answers otherwise where spaces run: it began a line with an empty row for spaces wider than the area under `trim`, and broke `cd` across two rows though it fit on one (`ab    cd` in 3 cells, `trim` false); this package takes the spaces at a break away and breaks no word that fits a row. `ratatui` did not scroll across a centred or right-aligned line, nor across a wide character at the cut; this package scrolls every line, the uncovered half of a wide character a blank cell. A paragraph's widest line is `width_of` over its lines
+
+capability tui/list  items one under another with one selected, kept in view
+  heroes  tui.List, tui.ListItem, tui.list_of, tui.draw_list, tui.HighlightSpacing, tui.ListDirection
+  go      tview.List, tview.NewList, tview.List.AddItem, tview.List.InsertItem, tview.List.RemoveItem, tview.List.Clear, tview.List.GetItemCount, tview.List.GetItemText, tview.List.SetItemText, tview.List.FindItems, tview.List.SetCurrentItem, tview.List.GetCurrentItem, tview.List.SetOffset, tview.List.GetOffset, tview.List.ShowSecondaryText, tview.List.SetHighlightFullLine, tview.List.SetSelectedFocusOnly, tview.List.SetWrapAround
+  rust    ratatui::widgets::List, ratatui::widgets::ListItem, List::new, List::items, List::highlight_style, List::highlight_symbol, List::highlight_spacing, List::repeat_highlight_symbol, List::direction, List::scroll_padding, List::style, List::len, List::is_empty, ratatui::widgets::ListDirection, ratatui::widgets::HighlightSpacing
+  python  textual.widgets.ListView, textual.widgets.ListItem, textual.widgets.OptionList
+  note    `ratatui`'s answers on the selection kept in view, the padding, the room for the symbol, the items from the bottom, and only the items that fit whole drawn (the first shown cut where it is taller than the area); `list_of` highlights reversed where `ratatui`'s default highlights nothing. `tview`'s secondary text is a second line of an item, and its wrap-around a `move_selection` the program wraps
+
+capability tui/selection  the selected row and column, moved, and the first row shown
+  heroes  tui.Selection, tui.selection, tui.select, tui.unselect, tui.selected_of, tui.select_first, tui.select_last, tui.move_selection, tui.select_column, tui.unselect_column, tui.selected_column_of, tui.move_column, tui.offset_of
+  go      tview.List.SetCurrentItem, tview.List.GetCurrentItem, tview.Table.Select, tview.Table.GetSelection, tview.Table.SetSelectable, tview.Table.GetSelectable
+  rust    ratatui::widgets::ListState, ratatui::widgets::TableState, ListState::select, selected, selected_mut, select_next, select_previous, select_first, select_last, scroll_down_by, scroll_up_by, offset, offset_mut, with_offset, with_selected, TableState::select_column, select_cell, selected_column, selected_cell, select_next_column, select_previous_column, select_first_column, select_last_column, scroll_left_by, scroll_right_by, with_selected_column, with_selected_cell, selected_column_mut
+  python  textual.widgets.ListView.index, textual.widgets.DataTable.cursor_coordinate, textual.widgets.DataTable.move_cursor
+  note    one selection for lists and tables; a move takes the count of rows, so it stops at the last at once, where `ratatui`'s `select_last` holds the largest number until a draw clamps it; with nothing selected, a move up selects the last as `ratatui` does
+
+capability tui/table  rows of cells in columns under a header, one row, column or cell selected
+  heroes  tui.Table, tui.Row, tui.TableCell, tui.table_of, tui.row_of, tui.draw_table
+  go      tview.Table, tview.NewTable, tview.TableCell, tview.NewTableCell, tview.Table.SetCell, tview.Table.SetCellSimple, tview.Table.GetCell, tview.Table.RemoveRow, tview.Table.RemoveColumn, tview.Table.InsertRow, tview.Table.InsertColumn, tview.Table.GetRowCount, tview.Table.GetColumnCount, tview.Table.SetFixed, tview.Table.SetBorders, tview.Table.SetSeparator, tview.Table.SetEvaluateAllRows, tview.Table.CellAt, tview.Table.SetContent, tview.TableContent, tview.TableContentReadOnly, tview.TableCell.SetExpansion, tview.TableCell.SetMaxWidth, tview.TableCell.SetAlign, tview.TableCell.SetReference, tview.TableCell.GetReference, tview.TableCell.SetTransparency, tview.TableCell.SetClickedFunc
+  rust    ratatui::widgets::Table, ratatui::widgets::Row, ratatui::widgets::Cell, Table::new, Table::rows, Table::header, Table::footer, Table::widths, Table::column_spacing, Table::flex, Table::style, Table::row_highlight_style, Table::column_highlight_style, Table::cell_highlight_style, Table::highlight_style, Table::highlight_symbol, Table::highlight_spacing, Row::new, Row::height, Row::top_margin, Row::bottom_margin, Row::style, Cell::new, Cell::style
+  python  textual.widgets.DataTable
+  note    `ratatui`'s answers on the widths, the header, its margin, the footer, the selected row, column and cell, and the rows kept in view; `row_of` makes a row as tall as its tallest cell, where `ratatui`'s rows are one row tall until told
+
+capability tui/tabs  a row of titles with one selected
+  heroes  tui.Tabs, tui.tabs_of, tui.draw_tabs
+  go      tview.Pages, tview.NewPages, tview.Pages.AddPage, tview.Pages.AddAndSwitchToPage, tview.Pages.SwitchToPage, tview.Pages.RemovePage, tview.Pages.HasPage, tview.Pages.ShowPage, tview.Pages.HidePage, tview.Pages.SendToFront, tview.Pages.SendToBack, tview.Pages.GetFrontPage, tview.Pages.GetPage, tview.Pages.GetPageCount, tview.Pages.GetPageNames, tview.Pages.SetChangedFunc
+  rust    ratatui::widgets::Tabs, Tabs::new, Tabs::titles, Tabs::select, Tabs::style, Tabs::highlight_style, Tabs::divider, Tabs::padding, Tabs::padding_left, Tabs::padding_right, Tabs::width
+  python  textual.widgets.Tabs, textual.widgets.Tab, textual.widgets.TabbedContent, textual.widgets.TabPane, textual.widgets.ContentSwitcher
+  note    pages are the program's own: it draws the page of the selected tab
+
+capability tui/gauge  a bar filled to a ratio, a label in its middle
+  heroes  tui.Gauge, tui.gauge_of, tui.draw_gauge
+  go      -
+  rust    ratatui::widgets::Gauge, Gauge::ratio, Gauge::percent, Gauge::label, Gauge::style, Gauge::gauge_style, Gauge::use_unicode
+  python  textual.widgets.ProgressBar
+  note    `ratatui`'s answers on the bar, the eighths and the label's swapped colours; where the bar runs under the cell after the label, `ratatui` left that cell blank (0.7 in 10 cells, a full gauge, 0.96 with no label), and this package fills it. A percentage is a ratio of a hundredth
+
+capability tui/line-gauge  a label and a line filled to a ratio, on one row
+  heroes  tui.LineGauge, tui.line_gauge_of, tui.draw_line_gauge
+  go      -
+  rust    ratatui::widgets::LineGauge, LineGauge::ratio, LineGauge::label, LineGauge::filled_style, LineGauge::unfilled_style, LineGauge::filled_symbol, LineGauge::unfilled_symbol, LineGauge::line_set, LineGauge::style
+  python  textual.widgets.ProgressBar
+
+capability tui/sparkline  values drawn as small bars in eighths of a cell
+  heroes  tui.Sparkline, tui.sparkline_of, tui.draw_sparkline, tui.SparklineDirection
+  go      -
+  rust    ratatui::widgets::Sparkline, ratatui::widgets::SparklineBar, Sparkline::data, Sparkline::max, Sparkline::style, Sparkline::direction, Sparkline::bar_set, ratatui::widgets::RenderDirection, ratatui::symbols::bar::Set
+  python  textual.widgets.Sparkline
+  note    a value missing from the data (`SparklineBar` with none, its absent symbol and style) is not drawn apart: the program writes a 0, or draws two sparklines
+
+capability tui/scrollbar  a track and a thumb telling how much of a content is shown
+  heroes  tui.Scrollbar, tui.scrollbar_of, tui.draw_scrollbar, tui.ScrollbarOrientation
+  go      -
+  rust    ratatui::widgets::Scrollbar, ratatui::widgets::ScrollbarState, ratatui::widgets::ScrollbarOrientation, ratatui::widgets::ScrollDirection, ratatui::symbols::scrollbar::Set, Scrollbar::new, Scrollbar::orientation, Scrollbar::thumb_symbol, Scrollbar::track_symbol, Scrollbar::begin_symbol, Scrollbar::end_symbol, Scrollbar::thumb_style, Scrollbar::track_style, Scrollbar::begin_style, Scrollbar::end_style, Scrollbar::symbols, Scrollbar::style, ScrollbarState::new, ScrollbarState::position, ScrollbarState::content_length, ScrollbarState::viewport_content_length, ScrollbarState::next, ScrollbarState::prev, ScrollbarState::first, ScrollbarState::last, ScrollbarState::scroll, ScrollbarState::get_position
+  python  textual.scrollbar.ScrollBar, textual's CSS scrollbar-size
+  note    the state is three numbers the program holds, so `ScrollbarState`'s moves are its own arithmetic
+
+capability tui/bar-chart  bars with values and labels, grouped, upright or lying
+  heroes  pending
+  go      -
+  rust    ratatui::widgets::BarChart, ratatui::widgets::Bar, ratatui::widgets::BarGroup, BarChart::data, BarChart::bar_width, BarChart::bar_gap, BarChart::group_gap, BarChart::max, BarChart::direction, BarChart::bar_style, BarChart::value_style, BarChart::label_style, BarChart::bar_set, BarChart::grouped, BarChart::horizontal, BarChart::vertical, ratatui::symbols::bar::Set
+  python  -
+
+capability tui/chart  lines and points of data sets on two axes, with a legend
+  heroes  pending
+  go      -
+  rust    ratatui::widgets::Chart, ratatui::widgets::Axis, ratatui::widgets::Dataset, ratatui::widgets::GraphType, ratatui::widgets::LegendPosition
+  python  -
+
+capability tui/canvas  shapes drawn in cells of braille dots, half blocks or characters
+  heroes  pending
+  go      tview.Image, tview.NewImage, tview.Image.SetImage, tview.Image.SetColors, tview.Image.SetDithering, tview.Image.SetAspectRatio, tview.Image.SetSize
+  rust    ratatui::widgets::canvas::Canvas, Context, Painter, Shape, Line, Rectangle, Circle, Points, FilledLine, Label, Map, MapResolution, ratatui::symbols::marker::Marker, ratatui::symbols::block::Set
+  python  -
+
+capability tui/calendar  a month drawn, days styled by the program
+  heroes  pending
+  go      -
+  rust    ratatui::widgets::calendar::Monthly, ratatui::widgets::calendar::CalendarEventStore, ratatui::widgets::calendar::DateStyler
+  python  -
+
+capability tui/input  one line of text typed, its cursor moved, drawn scrolled
+  heroes  tui.Input, tui.input_of, tui.press_input, tui.draw_input
+  go      tview.InputField, tview.NewInputField, tview.InputField.SetText, tview.InputField.GetText, tview.InputField.SetLabel, tview.InputField.SetPlaceholder, tview.InputField.SetMaskCharacter, tview.InputField.SetFieldWidth, tview.InputField.SetAcceptanceFunc, tview.InputField.SetDoneFunc, tview.InputField.SetFinishedFunc, tview.InputField.Autocomplete, tview.InputField.SetAutocompleteFunc, tview.InputField.SetAutocompletedFunc
+  rust    -
+  python  textual.widgets.Input, textual.widgets.MaskedInput
+  note    `ratatui` has none, so its answers do not judge it: the keys are GNU Readline's, a grapheme moved and taken as one; a check on what is typed is the program's, before or after `press_input`; completion is `term`'s line editor's, which draws no buffer
+
+capability tui/text-area  many lines of text edited
+  heroes  pending
+  go      tview.TextArea, tview.NewTextArea
+  rust    -
+  python  textual.widgets.TextArea
+
+capability tui/tree  a tree of nodes, folded and unfolded
+  heroes  pending
+  go      tview.TreeView, tview.NewTreeView, tview.TreeNode, tview.NewTreeNode
+  rust    -
+  python  textual.widgets.Tree, textual.widgets.DirectoryTree
+
+capability tui/form-controls  buttons, check boxes, drop-downs, radio buttons, switches and forms
+  heroes  refused: in immediate mode a control is a block or a line the program draws with its own state, and the keys it reads decide; `ratatui`, the reference, has none for that reason
+  go      tview.Button, tview.NewButton, tview.Checkbox, tview.NewCheckbox, tview.DropDown, tview.NewDropDown, tview.Form, tview.NewForm, tview.FormItem
+  rust    -
+  python  textual.widgets.Button, textual.widgets.Checkbox, textual.widgets.Switch, textual.widgets.RadioButton, textual.widgets.RadioSet, textual.widgets.Select, textual.widgets.SelectionList
+
+capability tui/modal  a dialog drawn over the screen
+  heroes  tui.centered, tui.clear
+  go      tview.Modal, tview.NewModal, tview.Modal.AddButtons, tview.Modal.ClearButtons, tview.Modal.SetText
+  rust    ratatui::widgets::Clear
+  python  textual.screen.ModalScreen, textual.App.push_screen, textual.App.pop_screen
+  note    an area centred, cleared, and a block drawn in it
+
+capability tui/application-widgets  a header, a footer of keys, a markdown viewer, a placeholder, a spinner, big digits, a tooltip, a rule, a welcome, a help panel
+  heroes  refused: each is a paragraph, a block or a line the program draws; a markdown viewer is `markdown`'s tree drawn by the program
+  go      -
+  rust    ratatui::widgets::RatatuiLogo, ratatui::widgets::RatatuiMascot, ratatui::widgets::logo::Size, ratatui::widgets::mascot::MascotEyeColor
+  python  textual.widgets.Header, textual.widgets.Footer, textual.widgets.KeyPanel, textual.widgets.HelpPanel, textual.widgets.Markdown, textual.widgets.MarkdownViewer, textual.widgets.Placeholder, textual.widgets.LoadingIndicator, textual.widgets.Digits, textual.widgets.Tooltip, textual.widgets.Rule, textual.widgets.Welcome, textual.widgets.Pretty, textual.widgets.Link, textual.widgets.Collapsible
+
+dropped
+  go      bubbletea.Model, bubbletea.Cmd, bubbletea.Batch, bubbletea.BatchMsg, bubbletea.Sequence, bubbletea.Sequentially (an Elm runtime's messages and commands, which the program's own loop is here); bubbletea.Interrupt, bubbletea.InterruptMsg (Ctrl-C is a key in the raw mode); bubbletea.LogToFile, bubbletea.LogToFileWith, bubbletea.LogOptionsSetter (`log`'s); bubbletea.ProgramOption, bubbletea.WithContext, bubbletea.WithEnvironment, bubbletea.WithFilter, bubbletea.WithFPS, bubbletea.WithInput, bubbletea.WithInputTTY, bubbletea.WithOutput, bubbletea.WithANSICompressor, bubbletea.WithoutCatchPanics, bubbletea.WithoutRenderer, bubbletea.WithoutSignalHandler, bubbletea.WithoutSignals, bubbletea.Program.Send (a runtime's settings and its message queue, which a loop that reads and draws needs none of); bubbletea.ScrollUp, bubbletea.ScrollDown, bubbletea.SyncScrollArea, bubbletea.ClearScrollArea (a renderer's scrolling regions, deprecated by bubbletea); tview.Application.SetFocus, tview.Application.GetFocus, tview.Primitive, tview.Box.Focus, tview.Box.Blur, tview.Box.HasFocus, tview.Box.SetFocusFunc, tview.Box.SetBlurFunc, tview.Application.SetRoot, tview.Application.ResizeToFullScreen, tview.Box.SetDrawFunc's subclassing (DrawForSubclass), tview.Application.SetClipboard, tview.Application.GetClipboardText (a retained tree of widgets with focus, callbacks and a root; in immediate mode the program knows which of its areas has the keys); every Set*Func of every tview widget (SetChangedFunc, SetSelectedFunc, SetDoneFunc and their kin: callbacks, which the language's functions without closures cannot carry state into)
+  rust    ratatui::backend::Backend, ratatui::backend::ClearType, ratatui::backend::FromCrossterm, ratatui::backend::IntoCrossterm (a backend behind an interface, the language having none: the terminal here is the program's own, through `term`); ratatui::style::palette::material and ::tailwind and their palettes (colour constants a program writes as `term.Color.rgb`); ratatui::style::ParseColorError and Color's `FromStr` (a colour named by text); every `Stylize` shortcut (`red`, `on_blue`, `bold`, `not_bold` and their kin on Style, Span, Line, Text and every widget: `term.with_foreground`, `term.with_background`, `term.with_attribute`); ratatui::text::Masked (a span shown masked, which `tui.Input.mask` does for the one place it is needed); assert_buffer_eq (a macro: a test compares `to_lines`); the `Clone`, `Debug`, `Default`, `Eq`, `Hash`, `From` and `Into` implementations of every type (the language copies, compares and prints values itself)
+  python  textual's DOM, CSS engine, reactive attributes, message pump, workers, command palette, themes, notifications, screens and modes, actions and bindings machinery, animation, `App.run_test`'s pilot, and `App`'s other 200 public names read by `dir()` (a retained-mode framework's machinery: here the program keeps its state, draws it and reads its keys)

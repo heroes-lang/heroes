@@ -1,0 +1,87 @@
+# What a terminal keeps between frames: the frame it shows, its size, the
+# modes it turned on, and the cursor.
+
+use term
+use tui/internal/grid
+
+# The state of a terminal held by `tui.Terminal`.
+record Screen
+    # The frame on the screen, as the last flush left it.
+    shown: grid.Grid
+    # Whether the next flush writes every cell, the screen being unknown.
+    whole: bool
+    # Columns of the screen.
+    columns: i64
+    # Rows of the screen.
+    rows: i64
+    # Whether mouse reports were asked.
+    mouse: bool
+    # Whether every motion of the mouse was asked.
+    motion: bool
+    # Whether bracketed paste was asked.
+    paste: bool
+    # Whether focus reports were asked.
+    focus: bool
+    # Whether the terminal is between `start` and `stop`, not suspended.
+    active: bool
+
+# The sequences that put the terminal in full-screen mode with the reports
+# asked.
+function entering(mouse: bool, motion: bool, paste: bool, focus: bool) -> str
+    parts: [str] @= ["\u{1b}[?1049h", term.cursor_hide(), "\u{1b}[0m", term.clear_screen()]
+
+    if mouse || motion
+        parts @ parts.push("\u{1b}[?1000h\u{1b}[?1002h")
+
+        if motion
+            parts @ parts.push("\u{1b}[?1003h")
+        parts @ parts.push("\u{1b}[?1006h")
+
+    if paste
+        parts @ parts.push("\u{1b}[?2004h")
+
+    if focus
+        parts @ parts.push("\u{1b}[?1004h")
+    return parts.join("")
+
+# The sequences that put it back: the reports off, the rendition and the
+# cursor back, the alternate screen left.
+function leaving(mouse: bool, motion: bool, paste: bool, focus: bool) -> str
+    parts: [str] @= []
+
+    if focus
+        parts @ parts.push("\u{1b}[?1004l")
+
+    if paste
+        parts @ parts.push("\u{1b}[?2004l")
+
+    if mouse || motion
+        parts @ parts.push("\u{1b}[?1006l\u{1b}[?1003l\u{1b}[?1002l\u{1b}[?1000l")
+    parts @ parts.push("\u{1b}[0m")
+    parts @ parts.push(term.cursor_show())
+    parts @ parts.push("\u{1b}[?1049l")
+    return parts.join("")
+
+# `title` with its control characters left out, as the sequence that sets
+# the window's title.
+function titled(title: str) -> str
+    kept: [str] @= []
+
+    for c in title.chars()
+        if c[0] >= 32 && c[0] != 127
+            kept @ kept.push(c)
+
+    return "\u{1b}]0;" + kept.join("") + "\u{7}"
+
+test "entering and leaving: no report, every report, the motion alone turning the mouse on"
+    assert entering(mouse: false, motion: false, paste: false, focus: false) == "\u{1b}[?1049h\u{1b}[?25l\u{1b}[0m\u{1b}[2J\u{1b}[H"
+    assert leaving(mouse: false, motion: false, paste: false, focus: false) == "\u{1b}[0m\u{1b}[?25h\u{1b}[?1049l"
+    every = entering(mouse: true, motion: true, paste: true, focus: true)
+    assert every == "\u{1b}[?1049h\u{1b}[?25l\u{1b}[0m\u{1b}[2J\u{1b}[H\u{1b}[?1000h\u{1b}[?1002h\u{1b}[?1003h\u{1b}[?1006h\u{1b}[?2004h\u{1b}[?1004h"
+    assert leaving(mouse: true, motion: true, paste: true, focus: true) == "\u{1b}[?1004l\u{1b}[?2004l\u{1b}[?1006l\u{1b}[?1003l\u{1b}[?1002l\u{1b}[?1000l\u{1b}[0m\u{1b}[?25h\u{1b}[?1049l"
+    assert entering(mouse: false, motion: true, paste: false, focus: false).len() > entering(mouse: false, motion: false, paste: false, focus: false).len()
+
+test "titled: plain, controls left out, a character of many bytes"
+    assert titled("Files") == "\u{1b}]0;Files\u{7}"
+    assert titled("a\u{7}b\u{1b}c\nd") == "\u{1b}]0;abcd\u{7}"
+    assert titled("日本") == "\u{1b}]0;日本\u{7}"

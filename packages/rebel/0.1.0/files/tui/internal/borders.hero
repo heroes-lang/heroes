@@ -1,0 +1,286 @@
+# A block's border and its titles drawn into a grid: the symbols of each
+# border type, the sides, the corners where two sides meet, and the titles of
+# an edge placed against its left, in its middle or against its right, cut
+# between its corners.
+
+use term
+use tui/internal/grid
+use tui/internal/packed
+use tui/internal/runs
+
+# A title to draw on an edge.
+record Title
+    # Its pieces.
+    pieces: [runs.Piece]
+    # Whether it stands on the bottom edge; false for the top.
+    bottom: bool
+    # `runs.LEFT`, `runs.CENTER` or `runs.RIGHT`.
+    align: i64
+
+# The symbols of border type `kind`, in the face's `BorderType` order: the
+# top-left, top-right, bottom-left and bottom-right corners, then the top,
+# bottom, left and right sides.
+function symbols_of(kind: i64) -> [str]
+    sets: [[str]] = [
+        ["┌", "┐", "└", "┘", "─", "─", "│", "│"]
+        ["╭", "╮", "╰", "╯", "─", "─", "│", "│"]
+        ["╔", "╗", "╚", "╝", "═", "═", "║", "║"]
+        ["┏", "┓", "┗", "┛", "━", "━", "┃", "┃"]
+        ["┌", "┐", "└", "┘", "╌", "╌", "╎", "╎"]
+        ["┏", "┓", "┗", "┛", "╍", "╍", "╏", "╏"]
+        ["┌", "┐", "└", "┘", "┄", "┄", "┆", "┆"]
+        ["┏", "┓", "┗", "┛", "┅", "┅", "┇", "┇"]
+        ["┌", "┐", "└", "┘", "┈", "┈", "┊", "┊"]
+        ["┏", "┓", "┗", "┛", "┉", "┉", "┋", "┋"]
+        ["▗", "▖", "▝", "▘", "▄", "▀", "▐", "▌"]
+        ["▛", "▜", "▙", "▟", "▀", "▄", "▌", "▐"]
+    ]
+    return sets[kind]
+
+# Draws the sides `top`, `right`, `bottom` and `left` of the rectangle in
+# `style`, then the corners where two drawn sides meet, the top-left last.
+function draw(@g: grid.Grid, x: i64, y: i64, width: i64, height: i64, top: bool, right: bool, bottom: bool, left: bool, kind: i64, style: i64)
+    if width <= 0 || height <= 0
+        return
+    s = symbols_of(kind)
+    last_x = x + width - 1
+    last_y = y + height - 1
+
+    if left
+        for row in range(from: y, to: y + height)
+            mark(@g, x: x, y: row, symbol: s[6], style: style)
+
+    if right
+        for row in range(from: y, to: y + height)
+            mark(@g, x: last_x, y: row, symbol: s[7], style: style)
+
+    if top
+        for column in range(from: x, to: x + width)
+            mark(@g, x: column, y: y, symbol: s[4], style: style)
+
+    if bottom
+        for column in range(from: x, to: x + width)
+            mark(@g, x: column, y: last_y, symbol: s[5], style: style)
+
+    if bottom && right
+        mark(@g, x: last_x, y: last_y, symbol: s[3], style: style)
+
+    if bottom && left
+        mark(@g, x: x, y: last_y, symbol: s[2], style: style)
+
+    if top && right
+        mark(@g, x: last_x, y: y, symbol: s[1], style: style)
+
+    if top && left
+        mark(@g, x: x, y: y, symbol: s[0], style: style)
+
+# Puts a one-cell `symbol` at `x`, `y` where it is in `g`.
+function mark(@g: grid.Grid, x: i64, y: i64, symbol: str, style: i64)
+    if grid.inside(g, x: x, y: y)
+        grid.put(@g, x: x, y: y, symbol: symbol, width: 1, style: style)
+
+# Draws `titles` on the top and bottom edges of the rectangle, between its
+# corners where `left` and `right` have a border, each piece in its style
+# laid over `title_style`. On each edge the right-aligned titles take their
+# room first, the left-aligned ones are cut where those begin, and the
+# centred ones stand in the middle, cut on both sides where they are wider.
+function draw_titles(@g: grid.Grid, x: i64, y: i64, width: i64, height: i64, left: bool, right: bool, titles: [Title], title_style: i64)
+    if width <= 0 || height <= 0
+        return
+
+    begin = if left
+        x + 1
+    else
+        x
+
+    end = if right
+        x + width - 1
+    else
+        x + width
+
+    if end <= begin
+        return
+
+    for on_bottom in [false, true]
+        row = if on_bottom
+            y + height - 1
+        else
+            y
+        edge: [Title] @= []
+
+        for t in titles
+            if t.bottom == on_bottom
+                edge @ edge.push(styled(t, under: title_style))
+
+        place_edge(@g, row: row, begin: begin, end: end, titles: edge)
+
+# `t` with each piece's style laid over `under`.
+function styled(t: Title, under: i64) -> Title
+    pieces: [runs.Piece] @= []
+
+    for p in t.pieces
+        pieces @ pieces.push(
+            runs.Piece(symbol: p.symbol, width: p.width, style: packed.over(under: under, top: p.style))
+        )
+
+    return Title(pieces: pieces, bottom: t.bottom, align: t.align)
+
+# The cells the titles of `align` take side by side, a cell apart.
+function group_width(titles: [Title] lent, align: i64) -> i64
+    total @= 0
+    count @= 0
+
+    for t in titles
+        if t.align == align
+            total @ total + runs.width_of(t.pieces)
+            count @ count + 1
+
+    if count == 0
+        return 0
+    return total + count - 1
+
+# Draws one edge's titles in row `row`, from column `begin` to `end`.
+function place_edge(@g: grid.Grid, row: i64, begin: i64, end: i64, titles: [Title] lent)
+    room = end - begin
+    right_width = group_width(titles, align: runs.RIGHT)
+    center_width = group_width(titles, align: runs.CENTER)
+
+    right_start = if right_width > room
+        begin
+    else
+        end - right_width
+
+    center_start @= if center_width > room
+        begin - (center_width - room) / 2
+    else
+        begin + (room - center_width + 1) / 2
+
+    for t in titles
+        if t.align == runs.CENTER
+            span(@g, row: row, at: center_start, begin: begin, end: end, pieces: t.pieces)
+            center_start @ center_start + runs.width_of(t.pieces) + 1
+
+    left_end = if right_width > 0
+        right_start
+    else
+        end
+    left_at @= begin
+
+    for t in titles
+        if t.align == runs.LEFT
+            span(@g, row: row, at: left_at, begin: begin, end: left_end, pieces: t.pieces)
+            left_at @ left_at + runs.width_of(t.pieces) + 1
+
+    right_at @= end - right_width
+
+    for t in titles
+        if t.align == runs.RIGHT
+            span(@g, row: row, at: right_at, begin: begin, end: end, pieces: t.pieces)
+            right_at @ right_at + runs.width_of(t.pieces) + 1
+
+# Draws `pieces` from column `at`, its part left of `begin` cut away and its
+# part from `end` on not drawn.
+function span(@g: grid.Grid, row: i64, at: i64, begin: i64, end: i64, pieces: [runs.Piece] lent)
+    if at >= end
+        return
+
+    if at < begin
+        _ = runs.place(@g, x: begin, y: row, pieces: runs.cut(pieces, columns: begin - at), limit: end)
+    else
+        _ = runs.place(@g, x: at, y: row, pieces: pieces, limit: end)
+
+## Tests
+
+# A title of `text`, plain, on the top or the bottom edge, against `align`.
+function title_of(text: str, bottom: bool, align: i64) -> Title
+    plain = term.plain()
+    return Title(
+        pieces: runs.pieces_of([runs.Run(text: text, style: plain)], line_style: plain),
+        bottom: bottom,
+        align: align
+    )
+
+# The rows of a block `width` by `height` of border type `kind` with the
+# sides asked and `ts` on its edges.
+function boxed(width: i64, height: i64, kind: i64, sides: [bool], ts: [Title]) -> [str]
+    g @= grid.new(x: 0, y: 0, width: width, height: height)
+    draw(
+        @g,
+        x: 0,
+        y: 0,
+        width: width,
+        height: height,
+        top: sides[0],
+        right: sides[1],
+        bottom: sides[2],
+        left: sides[3],
+        kind: kind,
+        style: 0
+    )
+    draw_titles(
+        @g,
+        x: 0,
+        y: 0,
+        width: width,
+        height: height,
+        left: sides[3],
+        right: sides[1],
+        titles: ts,
+        title_style: 0
+    )
+    out: [str] @= []
+
+    for row in range(from: 0, to: height)
+        out @ out.push(grid.row_text(g, row: row))
+
+    return out
+
+# Every drawing below is what `ratatui` 0.30.2's `Block` drew for the same
+# block, run 2026-11-18, but where a test says otherwise.
+
+test "draw: every border type as ratatui draws it"
+    every_side = [true, true, true, true]
+    assert boxed(width: 6, height: 3, kind: 0, sides: every_side, ts: []) == ["┌────┐", "│    │", "└────┘"]
+    assert boxed(width: 6, height: 3, kind: 1, sides: every_side, ts: []) == ["╭────╮", "│    │", "╰────╯"]
+    assert boxed(width: 6, height: 3, kind: 2, sides: every_side, ts: []) == ["╔════╗", "║    ║", "╚════╝"]
+    assert boxed(width: 6, height: 3, kind: 3, sides: every_side, ts: []) == ["┏━━━━┓", "┃    ┃", "┗━━━━┛"]
+    assert boxed(width: 6, height: 3, kind: 4, sides: every_side, ts: []) == ["┌╌╌╌╌┐", "╎    ╎", "└╌╌╌╌┘"]
+    assert boxed(width: 6, height: 3, kind: 5, sides: every_side, ts: []) == ["┏╍╍╍╍┓", "╏    ╏", "┗╍╍╍╍┛"]
+    assert boxed(width: 6, height: 3, kind: 6, sides: every_side, ts: []) == ["┌┄┄┄┄┐", "┆    ┆", "└┄┄┄┄┘"]
+    assert boxed(width: 6, height: 3, kind: 7, sides: every_side, ts: []) == ["┏┅┅┅┅┓", "┇    ┇", "┗┅┅┅┅┛"]
+    assert boxed(width: 6, height: 3, kind: 8, sides: every_side, ts: []) == ["┌┈┈┈┈┐", "┊    ┊", "└┈┈┈┈┘"]
+    assert boxed(width: 6, height: 3, kind: 9, sides: every_side, ts: []) == ["┏┉┉┉┉┓", "┋    ┋", "┗┉┉┉┉┛"]
+    assert boxed(width: 6, height: 3, kind: 10, sides: every_side, ts: []) == ["▗▄▄▄▄▖", "▐    ▌", "▝▀▀▀▀▘"]
+    assert boxed(width: 6, height: 3, kind: 11, sides: every_side, ts: []) == ["▛▀▀▀▀▜", "▌    ▐", "▙▄▄▄▄▟"]
+
+test "draw: one cell, two by two, one row high, no cell, some sides"
+    every_side = [true, true, true, true]
+    assert boxed(width: 1, height: 1, kind: 0, sides: every_side, ts: []) == ["┌"]
+    assert boxed(width: 2, height: 2, kind: 0, sides: every_side, ts: []) == ["┌┐", "└┘"]
+    assert boxed(width: 5, height: 1, kind: 0, sides: every_side, ts: [title_of("X", bottom: false, align: runs.LEFT)]) == ["┌X──┐"]
+    assert boxed(width: 0, height: 3, kind: 0, sides: every_side, ts: []) == ["", "", ""]
+    assert boxed(width: 6, height: 3, kind: 0, sides: [true, false, true, false], ts: [title_of("T", bottom: false, align: runs.LEFT)]) == ["T─────", "      ", "──────"]
+    assert boxed(width: 6, height: 3, kind: 0, sides: [false, true, false, true], ts: [title_of("T", bottom: false, align: runs.LEFT)]) == ["│T   │", "│    │", "│    │"]
+    assert boxed(width: 6, height: 2, kind: 0, sides: [false, false, false, false], ts: [title_of("T", bottom: false, align: runs.LEFT)]) == ["T     ", "      "]
+
+test "titles: left, two left a cell apart, centre and right, bottom, a wide title"
+    every_side = [true, true, true, true]
+    assert boxed(width: 10, height: 3, kind: 0, sides: every_side, ts: [title_of("Title", bottom: false, align: runs.LEFT)])[0] == "┌Title───┐"
+    two = [title_of("One", bottom: false, align: runs.LEFT), title_of("Two", bottom: false, align: runs.LEFT)]
+    assert boxed(width: 14, height: 3, kind: 0, sides: every_side, ts: two)[0] == "┌One─Two─────┐"
+    sides = [title_of("C", bottom: false, align: runs.CENTER), title_of("R", bottom: false, align: runs.RIGHT)]
+    assert boxed(width: 11, height: 3, kind: 0, sides: every_side, ts: sides)[0] == "┌────C───R┐"
+    both = [title_of("Bot", bottom: true, align: runs.LEFT), title_of("Top", bottom: false, align: runs.LEFT)]
+    assert boxed(width: 10, height: 3, kind: 0, sides: every_side, ts: both) == ["┌Top─────┐", "│        │", "└Bot─────┘"]
+    assert boxed(width: 8, height: 3, kind: 0, sides: every_side, ts: [title_of("日本", bottom: false, align: runs.LEFT)])[0] == "┌日本──┐"
+
+test "titles: cut between the corners, a right title cut from its left, the left cut where the right begins"
+    every_side = [true, true, true, true]
+    assert boxed(width: 8, height: 3, kind: 0, sides: every_side, ts: [title_of("A very long title", bottom: false, align: runs.LEFT)])[0] == "┌A very┐"
+    assert boxed(width: 8, height: 3, kind: 0, sides: every_side, ts: [title_of("Long title", bottom: false, align: runs.RIGHT)])[0] == "┌ title┐"
+    pair = [title_of("Left side", bottom: false, align: runs.LEFT), title_of("Right", bottom: false, align: runs.RIGHT)]
+    assert boxed(width: 12, height: 3, kind: 0, sides: every_side, ts: pair)[0] == "┌Left Right┐"
+
+test "titles: a centred title wider than its edge cut on both sides, where ratatui showed its end"
+    every_side = [true, true, true, true]
+    assert boxed(width: 8, height: 3, kind: 0, sides: every_side, ts: [title_of("Long title", bottom: false, align: runs.CENTER)])[0] == "┌ng tit┐"

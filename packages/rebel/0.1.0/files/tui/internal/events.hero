@@ -1,0 +1,267 @@
+# What the bytes of a key `term` could not name mean to a full-screen
+# program: a mouse report in SGR's form (mode 1006), the focus gained or
+# lost, the start or the end of a bracketed paste; and a key turned back into
+# the text it typed, for a paste.
+
+use term
+
+# Not one of ours: a key.
+constant KEY: i64
+    0
+
+# A mouse report.
+constant MOUSE: i64
+    1
+
+# The focus gained.
+constant FOCUS_IN: i64
+    2
+
+# The focus lost.
+constant FOCUS_OUT: i64
+    3
+
+# A paste begins.
+constant PASTE_START: i64
+    4
+
+# A paste ends.
+constant PASTE_END: i64
+    5
+
+# What the mouse did, as the face's `MouseAction` orders it: a press.
+constant PRESS: i64
+    0
+
+# A release.
+constant RELEASE: i64
+    1
+
+# A move with a button held.
+constant DRAG: i64
+    2
+
+# A move with none held.
+constant MOTION: i64
+    3
+
+# The wheel up; down, left and right follow.
+constant SCROLL_UP: i64
+    4
+
+# What some bytes meant.
+record Decoded
+    # `KEY` to `PASTE_END`.
+    kind: i64
+    # For a mouse report: `PRESS` to `SCROLL_UP` plus 3.
+    action: i64
+    # 0 for none, 1 left, 2 middle, 3 right.
+    button: i64
+    # The column, from 0.
+    x: i64
+    # The row, from 0.
+    y: i64
+    # Whether Shift was held.
+    shift: bool
+    # Whether Alt was held.
+    alt: bool
+    # Whether Control was held.
+    control: bool
+
+# Bytes of the kind `kind` and no mouse.
+function plain(kind: i64) -> Decoded
+    return Decoded(kind: kind, action: 0, button: 0, x: 0, y: 0, shift: false, alt: false, control: false)
+
+# What `bytes`, one key's, mean.
+function decode(bytes: [u8]) -> Decoded
+    if bytes == [27, '[', 'I']
+        return plain(FOCUS_IN)
+
+    if bytes == [27, '[', 'O']
+        return plain(FOCUS_OUT)
+
+    if bytes == [27, '[', '2', '0', '0', '~']
+        return plain(PASTE_START)
+
+    if bytes == [27, '[', '2', '0', '1', '~']
+        return plain(PASTE_END)
+
+    if bytes.len() >= 9 && bytes[0] == 27 && bytes[1] == '[' && bytes[2] == '<'
+        return mouse(bytes)
+    return plain(KEY)
+
+# A mouse report `ESC [ < b ; x ; y M` (or `m` for a release), or a key
+# where the bytes are not one.
+function mouse(bytes: [u8]) -> Decoded
+    last = bytes[bytes.len() - 1]
+
+    if last != 'M' && last != 'm'
+        return plain(KEY)
+    numbers: [i64] @= []
+    value @= 0
+    digits @= 0
+
+    for i in range(from: 3, to: bytes.len() - 1)
+        c = bytes[i]
+
+        if c == ';'
+            if digits == 0
+                return plain(KEY)
+            numbers @ numbers.push(value)
+            value @ 0
+            digits @ 0
+        else if c >= '0' && c <= '9' && digits < 6
+            value @ value * 10 + to_i64(c - '0').must()
+            digits @ digits + 1
+        else
+            return plain(KEY)
+
+    if digits == 0 || numbers.len() != 2 || numbers[1] < 1 || value < 1
+        return plain(KEY)
+    b = numbers[0]
+    low = b & 3
+
+    action = if b & 64 != 0
+        SCROLL_UP + low
+    else if b & 32 != 0
+        if low == 3
+            MOTION
+        else
+            DRAG
+    else if last == 'm'
+        RELEASE
+    else
+        PRESS
+
+    button = if b & 64 != 0 || low == 3
+        0
+    else
+        low + 1
+    return Decoded(
+        kind: MOUSE,
+        action: action,
+        button: button,
+        x: numbers[1] - 1,
+        y: value - 1,
+        shift: b & 4 != 0,
+        alt: b & 8 != 0,
+        control: b & 16 != 0
+    )
+
+# The text `k` typed, inside a paste: a character as itself, Enter as a line
+# feed, Tab as a tab, a control letter as its byte, Escape and a sequence
+# named nowhere as their bytes where they are UTF-8; nothing for the rest.
+function text_of(k: term.Key) -> str
+    return match k
+        .character c => c.text
+        .enter => "\n"
+        .tab => "\t"
+        .escape => "\u{1b}"
+        .backspace => "\u{7f}"
+        .control c => control_byte(c.letter)
+        .other o => bytes_text(o.bytes)
+        .up | .down | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete => ""
+        .function_key _ => ""
+
+# The byte Ctrl and `letter` send, as text.
+function control_byte(letter: str) -> str
+    if letter.len() != 1 || letter[0] < 'a' || letter[0] > 'z'
+        return ""
+    code = to_i64(letter[0] - 'a').must() + 1
+    names = [
+        "\u{1}"
+        "\u{2}"
+        "\u{3}"
+        "\u{4}"
+        "\u{5}"
+        "\u{6}"
+        "\u{7}"
+        "\u{8}"
+        "\t"
+        "\n"
+        "\u{b}"
+        "\u{c}"
+        "\r"
+        "\u{e}"
+        "\u{f}"
+        "\u{10}"
+        "\u{11}"
+        "\u{12}"
+        "\u{13}"
+        "\u{14}"
+        "\u{15}"
+        "\u{16}"
+        "\u{17}"
+        "\u{18}"
+        "\u{19}"
+        "\u{1a}"
+    ]
+    return names[code - 1]
+
+# `bytes` as text where they are UTF-8, else nothing.
+function bytes_text(bytes: [u8]) -> str
+    parts: [str] @= []
+
+    for b in bytes
+        if b >= 128
+            return ""
+        parts @ parts.push(ascii_of(b))
+
+    return parts.join("")
+
+# The ASCII byte `b` as text.
+function ascii_of(b: u8) -> str
+    if b == 27
+        return "\u{1b}"
+
+    if b >= 32 && b < 127
+        printable = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+        at = to_i64(b - 32).must()
+        return printable.slice(from: at, to: at + 1)
+    return ""
+
+## Tests
+
+test "decode: focus, paste's two marks, a key's bytes"
+    assert decode([27, '[', 'I']).kind == FOCUS_IN
+    assert decode([27, '[', 'O']).kind == FOCUS_OUT
+    assert decode([27, '[', '2', '0', '0', '~']).kind == PASTE_START
+    assert decode([27, '[', '2', '0', '1', '~']).kind == PASTE_END
+    assert decode([27, '[', '1', ';', '5', 'A']).kind == KEY
+    assert decode([]).kind == KEY
+
+test "decode: a click and its release, a drag, a move, the wheel's four ways, the modifiers, places from 1"
+    press = decode([27, '[', '<', '0', ';', '1', '0', ';', '5', 'M'])
+    assert press.kind == MOUSE && press.action == PRESS && press.button == 1 && press.x == 9 && press.y == 4
+    release = decode([27, '[', '<', '2', ';', '1', ';', '1', 'm'])
+    assert release.action == RELEASE && release.button == 3 && release.x == 0 && release.y == 0
+    drag = decode([27, '[', '<', '3', '3', ';', '2', ';', '3', 'M'])
+    assert drag.action == DRAG && drag.button == 2
+    moved = decode([27, '[', '<', '3', '5', ';', '2', ';', '3', 'M'])
+    assert moved.action == MOTION && moved.button == 0
+    assert decode([27, '[', '<', '6', '4', ';', '1', ';', '1', 'M']).action == SCROLL_UP
+    assert decode([27, '[', '<', '6', '5', ';', '1', ';', '1', 'M']).action == SCROLL_UP + 1
+    assert decode([27, '[', '<', '6', '6', ';', '1', ';', '1', 'M']).action == SCROLL_UP + 2
+    assert decode([27, '[', '<', '6', '7', ';', '1', ';', '1', 'M']).action == SCROLL_UP + 3
+    held = decode([27, '[', '<', '2', '8', ';', '1', ';', '1', 'M'])
+    assert held.shift && held.alt && held.control && held.button == 1
+    far = decode([27, '[', '<', '0', ';', '3', '0', '0', ';', '2', '0', '0', 'M'])
+    assert far.x == 299 && far.y == 199
+
+test "decode: broken reports are keys: no digits, a zero place, a stray byte, too many digits, the wrong end"
+    assert decode([27, '[', '<', ';', '1', ';', '1', 'M']).kind == KEY
+    assert decode([27, '[', '<', '0', ';', '0', ';', '1', 'M']).kind == KEY
+    assert decode([27, '[', '<', '0', ';', 'x', ';', '1', 'M']).kind == KEY
+    assert decode([27, '[', '<', '0', ';', '1', '2', '3', '4', '5', '6', '7', ';', '1', 'M']).kind == KEY
+    assert decode([27, '[', '<', '0', ';', '1', ';', '1', 'X']).kind == KEY
+    assert decode([27, '[', '<', '0', ';', '1', ';', '1', ';', '1', 'M']).kind == KEY
+
+test "text_of: a character, Enter, Tab, a control letter, bytes, a key with no text"
+    assert text_of(.character(text: "é")) == "é"
+    assert text_of(.enter) == "\n"
+    assert text_of(.tab) == "\t"
+    assert text_of(.control(letter: "a")) == "\u{1}"
+    assert text_of(.control(letter: "z")) == "\u{1a}"
+    assert text_of(.other(bytes: [27, '[', '9', '9', '~'])) == "\u{1b}[99~"
+    assert text_of(.other(bytes: [255])) == ""
+    assert text_of(.up) == ""

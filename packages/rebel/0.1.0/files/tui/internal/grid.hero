@@ -1,0 +1,349 @@
+# The cells of a buffer: a grid of symbols and their styles, row by row, and
+# what writes into it. A style is held packed in one `i64` (`packed`), so a
+# grid of a whole screen is two flat lists and a diff compares numbers. A
+# cell covered by the wide character to its left holds the empty symbol, and
+# no write leaves half of a wide character standing.
+
+use tui/internal/packed
+use unicode/segment
+
+# A rectangle of cells, row by row from the top-left.
+record Grid
+    # The column of the left edge, from 0.
+    x: i64
+    # The row of the top edge, from 0.
+    y: i64
+    # Columns, 0 or more.
+    width: i64
+    # Rows, 0 or more.
+    height: i64
+    # The symbol of each cell, `width` times `height` of them: a grapheme, " "
+    # for a blank cell, "" for a cell a wide character covers.
+    symbols: [str]
+    # The packed style of each cell, as `packed` packs it.
+    styles: [i64]
+
+# A grid of blank, plain cells; a width or a height below 0 is taken as 0.
+function new(x: i64, y: i64, width: i64, height: i64) -> Grid
+    w = if width < 0
+        0
+    else
+        width
+
+    h = if height < 0
+        0
+    else
+        height
+    symbols: [str] @= []
+    styles: [i64] @= []
+
+    for _ in range(from: 0, to: w * h)
+        symbols @ symbols.push(" ")
+        styles @ styles.push(packed.PLAIN)
+
+    return Grid(x: x, y: y, width: w, height: h, symbols: symbols, styles: styles)
+
+# Whether the cell at column `x`, row `y` is in `g`.
+function inside(g: Grid lent, x: i64, y: i64) -> bool
+    return x >= g.x && x < g.x + g.width && y >= g.y && y < g.y + g.height
+
+# The index of the cell at column `x`, row `y`, which is in `g`.
+function index_of(g: Grid lent, x: i64, y: i64) -> i64
+    return (y - g.y) * g.width + (x - g.x)
+
+# Makes the cell at index `i` free to be written: where a wide character
+# covers it, or it is a wide character covering others, that character
+# becomes blank cells.
+function release(@g: Grid, i: i64)
+    row_start = i - i % g.width
+    row_end = row_start + g.width
+
+    if g.symbols[i] == ""
+        lead @= i - 1
+
+        while lead >= row_start && g.symbols[lead] == ""
+            lead @ lead - 1
+
+        if lead >= row_start
+            g.symbols[lead] @ " "
+        blank_covered(@g, from: lead + 1, row_end: row_end)
+    else if i + 1 < row_end && g.symbols[i + 1] == ""
+        blank_covered(@g, from: i + 1, row_end: row_end)
+
+# Turns the covered cells from `from` on, up to the first that is not
+# covered or `row_end`, into blank cells.
+function blank_covered(@g: Grid, from: i64, row_end: i64)
+    at @= from
+
+    while at < row_end && g.symbols[at] == ""
+        g.symbols[at] @ " "
+        at @ at + 1
+
+# Puts `symbol`, `width` cells wide, at column `x`, row `y`, with `style`
+# laid over the cell's, the cells it covers holding "": the caller has
+# checked that all of them are in `g`.
+function put(@g: Grid, x: i64, y: i64, symbol: str, width: i64, style: i64)
+    i = index_of(g, x: x, y: y)
+
+    for k in range(from: 0, to: width)
+        release(@g, i: i + k)
+
+    laid = packed.over(under: g.styles[i], top: style)
+    g.symbols[i] @ symbol
+    g.styles[i] @ laid
+
+    for k in range(from: 1, to: width)
+        g.symbols[i + k] @ ""
+        g.styles[i + k] @ laid
+
+# Whether every byte of `s` is printable ASCII, so each byte is one cell.
+function is_plain_ascii(s: str) -> bool
+    for i in range(from: 0, to: s.len())
+        if s[i] < 32 || s[i] > 126
+            return false
+
+    return true
+
+# Draws `text` at row `y` from column `x`, in `style`, up to column `limit`
+# (not included) and the grid's right edge, and answers the column after the
+# last cell drawn. A grapheme of no width is skipped; one that would cross
+# the limit ends the drawing; one left of the grid's left edge takes its
+# columns and is not drawn.
+function draw(@g: Grid, x: i64, y: i64, text: str, style: i64, limit: i64) -> i64
+    if y < g.y || y >= g.y + g.height
+        return x
+    right = g.x + g.width
+
+    end = if limit < right
+        limit
+    else
+        right
+    column @= x
+
+    if is_plain_ascii(text)
+        for i in range(from: 0, to: text.len())
+            if column + 1 > end
+                return column
+
+            if column >= g.x
+                put(@g, x: column, y: y, symbol: text.slice(from: i, to: i + 1), width: 1, style: style)
+            column @ column + 1
+
+        return column
+
+    for piece in segment.graphemes(text)
+        w = segment.width_of(piece)
+
+        if w > 0
+            if column + w > end
+                return column
+
+            if column >= g.x
+                put(@g, x: column, y: y, symbol: piece, width: w, style: style)
+            column @ column + w
+
+    return column
+
+# The part of the rectangle at `x`, `y`, `width` by `height` that is in `g`,
+# as its first and last columns and rows plus one: [left, top, right, bottom].
+function clipped(g: Grid lent, x: i64, y: i64, width: i64, height: i64) -> [i64]
+    left = if x > g.x
+        x
+    else
+        g.x
+
+    top = if y > g.y
+        y
+    else
+        g.y
+    right_wanted = x + width
+
+    right = if right_wanted < g.x + g.width
+        right_wanted
+    else
+        g.x + g.width
+    bottom_wanted = y + height
+
+    bottom = if bottom_wanted < g.y + g.height
+        bottom_wanted
+    else
+        g.y + g.height
+    return [left, top, right, bottom]
+
+# Lays `style` over every cell of the rectangle in `g`.
+function patch(@g: Grid, x: i64, y: i64, width: i64, height: i64, style: i64)
+    if style == packed.PLAIN
+        return
+    c = clipped(g, x: x, y: y, width: width, height: height)
+
+    for row in range(from: c[1], to: c[3])
+        for column in range(from: c[0], to: c[2])
+            i = index_of(g, x: column, y: row)
+            g.styles[i] @ packed.over(under: g.styles[i], top: style)
+
+# Puts `symbol`, one cell wide, in every cell of the rectangle in `g`, with
+# `style` laid over each.
+function fill(@g: Grid, x: i64, y: i64, width: i64, height: i64, symbol: str, style: i64)
+    c = clipped(g, x: x, y: y, width: width, height: height)
+
+    for row in range(from: c[1], to: c[3])
+        for column in range(from: c[0], to: c[2])
+            put(@g, x: column, y: row, symbol: symbol, width: 1, style: style)
+
+# Puts every cell of the rectangle in `g` back to blank and plain.
+function clear(@g: Grid, x: i64, y: i64, width: i64, height: i64)
+    c = clipped(g, x: x, y: y, width: width, height: height)
+
+    for row in range(from: c[1], to: c[3])
+        for column in range(from: c[0], to: c[2])
+            i = index_of(g, x: column, y: row)
+            release(@g, i: i)
+            g.symbols[i] @ " "
+            g.styles[i] @ packed.PLAIN
+
+# Sets the style of the cell at `x`, `y` to `style` exactly, where it is in
+# `g`, the cells its character covers too.
+function restyle(@g: Grid, x: i64, y: i64, style: i64)
+    if !inside(g, x: x, y: y)
+        return
+    i = index_of(g, x: x, y: y)
+    g.styles[i] @ style
+    row_end = i - i % g.width + g.width
+    at @= i + 1
+
+    while at < row_end && g.symbols[at] == ""
+        g.styles[at] @ style
+        at @ at + 1
+
+# The symbols of row `row` of `g`, from its top, joined: a wide character once
+# for its cells.
+function row_text(g: Grid lent, row: i64) -> str
+    parts: [str] @= []
+    start = row * g.width
+
+    for i in range(from: start, to: start + g.width)
+        parts @ parts.push(g.symbols[i])
+
+    return parts.join("")
+
+# How many cells the character at index `i` takes: 1 and the covered cells
+# after it in its row.
+function width_at(g: Grid lent, i: i64) -> i64
+    row_end = i - i % g.width + g.width
+    at @= i + 1
+
+    while at < row_end && g.symbols[at] == ""
+        at @ at + 1
+
+    return at - i
+
+# Copies every cell of `from` into `g` where the two meet. A wide character
+# whose cells do not all land in `g`, and a covered cell whose character does
+# not, are copied as blank cells.
+function copy(@g: Grid, from: Grid lent)
+    c = clipped(g, x: from.x, y: from.y, width: from.width, height: from.height)
+
+    for row in range(from: c[1], to: c[3])
+        column @= c[0]
+
+        while column < c[2]
+            source = index_of(from, x: column, y: row)
+            symbol = from.symbols[source]
+            style = from.styles[source]
+
+            w = if symbol == ""
+                1
+            else
+                width_at(from, i: source)
+
+            if symbol == "" || column + w > c[2]
+                put(@g, x: column, y: row, symbol: " ", width: 1, style: packed.PLAIN)
+                target = index_of(g, x: column, y: row)
+                g.styles[target] @ style
+                column @ column + 1
+            else
+                target = index_of(g, x: column, y: row)
+
+                for k in range(from: 0, to: w)
+                    release(@g, i: target + k)
+
+                g.symbols[target] @ symbol
+                g.styles[target] @ style
+
+                for k in range(from: 1, to: w)
+                    g.symbols[target + k] @ ""
+                    g.styles[target + k] @ style
+
+                column @ column + w
+
+## Tests
+
+test "new: a negative size holds no cell, and every cell begins blank and plain"
+    assert new(x: 0, y: 0, width: -3, height: 2).symbols == []
+    g = new(x: 2, y: 1, width: 3, height: 2)
+    assert g.symbols == [" ", " ", " ", " ", " ", " "] && g.styles == [0, 0, 0, 0, 0, 0]
+    assert inside(g, x: 2, y: 1) && inside(g, x: 4, y: 2) && !inside(g, x: 5, y: 1) && !inside(g, x: 2, y: 3)
+
+test "text: ASCII, a wide character, the limit, the edge, controls and marks"
+    g @= new(x: 0, y: 0, width: 6, height: 1)
+    assert draw(@g, x: 0, y: 0, text: "ab", style: 0, limit: 6) == 2
+    assert draw(@g, x: 2, y: 0, text: "日x", style: 0, limit: 6) == 5
+    assert row_text(g, row: 0) == "ab日x "
+    assert g.symbols[3] == ""
+    assert draw(@g, x: 5, y: 0, text: "本", style: 0, limit: 6) == 5
+    assert row_text(g, row: 0) == "ab日x "
+    assert draw(@g, x: 4, y: 0, text: "本", style: 0, limit: 6) == 6
+    assert row_text(g, row: 0) == "ab日本"
+    assert draw(@g, x: 0, y: 0, text: "a\tb\u{1}c\u{7f}d", style: 0, limit: 3) == 3
+    assert row_text(g, row: 0) == "abc 本"
+    assert draw(@g, x: 0, y: 5, text: "zz", style: 0, limit: 6) == 0
+    accent = "é"
+    h @= new(x: 0, y: 0, width: 3, height: 1)
+    assert draw(@h, x: 0, y: 0, text: accent + "x", style: 0, limit: 3) == 2
+    assert h.symbols[0] == accent
+
+test "text: drawing over half of a wide character blanks its other half, left and right"
+    g @= new(x: 0, y: 0, width: 4, height: 1)
+    _ = draw(@g, x: 0, y: 0, text: "日本", style: 0, limit: 4)
+    _ = draw(@g, x: 1, y: 0, text: "x", style: 0, limit: 4)
+    assert g.symbols == [" ", "x", "本", ""]
+    _ = draw(@g, x: 2, y: 0, text: "y", style: 0, limit: 4)
+    assert g.symbols == [" ", "x", "y", " "]
+    _ = draw(@g, x: 1, y: 0, text: "日", style: 0, limit: 4)
+    assert g.symbols == [" ", "日", "", " "]
+    _ = draw(@g, x: 0, y: 0, text: "本", style: 0, limit: 4)
+    assert g.symbols == ["本", "", " ", " "]
+
+test "text: a start left of the grid takes its columns and draws what lands inside"
+    g @= new(x: 2, y: 0, width: 3, height: 1)
+    assert draw(@g, x: 0, y: 0, text: "abcdef", style: 0, limit: 10) == 5
+    assert row_text(g, row: 0) == "cde"
+    h @= new(x: 1, y: 0, width: 3, height: 1)
+    _ = draw(@h, x: 0, y: 0, text: "日ab", style: 0, limit: 10)
+    assert row_text(h, row: 0) == " ab"
+
+test "patch, fill, clear, restyle: clipped to the grid, a plain patch changes nothing"
+    g @= new(x: 0, y: 0, width: 3, height: 2)
+    patch(@g, x: -1, y: 1, width: 2, height: 5, style: 7)
+    assert g.styles == [0, 0, 0, 7, 0, 0]
+    fill(@g, x: 1, y: 0, width: 9, height: 1, symbol: "#", style: 0)
+    assert row_text(g, row: 0) == " ##"
+    clear(@g, x: 0, y: 0, width: 3, height: 2)
+    assert g.styles == [0, 0, 0, 0, 0, 0] && row_text(g, row: 0) == "   "
+    _ = draw(@g, x: 0, y: 1, text: "日", style: 0, limit: 3)
+    restyle(@g, x: 0, y: 1, style: 9)
+    assert g.styles[3] == 9 && g.styles[4] == 9 && g.styles[5] == 0
+    restyle(@g, x: 7, y: 7, style: 9)
+
+test "copy: where two grids meet, a wide character cut at the edge copied blank"
+    g @= new(x: 0, y: 0, width: 4, height: 1)
+    from @= new(x: 2, y: 0, width: 4, height: 1)
+    _ = draw(@from, x: 2, y: 0, text: "a日b", style: 3, limit: 9)
+    copy(g: @g, from: from)
+    assert g.symbols == [" ", " ", "a", " "]
+    assert g.styles == [0, 0, 3, 3]
+    left @= new(x: 0, y: 0, width: 3, height: 1)
+    _ = draw(@left, x: 0, y: 0, text: "日x", style: 0, limit: 3)
+    right @= new(x: 1, y: 0, width: 3, height: 1)
+    copy(g: @right, from: left)
+    assert right.symbols == [" ", "x", " "]

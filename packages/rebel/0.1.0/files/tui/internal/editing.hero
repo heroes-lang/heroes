@@ -1,0 +1,185 @@
+# One line of text edited by keys: the cursor a byte index at a grapheme's
+# start, moved and deleting by whole graphemes, and the line drawn masked or
+# not with the cursor's column counted in cells.
+
+use term
+use tui/internal/runs
+use unicode/segment
+
+# The text and the cursor.
+record Edit
+    # The text.
+    text: str
+    # The cursor, a byte index at a grapheme's start.
+    cursor: i64
+
+# `cursor` moved inside `text` and to the start of its grapheme.
+function settled(text: str, cursor: i64) -> i64
+    if cursor <= 0
+        return 0
+
+    if cursor >= text.len()
+        return text.len()
+    best @= 0
+
+    for b in segment.grapheme_boundaries(text)
+        if b <= cursor
+            best @ b
+
+    return best
+
+# Whether the grapheme of `text` from `from` to `to` is white space.
+function is_blank(text: str, from: i64, to: i64) -> bool
+    piece = text.slice(from: from, to: to)
+    return piece == " " || piece == "\t"
+
+# Does `key` to `e`: answers whether its text or its cursor changed.
+function press(@e: Edit, key: term.Key) -> bool
+    before = e
+    e.cursor @ settled(e.text, cursor: e.cursor)
+    s = e.text
+    at = e.cursor
+
+    back = if at > 0
+        segment.previous_grapheme_boundary(s: s, at: at)
+    else
+        0
+
+    forth = if at < s.len()
+        segment.next_grapheme_boundary(s: s, at: at)
+    else
+        s.len()
+
+    match key
+        .character c =>
+            e.text @ s.slice(from: 0, to: at) + c.text + s.slice(from: at, to: s.len())
+            e.cursor @ settled(e.text, cursor: at + c.text.len())
+        .left =>
+            e.cursor @ back
+        .right =>
+            e.cursor @ forth
+        .home =>
+            e.cursor @ 0
+        .end =>
+            e.cursor @ s.len()
+        .backspace =>
+            e.text @ s.slice(from: 0, to: back) + s.slice(from: at, to: s.len())
+            e.cursor @ back
+        .delete =>
+            e.text @ s.slice(from: 0, to: at) + s.slice(from: forth, to: s.len())
+        .control k =>
+            control(@e, letter: k.letter, back: back, forth: forth)
+        .enter | .tab | .escape | .up | .down | .page_up | .page_down | .insert => _ = 0
+        .function_key _                                                         => _ = 0
+        .other _                                                                => _ = 0
+
+    return e != before
+
+# Does the control key `letter` to `e`, whose cursor's neighbouring
+# graphemes begin at `back` and end at `forth`.
+function control(@e: Edit, letter: str, back: i64, forth: i64)
+    s = e.text
+    at = e.cursor
+
+    if letter == "a"
+        e.cursor @ 0
+    else if letter == "e"
+        e.cursor @ s.len()
+    else if letter == "b"
+        e.cursor @ back
+    else if letter == "f"
+        e.cursor @ forth
+    else if letter == "d"
+        e.text @ s.slice(from: 0, to: at) + s.slice(from: forth, to: s.len())
+    else if letter == "k"
+        e.text @ s.slice(from: 0, to: at)
+    else if letter == "u"
+        e.text @ s.slice(from: at, to: s.len())
+        e.cursor @ 0
+    else if letter == "w"
+        start @= at
+
+        while start > 0 && is_blank(s, from: segment.previous_grapheme_boundary(s: s, at: start), to: start)
+            start @ segment.previous_grapheme_boundary(s: s, at: start)
+
+        while start > 0 && !is_blank(s, from: segment.previous_grapheme_boundary(s: s, at: start), to: start)
+            start @ segment.previous_grapheme_boundary(s: s, at: start)
+
+        e.text @ s.slice(from: 0, to: start) + s.slice(from: at, to: s.len())
+        e.cursor @ start
+
+# The pieces `text` is drawn as in `style`: each grapheme, or `mask` for
+# each where it is not "".
+function shown(text: str, mask: str, style: term.Style) -> [runs.Piece]
+    own = runs.pieces_of([runs.Run(text: text, style: style)], line_style: term.plain())
+
+    if mask == ""
+        return own
+    one = runs.pieces_of([runs.Run(text: mask, style: style)], line_style: term.plain())
+    out: [runs.Piece] @= []
+
+    for _ in own
+        for p in one
+            out @ out.push(p)
+
+    return out
+
+## Tests
+
+# What `keys` make of `text` with its cursor at `cursor`: the text, a bar
+# where the cursor stands.
+function typed(text: str, cursor: i64, pressed: [term.Key]) -> str
+    e @= Edit(text: text, cursor: cursor)
+
+    for k in pressed
+        _ = press(@e, key: k)
+
+    return e.text.slice(from: 0, to: e.cursor) + "|" + e.text.slice(from: e.cursor, to: e.text.len())
+
+test "press: typing at the end, in the middle, a character of four bytes"
+    assert typed("", cursor: 0, pressed: [.character(text: "a"), .character(text: "b")]) == "ab|"
+    assert typed("ac", cursor: 1, pressed: [.character(text: "b")]) == "ab|c"
+    assert typed("x", cursor: 1, pressed: [.character(text: "🎸")]) == "x🎸|"
+
+test "press: moving by graphemes, a letter and its accent as one, to the ends, at the ends"
+    accent = "é"
+    assert typed("a" + accent + "b", cursor: 0, pressed: [.right, .right]) == "a" + accent + "|b"
+    assert typed("a" + accent + "b", cursor: 4, pressed: [.left]) == "a|" + accent + "b"
+    assert typed("abc", cursor: 1, pressed: [.home]) == "|abc"
+    assert typed("abc", cursor: 1, pressed: [.end]) == "abc|"
+    assert typed("abc", cursor: 0, pressed: [.left]) == "|abc"
+    assert typed("abc", cursor: 3, pressed: [.right]) == "abc|"
+    assert typed("abc", cursor: 2, pressed: [.control(letter: "a"), .control(letter: "f")]) == "a|bc"
+    assert typed("abc", cursor: 0, pressed: [.control(letter: "e"), .control(letter: "b")]) == "ab|c"
+
+test "press: deleting back and forth, at the ends, a grapheme whole"
+    accent = "é"
+    assert typed("ab", cursor: 2, pressed: [.backspace]) == "a|"
+    assert typed("ab", cursor: 0, pressed: [.backspace]) == "|ab"
+    assert typed("ab", cursor: 0, pressed: [.delete]) == "|b"
+    assert typed("ab", cursor: 2, pressed: [.delete]) == "ab|"
+    assert typed("a" + accent, cursor: 4, pressed: [.backspace]) == "a|"
+    assert typed("ab", cursor: 0, pressed: [.control(letter: "d")]) == "|b"
+
+test "press: killing to the end, to the start, the word before, spaces before it included"
+    assert typed("hello world", cursor: 5, pressed: [.control(letter: "k")]) == "hello|"
+    assert typed("hello world", cursor: 5, pressed: [.control(letter: "u")]) == "| world"
+    assert typed("say hello  ", cursor: 11, pressed: [.control(letter: "w")]) == "say |"
+    assert typed("word", cursor: 0, pressed: [.control(letter: "w")]) == "|word"
+
+test "press: the keys it does not take change nothing and answer false, a cursor inside a character settled"
+    e @= Edit(text: "ab", cursor: 1)
+    assert !press(@e, key: .enter)
+    assert !press(@e, key: .escape)
+    assert !press(@e, key: .control(letter: "z"))
+    assert press(@e, key: .character(text: "x"))
+    inside @= Edit(text: "é", cursor: 1)
+    assert press(@inside, key: .home)
+    assert settled("é", cursor: 1) == 0
+    assert settled("ab", cursor: -4) == 0 && settled("ab", cursor: 9) == 2
+
+test "shown: plain, masked one for each grapheme, the empty text"
+    assert runs.width_of(shown(text: "日b", mask: "", style: term.plain())) == 3
+    masked = shown(text: "日b", mask: "*", style: term.plain())
+    assert masked.len() == 2 && masked[0].symbol == "*" && masked[1].symbol == "*"
+    assert shown(text: "", mask: "*", style: term.plain()) == []

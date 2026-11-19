@@ -1,0 +1,295 @@
+# Reaches Rebel's `tui`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12), and shows it at work: a small browser of
+# two panes. The left pane lists topics; the right one shows the selected
+# topic's text, wrapped, with a scrollbar where it is longer than the pane.
+# Up and Down (or j and k) move the selection, Tab moves the keys to the other
+# pane, where Up and Down scroll the text, a click selects a topic, the wheel
+# scrolls, `/` opens a filter typed at the bottom, and q or Ctrl-C quits.
+#
+# The program keeps its own state in a record, draws a whole frame from it
+# each time round, hands the frame to `tui.flush`, which writes only what
+# changed, then reads one event and changes the state. Where its output is no
+# terminal (a pipe, a file, a test), it draws one frame into a buffer of its
+# own and prints its rows instead.
+
+use <rebel>/term
+use <rebel>/tui
+
+# A topic of the browser: its name and its text.
+record Topic
+    # What the left pane lists.
+    name: str
+    # What the right pane shows.
+    text: str
+
+# What the browser keeps between frames.
+record State
+    # The topics.
+    topics: [Topic]
+    # The selection in the list of the topics shown.
+    chosen: tui.Selection
+    # Whether the keys go to the right pane, where they scroll.
+    reading: bool
+    # Rows of the right pane's text scrolled off its top.
+    scroll: i64
+    # The filter typed after `/`.
+    filter: tui.Input
+    # Whether the filter is being typed.
+    filtering: bool
+    # Whether the program should end.
+    done: bool
+    # The rectangle the list was last drawn in, for the clicks.
+    list_area: tui.Rect
+
+# The topics the browser shows.
+function topics() -> [Topic]
+    return [
+        Topic(name: "Blocks", text: "A block is a box around an area: borders of twelve kinds, titles on its top and bottom edges against the left, in the middle or against the right, a style under it all and padding inside. What is drawn inside goes in inner_of its area.")
+        Topic(name: "Layout", text: "An area is cut by constraints: lengths, percentages, ratios, minimums, maximums and shares. Where the parts ask more than there is, they give it up in an order; where they ask less, the shares grow, and a flex places what is left.")
+        Topic(name: "Paragraphs", text: "Lines of styled spans, wrapped between words at the width of their area or cut at it, scrolled down and across. A word wider than the area is broken between graphemes; a wide character takes two cells.")
+        Topic(name: "Lists", text: "Items one under another with one selected, kept in view as the selection moves, a symbol before it, its rows highlighted across the whole width. The selection is a value the program keeps.")
+        Topic(name: "Tables", text: "Rows of cells in columns cut by constraints, under a header and over a footer that never scroll, a row, a column and a cell selected.")
+        Topic(name: "Gauges", text: "A bar filled to a ratio with its label in the middle, in whole cells or in eighths of one; a line gauge on one row; a sparkline of small bars.")
+        Topic(name: "Input", text: "One line of text typed, its cursor moved by graphemes, Readline's keys for the rest, drawn scrolled so the cursor stays in view, masked for a password.")
+        Topic(name: "Frames", text: "Each frame is a buffer drawn whole; flush writes only the cells that differ from the frame before, so a program redraws everything and the terminal sees only what changed.")
+    ]
+
+# The topics whose names hold `typed`, in order.
+function shown_of(all_topics: [Topic], typed: str) -> [Topic]
+    out: [Topic] @= []
+
+    for t in all_topics
+        if typed == "" || holds(s: t.name, part: typed)
+            out @ out.push(t)
+
+    return out
+
+# Whether `s` holds `part`, comparing bytes.
+function holds(s: str, part: str) -> bool
+    last = s.len() - part.len()
+    at @= 0
+
+    while at <= last
+        matched @= 0
+
+        while matched < part.len() && s[at + matched] == part[matched]
+            matched @ matched + 1
+
+        if matched == part.len()
+            return true
+        at @ at + 1
+
+    return false
+
+# The browser's first state.
+function first_state() -> State
+    chosen @= tui.selection()
+    tui.select(@chosen, index: 0)
+    return State(
+        topics: topics(),
+        chosen: chosen,
+        reading: false,
+        scroll: 0,
+        filter: tui.input_of(""),
+        filtering: false,
+        done: false,
+        list_area: tui.Rect(x: 0, y: 0, width: 0, height: 0)
+    )
+
+# Draws the whole browser into `frame` and answers where the cursor stands.
+function draw(@frame: tui.Buffer, @state: State) -> tui.Cursor
+    rows = tui.split(frame.area, layout: tui.layout_of(.vertical, constraints: [.min(n: 0), .length(n: 1)]))
+    panes = tui.split(rows[0], layout: tui.layout_of(.horizontal, constraints: [.length(n: 18), .fill(weight: 1)]))
+    visible = shown_of(state.topics, typed: state.filter.text)
+    names: [str] @= []
+
+    for t in visible
+        names @ names.push(t.name)
+
+    focus = term.with_foreground(term.plain(), color: .cyan)
+    left_box @= tui.with_title(tui.bordered(), title: "Topics")
+    right_box @= tui.bordered()
+
+    if state.reading
+        right_box.border_style @ focus
+    else
+        left_box.border_style @ focus
+    topic_list @= tui.list_of(names)
+    topic_list.highlight_symbol @ "> "
+    tui.draw_block(@frame, area: panes[0], block: left_box)
+    state.list_area @ tui.inner_of(left_box, area: panes[0])
+    tui.draw_list(@frame, area: state.list_area, list: topic_list, @state.chosen)
+    title @= "Nothing"
+    body @= "No topic holds the filter."
+
+    match tui.selected_of(state.chosen)
+        .ok i =>
+            if i < visible.len()
+                title @ visible[i].name
+                body @ visible[i].text
+        .err _ =>
+            _ = 0
+
+    right_box.titles @ [tui.Title(line: tui.line_of(title), position: .top)]
+    tui.draw_block(@frame, area: panes[1], block: right_box)
+    inside = tui.inner_of(right_box, area: panes[1])
+    text @= tui.paragraph_of(body)
+    text.wrap @ true
+    total = tui.height_of(text, width: inside.width - 1)
+
+    most = if total - inside.height > 0
+        total - inside.height
+    else
+        0
+
+    if state.scroll > most
+        state.scroll @ most
+    text.scroll_y @ state.scroll
+    reading_area = tui.Rect(x: inside.x, y: inside.y, width: inside.width - 1, height: inside.height)
+    tui.draw_paragraph(@frame, area: reading_area, paragraph: text)
+
+    if total > inside.height
+        bar @= tui.scrollbar_of(.vertical_right, content_length: total, position: state.scroll)
+        bar.viewport_length @ inside.height
+        tui.draw_scrollbar(@frame, area: inside, scrollbar: bar)
+
+    if state.filtering
+        _ = tui.draw_text(@frame, x: rows[1].x, y: rows[1].y, text: "/", style: term.plain(), width: 1)
+        return tui.draw_input(
+            @frame,
+            area: tui.Rect(x: rows[1].x + 1, y: rows[1].y, width: rows[1].width - 1, height: 1),
+            @state.filter
+        )
+    help = "Up Down: move  Tab: pane  /: filter  q: quit"
+    _ = tui.draw_text(
+        @frame,
+        x: rows[1].x,
+        y: rows[1].y,
+        text: help,
+        style: term.with_attribute(term.plain(), a: .dim),
+        width: rows[1].width
+    )
+    return .hidden
+
+# Changes `state` by `event`.
+function handle(@state: State, event: tui.Event)
+    count = shown_of(state.topics, typed: state.filter.text).len()
+
+    match event
+        .key k =>
+            if state.filtering
+                filtered(@state, key: k.key, count: count)
+            else
+                pressed(@state, key: k.key, count: count)
+        .mouse m =>
+            if m.action == .scroll_down
+                state.scroll @ state.scroll + 1
+            else if m.action == .scroll_up && state.scroll > 0
+                state.scroll @ state.scroll - 1
+            else if m.action == .press && tui.contains(state.list_area, x: m.x, y: m.y)
+                tui.select(@state.chosen, index: tui.offset_of(state.chosen) + m.y - state.list_area.y)
+                state.scroll @ 0
+        .pasted p =>
+            if state.filtering
+                for c in p.text.chars()
+                    _ = tui.press_input(@state.filter, key: .character(text: c))
+        .resized _ =>
+            _ = 0
+        .focus_gained | .focus_lost =>
+            _ = 0
+
+# Changes `state` by a key typed into the filter.
+function filtered(@state: State, key: term.Key, count: i64)
+    if key == .enter || key == .escape
+        state.filtering @ false
+    else if tui.press_input(@state.filter, key: key)
+        tui.select_first(@state.chosen, count: shown_of(state.topics, typed: state.filter.text).len())
+    else if key == .control(letter: "c")
+        state.done @ true
+    _ = count
+
+# Changes `state` by a key pressed outside the filter.
+function pressed(@state: State, key: term.Key, count: i64)
+    if key == .character(text: "q") || key == .control(letter: "c")
+        state.done @ true
+    else if key == .tab
+        state.reading @ !state.reading
+    else if key == .character(text: "/")
+        state.filtering @ true
+    else if key == .down || key == .character(text: "j")
+        if state.reading
+            state.scroll @ state.scroll + 1
+        else
+            tui.move_selection(@state.chosen, count: count, by: 1)
+            state.scroll @ 0
+    else if key == .up || key == .character(text: "k")
+        if state.reading
+            if state.scroll > 0
+                state.scroll @ state.scroll - 1
+        else
+            tui.move_selection(@state.chosen, count: count, by: -1)
+            state.scroll @ 0
+
+# Runs the browser in the terminal until q is pressed.
+function browse(@t: tui.Terminal) -> ()?
+    state @= first_state()
+    _ = tui.set_title(t, title: "Rebel tui").is_err()
+
+    while !state.done
+        frame @= tui.frame_of(t)
+        cursor = draw(@frame, @state)
+        tui.flush(@t, frame: frame, cursor: cursor)?
+        event = tui.read_event(@t)?
+        handle(@state, event: event)
+
+    return ok()
+
+function main()
+    options @= tui.default_options()
+    options.mouse @ true
+
+    match tui.start(options)
+        .ok t =>
+            running @= t
+            ran = browse(@running)
+            stopped = tui.stop(@running)
+
+            match ran
+                .ok _  => _ = 0
+                .err e => print("tui: ", e.msg)
+
+            if stopped.is_err()
+                print("tui: the terminal was not put back")
+        .err _ =>
+            frame @= tui.blank(tui.Rect(x: 0, y: 0, width: 64, height: 10))
+            state @= first_state()
+            _ = draw(@frame, @state)
+
+            for row in tui.to_lines(frame)
+                print(row)
+
+test "the browser: one frame drawn with no terminal, the topics, the text wrapped, the help"
+    frame @= tui.blank(tui.Rect(x: 0, y: 0, width: 64, height: 10))
+    state @= first_state()
+    assert draw(@frame, @state) == .hidden
+    rows = tui.to_lines(frame)
+    assert rows[0] == "┌Topics──────────┐┌Blocks──────────────────────────────────────┐"
+    assert rows[1] == "│> Blocks        ││A block is a box around an area: borders of │"
+    assert rows[7] == "│  Input         ││                                            │"
+    assert rows[8] == "└────────────────┘└────────────────────────────────────────────┘"
+    assert rows[9] == "Up Down: move  Tab: pane  /: filter  q: quit                    "
+
+test "the browser: keys move the selection, the filter narrows the list, q ends it"
+    state @= first_state()
+    handle(@state, event: .key(key: .down))
+    assert tui.selected_of(state.chosen).must() == 1
+    handle(@state, event: .key(key: .character(text: "/")))
+    assert state.filtering
+
+    for c in ["T", "a"]
+        handle(@state, event: .key(key: .character(text: c)))
+
+    assert shown_of(state.topics, typed: state.filter.text).len() == 1
+    handle(@state, event: .key(key: .enter))
+    handle(@state, event: .key(key: .character(text: "q")))
+    assert state.done

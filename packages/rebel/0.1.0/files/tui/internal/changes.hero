@@ -1,0 +1,136 @@
+# The cells that differ between two grids, and the bytes that write them on a
+# terminal: the cursor moved only where a run of changes does not follow the
+# last, each run of one style written by `term.styled`, which puts the
+# terminal's rendition back after it.
+
+use term
+use tui/internal/grid
+use tui/internal/packed
+
+# One cell to write.
+record Change
+    # Its column on the screen.
+    x: i64
+    # Its row on the screen.
+    y: i64
+    # What it holds.
+    symbol: str
+    # The cells it takes: 2 for a wide character.
+    width: i64
+    # Its packed style.
+    style: i64
+
+# The cells of `after` that differ from `before`, row by row; every cell of
+# `after` where the two do not stand on the same rectangle. A covered cell is
+# never a change: its character writes it.
+function diff(before: grid.Grid lent, after: grid.Grid lent) -> [Change]
+    out: [Change] @= []
+    same = before.x == after.x && before.y == after.y && before.width == after.width && before.height == after.height
+
+    for i in range(from: 0, to: after.symbols.len())
+        symbol = after.symbols[i]
+
+        if symbol != ""
+            if !same || symbol != before.symbols[i] || after.styles[i] != before.styles[i]
+                out @ out.push(
+                    Change(x: after.x + i % after.width, y: after.y + i / after.width, symbol: symbol, width: grid.width_at(after, i: i), style: after.styles[i])
+                )
+
+    return out
+
+# Every cell of `g` but the covered ones, as changes: a whole frame.
+function whole(g: grid.Grid lent) -> [Change]
+    nothing = grid.new(x: g.x - 1, y: g.y, width: 0, height: 0)
+    return diff(before: nothing, after: g)
+
+# The bytes that write `changes`; a change left of the screen or above it is
+# left out.
+function format(changes: [Change] lent) -> str
+    parts: [str] @= []
+    cursor_x @= -1
+    cursor_y @= -1
+    count = changes.len()
+    i @= 0
+
+    while i < count
+        first = changes[i]
+
+        if first.x < 0 || first.y < 0
+            i @ i + 1
+            continue
+
+        if first.x != cursor_x || first.y != cursor_y
+            parts @ parts.push(term.cursor_to(row: first.y + 1, column: first.x + 1).must())
+        symbols: [str] @= [first.symbol]
+        end @= first.x + first.width
+        j @= i + 1
+
+        while j < count && changes[j].y == first.y && changes[j].x == end && changes[j].style == first.style
+            symbols @ symbols.push(changes[j].symbol)
+            end @ end + changes[j].width
+            j @ j + 1
+
+        parts @ parts.push(term.styled(symbols.join(""), style: packed.style_of(first.style)))
+        cursor_x @ end
+        cursor_y @ first.y
+        i @ j
+
+    return parts.join("")
+
+## Tests
+
+# A grid of one row holding `text`.
+function row_of(text: str) -> grid.Grid
+    g @= grid.new(x: 0, y: 0, width: 4, height: 1)
+    _ = grid.draw(@g, x: 0, y: 0, text: text, style: 0, limit: 4)
+    return g
+
+# The changes from `a` to `b`, as text: `x:symbol` each.
+function changed(a: str, b: str) -> str
+    out: [str] @= []
+
+    for c in diff(before: row_of(a), after: row_of(b))
+        out @ out.push(f"{c.x}:{c.symbol}")
+
+    return out.join(" ")
+
+# The changes below are what `ratatui` 0.30.2's `Buffer::diff` answered for
+# the same rows, run 2026-11-18, but where a test says otherwise.
+
+test "diff: one cell, none, a wide character replaced and placed, as ratatui answered"
+    assert changed(a: "abc", b: "abd") == "2:d"
+    assert changed(a: "ab", b: "ab") == ""
+    assert changed(a: "a日b", b: "abcd") == "1:b 2:c 3:d"
+    assert changed(a: "abcd", b: "a日d") == "1:日"
+    assert changed(a: "    ", b: "日本") == "0:日 2:本"
+    assert changed(a: "日本", b: "本日") == "0:本 2:日"
+    assert changed(a: "日x", b: "日y") == "2:y"
+    assert changed(a: "x日", b: "y日") == "0:y"
+
+test "diff: the cells a wide character covered are changes once it is gone, where ratatui writes only its first"
+    assert changed(a: "日本", b: "    ") == "0:  1:  2:  3: "
+
+test "diff: a style alone, and grids on other rectangles take every cell"
+    a = row_of("ab")
+    b @= row_of("ab")
+    grid.patch(@b, x: 0, y: 0, width: 1, height: 1, style: 5)
+    d = diff(before: a, after: b)
+    assert d.len() == 1 && d[0].x == 0 && d[0].style == 5
+    moved = grid.new(x: 1, y: 0, width: 4, height: 1)
+    assert diff(before: a, after: moved).len() == 4
+    assert whole(row_of("日")).len() == 3
+
+test "format: nothing, a run in one place, two runs, a style run reset after, the cursor not moved where it stands"
+    assert format([]) == ""
+    one = diff(before: row_of(""), after: row_of("ab"))
+    assert format(one) == "\u{1b}[1;1Hab"
+    two = diff(before: row_of("abcd"), after: row_of("xbcy"))
+    assert format(two) == "\u{1b}[1;1Hx\u{1b}[1;4Hy"
+    red = packed.of(term.with_foreground(term.plain(), color: .red))
+    styled = [
+        Change(x: 2, y: 1, symbol: "日", width: 2, style: red)
+        Change(x: 4, y: 1, symbol: "z", width: 1, style: red)
+        Change(x: 5, y: 1, symbol: "q", width: 1, style: 0)
+    ]
+    assert format(styled) == "\u{1b}[2;3H\u{1b}[31m日z\u{1b}[0mq"
+    assert format([Change(x: -1, y: 0, symbol: "a", width: 1, style: 0)]) == ""

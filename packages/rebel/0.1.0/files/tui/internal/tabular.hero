@@ -1,0 +1,395 @@
+# A table drawn into a grid: its header at the top and its footer at the
+# bottom, never scrolled; between them the rows from the first shown that fit
+# whole (the first shown cut where it is taller), kept so the selected row is
+# in view; each cell's lines in its column; the selected
+# row, column and cell highlighted in that order.
+
+use term
+use tui/internal/grid
+use tui/internal/listing
+use tui/internal/packed
+use tui/internal/runs
+
+# A row of a table, inside the package.
+record Row
+    # Each cell's lines.
+    cells: [[listing.Shaped]]
+    # Each cell's packed style.
+    cell_styles: [i64]
+    # Its rows on the screen, 1 or more.
+    height: i64
+    # Rows left empty above it.
+    top: i64
+    # Rows left empty below it.
+    bottom: i64
+    # Its packed style, laid over the whole width.
+    style: i64
+
+# Where the table's columns stand.
+record Columns
+    # Each column's left edge.
+    xs: [i64]
+    # Each column's width.
+    widths: [i64]
+
+# What highlights a table: the selected row and column and their styles.
+record Highlight
+    # Whether a row is selected.
+    has_row: bool
+    # The selected row.
+    row: i64
+    # Whether a column is selected.
+    has_column: bool
+    # The selected column.
+    column: i64
+    # The symbol drawn before the selected row.
+    symbol: [runs.Piece]
+    # The room kept for it.
+    prefix: i64
+    # The style laid over the selected row.
+    row_style: i64
+    # The style laid over the selected column.
+    column_style: i64
+    # The style laid over the selected cell.
+    cell_style: i64
+
+# The rows `r` takes with its margins.
+function taken(r: Row lent) -> i64
+    height = if r.height > 0
+        r.height
+    else
+        1
+    return clamp_low(r.top) + height + clamp_low(r.bottom)
+
+# `n`, or 0 where it is below.
+function clamp_low(n: i64) -> i64
+    if n < 0
+        return 0
+    return n
+
+# Draws `r` from row `y`, at most `room` rows, across the rectangle's width
+# from `x`; answers the rows it took.
+function draw_row(@g: grid.Grid, x: i64, width: i64, y: i64, room: i64, r: Row lent, columns: Columns lent) -> i64
+    top = clamp_low(r.top)
+
+    height = if r.height > 0
+        r.height
+    else
+        1
+
+    shown = if height < room - top
+        height
+    else
+        room - top
+
+    if shown > 0
+        at = y + top
+        grid.patch(@g, x: x, y: at, width: width, height: shown, style: r.style)
+
+        for k in range(from: 0, to: columns.xs.len())
+            if k < r.cells.len()
+                cx = columns.xs[k]
+                cw = columns.widths[k]
+                grid.patch(@g, x: cx, y: at, width: cw, height: shown, style: r.cell_styles[k])
+                lines = r.cells[k]
+
+                for j in range(from: 0, to: lines.len())
+                    if j < shown
+                        line = lines[j]
+                        runs.draw_row(
+                            @g,
+                            x: cx,
+                            y: at + j,
+                            width: cw,
+                            pieces: line.pieces,
+                            align: line.align,
+                            scroll: 0
+                        )
+
+    return taken(r)
+
+# Draws a table in the rectangle and answers the first body row shown.
+function draw(@g: grid.Grid, x: i64, y: i64, width: i64, height: i64, header: [Row], rows: [Row], footer: [Row], columns: Columns, offset: i64, light: Highlight, style: i64) -> i64
+    grid.patch(@g, x: x, y: y, width: width, height: height, style: style)
+
+    if width <= 0 || height <= 0
+        return offset
+    bottom = y + height
+    at @= y
+
+    for r in header
+        if at < bottom
+            at @ at + draw_row(@g, x: x, width: width, y: at, room: bottom - at, r: r, columns: columns)
+
+    footer_height @= 0
+
+    for r in footer
+        footer_height @ footer_height + taken(r)
+
+    body_end_wanted = bottom - footer_height
+
+    body_end = if body_end_wanted > at
+        body_end_wanted
+    else
+        at
+    foot @= body_end
+
+    for r in footer
+        if foot < bottom
+            foot @ foot + draw_row(@g, x: x, width: width, y: foot, room: bottom - foot, r: r, columns: columns)
+
+    count = rows.len()
+
+    if count == 0
+        return offset
+
+    chosen = if light.row < count
+        light.row
+    else
+        count - 1
+    heights: [i64] @= []
+
+    for r in rows
+        heights @ heights.push(taken(r))
+
+    body_top = at
+    first = listing.window(
+        heights,
+        offset: offset,
+        has: light.has_row,
+        selected: chosen,
+        room: body_end - body_top,
+        padding: 0
+    )
+    row_y @= body_top
+    selected_y @= -1
+    selected_height @= 0
+    i @= first
+
+    while i < count && row_y < body_end && (row_y + heights[i] <= body_end || i == first)
+        r = rows[i]
+        top = clamp_low(r.top)
+        took = draw_row(@g, x: x, width: width, y: row_y, room: body_end - row_y, r: r, columns: columns)
+
+        if light.has_row && i == chosen && row_y + top < body_end
+            line_y = row_y + top
+            _ = runs.place(@g, x: x, y: line_y, pieces: light.symbol, limit: x + light.prefix)
+
+            shown_wanted = if r.height > 0
+                r.height
+            else
+                1
+
+            shown = if shown_wanted < body_end - line_y
+                shown_wanted
+            else
+                body_end - line_y
+            grid.patch(@g, x: x, y: line_y, width: width, height: shown, style: light.row_style)
+            selected_y @ line_y
+            selected_height @ shown
+        row_y @ row_y + took
+        i @ i + 1
+
+    if light.has_column && light.column < columns.xs.len()
+        cx = columns.xs[light.column]
+        cw = columns.widths[light.column]
+        grid.patch(@g, x: cx, y: body_top, width: cw, height: body_end - body_top, style: light.column_style)
+
+        if selected_y >= 0
+            grid.patch(@g, x: cx, y: selected_y, width: cw, height: selected_height, style: light.cell_style)
+    return first
+
+## Tests
+
+# A row of plain one-line cells.
+function plain_row(cells: [str]) -> Row
+    plain = term.plain()
+    shaped: [[listing.Shaped]] @= []
+    styles: [i64] @= []
+
+    for c in cells
+        shaped @ shaped.push(
+            [listing.Shaped(pieces: runs.pieces_of([runs.Run(text: c, style: plain)], line_style: plain), align: runs.LEFT)]
+        )
+        styles @ styles.push(packed.PLAIN)
+
+    return Row(cells: shaped, cell_styles: styles, height: 1, top: 0, bottom: 0, style: packed.PLAIN)
+
+# No highlight but the selected row, `has` and `row`, with `symbol` before it.
+function light_of(has: bool, row: i64, symbol: str, prefix: i64) -> Highlight
+    plain = term.plain()
+    return Highlight(
+        has_row: has,
+        row: row,
+        has_column: false,
+        column: 0,
+        symbol: runs.pieces_of([runs.Run(text: symbol, style: plain)], line_style: plain),
+        prefix: prefix,
+        row_style: packed.reversed(),
+        column_style: packed.PLAIN,
+        cell_style: packed.PLAIN
+    )
+
+# The rows of a drawing, then the first row shown.
+function rows_of(g: grid.Grid, first: i64) -> [str]
+    out: [str] @= []
+
+    for row in range(from: 0, to: g.height)
+        out @ out.push(grid.row_text(g, row: row))
+
+    out @ out.push(f"{first}")
+    return out
+
+# The table of three rows the tests share.
+function three() -> [Row]
+    return [plain_row(["a1", "b1", "c1"]), plain_row(["a2", "bb2", "c2"]), plain_row(["a3", "b3", "cccccc3"])]
+
+# Every drawing below is what `ratatui` 0.30.2's `Table` drew for the same
+# table, run 2026-11-18; the columns are what its widths `Length(3)`,
+# `Length(4)` and `Min(2)` became, a column apart, which `split` answers.
+
+test "draw: a header with a margin under it, a row selected with its symbol, the header moved right too"
+    g @= grid.new(x: 0, y: 0, width: 16, height: 4)
+    header @= plain_row(["A", "B", "C"])
+    header.bottom @ 1
+    first = draw(
+        @g,
+        x: 0,
+        y: 0,
+        width: 16,
+        height: 4,
+        header: [header],
+        rows: three(),
+        footer: [],
+        columns: Columns(xs: [1, 5, 10], widths: [3, 4, 6]),
+        offset: 0,
+        light: light_of(has: true, row: 1, symbol: ">", prefix: 1),
+        style: packed.PLAIN
+    )
+    assert rows_of(g, first: first) == [" A   B    C     ", "                ", " a1  b1   c1    ", ">a2  bb2  c2    ", "0"]
+    assert g.styles[47] == packed.PLAIN && g.styles[48] == packed.reversed() && g.styles[63] == packed.reversed()
+
+test "draw: no selection, a footer at the bottom, a selection kept in view"
+    g @= grid.new(x: 0, y: 0, width: 16, height: 5)
+    header @= plain_row(["A", "B", "C"])
+    header.bottom @ 1
+    first = draw(
+        @g,
+        x: 0,
+        y: 0,
+        width: 16,
+        height: 5,
+        header: [header],
+        rows: three(),
+        footer: [],
+        columns: Columns(xs: [0, 4, 9], widths: [3, 4, 7]),
+        offset: 0,
+        light: light_of(has: false, row: 0, symbol: ">", prefix: 0),
+        style: packed.PLAIN
+    )
+    assert rows_of(g, first: first) == ["A   B    C      ", "                ", "a1  b1   c1     ", "a2  bb2  c2     ", "a3  b3   cccccc3", "0"]
+    h @= grid.new(x: 0, y: 0, width: 9, height: 5)
+    second = draw(
+        @h,
+        x: 0,
+        y: 0,
+        width: 9,
+        height: 5,
+        header: [],
+        rows: three(),
+        footer: [plain_row(["f", "g", "h"])],
+        columns: Columns(xs: [0, 3, 6], widths: [3, 3, 3]),
+        offset: 0,
+        light: light_of(has: false, row: 0, symbol: "", prefix: 0),
+        style: packed.PLAIN
+    )
+    assert rows_of(h, first: second) == ["a1 b1 c1 ", "a2 bb2c2 ", "a3 b3 ccc", "         ", "f  g  h  ", "0"]
+    k @= grid.new(x: 0, y: 0, width: 16, height: 2)
+    third = draw(
+        @k,
+        x: 0,
+        y: 0,
+        width: 16,
+        height: 2,
+        header: [],
+        rows: three(),
+        footer: [],
+        columns: Columns(xs: [0, 4, 9], widths: [3, 4, 7]),
+        offset: 0,
+        light: light_of(has: true, row: 2, symbol: "", prefix: 0),
+        style: packed.PLAIN
+    )
+    assert rows_of(k, first: third) == ["a2  bb2  c2     ", "a3  b3   cccccc3", "1"]
+
+test "draw: a row two high, the selected cell over its column, margins counted"
+    g @= grid.new(x: 0, y: 0, width: 6, height: 3)
+    tall @= plain_row(["x", "z"])
+    plain = term.plain()
+    tall.cells[0] @ [
+        listing.Shaped(pieces: runs.pieces_of([runs.Run(text: "x", style: plain)], line_style: plain), align: runs.LEFT)
+        listing.Shaped(pieces: runs.pieces_of([runs.Run(text: "y", style: plain)], line_style: plain), align: runs.LEFT)
+    ]
+    tall.height @ 2
+    light @= light_of(has: true, row: 0, symbol: "", prefix: 0)
+    light.has_column @ true
+    light.column @ 1
+    light.row_style @ packed.PLAIN
+    light.column_style @ 2
+    light.cell_style @ packed.of(term.with_attribute(term.plain(), a: .bold))
+    first = draw(
+        @g,
+        x: 0,
+        y: 0,
+        width: 6,
+        height: 3,
+        header: [],
+        rows: [tall, plain_row(["p", "q"])],
+        footer: [],
+        columns: Columns(xs: [0, 3], widths: [2, 2]),
+        offset: 0,
+        light: light,
+        style: packed.PLAIN
+    )
+    assert rows_of(g, first: first) == ["x  z  ", "y     ", "p  q  ", "0"]
+    bold_red = packed.over(under: 2, top: packed.of(term.with_attribute(term.plain(), a: .bold)))
+    assert g.styles[3] == bold_red && g.styles[9] == bold_red && g.styles[15] == 2 && g.styles[0] == packed.PLAIN
+    m @= grid.new(x: 0, y: 0, width: 6, height: 4)
+    spaced @= plain_row(["a"])
+    spaced.top @ 1
+    under @= plain_row(["b"])
+    under.bottom @ 1
+    second = draw(
+        @m,
+        x: 0,
+        y: 0,
+        width: 6,
+        height: 4,
+        header: [],
+        rows: [spaced, under, plain_row(["c"])],
+        footer: [],
+        columns: Columns(xs: [0], widths: [3]),
+        offset: 0,
+        light: light_of(has: true, row: 1, symbol: "", prefix: 0),
+        style: packed.PLAIN
+    )
+    assert rows_of(m, first: second) == ["      ", "a     ", "b     ", "      ", "0"]
+
+test "draw: a header with no rows under it, an area of no cell"
+    g @= grid.new(x: 0, y: 0, width: 10, height: 3)
+    first = draw(
+        @g,
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 3,
+        header: [plain_row(["H"])],
+        rows: [],
+        footer: [],
+        columns: Columns(xs: [0], widths: [3]),
+        offset: 2,
+        light: light_of(has: true, row: 0, symbol: "", prefix: 0),
+        style: packed.PLAIN
+    )
+    assert rows_of(g, first: first) == ["H         ", "          ", "          ", "2"]
+    e @= grid.new(x: 0, y: 0, width: 0, height: 0)
+    assert draw(@e, x: 0, y: 0, width: 0, height: 0, header: [], rows: three(), footer: [], columns: Columns(xs: [], widths: []), offset: 1, light: light_of(has: false, row: 0, symbol: "", prefix: 0), style: packed.PLAIN) == 1

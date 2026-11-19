@@ -1,0 +1,181 @@
+# Styled text inside the package: the twin of the face's `Line`, cut into
+# pieces of one grapheme each with its width and its packed style, and
+# drawn into a grid scrolled, aligned and cut to a width.
+
+use term
+use tui/internal/grid
+use tui/internal/packed
+use unicode
+use unicode/segment
+
+# Where a row stands: against the left.
+constant LEFT: i64
+    0
+
+# In the middle, an odd cell before it.
+constant CENTER: i64
+    1
+
+# Against the right.
+constant RIGHT: i64
+    2
+
+# A piece of text in one style: the twin of the face's `Span`.
+record Run
+    # The text.
+    text: str
+    # Its style.
+    style: term.Style
+
+# One grapheme to draw.
+record Piece
+    # The grapheme.
+    symbol: str
+    # The cells it takes, 1 or more.
+    width: i64
+    # Its packed style: the line's with the span's laid over.
+    style: i64
+
+# The pieces of `runs`, each run's style laid over `line_style`; a grapheme of
+# no width (a control, a line break) is left out.
+function pieces_of(runs: [Run], line_style: term.Style) -> [Piece]
+    base = packed.of(line_style)
+    out: [Piece] @= []
+
+    for r in runs
+        style = packed.over(under: base, top: packed.of(r.style))
+
+        if grid.is_plain_ascii(r.text)
+            for i in range(from: 0, to: r.text.len())
+                out @ out.push(Piece(symbol: r.text.slice(from: i, to: i + 1), width: 1, style: style))
+        else
+            for g in segment.graphemes(r.text)
+                w = segment.width_of(g)
+
+                if w > 0
+                    out @ out.push(Piece(symbol: g, width: w, style: style))
+
+    return out
+
+# The cells `pieces` take.
+function width_of(pieces: [Piece] lent) -> i64
+    total: i64 @= 0
+
+    for p in pieces
+        total @ total + p.width
+
+    return total
+
+# Whether `p` is white space a line may break at: Unicode's White_Space, but
+# the no-break spaces U+00A0, U+2007 and U+202F.
+function is_space(p: Piece lent) -> bool
+    if p.symbol == " "
+        return true
+
+    if unicode.char_count(p.symbol) != 1
+        return false
+    c = unicode.code_point(p.symbol)
+
+    if c == 0xa0 || c == 0x2007 || c == 0x202f
+        return false
+    return unicode.is_space(p.symbol)
+
+# `pieces` with their first `columns` columns taken off: a wide piece the cut
+# goes through is taken off, and its columns right of the cut become blank
+# cells in its style.
+function cut(pieces: [Piece], columns: i64) -> [Piece]
+    if columns <= 0
+        return pieces
+    out: [Piece] @= []
+    passed: i64 @= 0
+
+    for p in pieces
+        if passed >= columns
+            out @ out.push(p)
+        else if passed + p.width > columns
+            for _ in range(from: columns, to: passed + p.width)
+                out @ out.push(Piece(symbol: " ", width: 1, style: p.style))
+        passed @ passed + p.width
+
+    return out
+
+# Draws `pieces` into `g` at row `y` from column `x`, up to column `limit`
+# (not included), and answers the column after the last cell drawn.
+function place(@g: grid.Grid, x: i64, y: i64, pieces: [Piece] lent, limit: i64) -> i64
+    if y < g.y || y >= g.y + g.height
+        return x
+    right = g.x + g.width
+
+    end = if limit < right
+        limit
+    else
+        right
+    column @= x
+
+    for p in pieces
+        if column + p.width > end
+            return column
+
+        if column >= g.x
+            grid.put(@g, x: column, y: y, symbol: p.symbol, width: p.width, style: p.style)
+        column @ column + p.width
+
+    return column
+
+# Draws `pieces` in the row `y` of the span from column `x`, `width` cells
+# wide, scrolled `scroll` columns, standing where `align` says where they are
+# narrower than the span, cut at its right edge where they are wider.
+function draw_row(@g: grid.Grid, x: i64, y: i64, width: i64, pieces: [Piece], align: i64, scroll: i64)
+    shown = cut(pieces, columns: scroll)
+    used = width_of(shown)
+
+    lead = if used >= width
+        0
+    else if align == CENTER
+        (width - used + 1) / 2
+    else if align == RIGHT
+        width - used
+    else
+        0
+    _ = place(@g, x: x + lead, y: y, pieces: shown, limit: x + width)
+
+## Tests
+
+test "pieces_of: styles laid over the line's, a wide character, a control left out, the empty run"
+    red = term.with_foreground(term.plain(), color: .red)
+    blue_back = term.with_background(term.plain(), color: .blue)
+    ps = pieces_of(
+        [Run(text: "a\t", style: red), Run(text: "", style: red), Run(text: "日", style: term.plain())],
+        line_style: blue_back
+    )
+    assert ps.len() == 2
+    assert ps[0].symbol == "a" && ps[0].width == 1 && packed.style_of(ps[0].style) == term.Style(foreground: .red, background: .blue, attributes: [])
+    assert ps[1].symbol == "日" && ps[1].width == 2 && packed.style_of(ps[1].style) == blue_back
+    assert width_of(ps) == 3
+    assert pieces_of([], line_style: red) == []
+
+test "is_space: a space, a tab is a control and no piece, a no-break space, an ideographic space, a letter"
+    assert is_space(Piece(symbol: " ", width: 1, style: 0))
+    assert !is_space(Piece(symbol: unicode.from_code_point(0xa0).must(), width: 1, style: 0))
+    assert is_space(Piece(symbol: unicode.from_code_point(0x3000).must(), width: 2, style: 0))
+    assert !is_space(Piece(symbol: "x", width: 1, style: 0))
+
+test "cut: nothing, a narrow piece, through a wide piece, past the end"
+    ps = pieces_of([Run(text: "a日b", style: term.plain())], line_style: term.plain())
+    assert cut(ps, columns: 0) == ps
+    assert cut(ps, columns: 1).len() == 2
+    through = cut(ps, columns: 2)
+    assert through.len() == 2 && through[0].symbol == " " && through[1].symbol == "b"
+    assert cut(ps, columns: 9) == []
+
+test "draw_row: left, center with the odd cell before, right, cut when wider, scrolled"
+    ps = pieces_of([Run(text: "cde", style: term.plain())], line_style: term.plain())
+    g @= grid.new(x: 0, y: 0, width: 6, height: 4)
+    draw_row(@g, x: 0, y: 0, width: 6, pieces: ps, align: LEFT, scroll: 0)
+    draw_row(@g, x: 0, y: 1, width: 6, pieces: ps, align: CENTER, scroll: 0)
+    draw_row(@g, x: 0, y: 2, width: 6, pieces: ps, align: RIGHT, scroll: 0)
+    draw_row(@g, x: 1, y: 3, width: 2, pieces: ps, align: RIGHT, scroll: 1)
+    assert grid.row_text(g, row: 0) == "cde   "
+    assert grid.row_text(g, row: 1) == "  cde "
+    assert grid.row_text(g, row: 2) == "   cde"
+    assert grid.row_text(g, row: 3) == " de   "

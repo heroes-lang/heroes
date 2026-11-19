@@ -1,0 +1,198 @@
+# A `term.Style` packed in one `i64`, so a buffer holds a number per cell and
+# a diff compares numbers: the foreground in bits 0 to 24, the background in
+# bits 25 to 49, the attributes in bits 50 to 57. A colour packs as 0 for
+# `.default`, 1 to 16 for the sixteen named, 17 plus the index for `.indexed`,
+# and 512 plus its 24 bits for `.rgb`.
+
+use term
+
+# The style that changes nothing.
+constant PLAIN: i64
+    0
+
+# The width of one colour's bits.
+constant COLOR_BITS: i64
+    25
+
+# The mask of one colour's bits.
+constant COLOR_MASK: i64
+    33554431
+
+# Where the attributes' bits begin.
+constant ATTRIBUTE_SHIFT: i64
+    50
+
+# The attribute `.reverse`, as a bit of the attributes.
+constant REVERSE: i64
+    32
+
+# A colour packed.
+function color_code(c: term.Color) -> i64
+    return match c
+        .default        => 0
+        .black          => 1
+        .red            => 2
+        .green          => 3
+        .yellow         => 4
+        .blue           => 5
+        .magenta        => 6
+        .cyan           => 7
+        .white          => 8
+        .bright_black   => 9
+        .bright_red     => 10
+        .bright_green   => 11
+        .bright_yellow  => 12
+        .bright_blue    => 13
+        .bright_magenta => 14
+        .bright_cyan    => 15
+        .bright_white   => 16
+        .indexed i      => 17 + to_i64(i.n).must()
+        .rgb x          => 512 + (to_i64(x.red).must() << 16) + (to_i64(x.green).must() << 8) + to_i64(x.blue).must()
+
+# The colour a packed colour stands for.
+function color_of(code: i64) -> term.Color
+    if code >= 512
+        bits = code - 512
+        return .rgb(red: byte_of(bits >> 16), green: byte_of(bits >> 8), blue: byte_of(bits))
+
+    if code >= 17
+        return .indexed(n: byte_of(code - 17))
+    named: [term.Color] = [
+        .default
+        .black
+        .red
+        .green
+        .yellow
+        .blue
+        .magenta
+        .cyan
+        .white
+        .bright_black
+        .bright_red
+        .bright_green
+        .bright_yellow
+        .bright_blue
+        .bright_magenta
+        .bright_cyan
+        .bright_white
+    ]
+    return named[code]
+
+# The low eight bits of `n` as a byte.
+function byte_of(n: i64) -> u8
+    return to_u8(n & 255).must()
+
+# An attribute's bit.
+function attribute_bit(a: term.Attribute) -> i64
+    return match a
+        .bold      => 1
+        .dim       => 2
+        .italic    => 4
+        .underline => 8
+        .blink     => 16
+        .reverse   => 32
+        .hidden    => 64
+        .strike    => 128
+
+# `style` packed.
+function of(style: term.Style) -> i64
+    bits: i64 @= 0
+
+    for a in style.attributes
+        bits @ bits | attribute_bit(a)
+
+    return color_code(style.foreground) | color_code(style.background) << COLOR_BITS | bits << ATTRIBUTE_SHIFT
+
+# The style a packed style stands for, its attributes in the order `term`
+# names them.
+function style_of(p: i64) -> term.Style
+    order: [term.Attribute] = [.bold, .dim, .italic, .underline, .blink, .reverse, .hidden, .strike]
+    bits = p >> ATTRIBUTE_SHIFT
+    attributes: [term.Attribute] @= []
+
+    for a in order
+        if bits & attribute_bit(a) != 0
+            attributes @ attributes.push(a)
+
+    return term.Style(
+        foreground: color_of(foreground_of(p)),
+        background: color_of(background_of(p)),
+        attributes: attributes
+    )
+
+# The packed foreground of `p`.
+function foreground_of(p: i64) -> i64
+    return p & COLOR_MASK
+
+# The packed background of `p`.
+function background_of(p: i64) -> i64
+    return p >> COLOR_BITS & COLOR_MASK
+
+# The attributes' bits of `p`.
+function attributes_of(p: i64) -> i64
+    return p >> ATTRIBUTE_SHIFT
+
+# `top` laid over `under`: each colour of `top` that is not the default
+# replaces `under`'s, and the attributes of both are kept.
+function over(under: i64, top: i64) -> i64
+    fore = if foreground_of(top) != 0
+        foreground_of(top)
+    else
+        foreground_of(under)
+
+    back = if background_of(top) != 0
+        background_of(top)
+    else
+        background_of(under)
+    return fore | back << COLOR_BITS | (attributes_of(under) | attributes_of(top)) << ATTRIBUTE_SHIFT
+
+# `p` with its foreground and its background swapped, its attributes kept.
+function swapped(p: i64) -> i64
+    return background_of(p) | foreground_of(p) << COLOR_BITS | attributes_of(p) << ATTRIBUTE_SHIFT
+
+# The plain style with the attribute `.reverse`.
+function reversed() -> i64
+    return REVERSE << ATTRIBUTE_SHIFT
+
+test "of and style_of: plain, the sixteen, indexed at 0 and 255, rgb at both ends, every attribute"
+    assert of(term.plain()) == PLAIN
+    assert style_of(PLAIN) == term.plain()
+    colors: [term.Color] = [
+        .default
+        .black
+        .white
+        .bright_white
+        .indexed(n: 0)
+        .indexed(n: 255)
+        .rgb(red: 0, green: 0, blue: 0)
+        .rgb(red: 255, green: 255, blue: 255)
+        .rgb(red: 1, green: 2, blue: 3)
+    ]
+
+    for c in colors
+        s = term.with_background(term.with_foreground(term.plain(), color: c), color: c)
+        assert style_of(of(s)) == s
+
+    every = term.Style(
+        foreground: .red,
+        background: .blue,
+        attributes: [.bold, .dim, .italic, .underline, .blink, .reverse, .hidden, .strike]
+    )
+    assert style_of(of(every)) == every
+    assert of(every) > 0
+
+test "of: the attributes in another order pack the same"
+    a = term.Style(foreground: .default, background: .default, attributes: [.strike, .bold])
+    b = term.Style(foreground: .default, background: .default, attributes: [.bold, .strike])
+    assert of(a) == of(b)
+    assert style_of(of(a)).attributes == [.bold, .strike]
+
+test "over: a default colour keeps what is under, attributes add, swapped exchanges the colours"
+    red_on_blue = of(term.with_background(term.with_foreground(term.plain(), color: .red), color: .blue))
+    bold = of(term.with_attribute(term.plain(), a: .bold))
+    green = of(term.with_foreground(term.plain(), color: .green))
+    assert style_of(over(under: red_on_blue, top: bold)) == term.Style(foreground: .red, background: .blue, attributes: [.bold])
+    assert style_of(over(under: red_on_blue, top: green)) == term.Style(foreground: .green, background: .blue, attributes: [])
+    assert over(under: PLAIN, top: PLAIN) == PLAIN
+    assert style_of(swapped(red_on_blue)) == term.Style(foreground: .blue, background: .red, attributes: [])
+    assert style_of(reversed()) == term.with_attribute(term.plain(), a: .reverse)

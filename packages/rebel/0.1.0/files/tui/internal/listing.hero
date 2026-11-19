@@ -1,0 +1,269 @@
+# A list drawn into a grid: the first item shown moved the least that keeps
+# the selected one in view with its padding around it, each item's lines one
+# under another, the room kept for the highlight symbol, the selected item's
+# rows highlighted across the whole width, top to bottom or bottom to top.
+
+use term
+use tui/internal/grid
+use tui/internal/packed
+use tui/internal/runs
+
+# A line of an item, its pieces and where it stands.
+record Shaped
+    # The pieces.
+    pieces: [runs.Piece]
+    # `runs.LEFT`, `runs.CENTER` or `runs.RIGHT`.
+    align: i64
+
+# When room is kept for the symbol: always.
+constant ALWAYS: i64
+    0
+
+# Only while a row is selected.
+constant WHEN_SELECTED: i64
+    1
+
+# Never.
+constant NEVER: i64
+    2
+
+# The first item to show, from `offset`, so the selected item and `padding`
+# items around it, where there are any, are in `room` rows; `heights` the
+# rows of each item.
+function window(heights: [i64], offset: i64, has: bool, selected: i64, room: i64, padding: i64) -> i64
+    count = heights.len()
+
+    if count == 0
+        return 0
+    first_shown @= offset
+
+    if first_shown > count - 1
+        first_shown @ count - 1
+
+    if first_shown < 0
+        first_shown @ 0
+
+    if !has
+        return first_shown
+
+    pad = if padding > 0
+        padding
+    else
+        0
+
+    wanted_first = if selected - pad > 0
+        selected - pad
+    else
+        0
+
+    if first_shown > wanted_first
+        first_shown @ wanted_first
+
+    wanted_last = if selected + pad < count - 1
+        selected + pad
+    else
+        count - 1
+    held @= 0
+
+    for i in range(from: first_shown, to: wanted_last + 1)
+        held @ held + heights[i]
+
+    while first_shown < selected && held > room
+        held @ held - heights[first_shown]
+        first_shown @ first_shown + 1
+
+    return first_shown
+
+# The room kept for a symbol `symbol_width` wide under `spacing`.
+function prefix_of(spacing: i64, has: bool, symbol_width: i64) -> i64
+    if spacing == ALWAYS || spacing == WHEN_SELECTED && has
+        return symbol_width
+    return 0
+
+# Draws a list in the rectangle and answers the first item shown. `items`
+# holds each item's lines, `item_styles` each item's packed style; the
+# selected item is `selected` where `has`, kept below the count. Only the
+# items that fit whole are drawn, as `ratatui` draws them, but the first
+# shown, cut where it is taller than the rectangle.
+function draw(@g: grid.Grid, x: i64, y: i64, width: i64, height: i64, items: [[Shaped]], item_styles: [i64], has: bool, selected: i64, offset: i64, symbol: [runs.Piece], spacing: i64, every_line: bool, upward: bool, padding: i64, style: i64, highlight: i64) -> i64
+    grid.patch(@g, x: x, y: y, width: width, height: height, style: style)
+    count = items.len()
+
+    if width <= 0 || height <= 0 || count == 0
+        return offset
+
+    chosen = if selected < count
+        selected
+    else
+        count - 1
+    heights: [i64] @= []
+
+    for it in items
+        rows = if it.len() > 0
+            it.len()
+        else
+            1
+
+        heights @ heights.push(rows)
+
+    first = window(heights, offset: offset, has: has, selected: chosen, room: height, padding: padding)
+    prefix = prefix_of(spacing: spacing, has: has, symbol_width: runs.width_of(symbol))
+    used @= 0
+    i @= first
+
+    while i < count && (used + heights[i] <= height || used == 0)
+        shown = if heights[i] < height - used
+            heights[i]
+        else
+            height - used
+
+        top = if upward
+            y + height - used - shown
+        else
+            y + used
+        is_selected = has && i == chosen
+        grid.patch(@g, x: x, y: top, width: width, height: shown, style: item_styles[i])
+
+        for j in range(from: 0, to: shown)
+            row = top + j
+
+            if is_selected && (j == 0 || every_line)
+                _ = runs.place(@g, x: x, y: row, pieces: symbol, limit: x + prefix)
+
+            if j < items[i].len()
+                line = items[i][j]
+                runs.draw_row(
+                    @g,
+                    x: x + prefix,
+                    y: row,
+                    width: width - prefix,
+                    pieces: line.pieces,
+                    align: line.align,
+                    scroll: 0
+                )
+
+        if is_selected
+            grid.patch(@g, x: x, y: top, width: width, height: shown, style: highlight)
+        used @ used + shown
+        i @ i + 1
+
+    return first
+
+## Tests
+
+# An item of the lines `parts`, plain, against the left.
+function item_of(parts: [str]) -> [Shaped]
+    plain = term.plain()
+    out: [Shaped] @= []
+
+    for part in parts
+        out @ out.push(
+            Shaped(pieces: runs.pieces_of([runs.Run(text: part, style: plain)], line_style: plain), align: runs.LEFT)
+        )
+
+    return out
+
+# The five items `Item 0` to `Item 4`.
+function five() -> [[Shaped]]
+    out: [[Shaped]] @= []
+
+    for i in range(from: 0, to: 5)
+        out @ out.push(item_of([f"Item {i}"]))
+
+    return out
+
+# A list of `items` drawn `width` by `height` with the symbol `symbol`: its
+# rows, and the first item shown, last.
+function listed(items: [[Shaped]], width: i64, height: i64, has: bool, selected: i64, offset: i64, symbol: str, spacing: i64, every_line: bool, upward: bool, padding: i64) -> [str]
+    g @= grid.new(x: 0, y: 0, width: width, height: height)
+    styles: [i64] @= []
+
+    for _ in items
+        styles @ styles.push(packed.PLAIN)
+
+    mark = runs.pieces_of([runs.Run(text: symbol, style: term.plain())], line_style: term.plain())
+    first = draw(
+        @g,
+        x: 0,
+        y: 0,
+        width: width,
+        height: height,
+        items: items,
+        item_styles: styles,
+        has: has,
+        selected: selected,
+        offset: offset,
+        symbol: mark,
+        spacing: spacing,
+        every_line: every_line,
+        upward: upward,
+        padding: padding,
+        style: packed.PLAIN,
+        highlight: packed.reversed()
+    )
+    out: [str] @= []
+
+    for row in range(from: 0, to: height)
+        out @ out.push(grid.row_text(g, row: row))
+
+    out @ out.push(f"{first}")
+    return out
+
+# Every drawing below is what `ratatui` 0.30.2's `List` drew with a
+# `ListState` for the same items, run 2026-11-18.
+
+test "draw: a selection kept in view at the bottom, none, past the last, an offset above it"
+    assert listed(five(), width: 10, height: 3, has: true, selected: 3, offset: 0, symbol: ">> ", spacing: WHEN_SELECTED, every_line: false, upward: false, padding: 0) == ["   Item 1 ", "   Item 2 ", ">> Item 3 ", "1"]
+    assert listed(five(), width: 10, height: 3, has: false, selected: 0, offset: 0, symbol: ">> ", spacing: WHEN_SELECTED, every_line: false, upward: false, padding: 0) == ["Item 0    ", "Item 1    ", "Item 2    ", "0"]
+    assert listed(five(), width: 10, height: 3, has: true, selected: 9, offset: 0, symbol: ">> ", spacing: WHEN_SELECTED, every_line: false, upward: false, padding: 0) == ["   Item 2 ", "   Item 3 ", ">> Item 4 ", "2"]
+    assert listed(five(), width: 10, height: 3, has: true, selected: 0, offset: 3, symbol: ">> ", spacing: WHEN_SELECTED, every_line: false, upward: false, padding: 0) == [">> Item 0 ", "   Item 1 ", "   Item 2 ", "0"]
+
+test "draw: the room for the symbol always, never, and always with nothing selected"
+    assert listed(five(), width: 10, height: 3, has: true, selected: 1, offset: 0, symbol: ">> ", spacing: ALWAYS, every_line: false, upward: false, padding: 0) == ["   Item 0 ", ">> Item 1 ", "   Item 2 ", "0"]
+    assert listed(five(), width: 10, height: 3, has: false, selected: 0, offset: 0, symbol: ">> ", spacing: ALWAYS, every_line: false, upward: false, padding: 0) == ["   Item 0 ", "   Item 1 ", "   Item 2 ", "0"]
+    assert listed(five(), width: 10, height: 3, has: true, selected: 1, offset: 0, symbol: ">> ", spacing: NEVER, every_line: false, upward: false, padding: 0) == ["Item 0    ", "Item 1    ", "Item 2    ", "0"]
+
+test "draw: scroll padding in the middle and at the end, bottom to top"
+    assert listed(five(), width: 10, height: 3, has: true, selected: 2, offset: 0, symbol: ">> ", spacing: WHEN_SELECTED, every_line: false, upward: false, padding: 1) == ["   Item 1 ", ">> Item 2 ", "   Item 3 ", "1"]
+    assert listed(five(), width: 10, height: 3, has: true, selected: 4, offset: 0, symbol: ">> ", spacing: WHEN_SELECTED, every_line: false, upward: false, padding: 1) == ["   Item 2 ", "   Item 3 ", ">> Item 4 ", "2"]
+    assert listed(five(), width: 10, height: 4, has: true, selected: 1, offset: 0, symbol: ">> ", spacing: WHEN_SELECTED, every_line: false, upward: true, padding: 0) == ["   Item 3 ", "   Item 2 ", ">> Item 1 ", "   Item 0 ", "0"]
+
+test "draw: items of several lines, the symbol repeated or not, an empty item one row"
+    multi = [item_of(["a", "b"]), item_of(["c"]), item_of(["d", "e", "f"])]
+    assert listed(multi, width: 6, height: 4, has: true, selected: 2, offset: 0, symbol: "> ", spacing: WHEN_SELECTED, every_line: true, upward: false, padding: 0) == ["  c   ", "> d   ", "> e   ", "> f   ", "1"]
+    assert listed(multi, width: 6, height: 4, has: true, selected: 0, offset: 0, symbol: "> ", spacing: WHEN_SELECTED, every_line: false, upward: false, padding: 0) == ["> a   ", "  b   ", "  c   ", "      ", "0"]
+    assert listed([item_of([""]), item_of(["x"])], width: 6, height: 3, has: false, selected: 0, offset: 0, symbol: "", spacing: WHEN_SELECTED, every_line: false, upward: false, padding: 0) == ["      ", "x     ", "      ", "0"]
+    assert listed([], width: 6, height: 2, has: true, selected: 0, offset: 4, symbol: "", spacing: WHEN_SELECTED, every_line: false, upward: false, padding: 0) == ["      ", "      ", "4"]
+
+test "draw: the highlight laid across the whole width, the symbol's cells included"
+    g @= grid.new(x: 0, y: 0, width: 10, height: 3)
+    mark = runs.pieces_of([runs.Run(text: ">> ", style: term.plain())], line_style: term.plain())
+    _ = draw(
+        @g,
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 3,
+        items: five(),
+        item_styles: [0, 0, 0, 0, 0],
+        has: true,
+        selected: 3,
+        offset: 0,
+        symbol: mark,
+        spacing: WHEN_SELECTED,
+        every_line: false,
+        upward: false,
+        padding: 0,
+        style: packed.PLAIN,
+        highlight: packed.reversed()
+    )
+    assert g.styles[19] == packed.PLAIN && g.styles[20] == packed.reversed() && g.styles[29] == packed.reversed()
+
+test "window: a huge list keeps the cost linear, the selection at its end"
+    heights: [i64] @= []
+
+    for _ in range(from: 0, to: 100000)
+        heights @ heights.push(1)
+
+    assert window(heights, offset: 0, has: true, selected: 99999, room: 10, padding: 0) == 99990
+    assert window([], offset: 3, has: true, selected: 0, room: 10, padding: 0) == 0

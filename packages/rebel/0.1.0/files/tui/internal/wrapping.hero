@@ -1,0 +1,145 @@
+# A line of pieces wrapped to a width: as many words on a row as fit, the
+# spaces where a row breaks taken away, a word wider than a row broken
+# between graphemes. Under `trim` the spaces a line begins with go too;
+# without it they stay on its first row.
+
+use term
+use tui/internal/runs
+
+# The rows of `pieces` wrapped to `width` cells, 1 or more; one empty row for
+# no pieces. A piece wider than `width` is left out.
+function wrap(pieces: [runs.Piece], width: i64, trim: bool) -> [[runs.Piece]]
+    rows: [[runs.Piece]] @= []
+    current: [runs.Piece] @= []
+    used: i64 @= 0
+    holds_word @= false
+    first @= true
+    gap: [runs.Piece] @= []
+    gap_width: i64 @= 0
+    count = pieces.len()
+    at @= 0
+
+    while at < count
+        if runs.is_space(pieces[at])
+            gap @ gap.push(pieces[at])
+            gap_width @ gap_width + pieces[at].width
+            at @ at + 1
+            continue
+        end @= at
+        word_width: i64 @= 0
+
+        while end < count && !runs.is_space(pieces[end])
+            word_width @ word_width + pieces[end].width
+            end @ end + 1
+
+        word = pieces.slice(from: at, to: end)
+
+        if !holds_word
+            if first && !trim
+                for p in gap
+                    if used + p.width <= width
+                        current @ current.push(p)
+                        used @ used + p.width
+
+            first @ false
+
+            if used + word_width <= width
+                append(current: @current, used: @used, word: word)
+            else if word_width <= width
+                rows @ rows.push(current)
+                current @ word
+                used @ word_width
+            else
+                fill(rows: @rows, current: @current, used: @used, word: word, width: width)
+        else if used + gap_width + word_width <= width
+            append(current: @current, used: @used, word: gap)
+            append(current: @current, used: @used, word: word)
+        else if word_width <= width
+            rows @ rows.push(current)
+            current @ word
+            used @ word_width
+        else
+            rows @ rows.push(current)
+            current @ []
+            used @ 0
+            fill(rows: @rows, current: @current, used: @used, word: word, width: width)
+
+        holds_word @ true
+        gap @ []
+        gap_width @ 0
+        at @ end
+
+    if !trim
+        for p in gap
+            if used + p.width <= width
+                current @ current.push(p)
+                used @ used + p.width
+
+    rows @ rows.push(current)
+    return rows
+
+# Adds `word` to the row being built.
+function append(@current: [runs.Piece], @used: i64, word: [runs.Piece] lent)
+    for p in word
+        current @ current.push(p)
+        used @ used + p.width
+
+# Adds `word`, wider than a row, piece by piece, beginning a new row where the
+# next piece does not fit; a piece wider than a whole row is left out.
+function fill(@rows: [[runs.Piece]], @current: [runs.Piece], @used: i64, word: [runs.Piece] lent, width: i64)
+    for p in word
+        if p.width <= width
+            if used + p.width > width
+                rows @ rows.push(current)
+                current @ []
+                used @ 0
+            current @ current.push(p)
+            used @ used + p.width
+
+## Tests
+
+# The rows of `text` wrapped to `width`, as text.
+function wrapped(text: str, width: i64, trim: bool) -> [str]
+    ps = runs.pieces_of([runs.Run(text: text, style: term.plain())], line_style: term.plain())
+    out: [str] @= []
+
+    for row in wrap(ps, width: width, trim: trim)
+        parts: [str] @= []
+
+        for p in row
+            parts @ parts.push(p.symbol)
+
+        out @ out.push(parts.join(""))
+
+    return out
+
+test "wrap: the empty line, spaces alone, words a space apart as ratatui wraps them"
+    assert wrapped("", width: 3, trim: true) == [""]
+    assert wrapped("   ", width: 3, trim: true) == [""]
+    assert wrapped("Hello world, this is a long text", width: 10, trim: true) == ["Hello", "world,", "this is a", "long text"]
+    assert wrapped("Hello world, this is a long text", width: 10, trim: false) == ["Hello", "world,", "this is a", "long text"]
+    assert wrapped("a b c d e", width: 3, trim: true) == ["a b", "c d", "e"]
+
+test "wrap: a word wider than the row starts a row of its own and fills it, as ratatui answered"
+    assert wrapped("abcdefghijklmnop qr", width: 5, trim: true) == ["abcde", "fghij", "klmno", "p qr"]
+    assert wrapped("ab cdefgh", width: 5, trim: true) == ["ab", "cdefg", "h"]
+    assert wrapped("abc defghijk lm", width: 5, trim: true) == ["abc", "defgh", "ijk", "lm"]
+    assert wrapped("abcd  e", width: 3, trim: false) == ["abc", "d", "e"]
+
+test "wrap: spaces a line begins with, kept without trim, the indentation alone on a row where the word does not fit"
+    assert wrapped(" ab", width: 3, trim: false) == [" ab"]
+    assert wrapped(" ab", width: 3, trim: true) == ["ab"]
+    assert wrapped("   ab", width: 3, trim: false) == ["   ", "ab"]
+    assert wrapped("    abc", width: 3, trim: false) == ["   ", "abc"]
+    assert wrapped("  abcdefg", width: 3, trim: false) == ["  a", "bcd", "efg"]
+    assert wrapped("  a  b    c   d", width: 4, trim: true) == ["a  b", "c", "d"]
+
+test "wrap: spaces at a break taken away, which ratatui keeps in part"
+    assert wrapped("ab   cd", width: 3, trim: false) == ["ab", "cd"]
+    assert wrapped("ab    cd", width: 3, trim: true) == ["ab", "cd"]
+    assert wrapped("abc  ", width: 3, trim: false) == ["abc"]
+    assert wrapped("a     ", width: 3, trim: false) == ["a  "]
+
+test "wrap: wide characters, a row of one cell leaving them out"
+    assert wrapped("日本語のテキスト", width: 5, trim: true) == ["日本", "語の", "テキ", "スト"]
+    assert wrapped("a日b", width: 1, trim: true) == ["a", "b"]
