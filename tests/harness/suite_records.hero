@@ -990,6 +990,25 @@ function run_all(scratch: str, only: str) -> report.Report?
     unmerged(@r, scratch: scratch)
     entries(@r, present: walked)
     portable.check(@r, present: walked)
+
+    # **M-rebel-library's final check** (2026-11-19, `superseded.hero`): the
+    # new sentence in its homes, the retired wordings and `core` as a package
+    # in no file that is not a record, generated or a closed issue, CLAUDE.md
+    # and names.md included, which `living` leaves out for the old spelling's
+    # reason alone; and every record the register lists carrying its note.
+    open_text: [str] @= []
+
+    for path in walked
+        if !is_record(path) && !is_generated(path) && closed[path].is_err()
+            open_text @ open_text.push(path)
+
+    bodies: {i64: str} @= {}
+
+    for issue in held.issues
+        bodies[issue.number] @ issue.body
+
+    answered = superseded.Answered(asked: held.asked, broken: held.broken, why: held.why, bodies: bodies)
+    superseded.check(@r, present: walked, open_text: open_text, github: answered)
     return ok(r)
 
 # EVERY DIRECTORY OF `selfhost/` IS AN AREA A CARD MAY NAME (`cards.AREAS`,
