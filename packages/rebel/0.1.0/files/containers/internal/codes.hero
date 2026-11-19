@@ -32,6 +32,23 @@ function require_storage(held: i64, count: i64, what: str)
             f"the {what} holds {held} elements where its structure holds {count}: it is not the list the structure was built over"
         )
 
+# Ends the program where `held`, the length of a list or a lookup map the
+# program lent as a structure's storage, is not `kept`, the length the
+# structure left it at its last call (defect 2597, panel 252's R3): it is not
+# the structure's own. A list of another structure is told so unless it is
+# as long: a shape holds none of the program's items, and the program's
+# lists are values of their own, so no check of a shape tells two of one
+# length apart.
+#
+# - `held`: the list's or the map's length.
+# - `kept`: the length the structure left it.
+# - `what`: its role, for the message.
+function require_kept(held: i64, kept: i64, what: str)
+    if held != kept
+        abort_with(
+            f"the {what} holds {held} elements where its structure left {kept}: it is not the one the structure was built over"
+        )
+
 # `at`, a slot, a position or a bit, as an answer: `not_found` saying `msg`
 # where it is below zero, the mark the private modules use for none.
 #
@@ -52,5 +69,9 @@ test "answer: a slot, zero, and none"
 test "require_storage: a list as long as the structure, and longer"
     require_storage(held: 3, count: 3, what: "key list")
     require_storage(held: 5, count: 3, what: "key list")
+
+test "require_kept: a list as long as its structure left it"
+    require_kept(held: 3, kept: 3, what: "key list")
+    require_kept(held: 0, kept: 0, what: "lookup map")
     assert NOT_FOUND == "not_found"
     assert INVALID == "invalid"

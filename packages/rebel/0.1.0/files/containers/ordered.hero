@@ -32,8 +32,10 @@
 #
 # It fails with `not_found`, where a key or a slot is not there. A call
 # aborts where the program broke a precondition it could have checked: a
-# slot past the size, a shape given lists that are not its own, a map's
-# write given a set's shape or the other way.
+# slot past the size, a list not as long as this package left the shape's
+# own, which another shape's mostly is (one just as long is not told apart,
+# since the shape holds none of the keys, so a program keeps each shape
+# beside its own lists), a map's write given a set's shape or the other way.
 
 use containers/internal/codes
 use containers/internal/samples
@@ -222,7 +224,7 @@ function discard_at<K>(@ordered: Ordered, @key_list: [K], at: i64)
 #
 # See also `slot_of`.
 function contains<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> bool
-    codes.require_storage(held: key_list.len(), count: ordered.tree.count, what: "key list")
+    codes.require_kept(held: key_list.len(), kept: tree.room(ordered.tree), what: "key list")
     return walk.exact_of(ordered.tree, key_list, key: key, less: less) != tree.NONE
 
 # The slot of the key equal to `key` in an ordered map or set.
@@ -235,7 +237,7 @@ function contains<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (functi
 # Fails `not_found` where no key is equal to `key`. See also
 # `contains`, `floor_slot`.
 function slot_of<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64?
-    codes.require_storage(held: key_list.len(), count: ordered.tree.count, what: "key list")
+    codes.require_kept(held: key_list.len(), kept: tree.room(ordered.tree), what: "key list")
     return codes.answer(
         at: walk.exact_of(ordered.tree, key_list, key: key, less: less),
         msg: f"no key equal to the key asked among the {ordered.tree.count} held"
@@ -251,7 +253,7 @@ function slot_of<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (functio
 # Fails `not_found` where every key goes after `key`, an empty map or set
 # included. See also `lower_slot`, `ceiling_slot`.
 function floor_slot<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64?
-    codes.require_storage(held: key_list.len(), count: ordered.tree.count, what: "key list")
+    codes.require_kept(held: key_list.len(), kept: tree.room(ordered.tree), what: "key list")
     return codes.answer(
         at: walk.floor_of(ordered.tree, key_list, key: key, less: less),
         msg: f"no key at or before the key asked among the {ordered.tree.count} held"
@@ -267,7 +269,7 @@ function floor_slot<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (func
 # Fails `not_found` where every key goes before `key`, an empty map or set
 # included. See also `higher_slot`, `floor_slot`.
 function ceiling_slot<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64?
-    codes.require_storage(held: key_list.len(), count: ordered.tree.count, what: "key list")
+    codes.require_kept(held: key_list.len(), kept: tree.room(ordered.tree), what: "key list")
     return codes.answer(
         at: walk.ceiling_of(ordered.tree, key_list, key: key, less: less),
         msg: f"no key at or after the key asked among the {ordered.tree.count} held"
@@ -282,7 +284,7 @@ function ceiling_slot<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (fu
 #
 # Fails `not_found` where no key goes before `key`. See also `floor_slot`.
 function lower_slot<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64?
-    codes.require_storage(held: key_list.len(), count: ordered.tree.count, what: "key list")
+    codes.require_kept(held: key_list.len(), kept: tree.room(ordered.tree), what: "key list")
     return codes.answer(
         at: walk.lower_of(ordered.tree, key_list, key: key, less: less),
         msg: f"no key before the key asked among the {ordered.tree.count} held"
@@ -297,7 +299,7 @@ function lower_slot<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (func
 #
 # Fails `not_found` where no key goes after `key`. See also `ceiling_slot`.
 function higher_slot<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64?
-    codes.require_storage(held: key_list.len(), count: ordered.tree.count, what: "key list")
+    codes.require_kept(held: key_list.len(), kept: tree.room(ordered.tree), what: "key list")
     return codes.answer(
         at: walk.higher_of(ordered.tree, key_list, key: key, less: less),
         msg: f"no key after the key asked among the {ordered.tree.count} held"
@@ -314,7 +316,7 @@ function higher_slot<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (fun
 # From 0 to the size; a held key's rank is its place from 0 in the order.
 # See also `slot_at_rank`.
 function rank_of<K>(ordered: Ordered, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64
-    codes.require_storage(held: key_list.len(), count: ordered.tree.count, what: "key list")
+    codes.require_kept(held: key_list.len(), kept: tree.room(ordered.tree), what: "key list")
     return walk.rank_of(ordered.tree, key_list, key: key, less: less)
 
 # The slot of the key with `rank` keys before it.
@@ -397,7 +399,7 @@ function slots(ordered: Ordered) -> [i64]
 # another kind, kept or left out at either end, is a walk by `next_slot`
 # from `ceiling_slot` or `higher_slot`. See also `slots`.
 function slots_between<K>(ordered: Ordered, key_list: [K] lent, from: K, to: K, less: (function(a: K, b: K) -> bool)) -> [i64]
-    codes.require_storage(held: key_list.len(), count: ordered.tree.count, what: "key list")
+    codes.require_kept(held: key_list.len(), kept: tree.room(ordered.tree), what: "key list")
     return walk.between(ordered.tree, key_list, from: from, to: to, less: less)
 
 # The keys of an ordered map or set in their order.
@@ -407,7 +409,7 @@ function slots_between<K>(ordered: Ordered, key_list: [K] lent, from: K, to: K, 
 #
 # Empty for an empty map or set. See also `slots`.
 function to_list<K>(ordered: Ordered, key_list: [K] lent) -> [K]
-    codes.require_storage(held: key_list.len(), count: ordered.tree.count, what: "key list")
+    codes.require_kept(held: key_list.len(), kept: tree.room(ordered.tree), what: "key list")
     held: [K] @= []
 
     for at in steps.in_order(ordered.tree)

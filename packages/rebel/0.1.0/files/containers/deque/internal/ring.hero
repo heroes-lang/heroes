@@ -15,6 +15,10 @@ record Ring
     count: i64
     # The most items a bounded deque holds; 0 for one without a bound.
     limit: i64
+    # How long the item list was when this package last left it, so that a
+    # call given a list of another length knows it is not this deque's
+    # (defect 2597).
+    room: i64
 
 # Below this length an item list is never cut back.
 constant KEPT: i64
@@ -26,15 +30,21 @@ constant FIRST_ROOM: i64
 
 # An empty ring, bounded by `limit` where it is above 0.
 function empty(limit: i64) -> Ring
-    return Ring(head: 0, count: 0, limit: limit)
+    return Ring(head: 0, count: 0, limit: limit, room: 0)
 
 # The slot of the item `index` places from the front.
 function slot_of(ring: Ring lent, capacity: i64, index: i64) -> i64
     return (ring.head + index) % capacity
 
-# Ends the program where the item list is shorter than the ring says.
+# Ends the program where the item list is not as long as this package left
+# it, so not this deque's own (defect 2597).
 function require_items(ring: Ring lent, held: i64)
-    codes.require_storage(held: held, count: ring.count, what: "item list")
+    codes.require_kept(held: held, kept: ring.room, what: "item list")
+
+# Whether an item list of `held` items is as long as this package left the
+# deque's own: what `require_items` asks.
+function holds_own(ring: Ring lent, held: i64) -> bool
+    return held == ring.room
 
 # Lays the items out again from slot 0, in their order, in a list of
 # `capacity` slots whose room holds copies of `pad`; the ring's head goes to 0.
@@ -50,6 +60,7 @@ function relay<T>(@ring: Ring, @items: [T], capacity: i64, pad: T)
 
     items @ laid
     ring.head @ 0
+    ring.room @ items.len()
 
 # Makes room for one more item where the list is full, doubling it.
 function make_room<T>(@ring: Ring, @items: [T], pad: T)
@@ -68,6 +79,7 @@ function let_go<T>(@ring: Ring, @items: [T], freed: i64)
     if ring.count == 0
         items @ []
         ring.head @ 0
+        ring.room @ 0
         return
     items[freed] @ items[ring.head]
 
@@ -285,6 +297,7 @@ test "every operation: four thousand random ones against a plain list, bounded a
         dice @= samples.Dice(state: 77 + limit)
 
         for step in range(from: 0, to: 4000)
+            assert holds_own(ring, held: items.len())
             choice = samples.roll(@dice, 7)
 
             if choice == 0
@@ -325,3 +338,18 @@ test "every operation: four thousand random ones against a plain list, bounded a
             assert ring.count == model.len()
             assert same_as(ring, items: items, model: model)
             assert items.len() < KEPT || ring.count * 4 > items.len() || limit > 0
+
+test "holds_own: another deque's list of another length is told, one of the same length is not (defect 2597)"
+    jobs: [i64] @= [1, 2, 3]
+    jobs_ring @= Ring(head: 0, count: 3, limit: 0, room: 3)
+    urgent: [i64] @= [10, 20, 30, 40]
+    urgent_ring @= Ring(head: 0, count: 4, limit: 0, room: 4)
+    assert holds_own(jobs_ring, held: jobs.len())
+    assert !holds_own(jobs_ring, held: urgent.len())
+
+    # One push each lays both lists out at `FIRST_ROOM`: the same length,
+    # which no check of a shape tells apart, so the face says so.
+    push_back(@jobs_ring, @jobs, 4)
+    push_back(@urgent_ring, @urgent, 50)
+    assert holds_own(jobs_ring, held: jobs.len())
+    assert jobs.len() == urgent.len() && holds_own(jobs_ring, held: urgent.len())

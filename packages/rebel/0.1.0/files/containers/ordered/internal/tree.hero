@@ -63,6 +63,13 @@ function size_of(tree: Tree lent, at: i64) -> i64
         return 0
     return tree.size[at]
 
+# How long the program's key list, and a map's value list, are as this
+# package left them: the tree's own lists of a slot grow and are cut with
+# them, `claim` beside `storage.store` and `trim` beside `storage.drop_slot`,
+# by one rule (defect 2597).
+function room(tree: Tree lent) -> i64
+    return tree.left.len()
+
 # Whether `at` names a live slot of the tree.
 function is_live(tree: Tree lent, at: i64) -> bool
     return at >= 0 && at < tree.count

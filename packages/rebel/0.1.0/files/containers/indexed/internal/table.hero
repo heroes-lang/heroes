@@ -14,6 +14,10 @@ record Table
     # How many keys of the lookup map name no entry; the map is rebuilt when
     # they outnumber the live ones.
     dead: i64
+    # How long the key and value lists were when this package last left
+    # them, so that a call given lists of another length knows they are not
+    # this map's (defect 2597).
+    room: i64
 
 # The mark of a key taken out, in the lookup map.
 constant GONE: i64
@@ -24,10 +28,22 @@ constant GONE: i64
 constant SPARE_KEYS: i64
     32
 
-# Ends the program where a list is shorter than the map.
+# Ends the program where a list is not as long as this package left it, so
+# not this map's own (defect 2597).
 function require_lists(table: Table lent, keys_held: i64, values_held: i64)
-    codes.require_storage(held: keys_held, count: table.count, what: "key list")
-    codes.require_storage(held: values_held, count: table.count, what: "value list")
+    codes.require_kept(held: keys_held, kept: table.room, what: "key list")
+    codes.require_kept(held: values_held, kept: table.room, what: "value list")
+
+# Ends the program where the lookup map does not hold a key for each live
+# entry and each key taken out since it was last rebuilt, so is not this
+# map's own (defect 2597).
+function require_lookup(table: Table lent, held: i64)
+    codes.require_kept(held: held, kept: table.count + table.dead, what: "lookup map")
+
+# Whether lists and a lookup map of these lengths are as this package left
+# the map's own: what `require_lists` and `require_lookup` ask.
+function holds_own(table: Table lent, keys_held: i64, values_held: i64, lookup_held: i64) -> bool
+    return keys_held == table.room && values_held == table.room && lookup_held == table.count + table.dead
 
 # Ends the program where `at` names no position.
 function require_position(table: Table lent, at: i64)
@@ -62,6 +78,7 @@ function put<K, V>(@table: Table, @key_list: [K], @value_list: [V], @lookup: {K:
     at = table.count
     storage.store(@key_list, at, key)
     storage.store(@value_list, at, value)
+    table.room @ key_list.len()
 
     if lookup[key].default(0) == GONE
         table.dead @ table.dead - 1
@@ -86,6 +103,7 @@ function swap_remove_at<K, V>(@table: Table, @key_list: [K], @value_list: [V], @
     table.count @ end
     storage.drop_slot(@key_list, at: at, end: end, count: end)
     storage.drop_slot(@value_list, at: at, end: end, count: end)
+    table.room @ key_list.len()
 
     if at != end
         lookup[key_list[at]] @ at
@@ -104,6 +122,7 @@ function shift_remove_at<K, V>(@table: Table, @key_list: [K], @value_list: [V], 
     table.count @ end
     storage.drop_slot(@key_list, at: end, end: end, count: end)
     storage.drop_slot(@value_list, at: end, end: end, count: end)
+    table.room @ key_list.len()
     forget(@table, key_list, @lookup, key)
 
 # Moves the entry at `from` to `to`, the ones between moving a place.
@@ -198,6 +217,7 @@ function sort_by_key<K, V>(@table: Table, @key_list: [K], @value_list: [V], @loo
 
     key_list @ sorted_keys
     value_list @ sorted_values
+    table.room @ key_list.len()
     rebuild(@table, key_list, @lookup)
 
 ## Tests
@@ -210,7 +230,7 @@ test "sorted_positions: empty, one, equal keys kept in their order, and reversed
     assert sorted_positions(range(from: 0, to: 9), count: 9, less: samples.descending) == [8, 7, 6, 5, 4, 3, 2, 1, 0]
 
 test "put, swap_remove_at and shift_remove_at: positions kept true in the lookup map"
-    table @= Table(count: 0, dead: 0)
+    table @= Table(count: 0, dead: 0, room: 0)
     held: [str] @= []
     values: [i64] @= []
     lookup: {str: i64} @= {}
@@ -245,7 +265,7 @@ test "move and swap: forward, back, and in place"
     assert lookup["d"].must() == 3
 
 test "forget: many keys taken out, the lookup map rebuilt and kept small"
-    table @= Table(count: 0, dead: 0)
+    table @= Table(count: 0, dead: 0, room: 0)
     held: [i64] @= []
     values: [i64] @= []
     lookup: {i64: i64} @= {}
@@ -260,7 +280,7 @@ test "forget: many keys taken out, the lookup map rebuilt and kept small"
     assert keys(lookup).len() <= 4 + 4 + SPARE_KEYS + 1
 
 test "put and every removal and move: four thousand random operations against lists in order"
-    table @= Table(count: 0, dead: 0)
+    table @= Table(count: 0, dead: 0, room: 0)
     held: [i64] @= []
     values: [i64] @= []
     lookup: {i64: i64} @= {}
@@ -269,6 +289,7 @@ test "put and every removal and move: four thousand random operations against li
     dice @= samples.Dice(state: 314)
 
     for step in range(from: 0, to: 4000)
+        assert holds_own(table, keys_held: held.len(), values_held: values.len(), lookup_held: lookup.len())
         key = samples.roll(@dice, 30)
         choice = samples.roll(@dice, 6)
         place @= -1
@@ -320,3 +341,22 @@ test "put and every removal and move: four thousand random operations against li
 
         for at in range(from: 0, to: model.len())
             assert position_of(table, lookup, model[at]) == at
+
+test "holds_own: another map's lists and lookup map are told (defect 2597)"
+    a @= Table(count: 0, dead: 0, room: 0)
+    a_keys: [i64] @= []
+    a_values: [i64] @= []
+    a_lookup: {i64: i64} @= {}
+    b @= Table(count: 0, dead: 0, room: 0)
+    b_keys: [i64] @= []
+    b_values: [i64] @= []
+    b_lookup: {i64: i64} @= {}
+    _ = put(@b, @b_keys, @b_values, @b_lookup, key: 2, value: 1)
+    _ = put(@b, @b_keys, @b_values, @b_lookup, key: 1, value: 2)
+    _ = put(@a, @a_keys, @a_values, @a_lookup, key: 5, value: 10)
+    assert holds_own(a, keys_held: a_keys.len(), values_held: a_values.len(), lookup_held: a_lookup.len())
+    assert !holds_own(a, keys_held: b_keys.len(), values_held: b_values.len(), lookup_held: b_lookup.len())
+
+    # Sorted, the lists are laid out again at the live entries' length.
+    sort_by_key(@b, @b_keys, @b_values, @b_lookup, less: samples.ascending)
+    assert holds_own(b, keys_held: b_keys.len(), values_held: b_values.len(), lookup_held: b_lookup.len())
