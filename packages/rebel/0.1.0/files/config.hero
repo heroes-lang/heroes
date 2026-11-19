@@ -33,6 +33,7 @@ use config/internal/trees
 use config/internal/variables
 use flags
 use json
+use path as file_paths
 use time
 
 ## Codes
@@ -984,18 +985,22 @@ test "read_layer and read_layer_if_present: a file read with its path, a file ab
 test "find_file: folders and extensions in order, a folder absent, nothing found"
     write_file(path: "build/rebel-config-find.toml", text: "a = 1\n").must()
     write_file(path: "build/rebel-config-find.yaml", text: "a: 2\n").must()
-    assert find_file(base: "rebel-config-find", dirs: ["build/absent-zz", "build"]).must() == "build/rebel-config-find.toml"
+
+    # A path found is its folder and its name joined by the system's separator.
+    sep = file_paths.sep()
+    assert find_file(base: "rebel-config-find", dirs: ["build/absent-zz", "build"]).must() == f"build{sep}rebel-config-find.toml"
 
     match find_file(base: "rebel-config-zz", dirs: ["build"])
         .ok _ => assert false
         .err e =>
             assert e.code == NOT_FOUND
-            assert e.msg == "no settings file \"rebel-config-zz\": looked at \"build/rebel-config-zz.json\", \"build/rebel-config-zz.toml\", \"build/rebel-config-zz.yaml\", \"build/rebel-config-zz.yml\", \"build/rebel-config-zz.ini\""
+            assert e.msg == f"no settings file \"rebel-config-zz\": looked at \"build{sep}rebel-config-zz.json\", \"build{sep}rebel-config-zz.toml\", \"build{sep}rebel-config-zz.yaml\", \"build{sep}rebel-config-zz.yml\", \"build{sep}rebel-config-zz.ini\""
 
 test "find_upward: the folder itself, a folder above folders that are not there, none"
     write_file(path: "build/rebel-config-up.env", text: "A=1\n").must()
-    assert find_upward(name: "rebel-config-up.env", dir: "build").must() == "build/rebel-config-up.env"
-    assert find_upward(name: "rebel-config-up.env", dir: "build/absent-zz/deeper").must() == "build/rebel-config-up.env"
+    found = "build" + file_paths.sep() + "rebel-config-up.env"
+    assert find_upward(name: "rebel-config-up.env", dir: "build").must() == found
+    assert find_upward(name: "rebel-config-up.env", dir: "build/absent-zz/deeper").must() == found
     assert find_upward(name: "rebel-config-up-zz.env", dir: "build/absent-zz").is_err()
 
 test "bind_files: a file read and trimmed, a file absent, a folder absent, a path under another"
@@ -1006,7 +1011,7 @@ test "bind_files: a file read and trimmed, a file absent, a folder absent, a pat
         names: {"db.password": "rebel-config-secret", "token": "rebel-config-absent-zz"}
     ).must()
     assert json.format(layer.value).must() == "{\"db\":{\"password\":\"s3cret\"}}"
-    assert layer.origins == {"/db/password": "build/rebel-config-secret"}
+    assert layer.origins == {"/db/password": "build" + file_paths.sep() + "rebel-config-secret"}
     assert bind_files(name: "s", dir: "build/absent-zz", names: {"a": "b"}).must().value == .object(members: {})
     assert bind_files(name: "s", dir: "build", names: {"a": "x", "a.b": "y"}).is_err()
 
@@ -1182,7 +1187,10 @@ test "path_of: relative to the folder of a file's layer, absolute kept, from the
     )
     env = from_env(name: "environment", env: {"APP_CA": "ca.pem"}, options: env_options("APP_")).must()
     s = merge([file, env])
-    assert path_of(s, "cert").must() == "conf/certs/a.pem"
+
+    # The file's folder and the value joined by the system's separator, the
+    # value kept as it is written.
+    assert path_of(s, "cert").must() == "conf" + file_paths.sep() + "certs/a.pem"
     assert path_of(s, "key").must() == "/k.pem"
     assert path_of(s, "ca").must() == "ca.pem"
     assert source_of(s, "cert").must().file == "conf/app.json"
@@ -1243,12 +1251,12 @@ test "read_layer_if_present: a file that is not there"
 # The settings file of a program, whatever format it was written in.
 test "find_file: the first folder that holds one"
     write_file(path: "build/rebel-config-app.yaml", text: "port: 1\n").must()
-    assert find_file(base: "rebel-config-app", dirs: ["build"]).must() == "build/rebel-config-app.yaml"
+    assert find_file(base: "rebel-config-app", dirs: ["build"]).must() == "build" + file_paths.sep() + "rebel-config-app.yaml"
 
 # A `.env` file found in a folder or one above it.
 test "find_upward: from a folder below"
     write_file(path: "build/rebel-config-example.env", text: "A=1\n").must()
-    assert find_upward(name: "rebel-config-example.env", dir: "build/below-zz").must() == "build/rebel-config-example.env"
+    assert find_upward(name: "rebel-config-example.env", dir: "build/below-zz").must() == "build" + file_paths.sep() + "rebel-config-example.env"
 
 # Secrets read from the files of a folder.
 test "bind_files: a password from its file"
@@ -1355,7 +1363,7 @@ test "path_of: a certificate beside its settings file"
         origins: {},
         file: "conf/app.json"
     )
-    assert path_of(merge([file]), "cert").must() == "conf/a.pem"
+    assert path_of(merge([file]), "cert").must() == "conf" + file_paths.sep() + "a.pem"
 
 # The elements of a list setting.
 test "items_of: a list of numbers"
