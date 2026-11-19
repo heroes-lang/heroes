@@ -1,0 +1,82 @@
+# Fixed 2026-11-19, defect 2582, lane-251 (adopted with panel 251's R2): a
+# worker and `main` printing at the same time.
+# Symptom: a line torn, `main donesum 15` and an empty line, 21 runs of 200 on
+# this Mac (panel 251's critic, `t2-ref`), 18 of 200 (its compiler-engineer):
+# `print` wrote each value and then its newline as separate calls with no lock
+# held across them, so the other thread's value landed inside the line.
+# Cause: nothing held stdout for a statement. A `print` now holds stdout's own
+# lock from its first value to its newline, so one statement is one span of
+# stdout. Each of 200 rounds starts a worker printing 50 lines of `sum 15`
+# while `main` prints 50 of `main done`, both into a file (the case's header,
+# since the harness would see an order that differs from run to run), and
+# every line read back must be one of the two, whole; without the lock the
+# first rounds already tear lines.
+extern "fixedbugs-2582-stdout-into-a-file.h"
+    function stdout_into(path: cstr lent) -> i64
+    function stdout_back(saved: i64) -> i64
+
+extern "stdio.h"
+    function remove(path: cstr lent) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+    function hero_os_pid() -> i64
+
+constant ROUNDS: i64
+    200
+
+constant LINES: i64
+    50
+
+function worker(n: i64) -> i64
+    i @= 0
+
+    while i < LINES
+        print("sum ", 15)
+        i @ i + 1
+
+    return n
+
+function main()
+    path = "build/heroes-golden-2582-" + hero_os_pid().to_str() + ".txt"
+    rounds @= 0
+    whole @= 0
+    torn @= 0
+
+    while rounds < ROUNDS
+        saved = stdout_into(path.cstr())
+
+        if saved < 0
+            break
+        t = hero_thread_spawn(body: worker, arg: rounds)
+        j @= 0
+
+        while j < LINES
+            print("main ", "done")
+            j @ j + 1
+
+        _ = hero_thread_join(handle: t)
+
+        if stdout_back(saved) != 1
+            break
+
+        line @= ""
+
+        for c in read_file(path).must().chars()
+            if c != "\n"
+                line @ line + c
+            else if line == "sum 15" || line == "main done"
+                whole @ whole + 1
+                line @ ""
+            else
+                torn @ torn + 1
+                line @ ""
+
+        if line != ""
+            torn @ torn + 1
+
+        rounds @ rounds + 1
+
+    _ = remove(path.cstr())
+    print(rounds, " rounds, ", whole, " lines whole, ", torn, " torn")

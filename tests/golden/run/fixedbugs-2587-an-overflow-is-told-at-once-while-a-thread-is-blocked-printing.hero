@@ -1,0 +1,33 @@
+# Fixed 2026-11-19, defect 2587, lane-251: the shape beside the defect's own,
+# an integer overflow on `main` while a worker sits blocked printing into a
+# pipe nobody reads.
+# Symptom: as the index's: the overflow's report waited on stdout's lock,
+# which the blocked worker never gives back, and nothing was said.
+# Cause: every report flushed stdout unconditionally (`parts/place.c`'s
+# reports as `hero_panic` did). All flush only where the lock can be had.
+extern "fixedbugs-2552-stdout-into-a-pipe-nobody-reads.h"
+    function unread_stdout() -> i64
+
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function talk(n: i64) -> i64
+    i @= 0
+
+    while i < 1_000_000_000
+        print("worker ", i)
+        i @ i + 1
+
+    return n
+
+function main()
+    if unread_stdout() == 1
+        t = hero_thread_spawn(body: talk, arg: 7)
+        _ = usleep(useconds: 200000)
+        big = 9_223_372_036_854_775_800 + t
+        print(big + 100)
+        _ = hero_thread_join(handle: t)

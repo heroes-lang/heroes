@@ -1,0 +1,2 @@
+!at: fixedbugs-2587-an-index-past-the-end-is-told-at-once-while-a-thread-is-blocked-printing.hero:38:15
+!panic: array index out of range

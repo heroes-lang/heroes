@@ -346,6 +346,7 @@ HeroStr hero_str_slice(HeroStr s, int64_t from, int64_t to) { return hero_str_sl
 
 void hero_print_str(HeroStr s) {
     hero_str_require(s);
+    hero_print_begin();
     fwrite(s.ptr, 1, (size_t)s.len, stdout);
 }
 

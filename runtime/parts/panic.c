@@ -9,10 +9,13 @@
 
 /* parts/panic.c — stopping, and the three unconditional printers.
  *
- * Every abort in the language funnels through `hero_panic`: an out-of-range
- * index, integer overflow, a `.must()` on an error, a slice that splits a
- * character. It flushes stdout first, because the interesting half of a failing
- * program is what it printed before it stopped.
+ * Every abort in the language funnels through `hero_panic` or a report of
+ * its kind: an out-of-range index, integer overflow, a `.must()` on an error, a
+ * slice that splits a character. Each flushes stdout first, because the
+ * interesting half of a failing program is what it printed before it stopped,
+ * and since defect 2587 only where stdout's lock can be had
+ * (`hero_stdout_before_report`, below), so a thread blocked printing never
+ * holds a report back.
  *
  * design.md §4.14 (arithmetic edges abort), §4.20.
  */
@@ -103,7 +106,7 @@ static void hero_stdout_before_report(void) {
 }
 
 _Noreturn void hero_panic(const char *msg) {
-    fflush(stdout);
+    hero_stdout_before_report();
     fprintf(stderr, "panic: %s\n", msg);
     hero_abort();
 }
@@ -175,11 +178,63 @@ _Noreturn void hero_unreachable(void) {
  * kept for an older program being what the author's rule before 1.0.0 refuses
  * (panel 232's R8). */
 
-void hero_print_int(int64_t v) { printf("%lld", (long long)v); }
+/* A LINE IS WRITTEN WHOLE, WHATEVER ANOTHER THREAD PRINTS (defect 2582;
+ * adopted with panel 251's R2, ratified 2026-11-19). `print` is one printer per
+ * value and then `hero_print_end`'s newline (`selfhost/emit/printing.hero`),
+ * separate calls that each took stdout's lock and gave it back, so another
+ * thread's value could land between two of them: a worker's `sum 15` written
+ * inside `main`'s `main done` line, 21 runs of 200 on this Mac (the sitting's
+ * critic), 18 of 200 (its compiler-engineer).
+ *
+ * So the statement's first printer takes stdout's own lock, `flockfile` on
+ * POSIX and `_lock_file` on Windows, and `hero_print_end` gives it back after
+ * the newline: one statement's values and newline are one span of stdout. The
+ * lock counts its holder's takings and the C library's own writes take it
+ * too, so the printers' `printf`, `fputs` and `fwrite` inside the span take it
+ * again at once, and another thread's line waits for the newline. Nothing runs
+ * between two printers of one statement but the printers: every argument is
+ * computed before the first (`printing.hero` prints values already held), so
+ * no `print` can open inside another. A panic inside the span, a `str` refused
+ * by its printer, finds the lock already its own (`hero_stdout_before_report`).
+ * Its price, in instructions retired over 100,000 `print`s of three values
+ * into `/dev/null` (`/usr/bin/time -l`, best of five after the first, this Mac,
+ * 2026-11-19): 562,888,637 without the lock and 579,266,753 with it, about 160
+ * a `print`, 2.9 %; the sitting's compiler-engineer read about 209. */
+static _Thread_local bool hero_print_open = false;
+
+static void hero_print_begin(void) {
+    if (hero_print_open) return;
+#if defined(_WIN32)
+    _lock_file(stdout);
+#else
+    flockfile(stdout);
+#endif
+    hero_print_open = true;
+}
+
+void hero_print_int(int64_t v) {
+    hero_print_begin();
+    printf("%lld", (long long)v);
+}
 /* See `hero_uint_to_str`: `u64` above 2^63 prints negative through the signed one. */
-void hero_print_uint(uint64_t v) { printf("%llu", (unsigned long long)v); }
-void hero_print_bool(bool v) { fputs(v ? "true" : "false", stdout); }
-void hero_print_end(void) { putchar('\n'); }
+void hero_print_uint(uint64_t v) {
+    hero_print_begin();
+    printf("%llu", (unsigned long long)v);
+}
+void hero_print_bool(bool v) {
+    hero_print_begin();
+    fputs(v ? "true" : "false", stdout);
+}
+void hero_print_end(void) {
+    hero_print_begin();
+    putchar('\n');
+    hero_print_open = false;
+#if defined(_WIN32)
+    _unlock_file(stdout);
+#else
+    funlockfile(stdout);
+#endif
+}
 
 /* Which test `heroes test` asked for. In the runtime rather than the generated C
  * because CLAUDE.md §7 lets a translation unit include `heroes_runtime.h` and

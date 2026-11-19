@@ -227,6 +227,7 @@ static int hero_f32_render(char *buf, size_t cap, float v) {
 void hero_print_f32(float v) {
     char buf[40];
     (void)hero_f32_render(buf, sizeof buf, v);
+    hero_print_begin();
     fputs(buf, stdout);
 }
 
@@ -241,6 +242,7 @@ HeroStr hero_f32_to_str(float v) {
 void hero_print_f64(double v) {
     char buf[40];
     (void)hero_f64_render(buf, sizeof buf, v);
+    hero_print_begin();
     fputs(buf, stdout);
 }
 

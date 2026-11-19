@@ -1,0 +1,2 @@
+!at: fixedbugs-2587-an-overflow-is-told-at-once-while-a-thread-is-blocked-printing.hero:32:15
+!panic: integer overflow
