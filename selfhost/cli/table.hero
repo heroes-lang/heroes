@@ -284,13 +284,14 @@ test "the table is the pipeline's order and the flags carry their shapes"
     # since it runs check's stages first (panel 253's R2, ratified 2026-11-19).
     assert table.len() == 17
     assert table[0].name == "lex"
-    assert table[3].name == "build"
+    assert table[3].name == "doc"
+    assert table[4].name == "build"
 
     # -o takes a value; --include repeats and names a directory.
     o_found: bool @= false
     inc_found: bool @= false
 
-    for f in table[3].flags
+    for f in table[4].flags
         if f.spelling == "-o"
             assert f.value
             assert !f.repeatable

@@ -126,7 +126,9 @@ test "a verb that reads one file refuses a directory, by a link too, naming what
             assert asked([c.name, inner]).must() == said(c, path: inner)
             assert strings.holds(text: said(c, path: inner), needle: "`" + c.name + "` ")
 
-    assert walked == 8
+    # Nine since 2026-11-19: `doc`, whose operand is one module (panel 253's
+    # R2).
+    assert walked == 9
     assert !process.remove_tree(dir).is_err()
 
 # Defect 2486's case and the shapes beside it: `measure` on a directory, a
