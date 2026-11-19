@@ -156,7 +156,10 @@ function decode_base64_lines(data: [u8]) -> [u8]?
             continue
 
         if !(b >= 'A' && b <= 'Z' || b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '+' || b == '/' || b == '=')
-            return fail(code: INVALID, msg: f"base 64 holds the byte {b} at {at}, of no base 64 alphabet")
+            return fail(
+                code: INVALID,
+                msg: f"base 64 holds '{bytes.format_escaped([b])}' at {at}, of no base 64 alphabet"
+            )
         kept @ kept.push(b)
         at @ at + 1
 
@@ -225,4 +228,4 @@ test "encode_base64_lines and decode_base64_lines: lines of 76, empty, missing p
 
     match decode_base64_lines(bytes.from_text("aGk*"))
         .ok _  => assert false
-        .err e => assert e.code == INVALID && e.msg == "base 64 holds the byte 42 at 3, of no base 64 alphabet"
+        .err e => assert e.code == INVALID && e.msg == "base 64 holds '*' at 3, of no base 64 alphabet"

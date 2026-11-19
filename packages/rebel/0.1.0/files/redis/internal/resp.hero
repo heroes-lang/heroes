@@ -226,7 +226,10 @@ function scan(data: [u8], at: i64) -> Scanned?
         if n < 0
             return fail(code: INVALID, msg: f"the reply's count at byte {at} is {n}")
         return ok(Scanned(complete: true, token: Token(kind: kind, count: n, data: [], next: after)))
-    return fail(code: INVALID, msg: f"the reply holds the byte {kind} at byte {at}, which begins no RESP type")
+    return fail(
+        code: INVALID,
+        msg: f"the reply holds '{bytes.format_escaped([kind])}' at byte {at}, which begins no RESP type"
+    )
 
 # Whether `data` writes an integer of any size: decimal digits, a `-` before
 # them allowed.
@@ -369,3 +372,8 @@ test "number: the edges of an i64, a sign, and none"
     assert number(bytes.from_text("9223372036854775808"), from: 0, to: 19).is_err()
     assert number(bytes.from_text("+7"), from: 0, to: 2).must() == 7
     assert number(bytes.from_text("-"), from: 0, to: 1).is_err()
+
+test "scan: a type unknown, told by its character (defect 2598)"
+    match scan(bytes.from_text("?x\r\n"), at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "the reply holds '?' at byte 0, which begins no RESP type"
