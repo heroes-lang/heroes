@@ -1,0 +1,13 @@
+error[doc_parameter_order]: the comment of `joined` names `first` after `second`, and the signature takes `first` first
+  at tests/golden/doc_refused/two-lines-out-of-order.hero:9:6
+    |
+  9 | # - `first`: the text that opens it
+    |      ^^^^^
+  note: a reader matches each line to the call by its place: write the parameter lines in the signature's order
+
+error[doc_parameter_order]: the comment of `again` names `first` twice, and the signature takes it once
+  at tests/golden/doc_refused/two-lines-out-of-order.hero:17:6
+     |
+  17 | # - `first`: the same text
+     |      ^^^^^
+  note: each parameter has one line, in the signature's order: join the two

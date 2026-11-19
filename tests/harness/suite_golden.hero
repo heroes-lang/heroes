@@ -299,6 +299,46 @@ function shape_permissive() -> Shape
         library_skip: false
     )
 
+# `doc/` is `heroes doc`'s reference of a module that checks and whose
+# comments it refuses nothing of (panel 253's R2, ratified 2026-11-19): the
+# artifact on stdout at exit 0, each case a module and its `.expected`
+# reference, a `.case` folder for a module a `use` can bind, `main`. That two
+# runs print the same bytes is the `determinism` suite's question. **6 cases on
+# 2026-11-19**, the count, and so the floor.
+function shape_doc() -> Shape
+    return Shape(
+        name: "doc",
+        dir: "tests/golden/doc",
+        verb: "doc",
+        flags: NO_FLAGS,
+        on_stderr: false,
+        want_code: 0,
+        least: 6,
+        watched: true,
+        silent_stdout: false,
+        library_skip: false
+    )
+
+# `doc_refused/` is what `heroes doc` refuses (R2): a comment whose parameter
+# lines do not name each parameter once, in order, and a module that does not
+# check, told on stderr in `check`'s whole form at exit 1, no reference on
+# stdout. Each diagnostic is annotated in its case, a line's own with `#~v` on
+# the comment line above it, which joins that comment and is no parameter
+# line. **6 cases on 2026-11-19**, the count, and so the floor.
+function shape_doc_refused() -> Shape
+    return Shape(
+        name: "doc_refused",
+        dir: "tests/golden/doc_refused",
+        verb: "doc",
+        flags: NO_FLAGS,
+        on_stderr: true,
+        want_code: 1,
+        least: 6,
+        watched: true,
+        silent_stdout: true,
+        library_skip: false
+    )
+
 # `only` narrows the form to the cases whose name holds it, or to a shard of
 # them, `<i>/<n>` (cases.selected, defect 537). A filter's cases are not the
 # tree, so its floor is not asked; a shard collects the whole directory before

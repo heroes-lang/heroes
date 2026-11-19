@@ -28,6 +28,11 @@
 # For the IR, determinism is the ONLY promise panel 019 made about the
 # artifact — it is explicitly not version-stable, which is LLVM's stance
 # on `.ll` — and a promise nothing checks is not a promise.
+#
+# **And a module's reference, since panel 253's R2 (2026-11-19)**: `heroes
+# doc` promises the same bytes on every run, so each case of
+# `tests/golden/doc/` is printed twice and the two compared, where the `doc`
+# form compares one run with its expectation.
 
 use absence
 use cases
@@ -48,6 +53,10 @@ constant EMIT_DIR: str
 constant RUN_DIR: str
     "tests/golden/run"
 
+# The modules whose reference `heroes doc` prints.
+constant DOC_DIR: str
+    "tests/golden/doc"
+
 # **The floors of the three directories, since defect 2534** (2026-11-15):
 # until then the suite held none, so a walk broken to find nothing read
 # `0 passed, 0 failed` and passed the gate (measured that day from a folder
@@ -64,6 +73,11 @@ constant LEAST_EMIT: i64
 constant LEAST_RUN: i64
     825
 
+# `doc/`'s floor, its count when it entered with panel 253's R2, 2026-11-19:
+# five files and one folder.
+constant LEAST_DOC: i64
+    6
+
 # The IR's directory, with its floor.
 function ir_walk() -> floors.Walked
     return floors.Walked(dir: IR_DIR, least: LEAST_IR)
@@ -71,6 +85,10 @@ function ir_walk() -> floors.Walked
 # The directories whose cases emit C, each with its floor.
 function c_walks() -> [floors.Walked]
     return [floors.Walked(dir: EMIT_DIR, least: LEAST_EMIT), floors.Walked(dir: RUN_DIR, least: LEAST_RUN)]
+
+# The directory whose cases `heroes doc` prints, with its floor.
+function doc_walk() -> floors.Walked
+    return floors.Walked(dir: DOC_DIR, least: LEAST_DOC)
 
 # `only` narrows the suite to the cases whose name holds it, in each directory
 # it walks (`cases.matching`, defect 2529): until then the suite took no word,
@@ -80,13 +98,13 @@ function c_walks() -> [floors.Walked]
 # that selects nothing is `main`'s to refuse, as it is for every suite. A
 # filter's cases are not the tree, so it asks no floor (`cases.asks_floor`).
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
-    return walk(scratch: scratch, compiler: compiler, ir: ir_walk(), c: c_walks(), only: only)
+    return walk(scratch: scratch, compiler: compiler, ir: ir_walk(), c: c_walks(), doc: doc_walk(), only: only)
 
 # The suite over the directories it is handed: what `run_all` asks of the
 # tree, with the directories and their floors as parameters so a test asks it
 # of a tree of its own (defect 2534). Each directory's whole count is held to
 # its floor before its cases are judged.
-function walk(scratch: str, compiler: str, ir: floors.Walked, c: [floors.Walked], only: str) -> report.Report?
+function walk(scratch: str, compiler: str, ir: floors.Walked, c: [floors.Walked], doc: floors.Walked, only: str) -> report.Report?
     r: report.Report @= report.empty()
     written = scratch + "/determinism"
     shell.mkdir_all(written)?
@@ -122,6 +140,13 @@ function walk(scratch: str, compiler: str, ir: floors.Walked, c: [floors.Walked]
         for item in cases.matching(found: whole, only: only)
             total @ total + 1
             c_case(@r, @skipped, scratch: scratch, compiler: compiler, written: written, item: item)
+
+    doc_cases = cases.collect(scratch: scratch, dir: doc.dir)?
+    floored(@r, walked: doc, found: doc_cases.len(), only: only)
+
+    for item in cases.matching(found: doc_cases, only: only)
+        total @ total + 1
+        doc_case(@r, scratch: scratch, compiler: compiler, item: item)
 
     if skipped > 0 && skipped * 3 >= total
         report.keep_failure(
@@ -214,6 +239,35 @@ function c_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str, w
         )
     else
         report.keep_pass(@r)
+
+# One case's reference, printed twice, the same bytes.
+function doc_case(@r: report.Report, scratch: str, compiler: str, item: cases.Case)
+    label = "determinism/doc/" + item.name
+    first = documented(scratch: scratch, compiler: compiler, item: item)
+    second = documented(scratch: scratch, compiler: compiler, item: item)
+
+    if first.is_err() || second.is_err()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  cannot print the reference of " + item.source + ":\n    " + last_error(first) + last_error(second)
+        )
+    else if first.must() != second.must()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  " + item.source + " prints a reference that differs twice — `heroes doc` promises the same bytes on every run"
+        )
+    else
+        report.keep_pass(@r)
+
+# One reference, as text, the words of a run that printed none its error.
+function documented(scratch: str, compiler: str, item: cases.Case) -> str?
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "doc", item.source])?
+
+    if said.code != 0
+        return fail(code: "cannot_document", msg: said.err)
+    return ok(said.out)
 
 # The units `build` writes for a case, twice, the same files with the same
 # bytes.
@@ -465,6 +519,8 @@ test "fixedbugs: the third word narrows the walk to the cases whose name holds i
     for walked in c_walks()
         named @ named + cases.matching(found: cases.collect(scratch: scratch, dir: walked.dir).must(), only: word).len()
 
+    named @ named + cases.matching(found: cases.collect(scratch: scratch, dir: DOC_DIR).must(), only: word).len()
+
     got = run_all(scratch: scratch, compiler: compiler.must(), only: word).must()
     assert named >= 1
     assert got.passed + got.failed + got.skips.len() == named
@@ -472,33 +528,34 @@ test "fixedbugs: the third word narrows the walk to the cases whose name holds i
 
 # DEFECT 2534, held as a test (2026-11-15): the suite held no floor, so run
 # from a folder holding its three directories empty it read `0 passed, 0
-# failed`, exit 0. Handed three empty directories of a test's own, each floored
-# at one, it fails once per directory, naming it; a filter asks no floor of
-# them; and a floor its directory meets is a pass. No case is emitted, so the
-# compiler named is a file nobody wrote.
+# failed`, exit 0. Handed empty directories of a test's own, each floored at
+# one, four since `doc/` joined on 2026-11-19, it fails once per directory,
+# naming it; a filter asks no floor of them; and a floor its directory meets
+# is a pass. No case is emitted, so the compiler named is a file nobody wrote.
 test "fixedbugs: a walk that finds nothing in a directory fails by that directory's floor, and a filter asks none (defect 2534)"
     scratch = shell.own_scratch()
     tree = scratch + "/determinism-2534"
     assert !shell.remove_tree(tree).is_err()
 
-    for dir in ["ir", "emit", "run"]
+    for dir in ["ir", "emit", "run", "doc"]
         assert !shell.mkdir_all(tree + "/" + dir).is_err()
 
     compiler = scratch + "/no-compiler-here"
     ir = floors.Walked(dir: tree + "/ir", least: 1)
     c: [floors.Walked] = [floors.Walked(dir: tree + "/emit", least: 1), floors.Walked(dir: tree + "/run", least: 1)]
-    empty = walk(scratch: scratch, compiler: compiler, ir: ir, c: c, only: "").must()
+    doc = floors.Walked(dir: tree + "/doc", least: 1)
+    empty = walk(scratch: scratch, compiler: compiler, ir: ir, c: c, doc: doc, only: "").must()
     assert empty.passed == 0
-    assert empty.failed == 3
+    assert empty.failed == 4
 
-    for i in range(from: 0, to: 3)
-        dir = ["ir", "emit", "run"][i]
+    for i in range(from: 0, to: 4)
+        dir = ["ir", "emit", "run", "doc"][i]
         assert strings.has_prefix(
             s: empty.failures[i],
             prefix: "FAIL determinism\n  the walk found 0 cases in " + tree + "/" + dir + " and had 1 — "
         )
 
-    filtered = walk(scratch: scratch, compiler: compiler, ir: ir, c: c, only: "fixedbugs-2534").must()
+    filtered = walk(scratch: scratch, compiler: compiler, ir: ir, c: c, doc: doc, only: "fixedbugs-2534").must()
     assert filtered.passed == 0
     assert filtered.failed == 0
     none: [floors.Walked] = []
@@ -507,8 +564,9 @@ test "fixedbugs: a walk that finds nothing in a directory fails by that director
         compiler: compiler,
         ir: floors.Walked(dir: tree + "/ir", least: 0),
         c: none,
+        doc: floors.Walked(dir: tree + "/doc", least: 0),
         only: ""
     ).must()
-    assert met.passed == 1
+    assert met.passed == 2
     assert met.failed == 0
     assert !shell.remove_tree(scratch).is_err()
