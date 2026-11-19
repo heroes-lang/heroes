@@ -92,6 +92,19 @@ test "read_key: with no key waiting, a time of 0 answers at once, timed out, or 
     assert answer == -1
     assert last_error() == HERO_TERM_TIMED_OUT || last_error() == HERO_TERM_NOT_A_TERMINAL
 
+# Run in a pseudo-terminal on macOS before 2026-11-19, this test and the one
+# above never ended: Darwin's poll(2) answers POLLNVAL for `/dev/tty`, and the
+# layer then waited in a read for a key nobody sent.
+test "read_key: with no key waiting, a limit of 200 ms ends timed out on a terminal, or not a terminal where the process has none"
+    room: [u8] @= []
+
+    for _ in range(from: 0, to: 64)
+        room @ room.push(0)
+
+    answer = read_key(@room, n: 64, ms: 200)
+    assert answer == -1
+    assert last_error() == HERO_TERM_TIMED_OUT || last_error() == HERO_TERM_NOT_A_TERMINAL
+
 test "enter_keys and leave: 0 then 1 then a leave on a terminal, or the enter not a terminal; a leave with no mode standing is 0, twice"
     assert leave() == 0
     assert leave() == 0

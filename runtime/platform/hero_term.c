@@ -9,9 +9,9 @@
  * (`selfhost/cli/layer.hero` builds, keys and links it). Its header,
  * `hero_term.h`, says what each function answers; this file says how each
  * platform gets there. Written from the systems' own pages (`termios(4)`,
- * `tcsetattr(3)`, `poll(2)`, `sigaction(2)`, Microsoft's console reference:
- * `SetConsoleMode`, `ReadConsoleInputW`, `WriteConsoleW`), never from
- * another library's source.
+ * `tcsetattr(3)`, `poll(2)`, `select(2)`, `sigaction(2)`, Microsoft's
+ * console reference: `SetConsoleMode`, `ReadConsoleInputW`,
+ * `WriteConsoleW`), never from another library's source.
  *
  * ITS OWN HEADER FIRST (held by the net's `runtime` suite).
  *
@@ -55,6 +55,7 @@
 #include <poll.h>
 #include <pthread.h>
 #include <signal.h>
+#include <sys/select.h>
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
@@ -582,6 +583,70 @@ static int hero_term_fill(HANDLE in, int64_t ms) {
     }
 }
 #else
+/* `hero_term_wait` by `select(2)`, for a descriptor `poll(2)` cannot serve.
+ * A set holds descriptors below FD_SETSIZE alone (the page: "The behavior of
+ * these macros is undefined if a descriptor value is less than zero or
+ * greater than or equal to FD_SETSIZE"), so a higher one is waited on
+ * through a copy below it, which reads the same terminal, closed after;
+ * where every descriptor below it is taken, -1 with EMFILE. */
+static int hero_term_select(int fd, int ms) {
+    int low = fd;
+
+    if (fd >= FD_SETSIZE) {
+        low = fcntl(fd, F_DUPFD_CLOEXEC, 0);
+
+        if (low < 0) {
+            return -1;
+        }
+        if (low >= FD_SETSIZE) {
+            (void)close(low);
+            errno = EMFILE;
+            return -1;
+        }
+    }
+    fd_set readable;
+    struct timeval limit = { 0, 0 };
+
+    FD_ZERO(&readable);
+    FD_SET(low, &readable);
+    if (ms > 0) {
+        limit.tv_sec = (time_t)(ms / 1000);
+        limit.tv_usec = (suseconds_t)((ms % 1000) * 1000);
+    }
+    int n = select(low + 1, &readable, NULL, NULL, ms < 0 ? NULL : &limit);
+
+    if (low != fd) {
+        int saved = errno;
+
+        (void)close(low);
+        errno = saved;
+    }
+    return n;
+}
+
+/* Whether a byte can be read from `fd`, waiting at most `ms` milliseconds
+ * (-1 no limit): 1 where one can or the terminal hung up, which the read
+ * then tells; 0 where the time passed; -1 with `errno` set.
+ *
+ * `poll(2)` first, and `select(2)` where it answers POLLNVAL. Darwin's
+ * `poll(2)` says under BUGS: "The poll() system call currently does not
+ * support devices." Measured on macOS on 2026-11-19 in a pseudo-terminal:
+ * `poll` on the descriptor `/dev/tty` opens answered POLLNVAL at once, and
+ * `select` waited its 200 ms, as `poll` did on the pseudo-terminal's own
+ * device. Until then a POLLNVAL fell through to a `read(2)` that waited for
+ * a key, so a limited read never timed out and an Escape alone was held
+ * until the next key. Linux's `poll` serves a terminal, and that arm never
+ * reaches `select`. */
+static int hero_term_wait(int fd, int ms) {
+    struct pollfd p = { fd, POLLIN, 0 };
+    int n = poll(&p, 1, ms);
+
+    if (n <= 0 || (p.revents & POLLNVAL) == 0) {
+        return n;
+    }
+    return hero_term_select(fd, ms);
+}
+
 /* What the terminal holds read ahead, waiting at most `ms` (-1 no limit) for
  * a byte: 1 where bytes came, 0 where the time passed with none, 2 where the
  * terminal is gone, -1 with the failure set. Under `hero_term_reading`. */
@@ -594,8 +659,7 @@ static int hero_term_fill(int fd, int64_t ms) {
         if (ends >= 0 && left < 0) {
             left = 0;
         }
-        struct pollfd p = { fd, POLLIN, 0 };
-        int n = poll(&p, 1, left < 0 ? -1 : (int)(left > 0x7FFFFFFF ? 0x7FFFFFFF : left));
+        int n = hero_term_wait(fd, left < 0 ? -1 : (int)(left > 0x7FFFFFFF ? 0x7FFFFFFF : left));
 
         if (n < 0) {
             if (errno == EINTR) {

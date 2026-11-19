@@ -174,7 +174,7 @@ capability term/read-key-timeout  a key waited for at most a given time
   go      -
   rust    crossterm::event::poll
   python  curses.halfdelay, curses.napms, curses.typeahead
-  note    in milliseconds, `net`'s unit for its deadlines: `time` is not in this package's row
+  note    in milliseconds, `net`'s unit for its deadlines: `time` is not in this package's row. Repaired 2026-11-19: on macOS a limited read never timed out and an Escape alone waited for the next key, since Darwin's poll(2) answers POLLNVAL for `/dev/tty` ("does not support devices", its BUGS) and the layer then waited in a read; the layer's wait is now poll, and select(2) where poll answers POLLNVAL, a descriptor at or past FD_SETSIZE waited on through a copy below it and `failed` (EMFILE) where every one below is taken. Measured in a pseudo-terminal (`rebel-scratch/repairs4/term`): with no key sent, `read_key_within(200)` ended `timeout` after 200 to 210 ms on this Mac, where it hung until killed at 6 s before; Escape alone was told 53 and 59 ms after it was sent, where it waited 605 and 200 ms for the next key; with 1,100 files open first, `failed` at once with every descriptor below 1,024 taken and `timeout` after 205 ms with one freed. Linux arm64 answered alike before and after (200 ms; 51 and 52 ms). The floor's tests run in a pseudo-terminal hung at their first wait before the repair and pass after, a 200 ms limit among them
 
 capability term/key-modifiers  Ctrl, Alt and Shift told beside any key
   heroes  pending
