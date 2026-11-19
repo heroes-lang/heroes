@@ -1,0 +1,165 @@
+# The numbers this program reads from text, written for it: a table's integers and floats.
+#
+# A `str` has no conversion to a number in this language (spec § 11), so
+# each program of `examples/` that reads one carries its own reader and no
+# library (design.md §1.11). Until 2026-11-19 it came from a package, which
+# M-rebel-library removed (its page's decisions 6 to 8); it is written here
+# from its contract alone.
+#
+# A float is rounded by the C library's `strtod` (spec § 13), the one reader
+# at hand that rounds a decimal of any length once, to the nearest `f64`, on
+# every platform; summing digits in Heroes rounds at every step, and a
+# reader that did read `0.3` as `0.30000000000000004` (defect 2546).
+
+# The C library's reader of a decimal float, which rounds once, to the
+# nearest `f64`. `parse_float` hands it only a text it has read whole, so
+# where its reading stops is never asked and its second argument is null.
+extern "stdlib.h"
+    function strtod(text: cstr lent, end: ptr) -> f64
+
+# What a text that writes no number fails with. One that writes a number past
+# the type's reach fails `does_not_fit`, the built-ins' own code (spec § 11).
+constant NOT_A_NUMBER: str
+    "not_a_number"
+
+# The digits are added below zero, where an `i64` reaches one further than it
+# does above it. A total below `CUTOFF`, or at it with a next digit past
+# `CUTLIM`, would leave the type at the next step, so the step is refused
+# before it is taken (the C library's `strtol` asks the same two numbers).
+constant CUTOFF: i64
+    -922337203685477580
+
+constant CUTLIM: i64
+    8
+
+# The integer `s` writes in decimal, an optional `+` or `-` before its digits.
+# It fails `not_a_number` where `s` holds anything else, an empty text and a
+# space included, and `does_not_fit` where the number lies past an `i64`.
+function atoi(s: str) -> i64?
+    at: i64 @= 0
+
+    if s.len() > 0 && (s[0] == '-' || s[0] == '+')
+        at @ 1
+
+    if at == s.len()
+        return fail(code: NOT_A_NUMBER, msg: quoted(s) + " is not a number")
+    total: i64 @= 0
+
+    while at < s.len()
+        if s[at] < '0' || s[at] > '9'
+            return fail(code: NOT_A_NUMBER, msg: quoted(s) + " is not a number")
+        digit = to_i64(s[at] - '0').must()
+
+        if total < CUTOFF || total == CUTOFF && digit > CUTLIM
+            return fail(code: "does_not_fit", msg: quoted(s) + " does not fit an i64")
+        total @ total * 10 - digit
+        at @ at + 1
+
+    if s[0] == '-'
+        return ok(total)
+
+    if total == CUTOFF * 10 - CUTLIM
+        return fail(code: "does_not_fit", msg: quoted(s) + " does not fit an i64")
+    return ok(-total)
+
+# The `f64` the whole of `s` writes, rounded once, to the nearest: a decimal
+# number with an optional sign, digits with or without a point (one digit at
+# least, on either side), and an optional exponent after `e` or `E`; or `inf`,
+# `+inf`, `-inf` or `nan`, as `to_str` writes them. It fails `not_a_number`
+# where `s` is anything else, and `does_not_fit` where the number lies past
+# the largest `f64`. The shape is asked here, so the C library reads only a
+# text this function has read whole, never its wider spellings (hexadecimal,
+# `infinity`, a leading space).
+function parse_float(s: str) -> f64?
+    if s == "inf" || s == "+inf" || s == "-inf" || s == "nan"
+        return ok(strtod(text: s.cstr(), end: nullptr))
+
+    if !decimal(s)
+        return fail(code: NOT_A_NUMBER, msg: quoted(s) + " is not a number")
+    value = strtod(text: s.cstr(), end: nullptr)
+
+    # A decimal past the largest `f64` is the one `strtod` answers with an
+    # infinity, and an infinity is the one number, `nan` aside, that taken
+    # from itself is not 0; `nan` cannot come from a decimal.
+    if value - value != 0.0
+        return fail(code: "does_not_fit", msg: quoted(s) + " lies past the largest f64")
+    return ok(value)
+
+# Whether `s` is a decimal number whole: `[+-] digits [. digits] [e [+-]
+# digits]`, the digits before the point or after it allowed to be none but
+# not both.
+function decimal(s: str) -> bool
+    at: i64 @= 0
+
+    if s.len() > 0 && (s[0] == '-' || s[0] == '+')
+        at @ 1
+    whole = digits_from(s, at: at)
+    at @ at + whole
+    fraction: i64 @= 0
+
+    if at < s.len() && s[at] == '.'
+        fraction @ digits_from(s, at: at + 1)
+        at @ at + 1 + fraction
+
+    if whole + fraction == 0
+        return false
+
+    if at < s.len() && (s[at] == 'e' || s[at] == 'E')
+        at @ at + 1
+
+        if at < s.len() && (s[at] == '-' || s[at] == '+')
+            at @ at + 1
+        power = digits_from(s, at: at)
+
+        if power == 0
+            return false
+        at @ at + power
+
+    return at == s.len()
+
+# How many ASCII digits stand in `s` from byte `at` on.
+function digits_from(s: str, at: i64) -> i64
+    end: i64 @= at
+
+    while end < s.len() && s[end] >= '0' && s[end] <= '9'
+        end @ end + 1
+
+    return end - at
+
+# `s` as a message shows it: in quotes up to 40 bytes, and past them by its
+# length, so a message never carries a whole file.
+function quoted(s: str) -> str
+    if s.len() > 40
+        return f"a text of {s.len()} bytes"
+    return f"\"{s}\""
+
+test "atoi reads a signed decimal integer, and names what it refuses"
+    assert atoi("0").must() == 0 && atoi("+17").must() == 17 && atoi("-42").must() == -42
+    assert atoi("9223372036854775807").must() == 9223372036854775807
+    assert atoi("-9223372036854775808").must() == -9223372036854775807 - 1
+    assert atoi("9223372036854775808").is_err() && atoi("-9223372036854775809").is_err()
+
+    for word in ["", "-", "+", "1 ", " 1", "1x", "--1", "1.5"]
+        match atoi(word)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_A_NUMBER && e.msg == quoted(word) + " is not a number"
+
+    match atoi(repeat("9", 41))
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit" && e.msg == "a text of 41 bytes does not fit an i64"
+
+test "parse_float rounds a decimal once, and refuses what is not one"
+    assert parse_float("0.3").must() == 0.3 && parse_float("0.3").must().to_str() == "0.3"
+    assert parse_float("1835852425.7146973").must().to_str() == "1835852425.7146974"
+    assert parse_float("2.").must() == 2.0 && parse_float(".5").must() == 0.5
+    assert parse_float("-1.5e3").must() == -1500.0 && parse_float("5e-324").must() > 0.0
+    assert parse_float("-0.0").must().to_str() == "-0.0" && parse_float("-inf").must() == -1.0 / 0.0
+    assert parse_float("1" + repeat("0", 308)).must().to_str() == "1e+308"
+    assert parse_float("1" + repeat("0", 400)).is_err()
+    nan = parse_float("nan").must()
+    assert nan != nan
+
+    for word in ["", ".", "-", "1e", "e5", "1e+", "0x1p3", "1_000", " 1", "1 ", "infinity", "INF", "1.2.3"]
+        match parse_float(word)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_A_NUMBER

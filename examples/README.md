@@ -9,11 +9,7 @@ cannot be forgotten. Beside the source, a program directory may carry
   stdout, optionally closed by `!exit: <code>` or `!panic: <message>`;
 - `main.args` — one argument per line, handed to `args()`;
 - data the program reads, named in `main.args` (`sample.json`, `sample.maze`, …).
-- `heroes.toml` and `heroes.packages/`: the program's catalogue, naming the
-  core packages it uses as one entry, `core`, from the index at the
-  repository's root (§ The index, below), and the tree `heroes add core`
-  placed of that version, the index's files byte for byte, committed so the
-  program builds as it stands and never fetches (`packages/README.md`).
+- no `heroes.toml`: no program here uses a package (§ The index, below).
 
 Every program is checked in **three configurations** — `-O0`, `-O2`,
 `--sanitize` — its `test` blocks green in all three and its output identical in
@@ -70,7 +66,7 @@ close a measured gap, its own header comment carries the measurement.
 | `histogram/` | how often each digit appears, one thread per BUCKET rather than one per band: the member of the family that partitions the answer instead of the input, so no two threads write one place |
 | `ini/` | a configuration file into `{str: {str: str}}`, built from text, with four named refusals |
 | `interpreter/` | a whole little language in **eleven modules across four directories** — scan, parse, run — and the corpus's first program of the compiler's own shape. It is where four language facts are visible in working code rather than in a diagnostic: a module cycle is refused, so the recursion between statements and expressions crosses the boundary as a **function value**; a function type cannot carry an `@`, so the interpreter's whole state is passed by value and handed back; `syn/expr` and `run/expr` are two modules with one noun, so one of them is renamed at its `use`; and `util/each`'s generics are instantiated at `str` from `syn/` and at `Value` from `run/`, which the corpus had never done across a `use`. Every way a script could kill it is a named refusal — division by zero, `%` by zero, overflow on `+ - *`, a number too large to scan, a runaway recursion — because a script is input. Writing it found two compiler defects (defect 006, `007`), one of them `heroes check` exiting 139 in silence on a valid program |
-| `json/` | a JSON reader over the core package `encoding/json`, whose `parse` and `render` it calls: what stays in the program is its own question of a document, how many values it holds and how deep they nest, a walk with an arm per kind over `json.Value`, a variant recursive through **both** `[T]` and `{K: V}`. Until core 0.2.0 it held its own reader and writer, 610 lines in two modules, which read `0.3` as `0.30000000000000004` and wrote `1e309` as `inf` (the package's admission notes) |
+| `json/` | a JSON reader with its own reader and writer, `json.hero`, written to RFC 8259: `parse`, `render` in one canonical form, and `field`. The program's own question of a document stays in `main.hero`, how many values it holds and how deep they nest, a walk with an arm per kind over `json.Value`, a variant recursive through **both** `[T]` and `{K: V}`. Its first reader, 610 lines in two modules, read `0.3` as `0.30000000000000004` and wrote `1e309` as `inf`; from 2026-11-10 it read through a package, and since M-rebel-library (2026-11-19) through its own again, which hands each number's digits to the C library's `strtod` to be rounded once and refuses a number past the largest `f64` |
 | `ledger/` | a book of accounts kept in **SQLite at program scale** — four modules, eighteen bound functions, one prepared statement reused across ten inserts inside a transaction, three column types read through a `variant` that cannot forget the fifth one SQLite has, and a join. The corpus binds SQLite twice on purpose: `sqlite/` asks *does the architecture work at all* and this one asks *does it hold when a program leans on it*. **Every number is computed twice by routes that share no line** — SQLite's `sum … group by` against the same total in Heroes — because nobody has published the answer for a book somebody invented. Money is an integer number of cents and never an `f64`, and the one float in it, SQLite's `avg`, is compared with a tolerance that says so |
 | `logs/` | a log summariser: a **level mask** (`\|` to add a flag, `&` to test, `~` to take away, `^` to toggle, `>>` to count), `{str: i64}` tallies read back in an order the map does not have, a ranking `sort` gets wrong on purpose, and a reader that **skips and counts** a line it cannot parse rather than refusing the file |
 | `mandelbrot/` | how many iterations a band of the Mandelbrot set needs, counted by several threads: the two-dimensional member, and the bands cost what the set makes them cost |
@@ -80,7 +76,6 @@ close a measured gap, its own header comment carries the measurement.
 | `montecarlo/` | pi by counting darts, one thread per SEED rather than per stream, because two threads sharing a generator is the classic race and here it cannot be written |
 | `nbody/` | five bodies under gravity for a thousand steps, and the two energies the benchmarks game publishes — `-0.169075164` before, `-0.169087605` after. The initial conditions are copied digit for digit from the reference C program, written without exponents because this language has none. The first program here where the FFI is **inside** a real program: it cannot take a step without `sqrt` |
 | `nqueens/` | how many ways eight queens fit, one thread per opening move: the member whose work is a search TREE rather than a range, so the threads finish at wildly different times |
-| `packages/` | the conventions every core package follows (`packages/README.md`), and `main.hero`, the packages' own program, a consumer of `<core>` like every other here, whose `heroes test` runs every package's tests: `strings`, `strconv` and `encoding/json` so far, each function admitted because the programs here wrote it by hand, their source the index's (§ The index) |
 | `palette/` | colours packed into one integer: the corpus's hex, octal and binary literals, `~` and `^`. The lines stand as `heroes fmt` produced them — it deleted the C parentheses around `mode & MASK == 0`, because here `&` binds tighter than a comparison, the other way round from C |
 | `pipeline/` | lines in, report out: the program that **cannot be written without `use … as`**, because two modules in two directories are both named `source` |
 | `query/` | a relational engine over a table it writes itself: a deterministic generator makes **5,000 rows**, the program writes them to a file, reads them back through a strict reader and asserts the round trip, then filters, joins, merge-sorts and groups them whole. The corpus's first program to hand the language data at volume — every other one reads an input of at most 28 lines — so it is where copy-on-write costs something, under `--sanitize` like everything else. Also the first `sort` on a `bool` and the first **map keyed by a record**. A query here is a **value** and not a string: the corpus already had three parsers, and a `variant` used as an instruction set was a shape it did not have. Every number it prints is computed twice by routes that share no line, because there is no published answer for a table a program invented |
@@ -116,21 +111,17 @@ mechanism is written down.
 
 ## The index
 
-Not a directory of this folder: the local static index of the core packages
-stands at the repository's root, `packages/`, and every catalogue here reads it,
-`index = "file://../../packages"` (panel 235's R15; panel 238's R10 moved it
-there from this folder, where it stood as `index/`). `core/versions` lists each
-version with the SHA-256 of its listing; `core/<version>/list` is that listing,
-`<sha256>  <path>` a file, sorted by the paths' bytes; and
-`core/<version>/files/` holds the package's source, the newest version being
-the one tree a change is written in. A published version is never edited: a
-change is a new version, its listing and its line written from `shasum -a 256`,
-and the `packages` suite recomputes every listing and sum and names the file
-that moved. No `use` reaches it: a program names the package
-`use <core>/strings` and reads the tree `heroes add` placed in its own folder.
-That tree's folder is named by the `index` line as written, so a move of the
-index renames every placed folder: `heroes fetch` in each program places the
-new one and leaves the old, which is removed by hand.
+No program here uses a package. The compiler's examples use no library, and
+each carries in modules of its own the few functions it calls, written for it
+(M-rebel-library's decisions 6 to 8, 2026-11-19): text taken apart in a
+`strings.hero`, numbers read in a `numbers.hero`, a JSON reader in
+`json/json.hero`, sockets and HTTP in `server/`. Until that day the programs
+that did took a package from a local static index at the repository's root,
+`packages/`, each through a catalogue `heroes.toml` and the tree `heroes add`
+placed beside it; the milestone removed that package.
+`packages/` now holds Rebel, the optional library, and the programs that use
+it stand in `examples-rebel/`, beside this folder, with one catalogue among
+them.
 
 ## `gallery/`
 

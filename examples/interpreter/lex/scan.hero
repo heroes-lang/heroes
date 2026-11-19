@@ -16,10 +16,10 @@
 # accumulating `value * 10 + digit` over a long run of digits does not wrap —
 # it stops the whole interpreter with a panic. A script is INPUT, and input must
 # not be able to kill the program reading it, so the run of digits is read by
-# core's `strconv.atoi`, which asks before each step whether the next one
-# still fits and fails `does_not_fit` where it does not; this module wrote
-# that guard by hand until core 0.5.0 (issue 1067). The test at the bottom
-# feeds it nineteen and twenty digits and asserts a refusal, not a crash.
+# `numbers.atoi`, the program's own reader (`numbers.hero`), which asks
+# before each step whether the next one still fits and fails `does_not_fit`
+# where it does not (issue 1067). The test at the bottom feeds it nineteen
+# and twenty digits and asserts a refusal, not a crash.
 #
 # **AND IT WORKS ON BYTES, WHICH IT DID NOT AT FIRST.** Every single-character
 # decision below compares an `i64` taken from `source[at]`, never a
@@ -39,9 +39,8 @@
 # is what lets the parser say *a statement ends at the end of its line* without
 # ever seeing an empty statement.
 
-use <core>/strconv
-
 use lex/token
+use numbers
 
 constant DIGITS: str
     "0123456789"
@@ -156,7 +155,7 @@ function number_at(source: str, from: i64) -> Read?
     while is_digit(byte_at(source: source, at: at))
         at @ at + 1
 
-    match strconv.atoi(source.slice(from: from, to: at))
+    match numbers.atoi(source.slice(from: from, to: at))
         .ok value => return ok(Read(what: .number(value: value), next: at))
         .err e    => return fail(code: ERR_NUMBER, msg: e.msg)
 
@@ -396,7 +395,7 @@ test "the four refusals, each asserted by its code"
 
 test "a number too large is refused and does not abort the interpreter"
     # THE ROBUSTNESS CASE (design.md §1.12). Heroes aborts on overflow, so
-    # without `strconv.atoi`'s guard these three lines would be a panic
+    # without `numbers.atoi`'s guard these three lines would be a panic
     # rather than a diagnostic — and the input is a SCRIPT, which is the one
     # thing this program does not control.
     assert refusal_of(scanned("print 9223372036854775807")) == "nothing was refused"

@@ -1,0 +1,74 @@
+# The numbers this program reads from text, written for it: the port the program is given.
+#
+# A `str` has no conversion to a number in this language (spec § 11), so
+# each program of `examples/` that reads one carries its own reader and no
+# library (design.md §1.11). Until 2026-11-19 it came from a package, which
+# M-rebel-library removed (its page's decisions 6 to 8); it is written here
+# from its contract alone.
+
+# What a text that writes no number fails with. One that writes a number past
+# the type's reach fails `does_not_fit`, the built-ins' own code (spec § 11).
+constant NOT_A_NUMBER: str
+    "not_a_number"
+
+# The digits are added below zero, where an `i64` reaches one further than it
+# does above it. A total below `CUTOFF`, or at it with a next digit past
+# `CUTLIM`, would leave the type at the next step, so the step is refused
+# before it is taken (the C library's `strtol` asks the same two numbers).
+constant CUTOFF: i64
+    -922337203685477580
+
+constant CUTLIM: i64
+    8
+
+# The integer `s` writes in decimal, an optional `+` or `-` before its digits.
+# It fails `not_a_number` where `s` holds anything else, an empty text and a
+# space included, and `does_not_fit` where the number lies past an `i64`.
+function atoi(s: str) -> i64?
+    at: i64 @= 0
+
+    if s.len() > 0 && (s[0] == '-' || s[0] == '+')
+        at @ 1
+
+    if at == s.len()
+        return fail(code: NOT_A_NUMBER, msg: quoted(s) + " is not a number")
+    total: i64 @= 0
+
+    while at < s.len()
+        if s[at] < '0' || s[at] > '9'
+            return fail(code: NOT_A_NUMBER, msg: quoted(s) + " is not a number")
+        digit = to_i64(s[at] - '0').must()
+
+        if total < CUTOFF || total == CUTOFF && digit > CUTLIM
+            return fail(code: "does_not_fit", msg: quoted(s) + " does not fit an i64")
+        total @ total * 10 - digit
+        at @ at + 1
+
+    if s[0] == '-'
+        return ok(total)
+
+    if total == CUTOFF * 10 - CUTLIM
+        return fail(code: "does_not_fit", msg: quoted(s) + " does not fit an i64")
+    return ok(-total)
+
+# `s` as a message shows it: in quotes up to 40 bytes, and past them by its
+# length, so a message never carries a whole file.
+function quoted(s: str) -> str
+    if s.len() > 40
+        return f"a text of {s.len()} bytes"
+    return f"\"{s}\""
+
+test "atoi reads a signed decimal integer, and names what it refuses"
+    assert atoi("0").must() == 0 && atoi("+17").must() == 17 && atoi("-42").must() == -42
+    assert atoi("9223372036854775807").must() == 9223372036854775807
+    assert atoi("-9223372036854775808").must() == -9223372036854775807 - 1
+    assert atoi("9223372036854775808").is_err() && atoi("-9223372036854775809").is_err()
+
+    for word in ["", "-", "+", "1 ", " 1", "1x", "--1", "1.5"]
+        match atoi(word)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_A_NUMBER && e.msg == quoted(word) + " is not a number"
+
+    match atoi(repeat("9", 41))
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit" && e.msg == "a text of 41 bytes does not fit an i64"

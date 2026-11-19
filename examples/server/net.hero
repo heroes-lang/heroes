@@ -1,0 +1,235 @@
+# TCP connections for this program, over the platform layer's sockets
+# (`hero_net.h`, spec § 13): a listener, the connections it accepts or the
+# program dials, their bytes, the deadline that bounds a wait, and the stop
+# that ends every wait.
+#
+# The language offers no sockets of its own and leaves them to C (design.md
+# §1.11: there is no standard library), so this program binds the layer
+# itself and no library. Until 2026-11-19 it came from a package, which
+# M-rebel-library removed (its page's decisions 6 to 8); it is written here
+# from the header's contract alone.
+#
+# A CONNECTION IS A HANDLE. `accept`, `dial` and `of` begin its life, and
+# `close` ends it, or `number` gives it up so that a thread, handed one `i64`
+# and nothing else (spec § 13), takes it back with `of`. The marks below are
+# the ones `hero_net.h` names for the two calls, so a connection never ended
+# and a number never taken back are told when `main` returns.
+
+extern "hero_net.h"
+    record Socket tag hero_net_socket
+    constant HERO_NET_OK: i64
+    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_port(s: Socket) -> i64
+    function hero_net_send(s: Socket, @data: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_recv(s: Socket, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_close(s: Socket consumes) -> i64
+    function hero_net_number(s: Socket consumes) -> i64
+    function hero_net_of(n: i64) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_catch_stop() -> i64
+    function hero_net_ask_stop()
+    function hero_net_set_deadline(s: Socket, ms: i64) -> i64
+    function hero_net_last_error() -> i64
+    function hero_net_last_os_error() -> i64
+
+# What a wait fails with once the program is asked to stop: by Ctrl-C or a
+# request to end after `catch_stop`, or by `ask_stop`.
+constant STOPPED: str
+    "stopped"
+
+# The codes of the layer's kinds of failure, by their numbers in
+# `hero_net.h`, 1 to 14.
+constant CODES: [str]
+    [
+        "invalid"
+        "not_open"
+        "address"
+        "in_use"
+        "refused"
+        "reset"
+        "timed_out"
+        "unreachable"
+        "limit"
+        "denied"
+        "other"
+        "stopped"
+        "too_long"
+        "not_found"
+    ]
+
+# The most bytes one `receive` asks the layer for.
+constant CHUNK: i64
+    4096
+
+# A socket listening for connections, which `close_listener` ends.
+record Listener
+    socket: Socket
+
+# A connection, which `close` ends or `number` gives up.
+record Conn
+    socket: Socket
+
+## Listening and dialling
+
+# From now on Ctrl-C and a request to end ask the program to stop, where they
+# ended it at once: every wait of this module then fails `STOPPED`.
+function catch_stop() -> ()?
+    if hero_net_catch_stop() != 0
+        return failed(doing: "catching the stop")
+    return ok()
+
+# Asks the whole program to stop, from any of its threads: every wait of this
+# module fails `STOPPED` from now on, one already waiting at once.
+function ask_stop()
+    hero_net_ask_stop()
+
+# A listener on `host` at `port`, 0 asking the system for a free one.
+function listen(host: str, port: i64) -> Listener?
+    s = hero_net_listen(address: host.cstr(), port: port)
+
+    if s == nullptr
+        return failed(doing: f"listening on {host}:{port}")
+    return ok(Listener(socket: s))
+
+# The port `listener` stands on.
+function port_of(listener: Listener) -> i64?
+    port = hero_net_port(listener.socket)
+
+    if port < 0
+        return failed(doing: "reading the listener's port")
+    return ok(port)
+
+# The next connection `listener` holds, waiting for one.
+function accept(listener: Listener) -> Conn?
+    s = hero_net_accept(listener.socket)
+
+    if s == nullptr
+        return failed(doing: "accepting a connection")
+    return ok(Conn(socket: s))
+
+# A connection to `host` at `port`.
+function dial(host: str, port: i64) -> Conn?
+    s = hero_net_connect(address: host.cstr(), port: port)
+
+    if s == nullptr
+        return failed(doing: f"dialling {host}:{port}")
+    return ok(Conn(socket: s))
+
+# Ends `listener`: a wait on it ends at once, and no connection is accepted
+# after.
+function close_listener(@listener: Listener)
+    _ = hero_net_close(listener.socket)
+
+# Ends `conn`.
+function close(@conn: Conn)
+    _ = hero_net_close(conn.socket)
+
+## Crossing to a thread
+
+# `conn` given up for the number a thread takes it back with (`of`).
+function number(@conn: Conn) -> i64?
+    n = hero_net_number(conn.socket)
+
+    if n < 0
+        return failed(doing: "giving the connection up for a number")
+    return ok(n)
+
+# The connection `n` names, taken back with a handle of its own.
+function of(n: i64) -> Conn?
+    s = hero_net_of(n)
+
+    if s == nullptr
+        return failed(doing: f"taking connection {n} back")
+    return ok(Conn(socket: s))
+
+## Bytes
+
+# From now, every wait on `conn` ends `seconds` from now at the latest,
+# failing `timed_out`.
+function set_deadline(conn: Conn, seconds: i64) -> ()?
+    if hero_net_set_deadline(conn.socket, ms: seconds * 1000) != 0
+        return failed(doing: "setting the deadline")
+    return ok()
+
+# Every byte of `text` sent on `conn`, however many sends it takes.
+function send_all(conn: Conn, text: str) -> ()?
+    rest: [u8] @= bytes_of(text)
+
+    while rest.len() > 0
+        n = rest.len().to_u64().must()
+        sent = hero_net_send(conn.socket, @rest, n: n)
+
+        if sent <= 0
+            return failed(doing: "sending")
+        rest @ rest.slice(from: sent, to: rest.len())
+
+    return ok()
+
+# The bytes `conn` holds, up to `CHUNK` of them, waiting for one; none once
+# the peer has closed its side.
+function receive(conn: Conn) -> [u8]?
+    buffer: [u8] @= []
+    got = hero_net_recv(conn.socket, @buffer, n: CHUNK.to_u64().must())
+
+    if got < 0
+        return failed(doing: "receiving")
+    return ok(buffer.slice(from: 0, to: got))
+
+# The bytes of `text`, one element each.
+function bytes_of(text: str) -> [u8]
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        out @ out.push(text[at])
+        at @ at + 1
+
+    return out
+
+# The failure the layer reported for the last call of this thread, `doing`
+# saying what the call was for, its code one of `CODES`.
+function failed<A>(doing: str) -> A?
+    kind = hero_net_last_error()
+    code = code_of(kind)
+    return fail(code: code, msg: f"{doing} failed: {code} (system error {hero_net_last_os_error()})")
+
+# The code of the layer's kind of failure `kind`, `other` for a kind this
+# module does not know, which a newer layer may add.
+function code_of(kind: i64) -> str
+    if kind >= 1 && kind <= CODES.len()
+        return CODES[kind - 1]
+    return "other"
+
+test "a connection dialled to a listener carries bytes, and the end that closes is told to the other"
+    listener: Listener @= listen(host: "127.0.0.1", port: 0).must()
+    port = port_of(listener).must()
+    client: Conn @= dial(host: "127.0.0.1", port: port).must()
+    server: Conn @= accept(listener).must()
+    send_all(client, text: "ping").must()
+    heard = receive(server).must()
+    assert heard.validated_bytes().must() == "ping"
+    close(@client)
+    assert receive(server).must().len() == 0
+    close(@server)
+    close_listener(@listener)
+
+test "a connection crosses as a number once, and a number taken back is refused"
+    listener: Listener @= listen(host: "127.0.0.1", port: 0).must()
+    client: Conn @= dial(host: "127.0.0.1", port: port_of(listener).must()).must()
+    accepted: Conn @= accept(listener).must()
+    n = number(@accepted).must()
+    taken: Conn @= of(n).must()
+
+    match of(n)
+        .ok _  => assert false
+        .err e => assert e.code == "not_open"
+
+    close(@taken)
+    close(@client)
+    close_listener(@listener)
+
+test "the codes name the layer's kinds, and a text is sent as its bytes"
+    assert code_of(5) == "refused" && code_of(12) == STOPPED && code_of(14) == "not_found"
+    assert code_of(0) == "other" && code_of(99) == "other"
+    assert bytes_of("hé") == [104, 195, 169]

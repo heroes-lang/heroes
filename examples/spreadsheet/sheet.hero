@@ -9,8 +9,8 @@
 # The file is one cell per line, `NAME = formula`. Blank lines and `#` comments
 # are skipped, which is what makes the sample readable.
 
-use <core>/strconv
-use <core>/strings
+use numbers
+use strings
 
 ## Error codes
 #
@@ -46,7 +46,7 @@ function is_digit(c: u8) -> bool
 
 # `A1` as a `Cell`, or an error naming what was wrong with it.
 #
-# The row is read by `strconv.atoi` once every byte after the letter is known
+# The row is read by `numbers.atoi` once every byte after the letter is known
 # to be a digit, since `atoi` would also take a sign. It asks before each step
 # whether the next one fits, so a row too long for an i64 is a failure this
 # function reports, where the loop it replaced multiplied first and aborted
@@ -61,7 +61,7 @@ function cell_of(name: str) -> Cell?
             return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` is not a cell: one letter then digits")
         i @ i + 1
 
-    row = match strconv.atoi(name.slice(from: 1, to: name.len()))
+    row = match numbers.atoi(name.slice(from: 1, to: name.len()))
         .ok n  => n
         .err _ => return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` has a row too long for an i64")
 

@@ -182,7 +182,7 @@ function trees() -> [Tree]
     # The examples row raised 2026-11-06 at M-core-packages' first batch gate, to
     # what the suite asked: 159 seeds and 1431 variants, past 120 and 1080 by
     # more than a quarter, the 39 `.hero` files that batch added under
-    # `examples/`: the core packages' canonical tree and its driver, five, and
+    # `examples/`: the package's canonical tree and its driver, five, and
     # the 34 copies of its files that fourteen programs carry.
     # The selfhost row raised 2026-11-08 at batch 25's gate, to what the suite
     # asked: 758 seeds and 6822 variants, past 599 and 5391 by more than a
@@ -197,7 +197,7 @@ function trees() -> [Tree]
     # quarter, the `.hero` files added under `tests/` since 2026-10-20.
     # The examples and packages rows raised 2026-11-10 at M-core-packages step
     # 9, to what the suite asked: examples 269 seeds and 2421 variants, past 159
-    # and 1431, the fifteen trees of core 0.2.0 that programs carry, ten files
+    # and 1431, the fifteen trees of the package's 0.2.0 that programs carry, ten files
     # each, and `examples/json/` down to its one module; packages 14 seeds and
     # 126 variants, past 4 and 36, the ten files of 0.2.0 beside 0.1.0's four.
     # **The tests row reads the net's own placed tree since feature 2425**
@@ -214,16 +214,16 @@ function trees() -> [Tree]
     # by its copies: 150 on 2026-11-10, 320 on 2026-11-14.
     # The packages row raised 2026-11-10 at batch 29's gate, to what the suite
     # asked: 26 seeds and 234 variants, past 14 and 126, the twelve files of
-    # core 0.2.1 (defect 2405) beside 0.2.0's ten and 0.1.0's four. And raised
+    # the package's 0.2.1 (defect 2405) beside 0.2.0's ten and 0.1.0's four. And raised
     # 2026-11-13 at batch 35's gate, to what the suite asked: 46 seeds and 414
     # variants, past 26 and 234 by more than a quarter, the twenty files of
-    # core 0.3.0 (its `net` face and floor and `net/http`, the HTTP server's
-    # packages) beside 0.2.1's twelve, counted with `find packages/core/<v>
-    # -name '*.hero'` for each version.
+    # the package's 0.3.0 (its `net` face and floor and `net/http`, the HTTP
+    # server's packages) beside 0.2.1's twelve, counted with `find` over each
+    # version's folder for `*.hero`.
     # **The packages row lowered 2026-11-14**, the world changed on purpose
     # and not the floor to fit it: the author's decision of that day removed
-    # core 0.1.0, 0.2.0 and 0.2.1 from the index once every program held 0.3.0
-    # (`examples/packages/README.md` § 10, steps 5 and 6), their 26 `.hero`
+    # the package's 0.1.0, 0.2.0 and 0.2.1 from the index once every program
+    # held 0.3.0 (`examples-rebel/packages/README.md` § 10, steps 5 and 6), their 26 `.hero`
     # files with them, so the row reads 0.3.0's twenty alone: 20 seeds and 180
     # variants, measured by `heroes probe packages --family multi` that day.
     # And 0.4.0 took 0.3.0's place the same day by the same decision, with
@@ -231,21 +231,29 @@ function trees() -> [Tree]
     # row stands: 20 seeds and 180 variants, the same command, exit 0.
     # The examples row raised 2026-11-14 at batch 36's gate, to what the suite
     # asked: 440 seeds and 3960 variants, past 269 and 2421 by more than a
-    # quarter, the sixteen programs' placed trees moved to core 0.4.0, twenty
+    # quarter, the sixteen programs' placed trees moved to the package's 0.4.0, twenty
     # files each where 0.2.1's held twelve: 440 `.hero` files under
     # `examples/`, 320 of them in placed trees, against 328 and 208 at
     # df7612ad3, counted with `git ls-files examples` that day.
     # Both rows raised 2026-11-15 at batch 38's gate, to what the suite asked:
     # examples 613 seeds and 5517 variants, packages 29 seeds and 261
-    # variants, past 440 and 3960, 20 and 180 by more than a quarter, core
-    # 0.6.0 in every placed tree and in the index with its 29 `.hero` files
+    # variants, past 440 and 3960, 20 and 180 by more than a quarter, the
+    # package's 0.6.0 in every placed tree and in the index with its 29 `.hero` files
     # (`strconv`'s `parse_float` and its private modules among them), 613 and
     # 29 counted with `git ls-tree -r --name-only HEAD` that day.
+    # **The examples row lowered 2026-11-19, the world changed on purpose and
+    # not the floor to fit it** (M-rebel-library step 55b): the author's
+    # decisions of 2026-11-15 removed the package every placed tree under
+    # `examples/` held and moved its driver beside Rebel's examples, the
+    # compiler's examples using no library since, each carrying the few
+    # functions it calls in modules of its own: 144 seeds and 1296 variants,
+    # read by this suite's own run that day, where the trees' 493 copies and
+    # the driver had stood.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 758, floor: Floor(family: "multi", generated: 6822, parsing: 6822), known: none)
         Tree(name: "tests, multi", root: "tests", seeds: 2332, floor: Floor(family: "multi", generated: 20988, parsing: 20988), known: none)
-        Tree(name: "examples, multi", root: "examples", seeds: 613, floor: Floor(family: "multi", generated: 5517, parsing: 5517), known: none)
+        Tree(name: "examples, multi", root: "examples", seeds: 144, floor: Floor(family: "multi", generated: 1296, parsing: 1296), known: none)
         Tree(name: "packages, multi", root: "packages", seeds: 29, floor: Floor(family: "multi", generated: 261, parsing: 261), known: none)
     ]
 

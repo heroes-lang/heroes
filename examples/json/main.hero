@@ -8,15 +8,13 @@
 # distinction is the compiler's own contract (CLAUDE.md §10) applied to a
 # program: *the input is bad* and *you called me wrong* are different answers.
 #
-# Reading and writing JSON is the package `encoding/json`'s, which `use
-# <core>/encoding/json` reaches through the catalogue `heroes.toml` beside this
-# file, written by `heroes add core`, and the tree that verb placed under
-# `heroes.packages/`. What stays here is the program's own question of a
-# document, how many values it holds and how deep they nest: a walk over
-# `json.Value`, a variant recursive through both `[T]` and `{K: V}`, with an
-# arm for each of its six kinds.
+# Reading and writing JSON is `json.hero`'s, the program's own module beside
+# this file, written to the RFC. What stays here is the program's own
+# question of a document, how many values it holds and how deep they nest: a
+# walk over `json.Value`, a variant recursive through both `[T]` and
+# `{K: V}`, with an arm for each of its six kinds.
 
-use <core>/encoding/json
+use json
 
 function main()
     given = args()

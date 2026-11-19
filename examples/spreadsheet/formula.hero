@@ -12,8 +12,7 @@
 # say: `visiting.push(name)` hands the callee a **copy**, so there is nothing to
 # pop on the way back and no way to forget to.
 
-use <core>/strconv
-
+use numbers
 use sheet
 
 ## Error codes
@@ -159,7 +158,7 @@ function factor(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
     return fail(code: ERR_UNEXPECTED_CHARACTER, msg: "no value starts at " + p.pos.to_str())
 
 # A literal: its digits and an optional point and more digits, read as one
-# text and rounded once by `strconv.parse_float`, so `0.3` is the `f64` that
+# text and rounded once by `numbers.parse_float`, so `0.3` is the `f64` that
 # `0.3` is. Built digit by digit with a running tenth it read as
 # `0.30000000000000004` (defect 2546). It fails `does_not_fit` where the
 # literal lies past the largest `f64`, which it read as `inf` before.
@@ -175,7 +174,7 @@ function number(@p: Parse) -> f64?
         while !at_end(p) && sheet.is_digit(here(p))
             advance(@p)
 
-    return strconv.parse_float(p.text.slice(from: start, to: p.pos))
+    return numbers.parse_float(p.text.slice(from: start, to: p.pos))
 
 # A name: either `SUM(` and a range, or a cell.
 function named(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?

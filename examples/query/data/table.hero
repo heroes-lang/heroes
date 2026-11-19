@@ -16,10 +16,9 @@
 # and every one of them is propagated with `?` (spec § Failure), so the
 # first bad byte in a five-thousand-line file stops the read and says where.
 
-use <core>/strconv
-use <core>/strings
-
 use data/row
+use numbers
+use strings
 
 constant ERR_HEADER: str
     "bad_header"
@@ -85,12 +84,13 @@ function int_of(text: str, line: i64) -> i64?
     if text.len() == 0
         return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": a number field is empty")
 
-    match strconv.atoi(text)
+    match numbers.atoi(text)
         .ok n  => return ok(n)
         .err e => return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": " + e.msg)
 
 # An `f64`, read back from the text `to_str` wrote for it and rounded ONCE,
-# to the nearest `f64`, by `strconv.parse_float` (Go's `ParseFloat`). Which
+# to the nearest `f64`, by `numbers.parse_float`, the program's own reader,
+# which hands a text it has read whole to the C library's `strtod`. Which
 # is not a style but a repair, and the round trip is what forced it, twice.
 #
 # `to_str` writes the digits that make a float read back as the same value
@@ -118,7 +118,7 @@ function float_of(text: str, line: i64) -> f64?
 
     # `parse_float`'s message quotes the text, `"1e+309" lies past the
     # largest f64`, so the line is all this adds, as in `int_of`.
-    match strconv.parse_float(text)
+    match numbers.parse_float(text)
         .ok value => return ok(value)
         .err e    => return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": " + e.msg)
 
@@ -306,9 +306,10 @@ test "defect 2570: every text `to_str` writes reads back as the value it was wri
     assert read(row.written(rows)).must() == rows
     assert float_of((0.0 / 0.0).to_str(), 1).must().to_str() == "nan"
 
-# `parse_float` reads more than the table's writer writes; the reader keeps
-# the table's shape, and each refusal names its line and what it found.
-test "defect 2570: a text `to_str` never writes is refused, naming its line, though `parse_float` reads most of them"
+# `parse_float` reads more than the table's writer writes (`.5`, `5.`, `+2`,
+# `1e5`); the reader keeps the table's shape, and each refusal names its line
+# and what it found.
+test "defect 2570: a text `to_str` never writes is refused, naming its line, though `parse_float` reads some of them"
     never = [
         "1_000"
         "0x1p3"
@@ -351,7 +352,7 @@ test "defect 2570: a text `to_str` never writes is refused, naming its line, tho
 test "defect 2570: a number past the largest f64 is refused, naming its line"
     match float_of("1e+309", 3)
         .ok _  => assert false
-        .err e => assert e.code == ERR_NUMBER && e.msg == "line 3: \"1e+309\" lies past the largest f64, about 1.8 times ten to the 308"
+        .err e => assert e.code == ERR_NUMBER && e.msg == "line 3: \"1e+309\" lies past the largest f64"
 
 # The error of a failed read, for the tests above. `.must()` on the error
 # side is not a thing, so this is the shape a test uses to look at one.

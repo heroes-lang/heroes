@@ -15,8 +15,8 @@
 # easy to leave out, and leaving it out is invisible until somebody types a
 # zero. The check is here and it has its own case.
 
-use <core>/strconv
-use <core>/strings
+use numbers
+use strings
 
 variant Token
     number
@@ -47,7 +47,7 @@ function token_of(word: str) -> Token?
 
     if word == "/"
         return ok(.divide)
-    return ok(.number(value: strconv.atoi(word)?))
+    return ok(.number(value: numbers.atoi(word)?))
 
 function evaluate(text: str) -> i64?
     stack: [i64] @= []
@@ -149,5 +149,5 @@ test "a negative number is a number and a minus is an operator"
     assert evaluate("-3").must() == 0 - 3
     assert evaluate("-3 -4 +").must() == 0 - 7
     assert evaluate("3 -4 -").must() == 7
-    assert strconv.atoi("-42").must() == 0 - 42
-    assert strconv.atoi("-").is_err()
+    assert numbers.atoi("-42").must() == 0 - 42
+    assert numbers.atoi("-").is_err()
