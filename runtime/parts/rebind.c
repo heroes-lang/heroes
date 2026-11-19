@@ -126,9 +126,17 @@ static void hero_rebind_set(HeroRebindEntry *e) {
 typedef void (*hero_rebind_catcher)(int, siginfo_t *, void *);
 
 /* The kernel's call of the catcher, made here in its place, so its C type is
- * not checked, for `parts/siginstall.c`'s wrapper's reason. */
-__attribute__((no_sanitize("function"))) static void hero_rebind_tramp(hero_rebind_catcher catcher, int style, int sig,
-                                                                       siginfo_t *info, void *context, uintptr_t token) {
+ * not checked, for `parts/siginstall.c`'s wrapper's reason. NOR IS ITS FRAME
+ * INSTRUMENTED BY AddressSanitizer: it never returns, leaving by
+ * `__sigreturn`, so redzones ASan laid around its entry were never taken
+ * back, and a later frame that reused those bytes was told a
+ * stack-buffer-overflow that was none (`fprintf` in the end of `main`'s
+ * report, `the-platform-layer-runs-the-leak-check-after-a-stop` under
+ * `--sanitize -O0`, 2026-11-19, ASan naming this frame's `me`). libSystem's
+ * own `_sigtramp`, which this stands in for, is not instrumented either. */
+__attribute__((no_sanitize("function", "address"))) static void hero_rebind_tramp(hero_rebind_catcher catcher, int style,
+                                                                                  int sig, siginfo_t *info,
+                                                                                  void *context, uintptr_t token) {
     (void)style;
     HeroRebindEntry me;
     me.prev = hero_rebind_now();
