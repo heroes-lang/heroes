@@ -147,7 +147,12 @@ HeroStr hero_args_shown(int64_t index, int64_t *status, int64_t *marks);
  * and the alternative — running the gate here — would report a leak for every
  * live value in every frame the exit unwinds past. Panel 036 flagged it; the
  * cost is that a golden which exits via `exit` loses its leak check, and the
- * corpus keeps one path that does not. */
+ * corpus keeps one path that does not.
+ *
+ * **It ends even while another thread is blocked printing** (defect 2600): the
+ * functions registered with `atexit` while the program ran are run, and where
+ * a thread holds stdout or stderr past a bound the process then ends at once,
+ * with this status, without C's own flushes (`parts/os.c`, `hero_exit_end`). */
 _Noreturn void hero_exit(int64_t code);
 
 /* How wide C's `long` is on THIS target, in bits.

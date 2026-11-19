@@ -1,0 +1,34 @@
+# Kept 2026-11-19, defect 2600, lane-impl-rt: the order the repair rests on.
+# `main` registers a function with `atexit` through C, then asks
+# `exit(code: 0)` while a worker sits blocked printing into a pipe nobody reads.
+# What it pins: the end `exit` asks is decided after every function the
+# program registered while it ran (the terminal put back is one,
+# `platform/hero_term.c`), so this one runs, and its status, 42, is the
+# program's; an end decided before it would read 0. Before the repair the
+# function ran too, and ended the process before C's `exit` could wait.
+extern "fixedbugs-2552-stdout-into-a-pipe-nobody-reads.h"
+    function unread_stdout() -> i64
+
+extern "fixedbugs-2600-a-function-registered-at-exit.h"
+    function register_at_exit() -> i64
+
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+
+function talk(n: i64) -> i64
+    i @= 0
+
+    while i < 1_000_000_000
+        print("worker ", i)
+        i @ i + 1
+
+    return n
+
+function main()
+    if unread_stdout() == 1 && register_at_exit() == 1
+        _ = hero_thread_spawn(body: talk, arg: 7)
+        _ = usleep(useconds: 300000)
+        exit(code: 0)

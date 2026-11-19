@@ -1,0 +1,31 @@
+# Fixed 2026-11-19, defect 2600, lane-impl-rt: the shape beside the defect's
+# own, `exit(code: 3)` while a worker sits blocked printing into a pipe nobody
+# reads.
+# Symptom: as the defect's own: the program never ended, so its code was never
+# seen.
+# Cause: C's `exit` waited on stdout's lock. Where that lock cannot be had the
+# process now ends at once, and with the code `exit` was asked for, never 0
+# and never an abort's 134.
+extern "fixedbugs-2552-stdout-into-a-pipe-nobody-reads.h"
+    function unread_stdout() -> i64
+
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+
+function talk(n: i64) -> i64
+    i @= 0
+
+    while i < 1_000_000_000
+        print("worker ", i)
+        i @ i + 1
+
+    return n
+
+function main()
+    if unread_stdout() == 1
+        _ = hero_thread_spawn(body: talk, arg: 7)
+        _ = usleep(useconds: 300000)
+        exit(code: 3)
