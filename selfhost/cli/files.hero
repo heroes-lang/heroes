@@ -131,6 +131,16 @@ function names_in(dir: str, want: i64) -> [str]
     hero_dir_release()
     return out
 
+# Every name directly in `dir`, whatever stands there: the names of both
+# kinds `names_in` sorts them into, a link to nothing among the files.
+function every_name_in(dir: str) -> [str]
+    out: [str] @= names_in(dir: dir, want: HERO_DIR_FILES)
+
+    for name in names_in(dir: dir, want: HERO_DIR_DIRECTORIES)
+        out @ out.push(name)
+
+    return out
+
 # Whether what is at `path` is a file, its links followed by the caller.
 function is_file(path: str) -> bool
     match entry(path)

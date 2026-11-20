@@ -31,6 +31,7 @@ use cli/argv
 use cli/files
 use cli/process
 use cli/publish
+use cli/strings
 use cli/table as cli_table
 use fetch/add_package
 use fetch/add_wanted
@@ -149,8 +150,15 @@ function placed_and_written(@ledger: staging.Ledger, inv: argv.Invocation, tools
     lines @ lines.push("wrote " + file)
 
     # Once the catalogue is written, each tree it names no more goes, where
-    # it is the tree that was placed (defect 2614, `fetch/unnamed.hero`).
-    for gone in unnamed.removed(program: program, run: ledger.folder, before: c, after: catalogue.parsed(file: file, text: text))
+    # it is the tree that was placed (defect 2614, `fetch/unnamed.hero`); and
+    # so does each a hand edit of the catalogue left before this run (defect
+    # 2621), the keys of the catalogue as it was being the first question's.
+    after = catalogue.parsed(file: file, text: text)
+
+    for gone in unnamed.removed(program: program, run: ledger.folder, before: c, after: after)
+        lines @ lines.push(gone)
+
+    for gone in unnamed.swept(program: program, run: ledger.folder, c: after, judged: unnamed.keys_of(c))
         lines @ lines.push(gone)
 
     return ok(lines)
@@ -321,9 +329,13 @@ test "a name from the index is added at its version with every package it needs,
     assert !process.path_exists(json_at) && !process.path_exists(strings_at)
 
     # The program's own version lowered below what `json` needs stays where
-    # `json` needs it: the program's is at least each dependency's.
+    # `json` needs it: the program's is at least each dependency's. The tree
+    # of 1.0.0 the run placed to read the version asked, which the catalogue
+    # written does not name, goes and is said (defect 2621); until then it
+    # stayed, named by nothing.
     held = said(["add", "strings@1.0.0", "-C", SCRATCH + "/app"], tools: transport.path_tools())
-    assert held == ["wrote " + SCRATCH + "/app/heroes.toml"]
+    assert held == ["wrote " + SCRATCH + "/app/heroes.toml", "removed strings 1.0.0 " + strings_at + ", which no entry names now"]
+    assert !process.path_exists(strings_at)
     assert catalogue.entry(catalogue.read(opened: SCRATCH + "/app/", named: ""), name: "strings").must().version == "1.1.0"
     assert !process.remove_tree(SCRATCH).is_err()
 
@@ -513,4 +525,52 @@ test "a refused add leaves the program's folder as it found it (defect 2434)"
     assert filed == "cannot_place" && told.exit_of(filed) == 2
     assert !process.path_exists(app + "heroes.packages")
     assert read_file(app + "heroes.toml").must() == "index = \"file://../idx\"\n"
+    assert !process.remove_tree(SCRATCH).is_err()
+
+# Defect 2620: a name `--as` gives a package an entry of the catalogue holds
+# under another name is refused at exit 1, before any folder is read or source
+# asked, the catalogue left as it was; written another way, the folder is the
+# same package. The entry's own name, or none, is that entry's add.
+test "a package an entry holds is never added under another name (defect 2620)"
+    made_repo.made(SCRATCH).must()
+    app = SCRATCH + "/app"
+    process.mkdir_all(app).must()
+    process.mkdir_all(SCRATCH + "/local").must()
+    assert said(["add", "--path", "../local", "-C", app], tools: transport.path_tools()) == ["added local ../local", "wrote " + app + "/heroes.toml"]
+    held = read_file(app + "/heroes.toml").must()
+    rename = "rename it by hand, `[dependencies.local]` to `[dependencies.rebel]` in `" + app + "/heroes.toml` and each `use <local>/` to `use <rebel>/`"
+
+    for folder in ["../local", "./../local/"]
+        got = outcome(invoked(["add", "--path", folder, "--as", "rebel", "-C", app]), tools: transport.path_tools())
+        assert got.len() == 1 && got[0].code == "catalogue_refused" && told.exit_of(got[0].code) == 1
+        assert got[0].said == "the catalogue's entry `local` already names the folder `../local`, and a program holds each package under one name, so `--as rebel` would name it twice: a `use <local>/` reaches it as it is, or " + rename
+        assert read_file(app + "/heroes.toml").must() == held
+
+    assert said(["add", "--path", "../local", "--as", "local", "-C", app], tools: transport.path_tools()) == ["wrote " + app + "/heroes.toml"]
+    assert read_file(app + "/heroes.toml").must() == held
+
+    # A git source, refused before its source is asked: at a tag no source
+    # has, the refusal is still this one.
+    made_repo.made(SCRATCH + "/src").must()
+    _ = made_repo.committed(
+        dir: SCRATCH + "/src",
+        files: ["lib.hero", "function y() -> i64\n    return 3\n"],
+        message: "one"
+    ).must()
+    made_repo.tagged(dir: SCRATCH + "/src", tag: "v1.0.0", annotated: false).must()
+    assert said(["add", "file://../src", "--tag", "v1.0.0", "--as", "yaml", "-C", app], tools: transport.path_tools()) == ["added yaml v1.0.0", "wrote " + app + "/heroes.toml"]
+    both = read_file(app + "/heroes.toml").must()
+
+    for tag in ["v1.0.0", "v9.9.9"]
+        got = outcome(
+            invoked(["add", "file://../src", "--tag", tag, "--as", "other", "-C", app]),
+            tools: transport.path_tools()
+        )
+        assert got.len() == 1 && got[0].code == "catalogue_refused"
+        assert strings.starts_with(
+            text: got[0].said,
+            prefix: "the catalogue's entry `yaml` already names `file://../src`, and a program holds each package under one name, so `--as other` would name it twice: "
+        )
+        assert read_file(app + "/heroes.toml").must() == both
+
     assert !process.remove_tree(SCRATCH).is_err()

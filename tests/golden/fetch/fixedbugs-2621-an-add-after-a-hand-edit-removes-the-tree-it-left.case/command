@@ -1,0 +1,2 @@
+add strings@1.0.0 -C <work>/app
+run <work>/app/main.hero

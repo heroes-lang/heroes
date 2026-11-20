@@ -1,0 +1,22 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:5: error[sum_mismatch]: the listing of kit 1.1.0 at the index `file://../../../../../tests/golden/fetch/fixedbugs-2621-a-fetch-that-refuses-an-entry-removes-nothing.case/idx` sums to `sha256-1590f41e82238de77c661d4cd471040aeee797d69ff9af35bd0e4023a5ea83ab`, and the catalogue's `sum` for it is `sha256-51d5b73f1508cff9c6da0b1c060f911b41f6dceb50acedecd3095432f564f687`: the package is not the one its entry was written for, and nothing was fetched
+$ heroes check <work>/app/main.hero
+exit 1
+stdout:
+stderr:
+error[package_unread]: `<kit>` cannot be read: the package `kit` 1.1.0 is in the catalogue and not placed, and a tree of it at the catalogue's `sum` is placed beside, at `<work>/app/heroes.packages/kit@1.0.0-968c8a98303d9eb4/`, at the version `1.0.0`: the catalogue's `version` is not the one that tree was placed at; write back `1.0.0`, and this tree is read
+  at <work>/app/main.hero:5:5
+    |
+  5 | use <kit>/csv
+    |     ^^^^^^^^^
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2621-a-fetch-that-refuses-an-entry-removes-nothing.case/idx"
+
+[dependencies.kit]
+version = "1.1.0"
+sum = "sha256-51d5b73f1508cff9c6da0b1c060f911b41f6dceb50acedecd3095432f564f687"
+heroes.packages:
+kit@1.0.0-968c8a98303d9eb4

@@ -1,3 +1,3 @@
-add file://../git/greet --tag v9 --as greet2 -C <work>/app
+add file://../git/greet --tag v9 -C <work>/app
 fetch -C <work>/app
 add file://../git/greet --tag v2 -C <work>/app

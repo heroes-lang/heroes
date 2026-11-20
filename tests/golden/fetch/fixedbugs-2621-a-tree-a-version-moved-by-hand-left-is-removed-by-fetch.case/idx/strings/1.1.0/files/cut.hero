@@ -1,0 +1,3 @@
+# The first word of a text.
+function cut() -> str
+    return "two"

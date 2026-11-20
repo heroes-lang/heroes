@@ -1,0 +1,9 @@
+# Defect 2620: the folder and the git source are reached by the names their
+# entries hold, `kit` and `yml`; the names a refused `--as` gave, `rebel` and
+# `other`, name no entry.
+use <kit>/strings
+use <yml>/load
+
+function main()
+    print(strings.first())
+    print(load.load().to_str())
