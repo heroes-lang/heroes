@@ -13,6 +13,7 @@
 # abort cannot hide the tests after it, with the report on stdout
 # because the verdicts are the artifact.
 
+use cli/abort_calls
 use cli/argv
 use cli/compile
 use cli/environment
@@ -104,8 +105,13 @@ function run_run(path: str, s: source.Source, inv: argv.Invocation, t: toolchain
     # The streams are INHERITED: this program's output is the point of
     # the command, so it goes where the compiler's own output goes. Under
     # `--sanitize` on Windows, DbgHelp names its frames (`cli/symbolized`).
-    given = symbolized.prepare(sanitize: options.sanitize)
+    # An abort's calls come back through a file of their own, and are told
+    # with their lines after it (`cli/abort_calls`, panel 253's R5).
+    calls = abort_calls.file_in(t.build)
+    abort_calls.clear(calls)
+    given = abort_calls.given(file: calls, beside: symbolized.prepare(sanitize: options.sanitize))
     ran = process.run_given(program: made.must().binary, words: words, out: "", err: "", given: given)
+    abort_calls.tell(file: calls, binary: made.must().binary)
 
     if !ran.started
         io.eprint(text: "error: cannot execute " + made.must().binary)
@@ -164,7 +170,8 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
     failed: i64 @= 0
     index: i64 @= 0
     ran: i64 @= 0
-    given = symbolized.prepare(sanitize: options.sanitize)
+    calls = abort_calls.file_in(t.build)
+    given = abort_calls.given(file: calls, beside: symbolized.prepare(sanitize: options.sanitize))
 
     # `--only` runs the tests whose title holds its text, each by its index
     # as the binary takes it (issue 1075, panel 018): two titles may share
@@ -177,6 +184,7 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
             index @ index + 1
             continue
         ran @ ran + 1
+        abort_calls.clear(calls)
         one = process.run_given(
             program: made.must().binary,
             words: [made.must().binary, index.to_str()],
@@ -184,6 +192,7 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
             err: "",
             given: given
         )
+        abort_calls.tell(file: calls, binary: made.must().binary)
 
         if one.started && one.code == 0
             print("ok   " + title)
