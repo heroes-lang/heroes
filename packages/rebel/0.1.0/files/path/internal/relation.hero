@@ -72,7 +72,7 @@ function why_apart(a: str, b: str, windows: bool) -> str
 
 # The way from `base` to `path`, `.` where they are the same, failing `invalid`
 # where the text holds none.
-function rel(path: str, base: str, windows: bool) -> str?
+function relative(path: str, base: str, windows: bool) -> str?
     to = cleaned(path, windows)
     from = cleaned(base, windows)
 
@@ -222,40 +222,40 @@ function length_order(a: i64, b: i64) -> i64
 ## Tests
 
 test "rel by POSIX's rules, the answers Go's `filepath.Rel` gave on 2026-11-15"
-    assert rel(path: "a", base: "a", windows: false).must() == "."
-    assert rel(path: "/b/c", base: "/a", windows: false).must() == "../b/c"
-    assert rel(path: "a", base: "a/b", windows: false).must() == ".."
-    assert rel(path: "../b", base: "../a", windows: false).must() == "../b"
-    assert rel(path: "a", base: ".", windows: false).must() == "a"
-    assert rel(path: ".", base: "a", windows: false).must() == ".."
-    assert rel(path: "../a", base: ".", windows: false).must() == "../a"
-    assert rel(path: "a/b/../c", base: "a/b", windows: false).must() == "../c"
-    assert rel(path: "/", base: "/", windows: false).must() == "."
-    assert rel(path: "/a/x/y", base: "/a/b/c", windows: false).must() == "../../x/y"
-    assert rel(path: "a", base: "", windows: false).must() == "a"
-    assert rel(path: "/a/b/c", base: "/a", windows: false).must() == "b/c"
-    assert rel(path: "a", base: "a/b/c", windows: false).must() == "../.."
-    assert rel(path: "x/è", base: "x/caffè", windows: false).must() == "../è"
+    assert relative(path: "a", base: "a", windows: false).must() == "."
+    assert relative(path: "/b/c", base: "/a", windows: false).must() == "../b/c"
+    assert relative(path: "a", base: "a/b", windows: false).must() == ".."
+    assert relative(path: "../b", base: "../a", windows: false).must() == "../b"
+    assert relative(path: "a", base: ".", windows: false).must() == "a"
+    assert relative(path: ".", base: "a", windows: false).must() == ".."
+    assert relative(path: "../a", base: ".", windows: false).must() == "../a"
+    assert relative(path: "a/b/../c", base: "a/b", windows: false).must() == "../c"
+    assert relative(path: "/", base: "/", windows: false).must() == "."
+    assert relative(path: "/a/x/y", base: "/a/b/c", windows: false).must() == "../../x/y"
+    assert relative(path: "a", base: "", windows: false).must() == "a"
+    assert relative(path: "/a/b/c", base: "/a", windows: false).must() == "b/c"
+    assert relative(path: "a", base: "a/b/c", windows: false).must() == "../.."
+    assert relative(path: "x/è", base: "x/caffè", windows: false).must() == "../è"
 
 test "rel fails where Go's `filepath.Rel` failed on 2026-11-15: a base that climbs out, a root on one side"
     for pair in [["a", ".."], [".", ".."], ["b", "a/../.."], ["../b", "../../a"], ["b", "/a"]]
-        match rel(path: pair[0], base: pair[1], windows: false)
+        match relative(path: pair[0], base: pair[1], windows: false)
             .ok _  => assert false
             .err e => assert e.code == "invalid"
 
-    match rel(path: "b", base: "/a", windows: false)
+    match relative(path: "b", base: "/a", windows: false)
         .ok _  => assert false
         .err e => assert e.msg == "no way from \"/a\" to \"b\": \"/a\" and \"b\" do not both begin at a root"
 
 test "rel by Windows' rules: drives, case set aside, a drive without a root, a share"
-    assert rel(path: "c:\\A\\b", base: "C:\\a", windows: true).must() == "b"
-    assert rel(path: "C:/x/y", base: "C:\\x\\z", windows: true).must() == "..\\y"
-    assert rel(path: "C:b", base: "C:a", windows: true).must() == "..\\b"
-    assert rel(path: "\\\\h\\s\\x", base: "\\\\h\\s", windows: true).must() == "x"
-    assert rel(path: "D:\\a", base: "C:\\a", windows: true).is_err()
-    assert rel(path: "\\a", base: "C:\\a", windows: true).is_err()
+    assert relative(path: "c:\\A\\b", base: "C:\\a", windows: true).must() == "b"
+    assert relative(path: "C:/x/y", base: "C:\\x\\z", windows: true).must() == "..\\y"
+    assert relative(path: "C:b", base: "C:a", windows: true).must() == "..\\b"
+    assert relative(path: "\\\\h\\s\\x", base: "\\\\h\\s", windows: true).must() == "x"
+    assert relative(path: "D:\\a", base: "C:\\a", windows: true).is_err()
+    assert relative(path: "\\a", base: "C:\\a", windows: true).is_err()
 
-    match rel(path: "C:a", base: "C:\\a", windows: true)
+    match relative(path: "C:a", base: "C:\\a", windows: true)
         .ok _  => assert false
         .err e => assert e.code == "invalid"
 
