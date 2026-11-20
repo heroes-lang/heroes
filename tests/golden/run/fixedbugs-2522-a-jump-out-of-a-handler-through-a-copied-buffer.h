@@ -39,11 +39,14 @@ static inline int32_t copied_escape(int32_t sig) {
 }
 
 /* The function called under 256 KiB of this frame, deeper than any frame the
- * handler had on any platform the case runs on. */
+ * handler had on any platform the case runs on. The room's address is handed
+ * to an empty `asm`, so the compiler keeps all of it: at `-O2` clang kept only
+ * the two bytes a `volatile` array's accesses touch, a frame of 32 bytes, in
+ * Linux arm64 (2026-11-20, `objdump`). */
 __attribute__((noinline)) static int64_t copied_deep(int64_t (*cb)(int64_t)) {
-    volatile char room[1 << 18];
-    room[0] = 1;
-    room[sizeof room - 1] = 1;
+    char room[1 << 18];
+    memset(room, 1, sizeof room);
+    __asm__ volatile("" : : "r"(room) : "memory");
     return cb(7) + room[0] - room[sizeof room - 1];
 }
 
