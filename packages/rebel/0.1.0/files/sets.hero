@@ -16,8 +16,11 @@
 # `union` is a word the compiler keeps from C and refuses as a name.
 #
 # It does not order the elements: `sort(sets.to_list(s))` does for numbers,
-# texts and booleans, and `lists.sort_by` for any other type. It does not count
-# how often a value occurs, which is `maps.counts`.
+# texts and booleans, and `lists.sort_by` for any other type. A set kept in the
+# order of its elements, with the elements around a bound, a range and a rank,
+# is `containers/ordered`'s, and a set of small numbers held one bit each is
+# `containers/bits`'. It does not count how often a value occurs, which is
+# `maps.counts`.
 #
 # Nothing here fails on what it is given, so no function answers a `T?` and the
 # package has no code. A function that puts an element into a map aborts where
@@ -293,11 +296,13 @@ test "remove: one element out"
 test "remove_all: two elements out, one absent"
     assert to_list(remove_all(from_list([1, 2, 3, 4]), [4, 1, 9])) == [2, 3]
 
-# The elements a function accepts.
+# The elements a function accepts; `samples.is_even` is
+# `function is_even(n: i64) -> bool`, true where `n % 2 == 0`.
 test "keep_where: the even numbers of a set"
     assert to_list(keep_where(from_list([1, 2, 3, 4]), samples.is_even)) == [2, 4]
 
-# A set without the elements a function accepts.
+# A set without the elements a function accepts; `samples.is_even` is
+# `function is_even(n: i64) -> bool`, true where `n % 2 == 0`.
 test "remove_where: the even numbers left out"
     assert to_list(remove_where(from_list([1, 2, 3, 4]), samples.is_even)) == [1, 3]
 
