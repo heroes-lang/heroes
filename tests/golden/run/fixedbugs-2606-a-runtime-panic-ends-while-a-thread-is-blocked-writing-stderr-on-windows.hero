@@ -8,9 +8,11 @@
 # past them on the full pipe.
 # Cause: Windows' report kept its stdio path. Each piece is now written past
 # the locks on a thread the report waits for at most 50 ms; a pipe that takes
-# nothing in that time drops the rest, and the program ends at its status, 127
-# on the box. The program makes its own stderr the unread pipe (its header),
-# so nothing reaches the harness's stderr.
+# nothing in that time drops the rest, and the program ends at its status:
+# 0xC0000409, 3221226505, the fail-fast that Windows' C library ends an
+# `abort` with, as the harness reads it (Git's bash shows it as 127). The
+# program makes its own stderr the unread pipe (its header), so nothing
+# reaches the harness's stderr.
 extern "fixedbugs-2606-windows-stderr-into-a-pipe-nobody-reads.h"
     function unread_stderr() -> i64
     function pause_us(us: i64) -> i64
