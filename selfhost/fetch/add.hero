@@ -31,6 +31,7 @@ use cli/argv
 use cli/files
 use cli/process
 use cli/publish
+use cli/strings
 use cli/table as cli_table
 use fetch/add_package
 use fetch/add_wanted
@@ -513,4 +514,52 @@ test "a refused add leaves the program's folder as it found it (defect 2434)"
     assert filed == "cannot_place" && told.exit_of(filed) == 2
     assert !process.path_exists(app + "heroes.packages")
     assert read_file(app + "heroes.toml").must() == "index = \"file://../idx\"\n"
+    assert !process.remove_tree(SCRATCH).is_err()
+
+# Defect 2620: a name `--as` gives a package an entry of the catalogue holds
+# under another name is refused at exit 1, before any folder is read or source
+# asked, the catalogue left as it was; written another way, the folder is the
+# same package. The entry's own name, or none, is that entry's add.
+test "a package an entry holds is never added under another name (defect 2620)"
+    made_repo.made(SCRATCH).must()
+    app = SCRATCH + "/app"
+    process.mkdir_all(app).must()
+    process.mkdir_all(SCRATCH + "/local").must()
+    assert said(["add", "--path", "../local", "-C", app], tools: transport.path_tools()) == ["added local ../local", "wrote " + app + "/heroes.toml"]
+    held = read_file(app + "/heroes.toml").must()
+    rename = "rename it by hand, `[dependencies.local]` to `[dependencies.rebel]` in `" + app + "/heroes.toml` and each `use <local>/` to `use <rebel>/`"
+
+    for folder in ["../local", "./../local/"]
+        got = outcome(invoked(["add", "--path", folder, "--as", "rebel", "-C", app]), tools: transport.path_tools())
+        assert got.len() == 1 && got[0].code == "catalogue_refused" && told.exit_of(got[0].code) == 1
+        assert got[0].said == "the catalogue's entry `local` already names the folder `../local`, and a program holds each package under one name, so `--as rebel` would name it twice: a `use <local>/` reaches it as it is, or " + rename
+        assert read_file(app + "/heroes.toml").must() == held
+
+    assert said(["add", "--path", "../local", "--as", "local", "-C", app], tools: transport.path_tools()) == ["wrote " + app + "/heroes.toml"]
+    assert read_file(app + "/heroes.toml").must() == held
+
+    # A git source, refused before its source is asked: at a tag no source
+    # has, the refusal is still this one.
+    made_repo.made(SCRATCH + "/src").must()
+    _ = made_repo.committed(
+        dir: SCRATCH + "/src",
+        files: ["lib.hero", "function y() -> i64\n    return 3\n"],
+        message: "one"
+    ).must()
+    made_repo.tagged(dir: SCRATCH + "/src", tag: "v1.0.0", annotated: false).must()
+    assert said(["add", "file://../src", "--tag", "v1.0.0", "--as", "yaml", "-C", app], tools: transport.path_tools()) == ["added yaml v1.0.0", "wrote " + app + "/heroes.toml"]
+    both = read_file(app + "/heroes.toml").must()
+
+    for tag in ["v1.0.0", "v9.9.9"]
+        got = outcome(
+            invoked(["add", "file://../src", "--tag", tag, "--as", "other", "-C", app]),
+            tools: transport.path_tools()
+        )
+        assert got.len() == 1 && got[0].code == "catalogue_refused"
+        assert strings.starts_with(
+            text: got[0].said,
+            prefix: "the catalogue's entry `yaml` already names `file://../src`, and a program holds each package under one name, so `--as other` would name it twice: "
+        )
+        assert read_file(app + "/heroes.toml").must() == both
+
     assert !process.remove_tree(SCRATCH).is_err()

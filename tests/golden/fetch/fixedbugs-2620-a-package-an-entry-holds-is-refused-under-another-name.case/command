@@ -1,0 +1,11 @@
+add --path ../local/kit -C <work>/app
+add --path ../local/kit --as rebel -C <work>/app
+add --path ./../local/kit/ --as rebel -C <work>/app
+add rebel/strings -C <work>/app
+add --path ../local/kit --as kit -C <work>/app
+add kit/strings -C <work>/app
+add file://../git/yaml --tag v0.3.1 --as yml -C <work>/app
+add file://../git/yaml --tag v0.3.1 --as other -C <work>/app
+add file://../git/yaml --tag v0.3.2 --as other -C <work>/app
+add file://../git/yaml --tag v0.3.2 -C <work>/app
+run <work>/app/main.hero
