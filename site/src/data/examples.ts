@@ -72,7 +72,6 @@ export const groups: Group[] = [
       'roman',
       'words',
       'wrap',
-      'packages',
     ],
   },
   {
@@ -134,6 +133,15 @@ export const groups: Group[] = [
     en: 'Games and simulations',
     it: 'Giochi e simulazioni',
     slugs: ['adventure', 'maze', 'board'],
+  },
+  {
+    // The second group, `examples-rebel/`: the programs written with Rebel
+    // (`.claude/rules/rebel.md`). Every shelf above is `examples/`, which uses
+    // no library.
+    key: 'rebel',
+    en: 'Written with Rebel',
+    it: 'Scritti con Rebel',
+    slugs: ['rebel/jq'],
   },
 ];
 
