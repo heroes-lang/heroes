@@ -215,7 +215,7 @@ function format_of(h: Header, transparent: bool) -> image.Format
         16
     else
         8
-    return image.format_with(channels: channels + alpha, bits: bits).must()
+    return image.format_of(channels: channels + alpha, bits: bits).must()
 
 test "be32 and be32_bytes: the high byte first, and back"
     assert be32([0x12, 0x34, 0x56, 0x78], at: 0) == 0x12345678
