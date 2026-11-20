@@ -3,10 +3,12 @@
 # that does not parse or a schema that breaks a rule aborts the test that
 # asked for it.
 
+use graphql
 use graphql/internal/build
 use graphql/internal/model
 use graphql/internal/parser
 use graphql/internal/tree
+use json
 
 # The schema `sdl` writes.
 function schema_of(sdl: str) -> model.Model
@@ -45,3 +47,90 @@ test "schema_of and tree_of: the specification's pets, and a query of them"
     m = pets()
     assert model.kind_of(m, name: "CatOrDog") == model.UNION
     assert tree_of("{ dog { name } }").nodes.len() == 6
+
+# FOR TESTS AND EXAMPLES of the face: the schema they run, the specification's characters of
+# Star Wars, a review written by a mutation and one announced by a
+# subscription.
+constant SPEC_SCHEMA: str
+    "enum Episode { NEWHOPE EMPIRE JEDI } interface Character { id: ID! name: String friends: [Character] } type Human implements Character { id: ID! name: String friends: [Character] homePlanet: String } type Droid implements Character { id: ID! name: String friends: [Character] primaryFunction: String } input ReviewInput { stars: Int! commentary: String } type Review { stars: Int! commentary: String } type Query { hero(episode: Episode): Character human(id: ID!): Human } type Mutation { createReview(episode: Episode, review: ReviewInput!): Review } type Subscription { reviewAdded(episode: Episode): Review }"
+
+# The characters of `SPEC_SCHEMA` by id, as JSON: each names its type in
+# `__typename` and leaves its friends to the resolver.
+constant SPEC_PEOPLE: str
+    "{\"1000\": {\"__typename\": \"Human\", \"id\": \"1000\", \"name\": \"Luke Skywalker\", \"homePlanet\": \"Tatooine\", \"friends\": [\"1002\", \"2001\"]}, \"1002\": {\"__typename\": \"Human\", \"id\": \"1002\", \"name\": \"Han Solo\", \"friends\": [\"1000\"]}, \"2001\": {\"__typename\": \"Droid\", \"id\": \"2001\", \"name\": \"R2-D2\", \"primaryFunction\": \"Astromech\", \"friends\": [\"1000\", \"1002\"]}}"
+
+# The resolver of `SPEC_SCHEMA` over the characters `SPEC_PEOPLE` holds, as a
+# program with state writes one.
+#
+# - `people`: the characters by id.
+# - `field`: the field handed out.
+#
+# A character is answered without its `friends`, which are handed out in
+# turn. Fails `not_found` for a field it does not know.
+function spec_resolver_with(people: {str: json.Value}, field: graphql.Field) -> json.Value?
+    if field.field_name == "hero"
+        id = if field.arguments["episode"].default(.null_value) == .text(v: "EMPIRE")
+            "1000"
+        else
+            "2001"
+        return ok(spec_without_friends(people[id].must()))
+
+    if field.field_name == "human"
+        id = json.text_of(field.arguments["id"].must()).must()
+
+        match people[id]
+            .ok p  => return ok(spec_without_friends(p))
+            .err _ => return ok(.null_value)
+
+    if field.field_name == "friends"
+        id = json.text_of(json.member(field.parent, key: "id").must()).must()
+        found: [json.Value] @= []
+
+        for friend in json.items_of(json.member(people[id].must(), key: "friends").must()).must()
+            found @ found.push(spec_without_friends(people[json.text_of(friend).must()].must()))
+
+        return ok(.list(items: found))
+
+    if field.field_name == "createReview"
+        return ok(field.arguments["review"].must())
+    return fail(code: graphql.NOT_FOUND, msg: f"no resolver for {field.type_name}.{field.field_name}")
+
+# `person` without its member `friends`, so that the executor hands them out.
+#
+# - `person`: a character of `SPEC_PEOPLE`.
+function spec_without_friends(person: json.Value) -> json.Value
+    members: {str: json.Value} @= {}
+
+    for key in keys(json.members_of(person).default({}))
+        if key != "friends"
+            members[key] @ json.member(person, key: key).must()
+
+    return .object(members: members)
+
+# The resolver of `SPEC_SCHEMA` for a program with no state of its own: it
+# reads `SPEC_PEOPLE` each time.
+#
+# - `field`: the field handed out.
+#
+# Fails as `spec_resolver_with` fails.
+function spec_resolver(field: graphql.Field) -> json.Value?
+    people = json.members_of(json.parse(SPEC_PEOPLE).must()).must()
+    return spec_resolver_with(people, field: field)
+
+# The schema `SPEC_SCHEMA` writes.
+function spec_schema() -> graphql.Schema
+    return graphql.parse_schema(SPEC_SCHEMA, limits: graphql.default_limits()).must()
+
+# A request of `query` alone.
+#
+# - `query`: the document's text.
+function spec_request(query: str) -> graphql.Request
+    return graphql.Request(query: query, operation_name: "", variables: .null_value, extensions: .null_value)
+
+# `r` executed against `spec_schema()` by `spec_resolver`, written as JSON.
+#
+# - `r`: the request.
+function spec_run(r: graphql.Request) -> str
+    return graphql.format_response(
+        graphql.execute(spec_schema(), r: r, root: .null_value, limits: graphql.default_limits(), resolver: spec_resolver)
+    ).must()

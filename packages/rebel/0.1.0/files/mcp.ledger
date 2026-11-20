@@ -31,7 +31,7 @@ capability protocol/version  the revision named and every request held to it: no
   note    An `initialize` is answered -32022 naming the version spoken, as the revision asks of a server that speaks it alone
 
 capability protocol/meta  a request's `_meta` read and checked: version, client, capabilities, progress token, log level, the trace context kept
-  heroes  mcp.meta_of, mcp.RequestMeta, mcp.request_params
+  heroes  mcp.meta_of, mcp.RequestMeta
   go      go-sdk mcp.Meta, mcp.Params.GetMeta, mcp-go server.WithRequestProtocolInfo, client.WithMetaPropagator, client.WithPropagator
   rust    -
   python  mcp.types, mcp.server.context
@@ -70,7 +70,7 @@ capability server/description  a server described as data: its tools, resources,
   note    The language has no closure, so the program describes, `handle` finds, and the program calls its own function with its own state, as `web` routes
 
 capability server/dispatch  each request found and checked, the package answering what it can from the description, the rest handed to the program
-  heroes  mcp.handle, mcp.handle_method, mcp.Request, mcp.tool_call_of, mcp.resource_read_of, mcp.prompt_get_of, mcp.completion_of, mcp.tool_named
+  heroes  mcp.handle, mcp.Request, mcp.tool_named
   go      go-sdk mcp.Server.Run, mcp.ServerSession, mcp-go server.MCPServer.HandleMessage, server.Hooks and their OnAfter functions
   rust    -
   python  mcp.server.lowlevel, mcp.server.session, mcp.server.runner
@@ -89,7 +89,7 @@ capability tools/call  a tool called, its arguments held to its input schema, it
   note    Arguments the input schema refuses are a tool execution error (`isError`), so the model can correct them, as Python answers; a result that does not conform to the output schema is the program's mistake and is answered -32603
 
 capability content  content blocks of text, image, audio, a resource link and an embedded resource, with their hints
-  heroes  mcp.Content, mcp.Annotations, mcp.no_annotations, mcp.text_content, mcp.content_json, mcp.content_of, mcp.annotations_json, mcp.annotations_of, mcp.put_annotations
+  heroes  mcp.Content, mcp.Annotations, mcp.no_annotations, mcp.text_content, mcp.content_json, mcp.content_of, mcp.annotations_json, mcp.annotations_of
   go      go-sdk mcp.Content, mcp.TextContent, mcp.ImageContent, mcp.AudioContent, mcp.ResourceLink, mcp.EmbeddedResource, mcp.Annotations, mcp-go mcp.TextContent, mcp.ImageContent, mcp.AudioContent, mcp.EmbeddedResource
   rust    -
   python  mcp.types
@@ -121,7 +121,7 @@ capability completion  an argument of a prompt or a template completed, 100 valu
   python  mcp.CompleteRequest, mcp.client.Client.complete
 
 capability pagination  lists answered page by page with opaque cursors, and every page read by a client, the empty cursor one
-  heroes  mcp.Server, mcp.every_page
+  heroes  mcp.Server
   go      go-sdk mcp.DefaultPageSize, mcp-go client's ErrRepeatedListCursor
   rust    -
   python  -
@@ -134,14 +134,14 @@ capability caching  `ttlMs` and `cacheScope` on discovery, the lists and a read;
   note    The server writes the hints; a client cache is the program's, the hints read from the results
 
 capability mrtr/elicitation  a server that needs the user answers `input_required` with an elicitation, form or URL; a client answers and retries; the capability checked first (-32021)
-  heroes  mcp.InputRequest, mcp.InputRequired, mcp.Inputs, mcp.Elicited, mcp.no_inputs, mcp.inputs_of, mcp.elicited_of, mcp.elicitation_response, mcp.answer_input_required, mcp.input_request_json, mcp.input_request_of, mcp.input_required_json, mcp.input_required_of, mcp.put_inputs
+  heroes  mcp.InputRequest, mcp.InputRequired, mcp.Inputs, mcp.Elicited, mcp.no_inputs, mcp.inputs_of, mcp.elicited_of, mcp.elicitation_response, mcp.answer_input_required, mcp.input_request_json, mcp.input_request_of, mcp.input_required_json, mcp.input_required_of
   go      go-sdk mcp.ElicitParams, mcp.ElicitResult, mcp.InputRequest, mcp.InputRequestMap, mcp.InputResponse, mcp.InputResponseMap, mcp-go server.ElicitationResponse, server.InputResponse, server.InputRequestBuilder, client.ElicitationHandler, client.WithElicitationHandler, client.WithMaxInputRoundTrips, client.WithManualInputRoundTrips
   rust    -
   python  mcp.InputRequiredRoundsExceededError, mcp.UrlElicitationRequiredError, mcp.server.elicitation, mcp.client.Client.elicitation_callback, input_required_max_rounds
   note    A client retries by hand, as mcp-go's manual mode: the language has no callback that could hold the user's answer
 
 capability mrtr/state  a server's `requestState` signed and bound to its request and its end, refused when changed
-  heroes  mcp.seal_state, mcp.open_state
+  heroes  mcp.sign_state, mcp.verify_state
   go      -
   rust    -
   python  mcp.server.request_state
@@ -161,7 +161,7 @@ capability cancellation  `notifications/cancelled` read by a server on standard 
   note    A server is single-threaded unless the program makes it otherwise, so a cancellation of the request it is answering arrives after its answer, a race the revision allows
 
 capability subscriptions  `subscriptions/listen` acknowledged with what the server agrees to, list changes and resource updates told only where asked, the subscription ended gracefully; a client that opens one and reads its notifications
-  heroes  mcp.Listen, mcp.Filter, mcp.honored_of, mcp.acknowledge, mcp.changed_of, mcp.updated_of, mcp.end_listen, mcp.filter_of, mcp.filter_json, mcp.subscribe, mcp.acknowledged, mcp.next_notification, mcp.Notification
+  heroes  mcp.Listen, mcp.Filter, mcp.honored_of, mcp.acknowledge, mcp.changed_of, mcp.updated_of, mcp.end_listen, mcp.filter_of, mcp.filter_json, mcp.subscribe, mcp.next_notification, mcp.Notification
   go      go-sdk mcp.Server.ResourceUpdated, mcp-go server.SubscriptionIDFromContext, server.WithSubscriptionID, server.OnAfterSubscriptionsListenFunc
   rust    -
   python  mcp.server.subscriptions, mcp.client.subscriptions, mcp.client.Client.listen, NotificationBinding
@@ -181,21 +181,21 @@ capability transport/stdio  standard streams one message a line, a server that e
   python  mcp.stdio_server, mcp.stdio_client, mcp.StdioServerParameters
 
 capability transport/streamable-http  one POST a message, JSON or an event stream answered, 202 for a notification, 405 for GET and DELETE, the Origin checked, the mirrored fields checked against the body (-32020), sessions and resumption passed over
-  heroes  mcp.read_http, mcp.check_fields, mcp.respond_http, mcp.start_stream, mcp.write_event, mcp.http_client, mcp.send_http, mcp.send_request
+  heroes  mcp.read_http, mcp.respond_http, mcp.start_stream, mcp.write_event, mcp.http_client, mcp.send_request
   go      go-sdk mcp.StreamableHTTPHandler, mcp.StreamableClientTransport, mcp.StreamableServerTransport, mcp.DefaultMaxRequestBodyBytes, mcp-go server.NewStreamableHTTPServer, client.NewStreamableHttpClient, server.CORSConfig and its options
   rust    -
   python  mcp.server.streamable_http, mcp.server.streamable_http_manager, mcp.server.transport_security, mcp.client.streamable_http
   note    An `Origin` not listed is refused 403 and one absent taken, so a page cannot reach a server on the user's machine; a body typed otherwise than JSON is refused, `jsonrpc`'s rule
 
 capability transport/x-mcp-header  a tool's `x-mcp-header` annotations checked, its arguments mirrored into `Mcp-Param-` fields by a client and held to the body by a server, values in the Base64 sentinel where a field cannot hold them
-  heroes  mcp.check_fields, mcp.send_http, mcp.list_tools
+  heroes  mcp.list_tools
   go      go-sdk the standard headers of `streamable_headers`, mcp-go client.WithInvalidToolHandler
   rust    -
   python  mcp.client.streamable_http
   note    A tool whose annotation is not of its form is left out of a client's list over HTTP, as the revision requires
 
 capability auth/server  a protected resource's metadata served (RFC 9728), the 401 and 403 challenges written, the token read
-  heroes  mcp.resource_metadata_response, mcp.unauthorized, mcp.insufficient_scope, web.bearer_token_of
+  heroes  mcp.resource_metadata_response, mcp.unauthorized, mcp.insufficient_scope, http.bearer_token_of
   go      go-sdk auth.RequireBearerToken, auth.ProtectedResourceMetadataHandler, mcp-go server.NewProtectedResourceMetadataHandler, server.ProtectedResourceMetadataPath, server.WellKnownProtectedResourcePath
   rust    -
   python  mcp.server.auth

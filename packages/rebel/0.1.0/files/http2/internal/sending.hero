@@ -4,6 +4,7 @@
 # each checked first, so a frame the session writes is one the peer may
 # read.
 
+use http2
 use http2/internal/checks
 use http2/internal/encoding
 use http2/internal/engine
@@ -17,7 +18,7 @@ function open_or_fail(s: engine.State lent, asked: str) -> ()?
     return ok()
 
 # A client's: the next stream opened with `headers`, its identifier answered.
-function open_stream(@s: engine.State, headers: [model.Field], end_stream: bool) -> i64?
+function open_stream(@s: engine.State, headers: [http2.Field], end_stream: bool) -> i64?
     asked = "opening an HTTP/2 stream"
 
     if !s.client
@@ -62,7 +63,7 @@ function sendable(s: engine.State lent, id: i64, asked: str) -> ()?
     return ok()
 
 # A response, an informational answer or trailers on `id`.
-function send_headers(@s: engine.State, id: i64, headers: [model.Field], end_stream: bool) -> ()?
+function send_headers(@s: engine.State, id: i64, headers: [http2.Field], end_stream: bool) -> ()?
     asked = f"sending a header list on stream {id}"
     sendable(s, id: id, asked: asked)?
     st @= engine.get(s, id: id)
@@ -203,7 +204,7 @@ function send_ping(@s: engine.State, data: [u8]) -> ()?
 
 # New settings, the changes alone sent; the windows of open streams follow
 # the new initial window at once.
-function change_settings(@s: engine.State, settings: model.Settings) -> ()?
+function change_settings(@s: engine.State, settings: http2.Settings) -> ()?
     why = values.refusal(settings)
 
     if why != ""

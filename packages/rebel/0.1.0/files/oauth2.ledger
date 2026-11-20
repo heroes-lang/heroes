@@ -52,20 +52,20 @@ capability code/url  the URL a user is sent to, with the state, the PKCE challen
   python  OAuth2Client.create_authorization_url
 
 capability code/redirect  the redirect read: the code taken, the state checked, an error answered, the issuer checked (RFC 9207)
-  heroes  oauth2.read_redirect
+  heroes  oauth2.parse_redirect
   go      -
   rust    -
   python  OAuth2Client.fetch_token(authorization_response=...), authlib.oauth2.rfc6749.MismatchingStateException, MissingCodeException, AccessDeniedError
   note    RFC 9207's `iss` is checked where the caller names the issuer, as the MCP authorization of 2026-07-28 requires; Go and the Rust crate leave it to the program
 
 capability code/exchange  an authorization code exchanged for tokens, with its PKCE verifier
-  heroes  oauth2.exchange
+  heroes  oauth2.exchange_code
   go      oauth2.Config.Exchange
   rust    Client::exchange_code, CodeTokenRequest::set_pkce_verifier, AuthorizationCode
   python  OAuth2Client.fetch_token, OAuth2Session.fetch_access_token
 
 capability resource-indicators  the resources a token is for, sent on the authorization and the token requests (RFC 8707)
-  heroes  oauth2.Config, oauth2.authorization_url, oauth2.exchange
+  heroes  oauth2.Config, oauth2.authorization_url, oauth2.exchange_code
   go      oauth2.SetAuthURLParam("resource", ...)
   rust    -
   python  -
@@ -114,7 +114,7 @@ capability grant/implicit  a token read from a redirect's fragment
   python  OAuth2Client.token_from_fragment, authlib.oauth2.rfc6749.ImplicitGrant
 
 capability token/value  a token answered: the access token, its type, its expiry, the refresh token, the scopes, an ID token, every other member
-  heroes  oauth2.Token, oauth2.read_token
+  heroes  oauth2.Token, oauth2.token_of
   go      oauth2.Token, oauth2.Token.AccessToken, oauth2.Token.TokenType, oauth2.Token.RefreshToken, oauth2.Token.Expiry, oauth2.Token.ExpiresIn, oauth2.Token.Extra, oauth2.Token.Type, oauth2.Token.WithExtra
   rust    oauth2::StandardTokenResponse, TokenResponse::access_token, token_type, expires_in, refresh_token, scopes
   python  authlib.oauth2.rfc6749.OAuth2Token, OAuth2Client.token, OAuth2Client.parse_response_token
@@ -134,7 +134,7 @@ capability token/use  a request carrying a token as `Authorization: Bearer`
   note    The token is a value the program adds to each request it sends; a client that refreshes inside the transport is Go's `Transport`, which a language without interfaces composes from `renewed` and `authorize`
 
 capability token/errors  an error the token endpoint answers (RFC 6749 § 5.2) told with its code, description and URI
-  heroes  oauth2.read_token
+  heroes  oauth2.token_of
   go      oauth2.RetrieveError, RetrieveError.Error, RetrieveError.ErrorCode, RetrieveError.ErrorDescription, RetrieveError.ErrorURI, RetrieveError.Response, RetrieveError.Body
   rust    oauth2::RequestTokenError, StandardErrorResponse, BasicErrorResponseType
   python  authlib.oauth2.rfc6749.OAuth2Error, InvalidClientError, InvalidGrantError, InvalidRequestError, InvalidScopeError, UnauthorizedClientError, UnsupportedGrantTypeError, UnsupportedResponseTypeError, OAuth2Client.oauth_error_class

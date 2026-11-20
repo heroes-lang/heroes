@@ -4,7 +4,7 @@
 # the responses against one of 256, three blocks each on one table.
 
 use bytes
-use http2/internal/model
+use http2
 
 # The names of the three requests of C.3 and C.4, in their order.
 constant REQUEST_NAMES: [[str]]
@@ -87,11 +87,11 @@ constant RESPONSE_TABLE_SIZES: [i64]
     ]
 
 # The fields of one example: `names[i]` with `values[i]`, none sensitive.
-function fields(names: [str], values: [str]) -> [model.Field]
-    out: [model.Field] @= []
+function fields(names: [str], values: [str]) -> [http2.Field]
+    out: [http2.Field] @= []
 
     for i in range(from: 0, to: names.len())
-        out @ out.push(model.Field(name: names[i], value: values[i], sensitive: false))
+        out @ out.push(http2.Field(name: names[i], value: values[i], sensitive: false))
 
     return out
 

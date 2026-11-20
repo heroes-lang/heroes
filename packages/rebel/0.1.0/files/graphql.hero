@@ -39,9 +39,11 @@
 # over HTTP whose status is not a success).
 
 use bytes
+use errors as failures
 use graphql/internal/build
 use graphql/internal/client_schema
 use graphql/internal/exec
+use graphql/internal/fixture
 use graphql/internal/introspect
 use graphql/internal/model
 use graphql/internal/parser
@@ -1285,132 +1287,29 @@ function format_message(m: Message) -> str?
 
 ## Tests
 
-# The schema of the tests and examples: the specification's characters of
-# Star Wars, a review written by a mutation and one announced by a
-# subscription.
-constant SPEC_SCHEMA: str
-    "enum Episode { NEWHOPE EMPIRE JEDI } interface Character { id: ID! name: String friends: [Character] } type Human implements Character { id: ID! name: String friends: [Character] homePlanet: String } type Droid implements Character { id: ID! name: String friends: [Character] primaryFunction: String } input ReviewInput { stars: Int! commentary: String } type Review { stars: Int! commentary: String } type Query { hero(episode: Episode): Character human(id: ID!): Human } type Mutation { createReview(episode: Episode, review: ReviewInput!): Review } type Subscription { reviewAdded(episode: Episode): Review }"
-
-# The characters of `SPEC_SCHEMA` by id, as JSON: each names its type in
-# `__typename` and leaves its friends to the resolver.
-constant SPEC_PEOPLE: str
-    "{\"1000\": {\"__typename\": \"Human\", \"id\": \"1000\", \"name\": \"Luke Skywalker\", \"homePlanet\": \"Tatooine\", \"friends\": [\"1002\", \"2001\"]}, \"1002\": {\"__typename\": \"Human\", \"id\": \"1002\", \"name\": \"Han Solo\", \"friends\": [\"1000\"]}, \"2001\": {\"__typename\": \"Droid\", \"id\": \"2001\", \"name\": \"R2-D2\", \"primaryFunction\": \"Astromech\", \"friends\": [\"1000\", \"1002\"]}}"
-
-# The resolver of `SPEC_SCHEMA` over the characters `SPEC_PEOPLE` holds, as a
-# program with state writes one.
-#
-# - `people`: the characters by id.
-# - `field`: the field handed out.
-#
-# A character is answered without its `friends`, which are handed out in
-# turn. Fails `not_found` for a field it does not know.
-function spec_resolver_with(people: {str: json.Value}, field: Field) -> json.Value?
-    if field.field_name == "hero"
-        id = if field.arguments["episode"].default(.null_value) == .text(v: "EMPIRE")
-            "1000"
-        else
-            "2001"
-        return ok(spec_without_friends(people[id].must()))
-
-    if field.field_name == "human"
-        id = json.text_of(field.arguments["id"].must()).must()
-
-        match people[id]
-            .ok p  => return ok(spec_without_friends(p))
-            .err _ => return ok(.null_value)
-
-    if field.field_name == "friends"
-        id = json.text_of(json.member(field.parent, key: "id").must()).must()
-        found: [json.Value] @= []
-
-        for friend in json.items_of(json.member(people[id].must(), key: "friends").must()).must()
-            found @ found.push(spec_without_friends(people[json.text_of(friend).must()].must()))
-
-        return ok(.list(items: found))
-
-    if field.field_name == "createReview"
-        return ok(field.arguments["review"].must())
-    return fail(code: NOT_FOUND, msg: f"no resolver for {field.type_name}.{field.field_name}")
-
-# `person` without its member `friends`, so that the executor hands them out.
-#
-# - `person`: a character of `SPEC_PEOPLE`.
-function spec_without_friends(person: json.Value) -> json.Value
-    members: {str: json.Value} @= {}
-
-    for key in keys(json.members_of(person).default({}))
-        if key != "friends"
-            members[key] @ json.member(person, key: key).must()
-
-    return .object(members: members)
-
-# The resolver of `SPEC_SCHEMA` for a program with no state of its own: it
-# reads `SPEC_PEOPLE` each time.
-#
-# - `field`: the field handed out.
-#
-# Fails as `spec_resolver_with` fails.
-function spec_resolver(field: Field) -> json.Value?
-    people = json.members_of(json.parse(SPEC_PEOPLE).must()).must()
-    return spec_resolver_with(people, field: field)
-
-# The schema `SPEC_SCHEMA` writes.
-function spec_schema() -> Schema
-    return parse_schema(SPEC_SCHEMA, limits: default_limits()).must()
-
-# A request of `query` alone.
-#
-# - `query`: the document's text.
-function spec_request(query: str) -> Request
-    return Request(query: query, operation_name: "", variables: .null_value, extensions: .null_value)
-
-# `r` executed against `spec_schema()` by `spec_resolver`, written as JSON.
-#
-# - `r`: the request.
-function spec_run(r: Request) -> str
-    return format_response(
-        execute(spec_schema(), r: r, root: .null_value, limits: default_limits(), resolver: spec_resolver)
-    ).must()
-
-# The code of `v`'s failure, "" where it holds a value.
-#
-# - `v`: the value or the failure.
-function code_of<T>(v: T?) -> str
-    match v
-        .ok _  => return ""
-        .err e => return e.code
-
-# The message of `v`'s failure, "" where it holds a value.
-#
-# - `v`: the value or the failure.
-function message_of<T>(v: T?) -> str
-    match v
-        .ok _  => return ""
-        .err e => return e.msg
-
 test "execute: graphql-js's answers for the specification's characters"
-    assert spec_run(spec_request("{ hero { name friends { name } } }")) == "{\"data\":{\"hero\":{\"name\":\"R2-D2\",\"friends\":[{\"name\":\"Luke Skywalker\"},{\"name\":\"Han Solo\"}]}}}"
+    assert fixture.spec_run(fixture.spec_request("{ hero { name friends { name } } }")) == "{\"data\":{\"hero\":{\"name\":\"R2-D2\",\"friends\":[{\"name\":\"Luke Skywalker\"},{\"name\":\"Han Solo\"}]}}}"
     by_episode = Request(
         query: "query ($ep: Episode) { hero(episode: $ep) { __typename name ... on Human { homePlanet } } }",
         operation_name: "",
         variables: json.parse("{\"ep\": \"EMPIRE\"}").must(),
         extensions: .null_value
     )
-    assert spec_run(by_episode) == "{\"data\":{\"hero\":{\"__typename\":\"Human\",\"name\":\"Luke Skywalker\",\"homePlanet\":\"Tatooine\"}}}"
-    assert spec_run(spec_request("{ human(id: \"404\") { name } }")) == "{\"data\":{\"human\":null}}"
-    assert spec_run(spec_request("mutation { createReview(episode: JEDI, review: {stars: 5, commentary: \"Great\"}) { stars commentary } }")) == "{\"data\":{\"createReview\":{\"stars\":5,\"commentary\":\"Great\"}}}"
-    assert spec_run(spec_request("{ hero { friends { friends { name } } } }")) == "{\"data\":{\"hero\":{\"friends\":[{\"friends\":[{\"name\":\"Han Solo\"},{\"name\":\"R2-D2\"}]},{\"friends\":[{\"name\":\"Luke Skywalker\"}]}]}}}"
+    assert fixture.spec_run(by_episode) == "{\"data\":{\"hero\":{\"__typename\":\"Human\",\"name\":\"Luke Skywalker\",\"homePlanet\":\"Tatooine\"}}}"
+    assert fixture.spec_run(fixture.spec_request("{ human(id: \"404\") { name } }")) == "{\"data\":{\"human\":null}}"
+    assert fixture.spec_run(fixture.spec_request("mutation { createReview(episode: JEDI, review: {stars: 5, commentary: \"Great\"}) { stars commentary } }")) == "{\"data\":{\"createReview\":{\"stars\":5,\"commentary\":\"Great\"}}}"
+    assert fixture.spec_run(fixture.spec_request("{ hero { friends { friends { name } } } }")) == "{\"data\":{\"hero\":{\"friends\":[{\"friends\":[{\"name\":\"Han Solo\"},{\"name\":\"R2-D2\"}]},{\"friends\":[{\"name\":\"Luke Skywalker\"}]}]}}}"
 
 test "execute: request errors carry no data, a non-null field's null nulls its parent"
-    assert spec_run(spec_request("{ hero { nope } }")) == "{\"errors\":[{\"message\":\"Cannot query field \\\"nope\\\" on type \\\"Character\\\". Did you mean \\\"name\\\"?\",\"locations\":[{\"line\":1,\"column\":10}]}]}"
-    assert spec_run(spec_request("{")) == "{\"errors\":[{\"message\":\"Syntax Error: Expected Name, found <EOF>.\",\"locations\":[{\"line\":1,\"column\":2}]}]}"
-    assert spec_run(spec_request("query ($ep: Episode!) { hero(episode: $ep) { name } }")) == "{\"errors\":[{\"message\":\"Variable \\\"$ep\\\" of required type \\\"Episode!\\\" was not provided.\",\"locations\":[{\"line\":1,\"column\":8}]}]}"
-    assert spec_run(spec_request("query A { hero { id } } query B { hero { id } }")) == "{\"errors\":[{\"message\":\"Must provide operation name if query contains multiple operations.\"}]}"
-    assert spec_run(spec_request("mutation { createReview(review: {stars: 1}) { stars } }")) == "{\"data\":{\"createReview\":{\"stars\":1}}}"
+    assert fixture.spec_run(fixture.spec_request("{ hero { nope } }")) == "{\"errors\":[{\"message\":\"Cannot query field \\\"nope\\\" on type \\\"Character\\\". Did you mean \\\"name\\\"?\",\"locations\":[{\"line\":1,\"column\":10}]}]}"
+    assert fixture.spec_run(fixture.spec_request("{")) == "{\"errors\":[{\"message\":\"Syntax Error: Expected Name, found <EOF>.\",\"locations\":[{\"line\":1,\"column\":2}]}]}"
+    assert fixture.spec_run(fixture.spec_request("query ($ep: Episode!) { hero(episode: $ep) { name } }")) == "{\"errors\":[{\"message\":\"Variable \\\"$ep\\\" of required type \\\"Episode!\\\" was not provided.\",\"locations\":[{\"line\":1,\"column\":8}]}]}"
+    assert fixture.spec_run(fixture.spec_request("query A { hero { id } } query B { hero { id } }")) == "{\"errors\":[{\"message\":\"Must provide operation name if query contains multiple operations.\"}]}"
+    assert fixture.spec_run(fixture.spec_request("mutation { createReview(review: {stars: 1}) { stars } }")) == "{\"data\":{\"createReview\":{\"stars\":1}}}"
 
 test "next_step: a level at a time, the friends of every hero in one step"
-    r = spec_request("{ a: hero { friends { name } } b: hero(episode: EMPIRE) { friends { name } } }")
-    e @= start(spec_schema(), r: r, root: .null_value, limits: default_limits())
+    r = fixture.spec_request("{ a: hero { friends { name } } b: hero(episode: EMPIRE) { friends { name } } }")
+    e @= start(fixture.spec_schema(), r: r, root: .null_value, limits: default_limits())
     sizes: [i64] @= []
     done @= false
 
@@ -1424,17 +1323,17 @@ test "next_step: a level at a time, the friends of every hero in one step"
                 answers: [json.Value?] @= []
 
                 for f in step.fields
-                    answers @ answers.push(spec_resolver(f))
+                    answers @ answers.push(fixture.spec_resolver(f))
 
                 answer(@e, answers: answers)
 
     assert sizes == [2, 2]
 
 test "next_step: a mutation's root fields one at a time"
-    r = spec_request(
+    r = fixture.spec_request(
         "mutation { a: createReview(review: {stars: 1}) { stars } b: createReview(review: {stars: 2}) { stars } }"
     )
-    e @= start(spec_schema(), r: r, root: .null_value, limits: default_limits())
+    e @= start(fixture.spec_schema(), r: r, root: .null_value, limits: default_limits())
     order: [str] @= []
     done @= false
 
@@ -1446,13 +1345,13 @@ test "next_step: a mutation's root fields one at a time"
             .resolve step =>
                 assert step.fields.len() == 1
                 order @ order.push(json.text_of(step.fields[0].path[0]).must())
-                answer(@e, answers: [spec_resolver(step.fields[0])])
+                answer(@e, answers: [fixture.spec_resolver(step.fields[0])])
 
     assert order == ["a", "b"]
 
 test "answer: a failure nulls the field and is reported with its path"
-    r = spec_request("{ hero { name friends { name } } }")
-    e @= start(spec_schema(), r: r, root: .null_value, limits: default_limits())
+    r = fixture.spec_request("{ hero { name friends { name } } }")
+    e @= start(fixture.spec_schema(), r: r, root: .null_value, limits: default_limits())
     response @= Response(data: .null_value, has_data: false, errors: [], extensions: .null_value)
     done @= false
 
@@ -1468,27 +1367,27 @@ test "answer: a failure nulls the field and is reported with its path"
                     if f.field_name == "friends"
                         answers @ answers.push(fail(code: "failed", msg: "the friends are away"))
                     else
-                        answers @ answers.push(spec_resolver(f))
+                        answers @ answers.push(fixture.spec_resolver(f))
 
                 answer(@e, answers: answers)
 
     assert format_response(response).must() == "{\"errors\":[{\"message\":\"the friends are away\",\"locations\":[{\"line\":1,\"column\":15}],\"path\":[\"hero\",\"friends\"]}],\"data\":{\"hero\":{\"name\":\"R2-D2\",\"friends\":null}}}"
 
 test "execute: an interface's value naming no type, and arguments refused at run time"
-    schema = spec_schema()
+    schema = fixture.spec_schema()
     root = json.parse("{\"hero\": {\"name\": \"nobody\"}}").must()
     got = execute(
         schema,
-        r: spec_request("{ hero { name } }"),
+        r: fixture.spec_request("{ hero { name } }"),
         root: root,
         limits: default_limits(),
-        resolver: spec_resolver
+        resolver: fixture.spec_resolver
     )
     assert got.errors[0].message == "Abstract type \"Character\" must resolve to an Object type at runtime for field \"Query.hero\". Either the \"Character\" type should provide a \"resolveType\" function or each possible type should provide an \"isTypeOf\" function."
     assert got.data == json.parse("{\"hero\": null}").must()
 
 test "validate: the limits of fields, aliases and levels, counted with fragments spread"
-    schema = spec_schema()
+    schema = fixture.spec_schema()
     limits @= default_limits()
     limits.fields @ 5
     nested = parse(
@@ -1510,7 +1409,7 @@ test "validate: introspection refused, and its names not suggested, where it is 
     document = parse("{ __schema { queryType { name } } hero { nam } }", limits: limits).must()
     messages: [str] @= []
 
-    for e in validate(spec_schema(), document: document, limits: limits)
+    for e in validate(fixture.spec_schema(), document: document, limits: limits)
         messages @ messages.push(e.message)
 
     assert messages == ["GraphQL introspection has been disabled, but the requested query contained the field \"__schema\".", "GraphQL introspection has been disabled, but the requested query contained the field \"queryType\".", "Cannot query field \"nam\" on type \"Character\"."]
@@ -1524,13 +1423,13 @@ test "read_http: GET's parameters, POST's body, and what each refuses"
     assert got.query == "{hero{name}}"
     assert got.variables == json.parse("{\"a\": 1}").must()
     put = http.request(method: "PUT", target: "http://localhost/graphql").must()
-    assert read_http(put, limits: default_limits()).code_of() == UNSUPPORTED
+    assert failures.has_code(read_http(put, limits: default_limits()), code: UNSUPPORTED)
     text = http.with_body(
         http.request(method: "POST", target: "http://localhost/graphql").must(),
         content_type: "text/plain",
         body: bytes.from_text("{}")
     )
-    assert read_http(text, limits: default_limits()).code_of() == UNSUPPORTED
+    assert failures.has_code(read_http(text, limits: default_limits()), code: UNSUPPORTED)
     small @= default_limits()
     small.bytes @ 4
     post = http.with_body(
@@ -1538,14 +1437,14 @@ test "read_http: GET's parameters, POST's body, and what each refuses"
         content_type: "application/json; charset=utf-8",
         body: bytes.from_text("{\"query\": \"{ hero { id } }\"}")
     )
-    assert read_http(post, limits: small).code_of() == LIMIT
+    assert failures.has_code(read_http(post, limits: small), code: LIMIT)
     assert read_http(post, limits: default_limits()).must().query == "{ hero { id } }"
     no_query = http.with_body(
         http.request(method: "POST", target: "http://localhost/graphql").must(),
         content_type: "application/json",
         body: bytes.from_text("{\"query\": 1}")
     )
-    assert read_http(no_query, limits: default_limits()).code_of() == INVALID
+    assert failures.has_code(read_http(no_query, limits: default_limits()), code: INVALID)
 
 test "respond_http: each media type's status, and 406 where neither is accepted"
     r = http.request(method: "POST", target: "http://localhost/graphql").must()
@@ -1572,14 +1471,14 @@ test "serve_http: a mutation asked by GET is answered 405"
         method: "GET",
         target: "http://localhost/graphql?query=mutation%7BcreateReview(review%3A%7Bstars%3A1%7D)%7Bstars%7D%7D"
     ).must()
-    people = json.members_of(json.parse(SPEC_PEOPLE).must()).must()
+    people = json.members_of(json.parse(fixture.SPEC_PEOPLE).must()).must()
     response = serve_http(
         get,
-        schema: spec_schema(),
+        schema: fixture.spec_schema(),
         root: .null_value,
         limits: default_limits(),
         state: people,
-        resolver: spec_resolver_with
+        resolver: fixture.spec_resolver_with
     )
     assert response.status == 405
     assert http.value_of(response.headers, name: "Allow").must() == "POST"
@@ -1590,7 +1489,7 @@ test "parse_message and format_message: every message of the protocol, read back
         .connection_ack(payload: .null_value)
         .ping(payload: .null_value)
         .pong(payload: .null_value)
-        .subscribe(id: "1", request: spec_request("subscription { reviewAdded { stars } }"))
+        .subscribe(id: "1", request: fixture.spec_request("subscription { reviewAdded { stars } }"))
         .next(id: "1", response: Response(data: json.parse("{\"a\": 1}").must(), has_data: true, errors: [], extensions: .null_value))
         .error(id: "1", errors: [Error(message: "no", locations: [Location(line: 1, column: 2)], path: [], extensions: .null_value)])
         .complete(id: "1")
@@ -1599,17 +1498,17 @@ test "parse_message and format_message: every message of the protocol, read back
     for m in messages
         assert parse_message(format_message(m).must()).must() == m
 
-    assert parse_message("{\"type\": \"subscribe\", \"payload\": {}}").message_of() == "the message \"subscribe\" holds no \"id\""
-    assert parse_message("{\"type\": \"start\", \"id\": \"1\"}").message_of() == "no message of the protocol is \"start\""
-    assert parse_message("[]").code_of() == INVALID
+    assert failures.chain_of(parse_message("{\"type\": \"subscribe\", \"payload\": {}}")).join(": ") == "the message \"subscribe\" holds no \"id\""
+    assert failures.chain_of(parse_message("{\"type\": \"start\", \"id\": \"1\"}")).join(": ") == "no message of the protocol is \"start\""
+    assert failures.has_code(parse_message("[]"), code: INVALID)
 
 test "parse_request: a persisted query's hash without its text, and members of the wrong kind"
     persisted = parse_request("{\"extensions\": {\"persistedQuery\": {\"version\": 1}}}").must()
     assert persisted.query == ""
-    assert parse_request("{}").message_of() == "the request holds no \"query\""
-    assert parse_request("{\"query\": \"{a}\", \"variables\": []}").message_of() == "the request's \"variables\" is not an object"
-    assert parse_request("{\"query\": \"{a}\", \"operationName\": 1}").message_of() == "the request's \"operationName\" is not a string"
-    assert parse_request("[1]").code_of() == INVALID
+    assert failures.chain_of(parse_request("{}")).join(": ") == "the request holds no \"query\""
+    assert failures.chain_of(parse_request("{\"query\": \"{a}\", \"variables\": []}")).join(": ") == "the request's \"variables\" is not an object"
+    assert failures.chain_of(parse_request("{\"query\": \"{a}\", \"operationName\": 1}")).join(": ") == "the request's \"operationName\" is not a string"
+    assert failures.has_code(parse_request("[1]"), code: INVALID)
 
 ## Examples
 
@@ -1628,7 +1527,7 @@ test "parse_schema: a schema, and an interface implemented in part"
         "type Query { a: I } interface I { x: Int } type T implements I { y: Int }",
         limits: default_limits()
     )
-    assert broken.message_of() == "Interface field I.x expected but T does not provide it. (1:35)"
+    assert failures.chain_of(broken).join(": ") == "Interface field I.x expected but T does not provide it. (1:35)"
 
 # A field added to a schema by an extension.
 test "extend_schema: a field added to the query root"
@@ -1643,16 +1542,16 @@ test "format_schema: a described type and an enum"
 
 # What the introspection query answers about a schema.
 test "introspection_of: the query root's name"
-    data = introspection_of(spec_schema())
+    data = introspection_of(fixture.spec_schema())
     schema_part = json.member(data, key: "__schema").must()
     assert json.member(schema_part, key: "queryType").must() == json.parse("{\"name\": \"Query\", \"kind\": \"OBJECT\"}").must()
 
 # A client's schema built from a server's answer, written back the same.
 test "schema_from_introspection: a schema read back from its introspection"
-    schema = spec_schema()
+    schema = fixture.spec_schema()
     back = schema_from_introspection(introspection_of(schema), limits: default_limits()).must()
     assert format_schema(back) == format_schema(schema)
-    assert schema_from_introspection(.null_value, limits: default_limits()).code_of() == INVALID
+    assert failures.has_code(schema_from_introspection(.null_value, limits: default_limits()), code: INVALID)
 
 # The text of the introspection query a client sends.
 test "introspection_query: graphql-js's query, named IntrospectionQuery"
@@ -1663,7 +1562,7 @@ test "introspection_query: graphql-js's query, named IntrospectionQuery"
 # parse.
 test "parse: a query, and a selection set never closed"
     assert parse("{ hero { name } }", limits: default_limits()).must().tree.nodes.len() > 0
-    assert parse("{", limits: default_limits()).message_of() == "Syntax Error: Expected Name, found <EOF>. (1:2)"
+    assert failures.chain_of(parse("{", limits: default_limits())).join(": ") == "Syntax Error: Expected Name, found <EOF>. (1:2)"
 
 # A document written as graphql-js prints it.
 test "format: two spaces a level"
@@ -1683,7 +1582,7 @@ test "operations_of: a query and a mutation"
 # A document validated against a schema: a field the type does not have.
 test "validate: a misspelt field, its name suggested"
     document = parse("{ hero { nam } }", limits: default_limits()).must()
-    errors = validate(spec_schema(), document: document, limits: default_limits())
+    errors = validate(fixture.spec_schema(), document: document, limits: default_limits())
     assert errors.len() == 1
     assert errors[0].message == "Cannot query field \"nam\" on type \"Character\". Did you mean \"name\"?"
     assert errors[0].locations == [Location(line: 1, column: 10)]
@@ -1692,7 +1591,7 @@ test "validate: a misspelt field, its name suggested"
 test "validate_with: unused variables alone"
     document = parse("query ($a: Int) { hero { nope } }", limits: default_limits()).must()
     errors = validate_with(
-        spec_schema(),
+        fixture.spec_schema(),
         document: document,
         limits: default_limits(),
         rules: ["NoUnusedVariablesRule"]
@@ -1729,7 +1628,7 @@ test "parse_response: data and an error with its place"
     assert r.has_data
     assert r.errors[0].locations == [Location(line: 1, column: 3)]
     assert r.errors[0].path == [.text(v: "a"), .number(v: 0.0)]
-    assert parse_response("{}").code_of() == INVALID
+    assert failures.has_code(parse_response("{}"), code: INVALID)
 
 # A response written as JSON, its errors first.
 test "format_response: errors, then data"
@@ -1748,7 +1647,7 @@ test "request_of: a value with an operation's name"
 
 # A request as the JSON value a transport carries.
 test "request_value: the members given"
-    assert request_value(spec_request("{ a }")) == json.parse("{\"query\": \"{ a }\"}").must()
+    assert request_value(fixture.spec_request("{ a }")) == json.parse("{\"query\": \"{ a }\"}").must()
 
 # A response read from a JSON value.
 test "response_of: data alone"
@@ -1784,7 +1683,7 @@ test "start: the specification's first example"
         "type Query { user(id: ID): User } type User { name: String }",
         limits: default_limits()
     ).must()
-    e @= start(schema, r: spec_request("{ user(id: 4) { name } }"), root: .null_value, limits: default_limits())
+    e @= start(schema, r: fixture.spec_request("{ user(id: 4) { name } }"), root: .null_value, limits: default_limits())
 
     match next_step(@e)
         .resolve step =>
@@ -1804,7 +1703,7 @@ test "start_document: a kept document, its second operation run"
         limits: default_limits()
     ).must()
     e @= start_document(
-        spec_schema(),
+        fixture.spec_schema(),
         document: document,
         operation_name: "B",
         variables: .null_value,
@@ -1815,7 +1714,7 @@ test "start_document: a kept document, its second operation run"
     match next_step(@e)
         .resolve step =>
             assert step.fields[0].arguments["episode"].must() == .text(v: "EMPIRE")
-            answer(@e, answers: [spec_resolver(step.fields[0])])
+            answer(@e, answers: [fixture.spec_resolver(step.fields[0])])
         .done _ => assert false
 
     match next_step(@e)
@@ -1825,8 +1724,8 @@ test "start_document: a kept document, its second operation run"
 # The fields handed out, their parents and paths.
 test "next_step: the hero, then its friends with the hero as their parent"
     e @= start(
-        spec_schema(),
-        r: spec_request("{ hero { friends { name } } }"),
+        fixture.spec_schema(),
+        r: fixture.spec_request("{ hero { friends { name } } }"),
         root: .null_value,
         limits: default_limits()
     )
@@ -1835,7 +1734,7 @@ test "next_step: the hero, then its friends with the hero as their parent"
         .resolve step =>
             assert step.fields.len() == 1
             assert step.fields[0].return_type == "Character"
-            answer(@e, answers: [spec_resolver(step.fields[0])])
+            answer(@e, answers: [fixture.spec_resolver(step.fields[0])])
         .done _ => assert false
 
     match next_step(@e)
@@ -1848,7 +1747,7 @@ test "next_step: the hero, then its friends with the hero as their parent"
 # Answers given back, a failure among them.
 test "answer: a value and a failure"
     schema = parse_schema("type Query { a: Int b: Int! }", limits: default_limits()).must()
-    e @= start(schema, r: spec_request("{ a b }"), root: .null_value, limits: default_limits())
+    e @= start(schema, r: fixture.spec_request("{ a b }"), root: .null_value, limits: default_limits())
 
     match next_step(@e)
         .resolve _ => answer(@e, answers: [ok(.number(v: 1.0)), fail(code: "failed", msg: "b is lost")])
@@ -1861,7 +1760,7 @@ test "answer: a value and a failure"
 # The fields selected below a field, over every type its value can be.
 test "selected_of: what the hero's resolver will be asked for"
     query = "{ hero { name ... on Human { homePlanet } ... on Droid { primaryFunction name } } }"
-    e @= start(spec_schema(), r: spec_request(query), root: .null_value, limits: default_limits())
+    e @= start(fixture.spec_schema(), r: fixture.spec_request(query), root: .null_value, limits: default_limits())
 
     match next_step(@e)
         .resolve step => assert selected_of(e, field: step.fields[0]) == ["name", "homePlanet", "primaryFunction"]
@@ -1869,30 +1768,30 @@ test "selected_of: what the hero's resolver will be asked for"
 
 # A request answered by one resolver of no state.
 test "execute: the hero and its friends"
-    assert spec_run(spec_request("{ hero { name } }")) == "{\"data\":{\"hero\":{\"name\":\"R2-D2\"}}}"
+    assert fixture.spec_run(fixture.spec_request("{ hero { name } }")) == "{\"data\":{\"hero\":{\"name\":\"R2-D2\"}}}"
 
 # A request answered by a resolver handed the program's own value.
 test "execute_with: the characters handed to the resolver"
-    people = json.members_of(json.parse(SPEC_PEOPLE).must()).must()
+    people = json.members_of(json.parse(fixture.SPEC_PEOPLE).must()).must()
     response = execute_with(
-        spec_schema(),
-        r: spec_request("{ human(id: \"1002\") { name } }"),
+        fixture.spec_schema(),
+        r: fixture.spec_request("{ human(id: \"1002\") { name } }"),
         root: .null_value,
         limits: default_limits(),
         state: people,
-        resolver: spec_resolver_with
+        resolver: fixture.spec_resolver_with
     )
     assert format_response(response).must() == "{\"data\":{\"human\":{\"name\":\"Han Solo\"}}}"
 
 # The source stream a subscription asks for, and one refused.
 test "subscribe: the root field and its arguments"
-    match subscribe(spec_schema(), r: spec_request("subscription { reviewAdded(episode: JEDI) { stars } }"), limits: default_limits())
+    match subscribe(fixture.spec_schema(), r: fixture.spec_request("subscription { reviewAdded(episode: JEDI) { stars } }"), limits: default_limits())
         .stream s =>
             assert s.field_name == "reviewAdded"
             assert s.arguments["episode"].must() == .text(v: "JEDI")
         .refused _ => assert false
 
-    match subscribe(spec_schema(), r: spec_request("subscription { reviewAdded { stars } hero { id } }"), limits: default_limits())
+    match subscribe(fixture.spec_schema(), r: fixture.spec_request("subscription { reviewAdded { stars } hero { id } }"), limits: default_limits())
         .stream _  => assert false
         .refused r => assert r.response.errors[0].message == "Anonymous Subscription must select only one top level field."
 
@@ -1900,8 +1799,8 @@ test "subscribe: the root field and its arguments"
 test "start_event: a review announced"
     event = json.parse("{\"reviewAdded\": {\"stars\": 4, \"commentary\": \"Good\"}}").must()
     e @= start_event(
-        spec_schema(),
-        r: spec_request("subscription { reviewAdded { stars commentary } }"),
+        fixture.spec_schema(),
+        r: fixture.spec_request("subscription { reviewAdded { stars commentary } }"),
         event: event,
         limits: default_limits()
     )
@@ -1938,7 +1837,7 @@ test "refusal_http: a method GraphQL over HTTP does not use"
 
 # A server's handler: a request read, executed and answered.
 test "serve_http: a query by POST"
-    people = json.members_of(json.parse(SPEC_PEOPLE).must()).must()
+    people = json.members_of(json.parse(fixture.SPEC_PEOPLE).must()).must()
     r = http.with_body(
         http.request(method: "POST", target: "http://localhost/graphql").must(),
         content_type: "application/json",
@@ -1946,25 +1845,25 @@ test "serve_http: a query by POST"
     )
     response = serve_http(
         r,
-        schema: spec_schema(),
+        schema: fixture.spec_schema(),
         root: .null_value,
         limits: default_limits(),
         state: people,
-        resolver: spec_resolver_with
+        resolver: fixture.spec_resolver_with
     )
     assert response.status == 200
     assert bytes.to_text(response.body).must() == "{\"data\":{\"hero\":{\"name\":\"R2-D2\"}}}"
 
 # A client's call refused before anything is sent: a target that is no URL.
 test "call_http: a target that is no URL"
-    assert call_http(http.default_client(), target: "no url", r: spec_request("{ a }")).is_err()
+    assert call_http(http.default_client(), target: "no url", r: fixture.spec_request("{ a }")).is_err()
 
 # A message of the WebSocket protocol read.
 test "parse_message: a subscription started"
     m = parse_message(
         "{\"id\": \"7\", \"type\": \"subscribe\", \"payload\": {\"query\": \"subscription { reviewAdded { stars } }\"}}"
     ).must()
-    assert m == .subscribe(id: "7", request: spec_request("subscription { reviewAdded { stars } }"))
+    assert m == .subscribe(id: "7", request: fixture.spec_request("subscription { reviewAdded { stars } }"))
 
 # A message of the WebSocket protocol written.
 test "format_message: a result sent"
@@ -1973,55 +1872,3 @@ test "format_message: a result sent"
         response: Response(data: json.parse("{\"a\": 1}").must(), has_data: true, errors: [], extensions: .null_value)
     )
     assert format_message(m).must() == "{\"id\":\"7\",\"type\":\"next\",\"payload\":{\"data\":{\"a\":1}}}"
-
-# The resolver of the tests answering the hero.
-test "spec_resolver_with: the hero of The Empire Strikes Back"
-    people = json.members_of(json.parse(SPEC_PEOPLE).must()).must()
-    field = Field(
-        id: 0,
-        type_name: "Query",
-        field_name: "hero",
-        arguments: {"episode": .text(v: "EMPIRE")},
-        parent: .null_value,
-        path: [.text(v: "hero")],
-        return_type: "Character"
-    )
-    assert json.member(spec_resolver_with(people, field: field).must(), key: "name").must() == .text(v: "Luke Skywalker")
-
-# A character with its friends left to the resolver.
-test "spec_without_friends: Han Solo's own members"
-    han = spec_without_friends(json.parse("{\"id\": \"1002\", \"friends\": [\"1000\"]}").must())
-    assert han == json.parse("{\"id\": \"1002\"}").must()
-
-# The resolver of a program with no state.
-test "spec_resolver: a field it does not know"
-    field = Field(
-        id: 0,
-        type_name: "Query",
-        field_name: "nope",
-        arguments: {},
-        parent: .null_value,
-        path: [],
-        return_type: "Int"
-    )
-    assert spec_resolver(field).code_of() == NOT_FOUND
-
-# The schema of the tests.
-test "spec_schema: its roots"
-    assert format_schema(spec_schema()) != ""
-
-# A request of a query alone.
-test "spec_request: no operation named, no variable"
-    assert spec_request("{ a }").variables == .null_value
-
-# A request run against the schema of the tests.
-test "spec_run: the hero's name"
-    assert spec_run(spec_request("{ hero { id } }")) == "{\"data\":{\"hero\":{\"id\":\"2001\"}}}"
-
-# A failure's code read in a test.
-test "code_of: a document that does not parse"
-    assert parse("{", limits: default_limits()).code_of() == INVALID
-
-# A failure's message read in a test.
-test "message_of: a value holds none"
-    assert parse("{ a }", limits: default_limits()).message_of() == ""

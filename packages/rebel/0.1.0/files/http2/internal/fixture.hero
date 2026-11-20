@@ -4,8 +4,8 @@
 # each takes its port and what to ask, and answers what it saw.
 
 use bytes
+use http2
 use http2/internal/engine
-use http2/internal/model
 use http2/internal/values
 use http2/internal/wire
 use io
@@ -33,8 +33,8 @@ function until_listening(port: i64)
             .err _ => time.sleep(time.milliseconds(10).must())
 
 # A field.
-function field(name: str, value: str) -> model.Field
-    return model.Field(name: name, value: value, sensitive: false)
+function field(name: str, value: str) -> http2.Field
+    return http2.Field(name: name, value: value, sensitive: false)
 
 # Serves the next request of `stream` with "hello " and its path, and
 # answers its method and path; "" where no request came.
@@ -48,7 +48,7 @@ function answer_one(stream: io.Stream) -> str
                 stream,
                 @w,
                 id: r.stream,
-                response: model.Response(status: 200, headers: [field(name: "content-type", value: "text/plain")], body: body, trailers: [field(name: "x-length", value: to_str(r.body.len()))])
+                response: http2.Response(status: 200, headers: [field(name: "content-type", value: "text/plain")], body: body, trailers: [field(name: "x-length", value: to_str(r.body.len()))])
             )
             wire.goodbye(stream, @w)
 
@@ -117,7 +117,7 @@ function serve_tls(arg: str) -> str
 # A GET of `path` on a client's connection over `stream`, as "status body".
 function get_on(stream: io.Stream, path: str) -> str
     w @= wire.adopt(stream, session: engine.make(client: true, options: values.default_options())).must()
-    request = model.Request(
+    request = http2.Request(
         method: "GET",
         scheme: "https",
         authority: "localhost",
@@ -202,7 +202,7 @@ function serve_many(arg: str) -> str
                                     stream,
                                     @w,
                                     id: r.stream,
-                                    response: model.Response(status: 200, headers: [], body: bytes.from_text("hello " + r.path), trailers: [])
+                                    response: http2.Response(status: 200, headers: [], body: bytes.from_text("hello " + r.path), trailers: [])
                                 )
 
                                 match said
@@ -221,3 +221,45 @@ function serve_many(arg: str) -> str
 
     net.close_listener(@l).must()
     return to_str(answered)
+
+# A handler that sends the request's body back with status 200, its
+# `content-type` kept: what a test's server answers, and a server whose
+# client checks what it sent.
+#
+# - `r`: the request.
+function echo(r: http2.Request) -> http2.Response
+    headers: [http2.Field] @= []
+
+    for f in r.headers
+        if f.name == "content-type"
+            headers @ headers.push(f)
+
+    return http2.Response(status: 200, headers: headers, body: r.body, trailers: [])
+
+# A handler that answers `text` as `text/plain; charset=utf-8` with status
+# 200, whatever was asked: the handler of `serve_with` whose state is the
+# text, as a health check answers.
+#
+# - `text`: the body.
+# - `r`: the request, not read.
+function respond_text(text: str, r: http2.Request) -> http2.Response
+    _ = r.stream
+    return http2.Response(
+        status: 200,
+        headers: [http2.Field(name: "content-type", value: "text/plain; charset=utf-8", sensitive: false)],
+        body: bytes.from_text(text),
+        trailers: []
+    )
+
+test "echo: the body and its content-type sent back"
+    r = echo(
+        http2.Request(method: "POST", scheme: "https", authority: "h", path: "/", protocol: "", headers: [http2.Field(name: "content-type", value: "application/json", sensitive: false), http2.Field(name: "x-a", value: "b", sensitive: false)], body: [123, 125], trailers: [], stream: 1)
+    )
+    assert r.status == 200 && r.body == [123, 125] && r.headers == [http2.Field(name: "content-type", value: "application/json", sensitive: false)]
+
+test "respond_text: OK as text"
+    r = respond_text(
+        text: "OK",
+        r: http2.Request(method: "GET", scheme: "https", authority: "h", path: "/healthz", protocol: "", headers: [], body: [], trailers: [], stream: 1)
+    )
+    assert r.status == 200 && r.body == bytes.from_text("OK")

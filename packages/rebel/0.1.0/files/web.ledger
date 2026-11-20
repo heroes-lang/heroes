@@ -194,21 +194,21 @@ capability request/header  a header field read
   note    `http.value_of`
 
 capability request/cookie  a cookie of the request read by its name
-  heroes  web.cookie_of
+  heroes  http.cookie_of
   go      echo.Context.Cookie, echo.Context.Cookies, gin.Context.Cookie
   rust    -
   python  flask.Request.cookies
   note    the first of the name, as Go's `Request.Cookie` answers
 
 capability request/bearer  the token of `Authorization: Bearer`
-  heroes  web.bearer_token_of
+  heroes  http.bearer_token_of
   go      echo/middleware.KeyAuth's extractor
   rust    -
   python  flask.Request.authorization.token
   note    the scheme compared without case, RFC 6750
 
 capability request/client-address  the client's address, through proxies the program trusts
-  heroes  web.client_address_of, web.forwarded_of, web.trusted_networks, web.Forwarded
+  heroes  web.forwarded_of, web.trusted_networks, web.Forwarded
   go      echo.Context.RealIP, echo.ExtractIPDirect, ExtractIPFromXFFHeader, ExtractIPFromRealIPHeader, echo.TrustOption, gin.Context.ClientIP, gin.Context.RemoteIP, gin.Engine.SetTrustedProxies, chi/middleware.RealIP
   rust    -
   python  flask.Request.remote_addr, flask.Request.access_route, werkzeug.middleware.proxy_fix.ProxyFix
@@ -396,7 +396,7 @@ capability middleware/basic-auth  a request refused 401 without credentials the 
   note    `WWW-Authenticate: Basic realm="…", charset="UTF-8"`, RFC 7617, where Echo writes `basic realm=Restricted`
 
 capability middleware/key-auth  a request refused 401 without a token the program accepts
-  heroes  web.require_bearer, web.challenge_bearer, web.bearer_token_of
+  heroes  web.require_bearer, web.challenge_bearer, http.bearer_token_of
   go      echo/middleware.KeyAuth, KeyAuthWithConfig
   rust    -
   python  -
@@ -424,11 +424,11 @@ capability middleware/cross-origin-protection  an unsafe request from another or
   note    Go's answers on every case tested (observed): a trusted `Origin` first, then `Sec-Fetch-Site`, then `Origin` against `Host` as written; a token kept by the server is middleware/csrf's, beside this
 
 capability middleware/secure  the headers that keep a page from being framed or sniffed
-  heroes  web.with_secure_headers, web.with_security_headers, web.SecurityHeaders, web.default_security_headers, web.format_hsts
+  heroes  web.with_security_headers, web.SecurityHeaders, web.default_security_headers, web.minimal_security_headers, web.format_hsts
   go      echo/middleware.Secure, SecureWithConfig, chi/middleware.NoCache, chi/middleware.SetHeader
   rust    -
   python  -
-  note    `with_secure_headers` writes three fields with no cost to any page; `with_security_headers` writes a set the program chooses, made from helmet 8.3.0's defaults as it answered on 2026-11-17 (its policy, HSTS for a year with subdomains, `nosniff`, `SAMEORIGIN`, `no-referrer`, both cross-origin policies `same-origin`, `Origin-Agent-Cluster: ?1` and its four older fields), each written where the response has none; Django 6.1.3's `SecurityMiddleware` and `XFrameOptionsMiddleware` answered with fewer (`nosniff`, `Referrer-Policy: same-origin`, `Cross-Origin-Opener-Policy: same-origin`, `X-Frame-Options: DENY`, no HSTS, which it sends only once `SECURE_HSTS_SECONDS` is set and only over HTTPS); HSTS is written whatever the connection, as helmet writes it, since a browser reads it only over HTTPS (RFC 6797 § 8.1) and a request does not say whether a proxy took TLS off; Echo's `Secure` writes none of them by default
+  note    `minimal_security_headers` makes three fields with no cost to any page; `with_security_headers` writes a set the program chooses, made from helmet 8.3.0's defaults as it answered on 2026-11-17 (its policy, HSTS for a year with subdomains, `nosniff`, `SAMEORIGIN`, `no-referrer`, both cross-origin policies `same-origin`, `Origin-Agent-Cluster: ?1` and its four older fields), each written where the response has none; Django 6.1.3's `SecurityMiddleware` and `XFrameOptionsMiddleware` answered with fewer (`nosniff`, `Referrer-Policy: same-origin`, `Cross-Origin-Opener-Policy: same-origin`, `X-Frame-Options: DENY`, no HSTS, which it sends only once `SECURE_HSTS_SECONDS` is set and only over HTTPS); HSTS is written whatever the connection, as helmet writes it, since a browser reads it only over HTTPS (RFC 6797 § 8.1) and a request does not say whether a proxy took TLS off; Echo's `Secure` writes none of them by default
 
 capability middleware/content-type  a body of a type the route does not read refused 415
   heroes  web.require_type

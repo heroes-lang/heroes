@@ -36,12 +36,26 @@
 # **What it does not do.** The connection, the reading and the writing of a
 # message are `http`'s, a URL's parts `url`'s, a JSON value `json`'s, a
 # template `template`'s, a file `fs`'s, a line of log `log`'s. A query, a form,
-# a field and Basic's credentials are read by `http.query_of`, `http.form_of`,
-# `http.value_of` and `http.basic_auth_of`, a multipart body's files by
-# `http.parts_of`. A body is held whole, as `http` holds it,
-# but an event stream's, which `start_events` begins and the program writes
-# as it goes; a client reads one with `http.event_reader`.
-# A handler cannot be stopped midway, so no step times one out.
+# a field, a cookie, Basic's credentials and a Bearer token are read by
+# `http.query_of`, `http.form_of`, `http.value_of`, `http.cookie_of`,
+# `http.basic_auth_of` and `http.bearer_token_of`, a multipart body's files
+# by `http.parts_of`. A request's JSON body is read here, by `json_of`, which
+# refuses a body not typed as JSON as a server must, where `http.json_of`
+# reads a response's by its charset. A response of text, of JSON or a
+# redirect is made by `http.respond_text`, `http.respond_json` and
+# `http.respond_redirect`; this package adds only the ones a router needs
+# (`error_response`, `not_routed`, `render`, `serve_file`, `serve_folder`,
+# `respond_events`). A body is held whole, as `http` holds it, but an event
+# stream's, which `start_events` begins and the program writes as it goes; a
+# client reads one with `http.event_reader`. A handler cannot be stopped
+# midway, so no step times one out.
+#
+# A WebSocket is `websocket`'s: the program's loop that found the route hands
+# its `io.Reader` and the request to `websocket.upgrade`, so a WebSocket
+# route needs the loop with state, not `serve`. Not done, the ledger saying
+# so of each: a route chosen by its parameter's kind (a parameter takes any
+# segment, and the handler reads it), requests passed on to another server
+# (a reverse proxy), and HTTP sent to HTTPS or a host to its `www.` form.
 #
 # The codes it fails with: `invalid`, `not_found`, `exists`, `not_text`,
 # `limit` (a cookie too long), `unsupported` (a cookie sealed on macOS), and,
@@ -188,8 +202,10 @@ function new_group(parent: Router, name: str, prefix: str) -> Router?
 #   route of `GET` takes `HEAD` too, where no route of `HEAD` does.
 # - `pattern`: the path after the router's prefix, of segments parted by `/`:
 #   a segment as written is matched as the request's segment unescaped reads;
-#   `:name` matches one segment that is not empty; `*name`, the last, matches
-#   the rest of the path, empty or not. It begins with `/`, or is "" in a
+#   `:name` matches one segment that is not empty, whatever it holds, so a
+#   handler reads a number from it itself (`numbers.parse_int` on
+#   `param_of`); `*name`, the last, matches the rest of the path, empty or
+#   not. It begins with `/`, or is "" in a
 #   group, where it names the prefix itself; it holds no empty segment but
 #   the last, and no parameter's name twice.
 # - `name`: the route's name, which `route` answers: any text but the empty
@@ -407,74 +423,6 @@ function json_of(r: http.Request) -> json.Value?
     if kind != "application/json" && !strings.has_suffix(s: kind, suffix: "+json")
         return fail(code: INVALID, msg: f"reading a JSON body: the request's body is typed \"{kind}\", not as JSON")
     return json.parse(bytes.to_text(r.body)?)
-
-# The value of the cookie `name` that `r` sends, the first of that name.
-#
-# - `r`: the request; every `Cookie` field is read.
-# - `name`: the cookie's name, compared as written.
-#
-# Fails `not_found` where `r` sends no such cookie, and `invalid` where a
-# `Cookie` field holds a control byte.
-function cookie_of(r: http.Request, name: str) -> str?
-    for value in http.values_of(r.headers, name: "Cookie")
-        for c in http.parse_cookie(value)?
-            if c.name == name
-                return ok(c.value)
-
-    return fail(code: NOT_FOUND, msg: f"the request sends no cookie named \"{name}\"")
-
-# The token `r` carries in an `Authorization: Bearer` field, RFC 6750.
-#
-# - `r`: the request; the scheme is compared without case.
-#
-# Fails `not_found` where `r` has no `Authorization` field of that scheme,
-# and `invalid` where its token is empty or holds a character RFC 6750's
-# token does not. See also `require_bearer`.
-function bearer_token_of(r: http.Request) -> str?
-    said = http.value_of(r.headers, name: "Authorization")?
-    token = reading.credentials_of(value: said, scheme: "Bearer")?
-
-    if !reading.is_b64token(token)
-        return fail(code: INVALID, msg: "reading the Bearer token: it is empty or holds a character a token does not")
-    return ok(token)
-
-# The address of the client that sent `r`: its connection's, or, where that
-# is a proxy the program trusts, the one `X-Forwarded-For` names.
-#
-# - `r`: the request; its `remote` and its `X-Forwarded-For` fields are read.
-# - `trusted`: the addresses of the proxies the program trusts, as
-#   `net.format_address` writes a host: `"10.0.0.1"`, `"::1"`; none trusts
-#   none, and `X-Forwarded-For` is then never read.
-#
-# The address alone, its port taken away. Read from the last entry of
-# `X-Forwarded-For` back, the first that is no trusted proxy; "" where `r` has
-# no `remote`.
-function client_address_of(r: http.Request, trusted: [str]) -> str
-    if r.remote == ""
-        return ""
-    direct = reading.host_of(r.remote)
-
-    if !reading.is_listed(direct, list: trusted)
-        return direct
-    entries: [str] @= []
-
-    for value in http.values_of(r.headers, name: "X-Forwarded-For")
-        for item in strings.split(s: value, sep: ",")
-            t = strings.trim(item)
-
-            if t != ""
-                entries @ entries.push(t)
-
-    at: i64 @= entries.len() - 1
-
-    while at >= 0
-        if !reading.is_listed(entries[at], list: trusted)
-            return entries[at]
-        at @ at - 1
-
-    if entries.len() > 0
-        return entries[0]
-    return direct
 
 ## Answering
 
@@ -724,20 +672,17 @@ function challenge_basic(realm: str) -> http.Response
 # - `accepts`: called once with the token where `r` carries one; true lets
 #   `r` go on.
 #
-# See also `bearer_token_of`, `challenge_bearer`.
+# See also `http.bearer_token_of`, `challenge_bearer`.
 function require_bearer(r: http.Request, realm: str, accepts: (function(str) -> bool)) -> Step
-    match http.value_of(r.headers, name: "Authorization")
-        .err _ => return .answer(response: challenge_bearer(realm: realm, error: ""))
-        .ok said =>
-            match reading.credentials_of(value: said, scheme: "Bearer")
-                .err _ => return .answer(response: challenge_bearer(realm: realm, error: ""))
-                .ok token =>
-                    if !reading.is_b64token(token)
-                        return .answer(response: challenge_bearer(realm: realm, error: "invalid_request"))
-
-                    if accepts(token)
-                        return .go_on(request: r)
-                    return .answer(response: challenge_bearer(realm: realm, error: "invalid_token"))
+    match http.bearer_token_of(r)
+        .err e =>
+            if e.code == http.INVALID
+                return .answer(response: challenge_bearer(realm: realm, error: "invalid_request"))
+            return .answer(response: challenge_bearer(realm: realm, error: ""))
+        .ok token =>
+            if accepts(token)
+                return .go_on(request: r)
+            return .answer(response: challenge_bearer(realm: realm, error: "invalid_token"))
 
 # The answer that asks for a Bearer token in `realm`, RFC 6750: 401, or 400
 # for `invalid_request`.
@@ -966,7 +911,8 @@ function recover(logger: log.Logger, r: http.Request, answer: http.Response?, fo
             return error_response(form, status: http.STATUS_INTERNAL_SERVER_ERROR, message: "Internal Server Error")
 
 # A copy of `response` with its body compressed by gzip, where `r` accepts it
-# and it is worth it.
+# and it is worth it: `http.with_compression`, by gzip alone and past a
+# size.
 #
 # - `r`: the request; its `Accept-Encoding` is read, `gzip` or `*` with a
 #   weight above 0.
@@ -974,29 +920,20 @@ function recover(logger: log.Logger, r: http.Request, answer: http.Response?, fo
 # - `min_bytes`: the fewest bytes of a body compressed; 0 compresses every
 #   body.
 #
-# Not compressed: a body shorter, a response with a `Content-Encoding`, a
-# status 1xx, 204, 206 or 304. Every other response gains `Vary:
-# Accept-Encoding`, whether `r` accepts gzip or not, and `Content-Encoding:
-# gzip` where its body is compressed. A body that does not compress is
-# answered as it is.
+# Not compressed: a body shorter, and what `http.with_compression` answers
+# as it is (a response with a `Content-Encoding`, no body, a status 1xx,
+# 204, 206 or 304). Every other response gains `Vary: Accept-Encoding`,
+# whether `r` accepts gzip or not, and `Content-Encoding: gzip` where its
+# body is compressed. See also `http.with_compression`.
 function gzip(r: http.Request, response: http.Response, min_bytes: i64) -> http.Response
-    if response.status < 200 || response.status == 204 || response.status == 206 || response.status == 304
+    if response.body.len() < min_bytes
         return response
 
-    if http.has_header(response.headers, name: "Content-Encoding") || response.body.len() < min_bytes
-        return response
-    out @= response
-    out.headers @ reading.with_vary(response.headers, name: "Accept-Encoding")
-
-    if !reading.accepts_gzip(http.values_of(r.headers, name: "Accept-Encoding"))
-        return out
-
-    match compress.compress(response.body, options: compress.defaults(.gzip))
-        .err _ => return out
-        .ok packed =>
-            out.body @ packed
-            out.headers @ http.with_header(out.headers, name: "Content-Encoding", value: "gzip")
-            return out
+    if reading.accepts_gzip(http.values_of(r.headers, name: "Accept-Encoding"))
+        return http.with_compression(response, r: r)
+    refused @= r
+    refused.headers @ http.with_header(r.headers, name: "Accept-Encoding", value: "identity")
+    return http.with_compression(response, r: refused)
 
 # Lets `r` go on with its body decompressed where its `Content-Encoding` is
 # `gzip`, and refuses it where that body does not read.
@@ -1094,22 +1031,6 @@ function require_type(r: http.Request, types: [str]) -> Step
     return .answer(
         response: error_response(.text, status: http.STATUS_UNSUPPORTED_MEDIA_TYPE, message: f"the body is typed \"{kind}\", which this route does not read")
     )
-
-# A copy of `response` carrying the fields that keep a page from being
-# sniffed, framed by another site or followed with its full address:
-# `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN` and
-# `Referrer-Policy: strict-origin-when-cross-origin`, each where `response`
-# has none.
-#
-# - `response`: the response.
-function with_secure_headers(response: http.Response) -> http.Response
-    out @= response
-
-    for pair in [["X-Content-Type-Options", "nosniff"], ["X-Frame-Options", "SAMEORIGIN"], ["Referrer-Policy", "strict-origin-when-cross-origin"]]
-        if !http.has_header(out.headers, name: pair[0])
-            out.headers @ out.headers.push(http.Header(name: pair[0], value: pair[1]))
-
-    return out
 
 # Lets a `POST` go on as the method its `X-HTTP-Method-Override` field
 # names, for a client that can send only `GET` and `POST`, as Echo's
@@ -1296,7 +1217,8 @@ function new_limiter(rate: f64, burst: i64, most_keys: i64) -> Limiter?
 #
 # - `limiter`: the limiter, whose bucket of `key` changes.
 # - `key`: the client, as the program names it: its address
-#   (`client_address_of`), a user, a token; a key met anew starts full.
+#   (`forwarded_of`'s `address`), a user, a token; a key met anew starts
+#   full.
 # - `now`: the time, as the program read it (`time.now`); one earlier than
 #   the bucket's last token taken counts no time, as Go's limiter counts it.
 #
@@ -1443,7 +1365,7 @@ record CookieOptions
     # read. The program closes them.
     sealing: [seal.Key]
 
-# Options for a cookie named `name` signed by `keys`: the path `/`, 30 days,
+# Options for a cookie named `name` signed by `ring`: the path `/`, 30 days,
 # `Secure`, `HttpOnly` and `SameSite=Lax`, nothing sealed.
 #
 # - `name`: the cookie's name.
@@ -1537,7 +1459,7 @@ function open_value(ring: [seal.Key], name: str, sealed: str, now: time.Instant)
 # Fails `not_found` where `r` sends no such cookie, and as `verify_value` or
 # `open_value` fails. See also `with_secure_cookie`.
 function secure_cookie_of(r: http.Request, options: CookieOptions, now: time.Instant) -> str?
-    said = cookie_of(r, name: options.name)?
+    said = http.cookie_of(r, name: options.name)?
 
     if options.sealing.len() > 0
         return open_value(options.sealing, name: options.name, sealed: said, now: now)
@@ -1827,7 +1749,8 @@ record SecurityHeaders
 #
 # Django's `SecurityMiddleware` writes fewer by default: `nosniff`,
 # `Referrer-Policy: same-origin`, `Cross-Origin-Opener-Policy: same-origin`,
-# `X-Frame-Options: DENY`, no HSTS. See also `with_security_headers`.
+# `X-Frame-Options: DENY`, no HSTS. See also `with_security_headers`,
+# `minimal_security_headers`.
 function default_security_headers() -> SecurityHeaders
     return SecurityHeaders(
         content_security_policy: "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
@@ -1840,6 +1763,26 @@ function default_security_headers() -> SecurityHeaders
         resource_policy: "same-origin",
         origin_agent_cluster: "?1",
         others: [http.Header(name: "X-DNS-Prefetch-Control", value: "off"), http.Header(name: "X-Download-Options", value: "noopen"), http.Header(name: "X-Permitted-Cross-Domain-Policies", value: "none"), http.Header(name: "X-XSS-Protection", value: "0")]
+    )
+
+# Three fields that cost no page anything, each written where a response has
+# none: `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN` and
+# `Referrer-Policy: strict-origin-when-cross-origin`, against a page sniffed,
+# framed by another site or followed with its full address; every other
+# field "". `with_security_headers` writes them. See also
+# `default_security_headers`, helmet's whole set.
+function minimal_security_headers() -> SecurityHeaders
+    return SecurityHeaders(
+        content_security_policy: "",
+        strict_transport_security: "",
+        content_type_options: "nosniff",
+        frame_options: "SAMEORIGIN",
+        referrer_policy: "strict-origin-when-cross-origin",
+        permissions_policy: "",
+        opener_policy: "",
+        resource_policy: "",
+        origin_agent_cluster: "",
+        others: []
     )
 
 # A `Strict-Transport-Security` value, RFC 6797 § 6.1.
@@ -1869,7 +1812,8 @@ function format_hsts(max_age_s: i64, subdomains: bool, preload: bool) -> str
 # - `response`: the response.
 # - `headers`: the fields, as `default_security_headers` makes them.
 #
-# A step after the handler; `with_secure_headers` writes three of them alone.
+# A step after the handler; `minimal_security_headers` makes three of them
+# alone.
 function with_security_headers(response: http.Response, headers: SecurityHeaders) -> http.Response
     pairs: [http.Header] @= [
         http.Header(name: "Content-Security-Policy", value: headers.content_security_policy)
@@ -1949,8 +1893,7 @@ function trusted_networks(list: [str]) -> [net.Network]?
 # behind it. With `Forwarded` the scheme and the host are its element's
 # `proto` and `host`; with `X-Forwarded-For`, the last value of
 # `X-Forwarded-Proto` and of `X-Forwarded-Host`, the nearest proxy's, as
-# werkzeug's `ProxyFix` reads one value each. See also
-# `client_address_of`.
+# werkzeug's `ProxyFix` reads one value each. See also `trusted_networks`.
 function forwarded_of(r: http.Request, trusted: [net.Network]) -> Forwarded
     host = http.value_of(r.headers, name: "Host").default("")
 
@@ -2173,22 +2116,23 @@ constant WEBHOOK_TOLERANCE_S: i64
 function new_webhook_secret() -> str?
     return ok(webhooks.secret_of(os.random_bytes(webhooks.SECRET_BYTES)?))
 
-# The `webhook-signature` of `payload` sent as `id` at `timestamp_s`, by the
+# The `webhook-signature` of `payload` sent as `id` at `sent`, by the
 # Standard Webhooks specification: `v1,` and the standard base 64 of the
-# HMAC-SHA256 of `id`, `.`, the timestamp's decimal, `.` and the payload,
-# keyed by the secret's bytes.
+# HMAC-SHA256 of `id`, `.`, the decimal of `sent`'s Unix seconds, `.` and the
+# payload, keyed by the secret's bytes.
 #
 # - `secret`: `whsec_` and standard base 64, as `new_webhook_secret` writes
 #   one; the prefix may be left out.
 # - `id`: the message's id, unique for each message: `msg_2KWPBgLlAfxdpx2AI54pPJ85f4W`.
-# - `timestamp_s`: when it is sent, in Unix seconds.
+# - `sent`: when it is sent; its whole seconds are signed, as `sign_webhook`
+#   writes them.
 # - `payload`: the body, its bytes as sent.
 #
 # Fails `invalid` where `secret` is no base 64 after its prefix, or holds no
 # byte. See also `sign_webhook`, `verify_webhook`.
-function webhook_signature(secret: str, id: str, timestamp_s: i64, payload: [u8]) -> str?
+function webhook_signature(secret: str, id: str, sent: time.Instant, payload: [u8]) -> str?
     key = webhooks.secret_bytes(secret)?
-    return ok(webhooks.signature(key: key, id: id, timestamp_s: timestamp_s, payload: payload))
+    return ok(webhooks.signature(key: key, id: id, timestamp_s: time.unix_seconds(sent), payload: payload))
 
 # The three header fields a webhook is sent with, by the Standard Webhooks
 # specification: `webhook-id`, `webhook-timestamp` and `webhook-signature`.
@@ -2201,7 +2145,7 @@ function webhook_signature(secret: str, id: str, timestamp_s: i64, payload: [u8]
 # Fails `invalid` where `secret` does not read. See also `verify_webhook`.
 function sign_webhook(secret: str, id: str, sent: time.Instant, payload: [u8]) -> [http.Header]?
     seconds = time.unix_seconds(sent)
-    signed = webhook_signature(secret: secret, id: id, timestamp_s: seconds, payload: payload)?
+    signed = webhook_signature(secret: secret, id: id, sent: sent, payload: payload)?
     return ok(
         [http.Header(name: "webhook-id", value: id), http.Header(name: "webhook-timestamp", value: to_str(seconds)), http.Header(name: "webhook-signature", value: signed)]
     )
@@ -2395,45 +2339,6 @@ test "json_of: a +json type, another type, no type, a body that is no JSON"
     assert json_of(
         http.with_body(fixture.request_of(method: "POST", target: "/", headers: []), content_type: "application/json", body: bytes.from_text("{"))
     ).is_err()
-
-test "cookie_of: the first of two fields, absent, a control byte"
-    r = fixture.request_of(
-        method: "GET",
-        target: "/",
-        headers: [http.Header(name: "Cookie", value: "a=1; b=2"), http.Header(name: "Cookie", value: "b=3")]
-    )
-    assert cookie_of(r, name: "b").must() == "2"
-
-    match cookie_of(r, name: "c")
-        .ok _  => assert false
-        .err e => assert e.code == NOT_FOUND
-
-test "bearer_token_of: absent, another scheme, a scheme in lower case, a token that is none"
-    assert bearer_token_of(fixture.request_of(method: "GET", target: "/", headers: [])).is_err()
-    assert bearer_token_of(
-        fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "Authorization", value: "Basic YTpi")])
-    ).is_err()
-    assert bearer_token_of(fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "Authorization", value: "bearer abc.def")])).must() == "abc.def"
-
-    match bearer_token_of(fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "Authorization", value: "Bearer a b")]))
-        .ok _  => assert false
-        .err e => assert e.code == INVALID
-
-test "client_address_of: no remote, untrusted, a chain of proxies, every entry trusted, IPv6"
-    r @= fixture.request_of(
-        method: "GET",
-        target: "/",
-        headers: [http.Header(name: "X-Forwarded-For", value: "203.0.113.9, 10.0.0.2")]
-    )
-    assert client_address_of(r, trusted: ["10.0.0.1"]) == ""
-    r.remote @ "192.0.2.1:5000"
-    assert client_address_of(r, trusted: []) == "192.0.2.1"
-    r.remote @ "10.0.0.1:4000"
-    assert client_address_of(r, trusted: ["10.0.0.1"]) == "10.0.0.2"
-    assert client_address_of(r, trusted: ["10.0.0.1", "10.0.0.2"]) == "203.0.113.9"
-    assert client_address_of(r, trusted: ["10.0.0.1", "10.0.0.2", "203.0.113.9"]) == "203.0.113.9"
-    r.remote @ "[::1]:80"
-    assert client_address_of(r, trusted: []) == "::1"
 
 test "error_response: text with its line end, JSON with a quote escaped"
     assert http.text_of(error_response(.text, status: 400, message: "bad")).must() == "bad\n"
@@ -2853,12 +2758,6 @@ test "require_type: a type read, its parameters set aside, another refused, no b
         .go_on _  => _ = 0
         .answer _ => assert false
 
-test "with_secure_headers: the three added, one the response has kept"
-    held @= http.respond_status(200)
-    held.headers @ [http.Header(name: "X-Frame-Options", value: "DENY")]
-    got = with_secure_headers(held)
-    assert http.value_of(got.headers, name: "X-Frame-Options").must() == "DENY" && http.value_of(got.headers, name: "X-Content-Type-Options").must() == "nosniff" && got.headers.len() == 3
-
 test "override_method: another method, no field, a method refused"
     put = fixture.request_of(
         method: "PUT",
@@ -3028,7 +2927,7 @@ test "seal_value and open_value through the face: unsupported on macOS, read bac
     later = time.add(now, d: time.seconds(60).must()).must()
 
     if !seal.is_available(.aes_256_gcm)
-        return
+        skip_test(reason: "this platform's cryptography offers no AES-256-GCM to seal")
     k @= seal.generate(.aes_256_gcm).must()
     sealed = seal_value([k], name: "s", value: "secret", expires: later).must()
     assert open_value([k], name: "s", sealed: sealed, now: now).must() == "secret" && open_value([k], name: "s", sealed: sealed, now: later).is_err()
@@ -3071,6 +2970,13 @@ test "csrf_secret: made once and kept in the session"
     s @= new_session()
     first = csrf_secret(@s).must()
     assert csrf_secret(@s).must() == first && s.values[CSRF_KEY].must() == first
+
+test "minimal_security_headers: the three written, one the response has kept, nothing else"
+    held @= http.respond_status(200)
+    held.headers @ [http.Header(name: "X-Frame-Options", value: "DENY")]
+    got = with_security_headers(held, headers: minimal_security_headers())
+    assert http.value_of(got.headers, name: "X-Frame-Options").must() == "DENY" && http.value_of(got.headers, name: "X-Content-Type-Options").must() == "nosniff" && got.headers.len() == 3
+    assert http.value_of(got.headers, name: "Referrer-Policy").must() == "strict-origin-when-cross-origin"
 
 test "with_security_headers: every field written where none stands, a handler's own kept, an empty one not written"
     own @= http.respond_text(http.STATUS_OK, text: "x")
@@ -3226,10 +3132,10 @@ test "health_response: JSON where the Accept asks it, text where it asks text or
 test "webhook_signature: the Standard Webhooks libraries' test vector, a secret without its prefix, and one that does not read"
     payload = bytes.from_text("{\"test\": 2432232314}")
     want = "v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE="
-    assert webhook_signature(secret: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", id: "msg_p5jXN8AQM9LWM0D4loKWxJek", timestamp_s: 1614265330, payload: payload).must() == want
-    assert webhook_signature(secret: "MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", id: "msg_p5jXN8AQM9LWM0D4loKWxJek", timestamp_s: 1614265330, payload: payload).must() == want
+    assert webhook_signature(secret: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", id: "msg_p5jXN8AQM9LWM0D4loKWxJek", sent: time.from_unix(whole_seconds: 1614265330, extra_nanoseconds: 0).must(), payload: payload).must() == want
+    assert webhook_signature(secret: "MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", id: "msg_p5jXN8AQM9LWM0D4loKWxJek", sent: time.from_unix(whole_seconds: 1614265330, extra_nanoseconds: 0).must(), payload: payload).must() == want
 
-    match webhook_signature(secret: "whsec_%%", id: "m", timestamp_s: 0, payload: payload)
+    match webhook_signature(secret: "whsec_%%", id: "m", sent: time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must(), payload: payload)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -3348,30 +3254,6 @@ test "json_of: an object"
         body: bytes.from_text("{\"n\":2}")
     )
     assert json.int_of(json.member(json_of(r).must(), key: "n").must()).must() == 2
-
-# A cookie read by its name.
-test "cookie_of: a session cookie"
-    r = fixture.request_of(
-        method: "GET",
-        target: "/",
-        headers: [http.Header(name: "Cookie", value: "theme=dark; session=abc")]
-    )
-    assert cookie_of(r, name: "session").must() == "abc"
-
-# A Bearer token read.
-test "bearer_token_of: a token"
-    r = http.with_bearer_auth(fixture.request_of(method: "GET", target: "/", headers: []), token: "t0k3n")
-    assert bearer_token_of(r).must() == "t0k3n"
-
-# The client behind a proxy the program trusts.
-test "client_address_of: through one trusted proxy"
-    r @= fixture.request_of(
-        method: "GET",
-        target: "/",
-        headers: [http.Header(name: "X-Forwarded-For", value: "203.0.113.9")]
-    )
-    r.remote @ "10.0.0.1:4000"
-    assert client_address_of(r, trusted: ["10.0.0.1"]) == "203.0.113.9"
 
 # An error answered as JSON.
 test "error_response: a 404 as JSON"
@@ -3579,10 +3461,6 @@ test "require_type: JSON let in"
     match require_type(r, types: ["application/json"])
         .go_on _  => _ = 0
         .answer _ => assert false
-
-# The fields that keep a page safe.
-test "with_secure_headers: nosniff added"
-    assert http.value_of(with_secure_headers(http.respond_status(200)).headers, name: "X-Content-Type-Options").must() == "nosniff"
 
 # A form's POST standing for a PATCH.
 test "override_method: PATCH"
@@ -3827,17 +3705,18 @@ test "verify_value: one byte changed is refused"
 
 # A value sealed for a cookie, where the system seals.
 test "seal_value: a secret kept by the client, unreadable"
-    if seal.is_available(.aes_128_gcm)
-        k @= seal.generate(.aes_128_gcm).must()
-        now = fixture.clock().must()
-        sealed = seal_value(
-            [k],
-            name: "c",
-            value: "42",
-            expires: time.add(now, d: time.seconds(60).must()).must()
-        ).must()
-        assert !strings.contains(s: sealed, substr: "42") && open_value([k], name: "c", sealed: sealed, now: now).must() == "42"
-        seal.close(@k).must()
+    if !seal.is_available(.aes_128_gcm)
+        skip_test(reason: "this platform's cryptography offers no AES-128-GCM to seal")
+    k @= seal.generate(.aes_128_gcm).must()
+    now = fixture.clock().must()
+    sealed = seal_value(
+        [k],
+        name: "c",
+        value: "42",
+        expires: time.add(now, d: time.seconds(60).must()).must()
+    ).must()
+    assert !strings.contains(s: sealed, substr: "42") && open_value([k], name: "c", sealed: sealed, now: now).must() == "42"
+    seal.close(@k).must()
 
 # A sealed value no key opens, refused.
 test "open_value: a value no key of the ring opens"
@@ -3945,6 +3824,11 @@ test "default_security_headers: helmet's policy and fields"
     h = default_security_headers()
     assert h.frame_options == "SAMEORIGIN" && h.referrer_policy == "no-referrer" && h.others.len() == 4
 
+# The three fields every page can carry.
+test "minimal_security_headers: nosniff for a page"
+    got = with_security_headers(http.respond_status(200), headers: minimal_security_headers())
+    assert http.value_of(got.headers, name: "X-Content-Type-Options").must() == "nosniff"
+
 # A two-year HSTS value for a site in browsers' preload lists.
 test "format_hsts: two years, subdomains, preload"
     assert format_hsts(max_age_s: 63_072_000, subdomains: true, preload: true) == "max-age=63072000; includeSubDomains; preload"
@@ -4032,7 +3916,7 @@ test "webhook_signature: the Standard Webhooks libraries' test vector"
     signed = webhook_signature(
         secret: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw",
         id: "msg_p5jXN8AQM9LWM0D4loKWxJek",
-        timestamp_s: 1614265330,
+        sent: time.from_unix(whole_seconds: 1614265330, extra_nanoseconds: 0).must(),
         payload: payload
     )
     assert signed.must() == "v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE="

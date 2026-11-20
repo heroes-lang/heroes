@@ -1,0 +1,670 @@
+# The inside of the face's `handle`, `read_http` and `send_request`: a
+# request's method dispatched to what it asks (a tool's call, a resource's
+# read, a prompt, a completion), the fields of Streamable HTTP checked against
+# the body, a request's parameters and its sending over HTTP, the pages of a
+# list read to their end, a subscription's acknowledgement, and the members
+# two JSON forms share. Each takes the face's own `Server`, `Client` and
+# `Request` (panel 252's R1 lets a private module name its face's types), so
+# a program sees `handle` and `send_request` and not their steps.
+
+use bytes
+use containers/deque
+use http
+use json
+use json/schema as schemas
+use jsonrpc
+use mcp
+use mcp/internal/build
+use mcp/internal/fixture
+use mcp/internal/headers
+use mcp/internal/pages
+use mcp/internal/templates
+use net
+use numbers
+use strings
+
+# What the request `method` asks of the program, its `_meta` checked: the
+# second half of `handle`.
+#
+# - `s`: the server.
+# - `id`: the request's id.
+# - `method`: the method.
+# - `params`: its parameters.
+# - `meta`: its `_meta`, read.
+function handle_method(s: mcp.Server, id: jsonrpc.Id, method: str, params: json.Value, meta: mcp.RequestMeta) -> mcp.Request
+    capabilities = mcp.capabilities_of(s)
+    info = mcp.implementation_json(s.info)
+
+    cursor = match build.text_at(params, key: "cursor")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    members: {str: json.Value} @= {}
+    listed: [json.Value] @= []
+    list_key: str @= ""
+
+    if method == "server/discover"
+        members["supportedVersions"] @ build.texts([mcp.PROTOCOL_VERSION])
+        members["capabilities"] @ mcp.server_capabilities_json(capabilities)
+        build.put_text(@members, key: "instructions", value: s.instructions)
+        return .answered(
+            answer: jsonrpc.result_of(id, value: build.result(members, server: info, cacheable: true, ttl_ms: s.ttl_ms, private: s.private))
+        )
+
+    if method == "tools/list" && capabilities.tools
+        list_key @ "tools"
+
+        for t in s.tools
+            listed @ listed.push(mcp.tool_json(t))
+    else if method == "resources/list" && capabilities.resources
+        list_key @ "resources"
+
+        for r in s.resources
+            listed @ listed.push(mcp.resource_json(r))
+    else if method == "resources/templates/list" && capabilities.resources
+        list_key @ "resourceTemplates"
+
+        for t in s.templates
+            listed @ listed.push(mcp.template_json(t))
+    else if method == "prompts/list" && capabilities.prompts
+        list_key @ "prompts"
+
+        for p in s.prompts
+            listed @ listed.push(mcp.prompt_json(p))
+
+    if list_key != ""
+        page = match pages.page(listed, cursor: cursor, size: s.page_size)
+            .ok got => got
+            .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+        members[list_key] @ .list(items: page.items)
+        build.put_text(@members, key: "nextCursor", value: page.next)
+        return .answered(
+            answer: jsonrpc.result_of(id, value: build.result(members, server: info, cacheable: true, ttl_ms: s.ttl_ms, private: s.private))
+        )
+
+    inputs = match mcp.inputs_of(params)
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    if method == "tools/call" && capabilities.tools
+        return tool_call_of(s, id: id, params: params, meta: meta, inputs: inputs)
+
+    if method == "resources/read" && capabilities.resources
+        return resource_read_of(s, id: id, params: params, meta: meta, inputs: inputs)
+
+    if method == "prompts/get" && capabilities.prompts
+        return prompt_get_of(s, id: id, params: params, meta: meta, inputs: inputs)
+
+    if method == "completion/complete" && s.completions
+        return completion_of(id, params: params, meta: meta)
+
+    if method == "subscriptions/listen"
+        wanted = match mcp.filter_of(build.members_of(params)["notifications"].default(.null_value))
+            .ok got => got
+            .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+        return .listen(listen: mcp.Listen(id: id, filter: wanted, meta: meta))
+    return .answered(
+        answer: .response(id: id, reply: .error(error: jsonrpc.Error(code: jsonrpc.METHOD_NOT_FOUND, message: "Method not found", data: .text(v: method))))
+    )
+
+# The tool call `params` asks for, its tool found and its arguments held to
+# the tool's input schema: part of `handle`.
+#
+# - `s`: the server.
+# - `id`: the request's id.
+# - `params`: the request's parameters.
+# - `meta`: its `_meta`.
+# - `inputs`: what a retry gives back.
+function tool_call_of(s: mcp.Server, id: jsonrpc.Id, params: json.Value, meta: mcp.RequestMeta, inputs: mcp.Inputs) -> mcp.Request
+    name = match build.required_text(params, key: "name")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    tool = match mcp.tool_named(s, name: name)
+        .ok got => got
+        .err _  => return .answered(answer: build.invalid_params(id, message: f"Unknown tool: {name}"))
+
+    arguments = build.members_of(params)["arguments"].default(.object(members: {}))
+
+    match arguments
+        .object _ => _ = 0
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return .answered(
+                answer: build.invalid_params(id, message: f"the arguments of \"{name}\" are not an object")
+            )
+
+    compiled = match schemas.compile(tool.input_schema)
+        .ok got => got
+        .err e => return .answered(
+            answer: jsonrpc.error_of(id, code: jsonrpc.INTERNAL_ERROR, message: f"the input schema of \"{name}\" does not compile: {e.msg}")
+        )
+
+    match schemas.validate(compiled, instance: arguments)
+        .ok _ => _ = 0
+        .err e => return .answered(
+            answer: mcp.answer_tool(s, call: mcp.ToolCall(id: id, name: name, arguments: arguments, meta: meta, inputs: inputs), result: mcp.error_result(f"Invalid arguments for \"{name}\": {e.msg}"))
+        )
+
+    return .call_tool(call: mcp.ToolCall(id: id, name: name, arguments: arguments, meta: meta, inputs: inputs))
+
+# The resource read `params` asks for: a listed resource, else the first
+# template that matches: part of `handle`.
+#
+# - `s`: the server.
+# - `id`: the request's id.
+# - `params`: the request's parameters.
+# - `meta`: its `_meta`.
+# - `inputs`: what a retry gives back.
+function resource_read_of(s: mcp.Server, id: jsonrpc.Id, params: json.Value, meta: mcp.RequestMeta, inputs: mcp.Inputs) -> mcp.Request
+    uri = match build.required_text(params, key: "uri")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    for r in s.resources
+        if r.uri == uri
+            return .read_resource(
+                read: mcp.ResourceRead(id: id, uri: uri, template: "", values: {}, meta: meta, inputs: inputs)
+            )
+
+    for t in s.templates
+        match templates.match_uri(template: t.uri_template, uri: uri)
+            .ok values => return .read_resource(
+                read: mcp.ResourceRead(id: id, uri: uri, template: t.uri_template, values: values, meta: meta, inputs: inputs)
+            )
+            .err _ => _ = 0
+
+    data: {str: json.Value} @= {}
+    data["uri"] @ .text(v: uri)
+    return .answered(
+        answer: build.error_answer(id, code: jsonrpc.INVALID_PARAMS, message: "Resource not found", data: .object(members: data))
+    )
+
+# The prompt `params` asks for, its required arguments given: part of
+# `handle`.
+#
+# - `s`: the server.
+# - `id`: the request's id.
+# - `params`: the request's parameters.
+# - `meta`: its `_meta`.
+# - `inputs`: what a retry gives back.
+function prompt_get_of(s: mcp.Server, id: jsonrpc.Id, params: json.Value, meta: mcp.RequestMeta, inputs: mcp.Inputs) -> mcp.Request
+    name = match build.required_text(params, key: "name")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    written = match build.object_at(params, key: "arguments")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    arguments: {str: str} @= {}
+
+    for key in keys(written)
+        match written[key].must()
+            .text t => arguments[key] @ t.v
+            .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                return .answered(answer: build.invalid_params(id, message: f"the argument \"{key}\" is not a string"))
+
+    for p in s.prompts
+        if p.name == name
+            for a in p.arguments
+                if a.required && arguments[a.name].is_err()
+                    return .answered(answer: build.invalid_params(id, message: f"Missing required argument: {a.name}"))
+
+            return .get_prompt(get: mcp.PromptGet(id: id, name: name, arguments: arguments, meta: meta, inputs: inputs))
+
+    return .answered(answer: build.invalid_params(id, message: f"Unknown prompt: {name}"))
+
+# The completion `params` asks for: part of `handle`.
+#
+# - `id`: the request's id.
+# - `params`: the request's parameters.
+# - `meta`: its `_meta`.
+function completion_of(id: jsonrpc.Id, params: json.Value, meta: mcp.RequestMeta) -> mcp.Request
+    written = build.members_of(params)
+    ref = written["ref"].default(.null_value)
+    argument = written["argument"].default(.null_value)
+    kind = build.text_at(ref, key: "type").default("")
+
+    target = if kind == "ref/prompt"
+        build.text_at(ref, key: "name").default("")
+    else
+        build.text_at(ref, key: "uri").default("")
+
+    if kind != "ref/prompt" && kind != "ref/resource" || target == ""
+        return .answered(
+            answer: build.invalid_params(id, message: "a completion's `ref` is neither a prompt nor a resource template")
+        )
+
+    name = match build.required_text(argument, key: "name")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    context: {str: str} @= {}
+    given = build.object_at(build.members_of(params)["context"].default(.null_value), key: "arguments").default({})
+
+    for key in keys(given)
+        context[key] @ json.text_of(given[key].must()).default("")
+
+    return .complete(
+        completion: mcp.Completion(id: id, kind: kind, ref: target, argument: name, value: build.text_at(argument, key: "value").default(""), context: context, meta: meta)
+    )
+
+# Fails `invalid` where a field of `r` that mirrors its body is missing or
+# does not match it, the message saying which: what `read_http` answers
+# -32020.
+#
+# - `s`: the server, whose tools say which `Mcp-Param-` fields a call
+#   carries.
+# - `r`: the HTTP request.
+# - `method`: the body's method.
+# - `params`: the body's parameters.
+#
+# An `Mcp-Name` and an `Mcp-Param-` field are read through the Base64
+# sentinel first; an integer is compared as a number, `42.0` matching `42`.
+# A tool unknown to `s` is left to `handle`, which answers it.
+function check_fields(s: mcp.Server, r: http.Request, method: str, params: json.Value) -> ()?
+    version = match http.value_of(r.headers, name: "MCP-Protocol-Version")
+        .ok got => got
+        .err _  => return fail(code: mcp.INVALID, msg: "Header mismatch: the MCP-Protocol-Version field is missing")
+
+    written = build.text_at(build.members_of(params)["_meta"].default(.null_value), key: "io.modelcontextprotocol/protocolVersion").default(
+        ""
+    )
+
+    if written != "" && written != version
+        return fail(
+            code: mcp.INVALID,
+            msg: f"Header mismatch: MCP-Protocol-Version '{version}' does not match the body's '{written}'"
+        )
+
+    named = match http.value_of(r.headers, name: "Mcp-Method")
+        .ok got => got
+        .err _  => return fail(code: mcp.INVALID, msg: "Header mismatch: the Mcp-Method field is missing")
+
+    if named != method
+        return fail(
+            code: mcp.INVALID,
+            msg: f"Header mismatch: Mcp-Method '{named}' does not match the body's '{method}'"
+        )
+
+    if method != "tools/call" && method != "prompts/get" && method != "resources/read"
+        return ok()
+
+    source = if method == "resources/read"
+        build.text_at(params, key: "uri").default("")
+    else
+        build.text_at(params, key: "name").default("")
+
+    field = match http.value_of(r.headers, name: "Mcp-Name")
+        .ok got => got
+        .err _  => return fail(code: mcp.INVALID, msg: "Header mismatch: the Mcp-Name field is missing")
+
+    name = headers.decode(field)?
+
+    if name != source
+        return fail(
+            code: mcp.INVALID,
+            msg: f"Header mismatch: Mcp-Name value '{name}' does not match body value '{source}'"
+        )
+
+    if method != "tools/call"
+        return ok()
+
+    tool = match mcp.tool_named(s, name: source)
+        .ok got => got
+        .err _  => return ok()
+
+    mirrored = match headers.params_of(tool.input_schema)
+        .ok got => got
+        .err _  => return ok()
+
+    arguments = build.members_of(params)["arguments"].default(.null_value)
+
+    for p in mirrored
+        match headers.value_of(arguments, p: p)
+            .ok value =>
+                given = match http.value_of(r.headers, name: "Mcp-Param-" + p.header)
+                    .ok got => headers.decode(got)?
+                    .err _ => return fail(
+                        code: mcp.INVALID,
+                        msg: f"Header mismatch: the Mcp-Param-{p.header} field is missing"
+                    )
+
+                same = if p.kind == "integer"
+                    numbers.parse_float(given).default(0.5) == numbers.parse_float(value).default(1.5)
+                else
+                    given == value
+
+                if !same
+                    return fail(
+                        code: mcp.INVALID,
+                        msg: f"Header mismatch: Mcp-Param-{p.header} value '{given}' does not match body value '{value}'"
+                    )
+            .err _ => _ = 0
+
+    return ok()
+
+# The parameters of a request of `c`: `params` with its `_meta`, the
+# protocol version, the client and its capabilities, and its progress token
+# where `c` asks for one.
+#
+# - `c`: the client.
+# - `params`: the request's own parameters.
+# - `id`: the request's id, from which a progress token is made.
+function request_params(c: mcp.Client, params: {str: json.Value}, id: i64) -> json.Value
+    meta: {str: json.Value} @= {}
+    meta["io.modelcontextprotocol/protocolVersion"] @ .text(v: mcp.PROTOCOL_VERSION)
+
+    if c.info.name != ""
+        meta["io.modelcontextprotocol/clientInfo"] @ mcp.implementation_json(c.info)
+    meta["io.modelcontextprotocol/clientCapabilities"] @ mcp.client_capabilities_json(c.capabilities)
+
+    if c.progress
+        meta["progressToken"] @ .text(v: f"progress-{id}")
+    out: {str: json.Value} @= params
+    out["_meta"] @ .object(members: meta)
+    return .object(members: out)
+
+# The result of one request over Streamable HTTP: the `POST`, its fields, and
+# the answer read from JSON or from an event stream, the notifications before
+# it kept.
+#
+# - `c`: the client; its `notifications` and `denied` change.
+# - `link_endpoint`: the MCP endpoint.
+# - `transport`: how the request is sent.
+# - `token`: the access token, "" for none.
+# - `method`: the method.
+# - `body`: its parameters, `_meta` included.
+# - `id`: its id.
+#
+# Fails as `send_request` fails.
+function send_http(@c: mcp.Client, link_endpoint: str, transport: http.Client, token: str, method: str, body: json.Value, id: i64) -> json.Value?
+    request_id: jsonrpc.Id = .number(v: to_f64(id))
+    text = jsonrpc.format(.request(id: request_id, method: method, params: body))?
+    r @= http.request(method: http.METHOD_POST, target: link_endpoint)?
+    fields: [http.Header] @= r.headers
+    fields @ http.with_header(fields, name: "Content-Type", value: "application/json")
+    fields @ http.with_header(fields, name: "Accept", value: "application/json, text/event-stream")
+    fields @ http.with_header(fields, name: "MCP-Protocol-Version", value: mcp.PROTOCOL_VERSION)
+    fields @ http.with_header(fields, name: "Mcp-Method", value: method)
+
+    if method == "tools/call" || method == "prompts/get"
+        fields @ http.with_header(
+            fields,
+            name: "Mcp-Name",
+            value: headers.encode(build.text_at(body, key: "name").default(""))
+        )
+
+    if method == "resources/read"
+        fields @ http.with_header(
+            fields,
+            name: "Mcp-Name",
+            value: headers.encode(build.text_at(body, key: "uri").default(""))
+        )
+
+    if method == "tools/call"
+        name = build.text_at(body, key: "name").default("")
+        arguments = build.members_of(body)["arguments"].default(.null_value)
+
+        for t in c.tools
+            if t.name == name
+                for p in headers.params_of(t.input_schema).default([])
+                    match headers.value_of(arguments, p: p)
+                        .ok value => fields @ http.with_header(
+                            fields,
+                            name: "Mcp-Param-" + p.header,
+                            value: headers.encode(value)
+                        )
+                        .err _    => _ = 0
+
+    if token != ""
+        fields @ http.with_header(fields, name: "Authorization", value: "Bearer " + token)
+    r.headers @ fields
+    r.body @ bytes.from_text(text)
+    response = http.send(transport, r: r)?
+
+    if response.status == http.STATUS_UNAUTHORIZED || response.status == http.STATUS_FORBIDDEN
+        c.denied @ response
+        challenge = http.value_of(response.headers, name: "WWW-Authenticate").default("no challenge")
+        return fail(code: mcp.PERMISSION, msg: f"the server answered {response.status}: {challenge}")
+    kind = strings.to_lower(http.value_of(response.headers, name: "Content-Type").default(""))
+    received: [jsonrpc.Message] @= []
+
+    if strings.has_prefix(s: kind, prefix: "text/event-stream")
+        for event in http.events_of(response)?
+            if strings.trim(event.data) != ""
+                received @ received.push(jsonrpc.message_of(json.parse(event.data)?)?)
+    else
+        match jsonrpc.parse(bytes.to_text_lossy(response.body), limits: jsonrpc.default_limits())
+            .ok got =>
+                for item in got.messages
+                    match item
+                        .ok m => received @ received.push(m)
+                        .err e => return fail(
+                            code: mcp.INVALID,
+                            msg: f"the server answered {response.status} with no message: {e.msg}"
+                        )
+            .err _ => return fail(
+                code: mcp.FAILED,
+                msg: f"the server answered {response.status}: {bytes.to_text_lossy(response.body)}"
+            )
+    answer: jsonrpc.Reply @= .result(value: .null_value)
+    answered: bool @= false
+
+    for m in received
+        match m
+            .response a =>
+                if a.id == request_id || a.id == .null_id
+                    answer @ a.reply
+                    answered @ true
+            .notification _ => deque.push_back(@c.waiting, @c.notifications, value: m)
+            .request _      => _ = 0
+
+    if !answered
+        return fail(code: mcp.INVALID, msg: f"the server answered {response.status} with no answer to the request")
+    return jsonrpc.value_of(answer)
+
+# Every item of the list `method` answers under `key`, page after page.
+#
+# - `c`: the client.
+# - `method`: `tools/list`, `resources/list`, `resources/templates/list` or
+#   `prompts/list`.
+# - `key`: the member that holds the items.
+#
+# A `nextCursor` given, the empty one included, asks for the next page, as
+# the revision asks. Fails `limit` past 10,000 pages, and as `send_request`
+# fails.
+function every_page(@c: mcp.Client, method: str, key: str) -> [json.Value]?
+    out: [json.Value] @= []
+    cursor: str @= ""
+    more: bool @= false
+    count: i64 @= 0
+
+    while true
+        params: {str: json.Value} @= {}
+
+        if more
+            params["cursor"] @ .text(v: cursor)
+        result = mcp.send_request(@c, method: method, params: params)?
+
+        for item in build.items_at(result, key: key)?
+            out @ out.push(item)
+
+        count @ count + 1
+
+        match build.members_of(result)["nextCursor"]
+            .ok next =>
+                cursor @ json.text_of(next)?
+                more @ true
+            .err _ => break
+
+        if count >= 10_000
+            return fail(code: mcp.LIMIT, msg: f"{method} gave more than 10,000 pages")
+
+    return ok(out)
+
+# The filter the server's acknowledgment of the subscription `id` names, the
+# messages before it kept in `rpc`'s inbox.
+#
+# - `rpc`: the stream's client.
+# - `id`: the subscription's id.
+#
+# Fails `failed` where the server answers the subscription with an error,
+# and as `jsonrpc.read_message` fails.
+function acknowledged(@rpc: jsonrpc.Client, id: jsonrpc.Id) -> mcp.Filter?
+    while true
+        m = jsonrpc.read_message(@rpc.reader, framing: rpc.framing, limits: rpc.limits)?
+
+        match m
+            .notification n =>
+                subscription = build.members_of(build.members_of(n.params)["_meta"].default(.null_value))["io.modelcontextprotocol/subscriptionId"].default(
+                    .null_value
+                )
+
+                if n.method == "notifications/subscriptions/acknowledged" && subscription == json.parse(jsonrpc.format_id(id)).must()
+                    return mcp.filter_of(build.members_of(n.params)["notifications"].default(.null_value))
+                deque.push_back(@rpc.waiting, @rpc.inbox, value: m)
+            .response r =>
+                if r.id == id
+                    _ = jsonrpc.value_of(r.reply)?
+                    return fail(code: mcp.FAILED, msg: "the server ended the subscription before acknowledging it")
+                deque.push_back(@rpc.waiting, @rpc.inbox, value: m)
+            .request _ => deque.push_back(@rpc.waiting, @rpc.inbox, value: m)
+
+# Writes `inputs` in a retried request's parameters: `inputResponses` and
+# `requestState`, each where it holds something.
+#
+# - `params`: the request's parameters.
+# - `inputs`: what the retry gives back.
+function put_inputs(@params: {str: json.Value}, inputs: mcp.Inputs)
+    if inputs.responses.len() > 0
+        params["inputResponses"] @ .object(members: inputs.responses)
+    build.put_text(@params, key: "requestState", value: inputs.state)
+
+# Writes `a` at `annotations` in `members` where it says anything.
+#
+# - `members`: the object being written.
+# - `a`: the hints.
+function put_annotations(@members: {str: json.Value}, a: mcp.Annotations)
+    if a != mcp.no_annotations()
+        members["annotations"] @ mcp.annotations_json(a)
+
+# Hints written into an object being built.
+test "put_annotations: none written for no hint"
+    members: {str: json.Value} @= {}
+    put_annotations(@members, a: mcp.no_annotations())
+    assert members == {}
+
+# The second half of `handle`, a prompt asked for.
+test "handle_method: a prompt"
+    meta = mcp.meta_of(json.parse("{" + fixture.TEST_META + "}").must()).must()
+
+    match handle_method(fixture.test_server(), id: .number(v: 1.0), method: "prompts/get", params: json.parse("{\"name\": \"review\", \"arguments\": {\"code\": \"x\"}}").must(), meta: meta)
+        .get_prompt g => assert g.get.arguments == {"code": "x"}
+        .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .complete _ | .listen _ => assert false
+
+# A tool call checked against its schema.
+test "tool_call_of: echo"
+    meta = mcp.meta_of(json.parse("{" + fixture.TEST_META + "}").must()).must()
+
+    match tool_call_of(fixture.test_server(), id: .number(v: 1.0), params: json.parse("{\"name\": \"echo\", \"arguments\": {\"text\": \"x\"}}").must(), meta: meta, inputs: mcp.no_inputs())
+        .call_tool c => assert c.call.arguments == json.parse("{\"text\": \"x\"}").must()
+        .answered _ | .respond _ | .cancelled _ | .ignored | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+# A listed resource read.
+test "resource_read_of: the readme"
+    meta = mcp.meta_of(json.parse("{" + fixture.TEST_META + "}").must()).must()
+
+    match resource_read_of(fixture.test_server(), id: .number(v: 1.0), params: json.parse("{\"uri\": \"notes://readme\"}").must(), meta: meta, inputs: mcp.no_inputs())
+        .read_resource r                                                                                            => assert r.read.template == ""
+        .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+# A prompt with its argument.
+test "prompt_get_of: review"
+    meta = mcp.meta_of(json.parse("{" + fixture.TEST_META + "}").must()).must()
+
+    match prompt_get_of(fixture.test_server(), id: .number(v: 1.0), params: json.parse("{\"name\": \"review\", \"arguments\": {\"code\": \"y\"}}").must(), meta: meta, inputs: mcp.no_inputs())
+        .get_prompt g => assert g.get.name == "review"
+        .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .complete _ | .listen _ => assert false
+
+# A completion of a template's variable.
+test "completion_of: a name"
+    meta = mcp.meta_of(json.parse("{" + fixture.TEST_META + "}").must()).must()
+
+    match completion_of(.number(v: 1.0), params: json.parse("{\"ref\": {\"type\": \"ref/resource\", \"uri\": \"greeting://{name}\"}, \"argument\": {\"name\": \"name\", \"value\": \"A\"}}").must(), meta: meta)
+        .complete c => assert c.completion.value == "A" && c.completion.ref == "greeting://{name}"
+        .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .listen _ => assert false
+
+# The fields of a list checked against its body.
+test "check_fields: a list's fields"
+    r @= http.request(method: http.METHOD_POST, target: "/mcp").must()
+    r.headers @ http.with_header(r.headers, name: "MCP-Protocol-Version", value: mcp.PROTOCOL_VERSION)
+    r.headers @ http.with_header(r.headers, name: "Mcp-Method", value: "tools/list")
+    check_fields(
+        fixture.test_server(),
+        r: r,
+        method: "tools/list",
+        params: json.parse("{" + fixture.TEST_META + "}").must()
+    ).must()
+
+# A request's parameters with its `_meta`.
+test "request_params: the version in `_meta`"
+    c = mcp.http_client(
+        "https://m/mcp",
+        transport: http.default_client(),
+        info: mcp.implementation(name: "c", version: "1")
+    )
+    assert mcp.meta_of(request_params(c, params: {}, id: 1)).must().protocol_version == mcp.PROTOCOL_VERSION
+
+# A request over HTTP to a port nothing listens on.
+test "send_http: nothing listens"
+    c @= mcp.http_client(
+        "http://127.0.0.1:1/mcp",
+        transport: http.default_client(),
+        info: mcp.implementation(name: "c", version: "1")
+    )
+    assert send_http(
+        @c,
+        link_endpoint: "http://127.0.0.1:1/mcp",
+        transport: http.default_client(),
+        token: "",
+        method: "server/discover",
+        body: .null_value,
+        id: 1
+    ).is_err()
+
+# Every page of a list.
+test "every_page: two pages"
+    two = fixture.peer(["{\"tools\": [1], \"nextCursor\": \"\"}", "{\"tools\": [2]}"])
+    c @= mcp.stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: mcp.implementation(name: "c", version: "1")
+    )
+    assert every_page(@c, method: "tools/list", key: "tools").must() == [.number(v: 1.0), .number(v: 2.0)]
+    fixture.shut(two)
+
+# A retry's answers written in its parameters.
+test "put_inputs: a state given back"
+    params: {str: json.Value} @= {}
+    put_inputs(@params, inputs: mcp.Inputs(responses: {}, state: "s"))
+    assert params == {"requestState": .text(v: "s")}
+
+# An acknowledgment read from a stream.
+test "acknowledged: the filter agreed"
+    two = net.pair(deadline_ms: 10_000).must()
+    jsonrpc.write_message(
+        two.second.stream,
+        m: .notification(method: "notifications/subscriptions/acknowledged", params: json.parse("{\"_meta\": {\"io.modelcontextprotocol/subscriptionId\": \"s\"}, \"notifications\": {}}").must()),
+        framing: .lines
+    ).must()
+    rpc @= jsonrpc.new_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        framing: .lines,
+        limits: jsonrpc.default_limits()
+    )
+    assert !acknowledged(@rpc, id: .text(v: "s")).must().tools
+    fixture.shut(two)

@@ -29,14 +29,23 @@
 # answers a client that asks for it over HTTP/2; and `round_trip_h2` sends
 # many requests on one HTTP/2 connection the program holds.
 #
-# **What it does not do.** HTTP/3 is not here, nor routing by
-# pattern, a time limit on making a plain connection,
-# Brotli or Zstandard, or a file server: a file is read by `fs` and answered
-# by `respond`. A body is held whole in memory, read within `Limits`, but
-# where a program reads it as it comes (`read_response_head`, `read_piece`),
-# an event stream's included (`read_event`), or writes it as it is made
-# (`write_response_head`). The connection is `net`'s, a URL `url`'s, a JSON
-# value `json`'s, an instant `time`'s.
+# **What it does not do.** HTTP/3 is not here, nor a time limit on making a
+# plain connection, nor a file server: a file is read by `fs` and answered
+# by `respond`. A body compressed by Brotli or Zstandard (`br`, `zstd`)
+# comes as it came, its `Content-Encoding` kept: `compress/brotli` and
+# `compress/zstd` undo it where the program asks, and `http` does not use
+# them, or every program that sends a request would carry their tables. A
+# body is held whole in memory, read within `Limits`, but where a program
+# reads it as it comes (`read_response_head`, `read_piece`), an event
+# stream's included (`read_event`), or writes it as it is made
+# (`write_response_head`).
+#
+# **The packages beside it.** Routing by pattern, middleware, sessions, the
+# signing of webhooks and the folders a server answers are `web`'s, over
+# this package's handlers; a WebSocket is `websocket`'s, which upgrades a
+# request of this package; OAuth 2.0's flows and tokens are `oauth2`'s,
+# whose requests this package sends. The connection is `net`'s, a URL
+# `url`'s, a JSON value `json`'s, an instant `time`'s.
 #
 # A server also reads a multipart form within its own limits
 # (`parts_of`), chooses what to answer by `Accept`, `Accept-Language` and
@@ -139,267 +148,6 @@ constant NOT_TEXT: str
 # An HTTP date outside what a `time.Instant` holds.
 constant DOES_NOT_FIT: str
     "does_not_fit"
-
-## Status codes
-
-# The status 100, "Continue".
-constant STATUS_CONTINUE: i64
-    100
-
-# The status 101, "Switching Protocols".
-constant STATUS_SWITCHING_PROTOCOLS: i64
-    101
-
-# The status 102, "Processing".
-constant STATUS_PROCESSING: i64
-    102
-
-# The status 103, "Early Hints".
-constant STATUS_EARLY_HINTS: i64
-    103
-
-# The status 200, "OK".
-constant STATUS_OK: i64
-    200
-
-# The status 201, "Created".
-constant STATUS_CREATED: i64
-    201
-
-# The status 202, "Accepted".
-constant STATUS_ACCEPTED: i64
-    202
-
-# The status 203, "Non-Authoritative Information".
-constant STATUS_NON_AUTHORITATIVE_INFORMATION: i64
-    203
-
-# The status 204, "No Content".
-constant STATUS_NO_CONTENT: i64
-    204
-
-# The status 205, "Reset Content".
-constant STATUS_RESET_CONTENT: i64
-    205
-
-# The status 206, "Partial Content".
-constant STATUS_PARTIAL_CONTENT: i64
-    206
-
-# The status 207, "Multi-Status".
-constant STATUS_MULTI_STATUS: i64
-    207
-
-# The status 208, "Already Reported".
-constant STATUS_ALREADY_REPORTED: i64
-    208
-
-# The status 226, "IM Used".
-constant STATUS_IM_USED: i64
-    226
-
-# The status 300, "Multiple Choices".
-constant STATUS_MULTIPLE_CHOICES: i64
-    300
-
-# The status 301, "Moved Permanently".
-constant STATUS_MOVED_PERMANENTLY: i64
-    301
-
-# The status 302, "Found".
-constant STATUS_FOUND: i64
-    302
-
-# The status 303, "See Other".
-constant STATUS_SEE_OTHER: i64
-    303
-
-# The status 304, "Not Modified".
-constant STATUS_NOT_MODIFIED: i64
-    304
-
-# The status 305, "Use Proxy".
-constant STATUS_USE_PROXY: i64
-    305
-
-# The status 307, "Temporary Redirect".
-constant STATUS_TEMPORARY_REDIRECT: i64
-    307
-
-# The status 308, "Permanent Redirect".
-constant STATUS_PERMANENT_REDIRECT: i64
-    308
-
-# The status 400, "Bad Request".
-constant STATUS_BAD_REQUEST: i64
-    400
-
-# The status 401, "Unauthorized".
-constant STATUS_UNAUTHORIZED: i64
-    401
-
-# The status 402, "Payment Required".
-constant STATUS_PAYMENT_REQUIRED: i64
-    402
-
-# The status 403, "Forbidden".
-constant STATUS_FORBIDDEN: i64
-    403
-
-# The status 404, "Not Found".
-constant STATUS_NOT_FOUND: i64
-    404
-
-# The status 405, "Method Not Allowed".
-constant STATUS_METHOD_NOT_ALLOWED: i64
-    405
-
-# The status 406, "Not Acceptable".
-constant STATUS_NOT_ACCEPTABLE: i64
-    406
-
-# The status 407, "Proxy Authentication Required".
-constant STATUS_PROXY_AUTHENTICATION_REQUIRED: i64
-    407
-
-# The status 408, "Request Timeout".
-constant STATUS_REQUEST_TIMEOUT: i64
-    408
-
-# The status 409, "Conflict".
-constant STATUS_CONFLICT: i64
-    409
-
-# The status 410, "Gone".
-constant STATUS_GONE: i64
-    410
-
-# The status 411, "Length Required".
-constant STATUS_LENGTH_REQUIRED: i64
-    411
-
-# The status 412, "Precondition Failed".
-constant STATUS_PRECONDITION_FAILED: i64
-    412
-
-# The status 413, "Content Too Large".
-constant STATUS_CONTENT_TOO_LARGE: i64
-    413
-
-# The status 414, "URI Too Long".
-constant STATUS_URI_TOO_LONG: i64
-    414
-
-# The status 415, "Unsupported Media Type".
-constant STATUS_UNSUPPORTED_MEDIA_TYPE: i64
-    415
-
-# The status 416, "Range Not Satisfiable".
-constant STATUS_RANGE_NOT_SATISFIABLE: i64
-    416
-
-# The status 417, "Expectation Failed".
-constant STATUS_EXPECTATION_FAILED: i64
-    417
-
-# The status 418, "I'm a Teapot".
-constant STATUS_IM_A_TEAPOT: i64
-    418
-
-# The status 421, "Misdirected Request".
-constant STATUS_MISDIRECTED_REQUEST: i64
-    421
-
-# The status 422, "Unprocessable Content".
-constant STATUS_UNPROCESSABLE_CONTENT: i64
-    422
-
-# The status 423, "Locked".
-constant STATUS_LOCKED: i64
-    423
-
-# The status 424, "Failed Dependency".
-constant STATUS_FAILED_DEPENDENCY: i64
-    424
-
-# The status 425, "Too Early".
-constant STATUS_TOO_EARLY: i64
-    425
-
-# The status 426, "Upgrade Required".
-constant STATUS_UPGRADE_REQUIRED: i64
-    426
-
-# The status 428, "Precondition Required".
-constant STATUS_PRECONDITION_REQUIRED: i64
-    428
-
-# The status 429, "Too Many Requests".
-constant STATUS_TOO_MANY_REQUESTS: i64
-    429
-
-# The status 431, "Request Header Fields Too Large".
-constant STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE: i64
-    431
-
-# The status 451, "Unavailable For Legal Reasons".
-constant STATUS_UNAVAILABLE_FOR_LEGAL_REASONS: i64
-    451
-
-# The status 500, "Internal Server Error".
-constant STATUS_INTERNAL_SERVER_ERROR: i64
-    500
-
-# The status 501, "Not Implemented".
-constant STATUS_NOT_IMPLEMENTED: i64
-    501
-
-# The status 502, "Bad Gateway".
-constant STATUS_BAD_GATEWAY: i64
-    502
-
-# The status 503, "Service Unavailable".
-constant STATUS_SERVICE_UNAVAILABLE: i64
-    503
-
-# The status 504, "Gateway Timeout".
-constant STATUS_GATEWAY_TIMEOUT: i64
-    504
-
-# The status 505, "HTTP Version Not Supported".
-constant STATUS_HTTP_VERSION_NOT_SUPPORTED: i64
-    505
-
-# The status 506, "Variant Also Negotiates".
-constant STATUS_VARIANT_ALSO_NEGOTIATES: i64
-    506
-
-# The status 507, "Insufficient Storage".
-constant STATUS_INSUFFICIENT_STORAGE: i64
-    507
-
-# The status 508, "Loop Detected".
-constant STATUS_LOOP_DETECTED: i64
-    508
-
-# The status 510, "Not Extended".
-constant STATUS_NOT_EXTENDED: i64
-    510
-
-# The status 511, "Network Authentication Required".
-constant STATUS_NETWORK_AUTHENTICATION_REQUIRED: i64
-    511
-
-# The text RFC 9110 gives the status `status`, as its constant's comment
-# writes it.
-#
-# - `status`: the status, any number.
-#
-# Fails `not_found` for a status RFC 9110 and its registry give no text.
-# Where Go's texts are older (413, 414, 416, 418, 422) RFC 9110's are taken,
-# as Python takes them.
-function status_text(status: i64) -> str?
-    return texts.text_of(status)
 
 ## Methods
 
@@ -593,7 +341,7 @@ record Credentials
     password: str
 
 # One part of a `multipart/form-data` body, as `with_multipart` writes it: a
-# form's field, or a file.
+# form's field, or a file. A server reads a part as a `FormPart`.
 record Part
     # The form field's name.
     name: str
@@ -752,6 +500,37 @@ function basic_auth_of(r: Request) -> Credentials?
             msg: "reading the credentials: Basic's text holds no `:` between the user and the password"
         )
 
+# The value of the cookie `name` that `r` sends, the first of that name, as
+# Go's `Request.Cookie` answers.
+#
+# - `r`: the request; every `Cookie` field is read.
+# - `name`: the cookie's name, compared as written.
+#
+# Fails `not_found` where `r` sends no such cookie, and `invalid` where a
+# `Cookie` field holds a control byte. See also `parse_cookie`.
+function cookie_of(r: Request, name: str) -> str?
+    for value in values_of(r.headers, name: "Cookie")
+        for c in parse_cookie(value)?
+            if c.name == name
+                return ok(c.value)
+
+    return fail(code: NOT_FOUND, msg: f"the request sends no cookie named {syntax.shown(name)}")
+
+# The token `r` carries in an `Authorization: Bearer` field, RFC 6750.
+#
+# - `r`: the request; the scheme is compared without case.
+#
+# Fails `not_found` where `r` has no `Authorization` field of that scheme,
+# and `invalid` where its token is empty or holds a character RFC 6750's
+# token does not. See also `with_bearer_auth`, `basic_auth_of`.
+function bearer_token_of(r: Request) -> str?
+    said = value_of(r.headers, name: "Authorization")?
+    token = syntax.credentials_of(value: said, scheme: "Bearer")?
+
+    if !syntax.is_b64token(token)
+        return fail(code: INVALID, msg: "reading the Bearer token: it is empty or holds a character a token does not")
+    return ok(token)
+
 # A copy of `r` carrying `user` and `password` in an `Authorization: Basic`
 # field, every `Authorization` before replaced.
 #
@@ -878,42 +657,42 @@ function respond_trace(r: Request) -> Response
 
     return respond(STATUS_OK, content_type: "message/http", body: data)
 
-# The body of `r` as text, read by the `charset` of its `Content-Type`.
+# The body of `response` as text, read by the `charset` of its `Content-Type`.
 #
-# - `r`: the response.
+# - `response`: the response.
 #
 # UTF-8 where no charset is named, as JSON and HTML5 read a body. Fails
 # `not_text` where the bytes are not UTF-8 or ASCII as named, `unsupported`
 # for a charset other than UTF-8, US-ASCII and ISO-8859-1 by their names and
 # aliases. See also `json_of`.
-function text_of(r: Response) -> str?
-    return charset.decode(r.body, name: charset.of(value_of(r.headers, name: "Content-Type").default("")))
+function text_of(response: Response) -> str?
+    return charset.decode(response.body, name: charset.of(value_of(response.headers, name: "Content-Type").default("")))
 
-# The body of `r` as a JSON value.
+# The body of `response` as a JSON value.
 #
-# - `r`: the response; its body read as `text_of` reads it.
+# - `response`: the response; its body read as `text_of` reads it.
 #
 # Fails as `text_of` and `json.parse` do.
-function json_of(r: Response) -> json.Value?
-    return json.parse(text_of(r)?)
+function json_of(response: Response) -> json.Value?
+    return json.parse(text_of(response)?)
 
-# `r` where its status is below 400, what `requests` calls raising for the
+# `response` where its status is below 400, what `requests` calls raising for the
 # status.
 #
-# - `r`: the response.
+# - `response`: the response.
 #
 # Fails `failed` for a status of 400 or more, its message naming the status
 # and the reason.
-function require_success(r: Response) -> Response?
-    if r.status >= 400
-        return fail(code: FAILED, msg: f"the server answered {r.status} {syntax.shown(r.reason)}")
-    return ok(r)
+function require_success(response: Response) -> Response?
+    if response.status >= 400
+        return fail(code: FAILED, msg: f"the server answered {response.status} {syntax.shown(response.reason)}")
+    return ok(response)
 
-# A copy of `r` with its `Content-Encoding` undone, RFC 9110 § 8.4: gzip,
+# A copy of `response` with its `Content-Encoding` undone, RFC 9110 § 8.4: gzip,
 # `x-gzip`, deflate and identity, the last applied first, `deflate` read as
 # zlib and, where zlib refuses it, as raw DEFLATE, as some servers send it.
 #
-# - `r`: the response, read whole.
+# - `response`: the response, read whole.
 # - `limit`: the most bytes each decoding may produce, 0 or more: a client's
 #   `limits.body_bytes` where `send` decodes.
 #
@@ -924,14 +703,14 @@ function require_success(r: Response) -> Response?
 # among them, and `invalid` where the body is not what its coding says, a
 # gzip cut short among them. `send` and `fetch` call it on every response.
 # See also `with_compression`.
-function decode_body(r: Response, limit: i64) -> Response?
-    codings = coding.codings_of(values_of(r.headers, name: "Content-Encoding"))
+function decode_body(response: Response, limit: i64) -> Response?
+    codings = coding.codings_of(values_of(response.headers, name: "Content-Encoding"))
 
-    if codings.len() == 0 || r.body.len() == 0 || !coding.is_decodable(codings)
-        return ok(r)
-    out @= r
-    out.body @ coding.decode(r.body, codings: codings, limit: limit)?
-    out.headers @ without_header(without_header(r.headers, name: "Content-Encoding"), name: "Content-Length")
+    if codings.len() == 0 || response.body.len() == 0 || !coding.is_decodable(codings)
+        return ok(response)
+    out @= response
+    out.body @ coding.decode(response.body, codings: codings, limit: limit)?
+    out.headers @ without_header(without_header(response.headers, name: "Content-Encoding"), name: "Content-Length")
     return ok(out)
 
 # A copy of `response` compressed as gzip, or as deflate (zlib) where `r`
@@ -940,30 +719,53 @@ function decode_body(r: Response, limit: i64) -> Response?
 # answers.
 #
 # - `response`: the response a handler made; one with a `Content-Encoding`
-#   already, no body, or a status of 204 or 304 is answered as it is.
+#   already, no body, or a status of 1xx, 204, 206 or 304 is answered as it
+#   is, since a partial body's range speaks of the bytes before coding.
 # - `r`: the request it answers; a coding named with `q=0` is refused, and
 #   `*` accepts any.
 #
 # The copy says `Content-Encoding` and `Vary: Accept-Encoding`, and so does
 # no copy: a response answered as it is because `r` refused both codings
-# gains `Vary: Accept-Encoding` alone, so a cache keeps the two apart.
-# Compressing is `compress`'s at its default level. See also `decode_body`.
+# gains `Vary: Accept-Encoding` alone, so a cache keeps the two apart; a
+# `Vary` field the response holds already gains `Accept-Encoding` among its
+# names, once, unless it names it or `*`. Compressing is `compress`'s at its
+# default level; a body it cannot compress is answered as it is, its `Vary`
+# added. See also `decode_body`, and `web.gzip`, which compresses by
+# gzip alone and only a body of a size the program names.
 function with_compression(response: Response, r: Request) -> Response
     out @= response
 
-    if has_header(response.headers, name: "Content-Encoding") || response.body.len() == 0 || response.status == 204 || response.status == 304
+    if has_header(response.headers, name: "Content-Encoding") || response.body.len() == 0 || response.status < 200 || response.status == 204 || response.status == 206 || response.status == 304
         return out
+    vary = values_of(response.headers, name: "Vary")
 
-    if !has_header(response.headers, name: "Vary")
+    if vary.len() == 0
         out.headers @ out.headers.push(Header(name: "Vary", value: "Accept-Encoding"))
+    else if !syntax.has_member(vary, token: "Accept-Encoding") && !syntax.has_member(vary, token: "*")
+        out.headers @ with_header(out.headers, name: "Vary", value: vary.join(", ") + ", Accept-Encoding")
     accepted = values_of(r.headers, name: "Accept-Encoding")
 
-    if coding.accepts(accepted, coding: "gzip")
-        out.body @ compress.compress(response.body, options: compress.defaults(.gzip)).must()
-        out.headers @ out.headers.push(Header(name: "Content-Encoding", value: "gzip"))
+    chosen = if coding.accepts(accepted, coding: "gzip")
+        "gzip"
     else if coding.accepts(accepted, coding: "deflate")
-        out.body @ compress.compress(response.body, options: compress.defaults(.zlib)).must()
-        out.headers @ out.headers.push(Header(name: "Content-Encoding", value: "deflate"))
+        "deflate"
+    else
+        ""
+
+    if chosen == ""
+        return out
+
+    format: compress.Format = if chosen == "gzip"
+        .gzip
+    else
+        .zlib
+
+    match compress.compress(response.body, options: compress.defaults(format))
+        .ok packed =>
+            out.body @ packed
+            out.headers @ out.headers.push(Header(name: "Content-Encoding", value: chosen))
+        .err _ => _ = 0
+
     return out
 
 ## Cookies
@@ -2044,8 +1846,16 @@ function serve(s: Server, l: net.Listener, handler: (function(Request) -> Respon
 # shorter than `s.deadline_ms`; `closed` where `l` is closed, `invalid` for a
 # deadline below 0, and as `tls.accept` fails for any reason that is not one
 # client's; where the system has nothing left it waits and tries again, as
-# `serve` does. Each request's `remote` is "", since
-# `tls` does not tell the client's address. See also `serve_stream`.
+# `serve` does. Each request's `remote` is "", since `tls` does not tell the
+# client's address.
+#
+# It ends at the stop as `serve` does, not gracefully, and no
+# `serve_tls_until_stopped` stands beside it: a program that ends a TLS
+# server gracefully writes the loop, `tls.accept` (which answers `stopped`
+# at the stop) and `serve_stream_until_stopped` on each stream, over a
+# listener offering HTTP/1.1 alone, since `serve_stream_until_stopped`
+# reads HTTP/1.1 and serves no stream whose ALPN chose `h2`. See also
+# `serve_stream`, `serve_until_stopped`.
 function serve_tls(s: Server, l: tls.Listener, handler: (function(Request) -> Response)) -> ()?
     wait_ms: i64 @= 5
 
@@ -2156,8 +1966,8 @@ function serve_stream(s: Server, stream: io.Stream, remote: str, handler: (funct
 #
 # Serves one connection at a time and ends as `serve` does. Handing `state`
 # costs no copy of its bytes where `handler` only reads it (README § B1); a
-# handler that changes it pays for a copy each call. See also
-# `serve_stream_with`, `serve_tls_with`.
+# handler that changes it pays for a copy each call. Fails where `serve`
+# fails, with its code. See also `serve_stream_with`, `serve_tls_with`.
 function serve_with<S>(s: Server, l: net.Listener, state: S, handler: (function(S, Request) -> Response)) -> ()?
     wait_ms: i64 @= 5
 
@@ -2195,8 +2005,8 @@ function serve_with<S>(s: Server, l: net.Listener, state: S, handler: (function(
 # - `handler`: called once for each request, with `state` and the request.
 #
 # Serves and ends as `serve_tls` does, a silent client dropped at the
-# deadline included.
-# See also `serve_with`.
+# deadline included. Fails where `serve_tls` fails, with its code. See also
+# `serve_with`.
 function serve_tls_with<S>(s: Server, l: tls.Listener, state: S, handler: (function(S, Request) -> Response)) -> ()?
     wait_ms: i64 @= 5
 
@@ -2641,7 +2451,8 @@ function serve_h2_with<S>(s: Server, @c: http2.Conn, remote: str, state: S, hand
 ## Multipart bodies read
 
 # One part of a `multipart/form-data` body as a server reads it, RFC 7578: a
-# form's field, or a file. Made by `parts_of` and `parse_multipart`.
+# form's field, or a file. Made by `parts_of` and `parse_multipart`; a
+# client writes a part as a `Part`.
 record FormPart
     # The form field's name, from `Content-Disposition`, its `%22`, `%0D` and
     # `%0A` read as the characters the HTML standard writes them for.
@@ -3254,6 +3065,11 @@ function serve_stream_until_stopped<S>(s: Server, stream: io.Stream, remote: str
 # 15:04:05 GMT`.
 #
 # - `t`: the instant, its fraction of a second dropped.
+#
+# The same text as `time.format(t, layout: .http)`, kept here beside
+# `parse_date`, which reads each of the three forms RFC 9110 asks a reader
+# to accept where `time.parse` reads the one layout it is given. See also
+# `parse_date`.
 function format_date(t: time.Instant) -> str
     return time.format(t, layout: .http)
 
@@ -3267,7 +3083,297 @@ function format_date(t: time.Instant) -> str
 function parse_date(s: str) -> time.Instant?
     return policy.parse_date(s)
 
+## Status codes
+
+# The status 100, "Continue".
+constant STATUS_CONTINUE: i64
+    100
+
+# The status 101, "Switching Protocols".
+constant STATUS_SWITCHING_PROTOCOLS: i64
+    101
+
+# The status 102, "Processing".
+constant STATUS_PROCESSING: i64
+    102
+
+# The status 103, "Early Hints".
+constant STATUS_EARLY_HINTS: i64
+    103
+
+# The status 200, "OK".
+constant STATUS_OK: i64
+    200
+
+# The status 201, "Created".
+constant STATUS_CREATED: i64
+    201
+
+# The status 202, "Accepted".
+constant STATUS_ACCEPTED: i64
+    202
+
+# The status 203, "Non-Authoritative Information".
+constant STATUS_NON_AUTHORITATIVE_INFORMATION: i64
+    203
+
+# The status 204, "No Content".
+constant STATUS_NO_CONTENT: i64
+    204
+
+# The status 205, "Reset Content".
+constant STATUS_RESET_CONTENT: i64
+    205
+
+# The status 206, "Partial Content".
+constant STATUS_PARTIAL_CONTENT: i64
+    206
+
+# The status 207, "Multi-Status".
+constant STATUS_MULTI_STATUS: i64
+    207
+
+# The status 208, "Already Reported".
+constant STATUS_ALREADY_REPORTED: i64
+    208
+
+# The status 226, "IM Used".
+constant STATUS_IM_USED: i64
+    226
+
+# The status 300, "Multiple Choices".
+constant STATUS_MULTIPLE_CHOICES: i64
+    300
+
+# The status 301, "Moved Permanently".
+constant STATUS_MOVED_PERMANENTLY: i64
+    301
+
+# The status 302, "Found".
+constant STATUS_FOUND: i64
+    302
+
+# The status 303, "See Other".
+constant STATUS_SEE_OTHER: i64
+    303
+
+# The status 304, "Not Modified".
+constant STATUS_NOT_MODIFIED: i64
+    304
+
+# The status 305, "Use Proxy".
+constant STATUS_USE_PROXY: i64
+    305
+
+# The status 307, "Temporary Redirect".
+constant STATUS_TEMPORARY_REDIRECT: i64
+    307
+
+# The status 308, "Permanent Redirect".
+constant STATUS_PERMANENT_REDIRECT: i64
+    308
+
+# The status 400, "Bad Request".
+constant STATUS_BAD_REQUEST: i64
+    400
+
+# The status 401, "Unauthorized".
+constant STATUS_UNAUTHORIZED: i64
+    401
+
+# The status 402, "Payment Required".
+constant STATUS_PAYMENT_REQUIRED: i64
+    402
+
+# The status 403, "Forbidden".
+constant STATUS_FORBIDDEN: i64
+    403
+
+# The status 404, "Not Found".
+constant STATUS_NOT_FOUND: i64
+    404
+
+# The status 405, "Method Not Allowed".
+constant STATUS_METHOD_NOT_ALLOWED: i64
+    405
+
+# The status 406, "Not Acceptable".
+constant STATUS_NOT_ACCEPTABLE: i64
+    406
+
+# The status 407, "Proxy Authentication Required".
+constant STATUS_PROXY_AUTHENTICATION_REQUIRED: i64
+    407
+
+# The status 408, "Request Timeout".
+constant STATUS_REQUEST_TIMEOUT: i64
+    408
+
+# The status 409, "Conflict".
+constant STATUS_CONFLICT: i64
+    409
+
+# The status 410, "Gone".
+constant STATUS_GONE: i64
+    410
+
+# The status 411, "Length Required".
+constant STATUS_LENGTH_REQUIRED: i64
+    411
+
+# The status 412, "Precondition Failed".
+constant STATUS_PRECONDITION_FAILED: i64
+    412
+
+# The status 413, "Content Too Large".
+constant STATUS_CONTENT_TOO_LARGE: i64
+    413
+
+# The status 414, "URI Too Long".
+constant STATUS_URI_TOO_LONG: i64
+    414
+
+# The status 415, "Unsupported Media Type".
+constant STATUS_UNSUPPORTED_MEDIA_TYPE: i64
+    415
+
+# The status 416, "Range Not Satisfiable".
+constant STATUS_RANGE_NOT_SATISFIABLE: i64
+    416
+
+# The status 417, "Expectation Failed".
+constant STATUS_EXPECTATION_FAILED: i64
+    417
+
+# The status 418, "I'm a Teapot".
+constant STATUS_IM_A_TEAPOT: i64
+    418
+
+# The status 421, "Misdirected Request".
+constant STATUS_MISDIRECTED_REQUEST: i64
+    421
+
+# The status 422, "Unprocessable Content".
+constant STATUS_UNPROCESSABLE_CONTENT: i64
+    422
+
+# The status 423, "Locked".
+constant STATUS_LOCKED: i64
+    423
+
+# The status 424, "Failed Dependency".
+constant STATUS_FAILED_DEPENDENCY: i64
+    424
+
+# The status 425, "Too Early".
+constant STATUS_TOO_EARLY: i64
+    425
+
+# The status 426, "Upgrade Required".
+constant STATUS_UPGRADE_REQUIRED: i64
+    426
+
+# The status 428, "Precondition Required".
+constant STATUS_PRECONDITION_REQUIRED: i64
+    428
+
+# The status 429, "Too Many Requests".
+constant STATUS_TOO_MANY_REQUESTS: i64
+    429
+
+# The status 431, "Request Header Fields Too Large".
+constant STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE: i64
+    431
+
+# The status 451, "Unavailable For Legal Reasons".
+constant STATUS_UNAVAILABLE_FOR_LEGAL_REASONS: i64
+    451
+
+# The status 500, "Internal Server Error".
+constant STATUS_INTERNAL_SERVER_ERROR: i64
+    500
+
+# The status 501, "Not Implemented".
+constant STATUS_NOT_IMPLEMENTED: i64
+    501
+
+# The status 502, "Bad Gateway".
+constant STATUS_BAD_GATEWAY: i64
+    502
+
+# The status 503, "Service Unavailable".
+constant STATUS_SERVICE_UNAVAILABLE: i64
+    503
+
+# The status 504, "Gateway Timeout".
+constant STATUS_GATEWAY_TIMEOUT: i64
+    504
+
+# The status 505, "HTTP Version Not Supported".
+constant STATUS_HTTP_VERSION_NOT_SUPPORTED: i64
+    505
+
+# The status 506, "Variant Also Negotiates".
+constant STATUS_VARIANT_ALSO_NEGOTIATES: i64
+    506
+
+# The status 507, "Insufficient Storage".
+constant STATUS_INSUFFICIENT_STORAGE: i64
+    507
+
+# The status 508, "Loop Detected".
+constant STATUS_LOOP_DETECTED: i64
+    508
+
+# The status 510, "Not Extended".
+constant STATUS_NOT_EXTENDED: i64
+    510
+
+# The status 511, "Network Authentication Required".
+constant STATUS_NETWORK_AUTHENTICATION_REQUIRED: i64
+    511
+
+# The text RFC 9110 gives the status `status`, as its constant's comment
+# writes it.
+#
+# - `status`: the status, any number.
+#
+# Fails `not_found` for a status RFC 9110 and its registry give no text.
+# Where Go's texts are older (413, 414, 416, 418, 422) RFC 9110's are taken,
+# as Python takes them.
+function status_text(status: i64) -> str?
+    return texts.text_of(status)
+
 ## Tests
+
+test "cookie_of: the first of two fields, absent, a control byte"
+    r @= request(method: METHOD_GET, target: "/").must()
+    r.headers @ [Header(name: "Cookie", value: "a=1; b=2"), Header(name: "Cookie", value: "b=3")]
+    assert cookie_of(r, name: "b").must() == "2"
+
+    match cookie_of(r, name: "c")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    r.headers @ [Header(name: "Cookie", value: "a=1\u{7}")]
+    assert cookie_of(r, name: "a").is_err()
+
+test "bearer_token_of: absent, another scheme, a scheme in lower case, a token that is none"
+    r @= request(method: METHOD_GET, target: "/").must()
+    assert bearer_token_of(r).is_err()
+    r.headers @ [Header(name: "Authorization", value: "Basic YTpi")]
+
+    match bearer_token_of(r)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    r.headers @ [Header(name: "Authorization", value: "bearer abc.def")]
+    assert bearer_token_of(r).must() == "abc.def"
+    r.headers @ [Header(name: "Authorization", value: "Bearer a b")]
+
+    match bearer_token_of(r)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
 
 test "fetch_once: a 503 sent again, its Retry-After of 0 read, then the 200"
     t @= canned.start(
@@ -3620,7 +3726,7 @@ test "serve_stream: a request over TLS from a client of the test authority"
     assert strings.has_prefix(s: said, prefix: "HTTP/1.1 200 OK\r\n") && strings.has_suffix(s: said, suffix: "\r\n\r\nTRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
     tls.close_listener(@l).must()
 
-test "get: https://example.com where the network answers, a SKIP line where it does not"
+test "get: https://example.com where the network answers, skipped where it does not"
     c @= default_client()
     c.deadline_ms @ 10_000
 
@@ -3628,7 +3734,7 @@ test "get: https://example.com where the network answers, a SKIP line where it d
         .ok got => assert got.status == 200 && strings.contains(s: text_of(got).default(""), substr: "Example Domain")
         .err e =>
             assert e.code != INVALID
-            print("SKIP get https://example.com/: the network did not answer, " + e.code + ": " + e.msg)
+            skip_test(reason: f"the network did not answer https://example.com/, {e.code}: {e.msg}")
 
 test "send: gzip, zlib and raw deflate bodies undone, a chunked one too, Accept-Encoding sent"
     text: [u8] = [104, 101, 108, 108, 111]
@@ -3692,6 +3798,27 @@ test "send: an Accept-Encoding the program set is kept, a coding it cannot undo 
     seen = threads.wait_text(@t.thread)
     assert got.body == [97, 98, 99] && value_of(got.headers, name: "Content-Encoding").must() == "br"
     assert strings.contains(s: seen, substr: "\nAccept-Encoding: br\n") && !strings.contains(s: seen, substr: "gzip")
+
+test "with_compression: a Vary held gains Accept-Encoding once, a Vary of * or naming it kept, 1xx and 206 answered as they are"
+    answer = respond_text(STATUS_OK, text: "aaaaaaaaaaaaaaaaaaaa")
+    r @= request(method: METHOD_GET, target: "/").must()
+    r.headers @ [Header(name: "Accept-Encoding", value: "gzip")]
+    held @= answer
+    held.headers @ held.headers.push(Header(name: "Vary", value: "Origin"))
+    got = with_compression(held, r: r)
+    assert values_of(got.headers, name: "Vary") == ["Origin, Accept-Encoding"] && value_of(got.headers, name: "Content-Encoding").must() == "gzip"
+    named @= answer
+    named.headers @ named.headers.push(Header(name: "Vary", value: "accept-encoding"))
+    assert values_of(with_compression(named, r: r).headers, name: "Vary") == ["accept-encoding"]
+    star @= answer
+    star.headers @ star.headers.push(Header(name: "Vary", value: "*"))
+    assert values_of(with_compression(star, r: r).headers, name: "Vary") == ["*"]
+    partial @= answer
+    partial.status @ 206
+    assert with_compression(partial, r: r) == partial
+    early @= answer
+    early.status @ 103
+    assert with_compression(early, r: r) == early
 
 test "with_compression: a coding refused by q=0, deflate alone, a body coded already, no body"
     body = bytes.from_text("aaaaaaaaaaaaaaaaaaaa")
@@ -3843,6 +3970,17 @@ test "basic_auth_of: RFC 7617's Aladdin"
     r.headers @ [Header(name: "Authorization", value: "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
     got = basic_auth_of(r).must()
     assert got.user == "Aladdin" && got.password == "open sesame"
+
+# A cookie read by its name.
+test "cookie_of: a session cookie"
+    r @= request(method: METHOD_GET, target: "/").must()
+    r.headers @ [Header(name: "Cookie", value: "theme=dark; session=abc")]
+    assert cookie_of(r, name: "session").must() == "abc"
+
+# A Bearer token read.
+test "bearer_token_of: a token"
+    r = with_bearer_auth(request(method: METHOD_GET, target: "/").must(), token: "t0k3n")
+    assert bearer_token_of(r).must() == "t0k3n"
 
 # Credentials written as Basic writes them.
 test "with_basic_auth: RFC 7617's Aladdin written"
@@ -4669,33 +4807,35 @@ test "is_single_label: com"
 # An `https://` request whose server chooses `h2` by ALPN goes over HTTP/2:
 # the server of this process answers HTTP/2 alone.
 test "send: https:// over HTTP/2 where the server's ALPN chooses h2"
-    if tls.is_available()
-        port = h2bridge.free_port()
-        t @= threads.spawn_text(body: h2bridge.serve_h2_tls, arg: to_str(port))
-        h2bridge.until_listening(port)
-        c @= default_client()
-        c.roots @ tls.TEST_ROOT
-        got = get(c, target: f"https://localhost:{port}/x").must()
-        assert got.status == 200 && text_of(got).must() == "over h2"
-        assert threads.wait_text(@t) == "1"
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    port = h2bridge.free_port()
+    t @= threads.spawn_text(body: h2bridge.serve_h2_tls, arg: to_str(port))
+    h2bridge.until_listening(port)
+    c @= default_client()
+    c.roots @ tls.TEST_ROOT
+    got = get(c, target: f"https://localhost:{port}/x").must()
+    assert got.status == 200 && text_of(got).must() == "over h2"
+    assert threads.wait_text(@t) == "1"
 
 # A TLS listener offering `h2` answers an HTTP/2 client over HTTP/2.
 test "serve_tls: an HTTP/2 client answered over HTTP/2"
-    if tls.is_available()
-        l @= tls.listen(
-            host: "127.0.0.1",
-            port: 0,
-            server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2", "http/1.1"])
-        ).must()
-        t @= threads.spawn_text(body: h2bridge.ask_h2_tls, arg: to_str(l.port))
-        tls.set_accept_deadline(l, ms: 5000).must()
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2", "http/1.1"])
+    ).must()
+    t @= threads.spawn_text(body: h2bridge.ask_h2_tls, arg: to_str(l.port))
+    tls.set_accept_deadline(l, ms: 5000).must()
 
-        match serve_tls(default_server(), l: l, handler: respond_not_found)
-            .ok _  => assert false
-            .err e => assert e.code == TIMEOUT
+    match serve_tls(default_server(), l: l, handler: respond_not_found)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
 
-        assert strings.has_prefix(s: threads.wait_text(@t), prefix: "404 ")
-        tls.close_listener(@l).must()
+    assert strings.has_prefix(s: threads.wait_text(@t), prefix: "404 ")
+    tls.close_listener(@l).must()
 
 # Two requests on one HTTP/2 connection the program holds.
 test "round_trip_h2: two requests on one connection"

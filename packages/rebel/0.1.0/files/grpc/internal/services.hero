@@ -6,6 +6,7 @@
 # NOT_FOUND, `protobuf` writing no `FileDescriptorProto`.
 
 use bytes
+use grpc
 use protobuf
 
 # The service a `HealthCheckRequest` names: its field 1, "" where absent.
@@ -25,13 +26,20 @@ function health_service(data: [u8]) -> str?
 
     return bytes.to_text(name)
 
-# A `HealthCheckResponse` of `status`: its field 1, an enum.
-function health_response(status: i64) -> [u8]
+# A `HealthCheckResponse` of `status`: its field 1, an enum, its number the
+# one `grpc.Health`'s cases name; `.unknown`, 0, is no field at all.
+function health_response(status: grpc.Health) -> [u8]
+    number: u64 = match status
+        .unknown         => 0
+        .serving         => 1
+        .not_serving     => 2
+        .service_unknown => 3
+
     out: [u8] @= []
 
-    if status != 0
+    if number != 0
         protobuf.push_tag(@out, number: 1, wire: .varint)
-        protobuf.push_varint(@out, v: to_u64(status).must())
+        protobuf.push_varint(@out, v: number)
     return out
 
 # A reflection's answer to `request`, for a server whose services are
@@ -91,8 +99,8 @@ test "health_service: a service named, none, and bytes that are no message"
     assert health_service([10, 9]).is_err()
 
 test "health_response: SERVING as field 1, UNKNOWN as nothing"
-    assert health_response(1) == [8, 1]
-    assert health_response(0) == []
+    assert health_response(.serving) == [8, 1]
+    assert health_response(.unknown) == []
 
 test "reflection_answer: the list of services, and NOT_FOUND to a file's name"
     listed = reflection_answer([58, 1, 42], services: ["a.B"]).must()

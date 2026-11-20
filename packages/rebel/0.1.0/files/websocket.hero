@@ -183,7 +183,7 @@ constant CLOSE_TLS_HANDSHAKE: i64
 # - `code`: the code asked; 1005, 1006 and 1015 are never sent, and any
 #   other below 3000 is reserved.
 #
-# See also `close`, `close_text`.
+# See also `close`, `close_name`.
 function is_close_code(code: i64) -> bool
     return frames.is_sendable(code)
 
@@ -194,7 +194,7 @@ function is_close_code(code: i64) -> bool
 #
 # Fails `not_found` for a code the registry names not, 1004 and those of
 # 3000 to 4999 among them. See also `is_close_code`.
-function close_text(code: i64) -> str?
+function close_name(code: i64) -> str?
     match code
         1000 => return ok("Normal Closure")
         1001 => return ok("Going Away")
@@ -996,15 +996,15 @@ function set_deadline(c: Conn, ms: i64) -> ()?
 
 ## Tests
 
-test "close_text: every code of the registry, and those it names not"
-    assert close_text(1002).must() == "Protocol error" && close_text(1015).must() == "TLS handshake"
-    assert close_text(1004).must() == "Reserved" && close_text(1014).must() == "Bad Gateway"
+test "close_name: every code of the registry, and those it names not"
+    assert close_name(1002).must() == "Protocol error" && close_name(1015).must() == "TLS handshake"
+    assert close_name(1004).must() == "Reserved" && close_name(1014).must() == "Bad Gateway"
 
-    match close_text(1016)
+    match close_name(1016)
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND
 
-    assert close_text(3000).is_err() && close_text(999).is_err()
+    assert close_name(3000).is_err() && close_name(999).is_err()
 
 test "conn_of: two ends of a pair, each reading what the other writes, and a close handshake begun by the client"
     two @= net.pair(deadline_ms: 5_000).must()
@@ -1119,35 +1119,36 @@ test "connect: a redirect followed, then refused past the most allowed; a scheme
     assert connect(target: "ws://127.0.0.1:1/", client: default_client()).is_err()
 
 test "connect: wss, the server's certificate checked against the test authority, and refused by the system's own"
-    if tls.is_available()
-        told @= net.open_udp(host: "127.0.0.1", port: 0).must()
-        server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} tls")
-        port = fixture.port_told(told)
-        client @= default_client()
-        client.tls @ tls.Client(roots: tls.TEST_ROOT, protocols: [])
-        c @= connect(target: f"wss://localhost:{port}/secure", client: client).must()
-        write_text(@c, text: "secret").must()
-        assert data_of(read_message(@c).must()) == bytes.from_text("secret")
-        set @= poll.make(1).must()
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    told @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} tls")
+    port = fixture.port_told(told)
+    client @= default_client()
+    client.tls @ tls.Client(roots: tls.TEST_ROOT, protocols: [])
+    c @= connect(target: f"wss://localhost:{port}/secure", client: client).must()
+    write_text(@c, text: "secret").must()
+    assert data_of(read_message(@c).must()) == bytes.from_text("secret")
+    set @= poll.make(1).must()
 
-        # macOS refuses a TLS stream (measured 2026-11-17); another system
-        # that takes one is asked nothing more here.
-        match poll.add_stream(set, s: c.stream, interest: .read)
-            .ok key => poll.remove(set, key: key).must()
-            .err e  => assert e.code == poll.UNSUPPORTED
+    # macOS refuses a TLS stream (measured 2026-11-17); another system
+    # that takes one is asked nothing more here.
+    match poll.add_stream(set, s: c.stream, interest: .read)
+        .ok key => poll.remove(set, key: key).must()
+        .err e  => assert e.code == poll.UNSUPPORTED
 
-        poll.close(@set).must()
-        close(@c, code: CLOSE_NORMAL, reason: "").must()
-        assert threads.wait_text(@server) == "echoed 1 /secure"
-        again @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} tls")
-        refused = connect(target: f"wss://localhost:{fixture.port_told(told)}/", client: default_client())
+    poll.close(@set).must()
+    close(@c, code: CLOSE_NORMAL, reason: "").must()
+    assert threads.wait_text(@server) == "echoed 1 /secure"
+    again @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} tls")
+    refused = connect(target: f"wss://localhost:{fixture.port_told(told)}/", client: default_client())
 
-        match refused
-            .ok _  => assert false
-            .err e => assert e.code == INVALID
+    match refused
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
 
-        _ = threads.wait_text(@again)
-        net.close_udp(@told).must()
+    _ = threads.wait_text(@again)
+    net.close_udp(@told).must()
 
 test "write_message: 65,536 bytes in fragments of 1,300, and a message of 1 MiB, there and back (Autobahn 9, 10)"
     told @= net.open_udp(host: "127.0.0.1", port: 0).must()
@@ -1217,8 +1218,8 @@ test "is_close_code: a normal close, a private code, and a code never sent"
     assert !is_close_code(CLOSE_NO_STATUS) && !is_close_code(CLOSE_ABNORMAL) && !is_close_code(2000)
 
 # The registry's name of a code.
-test "close_text: the name of a normal close"
-    assert close_text(CLOSE_NORMAL).must() == "Normal Closure"
+test "close_name: the name of a normal close"
+    assert close_name(CLOSE_NORMAL).must() == "Normal Closure"
 
 # A text message's bytes are its UTF-8.
 test "data_of: the bytes of a text and of a message of bytes"

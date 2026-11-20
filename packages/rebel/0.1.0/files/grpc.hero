@@ -64,7 +64,7 @@ constant LIMIT: str
 constant CLOSED: str
     "closed"
 
-# A method no schema or list names: `method_of`, `status_name`.
+# A method no schema or list names: `proto_method_of`, `status_name`.
 constant NOT_FOUND: str
     "not_found"
 
@@ -72,78 +72,7 @@ constant NOT_FOUND: str
 constant UNSUPPORTED: str
     "unsupported"
 
-## Status codes
-
-# OK: the call succeeded.
-constant STATUS_OK: i64
-    0
-
-# CANCELLED: the call was cancelled, usually by its caller.
-constant STATUS_CANCELLED: i64
-    1
-
-# UNKNOWN: an error no other code describes, or a status from a space this
-# end does not know.
-constant STATUS_UNKNOWN: i64
-    2
-
-# INVALID_ARGUMENT: the caller gave an argument the server refuses whatever
-# the system's state.
-constant STATUS_INVALID_ARGUMENT: i64
-    3
-
-# DEADLINE_EXCEEDED: the deadline passed before the call ended.
-constant STATUS_DEADLINE_EXCEEDED: i64
-    4
-
-# NOT_FOUND: an entity the call names was not found.
-constant STATUS_NOT_FOUND: i64
-    5
-
-# ALREADY_EXISTS: an entity the call would create exists already.
-constant STATUS_ALREADY_EXISTS: i64
-    6
-
-# PERMISSION_DENIED: the caller may not do this.
-constant STATUS_PERMISSION_DENIED: i64
-    7
-
-# RESOURCE_EXHAUSTED: a resource ran out, a quota or a size among them.
-constant STATUS_RESOURCE_EXHAUSTED: i64
-    8
-
-# FAILED_PRECONDITION: the system is not in the state the call needs.
-constant STATUS_FAILED_PRECONDITION: i64
-    9
-
-# ABORTED: the call was aborted, a conflict among others.
-constant STATUS_ABORTED: i64
-    10
-
-# OUT_OF_RANGE: the call went past a valid range.
-constant STATUS_OUT_OF_RANGE: i64
-    11
-
-# UNIMPLEMENTED: the server does not offer the method.
-constant STATUS_UNIMPLEMENTED: i64
-    12
-
-# INTERNAL: an invariant broke inside the server or the protocol.
-constant STATUS_INTERNAL: i64
-    13
-
-# UNAVAILABLE: the service cannot be reached now; the call may be tried
-# again.
-constant STATUS_UNAVAILABLE: i64
-    14
-
-# DATA_LOSS: data was lost or corrupted beyond repair.
-constant STATUS_DATA_LOSS: i64
-    15
-
-# UNAUTHENTICATED: the call carries no valid credentials.
-constant STATUS_UNAUTHENTICATED: i64
-    16
+## Statuses
 
 # How a call ended: a status code, a message for a person, and the details
 # gRPC's rich error model carries as bytes (a `google.rpc.Status` as
@@ -349,7 +278,7 @@ function default_options() -> Options
 ## A client
 
 # A channel to one server: an HTTP/2 connection whose calls go to one
-# authority. Made by `dial`, `dial_plain` or `channel_of`; `close` closes it.
+# authority. Made by `connect`, `connect_plain` or `channel_of`; `close` closes it.
 record Channel
     # The connection, owned by the channel.
     conn: http2.Conn
@@ -423,8 +352,8 @@ variant Incoming
 #   own store.
 # - `options`: how its calls run.
 #
-# Fails as `http2.connect` fails. See also `dial_plain`.
-function dial(host: str, port: i64, deadline_ms: i64, roots: str, options: Options) -> Channel?
+# Fails as `http2.connect` fails. See also `connect_plain`.
+function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Options) -> Channel?
     conn = http2.connect(host: host, port: port, deadline_ms: deadline_ms, roots: roots, options: options.http2)?
 
     authority = if port == 443
@@ -437,11 +366,13 @@ function dial(host: str, port: i64, deadline_ms: i64, roots: str, options: Optio
 #
 # - `host`: a name or an address without brackets.
 # - `port`: 1 to 65535.
+# - `deadline_ms`: the milliseconds the connection and its preface may
+#   take, 0 for no limit.
 # - `options`: how its calls run.
 #
-# Fails as `http2.connect_plain` fails. See also `dial`.
-function dial_plain(host: str, port: i64, options: Options) -> Channel?
-    conn = http2.connect_plain(host: host, port: port, deadline_ms: 0, options: options.http2)?
+# Fails as `http2.connect_plain` fails. See also `connect`.
+function connect_plain(host: str, port: i64, deadline_ms: i64, options: Options) -> Channel?
+    conn = http2.connect_plain(host: host, port: port, deadline_ms: deadline_ms, options: options.http2)?
     return ok(Channel(conn: conn, authority: f"{host}:{port}", scheme: "http", options: options))
 
 # A channel over an HTTP/2 connection the program made.
@@ -451,22 +382,22 @@ function dial_plain(host: str, port: i64, options: Options) -> Channel?
 # - `scheme`: `https` or `http`.
 # - `options`: how its calls run.
 #
-# See also `dial`.
+# See also `connect`.
 function channel_of(conn: http2.Conn, authority: str, scheme: str, options: Options) -> Channel
     return Channel(conn: conn, authority: authority, scheme: scheme, options: options)
 
 # Closes the channel: GOAWAY, then its connection closed.
 #
-# - `ch`: the channel; closed by this call.
+# - `channel`: the channel; closed by this call.
 #
-# Fails as `http2.close` does. See also `dial`.
-function close(@ch: Channel) -> ()?
-    return http2.close(@ch.conn)
+# Fails as `http2.close` does. See also `connect`.
+function close(@channel: Channel) -> ()?
+    return http2.close(@channel.conn)
 
 # A unary call, or a call whose server answers a stream: `request` sent, every
 # response read, the call's status answered.
 #
-# - `ch`: the channel.
+# - `channel`: the channel.
 # - `path`: the method's path, `/shop.Shop/GetOrder`.
 # - `request`: the request's bytes.
 # - `metadata`: the entries sent with the call.
@@ -477,69 +408,69 @@ function close(@ch: Channel) -> ()?
 # connection lost answers `STATUS_UNAVAILABLE`. Fails `invalid` where `path` or
 # an entry is refused, `closed` where the channel has ended. See also
 # `call_many`, `start_call`.
-function call(@ch: Channel, path: str, request: [u8], metadata: [Entry], timeout_ms: i64) -> Reply?
-    c @= start_call(@ch, path: path, metadata: metadata, timeout_ms: timeout_ms)?
+function call(@channel: Channel, path: str, request: [u8], metadata: [Entry], timeout_ms: i64) -> Reply?
+    c @= start_call(@channel, path: path, metadata: metadata, timeout_ms: timeout_ms)?
 
-    match send(@ch, @c, message: request)
+    match send(@channel, @c, message: request)
         .ok _ => _ = 0
         .err e =>
             if e.code == LIMIT || e.code == INVALID
-                cancel(@ch, @c).must()
+                cancel(@channel, @c).must()
                 return fail(code: e.code, msg: e.msg)
 
-    match close_send(@ch, c: c)
+    match close_send(@channel, c: c)
         .ok _  => _ = 0
         .err _ => _ = 0
 
     messages: [[u8]] @= []
 
     while true
-        match receive(@ch, @c)?
+        match receive(@channel, @c)?
             .message m => messages @ messages.push(m.data)
             .end e => return ok(Reply(status: e.status, messages: messages, headers: c.headers, trailers: e.trailers))
 
 # A call whose client sends a stream: every request sent, the stream closed,
 # every response read.
 #
-# - `ch`: the channel.
+# - `channel`: the channel.
 # - `path`: the method's path.
 # - `requests`: the requests' bytes, in order; none sends none.
 # - `metadata`: the entries sent with the call.
 # - `timeout_ms`: as `call` takes it.
 #
 # Fails as `call` does. See also `call`.
-function call_many(@ch: Channel, path: str, requests: [[u8]], metadata: [Entry], timeout_ms: i64) -> Reply?
-    c @= start_call(@ch, path: path, metadata: metadata, timeout_ms: timeout_ms)?
+function call_many(@channel: Channel, path: str, requests: [[u8]], metadata: [Entry], timeout_ms: i64) -> Reply?
+    c @= start_call(@channel, path: path, metadata: metadata, timeout_ms: timeout_ms)?
 
     for request in requests
-        match send(@ch, @c, message: request)
+        match send(@channel, @c, message: request)
             .ok _ => _ = 0
             .err e =>
                 if e.code == LIMIT || e.code == INVALID
-                    cancel(@ch, @c).must()
+                    cancel(@channel, @c).must()
                     return fail(code: e.code, msg: e.msg)
 
-    match close_send(@ch, c: c)
+    match close_send(@channel, c: c)
         .ok _  => _ = 0
         .err _ => _ = 0
 
     messages: [[u8]] @= []
 
     while true
-        match receive(@ch, @c)?
+        match receive(@channel, @c)?
             .message m => messages @ messages.push(m.data)
             .end e => return ok(Reply(status: e.status, messages: messages, headers: c.headers, trailers: e.trailers))
 
 # A call started, its head sent: what a call that streams both ways needs,
 # its messages sent and read one by one.
 #
-# - `ch`: the channel.
+# - `channel`: the channel.
 # - `path`: the method's path.
 # - `metadata`: the entries sent with the call.
 # - `timeout_ms`: as `call` takes it.
 #
 # Fails as `call` does. See also `send`, `receive`, `close_send`.
-function start_call(@ch: Channel, path: str, metadata: [Entry], timeout_ms: i64) -> Call?
+function start_call(@channel: Channel, path: str, metadata: [Entry], timeout_ms: i64) -> Call?
     names: [str] @= []
     values: [[u8]] @= []
 
@@ -551,69 +482,70 @@ function start_call(@ch: Channel, path: str, metadata: [Entry], timeout_ms: i64)
         texts.format_timeout(timeout_ms * 1000000)
     else
         ""
-    head = calls.call_head(scheme: ch.scheme, authority: ch.authority, path: path, user_agent: ch.options.user_agent, gzip: ch.options.compress, timeout: timeout, names: names, values: values)?
+    head = calls.call_head(scheme: channel.scheme, authority: channel.authority, path: path, user_agent: channel.options.user_agent, gzip: channel.options.compress, timeout: timeout, names: names, values: values)?
 
     deadline_at = if timeout_ms > 0
         clock.now_ms() + timeout_ms
     else
         0
-    id = http2.start_stream(@ch.conn, headers: head, end_stream: false)?
+    id = http2.start_stream(@channel.conn, headers: head, end_stream: false)?
     return ok(
-        Call(stream: id, path: path, deadline_at: deadline_at, headers: [], held: [], gzip_in: false, gzip_out: ch.options.compress, ended: false, status: Status(code: STATUS_OK, message: "", details: []), trailers: [], pending: [])
+        Call(stream: id, path: path, deadline_at: deadline_at, headers: [], held: [], gzip_in: false, gzip_out: channel.options.compress, ended: false, status: Status(code: STATUS_OK, message: "", details: []), trailers: [], pending: [])
     )
 
 # Sends one message on a call.
 #
-# - `ch`: the channel.
+# - `channel`: the channel.
 # - `c`: the call.
 # - `message`: the message's bytes, compressed where the call compresses.
 #
 # Fails `limit` past `Options.max_message_bytes`, `closed` where the call
 # has ended or this end closed its side. See also `close_send`.
-function send(@ch: Channel, @c: Call, message: [u8]) -> ()?
+function send(@channel: Channel, @c: Call, message: [u8]) -> ()?
     if c.ended
         return fail(code: CLOSED, msg: f"sending on the call {c.path}: it has ended")
 
-    if message.len() > ch.options.max_message_bytes
+    if message.len() > channel.options.max_message_bytes
         return fail(
             code: LIMIT,
-            msg: f"sending on the call {c.path}: a message of {message.len()} bytes passes {ch.options.max_message_bytes}"
+            msg: f"sending on the call {c.path}: a message of {message.len()} bytes passes {channel.options.max_message_bytes}"
         )
     data = calls.framed(message, gzip: c.gzip_out)?
     left = clock.left_of(c.deadline_at)
 
     if left == 0
-        cancel(@ch, @c)?
+        cancel(@channel, @c)?
         c.status @ Status(
             code: STATUS_DEADLINE_EXCEEDED,
             message: "the deadline passed before the message was sent",
             details: []
         )
         return fail(code: "timeout", msg: f"sending on the call {c.path}: its deadline passed")
-    clock.wait_until(ch.conn.stream, deadline_at: c.deadline_at)
-    sent = http2.write_data(@ch.conn, stream: c.stream, data: data, end_stream: false)
-    clock.set_wait(ch.conn.stream, ms: 0)
+    clock.wait_until(channel.conn.stream, deadline_at: c.deadline_at)
+    sent = http2.write_data(@channel.conn, stream: c.stream, data: data, end_stream: false)
+    clock.set_wait(channel.conn.stream, ms: 0)
     return sent
 
 # Tells the server this end sends no more messages on the call.
 #
-# - `ch`: the channel.
+# - `channel`: the channel.
 # - `c`: the call.
 #
 # Fails `closed` where the call has ended. See also `send`.
-function close_send(@ch: Channel, c: Call) -> ()?
+function close_send(@channel: Channel, c: Call) -> ()?
     if c.ended
         return fail(code: CLOSED, msg: f"closing the call {c.path}: it has ended")
-    return http2.write_data(@ch.conn, stream: c.stream, data: [], end_stream: true)
+    return http2.write_data(@channel.conn, stream: c.stream, data: [], end_stream: true)
 
 # The next message of the call, or its end with its status.
 #
-# - `ch`: the channel.
+# - `channel`: the channel.
 # - `c`: the call; once it has ended every later call answers the same end.
 #
 # A deadline passed answers the end `STATUS_DEADLINE_EXCEEDED` and cancels the
-# call. See also `send`.
-function receive(@ch: Channel, @c: Call) -> Incoming?
+# call. It never fails: a deadline passed, a reset and a connection lost end
+# the call, its `Status` saying why (the module's comment). See also `send`.
+function receive(@channel: Channel, @c: Call) -> Incoming?
     while true
         if c.pending.len() > 0
             return ok(.message(data: calls.pop(@c.pending)))
@@ -623,17 +555,17 @@ function receive(@ch: Channel, @c: Call) -> Incoming?
         left = clock.left_of(c.deadline_at)
 
         if left == 0
-            cancel(@ch, @c)?
+            cancel(@channel, @c)?
             c.status @ Status(code: STATUS_DEADLINE_EXCEEDED, message: "the deadline passed", details: [])
         else
-            clock.wait_until(ch.conn.stream, deadline_at: c.deadline_at)
-            got = http2.read_event_of(@ch.conn, stream: c.stream)
-            clock.set_wait(ch.conn.stream, ms: 0)
+            clock.wait_until(channel.conn.stream, deadline_at: c.deadline_at)
+            got = http2.read_event_of(@channel.conn, stream: c.stream)
+            clock.set_wait(channel.conn.stream, ms: 0)
 
             match got
                 .err e =>
                     if e.code == "timeout" && c.deadline_at != 0
-                        cancel(@ch, @c)?
+                        cancel(@channel, @c)?
                         c.status @ Status(code: STATUS_DEADLINE_EXCEEDED, message: "the deadline passed", details: [])
                     else
                         c.ended @ true
@@ -662,11 +594,11 @@ function receive(@ch: Channel, @c: Call) -> Incoming?
                                 @c.pending,
                                 data: d.data,
                                 gzip: c.gzip_in,
-                                most: ch.options.max_message_bytes
+                                most: channel.options.max_message_bytes
                             )
 
                             if taken.code != ""
-                                cancel(@ch, @c)?
+                                cancel(@channel, @c)?
 
                                 code = if taken.code == LIMIT
                                     STATUS_RESOURCE_EXHAUSTED
@@ -709,19 +641,21 @@ function receive(@ch: Channel, @c: Call) -> Incoming?
 # Cancels a call: the stream reset with `CANCEL`, the call ended
 # `STATUS_CANCELLED`.
 #
-# - `ch`: the channel.
+# - `channel`: the channel.
 # - `c`: the call.
 #
-# See also `start_call`.
-function cancel(@ch: Channel, @c: Call) -> ()?
+# It never fails: where the connection refuses the reset, the call ends all
+# the same, and a call already ended is left as it is. See also
+# `start_call`.
+function cancel(@channel: Channel, @c: Call) -> ()?
     if c.ended
         return ok()
 
-    match http2.write_reset(@ch.conn, stream: c.stream, error: http2.CANCEL)
+    match http2.write_reset(@channel.conn, stream: c.stream, error: http2.CANCEL)
         .ok _  => _ = 0
         .err _ => _ = 0
 
-    calls.drain(@ch.conn, stream: c.stream)
+    calls.drain(@channel.conn, stream: c.stream)
     c.ended @ true
     c.status @ Status(code: STATUS_CANCELLED, message: "cancelled by the client", details: [])
     return ok()
@@ -736,7 +670,7 @@ function cancel(@ch: Channel, @c: Call) -> ()?
 #
 # Fails `not_found` where the schema holds no such method, `invalid` where
 # the path is not `/service/method`. See also `path_of`.
-function method_of(schema: protobuf.Schema, path: str) -> protobuf.Method?
+function proto_method_of(schema: protobuf.Schema, path: str) -> protobuf.Method?
     why = calls.path_refusal(path)
 
     if why != ""
@@ -754,7 +688,7 @@ function method_of(schema: protobuf.Schema, path: str) -> protobuf.Method?
 #
 # - `m`: the method, as `protobuf` read it.
 #
-# See also `method_of`.
+# See also `proto_method_of`.
 function path_of(m: protobuf.Method) -> str
     cut = m.full_name.len() - m.name.len() - 1
 
@@ -777,18 +711,18 @@ record ProtoReply
 # input type and encoded, the call made as `call` makes it, each response
 # decoded as the output type.
 #
-# - `ch`: the channel.
+# - `channel`: the channel.
 # - `schema`: the schema holding the service.
 # - `path`: the method's path.
 # - `request`: the request, of the method's input type.
 # - `metadata`: the entries sent with the call.
 # - `timeout_ms`: as `call` takes it.
 #
-# Fails as `method_of`, `protobuf.encode` and `call` do, `invalid` where
+# Fails as `proto_method_of`, `protobuf.encode` and `call` do, `invalid` where
 # `request` is of another type or a response does not decode. See also
 # `call`.
-function call_proto(@ch: Channel, schema: protobuf.Schema, path: str, request: protobuf.Message, metadata: [Entry], timeout_ms: i64) -> ProtoReply?
-    m = method_of(schema, path: path)?
+function call_proto(@channel: Channel, schema: protobuf.Schema, path: str, request: protobuf.Message, metadata: [Entry], timeout_ms: i64) -> ProtoReply?
+    m = proto_method_of(schema, path: path)?
 
     wanted = if m.input_type.len() > 0 && m.input_type[0] == '.'
         m.input_type.slice(from: 1, to: m.input_type.len())
@@ -800,7 +734,7 @@ function call_proto(@ch: Channel, schema: protobuf.Schema, path: str, request: p
             code: INVALID,
             msg: f"calling {path}: the request is a {request.type_name}, and the method takes a {wanted}"
         )
-    reply = call(@ch, path: path, request: protobuf.encode(schema, m: request)?, metadata: metadata, timeout_ms: timeout_ms)?
+    reply = call(@channel, path: path, request: protobuf.encode(schema, m: request)?, metadata: metadata, timeout_ms: timeout_ms)?
     out: [protobuf.Message] @= []
 
     for data in reply.messages
@@ -839,21 +773,17 @@ function methods_of(service: protobuf.Service) -> [Method]
 
     return out
 
-# A health status: the service's state is not known.
-constant HEALTH_UNKNOWN: i64
-    0
-
-# A health status: the service is serving.
-constant SERVING: i64
-    1
-
-# A health status: the service is not serving.
-constant NOT_SERVING: i64
-    2
-
-# A health status, sent by `Watch` alone: no such service is known.
-constant SERVICE_UNKNOWN: i64
-    3
+# The health of a service, as the health checking service
+# `grpc.health.v1.Health` answers it.
+variant Health
+    # The service's state is not known: `UNKNOWN`, 0 on the wire.
+    unknown
+    # The service is serving: `SERVING`, 1.
+    serving
+    # The service is not serving: `NOT_SERVING`, 2.
+    not_serving
+    # No such service is known: `SERVICE_UNKNOWN`, 3, sent by `Watch` alone.
+    service_unknown
 
 # A server's end of one HTTP/2 connection: the calls on it found and
 # answered. Made by `server_of`; its owner closes it with `close_server`.
@@ -864,7 +794,7 @@ record Server
     options: Options
     # The health of each service by name, "" for the server as a whole, as
     # `grpc.health.v1.Health` answers it; empty answers no health checking.
-    health: {str: i64}
+    health: {str: Health}
     # The full names of the services server reflection lists; empty answers
     # no reflection.
     reflection: [str]
@@ -1199,7 +1129,7 @@ function answer_health(@s: Server, @c: ServerCall) -> ()?
         )
 
 # Answers a call of the health checking service's `Watch`: the status now, or
-# `SERVICE_UNKNOWN`, then each change `set_health` makes, the call kept open
+# `.service_unknown`, then each change `set_health` makes, the call kept open
 # until the client cancels it.
 #
 # - `s`: the server; the call is kept among its `watchers`.
@@ -1214,7 +1144,7 @@ function watch_health(@s: Server, @c: ServerCall) -> ()?
         .end _     => _ = 0
 
     service = services.health_service(request)?
-    status = s.health[service].default(SERVICE_UNKNOWN)
+    status = s.health[service].default(.service_unknown)
     write_response(@s, @c, message: services.health_response(status))?
     s.watchers[c.stream] @ service
     return ok()
@@ -1248,12 +1178,11 @@ function left_ms(c: ServerCall) -> i64
 #
 # - `s`: the server; its `health` changes.
 # - `service`: the service's full name, "" for the server as a whole.
-# - `status`: `SERVING`, `NOT_SERVING`, `HEALTH_UNKNOWN`.
+# - `status`: its health, `.serving` or `.not_serving` most often.
 #
-# Fails `invalid` for a status outside 0 to 3. See also `Server`.
-function set_health(@s: Server, service: str, status: i64) -> ()?
-    if status < 0 || status > 3
-        return fail(code: INVALID, msg: f"setting the health of \"{service}\": {status} is no status, 0 to 3")
+# A watcher whose stream no longer takes a message is dropped. See also
+# `Server`.
+function set_health(@s: Server, service: str, status: Health)
     s.health[service] @ status
     gone: [i64] @= []
 
@@ -1286,7 +1215,78 @@ function set_health(@s: Server, service: str, status: i64) -> ()?
 
         s.watchers @ kept
 
-    return ok()
+## Status codes
+
+# OK: the call succeeded.
+constant STATUS_OK: i64
+    0
+
+# CANCELLED: the call was cancelled, usually by its caller.
+constant STATUS_CANCELLED: i64
+    1
+
+# UNKNOWN: an error no other code describes, or a status from a space this
+# end does not know.
+constant STATUS_UNKNOWN: i64
+    2
+
+# INVALID_ARGUMENT: the caller gave an argument the server refuses whatever
+# the system's state.
+constant STATUS_INVALID_ARGUMENT: i64
+    3
+
+# DEADLINE_EXCEEDED: the deadline passed before the call ended.
+constant STATUS_DEADLINE_EXCEEDED: i64
+    4
+
+# NOT_FOUND: an entity the call names was not found.
+constant STATUS_NOT_FOUND: i64
+    5
+
+# ALREADY_EXISTS: an entity the call would create exists already.
+constant STATUS_ALREADY_EXISTS: i64
+    6
+
+# PERMISSION_DENIED: the caller may not do this.
+constant STATUS_PERMISSION_DENIED: i64
+    7
+
+# RESOURCE_EXHAUSTED: a resource ran out, a quota or a size among them.
+constant STATUS_RESOURCE_EXHAUSTED: i64
+    8
+
+# FAILED_PRECONDITION: the system is not in the state the call needs.
+constant STATUS_FAILED_PRECONDITION: i64
+    9
+
+# ABORTED: the call was aborted, a conflict among others.
+constant STATUS_ABORTED: i64
+    10
+
+# OUT_OF_RANGE: the call went past a valid range.
+constant STATUS_OUT_OF_RANGE: i64
+    11
+
+# UNIMPLEMENTED: the server does not offer the method.
+constant STATUS_UNIMPLEMENTED: i64
+    12
+
+# INTERNAL: an invariant broke inside the server or the protocol.
+constant STATUS_INTERNAL: i64
+    13
+
+# UNAVAILABLE: the service cannot be reached now; the call may be tried
+# again.
+constant STATUS_UNAVAILABLE: i64
+    14
+
+# DATA_LOSS: data was lost or corrupted beyond repair.
+constant STATUS_DATA_LOSS: i64
+    15
+
+# UNAUTHENTICATED: the call carries no valid credentials.
+constant STATUS_UNAUTHENTICATED: i64
+    16
 
 ## Examples
 
@@ -1345,29 +1345,30 @@ test "default_options: messages of 4 MiB, uncompressed"
     assert o.max_message_bytes == 4194304 && !o.compress
 
 # A channel over TLS to a server of this process, ALPN choosing `h2`.
-test "dial: a unary call over TLS"
-    if tls.is_available()
-        port = fixture.free_port()
-        server @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port))
-        fixture.until_listening(port)
-        ch @= dial(
-            host: "localhost",
-            port: port,
-            deadline_ms: 10000,
-            roots: tls.TEST_ROOT,
-            options: default_options()
-        ).must()
-        r = call(@ch, path: "/test.Echo/Echo", request: bytes.from_text("hi"), metadata: [], timeout_ms: 5000).must()
-        assert r.status.code == STATUS_OK && r.messages == [bytes.from_text("hi")]
-        close(@ch).must()
-        assert threads.wait_text(@server) == "1"
+test "connect: a unary call over TLS"
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port))
+    fixture.until_listening(port)
+    ch @= connect(
+        host: "localhost",
+        port: port,
+        deadline_ms: 10000,
+        roots: tls.TEST_ROOT,
+        options: default_options()
+    ).must()
+    r = call(@ch, path: "/test.Echo/Echo", request: bytes.from_text("hi"), metadata: [], timeout_ms: 5000).must()
+    assert r.status.code == STATUS_OK && r.messages == [bytes.from_text("hi")]
+    close(@ch).must()
+    assert threads.wait_text(@server) == "1"
 
 # A channel in plain text, HTTP/2 by prior knowledge.
-test "dial_plain: a unary call over h2c"
+test "connect_plain: a unary call over h2c"
     port = fixture.free_port()
     server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
     fixture.until_listening(port)
-    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     r = call(
         @ch,
         path: "/test.Echo/Echo",
@@ -1395,7 +1396,7 @@ test "close: a second close refused"
     port = fixture.free_port()
     server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
     fixture.until_listening(port)
-    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     _ = call(@ch, path: "/test.Echo/Echo", request: [], metadata: [], timeout_ms: 0).must()
     close(@ch).must()
     assert close(@ch).is_err()
@@ -1407,7 +1408,7 @@ test "call: echoed, NOT_FOUND with its details, three messages streamed"
     port = fixture.free_port()
     server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
     fixture.until_listening(port)
-    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     assert call(@ch, path: "/test.Echo/Echo", request: [9], metadata: [], timeout_ms: 0).must().messages == [[9]]
     failed = call(@ch, path: "/test.Echo/Fail", request: [], metadata: [], timeout_ms: 0).must()
     assert failed.status == Status(code: STATUS_NOT_FOUND, message: "no such thing", details: [1, 2])
@@ -1421,7 +1422,7 @@ test "call_many: three requests echoed"
     port = fixture.free_port()
     server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
     fixture.until_listening(port)
-    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     r = call_many(@ch, path: "/test.Echo/Echo", requests: [[1], [2], [3]], metadata: [], timeout_ms: 0).must()
     assert r.messages == [[1], [2], [3]]
     close(@ch).must()
@@ -1432,7 +1433,7 @@ test "start_call: a call driven message by message"
     port = fixture.free_port()
     server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
     fixture.until_listening(port)
-    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
     send(@ch, @c, message: [4]).must()
     send(@ch, @c, message: [5]).must()
@@ -1449,7 +1450,7 @@ test "send: a message past the bound refused"
     fixture.until_listening(port)
     o @= default_options()
     o.max_message_bytes @ 4
-    ch @= dial_plain(host: "127.0.0.1", port: port, options: o).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: o).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
 
     match send(@ch, @c, message: [1, 2, 3, 4, 5])
@@ -1467,7 +1468,7 @@ test "close_send: the server answers after the client's last message"
     port = fixture.free_port()
     server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
     fixture.until_listening(port)
-    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Many", metadata: [], timeout_ms: 0).must()
     close_send(@ch, c: c).must()
     assert receive(@ch, @c).must() == .message(data: bytes.from_text("one"))
@@ -1479,7 +1480,7 @@ test "receive: the end with its status, and DEADLINE_EXCEEDED"
     port = fixture.free_port()
     server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
     fixture.until_listening(port)
-    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
     close_send(@ch, c: c).must()
 
@@ -1497,7 +1498,7 @@ test "cancel: the call ends CANCELLED"
     port = fixture.free_port()
     server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
     fixture.until_listening(port)
-    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
     cancel(@ch, @c).must()
 
@@ -1509,14 +1510,14 @@ test "cancel: the call ends CANCELLED"
     _ = threads.wait_text(@server)
 
 # A method found by its path in a schema read from a `.proto`.
-test "method_of: GetNote of test.Notes"
+test "proto_method_of: GetNote of test.Notes"
     schema = protobuf.parse_schema_text(
         name: "notes.proto",
         text: "syntax = \"proto3\";\npackage test;\nmessage Note { string text = 1; }\nservice Notes { rpc GetNote (Note) returns (Note); rpc Watch (Note) returns (stream Note); }\n"
     ).must()
-    m = method_of(schema, path: "/test.Notes/GetNote").must()
+    m = proto_method_of(schema, path: "/test.Notes/GetNote").must()
     assert m.name == "GetNote"
-    assert method_of(schema, path: "/test.Notes/Nothing").is_err()
+    assert proto_method_of(schema, path: "/test.Notes/Nothing").is_err()
 
 # The path a method is called by.
 test "path_of: /test.Notes/GetNote"
@@ -1537,7 +1538,7 @@ test "call_proto: a Note echoed and decoded"
     ).must()
     note @= protobuf.new_message(schema, type_name: "test.Note").must()
     protobuf.set(schema, @note, field: "text", value: .text(v: "proto")).must()
-    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     r = call_proto(@ch, schema: schema, path: "/test.Echo/Echo", request: note, metadata: [], timeout_ms: 0).must()
     assert protobuf.text_of(protobuf.get(schema, m: r.messages[0], field: "text").must()).must() == "proto"
     close(@ch).must()
@@ -1718,27 +1719,26 @@ test "set_health: a watcher told the server is serving"
         methods: [Method(path: "/grpc.health.v1.Health/Watch", client_streaming: false, server_streaming: true)]
     ).must()
     watch_health(@s, @c).must()
-    set_health(@s, service: "", status: SERVING).must()
-    assert set_health(@s, service: "", status: 7).is_err()
+    set_health(@s, service: "", status: .serving)
     close_server(@s).must()
     assert bytes.has_prefix(s: bytes.from_text(threads.wait_text(@client)), prefix: bytes.from_text("999 2"))
     net.close_listener(@l).must()
 
 # A health check answered by the server itself.
-test "answer_health: the server as a whole SERVING"
+test "answer_health: the server as a whole serving"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Check ")
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
-    s.health[""] @ SERVING
+    s.health[""] @ .serving
     assert next_call(@s, methods: []).is_err()
     assert bytes.has_prefix(s: bytes.from_text(threads.wait_text(@client)), prefix: bytes.from_text("0 1"))
     close_server(@s).must()
     net.close_listener(@l).must()
 
 # A health watch answered with the status now.
-test "watch_health: SERVICE_UNKNOWN for a service with no health kept"
+test "watch_health: service_unknown for a service with no health kept"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ")
     accepted = net.accept(l, deadline_ms: 10000).must()

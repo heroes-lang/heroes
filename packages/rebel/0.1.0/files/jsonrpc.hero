@@ -26,7 +26,8 @@
 #
 # The codes it fails with: `invalid` (a text or a frame that is no message, a
 # method or a parameter refused), `not_found` (no method of that name, no
-# parameter of that name), `limit` (a message or a batch past `Limits`),
+# parameter of that name), `exists` (a method added twice), `limit` (a
+# message or a batch past `Limits`),
 # `not_text` (a frame that is not UTF-8), `failed` (an answer that is an
 # error), `unsupported` (an HTTP method or a charset refused), and from the
 # stream: `closed`, `timeout`, `stopped`.
@@ -1044,103 +1045,42 @@ function call_http(transport: http.Client, target: str, method: str, params: jso
 
 ## Tests
 
-# The methods of the specification's examples, § 7: `subtract` by position
-# and by name, `sum` of up to three, `get_data`, and the notifications
-# `update` and `notify_hello`; `foobar` and `foo.get` are not there.
-function spec_methods() -> Methods
-    m @= new_methods()
-    add_method(@m, name: "subtract", params: ["minuend", "subtrahend"], required: 2).must()
-    add_method(@m, name: "sum", params: ["a", "b", "c"], required: 0).must()
-    add_method(@m, name: "get_data", params: [], required: 0).must()
-    add_method(@m, name: "update", params: ["a", "b", "c", "d", "e"], required: 0).must()
-    add_method(@m, name: "notify_hello", params: ["n"], required: 1).must()
-    return m
-
-# The handler of `spec_methods`, as a server with no state writes it.
-#
-# - `found`: the method found and its parameters by name.
-#
-# Fails `invalid` where a parameter of `subtract` or `sum` is not a number.
-function spec_handler(found: Found) -> json.Value?
-    if found.method == "subtract"
-        a = json.number_of(param_of(found, name: "minuend")?)?
-        b = json.number_of(param_of(found, name: "subtrahend")?)?
-        return ok(.number(v: a - b))
-
-    if found.method == "sum"
-        total: f64 @= 0.0
-
-        for name in keys(found.params)
-            total @ total + json.number_of(found.params[name].must())?
-
-        return ok(.number(v: total))
-
-    if found.method == "get_data"
-        return ok(json.parse("[\"hello\", 5]").must())
-    return ok(.null_value)
-
-# The answer of a server with no state to an HTTP request, as `http.exchange`
-# hands it: the body read, dispatched to `spec_handler`, and answered.
-#
-# - `r`: the request.
-function spec_over_http(r: http.Request) -> http.Response
-    received = match read_http(r, limits: default_limits())
-        .ok got => got
-        .err e  => return refusal_http(code: e.code, msg: e.msg)
-
-    answers: [Message] @= []
-
-    for item in received.messages
-        match item
-            .err e => answers @ answers.push(invalid_request_of(e.msg))
-            .ok m =>
-                match m
-                    .request q =>
-                        answer = match method_of(spec_methods(), method: q.method, params: q.params)
-                            .ok found => answer_of(q.id, outcome: spec_handler(found))
-                            .err e    => refusal_of(q.id, code: e.code, msg: e.msg)
-
-                        answers @ answers.push(answer)
-                    .notification _ | .response _ => _ = 0
-
-    return respond_http(answers, batch: received.batch).must()
-
 test "dispatch: every example of the specification's § 7"
-    m = spec_methods()
+    m = fixture.spec_methods()
     limits = default_limits()
-    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": [23, 42], \"id\": 2}", methods: m, limits: limits, handler: spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":-19}"
-    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": {\"subtrahend\": 23, \"minuend\": 42}, \"id\": 3}", methods: m, limits: limits, handler: spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":19}"
-    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"update\", \"params\": [1,2,3,4,5]}", methods: m, limits: limits, handler: spec_handler).must() == ""
-    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"foobar\"}", methods: m, limits: limits, handler: spec_handler).must() == ""
-    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"foobar\", \"id\": \"1\"}", methods: m, limits: limits, handler: spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"error\":{\"code\":-32601,\"message\":\"Method not found\",\"data\":\"no method \\\"foobar\\\"\"}}"
-    assert fixture.codes_of(dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"foobar, \"params\": \"bar\", \"baz]", methods: m, limits: limits, handler: spec_handler).must()) == [PARSE_ERROR]
-    assert fixture.codes_of(dispatch("{\"jsonrpc\": \"2.0\", \"method\": 1, \"params\": \"bar\"}", methods: m, limits: limits, handler: spec_handler).must()) == [INVALID_REQUEST]
-    assert fixture.codes_of(dispatch("[{\"jsonrpc\": \"2.0\", \"method\": \"sum\", \"params\": [1,2,4], \"id\": \"1\"},{\"jsonrpc\": \"2.0\", \"method\"]", methods: m, limits: limits, handler: spec_handler).must()) == [PARSE_ERROR]
-    empty = dispatch("[]", methods: m, limits: limits, handler: spec_handler).must()
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": [23, 42], \"id\": 2}", methods: m, limits: limits, handler: fixture.spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":-19}"
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": {\"subtrahend\": 23, \"minuend\": 42}, \"id\": 3}", methods: m, limits: limits, handler: fixture.spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":19}"
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"update\", \"params\": [1,2,3,4,5]}", methods: m, limits: limits, handler: fixture.spec_handler).must() == ""
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"foobar\"}", methods: m, limits: limits, handler: fixture.spec_handler).must() == ""
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"foobar\", \"id\": \"1\"}", methods: m, limits: limits, handler: fixture.spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"error\":{\"code\":-32601,\"message\":\"Method not found\",\"data\":\"no method \\\"foobar\\\"\"}}"
+    assert fixture.codes_of(dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"foobar, \"params\": \"bar\", \"baz]", methods: m, limits: limits, handler: fixture.spec_handler).must()) == [PARSE_ERROR]
+    assert fixture.codes_of(dispatch("{\"jsonrpc\": \"2.0\", \"method\": 1, \"params\": \"bar\"}", methods: m, limits: limits, handler: fixture.spec_handler).must()) == [INVALID_REQUEST]
+    assert fixture.codes_of(dispatch("[{\"jsonrpc\": \"2.0\", \"method\": \"sum\", \"params\": [1,2,4], \"id\": \"1\"},{\"jsonrpc\": \"2.0\", \"method\"]", methods: m, limits: limits, handler: fixture.spec_handler).must()) == [PARSE_ERROR]
+    empty = dispatch("[]", methods: m, limits: limits, handler: fixture.spec_handler).must()
     assert empty[0] == '{' && fixture.codes_of(empty) == [INVALID_REQUEST]
-    one = dispatch("[1]", methods: m, limits: limits, handler: spec_handler).must()
+    one = dispatch("[1]", methods: m, limits: limits, handler: fixture.spec_handler).must()
     assert one[0] == '[' && fixture.codes_of(one) == [INVALID_REQUEST]
-    assert fixture.codes_of(dispatch("[1,2,3]", methods: m, limits: limits, handler: spec_handler).must()) == [INVALID_REQUEST, INVALID_REQUEST, INVALID_REQUEST]
+    assert fixture.codes_of(dispatch("[1,2,3]", methods: m, limits: limits, handler: fixture.spec_handler).must()) == [INVALID_REQUEST, INVALID_REQUEST, INVALID_REQUEST]
     batch = "[{\"jsonrpc\": \"2.0\", \"method\": \"sum\", \"params\": [1,2,4], \"id\": \"1\"}, {\"jsonrpc\": \"2.0\", \"method\": \"notify_hello\", \"params\": [7]}, {\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": [42,23], \"id\": \"2\"}, {\"foo\": \"boo\"}, {\"jsonrpc\": \"2.0\", \"method\": \"foo.get\", \"params\": {\"name\": \"myself\"}, \"id\": \"5\"}, {\"jsonrpc\": \"2.0\", \"method\": \"get_data\", \"id\": \"9\"}]"
-    answered = dispatch(batch, methods: m, limits: limits, handler: spec_handler).must()
+    answered = dispatch(batch, methods: m, limits: limits, handler: fixture.spec_handler).must()
     assert fixture.codes_of(answered) == [0, 0, INVALID_REQUEST, METHOD_NOT_FOUND, 0]
     assert strings.has_prefix(
         s: answered,
         prefix: "[{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"result\":7},{\"jsonrpc\":\"2.0\",\"id\":\"2\",\"result\":19},"
     )
     assert strings.has_suffix(s: answered, suffix: "{\"jsonrpc\":\"2.0\",\"id\":\"9\",\"result\":[\"hello\",5]}]")
-    assert dispatch("[{\"jsonrpc\": \"2.0\", \"method\": \"notify_sum\", \"params\": [1,2,4]}, {\"jsonrpc\": \"2.0\", \"method\": \"notify_hello\", \"params\": [7]}]", methods: m, limits: limits, handler: spec_handler).must() == ""
+    assert dispatch("[{\"jsonrpc\": \"2.0\", \"method\": \"notify_sum\", \"params\": [1,2,4]}, {\"jsonrpc\": \"2.0\", \"method\": \"notify_hello\", \"params\": [7]}]", methods: m, limits: limits, handler: fixture.spec_handler).must() == ""
 
 test "dispatch: parameters refused, a handler failing, a null id, a text past the limit"
-    m = spec_methods()
+    m = fixture.spec_methods()
     limits = default_limits()
-    assert fixture.codes_of(dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"subtract\",\"params\":[1],\"id\":1}", methods: m, limits: limits, handler: spec_handler).must()) == [INVALID_PARAMS]
-    assert fixture.codes_of(dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"subtract\",\"params\":[\"a\",1],\"id\":1}", methods: m, limits: limits, handler: spec_handler).must()) == [INVALID_PARAMS]
-    assert dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"get_data\",\"id\":null}", methods: m, limits: limits, handler: spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":null,\"result\":[\"hello\",5]}"
+    assert fixture.codes_of(dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"subtract\",\"params\":[1],\"id\":1}", methods: m, limits: limits, handler: fixture.spec_handler).must()) == [INVALID_PARAMS]
+    assert fixture.codes_of(dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"subtract\",\"params\":[\"a\",1],\"id\":1}", methods: m, limits: limits, handler: fixture.spec_handler).must()) == [INVALID_PARAMS]
+    assert dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"get_data\",\"id\":null}", methods: m, limits: limits, handler: fixture.spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":null,\"result\":[\"hello\",5]}"
     small = Limits(message_bytes: 10, batch_items: 1, depth: 2)
-    assert fixture.codes_of(dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"get_data\",\"id\":1}", methods: m, limits: small, handler: spec_handler).must()) == [INVALID_REQUEST]
-    assert fixture.codes_of(dispatch("[[[1]]]", methods: m, limits: Limits(message_bytes: 100, batch_items: 9, depth: 2), handler: spec_handler).must()) == [PARSE_ERROR]
-    assert fixture.codes_of(dispatch("[1,2]", methods: m, limits: Limits(message_bytes: 100, batch_items: 1, depth: 9), handler: spec_handler).must()) == [INVALID_REQUEST]
+    assert fixture.codes_of(dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"get_data\",\"id\":1}", methods: m, limits: small, handler: fixture.spec_handler).must()) == [INVALID_REQUEST]
+    assert fixture.codes_of(dispatch("[[[1]]]", methods: m, limits: Limits(message_bytes: 100, batch_items: 9, depth: 2), handler: fixture.spec_handler).must()) == [PARSE_ERROR]
+    assert fixture.codes_of(dispatch("[1,2]", methods: m, limits: Limits(message_bytes: 100, batch_items: 1, depth: 9), handler: fixture.spec_handler).must()) == [INVALID_REQUEST]
 
 test "parse: one message, a batch, the empty array, and a text that is no JSON"
     limits = default_limits()
@@ -1196,7 +1136,7 @@ test "value_of, format_id: an error with and without data, and every kind of id"
     assert format_id(.absent) == "" && format_id(.null_id) == "null" && format_id(.number(v: -2.0)) == "-2" && format_id(.text(v: "a\"b")) == "\"a\\\"b\""
 
 test "add_method, method_of, param_of: a method twice, an `rpc.` name, an optional parameter not given"
-    m @= spec_methods()
+    m @= fixture.spec_methods()
 
     match add_method(@m, name: "sum", params: [], required: 0)
         .ok _  => assert false
@@ -1314,23 +1254,23 @@ test "read_http, respond_http, refusal_http: a call, a batch, a notification, an
         content_type: "application/json",
         body: bytes.from_text("{\"jsonrpc\":\"2.0\",\"method\":\"subtract\",\"params\":[42,23],\"id\":1}")
     )
-    answered = http.exchange(call_body, handler: spec_over_http).must()
+    answered = http.exchange(call_body, handler: fixture.spec_over_http).must()
     assert answered.status == 200 && http.text_of(answered).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":19}"
     notified = http.exchange(
         http.with_body(post, content_type: "application/json", body: bytes.from_text("{\"jsonrpc\":\"2.0\",\"method\":\"update\"}")),
-        handler: spec_over_http
+        handler: fixture.spec_over_http
     ).must()
     assert notified.status == 204
     batch = http.exchange(
         http.with_body(post, content_type: "application/json; charset=utf-8", body: bytes.from_text("[1]")),
-        handler: spec_over_http
+        handler: fixture.spec_over_http
     ).must()
     assert batch.status == 200 && fixture.codes_of(http.text_of(batch).must()) == [INVALID_REQUEST]
-    got = http.exchange(http.request(method: "GET", target: "/rpc").must(), handler: spec_over_http).must()
+    got = http.exchange(http.request(method: "GET", target: "/rpc").must(), handler: fixture.spec_over_http).must()
     assert got.status == 405 && http.value_of(got.headers, name: "Allow").must() == "POST"
     broken = http.exchange(
         http.with_body(post, content_type: "application/json", body: bytes.from_text("{")),
-        handler: spec_over_http
+        handler: fixture.spec_over_http
     ).must()
     assert broken.status == 400 && fixture.codes_of(http.text_of(broken).must()) == [PARSE_ERROR]
     assert refusal_http(code: LIMIT, msg: "too long").status == 413
@@ -1499,14 +1439,14 @@ test "add_method: subtract by position or by name"
 
 # A call by position found, its parameters named.
 test "method_of: positional parameters named"
-    m = spec_methods()
+    m = fixture.spec_methods()
     found = method_of(m, method: "subtract", params: json.parse("[42, 23]").must()).must()
     assert found.method == "subtract" && found.params["subtrahend"].must() == .number(v: 23.0)
 
 # A parameter read by a handler.
 test "param_of: one parameter of a call"
     found = method_of(
-        spec_methods(),
+        fixture.spec_methods(),
         method: "subtract",
         params: json.parse("{\"minuend\": 1, \"subtrahend\": 2}").must()
     ).must()
@@ -1514,7 +1454,7 @@ test "param_of: one parameter of a call"
 
 # A server with no state answering one call.
 test "dispatch: one call answered"
-    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": [42, 23], \"id\": 1}", methods: spec_methods(), limits: default_limits(), handler: spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":19}"
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": [42, 23], \"id\": 1}", methods: fixture.spec_methods(), limits: default_limits(), handler: fixture.spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":19}"
 
 # A client over one end of a connection, its first id 1.
 test "new_client: a client over a connection"
