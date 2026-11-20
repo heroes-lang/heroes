@@ -428,19 +428,52 @@ static int hero_lease_call_prior(int signum, siginfo_t *si, void *ctx) {
  * 175 ordered; where `hero_stack_regfile` does not know the file, a return is
  * read as a decline, as it was before this function.
  *
- * What that leaves, said, each as it was before this function: a file that
- * comes back as it was from a signal whose pc is already past it, one a
- * process sent with `raise` or `kill` or an x86-64 `int3`, where the thread
- * would go on, is still claimed; and so is the one that `abort` raises, which
- * `abort` itself ends by the default once the handler returns, so claiming it
- * is what keeps its line. */
+ * What that leaves, said: a file that comes back as it was from a signal
+ * whose pc is already past it, where the thread would go on, is let go where
+ * a process sent it (`hero_lease_sent`, below, defect 2583); an x86-64 `int3`,
+ * whose pc is past it with no sender, is still claimed, and so is a SIGABRT a
+ * process sent, which `abort` raises too and itself ends by the default once
+ * the handler returns, so claiming it is what keeps its line. */
+static int hero_lease_sent(const siginfo_t *si);
+
 static int hero_lease_prior_recovered(int signum, siginfo_t *si, void *ctx) {
     HeroStackRegfile before;
     int known = hero_stack_regfile(ctx, &before);
-    if (!hero_lease_call_prior(signum, si, ctx) || !known) return 0;
+    int sent = signum != SIGABRT && hero_lease_sent(si);
+    if (!hero_lease_call_prior(signum, si, ctx)) return 0;
+    if (sent) return 1;
+    if (!known) return 0;
     HeroStackRegfile after;
     hero_stack_regfile(ctx, &after);
     return memcmp(&before, &after, sizeof before) != 0;
+}
+
+/* A SIGTRAP OR A SIGILL A PROCESS SENT GOES ON WHERE THE HANDLER BEFORE US
+ * RETURNED (defect 2583, 2026-11-20). `raise`, `kill`, `pthread_kill` or
+ * another process's `kill` deliver the signal after the call that sent it, so
+ * a handler that returns sends the thread back past that call, and a C
+ * program goes on: a library's handler that only notes the signal, then
+ * `raise(SIGTRAP)`, ended plain C at 0 and this runtime at 133 under a line
+ * saying the process was dying, 3 runs of 3 on this Mac (batch 39's
+ * `raised_trap`). Measured 2026-11-20, each shape under a handler that notes
+ * and returns, plain C going on at 0 in every one: `raise`, `kill` and
+ * `pthread_kill` of SIGTRAP and another process's `kill` arrive with `si_code`
+ * 0 and a sender on this Mac, and with `SI_TKILL` (-6) or `SI_USER` (0) and a
+ * sender in Linux arm64 (glibc 2.41); a `brk` arrives with `si_code` 0 and no
+ * sender here and with `TRAP_BRKPT` there. So a signal with `si_code` at or
+ * below 0 (Darwin's `SI_USER` with them) and a sender is one a process sent,
+ * and, its handler returned, is let go with nothing said.
+ *
+ * NOT SIGABRT: `abort` raises it the same way, and where the handler returns,
+ * ends the process itself by the default with no line, so claiming it is what
+ * keeps its line; this Mac tells the two apart by the mask `abort` blocks every
+ * other signal with, and glibc's `abort` blocks none (both measured that day).
+ * Whether a raised SIGABRT is let go is the defect's open question, a ruling.
+ * Nor what arrives with no sender, a trap instruction: Darwin's `raise(SIGILL)`
+ * arrives as a `udf` does, `si_code` 2 and no sender, and stays claimed. */
+static int hero_lease_sent(const siginfo_t *si) {
+    if (si == NULL || si->si_pid == 0) return 0;
+    return si->si_code <= 0 || si->si_code == SI_USER;
 }
 
 /* PANEL 175 CHANGED THE ORDER AND THE WORD, and each change is a defect that
