@@ -11,6 +11,9 @@
 # leaves, by the record of the buffer it jumps to, which is trusted only
 # while the buffer still holds the bytes the C library saved. This jump lands
 # within the handler, so its entry stands and the function is refused.
+# Since 2026-11-20 (lane-signals, defect 2522's row *it owes words of its
+# own*) the refusal says what the runtime knows: a jump to a buffer it never
+# saw filled, which may have left the handler or landed inside it.
 extern "fixedbugs-2522-a-handler-of-cs-jumps-and-its-deep-callback.h"
     function jumps_install(sig: i32, how: i32, cb: (function(i64) -> i64)) -> i32
     function jumps_raise(sig: i32) -> i32

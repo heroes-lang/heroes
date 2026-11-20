@@ -1,0 +1,26 @@
+# Fixed 2026-11-20, defect 2522's row *a jump through a buffer J never saw*,
+# lane-signals (panel 251's R1: it owes words of its own): a correct program
+# saves a buffer, copies it, and its handler jumps out of itself through the
+# copy; the signal over, it calls the function from far deeper.
+# Symptom: refused with *was called from inside a signal handler: C called it
+# while handling a signal*, false of this program (40 runs of 40 on this Mac
+# at `-O0` and `-O2`, 20 of 20 at `-O0` in Linux arm64).
+# Cause: the copy is a buffer the runtime never saw filled, so it cannot tell
+# a jump out of the handler from one within it, and keeps the handler as
+# running (a miss errs toward a told refusal). The refusal stands; its words
+# now say what the runtime knows: a jump it could not follow.
+extern "fixedbugs-2522-a-jump-out-of-a-handler-through-a-copied-buffer.h"
+    function copied_install(sig: i32) -> i32
+    function copied_escape(sig: i32) -> i32
+    function copied_call(cb: (function(i64) -> i64)) -> i64
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function answer(n: i64) -> i64
+    return n + 1
+
+function main()
+    print("installed ", copied_install(sig: SIGUSR1))
+    print("escaped ", copied_escape(sig: SIGUSR1))
+    print("called ", copied_call(cb: answer))
