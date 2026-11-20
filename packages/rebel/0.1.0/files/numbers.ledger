@@ -166,14 +166,14 @@ capability number/width-fill  a number's text widened to a width with a fill, at
   note    a number's text is text, and the width, fill and alignment are `strings`'
 
 capability number/sign  a number's text with its sign always shown
-  heroes  numbers.with_sign
+  heroes  numbers.with_plus_sign
   go      -
   rust    the `+` flag
   python  format (the options + and space)
   note    Python's ` ` option, a space for no sign, is `" " + s` where `s` has none
 
 capability number/negative-zero  a zero written without the minus its rounding left
-  heroes  numbers.unsigned_zero
+  heroes  numbers.trim_negative_zero
   go      -
   rust    -
   python  format (the `z` option)
