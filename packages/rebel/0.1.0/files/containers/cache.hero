@@ -226,7 +226,7 @@ function expire<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: 
 # - `cache`: the shape.
 #
 # Empty for an empty cache; entries expired and not yet forgotten are among
-# them. See also `oldest`.
+# them. See also `oldest_slot`.
 function slots(cache: Cache) -> [i64]
     return lru.by_use(cache.entries)
 
@@ -236,7 +236,7 @@ function slots(cache: Cache) -> [i64]
 # - `cache`: the shape.
 #
 # Fails `not_found` where the cache is empty. See also `slots`.
-function oldest(cache: Cache) -> i64?
+function oldest_slot(cache: Cache) -> i64?
     return codes.answer(at: cache.entries.oldest, msg: "an empty cache has no entry used least recently")
 
 # Empties a cache, keeping its capacity and time to live.
@@ -317,7 +317,7 @@ test "peek: a look that leaves the order of use"
     put(@pages, @urls, @bodies, @lookup, key: "/a", value: "A", now: 0)
     put(@pages, @urls, @bodies, @lookup, key: "/b", value: "B", now: 0)
     assert peek(pages, bodies, lookup, key: "/a", now: 0).must() == "A"
-    assert urls[oldest(pages).must()] == "/a"
+    assert urls[oldest_slot(pages).must()] == "/a"
 
 # Whether a live entry is held.
 test "contains: a key held, then expired"
@@ -368,14 +368,14 @@ test "slots: the pages by their last use"
     assert order == ["/c", "/b", "/a"]
 
 # The next entry a full cache forgets.
-test "oldest: the page used longest ago"
+test "oldest_slot: the page used longest ago"
     pages @= new(4)
     urls: [str] @= []
     bodies: [str] @= []
     lookup: {str: i64} @= {}
     put(@pages, @urls, @bodies, @lookup, key: "/a", value: "A", now: 0)
     put(@pages, @urls, @bodies, @lookup, key: "/b", value: "B", now: 0)
-    assert urls[oldest(pages).must()] == "/a"
+    assert urls[oldest_slot(pages).must()] == "/a"
 
 # A cache emptied.
 test "clear: every page forgotten"

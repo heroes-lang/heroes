@@ -20,10 +20,10 @@ function last<T>(xs: [T]) -> T?
 
 # The element of `xs` at `index`, failing `not_found` where `index` is below
 # zero or at or past the length.
-function get<T>(xs: [T], index: i64) -> T?
-    if index < 0 || index >= xs.len()
-        return fail(code: codes.NOT_FOUND, msg: f"no element at {index} in a list of {xs.len()}")
-    return ok(xs[index])
+function get<T>(xs: [T], at: i64) -> T?
+    if at < 0 || at >= xs.len()
+        return fail(code: codes.NOT_FOUND, msg: f"no element at {at} in a list of {xs.len()}")
+    return ok(xs[at])
 
 # The first `n` elements of `xs`, all of them where it holds fewer; aborts
 # where `n` is below zero.

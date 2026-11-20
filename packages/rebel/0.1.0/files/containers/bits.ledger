@@ -35,7 +35,7 @@ capability bits/count  how many bits are set, and whether none or all are
   note    Java's `cardinality` and `isEmpty`, .NET's `HasAllSet` and `HasAnySet`; a word counted by halves with its sign bit apart, since no operator here may overflow
 
 capability bits/algebra  two sets combined: and, or, xor, and not, and a set turned over
-  heroes  bits.and, bits.or, bits.xor, bits.and_not, bits.not
+  heroes  bits.intersection, bits.union_of, bits.symmetric_difference, bits.difference, bits.complement
   go      -
   rust    -
   python  -

@@ -60,12 +60,7 @@ function position_of<K>(table: Table lent, lookup: {K: i64} lent, key: K) -> i64
 
 # Builds the lookup map again from the live keys alone.
 function rebuild<K>(@table: Table, key_list: [K] lent, @lookup: {K: i64})
-    fresh: {K: i64} @= {}
-
-    for at in range(from: 0, to: table.count)
-        fresh[key_list[at]] @ at
-
-    lookup @ fresh
+    lookup @ storage.lookup_of(key_list, count: table.count)
     table.dead @ 0
 
 # Puts `value` under `key` and answers its position.

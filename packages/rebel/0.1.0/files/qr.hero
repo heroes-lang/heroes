@@ -454,19 +454,34 @@ function to_pixels(code: Code, scale: i64, border: i64) -> [u8]
 
 ## Payloads
 
+# The security a Wi-Fi network asks, as the readers of a Wi-Fi code name it in
+# its `T:` field.
+variant WifiSecurity
+    # WPA, WPA2 or WPA3 with a password, which the readers write `WPA`.
+    wpa
+    # WEP with a password, an old cipher a reader still joins: `WEP`.
+    wep
+    # An open network, which asks no password: `nopass`.
+    open
+
 # The text that tells a phone to join a Wi-Fi network, in the form readers
 # share: `WIFI:T:WPA;S:<name>;P:<password>;;`, each value's `\`, `;`, `,`,
 # `:` and `"` escaped by a backslash.
 #
 # - `ssid`: the network's name.
-# - `password`: its password; empty for an open network, which writes none.
-# - `security`: `WPA`, `WEP` or `nopass`, as the readers name them; any
-#   other is written as given.
+# - `password`: its password; empty writes none, as an open network asks.
+# - `security`: what the network asks, written `T:WPA`, `T:WEP` or
+#   `T:nopass`.
 # - `hidden`: whether the network does not announce its name.
 #
 # See also `make`.
-function wifi_text(ssid: str, password: str, security: str, hidden: bool) -> str
-    return render.wifi(ssid: ssid, password: password, security: security, hidden: hidden)
+function wifi_text(ssid: str, password: str, security: WifiSecurity, hidden: bool) -> str
+    named = match security
+        .wpa  => "WPA"
+        .wep  => "WEP"
+        .open => "nopass"
+
+    return render.wifi(ssid: ssid, password: password, security: named, hidden: hidden)
 
 ## Examples
 
@@ -570,5 +585,6 @@ test "to_pixels: a version 1 code, two pixels a module, no border"
 
 # The text of a Wi-Fi network.
 test "wifi_text: a network with a password"
-    text = wifi_text(ssid: "home", password: "secret", security: "WPA", hidden: false)
+    text = wifi_text(ssid: "home", password: "secret", security: .wpa, hidden: false)
     assert text == "WIFI:T:WPA;S:home;P:secret;;"
+    assert wifi_text(ssid: "cafe", password: "", security: .open, hidden: false) == "WIFI:T:nopass;S:cafe;;"

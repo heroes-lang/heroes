@@ -12,6 +12,14 @@
 # What the language already does is not done again: `to_str` writes an integer
 # in base ten, a boolean, and a float in the fewest digits that read back as
 # it; `to_i8` to `to_u64` narrow an integer and `to_f64` widens one.
+#
+# What its neighbours do: an integer past 64 bits, and a decimal or a fraction
+# held exactly, is `big`'s, where `parse_int` fails `does_not_fit`; a number
+# written as a language writes it, its decimal mark, its grouping, a
+# percentage or an amount of money, is `i18n/numbers`', of which
+# `group_digits` and `format_percent` are the plain forms; and arithmetic on
+# the numbers read, the limits of each type among it (`math.MIN_I64`,
+# `math.MAX_I64`), is `math`'s.
 
 use numbers/internal/fault
 use numbers/internal/forms
@@ -38,252 +46,360 @@ constant INVALID: str
 constant DOES_NOT_FIT: str
     "does_not_fit"
 
-# The smallest `i64`, -9223372036854775808, written as a difference since its
-# magnitude is no `i64`.
-constant LOWEST: i64
-    0 - 9223372036854775807 - 1
-
-# The largest `i64`.
-constant HIGHEST: i64
-    9223372036854775807
-
 ## Integers in base ten
 
-# The integer `s` spells in base ten, as the language's integer, `i64`: an
-# optional `+` or `-`, then one digit or more, and nothing else. Fails
-# `invalid` where `s` is empty, has no digit, or holds any other byte, a space
-# and a `_` included; fails `does_not_fit` where the number is outside `i64`.
-# Zeros before the number are read: "007" is 7.
+# The integer `s` spells in base ten, as the language's integer, `i64`.
+#
+# - `s`: an optional `+` or `-`, then one digit or more, and nothing else;
+#   zeros before the number are read, so "007" is 7.
+#
+# Fails `invalid` where `s` is empty, has no digit, or holds any other byte, a
+# space and a `_` included; fails `does_not_fit` where the number is outside
+# `i64`, `math.MIN_I64` to `math.MAX_I64`. A number past 64 bits is read by
+# `big`. See also `parse_int_base`, `parse_int_literal`.
 function parse_int(s: str) -> i64?
-    return whole.signed(s: s, sp: whole.plain(s, 10), min: LOWEST, max: HIGHEST, type_name: "i64")
+    return whole.signed(s: s, sp: whole.plain(s, 10), min: whole.LOWEST, max: whole.HIGHEST, type_name: "i64")
 
-# The integer `s` spells in base ten, as an `i8`. Fails `invalid` and
-# `does_not_fit` as `parse_int` does, the range being -128 to 127.
+# The integer `s` spells in base ten, as an `i8`.
+#
+# - `s`: the text, read as `parse_int` reads it.
+#
+# Fails `invalid` and `does_not_fit` as `parse_int` does, the range being -128
+# to 127.
 function parse_i8(s: str) -> i8?
     n = whole.signed(s: s, sp: whole.plain(s, 10), min: -128, max: 127, type_name: "i8")?
     return ok(to_i8(n).must())
 
-# The integer `s` spells in base ten, as an `i16`. Fails `invalid` and
-# `does_not_fit` as `parse_int` does, the range being -32768 to 32767.
+# The integer `s` spells in base ten, as an `i16`.
+#
+# - `s`: the text, read as `parse_int` reads it.
+#
+# Fails `invalid` and `does_not_fit` as `parse_int` does, the range being
+# -32768 to 32767.
 function parse_i16(s: str) -> i16?
     n = whole.signed(s: s, sp: whole.plain(s, 10), min: -32768, max: 32767, type_name: "i16")?
     return ok(to_i16(n).must())
 
-# The integer `s` spells in base ten, as an `i32`. Fails `invalid` and
-# `does_not_fit` as `parse_int` does, the range being -2147483648 to
-# 2147483647.
+# The integer `s` spells in base ten, as an `i32`.
+#
+# - `s`: the text, read as `parse_int` reads it.
+#
+# Fails `invalid` and `does_not_fit` as `parse_int` does, the range being
+# -2147483648 to 2147483647.
 function parse_i32(s: str) -> i32?
     n = whole.signed(s: s, sp: whole.plain(s, 10), min: -2147483648, max: 2147483647, type_name: "i32")?
     return ok(to_i32(n).must())
 
-# The integer `s` spells in base ten, as a `u8`. Fails `invalid` as
-# `parse_int` does, and `does_not_fit` where the number is outside 0 to 255: a
-# negative number is a number that does not fit, and "-0" is 0.
+# The integer `s` spells in base ten, as a `u8`.
+#
+# - `s`: the text, read as `parse_int` reads it; "-0" is 0.
+#
+# Fails `invalid` as `parse_int` does, and `does_not_fit` where the number is
+# outside 0 to 255: a negative number is a number that does not fit.
 function parse_u8(s: str) -> u8?
     n = whole.signed(s: s, sp: whole.plain(s, 10), min: 0, max: 255, type_name: "u8")?
     return ok(to_u8(n).must())
 
-# The integer `s` spells in base ten, as a `u16`. Fails `invalid` as
-# `parse_int` does, and `does_not_fit` where the number is outside 0 to 65535,
-# a negative one included.
+# The integer `s` spells in base ten, as a `u16`.
+#
+# - `s`: the text, read as `parse_int` reads it.
+#
+# Fails `invalid` as `parse_int` does, and `does_not_fit` where the number is
+# outside 0 to 65535, a negative one included.
 function parse_u16(s: str) -> u16?
     n = whole.signed(s: s, sp: whole.plain(s, 10), min: 0, max: 65535, type_name: "u16")?
     return ok(to_u16(n).must())
 
-# The integer `s` spells in base ten, as a `u32`. Fails `invalid` as
-# `parse_int` does, and `does_not_fit` where the number is outside 0 to
-# 4294967295, a negative one included.
+# The integer `s` spells in base ten, as a `u32`.
+#
+# - `s`: the text, read as `parse_int` reads it.
+#
+# Fails `invalid` as `parse_int` does, and `does_not_fit` where the number is
+# outside 0 to 4294967295, a negative one included.
 function parse_u32(s: str) -> u32?
     n = whole.signed(s: s, sp: whole.plain(s, 10), min: 0, max: 4294967295, type_name: "u32")?
     return ok(to_u32(n).must())
 
-# The integer `s` spells in base ten, as a `u64`. Fails `invalid` as
-# `parse_int` does, and `does_not_fit` where the number is outside 0 to
-# 18446744073709551615, a negative one included.
+# The integer `s` spells in base ten, as a `u64`.
+#
+# - `s`: the text, read as `parse_int` reads it.
+#
+# Fails `invalid` as `parse_int` does, and `does_not_fit` where the number is
+# outside 0 to 18446744073709551615, a negative one included.
 function parse_u64(s: str) -> u64?
     return whole.unsigned(s, whole.plain(s, 10))
 
 ## Integers in another base
 
-# The integer `s` spells in `base`, 2 to 36: an optional sign, then digits of
-# that base, the letters `a` to `z` in either case standing for 10 to 35. No
-# prefix is read: "0x1f" is `invalid` in base 16, where "1f" is 31. Fails
-# `invalid` and `does_not_fit` as `parse_int` does. Aborts where `base` is
-# outside 2 to 36.
+# The integer `s` spells in `base`.
+#
+# - `s`: an optional sign, then digits of `base`, the letters `a` to `z` in
+#   either case standing for 10 to 35; no prefix is read, so "0x1f" is
+#   `invalid` in base 16, where "1f" is 31.
+# - `base`: 2 to 36.
+#
+# Fails `invalid` and `does_not_fit` as `parse_int` does. Aborts where `base`
+# is outside 2 to 36. See also `format_int`.
 function parse_int_base(s: str, base: i64) -> i64?
-    return whole.signed(s: s, sp: whole.plain(s, base), min: LOWEST, max: HIGHEST, type_name: "i64")
+    return whole.signed(s: s, sp: whole.plain(s, base), min: whole.LOWEST, max: whole.HIGHEST, type_name: "i64")
 
-# The integer `s` spells in `base`, 2 to 36, as a `u64`. Fails `invalid` as
-# `parse_int_base` does, and `does_not_fit` where the number is outside `u64`,
-# a negative one included. Aborts where `base` is outside 2 to 36.
+# The integer `s` spells in `base`, as a `u64`.
+#
+# - `s`: the text, read as `parse_int_base` reads it.
+# - `base`: 2 to 36.
+#
+# Fails `invalid` as `parse_int_base` does, and `does_not_fit` where the number
+# is outside `u64`, a negative one included. Aborts where `base` is outside 2
+# to 36. See also `format_u64`.
 function parse_u64_base(s: str, base: i64) -> u64?
     return whole.unsigned(s, whole.plain(s, base))
 
 # The integer `s` spells as the language writes one: an optional sign, then
-# `0x`, `0o` or `0b` and digits of base 16, 8 or 2, or digits of base ten,
-# with a `_` allowed between any two digits. Fails `invalid` where `s` is not
-# such a literal: a prefix in upper case, a `_` anywhere but between two
-# digits, and a zero before a decimal number, which is never octal; fails
-# `does_not_fit` where the number is outside `i64`.
+# `0x`, `0o` or `0b` and digits of base 16, 8 or 2, or digits of base ten.
+#
+# - `s`: the literal's text; a `_` may stand between any two digits.
+#
+# Fails `invalid` where `s` is not such a literal: a prefix in upper case, a
+# `_` anywhere but between two digits, and a zero before a decimal number,
+# which is never octal; fails `does_not_fit` where the number is outside
+# `i64`. See also `format_int_literal`.
 function parse_int_literal(s: str) -> i64?
-    return whole.signed(s: s, sp: whole.literal(s)?, min: LOWEST, max: HIGHEST, type_name: "i64")
+    return whole.signed(s: s, sp: whole.literal(s)?, min: whole.LOWEST, max: whole.HIGHEST, type_name: "i64")
 
-# The integer `s` spells as the language writes one, as a `u64`. Fails
-# `invalid` as `parse_int_literal` does, and `does_not_fit` where the number
-# is outside `u64`, a negative one included.
+# The integer `s` spells as the language writes one, as a `u64`.
+#
+# - `s`: the literal's text, read as `parse_int_literal` reads it.
+#
+# Fails `invalid` as `parse_int_literal` does, and `does_not_fit` where the
+# number is outside `u64`, a negative one included. See also
+# `format_u64_literal`.
 function parse_u64_literal(s: str) -> u64?
     return whole.unsigned(s, whole.literal(s)?)
 
 # The `i64` whose 64 bits `s` spells in `base` as an unsigned number, what
-# `format_bits` writes read back: "ffffffffffffffff" in base 16 is -1. No sign
-# and no prefix is read. Fails `invalid` where `s` is empty or holds a byte
-# that is no digit of `base`, and `does_not_fit` where the number needs more
-# than 64 bits. Aborts where `base` is outside 2 to 36.
+# `format_bits` writes read back: "ffffffffffffffff" in base 16 is -1.
+#
+# - `s`: digits of `base`, with no sign and no prefix.
+# - `base`: 2 to 36.
+#
+# Fails `invalid` where `s` is empty or holds a byte that is no digit of
+# `base`, and `does_not_fit` where the number needs more than 64 bits. Aborts
+# where `base` is outside 2 to 36.
 function parse_bits(s: str, base: i64) -> i64?
     bits = whole.unsigned(s, whole.bare(base))?
     return ok(whole.as_bits(bits))
 
-# `n` written in `base`, 2 to 36: a `-` where it is negative, then its digits,
-# the letters in lower case, with no prefix and no zero before them. Aborts
-# where `base` is outside 2 to 36.
+# `n` written in `base`: a `-` where it is negative, then its digits, the
+# letters in lower case, with no prefix and no zero before them.
+#
+# - `n`: any `i64`.
+# - `base`: 2 to 36.
+#
+# Aborts where `base` is outside 2 to 36. Base ten is the built-in `to_str`'s.
+# See also `parse_int_base`, `format_int_literal`.
 function format_int(n: i64, base: i64) -> str
     return radix.spelt(negative: n < 0, prefix: "", n: radix.magnitude(n), base: base)
 
-# `n` written in `base`, 2 to 36, as `format_int` writes an `i64`. Aborts
-# where `base` is outside 2 to 36.
+# `n` written in `base`, as `format_int` writes an `i64`.
+#
+# - `n`: any `u64`.
+# - `base`: 2 to 36.
+#
+# Aborts where `base` is outside 2 to 36. See also `parse_u64_base`.
 function format_u64(n: u64, base: i64) -> str
     return radix.spelt(negative: false, prefix: "", n: n, base: base)
 
 # `n` written as the language writes an integer in `base`: a `-` where it is
 # negative, then `0x`, `0o` or `0b` and its digits for base 16, 8 or 2, and
-# its digits alone for base ten; `parse_int_literal` reads it back. Aborts
-# where `base` is not 2, 8, 10 or 16, the bases that have a spelling.
+# its digits alone for base ten.
+#
+# - `n`: any `i64`.
+# - `base`: 2, 8, 10 or 16, the bases that have a spelling.
+#
+# `parse_int_literal` reads it back. Aborts where `base` is not 2, 8, 10 or 16.
 function format_int_literal(n: i64, base: i64) -> str
     return radix.spelt(negative: n < 0, prefix: radix.prefix_of(base), n: radix.magnitude(n), base: base)
 
 # `n` written as the language writes an integer in `base`, as
-# `format_int_literal` writes an `i64`. Aborts where `base` is not 2, 8, 10
-# or 16.
+# `format_int_literal` writes an `i64`.
+#
+# - `n`: any `u64`.
+# - `base`: 2, 8, 10 or 16.
+#
+# Aborts where `base` is not 2, 8, 10 or 16. See also `parse_u64_literal`.
 function format_u64_literal(n: u64, base: i64) -> str
     return radix.spelt(negative: false, prefix: radix.prefix_of(base), n: n, base: base)
 
-# The 64 bits of `n` written in `base` as the unsigned number they spell, so
-# a negative `n` has no sign: -1 in base 16 is "ffffffffffffffff". It is the
-# form of a value held for its bits, since the bitwise operators work on
-# `i64`; a `n` that is not negative is written as `format_int` writes it.
-# Aborts where `base` is outside 2 to 36.
+# The 64 bits of `n` written in `base` as the unsigned number they spell, so a
+# negative `n` has no sign: -1 in base 16 is "ffffffffffffffff".
+#
+# - `n`: any `i64`, held for its bits; one that is not negative is written as
+#   `format_int` writes it.
+# - `base`: 2 to 36.
+#
+# It is the form of a value held for its bits, since the bitwise operators work
+# on `i64`. Aborts where `base` is outside 2 to 36. See also `parse_bits`.
 function format_bits(n: i64, base: i64) -> str
     return radix.spelt(negative: false, prefix: "", n: radix.bits_of(n), base: base)
 
 ## Floats from text
 
 # The `f64` nearest to the number `s` spells in decimal, ties going to the
-# even one: an optional sign, digits with at most one point among them, and
-# an optional exponent, `e` or `E`, an optional sign and digits; or, in any
-# case of letters and with an optional sign, `inf`, `infinity` or `nan`.
-# Everything `to_str` writes for a float is read back as the same value.
-# Fails `invalid` where `s` is anything else: empty, without a digit, with a
-# space, a `_`, or a `0x`. A number too large for `f64` is `inf` and one too
-# small is zero, each with its sign, so nothing fails to fit. The answer is
-# exact for a text of any length; the time is linear in the length.
+# even one.
+#
+# - `s`: an optional sign, digits with at most one point among them, and an
+#   optional exponent, `e` or `E`, an optional sign and digits; or, in any
+#   case of letters and with an optional sign, `inf`, `infinity` or `nan`.
+#
+# Everything `to_str` writes for a float is read back as the same value. A
+# number too large for `f64` is `inf` and one too small is zero, each with its
+# sign, so nothing fails to fit. Fails `invalid` where `s` is anything else:
+# empty, without a digit, with a space, a `_`, or a `0x`. The answer is exact
+# for a text of any length; the time is linear in the length. See also
+# `parse_f32`, `parse_float_hex`.
 function parse_float(s: str) -> f64?
     return ok(read.value(r: read.decimal(s)?, format: near.f64_format()))
 
 # The `f32` nearest to the number `s` spells in decimal, ties going to the
-# even one, read as `parse_float` reads it and rounded once: `parse_float`
-# narrowed by `to_f32` rounds twice and can answer the neighbour. Fails
-# `invalid` as `parse_float` does.
+# even one, rounded once.
+#
+# - `s`: the text, read as `parse_float` reads it.
+#
+# `parse_float` narrowed by `to_f32` rounds twice and can answer the
+# neighbour. Fails `invalid` as `parse_float` does.
 function parse_f32(s: str) -> f32?
     return ok(to_f32(read.value(r: read.decimal(s)?, format: near.f32_format())))
 
-# The `f64` nearest to the number `s` spells in hexadecimal: an optional
-# sign, `0x` or `0X`, hexadecimal digits of either case with at most one point among
-# them, and an optional exponent, `p` or `P`, an optional sign and decimal
-# digits, which counts powers of two; or `inf`, `infinity` or `nan` as
-# `parse_float` reads them. "0x1.8p+1" is 3.0. Fails `invalid` where `s` is
-# anything else. More bits than an `f64` holds are rounded, ties to the even
-# one; too large is `inf` and too small is zero.
+# The `f64` nearest to the number `s` spells in hexadecimal: "0x1.8p+1" is
+# 3.0.
+#
+# - `s`: an optional sign, `0x` or `0X`, hexadecimal digits of either case
+#   with at most one point among them, and an optional exponent, `p` or `P`,
+#   an optional sign and decimal digits, which counts powers of two; or
+#   `inf`, `infinity` or `nan` as `parse_float` reads them.
+#
+# More bits than an `f64` holds are rounded, ties to the even one; too large
+# is `inf` and too small is zero. Fails `invalid` where `s` is anything else.
+# See also `format_float_hex`.
 function parse_float_hex(s: str) -> f64?
     return ok(read.value(r: read_hex.hexadecimal(s)?, format: near.f64_format()))
 
 ## Floats as text
 
 # `x` written with `precision` digits after the point and no exponent,
-# rounded from the exact value `x` holds, ties going to the even digit:
-# 0.125 at precision 2 is "0.12". At precision 0 no point is written. A
-# value that rounds to zero keeps its sign, "-0.00"; `inf`, `-inf` and `nan`
-# are written so. Aborts where `precision` is negative. Every digit is exact,
-# whatever the precision: past the digits `x` holds, the rest are zeros.
+# rounded from the exact value `x` holds, ties going to the even digit: 0.125
+# at precision 2 is "0.12".
+#
+# - `x`: any `f64`; `inf`, `-inf` and `nan` are written so.
+# - `precision`: the digits after the point, 0 or more; at 0 no point is
+#   written.
+#
+# A value that rounds to zero keeps its sign, "-0.00", which
+# `trim_negative_zero` takes off. Every digit is exact, whatever the
+# precision: past the digits `x` holds, the rest are zeros. Aborts where
+# `precision` is negative. A number written as a language writes it, its
+# decimal mark and grouping, is `i18n/numbers`'.
 function format_float(x: f64, precision: i64) -> str
     return write.fixed(x: x, precision: precision)
 
 # `x` times 100 written with `precision` digits after the point and a `%`
-# after them: 0.125 at precision 1 is "12.5%". The hundredfold value is exact,
-# not the float `x * 100.0`, and is rounded as `format_float` rounds;
-# `inf%`, `-inf%` and `nan%` are written so. Aborts where `precision` is
-# negative.
+# after them: 0.125 at precision 1 is "12.5%".
+#
+# - `x`: the fraction; `inf`, `-inf` and `nan` are written `inf%`, `-inf%`
+#   and `nan%`.
+# - `precision`: the digits after the point, 0 or more.
+#
+# The hundredfold value is exact, not the float `x * 100.0`, and is rounded as
+# `format_float` rounds. Aborts where `precision` is negative. A percentage
+# written as a language writes it is `i18n/numbers`'.
 function format_percent(x: f64, precision: i64) -> str
     return write.percent(x: x, precision: precision)
 
 # `x` written in exponent form with `precision` digits after the point: one
 # digit, the point and the digits, `e`, the exponent's sign and at least two
-# digits of it, "1.50e+00". Rounded from the exact value, ties going to the
-# even digit; at precision 0 no point is written. `inf`, `-inf` and `nan` are
-# written so. Aborts where `precision` is negative.
+# digits of it, "1.50e+00".
+#
+# - `x`: any `f64`; `inf`, `-inf` and `nan` are written so.
+# - `precision`: the digits after the point, 0 or more; at 0 no point is
+#   written.
+#
+# Rounded from the exact value, ties going to the even digit. Aborts where
+# `precision` is negative.
 function format_float_exp(x: f64, precision: i64) -> str
     return write.scientific(x: x, precision: precision)
 
 # `x` written to `digits` significant digits, in the plainer of two forms:
 # with no exponent where the exponent of its first digit is -4 or more and
-# under `digits`, in exponent form otherwise; zeros that end the fraction are
-# left out, and the point with them. 1234.5 to 3 digits is "1.23e+03" and to
-# 6 digits is "1234.5". Rounded from the exact value, ties going to the even
-# digit. Aborts where `digits` is under 1.
+# under `digits`, in exponent form otherwise.
+#
+# - `x`: any `f64`.
+# - `digits`: the significant digits, 1 or more.
+#
+# Zeros that end the fraction are left out, and the point with them: 1234.5 to
+# 3 digits is "1.23e+03" and to 6 digits is "1234.5". Rounded from the exact
+# value, ties going to the even digit. Aborts where `digits` is under 1.
 function format_float_general(x: f64, digits: i64) -> str
     return write.general(x: x, digits: digits)
 
 # `x` written in the fewest digits that read back as `x`, the nearest to it
-# where several do, with no exponent whatever its size: one sextillion is
-# "1000000000000000000000.0", where `to_str` writes "1e+21". `to_str`
-# promises a text that reads back and not the fewest digits, and at some
-# powers of two writes one digit more. A whole value ends in ".0", as
-# `to_str` writes it; `inf`, `-inf` and `nan` are written so.
+# where several do, with no exponent whatever its size.
+#
+# - `x`: any `f64`; `inf`, `-inf` and `nan` are written so.
+#
+# One sextillion is "1000000000000000000000.0", where `to_str` writes
+# "1e+21"; `to_str` promises a text that reads back and not the fewest digits,
+# and at some powers of two writes one digit more. A whole value ends in ".0",
+# as `to_str` writes it.
 function format_float_shortest(x: f64) -> str
     return forms.shortest(text: to_str(x), x: x, format: near.f64_format(), exponent_form: false)
 
-# `x` written in exponent form in the fewest digits that read back as `x`:
-# one digit, the point and the rest where there are more, `e`, the exponent's
-# sign and at least two digits of it, "1.5e+00" and "1e+21". An integer under
-# 2 to the 53rd is written so exactly through `to_f64`.
+# `x` written in exponent form in the fewest digits that read back as `x`: one
+# digit, the point and the rest where there are more, `e`, the exponent's sign
+# and at least two digits of it, "1.5e+00" and "1e+21".
+#
+# - `x`: any `f64`; an integer under 2 to the 53rd is written so exactly
+#   through `to_f64`.
 function format_float_exp_shortest(x: f64) -> str
     return forms.shortest(text: to_str(x), x: x, format: near.f64_format(), exponent_form: true)
 
 # `x` written in the fewest digits that read back as the same `f32`, with no
-# exponent, as `format_float_shortest` writes an `f64`. Widening `x` with
-# `to_f64` first writes the digits of the wider value, 0.10000000149011612
-# for the `f32` nearest to 0.1.
+# exponent, as `format_float_shortest` writes an `f64`.
+#
+# - `x`: any `f32`.
+#
+# Widening `x` with `to_f64` first writes the digits of the wider value,
+# 0.10000000149011612 for the `f32` nearest to 0.1.
 function format_f32_shortest(x: f32) -> str
     return forms.shortest(text: to_str(x), x: to_f64(x), format: near.f32_format(), exponent_form: false)
 
-# `x` written in exponent form in the fewest digits that read back as the
-# same `f32`, as `format_float_exp_shortest` writes an `f64`.
+# `x` written in exponent form in the fewest digits that read back as the same
+# `f32`, as `format_float_exp_shortest` writes an `f64`.
+#
+# - `x`: any `f32`.
 function format_f32_exp_shortest(x: f32) -> str
     return forms.shortest(text: to_str(x), x: to_f64(x), format: near.f32_format(), exponent_form: true)
 
-# `x` written in hexadecimal, every bit of it and no more: the sign, `0x1`,
-# a point and the hexadecimal digits of the fraction where it has any, `p`,
-# and the power of two with its sign, "0x1.8p+1" for 3.0; zero is "0x0p+0",
-# and `inf`, `-inf` and `nan` are written so. `parse_float_hex` reads it back
-# as the same value.
+# `x` written in hexadecimal, every bit of it and no more: the sign, `0x1`, a
+# point and the hexadecimal digits of the fraction where it has any, `p`, and
+# the power of two with its sign, "0x1.8p+1" for 3.0.
+#
+# - `x`: any `f64`; zero is "0x0p+0", and `inf`, `-inf` and `nan` are written
+#   so.
+#
+# `parse_float_hex` reads it back as the same value.
 function format_float_hex(x: f64) -> str
     return forms.hexadecimal(x)
 
 # The `f64` nearest to `x` rounded at `decimals` digits after the point, ties
 # going to the even digit, the rounding done on the exact value `x` holds:
-# 2.675 at 2 is 2.67, since the float is under 2.675. A negative `decimals`
-# rounds before the point, 1250.0 at -2 being 1200.0. `inf`, `-inf` and `nan`
-# are answered as they are, and a value that rounds past the largest `f64` is
-# `inf`.
+# 2.675 at 2 is 2.67, since the float is under 2.675.
+#
+# - `x`: any `f64`; `inf`, `-inf` and `nan` are answered as they are.
+# - `decimals`: the digits after the point to keep; a negative count rounds
+#   before the point, 1250.0 at -2 being 1200.0.
+#
+# A value that rounds past the largest `f64` is `inf`. Rounding to a whole
+# number is `math.round`'s.
 function round_to(x: f64, decimals: i64) -> f64
     return forms.round_to(x: x, decimals: decimals)
 
@@ -446,8 +562,11 @@ function parse_size(s: str, units: SizeUnits) -> i64?
 ## Booleans
 
 # The boolean `s` spells: `true` for "true" and `false` for "false", the two
-# texts `to_str` writes. Fails `invalid` for any other text, "1", "True" and
-# "" included.
+# texts `to_str` writes.
+#
+# - `s`: the text to read.
+#
+# Fails `invalid` for any other text, "1", "True" and "" included.
 function parse_bool(s: str) -> bool?
     if s == "true"
         return ok(true)
@@ -458,23 +577,36 @@ function parse_bool(s: str) -> bool?
 
 ## Width, sign and grouping
 
-# `s`, the text of a number, with a `+` before it where it has no sign, so
-# that the sign always shows: "5" is "+5", and "-5" and "+5" are answered as
-# they are.
-function with_sign(s: str) -> str
+# `s`, the text of a number, with a `+` before it where it has no sign, so that
+# the sign always shows: "5" is "+5".
+#
+# - `s`: the number's text; "-5" and "+5" are answered as they are.
+#
+# A float's size with the sign of another is `math.with_sign`'s.
+function with_plus_sign(s: str) -> str
     return layout.with_sign(s)
 
 # `s`, the text of a number, without its `-` where every digit before its
 # exponent is zero: "-0.00" is "0.00", what a small negative value rounds to.
-# Any other text is answered as it is.
-function unsigned_zero(s: str) -> str
+#
+# - `s`: the number's text; any other text is answered as it is.
+#
+# See also `format_float`.
+function trim_negative_zero(s: str) -> str
     return layout.unsigned_zero(s)
 
-# `s`, the text of a number, with `sep` between each group of `size` digits
-# of its whole part, counted from the right: "1234567.891" by "," and 3 is
-# "1,234,567.891". The whole part is the digits after the sign and the base
-# prefix, hexadecimal ones after `0x`, and nothing after it is grouped.
-# Aborts where `size` is under 1.
+# `s`, the text of a number, with `sep` between each group of `size` digits of
+# its whole part, counted from the right: "1234567.891" by "," and 3 is
+# "1,234,567.891".
+#
+# - `s`: the number's text; its whole part is the digits after the sign and
+#   the base prefix, hexadecimal ones after `0x`, and nothing after it is
+#   grouped.
+# - `sep`: the text put between two groups.
+# - `size`: the digits in a group, 1 or more.
+#
+# Aborts where `size` is under 1. The grouping a language uses, its separator
+# and its sizes, is `i18n/numbers`'.
 function group_digits(s: str, sep: str, size: i64) -> str
     return layout.group_digits(s: s, sep: sep, size: size)
 
@@ -482,8 +614,8 @@ function group_digits(s: str, sep: str, size: i64) -> str
 
 test "parse_int: zero, both ends of i64, one past each, a sign, and what is no integer"
     assert parse_int("0").must() == 0
-    assert parse_int("-9223372036854775808").must() == LOWEST
-    assert parse_int("9223372036854775807").must() == HIGHEST
+    assert parse_int("-9223372036854775808").must() == whole.LOWEST
+    assert parse_int("9223372036854775807").must() == whole.HIGHEST
     assert parse_int("+007").must() == 7
     assert parse_int("9223372036854775808").is_err()
     assert parse_int("-9223372036854775809").is_err()
@@ -516,7 +648,7 @@ test "parse_i8 to parse_u64: each width at both ends and one past"
 test "parse_int_base and parse_u64_base: base 2 and 36, both cases of letters, and a prefix"
     assert parse_int_base(s: "-101", base: 2).must() == -5
     assert parse_int_base(s: "zZ", base: 36).must() == 1295
-    assert parse_int_base(s: "7FFFFFFFFFFFFFFF", base: 16).must() == HIGHEST
+    assert parse_int_base(s: "7FFFFFFFFFFFFFFF", base: 16).must() == whole.HIGHEST
     assert parse_int_base(s: "8000000000000000", base: 16).is_err()
     assert parse_int_base(s: "0x1f", base: 16).is_err()
     assert parse_int_base(s: "2", base: 2).is_err()
@@ -529,7 +661,7 @@ test "parse_int_literal and parse_u64_literal: each prefix, a `_`, and what the 
     assert parse_int_literal("0b1_01").must() == 5
     assert parse_int_literal("1_000").must() == 1000
     assert parse_int_literal("0").must() == 0
-    assert parse_int_literal("-0x8000000000000000").must() == LOWEST
+    assert parse_int_literal("-0x8000000000000000").must() == whole.LOWEST
     assert parse_int_literal("0x8000000000000000").is_err()
     assert parse_u64_literal("0xffff_ffff_ffff_ffff").must() == 18446744073709551615
 
@@ -538,8 +670,8 @@ test "parse_int_literal and parse_u64_literal: each prefix, a `_`, and what the 
 
 test "parse_bits: every bit set, the top bit alone, and a bit too many"
     assert parse_bits(s: "ffffffffffffffff", base: 16).must() == -1
-    assert parse_bits(s: "8000000000000000", base: 16).must() == LOWEST
-    assert parse_bits(s: "7fffffffffffffff", base: 16).must() == HIGHEST
+    assert parse_bits(s: "8000000000000000", base: 16).must() == whole.LOWEST
+    assert parse_bits(s: "7fffffffffffffff", base: 16).must() == whole.HIGHEST
     assert parse_bits(s: "10000000000000000", base: 16).is_err()
     assert parse_bits(s: "-1", base: 16).is_err()
 
@@ -547,8 +679,8 @@ test "format_int, format_u64, format_int_literal and format_bits: zero, both end
     assert format_int(n: 0, base: 10) == "0"
     assert format_int(n: 255, base: 16) == "ff"
     assert format_int(n: -255, base: 16) == "-ff"
-    assert format_int(n: LOWEST, base: 10) == "-9223372036854775808"
-    assert format_int(n: LOWEST, base: 2) == "-1000000000000000000000000000000000000000000000000000000000000000"
+    assert format_int(n: whole.LOWEST, base: 10) == "-9223372036854775808"
+    assert format_int(n: whole.LOWEST, base: 2) == "-1000000000000000000000000000000000000000000000000000000000000000"
     assert format_u64(n: 18446744073709551615, base: 36) == "3w5e11264sgsf"
     assert format_int_literal(n: -255, base: 16) == "-0xff"
     assert format_int_literal(n: 8, base: 8) == "0o10"
@@ -556,7 +688,7 @@ test "format_int, format_u64, format_int_literal and format_bits: zero, both end
     assert format_int_literal(n: -5, base: 10) == "-5"
     assert format_u64_literal(n: 255, base: 16) == "0xff"
     assert format_bits(n: -1, base: 16) == "ffffffffffffffff"
-    assert format_bits(n: LOWEST, base: 16) == "8000000000000000"
+    assert format_bits(n: whole.LOWEST, base: 16) == "8000000000000000"
     assert format_bits(n: 5, base: 2) == "101"
 
 test "parse_float: exact halves at both ends, past the range, a sign on zero, and what is no float"
@@ -638,15 +770,174 @@ test "parse_bool: the two texts, and every other"
             .ok _  => assert false
             .err e => assert e.code == INVALID
 
-test "with_sign, unsigned_zero and group_digits: the text of a number reshaped"
-    assert with_sign("5") == "+5"
-    assert with_sign("-5") == "-5"
-    assert unsigned_zero(format_float(x: -0.001, precision: 2)) == "0.00"
-    assert unsigned_zero("-0.01") == "-0.01"
+test "with_plus_sign, trim_negative_zero and group_digits: the text of a number reshaped"
+    assert with_plus_sign("5") == "+5"
+    assert with_plus_sign("-5") == "-5"
+    assert trim_negative_zero(format_float(x: -0.001, precision: 2)) == "0.00"
+    assert trim_negative_zero("-0.01") == "-0.01"
     assert group_digits(s: "1234567", sep: ",", size: 3) == "1,234,567"
     assert group_digits(s: format_u64_literal(n: 16777215, base: 16), sep: "_", size: 4) == "0xff_ffff"
 
 ## Examples
+
+# A count read from a command's argument, and a word that is no number.
+test "parse_int: a count, and a word"
+    assert parse_int("42").must() == 42
+    assert parse_int("-7").must() == -7
+    assert parse_int("forty").is_err()
+
+# A byte of a signed format read from text.
+test "parse_i8: a signed byte"
+    assert parse_i8("-128").must() == -128
+    assert parse_i8("128").is_err()
+
+# A sample of 16-bit audio read from text.
+test "parse_i16: a sample"
+    assert parse_i16("-32768").must() == -32768
+
+# A 32-bit offset read from text.
+test "parse_i32: an offset"
+    assert parse_i32("2147483647").must() == 2147483647
+
+# A colour channel read from text, and one past it.
+test "parse_u8: a colour channel"
+    assert parse_u8("255").must() == 255
+    assert parse_u8("256").is_err()
+
+# A port number read from text.
+test "parse_u16: a port"
+    assert parse_u16("8080").must() == 8080
+
+# An IPv4 address held as one number, read from text.
+test "parse_u32: an address as a number"
+    assert parse_u32("3232235777").must() == 3232235777
+
+# A size past the largest `i64`, which a `u64` holds.
+test "parse_u64: past the largest i64"
+    assert parse_u64("18446744073709551615").must() == 18446744073709551615
+
+# A colour's hexadecimal digits read, in either case.
+test "parse_int_base: hexadecimal digits"
+    assert parse_int_base(s: "ff", base: 16).must() == 255
+    assert parse_int_base(s: "FF", base: 16).must() == 255
+
+# A 64-bit hash written in hexadecimal read back whole.
+test "parse_u64_base: a hash in hexadecimal"
+    assert parse_u64_base(s: "ffffffffffffffff", base: 16).must() == 18446744073709551615
+
+# A number written as the language writes one, prefix and underscores read.
+test "parse_int_literal: a hexadecimal literal and a grouped one"
+    assert parse_int_literal("0xff").must() == 255
+    assert parse_int_literal("1_000_000").must() == 1000000
+
+# The largest `u64` written as a literal.
+test "parse_u64_literal: the largest u64 in hexadecimal"
+    assert parse_u64_literal("0xffff_ffff_ffff_ffff").must() == 18446744073709551615
+
+# A mask's bits read back into an `i64`.
+test "parse_bits: every bit set is minus one"
+    assert parse_bits(s: "ffffffffffffffff", base: 16).must() == -1
+
+# A number in binary and in hexadecimal.
+test "format_int: binary and hexadecimal"
+    assert format_int(n: 5, base: 2) == "101"
+    assert format_int(n: -255, base: 16) == "-ff"
+
+# The largest `u64` in hexadecimal.
+test "format_u64: the largest in hexadecimal"
+    assert format_u64(n: 18446744073709551615, base: 16) == "ffffffffffffffff"
+
+# A number written as a literal of the language.
+test "format_int_literal: in hexadecimal and in binary"
+    assert format_int_literal(n: 255, base: 16) == "0xff"
+    assert format_int_literal(n: -5, base: 2) == "-0b101"
+
+# A `u64` written as a literal.
+test "format_u64_literal: in octal"
+    assert format_u64_literal(n: 8, base: 8) == "0o10"
+
+# Minus one's bits, which a mask writes.
+test "format_bits: minus one in hexadecimal"
+    assert format_bits(n: -1, base: 16) == "ffffffffffffffff"
+
+# A price read from text, and one with an exponent.
+test "parse_float: a price and an exponent"
+    assert parse_float("19.99").must() == 19.99
+    assert parse_float("2.5e3").must() == 2500.0
+
+# An `f32` read in one rounding.
+test "parse_f32: a tenth"
+    tenth: f32 = 0.1
+    assert parse_f32("0.1").must() == tenth
+
+# A float read from C's hexadecimal form.
+test "parse_float_hex: three"
+    assert parse_float_hex("0x1.8p+1").must() == 3.0
+
+# A price written to two decimals, rounded from the float's exact value.
+test "format_float: a price to two decimals"
+    assert format_float(x: 3.14159, precision: 2) == "3.14"
+    assert format_float(x: 2.5, precision: 0) == "2"
+
+# A ratio written as a percentage.
+test "format_percent: an eighth"
+    assert format_percent(x: 0.125, precision: 1) == "12.5%"
+
+# A number written in exponent form.
+test "format_float_exp: one and a half thousand"
+    assert format_float_exp(x: 1500.0, precision: 2) == "1.50e+03"
+
+# A number to three significant digits, in the plainer form.
+test "format_float_general: three digits, small and large"
+    assert format_float_general(x: 3.14159, digits: 3) == "3.14"
+    assert format_float_general(x: 1234.5, digits: 3) == "1.23e+03"
+
+# A float in the fewest digits, with no exponent.
+test "format_float_shortest: a tenth and one sextillion"
+    assert format_float_shortest(0.1) == "0.1"
+    assert format_float_shortest(1000000000000000000000.0) == "1000000000000000000000.0"
+
+# A float in the fewest digits, in exponent form.
+test "format_float_exp_shortest: one and a half"
+    assert format_float_exp_shortest(1.5) == "1.5e+00"
+
+# An `f32` in its own fewest digits, not its widened ones.
+test "format_f32_shortest: a tenth"
+    tenth: f32 = 0.1
+    assert format_f32_shortest(tenth) == "0.1"
+
+# An `f32` in exponent form, in its own fewest digits.
+test "format_f32_exp_shortest: ten billion"
+    x: f32 = 10000000000.0
+    assert format_f32_exp_shortest(x) == "1e+10"
+
+# A float's every bit in hexadecimal.
+test "format_float_hex: three and a tenth"
+    assert format_float_hex(3.0) == "0x1.8p+1"
+    assert format_float_hex(0.1) == "0x1.999999999999ap-4"
+
+# A float rounded at a decimal place, the exact value deciding.
+test "round_to: two decimals, and hundreds"
+    assert round_to(x: 2.675, decimals: 2) == 2.67
+    assert round_to(x: 1250.0, decimals: -2) == 1200.0
+
+# A flag read from a configuration.
+test "parse_bool: true, and a word that is not"
+    assert parse_bool("true").must()
+    assert parse_bool("yes").is_err()
+
+# A change written with its sign always shown.
+test "with_plus_sign: a gain and a loss"
+    assert with_plus_sign("5") == "+5"
+    assert with_plus_sign("-5") == "-5"
+
+# A small loss rounded to zero, written without its minus.
+test "trim_negative_zero: a rounded loss"
+    assert trim_negative_zero(format_float(x: -0.001, precision: 2)) == "0.00"
+
+# A large number grouped by thousands.
+test "group_digits: thousands"
+    assert group_digits(s: "1234567.891", sep: ",", size: 3) == "1,234,567.891"
 
 # A double's bits as a binary format writes them, and minus zero's.
 test "f64_to_bits: one and minus zero"

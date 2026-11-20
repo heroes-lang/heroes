@@ -1,0 +1,5 @@
+ok   "a: passes"
+SKIP "b: skips where no server is named": no server named
+skipped
+ok   "c: prints a skip line and ends, a pass"
+3 tests, 1 skipped

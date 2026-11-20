@@ -1,0 +1,6 @@
+SKIP "a: skips": no server named
+ok   "b: exits 0"
+FAIL "c: exits 77, automake's skip status"
+FAIL "d: aborts"
+4 tests, 2 failed, 1 skipped
+!exit: 1

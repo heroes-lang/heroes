@@ -1,6 +1,6 @@
 # The constants of `math`, written once: the face names each of them, and every
-# private module of the package reads them here, since a private module cannot
-# use the face that uses it.
+# private module of the package reads them here, beside the powers of two the
+# face does not offer.
 #
 # Heroes has no exponent literal (spec § 2), so the extremes of `f64` are
 # computed from powers of two, each exact, and the infinity and the nan from

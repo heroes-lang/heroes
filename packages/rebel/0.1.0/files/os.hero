@@ -2,7 +2,9 @@
 # system keeps for a program's data, state, cache, settings and sockets, who it
 # runs as and on what machine, and a URL or a file handed to the application
 # the user's system keeps for it. Files and folders by path are the package
-# `fs`'s, and other programs the package `process`'s.
+# `fs`'s, and other programs the package `process`'s. The program's arguments
+# and its exit are the language's own, the built-ins `args()` and `exit`, and
+# its arguments read as flags and options are `flags`'.
 #
 # The environment is read and never written: in C a write of it beside another
 # thread's read is undefined, so no function here sets, removes or clears a
@@ -69,16 +71,24 @@ record RawVariable
     # The bytes after it.
     value: [u8]
 
-# The value of the environment variable `name`. Fails `not_found` where it is
-# not set, which is never the same as set empty; `not_text` where its value is
-# not UTF-8 (`env_bytes` reads it); `invalid` where `name` is empty or holds
-# `=` or a zero byte, which name no variable on any system. On Windows a name
-# is compared without its case, as the system compares it.
+# The value of the environment variable `name`.
+#
+# - `name`: the variable's name; on Windows it is compared without its case,
+#   as the system compares it.
+#
+# Fails `not_found` where it is not set, which is never the same as set empty;
+# `not_text` where its value is not UTF-8 (`env_bytes` reads it); `invalid`
+# where `name` is empty or holds `=` or a zero byte, which name no variable on
+# any system. See also `env_all`, `expand_env`.
 function env(name: str) -> str?
     return variables.value_of(name)
 
 # The value of the environment variable `name` as the bytes the system holds,
-# UTF-8 or not. Fails as `env` does, but never `not_text`.
+# UTF-8 or not.
+#
+# - `name`: the variable's name, as `env` reads it.
+#
+# Fails as `env` does, but never `not_text`.
 function env_bytes(name: str) -> [u8]?
     return variables.bytes_of(name)
 
@@ -106,16 +116,25 @@ function env_all_bytes() -> [RawVariable]?
     return ok(out)
 
 # `s` with each `$NAME` and `${NAME}` replaced by what `lookup` answers for
-# `NAME`, a name being ASCII letters, digits and `_`; `$$` writes one `$`, and
-# a `$` before anything else stays as it is written. Fails with `lookup`'s own
-# error where it fails, and `invalid` where a `${` has no `}` or holds what is
-# not a name. Each name is asked once per place it stands.
+# `NAME`, a name being ASCII letters, digits and `_`.
+#
+# - `s`: the text to expand; `$$` writes one `$`, and a `$` before anything
+#   else stays as it is written.
+# - `lookup`: called once for each place a name stands, with the name; what
+#   it answers stands there, and its failure is the call's.
+#
+# Fails with `lookup`'s own error where it fails, and `invalid` where a `${`
+# has no `}` or holds what is not a name. See also `expand_env`.
 function expand(s: str, lookup: (function(str) -> str?)) -> str?
     return expansion.expanded(s, lookup: lookup)
 
 # `s` with each `$NAME` and `${NAME}` replaced by the environment's value, as
-# `expand` reads them. Fails `not_found` naming the first variable that is not
-# set, never writing it as empty, and as `env` fails for a value.
+# `expand` reads them.
+#
+# - `s`: the text to expand.
+#
+# Fails `not_found` naming the first variable that is not set, never writing
+# it as empty, and as `env` fails for a value.
 function expand_env(s: str) -> str?
     return expansion.expanded(s, lookup: env)
 
@@ -141,12 +160,17 @@ function working_dir() -> str?
     return ok(here)
 
 # Makes `path` the working folder, which every relative path is read in from
-# then on, a relative `path` read in the old one. Fails `file_not_found` where
-# `path` names nothing, `not_a_directory` where it names no folder,
-# `permission` where the folder is not this user's to enter, and `invalid`
-# where `path` is empty of meaning to the system or holds a zero byte. The
-# folder is the process's, one for all its threads: a thread that reads a
-# relative path while another changes it may read either folder.
+# then on.
+#
+# - `path`: the folder to enter; a relative one is read in the old working
+#   folder.
+#
+# The folder is the process's, one for all its threads: a thread that reads a
+# relative path while another changes it may read either folder. Fails
+# `file_not_found` where `path` names nothing, `not_a_directory` where it
+# names no folder, `permission` where the folder is not this user's to enter,
+# and `invalid` where `path` is empty of meaning to the system or holds a zero
+# byte. See also `working_dir`.
 function change_dir(path: str) -> ()?
     if codes.has_zero(path)
         return fail(code: codes.INVALID, msg: "a path holding a zero byte names no folder")
@@ -722,9 +746,14 @@ function network_counters() -> [NetworkCounters]?
 ## Random bytes and the terminal
 
 # `count` bytes from the system's generator for keys, fit for a unique name or
-# a key. Fails `invalid` where `count` is below 0, and with the system's code
-# where the generator refuses. On Linux it may wait, early in the machine's
-# start, until the generator is ready.
+# a key.
+#
+# - `count`: how many bytes, 0 or more.
+#
+# Fails `invalid` where `count` is below 0, and with the system's code where
+# the generator refuses. On Linux it may wait, early in the machine's start,
+# until the generator is ready. Numbers drawn from a seed, repeatable, are
+# `random`'s.
 function random_bytes(count: i64) -> [u8]?
     if count < 0
         return fail(code: codes.INVALID, msg: f"{count} random bytes asked: a count is 0 or more")
@@ -1058,6 +1087,190 @@ test "open_path: empty and a zero byte invalid, a missing file file_not_found, n
         .err e => assert e.code == FILE_NOT_FOUND
 
 ## Examples
+
+# The folders the system searches for programs, and a variable never set.
+test "env: PATH, and a variable never set"
+    assert env("PATH").must().len() > 0
+    assert env("REBEL_OS_EXAMPLE_NEVER_SET").is_err()
+
+# A variable's bytes, which are its text where it is UTF-8.
+test "env_bytes: PATH's bytes"
+    assert env_bytes("PATH").must().len() == env("PATH").must().len()
+
+# Every variable of the environment, each name one `env` reads.
+test "env_all: every variable"
+    assert env_all().must().len() > 0
+
+# Every variable as the system holds its bytes.
+test "env_all_bytes: every variable's bytes"
+    for variable in env_all_bytes().must()
+        assert variable.name.len() > 0
+
+# A text expanded with the environment as its lookup, as a shell would.
+test "expand: names looked up by a function"
+    assert expand(s: "${PATH}", lookup: env).must() == env("PATH").must()
+    assert expand(s: "costs $$5", lookup: env).must() == "costs $5"
+
+# A path written with a variable in it, expanded.
+test "expand_env: a variable in a path"
+    assert expand_env("$PATH").must() == env("PATH").must()
+    assert expand_env("$REBEL_OS_EXAMPLE_NEVER_SET/x").is_err()
+
+# The folder the program stands in.
+test "working_dir: where the program stands"
+    assert working_dir().must().len() > 0
+
+# The parent folder entered, then the folder the program stood in again.
+test "change_dir: in and back"
+    here = working_dir().must()
+    change_dir("..").must()
+    change_dir(here).must()
+    assert working_dir().must() == here
+
+# The folder for temporary files.
+test "temp_dir: where temporary files go"
+    assert temp_dir().must().len() > 0
+
+# The user's home folder, where the machine names one.
+test "home_dir: the user's home"
+    match home_dir()
+        .ok dir => assert dir.len() > 0
+        .err e  => assert e.code == NOT_FOUND || e.code == NOT_TEXT
+
+# Where a program keeps what it can make again.
+test "cache_dir: a program's cache"
+    match cache_dir()
+        .ok dir => assert dir.len() > 0
+        .err e  => assert e.code == NOT_FOUND || e.code == NOT_TEXT
+
+# Where a program keeps its settings.
+test "config_dir: a program's settings"
+    match config_dir()
+        .ok dir => assert dir.len() > 0
+        .err e  => assert e.code == NOT_FOUND || e.code == NOT_TEXT
+
+# The program's own file, where the machine names it.
+test "executable_path: the program's own file"
+    match executable_path()
+        .ok exe => assert exe.len() > 0
+        .err e  => assert e.code == NOT_FOUND
+
+# The family of this system, which the suffix of an executable tells.
+test "family: posix or windows"
+    windows = executable_suffix() == ".exe"
+
+    match family()
+        .windows => assert windows
+        .posix   => assert !windows
+
+# A program's file name, written as this system names one.
+test "executable_suffix: a tool's file name"
+    name = "tool" + executable_suffix()
+    assert name == "tool" || name == "tool.exe"
+
+# The process's own id, written into a lock file's name.
+test "pid: a name only this process writes"
+    assert pid() > 0
+    assert ("lock." + to_str(pid())).len() > 5
+
+# The process that started this one is another.
+test "parent_pid: another process"
+    assert parent_pid().must() != pid()
+
+# The user's id on POSIX, none on Windows.
+test "user_id: a number on POSIX"
+    match user_id()
+        .ok id => assert id >= 0
+        .err e => assert e.code == UNSUPPORTED
+
+# Whether the process runs with the rights of the system's own user.
+test "effective_user_id: root or not"
+    match effective_user_id()
+        .ok id => assert id >= 0
+        .err e => assert e.code == UNSUPPORTED
+
+# The group the process was started in.
+test "group_id: a number on POSIX"
+    match group_id()
+        .ok id => assert id >= 0
+        .err e => assert e.code == UNSUPPORTED
+
+# The group whose rights the process has.
+test "effective_group_id: a number on POSIX"
+    match effective_group_id()
+        .ok id => assert id >= 0
+        .err e => assert e.code == UNSUPPORTED
+
+# The other groups the process belongs to.
+test "group_ids: every one a number"
+    match group_ids()
+        .ok ids =>
+            for id in ids
+                assert id >= 0
+        .err e => assert e.code == UNSUPPORTED
+
+# The machine's name, as a log line writes it.
+test "host_name: the machine's name"
+    assert host_name().must().len() > 0
+
+# The size of a page, a multiple of 4096 on every machine Rebel runs on.
+test "page_size: a page of memory"
+    assert page_size().must() % 4096 == 0
+
+# How many workers a program starts, one per processor.
+test "processor_count: one worker per processor"
+    assert processor_count().must() >= 1
+
+# The system's name, as a program's report writes it.
+test "system: the system's name"
+    name = match system()
+        .darwin  => "macOS"
+        .linux   => "Linux"
+        .windows => "Windows"
+        .other   => "another POSIX system"
+
+    assert name.len() > 0
+
+# The architecture's name, as a download page names it.
+test "architecture: the processor's name"
+    name = match architecture()
+        .x86_64 => "amd64"
+        .arm64  => "arm64"
+        .other  => "other"
+
+    assert name.len() > 0
+
+# The system's version, as `uname -r` prints it on POSIX.
+test "system_version: the version text"
+    assert system_version().must().len() > 0
+
+# The name of the user the process runs as, where the machine names one.
+test "user_name: who runs the process"
+    match user_name()
+        .ok name => assert name.len() > 0
+        .err e   => assert e.code == NOT_FOUND
+
+# The processor time spent so far, in milliseconds.
+test "process_times: the time spent so far"
+    times = process_times().must()
+    assert (times.user_ns + times.system_ns) / 1000000 >= 0
+
+# The load over the last minute, as `uptime` shows it, where the system keeps
+# one.
+test "load_average: the last minute's load"
+    match load_average()
+        .ok load => assert load.one_minute >= 0
+        .err e   => assert e.code == UNSUPPORTED
+
+# A key of 32 random bytes.
+test "random_bytes: a key"
+    assert random_bytes(32).must().len() == 32
+
+# The terminal's width, where the output is one.
+test "terminal_size: the width of the terminal"
+    match terminal_size()
+        .ok size => assert size.columns > 0
+        .err e   => assert e.code == UNSUPPORTED
 
 # The share of the machine's memory available now, as a percentage.
 test "memory: the share of the memory available now"

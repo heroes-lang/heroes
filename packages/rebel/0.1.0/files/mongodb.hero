@@ -1816,10 +1816,10 @@ test "connect: a port where nothing listens fails closed, and a port out of rang
 
 test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-and-modify, bulk writes, indexes and failures, against the server REBEL_MONGODB_URL names"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => print("live: skipped, REBEL_MONGODB_URL names no server")
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             match connect(parse_url(url).must())
-                .err e => print(f"live: skipped, nothing answers: {e.code}")
+                .err e => skip_test(reason: f"nothing answers: {e.code}")
                 .ok first =>
                     c @= first
                     db = "rebel_test"
@@ -2375,10 +2375,10 @@ test "parse_url: a replica set with a user and a majority write concern"
     opts = parse_url("mongodb://app:s3cret@db1:27017,db2:27017/shop?replicaSet=rs0&w=majority").must()
     assert opts.hosts.len() == 2 && opts.username == "app" && opts.replica_set == "rs0" && opts.write_concern.w == "majority"
 
-# A client connected, where the environment names a server; elsewhere it shows nothing.
+# A client connected, where the environment names a server; elsewhere it skips.
 test "connect: a client of the server REBEL_MONGODB_URL names"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             assert !is_closed(c)
