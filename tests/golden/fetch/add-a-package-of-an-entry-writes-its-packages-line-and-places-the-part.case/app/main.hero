@@ -1,0 +1,7 @@
+# Panel 253's R6 (2026-11-19): `heroes add kit/flags` over an entry placed whole
+# lists `flags` and `csv`, which this program already uses, and places that
+# part; a second time it says so, and a name the version lacks is refused.
+use <kit>/csv
+
+function main()
+    print(csv.first("one,two"))

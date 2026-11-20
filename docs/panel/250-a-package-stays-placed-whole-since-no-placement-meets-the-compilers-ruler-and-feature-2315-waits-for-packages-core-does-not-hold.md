@@ -645,4 +645,4 @@ only the packages it names, with each one they use, and an entry without one kee
 *(b)*, feature 2315 waiting at M-package-index for packages `core` does not hold, no longer holds:
 2315 is M-rebel-packages-manager's, the package manager written with Rebel (the author's decisions
 4 and 8 of 2026-11-15). R2 and R4 stand. Entry 12 of the register of the decisions M-rebel-library
-invalidates, <register>.
+invalidates, https://github.com/heroes-lang/heroes/issues/2610.

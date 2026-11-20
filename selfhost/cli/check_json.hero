@@ -214,6 +214,6 @@ test "a document holds the notes the compilation owes, each once"
         unverified: true
     )
     aliases: [reached.Alias] = []
-    s.reached @ reached.Reached(packages: [folder], aliases: aliases)
+    s.reached @ reached.Reached(packages: [folder], aliases: aliases, listings: [])
     got = head_of(kind: "diagnostics", readings: [s, s])
     assert got == "{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"notes\": [\"the package `json` is read from the folder `vendor/json/`, a `path` entry of the catalogue: unverified, no fingerprint holds it\"],\n"

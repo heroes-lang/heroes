@@ -33,8 +33,12 @@ so a long expression, a condition included, breaks inside parentheses.
   file you compile, names with its source, exact version and `sum`, or by a
   local `path` alone, which nothing verifies.
   `heroes add json` writes that entry; a program that uses no package has no
-  catalogue. A path with `internal` as a part after its first is named only by the
-  module the path before the last such part names and by the modules under it.
+  catalogue. An entry publishing several packages under one version, or
+  its `path`, places only those its `packages` names, with each one they
+  use: `heroes add kit/csv` adds one, and a `use <kit>/flags` it does
+  not name is refused. A path with `internal` as a part after its first is
+  named only by the module the path before the last such part names and by
+  the modules under it.
   Inside a package a `use` starts at the package's own root, and its
   brackets name entries of the package's own catalogue; a program holds one
   version of each package, every one listed in its catalogue:
@@ -48,6 +52,11 @@ git = "https://git.example.org/ana/yaml"
 tag = "v0.3.1"
 commit = "9fceb02d0ae598e95dc970b74767f19372d61af8"
 sum = "sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9"
+
+[dependencies.kit]
+version = "0.1.0"
+sum = "sha256-b0edd05953914a1ba4d3be24c2770ae4206b5edf52ed34843bf7323f16405ccb"
+packages = ["csv", "json"]
 ```
 - `#` comments to end of line, markdown inside. A comment directly above a
   declaration, a field or a case documents it: a first sentence that stands

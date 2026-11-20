@@ -1,0 +1,4 @@
+add file://../git/kit --tag v1.0.0 -C <work>/app
+add kit/csv -C <work>/app
+fetch -C <work>/app
+run <work>/app/main.hero

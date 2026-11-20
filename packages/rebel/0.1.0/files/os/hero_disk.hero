@@ -566,6 +566,38 @@ test "rename: a file moved, a file over a file, a file over a folder, a folder o
     assert last_error() == HERO_DISK_NOT_FOUND
     test_clear(dir, holds: holds)
 
+# Defect 2608: a file renamed onto a folder is told the folder it is, by what
+# the target is and never by the system's number, which differs here by
+# platform (measured 2026-11-20 by a C probe): onto the folder that holds it,
+# one above that, or that folder spelled with a trailing `/`, Darwin's
+# `rename` says `EISDIR` and Linux's `ENOTEMPTY`; spelled with `/.`, Darwin
+# says `EINVAL` and Linux `EBUSY`; onto a full folder that holds it not, and
+# a link onto any folder, both say `EISDIR`. The file stays where it was.
+test "rename: a file onto the folder that holds it, one above, spelled with / or /., a full folder and a link onto one, is a folder on every platform (defect 2608)"
+    holds = ["m/u/f", "m/u", "m", "n/x", "n", "l"]
+    dir = test_folder("rename-onto-folder", holds: holds)
+    assert make_folder(dir + "/m", permission: 0o755) == 0
+    assert make_folder(dir + "/m/u", permission: 0o755) == 0
+    assert !write_file(path: dir + "/m/u/f", text: "x").is_err()
+    assert make_folder(dir + "/n", permission: 0o755) == 0
+    assert !write_file(path: dir + "/n/x", text: "y").is_err()
+    onto = [dir + "/m/u", dir + "/m", dir + "/m/u/", dir + "/m/u/.", dir + "/n"]
+
+    for to in onto
+        assert rename(from: dir + "/m/u/f", to: to) == -1
+        assert last_error() == HERO_DISK_IS_A_DIRECTORY
+        assert test_fact(dir + "/m/u/f", place: HERO_DISK_FACT_KIND) == HERO_DISK_KIND_FILE
+
+    # A link is what its name is: one onto a folder never takes its place
+    # either. Windows makes one only for a user allowed to.
+    if symlink(target: "m/u/f", name: dir + "/l") == 0
+        assert rename(from: dir + "/l", to: dir + "/n") == -1
+        assert last_error() == HERO_DISK_IS_A_DIRECTORY
+        assert rename(from: dir + "/l", to: dir + "/m") == -1
+        assert last_error() == HERO_DISK_IS_A_DIRECTORY
+
+    test_clear(dir, holds: holds)
+
 test "scan: an empty folder, each entry with its kind, a buffer too short, a file, and a folder not there"
     holds = ["file", "sub", "link"]
     dir = test_folder("scan", holds: holds)

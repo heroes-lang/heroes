@@ -1,0 +1,2 @@
+note: the package `kit` is read from the folder `tests/golden/check/package-a-use-its-entrys-packages-line-does-not-name.case/vendor/kit/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+tests/golden/check/package-a-use-its-entrys-packages-line-does-not-name.case/main.hero:7:5: error[package_not_listed]: `<kit>/flags` is not among the packages the entry `kit` places, the ones its `packages` line names

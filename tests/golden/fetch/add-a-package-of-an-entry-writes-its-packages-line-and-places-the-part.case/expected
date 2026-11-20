@@ -1,0 +1,36 @@
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+placed kit 1.0.0 <work>/app/heroes.packages/kit@1.0.0-69721a0dbea8780f
+stderr:
+$ heroes add kit/flags -C <work>/app
+exit 0
+stdout:
+added kit/flags
+placed kit 1.0.0 <work>/app/heroes.packages/kit@1.0.0-69721a0dbea8780f, 4 of 5 files: what its `packages` line names and the modules those use
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add kit/flags -C <work>/app
+exit 0
+stdout:
+`kit` already places `flags`
+stderr:
+$ heroes add kit/nosuch -C <work>/app
+exit 1
+stdout:
+stderr:
+error[package_unknown]: `nosuch` is no package of `kit` 1.0.0: the version holds no `nosuch.hero` for a `packages` line to place
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+one
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/add-a-package-of-an-entry-writes-its-packages-line-and-places-the-part.case/idx"
+
+[dependencies.kit]
+version = "1.0.0"
+sum = "sha256-51d5b73f1508cff9c6da0b1c060f911b41f6dceb50acedecd3095432f564f687"
+packages = ["csv", "flags"]
+heroes.packages:
+kit@1.0.0-69721a0dbea8780f

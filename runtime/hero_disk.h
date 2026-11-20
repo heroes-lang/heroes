@@ -173,7 +173,9 @@ int64_t hero_disk_remove(const char *path);
  * place of a file, the old one gone: in one step on POSIX (`rename`), and
  * by `MoveFileExW` with `MOVEFILE_REPLACE_EXISTING` on Windows, of which no
  * page promises one step. It never takes a directory's place:
- * `HERO_DISK_IS_A_DIRECTORY`. A directory never takes the place of
+ * `HERO_DISK_IS_A_DIRECTORY`, the directory that holds it and `.` among
+ * them, told by what `to` is and never by the system's number, which for
+ * those two differs by platform. A directory never takes the place of
  * anything: `HERO_DISK_EXISTS`, where POSIX alone would have replaced an
  * empty directory and Windows nothing; the layer looks before it renames,
  * so a directory made at `to` between the look and the rename is replaced

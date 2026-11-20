@@ -36,6 +36,6 @@ met by the author's decision rather than by a consumer found later. Panel 253's 
 2026-11-19, decision 2595) adopted `heroes doc` as the seventeenth verb with its sentence in spec
 § 1, and M-rebel-library's step 59 builds it (`557c53420` and `cc1a13fd7`, on lane-impl-doc at this
 writing). Panel 234's R5, *no `heroes doc` in this milestone* of M-core-packages, is entered in the
-register of the decisions M-rebel-library invalidates, <register>. The row left § The chain on
+register of the decisions M-rebel-library invalidates, https://github.com/heroes-lang/heroes/issues/2610. The row left § The chain on
 2026-11-19, at M-rebel-library's landing; its open task, 808, moves to M-rebel-library's milestone
 on GitHub. The page above stands as it was written.

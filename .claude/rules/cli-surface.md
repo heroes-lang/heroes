@@ -41,6 +41,16 @@ cannot carry. The second sentence governs a verb split out of an existing one.
 does*), and panel 244's R2 ruled its shape by the first sentence: its artifact
 is a new project's folder and its operand a name, so a subcommand, and
 `--package` a flag, since it changes how one question is answered.
+**`heroes doc` entered the same way, by the author's decision 13 of
+2026-11-15** (M-rebel-library's page, meant as: *the documentation is decided
+first: the shape of the comment above a function, a record and a variant, and
+the verb `heroes doc`*), and panel 253's R2 adopted it as the seventeenth verb;
+no seat of that sitting read it against the stopping rule (its critic's finding
+19). Its shape is the first sentence's: its artifact is a module's reference,
+each declaration's signature, what documents it and its examples, and its
+operand a module, a `.hero` file or `<name>/<module>` through the program's
+catalogue, so a subcommand (issue 808 asked the stopping rule's question of it
+first).
 
 **The contract of every invocation**: the artifact on stdout, diagnostics on
 stderr; exit 0 clean, exit 1 the input has diagnostics, exit 2 the tool could not

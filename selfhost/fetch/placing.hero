@@ -10,9 +10,16 @@
 #
 # The key a tree is placed under is `module/placed.hero`'s, the one discovery
 # reads it under, so what a verb places is what a build finds.
+#
+# **What is placed is a function of the catalogue's entry** (panel 253's R6):
+# the version whole, or where the entry has a `packages` line, the part that
+# line places (`fetch/closure.hero`). A tree at its sum that holds another
+# part, placed for another line or whole before the line was written, is
+# placed anew, every file of it being the version's (`fetch/staging.hero`).
 
 use cli/process
 use fetch/address
+use fetch/closure
 use fetch/git_source
 use fetch/index_source
 use fetch/staging
@@ -27,22 +34,23 @@ record Placed
     fetched: bool
 
 # The entry `e` of the program whose folder is `program` ("" or a path ending
-# with `/`) placed, `index` its catalogue's `index` line; a tree fetched is
-# written into the run's `ledger`.
-function placed_tree(@ledger: staging.Ledger, tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str) -> Placed?
+# with `/`) placed, `index` its catalogue's `index` line and `listed` its
+# `packages` line, empty for the whole version; a tree fetched is written into
+# the run's `ledger`.
+function placed_tree(@ledger: staging.Ledger, tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str, listed: [str]) -> Placed?
     if e.path.len() > 0
         return ok(Placed(folder: program + e.path, fetched: false))
     at = program + "heroes.packages/" + placed.key(e, index: index)
 
-    if process.is_directory(at) && fingerprint.of(at).default("") == e.sum
+    if process.is_directory(at) && fingerprint.of(at).default("") == e.sum && closure.holds_exactly(at, listed: listed)
         return ok(Placed(folder: at, fetched: false))
 
     if e.git.len() > 0
         return ok(
-            Placed(folder: git_source.fetched(@ledger, tools, e: e, program: program, root: root, index: index)?, fetched: true)
+            Placed(folder: git_source.fetched(@ledger, tools, e: e, program: program, root: root, index: index, listed: listed)?, fetched: true)
         )
     return ok(
-        Placed(folder: index_source.fetched(@ledger, tools, e: e, program: program, root: root, index: index)?, fetched: true)
+        Placed(folder: index_source.fetched(@ledger, tools, e: e, program: program, root: root, index: index, listed: listed)?, fetched: true)
     )
 
 # The catalogue a placed tree holds, `catalogue.read`'s empty one where it

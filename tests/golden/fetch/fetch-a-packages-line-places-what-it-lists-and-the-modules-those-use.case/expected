@@ -1,0 +1,24 @@
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+placed kit 1.0.0 <work>/app/heroes.packages/kit@1.0.0-a9b2d26e3e438a1f, 3 of 5 files: what its `packages` line names and the modules those use
+stderr:
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+kept kit 1.0.0 <work>/app/heroes.packages/kit@1.0.0-a9b2d26e3e438a1f, 3 of 5 files: what its `packages` line names and the modules those use
+stderr:
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+one
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fetch-a-packages-line-places-what-it-lists-and-the-modules-those-use.case/idx"
+
+[dependencies.kit]
+version = "1.0.0"
+sum = "sha256-51d5b73f1508cff9c6da0b1c060f911b41f6dceb50acedecd3095432f564f687"
+packages = ["csv"]
+heroes.packages:
+kit@1.0.0-a9b2d26e3e438a1f

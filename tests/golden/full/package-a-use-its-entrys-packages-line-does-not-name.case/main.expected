@@ -1,0 +1,7 @@
+note: the package `kit` is read from the folder `tests/golden/full/package-a-use-its-entrys-packages-line-does-not-name.case/vendor/kit/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[package_not_listed]: `<kit>/flags` is not among the packages the entry `kit` places, the ones its `packages` line names
+  at tests/golden/full/package-a-use-its-entrys-packages-line-does-not-name.case/main.hero:7:5
+    |
+  7 | use <kit>/flags  #~ package_not_listed
+    |     ^^^^^^^^^^^
+  note: `tests/golden/full/package-a-use-its-entrys-packages-line-does-not-name.case/heroes.toml`'s `[dependencies.kit]` places `csv`, with the modules each one uses; `heroes add kit/flags` adds `flags` to its `packages` line, and a program names every package it uses there

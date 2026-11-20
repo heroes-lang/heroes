@@ -1119,14 +1119,29 @@ int64_t hero_disk_rename(const char *from, const char *to) {
     }
     /* A directory takes the place of nothing, where `rename` alone would
      * replace an empty one: anything at `to` but the directory itself,
-     * under another case of its letters, refuses it. A file over a
-     * directory is `rename`'s own `EISDIR`. */
+     * under another case of its letters, refuses it. */
     if (S_ISDIR(source.st_mode) && lstat(to, &target) == 0 &&
         !(target.st_dev == source.st_dev && target.st_ino == source.st_ino)) {
         return hero_disk_refused(HERO_DISK_EXISTS);
     }
     if (rename(from, to) != 0) {
-        return hero_disk_failed();
+        int code = errno;
+
+        /* Anything but a directory never takes a directory's place, and
+         * what `to` IS says so, asked once the rename has failed: the
+         * number does not. Measured on 2026-11-20 by a C probe of each
+         * shape, a file renamed onto the directory that holds it, or onto
+         * one above that, is `EISDIR` on Darwin and `ENOTEMPTY` on Linux
+         * (its check that the target is no ancestor of the source comes
+         * first), onto `.` or `<dir>/.` `EINVAL` on Darwin and `EBUSY` on
+         * Linux, and onto any other directory `EISDIR` on both (defect
+         * 2608). `lstat`, because a link at `to` is replaced and never
+         * what it names; a `to` that cannot be asked keeps the number. */
+        if (!S_ISDIR(source.st_mode) && lstat(to, &target) == 0 && S_ISDIR(target.st_mode)) {
+            hero_disk_fail(HERO_DISK_IS_A_DIRECTORY, (int64_t)code);
+            return -1;
+        }
+        return hero_disk_failed_with((int64_t)code);
     }
     return 0;
 }

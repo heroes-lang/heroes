@@ -1,0 +1,6 @@
+index = "file://../../../../../tests/golden/fetch/fetch-a-packages-line-places-what-it-lists-and-the-modules-those-use.case/idx"
+
+[dependencies.kit]
+version = "1.0.0"
+sum = "sha256-51d5b73f1508cff9c6da0b1c060f911b41f6dceb50acedecd3095432f564f687"
+packages = ["csv"]

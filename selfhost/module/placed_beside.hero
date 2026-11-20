@@ -267,6 +267,7 @@ function catalogue_of(index: str, entries: [catalogue.Entry]) -> catalogue.Catal
         file: "heroes.toml",
         index: index,
         entries: entries,
+        listings: [],
         problem: "",
         code: "",
         at: "",

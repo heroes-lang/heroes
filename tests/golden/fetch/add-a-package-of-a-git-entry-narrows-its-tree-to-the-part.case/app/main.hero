@@ -1,0 +1,7 @@
+# Panel 253's R6 (2026-11-19): a git entry's tree comes whole from its
+# commit, and an entry with a `packages` line places the part it names:
+# `csv` and the modules its `use` lines reach, never `flags` or the ledger.
+use <kit>/csv
+
+function main()
+    print(csv.first("one,two"))

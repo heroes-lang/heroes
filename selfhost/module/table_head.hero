@@ -1,0 +1,62 @@
+# A catalogue's table row, `[dependencies.<name>]` (spec § 1; panel 235's
+# R5, ratified 2026-11-07): its head asked of the row's bytes, and the name
+# it opens judged as a `use` writes it between the brackets. Moved whole out
+# of `module/catalogue.hero` with panel 253's R6, which gave that reader an
+# entry's `packages` line, along the seam between reading a table's head and
+# reading what an entry holds, so that module keeps room under the ceiling
+# `.claude/rules/module-shape.md` sets.
+
+use bytes
+use module/entry_name
+use module/toml_line
+
+# A table row read: its head asked of the row's bytes from `at`, never cut at
+# the head's length (defect 2410), since a row is the author's and may hold
+# any character, and `[dependencieXé]` put that cut inside `é`, which stopped
+# `check` with *string slice splits a character* where the catalogue's own
+# message was owed. Every later cut stands beside an ASCII byte: the head's
+# `.`, a `]`, or the row's end.
+function named(row: str, at: i64, names: [str], holds: str) -> str?
+    head = "[dependencies."
+
+    if !bytes.bytes_at(text: row, at: at, needle: head)
+        return fail(
+            code: "table",
+            msg: "a table is `[dependencies.<name>]`, one per entry, found `" + row + "`; " + holds
+        )
+    start = at + head.len()
+    close: i64 @= start
+
+    while close < row.len() && row[close] != ']'
+        close @ close + 1
+
+    name = row.slice(from: start, to: close)
+
+    if close == row.len() || toml_line.after_value(row, at: close + 1).len() > 0
+        return fail(
+            code: "table",
+            msg: "a table is `[dependencies.<name>]` and nothing after it but a comment, found `" + row + "`"
+        )
+
+    if !entry_name.shaped(name)
+        return fail(
+            code: "name",
+            msg: "an entry's name is lowercase letters, digits and `_`, starting with a letter, as `[dependencies.json]`, found `" + name + "`"
+        )
+
+    # A name no `use` writes between the brackets names an entry no line
+    # reaches, and a message quoting the alias would offer a line the parser
+    # refuses (defect 2432).
+    word = entry_name.word(name)
+
+    if word.len() > 0
+        return fail(
+            code: "name",
+            msg: word + ", so no line reaches the entry: a folder or a git source takes another name, `[dependencies.<name>]`, which its `use` lines write, and a package of the index keeps the index's name, so one called `" + name + "` is reached by no program"
+        )
+
+    for one in names
+        if one == name
+            return fail(code: "twice", msg: "the entry `" + name + "` is written twice")
+
+    return ok(name)

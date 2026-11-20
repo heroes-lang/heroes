@@ -149,6 +149,7 @@ static void hero_sig_prune(HeroSignalStack *own, uintptr_t at) {
         if (!left) break;
         own->depth -= 1;
     }
+    if (own->unsure > own->depth) own->unsure = own->depth;
 }
 
 /* What the kernel runs for every handler a program's C installed: the entry
@@ -190,21 +191,26 @@ __attribute__((no_sanitize("function"))) static void hero_sig_wrapper(int sig, s
     if (at >= 0) {
         atomic_signal_fence(memory_order_seq_cst);
         own->depth = at;
+        /* This handler returned, so it was running, and every handler it
+         * interrupted with it: a jump J could not follow, made while they
+         * stood, landed inside this one. */
+        if (own->unsure > at) own->unsure = 0;
     }
 }
 
 /* The thunk's question (`parts/sigguard.c`): is a wrapper on this thread
  * still running above the thunk's frame? The entries it proves left are
- * dropped first; one that remains above it, on the same stack, refuses. */
+ * dropped first; one that remains above it, on the same stack, refuses, told
+ * as unsure where a jump J could not follow passed over it. */
 static int hero_sig_inside(HeroSignalStack *own, uintptr_t frame) {
-    if (own == NULL || own->depth == 0) return 0;
+    if (own == NULL || own->depth == 0) return HERO_SIG_OUTSIDE;
     hero_sig_prune(own, frame);
     bool here = hero_sig_on_own(own, frame);
     for (int i = own->depth - 1; i >= 0; i -= 1) {
         uintptr_t w = own->entries[i];
-        if (hero_sig_on_own(own, w) == here && w > frame) return 1;
+        if (hero_sig_on_own(own, w) == here && w > frame) return i < own->unsure ? HERO_SIG_UNSURE : HERO_SIG_INSIDE;
     }
-    return 0;
+    return HERO_SIG_OUTSIDE;
 }
 
 int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *restrict old) {

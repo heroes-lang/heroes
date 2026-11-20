@@ -1338,7 +1338,9 @@ test "the tables are what this module is, so they are counted"
     # 210 -> 213 on 2026-11-09, lane b26-fmt (panel 238's R1): the `use`
     # block printed in its one order, `useorder238/`, out of order, late and
     # already in order.
-    assert verb_probes().len() == 213
+    # 213 -> 214 on 2026-11-19, lane lane-impl-b (panel 252's R1): a ring
+    # between two packages builds and runs, `ring252/`.
+    assert verb_probes().len() == 214
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map

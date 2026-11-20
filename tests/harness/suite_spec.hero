@@ -97,7 +97,7 @@ constant LEDGER: str
 # DATED, and prose beside the constant is neither, however dated it looks. The
 # constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
-    137
+    138
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -111,7 +111,7 @@ constant LEDGER_ROWS: i64
 # check does not enforce that rule: it makes its question unavoidable, and
 # the answer lands in the commit body where a reader can audit it.
 constant SPEC_TOKENS: i64
-    8889
+    9022
 
 # The registry's own size, gated separately — it is NOT part of §1.6's budget
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
@@ -172,7 +172,7 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    11625
+    11788
 
 constant REAL_MODEL: str
     "claude-opus-5"
@@ -190,7 +190,7 @@ constant REAL_TAKEN: str
 # staleness detector, the delta gate's previous level, and the movement detector
 # the contract never had.
 constant CONTRACT_REAL_TOKENS: i64
-    8359
+    8461
 
 # **The contract's date is its own, and this constant is why.** `REAL_TAKEN`
 # above judged BOTH documents until 2026-09-13, and it worked for exactly as
@@ -203,10 +203,10 @@ constant CONTRACT_REAL_TOKENS: i64
 # being loosened: two independent documents, two independent refreshes, two
 # dates. A shared constant between them was a coupling nothing had stated.
 constant CONTRACT_REAL_TAKEN: str
-    "2026-10-29"
+    "2026-11-20"
 
 constant CONTRACT_TOKENS: i64
-    6315
+    6391
 
 # The width of one commit's allowed growth, in VENDORED tokens, on both judged
 # documents. §1.6 queued this figure and panel 134 landed it; the reasoning and
@@ -223,7 +223,7 @@ constant DELTA_GATE: i64
 # **Until 2026-10-29 no check read this copy** (defect 2252): it stood at a
 # digest of 2026-10-26 through two changes of the spec, every suite green.
 constant SPEC_DIGEST: str
-    "53d9a86900ad8546"
+    "4dced6767460e590"
 
 # The compiler's record of the judged documents, which `measure` is compiled
 # from and holds the spec to: the four constants of the spec's `real` row live
@@ -1433,7 +1433,7 @@ constant LEAST_FENCES: i64
 # the reason measured on 2026-10-29 by building it alone and inside a `main`.
 function fragments() -> [Fragment]
     return [
-        Fragment(section: 1, text: "[dependencies.json]\nversion = \"1.4.2\"\nsum = \"sha256-14a856d668dbbf1a29152de3db55b276e1c29cd5599823335de861c4b97da124\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"9fceb02d0ae598e95dc970b74767f19372d61af8\"\nsum = \"sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9\"\n", why: "the catalogue `heroes.toml` (panel 235's R5 and R13), a TOML file `selfhost/module/catalogue.hero` reads, and no program")
+        Fragment(section: 1, text: "[dependencies.json]\nversion = \"1.4.2\"\nsum = \"sha256-14a856d668dbbf1a29152de3db55b276e1c29cd5599823335de861c4b97da124\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"9fceb02d0ae598e95dc970b74767f19372d61af8\"\nsum = \"sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9\"\n\n[dependencies.kit]\nversion = \"0.1.0\"\nsum = \"sha256-b0edd05953914a1ba4d3be24c2770ae4206b5edf52ed34843bf7323f16405ccb\"\npackages = [\"csv\", \"json\"]\n", why: "the catalogue `heroes.toml` (panel 235's R5 and R13), a TOML file `selfhost/module/catalogue.hero` reads, and no program")
         Fragment(section: 5, text: "x = 5              # immutable binding, type inferred\nv @= 0             # mutable cell, type inferred too\nv @ v + 1          # re-binding\n", why: "statements, and inside a `main` `x` is bound and never read, which spec § 5 refuses (`unused_binding`)")
         Fragment(section: 6, text: "match head(names)\n    .ok n  => print(n)\n    .err e => print(e.code)\n", why: "a statement naming `names`, which nothing declares (`unknown_name`); the `head` above it is built")
         Fragment(section: 7, text: "arithmetic   + - * / %          (both sides one numeric type — never mixed)\n             +                  (str with str: concatenation)\ncomparison   == != < <= > >=    (`< <= > >=`: a number only)\nboolean      && || !            (bool only; && and || short-circuit)\nbitwise      & | ^ ~ << >>      (i64 only; shift count 0..63 or it aborts)\n", why: "the table of the operators, words in columns and not a program; the `rejected` check reads its words")

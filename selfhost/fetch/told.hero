@@ -26,8 +26,9 @@ use module/catalogue
 # word a catalogue wrote, a source that answers that what was asked for is not
 # there, a file past its bound, a tree holding a name no package may, a tag
 # that moved, a sum that does not match, an index's file in no shape it has,
-# a catalogue that does not read or a requirement it may not hold, and no
-# catalogue where one is fetched from.
+# a catalogue that does not read or a requirement it may not hold, no
+# catalogue where one is fetched from, and a `packages` line naming a package
+# its version holds no module of (panel 253's R6).
 constant INPUT_CODES: [str]
     [
         "source_refused"
@@ -42,6 +43,7 @@ constant INPUT_CODES: [str]
         "catalogue_refused"
         "requirement_refused"
         "no_catalogue"
+        "package_unknown"
     ]
 
 # The codes that blame the tool or the machine, exit 2: a program this command

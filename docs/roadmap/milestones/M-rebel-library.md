@@ -398,6 +398,13 @@ Given in conversation, meant as: *yes to everything*. Each written as what it se
 - **Nothing is installed on the Windows box**; Rebel's own pipeline installs SQLite where its tests
   need it.
 
+## The author's answer of 2026-11-20, in the first minutes after midnight: M-web-framework retired
+
+Given in conversation, meant as: *OK to the web framework out of the ROADMAP*. It confirms the
+retirement of **M-web-framework** into this milestone, which decision 23 decided (Rebel's `web`
+gives what Echo gives, and it encloses M-web-framework) and the landing carried out: the row left
+the chain, and the page stays as the record of what it held.
+
 ## The coherence review's nineteen decisions, adopted by recommendation on 2026-11-19
 
 The review of decision 31 put nineteen questions, D01 to D19, each with its recommendation and the
@@ -596,6 +603,6 @@ Read from `git log` of the branch `rebel-round`, which opened from `main` at `f6
   reds the branch carries at its base. Then the three owed steps above, one at a time.
 
 **The register of the decisions this milestone invalidates** is one `decision` issue with dated
-comments (decision 10, panel 253's R1), <register>; this page carries no list of it. The records
+comments (decision 10, panel 253's R1), https://github.com/heroes-lang/heroes/issues/2610; this page carries no list of it. The records
 that held a superseded decision each end with a dated note pointing at it.
 

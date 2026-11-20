@@ -1,0 +1,7 @@
+# Panel 253's R6 (2026-11-19): an empty `packages` line places nothing and
+# says nothing an absent one does not, so it is refused with its line; the
+# catalogue does not read, and the `use` that reaches through it is refused.
+use <kit>/csv  #~ catalogue_refused
+
+function main()
+    print(csv.first("a"))

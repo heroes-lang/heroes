@@ -1,0 +1,26 @@
+# Fixed 2026-11-20, defect 2606, lane-signals: `main` joins a handle the
+# program was never given, a runtime panic, while a thread of its own holds
+# stderr's lock and never gives it back; stderr itself takes bytes.
+# Symptom: the program never ended and said nothing: the report was written
+# with `fprintf(stderr, ...)`, which waited on the lock the thread holds.
+# Cause: a report's bytes went through stdio. Every report now asks stderr's
+# lock as it asks stdout's, for a bound, and writes its bytes to the
+# descriptor itself, past a lock it could not have.
+extern "fixedbugs-2606-a-thread-keeps-stderrs-lock.h"
+    function keep_stderr(n: i64) -> i64
+
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function keep(n: i64) -> i64
+    return keep_stderr(n: n)
+
+function main()
+    t = hero_thread_spawn(body: keep, arg: 7)
+    _ = usleep(useconds: 300000)
+    print("main stops now")
+    _ = hero_thread_join(handle: t + 1000)

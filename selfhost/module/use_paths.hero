@@ -1,0 +1,81 @@
+# Reading a `use` line's path off a file's tokens (spec § Files and layout;
+# panels 032 R4/R5, 099 R1/R3, 235's R1): the half of `module/paths.hero`
+# that discovery reads before there is a tree to walk, moved here whole for
+# panel 253's R6, so `heroes fetch` reads a package's `use` lines by the
+# reader discovery uses (`fetch/closure.hero`) and reaches the lexer alone,
+# never the parser, which reaches the fetch verbs. The adjacency rule's two
+# readers and the test that holds them to one answer are `module/paths.hero`'s
+# header and its test, which call this reader through `paths.uses_of`.
+
+use lexer
+use token
+
+# The module names a file's use lines name, in source order. Scanned from
+# the TOKEN STREAM rather than the tree: discovery runs before there is a
+# Source to parse against, and the lexer has already settled the shape of
+# every token on the line. A malformed use is skipped here and diagnosed by
+# the parser later, once.
+function uses_of(text: str) -> [str]
+    out = lexer.lex_one(text)
+    found: [str] @= []
+    at: i64 @= 0
+
+    while at < out.tokens.len()
+        if out.tokens[at].kind == .kw_use
+            named = path_at(tokens: out.tokens, text: text, at: at + 1)
+
+            if !named.is_err()
+                found @ found.push(named.must())
+        at @ at + 1
+
+    return found
+
+# The whole path starting at `at`, or an error where there is no path there.
+#
+# `ident (/ ident)*`, every token ADJACENT to the one before it. Adjacency is
+# the rule rather than the token sequence: the lexer gives `use a/b` and
+# `use a / b` the same three tokens, and only the first is one module.
+# A comment cannot sit inside a path for the same reason — its span would
+# push the parts apart — so nothing here has to skip one.
+#
+# **A package's mark is read here too** (panel 235's R1): `<json>/parse` is
+# one name, `<` name `>` `/` and the path, every token touching the one
+# before, as `parse/use_mark.hero` reads it with diagnostics. A mark that is
+# not whole is no path here, and the parser tells it.
+function path_at(tokens: [token.Token], text: str, at: i64) -> str?
+    first = at + marked(tokens, at: at)
+
+    if first >= tokens.len() || tokens[first].kind != .ident
+        return fail(code: "no_path", msg: "a use line whose name is missing or not a name")
+    start = tokens[at].span.start
+    end: i64 @= tokens[first].span.end
+    probe: i64 @= first + 1
+
+    while probe + 1 < tokens.len()
+        slash = tokens[probe]
+        part = tokens[probe + 1]
+
+        if slash.kind != .slash || part.kind != .ident
+            return ok(text.slice(from: start, to: end))
+
+        if slash.span.start != end || part.span.start != slash.span.end
+            return ok(text.slice(from: start, to: end))
+        end @ part.span.end
+        probe @ probe + 2
+
+    return ok(text.slice(from: start, to: end))
+
+# The tokens a package's mark takes before its module's first name, `<` name
+# `>` `/`, each touching the one before and the first name touching the `/`:
+# 4, or 0 where there is no whole mark, which the parser tells.
+function marked(tokens: [token.Token], at: i64) -> i64
+    if at + 4 >= tokens.len() || tokens[at].kind != .lt || tokens[at + 1].kind != .ident || tokens[at + 2].kind != .gt || tokens[at + 3].kind != .slash
+        return 0
+    probe: i64 @= at + 1
+
+    while probe <= at + 4
+        if tokens[probe].span.start != tokens[probe - 1].span.end
+            return 0
+        probe @ probe + 1
+
+    return 4

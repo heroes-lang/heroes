@@ -1,0 +1,57 @@
+# Where a run of `heroes fetch` or `heroes add` may stage a package's tree
+# (`fetch/staging.hero`): never in a placed package's tree (defect 2576), and
+# never where a name of the author's stands at the program's
+# `heroes.packages` (defect 2538). Moved whole out of `fetch/staging.hero`
+# with panel 253's R6, which made a staged tree's placement replace a part
+# placed for another `packages` line, so that module keeps room for it under
+# the ceiling `.claude/rules/module-shape.md` sets, along the seam between
+# where a run may stage and what it stages.
+
+use cli/placed_files
+use module/standing
+
+# Whether the program's folder `program` ("" for the current one, or a path
+# ending with `/`) stands in a placed package's tree, by its letters or as
+# the filesystem resolves it (`cli/placed_files.hero`): there no run stages,
+# nothing is undone, and git is never asked (defect 2576).
+function in_tree(program: str) -> bool
+    if program.len() == 0
+        return placed_files.folder_within("./")
+    return placed_files.folder_within(program)
+
+# No staging folder is made in a placed package's tree (defect 2576), which
+# no writer writes: a folder made there, even for an instant, is in the tree
+# when a build of the program that placed it fingerprints it, and that build
+# refused a correct program with `package_unread`. The verbs refuse such a
+# folder before a run begins (`fetch/verb_place.hero`), and a build asks no
+# git there (`module/unplaced.hero`); this is the door every staging folder
+# passes, so none is made there whoever asks.
+function out_of_trees(program: str, home: str) -> ()?
+    if !in_tree(program)
+        return ok()
+    return fail(
+        code: "bad_usage",
+        msg: placed_files.here_refused(writes: "a run's staging folder, under `" + home + "/`,", place: folder_shown(program), instead: "a package is placed for a program outside them")
+    )
+
+# The program's folder as a place a refusal shows: `./` for the current one.
+function folder_shown(program: str) -> str
+    if program.len() == 0
+        return "./"
+    return program
+
+# Whether a tree can be placed under `home`, the program's `heroes.packages`:
+# a name of the author's standing there, a file or a link to one or to
+# nothing, refuses the run at exit 1 with what stands named, as a name at a
+# tree's key does (defect 2506's words and code, `fetch/edited.hero`), and
+# nothing is placed (defect 2538). Until then `mkdir` failed on it and the
+# run was the tool's, `cannot_place` at exit 2 with the system's number 17.
+function placeable(home: str) -> ()?
+    blocked = standing.home_blocked(home)
+
+    if blocked == .nothing
+        return ok()
+    return fail(
+        code: "sum_mismatch",
+        msg: "the program's packages would be placed in `" + home + "`, where " + standing.said(blocked) + " stands; it is yours, so nothing was placed there: move it out of the program's folder to keep it, or remove it to have the packages placed"
+    )

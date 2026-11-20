@@ -1,0 +1,32 @@
+$ heroes add file://../git/kit --tag v1.0.0 -C <work>/app
+exit 0
+stdout:
+added kit v1.0.0
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add kit/csv -C <work>/app
+exit 0
+stdout:
+added kit/csv
+placed kit v1.0.0 <work>/app/heroes.packages/kit@v1.0.0-60a41a18372fa1ce, 3 of 5 files: what its `packages` line names and the modules those use
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+kept kit v1.0.0 <work>/app/heroes.packages/kit@v1.0.0-60a41a18372fa1ce, 3 of 5 files: what its `packages` line names and the modules those use
+stderr:
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+one
+stderr:
+heroes.toml:
+[dependencies.kit]
+git = "file://../git/kit"
+tag = "v1.0.0"
+commit = "264bd16778a099080c8cbf5f5eaba4f9ad0e8711"
+sum = "sha256-51d5b73f1508cff9c6da0b1c060f911b41f6dceb50acedecd3095432f564f687"
+packages = ["csv"]
+heroes.packages:
+kit@v1.0.0-60a41a18372fa1ce

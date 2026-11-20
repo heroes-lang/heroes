@@ -1,0 +1,11 @@
+# Panel 253's R6 (2026-11-19): `kit` 1.0.0 publishes `csv`, `text`, its private
+# `text/internal/scan`, `flags` and a ledger under one version; this entry
+# lists `csv`, and `heroes fetch` placed `csv` and the two modules its `use`
+# lines reach, with the version's listing `heroes.list`, 3 of its 5 files.
+# The build holds the part to the version's `sum` through that listing.
+index = "file://../kitidx"
+
+[dependencies.kit]
+version = "1.0.0"
+sum = "sha256-51d5b73f1508cff9c6da0b1c060f911b41f6dceb50acedecd3095432f564f687"
+packages = ["csv"]

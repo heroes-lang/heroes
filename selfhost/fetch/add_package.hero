@@ -1,0 +1,292 @@
+# `heroes add <entry>/<path>` (spec § 1; panel 253's R6, ratified
+# 2026-11-19): one package of an entry publishing several under one version,
+# `heroes add rebel/csv`, added to the entry's `packages` line, the name the
+# whole path a program writes after `<rebel>/`. The entry is one the program's
+# catalogue already holds; `heroes add rebel` writes it.
+#
+# **The line is a function of the names, never of the order the verbs ran**:
+# it is written sorted, so `add rebel/csv` before or after `add rebel/json`
+# writes one line. An entry with no line places its version whole, so the
+# first name added to it writes, beside the one asked for, every package the
+# program's own modules already name through that entry (`used_in`), and no
+# `use` that built is refused by the line it gains.
+#
+# **What it places**: a `path` entry's folder is read where it stands, so
+# only the line is written, once its folder holds the package's module; any
+# other entry's part is placed anew for the line it will hold before the line
+# is written (`fetch/placing.hero`), a name the version holds no module of
+# refused at exit 1, and a run that is refused takes back what it placed and
+# writes nothing (defect 2434), as every `heroes add` does.
+
+use cli/argv
+use cli/files
+use cli/process
+use cli/publish
+use cli/strings
+use fetch/catalogue_edit
+use fetch/closure
+use fetch/leftover
+use fetch/placing
+use fetch/staging
+use fetch/told
+use fetch/transport
+use fetch/verb_place
+use module/catalogue
+use module/fingerprint
+use module/listing
+use module/use_paths
+
+# The widest a `packages` line is written on one line; a longer one is
+# written one name a line, as TOML writes an array over several.
+constant WIDE: i64
+    100
+
+# Whether `operand` names a package of an entry the catalogue holds,
+# `<entry>/<path>`: an address names no entry before its first `/`.
+function asks(c: catalogue.Catalogue, operand: str) -> bool
+    at = slash_of(operand)
+    return at > 0 && !catalogue.entry(c, name: operand.slice(from: 0, to: at)).is_err()
+
+function slash_of(text: str) -> i64
+    for at in range(from: 0, to: text.len())
+        if text[at] == '/'
+            return at
+
+    return -1
+
+# What the command says: the name added, the part placed and the file
+# written, or the refusal, nothing written.
+function added(inv: argv.Invocation, tools: transport.Tools, program: str, c: catalogue.Catalogue, operand: str) -> [told.Said]
+    at = slash_of(operand)
+    name = operand.slice(from: 0, to: at)
+    inside = operand.slice(from: at + 1, to: operand.len())
+
+    for flag in ["--tag", "--as", "--path", "--index"]
+        if argv.has(inv, spelling: flag)
+            return [
+                told.Said(code: "bad_usage", at: "", said: "`heroes add " + operand + "` adds a package of the entry `" + name + "` to its `packages` line, and takes no `" + flag + "`: the entry's source is its own")
+            ]
+
+    if !listing.path_shaped(inside)
+        return [
+            told.Said(code: "bad_usage", at: "", said: "`" + inside + "` is no package's path: a package of `" + name + "` is named as a `use` writes it after `<" + name + ">/`, names joined by `/`, `heroes add " + name + "/csv`")
+        ]
+    listed = listing.of(c.listings, entry: name)
+
+    if listing.names(listed, wanted: inside)
+        return [told.Said(code: "", at: "", said: "`" + name + "` already places `" + inside + "`")]
+    wanted: [str] @= listed
+
+    if !listing.has(c.listings, entry: name)
+        wanted @ used_in(program: program, entry: name)
+    wanted @ with_name(wanted, name: inside)
+    e = catalogue.entry(c, name: name).must()
+
+    if e.path.len() > 0
+        return listed_in_folder(program: program, e: e, inside: inside, wanted: wanted)
+    return placed_and_listed(tools: tools, program: program, c: c, e: e, inside: inside, wanted: wanted)
+
+# A `path` entry's line written, once its folder holds the package's module.
+function listed_in_folder(program: str, e: catalogue.Entry, inside: str, wanted: [str]) -> [told.Said]
+    folder: str @= e.path
+
+    if folder[folder.len() - 1] != '/'
+        folder @ folder + "/"
+
+    if folder[0] != '/'
+        folder @ program + folder
+
+    if !files.is_file(folder + inside + ".hero")
+        return [
+            told.Said(code: closure.UNKNOWN, at: "", said: "`" + inside + "` is no package of `" + e.name + "`: its folder, `" + folder + "`, holds no `" + inside + ".hero`")
+        ]
+    written = with_line(program: program, name: e.name, packages: wanted)
+
+    if written.is_err()
+        return [told.Said(code: "cannot_place", at: "", said: verb_place.why(written))]
+    return [
+        told.Said(code: "", at: "", said: "added " + e.name + "/" + inside)
+        told.Said(code: "", at: "", said: "wrote " + program + catalogue.FILE)
+    ]
+
+# Any other entry's part placed for the line it will hold, then the line
+# written; a refusal at either takes back what the run placed.
+function placed_and_listed(tools: transport.Tools, program: str, c: catalogue.Catalogue, e: catalogue.Entry, inside: str, wanted: [str]) -> [told.Said]
+    leftover.recovered(program)
+    begun = staging.begun(program)
+
+    if begun.is_err()
+        return [told.refused(failure: verb_place.unit_of(begun), at: "")]
+    ledger: staging.Ledger @= begun.must()
+    root = transport.root_of(tools, folder: verb_place.dot_if_empty(program), scratch: ledger.folder)
+    tree: placing.Placed? @= fail(code: "none", msg: "")
+
+    if root.is_err()
+        tree @ fail(code: verb_place.code_of(verb_place.unit_of(root)), msg: verb_place.why(verb_place.unit_of(root)))
+    else
+        tree @ placing.placed_tree(
+            @ledger,
+            tools,
+            e: e,
+            program: program,
+            root: root.must(),
+            index: c.index,
+            listed: wanted
+        )
+    written: ()? @= verb_place.unit_of(tree)
+
+    if !written.is_err()
+        written @ with_line(program: program, name: e.name, packages: wanted)
+
+    if written.is_err()
+        left = staging.undone(@ledger)
+        why: str @= verb_place.why(written)
+
+        if left.len() > 0
+            why @ why + "; and what this run placed could not all be taken back: " + left
+        return [told.Said(code: verb_place.code_of(written), at: "", said: why)]
+    staging.ended(@ledger)
+    folder = tree.must().folder
+    return [
+        told.Said(code: "", at: "", said: "added " + e.name + "/" + inside)
+        told.Said(code: "", at: "", said: "placed " + e.name + " " + placing.at_said(e) + " " + folder + closure.counted(folder))
+        told.Said(code: "", at: "", said: "wrote " + program + catalogue.FILE)
+    ]
+
+# `names` with `name`, sorted, each once.
+function with_name(names: [str], name: str) -> [str]
+    out: [str] @= []
+
+    for one in sort(names.push(name))
+        if out.len() == 0 || out[out.len() - 1] != one
+            out @ out.push(one)
+
+    return out
+
+# Every path the program's own modules name through the entry `entry`,
+# `use <entry>/<path>`: each `.hero` under the program's folder, the trees
+# under `heroes.packages/` and every folder holding a catalogue of its own, a
+# package's or another program's, left out.
+function used_in(program: str, entry: str) -> [str]
+    base = fingerprint.without_slash(verb_place.dot_if_empty(program))
+    walked = process.walk(base)
+
+    if walked.is_err()
+        return []
+    homes: [str] @= ["heroes.packages/"]
+
+    for path in walked.must().files
+        inside = path.slice(from: base.len() + 1, to: path.len())
+
+        if strings.ends_with(text: inside, suffix: "/" + catalogue.FILE)
+            homes @ homes.push(inside.slice(from: 0, to: inside.len() - catalogue.FILE.len()))
+
+    head = "<" + entry + ">/"
+    out: [str] @= []
+
+    for path in walked.must().files
+        inside = path.slice(from: base.len() + 1, to: path.len())
+
+        if strings.ends_with(text: inside, suffix: ".hero") && !under(inside, homes: homes)
+            for used in use_paths.uses_of(read_file(path).default(""))
+                if strings.starts_with(text: used, prefix: head)
+                    out @ with_name(out, name: used.slice(from: head.len(), to: used.len()))
+
+    return out
+
+function under(path: str, homes: [str]) -> bool
+    for home in homes
+        if strings.starts_with(text: path, prefix: home)
+            return true
+
+    return false
+
+# The program's catalogue with the entry `name`'s `packages` line set to
+# `packages`, written where the catalogue stands.
+function with_line(program: str, name: str, packages: [str]) -> ()?
+    path = program + catalogue.FILE
+    text = read_file(path)
+
+    if text.is_err()
+        return fail(code: "cannot_place", msg: "cannot read " + path)
+    return publish.rewrite(path: path, text: with_listing(text: text.must(), name: name, packages: packages))
+
+# The catalogue's text with the entry `name`'s `packages` line set to
+# `packages`: changed where it stands, the lines a list over several lines
+# took among them, and added after the table's last line where it does not;
+# every other line kept as the author wrote it, its end too.
+function with_listing(text: str, name: str, packages: [str]) -> str
+    lines = catalogue_edit.lines_of(text)
+    eol = catalogue_edit.end_of(lines)
+    written = line_of(packages, eol: eol)
+    head = catalogue_edit.table_at(lines, name: name)
+    end = catalogue_edit.table_end(lines, head: head)
+    at = catalogue_edit.key_line(lines, from: head + 1, to: end, key: "packages")
+    last: i64 @= at
+
+    if at >= 0
+        last @ at + listing.joined(lines, at: at).rows - 1
+    else
+        last @ head
+
+        for probe in range(from: head + 1, to: end)
+            if !catalogue_edit.blank(lines[probe])
+                last @ probe
+
+    out: [str] @= lines.slice(from: 0, to: last + 1)
+
+    if at >= 0
+        out @ lines.slice(from: 0, to: at)
+
+    for one in written
+        out @ out.push(one)
+
+    for rest in lines.slice(from: last + 1, to: lines.len())
+        out @ out.push(rest)
+
+    return out.join("\n") + "\n"
+
+# The `packages` line's lines: one where it is no wider than `WIDE`, else
+# one name a line between the brackets' own lines.
+function line_of(packages: [str], eol: str) -> [str]
+    quoted: [str] @= []
+
+    for one in packages
+        quoted @ quoted.push("\"" + one + "\"")
+
+    one_line = "packages = [" + quoted.join(", ") + "]"
+
+    if one_line.len() <= WIDE
+        return [one_line + eol]
+    out: [str] @= ["packages = [" + eol]
+
+    for one in quoted
+        out @ out.push("    " + one + "," + eol)
+
+    out @ out.push("]" + eol)
+    return out
+
+## Tests
+
+test "a packages line is written sorted, on one line or one name a line, and read back"
+    before = "# mine\n[dependencies.kit]\npath = \"vendor/kit\"\n\n[dependencies.json]\npath = \"../json\"\n"
+    one = with_listing(text: before, name: "kit", packages: with_name(["json"], name: "csv"))
+    assert one == "# mine\n[dependencies.kit]\npath = \"vendor/kit\"\npackages = [\"csv\", \"json\"]\n\n[dependencies.json]\npath = \"../json\"\n"
+    back = catalogue.parsed(file: "h", text: one)
+    assert back.problem == "" && listing.of(back.listings, entry: "kit") == ["csv", "json"]
+    many: [str] @= []
+
+    for n in range(from: 0, to: 12)
+        many @ many.push("package_" + n.to_str())
+
+    long = with_listing(text: one, name: "kit", packages: many)
+    assert strings.starts_with(
+        text: long,
+        prefix: "# mine\n[dependencies.kit]\npath = \"vendor/kit\"\npackages = [\n    \"package_0\",\n"
+    )
+    read = catalogue.parsed(file: "h", text: long)
+    assert read.problem == "" && listing.of(read.listings, entry: "kit") == many
+    assert catalogue.entry(read, name: "json").must().path == "../json"
+    again = with_listing(text: long, name: "kit", packages: ["csv"])
+    assert again == "# mine\n[dependencies.kit]\npath = \"vendor/kit\"\npackages = [\"csv\"]\n\n[dependencies.json]\npath = \"../json\"\n"
+    assert with_name(["b", "a"], name: "a") == ["a", "b"]

@@ -35,6 +35,7 @@ use module/placed
 use module/private
 use module/reached
 use module/spelling
+use module/unlisted
 use resolve/library_declared
 use source
 use token
@@ -47,6 +48,11 @@ function unknown(s: source.Source, used: ast.Use, name: str, told: [diag.Diagnos
     from = source.module_at(s, used.span.start)
     written = source.span_text(s, span)
     none: [diag.Diagnostic] = []
+
+    # A `use` its entry's `packages` line does not name is told as that,
+    # once, placed or not (`module/unlisted.hero`).
+    if unlisted.said_at(found: told, span: span)
+        return none
 
     if placed.is_package(from) && name.len() == 0
         return [
@@ -167,6 +173,10 @@ function own_unknown(s: source.Source, uses: [ast.Use], used: ast.Use, name: str
 # plain message alone, R18 being asked in the program's own files only).
 # `inside` is the module's path in the package, `written` the line's text.
 function in_package(s: source.Source, used: ast.Use, package: reached.Package, inside: str, written: str) -> diag.Diagnostic
+    lacks = unlisted.part_lacks(package, inside: inside, span: used.name)
+
+    if lacks.len() > 0
+        return lacks[0]
     plain = diag.new_diagnostic(
         code: "unknown_package_module",
         message: "the package `" + package.alias + "` has no module `" + inside + "`: `use " + written + "` reads `" + package.root + inside + ".hero`, and that file is not there",

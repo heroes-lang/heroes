@@ -16,7 +16,19 @@
 # **Checked at every build that reads the tree** (R7): a tree inside the
 # program is a folder anything can edit, and an edited tree compiling at
 # exit 0 is the outcome robustness refuses (`module/packages.hero`).
+#
+# **A tree placed by an entry's `packages` line holds part of its version**
+# (panel 253's R6, `fetch/closure.hero`), and keeps the version's own listing
+# beside the files at its root, `heroes.list`, the very text its `sum` is the
+# SHA-256 of: its fingerprint is that listing's where every other file it
+# holds is a line of the listing as it stands, and the tree's own otherwise,
+# which is then no entry's `sum`. A file of the version left out is no change,
+# the placement having left it out; a byte changed, a file added or the
+# listing edited is one, as in a whole tree. Cargo's vendored crate keeps its
+# files' sums the same way, in its `.cargo-checksum.json`. No version's file
+# takes the name (`fetch/tree_names.hero`), so a whole tree never holds it.
 
+use cli/files
 use cli/process
 use cli/sha256
 
@@ -27,10 +39,58 @@ extern "hero_compiler.h"
 extern "hero_os.h"
     constant HERO_OS_OK: i64
 
+# The name of the listing a tree placed by a `packages` line keeps at its
+# root.
+constant LISTING: str
+    "heroes.list"
+
 # The fingerprint of the tree at `root`, opened as the compiler opens files,
-# or a failure naming the file that could not be read or named.
+# or a failure naming the file that could not be read or named: held to its
+# kept listing where it keeps one.
 function of(root: str) -> str?
-    return ok("sha256-" + hero_text_sha256(text: listing(root)?))
+    kept = kept_listing(root)?
+    lines = listed_lines(root)?
+
+    if kept.len() == 0
+        return ok("sha256-" + hero_text_sha256(text: lines.join("")))
+    return ok(held_to(lines, kept: kept))
+
+# The listing the tree at `root` keeps at its root, "" where it keeps none and
+# is a whole version's.
+function kept_listing(root: str) -> str?
+    path = without_slash(root) + "/" + LISTING
+
+    if files.entry(path) == .absent
+        return ok("")
+    text = read_file(path)
+
+    if text.is_err()
+        return fail(code: "unreadable", msg: "`" + path + "` cannot be read")
+    return ok(text.must())
+
+# The sum of a tree that keeps the listing `kept`, its own `lines` as they
+# stand: the listing's where every other line is one of the listing's, else
+# the tree's own, which no entry's `sum` is.
+function held_to(lines: [str], kept: str) -> str
+    known = kept_lines(kept)
+
+    for line in lines
+        if name_of(line) != LISTING && known[line].is_err()
+            return "sha256-" + hero_text_sha256(text: lines.join(""))
+
+    return "sha256-" + hero_text_sha256(text: kept)
+
+# The lines of a kept listing, each with its line end, as keys.
+function kept_lines(kept: str) -> {str: bool}
+    out: {str: bool} @= {}
+    from: i64 @= 0
+
+    for at in range(from: 0, to: kept.len())
+        if kept[at] == '\n'
+            out[kept.slice(from: from, to: at + 1)] @ true
+            from @ at + 1
+
+    return out
 
 # The listing the fingerprint hashes: one line per regular file under `root`.
 function listing(root: str) -> str?
@@ -67,6 +127,33 @@ function without_slash(root: str) -> str
         return root.slice(from: 0, to: root.len() - 1)
     return root
 
+# Whether the trees at `a` and `b` hold files of the same names.
+function same_files(a: str, b: str) -> bool
+    left = names_in(a)
+    right = names_in(b)
+
+    # ORDER: none — a count and an existence test, so every order gives one answer.
+    if keys(left).len() != keys(right).len()
+        return false
+
+    for name in keys(left)
+        if right[name].is_err()
+            return false
+
+    return true
+
+# The names of the files under `root`, none where it cannot be read whole.
+function names_in(root: str) -> {str: bool}
+    out: {str: bool} @= {}
+
+    match listed_lines(root)
+        .ok lines =>
+            for line in lines
+                out[name_of(line)] @ true
+        .err _ => return out
+
+    return out
+
 ## The files a placed tree gained, named only where its sum proves them
 
 # Where a line's name opens: 64 hexadecimal digits and two spaces.
@@ -98,6 +185,10 @@ function added(root: str, sum: str) -> [str]
     if got.is_err()
         return []
     listed = got.must()
+    kept = kept_listing(root).default("")
+
+    if kept.len() > 0
+        return added_to_part(listed, kept: kept, sum: sum)
     trials: i64 @= TRIAL_CAP / (listed.join("").len() + 1)
 
     for name in repeated_names(listed)
@@ -125,6 +216,32 @@ function added(root: str, sum: str) -> [str]
             return [name_of(listed[at])]
 
     return []
+
+# The files added to a tree placed by a `packages` line, which keeps the
+# listing `kept`: where that listing is the one `sum` names and every other
+# file the tree holds is a line of it or a name it lacks, those names; empty
+# where a file it names changed, which the sum alone tells.
+function added_to_part(listed: [str], kept: str, sum: str) -> [str]
+    if "sha256-" + hero_text_sha256(text: kept) != sum
+        return []
+    known = kept_lines(kept)
+    names: {str: bool} @= {}
+
+    # ORDER: none — a table keyed by name.
+    for line in keys(known)
+        names[name_of(line)] @ true
+
+    out: [str] @= []
+
+    for line in listed
+        name = name_of(line)
+
+        if name != LISTING && known[line].is_err()
+            if !names[name].is_err()
+                return []
+            out @ out.push(name)
+
+    return out
 
 # Whether the listing `listed` less the lines `out` marks hashes to `sum`.
 function hits(listed: [str], out: [bool], sum: str) -> bool
@@ -245,7 +362,13 @@ test "the files a tree gained are named where its sum proves them, and nothing i
 
 # Defect 2572: a FIFO in a tree is no file the sum can read, and the read
 # answers at once rather than waiting for a writer, which hung every build
-# of the program that placed the tree. Made where the machine has `mkfifo`.
+# of the program that placed the tree. What `mkfifo` made is asked of the
+# name, as `standing.hero`'s case asks it: Windows has no FIFO in its file
+# system, and on the CI's Windows leg Git's `mkfifo` ended at exit 0 having
+# made no name the sum cannot read (run 43769808533, read 2026-11-19: `of`
+# answered a fingerprint). So where no FIFO stands the test holds the one
+# reason it may, that this is Windows, and that the tree sums at once; on
+# any other platform a FIFO not made fails it.
 test "a FIFO in a tree fails its fingerprint at once (defect 2572)"
     dir = "build/selftest-fingerprint-2572"
     assert !process.remove_tree(dir).is_err()
@@ -258,7 +381,10 @@ test "a FIFO in a tree fails its fingerprint at once (defect 2572)"
         err: process.discard()
     )
 
-    if made.started && made.code == 0
+    if !made.started || made.code != 0 || !files.is_special(dir + "/pipe")
+        assert process.exe_suffix() == ".exe"
+        assert !of(dir).is_err()
+    else
         match of(dir)
             .ok _  => assert false
             .err e => assert e.code == "unreadable" && e.msg == "`" + dir + "/pipe` cannot be read"
