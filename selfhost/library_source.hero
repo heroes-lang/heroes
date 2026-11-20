@@ -273,6 +273,15 @@ constant LINES: [str]
         "        status: i64? = fail(code: \"does_not_fit\", msg: \"`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given \" + to_str(code))"
         "        _ = status.must()"
         "    hero_exit(code)"
+        ""
+        "# Ends a `test` block as skipped, never passed (panel 253's R4; why, `cli/test_outcome.hero`): `skipped` and the reason, written into"
+        "# the file `heroes test` names as the test's second argument, then exit 0. Run with no file named, or one it cannot write, it stops there."
+        "function skip_test(reason: str)"
+        "    if hero_args_count() < 2"
+        "        untold: i64? = fail(code: \"no_runner\", msg: \"a test skipped where no `heroes test` runs it, so it stops here instead: \" + reason)"
+        "        _ = untold.must()"
+        "    write_file(path: hero_args_at(1), text: \"skipped\\n\" + reason).must()"
+        "    hero_exit(0)"
     ]
 
 # The library source, exactly as the bootstrap embeds it.
