@@ -1,7 +1,7 @@
 
   <div class="page-head">
     <h1 class="page">Why Heroes</h1>
-    <span class="nod">· <a href="/about/thanks/#rebel-rebel">rebel rebel</a></span>
+    <span class="nod">· <a href="/about/thanks/#life-on-mars">life on mars?</a></span>
   </div>
   <p class="lede">
     Heroes starts with two constraints: the code must be easy for a model to read, and programs must be able to use C libraries.
@@ -137,7 +137,7 @@ record Rect
     Each one is a choice, and this is what it costs.
   </p>
   <ul class="pillars">
-    <li><b>There is no standard library.</b> The built-ins are one line of the
+    <li><b>Heroes imposes no standard library.</b> The built-ins are one line of the
     specification: printing, length, <code>push</code>, <code>slice</code>,
     <code>chars</code>, <code>keys</code>, <code>join</code>,
     <code>repeat</code>, sorting, the numeric conversions, and <code>map</code>,
@@ -146,11 +146,13 @@ record Rect
     themselves written in Heroes; plus reading and writing a file, the
     command-line arguments and <code>exit</code>. Everything else is a C
     library you declare yourself, or a package of Heroes code your program
-    carries with it, which <code>heroes add</code> fetches from a git
-    repository or from an index, the place where packages are published. So
-    far the project publishes only the core packages, for text, numbers and
-    JSON, in a folder of its repository, and its index on the web is still to
-    be built.</li>
+    carries with it, which <code>heroes add</code> fetches from an index, the
+    place where packages are published, from a git repository or from a
+    folder. The project writes one such package, <a href="/rebel/">Rebel</a>,
+    a broad library for text, files, numbers, the network and data formats,
+    which a program takes or leaves; the compiler itself is written without
+    it. The index on the web is still to be built, so today a program takes
+    Rebel from the folder of the repository that holds it.</li>
     <li><b>Parallel work carries one number.</b> A thread takes an
     <code>i64</code> and gives one back. Put a list inside a callback&rsquo;s
     type and the compiler refuses it before anything runs, with
