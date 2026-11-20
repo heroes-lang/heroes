@@ -15,6 +15,7 @@ use check/function_value
 use check/lower
 use check/state
 use check/table
+use check/test_only
 use contextless_errors
 use inventory
 use resolved
@@ -33,7 +34,9 @@ function synth_name(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
                 # §4.13: a top-level function is a value, its type its
                 # signature, but for an `@` or a generic one where nothing
                 # binds it (defects 398, 402: `check/function_value.hero`).
-                .function_decl   => return function_value.synthesised(@c, a, r, s, decls, decl: t.at, span: span)
+                .function_decl =>
+                    test_only.after_name(@c, s, decls, decl: t.at, span: span)
+                    return function_value.synthesised(@c, a, r, s, decls, decl: t.at, span: span)
                 .constant_decl k => return lower.lower_ty(@c, a, r, k.ty)
                 # A record name is a constructor, not a value on its own
                 # (§4.9): only meaningful as the callee of a call.

@@ -1,0 +1,4 @@
+tests/golden/check/skip-test-outside-a-test-block-is-refused.hero:17:5: error[skip_outside_test]: `skip_test` ends a `test` block as skipped, and this is not one
+tests/golden/check/skip-test-outside-a-test-block-is-refused.hero:20:5: error[skip_outside_test]: `skip_test` ends a `test` block as skipped, and this is not one
+tests/golden/check/skip-test-outside-a-test-block-is-refused.hero:23:13: error[skip_outside_test]: `skip_test` ends a `test` block as skipped, and this is not one
+tests/golden/check/skip-test-outside-a-test-block-is-refused.hero:30:5: error[skip_outside_test]: `skip_test` ends a `test` block as skipped, and this is not one

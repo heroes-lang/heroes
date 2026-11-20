@@ -59,6 +59,13 @@ record Case
     expected: str
     name: str
 
+# The files that are an expectation of the `.hero` of their name, so one
+# standing without it is a case that stopped running: the program's
+# `.expected`, and since panel 253's R4 the `.tested` the `run` form holds
+# its `heroes test` to (`suite_run.hero`).
+constant OWNED: [str]
+    [".expected", ".tested"]
+
 # The cases of `dir`, each paired with its expectation, or the failure naming
 # the first half pair: `programs`, under the pair rule.
 function collect(scratch: str, dir: str) -> [Case]?
@@ -70,11 +77,12 @@ function collect(scratch: str, dir: str) -> [Case]?
     present = listed(entries)
 
     for entry in entries
-        if strings.has_suffix(s: entry, suffix: ".expected")
-            owner = strings.without_suffix(text: entry, suffix: ".expected") + ".hero"
+        for ending in OWNED
+            if strings.has_suffix(s: entry, suffix: ending)
+                owner = strings.without_suffix(text: entry, suffix: ending) + ".hero"
 
-            if present[owner].is_err()
-                return fail(code: "orphan", msg: "orphan expectation: " + entry + " has no .hero source")
+                if present[owner].is_err()
+                    return fail(code: "orphan", msg: "orphan expectation: " + entry + " has no .hero source")
 
     found = programs(scratch: scratch, dir: dir)?
 
@@ -535,4 +543,15 @@ test "an expectation with no source stops the harness by name"
         .err e => e.code
 
     assert code == "orphan"
+
+    # And a `.tested` with no source, which the `run` form would never read.
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    assert !write_file(path: tree + "/ghost.tested", text: "").is_err()
+
+    again = match collect(scratch: scratch, dir: tree)
+        .ok _  => "ok"
+        .err e => e.code
+
+    assert again == "orphan"
     assert !shell.remove_tree(scratch).is_err()

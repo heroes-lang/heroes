@@ -263,9 +263,10 @@ test "names collide with nothing: library capture, sanitised slots, foreign fiel
     assert constant_block(owner: "h_geom_K_3", held: 5) != constant_block(owner: "h_geom_K", held: 35)
 
 # Defect 480's case: the library's functions outside the inventory are
-# exactly `args_checked` and `validated`, read from the library's own
-# declarations, and each is spelled by the module that declares it.
-test "the library declares two names the inventory lacks, each spelled by its module (defect 480)"
+# exactly `args_checked`, `validated` and, since panel 253's R4, `skip_test`,
+# read from the library's own declarations, and each is spelled by the module
+# that declares it.
+test "the library declares three names the inventory lacks, each spelled by its module (defect 480)"
     text = library_source.text()
     parsed = parse.parse(text)
     s = source.new_source(name: "library.hero", text: text)
@@ -280,6 +281,7 @@ test "the library declares two names the inventory lacks, each spelled by its mo
                     outside @ outside.push(name)
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
-    assert sort(outside) == ["args_checked", "validated"]
+    assert sort(outside) == ["args_checked", "skip_test", "validated"]
     assert function_name(module: source.LIBRARY_MODULE, name: "validated") == "h_" + source.LIBRARY_MODULE + "_validated"
     assert function_name(module: source.LIBRARY_MODULE, name: "args_checked") == "h_" + source.LIBRARY_MODULE + "_args_checked"
+    assert function_name(module: source.LIBRARY_MODULE, name: "skip_test") == "h_" + source.LIBRARY_MODULE + "_skip_test"
