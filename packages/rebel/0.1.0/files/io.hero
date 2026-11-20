@@ -23,6 +23,14 @@
 # is answers an empty list or an empty text at the end; one that promises a
 # count, `read_exact`, fails `closed` where the end comes first. `at_end` asks
 # a reader whether the end has come.
+#
+# **What it does not do.** It makes no stream over a `[u8]`: bytes in memory
+# are a list, cut and searched by `bytes`, and a reader reads a stream. It
+# composes no streams, no reader over several one after another and no writer
+# to several at once: a program copies between the two it names, with `copy`.
+# It sets no deadline: the time a socket's stream may wait is set by `net` or
+# `tls`, and a call here answers `timeout` once it runs out. Opening a file is
+# `fs.open`'s, a child's ends `process`'s, a connection `net`'s.
 
 use bytes
 use io/hero_stream
@@ -74,24 +82,6 @@ constant STOPPED: str
 # carries the system's own number.
 constant FAILED: str
     failure.FAILED
-
-# A path names nothing: what `last_failure` answers after a floor's `open`.
-constant FILE_NOT_FOUND: str
-    failure.FILE_NOT_FOUND
-
-# The file is there already: what `last_failure` answers after a floor's
-# `open` that must create it.
-constant EXISTS: str
-    failure.EXISTS
-
-# A path names a folder: what `last_failure` answers after a floor's `open`.
-constant IS_A_DIRECTORY: str
-    failure.IS_A_DIRECTORY
-
-# A name on a path's way is a file: what `last_failure` answers after a
-# floor's `open`.
-constant NOT_A_DIRECTORY: str
-    failure.NOT_A_DIRECTORY
 
 ## The stream
 
@@ -159,18 +149,16 @@ function pipe() -> Pipe?
         Pipe(reader: of_handle(out_end, name: "a pipe's reading end"), writer: of_handle(in_end, name: "a pipe's writing end"))
     )
 
-# The stream over `handle`, a handle of the floor `io/hero_stream` that the
-# caller owns, called `name` in messages: how `fs`, `process` and `net` hand
-# out what they open. From this call the stream owns the handle, and `close`
-# gives it back.
-function of_handle(handle: hero_stream.Stream, name: str) -> Stream
-    return Stream(handle: handle, borrowed: false, name: name)
-
 # Closes `s` and empties the place, so every later call through it fails
-# `closed`. Fails `closed` where it is closed already, and with the system's
-# code where the system reported a failure while closing, the last bytes of a
-# file not written among them; the stream is given back either way. One of
-# the process's own three is not closed.
+# `closed`.
+#
+# - `s`: the caller's place holding the stream; it is emptied, whatever the
+#   answer.
+#
+# Fails `closed` where it is closed already, and with the system's code where
+# the system reported a failure while closing, the last bytes of a file not
+# written among them; the stream is given back either way. One of the
+# process's own three is not closed.
 function close(@s: Stream) -> ()?
     asked = "closing " + s.name
 
@@ -187,24 +175,26 @@ function close(@s: Stream) -> ()?
         return failure.last(asked: asked)
     return ok()
 
-# Whether `close` has emptied this place. A copy made before the close was
-# not emptied, and asking it aborts (the module's opening comment).
+# Whether `close` has emptied this place.
+#
+# - `s`: the place asked about.
+#
+# A copy made before the close was not emptied, and asking it aborts (the
+# module's opening comment).
 function is_closed(s: Stream) -> bool
     return s.handle == nullptr
-
-# The failure the floor's last call on this thread left, as a `T?` whose
-# message begins with `asked`: how `fs`, `process` and `net` turn a `nullptr`
-# or a -1 of `io/hero_stream` into a code of README § A4. It reads the floor's
-# last error, so it is called right after the call that failed.
-function last_failure<T>(asked: str) -> T?
-    return failure.last(asked: asked)
 
 ## Reading a stream
 
 # Up to `most` bytes of `s`, waiting for one: at most 65,536 at once, and
-# fewer where fewer are there. At the end it answers an empty list, and so it
-# does for a `most` of 0. Fails `invalid` where `most` is below 0, `closed`
-# where `s` is closed, `permission` where it was not opened to read.
+# fewer where fewer are there.
+#
+# - `s`: the stream read.
+# - `most`: the most bytes answered; 0 answers an empty list at once.
+#
+# At the end it answers an empty list. Fails `invalid` where `most` is below
+# 0, `closed` where `s` is closed, `permission` where it was not opened to
+# read. See also `read_exact`, `reader`.
 function read(s: Stream, most: i64) -> [u8]?
     if most < 0
         return failure.of(code: INVALID, asked: f"reading {most} bytes of {s.name}", why: "a count is 0 or more")
@@ -213,9 +203,14 @@ function read(s: Stream, most: i64) -> [u8]?
         return ok([])
     return move.some(s.handle, name: s.name, most: most)
 
-# Exactly `count` bytes of `s`, waiting for each. Fails `closed` where the
-# stream ends first, the message saying how many came, and `invalid` where
-# `count` is below 0. The bytes read before a failure are lost.
+# Exactly `count` bytes of `s`, waiting for each.
+#
+# - `s`: the stream read.
+# - `count`: the bytes answered, no fewer; 0 answers an empty list.
+#
+# Fails `closed` where the stream ends first, the message saying how many
+# came, and `invalid` where `count` is below 0. The bytes read before a
+# failure are lost.
 function read_exact(s: Stream, count: i64) -> [u8]?
     if count < 0
         return failure.of(code: INVALID, asked: f"reading {count} bytes of {s.name}", why: "a count is 0 or more")
@@ -223,17 +218,30 @@ function read_exact(s: Stream, count: i64) -> [u8]?
 
 # Every byte of `s` from where it stands to its end, waiting for the end: an
 # empty list where it is at its end already.
+#
+# - `s`: the stream read.
+#
+# Fails as `read` does, `closed` where `s` is closed and `permission` where it
+# was not opened to read; the bytes read before a failure are lost. See also
+# `read_all_text`.
 function read_all(s: Stream) -> [u8]?
     return move.to_end(s.handle, name: s.name)
 
-# Every byte of `s` to its end, as text. Fails `not_text` where the bytes are
-# not UTF-8; they are read either way.
+# Every byte of `s` to its end, as text.
+#
+# - `s`: the stream read.
+#
+# Fails `not_text` where the bytes are not UTF-8; they are read either way.
 function read_all_text(s: Stream) -> str?
     return failure.text(read_all(s)?, asked: "reading " + s.name + " as text")
 
 ## Writing a stream
 
 # Writes every byte of `data` to `s`, as many times as the system needs.
+#
+# - `s`: the stream written.
+# - `data`: the bytes written, in order; none write nothing.
+#
 # Fails `closed` where `s` is closed or its reader is gone, as a pipe's or a
 # socket's may be, and `permission` where `s` was not opened to write; the
 # bytes written before a failure stay written.
@@ -241,17 +249,36 @@ function write(s: Stream, data: [u8]) -> ()?
     return move.every(s.handle, name: s.name, data: data)
 
 # Writes every byte of `text` to `s`, as `write` does.
+#
+# - `s`: the stream written.
+# - `text`: the text written, its UTF-8.
+#
+# Fails as `write` does: `closed` where `s` is closed or its reader is gone,
+# `permission` where it was not opened to write. See also `write_line`.
 function write_text(s: Stream, text: str) -> ()?
     return write(s, data: bytes.from_text(text))
 
 # Writes `line` and a line feed to `s` in one write, as `write` does.
+#
+# - `s`: the stream written.
+# - `line`: the line, without its end; the empty line writes a line feed
+#   alone.
+#
+# Fails as `write` does: `closed` where `s` is closed or its reader is gone,
+# `permission` where it was not opened to write. See also `write_lines`.
 function write_line(s: Stream, line: str) -> ()?
     data @= bytes.from_text(line)
     data @ data.push('\n')
     return write(s, data: data)
 
 # Writes each of `lines` followed by a line feed, in one write, as `write`
-# does: nothing for an empty list.
+# does.
+#
+# - `s`: the stream written.
+# - `lines`: the lines, each without its end; none write nothing.
+#
+# Fails as `write` does: `closed` where `s` is closed or its reader is gone,
+# `permission` where it was not opened to write. See also `write_line`.
 function write_lines(s: Stream, lines: [str]) -> ()?
     if lines.len() == 0
         return ok()
@@ -260,14 +287,24 @@ function write_lines(s: Stream, lines: [str]) -> ()?
 ## Copying
 
 # Copies everything `from` holds, to its end, into `to`, and answers how many
-# bytes, 65,536 at a time. Fails as `read` and `write` do; the bytes copied
-# before a failure stay written.
+# bytes, 65,536 at a time.
+#
+# - `from`: the stream read, to its end.
+# - `to`: the stream written.
+#
+# Fails as `read` and `write` do; the bytes copied before a failure stay
+# written.
 function copy(from: Stream, to: Stream) -> i64?
     return move.across(from: from.handle, from_name: from.name, to: to.handle, to_name: to.name, limit: -1)
 
 # Copies at most `n` bytes of `from` into `to` and answers how many, fewer
-# where `from` ends first. Fails `invalid` where `n` is below 0, and as
-# `copy` does.
+# where `from` ends first.
+#
+# - `from`: the stream read.
+# - `to`: the stream written.
+# - `n`: the most bytes copied; 0 copies none.
+#
+# Fails `invalid` where `n` is below 0, and as `copy` does.
 function copy_n(from: Stream, to: Stream, n: i64) -> i64?
     if n < 0
         return failure.of(code: INVALID, asked: f"copying {n} bytes of {from.name}", why: "a count is 0 or more")
@@ -276,9 +313,16 @@ function copy_n(from: Stream, to: Stream, n: i64) -> i64?
 ## Positions, and what a stream is
 
 # Moves where the next read or write of `s` begins to `offset` bytes from
-# `from`, and answers that position counted from the start. A position past
-# the end is allowed; one before the start fails `invalid`. Fails
-# `unsupported` where `s` has no positions: a pipe, a terminal, a socket.
+# `from`, and answers that position counted from the start.
+#
+# - `s`: the stream, a file's.
+# - `offset`: the bytes counted from `from`, negative to go back.
+# - `from`: where `offset` counts from: the start, where `s` stands, or the
+#   end.
+#
+# A position past the end is allowed; one before the start fails `invalid`.
+# Fails `unsupported` where `s` has no positions: a pipe, a terminal, a
+# socket.
 function seek(s: Stream, offset: i64, from: Origin) -> i64?
     whence = match from
         .start   => hero_stream.HERO_STREAM_FROM_START
@@ -291,8 +335,11 @@ function seek(s: Stream, offset: i64, from: Origin) -> i64?
         return failure.last(asked: f"moving {offset} bytes in {s.name}")
     return ok(at)
 
-# Where the next read or write of `s` begins, counted in bytes from the
-# start. Fails `unsupported` as `seek` does.
+# Where the next read or write of `s` begins, counted in bytes from the start.
+#
+# - `s`: the stream, a file's.
+#
+# Fails `unsupported` as `seek` does.
 function position(s: Stream) -> i64?
     at = hero_stream.seek(s.handle, offset: 0, from: hero_stream.HERO_STREAM_FROM_CURRENT)
 
@@ -301,6 +348,9 @@ function position(s: Stream) -> i64?
     return ok(at)
 
 # The size in bytes of the file `s` stands on, as the system holds it now.
+#
+# - `s`: the stream, a file's.
+#
 # Fails `unsupported` where `s` is no file.
 function size(s: Stream) -> i64?
     answer = hero_stream.size(s.handle)
@@ -310,9 +360,14 @@ function size(s: Stream) -> i64?
     return ok(answer)
 
 # Makes the file `s` stands on `length` bytes long, cutting what is past it or
-# adding zero bytes to reach it; where `s` stands does not move. Fails
-# `invalid` where `length` is below 0, `unsupported` where `s` is no file and
-# `permission` where it was not opened to write or was opened to append.
+# adding zero bytes to reach it; where `s` stands does not move.
+#
+# - `s`: the stream, a file's opened to write.
+# - `length`: the bytes the file holds after the call.
+#
+# Fails `invalid` where `length` is below 0, `unsupported` where `s` is no
+# file and `permission` where it was not opened to write or was opened to
+# append.
 function truncate(s: Stream, length: i64) -> ()?
     asked = f"making {s.name} {length} bytes long"
 
@@ -323,16 +378,23 @@ function truncate(s: Stream, length: i64) -> ()?
         return failure.last(asked: asked)
     return ok()
 
-# Answers once the system says every byte written to the file `s` stands on
-# is on the storage itself. Fails `unsupported` where `s` is no file: a pipe's
-# bytes reached their reader when they were written.
+# Answers once the system says every byte written to the file `s` stands on is
+# on the storage itself.
+#
+# - `s`: the stream, a file's.
+#
+# Fails `unsupported` where `s` is no file: a pipe's bytes reached their
+# reader when they were written.
 function sync(s: Stream) -> ()?
     if hero_stream.sync(s.handle) != 0
         return failure.last(asked: "putting " + s.name + " on the storage")
     return ok()
 
-# Whether `s` is a terminal, or a Windows console. Fails `closed` where `s`
-# is closed.
+# Whether `s` is a terminal, or a Windows console.
+#
+# - `s`: the stream asked about.
+#
+# Fails `closed` where `s` is closed.
 function is_terminal(s: Stream) -> bool?
     answer = hero_stream.is_terminal(s.handle)
 
@@ -340,9 +402,12 @@ function is_terminal(s: Stream) -> bool?
         return failure.last(asked: "asking whether " + s.name + " is a terminal")
     return ok(answer == 1)
 
-# Whether `s` has positions, which only a file has: `seek`, `position`,
-# `size` and `truncate` fail `unsupported` on the rest. Fails `closed` where
-# `s` is closed.
+# Whether `s` has positions, which only a file has: `seek`, `position`, `size`
+# and `truncate` fail `unsupported` on the rest.
+#
+# - `s`: the stream asked about.
+#
+# Fails `closed` where `s` is closed.
 function is_seekable(s: Stream) -> bool?
     answer = hero_stream.kind(s.handle)
 
@@ -364,15 +429,23 @@ record Reader
     # What was read of the stream and not given out yet.
     held: buffer.Held
 
-# A reader over `s`, holding nothing yet. It reads nothing until asked.
+# A reader over `s`, holding nothing yet.
+#
+# - `s`: the stream read; the reader holds a copy of it and never closes it.
+#
+# It reads nothing until asked.
 function reader(s: Stream) -> Reader
     return Reader(stream: s, held: buffer.empty())
 
 # The next line of `r` as text, without its end: a line feed, or a carriage
-# return and a line feed. A last line with no end is a line; a carriage
-# return alone ends nothing. At the end it answers "", as it does for an
-# empty line, so `at_end` tells them apart. Fails `not_text` where the line's
-# bytes are not UTF-8, the line read either way.
+# return and a line feed.
+#
+# - `r`: the caller's reader, which moves past the line and its end.
+#
+# A last line with no end is a line; a carriage return alone ends nothing. At
+# the end it answers "", as it does for an empty line, so `at_end` tells them
+# apart. Fails `not_text` where the line's bytes are not UTF-8, the line read
+# either way.
 function read_line(@r: Reader) -> str?
     line = read_until(@r, byte: '\n')?
     end: i64 @= line.len()
@@ -385,14 +458,21 @@ function read_line(@r: Reader) -> str?
     return failure.text(line.slice(from: 0, to: end), asked: "reading a line of " + r.stream.name)
 
 # The next line of `r` as text, with its end as it was, "\n" or "\r\n", or
-# none for a last line with no end: "" only at the end. Fails `not_text` as
-# `read_line` does.
+# none for a last line with no end: "" only at the end.
+#
+# - `r`: the caller's reader, which moves past the line.
+#
+# Fails `not_text` as `read_line` does.
 function read_line_with_end(@r: Reader) -> str?
     return failure.text(read_until(@r, byte: '\n')?, asked: "reading a line of " + r.stream.name)
 
 # Every line left in `r`, each without its end as `read_line` reads it: an
-# empty list at the end. Fails `not_text` where a line is not UTF-8, the
-# lines before it read and lost.
+# empty list at the end.
+#
+# - `r`: the caller's reader, which reads to its end.
+#
+# Fails `not_text` where a line is not UTF-8, the lines before it read and
+# lost.
 function read_lines(@r: Reader) -> [str]?
     out: [str] @= []
 
@@ -403,36 +483,61 @@ function read_lines(@r: Reader) -> [str]?
 
 # The bytes of `r` up to and including the first `byte`, or to the end where
 # no `byte` comes: an empty list at the end.
+#
+# - `r`: the caller's reader, which moves past the bytes answered.
+# - `byte`: the byte that ends what is answered, kept at its end.
+#
+# Fails as `read` does, `closed` where the stream is closed and `permission`
+# where it was not opened to read. See also `read_line`.
 function read_until(@r: Reader, byte: u8) -> [u8]?
     return buffer.until(@r.held, r.stream.handle, name: r.stream.name, byte: byte)
 
-# The next character of `r`, of one to four bytes: "" at the end. Fails
-# `not_text` where the bytes there begin no character, or the stream ends
-# inside one; the bytes that do not make a character are read either way.
+# The next character of `r`, of one to four bytes: "" at the end.
+#
+# - `r`: the caller's reader, which moves past the character.
+#
+# Fails `not_text` where the bytes there begin no character, or the stream
+# ends inside one; the bytes that do not make a character are read either way.
 function read_char(@r: Reader) -> str?
     return buffer.char(@r.held, r.stream.handle, name: r.stream.name)
 
 # At most `n` bytes of `r`, waiting until `n` have come or the stream ends:
-# fewer only at the end, and an empty list there. Fails `invalid` where `n` is
-# below 0.
+# fewer only at the end, and an empty list there.
+#
+# - `r`: the caller's reader, which moves past the bytes answered.
+# - `n`: the most bytes answered; 0 answers an empty list.
+#
+# Fails `invalid` where `n` is below 0.
 function read_n(@r: Reader, n: i64) -> [u8]?
     if n < 0
         return failure.of(code: INVALID, asked: f"reading {n} bytes of {r.stream.name}", why: "a count is 0 or more")
     return ok(buffer.take(@r.held, r.stream.handle, name: r.stream.name, n: n, keep: true)?.bytes)
 
 # Every byte left in `r`, what it holds first, then its stream to the end.
+#
+# - `r`: the caller's reader, which is at its end after the call.
+#
+# Fails as `read` does, `closed` where the stream is closed and `permission`
+# where it was not opened to read. See also `read_rest_text`.
 function read_rest(@r: Reader) -> [u8]?
     return buffer.rest(@r.held, r.stream.handle, name: r.stream.name)
 
-# Every byte left in `r`, as text. Fails `not_text` where the bytes are not
-# UTF-8; they are read either way.
+# Every byte left in `r`, as text.
+#
+# - `r`: the caller's reader, which is at its end after the call.
+#
+# Fails `not_text` where the bytes are not UTF-8; they are read either way.
 function read_rest_text(@r: Reader) -> str?
     return failure.text(read_rest(@r)?, asked: "reading " + r.stream.name + " as text")
 
-# The next `n` bytes of `r` without reading them: the next call gives them
-# out again. Fewer only at the end. It waits until `n` are held and holds them
-# all, so a large `n` costs that much memory. Fails `invalid` where `n` is
-# below 0.
+# The next `n` bytes of `r` without reading them: the next call gives them out
+# again.
+#
+# - `r`: the caller's reader, which holds the bytes and gives them out again.
+# - `n`: the bytes looked at; 0 answers an empty list.
+#
+# Fewer only at the end. It waits until `n` are held and holds them all, so a
+# large `n` costs that much memory. Fails `invalid` where `n` is below 0.
 function peek(@r: Reader, n: i64) -> [u8]?
     if n < 0
         return failure.of(
@@ -443,7 +548,12 @@ function peek(@r: Reader, n: i64) -> [u8]?
     return buffer.look(@r.held, r.stream.handle, name: r.stream.name, n: n)
 
 # Reads and drops at most `n` bytes of `r`, and answers how many: fewer only
-# at the end. Fails `invalid` where `n` is below 0.
+# at the end.
+#
+# - `r`: the caller's reader, which moves past the bytes dropped.
+# - `n`: the most bytes dropped.
+#
+# Fails `invalid` where `n` is below 0.
 function skip(@r: Reader, n: i64) -> i64?
     if n < 0
         return failure.of(code: INVALID, asked: f"skipping {n} bytes of {r.stream.name}", why: "a count is 0 or more")
@@ -451,13 +561,71 @@ function skip(@r: Reader, n: i64) -> i64?
 
 # Whether `r` has no byte left, waiting for one where it holds none and the
 # stream has not ended.
+#
+# - `r`: the caller's reader, which may read the stream to fill itself and
+#   gives nothing out.
+#
+# Fails as `read` does, `closed` where the stream is closed and `permission`
+# where it was not opened to read. See also `read_line`.
 function at_end(@r: Reader) -> bool?
     return ok(!buffer.fill(@r.held, r.stream.handle, name: r.stream.name)?)
 
 # The bytes `r` holds and has not given out, read from its stream already:
-# what a read of the stream itself would no longer see. It waits for nothing.
+# what a read of the stream itself would no longer see.
+#
+# - `r`: the reader.
+#
+# It waits for nothing.
 function buffered(r: Reader) -> [u8]
     return r.held.bytes.slice(from: r.held.at, to: r.held.bytes.len())
+
+## For the packages that open a stream
+
+# A path names nothing: what `last_failure` answers after a floor's `open`.
+constant FILE_NOT_FOUND: str
+    failure.FILE_NOT_FOUND
+
+# The file is there already: what `last_failure` answers after a floor's
+# `open` that must create it.
+constant EXISTS: str
+    failure.EXISTS
+
+# A path names a folder: what `last_failure` answers after a floor's `open`.
+constant IS_A_DIRECTORY: str
+    failure.IS_A_DIRECTORY
+
+# A name on a path's way is a file: what `last_failure` answers after a
+# floor's `open`.
+constant NOT_A_DIRECTORY: str
+    failure.NOT_A_DIRECTORY
+
+# The stream over `handle`, a handle of the floor `io/hero_stream` that the
+# caller owns, called `name` in messages: how `fs`, `process` and `net` hand
+# out what they open.
+#
+# - `handle`: a handle of the floor `io/hero_stream`, open, which the stream
+#   owns from this call.
+# - `name`: how a failure's message names the stream: a path in quotes, "a
+#   pipe's reading end".
+#
+# From this call the stream owns the handle, and `close` gives it back.
+function of_handle(handle: hero_stream.Stream, name: str) -> Stream
+    return Stream(handle: handle, borrowed: false, name: name)
+
+# The failure the floor's last call on this thread left, as a `T?` whose
+# message begins with `asked`: how `fs`, `process` and `net` turn a `nullptr`
+# or a -1 of `io/hero_stream` into a code of README § A4.
+#
+# - `asked`: what was being done, in words that begin the message:
+#   `opening "notes.txt"`.
+#
+# It reads the floor's last error, so it is called right after the call that
+# failed. Fails always, with the code the floor's failure names:
+# `file_not_found`, `exists`, `is_a_directory`, `not_a_directory`,
+# `permission`, `limit`, `unsupported`, `closed`, `timeout`, `stopped`,
+# `invalid`, or `failed` with the system's own number. See also `of_handle`.
+function last_failure<T>(asked: str) -> T?
+    return failure.last(asked: asked)
 
 ## Tests
 
@@ -854,3 +1022,370 @@ test "read_rest_text after a line, and a reader whose own stream place was close
     match at_end(@r)
         .ok _  => assert false
         .err e => assert e.code == CLOSED
+
+## Examples
+
+# The process's own input is borrowed: the same stream at every call.
+test "stdin: borrowed from the process"
+    input = stdin()
+    assert input.borrowed && !is_closed(input)
+
+# The process's own output, which `close` does not close: the place is
+# emptied, and `stdout()` answers the stream again.
+test "stdout: closed in one place and still the process's"
+    out @= stdout()
+    close(@out).must()
+    assert is_closed(out) && !is_closed(stdout())
+
+# The process's own error output, written with nothing.
+test "stderr: a write of nothing"
+    write(stderr(), data: []).must()
+
+# Bytes written to one end of a pipe and read from the other.
+test "pipe: a line through a pipe"
+    p @= pipe().must()
+    write_line(p.writer, line: "hello").must()
+    close(@p.writer).must()
+    assert read_all_text(p.reader).must() == "hello\n"
+    close(@p.reader).must()
+
+# How a package that opens a stream hands it out: the floor's handle made a
+# stream, its name in the messages.
+test "of_handle: a floor's pipe made two streams"
+    out_end: hero_stream.Stream @= nullptr
+    in_end: hero_stream.Stream @= nullptr
+    assert hero_stream.pipe(reader: @out_end, writer: @in_end) == 0
+    reading @= of_handle(out_end, name: "the log's reading end")
+    writing @= of_handle(in_end, name: "the log's writing end")
+    write_text(writing, text: "x").must()
+    close(@writing).must()
+    assert read_all_text(reading).must() == "x"
+    close(@reading).must()
+
+# A stream closed through its place, which every later call finds closed.
+test "close: a pipe's end, and a read after it"
+    p @= pipe().must()
+    close(@p.writer).must()
+    assert write_text(p.writer, text: "late").is_err()
+    close(@p.reader).must()
+
+# A place asked whether `close` emptied it.
+test "is_closed: before and after"
+    p @= pipe().must()
+    assert !is_closed(p.reader)
+    close(@p.reader).must()
+    assert is_closed(p.reader)
+    close(@p.writer).must()
+
+# A floor's open of a path that is not there, turned into the library's code.
+test "last_failure: a file that is not there"
+    folder = hero_stream.scratch("io-example-last")
+    handle = hero_stream.open(folder + "/missing.txt", access: hero_stream.HERO_STREAM_ACCESS_READ, perm: 0)
+    assert handle == nullptr
+    t: Stream? = last_failure(asked: "opening \"missing.txt\"")
+
+    match t
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
+    assert hero_stream.cleared(folder)
+
+# A stream read a few bytes at a time.
+test "read: three bytes, then the rest, then the end"
+    p @= pipe().must()
+    write_text(p.writer, text: "hello").must()
+    close(@p.writer).must()
+    assert read(p.reader, most: 3).must() == [104, 101, 108]
+    assert read(p.reader, most: 100).must() == [108, 111]
+    assert read(p.reader, most: 100).must().len() == 0
+    close(@p.reader).must()
+
+# A header of a fixed size read whole, and a stream that ends too soon.
+test "read_exact: a header of four bytes"
+    p @= pipe().must()
+    write(p.writer, data: [0xca, 0xfe, 0xba, 0xbe, 0x01]).must()
+    close(@p.writer).must()
+    assert read_exact(p.reader, count: 4).must() == [0xca, 0xfe, 0xba, 0xbe]
+    assert read_exact(p.reader, count: 4).is_err()
+    close(@p.reader).must()
+
+# Everything a stream holds, read to its end.
+test "read_all: a pipe's bytes"
+    p @= pipe().must()
+    write(p.writer, data: [1, 2, 3]).must()
+    close(@p.writer).must()
+    assert read_all(p.reader).must() == [1, 2, 3]
+    close(@p.reader).must()
+
+# Everything a stream holds, as text.
+test "read_all_text: a message"
+    p @= pipe().must()
+    write_text(p.writer, text: "caffè").must()
+    close(@p.writer).must()
+    assert read_all_text(p.reader).must() == "caffè"
+    close(@p.reader).must()
+
+# Bytes written to a stream.
+test "write: a frame of bytes"
+    p @= pipe().must()
+    write(p.writer, data: [0x01, 0x02]).must()
+    close(@p.writer).must()
+    assert read_all(p.reader).must() == [0x01, 0x02]
+    close(@p.reader).must()
+
+# A text written to a stream as its UTF-8.
+test "write_text: a word with an accent"
+    p @= pipe().must()
+    write_text(p.writer, text: "né").must()
+    close(@p.writer).must()
+    assert read_all(p.reader).must() == [0x6e, 0xc3, 0xa9]
+    close(@p.reader).must()
+
+# A line written with its end.
+test "write_line: a line of a log"
+    p @= pipe().must()
+    write_line(p.writer, line: "started").must()
+    close(@p.writer).must()
+    assert read_all_text(p.reader).must() == "started\n"
+    close(@p.reader).must()
+
+# Several lines written in one write.
+test "write_lines: three lines"
+    p @= pipe().must()
+    write_lines(p.writer, lines: ["a", "b", "c"]).must()
+    close(@p.writer).must()
+    assert read_all_text(p.reader).must() == "a\nb\nc\n"
+    close(@p.reader).must()
+
+# One stream copied into another, to its end.
+test "copy: one pipe into another"
+    first @= pipe().must()
+    second @= pipe().must()
+    write_text(first.writer, text: "abc").must()
+    close(@first.writer).must()
+    assert copy(from: first.reader, to: second.writer).must() == 3
+    close(@second.writer).must()
+    assert read_all_text(second.reader).must() == "abc"
+    close(@first.reader).must()
+    close(@second.reader).must()
+
+# The first bytes of a stream copied into another.
+test "copy_n: the first two bytes"
+    first @= pipe().must()
+    second @= pipe().must()
+    write_text(first.writer, text: "abc").must()
+    close(@first.writer).must()
+    assert copy_n(from: first.reader, to: second.writer, n: 2).must() == 2
+    close(@second.writer).must()
+    assert read_all_text(second.reader).must() == "ab"
+    close(@first.reader).must()
+    close(@second.reader).must()
+
+# A file read from a place counted from its end.
+test "seek: the last two bytes of a file"
+    folder = hero_stream.scratch("io-example-seek")
+    path = folder + "/ten.bin"
+    f @= of_handle(
+        hero_stream.open(path, access: hero_stream.HERO_STREAM_ACCESS_WRITE, perm: 0o644),
+        name: "\"ten.bin\""
+    )
+    write(f, data: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).must()
+    close(@f).must()
+    g @= of_handle(hero_stream.open(path, access: hero_stream.HERO_STREAM_ACCESS_READ, perm: 0), name: "\"ten.bin\"")
+    assert seek(g, offset: -2, from: .end).must() == 8
+    assert read_all(g).must() == [8, 9]
+    close(@g).must()
+    assert hero_stream.cleared(folder)
+
+# Where a file's stream stands after a write.
+test "position: after five bytes written"
+    folder = hero_stream.scratch("io-example-position")
+    f @= of_handle(
+        hero_stream.open(folder + "/five.bin", access: hero_stream.HERO_STREAM_ACCESS_WRITE, perm: 0o644),
+        name: "\"five.bin\""
+    )
+    write(f, data: [1, 2, 3, 4, 5]).must()
+    assert position(f).must() == 5
+    close(@f).must()
+    assert hero_stream.cleared(folder)
+
+# The size of a file a stream stands on.
+test "size: a file of five bytes"
+    folder = hero_stream.scratch("io-example-size")
+    f @= of_handle(
+        hero_stream.open(folder + "/five.bin", access: hero_stream.HERO_STREAM_ACCESS_WRITE, perm: 0o644),
+        name: "\"five.bin\""
+    )
+    write(f, data: [1, 2, 3, 4, 5]).must()
+    assert size(f).must() == 5
+    close(@f).must()
+    assert hero_stream.cleared(folder)
+
+# A file cut to its first two bytes.
+test "truncate: a file cut short"
+    folder = hero_stream.scratch("io-example-truncate")
+    f @= of_handle(
+        hero_stream.open(folder + "/five.bin", access: hero_stream.HERO_STREAM_ACCESS_WRITE, perm: 0o644),
+        name: "\"five.bin\""
+    )
+    write(f, data: [1, 2, 3, 4, 5]).must()
+    truncate(f, length: 2).must()
+    assert size(f).must() == 2
+    close(@f).must()
+    assert hero_stream.cleared(folder)
+
+# A file's bytes put on the storage before the program goes on.
+test "sync: a file written and synced"
+    folder = hero_stream.scratch("io-example-sync")
+    f @= of_handle(
+        hero_stream.open(folder + "/log.txt", access: hero_stream.HERO_STREAM_ACCESS_WRITE, perm: 0o644),
+        name: "\"log.txt\""
+    )
+    write_line(f, line: "saved").must()
+    sync(f).must()
+    close(@f).must()
+    assert hero_stream.cleared(folder)
+
+# A pipe is no terminal.
+test "is_terminal: a pipe"
+    p @= pipe().must()
+    assert !is_terminal(p.reader).must()
+    close(@p.reader).must()
+    close(@p.writer).must()
+
+# A pipe has no positions, so a program reads it from the start.
+test "is_seekable: a pipe"
+    p @= pipe().must()
+    assert !is_seekable(p.reader).must()
+    close(@p.reader).must()
+    close(@p.writer).must()
+
+# A reader made over a stream, which reads nothing until asked.
+test "reader: over a pipe"
+    p @= pipe().must()
+    write_text(p.writer, text: "one\ntwo\n").must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert read_line(@r).must() == "one"
+    close(@p.reader).must()
+
+# Lines read one at a time, their ends taken off.
+test "read_line: two lines of a file written on Windows"
+    p @= pipe().must()
+    write_text(p.writer, text: "one\r\ntwo").must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert read_line(@r).must() == "one"
+    assert read_line(@r).must() == "two"
+    close(@p.reader).must()
+
+# A line read with its end as it was.
+test "read_line_with_end: the end kept"
+    p @= pipe().must()
+    write_text(p.writer, text: "one\r\ntwo").must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert read_line_with_end(@r).must() == "one\r\n"
+    close(@p.reader).must()
+
+# Every line of a stream.
+test "read_lines: a short file"
+    p @= pipe().must()
+    write_text(p.writer, text: "a\nb\nc\n").must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert read_lines(@r).must() == ["a", "b", "c"]
+    close(@p.reader).must()
+
+# The bytes up to a separator, the separator kept.
+test "read_until: a record ended by a zero byte"
+    p @= pipe().must()
+    write(p.writer, data: [0x61, 0x62, 0x00, 0x63]).must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert read_until(@r, byte: 0x00).must() == [0x61, 0x62, 0x00]
+    close(@p.reader).must()
+
+# Characters read one at a time, of one byte and of two.
+test "read_char: a word with an accent"
+    p @= pipe().must()
+    write_text(p.writer, text: "né").must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert read_char(@r).must() == "n" && read_char(@r).must() == "é" && read_char(@r).must() == ""
+    close(@p.reader).must()
+
+# A field of a fixed size read through a reader.
+test "read_n: a length field"
+    p @= pipe().must()
+    write(p.writer, data: [0x00, 0x05, 0x68]).must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert read_n(@r, n: 2).must() == [0x00, 0x05]
+    close(@p.reader).must()
+
+# A message's body read after its first line.
+test "read_rest: the body after a head"
+    p @= pipe().must()
+    write_text(p.writer, text: "head\nbody").must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert read_line(@r).must() == "head"
+    assert read_rest(@r).must() == [0x62, 0x6f, 0x64, 0x79]
+    close(@p.reader).must()
+
+# The rest of a stream as text.
+test "read_rest_text: the body after a head"
+    p @= pipe().must()
+    write_text(p.writer, text: "head\nbody é").must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert read_line(@r).must() == "head"
+    assert read_rest_text(@r).must() == "body é"
+    close(@p.reader).must()
+
+# A format told by its first bytes before they are read.
+test "peek: a signature looked at, then read"
+    p @= pipe().must()
+    write_text(p.writer, text: "%PDF-1.7").must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert peek(@r, n: 4).must() == [0x25, 0x50, 0x44, 0x46]
+    assert read_n(@r, n: 4).must() == [0x25, 0x50, 0x44, 0x46]
+    close(@p.reader).must()
+
+# A header dropped before the data.
+test "skip: a header of two bytes"
+    p @= pipe().must()
+    write(p.writer, data: [0xff, 0xfe, 0x41]).must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert skip(@r, n: 2).must() == 2
+    assert read_rest(@r).must() == [0x41]
+    close(@p.reader).must()
+
+# A loop that reads lines until the stream ends.
+test "at_end: lines read until the end"
+    p @= pipe().must()
+    write_text(p.writer, text: "a\nb\n").must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    count: i64 @= 0
+
+    while !at_end(@r).must()
+        _ = read_line(@r).must()
+        count @ count + 1
+
+    assert count == 2
+    close(@p.reader).must()
+
+# What a reader holds after a line: the bytes a read of the stream itself
+# would no longer see.
+test "buffered: the bytes after the first line"
+    p @= pipe().must()
+    write_text(p.writer, text: "a\nbc").must()
+    close(@p.writer).must()
+    r @= reader(p.reader)
+    assert read_line(@r).must() == "a"
+    assert buffered(r) == [0x62, 0x63]
+    close(@p.reader).must()
