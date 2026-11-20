@@ -49,7 +49,11 @@ function cells_between(s: str lent, from: i64, to: i64) -> i64
     return segment.width_of(s.slice(from: from, to: to))
 
 test "width takes_no_cell: a control, ASCII, a mark, a wide ideograph, an emoji, a Hangul vowel, the soft hyphen, a zero-width space"
-    s = "\u{1b}á中😀ᅡ­​x"
+    # The soft hyphen and the zero-width space, made from their UTF-8 bytes:
+    # a string writes either only as itself, which no reader of this file sees.
+    soft_hyphen_bytes: [u8] = [0xc2, 0xad]
+    zero_width_space_bytes: [u8] = [0xe2, 0x80, 0x8b]
+    s = "\u{1b}á中😀ᅡ" + soft_hyphen_bytes.validated_bytes().must() + zero_width_space_bytes.validated_bytes().must() + "x"
     at: i64 @= 0
     told: [bool] @= []
 

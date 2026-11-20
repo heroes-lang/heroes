@@ -85,11 +85,11 @@ capability tok/count  the tokens of a text counted
   note    `encode_ordinary`'s count; a count with special tokens allowed is the length of `encode_with_specials`'s answer. Python counts with `len` of `encode`
 
 capability tok/claude  the tokens of a text counted as Claude reads them
-  heroes  anthropic.count_tokens
+  heroes  anthropic.count_input_tokens
   go      -
   rust    -
   python  -
-  note    Anthropic publishes no tokenizer for Claude: its tokens are counted by the API's `count_tokens`, which `llm/anthropic` asks over the network; no table of this package counts them
+  note    Anthropic publishes no tokenizer for Claude: its tokens are counted by the API's `count_tokens`, which `llm/anthropic.count_input_tokens` asks over the network; no table of this package counts them
 
 capability tok/truncate  a text cut to at most a number of tokens
   heroes  tokenizer.truncate

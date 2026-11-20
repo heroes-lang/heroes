@@ -29,8 +29,8 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 |---|---|---|---|---|
 | 0 | `unicode` | what a character is: classes, case, the tables, UTF-8 read and written |  |  |
 | 0 | `math` | the functions of mathematics, complex numbers by C11 Annex G, and the integer helpers that cannot overflow in silence |  | `math.h` |
-| 0 | `lists` | what the built-ins do not do for a `[T]`: a stable sort by an order, search, slices of a list, pairs |  |  |
-| 0 | `maps` | what the built-ins do not do for a `{K: V}`: values, entries, merging, removing |  |  |
+| 0 | `lists` | what the built-ins do not do for a `[T]`: a stable sort by an order, search, slices of a list; pairs of two lists or of an index and an element refused, the language having no generic record |  |  |
+| 0 | `maps` | what the built-ins do not do for a `{K: V}`: values, merging, removing; its entries as one list of pairs refused, the language having no generic record |  |  |
 | 0 | `numbers` | a number read from text and written as text, in every base and precision |  |  |
 | 0 | `path` | a path as text, by POSIX's rules and by Windows', touching no disk |  |  |
 | 0 | `os` | the process's world: environment, working folder, who and where it runs |  | `hero_sys.h`, `hero_os.h` |
@@ -87,7 +87,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings` | `hero_net.h`, `hero_stream_net.h` |
 | 3 | `yaml` | a YAML document parsed into values and written back | `json`, `numbers`, `strings`, `unicode` |  |
-| 3 | `cbor` | CBOR (RFC 8949) read into and written from a `json.Value`, bytes and tags kept | `big`, `bytes`, `json`, `lists` |  |
+| 3 | `cbor` | CBOR (RFC 8949) read into a value of its own, which keeps bytes and tags, and crossed to and from a `json.Value` | `big`, `bytes`, `json`, `lists` |  |
 | 3 | `term` | colours and styles that fall back to plain text, the cursor, the screen, a key and a secret read without echo, a progress bar | `bytes`, `io`, `os`, `unicode` | `hero_term.h` |
 | 3 | `csv` | comma-separated values read and written by RFC 4180 | `io`, `strings` |  |
 | 3 | `compress` | DEFLATE, gzip and zlib, written and read | `bytes`, `hash`, `io` |  |
@@ -97,7 +97,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `json/schema` | JSON Schema 2020-12 (and draft 7) validation, every error with its place | `bytes`, `json`, `numbers`, `regex`, `strings`, `unicode`, `url` |  |
 | 3 | `json/patch` | JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386) made and applied | `json`, `strings` |  |
 | 3 | `json/path` | JSONPath queries (RFC 9535) | `json`, `numbers`, `regex`, `strings`, `unicode` |  |
-| 3 | `json/jq` | the jq language run over a `json.Value`, so over YAML, TOML, CBOR, MessagePack and XML read into one | `bytes`, `json`, `math`, `numbers`, `regex`, `strings`, `unicode` |  |
+| 3 | `json/jq` | the jq language run over a `json.Value`, so over YAML, TOML, CBOR and MessagePack read into one | `bytes`, `json`, `math`, `numbers`, `regex`, `strings`, `unicode` |  |
 | 3 | `serial` | serial ports listed, opened, set and read and written as a stream | `io` | `hero_serial.h` |
 | 3 | `i18n/numbers` | numbers written and read as a language writes them: separators, percentages, money with its currency, compact forms | `i18n`, `strings`, `unicode` |  |
 | 3 | `i18n/collate` | texts ordered as a language orders them, by the Unicode Collation Algorithm over CLDR's root and tailorings | `i18n`, `strings`, `unicode`, `unicode/normalize` |  |
@@ -106,7 +106,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
 | 3 | `tokenizer/tables` | the encodings of OpenAI's models carried as data, by name, and which encoding a model reads; each table a module of its own, `tokenizer/tables/o200k_base`, `cl100k_base` and `o200k_harmony`, so a program carries the one it names | `tokenizer` |  |
 | 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
-| 4 | `msgpack` | MessagePack read into and written from a `json.Value`, bytes and extensions kept | `bytes`, `json`, `lists`, `time` |  |
+| 4 | `msgpack` | MessagePack read into a value of its own, which keeps bytes and extensions, and crossed to and from a `json.Value` | `bytes`, `json`, `lists`, `time` |  |
 | 4 | `poll` | waiting on many streams, sockets and timers at once, and being told which are ready | `io`, `net`, `time` | `hero_poll.h` |
 | 4 | `tls` | TLS client and server as an `io.Stream`, certificates checked by the system's own store: SChannel on Windows, Apple's Security framework on macOS, OpenSSL on Linux | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `threads`, `time` | `hero_tls.h` |
 | 4 | `log` | lines with a time and a level, to a stream | `io`, `json`, `strings`, `time` |  |
@@ -137,7 +137,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `sql/sqlite` | SQLite over its library, the same API name for name; only its users need the library | `sql`, `strings`, `time` | `sqlite3.h` |
 | 5 | `sql/mysql` | MySQL and MariaDB over their own protocol, written in Heroes; the same API as the other two drivers | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `sql`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `redis` | a Redis client over its protocol (RESP2 and RESP3): commands, pipelines, publish and subscribe | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url` |  |
-| 5 | `sql/build` | queries as values composed by functions, placeholders for each database, values only as parameters, a row read into a record by its field names; the ORM itself refused, with the reason | `sql`, `strings` |  |
+| 5 | `sql/build` | queries as values composed by functions, placeholders for PostgreSQL and SQLite, values only as parameters, a row read into a record by its field names; the ORM itself refused, with the reason | `sql`, `strings` |  |
 | 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `bytes`, `io`, `net`, `numbers`, `threads`, `time`, `tls` |  |
 | 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `bytes`, `crypto`, `io`, `mail`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `x509` | certificates, requests and revocation lists read, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto/keypairs`, `net`, `pem`, `strings`, `time` |  |
@@ -164,7 +164,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 7 | `s3` | the S3 API with Signature Version 4: objects, buckets, multipart uploads, presigned URLs | `bytes`, `crypto`, `hash`, `http`, `ini`, `io`, `json`, `lists`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url`, `xml` |  |
 | 7 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `net`, `numbers`, `strings`, `threads` |  |
 | 7 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `bytes`, `compress`, `http`, `lists`, `log`, `numbers`, `os`, `protobuf`, `random`, `strings`, `time`, `url` |  |
-| 7 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded | `big`, `bytes`, `crypto`, `http`, `jose`, `json`, `os`, `pem`, `time`, `x509` |  |
+| 7 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded; the certificate request made elsewhere until `x509` writes one | `big`, `bytes`, `crypto`, `http`, `jose`, `json`, `os`, `pem`, `time`, `x509` |  |
 | 7 | `llm/anthropic` | Claude's Messages API: messages, streaming, tools driven by the program, token counting, batches | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 7 | `llm/openai` | Chat Completions and Responses, which Ollama and vLLM also speak: streaming, tools, embeddings | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 7 | `graphql` | GraphQL documents and schemas parsed, validated and executed, the program resolving each field | `bytes`, `http`, `json`, `numbers`, `strings`, `unicode` |  |

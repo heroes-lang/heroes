@@ -414,7 +414,7 @@ capability char/escape  a character written as an escape of a program's source
   python  -
 
 capability char/name  the name Unicode gives a character, and the character a name gives
-  heroes  unicode/names.name, unicode/names.from_name, unicode/names.aliases
+  heroes  unicode/names.name, unicode/names.character_named, unicode/names.aliases
   go      -
   rust    -
   python  unicodedata.name, unicodedata.lookup

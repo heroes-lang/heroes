@@ -20,6 +20,9 @@
 #
 # - `open(...) -> Db?`: a connection; `close` ends it, and the program owes it.
 # - `close(@db: Db) -> ()?`
+# - `is_closed(db: Db) -> bool`: whether `close` has ended it.
+# - `ping(db: Db) -> ()?`: a round trip that tells the connection still
+#   answers, `@db` where the driver reads the answer on its own wire.
 # - `exec(@db: Db, statement: str, params: [sql.Value]) -> sql.Result?`: one
 #   statement that answers no rows, its values bound as parameters.
 # - `query(@db: Db, statement: str, params: [sql.Value]) -> sql.Rows?`: one
@@ -35,6 +38,8 @@
 # - `close_statement(@db: Db, @prepared: Statement) -> ()?`
 # - `begin(@db: Db) -> ()?`, `commit(@db: Db) -> ()?`, `rollback(@db: Db) -> ()?`:
 #   a transaction, which `begin` refuses to open inside another.
+# - `in_transaction(db: Db) -> bool`: whether a transaction `begin` opened is
+#   open.
 #
 # A value travels as a parameter, never inside the text of a statement: a
 # statement names its parameters with the database's own placeholders, `$1`,

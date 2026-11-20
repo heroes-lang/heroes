@@ -6,7 +6,10 @@
 # no longer shows. Written by the review of 2026-11-19 from the readout of
 # `rebel_review.hero` over Rebel 0.1.0; every reason is one of the constants
 # below, each saying why the repair is not local and sure, or where it is
-# repaired.
+# repaired. The review's fix lanes of 2026-11-20 (its plan's § 8) took out
+# every row their repairs retired, keep the findings they made new with
+# their reasons, and corrected five reasons its readers found wrong though
+# the keep held (L-E02).
 
 # A finding the review keeps: the instrument's check, the key it is kept
 # under (what the readout prints after `under`), and the reason.
@@ -37,7 +40,7 @@ constant CONTAINERS_SHARED_MODULES: str
 
 # One name for one question asked of different grammars.
 constant EACH_ITS_GRAMMAR: str
-    "each answers for its own grammar or format (JSON, jq, JSONPath, SemVer, YAML; MQTT's and NATS's subjects; HTTP's and PDF's dates): one meaning, by design"
+    "each answers for its own grammar or format (JSON, jq, JSONPath, SemVer, YAML; MQTT's and NATS's subjects; HTTP's and PDF's dates; GraphQL's and JSON-RPC's requests over HTTP; the standard's quoted identifier and MySQL's): one meaning, by design"
 
 # Each client reads its own service's environment.
 constant EACH_ITS_SERVICE: str
@@ -45,7 +48,7 @@ constant EACH_ITS_SERVICE: str
 
 # A deadline set by the package that made the stream.
 constant EACH_ITS_STREAM: str
-    "each sets the deadline of the streams its own package makes, which `io` leaves to the package that made the stream (`io.hero`'s doc); the readers ask whether `io` should own the word"
+    "each sets the deadline of the streams its own package makes, over the one `io.Stream`: `ipc`'s channel, `net`'s connection, and `tls`'s TLS stream or a connection's (since 2026-11-20, the coherence review's X12), which `io` leaves to the package that made the stream (`io.hero`'s doc); the readers ask whether `io` should own the word"
 
 # Formats read into and written from `json.Value`.
 constant FORMATS_OF_ONE_VALUE: str
@@ -71,10 +74,6 @@ constant ONE_DOMAIN_OF_TYPES: str
 constant ONE_LAYER: str
     "two packages of one layer may not use each other (README § A1), so what they share is written twice until a package below both holds it publicly: the readers'"
 
-# `os`'s floor of `hero_disk.h`, which names `io`'s stream.
-constant OS_DISK_NAMES_STREAMS: str
-    "`os/hero_disk`, the floor of `hero_disk.h`, names `hero_stream.Stream` for its two lock calls; moving those two to a floor of `io` frees `os`, and moves what `fs` calls: no local repair, kept for the readers"
-
 # An abbreviated parameter, whose name callers write.
 constant PARAMETER_LABELS: str
     "a parameter's name is a label a caller writes where two parameters share a type (spec § 9), so the rename reaches callers in other packages and the examples: no local repair; kept for the readers, who choose the word (`ch` and `re` are the areas' habit)"
@@ -94,10 +93,6 @@ constant REQUEST_FIRST: str
 # Retries an LLM client waits as its server asks.
 constant RETRIES_OF_THEIR_OWN: str
     "`http.Retries` is the general policy, and the two LLM clients wait what their server asks; whether they should hold an `http.Retries` is the readers' question"
-
-# `template`'s escaping, which `html` also offers.
-constant TEMPLATE_MAY_USE_HTML: str
-    "`template` (layer 3) may use `html` (layer 2), so its own escaping could be `html`'s: removing two names from `template`'s face changes what its callers write, and is the readers' question"
 
 # A test fixture of a package's own tests.
 constant TEST_FIXTURES: str
@@ -119,10 +114,21 @@ constant TWO_MEANINGS: str
 constant TWO_SHAPES_OF_VECTOR: str
     "`math/linear` holds vectors of two to four `f64` for geometry and `vectors` lists of `f32` of any length for embeddings: one operation on two shapes, which a language without overloading writes twice; the readers decide whether the ledgers should name each other"
 
+# `opts`, where the face's own maker is `options()`.
+constant OPTIONS_IS_THE_MAKER: str
+    "every one of these faces declares its maker `function options(`, so a parameter named `options` is `shadowed_binding` (run by the review's reader of layers 5 and 6); `opts` is the label each writes alike, and whether README § A3's short list names it is the readers' question (fix-plan D06)"
+
+# A total step over bytes already valid, in a hot loop.
+constant A_TOTAL_STEP: str
+    "a public form exists (`unicode.utf8_len_of_first`, `unicode.utf8_len`) and answers an `i64?` that fails on what begins no character, where these copies are total steps over text already valid inside a loop over every byte: kept for the step's cost, which is unmeasured and the readers' to time"
+
+# A table looked up by a direct comparison.
+constant A_DIRECT_COMPARISON: str
+    "`lists.upper_bound` is the public home, through a function value at every comparison; each copy looks up a table of its own by a direct comparison, a speed kept until it is timed (fix-plan § 10, unrun)"
+
 # Every finding kept, in the order the readout prints them.
 function kept() -> [Kept]
     return [
-        Kept(check: "ledgers", key: "address/parse in mail, net", why: TWO_MEANINGS)
         Kept(check: "ledgers", key: "bits/count in containers/bits, math", why: TWO_MEANINGS)
         Kept(check: "ledgers", key: "client/base-url in llm/anthropic, llm/openai", why: TWO_LLM_CLIENTS)
         Kept(check: "ledgers", key: "client/env in llm/anthropic, llm/openai, s3", why: EACH_ITS_SERVICE)
@@ -137,10 +143,8 @@ function kept() -> [Kept]
         Kept(check: "ledgers", key: "errors/codes in http2, jsonrpc", why: TWO_MEANINGS)
         Kept(check: "ledgers", key: "errors/connection in llm/anthropic, llm/openai", why: TWO_LLM_CLIENTS)
         Kept(check: "ledgers", key: "errors/status in llm/anthropic, llm/openai", why: TWO_LLM_CLIENTS)
-        Kept(check: "ledgers", key: "html/escape in html, template", why: TEMPLATE_MAY_USE_HTML)
-        Kept(check: "ledgers", key: "html/unescape in html, template", why: TEMPLATE_MAY_USE_HTML)
-        Kept(check: "ledgers", key: "http/client in graphql, jsonrpc", why: TWO_MEANINGS)
-        Kept(check: "ledgers", key: "http/server in graphql, jsonrpc", why: TWO_MEANINGS)
+        Kept(check: "ledgers", key: "http/client in graphql, jsonrpc", why: EACH_ITS_GRAMMAR)
+        Kept(check: "ledgers", key: "http/server in graphql, jsonrpc", why: EACH_ITS_GRAMMAR)
         Kept(check: "ledgers", key: "message/values in jsonrpc, protobuf", why: TWO_MEANINGS)
         Kept(check: "ledgers", key: "name/reverse in dns, net", why: TWO_MEANINGS)
         Kept(check: "ledgers", key: "number/percent in i18n/numbers, numbers", why: PLAIN_AND_LOCALE)
@@ -159,6 +163,7 @@ function kept() -> [Kept]
         Kept(check: "ledgers", key: "write/json in openapi, websocket", why: TWO_MEANINGS)
         Kept(check: "twins", key: "compare in path, strings", why: TWO_MEANINGS)
         Kept(check: "twins", key: "decode in image/bmp, image/netpbm", why: ONE_API_BY_DESIGN)
+        Kept(check: "twins", key: "decode_image in image/bmp, image/gif, image/jpeg, image/netpbm, image/png", why: ONE_API_BY_DESIGN)
         Kept(check: "twins", key: "decompress in compress/brotli, compress/bzip2, compress/lz4, compress/xz, compress/zstd", why: ONE_API_BY_DESIGN)
         Kept(check: "twins", key: "encoding in tokenizer/tables/cl100k_base, tokenizer/tables/o200k_base, tokenizer/tables/o200k_harmony", why: ONE_API_BY_DESIGN)
         Kept(check: "twins", key: "error_name in http2, kafka", why: TWO_MEANINGS)
@@ -168,7 +173,6 @@ function kept() -> [Kept]
         Kept(check: "twins", key: "frame_size in compress/lz4, compress/zstd", why: ONE_API_BY_DESIGN)
         Kept(check: "twins", key: "is_ascii in strings, unicode", why: CHARACTER_AND_TEXT)
         Kept(check: "twins", key: "is_lower in strings, unicode", why: CHARACTER_AND_TEXT)
-        Kept(check: "twins", key: "is_title in strings, unicode", why: CHARACTER_AND_TEXT)
         Kept(check: "twins", key: "is_upper in strings, unicode", why: CHARACTER_AND_TEXT)
         Kept(check: "twins", key: "is_valid in json, json/jq, json/path, semver, yaml", why: EACH_ITS_GRAMMAR)
         Kept(check: "twins", key: "is_valid_filter in mqtt, nats", why: EACH_ITS_GRAMMAR)
@@ -179,8 +183,9 @@ function kept() -> [Kept]
         Kept(check: "twins", key: "parse in json, yaml", why: FORMATS_OF_ONE_VALUE)
         Kept(check: "twins", key: "parse_date in http, pdf", why: EACH_ITS_GRAMMAR)
         Kept(check: "twins", key: "quote in json, process", why: TWO_MEANINGS)
+        Kept(check: "twins", key: "quote_identifier in sql, sql/mysql", why: EACH_ITS_GRAMMAR)
         Kept(check: "twins", key: "remove_all in fs, keyring", why: TWO_MEANINGS)
-        Kept(check: "twins", key: "set_deadline in ipc, tls", why: EACH_ITS_STREAM)
+        Kept(check: "twins", key: "set_deadline in ipc, net, tls", why: EACH_ITS_STREAM)
         Kept(check: "twins", key: "skippable_frame in compress/lz4, compress/zstd", why: ONE_API_BY_DESIGN)
         Kept(check: "twins", key: "to_casefold in strings, unicode", why: CHARACTER_AND_TEXT)
         Kept(check: "twins", key: "to_lower in strings, unicode", why: CHARACTER_AND_TEXT)
@@ -207,17 +212,14 @@ function kept() -> [Kept]
         Kept(check: "oversized", key: "protobuf", why: A_SPLIT_IS_NOT_LOCAL)
         Kept(check: "oversized", key: "strings", why: A_SPLIT_IS_NOT_LOCAL)
         Kept(check: "oversized", key: "time", why: A_SPLIT_IS_NOT_LOCAL)
-        Kept(check: "names", key: "amqp abbreviated opts", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "amqp abbreviated ch", why: PARAMETER_LABELS)
+        Kept(check: "names", key: "amqp abbreviated opts", why: OPTIONS_IS_THE_MAKER)
         Kept(check: "names", key: "crypto/keypairs text format_private_der", why: BYTES_NAMED_FORMAT)
         Kept(check: "names", key: "crypto/keypairs text format_public_der", why: BYTES_NAMED_FORMAT)
         Kept(check: "names", key: "crypto/keypairs text format_private_raw", why: BYTES_NAMED_FORMAT)
         Kept(check: "names", key: "crypto/keypairs text format_public_raw", why: BYTES_NAMED_FORMAT)
         Kept(check: "names", key: "graphql abbreviated msg", why: PARAMETER_LABELS)
         Kept(check: "names", key: "grpc abbreviated conn", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "grpc abbreviated ch", why: PARAMETER_LABELS)
         Kept(check: "names", key: "image abbreviated img", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "image abbreviated src", why: PARAMETER_LABELS)
         Kept(check: "names", key: "image/bmp abbreviated img", why: PARAMETER_LABELS)
         Kept(check: "names", key: "image/gif abbreviated img", why: PARAMETER_LABELS)
         Kept(check: "names", key: "image/jpeg abbreviated img", why: PARAMETER_LABELS)
@@ -226,38 +228,34 @@ function kept() -> [Kept]
         Kept(check: "names", key: "jose text format_public_der", why: BYTES_NAMED_FORMAT)
         Kept(check: "names", key: "jose text format_private_der", why: BYTES_NAMED_FORMAT)
         Kept(check: "names", key: "jsonrpc abbreviated msg", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "kafka abbreviated opts", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "ldap abbreviated opts", why: PARAMETER_LABELS)
+        Kept(check: "names", key: "kafka abbreviated opts", why: OPTIONS_IS_THE_MAKER)
+        Kept(check: "names", key: "ldap abbreviated opts", why: OPTIONS_IS_THE_MAKER)
         Kept(check: "names", key: "llm/anthropic abbreviated msg", why: PARAMETER_LABELS)
         Kept(check: "names", key: "llm/openai abbreviated msg", why: PARAMETER_LABELS)
         Kept(check: "names", key: "log abbreviated msg", why: PARAMETER_LABELS)
         Kept(check: "names", key: "log/files abbreviated msg", why: PARAMETER_LABELS)
         Kept(check: "names", key: "mail text format_message", why: BYTES_NAMED_FORMAT)
         Kept(check: "names", key: "mail text format_header", why: BYTES_NAMED_FORMAT)
-        Kept(check: "names", key: "mongodb abbreviated opts", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "mqtt abbreviated opts", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "nats abbreviated opts", why: PARAMETER_LABELS)
+        Kept(check: "names", key: "mail/smtp abbreviated opts", why: OPTIONS_IS_THE_MAKER)
+        Kept(check: "names", key: "mongodb abbreviated opts", why: OPTIONS_IS_THE_MAKER)
+        Kept(check: "names", key: "mqtt abbreviated opts", why: OPTIONS_IS_THE_MAKER)
+        Kept(check: "names", key: "nats abbreviated opts", why: OPTIONS_IS_THE_MAKER)
         Kept(check: "names", key: "pdf abbreviated img", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "redis abbreviated opts", why: PARAMETER_LABELS)
+        Kept(check: "names", key: "redis abbreviated opts", why: OPTIONS_IS_THE_MAKER)
         Kept(check: "names", key: "redis abbreviated msg", why: PARAMETER_LABELS)
         Kept(check: "names", key: "regex abbreviated re", why: PARAMETER_LABELS)
         Kept(check: "names", key: "sql abbreviated msg", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "sql/migrate abbreviated opts", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "sql/mysql abbreviated opts", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "sql/odbc abbreviated opts", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "sql/postgres abbreviated opts", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "strings abbreviated arg", why: PARAMETER_LABELS)
+        Kept(check: "names", key: "sql/migrate abbreviated opts", why: OPTIONS_IS_THE_MAKER)
+        Kept(check: "names", key: "sql/mysql abbreviated opts", why: OPTIONS_IS_THE_MAKER)
+        Kept(check: "names", key: "sql/odbc abbreviated opts", why: OPTIONS_IS_THE_MAKER)
+        Kept(check: "names", key: "sql/postgres abbreviated opts", why: OPTIONS_IS_THE_MAKER)
         Kept(check: "names", key: "threads abbreviated arg", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "tokenizer abbreviated enc", why: PARAMETER_LABELS)
         Kept(check: "names", key: "tracing abbreviated msg", why: PARAMETER_LABELS)
         Kept(check: "names", key: "web copy with_cors", why: REQUEST_FIRST)
         Kept(check: "names", key: "web copy with_etag", why: REQUEST_FIRST)
-        Kept(check: "names", key: "x509 abbreviated cert", why: PARAMETER_LABELS)
-        Kept(check: "names", key: "xlsx abbreviated wb", why: PARAMETER_LABELS)
         Kept(check: "layers", key: "no row holds containers/internal/codes", why: CONTAINERS_SHARED_MODULES)
         Kept(check: "layers", key: "no row holds containers/internal/samples", why: CONTAINERS_SHARED_MODULES)
         Kept(check: "layers", key: "no row holds containers/internal/storage", why: CONTAINERS_SHARED_MODULES)
-        Kept(check: "layers", key: "os uses io", why: OS_DISK_NAMES_STREAMS)
         Kept(check: "unlisted", key: "no row tokenizer/tables/cl100k_base", why: TABLES_OF_A_PACKAGE)
         Kept(check: "unlisted", key: "no ledger tokenizer/tables/cl100k_base", why: TABLES_OF_A_PACKAGE)
         Kept(check: "unlisted", key: "no row tokenizer/tables/o200k_base", why: TABLES_OF_A_PACKAGE)
@@ -266,7 +264,6 @@ function kept() -> [Kept]
         Kept(check: "unlisted", key: "no ledger tokenizer/tables/o200k_harmony", why: TABLES_OF_A_PACKAGE)
         Kept(check: "bodies", key: "amqp/internal/link.read, kafka/internal/link.read", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "amqp/internal/link.close, kafka/internal/link.close", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "archive/internal/tar_format.clamp, tui/internal/solve.kept", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "big/internal/limbs.trimmed, numbers/internal/big.trimmed", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "big/internal/limbs.compare, numbers/internal/big.compare, stats/internal/big.compare", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "bytes.compile_patterns, strings.compile_patterns", why: NO_PUBLIC_HOME)
@@ -280,36 +277,21 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "bytes/internal/trimming.trim_suffix_all, strings/internal/trimming.trim_suffix_all", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "cbor/internal/convert.advance, msgpack/internal/convert.advance", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "cbor/internal/convert.pointer_at, msgpack/internal/convert.pointer_at", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "cbor/internal/floats.pow2, msgpack/internal/floats.pow2", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "cbor/internal/floats.parts_of, msgpack/internal/floats.parts_of", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "cbor/internal/floats.value_of, msgpack/internal/floats.value_of", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "cbor/internal/floats.single_value, msgpack/internal/floats.single_value", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "cbor/internal/floats.double_value, msgpack/internal/floats.double_value", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "compress.write, compress/lz4.write", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "compress.read_rest, compress/lz4.read_rest", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "compress/lz4/internal/fast.lane, hash/internal/xxhash.lane32", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "containers/cache/internal/lru.rebuild, containers/indexed/internal/table.rebuild", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "containers/internal/samples.by_bytes, i18n/collate/internal/root.strings_less, i18n/collate/internal/weighing.bytes_less", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "containers/internal/samples.roll, graphs/internal/samples.roll", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "crypto/internal/word.bytes_of, hash/internal/word.bytes_of, strings/internal/bounds.to_bytes", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "crypto/keypairs/internal/failure.words, crypto/seal/internal/failure.words", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "crypto/keypairs/internal/failure.last, crypto/seal/internal/failure.last", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "crypto/keypairs/internal/operations.close, crypto/seal/internal/sealing.close", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "csv/internal/scan.line_end_len, toml/internal/scalar.line_end_len", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "graphql/internal/lexer.hex_digit, grpc/internal/texts.value_of_digit, i18n/internal/po_file.hex_value, ldap/internal/dn.hex_value, pdf/internal/parse.hex_value, protobuf/internal/lexer.hex_value, xlsx/internal/text.hex_value", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "grpc/internal/clock.set_wait, http2/internal/wire.set_wait", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "grpc/internal/fixture.until_listening, http/internal/h2bridge.until_listening, http2/internal/fixture.until_listening", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "html/sanitize/internal/values.is_integer, regex/internal/template.all_digits", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "http/internal/charset.latin1, mail/internal/charsets.latin1", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "http/internal/syntax.trim_ows, time/internal/retry_after.trimmed", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "i18n/collate/internal/root.digit_of, i18n/dates/internal/date_data.digit_of", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "image/gif/internal/blocks.name_is, openapi/internal/shape.strings_begin", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "json.format_indented, xml.format_indented", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "json/internal/scan.position, yaml/internal/source.position", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "json/jq/internal/dates.month_names, time/internal/forms.month_names", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "json/jq/internal/lexer.holds_at, openapi/internal/routes.has_at, web/internal/sniffing.holds_at", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "json/jq/internal/text.begins, term/internal/words.begins_with, web/internal/sniffing.begins", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "json/path/internal/edit.depth_of, json/schema/internal/ranking.depth_of", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "keyring/internal/names.has_zero, os/internal/codes.has_zero, serial/internal/calls.holds_zero, sql/mysql/internal/wire.has_zero, sql/postgres/internal/wire.has_zero, tls/internal/text.has_zero", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "ldap/internal/fake.until_listening, mail/smtp/internal/fake.until_listening", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "ldap/internal/fake.listening, mail/smtp/internal/fake.listening", why: TEST_FIXTURES)
@@ -328,7 +310,6 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "llm/anthropic/internal/transport.attempt_open, llm/openai/internal/transport.attempt_open", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "llm/anthropic/internal/transport.headed, llm/openai/internal/transport.headed", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "mail/internal/params.hex_value, mail/internal/transfer.hex_value, mail/internal/words.hex_value, sql/postgres/internal/target.hex_of", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "mail/internal/write.is_ascii, mail/smtp/internal/protocol.is_ascii", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "markdown/internal/html_reading.put_work, web/internal/tree.put", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "metrics.otlp_to, tracing.otlp_to", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "metrics/internal/otlp.any_boolean, tracing/internal/otlp.any_boolean", why: NO_PUBLIC_HOME)
@@ -339,36 +320,29 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "metrics/internal/posting.env_headers, tracing/internal/posting.env_headers", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "metrics/internal/posting.retry_delay, tracing/internal/posting.retry_delay", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "metrics/internal/posting.post, tracing/internal/posting.post", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "mqtt/internal/link.is_secured, nats/internal/link.is_secured", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "mqtt/internal/link.arm, nats/internal/link.arm", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "mqtt/internal/link.read, nats/internal/link.read", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "mqtt/internal/link.write, nats/internal/link.write", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "mqtt/internal/link.close, nats/internal/link.close", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "mqtt/internal/link.stream_of, nats/internal/link.stream_of", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "openapi/internal/shape.found_of, template/internal/values.kind_named", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "openapi/internal/shape.push_item, url/internal/paths.put", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "path/internal/relation.length_order, semver/internal/order.compare_numbers", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "qr/internal/bits.char_width, url/internal/classes.char_width", why: NO_PUBLIC_HOME)
+        Kept(check: "bodies", key: "qr/internal/bits.char_width, url/internal/classes.char_width", why: A_TOTAL_STEP)
         Kept(check: "bodies", key: "redis/internal/session.send, sql/postgres/internal/session.send", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "search/internal/store.need, vectors/internal/store.need", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "search/internal/store.take_low, vectors/internal/store.take_low", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "sql/mysql.options, sql/postgres.options", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "sql/mysql/internal/script.finish, sql/postgres/internal/script.finish", why: NO_PUBLIC_HOME)
+        Kept(check: "bodies", key: "sql/mysql/internal/script.finish, sql/postgres/internal/script.finish", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "sql/mysql/internal/wire.push_cstr, sql/postgres/internal/wire.push_cstr", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "sql/odbc/internal/values.zero_at, sql/sqlite/internal/values.zero_at", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "template/internal/lex.holds_at, xml/internal/markup.holds_at", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "time/internal/cron_next.changes_up_to, unicode/internal/search.count_at_or_below, unicode/names/internal/naming.count_at_or_below, unicode/normalize/internal/lookup.count_at_or_below, unicode/segment/internal/text.count_at_or_below", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "unicode/internal/utf8.len_of, unicode/segment/internal/text.utf8_len", why: NO_PUBLIC_HOME)
+        Kept(check: "bodies", key: "time/internal/cron_next.changes_up_to, unicode/internal/search.count_at_or_below, unicode/names/internal/naming.count_at_or_below, unicode/normalize/internal/lookup.count_at_or_below, unicode/segment/internal/text.count_at_or_below", why: A_DIRECT_COMPARISON)
+        Kept(check: "bodies", key: "unicode/internal/utf8.len_of, unicode/segment/internal/text.utf8_len", why: A_TOTAL_STEP)
         Kept(check: "one-layer", key: "amqp & kafka", why: ONE_LAYER)
         Kept(check: "one-layer", key: "bytes & strings", why: ONE_LAYER)
-        Kept(check: "one-layer", key: "containers/cache & containers/indexed", why: ONE_LAYER)
         Kept(check: "one-layer", key: "crypto/keypairs & crypto/seal", why: ONE_LAYER)
         Kept(check: "one-layer", key: "grpc & http", why: ONE_LAYER)
         Kept(check: "one-layer", key: "grpc & xlsx", why: ONE_LAYER)
         Kept(check: "one-layer", key: "json & xml", why: ONE_LAYER)
-        Kept(check: "one-layer", key: "json/jq & term", why: ONE_LAYER)
         Kept(check: "one-layer", key: "json/jq & time", why: ONE_LAYER)
-        Kept(check: "one-layer", key: "json/path & json/schema", why: ONE_LAYER)
         Kept(check: "one-layer", key: "ldap & mail/smtp", why: ONE_LAYER)
         Kept(check: "one-layer", key: "ldap & pdf", why: ONE_LAYER)
         Kept(check: "one-layer", key: "llm/anthropic & llm/openai", why: ONE_LAYER)
