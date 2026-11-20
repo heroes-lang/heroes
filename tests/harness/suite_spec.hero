@@ -97,7 +97,7 @@ constant LEDGER: str
 # DATED, and prose beside the constant is neither, however dated it looks. The
 # constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
-    137
+    138
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -111,7 +111,7 @@ constant LEDGER_ROWS: i64
 # check does not enforce that rule: it makes its question unavoidable, and
 # the answer lands in the commit body where a reader can audit it.
 constant SPEC_TOKENS: i64
-    8964
+    9022
 
 # The registry's own size, gated separately — it is NOT part of §1.6's budget
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
@@ -172,7 +172,7 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    11714
+    11788
 
 constant REAL_MODEL: str
     "claude-opus-5"
@@ -190,7 +190,7 @@ constant REAL_TAKEN: str
 # staleness detector, the delta gate's previous level, and the movement detector
 # the contract never had.
 constant CONTRACT_REAL_TOKENS: i64
-    8359
+    8461
 
 # **The contract's date is its own, and this constant is why.** `REAL_TAKEN`
 # above judged BOTH documents until 2026-09-13, and it worked for exactly as
@@ -203,10 +203,10 @@ constant CONTRACT_REAL_TOKENS: i64
 # being loosened: two independent documents, two independent refreshes, two
 # dates. A shared constant between them was a coupling nothing had stated.
 constant CONTRACT_REAL_TAKEN: str
-    "2026-10-29"
+    "2026-11-20"
 
 constant CONTRACT_TOKENS: i64
-    6315
+    6391
 
 # The width of one commit's allowed growth, in VENDORED tokens, on both judged
 # documents. §1.6 queued this figure and panel 134 landed it; the reasoning and
@@ -223,7 +223,7 @@ constant DELTA_GATE: i64
 # **Until 2026-10-29 no check read this copy** (defect 2252): it stood at a
 # digest of 2026-10-26 through two changes of the spec, every suite green.
 constant SPEC_DIGEST: str
-    "3badc71e20b5d17a"
+    "4dced6767460e590"
 
 # The compiler's record of the judged documents, which `measure` is compiled
 # from and holds the spec to: the four constants of the spec's `real` row live

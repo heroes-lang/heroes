@@ -123,6 +123,27 @@ static void hero_rebind_set(HeroRebindEntry *e) {
     }
 }
 
+/* THE ENTRY A JUMP J COULD NOT FOLLOW PASSED OVER (defect 2522's row): the
+ * innermost entry when this thread jumped to a buffer with no trusted record,
+ * in a third key's slot, so the thunk's refusal resting on it says the handler
+ * may have been left (`parts/sigguard.c`). It is compared, never read through:
+ * a handler left by that jump left its trampoline's frame dead. It goes where
+ * the entry is shown live: its trampoline returns, or a followed jump lands in
+ * it; a new trampoline's frame at the same address clears it at its push. */
+static _Atomic pthread_key_t hero_rebind_unsure_key;
+static _Atomic int hero_rebind_unsure_keyed = 0;
+
+static HeroRebindEntry *hero_rebind_unsure(void) {
+    if (!atomic_load_explicit(&hero_rebind_unsure_keyed, memory_order_acquire)) return NULL;
+    return pthread_getspecific(atomic_load_explicit(&hero_rebind_unsure_key, memory_order_relaxed));
+}
+
+static void hero_rebind_mark(HeroRebindEntry *e) {
+    if (atomic_load_explicit(&hero_rebind_unsure_keyed, memory_order_acquire)) {
+        pthread_setspecific(atomic_load_explicit(&hero_rebind_unsure_key, memory_order_relaxed), e);
+    }
+}
+
 typedef void (*hero_rebind_catcher)(int, siginfo_t *, void *);
 
 /* The kernel's call of the catcher, made here in its place, so its C type is
@@ -140,15 +161,22 @@ __attribute__((no_sanitize("function", "address"))) static void hero_rebind_tram
     (void)style;
     HeroRebindEntry me;
     me.prev = hero_rebind_now();
+    if (hero_rebind_unsure() == &me) hero_rebind_mark(NULL);
     hero_rebind_set(&me);
     catcher(sig, info, context);
+    if (hero_rebind_unsure() == &me) hero_rebind_mark(NULL);
     hero_rebind_set(me.prev);
     __sigreturn(context, HERO_REBIND_RETURN_FLAVOR, token);
     __builtin_trap();
 }
 
-/* The thunk's question (`parts/sigguard.c`). */
-static int hero_rebind_inside(void) { return hero_rebind_now() != NULL; }
+/* The thunk's question (`parts/sigguard.c`): no entry, an entry, or an entry
+ * a jump J could not follow passed over. */
+static int hero_rebind_inside(void) {
+    HeroRebindEntry *now = hero_rebind_now();
+    if (now == NULL) return HERO_SIG_OUTSIDE;
+    return now == hero_rebind_unsure() ? HERO_SIG_UNSURE : HERO_SIG_INSIDE;
+}
 
 /* -- the C library's own, taken before `main` -------------------------- */
 
@@ -336,16 +364,21 @@ static void hero_rebind_forget(const void *buf) {
 
 /* A jump to `buf`: outside every handler nothing to do; else the entries its
  * record holds, where it has one whose bytes are still the C library's;
- * else every entry kept. */
+ * else every entry kept, and the innermost marked as one this jump may have
+ * left. */
 static void hero_rebind_jump(const void *buf) {
     hero_rebind_settle();
-    if (hero_rebind_now() == NULL) return;
+    HeroRebindEntry *now = hero_rebind_now();
+    if (now == NULL) return;
     HeroRebindRecord *r = hero_rebind_record(buf);
-    if (r == NULL) return;
-    if (atomic_load(&r->printed) && atomic_load(&r->print) != hero_rebind_fingerprint(buf)) return;
     uintptr_t b = (uintptr_t)buf;
-    uintptr_t entry = atomic_load(&r->entry);
-    if (atomic_load_explicit(&r->buf, memory_order_acquire) != b) return;
+    bool trusted = r != NULL && !(atomic_load(&r->printed) && atomic_load(&r->print) != hero_rebind_fingerprint(buf));
+    uintptr_t entry = trusted ? atomic_load(&r->entry) : 0;
+    if (!trusted || atomic_load_explicit(&r->buf, memory_order_acquire) != b) {
+        hero_rebind_mark(now);
+        return;
+    }
+    if ((HeroRebindEntry *)entry == hero_rebind_unsure()) hero_rebind_mark(NULL);
     hero_rebind_set((HeroRebindEntry *)entry);
 }
 
@@ -554,6 +587,10 @@ __attribute__((constructor(0))) static void hero_rebind_start(void) {
     if (pthread_key_create(&key, NULL) == 0) {
         atomic_store_explicit(&hero_rebind_pending, key, memory_order_relaxed);
         atomic_store_explicit(&hero_rebind_pending_keyed, 1, memory_order_release);
+    }
+    if (pthread_key_create(&key, NULL) == 0) {
+        atomic_store_explicit(&hero_rebind_unsure_key, key, memory_order_relaxed);
+        atomic_store_explicit(&hero_rebind_unsure_keyed, 1, memory_order_release);
     }
     atomic_store(&hero_rebind_real_sigaction, (hero_rebind_action_fn)dlsym(RTLD_DEFAULT, "sigaction"));
     atomic_store(&hero_rebind_real_signal, (hero_rebind_signal_fn)dlsym(RTLD_DEFAULT, "signal"));

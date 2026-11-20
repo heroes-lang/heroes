@@ -1,0 +1,46 @@
+# UNVERIFIED — pending debrief
+# Panel 253's R4, M-rebel-library step 61a, 2026-11-19: `skip_test(reason:)`
+# ends a `test` block as skipped, and only a test block's own lines name it,
+# so `heroes test` can say which test skipped. Refused outside one wherever
+# the name stands: called in a function, in `main`, through the dot, and read
+# as a value to be called later. Inside a test, clean: a call, a call as the
+# arm of a `match` whose other arm gives the value (a skip ends its path as
+# `exit` does), and the function handed to a helper, which ends the test that
+# handed it.
+
+function port_of(name: str) -> i64?
+    if name.len() == 0
+        return fail(code: "unnamed", msg: "no server named")
+    return ok(5432)
+
+function helper()
+    skip_test(reason: "not in a test")  #~ skip_outside_test
+
+function through_the_dot()
+    "not in a test".skip_test()  #~ skip_outside_test
+
+function handed_on()
+    later = skip_test  #~ skip_outside_test
+    later("not in a test")
+
+function skip_through(skip: (function(str) -> ()), reason: str)
+    skip(reason)
+
+function main()
+    skip_test(reason: "not in a test")  #~ skip_outside_test
+    helper()
+    through_the_dot()
+    handed_on()
+
+test "a call skips"
+    skip_test(reason: "no server named")
+
+test "an arm skips where the other gives a value"
+    port = match port_of(name: "")
+        .ok p  => p
+        .err _ => skip_test(reason: "no server named")
+
+    assert port == 5432
+
+test "the function handed to a helper"
+    skip_through(skip: skip_test, reason: "no server named")

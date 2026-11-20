@@ -1,0 +1,14 @@
+# Panel 253's R4, M-rebel-library step 61a, 2026-11-19: a run where every
+# test skipped tested nothing, and fails, exit 1, as the harness's floor fails
+# a machine that judged nothing (defect 246) and as `--only` selecting no test
+# is refused (`skip-test-a-run-whose-every-test-skipped-fails.tested`). The
+# program itself runs as any other: its `main` never skips.
+
+function main()
+    print("main runs")
+
+test "a: needs a server"
+    skip_test(reason: "REBEL_X_URL is not set")
+
+test "b: needs a server too"
+    skip_test(reason: "REBEL_X_URL is not set")

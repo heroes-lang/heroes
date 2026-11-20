@@ -362,7 +362,13 @@ test "the files a tree gained are named where its sum proves them, and nothing i
 
 # Defect 2572: a FIFO in a tree is no file the sum can read, and the read
 # answers at once rather than waiting for a writer, which hung every build
-# of the program that placed the tree. Made where the machine has `mkfifo`.
+# of the program that placed the tree. What `mkfifo` made is asked of the
+# name, as `standing.hero`'s case asks it: Windows has no FIFO in its file
+# system, and on the CI's Windows leg Git's `mkfifo` ended at exit 0 having
+# made no name the sum cannot read (run 43769808533, read 2026-11-19: `of`
+# answered a fingerprint). So where no FIFO stands the test holds the one
+# reason it may, that this is Windows, and that the tree sums at once; on
+# any other platform a FIFO not made fails it.
 test "a FIFO in a tree fails its fingerprint at once (defect 2572)"
     dir = "build/selftest-fingerprint-2572"
     assert !process.remove_tree(dir).is_err()
@@ -375,7 +381,10 @@ test "a FIFO in a tree fails its fingerprint at once (defect 2572)"
         err: process.discard()
     )
 
-    if made.started && made.code == 0
+    if !made.started || made.code != 0 || !files.is_special(dir + "/pipe")
+        assert process.exe_suffix() == ".exe"
+        assert !of(dir).is_err()
+    else
         match of(dir)
             .ok _  => assert false
             .err e => assert e.code == "unreadable" && e.msg == "`" + dir + "/pipe` cannot be read"

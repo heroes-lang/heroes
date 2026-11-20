@@ -160,7 +160,7 @@ constant NOTED: [str]
 # pieces where it is compared (`placeholder`), so that replacement cannot
 # rewrite the comparison too.
 constant REGISTER: str
-    "<register>"
+    "https://github.com/heroes-lang/heroes/issues/2610"
 
 function placeholder() -> str
     return "<" + "register" + ">"

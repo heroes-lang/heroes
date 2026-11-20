@@ -527,13 +527,19 @@ int32_t hero_signal_fd(void);
  * compiler writes calls (panel 232's R6): its functions count the references
  * of a program's own values and free them, and one bound from Heroes freed a
  * string the program still held. The Heroes library and the compiler bound
- * three of them, which stand here now, where every unit reads them before
- * its groups as it read them there. */
+ * three of them; two stand here now, where every unit reads them before its
+ * groups as it read them there, and the third, `print`'s printer of a `str`,
+ * went back to that interface with defect 2607, the door below in its place. */
 
-/* The bytes of a `str` to stdout, nothing added: the half of `print` before its
- * newline, which the C this compiler writes for `print` calls too, and which
- * the compiler binds for its artifact (`selfhost/cli/io.hero`). */
-void hero_print_str(HeroStr s);
+/* The bytes of a `str` to stdout, nothing added, as one span of their own:
+ * stdout's lock taken, the bytes written whole, the lock given back, so no
+ * other thread's line falls inside them and none waits on them after the call
+ * (defect 2607). The compiler binds it for its artifact
+ * (`selfhost/cli/io.hero`). Until defect 2607 this door was `print`'s own
+ * printer, `hero_print_str`, which opens a span only `print`'s newline
+ * closes: called alone in a thread that kept running, it held stdout's lock,
+ * and `main`'s `print` waited 3.0 s for the thread's three sleeps to end. */
+void hero_write_out(HeroStr text);
 
 /* The conversion with a status instead of a grave (panel 089). The Heroes side
  * is `validated(c: cstr) -> str?` in the Tier-2 library, and these three codes

@@ -507,9 +507,26 @@ constant CEILING: i64
 # past every arm, and the scan `open_entry` falls back on once a shadow is told
 # and then bound, since the map names the last entry under a name and that
 # entry may stand in a closed scope while an outer one still binds it.
+# **One arrived on 2026-11-19, lane lane-impl-skip, for panel 253's R4**:
+# `selfhost/library_source.hero` at **310** (measured 307 by
+# `ceiling.code_lines`), the library's `skip_test`, nine lines appended to the
+# library's text, which stood at 298. The file is one constant, `LINES`, and
+# its rows ARE the library's source: every program's `#line "<heroes
+# library>"` names a row's position, so a row is appended and never moved
+# (the module's own header), and two mirrors read the constant as one list,
+# `.claude/hooks/provenance.py`'s key and `tests/harness/sources_key.hero`'s,
+# so a cut into two constants is a cut through both mirrors and buys a reader
+# nothing, the rows being text and not code to follow. And
+# `selfhost/check/walk.hero` 1870 -> **1871** the same day, for the same
+# resolution: its whole share of `skip_test`'s refusal outside a test block,
+# `check/test_only.hero`, is the `use` that reaches it and the one call after
+# a call is checked, beside `exit_code.after_call`, the knot's other
+# after-the-call rules (the sitting's compiler-engineer priced it at +2 by
+# `wc -l` before it was built; `test_only.after_name` is called from
+# `check/name_types.hero`, a file with room).
 constant DECIDED: [str]
     [
-        "selfhost/check/walk.hero 1870"
+        "selfhost/check/walk.hero 1871"
         "selfhost/print/fmt.hero 1175"
         "selfhost/ir/flatten.hero 1250"
         "selfhost/grammar_expr.hero 1085"
@@ -530,6 +547,7 @@ constant DECIDED: [str]
         "selfhost/modules.hero 320"
         "selfhost/parse/use_line.hero 310"
         "selfhost/print/brackets.hero 315"
+        "selfhost/library_source.hero 310"
     ]
 
 # THE PARSER'S MODULES HAVE A BUDGET, and not only each file a ceiling
@@ -1219,7 +1237,11 @@ test "the ceiling is per file, and a decided file keeps its own"
     # **18 -> 19 on 2026-10-07**, batch 14: `print/brackets.hero` arrives for
     # defect 333's `shut`, an ADDITION, a knot the module doc maps. The reason
     # is above DECIDED.
-    assert DECIDED.len() == 21
+    #
+    # **21 -> 22 on 2026-11-19**, panel 253's R4: `library_source.hero`
+    # arrives for the library's `skip_test`, an ADDITION, one constant whose
+    # rows are the library's text. The reason is above DECIDED.
+    assert DECIDED.len() == 22
 
 # DEFECT 209, held as a test (2026-10-04): a narrowed walk that selects no
 # module records nothing, where it read one pass, and one that selects a module

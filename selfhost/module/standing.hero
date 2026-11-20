@@ -196,8 +196,14 @@ test "what stands at a key is asked of its own name, a link's kind told apart (d
 # Defect 2572: a FIFO at the catalogue's name, or a link to one, is told
 # what it is, and no reader of the compiler waits on it: the catalogue's,
 # a source's and a key's read through the compiler's door all answer at
-# once. A FIFO is made by the system's `mkfifo` where this machine has one;
-# Windows has none, and a FIFO there has no name in the filesystem.
+# once. A FIFO is made by the system's `mkfifo`, and what it made is asked of
+# the name, never of the command's exit: Windows has no FIFO in its file
+# system, and on the CI's Windows leg Git's `mkfifo` ended at exit 0 with
+# nothing a reader opens at the name (run 43769808533, read 2026-11-19: this
+# test's FIFO arm read `no file at` it). So where no FIFO stands the test
+# holds the one reason it may, that this is Windows, and that the
+# catalogue's read there answers at once as none; on any other platform a
+# FIFO not made fails it.
 test "a FIFO at the catalogue's name is told what it is, and no reader waits on it (defect 2572)"
     dir = SCRATCH + "-2572"
     assert !process.remove_tree(dir).is_err()
@@ -209,7 +215,13 @@ test "a FIFO at the catalogue's name is told what it is, and no reader waits on 
         err: process.discard()
     )
 
-    if made.started && made.code == 0
+    if !made.started || made.code != 0 || !files.is_special(dir + "/heroes.toml")
+        assert process.exe_suffix() == ".exe"
+
+        match catalogue_text(path: dir + "/heroes.toml", named: "app/heroes.toml")
+            .ok _  => assert false
+            .err e => assert e.code == "file_not_found"
+    else
         match catalogue_text(path: dir + "/heroes.toml", named: "app/heroes.toml")
             .ok _  => assert false
             .err e => assert e.msg == "`app/heroes.toml` is a name that is neither a folder, a file nor a link, where a catalogue is a file: rename it to keep it, or remove it"

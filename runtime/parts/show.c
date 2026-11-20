@@ -286,7 +286,7 @@ void hero_show_map(HeroShow *o, const void *p, HeroShowFn key, HeroShowFn val) {
 _Noreturn void hero_panic_assert_shown_at(HeroStr text, HeroShowFn show, const void *left, const void *right, int alike,
                                           const char *file, const char *function, int64_t line, int64_t column) {
     hero_str_require(text);
-    hero_stdout_before_report();
+    hero_report_begin();
     HeroReport r = {.used = 0};
     HERO_REPORT_OWN(&r, "assert failed: ");
     hero_report_message(&r, text);

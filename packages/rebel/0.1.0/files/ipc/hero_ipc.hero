@@ -33,12 +33,14 @@ extern "hero_ipc.h"
     constant HERO_IPC_NOT_FOUND: i64
     constant HERO_IPC_EXISTS: i64
     constant HERO_IPC_DENIED: i64
+    constant HERO_IPC_IS_A_DIRECTORY: i64
     constant HERO_IPC_LIMIT: i64
     constant HERO_IPC_CLOSED_PEER: i64
     constant HERO_IPC_UNSUPPORTED: i64
     constant HERO_IPC_OTHER: i64
     constant HERO_IPC_REFUSED: i64
     constant HERO_IPC_NOT_HELD: i64
+    constant HERO_IPC_NOT_A_SOCKET: i64
     constant HERO_IPC_TIMED_OUT: i64
     constant HERO_IPC_STOPPED: i64
     # What a wait's `within_ms` takes for no bound.
@@ -92,6 +94,12 @@ extern "hero_ipc.h"
 extern "hero_os.h"
     function hero_os_pid() -> i64
     function hero_run_exe_suffix() -> str
+    # And the files a test of a connect stands at its path: a folder made, a
+    # file, a link or an empty folder removed, a link made, a file renamed.
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_fs_remove(path: cstr lent) -> i64
+    function hero_fs_symlink(target: cstr lent, name: cstr lent) -> i64
+    function hero_fs_rename(from: cstr lent, to: cstr lent) -> i64
 
 ## Channels
 
@@ -386,6 +394,63 @@ test "connect: a path under a file that is not a folder is not found on every pl
     assert under == nullptr
     assert last_error() == HERO_IPC_NOT_FOUND
     assert close_listener(@l) == 0
+
+# Defect 2609: a connect to a path where something that is no socket stands
+# is told what stands there, never by the system's number, which differs by
+# platform (measured 2026-11-20 by a C probe, blocking and not alike): Darwin
+# answers `ENOTSOCK` for a file, an empty one, a folder, a FIFO, a device and
+# a link to each, Linux `ECONNREFUSED`, its number for a socket file nothing
+# listens on, and Windows 10061 for a file and 10022 for a folder (the box,
+# 2026-11-19). A folder, spelled with a `/` or a `.` or reached through a
+# link, is `HERO_IPC_IS_A_DIRECTORY`; a file, empty or not, a device and a
+# link to a file are `HERO_IPC_NOT_A_SOCKET`; a socket file nothing listens on
+# stays `HERO_IPC_REFUSED`. A link is made where the platform lets this user.
+test "connect: a folder, a file, an empty file, a device, a link to each and a socket file nothing listens on are told what they are on every platform (defect 2609)"
+    dir = f"build/{test_name("no-socket")}"
+    holds = ["file-link", "folder-link", "file.txt", "empty.txt", "folder", "stale.sock", "moved.sock"]
+
+    for item in holds
+        _ = hero_fs_remove(f"{dir}/{item}".cstr())
+
+    assert hero_fs_mkdir_all(f"{dir}/folder".cstr()) == 0
+    assert !write_file(path: dir + "/file.txt", text: "x").is_err()
+    assert !write_file(path: dir + "/empty.txt", text: "").is_err()
+    folders @= [dir, dir + "/folder", dir + "/folder/", dir + "/folder/."]
+    regular @= [dir + "/file.txt", dir + "/empty.txt"]
+
+    if hero_fs_symlink(target: "folder".cstr(), name: f"{dir}/folder-link".cstr()) == 0
+        folders @ folders.push(dir + "/folder-link")
+
+    if hero_fs_symlink(target: "file.txt".cstr(), name: f"{dir}/file-link".cstr()) == 0
+        regular @ regular.push(dir + "/file-link")
+
+    if hero_run_exe_suffix() == ""
+        regular @ regular.push("/dev/null")
+
+    for at in folders
+        c = connect(at, space: HERO_IPC_SPACE_PATH, within_ms: 0)
+        assert c == nullptr
+        assert last_error() == HERO_IPC_IS_A_DIRECTORY
+
+    for at in regular
+        c = connect(at, space: HERO_IPC_SPACE_PATH, within_ms: 0)
+        assert c == nullptr
+        assert last_error() == HERO_IPC_NOT_A_SOCKET
+
+    # A socket file its listener left: renamed away while it listened, so
+    # the close, which removes the file at its own path alone, leaves it.
+    l @= listen(dir + "/stale.sock", space: HERO_IPC_SPACE_PATH, perm: 0o600)
+    assert l != nullptr
+    assert hero_fs_rename(from: f"{dir}/stale.sock".cstr(), to: f"{dir}/moved.sock".cstr()) == 0
+    assert close_listener(@l) == 0
+    stale = connect(dir + "/moved.sock", space: HERO_IPC_SPACE_PATH, within_ms: 0)
+    assert stale == nullptr
+    assert last_error() == HERO_IPC_REFUSED
+
+    for item in holds
+        _ = hero_fs_remove(f"{dir}/{item}".cstr())
+
+    assert hero_fs_remove(dir.cstr()) == 0
 
 test "accept: within 0 and within 50 time out, -2 is refused, and no listener is not open"
     path = f"build/{test_name("bound")}.sock"

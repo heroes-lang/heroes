@@ -402,16 +402,11 @@ static void hero_stack_measure(uintptr_t *lo, uintptr_t *hi) {
 #define HERO_STACK_WINDOW ((uintptr_t)1 << 20)
 
 /* `write(2)` and nothing else: inside a signal handler, `fprintf` is not ours
- * to call (the faulting thread may hold stdout's lock). */
-static void hero_stack_say(const char *s) {
-    size_t n = strlen(s);
-    while (n > 0) {
-        ssize_t put = write(2, s, n);
-        if (put <= 0) return;
-        s += (size_t)put;
-        n -= (size_t)put;
-    }
-}
+ * to call (the faulting thread may hold stdout's lock). Each piece is written
+ * by `hero_stderr_put` (`parts/panic.c`), which waits for stderr's descriptor
+ * only as long as it takes something, so a full pipe nobody reads never holds
+ * this report back (defect 2606). */
+static void hero_stack_say(const char *s) { hero_stderr_put(s, strlen(s)); }
 
 static int hero_stack_is_heroes(const char *sym) {
     if (sym == NULL) return 0;
@@ -420,14 +415,7 @@ static int hero_stack_is_heroes(const char *sym) {
 }
 
 /* `n` bytes of `s`, by `write(2)` alone, as `hero_stack_say` writes. */
-static void hero_stack_say_n(const char *s, size_t n) {
-    while (n > 0) {
-        ssize_t put = write(2, s, n);
-        if (put <= 0) return;
-        s += (size_t)put;
-        n -= (size_t)put;
-    }
-}
+static void hero_stack_say_n(const char *s, size_t n) { hero_stderr_put(s, n); }
 
 /* THE PROGRAM'S OWN SPELLINGS (panel 230's R1, kind 3; the critic's finding 12).
  * The walk finds a C symbol, `h_<component>_<name>`, whose component is the

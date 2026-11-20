@@ -460,6 +460,7 @@
 #pragma pop_macro("hero_utf8_valid")
 #pragma pop_macro("hero_word_bits")
 #pragma pop_macro("hero_write_err")
+#pragma pop_macro("hero_write_out")
 #pragma pop_macro("hypot")
 #pragma pop_macro("hypotf")
 #pragma pop_macro("hypotl")

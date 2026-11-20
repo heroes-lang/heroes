@@ -5,7 +5,8 @@
 # not, are `net`'s; a child's own three streams are `process`'s; a pipe within
 # the process is `io.pipe`. Every failure is a code of the library's closed
 # list (README § A4): `not_found`, `exists`, `permission`, `invalid`,
-# `closed`, `timeout`, `stopped`, `limit`, `unsupported` and `failed`. The face
+# `is_a_directory`, `closed`, `timeout`, `stopped`, `limit`, `unsupported` and
+# `failed`. The face
 # stands on the floor `ipc/hero_ipc`, the thin binding of `hero_ipc.h`.
 #
 # **A channel's name** is a path of the file system on every platform, a
@@ -63,11 +64,18 @@ constant PERMISSION: str
     failure.PERMISSION
 
 # An argument outside what the function reads: a name outside the rule, a
-# path longer than a socket's address holds, a size or an offset outside the
-# memory, a `within_ms` below 0 that is not `FOREVER`, a message past its
-# most, a lock asked again or released by a thread that does not hold it.
+# path longer than a socket's address holds, a path a connect is given where
+# something stands that is no socket and no folder (a file, a FIFO, a
+# device), a size or an offset outside the memory, a `within_ms` below 0 that
+# is not `FOREVER`, a message past its most, a lock asked again or released
+# by a thread that does not hold it.
 constant INVALID: str
     failure.INVALID
+
+# A folder is at the path a connect is given, where a listener's socket file
+# would be.
+constant IS_A_DIRECTORY: str
+    failure.IS_A_DIRECTORY
 
 # The listener, memory, semaphore or lock is closed, or the channel's other
 # end is gone, or it ended before a whole message.
@@ -210,9 +218,12 @@ function accept(l: Listener, within_ms: i64) -> io.Stream?
 #   another connection, 0 not to wait, `FOREVER` for no bound.
 #
 # Fails `not_found` where nothing is at the path or a socket file is there
-# and nothing listens on it, `timeout` past the bound, `permission` where
-# the socket file's permission refuses this user, `invalid` for an empty or
-# too long path.
+# and nothing listens on it, `is_a_directory` where a folder is there,
+# `invalid` where something else that is no socket is there (a file, a FIFO,
+# a device) and for an empty or too long path, `timeout` past the bound, and
+# `permission` where the socket file's permission refuses this user. What is
+# at the path decides the code, the same on every platform, whatever number
+# the system answered (a link is followed, as the connect follows it).
 #
 # See also `listen`, `write_message`.
 function connect(path: str, within_ms: i64) -> io.Stream?
@@ -845,6 +856,18 @@ test "remove_memory, remove_semaphore and remove_lock after the last close: kept
             assert close_semaphore(@opened) == ok()
             assert remove_semaphore(semaphore_name) == ok()
             assert remove_lock(lock_name) == ok()
+
+# Defect 2609: a connect to a path where no socket stands is told by what
+# stands there, on every platform: a folder is `is_a_directory`, its message
+# saying so, where Darwin answered `failed` and Linux and Windows `not_found`
+# as for a socket file nothing listens on. A file is `invalid`, the words
+# `failure`'s own test holds; the floor's test asks each shape of the disk.
+test "connect: a folder at the path is is_a_directory, told what is there, on every platform (defect 2609)"
+    match connect(".", within_ms: 0)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == IS_A_DIRECTORY
+            assert e.msg == "connecting to \".\": a folder is there, where a listener's socket file would be"
 
 ## Examples
 
