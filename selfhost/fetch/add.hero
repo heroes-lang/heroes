@@ -46,6 +46,7 @@ use fetch/placing
 use fetch/staging
 use fetch/told
 use fetch/transport
+use fetch/unnamed
 use fetch/verb_place
 use module/catalogue
 use module/fingerprint
@@ -146,6 +147,12 @@ function placed_and_written(@ledger: staging.Ledger, inv: argv.Invocation, tools
         return fail(code: "cannot_place", msg: verb_place.why(published))
     lines: [str] @= changes(c, picks: built)
     lines @ lines.push("wrote " + file)
+
+    # Once the catalogue is written, each tree it names no more goes, where
+    # it is the tree that was placed (defect 2614, `fetch/unnamed.hero`).
+    for gone in unnamed.removed(program: program, run: ledger.folder, before: c, after: catalogue.parsed(file: file, text: text))
+        lines @ lines.push(gone)
+
     return ok(lines)
 
 # The index line the catalogue will hold: its own, or the one `--index`
@@ -297,8 +304,21 @@ test "a name from the index is added at its version with every package it needs,
     assert fingerprint.of(SCRATCH + "/app/heroes.packages/" + placed.key(json, index: "file://../idx")).must() == m.json_1
 
     # The highest version, and the `strings` it needs raised with it (MVS).
+    # The trees of the versions the catalogue names no more go (defect 2614).
     again = said(["add", "json", "-C", SCRATCH + "/app"], tools: transport.path_tools())
-    assert again == ["changed json 1.0.0 -> 2.0.0", "changed strings 1.0.0 -> 1.1.0 for json", "wrote " + SCRATCH + "/app/heroes.toml"]
+    strings_1 = catalogue.Entry(
+        name: "strings",
+        version: "1.0.0",
+        git: "",
+        tag: "",
+        commit: "",
+        path: "",
+        sum: m.strings_1
+    )
+    json_at = SCRATCH + "/app/heroes.packages/" + placed.key(json, index: "file://../idx")
+    strings_at = SCRATCH + "/app/heroes.packages/" + placed.key(strings_1, index: "file://../idx")
+    assert again == ["changed json 1.0.0 -> 2.0.0", "changed strings 1.0.0 -> 1.1.0 for json", "wrote " + SCRATCH + "/app/heroes.toml", "removed json 1.0.0 " + json_at + ", which no entry names now", "removed strings 1.0.0 " + strings_at + ", which no entry names now"]
+    assert !process.path_exists(json_at) && !process.path_exists(strings_at)
 
     # The program's own version lowered below what `json` needs stays where
     # `json` needs it: the program's is at least each dependency's.

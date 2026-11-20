@@ -1,0 +1,162 @@
+# The trees `heroes add` leaves no entry of the catalogue naming (defect
+# 2614): a version moved, `heroes add rebel` taking `rebel` from 0.1.0 to
+# 0.1.1, a package raised with it by minimal version selection, a tag moved
+# or an entry's source changed places the new tree under its own key
+# (`module/placed.hero`), and the tree the old line named stayed beside it.
+# It compiled nothing (`.claude/rules/cli-surface.md`'s falsifier: a fetched
+# copy left behind after its entry is gone compiles nothing), and the
+# program's folder kept every version it had ever held.
+#
+# **Once the catalogue is written, and only then**: each tree an entry of
+# the catalogue as it was is placed under, at a key no entry of the
+# catalogue as written names, is removed where it is the tree that was
+# placed, a folder that sums to that entry's `sum` (the build's own test,
+# `module/fingerprint.hero`, a part's through its kept listing), so what
+# goes can be placed again from its source and nothing of the author's goes
+# with it. It is moved into the run's own folder, one rename on one volume,
+# and goes with that folder when the run ends (`staging.ended`); a run
+# killed before then leaves it in a folder the next run removes
+# (`fetch/leftover.hero`). A tree that no longer sums was changed since it
+# was placed, and the change is the author's (panel 246's R2, defect 2493):
+# it stays, and so does anything at the key that is not a folder, a link
+# above all, which no verb places. The command says what went and what
+# stayed, a line each, with how to keep or remove what stayed.
+#
+# **Only what this run unnamed**: a tree no entry named before the run,
+# left by a hand edit of the catalogue followed by `heroes fetch`, is not
+# this verb's to judge, since nothing in hand says what it was placed for
+# or at which `sum`; it stays as it stood.
+
+use cli/files
+use cli/process
+use fetch/placing
+use fetch/staging
+use module/catalogue
+use module/fingerprint
+use module/placed
+use module/standing
+
+# What a run says of the trees the entries of `before` were placed under
+# and no entry of `after` names, the catalogue the run wrote: each removed,
+# or kept with why, in the order of `before`'s entries. `program` is the
+# program's folder ("" for the current one, or a path ending with `/`), and
+# `run` the run's own folder (`staging.Ledger`'s), which takes what goes and
+# is removed with it when the run ends. None where `after` does not read,
+# which then names nothing a reader can trust.
+function removed(program: str, run: str, before: catalogue.Catalogue, after: catalogue.Catalogue) -> [str]
+    if after.problem.len() > 0 || after.file.len() == 0
+        return []
+    named: [str] @= []
+
+    for e in after.entries
+        if e.path.len() == 0
+            named @ named.push(placed.key(e, index: after.index))
+
+    out: [str] @= []
+
+    for e in before.entries
+        if e.path.len() == 0
+            key = placed.key(e, index: before.index)
+
+            if !held(named, key: key)
+                told = said_of(program: program, run: run, e: e, key: key, serial: out.len())
+
+                if told.len() > 0
+                    out @ out.push(told)
+
+    return out
+
+# What is said of the tree the entry `e` was placed under, at `key`, which
+# no entry names now: "" where nothing stands there; the `serial`th line the
+# run says of such trees, which names its place in the run's folder.
+function said_of(program: str, run: str, e: catalogue.Entry, key: str, serial: i64) -> str
+    at = program + staging.PLACED + "/" + key
+    stands = standing.at(at)
+
+    if stands == .nothing
+        return ""
+    kept = "kept " + at + ", which no entry names now: "
+    keep = "; move it out of `" + staging.PLACED + "/` to keep it, or remove it"
+
+    if stands != .tree
+        return kept + standing.said(stands) + " stands there, which no verb places, so it is yours" + keep
+
+    if fingerprint.of(at).default("") != e.sum
+        return kept + "it was changed since `" + e.name + "` " + placing.at_said(e) + " was placed there, and the change is yours" + keep
+    moved = process.rename_over(from: at, to: run + "/unnamed-" + serial.to_str())
+
+    if moved.is_err()
+        return kept + "it cannot be moved away: " + staging.why(moved)
+    return "removed " + e.name + " " + placing.at_said(e) + " " + at + ", which no entry names now"
+
+function held(named: [str], key: str) -> bool
+    for each in named
+        if each == key
+            return true
+
+    return false
+
+## Tests
+
+# A program's folder under `build/`, two versions of `kit` placed by hand as
+# `heroes fetch` places them, and the catalogue moving from the first to the
+# second: the first goes with the run's folder, the second stays; an edited
+# tree and a link at a key no entry names stay, each said.
+test "a tree no entry names after the catalogue is written goes, and one the author changed stays (defect 2614)"
+    program = "build/selftest-fetch-unnamed/"
+    assert !process.remove_tree(program).is_err()
+    one_text = "function on() -> bool\n    return true\n"
+    two_text = "function on() -> bool\n    return false\n"
+    assert !process.mkdir_all(program + "v1").is_err()
+    assert !write_file(path: program + "v1/flags.hero", text: one_text).is_err()
+    assert !process.mkdir_all(program + "v2").is_err()
+    assert !write_file(path: program + "v2/flags.hero", text: two_text).is_err()
+    sum_1 = fingerprint.of(program + "v1").must()
+    sum_2 = fingerprint.of(program + "v2").must()
+    before = catalogue.parsed(file: program + "heroes.toml", text: kit(version: "1.0.0", sum: sum_1))
+    after = catalogue.parsed(file: program + "heroes.toml", text: kit(version: "1.1.0", sum: sum_2))
+    assert before.problem == "" && after.problem == ""
+    old = program + "heroes.packages/" + placed.key(before.entries[0], index: before.index)
+    new = program + "heroes.packages/" + placed.key(after.entries[0], index: after.index)
+    assert !process.mkdir_all(old).is_err() && !process.mkdir_all(new).is_err()
+    assert !write_file(path: old + "/flags.hero", text: one_text).is_err()
+    assert !write_file(path: new + "/flags.hero", text: two_text).is_err()
+
+    # The catalogue moved: the old tree goes, the new one stays.
+    ledger: staging.Ledger @= staging.begun(program).must()
+    assert removed(program: ledger.program, run: ledger.folder, before: before, after: after) == ["removed kit 1.0.0 " + old + ", which no entry names now"]
+    assert !process.path_exists(old) && process.is_directory(new)
+    staging.ended(@ledger)
+    assert process.walk(program + "heroes.packages").must().files == [new + "/flags.hero"]
+
+    # Nothing moved, or a catalogue that does not read: nothing goes.
+    same: staging.Ledger @= staging.begun(program).must()
+    assert removed(program: same.program, run: same.folder, before: after, after: after).len() == 0
+    assert removed(program: same.program, run: same.folder, before: after, after: catalogue.parsed(file: program + "heroes.toml", text: "version = 1\n")).len() == 0
+    staging.ended(@same)
+    assert process.is_directory(new)
+
+    # The author's edit of a tree no entry names now stays, and is said.
+    assert !write_file(path: new + "/flags.hero", text: two_text + "# mine\n").is_err()
+    edited: staging.Ledger @= staging.begun(program).must()
+    assert removed(program: edited.program, run: edited.folder, before: after, after: before) == ["kept " + new + ", which no entry names now: it was changed since `kit` 1.1.0 was placed there, and the change is yours; move it out of `heroes.packages/` to keep it, or remove it"]
+    staging.ended(@edited)
+    assert read_file(new + "/flags.hero").must() == two_text + "# mine\n"
+
+    # A link at a key no entry names is no tree a verb placed: it stays,
+    # where this machine makes links, and so does what it names.
+    assert !process.remove_tree(new).is_err()
+    assert !process.mkdir_all(program + "mine").is_err()
+    assert !write_file(path: program + "mine/flags.hero", text: two_text).is_err()
+
+    if !files.symbolic_link(target: "../mine", name: new).is_err()
+        linked: staging.Ledger @= staging.begun(program).must()
+        assert removed(program: linked.program, run: linked.folder, before: after, after: before) == ["kept " + new + ", which no entry names now: a link to a folder stands there, which no verb places, so it is yours; move it out of `heroes.packages/` to keep it, or remove it"]
+        staging.ended(@linked)
+        assert files.entry(new) == .link
+        assert read_file(program + "mine/flags.hero").must() == two_text
+
+    assert !process.remove_tree(program).is_err()
+
+function kit(version: str, sum: str) -> str
+    return "index = \"file://../idx\"\n\n[dependencies.kit]\nversion = \"" + version + "\"\nsum = \"" + sum + "\"\n"

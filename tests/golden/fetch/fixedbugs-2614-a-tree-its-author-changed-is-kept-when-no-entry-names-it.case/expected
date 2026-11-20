@@ -1,0 +1,21 @@
+$ heroes add kit -C <work>/app
+exit 0
+stdout:
+changed kit 1.0.0 -> 1.1.0
+wrote <work>/app/heroes.toml
+kept <work>/app/heroes.packages/kit@1.0.0-0f93d58e1b78cdb2, which no entry names now: it was changed since `kit` 1.0.0 was placed there, and the change is yours; move it out of `heroes.packages/` to keep it, or remove it
+stderr:
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+one
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2614-a-tree-its-author-changed-is-kept-when-no-entry-names-it.case/idx"
+
+[dependencies.kit]
+version = "1.1.0"
+sum = "sha256-1590f41e82238de77c661d4cd471040aeee797d69ff9af35bd0e4023a5ea83ab"
+heroes.packages:
+kit@1.0.0-0f93d58e1b78cdb2
+kit@1.1.0-6a3159ed9195625a
