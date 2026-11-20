@@ -1,0 +1,8 @@
+# Fixed defect 2621, 2026-11-20, lane umbrella-3: a fetch that refuses an
+# entry removes no tree, here the version moved by hand and its `sum` left as
+# it was; the tree of 1.0.0 stays, and the build reads it to say which line
+# moved.
+use <kit>/csv
+
+function main()
+    print(csv.first("one,two"))

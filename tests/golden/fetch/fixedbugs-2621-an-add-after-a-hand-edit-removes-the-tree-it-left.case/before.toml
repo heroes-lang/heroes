@@ -1,0 +1,5 @@
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2621-an-add-after-a-hand-edit-removes-the-tree-it-left.case/idx"
+
+[dependencies.kit]
+version = "1.1.0"
+sum = "sha256-1590f41e82238de77c661d4cd471040aeee797d69ff9af35bd0e4023a5ea83ab"

@@ -1,0 +1,32 @@
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+placed kit 1.1.0 <work>/app/heroes.packages/kit@1.1.0-f921433bb735bcee
+placed yml v0.3.2 <work>/app/heroes.packages/yaml@v0.3.2-882578d6ece11218
+kept <work>/app/heroes.packages/kit@1.0.0-f4bc58e350f0ca36, which no entry names now: its files do not sum to `kit` 1.0.0 of the catalogue's index as its name says it was placed, so it was changed since or placed from another source, and nothing says it can be placed again; move it out of `heroes.packages/` to keep it, or remove it
+kept <work>/app/heroes.packages/yaml@v0.3.1-0ee71d7abaa6570f, which no entry names now: its name holds no version of the catalogue's index, and the key of a tree placed from git hashes a commit no name holds, so nothing says it can be placed again; move it out of `heroes.packages/` to keep it, or remove it
+stderr:
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+one
+3
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2621-a-tree-fetch-cannot-hold-to-its-name-is-kept-and-said.case/idx"
+
+[dependencies.kit]
+version = "1.1.0"
+sum = "sha256-1590f41e82238de77c661d4cd471040aeee797d69ff9af35bd0e4023a5ea83ab"
+
+[dependencies.yml]
+git = "file://../git/yaml"
+tag = "v0.3.2"
+commit = "e45e574b74a1bb7f8a2ba6185f3785fd62409e37"
+sum = "sha256-bfddac11fb7fb73050fbf32002d8bd27031fb4441d191e019eeef29e34957207"
+heroes.packages:
+kit@1.0.0-f4bc58e350f0ca36
+kit@1.1.0-f921433bb735bcee
+notes
+yaml@v0.3.1-0ee71d7abaa6570f
+yaml@v0.3.2-882578d6ece11218

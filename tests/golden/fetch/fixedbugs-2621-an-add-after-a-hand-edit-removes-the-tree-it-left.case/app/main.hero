@@ -1,0 +1,10 @@
+# Fixed defect 2621, 2026-11-20, lane umbrella-3: `heroes add` after a hand
+# edit of the catalogue places every entry, the moved one included, and the
+# tree the edit left, `kit` 1.0.0, goes with a line, though no entry of the
+# catalogue `add` read named it.
+use <kit>/csv
+use <strings>/cut
+
+function main()
+    print(csv.first("one,two"))
+    print(cut.cut())

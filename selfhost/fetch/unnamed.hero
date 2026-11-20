@@ -22,19 +22,40 @@
 # above all, which no verb places. The command says what went and what
 # stayed, a line each, with how to keep or remove what stayed.
 #
-# **Only what this run unnamed**: a tree no entry named before the run,
-# left by a hand edit of the catalogue followed by `heroes fetch`, is not
-# this verb's to judge, since nothing in hand says what it was placed for
-# or at which `sum`; it stays as it stood.
+# **And what a hand edit left, at every run that placed its catalogue
+# whole** (defect 2621): a `version` changed by hand in the catalogue, then
+# `heroes fetch`, placed the new tree beside the old one, and no catalogue in
+# hand named the old one, so it stood beside it for good. A run that placed
+# every entry of its catalogue, `heroes fetch` refusing none or `heroes add`
+# writing the catalogue, asks every name directly under `heroes.packages/`
+# with a key's shape, `<name>@<version>-<sixteen digits>`, that no entry
+# names (`swept`): a folder whose files sum to `S` is the index package its
+# name writes, placed and unchanged, where the key of `<name>` at `<version>`
+# from the catalogue's index at the sum `S` is its name again, and it goes,
+# said as above. The key is the SHA-256 of every field that names the
+# package, its sum among them (`placed.key`), so no name is taken on its
+# word: one byte edited in the tree, or a name copied from another tree,
+# gives another key. Every other name of that shape stays, said with why: a
+# tree from git, whose key hashes a commit no name holds; one from an index
+# the catalogue no longer reads; one changed since it was placed; anything
+# that is not a folder. A name of no key's shape is no tree a verb placed (a
+# run's own folder and its lock open with `.` and hold no `@`,
+# `fetch/staging.hero`) and is not asked. **A run that refused an entry
+# sweeps nothing**: a tree beside a key the catalogue names but nothing is
+# placed under is what a build reads to say which line moved
+# (`module/placed_beside.hero`), and the author is mid-edit; nor does `heroes
+# add <entry>/<path>`, which places one entry and asks no other.
 
 use cli/files
 use cli/process
 use fetch/placing
 use fetch/staging
 use module/catalogue
+use module/entry_name
 use module/fingerprint
 use module/placed
 use module/standing
+use module/sums
 
 # What a run says of the trees the entries of `before` were placed under
 # and no entry of `after` names, the catalogue the run wrote: each removed,
@@ -92,6 +113,109 @@ function said_of(program: str, run: str, e: catalogue.Entry, key: str, serial: i
 function held(named: [str], key: str) -> bool
     for each in named
         if each == key
+            return true
+
+    return false
+
+# The keys the entries of `c` are placed under, a `path` entry's none.
+function keys_of(c: catalogue.Catalogue) -> [str]
+    out: [str] @= []
+
+    for e in c.entries
+        if e.path.len() == 0
+            out @ out.push(placed.key(e, index: c.index))
+
+    return out
+
+## What a hand edit left (defect 2621)
+
+# What a run that placed every entry of `c`, the catalogue as it stands once
+# the run is done, says of each name under `heroes.packages/` with a key's
+# shape that no entry of `c` names and no key of `judged` is (those this run
+# has already said of, `removed`'s): each tree removed, or kept with why, in
+# the order of their names. `program` and `run` as `removed` takes them.
+# None where `c` does not read.
+function swept(program: str, run: str, c: catalogue.Catalogue, judged: [str]) -> [str]
+    home = program + staging.PLACED
+
+    if c.problem.len() > 0 || c.file.len() == 0 || !process.is_directory(home)
+        return []
+    named: [str] @= keys_of(c)
+
+    for key in judged
+        named @ named.push(key)
+
+    out: [str] @= []
+
+    for name in sort(files.every_name_in(home))
+        if key_shaped(name) && !held(named, key: name)
+            out @ out.push(swept_one(at: home + "/" + name, run: run, c: c, name: name, serial: out.len()))
+
+    return out
+
+# What is said of `name`, standing at `at`, which no entry names: removed
+# where it is the index package its name writes, placed and unchanged, the
+# `serial`th such line naming its place in the run's folder; else kept, with
+# why.
+function swept_one(at: str, run: str, c: catalogue.Catalogue, name: str, serial: i64) -> str
+    stands = standing.at(at)
+    kept = "kept " + at + ", which no entry names now: "
+    keep = "; move it out of `" + staging.PLACED + "/` to keep it, or remove it"
+
+    if stands != .tree
+        return kept + standing.said(stands) + " stands there, which no verb places, so it is yours" + keep
+    e = written_version(name: name, sum: fingerprint.of(at).default(""))
+
+    if e.name.len() == 0
+        return kept + "its name holds no version of the catalogue's index, and the key of a tree placed from git hashes a commit no name holds, so nothing says it can be placed again" + keep
+
+    if placed.key(e, index: c.index) != name
+        return kept + "its files do not sum to `" + e.name + "` " + e.version + " of the catalogue's index as its name says it was placed, so it was changed since or placed from another source, and nothing says it can be placed again" + keep
+    moved = process.rename_over(from: at, to: run + "/swept-" + serial.to_str())
+
+    if moved.is_err()
+        return kept + "it cannot be moved away: " + staging.why(moved)
+    return "removed " + e.name + " " + e.version + " " + at + ", which no entry names now"
+
+# How many hexadecimal digits close a key (`placed.keyed`).
+constant DIGITS: i64
+    16
+
+# The index package a key's name writes, `<name>@<version>-<digits>`, at the
+# sum `sum`; an entry with no name where the part before `@` is no entry's
+# name or the part after it no version, a git tree's tag among them.
+function written_version(name: str, sum: str) -> catalogue.Entry
+    none = catalogue.Entry(name: "", version: "", git: "", tag: "", commit: "", path: "", sum: "")
+    head = name.slice(from: 0, to: name.len() - DIGITS - 1)
+    at: i64 @= 0
+
+    while at < head.len() && head[at] != '@'
+        at @ at + 1
+
+    if at >= head.len()
+        return none
+    written = head.slice(from: 0, to: at)
+    version = head.slice(from: at + 1, to: head.len())
+
+    if entry_name.refused(written).len() > 0 || !sums.version_shape(version)
+        return none
+    return catalogue.Entry(name: written, version: version, git: "", tag: "", commit: "", path: "", sum: sum)
+
+# Whether `name` has a key's shape: a first part, `@`, a second, `-` and
+# sixteen lowercase hexadecimal digits. A run's own folder and its lock open
+# with `.` and hold no `@` (`fetch/staging.hero`), so neither has it.
+function key_shaped(name: str) -> bool
+    if name.len() < DIGITS + 4 || name[0] == '.' || name[name.len() - DIGITS - 1] != '-'
+        return false
+
+    for at in range(from: name.len() - DIGITS, to: name.len())
+        b = name[at]
+
+        if !(b >= '0' && b <= '9' || b >= 'a' && b <= 'f')
+            return false
+
+    for at in range(from: 1, to: name.len() - DIGITS - 2)
+        if name[at] == '@'
             return true
 
     return false
@@ -160,3 +284,86 @@ test "a tree no entry names after the catalogue is written goes, and one the aut
 
 function kit(version: str, sum: str) -> str
     return "index = \"file://../idx\"\n\n[dependencies.kit]\nversion = \"" + version + "\"\nsum = \"" + sum + "\"\n"
+
+# The entry `kit` of an index at `version` and `sum`.
+function kit_at(version: str, sum: str) -> catalogue.Entry
+    return catalogue.Entry(name: "kit", version: version, git: "", tag: "", commit: "", path: "", sum: sum)
+
+# A folder made at `dir` holding `flags.hero` as `text`.
+function tree_at(dir: str, text: str)
+    process.mkdir_all(dir).must()
+    write_file(path: dir + "/flags.hero", text: text).must()
+
+# Defect 2621: what a hand edit of the catalogue left, asked of every name
+# under `heroes.packages/` once a run placed the catalogue whole. A version's
+# tree and a part a `packages` line placed, each unchanged, go; a tree edited,
+# one keyed for another index and one whose name holds a git tag stay, each
+# said, and so does a link; the key the catalogue names, a key already
+# judged, a run's own folder and a name of no key's shape are not asked; and
+# a catalogue that does not read sweeps nothing.
+test "a tree a hand edit left goes where its files sum to the key its name holds (defect 2621)"
+    program = "build/selftest-fetch-swept/"
+    home = program + "heroes.packages/"
+    assert !process.remove_tree(program).is_err()
+    one_text = "function on() -> bool\n    return true\n"
+    two_text = "function on() -> bool\n    return false\n"
+    tree_at(dir: program + "v1", text: one_text)
+    tree_at(dir: program + "v2", text: two_text)
+    tree_at(dir: program + "v3", text: one_text)
+    write_file(path: program + "v3/text.hero", text: two_text).must()
+    sum_1 = fingerprint.of(program + "v1").must()
+    sum_2 = fingerprint.of(program + "v2").must()
+    sum_3 = fingerprint.of(program + "v3").must()
+    c = catalogue.parsed(file: program + "heroes.toml", text: kit(version: "1.1.0", sum: sum_2))
+    assert c.problem == ""
+    current = home + placed.key(c.entries[0], index: c.index)
+    old = home + placed.key(kit_at(version: "1.0.0", sum: sum_1), index: c.index)
+    part = home + placed.key(kit_at(version: "0.9.0", sum: sum_3), index: c.index)
+    edited = home + placed.key(kit_at(version: "0.8.0", sum: sum_1), index: c.index)
+    other = home + placed.key(kit_at(version: "0.7.0", sum: sum_1), index: "file://../other")
+    git = home + "kit@v0.6.0-0123456789abcdef"
+    judged_key = placed.key(kit_at(version: "0.5.0", sum: sum_1), index: c.index)
+    tree_at(dir: current, text: two_text)
+    tree_at(dir: old, text: one_text)
+    tree_at(dir: part, text: one_text)
+    write_file(path: part + "/" + fingerprint.LISTING, text: fingerprint.listing(program + "v3").must()).must()
+    tree_at(dir: edited, text: one_text + "# mine\n")
+    tree_at(dir: other, text: one_text)
+    tree_at(dir: git, text: one_text)
+    tree_at(dir: home + judged_key, text: one_text)
+    tree_at(dir: home + ".fetching-1-1", text: one_text)
+    tree_at(dir: home + "notes", text: one_text)
+    assert fingerprint.of(part).must() == sum_3
+    keep = "; move it out of `heroes.packages/` to keep it, or remove it"
+    changed = ", which no entry names now: its files do not sum to `kit` "
+    since = " of the catalogue's index as its name says it was placed, so it was changed since or placed from another source, and nothing says it can be placed again"
+    tagged = "kept " + git + ", which no entry names now: its name holds no version of the catalogue's index, and the key of a tree placed from git hashes a commit no name holds, so nothing says it can be placed again" + keep
+    ledger: staging.Ledger @= staging.begun(program).must()
+    said = swept(program: ledger.program, run: ledger.folder, c: c, judged: [judged_key])
+    assert said == ["kept " + other + changed + "0.7.0" + since + keep, "kept " + edited + changed + "0.8.0" + since + keep, "removed kit 0.9.0 " + part + ", which no entry names now", "removed kit 1.0.0 " + old + ", which no entry names now", tagged]
+    staging.ended(@ledger)
+    assert !process.path_exists(old) && !process.path_exists(part)
+
+    for stays in [current, edited, other, git, home + judged_key, home + ".fetching-1-1", home + "notes"]
+        assert process.is_directory(stays)
+
+    assert read_file(edited + "/flags.hero").must() == one_text + "# mine\n"
+
+    # A catalogue that does not read names nothing a reader can trust.
+    unread: staging.Ledger @= staging.begun(program).must()
+    assert swept(program: unread.program, run: unread.folder, c: catalogue.parsed(file: program + "heroes.toml", text: "version = 1\n"), judged: []).len() == 0
+    staging.ended(@unread)
+
+    # A link at a key's name is no tree a verb placed, where this machine
+    # makes links.
+    linked = home + "kit@1.2.0-0123456789abcdef"
+
+    if !files.symbolic_link(target: "notes", name: linked).is_err()
+        again: staging.Ledger @= staging.begun(program).must()
+        told = swept(program: again.program, run: again.folder, c: c, judged: [judged_key])
+        staging.ended(@again)
+        assert told.len() == 4 && told[3] == tagged
+        assert told[2] == "kept " + linked + ", which no entry names now: a link to a folder stands there, which no verb places, so it is yours" + keep
+        assert files.entry(linked) == .link
+
+    assert !process.remove_tree(program).is_err()

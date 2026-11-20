@@ -1,4 +1,4 @@
-$ heroes add file://../git/greet --tag v9 --as greet2 -C <work>/app
+$ heroes add file://../git/greet --tag v9 -C <work>/app
 exit 1
 stdout:
 stderr:

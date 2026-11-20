@@ -1,0 +1,74 @@
+$ heroes add --path ../local/kit -C <work>/app
+exit 0
+stdout:
+added kit ../local/kit
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add --path ../local/kit --as rebel -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `kit` already names the folder `../local/kit`, and a program holds each package under one name, so `--as rebel` would name it twice: a `use <kit>/` reaches it as it is, or rename it by hand, `[dependencies.kit]` to `[dependencies.rebel]` in `<work>/app/heroes.toml` and each `use <kit>/` to `use <rebel>/`
+$ heroes add --path ./../local/kit/ --as rebel -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `kit` already names the folder `../local/kit`, and a program holds each package under one name, so `--as rebel` would name it twice: a `use <kit>/` reaches it as it is, or rename it by hand, `[dependencies.kit]` to `[dependencies.rebel]` in `<work>/app/heroes.toml` and each `use <kit>/` to `use <rebel>/`
+$ heroes add rebel/strings -C <work>/app
+exit 1
+stdout:
+stderr:
+error[unknown_entry]: `rebel/strings` names the package `strings` of the entry `rebel`, and the catalogue `<work>/app/heroes.toml` holds no entry `rebel`, whose one entry is `kit`: `heroes add rebel` writes the entry from the index, `heroes add --path <folder> --as rebel` from a folder of yours, or a git address with `--tag` and `--as rebel` from git; then `heroes add rebel/strings` adds `strings` to its `packages` line
+$ heroes add --path ../local/kit --as kit -C <work>/app
+exit 0
+stdout:
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add kit/strings -C <work>/app
+exit 0
+stdout:
+added kit/strings
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add file://../git/yaml --tag v0.3.1 --as yml -C <work>/app
+exit 0
+stdout:
+added yml v0.3.1
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add file://../git/yaml --tag v0.3.1 --as other -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `yml` already names `file://../git/yaml`, and a program holds each package under one name, so `--as other` would name it twice: a `use <yml>/` reaches it as it is, or rename it by hand, `[dependencies.yml]` to `[dependencies.other]` in `<work>/app/heroes.toml` and each `use <yml>/` to `use <other>/`
+$ heroes add file://../git/yaml --tag v0.3.2 --as other -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `yml` already names `file://../git/yaml`, and a program holds each package under one name, so `--as other` would name it twice: a `use <yml>/` reaches it as it is, or rename it by hand, `[dependencies.yml]` to `[dependencies.other]` in `<work>/app/heroes.toml` and each `use <yml>/` to `use <other>/`
+$ heroes add file://../git/yaml --tag v0.3.2 -C <work>/app
+exit 0
+stdout:
+changed yml v0.3.1 -> v0.3.2
+wrote <work>/app/heroes.toml
+removed yml v0.3.1 <work>/app/heroes.packages/yaml@v0.3.1-0ee71d7abaa6570f, which no entry names now
+stderr:
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+kit
+3
+stderr:
+note: the package `kit` is read from the folder `<work>/app/../local/kit/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+heroes.toml:
+[dependencies.kit]
+path = "../local/kit"
+packages = ["strings"]
+
+[dependencies.yml]
+git = "file://../git/yaml"
+tag = "v0.3.2"
+commit = "e45e574b74a1bb7f8a2ba6185f3785fd62409e37"
+sum = "sha256-bfddac11fb7fb73050fbf32002d8bd27031fb4441d191e019eeef29e34957207"
+heroes.packages:
+yaml@v0.3.2-882578d6ece11218
