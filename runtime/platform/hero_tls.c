@@ -305,6 +305,20 @@ static size_t hero_tls_protocols_wire(const char *protocols, unsigned char *into
 }
 #endif
 
+/* A time a door hands to `hero_net.h` as it was given: the two headers'
+ * numbers are one. */
+_Static_assert(HERO_TLS_FOREVER == HERO_NET_FOREVER, "HERO_TLS_FOREVER is HERO_NET_FOREVER");
+
+/* Whether `ms` is a time a door takes: 0 or more, or `HERO_TLS_FOREVER`;
+ * says `HERO_TLS_INVALID` where it is not. */
+static bool hero_tls_time_given(int64_t ms) {
+    if (ms < 0 && ms != HERO_TLS_FOREVER) {
+        hero_tls_said(HERO_TLS_INVALID, 0, "the time given is below 0 and is not HERO_TLS_FOREVER (-1)");
+        return false;
+    }
+    return true;
+}
+
 static bool hero_tls_checks_given(int64_t checks) {
     if (checks != HERO_TLS_CHECK_ALL && checks != HERO_TLS_CHECK_NOTHING_FOR_TESTS) {
         hero_tls_said(HERO_TLS_INVALID, 0, "the checks are none of HERO_TLS_CHECK_ALL and HERO_TLS_CHECK_NOTHING_FOR_TESTS");
@@ -3199,8 +3213,10 @@ static hero_stream *hero_tls_run(hero_stream *inner, hero_tls_engine *engine, he
         hero_tls_said(kind, os, words);
         return NULL;
     }
+    /* The handshake's time ends with it: the stream's waits are as long as
+     * `hero_tls_set_deadline` then says. */
     if (socket != NULL) {
-        (void)hero_net_set_deadline(socket, 0);
+        (void)hero_net_set_deadline(socket, HERO_NET_FOREVER);
     }
     stream = hero_stream_make(s, &hero_tls_ops, HERO_STREAM_KIND_SOCKET);
     if (stream == NULL) {
@@ -3265,8 +3281,7 @@ int64_t hero_tls_set_deadline(hero_stream *s, int64_t ms) {
     int64_t kind;
     int64_t os;
 
-    if (ms < 0) {
-        hero_tls_said(HERO_TLS_INVALID, 0, "the time given is below 0");
+    if (!hero_tls_time_given(ms)) {
         return -1;
     }
     session = hero_tls_held(s);
@@ -3465,18 +3480,18 @@ hero_stream *hero_tls_server(hero_stream *inner, const void *chain, uint64_t cha
     return hero_tls_run(inner, e, NULL, false);
 }
 
-/* The milliseconds left of `ms` since `start` (monotonic nanoseconds), at
- * least 1 while some is left; 0 where `ms` is 0, no limit; -1 where none is
- * left. */
+/* The milliseconds left of `ms` since `start` (monotonic nanoseconds), as
+ * `hero_net_set_deadline` takes them: `HERO_TLS_FOREVER` where `ms` is, no
+ * limit; at least 1 while some is left; 0 where none is, a time passed. */
 static int64_t hero_tls_left(int64_t ms, int64_t start) {
     int64_t spent;
 
-    if (ms == 0) {
-        return 0;
+    if (ms == HERO_TLS_FOREVER) {
+        return HERO_TLS_FOREVER;
     }
     spent = (hero_time_monotonic_ns() - start) / 1000000;
     if (spent >= ms) {
-        return -1;
+        return 0;
     }
     return ms - spent;
 }
@@ -3494,8 +3509,7 @@ static hero_stream *hero_tls_connect_with(const char *host, int64_t port, int64_
     if (!hero_tls_host_given(host) || !hero_tls_port_given(port, false)) {
         return NULL;
     }
-    if (ms < 0) {
-        hero_tls_said(HERO_TLS_INVALID, 0, "the time given is below 0");
+    if (!hero_tls_time_given(ms)) {
         return NULL;
     }
     c = hero_tls_client_config(roots, roots_count, protocols, checks);
@@ -3515,8 +3529,10 @@ static hero_stream *hero_tls_connect_with(const char *host, int64_t port, int64_
         hero_tls_said(kind, hero_net_last_os_error(), hero_tls_net_words(kind));
         return NULL;
     }
+    /* What is left of the time bounds the exchange and the handshake; none
+     * left, a time of 0 among them, is the time passed, with no byte sent. */
     left = hero_tls_left(ms, start);
-    if (left < 0 || hero_net_set_deadline(socket, left) < 0) {
+    if (left == 0 || hero_net_set_deadline(socket, left) < 0) {
         hero_tls_engine_free(e);
         (void)hero_net_close(socket);
         hero_tls_said(HERO_TLS_TIMED_OUT, 0, hero_tls_net_words(HERO_TLS_TIMED_OUT));
@@ -3656,8 +3672,7 @@ int64_t hero_tls_set_accept_deadline(hero_tls_listener *l, int64_t ms) {
     hero_tls_spot *spot;
     int64_t answer;
 
-    if (ms < 0) {
-        hero_tls_said(HERO_TLS_INVALID, 0, "the time given is below 0");
+    if (!hero_tls_time_given(ms)) {
         return -1;
     }
     spot = hero_tls_enter(l, &slot);
@@ -3686,8 +3701,7 @@ hero_stream *hero_tls_accept(hero_tls_listener *l, int64_t ms) {
     hero_tls_script *script;
     int64_t ran;
 
-    if (ms < 0) {
-        hero_tls_said(HERO_TLS_INVALID, 0, "the time given is below 0");
+    if (!hero_tls_time_given(ms)) {
         return NULL;
     }
     spot = hero_tls_enter(l, &slot);
@@ -3712,7 +3726,10 @@ hero_stream *hero_tls_accept(hero_tls_listener *l, int64_t ms) {
         (void)hero_net_close(socket);
         return NULL;
     }
-    if (ms > 0) {
+    /* The handshake's time from the connection, the socket's deadline until
+     * `hero_tls_run` takes it away: 0 a time passed, so a handshake, which
+     * always waits for the peer, fails at once. */
+    if (ms != HERO_TLS_FOREVER) {
         (void)hero_net_set_deadline(socket, ms);
     }
     ran = hero_tls_exchange_on(socket, script);
@@ -4403,22 +4420,34 @@ static bool hero_tls_is_address(const char *host) {
     return inet_pton(AF_INET, host, bytes) == 1 || inet_pton(AF_INET6, host, bytes) == 1;
 }
 
-/* The monotonic time `ms` milliseconds from now, 0 for no limit: where `ms`
- * is 0, or so long that its end does not fit the clock's 64 bits (past
- * about 290 years), which no wait meets either. */
+/* The monotonic time `ms` milliseconds from now, a time the caller checked
+ * (`hero_tls_time_given`): 0, no limit, where `ms` is `HERO_TLS_FOREVER` or
+ * so long that its end does not fit the clock's 64 bits (past about 290
+ * years), which no wait meets either; now itself where `ms` is 0, a time
+ * already passed; and never 0 otherwise, which would read as no limit, so 1
+ * where the sum is 0 or the clock cannot be read, a time every wait has
+ * passed. */
 static int64_t hero_tls_until(int64_t ms) {
     int64_t now = hero_time_monotonic_ns();
+    int64_t until;
 
-    if (ms <= 0 || ms > (INT64_MAX - now) / INT64_C(1000000)) {
+    if (ms == HERO_TLS_FOREVER) {
         return 0;
     }
-    return now + ms * INT64_C(1000000);
+    if (now < 0) {
+        return 1;
+    }
+    if (ms > (INT64_MAX - now) / INT64_C(1000000)) {
+        return 0;
+    }
+    until = now + ms * INT64_C(1000000);
+    return until > 0 ? until : 1;
 }
 
 /* A client's connection by name, the steps of `script` (NULL for none) run
  * by a framer below TLS: `hero_tls_connect` and `hero_tls_connect_after`. */
 static hero_stream *hero_tls_connect_with(const char *host, int64_t port, int64_t ms, const void *roots, uint64_t roots_count, const char *protocols, int64_t checks, hero_tls_script *script) {
-    int64_t until = hero_tls_until(ms);
+    int64_t until;
     nw_protocol_options_t below = NULL;
     hero_tls_apple *a;
     char port_text[8];
@@ -4428,10 +4457,10 @@ static hero_stream *hero_tls_connect_with(const char *host, int64_t port, int64_
     if (!hero_tls_host_given(host) || !hero_tls_port_given(port, false) || !hero_tls_bytes_given(roots, roots_count, "the roots") || !hero_tls_protocols_given(protocols) || !hero_tls_checks_given(checks)) {
         return NULL;
     }
-    if (ms < 0) {
-        hero_tls_said(HERO_TLS_INVALID, 0, "the time given is below 0");
+    if (!hero_tls_time_given(ms)) {
         return NULL;
     }
+    until = hero_tls_until(ms);
     a = hero_tls_apple_new();
     if (a == NULL) {
         return NULL;
@@ -4862,8 +4891,7 @@ int64_t hero_tls_protocol(hero_stream *s, void *buffer, uint64_t count) {
 int64_t hero_tls_set_deadline(hero_stream *s, int64_t ms) {
     hero_tls_apple *a;
 
-    if (ms < 0) {
-        hero_tls_said(HERO_TLS_INVALID, 0, "the time given is below 0");
+    if (!hero_tls_time_given(ms)) {
         return -1;
     }
     a = hero_tls_apple_held(s);
@@ -5275,8 +5303,7 @@ int64_t hero_tls_set_accept_deadline(hero_tls_listener *l, int64_t ms) {
     hero_tls_slot *slot;
     hero_tls_spot *spot;
 
-    if (ms < 0) {
-        hero_tls_said(HERO_TLS_INVALID, 0, "the time given is below 0");
+    if (!hero_tls_time_given(ms)) {
         return -1;
     }
     spot = hero_tls_enter(l, &slot);
@@ -5299,8 +5326,7 @@ hero_stream *hero_tls_accept(hero_tls_listener *l, int64_t ms) {
     nw_connection_t connection = NULL;
     hero_tls_apple *a;
 
-    if (ms < 0) {
-        hero_tls_said(HERO_TLS_INVALID, 0, "the time given is below 0");
+    if (!hero_tls_time_given(ms)) {
         return NULL;
     }
     spot = hero_tls_enter(l, &slot);

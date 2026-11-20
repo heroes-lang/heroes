@@ -150,7 +150,7 @@ function conn_of(n: i64, deadline_ms: i64) -> Ends?
 function set_deadline(s: hero_net.Socket, ms: i64, asked: str) -> ()?
     checked_deadline(ms, asked: asked)?
 
-    if hero_net.set_deadline(s, ms: ms) != 0
+    if hero_net.set_deadline(s, ms: floor_ms(ms)) != 0
         return failure.last(asked: asked)
     return ok()
 
@@ -335,6 +335,17 @@ function checked_deadline(ms: i64, asked: str) -> ()?
     if ms < 0
         return failure.of(code: failure.INVALID, asked: asked, why: f"the deadline {ms} ms is below 0")
     return ok()
+
+# The floor's time for `ms`, a time the face takes and `checked_deadline`
+# passed: the face's 0, no limit, is the floor's `HERO_NET_FOREVER`, since
+# the floor's 0 is a time already passed (2026-11-20, M-rebel-library step
+# 83a), and a time above 0 is itself.
+#
+# - `ms`: 0 or more.
+function floor_ms(ms: i64) -> i64
+    if ms == 0
+        return hero_net.HERO_NET_FOREVER
+    return ms
 
 # `port` where it is a port, else 0, so a message can be written before the
 # port is refused.

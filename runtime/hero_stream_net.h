@@ -68,8 +68,9 @@
  * before any other call of that header, still names the socket's own.
  *
  * THE DEADLINE IS THE SOCKET'S, set by `hero_net_set_deadline` BEFORE this
- * call: a time and not a span, which nothing moves once the socket is a
- * stream. The stop reaches a read or a write waiting on the stream as it
+ * call: a time and not a span, which once the socket is a stream only
+ * `hero_stream_net_set_deadline` moves (below, since round 3; until
+ * 2026-11-20 this sentence said nothing moved it). The stop reaches a read or a write waiting on the stream as it
  * reaches one waiting on the socket. */
 hero_stream *hero_stream_net_of(hero_net_socket *s);
 
@@ -80,7 +81,9 @@ hero_stream *hero_stream_net_of(hero_net_socket *s);
  * answering what that call answers: `hero_stream_net_set_deadline` is
  * `hero_net_set_deadline`, so A DEADLINE MOVES AFTER THE SOCKET BECAME A
  * STREAM, a read or a write waiting on the stream taking the new one at
- * once; `hero_stream_net_shutdown` is `hero_net_shutdown`;
+ * once, 0 a deadline already passed and `HERO_NET_FOREVER` none, a `ms`
+ * below -1 refused (since 2026-11-20, `hero_net.h`'s `HERO_NET_FOREVER`);
+ * `hero_stream_net_shutdown` is `hero_net_shutdown`;
  * `hero_stream_net_set_option` and `hero_stream_net_option` are
  * `hero_net_set_option` and `hero_net_option`.
  *

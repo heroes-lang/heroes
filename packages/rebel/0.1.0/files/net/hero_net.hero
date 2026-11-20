@@ -13,6 +13,8 @@
 # the call and ended by `hero_net_close`, or given up for its number by
 # `hero_net_number` where it is a connection a thread may take (panel 246's R6).
 
+use threads/hero_os as threads_floor
+
 extern "hero_net.h"
     # A socket the layer holds open. It is a handle the layer issues and
     # checks: one closed already, `nullptr`, or one it never issued is
@@ -37,6 +39,9 @@ extern "hero_net.h"
     constant HERO_NET_NOT_FOUND: i64
     # The bytes a buffer must have for the layer to write an address into it.
     constant HERO_NET_ADDRESS_MOST: u64
+    # What a call taking a time takes for no limit, -1; 0 is then a time
+    # already passed (2026-11-20).
+    constant HERO_NET_FOREVER: i64
     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
     function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close | hero_net_number
     function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close | hero_net_number
@@ -158,8 +163,15 @@ function ask_stop()
     hero_net_ask_stop()
 
 # 0 once every wait on `s` ends by `ms` milliseconds from now, or -1. A wait
-# past it fails `HERO_NET_TIMED_OUT`, calls already waiting among them; 0
-# takes it away; -1 where `s` is not open or `ms` is negative.
+# past it fails `HERO_NET_TIMED_OUT`, calls already waiting among them, and a
+# call that need not wait is spared it.
+#
+# - `s`: the socket; it stays open.
+# - `ms`: milliseconds from now; 0 a deadline already passed, so every wait
+#   on `s` ends at once; `HERO_NET_FOREVER` takes the deadline away; below -1
+#   fails `HERO_NET_INVALID`.
+#
+# -1 where `s` is not open, `HERO_NET_NOT_OPEN`, or `ms` is refused.
 function set_deadline(s: Socket, ms: i64) -> i64
     return hero_net_set_deadline(s, ms: ms)
 
@@ -225,9 +237,14 @@ function remote(s: Socket, @address: [u8], m: u64, @port: i64) -> i64
 
 # A connection to `address` at `port`, as `connect` makes it, made within
 # `ms` milliseconds, or `nullptr`: `HERO_NET_TIMED_OUT` once they pass, every
-# address of a name tried within the one time. 0 is no limit, below 0
-# `HERO_NET_INVALID`; the name's lookup is not bounded. The connection made
-# keeps no deadline. It aborts where `address` holds a zero byte.
+# address of a name tried within the one time. The name's lookup is not
+# bounded, and the connection made keeps no deadline.
+#
+# - `address`: a number or a name; it aborts where it holds a zero byte.
+# - `port`: 0 to 65535, else `HERO_NET_INVALID`.
+# - `ms`: milliseconds; 0 waits not at all, a connection the system made at
+#   once answered and else `HERO_NET_TIMED_OUT`; `HERO_NET_FOREVER` is no
+#   limit, as `connect`; below -1 fails `HERO_NET_INVALID`.
 function connect_within(address: str, port: i64, ms: i64) -> Socket
     return hero_net_connect_within(address: address.cstr(), port: port, ms: ms)
 
@@ -348,7 +365,7 @@ test "number gives a connection up and of takes it back once, a stale number ref
     assert close(@client) == 0
     assert close(@listener) == 0
 
-test "a deadline ends a recv on a quiet connection, and 0 takes it away"
+test "a deadline ends a recv on a quiet connection, and HERO_NET_FOREVER takes it away"
     listener @= listen(address: "127.0.0.1", port: 0)
     client @= connect(address: "127.0.0.1", port: port_of(listener))
     accepted @= accept(listener)
@@ -356,13 +373,69 @@ test "a deadline ends a recv on a quiet connection, and 0 takes it away"
     assert set_deadline(accepted, ms: 200) == 0
     assert recv(accepted, @heard, n: 8) == -1
     assert last_error() == HERO_NET_TIMED_OUT
-    assert set_deadline(accepted, ms: 0) == 0
+    assert set_deadline(accepted, ms: HERO_NET_FOREVER) == 0
     hello: [u8] @= [104]
     assert send(client, @hello, n: 1) == 1
     assert recv(accepted, @heard, n: 8) == 1
-    assert set_deadline(accepted, ms: -1) == -1
+    assert set_deadline(accepted, ms: -2) == -1
     assert last_error() == HERO_NET_INVALID
     assert close(@client) == 0
+    assert close(@accepted) == 0
+    assert close(@listener) == 0
+
+# The far end of the tests of a time that waits, on a thread of its own: it
+# takes back the connection `n` names, waits 400 ms on it for a byte that
+# never comes, its own deadline ending that wait, then sends one byte, 42,
+# and closes the connection. 0 where every step held, else the step that did
+# not.
+#
+# - `n`: the number a connection was given up for, taken back here once.
+function test_send_late(n: i64) -> i64
+    s @= of(n)
+
+    if s == nullptr
+        return 1
+    answer: i64 @= 0
+    quiet: [u8] @= []
+
+    if set_deadline(s, ms: 400) != 0
+        answer @ 2
+    else if recv(s, @quiet, n: 1) != -1 || last_error() != HERO_NET_TIMED_OUT
+        answer @ 3
+    else
+        late: [u8] @= [42]
+
+        if send(s, @late, n: 1) != 1
+            answer @ 4
+
+    if close(@s) != 0 && answer == 0
+        answer @ 5
+    return answer
+
+# THE TIME 0 AND `HERO_NET_FOREVER` (2026-11-20, M-rebel-library step 83a):
+# 0 is a deadline already passed, so a recv with nothing come ends at once,
+# well before the byte the far end sends 400 ms after it starts;
+# `HERO_NET_FOREVER` takes the deadline away, and the next recv waits for
+# that byte.
+test "set_deadline: 0 ends a wait at once, before a byte sent 400 ms later, and HERO_NET_FOREVER waits for that byte"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    client @= connect(address: "127.0.0.1", port: port_of(listener))
+    accepted @= accept(listener)
+    assert accepted != nullptr
+    heard: [u8] @= []
+    assert set_deadline(accepted, ms: 0) == 0
+    n = number(@client)
+    assert n > 0
+    why: i64 @= 0
+    far = threads_floor.start(test_send_late, arg: n, bytes: 0, why: @why)
+    assert far >= 0
+    assert recv(accepted, @heard, n: 8) == -1
+    assert last_error() == HERO_NET_TIMED_OUT
+    assert set_deadline(accepted, ms: HERO_NET_FOREVER) == 0
+    assert recv(accepted, @heard, n: 8) == 1
+    assert heard[0] == 42
+    assert threads_floor.finish(far) == 0
+    assert recv(accepted, @heard, n: 8) == 0
     assert close(@accepted) == 0
     assert close(@listener) == 0
 
@@ -619,7 +692,7 @@ test "connect_within: a listener reached within its time, a time below 0, an add
     assert last_error() == HERO_NET_TIMED_OUT
     assert close(@client) == 0
     assert close(@accepted) == 0
-    none = connect_within(address: "127.0.0.1", port: port_of(listener), ms: -1)
+    none = connect_within(address: "127.0.0.1", port: port_of(listener), ms: -2)
     assert none == nullptr
     assert last_error() == HERO_NET_INVALID
     assert close(@listener) == 0
@@ -627,6 +700,36 @@ test "connect_within: a listener reached within its time, a time below 0, an add
     # TEST-NET-1 (RFC 5737) is routed nowhere: the time passes, or the
     # system says at once that no route reaches it.
     silent = connect_within(address: "192.0.2.1", port: 9, ms: 300)
+    assert silent == nullptr
+    assert last_error() == HERO_NET_TIMED_OUT || last_error() == HERO_NET_UNREACHABLE
+
+# THE TIME 0 AND `HERO_NET_FOREVER` (2026-11-20, M-rebel-library step 83a):
+# 0 waits not at all, so a connection is answered only where the system made
+# it by the time it is asked, and to an address that never answers the call
+# ends at once, where with no limit it would wait for the system to give up,
+# a minute or more; `HERO_NET_FOREVER` waits for as long as the connection
+# takes.
+test "connect_within: 0 waits not at all, made at once or timed out at once, and HERO_NET_FOREVER waits until the connection is made"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    port = port_of(listener)
+    quick @= connect_within(address: "127.0.0.1", port: port, ms: 0)
+
+    if quick == nullptr
+        assert last_error() == HERO_NET_TIMED_OUT
+    else
+        assert close(@quick) == 0
+    patient @= connect_within(address: "127.0.0.1", port: port, ms: HERO_NET_FOREVER)
+    assert patient != nullptr
+    there: [u8] @= []
+    there_port: i64 @= 0
+    assert remote(patient, @there, m: HERO_NET_ADDRESS_MOST, @there_port) == 9
+    assert there_port == port
+    assert close(@patient) == 0
+    assert close(@listener) == 0
+
+    # TEST-NET-1 (RFC 5737) is routed nowhere: the system says at once that
+    # no route reaches it, or the time of 0 has passed.
+    silent = connect_within(address: "192.0.2.1", port: 9, ms: 0)
     assert silent == nullptr
     assert last_error() == HERO_NET_TIMED_OUT || last_error() == HERO_NET_UNREACHABLE
 

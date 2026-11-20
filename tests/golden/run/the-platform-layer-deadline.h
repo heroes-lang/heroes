@@ -148,16 +148,17 @@ static inline int64_t deadline_reaches_a_call_already_waiting(void) {
     return step;
 }
 
-/* A deadline of 200 ms taken away by 0, then a recv whose peer sends one
- * byte at 600 ms: 1 where the byte was received, no deadline met. */
-static inline int64_t deadline_zero_takes_it_away(void) {
+/* A deadline of 200 ms taken away by `HERO_NET_FOREVER`, then a recv whose
+ * peer sends one byte at 600 ms: 1 where the byte was received, no deadline
+ * met. Until 2026-11-20 (M-rebel-library step 83a) 0 took it away. */
+static inline int64_t deadline_forever_takes_it_away(void) {
     hero_net_socket *listener = hero_net_listen("127.0.0.1", 0);
     hero_net_socket *ends[2] = { NULL, NULL };
     waiter_thread sender;
     unsigned char byte = 0;
 
     if (listener == NULL || !deadline_pair(listener, ends)) return -1;
-    if (hero_net_set_deadline(ends[1], 200) != 0 || hero_net_set_deadline(ends[1], 0) != 0) return -2;
+    if (hero_net_set_deadline(ends[1], 200) != 0 || hero_net_set_deadline(ends[1], HERO_NET_FOREVER) != 0) return -2;
     sender_on = ends[0];
     sender_after_ms = 600;
     if (!sender_start(&sender)) return -3;
@@ -165,6 +166,48 @@ static inline int64_t deadline_zero_takes_it_away(void) {
     int64_t step = got == 1 && byte == 42 ? 1 : -4;
 
     waiter_join(sender);
+    deadline_close(listener, ends);
+    return step;
+}
+
+/* A deadline of 0 is one already passed (since 2026-11-20): a byte already
+ * there is received past it, the next recv, which must wait, answers
+ * `HERO_NET_TIMED_OUT` before 1,000 ms, and a recv already waiting with no
+ * deadline is ended by a 0 another thread sets 300 ms in, before 2,300 ms
+ * from its start: 1 where all three held. */
+static inline int64_t deadline_zero_ends_a_wait_at_once(void) {
+    hero_net_socket *listener = hero_net_listen("127.0.0.1", 0);
+    hero_net_socket *ends[2] = { NULL, NULL };
+    waiter_thread setter;
+    unsigned char b = 5;
+    unsigned char byte = 0;
+
+    if (listener == NULL || !deadline_pair(listener, ends)) return -1;
+    if (hero_net_send(ends[0], &b, 1) != 1) return -2;
+    waiters_pause(50);
+    if (hero_net_set_deadline(ends[1], 0) != 0) return -3;
+    int64_t step = hero_net_recv(ends[1], &byte, 1) == 1 && byte == 5 ? 1 : -4;
+    int64_t began = waiters_now_us();
+
+    if (step == 1 && (hero_net_recv(ends[1], &byte, 1) != -1 || hero_net_last_error() != HERO_NET_TIMED_OUT)) step = -5;
+    if (step == 1 && waiters_now_us() - began >= 1000000) step = -6;
+    if (step == 1 && hero_net_set_deadline(ends[1], HERO_NET_FOREVER) != 0) step = -7;
+    if (step == 1) {
+        setter_on = ends[1];
+        setter_ms = 0;
+        if (!setter_start(&setter)) {
+            step = -8;
+        } else {
+            began = waiters_now_us();
+            int64_t got = hero_net_recv(ends[1], &byte, 1);
+            int64_t kind = hero_net_last_error();
+            int64_t took = waiters_now_us() - began;
+
+            if (got != -1 || kind != HERO_NET_TIMED_OUT) step = -9;
+            if (step == 1 && (took < 300000 || took >= 2300000)) step = -10;
+            waiter_join(setter);
+        }
+    }
     deadline_close(listener, ends);
     return step;
 }
@@ -204,13 +247,16 @@ static inline int64_t deadline_spares_what_is_there_and_crosses_as_a_number(void
     return step;
 }
 
-/* What the door refuses: a negative time, `HERO_NET_INVALID`, and a socket
- * closed already, `HERO_NET_NOT_OPEN`: 1 where both were refused so. */
+/* What the door refuses: a time below -1, `HERO_NET_INVALID`, where
+ * `HERO_NET_FOREVER`, -1, is taken; and a socket closed already,
+ * `HERO_NET_NOT_OPEN`: 1 where each was answered so. Until 2026-11-20 -1
+ * itself was refused. */
 static inline int64_t deadline_refusals(void) {
     hero_net_socket *listener = hero_net_listen("127.0.0.1", 0);
 
     if (listener == NULL) return -1;
-    if (hero_net_set_deadline(listener, -1) != -1 || hero_net_last_error() != HERO_NET_INVALID) return -2;
+    if (hero_net_set_deadline(listener, -2) != -1 || hero_net_last_error() != HERO_NET_INVALID) return -2;
+    if (hero_net_set_deadline(listener, HERO_NET_FOREVER) != 0) return -4;
     hero_net_close(listener);
     if (hero_net_set_deadline(listener, 100) != -1 || hero_net_last_error() != HERO_NET_NOT_OPEN) return -3;
     return 1;
