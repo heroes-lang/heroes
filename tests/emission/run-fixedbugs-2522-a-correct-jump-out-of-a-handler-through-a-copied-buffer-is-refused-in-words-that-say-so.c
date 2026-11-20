@@ -334,7 +334,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("661a07da68749603", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5bb226f615df61f9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2522acorrectjumpoutofahandlerthroughacopiedbufferisrefusedinwordsthatsayso\tfixedbugs-2522-a-correct-jump-out-of-a-handler-through-a-copied-buffer-is-refused-in-words-that-say-so\n");

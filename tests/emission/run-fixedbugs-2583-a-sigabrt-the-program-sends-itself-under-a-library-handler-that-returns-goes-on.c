@@ -278,7 +278,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("21ba61d238a88201", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("175280ee66134df6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2583asigabrttheprogramsendsitselfunderalibraryhandlerthatreturnsgoeson\tfixedbugs-2583-a-sigabrt-the-program-sends-itself-under-a-library-handler-that-returns-goes-on\n");
