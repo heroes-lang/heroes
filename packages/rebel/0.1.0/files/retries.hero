@@ -1,0 +1,863 @@
+# The waits of a retry loop and circuit breakers: how long a program waits
+# before it tries a failed call again, spread by chance so that clients that
+# failed together do not try again together, when it gives up, and the wait an
+# HTTP `Retry-After` asks; and a breaker that stops calling a service that
+# keeps failing, then lets a trial through.
+#
+# It does not sleep, read a clock or make a call: every function is given the
+# time it reads, the program sleeps (`time.sleep`) and reads the clock
+# (`time.now`), and the chance a wait is spread by is a fraction the caller
+# draws (`random_fraction`, or `random.next_f64` for a seeded one). The
+# durations and instants are `time`'s.
+#
+# It fails with `invalid`, a policy or an argument outside its bounds;
+# `limit`, the attempts a policy allows all made; and `timeout`, a wait that
+# would end past the total time a policy allows.
+
+use math
+use os
+use retries/internal/circuit
+use retries/internal/retry_after
+use retries/internal/waits
+use time
+
+## Codes
+
+# The code of a policy or an argument outside its bounds, and of a
+# `Retry-After` value that is neither seconds nor a date; the message names
+# the number or the text.
+constant INVALID: str
+    "invalid"
+
+# The code of a retry loop whose attempts allowed are all made: `next_wait`
+# fails with it.
+constant LIMIT: str
+    "limit"
+
+# The code of a retry loop whose next wait would end past the total time
+# allowed: `next_wait` fails with it.
+constant TIMEOUT: str
+    "timeout"
+
+## Retries
+
+# How a wait between two attempts is spread by chance, so that clients that
+# failed together do not try again together. The names are those of AWS's
+# Architecture Blog, "Exponential Backoff And Jitter".
+variant Jitter
+    # No chance: the wait is the exponential one exactly.
+    none
+    # Anywhere from zero to the exponential wait: AWS's "full jitter".
+    full
+    # Half the exponential wait, then anywhere up to the other half: AWS's
+    # "equal jitter".
+    equal
+    # Anywhere from the first wait to the previous wait times the multiplier,
+    # the count of failures not read: AWS's "decorrelated jitter", whose
+    # multiplier is 3.
+    decorrelated
+    # Within a share of the exponential wait either side, as
+    # cenkalti/backoff's randomization factor spreads it.
+    spread
+        # The share, from 0 to 1: 0.5 draws from half the wait to one and a
+        # half times it.
+        factor: f64
+
+# How the waits of a retry loop grow, how chance spreads them, and when the
+# loop gives up. `backoff` makes one, and `with_jitter`, `with_attempts` and
+# `with_total` change it, each checking what it sets; one built directly is
+# checked by every function that reads it.
+record Backoff
+    # The wait after the first failure, above zero.
+    first: time.Duration
+    # What each wait is multiplied by to make the next, finite and at least 1.
+    multiplier: f64
+    # The longest wait, at least `first`: no wait is longer, jitter included.
+    longest: time.Duration
+    # How chance spreads each wait; `none` from `backoff`.
+    jitter: Jitter
+    # The most attempts in all, the first included; 0 for no limit.
+    attempts: i64
+    # The most time from the start of the first attempt to the start of the
+    # last, at least zero; zero for no limit.
+    total: time.Duration
+
+# Where a retry loop stands: the policy, the failures counted, the last wait.
+# `new_retry` makes one, and `next_wait` moves it on.
+record Retry
+    # The policy the waits follow.
+    policy: Backoff
+    # The failures counted by `next_wait` so far.
+    failures: i64
+    # The last wait `next_wait` answered, zero before the first.
+    last_wait: time.Duration
+
+# A policy of exponential waits: `first` after the first failure, each next
+# one `multiplier` times the one before, none longer than `longest`; no
+# jitter, and no limit until `with_attempts` or `with_total` sets one.
+#
+# - `first`: the wait after the first failure, above zero.
+# - `multiplier`: finite and at least 1; 2 doubles each wait, 1 keeps every
+#   wait `first`.
+# - `longest`: the longest wait, at least `first`.
+#
+# Fails `invalid` where any is outside those bounds. See also `wait_after`,
+# `next_wait`.
+function backoff(first: time.Duration, multiplier: f64, longest: time.Duration) -> Backoff?
+    policy = Backoff(
+        first: first,
+        multiplier: multiplier,
+        longest: longest,
+        jitter: .none,
+        attempts: 0,
+        total: time.Duration(nanoseconds: 0)
+    )
+    waits.check(first: first.nanoseconds, multiplier: multiplier, longest: longest.nanoseconds, attempts: 0, total: 0, factor: 0.0)?
+    return ok(policy)
+
+# `policy` with its waits spread by `jitter`.
+#
+# - `policy`: the policy.
+# - `jitter`: how chance spreads each wait; a `spread` factor from 0 to 1.
+#
+# Fails `invalid` where a `spread` factor is outside 0 to 1. See also
+# `Jitter`.
+function with_jitter(policy: Backoff, jitter: Jitter) -> Backoff?
+    match jitter
+        .spread s =>
+            if !waits.is_fraction(s.factor)
+                return fail(code: INVALID, msg: f"the spread's factor {s.factor} is outside 0 to 1")
+        .none | .full | .equal | .decorrelated => _ = 0
+
+    return ok(
+        Backoff(first: policy.first, multiplier: policy.multiplier, longest: policy.longest, jitter: jitter, attempts: policy.attempts, total: policy.total)
+    )
+
+# `policy` giving up once `attempts` attempts in all are made.
+#
+# - `policy`: the policy.
+# - `attempts`: the most attempts, the first included, at least 0; 0 lifts
+#   the limit, and 1 allows no retry at all.
+#
+# Fails `invalid` where `attempts` is below 0. See also `next_wait`.
+function with_attempts(policy: Backoff, attempts: i64) -> Backoff?
+    if attempts < 0
+        return fail(code: INVALID, msg: f"the attempts allowed, {attempts}, are below 0")
+    return ok(
+        Backoff(first: policy.first, multiplier: policy.multiplier, longest: policy.longest, jitter: policy.jitter, attempts: attempts, total: policy.total)
+    )
+
+# `policy` giving up where the next wait would end more than `total` after
+# the first attempt began, as cenkalti/backoff's `MaxElapsedTime` does.
+#
+# - `policy`: the policy.
+# - `total`: the most time, at least zero; zero lifts the limit.
+#
+# Fails `invalid` where `total` is below zero. See also `next_wait`.
+function with_total(policy: Backoff, total: time.Duration) -> Backoff?
+    if total.nanoseconds < 0
+        return fail(code: INVALID, msg: f"the total time allowed, {time.format_duration(total)}, is below zero")
+    return ok(
+        Backoff(first: policy.first, multiplier: policy.multiplier, longest: policy.longest, jitter: policy.jitter, attempts: policy.attempts, total: total)
+    )
+
+# The wait after `failures` failures in a row: `first` times `multiplier` to
+# the power `failures - 1`, at most `longest`, then spread by the policy's
+# jitter from `fraction`.
+#
+# - `policy`: the policy.
+# - `failures`: the failures so far, at least 1: 1 for the wait after the
+#   first attempt failed.
+# - `previous`: the wait answered before this one, zero before the first;
+#   read by `decorrelated` alone, a wait shorter than `first` read as `first`.
+# - `fraction`: a number drawn by chance from 0 to 1, as
+#   `random.next_f64` draws one; read by every jitter but `none`.
+#
+# Fails `invalid` where `failures` is below 1, `previous` below zero,
+# `fraction` outside 0 to 1, or `policy` one `backoff` would refuse. The
+# growth is computed in floats, exact while the wait is below 2^53
+# nanoseconds (about 104 days); it never overflows. See also `next_wait`.
+function wait_after(policy: Backoff, failures: i64, previous: time.Duration, fraction: f64) -> time.Duration?
+    factor = match policy.jitter
+        .spread s                              => s.factor
+        .none | .full | .equal | .decorrelated => 0.0
+
+    waits.check(first: policy.first.nanoseconds, multiplier: policy.multiplier, longest: policy.longest.nanoseconds, attempts: policy.attempts, total: policy.total.nanoseconds, factor: factor)?
+
+    if failures < 1
+        return fail(code: INVALID, msg: f"the failures, {failures}, are below 1")
+
+    if previous.nanoseconds < 0
+        return fail(code: INVALID, msg: f"the previous wait, {time.format_duration(previous)}, is below zero")
+
+    if !waits.is_fraction(fraction)
+        return fail(code: INVALID, msg: f"the fraction {fraction} is outside 0 to 1")
+    first = policy.first.nanoseconds
+    longest = policy.longest.nanoseconds
+    wait = waits.exponential(first: first, multiplier: policy.multiplier, longest: longest, failures: failures)
+
+    kind = match policy.jitter
+        .none         => waits.NONE
+        .full         => waits.FULL
+        .equal        => waits.EQUAL
+        .decorrelated => waits.DECORRELATED
+        .spread _     => waits.SPREAD
+
+    spread = waits.jittered(
+        kind: kind,
+        wait: wait,
+        previous: previous.nanoseconds,
+        first: first,
+        multiplier: policy.multiplier,
+        factor: factor,
+        longest: longest,
+        fraction: fraction
+    )
+    return ok(time.Duration(nanoseconds: spread))
+
+# The wait after `failures` failures in a row, as `wait_after` answers it,
+# its fraction drawn by `random_fraction` where the policy's jitter reads one
+# and nothing drawn where it does not: the wait a program that retries
+# sleeps, with no fraction of its own to give.
+#
+# - `policy`: the policy.
+# - `failures`: the failures so far, at least 1.
+# - `previous`: the wait answered before this one, zero before the first;
+#   read by `decorrelated` alone.
+#
+# Fails `invalid` as `wait_after` fails, and where `random_fraction` fails,
+# with its code. See also `next_wait`.
+function drawn_wait(policy: Backoff, failures: i64, previous: time.Duration) -> time.Duration?
+    fraction = match policy.jitter
+        .none                                      => 0.0
+        .full | .equal | .decorrelated | .spread _ => random_fraction()?
+
+    return wait_after(policy, failures: failures, previous: previous, fraction: fraction)
+
+# A number from 0 up to 1, 1 left out, drawn from the system's generator for
+# keys: the `fraction` `wait_after` and `next_wait` read, so that waits are
+# spread unseen by any other program.
+#
+# Fails where `os.random_bytes` fails, with its code. See also `wait_after`.
+function random_fraction() -> f64?
+    return ok(waits.fraction_of(os.random_bytes(7)?))
+
+# A retry loop about to make its first attempt under `policy`.
+#
+# - `policy`: the policy its waits follow.
+#
+# See also `next_wait`.
+function new_retry(policy: Backoff) -> Retry
+    return Retry(policy: policy, failures: 0, last_wait: time.Duration(nanoseconds: 0))
+
+# The wait before the next attempt, once one more attempt has failed: the
+# program sleeps it, then tries again. It counts the failure, then gives up
+# where the policy says so.
+#
+# - `retry`: where the loop stands, which the caller holds; one more failure
+#   is counted in it, and the wait answered kept for the next.
+# - `spent`: the time since the first attempt began, at least zero, read
+#   against the policy's `total`.
+# - `fraction`: a number drawn by chance from 0 to 1, as `wait_after` reads
+#   it.
+#
+# Fails `limit` where the attempts allowed are all made (the failure is
+# counted, and every later call fails so too); `timeout` where the wait would
+# end past the total time allowed; `invalid` where `spent` is below zero or
+# `fraction` outside 0 to 1, nothing counted then, or where the policy is one
+# `backoff` would refuse. See also `wait_after`, `parse_retry_after`.
+function next_wait(@retry: Retry, spent: time.Duration, fraction: f64) -> time.Duration?
+    if spent.nanoseconds < 0
+        return fail(code: INVALID, msg: f"the time spent, {time.format_duration(spent)}, is below zero")
+
+    if !waits.is_fraction(fraction)
+        return fail(code: INVALID, msg: f"the fraction {fraction} is outside 0 to 1")
+
+    if retry.failures < math.MAX_I64
+        retry.failures @ retry.failures + 1
+    attempts = retry.policy.attempts
+
+    if attempts > 0 && retry.failures >= attempts
+        return fail(code: LIMIT, msg: f"the {attempts} attempts allowed are all made")
+    wait = wait_after(retry.policy, failures: retry.failures, previous: retry.last_wait, fraction: fraction)?
+    total = retry.policy.total.nanoseconds
+
+    if total > 0 && spent.nanoseconds > total - wait.nanoseconds
+        return fail(
+            code: TIMEOUT,
+            msg: f"a wait of {time.format_duration(wait)} after {time.format_duration(spent)} would pass the {time.format_duration(retry.policy.total)} allowed"
+        )
+    retry.last_wait @ wait
+    return ok(wait)
+
+# The wait an HTTP `Retry-After` value asks for (RFC 9110, 10.2.3), from
+# `received`, at most `longest`.
+#
+# - `s`: the field's value, spaces and tabs at either end set aside: a count
+#   of seconds, or a date in IMF-fixdate, RFC 850's form or C's `asctime`,
+#   the three a recipient must read.
+# - `received`: when the response holding it was received: the wait starts
+#   from it, and a date is read against it.
+# - `longest`: the longest wait the program accepts, at least zero; a count
+#   of seconds past it, or too large for any number, is cut to it.
+#
+# A date already past asks no wait: zero. Fails `invalid` where `s` is
+# neither seconds nor such a date, or `longest` is below zero. See also
+# `next_wait`.
+function parse_retry_after(s: str, received: time.Instant, longest: time.Duration) -> time.Duration?
+    return ok(
+        time.Duration(nanoseconds: retry_after.wait_of(s: s, now: received.unix_nanoseconds, longest: longest.nanoseconds)?)
+    )
+
+## Circuit breakers
+
+# When a circuit breaker opens, how long it stays open, and what closes it.
+# `breaker_policy` makes one, and `with_trials` and `with_failure_ratio`
+# change it, each checking what it sets; a breaker made from one built
+# directly with a field out of bounds does what its numbers say and never
+# aborts.
+record BreakerPolicy
+    # The failures in a row, while closed, that open it; 0 where only the
+    # ratio of `with_failure_ratio` does.
+    failures: i64
+    # How long it stays open before it lets a trial through, above zero.
+    open_for: time.Duration
+    # The trial calls it lets through while half-open, at least 1.
+    trials: i64
+    # The trials that must succeed, while half-open, to close it, from 1 to
+    # `trials`.
+    successes: i64
+    # The share of failed calls in the window that opens it, above 0 and at
+    # most 1; 0 where the share is not read.
+    ratio: f64
+    # How far back the share looks, above zero where `ratio` is.
+    window: time.Duration
+    # The calls the window must hold before the share is read, at least 1
+    # where `ratio` is.
+    least_calls: i64
+
+# Where a circuit breaker stands at an instant.
+variant BreakerState
+    # Calls go through, and failures are counted.
+    closed
+    # Calls are refused.
+    open
+        # When it lets a trial through.
+        until: time.Instant
+    # Trial calls go through, as many as the policy allows; their outcome
+    # closes it or opens it again.
+    half_open
+
+# A circuit breaker the program holds: its policy and what it has seen.
+# `new_breaker` makes one; `allow_call`, `record_success` and
+# `record_failure` move it on, every time given by the caller.
+record Breaker
+    # The policy it was made with; changing it changes nothing, since the
+    # machine keeps its own copy of the numbers: a new policy is a new
+    # breaker.
+    policy: BreakerPolicy
+    # What it has seen, read only by this package's functions.
+    machine: circuit.Machine
+
+# A policy that opens after `failures` failures in a row and stays open for
+# `open_for`, then lets one trial through, whose success closes it.
+#
+# - `failures`: the failures in a row that open it, at least 1; or 0, for a
+#   policy that opens by the share of `with_failure_ratio` alone (without
+#   it, never).
+# - `open_for`: how long it stays open, above zero.
+#
+# Fails `invalid` where either is outside its bounds. See also
+# `with_trials`, `with_failure_ratio`, `new_breaker`.
+function breaker_policy(failures: i64, open_for: time.Duration) -> BreakerPolicy?
+    policy = BreakerPolicy(
+        failures: failures,
+        open_for: open_for,
+        trials: 1,
+        successes: 1,
+        ratio: 0.0,
+        window: time.Duration(nanoseconds: 0),
+        least_calls: 0
+    )
+
+    if failures < 0
+        return fail(code: INVALID, msg: f"the failures that open the breaker, {failures}, are below 0")
+
+    if open_for.nanoseconds <= 0
+        return fail(code: INVALID, msg: f"the open time, {time.format_duration(open_for)}, is not above zero")
+    return ok(policy)
+
+# `policy` letting `trials` trial calls through while half-open, closing
+# after `successes` of them succeed.
+#
+# - `policy`: the policy.
+# - `trials`: the trial calls, at least 1.
+# - `successes`: the successes that close it, from 1 to `trials`; a trial
+#   that fails opens it again at once.
+#
+# Fails `invalid` where either is outside its bounds. See also
+# `allow_call`.
+function with_trials(policy: BreakerPolicy, trials: i64, successes: i64) -> BreakerPolicy?
+    if trials < 1
+        return fail(code: INVALID, msg: f"the trials, {trials}, are below 1")
+
+    if successes < 1 || successes > trials
+        return fail(code: INVALID, msg: f"the successes that close the breaker, {successes}, are outside 1 to {trials}")
+    return ok(
+        BreakerPolicy(failures: policy.failures, open_for: policy.open_for, trials: trials, successes: successes, ratio: policy.ratio, window: policy.window, least_calls: policy.least_calls)
+    )
+
+# `policy` also opening where, in the last `window`, at least `least_calls`
+# calls were recorded and at least `ratio` of them failed, as Polly's
+# breaker reads its failure ratio.
+#
+# - `policy`: the policy.
+# - `ratio`: the share of failures, above 0 and at most 1: 0.5 for half.
+# - `window`: how far back the share looks, above zero; it is cut into ten
+#   slots, so a call is forgotten between nine and ten tenths of it later.
+# - `least_calls`: the calls the window must hold first, at least 1.
+#
+# Fails `invalid` where any is outside its bounds. See also
+# `record_failure`.
+function with_failure_ratio(policy: BreakerPolicy, ratio: f64, window: time.Duration, least_calls: i64) -> BreakerPolicy?
+    if ratio != ratio || ratio <= 0.0 || ratio > 1.0
+        return fail(code: INVALID, msg: f"the failure ratio {ratio} is not above 0 and at most 1")
+
+    if window.nanoseconds <= 0
+        return fail(code: INVALID, msg: f"the window, {time.format_duration(window)}, is not above zero")
+
+    if least_calls < 1
+        return fail(code: INVALID, msg: f"the calls the window must hold, {least_calls}, are below 1")
+    return ok(
+        BreakerPolicy(failures: policy.failures, open_for: policy.open_for, trials: policy.trials, successes: policy.successes, ratio: ratio, window: window, least_calls: least_calls)
+    )
+
+# A closed breaker following `policy`, having seen nothing.
+#
+# - `policy`: the policy, as `breaker_policy` makes it.
+#
+# See also `allow_call`.
+function new_breaker(policy: BreakerPolicy) -> Breaker
+    rules = circuit.Rules(
+        failures: policy.failures,
+        ratio: policy.ratio,
+        window: policy.window.nanoseconds,
+        least_calls: policy.least_calls,
+        open_for: policy.open_for.nanoseconds,
+        trials: policy.trials,
+        successes: policy.successes
+    )
+    return Breaker(policy: policy, machine: circuit.fresh(rules))
+
+# Whether a call may go at the instant `at`: always while closed; never while
+# open, until its open time has passed, when it turns half-open and lets the
+# first trial through; while half-open, while trials are left. The program
+# makes the call only where this answers `true`, then records its outcome.
+#
+# - `breaker`: the breaker, which the caller holds; turning half-open and a
+#   trial let through are counted in it.
+# - `at`: the time of the call, as the caller's clock reads it; a time
+#   earlier than one given before is read as it is.
+#
+# A trial let through and never recorded keeps its place: a program records
+# every call it made. See also `record_success`, `record_failure`,
+# `breaker_state`.
+function allow_call(@breaker: Breaker, at: time.Instant) -> bool
+    return circuit.allow(@breaker.machine, now: at.unix_nanoseconds)
+
+# The call let through by `allow_call` succeeded, ending at the instant `at`:
+# while closed, the failures in a row end; while half-open, enough successes
+# close it; while open, nothing changes.
+#
+# - `breaker`: the breaker, which the caller holds; the success is counted in
+#   it.
+# - `at`: when the call ended.
+#
+# See also `record_failure`.
+function record_success(@breaker: Breaker, at: time.Instant)
+    circuit.succeeded(@breaker.machine, now: at.unix_nanoseconds)
+
+# The call let through by `allow_call` failed, ending at the instant `at`:
+# while closed, it is counted, and the breaker opens where the failures in a
+# row or the share of the window reach the policy's; while half-open, it opens
+# again; while open, nothing changes.
+#
+# - `breaker`: the breaker, which the caller holds; the failure is counted in
+#   it, and it may open.
+# - `at`: when the call ended; an open breaker stays open from it.
+#
+# See also `record_success`.
+function record_failure(@breaker: Breaker, at: time.Instant)
+    circuit.failed(@breaker.machine, now: at.unix_nanoseconds)
+
+# Where `breaker` stands at the instant `at`, changing nothing: an open breaker
+# whose open time has passed reads as half-open, though no call has asked yet.
+#
+# - `breaker`: the breaker.
+# - `at`: the instant asked about.
+#
+# See also `allow_call`.
+function breaker_state(breaker: Breaker, at: time.Instant) -> BreakerState
+    state = circuit.state_at(machine: breaker.machine, now: at.unix_nanoseconds)
+
+    if state == circuit.CLOSED
+        return .closed
+
+    if state == circuit.OPEN
+        return .open(until: time.Instant(unix_nanoseconds: circuit.open_until(breaker.machine)))
+    return .half_open
+
+## Tests
+
+test "backoff: the three bounds refused, each message naming its number, and the defaults"
+    match backoff(first: time.seconds(0).must(), multiplier: 2.0, longest: time.seconds(1).must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the first wait, 0s, is not above zero"
+
+    match backoff(first: time.seconds(1).must(), multiplier: 0.5, longest: time.seconds(1).must())
+        .ok _  => assert false
+        .err e => assert e.msg == "the multiplier 0.5 is not a finite number from 1 up"
+
+    match backoff(first: time.seconds(2).must(), multiplier: 2.0, longest: time.seconds(1).must())
+        .ok _  => assert false
+        .err e => assert e.msg == "the longest wait, 1s, is shorter than the first, 2s"
+
+    assert backoff(first: time.seconds(1).must(), multiplier: 1.0 / 0.0, longest: time.seconds(1).must()).is_err()
+    policy = backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must()
+    assert policy.jitter == .none && policy.attempts == 0 && policy.total == time.nanoseconds(0)
+    assert backoff(first: time.nanoseconds(1), multiplier: 1.0, longest: time.nanoseconds(1)).must().longest == time.nanoseconds(1)
+
+test "with_jitter, with_attempts and with_total: refusals, and a limit lifted by zero"
+    policy = backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must()
+
+    match with_jitter(policy, jitter: .spread(factor: 1.5))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the spread's factor 1.5 is outside 0 to 1"
+
+    assert with_jitter(policy, jitter: .spread(factor: 0.0 / 0.0)).is_err()
+    assert with_jitter(policy, jitter: .spread(factor: 1.0)).must().jitter == .spread(factor: 1.0)
+
+    match with_attempts(policy, attempts: -1)
+        .ok _  => assert false
+        .err e => assert e.msg == "the attempts allowed, -1, are below 0"
+
+    assert with_attempts(with_attempts(policy, attempts: 3).must(), attempts: 0).must().attempts == 0
+
+    match with_total(policy, total: time.nanoseconds(-1))
+        .ok _  => assert false
+        .err e => assert e.msg == "the total time allowed, -1ns, is below zero"
+
+    assert with_total(policy, total: time.nanoseconds(0)).must().total == time.nanoseconds(0)
+
+test "wait_after: each jitter at a quarter, the cap, and every refusal"
+    policy = backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must()
+    zero = time.nanoseconds(0)
+    assert wait_after(policy, failures: 1, previous: zero, fraction: 0.25).must() == time.milliseconds(100).must()
+    assert wait_after(policy, failures: 4, previous: zero, fraction: 0.25).must() == time.milliseconds(800).must()
+    assert wait_after(policy, failures: 8, previous: zero, fraction: 0.25).must() == time.seconds(10).must()
+    assert wait_after(policy, failures: 9_223_372_036_854_775_807, previous: zero, fraction: 0.25).must() == time.seconds(10).must()
+    full = with_jitter(policy, jitter: .full).must()
+    assert wait_after(full, failures: 4, previous: zero, fraction: 0.25).must() == time.milliseconds(200).must()
+    equal = with_jitter(policy, jitter: .equal).must()
+    assert wait_after(equal, failures: 4, previous: zero, fraction: 0.25).must() == time.milliseconds(500).must()
+    tripled = backoff(first: time.milliseconds(100).must(), multiplier: 3.0, longest: time.seconds(10).must()).must()
+    decorrelated = with_jitter(tripled, jitter: .decorrelated).must()
+    assert wait_after(decorrelated, failures: 9, previous: time.milliseconds(300).must(), fraction: 0.25).must() == time.milliseconds(300).must()
+    spread = with_jitter(policy, jitter: .spread(factor: 0.5)).must()
+    assert wait_after(spread, failures: 4, previous: zero, fraction: 0.25).must() == time.milliseconds(600).must()
+
+    match wait_after(policy, failures: 0, previous: zero, fraction: 0.5)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the failures, 0, are below 1"
+
+    match wait_after(policy, failures: 1, previous: time.nanoseconds(-1), fraction: 0.5)
+        .ok _  => assert false
+        .err e => assert e.msg == "the previous wait, -1ns, is below zero"
+
+    match wait_after(policy, failures: 1, previous: zero, fraction: 1.5)
+        .ok _  => assert false
+        .err e => assert e.msg == "the fraction 1.5 is outside 0 to 1"
+
+    assert wait_after(policy, failures: 1, previous: zero, fraction: 0.0 / 0.0).is_err()
+    built = Backoff(
+        first: time.milliseconds(100).must(),
+        multiplier: 0.5,
+        longest: time.seconds(1).must(),
+        jitter: .none,
+        attempts: 0,
+        total: zero
+    )
+
+    match wait_after(built, failures: 1, previous: zero, fraction: 0.5)
+        .ok _  => assert false
+        .err e => assert e.msg == "the multiplier 0.5 is not a finite number from 1 up"
+
+test "next_wait: four attempts allowed, three waits doubling, then limit, and limit again"
+    policy = with_attempts(
+        backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must(),
+        attempts: 4
+    ).must()
+    retry: Retry @= new_retry(policy)
+    zero = time.nanoseconds(0)
+    assert next_wait(@retry, spent: zero, fraction: 0.0).must() == time.milliseconds(100).must()
+    assert next_wait(@retry, spent: zero, fraction: 0.0).must() == time.milliseconds(200).must()
+    assert next_wait(@retry, spent: zero, fraction: 0.0).must() == time.milliseconds(400).must()
+
+    match next_wait(@retry, spent: zero, fraction: 0.0)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT && e.msg == "the 4 attempts allowed are all made"
+
+    match next_wait(@retry, spent: zero, fraction: 0.0)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    assert retry.failures == 5 && retry.last_wait == time.milliseconds(400).must()
+
+test "next_wait: the total time, decorrelated waits from the last, and refusals that count nothing"
+    tripled = backoff(first: time.milliseconds(100).must(), multiplier: 3.0, longest: time.seconds(10).must()).must()
+    policy = with_total(with_jitter(tripled, jitter: .decorrelated).must(), total: time.seconds(1).must()).must()
+    retry: Retry @= new_retry(policy)
+    assert next_wait(@retry, spent: time.nanoseconds(0), fraction: 0.5).must() == time.milliseconds(200).must()
+    assert next_wait(@retry, spent: time.milliseconds(250).must(), fraction: 0.5).must() == time.milliseconds(350).must()
+
+    match next_wait(@retry, spent: time.milliseconds(700).must(), fraction: 0.5)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT && e.msg == "a wait of 575ms after 700ms would pass the 1s allowed"
+
+    assert retry.failures == 3 && retry.last_wait == time.milliseconds(350).must()
+
+    match next_wait(@retry, spent: time.nanoseconds(-1), fraction: 0.5)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the time spent, -1ns, is below zero"
+
+    assert next_wait(@retry, spent: time.nanoseconds(0), fraction: -0.5).is_err()
+    assert retry.failures == 3
+
+test "parse_retry_after: seconds, a date a minute ahead, the cap, a date past, and a refusal"
+    received = time.parse("2015-10-21T07:27:00Z", layout: .rfc3339).must()
+    assert parse_retry_after("120", received: received, longest: time.minutes(5).must()).must() == time.seconds(120).must()
+    assert parse_retry_after("Wed, 21 Oct 2015 07:28:00 GMT", received: received, longest: time.minutes(5).must()).must() == time.seconds(60).must()
+    assert parse_retry_after("86400", received: received, longest: time.minutes(5).must()).must() == time.minutes(5).must()
+    assert parse_retry_after("Wed, 21 Oct 2015 07:00:00 GMT", received: received, longest: time.minutes(5).must()).must() == time.nanoseconds(0)
+
+    match parse_retry_after("soon", received: received, longest: time.minutes(5).must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the Retry-After value \"soon\" is neither a count of seconds nor an HTTP date"
+
+test "breaker_policy, with_trials and with_failure_ratio: the defaults, and every bound refused"
+    policy = breaker_policy(failures: 5, open_for: time.seconds(30).must()).must()
+    assert policy.trials == 1 && policy.successes == 1 && policy.ratio == 0.0
+    assert breaker_policy(failures: 0, open_for: time.seconds(1).must()).must().failures == 0
+
+    match breaker_policy(failures: -1, open_for: time.seconds(1).must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the failures that open the breaker, -1, are below 0"
+
+    match breaker_policy(failures: 1, open_for: time.nanoseconds(0))
+        .ok _  => assert false
+        .err e => assert e.msg == "the open time, 0s, is not above zero"
+
+    match with_trials(policy, trials: 0, successes: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "the trials, 0, are below 1"
+
+    match with_trials(policy, trials: 2, successes: 3)
+        .ok _  => assert false
+        .err e => assert e.msg == "the successes that close the breaker, 3, are outside 1 to 2"
+
+    assert with_trials(policy, trials: 3, successes: 2).must().successes == 2
+
+    match with_failure_ratio(policy, ratio: 0.0, window: time.seconds(10).must(), least_calls: 1)
+        .ok _  => assert false
+        .err e => assert e.msg == "the failure ratio 0.0 is not above 0 and at most 1"
+
+    assert with_failure_ratio(policy, ratio: 1.5, window: time.seconds(10).must(), least_calls: 1).is_err()
+    assert with_failure_ratio(policy, ratio: 0.0 / 0.0, window: time.seconds(10).must(), least_calls: 1).is_err()
+
+    match with_failure_ratio(policy, ratio: 0.5, window: time.nanoseconds(0), least_calls: 1)
+        .ok _  => assert false
+        .err e => assert e.msg == "the window, 0s, is not above zero"
+
+    match with_failure_ratio(policy, ratio: 0.5, window: time.seconds(10).must(), least_calls: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "the calls the window must hold, 0, are below 1"
+
+    assert with_failure_ratio(policy, ratio: 1.0, window: time.seconds(10).must(), least_calls: 20).must().least_calls == 20
+
+test "allow_call, record_success, record_failure and breaker_state: closed, open, half-open, open again, closed"
+    start = time.date(year: 2026, month: 1, day: 1).must()
+    policy = breaker_policy(failures: 2, open_for: time.seconds(30).must()).must()
+    breaker: Breaker @= new_breaker(policy)
+    assert breaker_state(breaker, at: start) == .closed
+    assert allow_call(@breaker, at: start)
+    record_failure(@breaker, at: start)
+    assert breaker_state(breaker, at: start) == .closed
+    later = time.add(t: start, d: time.seconds(1).must()).must()
+    record_failure(@breaker, at: later)
+    reopen = time.add(t: later, d: time.seconds(30).must()).must()
+    assert breaker_state(breaker, at: later) == .open(until: reopen)
+    assert !allow_call(@breaker, at: time.add(t: later, d: time.seconds(29).must()).must())
+    assert breaker_state(breaker, at: reopen) == .half_open
+    assert allow_call(@breaker, at: reopen)
+    assert !allow_call(@breaker, at: reopen)
+    record_failure(@breaker, at: reopen)
+    assert breaker_state(breaker, at: reopen) == .open(until: time.add(t: reopen, d: time.seconds(30).must()).must())
+    again = time.add(t: reopen, d: time.seconds(30).must()).must()
+    assert allow_call(@breaker, at: again)
+    record_success(@breaker, at: again)
+    assert breaker_state(breaker, at: again) == .closed
+    assert allow_call(@breaker, at: again)
+
+test "new_breaker: a policy built directly with no trials refuses every call once open, and never aborts"
+    start = time.date(year: 2026, month: 1, day: 1).must()
+    built = BreakerPolicy(
+        failures: 1,
+        open_for: time.seconds(1).must(),
+        trials: 0,
+        successes: 0,
+        ratio: 0.0 / 0.0,
+        window: time.nanoseconds(-5),
+        least_calls: -1
+    )
+    breaker: Breaker @= new_breaker(built)
+    record_failure(@breaker, at: start)
+    assert !allow_call(@breaker, at: time.add(t: start, d: time.seconds(5).must()).must())
+    assert breaker_state(breaker, at: time.add(t: start, d: time.seconds(5).must()).must()) == .half_open
+
+## Examples
+
+# A policy of waits doubling from 100 milliseconds, none longer than 10
+# seconds.
+test "backoff: waits doubling from 100 ms up to 10 s"
+    policy = backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must()
+    assert wait_after(policy, failures: 3, previous: time.nanoseconds(0), fraction: 0.0).must() == time.milliseconds(400).must()
+
+# Full jitter: each wait drawn from zero to the exponential one.
+test "with_jitter: full jitter halves the wait at a fraction of a half"
+    policy = with_jitter(
+        backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must(),
+        jitter: .full
+    ).must()
+    assert wait_after(policy, failures: 2, previous: time.nanoseconds(0), fraction: 0.5).must() == time.milliseconds(100).must()
+
+# A loop that gives up after five attempts in all.
+test "with_attempts: five attempts in all"
+    policy = with_attempts(
+        backoff(first: time.seconds(1).must(), multiplier: 2.0, longest: time.seconds(30).must()).must(),
+        attempts: 5
+    ).must()
+    assert policy.attempts == 5
+
+# A loop that gives up where the next wait would end more than a minute after
+# the first attempt.
+test "with_total: a minute in all"
+    policy = with_total(
+        backoff(first: time.seconds(1).must(), multiplier: 2.0, longest: time.seconds(30).must()).must(),
+        total: time.minutes(1).must()
+    ).must()
+    assert policy.total == time.minutes(1).must()
+
+# The wait after the third failure, with no jitter.
+test "wait_after: the third wait is four times the first"
+    policy = backoff(first: time.milliseconds(250).must(), multiplier: 2.0, longest: time.seconds(10).must()).must()
+    assert wait_after(policy, failures: 3, previous: time.nanoseconds(0), fraction: 0.0).must() == time.seconds(1).must()
+
+# The third wait of a policy with no jitter, nothing drawn.
+test "drawn_wait: the third wait, no jitter"
+    policy = backoff(first: time.milliseconds(250).must(), multiplier: 2.0, longest: time.seconds(10).must()).must()
+    assert drawn_wait(policy, failures: 3, previous: time.Duration(nanoseconds: 0)).must() == time.seconds(1).must()
+
+# A fraction drawn for a wait's jitter.
+test "random_fraction: from 0 up to 1"
+    f = random_fraction().must()
+    assert f >= 0.0 && f < 1.0
+
+# A retry loop about to make its first attempt.
+test "new_retry: no failure counted yet"
+    policy = backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must()
+    assert new_retry(policy).failures == 0
+
+# A retry loop: each failed attempt asks the next wait, until the policy gives
+# up; a program would sleep each wait, try again, and stop at its first
+# success.
+test "next_wait: a loop that gives up after three attempts"
+    policy = with_attempts(
+        backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must(),
+        attempts: 3
+    ).must()
+    retry: Retry @= new_retry(policy)
+    waited: [time.Duration] @= []
+
+    while true
+        match next_wait(@retry, spent: time.nanoseconds(0), fraction: 0.0)
+            .ok wait => waited @ waited.push(wait)
+            .err e =>
+                assert e.code == LIMIT
+                break
+
+    assert waited == [time.milliseconds(100).must(), time.milliseconds(200).must()]
+
+# A server's 503 asking the client to come back in two minutes.
+test "parse_retry_after: a server asks two minutes"
+    received = time.date(year: 2026, month: 1, day: 1).must()
+    assert parse_retry_after("120", received: received, longest: time.minutes(10).must()).must() == time.minutes(2).must()
+
+# A breaker that opens after five failures in a row, for thirty seconds.
+test "breaker_policy: five failures, thirty seconds open"
+    policy = breaker_policy(failures: 5, open_for: time.seconds(30).must()).must()
+    assert policy.failures == 5 && policy.trials == 1
+
+# Three trial calls while half-open, two of whose successes close it.
+test "with_trials: three trials, two successes"
+    policy = with_trials(
+        breaker_policy(failures: 5, open_for: time.seconds(30).must()).must(),
+        trials: 3,
+        successes: 2
+    ).must()
+    assert policy.trials == 3
+
+# A breaker that also opens where half the calls of the last minute failed,
+# once the minute holds twenty.
+test "with_failure_ratio: half the calls of a minute"
+    policy = with_failure_ratio(
+        breaker_policy(failures: 0, open_for: time.seconds(30).must()).must(),
+        ratio: 0.5,
+        window: time.minutes(1).must(),
+        least_calls: 20
+    ).must()
+    assert policy.ratio == 0.5
+
+# A new breaker is closed.
+test "new_breaker: closed at first"
+    breaker = new_breaker(breaker_policy(failures: 5, open_for: time.seconds(30).must()).must())
+    assert breaker_state(breaker, at: time.date(year: 2026, month: 1, day: 1).must()) == .closed
+
+# A call goes only where the breaker allows it.
+test "allow_call: a closed breaker lets a call through"
+    breaker: Breaker @= new_breaker(breaker_policy(failures: 5, open_for: time.seconds(30).must()).must())
+    assert allow_call(@breaker, at: time.date(year: 2026, month: 1, day: 1).must())
+
+# A trial's success closes a half-open breaker.
+test "record_success: a trial's success closes the breaker"
+    start = time.date(year: 2026, month: 1, day: 1).must()
+    breaker: Breaker @= new_breaker(breaker_policy(failures: 1, open_for: time.seconds(30).must()).must())
+    record_failure(@breaker, at: start)
+    later = time.add(t: start, d: time.minutes(1).must()).must()
+    assert allow_call(@breaker, at: later)
+    record_success(@breaker, at: later)
+    assert breaker_state(breaker, at: later) == .closed
+
+# Two failures in a row open a breaker whose policy says two.
+test "record_failure: the second failure in a row opens it"
+    start = time.date(year: 2026, month: 1, day: 1).must()
+    breaker: Breaker @= new_breaker(breaker_policy(failures: 2, open_for: time.seconds(30).must()).must())
+    record_failure(@breaker, at: start)
+    record_failure(@breaker, at: start)
+    assert breaker_state(breaker, at: start) == .open(until: time.add(t: start, d: time.seconds(30).must()).must())
+
+# An open breaker reads as half-open once its open time has passed.
+test "breaker_state: half-open after the open time"
+    start = time.date(year: 2026, month: 1, day: 1).must()
+    breaker: Breaker @= new_breaker(breaker_policy(failures: 1, open_for: time.seconds(30).must()).must())
+    record_failure(@breaker, at: start)
+    assert breaker_state(breaker, at: time.add(t: start, d: time.seconds(30).must()).must()) == .half_open

@@ -1,0 +1,35 @@
+# The ledger of `retries`. Its blocks were `time.ledger`'s until 2026-11-20,
+# when the coherence review's D14 gave the waits of a retry loop and the
+# circuit breakers a package of their own at layer 4, above `time`, whose
+# durations and instants they read; the names did not change, `time.backoff`
+# is `retries.backoff`. `retries.random_fraction` and `retries.drawn_wait` are
+# new that day, `jobs`'s private draw made public, so that `jobs`, `http` and
+# the OTLP exporters spread their waits alike.
+
+capability retry/backoff  the waits of a retry loop: exponential from a first wait, capped, spread by chance
+  heroes  retries.backoff, retries.Backoff, retries.Jitter, retries.with_jitter, retries.wait_after, retries.drawn_wait, retries.random_fraction
+  go      -
+  rust    -
+  python  -
+  note    no standard library of the three has one. The yardsticks are PyPI's tenacity (its exponential waits, a multiplier and a cap, and random ones), Go's cenkalti/backoff (`ExponentialBackOff`: an initial interval, a multiplier, a largest interval, a randomization factor) and Polly; none is on this machine (tenacity absent from Python 3.15's site, cenkalti/backoff's module cache holding no source to build, 2026-11-17), so no answer of theirs was observed. The wait after the n-th failure is `first` times `multiplier` to the n-1 (tenacity's), capped at `longest`; the jitters are AWS's Architecture Blog's, "Exponential Backoff And Jitter": full, equal and decorrelated, the last between `first` and the previous wait times the policy's multiplier where AWS writes 3; `spread` is cenkalti's randomization factor, capped at `longest` where cenkalti lets a randomized wait pass its largest interval. The program draws the fraction, `retries.random_fraction` from the system's generator or `random.next_f64` from a seed, so the package holds no generator; the growth is in floats, exact below 2^53 nanoseconds, checked against Python's float arithmetic
+
+capability retry/limits  a retry loop that gives up after a count of attempts or a total time
+  heroes  retries.Retry, retries.new_retry, retries.next_wait, retries.with_attempts, retries.with_total, retries.LIMIT, retries.TIMEOUT
+  go      -
+  rust    -
+  python  -
+  note    tenacity's stop after a count of attempts or a delay and cenkalti's `MaxElapsedTime` are the yardsticks; the total is judged as cenkalti documents it, the time spent plus the next wait against it, and the end of the attempts fails `limit`, the end of the time `timeout`. The program loops, sleeps and calls; tenacity's decorator and cenkalti's `Retry` call a closure, which Heroes has not
+
+capability retry/retry-after  the wait an HTTP `Retry-After` value asks for
+  heroes  retries.parse_retry_after
+  go      -
+  rust    -
+  python  -
+  note    RFC 9110 10.2.3: whole seconds, or a date in the three forms a recipient must read (IMF-fixdate, RFC 850's, `asctime`'s), read by `time.parse`'s three layouts; a date past asks 0, and the caller's longest wait caps every answer, a count of seconds too large for any number included
+
+capability resilience/circuit-breaker  a circuit breaker: closed, open and half-open, opened by failures in a row or by a share of failures, the time the caller's
+  heroes  retries.Breaker, retries.BreakerPolicy, retries.BreakerState, retries.breaker_policy, retries.with_trials, retries.with_failure_ratio, retries.new_breaker, retries.allow_call, retries.record_success, retries.record_failure, retries.breaker_state
+  go      -
+  rust    -
+  python  -
+  note    no standard library of the three has one. The yardsticks are Go's sony/gobreaker (its half-open requests as `trials`, closing after that many successes where `successes` may ask fewer, its timeout as `open_for`, its default trip on consecutive failures as `failures`, its counts cleared at every change of state) and Polly's breaker (failure ratio, sampling duration, minimum throughput and break duration as `with_failure_ratio` and `open_for`, its window cut into ten slots); neither is on this machine (2026-11-17), so no answer of theirs was observed, and the rules are the ones written on these functions, judged by their tests. gobreaker's generations are not kept: a result recorded while open is set aside, and a program records each call it was allowed. Its state-change callback and its test of success are the program's own code around the calls

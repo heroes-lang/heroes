@@ -4,14 +4,14 @@
 # caller gives. Bytes are compared, and a slice is cut only between ASCII
 # spaces, so no value can make it split a character.
 
+use math
+use retries
 use strings
-use time/internal/arith
-use time/internal/forms
-use time/internal/reading
+use time
 
-# The code of a value that is neither seconds nor a date.
-constant INVALID: str
-    "invalid"
+# Nanoseconds in a second.
+constant SECOND: i64
+    1_000_000_000
 
 # Whether `s` is one ASCII digit or more and nothing else.
 function is_digits(s: str) -> bool
@@ -27,32 +27,32 @@ function is_digits(s: str) -> bool
 # The nanoseconds `digits` seconds last, at most `longest`: a count too large
 # for an `i64` is `longest` as well.
 function seconds_wait(digits: str, longest: i64) -> i64
-    most_seconds = longest / arith.SECOND + 1
+    most_seconds = longest / SECOND + 1
     seconds: i64 @= 0
 
     for at in range(from: 0, to: digits.len())
         if seconds <= most_seconds
             seconds @ seconds * 10 + to_i64(digits[at] - '0').must()
 
-    if seconds > longest / arith.SECOND
+    if seconds > longest / SECOND
         return longest
-    return seconds * arith.SECOND
+    return seconds * SECOND
 
 # The instant, as nanoseconds, that `s` writes as an HTTP date in any of its
 # three forms. Fails `invalid` where it is none of them.
 function date_of(s: str) -> i64?
-    match reading.parse(s: s, pieces: forms.http())
-        .ok n  => return ok(n)
+    match time.parse(s, layout: .http)
+        .ok t  => return ok(t.unix_nanoseconds)
         .err _ => _ = 0
 
-    match reading.parse(s: s, pieces: forms.rfc850())
-        .ok n  => return ok(n)
+    match time.parse(s, layout: .rfc850)
+        .ok t  => return ok(t.unix_nanoseconds)
         .err _ => _ = 0
 
-    match reading.parse(s: s, pieces: forms.ansic())
-        .ok n => return ok(n)
+    match time.parse(s, layout: .ansic)
+        .ok t => return ok(t.unix_nanoseconds)
         .err _ => return fail(
-            code: INVALID,
+            code: retries.INVALID,
             msg: f"the Retry-After value \"{s}\" is neither a count of seconds nor an HTTP date"
         )
 
@@ -62,20 +62,20 @@ function date_of(s: str) -> i64?
 # below 0.
 function wait_of(s: str, now: i64, longest: i64) -> i64?
     if longest < 0
-        return fail(code: INVALID, msg: f"the longest wait, {longest} nanoseconds, is below 0")
+        return fail(code: retries.INVALID, msg: f"the longest wait, {longest} nanoseconds, is below 0")
 
     # A field's value may carry optional white space at either end (RFC 9110's
     # OWS), spaces and tabs alone.
     value = strings.trim_any(s: s, set: " \t")
 
     if value.len() == 0
-        return fail(code: INVALID, msg: "the Retry-After value is empty")
+        return fail(code: retries.INVALID, msg: "the Retry-After value is empty")
 
     if is_digits(value)
         return ok(seconds_wait(digits: value, longest: longest))
     date = date_of(value)?
 
-    match arith.subtract(a: date, b: now)
+    match math.subtract_i64(a: date, b: now)
         .ok wait =>
             if wait <= 0
                 return ok(0)
@@ -97,32 +97,32 @@ test "is_digits: empty, one, many, a sign, a point, and a character of two bytes
     assert !is_digits("1²")
 
 test "seconds_wait: zero, a minute, past the cap, and a count past any i64"
-    assert seconds_wait(digits: "0", longest: arith.MAX) == 0
-    assert seconds_wait(digits: "60", longest: arith.MAX) == 60_000_000_000
+    assert seconds_wait(digits: "0", longest: math.MAX_I64) == 0
+    assert seconds_wait(digits: "60", longest: math.MAX_I64) == 60_000_000_000
     assert seconds_wait(digits: "3600", longest: 60_000_000_000) == 60_000_000_000
-    assert seconds_wait(digits: "99999999999999999999999999", longest: arith.MAX) == arith.MAX
-    assert seconds_wait(digits: "9223372036", longest: arith.MAX) == 9_223_372_036_000_000_000
-    assert seconds_wait(digits: "9223372037", longest: arith.MAX) == arith.MAX
+    assert seconds_wait(digits: "99999999999999999999999999", longest: math.MAX_I64) == math.MAX_I64
+    assert seconds_wait(digits: "9223372036", longest: math.MAX_I64) == 9_223_372_036_000_000_000
+    assert seconds_wait(digits: "9223372037", longest: math.MAX_I64) == math.MAX_I64
     assert seconds_wait(digits: "1", longest: 0) == 0
 
 test "wait_of: seconds, the white space around them, the three date forms, a date past, a date far ahead, and refusals"
     # 2015-10-21T07:28:00Z, RFC 9110's own example, minus 60 seconds.
     now = 1_445_412_420_000_000_000
-    assert wait_of(s: "120", now: now, longest: arith.MAX).must() == 120_000_000_000
+    assert wait_of(s: "120", now: now, longest: math.MAX_I64).must() == 120_000_000_000
     assert wait_of(s: " 120 ", now: now, longest: 60_000_000_000).must() == 60_000_000_000
-    assert wait_of(s: "\t 120 \t", now: now, longest: arith.MAX).must() == 120_000_000_000
-    assert wait_of(s: "Wed, 21 Oct 2015 07:28:00 GMT", now: now, longest: arith.MAX).must() == 60_000_000_000
-    assert wait_of(s: "Wednesday, 21-Oct-15 07:28:00 GMT", now: now, longest: arith.MAX).must() == 60_000_000_000
-    assert wait_of(s: "Wed Oct 21 07:28:00 2015", now: now, longest: arith.MAX).must() == 60_000_000_000
-    assert wait_of(s: "Wed, 21 Oct 2015 07:26:00 GMT", now: now, longest: arith.MAX).must() == 0
-    assert wait_of(s: "Wed, 21 Oct 2015 07:28:00 GMT", now: arith.MIN, longest: 5).must() == 5
-    assert wait_of(s: "Wed, 21 Oct 2015 07:28:00 GMT", now: arith.MAX, longest: 5).must() == 0
+    assert wait_of(s: "\t 120 \t", now: now, longest: math.MAX_I64).must() == 120_000_000_000
+    assert wait_of(s: "Wed, 21 Oct 2015 07:28:00 GMT", now: now, longest: math.MAX_I64).must() == 60_000_000_000
+    assert wait_of(s: "Wednesday, 21-Oct-15 07:28:00 GMT", now: now, longest: math.MAX_I64).must() == 60_000_000_000
+    assert wait_of(s: "Wed Oct 21 07:28:00 2015", now: now, longest: math.MAX_I64).must() == 60_000_000_000
+    assert wait_of(s: "Wed, 21 Oct 2015 07:26:00 GMT", now: now, longest: math.MAX_I64).must() == 0
+    assert wait_of(s: "Wed, 21 Oct 2015 07:28:00 GMT", now: math.MIN_I64, longest: 5).must() == 5
+    assert wait_of(s: "Wed, 21 Oct 2015 07:28:00 GMT", now: math.MAX_I64, longest: 5).must() == 0
 
     for bad in ["", "  ", "\t \t", "1 20", "-5", "1.5", "+5", "soon", "Wed, 21 Oct 2015 07:28:00 CET", "120s"]
-        match wait_of(s: bad, now: now, longest: arith.MAX)
+        match wait_of(s: bad, now: now, longest: math.MAX_I64)
             .ok _  => assert false
-            .err e => assert e.code == INVALID
+            .err e => assert e.code == retries.INVALID
 
     match wait_of(s: "120", now: now, longest: -1)
         .ok _  => assert false
-        .err e => assert e.code == INVALID && e.msg == "the longest wait, -1 nanoseconds, is below 0"
+        .err e => assert e.code == retries.INVALID && e.msg == "the longest wait, -1 nanoseconds, is below 0"

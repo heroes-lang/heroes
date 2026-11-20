@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and forty-seven packages, in layers. **A package may use any package of a layer below
+A hundred and forty-eight packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
@@ -126,13 +126,14 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `tui` | full-screen terminal programs in immediate mode: widgets, layout by constraints, only the changed cells written | `io`, `os`, `term`, `unicode`, `unicode/segment` |  |
 | 4 | `webauthn` | a WebAuthn relying party: registration and authentication ceremonies, attestation and assertion verified | `bytes`, `cbor`, `crypto`, `crypto/keypairs`, `json`, `os` |  |
 | 4 | `image/png` | PNG read and written: every colour type and bit depth, interlacing read, the filter and the compression chosen, chunks kept or dropped | `bytes`, `compress`, `hash`, `image` |  |
-| 4 | `jobs` | background jobs and their workers, retried and scheduled, over a store in a subpackage: the values both stores share | `json`, `numbers`, `os`, `time` |  |
+| 4 | `retries` | the waits of a retry loop, exponential and spread by chance, when it gives up, the wait a `Retry-After` asks; circuit breakers; the time always the caller's | `math`, `os`, `strings`, `time` |  |
 | 4 | `compress/zstd` | Zstandard (RFC 8878) read, and written at a basic level | `bytes`, `compress`, `hash` |  |
 | 4 | `compress/brotli` | Brotli (RFC 7932) read, and written at a basic level | `bytes`, `compress` |  |
 | 4 | `compress/bzip2` | bzip2 read and written | `bytes`, `compress` |  |
 | 4 | `process` | another program run, fed, read and waited for | `io`, `os`, `path`, `strings`, `time`, `unicode` | `hero_proc.h` |
 | 4 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `compress`, `hash`, `io` |  |
 | 4 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `bytes`, `compress`, `crypto`, `hash` |  |
+| 5 | `jobs` | background jobs and their workers, retried and scheduled, over a store in a subpackage: the values both stores share | `json`, `numbers`, `os`, `retries`, `time` |  |
 | 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
 | 5 | `sql/postgres` | PostgreSQL over its own protocol, written in Heroes; the API every driver keeps | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `scram`, `sql`, `strings`, `threads`, `time`, `tls` |  |
@@ -153,7 +154,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `log/files` | logs written to files that rotate by size or by day, the old ones kept, counted and compressed | `compress`, `fs`, `io`, `log`, `path`, `strings`, `time` |  |
 | 5 | `pdf` | PDF documents written (text, standard fonts, images, simple tables) and their text read | `bytes`, `compress`, `crypto`, `image`, `image/png`, `math`, `time`, `unicode` |  |
 | 5 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads` | `hero_ipc.h` |
-| 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
 | 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `bytes`, `compress`, `http2`, `io`, `net`, `numbers`, `protobuf`, `threads`, `time`, `tls` |  |
 | 6 | `xlsx` | spreadsheets of Office Open XML read and written: sheets, cells, types, styles | `archive`, `bytes`, `fs`, `io`, `lists`, `math`, `numbers`, `strings`, `time`, `unicode`, `xml` |  |
@@ -162,13 +163,13 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `http`, `io`, `json`, `log`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 7 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
 | 7 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `threads`, `time`, `url` |  |
-| 7 | `metrics` | counters, gauges and histograms, written in Prometheus's text format and served | `bytes`, `compress`, `http`, `lists`, `math`, `net`, `numbers`, `os`, `protobuf`, `random`, `strings`, `time`, `url` |  |
+| 7 | `metrics` | counters, gauges and histograms, written in Prometheus's text format and served | `bytes`, `compress`, `http`, `lists`, `math`, `net`, `numbers`, `os`, `protobuf`, `random`, `retries`, `strings`, `time`, `url` |  |
 | 7 | `s3` | the S3 API with Signature Version 4: objects, buckets, multipart uploads, presigned URLs | `bytes`, `crypto`, `hash`, `http`, `ini`, `io`, `json`, `lists`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url`, `xml` |  |
 | 7 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `net`, `numbers`, `strings`, `threads` |  |
-| 7 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `bytes`, `compress`, `http`, `lists`, `log`, `numbers`, `os`, `protobuf`, `random`, `strings`, `time`, `url` |  |
+| 7 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `bytes`, `compress`, `http`, `lists`, `log`, `numbers`, `os`, `protobuf`, `random`, `retries`, `strings`, `time`, `url` |  |
 | 7 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded; the certificate request made elsewhere until `x509` writes one | `big`, `bytes`, `crypto`, `http`, `jose`, `json`, `os`, `pem`, `time`, `x509` |  |
-| 7 | `llm/anthropic` | Claude's Messages API: messages, streaming, tools driven by the program, token counting, batches | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `strings`, `threads`, `time`, `tls`, `url` |  |
-| 7 | `llm/openai` | Chat Completions and Responses, which Ollama and vLLM also speak: streaming, tools, embeddings | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 7 | `llm/anthropic` | Claude's Messages API: messages, streaming, tools driven by the program, token counting, batches | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 7 | `llm/openai` | Chat Completions and Responses, which Ollama and vLLM also speak: streaming, tools, embeddings | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 7 | `graphql` | GraphQL documents and schemas parsed, validated and executed, the program resolving each field | `bytes`, `http`, `json`, `numbers`, `strings`, `unicode` |  |
 | 8 | `nats` | a NATS client: publish, subscribe, request and reply, over TLS | `bytes`, `crypto/keypairs`, `io`, `json`, `maps`, `net`, `os`, `poll`, `random`, `strings`, `threads`, `time`, `tls`, `url`, `websocket` |  |
 | 8 | `mqtt` | an MQTT 3.1.1 and 5 client, every quality of service | `bytes`, `io`, `maps`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `time`, `tls`, `url`, `websocket` |  |

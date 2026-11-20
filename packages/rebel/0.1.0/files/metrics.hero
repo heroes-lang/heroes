@@ -52,6 +52,7 @@ use metrics/internal/text_write
 use net
 use numbers
 use random
+use retries
 use strings
 use time
 
@@ -1680,9 +1681,9 @@ record Otlp
     headers: [http.Header]
     # Whether the body is sent compressed by gzip.
     gzip: bool
-    # When a request is sent again: after a status of `statuses`, waiting
-    # `backoff_ms` doubled each time, or the `Retry-After` the collector asks,
-    # at most `max_backoff_ms`, `count` times at most.
+    # When a request is sent again: after a status of `statuses`, waiting as
+    # `backoff` says, or the `Retry-After` the collector asks, at most its
+    # `longest`, `count` times at most.
     retries: http.Retries
 
 # The URL OTLP's metrics are posted to where nothing else says: the
@@ -1703,7 +1704,7 @@ function otlp_to(target: str) -> Otlp
         url: target,
         headers: [],
         gzip: false,
-        retries: http.Retries(count: 3, statuses: [429, 502, 503, 504], backoff_ms: 1_000, max_backoff_ms: 30_000)
+        retries: http.Retries(count: 3, statuses: [429, 502, 503, 504], backoff: retries.backoff(first: time.seconds(1).must(), multiplier: 2.0, longest: time.seconds(30).must()).must())
     )
 
 # An exporter as OpenTelemetry's environment variables describe it:
@@ -1814,7 +1815,7 @@ record Exported
 # answer is no protobuf message; and as `http.send` fails. See also
 # `otlp_to`.
 function export_otlp(exporter: Otlp, body: [u8]) -> Exported?
-    partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, retries: exporter.retries, body: body)?
+    partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, policy: exporter.retries, body: body)?
     return ok(Exported(rejected: partial.rejected, message: partial.message))
 
 ## Tests

@@ -11,6 +11,7 @@
 use json
 use llm/openai/internal/fields
 use numbers
+use retries
 use strings
 use time
 
@@ -172,7 +173,7 @@ function wait_before(retry_after_ms: str, retry_after: str, received: time.Insta
     longest = time.milliseconds(LONGEST_MS).must()
 
     if retry_after != ""
-        match time.parse_retry_after(retry_after, received: received, longest: longest)
+        match retries.parse_retry_after(retry_after, received: received, longest: longest)
             .ok d  => return time.to_units(d, unit: .millisecond)
             .err _ => _ = 0
     shift: i64 @= attempt - 1

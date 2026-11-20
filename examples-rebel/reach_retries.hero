@@ -1,0 +1,24 @@
+# Reaches Rebel's `retries`, so that `heroes test` on this file runs the tests
+# of the package and of its private modules (spec § 12). It prints the waits
+# of a retry loop that gives up after four attempts, 100 ms doubling, with no
+# jitter, the same on every run: "100ms 200ms 400ms limit".
+
+use <rebel>/retries
+use <rebel>/time
+
+function main()
+    policy = retries.with_attempts(
+        retries.backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must(),
+        attempts: 4
+    ).must()
+    loop: retries.Retry @= retries.new_retry(policy)
+    said: [str] @= []
+
+    while true
+        match retries.next_wait(@loop, spent: time.Duration(nanoseconds: 0), fraction: 0.0)
+            .ok wait => said @ said.push(time.format_duration(wait))
+            .err e =>
+                said @ said.push(e.code)
+                break
+
+    print(said.join(" "))

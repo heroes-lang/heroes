@@ -259,7 +259,7 @@ capability errors/advice  whether a failure may pass if sent again, and after ho
   go      -
   rust    -
   python  RetryableError
-  note    `retryable` and `wait_ms` from the status, `x-should-retry` and `retry-after` (seconds or a date, through `time.parse_retry_after`); the SDKs keep this inside their retry loop
+  note    `retryable` and `wait_ms` from the status, `x-should-retry` and `retry-after` (seconds or a date, through `retries.parse_retry_after`); the SDKs keep this inside their retry loop
 
 capability errors/request-id  the id of a request, for support
   heroes  llm/anthropic.ApiError

@@ -93,6 +93,7 @@ use http2
 use io
 use json
 use net
+use retries
 use strings
 use threads
 use time
@@ -1149,12 +1150,12 @@ record Retries
     # The statuses after which it is sent again: `[429, 500, 502, 503, 504]`
     # in `default_client`.
     statuses: [i64]
-    # The milliseconds waited before the first retry, doubled before each
-    # next, 0 or more.
-    backoff_ms: i64
-    # The most milliseconds waited before one retry, a `Retry-After` the
-    # server sends included.
-    max_backoff_ms: i64
+    # The waits before the retries: `retries.backoff`'s, 100 ms doubled up to
+    # 10 s in `default_client`; its jitter is drawn from the system's
+    # generator where it spreads the waits, and its `longest` holds a
+    # `Retry-After` the server asks too. Its own limits on attempts and time
+    # are not read: `count` and the client's `deadline_ms` are.
+    backoff: retries.Backoff
 
 # How a client sends: made by `default_client`, its fields changed by the
 # program.
@@ -1201,7 +1202,7 @@ function default_client() -> Client
         deadline_ms: 30_000,
         limits: default_limits(),
         roots: "",
-        retries: Retries(count: 0, statuses: [429, 500, 502, 503, 504], backoff_ms: 100, max_backoff_ms: 10_000),
+        retries: Retries(count: 0, statuses: [429, 500, 502, 503, 504], backoff: retries.backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must()),
         proxy: no_proxy(),
         user_agent: USER_AGENT
     )
@@ -1305,6 +1306,7 @@ function fetch_once(@s: Session, r: Request) -> Response?
 
     c = s.client
     tries: i64 @= 0
+    last_wait: time.Duration @= time.Duration(nanoseconds: 0)
 
     while true
         now = time.now()?
@@ -1360,7 +1362,7 @@ function fetch_once(@s: Session, r: Request) -> Response?
                 bounds: wire.Bounds(head_bytes: c.limits.head_bytes, field_count: c.limits.field_count, body_bytes: c.limits.body_bytes)
             )
         retry = policy.is_idempotent(out.method) && tries < c.retries.count
-        wait: i64 @= policy.backoff_ms(attempt: tries + 1, base: c.retries.backoff_ms, most: c.retries.max_backoff_ms)
+        wait: time.Duration @= time.Duration(nanoseconds: 0)
 
         match outcome
             .ok m =>
@@ -1386,20 +1388,28 @@ function fetch_once(@s: Session, r: Request) -> Response?
 
                 if !retry || !policy.has_status(c.retries.statuses, status: answer.status)
                     return decode_body(answer, limit: c.limits.body_bytes)
+                wait @ retries.drawn_wait(c.retries.backoff, failures: tries + 1, previous: last_wait)?
+                last_wait @ wait
 
-                match policy.retry_after_ms(value_of(answer.headers, name: "Retry-After").default(""), now: now)
-                    .ok after => wait @ policy.at_most(n: after, most: c.retries.max_backoff_ms)
+                match retries.parse_retry_after(value_of(answer.headers, name: "Retry-After").default(""), received: now, longest: c.retries.backoff.longest)
+                    .ok after => wait @ after
                     .err _    => _ = 0
 
-                if !policy.may_wait(deadline_ms: c.deadline_ms, start: start, wait_ms: wait)?
+                if !policy.may_wait(deadline_ms: c.deadline_ms, start: start, wait_ms: time.to_units(wait, unit: .millisecond))?
                     return decode_body(answer, limit: c.limits.body_bytes)
             .err e =>
                 transient = e.code == CLOSED || e.code == TIMEOUT || e.code == FAILED
 
-                if !retry || !transient || !policy.may_wait(deadline_ms: c.deadline_ms, start: start, wait_ms: wait)?
+                if !retry || !transient
+                    return fail(code: e.code, msg: e.msg)
+                wait @ retries.drawn_wait(c.retries.backoff, failures: tries + 1, previous: last_wait)?
+                last_wait @ wait
+
+                if !policy.may_wait(deadline_ms: c.deadline_ms, start: start, wait_ms: time.to_units(wait, unit: .millisecond))?
                     return fail(code: e.code, msg: e.msg)
 
-        policy.pause(wait)
+        if wait.nanoseconds > 0
+            time.sleep(wait)
         tries @ tries + 1
 
 # The response to `r`, sent to the `http://` or `https://` URL it names on a

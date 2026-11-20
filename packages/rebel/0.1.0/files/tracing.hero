@@ -33,6 +33,7 @@ use http
 use log
 use numbers
 use random
+use retries
 use strings
 use time
 use tracing/internal/fixture
@@ -875,7 +876,7 @@ function otlp_to(target: str) -> Otlp
         url: target,
         headers: [],
         gzip: false,
-        retries: http.Retries(count: 3, statuses: [429, 502, 503, 504], backoff_ms: 1_000, max_backoff_ms: 30_000)
+        retries: http.Retries(count: 3, statuses: [429, 502, 503, 504], backoff: retries.backoff(first: time.seconds(1).must(), multiplier: 2.0, longest: time.seconds(30).must()).must())
     )
 
 # An exporter of `signal` as OpenTelemetry's environment variables describe
@@ -1098,7 +1099,7 @@ function export_spans(@tracer: Tracer, exporter: Otlp) -> Exported?
         else
             512
         batch = tracer.ended.slice(from: 0, to: count)
-        partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, retries: exporter.retries, body: encode_spans(batch, resource: tracer.resource, scope: tracer.scope))?
+        partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, policy: exporter.retries, body: encode_spans(batch, resource: tracer.resource, scope: tracer.scope))?
         tracer.ended @ tracer.ended.slice(from: count, to: tracer.ended.len())
         rejected @ rejected + partial.rejected
 
@@ -1308,7 +1309,7 @@ function encode_logs(records: [LogRecord], resource: [Attribute], scope: Scope) 
 function export_logs(exporter: Otlp, records: [LogRecord], resource: [Attribute], scope: Scope) -> Exported?
     if records.len() == 0
         return ok(Exported(rejected: 0, message: ""))
-    partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, retries: exporter.retries, body: encode_logs(records, resource: resource, scope: scope))?
+    partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, policy: exporter.retries, body: encode_logs(records, resource: resource, scope: scope))?
     return ok(Exported(rejected: partial.rejected, message: partial.message))
 
 ## Tests

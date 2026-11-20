@@ -55,21 +55,6 @@ function cut_name(name: str) -> str
 
     return kept.join("")
 
-# A number from 0 up to 1, 1 left out, of the first seven of `drawn`: their
-# 53 high bits over 2^53, so every value an `f64` spaces evenly there can
-# come. Fewer than seven bytes count as zeros after them.
-function fraction_of(drawn: [u8]) -> f64
-    n: i64 @= 0
-
-    for i in range(from: 0, to: 7)
-        b: i64 @= 0
-
-        if i < drawn.len()
-            b @ to_i64(drawn[i]).must()
-        n @ n << 8 | b
-
-    return to_f64(n >> 3) / 9007199254740992.0
-
 test "check_name: empty where it may and may not be, the longest, one past, and a zero byte"
     check_name(what: "k", name: "", empty_allowed: true).must()
 
@@ -90,11 +75,3 @@ test "cut_name: short kept whole, long cut at a character's edge"
     assert cut_name("box:12") == "box:12"
     cut = cut_name("a" + repeat("é", 200))
     assert cut.len() == 255 && cut == "a" + repeat("é", 127)
-
-test "fraction_of: zeros, every bit, the high bits alone, and fewer bytes than seven"
-    assert fraction_of([0, 0, 0, 0, 0, 0, 0]) == 0.0
-    top = fraction_of([255, 255, 255, 255, 255, 255, 255])
-    assert top < 1.0 && top > 0.9999999999999998
-    assert fraction_of([128, 0, 0, 0, 0, 0, 0]) == 0.5
-    assert fraction_of([64]) == 0.25
-    assert fraction_of([]) == 0.0
