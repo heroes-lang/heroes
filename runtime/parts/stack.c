@@ -670,14 +670,7 @@ void hero_stack_spell(const char *text) { (void)text; }
 static LONG WINAPI hero_stack_asan_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
         hero_stack_tell_first();
-        const char *s = "panic: stack exhausted\n";
-        size_t n = strlen(s);
-        while (n > 0) {
-            int put = _write(2, s, (unsigned int)n);
-            if (put <= 0) break;
-            s += (size_t)put;
-            n -= (size_t)put;
-        }
+        hero_stderr_put("panic: stack exhausted\n", 23);
         hero_abort();
     }
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
@@ -1249,20 +1242,13 @@ static void hero_stack_guard_install(void) {
 #include <windows.h>
 #include <io.h>
 
-/* `_write` until every byte is out, as `hero_stack_say` loops on POSIX: the
- * CRT may write fewer bytes than it was handed, and a sentence cut short is a
- * contract broken on the one platform nobody reads it on. */
-static void hero_stack_veh_say(const char *s) {
-    size_t n = strlen(s);
-    while (n > 0) {
-        int put = _write(2, s, (unsigned int)n);
-        if (put <= 0) return;
-        s += (size_t)put;
-        n -= (size_t)put;
-    }
-}
+/* Through `hero_stderr_put` (`parts/panic.c`), as `hero_stack_say` writes on
+ * POSIX: every byte out, a piece at a time, past stderr's locks, and never
+ * waiting on a reader that takes nothing (defect 2606). It looped on `_write`
+ * until then, which waits on the descriptor's lock a blocked writer holds. */
+static void hero_stack_veh_say(const char *s) { hero_stderr_put(s, strlen(s)); }
 
-/* The POSIX arm's `hero_stack_say_hex`, in this platform's `_write`: the same
+/* The POSIX arm's `hero_stack_say_hex`, through the same writer: the same
  * digits, from the one writer above the platform split. */
 static void hero_stack_veh_say_hex(uintptr_t v) {
     char buf[HERO_HEX_BUF];
