@@ -3,7 +3,8 @@
 # that write it in the fewest bits.
 #
 # A segment here is a `Piece`, the face's `Segment` made plain: a mode index
-# and its bytes, since a private module cannot name its own face's types.
+# and its bytes, with a sixth case the face does not offer, the header of a
+# structured append that `make_sequence` writes before each symbol's data.
 # Bits are held one to a `u8`, 0 or 1, a symbol holding at most 23,648 of
 # data.
 

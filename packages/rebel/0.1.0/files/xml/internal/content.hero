@@ -56,14 +56,14 @@ function read_element(text: str, at: i64, max_depth: i64, @events: [event.Event]
             i @ got.end
         else if b != '<'
             i @ text_run(text: text, at: i, pieces: @pieces)?
-        else if markup.holds_at(text: text, at: i, word: "<![CDATA[")
+        else if strings.has_prefix_at(s: text, prefix: "<![CDATA[", at: i)
             got = markup.read_cdata(text: text, at: i)?
             pieces @ pieces.push(got.value)
             i @ got.end
         else
             flush(events: @events, pieces: @pieces)
 
-            if markup.holds_at(text: text, at: i, word: "</")
+            if strings.has_prefix_at(s: text, prefix: "</", at: i)
                 top = depth - 1
                 close = end_tag_end(text: text, at: i, raw: raws[top], opened: opened[top])?
                 events @ events.push(event.of_text(kind: event.END, s: ""))
@@ -73,15 +73,15 @@ function read_element(text: str, at: i64, max_depth: i64, @events: [event.Event]
 
                 if depth == 0
                     return ok(i)
-            else if markup.holds_at(text: text, at: i, word: "<!--")
+            else if strings.has_prefix_at(s: text, prefix: "<!--", at: i)
                 got = markup.read_comment(text: text, at: i)?
                 events @ events.push(event.of_text(kind: event.COMMENT, s: got.value))
                 i @ got.end
-            else if markup.holds_at(text: text, at: i, word: "<?")
+            else if strings.has_prefix_at(s: text, prefix: "<?", at: i)
                 got = markup.read_instruction(text: text, at: i)?
                 events @ events.push(event.instruction(target: got.target, data: got.data))
                 i @ got.end
-            else if markup.holds_at(text: text, at: i, word: "<!")
+            else if strings.has_prefix_at(s: text, prefix: "<!", at: i)
                 return fail(
                     code: scan.INVALID,
                     msg: scan.said(text: text, at: i, what: "`<!` opens no comment and no CDATA section here, and a document type declaration stands only before the root")
@@ -133,7 +133,7 @@ function text_run(text: str, at: i64, @pieces: [str]) -> i64?
     j: i64 @= at
 
     while j < text.len() && text[j] != '<' && text[j] != '&'
-        if text[j] == ']' && markup.holds_at(text: text, at: j, word: "]]>")
+        if text[j] == ']' && strings.has_prefix_at(s: text, prefix: "]]>", at: j)
             return fail(
                 code: scan.INVALID,
                 msg: scan.said(text: text, at: j, what: "`]]>` stands in text, where XML allows it only to end a CDATA section: write it `]]&gt;`")

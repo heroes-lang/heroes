@@ -87,12 +87,12 @@ function make(from: json.Value, to: json.Value, tests: bool) -> [ops.Op]
                             m
                         prefix: i64 @= 0
 
-                        while prefix < shorter && json.equal(a: l.items[prefix], b: r.items[prefix])
+                        while prefix < shorter && json.equals(a: l.items[prefix], b: r.items[prefix])
                             prefix @ prefix + 1
 
                         suffix: i64 @= 0
 
-                        while suffix < shorter - prefix && json.equal(a: l.items[n - 1 - suffix], b: r.items[m - 1 - suffix])
+                        while suffix < shorter - prefix && json.equals(a: l.items[n - 1 - suffix], b: r.items[m - 1 - suffix])
                             suffix @ suffix + 1
 
                         a = n - prefix - suffix
@@ -126,7 +126,7 @@ function make(from: json.Value, to: json.Value, tests: bool) -> [ops.Op]
                     .null_value | .boolean _ | .number _ | .text _ | .object _ => _ = 0
             .null_value | .boolean _ | .number _ | .text _ => _ = 0
 
-        if !handled && !json.equal(a: left, b: right)
+        if !handled && !json.equals(a: left, b: right)
             emit(out: @out, op: ops.Op(kind: ops.REPLACE, path: path, from: "", value: right), old: left, tests: tests)
 
     return out
@@ -177,11 +177,11 @@ test "make: every patch it makes turns the first value into the second, tested o
     for pair in pairs
         from = json.parse(pair[0]).must()
         to = json.parse(pair[1]).must()
-        assert json.equal(
+        assert json.equals(
             a: apply.run(from, operations: make(from: from, to: to, tests: false), loose: loose).must(),
             b: to
         )
-        assert json.equal(
+        assert json.equals(
             a: apply.run(from, operations: make(from: from, to: to, tests: true), loose: loose).must(),
             b: to
         )

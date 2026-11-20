@@ -16,6 +16,7 @@
 # one zero byte. Nothing is quoted and no shell reads it.
 
 use io/hero_stream
+use process/internal/fixture
 
 extern "hero_proc.h"
     # A process the layer started and the program holds. It is a handle the
@@ -64,16 +65,6 @@ extern "hero_proc.h"
     # the stream `hero_proc_pipe` begins, declared here because a mark names
     # a call of its own module. A program closes one through `io/hero_stream`.
     function hero_stream_close(s: hero_stream.Stream consumes) -> i64
-
-# What the tests below need of the runtime, and nothing else here does: a
-# folder made and removed, this process's number, which keeps two runs'
-# folders apart, and the suffix that tells Windows from the rest.
-extern "hero_os.h"
-    constant HERO_OS_OK: i64
-    function hero_fs_mkdir_all(path: cstr lent) -> i64
-    function hero_dir_remove_tree(path: cstr lent) -> i64
-    function hero_os_pid() -> i64
-    function hero_run_exe_suffix() -> str
 
 # The process `program` started as, or `nullptr`; no process was started
 # where it is `nullptr`. `program` is a path where it holds a separator, else
@@ -174,136 +165,6 @@ extern "hero_stream.h"
 
 ## Tests
 
-# Whether the tests run on Windows, asked of the runtime as the compiler asks
-# it: the one system whose programs need `.exe` to be started.
-function on_windows() -> bool
-    return hero_run_exe_suffix() == ".exe"
-
-# The words as the one list C reads: each followed by a zero byte.
-function packed(words: [str]) -> [u8]
-    out: [u8] @= []
-
-    for word in words
-        for i in range(from: 0, to: word.len())
-            out @ out.push(word[i])
-
-        out @ out.push(0)
-
-    return out
-
-# Everything `s` holds up to its end.
-function drained(s: hero_stream.Stream) -> [u8]
-    out: [u8] @= []
-    part: [u8] @= []
-
-    while true
-        got = hero_stream.read(s, @part, n: 256)
-
-        if got <= 0
-            return out
-
-        for i in range(from: 0, to: got)
-            out @ out.push(part[i])
-
-# The bytes as text, without the line ending a child printed after it, which
-# is two bytes on Windows.
-function line(bytes: [u8]) -> str
-    end: i64 @= bytes.len()
-
-    while end > 0 && (bytes[end - 1] == 10 || bytes[end - 1] == 13)
-        end @ end - 1
-
-    return bytes.slice(from: 0, to: end).validated_bytes().must()
-
-# Whether `text` ends with `tail`.
-function ends_with(text: str, tail: str) -> bool
-    return text.len() >= tail.len() && text.slice(from: text.len() - tail.len(), to: text.len()) == tail
-
-# The three kinds of a child the tests neither feed nor read.
-function quiet() -> [i64]
-    return [HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_NOTHING]
-
-# A child with its lists already bytes and no stream of the program's.
-function begun(program: str, arguments: [u8], environment_kind: i64, environment: [u8], folder: str, kinds: [i64]) -> Proc
-    words: [u8] @= arguments
-    variables: [u8] @= environment
-    return start(
-        program: program,
-        arguments: @words,
-        arguments_count: words.len().to_u64().must(),
-        environment_kind: environment_kind,
-        environment: @variables,
-        environment_count: variables.len().to_u64().must(),
-        folder: folder,
-        in_kind: kinds[0],
-        in_stream: nullptr,
-        out_kind: kinds[1],
-        out_stream: nullptr,
-        err_kind: kinds[2],
-        err_stream: nullptr
-    )
-
-# A child of `program` with `words`, this process's environment, and `folder`.
-function child(program: str, words: [str], folder: str, kinds: [i64]) -> Proc
-    none: [u8] = []
-    return begun(
-        program: program,
-        arguments: packed(words),
-        environment_kind: HERO_PROC_ENV_PARENT,
-        environment: none,
-        folder: folder,
-        kinds: kinds
-    )
-
-# The system's own shell, which the tests' children are: `sh`, and on
-# Windows `cmd.exe`.
-function shell_program() -> str
-    if on_windows()
-        return "cmd.exe"
-
-    return "sh"
-
-# The shell's arguments for one command of `words`: `-c` and the command as
-# one word, and on Windows `/c` and each word, which `cmd.exe` joins itself.
-function shell_words(words: [str]) -> [str]
-    if on_windows()
-        out: [str] @= ["/c"]
-
-        for word in words
-            out @ out.push(word)
-
-        return out
-
-    return ["-c", join(words, " ")]
-
-# The shell running one command.
-function shell(words: [str], folder: str, kinds: [i64]) -> Proc
-    return child(program: shell_program(), words: shell_words(words), folder: folder, kinds: kinds)
-
-# The system's own program that copies its input to its output and ends when
-# the input does: `cat`, and on Windows `sort`, which one line passes through
-# unchanged. With a pipe nobody closes as its input it runs until it is ended.
-function echoer() -> str
-    if on_windows()
-        return "sort"
-
-    return "cat"
-
-# The folder a test works in, made new under `build/` of the folder the tests
-# run from, and its name, which holds this process's number.
-function scratch_name(name: str) -> str
-    return f"rebel-hero_proc-{hero_os_pid()}-{name}"
-
-# The folder of that name, made.
-function scratch(name: str) -> str
-    folder = "build/" + scratch_name(name)
-    _ = hero_fs_mkdir_all(folder.cstr())
-    return folder
-
-# Whether `folder` is gone, removed with everything a test left in it.
-function cleared(folder: str) -> bool
-    return hero_dir_remove_tree(folder.cstr()) == HERO_OS_OK
-
 # The edge the language itself shuts first: a process released is a name the
 # compiler refuses to read again, so what reaches C as no process is `nullptr`.
 test "nullptr is no process: every door answers -1 or nullptr with HERO_PROC_NOT_OPEN, the layer's own refusal"
@@ -331,49 +192,49 @@ test "nullptr is no process: every door answers -1 or nullptr with HERO_PROC_NOT
 
 test "what the layer refuses before any child: no program, a list with no zero at its end, a variable with no `=`, and kinds that are none"
     none: [u8] = []
-    no_program = begun(
+    no_program = fixture.begun(
         program: "",
         arguments: none,
         environment_kind: HERO_PROC_ENV_PARENT,
         environment: none,
         folder: "",
-        kinds: quiet()
+        kinds: fixture.quiet()
     )
     assert no_program == nullptr
     assert last_error() == HERO_PROC_INVALID
     assert last_os_error() == 0
-    unended = begun(
-        program: echoer(),
+    unended = fixture.begun(
+        program: fixture.copier(),
         arguments: [97],
         environment_kind: HERO_PROC_ENV_PARENT,
         environment: none,
         folder: "",
-        kinds: quiet()
+        kinds: fixture.quiet()
     )
     assert unended == nullptr
     assert last_error() == HERO_PROC_INVALID
-    bare = begun(
-        program: echoer(),
+    bare = fixture.begun(
+        program: fixture.copier(),
         arguments: none,
         environment_kind: HERO_PROC_ENV_GIVEN,
         environment: [65, 0],
         folder: "",
-        kinds: quiet()
+        kinds: fixture.quiet()
     )
     assert bare == nullptr
     assert last_error() == HERO_PROC_INVALID
-    no_such_environment = begun(
-        program: echoer(),
+    no_such_environment = fixture.begun(
+        program: fixture.copier(),
         arguments: none,
         environment_kind: 2,
         environment: none,
         folder: "",
-        kinds: quiet()
+        kinds: fixture.quiet()
     )
     assert no_such_environment == nullptr
     assert last_error() == HERO_PROC_INVALID
-    no_such_kind = begun(
-        program: echoer(),
+    no_such_kind = fixture.begun(
+        program: fixture.copier(),
         arguments: none,
         environment_kind: HERO_PROC_ENV_PARENT,
         environment: none,
@@ -391,13 +252,13 @@ test "the largest list: one argument past 4,096 is HERO_PROC_LIMIT, and no child
         many @ many.push(0)
 
     none: [u8] = []
-    refused = begun(
-        program: echoer(),
+    refused = fixture.begun(
+        program: fixture.copier(),
         arguments: many,
         environment_kind: HERO_PROC_ENV_PARENT,
         environment: none,
         folder: "",
-        kinds: quiet()
+        kinds: fixture.quiet()
     )
     assert refused == nullptr
     assert last_error() == HERO_PROC_LIMIT
@@ -407,7 +268,7 @@ test "a stream that is none, handed as the child's input: nullptr with HERO_PROC
     words: [u8] @= []
     variables: [u8] @= []
     refused = start(
-        program: echoer(),
+        program: fixture.copier(),
         arguments: @words,
         arguments_count: 0,
         environment_kind: HERO_PROC_ENV_PARENT,
@@ -426,24 +287,34 @@ test "a stream that is none, handed as the child's input: nullptr with HERO_PROC
 
 test "a program that is not there: nullptr with HERO_PROC_NOT_FOUND at the start, by name and by path"
     no_words: [str] = []
-    by_name = child(program: "rebel-no-such-program", words: no_words, folder: "", kinds: quiet())
+    by_name = fixture.child(program: "rebel-no-such-program", words: no_words, folder: "", kinds: fixture.quiet())
     assert by_name == nullptr
     assert last_error() == HERO_PROC_NOT_FOUND
     assert last_os_error() != 0
-    by_path = child(program: "build/rebel-no-such-folder/program", words: no_words, folder: "", kinds: quiet())
+    by_path = fixture.child(
+        program: "build/rebel-no-such-folder/program",
+        words: no_words,
+        folder: "",
+        kinds: fixture.quiet()
+    )
     assert by_path == nullptr
     assert last_error() == HERO_PROC_NOT_FOUND
     assert last_os_error() != 0
 
 test "a folder that is not there: nullptr with HERO_PROC_NOT_A_DIRECTORY, never a missing program's kind"
     no_words: [str] = []
-    lost = child(program: echoer(), words: no_words, folder: "build/rebel-no-such-folder", kinds: quiet())
+    lost = fixture.child(
+        program: fixture.copier(),
+        words: no_words,
+        folder: "build/rebel-no-such-folder",
+        kinds: fixture.quiet()
+    )
     assert lost == nullptr
     assert last_error() == HERO_PROC_NOT_A_DIRECTORY
     assert last_os_error() != 0
 
 test "a child's output read through a pipe: its bytes, then the end, and its exit code 0"
-    p @= shell(
+    p @= fixture.shell(
         words: ["echo", "hello"],
         folder: "",
         kinds: [HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING]
@@ -453,7 +324,7 @@ test "a child's output read through a pipe: its bytes, then the end, and its exi
     assert id(p) > 0
     out @= pipe(p, HERO_PROC_OUTPUT)
     assert out != nullptr
-    assert line(drained(out)) == "hello"
+    assert fixture.line(fixture.drained(out)) == "hello"
     code: i64 @= 7
     by: i64 @= 7
     assert wait(p, code: @code, by_signal: @by) == 0
@@ -462,7 +333,7 @@ test "a child's output read through a pipe: its bytes, then the end, and its exi
     assert release(@p) == 0
 
 test "a pipe's end is taken once: taken again, never asked for, or of no such stream, it is nullptr with HERO_PROC_INVALID"
-    p @= shell(
+    p @= fixture.shell(
         words: ["echo", "hello"],
         folder: "",
         kinds: [HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING]
@@ -478,14 +349,14 @@ test "a pipe's end is taken once: taken again, never asked for, or of no such st
     no_such = pipe(p, 3)
     assert no_such == nullptr
     assert last_error() == HERO_PROC_INVALID
-    assert line(drained(out)) == "hello"
+    assert fixture.line(fixture.drained(out)) == "hello"
     assert hero_stream.close(@out) == 0
     assert release(@p) == 0
 
 test "text written to a child's input comes back from its output, and closing the input ends the child"
     no_words: [str] = []
-    p @= child(
-        program: echoer(),
+    p @= fixture.child(
+        program: fixture.copier(),
         words: no_words,
         folder: "",
         kinds: [HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING]
@@ -497,7 +368,7 @@ test "text written to a child's input comes back from its output, and closing th
     text: [u8] @= [114, 101, 98, 101, 108, 10]
     assert hero_stream.write(input, @text, n: 6) == 6
     assert hero_stream.close(@input) == 0
-    assert line(drained(output)) == "rebel"
+    assert fixture.line(fixture.drained(output)) == "rebel"
     code: i64 @= 7
     by: i64 @= 7
     assert wait(p, code: @code, by_signal: @by) == 0
@@ -506,7 +377,7 @@ test "text written to a child's input comes back from its output, and closing th
     assert release(@p) == 0
 
 test "an exit code that is not zero is the code, and no signal"
-    p @= shell(words: ["exit", "3"], folder: "", kinds: quiet())
+    p @= fixture.shell(words: ["exit", "3"], folder: "", kinds: fixture.quiet())
     assert p != nullptr
     code: i64 @= 7
     by: i64 @= 7
@@ -515,7 +386,7 @@ test "an exit code that is not zero is the code, and no signal"
     assert release(@p) == 0
 
 test "a wait asked twice answers the same, and ended answers 1 after it"
-    p @= shell(words: ["exit", "5"], folder: "", kinds: quiet())
+    p @= fixture.shell(words: ["exit", "5"], folder: "", kinds: fixture.quiet())
     assert p != nullptr
     code: i64 @= 7
     by: i64 @= 7
@@ -532,8 +403,8 @@ test "a wait asked twice answers the same, and ended answers 1 after it"
 # ended; the pipe's end is closed only after.
 test "a child ended at once: its wait answers the signal, or on Windows the kill's code, and stopping it again sends nothing"
     no_words: [str] = []
-    p @= child(
-        program: echoer(),
+    p @= fixture.child(
+        program: fixture.copier(),
         words: no_words,
         folder: "",
         kinds: [HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_NOTHING]
@@ -550,7 +421,7 @@ test "a child ended at once: its wait answers the signal, or on Windows the kill
     by: i64 @= 7
     assert wait(p, code: @code, by_signal: @by) == 0
 
-    if on_windows()
+    if fixture.on_windows()
         assert code == 1 && by == 0
     else
         assert code == -1 && by == 9
@@ -565,8 +436,8 @@ test "a child ended at once: its wait answers the signal, or on Windows the kill
 
 test "a request to end: SIGTERM ends the child, and on Windows it is HERO_PROC_UNSUPPORTED and the child runs on until it is killed"
     no_words: [str] = []
-    p @= child(
-        program: echoer(),
+    p @= fixture.child(
+        program: fixture.copier(),
         words: no_words,
         folder: "",
         kinds: [HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_NOTHING]
@@ -574,7 +445,7 @@ test "a request to end: SIGTERM ends the child, and on Windows it is HERO_PROC_U
     assert p != nullptr
     asked = terminate(p)
 
-    if on_windows()
+    if fixture.on_windows()
         assert asked == -1
         assert last_error() == HERO_PROC_UNSUPPORTED
         assert ended(p) == 0
@@ -585,50 +456,50 @@ test "a request to end: SIGTERM ends the child, and on Windows it is HERO_PROC_U
     by: i64 @= 7
     assert wait(p, code: @code, by_signal: @by) == 0
 
-    if on_windows()
+    if fixture.on_windows()
         assert code == 1 && by == 0
     else
         assert code == -1 && by == 15
     assert release(@p) == 0
 
 test "a child given a working folder prints it, and this process's folder is not moved"
-    folder = scratch("folder")
+    folder = fixture.scratch("folder")
     command: str @= "pwd"
 
-    if on_windows()
+    if fixture.on_windows()
         command @ "cd"
-    p @= shell(
+    p @= fixture.shell(
         words: [command],
         folder: folder,
         kinds: [HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING]
     )
     assert p != nullptr
     out @= pipe(p, HERO_PROC_OUTPUT)
-    assert ends_with(text: line(drained(out)), tail: scratch_name("folder"))
+    assert fixture.ends_with(text: fixture.line(fixture.drained(out)), tail: fixture.scratch_name("folder"))
     code: i64 @= 7
     by: i64 @= 7
     assert wait(p, code: @code, by_signal: @by) == 0
     assert code == 0 && by == 0
     assert hero_stream.close(@out) == 0
     assert release(@p) == 0
-    assert cleared(folder)
+    assert fixture.cleared(folder)
 
 test "a given environment is the child's own: it reads the variable it was handed"
     variable: str @= "$REBEL_WORD"
 
-    if on_windows()
+    if fixture.on_windows()
         variable @ "%REBEL_WORD%"
-    p @= begun(
-        program: shell_program(),
-        arguments: packed(shell_words(["echo", variable])),
+    p @= fixture.begun(
+        program: fixture.shell_program(),
+        arguments: fixture.packed(fixture.shell_words(["echo", variable])),
         environment_kind: HERO_PROC_ENV_GIVEN,
-        environment: packed(["REBEL_WORD=bowie"]),
+        environment: fixture.packed(["REBEL_WORD=bowie"]),
         folder: "",
         kinds: [HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING]
     )
     assert p != nullptr
     out @= pipe(p, HERO_PROC_OUTPUT)
-    assert line(drained(out)) == "bowie"
+    assert fixture.line(fixture.drained(out)) == "bowie"
     code: i64 @= 7
     by: i64 @= 7
     assert wait(p, code: @code, by_signal: @by) == 0
@@ -640,10 +511,10 @@ test "a stream the program holds is the child's output and its error: a pipe of 
     reader: hero_stream.Stream @= nullptr
     writer: hero_stream.Stream @= nullptr
     assert hero_stream.pipe(reader: @reader, writer: @writer) == 0
-    words: [u8] @= packed(shell_words(["echo", "hello"]))
+    words: [u8] @= fixture.packed(fixture.shell_words(["echo", "hello"]))
     variables: [u8] @= []
     p @= start(
-        program: shell_program(),
+        program: fixture.shell_program(),
         arguments: @words,
         arguments_count: words.len().to_u64().must(),
         environment_kind: HERO_PROC_ENV_PARENT,
@@ -659,7 +530,7 @@ test "a stream the program holds is the child's output and its error: a pipe of 
     )
     assert p != nullptr
     assert hero_stream.close(@writer) == 0
-    assert line(drained(reader)) == "hello"
+    assert fixture.line(fixture.drained(reader)) == "hello"
     code: i64 @= 7
     by: i64 @= 7
     assert wait(p, code: @code, by_signal: @by) == 0
@@ -672,8 +543,8 @@ test "a stream the program holds is the child's output and its error: a pipe of 
 # it, so nothing outlives the test.
 test "a process released while it runs is given back at once, and its pipe never taken is closed"
     no_words: [str] = []
-    p @= child(
-        program: echoer(),
+    p @= fixture.child(
+        program: fixture.copier(),
         words: no_words,
         folder: "",
         kinds: [HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_NOTHING]

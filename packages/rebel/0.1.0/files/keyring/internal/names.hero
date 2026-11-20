@@ -1,22 +1,12 @@
 # What `keyring` checks before it asks the system: a service and an account
 # are text the layer can hand to C, so no zero byte (`.cstr()` would abort on
-# one), a service not empty, each at most `NAME_MOST` bytes, and a secret at
-# most `SECRET_MOST` bytes. Each refusal is `invalid`, its message what was
-# asked and what was wrong, so the floor is never handed what it refuses.
+# one), a service not empty, each at most `MAX_NAME_BYTES` bytes, and a secret
+# at most `MAX_SECRET_BYTES` bytes. Each refusal is `invalid`, its message
+# what was asked and what was wrong, so the floor is never handed what it
+# refuses.
 
 use bytes
-use keyring/hero_keyring
-use keyring/internal/failure
-
-# The most bytes a service or an account holds: the layer's
-# `HERO_KEYRING_NAME_MOST`, written here so the face can name it.
-constant NAME_MOST: i64
-    1024
-
-# The most bytes a secret holds, on every platform: the layer's
-# `HERO_KEYRING_SECRET_MOST`.
-constant SECRET_MOST: i64
-    2560
+use keyring
 
 # Whether `s` holds a zero byte.
 function has_zero(s: str) -> bool
@@ -30,8 +20,8 @@ function has_zero(s: str) -> bool
     return false
 
 # `name`, the service where `is_service`, else the account, checked: no zero
-# byte, at most `NAME_MOST` bytes, and a service not empty. Fails `invalid`,
-# its message `asked` then what was wrong.
+# byte, at most `MAX_NAME_BYTES` bytes, and a service not empty. Fails
+# `invalid`, its message `asked` then what was wrong.
 function checked_name(name: str, is_service: bool, asked: str) -> ()?
     what = if is_service
         "service"
@@ -40,18 +30,18 @@ function checked_name(name: str, is_service: bool, asked: str) -> ()?
 
     if is_service && name.len() == 0
         return fail(
-            code: failure.INVALID,
+            code: keyring.INVALID,
             msg: f"{asked}: the service is empty, and a service names the program's secrets"
         )
 
-    if name.len() > NAME_MOST
+    if name.len() > keyring.MAX_NAME_BYTES
         return fail(
-            code: failure.INVALID,
-            msg: f"{asked}: the {what} takes {name.len()} bytes, past the {NAME_MOST} a keyring holds"
+            code: keyring.INVALID,
+            msg: f"{asked}: the {what} takes {name.len()} bytes, past the {keyring.MAX_NAME_BYTES} a keyring holds"
         )
 
     if has_zero(name)
-        return fail(code: failure.INVALID, msg: f"{asked}: the {what} holds a zero byte, which no keyring takes")
+        return fail(code: keyring.INVALID, msg: f"{asked}: the {what} holds a zero byte, which no keyring takes")
     return ok()
 
 # The service and the account checked, the service first.
@@ -63,18 +53,14 @@ function checked(service: str, account: str, asked: str) -> ()?
 function checked_service(service: str, asked: str) -> ()?
     return checked_name(name: service, is_service: true, asked: asked)
 
-# A secret checked: at most `SECRET_MOST` bytes.
+# A secret checked: at most `MAX_SECRET_BYTES` bytes.
 function checked_secret(secret: [u8], asked: str) -> ()?
-    if secret.len() > SECRET_MOST
+    if secret.len() > keyring.MAX_SECRET_BYTES
         return fail(
-            code: failure.INVALID,
-            msg: f"{asked}: the secret takes {secret.len()} bytes, past the {SECRET_MOST} a keyring holds on every platform"
+            code: keyring.INVALID,
+            msg: f"{asked}: the secret takes {secret.len()} bytes, past the {keyring.MAX_SECRET_BYTES} a keyring holds on every platform"
         )
     return ok()
-
-test "NAME_MOST and SECRET_MOST: the layer's own bounds"
-    assert NAME_MOST == hero_keyring.HERO_KEYRING_NAME_MOST
-    assert SECRET_MOST == hero_keyring.HERO_KEYRING_SECRET_MOST
 
 test "has_zero: empty, none, at the start, at the end, and after a character of more than one byte"
     assert !has_zero("")
@@ -83,11 +69,11 @@ test "has_zero: empty, none, at the start, at the end, and after a character of 
     assert has_zero(bytes.to_text([97, 0]).must())
     assert has_zero(bytes.to_text([195, 169, 0]).must())
 
-test "checked: an empty service, an empty account, names at and past NAME_MOST, and the message"
+test "checked: an empty service, an empty account, names at and past MAX_NAME_BYTES, and the message"
     assert checked(service: "app", account: "", asked: "x").is_err() == false
     assert checked(service: "", account: "a", asked: "x").is_err()
-    at_most = repeat("s", to_u64(NAME_MOST).must())
-    past = repeat("s", to_u64(NAME_MOST + 1).must())
+    at_most = repeat("s", to_u64(keyring.MAX_NAME_BYTES).must())
+    past = repeat("s", to_u64(keyring.MAX_NAME_BYTES + 1).must())
     assert !checked(service: at_most, account: at_most, asked: "x").is_err()
     assert checked(service: past, account: "a", asked: "x").is_err()
     assert checked(service: "a", account: past, asked: "x").is_err()
@@ -95,15 +81,15 @@ test "checked: an empty service, an empty account, names at and past NAME_MOST, 
     match checked(service: "a", account: past, asked: "storing")
         .ok _ => assert false
         .err e =>
-            assert e.code == failure.INVALID
+            assert e.code == keyring.INVALID
             assert e.msg == "storing: the account takes 1025 bytes, past the 1024 a keyring holds"
 
-test "checked_secret: none, SECRET_MOST bytes, and one past"
+test "checked_secret: none, MAX_SECRET_BYTES bytes, and one past"
     none: [u8] = []
     assert !checked_secret(secret: none, asked: "x").is_err()
     full: [u8] @= []
 
-    for _ in range(from: 0, to: SECRET_MOST)
+    for _ in range(from: 0, to: keyring.MAX_SECRET_BYTES)
         full @ full.push(1)
 
     assert !checked_secret(secret: full, asked: "x").is_err()

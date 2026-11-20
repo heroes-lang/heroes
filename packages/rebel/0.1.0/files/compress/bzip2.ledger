@@ -33,7 +33,7 @@ capability bzip2/leading  a stream at the start of other bytes, and where it end
   note    -
 
 capability bzip2/levels  the block size, 100,000 to 900,000 bytes
-  heroes  compress/bzip2.MIN_LEVEL, compress/bzip2.MAX_LEVEL
+  heroes  compress/bzip2.Options, compress/bzip2.defaults, compress/bzip2.MIN_LEVEL, compress/bzip2.DEFAULT_LEVEL, compress/bzip2.MAX_LEVEL
   go      -
   rust    -
   python  bz2.compress(compresslevel=), BZ2Compressor(compresslevel=), BZ2File(compresslevel=), bz2.open(compresslevel=)

@@ -1,11 +1,15 @@
-# The charsets `mail` reads: UTF-8, US-ASCII and ISO-8859-1, by the names and
-# aliases mail writes them with, and the shared decision of what a byte of a
-# header that is not UTF-8 means. Another charset is `unsupported`, so a
-# caller can keep its bytes; the WHATWG legacy encodings wait for
-# `unicode/encodings`.
+# The charsets `mail` reads: UTF-8, US-ASCII and ISO-8859-1 by the names and
+# aliases mail writes them with, read here, and every other encoding of the
+# WHATWG standard read through `unicode/encodings`; and the shared decision
+# of what a byte of a header that is not UTF-8 means. ISO-8859-1 is read as
+# Latin-1, each byte the character of its number, where WHATWG reads its
+# label as Windows-1252; US-ASCII refuses a byte above 127, where WHATWG reads
+# its label as Windows-1252 too. A charset no encoding names is `unsupported`,
+# so a caller can keep its bytes.
 
 use bytes
 use strings
+use unicode/encodings
 
 # The code of a charset this package does not read.
 constant UNSUPPORTED: str
@@ -24,8 +28,8 @@ function normal(name: str) -> str
         .ok at => lowered.slice(from: 0, to: at)
         .err _ => lowered
 
-# Which of the three charsets `name` names: `utf-8`, `us-ascii` or
-# `iso-8859-1`, or "" for another.
+# Which of the three charsets read here `name` names: `utf-8`, `us-ascii` or
+# `iso-8859-1`, or "" for another, which `legacy` reads.
 function canonical(name: str) -> str
     return match normal(name)
         "utf-8" | "utf8" | "u8" | "utf" | "cp65001"                          => "utf-8"
@@ -33,12 +37,9 @@ function canonical(name: str) -> str
         "iso-8859-1" | "iso8859-1" | "iso_8859-1" | "8859" | "cp819" | "latin" | "latin1" | "latin-1" | "l1" | "iso-ir-100" => "iso-8859-1"
         _ => ""
 
-# Whether `name` is one of the three charsets this package reads.
-function is_read(name: str) -> bool
-    return canonical(name) != ""
-
-# `data` as text in the charset `name`. Fails `unsupported` for a charset
-# other than the three, `not_text` where the bytes are not text in it.
+# `data` as text in the charset `name`. Fails `unsupported` for a charset no
+# encoding names, and for one WHATWG reads as U+FFFD alone; `not_text` where
+# the bytes are not text in it.
 function decode(data: [u8], name: str) -> str?
     return match canonical(name)
         "utf-8" =>
@@ -49,11 +50,34 @@ function decode(data: [u8], name: str) -> str?
                     msg: f"{data.len()} bytes said to be UTF-8 are not: {where_not_utf8(data)}"
                 )
         "us-ascii"   => ascii(data)
-        "iso-8859-1" => ok(latin1(data))
-        _ => fail(
+        "iso-8859-1" => ok(encodings.decode_isomorphic(data))
+        _            => legacy(data, name: name)
+
+# `data` as text in the WHATWG encoding the charset `name` labels: Windows-1252,
+# the ISO-8859 family, KOI8, Shift_JIS, EUC-JP, ISO-2022-JP, GB18030, Big5,
+# EUC-KR and the rest. Fails `unsupported` where the label names none, or names
+# the encoding `replacement` (ISO-2022-KR, ISO-2022-CN, HZ), which reads any
+# bytes as one U+FFFD; `not_text` at the first sequence the encoding cannot
+# read.
+function legacy(data: [u8], name: str) -> str?
+    label = normal(name)
+
+    encoding = match encodings.name_of(label)
+        .ok found => found
+        .err _ => return fail(
             code: UNSUPPORTED,
-            msg: f"the charset \"{strings.trim(name)}\" is not UTF-8, US-ASCII or ISO-8859-1, the ones this package reads"
+            msg: f"the charset \"{strings.trim(name)}\" is no encoding this package reads"
         )
+
+    if encoding == encodings.REPLACEMENT
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"the charset \"{strings.trim(name)}\" is one the WHATWG encodings read as U+FFFD alone, so that its text cannot slip past a filter"
+        )
+
+    return match encodings.decode_strict(data, encoding: encoding)
+        .ok text => ok(text)
+        .err e   => fail(code: NOT_TEXT, msg: f"{data.len()} bytes said to be {encoding} are not: {e.msg}")
 
 # Where `data` first stops being UTF-8, as words.
 function where_not_utf8(data: [u8]) -> str
@@ -115,35 +139,22 @@ function ascii(data: [u8]) -> str?
 
     return ok(bytes.to_text(data).must())
 
-# `data` as ISO-8859-1: each byte the character of its number.
-function latin1(data: [u8]) -> str
-    out: [u8] @= []
-
-    for b in data
-        if b < 128
-            out @ out.push(b)
-        else
-            out @ out.push(192 + b / 64)
-            out @ out.push(128 + b % 64)
-
-    return bytes.to_text(out).must()
-
 # `data`, a header's bytes, as text: UTF-8 where it is (RFC 6532), and
 # ISO-8859-1 otherwise, one character a byte, so nothing is refused and
 # nothing is lost.
 function header_text(data: [u8]) -> str
     return match bytes.to_text(data)
         .ok text => text
-        .err _   => latin1(data)
+        .err _   => encodings.decode_isomorphic(data)
 
 ## Tests
 
 test "normal and canonical: case, spaces, a language, the aliases, another charset"
     assert normal(" UTF-8*en ") == "utf-8" && normal("") == ""
     assert canonical("UTF8") == "utf-8" && canonical("ASCII") == "us-ascii" && canonical("Latin1") == "iso-8859-1"
-    assert canonical("koi8-r") == "" && canonical("windows-1252") == "" && !is_read("shift_jis") && is_read("us-ascii")
+    assert canonical("koi8-r") == "" && canonical("windows-1252") == "" && canonical("shift_jis") == "" && canonical("us-ascii") == "us-ascii"
 
-test "decode: UTF-8, ASCII refusing a high byte, Latin-1 every byte, another charset unsupported"
+test "decode: UTF-8, ASCII refusing a high byte, Latin-1 every byte, a charset no encoding names unsupported"
     assert decode(bytes.from_text("café"), name: "utf-8").must() == "café"
     assert decode([], name: "utf-8").must() == ""
     assert decode([104, 105], name: "us-ascii").must() == "hi"
@@ -157,9 +168,24 @@ test "decode: UTF-8, ASCII refusing a high byte, Latin-1 every byte, another cha
         .ok _  => assert false
         .err e => assert e.code == NOT_TEXT
 
-    match decode([240], name: "koi8-r")
+    match decode([240], name: "utf-7")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED && e.msg == "the charset \"utf-7\" is no encoding this package reads"
+
+test "legacy: KOI8-R, Windows-1252's euro, Shift_JIS, a label with a language, ISO-2022-KR refused, and bytes the encoding cannot read"
+    assert decode([0xf0, 0xd2], name: "koi8-r").must() == "Пр"
+    assert decode([0x80], name: "Windows-1252").must() == "€"
+    assert decode([0x82, 0xa0], name: "shift_jis").must() == "あ"
+    assert decode([0xf0], name: "KOI8-R*ru").must() == "П"
+    assert decode([], name: "koi8-r").must() == ""
+
+    match decode([0x41], name: "iso-2022-kr")
         .ok _  => assert false
         .err e => assert e.code == UNSUPPORTED
+
+    match decode([0x82], name: "shift_jis")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
 
 test "utf8_width_at: one to four bytes, an overlong form, a surrogate, a cut character"
     assert utf8_width_at(data: [97], at: 0) == 1 && utf8_width_at(data: bytes.from_text("é"), at: 0) == 2
@@ -167,6 +193,6 @@ test "utf8_width_at: one to four bytes, an overlong form, a surrogate, a cut cha
     assert utf8_width_at(data: [0xc0, 0x80], at: 0) == 0 && utf8_width_at(data: [0xed, 0xa0, 0x80], at: 0) == 0
     assert utf8_width_at(data: [0xe2, 0x82], at: 0) == 0 && utf8_width_at(data: [0x80], at: 0) == 0
 
-test "latin1 and header_text: high bytes, UTF-8 kept, other bytes read as ISO-8859-1"
-    assert latin1([]) == "" && latin1([0xff, 0x41]) == "ÿA"
+test "header_text: high bytes, UTF-8 kept, other bytes read as ISO-8859-1"
+    assert header_text([]) == "" && header_text([0xff, 0x41]) == "ÿA"
     assert header_text(bytes.from_text("Grüße")) == "Grüße" && header_text([0x47, 0x72, 0xfc, 0xdf, 0x65]) == "Grüße"

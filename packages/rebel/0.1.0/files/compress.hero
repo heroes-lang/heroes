@@ -9,7 +9,9 @@
 # checksums alone, CRC-32 and Adler-32, are `hash`'s. The other formats are
 # subpackages, so only the programs that use one carry it: Zstandard is
 # `compress/zstd`'s, Brotli `compress/brotli`'s, bzip2 `compress/bzip2`'s, xz
-# and LZMA `compress/xz`'s. LZW is in none: each format that uses it fixes its
+# and LZMA `compress/xz`'s, LZ4 `compress/lz4`'s. Of them `compress/lz4`
+# alone reads and writes piece by piece and through an `io.Stream`, as this
+# package does; the other four read the whole input. LZW is in none: each format that uses it fixes its
 # own variant (GIF's codes lowest bit first, PDF's and TIFF's highest first,
 # with an early change), and the package that reads the format holds it.
 #

@@ -1,6 +1,6 @@
 # A patch's operations as the package's modules hold them, one record for the
 # six, and the patch read from a value and written as one. The face turns its
-# `Operation` into an `Op` and back, since a private module cannot read it.
+# `Operation` into an `Op` and back.
 
 use json
 

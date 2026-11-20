@@ -6,7 +6,10 @@
 #
 # A text is UTF-8 and a match never splits a character: every position here is
 # a byte index at a character's first byte, and `.` and a class read one
-# character, of however many bytes. Of the matches that begin at the leftmost
+# character, of however many bytes. Bytes that are not text are not searched
+# here: a `[u8]` is searched for bytes by `bytes`, and for many patterns at
+# once by `bytes.compile_patterns`. A glob, `*.txt`, is no pattern of this
+# package: the paths a glob names are `fs.glob`'s. Of the matches that begin at the leftmost
 # place the one taken is the one a backtracking engine would take, Perl's
 # rule: an alternative written first is preferred, a repetition takes as many
 # as it can, and a lazy one as few.
@@ -50,6 +53,7 @@ use regex/internal/escapes
 use regex/internal/iterate
 use regex/internal/parse
 use regex/internal/program
+use regex/internal/samples
 use regex/internal/simulate
 use regex/internal/template as filling
 use unicode
@@ -96,34 +100,49 @@ record Regex
     # The automaton the pattern compiled to, which the functions below run.
     compiled: program.Program
 
-# The pattern `pattern` compiled. Fails `invalid` where it is not a pattern
-# this package reads, the message saying which byte of it and why; fails
-# `limit` where a count is above `MAX_REPEAT`, the groups are more than
-# `MAX_GROUPS`, groups nest more than `MAX_NESTING` deep or the automaton
-# would have more than `MAX_STATES` states. It costs time linear in the
-# automaton it builds for each level of groups nested; compile once and keep
-# the answer.
+# The pattern `pattern` compiled.
+#
+# - `pattern`: the pattern, written as the module's opening comment says; the
+#   empty pattern matches the empty text everywhere.
+#
+# Fails `invalid` where it is not a pattern this package reads, the message
+# saying which byte of it and why; fails `limit` where a count is above
+# `MAX_REPEAT`, the groups are more than `MAX_GROUPS`, groups nest more than
+# `MAX_NESTING` deep or the automaton would have more than `MAX_STATES`
+# states. It costs time linear in the automaton it builds for each level of
+# groups nested; compile once and keep the answer.
 function compile(pattern: str) -> Regex?
     compiled = parse.compile(pattern)?
     return ok(Regex(pattern: pattern, compiled: compiled))
 
 # `s` with a `\` before each character a pattern reads specially, so that
-# compiled it matches `s` itself and nothing else. The characters are
-# `\ . + * ? ( ) | [ ] { } ^ $ -`.
+# compiled it matches `s` itself and nothing else.
+#
+# - `s`: the text to match as it stands; the empty text answers itself.
+#
+# The characters are `\ . + * ? ( ) | [ ] { } ^ $ -`.
 function escape(s: str) -> str
     return escapes.quote(s)
 
 # How many groups `re` captures, the whole match not counted.
+#
+# - `re`: the compiled pattern.
 function group_count(re: Regex) -> i64
     return re.compiled.groups
 
 # The name of each group of `re`, the group 1 first, "" for a group without a
 # name.
+#
+# - `re`: the compiled pattern.
 function group_names(re: Regex) -> [str]
     return re.compiled.names.slice(from: 1, to: re.compiled.names.len())
 
-# The number of the group of `re` named `name`. Fails `not_found` where no
-# group has that name.
+# The number of the group of `re` named `name`.
+#
+# - `re`: the compiled pattern.
+# - `name`: the group's name; the empty name names no group.
+#
+# Fails `not_found` where no group has that name.
 function group_number(re: Regex, name: str) -> i64?
     for i in range(from: 1, to: re.compiled.names.len())
         if name != "" && re.compiled.names[i] == name
@@ -153,15 +172,29 @@ record Match
     captured: capture.Groups
 
 # Whether `s` holds a match of `re`, anywhere in it.
+#
+# - `s`: the text searched.
+# - `re`: the compiled pattern.
 function contains(s: str, re: Regex) -> bool
     return !simulate.run_once(re.compiled, s: s, search: simulate.Search(from: 0, anchored: false, whole: false, not_empty_at: -1, groups: false)).is_err()
 
 # The first match of `re` in `s`: the leftmost, and of those the one Perl's
-# rule prefers. Fails `not_found` where `s` holds none.
+# rule prefers.
+#
+# - `s`: the text searched.
+# - `re`: the compiled pattern.
+#
+# Fails `not_found` where `s` holds none.
 function search(s: str, re: Regex) -> Match?
     return search_from(s: s, re: re, from: 0)
 
 # The first match of `re` in `s` that begins at the byte `from` or after it.
+#
+# - `s`: the text searched.
+# - `re`: the compiled pattern.
+# - `from`: the byte where the search begins, at a character's first byte, 0
+#   to `s.len()`.
+#
 # Fails `not_found` where there is none. Aborts where `from` is outside `s` or
 # inside a character, as a slice does. The text before `from` is still seen:
 # `^` and `\b` there answer as they do in the whole text, which a search of
@@ -172,40 +205,59 @@ function search_from(s: str, re: Regex, from: i64) -> Match?
     g = capture.search_groups(pattern: re.pattern, prog: re.compiled, s: s, search: simulate.Search(from: from, anchored: false, whole: false, not_empty_at: -1, groups: true))?
     return ok(Match(start: g.slots[0], end: g.slots[1], text: s.slice(from: g.slots[0], to: g.slots[1]), captured: g))
 
-# The match of `re` that begins exactly at the byte `at` of `s`. Fails
-# `not_found` where none begins there. Aborts where `at` is outside `s` or
-# inside a character, as a slice does. The text before `at` is still seen, as
-# in `search_from`.
+# The match of `re` that begins exactly at the byte `at` of `s`.
+#
+# - `s`: the text read.
+# - `re`: the compiled pattern.
+# - `at`: the byte where the match must begin, at a character's first byte, 0
+#   to `s.len()`.
+#
+# Fails `not_found` where none begins there. Aborts where `at` is outside `s`
+# or inside a character, as a slice does. The text before `at` is still seen,
+# as in `search_from`.
 function match_at(s: str, re: Regex, at: i64) -> Match?
     assert unicode.is_char_boundary(s, at)
     g = capture.search_groups(pattern: re.pattern, prog: re.compiled, s: s, search: simulate.Search(from: at, anchored: true, whole: false, not_empty_at: -1, groups: true))?
     return ok(Match(start: g.slots[0], end: g.slots[1], text: s.slice(from: g.slots[0], to: g.slots[1]), captured: g))
 
 # The match of `re` that is the whole of `s`, from its first byte to its last.
+#
+# - `s`: the text read whole.
+# - `re`: the compiled pattern.
+#
 # Fails `not_found` where `s` as a whole does not match, even where a part of
 # it does.
 function full_match(s: str, re: Regex) -> Match?
     g = capture.search_groups(pattern: re.pattern, prog: re.compiled, s: s, search: simulate.Search(from: 0, anchored: true, whole: true, not_empty_at: -1, groups: true))?
     return ok(Match(start: g.slots[0], end: g.slots[1], text: s.slice(from: g.slots[0], to: g.slots[1]), captured: g))
 
-# Every match of `re` in `s`, in order, none overlapping another. A search
-# begins again where the match before it ended, and after an empty match it
-# takes no empty match at the same place again: Python's rule and Perl's, so
-# `a*` in "baa" answers "", "aa" and "", where Go answers the first two. Each
-# search is linear in the text; a pattern that must read far ahead to choose
-# its match may read the rest of the text again for each match.
+# Every match of `re` in `s`, in order, none overlapping another.
+#
+# - `s`: the text searched.
+# - `re`: the compiled pattern.
+#
+# A search begins again where the match before it ended, and after an empty
+# match it takes no empty match at the same place again: Python's rule and
+# Perl's, so `a*` in "baa" answers "", "aa" and "", where Go answers the first
+# two. Each search is linear in the text; a pattern that must read far ahead
+# to choose its match may read the rest of the text again for each match.
 function search_all(s: str, re: Regex) -> [Match]
-    return search_n(s: s, re: re, n: 2 * s.len() + 2)
+    return search_n(s: s, re: re, n: iterate.EVERY)
 
-# The first `n` matches of `search_all`, or all of them where they are fewer;
-# none where `n` is zero or less.
-function search_n(s: str, re: Regex, n: i64) -> [Match]
+# The first `n` matches of `search_all`, or all of them where they are fewer.
+#
+# - `s`: the text searched.
+# - `re`: the compiled pattern.
+# - `n`: the most matches answered; 0 answers none.
+#
+# See also `search_all`.
+function search_n(s: str, re: Regex, n: u64) -> [Match]
     out: [Match] @= []
 
-    if n <= 0
+    if n == 0
         return out
 
-    for slots in iterate.all_slots(re.compiled, s: s, most: n)
+    for slots in iterate.all_slots(re.compiled, s: s, most: iterate.bound_of(n))
         g = capture.groups_of(s: s, prog: re.compiled, slots: slots)
         out @ out.push(
             Match(start: g.slots[0], end: g.slots[1], text: s.slice(from: g.slots[0], to: g.slots[1]), captured: g)
@@ -215,23 +267,36 @@ function search_n(s: str, re: Regex, n: i64) -> [Match]
 
 ## The groups of a match
 
-# The text the group `n` matched, the group 0 being the whole match. Fails
-# `not_found` where the group took no part in the match, and `invalid` where
-# the pattern has no group `n`.
+# The text the group `n` matched, the group 0 being the whole match.
+#
+# - `m`: the match.
+# - `n`: the group's number, 0 for the whole match.
+#
+# Fails `not_found` where the group took no part in the match, and `invalid`
+# where the pattern has no group `n`.
 function group(m: Match, n: i64) -> str?
     at = span(m, n)?
     return ok(m.captured.source.slice(from: at.start, to: at.end))
 
-# The text the group named `name` matched. Fails `not_found` where the group
-# took no part in the match, and `invalid` where the pattern has no group of
-# that name.
+# The text the group named `name` matched.
+#
+# - `m`: the match.
+# - `name`: the group's name.
+#
+# Fails `not_found` where the group took no part in the match, and `invalid`
+# where the pattern has no group of that name.
 function group_named(m: Match, name: str) -> str?
     n = capture.number_of(m.captured, name)?
     return group(m, n)
 
 # Where the group `n` matched in the text searched, the group 0 being the
-# whole match. Fails `not_found` where the group took no part in the match,
-# and `invalid` where the pattern has no group `n`.
+# whole match.
+#
+# - `m`: the match.
+# - `n`: the group's number, 0 for the whole match.
+#
+# Fails `not_found` where the group took no part in the match, and `invalid`
+# where the pattern has no group `n`.
 function span(m: Match, n: i64) -> Span?
     count = m.captured.names.len() - 1
 
@@ -243,15 +308,22 @@ function span(m: Match, n: i64) -> Span?
         return fail(code: NOT_FOUND, msg: f"the group {n} took no part in the match")
     return ok(Span(start: start, end: m.captured.slots[2 * n + 1]))
 
-# Where the group named `name` matched in the text searched. Fails `not_found`
-# where the group took no part in the match, and `invalid` where the pattern
-# has no group of that name.
+# Where the group named `name` matched in the text searched.
+#
+# - `m`: the match.
+# - `name`: the group's name.
+#
+# Fails `not_found` where the group took no part in the match, and `invalid`
+# where the pattern has no group of that name.
 function span_named(m: Match, name: str) -> Span?
     n = capture.number_of(m.captured, name)?
     return span(m, n)
 
 # The text of every group, the group 1 first, with `absent` for each group
 # that took no part in the match.
+#
+# - `m`: the match.
+# - `absent`: the text written for a group that took no part.
 function groups(m: Match, absent: str) -> [str]
     out: [str] @= []
 
@@ -262,6 +334,9 @@ function groups(m: Match, absent: str) -> [str]
 
 # The text of every group that has a name, by its name, with `absent` for each
 # that took no part in the match.
+#
+# - `m`: the match.
+# - `absent`: the text written for a group that took no part.
 function groups_by_name(m: Match, absent: str) -> {str: str}
     out: {str: str} @= {}
 
@@ -272,8 +347,11 @@ function groups_by_name(m: Match, absent: str) -> {str: str}
     return out
 
 # The number of the group that closed last in the match, which says which
-# alternative matched where each is a group. Fails `not_found` where no group
-# took part.
+# alternative matched where each is a group.
+#
+# - `m`: the match.
+#
+# Fails `not_found` where no group took part.
 function last_group(m: Match) -> i64?
     if m.captured.last <= 0
         return fail(code: NOT_FOUND, msg: "no group took part in the match")
@@ -281,11 +359,16 @@ function last_group(m: Match) -> i64?
 
 # `template` with each `$` filled from the match: `$1` and `${1}` are the text
 # of the group 1, `$name` and `${name}` of the group so named, `$0` the whole
-# match, and `$$` one `$`; a group that took no part writes nothing. A name
-# after `$` goes on as far as letters, digits and `_` do, so braces end it
-# where the text goes on with one of those. Fails `invalid` where the template
-# names a group the pattern has not, where a `$` is followed by none of these,
-# and where a number is followed by a letter or `_`, which reads two ways.
+# match, and `$$` one `$`; a group that took no part writes nothing.
+#
+# - `m`: the match whose groups fill the template.
+# - `template`: the text written, `$` naming a group.
+#
+# A name after `$` goes on as far as letters, digits and `_` do, so braces end
+# it where the text goes on with one of those. Fails `invalid` where the
+# template names a group the pattern has not, where a `$` is followed by none
+# of these, and where a number is followed by a letter or `_`, which reads two
+# ways.
 function expand(m: Match, template: str) -> str?
     pieces = filling.pieces_of(template, m.captured.names)?
     return ok(filling.fill(pieces, slots: m.captured.slots, source: m.captured.source))
@@ -293,21 +376,39 @@ function expand(m: Match, template: str) -> str?
 ## Replacing
 
 # `s` with its first match of `re` replaced by `new`, which is taken as it is:
-# a `$` in it is a `$`. `s` itself where there is no match.
+# a `$` in it is a `$`.
+#
+# - `s`: the text read.
+# - `re`: the compiled pattern.
+# - `new`: the text written in the match's place, `$` included as it stands.
+#
+# `s` itself where there is no match.
 function replace(s: str, re: Regex, new: str) -> str
     return replace_n(s: s, re: re, new: new, n: 1)
 
-# `s` with every match of `re` replaced by `new`, which is taken as it is. The
-# matches are `search_all`'s.
+# `s` with every match of `re` replaced by `new`, which is taken as it is.
+#
+# - `s`: the text read.
+# - `re`: the compiled pattern.
+# - `new`: the text written in each match's place, `$` included as it stands.
+#
+# The matches are `search_all`'s.
 function replace_all(s: str, re: Regex, new: str) -> str
-    return replace_n(s: s, re: re, new: new, n: 2 * s.len() + 2)
+    return replace_n(s: s, re: re, new: new, n: iterate.EVERY)
 
 # `s` with its first `n` matches of `re` replaced by `new`, which is taken as
-# it is; `s` itself where `n` is zero or less.
-function replace_n(s: str, re: Regex, new: str, n: i64) -> str
-    if n <= 0
+# it is.
+#
+# - `s`: the text read.
+# - `re`: the compiled pattern.
+# - `new`: the text written in each match's place, `$` included as it stands.
+# - `n`: the most matches replaced; 0 answers `s`.
+#
+# The matches are `search_all`'s. See also `replace_all`, `substitute_n`.
+function replace_n(s: str, re: Regex, new: str, n: u64) -> str
+    if n == 0
         return s
-    found = iterate.all_slots(re.compiled, s: s, most: n)
+    found = iterate.all_slots(re.compiled, s: s, most: iterate.bound_of(n))
     inserts: [str] @= []
 
     for _ in found
@@ -316,26 +417,45 @@ function replace_n(s: str, re: Regex, new: str, n: i64) -> str
     return iterate.rebuilt(s, found: found, inserts: inserts)
 
 # `s` with its first match of `re` replaced by `template` filled from that
-# match, as `expand` fills it. Fails `invalid` where `expand` would, whether
-# or not `s` holds a match.
+# match, as `expand` fills it.
+#
+# - `s`: the text read.
+# - `re`: the compiled pattern.
+# - `template`: the text written in the match's place, `$` naming a group as
+#   `expand` reads it.
+#
+# Fails `invalid` where `expand` would, whether or not `s` holds a match.
 function substitute(s: str, re: Regex, template: str) -> str?
     return substitute_n(s: s, re: re, template: template, n: 1)
 
 # `s` with every match of `re` replaced by `template` filled from that match,
-# as `expand` fills it. Fails `invalid` where `expand` would, whether or not
-# `s` holds a match. The matches are `search_all`'s.
+# as `expand` fills it.
+#
+# - `s`: the text read.
+# - `re`: the compiled pattern.
+# - `template`: the text written in each match's place, as `expand` reads it.
+#
+# Fails `invalid` where `expand` would, whether or not `s` holds a match. The
+# matches are `search_all`'s.
 function substitute_all(s: str, re: Regex, template: str) -> str?
-    return substitute_n(s: s, re: re, template: template, n: 2 * s.len() + 2)
+    return substitute_n(s: s, re: re, template: template, n: iterate.EVERY)
 
 # `s` with its first `n` matches of `re` replaced by `template` filled from
-# each, as `expand` fills it; `s` itself where `n` is zero or less. Fails
-# `invalid` where `expand` would, whether or not `s` holds a match.
-function substitute_n(s: str, re: Regex, template: str, n: i64) -> str?
+# each, as `expand` fills it.
+#
+# - `s`: the text read.
+# - `re`: the compiled pattern.
+# - `template`: the text written in each match's place, as `expand` reads it.
+# - `n`: the most matches replaced; 0 answers `s`, the template still read.
+#
+# Fails `invalid` where `expand` would, whether or not `s` holds a match. See
+# also `substitute_all`.
+function substitute_n(s: str, re: Regex, template: str, n: u64) -> str?
     pieces = filling.pieces_of(template, re.compiled.names)?
 
-    if n <= 0
+    if n == 0
         return ok(s)
-    found = iterate.all_slots(re.compiled, s: s, most: n)
+    found = iterate.all_slots(re.compiled, s: s, most: iterate.bound_of(n))
     inserts: [str] @= []
 
     for slots in found
@@ -344,17 +464,37 @@ function substitute_n(s: str, re: Regex, template: str, n: i64) -> str?
     return ok(iterate.rebuilt(s, found: found, inserts: inserts))
 
 # `s` with its first match of `re` replaced by what `by` answers for it.
+#
+# - `s`: the text read.
+# - `re`: the compiled pattern.
+# - `by`: asked once, with the first match; what it answers is written in the
+#   match's place.
 function replace_by(s: str, re: Regex, by: (function(Match) -> str)) -> str
     return replace_n_by(s: s, re: re, by: by, n: 1)
 
 # `s` with every match of `re` replaced by what `by` answers for it, called
-# once for each match, in order. The matches are `search_all`'s.
+# once for each match, in order.
+#
+# - `s`: the text read.
+# - `re`: the compiled pattern.
+# - `by`: asked once for each match, in order; what it answers is written in
+#   the match's place.
+#
+# The matches are `search_all`'s.
 function replace_all_by(s: str, re: Regex, by: (function(Match) -> str)) -> str
-    return replace_n_by(s: s, re: re, by: by, n: 2 * s.len() + 2)
+    return replace_n_by(s: s, re: re, by: by, n: iterate.EVERY)
 
 # `s` with its first `n` matches of `re` replaced by what `by` answers for
-# each; `s` itself where `n` is zero or less.
-function replace_n_by(s: str, re: Regex, by: (function(Match) -> str), n: i64) -> str
+# each.
+#
+# - `s`: the text read.
+# - `re`: the compiled pattern.
+# - `by`: asked once for each of the first `n` matches, in order; what it
+#   answers is written in the match's place.
+# - `n`: the most matches replaced; 0 answers `s`, `by` never asked.
+#
+# See also `replace_all_by`.
+function replace_n_by(s: str, re: Regex, by: (function(Match) -> str), n: u64) -> str
     found: [[i64]] @= []
     inserts: [str] @= []
 
@@ -368,19 +508,28 @@ function replace_n_by(s: str, re: Regex, by: (function(Match) -> str), n: i64) -
 
 # The pieces of `s` between its matches of `re`, in order: one more piece than
 # there are matches, so a text with no match answers itself alone, and a match
-# at either end leaves an empty piece there. The matches are `search_all`'s,
-# empty ones included, as Python cuts.
+# at either end leaves an empty piece there.
+#
+# - `s`: the text cut.
+# - `re`: the compiled pattern whose matches separate the pieces.
+#
+# The matches are `search_all`'s, empty ones included, as Python cuts.
 function split(s: str, re: Regex) -> [str]
-    return split_n(s: s, re: re, n: 2 * s.len() + 3)
+    return split_n(s: s, re: re, n: iterate.EVERY)
 
 # The pieces of `split`, at most `n` of them: the first `n - 1` matches cut,
-# and the last piece is the rest of `s`, uncut. No piece where `n` is zero or
-# less.
-function split_n(s: str, re: Regex, n: i64) -> [str]
-    if n <= 0
+# and the last piece is the rest of `s`, uncut.
+#
+# - `s`: the text cut.
+# - `re`: the compiled pattern whose matches separate the pieces.
+# - `n`: the most pieces answered; 0 answers none.
+#
+# See also `split`.
+function split_n(s: str, re: Regex, n: u64) -> [str]
+    if n == 0
         out: [str] = []
         return out
-    return iterate.pieces(s, iterate.all_slots(re.compiled, s: s, most: n - 1))
+    return iterate.pieces(s, iterate.all_slots(re.compiled, s: s, most: iterate.bound_of(n - 1)))
 
 ## Tests
 
@@ -476,14 +625,14 @@ test "search_all: the text, start and end of each match, and characters of more 
     assert found[1].text == "22" && found[1].start == 5 && found[1].end == 7
     assert search_all("", compile("x").must()).len() == 0
 
-test "search_all and search_n: none, empty matches by Python's rule, and at most so many"
+test "search_all and search_n: none, empty matches by Python's rule, at most so many, and the largest count"
     none: [[i64]] = []
     assert iterate.spans_of(pattern: "x", s: "abc", most: -1) == none
     assert iterate.spans_of(pattern: "a*", s: "baaa", most: -1) == [[0, 0], [1, 4], [4, 4]]
     assert iterate.spans_of(pattern: "", s: "", most: -1) == [[0, 0]]
     assert search_n(s: "aaa", re: compile("a").must(), n: 2).len() == 2
     assert search_n(s: "aaa", re: compile("a").must(), n: 0).len() == 0
-    assert search_n(s: "aaa", re: compile("a").must(), n: -1).len() == 0
+    assert search_n(s: "aaa", re: compile("a").must(), n: iterate.EVERY).len() == 3
 
 test "a pattern that makes a backtracking engine exponential answers at once"
     re = compile("(a+)+$").must()
@@ -558,21 +707,13 @@ test "substitute and its forms: groups by number and name, a template refused wi
     assert substitute_all(s: "me@home, you@work", re: mail, template: "${d} at $w").must() == "home at me, work at you"
     assert substitute(s: "none here", re: re, template: "$5").is_err()
 
-# What the tests and examples of `replace_by` and its forms replace a match
-# by: its text in angle brackets. It stands in the face because a function
-# over a `Match` can stand nowhere else in the package.
-#
-# - `m`: the match.
-function bracketed(m: Match) -> str
-    return "<" + m.text + ">"
-
 test "replace_by and its forms: the first, so many, every one, and no match"
     digits = compile("\\d+").must()
-    assert replace_by(s: "a1b22", re: digits, by: bracketed) == "a<1>b22"
-    assert replace_all_by(s: "a1b22", re: digits, by: bracketed) == "a<1>b<22>"
-    assert replace_n_by(s: "a1b22c3", re: digits, by: bracketed, n: 2) == "a<1>b<22>c3"
-    assert replace_n_by(s: "a1b22", re: digits, by: bracketed, n: 0) == "a1b22"
-    assert replace_all_by(s: "abc", re: digits, by: bracketed) == "abc"
+    assert replace_by(s: "a1b22", re: digits, by: samples.bracketed) == "a<1>b22"
+    assert replace_all_by(s: "a1b22", re: digits, by: samples.bracketed) == "a<1>b<22>"
+    assert replace_n_by(s: "a1b22c3", re: digits, by: samples.bracketed, n: 2) == "a<1>b<22>c3"
+    assert replace_n_by(s: "a1b22", re: digits, by: samples.bracketed, n: 0) == "a1b22"
+    assert replace_all_by(s: "abc", re: digits, by: samples.bracketed) == "abc"
 
 test "split and split_n: no match, a separator at either end, empty matches, and at most so many"
     comma = compile(",").must()
@@ -716,15 +857,15 @@ test "substitute_n: the first two words doubled"
 
 # The first match replaced by what a function answers for it.
 test "replace_by: the first number in brackets"
-    assert replace_by(s: "1 and 22", re: compile("\\d+").must(), by: bracketed) == "<1> and 22"
+    assert replace_by(s: "1 and 22", re: compile("\\d+").must(), by: samples.bracketed) == "<1> and 22"
 
 # Every match replaced by what a function answers for it.
 test "replace_all_by: every number in brackets"
-    assert replace_all_by(s: "1 and 22", re: compile("\\d+").must(), by: bracketed) == "<1> and <22>"
+    assert replace_all_by(s: "1 and 22", re: compile("\\d+").must(), by: samples.bracketed) == "<1> and <22>"
 
 # The first matches replaced by what a function answers, and the rest left.
 test "replace_n_by: the first number of three in brackets"
-    assert replace_n_by(s: "1 2 3", re: compile("\\d").must(), by: bracketed, n: 1) == "<1> 2 3"
+    assert replace_n_by(s: "1 2 3", re: compile("\\d").must(), by: samples.bracketed, n: 1) == "<1> 2 3"
 
 # A line cut at commas and the spaces after them.
 test "split: a list written by hand"

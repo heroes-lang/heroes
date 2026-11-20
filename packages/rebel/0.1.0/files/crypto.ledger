@@ -108,11 +108,11 @@ capability crypto/blake2-tree  BLAKE2's tree mode: fanout, depth, leaf size, nod
   python  hashlib.blake2b (fanout, depth, leaf_size, node_offset, node_depth, inner_size, last_node), hashlib.blake2s (the same)
 
 capability crypto/scrypt  a key derived from a password by scrypt
-  heroes  crypto.scrypt, crypto.MOST_MEMORY
+  heroes  crypto.scrypt, crypto.MAX_MEMORY
   go      -
   rust    -
   python  hashlib.scrypt
-  note    RFC 7914's vectors 1 to 3 and its Salsa20/8 vector answered as Python did on 2026-11-17 (vectors 2 and 3, 1 MiB × 16 and 16 MiB: the test run of the whole package grew from 9.65 s to 14.33 s of wall when they and their checks came in); vector 4 asks 1 GiB and runs nowhere here. Python's `maxmem` (32 MiB by default, OpenSSL's) is the constant `MOST_MEMORY`, 2 GiB, over 128 × r × (n + p) bytes, so vector 4 is allowed and a call cannot ask without bound; every refusal of Python's (n no power of two, n not below 2^(16r), r × p from 2^30, a length of 0) is one here. Go's is `golang.org/x/crypto/scrypt`, outside its standard library
+  note    RFC 7914's vectors 1 to 3 and its Salsa20/8 vector answered as Python did on 2026-11-17 (vectors 2 and 3, 1 MiB × 16 and 16 MiB: the test run of the whole package grew from 9.65 s to 14.33 s of wall when they and their checks came in); vector 4 asks 1 GiB and runs nowhere here. Python's `maxmem` (32 MiB by default, OpenSSL's) is the constant `MAX_MEMORY`, 2 GiB, over 128 × r × (n + p) bytes, so vector 4 is allowed and a call cannot ask without bound; every refusal of Python's (n no power of two, n not below 2^(16r), r × p from 2^30, a length of 0) is one here. Go's is `golang.org/x/crypto/scrypt`, outside its standard library
 
 capability crypto/file-digest  the digest of a stream or a file
   heroes  crypto.update
@@ -136,11 +136,11 @@ capability crypto/blake3  the BLAKE3 hash, keyed hash and key derivation, read t
   note    none of the three standard libraries has BLAKE3; Zig's `std.crypto.hash.Blake3` does, and the yardstick is its behaviour and the BLAKE3 team's own crate's names (`hash`, `keyed_hash`, `derive_key`, `OutputReader::set_position` as `digest_blake3_from`). All 35 cases of the official `test_vectors.json` (fetched 2026-11-17) pass in all three modes to 131 bytes, and Zig answered three of them alike; a key that is not 32 bytes is `invalid`, where the crate's type takes only 32
 
 capability crypto/argon2  a password hashed, or a key derived, by Argon2d, Argon2i or Argon2id, with a secret and associated data
-  heroes  crypto.argon2, crypto.Argon2, crypto.Argon2Params, crypto.argon2_low_memory, crypto.argon2_high_memory, crypto.MOST_MEMORY
+  heroes  crypto.argon2, crypto.Argon2, crypto.Argon2Params, crypto.argon2_low_memory, crypto.argon2_high_memory, crypto.MAX_MEMORY
   go      -
   rust    -
   python  -
-  note    RFC 9106's three vectors and eight more cases (two lanes, segments past 128 blocks, memory no multiple of 4 × lanes, a tag past 64 bytes, the smallest memory and tag, version 16) answered as OpenSSL 4.1's `kdf ARGON2*` did on 2026-11-17; the lanes are computed one after another, which answers what threads would. The bounds are RFC 9106's but the memory, which is `MOST_MEMORY` (2 GiB, RFC 9106's first recommendation exactly). Python's standard library has none (`argon2-cffi` is not of it; its profiles `RFC_9106_LOW_MEMORY` and `RFC_9106_HIGH_MEMORY` are the two functions here), nor Go's (`golang.org/x/crypto/argon2`), nor Rust's
+  note    RFC 9106's three vectors and eight more cases (two lanes, segments past 128 blocks, memory no multiple of 4 × lanes, a tag past 64 bytes, the smallest memory and tag, version 16) answered as OpenSSL 4.1's `kdf ARGON2*` did on 2026-11-17; the lanes are computed one after another, which answers what threads would. The bounds are RFC 9106's but the memory, which is `MAX_MEMORY` (2 GiB, RFC 9106's first recommendation exactly). Python's standard library has none (`argon2-cffi` is not of it; its profiles `RFC_9106_LOW_MEMORY` and `RFC_9106_HIGH_MEMORY` are the two functions here), nor Go's (`golang.org/x/crypto/argon2`), nor Rust's
 
 capability crypto/bcrypt  a password hashed by bcrypt, its cost and the limit of 72 bytes said
   heroes  crypto.hash_bcrypt, crypto.verify_bcrypt, crypto.parse_bcrypt_cost
@@ -154,21 +154,21 @@ capability crypto/password-strings  a password's hash stored as a string and ver
   go      -
   rust    -
   python  -
-  note    Argon2's PHC string (`$argon2id$v=19$m=..,t=..,p=..$salt$tag`, base 64 with no padding) as the reference implementation writes it; strings Zig wrote in the three types verify, a string with no `v=` is version 16 as the reference reads it, and every part read from a stored string is bounded before anything is allocated, its memory by `MOST_MEMORY`. `parse_argon2` and `parse_bcrypt_cost` answer what a hash was made with, which `argon2-cffi`'s `check_needs_rehash` and Go's `bcrypt.Cost` ask. No salt is made here: `crypto` stands on no C, and the salt comes from `random` or `os.random_bytes`. A secret and associated data have no field in the string, so `hash_argon2` takes neither
+  note    Argon2's PHC string (`$argon2id$v=19$m=..,t=..,p=..$salt$tag`, base 64 with no padding) as the reference implementation writes it; strings Zig wrote in the three types verify, a string with no `v=` is version 16 as the reference reads it, and every part read from a stored string is bounded before anything is allocated, its memory by `MAX_MEMORY`. `parse_argon2` and `parse_bcrypt_cost` answer what a hash was made with, which `argon2-cffi`'s `check_needs_rehash` and Go's `bcrypt.Cost` ask. No salt is made here: `crypto` stands on no C, and the salt comes from `random` or `os.random_bytes`. A secret and associated data have no field in the string, so `hash_argon2` takes neither
 
 capability crypto/hotp  a one-time password made from a counter (HOTP), and one received checked within a window of counters
-  heroes  crypto.hotp, crypto.verify_hotp, crypto.Otp, crypto.new_otp, crypto.MOST_OTP_WINDOW
+  heroes  crypto.hotp, crypto.verify_hotp, crypto.Otp, crypto.new_otp, crypto.MAX_OTP_WINDOW
   go      -
   rust    -
   python  -
   note    RFC 4226's Appendix D vectors, and the other cases as Python's `hmac` and `struct` answered them on 2026-11-17. The yardstick is Python's pyotp (not on this machine): `HOTP.at` and `HOTP.verify`, which answers a `bool` where `verify_hotp` answers the counter that matched, which RFC 4226's look-ahead resynchronisation needs. Codes of 6 to 10 digits (RFC 4226 asks 6 at least, and its 31 bits fill 10); a key of one byte at least, where RFC 4226 asks 16 and services often hand apps 10; SHA-1, SHA-256 and SHA-512 alone, the truncation reading 20 bytes of the tag. Every counter of the window is computed and compared in constant time through `equals_constant_time`'s work, whatever matched. None of the three standard libraries has HOTP
 
 capability crypto/totp  a one-time password made from a time the caller gives (TOTP), and one received checked within a window of steps
-  heroes  crypto.totp, crypto.verify_totp, crypto.MOST_OTP_WINDOW
+  heroes  crypto.totp, crypto.verify_totp, crypto.MAX_OTP_WINDOW
   go      -
   rust    -
   python  -
-  note    RFC 6238's Appendix B, every time by its three digests and seeds. pyotp's `TOTP.at` and `TOTP.verify(valid_window=)` are the yardstick; `verify_totp` answers the step that matched, the nearest to the time's own first, so that the caller refuses a step it has taken already (RFC 6238's section 5.2). No clock is read: the caller gives the seconds since 1970, and T0 is 0, RFC 6238's default; a window above `MOST_OTP_WINDOW` (1000) or below 0 fails `invalid`. None of the three standard libraries has TOTP
+  note    RFC 6238's Appendix B, every time by its three digests and seeds. pyotp's `TOTP.at` and `TOTP.verify(valid_window=)` are the yardstick; `verify_totp` answers the step that matched, the nearest to the time's own first, so that the caller refuses a step it has taken already (RFC 6238's section 5.2). No clock is read: the caller gives the seconds since 1970, and T0 is 0, RFC 6238's default; a window above `MAX_OTP_WINDOW` (1000) or below 0 fails `invalid`. None of the three standard libraries has TOTP
 
 capability crypto/otp-uri  the otpauth URI that hands a one-time password's key to an authenticator app
   heroes  crypto.format_hotp_uri, crypto.format_totp_uri

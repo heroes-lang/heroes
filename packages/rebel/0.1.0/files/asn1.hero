@@ -65,228 +65,6 @@ constant NOT_TEXT: str
 constant DOES_NOT_FIT: str
     "does_not_fit"
 
-## Tags
-
-# The class of a tag, X.690 § 8.1.2.2.
-variant Class
-    # The types X.680 itself defines: INTEGER, SEQUENCE and the others.
-    universal
-    # A tag an application gives its own types, `[APPLICATION 1]`.
-    application
-    # A tag that tells the elements of one SEQUENCE, SET or CHOICE apart,
-    # `[0]`.
-    context_specific
-    # A tag an organisation gives its own types, `[PRIVATE 1]`.
-    private
-
-# The tag of an element: its class, its number, and whether its content is
-# made of elements. Built directly; a number is 0 or more.
-record Tag
-    # The class.
-    kind: Class
-    # The number within the class, 0 or more.
-    number: i64
-    # Whether the content is made of elements (constructed) or is the value's
-    # own bytes (primitive).
-    constructed: bool
-
-# The universal number of BOOLEAN.
-constant BOOLEAN: i64
-    1
-
-# The universal number of INTEGER.
-constant INTEGER: i64
-    2
-
-# The universal number of BIT STRING.
-constant BIT_STRING: i64
-    3
-
-# The universal number of OCTET STRING.
-constant OCTET_STRING: i64
-    4
-
-# The universal number of NULL.
-constant NULL: i64
-    5
-
-# The universal number of OBJECT IDENTIFIER.
-constant OBJECT_IDENTIFIER: i64
-    6
-
-# The universal number of ObjectDescriptor.
-constant OBJECT_DESCRIPTOR: i64
-    7
-
-# The universal number of EXTERNAL, kept as a constructed element.
-constant EXTERNAL: i64
-    8
-
-# The universal number of REAL.
-constant REAL: i64
-    9
-
-# The universal number of ENUMERATED.
-constant ENUMERATED: i64
-    10
-
-# The universal number of EMBEDDED PDV, kept as a constructed element.
-constant EMBEDDED_PDV: i64
-    11
-
-# The universal number of UTF8String.
-constant UTF8_STRING: i64
-    12
-
-# The universal number of RELATIVE-OID.
-constant RELATIVE_OID: i64
-    13
-
-# The universal number of TIME, kept as its content.
-constant TIME: i64
-    14
-
-# The universal number of SEQUENCE and SEQUENCE OF.
-constant SEQUENCE: i64
-    16
-
-# The universal number of SET and SET OF.
-constant SET: i64
-    17
-
-# The universal number of NumericString.
-constant NUMERIC_STRING: i64
-    18
-
-# The universal number of PrintableString.
-constant PRINTABLE_STRING: i64
-    19
-
-# The universal number of TeletexString, also called T61String.
-constant TELETEX_STRING: i64
-    20
-
-# The universal number of VideotexString.
-constant VIDEOTEX_STRING: i64
-    21
-
-# The universal number of IA5String.
-constant IA5_STRING: i64
-    22
-
-# The universal number of UTCTime.
-constant UTC_TIME: i64
-    23
-
-# The universal number of GeneralizedTime.
-constant GENERALIZED_TIME: i64
-    24
-
-# The universal number of GraphicString.
-constant GRAPHIC_STRING: i64
-    25
-
-# The universal number of VisibleString.
-constant VISIBLE_STRING: i64
-    26
-
-# The universal number of GeneralString.
-constant GENERAL_STRING: i64
-    27
-
-# The universal number of UniversalString.
-constant UNIVERSAL_STRING: i64
-    28
-
-# The universal number of CHARACTER STRING, kept as a constructed element.
-constant CHARACTER_STRING: i64
-    29
-
-# The universal number of BMPString.
-constant BMP_STRING: i64
-    30
-
-# The universal number of DATE, kept as its content.
-constant DATE: i64
-    31
-
-# The universal number of TIME-OF-DAY, kept as its content.
-constant TIME_OF_DAY: i64
-    32
-
-# The universal number of DATE-TIME, kept as its content.
-constant DATE_TIME: i64
-    33
-
-# The universal number of DURATION, kept as its content.
-constant DURATION: i64
-    34
-
-# The universal number of OID-IRI, kept as its content.
-constant OID_IRI: i64
-    35
-
-# The universal number of RELATIVE-OID-IRI, kept as its content.
-constant RELATIVE_OID_IRI: i64
-    36
-
-# `tag` as ASN.1's notation writes it: a universal type by its name,
-# `INTEGER`, `SEQUENCE`; another as `[0]`, `[APPLICATION 1]`, `[PRIVATE 2]`;
-# a universal number with no type as `[UNIVERSAL 99]`.
-#
-# - `tag`: any tag; whether it is constructed is not written.
-#
-# See also `tag_of`.
-function format_tag(tag: Tag) -> str
-    kind = match tag.kind
-        .universal        => 0
-        .application      => 1
-        .context_specific => 2
-        .private          => 3
-
-    return header.tag_name(kind: kind, number: tag.number)
-
-# The tag `v` is written with by `encode_der`.
-#
-# - `v`: any value.
-#
-# A SEQUENCE and a SET are constructed, the others primitive but where the
-# case holds its own tag. See also `format_tag`.
-function tag_of(v: Value) -> Tag
-    return match v
-        .boolean _      => Tag(kind: .universal, number: BOOLEAN, constructed: false)
-        .integer _      => Tag(kind: .universal, number: INTEGER, constructed: false)
-        .big_integer _  => Tag(kind: .universal, number: INTEGER, constructed: false)
-        .enumerated _   => Tag(kind: .universal, number: ENUMERATED, constructed: false)
-        .real _         => Tag(kind: .universal, number: REAL, constructed: false)
-        .bit_string _   => Tag(kind: .universal, number: BIT_STRING, constructed: false)
-        .octet_string _ => Tag(kind: .universal, number: OCTET_STRING, constructed: false)
-        .null_value     => Tag(kind: .universal, number: NULL, constructed: false)
-        .oid _          => Tag(kind: .universal, number: OBJECT_IDENTIFIER, constructed: false)
-        .relative_oid _ => Tag(kind: .universal, number: RELATIVE_OID, constructed: false)
-        .text t =>
-            number = match t.kind
-                .utf8              => UTF8_STRING
-                .numeric           => NUMERIC_STRING
-                .printable         => PRINTABLE_STRING
-                .teletex           => TELETEX_STRING
-                .videotex          => VIDEOTEX_STRING
-                .ia5               => IA5_STRING
-                .graphic           => GRAPHIC_STRING
-                .visible           => VISIBLE_STRING
-                .general           => GENERAL_STRING
-                .universal         => UNIVERSAL_STRING
-                .bmp               => BMP_STRING
-                .object_descriptor => OBJECT_DESCRIPTOR
-
-            Tag(kind: .universal, number: number, constructed: false)
-        .utc_time _         => Tag(kind: .universal, number: UTC_TIME, constructed: false)
-        .generalized_time _ => Tag(kind: .universal, number: GENERALIZED_TIME, constructed: false)
-        .sequence _         => Tag(kind: .universal, number: SEQUENCE, constructed: true)
-        .set _              => Tag(kind: .universal, number: SET, constructed: true)
-        .primitive p        => p.tag
-        .constructed c      => c.tag
-
 ## Values
 
 # One ASN.1 value. A `match` on it answers all seventeen cases.
@@ -1125,6 +903,228 @@ function to_universal(v: Value, number: i64, encoding: Encoding) -> Value?
                 code: INVALID,
                 msg: f"an element of another tag was expected, and {format_tag(tag_of(v))} was found"
             )
+
+## Tags
+
+# The class of a tag, X.690 § 8.1.2.2.
+variant Class
+    # The types X.680 itself defines: INTEGER, SEQUENCE and the others.
+    universal
+    # A tag an application gives its own types, `[APPLICATION 1]`.
+    application
+    # A tag that tells the elements of one SEQUENCE, SET or CHOICE apart,
+    # `[0]`.
+    context_specific
+    # A tag an organisation gives its own types, `[PRIVATE 1]`.
+    private
+
+# The tag of an element: its class, its number, and whether its content is
+# made of elements. Built directly; a number is 0 or more.
+record Tag
+    # The class.
+    kind: Class
+    # The number within the class, 0 or more.
+    number: i64
+    # Whether the content is made of elements (constructed) or is the value's
+    # own bytes (primitive).
+    constructed: bool
+
+# The universal number of BOOLEAN.
+constant BOOLEAN: i64
+    1
+
+# The universal number of INTEGER.
+constant INTEGER: i64
+    2
+
+# The universal number of BIT STRING.
+constant BIT_STRING: i64
+    3
+
+# The universal number of OCTET STRING.
+constant OCTET_STRING: i64
+    4
+
+# The universal number of NULL.
+constant NULL: i64
+    5
+
+# The universal number of OBJECT IDENTIFIER.
+constant OBJECT_IDENTIFIER: i64
+    6
+
+# The universal number of ObjectDescriptor.
+constant OBJECT_DESCRIPTOR: i64
+    7
+
+# The universal number of EXTERNAL, kept as a constructed element.
+constant EXTERNAL: i64
+    8
+
+# The universal number of REAL.
+constant REAL: i64
+    9
+
+# The universal number of ENUMERATED.
+constant ENUMERATED: i64
+    10
+
+# The universal number of EMBEDDED PDV, kept as a constructed element.
+constant EMBEDDED_PDV: i64
+    11
+
+# The universal number of UTF8String.
+constant UTF8_STRING: i64
+    12
+
+# The universal number of RELATIVE-OID.
+constant RELATIVE_OID: i64
+    13
+
+# The universal number of TIME, kept as its content.
+constant TIME: i64
+    14
+
+# The universal number of SEQUENCE and SEQUENCE OF.
+constant SEQUENCE: i64
+    16
+
+# The universal number of SET and SET OF.
+constant SET: i64
+    17
+
+# The universal number of NumericString.
+constant NUMERIC_STRING: i64
+    18
+
+# The universal number of PrintableString.
+constant PRINTABLE_STRING: i64
+    19
+
+# The universal number of TeletexString, also called T61String.
+constant TELETEX_STRING: i64
+    20
+
+# The universal number of VideotexString.
+constant VIDEOTEX_STRING: i64
+    21
+
+# The universal number of IA5String.
+constant IA5_STRING: i64
+    22
+
+# The universal number of UTCTime.
+constant UTC_TIME: i64
+    23
+
+# The universal number of GeneralizedTime.
+constant GENERALIZED_TIME: i64
+    24
+
+# The universal number of GraphicString.
+constant GRAPHIC_STRING: i64
+    25
+
+# The universal number of VisibleString.
+constant VISIBLE_STRING: i64
+    26
+
+# The universal number of GeneralString.
+constant GENERAL_STRING: i64
+    27
+
+# The universal number of UniversalString.
+constant UNIVERSAL_STRING: i64
+    28
+
+# The universal number of CHARACTER STRING, kept as a constructed element.
+constant CHARACTER_STRING: i64
+    29
+
+# The universal number of BMPString.
+constant BMP_STRING: i64
+    30
+
+# The universal number of DATE, kept as its content.
+constant DATE: i64
+    31
+
+# The universal number of TIME-OF-DAY, kept as its content.
+constant TIME_OF_DAY: i64
+    32
+
+# The universal number of DATE-TIME, kept as its content.
+constant DATE_TIME: i64
+    33
+
+# The universal number of DURATION, kept as its content.
+constant DURATION: i64
+    34
+
+# The universal number of OID-IRI, kept as its content.
+constant OID_IRI: i64
+    35
+
+# The universal number of RELATIVE-OID-IRI, kept as its content.
+constant RELATIVE_OID_IRI: i64
+    36
+
+# `tag` as ASN.1's notation writes it: a universal type by its name,
+# `INTEGER`, `SEQUENCE`; another as `[0]`, `[APPLICATION 1]`, `[PRIVATE 2]`;
+# a universal number with no type as `[UNIVERSAL 99]`.
+#
+# - `tag`: any tag; whether it is constructed is not written.
+#
+# See also `tag_of`.
+function format_tag(tag: Tag) -> str
+    kind = match tag.kind
+        .universal        => 0
+        .application      => 1
+        .context_specific => 2
+        .private          => 3
+
+    return header.tag_name(kind: kind, number: tag.number)
+
+# The tag `v` is written with by `encode_der`.
+#
+# - `v`: any value.
+#
+# A SEQUENCE and a SET are constructed, the others primitive but where the
+# case holds its own tag. See also `format_tag`.
+function tag_of(v: Value) -> Tag
+    return match v
+        .boolean _      => Tag(kind: .universal, number: BOOLEAN, constructed: false)
+        .integer _      => Tag(kind: .universal, number: INTEGER, constructed: false)
+        .big_integer _  => Tag(kind: .universal, number: INTEGER, constructed: false)
+        .enumerated _   => Tag(kind: .universal, number: ENUMERATED, constructed: false)
+        .real _         => Tag(kind: .universal, number: REAL, constructed: false)
+        .bit_string _   => Tag(kind: .universal, number: BIT_STRING, constructed: false)
+        .octet_string _ => Tag(kind: .universal, number: OCTET_STRING, constructed: false)
+        .null_value     => Tag(kind: .universal, number: NULL, constructed: false)
+        .oid _          => Tag(kind: .universal, number: OBJECT_IDENTIFIER, constructed: false)
+        .relative_oid _ => Tag(kind: .universal, number: RELATIVE_OID, constructed: false)
+        .text t =>
+            number = match t.kind
+                .utf8              => UTF8_STRING
+                .numeric           => NUMERIC_STRING
+                .printable         => PRINTABLE_STRING
+                .teletex           => TELETEX_STRING
+                .videotex          => VIDEOTEX_STRING
+                .ia5               => IA5_STRING
+                .graphic           => GRAPHIC_STRING
+                .visible           => VISIBLE_STRING
+                .general           => GENERAL_STRING
+                .universal         => UNIVERSAL_STRING
+                .bmp               => BMP_STRING
+                .object_descriptor => OBJECT_DESCRIPTOR
+
+            Tag(kind: .universal, number: number, constructed: false)
+        .utc_time _         => Tag(kind: .universal, number: UTC_TIME, constructed: false)
+        .generalized_time _ => Tag(kind: .universal, number: GENERALIZED_TIME, constructed: false)
+        .sequence _         => Tag(kind: .universal, number: SEQUENCE, constructed: true)
+        .set _              => Tag(kind: .universal, number: SET, constructed: true)
+        .primitive p        => p.tag
+        .constructed c      => c.tag
 
 ## Object identifiers
 

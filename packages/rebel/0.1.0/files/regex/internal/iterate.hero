@@ -8,6 +8,17 @@ use regex/internal/parse as regex_parse
 use regex/internal/program
 use regex/internal/simulate
 
+# The count a caller gives where it means every match: the largest `u64`,
+# which `bound_of` reads as no bound.
+constant EVERY: u64
+    18446744073709551615
+
+# The bound `all_slots` takes for a caller's count of `n` matches: `n`
+# itself, or -1, no bound, where `n` passes the largest `i64`, more matches
+# than any text holds.
+function bound_of(n: u64) -> i64
+    return to_i64(n).default(-1)
+
 # The slots of the matches of `prog` in `s`, in order, at most `most` of
 # them.
 #
@@ -83,6 +94,11 @@ function spans_of(pattern: str, s: str, most: i64) -> [[i64]]
         out @ out.push([slots[0], slots[1]])
 
     return out
+
+test "bound_of: a count, the largest i64, and past it"
+    assert bound_of(3) == 3
+    assert bound_of(9223372036854775807) == 9223372036854775807
+    assert bound_of(9223372036854775808) == -1 && bound_of(EVERY) == -1
 
 test "all_slots: none, one, every one, at most so many, and an empty text"
     none: [[i64]] = []

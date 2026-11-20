@@ -33,11 +33,18 @@ capability command/quote-all  words quoted and joined into one line for a POSIX 
   python  shlex.join
   note    Python's. Go's `String` joins the words without quoting and is for showing only
 
-capability command/windows-line  a Windows command line written by the program
-  heroes  refused: the floor writes a child's Windows line from the list itself, by the rule `CommandLineToArgvW` undoes; a line written by hand is what lets a word run as another
+capability command/windows-line  a child started from a Windows command line the program wrote, not from a list
+  heroes  refused: the floor writes a child's Windows line from the list itself, by the rule `CommandLineToArgvW` undoes; a `Command` built from a line written by hand, Rust's `raw_arg`, is what lets a word run as another
   go      -
   rust    Command::raw_arg, Command::force_quotes
+  python  -
+
+capability text/quote-windows-command-line  a list of words written as the Windows command line that reads back as the same list
+  heroes  strings.quote_windows_args
+  go      -
+  rust    -
   python  list2cmdline
+  note    `strings`', a package below this one, for a program that writes a line for another to read; `process` needs none, since the floor writes a child's line from its list
 
 capability env/set  a variable set for the child
   heroes  process.with_env

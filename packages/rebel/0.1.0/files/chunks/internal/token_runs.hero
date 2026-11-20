@@ -5,7 +5,6 @@
 # counts its tokens, and the runs are joined into pieces of at most the size,
 # with their overlap, as `windows` joins any parts.
 
-use chunks/internal/meter
 use chunks/internal/windows
 use tokenizer
 use unicode/segment
@@ -48,7 +47,7 @@ function add_token_windows(@spans: [i64], s: str, enc: tokenizer.Encoding lent, 
         costs: costs,
         size: size,
         overlap: overlap,
-        m: meter.Meter(kind: meter.BYTES, encodings: [])
+        m: .bytes
     )
 
 # The 256 bytes, "ab" and " cd" as an encoding, for the tests.

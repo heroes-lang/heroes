@@ -91,7 +91,7 @@ function concat(parts: [[u8]]) -> [u8]
     return out
 
 # The lists of `parts` with `sep` between each two.
-function join_all(parts: [[u8]], sep: [u8]) -> [u8]
+function joined(parts: [[u8]], sep: [u8]) -> [u8]
     out: [u8] @= []
     at: i64 @= 0
 
@@ -160,15 +160,15 @@ test "padded: before, after, both sides even and odd, a pad of two bytes, too wi
     assert padded(s: t("ab"), width: 9, pad: t(""), before: false, after: true) == t("ab")
     assert padded(s: t("ab"), width: -9223372036854775807 - 1, pad: t("*"), before: true, after: true) == t("ab")
 
-test "concat and join_all: no parts, one part, an empty part between two"
+test "concat and joined: no parts, one part, an empty part between two"
     t = raw.of_text
     nothing: [[u8]] = []
     assert concat(nothing) == t("")
     assert concat([t("a"), t(""), t("c")]) == t("ac")
-    assert join_all(parts: nothing, sep: t(", ")) == t("")
-    assert join_all(parts: [t("a")], sep: t(", ")) == t("a")
-    assert join_all(parts: [t("a"), t(""), t("c")], sep: t(", ")) == t("a, , c")
-    assert join_all(parts: [t("a"), t("b")], sep: t("")) == t("ab")
+    assert joined(parts: nothing, sep: t(", ")) == t("")
+    assert joined(parts: [t("a")], sep: t(", ")) == t("a")
+    assert joined(parts: [t("a"), t(""), t("c")], sep: t(", ")) == t("a, , c")
+    assert joined(parts: [t("a"), t("b")], sep: t("")) == t("ab")
 
 test "repeated: three times, none, and the empty list many times"
     t = raw.of_text

@@ -225,13 +225,36 @@ test "every file under the runtime's parts is included by runtime.c, and every p
 
 # The platform layer's members are `runtime.c`'s names under `platform/`, in
 # its order, each beside its header, among the files the runtime is made of
-# (feature 2295).
+# (feature 2295). Read from the layer as it stands, never from a copied list:
+# the layer held the sockets and the clock alone when this test was written,
+# Rebel's floors brought it to sixteen members, and a list of two was then a
+# red that said nothing about the code (the round's base, 2026-11-20).
 test "the platform layer's members are the names runtime.c gives under platform/, among the runtime's files (feature 2295)"
-    assert layer_members("runtime").must() == ["runtime/platform/hero_net.c", "runtime/platform/hero_time.c"]
+    members = layer_members("runtime").must()
     made = made_of("runtime").must()
+    in_order: [str] @= []
 
-    for path in ["runtime/hero_net.h", "runtime/platform/hero_net.c", "runtime/hero_time.h", "runtime/platform/hero_time.c"]
-        assert has(made, path)
+    for path in made
+        if is_member(path.slice(from: "runtime/".len(), to: path.len()))
+            in_order @ in_order.push(path)
+
+    assert members == in_order
+
+    # The sockets and the clock, which the archive's tests below link by
+    # their headers, are among them.
+    assert has(members, "runtime/platform/hero_net.c")
+    assert has(members, "runtime/platform/hero_time.c")
+
+    # Each member stands right after its own header, `runtime/<name>.h`.
+    for member in members
+        at: i64 @= 0
+
+        while made[at] != member
+            at @ at + 1
+
+        name = member.slice(from: "runtime/platform/".len(), to: member.len() - 2)
+        assert at > 0
+        assert made[at - 1] == "runtime/" + name + ".h"
 
     for name in ["platform/hero_net.c", "platform/x.c"]
         assert is_member(name)
@@ -241,9 +264,14 @@ test "the platform layer's members are the names runtime.c gives under platform/
 
 # The folder and `runtime.c` say the same members, defect 464's question for
 # `parts/` asked of `platform/`: a member nothing names is never archived nor
-# keyed, and one named and gone is a build that fails.
+# keyed, and one named and gone is a build that fails. And a header of the
+# folder is a file `runtime.c` names too: `platform/hero_handle_tag.h`, which
+# the members alone include, was named nowhere until 2026-11-20, so the key
+# did not cover it and a copy of the runtime made from its file list held
+# members that did not compile (`cli/layer.hero`'s tests).
 test "every C file under the runtime's platform folder is a member runtime.c names, and every member it names is there (feature 2295)"
     named = layer_members("runtime").must()
+    made = made_of("runtime").must()
     found: [str] @= []
 
     for path in process.files_under("runtime/platform").must()
@@ -251,6 +279,9 @@ test "every C file under the runtime's platform folder is a member runtime.c nam
 
         if is_member(name) && name[LAYER.len()] != '.'
             found @ found.push(path)
+
+        if name[LAYER.len()] != '.' && bytes.bytes_at(text: name, at: name.len() - 2, needle: ".h")
+            assert has(made, path)
 
     assert named.len() >= 2
 

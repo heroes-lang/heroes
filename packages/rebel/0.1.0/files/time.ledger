@@ -345,7 +345,7 @@ capability calendar/weekday-name  the name of a weekday
   go      Weekday.String, time.Sunday, time.Monday, time.Tuesday, time.Wednesday, time.Thursday, time.Friday, time.Saturday
   rust    -
   python  calendar.day_name, calendar.day_abbr, calendar.Day, calendar.MONDAY, calendar.TUESDAY, calendar.WEDNESDAY, calendar.THURSDAY, calendar.FRIDAY, calendar.SATURDAY, calendar.SUNDAY
-  note    English; the three-letter forms are the names' first three letters. A locale's names are refused, calendar/locale
+  note    English; the three-letter forms are the names' first three letters. A language's names are `i18n/dates.weekday_names`'s, calendar/locale
 
 capability calendar/month-name  the name of a month
   heroes  time.month_name
@@ -433,7 +433,7 @@ capability calendar/printed  a month or a year laid out as a printed calendar
   python  calendar.calendar, calendar.month, calendar.prcal, calendar.prmonth, calendar.prweek, calendar.monthcalendar, calendar.week, calendar.weekheader, calendar.format, calendar.formatstring, calendar.setfirstweekday, calendar.firstweekday, calendar.Calendar, calendar.TextCalendar, calendar.HTMLCalendar, calendar.IllegalWeekdayError, calendar.main
 
 capability calendar/locale  names and layouts in another language
-  heroes  refused: no locale data; the names are English and the layouts are the standards'
+  heroes  refused: a language's names and layouts are `i18n/dates`'s (`i18n/dates.month_names`, `i18n/dates.weekday_names`, `i18n/dates.format_date`), a package above this one that holds CLDR's data; `time` carries none, so its names stay English and its layouts the standards', which a program reads back in any locale
   go      -
   rust    -
   python  calendar.different_locale, calendar.LocaleTextCalendar, calendar.LocaleHTMLCalendar
@@ -466,7 +466,7 @@ capability text/other-layouts  the layouts left out of the closed set
   python  -
 
 capability text/patterns  an instant written and read by a pattern the program writes
-  heroes  refused: a pattern is a second grammar in a string, which no compiler checks; the layouts are a closed variant instead
+  heroes  refused: a pattern is `i18n/dates`'s (`i18n/dates.format_pattern`, `i18n/dates.parse_pattern`), whose CLDR patterns read a language's names; `time` keeps a closed `Layout` instead, so a text it writes is one a standard names and reads back, and a misspelt layout is a compile error rather than a string read at run time
   go      Time.Format (any layout), time.Parse (any layout)
   rust    -
   python  time.strftime, time.strptime, datetime.datetime.strftime, datetime.datetime.strptime, datetime.date.strftime, datetime.date.strptime, datetime.time.strftime, datetime.time.strptime, datetime.datetime.__format__

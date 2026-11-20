@@ -62,7 +62,7 @@ function new() -> Deque
 #
 # - `most`: the most items it holds, from 1.
 #
-# Aborts where `most` is below 1. See also `new`, `limit`.
+# Aborts where `most` is below 1. See also `new`, `capacity`.
 function new_bounded(most: i64) -> Deque
     if most < 1
         codes.abort_with(f"a bounded deque holds at least one item, and {most} was asked")
@@ -81,7 +81,7 @@ function over<T>(items: [T] lent) -> Deque
 #
 # - `deque`: the shape.
 #
-# See also `limit`.
+# See also `capacity`.
 function size(deque: Deque) -> i64
     return deque.ring.count
 
@@ -91,7 +91,7 @@ function size(deque: Deque) -> i64
 #
 # Fails `not_found` where the deque has no bound. See also
 # `new_bounded`.
-function limit(deque: Deque) -> i64?
+function capacity(deque: Deque) -> i64?
     if deque.ring.limit == 0
         return fail(code: NOT_FOUND, msg: "the deque has no bound")
     return ok(deque.ring.limit)
@@ -164,81 +164,82 @@ function first<T>(deque: Deque, items: [T] lent) -> T?
 function last<T>(deque: Deque, items: [T] lent) -> T?
     return get(deque, items, deque.ring.count - 1)
 
-# The item `index` places from the front of a deque.
+# The item at place `at` of a deque, counted from the front.
 #
 # - `deque`: the shape.
 # - `items`: the item list.
-# - `index`: the place, 0 at the front.
+# - `at`: the place, 0 at the front.
 #
-# Fails `not_found` where `index` is below zero or at or past the size.
+# Fails `not_found` where `at` is below zero or at or past the size.
 # See also `put`.
-function get<T>(deque: Deque, items: [T] lent, index: i64) -> T?
+function get<T>(deque: Deque, items: [T] lent, at: i64) -> T?
     ring.require_items(deque.ring, items.len())
 
-    if index < 0 || index >= deque.ring.count
-        return fail(code: NOT_FOUND, msg: f"place {index} is outside a deque of {deque.ring.count} items")
-    return ok(items[ring.slot_of(deque.ring, capacity: items.len(), index: index)])
+    if at < 0 || at >= deque.ring.count
+        return fail(code: NOT_FOUND, msg: f"place {at} is outside a deque of {deque.ring.count} items")
+    return ok(items[ring.slot_of(deque.ring, capacity: items.len(), index: at)])
 
-# Writes `value` over the item `index` places from the front of a deque.
+# Writes `value` over the item at place `at` of a deque, counted from the
+# front.
 #
 # - `deque`: the shape, left as it was.
 # - `items`: the item list; one slot changes.
-# - `index`: the place, 0 at the front.
+# - `at`: the place, 0 at the front.
 # - `value`: the new item.
 #
-# Fails `not_found` where `index` is below zero or at or past the size, and
+# Fails `not_found` where `at` is below zero or at or past the size, and
 # writes nothing. See also `get`.
-function put<T>(deque: Deque, @items: [T], index: i64, value: T) -> ()?
+function put<T>(deque: Deque, @items: [T], at: i64, value: T) -> ()?
     ring.require_items(deque.ring, items.len())
 
-    if index < 0 || index >= deque.ring.count
-        return fail(code: NOT_FOUND, msg: f"place {index} is outside a deque of {deque.ring.count} items")
-    at = ring.slot_of(deque.ring, capacity: items.len(), index: index)
-    items[at] @ value
+    if at < 0 || at >= deque.ring.count
+        return fail(code: NOT_FOUND, msg: f"place {at} is outside a deque of {deque.ring.count} items")
+    slot = ring.slot_of(deque.ring, capacity: items.len(), index: at)
+    items[slot] @ value
     return ok()
 
-# Puts `value` `index` places from the front of a deque, the items from there
-# on moving one place back.
+# Puts `value` at place `at` of a deque, counted from the front, the items
+# from there on moving one place back.
 #
 # - `deque`: the shape; it grows by one.
 # - `items`: the item list.
-# - `index`: the place, from 0, the front, to the size, the back.
+# - `at`: the place, from 0, the front, to the size, the back.
 # - `value`: the item to put.
 #
-# It moves the items on the nearer side of `index`, at most half of them.
-# Fails `not_found` where `index` is below zero or past the size, and
+# It moves the items on the nearer side of `at`, at most half of them.
+# Fails `not_found` where `at` is below zero or past the size, and
 # `invalid` where a bounded deque is full, as Python's `deque.insert` refuses;
 # either way it changes nothing. See also `remove_at`.
-function insert<T>(@deque: Deque, @items: [T], index: i64, value: T) -> ()?
+function insert<T>(@deque: Deque, @items: [T], at: i64, value: T) -> ()?
     ring.require_items(deque.ring, items.len())
 
-    if index < 0 || index > deque.ring.count
+    if at < 0 || at > deque.ring.count
         return fail(
             code: NOT_FOUND,
-            msg: f"place {index} is outside 0 to {deque.ring.count}, where a deque of {deque.ring.count} items takes one"
+            msg: f"place {at} is outside 0 to {deque.ring.count}, where a deque of {deque.ring.count} items takes one"
         )
 
     if deque.ring.limit > 0 && deque.ring.count == deque.ring.limit
         return fail(code: INVALID, msg: f"the deque holds its limit of {deque.ring.limit} items")
-    ring.insert(@deque.ring, @items, index, value)
+    ring.insert(@deque.ring, @items, at, value)
     return ok()
 
-# Takes out the item `index` places from the front of a deque and answers it,
-# the items after it moving one place forward.
+# Takes out the item at place `at` of a deque, counted from the front, and
+# answers it, the items after it moving one place forward.
 #
 # - `deque`: the shape; it shrinks by one.
 # - `items`: the item list.
-# - `index`: the place, 0 at the front.
+# - `at`: the place, 0 at the front.
 #
-# It moves the items on the nearer side of `index`, at most half of them.
-# Fails `not_found` where `index` is below zero or at or past the size. See
+# It moves the items on the nearer side of `at`, at most half of them.
+# Fails `not_found` where `at` is below zero or at or past the size. See
 # also `insert`.
-function remove_at<T>(@deque: Deque, @items: [T], index: i64) -> T?
+function remove_at<T>(@deque: Deque, @items: [T], at: i64) -> T?
     ring.require_items(deque.ring, items.len())
 
-    if index < 0 || index >= deque.ring.count
-        return fail(code: NOT_FOUND, msg: f"place {index} is outside a deque of {deque.ring.count} items")
-    return ok(ring.remove_at(@deque.ring, @items, index))
+    if at < 0 || at >= deque.ring.count
+        return fail(code: NOT_FOUND, msg: f"place {at} is outside a deque of {deque.ring.count} items")
+    return ok(ring.remove_at(@deque.ring, @items, at))
 
 # Moves the first `by` items of a deque to its back, in their order.
 #
@@ -336,9 +337,9 @@ test "size: two items pushed, one popped"
     assert size(queue) == 1
 
 # The bound of a bounded deque, and none of another.
-test "limit: a bound of ten, and no bound"
-    assert limit(new_bounded(10)).must() == 10
-    assert limit(new()).is_err()
+test "capacity: a bound of ten, and no bound"
+    assert capacity(new_bounded(10)).must() == 10
+    assert capacity(new()).is_err()
 
 # A queue served first in, first out.
 test "push_back: customers served in the order they came"
@@ -464,4 +465,4 @@ test "clear: a bounded queue emptied"
     push_back(@tail, @lines, "x")
     clear(@tail, @lines)
     assert size(tail) == 0
-    assert limit(tail).must() == 2
+    assert capacity(tail).must() == 2

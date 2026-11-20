@@ -1,0 +1,103 @@
+# The functions of one float that blend between two numbers, beneath the face's
+# `lerp`, `inverse_lerp`, `remap`, `smoothstep` and `smootherstep`: the small
+# operations of games and of shaders, on plain floats. `math/linear` blends
+# vectors with them, through the face.
+#
+# A nan answers a nan where the face says so; nothing here orders a nan, since
+# ordering one aborts (spec § 7).
+
+use math/internal/floats
+use math/internal/limits
+
+# The number a fraction `t` of the way from `from` to `to`: `(1 - t) * from + t
+# * to`, exactly `from` at 0 and exactly `to` at 1.
+#
+# - `from`: where `t` is 0.
+# - `to`: where `t` is 1.
+# - `t`: the fraction; outside 0 to 1 it goes on past either end.
+function lerp(from: f64, to: f64, t: f64) -> f64
+    return (1.0 - t) * from + t * to
+
+# The fraction of the way `x` stands from `from` to `to`, `lerp`'s inverse.
+#
+# - `from`: where the answer is 0.
+# - `to`: where the answer is 1.
+# - `x`: the number placed; a nan answers a nan.
+#
+# Fails `invalid` where `from` and `to` are equal, which places nothing.
+function inverse_lerp(from: f64, to: f64, x: f64) -> f64?
+    if from == to
+        return fail(code: limits.INVALID, msg: f"no fraction places {x} between {from} and itself")
+    return ok((x - from) / (to - from))
+
+# `t` held from 0 to 1, a nan answering a nan.
+#
+# - `t`: any float.
+function clamp01(t: f64) -> f64
+    if floats.is_nan(t)
+        return t
+
+    if t < 0.0
+        return 0.0
+
+    if t > 1.0
+        return 1.0
+    return t
+
+# Where `x` stands from `low` to `high`, held from 0 to 1, for the steps below;
+# where `low` and `high` are equal, 0 below them and 1 from them on.
+#
+# - `low`: where the answer is 0.
+# - `high`: where the answer is 1.
+# - `x`: the number placed.
+function placed(low: f64, high: f64, x: f64) -> f64
+    if floats.is_nan(x) || floats.is_nan(low) || floats.is_nan(high)
+        return limits.NAN
+
+    if low == high
+        if x < low
+            return 0.0
+        return 1.0
+    return clamp01((x - low) / (high - low))
+
+# Hermite's smooth step from 0 at `low` to 1 at `high`: `3t^2 - 2t^3` of where
+# `x` stands between them, held from 0 to 1.
+#
+# - `low`: where the answer leaves 0.
+# - `high`: where it reaches 1.
+# - `x`: the number placed.
+function smoothstep(low: f64, high: f64, x: f64) -> f64
+    t = placed(low: low, high: high, x: x)
+    return t * t * (3.0 - 2.0 * t)
+
+# Perlin's smoother step, `6t^5 - 15t^4 + 10t^3`, whose second derivative is
+# zero at both ends too.
+#
+# - `low`: where the answer leaves 0.
+# - `high`: where it reaches 1.
+# - `x`: the number placed.
+function smootherstep(low: f64, high: f64, x: f64) -> f64
+    t = placed(low: low, high: high, x: x)
+    return t * t * t * (t * (6.0 * t - 15.0) + 10.0)
+
+## Tests
+
+test "lerp and inverse_lerp: both ends exactly, the middle, past the end, an empty range"
+    assert lerp(from: 0.1, to: 0.7, t: 0.0) == 0.1
+    assert lerp(from: 0.1, to: 0.7, t: 1.0) == 0.7
+    assert lerp(from: -2.0, to: 2.0, t: 0.5) == 0.0
+    assert lerp(from: 0.0, to: 10.0, t: 1.5) == 15.0
+    assert inverse_lerp(from: 10.0, to: 20.0, x: 15.0).must() == 0.5
+    assert inverse_lerp(from: 10.0, to: 20.0, x: 30.0).must() == 2.0
+    assert inverse_lerp(from: 3.0, to: 3.0, x: 3.0).is_err()
+
+test "smoothstep and smootherstep: below, at both ends, the middle, above, an empty range, a nan"
+    assert smoothstep(low: 0.0, high: 1.0, x: -1.0) == 0.0
+    assert smoothstep(low: 0.0, high: 1.0, x: 0.5) == 0.5
+    assert smoothstep(low: 0.0, high: 1.0, x: 0.25) == 0.15625
+    assert smoothstep(low: 0.0, high: 1.0, x: 2.0) == 1.0
+    assert smoothstep(low: 1.0, high: 1.0, x: 0.5) == 0.0 && smoothstep(low: 1.0, high: 1.0, x: 1.0) == 1.0
+    assert floats.is_nan(smoothstep(low: 0.0, high: 1.0, x: limits.NAN))
+    assert smootherstep(low: 0.0, high: 1.0, x: 0.5) == 0.5
+    assert smootherstep(low: 0.0, high: 1.0, x: 0.25) == 0.103515625
+    assert smootherstep(low: 0.0, high: 2.0, x: 2.0) == 1.0

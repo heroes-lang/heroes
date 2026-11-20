@@ -1,8 +1,8 @@
 # The ledger of `dns`: what Go's `net` (its DNS lookups) and Go's own message
 # reader `golang.org/x/net/dns/dnsmessage` (vendored in Go 1.27's tree, read
-# with `go doc -all vendor/golang.org/x/net/dns/dnsmessage`) let a program
-# do, one block per capability, and what Rebel answers. Python's and Rust's
-# standard libraries have no DNS client beyond the system's resolver, which
+# for this ledger of 2026-11-17 by `go doc -all vendor/golang.org/x/net/dns/dnsmessage`)
+# let a program do, one block per capability, and what Rebel answers. Python's
+# and Rust's standard libraries have no DNS client beyond the system's resolver, which
 # is `net`'s (`net.lookup`, `net.name_of`). The task named dnspython, Rust's
 # hickory-dns and Java's `jdk.naming.dns` as the yardstick: none of the three
 # is on this machine (2026-11-17: `import dns` fails, no hickory crate in

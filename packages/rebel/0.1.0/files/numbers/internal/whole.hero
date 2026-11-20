@@ -7,6 +7,16 @@
 
 use numbers/internal/fault
 
+# The smallest `i64`, -9223372036854775808, written as a difference since its
+# magnitude is no `i64`: `math.MIN_I64`, which a package of layer 0 beside
+# `math` does not use.
+constant LOWEST: i64
+    0 - 9223372036854775807 - 1
+
+# The largest `i64`, `math.MAX_I64`.
+constant HIGHEST: i64
+    9223372036854775807
+
 # How a text spells an integer, read from its first bytes.
 record Spelling
     # Whether a `-` came first.

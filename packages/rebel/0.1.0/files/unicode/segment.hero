@@ -2,9 +2,9 @@
 # sees as one character (UAX #29); into words and sentences (UAX #29); at the
 # places a line may break (UAX #14). It also measures a text in the columns a
 # terminal draws it in (UAX #11, and the emoji rules terminals follow), and
-# wraps a text to a width in columns. The tables hold Unicode 17.0.0, which
-# `UNICODE_VERSION` says; they live apart from `unicode` so that only the
-# programs that cut or measure text carry them.
+# wraps, cuts and pads a text to a width in columns. The tables hold Unicode
+# 17.0.0, which `UNICODE_VERSION` says; they live apart from `unicode` so that
+# only the programs that cut or measure text carry them.
 #
 # What it does NOT do: say what a character is (`unicode`); cut a text at a
 # separator or into the words between white space (`strings.split`,
@@ -23,6 +23,7 @@ use unicode/segment/internal/graphemes as grapheme_rules
 use unicode/segment/internal/line_cases
 use unicode/segment/internal/line_cases_more
 use unicode/segment/internal/lines
+use unicode/segment/internal/padding
 use unicode/segment/internal/sentence_cases
 use unicode/segment/internal/sentences as sentence_rules
 use unicode/segment/internal/tables
@@ -32,7 +33,7 @@ use unicode/segment/internal/word_cases
 use unicode/segment/internal/words as word_rules
 use unicode/segment/internal/wrap as wrapping
 
-## Limits
+## Version
 
 # The version of Unicode the tables hold.
 constant UNICODE_VERSION: str
@@ -364,6 +365,54 @@ function wrap(s: str, options: WrapOptions) -> [str]
 function truncate(s: str, width: i64, ellipsis: str) -> str
     return wrapping.truncate(s: s, columns: width, ellipsis: ellipsis)
 
+## Padding
+
+# `s` with `pad` written before it until the whole takes `width` columns, as
+# `width_of` counts them, where `strings.pad_start` counts characters: how a
+# column of numbers or of words in any script is aligned to the right in a
+# terminal.
+#
+# - `s`: the text; it is answered as it is where it takes `width` columns or
+#   more.
+# - `width`: the columns the answer takes; below the width of `s`, `s` is
+#   answered.
+# - `pad`: drawn text, written grapheme by grapheme again and again; where a
+#   grapheme of it would pass `width`, spaces fill the columns left, and a
+#   `pad` that takes no column, the empty one included, is a space. It is
+#   measured grapheme by grapheme, so it holds no escape sequence.
+#
+# See also `pad_end_columns`, `center_columns`, `truncate`.
+function pad_start_columns(s: str, width: i64, pad: str) -> str
+    return padding.pad_start(s: s, columns: width, pad: pad)
+
+# `s` with `pad` written after it until the whole takes `width` columns, as
+# `width_of` counts them: how a cell of a table drawn in a terminal is filled,
+# whatever script it holds.
+#
+# - `s`: the text; it is answered as it is where it takes `width` columns or
+#   more.
+# - `width`: the columns the answer takes; below the width of `s`, `s` is
+#   answered.
+# - `pad`: drawn text, read as `pad_start_columns` reads it.
+#
+# See also `pad_start_columns`, `truncate`, which cuts a cell too wide.
+function pad_end_columns(s: str, width: i64, pad: str) -> str
+    return padding.pad_end(s: s, columns: width, pad: pad)
+
+# `s` with `pad` written on both sides until the whole takes `width` columns,
+# half of the padding before and half after, the odd column after.
+#
+# - `s`: the text; it is answered as it is where it takes `width` columns or
+#   more.
+# - `width`: the columns the answer takes; below the width of `s`, `s` is
+#   answered.
+# - `pad`: drawn text, read as `pad_start_columns` reads it, each side
+#   starting it afresh.
+#
+# See also `pad_start_columns`, `strings.center`.
+function center_columns(s: str, width: i64, pad: str) -> str
+    return padding.center(s: s, columns: width, pad: pad)
+
 ## Tests
 
 # Every expected answer below is what Python 3.15.2's `unicodedata` and
@@ -504,3 +553,18 @@ test "wrap: a sentence in ten columns"
 # A title cut to fit eight columns of a table.
 test "truncate: a title in eight columns"
     assert truncate(s: "Hello, world", width: 8, ellipsis: "…") == "Hello, …"
+
+# A price aligned to the right of a column six wide, beside one in Japanese.
+test "pad_start_columns: a column of prices"
+    assert pad_start_columns(s: "12", width: 6, pad: " ") == "    12"
+    assert pad_start_columns(s: "円12", width: 6, pad: " ") == "  円12"
+
+# Two cells of one table filled to eight columns, one in Japanese, with
+# leaders.
+test "pad_end_columns: two cells of a table"
+    assert pad_end_columns(s: "Tokyo", width: 8, pad: ".") == "Tokyo..."
+    assert pad_end_columns(s: "東京", width: 8, pad: ".") == "東京...."
+
+# A title centred in a banner of nine columns.
+test "center_columns: a title in a banner"
+    assert center_columns(s: "日本", width: 9, pad: "=") == "==日本==="

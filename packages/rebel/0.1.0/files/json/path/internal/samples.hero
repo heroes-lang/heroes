@@ -1,0 +1,17 @@
+# The functions the face's examples hand to a function of the face, kept out
+# of the face so that it offers none of them: no closure stands in the
+# language, so an example's function is a top-level one somewhere.
+
+use json
+
+# `v` doubled where it is a number, and `v` itself otherwise: the function the
+# example of `replace_all_by` hands it.
+function doubled(v: json.Value) -> json.Value
+    match v
+        .number n                                                => return .number(v: n.v * 2.0)
+        .null_value | .boolean _ | .text _ | .list _ | .object _ => return v
+
+## Tests
+
+test "doubled: a number and a text"
+    assert doubled(.number(v: 1.5)) == .number(v: 3.0) && doubled(.text(v: "a")) == .text(v: "a")

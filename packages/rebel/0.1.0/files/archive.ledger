@@ -1,9 +1,10 @@
-# The ledger of `archive`: what Go's `archive/tar` and `archive/zip` (Go
-# 1.27) and Python's `tarfile` and `zipfile` (3.15) let a program do, one
-# block per capability, and what Rebel answers. Rust's standard library has
-# no archives, so its line is `-` in every block. The lists are this
-# machine's, 2026-11-16: `go doc -all` on both packages, and `__all__` and
-# `dir()` of both modules and of their classes. The tests read archives
+# The ledger of `archive`, its lists of 2026-11-16: what Go's `archive/tar`
+# and Go's `archive/zip` (Go 1.27, `go doc` of 2026-11-16) and Python's
+# `tarfile` and `zipfile` (3.15) let a program do, one block per capability,
+# and what Rebel answers. Rust's standard library has no archives, so its line
+# is `-` in every block. The lists are this machine's, 2026-11-16: `go doc
+# -all` on both packages, and `__all__` and `dir()` of both modules and of
+# their classes. The tests read archives
 # Python made; the cross-check in the scratch folder had Python read every
 # archive Rebel wrote (tar, tar.gz, zip, 65,536 members, a 4.4 GB member)
 # and Rebel extract Python's.

@@ -2,11 +2,12 @@
 # a flat list of events in the order the bytes hold them, each container's
 # event carrying how many objects follow it, as the format's own header does.
 #
-# The package's private modules work on this list and never on
-# `msgpack.Value`, which only the face can name: a module the face uses may
-# not use the face. The face turns the list into a value and a value into the
-# list, each on a stack of its own, so that no function follows the data with
-# recursion.
+# The decoder writes this list and the encoder reads it, each in one loop, a
+# container's count standing where a recursion would; the face turns the list
+# into a value and a value into the list, each on a stack of its own, so that
+# no function follows the data with recursion however deep it is. A private
+# module may use the face since panel 252's R1: the list is kept for that
+# loop, and no longer for want of the face's `Value`.
 
 # `nil`.
 constant NIL_VALUE: i64

@@ -28,6 +28,6 @@ function main()
             match lens
                 .err e => print(e.msg)
                 .ok p =>
-                    match linear.project_point3(m: linear.mul_mat4(a: p, b: v), p: linear.Vec3(x: 1.0, y: 1.0, z: 0.0))
+                    match linear.project_point3(m: linear.multiply_mat4(a: p, b: v), p: linear.Vec3(x: 1.0, y: 1.0, z: 0.0))
                         .ok q  => print(q.x, " ", q.y, " ", q.z)
                         .err e => print(e.msg)

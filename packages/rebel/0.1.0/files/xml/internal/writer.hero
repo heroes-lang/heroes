@@ -341,7 +341,7 @@ function comment(text: str, names_at: [str] lent, depth: i64) -> str?
             msg: f"a comment in {path_of(names_at: names_at, depth: depth)} holds {scan.found(text: text, at: bad)}, a character XML cannot hold"
         )
 
-    if markup.index_from(text: text, at: 0, word: "--") < text.len() || markup.holds_at(text: text, at: text.len() - 1, word: "-")
+    if markup.index_from(text: text, at: 0, word: "--") < text.len() || strings.has_prefix_at(s: text, prefix: "-", at: text.len() - 1)
         return fail(
             code: scan.INVALID,
             msg: f"a comment in {path_of(names_at: names_at, depth: depth)} holds `--` or ends in `-`, which would end it early: \"{text}\""

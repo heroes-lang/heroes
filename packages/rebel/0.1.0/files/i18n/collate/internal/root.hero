@@ -10,6 +10,7 @@
 
 use i18n/collate/internal/collate_tables
 use i18n/internal/locale_syntax
+use strings
 use unicode
 
 # What every weight of the root is multiplied by.
@@ -162,7 +163,7 @@ function contractions_from(first: str) -> [[i64]]
     while low < high
         middle = (low + high) / 2
 
-        if strings_less(a: names[middle], b: first)
+        if strings.compare(a: names[middle], b: first) < 0
             low @ middle + 1
         else
             high @ middle
@@ -170,35 +171,11 @@ function contractions_from(first: str) -> [[i64]]
     out: [[i64]] @= []
     at @= low
 
-    while at < names.len() && has_prefix(s: names[at], prefix: first)
+    while at < names.len() && strings.has_prefix(s: names[at], prefix: first)
         out @ out.push(unicode.code_points(names[at]))
         at @ at + 1
 
     return out
-
-# Whether `a` comes before `b` by their bytes.
-function strings_less(a: str, b: str) -> bool
-    at @= 0
-
-    while at < a.len() && at < b.len()
-        if a[at] != b[at]
-            return a[at] < b[at]
-        at @ at + 1
-
-    return a.len() < b.len()
-
-# Whether `s` opens with `prefix`.
-function has_prefix(s: str, prefix: str) -> bool
-    if prefix.len() > s.len()
-        return false
-    at @= 0
-
-    while at < prefix.len()
-        if s[at] != prefix[at]
-            return false
-        at @ at + 1
-
-    return true
 
 # The last primary, scaled, of the group a maximum variable `which` makes
 # variable: 0 the spaces, 1 punctuation, 2 symbols, the last before the

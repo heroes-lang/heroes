@@ -39,7 +39,7 @@
 # because only a program that reaches the floor reads it
 # (`package_judge.hero`); the floor itself still builds beside the answer. The
 # cards are the ones placed in the tree, `<path>.md` beside `<path>.hero`
-# (`examples-rebel/packages/README.md` § 8), so a model reads the cards of the
+# (task 2294), so a model reads the cards of the
 # packages its answer compiles against, in E2's form, each function's
 # signature beside the call a program writes (R5; R14's *the card's form is
 # E2's*), taken as the card program wrote them. A `.md` beside no module is

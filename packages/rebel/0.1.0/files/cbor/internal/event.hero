@@ -2,8 +2,7 @@
 # list of events in the order the encoding writes them, each container's
 # event carrying how many items follow it, as the encoding's own head does.
 #
-# The package's private modules work on this list and never on `cbor.Value`,
-# which only the face can name: a module the face uses may not use the face.
+# The package's private modules work on this list and never on `cbor.Value`.
 # The face turns the list into a value and a value into the list, each on a
 # stack of its own, so that no function follows the data with recursion.
 

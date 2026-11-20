@@ -16,6 +16,13 @@
 # every handle is (spec § 13).
 #
 # **A time is nanoseconds on the monotonic clock**, which never goes back.
+#
+# What it does NOT do: this process's own number, environment, folders and
+# exit (`os`); a channel or memory shared with another running program
+# (`ipc`); a command line written for Windows (`strings.quote_windows_args`).
+# A signal other than the end and the end at once, and a process found by its
+# number rather than by the handle that started it, are refused
+# (`process.ledger`).
 
 use io
 use os
@@ -902,6 +909,8 @@ function path_of(program: str) -> str?
 # - `word`: any text; empty is `''`.
 #
 # For `sh` and the shells that keep its rules, never for Windows' `cmd.exe`.
+# See also `strings.quote_windows_arg`, which writes a word as a Windows
+# program's C runtime reads it back.
 function quote(word: str) -> str
     return quoting.quoted(word)
 
@@ -1336,6 +1345,163 @@ test "usage_of: a running child read twice, then refused once waited for, and re
         .err e => assert e.code == INVALID
 
 ## Examples
+
+# A command built from a program and its arguments, each reaching the child
+# whole: nothing is run yet.
+test "command: git asked for its short status"
+    c = command("git", ["status", "--short"])
+    assert c.program == "git" && c.arguments == ["status", "--short"]
+
+# A line read by the system's shell, where a pipe or a redirection is wanted.
+test "shell: a line the shell reads"
+    assert fixture.unix_lines(capture(shell("echo hello").must()).must()) == "hello\n"
+
+# A command with its arguments replaced.
+test "with_arguments: a listing asked long"
+    c = with_arguments(command("ls", []), arguments: ["-l"])
+    assert c.arguments == ["-l"]
+
+# A variable set for the child alone.
+test "with_env: the compiler a build uses"
+    c = with_env(command("make", []), name: "CC", value: "clang")
+    assert env_of(c).must()["CC"].must() == "clang"
+
+# Several variables set at once.
+test "with_env_all: two settings for a build"
+    c = with_env_all(command("make", []), variables: {"CC": "clang", "CFLAGS": "-O2"})
+    assert env_of(c).must()["CFLAGS"].must() == "-O2"
+
+# A variable the child does not take from this process.
+test "with_env_removed: no debugging for the child"
+    c = with_env_removed(with_env(command("make", []), name: "DEBUG", value: "1"), name: "DEBUG")
+    assert env_of(c).must()["DEBUG"].is_err()
+
+# A child that starts from no variable at all.
+test "with_env_cleared: a clean environment with one variable"
+    c = with_env(with_env_cleared(command("make", [])), name: "HOME", value: "/tmp")
+    assert env_of(c).must() == {"HOME": "/tmp"}
+
+# The variables a child will start with.
+test "env_of: the one variable a cleared command sets"
+    c = with_env(with_env_cleared(command("env", [])), name: "LANG", value: "C")
+    assert env_of(c).must() == {"LANG": "C"}
+
+# A child run in another working folder.
+test "with_dir: a build run inside its folder"
+    c = with_dir(command("make", []), dir: "build")
+    assert c.dir == "build"
+
+# A child fed a text, then the end.
+test "with_input: a line fed to the copier"
+    c = with_output(with_input(command(fixture.copier(), []), from: .text(text: "hi\n")), to: .pipe)
+    assert fixture.line(run(c).must().output) == "hi"
+
+# A child's output kept by the program.
+test "with_output: what a child prints, kept"
+    c = with_output(shell("echo out").must(), to: .pipe)
+    assert fixture.line(run(c).must().output) == "out"
+
+# A child's error kept by the program.
+test "with_error: what a child writes to its error, kept"
+    c = with_error(shell(fixture.error_script("oops")).must(), to: .pipe)
+    assert fixture.line(run(c).must().error) == "oops"
+
+# A child's output and error read as one, in the order written.
+test "with_error_to_output: both streams in one"
+    c = with_error_to_output(with_output(shell(fixture.both_script(first: "a", second: "b")).must(), to: .pipe))
+    assert fixture.unix_lines(fixture.line(run(c).must().output)) == "a\nb"
+
+# A child ended at once when it runs too long.
+test "with_time_limit: a sleep of five seconds cut at a tenth of one"
+    c = with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(5)), nanoseconds: 100_000_000)
+    assert run(c).must().status == .timed_out
+
+# What a child prints, as text, where it must succeed.
+test "capture: the text a child prints"
+    text = capture(command(fixture.shell_program(), fixture.shell_arguments("echo hi"))).must()
+    assert fixture.unix_lines(text) == "hi\n"
+
+# A child started and fed through its pipe while the program goes on.
+test "start: a child fed through its input pipe"
+    child @= start(with_output(with_input(command(fixture.copier(), []), from: .pipe), to: .nothing)).must()
+    io.write_text(child.input, text: "line\n").must()
+    io.close(@child.input).must()
+    assert wait(@child).must() == .exited(code: 0)
+
+# The end of a child waited for, and how it ended.
+test "wait: a child that exits with 3"
+    child @= start(shell(fixture.exit_script(3)).must()).must()
+    assert wait(@child).must() == .exited(code: 3)
+
+# Whether a child has ended, asked without waiting.
+test "has_ended: a sleeping child has not"
+    child @= start(command(fixture.sleeper(), fixture.sleeper_arguments(5))).must()
+    assert !has_ended(@child).must()
+    kill(child).must()
+    assert !is_success(wait(@child).must())
+
+# A child asked to end, which it may answer by cleaning up first.
+test "terminate: a sleeping child asked to end"
+    child @= start(command(fixture.sleeper(), fixture.sleeper_arguments(5))).must()
+
+    match terminate(child)
+        .ok _ => assert wait(@child).must() == .signaled(signal: 15)
+        .err e =>
+            assert e.code == UNSUPPORTED && fixture.on_windows()
+            kill(child).must()
+            assert !is_success(wait(@child).must())
+
+# A child ended at once.
+test "kill: a sleeping child ended at once"
+    child @= start(command(fixture.sleeper(), fixture.sleeper_arguments(5))).must()
+    kill(child).must()
+    assert !is_success(wait(@child).must())
+
+# A child given up, left to run without the program waiting for it.
+test "release: a child let go"
+    child @= start(with_input(command(fixture.copier(), []), from: .pipe)).must()
+    release(@child).must()
+
+# The CPU time a child used, once it has ended.
+test "cpu_of: the time a short child used"
+    child @= start(shell(fixture.exit_script(0)).must()).must()
+    assert wait(@child).must() == .exited(code: 0)
+    used = cpu_of(child).must()
+    assert used.user_nanoseconds >= 0 && used.system_nanoseconds >= 0
+
+# Whether a child succeeded.
+test "is_success: exit code 0 and exit code 1"
+    assert is_success(.exited(code: 0)) && !is_success(.exited(code: 1))
+
+# The exit code a child ended with.
+test "code_of: the code 3"
+    assert code_of(.exited(code: 3)).must() == 3
+
+# The signal that ended a child.
+test "signal_of: SIGTERM"
+    assert signal_of(.signaled(signal: 15)).must() == 15
+
+# A failure where a child did not succeed, to hand on with `?`.
+test "require_success: a child that exits with 2 fails"
+    match require_success(.exited(code: 2))
+        .ok _  => assert false
+        .err e => assert e.code == FAILED
+
+# How a child ended, in words for a message.
+test "format_status: an exit code"
+    assert format_status(.exited(code: 3)) == "exited with code 3"
+
+# Where a program found on PATH stands.
+test "path_of: the system's shell"
+    assert fixture.ends_with(text: path_of(fixture.shell_name()).must(), tail: fixture.shell_ending())
+
+# A word written so a POSIX shell reads it back whole.
+test "quote: a word with a quote in it"
+    assert quote("it's") == "'it'\"'\"'s'"
+
+# Words written as one line a POSIX shell reads back as those words.
+test "quote_all: a file name with a space"
+    assert quote_all(["ls", "my file"]) == "ls 'my file'"
 
 # The memory a child holds while it runs, then its end waited for.
 test "usage_of: the memory a running child holds"

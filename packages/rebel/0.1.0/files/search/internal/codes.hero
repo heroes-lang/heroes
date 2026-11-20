@@ -1,5 +1,5 @@
-# The codes `search` fails with, and the numbers its private modules name a
-# formula by, since a private module cannot read the face's `Formula`.
+# The codes `search` fails with, which the face names again, and the numbers
+# its private modules name a formula by.
 
 # The code of a query, a setting or bytes a function cannot read.
 constant INVALID: str

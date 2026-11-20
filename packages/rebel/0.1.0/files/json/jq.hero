@@ -1,7 +1,8 @@
 # The jq language run over a `json.Value`: a filter read once and run against
 # any number of values, each run answering every value the filter outputs.
-# Since YAML, TOML, CBOR, MessagePack and XML are read into a `json.Value` by
-# their own packages, a filter runs over them too, as `yq` and `xq` do.
+# Since YAML is read into a `json.Value` by `yaml`, and TOML, CBOR and
+# MessagePack are turned into one by the `to_json` of their own packages, a
+# filter runs over them too, as `yq` does.
 #
 # The language is jq 1.7's, as its manual defines it: paths, iteration,
 # pipes, `,`, `//`, `?`, comparisons and arithmetic as jq defines them on each

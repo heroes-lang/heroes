@@ -67,11 +67,11 @@ capability env/path-list-split  a list of paths such as PATH cut into its paths
   note    the package `path`'s, beside its `list_sep`
 
 capability env/path-list-join  a list of paths such as PATH built, refusing a path that holds the separator
-  heroes  pending
+  heroes  path.join_list
   go      -
   rust    env::join_paths
   python  -
-  note    the package `path`'s area, beside `split_list`; `join` with `path.list_sep()` builds the list but does not refuse a path holding the separator, as Rust's join_paths does
+  note    the package `path`'s, beside its `split_list`
 
 capability process/args  the program's arguments
   heroes  built-in args
@@ -232,11 +232,11 @@ capability user/change  the user or the groups the process runs as changed
   note    no floor door changes who the process runs as, and every thread of the process is changed at once
 
 capability user/password  a secret read from the terminal without echoing it
-  heroes  pending
+  heroes  term.read_secret, term.read_password
   go      -
   rust    -
   python  getpass.getpass
-  note    no floor door turns a terminal's echo off
+  note    the package `term`'s, which turns the terminal's echo off; no floor door of `os` does
 
 capability machine/host-name  the machine's host name
   heroes  os.host_name
@@ -364,11 +364,11 @@ capability terminal/size  the size of the terminal the process writes to
   note    `unsupported` where the output is no terminal, as Python's OSError; Python's shutil fallback to COLUMNS and LINES is not taken
 
 capability terminal/is-terminal  whether the process's output is a terminal
-  heroes  pending
+  heroes  io.is_terminal
   go      -
   rust    -
   python  os.isatty
-  note    a question about a stream, `hero_stream_is_terminal`, so the package `io`'s, a layer `os` may not use; `terminal_size` failing `unsupported` cannot answer it, since a terminal may tell no size
+  note    a question about a stream, so the package `io`'s, a layer `os` may not use; `terminal_size` failing `unsupported` cannot answer it, since a terminal may tell no size
 
 capability process/times  the processor time the process has spent
   heroes  os.process_times
