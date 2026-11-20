@@ -213,11 +213,11 @@ capability js/escape  a text escaped for a JavaScript string
   note    Go's `JSEscapeString` byte for byte, but a character past U+FFFF that is not printable, which Go writes as `\u` and five digits, a JavaScript string reads as another: it is written as its two surrogates
 
 capability url/query-escape  a text escaped for a URL's query
-  heroes  refused: a URL's parts are `url`'s, a package of the same layer this one does not use; the HTML mode escapes a value in a URL by its place, and a program writes `url.escape_query` of a value before it hands it in for the text mode
+  heroes  url.escape_query
   go      URLQueryEscaper, urlquery
   rust    -
   python  -
-  note    -
+  note    a URL's parts are `url`'s, a package of the layer below this one: a program writes `url.escape_query` of a value before it hands it in for the text mode, and the HTML mode escapes a value in a URL by its place, so no function of the template's own does it twice
 
 capability template/clone  a set of templates copied, to be changed apart
   heroes  built-in =

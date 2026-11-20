@@ -8,6 +8,13 @@
 # either outside quotes, and a carriage return alone is a field's text. An
 # empty line holds no row and is skipped.
 #
+# Tab-separated values are the same format with another separator: the
+# options' `separator` set to "\t", as Python's `excel_tab` sets it. Rows
+# keyed by the names of a header row are `parse_records` and
+# `format_records`. The options are never guessed from a sample, as Python's
+# `Sniffer` guesses them, since a guess can read a text as another format
+# without a word: a program states the format it reads.
+#
 # Fails `invalid` where a text is not CSV as the options read it, the message
 # opening `line L, column C:`, both from 1 and the column in characters, or
 # `line L:` for a row of the wrong length. Through a stream, fails as well as
@@ -265,7 +272,7 @@ function reader(s: io.Stream, options: ReadOptions) -> Reader
 # The next row of `r`'s stream, [] at its end: no row read is empty, since an
 # empty line holds none.
 #
-# - `@r`: the reader; advances past the row and the empty lines and comments
+# - `r`: the reader; advances past the row and the empty lines and comments
 #   before it.
 #
 # Fails `invalid` as `parse_with` does, the lines counted from the stream's
@@ -278,7 +285,7 @@ function read_row(@r: Reader) -> [str]?
 
 # Every row left in `r`'s stream, in order.
 #
-# - `@r`: the reader; reaches the stream's end.
+# - `r`: the reader; reaches the stream's end.
 #
 # Fails as `read_row` does.
 function read_rows(@r: Reader) -> [[str]]?
@@ -287,7 +294,7 @@ function read_rows(@r: Reader) -> [[str]]?
 # Whether no row is left in `r`'s stream, waiting for a line where none is
 # there and the stream has not ended.
 #
-# - `@r`: the reader; reads and drops the empty lines and comments before the
+# - `r`: the reader; reads and drops the empty lines and comments before the
 #   next row.
 #
 # Fails as `read_row` does.

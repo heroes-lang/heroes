@@ -45,7 +45,7 @@ capability md/tree  the document as a tree a program walks
   note    nodes numbered in one list and linked to their parent, children and siblings, as comrak's arena and goldmark's tree hold them; pulldown-cmark answers a stream of events, which `descendants` gives in the same order. A `match` on `Node` answers every kind, so a program that misses one does not compile
 
 capability md/change  the tree changed and written again
-  heroes  markdown.add_child, markdown.insert_before, markdown.insert_after, markdown.remove, markdown.set_node
+  heroes  markdown.append_child, markdown.insert_before, markdown.insert_after, markdown.remove, markdown.set_node
   go      ast.Node
   rust    comrak::arena_tree
   python  Token.attrSet, Token.attrPush, Token.attrJoin, Token.attrGet, Token.attrIndex, Token.attrItems, Token.attrs, Token.copy, Token.as_dict, Token.from_dict, Token.meta, SyntaxTreeNode.attrGet, SyntaxTreeNode.attrs
