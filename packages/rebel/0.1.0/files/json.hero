@@ -11,6 +11,13 @@
 # A record is not filled from JSON by its field names, since the language has
 # no reflection: a program reads each member out of the tree and builds its own
 # type from it.
+#
+# `Value` is the tree the packages beside this one read and answer: a query
+# by JSONPath is `json/path`'s, a patch and a merge patch `json/patch`'s, a
+# schema's verdict `json/schema`'s, a jq filter `json/jq`'s. YAML is read
+# into a `Value` and written from one by `yaml`; CBOR, MessagePack, BSON and
+# TOML hold values of their own, which `cbor`, `msgpack`, `bson` and `toml`
+# turn into a `Value` and back with their `to_json` and `from_json`.
 
 use json/internal/event
 use json/internal/order
@@ -35,7 +42,7 @@ use json/internal/writer
 # that order. `==` compares two values whatever the order of their members; it
 # follows their nesting, so on two values nested many thousands deep it runs
 # out of stack and aborts, which is why `parse` reads no deeper than
-# `DEFAULT_MAX_DEPTH` unless it is asked to; `equal` answers the same on a
+# `DEFAULT_MAX_DEPTH` unless it is asked to; `equals` answers the same on a
 # stack of its own.
 variant Value
     # JSON's `null`, a word the language keeps for itself.
@@ -67,7 +74,7 @@ variant Value
 #
 # It visits each element and member of the two once, so its cost is linear
 # in their size. See also `kind_of`.
-function equal(a: Value, b: Value) -> bool
+function equals(a: Value, b: Value) -> bool
     lefts: [Value] @= [a]
     rights: [Value] @= [b]
     top: i64 @= 1
@@ -135,6 +142,12 @@ function equal(a: Value, b: Value) -> bool
 # asked for, and of a pointer that is not one.
 constant INVALID: str
     "invalid"
+
+# The code of a value that holds a `nan` or an infinity, which no JSON says:
+# `format`, `format_indented`, `format_with` unless its options ask for
+# Python's words, and `format_canonical`.
+constant UNSUPPORTED: str
+    "unsupported"
 
 # The code of a key an object does not hold and of an index past a list's end.
 constant NOT_FOUND: str
@@ -468,7 +481,8 @@ function compact() -> FormatOptions
 #
 # - `v`: the value to write, nested as deep as it is.
 #
-# Fails `invalid` where `v` holds a `nan` or an infinity, which no JSON says.
+# Fails `unsupported` where `v` holds a `nan` or an infinity, which no JSON
+# says.
 #
 # The same value always gives the same bytes: an object's members are written
 # in the order it holds them, and a number as the shortest digits that read
@@ -485,8 +499,8 @@ function format(v: Value) -> str?
 # - `width`: the spaces that indent each level, 0 or more; 0 breaks the lines
 #   and indents nothing.
 #
-# Fails `invalid` where `width` is below 0, and where `v` holds a `nan` or an
-# infinity.
+# Fails `invalid` where `width` is below 0, and `unsupported` where `v` holds a
+# `nan` or an infinity.
 #
 # No line break ends the text, and an empty list or object is written `[]` or
 # `{}`.
@@ -503,7 +517,7 @@ function format_indented(v: Value, width: i64) -> str?
 # - `v`: the value to write.
 # - `options`: how it is written; `compact()` writes the shortest text.
 #
-# Fails `invalid` where `v` holds a `nan` or an infinity and
+# Fails `unsupported` where `v` holds a `nan` or an infinity and
 # `options.non_finite` does not ask for them.
 function format_with(v: Value, options: FormatOptions) -> str?
     walked: [event.Event] @= []
@@ -580,7 +594,7 @@ function format_with(v: Value, options: FormatOptions) -> str?
 #
 # - `v`: the value to write.
 #
-# Fails `invalid` where `v` holds a `nan` or an infinity.
+# Fails `unsupported` where `v` holds a `nan` or an infinity.
 #
 # The text is one line with no white space, the members in the order of their
 # keys' UTF-16 code units, and a negative zero written `0`. It writes the value
@@ -1050,7 +1064,7 @@ test "format: nan and the infinities fail, where Python's default writes them"
 
     match format(.list(items: [.number(v: nan)]))
         .ok _  => assert false
-        .err e => assert e.code == "invalid"
+        .err e => assert e.code == UNSUPPORTED
 
     python: FormatOptions @= compact()
     python.non_finite @ true
@@ -1334,15 +1348,15 @@ test "parse_partial: what no byte more can mend fails as parse does, where pydan
     assert parse_partial(repeat("[", 512)).must().cut == .container
 
 test "equal: each kind, a number written two ways, and members in another order"
-    assert equal(a: .null_value, b: .null_value)
-    assert !equal(a: .null_value, b: .boolean(v: false))
-    assert equal(a: parse("1").must(), b: parse("1.0").must())
-    assert !equal(a: .number(v: 1.0), b: .text(v: "1"))
-    assert equal(a: parse("{\"a\":1,\"b\":[2,{}]}").must(), b: parse("{\"b\":[2,{}],\"a\":1}").must())
-    assert !equal(a: parse("{\"a\":1}").must(), b: parse("{\"a\":1,\"b\":2}").must())
-    assert !equal(a: parse("{\"a\":1}").must(), b: parse("{\"b\":1}").must())
-    assert !equal(a: parse("[1,2]").must(), b: parse("[2,1]").must())
-    assert equal(a: .text(v: "città"), b: .text(v: "città"))
+    assert equals(a: .null_value, b: .null_value)
+    assert !equals(a: .null_value, b: .boolean(v: false))
+    assert equals(a: parse("1").must(), b: parse("1.0").must())
+    assert !equals(a: .number(v: 1.0), b: .text(v: "1"))
+    assert equals(a: parse("{\"a\":1,\"b\":[2,{}]}").must(), b: parse("{\"b\":[2,{}],\"a\":1}").must())
+    assert !equals(a: parse("{\"a\":1}").must(), b: parse("{\"a\":1,\"b\":2}").must())
+    assert !equals(a: parse("{\"a\":1}").must(), b: parse("{\"b\":1}").must())
+    assert !equals(a: parse("[1,2]").must(), b: parse("[2,1]").must())
+    assert equals(a: .text(v: "città"), b: .text(v: "città"))
 
 test "equal: two lists nested a hundred thousand deep"
     a: Value @= .null_value
@@ -1352,8 +1366,8 @@ test "equal: two lists nested a hundred thousand deep"
         a @ .list(items: [a])
         b @ .list(items: [b])
 
-    assert equal(a: a, b: b)
-    assert !equal(a: a, b: .list(items: [b]))
+    assert equals(a: a, b: b)
+    assert !equals(a: a, b: .list(items: [b]))
 
 ## Examples
 
@@ -1368,7 +1382,150 @@ test "parse_partial: a tool's arguments half arrived"
     assert got.pointer == "/note"
 
 # Two objects written with their members in two orders, which are one value.
-test "equal: one object written in two orders"
+test "equals: one object written in two orders"
     one = parse("{\"a\": 1, \"b\": [true, null]}").must()
     two = parse("{\"b\": [true, null], \"a\": 1.0}").must()
-    assert equal(a: one, b: two)
+    assert equals(a: one, b: two)
+
+# The options of RFC 8259, widened to read what Python writes for a NaN.
+test "strict: widened by one field"
+    options @= strict()
+    options.non_finite @ true
+    assert is_null(parse_with("null", options).must()) && !parse_with("NaN", options).is_err()
+
+# A configuration read, and a member read out of it.
+test "parse: an object read"
+    v = parse("{\"name\": \"Ada\", \"tags\": [\"x\"]}").must()
+    assert text_of(member(v, "name").must()).must() == "Ada"
+
+# A text whose key is written twice, read where the options allow it.
+test "parse_with: a key written twice, the last value kept"
+    options @= strict()
+    options.duplicate_keys @ true
+    v = parse_with("{\"a\": 1, \"a\": 2}", options).must()
+    assert int_of(member(v, "a").must()).must() == 2
+
+# Values written one after another, as JSON Lines holds them, read in a loop.
+test "parse_next: three values one after another"
+    text = "1 [2] {\"a\":3}"
+    at: i64 @= 0
+    count: i64 @= 0
+
+    while at < text.len()
+        got = parse_next(text: text, from: at, options: strict()).must()
+        at @ got.next
+        count @ count + 1
+
+    assert count == 3
+
+# A text asked whether it is JSON.
+test "is_valid: JSON and a trailing comma"
+    assert is_valid("[1, 2]") && !is_valid("[1, 2,]")
+
+# The shortest text, changed to sort its keys.
+test "compact: its keys sorted"
+    options @= compact()
+    options.sort_keys @ true
+    assert format_with(parse("{\"b\":1,\"a\":2}").must(), options).must() == "{\"a\":2,\"b\":1}"
+
+# A value written on one line, an integer with no fraction.
+test "format: an object with a list"
+    assert format(parse("{\"a\": [1.0, true, null]}").must()).must() == "{\"a\":[1,true,null]}"
+
+# A value written over several lines, as Python's `indent=2` writes it.
+test "format_indented: two spaces"
+    assert format_indented(parse("{\"a\":[1,2]}").must(), width: 2).must() == "{\n  \"a\": [\n    1,\n    2\n  ]\n}"
+
+# A value written with its keys sorted and a space after each separator, as
+# Python's `sort_keys=True` writes it.
+test "format_with: keys sorted and spaced"
+    options @= compact()
+    options.sort_keys @ true
+    options.spaced @ true
+    assert format_with(parse("{\"b\":1,\"a\":[2,3]}").must(), options).must() == "{\"a\": [2, 3], \"b\": 1}"
+
+# A value written in the one form RFC 8785 gives it, for a signature.
+test "format_canonical: keys in order and a number shortened"
+    assert format_canonical(parse("{\"b\":1.50,\"a\":[1e2]}").must()).must() == "{\"a\":[100],\"b\":1.5}"
+
+# A text written as a JSON string.
+test "quote: a quote and a line break"
+    assert quote("say \"hi\"\n") == "\"say \\\"hi\\\"\\n\""
+
+# A JSON string read back as its text.
+test "unquote: an escape read"
+    assert unquote("\"caf\\u00e9\"").must() == "café"
+
+# A text taken to one line, its tokens as they were written.
+test "to_compact: white space taken out"
+    assert to_compact("{ \"a\" : [ 1.50 , 2 ] }").must() == "{\"a\":[1.50,2]}"
+
+# A text laid out over several lines, its tokens as they were written.
+test "to_indented: a list over lines"
+    assert to_indented("[1.50,2]", width: 2).must() == "[\n  1.50,\n  2\n]"
+
+# A text made safe inside an HTML script element.
+test "to_html_safe: a tag inside a string"
+    assert to_html_safe("{\"h\":\"<b>&\"}") == "{\"h\":\"\\u003cb\\u003e\\u0026\"}"
+
+# The kind of a value, for a message.
+test "kind_of: a list"
+    assert kind_of(parse("[1]").must()) == "list"
+
+# A member asked whether it is null.
+test "is_null: a null and a zero"
+    assert is_null(parse("null").must()) && !is_null(parse("0").must())
+
+# A setting read as a `bool`.
+test "bool_of: a flag"
+    assert bool_of(parse("true").must()).must()
+
+# A number read as an `f64`.
+test "number_of: a price"
+    assert number_of(parse("9.99").must()).must() == 9.99
+
+# A count read as an integer, and a number that is no integer refused.
+test "int_of: a count and a fraction"
+    assert int_of(parse("42").must()).must() == 42
+    assert int_of(parse("4.2").must()).is_err()
+
+# A name read as a `str`.
+test "text_of: a name"
+    assert text_of(parse("\"Ada\"").must()).must() == "Ada"
+
+# The elements of a list, in order.
+test "items_of: a list of numbers"
+    assert items_of(parse("[1, 2]").must()).must().len() == 2
+
+# The members of an object, in the order they were written.
+test "members_of: the keys in their order"
+    members = members_of(parse("{\"b\": 1, \"a\": 2}").must()).must()
+    assert keys(members) == ["b", "a"]
+
+# A member read by its key, and one that is not there.
+test "member: a key held and one missing"
+    v = parse("{\"a\": 1}").must()
+    assert member(v, "a").must() == .number(v: 1.0)
+    assert member(v, "b").is_err()
+
+# An element read by its index.
+test "element: the second of three"
+    assert element(parse("[\"x\", \"y\", \"z\"]").must(), index: 1).must() == .text(v: "y")
+
+# A value deep inside a document, reached by a pointer.
+test "value_at: a member of the first element"
+    v = parse("{\"users\": [{\"name\": \"Ada\"}]}").must()
+    assert value_at(v, pointer: "/users/0/name").must() == .text(v: "Ada")
+
+# An integer made a value, and one past what an `f64` holds exactly.
+test "from_int: a count and the edge"
+    assert format(from_int(7).must()).must() == "7"
+    assert from_int(MAX_EXACT_INT + 1).is_err()
+
+# A pointer written from keys that hold a slash and a tilde.
+test "pointer_of: keys with a slash and a tilde"
+    assert pointer_of(["a/b", "c~d", "0"]) == "/a~1b/c~0d/0"
+
+# A pointer read back as its keys.
+test "pointer_tokens: escapes read"
+    assert pointer_tokens("/a~1b/c~0d/0").must() == ["a/b", "c~d", "0"]

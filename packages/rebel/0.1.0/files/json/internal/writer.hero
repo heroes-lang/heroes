@@ -13,6 +13,10 @@ use unicode
 constant INVALID: str
     "invalid"
 
+# The code of a `nan` or an infinity, which no JSON says.
+constant UNSUPPORTED: str
+    "unsupported"
+
 # How the events are written: the fields of `json.FormatOptions`, and one of
 # RFC 8785's own.
 record Layout
@@ -159,13 +163,13 @@ function scalar_text(e: event.Event, layout: Layout) -> str?
 
 # `x` as a JSON number: the shortest digits that read back as `x`, laid out
 # as Go and ECMAScript lay them, with no point on an integer, and an exponent
-# only from 1e+21 up and from 1e-7 down. Fails `invalid` on `nan` and the
+# only from 1e+21 up and from 1e-7 down. Fails `unsupported` on `nan` and the
 # infinities, unless `layout.non_finite` asks for Python's `NaN`, `Infinity`
 # and `-Infinity`.
 function number_text(x: f64, layout: Layout) -> str?
     if x != x || x - x != 0.0
         if !layout.non_finite
-            return fail(code: INVALID, msg: f"the number {x} has no JSON: a JSON text writes only finite numbers")
+            return fail(code: UNSUPPORTED, msg: f"the number {x} has no JSON: a JSON text writes only finite numbers")
 
         if x != x
             return ok("NaN")
@@ -372,7 +376,7 @@ test "number_text: nan and the infinities fail, and are written as Python writes
 
     match number_text(x: nan, layout: flat())
         .ok _  => assert false
-        .err e => assert e.code == "invalid" && e.msg == "the number nan has no JSON: a JSON text writes only finite numbers"
+        .err e => assert e.code == "unsupported" && e.msg == "the number nan has no JSON: a JSON text writes only finite numbers"
 
     assert number_text(x: inf, layout: flat()).is_err()
     assert number_text(x: 0.0 - inf, layout: flat()).is_err()

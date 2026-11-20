@@ -55,7 +55,7 @@ constant INVALID: str
 
 # The code of a reference, a meta-schema or a URI that names nothing among the
 # documents given, of a format that is not one of the dialects', and of an
-# empty list of errors: `compile_with`, `compile_at`, `is_format` and
+# empty list of errors: `compile_with`, `compile_at`, `matches_format` and
 # `best_of` fail with it.
 constant NOT_FOUND: str
     "not_found"
@@ -406,7 +406,7 @@ function schema_errors_of(schema: json.Value, options: Options) -> [Error]?
 # refused, not mapped, and a label is not held to NFC.
 #
 # Fails `not_found` where `format` is none of them.
-function is_format(text: str, format: str) -> bool?
+function matches_format(text: str, format: str) -> bool?
     return formats.check(text: text, format: format)
 
 ## Tests
@@ -494,5 +494,5 @@ test "schema_errors_of: a minimum that is not a number"
     assert found.len() > 0
 
 # A text checked against a format.
-test "is_format: a date"
-    assert is_format(text: "1977-01-14", format: "date").must() && !is_format(text: "1977-13-01", format: "date").must()
+test "matches_format: a date"
+    assert matches_format(text: "1977-01-14", format: "date").must() && !matches_format(text: "1977-13-01", format: "date").must()

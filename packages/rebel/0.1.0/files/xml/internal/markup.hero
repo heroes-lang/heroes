@@ -29,17 +29,6 @@ record Declared
     # The byte index past `?>`.
     end: i64
 
-# Whether `text` holds `word` from byte `at` on.
-function holds_at(text: str, at: i64, word: str) -> bool
-    if at < 0 || at + word.len() > text.len()
-        return false
-
-    for k in range(from: 0, to: word.len())
-        if text[at + k] != word[k]
-            return false
-
-    return true
-
 # The byte index of the first byte from `at` on that is not white space, or
 # the text's length.
 function skip_space(text: str, at: i64) -> i64
@@ -56,7 +45,7 @@ function index_from(text: str, at: i64, word: str) -> i64
     i: i64 @= at
 
     while i + word.len() <= text.len()
-        if holds_at(text: text, at: i, word: word)
+        if strings.has_prefix_at(s: text, prefix: word, at: i)
             return i
         i @ i + 1
 
@@ -75,7 +64,7 @@ function read_comment(text: str, at: i64) -> refs.Piece?
             msg: scan.expected(text: text, at: text.len(), what: f"`-->`, which ends the comment opened at {scan.position(text: text, at: at)}")
         )
 
-    if !holds_at(text: text, at: dashes, word: "-->")
+    if !strings.has_prefix_at(s: text, prefix: "-->", at: dashes)
         return fail(
             code: scan.INVALID,
             msg: scan.said(text: text, at: dashes, what: "`--` stands inside a comment, where XML allows it only in the `-->` that ends it")
@@ -105,7 +94,7 @@ function read_instruction(text: str, at: i64) -> Instruction?
             msg: scan.said(text: text, at: first, what: f"the target `{target}` holds a colon, which Namespaces in XML 1.0 refuses")
         )
 
-    if holds_at(text: text, at: end, word: "?>")
+    if strings.has_prefix_at(s: text, prefix: "?>", at: end)
         return ok(Instruction(target: target, data: "", end: end + 2))
 
     if end >= text.len() || !characters.is_space(text[end])
@@ -201,7 +190,7 @@ function is_ascii_letter(b: u8) -> bool
 function read_declaration(text: str, at: i64) -> Declared?
     first = skip_space(text: text, at: at + 5)
 
-    if !holds_at(text: text, at: first, word: "version")
+    if !strings.has_prefix_at(s: text, prefix: "version", at: first)
         return fail(
             code: scan.INVALID,
             msg: scan.expected(text: text, at: first, what: "`version`, which a declaration names first")
@@ -218,7 +207,7 @@ function read_declaration(text: str, at: i64) -> Declared?
     standalone: str @= ""
     next: i64 @= skip_space(text: text, at: i)
 
-    if next > i && holds_at(text: text, at: next, word: "encoding")
+    if next > i && strings.has_prefix_at(s: text, prefix: "encoding", at: next)
         named = read_pseudo(text: text, at: next, name: "encoding")?
 
         if !is_encoding_name(named.value)
@@ -236,7 +225,7 @@ function read_declaration(text: str, at: i64) -> Declared?
         i @ named.end
         next @ skip_space(text: text, at: i)
 
-    if next > i && holds_at(text: text, at: next, word: "standalone")
+    if next > i && strings.has_prefix_at(s: text, prefix: "standalone", at: next)
         said = read_pseudo(text: text, at: next, name: "standalone")?
 
         if said.value != "yes" && said.value != "no"
@@ -248,7 +237,7 @@ function read_declaration(text: str, at: i64) -> Declared?
         i @ said.end
         next @ skip_space(text: text, at: i)
 
-    if !holds_at(text: text, at: next, word: "?>")
+    if !strings.has_prefix_at(s: text, prefix: "?>", at: next)
         what = if encoding == "" && standalone == ""
             "`encoding`, `standalone` or `?>`"
         else if standalone == ""
@@ -260,10 +249,10 @@ function read_declaration(text: str, at: i64) -> Declared?
 
 ## Tests
 
-test "holds_at, skip_space and index_from: at the start, past the end, and absent"
-    assert holds_at(text: "<!--", at: 0, word: "<!")
-    assert !holds_at(text: "<!", at: 1, word: "!-")
-    assert !holds_at(text: "a", at: -1, word: "a")
+test "skip_space and index_from, beside strings.has_prefix_at: at the start, past the end, and absent"
+    assert strings.has_prefix_at(s: "<!--", prefix: "<!", at: 0)
+    assert !strings.has_prefix_at(s: "<!", prefix: "!-", at: 1)
+    assert !strings.has_prefix_at(s: "a", prefix: "a", at: -1)
     assert skip_space(text: " \t\r\nx", at: 0) == 4
     assert skip_space(text: "  ", at: 0) == 2
     assert index_from(text: "a?>b?>", at: 2, word: "?>") == 4

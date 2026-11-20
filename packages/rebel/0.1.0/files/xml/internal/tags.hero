@@ -3,6 +3,7 @@
 # reads it, and no attribute written twice. Resolving the names to their
 # namespaces is the reader's, which holds the scope.
 
+use strings
 use xml/internal/characters
 use xml/internal/markup
 use xml/internal/refs
@@ -41,7 +42,7 @@ function read_start_tag(text: str, at: i64) -> StartTag?
         if next < text.len() && text[next] == '>'
             return ok(StartTag(raw: raw, names: names, values: values, places: places, closed: false, end: next + 1))
 
-        if markup.holds_at(text: text, at: next, word: "/>")
+        if strings.has_prefix_at(s: text, prefix: "/>", at: next)
             return ok(StartTag(raw: raw, names: names, values: values, places: places, closed: true, end: next + 2))
 
         if next == i
