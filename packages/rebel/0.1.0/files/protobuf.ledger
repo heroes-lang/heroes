@@ -291,14 +291,14 @@ capability text/read  a message read from the text format
   python  text_format.Parse, text_format.Merge, text_format.ParseLines, text_format.MergeLines, text_format.Tokenizer, text_format.ParseBool, text_format.ParseEnum, text_format.ParseFloat, text_format.ParseInteger, text_format.ParseError
 
 capability wkt/timestamp  a Timestamp to and from an instant, and its RFC 3339 text
-  heroes  protobuf.from_instant, protobuf.to_instant, protobuf.format_timestamp, protobuf.parse_timestamp
+  heroes  protobuf.from_instant, protobuf.instant_of, protobuf.format_timestamp, protobuf.parse_timestamp
   go      timestamppb.New, timestamppb.Now, timestamppb.Timestamp.AsTime, timestamppb.Timestamp.CheckValid, timestamppb.Timestamp.IsValid
   rust    prost_types::Timestamp, prost_types::TimestampError
   python  timestamp_pb2.Timestamp.FromDatetime, ToDatetime, FromJsonString, ToJsonString, GetCurrentTime, FromSeconds, ToSeconds, FromMilliseconds, ToMilliseconds, FromMicroseconds, ToMicroseconds, FromNanoseconds, ToNanoseconds
-  note    the text spans 0001 to 9999 as the type does, wider than a `time.Instant`, which `to_instant` fails `does_not_fit` past; 0, 3, 6 or 9 fraction digits as Go writes them. Now is `from_instant(time.now()?)`; seconds and their parts are `time`'s
+  note    the text spans 0001 to 9999 as the type does, wider than a `time.Instant`, which `instant_of` fails `does_not_fit` past; 0, 3, 6 or 9 fraction digits as Go writes them. Now is `from_instant(time.now()?)`; seconds and their parts are `time`'s
 
 capability wkt/duration  a Duration to and from a `time.Duration`, and its text
-  heroes  protobuf.from_duration, protobuf.to_duration, protobuf.format_duration, protobuf.parse_duration
+  heroes  protobuf.from_duration, protobuf.duration_of, protobuf.format_duration, protobuf.parse_duration
   go      durationpb.New, durationpb.Duration.AsDuration, durationpb.Duration.CheckValid, durationpb.Duration.IsValid
   rust    prost_types::Duration, prost_types::DurationError
   python  duration_pb2.Duration.FromTimedelta, ToTimedelta, FromJsonString, ToJsonString, FromSeconds, ToSeconds, FromMilliseconds, ToMilliseconds, FromMicroseconds, ToMicroseconds, FromNanoseconds, ToNanoseconds
@@ -325,7 +325,7 @@ capability wkt/wrappers  a scalar in its wrapper message and out of it
   python  wrappers_pb2.BoolValue, BytesValue, DoubleValue, FloatValue, Int32Value, Int64Value, StringValue, UInt32Value, UInt64Value
 
 capability wkt/field-mask  a FieldMask built, read, written as JSON text, normalized, joined, intersected and checked against a type
-  heroes  protobuf.field_mask_of, protobuf.paths_of, protobuf.format_field_mask, protobuf.parse_field_mask, protobuf.normalize_mask, protobuf.union_masks, protobuf.intersect_masks, protobuf.check_mask
+  heroes  protobuf.field_mask_of, protobuf.paths_of, protobuf.format_field_mask, protobuf.parse_field_mask, protobuf.normalize_field_mask, protobuf.union_field_masks, protobuf.intersect_field_masks, protobuf.check_field_mask
   go      fieldmaskpb.New, fieldmaskpb.Union, fieldmaskpb.Intersect, fieldmaskpb.FieldMask.Append, fieldmaskpb.FieldMask.IsValid, fieldmaskpb.FieldMask.Normalize
   rust    prost_types::FieldMask
   python  field_mask_pb2.FieldMask.ToJsonString, FromJsonString, IsValidForDescriptor, CanonicalFormFromMask, Union, Intersect, AllFieldsFromDescriptor

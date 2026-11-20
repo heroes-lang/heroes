@@ -295,9 +295,11 @@ test "decode: malformed words are text, base 64 without padding, a language"
     assert joined_text(decode("=?utf-8*en?q?hello?=")).must() == "hello"
     assert joined_text(decode("=?")).must() == "=?"
 
-test "decode: a charset not read keeps its bytes; bytes not UTF-8 are not decoded"
-    pieces = decode("x =?koi8-r?q?=F0?=")
-    assert pieces.len() == 2 && pieces[1].charset == "koi8-r" && pieces[1].data == [240] && !pieces[1].is_decoded
+test "decode: a charset not read keeps its bytes, a legacy one is read, and bytes not UTF-8 are not decoded"
+    pieces = decode("x =?utf-7?q?=F0?=")
+    assert pieces.len() == 2 && pieces[1].charset == "utf-7" && pieces[1].data == [240] && !pieces[1].is_decoded
+    read = decode("=?koi8-r?q?=F0?=")
+    assert read.len() == 1 && read[0].is_decoded && read[0].text == "П"
 
     match joined_text(pieces)
         .ok _  => assert false

@@ -160,351 +160,6 @@ constant MAX_FIELD_NUMBER: i64
 constant TYPE_URL_PREFIX: str
     "type.googleapis.com/"
 
-## The wire, field by field
-
-# How a field's value is written on the wire.
-variant WireType
-    # A varint, wire type 0.
-    varint
-    # Eight bytes, wire type 1.
-    fixed64
-    # A varint length, then that many bytes, wire type 2.
-    length_delimited
-    # The start of a group, wire type 3.
-    start_group
-    # The end of a group, wire type 4.
-    end_group
-    # Four bytes, wire type 5.
-    fixed32
-
-# A number read from the wire, and where the bytes after it begin.
-record WireNumber
-    # The number: a varint's, or four or eight bytes' little-endian.
-    value: u64
-    # The index of the byte after it.
-    next: i64
-
-# A field's tag read from the wire.
-record WireTag
-    # The field number, 1 to `MAX_FIELD_NUMBER`.
-    number: i64
-    # How its value is written.
-    wire: WireType
-    # The index of the value's first byte.
-    next: i64
-
-# A length-delimited value read from the wire.
-record WireBytes
-    # The bytes, the length taken off.
-    value: [u8]
-    # The index of the byte after them.
-    next: i64
-
-# Writes `number`'s tag with `wire` at the end of `to`.
-#
-# - `to`: the bytes written so far, which this lengthens.
-# - `number`: the field number, 1 to `MAX_FIELD_NUMBER`.
-# - `wire`: how the value after it is written.
-#
-# Aborts where `number` is outside 1 to `MAX_FIELD_NUMBER`. See also
-# `decode_tag`.
-function push_tag(@to: [u8], number: i64, wire: WireType)
-    code = match wire
-        .varint           => 0
-        .fixed64          => 1
-        .length_delimited => 2
-        .start_group      => 3
-        .end_group        => 4
-        .fixed32          => 5
-
-    wires.push_tag(@to, number: number, wire: code)
-
-# Writes `v` as a varint at the end of `to`: seven bits a byte, the lowest
-# first.
-#
-# - `to`: the bytes written so far, which this lengthens.
-# - `v`: any `u64`; one byte up to 127, ten for the largest.
-#
-# See also `decode_varint`, `to_zigzag`.
-function push_varint(@to: [u8], v: u64)
-    wires.push_varint(@to, v)
-
-# Writes `v` as four bytes, the lowest first, at the end of `to`.
-#
-# - `to`: the bytes written so far, which this lengthens.
-# - `v`: any `u32`.
-#
-# See also `decode_fixed32`, `numbers.f32_to_bits`.
-function push_fixed32(@to: [u8], v: u32)
-    wires.push_fixed32(@to, v)
-
-# Writes `v` as eight bytes, the lowest first, at the end of `to`.
-#
-# - `to`: the bytes written so far, which this lengthens.
-# - `v`: any `u64`.
-#
-# See also `decode_fixed64`, `numbers.f64_to_bits`.
-function push_fixed64(@to: [u8], v: u64)
-    wires.push_fixed64(@to, v)
-
-# Writes the length of `v` as a varint, then `v`, at the end of `to`.
-#
-# - `to`: the bytes written so far, which this lengthens.
-# - `v`: the bytes, of any length, the empty list included.
-#
-# See also `decode_length_delimited`.
-function push_length_delimited(@to: [u8], v: [u8])
-    wires.push_bytes(to: @to, v: v)
-
-# The tag that begins at byte `at` of `data`.
-#
-# - `data`: the bytes.
-# - `at`: the index of the tag's first byte, 0 to the length of `data`.
-#
-# Fails `invalid` where the bytes end inside the tag, where its varint passes
-# 32 bits, where its wire type is 6 or 7, and where its number is 0 or past
-# `MAX_FIELD_NUMBER`; the message names the byte. See also `push_tag`,
-# `skip_field`.
-function decode_tag(data: [u8], at: i64) -> WireTag?
-    t = wires.tag(data, at: at)?
-
-    wire: WireType = if t.wire == 0
-        .varint
-    else if t.wire == 1
-        .fixed64
-    else if t.wire == 2
-        .length_delimited
-    else if t.wire == 3
-        .start_group
-    else if t.wire == 4
-        .end_group
-    else
-        .fixed32
-    return ok(WireTag(number: t.number, wire: wire, next: t.next))
-
-# The varint that begins at byte `at` of `data`.
-#
-# - `data`: the bytes.
-# - `at`: the index of its first byte, 0 to the length of `data`.
-#
-# A varint written longer than it needs is read, up to ten bytes. Fails
-# `invalid` where the bytes end inside it, and where it has an eleventh byte or
-# a tenth above 1, which pass 64 bits. See also `push_varint`.
-function decode_varint(data: [u8], at: i64) -> WireNumber?
-    got = wires.varint(data, at: at)?
-    return ok(WireNumber(value: got.value, next: got.next))
-
-# The four bytes that begin at byte `at` of `data`, the lowest first.
-#
-# - `data`: the bytes.
-# - `at`: the index of the first, 0 to the length of `data`.
-#
-# Fails `invalid` where fewer than four bytes are left. See also
-# `push_fixed32`, `numbers.bits_to_f32`.
-function decode_fixed32(data: [u8], at: i64) -> WireNumber?
-    got = wires.fixed32(data, at: at)?
-    return ok(WireNumber(value: got.value, next: got.next))
-
-# The eight bytes that begin at byte `at` of `data`, the lowest first.
-#
-# - `data`: the bytes.
-# - `at`: the index of the first, 0 to the length of `data`.
-#
-# Fails `invalid` where fewer than eight bytes are left. See also
-# `push_fixed64`, `numbers.bits_to_f64`.
-function decode_fixed64(data: [u8], at: i64) -> WireNumber?
-    got = wires.fixed64(data, at: at)?
-    return ok(WireNumber(value: got.value, next: got.next))
-
-# The length-delimited value that begins at byte `at` of `data`: a varint
-# length, then that many bytes.
-#
-# - `data`: the bytes.
-# - `at`: the index of the length's first byte, 0 to the length of `data`.
-#
-# Fails `invalid` where the length is not a varint or passes the bytes left,
-# before anything is held for it. See also `push_length_delimited`.
-function decode_length_delimited(data: [u8], at: i64) -> WireBytes?
-    got = wires.delimited(data, at: at)?
-    return ok(WireBytes(value: got.data, next: got.next))
-
-# The index past the value of the field whose tag `tag` is, a group's end tag
-# included: the way past a field a program does not read.
-#
-# - `data`: the bytes holding the field.
-# - `tag`: the field's tag, as `decode_tag` answered it at its place in `data`.
-#
-# A group is skipped to the end tag of its own number, the groups inside it
-# too, no deeper than `DEFAULT_MAX_DEPTH`. Fails `invalid` where the value
-# passes the end of `data`, where a group's end tag is missing or of another
-# number, where `tag` is itself an end tag, and where groups nest deeper. See
-# also `decode_tag`.
-function skip_field(data: [u8], tag: WireTag) -> i64?
-    code = match tag.wire
-        .varint           => 0
-        .fixed64          => 1
-        .length_delimited => 2
-        .start_group      => 3
-        .end_group        => 4
-        .fixed32          => 5
-
-    return wires.skip(data, number: tag.number, wire: code, at: tag.next, max_depth: DEFAULT_MAX_DEPTH)
-
-# `n` in zig-zag form, as `sint32` and `sint64` write it: 0, -1, 1, -2 become
-# 0, 1, 2, 3.
-#
-# - `n`: any `i64`.
-#
-# See also `from_zigzag`.
-function to_zigzag(n: i64) -> u64
-    return twos.zigzag(n)
-
-# The number whose zig-zag form `n` is.
-#
-# - `n`: any `u64`.
-#
-# See also `to_zigzag`.
-function from_zigzag(n: u64) -> i64
-    return twos.unzigzag(n)
-
-# How many bytes `push_varint` writes for `v`, 1 to 10.
-#
-# - `v`: any `u64`.
-#
-# See also `push_varint`.
-function size_of_varint(v: u64) -> i64
-    return wires.varint_size(v)
-
-## Bytes read with no schema
-
-# One field read with no schema: its number and its value as the wire holds
-# it, which says nothing of the kind its `.proto` declares.
-record RawField
-    # The field number.
-    number: i64
-    # The value.
-    value: RawValue
-
-# A field's value as the wire holds it.
-variant RawValue
-    # A varint, wire type 0.
-    varint
-        # The number.
-        v: u64
-    # Eight bytes, wire type 1.
-    fixed64
-        # The bytes as a little-endian number.
-        v: u64
-    # A length-delimited value, wire type 2: a string, bytes, a message or a
-    # packed list, which the wire does not tell apart.
-    length_delimited
-        # The bytes.
-        v: [u8]
-    # A group, wire types 3 and 4: the fields between its two tags.
-    group
-        # The fields, in order.
-        fields: [RawField]
-    # Four bytes, wire type 5.
-    fixed32
-        # The bytes as a little-endian number.
-        v: u32
-
-# The fields `data` holds, read with no schema, as `protoc --decode_raw` reads
-# them.
-#
-# - `data`: the encoded fields; the empty list holds none.
-#
-# Fails `invalid` where a tag, a value or a group is not whole, and where
-# groups nest deeper than `DEFAULT_MAX_DEPTH`; the message names the byte. A
-# length-delimited value is not looked inside. See also `encode_raw`.
-function decode_raw(data: [u8]) -> [RawField]?
-    raws = wires.raw_fields(data, max_depth: DEFAULT_MAX_DEPTH)?
-
-    # The fields of the groups still open, the innermost last, and their
-    # numbers.
-    levels: [[RawField]] @= []
-    numbers: [i64] @= []
-    current: [RawField] @= []
-
-    for r in raws
-        if r.wire == wires.START_GROUP
-            levels @ levels.push(current)
-            numbers @ numbers.push(r.number)
-            current @ []
-        else if r.wire == wires.END_GROUP
-            inner = current
-            current @ levels[levels.len() - 1]
-            levels @ levels.slice(from: 0, to: levels.len() - 1)
-            numbers @ numbers.slice(from: 0, to: numbers.len() - 1)
-            current @ current.push(RawField(number: r.number, value: .group(fields: inner)))
-        else
-            value: RawValue = if r.wire == wires.VARINT
-                .varint(v: r.value)
-            else if r.wire == wires.FIXED64
-                .fixed64(v: r.value)
-            else if r.wire == wires.FIXED32
-                .fixed32(v: to_u32(r.value).must())
-            else
-                .length_delimited(v: r.data)
-            current @ current.push(RawField(number: r.number, value: value))
-
-    return ok(current)
-
-# `fields` written on the wire, in their order.
-#
-# - `fields`: the fields; numbers outside 1 to `MAX_FIELD_NUMBER` abort.
-#
-# `decode_raw` reads back every list this writes. Aborts where a number is
-# outside 1 to `MAX_FIELD_NUMBER`. See also `decode_raw`.
-function encode_raw(fields: [RawField]) -> [u8]
-    out: [u8] @= []
-
-    # What is left to write, the next on top, and for each the number of the
-    # group it ends, or 0 for a field.
-    left: [RawField] @= []
-    ends: [i64] @= []
-    k: i64 @= fields.len()
-
-    while k > 0
-        k @ k - 1
-        left @ left.push(fields[k])
-        ends @ ends.push(0)
-
-    while left.len() > 0
-        here = left[left.len() - 1]
-        end = ends[ends.len() - 1]
-        left @ left.slice(from: 0, to: left.len() - 1)
-        ends @ ends.slice(from: 0, to: ends.len() - 1)
-
-        if end > 0
-            wires.push_tag(@out, number: end, wire: wires.END_GROUP)
-        else
-            match here.value
-                .varint x =>
-                    wires.push_tag(@out, number: here.number, wire: wires.VARINT)
-                    wires.push_varint(@out, x.v)
-                .fixed64 x =>
-                    wires.push_tag(@out, number: here.number, wire: wires.FIXED64)
-                    wires.push_fixed64(@out, x.v)
-                .length_delimited x =>
-                    wires.push_tag(@out, number: here.number, wire: wires.BYTES)
-                    wires.push_bytes(to: @out, v: x.v)
-                .fixed32 x =>
-                    wires.push_tag(@out, number: here.number, wire: wires.FIXED32)
-                    wires.push_fixed32(@out, x.v)
-                .group g =>
-                    wires.push_tag(@out, number: here.number, wire: wires.START_GROUP)
-                    left @ left.push(here)
-                    ends @ ends.push(here.number)
-                    j: i64 @= g.fields.len()
-
-                    while j > 0
-                        j @ j - 1
-                        left @ left.push(g.fields[j])
-                        ends @ ends.push(0)
-
-    return out
-
 ## The schema
 
 # How a `.proto` file is written: proto2, proto3, or an edition.
@@ -2293,7 +1948,7 @@ function from_json_with(schema: Schema, type_name: str, v: json.Value, options: 
 #
 # - `t`: any instant.
 #
-# See also `to_instant`, `format_timestamp`.
+# See also `instant_of`, `format_timestamp`.
 function from_instant(t: time.Instant) -> Message
     seconds: i64 @= t.unix_nanoseconds / 1000000000
     nanos: i64 @= t.unix_nanoseconds % 1000000000
@@ -2318,7 +1973,7 @@ function from_instant(t: time.Instant) -> Message
 # 0 to 999,999,999; `does_not_fit` where its moment is outside what a
 # `time.Instant` holds, 1677 to 2262, though a timestamp holds the years 1 to
 # 9999. See also `from_instant`.
-function to_instant(m: Message) -> time.Instant?
+function instant_of(m: Message) -> time.Instant?
     if m.type_name != "google.protobuf.Timestamp"
         return fail(code: INVALID, msg: f"a {m.type_name} is no google.protobuf.Timestamp")
     seconds: i64 @= 0
@@ -2346,7 +2001,7 @@ function to_instant(m: Message) -> time.Instant?
 #
 # - `d`: any duration.
 #
-# See also `to_duration`, `format_duration`.
+# See also `duration_of`, `format_duration`.
 function from_duration(d: time.Duration) -> Message
     seconds = d.nanoseconds / 1000000000
     nanos = d.nanoseconds % 1000000000
@@ -2367,7 +2022,7 @@ function from_duration(d: time.Duration) -> Message
 # differ in sign or its nanoseconds pass a second; `does_not_fit` where it is
 # past what a `time.Duration` holds, about 292 years. See also
 # `from_duration`.
-function to_duration(m: Message) -> time.Duration?
+function duration_of(m: Message) -> time.Duration?
     if m.type_name != "google.protobuf.Duration"
         return fail(code: INVALID, msg: f"a {m.type_name} is no google.protobuf.Duration")
     seconds: i64 @= 0
@@ -2725,8 +2380,8 @@ function parse_field_mask(s: str) -> [str]?
 #
 # - `paths`: the paths, in any order.
 #
-# See also `union_masks`, `intersect_masks`.
-function normalize_mask(paths: [str]) -> [str]
+# See also `union_field_masks`, `intersect_field_masks`.
+function normalize_field_mask(paths: [str]) -> [str]
     return wkt.normalize(paths)
 
 # The paths either mask covers, normalized.
@@ -2734,8 +2389,8 @@ function normalize_mask(paths: [str]) -> [str]
 # - `a`: the first mask's paths.
 # - `b`: the second's.
 #
-# See also `normalize_mask`.
-function union_masks(a: [str], b: [str]) -> [str]
+# See also `normalize_field_mask`.
+function union_field_masks(a: [str], b: [str]) -> [str]
     both: [str] @= a
 
     for p in b
@@ -2748,8 +2403,8 @@ function union_masks(a: [str], b: [str]) -> [str]
 # - `a`: the first mask's paths.
 # - `b`: the second's.
 #
-# See also `normalize_mask`.
-function intersect_masks(a: [str], b: [str]) -> [str]
+# See also `normalize_field_mask`.
+function intersect_field_masks(a: [str], b: [str]) -> [str]
     return wkt.intersect(a: a, b: b)
 
 # Checks that each path of `paths` names fields of the type `type_name`, every
@@ -2761,7 +2416,7 @@ function intersect_masks(a: [str], b: [str]) -> [str]
 #
 # Fails `invalid` naming the first path that names no field; `not_found` where
 # the type is not in the schema. See also `field_mask_of`.
-function check_mask(schema: Schema, type_name: str, paths: [str]) -> ()?
+function check_field_mask(schema: Schema, type_name: str, paths: [str]) -> ()?
     t = message_named(schema, name: type_name)?
 
     for path in paths
@@ -2792,6 +2447,351 @@ function check_mask(schema: Schema, type_name: str, paths: [str]) -> ()?
                         here @ message_named(schema, name: f.type_name)?
 
     return ok()
+
+## The wire, field by field
+
+# How a field's value is written on the wire.
+variant WireType
+    # A varint, wire type 0.
+    varint
+    # Eight bytes, wire type 1.
+    fixed64
+    # A varint length, then that many bytes, wire type 2.
+    length_delimited
+    # The start of a group, wire type 3.
+    start_group
+    # The end of a group, wire type 4.
+    end_group
+    # Four bytes, wire type 5.
+    fixed32
+
+# A number read from the wire, and where the bytes after it begin.
+record WireNumber
+    # The number: a varint's, or four or eight bytes' little-endian.
+    value: u64
+    # The index of the byte after it.
+    next: i64
+
+# A field's tag read from the wire.
+record WireTag
+    # The field number, 1 to `MAX_FIELD_NUMBER`.
+    number: i64
+    # How its value is written.
+    wire: WireType
+    # The index of the value's first byte.
+    next: i64
+
+# A length-delimited value read from the wire.
+record WireBytes
+    # The bytes, the length taken off.
+    value: [u8]
+    # The index of the byte after them.
+    next: i64
+
+# Writes `number`'s tag with `wire` at the end of `to`.
+#
+# - `to`: the bytes written so far, which this lengthens.
+# - `number`: the field number, 1 to `MAX_FIELD_NUMBER`.
+# - `wire`: how the value after it is written.
+#
+# Aborts where `number` is outside 1 to `MAX_FIELD_NUMBER`. See also
+# `decode_tag`.
+function push_tag(@to: [u8], number: i64, wire: WireType)
+    code = match wire
+        .varint           => 0
+        .fixed64          => 1
+        .length_delimited => 2
+        .start_group      => 3
+        .end_group        => 4
+        .fixed32          => 5
+
+    wires.push_tag(@to, number: number, wire: code)
+
+# Writes `v` as a varint at the end of `to`: seven bits a byte, the lowest
+# first.
+#
+# - `to`: the bytes written so far, which this lengthens.
+# - `v`: any `u64`; one byte up to 127, ten for the largest.
+#
+# See also `decode_varint`, `to_zigzag`.
+function push_varint(@to: [u8], v: u64)
+    wires.push_varint(@to, v)
+
+# Writes `v` as four bytes, the lowest first, at the end of `to`.
+#
+# - `to`: the bytes written so far, which this lengthens.
+# - `v`: any `u32`.
+#
+# See also `decode_fixed32`, `numbers.f32_to_bits`.
+function push_fixed32(@to: [u8], v: u32)
+    wires.push_fixed32(@to, v)
+
+# Writes `v` as eight bytes, the lowest first, at the end of `to`.
+#
+# - `to`: the bytes written so far, which this lengthens.
+# - `v`: any `u64`.
+#
+# See also `decode_fixed64`, `numbers.f64_to_bits`.
+function push_fixed64(@to: [u8], v: u64)
+    wires.push_fixed64(@to, v)
+
+# Writes the length of `v` as a varint, then `v`, at the end of `to`.
+#
+# - `to`: the bytes written so far, which this lengthens.
+# - `v`: the bytes, of any length, the empty list included.
+#
+# See also `decode_length_delimited`.
+function push_length_delimited(@to: [u8], v: [u8])
+    wires.push_bytes(to: @to, v: v)
+
+# The tag that begins at byte `at` of `data`.
+#
+# - `data`: the bytes.
+# - `at`: the index of the tag's first byte, 0 to the length of `data`.
+#
+# Fails `invalid` where the bytes end inside the tag, where its varint passes
+# 32 bits, where its wire type is 6 or 7, and where its number is 0 or past
+# `MAX_FIELD_NUMBER`; the message names the byte. See also `push_tag`,
+# `skip_field`.
+function decode_tag(data: [u8], at: i64) -> WireTag?
+    t = wires.tag(data, at: at)?
+
+    wire: WireType = if t.wire == 0
+        .varint
+    else if t.wire == 1
+        .fixed64
+    else if t.wire == 2
+        .length_delimited
+    else if t.wire == 3
+        .start_group
+    else if t.wire == 4
+        .end_group
+    else
+        .fixed32
+    return ok(WireTag(number: t.number, wire: wire, next: t.next))
+
+# The varint that begins at byte `at` of `data`.
+#
+# - `data`: the bytes.
+# - `at`: the index of its first byte, 0 to the length of `data`.
+#
+# A varint written longer than it needs is read, up to ten bytes. Fails
+# `invalid` where the bytes end inside it, and where it has an eleventh byte or
+# a tenth above 1, which pass 64 bits. See also `push_varint`.
+function decode_varint(data: [u8], at: i64) -> WireNumber?
+    got = wires.varint(data, at: at)?
+    return ok(WireNumber(value: got.value, next: got.next))
+
+# The four bytes that begin at byte `at` of `data`, the lowest first.
+#
+# - `data`: the bytes.
+# - `at`: the index of the first, 0 to the length of `data`.
+#
+# Fails `invalid` where fewer than four bytes are left. See also
+# `push_fixed32`, `numbers.bits_to_f32`.
+function decode_fixed32(data: [u8], at: i64) -> WireNumber?
+    got = wires.fixed32(data, at: at)?
+    return ok(WireNumber(value: got.value, next: got.next))
+
+# The eight bytes that begin at byte `at` of `data`, the lowest first.
+#
+# - `data`: the bytes.
+# - `at`: the index of the first, 0 to the length of `data`.
+#
+# Fails `invalid` where fewer than eight bytes are left. See also
+# `push_fixed64`, `numbers.bits_to_f64`.
+function decode_fixed64(data: [u8], at: i64) -> WireNumber?
+    got = wires.fixed64(data, at: at)?
+    return ok(WireNumber(value: got.value, next: got.next))
+
+# The length-delimited value that begins at byte `at` of `data`: a varint
+# length, then that many bytes.
+#
+# - `data`: the bytes.
+# - `at`: the index of the length's first byte, 0 to the length of `data`.
+#
+# Fails `invalid` where the length is not a varint or passes the bytes left,
+# before anything is held for it. See also `push_length_delimited`.
+function decode_length_delimited(data: [u8], at: i64) -> WireBytes?
+    got = wires.delimited(data, at: at)?
+    return ok(WireBytes(value: got.data, next: got.next))
+
+# The index past the value of the field whose tag `tag` is, a group's end tag
+# included: the way past a field a program does not read.
+#
+# - `data`: the bytes holding the field.
+# - `tag`: the field's tag, as `decode_tag` answered it at its place in `data`.
+#
+# A group is skipped to the end tag of its own number, the groups inside it
+# too, no deeper than `DEFAULT_MAX_DEPTH`. Fails `invalid` where the value
+# passes the end of `data`, where a group's end tag is missing or of another
+# number, where `tag` is itself an end tag, and where groups nest deeper. See
+# also `decode_tag`.
+function skip_field(data: [u8], tag: WireTag) -> i64?
+    code = match tag.wire
+        .varint           => 0
+        .fixed64          => 1
+        .length_delimited => 2
+        .start_group      => 3
+        .end_group        => 4
+        .fixed32          => 5
+
+    return wires.skip(data, number: tag.number, wire: code, at: tag.next, max_depth: DEFAULT_MAX_DEPTH)
+
+# `n` in zig-zag form, as `sint32` and `sint64` write it: 0, -1, 1, -2 become
+# 0, 1, 2, 3.
+#
+# - `n`: any `i64`.
+#
+# See also `from_zigzag`.
+function to_zigzag(n: i64) -> u64
+    return twos.zigzag(n)
+
+# The number whose zig-zag form `n` is.
+#
+# - `n`: any `u64`.
+#
+# See also `to_zigzag`.
+function from_zigzag(n: u64) -> i64
+    return twos.unzigzag(n)
+
+# How many bytes `push_varint` writes for `v`, 1 to 10.
+#
+# - `v`: any `u64`.
+#
+# See also `push_varint`.
+function size_of_varint(v: u64) -> i64
+    return wires.varint_size(v)
+
+## Bytes read with no schema
+
+# One field read with no schema: its number and its value as the wire holds
+# it, which says nothing of the kind its `.proto` declares.
+record RawField
+    # The field number.
+    number: i64
+    # The value.
+    value: RawValue
+
+# A field's value as the wire holds it.
+variant RawValue
+    # A varint, wire type 0.
+    varint
+        # The number.
+        v: u64
+    # Eight bytes, wire type 1.
+    fixed64
+        # The bytes as a little-endian number.
+        v: u64
+    # A length-delimited value, wire type 2: a string, bytes, a message or a
+    # packed list, which the wire does not tell apart.
+    length_delimited
+        # The bytes.
+        v: [u8]
+    # A group, wire types 3 and 4: the fields between its two tags.
+    group
+        # The fields, in order.
+        fields: [RawField]
+    # Four bytes, wire type 5.
+    fixed32
+        # The bytes as a little-endian number.
+        v: u32
+
+# The fields `data` holds, read with no schema, as `protoc --decode_raw` reads
+# them.
+#
+# - `data`: the encoded fields; the empty list holds none.
+#
+# Fails `invalid` where a tag, a value or a group is not whole, and where
+# groups nest deeper than `DEFAULT_MAX_DEPTH`; the message names the byte. A
+# length-delimited value is not looked inside. See also `encode_raw`.
+function decode_raw(data: [u8]) -> [RawField]?
+    raws = wires.raw_fields(data, max_depth: DEFAULT_MAX_DEPTH)?
+
+    # The fields of the groups still open, the innermost last, and their
+    # numbers.
+    levels: [[RawField]] @= []
+    numbers: [i64] @= []
+    current: [RawField] @= []
+
+    for r in raws
+        if r.wire == wires.START_GROUP
+            levels @ levels.push(current)
+            numbers @ numbers.push(r.number)
+            current @ []
+        else if r.wire == wires.END_GROUP
+            inner = current
+            current @ levels[levels.len() - 1]
+            levels @ levels.slice(from: 0, to: levels.len() - 1)
+            numbers @ numbers.slice(from: 0, to: numbers.len() - 1)
+            current @ current.push(RawField(number: r.number, value: .group(fields: inner)))
+        else
+            value: RawValue = if r.wire == wires.VARINT
+                .varint(v: r.value)
+            else if r.wire == wires.FIXED64
+                .fixed64(v: r.value)
+            else if r.wire == wires.FIXED32
+                .fixed32(v: to_u32(r.value).must())
+            else
+                .length_delimited(v: r.data)
+            current @ current.push(RawField(number: r.number, value: value))
+
+    return ok(current)
+
+# `fields` written on the wire, in their order.
+#
+# - `fields`: the fields; numbers outside 1 to `MAX_FIELD_NUMBER` abort.
+#
+# `decode_raw` reads back every list this writes. Aborts where a number is
+# outside 1 to `MAX_FIELD_NUMBER`. See also `decode_raw`.
+function encode_raw(fields: [RawField]) -> [u8]
+    out: [u8] @= []
+
+    # What is left to write, the next on top, and for each the number of the
+    # group it ends, or 0 for a field.
+    left: [RawField] @= []
+    ends: [i64] @= []
+    k: i64 @= fields.len()
+
+    while k > 0
+        k @ k - 1
+        left @ left.push(fields[k])
+        ends @ ends.push(0)
+
+    while left.len() > 0
+        here = left[left.len() - 1]
+        end = ends[ends.len() - 1]
+        left @ left.slice(from: 0, to: left.len() - 1)
+        ends @ ends.slice(from: 0, to: ends.len() - 1)
+
+        if end > 0
+            wires.push_tag(@out, number: end, wire: wires.END_GROUP)
+        else
+            match here.value
+                .varint x =>
+                    wires.push_tag(@out, number: here.number, wire: wires.VARINT)
+                    wires.push_varint(@out, x.v)
+                .fixed64 x =>
+                    wires.push_tag(@out, number: here.number, wire: wires.FIXED64)
+                    wires.push_fixed64(@out, x.v)
+                .length_delimited x =>
+                    wires.push_tag(@out, number: here.number, wire: wires.BYTES)
+                    wires.push_bytes(to: @out, v: x.v)
+                .fixed32 x =>
+                    wires.push_tag(@out, number: here.number, wire: wires.FIXED32)
+                    wires.push_fixed32(@out, x.v)
+                .group g =>
+                    wires.push_tag(@out, number: here.number, wire: wires.START_GROUP)
+                    left @ left.push(here)
+                    ends @ ends.push(here.number)
+                    j: i64 @= g.fields.len()
+
+                    while j > 0
+                        j @ j - 1
+                        left @ left.push(g.fields[j])
+                        ends @ ends.push(0)
+
+    return out
 
 ## Tests
 
@@ -3396,16 +3396,16 @@ test "from_instant: the epoch and a second"
     assert from_instant(time.Instant(unix_nanoseconds: 1500000000)).fields == {1: .int64(v: 1), 2: .int32(v: 500000000)}
 
 # A timestamp read as an instant.
-test "to_instant: one second"
-    assert to_instant(from_instant(time.Instant(unix_nanoseconds: 1000000000))).must().unix_nanoseconds == 1000000000
+test "instant_of: one second"
+    assert instant_of(from_instant(time.Instant(unix_nanoseconds: 1000000000))).must().unix_nanoseconds == 1000000000
 
 # A duration held as a message.
 test "from_duration: minus a second and a half"
     assert from_duration(time.Duration(nanoseconds: -1500000000)).fields == {1: .int64(v: -1), 2: .int32(v: -500000000)}
 
 # A duration read back.
-test "to_duration: two seconds"
-    assert to_duration(from_duration(time.Duration(nanoseconds: 2000000000))).must().nanoseconds == 2000000000
+test "duration_of: two seconds"
+    assert duration_of(from_duration(time.Duration(nanoseconds: 2000000000))).must().nanoseconds == 2000000000
 
 # A timestamp as RFC 3339 text.
 test "format_timestamp: 1972"
@@ -3480,19 +3480,19 @@ test "parse_field_mask: two paths"
     assert parse_field_mask("user.displayName,id").must() == ["user.display_name", "id"]
 
 # A path another covers, taken out.
-test "normalize_mask: a covered path"
-    assert normalize_mask(["a.b", "a", "c"]) == ["a", "c"]
+test "normalize_field_mask: a covered path"
+    assert normalize_field_mask(["a.b", "a", "c"]) == ["a", "c"]
 
 # What either mask covers.
-test "union_masks: two masks"
-    assert union_masks(a: ["a.b"], b: ["a", "c"]) == ["a", "c"]
+test "union_field_masks: two masks"
+    assert union_field_masks(a: ["a.b"], b: ["a", "c"]) == ["a", "c"]
 
 # What both masks cover.
-test "intersect_masks: two masks"
-    assert intersect_masks(a: ["a"], b: ["a.b", "c"]) == ["a.b"]
+test "intersect_field_masks: two masks"
+    assert intersect_field_masks(a: ["a"], b: ["a.b", "c"]) == ["a.b"]
 
 # Paths checked against a type.
-test "check_mask: a path that goes on past a list"
+test "check_field_mask: a path that goes on past a list"
     schema = parse_schema_text(name: "shop.proto", text: samples.shop_proto()).must()
-    assert !check_mask(schema, type_name: "shop.Order", paths: ["id", "placed.seconds"]).is_err()
-    assert check_mask(schema, type_name: "shop.Order", paths: ["items.sku"]).is_err()
+    assert !check_field_mask(schema, type_name: "shop.Order", paths: ["id", "placed.seconds"]).is_err()
+    assert check_field_mask(schema, type_name: "shop.Order", paths: ["items.sku"]).is_err()

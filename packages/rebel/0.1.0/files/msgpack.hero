@@ -29,6 +29,7 @@ use msgpack/internal/convert
 use msgpack/internal/decoder
 use msgpack/internal/encoder
 use msgpack/internal/event
+use msgpack/internal/kinds
 use msgpack/internal/stamp
 use time
 
@@ -412,6 +413,101 @@ function member(v: Value, key: str) -> Value?
         .nil_value | .boolean _ | .unsigned _ | .negative _ | .float _ | .text _ | .binary _ | .list _ | .extension _ =>
             fail(code: INVALID, msg: f"the object is no map, so it holds no key {json.quote(key)}")
 
+# The name of `v`'s case, as a `match` on it writes it: `nil_value`,
+# `boolean`, `unsigned`, `negative`, `float`, `text`, `binary`, `list`,
+# `pairs` or `extension`.
+#
+# - `v`: any object.
+function kind_of(v: Value) -> str
+    return match v
+        .nil_value   => "nil_value"
+        .boolean _   => "boolean"
+        .unsigned _  => "unsigned"
+        .negative _  => "negative"
+        .float _     => "float"
+        .text _      => "text"
+        .binary _    => "binary"
+        .list _      => "list"
+        .pairs _     => "pairs"
+        .extension _ => "extension"
+
+# The `bool` of `false` or `true`.
+#
+# - `v`: the object read, expected to be a `boolean`.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the
+# kind it is. See also `kind_of`.
+function bool_of(v: Value) -> bool?
+    match v
+        .boolean b => return ok(b.v)
+        .nil_value | .unsigned _ | .negative _ | .float _ | .text _ | .binary _ | .list _ | .pairs _ | .extension _ =>
+            return fail(code: INVALID, msg: f"expected a boolean, found {kinds.described(kind_of(v))}")
+
+# The number of a float, encoded as a float 32 or a float 64.
+#
+# - `v`: the object read, expected to be a `float`; an integer is not one,
+#   and `int_of` reads it.
+#
+# A `nan` and the infinities are answered as they are. Fails `invalid` where
+# `v` is of another kind, and the message names the kind it is.
+function float_of(v: Value) -> f64?
+    match v
+        .float f => return ok(f.v)
+        .nil_value | .boolean _ | .unsigned _ | .negative _ | .text _ | .binary _ | .list _ | .pairs _ | .extension _ =>
+            return fail(code: INVALID, msg: f"expected a float, found {kinds.described(kind_of(v))}")
+
+# The characters of a string (MessagePack's `str`).
+#
+# - `v`: the object read, expected to be a `text`; a binary is not one, and
+#   `bytes_of` reads it.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the
+# kind it is.
+function text_of(v: Value) -> str?
+    match v
+        .text t => return ok(t.v)
+        .nil_value | .boolean _ | .unsigned _ | .negative _ | .float _ | .binary _ | .list _ | .pairs _ | .extension _ =>
+            return fail(code: INVALID, msg: f"expected a string, found {kinds.described(kind_of(v))}")
+
+# The bytes of a binary (MessagePack's `bin`).
+#
+# - `v`: the object read, expected to be a `binary`; a string is not one,
+#   and `text_of` reads it, nor an extension, whose bytes its case holds.
+#
+# The empty binary answers no bytes. Fails `invalid` where `v` is of another
+# kind, and the message names the kind it is.
+function bytes_of(v: Value) -> [u8]?
+    match v
+        .binary b => return ok(b.v)
+        .nil_value | .boolean _ | .unsigned _ | .negative _ | .float _ | .text _ | .list _ | .pairs _ | .extension _ =>
+            return fail(code: INVALID, msg: f"expected a binary, found {kinds.described(kind_of(v))}")
+
+# The items of an array, in order.
+#
+# - `v`: the object read, expected to be a `list`.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the
+# kind it is.
+function items_of(v: Value) -> [Value]?
+    match v
+        .list l => return ok(l.items)
+        .nil_value | .boolean _ | .unsigned _ | .negative _ | .float _ | .text _ | .binary _ | .pairs _ | .extension _ =>
+            return fail(code: INVALID, msg: f"expected an array, found {kinds.described(kind_of(v))}")
+
+# The entries of a map, its keys of any kind, in the order they were read or
+# built.
+#
+# - `v`: the object read, expected to be a `pairs`.
+#
+# A key written twice stands in both its entries. Fails `invalid` where `v`
+# is of another kind, and the message names the kind it is. See also
+# `member`.
+function entries_of(v: Value) -> [Entry]?
+    match v
+        .pairs p => return ok(p.entries)
+        .nil_value | .boolean _ | .unsigned _ | .negative _ | .float _ | .text _ | .binary _ | .list _ | .extension _ =>
+            return fail(code: INVALID, msg: f"expected a map, found {kinds.described(kind_of(v))}")
+
 ## Timestamps
 
 # The instant the timestamp `v` holds.
@@ -502,6 +598,36 @@ test "member: the value under a string key"
     v = decode([0x81, 0xa4, 0x6e, 0x61, 0x6d, 0x65, 0xa3, 0x61, 0x64, 0x61]).must()
     assert member(v, key: "name").must() == .text(v: "ada")
 
+# The kind of an object, to choose how to read it.
+test "kind_of: a string and a map"
+    assert kind_of(.text(v: "hi")) == "text" && kind_of(decode([0x80]).must()) == "pairs"
+
+# A boolean read from its byte.
+test "bool_of: true"
+    assert bool_of(decode([0xc3]).must()).must()
+
+# A float read from its nine bytes.
+test "float_of: 1.5 as a float 64"
+    assert float_of(decode([0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0]).must()).must() == 1.5
+
+# A string read from its bytes.
+test "text_of: the string \"hi\""
+    assert text_of(decode([0xa2, 0x68, 0x69]).must()).must() == "hi"
+
+# A binary read from its bytes.
+test "bytes_of: two bytes"
+    assert bytes_of(decode([0xc4, 0x02, 0x01, 0x02]).must()).must() == [1, 2]
+
+# The items of an array, each then read by its kind.
+test "items_of: an array of two integers"
+    items = items_of(decode([0x92, 0x01, 0x02]).must()).must()
+    assert items.len() == 2 && int_of(items[1]).must() == 2
+
+# The entries of a map, its keys of any kind.
+test "entries_of: a map of an integer key"
+    entries = entries_of(decode([0x81, 0x01, 0xc2]).must()).must()
+    assert entries.len() == 1 && entries[0].key == .unsigned(v: 1) && entries[0].value == .boolean(v: false)
+
 # A timestamp of whole seconds, read as an instant.
 test "instant_of: a timestamp of 32 bits"
     v = decode([0xd6, 0xff, 0x00, 0x00, 0x00, 0x3c]).must()
@@ -544,3 +670,63 @@ test "decode and encode: every format the specification lists, read and written 
     for row in rows
         v = decode(bytes.parse_hex(row[0]).must()).must()
         assert bytes.format_hex(encode(v).must()) == row[1]
+
+test "kind_of: every case by its name"
+    values: [Value] = [
+        .nil_value
+        .boolean(v: true)
+        .unsigned(v: 0)
+        .negative(v: -1)
+        .float(v: 0.5)
+        .text(v: "")
+        .binary(v: [])
+        .list(items: [])
+        .pairs(entries: [])
+        .extension(kind: 1, data: [])
+    ]
+    names: [str] @= []
+
+    for v in values
+        names @ names.push(kind_of(v))
+
+    assert names == ["nil_value", "boolean", "unsigned", "negative", "float", "text", "binary", "list", "pairs", "extension"]
+
+test "bool_of, float_of, text_of, bytes_of: false, a nan and the infinities, the empty string and binary, and each kind refused with its words"
+    assert !bool_of(.boolean(v: false)).must()
+    x = float_of(.float(v: 0.0 / 0.0)).must()
+    assert x != x
+    assert float_of(decode([0xca, 0x7f, 0x80, 0x00, 0x00]).must()).must() == 1.0 / 0.0
+    assert float_of(decode([0xcb, 0xff, 0xf0, 0, 0, 0, 0, 0, 0]).must()).must() == -1.0 / 0.0
+    assert text_of(.text(v: "")).must() == "" && text_of(.text(v: "über")).must() == "über"
+    assert bytes_of(.binary(v: [])).must().len() == 0
+
+    match bool_of(.nil_value)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a boolean, found nil"
+
+    match float_of(.unsigned(v: 1))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a float, found an unsigned integer"
+
+    match text_of(.binary(v: [0x61]))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a string, found a binary"
+
+    match bytes_of(.extension(kind: 1, data: [0x61]))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a binary, found an extension"
+
+test "items_of and entries_of: empty ones, a key twice kept, and each refusing the other"
+    assert items_of(decode([0x90]).must()).must().len() == 0
+    assert entries_of(decode([0x80]).must()).must().len() == 0
+    lenient = DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, duplicate_keys: true, invalid_text: false)
+    twice = entries_of(decode_with(data: [0x82, 0x01, 0x02, 0x01, 0x03], options: lenient).must()).must()
+    assert twice.len() == 2 && twice[0].value == .unsigned(v: 2) && twice[1].value == .unsigned(v: 3)
+
+    match items_of(decode([0x80]).must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected an array, found a map"
+
+    match entries_of(decode([0x90]).must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a map, found an array"

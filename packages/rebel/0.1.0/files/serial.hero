@@ -313,7 +313,7 @@ function timeouts_of(port: io.Stream) -> Timeouts?
 ## Modem lines
 
 # The modem lines of a port, each on or off.
-record Lines
+record ModemLines
     # Data Terminal Ready, this side's.
     dtr: bool
     # Request To Send, this side's.
@@ -337,10 +337,10 @@ record Lines
 # closed.
 #
 # See also `set_dtr`, `set_rts`.
-function lines_of(port: io.Stream) -> Lines?
+function modem_lines_of(port: io.Stream) -> ModemLines?
     bits = calls.lines(port)?
     return ok(
-        Lines(dtr: bits & hero_serial.HERO_SERIAL_LINE_DTR != 0, rts: bits & hero_serial.HERO_SERIAL_LINE_RTS != 0, cts: bits & hero_serial.HERO_SERIAL_LINE_CTS != 0, dsr: bits & hero_serial.HERO_SERIAL_LINE_DSR != 0, cd: bits & hero_serial.HERO_SERIAL_LINE_CD != 0, ri: bits & hero_serial.HERO_SERIAL_LINE_RI != 0)
+        ModemLines(dtr: bits & hero_serial.HERO_SERIAL_LINE_DTR != 0, rts: bits & hero_serial.HERO_SERIAL_LINE_RTS != 0, cts: bits & hero_serial.HERO_SERIAL_LINE_CTS != 0, dsr: bits & hero_serial.HERO_SERIAL_LINE_DSR != 0, cd: bits & hero_serial.HERO_SERIAL_LINE_CD != 0, ri: bits & hero_serial.HERO_SERIAL_LINE_RI != 0)
     )
 
 # Raises the DTR line of `port`, or drops it.
@@ -350,9 +350,9 @@ function lines_of(port: io.Stream) -> Lines?
 #
 # A DSR/DTR flow drives the line itself and may take it back.
 #
-# Fails as `lines_of` does.
+# Fails as `modem_lines_of` does.
 #
-# See also `set_rts`, `lines_of`.
+# See also `set_rts`, `modem_lines_of`.
 function set_dtr(port: io.Stream, on: bool) -> ()?
     return calls.set_line(port, line: hero_serial.HERO_SERIAL_LINE_DTR, name: "DTR", on: on)
 
@@ -363,9 +363,9 @@ function set_dtr(port: io.Stream, on: bool) -> ()?
 #
 # An RTS/CTS flow drives the line itself and may take it back.
 #
-# Fails as `lines_of` does.
+# Fails as `modem_lines_of` does.
 #
-# See also `set_dtr`, `lines_of`.
+# See also `set_dtr`, `modem_lines_of`.
 function set_rts(port: io.Stream, on: bool) -> ()?
     return calls.set_line(port, line: hero_serial.HERO_SERIAL_LINE_RTS, name: "RTS", on: on)
 
@@ -595,14 +595,14 @@ test "timeouts_of: FOREVER and no gap after an open"
             io.close(@pair.controller).must()
 
 # The lines of a real port; a pseudo-terminal has none and says so.
-test "lines_of: a pseudo-terminal has no modem lines"
+test "modem_lines_of: a pseudo-terminal has no modem lines"
     match open_pseudo()
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
             port @= open(pair.path, settings: defaults(baud: 9600)).must()
 
-            match lines_of(port)
+            match modem_lines_of(port)
                 .ok l  => assert l.dtr || !l.dtr
                 .err e => assert e.code == UNSUPPORTED
 

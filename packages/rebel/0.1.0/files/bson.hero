@@ -1070,7 +1070,10 @@ function reordered(b: [u8], representation: UuidRepresentation) -> [u8]
 # - `b`: the UUID's sixteen bytes, in their standard order.
 # - `representation`: the subtype and order to write.
 #
-# Fails `invalid` where `b` is not sixteen bytes. See also `uuid_of`.
+# Fails `invalid` where `b` is not sixteen bytes. A `uuid.Uuid` gives its
+# sixteen bytes by `uuid.to_bytes`, since `uuid` stands at this package's
+# layer and its type cannot be named here. See also `uuid_of`,
+# `uuid.to_bytes`.
 function from_uuid(b: [u8], representation: UuidRepresentation) -> Value?
     if b.len() != 16
         return fail(code: INVALID, msg: f"{b.len()} bytes, where a UUID has 16")
@@ -1088,7 +1091,8 @@ function from_uuid(b: [u8], representation: UuidRepresentation) -> Value?
 # - `representation`: the subtype and order it was written in.
 #
 # Fails `invalid` where `v` is no binary of that subtype holding sixteen
-# bytes. See also `from_uuid`.
+# bytes. The bytes become a `uuid.Uuid` by `uuid.from_bytes`. See also
+# `from_uuid`, `uuid.from_bytes`.
 function uuid_of(v: Value, representation: UuidRepresentation) -> [u8]?
     wanted: u8 = match representation
         .standard                                      => SUBTYPE_UUID

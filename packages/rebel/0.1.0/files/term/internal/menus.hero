@@ -6,6 +6,7 @@
 use term/internal/sgr
 use term/internal/width
 use unicode
+use unicode/segment
 
 # The bell, rung where Enter answers nothing.
 constant BELL: str
@@ -334,23 +335,12 @@ function back(drawn: i64) -> str
     return "\r" + up + sgr.CSI + "J"
 
 # `s` cut to at most `columns - 1` cells, so that it never reaches the last
-# column and wraps; as it is where `columns` is 0.
+# column and wraps; as it is where `columns` is 0 or 1. It cuts between
+# graphemes and keeps a style's sequences, as `unicode/segment.truncate` does.
 function cut(s: str, columns: i64) -> str
     if columns <= 1 || width.cells_of(s) < columns
         return s
-    at @= 0
-    used @= 0
-
-    while at < s.len()
-        next = width.next_at(s, at)
-        cells = width.cells_between(s, from: at, to: next)
-
-        if used + cells > columns - 1
-            return s.slice(from: 0, to: at)
-        used @ used + cells
-        at @ next
-
-    return s
+    return segment.truncate(s: s, width: columns - 1, ellipsis: "")
 
 # `s` with each control character, a line break or an escape among them,
 # written as a space, so that a choice draws on its one line.

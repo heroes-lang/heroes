@@ -17,7 +17,15 @@
 # It does not make a plain connection, look a name up or listen for one
 # (`net`), read or write the bytes of a stream (`io`), speak HTTP (`http`)
 # or Postgres (`sql/postgres`), or read a certificate's fields: a
-# certificate is handed and checked as PEM, and never opened here.
+# certificate is handed and checked as PEM, and never opened here; `x509`
+# reads its fields and `pem` reads and writes the PEM around it.
+#
+# Not here yet (`tls.ledger`, `pending`): a client that presents a
+# certificate and a server that asks for one (mutual TLS), the peer's
+# certificate handed to the program, a server choosing its certificate by
+# the name the client sent (SNI), the two addresses of a connection `connect`
+# made, an identity read from PKCS #12, TLS 1.3 asked as the least, a
+# half-close, a revocation asked, channel binding and an encrypted hello.
 #
 # **On macOS TLS runs only over a connection Network.framework makes**:
 # `connect` and `accept` work everywhere, and `client_over` and
@@ -92,54 +100,6 @@ constant UNSUPPORTED: str
 # the system's own words.
 constant FAILED: str
     "failed"
-
-## Certificates for tests
-
-# FOR TESTS ONLY: a test authority's certificate, EC on P-256, valid from
-# 2019 to 2125, which signed every certificate below but `TEST_SELF_CHAIN`.
-# Its key and theirs are public, in this package's source: a program that is
-# not a test never trusts it. A client trusting it alone is
-# `Client(roots: TEST_ROOT, protocols: [])`.
-constant TEST_ROOT: str
-    fixture.ROOT
-
-# FOR TESTS ONLY: a certificate for `localhost`, `127.0.0.1` and `::1`
-# signed by `TEST_ROOT`. Its first day stands before 2019-07-01 because
-# macOS refuses any server certificate issued after that day that is valid
-# for more than 825 days.
-constant TEST_LOCALHOST_CHAIN: str
-    fixture.LOCALHOST_CHAIN
-
-# FOR TESTS ONLY: `TEST_LOCALHOST_CHAIN`'s key, as PKCS #8.
-constant TEST_LOCALHOST_KEY: str
-    fixture.LOCALHOST_KEY
-
-# FOR TESTS ONLY: a certificate for `wrong.example` alone, signed by
-# `TEST_ROOT`, which a client of `localhost` refuses for its host.
-constant TEST_WRONG_CHAIN: str
-    fixture.WRONG_CHAIN
-
-# FOR TESTS ONLY: `TEST_WRONG_CHAIN`'s key.
-constant TEST_WRONG_KEY: str
-    fixture.WRONG_KEY
-
-# FOR TESTS ONLY: a certificate for `localhost` signed by `TEST_ROOT` and
-# valid in 2020 alone, which a client refuses as past its last day.
-constant TEST_EXPIRED_CHAIN: str
-    fixture.EXPIRED_CHAIN
-
-# FOR TESTS ONLY: `TEST_EXPIRED_CHAIN`'s key.
-constant TEST_EXPIRED_KEY: str
-    fixture.EXPIRED_KEY
-
-# FOR TESTS ONLY: a certificate for `localhost` signed by its own key, which
-# no authority vouches for.
-constant TEST_SELF_CHAIN: str
-    fixture.SELF_CHAIN
-
-# FOR TESTS ONLY: `TEST_SELF_CHAIN`'s key.
-constant TEST_SELF_KEY: str
-    fixture.SELF_KEY
 
 ## Settings
 
@@ -511,6 +471,54 @@ function version_of(s: io.Stream) -> i64?
 # the peer chose a name that is not UTF-8. See also `version_of`.
 function protocol_of(s: io.Stream) -> str?
     return connections.protocol_of(s)
+
+## Certificates for tests
+
+# FOR TESTS ONLY: a test authority's certificate, EC on P-256, valid from
+# 2019 to 2125, which signed every certificate below but `TEST_SELF_CHAIN`.
+# Its key and theirs are public, in this package's source: a program that is
+# not a test never trusts it. A client trusting it alone is
+# `Client(roots: TEST_ROOT, protocols: [])`.
+constant TEST_ROOT: str
+    fixture.ROOT
+
+# FOR TESTS ONLY: a certificate for `localhost`, `127.0.0.1` and `::1`
+# signed by `TEST_ROOT`. Its first day stands before 2019-07-01 because
+# macOS refuses any server certificate issued after that day that is valid
+# for more than 825 days.
+constant TEST_LOCALHOST_CHAIN: str
+    fixture.LOCALHOST_CHAIN
+
+# FOR TESTS ONLY: `TEST_LOCALHOST_CHAIN`'s key, as PKCS #8.
+constant TEST_LOCALHOST_KEY: str
+    fixture.LOCALHOST_KEY
+
+# FOR TESTS ONLY: a certificate for `wrong.example` alone, signed by
+# `TEST_ROOT`, which a client of `localhost` refuses for its host.
+constant TEST_WRONG_CHAIN: str
+    fixture.WRONG_CHAIN
+
+# FOR TESTS ONLY: `TEST_WRONG_CHAIN`'s key.
+constant TEST_WRONG_KEY: str
+    fixture.WRONG_KEY
+
+# FOR TESTS ONLY: a certificate for `localhost` signed by `TEST_ROOT` and
+# valid in 2020 alone, which a client refuses as past its last day.
+constant TEST_EXPIRED_CHAIN: str
+    fixture.EXPIRED_CHAIN
+
+# FOR TESTS ONLY: `TEST_EXPIRED_CHAIN`'s key.
+constant TEST_EXPIRED_KEY: str
+    fixture.EXPIRED_KEY
+
+# FOR TESTS ONLY: a certificate for `localhost` signed by its own key, which
+# no authority vouches for.
+constant TEST_SELF_CHAIN: str
+    fixture.SELF_CHAIN
+
+# FOR TESTS ONLY: `TEST_SELF_CHAIN`'s key.
+constant TEST_SELF_KEY: str
+    fixture.SELF_KEY
 
 ## Examples
 

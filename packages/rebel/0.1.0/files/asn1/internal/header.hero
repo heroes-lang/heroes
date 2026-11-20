@@ -1,8 +1,11 @@
 # The tag and the length of one element, read and written by X.690 § 8.1,
 # and the names of the universal types for messages. A class is a number
-# here, 0 universal, 1 application, 2 context-specific, 3 private, since the
-# face's types cannot be named from a private module. No length is trusted
-# before the bytes that would fill it are there.
+# here, 0 universal, 1 application, 2 context-specific, 3 private: the two
+# bits X.690 writes, which the walk compares to put a DER SET's elements in
+# the order of their bytes and the writer shifts into an element's first
+# byte; the face turns it into its `Class`. (A private module may name the
+# face's types since panel 252's R1; the number is kept for that order.) No
+# length is trusted before the bytes that would fill it are there.
 
 # The code of bytes that are not an element.
 constant INVALID: str
