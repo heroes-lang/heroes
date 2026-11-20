@@ -26,6 +26,7 @@
 use cli/process
 use cli/strings
 use fetch/address
+use fetch/index_files
 use fetch/listing_read
 use fetch/made_index
 use fetch/made_repo
@@ -38,11 +39,7 @@ use module/placed
 use module/sums
 
 extern "hero_compiler.h"
-    function hero_file_sha256(path: cstr lent, @status: i64) -> str
     function hero_text_sha256(text: str) -> str
-
-extern "hero_os.h"
-    constant HERO_OS_OK: i64
 
 # The index a catalogue with no `index` line reads (R5, R9's C4): the Heroes
 # index, which row 78 serves; its address waits on that row and is held here
@@ -54,11 +51,6 @@ constant HEROES_INDEX: str
 # `go.mod` (`modfetch`, 16 MiB), past which no honest index's text goes.
 constant TEXT_CAP: i64
     16777216
-
-# The most bytes one file of a package may hold: Go's bound on a module's
-# whole zip, 500 MiB, rounded up to a power of two.
-constant FILE_CAP: i64
-    536870912
 
 # One version an index lists, with the sum of its listing.
 record Listed
@@ -173,11 +165,13 @@ function unlisted(listed: [Listed]?, otherwise: str) -> str
 
 # The index entry `e` of the program whose folder is `program` fetched and
 # placed under its key, and written into the run's `ledger`: the folder it now
-# stands in. `index` is the catalogue's `index` line, "" for the Heroes index.
-function fetched(@ledger: staging.Ledger, tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str) -> str?
+# stands in. `index` is the catalogue's `index` line, "" for the Heroes index;
+# `listed` the entry's `packages` line, empty where it places the whole
+# version (panel 253's R6).
+function fetched(@ledger: staging.Ledger, tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str, listed: [str]) -> str?
     at = address.judged(written_index(index), root: root)?
     s: staging.Staging @= staging.opened(program)?
-    done = written(tools, index: at, name: e.name, version: e.version, sum: e.sum, s: s)
+    done = written(tools, index: at, name: e.name, version: e.version, sum: e.sum, s: s, packages: listed)
 
     if done.is_err()
         staging.dropped(@s)
@@ -192,8 +186,11 @@ function fetched(@ledger: staging.Ledger, tools: transport.Tools, e: catalogue.E
 
 # The tree of `name` at `version` written into `s`: its listing first, held to
 # `sum` before any file is asked for and its names judged whole
-# (`fetch/tree_names.hero`); then each file, held to its line as it lands.
-function written(tools: transport.Tools, index: address.Address, name: str, version: str, sum: str, s: staging.Staging) -> ()?
+# (`fetch/tree_names.hero`); then each file, held to its line as it lands:
+# every file of the version, or where `packages` names some, the module of
+# each and every module those reach, the listing kept beside them
+# (`fetch/closure.hero`), so no other file is asked of the index.
+function written(tools: transport.Tools, index: address.Address, name: str, version: str, sum: str, s: staging.Staging, packages: [str]) -> ()?
     base = name + "/" + version
     listed = s.folder + "/list.txt"
     asked = transport.got(
@@ -228,20 +225,17 @@ function written(tools: transport.Tools, index: address.Address, name: str, vers
         )
     files = listing_read.lines_of_listing(listing)?
 
-    for one in files
-        path = s.tree + "/" + one.path
-        made(process.mkdir_all(folder_of(path)))?
-        transport.got(tools, at: address.under(index, inside: base + "/files/" + one.path), into: path, cap: FILE_CAP, scratch: s.folder)?
-        status: i64 @= 0
-        landed = hero_file_sha256(path: path.cstr(), status: @status)
-
-        if status != HERO_OS_OK || landed != one.sum
-            return fail(
-                code: "sum_mismatch",
-                msg: "`" + one.path + "` of " + name + " " + version + " does not match its line of the listing, " + one.sum + ", and nothing was placed"
-            )
-
-    return ok()
+    return index_files.written(
+        tools,
+        index: index,
+        base: base,
+        s: s,
+        listing: listing,
+        files: files,
+        packages: packages,
+        name: name,
+        version: version
+    )
 
 # A text's lines, each without its line end; a last line with none is a line.
 function lines_of(text: str) -> [str]
@@ -263,31 +257,6 @@ function space_in(line: str) -> i64
             return at
 
     return -1
-
-# The folder `path` stands in, Go's `path.Dir` for a path with no trailing
-# `/`: the part before its last `/`, `/` where that slash is its first byte,
-# and `.` where it holds none. Every byte is asked, the first included: until
-# defect 2406 the loop stopped at index 0, so `a` answered a slash there as
-# `/a` does, and `""` sliced to -1 and aborted.
-function folder_of(path: str) -> str
-    at: i64 @= path.len() - 1
-
-    while at >= 0 && path[at] != '/'
-        at @ at - 1
-
-    if at < 0
-        return "."
-
-    if at == 0
-        return "/"
-    return path.slice(from: 0, to: at)
-
-# A folder that could not be made under the staging folder, told as the
-# machine's.
-function made(done: ()?) -> ()?
-    match done
-        .ok _  => return ok()
-        .err e => return fail(code: "cannot_place", msg: e.msg)
 
 function code_of(failed: ()?) -> str
     match failed
@@ -345,12 +314,44 @@ test "an index lists a package's versions with their sums, and places a version 
         e: entry(name: "json", version: "1.4.2", sum: m.sum),
         program: SCRATCH + "/app/",
         root: m.root,
-        index: "file://../idx"
+        index: "file://../idx",
+        listed: []
     ).must()
     staging.ended(@ledger)
     assert at == SCRATCH + "/app/heroes.packages/" + placed.key(entry(name: "json", version: "1.4.2", sum: m.sum), index: "file://../idx")
     assert read_file(at + "/parse.hero").must() == "function x() -> i64\n    return 1\n"
     assert fingerprint.of(at).must() == m.sum
+
+    # Panel 253's R6: an entry listing `parse` gets `parse.hero` and the
+    # version's listing, never its other files, and the part sums to the
+    # version's `sum`; the same tree whole is placed anew, the part replaced.
+    process.mkdir_all(SCRATCH + "/part").must()
+    part_root = transport.root_of(transport.path_tools(), folder: SCRATCH + "/part", scratch: SCRATCH).must()
+    held: staging.Ledger @= staging.begun(SCRATCH + "/part/").must()
+    part = fetched(
+        @held,
+        transport.path_tools(),
+        e: entry(name: "json", version: "1.4.2", sum: m.sum),
+        program: SCRATCH + "/part/",
+        root: part_root,
+        index: "file://../idx",
+        listed: ["parse"]
+    ).must()
+    assert process.path_exists(part + "/parse.hero") && process.path_exists(part + "/" + fingerprint.LISTING)
+    assert !process.path_exists(part + "/logo.png") && !process.path_exists(part + "/sub/note.txt")
+    assert fingerprint.of(part).must() == m.sum
+    whole = fetched(
+        @held,
+        transport.path_tools(),
+        e: entry(name: "json", version: "1.4.2", sum: m.sum),
+        program: SCRATCH + "/part/",
+        root: part_root,
+        index: "file://../idx",
+        listed: []
+    ).must()
+    assert whole == part && process.path_exists(whole + "/logo.png") && !process.path_exists(whole + "/" + fingerprint.LISTING)
+    assert fingerprint.of(whole).must() == m.sum
+    staging.ended(@held)
 
     match versions(transport.path_tools(), index: index, name: "yaml", scratch: SCRATCH)
         .ok _  => assert false
@@ -364,17 +365,17 @@ test "a version the index does not serve is told what it lists and the verb, or 
     other = "sha256-" + "0".repeat(64.to_u64().must())
     s: staging.Staging @= staging.opened(SCRATCH + "/app/").must()
 
-    match written(transport.path_tools(), index: index, name: "json", version: "1.0.0", sum: other, s: s)
+    match written(transport.path_tools(), index: index, name: "json", version: "1.0.0", sum: other, s: s, packages: [])
         .ok _ => assert false
         .err e =>
             assert e.code == "absent"
             assert e.msg == "the index `file://../idx` serves no json 1.0.0: it lists 1.4.2, and `heroes add json` writes the entry at the newest, 1.4.2, and places it"
 
-    match written(transport.path_tools(), index: index, name: "json", version: "1.4.3", sum: m.sum, s: s)
+    match written(transport.path_tools(), index: index, name: "json", version: "1.4.3", sum: m.sum, s: s, packages: [])
         .ok _  => assert false
         .err e => assert e.msg == "the index `file://../idx` serves no json 1.4.3, and it publishes the catalogue's `sum`, the same files, as 1.4.2: write `version = \"1.4.2\"` in the entry, and `heroes fetch` places them"
 
-    match written(transport.path_tools(), index: index, name: "yaml", version: "1.0.0", sum: other, s: s)
+    match written(transport.path_tools(), index: index, name: "yaml", version: "1.0.0", sum: other, s: s, packages: [])
         .ok _  => assert false
         .err e => assert e.msg == "the index `file://../idx` lists no package `yaml`: there is no file `file://../idx/yaml/versions`"
 
@@ -393,7 +394,7 @@ test "a listing whose sum is not the entry's fetches no file, and a file the ind
     s: staging.Staging @= staging.opened(SCRATCH + "/app/").must()
     index = address.judged("file://../idx", root: m.root).must()
 
-    match written(transport.path_tools(), index: index, name: "json", version: "1.4.2", sum: wrong, s: s)
+    match written(transport.path_tools(), index: index, name: "json", version: "1.4.2", sum: wrong, s: s, packages: [])
         .ok _  => assert false
         .err e => assert e.code == "sum_mismatch"
 
@@ -407,7 +408,7 @@ test "a listing whose sum is not the entry's fetches no file, and a file the ind
 
     ledger: staging.Ledger @= staging.begun(SCRATCH + "/app/").must()
 
-    match fetched(@ledger, transport.path_tools(), e: entry(name: "json", version: "1.4.2", sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "file://../idx")
+    match fetched(@ledger, transport.path_tools(), e: entry(name: "json", version: "1.4.2", sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "file://../idx", listed: [])
         .ok _ => assert false
         .err e =>
             assert e.code == "sum_mismatch"
@@ -440,7 +441,7 @@ test "a listing naming a place above the package, out of order or twice is refus
         assert !write_file(path: SCRATCH + "/idx/evil/1.0.0/list", text: listing).is_err()
         s: staging.Staging @= staging.opened(SCRATCH + "/app/").must()
 
-        match written(transport.path_tools(), index: index, name: "evil", version: "1.0.0", sum: "sha256-" + hero_text_sha256(text: listing), s: s)
+        match written(transport.path_tools(), index: index, name: "evil", version: "1.0.0", sum: "sha256-" + hero_text_sha256(text: listing), s: s, packages: [])
             .ok _  => assert false
             .err e => assert e.code == "name_refused" || e.code == "index_refused"
 
@@ -463,13 +464,3 @@ test "a versions file holding a line that is not a version and its sum is refuse
             assert e.msg == "line 2 of the index's `json/versions` is not `<version> <sum>`: `latest`"
 
     assert !process.remove_tree(SCRATCH).is_err()
-
-test "a path's folder is asked of every byte, the first included (defect 2406)"
-    assert folder_of("") == "."
-    assert folder_of("a") == "."
-    assert folder_of("/") == "/"
-    assert folder_of("/a") == "/"
-    assert folder_of(".bashrc") == "."
-    assert folder_of("..") == "."
-    assert folder_of("file.tar.gz") == "."
-    assert folder_of("staging/tree/file.tar.gz") == "staging/tree"

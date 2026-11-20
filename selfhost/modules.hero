@@ -43,6 +43,7 @@ use module/private
 use module/reached
 use module/reading
 use module/spelling
+use module/unlisted
 use parse
 use source
 use token
@@ -133,7 +134,7 @@ function load_edited(path: str, root_text: str, edited: [source.InputFile], libr
         source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: library, is_library: true)
     )
     out: source.Source @= reading.placed(source.from_files(files), modules: each)
-    out.reached @ reached.Reached(packages: book.reached, aliases: book.aliases)
+    out.reached @ reached.Reached(packages: book.reached, aliases: book.aliases, listings: book.program.listings)
     return ok(out)
 
 ## The graph's own errors — against the finished Source
@@ -149,7 +150,7 @@ function load_edited(path: str, root_text: str, edited: [source.InputFile], libr
 # a ring was `module_cycle`, panel 031's R6, for an incremental build
 # that never came to need it.
 function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @= []
+    out: [diag.Diagnostic] @= unlisted.told(s, uses, found: [])
     out @ unknown_modules(s, uses, found: out)
     out @ collisions(s, found: out)
     out @ private.told(s, uses, found: out)

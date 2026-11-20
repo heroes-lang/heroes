@@ -1,0 +1,6 @@
+# Panel 253's R6 (2026-11-19): an entry publishing several packages under
+# one version, or its `path`, places only those its `packages` line names,
+# with each module they use.
+[dependencies.kit]
+path = "vendor/kit"
+packages = ["csv"]

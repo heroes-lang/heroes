@@ -1,0 +1,5 @@
+index = "file://../../../../../tests/golden/fetch/add-a-package-of-an-entry-writes-its-packages-line-and-places-the-part.case/idx"
+
+[dependencies.kit]
+version = "1.0.0"
+sum = "sha256-51d5b73f1508cff9c6da0b1c060f911b41f6dceb50acedecd3095432f564f687"

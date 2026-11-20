@@ -19,8 +19,15 @@
 # entry's sum (`fetch/staging.hero`), so the tree is never placed; told then
 # as a sum that does not match, not as the two names.
 #
+# **And one name at the root is refused, `heroes.list`**: it is where a tree
+# placed by an entry's `packages` line keeps its version's listing (panel
+# 253's R6, `module/fingerprint.hero`), so a version holding a file of that
+# name would read as part of itself, its sum taken over the wrong text.
+#
 # Every refusal is the input's, exit 1 (`fetch/told.hero`), and names the
 # first name refused.
+
+use module/fingerprint
 
 # What is wrong with one name of a package's tree, or "" where nothing is.
 function name_said(path: str) -> str
@@ -29,6 +36,9 @@ function name_said(path: str) -> str
 
     if path[0] == '/'
         return "`" + path + "` opens with `/`, which names a place outside the package"
+
+    if path == fingerprint.LISTING
+        return "`" + path + "` stands at the root, the name a tree placed by an entry's `packages` line keeps its version's listing under, which no file of a package's takes"
 
     for at in range(from: 0, to: path.len())
         b = path[at]
@@ -157,6 +167,11 @@ test "a name a package may hold passes, and every shape C3 refuses is told by wh
     assert name_said("a/") == "`a/` has an empty part, a `/` at its end or two together"
     assert name_said("./a") == "`./a` has a part `.`"
     assert name_said("x/.Git/config") == "`x/.Git/config` has a part `.git`, which would make the package's folder a repository inside the program's"
+
+    # Panel 253's R6: the name a placement by `packages` keeps the listing
+    # under, at the root alone.
+    assert name_said("heroes.list") == "`heroes.list` stands at the root, the name a tree placed by an entry's `packages` line keeps its version's listing under, which no file of a package's takes"
+    assert name_said("sub/heroes.list") == ""
     assert mode_said(mode: "100644", path: "a") == ""
     assert mode_said(mode: "100755", path: "a") == ""
     assert mode_said(mode: "120000", path: "link") == "`link` is a symbolic link, which could name a file outside the package once placed"

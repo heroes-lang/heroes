@@ -31,6 +31,7 @@ use cli/process
 use cli/strings
 use fetch/address
 use fetch/index_source
+use fetch/stage_home
 use fetch/staging
 use fetch/transport
 use fetch/verb_place
@@ -53,7 +54,7 @@ function refusal(package: reached.Package, e: catalogue.Entry, index: str, progr
     # that is told, and git is never asked: its staging folder stood in the
     # tree, and a build of the program that placed the tree, reading it at
     # that moment, refused that program by its sum.
-    if staging.in_tree(program)
+    if stage_home.in_tree(program)
         return fail(code: "", msg: in_tree_said(package, e: e, program: program, named: named))
     written: str @= e.git
 

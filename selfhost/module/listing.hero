@@ -1,0 +1,256 @@
+# An entry's `packages` line (spec § 1; panel 253's R6, ratified 2026-11-19):
+# the packages an entry publishing several under one version places, `rebel`
+# among them, each named by the whole path a program writes after the
+# brackets, `packages = ["compress/zstd", "json"]`. An entry with the line
+# places those and each module their own `use` lines reach (`fetch/closure.hero`);
+# one without it places its version whole (panel 250's R1, which R6 amends by
+# name for an entry with the line alone). The line binds a `path` entry too, so
+# a program moved from a folder to a fetched entry is refused by the same lines.
+#
+# **What the list changes is only whether the program builds**
+# (`.claude/rules/cli-surface.md`'s falsifier): a name deleted refuses the
+# `use` that needed it (`module/unlisted.hero`), a name mistyped refuses the
+# `use` of the name meant, the line deleted places the version whole; no edit
+# compiles another module in a named one's place.
+#
+# Read here, on the seam between reading a line's value and reading what an
+# entry holds (`module/catalogue.hero`): written once an entry, inside its
+# table, never empty, each name a path of names and none twice; on one line,
+# or over several as TOML writes an array, one name a line and a comment after
+# any (`joined`), which is how `heroes add` writes a long one.
+
+use bytes
+use module/reached
+use module/toml_line
+
+# What a program writes in a `packages` line, as every refusal shows it.
+constant EXAMPLE: str
+    "`packages = [\"csv\", \"json\"]`"
+
+# The `packages` line of the entry `entry`, its value from `at` in `row`,
+# added to `listings`; "" where it reads, else what is wrong with it.
+function read(@listings: [reached.Listing], entry: str, row: str, at: i64) -> str
+    got = toml_line.strings(row, at: at)
+
+    if got.is_err()
+        return toml_line.failure_of_list(got)
+
+    for one in listings
+        if one.entry == entry
+            return "`packages` is written twice in the entry `" + entry + "`"
+
+    if got.must().len() == 0
+        return "`packages` names no package in the entry `" + entry + "`: write the packages the program uses, " + EXAMPLE + ", or no `packages` line to place the whole version"
+    seen: {str: bool} @= {}
+
+    for one in got.must()
+        if !path_shaped(one)
+            return "`packages` names `" + one + "` in the entry `" + entry + "`, and a name there is the path a `use` writes after `<" + entry + ">/`, names joined by `/`: " + EXAMPLE
+
+        if !seen[one].is_err()
+            return "`packages` names `" + one + "` twice in the entry `" + entry + "`"
+        seen[one] @ true
+
+    listings @ listings.push(reached.Listing(entry: entry, packages: got.must()))
+    return ""
+
+## A list over several lines
+
+# One row a catalogue's reader reads, and the number of the line it opens.
+record Row
+    text: str
+    number: i64
+
+# The rows of a catalogue's text: each line, but a `packages` list over several
+# lines, which is one row (`joined`), numbered by the line that opens it.
+function rows(text: str) -> [Row]
+    lines = lines_of(text)
+    out: [Row] @= []
+    at: i64 @= 0
+
+    while at < lines.len()
+        taken = joined(lines, at: at)
+        out @ out.push(Row(text: taken.row, number: at + 1))
+        at @ at + taken.rows
+
+    return out
+
+# The text's lines without their `\n`, a last line with none among them.
+function lines_of(text: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == '\n'
+            out @ out.push(text.slice(from: from, to: at))
+            from @ at + 1
+
+    if from < text.len()
+        out @ out.push(text.slice(from: from, to: text.len()))
+    return out
+
+# The row a reader reads at `at` in `lines`, and how many lines it took: the
+# line itself, or where it opens a `packages` list it does not close, every
+# line to the one holding the `]`, each line's comment taken out, joined into
+# one row. A list never closed takes every line after it, and the reader
+# refuses the row as not closed.
+record Rows
+    row: str
+    rows: i64
+
+function joined(lines: [str], at: i64) -> Rows
+    first = uncommented(lines[at])
+
+    if !opens(first)
+        return Rows(row: lines[at], rows: 1)
+    pieces: [str] @= [first]
+    probe: i64 @= at + 1
+
+    while probe < lines.len()
+        piece = uncommented(lines[probe])
+        pieces @ pieces.push(piece)
+
+        if closed(piece)
+            return Rows(row: pieces.join(" "), rows: probe - at + 1)
+        probe @ probe + 1
+
+    return Rows(row: pieces.join(" "), rows: probe - at)
+
+# Whether `row`, its comment out, is `packages = [` and no `]`.
+function opens(row: str) -> bool
+    at = toml_line.past_spaces(row, at: 0)
+
+    # Asked of the row's bytes, never cut at a length: a row is the author's
+    # and may hold any character (defect 2410).
+    if !bytes.bytes_at(text: row, at: at, needle: "packages")
+        return false
+    eq = toml_line.past_spaces(row, at: at + 8)
+
+    if eq >= row.len() || row[eq] != '='
+        return false
+    open = toml_line.past_spaces(row, at: eq + 1)
+    return open < row.len() && row[open] == '[' && !closed(row)
+
+# Whether `row` holds a `]` outside its quotes.
+function closed(row: str) -> bool
+    quoted: bool @= false
+
+    for at in range(from: 0, to: row.len())
+        if row[at] == '"'
+            quoted @ !quoted
+        else if row[at] == ']' && !quoted
+            return true
+
+    return false
+
+# `row` with its comment, a `#` outside its quotes and all after it, and the
+# return before its line end taken out.
+function uncommented(row: str) -> str
+    quoted: bool @= false
+    end: i64 @= row.len()
+
+    for at in range(from: 0, to: row.len())
+        if row[at] == '"'
+            quoted @ !quoted
+        else if row[at] == '#' && !quoted && end == row.len()
+            end @ at
+
+    while end > 0 && row[end - 1] == '\r'
+        end @ end - 1
+
+    return row.slice(from: 0, to: end)
+
+# The packages the entry `entry` lists, empty where it has no `packages` line
+# and is placed whole.
+function of(listings: [reached.Listing], entry: str) -> [str]
+    for one in listings
+        if one.entry == entry
+            return one.packages
+
+    return []
+
+# Whether `listings` gives the entry `entry` a `packages` line.
+function has(listings: [reached.Listing], entry: str) -> bool
+    for one in listings
+        if one.entry == entry
+            return true
+
+    return false
+
+# Whether `packages` names `wanted`.
+function names(packages: [str], wanted: str) -> bool
+    for one in packages
+        if one == wanted
+            return true
+
+    return false
+
+# Whether `name` is a path a `use` can write after the brackets: names of
+# letters, digits and `_`, each opening with a letter or `_`, joined by `/`.
+# A keyword in it is no name a `use` writes either, and the `use` that writes
+# it is refused by the parser, never by this list.
+function path_shaped(name: str) -> bool
+    if name.len() == 0
+        return false
+    opening: bool @= true
+
+    for at in range(from: 0, to: name.len())
+        b = name[at]
+
+        if b == '/'
+            if opening
+                return false
+            opening @ true
+        else if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_'
+            opening @ false
+        else if b >= '0' && b <= '9'
+            if opening
+                return false
+        else
+            return false
+
+    return !opening
+
+## Tests
+
+test "a packages line reads once an entry, names in it the paths a use writes, none empty and none twice"
+    out: [reached.Listing] @= []
+    assert read(@out, entry: "rebel", row: "packages = [\"csv\", \"compress/zstd\"]  # two", at: 11) == ""
+    assert of(out, entry: "rebel") == ["csv", "compress/zstd"]
+    assert has(out, entry: "rebel") && !has(out, entry: "json")
+    assert of(out, entry: "json").len() == 0
+    assert read(@out, entry: "rebel", row: "packages = [\"csv\"]", at: 11) == "`packages` is written twice in the entry `rebel`"
+    empty: [reached.Listing] @= []
+    assert read(@empty, entry: "kit", row: "packages = []", at: 11).len() > 0
+    assert read(@empty, entry: "kit", row: "packages = [\"a\", \"a\"]", at: 11) == "`packages` names `a` twice in the entry `kit`"
+    assert read(@empty, entry: "kit", row: "packages = [\"a\" \"b\"]", at: 11).len() > 0
+    assert read(@empty, entry: "kit", row: "packages = \"a\"", at: 11).len() > 0
+    assert read(@empty, entry: "kit", row: "packages = [\"a\",", at: 11).len() > 0
+    assert empty.len() == 0
+
+test "a list over several lines is read as one row, its comments out, a last comma allowed"
+    lines = [
+        "[dependencies.rebel]"
+        "packages = [  # what the programs use"
+        "    \"csv\","
+        "    \"json\",  # the parser"
+        "]"
+        "path = \"x\""
+    ]
+    one = joined(lines, at: 1)
+    assert one.rows == 4
+    out: [reached.Listing] @= []
+    assert read(@out, entry: "rebel", row: one.row, at: 11) == ""
+    assert of(out, entry: "rebel") == ["csv", "json"]
+    assert joined(lines, at: 0).rows == 1 && joined(lines, at: 5).rows == 1
+    assert joined(["packages = [\"a\"]  # [", "x"], at: 0).rows == 1
+    never = joined(["packages = [", "    \"a\","], at: 0)
+    assert never.rows == 2
+    assert read(@out, entry: "kit", row: never.row, at: 11) == "the list is not closed by `]`"
+
+test "a name in a packages line is a path of names, never a part empty or opening with a digit"
+    for good in ["csv", "net/hero_net", "compress/zstd", "_x", "a1/b2"]
+        assert path_shaped(good)
+
+    for bad in ["", "/csv", "csv/", "a//b", "1a", "a/2b", "a-b", "a.b", "<rebel>/csv", "a b"]
+        assert !path_shaped(bad)

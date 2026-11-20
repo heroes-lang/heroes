@@ -29,12 +29,24 @@ record Alias
     written: str
     meant: str
 
+# What an entry of the program's catalogue places where it has a `packages`
+# line (panel 253's R6): the entry's name and the paths its `packages` line
+# names, each the whole path a program writes after `<entry>/`. An entry with
+# no such line has no listing and is placed whole.
+record Listing
+    entry: str
+    packages: [str]
+
 record Reached
     packages: [Package]
     aliases: [Alias]
+    # The program's catalogue's listings, which the graph holds the program's
+    # own `use` lines to (`module/unlisted.hero`).
+    listings: [Listing]
 
 # A compilation that names no package.
 function none() -> Reached
     packages: [Package] = []
     aliases: [Alias] = []
-    return Reached(packages: packages, aliases: aliases)
+    listings: [Listing] = []
+    return Reached(packages: packages, aliases: aliases, listings: listings)

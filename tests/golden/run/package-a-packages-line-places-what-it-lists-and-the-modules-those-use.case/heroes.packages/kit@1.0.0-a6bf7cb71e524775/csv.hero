@@ -1,0 +1,6 @@
+# A package the program lists: its own `use` reaches `text`, placed with it.
+use text
+
+# The first field of a line of comma-separated values.
+function first(line: str) -> str
+    return text.before(line, mark: ',')

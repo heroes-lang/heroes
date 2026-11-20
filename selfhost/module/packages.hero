@@ -266,6 +266,11 @@ constant STANDING_ADVICE: str
 function changed_said(package: reached.Package, e: catalogue.Entry, now: str) -> str
     gained = fingerprint.added(root: package.opened, sum: e.sum)
 
+    # A part placed by a `packages` line leaves files out by design (panel
+    # 253's R6), so a file taken out of it is no change.
+    if gained.len() == 0 && fingerprint.kept_listing(package.opened).default("").len() > 0
+        return "the tree placed at `" + package.root + "` is `" + now + "`, and the catalogue's `sum` for it is `" + e.sum + "`: a file of it, or the listing `" + fingerprint.LISTING + "` it keeps, was changed since it was placed — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again"
+
     if gained.len() == 0
         return "the tree placed at `" + package.root + "` is `" + now + "`, and the catalogue's `sum` for it is `" + e.sum + "`: a file of it was changed, added or taken out since it was placed — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again"
 
