@@ -25,13 +25,17 @@
 # browser from the address the program gives, a CDN's by default, so no
 # third party's JavaScript is bundled into a program.
 #
-# **What it does not do.** It reads and writes OpenAPI 3.1 alone: a document
-# of 3.0 or of Swagger 2.0 is refused `unsupported`. A reference is followed
-# within the document: one naming another document is refused when a
-# validator is made. A credential is checked for its presence, never for its
-# truth, which is the program's to judge (`web.require_bearer`). JSON is
-# `json`'s, YAML `yaml`'s, a schema's validation `json/schema`'s, an HTTP
-# message `http`'s, a route `web`'s.
+# **What it does not do.** It reads and writes OpenAPI 3.1 alone: a document of
+# 3.0 or of Swagger 2.0 is refused `unsupported`. A reference is followed within
+# the document: one naming another document is refused when a validator is made.
+# A credential is checked for its presence, never for its truth, which is the
+# program's to judge (`web.require_bearer`). A validator does not assert a
+# schema's `format`, refuse a `readOnly` property in a request or a `writeOnly`
+# one in a response, validate a webhook, or check that a document's examples and
+# defaults hold to their schemas: a request it finds no issue in may still break
+# them, and the ledger says so of each. JSON is `json`'s, YAML `yaml`'s, a
+# schema's validation `json/schema`'s, an HTTP message `http`'s, a route
+# `web`'s.
 #
 # The codes it fails with: `invalid` (a document, a request or a response not
 # of its form), `not_found` (a reference, an operation or a route that names
@@ -1858,6 +1862,651 @@ function parse(text: str) -> Document?
         v @ yaml.parse(text)?
     return from_json(v)
 
+## A document checked
+
+# One thing wrong with a document: where, and what.
+record Problem
+    # Where in the document, as a JSON pointer: `/paths/~1pets/get`.
+    pointer: str
+    # What is wrong, in words a reader can act on.
+    message: str
+
+# Every problem of `doc`: what OpenAPI 3.1 asks of a document beyond the form
+# of each object, in the order of the document.
+#
+# - `doc`: the document.
+#
+# It asks: an `info` with a title and a version; a path, a component or a
+# webhook; paths that begin with `/`, each template's parameters declared
+# for every operation and each path parameter in its template, required; two
+# templates that differ only in their parameters' names; a parameter and its
+# location once in a list, a style its location takes, `schema` or `content`
+# and not both; `example` and `examples` not both; an `operationId` once in
+# the document; a status a key of three digits, a range or `default`; a
+# reference that names a component of its kind; a requirement whose schemes
+# the components hold; a server variable in its URL, its default among its
+# values; a component's name of letters, digits, `.`, `-` and `_`; a tag's
+# name once; and every schema valid against JSON Schema 2020-12's
+# meta-schema. None where `doc` is valid.
+function errors_of(doc: Document) -> [Problem]
+    out: [Problem] @= []
+
+    for p in checks.problems(to_json(doc))
+        out @ out.push(Problem(pointer: p.pointer, message: p.message))
+
+    return out
+
+# Nothing where `doc` has no problem.
+#
+# - `doc`: the document.
+#
+# Fails `invalid` where it has one, with the first `errors_of` gives and
+# after it how many there are in all.
+function check(doc: Document) -> ()?
+    found = errors_of(doc)
+
+    if found.len() == 0
+        return ok()
+
+    where = if found[0].pointer == ""
+        "the document"
+    else
+        found[0].pointer
+
+    more = if found.len() == 1
+        "1 problem in all"
+    else
+        f"{found.len()} problems in all"
+    return fail(code: INVALID, msg: f"at {where}: {found[0].message}; {more}")
+
+# `doc` with every path, webhook, component, tag and requirement of `other`
+# added.
+#
+# - `doc`: the document added to; its `info`, servers and the rest stand.
+# - `other`: the document whose parts are added, after `doc`'s.
+#
+# Fails `exists` where both have an operation on one method and path, a
+# webhook's operation, or a component of one kind and name that are not
+# equal; a tag both have keeps `doc`'s.
+function merge(doc: Document, other: Document) -> Document?
+    out @= doc
+
+    for path in keys(other.paths)
+        incoming = other.paths[path].must()
+
+        match out.paths[path]
+            .err _ => out.paths[path] @ incoming
+            .ok mine =>
+                item @= mine
+
+                for method in keys(incoming.operations)
+                    op = incoming.operations[method].must()
+
+                    match item.operations[method]
+                        .ok there =>
+                            if there != op
+                                return fail(
+                                    code: EXISTS,
+                                    msg: f"{strings.to_upper_ascii(method)} {path} is in both documents, and differs"
+                                )
+                        .err _ => item.operations[method] @ op
+
+                out.paths[path] @ item
+
+    for name in keys(other.webhooks)
+        incoming = other.webhooks[name].must()
+
+        match out.webhooks[name]
+            .err _ => out.webhooks[name] @ incoming
+            .ok mine =>
+                item @= mine
+
+                for method in keys(incoming.operations)
+                    op = incoming.operations[method].must()
+
+                    match item.operations[method]
+                        .ok there =>
+                            if there != op
+                                return fail(
+                                    code: EXISTS,
+                                    msg: f"the webhook \"{name}\" has an operation for {strings.to_upper_ascii(method)} in both documents, and it differs"
+                                )
+                        .err _ => item.operations[method] @ op
+
+                out.webhooks[name] @ item
+
+    c @= out.components
+    given = other.components
+
+    for name in keys(given.schemas)
+        match c.schemas[name]
+            .ok there =>
+                if there != given.schemas[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the schema \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.schemas[name] @ given.schemas[name].must()
+
+    for name in keys(given.responses)
+        match c.responses[name]
+            .ok there =>
+                if there != given.responses[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the response \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.responses[name] @ given.responses[name].must()
+
+    for name in keys(given.parameters)
+        match c.parameters[name]
+            .ok there =>
+                if there != given.parameters[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the parameter \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.parameters[name] @ given.parameters[name].must()
+
+    for name in keys(given.examples)
+        match c.examples[name]
+            .ok there =>
+                if there != given.examples[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the example \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.examples[name] @ given.examples[name].must()
+
+    for name in keys(given.request_bodies)
+        match c.request_bodies[name]
+            .ok there =>
+                if there != given.request_bodies[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the request body \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.request_bodies[name] @ given.request_bodies[name].must()
+
+    for name in keys(given.headers)
+        match c.headers[name]
+            .ok there =>
+                if there != given.headers[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the header \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.headers[name] @ given.headers[name].must()
+
+    for name in keys(given.security_schemes)
+        match c.security_schemes[name]
+            .ok there =>
+                if there != given.security_schemes[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the security scheme \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.security_schemes[name] @ given.security_schemes[name].must()
+
+    for name in keys(given.links)
+        match c.links[name]
+            .ok there =>
+                if there != given.links[name].must()
+                    return fail(code: EXISTS, msg: f"the link \"{name}\" is in both documents' components, and differs")
+            .err _ => c.links[name] @ given.links[name].must()
+
+    for name in keys(given.callbacks)
+        match c.callbacks[name]
+            .ok there =>
+                if there != given.callbacks[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the callback \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.callbacks[name] @ given.callbacks[name].must()
+
+    for name in keys(given.path_items)
+        match c.path_items[name]
+            .ok there =>
+                if there != given.path_items[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the path item \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.path_items[name] @ given.path_items[name].must()
+
+    out.components @ c
+    tags @= out.tags
+
+    for t in other.tags
+        known: bool @= false
+
+        for mine in tags
+            if mine.name == t.name
+                known @ true
+
+        if !known
+            tags @ tags.push(t)
+
+    out.tags @ tags
+    security @= out.security
+
+    for each in other.security
+        known: bool @= false
+
+        for mine in security
+            if mine == each
+                known @ true
+
+        if !known
+            security @ security.push(each)
+
+    out.security @ security
+    return ok(out)
+
+## Routes
+
+# The pattern `web` reads for the template `path`: `/pets/{id}` is
+# `/pets/:id`.
+#
+# - `path`: a path's template.
+#
+# Fails `invalid` where a segment holds a parameter beside other text, as
+# `/files/{name}.json`, which a `web` pattern does not say, or where a `{` is
+# not closed.
+function pattern_of(path: str) -> str?
+    return routes.pattern(path)
+
+# The name `add_routes` gives the route of `endpoint`: its `operation_id`,
+# or its method and path, `GET /pets`, where it has none.
+#
+# - `endpoint`: the operation.
+function route_name_of(endpoint: Endpoint) -> str
+    if endpoint.operation.operation_id != ""
+        return endpoint.operation.operation_id
+    return endpoint.method + " " + endpoint.path
+
+# Adds to `router` a route for every operation of `doc`, named by
+# `route_name_of`, under the path of its first server: the operation's, else
+# its path item's, else the document's, each variable at its default, so
+# `/pets` of a server `https://api.example.com/v1` is `/v1/pets`.
+#
+# - `router`: the router, which gains the routes.
+# - `doc`: the document.
+#
+# Fails as `pattern_of` and `web.add` do, adding the routes before the one
+# that fails.
+function add_routes(@router: web.Router, doc: Document) -> ()?
+    none: {str: str} = {}
+
+    for e in operations_of(doc)
+        servers: [Server] @= e.operation.servers
+
+        if servers.len() == 0
+            servers @ e.item.servers
+
+        if servers.len() == 0
+            servers @ doc.servers
+        prefix: str @= ""
+
+        if servers.len() > 0
+            prefix @ routes.base_path(server_url(servers[0], values: none)?)
+        web.add(@router, method: e.method, pattern: pattern_of(prefix + e.path)?, name: route_name_of(e))?
+
+    return ok()
+
+## Requests and responses validated
+
+# A document compiled to validate requests and responses: every schema read
+# once. `new_validator` makes one.
+record Validator
+    # The document.
+    document: Document
+    # What the validation reads, which only this package reads.
+    code: compiled.Compiled
+
+# One thing wrong with a request or a response: where, and what.
+record Issue
+    # The status a server answers it with: 404 where no path is the
+    # request's, 405 where no operation takes its method, 415 where its body
+    # is of no media type the operation takes, 401 where a credential is
+    # missing, 400 otherwise; 500 for a response's.
+    status: i64
+    # Where: `path`, `query`, `header`, `cookie`, `body`, `security`, `route`
+    # (the path or the method), or `status` (a response's status).
+    location: str
+    # The parameter's or the header field's name; for a 405, the methods the
+    # path takes, as `Allow` writes them; "" for the body and the rest.
+    name: str
+    # Where inside the value, as a JSON pointer: "" for the value itself.
+    pointer: str
+    # The keyword of the schema that failed, such as `minimum`, or the rule:
+    # `required`, `style`, `mediaType`, `security`.
+    keyword: str
+    # What was asked and what was found.
+    message: str
+
+# A request's values, read and valid.
+record Values
+    # The operation's `operation_id`; "" where it has none.
+    operation_id: str
+    # The method, in upper case.
+    method: str
+    # The path's template, as the document writes it.
+    template: str
+    # The path's parameters, by name, read by their schemas: `"7"` is `7`
+    # where the schema says `integer`.
+    path: {str: json.Value}
+    # The query's parameters given, by name, and the defaults of those not
+    # given that have one.
+    query: {str: json.Value}
+    # The header's parameters, by the names the document gives them.
+    headers: {str: json.Value}
+    # The cookies' parameters, by name.
+    cookies: {str: json.Value}
+    # The body read by its media type: JSON's value, a form's object, a
+    # text; `.null_value` where there is none.
+    body: json.Value
+    # The media type of the body, without its parameters; "" where there is
+    # none.
+    media_type: str
+
+# A validator of `doc`'s requests and responses.
+#
+# - `doc`: the document.
+#
+# It does not assert a schema's `format`, which 2020-12 makes an annotation,
+# nor refuse a `readOnly` property in a request or a `writeOnly` one in a
+# response. Fails `invalid` where a schema does not compile, or a reference
+# names nothing, the message naming it by its JSON pointer; `unsupported`
+# where a reference names another document, and as `json/schema` compiles a
+# schema. Its cost is that of compiling each schema once, with the components
+# it names.
+function new_validator(doc: Document) -> Validator?
+    return ok(Validator(document: doc, code: compiled.compile(to_json(doc))?))
+
+# Every issue of `r` against the operation of `v`'s document that takes it.
+#
+# - `v`: the validator.
+# - `r`: the request: its method, path, query, header fields, cookies and
+#   body are read.
+#
+# One issue alone where no operation takes it (404 or 405). Then each
+# parameter's, in the order of the operation's parameters, the body's, then
+# the security's. None where `r` is valid. A query parameter or a header
+# field the operation does not name is no issue.
+function request_errors_of(v: Validator, r: http.Request) -> [Issue]
+    out: [Issue] @= []
+
+    for i in requests.check(v.code, r: r).issues
+        out @ out.push(
+            Issue(status: i.status, location: i.location, name: i.name, pointer: i.pointer, keyword: i.keyword, message: i.message)
+        )
+
+    return out
+
+# The values of `r`, read and validated.
+#
+# - `v`: the validator.
+# - `r`: the request.
+#
+# Fails `not_found` where no operation takes `r`, and `invalid` with the
+# first issue `request_errors_of` gives, and how many in all, where it is not
+# valid. See also `problem_response`.
+function read_request(v: Validator, r: http.Request) -> Values?
+    outcome = requests.check(v.code, r: r)
+
+    if outcome.issues.len() > 0
+        i = outcome.issues[0]
+        first = format_issue(
+            Issue(status: i.status, location: i.location, name: i.name, pointer: i.pointer, keyword: i.keyword, message: i.message)
+        )
+
+        if outcome.at < 0
+            return fail(code: NOT_FOUND, msg: first)
+
+        more = if outcome.issues.len() == 1
+            "1 issue in all"
+        else
+            f"{outcome.issues.len()} issues in all"
+        return fail(code: INVALID, msg: f"{first}; {more}")
+    w = outcome.values
+    return ok(
+        Values(operation_id: w.operation_id, method: w.method, template: w.template, path: w.path, query: w.query, headers: w.headers, cookies: w.cookies, body: w.body, media_type: w.media_type)
+    )
+
+# Every issue of `response` as the answer to `r`.
+#
+# - `v`: the validator.
+# - `r`: the request it answers, which names the operation.
+# - `response`: the response: its status, header fields and body are read.
+#
+# One issue alone where no operation takes `r` or the operation has no
+# response for the status, nor a range or a `default`. Then each header
+# field's the response declares, then the body's. None where it is valid.
+function response_errors_of(v: Validator, r: http.Request, response: http.Response) -> [Issue]
+    out: [Issue] @= []
+
+    for i in answers.check(v.code, r: r, response: response)
+        out @ out.push(
+            Issue(status: i.status, location: i.location, name: i.name, pointer: i.pointer, keyword: i.keyword, message: i.message)
+        )
+
+    return out
+
+# Nothing where `response` is a valid answer to `r`.
+#
+# - `v`: the validator.
+# - `r`: the request it answers.
+# - `response`: the response.
+#
+# Fails `invalid` with the first issue `response_errors_of` gives and how
+# many in all.
+function check_response(v: Validator, r: http.Request, response: http.Response) -> ()?
+    found = response_errors_of(v, r: r, response: response)
+
+    if found.len() == 0
+        return ok()
+
+    more = if found.len() == 1
+        "1 issue in all"
+    else
+        f"{found.len()} issues in all"
+    return fail(code: INVALID, msg: f"{format_issue(found[0])}; {more}")
+
+# `issue` as one line a person reads.
+#
+# - `issue`: the issue.
+function format_issue(issue: Issue) -> str
+    where: str @= issue.location
+
+    if issue.name != "" && issue.location != "route"
+        where @ f"{issue.location} \"{issue.name}\""
+
+    if issue.pointer != ""
+        where @ where + " at " + issue.pointer
+
+    if issue.keyword != ""
+        return f"{where}: {issue.message} ({issue.keyword})"
+    return f"{where}: {issue.message}"
+
+# The answer to a request whose issues are `issues`: a problem of RFC 9457,
+# `application/problem+json`, its status the first issue's, its `errors` a
+# list of each issue's location, name, pointer, keyword and message.
+#
+# - `issues`: the issues, at least one; none answers 400 with no `errors`.
+#
+# A 405 has `Allow` with the methods the path takes, read from its message's
+# issue.
+function problem_response(issues: [Issue]) -> http.Response
+    status = if issues.len() > 0
+        issues[0].status
+    else
+        http.STATUS_BAD_REQUEST
+    m: {str: json.Value} @= {}
+    m["type"] @ .text(v: "about:blank")
+    m["title"] @ .text(v: http.status_text(status).default("Error"))
+    m["status"] @ .number(v: to_f64(status))
+
+    if issues.len() > 0
+        m["detail"] @ .text(v: format_issue(issues[0]))
+        errors: [json.Value] @= []
+
+        for i in issues
+            e: {str: json.Value} @= {}
+            e["in"] @ .text(v: i.location)
+            objects.put_text(@e, key: "name", value: i.name)
+            e["pointer"] @ .text(v: i.pointer)
+            objects.put_text(@e, key: "keyword", value: i.keyword)
+            e["message"] @ .text(v: i.message)
+            errors @ errors.push(.object(members: e))
+
+        m["errors"] @ .list(items: errors)
+    out @= http.respond(
+        status,
+        content_type: "application/problem+json",
+        body: bytes.from_text(json.format(.object(members: m)).default("{}"))
+    )
+
+    if status == http.STATUS_METHOD_NOT_ALLOWED && issues.len() > 0
+        out.headers @ http.with_header(out.headers, name: "Allow", value: issues[0].name)
+    return out
+
+## Serving the document
+
+# The route name of the document as JSON.
+constant ROUTE_DOCUMENT_JSON: str
+    "openapi.json"
+
+# The route name of the document as YAML.
+constant ROUTE_DOCUMENT_YAML: str
+    "openapi.yaml"
+
+# The route name of Swagger UI's page.
+constant ROUTE_SWAGGER_UI: str
+    "openapi.swagger_ui"
+
+# The route name of Redoc's page.
+constant ROUTE_REDOC: str
+    "openapi.redoc"
+
+# Where a document and its pages are served, and what they hold. `new_site`
+# makes one; a program changes its paths and its scripts' URLs before
+# `add_site_routes`.
+record Site
+    # The path of the document as JSON; "" serves it at no path.
+    json_path: str
+    # The path of the document as YAML; "" serves it at no path.
+    yaml_path: str
+    # The path of Swagger UI's page; "" serves it at no path.
+    swagger_ui_path: str
+    # The path of Redoc's page; "" serves it at no path.
+    redoc_path: str
+    # The pages' title.
+    title: str
+    # The URL of Swagger UI's script, `swagger-ui-bundle.js`.
+    swagger_ui_script: str
+    # The URL of Swagger UI's style sheet, `swagger-ui.css`.
+    swagger_ui_style: str
+    # The URL of Redoc's script, `redoc.standalone.js`.
+    redoc_script: str
+    # The document as JSON, written once by `new_site`.
+    document_json: str
+    # The document as YAML, written once by `new_site`.
+    document_yaml: str
+
+# The site of `doc`: the document at `/openapi.json` and `/openapi.yaml`,
+# Swagger UI's page at `/docs` and Redoc's at `/redoc`, their scripts from
+# jsDelivr's copies of `swagger-ui-dist` 5 and `redoc` 2.
+#
+# - `doc`: the document, written as JSON and as YAML at once.
+# - `title`: the pages' title, any text.
+#
+# Fails as `format_json` and `format_yaml` do.
+function new_site(doc: Document, title: str) -> Site?
+    return ok(
+        Site(json_path: "/openapi.json", yaml_path: "/openapi.yaml", swagger_ui_path: "/docs", redoc_path: "/redoc", title: title, swagger_ui_script: "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js", swagger_ui_style: "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css", redoc_script: "https://cdn.jsdelivr.net/npm/redoc@2/bundles/redoc.standalone.js", document_json: format_json(doc)?, document_yaml: format_yaml(doc)?)
+    )
+
+# Adds to `router` a `GET` route for each path of `site` that is not "",
+# named `ROUTE_DOCUMENT_JSON`, `ROUTE_DOCUMENT_YAML`, `ROUTE_SWAGGER_UI` and
+# `ROUTE_REDOC`.
+#
+# - `router`: the router, which gains the routes.
+# - `site`: the site.
+#
+# Fails as `web.add` does.
+function add_site_routes(@router: web.Router, site: Site) -> ()?
+    if site.json_path != ""
+        web.add(@router, method: http.METHOD_GET, pattern: site.json_path, name: ROUTE_DOCUMENT_JSON)?
+
+    if site.yaml_path != ""
+        web.add(@router, method: http.METHOD_GET, pattern: site.yaml_path, name: ROUTE_DOCUMENT_YAML)?
+
+    if site.swagger_ui_path != ""
+        web.add(@router, method: http.METHOD_GET, pattern: site.swagger_ui_path, name: ROUTE_SWAGGER_UI)?
+
+    if site.redoc_path != ""
+        web.add(@router, method: http.METHOD_GET, pattern: site.redoc_path, name: ROUTE_REDOC)?
+    return ok()
+
+# Whether `name` is a route `add_site_routes` adds.
+#
+# - `name`: a route's name, as `web.route` answers it.
+function is_site_route(name: str) -> bool
+    return name == ROUTE_DOCUMENT_JSON || name == ROUTE_DOCUMENT_YAML || name == ROUTE_SWAGGER_UI || name == ROUTE_REDOC
+
+# The answer of `site` to the route `name`: the document or a page, 200.
+#
+# - `site`: the site.
+# - `name`: one of the four route names; another answers 404.
+function respond_site(site: Site, name: str) -> http.Response
+    document_url = if site.json_path != ""
+        site.json_path
+    else
+        site.yaml_path
+
+    if name == ROUTE_DOCUMENT_JSON
+        return http.respond(http.STATUS_OK, content_type: "application/json", body: bytes.from_text(site.document_json))
+
+    if name == ROUTE_DOCUMENT_YAML
+        return http.respond(http.STATUS_OK, content_type: "application/yaml", body: bytes.from_text(site.document_yaml))
+
+    if name == ROUTE_SWAGGER_UI
+        page = swagger_ui_page(
+            title: site.title,
+            document_url: document_url,
+            script_url: site.swagger_ui_script,
+            style_url: site.swagger_ui_style
+        )
+        return http.respond(http.STATUS_OK, content_type: "text/html; charset=utf-8", body: bytes.from_text(page))
+
+    if name == ROUTE_REDOC
+        page = redoc_page(title: site.title, document_url: document_url, script_url: site.redoc_script)
+        return http.respond(http.STATUS_OK, content_type: "text/html; charset=utf-8", body: bytes.from_text(page))
+    return http.respond_text(http.STATUS_NOT_FOUND, text: "Not Found\n")
+
+# Swagger UI's page of the document at `document_url`.
+#
+# - `title`: the page's title, escaped.
+# - `document_url`: where the browser reads the document, such as
+#   `/openapi.json`.
+# - `script_url`: the URL of `swagger-ui-bundle.js`.
+# - `style_url`: the URL of `swagger-ui.css`.
+#
+# Every value is escaped where it stands: as HTML in an attribute, as a
+# JavaScript string in the script. See also `redoc_page`.
+function swagger_ui_page(title: str, document_url: str, script_url: str, style_url: str) -> str
+    return pages.swagger_ui(title: title, document_url: document_url, script_url: script_url, style_url: style_url)
+
+# Redoc's page of the document at `document_url`.
+#
+# - `title`: the page's title, escaped.
+# - `document_url`: where the browser reads the document.
+# - `script_url`: the URL of `redoc.standalone.js`.
+function redoc_page(title: str, document_url: str, script_url: str) -> str
+    return pages.redoc(title: title, document_url: document_url, script_url: script_url)
+
 ## Each object as JSON
 
 # `info` as JSON.
@@ -2804,649 +3453,6 @@ function security_requirement_of(v: json.Value) -> SecurityRequirement?
         schemes[name] @ scopes
 
     return ok(SecurityRequirement(schemes: schemes))
-
-## A document checked
-
-# One thing wrong with a document: where, and what.
-record Problem
-    # Where in the document, as a JSON pointer: `/paths/~1pets/get`.
-    pointer: str
-    # What is wrong, in words a reader can act on.
-    message: str
-
-# Every problem of `doc`: what OpenAPI 3.1 asks of a document beyond the form
-# of each object, in the order of the document.
-#
-# - `doc`: the document.
-#
-# It asks: an `info` with a title and a version; a path, a component or a
-# webhook; paths that begin with `/`, each template's parameters declared
-# for every operation and each path parameter in its template, required; two
-# templates that differ only in their parameters' names; a parameter and its
-# location once in a list, a style its location takes, `schema` or `content`
-# and not both; `example` and `examples` not both; an `operationId` once in
-# the document; a status a key of three digits, a range or `default`; a
-# reference that names a component of its kind; a requirement whose schemes
-# the components hold; a server variable in its URL, its default among its
-# values; a component's name of letters, digits, `.`, `-` and `_`; a tag's
-# name once; and every schema valid against JSON Schema 2020-12's
-# meta-schema. None where `doc` is valid.
-function errors_of(doc: Document) -> [Problem]
-    out: [Problem] @= []
-
-    for p in checks.problems(to_json(doc))
-        out @ out.push(Problem(pointer: p.pointer, message: p.message))
-
-    return out
-
-# Nothing where `doc` has no problem.
-#
-# - `doc`: the document.
-#
-# Fails `invalid` where it has one, with the first `errors_of` gives and
-# after it how many there are in all.
-function check(doc: Document) -> ()?
-    found = errors_of(doc)
-
-    if found.len() == 0
-        return ok()
-
-    where = if found[0].pointer == ""
-        "the document"
-    else
-        found[0].pointer
-
-    more = if found.len() == 1
-        "1 problem in all"
-    else
-        f"{found.len()} problems in all"
-    return fail(code: INVALID, msg: f"at {where}: {found[0].message}; {more}")
-
-# `doc` with every path, webhook, component, tag and requirement of `other`
-# added.
-#
-# - `doc`: the document added to; its `info`, servers and the rest stand.
-# - `other`: the document whose parts are added, after `doc`'s.
-#
-# Fails `exists` where both have an operation on one method and path, a
-# webhook's operation, or a component of one kind and name that are not
-# equal; a tag both have keeps `doc`'s.
-function merge(doc: Document, other: Document) -> Document?
-    out @= doc
-
-    for path in keys(other.paths)
-        incoming = other.paths[path].must()
-
-        match out.paths[path]
-            .err _ => out.paths[path] @ incoming
-            .ok mine =>
-                item @= mine
-
-                for method in keys(incoming.operations)
-                    op = incoming.operations[method].must()
-
-                    match item.operations[method]
-                        .ok there =>
-                            if there != op
-                                return fail(
-                                    code: EXISTS,
-                                    msg: f"{strings.to_upper_ascii(method)} {path} is in both documents, and differs"
-                                )
-                        .err _ => item.operations[method] @ op
-
-                out.paths[path] @ item
-
-    for name in keys(other.webhooks)
-        incoming = other.webhooks[name].must()
-
-        match out.webhooks[name]
-            .err _ => out.webhooks[name] @ incoming
-            .ok mine =>
-                item @= mine
-
-                for method in keys(incoming.operations)
-                    op = incoming.operations[method].must()
-
-                    match item.operations[method]
-                        .ok there =>
-                            if there != op
-                                return fail(
-                                    code: EXISTS,
-                                    msg: f"the webhook \"{name}\" has an operation for {strings.to_upper_ascii(method)} in both documents, and it differs"
-                                )
-                        .err _ => item.operations[method] @ op
-
-                out.webhooks[name] @ item
-
-    c @= out.components
-    given = other.components
-
-    for name in keys(given.schemas)
-        match c.schemas[name]
-            .ok there =>
-                if there != given.schemas[name].must()
-                    return fail(
-                        code: EXISTS,
-                        msg: f"the schema \"{name}\" is in both documents' components, and differs"
-                    )
-            .err _ => c.schemas[name] @ given.schemas[name].must()
-
-    for name in keys(given.responses)
-        match c.responses[name]
-            .ok there =>
-                if there != given.responses[name].must()
-                    return fail(
-                        code: EXISTS,
-                        msg: f"the response \"{name}\" is in both documents' components, and differs"
-                    )
-            .err _ => c.responses[name] @ given.responses[name].must()
-
-    for name in keys(given.parameters)
-        match c.parameters[name]
-            .ok there =>
-                if there != given.parameters[name].must()
-                    return fail(
-                        code: EXISTS,
-                        msg: f"the parameter \"{name}\" is in both documents' components, and differs"
-                    )
-            .err _ => c.parameters[name] @ given.parameters[name].must()
-
-    for name in keys(given.examples)
-        match c.examples[name]
-            .ok there =>
-                if there != given.examples[name].must()
-                    return fail(
-                        code: EXISTS,
-                        msg: f"the example \"{name}\" is in both documents' components, and differs"
-                    )
-            .err _ => c.examples[name] @ given.examples[name].must()
-
-    for name in keys(given.request_bodies)
-        match c.request_bodies[name]
-            .ok there =>
-                if there != given.request_bodies[name].must()
-                    return fail(
-                        code: EXISTS,
-                        msg: f"the request body \"{name}\" is in both documents' components, and differs"
-                    )
-            .err _ => c.request_bodies[name] @ given.request_bodies[name].must()
-
-    for name in keys(given.headers)
-        match c.headers[name]
-            .ok there =>
-                if there != given.headers[name].must()
-                    return fail(
-                        code: EXISTS,
-                        msg: f"the header \"{name}\" is in both documents' components, and differs"
-                    )
-            .err _ => c.headers[name] @ given.headers[name].must()
-
-    for name in keys(given.security_schemes)
-        match c.security_schemes[name]
-            .ok there =>
-                if there != given.security_schemes[name].must()
-                    return fail(
-                        code: EXISTS,
-                        msg: f"the security scheme \"{name}\" is in both documents' components, and differs"
-                    )
-            .err _ => c.security_schemes[name] @ given.security_schemes[name].must()
-
-    for name in keys(given.links)
-        match c.links[name]
-            .ok there =>
-                if there != given.links[name].must()
-                    return fail(code: EXISTS, msg: f"the link \"{name}\" is in both documents' components, and differs")
-            .err _ => c.links[name] @ given.links[name].must()
-
-    for name in keys(given.callbacks)
-        match c.callbacks[name]
-            .ok there =>
-                if there != given.callbacks[name].must()
-                    return fail(
-                        code: EXISTS,
-                        msg: f"the callback \"{name}\" is in both documents' components, and differs"
-                    )
-            .err _ => c.callbacks[name] @ given.callbacks[name].must()
-
-    for name in keys(given.path_items)
-        match c.path_items[name]
-            .ok there =>
-                if there != given.path_items[name].must()
-                    return fail(
-                        code: EXISTS,
-                        msg: f"the path item \"{name}\" is in both documents' components, and differs"
-                    )
-            .err _ => c.path_items[name] @ given.path_items[name].must()
-
-    out.components @ c
-    tags @= out.tags
-
-    for t in other.tags
-        known: bool @= false
-
-        for mine in tags
-            if mine.name == t.name
-                known @ true
-
-        if !known
-            tags @ tags.push(t)
-
-    out.tags @ tags
-    security @= out.security
-
-    for each in other.security
-        known: bool @= false
-
-        for mine in security
-            if mine == each
-                known @ true
-
-        if !known
-            security @ security.push(each)
-
-    out.security @ security
-    return ok(out)
-
-## Routes
-
-# The pattern `web` reads for the template `path`: `/pets/{id}` is
-# `/pets/:id`.
-#
-# - `path`: a path's template.
-#
-# Fails `invalid` where a segment holds a parameter beside other text, as
-# `/files/{name}.json`, which a `web` pattern does not say, or where a `{` is
-# not closed.
-function pattern_of(path: str) -> str?
-    return routes.pattern(path)
-
-# The name `add_routes` gives the route of `endpoint`: its `operation_id`,
-# or its method and path, `GET /pets`, where it has none.
-#
-# - `endpoint`: the operation.
-function route_name_of(endpoint: Endpoint) -> str
-    if endpoint.operation.operation_id != ""
-        return endpoint.operation.operation_id
-    return endpoint.method + " " + endpoint.path
-
-# Adds to `router` a route for every operation of `doc`, named by
-# `route_name_of`, under the path of its first server: the operation's, else
-# its path item's, else the document's, each variable at its default, so
-# `/pets` of a server `https://api.example.com/v1` is `/v1/pets`.
-#
-# - `router`: the router, which gains the routes.
-# - `doc`: the document.
-#
-# Fails as `pattern_of` and `web.add` do, adding the routes before the one
-# that fails.
-function add_routes(@router: web.Router, doc: Document) -> ()?
-    none: {str: str} = {}
-
-    for e in operations_of(doc)
-        servers: [Server] @= e.operation.servers
-
-        if servers.len() == 0
-            servers @ e.item.servers
-
-        if servers.len() == 0
-            servers @ doc.servers
-        prefix: str @= ""
-
-        if servers.len() > 0
-            prefix @ routes.base_path(server_url(servers[0], values: none)?)
-        web.add(@router, method: e.method, pattern: pattern_of(prefix + e.path)?, name: route_name_of(e))?
-
-    return ok()
-
-## Requests and responses validated
-
-# A document compiled to validate requests and responses: every schema read
-# once. `new_validator` makes one.
-record Validator
-    # The document.
-    document: Document
-    # What the validation reads, which only this package reads.
-    code: compiled.Compiled
-
-# One thing wrong with a request or a response: where, and what.
-record Issue
-    # The status a server answers it with: 404 where no path is the
-    # request's, 405 where no operation takes its method, 415 where its body
-    # is of no media type the operation takes, 401 where a credential is
-    # missing, 400 otherwise; 500 for a response's.
-    status: i64
-    # Where: `path`, `query`, `header`, `cookie`, `body`, `security`, `route`
-    # (the path or the method), or `status` (a response's status).
-    location: str
-    # The parameter's or the header field's name; for a 405, the methods the
-    # path takes, as `Allow` writes them; "" for the body and the rest.
-    name: str
-    # Where inside the value, as a JSON pointer: "" for the value itself.
-    pointer: str
-    # The keyword of the schema that failed, such as `minimum`, or the rule:
-    # `required`, `style`, `mediaType`, `security`.
-    keyword: str
-    # What was asked and what was found.
-    message: str
-
-# A request's values, read and valid.
-record Values
-    # The operation's `operation_id`; "" where it has none.
-    operation_id: str
-    # The method, in upper case.
-    method: str
-    # The path's template, as the document writes it.
-    template: str
-    # The path's parameters, by name, read by their schemas: `"7"` is `7`
-    # where the schema says `integer`.
-    path: {str: json.Value}
-    # The query's parameters given, by name, and the defaults of those not
-    # given that have one.
-    query: {str: json.Value}
-    # The header's parameters, by the names the document gives them.
-    headers: {str: json.Value}
-    # The cookies' parameters, by name.
-    cookies: {str: json.Value}
-    # The body read by its media type: JSON's value, a form's object, a
-    # text; `.null_value` where there is none.
-    body: json.Value
-    # The media type of the body, without its parameters; "" where there is
-    # none.
-    media_type: str
-
-# A validator of `doc`'s requests and responses.
-#
-# - `doc`: the document.
-#
-# Fails `invalid` where a schema does not compile, or a reference names
-# nothing, the message naming it by its JSON pointer; `unsupported` where a
-# reference names another document, and as `json/schema` compiles a schema.
-# Its cost is that of compiling each schema once, with the components it
-# names.
-function new_validator(doc: Document) -> Validator?
-    return ok(Validator(document: doc, code: compiled.compile(to_json(doc))?))
-
-# Every issue of `r` against the operation of `v`'s document that takes it.
-#
-# - `v`: the validator.
-# - `r`: the request: its method, path, query, header fields, cookies and
-#   body are read.
-#
-# One issue alone where no operation takes it (404 or 405). Then each
-# parameter's, in the order of the operation's parameters, the body's, then
-# the security's. None where `r` is valid. A query parameter or a header
-# field the operation does not name is no issue.
-function request_errors_of(v: Validator, r: http.Request) -> [Issue]
-    out: [Issue] @= []
-
-    for i in requests.check(v.code, r: r).issues
-        out @ out.push(
-            Issue(status: i.status, location: i.location, name: i.name, pointer: i.pointer, keyword: i.keyword, message: i.message)
-        )
-
-    return out
-
-# The values of `r`, read and validated.
-#
-# - `v`: the validator.
-# - `r`: the request.
-#
-# Fails `not_found` where no operation takes `r`, and `invalid` with the
-# first issue `request_errors_of` gives, and how many in all, where it is not
-# valid. See also `problem_response`.
-function read_request(v: Validator, r: http.Request) -> Values?
-    outcome = requests.check(v.code, r: r)
-
-    if outcome.issues.len() > 0
-        i = outcome.issues[0]
-        first = format_issue(
-            Issue(status: i.status, location: i.location, name: i.name, pointer: i.pointer, keyword: i.keyword, message: i.message)
-        )
-
-        if outcome.at < 0
-            return fail(code: NOT_FOUND, msg: first)
-
-        more = if outcome.issues.len() == 1
-            "1 issue in all"
-        else
-            f"{outcome.issues.len()} issues in all"
-        return fail(code: INVALID, msg: f"{first}; {more}")
-    w = outcome.values
-    return ok(
-        Values(operation_id: w.operation_id, method: w.method, template: w.template, path: w.path, query: w.query, headers: w.headers, cookies: w.cookies, body: w.body, media_type: w.media_type)
-    )
-
-# Every issue of `response` as the answer to `r`.
-#
-# - `v`: the validator.
-# - `r`: the request it answers, which names the operation.
-# - `response`: the response: its status, header fields and body are read.
-#
-# One issue alone where no operation takes `r` or the operation has no
-# response for the status, nor a range or a `default`. Then each header
-# field's the response declares, then the body's. None where it is valid.
-function response_errors_of(v: Validator, r: http.Request, response: http.Response) -> [Issue]
-    out: [Issue] @= []
-
-    for i in answers.check(v.code, r: r, response: response)
-        out @ out.push(
-            Issue(status: i.status, location: i.location, name: i.name, pointer: i.pointer, keyword: i.keyword, message: i.message)
-        )
-
-    return out
-
-# Nothing where `response` is a valid answer to `r`.
-#
-# - `v`: the validator.
-# - `r`: the request it answers.
-# - `response`: the response.
-#
-# Fails `invalid` with the first issue `response_errors_of` gives and how
-# many in all.
-function check_response(v: Validator, r: http.Request, response: http.Response) -> ()?
-    found = response_errors_of(v, r: r, response: response)
-
-    if found.len() == 0
-        return ok()
-
-    more = if found.len() == 1
-        "1 issue in all"
-    else
-        f"{found.len()} issues in all"
-    return fail(code: INVALID, msg: f"{format_issue(found[0])}; {more}")
-
-# `issue` as one line a person reads.
-#
-# - `issue`: the issue.
-function format_issue(issue: Issue) -> str
-    where: str @= issue.location
-
-    if issue.name != "" && issue.location != "route"
-        where @ f"{issue.location} \"{issue.name}\""
-
-    if issue.pointer != ""
-        where @ where + " at " + issue.pointer
-
-    if issue.keyword != ""
-        return f"{where}: {issue.message} ({issue.keyword})"
-    return f"{where}: {issue.message}"
-
-# The answer to a request whose issues are `issues`: a problem of RFC 9457,
-# `application/problem+json`, its status the first issue's, its `errors` a
-# list of each issue's location, name, pointer, keyword and message.
-#
-# - `issues`: the issues, at least one; none answers 400 with no `errors`.
-#
-# A 405 has `Allow` with the methods the path takes, read from its message's
-# issue.
-function problem_response(issues: [Issue]) -> http.Response
-    status = if issues.len() > 0
-        issues[0].status
-    else
-        http.STATUS_BAD_REQUEST
-    m: {str: json.Value} @= {}
-    m["type"] @ .text(v: "about:blank")
-    m["title"] @ .text(v: http.status_text(status).default("Error"))
-    m["status"] @ .number(v: to_f64(status))
-
-    if issues.len() > 0
-        m["detail"] @ .text(v: format_issue(issues[0]))
-        errors: [json.Value] @= []
-
-        for i in issues
-            e: {str: json.Value} @= {}
-            e["in"] @ .text(v: i.location)
-            objects.put_text(@e, key: "name", value: i.name)
-            e["pointer"] @ .text(v: i.pointer)
-            objects.put_text(@e, key: "keyword", value: i.keyword)
-            e["message"] @ .text(v: i.message)
-            errors @ errors.push(.object(members: e))
-
-        m["errors"] @ .list(items: errors)
-    out @= http.respond(
-        status,
-        content_type: "application/problem+json",
-        body: bytes.from_text(json.format(.object(members: m)).default("{}"))
-    )
-
-    if status == http.STATUS_METHOD_NOT_ALLOWED && issues.len() > 0
-        out.headers @ http.with_header(out.headers, name: "Allow", value: issues[0].name)
-    return out
-
-## Serving the document
-
-# The route name of the document as JSON.
-constant ROUTE_DOCUMENT_JSON: str
-    "openapi.json"
-
-# The route name of the document as YAML.
-constant ROUTE_DOCUMENT_YAML: str
-    "openapi.yaml"
-
-# The route name of Swagger UI's page.
-constant ROUTE_SWAGGER_UI: str
-    "openapi.swagger_ui"
-
-# The route name of Redoc's page.
-constant ROUTE_REDOC: str
-    "openapi.redoc"
-
-# Where a document and its pages are served, and what they hold. `new_site`
-# makes one; a program changes its paths and its scripts' URLs before
-# `add_site_routes`.
-record Site
-    # The path of the document as JSON; "" serves it at no path.
-    json_path: str
-    # The path of the document as YAML; "" serves it at no path.
-    yaml_path: str
-    # The path of Swagger UI's page; "" serves it at no path.
-    swagger_ui_path: str
-    # The path of Redoc's page; "" serves it at no path.
-    redoc_path: str
-    # The pages' title.
-    title: str
-    # The URL of Swagger UI's script, `swagger-ui-bundle.js`.
-    swagger_ui_script: str
-    # The URL of Swagger UI's style sheet, `swagger-ui.css`.
-    swagger_ui_style: str
-    # The URL of Redoc's script, `redoc.standalone.js`.
-    redoc_script: str
-    # The document as JSON, written once by `new_site`.
-    document_json: str
-    # The document as YAML, written once by `new_site`.
-    document_yaml: str
-
-# The site of `doc`: the document at `/openapi.json` and `/openapi.yaml`,
-# Swagger UI's page at `/docs` and Redoc's at `/redoc`, their scripts from
-# jsDelivr's copies of `swagger-ui-dist` 5 and `redoc` 2.
-#
-# - `doc`: the document, written as JSON and as YAML at once.
-# - `title`: the pages' title, any text.
-#
-# Fails as `format_json` and `format_yaml` do.
-function new_site(doc: Document, title: str) -> Site?
-    return ok(
-        Site(json_path: "/openapi.json", yaml_path: "/openapi.yaml", swagger_ui_path: "/docs", redoc_path: "/redoc", title: title, swagger_ui_script: "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js", swagger_ui_style: "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css", redoc_script: "https://cdn.jsdelivr.net/npm/redoc@2/bundles/redoc.standalone.js", document_json: format_json(doc)?, document_yaml: format_yaml(doc)?)
-    )
-
-# Adds to `router` a `GET` route for each path of `site` that is not "",
-# named `ROUTE_DOCUMENT_JSON`, `ROUTE_DOCUMENT_YAML`, `ROUTE_SWAGGER_UI` and
-# `ROUTE_REDOC`.
-#
-# - `router`: the router, which gains the routes.
-# - `site`: the site.
-#
-# Fails as `web.add` does.
-function add_site_routes(@router: web.Router, site: Site) -> ()?
-    if site.json_path != ""
-        web.add(@router, method: http.METHOD_GET, pattern: site.json_path, name: ROUTE_DOCUMENT_JSON)?
-
-    if site.yaml_path != ""
-        web.add(@router, method: http.METHOD_GET, pattern: site.yaml_path, name: ROUTE_DOCUMENT_YAML)?
-
-    if site.swagger_ui_path != ""
-        web.add(@router, method: http.METHOD_GET, pattern: site.swagger_ui_path, name: ROUTE_SWAGGER_UI)?
-
-    if site.redoc_path != ""
-        web.add(@router, method: http.METHOD_GET, pattern: site.redoc_path, name: ROUTE_REDOC)?
-    return ok()
-
-# Whether `name` is a route `add_site_routes` adds.
-#
-# - `name`: a route's name, as `web.route` answers it.
-function is_site_route(name: str) -> bool
-    return name == ROUTE_DOCUMENT_JSON || name == ROUTE_DOCUMENT_YAML || name == ROUTE_SWAGGER_UI || name == ROUTE_REDOC
-
-# The answer of `site` to the route `name`: the document or a page, 200.
-#
-# - `site`: the site.
-# - `name`: one of the four route names; another answers 404.
-function respond_site(site: Site, name: str) -> http.Response
-    document_url = if site.json_path != ""
-        site.json_path
-    else
-        site.yaml_path
-
-    if name == ROUTE_DOCUMENT_JSON
-        return http.respond(http.STATUS_OK, content_type: "application/json", body: bytes.from_text(site.document_json))
-
-    if name == ROUTE_DOCUMENT_YAML
-        return http.respond(http.STATUS_OK, content_type: "application/yaml", body: bytes.from_text(site.document_yaml))
-
-    if name == ROUTE_SWAGGER_UI
-        page = swagger_ui_page(
-            title: site.title,
-            document_url: document_url,
-            script_url: site.swagger_ui_script,
-            style_url: site.swagger_ui_style
-        )
-        return http.respond(http.STATUS_OK, content_type: "text/html; charset=utf-8", body: bytes.from_text(page))
-
-    if name == ROUTE_REDOC
-        page = redoc_page(title: site.title, document_url: document_url, script_url: site.redoc_script)
-        return http.respond(http.STATUS_OK, content_type: "text/html; charset=utf-8", body: bytes.from_text(page))
-    return http.respond_text(http.STATUS_NOT_FOUND, text: "Not Found\n")
-
-# Swagger UI's page of the document at `document_url`.
-#
-# - `title`: the page's title, escaped.
-# - `document_url`: where the browser reads the document, such as
-#   `/openapi.json`.
-# - `script_url`: the URL of `swagger-ui-bundle.js`.
-# - `style_url`: the URL of `swagger-ui.css`.
-#
-# Every value is escaped where it stands: as HTML in an attribute, as a
-# JavaScript string in the script. See also `redoc_page`.
-function swagger_ui_page(title: str, document_url: str, script_url: str, style_url: str) -> str
-    return pages.swagger_ui(title: title, document_url: document_url, script_url: script_url, style_url: style_url)
-
-# Redoc's page of the document at `document_url`.
-#
-# - `title`: the page's title, escaped.
-# - `document_url`: where the browser reads the document.
-# - `script_url`: the URL of `redoc.standalone.js`.
-function redoc_page(title: str, document_url: str, script_url: str) -> str
-    return pages.redoc(title: title, document_url: document_url, script_url: script_url)
 
 ## Tests
 

@@ -2411,22 +2411,23 @@ test "connect with StartTLS: a server that knows no StartTLS fails unsupported"
     assert threads.wait_text(@server) == "ok"
 
 test "start_tls: on macOS a connection already open fails unsupported, before anything is sent"
-    if os.system() == .darwin
-        port = fake.free_port()
-        server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind")
-        fake.until_listening(port)
-        opts @= options("127.0.0.1")
-        opts.port @ port
-        opts.security @ .plain
-        c @= connect(opts).must()
+    if os.system() != .darwin
+        skip_test(reason: "the case is macOS's alone, whose TLS begins only over a connection tls makes")
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= connect(opts).must()
 
-        match start_tls(@c, roots: tls.TEST_ROOT)
-            .ok _  => assert false
-            .err e => assert e.code == "unsupported"
+    match start_tls(@c, roots: tls.TEST_ROOT)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
 
-        bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
-        close(@c).must()
-        assert threads.wait_text(@server) == "ok"
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
 
 test "names: parse_dn, format_dn, parse_rdn, the comparisons, a parent and a child"
     d = parse_dn("CN=Ana+sn=Rossi, ou=people, dc=example,dc=org").must()

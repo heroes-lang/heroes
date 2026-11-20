@@ -794,7 +794,7 @@ record UpdateResult
     # The `_id` of the document an upsert inserted, [] where none was.
     upserted_ids: [bson.Value]
 
-# Updates the first document of `collection` that `filter` matches.
+# Updates the first document of `collection` that `query` matches.
 #
 # - `client`: the client.
 # - `database`: the database's name.
@@ -814,7 +814,7 @@ function update_one(@client: Client, database: str, collection: str, query: bson
         UpdateResult(matched: counts.n - counts.upserted.len(), modified: counts.modified, upserted_ids: counts.upserted)
     )
 
-# Updates every document of `collection` that `filter` matches.
+# Updates every document of `collection` that `query` matches.
 #
 # - `client`: the client.
 # - `database`: the database's name.
@@ -832,7 +832,7 @@ function update_many(@client: Client, database: str, collection: str, query: bso
         UpdateResult(matched: counts.n - counts.upserted.len(), modified: counts.modified, upserted_ids: counts.upserted)
     )
 
-# Replaces the first document of `collection` that `filter` matches by
+# Replaces the first document of `collection` that `query` matches by
 # `replacement`, its `_id` kept.
 #
 # - `client`: the client.
@@ -844,7 +844,7 @@ function update_many(@client: Client, database: str, collection: str, query: bso
 # - `opts`: the upsert and the fields joined; array filters do not apply.
 #
 # Fails `invalid` where `replacement` holds a field beginning with `$` or
-# `options` names array filters, and as every write fails. See also
+# `opts` names array filters, and as every write fails. See also
 # `update_one`.
 function replace_one(@client: Client, database: str, collection: str, query: bson.Document, replacement: bson.Document, opts: WriteOptions) -> UpdateResult?
     for f in replacement.fields
@@ -869,7 +869,7 @@ function replace_one(@client: Client, database: str, collection: str, query: bso
         UpdateResult(matched: counts.n - counts.upserted.len(), modified: counts.modified, upserted_ids: counts.upserted)
     )
 
-# Deletes the first document of `collection` that `filter` matches, and
+# Deletes the first document of `collection` that `query` matches, and
 # answers how many were deleted, 0 or 1.
 #
 # - `client`: the client.
@@ -885,7 +885,7 @@ function delete_one(@client: Client, database: str, collection: str, query: bson
     counts = writes.send(@client.state, database: database, command: "delete", collection: collection, identifier: "deletes", items: [statement], ordered: true, retryable: true, extra: opts.command)?
     return ok(counts.n)
 
-# Deletes every document of `collection` that `filter` matches, and answers
+# Deletes every document of `collection` that `query` matches, and answers
 # how many.
 #
 # - `client`: the client.
@@ -1095,7 +1095,7 @@ record Cursor
     # The cursor's state, which only this package reads and writes.
     state: cursors.Cursor
 
-# The documents of `collection` that `filter` matches, as a cursor: MongoDB's
+# The documents of `collection` that `query` matches, as a cursor: MongoDB's
 # `find`, which a built-in's name keeps from being this function's.
 #
 # - `client`: the client, which the cursor's later batches are read through.
@@ -1124,7 +1124,7 @@ function find_many(@client: Client, database: str, collection: str, query: bson.
         Cursor(state: cursors.of_reply(reply, database: database, batch_size: opts.batch_size, max_await_ms: 0, is_stream: false)?)
     )
 
-# The first document of `collection` that `filter` matches, in `options`'
+# The first document of `collection` that `query` matches, in `opts`'
 # order.
 #
 # - `client`: the client.
@@ -1191,7 +1191,7 @@ function is_exhausted(cursor: Cursor) -> bool
     c = cursor.state
     return c.id == 0 && c.at >= c.batch.len()
 
-# How many documents of `collection` `filter` matches, counted by the
+# How many documents of `collection` `query` matches, counted by the
 # server's aggregation as the drivers count them.
 #
 # - `client`: the client.
@@ -1225,7 +1225,7 @@ function estimated_document_count(@client: Client, database: str, collection: st
     return bson.int_of(bson.member(reply, name: "n")?)
 
 # The distinct values of `field` among the documents of `collection` that
-# `filter` matches.
+# `query` matches.
 #
 # - `client`: the client.
 # - `database`: the database's name.
@@ -1327,8 +1327,8 @@ function find_and_modify_options() -> FindAndModifyOptions
         command: empty
     )
 
-# Updates the first document of `collection` that `filter` matches in
-# `options`' order, and answers it before or after.
+# Updates the first document of `collection` that `query` matches in
+# `opts`' order, and answers it before or after.
 #
 # - `client`: the client.
 # - `database`: the database's name.
@@ -1357,7 +1357,7 @@ function find_one_and_update(@client: Client, database: str, collection: str, qu
     reply = ops.write(@client.state, database: database, body: body, sequences: [], retryable: true)?
     return replies.modified_of(reply, what: database + "." + collection)
 
-# Replaces the first document of `collection` that `filter` matches, and
+# Replaces the first document of `collection` that `query` matches, and
 # answers it before or after.
 #
 # - `client`: the client.
@@ -1390,7 +1390,7 @@ function find_one_and_replace(@client: Client, database: str, collection: str, q
     reply = ops.write(@client.state, database: database, body: body, sequences: [], retryable: true)?
     return replies.modified_of(reply, what: database + "." + collection)
 
-# Deletes the first document of `collection` that `filter` matches, and
+# Deletes the first document of `collection` that `query` matches, and
 # answers it.
 #
 # - `client`: the client.
@@ -2132,10 +2132,10 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
 
 test "live: a batch past the server's most writes, sent in two commands"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => print("live batches: skipped, REBEL_MONGODB_URL names no server")
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             match connect(parse_url(url).must())
-                .err e => print(f"live batches: skipped, nothing answers: {e.code}")
+                .err e => skip_test(reason: f"nothing answers: {e.code}")
                 .ok first =>
                     c @= first
                     drop_collection(@c, database: "rebel_test_batches", collection: "many").must()
@@ -2153,17 +2153,16 @@ test "live: a batch past the server's most writes, sent in two commands"
 
 test "live: transactions committed and aborted as a second client sees them, and a failure inside one"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => print("live transactions: skipped, REBEL_MONGODB_URL names no server")
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             match connect(parse_url(url).must())
-                .err e => print(f"live transactions: skipped, nothing answers: {e.code}")
+                .err e => skip_test(reason: f"nothing answers: {e.code}")
                 .ok first =>
                     c @= first
 
                     if server_of(c).replica_set == ""
-                        print("live transactions: skipped, the server is no replica set")
                         close(@c).must()
-                        return
+                        skip_test(reason: "the server is no replica set")
                     other @= connect(parse_url(url).must()).must()
                     db = "rebel_test_txn"
                     none = bson.Document(fields: [])
@@ -2240,17 +2239,16 @@ test "live: transactions committed and aborted as a second client sees them, and
 
 test "live: a change stream's insert and update, and a stream resumed after its token"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => print("live change streams: skipped, REBEL_MONGODB_URL names no server")
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             match connect(parse_url(url).must())
-                .err e => print(f"live change streams: skipped, nothing answers: {e.code}")
+                .err e => skip_test(reason: f"nothing answers: {e.code}")
                 .ok first =>
                     c @= first
 
                     if server_of(c).replica_set == ""
-                        print("live change streams: skipped, the server is no replica set")
                         close(@c).must()
-                        return
+                        skip_test(reason: "the server is no replica set")
                     db = "rebel_test_streams"
                     drop_collection(@c, database: db, collection: "events").must()
                     create_collection(@c, database: db, collection: "events", opts: bson.Document(fields: [])).must()
@@ -2296,7 +2294,7 @@ test "live: a change stream's insert and update, and a stream resumed after its 
 
 test "live: logins by SCRAM-SHA-1, by SASLprep's password, refused, read-only, over TLS, and a read preference no member suits"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => print("live logins: skipped, REBEL_MONGODB_URL names no server")
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             opts = parse_url(url).must()
             wrong @= opts
@@ -2387,7 +2385,7 @@ test "connect: a client of the server REBEL_MONGODB_URL names"
 # A client closed, after which every call fails `closed`.
 test "close: the end of a client"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             c2 @= connect(parse_url(url).must()).must()
@@ -2398,7 +2396,7 @@ test "close: the end of a client"
 # Whether a client is still open.
 test "is_closed: before and after close"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             assert !is_closed(c)
@@ -2407,7 +2405,7 @@ test "is_closed: before and after close"
 # A limit on how long each reply may take.
 test "set_timeout: five seconds for each reply"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             set_timeout(@c, ms: 5000).must()
@@ -2417,7 +2415,7 @@ test "set_timeout: five seconds for each reply"
 # What kind of server the client stands on.
 test "server_of: what the server said of itself"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             info = server_of(c)
@@ -2427,7 +2425,7 @@ test "server_of: what the server said of itself"
 # Whether the server answers.
 test "ping: the server answers"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             ping(@c).must()
@@ -2436,7 +2434,7 @@ test "ping: the server answers"
 # Any command, here the server's version.
 test "run_command: the server's build"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             reply = run_command(@c, database: "admin", command: bson.parse_json("{\"buildInfo\": 1}").must()).must()
@@ -2446,7 +2444,7 @@ test "run_command: the server's build"
 # A command that answers a cursor.
 test "run_cursor_command: the collections of a database as a cursor"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             cursor @= run_cursor_command(
@@ -2460,7 +2458,7 @@ test "run_cursor_command: the collections of a database as a cursor"
 # How the server would run a query.
 test "explain: the plan of a query"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             plan = explain(
@@ -2475,7 +2473,7 @@ test "explain: the plan of a query"
 # The names of the databases.
 test "list_database_names: the server's databases"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             assert list_database_names(@c).must().len() > 0
@@ -2484,7 +2482,7 @@ test "list_database_names: the server's databases"
 # The databases, each with its size on disk.
 test "list_databases: the server's databases with their sizes"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             assert list_databases(@c, query: bson.Document(fields: [])).must().len() > 0
@@ -2493,7 +2491,7 @@ test "list_databases: the server's databases with their sizes"
 # A database removed with all it holds.
 test "drop_database: a database removed"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = insert_one(
@@ -2508,7 +2506,7 @@ test "drop_database: a database removed"
 # The names of a database's collections.
 test "list_collection_names: the collections of a database"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = insert_one(@c, database: "rebel_examples", collection: "people", doc: bson.Document(fields: [])).must()
@@ -2519,7 +2517,7 @@ test "list_collection_names: the collections of a database"
 # A database's collections, each with its options.
 test "list_collections: the collections with their options"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = insert_one(@c, database: "rebel_examples", collection: "people", doc: bson.Document(fields: [])).must()
@@ -2529,7 +2527,7 @@ test "list_collections: the collections with their options"
 # A collection created with options.
 test "create_collection: a capped collection"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             drop_collection(@c, database: "rebel_examples", collection: "log").must()
@@ -2544,7 +2542,7 @@ test "create_collection: a capped collection"
 # A view of a collection through a pipeline.
 test "create_view: the adults of a collection"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             drop_collection(@c, database: "rebel_examples", collection: "adults").must()
@@ -2560,7 +2558,7 @@ test "create_view: the adults of a collection"
 # A collection removed; one that does not exist is no failure.
 test "drop_collection: a collection removed"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             drop_collection(@c, database: "rebel_examples", collection: "nothing_here").must()
@@ -2569,7 +2567,7 @@ test "drop_collection: a collection removed"
 # A collection renamed in its database.
 test "rename_collection: a collection given a new name"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             drop_collection(@c, database: "rebel_examples", collection: "old_name").must()
@@ -2591,7 +2589,7 @@ test "rename_collection: a collection given a new name"
 # A document inserted, its `_id` made.
 test "insert_one: a document and its new _id"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             id = insert_one(
@@ -2606,7 +2604,7 @@ test "insert_one: a document and its new _id"
 # Several documents inserted in one command.
 test "insert_many: three documents at once"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             docs = [
@@ -2626,7 +2624,7 @@ test "write_options: an upsert"
 # One document changed by an operator.
 test "update_one: a field raised by one"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = insert_one(
@@ -2649,7 +2647,7 @@ test "update_one: a field raised by one"
 # Every matching document changed.
 test "update_many: every match changed"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             r = update_many(
@@ -2666,7 +2664,7 @@ test "update_many: every match changed"
 # A document replaced whole.
 test "replace_one: a document replaced, its _id kept"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             opts @= write_options()
@@ -2685,7 +2683,7 @@ test "replace_one: a document replaced, its _id kept"
 # The first matching document deleted.
 test "delete_one: one document deleted"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = insert_one(
@@ -2700,7 +2698,7 @@ test "delete_one: one document deleted"
 # Every matching document deleted.
 test "delete_many: every match deleted"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = delete_many(
@@ -2715,7 +2713,7 @@ test "delete_many: every match deleted"
 # Several writes of several kinds sent together.
 test "bulk_write: an insert, an update and a delete in order"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             models: [WriteModel] = [
@@ -2738,7 +2736,7 @@ test "find_options: the five youngest, their names alone"
 # The documents a query matches, read from a cursor.
 test "find_many: the adults, read one at a time"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             cursor @= find_many(
@@ -2759,7 +2757,7 @@ test "find_many: the adults, read one at a time"
 # The first document a query matches.
 test "find_one: one document by its name"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = insert_one(
@@ -2781,7 +2779,7 @@ test "find_one: one document by its name"
 # A cursor read to its end, one document at a time.
 test "next_document: the documents of a cursor until its end"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             cursor @= find_many(
@@ -2806,7 +2804,7 @@ test "next_document: the documents of a cursor until its end"
 # A cursor read whole.
 test "read_all: every document of a cursor at once"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             cursor @= find_many(
@@ -2823,7 +2821,7 @@ test "read_all: every document of a cursor at once"
 # A cursor the program stops reading.
 test "close_cursor: a cursor given up before its end"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             opts @= find_options()
@@ -2842,7 +2840,7 @@ test "close_cursor: a cursor given up before its end"
 # Whether a cursor has given out everything.
 test "is_exhausted: a cursor read to its end"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             cursor = find_many(
@@ -2858,7 +2856,7 @@ test "is_exhausted: a cursor read to its end"
 # How many documents a query matches.
 test "count_documents: the adults counted"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             assert count_documents(@c, database: "rebel_examples", collection: "people", query: bson.parse_json("{\"age\": {\"$gte\": 18}}").must()).must() >= 0
@@ -2867,7 +2865,7 @@ test "count_documents: the adults counted"
 # How many documents a collection holds, quickly.
 test "estimated_document_count: a collection's size from its metadata"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             assert estimated_document_count(@c, database: "rebel_examples", collection: "people").must() >= 0
@@ -2876,7 +2874,7 @@ test "estimated_document_count: a collection's size from its metadata"
 # The distinct values of a field.
 test "distinct: the names of the people"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = distinct(
@@ -2898,7 +2896,7 @@ test "aggregate_options: batches of a hundred, spilled to disk"
 # Documents grouped by a pipeline.
 test "aggregate: the people counted by age"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             pipeline = [bson.parse_json("{\"$group\": {\"_id\": \"$age\", \"n\": {\"$sum\": 1}}}").must()]
@@ -2921,7 +2919,7 @@ test "find_and_modify_options: the document after the change"
 # A document changed and answered in one command.
 test "find_one_and_update: a counter raised and read in one step"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             opts @= find_and_modify_options()
@@ -2941,7 +2939,7 @@ test "find_one_and_update: a counter raised and read in one step"
 # A document replaced and answered in one command.
 test "find_one_and_replace: a document replaced and its old version answered"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             opts @= find_and_modify_options()
@@ -2956,7 +2954,7 @@ test "find_one_and_replace: a document replaced and its old version answered"
 # A document deleted and answered in one command.
 test "find_one_and_delete: the oldest job taken off a queue"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = insert_one(
@@ -2984,7 +2982,7 @@ test "index_name_of: the name of a compound index"
 # An index created, and its name.
 test "create_index: a unique index on email"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             name = create_index(
@@ -2999,7 +2997,7 @@ test "create_index: a unique index on email"
 # Several indexes created together.
 test "create_indexes: two indexes in one command"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             models = [
@@ -3012,7 +3010,7 @@ test "create_indexes: two indexes in one command"
 # A collection's indexes, `_id_` first.
 test "list_indexes: the indexes of a collection"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = insert_one(
@@ -3027,7 +3025,7 @@ test "list_indexes: the indexes of a collection"
 # An index removed.
 test "drop_index: an index removed by its name"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = create_index(
@@ -3042,7 +3040,7 @@ test "drop_index: an index removed by its name"
 # Every index of a collection removed.
 test "drop_indexes: every index but _id_ removed"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             _ = insert_one(
@@ -3063,7 +3061,7 @@ test "watch_options: the full document of each update"
 # A change stream opened, a change made, and the change read.
 test "watch: the next change of a collection"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
 
@@ -3089,7 +3087,7 @@ test "watch: the next change of a collection"
 # The token to resume a stream after its last change.
 test "resume_token_of: where a stream stood"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
 
@@ -3122,7 +3120,7 @@ test "transaction_options: a snapshot read and a majority commit"
 # A transaction begun, written in, and committed.
 test "start_transaction: two writes made visible together"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
 
@@ -3148,7 +3146,7 @@ test "start_transaction: two writes made visible together"
 # A transaction committed.
 test "commit_transaction: an insert made visible"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
 
@@ -3167,7 +3165,7 @@ test "commit_transaction: an insert made visible"
 # A transaction aborted: none of its writes stands.
 test "abort_transaction: an insert undone"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
 
@@ -3185,7 +3183,7 @@ test "abort_transaction: an insert undone"
 # Whether a transaction is in progress.
 test "is_in_transaction: before and inside a transaction"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             assert !is_in_transaction(c)
@@ -3194,7 +3192,7 @@ test "is_in_transaction: before and inside a transaction"
 # The id of the client's logical session.
 test "session_id_of: the session's UUID"
     match os.env("REBEL_MONGODB_URL")
-        .err _ => _ = 0
+        .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             assert bson.has_member(session_id_of(c), name: "id")

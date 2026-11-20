@@ -61,7 +61,7 @@ constant INVALID: str
 
 # A key refused or a resource it may not use (401, 402, 403), and an answer
 # the model refused or a filter cut (`require_finished`,
-# `require_completed`).
+# `require_complete`).
 constant PERMISSION: str
     "permission"
 
@@ -1056,7 +1056,7 @@ function function_calls_of(r: Response) -> [ToolCall]
 # `permission` where it is incomplete by a content filter or a message of it
 # holds a refusal; `invalid` for any other status, a response still in
 # progress among them. See also `STATUS_COMPLETED`.
-function require_completed(r: Response) -> Response?
+function require_complete(r: Response) -> Response?
     for item in r.output
         for part in fields.list_at(item, key: "content")
             if fields.text_at(part, key: "type") == "refusal"
@@ -1326,7 +1326,7 @@ function response_of(s: ResponseStream) -> Response?
 #   or `response.failed`.
 #
 # Fails as `next_response_event` fails before the last event. See also
-# `response_of`, `require_completed`.
+# `response_of`, `require_complete`.
 function final_response(@s: ResponseStream) -> Response?
     while !s.state.ended
         _ = next_response_event(@s)?
@@ -1514,12 +1514,12 @@ test "require_finished: no choice, a refusal, a filter and a cut; a stop and a r
 
     assert text_of(require_finished(parse_completion(canned.completion(message: "{\"role\":\"assistant\",\"content\":\"x\"}", finish_reason: "new")).must()).must()) == "x"
 
-test "require_completed: failed, incomplete by tokens and by a filter, in progress, and a refusal part"
+test "require_complete: failed, incomplete by tokens and by a filter, in progress, and a refusal part"
     failed = parse_response(
         "{\"object\":\"response\",\"status\":\"failed\",\"error\":{\"code\":\"server_error\",\"message\":\"boom\"},\"output\":[]}"
     ).must()
 
-    match require_completed(failed)
+    match require_complete(failed)
         .ok _  => assert false
         .err e => assert e.code == FAILED && e.msg == "the response failed: server_error: boom"
 
@@ -1527,7 +1527,7 @@ test "require_completed: failed, incomplete by tokens and by a filter, in progre
         "{\"object\":\"response\",\"status\":\"incomplete\",\"incomplete_details\":{\"reason\":\"max_output_tokens\"},\"output\":[]}"
     ).must()
 
-    match require_completed(cut)
+    match require_complete(cut)
         .ok _  => assert false
         .err e => assert e.code == LIMIT
 
@@ -1535,11 +1535,11 @@ test "require_completed: failed, incomplete by tokens and by a filter, in progre
         "{\"object\":\"response\",\"status\":\"incomplete\",\"incomplete_details\":{\"reason\":\"content_filter\"},\"output\":[]}"
     ).must()
 
-    match require_completed(filtered)
+    match require_complete(filtered)
         .ok _  => assert false
         .err e => assert e.code == PERMISSION
 
-    match require_completed(parse_response(canned.response(output: "[]", status: "in_progress")).must())
+    match require_complete(parse_response(canned.response(output: "[]", status: "in_progress")).must())
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -1547,7 +1547,7 @@ test "require_completed: failed, incomplete by tokens and by a filter, in progre
         canned.response(output: "[{\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"refusal\",\"refusal\":\"No.\"}]}]", status: "completed")
     ).must()
 
-    match require_completed(refused)
+    match require_complete(refused)
         .ok _  => assert false
         .err e => assert e.code == PERMISSION && e.msg == "the model refused: No."
 
@@ -1685,38 +1685,39 @@ test "client_from_env and ollama_client: what the environment holds, never a val
         .ok c  => assert strings.has_suffix(s: c.base_url, suffix: "/v1") && c.api_key == ""
         .err e => assert e.code == INVALID
 
-test "live: OpenAI where OPENAI_API_KEY is set, Ollama where OLLAMA_HOST is"
+test "live: OpenAI, where OPENAI_API_KEY is set"
     key = os.env("OPENAI_API_KEY").default("")
 
     if key == ""
-        print("live llm/openai: skipped, OPENAI_API_KEY is not set")
-    else
-        match list_models(default_client(key))
-            .err e => print("live llm/openai: skipped, the API did not answer: " + e.code)
-            .ok models =>
-                print(f"live llm/openai: {models.len()} models listed")
-                model = os.env("REBEL_OPENAI_LIVE_MODEL").default("")
+        skip_test(reason: "OPENAI_API_KEY is not set")
 
-                if model == ""
-                    print("live llm/openai: the chat skipped, REBEL_OPENAI_LIVE_MODEL is not set")
-                else
-                    r = with_chat_field(
-                        chat_request(model: model, messages: [user_message("Say ok.")]),
-                        name: "max_completion_tokens",
-                        value: json.from_int(16).must()
-                    )
-                    done = chat(default_client(key), r: r).must()
-                    print(f"live llm/openai: {done.usage.output_tokens} output tokens answered")
+    match list_models(default_client(key))
+        .err e => skip_test(reason: "the API did not answer: " + e.code)
+        .ok models =>
+            print(f"live llm/openai: {models.len()} models listed")
+            model = os.env("REBEL_OPENAI_LIVE_MODEL").default("")
 
+            if model == ""
+                print("live llm/openai: the chat skipped, REBEL_OPENAI_LIVE_MODEL is not set")
+            else
+                r = with_chat_field(
+                    chat_request(model: model, messages: [user_message("Say ok.")]),
+                    name: "max_completion_tokens",
+                    value: json.from_int(16).must()
+                )
+                done = chat(default_client(key), r: r).must()
+                print(f"live llm/openai: {done.usage.output_tokens} output tokens answered")
+
+test "live: Ollama, where OLLAMA_HOST is set"
     if os.env("OLLAMA_HOST").default("") == ""
-        print("live llm/openai on Ollama: skipped, OLLAMA_HOST is not set")
-    else
-        match ollama_client()
-            .err e => print("live llm/openai on Ollama: skipped, OLLAMA_HOST is not read: " + e.code)
-            .ok c =>
-                match list_models(c)
-                    .err e     => print("live llm/openai on Ollama: skipped, nothing answered: " + e.code)
-                    .ok models => print(f"live llm/openai on Ollama: {models.len()} models listed")
+        skip_test(reason: "OLLAMA_HOST is not set")
+
+    match ollama_client()
+        .err e => skip_test(reason: "OLLAMA_HOST is not read: " + e.code)
+        .ok c =>
+            match list_models(c)
+                .err e     => skip_test(reason: "nothing answered: " + e.code)
+                .ok models => print(f"live llm/openai on Ollama: {models.len()} models listed")
 
 ## Examples
 
@@ -2055,8 +2056,8 @@ test "function_calls_of: one call"
     assert function_calls_of(r) == [ToolCall(id: "call_1", name: "f", arguments: "{}")]
 
 # A response checked before its output is read.
-test "require_completed: a completed response"
-    assert require_completed(parse_response(canned.response(output: "[]", status: "completed")).must()).must().id == "resp_1"
+test "require_complete: a completed response"
+    assert require_complete(parse_response(canned.response(output: "[]", status: "completed")).must()).must().id == "resp_1"
 
 # A tool loop of the Responses API, the state kept by the program.
 test "with_function_outputs: a function call answered"

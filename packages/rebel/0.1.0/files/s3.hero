@@ -30,7 +30,7 @@
 # `xml`'s, a time `time`'s, a request and a response `http`'s.
 #
 # A request that fails on the server is sent again, at most
-# `Client.attempts` times in all, where S3 calls the failure passing (500,
+# `Client.max_attempts` times in all, where S3 calls the failure passing (500,
 # 502, 503, 504, `SlowDown`, `RequestTimeout`) or the connection failed.
 #
 # The codes it fails with, each S3 error code mapped to one, the message
@@ -379,7 +379,7 @@ record Client
     roots: str
     # How many times a request is sent at most, its first included: 1 for no
     # retry.
-    attempts: i64
+    max_attempts: i64
 
 # A client of Amazon S3 in `region`.
 #
@@ -403,7 +403,7 @@ function aws_client(region: str, credentials: Credentials) -> Client
         deadline_ms: 60_000,
         limits: http.Limits(head_bytes: 65_536, field_count: 200, body_bytes: 1_073_741_824),
         roots: "",
-        attempts: 3
+        max_attempts: 3
     )
 
 # A client of a MinIO server, or of any server of the S3 API, at
@@ -772,7 +772,7 @@ function prepare(c: Client, op: Operation, at: time.Instant) -> http.Request?
 # - `op`: the operation.
 #
 # A failure S3 calls passing is sent again, signed anew, at most
-# `c.attempts` times in all, waiting 100 ms doubled each time up to 20 s.
+# `c.max_attempts` times in all, waiting 100 ms doubled each time up to 20 s.
 # Fails with the code S3's own error code maps to (the face's comment names
 # them), the message opening with S3's code, or with the status where S3
 # answered no error document, and naming the method, the bucket and the key; and as `prepare` and the connection fail. A body is
@@ -794,13 +794,13 @@ function send(c: Client, op: Operation) -> http.Response?
                 if reply.region == ""
                     reply.region @ http.value_of(response.headers, name: "x-amz-bucket-region").default("")
 
-                if attempt >= c.attempts || !failures.is_retryable(status: response.status, s3_code: reply.code)
+                if attempt >= c.max_attempts || !failures.is_retryable(status: response.status, s3_code: reply.code)
                     return fail(
                         code: failures.code_for(status: response.status, s3_code: reply.code),
                         msg: failures.message_for(method: op.method, bucket: op.bucket, key: op.key, status: response.status, reply: reply)
                     )
             .err e =>
-                if attempt >= c.attempts || !failures.is_transient(e.code)
+                if attempt >= c.max_attempts || !failures.is_transient(e.code)
                     return fail(
                         code: e.code,
                         msg: "S3 " + failures.request_named(method: op.method, bucket: op.bucket, key: op.key) + ": " + e.msg
@@ -1285,13 +1285,13 @@ function get_object_to(c: Client, bucket: str, key: str, options: GetOptions, s:
                 if reply.region == ""
                     reply.region @ http.value_of(held.head.headers, name: "x-amz-bucket-region").default("")
 
-                if attempt >= c.attempts || !failures.is_retryable(status: held.head.status, s3_code: reply.code)
+                if attempt >= c.max_attempts || !failures.is_retryable(status: held.head.status, s3_code: reply.code)
                     return fail(
                         code: failures.code_for(status: held.head.status, s3_code: reply.code),
                         msg: failures.message_for(method: "GET", bucket: bucket, key: key, status: held.head.status, reply: reply)
                     )
             .err e =>
-                if attempt >= c.attempts || !failures.is_transient(e.code)
+                if attempt >= c.max_attempts || !failures.is_transient(e.code)
                     return fail(
                         code: e.code,
                         msg: "S3 " + failures.request_named(method: "GET", bucket: bucket, key: key) + ": " + e.msg
@@ -1369,7 +1369,7 @@ record NotDeleted
     # S3's message.
     message: str
 
-# Deletes every object of `keys` from `bucket`, a thousand to a request.
+# Deletes every object of `names` from `bucket`, a thousand to a request.
 #
 # - `c`: the client.
 # - `bucket`: the bucket's name.
@@ -2429,7 +2429,7 @@ test "aws_client, minio_client, r2_client and backblaze_client: the URL each rea
     assert object_url(r2_client(account_id: "acct", credentials: k), bucket: "b1b", key: "k").must() == "https://acct.r2.cloudflarestorage.com/b1b/k"
     assert object_url(backblaze_client(region: "us-west-004", credentials: k), bucket: "b1b", key: "k").must() == "https://s3.us-west-004.backblazeb2.com/b1b/k"
     r2 = r2_client(account_id: "acct", credentials: k)
-    assert r2.region == "auto" && r2.attempts == 3 && r2.sign_payload
+    assert r2.region == "auto" && r2.max_attempts == 3 && r2.sign_payload
 
 test "prepare: a PUT with fields and metadata, and a listing's query on a MinIO, signed as botocore 1.44.6 signs them"
     k = Credentials(
@@ -2668,303 +2668,301 @@ test "live: objects put, read whole and by range, asked about, copied, tagged, d
     endpoint = os.env("REBEL_S3_LIVE_URL").default("")
 
     if endpoint == ""
-        print("live s3 objects: skipped, REBEL_S3_LIVE_URL is not set")
-    else
-        c = minio_client(
-            endpoint: endpoint,
-            credentials: Credentials(access_key_id: os.env("REBEL_S3_LIVE_ACCESS_KEY").default("minioadmin"), secret_access_key: os.env("REBEL_S3_LIVE_SECRET_KEY").default("minioadmin"), session_token: "")
-        )
+        skip_test(reason: "REBEL_S3_LIVE_URL is not set")
+    c = minio_client(
+        endpoint: endpoint,
+        credentials: Credentials(access_key_id: os.env("REBEL_S3_LIVE_ACCESS_KEY").default("minioadmin"), secret_access_key: os.env("REBEL_S3_LIVE_SECRET_KEY").default("minioadmin"), session_token: "")
+    )
 
-        match list_buckets(c)
-            .err e =>
-                if e.code == PERMISSION || e.code == INVALID
-                    print(f"live s3 objects: the server at {endpoint} answered and refused: {e.msg}")
-                    assert false
-                print(f"live s3 objects: skipped, nothing answered at {endpoint}: {e.code}")
-            .ok _ =>
-                bucket = f"rebel-objects-{time.unix_milliseconds(time.now().must())}"
-                create_bucket(c, bucket: bucket).must()
-                assert bucket_exists(c, bucket: bucket).must() && !bucket_exists(c, bucket: bucket + "-none").must()
-                assert bucket_region(c, bucket: bucket).must() == "us-east-1"
+    match list_buckets(c)
+        .err e =>
+            if e.code == PERMISSION || e.code == INVALID
+                print(f"live s3 objects: the server at {endpoint} answered and refused: {e.msg}")
+                assert false
+            skip_test(reason: f"nothing answered at {endpoint}: {e.code}")
+        .ok _ =>
+            bucket = f"rebel-objects-{time.unix_milliseconds(time.now().must())}"
+            create_bucket(c, bucket: bucket).must()
+            assert bucket_exists(c, bucket: bucket).must() && !bucket_exists(c, bucket: bucket + "-none").must()
+            assert bucket_region(c, bucket: bucket).must() == "us-east-1"
 
-                match create_bucket(c, bucket: bucket)
-                    .ok _  => assert false
-                    .err e => assert e.code == EXISTS
+            match create_bucket(c, bucket: bucket)
+                .ok _  => assert false
+                .err e => assert e.code == EXISTS
 
-                o @= put_options()
-                o.content_type @ "text/plain"
-                o.metadata @ [Meta(name: "Colour", value: "blue")]
-                o.checksum @ .sha256
-                key = "dir/a b+c é.txt"
-                stored = put_object(
-                    c,
-                    bucket: bucket,
-                    key: key,
-                    data: bytes.from_text("hello, world"),
-                    options: o
-                ).must()
-                assert stored.etag == "\"" + bytes.format_hex(crypto.md5_text("hello, world")) + "\"" && stored.checksum == checksum_of(bytes.from_text("hello, world"), algorithm: .sha256)
-                whole = get_object(c, bucket: bucket, key: key).must()
-                assert whole.data == bytes.from_text("hello, world") && whole.info.content_type == "text/plain" && whole.info.metadata == [Meta(name: "colour", value: "blue")]
-                g @= get_options()
-                g.span @ .between(first: 7, last: 11)
-                g.verify_checksum @ true
-                part = get_object_with(c, bucket: bucket, key: key, options: g).must()
-                assert part.data == bytes.from_text("world") && part.info.size == 5 && part.info.total_size == 12
-                g.span @ .suffix(count: 5)
-                assert get_object_with(c, bucket: bucket, key: key, options: g).must().data == bytes.from_text("world")
-                g.span @ .whole
-                checked = get_object_with(c, bucket: bucket, key: key, options: g).must()
-                assert checked.info.checksum_algorithm == .sha256 && checked.info.checksum == stored.checksum
-                g.span @ .from(first: 100)
+            o @= put_options()
+            o.content_type @ "text/plain"
+            o.metadata @ [Meta(name: "Colour", value: "blue")]
+            o.checksum @ .sha256
+            key = "dir/a b+c é.txt"
+            stored = put_object(
+                c,
+                bucket: bucket,
+                key: key,
+                data: bytes.from_text("hello, world"),
+                options: o
+            ).must()
+            assert stored.etag == "\"" + bytes.format_hex(crypto.md5_text("hello, world")) + "\"" && stored.checksum == checksum_of(bytes.from_text("hello, world"), algorithm: .sha256)
+            whole = get_object(c, bucket: bucket, key: key).must()
+            assert whole.data == bytes.from_text("hello, world") && whole.info.content_type == "text/plain" && whole.info.metadata == [Meta(name: "colour", value: "blue")]
+            g @= get_options()
+            g.span @ .between(first: 7, last: 11)
+            g.verify_checksum @ true
+            part = get_object_with(c, bucket: bucket, key: key, options: g).must()
+            assert part.data == bytes.from_text("world") && part.info.size == 5 && part.info.total_size == 12
+            g.span @ .suffix(count: 5)
+            assert get_object_with(c, bucket: bucket, key: key, options: g).must().data == bytes.from_text("world")
+            g.span @ .whole
+            checked = get_object_with(c, bucket: bucket, key: key, options: g).must()
+            assert checked.info.checksum_algorithm == .sha256 && checked.info.checksum == stored.checksum
+            g.span @ .from(first: 100)
 
-                match get_object_with(c, bucket: bucket, key: key, options: g)
-                    .ok _  => assert false
-                    .err e => assert e.code == INVALID && strings.has_prefix(s: e.msg, prefix: "InvalidRange")
+            match get_object_with(c, bucket: bucket, key: key, options: g)
+                .ok _  => assert false
+                .err e => assert e.code == INVALID && strings.has_prefix(s: e.msg, prefix: "InvalidRange")
 
-                n @= get_options()
-                n.if_none_match @ stored.etag
+            n @= get_options()
+            n.if_none_match @ stored.etag
 
-                match get_object_with(c, bucket: bucket, key: key, options: n)
-                    .ok _  => assert false
-                    .err e => assert e.code == FAILED
+            match get_object_with(c, bucket: bucket, key: key, options: n)
+                .ok _  => assert false
+                .err e => assert e.code == FAILED
 
-                head = head_object(c, bucket: bucket, key: key).must()
-                assert head.size == 12 && head.etag == stored.etag
-                assert object_exists(c, bucket: bucket, key: key).must() && !object_exists(c, bucket: bucket, key: "absent").must()
+            head = head_object(c, bucket: bucket, key: key).must()
+            assert head.size == 12 && head.etag == stored.etag
+            assert object_exists(c, bucket: bucket, key: key).must() && !object_exists(c, bucket: bucket, key: "absent").must()
 
-                match get_object(c, bucket: bucket, key: "absent")
-                    .ok _  => assert false
-                    .err e => assert e.code == NOT_FOUND && strings.has_prefix(s: e.msg, prefix: "NoSuchKey")
+            match get_object(c, bucket: bucket, key: "absent")
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND && strings.has_prefix(s: e.msg, prefix: "NoSuchKey")
 
-                only @= put_options()
-                only.if_none_match @ "*"
+            only @= put_options()
+            only.if_none_match @ "*"
 
-                match put_object(c, bucket: bucket, key: key, data: [1], options: only)
-                    .ok _  => assert false
-                    .err e => assert e.code == EXISTS
+            match put_object(c, bucket: bucket, key: key, data: [1], options: only)
+                .ok _  => assert false
+                .err e => assert e.code == EXISTS
 
-                copied = copy_object(
-                    c,
-                    from_bucket: bucket,
-                    from_key: key,
-                    to_bucket: bucket,
-                    to_key: "copy.txt"
-                ).must()
-                assert copied.etag == stored.etag
-                r @= put_options()
-                r.content_type @ "application/x-rebel"
-                _ = copy_object_with(
-                    c,
-                    from_bucket: bucket,
-                    from_key: key,
-                    to_bucket: bucket,
-                    to_key: "copy2.txt",
-                    options: r
-                ).must()
-                assert head_object(c, bucket: bucket, key: "copy2.txt").must().content_type == "application/x-rebel"
-                put_object_tags(
-                    c,
-                    bucket: bucket,
-                    key: key,
-                    tags: [Tag(key: "a", value: "1"), Tag(key: "b c", value: "x y")]
-                ).must()
-                tags = get_object_tags(c, bucket: bucket, key: key).must()
-                assert tags.len() == 2
-                assert tags[0] == Tag(key: "a", value: "1") || tags[1] == Tag(key: "a", value: "1")
-                every: [str] @= []
-                i: i64 @= 0
+            copied = copy_object(
+                c,
+                from_bucket: bucket,
+                from_key: key,
+                to_bucket: bucket,
+                to_key: "copy.txt"
+            ).must()
+            assert copied.etag == stored.etag
+            r @= put_options()
+            r.content_type @ "application/x-rebel"
+            _ = copy_object_with(
+                c,
+                from_bucket: bucket,
+                from_key: key,
+                to_bucket: bucket,
+                to_key: "copy2.txt",
+                options: r
+            ).must()
+            assert head_object(c, bucket: bucket, key: "copy2.txt").must().content_type == "application/x-rebel"
+            put_object_tags(
+                c,
+                bucket: bucket,
+                key: key,
+                tags: [Tag(key: "a", value: "1"), Tag(key: "b c", value: "x y")]
+            ).must()
+            tags = get_object_tags(c, bucket: bucket, key: key).must()
+            assert tags.len() == 2
+            assert tags[0] == Tag(key: "a", value: "1") || tags[1] == Tag(key: "a", value: "1")
+            every: [str] @= []
+            i: i64 @= 0
 
-                while i < 7
-                    name = f"page/{i}"
-                    _ = put_object(c, bucket: bucket, key: name, data: [], options: put_options()).must()
-                    every @ every.push(name)
-                    i @ i + 1
+            while i < 7
+                name = f"page/{i}"
+                _ = put_object(c, bucket: bucket, key: name, data: [], options: put_options()).must()
+                every @ every.push(name)
+                i @ i + 1
 
-                l @= list_options()
-                l.prefix @ "page/"
-                l.max_keys @ 3
-                first = list_objects(c, bucket: bucket, options: l).must()
-                assert first.objects.len() == 3 && first.truncated && first.next_token != ""
-                assert list_all_objects(c, bucket: bucket, prefix: "page/").must().len() == 7
-                d @= list_options()
-                d.delimiter @ "/"
-                top = list_objects(c, bucket: bucket, options: d).must()
-                assert top.prefixes == ["dir/", "page/"] && top.objects.len() == 2
-                assert list_all_objects(c, bucket: bucket, prefix: "dir/").must()[0].key == key
+            l @= list_options()
+            l.prefix @ "page/"
+            l.max_keys @ 3
+            first = list_objects(c, bucket: bucket, options: l).must()
+            assert first.objects.len() == 3 && first.truncated && first.next_token != ""
+            assert list_all_objects(c, bucket: bucket, prefix: "page/").must().len() == 7
+            d @= list_options()
+            d.delimiter @ "/"
+            top = list_objects(c, bucket: bucket, options: d).must()
+            assert top.prefixes == ["dir/", "page/"] && top.objects.len() == 2
+            assert list_all_objects(c, bucket: bucket, prefix: "dir/").must()[0].key == key
 
-                match delete_bucket(c, bucket: bucket)
-                    .ok _  => assert false
-                    .err e => assert e.code == NOT_EMPTY
+            match delete_bucket(c, bucket: bucket)
+                .ok _  => assert false
+                .err e => assert e.code == NOT_EMPTY
 
-                every @ every.push(key)
-                every @ every.push("copy.txt")
-                every @ every.push("copy2.txt")
-                assert delete_objects(c, bucket: bucket, names: every).must().len() == 0
-                delete_object(c, bucket: bucket, key: "absent").must()
-                assert list_all_objects(c, bucket: bucket, prefix: "").must().len() == 0
-                delete_bucket(c, bucket: bucket).must()
-                assert !bucket_exists(c, bucket: bucket).must()
-                print("live s3 objects: every operation answered as expected")
+            every @ every.push(key)
+            every @ every.push("copy.txt")
+            every @ every.push("copy2.txt")
+            assert delete_objects(c, bucket: bucket, names: every).must().len() == 0
+            delete_object(c, bucket: bucket, key: "absent").must()
+            assert list_all_objects(c, bucket: bucket, prefix: "").must().len() == 0
+            delete_bucket(c, bucket: bucket).must()
+            assert !bucket_exists(c, bucket: bucket).must()
+            print("live s3 objects: every operation answered as expected")
 
 test "live: an upload in parts, from data and from a stream, a part copied, an upload aborted, presigned URLs fetched, a configuration written and read, where REBEL_S3_LIVE_URL names a server that answers"
     endpoint = os.env("REBEL_S3_LIVE_URL").default("")
 
     if endpoint == ""
-        print("live s3 uploads: skipped, REBEL_S3_LIVE_URL is not set")
-    else
-        c = minio_client(
-            endpoint: endpoint,
-            credentials: Credentials(access_key_id: os.env("REBEL_S3_LIVE_ACCESS_KEY").default("minioadmin"), secret_access_key: os.env("REBEL_S3_LIVE_SECRET_KEY").default("minioadmin"), session_token: "")
-        )
+        skip_test(reason: "REBEL_S3_LIVE_URL is not set")
+    c = minio_client(
+        endpoint: endpoint,
+        credentials: Credentials(access_key_id: os.env("REBEL_S3_LIVE_ACCESS_KEY").default("minioadmin"), secret_access_key: os.env("REBEL_S3_LIVE_SECRET_KEY").default("minioadmin"), session_token: "")
+    )
 
-        match list_buckets(c)
-            .err e =>
-                if e.code == PERMISSION || e.code == INVALID
-                    print(f"live s3 uploads: the server at {endpoint} answered and refused: {e.msg}")
-                    assert false
-                print(f"live s3 uploads: skipped, nothing answered at {endpoint}: {e.code}")
-            .ok _ =>
-                bucket = f"rebel-uploads-{time.unix_milliseconds(time.now().must())}"
-                create_bucket(c, bucket: bucket).must()
-                data: [u8] @= []
-                i: i64 @= 0
+    match list_buckets(c)
+        .err e =>
+            if e.code == PERMISSION || e.code == INVALID
+                print(f"live s3 uploads: the server at {endpoint} answered and refused: {e.msg}")
+                assert false
+            skip_test(reason: f"nothing answered at {endpoint}: {e.code}")
+        .ok _ =>
+            bucket = f"rebel-uploads-{time.unix_milliseconds(time.now().must())}"
+            create_bucket(c, bucket: bucket).must()
+            data: [u8] @= []
+            i: i64 @= 0
 
-                while i < MIN_PART_SIZE + 1_000
-                    data @ data.push(to_u8(i % 251).must())
-                    i @ i + 1
+            while i < MIN_PART_SIZE + 1_000
+                data @ data.push(to_u8(i % 251).must())
+                i @ i + 1
 
-                o @= put_options()
-                o.checksum @ .crc32c
-                stored = put_object_in_parts(
-                    c,
-                    bucket: bucket,
-                    key: "big",
-                    data: data,
-                    part_size: MIN_PART_SIZE,
-                    options: o
-                ).must()
-                assert strings.has_suffix(s: stored.etag, suffix: "-2\"")
-                back = get_object(c, bucket: bucket, key: "big").must()
-                assert back.data.len() == data.len() && crypto.sha256(back.data) == crypto.sha256(data)
-                pipe = io.pipe().must()
-                io.write(pipe.writer, data: bytes.from_text("from a stream")).must()
-                writer @= pipe.writer
-                io.close(@writer).must()
-                reader @= pipe.reader
-                _ = put_object_from(
-                    c,
-                    bucket: bucket,
-                    key: "streamed",
-                    s: reader,
-                    part_size: MIN_PART_SIZE,
-                    options: put_options()
-                ).must()
-                io.close(@reader).must()
-                assert get_object(c, bucket: bucket, key: "streamed").must().data == bytes.from_text("from a stream")
-                out = io.pipe().must()
-                g @= get_options()
-                g.span @ .between(first: 0, last: 3)
-                info = get_object_to(c, bucket: bucket, key: "streamed", options: g, s: out.writer).must()
-                assert info.size == 4
-                w @= out.writer
-                io.close(@w).must()
-                rd @= out.reader
-                assert io.read_all(rd).must() == bytes.from_text("from")
-                io.close(@rd).must()
-                plain @= put_options()
-                plain.checksum @ .none
-                upload = create_multipart_upload(c, bucket: bucket, key: "copied", options: plain).must()
-                p1 = upload_part_copy(
-                    c,
-                    upload: upload,
-                    number: 1,
-                    from_bucket: bucket,
-                    from_key: "big",
-                    span: .between(first: 0, last: MIN_PART_SIZE - 1)
-                ).must()
-                p2 = upload_part(c, upload: upload, number: 2, data: bytes.from_text("tail")).must()
-                assert list_parts(c, upload: upload).must().len() == 2
-                assert list_multipart_uploads(c, bucket: bucket, prefix: "copied").must().len() == 1
-                _ = complete_multipart_upload(c, upload: upload, parts: [p2, p1]).must()
-                assert head_object(c, bucket: bucket, key: "copied").must().size == MIN_PART_SIZE + 4
-                dropped = create_multipart_upload(c, bucket: bucket, key: "dropped", options: put_options()).must()
-                abort_multipart_upload(c, upload: dropped).must()
-                assert list_multipart_uploads(c, bucket: bucket, prefix: "").must().len() == 0
+            o @= put_options()
+            o.checksum @ .crc32c
+            stored = put_object_in_parts(
+                c,
+                bucket: bucket,
+                key: "big",
+                data: data,
+                part_size: MIN_PART_SIZE,
+                options: o
+            ).must()
+            assert strings.has_suffix(s: stored.etag, suffix: "-2\"")
+            back = get_object(c, bucket: bucket, key: "big").must()
+            assert back.data.len() == data.len() && crypto.sha256(back.data) == crypto.sha256(data)
+            pipe = io.pipe().must()
+            io.write(pipe.writer, data: bytes.from_text("from a stream")).must()
+            writer @= pipe.writer
+            io.close(@writer).must()
+            reader @= pipe.reader
+            _ = put_object_from(
+                c,
+                bucket: bucket,
+                key: "streamed",
+                s: reader,
+                part_size: MIN_PART_SIZE,
+                options: put_options()
+            ).must()
+            io.close(@reader).must()
+            assert get_object(c, bucket: bucket, key: "streamed").must().data == bytes.from_text("from a stream")
+            out = io.pipe().must()
+            g @= get_options()
+            g.span @ .between(first: 0, last: 3)
+            info = get_object_to(c, bucket: bucket, key: "streamed", options: g, s: out.writer).must()
+            assert info.size == 4
+            w @= out.writer
+            io.close(@w).must()
+            rd @= out.reader
+            assert io.read_all(rd).must() == bytes.from_text("from")
+            io.close(@rd).must()
+            plain @= put_options()
+            plain.checksum @ .none
+            upload = create_multipart_upload(c, bucket: bucket, key: "copied", options: plain).must()
+            p1 = upload_part_copy(
+                c,
+                upload: upload,
+                number: 1,
+                from_bucket: bucket,
+                from_key: "big",
+                span: .between(first: 0, last: MIN_PART_SIZE - 1)
+            ).must()
+            p2 = upload_part(c, upload: upload, number: 2, data: bytes.from_text("tail")).must()
+            assert list_parts(c, upload: upload).must().len() == 2
+            assert list_multipart_uploads(c, bucket: bucket, prefix: "copied").must().len() == 1
+            _ = complete_multipart_upload(c, upload: upload, parts: [p2, p1]).must()
+            assert head_object(c, bucket: bucket, key: "copied").must().size == MIN_PART_SIZE + 4
+            dropped = create_multipart_upload(c, bucket: bucket, key: "dropped", options: put_options()).must()
+            abort_multipart_upload(c, upload: dropped).must()
+            assert list_multipart_uploads(c, bucket: bucket, prefix: "").must().len() == 0
 
-                match abort_multipart_upload(c, upload: dropped)
-                    .ok _  => _ = 0
-                    .err e => assert e.code == NOT_FOUND
+            match abort_multipart_upload(c, upload: dropped)
+                .ok _  => _ = 0
+                .err e => assert e.code == NOT_FOUND
 
-                web = http.default_client()
-                fetched = http.get(
-                    web,
-                    target: presign_get(c, bucket: bucket, key: "streamed", expires_seconds: 60).must()
-                ).must()
-                assert fetched.status == 200 && fetched.body == bytes.from_text("from a stream")
-                sent = http.send(
-                    web,
-                    r: http.with_body(http.request(method: "PUT", target: presign_put(c, bucket: bucket, key: "presigned", expires_seconds: 60).must()).must(), content_type: "", body: bytes.from_text("put by URL"))
-                ).must()
-                assert sent.status == 200 && get_object(c, bucket: bucket, key: "presigned").must().data == bytes.from_text("put by URL")
-                form = presign_post(
-                    c,
-                    bucket: bucket,
-                    key: "posted",
-                    content_type: "text/plain",
-                    max_size: 100,
-                    at: time.now().must(),
-                    expires_seconds: 60
-                ).must()
-                parts: [http.Part] @= []
+            web = http.default_client()
+            fetched = http.get(
+                web,
+                target: presign_get(c, bucket: bucket, key: "streamed", expires_seconds: 60).must()
+            ).must()
+            assert fetched.status == 200 && fetched.body == bytes.from_text("from a stream")
+            sent = http.send(
+                web,
+                r: http.with_body(http.request(method: "PUT", target: presign_put(c, bucket: bucket, key: "presigned", expires_seconds: 60).must()).must(), content_type: "", body: bytes.from_text("put by URL"))
+            ).must()
+            assert sent.status == 200 && get_object(c, bucket: bucket, key: "presigned").must().data == bytes.from_text("put by URL")
+            form = presign_post(
+                c,
+                bucket: bucket,
+                key: "posted",
+                content_type: "text/plain",
+                max_size: 100,
+                at: time.now().must(),
+                expires_seconds: 60
+            ).must()
+            parts: [http.Part] @= []
 
-                for f in form.fields
-                    parts @ parts.push(
-                        http.Part(name: f.key, filename: "", content_type: "", data: bytes.from_text(f.value))
-                    )
-
+            for f in form.fields
                 parts @ parts.push(
-                    http.Part(name: "file", filename: "posted.txt", content_type: "text/plain", data: bytes.from_text("posted by a form"))
+                    http.Part(name: f.key, filename: "", content_type: "", data: bytes.from_text(f.value))
                 )
-                posted = http.send(
-                    web,
-                    r: http.with_multipart(http.request(method: "POST", target: form.target).must(), parts: parts)
-                ).must()
-                assert posted.status == 204
-                assert get_object(c, bucket: bucket, key: "posted").must().data == bytes.from_text("posted by a form")
-                assert delete_objects(c, bucket: bucket, names: ["big", "streamed", "copied", "presigned", "posted"]).must().len() == 0
-                delete_bucket(c, bucket: bucket).must()
-                kept = bucket + "-versions"
-                create_bucket(c, bucket: kept).must()
-                put_bucket_config(
-                    c,
-                    bucket: kept,
-                    name: "versioning",
-                    document: "<VersioningConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Status>Enabled</Status></VersioningConfiguration>"
-                ).must()
-                assert strings.contains(
-                    s: get_bucket_config(c, bucket: kept, name: "versioning").must(),
-                    substr: "<Status>Enabled</Status>"
-                )
-                versioned = put_object(c, bucket: kept, key: "v", data: [1, 2, 3], options: put_options()).must()
-                assert versioned.version_id != ""
-                second = put_object(c, bucket: kept, key: "v", data: [4], options: put_options()).must()
-                delete_object(c, bucket: kept, key: "v").must()
-                versions = list_object_versions(c, bucket: kept, prefix: "").must()
-                assert versions.len() == 3 && versions[0].delete_marker && versions[0].is_latest
-                assert versions[1].version_id == second.version_id && versions[1].size == 1 && versions[2].version_id == versioned.version_id
 
-                for v in versions
-                    delete_object_version(c, bucket: kept, key: v.key, version_id: v.version_id).must()
+            parts @ parts.push(
+                http.Part(name: "file", filename: "posted.txt", content_type: "text/plain", data: bytes.from_text("posted by a form"))
+            )
+            posted = http.send(
+                web,
+                r: http.with_multipart(http.request(method: "POST", target: form.target).must(), parts: parts)
+            ).must()
+            assert posted.status == 204
+            assert get_object(c, bucket: bucket, key: "posted").must().data == bytes.from_text("posted by a form")
+            assert delete_objects(c, bucket: bucket, names: ["big", "streamed", "copied", "presigned", "posted"]).must().len() == 0
+            delete_bucket(c, bucket: bucket).must()
+            kept = bucket + "-versions"
+            create_bucket(c, bucket: kept).must()
+            put_bucket_config(
+                c,
+                bucket: kept,
+                name: "versioning",
+                document: "<VersioningConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Status>Enabled</Status></VersioningConfiguration>"
+            ).must()
+            assert strings.contains(
+                s: get_bucket_config(c, bucket: kept, name: "versioning").must(),
+                substr: "<Status>Enabled</Status>"
+            )
+            versioned = put_object(c, bucket: kept, key: "v", data: [1, 2, 3], options: put_options()).must()
+            assert versioned.version_id != ""
+            second = put_object(c, bucket: kept, key: "v", data: [4], options: put_options()).must()
+            delete_object(c, bucket: kept, key: "v").must()
+            versions = list_object_versions(c, bucket: kept, prefix: "").must()
+            assert versions.len() == 3 && versions[0].delete_marker && versions[0].is_latest
+            assert versions[1].version_id == second.version_id && versions[1].size == 1 && versions[2].version_id == versioned.version_id
 
-                assert list_object_versions(c, bucket: kept, prefix: "").must().len() == 0
+            for v in versions
+                delete_object_version(c, bucket: kept, key: v.key, version_id: v.version_id).must()
 
-                match get_bucket_config(c, bucket: kept, name: "policy")
-                    .ok _  => assert false
-                    .err e => assert e.code == NOT_FOUND
+            assert list_object_versions(c, bucket: kept, prefix: "").must().len() == 0
 
-                delete_bucket(c, bucket: kept).must()
-                print("live s3 uploads: every operation answered as expected")
+            match get_bucket_config(c, bucket: kept, name: "policy")
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND
+
+            delete_bucket(c, bucket: kept).must()
+            print("live s3 uploads: every operation answered as expected")
 
 ## Examples
 
@@ -3161,7 +3159,7 @@ test "prepare: a GET of an object"
     assert http.has_header(r.headers, name: "Authorization") && http.value_of(r.headers, name: "X-Amz-Date").must() == "19700101T000000Z"
 
 # An operation sent, where a MinIO of its defaults answers on this machine;
-# elsewhere it shows nothing.
+# elsewhere it skips.
 test "send: the buckets listed by hand"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3170,7 +3168,7 @@ test "send: the buckets listed by hand"
 
     match send(c, op: operation(method: "GET", bucket: "", key: ""))
         .ok r  => assert r.status == 200
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Options for a page of text kept a day by caches.
 test "put_options: a type and a cache's lifetime"
@@ -3187,7 +3185,7 @@ test "headers_of: a type and a piece of metadata"
     assert headers_of(o).must() == [http.Header(name: "Content-Type", value: "image/png"), http.Header(name: "x-amz-meta-author", value: "ana")]
 
 # A text put, where a MinIO of its defaults answers on this machine and
-# holds the bucket `rebel-examples`; elsewhere it shows nothing.
+# holds the bucket `rebel-examples`; elsewhere it skips.
 test "put_object: a text"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3196,7 +3194,7 @@ test "put_object: a text"
 
     match put_object(c, bucket: "rebel-examples", key: "hello.txt", data: bytes.from_text("hello"), options: put_options())
         .ok s  => assert s.etag == "\"5d41402abc4b2a76b9719d911017c592\""
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Options asking for the first ten bytes.
 test "get_options: a range"
@@ -3227,7 +3225,7 @@ test "info_of: a length, a type and a date"
     assert i.size == 5 && i.content_type == "text/plain"
 
 # An object read whole, where a MinIO of its defaults answers on this
-# machine and holds it; elsewhere it shows nothing.
+# machine and holds it; elsewhere it skips.
 test "get_object: a text read back"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3236,10 +3234,10 @@ test "get_object: a text read back"
 
     match get_object(c, bucket: "rebel-examples", key: "hello.txt")
         .ok o  => assert o.data.len() == o.info.size
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # The first byte of an object, where a MinIO of its defaults answers on this
-# machine and holds it; elsewhere it shows nothing.
+# machine and holds it; elsewhere it skips.
 test "get_object_with: a range of one byte"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3250,29 +3248,28 @@ test "get_object_with: a range of one byte"
 
     match get_object_with(c, bucket: "rebel-examples", key: "hello.txt", options: o)
         .ok got => assert got.data.len() == 1
-        .err _  => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
-# An object copied to the process's standard output as it comes, where a
-# MinIO of its defaults answers on this machine and holds it; elsewhere it
-# shows nothing.
+# An object copied to a stream as it comes, where a MinIO of its defaults
+# answers on this machine and holds it; elsewhere it skips.
 test "get_object_to: an object to a stream"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
     p = io.pipe().must()
-
-    match get_object_to(c, bucket: "rebel-examples", key: "hello.txt", options: get_options(), s: p.writer)
-        .ok i  => assert i.size >= 0
-        .err _ => _ = 0
-
+    got = get_object_to(c, bucket: "rebel-examples", key: "hello.txt", options: get_options(), s: p.writer)
     w @= p.writer
     io.close(@w).must()
     r @= p.reader
     io.close(@r).must()
 
+    match got
+        .ok i  => assert i.size >= 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
+
 # What S3 says of an object, where a MinIO of its defaults answers on this
-# machine and holds it; elsewhere it shows nothing.
+# machine and holds it; elsewhere it skips.
 test "head_object: the size of a text"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3281,10 +3278,10 @@ test "head_object: the size of a text"
 
     match head_object(c, bucket: "rebel-examples", key: "hello.txt")
         .ok i  => assert i.size >= 0
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Whether an object is there, where a MinIO of its defaults answers on this
-# machine; elsewhere it shows nothing.
+# machine; elsewhere it skips.
 test "object_exists: a key nobody put"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3293,10 +3290,10 @@ test "object_exists: a key nobody put"
 
     match object_exists(c, bucket: "rebel-examples", key: "nobody-put-this")
         .ok there => assert !there
-        .err _    => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # An object deleted, where a MinIO of its defaults answers on this machine;
-# elsewhere it shows nothing.
+# elsewhere it skips.
 test "delete_object: a key, there or not"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3305,10 +3302,10 @@ test "delete_object: a key, there or not"
 
     match delete_object(c, bucket: "rebel-examples", key: "gone.txt")
         .ok _  => _ = 0
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # One version deleted for good, where a MinIO of its defaults answers on
-# this machine; elsewhere it shows nothing.
+# this machine; elsewhere it skips.
 test "delete_object_version: a version that is not there"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3317,10 +3314,10 @@ test "delete_object_version: a version that is not there"
 
     match delete_object_version(c, bucket: "rebel-examples", key: "hello.txt", version_id: "null")
         .ok _  => _ = 0
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Two objects deleted in one request, where a MinIO of its defaults answers
-# on this machine; elsewhere it shows nothing.
+# on this machine; elsewhere it skips.
 test "delete_objects: two keys"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3329,10 +3326,10 @@ test "delete_objects: two keys"
 
     match delete_objects(c, bucket: "rebel-examples", names: ["a.txt", "b.txt"])
         .ok refused => assert refused.len() == 0
-        .err _      => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # An object copied, where a MinIO of its defaults answers on this machine
-# and holds it; elsewhere it shows nothing.
+# and holds it; elsewhere it skips.
 test "copy_object: a text to a second key"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3341,10 +3338,10 @@ test "copy_object: a text to a second key"
 
     match copy_object(c, from_bucket: "rebel-examples", from_key: "hello.txt", to_bucket: "rebel-examples", to_key: "hello-copy.txt")
         .ok s  => assert s.etag != ""
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # An object's type changed in place, where a MinIO of its defaults answers
-# on this machine and holds it; elsewhere it shows nothing.
+# on this machine and holds it; elsewhere it skips.
 test "copy_object_with: a new type"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3355,10 +3352,10 @@ test "copy_object_with: a new type"
 
     match copy_object_with(c, from_bucket: "rebel-examples", from_key: "hello.txt", to_bucket: "rebel-examples", to_key: "hello.txt", options: o)
         .ok s  => assert s.etag != ""
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # An object's tags, where a MinIO of its defaults answers on this machine
-# and holds it; elsewhere it shows nothing.
+# and holds it; elsewhere it skips.
 test "get_object_tags: the tags of a text"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3367,10 +3364,10 @@ test "get_object_tags: the tags of a text"
 
     match get_object_tags(c, bucket: "rebel-examples", key: "hello.txt")
         .ok tags => assert tags.len() <= 10
-        .err _   => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # An object tagged, where a MinIO of its defaults answers on this machine
-# and holds it; elsewhere it shows nothing.
+# and holds it; elsewhere it skips.
 test "put_object_tags: one tag"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3379,7 +3376,7 @@ test "put_object_tags: one tag"
 
     match put_object_tags(c, bucket: "rebel-examples", key: "hello.txt", tags: [Tag(key: "project", value: "rebel")])
         .ok _  => _ = 0
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Options for the folders at the top of a bucket.
 test "list_options: a delimiter"
@@ -3388,7 +3385,7 @@ test "list_options: a delimiter"
     assert o.prefix == "" && o.max_keys == 0
 
 # One page of objects, where a MinIO of its defaults answers on this machine
-# and holds the bucket; elsewhere it shows nothing.
+# and holds the bucket; elsewhere it skips.
 test "list_objects: ten keys a page"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3399,10 +3396,10 @@ test "list_objects: ten keys a page"
 
     match list_objects(c, bucket: "rebel-examples", options: o)
         .ok page => assert page.objects.len() <= 10
-        .err _   => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Every object under a prefix, where a MinIO of its defaults answers on this
-# machine and holds the bucket; elsewhere it shows nothing.
+# machine and holds the bucket; elsewhere it skips.
 test "list_all_objects: every key under a prefix"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3411,10 +3408,10 @@ test "list_all_objects: every key under a prefix"
 
     match list_all_objects(c, bucket: "rebel-examples", prefix: "hello")
         .ok all_of => assert all_of.len() >= 0
-        .err _     => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # The buckets of the credentials, where a MinIO of its defaults answers on
-# this machine; elsewhere it shows nothing.
+# this machine; elsewhere it skips.
 test "list_buckets: every bucket"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3423,10 +3420,10 @@ test "list_buckets: every bucket"
 
     match list_buckets(c)
         .ok buckets => assert buckets.len() >= 0
-        .err _      => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Every version kept of a key, where a MinIO of its defaults answers on this
-# machine and holds the bucket; elsewhere it shows nothing.
+# machine and holds the bucket; elsewhere it skips.
 test "list_object_versions: the versions of a key"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3435,7 +3432,7 @@ test "list_object_versions: the versions of a key"
 
     match list_object_versions(c, bucket: "rebel-examples", prefix: "hello.txt")
         .ok versions => assert versions.len() >= 0
-        .err _       => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # A form that lets a browser upload one photo of at most 10 MB for an hour.
 test "presign_post: a photo's upload form"
@@ -3455,7 +3452,7 @@ test "presign_post: a photo's upload form"
     assert form.target == "https://uploads.s3.eu-west-1.amazonaws.com/" && form.fields.len() == 7
 
 # The bucket the other examples use, made where a MinIO of its defaults
-# answers on this machine; elsewhere it shows nothing.
+# answers on this machine; elsewhere it skips.
 test "create_bucket: the examples' bucket"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3467,7 +3464,7 @@ test "create_bucket: the examples' bucket"
         .err e => assert e.code != INVALID
 
 # A bucket made and deleted, where a MinIO of its defaults answers on this
-# machine; elsewhere it shows nothing.
+# machine; elsewhere it skips.
 test "delete_bucket: an empty bucket"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3476,10 +3473,10 @@ test "delete_bucket: an empty bucket"
 
     match create_bucket(c, bucket: "rebel-examples-gone")
         .ok _  => delete_bucket(c, bucket: "rebel-examples-gone").must()
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Whether a bucket is there, where a MinIO of its defaults answers on this
-# machine; elsewhere it shows nothing.
+# machine; elsewhere it skips.
 test "bucket_exists: a bucket nobody made"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3488,10 +3485,10 @@ test "bucket_exists: a bucket nobody made"
 
     match bucket_exists(c, bucket: "rebel-nobody-made-this")
         .ok there => assert !there
-        .err _    => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # The region of a bucket, where a MinIO of its defaults answers on this
-# machine and holds it; elsewhere it shows nothing.
+# machine and holds it; elsewhere it skips.
 test "bucket_region: a MinIO's"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3500,10 +3497,10 @@ test "bucket_region: a MinIO's"
 
     match bucket_region(c, bucket: "rebel-examples")
         .ok region => assert region != ""
-        .err _     => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # A bucket's versioning read, where a MinIO of its defaults answers on this
-# machine and holds it; elsewhere it shows nothing.
+# machine and holds it; elsewhere it skips.
 test "get_bucket_config: versioning"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3512,10 +3509,10 @@ test "get_bucket_config: versioning"
 
     match get_bucket_config(c, bucket: "rebel-examples", name: "versioning")
         .ok text => assert strings.contains(s: text, substr: "VersioningConfiguration")
-        .err _   => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # A bucket's tags set, where a MinIO of its defaults answers on this machine
-# and holds it; elsewhere it shows nothing.
+# and holds it; elsewhere it skips.
 test "put_bucket_config: tags"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3525,10 +3522,10 @@ test "put_bucket_config: tags"
 
     match put_bucket_config(c, bucket: "rebel-examples", name: "tagging", document: tags)
         .ok _  => _ = 0
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # A bucket's tags deleted, where a MinIO of its defaults answers on this
-# machine and holds it; elsewhere it shows nothing.
+# machine and holds it; elsewhere it skips.
 test "delete_bucket_config: tags"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3537,10 +3534,10 @@ test "delete_bucket_config: tags"
 
     match delete_bucket_config(c, bucket: "rebel-examples", name: "tagging")
         .ok _  => _ = 0
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # An upload in parts begun and aborted, where a MinIO of its defaults
-# answers on this machine and holds the bucket; elsewhere it shows nothing.
+# answers on this machine and holds the bucket; elsewhere it skips.
 test "create_multipart_upload: an upload begun"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3551,10 +3548,10 @@ test "create_multipart_upload: an upload begun"
         .ok u =>
             assert u.upload_id != ""
             abort_multipart_upload(c, upload: u).must()
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # A last part uploaded, where a MinIO of its defaults answers on this
-# machine and holds the bucket; elsewhere it shows nothing.
+# machine and holds the bucket; elsewhere it skips.
 test "upload_part: one small part"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3566,10 +3563,10 @@ test "upload_part: one small part"
             p = upload_part(c, upload: u, number: 1, data: [1, 2, 3]).must()
             assert p.number == 1 && p.etag != ""
             abort_multipart_upload(c, upload: u).must()
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # A part copied from another object, where a MinIO of its defaults answers
-# on this machine and holds it; elsewhere it shows nothing.
+# on this machine and holds it; elsewhere it skips.
 test "upload_part_copy: a whole object as one part"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3583,10 +3580,10 @@ test "upload_part_copy: a whole object as one part"
                 .err _ => _ = 0
 
             abort_multipart_upload(c, upload: u).must()
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # An upload of one part completed, where a MinIO of its defaults answers on
-# this machine and holds the bucket; elsewhere it shows nothing.
+# this machine and holds the bucket; elsewhere it skips.
 test "complete_multipart_upload: one part"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3597,10 +3594,10 @@ test "complete_multipart_upload: one part"
         .ok u =>
             p = upload_part(c, upload: u, number: 1, data: bytes.from_text("one")).must()
             assert complete_multipart_upload(c, upload: u, parts: [p]).must().etag != ""
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # An upload aborted, where a MinIO of its defaults answers on this machine
-# and holds the bucket; elsewhere it shows nothing.
+# and holds the bucket; elsewhere it skips.
 test "abort_multipart_upload: an upload nobody finishes"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3609,10 +3606,10 @@ test "abort_multipart_upload: an upload nobody finishes"
 
     match create_multipart_upload(c, bucket: "rebel-examples", key: "abandoned.bin", options: put_options())
         .ok u  => abort_multipart_upload(c, upload: u).must()
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # The parts of an upload, where a MinIO of its defaults answers on this
-# machine and holds the bucket; elsewhere it shows nothing.
+# machine and holds the bucket; elsewhere it skips.
 test "list_parts: one part listed"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3624,10 +3621,10 @@ test "list_parts: one part listed"
             _ = upload_part(c, upload: u, number: 1, data: [7]).must()
             assert list_parts(c, upload: u).must().len() == 1
             abort_multipart_upload(c, upload: u).must()
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # The uploads nobody ended, where a MinIO of its defaults answers on this
-# machine and holds the bucket; elsewhere it shows nothing.
+# machine and holds the bucket; elsewhere it skips.
 test "list_multipart_uploads: uploads left open"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3636,10 +3633,10 @@ test "list_multipart_uploads: uploads left open"
 
     match list_multipart_uploads(c, bucket: "rebel-examples", prefix: "")
         .ok open => assert open.len() >= 0
-        .err _   => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Data of two parts put, where a MinIO of its defaults answers on this
-# machine and holds the bucket; elsewhere it shows nothing.
+# machine and holds the bucket; elsewhere it skips.
 test "put_object_in_parts: parts of 5 MiB"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3648,10 +3645,10 @@ test "put_object_in_parts: parts of 5 MiB"
 
     match put_object_in_parts(c, bucket: "rebel-examples", key: "small.bin", data: [1, 2, 3], part_size: MIN_PART_SIZE, options: put_options())
         .ok s  => assert s.etag != ""
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # What a pipe holds put, where a MinIO of its defaults answers on this
-# machine and holds the bucket; elsewhere it shows nothing.
+# machine and holds the bucket; elsewhere it skips.
 test "put_object_from: a stream's bytes"
     c = minio_client(
         endpoint: "http://127.0.0.1:9000",
@@ -3664,7 +3661,7 @@ test "put_object_from: a stream's bytes"
 
     match put_object_from(c, bucket: "rebel-examples", key: "streamed.txt", s: p.reader, part_size: MIN_PART_SIZE, options: put_options())
         .ok s  => assert s.etag != ""
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
     r @= p.reader
     io.close(@r).must()

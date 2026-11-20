@@ -4,10 +4,15 @@
 # processes, named, every wait with a bound. TCP and UDP, between machines or
 # not, are `net`'s; a child's own three streams are `process`'s; a pipe within
 # the process is `io.pipe`. Every failure is a code of the library's closed
-# list (README § A4): `not_found`, `exists`, `permission`, `invalid`,
-# `is_a_directory`, `closed`, `timeout`, `stopped`, `limit`, `unsupported` and
-# `failed`. The face
-# stands on the floor `ipc/hero_ipc`, the thin binding of `hero_ipc.h`.
+# list (README § A4): `not_found`, `file_not_found`, `exists`, `permission`,
+# `invalid`, `is_a_directory`, `closed`, `timeout`, `stopped`, `limit`,
+# `unsupported` and `failed`. The face stands on the floor `ipc/hero_ipc`, the
+# thin binding of `hero_ipc.h`.
+#
+# **Three locks between processes stand in Rebel**: this package's, named, of
+# the machine; `fs.lock`, on a file, which another program that locks the file
+# respects; and `redis.lock`, on a Redis server, held across machines and
+# expiring with its time to live.
 #
 # **A channel's name** is a path of the file system on every platform, a
 # socket file made there (Windows 10 1803 and later); Linux has abstract
@@ -37,7 +42,6 @@ use io
 use ipc/hero_ipc
 use ipc/internal/across
 use ipc/internal/channels
-use ipc/internal/failure
 use ipc/internal/messages
 use ipc/internal/names
 use ipc/internal/shared
@@ -47,21 +51,26 @@ use process
 
 ## Codes
 
-# A name that names nothing: no listener at a path or a name (a socket file
-# a process that died left among them), no memory, semaphore or lock of that
-# name, or memory its maker has not sized yet.
+# A name that names nothing: no memory, semaphore or lock of that name, a
+# Windows pipe no listener has, or memory its maker has not sized yet.
 constant NOT_FOUND: str
-    failure.NOT_FOUND
+    "not_found"
+
+# A path that names nothing: no file at the path a connect is given, or no
+# folder where a listener's socket file would be made; the language's own
+# code for it.
+constant FILE_NOT_FOUND: str
+    "file_not_found"
 
 # A name taken already: a file at a listener's path, a listener on a name,
 # memory or a semaphore of that name, on Windows an object of any kind.
 constant EXISTS: str
-    failure.EXISTS
+    "exists"
 
 # The system refuses this to the program: the name's permission is another's,
 # or a lock's file is no regular file of one name.
 constant PERMISSION: str
-    failure.PERMISSION
+    "permission"
 
 # An argument outside what the function reads: a name outside the rule, a
 # path longer than a socket's address holds, a path a connect is given where
@@ -70,39 +79,41 @@ constant PERMISSION: str
 # is not `FOREVER`, a message past its most, a lock asked again or released
 # by a thread that does not hold it.
 constant INVALID: str
-    failure.INVALID
+    "invalid"
 
 # A folder is at the path a connect is given, where a listener's socket file
 # would be.
 constant IS_A_DIRECTORY: str
-    failure.IS_A_DIRECTORY
+    "is_a_directory"
 
 # The listener, memory, semaphore or lock is closed, or the channel's other
-# end is gone, or it ended before a whole message.
+# end is gone, or it ended before a whole message, or nothing listens where a
+# connect asks: a socket file a process that died left, an abstract name no
+# listener has.
 constant CLOSED: str
-    failure.CLOSED
+    "closed"
 
 # The bound a wait was given passed first.
 constant TIMEOUT: str
-    failure.TIMEOUT
+    "timeout"
 
 # The program was asked to stop while a call waited.
 constant STOPPED: str
-    failure.STOPPED
+    "stopped"
 
 # The process or the machine has no descriptor, handle, memory or room left.
 constant LIMIT: str
-    failure.LIMIT
+    "limit"
 
 # This platform has no such thing: an abstract name off Linux, a named pipe
 # off Windows.
 constant UNSUPPORTED: str
-    failure.UNSUPPORTED
+    "unsupported"
 
 # The system refused for a reason none of the other codes names; the message
 # carries the system's own number.
 constant FAILED: str
-    failure.FAILED
+    "failed"
 
 ## Waiting
 
@@ -157,8 +168,8 @@ variant Space
 #   connect. Windows has no such bits and ignores it.
 #
 # Fails `exists` as above, `invalid` for an empty or a too long path or a
-# permission out of range, `not_found` where a folder on the path is not
-# there, `permission` where the system refuses the folder.
+# permission out of range, `file_not_found` where a folder on the path is
+# not there, `permission` where the system refuses the folder.
 #
 # See also `accept`, `connect`, `close_listener`.
 function listen(path: str, permission: i64) -> Listener?
@@ -217,8 +228,9 @@ function accept(l: Listener, within_ms: i64) -> io.Stream?
 # - `within_ms`: the milliseconds to wait while the listener has no room for
 #   another connection, 0 not to wait, `FOREVER` for no bound.
 #
-# Fails `not_found` where nothing is at the path or a socket file is there
-# and nothing listens on it, `is_a_directory` where a folder is there,
+# Fails `file_not_found` where nothing is at the path, `closed` where a
+# socket file is there and nothing listens on it, `is_a_directory` where a
+# folder is there,
 # `invalid` where something else that is no socket is there (a file, a FIFO,
 # a device) and for an empty or too long path, `timeout` past the bound, and
 # `permission` where the socket file's permission refuses this user. What is
@@ -235,8 +247,8 @@ function connect(path: str, within_ms: i64) -> io.Stream?
 # - `name`: a name by `is_name`'s rule.
 # - `within_ms`: as for `connect`.
 #
-# Fails `unsupported` off Linux, `not_found` where nothing listens on the
-# name, and as `connect` does.
+# Fails `unsupported` off Linux, `closed` where nothing listens on the name,
+# and as `connect` does.
 #
 # See also `listen_abstract`.
 function connect_abstract(name: str, within_ms: i64) -> io.Stream?
@@ -250,7 +262,7 @@ function connect_abstract(name: str, within_ms: i64) -> io.Stream?
 # - `within_ms`: the milliseconds to wait while every instance of the pipe
 #   serves a client, 0 not to wait, `FOREVER` for no bound.
 #
-# Fails `unsupported` off Windows, `not_found` where nothing listens on the
+# Fails `unsupported` off Windows, `not_found` where no listener has the
 # name, and as `connect` does.
 #
 # See also `listen_pipe`.
@@ -931,14 +943,14 @@ test "connect: bytes through a channel, and nothing at the path"
 
     match connect(path, within_ms: 0)
         .ok _  => assert false
-        .err e => assert e.code == NOT_FOUND
+        .err e => assert e.code == FILE_NOT_FOUND
 
 # A connection to an abstract name on Linux; every other platform answers
 # `unsupported`.
 test "connect_abstract: on Linux, unsupported elsewhere"
     match connect_abstract(f"example-none-{os.pid()}", within_ms: 0)
         .ok _  => assert false
-        .err e => assert e.code == NOT_FOUND || e.code == UNSUPPORTED
+        .err e => assert e.code == CLOSED || e.code == UNSUPPORTED
 
 # A connection to a Windows named pipe; every other platform answers
 # `unsupported`.

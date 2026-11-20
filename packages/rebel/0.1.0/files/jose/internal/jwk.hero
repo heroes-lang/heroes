@@ -1,34 +1,13 @@
 # A JSON Web Key (RFC 7517) read from its JSON and written back, and the
 # rules every use of one asks: the members its type requires, their lengths,
 # which algorithms its type serves, and whether its `alg`, `use` and
-# `key_ops` allow an operation. The face's `Key` holds the same fields as
-# `Jwk`; the face hands keys here as their JSON, since a private module does
-# not see its face.
+# `key_ops` allow an operation, over the face's own `jose.Key` (panel 252's
+# R1 lets a private module name its face's types).
 
 use bytes
 use crypto
+use jose
 use json
-
-# A key as `jose.Key` holds it, field for field.
-record Jwk
-    # `kty`.
-    key_type: str
-    # `crv`, "" for none.
-    curve: str
-    # `kid`, "" for none.
-    id: str
-    # `use`, "" for none.
-    usage: str
-    # `key_ops`, empty for none.
-    operations: [str]
-    # `alg`, "" for none.
-    algorithm: str
-    # The key's members by name, base64url undone.
-    material: {str: [u8]}
-    # `x5c`, DER each.
-    chain: [[u8]]
-    # Every other member.
-    extra: {str: json.Value}
 
 # The code of a key not of its form.
 constant INVALID: str
@@ -123,7 +102,7 @@ function bytes_member(name: str, v: json.Value) -> [u8]?
         .err e => return fail(code: INVALID, msg: f"a JWK's \"{name}\" is not base64url without padding: {e.msg}")
 
 # The key `v` writes.
-function read(v: json.Value) -> Jwk?
+function read(v: json.Value) -> jose.Key?
     members = match json.members_of(v)
         .ok m  => m
         .err _ => return fail(code: INVALID, msg: f"a JWK is a JSON object, and {json.kind_of(v)} was found")
@@ -184,7 +163,7 @@ function read(v: json.Value) -> Jwk?
             return fail(code: INVALID, msg: f"a JWK's \"key_ops\" holds \"{name}\" twice")
         seen[name] @ true
 
-    sized = Jwk(
+    sized = jose.Key(
         key_type: key_type,
         curve: curve,
         id: text_member(members, name: "kid")?,
@@ -234,7 +213,7 @@ function certificates(v: json.Value) -> [[u8]]?
 
 # Whether the lengths of `key`'s members are those its curve asks: every
 # coordinate and `d` exactly as long, and no member empty.
-function check_lengths(key: Jwk) -> ()?
+function check_lengths(key: jose.Key) -> ()?
     size = curve_size(key.curve)
 
     for name in keys(key.material)
@@ -252,7 +231,7 @@ function check_lengths(key: Jwk) -> ()?
     return ok()
 
 # `key` as its JSON object, members in RFC 7517's order and `extra` last.
-function write(key: Jwk) -> json.Value
+function write(key: jose.Key) -> json.Value
     members: {str: json.Value} @= {}
     members["kty"] @ .text(v: key.key_type)
 
@@ -301,7 +280,7 @@ function write(key: Jwk) -> json.Value
     return .object(members: members)
 
 # Whether `key` holds a secret.
-function is_private(key: Jwk) -> bool
+function is_private(key: jose.Key) -> bool
     if key.key_type == "oct"
         return true
     return !key.material["d"].is_err()
@@ -316,7 +295,7 @@ function public_operation(op: str) -> str
 
 # `key` with its secret members taken out, its private operations turned to
 # their public ones.
-function public_of(key: Jwk) -> Jwk?
+function public_of(key: jose.Key) -> jose.Key?
     if key.key_type == "oct"
         return fail(code: INVALID, msg: "an oct key has no public half: its one member is the secret")
     secret = private_names(key.key_type)
@@ -335,12 +314,12 @@ function public_of(key: Jwk) -> Jwk?
             operations @ operations.push(public)
 
     return ok(
-        Jwk(key_type: key.key_type, curve: key.curve, id: key.id, usage: key.usage, operations: operations, algorithm: key.algorithm, material: material, chain: key.chain, extra: key.extra)
+        jose.Key(key_type: key.key_type, curve: key.curve, id: key.id, usage: key.usage, operations: operations, algorithm: key.algorithm, material: material, chain: key.chain, extra: key.extra)
     )
 
 # The JSON RFC 7638 digests: the required members in the order of their
 # names, no white space.
-function thumbprint_input(key: Jwk) -> str?
+function thumbprint_input(key: jose.Key) -> str?
     members: {str: json.Value} @= {}
     names: [str] @= ["kty"]
 
@@ -366,7 +345,7 @@ function thumbprint_input(key: Jwk) -> str?
     return json.format(.object(members: members))
 
 # `key`'s thumbprint by `algorithm` (RFC 7638).
-function thumbprint(key: Jwk, algorithm: crypto.Algorithm) -> [u8]?
+function thumbprint(key: jose.Key, algorithm: crypto.Algorithm) -> [u8]?
     input = thumbprint_input(key)?
     state @= crypto.start(algorithm)
     crypto.update_text(@state, input)
@@ -376,7 +355,7 @@ function thumbprint(key: Jwk, algorithm: crypto.Algorithm) -> [u8]?
 # algorithm named `algorithm` for `operation`, one of `sign`, `verify`,
 # `encrypt`, `decrypt`, `wrapKey`, `unwrapKey` or `deriveKey`; the message
 # says what refused it.
-function allows(key: Jwk, algorithm: str, operation: str) -> ()?
+function allows(key: jose.Key, algorithm: str, operation: str) -> ()?
     if key.algorithm != "" && key.algorithm != algorithm
         return fail(code: INVALID, msg: f"the key \"{key.id}\" serves {key.algorithm} alone, and {algorithm} was asked")
     signing = operation == "sign" || operation == "verify"
@@ -467,7 +446,7 @@ test "thumbprint: an EC key and an OKP key, the members their types require, a m
     assert bytes.format_base64_url_unpadded(thumbprint(okp, algorithm: .sha256).must()) == "kPrK_qmxVWaYVA9wwBF6Iuo3vVzz7TxHCTwXBygrS4k"
     bare: {str: [u8]} = {}
     assert thumbprint_input(
-        Jwk(key_type: "RSA", curve: "", id: "", usage: "", operations: [], algorithm: "", material: bare, chain: [], extra: {})
+        jose.Key(key_type: "RSA", curve: "", id: "", usage: "", operations: [], algorithm: "", material: bare, chain: [], extra: {})
     ).is_err()
 
 test "allows: alg, use and key_ops each refusing, deriveBits read as deriveKey, and a key with none allowing all"

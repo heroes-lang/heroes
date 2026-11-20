@@ -4,40 +4,47 @@
 # what the system answered (README § A4). A channel's reads and writes fail
 # through `io`, whose own codes they are.
 
+use ipc
 use ipc/hero_ipc
 
+# The face's codes, named here for the private modules: the face writes
+# each one's text.
+
 constant NOT_FOUND: str
-    "not_found"
+    ipc.NOT_FOUND
+
+constant FILE_NOT_FOUND: str
+    ipc.FILE_NOT_FOUND
 
 constant EXISTS: str
-    "exists"
+    ipc.EXISTS
 
 constant PERMISSION: str
-    "permission"
+    ipc.PERMISSION
 
 constant INVALID: str
-    "invalid"
+    ipc.INVALID
 
 constant IS_A_DIRECTORY: str
-    "is_a_directory"
+    ipc.IS_A_DIRECTORY
 
 constant CLOSED: str
-    "closed"
+    ipc.CLOSED
 
 constant TIMEOUT: str
-    "timeout"
+    ipc.TIMEOUT
 
 constant STOPPED: str
-    "stopped"
+    ipc.STOPPED
 
 constant LIMIT: str
-    "limit"
+    ipc.LIMIT
 
 constant UNSUPPORTED: str
-    "unsupported"
+    ipc.UNSUPPORTED
 
 constant FAILED: str
-    "failed"
+    ipc.FAILED
 
 # What a code and its words are, for one kind of the floor.
 record Told
@@ -60,8 +67,8 @@ function told(kind: i64, os_error: i64) -> Told
 
     if kind == hero_ipc.HERO_IPC_REFUSED
         return Told(
-            code: NOT_FOUND,
-            why: "a socket file is there and nothing listens on it, one a process that died may have left"
+            code: CLOSED,
+            why: "nothing listens there: a socket file is there, one a process that died may have left, or no listener has the name"
         )
 
     if kind == hero_ipc.HERO_IPC_IS_A_DIRECTORY
@@ -105,6 +112,17 @@ function last<T>(asked: str) -> T?
     t = told(kind: hero_ipc.last_error(), os_error: hero_ipc.last_os_error())
     return fail(code: t.code, msg: f"{asked}: {t.why}")
 
+# The failure the floor's last call on a path named, as `last` reads it, a
+# path that names nothing being `file_not_found`, the language's own code
+# for it, where a name of another space names nothing as `not_found`.
+function last_at_path<T>(asked: str) -> T?
+    kind = hero_ipc.last_error()
+
+    if kind == hero_ipc.HERO_IPC_NOT_FOUND
+        return fail(code: FILE_NOT_FOUND, msg: f"{asked}: nothing is at the path")
+    t = told(kind: kind, os_error: hero_ipc.last_os_error())
+    return fail(code: t.code, msg: f"{asked}: {t.why}")
+
 # A failure of `code` the package finds before the floor is asked, its
 # message `asked` then `why`.
 function of<T>(code: str, asked: str, why: str) -> T?
@@ -119,7 +137,7 @@ function done(answer: i64, asked: str) -> ()?
 
 ## Tests
 
-test "told: every kind of the floor is a code of README § A4, a refused connection is not_found, and an unknown kind is failed with its number"
+test "told: every kind of the floor is a code of README § A4, a refused connection is closed, and an unknown kind is failed with its number"
     assert told(kind: hero_ipc.HERO_IPC_INVALID, os_error: 0).code == INVALID
     assert told(kind: hero_ipc.HERO_IPC_IS_A_DIRECTORY, os_error: 111).code == IS_A_DIRECTORY
     assert told(kind: hero_ipc.HERO_IPC_NOT_A_SOCKET, os_error: 38).code == INVALID
@@ -127,7 +145,7 @@ test "told: every kind of the floor is a code of README § A4, a refused connect
     assert told(kind: hero_ipc.HERO_IPC_NOT_A_SOCKET, os_error: 38).why == "what is there is no socket, a file, a FIFO or a device, and nothing can listen on it"
     assert told(kind: hero_ipc.HERO_IPC_NOT_OPEN, os_error: 0).code == CLOSED
     assert told(kind: hero_ipc.HERO_IPC_NOT_FOUND, os_error: 2).code == NOT_FOUND
-    assert told(kind: hero_ipc.HERO_IPC_REFUSED, os_error: 61).code == NOT_FOUND
+    assert told(kind: hero_ipc.HERO_IPC_REFUSED, os_error: 61).code == CLOSED
     assert told(kind: hero_ipc.HERO_IPC_EXISTS, os_error: 17).code == EXISTS
     assert told(kind: hero_ipc.HERO_IPC_DENIED, os_error: 13).code == PERMISSION
     assert told(kind: hero_ipc.HERO_IPC_LIMIT, os_error: 24).code == LIMIT

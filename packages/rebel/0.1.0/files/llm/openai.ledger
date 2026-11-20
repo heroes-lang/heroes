@@ -129,7 +129,7 @@ capability responses/create  a response made from input items, read whole
   python  responses.create
 
 capability responses/answer  the response read: status, output items, text, usage, error
-  heroes  llm/openai.Response, llm/openai.to_response, llm/openai.parse_response, llm/openai.output_text_of, llm/openai.STATUS_COMPLETED, llm/openai.STATUS_INCOMPLETE, llm/openai.STATUS_FAILED, llm/openai.STATUS_IN_PROGRESS, llm/openai.STATUS_QUEUED, llm/openai.STATUS_CANCELLED, llm/openai.require_completed
+  heroes  llm/openai.Response, llm/openai.to_response, llm/openai.parse_response, llm/openai.output_text_of, llm/openai.STATUS_COMPLETED, llm/openai.STATUS_INCOMPLETE, llm/openai.STATUS_FAILED, llm/openai.STATUS_IN_PROGRESS, llm/openai.STATUS_QUEUED, llm/openai.STATUS_CANCELLED, llm/openai.require_complete
   go      responses.Response, responses.Response.OutputText, responses.ResponseOutputItemUnion, responses.ResponseUsage
   rust    -
   python  types.responses.Response, Response.output_text

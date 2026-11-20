@@ -838,7 +838,7 @@ function create(c: Client, r: Request) -> Message?
 #   read (`metadata`, `stop_sequences`, `service_tier`) are not sent.
 #
 # Fails as `create` fails. See also `create`.
-function count_tokens(c: Client, r: Request) -> i64?
+function count_input_tokens(c: Client, r: Request) -> i64?
     body = fields.only(
         to_json(r)?,
         names: ["model", "messages", "system", "tools", "thinking", "tool_choice", "output_config", "cache_control", "speed"]
@@ -1764,18 +1764,17 @@ test "live: the smallest request, where REBEL_ANTHROPIC_LIVE_KEY gives a key of 
     key = os.env("REBEL_ANTHROPIC_LIVE_KEY").default("")
 
     if key == ""
-        print("live llm/anthropic: skipped, REBEL_ANTHROPIC_LIVE_KEY is not set")
-    else
-        c = default_client(key)
-        model = os.env("REBEL_ANTHROPIC_LIVE_MODEL").default("claude-haiku-5-5")
-        r = new_request(model: model, max_tokens: 16, turns: [user("Say ok.")])
+        skip_test(reason: "REBEL_ANTHROPIC_LIVE_KEY is not set")
+    c = default_client(key)
+    model = os.env("REBEL_ANTHROPIC_LIVE_MODEL").default("claude-haiku-5-5")
+    r = new_request(model: model, max_tokens: 16, turns: [user("Say ok.")])
 
-        match count_tokens(c, r: r)
-            .err e => print("live llm/anthropic: skipped, the API did not count: " + e.code)
-            .ok n =>
-                m = require_complete(create(c, r: r).must()).must()
-                print(f"live llm/anthropic: {n} input tokens counted, {m.usage.output_tokens} output tokens answered")
-                assert n > 0 && m.usage.output_tokens > 0
+    match count_input_tokens(c, r: r)
+        .err e => skip_test(reason: "the API did not count: " + e.code)
+        .ok n =>
+            m = require_complete(create(c, r: r).must()).must()
+            print(f"live llm/anthropic: {n} input tokens counted, {m.usage.output_tokens} output tokens answered")
+            assert n > 0 && m.usage.output_tokens > 0
 
 ## Examples
 
@@ -2013,11 +2012,11 @@ test "create: a rate limit waited out"
     assert m.id == "msg_01" && canned.requests_of(@t).len() == 2
 
 # The tokens a request would cost.
-test "count_tokens: a request counted, its max_tokens not sent"
+test "count_input_tokens: a request counted, its max_tokens not sent"
     t @= canned.start([canned.json_answer(status: 200, body: "{\"input_tokens\":14}", fields: [])])
     c @= default_client("k")
     c.base_url @ canned.base(t.port)
-    n = count_tokens(c, r: new_request(model: "claude-opus-5-5", max_tokens: 64, turns: [user("Hello")])).must()
+    n = count_input_tokens(c, r: new_request(model: "claude-opus-5-5", max_tokens: 64, turns: [user("Hello")])).must()
     seen = canned.requests_of(@t)
     assert n == 14 && strings.has_prefix(s: seen[0], prefix: "POST /v1/messages/count_tokens\n")
     assert strings.has_suffix(

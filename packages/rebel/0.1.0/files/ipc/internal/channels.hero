@@ -72,6 +72,8 @@ function listen(name: str, space: i64, permission: i64) -> hero_ipc.Listener?
     l = hero_ipc.listen(name, space: space, perm: permission)
 
     if l == nullptr
+        if space == hero_ipc.HERO_IPC_SPACE_PATH
+            return failure.last_at_path(asked: asked)
         return failure.last(asked: asked)
     return ok(l)
 
@@ -96,6 +98,8 @@ function connect(name: str, space: i64, within_ms: i64) -> io.Stream?
     s = hero_ipc.connect(name, space: space, within_ms: within_ms)
 
     if s == nullptr
+        if space == hero_ipc.HERO_IPC_SPACE_PATH
+            return failure.last_at_path(asked: asked)
         return failure.last(asked: asked)
     return ok(io.of_handle(s, name: "the channel to " + where))
 
@@ -193,12 +197,14 @@ test "listen: an empty path, a permission past 0o777 and a pipe's bad name are t
             assert close(@first, where: label(path, space: hero_ipc.HERO_IPC_SPACE_PATH)) == ok()
             assert close(@first, where: "x").is_err()
 
-test "connect: nothing at the path is not_found, a bound of -5 is invalid, and accept, peer, close_write and set_deadline answer on a channel"
+test "connect: nothing at the path is file_not_found, a bound of -5 is invalid, and accept, peer, close_write and set_deadline answer on a channel"
     path = test_path("conn")
 
     match connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within_ms: 0)
-        .ok _  => assert false
-        .err e => assert e.code == failure.NOT_FOUND
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.FILE_NOT_FOUND
+            assert e.msg == "connecting to \"" + path + "\": nothing is at the path"
 
     match connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within_ms: -5)
         .ok _  => assert false
