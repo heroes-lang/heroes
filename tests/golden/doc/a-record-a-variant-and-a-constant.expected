@@ -1,0 +1,40 @@
+# a-record-a-variant-and-a-constant
+
+A record, a variant and a constant are printed as written, under their kind,
+the comments above their fields and cases with them, then what documents
+them; a function with no comment is printed with its call alone (spec § 1;
+panel 253's R2).
+
+## record Point
+
+    record Point
+        # Across, in cells.
+        x: i64
+        # Down, in cells.
+        y: i64
+
+A point on a grid.
+
+## variant Heading
+
+    variant Heading
+        # Up the grid.
+        north
+        # Down it, by so many cells.
+        south
+            cells: i64
+
+Where a move goes.
+
+## constant WIDEST
+
+    constant WIDEST: i64
+        64
+
+The widest grid.
+
+## function moved
+
+    function moved(p: Point, cells: i64) -> Point
+
+    moved(p, cells)

@@ -1,0 +1,19 @@
+# Parameter lines out of the signature's order are refused at the line the
+# order breaks, and a line naming a parameter twice the same way (spec § 1;
+# panel 253's R2).
+
+# `first` then `second`.
+#
+# - `second`: the text that closes it
+#~v doc_parameter_order
+# - `first`: the text that opens it
+function joined(first: str, second: str) -> str
+    return first + second
+
+# `first` again.
+#
+# - `first`: the text
+#~v doc_parameter_order
+# - `first`: the same text
+function again(first: str) -> str
+    return first

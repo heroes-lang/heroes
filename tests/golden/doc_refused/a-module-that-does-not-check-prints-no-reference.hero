@@ -1,0 +1,6 @@
+# A module that does not check is told what `heroes check` tells it, and no
+# reference is printed, whatever its comments say (panel 253's R2).
+
+# A number, written as a text.
+function wrong() -> i64
+    return "one"  #~ type_mismatch

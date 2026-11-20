@@ -1,0 +1,290 @@
+# `heroes doc <module>`: a module's reference, read through the compiler's own
+# parse, names and types (spec § 1; panel 253's R2, ratified 2026-11-19;
+# design.md §3.5 for the one command, Part 6's literate-source row for the
+# direction, *`heroes doc` generates the document instead*). The module is one
+# `.hero` file, or `<name>/<module>`, a package's module read through the
+# program's catalogue in the folder the command runs in.
+#
+# Every stage `heroes check` runs runs first, through `check.report`, and a
+# module that does not check prints its diagnostics and no reference; then
+# what `cli/doc_shape.hero` refuses in the module's comments, the same way.
+# Then, for that module alone, in the order it is written: its module doc, and
+# each declaration with its signature as the printer writes it, what documents
+# it, and for a function the call a program writes (each argument the
+# parameter's own name, `@` where the parameter is, a label exactly where the
+# checker's label rule asks one: `check/type_fit.hero`'s `shared`, over the
+# types the checker interned for the written parameters) and its examples
+# (`cli/doc_text.hero`). The call is written `<binding>.<name>(...)`, the
+# binding being what a `use` of the module binds, its last part; where that
+# part is no name a `use` can spell (a file `two-words.hero`), no program
+# reaches the module by a `use`, and the call is written bare, as the module
+# itself writes it. **A reference is the same bytes on every run**: it
+# reads the source and the checker, never the clock, the machine or a path
+# but the module's own name.
+#
+# A package's module is read as a package's module, never as a root: the verb
+# reads a root of one line, `use <name>/<module>`, held in memory and written
+# nowhere, so the catalogue is read as a build reads it and the module's bare
+# `use` lines start at its package's root (a nested module read as a root
+# fails at its first `use`, measured by panel 253's compiler-engineer). That
+# root holds no expression, so what the name and type stages say of it can only
+# be of its `use`, never used, and is dropped; what its parse and its module
+# graph say is the operand's own fault, a name no catalogue reaches, and is
+# told.
+
+use ast
+use check/state
+use check/type_fit
+use checker
+use cli/argv
+use cli/check
+use cli/doc_shape
+use cli/doc_text
+use cli/input
+use cli/io
+use cli/process
+use cli/table as cli_table
+use cli/unverified
+use diag
+use keywords
+use library_source
+use module/placed
+use modules
+use parse
+use parse/swap_reading
+use print/signature
+use rename_fit
+use resolve
+use source
+
+# The name of the root a package's module is read through, in the folder whose
+# catalogue reaches it.
+constant ROOT: str
+    "heroes-doc-root.hero"
+
+# What one run answers: how it ends, and the reference, "" where none is
+# printed.
+record Answered
+    exit: cli_table.Exit
+    reference: str
+
+# The verb, from the folder the command runs in: the reference on stdout.
+function run_operand(inv: argv.Invocation, library: str) -> cli_table.Exit
+    said = answered(inv, library: library, folder: "")
+
+    if said.reference.len() > 0
+        io.print_artifact(text: said.reference)
+    return said.exit
+
+# The run of the verb over its operand, its diagnostics told on stderr, with
+# the catalogue of `folder` (`""` the folder it runs in, else ending in `/`)
+# read for a package's module.
+function answered(inv: argv.Invocation, library: str, folder: str) -> Answered
+    path = inv.file.default("")
+
+    if placed.is_package(path)
+        if holds_line_break(path)
+            io.eprint(
+                text: "error: `heroes doc` reads one module, and its operand holds a line break, which no module's name does"
+            )
+            return Answered(exit: .failed_exit, reference: "")
+        root = modules.load_text(path: folder + ROOT, root_text: "use " + path + "\n", library: library)
+
+        if root.is_err()
+            io.eprint(text: "error: " + read_failure(root))
+            return Answered(exit: .failed_exit, reference: "")
+        return reading(root.must(), inv: inv, target: path)
+    read = input.read_compilation(path: path, library: library)
+
+    if read.is_err()
+        io.eprint(text: "error: " + read_failure(read))
+        return Answered(exit: .failed_exit, reference: "")
+    s = read.must()
+    return reading(s, inv: inv, target: source.module_at(s, s.files[0].start))
+
+function holds_line_break(text: str) -> bool
+    for c in text.chars()
+        if c == "\n" || c == "\r"
+            return true
+
+    return false
+
+function read_failure(failed: source.Source?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+# What the name and type stages say, the root's dropped where the root is the
+# one-line `use` of a package's module and not the target.
+function apart_from_root(said: [diag.Diagnostic], s: source.Source, target: str) -> [diag.Diagnostic]
+    if source.module_at(s, s.files[0].start) == target
+        return said
+    kept: [diag.Diagnostic] @= []
+
+    for d in said
+        if !source.is_root(s, d.span.start)
+            kept @ kept.push(d)
+
+    return kept
+
+# The stages, each told and stopping where it speaks, then the reference.
+function reading(s: source.Source, inv: argv.Invocation, target: str) -> Answered
+    unverified.say(s, inv)
+    parsed = parse.parse_source(s)
+    stop = check.report(parsed.diagnostics, s, inv, stage: 1)
+
+    if !stop.is_err()
+        return Answered(exit: stop.must(), reference: "")
+    stop_g = check.report(modules.errors(s, parsed.uses), s, inv, stage: 2)
+
+    if !stop_g.is_err()
+        return Answered(exit: stop_g.must(), reference: "")
+    out = rename_fit.judged(resolve.resolve_as(parsed.tree, s, parsed.decls, parsed.uses, permissive: false), s, parsed)
+    stop_r = check.report(apart_from_root(out.diagnostics, s, target: target), s, inv, stage: 3)
+
+    if !stop_r.is_err()
+        return Answered(exit: stop_r.must(), reference: "")
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    stop_c = check.report(apart_from_root(c.diagnostics, s, target: target), s, inv, stage: 4)
+
+    if !stop_c.is_err()
+        return Answered(exit: stop_c.must(), reference: "")
+    file = doc_text.file_of(s, target: target)
+
+    if file < 0
+        io.eprint(text: "error: no module `" + target + "` was read")
+        return Answered(exit: .failed_exit, reference: "")
+    stop_d = check.report(doc_shape.refusals(s, decls: parsed.decls, target: target), s, inv, stage: 4)
+
+    if !stop_d.is_err()
+        return Answered(exit: stop_d.must(), reference: "")
+    return Answered(
+        exit: .ok_exit,
+        reference: reference(parsed.tree, s, decls: parsed.decls, c: c, target: target, file: file)
+    )
+
+# The reference of `target`: its title and module doc, then each declaration
+# in the order it is written.
+function reference(tree: ast.Ast, s: source.Source, decls: [ast.Decl], c: state.Checked, target: str, file: i64) -> str
+    binding = doc_text.last_component(target)
+    out: [str] @= ["# " + target + "\n"]
+    said = doc_text.module_doc(s, decls: decls, file: file)
+
+    if said.len() > 0
+        out @ out.push("\n" + said)
+    own: [ast.Decl] @= []
+
+    for d in decls
+        if source.module_at(s, d.name.start) == target
+            own @ own.push(d)
+
+    for d in own
+        name = source.span_text(s, d.name)
+
+        match d.kind
+            .function_decl fd =>
+                out @ out.push(
+                    "\n## function " + name + "\n\n    " + signature.one_line(tree, s, name: name, fd: fd.value) + "\n"
+                )
+                out @ out.push(doc_text.doc_text(s, doc: d.doc))
+                out @ out.push("\n    " + call_of(s, binding: binding, name: name, fd: fd.value, c: c) + "\n")
+
+                for t in own
+                    if doc_text.is_example_of(s, example: t, name: name, target: target)
+                        out @ out.push(
+                            "\n### Example\n\n" + doc_text.indented(doc_text.example_text(s, example: t, file: file))
+                        )
+            .record_decl   => out @ out.push(written(s, d: d, kind: "record", name: name, file: file))
+            .variant_decl  => out @ out.push(written(s, d: d, kind: "variant", name: name, file: file))
+            .constant_decl => out @ out.push(written(s, d: d, kind: "constant", name: name, file: file))
+            .test_decl     => continue
+
+    return out.join("")
+
+# A record, a variant or a constant: its heading, the declaration as written,
+# and what documents it.
+function written(s: source.Source, d: ast.Decl, kind: str, name: str, file: i64) -> str
+    return "\n## " + kind + " " + name + "\n\n" + doc_text.indented(doc_text.block(s, d: d, file: file)) + doc_text.doc_text(s, doc: d.doc)
+
+# The call a program writes to `name` of the module bound as `binding`.
+function call_of(s: source.Source, binding: str, name: str, fd: ast.FunctionDecl, c: state.Checked) -> str
+    ids: [i64] @= []
+
+    # A type the checker did not intern for a parameter is its own, shared
+    # with no other, so it asks no label.
+    for p in fd.params
+        ids @ ids.push(c.written_types[p.ty].default(-1 - ids.len()))
+
+    shared = type_fit.shared(ids)
+    arguments: [str] @= []
+    at: i64 @= 0
+
+    for p in fd.params
+        written_name = source.span_text(s, p.name)
+        label: str @= ""
+
+        if shared[at] && written_name != "_"
+            label @ written_name + ": "
+        mark: str @= ""
+
+        if p.mutable
+            mark @ "@"
+        arguments @ arguments.push(label + mark + written_name)
+        at @ at + 1
+
+    called = name + "(" + arguments.join(", ") + ")"
+
+    if !swap_reading.is_identifier(binding) || !keywords.keyword(binding).is_err()
+        return called
+    return binding + "." + called
+
+## Tests
+
+function asked(operand: str) -> argv.Invocation
+    return argv.Invocation(tag: .doc_cmd, file: ok(operand), program_args: [], flags: [])
+
+# The run of the verb over a module held as text, named `name`.
+function of_text(name: str, text: str) -> Answered
+    s = modules.load_text(path: name, root_text: text, library: library_source.text()).must()
+    return reading(s, inv: asked(name), target: source.module_at(s, s.files[0].start))
+
+# A module of two functions and an example, the second function's line
+# written as `line`.
+function words_text(line: str) -> str
+    return "# Words.\n\n# Joined.\n#\n# - `first`: one\n# - `second`: two\nfunction joined(first: str, second: str) -> str\n    return first + second\n\n# How many.\n#\n# - `" + line + "`: counted\nfunction count(@n: i64)\n    n @ n + 1\n\n# A dash.\ntest \"joined: a dash\"\n    assert joined(first: \"a\", second: \"b\") == \"ab\"\n"
+
+test "a module's reference: its doc, each declaration, the call labelled where the checker asks, and its example"
+    refused = of_text(name: "words.hero", text: words_text("@n"))
+    assert refused.exit == .diagnostics_exit
+    assert refused.reference == ""
+    said = of_text(name: "words.hero", text: words_text("n"))
+    assert said.exit == .ok_exit
+    assert said.reference == "# words\n\nWords.\n\n## function joined\n\n    function joined(first: str, second: str) -> str\n\nJoined.\n\n- `first`: one\n- `second`: two\n\n    words.joined(first: first, second: second)\n\n### Example\n\n    # A dash.\n    test \"joined: a dash\"\n        assert joined(first: \"a\", second: \"b\") == \"ab\"\n\n## function count\n\n    function count(@n: i64)\n\nHow many.\n\n- `n`: counted\n\n    words.count(@n)\n"
+
+test "a record, a variant and a constant are printed as written, under their kind"
+    said = of_text(
+        name: "kinds.hero",
+        text: "# A point.\nrecord Point\n    # Across.\n    x: i64\n\n# The most.\nconstant MOST: i64\n    3\n"
+    )
+    assert said.exit == .ok_exit
+    assert said.reference == "# kinds\n\n## record Point\n\n    record Point\n        # Across.\n        x: i64\n\nA point.\n\n## constant MOST\n\n    constant MOST: i64\n        3\n\nThe most.\n"
+
+test "a module that does not check prints no reference"
+    said = of_text(name: "wrong.hero", text: "# f.\nfunction f() -> i64\n    return \"no\"\n")
+    assert said.exit == .diagnostics_exit
+    assert said.reference == ""
+
+test "a package's module is read through the catalogue, its bare `use` lines from its package's root"
+    dir = "build/selftest-doc/"
+    assert !process.remove_tree(dir).is_err() || !process.is_directory(dir)
+    assert !process.mkdir_all(dir + "kit").is_err()
+    assert !write_file(path: dir + "heroes.toml", text: "[dependencies.kit]\npath = \"kit\"\n").is_err()
+    assert !write_file(path: dir + "kit/parts.hero", text: "# One.\nfunction one() -> i64\n    return 1\n").is_err()
+    assert !write_file(path: dir + "kit/words.hero", text: "# Two words.\n\nuse parts\n\n# Two.\nfunction two() -> i64\n    return parts.one() + 1\n").is_err()
+    said = answered(asked("<kit>/words"), library: library_source.text(), folder: dir)
+    assert said.exit == .ok_exit
+    assert said.reference == "# <kit>/words\n\nTwo words.\n\n## function two\n\n    function two() -> i64\n\nTwo.\n\n    words.two()\n"
+
+    # A module no catalogue reaches prints no reference.
+    assert answered(asked("<kit>/none"), library: library_source.text(), folder: dir).reference == ""
+    assert answered(asked("<kit>/a\nb"), library: library_source.text(), folder: dir).exit == .failed_exit

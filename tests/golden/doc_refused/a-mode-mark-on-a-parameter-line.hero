@@ -1,0 +1,11 @@
+# A parameter line names the parameter's identifier without its mode mark,
+# `list` and never `@list`; the mark's removal is the certain fix (spec § 1;
+# panel 253's R2, the coordinator's ruling).
+
+# Adds `more` to `list`, in its place.
+#
+#~v doc_unknown_parameter
+# - `@list`: the caller's list, which gains one value
+# - `more`: the value it gains
+function grow(@list: [i64], more: i64)
+    list @ list.push(more)

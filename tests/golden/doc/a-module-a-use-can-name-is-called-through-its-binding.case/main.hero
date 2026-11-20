@@ -1,0 +1,11 @@
+# A module whose name a `use` can spell, `main` here, is called through the
+# binding `use main` makes, its labels the checker's (spec § 1, § 9; panel
+# 253's R2).
+
+# The text between two others.
+#
+# - `left`: what opens it
+# - `right`: what closes it
+# - `inner`: what stands between
+function between(left: str, right: str, inner: str) -> str
+    return left + inner + right

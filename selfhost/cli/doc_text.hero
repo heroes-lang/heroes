@@ -1,0 +1,271 @@
+# The words of a module's reference that are read from its text (spec § 1;
+# panel 253's R2, ratified 2026-11-19; design.md Part 6's literate-source row,
+# *`heroes doc` generates the document instead*): a comment's lines with their
+# `#` taken off, the module doc, the examples of a function, and the binding a
+# program calls the module by. The declarations, their signatures and their
+# types are the compiler's own, read in `cli/doc.hero`.
+#
+# **An example is a `test` of the module with a comment directly above it and
+# a title opening with a function's name and a colon, wherever it stands**
+# (R2: the prototype took those under `## Examples` alone, and printed none of
+# the five readers' examples the blind seat graded). **The module doc is the
+# comment the file opens with, up to its first line that is not a comment or
+# is a `##` heading**, and none where that comment documents a declaration
+# directly below it (the prototype printed such a comment twice, as the
+# module's and as the function's).
+#
+# **A declaration is printed as its block, never as its span**: its header
+# line and every line after it indented deeper, blank lines between them
+# kept, which is the whole declaration because indentation is rigid (spec
+# § 1). A record's span ends at its last field's name and a variant's at its
+# last case's, so the prototype printed `y` for `y: i64` and dropped a last
+# case's fields.
+
+use ast
+use cli/strings
+use parse
+use source
+use token
+
+# A comment line's words, its `#` and the one space after it taken off.
+function comment_words(line: str) -> str
+    if strings.starts_with(text: line, prefix: "# ")
+        return line.slice(from: 2, to: line.len())
+
+    if strings.starts_with(text: line, prefix: "#")
+        return line.slice(from: 1, to: line.len())
+    return line
+
+# What documents a declaration, as the reference prints it: its comment's
+# words, one line each, a blank line above them; "" where nothing does.
+function doc_text(s: source.Source, doc: [token.Span]) -> str
+    if doc.len() == 0
+        return ""
+    lines: [str] @= []
+
+    for span in doc
+        lines @ lines.push(comment_words(source.span_text(s, span)))
+
+    return "\n" + lines.join("\n") + "\n"
+
+# The module doc of the file `file`, its words ending in a line break; "" where
+# the file opens with no comment, or with one that documents a declaration.
+function module_doc(s: source.Source, decls: [ast.Decl], file: i64) -> str
+    start = s.files[file].start
+
+    for d in decls
+        if d.doc.len() > 0 && d.doc[0].start == start
+            return ""
+
+    said: [str] @= []
+
+    for line in file_lines(s, file: file)
+        if !strings.starts_with(text: line, prefix: "#") || strings.starts_with(text: line, prefix: "##")
+            break
+        said @ said.push(comment_words(line))
+
+    if said.len() == 0
+        return ""
+    return said.join("\n") + "\n"
+
+# The lines of the file `file`, without their line breaks.
+function file_lines(s: source.Source, file: i64) -> [str]
+    lines: [str] @= []
+    end = file_end(s, file: file)
+    at: i64 @= s.files[file].start
+    from: i64 @= at
+
+    while at < end
+        if s.text[at] == '\n'
+            lines @ lines.push(s.text.slice(from: from, to: at))
+            from @ at + 1
+        at @ at + 1
+
+    if from < end
+        lines @ lines.push(s.text.slice(from: from, to: end))
+    return lines
+
+# Where a file's text ends: the next file's start, or the text's end.
+function file_end(s: source.Source, file: i64) -> i64
+    if file + 1 < s.files.len()
+        return s.files[file + 1].start
+    return s.text.len()
+
+# The file holding the module `target`, -1 where none of the program's does.
+function file_of(s: source.Source, target: str) -> i64
+    at: i64 @= 0
+
+    for f in s.files
+        if f.module == target && !f.is_library
+            return at
+        at @ at + 1
+
+    return -1
+
+# The name a test's title opens with, before its first colon; "" where the
+# title holds no colon. The title is read as written, quotes and all, so a
+# title with an escape before its colon names no function.
+function titled(s: source.Source, example: ast.Decl) -> str
+    title = source.span_text(s, example.name)
+
+    if title.len() < 2
+        return ""
+    words = title.slice(from: 1, to: title.len() - 1)
+    at: i64 @= 0
+
+    while at < words.len() && words[at] != ':'
+        at @ at + 1
+
+    if at == words.len()
+        return ""
+    return words.slice(from: 0, to: at)
+
+# Whether `example` is an example of the function `name` of `target`: a test
+# of that module, documented, its title opening with the name and a colon.
+function is_example_of(s: source.Source, example: ast.Decl, name: str, target: str) -> bool
+    if source.module_at(s, example.name.start) != target || example.doc.len() == 0
+        return false
+
+    return match example.kind
+        .test_decl                                                     => titled(s, example: example) == name
+        .function_decl | .record_decl | .variant_decl | .constant_decl => false
+
+# An example as the reference prints it: its comment and its test, as written.
+function example_text(s: source.Source, example: ast.Decl, file: i64) -> str
+    lines: [str] @= []
+
+    for span in example.doc
+        lines @ lines.push(source.span_text(s, span))
+
+    lines @ lines.push(block(s, d: example, file: file))
+    return lines.join("\n")
+
+# The declaration `d` of the file `file` as written: its header line and every
+# line after it indented deeper than the header, blank lines among them kept
+# and none after the last, each line dedented by the header's indentation.
+function block(s: source.Source, d: ast.Decl, file: i64) -> str
+    end = file_end(s, file: file)
+    head = line_start(s, at: d.span.start)
+    indent = d.span.start - head
+    lines: [str] @= [s.text.slice(from: d.span.start, to: line_end(s, at: d.span.start, end: end))]
+    blanks: i64 @= 0
+    at: i64 @= line_end(s, at: d.span.start, end: end) + 1
+
+    while at < end
+        stop = line_end(s, at: at, end: end)
+        line = s.text.slice(from: at, to: stop)
+
+        if strings.trimmed(line).len() == 0
+            blanks @ blanks + 1
+        else if deeper(line, indent: indent)
+            for _ in range(from: 0, to: blanks)
+                lines @ lines.push("")
+
+            blanks @ 0
+            lines @ lines.push(line.slice(from: indent, to: line.len()))
+        else
+            break
+        at @ stop + 1
+
+    return lines.join("\n")
+
+# Whether `line` is indented by more than `indent` spaces.
+function deeper(line: str, indent: i64) -> bool
+    at: i64 @= 0
+
+    while at < line.len() && line[at] == ' '
+        at @ at + 1
+
+    return at > indent
+
+# The offset the line holding `at` starts at.
+function line_start(s: source.Source, at: i64) -> i64
+    from: i64 @= at
+
+    while from > 0 && s.text[from - 1] != '\n'
+        from @ from - 1
+
+    return from
+
+# The offset of the line break ending the line holding `at`, or `end`.
+function line_end(s: source.Source, at: i64, end: i64) -> i64
+    to: i64 @= at
+
+    while to < end && s.text[to] != '\n'
+        to @ to + 1
+
+    return to
+
+# `text` as a Markdown code block: every line that holds anything indented by
+# four spaces, ending in a line break.
+function indented(text: str) -> str
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at <= text.len()
+        if at == text.len() || text[at] == '\n'
+            line = text.slice(from: from, to: at)
+
+            if line.len() > 0
+                out @ out.push("    " + line)
+            else
+                out @ out.push("")
+            from @ at + 1
+        at @ at + 1
+
+    return out.join("\n") + "\n"
+
+# The name a `use` of `module` binds: its last part.
+function last_component(module: str) -> str
+    at: i64 @= module.len()
+
+    while at > 0 && module[at - 1] != '/'
+        at @ at - 1
+
+    return module.slice(from: at, to: module.len())
+
+## Tests
+
+function decls_of(s: source.Source) -> [ast.Decl]
+    return parse.parse_source(s).decls
+
+test "the binding is the module's last part"
+    assert last_component("compress/lz4") == "lz4"
+    assert last_component("<rebel>/compress/lz4") == "lz4"
+    assert last_component("json") == "json"
+
+test "the module doc stops at its first line that is no comment, or a heading"
+    s = source.new_source(name: "t.hero", text: "# What it is.\n# Two lines.\n\n# f.\nfunction f()\n    return\n")
+    assert module_doc(s, decls: decls_of(s), file: 0) == "What it is.\nTwo lines.\n"
+    h = source.new_source(name: "t.hero", text: "# What it is.\n## A topic\n# f.\nfunction f()\n    return\n")
+    assert module_doc(h, decls: decls_of(h), file: 0) == "What it is.\n"
+
+test "a comment the file opens with directly above a declaration is the declaration's, never the module's"
+    s = source.new_source(name: "t.hero", text: "# f, alone.\nfunction f()\n    return\n")
+    decls = decls_of(s)
+    assert module_doc(s, decls: decls, file: 0) == ""
+    assert doc_text(s, doc: decls[0].doc) == "\nf, alone.\n"
+
+test "an example is a documented test titled with the function's name, wherever it stands"
+    text = "# f.\nfunction f() -> i64\n    return 1\n\n# Shown.\ntest \"f: one\"\n    assert f() == 1\n\ntest \"f: not shown, no comment\"\n    assert f() == 1\n\n## Examples\n\n# Not f's.\ntest \"ff: other\"\n    assert f() == 1\n"
+    s = source.new_source(name: "t.hero", text: text)
+    target = source.module_at(s, 0)
+    shown: [str] @= []
+
+    for d in decls_of(s)
+        if is_example_of(s, example: d, name: "f", target: target)
+            shown @ shown.push(source.span_text(s, d.name))
+
+    assert shown == ["\"f: one\""]
+
+test "a declaration is its block, its last field's type and a case's fields with it"
+    text = "record P\n    # Across.\n    x: i64\n\n    y: i64\n\n# Next.\nvariant V\n    one\n    two\n        n: i64\n"
+    s = source.new_source(name: "t.hero", text: text)
+    decls = decls_of(s)
+    assert block(s, d: decls[0], file: 0) == "record P\n    # Across.\n    x: i64\n\n    y: i64"
+    assert block(s, d: decls[1], file: 0) == "variant V\n    one\n    two\n        n: i64"
+
+test "a title with no colon names no function"
+    s = source.new_source(name: "t.hero", text: "# x.\ntest \"f one\"\n    assert true\n")
+    assert titled(s, example: decls_of(s)[0]) == ""

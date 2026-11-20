@@ -1,0 +1,20 @@
+# A documented function's comment names every parameter: each one no line
+# names is refused where the signature writes it, a comment with no parameter
+# line at all refused once for each (spec § 1; panel 253's R2). A function
+# with no comment documents nothing and is refused nothing.
+
+# The larger of two numbers.
+function larger(a: i64, b: i64) -> i64  #~ doc_missing_parameter doc_missing_parameter
+    if a > b
+        return a
+    return b
+
+# Three joined.
+#
+# - `a`: the first
+# - `c`: the third
+function three(a: str, b: str, c: str) -> str  #~ doc_missing_parameter
+    return a + b + c
+
+function bare(a: i64) -> i64
+    return a
