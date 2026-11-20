@@ -3718,7 +3718,7 @@ test "serve_stream: a request over TLS from a client of the test authority"
     t @= threads.spawn_text(
         body: canned.ask_tls,
         arg: f"{l.port}" + canned.SEPARATOR + "TRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
-    )
+    ).must()
     stream @= tls.accept(l, deadline_ms: 10_000).must()
     assert serve_stream(default_server(), stream: stream, remote: "", handler: respond_trace) == 1
     io.close(@stream).must()
@@ -3847,7 +3847,7 @@ test "serve_tls: a client silent after its handshake dropped at the deadline, th
         port: 0,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["http/1.1"])
     ).must()
-    t @= threads.spawn_text(body: canned.ask_tls, arg: f"{l.port}" + canned.SEPARATOR)
+    t @= threads.spawn_text(body: canned.ask_tls, arg: f"{l.port}" + canned.SEPARATOR).must()
     tls.set_accept_deadline(l, deadline_ms: 3_000).must()
     s @= default_server()
     s.deadline_ms @ 300
@@ -4810,7 +4810,7 @@ test "send: https:// over HTTP/2 where the server's ALPN chooses h2"
     if !tls.is_available()
         skip_test(reason: "this platform offers no TLS library to tls")
     port = h2bridge.free_port()
-    t @= threads.spawn_text(body: h2bridge.serve_h2_tls, arg: to_str(port))
+    t @= threads.spawn_text(body: h2bridge.serve_h2_tls, arg: to_str(port)).must()
     h2bridge.until_listening(port)
     c @= default_client()
     c.roots @ tls.TEST_ROOT
@@ -4827,7 +4827,7 @@ test "serve_tls: an HTTP/2 client answered over HTTP/2"
         port: 0,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2", "http/1.1"])
     ).must()
-    t @= threads.spawn_text(body: h2bridge.ask_h2_tls, arg: to_str(l.port))
+    t @= threads.spawn_text(body: h2bridge.ask_h2_tls, arg: to_str(l.port)).must()
     tls.set_accept_deadline(l, deadline_ms: 5000).must()
 
     match serve_tls(default_server(), l: l, handler: respond_not_found)
@@ -4840,7 +4840,7 @@ test "serve_tls: an HTTP/2 client answered over HTTP/2"
 # Two requests on one HTTP/2 connection the program holds.
 test "round_trip_h2: two requests on one connection"
     port = h2bridge.free_port()
-    t @= threads.spawn_text(body: h2bridge.serve_h2_plain, arg: to_str(port))
+    t @= threads.spawn_text(body: h2bridge.serve_h2_plain, arg: to_str(port)).must()
     h2bridge.until_listening(port)
     c @= http2.connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: http2.default_options()).must()
     first = round_trip_h2(
@@ -4860,7 +4860,7 @@ test "round_trip_h2: two requests on one connection"
 # An HTTP/2 connection served with a handler of this package.
 test "serve_h2: one request answered 404 by respond_not_found"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port))
+    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= http2.server_of(@stream, options: http2.default_options()).must()
@@ -4872,7 +4872,7 @@ test "serve_h2: one request answered 404 by respond_not_found"
 # An HTTP/2 connection served with the program's own value as state.
 test "serve_h2_with: a redirector over HTTP/2"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port))
+    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= http2.server_of(@stream, options: http2.default_options()).must()

@@ -745,7 +745,7 @@ test "open over TLS: a server answering N to the request for TLS fails unsupport
     if !tls.is_available()
         skip_test(reason: "this platform offers no TLS library to tls")
     port = tls_peer.free_port()
-    peer @= threads.spawn_text(body: tls_peer.serve, arg: "n " + to_str(port))
+    peer @= threads.spawn_text(body: tls_peer.serve, arg: "n " + to_str(port)).must()
     tls_peer.until_listening(port)
     made = open(
         Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
@@ -765,7 +765,7 @@ test "open over TLS: a server whose certificate names another host is refused in
     if !tls.is_available()
         skip_test(reason: "this platform offers no TLS library to tls")
     port = tls_peer.free_port()
-    peer @= threads.spawn_text(body: tls_peer.serve, arg: "wrong " + to_str(port))
+    peer @= threads.spawn_text(body: tls_peer.serve, arg: "wrong " + to_str(port)).must()
     tls_peer.until_listening(port)
     made = open(
         Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
@@ -785,7 +785,7 @@ test "open over TLS: the request answered S, the handshake checked, and the serv
     if !tls.is_available()
         skip_test(reason: "this platform offers no TLS library to tls")
     port = tls_peer.free_port()
-    peer @= threads.spawn_text(body: tls_peer.serve, arg: "fatal " + to_str(port))
+    peer @= threads.spawn_text(body: tls_peer.serve, arg: "fatal " + to_str(port)).must()
     tls_peer.until_listening(port)
     made = open(
         Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))

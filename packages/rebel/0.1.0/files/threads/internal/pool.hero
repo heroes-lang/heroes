@@ -52,19 +52,34 @@ function run_all(body: (function(i64) -> i64), values: [i64], workers: i64) -> [
     return ok(out)
 
 # `body` of each of `values` on threads, at most `workers` at once, the
-# answers in order, each a copy.
-function run_all_text(body: (function(str) -> str), values: [str], workers: i64) -> [str]
+# answers in order, each a copy. Fails `limit` where the system refuses a
+# thread, after waiting for those already started.
+function run_all_text(body: (function(str) -> str), values: [str], workers: i64) -> [str]?
     wide = width(workers: workers)
     handles: [i64] @= []
     out: [str] @= []
 
     while out.len() < values.len()
         while handles.len() < values.len() && handles.len() - out.len() < wide
-            handles @ handles.push(hero_os.start_text(body: body, arg: values[handles.len()]))
+            why: i64 @= 0
+            handle = hero_os.start_text(body: body, arg: values[handles.len()], bytes: 0, why: @why)
+
+            if handle < 0
+                at: i64 @= out.len()
+
+                while at < handles.len()
+                    _ = hero_os.finish_text(handles[at])
+                    at @ at + 1
+
+                return fail(
+                    code: LIMIT,
+                    msg: f"the system refused to start a thread for text {handles.len()} of {values.len()} (its own number {why})"
+                )
+            handles @ handles.push(handle)
 
         out @ out.push(hero_os.finish_text(handles[out.len()]))
 
-    return out
+    return ok(out)
 
 test "width: one, the ceiling, and past it"
     assert width(workers: 1) == 1
@@ -96,7 +111,7 @@ test "run_all: more values than the runtime's ceiling, workers past it, every an
 
 test "run_all_text: no value, one, text of more than one byte and the empty text cross whole, in order"
     nothing: [str] = []
-    assert run_all_text(body: samples.shout, values: nothing, workers: 2).len() == 0
-    assert run_all_text(body: samples.shout, values: ["hi"], workers: 1) == ["hi!"]
-    assert run_all_text(body: samples.same_text, values: ["caffè", "", "über", "日本"], workers: 2) == ["caffè", "", "über", "日本"]
-    assert run_all_text(body: samples.shout, values: ["a", "b", "c"], workers: 9) == ["a!", "b!", "c!"]
+    assert run_all_text(body: samples.shout, values: nothing, workers: 2).must().len() == 0
+    assert run_all_text(body: samples.shout, values: ["hi"], workers: 1).must() == ["hi!"]
+    assert run_all_text(body: samples.same_text, values: ["caffè", "", "über", "日本"], workers: 2).must() == ["caffè", "", "über", "日本"]
+    assert run_all_text(body: samples.shout, values: ["a", "b", "c"], workers: 9).must() == ["a!", "b!", "c!"]

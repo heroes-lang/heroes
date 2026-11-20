@@ -593,7 +593,7 @@ test "listen: on the loopback address, a port the system chooses"
             port: 0,
             server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: ["http/1.1"])
         ).must()
-        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port))
+        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port)).must()
         assert loopback.heard_on(accept(l, deadline_ms: 10000)) == "ping"
         assert threads.wait_text(@client) == "ok http/1.1 pong"
         close_listener(@l).must()
@@ -607,7 +607,7 @@ test "accept: one client, four bytes each way"
             port: 0,
             server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
         ).must()
-        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port))
+        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port)).must()
         s @= accept(l, deadline_ms: 10000).must()
         assert io.read_exact(s, n: 4).must() == [112, 105, 110, 103]
         io.write_text(s, text: "pong").must()
@@ -635,7 +635,7 @@ test "close_listener: then accept fails closed"
 test "server_over: a connection of net made a TLS server's"
     if is_available()
         l @= net.listen(host: "127.0.0.1", port: 0).must()
-        client @= threads.spawn_text(body: loopback.client_side, arg: "over " + to_str(l.address.port))
+        client @= threads.spawn_text(body: loopback.client_side, arg: "over " + to_str(l.address.port)).must()
         c = net.accept(l, deadline_ms: 10000).must()
         inner @= c.stream
         secured = server_over(
@@ -657,7 +657,7 @@ test "version_of: TLS 1.2 or 1.3, never less"
             port: 0,
             server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
         ).must()
-        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port))
+        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port)).must()
         s @= accept(l, deadline_ms: 10000).must()
         version = version_of(s).must()
         assert version == 12 || version == 13
@@ -675,7 +675,7 @@ test "protocol_of: http/1.1 chosen of the server's two"
             port: 0,
             server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: ["h2", "http/1.1"])
         ).must()
-        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port))
+        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port)).must()
         s @= accept(l, deadline_ms: 10000).must()
         assert protocol_of(s).must() == "http/1.1"
         assert loopback.answer_once(s).must() == "ping"
@@ -688,7 +688,7 @@ test "protocol_of: http/1.1 chosen of the server's two"
 test "connect_after: Postgres's SSLRequest, then TLS"
     if is_available()
         port = loopback.free_port()
-        server @= threads.spawn_text(body: loopback.serve_after, arg: "postgres " + to_str(port))
+        server @= threads.spawn_text(body: loopback.serve_after, arg: "postgres " + to_str(port)).must()
         loopback.until_listening(port)
         request: [u8] = [0, 0, 0, 8, 4, 210, 22, 47]
         s @= connect_after(
@@ -721,7 +721,7 @@ test "listen_after: an SMTP server's STARTTLS, then TLS"
             server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: ["http/1.1"]),
             steps: steps
         ).must()
-        client @= threads.spawn_text(body: loopback.client_side, arg: "smtp " + to_str(l.port))
+        client @= threads.spawn_text(body: loopback.client_side, arg: "smtp " + to_str(l.port)).must()
         assert loopback.heard_on(accept(l, deadline_ms: 10000)) == "ping"
         assert threads.wait_text(@client) == "ok http/1.1 pong"
         close_listener(@l).must()
@@ -735,7 +735,7 @@ test "set_deadline: a server's read ended, then the client's bytes read"
             port: 0,
             server: Server(chain: TEST_LOCALHOST_CHAIN, key: TEST_LOCALHOST_KEY, protocols: [])
         ).must()
-        client @= threads.spawn_text(body: loopback.client_side, arg: "late " + to_str(l.port))
+        client @= threads.spawn_text(body: loopback.client_side, arg: "late " + to_str(l.port)).must()
         s @= accept(l, deadline_ms: 10000).must()
         set_deadline(s, deadline_ms: 300).must()
         early = io.read(s, n: 4)

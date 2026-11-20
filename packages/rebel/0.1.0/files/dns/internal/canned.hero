@@ -53,7 +53,7 @@ function dropped() -> str
 # from a control listener of this thread, so no port is assumed free.
 function start(steps: [str]) -> Started
     control @= net.listen("127.0.0.1", port: 0).must()
-    t = threads.spawn_text(body: serve, arg: f"{control.address.port}" + SEPARATOR + steps.join(SEPARATOR))
+    t = threads.spawn_text(body: serve, arg: f"{control.address.port}" + SEPARATOR + steps.join(SEPARATOR)).must()
     told = net.accept(control, deadline_ms: 10_000).must()
     r @= io.reader(told.stream)
     port = strings.trim(io.read_rest_text(@r).must())

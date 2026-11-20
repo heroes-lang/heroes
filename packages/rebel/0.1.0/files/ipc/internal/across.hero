@@ -102,7 +102,7 @@ function hold(lock: str, ready: str, go: str) -> ()?
 # and tries it once: `taken` (and released again), `refused` where it timed
 # out, or the failure's code.
 function try_from_another_thread(name: str) -> str
-    t @= threads.spawn_text(try_once, arg: name)
+    t @= threads.spawn_text(try_once, arg: name).must()
     return threads.wait_text(@t)
 
 # The thread's part of `try_from_another_thread`.

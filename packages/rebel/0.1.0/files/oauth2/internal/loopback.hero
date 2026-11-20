@@ -64,7 +64,7 @@ record State
 # listener of the caller's, so no port is assumed free.
 function start() -> Started
     control @= net.listen(host: "127.0.0.1", port: 0).must()
-    t = threads.spawn_text(body: serve, arg: f"{control.address.port}")
+    t = threads.spawn_text(body: serve, arg: f"{control.address.port}").must()
     told = net.accept(control, deadline_ms: 10_000).must()
     r @= io.reader(told.stream)
     port = number_of(io.read_rest_text(@r).must())

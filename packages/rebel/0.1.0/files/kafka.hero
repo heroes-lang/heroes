@@ -1526,7 +1526,7 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
 
             assert fresh == 10
             commit(@j).must()
-            other = threads.spawn_text(live.second_member, arg: f"{text}|{group}|{topic}|10")
+            other = threads.spawn_text(live.second_member, arg: f"{text}|{group}|{topic}|10").must()
             more: [Message] @= []
 
             for i in range(from: 0, to: 20)

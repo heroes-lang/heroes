@@ -1075,7 +1075,7 @@ test "upgrade: an origin of its own host and one listed accepted, a subprotocol 
 
 test "connect: compression agreed with the server, a long text there and back"
     told @= net.open_udp(host: "127.0.0.1", port: 0).must()
-    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} deflate")
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} deflate").must()
     port = fixture.port_told(told)
     client @= default_client()
     client.compression.enabled @ true
@@ -1093,12 +1093,12 @@ test "connect: compression agreed with the server, a long text there and back"
 
 test "connect: a redirect followed, then refused past the most allowed; a scheme other than ws and wss; nothing listening"
     told @= net.open_udp(host: "127.0.0.1", port: 0).must()
-    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} moved")
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} moved").must()
     port = fixture.port_told(told)
     c @= connect(target: f"ws://127.0.0.1:{port}/first", client: default_client()).must()
     close(@c, code: CLOSE_NORMAL, reason: "").must()
     assert threads.wait_text(@server) == "echoed 0 /again"
-    again @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} moved")
+    again @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} moved").must()
     next_port = fixture.port_told(told)
     once @= default_client()
     once.redirects @ 0
@@ -1122,7 +1122,7 @@ test "connect: wss, the server's certificate checked against the test authority,
     if !tls.is_available()
         skip_test(reason: "this platform offers no TLS library to tls")
     told @= net.open_udp(host: "127.0.0.1", port: 0).must()
-    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} tls")
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} tls").must()
     port = fixture.port_told(told)
     client @= default_client()
     client.tls @ tls.Client(roots: tls.TEST_ROOT, protocols: [])
@@ -1140,7 +1140,7 @@ test "connect: wss, the server's certificate checked against the test authority,
     poll.close(@set).must()
     close(@c, code: CLOSE_NORMAL, reason: "").must()
     assert threads.wait_text(@server) == "echoed 1 /secure"
-    again @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} tls")
+    again @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} tls").must()
     refused = connect(target: f"wss://localhost:{fixture.port_told(told)}/", client: default_client())
 
     match refused
@@ -1152,7 +1152,7 @@ test "connect: wss, the server's certificate checked against the test authority,
 
 test "write_message: 65,536 bytes in fragments of 1,300, and a message of 1 MiB, there and back (Autobahn 9, 10)"
     told @= net.open_udp(host: "127.0.0.1", port: 0).must()
-    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} plain")
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} plain").must()
     client @= default_client()
     client.settings.fragment_bytes @ 1300
     c @= connect(target: f"ws://127.0.0.1:{fixture.port_told(told)}/", client: client).must()
@@ -1315,7 +1315,7 @@ test "last_pong_of: the bytes a ping carried, back"
 # and back, and the closing handshake.
 test "connect: a text there and back, then closed"
     told @= net.open_udp(host: "127.0.0.1", port: 0).must()
-    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} plain")
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} plain").must()
     port = fixture.port_told(told)
     c @= connect(target: f"ws://127.0.0.1:{port}/chat", client: default_client()).must()
     write_text(@c, text: "hello").must()
@@ -1332,7 +1332,7 @@ test "connect: a text there and back, then closed"
 # subprotocol offered and chosen.
 test "client_over: over a connection of net, the subprotocol chat chosen"
     told @= net.open_udp(host: "127.0.0.1", port: 0).must()
-    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} chat")
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} chat").must()
     port = fixture.port_told(told)
     tcp @= net.connect(host: "127.0.0.1", port: port, deadline_ms: 5_000).must()
     asking @= default_client()
@@ -1427,7 +1427,7 @@ test "read_message: a text and a message of bytes"
 # connection let go once it closes.
 test "read_ready: one thread serves three clients through poll"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    clients @= threads.spawn_text(body: fixture.three_clients, arg: to_str(l.address.port))
+    clients @= threads.spawn_text(body: fixture.three_clients, arg: to_str(l.address.port)).must()
     set @= poll.make(8).must()
     listening = poll.add_listener(set, l: l).must()
     conns: [Conn] @= []
@@ -1596,7 +1596,7 @@ test "write_close: the handshake begun, then ended by the next read"
 # stream closed.
 test "close: a client ends its connection"
     told @= net.open_udp(host: "127.0.0.1", port: 0).must()
-    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} plain")
+    server @= threads.spawn_text(body: fixture.echo_server, arg: f"{told.address.port} plain").must()
     c @= connect(target: f"ws://127.0.0.1:{fixture.port_told(told)}/", client: default_client()).must()
     close(@c, code: CLOSE_NORMAL, reason: "bye").must()
     assert !is_open(c) && closing_of(c).must().code == CLOSE_NORMAL

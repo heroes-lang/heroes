@@ -151,7 +151,7 @@ function heard_on(taken: io.Stream?) -> str
 # the client said and what the server heard, joined by `" | "`.
 function round(chain: str, key: str, mode: str) -> str
     l @= connections.listen(host: "127.0.0.1", port: 0, chain: chain, key: key, protocols: ["h2", "http/1.1"]).must()
-    client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.port))
+    client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.port)).must()
 
     # Bounded, so a client that never connects fails the test, never hangs it.
     connections.set_accept_deadline(l.handle, ms: 15000, asked: "bounding the test's wait").must()
@@ -164,7 +164,7 @@ function round(chain: str, key: str, mode: str) -> str
 # over its connection, the server over the one it accepts.
 function round_over() -> str
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: client_side, arg: "over " + to_str(l.address.port))
+    client @= threads.spawn_text(body: client_side, arg: "over " + to_str(l.address.port)).must()
     accepted = net.accept(l, deadline_ms: 10000)
     heard @= ""
 
@@ -262,7 +262,7 @@ function round_after(server_steps: [connections.Plain], mode: str) -> str
         protocols: ["h2", "http/1.1"],
         steps: server_steps
     ).must()
-    client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.port))
+    client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.port)).must()
 
     # Bounded, so a client that never connects fails the test, never hangs it.
     connections.set_accept_deadline(l.handle, ms: 15000, asked: "bounding the test's wait").must()
@@ -275,7 +275,7 @@ function round_after(server_steps: [connections.Plain], mode: str) -> str
 # nothing: answers what the client of `mode` said.
 function round_plain(mode: str, first: str) -> str
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.address.port))
+    client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.address.port)).must()
     net.set_accept_deadline(l, deadline_ms: 15000).must()
     c = net.accept(l, deadline_ms: 10000).must()
     stream @= c.stream
@@ -502,7 +502,7 @@ test "set_deadline: a read the deadline ends fails timeout and loses nothing, th
             key: fixture.LOCALHOST_KEY,
             protocols: []
         ).must()
-        client @= threads.spawn_text(body: client_side, arg: "patient " + to_str(l.port))
+        client @= threads.spawn_text(body: client_side, arg: "patient " + to_str(l.port)).must()
         s @= connections.accept(l.handle, deadline_ms: 10000, asked: "accepting").must()
         time.sleep(time.Duration(nanoseconds: 800000000))
         io.write_text(s, text: "late").must()
