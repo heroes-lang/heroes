@@ -301,6 +301,15 @@ _Static_assert(ATOMIC_INT_LOCK_FREE == 2, "the told flag is read in a signal han
 static _Atomic int hero_stack_told = 0;
 static _Thread_local _Atomic int hero_stack_telling = 0;
 
+/* WHETHER THE STOP IS A FAULT'S, TOLD FROM WINDOWS' VECTORED HANDLER: such a stop
+ * walks no call (`parts/calls.c`), as on POSIX, where the handler runs on the
+ * thread's alternate stack and the walk reads nothing outside the thread's
+ * own. The handler runs on the faulting stack itself, which after
+ * `EXCEPTION_STACK_OVERFLOW` holds only the room `SetThreadStackGuarantee`
+ * left, so no walk is begun there; and the same program then says the same
+ * lines on the three platforms. Set once, before the handler's `hero_abort`. */
+__attribute__((unused)) static _Atomic int hero_stack_handler_stop = 0;
+
 #if defined(_WIN32)
 #include <windows.h>
 #else
@@ -317,6 +326,107 @@ static void hero_stack_tell_first(void) {
         for (;;) pause();
 #endif
     }
+}
+
+/* THE NAMES AND THE WRITER EVERY PLATFORM SHARES: the walk of an abort's
+ * calls (`parts/calls.c`) spells a frame by them on Windows as on POSIX
+ * (panel 253's R5), and the guard's handler below writes by them. */
+#include <string.h>
+
+/* `write(2)` and nothing else: inside a signal handler, `fprintf` is not ours
+ * to call (the faulting thread may hold stdout's lock). Each piece is written
+ * by `hero_stderr_put` (`parts/panic.c`), which waits for stderr's descriptor
+ * only as long as it takes something, so a full pipe nobody reads never holds
+ * this report back (defect 2606). */
+static void hero_stack_say(const char *s) { hero_stderr_put(s, strlen(s)); }
+
+static int hero_stack_is_heroes(const char *sym) {
+    if (sym == NULL) return 0;
+    if (sym[0] == '_') sym++; /* Mach-O's leading underscore */
+    return sym[0] == 'h' && sym[1] == '_';
+}
+
+/* `n` bytes of `s`, by `write(2)` alone, as `hero_stack_say` writes. */
+static void hero_stack_say_n(const char *s, size_t n) { hero_stderr_put(s, n); }
+
+/* THE PROGRAM'S OWN SPELLINGS (panel 230's R1, kind 3; the critic's finding 12).
+ * The walk finds a C symbol, `h_<component>_<name>`, whose component is the
+ * module's name made a C identifier, so a stack exhausted in `thread_deep` read
+ * `threaddeep.down` beside an index abort that read `thread_deep.worker`. The
+ * program's `main` hands this runtime the spellings that differ, rows of
+ * `<key>\t<spelling>\n`, a symbol whole (a test's, `test "<title>"`) or a
+ * module's component, before any thread can exist and before any fault can be
+ * taken, and they are only read afterwards. Read in a handler, by bytes alone.
+ * NULL, a program a compiler before this one wrote, spells as before. */
+static const char *hero_stack_spellings = NULL;
+
+void hero_stack_spell(const char *text) { hero_stack_spellings = text; }
+
+/* The spelling of the `n` bytes at `key`, its length in `*len`, or NULL. */
+static const char *hero_stack_spelled(const char *key, size_t n, size_t *len) {
+    const char *row = hero_stack_spellings;
+    if (row == NULL) return NULL;
+    while (*row != '\0') {
+        const char *tab = row;
+        while (*tab != '\0' && *tab != '\t' && *tab != '\n') tab++;
+        const char *end = tab;
+        while (*end != '\0' && *end != '\n') end++;
+        if (*tab == '\t' && (size_t)(tab - row) == n && memcmp(row, key, n) == 0) {
+            *len = (size_t)(end - tab - 1);
+            return tab + 1;
+        }
+        row = *end == '\n' ? end + 1 : end;
+    }
+    return NULL;
+}
+
+/* `h_<module>_<name>[_<hash>]` → `<module>.<name>[_<hash>]`. The mangler
+ * sanitises the module to [A-Za-z0-9], so the first `_` after `h_` ends it
+ * (CLAUDE.md §7), and the program's spelling of either half is asked first. A
+ * symbol that is not a Heroes function is written as it is. */
+__attribute__((unused)) static void hero_stack_say_heroes_name(const char *sym) {
+    if (sym[0] == '_') sym++;
+    size_t whole = 0;
+    const char *spelled = hero_stack_spelled(sym, strlen(sym), &whole);
+    if (spelled != NULL) {
+        hero_stack_say_n(spelled, whole);
+        return;
+    }
+    if (sym[0] == 'h' && sym[1] == '_' && sym[2] != '\0') {
+        const char *rest = sym + 2;
+        /* A component that begins with a digit is the compiler's own marker,
+         * which no source file's component does (`emit/ctype.hero`'s
+         * `SYNTHETIC`): a callback's thunk is `h_0cb_<module>_<name>`
+         * (`emit/callback_thunk.hero`), and at `-O2` the function it calls is
+         * inlined into it, so the frame that runs out is the thunk's. The
+         * marker is told without, as `-O0` tells the function itself
+         * (defect 2277). */
+        if (rest[0] >= '0' && rest[0] <= '9') {
+            const char *marker = strchr(rest, '_');
+            if (marker != NULL && marker[1] != '\0') rest = marker + 1;
+        }
+        const char *us = strchr(rest, '_');
+        if (us != NULL && us[1] != '\0') {
+            size_t n = (size_t)(us - rest);
+            size_t len = 0;
+            const char *module = hero_stack_spelled(rest, n, &len);
+            if (module != NULL) {
+                hero_stack_say_n(module, len);
+            } else {
+                hero_stack_say_n(rest, n);
+            }
+            hero_stack_say(".");
+            /* A name the compiler invented beside a type, a test or an
+             * instance begins with a digit after the module (defect 2234),
+             * which no author's name does: told without it, as the source
+             * spells what it belongs to. */
+            const char *named = us + 1;
+            if (named[0] >= '0' && named[0] <= '9' && named[1] != '\0') named++;
+            hero_stack_say(named);
+            return;
+        }
+    }
+    hero_stack_say(sym);
 }
 
 /* THE HELPERS, compiled on every POSIX build, under the sanitizer too (panel
@@ -406,101 +516,6 @@ static void hero_stack_measure(uintptr_t *lo, uintptr_t *hi) {
  * it, or inside another mapping, nothing here can see it. */
 #define HERO_STACK_WINDOW ((uintptr_t)1 << 20)
 
-/* `write(2)` and nothing else: inside a signal handler, `fprintf` is not ours
- * to call (the faulting thread may hold stdout's lock). Each piece is written
- * by `hero_stderr_put` (`parts/panic.c`), which waits for stderr's descriptor
- * only as long as it takes something, so a full pipe nobody reads never holds
- * this report back (defect 2606). */
-static void hero_stack_say(const char *s) { hero_stderr_put(s, strlen(s)); }
-
-static int hero_stack_is_heroes(const char *sym) {
-    if (sym == NULL) return 0;
-    if (sym[0] == '_') sym++; /* Mach-O's leading underscore */
-    return sym[0] == 'h' && sym[1] == '_';
-}
-
-/* `n` bytes of `s`, by `write(2)` alone, as `hero_stack_say` writes. */
-static void hero_stack_say_n(const char *s, size_t n) { hero_stderr_put(s, n); }
-
-/* THE PROGRAM'S OWN SPELLINGS (panel 230's R1, kind 3; the critic's finding 12).
- * The walk finds a C symbol, `h_<component>_<name>`, whose component is the
- * module's name made a C identifier, so a stack exhausted in `thread_deep` read
- * `threaddeep.down` beside an index abort that read `thread_deep.worker`. The
- * program's `main` hands this runtime the spellings that differ, rows of
- * `<key>\t<spelling>\n`, a symbol whole (a test's, `test "<title>"`) or a
- * module's component, before any thread can exist and before any fault can be
- * taken, and they are only read afterwards. Read in a handler, by bytes alone.
- * NULL, a program a compiler before this one wrote, spells as before. */
-static const char *hero_stack_spellings = NULL;
-
-void hero_stack_spell(const char *text) { hero_stack_spellings = text; }
-
-/* The spelling of the `n` bytes at `key`, its length in `*len`, or NULL. */
-static const char *hero_stack_spelled(const char *key, size_t n, size_t *len) {
-    const char *row = hero_stack_spellings;
-    if (row == NULL) return NULL;
-    while (*row != '\0') {
-        const char *tab = row;
-        while (*tab != '\0' && *tab != '\t' && *tab != '\n') tab++;
-        const char *end = tab;
-        while (*end != '\0' && *end != '\n') end++;
-        if (*tab == '\t' && (size_t)(tab - row) == n && memcmp(row, key, n) == 0) {
-            *len = (size_t)(end - tab - 1);
-            return tab + 1;
-        }
-        row = *end == '\n' ? end + 1 : end;
-    }
-    return NULL;
-}
-
-/* `h_<module>_<name>[_<hash>]` → `<module>.<name>[_<hash>]`. The mangler
- * sanitises the module to [A-Za-z0-9], so the first `_` after `h_` ends it
- * (CLAUDE.md §7), and the program's spelling of either half is asked first. A
- * symbol that is not a Heroes function is written as it is. */
-static void hero_stack_say_heroes_name(const char *sym) {
-    if (sym[0] == '_') sym++;
-    size_t whole = 0;
-    const char *spelled = hero_stack_spelled(sym, strlen(sym), &whole);
-    if (spelled != NULL) {
-        hero_stack_say_n(spelled, whole);
-        return;
-    }
-    if (sym[0] == 'h' && sym[1] == '_' && sym[2] != '\0') {
-        const char *rest = sym + 2;
-        /* A component that begins with a digit is the compiler's own marker,
-         * which no source file's component does (`emit/ctype.hero`'s
-         * `SYNTHETIC`): a callback's thunk is `h_0cb_<module>_<name>`
-         * (`emit/callback_thunk.hero`), and at `-O2` the function it calls is
-         * inlined into it, so the frame that runs out is the thunk's. The
-         * marker is told without, as `-O0` tells the function itself
-         * (defect 2277). */
-        if (rest[0] >= '0' && rest[0] <= '9') {
-            const char *marker = strchr(rest, '_');
-            if (marker != NULL && marker[1] != '\0') rest = marker + 1;
-        }
-        const char *us = strchr(rest, '_');
-        if (us != NULL && us[1] != '\0') {
-            size_t n = (size_t)(us - rest);
-            size_t len = 0;
-            const char *module = hero_stack_spelled(rest, n, &len);
-            if (module != NULL) {
-                hero_stack_say_n(module, len);
-            } else {
-                hero_stack_say_n(rest, n);
-            }
-            hero_stack_say(".");
-            /* A name the compiler invented beside a type, a test or an
-             * instance begins with a digit after the module (defect 2234),
-             * which no author's name does: told without it, as the source
-             * spells what it belongs to. */
-            const char *named = us + 1;
-            if (named[0] >= '0' && named[0] <= '9' && named[1] != '\0') named++;
-            hero_stack_say(named);
-            return;
-        }
-    }
-    hero_stack_say(sym);
-}
 
 /* The faulting pc, fp and sp from the interrupted context — with
  * `hero_stack_regfile` below them, the only lines in this file that know a
@@ -649,16 +664,6 @@ static const char *hero_stack_blame(uintptr_t pc, uintptr_t fp, uintptr_t lr) {
     return first;
 }
 
-#else
-
-/* WINDOWS WALKS NO FRAMES and names no function (panel 230's R1), so nothing
- * here reads the spellings a program's `main` hands the walk. The entry point
- * stands all the same, since every `main` whose spellings differ calls it, the
- * seed's and every test runner's among them: defined on POSIX alone, it left
- * the compiler unlinkable from its seed on the CI's Windows leg, `LNK2019:
- * unresolved external symbol hero_stack_spell` (defect 2239). */
-void hero_stack_spell(const char *text) { (void)text; }
-
 #endif
 
 #if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
@@ -704,17 +709,23 @@ void hero_stack_spell(const char *text) { (void)text; }
 #include <windows.h>
 #include <io.h>
 
+/* The end of every stop a vectored handler tells, past the flag above. */
+static _Noreturn void hero_stack_veh_abort(void) {
+    atomic_store(&hero_stack_handler_stop, 1);
+    hero_abort();
+}
+
 static LONG WINAPI hero_stack_asan_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
         hero_stack_tell_first();
         hero_stderr_put_here("panic: stack exhausted\n", 23);
-        hero_abort();
+        hero_stack_veh_abort();
     }
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
         hero_stack_tell_first();
         hero_stderr_put_here(HERO_NULL_CALL_SAID, strlen(HERO_NULL_CALL_SAID));
-        hero_abort();
+        hero_stack_veh_abort();
     }
     return EXCEPTION_CONTINUE_SEARCH;
 }
@@ -1282,11 +1293,17 @@ static void hero_stack_veh_say_hex(uintptr_t v) {
     hero_stack_veh_say(buf);
 }
 
+/* The end of every stop a vectored handler tells, past the flag above. */
+static _Noreturn void hero_stack_veh_abort(void) {
+    atomic_store(&hero_stack_handler_stop, 1);
+    hero_abort();
+}
+
 static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
         hero_stack_tell_first();
         hero_stack_veh_say("panic: stack exhausted\n");
-        hero_abort();
+        hero_stack_veh_abort();
     }
     /* THE POSIX HALF'S WITNESS, IN WINDOWS' OWN VOCABULARY (defect 013,
      * 2026-09-05). `ExceptionAddress` is where the program was EXECUTING,
@@ -1303,7 +1320,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
         && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
         hero_stack_tell_first();
         hero_stack_veh_say(HERO_NULL_CALL_SAID);
-        hero_abort();
+        hero_stack_veh_abort();
     }
 
     /* THE OTHER POSIX WITNESS, AND WINDOWS HAD NO ARM FOR IT UNTIL 2026-09-16
@@ -1346,7 +1363,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
         && hero_lend_fault_at((uintptr_t)ep->ExceptionRecord->ExceptionInformation[1], &lend)) {
         hero_stack_tell_first();
         hero_lend_tell(&lend, hero_stack_veh_say);
-        hero_abort();
+        hero_stack_veh_abort();
     }
     uintptr_t dead_offset = 0;
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
@@ -1356,7 +1373,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
         hero_stack_veh_say("panic: a dead C handle was used inside C, at offset ");
         hero_stack_veh_say_hex(dead_offset);
         hero_stack_veh_say("\n" HERO_DEAD_USE_TAIL);
-        hero_abort();
+        hero_stack_veh_abort();
     }
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && ep->ExceptionRecord->NumberParameters >= 2
@@ -1369,7 +1386,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
         hero_stack_veh_say("panic: a null pointer was read through, at offset ");
         hero_stack_veh_say_hex((uintptr_t)ep->ExceptionRecord->ExceptionInformation[1]);
         hero_stack_veh_say("\n" HERO_NULL_READ_TAIL);
-        hero_abort();
+        hero_stack_veh_abort();
     }
     return EXCEPTION_CONTINUE_SEARCH;
 }
