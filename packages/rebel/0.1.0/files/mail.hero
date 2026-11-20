@@ -10,8 +10,11 @@
 # (`fs` reads each file, `parse_message` each message), turn HTML into text
 # (`html`) or sign a message (DKIM is not written). Of the charsets an encoded
 # word, a parameter or a part may name it reads UTF-8, US-ASCII and
-# ISO-8859-1; another fails `unsupported`, its bytes kept where a function
-# answers them.
+# ISO-8859-1 itself, ISO-8859-1 as Latin-1, and every other encoding of the
+# WHATWG standard through `unicode/encodings` (Windows-1252, KOI8-R,
+# Shift_JIS, ISO-2022-JP and the rest); a charset no encoding names fails
+# `unsupported`, its bytes kept where a function answers them. Reading a
+# mailbox from a server (IMAP, POP3) is in no package of Rebel.
 #
 # A message is read without failing, as Python's `email` reads one: what was
 # wrong and repaired is told in its `defects`. It fails `invalid` where a text
@@ -205,7 +208,9 @@ function read_message(s: io.Stream) -> Message?
 #
 # - `m`: the message; a field's value is written as given, but where it holds
 #   text above ASCII and `options` asks no UTF-8, an address field is written
-#   with its names as encoded words and any other with its whole value so.
+#   with its names as encoded words and its domains as their A-labels
+#   (`url/idna.to_ascii`), and any other with its whole value as encoded
+#   words.
 # - `options`: the line ends, the fold and whether UTF-8 is written.
 #
 # A multipart keeps the boundary its `Content-Type` names where no part
@@ -215,8 +220,10 @@ function read_message(s: io.Stream) -> Message?
 #
 # Fails `invalid` where a field's name is empty or holds a byte other than
 # printable ASCII but `:`, or a value holds a line break, which would make a
-# field of its own; `unsupported` where an address's mailbox is above ASCII
-# and `options` asks no UTF-8. See also `parse_message`, `write_message`.
+# field of its own, or where an address's domain is no name IDNA writes;
+# `unsupported` where an address's local part is above ASCII and `options`
+# asks no UTF-8, since a local part has no ASCII form. See also
+# `parse_message`, `write_message`.
 function format_message(m: Message, options: WriteOptions) -> [u8]?
     nodes: [tree.Node] @= []
     pending: [Message] @= [m]
@@ -308,10 +315,12 @@ function format_header(fields: [Field], options: WriteOptions) -> [u8]?
 # - `options`: the line ends, the fold and whether UTF-8 is written.
 #
 # A fold goes before a space, so a line is broken only where it has one:
-# `Subject: a very long` and ` subject`. Fails `invalid` where the name is
-# empty or holds a byte other than printable ASCII but `:`, or the value
-# holds a line break; `unsupported` where an address field's mailbox is above
-# ASCII and `options` asks no UTF-8. See also `format_header`, `unfold`.
+# `Subject: a very long` and ` subject`. Where `options` asks no UTF-8, an
+# address's domain above ASCII is written as its A-labels. Fails `invalid`
+# where the name is empty or holds a byte other than printable ASCII but `:`,
+# the value holds a line break, or an address's domain is no name IDNA
+# writes; `unsupported` where an address's local part is above ASCII and
+# `options` asks no UTF-8. See also `format_header`, `unfold`.
 function format_field(field: Field, options: WriteOptions) -> str?
     value = write.prepared(name: field.name, value: field.value, utf8: options.utf8)?
     return field_lines.folded(name: field.name, value: value, limit: options.line_length, line_end: options.line_end)
@@ -446,7 +455,7 @@ record ContentType
     # The parameters by name, the names in lower case and in the order
     # written; a value joined from RFC 2231's continuations and decoded from
     # its charset. A value in a charset this package does not read stays as
-    # written under its name with `*`: `title*` holding `koi8-r''%F0%D2`.
+    # written under its name with `*`: `title*` holding `utf-7''+AKM-`.
     params: {str: str}
 
 # How a part is shown, as `Content-Disposition` writes it: `attachment;
@@ -563,10 +572,13 @@ function content_of(m: Message) -> [u8]?
 # - `m`: a part whose content is text.
 #
 # Its line breaks are the ones the content holds, `"\r\n"` in a message
-# read from the wire, as Python's `get_content` answers them. Fails as
-# `content_of` fails; `unsupported` for a charset other than UTF-8, US-ASCII
-# and ISO-8859-1; `not_text` where the bytes are not text in it. See also
-# `content_of`.
+# read from the wire, as Python's `get_content` answers them. ISO-8859-1 is
+# read as Latin-1, each byte the character of its number, and a charset
+# other than UTF-8, US-ASCII and ISO-8859-1 through `unicode/encodings`. Fails
+# as `content_of` fails; `unsupported` for a charset no encoding names, and
+# for one WHATWG reads as U+FFFD alone (ISO-2022-KR, ISO-2022-CN, HZ);
+# `not_text` where the bytes are not text in it. See also `content_of`,
+# `unicode/encodings.decode_strict`.
 function text_of(m: Message) -> str?
     data = content_of(m)?
 
@@ -1080,9 +1092,11 @@ variant WordEncoding
 # - `s`: a header's text, unfolded; space between two encoded words is
 #   dropped, and a word that is not well formed stays as written.
 #
-# Fails `unsupported` where a word names a charset other than UTF-8,
-# US-ASCII and ISO-8859-1, the message naming it; `not_text` where its bytes
-# are not text in it. See also `decode_words`, `encode_words`.
+# Fails `unsupported` where a word names a charset no encoding names, or one
+# WHATWG reads as U+FFFD alone, the message naming it; `not_text` where its
+# bytes are not text in it. A charset other than UTF-8, US-ASCII and
+# ISO-8859-1 is read through `unicode/encodings`. See also `decode_words`,
+# `encode_words`.
 function decode_header(s: str) -> str?
     return words.joined_text(words.decode(s))
 
@@ -1601,9 +1615,13 @@ test "decode_header: two words of Latin-1 and UTF-8"
     assert decode_header("=?iso-8859-1?q?caf=E9?= and =?utf-8?b?w6k=?=").must() == "café and é"
 
 # The pieces of a header, a charset not read kept as bytes.
-test "decode_words: a word in KOI8-R kept"
-    pieces = decode_words("x =?koi8-r?q?=F0?=")
-    assert pieces.len() == 2 && pieces[1].charset == "koi8-r" && pieces[1].data == [240] && !pieces[1].is_decoded
+test "decode_words: a word in UTF-7 kept, which no encoding names"
+    pieces = decode_words("x =?utf-7?q?+AKM-?=")
+    assert pieces.len() == 2 && pieces[1].charset == "utf-7" && pieces[1].data == bytes.from_text("+AKM-") && !pieces[1].is_decoded
+
+# A subject in a legacy charset, read through `unicode/encodings`.
+test "decode_header: a word in KOI8-R"
+    assert decode_header("=?koi8-r?q?=F0=D2=C9=D7=C5=D4?=").must() == "Привет"
 
 # Text written as encoded words.
 test "encode_words: Q and B"

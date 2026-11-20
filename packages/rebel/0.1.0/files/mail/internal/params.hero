@@ -444,8 +444,9 @@ test "parse: RFC 2231 extended values, continuations, a missing piece, a charset
     assert parse("attachment; filename*0*=UTF-8''na%C3%AF; filename*1*=ve.txt", typed: false).must().params["filename"].must() == "naïve.txt"
     assert parse("attachment; filename*=iso-8859-1'en'%A3%20rates", typed: false).must().params["filename"].must() == "£ rates"
     assert parse("attachment; filename*0=a; filename*2=c", typed: false).must().params["filename"].must() == "a"
-    kept = parse("attachment; filename*=koi8-r''%F0%D2", typed: false).must().params
-    assert kept["filename"].is_err() && kept["filename*"].must() == "koi8-r''%F0%D2"
+    kept = parse("attachment; filename*=utf-7''%F0%D2", typed: false).must().params
+    assert kept["filename"].is_err() && kept["filename*"].must() == "utf-7''%F0%D2"
+    assert parse("attachment; filename*=koi8-r''%F0%D2", typed: false).must().params["filename"].must() == "Пр"
     both = parse("attachment; filename=\"plain.txt\"; filename*=utf-8''%C3%A9.txt", typed: false).must().params
     assert both["filename"].must() == "é.txt" && both.len() == 1
     assert parse("text/plain; name=naïve.txt", typed: true).must().params["name"].must() == "naïve.txt"
