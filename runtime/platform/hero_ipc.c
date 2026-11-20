@@ -86,6 +86,13 @@
  * connect refused any of those ways asks the path (`hero_ipc_connect_failed`)
  * and the header's two kinds stay apart, as POSIX's `ENOENT` and `ENOTDIR`
  * keep them.
+ *
+ * A CONNECT THAT FAILED IS TOLD BY WHAT ITS PATH IS, on every platform: a
+ * regular file or a folder at the path is `ENOTSOCK` on Darwin,
+ * `ECONNREFUSED` on Linux (its number for a socket file nothing listens on)
+ * and 10061 or 10022 on Windows, so each arm's `hero_ipc_connect_failed`
+ * asks the disk once the connect has failed and names a folder and anything
+ * else that is no socket by kinds of their own (defect 2609, 2026-11-20).
  */
 
 #include "hero_ipc.h"
@@ -1197,27 +1204,21 @@ static bool hero_ipc_address(const char *name, SOCKADDR_UN *address) {
     return true;
 }
 
-/* Whether nothing stands at the path `name`, asked of the disk after Windows
- * refused a connect to it, the number of the answer that says so in `why`.
- * `ERROR_FILE_NOT_FOUND` or `ERROR_PATH_NOT_FOUND` say it at once. A socket
- * file standing where a folder of the path would be is a reparse point the
- * system cannot pass through, and its answer is `ERROR_CANT_ACCESS_FILE`
- * (1920), however far below it the path goes (measured on the box,
- * 2026-11-19): the nearest part of the path above that stands is asked, and
- * one that is no folder is what POSIX's `ENOTDIR` says. */
-static bool hero_ipc_nothing_at(const char *name, DWORD *why) {
-    wchar_t wide[HERO_IPC_NAME_ROOM];
-
-    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, wide, HERO_IPC_NAME_ROOM) == 0 ||
-        GetFileAttributesW(wide) != INVALID_FILE_ATTRIBUTES) {
-        return false;
-    }
+/* Where the path names no file: `HERO_IPC_NOT_FOUND`, the answer's number in
+ * `why`, or `HERO_IPC_OK` where it cannot be told. `ERROR_FILE_NOT_FOUND` or
+ * `ERROR_PATH_NOT_FOUND` say it at once. A socket file standing where a
+ * folder of the path would be is a reparse point the system cannot pass
+ * through, and its answer is `ERROR_CANT_ACCESS_FILE` (1920), however far
+ * below it the path goes (measured on the box, 2026-11-19): the nearest part
+ * of the path above that stands is asked, and one that is no folder is what
+ * POSIX's `ENOTDIR` says. */
+static int64_t hero_ipc_absent(wchar_t *wide, DWORD *why) {
     *why = GetLastError();
     if (*why == ERROR_FILE_NOT_FOUND || *why == ERROR_PATH_NOT_FOUND) {
-        return true;
+        return HERO_IPC_NOT_FOUND;
     }
     if (*why != ERROR_CANT_ACCESS_FILE) {
-        return false;
+        return HERO_IPC_OK;
     }
     for (size_t at = wcslen(wide); at > 0; at -= 1) {
         if (wide[at - 1] == L'/' || wide[at - 1] == L'\\') {
@@ -1225,17 +1226,89 @@ static bool hero_ipc_nothing_at(const char *name, DWORD *why) {
             DWORD attrs = GetFileAttributesW(wide);
 
             if (attrs != INVALID_FILE_ATTRIBUTES) {
-                return (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0;
+                return (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0 ? HERO_IPC_NOT_FOUND : HERO_IPC_OK;
             }
         }
     }
-    return false;
+    return HERO_IPC_OK;
 }
 
-/* A connect to the path `name` failed with `code`, Winsock's number, named
- * as the header promises. Windows' AF_UNIX answers a path nothing is at with
- * three numbers, none of them a kind of its own (measured on the box, Windows
- * Server 2025, 2026-11-18 and 2026-11-19, blocking and not alike):
+#if !defined(IO_REPARSE_TAG_AF_UNIX)
+/* The tag of a socket file's reparse point, `winnt.h`'s since the SDK of
+ * Windows 10 1803, named here for a C library that predates it. */
+#define HERO_IPC_TAG_AF_UNIX 0x80000023UL
+#else
+#define HERO_IPC_TAG_AF_UNIX ((DWORD)IO_REPARSE_TAG_AF_UNIX)
+#endif
+
+/* What `wide` names, opened to be asked about and never read: a folder too,
+ * and the reparse point itself, not what it names, unless `follow`. */
+static HANDLE hero_ipc_open_asked(const wchar_t *wide, bool follow) {
+    return CreateFileW(wide, FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                       OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | (follow ? 0 : FILE_FLAG_OPEN_REPARSE_POINT), NULL);
+}
+
+/* What the open handle `h` is, closed after it is asked: `HERO_IPC_OK` for a
+ * socket file or what cannot be asked, else a folder or no socket. */
+static int64_t hero_ipc_kind_of_handle(HANDLE h) {
+    FILE_ATTRIBUTE_TAG_INFO tag;
+    BOOL told = GetFileInformationByHandleEx(h, FileAttributeTagInfo, &tag, sizeof tag);
+
+    (void)CloseHandle(h);
+    if (!told || ((tag.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0 && tag.ReparseTag == HERO_IPC_TAG_AF_UNIX)) {
+        return HERO_IPC_OK;
+    }
+    return (tag.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 ? HERO_IPC_IS_A_DIRECTORY : HERO_IPC_NOT_A_SOCKET;
+}
+
+/* What stands at the path `name`, asked of the disk once a connect to it has
+ * failed: `HERO_IPC_NOT_FOUND` where nothing is, the disk's number in `why`;
+ * `HERO_IPC_IS_A_DIRECTORY` for a folder; `HERO_IPC_NOT_A_SOCKET` for anything
+ * else that is no socket file; and `HERO_IPC_OK` for a socket file, or where
+ * the disk cannot tell, so the connect's own kind stands. A socket file is a
+ * reparse point of its own tag. A symbolic link or a junction is asked for
+ * what it names, as POSIX's connect follows a link, and a link to nothing is
+ * nothing there; any other reparse point, a cloud file's placeholder among
+ * them, IS the file (`hero_disk.c`'s `hero_disk_link_tag`). */
+static int64_t hero_ipc_standing(const char *name, DWORD *why) {
+    wchar_t wide[HERO_IPC_NAME_ROOM];
+
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, wide, HERO_IPC_NAME_ROOM) == 0) {
+        return HERO_IPC_OK;
+    }
+    DWORD attrs = GetFileAttributesW(wide);
+
+    if (attrs == INVALID_FILE_ATTRIBUTES) {
+        return hero_ipc_absent(wide, why);
+    }
+    if ((attrs & FILE_ATTRIBUTE_REPARSE_POINT) == 0) {
+        return (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0 ? HERO_IPC_IS_A_DIRECTORY : HERO_IPC_NOT_A_SOCKET;
+    }
+    HANDLE h = hero_ipc_open_asked(wide, false);
+    FILE_ATTRIBUTE_TAG_INFO tag;
+
+    if (h == INVALID_HANDLE_VALUE) {
+        return HERO_IPC_OK;
+    }
+    if (!GetFileInformationByHandleEx(h, FileAttributeTagInfo, &tag, sizeof tag)) {
+        (void)CloseHandle(h);
+        return HERO_IPC_OK;
+    }
+    if (tag.ReparseTag != IO_REPARSE_TAG_SYMLINK && tag.ReparseTag != IO_REPARSE_TAG_MOUNT_POINT) {
+        return hero_ipc_kind_of_handle(h);
+    }
+    (void)CloseHandle(h);
+    h = hero_ipc_open_asked(wide, true);
+    if (h == INVALID_HANDLE_VALUE) {
+        *why = GetLastError();
+        return *why == ERROR_FILE_NOT_FOUND || *why == ERROR_PATH_NOT_FOUND ? HERO_IPC_NOT_FOUND : HERO_IPC_OK;
+    }
+    return hero_ipc_kind_of_handle(h);
+}
+
+/* A connect to the path `name` failed with `code`, Winsock's number, named by
+ * what the path IS, which the number does not say (measured on the box,
+ * Windows Server 2025, 2026-11-18 and 2026-11-19, blocking and not alike):
  * `WSAECONNREFUSED` (10061) for a name never made in a folder that stands, as
  * for a socket file nothing listens on and for a regular file; `WSAENETDOWN`
  * (10050) for a path whose folder is not there, one folder missing or two,
@@ -1243,17 +1316,24 @@ static bool hero_ipc_nothing_at(const char *name, DWORD *why) {
  * would and a drive that does not exist (defect 2602, which answered
  * `HERO_IPC_OTHER` there); and `WSAEINVAL` (10022) for a path below a socket
  * file, as for a folder (defect 2602's shape beside, which answered
- * `HERO_IPC_INVALID`). POSIX answers `ENOENT` or `ENOTDIR` for each path
- * nothing is at, and the header promises `HERO_IPC_NOT_FOUND`. So after any of
- * the three the path is asked (`hero_ipc_nothing_at`), and where nothing is
- * there the kind is `HERO_IPC_NOT_FOUND` with the disk's number; a path that
- * stands keeps the connect's own kind, `HERO_IPC_REFUSED` for a socket file
- * nothing listens on. */
+ * `HERO_IPC_INVALID`, and defect 2609). POSIX answers `ENOENT` or `ENOTDIR`
+ * for each path nothing is at, and `ENOTSOCK` on Darwin, `ECONNREFUSED` on
+ * Linux, for a file or a folder. So after any failure the path is asked
+ * (`hero_ipc_standing`): nothing there is `HERO_IPC_NOT_FOUND` with the disk's
+ * number, a folder `HERO_IPC_IS_A_DIRECTORY` and anything else that is no
+ * socket file `HERO_IPC_NOT_A_SOCKET`, each of those two with Winsock's; a
+ * socket file keeps the connect's own kind, `HERO_IPC_REFUSED` where nothing
+ * listens on it. */
 static void hero_ipc_connect_failed(const char *name, int64_t code) {
     DWORD why = 0;
+    int64_t stands = hero_ipc_standing(name, &why);
 
-    if ((code == WSAECONNREFUSED || code == WSAENETDOWN || code == WSAEINVAL) && hero_ipc_nothing_at(name, &why)) {
+    if (stands == HERO_IPC_NOT_FOUND) {
         hero_ipc_fail(HERO_IPC_NOT_FOUND, (int64_t)why);
+        return;
+    }
+    if (stands != HERO_IPC_OK) {
+        hero_ipc_fail(stands, code);
         return;
     }
     hero_ipc_failed_with(code);
@@ -1917,6 +1997,29 @@ hero_stream *hero_ipc_accept(hero_ipc_listener *l, int64_t within_ms) {
     }
 }
 
+/* A connect to `name` in `space` failed with `code`, the system's number,
+ * named by what the path IS, asked of the disk once the connect has failed:
+ * the number does not say it. Measured on 2026-11-20 by a C probe of each
+ * shape, blocking and not alike, Darwin answers `ENOTSOCK` for a regular
+ * file, an empty one, a folder, a FIFO, `/dev/null` and a link to each, and
+ * Linux `ECONNREFUSED` for every one of them, its number for a socket file
+ * nothing listens on (defect 2609, which told Darwin's `HERO_IPC_OTHER` and
+ * Linux's `HERO_IPC_REFUSED`, a server named as refusing where none could
+ * be). `stat`, since the connect follows a link as it does: a folder is
+ * `HERO_IPC_IS_A_DIRECTORY`, anything else that stands and is no socket
+ * `HERO_IPC_NOT_A_SOCKET`, each with the system's number; a socket file, and
+ * a path that cannot be asked, keep the connect's own kind. A name in
+ * Linux's abstract space has no file to ask. */
+static void hero_ipc_connect_failed(const char *name, int64_t space, int code) {
+    struct stat info;
+
+    if (space == HERO_IPC_SPACE_PATH && stat(name, &info) == 0 && !S_ISSOCK(info.st_mode)) {
+        hero_ipc_fail(S_ISDIR(info.st_mode) ? HERO_IPC_IS_A_DIRECTORY : HERO_IPC_NOT_A_SOCKET, (int64_t)code);
+        return;
+    }
+    hero_ipc_failed_with((int64_t)code);
+}
+
 hero_stream *hero_ipc_connect(const char *name, int64_t space, int64_t within_ms) {
     struct sockaddr_un address;
     socklen_t length = 0;
@@ -1955,14 +2058,14 @@ hero_stream *hero_ipc_connect(const char *name, int64_t space, int64_t within_ms
                 hero_ipc_failed_system();
                 kind = hero_ipc_kind;
             } else if (kind == HERO_IPC_OK && said != 0) {
-                hero_ipc_failed_with((int64_t)said);
+                hero_ipc_connect_failed(name, space, said);
                 kind = hero_ipc_kind;
             }
             if (kind == HERO_IPC_OK) {
                 return hero_ipc_stream_of_fd(fd);
             }
         } else {
-            hero_ipc_failed_with((int64_t)why);
+            hero_ipc_connect_failed(name, space, why);
             kind = hero_ipc_kind;
         }
         int64_t os = kind == hero_ipc_kind ? hero_ipc_os : 0;

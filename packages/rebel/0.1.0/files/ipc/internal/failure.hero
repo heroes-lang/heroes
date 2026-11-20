@@ -18,6 +18,9 @@ constant PERMISSION: str
 constant INVALID: str
     "invalid"
 
+constant IS_A_DIRECTORY: str
+    "is_a_directory"
+
 constant CLOSED: str
     "closed"
 
@@ -59,6 +62,15 @@ function told(kind: i64, os_error: i64) -> Told
         return Told(
             code: NOT_FOUND,
             why: "a socket file is there and nothing listens on it, one a process that died may have left"
+        )
+
+    if kind == hero_ipc.HERO_IPC_IS_A_DIRECTORY
+        return Told(code: IS_A_DIRECTORY, why: "a folder is there, where a listener's socket file would be")
+
+    if kind == hero_ipc.HERO_IPC_NOT_A_SOCKET
+        return Told(
+            code: INVALID,
+            why: "what is there is no socket, a file, a FIFO or a device, and nothing can listen on it"
         )
 
     if kind == hero_ipc.HERO_IPC_EXISTS
@@ -109,6 +121,10 @@ function done(answer: i64, asked: str) -> ()?
 
 test "told: every kind of the floor is a code of README § A4, a refused connection is not_found, and an unknown kind is failed with its number"
     assert told(kind: hero_ipc.HERO_IPC_INVALID, os_error: 0).code == INVALID
+    assert told(kind: hero_ipc.HERO_IPC_IS_A_DIRECTORY, os_error: 111).code == IS_A_DIRECTORY
+    assert told(kind: hero_ipc.HERO_IPC_NOT_A_SOCKET, os_error: 38).code == INVALID
+    assert told(kind: hero_ipc.HERO_IPC_IS_A_DIRECTORY, os_error: 111).why == "a folder is there, where a listener's socket file would be"
+    assert told(kind: hero_ipc.HERO_IPC_NOT_A_SOCKET, os_error: 38).why == "what is there is no socket, a file, a FIFO or a device, and nothing can listen on it"
     assert told(kind: hero_ipc.HERO_IPC_NOT_OPEN, os_error: 0).code == CLOSED
     assert told(kind: hero_ipc.HERO_IPC_NOT_FOUND, os_error: 2).code == NOT_FOUND
     assert told(kind: hero_ipc.HERO_IPC_REFUSED, os_error: 61).code == NOT_FOUND

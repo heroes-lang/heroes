@@ -100,6 +100,9 @@ typedef struct hero_ipc_lock hero_ipc_lock;
 #define HERO_IPC_EXISTS 4
 /* The system refuses the access: the name's permissions are another's. */
 #define HERO_IPC_DENIED 5
+/* A folder is at the path a connect was given, where a socket file would be
+ * (defect 2609). */
+#define HERO_IPC_IS_A_DIRECTORY 7
 /* The process or the machine has no descriptor, handle, memory or room left,
  * or the layer's table is full. */
 #define HERO_IPC_LIMIT 8
@@ -114,6 +117,10 @@ typedef struct hero_ipc_lock hero_ipc_lock;
 #define HERO_IPC_REFUSED 13
 /* The lock is not held by the calling thread, so it cannot release it. */
 #define HERO_IPC_NOT_HELD 14
+/* Something that is neither a socket file nor a folder is at the path a
+ * connect was given: a regular file, a FIFO or a device, which nothing can
+ * listen on (defect 2609). `hero_stream.h` leaves 15 unused. */
+#define HERO_IPC_NOT_A_SOCKET 15
 /* The bound a wait was given passed first. */
 #define HERO_IPC_TIMED_OUT 16
 /* The program asked to stop while the call waited (`hero_net.h`). */
@@ -164,7 +171,11 @@ hero_stream *hero_ipc_accept(hero_ipc_listener *l, int64_t within_ms);
 /* A connection to the listener on `name` in `space`, as `hero_ipc_accept`'s
  * stream; waiting at most `within_ms` while the listener has no room for
  * another. `HERO_IPC_NOT_FOUND` where nothing has the name,
- * `HERO_IPC_REFUSED` where a socket file has it and nothing listens. */
+ * `HERO_IPC_REFUSED` where a socket file has it and nothing listens,
+ * `HERO_IPC_IS_A_DIRECTORY` where a folder is at the path and
+ * `HERO_IPC_NOT_A_SOCKET` where anything else that is no socket is: told
+ * by what the path is, asked once the connect has failed, and never by the
+ * system's number, which for those two is another on each platform. */
 hero_stream *hero_ipc_connect(const char *name, int64_t space, int64_t within_ms);
 
 /* Closes the listener and gives its handle back, whatever is answered: 0,
