@@ -1,0 +1,4 @@
+before
+!called: abort-calls-on-a-thread.worker
+!at: abort-calls-on-a-thread.hero:12:12
+!panic: array index out of range

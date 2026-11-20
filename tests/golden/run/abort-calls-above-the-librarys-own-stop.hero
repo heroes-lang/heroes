@@ -1,0 +1,11 @@
+# Panel 253's R5: a stop the Heroes library makes names its caller's place
+# (panel 230's R1, `emit/stop_place.hero`), here `exit(code:)` handed 300 in
+# `leave`; the walk passes over the library's own frame and the place's
+# function, which the report already says, and tells the calls above them.
+
+function leave(n: i64)
+    exit(code: n * 100)
+
+function main()
+    print("before")
+    leave(3)
