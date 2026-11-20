@@ -345,7 +345,7 @@ test "request: the header written, the answer read whole across reads, a correla
     io.write(peer, data: [0, 0, 0, 7, 0, 0, 0, 1, 9, 8, 7]).must()
     r @= request(@c, key: 3, version: 8, body: [5], client_id: "id", wait_ms: 2000, most: 100, answered: true).must()
     assert wire.take_raw(@r, n: 3, what: "x").must() == [9, 8, 7]
-    assert io.read(peer, most: 100).must() == [0, 0, 0, 13, 0, 3, 0, 8, 0, 0, 0, 1, 0, 2, 'i', 'd', 5]
+    assert io.read(peer, n: 100).must() == [0, 0, 0, 13, 0, 3, 0, 8, 0, 0, 0, 1, 0, 2, 'i', 'd', 5]
     io.write(peer, data: [0, 0, 0, 4, 0, 0, 0, 9]).must()
     assert request(@c, key: 3, version: 8, body: [], client_id: "", wait_ms: 2000, most: 100, answered: true).is_err() && !c.open
     c.link @ .gone

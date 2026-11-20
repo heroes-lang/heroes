@@ -17,7 +17,7 @@ use websocket/internal/writing
 
 # The TCP port a server on a thread told on the datagram socket `u`.
 function port_told(u: net.UdpSocket) -> i64
-    net.set_udp_deadline(u, ms: 10_000).must()
+    net.set_udp_deadline(u, deadline_ms: 10_000).must()
     return net.parse_port(handmade.text_of(net.receive(u).must().data)).must()
 
 # What a test's compression asks: off, or on with the usual parameters.

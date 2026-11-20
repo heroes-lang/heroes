@@ -73,8 +73,8 @@ function scripted(out: io.Stream, input: io.Stream) -> Conn
 # fail.
 function set_deadline(c: Conn lent, ms: i64) -> ()?
     return match c.link
-        .plain p  => net.set_deadline(p.conn, ms: ms)
-        .secured  => tls.set_deadline(c.out, ms: ms)
+        .plain p  => net.set_deadline(p.conn.stream, deadline_ms: ms)
+        .secured  => tls.set_deadline(c.out, deadline_ms: ms)
         .scripted => ok()
 
 # A failure of `c` with `code`, after which `c` has ended.
@@ -94,7 +94,7 @@ function exchange(@c: Conn, message: [u8], request_id: i64) -> bson.Document?
         .ok _  => _ = 0
         .err e => return broken(c: @c, code: e.code, what: f"writing a request: {e.msg}")
 
-    head = match io.read_exact(c.input, count: 4)
+    head = match io.read_exact(c.input, n: 4)
         .ok got => got
         .err e  => return broken(c: @c, code: e.code, what: f"reading a reply: {e.msg}")
 
@@ -102,7 +102,7 @@ function exchange(@c: Conn, message: [u8], request_id: i64) -> bson.Document?
         .ok got => got
         .err e  => return broken(c: @c, code: e.code, what: e.msg)
 
-    rest = match io.read_exact(c.input, count: n - 4)
+    rest = match io.read_exact(c.input, n: n - 4)
         .ok got => got
         .err e  => return broken(c: @c, code: e.code, what: f"reading a reply: {e.msg}")
 

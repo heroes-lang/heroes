@@ -1,7 +1,8 @@
 # A lock on a whole file held through an open stream, what `fs.lock`,
 # `fs.try_lock` and `fs.unlock` do (round 3, 2026-11-16): one door of
-# `hero_disk` each, the stream's floor handle handed to it.
+# `fs/hero_disk` each, the stream's floor handle handed to it.
 
+use fs/hero_disk as locks_floor
 use fs/internal/codes
 use fs/internal/fixture
 use fs/internal/whole
@@ -24,16 +25,16 @@ function locked(s: io.Stream, exclusive: bool, wait: bool) -> bool?
 
     if s.handle == nullptr
         return fail(code: codes.CLOSED, msg: f"{asked}: the stream is closed")
-    how: i64 @= hero_disk.HERO_DISK_LOCK_SHARED
+    how: i64 @= locks_floor.HERO_DISK_LOCK_SHARED
 
     if exclusive
-        how @ hero_disk.HERO_DISK_LOCK_EXCLUSIVE
+        how @ locks_floor.HERO_DISK_LOCK_EXCLUSIVE
     waits: i64 @= 0
 
     if wait
         waits @ 1
 
-    if hero_disk.lock(s.handle, how: how, wait: waits) == 0
+    if locks_floor.lock(s.handle, how: how, wait: waits) == 0
         return ok(true)
 
     if !wait && codes.last_was(hero_disk.HERO_DISK_BUSY)
@@ -51,7 +52,7 @@ function unlocked(s: io.Stream) -> ()?
     if s.handle == nullptr
         return fail(code: codes.CLOSED, msg: f"{asked}: the stream is closed")
 
-    if hero_disk.unlock(s.handle) != 0
+    if locks_floor.unlock(s.handle) != 0
         return codes.disk_failed(asked: asked)
     return ok()
 

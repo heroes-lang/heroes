@@ -186,35 +186,35 @@ function is_closed(s: Stream) -> bool
 
 ## Reading a stream
 
-# Up to `most` bytes of `s`, waiting for one: at most 65,536 at once, and
+# Up to `n` bytes of `s`, waiting for one: at most 65,536 at once, and
 # fewer where fewer are there.
 #
 # - `s`: the stream read.
-# - `most`: the most bytes answered; 0 answers an empty list at once.
+# - `n`: the most bytes answered; 0 answers an empty list at once.
 #
-# At the end it answers an empty list. Fails `invalid` where `most` is below
+# At the end it answers an empty list. Fails `invalid` where `n` is below
 # 0, `closed` where `s` is closed, `permission` where it was not opened to
 # read. See also `read_exact`, `reader`.
-function read(s: Stream, most: i64) -> [u8]?
-    if most < 0
-        return failure.of(code: INVALID, asked: f"reading {most} bytes of {s.name}", why: "a count is 0 or more")
+function read(s: Stream, n: i64) -> [u8]?
+    if n < 0
+        return failure.of(code: INVALID, asked: f"reading {n} bytes of {s.name}", why: "a count is 0 or more")
 
-    if most == 0
+    if n == 0
         return ok([])
-    return move.some(s.handle, name: s.name, most: most)
+    return move.some(s.handle, name: s.name, most: n)
 
-# Exactly `count` bytes of `s`, waiting for each.
+# Exactly `n` bytes of `s`, waiting for each.
 #
 # - `s`: the stream read.
-# - `count`: the bytes answered, no fewer; 0 answers an empty list.
+# - `n`: the bytes answered, no fewer; 0 answers an empty list.
 #
 # Fails `closed` where the stream ends first, the message saying how many
-# came, and `invalid` where `count` is below 0. The bytes read before a
+# came, and `invalid` where `n` is below 0. The bytes read before a
 # failure are lost.
-function read_exact(s: Stream, count: i64) -> [u8]?
-    if count < 0
-        return failure.of(code: INVALID, asked: f"reading {count} bytes of {s.name}", why: "a count is 0 or more")
-    return move.exactly(s.handle, name: s.name, count: count)
+function read_exact(s: Stream, n: i64) -> [u8]?
+    if n < 0
+        return failure.of(code: INVALID, asked: f"reading {n} bytes of {s.name}", why: "a count is 0 or more")
+    return move.exactly(s.handle, name: s.name, count: n)
 
 # Every byte of `s` from where it stands to its end, waiting for the end: an
 # empty list where it is at its end already.
@@ -631,13 +631,13 @@ function last_failure<T>(asked: str) -> T?
 
 test "read through a pipe: up to a count, a count of 0, a negative count, and the end as an empty list"
     s @= of_handle(fixture.fed([104, 101, 108, 108, 111]), name: "a fed pipe")
-    assert read(s, most: 2).must() == [104, 101]
-    assert read(s, most: 0).must().len() == 0
-    assert read(s, most: 100).must() == [108, 108, 111]
-    assert read(s, most: 100).must().len() == 0
-    assert read(s, most: 1).must().len() == 0
+    assert read(s, n: 2).must() == [104, 101]
+    assert read(s, n: 0).must().len() == 0
+    assert read(s, n: 100).must() == [108, 108, 111]
+    assert read(s, n: 100).must().len() == 0
+    assert read(s, n: 1).must().len() == 0
 
-    match read(s, most: -1)
+    match read(s, n: -1)
         .ok _  => assert false
         .err e => assert e.code == INVALID && e.msg == "reading -1 bytes of a fed pipe: a count is 0 or more"
 
@@ -645,14 +645,14 @@ test "read through a pipe: up to a count, a count of 0, a negative count, and th
 
 test "read_exact: exactly, none, a negative count, and an end that comes first"
     s @= of_handle(fixture.fed([1, 2, 3, 4, 5]), name: "five bytes")
-    assert read_exact(s, count: 0).must().len() == 0
-    assert read_exact(s, count: 2).must() == [1, 2]
+    assert read_exact(s, n: 0).must().len() == 0
+    assert read_exact(s, n: 2).must() == [1, 2]
 
-    match read_exact(s, count: 4)
+    match read_exact(s, n: 4)
         .ok _  => assert false
         .err e => assert e.code == CLOSED && e.msg == "reading 4 bytes of five bytes: the stream ended after 3"
 
-    match read_exact(s, count: -2)
+    match read_exact(s, n: -2)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -711,7 +711,7 @@ test "a stream closed: every later call through the place fails closed, a second
     close(@s).must()
     assert is_closed(s)
 
-    match read(s, most: 1)
+    match read(s, n: 1)
         .ok _  => assert false
         .err e => assert e.code == CLOSED && e.msg == "reading a short pipe: the stream is closed"
 
@@ -752,13 +752,13 @@ test "a file: seek from each origin, position, size, truncate and sync, and a pi
     assert size(f).must() == 10
     assert position(f).must() == 0
     assert seek(f, offset: 4, from: .start).must() == 4
-    assert read(f, most: 2).must() == [4, 5]
+    assert read(f, n: 2).must() == [4, 5]
     assert position(f).must() == 6
     assert seek(f, offset: -1, from: .current).must() == 5
     assert seek(f, offset: -2, from: .end).must() == 8
-    assert read(f, most: 10).must() == [8, 9]
+    assert read(f, n: 10).must() == [8, 9]
     assert seek(f, offset: 20, from: .start).must() == 20
-    assert read(f, most: 4).must().len() == 0
+    assert read(f, n: 4).must().len() == 0
 
     match seek(f, offset: -1, from: .start)
         .ok _  => assert false
@@ -1095,9 +1095,9 @@ test "read: three bytes, then the rest, then the end"
     p @= pipe().must()
     write_text(p.writer, text: "hello").must()
     close(@p.writer).must()
-    assert read(p.reader, most: 3).must() == [104, 101, 108]
-    assert read(p.reader, most: 100).must() == [108, 111]
-    assert read(p.reader, most: 100).must().len() == 0
+    assert read(p.reader, n: 3).must() == [104, 101, 108]
+    assert read(p.reader, n: 100).must() == [108, 111]
+    assert read(p.reader, n: 100).must().len() == 0
     close(@p.reader).must()
 
 # A header of a fixed size read whole, and a stream that ends too soon.
@@ -1105,8 +1105,8 @@ test "read_exact: a header of four bytes"
     p @= pipe().must()
     write(p.writer, data: [0xca, 0xfe, 0xba, 0xbe, 0x01]).must()
     close(@p.writer).must()
-    assert read_exact(p.reader, count: 4).must() == [0xca, 0xfe, 0xba, 0xbe]
-    assert read_exact(p.reader, count: 4).is_err()
+    assert read_exact(p.reader, n: 4).must() == [0xca, 0xfe, 0xba, 0xbe]
+    assert read_exact(p.reader, n: 4).is_err()
     close(@p.reader).must()
 
 # Everything a stream holds, read to its end.

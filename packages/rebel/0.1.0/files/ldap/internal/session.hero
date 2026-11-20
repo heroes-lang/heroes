@@ -221,8 +221,8 @@ function start_tls(@s: Session, roots: str) -> ()?
 # Sets the deadline of `s`'s next operation, `s.deadline_ms` from now.
 function set_deadline(s: Session) -> ()?
     match s.link
-        .plain p => return net.set_deadline(p.conn, ms: s.deadline_ms)
-        .secured => return tls.set_deadline(s.stream, ms: s.deadline_ms)
+        .plain p => return net.set_deadline(p.conn.stream, deadline_ms: s.deadline_ms)
+        .secured => return tls.set_deadline(s.stream, deadline_ms: s.deadline_ms)
 
 # Fails `closed` with the reason `s` ended.
 function ended_failure<T>(s: Session) -> T?

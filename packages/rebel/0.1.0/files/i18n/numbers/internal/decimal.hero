@@ -2,6 +2,7 @@
 # read from decimal text, scaled by a power of ten, and rounded to a count of
 # fraction or significant digits by each rounding mode.
 
+use bytes
 use strings
 
 # The code a text that is no number fails with.
@@ -232,7 +233,7 @@ function rounds_up(dropped: str, last: u8, mode: i64, negative: bool) -> bool
 function increment(digits: str) -> str
     out: [u8] @= []
 
-    for b in strings.to_bytes(digits)
+    for b in bytes.from_text(digits)
         out @ out.push(b)
 
     at @= out.len() - 1

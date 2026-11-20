@@ -793,7 +793,7 @@ function children_in(e: Element, space: str, local: str) -> [Element]
 # left out.
 #
 # - `e`: the element.
-function elements_of(e: Element) -> [Element]
+function child_elements(e: Element) -> [Element]
     found: [Element] @= []
 
     for c in e.children
@@ -810,10 +810,10 @@ function elements_of(e: Element) -> [Element]
 # - `name`: the name as written, `p:local` or `local`.
 #
 # Empty where there is none. It holds its own stack.
-function descendants(e: Element, name: str) -> [Element]
+function elements_named(e: Element, name: str) -> [Element]
     found: [Element] @= []
 
-    for d in descendants_of(e)
+    for d in descendants(e)
         if format_name(d.name) == name
             found @ found.push(d)
 
@@ -830,7 +830,7 @@ function descendants(e: Element, name: str) -> [Element]
 function descendants_in(e: Element, space: str, local: str) -> [Element]
     found: [Element] @= []
 
-    for d in descendants_of(e)
+    for d in descendants(e)
         if d.name.space == space && d.name.local == local
             found @ found.push(d)
 
@@ -841,13 +841,13 @@ function descendants_in(e: Element, space: str, local: str) -> [Element]
 # - `e`: the element looked inside; it is not among the answers.
 #
 # Empty where `e` has no child element.
-function descendants_of(e: Element) -> [Element]
+function descendants(e: Element) -> [Element]
     found: [Element] @= []
 
     # The elements left to visit, the next on top.
     left: [Element] @= []
     top: i64 @= 0
-    kids = elements_of(e)
+    kids = child_elements(e)
     at: i64 @= kids.len()
 
     while at > 0
@@ -860,7 +860,7 @@ function descendants_of(e: Element) -> [Element]
         here = left[top]
         left[top] @ e
         found @ found.push(here)
-        inner = elements_of(here)
+        inner = child_elements(here)
         k: i64 @= inner.len()
 
         while k > 0
@@ -1056,7 +1056,7 @@ test "parse: names resolved to their namespaces, a declaration's own name includ
         Attribute(name: Name(prefix: "xml", local: "lang", space: XML_SPACE), value: "it")
     ]
     assert doc.root.attributes == want
-    kids = elements_of(doc.root)
+    kids = child_elements(doc.root)
     assert kids[0].name == Name(prefix: "p", local: "b", space: "u") && kids[1].name == Name(prefix: "", local: "c", space: "d")
 
 test "parse: the texts ElementTree refuses, each with its line and column"
@@ -1145,7 +1145,7 @@ test "parse_with: a hundred thousand deep when asked, read and written on the pa
     wide.max_depth @ 100000
     doc = parse_with(deep, wide).must()
     assert format_element(doc.root, compact()).must() == repeat("<a>", 99999) + "<a/>" + repeat("</a>", 99999)
-    assert descendants_of(doc.root).len() == 99999
+    assert descendants(doc.root).len() == 99999
     assert text_of(doc.root) == ""
 
 test "parse_bytes: UTF-8 with a byte order mark, and a byte that is not UTF-8 with its line and column"
@@ -1253,7 +1253,7 @@ test "format_with: an empty element opened and closed as Go writes it, a tab, an
 
 test "format_element: an element alone, and one whose namespace is declared only above it"
     doc = parse("<r xmlns=\"d\"><a x=\"1\"/></r>").must()
-    inner = elements_of(doc.root)[0]
+    inner = child_elements(doc.root)[0]
     assert format_element(doc.root, compact()).must() == "<r xmlns=\"d\"><a x=\"1\"/></r>"
     assert format_element(inner, compact()).is_err()
     assert format_element(inner.with_namespace(prefix: "", space: "d"), compact()).must() == "<a x=\"1\" xmlns=\"d\"/>"
@@ -1320,7 +1320,7 @@ test "with_child: a tree a hundred thousand deep, written and walked on the pack
         deep @ element("a").with_child(inner: deep)
 
     assert format_element(deep, compact()).must() == repeat("<a>", 100000) + "<a/>" + repeat("</a>", 100000)
-    assert descendants_of(deep).len() == 100000
+    assert descendants(deep).len() == 100000
     assert text_of(deep.with_text("t")) == "t"
 
 test "child and child_in: the first of a name, and none, with the names there are"
@@ -1335,25 +1335,25 @@ test "child and child_in: the first of a name, and none, with the names there ar
     assert child_in(root, space: "", local: "c").is_err()
     assert child(element("a"), "b").is_err()
 
-test "children_named, children_in and elements_of: in order, text left out, and none"
+test "children_named, children_in and child_elements: in order, text left out, and none"
     root = parse("<r xmlns:p=\"u\">t<a/><b/><a/><p:a/><!--c--></r>").must().root
     assert children_named(root, "a").len() == 2
     assert children_in(root, space: "u", local: "a").len() == 1
     assert children_in(root, space: "", local: "a").len() == 2
-    assert elements_of(root).len() == 4
-    assert children_named(root, "z").len() == 0 && elements_of(element("a")).len() == 0
+    assert child_elements(root).len() == 4
+    assert children_named(root, "z").len() == 0 && child_elements(element("a")).len() == 0
 
-test "descendants, descendants_in and descendants_of: document order as ElementTree's iter, the element itself left out as minidom leaves it"
+test "elements_named, descendants_in and descendants: document order as ElementTree's iter, the element itself left out as minidom leaves it"
     root = parse("<r><a><b/><c/></a><d xmlns=\"u\"><b/></d></r>").must().root
     names: [str] @= []
 
-    for d in descendants_of(root)
+    for d in descendants(root)
         names @ names.push(format_name(d.name))
 
     assert names == ["a", "b", "c", "d", "b"]
-    assert descendants(root, "b").len() == 2
+    assert elements_named(root, "b").len() == 2
     assert descendants_in(root, space: "u", local: "b").len() == 1
-    assert descendants(root, "r").len() == 0
+    assert elements_named(root, "r").len() == 0
 
 test "element_at and elements_at: as ElementTree's find and findall, the empty path, and XPath refused"
     root = parse("<r><a/><a><b>1</b><b>2</b></a><a><b>3</b></a></r>").must().root
@@ -1540,13 +1540,13 @@ test "children_in: every child of a namespace"
     assert children_in(root, space: "urn:a", local: "x").len() == 2
 
 # Every child element, text left out.
-test "elements_of: the child elements"
-    assert elements_of(parse("<a>t<b/>u<c/></a>").must().root).len() == 2
+test "child_elements: the child elements"
+    assert child_elements(parse("<a>t<b/>u<c/></a>").must().root).len() == 2
 
 # Every element of a name, at any depth.
-test "descendants: every title"
+test "elements_named: every title"
     root = parse("<lib><book><title>A</title></book><book><title>B</title></book></lib>").must().root
-    assert descendants(root, "title").len() == 2
+    assert elements_named(root, "title").len() == 2
 
 # Every element of a namespace, at any depth.
 test "descendants_in: every element of a namespace"
@@ -1554,8 +1554,8 @@ test "descendants_in: every element of a namespace"
     assert descendants_in(root, space: "urn:a", local: "y").len() == 2
 
 # Every element inside another.
-test "descendants_of: every element inside"
-    assert descendants_of(parse("<a><b><c/></b></a>").must().root).len() == 2
+test "descendants: every element inside"
+    assert descendants(parse("<a><b><c/></b></a>").must().root).len() == 2
 
 # The first element a path of names reaches.
 test "element_at: a path of names"

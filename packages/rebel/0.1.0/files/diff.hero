@@ -100,7 +100,7 @@ function lines_of(text: str) -> [str]
 # - `text`: any text; white space is Unicode's.
 #
 # Empty for the empty text. Joined with `join(words, "")` they give `text`
-# back. Characters are `text.chars()`, bytes `strings.to_bytes(text)`.
+# back. Characters are `text.chars()`, bytes `bytes.from_text(text)`.
 function words_of(text: str) -> [str]
     return split.words_of(text)
 

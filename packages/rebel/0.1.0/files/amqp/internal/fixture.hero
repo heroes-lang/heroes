@@ -95,7 +95,7 @@ function delivery(channel: i64, tag: i64, body: [u8]) -> [u8]
 #
 # - `peer`: the server's end.
 function written(peer: io.Stream) -> [u8]
-    return io.read(peer, most: 65536).must()
+    return io.read(peer, n: 65536).must()
 
 # Closes both ends of a test's connection.
 #

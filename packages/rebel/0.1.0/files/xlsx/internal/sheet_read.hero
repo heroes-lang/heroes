@@ -129,7 +129,7 @@ function iso_date(s: str) -> time.DateTime?
 
 # The first child of `e` named `local`.
 function child_of(e: xml.Element, local: str) -> xml.Element?
-    for c in xml.elements_of(e)
+    for c in xml.child_elements(e)
         if c.name.local == local
             return ok(c)
 
@@ -179,7 +179,7 @@ function read_sheet(part_text: str, name: str, state: str, given: Given, rels: [
     for span in layout.rows
         piece = parse_piece(s: layout.root_open + part_text.slice(from: span.start, to: span.end) + close, sheet: name)?
 
-        for r in xml.elements_of(piece)
+        for r in xml.child_elements(piece)
             if r.name.local == "row"
                 row_at @ int_attribute(r, name: "r", fallback: row_at + 2) - 1
 
@@ -199,7 +199,7 @@ function read_sheet(part_text: str, name: str, state: str, given: Given, rels: [
                     rows @ rows.push(model.Row(row: row_at, height: height, hidden: hidden))
                 column_at: i64 @= -1
 
-                for c in xml.elements_of(r)
+                for c in xml.child_elements(r)
                     if c.name.local == "c"
                         row: i64 @= row_at
 
@@ -224,17 +224,17 @@ function read_sheet(part_text: str, name: str, state: str, given: Given, rels: [
                                 in_order @ false
                             cells @ cells.push(got)
 
-    for part in xml.elements_of(root)
+    for part in xml.child_elements(root)
         local = part.name.local
 
         if local == "mergeCells"
-            for m in xml.elements_of(part)
+            for m in xml.child_elements(part)
                 if m.name.local == "mergeCell"
                     match names.box_of(xml.attribute(m, name: "ref").default(""))
                         .ok box => merged @ merged.push(box)
                         .err e  => return fail(code: INVALID, msg: f"the sheet \"{name}\" merges {e.msg}")
         else if local == "hyperlinks"
-            for h in xml.elements_of(part)
+            for h in xml.child_elements(part)
                 if h.name.local == "hyperlink"
                     match names.box_of(xml.attribute(h, name: "ref").default(""))
                         .ok box =>
@@ -250,7 +250,7 @@ function read_sheet(part_text: str, name: str, state: str, given: Given, rels: [
                             )
                         .err e => return fail(code: INVALID, msg: f"the sheet \"{name}\" links {e.msg}")
         else if local == "cols"
-            for col in xml.elements_of(part)
+            for col in xml.child_elements(part)
                 if col.name.local == "col"
                     first = int_attribute(col, name: "min", fallback: 0) - 1
                     last: i64 @= int_attribute(col, name: "max", fallback: first + 1) - 1
@@ -263,7 +263,7 @@ function read_sheet(part_text: str, name: str, state: str, given: Given, rels: [
                             model.Column(first: first, last: last, width: float_attribute(col, name: "width", fallback: 0.0), hidden: flag(col, name: "hidden"))
                         )
         else if local == "sheetViews"
-            for view in xml.elements_of(part)
+            for view in xml.child_elements(part)
                 match child_of(view, local: "pane")
                     .ok pane =>
                         pane_state = xml.attribute(pane, name: "state").default("split")
@@ -306,7 +306,7 @@ function read_cell(c: xml.Element, row: i64, column: i64, given: Given, @masters
     inline: str @= ""
     has_inline: bool @= false
 
-    for e in xml.elements_of(c)
+    for e in xml.child_elements(c)
         local = e.name.local
 
         if local == "v"

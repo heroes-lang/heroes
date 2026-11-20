@@ -39,7 +39,7 @@ function health_response(status: grpc.Health) -> [u8]
 
     if number != 0
         protobuf.push_tag(@out, number: 1, wire: .varint)
-        protobuf.push_varint(@out, v: number)
+        protobuf.push_uvarint(@out, v: number)
     return out
 
 # A reflection's answer to `request`, for a server whose services are
@@ -83,7 +83,7 @@ function reflection_answer(request: [u8], services: [str]) -> [u8]?
     else
         error: [u8] @= []
         protobuf.push_tag(@error, number: 1, wire: .varint)
-        protobuf.push_varint(@error, v: 5)
+        protobuf.push_uvarint(@error, v: 5)
         protobuf.push_tag(@error, number: 2, wire: .length_delimited)
         protobuf.push_length_delimited(
             to: @error,

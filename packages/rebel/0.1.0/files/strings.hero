@@ -1000,14 +1000,6 @@ function quote_windows_args(arguments: [str]) -> str?
 function is_ascii(s: str) -> bool
     return bounds.is_ascii(s)
 
-# The bytes of `s`, which are its UTF-8.
-#
-# - `s`: the text.
-#
-# `validated_bytes` reads them back as the same text.
-function to_bytes(s: str) -> [u8]
-    return bounds.to_bytes(s)
-
 # Whether byte index `at` of `s` stands between two characters: at 0, at
 # `s.len()`, or where a character begins.
 #
@@ -1776,10 +1768,6 @@ test "is_title: a heading"
 # A text asked whether it is ASCII.
 test "is_ascii: plain and accented"
     assert is_ascii("hello") && !is_ascii("héllo")
-
-# The bytes of a text, its UTF-8.
-test "to_bytes: a letter of two bytes"
-    assert to_bytes("é") == [0xc3, 0xa9]
 
 # A byte index asked whether a slice may cut there.
 test "is_boundary: inside a letter of two bytes"

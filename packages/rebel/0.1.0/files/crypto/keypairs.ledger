@@ -82,7 +82,7 @@ capability keypairs/public-half  a private key's public half
   python  Ed25519PrivateKey.public_key, X25519PrivateKey.public_key, EllipticCurvePrivateKey.public_key, RSAPrivateKey.public_key
   note    a private key and a public key are two types, so a public key never signs, decrypts or agrees by mistake: a compile error
 capability keypairs/close  a key's end, its secret overwritten
-  heroes  keypairs.close, keypairs.close_public
+  heroes  keypairs.close_private, keypairs.close_public
   go      -
   rust    -
   python  -

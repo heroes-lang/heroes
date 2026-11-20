@@ -521,10 +521,11 @@ function send(@channel: Channel, @c: Call, message: [u8]) -> ()?
             details: []
         )
         return fail(code: "timeout", msg: f"sending on the call {c.path}: its deadline passed")
-    clock.wait_until(channel.conn.stream, deadline_at: c.deadline_at)
+    clock.wait_until(channel.conn.stream, deadline_at: c.deadline_at)?
     sent = http2.write_data(@channel.conn, stream: c.stream, data: data, end_stream: false)
-    clock.set_wait(channel.conn.stream, ms: 0)
-    return sent
+    cleared = clock.set_wait(channel.conn.stream, ms: 0)
+    sent?
+    return cleared
 
 # Tells the server this end sends no more messages on the call.
 #
@@ -558,9 +559,9 @@ function receive(@channel: Channel, @c: Call) -> Incoming?
             cancel(@channel, @c)?
             c.status @ Status(code: STATUS_DEADLINE_EXCEEDED, message: "the deadline passed", details: [])
         else
-            clock.wait_until(channel.conn.stream, deadline_at: c.deadline_at)
+            clock.wait_until(channel.conn.stream, deadline_at: c.deadline_at)?
             got = http2.read_event_of(@channel.conn, stream: c.stream)
-            clock.set_wait(channel.conn.stream, ms: 0)
+            clock.set_wait(channel.conn.stream, ms: 0)?
 
             match got
                 .err e =>

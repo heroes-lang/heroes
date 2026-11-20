@@ -244,7 +244,7 @@ function add_streamed(@sink: Sink, name: str, comment: str, method: i64, level: 
     check @= hash.start32(.crc32)
 
     while true
-        got = io.read(from, most: 65536)?
+        got = io.read(from, n: 65536)?
 
         if got.len() == 0
             break

@@ -62,7 +62,7 @@ function answer_one(stream: io.Stream) -> str
 function serve_plain(arg: str) -> str
     port = numbers.parse_int(arg).must()
     l @= net.listen(host: "127.0.0.1", port: port).must()
-    net.set_accept_deadline(l, ms: 10000).must()
+    net.set_accept_deadline(l, deadline_ms: 10000).must()
 
     for _ in range(from: 0, to: 20)
         match net.accept(l, deadline_ms: 10000)
@@ -93,13 +93,13 @@ function serve_tls(arg: str) -> str
         port: port,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2"])
     ).must()
-    tls.set_accept_deadline(l, ms: 10000).must()
+    tls.set_accept_deadline(l, deadline_ms: 10000).must()
 
     for _ in range(from: 0, to: 20)
         match tls.accept(l, deadline_ms: 10000)
             .ok accepted =>
                 stream @= accepted
-                tls.set_deadline(stream, ms: 10000).must()
+                tls.set_deadline(stream, deadline_ms: 10000).must()
                 got = answer_one(stream)
 
                 match io.close(@stream)
@@ -160,7 +160,7 @@ function get_tls(arg: str) -> str
         deadline_ms: 10000,
         client: tls.Client(roots: tls.TEST_ROOT, protocols: ["h2"])
     ).must()
-    tls.set_deadline(stream, ms: 10000).must()
+    tls.set_deadline(stream, deadline_ms: 10000).must()
     got = get_on(stream, path: arg.slice(from: cut + 1, to: arg.len()))
     io.close(@stream).must()
     return got
@@ -182,7 +182,7 @@ function serve_many(arg: str) -> str
     port = numbers.parse_int(arg.slice(from: 0, to: cut)).must()
     count = numbers.parse_int(arg.slice(from: cut + 1, to: arg.len())).must()
     l @= net.listen(host: "127.0.0.1", port: port).must()
-    net.set_accept_deadline(l, ms: 10000).must()
+    net.set_accept_deadline(l, deadline_ms: 10000).must()
     answered: i64 @= 0
 
     for _ in range(from: 0, to: 20)

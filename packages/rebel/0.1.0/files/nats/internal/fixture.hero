@@ -41,7 +41,7 @@ function rig(script: str) -> Rig
 # - `s`: the stream.
 # - `n`: how many.
 function read_n(s: io.Stream, n: i64) -> [u8]
-    return io.read_exact(s, count: n).must()
+    return io.read_exact(s, n: n).must()
 
 # What the server's end has received within a tenth of a second, as text,
 # bytes that are no UTF-8 replaced.
@@ -49,10 +49,10 @@ function read_n(s: io.Stream, n: i64) -> [u8]
 # - `c`: the server's end.
 function heard(c: net.Conn) -> str
     out: [u8] @= []
-    net.set_deadline(c, ms: 100).must()
+    net.set_deadline(c.stream, deadline_ms: 100).must()
 
     while true
-        match io.read(c.stream, most: 65536)
+        match io.read(c.stream, n: 65536)
             .ok got =>
                 if got.len() == 0
                     return bytes.to_text_lossy(out)

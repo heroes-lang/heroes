@@ -80,7 +80,6 @@ use url
 use uuid
 use web/internal/csrf
 use web/internal/event_stream
-use web/internal/extensions
 use web/internal/fixture
 use web/internal/folders
 use web/internal/health
@@ -545,27 +544,12 @@ function serve_folder(r: http.Request, folder: Folder, rest: str) -> http.Respon
 function serve_file(r: http.Request, file: str) -> http.Response
     return folders.serve_file(r, file: file)
 
-# The media type of a file named `name`, by its extension, compared without
-# case: `text/html; charset=utf-8` for `index.html`.
-#
-# - `name`: a file's name or path.
-#
-# A type of text carries `charset=utf-8`. Fails `not_found` where the name has
-# no extension, or one this package's table does not hold. See also `sniff`.
-function content_type_of(name: str) -> str?
-    ext = path.ext(name)?
-    kind = extensions.type_of(ext)
-
-    if kind == ""
-        return fail(code: NOT_FOUND, msg: f"no media type is known for the extension \"{ext}\"")
-    return ok(kind)
-
 # The media type the first bytes of `data` show, by the WHATWG's rules as Go
 # reads them: `application/octet-stream` where they show none.
 #
 # - `data`: the bytes; the first 512 are read.
 #
-# See also `content_type_of`.
+# A file's type by its name is `mail.media_type_of`'s.
 function sniff(data: [u8]) -> str
     return sniffing.sniff(data)
 
@@ -2458,14 +2442,6 @@ test "serve_folder: a dot segment, a backslash, a hidden name, a link out, nothi
     assert http.value_of(serve_folder(fixture.request_of(method: "GET", target: "/static/sub/b.html", headers: []), folder: f, rest: "sub/b.html").headers, name: "Content-Type").must() == "text/html; charset=utf-8"
     fixture.remove(root)
 
-test "content_type_of: by its extension in any case, a path, none, unknown"
-    assert content_type_of("a/b/Photo.JPG").must() == "image/jpeg"
-
-    for name in ["README", "a.unknown", "dir/"]
-        match content_type_of(name)
-            .ok _  => assert false
-            .err e => assert e.code == NOT_FOUND
-
 test "before: none goes on with the request, the first answer stops the rest"
     r = fixture.request_of(
         method: "POST",
@@ -3300,10 +3276,6 @@ test "serve_file: a file, one range of it"
     assert got.status == 206 && http.text_of(got).must() == "hello"
     fixture.remove(root)
 
-# A file's type by its name.
-test "content_type_of: a style sheet"
-    assert content_type_of("site.css").must() == "text/css; charset=utf-8"
-
 # A body's type by its first bytes.
 test "sniff: a PNG"
     assert sniff([137, 80, 78, 71, 13, 10, 26, 10, 0]) == "image/png"
@@ -3480,7 +3452,7 @@ test "serve: a router with no route answering 404"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     conn = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
     io.write_text(conn.stream, text: "GET /x HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n").must()
-    net.set_accept_deadline(l, ms: 300).must()
+    net.set_accept_deadline(l, deadline_ms: 300).must()
 
     match serve(http.default_server(), l: l, router: new_router(), handler: not_routed)
         .ok _  => assert false
@@ -3889,7 +3861,7 @@ test "exchange: a path no route takes answered 404"
 # A router served until the stop, here ended by its listener's deadline.
 test "serve_until_stopped: a listener with no client, its deadline passed"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    net.set_accept_deadline(l, ms: 100).must()
+    net.set_accept_deadline(l, deadline_ms: 100).must()
 
     match serve_until_stopped(http.default_server(), l: l, router: new_router(), handler: not_routed, grace_ms: 1_000)
         .ok _  => assert false

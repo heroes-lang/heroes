@@ -46,7 +46,7 @@ function read_some(@src: Source, most: i64) -> [u8]?
     if src.gzip
         got @ compress.read(@src.reader, most: ask)?
     else
-        got @ io.read(src.stream, most: ask)?
+        got @ io.read(src.stream, n: ask)?
 
     if src.used + got.len() > src.limit
         return fail(code: codes.LIMIT, msg: f"the archive passes the limit of {src.limit} bytes")

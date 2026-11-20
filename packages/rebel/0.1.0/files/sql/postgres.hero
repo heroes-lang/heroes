@@ -267,7 +267,7 @@ function open(opts: Options) -> Db?
         .plain => _ = 0
         .checked _ | .direct _ =>
             if opts.deadline_ms > 0
-                timed = tls.set_deadline(stream, ms: opts.deadline_ms)
+                timed = tls.set_deadline(stream, deadline_ms: opts.deadline_ms)
 
                 match timed
                     .ok _ => _ = 0

@@ -15,7 +15,7 @@ function read_line(s: io.Stream) -> str?
     ended @= false
 
     while !ended
-        got = io.read(s, most: 1)?
+        got = io.read(s, n: 1)?
 
         if got.len() == 0
             if line.len() == 0

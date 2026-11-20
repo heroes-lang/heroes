@@ -122,25 +122,25 @@ capability xml/namespace-registry  a prefix chosen once, for every later write, 
   note    -
 
 capability xml/children  an element's child elements: by name, the first, every one
-  heroes  xml.child, xml.child_in, xml.children_named, xml.children_in, xml.elements_of
+  heroes  xml.child, xml.child_in, xml.children_named, xml.children_in, xml.child_elements
   go      -
   rust    -
   python  Element.find, Element.findall, Element.iterfind (of one name), minidom Node.firstChild, Node.lastChild, Node.hasChildNodes
   note    by the name as written, or by namespace and local name whatever the prefix, as ElementTree's `{uri}local`; absent is `not_found` naming the children there are, where ElementTree answers None
 
 capability xml/descendants  every element inside another, by name or every one, in document order
-  heroes  xml.descendants, xml.descendants_in, xml.descendants_of
+  heroes  xml.elements_named, xml.descendants_in, xml.descendants
   go      -
   rust    -
   python  Element.iter, ElementTree.iter, Element.getElementsByTagName, Element.getElementsByTagNameNS, Document.getElementsByTagName, Document.getElementsByTagNameNS
   note    document order; the element itself is left out, as minidom's getElementsByTagName leaves it and ElementTree's iter does not. On the package's own stack
 
 capability xml/by-id  an element found by its identifier
-  heroes  xml.descendants_of, xml.attribute
+  heroes  xml.descendants, xml.attribute
   go      -
   rust    -
   python  XMLID, Document.getElementById
-  note    an identifier is whatever attribute the program names, since no DTD types one: a program walks `descendants_of` and asks `attribute`
+  note    an identifier is whatever attribute the program names, since no DTD types one: a program walks `descendants` and asks `attribute`
 
 capability xml/path  an element reached by a path of names
   heroes  xml.element_at, xml.elements_at

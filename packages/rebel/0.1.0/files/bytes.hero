@@ -1295,7 +1295,8 @@ function encode_uvarint(n: u64) -> [u8]
 # Fails `invalid` where the bytes end before a byte with its highest bit
 # clear, a negative `at` or one past the end included; fails `does_not_fit`
 # where the varint holds more than 64 bits, a tenth byte above 1. See also
-# `encode_uvarint`, `decode_varint`.
+# `encode_uvarint`, `decode_varint`, and `protobuf.decode_uvarint`, which
+# reads the same varint where a message holds it.
 function decode_uvarint(s: [u8], at: i64) -> DecodedUvarint?
     read = varint.decoded(s, at: at)?
     return ok(DecodedUvarint(value: binary.u64_of_bits(read.bits), width: read.width))

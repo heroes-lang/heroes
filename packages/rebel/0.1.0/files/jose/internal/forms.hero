@@ -283,7 +283,7 @@ function read_private(der: [u8]) -> jose.Key?
     if version != 0 && version != 1
         return fail(code: INVALID, msg: f"a PKCS #8 of the version {version}")
     n = named(items[1])?
-    inner = within(r: asn1.octets_of(items[2]), what: "a PKCS #8's key")?
+    inner = within(r: asn1.bytes_of(items[2]), what: "a PKCS #8's key")?
     material: {str: [u8]} @= {}
 
     if n.key_type == "RSA"
@@ -307,7 +307,7 @@ function read_private(der: [u8]) -> jose.Key?
 
         if parts.len() < 2
             return fail(code: INVALID, msg: "an ECPrivateKey without its key")
-        d = within(r: asn1.octets_of(parts[1]), what: "an ECPrivateKey's key")?
+        d = within(r: asn1.bytes_of(parts[1]), what: "an ECPrivateKey's key")?
         material["d"] @ padded(d, size: jwk.curve_size(n.curve), what: "an EC private key")?
 
         for part in parts.slice(from: 2, to: parts.len())
@@ -324,7 +324,7 @@ function read_private(der: [u8]) -> jose.Key?
             point = computed_public(der: der, curve: n.curve)?
             coordinates(@material, point: point, curve: n.curve)
         return ok(bare(n, material: material))
-    seed = within(r: asn1.octets_of(within(r: asn1.decode_der(inner), what: "a CurvePrivateKey")?), what: "a CurvePrivateKey")?
+    seed = within(r: asn1.bytes_of(within(r: asn1.decode_der(inner), what: "a CurvePrivateKey")?), what: "a CurvePrivateKey")?
 
     if seed.len() != jwk.curve_size(n.curve)
         return fail(code: INVALID, msg: f"an {n.curve} private key of {seed.len()} bytes")
@@ -342,7 +342,7 @@ function computed_public(der: [u8], curve: str) -> [u8]?
 
     match public_r
         .err e =>
-            match keypairs.close(@key)
+            match keypairs.close_private(@key)
                 .ok _  => _ = 0
                 .err _ => _ = 0
 
@@ -351,7 +351,7 @@ function computed_public(der: [u8], curve: str) -> [u8]?
             public @= p
             raw = keypairs.format_public_raw(public)
             keypairs.close_public(@public)?
-            keypairs.close(@key)?
+            keypairs.close_private(@key)?
             return raw
 
 # JOSE's form of the ECDSA signature `der`: R and S, each `size` bytes.

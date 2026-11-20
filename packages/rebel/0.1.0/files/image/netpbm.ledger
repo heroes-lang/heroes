@@ -10,7 +10,7 @@
 # fields up to ENDHDR).
 
 capability netpbm/decode  PBM, PGM, PPM and PAM read, plain or raw
-  heroes  image/netpbm.decode
+  heroes  image/netpbm.decode, image/netpbm.decode_image
   go      -
   rust    -
   python  Image.open, PpmImagePlugin.PpmImageFile, PpmImagePlugin.PpmPlainDecoder

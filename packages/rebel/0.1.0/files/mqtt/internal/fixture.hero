@@ -41,10 +41,10 @@ function rig(script: str) -> Rig
 # - `c`: the server's end.
 function heard(c: net.Conn) -> [u8]
     out: [u8] @= []
-    net.set_deadline(c, ms: 100).must()
+    net.set_deadline(c.stream, deadline_ms: 100).must()
 
     while true
-        match io.read(c.stream, most: 65536)
+        match io.read(c.stream, n: 65536)
             .ok got =>
                 if got.len() == 0
                     return out

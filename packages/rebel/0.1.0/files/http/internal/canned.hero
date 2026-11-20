@@ -91,7 +91,7 @@ function serve(arg: str) -> str
     control = syntax.decimal(s: parts[0], what: "the control port").must()
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     tell(control: control, port: l.address.port)
-    net.set_accept_deadline(l, ms: 10_000).must()
+    net.set_accept_deadline(l, deadline_ms: 10_000).must()
     seen: [str] @= []
     at: i64 @= 1
 

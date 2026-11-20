@@ -129,8 +129,8 @@ function is_secured(l: Link, secure: bool) -> bool
 # - `ms`: milliseconds, 0 or more.
 function arm(l: Link, ms: i64) -> ()?
     return match l
-        .plain p   => net.set_deadline(p.conn, ms: ms)
-        .secured s => tls.set_deadline(s.stream, ms: ms)
+        .plain p   => net.set_deadline(p.conn.stream, deadline_ms: ms)
+        .secured s => tls.set_deadline(s.stream, deadline_ms: ms)
         .socket w  => websocket.set_deadline(w.conn, ms: ms)
         .gone      => fail(code: model.CLOSED, msg: "the connection is closed")
 
@@ -143,8 +143,8 @@ function arm(l: Link, ms: i64) -> ()?
 # fails.
 function read(@l: Link, target: str) -> [u8]?
     got = match l
-        .plain p   => io.read(p.conn.stream, most: CHUNK)?
-        .secured s => io.read(s.stream, most: CHUNK)?
+        .plain p   => io.read(p.conn.stream, n: CHUNK)?
+        .secured s => io.read(s.stream, n: CHUNK)?
         .socket w =>
             c @= w.conn
             answer = websocket.read_message(@c)
@@ -212,7 +212,7 @@ test "a link over a pair of connections: written, read, armed, closed, and gone 
     l: Link @= .plain(conn: two.first)
     peer @= two.second.stream
     write(@l, data: [1, 2, 3]).must()
-    assert io.read_exact(peer, count: 3).must() == [1, 2, 3]
+    assert io.read_exact(peer, n: 3).must() == [1, 2, 3]
     io.write(peer, data: [9]).must()
     assert read(@l, target: "t").must() == [9]
     arm(l, ms: 50).must()

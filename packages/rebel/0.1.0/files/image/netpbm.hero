@@ -79,6 +79,18 @@ function decode(data: [u8], limits: image.Limits) -> image.Image?
 
     return ok(image.Image(width: h.width, height: h.height, format: format, pixels: pixels))
 
+# The image `data` holds, alone: what a program that reads any of the
+# formats asks of each, by one call of one shape in `image/bmp`, `image/gif`,
+# `image/jpeg`, `image/netpbm` and `image/png`.
+#
+# - `data`: a whole netpbm file.
+# - `limits`: the largest image the caller allows; `image.default_limits`
+#   makes the usual ones.
+#
+# The answer is `decode`'s, which is the image alone already. Fails as `decode` fails. See also `decode`.
+function decode_image(data: [u8], limits: image.Limits) -> image.Image?
+    return decode(data, limits: limits)
+
 # The size, maximum value and depth of the netpbm `data`, read from its
 # header.
 #
@@ -252,3 +264,9 @@ test "encode: RGB as a raw PPM"
 test "encode_bitmap: dark pixels black"
     img = image.from_pixels(width: 2, height: 1, format: .gray, pixels: [10, 250]).must()
     assert encode_bitmap(img, threshold: 128, plain: true) == bytes.from_text("P1\n2 1\n1 0\n")
+
+# The image alone, by the call every format answers.
+test "decode_image: what decode answers"
+    img = image.from_pixels(width: 1, height: 1, format: .rgb, pixels: [1, 2, 3]).must()
+    data = encode(img, plain: false).must()
+    assert decode_image(data, limits: image.default_limits()).must() == decode(data, limits: image.default_limits()).must()

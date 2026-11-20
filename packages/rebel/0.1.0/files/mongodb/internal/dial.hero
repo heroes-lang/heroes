@@ -92,7 +92,7 @@ function handshake(@s: session.State) -> ()?
 
 # The bytes of a binary field `name` of `doc`.
 function payload_of(doc: bson.Document, name: str) -> [u8]?
-    return bson.binary_of(bson.member(doc, name: name)?)
+    return bson.bytes_of(bson.member(doc, name: name)?)
 
 # Whether `doc`'s field `done` is true.
 function is_done(doc: bson.Document) -> bool

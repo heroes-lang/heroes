@@ -762,7 +762,7 @@ function from_integer(n: big.Integer) -> Value
 # - `v`: the value.
 #
 # Fails `invalid` where `v` is of another case. See also `bits_of`.
-function octets_of(v: Value) -> [u8]?
+function bytes_of(v: Value) -> [u8]?
     return match v
         .octet_string o => ok(o.v)
         .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => fail(
@@ -1203,7 +1203,7 @@ test "decode_der: OpenSSL's SEQUENCE of fourteen kinds, read and written back to
     assert text_of(to_universal(v: items[9], number: IA5_STRING, encoding: .der).must()).must() == "a@b"
     assert items[10] == .null_value
     assert bits_of(items[11]).must() == BitString(bytes: [0x41], bit_len: 8)
-    assert octets_of(items[12]).must() == bytes.from_text("hello")
+    assert bytes_of(items[12]).must() == bytes.from_text("hello")
     assert items[13] == .enumerated(v: 2)
     assert encode_der(v).must() == data
 
@@ -1381,7 +1381,7 @@ test "the walking functions: each refuses a value of another case, naming it"
     assert bool_of(.null_value).is_err()
     assert int_of(.text(kind: .utf8, v: "1")).is_err()
     assert integer_of(.enumerated(v: 1)).is_err()
-    assert octets_of(.bit_string(v: BitString(bytes: [], bit_len: 0))).is_err()
+    assert bytes_of(.bit_string(v: BitString(bytes: [], bit_len: 0))).is_err()
     assert bits_of(.octet_string(v: [])).is_err()
     assert oid_of(.relative_oid(v: Oid(dotted: "1"))).is_err()
     assert text_of(.octet_string(v: [])).is_err()
@@ -1500,8 +1500,8 @@ test "from_integer: a small and a large integer"
     assert from_integer(big.parse("18446744073709551616").must()) == .big_integer(v: big.parse("18446744073709551616").must())
 
 # The bytes of an OCTET STRING.
-test "octets_of: an OCTET STRING"
-    assert octets_of(.octet_string(v: [7])).must() == [7]
+test "bytes_of: an OCTET STRING"
+    assert bytes_of(.octet_string(v: [7])).must() == [7]
 
 # The bits of a BIT STRING read from DER.
 test "bits_of: a BIT STRING of four bits"

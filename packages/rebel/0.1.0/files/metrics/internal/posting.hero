@@ -48,7 +48,7 @@ function group_part(name: str, value: str) -> str
         plain = names.is_letter(c) || names.is_digit(c) || c == '-' || c == '.' || c == '_' || c == '~'
 
         if !plain
-            return "/" + name + "@base64/" + bytes.format_base64_url(strings.to_bytes(value))
+            return "/" + name + "@base64/" + bytes.format_base64_url(bytes.from_text(value))
 
     return "/" + name + "/" + value
 
@@ -72,7 +72,7 @@ function pushed(client: http.Client, method: str, target: str, body: str, conten
     r @= http.request(method: method, target: target)?
 
     if body != ""
-        r @ http.with_body(r, content_type: content_type, body: strings.to_bytes(body))
+        r @ http.with_body(r, content_type: content_type, body: bytes.from_text(body))
     response = http.send(client, r: r)?
 
     if response.status < 200 || response.status >= 300

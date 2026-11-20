@@ -8,6 +8,7 @@
 
 use bytes
 use io
+use net
 use strings
 use tls/hero_tls
 use tls/internal/failure
@@ -292,14 +293,20 @@ function listen_after(host: str, port: i64, chain: str, key: str, protocols: [st
     return ok(Bound(handle: handle, port: found))
 
 # Makes every later and waiting read and write of `s` end by `ms`
-# milliseconds from now.
+# milliseconds from now: by the TLS layer where `s` is a TLS stream, by
+# `net` where it is a connection's own stream.
 function set_deadline(s: io.Stream, ms: i64, asked: str) -> ()?
     if s.handle == nullptr
         return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
 
-    if hero_tls.set_deadline(s.handle, ms: ms) != 0
+    if hero_tls.set_deadline(s.handle, ms: ms) == 0
+        return ok()
+
+    if hero_tls.last_error() != hero_tls.HERO_TLS_NOT_OPEN
         return failure.last(asked: asked)
-    return ok()
+
+    # No TLS stream: a connection's own stream takes its deadline from `net`.
+    return net.set_deadline(s, deadline_ms: ms)
 
 # Makes every later and waiting accept on `l` end by `ms` milliseconds from
 # now.

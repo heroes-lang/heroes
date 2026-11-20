@@ -1,5 +1,5 @@
-# A file's media type by its extension: one table carried here, the same on
-# every machine. Its types are what Go 1.27's `mime.TypeByExtension` answers
+# A file's media type by its extension, for `media_type_of`: one table
+# carried here, the same on every machine. Its types are what Go 1.27's `mime.TypeByExtension` answers
 # on macOS, else what Python 3.15's built-in `mimetypes` table answers, both
 # observed on 2026-11-16; a type of text carries `charset=utf-8`.
 

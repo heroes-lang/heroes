@@ -225,7 +225,7 @@ test "message: one frame masked by a client, fragments where the bounds say, and
     two @= net.pair(deadline_ms: 5_000).must()
     c @= handmade.client()
     message(@two.first.stream, @c, b: handmade.bounds(), text: true, data: bytes.from_text("hello")).must()
-    raw = io.read_exact(two.second.stream, count: 11).must()
+    raw = io.read_exact(two.second.stream, n: 11).must()
     assert raw[0] == 129 && raw[1] == 133 && frames.unmasked(data: raw.slice(from: 6, to: 11), key: raw.slice(from: 2, to: 6)) == bytes.from_text("hello")
     s @= handmade.server()
     cut = engine.Bounds(frame_bytes: 100, message_bytes: 100, fragment_bytes: 2, close_wait_ms: 1_000)

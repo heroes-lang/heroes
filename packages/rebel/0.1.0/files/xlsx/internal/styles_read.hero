@@ -156,12 +156,12 @@ function default_theme() -> [str]
 function theme_colors(root: xml.Element) -> [str]
     found: [str] @= []
 
-    for scheme in xml.descendants_of(root)
+    for scheme in xml.descendants(root)
         if scheme.name.local == "clrScheme"
-            for slot in xml.elements_of(scheme)
+            for slot in xml.child_elements(scheme)
                 color: str @= ""
 
-                for c in xml.elements_of(slot)
+                for c in xml.child_elements(slot)
                     if c.name.local == "srgbClr"
                         color @ hex6(xml.attribute(c, name: "val").default(""))
                     else if c.name.local == "sysClr"
@@ -307,9 +307,9 @@ function is_on(e: xml.Element) -> bool
 # The elements of `root` named `local`'s children, in order: the fonts of
 # `<fonts>`.
 function items_of(root: xml.Element, local: str) -> [xml.Element]
-    for e in xml.elements_of(root)
+    for e in xml.child_elements(root)
         if e.name.local == local
-            return xml.elements_of(e)
+            return xml.child_elements(e)
 
     return []
 
@@ -320,7 +320,7 @@ function fonts_of(root: xml.Element, palette: [str], theme: [str]) -> [FontPart]
     for f in items_of(root, local: "fonts")
         font @= FontPart(name: "", size: 11.0, color: "", bold: false, italic: false, underline: "", strike: false)
 
-        for e in xml.elements_of(f)
+        for e in xml.child_elements(f)
             local = e.name.local
 
             if local == "name"
@@ -354,11 +354,11 @@ function fills_of(root: xml.Element, palette: [str], theme: [str]) -> [FillPart]
     for f in items_of(root, local: "fills")
         fill @= FillPart(pattern: "none", color: "", background: "")
 
-        for p in xml.elements_of(f)
+        for p in xml.child_elements(f)
             if p.name.local == "patternFill"
                 fill.pattern @ xml.attribute(p, name: "patternType").default("none")
 
-                for c in xml.elements_of(p)
+                for c in xml.child_elements(p)
                     if c.name.local == "fgColor"
                         fill.color @ color_of(c, palette: palette, theme: theme)
                     else if c.name.local == "bgColor"
@@ -370,12 +370,12 @@ function fills_of(root: xml.Element, palette: [str], theme: [str]) -> [FillPart]
 
 # The edge `side` of the border `b`: its style word and its colour.
 function edge_of(b: xml.Element, side: str, palette: [str], theme: [str]) -> [str]
-    for e in xml.elements_of(b)
+    for e in xml.child_elements(b)
         if e.name.local == side
             line = xml.attribute(e, name: "style").default("")
             color: str @= ""
 
-            for c in xml.elements_of(e)
+            for c in xml.child_elements(e)
                 if c.name.local == "color"
                     color @ color_of(c, palette: palette, theme: theme)
 
@@ -403,13 +403,13 @@ function borders_of(root: xml.Element, palette: [str], theme: [str]) -> [BorderP
 # The palette of `root`: its own `<indexedColors>` where it writes them, the
 # default otherwise.
 function palette_of(root: xml.Element) -> [str]
-    for e in xml.elements_of(root)
+    for e in xml.child_elements(root)
         if e.name.local == "colors"
-            for list in xml.elements_of(e)
+            for list in xml.child_elements(e)
                 if list.name.local == "indexedColors"
                     own: [str] @= []
 
-                    for c in xml.elements_of(list)
+                    for c in xml.child_elements(list)
                         own @ own.push(hex6(xml.attribute(c, name: "rgb").default("")))
 
                     if own.len() > 0
@@ -473,7 +473,7 @@ function read_styles(root: xml.Element, theme: [str]) -> Read
             style.bottom_line @ b.bottom_line
             style.bottom_color @ b.bottom_color
 
-        for a in xml.elements_of(xf)
+        for a in xml.child_elements(xf)
             if a.name.local == "alignment"
                 style.horizontal @ xml.attribute(a, name: "horizontal").default("general")
                 style.vertical @ xml.attribute(a, name: "vertical").default("bottom")

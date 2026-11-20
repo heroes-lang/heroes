@@ -165,7 +165,7 @@ function serve_http_many(control: i64) -> i64
     told @= net.connect("127.0.0.1", port: control, deadline_ms: 10_000).must()
     io.write_text(told.stream, text: f"{l.address.port}").must()
     io.close(@told.stream).must()
-    net.set_accept_deadline(l, ms: 2_000).must()
+    net.set_accept_deadline(l, deadline_ms: 2_000).must()
     s = test_server()
     served: i64 @= 0
 

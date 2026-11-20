@@ -267,7 +267,7 @@ function drain(stream: io.Stream, ms: i64)
         return
 
     while true
-        match io.read(stream, most: engine.READ_MOST)
+        match io.read(stream, n: engine.READ_MOST)
             .ok got =>
                 if got.len() == 0
                     return

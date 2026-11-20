@@ -1909,7 +1909,7 @@ test "read_frame: a SETTINGS frame from a pipe"
 test "write_frame: a GOAWAY with no error"
     p = io.pipe().must()
     write_frame(p.writer, f: .goaway(last_stream: 1, error: NO_ERROR, debug: [])).must()
-    assert bytes.format_hex(io.read_exact(p.reader, count: 17).must()) == "0000080700000000000000000100000000"
+    assert bytes.format_hex(io.read_exact(p.reader, n: 17).must()) == "0000080700000000000000000100000000"
     w @= p.writer
     io.close(@w).must()
     gone @= p.reader

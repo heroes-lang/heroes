@@ -100,7 +100,7 @@ function bytes_at(s: io.Stream, at: i64, count: i64, size: i64, what: str) -> [u
     if at < 0 || count < 0 || at + count > size
         return codes.invalid_at(at: at, why: f"{what} reaches past the end of the archive, at {size} bytes")
     _ = io.seek(s, offset: at, from: .start)?
-    return io.read_exact(s, count: count)
+    return io.read_exact(s, n: count)
 
 # The central directory of the zip archive `s` holds. Fails `invalid` where
 # no end record is found or a record is not one, `unsupported` on an

@@ -415,38 +415,40 @@ function server_over(@inner: io.Stream, server: Server) -> io.Stream?
 
 ## Time
 
-# Makes every later and waiting read and write of `s` end by `ms`
-# milliseconds from now, failing `timeout`, as `net.set_deadline` does for a
-# connection's stream.
+# Makes every later and waiting read and write of `s` end by `deadline_ms`
+# milliseconds from now, failing `timeout`: a TLS stream's by its own layer,
+# and a connection's stream that is no TLS stream by `net.set_deadline`, so a
+# program holding either kind moves its deadline by this one call.
 #
 # - `s`: a stream `connect`, `connect_after`, `accept`, `client_over` or
-#   `server_over` answered.
-# - `ms`: milliseconds from now, 0 to take the deadline away.
+#   `server_over` answered, or a `net.Conn`'s.
+# - `deadline_ms`: milliseconds from now, 0 to take the deadline away.
 #
 # A read the deadline ended loses nothing: the next read goes on where it
 # stopped. A write it ended may have sent part of a record, and every later
 # write then fails `failed`: the stream is good for nothing but reading what
 # is left and closing, as Go rules of its own TLS. Fails `invalid` where
-# `ms` is below 0, `closed` where `s` is closed or no TLS stream,
-# `unsupported` where it runs over a stream that is no socket. On macOS a
+# `deadline_ms` is below 0, `closed` where `s` is closed, `unsupported`
+# where it runs over a stream that is no socket, and as `net.set_deadline`
+# fails where `s` is no TLS stream. On macOS a
 # read already waiting takes the new deadline within about 50 ms. See also
 # `set_accept_deadline`.
-function set_deadline(s: io.Stream, ms: i64) -> ()?
-    return connections.set_deadline(s, ms: ms, asked: "setting a deadline on " + s.name)
+function set_deadline(s: io.Stream, deadline_ms: i64) -> ()?
+    return connections.set_deadline(s, ms: deadline_ms, asked: "setting a deadline on " + s.name)
 
 # Makes every `accept` on `l` waiting for a client, and every later one, end
-# by `ms` milliseconds from now, failing `timeout`; a handshake's own time
-# stays `accept`'s.
+# by `deadline_ms` milliseconds from now, failing `timeout`; a handshake's
+# own time stays `accept`'s.
 #
 # - `l`: the listener.
-# - `ms`: milliseconds from now, 0 to take the deadline away.
+# - `deadline_ms`: milliseconds from now, 0 to take the deadline away.
 #
-# Fails `invalid` where `ms` is below 0, `closed` where `l` is closed. See
+# Fails `invalid` where `deadline_ms` is below 0, `closed` where `l` is closed. See
 # also `accept`, `set_deadline`.
-function set_accept_deadline(l: Listener, ms: i64) -> ()?
+function set_accept_deadline(l: Listener, deadline_ms: i64) -> ()?
     return connections.set_accept_deadline(
         l.handle,
-        ms: ms,
+        ms: deadline_ms,
         asked: "setting a deadline on the TLS listener on port " + to_str(l.port)
     )
 
@@ -607,7 +609,7 @@ test "accept: one client, four bytes each way"
         ).must()
         client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port))
         s @= accept(l, deadline_ms: 10000).must()
-        assert io.read_exact(s, count: 4).must() == [112, 105, 110, 103]
+        assert io.read_exact(s, n: 4).must() == [112, 105, 110, 103]
         io.write_text(s, text: "pong").must()
         io.close(@s).must()
         assert threads.wait_text(@client) == "ok  pong"
@@ -697,7 +699,7 @@ test "connect_after: Postgres's SSLRequest, then TLS"
             steps: [.send(data: request), .expect(answer: [83])]
         ).must()
         io.write_text(s, text: "ping").must()
-        assert io.read_exact(s, count: 4).must() == [112, 111, 110, 103]
+        assert io.read_exact(s, n: 4).must() == [112, 111, 110, 103]
         io.close(@s).must()
         assert threads.wait_text(@server) == "ping"
 
@@ -735,14 +737,14 @@ test "set_deadline: a server's read ended, then the client's bytes read"
         ).must()
         client @= threads.spawn_text(body: loopback.client_side, arg: "late " + to_str(l.port))
         s @= accept(l, deadline_ms: 10000).must()
-        set_deadline(s, ms: 300).must()
-        early = io.read(s, most: 4)
+        set_deadline(s, deadline_ms: 300).must()
+        early = io.read(s, n: 4)
 
         match early
             .ok _  => assert false
             .err e => assert e.code == TIMEOUT
 
-        set_deadline(s, ms: 0).must()
+        set_deadline(s, deadline_ms: 0).must()
         assert loopback.answer_once(s).must() == "ping"
         io.close(@s).must()
         assert threads.wait_text(@client) == "ok  pong"
@@ -756,7 +758,7 @@ test "set_accept_deadline: no client within 200 ms"
             port: 0,
             server: Server(chain: TEST_LOCALHOST_CHAIN, key: TEST_LOCALHOST_KEY, protocols: [])
         ).must()
-        set_accept_deadline(l, ms: 200).must()
+        set_accept_deadline(l, deadline_ms: 200).must()
         nobody = accept(l, deadline_ms: 0)
 
         match nobody

@@ -1441,7 +1441,7 @@ test "read_ready: one thread serves three clients through poll"
                 reader @= io.reader(tcp.stream)
                 r = http.next_request(@reader, limits: http.default_limits()).must()
                 c = upgrade(@reader, r: r, server: default_server()).must()
-                net.set_deadline(tcp, ms: 0).must()
+                net.set_deadline(tcp.stream, deadline_ms: 0).must()
                 which[poll.add_stream(set, s: c.stream, interest: .read).must()] @ conns.len()
                 conns @ conns.push(c)
             else

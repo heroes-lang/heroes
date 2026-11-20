@@ -635,7 +635,7 @@ function read(@r: Reader, most: i64) -> [u8]?
 
         if inflater.pending(r.decompressor.state) > 0 || status == inflater.ENDED
             return ok(inflater.take(@r.decompressor.state, most: most))
-        more = io.read(r.from, most: 65536)?
+        more = io.read(r.from, n: 65536)?
 
         if more.len() == 0
             inflater.end_input(@r.decompressor.state)
@@ -685,7 +685,7 @@ function read_header(@r: Reader) -> Header?
             return fail(code: INVALID, msg: "a gzip stream that ended before its header")
 
         if status == inflater.STARVED
-            more = io.read(r.from, most: 65536)?
+            more = io.read(r.from, n: 65536)?
 
             if more.len() == 0
                 inflater.end_input(@r.decompressor.state)
@@ -713,7 +713,7 @@ function compress_stream(from: io.Stream, to: io.Stream, options: Options) -> i6
     written: i64 @= 0
 
     while true
-        more = io.read(from, most: 65536)?
+        more = io.read(from, n: 65536)?
 
         if more.len() == 0
             break
@@ -1196,7 +1196,7 @@ test "flush: written so far, readable so far"
     write(@w, data: bytes.from_text("under pressure")).must()
     flush(@w, how: .sync).must()
     d @= decompressor(.raw, limit: 100)
-    assert decompress_part(@d, data: io.read(p.reader, most: 1000).must(), most: 100).must() == bytes.from_text("under pressure")
+    assert decompress_part(@d, data: io.read(p.reader, n: 1000).must(), most: 100).must() == bytes.from_text("under pressure")
     finish(@w).must()
     io.close(@p.writer).must()
     io.close(@p.reader).must()

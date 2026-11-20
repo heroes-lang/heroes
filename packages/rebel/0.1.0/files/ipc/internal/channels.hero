@@ -218,12 +218,12 @@ test "connect: nothing at the path is file_not_found, a bound of -5 is invalid, 
     assert set_deadline(client, ms: 20) == ok()
     assert set_deadline(client, ms: -1).is_err()
 
-    match io.read(client, most: 1)
+    match io.read(client, n: 1)
         .ok _  => assert false
         .err e => assert e.code == failure.TIMEOUT
 
     assert close_write(server) == ok()
-    assert io.read(client, most: 1).must().len() == 0
+    assert io.read(client, n: 1).must().len() == 0
     assert io.close(@client) == ok()
     assert io.close(@server) == ok()
     assert set_deadline(server, ms: 5).is_err()

@@ -528,24 +528,24 @@ record Srv
     # Its weight among servers of one priority.
     weight: i64
 
-# The servers of the service `service` over `proto` for `name`, asked as
-# `_service._proto.name`, by priority from the lowest and within one by
+# The servers of the service `service` over `protocol` for `name`, asked as
+# `_service._protocol.name`, by priority from the lowest and within one by
 # weight from the largest. A sole record whose target is `.` says the
 # service is not offered, and answers none.
 #
 # - `r`: the resolver.
 # - `service`: the service, `xmpp-server`, without its underscore; "" asks
 #   `name` itself.
-# - `proto`: the protocol, `tcp` or `udp`, without its underscore; ""
+# - `protocol`: the protocol, `tcp` or `udp`, without its underscore; ""
 #   with `service` "".
 # - `name`: the domain, as `lookup` reads it.
 #
 # Fails as `lookup` fails. See also `lookup`.
-function lookup_srv(r: Resolver, service: str, proto: str, name: str) -> [Srv]?
+function lookup_srv(r: Resolver, service: str, protocol: str, name: str) -> [Srv]?
     asked: str @= name
 
-    if service != "" || proto != ""
-        asked @ "_" + service + "._" + proto + "." + name
+    if service != "" || protocol != ""
+        asked @ "_" + service + "._" + protocol + "." + name
     answer = lookup(r, name: asked, type_code: TYPE_SRV)?
     out: [Srv] @= []
 
@@ -2399,7 +2399,7 @@ test "lookup_srv: the servers of a SIP service"
     found = lookup_srv(
         resolver([f"127.0.0.1:{server.port}"]).must(),
         service: "sip",
-        proto: "udp",
+        protocol: "udp",
         name: "example.com."
     ).must()
     assert found[0].target == "a.example.com." && found[1].weight == 5

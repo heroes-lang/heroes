@@ -425,7 +425,7 @@ test "discard, drain and waiting: bytes counted, thrown away, and a drain once t
             assert discard(p.port, which: hero_serial.HERO_SERIAL_INPUT, what: "input") == ok()
             assert waiting(p.port, which: hero_serial.HERO_SERIAL_INPUT, what: "input").must() == 0
             io.write(p.port, data: [1]).must()
-            assert io.read(p.controller, most: 4).must() == [1]
+            assert io.read(p.controller, n: 4).must() == [1]
             assert drain(p.port) == ok()
             test_close(@p)
 

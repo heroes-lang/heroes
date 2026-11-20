@@ -1358,7 +1358,7 @@ function add_jpeg(@doc: Document, data: [u8]) -> ImageId?
 # It holds the decoded pixels while it compresses them again. See also
 # `add_image` and `add_jpeg`.
 function add_png(@doc: Document, data: [u8]) -> ImageId?
-    decoded = png.decode(data, options: png.decoding())?
+    decoded = png.decode_with(data, options: png.decoding())?
     return add_image(@doc, img: decoded.image)
 
 # Adds the image `img` to `doc` for `draw_image` to draw: its colour

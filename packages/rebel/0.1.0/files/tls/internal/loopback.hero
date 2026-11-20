@@ -114,14 +114,14 @@ function spoken(made: io.Stream?) -> str
 # The client's side of the exchange.
 function talk(s: io.Stream) -> str?
     io.write_text(s, text: "ping")?
-    reply = io.read_exact(s, count: 4)?
+    reply = io.read_exact(s, n: 4)?
     chosen = connections.protocol_of(s)?
     return ok("ok " + chosen + " " + bytes.to_text(reply)?)
 
 # The server's side of one connection: four bytes read, "pong" written, the
 # version asked; answers the bytes read.
 function answer_once(s: io.Stream) -> str?
-    heard = io.read_exact(s, count: 4)?
+    heard = io.read_exact(s, n: 4)?
     io.write_text(s, text: "pong")?
     version = connections.version_of(s)?
 
@@ -276,7 +276,7 @@ function round_after(server_steps: [connections.Plain], mode: str) -> str
 function round_plain(mode: str, first: str) -> str
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.address.port))
-    net.set_accept_deadline(l, ms: 15000).must()
+    net.set_accept_deadline(l, deadline_ms: 15000).must()
     c = net.accept(l, deadline_ms: 10000).must()
     stream @= c.stream
 
@@ -397,7 +397,7 @@ function answer_of(said: str?) -> str
 # read that came after it.
 function patient(s: io.Stream) -> str?
     connections.set_deadline(s, ms: 300, asked: "setting a deadline")?
-    first = io.read(s, most: 4)
+    first = io.read(s, n: 4)
     ended @= "no failure"
 
     match first
@@ -405,7 +405,7 @@ function patient(s: io.Stream) -> str?
         .err e => ended @ e.code
 
     connections.set_deadline(s, ms: 0, asked: "taking the deadline away")?
-    late = io.read_exact(s, count: 4)?
+    late = io.read_exact(s, n: 4)?
     return ok("first " + ended + ", then " + bytes.to_text(late)?)
 
 ## Tests

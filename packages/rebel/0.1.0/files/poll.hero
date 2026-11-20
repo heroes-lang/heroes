@@ -395,7 +395,7 @@ test "add_conn: a connection told readable once its peer writes"
     assert events.len() == 1
     assert events[0].key == key
     assert events[0].readable
-    assert io.read(server.stream, most: 16).must() == [104, 105]
+    assert io.read(server.stream, n: 16).must() == [104, 105]
     close(@s).must()
     io.close(@client.stream).must()
     io.close(@server.stream).must()
@@ -519,12 +519,12 @@ test "wait: an echo server serves three clients on one thread"
                 served @ served.push(c)
             else
                 c = served[which[e.key].must()]
-                io.write(c.stream, data: io.read(c.stream, most: 64).must()).must()
+                io.write(c.stream, data: io.read(c.stream, n: 64).must()).must()
                 remove(s, key: e.key).must()
                 echoed @ echoed + 1
 
     for i in range(from: 0, to: 3)
-        assert io.read_exact(clients[i].stream, count: 2).must() == [104, to_u8(48 + i).must()]
+        assert io.read_exact(clients[i].stream, n: 2).must() == [104, to_u8(48 + i).must()]
         io.close(@clients[i].stream).must()
         io.close(@served[i].stream).must()
 

@@ -15,7 +15,7 @@
 # 2026-11-17.
 
 capability wire/varint  a varint written, read, and measured
-  heroes  protobuf.push_varint, protobuf.decode_varint, protobuf.size_of_varint, protobuf.WireNumber
+  heroes  protobuf.push_uvarint, protobuf.decode_uvarint, protobuf.size_of_uvarint, protobuf.WireNumber
   go      protowire.AppendVarint, protowire.ConsumeVarint, protowire.SizeVarint
   rust    protobuf::CodedOutputStream::write_raw_varint64, protobuf::CodedInputStream::read_raw_varint64, protobuf::rt::compute_raw_varint64_size
   python  -

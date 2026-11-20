@@ -24,6 +24,7 @@
 # number rather than by the handle that started it, are refused
 # (`process.ledger`).
 
+use bytes
 use io
 use os
 use process/hero_proc
@@ -591,7 +592,7 @@ function start(c: Command) -> Child?
             feeding @ true
             launch.plain(hero_proc.HERO_PROC_STDIO_NOTHING)
         .text given =>
-            fed @ strings.to_bytes(given.text)
+            fed @ bytes.from_text(given.text)
             feeding @ true
             launch.plain(hero_proc.HERO_PROC_STDIO_NOTHING)
 
@@ -990,8 +991,8 @@ test "run: the output captured, the error captured, and both joined in the order
 test "run: input as bytes, as text of more than one byte a character, none, and a pipe whose end comes at once"
     none: [str] = []
     copy = with_output(command(fixture.copier(), none), to: .pipe)
-    bytes = run(with_input(copy, from: .bytes(data: [114, 101, 98, 101, 108, 10]))).must()
-    assert fixture.line(bytes.output) == "rebel"
+    raw = run(with_input(copy, from: .bytes(data: [114, 101, 98, 101, 108, 10]))).must()
+    assert fixture.line(raw.output) == "rebel"
     text = run(with_input(copy, from: .text(text: "héros\n"))).must()
     assert fixture.line(text.output) == "héros"
     empty: [u8] = []

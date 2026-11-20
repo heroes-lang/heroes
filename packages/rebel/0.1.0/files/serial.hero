@@ -522,7 +522,7 @@ test "open_pseudo: a port and a device without hardware"
             pair @= pty
             port @= open(pair.path, settings: defaults(baud: 9600)).must()
             io.write_text(port, text: "AT\r").must()
-            assert io.read(pair.controller, most: 16).must() == [65, 84, 13]
+            assert io.read(pair.controller, n: 16).must() == [65, 84, 13]
             io.close(@port).must()
             io.close(@pair.controller).must()
 
@@ -535,7 +535,7 @@ test "open: a port set and written to, its answer read"
             port @= open(pair.path, settings: defaults(baud: 9600)).must()
             set_timeouts(port, timeouts: Timeouts(read_ms: 2000, write_ms: 2000, gap_ms: 0)).must()
             io.write_text(pair.controller, text: "OK\n").must()
-            assert io.read(port, most: 16).must() == [79, 75, 10]
+            assert io.read(port, n: 16).must() == [79, 75, 10]
             io.close(@port).must()
             io.close(@pair.controller).must()
 
@@ -576,7 +576,7 @@ test "set_timeouts: a read bounded to 100 ms"
             port @= open(pair.path, settings: defaults(baud: 9600)).must()
             set_timeouts(port, timeouts: Timeouts(read_ms: 100, write_ms: FOREVER, gap_ms: 0)).must()
 
-            match io.read(port, most: 16)
+            match io.read(port, n: 16)
                 .ok _  => assert false
                 .err e => assert e.code == TIMEOUT
 
@@ -695,7 +695,7 @@ test "drain: written bytes sent before going on"
             port @= open(pair.path, settings: defaults(baud: 9600)).must()
             set_timeouts(port, timeouts: Timeouts(read_ms: 2000, write_ms: 2000, gap_ms: 0)).must()
             io.write_text(port, text: "go").must()
-            assert io.read(pair.controller, most: 8).must() == [103, 111]
+            assert io.read(pair.controller, n: 8).must() == [103, 111]
             drain(port).must()
             io.close(@port).must()
             io.close(@pair.controller).must()

@@ -88,6 +88,18 @@ function decode(data: [u8], limits: image.Limits) -> Jpeg?
 constant MAX_SCANS: i64
     reading.MAX_SCANS
 
+# The image `data` holds, alone: what a program that reads any of the
+# formats asks of each, by one call of one shape in `image/bmp`, `image/gif`,
+# `image/jpeg`, `image/netpbm` and `image/png`.
+#
+# - `data`: a whole JPEG file.
+# - `limits`: the largest image the caller allows; `image.default_limits`
+#   makes the usual ones.
+#
+# The pixels are as the file stores them, gray or RGB: the EXIF orientation that says how to show them is `decode`'s `orientation`. Fails as `decode` fails. See also `decode`.
+function decode_image(data: [u8], limits: image.Limits) -> image.Image?
+    return ok(decode(data, limits: limits)?.image)
+
 # What the frame header of a JPEG file says, read without its scans.
 record Info
     # The columns.
@@ -368,3 +380,9 @@ test "encode: RGB at quality 90 and 4:4:4"
     file = encode(img, EncodeOptions(quality: 90, subsampling: .full)).must()
     assert file.slice(from: 0, to: 2) == [0xff, 0xd8]
     assert decode(file, image.default_limits()).must().image.pixels.slice(from: 0, to: 3) == [0, 0, 0]
+
+# The pixels alone, as every format answers them.
+test "decode_image: a gray image read back as gray"
+    img = image.from_pixels(width: 2, height: 2, format: .gray, pixels: [128, 128, 128, 128]).must()
+    back = decode_image(encode(img, encoding()).must(), limits: image.default_limits()).must()
+    assert back.width == 2 && back.height == 2 && back.format == .gray

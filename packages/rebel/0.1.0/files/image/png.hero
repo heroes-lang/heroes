@@ -50,16 +50,16 @@ variant Keep
 
 ## Reading
 
-# How `decode` reads a file.
+# How `decode_with` reads a file.
 record DecodeOptions
     # The largest image the caller allows; past it, `limit`.
     limits: image.Limits
     # Which ancillary chunks are kept in `Png.chunks`.
     keep: Keep
 
-# Options of `image.default_limits` that keep no chunk.
+# Options of `image.default_limits` that keep no chunk, which `decode` takes.
 #
-# See also `decode`.
+# See also `decode_with`.
 function decoding() -> DecodeOptions
     return DecodeOptions(limits: image.default_limits(), keep: .none)
 
@@ -84,7 +84,19 @@ record Png
     # order.
     chunks: [Chunk]
 
-# The image `data` holds, and its palette and chunks.
+# The image `data` holds, and its palette, keeping no ancillary chunk.
+#
+# - `data`: a whole PNG file: its signature, `IHDR`, the chunks, `IEND`.
+#   Bytes after `IEND` are not read.
+# - `limits`: the largest image the caller allows; `image.default_limits`
+#   makes the usual ones.
+#
+# Fails as `decode_with` fails. See also `decode_with`, which keeps chunks,
+# and `decode_image`.
+function decode(data: [u8], limits: image.Limits) -> Png?
+    return decode_with(data, options: DecodeOptions(limits: limits, keep: .none))
+
+# The image `data` holds, and its palette and the chunks `options` keeps.
 #
 # - `data`: a whole PNG file: its signature, `IHDR`, the chunks, `IEND`.
 #   Bytes after `IEND` are not read.
@@ -103,7 +115,7 @@ record Png
 #
 # It holds the inflated image data and the image at once. See also
 # `info_of` and `encode`.
-function decode(data: [u8], options: DecodeOptions) -> Png?
+function decode_with(data: [u8], options: DecodeOptions) -> Png?
     keep_all = match options.keep
         .all            => true
         .none | .only _ => false
@@ -121,6 +133,18 @@ function decode(data: [u8], options: DecodeOptions) -> Png?
     return ok(
         Png(image: d.image, palette: d.palette, bit_depth: d.header.depth, color_type: d.header.color_type, interlaced: d.header.interlaced, chunks: kept)
     )
+
+# The image `data` holds, alone: what a program that reads any of the
+# formats asks of each, by one call of one shape in `image/bmp`, `image/gif`,
+# `image/jpeg`, `image/netpbm` and `image/png`.
+#
+# - `data`: a whole PNG file.
+# - `limits`: the largest image the caller allows; `image.default_limits`
+#   makes the usual ones.
+#
+# The pixels are `decode`'s `image`, a palette looked up and `tRNS` made alpha. Fails as `decode` fails. See also `decode`.
+function decode_image(data: [u8], limits: image.Limits) -> image.Image?
+    return ok(decode(data, limits: limits)?.image)
 
 # What the header of a PNG file says, read without its image data.
 record Info
@@ -352,7 +376,7 @@ function text_chunk(keyword: str, text: str) -> Chunk?
 
 test "decode: every file of Go's encoder and of the writer, pixel for pixel as Go reads it"
     for s in samples.readable()
-        p = decode(bytes.parse_hex(s.file).must(), decoding()).must()
+        p = decode_with(bytes.parse_hex(s.file).must(), decoding()).must()
         assert p.image.width == s.width
         assert p.image.height == s.height
         assert p.image.format == samples.format_named(s.format)
@@ -360,7 +384,7 @@ test "decode: every file of Go's encoder and of the writer, pixel for pixel as G
 
 test "decode: every broken file refused with its code, the bombs before they allocate"
     for b in samples.refused()
-        match decode(bytes.parse_hex(b.file).must(), decoding())
+        match decode_with(bytes.parse_hex(b.file).must(), decoding())
             .ok _  => assert b.name == "never"
             .err e => assert e.code == b.code
 
@@ -370,13 +394,13 @@ test "decode: every prefix of a file is refused, and no changed byte aborts"
             file = bytes.parse_hex(s.file).must()
 
             for n in range(from: 0, to: file.len() - 12)
-                assert decode(file.slice(from: 0, to: n), decoding()).is_err()
+                assert decode_with(file.slice(from: 0, to: n), decoding()).is_err()
 
             for k in range(from: 0, to: file.len())
                 changed @= file
                 changed[k] @ to_u8(to_i64(file[k]).must() ^ 0x5a).must()
 
-                match decode(changed, decoding())
+                match decode_with(changed, decoding())
                     .ok p  => assert image.is_valid(p.image)
                     .err e => assert e.code == image.INVALID || e.code == image.UNSUPPORTED || e.code == image.LIMIT
 
@@ -384,19 +408,19 @@ test "decode: limits of the caller's own, and chunks kept by type, in place"
     file = bytes.parse_hex(samples.readable()[0].file).must()
     small = DecodeOptions(limits: image.Limits(max_width: 8, max_height: 100, max_pixels: 1000), keep: .none)
 
-    match decode(file, small)
+    match decode_with(file, small)
         .ok _  => assert false
         .err e => assert e.code == image.LIMIT
 
     rich = bytes.parse_hex(samples.readable()[samples.readable().len() - 1].file).must()
-    assert decode(rich, decoding()).must().chunks.len() == 0
-    every = decode(rich, DecodeOptions(limits: image.default_limits(), keep: .all)).must().chunks
+    assert decode_with(rich, decoding()).must().chunks.len() == 0
+    every = decode_with(rich, DecodeOptions(limits: image.default_limits(), keep: .all)).must().chunks
     assert every.len() == 4
     assert every[0].kind == "gAMA"
     assert !every[1].after_image
     assert every[2].kind == "zTXt"
     assert every[3].after_image
-    some = decode(rich, DecodeOptions(limits: image.default_limits(), keep: .only(kinds: ["iTXt"]))).must().chunks
+    some = decode_with(rich, DecodeOptions(limits: image.default_limits(), keep: .only(kinds: ["iTXt"]))).must().chunks
     assert some.len() == 1
     assert some[0].kind == "iTXt"
 
@@ -406,7 +430,7 @@ test "info_of: the header and a tRNS, nothing inflated"
         info = info_of(file).must()
         assert info.width == s.width
         assert info.format == samples.format_named(s.format)
-        assert info.interlaced == decode(file, decoding()).must().interlaced
+        assert info.interlaced == decode_with(file, decoding()).must().interlaced
 
     assert info_of([0x89, 0x50]).is_err()
 
@@ -426,14 +450,14 @@ test "encode and decode: every format, every filter and every level, back as wri
         for f in filters
             o @= encoding()
             o.filter @ f
-            back = decode(encode(img, o).must(), decoding()).must()
+            back = decode_with(encode(img, o).must(), decoding()).must()
             assert back.image == img
             assert back.bit_depth == image.bits_of(format)
 
         for level in range(from: 0, to: 10)
             o @= encoding()
             o.level @ level
-            assert decode(encode(img, o).must(), decoding()).must().image == img
+            assert decode_with(encode(img, o).must(), decoding()).must().image == img
 
 test "encode: the same image answers the same bytes, an empty image and a bad level refused"
     img = image.from_pixels(width: 2, height: 1, format: .rgb, pixels: [1, 2, 3, 4, 5, 6]).must()
@@ -451,7 +475,7 @@ test "encode: chunks written where they belong and read back, and chunks refused
         Chunk(kind: "gAMA", data: [0, 0, 0xb1, 0x8f], after_image: false)
         text_chunk(keyword: "Title", text: "Heroes").must()
     ]
-    kept = decode(encode(img, o).must(), DecodeOptions(limits: image.default_limits(), keep: .all)).must().chunks
+    kept = decode_with(encode(img, o).must(), DecodeOptions(limits: image.default_limits(), keep: .all)).must().chunks
     assert kept.len() == 3
     assert kept[0].kind == "gAMA"
     assert kept[1].kind == "tEXt"
@@ -483,7 +507,7 @@ test "encode_indexed: 2, 4, 16 and 256 colours, alpha in tRNS, back to the same 
             indices @ indices.push(to_u8(i * 7 % count).must())
 
         ix = image.Indexed(width: 11, height: 3, palette: palette, indices: indices)
-        back = decode(encode_indexed(ix, encoding()).must(), decoding()).must()
+        back = decode_with(encode_indexed(ix, encoding()).must(), decoding()).must()
         assert back.color_type == 3
         assert back.bit_depth == writing.index_depth(count)
         assert back.palette == palette
@@ -496,7 +520,7 @@ test "encode_indexed: an index past the palette and no palette refused"
 
 test "texts_of: the texts of the writer's file, Latin-1, compressed and UTF-8"
     rich = bytes.parse_hex(samples.readable()[samples.readable().len() - 1].file).must()
-    kept = decode(rich, DecodeOptions(limits: image.default_limits(), keep: .all)).must().chunks
+    kept = decode_with(rich, DecodeOptions(limits: image.default_limits(), keep: .all)).must().chunks
     found = texts_of(kept, limit: 1000).must()
     assert found.len() == 3
     assert found[0] == Text(keyword: "Author", text: "Bowie été")
@@ -518,7 +542,7 @@ test "decoding: the default limits, no chunk kept"
 # A file written and read back.
 test "decode: an image written as PNG comes back the same"
     img = image.from_pixels(width: 2, height: 1, format: .rgba, pixels: [255, 0, 0, 255, 0, 0, 255, 128]).must()
-    back = decode(encode(img, encoding()).must(), decoding()).must()
+    back = decode(encode(img, encoding()).must(), limits: image.default_limits()).must()
     assert back.image == img
     assert back.color_type == 6
 
@@ -545,7 +569,7 @@ test "encode: a gray image at level 9"
 test "encode_indexed: black and white in 1 bit"
     bw = [image.Color(r: 0, g: 0, b: 0, a: 255), image.Color(r: 255, g: 255, b: 255, a: 255)]
     ix = image.Indexed(width: 8, height: 1, palette: bw, indices: [0, 1, 0, 1, 0, 1, 0, 1])
-    back = decode(encode_indexed(ix, encoding()).must(), decoding()).must()
+    back = decode_with(encode_indexed(ix, encoding()).must(), decoding()).must()
     assert back.bit_depth == 1
     assert back.image.pixels.slice(from: 0, to: 6) == [0, 0, 0, 255, 255, 255]
 
@@ -554,10 +578,21 @@ test "texts_of: a title written and read back"
     o @= encoding()
     o.chunks @ [text_chunk(keyword: "Title", text: "Station to Station").must()]
     file = encode(image.blank(width: 1, height: 1, format: .gray).must(), o).must()
-    kept = decode(file, DecodeOptions(limits: image.default_limits(), keep: .only(kinds: ["tEXt"]))).must().chunks
+    kept = decode_with(file, DecodeOptions(limits: image.default_limits(), keep: .only(kinds: ["tEXt"]))).must().chunks
     assert texts_of(kept, limit: 1000).must() == [Text(keyword: "Title", text: "Station to Station")]
 
 # A text chunk made from a keyword and a text.
 test "text_chunk: ASCII as tEXt, other text as iTXt"
     assert text_chunk(keyword: "Author", text: "Bowie").must().kind == "tEXt"
     assert text_chunk(keyword: "Author", text: "Bowié").must().kind == "iTXt"
+
+# A file's chunks kept as it is read.
+test "decode_with: the text chunks kept"
+    img = image.from_pixels(width: 1, height: 1, format: .gray, pixels: [7]).must()
+    file = encode(img, encoding()).must()
+    assert decode_with(file, DecodeOptions(limits: image.default_limits(), keep: .all)).must().image == img
+
+# The pixels alone, as every format answers them.
+test "decode_image: the image alone"
+    img = image.from_pixels(width: 1, height: 1, format: .gray, pixels: [200]).must()
+    assert decode_image(encode(img, encoding()).must(), limits: image.default_limits()).must() == img

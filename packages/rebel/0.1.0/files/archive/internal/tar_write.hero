@@ -86,7 +86,7 @@ function copy_in(@sink: Sink, from: io.Stream, most: i64, name: str) -> i64?
     copied: i64 @= 0
 
     while true
-        got = io.read(from, most: 65536)?
+        got = io.read(from, n: 65536)?
 
         if got.len() == 0
             return ok(copied)

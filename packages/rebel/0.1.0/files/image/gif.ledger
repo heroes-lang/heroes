@@ -14,7 +14,7 @@
 # loop count equal.
 
 capability gif/decode  every frame of a GIF read, with its palette, place, delay and disposal
-  heroes  image/gif.decode, image/gif.Gif, image/gif.Frame, image/gif.Disposal
+  heroes  image/gif.decode, image/gif.decode_image, image/gif.Gif, image/gif.Frame, image/gif.Disposal
   go      DecodeAll, Decode, GIF, GIF.Image, GIF.Delay, GIF.Disposal, GIF.LoopCount, GIF.Config, GIF.BackgroundIndex, DisposalNone, DisposalBackground, DisposalPrevious
   rust    -
   python  Image.open, Image.seek, Image.tell, Image.n_frames, Image.is_animated, Image.info["duration"], Image.info["loop"], Image.info["background"], Image.info["transparency"], Image.disposal_method

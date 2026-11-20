@@ -79,7 +79,7 @@ function next_chunk(@r: Reading) -> [u8]?
             if ask > 65536
                 ask @ 65536
             _ = io.seek(r.s, offset: r.at, from: .start)?
-            got = io.read(r.s, most: ask)?
+            got = io.read(r.s, n: ask)?
 
             if got.len() == 0
                 return codes.invalid_at(at: r.at, why: f"the archive ends inside the data of \"{r.m.name}\"")

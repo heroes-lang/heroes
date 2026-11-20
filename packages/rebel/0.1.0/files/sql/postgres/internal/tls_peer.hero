@@ -76,7 +76,7 @@ function serve(arg: str) -> str
         .ok l =>
             listener @= l
             did @= "no client went through TLS"
-            bounded = tls.set_accept_deadline(listener, ms: 15000)
+            bounded = tls.set_accept_deadline(listener, deadline_ms: 15000)
 
             match bounded
                 .ok _  => _ = 0
@@ -110,7 +110,7 @@ function serve(arg: str) -> str
 # Reads the client's startup message through TLS and answers it a FATAL
 # error, as a server refusing the password does.
 function answered(s: io.Stream) -> str
-    startup = io.read(s, most: 1024)
+    startup = io.read(s, n: 1024)
 
     match startup
         .err e => return e.code + ": " + e.msg
