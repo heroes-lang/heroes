@@ -919,11 +919,10 @@ function checkSpecLinesThreshold(text: string, pagePath: string): string[] {
  * the fixpoint on (defect 2352). `seed/heroes.c` is refreshed at a release and
  * at a red two-stage build (`seed/README.md` § When this file must be
  * regenerated), so between two the compiler clang makes from it is an earlier
- * day's: on 2026-11-08 it refused a package's `use`, its alias in angle
- * brackets, and listed `add` and `fetch` as not built, while 18 programs of
- * `examples/` used a package and the site taught `heroes add`, because the
- * README and every page taught the clang line
- * alone. They teach both lines since, the README in step with the site
+ * day's: on 2026-11-08 it refused a package's `use`, the one with an entry in
+ * angle brackets, and listed `add` and `fetch` as not built, while 18 programs
+ * of `examples/` used a package and the site taught `heroes add`, because the
+ * README and every page taught the clang line alone. They teach both lines since, the README in step with the site
  * (`site/CLAUDE.md` § The README follows the site), and a page that drops the
  * second, or spells either another way, is red here. The README's fixpoint
  * commands check out a release by hand where `project.html` writes
