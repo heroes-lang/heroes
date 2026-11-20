@@ -11,7 +11,14 @@
 #
 # It does not convert a host between Unicode and its ASCII form in Punycode,
 # "bücher.de" and "xn--bcher-kva.de": `url/idna` does, by UTS #46, apart so
-# that only the programs that convert a host carry its tables.
+# that only the programs that convert a host carry its tables. It reads by RFC
+# 3986, not by the URL Standard of WHATWG that browsers follow, which repairs
+# what RFC 3986 refuses: a backslash, a space or a tab is `invalid` here, and
+# `parse_loose` escapes it, "/a\b" read as "/a%5Cb", where a browser reads a
+# slash or takes it out. A `data:` URL is read as any URL, its media type and
+# its data in the path, "text/plain;base64,aGk=", and nothing here decodes
+# the data: what follows its "," is `bytes.parse_base64` where ";base64"
+# precedes it, and `unescape_bytes` where it does not.
 
 use strings
 use url/internal/classes
@@ -97,68 +104,85 @@ record Url
     empty_fragment: bool
 
 # The parts of the URL `s` writes, a relative reference included: "/a?b",
-# "../c" and "" are read too, with an empty scheme. Fails `invalid` where `s`
-# is no URL by RFC 3986, the message naming the byte and the reason: a
-# character a URL may not hold as itself (a space, a quote, a `[` outside a
-# host, any character above ASCII), a `%` not followed by two hexadecimal
-# digits, a scheme that is not letters, digits, "+", "-" and "." after a
-# letter, a port that is not digits, a host in brackets that is no IPv6
-# address, an escape in a host that writes neither a character above ASCII nor
-# a letter, a digit, "-", ".", "_" or "~", and a relative path whose first
-# segment holds a ":", as "192.0.2.1:80/x" does. Fails `not_text` where the
-# escapes of the user, the password or the host are not UTF-8. The scheme and
-# the host are answered in lower case; an empty port, "h:", is read as none.
-# A text with no "//" after its scheme has no host: "localhost:80" is the
-# scheme "localhost" and the path "80", and "mailto:a@b" the path "a@b".
+# "../c" and "" are read too, with an empty scheme.
+#
+# - `s`: the URL or the relative reference, as it is written; nothing is
+#   trimmed.
+#
+# Fails `invalid` where `s` is no URL by RFC 3986, the message naming the byte
+# and the reason: a character a URL may not hold as itself (a space, a quote,
+# a `[` outside a host, any character above ASCII), a `%` not followed by two
+# hexadecimal digits, a scheme that is not letters, digits, "+", "-" and "."
+# after a letter, a port that is not digits, a host in brackets that is no
+# IPv6 address, an escape in a host that writes neither a character above
+# ASCII nor a letter, a digit, "-", ".", "_" or "~", and a relative path whose
+# first segment holds a ":", as "192.0.2.1:80/x" does. Fails `not_text` where
+# the escapes of the user, the password or the host are not UTF-8. The scheme
+# and the host are answered in lower case; an empty port, "h:", is read as
+# none. A text with no "//" after its scheme has no host: "localhost:80" is
+# the scheme "localhost" and the path "80", and "mailto:a@b" the path "a@b".
 function parse(s: str) -> Url?
     p = read.parse(s)?
     return ok(
         Url(scheme: p.scheme, user: p.user, password: p.password, host: p.host, port: p.port, path: p.path, query: p.query, fragment: p.fragment, empty_authority: p.empty_authority, empty_userinfo: p.empty_userinfo, empty_password: p.empty_password, empty_query: p.empty_query, empty_fragment: p.empty_fragment)
     )
 
-# The parts of the URL `s` writes, read as `parse` reads them after every
-# byte its part may not hold is written as an escape: a space, a quote, a
-# `[` in a query, a character above ASCII, a second "#", and a `%` that begins
-# no escape, which becomes "%25". Fails `invalid` and `not_text` as `parse`
-# does on everything else, its message naming the bytes of the escaped text.
-# It is the reading for a text a person typed or another program sent;
-# nothing is trimmed, so a space at either end is escaped like any other.
+# The parts of the URL `s` writes, read as `parse` reads them after every byte
+# its part may not hold is written as an escape: a space, a quote, a `[` in a
+# query, a character above ASCII, a second "#", and a `%` that begins no
+# escape, which becomes "%25".
+#
+# - `s`: the text, as a person typed it or another program sent it.
+#
+# Fails `invalid` and `not_text` as `parse` does on everything else, its
+# message naming the bytes of the escaped text. It is the reading for a text a
+# person typed or another program sent; nothing is trimmed, so a space at
+# either end is escaped like any other.
 function parse_loose(s: str) -> Url?
     return parse(loose.loosen(s))
 
 # The parts of `s`, the target an HTTP request names: an absolute path with
 # its query, "/a?b", or an absolute URL, "http://h/a?b" (RFC 9112 § 3.2).
+#
+# - `s`: the target, as the first line of a request writes it.
+#
 # Fails `invalid` where `s` is neither, has a fragment, or is no URL as
-# `parse` reads one, and `not_text` as `parse` does. A target that begins
-# with "//" is a path, never a host. The target "*" and the "host:port" of
-# CONNECT are no URLs: the first is compared, the second read by
-# `parse_host_port`.
+# `parse` reads one, and `not_text` as `parse` does. A target that begins with
+# "//" is a path, never a host. The target "*" and the "host:port" of CONNECT
+# are no URLs: the first is compared, the second read by `parse_host_port`.
 function parse_request_target(s: str) -> Url?
     p = read.parse_target(s)?
     return ok(
         Url(scheme: p.scheme, user: p.user, password: p.password, host: p.host, port: p.port, path: p.path, query: p.query, fragment: p.fragment, empty_authority: p.empty_authority, empty_userinfo: p.empty_userinfo, empty_password: p.empty_password, empty_query: p.empty_query, empty_fragment: p.empty_fragment)
     )
 
-# The text of `u`, its parts joined by RFC 3986 § 5.3: the user, the
-# password and the host are escaped, and in a raw part every byte the part
-# may not hold is written as its escape, a `%` that begins no escape as
-# "%25". A host that is an IPv6 address stands in brackets, and any other
-# host is escaped as a name, a ":" in it as "%3A". Three changes keep the
-# text reading back to the same parts: a path that does not begin with "/"
-# gets one after an authority; a path that begins with "//" gets "/." before
-# it where there is no authority; and "./" stands before a first segment that
-# holds a ":" where there is neither scheme nor authority. Aborts where the
-# scheme is not a letter then letters, digits, "+", "-" and ".", or the port
-# holds a byte that is not a digit, since no escape writes either: neither
-# comes out of `parse`.
+# The text of `u`, its parts joined by RFC 3986 § 5.3: the user, the password
+# and the host are escaped, and in a raw part every byte the part may not hold
+# is written as its escape, a `%` that begins no escape as "%25".
+#
+# - `u`: the URL's parts.
+#
+# A host that is an IPv6 address stands in brackets, and any other host is
+# escaped as a name, a ":" in it as "%3A". Three changes keep the text reading
+# back to the same parts: a path that does not begin with "/" gets one after
+# an authority; a path that begins with "//" gets "/." before it where there
+# is no authority; and "./" stands before a first segment that holds a ":"
+# where there is neither scheme nor authority. Aborts where the scheme is not
+# a letter then letters, digits, "+", "-" and ".", or the port holds a byte
+# that is not a digit, since no escape writes either: neither comes out of
+# `parse`.
 function format(u: Url) -> str
     return write.format(
         parts.Parts(scheme: u.scheme, user: u.user, password: u.password, host: u.host, port: u.port, path: u.path, query: u.query, fragment: u.fragment, empty_authority: u.empty_authority, empty_userinfo: u.empty_userinfo, empty_password: u.empty_password, empty_query: u.empty_query, empty_fragment: u.empty_fragment)
     )
 
 # The text of `u` with its password written "xxxxx", for a log, an empty
-# password that is written included. A URL with no password is written as
-# `format` writes it, and aborts where `format` does.
+# password that is written included.
+#
+# - `u`: the URL's parts.
+#
+# A URL with no password is written as `format` writes it, and aborts where
+# `format` does.
 function redacted(u: Url) -> str
     if u.password == "" && !u.empty_password
         return format(u)
@@ -168,17 +192,24 @@ function redacted(u: Url) -> str
 
 # The path and the query of `u` as the first line of an HTTP request names
 # them: the path, "/" where it is empty and a "/" before it where it begins
-# with none, then "?" and the query where `u` has one. Both are written as
-# `format` writes them.
+# with none, then "?" and the query where `u` has one.
+#
+# - `u`: the URL's parts; only its path and its query are read.
+#
+# Both are written as `format` writes them.
 function request_target(u: Url) -> str
     return write.request_target(path: u.path, query: u.query, empty_query: u.empty_query)
 
 # Whether `u` has a scheme, which is what tells a URL from a relative
 # reference.
+#
+# - `u`: the URL's parts.
 function is_abs(u: Url) -> bool
     return u.scheme != ""
 
 # `u` without its fragment, an empty one included.
+#
+# - `u`: the URL's parts.
 function without_fragment(u: Url) -> Url
     out @= u
     out.fragment @ ""
@@ -186,10 +217,15 @@ function without_fragment(u: Url) -> Url
     return out
 
 # The URL `reference` names where it is found in `base`, by RFC 3986 § 5.2:
-# "../g" against "http://a/b/c/d" is "http://a/b/g". A reference with a
-# scheme is answered as it is, its "." and ".." segments removed, even where
-# the scheme is `base`'s own (the RFC's strict reading). The fragment is
-# always `reference`'s. Where `base` has no scheme the answer has none either.
+# "../g" against "http://a/b/c/d" is "http://a/b/g".
+#
+# - `base`: the URL the reference is read against, as a page's own address.
+# - `reference`: the URL or the relative reference read against `base`.
+#
+# A reference with a scheme is answered as it is, its "." and ".." segments
+# removed, even where the scheme is `base`'s own (the RFC's strict reading).
+# The fragment is always `reference`'s. Where `base` has no scheme the answer
+# has none either.
 function resolve(base: Url, reference: Url) -> Url
     out @= reference
     authority = reference.user != "" || reference.password != "" || reference.host != "" || reference.port != "" || reference.empty_authority || reference.empty_userinfo || reference.empty_password
@@ -230,114 +266,163 @@ record HostPort
     port: str
 
 # The host and the port of `s`, written as an authority writes them with no
-# user before: "example.com", "example.com:8080", "[::1]:8080". Fails
-# `invalid` where the port is not digits, the host is not one `parse` reads,
-# or `s` holds a ":" more than once outside brackets, as an IPv6 address
-# without brackets does; and `not_text` where the host's escapes are not
-# UTF-8.
+# user before: "example.com", "example.com:8080", "[::1]:8080".
+#
+# - `s`: the host and the port, as an authority writes them.
+#
+# Fails `invalid` where the port is not digits, the host is not one `parse`
+# reads, or `s` holds a ":" more than once outside brackets, as an IPv6
+# address without brackets does; and `not_text` where the host's escapes are
+# not UTF-8.
 function parse_host_port(s: str) -> HostPort?
     place = hosts.read(s: s, from: 0, to: s.len())?
     return ok(HostPort(host: place.host, port: place.port))
 
-# The text "host:port" as an authority writes it: an IPv6 address in
-# brackets, any other host escaped as a name, then ":" and `port` where
-# `port` is not "". Aborts where `port` holds a byte that is not a digit.
+# The text "host:port" as an authority writes it: an IPv6 address in brackets,
+# any other host escaped as a name, then ":" and `port` where `port` is not
+# "".
+#
+# - `host`: the host, unescaped, an IPv6 address without its brackets.
+# - `port`: the port, digits alone, or "" for none.
+#
+# Aborts where `port` holds a byte that is not a digit.
 function format_host_port(host: str, port: str) -> str
     return hosts.format(host: host, port: port)
 
-# The port `u` is reached on, as a number: the one it writes, else the
-# default of its scheme. Fails `not_found` where it writes none and
-# `default_port` knows none for the scheme, `does_not_fit` where the port is
-# past 65535, and `invalid` where a port written by hand is not digits.
+# The port `u` is reached on, as a number: the one it writes, else the default
+# of its scheme.
+#
+# - `u`: the URL's parts.
+#
+# Fails `not_found` where it writes none and `default_port` knows none for the
+# scheme, `does_not_fit` where the port is past 65535, and `invalid` where a
+# port written by hand is not digits.
 function port_of(u: Url) -> i64?
     if u.port == ""
         return default_port(u.scheme)
     return ports.read(u.port)
 
 # The port a URL of `scheme` is reached on where it writes none: 80 for
-# "http", 443 for "https". Fails `not_found` for a scheme not in the table,
-# which holds the schemes with a port of their own that everybody uses. The
-# scheme is read in any case.
+# "http", 443 for "https".
+#
+# - `scheme`: the scheme, in any case.
+#
+# Fails `not_found` for a scheme not in the table, which holds the schemes
+# with a port of their own that everybody uses. The scheme is read in any
+# case.
 function default_port(scheme: str) -> i64?
     return ports.default_of(scheme)
 
 ## The path
 
 # The segments of the raw path `path`, each unescaped: "/a%2Fb/c" answers
-# ["a/b", "c"]. Fails `invalid` where a `%` begins no escape and `not_text`
-# where a segment's bytes are not UTF-8. A "/" at the start begins the first
-# segment and is not one, so "a/b" and "/a/b" answer the same; a "/" at the
-# end leaves an empty last segment; "" answers no segment and "/" one empty
-# segment.
+# ["a/b", "c"].
+#
+# - `path`: the raw path, escapes and all.
+#
+# Fails `invalid` where a `%` begins no escape and `not_text` where a
+# segment's bytes are not UTF-8. A "/" at the start begins the first segment
+# and is not one, so "a/b" and "/a/b" answer the same; a "/" at the end leaves
+# an empty last segment; "" answers no segment and "/" one empty segment.
 function parse_path(path: str) -> [str]?
     return paths.parse(path)
 
 # The raw path of `segments`, a "/" before each and each escaped as
 # `escape_segment` does, so a "/" inside a segment stays in it: ["a/b", "c"]
-# answers "/a%2Fb/c". No segment answers "".
+# answers "/a%2Fb/c".
+#
+# - `segments`: the segments, unescaped, in order.
+#
+# No segment answers "".
 function format_path(segments: [str]) -> str
     return paths.format(segments)
 
-# `u` with its path going on with `segments`, each escaped as
-# `escape_segment` does: "http://h/v1" and ["users", "7"] answer
-# "http://h/v1/users/7", and so does "http://h/v1/". A segment "." or ".."
-# is written as it is, and whoever reads the path takes it for a dot-segment:
-# refuse those names first where they come from outside.
+# `u` with its path going on with `segments`, each escaped as `escape_segment`
+# does: "http://h/v1" and ["users", "7"] answer "http://h/v1/users/7", and so
+# does "http://h/v1/".
+#
+# - `u`: the URL whose path goes on.
+# - `segments`: the segments added, unescaped, in order; none add nothing.
+#
+# A segment "." or ".." is written as it is, and whoever reads the path takes
+# it for a dot-segment: refuse those names first where they come from outside.
 function add_segments(u: Url, segments: [str]) -> Url
     out @= u
     authority = u.user != "" || u.password != "" || u.host != "" || u.port != "" || u.empty_authority || u.empty_userinfo || u.empty_password
     out.path @ paths.add(path: u.path, segments: segments, authority: authority)
     return out
 
-# The raw path `path` without its "." and ".." segments, by RFC 3986
-# § 5.2.4: "/a/b/../c/./d" answers "/a/c/d". A ".." above the first segment
-# is dropped. It reads the text as it stands, so an escaped dot, "%2E", is
-# not one.
+# The raw path `path` without its "." and ".." segments, by RFC 3986 § 5.2.4:
+# "/a/b/../c/./d" answers "/a/c/d".
+#
+# - `path`: the raw path.
+#
+# A ".." above the first segment is dropped. It reads the text as it stands,
+# so an escaped dot, "%2E", is not one.
 function remove_dot_segments(path: str) -> str
     return paths.remove_dot_segments(path)
 
 ## Escapes
 
-# `s` written as one segment of a path: every byte but a letter, a digit,
-# "-", ".", "_" and "~" becomes "%" and two upper-case hexadecimal digits,
-# the "/" included, so the segment stays one. A character above ASCII is
-# escaped byte by byte. The names "." and ".." stay as they are, and a path
-# reads them as dot-segments.
+# `s` written as one segment of a path: every byte but a letter, a digit, "-",
+# ".", "_" and "~" becomes "%" and two upper-case hexadecimal digits, the "/"
+# included, so the segment stays one.
+#
+# - `s`: the text of the segment; the empty text answers itself.
+#
+# A character above ASCII is escaped byte by byte. The names "." and ".." stay
+# as they are, and a path reads them as dot-segments.
 function escape_segment(s: str) -> str
     return escapes.escape(s: s, keeps: classes.is_unreserved, plus: false)
 
 # `s` written as a key or a value of a query, by the rules of a form
 # (`application/x-www-form-urlencoded`): a space becomes "+", and every other
 # byte but a letter, a digit, "-", ".", "_" and "~" its escape.
+#
+# - `s`: the key or the value.
 function escape_query(s: str) -> str
     return escapes.escape(s: s, keeps: classes.is_unreserved, plus: true)
 
 # `s` written as a fragment: as `escape_segment`, but "/" and "?" stay, which
 # a fragment may hold as themselves.
+#
+# - `s`: the text of the fragment.
 function escape_fragment(s: str) -> str
     return escapes.escape(s: s, keeps: classes.in_fragment_data, plus: false)
 
 # `data` written as escapes, for bytes that are no text: every byte but a
 # letter, a digit, "-", ".", "_" and "~" becomes its escape.
+#
+# - `data`: the bytes written; none answer "".
 function escape_bytes(data: [u8]) -> str
     return escapes.escape_list(data: data, keeps: classes.is_unreserved)
 
 # The text `s` stands for, each "%" and two hexadecimal digits read as one
-# byte: what a path segment, a fragment or a name holds. Fails `invalid` where
-# a `%` is not followed by two hexadecimal digits, the message naming the
-# byte, and `not_text` where the bytes are not UTF-8. Every other byte is
-# answered as it is, a "+" included.
+# byte: what a path segment, a fragment or a name holds.
+#
+# - `s`: the escaped text.
+#
+# Fails `invalid` where a `%` is not followed by two hexadecimal digits, the
+# message naming the byte, and `not_text` where the bytes are not UTF-8. Every
+# other byte is answered as it is, a "+" included.
 function unescape(s: str) -> str?
     return escapes.unescape(s: s, plus: false)
 
-# The text `s` stands for as a key or a value of a query: as `unescape`, and
-# a "+" is a space. Fails as `unescape` does.
+# The text `s` stands for as a key or a value of a query: as `unescape`, and a
+# "+" is a space.
+#
+# - `s`: the escaped key or value.
+#
+# Fails as `unescape` does.
 function unescape_query(s: str) -> str?
     return escapes.unescape(s: s, plus: true)
 
 # The bytes `s` stands for, each "%" and two hexadecimal digits read as one
-# byte and every other byte as itself, text or not. Fails `invalid` where a
-# `%` is not followed by two hexadecimal digits.
+# byte and every other byte as itself, text or not.
+#
+# - `s`: the escaped text.
+#
+# Fails `invalid` where a `%` is not followed by two hexadecimal digits.
 function unescape_bytes(s: str) -> [u8]?
     return escapes.decode(s: s, plus: false)
 
@@ -350,13 +435,16 @@ record Pair
     # The value, the text after the "="; "" where the pair writes none.
     value: str
 
-# The keys and values of the raw query `query`, in the order it writes them,
-# a key held more than once kept each time: "a=1&b=2&a=3" answers three
-# pairs. Fails `invalid` where a `%` begins no escape and `not_text` where a
-# key's or a value's bytes are not UTF-8. Pairs are parted by "&" alone, and a
-# ";" is a character like any other. A pair is cut at its first "="; one with
-# no "=" is a key with an empty value; an empty piece, as between "&&", is no
-# pair. A "+" is a space.
+# The keys and values of the raw query `query`, in the order it writes them, a
+# key held more than once kept each time: "a=1&b=2&a=3" answers three pairs.
+#
+# - `query`: the raw query, without its "?"; "" answers no pair.
+#
+# Fails `invalid` where a `%` begins no escape and `not_text` where a key's or
+# a value's bytes are not UTF-8. Pairs are parted by "&" alone, and a ";" is a
+# character like any other. A pair is cut at its first "="; one with no "=" is
+# a key with an empty value; an empty piece, as between "&&", is no pair. A
+# "+" is a space.
 function parse_query(query: str) -> [Pair]?
     out: [Pair] @= []
 
@@ -373,8 +461,11 @@ function parse_query(query: str) -> [Pair]?
     return ok(out)
 
 # The raw query of `pairs`, in their order: each key and value escaped as
-# `escape_query` does, "=" between the two and "&" between pairs. A pair with
-# an empty value is written "key=".
+# `escape_query` does, "=" between the two and "&" between pairs.
+#
+# - `pairs`: the keys and values, unescaped, in order; none answer "".
+#
+# A pair with an empty value is written "key=".
 function format_query(pairs: [Pair]) -> str
     pieces: [str] @= []
 
@@ -383,8 +474,12 @@ function format_query(pairs: [Pair]) -> str
 
     return pieces.join("&")
 
-# The value of the first pair of `pairs` whose key is `key`. Fails
-# `not_found` where no pair has it.
+# The value of the first pair of `pairs` whose key is `key`.
+#
+# - `pairs`: the pairs searched, in order.
+# - `key`: the key, unescaped, compared byte for byte.
+#
+# Fails `not_found` where no pair has it.
 function value_of(pairs: [Pair], key: str) -> str?
     for pair in pairs
         if pair.key == key
@@ -392,8 +487,11 @@ function value_of(pairs: [Pair], key: str) -> str?
 
     return fail(code: NOT_FOUND, msg: f"no key {classes.shown(key)} among {pairs.len()} pairs")
 
-# The values of every pair of `pairs` whose key is `key`, in their order;
-# none where no pair has it.
+# The values of every pair of `pairs` whose key is `key`, in their order; none
+# where no pair has it.
+#
+# - `pairs`: the pairs searched, in order.
+# - `key`: the key, unescaped, compared byte for byte.
 function values_of(pairs: [Pair], key: str) -> [str]
     out: [str] @= []
 
@@ -404,6 +502,9 @@ function values_of(pairs: [Pair], key: str) -> [str]
     return out
 
 # Whether a pair of `pairs` has the key `key`.
+#
+# - `pairs`: the pairs searched.
+# - `key`: the key, unescaped, compared byte for byte.
 function has_key(pairs: [Pair], key: str) -> bool
     for pair in pairs
         if pair.key == key
@@ -411,9 +512,13 @@ function has_key(pairs: [Pair], key: str) -> bool
 
     return false
 
-# `pairs` with `key` holding `value` alone: the first pair with that key
-# takes the value where it stands, every later one is left out, and where no
-# pair has the key one is added at the end.
+# `pairs` with `key` holding `value` alone: the first pair with that key takes
+# the value where it stands, every later one is left out, and where no pair
+# has the key one is added at the end.
+#
+# - `pairs`: the pairs, in order.
+# - `key`: the key set, unescaped.
+# - `value`: the value it holds, unescaped.
 function with_value(pairs: [Pair], key: str, value: str) -> [Pair]
     out: [Pair] @= []
     placed: bool @= false
@@ -430,6 +535,9 @@ function with_value(pairs: [Pair], key: str, value: str) -> [Pair]
     return out
 
 # `pairs` without the pairs whose key is `key`, the others in their order.
+#
+# - `pairs`: the pairs, in order.
+# - `key`: the key taken out, unescaped.
 function without_key(pairs: [Pair], key: str) -> [Pair]
     out: [Pair] @= []
 
@@ -733,3 +841,130 @@ test "value_of, values_of, has_key, with_value and without_key"
     match value_of(pairs: pairs, key: "z")
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND && e.msg == "no key \"z\" among 3 pairs"
+
+## Examples
+
+# A URL read into its parts.
+test "parse: every part of a URL"
+    u = parse("https://ada@example.com:8443/a/b?q=1#top").must()
+    assert u.scheme == "https" && u.user == "ada" && u.host == "example.com" && u.port == "8443"
+    assert u.path == "/a/b" && u.query == "q=1" && u.fragment == "top"
+
+# A URL a person typed, its space written as an escape.
+test "parse_loose: a space in a path"
+    assert parse_loose("http://h/a b").must().path == "/a%20b"
+
+# The target an HTTP request names, read into its path and query.
+test "parse_request_target: a path and a query"
+    t = parse_request_target("/search?q=x").must()
+    assert t.path == "/search" && t.query == "q=x"
+
+# A URL written back after its host changed.
+test "format: a URL with another host"
+    u @= parse("http://a.example/x?y=1").must()
+    u.host @ "b.example"
+    assert format(u) == "http://b.example/x?y=1"
+
+# A URL written for a log, its password hidden.
+test "redacted: a URL with a password"
+    assert redacted(parse("https://ada:secret@h/").must()) == "https://ada:xxxxx@h/"
+
+# The path and query a request's first line names.
+test "request_target: a URL with a fragment"
+    assert request_target(parse("http://h/a?b=1#c").must()) == "/a?b=1"
+
+# A URL told from a relative reference.
+test "is_abs: a URL and a path"
+    assert is_abs(parse("http://h/").must()) && !is_abs(parse("/a").must())
+
+# A URL without the fragment a browser keeps to itself.
+test "without_fragment: a page's place dropped"
+    assert format(without_fragment(parse("http://h/a#top").must())) == "http://h/a"
+
+# A host and its port, an IPv6 address in brackets.
+test "parse_host_port: an IPv6 address and a port"
+    hp = parse_host_port("[::1]:8080").must()
+    assert hp.host == "::1" && hp.port == "8080"
+
+# A host and a port written as an authority.
+test "format_host_port: an IPv6 address and a port"
+    assert format_host_port(host: "::1", port: "8080") == "[::1]:8080"
+
+# The port a URL is reached on, written or by its scheme.
+test "port_of: written and by the scheme"
+    assert port_of(parse("http://h:8080/").must()).must() == 8080
+    assert port_of(parse("https://h/").must()).must() == 443
+
+# The port of a scheme.
+test "default_port: HTTPS"
+    assert default_port("https").must() == 443
+
+# A path's segments, an escaped slash kept inside its segment.
+test "parse_path: an escaped slash"
+    assert parse_path("/a%2Fb/c").must() == ["a/b", "c"]
+
+# A path written from its segments.
+test "format_path: a slash inside a segment"
+    assert format_path(["a/b", "c"]) == "/a%2Fb/c"
+
+# An API's base URL with a resource's segments added.
+test "add_segments: a resource under a base"
+    u = add_segments(parse("http://h/v1").must(), segments: ["users", "7"])
+    assert format(u) == "http://h/v1/users/7"
+
+# A path cleaned of its dot-segments.
+test "remove_dot_segments: up and here"
+    assert remove_dot_segments("/a/b/../c/./d") == "/a/c/d"
+
+# A name written as one segment of a path.
+test "escape_segment: a name with a space and a slash"
+    assert escape_segment("a b/c") == "a%20b%2Fc"
+
+# A value written into a query, a space as a plus.
+test "escape_query: a value with a space and a plus"
+    assert escape_query("a b+c") == "a+b%2Bc"
+
+# A fragment written, its slash and question mark kept.
+test "escape_fragment: a fragment with a space"
+    assert escape_fragment("a b/c?") == "a%20b/c?"
+
+# Bytes that are no text written as escapes.
+test "escape_bytes: a byte above ASCII and a letter"
+    assert escape_bytes([0xff, 0x41]) == "%FFA"
+
+# A segment's escapes read back as text.
+test "unescape: an accented letter"
+    assert unescape("caf%C3%A9").must() == "café"
+
+# A query's value read back, its plus a space.
+test "unescape_query: a plus and an escape"
+    assert unescape_query("a+b%21").must() == "a b!"
+
+# Escapes read back as bytes that are no text.
+test "unescape_bytes: a byte above ASCII and a zero byte"
+    assert unescape_bytes("%FF%00").must() == [0xff, 0x00]
+
+# The first value of a key.
+test "value_of: the first of two"
+    pairs = parse_query("a=1&b=2&a=3").must()
+    assert value_of(pairs, key: "a").must() == "1"
+
+# Every value of a key, in order.
+test "values_of: a key held twice"
+    pairs = parse_query("a=1&b=2&a=3").must()
+    assert values_of(pairs, key: "a") == ["1", "3"]
+
+# A query asked whether it holds a key.
+test "has_key: held and not"
+    pairs = parse_query("a=1&b=2").must()
+    assert has_key(pairs, key: "b") && !has_key(pairs, key: "c")
+
+# A key given one value in place of its two.
+test "with_value: a page number set"
+    pairs = parse_query("page=1&q=x&page=2").must()
+    assert format_query(with_value(pairs, key: "page", value: "3")) == "page=3&q=x"
+
+# A key taken out of a query.
+test "without_key: a token taken out"
+    pairs = parse_query("q=x&token=s3cret").must()
+    assert format_query(without_key(pairs, key: "token")) == "q=x"
