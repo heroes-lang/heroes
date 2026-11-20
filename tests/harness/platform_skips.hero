@@ -88,6 +88,9 @@ constant FRAME_NAMED_ON_WINDOWS: str
 constant INSTANCE_NAMED_ON_WINDOWS: str
     "Windows' stack guard says `stack exhausted` and names no function, the first sentence alone, and its room's bound says it without a name too, so a case pinning a generic function's instance by name, the frame or the room it ran out of, is judged where a name is said, Darwin and Linux, and defect 2253's cases judge Windows (defect 2371)"
 
+constant CALLS_ON_WINDOWS: str
+    "Windows' runtime tells no call beneath an abort's report yet (`runtime/parts/calls.c`'s Windows arm: a PE holds no names of its functions without DbgHelp and the PDB beside it, and `llvm-symbolizer` reads a Heroes function's lines from that PDB wrongly, defect 509's measurement on the box), so a case pinning the calls an abort tells is judged where they are told, Darwin and Linux; unrun on the box, which did not answer on 2026-11-20 (panel 253's R5)"
+
 constant LIBRARY_FILE_ON_WINDOWS: str
     "the Windows target links `-lh2476` as `h2476.lib` (`ffi_build.names_library`, measured on the box by panel 188 and beside defect 2398), a file of another name than the `libh2476.a` the case's folder holds for this Mac's ld64 and Linux's GNU ld, which read it under one name and refuse it in words read alike; so the file the expectation names cannot be the one the Windows link opens, and `link.exe`'s words for a file it cannot read are unrun (defect 2476)"
 
@@ -133,6 +136,12 @@ function windows() -> [Skip]
         Skip(name: "fixedbugs-2476-a-file-the-linker-cannot-read-for-a-link-is-told-at-the-group-that-links-it", why: LIBRARY_FILE_ON_WINDOWS)
         Skip(name: "the-platform-layer-ends-at-a-second-request-to-end", why: SECOND_EVENT_ON_WINDOWS)
         Skip(name: "the-platform-layer-ends-at-a-second-interrupt-after-the-program-asked-its-stop", why: SECOND_INTERRUPT_ON_WINDOWS)
+        Skip(name: "abort-calls-a-function-inlined-into-main", why: CALLS_ON_WINDOWS)
+        Skip(name: "abort-calls-above-the-librarys-own-stop", why: CALLS_ON_WINDOWS)
+        Skip(name: "abort-calls-on-a-thread", why: CALLS_ON_WINDOWS)
+        Skip(name: "abort-calls-three-deep", why: CALLS_ON_WINDOWS)
+        Skip(name: "abort-calls-through-a-callback-from-c", why: CALLS_ON_WINDOWS)
+        Skip(name: "abort-calls-through-a-recursion", why: CALLS_ON_WINDOWS)
     ]
 
 # The programs every other platform builds and the Windows target's C refuses,
@@ -286,7 +295,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 21
+    assert windows().len() == 27
 
     for one in windows().slice(from: 5, to: 17)
         assert shell.exists("tests/golden/run/" + one.name + ".hero")
@@ -303,6 +312,12 @@ test "every name skipped on Windows is a case or a surface row that exists"
     # The second interrupt after the stop a program asked itself, whose end
     # Windows' own handler answers in a status of its own (panel 248's R4).
     assert shell.exists("tests/golden/run/" + windows()[20].name + ".hero")
+
+    # The calls an abort tells, which Windows' runtime does not tell yet
+    # (panel 253's R5).
+    for one in windows().slice(from: 21, to: 27)
+        assert shell.exists("tests/golden/run/" + one.name + ".hero")
+        assert one.why == CALLS_ON_WINDOWS
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).
