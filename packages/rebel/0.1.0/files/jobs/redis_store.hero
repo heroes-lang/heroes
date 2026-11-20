@@ -39,7 +39,7 @@ use time
 # job's fields, `rebel_jobs:ready:<queue>` and the other sets of a queue,
 # `rebel_jobs:unique:<key>`, `rebel_jobs:periodic:<name>`.
 constant PREFIX: str
-    replies.PREFIX
+    "rebel_jobs:"
 
 ## Enqueueing
 
@@ -247,7 +247,7 @@ function extend(@c: redis.Client, worker: jobs.Worker, claimed: jobs.Info) -> jo
 # Any worker may call it, as often as it likes; a worker loop calls it
 # every few minutes. Fails as `redis.call` fails. See also `extend`.
 function rescue(@c: redis.Client) -> i64?
-    return redis.integer_of(redis.call(@c, ["EVAL", scripts.rescue(), "0", PREFIX])?)
+    return redis.int_of(redis.call(@c, ["EVAL", scripts.rescue(), "0", PREFIX])?)
 
 # Removes every job of `state` that finished more than `older_than` ago, and
 # answers how many.
@@ -268,7 +268,7 @@ function purge(@c: redis.Client, state: jobs.State, older_than: time.Duration) -
 
     if older_than.nanoseconds < 0
         return fail(code: jobs.INVALID, msg: f"the age, {time.format_duration(older_than)}, is below zero")
-    return redis.integer_of(
+    return redis.int_of(
         redis.call(@c, ["EVAL", scripts.purge(), "0", PREFIX, jobs.state_name(state), to_str(replies.micros(older_than))])?
     )
 
@@ -499,7 +499,10 @@ function enqueue_due(@c: redis.Client, schedules: [jobs.Periodic]) -> [i64]?
 
 ## Tests
 
-test "live: skipped where REBEL_REDIS_URL names no server"
+test "PREFIX: every key of the store begins with rebel_jobs:"
+    assert PREFIX == "rebel_jobs:"
+
+test "live: the version of the server REBEL_REDIS_URL names"
     match live.connect()
         .ok first =>
             c @= first
@@ -509,11 +512,11 @@ test "live: skipped where REBEL_REDIS_URL names no server"
                 strings.split(s: strings.split(s: info, sep: "redis_version:")[1], sep: "\r\n")[0]
             )
             redis.close(@c).must()
-        .err e => print("jobs/redis_store live: skipped, ", e.msg)
+        .err e => skip_test(reason: e.msg)
 
 test "enqueue live: each start, a past instant ready at once, a payload of more than one byte, a unique key held and freed, and the refusals"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
@@ -554,7 +557,7 @@ test "enqueue live: each start, a past instant ready at once, a payload of more 
 
 test "enqueue_many live: none, all kept, and a duplicate keeping none, held before or within the batch"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             assert enqueue_many(@c, []).must() == []
@@ -586,7 +589,7 @@ test "enqueue_many live: none, all kept, and a duplicate keeping none, held befo
 
 test "claim live: by priority across queues, ids in order within one millisecond, a queue paused passed over, and a bad worker refused"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             low @= jobs.new_job("low", .null_value)
@@ -620,7 +623,7 @@ test "claim live: by priority across queues, ids in order within one millisecond
 
 test "complete and fail_attempt live: a second completion refused, attempts spent fail for good with every error, and an error of quotes and more than one byte"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
@@ -657,7 +660,7 @@ test "complete and fail_attempt live: a second completion refused, attempts spen
 
 test "discard, snooze and extend live: failed for good at once, an attempt given back uncounted, a lease renewed, and a cancellation learnt"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
@@ -686,7 +689,7 @@ test "discard, snooze and extend live: failed for good at once, an attempt given
 
 test "rescue live: a lease run out given back counted, a late completion refused, and a job of one attempt failed for good"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             worker @= jobs.new_worker([jobs.DEFAULT_QUEUE])
@@ -710,7 +713,7 @@ test "rescue live: a lease run out given back counted, a late completion refused
 
 test "purge, get, list and counts live: the finished removed by age, a job not there, pages of a queue, and the refusals"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             worker = jobs.new_worker(["q"])
@@ -755,7 +758,7 @@ test "purge, get, list and counts live: the finished removed by age, a job not t
 
 test "pause, resume and paused_queues live: two paused in order, one resumed, a queue never seen, and a bad name"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             pause(@c, "zeta").must()
@@ -770,7 +773,7 @@ test "pause, resume and paused_queues live: two paused in order, one resumed, a 
 
 test "cancel, retry and delete live: each state answered, a running job kept, a held key refused, and a job not there"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
@@ -814,7 +817,7 @@ test "cancel, retry and delete live: each state answered, a running job kept, a 
 
 test "enqueue_due live: first seen nothing, due once enqueued once, called again nothing, a changed schedule kept anew, and a held key passed"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             job @= jobs.new_job("report", .null_value)
@@ -825,11 +828,11 @@ test "enqueue_due live: first seen nothing, due once enqueued once, called again
             ids = enqueue_due(@c, [nightly]).must()
             assert ids.len() == 1 && get(@c, ids[0]).must().queue == "reports"
             assert enqueue_due(@c, [nightly, nightly]).must() == []
-            kept = redis.integer_of(redis.call(@c, ["HGET", PREFIX + "periodic:nightly", "next_at"]).must()).must()
+            kept = redis.int_of(redis.call(@c, ["HGET", PREFIX + "periodic:nightly", "next_at"]).must()).must()
             assert kept % 86_400_000_000 == 3 * 3_600_000_000
             hourly = jobs.new_periodic(name: "nightly", cron: "0 * * * *", job: job).must()
             assert enqueue_due(@c, [hourly]).must() == []
-            moved = redis.integer_of(redis.call(@c, ["HGET", PREFIX + "periodic:nightly", "next_at"]).must()).must()
+            moved = redis.int_of(redis.call(@c, ["HGET", PREFIX + "periodic:nightly", "next_at"]).must()).must()
             assert moved % 3_600_000_000 == 0 && moved <= kept
             held @= job
             held.unique_key @ "one-report"
@@ -838,7 +841,7 @@ test "enqueue_due live: first seen nothing, due once enqueued once, called again
             assert enqueue_due(@c, [once]).must() == []
             _ = redis.call(@c, ["HSET", PREFIX + "periodic:held", "next_at", "1000000"]).must()
             assert enqueue_due(@c, [once]).must() == []
-            assert redis.integer_of(redis.call(@c, ["HGET", PREFIX + "periodic:held", "next_at"]).must()).must() > 1_000_000
+            assert redis.int_of(redis.call(@c, ["HGET", PREFIX + "periodic:held", "next_at"]).must()).must() > 1_000_000
             bad @= job
             bad.kind @ ""
             assert enqueue_due(@c, [jobs.new_periodic(name: "bad", cron: "* * * * *", job: bad).must()]).is_err()
@@ -846,14 +849,10 @@ test "enqueue_due live: first seen nothing, due once enqueued once, called again
 
 ## Examples
 
-# The prefix of the store's keys.
-test "PREFIX: the keys of the store"
-    assert PREFIX == "rebel_jobs:"
-
 # A job enqueued, to run as soon as a worker claims it.
 test "enqueue: a welcome email"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             id = enqueue(@c, jobs.new_job("send_welcome", .object(members: {"user": .number(v: 7.0)}))).must()
@@ -863,7 +862,7 @@ test "enqueue: a welcome email"
 # Two jobs enqueued, all or none.
 test "enqueue_many: two jobs"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             ids = enqueue_many(@c, [jobs.new_job("a", .null_value), jobs.new_job("b", .null_value)]).must()
@@ -873,7 +872,7 @@ test "enqueue_many: two jobs"
 # The job that holds a unique key.
 test "find_unique: a nightly sync not yet run"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             j @= jobs.new_job("sync", .null_value)
@@ -885,7 +884,7 @@ test "find_unique: a nightly sync not yet run"
 # A worker's loop: claim, run the program's own function, complete.
 test "claim: the next job, run and completed"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             _ = enqueue(@c, jobs.new_job("resize", .text(v: "photo.png"))).must()
@@ -897,7 +896,7 @@ test "claim: the next job, run and completed"
 # A job completed with what it answered.
 test "complete: a job and its output"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             id = enqueue(@c, jobs.new_job("count", .null_value)).must()
@@ -908,7 +907,7 @@ test "complete: a job and its output"
 # A failed attempt, the job waiting to run again.
 test "fail_attempt: the first attempt failed, the job waits"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             _ = enqueue(@c, jobs.new_job("charge", .null_value)).must()
@@ -920,7 +919,7 @@ test "fail_attempt: the first attempt failed, the job waits"
 # A job failed for good, whatever attempts it had left.
 test "discard: a payload the program cannot read"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             id = enqueue(@c, jobs.new_job("import", .text(v: "not a file"))).must()
@@ -935,7 +934,7 @@ test "discard: a payload the program cannot read"
 # An attempt given back, the job to run again in a minute.
 test "snooze: a resource busy"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             id = enqueue(@c, jobs.new_job("export", .null_value)).must()
@@ -946,7 +945,7 @@ test "snooze: a resource busy"
 # A long job renewing its lease.
 test "extend: the lease of a long job renewed"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             _ = enqueue(@c, jobs.new_job("render", .null_value)).must()
@@ -958,7 +957,7 @@ test "extend: the lease of a long job renewed"
 # The jobs of workers gone given back.
 test "rescue: no lease has run out"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             assert rescue(@c).must() == 0
@@ -967,7 +966,7 @@ test "rescue: no lease has run out"
 # The completed jobs of more than a day ago removed.
 test "purge: completed jobs older than a day"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             assert purge(@c, .completed, older_than: time.hours(24).must()).must() == 0
@@ -976,7 +975,7 @@ test "purge: completed jobs older than a day"
 # A queue paused, its jobs waiting.
 test "pause: the mail queue"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             pause(@c, "mail").must()
@@ -986,7 +985,7 @@ test "pause: the mail queue"
 # A queue paused, then claimed from again.
 test "resume: the mail queue"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             pause(@c, "mail").must()
@@ -997,7 +996,7 @@ test "resume: the mail queue"
 # The queues paused.
 test "paused_queues: none"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             assert paused_queues(@c).must() == []
@@ -1006,7 +1005,7 @@ test "paused_queues: none"
 # A job read by its id.
 test "get: a job just enqueued"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             id = enqueue(@c, jobs.new_job("thumbnail", .null_value)).must()
@@ -1016,7 +1015,7 @@ test "get: a job just enqueued"
 # The jobs waiting in a queue, in the order they would be claimed.
 test "list: the jobs waiting in the default queue"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             _ = enqueue(@c, jobs.new_job("a", .null_value)).must()
@@ -1026,7 +1025,7 @@ test "list: the jobs waiting in the default queue"
 # How many jobs stand in each queue and state.
 test "counts: one job waiting"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             _ = enqueue(@c, jobs.new_job("a", .null_value)).must()
@@ -1036,7 +1035,7 @@ test "counts: one job waiting"
 # A job cancelled before it ran.
 test "cancel: a job waiting"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             id = enqueue(@c, jobs.new_job("a", .null_value)).must()
@@ -1046,7 +1045,7 @@ test "cancel: a job waiting"
 # A job failed for good, run again.
 test "retry: a job discarded, run again"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             id = enqueue(@c, jobs.new_job("a", .null_value)).must()
@@ -1057,7 +1056,7 @@ test "retry: a job discarded, run again"
 # A job removed.
 test "delete: a job waiting"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             id = enqueue(@c, jobs.new_job("a", .null_value)).must()
@@ -1068,7 +1067,7 @@ test "delete: a job waiting"
 # A nightly report: its schedule kept the first time, enqueued once due.
 test "enqueue_due: a schedule first seen enqueues nothing yet"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
             nightly = jobs.new_periodic(

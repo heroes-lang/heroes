@@ -8,10 +8,6 @@ use numbers
 use redis
 use time
 
-# The prefix of every key the store writes.
-constant PREFIX: str
-    "rebel_jobs:"
-
 # `d` in whole microseconds, rounded toward zero.
 function micros(d: time.Duration) -> i64
     return d.nanoseconds / 1_000
