@@ -13,6 +13,14 @@
 #   per level, `<function> (in <image>) (<file>:<line>)`, and a blank line,
 #   the file whole, the compile's folder before it, where without the flag
 #   it gives the file's last part alone;
+# - the PDB beside a Windows binary, read by the runtime's own reader
+#   (`runtime/parts/pdb_door.c`, `hero_pdb_symbolized`), in
+#   `llvm-symbolizer`'s words below; asked before it, because
+#   `llvm-symbolizer` reads a Heroes function's lines from a PDB wrongly
+#   (measured on the box, clang and LLVM 23.1.1: the call of `outer` to
+#   `middle` at `-O0`, `.hero` line 18 by the PDB's own table, answered as
+#   the generated C's line 42), and it answers for nothing but a PE binary
+#   whose PDB is the one it names;
 # - `llvm-symbolizer --inlines --relativenames`, the file as the `#line`
 #   named it, relative to the compile's folder; per address a function line
 #   and a `<file>:<line>:<column>` line per level, and a blank line;
@@ -29,6 +37,14 @@ use cli/process
 use cli/strings
 use module/listing
 
+# The PDB's reader, the compiler's own door (`runtime/hero_compiler.h`).
+# `lent`: the call reads both while it runs and keeps neither.
+extern "hero_compiler.h"
+    function hero_pdb_symbolized(binary: cstr lent, addresses: cstr lent, @status: i64) -> str
+
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+
 # One inlined level of a resolved address: the function's C name, and where
 # its call stands, `<file>:<line>`, or "" where the symbolizer knew none.
 record Level
@@ -44,6 +60,14 @@ function resolved(binary: str, addresses: [str], scratch: str) -> [[Level]]?
 
     if !atos.is_err()
         read = atos_levels(atos.must())
+
+        if complete(read, count: addresses.len())
+            return ok(read)
+    status: i64 @= 0
+    pdb = hero_pdb_symbolized(binary: binary.cstr(), addresses: addresses.join(" ").cstr(), status: @status)
+
+    if status == HERO_OS_OK
+        read = llvm_levels(pdb)
 
         if complete(read, count: addresses.len())
             return ok(read)
@@ -288,6 +312,19 @@ test "addr2line's levels are read per address, a discriminator left out"
     assert read[0][1].place == "/w/deep.hero:10"
     assert read[1][0].place == "/w/deep.hero:14"
     assert !complete(addr2line_levels("0x0000000000001234\n??\n??:0\n"), count: 1)
+
+test "the PDB's reader answers for no binary but a PE one with its PDB, and asks nothing of this one's"
+    status: i64 @= 0
+    said = hero_pdb_symbolized(
+        binary: "selfhost/cli/abort_symbolized.hero".cstr(),
+        addresses: "0x1000".cstr(),
+        status: @status
+    )
+    assert status != HERO_OS_OK
+    assert said == ""
+    absent: i64 @= 0
+    _ = hero_pdb_symbolized(binary: "build/no-such-binary.exe".cstr(), addresses: "0x1000".cstr(), status: @absent)
+    assert absent != HERO_OS_OK
 
 test "a count is read from its decimal digits alone"
     assert decimal("14").must() == 14

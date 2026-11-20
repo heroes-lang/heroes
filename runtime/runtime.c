@@ -148,6 +148,12 @@
  * stack.c below, for every name a fault's report gives. */
 #include "parts/symbols.c"
 
+/* A Windows program's functions, lines and inlined calls from the PDB its link
+ * wrote (panel 253's R5): read over bytes its caller hands it, so it compiles on
+ * every platform and asks no loader. Needs nothing; asked by calls.c below for
+ * an abort's names on Windows, and by pdb_door.c for the compiler. */
+#include "parts/pdb.c"
+
 /* The guard-page handler that turns a stack overflow into a panic with the
  * function's name (panel 104). Needs only panic.c above it; installed once
  * from hero_args_set, in os.c below. */
@@ -293,6 +299,10 @@
 /* The SHA-256 of a file's bytes, for a package's fingerprint (panel 235's
  * R6): after `os.c`, whose `hero_file_bytes` it reads through. */
 #include "parts/sha256.c"
+/* The lines of a Windows build, for the compiler's parent of a program that
+ * aborted (panel 253's R5): after `os.c`, whose `hero_file_bytes` it reads
+ * through, `calls.c`, whose digits it writes, and `pdb.c`. */
+#include "parts/pdb_door.c"
 
 /* What an `f32` literal holds, read once (defect 2276): the compiler's door,
  * after `hero_compiler.h` declares it and after `f64.c`, whose locale window

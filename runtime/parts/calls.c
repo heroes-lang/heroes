@@ -65,30 +65,37 @@
  * Darwin's `dladdr` returned at once in the same probe and is asked there, as
  * the guard asks it.
  *
+ * ON WINDOWS the walk is the system's, `RtlCaptureStackBackTrace`, which
+ * unwinds by the tables every x64 image carries and needs no frame record, so
+ * no frame word is asked there (`hero_frame_records_asked`); and a frame is
+ * named from the PDB the link wrote beside the binary, read by this runtime
+ * itself (`parts/pdb.c`), never by DbgHelp, whose loading at an abort waits
+ * on the loader's lock as `dladdr` does on Linux. The file is found as the
+ * system started it (the process's own parameters, no lock taken), its PDB
+ * beside it by the name the image records, held to the image's GUID; and
+ * the address told is the file's own, its preferred base read from the
+ * file's headers, the one `llvm-symbolizer` and the parent's own reader
+ * take. Nothing is allocated: the PDB is mapped, the names copied into
+ * static rooms. A stop told from the vectored handler walks nothing, as on
+ * POSIX (`parts/stack.c`'s `hero_stack_handler_stop`).
+ *
  * WHAT IT CANNOT SEE, said. A frame with no record: C built without frame
  * records hides every Heroes caller above it (`-fomit-frame-pointer`, a
  * library's choice; the program's own units and the runtime keep records on
  * every POSIX target, `-fno-omit-frame-pointer` (`selfhost/cli/flags.hero`'s
  * `frame_words`), since x86-64's clang omits them at `-O2`). A binary
- * stripped of its symbol table names no frame. Windows tells no call yet:
- * its arm, at the end of this file, says why.
+ * stripped of its symbol table names no frame, nor one on Windows whose PDB
+ * is not beside it, or is another link's.
  */
-
-#if !defined(_WIN32)
-
-#include <errno.h>
-#include <fcntl.h>
-#if defined(__APPLE__)
-#include <mach-o/loader.h>
-#else
-#include <sys/auxv.h>
-#endif
 
 /* At most this many distinct calls are told, innermost first, and at most this
  * many frames read; a call repeated frame after frame, a recursion, is one
  * line with its count. */
 #define HERO_CALLS_KEPT 64
 #define HERO_CALLS_WALKED 4096
+
+/* A name as the walk tells it, at most this many bytes. */
+#define HERO_CALLS_NAME 512
 
 /* The function the report's place names, as its writer was handed it
  * (`parts/place.c`, `hero_report_place`), or NULL where the stop names none.
@@ -102,9 +109,22 @@ static void hero_calls_note_place(const char *function) {
 }
 
 /* The file the program's parent asked the calls to be written to, empty where
- * none was asked. A program the system started with more rights than its
- * caller's (set-user-ID) takes no file from its environment. */
+ * none was asked, read once as the program starts and taken out of its
+ * environment, so no program it starts inherits it. */
 #define HERO_CALLS_VARIABLE "HEROES_CALLS"
+
+#if !defined(_WIN32)
+
+#include <errno.h>
+#include <fcntl.h>
+#if defined(__APPLE__)
+#include <mach-o/loader.h>
+#else
+#include <sys/auxv.h>
+#endif
+
+/* A program the system started with more rights than its caller's
+ * (set-user-ID) takes no file from its environment. */
 static char hero_calls_file[4096];
 
 static void hero_calls_channel(void) {
@@ -119,6 +139,8 @@ static void hero_calls_channel(void) {
     if (!secure && n > 0 && n < sizeof hero_calls_file) memcpy(hero_calls_file, given, n + 1);
     unsetenv(HERO_CALLS_VARIABLE);
 }
+
+static int hero_calls_asked(void) { return hero_calls_file[0] != '\0'; }
 
 #if defined(__APPLE__)
 /* The executable's Mach-O header, where the system mapped it. Weak, so an
@@ -151,7 +173,8 @@ static int hero_calls_slide(uintptr_t *slide) {
 /* The symbol of the executable's function whose bytes hold `addr`, or NULL,
  * and in `*file` the address the file gives it. Linux: the executable's own
  * table, never `dladdr` (above). Darwin: `dladdr`, an answer only where the
- * image is the executable. */
+ * image is the executable. The name is the table's own, kept for the
+ * process's life. */
 static const char *hero_calls_symbol(uintptr_t addr, uintptr_t *file) {
 #if defined(__linux__)
     const char *own = hero_own_symbol(addr);
@@ -170,6 +193,129 @@ static const char *hero_calls_symbol(uintptr_t addr, uintptr_t *file) {
     return NULL;
 #endif
 }
+
+#else
+
+#include <stdlib.h>
+#include <windows.h>
+#include <winternl.h>
+
+/* The image this runtime is linked into, as the system mapped it (the
+ * linker's own symbol for its base, link.exe's and lld-link's alike). */
+extern IMAGE_DOS_HEADER __ImageBase;
+
+static wchar_t hero_calls_file[4096];
+
+static void hero_calls_channel(void) {
+    DWORD n = GetEnvironmentVariableW(L"" HERO_CALLS_VARIABLE, hero_calls_file, 4096);
+    if (n == 0 && GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
+        hero_calls_file[0] = 0;
+        return;
+    }
+    if (n == 0 || n >= 4096) hero_calls_file[0] = 0;
+    /* Out of the C library's copy and the process's own block, which
+     * `parts/run.c` hands a child (`GetEnvironmentStringsW`). */
+    (void)_wputenv_s(L"" HERO_CALLS_VARIABLE, L"");
+    (void)SetEnvironmentVariableW(L"" HERO_CALLS_VARIABLE, NULL);
+}
+
+static int hero_calls_asked(void) { return hero_calls_file[0] != 0; }
+
+/* The image and its PDB, read once, at the first name asked: 0 unread, 1
+ * read, -1 not there. */
+static int hero_calls_pdb_state = 0;
+static HeroPe hero_calls_image;
+static uint64_t hero_calls_file_base;
+static HeroPdb hero_calls_pdb;
+
+/* The executable's path as the system started it, from the process's own
+ * parameters: `GetModuleFileNameW` is not asked, since it may wait on the
+ * loader's lock. NULL where it is not there. */
+static const UNICODE_STRING *hero_calls_image_path(void) {
+    PEB *peb = NtCurrentTeb()->ProcessEnvironmentBlock;
+    if (peb == NULL || peb->ProcessParameters == NULL) return NULL;
+    const UNICODE_STRING *path = &peb->ProcessParameters->ImagePathName;
+    if (path->Buffer == NULL || path->Length == 0 || path->Length / sizeof(wchar_t) >= 32000) return NULL;
+    return path;
+}
+
+/* A file opened for reading, or INVALID_HANDLE_VALUE. */
+static HANDLE hero_calls_open_read(const wchar_t *path) {
+    return CreateFileW(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
+                       FILE_ATTRIBUTE_NORMAL, NULL);
+}
+
+static int hero_calls_pdb_read(void) {
+    HeroPe *pe = &hero_calls_image;
+    unsigned char guid[16];
+    char recorded[1024];
+    if (!hero_pe_open(pe, (const unsigned char *)&__ImageBase, 4096, 1) || !hero_pe_pdb(pe, guid, recorded, sizeof recorded))
+        return 0;
+    const UNICODE_STRING *image = hero_calls_image_path();
+    if (image == NULL) return 0;
+    static wchar_t path[32768];
+    size_t len = image->Length / sizeof(wchar_t);
+    memcpy(path, image->Buffer, len * sizeof(wchar_t));
+    path[len] = 0;
+
+    /* The preferred base, from the file's headers: the loader may write the
+     * base it chose into the mapped ones. */
+    static unsigned char headers[4096];
+    HANDLE h = hero_calls_open_read(path);
+    if (h == INVALID_HANDLE_VALUE) return 0;
+    DWORD got = 0;
+    BOOL ok = ReadFile(h, headers, sizeof headers, &got, NULL);
+    CloseHandle(h);
+    HeroPe file;
+    if (!ok || !hero_pe_open(&file, headers, got, 0)) return 0;
+    hero_calls_file_base = file.image_base;
+
+    /* The PDB beside it, by the last part of the name the image records. */
+    size_t folder = len;
+    while (folder > 0 && path[folder - 1] != L'\\' && path[folder - 1] != L'/') folder--;
+    const char *last = recorded + hero_pdb_last_part(recorded);
+    int wide = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, last, -1, path + folder,
+                                   (int)(sizeof path / sizeof path[0] - folder));
+    if (wide <= 0) return 0;
+    h = hero_calls_open_read(path);
+    if (h == INVALID_HANDLE_VALUE) return 0;
+    LARGE_INTEGER size;
+    HANDLE m = NULL;
+    if (GetFileSizeEx(h, &size) && size.QuadPart > 0) m = CreateFileMappingW(h, NULL, PAGE_READONLY, 0, 0, NULL);
+    CloseHandle(h);
+    if (m == NULL) return 0;
+    const void *view = MapViewOfFile(m, FILE_MAP_READ, 0, 0, 0);
+    CloseHandle(m);
+    unsigned char pdb_guid[16];
+    if (view == NULL) return 0;
+    if (!hero_pdb_open(&hero_calls_pdb, (const unsigned char *)view, (size_t)size.QuadPart) ||
+        !hero_pdb_guid(&hero_calls_pdb, pdb_guid) || memcmp(guid, pdb_guid, 16) != 0) {
+        UnmapViewOfFile(view);
+        return 0;
+    }
+    return 1;
+}
+
+/* The name of the executable's function whose bytes hold `addr`, into a room
+ * the next call writes over, or NULL; in `*file` the address the file gives
+ * it. */
+static const char *hero_calls_symbol(uintptr_t addr, uintptr_t *file) {
+    static char name[HERO_CALLS_NAME];
+    if (hero_calls_pdb_state == 0) hero_calls_pdb_state = hero_calls_pdb_read() ? 1 : -1;
+    if (hero_calls_pdb_state != 1) return NULL;
+    uintptr_t base = (uintptr_t)&__ImageBase;
+    if (addr < base || addr - base >= hero_calls_image.image_size) return NULL;
+    uint32_t rva = (uint32_t)(addr - base);
+    uint16_t seg = 0;
+    uint32_t off = 0;
+    HeroPdbProc proc;
+    if (!hero_pe_section_of(&hero_calls_image, rva, &seg, &off)) return NULL;
+    if (!hero_pdb_proc_at(&hero_calls_pdb, seg, off, &proc, name, sizeof name)) return NULL;
+    *file = (uintptr_t)(hero_calls_file_base + rva);
+    return name;
+}
+
+#endif
 
 /* A Heroes symbol whose component is the compiler's own marker, a digit
  * (`emit/ctype.hero`'s `SYNTHETIC`): a callback's thunk, `h_0cb_<module>_<name>`,
@@ -195,7 +341,6 @@ static int hero_calls_in_library(const char *sym) {
  * spelling (`hero_stack_say_heroes_name`), the program's own spellings first,
  * cut where the buffer ends. `*invented` says whether the name was one the
  * compiler made beside the module's, an instance's among them. */
-#define HERO_CALLS_NAME 512
 typedef struct {
     char text[HERO_CALLS_NAME];
     size_t used;
@@ -282,6 +427,32 @@ typedef struct {
     int cut;         /* the walk stopped at its bound, not at the stack's end */
 } HeroCalls;
 
+/* Whether a frame returning to `ret` opens a call of its own, kept: not the
+ * call before it again, and room left. */
+__attribute__((unused)) static int hero_calls_fresh(const HeroCalls *out, uintptr_t last, uintptr_t ret) {
+    int again = out->count > 0 && last == ret - 1;
+    return !again && out->beyond == 0 && out->count < HERO_CALLS_KEPT;
+}
+
+/* A Heroes function's frame returning to `ret`: a call kept, a recursion's
+ * count, or one past the kept. */
+static void hero_calls_keep(HeroCalls *out, uintptr_t *last, uintptr_t ret, uintptr_t file, const char *sym) {
+    int again = out->count > 0 && *last == ret - 1;
+    if (again && out->beyond == 0) {
+        out->calls[out->count - 1].times++;
+    } else if (out->beyond == 0 && out->count < HERO_CALLS_KEPT) {
+        out->calls[out->count].file = file;
+        out->calls[out->count].sym = sym;
+        out->calls[out->count].times = 1;
+        out->count++;
+    } else if (!again) {
+        out->beyond++;
+    }
+    *last = ret - 1;
+}
+
+#if !defined(_WIN32)
+
 /* An AArch64 return address a C library built with pointer authentication
  * saved is signed in its upper bits; a user address is under 2^48 on both
  * AArch64 platforms. x86-64 signs nothing. */
@@ -310,24 +481,44 @@ static void hero_calls_walk(uintptr_t fp, uintptr_t lo, uintptr_t hi, HeroCalls 
         if (ret == 0) return;
         uintptr_t file = 0;
         const char *sym = hero_calls_symbol(ret - 1, &file);
-        if (sym != NULL && hero_stack_is_heroes(sym)) {
-            int again = out->count > 0 && last == ret - 1;
-            if (again && out->beyond == 0) {
-                out->calls[out->count - 1].times++;
-            } else if (out->beyond == 0 && out->count < HERO_CALLS_KEPT) {
-                out->calls[out->count].file = file;
-                out->calls[out->count].sym = sym;
-                out->calls[out->count].times = 1;
-                out->count++;
-            } else if (!again) {
-                out->beyond++;
-            }
-            last = ret - 1;
-        }
+        if (sym != NULL && hero_stack_is_heroes(sym)) hero_calls_keep(out, &last, ret, file, sym);
         if (next <= fp) return;
         fp = next;
     }
 }
+
+#else
+
+/* The return addresses the system's unwinder reads from this frame up, each
+ * named from the PDB; a kept call's name copied into a room of its own, since
+ * the PDB's reader hands each name in one room. */
+static void hero_calls_walk(HeroCalls *out) {
+    static void *frames[HERO_CALLS_WALKED];
+    static char names[HERO_CALLS_KEPT][HERO_CALLS_NAME];
+    out->count = 0;
+    out->beyond = 0;
+    out->cut = 0;
+    USHORT n = RtlCaptureStackBackTrace(0, HERO_CALLS_WALKED, frames, NULL);
+    if (n >= HERO_CALLS_WALKED) out->cut = 1;
+    uintptr_t last = 0;
+    for (USHORT i = 0; i < n; i++) {
+        uintptr_t ret = (uintptr_t)frames[i];
+        if (ret == 0) break;
+        uintptr_t file = 0;
+        const char *sym = hero_calls_symbol(ret - 1, &file);
+        if (sym == NULL || !hero_stack_is_heroes(sym)) continue;
+        if (hero_calls_fresh(out, last, ret)) {
+            size_t len = strlen(sym);
+            if (len >= HERO_CALLS_NAME) len = HERO_CALLS_NAME - 1;
+            memcpy(names[out->count], sym, len);
+            names[out->count][len] = '\0';
+            sym = names[out->count];
+        }
+        hero_calls_keep(out, &last, ret, file, sym);
+    }
+}
+
+#endif
 
 /* WHICH CALLS ARE TOLD, a mark for each kept one: 0 not told; 1 told; 2 told,
  * the place's own function inlined into it, so the parent leaves out of its
@@ -409,8 +600,24 @@ static void hero_calls_say(const HeroCalls *c, const unsigned char *told) {
     }
 }
 
+/* THE FILE THE PARENT ASKED FOR, created, never opened if it is there, and
+ * no link followed, so a file named by an environment cannot be written
+ * over: POSIX's `O_EXCL` and `O_NOFOLLOW`, Windows' `CREATE_NEW` and
+ * `FILE_FLAG_OPEN_REPARSE_POINT`. */
+#if !defined(_WIN32)
+typedef int HeroCallsSink;
+
+static int hero_calls_sink_open(HeroCallsSink *out) {
+    int fd = open(hero_calls_file, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600);
+    if (fd < 0) return 0;
+    *out = fd;
+    return 1;
+}
+
+static void hero_calls_sink_close(HeroCallsSink fd) { close(fd); }
+
 /* Every byte of `s` to `fd`, or false. */
-static int hero_calls_write(int fd, const char *s, size_t n) {
+static int hero_calls_write(HeroCallsSink fd, const char *s, size_t n) {
     while (n > 0) {
         ssize_t put = write(fd, s, n);
         if (put < 0 && errno == EINTR) continue;
@@ -420,8 +627,32 @@ static int hero_calls_write(int fd, const char *s, size_t n) {
     }
     return 1;
 }
+#else
+typedef HANDLE HeroCallsSink;
 
-static int hero_calls_write_text(int fd, const char *s) { return hero_calls_write(fd, s, strlen(s)); }
+static int hero_calls_sink_open(HeroCallsSink *out) {
+    HANDLE h = CreateFileW(hero_calls_file, GENERIC_WRITE, 0, NULL, CREATE_NEW,
+                           FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+    if (h == INVALID_HANDLE_VALUE) return 0;
+    *out = h;
+    return 1;
+}
+
+static void hero_calls_sink_close(HeroCallsSink h) { CloseHandle(h); }
+
+static int hero_calls_write(HeroCallsSink h, const char *s, size_t n) {
+    while (n > 0) {
+        DWORD ask = n > (1u << 20) ? (1u << 20) : (DWORD)n;
+        DWORD put = 0;
+        if (!WriteFile(h, s, ask, &put, NULL) || put == 0) return 0;
+        s += put;
+        n -= put;
+    }
+    return 1;
+}
+#endif
+
+static int hero_calls_write_text(HeroCallsSink fd, const char *s) { return hero_calls_write(fd, s, strlen(s)); }
 
 /* THE PARENT'S FILE (`selfhost/cli/abort_calls.hero` reads it), one record a
  * line, every frame the walk kept and whether a binary alone would tell it:
@@ -431,12 +662,10 @@ static int hero_calls_write_text(int fd, const char *s) { return hero_calls_writ
  *     call <mark> <times> 0x<file address> <name>       `hero_calls_choose`'s mark
  *     beyond <count>                    or `cut`
  *
- * Created, never opened if it is there (`O_EXCL`, no link followed), so a
- * file named by an environment cannot be written over. False where it could
- * not be written, and the lines go to stderr instead. */
+ * False where it could not be written, and the lines go to stderr instead. */
 static int hero_calls_to_file(const HeroCalls *c, const unsigned char *told) {
-    int fd = open(hero_calls_file, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600);
-    if (fd < 0) return 0;
+    HeroCallsSink fd;
+    if (!hero_calls_sink_open(&fd)) return 0;
     int ok = hero_calls_write_text(fd, "heroes-calls 1\n");
     const char *row = hero_stack_spellings;
     while (ok && row != NULL && *row != '\0') {
@@ -464,16 +693,28 @@ static int hero_calls_to_file(const HeroCalls *c, const unsigned char *told) {
         size_t n = hero_calls_decimal(c->beyond, count);
         ok = hero_calls_write_text(fd, "beyond ") && hero_calls_write(fd, count, n) && hero_calls_write_text(fd, "\n");
     }
-    close(fd);
+    hero_calls_sink_close(fd);
     return ok;
 }
 
 /* Told once per process, by the thread whose report this is. */
 static _Atomic int hero_calls_told = 0;
 
+/* The calls kept, chosen and told: to the parent's file where it asked for
+ * one and it could be written, else on stderr. */
+static void hero_calls_tell_kept(const HeroCalls *c) {
+    if (c->count == 0) return;
+    unsigned char told[HERO_CALLS_KEPT];
+    hero_calls_choose(c, told);
+    if (hero_calls_asked() && hero_calls_to_file(c, told)) return;
+    hero_calls_say(c, told);
+}
+
 /* Not inlined, so its own frame is a frame record the walk starts from. */
 __attribute__((noinline)) static void hero_calls_tell(void) {
     if (atomic_exchange(&hero_calls_told, 1) != 0) return;
+    HeroCalls c;
+#if !defined(_WIN32)
 #if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
     uintptr_t lo = hero_stack_walk_lo, hi = hero_stack_walk_hi;
 #else
@@ -481,31 +722,10 @@ __attribute__((noinline)) static void hero_calls_tell(void) {
 #endif
     uintptr_t fp = (uintptr_t)__builtin_frame_address(0);
     if (hi == 0 || fp < lo || fp >= hi) return;
-    HeroCalls c;
     hero_calls_walk(fp, lo, hi, &c);
-    if (c.count == 0) return;
-    unsigned char told[HERO_CALLS_KEPT];
-    hero_calls_choose(&c, told);
-    if (hero_calls_file[0] != '\0' && hero_calls_to_file(&c, told)) return;
-    hero_calls_say(&c, told);
-}
-
 #else
-
-/* WINDOWS TELLS NO CALL YET, and the report says its place alone, as before
- * (`parts/stack.c`'s *Windows has no walk*). What a Windows arm needs, read
- * and not run, the box being off while this was written (2026-11-20): the
- * walk itself is `RtlCaptureStackBackTrace`, which reads the unwind tables
- * every x64 image carries and needs no frame record, so the frame word is not
- * asked there (`hero_frame_records_asked`); but a PE holds no table of its
- * functions' names, which live in the PDB the link writes beside it
- * (`selfhost/cli/flags.hero`, a `-g` word on the link), so the runtime could
- * tell no frame as the program's without DbgHelp, and the parent's
- * `llvm-symbolizer` reads a Heroes function's lines from that PDB wrongly,
- * the last file's line for every address (defect 509's measurement on the
- * box, `selfhost/cli/symbolized.hero`). Both are owed to the box. */
-static void hero_calls_note_place(const char *function) { (void)function; }
-static void hero_calls_channel(void) {}
-static void hero_calls_tell(void) {}
-
+    if (atomic_load(&hero_stack_handler_stop)) return;
+    hero_calls_walk(&c);
 #endif
+    hero_calls_tell_kept(&c);
+}
