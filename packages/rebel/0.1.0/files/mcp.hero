@@ -368,7 +368,7 @@ function error_result(text: str) -> ToolResult
 # - `value`: the structured result, which conforms to the tool's output
 #   schema where it has one.
 #
-# Fails `invalid` where `value` holds a `nan` or an infinity.
+# Fails `unsupported` where `value` holds a `nan` or an infinity.
 function structured_result(value: json.Value) -> ToolResult?
     return ok(ToolResult(content: [text_content(json.format(value)?)], structured: value, is_error: false))
 

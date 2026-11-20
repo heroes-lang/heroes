@@ -1828,7 +1828,7 @@ function from_json(v: json.Value) -> Document?
 #
 # - `doc`: the document.
 #
-# Fails `invalid` where a value of it is a `nan` or an infinity.
+# Fails `unsupported` where a value of it is a `nan` or an infinity.
 function format_json(doc: Document) -> str?
     return json.format_indented(to_json(doc), width: 2)
 

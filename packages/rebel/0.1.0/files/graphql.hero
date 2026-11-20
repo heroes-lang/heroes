@@ -450,7 +450,7 @@ function parse_request(text: str) -> Request?
 #
 # - `r`: the request.
 #
-# Fails `invalid` where a variable holds `nan` or an infinity. See also
+# Fails `unsupported` where a variable holds `nan` or an infinity. See also
 # `parse_request`.
 function format_request(r: Request) -> str?
     members: {str: json.Value} @= {}
@@ -486,7 +486,7 @@ function parse_response(text: str) -> Response?
 #
 # - `response`: the response.
 #
-# Fails `invalid` where a value holds `nan` or an infinity, which the
+# Fails `unsupported` where a value holds `nan` or an infinity, which the
 # program's own answers alone can hold. See also `parse_response`.
 function format_response(response: Response) -> str?
     return json.format(response_value(response))
@@ -1236,7 +1236,7 @@ function parse_message(text: str) -> Message?
 #
 # - `m`: the message.
 #
-# Fails `invalid` where a value holds `nan` or an infinity. See also
+# Fails `unsupported` where a value holds `nan` or an infinity. See also
 # `parse_message`.
 function format_message(m: Message) -> str?
     members: {str: json.Value} @= {}
