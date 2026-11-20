@@ -605,10 +605,11 @@ capability text/to-bytes  the bytes of a text
   python  str.encode (as UTF-8)
 
 capability text/from-bytes  the text some bytes are, where they are UTF-8
-  heroes  built-in validated_bytes
+  heroes  built-in validated_bytes, bytes.to_text
   go      -
   rust    str::from_utf8, String::from_utf8
   python  -
+  note    `bytes.to_text` answers what the built-in answers, and its message names the index where the bytes stop being UTF-8
 
 capability text/repair-utf8  a text with what is not UTF-8 replaced
   heroes  refused: a `str` is UTF-8 by construction, so no text needs the repair; bytes that are not text fail `not_text` where they are read

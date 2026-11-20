@@ -22,10 +22,12 @@ use bytes/internal/cut
 use bytes/internal/hex
 use bytes/internal/multi
 use bytes/internal/raw
+use bytes/internal/samples
 use bytes/internal/search
 use bytes/internal/text
 use bytes/internal/trimming
 use bytes/internal/varint
+use numbers
 
 ## Codes
 
@@ -51,137 +53,238 @@ constant DOES_NOT_FIT: str
 
 ## Text and bytes
 
-# The bytes of `s`, which are its UTF-8. `to_text` reads them back as the
-# same text.
+# The bytes of `s`, which are its UTF-8.
+#
+# - `s`: the text.
+#
+# `to_text` reads them back as the same text.
 function from_text(s: str) -> [u8]
     return raw.of_text(s)
 
-# The text `s` holds. Fails `not_text` where `s` is not UTF-8, and the
-# message says at which index it stops being UTF-8. A zero byte is text, and
-# the empty list is the empty text.
+# The text `s` holds.
+#
+# - `s`: the bytes read as UTF-8; a zero byte is text, and the empty list is
+#   the empty text.
+#
+# Fails `not_text` where `s` is not UTF-8, the message saying at which index
+# the bytes stop being UTF-8 and which byte stands there: what it adds to the
+# built-in `s.validated_bytes()`, which answers the same text and fails with
+# the same code. See also `to_text_lossy`, `from_text`.
 function to_text(s: [u8]) -> str?
     return text.to_text(s)
 
-# The text `s` holds, with U+FFFD, the replacement character, in place of
-# what is not UTF-8. It never fails, so the answer says nothing of whether `s`
-# was text: `to_text` does. Each longest run of bytes that begins a character
-# and cannot go on is replaced once, as Rust's and Python's lossy readers do;
-# a byte that begins nothing is replaced alone.
+# The text `s` holds, with U+FFFD, the replacement character, in place of what
+# is not UTF-8.
+#
+# - `s`: the bytes read as UTF-8.
+#
+# It never fails, so the answer says nothing of whether `s` was text:
+# `to_text` does. Each longest run of bytes that begins a character and cannot
+# go on is replaced once, as Rust's and Python's lossy readers do; a byte that
+# begins nothing is replaced alone.
 function to_text_lossy(s: [u8]) -> str
     return text.lossy(s)
 
 # `s` as ASCII text that a reader can see whole: a printable ASCII byte as
 # itself; tab, line feed and carriage return as `\t`, `\n` and `\r`; `\`, `"`
 # and `'` behind a `\`; every other byte as `\x` and its two hexadecimal
-# digits in lower case. It is for a message or a log, and nothing here reads
-# it back.
+# digits in lower case.
+#
+# - `s`: the bytes shown.
+#
+# It is for a message or a log, and nothing here reads it back.
 function format_escaped(s: [u8]) -> str
     return raw.escaped(s)
 
 ## Searching
 
-# Whether `s` holds `substr`. Every list holds the empty one.
+# Whether `s` holds `substr`.
+#
+# - `s`: the bytes searched.
+# - `substr`: the bytes looked for.
+#
+# Every list holds the empty one.
 function contains(s: [u8], substr: [u8]) -> bool
     return search.contains(s: s, substr: substr)
 
-# Whether `s` holds any byte of `set`. No list holds a byte of the empty
-# set.
+# Whether `s` holds any byte of `set`.
+#
+# - `s`: the bytes searched.
+# - `set`: the bytes looked for, each one alone; their order does not count.
+#
+# No list holds a byte of the empty set.
 function contains_any(s: [u8], set: [u8]) -> bool
     return search.contains_any(s: s, set: set)
 
-# Whether `s` begins with `prefix`. Every list begins with the empty one.
+# Whether `s` begins with `prefix`.
+#
+# - `s`: the bytes asked about.
+# - `prefix`: the bytes they may begin with.
+#
+# Every list begins with the empty one.
 function has_prefix(s: [u8], prefix: [u8]) -> bool
     return search.has_prefix_at(s: s, prefix: prefix, at: 0)
 
-# Whether `prefix` stands in `s` at index `at`. It is false for an `at` below
-# 0 or past the end, so it never aborts, and it copies nothing, where
-# `has_prefix` on a slice copies the slice.
+# Whether `prefix` stands in `s` at index `at`.
+#
+# - `s`: the bytes asked about.
+# - `prefix`: the bytes that may stand at `at`.
+# - `at`: an index of `s`; any value.
+#
+# It is false for an `at` below 0 or past the end, so it never aborts, and it
+# copies nothing, where `has_prefix` on a slice copies the slice.
 function has_prefix_at(s: [u8], prefix: [u8], at: i64) -> bool
     return search.has_prefix_at(s: s, prefix: prefix, at: at)
 
-# Whether `s` ends with `suffix`. Every list ends with the empty one.
+# Whether `s` ends with `suffix`.
+#
+# - `s`: the bytes asked about.
+# - `suffix`: the bytes they may end with.
+#
+# Every list ends with the empty one.
 function has_suffix(s: [u8], suffix: [u8]) -> bool
     return search.has_suffix(s: s, suffix: suffix)
 
-# Where `substr` first begins in `s`, as an index. Fails `not_found` where `s`
-# holds none. The empty `substr` is found at 0. One byte is sought as a list
-# of one.
+# Where `substr` first begins in `s`, as an index.
+#
+# - `s`: the bytes searched.
+# - `substr`: the bytes looked for.
+#
+# Fails `not_found` where `s` holds none. The empty `substr` is found at 0.
+# One byte is sought as a list of one.
 function index_of(s: [u8], substr: [u8]) -> i64?
     return search.index_of_from(s: s, substr: substr, from: 0)
 
-# Where `substr` first begins in `s` at or after index `from`. Fails
-# `not_found` where that part of `s` holds none. A `from` below 0 searches the
-# whole list and one past the end finds nothing, so it never aborts; the empty
-# `substr` is found at `from`, or at 0 for a `from` below 0. It copies
-# nothing, where `index_of` on a slice copies the slice.
+# Where `substr` first begins in `s` at or after index `from`.
+#
+# - `s`: the bytes searched.
+# - `substr`: the bytes looked for.
+# - `from`: the index where the search begins; any value.
+#
+# Fails `not_found` where that part of `s` holds none. A `from` below 0
+# searches the whole list and one past the end finds nothing, so it never
+# aborts; the empty `substr` is found at `from`, or at 0 for a `from` below 0.
+# It copies nothing, where `index_of` on a slice copies the slice.
 function index_of_from(s: [u8], substr: [u8], from: i64) -> i64?
     return search.index_of_from(s: s, substr: substr, from: from)
 
-# Where `substr` last begins in `s`, as an index. Fails `not_found` where `s`
-# holds none. The empty `substr` is found at the end, `s.len()`.
+# Where `substr` last begins in `s`, as an index.
+#
+# - `s`: the bytes searched.
+# - `substr`: the bytes looked for.
+#
+# Fails `not_found` where `s` holds none. The empty `substr` is found at the
+# end, `s.len()`.
 function index_of_last(s: [u8], substr: [u8]) -> i64?
     return search.index_of_last(s: s, substr: substr)
 
-# Where the first byte of `s` that `set` holds stands, as an index. Fails
-# `not_found` where `s` holds no byte of `set`, and so for an empty `set`.
+# Where the first byte of `s` that `set` holds stands, as an index.
+#
+# - `s`: the bytes searched.
+# - `set`: the bytes looked for, each one alone.
+#
+# Fails `not_found` where `s` holds no byte of `set`, and so for an empty
+# `set`.
 function index_of_any(s: [u8], set: [u8]) -> i64?
     return search.index_of_any_from(s: s, set: set, from: 0)
 
 # Where the first byte that `set` holds stands in `s` at or after index
-# `from`. Fails `not_found` where that part of `s` holds none. A `from` below
-# 0 searches the whole list and one past the end finds nothing.
+# `from`.
+#
+# - `s`: the bytes searched.
+# - `set`: the bytes looked for, each one alone.
+# - `from`: the index where the search begins; any value.
+#
+# Fails `not_found` where that part of `s` holds none. A `from` below 0
+# searches the whole list and one past the end finds nothing.
 function index_of_any_from(s: [u8], set: [u8], from: i64) -> i64?
     return search.index_of_any_from(s: s, set: set, from: from)
 
-# Where the last byte of `s` that `set` holds stands, as an index. Fails
-# `not_found` where `s` holds no byte of `set`, and so for an empty `set`.
+# Where the last byte of `s` that `set` holds stands, as an index.
+#
+# - `s`: the bytes searched.
+# - `set`: the bytes looked for, each one alone.
+#
+# Fails `not_found` where `s` holds no byte of `set`, and so for an empty
+# `set`.
 function index_of_any_last(s: [u8], set: [u8]) -> i64?
     return search.index_of_any_last(s: s, set: set)
 
 # Where the first byte of `s` that `accepts` accepts stands, as an index.
+#
+# - `s`: the bytes searched.
+# - `accepts`: asked of each byte in order; true ends the search there.
+#
 # Fails `not_found` where it accepts none. `accepts` is asked each byte in
 # order and no further than the first it accepts.
 function index_where(s: [u8], accepts: (function(u8) -> bool)) -> i64?
     return search.index_where_from(s: s, accepts: accepts, from: 0)
 
 # Where the first byte that `accepts` accepts stands in `s` at or after index
-# `from`. Fails `not_found` where it accepts none there. A `from` below 0
-# searches the whole list and one past the end finds nothing.
+# `from`.
+#
+# - `s`: the bytes searched.
+# - `accepts`: asked of each byte from `from` on, in order.
+# - `from`: the index where the search begins; any value.
+#
+# Fails `not_found` where it accepts none there. A `from` below 0 searches the
+# whole list and one past the end finds nothing.
 function index_where_from(s: [u8], accepts: (function(u8) -> bool), from: i64) -> i64?
     return search.index_where_from(s: s, accepts: accepts, from: from)
 
 # Where the last byte of `s` that `accepts` accepts stands, as an index.
+#
+# - `s`: the bytes searched.
+# - `accepts`: asked of each byte, from the last one back.
+#
 # Fails `not_found` where it accepts none. `accepts` is asked each byte from
 # the end backwards and no further than the first it accepts.
 function index_where_last(s: [u8], accepts: (function(u8) -> bool)) -> i64?
     return search.index_where_last(s: s, accepts: accepts)
 
 # How many times `s` holds `substr`, counted from the start with no two
-# occurrences sharing a byte: four bytes alike hold two of them twice. The
-# empty `substr` is counted once more than `s` has bytes, as Python counts;
-# Go counts once more than there are characters.
+# occurrences sharing a byte: four bytes alike hold two of them twice.
+#
+# - `s`: the bytes searched.
+# - `substr`: the bytes counted.
+#
+# The empty `substr` is counted once more than `s` has bytes, as Python
+# counts; Go counts once more than there are characters.
 function count_of(s: [u8], substr: [u8]) -> i64
     return search.count_of(s: s, substr: substr)
 
 # Where each occurrence of `substr` begins in `s`, in order, as indices, taken
-# from the start with no two sharing a byte. The empty `substr` is found
-# before every byte and at the end.
+# from the start with no two sharing a byte.
+#
+# - `s`: the bytes searched.
+# - `substr`: the bytes looked for.
+#
+# The empty `substr` is found before every byte and at the end.
 function index_of_all(s: [u8], substr: [u8]) -> [i64]
     return search.index_of_all(s: s, substr: substr)
 
 ## Comparing
 
 # Which of `a` and `b` orders first: -1 where `a` does, 1 where `b` does, 0
-# where they are the same bytes. The order is by bytes as numbers, the one
-# the built-in `sort` gives a `[str]`; a list orders before every longer list
-# that begins with it. Whether two lists are the same is the built-in `==`.
+# where they are the same bytes.
+#
+# - `a`: the first bytes.
+# - `b`: the second bytes.
+#
+# The order is by bytes as numbers, the one the built-in `sort` gives a
+# `[str]`; a list orders before every longer list that begins with it. Whether
+# two lists are the same is the built-in `==`.
 function compare(a: [u8], b: [u8]) -> i64
     return search.compare(a: a, b: b)
 
-# Whether `a` and `b` are the same bytes once the case of their ASCII
-# letters, `a` to `z`, is set aside. Every other byte must be the same, one
-# above 127 included, so two texts that differ in the case of an accented
-# letter differ here.
+# Whether `a` and `b` are the same bytes once the case of their ASCII letters,
+# `a` to `z`, is set aside.
+#
+# - `a`: the first bytes.
+# - `b`: the second bytes.
+#
+# Every other byte must be the same, one above 127 included, so two texts that
+# differ in the case of an accented letter differ here.
 function equals_ignoring_case_ascii(a: [u8], b: [u8]) -> bool
     return ascii.equals_ignoring_case(a: a, b: b)
 
@@ -195,172 +298,289 @@ record Halves
     # The bytes after the separator.
     after: [u8]
 
-# The bytes of `s` before its first `sep` and the bytes after it. Fails
-# `not_found` where `s` holds no `sep`. An empty `sep` is found at the start,
-# so `before` is empty and `after` is `s`.
+# The bytes of `s` before its first `sep` and the bytes after it.
+#
+# - `s`: the bytes cut.
+# - `sep`: the separator, looked for from the start.
+#
+# Fails `not_found` where `s` holds no `sep`. An empty `sep` is found at the
+# start, so `before` is empty and `after` is `s`.
 function split_once(s: [u8], sep: [u8]) -> Halves?
     at = search.index_of_from(s: s, substr: sep, from: 0)?
     return ok(Halves(before: s.slice(from: 0, to: at), after: s.slice(from: at + sep.len(), to: s.len())))
 
-# The bytes of `s` before its last `sep` and the bytes after it. Fails
-# `not_found` where `s` holds no `sep`. An empty `sep` is found at the end,
-# so `before` is `s` and `after` is empty.
+# The bytes of `s` before its last `sep` and the bytes after it.
+#
+# - `s`: the bytes cut.
+# - `sep`: the separator, looked for from the end.
+#
+# Fails `not_found` where `s` holds no `sep`. An empty `sep` is found at the
+# end, so `before` is `s` and `after` is empty.
 function split_once_last(s: [u8], sep: [u8]) -> Halves?
     at = search.index_of_last(s: s, substr: sep)?
     return ok(Halves(before: s.slice(from: 0, to: at), after: s.slice(from: at + sep.len(), to: s.len())))
 
 # The pieces of `s` between its `sep`s, one more than `count_of` counts: a
 # `sep` at either end leaves an empty piece there, and bytes holding no `sep`
-# are their own one piece, the empty list included. An empty `sep` cuts
-# between every two bytes, so each byte is a piece, and the empty list has
-# none.
+# are their own one piece, the empty list included.
+#
+# - `s`: the bytes cut.
+# - `sep`: the separator, which no piece holds.
+#
+# An empty `sep` cuts between every two bytes, so each byte is a piece, and
+# the empty list has none.
 function split(s: [u8], sep: [u8]) -> [[u8]]
     return cut.from_start(s: s, sep: sep, n: 0, bounded: false, keep: false)
 
 # At most `n` pieces of `s` between its `sep`s, cut from the start; the last
-# piece holds the rest of `s`, later `sep`s included. No piece at all for an
-# `n` of 0. An empty `sep` cuts after each byte.
+# piece holds the rest of `s`, later `sep`s included.
+#
+# - `s`: the bytes cut.
+# - `sep`: the separator.
+# - `n`: the most pieces answered.
+#
+# No piece at all for an `n` of 0. An empty `sep` cuts after each byte.
 function split_n(s: [u8], sep: [u8], n: u64) -> [[u8]]
     return cut.from_start(s: s, sep: sep, n: n, bounded: true, keep: false)
 
 # At most `n` pieces of `s` between its `sep`s, cut from the end; the first
-# piece holds the rest of `s`, earlier `sep`s included. The pieces stand in
-# the order of the bytes. No piece at all for an `n` of 0. An empty `sep`
-# cuts before each byte.
+# piece holds the rest of `s`, earlier `sep`s included.
+#
+# - `s`: the bytes cut.
+# - `sep`: the separator.
+# - `n`: the most pieces answered.
+#
+# The pieces stand in the order of the bytes. No piece at all for an `n` of 0.
+# An empty `sep` cuts before each byte.
 function split_n_last(s: [u8], sep: [u8], n: u64) -> [[u8]]
     return cut.from_end(s: s, sep: sep, n: n)
 
 # The pieces of `s`, each ending with the `sep` that follows it, and a last
-# piece for what follows the last `sep` where anything does. Joined with
-# nothing between them they are `s` again, and none is empty, so the empty
-# list has no pieces. With a line feed they are the lines of `s` with their
-# ends. An empty `sep` gives each byte as a piece.
+# piece for what follows the last `sep` where anything does.
+#
+# - `s`: the bytes cut.
+# - `sep`: the separator, kept at the end of the piece it ends.
+#
+# Joined with nothing between them they are `s` again, and none is empty, so
+# the empty list has no pieces. With a line feed they are the lines of `s`
+# with their ends. An empty `sep` gives each byte as a piece.
 function split_after(s: [u8], sep: [u8]) -> [[u8]]
     return cut.from_start(s: s, sep: sep, n: 0, bounded: false, keep: true)
 
 # At most `n` pieces of `s`, each ending with the `sep` that follows it, cut
-# from the start; the last piece holds the rest of `s`. No piece at all for
-# an `n` of 0, and none is empty.
+# from the start; the last piece holds the rest of `s`.
+#
+# - `s`: the bytes cut.
+# - `sep`: the separator, kept at the end of the piece it ends.
+# - `n`: the most pieces answered.
+#
+# No piece at all for an `n` of 0, and none is empty.
 function split_after_n(s: [u8], sep: [u8], n: u64) -> [[u8]]
     return cut.from_start(s: s, sep: sep, n: n, bounded: true, keep: true)
 
 # The pieces of `s` that `sep` ends: what `split` answers without the empty
 # piece after a final `sep`, so bytes that end with `sep` and the same bytes
-# without it have the same pieces. The empty list has no pieces.
+# without it have the same pieces.
+#
+# - `s`: the bytes cut.
+# - `sep`: what ends each piece.
+#
+# The empty list has no pieces.
 function split_terminated(s: [u8], sep: [u8]) -> [[u8]]
     return cut.split_terminated(s: s, sep: sep)
 
 # The pieces of `s` between its bytes that `set` holds, one more than there
-# are such bytes. An empty `set` cuts nowhere and answers `s` as its one
-# piece.
+# are such bytes.
+#
+# - `s`: the bytes cut.
+# - `set`: the bytes that separate, each one alone.
+#
+# An empty `set` cuts nowhere and answers `s` as its one piece.
 function split_any(s: [u8], set: [u8]) -> [[u8]]
     return cut.split_any(s: s, set: set)
 
-# The pieces of `s` between its bytes that `separates` accepts, one more
-# than there are such bytes, so two of them side by side leave an empty piece
-# between; `words_where` leaves none. `separates` is asked each byte once, in
-# order.
+# The pieces of `s` between its bytes that `separates` accepts, one more than
+# there are such bytes, so two of them side by side leave an empty piece
+# between; `words_where` leaves none.
+#
+# - `s`: the bytes cut.
+# - `separates`: asked of each byte in order; true makes it a separator.
+#
+# `separates` is asked each byte once, in order.
 function split_where(s: [u8], separates: (function(u8) -> bool)) -> [[u8]]
     return cut.split_where(s, separates)
 
-# The words of `s`: the pieces between its runs of ASCII white space, none
-# of them empty, so bytes of white space alone have no words. White space is
-# `is_space_ascii`'s.
+# The words of `s`: the pieces between its runs of ASCII white space, none of
+# them empty, so bytes of white space alone have no words.
+#
+# - `s`: the bytes cut.
+#
+# White space is `is_space_ascii`'s.
 function words(s: [u8]) -> [[u8]]
     return cut.words_where(s, ascii.is_space)
 
 # The pieces of `s` between its runs of bytes that `separates` accepts, none
-# of them empty. `separates` is asked each byte once, in order.
+# of them empty.
+#
+# - `s`: the bytes cut.
+# - `separates`: asked of each byte in order; a run of bytes it accepts
+#   separates two words.
+#
+# `separates` is asked each byte once, in order.
 function words_where(s: [u8], separates: (function(u8) -> bool)) -> [[u8]]
     return cut.words_where(s, separates)
 
-# The lines of `s`, each without its end, which is a line feed, or a
-# carriage return and a line feed together. The last line's end is optional,
-# so bytes that end with a line end have no empty line after it; the empty
-# list has no lines, and a carriage return with no line feed after it ends
-# nothing.
+# The lines of `s`, each without its end, which is a line feed, or a carriage
+# return and a line feed together.
+#
+# - `s`: the bytes cut.
+#
+# The last line's end is optional, so bytes that end with a line end have no
+# empty line after it; the empty list has no lines, and a carriage return with
+# no line feed after it ends nothing.
 function lines(s: [u8]) -> [[u8]]
     return cut.lines(s)
 
 ## Trimming
 
-# `s` without the ASCII white space at either end. White space is
-# `is_space_ascii`'s: space, tab, line feed, vertical tab, form feed and
-# carriage return.
+# `s` without the ASCII white space at either end.
+#
+# - `s`: the bytes trimmed.
+#
+# White space is `is_space_ascii`'s: space, tab, line feed, vertical tab, form
+# feed and carriage return.
 function trim(s: [u8]) -> [u8]
     return trimming.trim_where(s, ascii.is_space)
 
 # `s` without the ASCII white space at its start.
+#
+# - `s`: the bytes trimmed.
 function trim_start(s: [u8]) -> [u8]
     return trimming.trim_start_where(s, ascii.is_space)
 
 # `s` without the ASCII white space at its end.
+#
+# - `s`: the bytes trimmed.
 function trim_end(s: [u8]) -> [u8]
     return trimming.trim_end_where(s, ascii.is_space)
 
-# `s` without the bytes of `set` at either end: a byte is taken off an end
-# for as long as `set` holds it. `set` is a set, not bytes to match;
-# `trim_prefix` and `trim_suffix` take bytes off. An empty `set` takes
-# nothing off.
+# `s` without the bytes of `set` at either end: a byte is taken off an end for
+# as long as `set` holds it.
+#
+# - `s`: the bytes trimmed.
+# - `set`: the bytes taken off, each one alone.
+#
+# `set` is a set, not bytes to match; `trim_prefix` and `trim_suffix` take
+# bytes off. An empty `set` takes nothing off.
 function trim_any(s: [u8], set: [u8]) -> [u8]
     return trimming.trim_any(s: s, set: set)
 
 # `s` without the bytes of `set` at its start.
+#
+# - `s`: the bytes trimmed.
+# - `set`: the bytes taken off, each one alone; the empty set takes nothing
+#   off.
 function trim_start_any(s: [u8], set: [u8]) -> [u8]
     return trimming.trim_start_any(s: s, set: set)
 
 # `s` without the bytes of `set` at its end.
+#
+# - `s`: the bytes trimmed.
+# - `set`: the bytes taken off, each one alone; the empty set takes nothing
+#   off.
 function trim_end_any(s: [u8], set: [u8]) -> [u8]
     return trimming.trim_end_any(s: s, set: set)
 
 # `s` without the bytes `accepts` accepts at either end: a byte is taken off
 # an end for as long as `accepts` accepts it.
+#
+# - `s`: the bytes trimmed.
+# - `accepts`: asked of each byte at an end; true takes it off.
 function trim_where(s: [u8], accepts: (function(u8) -> bool)) -> [u8]
     return trimming.trim_where(s, accepts)
 
 # `s` without the bytes `accepts` accepts at its start.
+#
+# - `s`: the bytes trimmed.
+# - `accepts`: asked of each byte from the start; true takes it off.
 function trim_start_where(s: [u8], accepts: (function(u8) -> bool)) -> [u8]
     return trimming.trim_start_where(s, accepts)
 
 # `s` without the bytes `accepts` accepts at its end.
+#
+# - `s`: the bytes trimmed.
+# - `accepts`: asked of each byte from the end; true takes it off.
 function trim_end_where(s: [u8], accepts: (function(u8) -> bool)) -> [u8]
     return trimming.trim_end_where(s, accepts)
 
 # `s` without `prefix` at its start, or `s` itself where it does not begin
-# with it. The prefix is taken off once: `trim_prefix_all` takes off every
-# one, and `after_prefix` says whether it was there.
+# with it.
+#
+# - `s`: the bytes trimmed.
+# - `prefix`: the bytes taken off their start.
+#
+# The prefix is taken off once: `trim_prefix_all` takes off every one, and
+# `after_prefix` says whether it was there.
 function trim_prefix(s: [u8], prefix: [u8]) -> [u8]
     return trimming.trim_prefix(s: s, prefix: prefix)
 
 # `s` without `suffix` at its end, or `s` itself where it does not end with
-# it. The suffix is taken off once: `trim_suffix_all` takes off every one,
-# and `before_suffix` says whether it was there.
+# it.
+#
+# - `s`: the bytes trimmed.
+# - `suffix`: the bytes taken off their end.
+#
+# The suffix is taken off once: `trim_suffix_all` takes off every one, and
+# `before_suffix` says whether it was there.
 function trim_suffix(s: [u8], suffix: [u8]) -> [u8]
     return trimming.trim_suffix(s: s, suffix: suffix)
 
 # `s` without `prefix` at its start, taken off for as many times as what is
-# left begins with it. An empty `prefix` takes nothing off.
+# left begins with it.
+#
+# - `s`: the bytes trimmed.
+# - `prefix`: the bytes taken off their start, again and again.
+#
+# An empty `prefix` takes nothing off.
 function trim_prefix_all(s: [u8], prefix: [u8]) -> [u8]
     return trimming.trim_prefix_all(s: s, prefix: prefix)
 
-# `s` without `suffix` at its end, taken off for as many times as what is
-# left ends with it. An empty `suffix` takes nothing off.
+# `s` without `suffix` at its end, taken off for as many times as what is left
+# ends with it.
+#
+# - `s`: the bytes trimmed.
+# - `suffix`: the bytes taken off their end, again and again.
+#
+# An empty `suffix` takes nothing off.
 function trim_suffix_all(s: [u8], suffix: [u8]) -> [u8]
     return trimming.trim_suffix_all(s: s, suffix: suffix)
 
-# The bytes of `s` after `prefix`. Fails `not_found` where `s` does not begin
-# with `prefix`. An empty `prefix` is always there, and the bytes after it
-# are `s`.
+# The bytes of `s` after `prefix`.
+#
+# - `s`: the bytes read.
+# - `prefix`: the bytes they must begin with.
+#
+# Fails `not_found` where `s` does not begin with `prefix`. An empty `prefix`
+# is always there, and the bytes after it are `s`.
 function after_prefix(s: [u8], prefix: [u8]) -> [u8]?
     return trimming.after_prefix(s: s, prefix: prefix)
 
-# The bytes of `s` before `suffix`. Fails `not_found` where `s` does not end
-# with `suffix`. An empty `suffix` is always there, and the bytes before it
-# are `s`.
+# The bytes of `s` before `suffix`.
+#
+# - `s`: the bytes read.
+# - `suffix`: the bytes they must end with.
+#
+# Fails `not_found` where `s` does not end with `suffix`. An empty `suffix` is
+# always there, and the bytes before it are `s`.
 function before_suffix(s: [u8], suffix: [u8]) -> [u8]?
     return trimming.before_suffix(s: s, suffix: suffix)
 
 # The bytes of `s` between `prefix` at its start and `suffix` at its end.
+#
+# - `s`: the bytes read.
+# - `prefix`: the bytes they must begin with.
+# - `suffix`: the bytes they must end with, after `prefix`.
+#
 # Fails `not_found` where `s` does not begin with `prefix`, does not end with
 # `suffix`, or is too short to hold the two apart.
 function between(s: [u8], prefix: [u8], suffix: [u8]) -> [u8]?
@@ -368,111 +588,187 @@ function between(s: [u8], prefix: [u8], suffix: [u8]) -> [u8]?
 
 ## Replacing
 
-# `s` with every `old` replaced by `new`, the occurrences taken from the
-# start with no two sharing a byte. An empty `old` stands before every byte
-# and at the end, so `new` is written in each of those places.
+# `s` with every `old` replaced by `new`, the occurrences taken from the start
+# with no two sharing a byte.
+#
+# - `s`: the bytes read.
+# - `old`: the bytes replaced.
+# - `new`: the bytes written in their place.
+#
+# An empty `old` stands before every byte and at the end, so `new` is written
+# in each of those places.
 function replace_all(s: [u8], old: [u8], new: [u8]) -> [u8]
     return build.replaced(s: s, old: old, new: new, n: 0, bounded: false)
 
 # `s` with its first `n` occurrences of `old` replaced by `new`, taken as
 # `replace_all` takes them; `s` itself for an `n` of 0.
+#
+# - `s`: the bytes read.
+# - `old`: the bytes replaced.
+# - `new`: the bytes written in their place.
+# - `n`: the most occurrences replaced.
 function replace_n(s: [u8], old: [u8], new: [u8], n: u64) -> [u8]
     return build.replaced(s: s, old: old, new: new, n: n, bounded: true)
 
 # `s` with its last `old` replaced by `new`, or `s` itself where it holds
-# none. An empty `old` stands at the end, so `new` is written there.
+# none.
+#
+# - `s`: the bytes read.
+# - `old`: the bytes replaced.
+# - `new`: the bytes written in their place.
+#
+# An empty `old` stands at the end, so `new` is written there.
 function replace_last(s: [u8], old: [u8], new: [u8]) -> [u8]
     return build.replace_last(s: s, old: old, new: new)
 
 ## Padding
 
 # `s` with `pad` written before it until the whole is `width` bytes long, or
-# `s` itself where it is that long already or `pad` is empty. A `pad` of
-# several bytes is written again and again and cut where the width is
-# reached. `s` is never cut.
+# `s` itself where it is that long already or `pad` is empty.
+#
+# - `s`: the bytes padded; they are answered as they are where they are
+#   `width` bytes long or more.
+# - `width`: the bytes the answer holds; any value.
+# - `pad`: the bytes written, again and again; the empty list pads nothing.
+#
+# A `pad` of several bytes is written again and again and cut where the width
+# is reached. `s` is never cut.
 function pad_start(s: [u8], width: i64, pad: [u8]) -> [u8]
     return build.padded(s: s, width: width, pad: pad, before: true, after: false)
 
 # `s` with `pad` written after it until the whole is `width` bytes long, or
-# `s` itself where it is that long already or `pad` is empty. A `pad` of
-# several bytes is written again and again and cut where the width is
-# reached. `s` is never cut.
+# `s` itself where it is that long already or `pad` is empty.
+#
+# - `s`: the bytes padded; they are answered as they are where they are
+#   `width` bytes long or more.
+# - `width`: the bytes the answer holds; any value.
+# - `pad`: the bytes written, again and again; the empty list pads nothing.
+#
+# A `pad` of several bytes is written again and again and cut where the width
+# is reached. `s` is never cut.
 function pad_end(s: [u8], width: i64, pad: [u8]) -> [u8]
     return build.padded(s: s, width: width, pad: pad, before: false, after: true)
 
 # `s` with `pad` written on both sides until the whole is `width` bytes long,
 # half of the padding before and half after, the odd byte after; `s` itself
-# where it is that long already or `pad` is empty. Each side starts `pad`
-# afresh.
+# where it is that long already or `pad` is empty.
+#
+# - `s`: the bytes padded; they are answered as they are where they are
+#   `width` bytes long or more.
+# - `width`: the bytes the answer holds; any value.
+# - `pad`: the bytes written on each side; the empty list pads nothing.
+#
+# Each side starts `pad` afresh.
 function center(s: [u8], width: i64, pad: [u8]) -> [u8]
     return build.padded(s: s, width: width, pad: pad, before: true, after: true)
 
 ## Case and ASCII
 
-# `s` with each ASCII upper-case letter as its lower-case one, and every
-# other byte as it is, one above 127 included: it does not read UTF-8, so an
+# `s` with each ASCII upper-case letter as its lower-case one, and every other
+# byte as it is, one above 127 included: it does not read UTF-8, so an
 # accented letter keeps its case.
+#
+# - `s`: the bytes lowered.
 function to_lower_ascii(s: [u8]) -> [u8]
     return ascii.to_lower(s)
 
-# `s` with each ASCII lower-case letter as its upper-case one, and every
-# other byte as it is, one above 127 included.
+# `s` with each ASCII lower-case letter as its upper-case one, and every other
+# byte as it is, one above 127 included.
+#
+# - `s`: the bytes raised.
 function to_upper_ascii(s: [u8]) -> [u8]
     return ascii.to_upper(s)
 
-# Whether every byte of `s` is ASCII, below 128. The empty list is.
+# Whether every byte of `s` is ASCII, below 128.
+#
+# - `s`: the bytes asked about.
+#
+# The empty list is.
 function is_ascii(s: [u8]) -> bool
     return ascii.is_ascii(s)
 
 # Whether the byte `c` is ASCII white space: space, tab, line feed, vertical
-# tab, form feed or carriage return, the bytes 32 and 9 to 13. It is a
-# function to hand to `index_where`, `trim_where`, `split_where` or the
-# built-in `all`.
+# tab, form feed or carriage return, the bytes 32 and 9 to 13.
+#
+# - `c`: the byte asked about; any.
+#
+# It is a function to hand to `index_where`, `trim_where`, `split_where` or
+# the built-in `all`.
 function is_space_ascii(c: u8) -> bool
     return ascii.is_space(c)
 
 # Whether the byte `c` is an ASCII digit, `0` to `9`.
+#
+# - `c`: the byte asked about; any.
 function is_digit_ascii(c: u8) -> bool
     return ascii.is_digit(c)
 
 # Whether the byte `c` is an ASCII letter, `a` to `z` or `A` to `Z`.
+#
+# - `c`: the byte asked about; any.
 function is_letter_ascii(c: u8) -> bool
     return ascii.is_letter(c)
 
 # Whether the byte `c` is an ASCII upper-case letter, `A` to `Z`.
+#
+# - `c`: the byte asked about; any.
 function is_upper_ascii(c: u8) -> bool
     return ascii.is_upper(c)
 
 # Whether the byte `c` is an ASCII lower-case letter, `a` to `z`.
+#
+# - `c`: the byte asked about; any.
 function is_lower_ascii(c: u8) -> bool
     return ascii.is_lower(c)
 
 ## Building
 
-# The lists of `parts` one after another, as one list. No parts are the
-# empty list.
+# The lists of `parts` one after another, as one list.
+#
+# - `parts`: the lists, in order; an empty one adds nothing.
+#
+# No parts are the empty list.
 function concat(parts: [[u8]]) -> [u8]
     return build.concat(parts)
 
 # The lists of `parts` one after another with `sep` between each two, as one
-# list. It does for bytes what the built-in `join` does for text: no parts
-# are the empty list, and one part is itself.
-function join_all(parts: [[u8]], sep: [u8]) -> [u8]
-    return build.join_all(parts: parts, sep: sep)
+# list: for bytes what the built-in `join` does for text.
+#
+# - `parts`: the lists, in order; none are the empty list, and one part is
+#   itself.
+# - `sep`: the bytes written between each two parts; the empty list joins them
+#   as `concat` does.
+#
+# See also `concat`, `split`.
+function joined(parts: [[u8]], sep: [u8]) -> [u8]
+    return build.joined(parts: parts, sep: sep)
 
-# `s` written `n` times, as one list. It does for bytes what the built-in
-# `repeat` does for text, and takes its count as that does, as a `u64`.
+# `s` written `n` times, as one list.
+#
+# - `s`: the bytes repeated.
+# - `n`: how many times; 0 answers the empty list.
+#
+# It does for bytes what the built-in `repeat` does for text, and takes its
+# count as that does, as a `u64`.
 function repeated(s: [u8], n: u64) -> [u8]
     return build.repeated(s, n)
 
-# Adds the bytes of `from` at the end of `to`, which the caller owns. It
-# grows `to` in place and copies nothing of what `to` held, so a list built
+# Adds the bytes of `from` at the end of `to`, which the caller owns.
+#
+# - `to`: the caller's list, grown in place by the bytes of `from`.
+# - `from`: the bytes added, in order.
+#
+# It grows `to` in place and copies nothing of what `to` held, so a list built
 # from many pieces costs the bytes added and no more.
 function push_all(@to: [u8], from: [u8])
     raw.push_all(to: @to, from: from)
 
-# Adds the bytes of `s`, its UTF-8, at the end of `to`, which the caller
-# owns. It grows `to` in place and builds no list of `s` on the way.
+# Adds the bytes of `s`, its UTF-8, at the end of `to`, which the caller owns.
+#
+# - `to`: the caller's list, grown in place by the bytes of `s`.
+# - `s`: the text whose bytes are added.
+#
+# It grows `to` in place and builds no list of `s` on the way.
 function push_text(@to: [u8], s: str)
     raw.push_text(@to, s)
 
@@ -480,79 +776,114 @@ function push_text(@to: [u8], s: str)
 
 # `s` as hexadecimal text: two digits for each byte, the high half first, in
 # lower case, with nothing between the bytes.
+#
+# - `s`: the bytes written; the empty list is the empty text.
 function format_hex(s: [u8]) -> str
     return hex.formatted(s, raw.LOWER_DIGITS)
 
 # `s` as hexadecimal text in upper case: two digits for each byte, the high
 # half first, with nothing between the bytes.
+#
+# - `s`: the bytes written; the empty list is the empty text.
 function format_hex_upper(s: [u8]) -> str
     return hex.formatted(s, raw.UPPER_DIGITS)
 
 # `s` as the lines of a hexadecimal dump, the form `hexdump -C` writes:
 # sixteen bytes a line, each line its offset in eight hexadecimal digits or
 # more, the bytes in hexadecimal with a wider space after the eighth, and the
-# printable ASCII ones between bars with a dot for every other. Each line ends
-# with a line feed, and no bytes are the empty text. It is for a reader, and
-# nothing here reads it back.
+# printable ASCII ones between bars with a dot for every other.
+#
+# - `s`: the bytes shown.
+#
+# Each line ends with a line feed, and no bytes are the empty text. It is for
+# a reader, and nothing here reads it back.
 function format_hex_dump(s: [u8]) -> str
     return hex.dumped(s)
 
-# The bytes that `s`, hexadecimal text, writes: one byte for each two
-# digits, in either case and both together. Fails `invalid` where `s` has an
-# odd length or holds a byte that is not a hexadecimal digit; the message
-# says at which byte. Nothing is skipped: a space, a line end or a `0x`
-# before the digits is not a digit.
+# The bytes that `s`, hexadecimal text, writes: one byte for each two digits,
+# in either case and both together.
+#
+# - `s`: the hexadecimal text, two digits for each byte; the empty text is the
+#   empty list.
+#
+# Fails `invalid` where `s` has an odd length or holds a byte that is not a
+# hexadecimal digit; the message says at which byte. Nothing is skipped: a
+# space, a line end or a `0x` before the digits is not a digit.
 function parse_hex(s: str) -> [u8]?
     return hex.parsed(s)
 
 ## Base 64
 
 # `s` as base 64 in the standard alphabet, `+` and `/` its last two, padded
-# with `=` to a length that is a multiple of 4. It is one line whatever its
-# length.
+# with `=` to a length that is a multiple of 4.
+#
+# - `s`: the bytes written; the empty list is the empty text.
+#
+# It is one line whatever its length: MIME's lines of 76 characters, which a
+# mail's part holds, are `mail.format_base64_lines`. See also `parse_base64`,
+# `format_base64_url`.
 function format_base64(s: [u8]) -> str
     return base64.formatted(s, url: false, padded: true)
 
 # `s` as base 64 in the standard alphabet with no padding.
+#
+# - `s`: the bytes written; the empty list is the empty text.
 function format_base64_unpadded(s: [u8]) -> str
     return base64.formatted(s, url: false, padded: false)
 
 # `s` as base 64 in the alphabet safe in a URL and in a file's name, `-` and
 # `_` its last two, padded with `=` to a length that is a multiple of 4.
+#
+# - `s`: the bytes written; the empty list is the empty text.
 function format_base64_url(s: [u8]) -> str
     return base64.formatted(s, url: true, padded: true)
 
 # `s` as base 64 in the alphabet safe in a URL and in a file's name, with no
 # padding.
+#
+# - `s`: the bytes written; the empty list is the empty text.
 function format_base64_url_unpadded(s: [u8]) -> str
     return base64.formatted(s, url: true, padded: false)
 
-# The bytes that `s`, padded base 64 in the standard alphabet, writes. Fails
-# `invalid` where `s` holds a byte outside the alphabet, where its length is
-# not a multiple of 4 or its padding is not the one its bytes need, and where
-# its last character sets bits that belong to no byte; the message says at
-# which byte. Nothing is skipped, a line end included, so a text has one
-# reading and given bytes are written by one text.
+# The bytes that `s`, padded base 64 in the standard alphabet, writes.
+#
+# - `s`: the base 64 text, padded; the empty text is the empty list.
+#
+# Fails `invalid` where `s` holds a byte outside the alphabet, where its
+# length is not a multiple of 4 or its padding is not the one its bytes need,
+# and where its last character sets bits that belong to no byte; the message
+# says at which byte. Nothing is skipped, a line end included, so a text has
+# one reading and given bytes are written by one text.
 function parse_base64(s: str) -> [u8]?
     return base64_read.parsed(s, url: false, padded: true)
 
 # The bytes that `s`, base 64 in the standard alphabet with no padding,
-# writes. Fails `invalid` where `s` holds a byte outside the alphabet, a `=`
-# included, where its length is one more than a multiple of 4, and where its
-# last character sets bits that belong to no byte; the message says at which
-# byte.
+# writes.
+#
+# - `s`: the base 64 text, unpadded; the empty text is the empty list.
+#
+# Fails `invalid` where `s` holds a byte outside the alphabet, a `=` included,
+# where its length is one more than a multiple of 4, and where its last
+# character sets bits that belong to no byte; the message says at which byte.
 function parse_base64_unpadded(s: str) -> [u8]?
     return base64_read.parsed(s, url: false, padded: false)
 
 # The bytes that `s`, padded base 64 in the alphabet safe in a URL, writes.
+#
+# - `s`: the base 64 text in the URL's alphabet, padded.
+#
 # Fails `invalid` as `parse_base64` does, `+` and `/` being outside this
 # alphabet.
 function parse_base64_url(s: str) -> [u8]?
     return base64_read.parsed(s, url: true, padded: true)
 
 # The bytes that `s`, base 64 in the alphabet safe in a URL with no padding,
-# writes. Fails `invalid` as `parse_base64_unpadded` does, `+` and `/` being
-# outside this alphabet.
+# writes.
+#
+# - `s`: the base 64 text in the URL's alphabet, unpadded.
+#
+# Fails `invalid` as `parse_base64_unpadded` does, `+` and `/` being outside
+# this alphabet.
 function parse_base64_url_unpadded(s: str) -> [u8]?
     return base64_read.parsed(s, url: true, padded: false)
 
@@ -655,7 +986,7 @@ function encode_i16_le(n: i16) -> [u8]
 # `decode_i16_le`.
 function decode_i16_be(s: [u8], at: i64) -> i16?
     return ok(
-        to_i16(binary.signed(value: binary.decoded(s, at: at, width: 2, big: true, asked: "a i16")?, width: 2)).must()
+        to_i16(binary.signed(value: binary.decoded(s, at: at, width: 2, big: true, asked: "an i16")?, width: 2)).must()
     )
 
 # The `i16` that the 2 bytes of `s` from index `at` hold, the lowest byte first (little endian), in two's complement.
@@ -668,7 +999,7 @@ function decode_i16_be(s: [u8], at: i64) -> i16?
 # `decode_i16_be`.
 function decode_i16_le(s: [u8], at: i64) -> i16?
     return ok(
-        to_i16(binary.signed(value: binary.decoded(s, at: at, width: 2, big: false, asked: "a i16")?, width: 2)).must()
+        to_i16(binary.signed(value: binary.decoded(s, at: at, width: 2, big: false, asked: "an i16")?, width: 2)).must()
     )
 
 # The 4 bytes of `n`, the highest byte first (big endian, the order of the network).
@@ -735,7 +1066,7 @@ function encode_i32_le(n: i32) -> [u8]
 # `decode_i32_le`.
 function decode_i32_be(s: [u8], at: i64) -> i32?
     return ok(
-        to_i32(binary.signed(value: binary.decoded(s, at: at, width: 4, big: true, asked: "a i32")?, width: 4)).must()
+        to_i32(binary.signed(value: binary.decoded(s, at: at, width: 4, big: true, asked: "an i32")?, width: 4)).must()
     )
 
 # The `i32` that the 4 bytes of `s` from index `at` hold, the lowest byte first (little endian), in two's complement.
@@ -748,7 +1079,7 @@ function decode_i32_be(s: [u8], at: i64) -> i32?
 # `decode_i32_be`.
 function decode_i32_le(s: [u8], at: i64) -> i32?
     return ok(
-        to_i32(binary.signed(value: binary.decoded(s, at: at, width: 4, big: false, asked: "a i32")?, width: 4)).must()
+        to_i32(binary.signed(value: binary.decoded(s, at: at, width: 4, big: false, asked: "an i32")?, width: 4)).must()
     )
 
 # The 8 bytes of `n`, the highest byte first (big endian, the order of the network).
@@ -814,7 +1145,7 @@ function encode_i64_le(n: i64) -> [u8]
 # a negative `at` or one past the end included. See also `encode_i64_be`,
 # `decode_i64_le`.
 function decode_i64_be(s: [u8], at: i64) -> i64?
-    return ok(binary.decoded(s, at: at, width: 8, big: true, asked: "a i64")?)
+    return ok(binary.decoded(s, at: at, width: 8, big: true, asked: "an i64")?)
 
 # The `i64` that the 8 bytes of `s` from index `at` hold, the lowest byte first (little endian), in two's complement.
 #
@@ -825,7 +1156,103 @@ function decode_i64_be(s: [u8], at: i64) -> i64?
 # a negative `at` or one past the end included. See also `encode_i64_le`,
 # `decode_i64_be`.
 function decode_i64_le(s: [u8], at: i64) -> i64?
-    return ok(binary.decoded(s, at: at, width: 8, big: false, asked: "a i64")?)
+    return ok(binary.decoded(s, at: at, width: 8, big: false, asked: "an i64")?)
+
+## Floats as bytes
+
+# The 4 bytes of `x` as IEEE 754 lays them out, the highest byte first (big
+# endian, the order of the network): what a binary format writes for an
+# `f32`, Python's `struct` format `>f`.
+#
+# - `x`: any `f32`; both zeros, the subnormals and the infinities keep their
+#   bits, and every NaN is written as the quiet NaN `0x7fc00000`, as
+#   `numbers.f32_to_bits` says.
+#
+# See also `decode_f32_be`, `encode_f32_le`.
+function encode_f32_be(x: f32) -> [u8]
+    return encode_u32_be(numbers.f32_to_bits(x))
+
+# The 4 bytes of `x` as IEEE 754 lays them out, the lowest byte first (little
+# endian), Python's `struct` format `<f`.
+#
+# - `x`: any `f32`, a NaN written as `encode_f32_be` writes it.
+#
+# See also `decode_f32_le`, `encode_f32_be`.
+function encode_f32_le(x: f32) -> [u8]
+    return encode_u32_le(numbers.f32_to_bits(x))
+
+# The 8 bytes of `x` as IEEE 754 lays them out, the highest byte first (big
+# endian, the order of the network): what a binary format writes for an
+# `f64`, Python's `struct` format `>d`.
+#
+# - `x`: any `f64`; both zeros, the subnormals and the infinities keep their
+#   bits, and every NaN is written as the quiet NaN
+#   `0x7ff8000000000000`, as `numbers.f64_to_bits` says.
+#
+# See also `decode_f64_be`, `encode_f64_le`.
+function encode_f64_be(x: f64) -> [u8]
+    return encode_u64_be(numbers.f64_to_bits(x))
+
+# The 8 bytes of `x` as IEEE 754 lays them out, the lowest byte first (little
+# endian), Python's `struct` format `<d`.
+#
+# - `x`: any `f64`, a NaN written as `encode_f64_be` writes it.
+#
+# See also `decode_f64_le`, `encode_f64_be`.
+function encode_f64_le(x: f64) -> [u8]
+    return encode_u64_le(numbers.f64_to_bits(x))
+
+# The `f32` that the 4 bytes of `s` from index `at` hold as IEEE 754 lays
+# them out, the highest byte first (big endian, the order of the network).
+#
+# - `s`: the bytes; those before `at` and after the 4 are not read.
+# - `at`: the index of the first of the 4; any `i64`.
+#
+# Every pattern of bits is a float: an exponent of all ones is an infinity
+# with a fraction of zero and the language's one NaN with any other. Fails
+# `invalid` where fewer than 4 bytes stand from `at` to the end of `s`, a
+# negative `at` or one past the end included. See also `encode_f32_be`,
+# `decode_f32_le`.
+function decode_f32_be(s: [u8], at: i64) -> f32?
+    return ok(numbers.bits_to_f32(to_u32(binary.decoded(s, at: at, width: 4, big: true, asked: "an f32")?).must()))
+
+# The `f32` that the 4 bytes of `s` from index `at` hold as IEEE 754 lays
+# them out, the lowest byte first (little endian).
+#
+# - `s`: the bytes; those before `at` and after the 4 are not read.
+# - `at`: the index of the first of the 4; any `i64`.
+#
+# Fails `invalid` where fewer than 4 bytes stand from `at` to the end of `s`,
+# a negative `at` or one past the end included. See also `encode_f32_le`,
+# `decode_f32_be`.
+function decode_f32_le(s: [u8], at: i64) -> f32?
+    return ok(numbers.bits_to_f32(to_u32(binary.decoded(s, at: at, width: 4, big: false, asked: "an f32")?).must()))
+
+# The `f64` that the 8 bytes of `s` from index `at` hold as IEEE 754 lays
+# them out, the highest byte first (big endian, the order of the network).
+#
+# - `s`: the bytes; those before `at` and after the 8 are not read.
+# - `at`: the index of the first of the 8; any `i64`.
+#
+# Every pattern of bits is a float, as `decode_f32_be` says. Fails `invalid`
+# where fewer than 8 bytes stand from `at` to the end of `s`, a negative `at`
+# or one past the end included. See also `encode_f64_be`, `decode_f64_le`.
+function decode_f64_be(s: [u8], at: i64) -> f64?
+    return ok(numbers.bits_to_f64(binary.u64_of_bits(binary.decoded(s, at: at, width: 8, big: true, asked: "an f64")?)))
+
+# The `f64` that the 8 bytes of `s` from index `at` hold as IEEE 754 lays
+# them out, the lowest byte first (little endian).
+#
+# - `s`: the bytes; those before `at` and after the 8 are not read.
+# - `at`: the index of the first of the 8; any `i64`.
+#
+# Fails `invalid` where fewer than 8 bytes stand from `at` to the end of `s`,
+# a negative `at` or one past the end included. See also `encode_f64_le`,
+# `decode_f64_be`.
+function decode_f64_le(s: [u8], at: i64) -> f64?
+    return ok(
+        numbers.bits_to_f64(binary.u64_of_bits(binary.decoded(s, at: at, width: 8, big: false, asked: "an f64")?))
+    )
 
 ## Varints
 
@@ -1314,6 +1741,41 @@ test "decode_i64_be: minus one, every bit set, read back at index 1"
 test "decode_i64_le: the largest i64, the lowest byte first, read back at index 1"
     assert decode_i64_le([0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f], at: 1).must() == 9_223_372_036_854_775_807
 
+# A float written for the network, as Python's `struct.pack(">f", 1.5)`.
+test "encode_f32_be: one and a half"
+    assert encode_f32_be(1.5) == [0x3f, 0xc0, 0x00, 0x00]
+
+# The same float, the lowest byte first.
+test "encode_f32_le: one and a half"
+    assert encode_f32_le(1.5) == [0x00, 0x00, 0xc0, 0x3f]
+
+# A float of 64 bits written for the network, as Python's
+# `struct.pack(">d", -0.1)`.
+test "encode_f64_be: minus a tenth"
+    assert encode_f64_be(-0.1) == [0xbf, 0xb9, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9a]
+
+# The same float, the lowest byte first.
+test "encode_f64_le: minus a tenth"
+    assert encode_f64_le(-0.1) == [0x9a, 0x99, 0x99, 0x99, 0x99, 0x99, 0xb9, 0xbf]
+
+# A float read back at index 1, and bytes too few for one.
+test "decode_f32_be: a quarter at index 1"
+    assert decode_f32_be([0xff, 0x3e, 0x80, 0x00, 0x00], at: 1).must() == 0.25
+    assert decode_f32_be([0x3e, 0x80], at: 0).is_err()
+
+# A float read from its bytes, the lowest first, as Python's
+# `struct.unpack("<f", ...)` reads them.
+test "decode_f32_le: minus two"
+    assert decode_f32_le([0x00, 0x00, 0x00, 0xc0], at: 0).must() == -2.0
+
+# Pi read from its bytes, as Python's `struct.unpack(">d", ...)` reads them.
+test "decode_f64_be: pi"
+    assert decode_f64_be([0x40, 0x09, 0x21, 0xfb, 0x54, 0x44, 0x2d, 0x18], at: 0).must() == 3.141592653589793
+
+# A float read back from the bytes `encode_f64_le` wrote.
+test "decode_f64_le: a float there and back"
+    assert decode_f64_le(encode_f64_le(-2.5), at: 0).must() == -2.5
+
 # 300, the example of protocol buffers' guide, in two bytes.
 test "encode_uvarint: 300 in two bytes"
     assert encode_uvarint(300) == [0xac, 0x02]
@@ -1378,11 +1840,343 @@ test "replace_patterns_all: line ends made one kind"
     ends = compile_patterns([[13, 10], [13]], .leftmost_first)
     assert replace_patterns_all(['a', 13, 10, 'b', 13], ends, [[10], [10]]) == ['a', 10, 'b', 10]
 
-# The answer of `replace_patterns_all_by`'s example: a match doubled.
-function doubled(m: PatternMatch) -> [u8]
-    return concat([m.text, m.text])
-
 # Each match written twice by a function.
 test "replace_patterns_all_by: matches doubled"
     p = compile_patterns([['x']], .leftmost_first)
-    assert replace_patterns_all_by(['a', 'x', 'b'], p, doubled) == ['a', 'x', 'x', 'b']
+    assert replace_patterns_all_by(['a', 'x', 'b'], p, samples.doubled) == ['a', 'x', 'x', 'b']
+
+# The bytes of a text, to write it to a stream or to hash it.
+test "from_text: a letter of two bytes"
+    assert from_text("é!") == [0xc3, 0xa9, 0x21]
+
+# Bytes read from a file read back as text, and bytes that are not UTF-8.
+test "to_text: UTF-8 and a stray byte"
+    assert to_text([0x68, 0x69]).must() == "hi"
+    assert to_text([0x68, 0xff]).is_err()
+
+# Bytes that are not all UTF-8 shown with the replacement character.
+test "to_text_lossy: a stray byte"
+    assert to_text_lossy([0x68, 0xff, 0x69]) == "h�i"
+
+# Bytes written for a log, the unprintable ones escaped.
+test "format_escaped: a line with a tab and a zero byte"
+    assert format_escaped([0x61, 0x09, 0x00]) == "a\\t\\x00"
+
+# A header's name looked for in a request's bytes.
+test "contains: a header in a request"
+    assert contains(s: from_text("GET / HTTP/1.1\r\nHost: a\r\n"), substr: from_text("Host:"))
+
+# Whether bytes hold a line end of either kind.
+test "contains_any: a line end"
+    assert contains_any(s: from_text("a\r\nb"), set: [0x0a, 0x0d])
+
+# A file's magic number asked at its start.
+test "has_prefix: a PNG's signature"
+    assert has_prefix(s: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a], prefix: [0x89, 0x50, 0x4e, 0x47])
+
+# A field asked at the place a reader has reached.
+test "has_prefix_at: a field at an offset"
+    assert has_prefix_at(s: from_text("key=value"), prefix: from_text("value"), at: 4)
+
+# Bytes asked whether they end with a line end.
+test "has_suffix: a line end"
+    assert has_suffix(s: from_text("line\r\n"), suffix: [0x0d, 0x0a])
+
+# Where the blank line that ends an HTTP head begins.
+test "index_of: the end of a head"
+    assert index_of(s: from_text("A: 1\r\n\r\nbody"), substr: from_text("\r\n\r\n")).must() == 4
+
+# The second line end, searched for after the first.
+test "index_of_from: the second line end"
+    assert index_of_from(s: from_text("a\nb\nc"), substr: [0x0a], from: 2).must() == 3
+
+# Where the last slash of a path stands.
+test "index_of_last: the last slash"
+    assert index_of_last(s: from_text("a/b/c"), substr: from_text("/")).must() == 3
+
+# Where the first of two separators stands.
+test "index_of_any: the first separator"
+    assert index_of_any(s: from_text("a,b;c"), set: from_text(";,")).must() == 1
+
+# The next separator after the first.
+test "index_of_any_from: the separator after the first"
+    assert index_of_any_from(s: from_text("a,b;c"), set: from_text(";,"), from: 2).must() == 3
+
+# The last separator of two kinds.
+test "index_of_any_last: the last separator"
+    assert index_of_any_last(s: from_text("a,b;c"), set: from_text(";,")).must() == 3
+
+# Where the first digit stands.
+test "index_where: the first digit"
+    assert index_where(s: from_text("v2.1"), accepts: is_digit_ascii).must() == 1
+
+# The first digit after a place.
+test "index_where_from: a digit after a place"
+    assert index_where_from(s: from_text("a1 b2"), accepts: is_digit_ascii, from: 2).must() == 4
+
+# Where the last letter stands.
+test "index_where_last: the last letter"
+    assert index_where_last(s: from_text("ab12"), accepts: is_letter_ascii).must() == 1
+
+# How many line feeds bytes hold.
+test "count_of: line feeds"
+    assert count_of(s: from_text("a\nb\nc\n"), substr: [0x0a]) == 3
+
+# Every place a separator stands.
+test "index_of_all: every separator"
+    assert index_of_all(s: from_text("a,b,c"), substr: from_text(",")) == [1, 3]
+
+# Two keys ordered by their bytes.
+test "compare: two keys"
+    assert compare(a: from_text("abc"), b: from_text("abd")) == -1
+
+# A header's name compared as the protocol compares it.
+test "equals_ignoring_case_ascii: a header's name"
+    assert equals_ignoring_case_ascii(a: from_text("Content-Length"), b: from_text("content-length"))
+
+# A header line cut at its first colon.
+test "split_once: a header's name and value"
+    halves = split_once(s: from_text("Host: a:8080"), sep: from_text(":")).must()
+    assert halves.before == from_text("Host") && halves.after == from_text(" a:8080")
+
+# An address cut at its last colon, before the port.
+test "split_once_last: a host and its port"
+    halves = split_once_last(s: from_text("[::1]:8080"), sep: from_text(":")).must()
+    assert halves.before == from_text("[::1]") && halves.after == from_text("8080")
+
+# Fields between commas, an empty one kept.
+test "split: comma-separated fields"
+    assert split(s: from_text("a,,b"), sep: from_text(",")) == [from_text("a"), [], from_text("b")]
+
+# A request line cut into its method and the rest.
+test "split_n: a method and the rest"
+    assert split_n(s: from_text("GET /a b"), sep: from_text(" "), n: 2) == [from_text("GET"), from_text("/a b")]
+
+# A name cut at its last dot only.
+test "split_n_last: a name and its extension"
+    assert split_n_last(s: from_text("a.tar.gz"), sep: from_text("."), n: 2) == [from_text("a.tar"), from_text("gz")]
+
+# Lines with their ends, which joined give the bytes again.
+test "split_after: lines with their ends"
+    assert split_after(s: from_text("a\nb"), sep: [0x0a]) == [from_text("a\n"), from_text("b")]
+
+# The first line with its end, and the rest whole.
+test "split_after_n: the first line and the rest"
+    assert split_after_n(s: from_text("a\nb\nc"), sep: [0x0a], n: 2) == [from_text("a\n"), from_text("b\nc")]
+
+# Records each ended by a zero byte, the last one too.
+test "split_terminated: records ended by a zero byte"
+    assert split_terminated(s: [0x61, 0x00, 0x62, 0x00], sep: [0x00]) == [[0x61], [0x62]]
+
+# Fields separated by either of two bytes.
+test "split_any: two separators"
+    assert split_any(s: from_text("a,b;c"), set: from_text(",;")) == [from_text("a"), from_text("b"), from_text("c")]
+
+# Bytes cut at every digit.
+test "split_where: cut at digits"
+    assert split_where(s: from_text("a1b"), separates: is_digit_ascii) == [from_text("a"), from_text("b")]
+
+# The words of a line, however much white space stands between them.
+test "words: a line with runs of spaces"
+    assert words(from_text("  GET  /  ")) == [from_text("GET"), from_text("/")]
+
+# The words between runs of digits.
+test "words_where: words between digits"
+    assert words_where(s: from_text("a12b3"), separates: is_digit_ascii) == [from_text("a"), from_text("b")]
+
+# The lines of bytes written with Windows' ends.
+test "lines: carriage returns and line feeds"
+    assert lines(from_text("a\r\nb\r\n")) == [from_text("a"), from_text("b")]
+
+# A value read from a header, its spaces taken off.
+test "trim: a header's value"
+    assert trim(from_text("  gzip \r\n")) == from_text("gzip")
+
+# The white space at the start taken off.
+test "trim_start: indentation"
+    assert trim_start(from_text("\t x")) == from_text("x")
+
+# The white space at the end taken off.
+test "trim_end: a line end"
+    assert trim_end(from_text("x \r\n")) == from_text("x")
+
+# The zero bytes around a field taken off.
+test "trim_any: zero bytes around a field"
+    assert trim_any(s: [0x00, 0x61, 0x00, 0x00], set: [0x00]) == [0x61]
+
+# The zeros before a number taken off.
+test "trim_start_any: zeros before a number"
+    assert trim_start_any(s: from_text("0042"), set: from_text("0")) == from_text("42")
+
+# The zero bytes after a fixed-width name taken off.
+test "trim_end_any: a fixed-width name"
+    assert trim_end_any(s: [0x61, 0x62, 0x00, 0x00], set: [0x00]) == from_text("ab")
+
+# The digits around a word taken off.
+test "trim_where: digits around a word"
+    assert trim_where(s: from_text("12ab34"), accepts: is_digit_ascii) == from_text("ab")
+
+# The digits at the start taken off.
+test "trim_start_where: digits at the start"
+    assert trim_start_where(s: from_text("12ab"), accepts: is_digit_ascii) == from_text("ab")
+
+# The digits at the end taken off.
+test "trim_end_where: digits at the end"
+    assert trim_end_where(s: from_text("ab12"), accepts: is_digit_ascii) == from_text("ab")
+
+# A UTF-8 byte order mark taken off, once.
+test "trim_prefix: a byte order mark"
+    assert trim_prefix(s: [0xef, 0xbb, 0xbf, 0x61], prefix: [0xef, 0xbb, 0xbf]) == [0x61]
+
+# A line end taken off, once.
+test "trim_suffix: a line end"
+    assert trim_suffix(s: from_text("a\r\n"), suffix: from_text("\r\n")) == from_text("a")
+
+# Every pair of slashes at the start taken off.
+test "trim_prefix_all: slashes at the start"
+    assert trim_prefix_all(s: from_text("////a"), prefix: from_text("//")) == from_text("a")
+
+# Every line end at the end taken off.
+test "trim_suffix_all: line ends at the end"
+    assert trim_suffix_all(s: from_text("a\n\n\n"), suffix: [0x0a]) == from_text("a")
+
+# What follows a known prefix, only where it is there.
+test "after_prefix: a payload after its tag"
+    assert after_prefix(s: from_text("v1:data"), prefix: from_text("v1:")).must() == from_text("data")
+
+# What stands before a known suffix, only where it is there.
+test "before_suffix: a line without its end"
+    assert before_suffix(s: from_text("a\r\n"), suffix: from_text("\r\n")).must() == from_text("a")
+
+# The bytes between two markers.
+test "between: a field between quotes"
+    assert between(s: from_text("\"x\""), prefix: from_text("\""), suffix: from_text("\"")).must() == from_text("x")
+
+# Every line feed written as a carriage return and a line feed.
+test "replace_all: line ends made Windows' own"
+    assert replace_all(s: from_text("a\nb"), old: [0x0a], new: [0x0d, 0x0a]) == from_text("a\r\nb")
+
+# The first separator replaced, the rest kept.
+test "replace_n: the first separator"
+    assert replace_n(s: from_text("a,b,c"), old: from_text(","), new: from_text(";"), n: 1) == from_text("a;b,c")
+
+# The last separator replaced.
+test "replace_last: the last separator"
+    assert replace_last(s: from_text("a,b,c"), old: from_text(","), new: from_text(";")) == from_text("a,b;c")
+
+# A field written to a fixed width, zero bytes before it.
+test "pad_start: a field to a fixed width"
+    assert pad_start(s: [0x07], width: 4, pad: [0x00]) == [0x00, 0x00, 0x00, 0x07]
+
+# A name written to a fixed width, zero bytes after it.
+test "pad_end: a name to a fixed width"
+    assert pad_end(s: from_text("ab"), width: 4, pad: [0x00]) == [0x61, 0x62, 0x00, 0x00]
+
+# A title centred between dashes.
+test "center: a title between dashes"
+    assert center(s: from_text("ab"), width: 6, pad: from_text("-")) == from_text("--ab--")
+
+# A protocol's keyword lowered, a byte above 127 untouched.
+test "to_lower_ascii: a keyword"
+    assert to_lower_ascii(from_text("HELLO")) == from_text("hello")
+
+# A protocol's keyword raised.
+test "to_upper_ascii: a keyword"
+    assert to_upper_ascii(from_text("get")) == from_text("GET")
+
+# Bytes asked whether they are ASCII.
+test "is_ascii: plain and UTF-8"
+    assert is_ascii(from_text("hello")) && !is_ascii(from_text("héllo"))
+
+# The white space test handed to a function of the face.
+test "is_space_ascii: a tab and a letter"
+    assert is_space_ascii(0x09) && !is_space_ascii(0x61)
+
+# A byte asked whether it is a digit.
+test "is_digit_ascii: a digit and a letter"
+    assert is_digit_ascii(0x37) && !is_digit_ascii(0x61)
+
+# A byte asked whether it is a letter.
+test "is_letter_ascii: a letter and a digit"
+    assert is_letter_ascii(0x5a) && !is_letter_ascii(0x37)
+
+# A byte asked whether it is a capital.
+test "is_upper_ascii: a capital and a small letter"
+    assert is_upper_ascii(0x41) && !is_upper_ascii(0x61)
+
+# A byte asked whether it is a small letter.
+test "is_lower_ascii: a small letter and a capital"
+    assert is_lower_ascii(0x61) && !is_lower_ascii(0x41)
+
+# A message made of its head and its body.
+test "concat: a head and a body"
+    assert concat([from_text("A: 1\r\n\r\n"), from_text("hi")]) == from_text("A: 1\r\n\r\nhi")
+
+# Lines joined by carriage returns and line feeds.
+test "joined: lines joined"
+    assert joined(parts: [from_text("a"), from_text("b")], sep: from_text("\r\n")) == from_text("a\r\nb")
+
+# A pattern of bytes repeated to fill a buffer.
+test "repeated: a pattern three times"
+    assert repeated([0xab, 0xcd], 3) == [0xab, 0xcd, 0xab, 0xcd, 0xab, 0xcd]
+
+# A frame built from pieces in one list, nothing copied twice.
+test "push_all: a frame built in place"
+    frame: [u8] @= [0x01]
+    push_all(to: @frame, from: [0x02, 0x03])
+    assert frame == [0x01, 0x02, 0x03]
+
+# A text's bytes added to a frame in place.
+test "push_text: a text added to a frame"
+    frame: [u8] @= [0x01]
+    push_text(@frame, s: "ok")
+    assert frame == [0x01, 0x6f, 0x6b]
+
+# A digest written as hexadecimal.
+test "format_hex: four bytes"
+    assert format_hex([0xde, 0xad, 0xbe, 0xef]) == "deadbeef"
+
+# The same in upper case, as some protocols write it.
+test "format_hex_upper: four bytes"
+    assert format_hex_upper([0xde, 0xad, 0xbe, 0xef]) == "DEADBEEF"
+
+# A line of a dump, as Go's `hex.Dump` writes it.
+test "format_hex_dump: three bytes"
+    assert format_hex_dump(from_text("Hi\n")) == "00000000  48 69 0a                                          |Hi.|\n"
+
+# A digest read back from hexadecimal, in either case.
+test "parse_hex: a digest"
+    assert parse_hex("DEADbeef").must() == [0xde, 0xad, 0xbe, 0xef]
+
+# A short text in base 64, padded.
+test "format_base64: two bytes"
+    assert format_base64(from_text("hi")) == "aGk="
+
+# The same without its padding.
+test "format_base64_unpadded: two bytes"
+    assert format_base64_unpadded(from_text("hi")) == "aGk"
+
+# Bytes in the alphabet safe in a URL, two that the standard writes `+` and `/`.
+test "format_base64_url: bytes written with - and _"
+    assert format_base64_url([0xfb, 0xff]) == "-_8="
+
+# The same without padding, as a JSON Web Token writes it.
+test "format_base64_url_unpadded: bytes written with - and _"
+    assert format_base64_url_unpadded([0xfb, 0xff]) == "-_8"
+
+# Base 64 read back, and a text that is not base 64.
+test "parse_base64: a short text and a wrong one"
+    assert parse_base64("aGk=").must() == from_text("hi")
+    assert parse_base64("aGk").is_err()
+
+# Base 64 with no padding read back.
+test "parse_base64_unpadded: a short text"
+    assert parse_base64_unpadded("aGk").must() == from_text("hi")
+
+# Base 64 in the URL's alphabet read back.
+test "parse_base64_url: two bytes"
+    assert parse_base64_url("-_8=").must() == [0xfb, 0xff]
+
+# A part of a JSON Web Token read back.
+test "parse_base64_url_unpadded: two bytes"
+    assert parse_base64_url_unpadded("-_8").must() == [0xfb, 0xff]
