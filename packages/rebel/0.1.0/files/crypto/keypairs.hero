@@ -643,7 +643,7 @@ test "public_of: the public half of a P-384 key"
     close_private(@key).must()
 
 # A private key closed, its secret overwritten.
-test "close: a key made and closed"
+test "close_private: a key made and closed"
     key @= generate(.p256).must()
     close_private(@key).must()
 
