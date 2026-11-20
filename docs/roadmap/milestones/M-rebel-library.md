@@ -596,6 +596,6 @@ Read from `git log` of the branch `rebel-round`, which opened from `main` at `f6
   reds the branch carries at its base. Then the three owed steps above, one at a time.
 
 **The register of the decisions this milestone invalidates** is one `decision` issue with dated
-comments (decision 10, panel 253's R1), <register>; this page carries no list of it. The records
+comments (decision 10, panel 253's R1), https://github.com/heroes-lang/heroes/issues/2610; this page carries no list of it. The records
 that held a superseded decision each end with a dated note pointing at it.
 

@@ -707,4 +707,4 @@ of Go's names, R5's card and its ceiling with *no `heroes doc` in this milestone
 verb. Stand: R1's *no core package is shipped with the compiler or the runtime* and the veto of
 route B5, R4's thick face over a published floor, R6's platform layer beside the runtime, R3's two
 compiler refusals, R7 to R12, R15 and R16. Entry 7 of the register of the decisions M-rebel-library
-invalidates, <register>.
+invalidates, https://github.com/heroes-lang/heroes/issues/2610.
