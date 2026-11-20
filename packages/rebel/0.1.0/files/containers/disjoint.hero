@@ -84,7 +84,7 @@ function set_count(disjoint: Disjoint) -> i64
 # change it: compare two roots asked after the same merges, never one kept
 # from before. Aborts where `element` is not an element. It costs nearly a
 # constant, the inverse of Ackermann's function of the size, over many calls.
-# See also `same`, `to_labels`.
+# See also `is_same_set`, `to_labels`.
 function root_of(@disjoint: Disjoint, element: i64) -> i64
     return forest.root(@disjoint.forest, element)
 
@@ -97,7 +97,7 @@ function root_of(@disjoint: Disjoint, element: i64) -> i64
 #
 # False where `a` and `b` stood in one set already, which is how Kruskal's
 # algorithm finds an edge that would close a cycle. Aborts where `a` or `b`
-# is not an element. See also `same`.
+# is not an element. See also `is_same_set`.
 function merge(@disjoint: Disjoint, a: i64, b: i64) -> bool
     return forest.unite(@disjoint.forest, a: a, b: b)
 
@@ -109,7 +109,7 @@ function merge(@disjoint: Disjoint, a: i64, b: i64) -> bool
 # - `b`: another, or `a` itself, which always stands with itself.
 #
 # Aborts where `a` or `b` is not an element. See also `merge`, `root_of`.
-function same(@disjoint: Disjoint, a: i64, b: i64) -> bool
+function is_same_set(@disjoint: Disjoint, a: i64, b: i64) -> bool
     first = forest.root(@disjoint.forest, a)
     return forest.root(@disjoint.forest, b) == first
 
@@ -195,12 +195,12 @@ test "merge: three roads between three towns, the third closing a loop"
     assert !merge(@towns, a: 0, b: 2)
 
 # Whether two people know each other through friends.
-test "same: a friend of a friend, and a stranger"
+test "is_same_set: a friend of a friend, and a stranger"
     people @= new(4)
     _ = merge(@people, a: 0, b: 1)
     _ = merge(@people, a: 1, b: 2)
-    assert same(@people, a: 0, b: 2)
-    assert !same(@people, a: 0, b: 3)
+    assert is_same_set(@people, a: 0, b: 2)
+    assert !is_same_set(@people, a: 0, b: 3)
 
 # The size of the island a cell stands on.
 test "size_of: an island of three cells and one alone"

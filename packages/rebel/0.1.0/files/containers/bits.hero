@@ -156,48 +156,52 @@ function flip_range(@bits: Bits, from: i64, to: i64)
 function count_ones(bits: Bits) -> i64
     return bitwords.count_ones(bits.words)
 
-# The bits set in both sets.
+# The bits set in both sets: Java's `BitSet.and`, named as `sets` names it.
 #
 # - `bits`: the first set.
 # - `other`: the second set; a shorter one reads as clear past its size.
 #
-# Of the larger of the two sizes. See also `or`, `and_not`.
-function and(bits: Bits, other: Bits) -> Bits
+# Of the larger of the two sizes. See also `union_of`, `difference`.
+function intersection(bits: Bits, other: Bits) -> Bits
     return Bits(words: bitwords.combine(left: bits.words, right: other.words, how: 0))
 
-# The bits set in either set.
+# The bits set in either set: Java's `BitSet.or`, named as `sets` names it.
 #
 # - `bits`: the first set.
 # - `other`: the second set; a shorter one reads as clear past its size.
 #
-# Of the larger of the two sizes. See also `and`, `xor`.
-function or(bits: Bits, other: Bits) -> Bits
+# Of the larger of the two sizes. See also `intersection`,
+# `symmetric_difference`.
+function union_of(bits: Bits, other: Bits) -> Bits
     return Bits(words: bitwords.combine(left: bits.words, right: other.words, how: 1))
 
-# The bits set in one set and not the other.
+# The bits set in one set and not the other: Java's `BitSet.xor`, named as
+# `sets` names it.
 #
 # - `bits`: the first set.
 # - `other`: the second set; a shorter one reads as clear past its size.
 #
-# Of the larger of the two sizes. See also `or`.
-function xor(bits: Bits, other: Bits) -> Bits
+# Of the larger of the two sizes. See also `union_of`.
+function symmetric_difference(bits: Bits, other: Bits) -> Bits
     return Bits(words: bitwords.combine(left: bits.words, right: other.words, how: 2))
 
-# The bits set in `bits` and clear in `other`.
+# The bits set in `bits` and clear in `other`: Java's `BitSet.andNot`, named
+# as `sets` names it.
 #
 # - `bits`: the set to keep bits of.
 # - `other`: the bits to clear; a shorter one reads as clear past its size.
 #
-# Of the larger of the two sizes. See also `and`, `not`.
-function and_not(bits: Bits, other: Bits) -> Bits
+# Of the larger of the two sizes. See also `intersection`, `complement`.
+function difference(bits: Bits, other: Bits) -> Bits
     return Bits(words: bitwords.combine(left: bits.words, right: other.words, how: 3))
 
-# Every bit of a set turned over, within its size.
+# Every bit of a set turned over, within its size: .NET's `BitArray.Not`, and
+# Java's `BitSet.flip` over the whole size.
 #
 # - `bits`: the set.
 #
-# Of the same size; the bits past it stay clear. See also `and_not`.
-function not(bits: Bits) -> Bits
+# Of the same size; the bits past it stay clear. See also `difference`.
+function complement(bits: Bits) -> Bits
     turned @= bits.words
     bitwords.change_range(@turned, from: 0, to: turned.size, how: 2)
     return Bits(words: turned)
@@ -207,7 +211,7 @@ function not(bits: Bits) -> Bits
 # - `bits`: the first set.
 # - `other`: the second set, of any size.
 #
-# True where either is empty. See also `and`, `is_subset`.
+# True where either is empty. See also `intersection`, `is_subset`.
 function is_disjoint(bits: Bits, other: Bits) -> bool
     return bitwords.count_ones(bitwords.combine(left: bits.words, right: other.words, how: 0)) == 0
 
@@ -366,12 +370,12 @@ function to_words(bits: Bits) -> [i64]
 
 # A set of `count` bits read from `words` in the order of `to_words`.
 #
+# - `count`: how many bits, from 0, as `new` and `from_indices` take it first.
 # - `words`: the words; fewer than `count` needs read as clear past them,
 #   and their bits past `count` are dropped.
-# - `count`: how many bits, from 0.
 #
 # Aborts where `count` is below zero. See also `to_words`.
-function from_words(words: [i64], count: i64) -> Bits
+function from_words(count: i64, words: [i64]) -> Bits
     made @= bitwords.clear_set(count)
 
     for at in range(from: 0, to: made.words.len())
@@ -541,32 +545,32 @@ test "count_ones: the seats taken"
     assert count_ones(parse("1101").must()) == 3
 
 # The bits set in both.
-test "and: the days both are free"
+test "intersection: the days both are free"
     ann = parse("1100").must()
     bob = parse("0110").must()
-    assert format(and(bits: ann, other: bob)) == "0100"
+    assert format(intersection(bits: ann, other: bob)) == "0100"
 
 # The bits set in either.
-test "or: the days either is free"
+test "union_of: the days either is free"
     ann = parse("1100").must()
     bob = parse("0110").must()
-    assert format(or(bits: ann, other: bob)) == "1110"
+    assert format(union_of(bits: ann, other: bob)) == "1110"
 
 # The bits set in exactly one.
-test "xor: the days only one is free"
+test "symmetric_difference: the days only one is free"
     ann = parse("1100").must()
     bob = parse("0110").must()
-    assert format(xor(bits: ann, other: bob)) == "1010"
+    assert format(symmetric_difference(bits: ann, other: bob)) == "1010"
 
 # The bits of one with those of another taken away.
-test "and_not: the days ann is free and bob is not"
+test "difference: the days ann is free and bob is not"
     ann = parse("1100").must()
     bob = parse("0110").must()
-    assert format(and_not(bits: ann, other: bob)) == "1000"
+    assert format(difference(bits: ann, other: bob)) == "1000"
 
 # Every bit turned over.
-test "not: the busy days from the free ones"
-    assert format(not(parse("1100").must())) == "0011"
+test "complement: the busy days from the free ones"
+    assert format(complement(parse("1100").must())) == "0011"
 
 # Whether two sets share no bit.
 test "is_disjoint: two shifts that do not overlap"
@@ -640,7 +644,7 @@ test "to_words: bit 63 is the sign of the first word"
 
 # A set read from words.
 test "from_words: three bits of one word"
-    assert format(from_words(words: [6], count: 3)) == "011"
+    assert format(from_words(count: 3, words: [6])) == "011"
 
 # A set written as text.
 test "format: a set as zeros and ones"

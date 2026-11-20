@@ -383,7 +383,7 @@ function previous_slot(ordered: Ordered, at: i64) -> i64?
 # - `ordered`: the shape.
 #
 # Empty for an empty map or set. See also `slots_between`,
-# `to_list`.
+# `keys_in_order`.
 function slots(ordered: Ordered) -> [i64]
     return steps.in_order(ordered.tree)
 
@@ -408,7 +408,7 @@ function slots_between<K>(ordered: Ordered, key_list: [K] lent, from: K, to: K, 
 # - `key_list`: its keys.
 #
 # Empty for an empty map or set. See also `slots`.
-function to_list<K>(ordered: Ordered, key_list: [K] lent) -> [K]
+function keys_in_order<K>(ordered: Ordered, key_list: [K] lent) -> [K]
     codes.require_kept(held: key_list.len(), kept: tree.room(ordered.tree), what: "key list")
     held: [K] @= []
 
@@ -416,6 +416,32 @@ function to_list<K>(ordered: Ordered, key_list: [K] lent) -> [K]
         held @ held.push(key_list[at])
 
     return held
+
+# Empties an ordered map, every key and value let go.
+#
+# - `ordered`: the map's shape; it holds no key after, and stays a map's.
+# - `key_list`: the map's keys, emptied.
+# - `value_list`: the map's values, emptied.
+#
+# Aborts where `ordered` is a set's shape or a list is shorter than its size.
+# See also `clear_set`, `new_map`.
+function clear<K, V>(@ordered: Ordered, @key_list: [K], @value_list: [V])
+    edit.require_kind(ordered.tree, as_map: true, keys_held: key_list.len(), values_held: value_list.len())
+    ordered.tree @ tree.empty(holds_values: true)
+    key_list @ []
+    value_list @ []
+
+# Empties an ordered set, every key let go.
+#
+# - `ordered`: the set's shape; it holds no key after, and stays a set's.
+# - `key_list`: the set's keys, emptied.
+#
+# Aborts where `ordered` is a map's shape or `key_list` is shorter than its
+# size. See also `clear`, `new_set`.
+function clear_set<K>(@ordered: Ordered, @key_list: [K])
+    edit.require_kind(ordered.tree, as_map: false, keys_held: key_list.len(), values_held: 0)
+    ordered.tree @ tree.empty(holds_values: false)
+    key_list @ []
 
 ## Examples
 
@@ -429,7 +455,9 @@ test "new_set: an empty set of numbers"
     seen = new_set()
     assert first_slot(seen).is_err()
 
-# A key put twice counts once.
+# A key put twice counts once. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
 test "size: three keys put, one of them twice"
     ages @= new_map()
     names: [str] @= []
@@ -440,7 +468,9 @@ test "size: three keys put, one of them twice"
 
     assert size(ages) == 3
 
-# A value put, then replaced under the same key.
+# A value put, then replaced under the same key. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
 test "put: an age put and then changed"
     ages @= new_map()
     names: [str] @= []
@@ -449,7 +479,9 @@ test "put: an age put and then changed"
     put(@ages, @names, @years, key: "ann", value: 31, less: samples.by_bytes)
     assert get(ages, names, years, key: "ann", less: samples.by_bytes).must() == 31
 
-# A value found by its key, and a key that is not there.
+# A value found by its key, and a key that is not there. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
 test "get: an age by name, and a name not held"
     ages @= new_map()
     names: [str] @= []
@@ -458,7 +490,9 @@ test "get: an age by name, and a name not held"
     assert get(ages, names, years, key: "bob", less: samples.by_bytes).must() == 40
     assert get(ages, names, years, key: "zoe", less: samples.by_bytes).is_err()
 
-# A key taken out, its value answered.
+# A key taken out, its value answered. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
 test "remove: a name taken out of the map"
     ages @= new_map()
     names: [str] @= []
@@ -466,9 +500,11 @@ test "remove: a name taken out of the map"
     put(@ages, @names, @years, key: "bob", value: 40, less: samples.by_bytes)
     put(@ages, @names, @years, key: "ann", value: 30, less: samples.by_bytes)
     assert remove(@ages, @names, @years, key: "bob", less: samples.by_bytes).must() == 40
-    assert to_list(ages, names) == ["ann"]
+    assert keys_in_order(ages, names) == ["ann"]
 
 # The smallest key taken out by its slot: Rust's `pop_first`.
+# `samples.ascending` is `function ascending(a: i64, b: i64) -> bool`, true
+# where `a < b`.
 test "remove_at: the earliest deadline taken out"
     jobs @= new_map()
     deadlines: [i64] @= []
@@ -478,16 +514,18 @@ test "remove_at: the earliest deadline taken out"
     at = first_slot(jobs).must()
     assert titles[at] == "soon"
     remove_at(@jobs, @deadlines, @titles, at)
-    assert to_list(jobs, deadlines) == [9]
+    assert keys_in_order(jobs, deadlines) == [9]
 
-# A number added once, and again.
+# A number added once, and again. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "add: a number new, then held already"
     seen @= new_set()
     numbers: [i64] @= []
     assert add(@seen, @numbers, key: 7, less: samples.ascending)
     assert !add(@seen, @numbers, key: 7, less: samples.ascending)
 
-# A number taken out, and one that was never there.
+# A number taken out, and one that was never there. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "discard: a number held, then one absent"
     seen @= new_set()
     numbers: [i64] @= []
@@ -495,7 +533,8 @@ test "discard: a number held, then one absent"
     assert discard(@seen, @numbers, key: 7, less: samples.ascending)
     assert !discard(@seen, @numbers, key: 8, less: samples.ascending)
 
-# The largest number taken out of a set by its slot.
+# The largest number taken out of a set by its slot. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "discard_at: the largest number taken out"
     seen @= new_set()
     numbers: [i64] @= []
@@ -504,9 +543,11 @@ test "discard_at: the largest number taken out"
         _ = add(@seen, @numbers, key: n, less: samples.ascending)
 
     discard_at(@seen, @numbers, last_slot(seen).must())
-    assert to_list(seen, numbers) == [1, 4]
+    assert keys_in_order(seen, numbers) == [1, 4]
 
-# Whether a word is in a set of words.
+# Whether a word is in a set of words. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
 test "contains: a word held and a word not"
     words @= new_set()
     held: [str] @= []
@@ -514,7 +555,9 @@ test "contains: a word held and a word not"
     assert contains(words, held, key: "kiwi", less: samples.by_bytes)
     assert !contains(words, held, key: "lime", less: samples.by_bytes)
 
-# The slot of a key, to read its value beside it.
+# The slot of a key, to read its value beside it. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
 test "slot_of: the slot of a name, then its value"
     ages @= new_map()
     names: [str] @= []
@@ -523,7 +566,8 @@ test "slot_of: the slot of a name, then its value"
     at = slot_of(ages, names, key: "ann", less: samples.by_bytes).must()
     assert years[at] == 30
 
-# The dearest price within a budget.
+# The dearest price within a budget. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "floor_slot: the dearest price at or under a budget"
     prices @= new_set()
     held: [i64] @= []
@@ -534,7 +578,8 @@ test "floor_slot: the dearest price at or under a budget"
     assert held[floor_slot(prices, held, key: 25, less: samples.ascending).must()] == 20
     assert floor_slot(prices, held, key: 5, less: samples.ascending).is_err()
 
-# The first train at or after a time.
+# The first train at or after a time. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "ceiling_slot: the next train from a time"
     trains @= new_set()
     times: [i64] @= []
@@ -545,7 +590,8 @@ test "ceiling_slot: the next train from a time"
     assert times[ceiling_slot(trains, times, key: 610, less: samples.ascending).must()] == 615
     assert times[ceiling_slot(trains, times, key: 615, less: samples.ascending).must()] == 615
 
-# The last key strictly before a bound.
+# The last key strictly before a bound. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "lower_slot: the version before a given one"
     versions @= new_set()
     numbers: [i64] @= []
@@ -555,7 +601,8 @@ test "lower_slot: the version before a given one"
 
     assert numbers[lower_slot(versions, numbers, key: 4, less: samples.ascending).must()] == 2
 
-# The first key strictly after a bound.
+# The first key strictly after a bound. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "higher_slot: the version after a given one"
     versions @= new_set()
     numbers: [i64] @= []
@@ -566,7 +613,8 @@ test "higher_slot: the version after a given one"
     assert numbers[higher_slot(versions, numbers, key: 2, less: samples.ascending).must()] == 4
     assert higher_slot(versions, numbers, key: 4, less: samples.ascending).is_err()
 
-# A score's place in a table, counted from 0.
+# A score's place in a table, counted from 0. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "rank_of: how many scores are lower"
     scores @= new_set()
     held: [i64] @= []
@@ -577,7 +625,8 @@ test "rank_of: how many scores are lower"
     assert rank_of(scores, held, key: 70, less: samples.ascending) == 1
     assert rank_of(scores, held, key: 80, less: samples.ascending) == 2
 
-# The median of an odd number of values.
+# The median of an odd number of values. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "slot_at_rank: the middle of five numbers"
     values @= new_set()
     held: [i64] @= []
@@ -587,7 +636,8 @@ test "slot_at_rank: the middle of five numbers"
 
     assert held[slot_at_rank(values, 2).must()] == 5
 
-# The smallest key.
+# The smallest key. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "first_slot: the earliest date"
     dates @= new_set()
     held: [i64] @= []
@@ -597,7 +647,8 @@ test "first_slot: the earliest date"
 
     assert held[first_slot(dates).must()] == 20251231
 
-# The largest key.
+# The largest key. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "last_slot: the latest date"
     dates @= new_set()
     held: [i64] @= []
@@ -607,7 +658,9 @@ test "last_slot: the latest date"
 
     assert held[last_slot(dates).must()] == 20261117
 
-# A walk forwards through every key.
+# A walk forwards through every key. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
 test "next_slot: every word in order, one step at a time"
     words @= new_set()
     held: [str] @= []
@@ -625,7 +678,9 @@ test "next_slot: every word in order, one step at a time"
 
     assert walked == ["date", "fig", "pear"]
 
-# A walk backwards from the largest key.
+# A walk backwards from the largest key. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
 test "previous_slot: the key before the last"
     words @= new_set()
     held: [str] @= []
@@ -636,7 +691,9 @@ test "previous_slot: the key before the last"
     at = previous_slot(words, last_slot(words).must()).must()
     assert held[at] == "fig"
 
-# Every entry in the order of its key, with its value.
+# Every entry in the order of its key, with its value. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
 test "slots: names and ages in the order of the names"
     ages @= new_map()
     names: [str] @= []
@@ -650,7 +707,8 @@ test "slots: names and ages in the order of the names"
 
     assert written.join(" ") == "al=1 cy=3"
 
-# The keys of a range, the upper bound left out.
+# The keys of a range, the upper bound left out. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "slots_between: the events of a day"
     events @= new_set()
     times: [i64] @= []
@@ -665,12 +723,35 @@ test "slots_between: the events of a day"
 
     assert found == [12, 17, 23]
 
-# The keys in order, as a list.
-test "to_list: the words of a sentence sorted and each once"
+# The keys in order, as a list. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
+test "keys_in_order: the words of a sentence sorted and each once"
     words @= new_set()
     held: [str] @= []
 
     for word in ["to", "be", "or", "not", "to", "be"]
         _ = add(@words, @held, key: word, less: samples.by_bytes)
 
-    assert to_list(words, held) == ["be", "not", "or", "to"]
+    assert keys_in_order(words, held) == ["be", "not", "or", "to"]
+
+# A map of names to ages emptied, ready again. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
+test "clear: a map emptied"
+    ages @= new_map()
+    names: [str] @= []
+    years: [i64] @= []
+    put(@ages, @names, @years, key: "ann", value: 30, less: samples.by_bytes)
+    clear(@ages, @names, @years)
+    assert size(ages) == 0 && names.len() == 0 && years.len() == 0
+
+# A set of numbers emptied, then used again. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
+test "clear_set: a set emptied and filled again"
+    seen @= new_set()
+    numbers: [i64] @= []
+    _ = add(@seen, @numbers, key: 7, less: samples.ascending)
+    clear_set(@seen, @numbers)
+    assert size(seen) == 0
+    assert add(@seen, @numbers, key: 7, less: samples.ascending)
