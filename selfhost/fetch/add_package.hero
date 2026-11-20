@@ -66,6 +66,10 @@ function added(inv: argv.Invocation, tools: transport.Tools, program: str, c: ca
 
     if !listing.path_shaped(inside)
         return [package_operand.no_path(name: name, inside: inside)]
+    private = package_operand.private_refused(name: name, inside: inside)
+
+    if private.len() > 0
+        return private
     listed = listing.of(c.listings, entry: name)
 
     if listing.names(listed, wanted: inside)

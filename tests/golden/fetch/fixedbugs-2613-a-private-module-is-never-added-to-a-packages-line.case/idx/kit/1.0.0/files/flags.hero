@@ -1,0 +1,5 @@
+# Not listed and reached by nothing listed: never placed.
+use flags/internal/bits
+
+function on() -> bool
+    return bits.one() == 1

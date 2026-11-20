@@ -1,0 +1,10 @@
+# Fixed defect 2613, 2026-11-20, lane umbrella-2: `heroes add` never writes a
+# private module into a `packages` line, which names what a program's `use`
+# writes and no program's module names a private one. `heroes add
+# kit/text/internal/scan` wrote it and placed the part; it is refused at
+# exit 1 with the module it belongs to named, before any entry is asked, and
+# the catalogue stays as it was.
+use <kit>/csv
+
+function main()
+    print(csv.first("one,two"))

@@ -1,0 +1,6 @@
+function comma_at(line: str) -> i64
+    for at in range(from: 0, to: line.len())
+        if line[at] == ','
+            return at
+
+    return line.len()

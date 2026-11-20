@@ -11,6 +11,13 @@
 # the `use` it refuses is told once: a module the list does not name is often
 # not placed either, and `module/package_told.hero` says nothing more of it.
 #
+# **A private module is never told here** (defect 2613): no module of a
+# program names a package's private module, so no line lists one, and this
+# refusal's note offered `heroes add kit/csv/internal/scan`, a line listing
+# one, before `private_module` told the same `use` again. It is the private
+# rule's alone, told by `module/private.hero` where the compilation holds the
+# module and by `module/package_told.hero` where a placed part lacks it.
+#
 # **The repair is a command, never a `Fix`**: a `Fix` edits a file of the
 # compilation, and the catalogue is none (panel 235's R5,
 # `module/package_told.hero`'s header), so the note names `heroes add
@@ -23,6 +30,7 @@ use module/fingerprint
 use module/listing
 use module/paths
 use module/placed
+use module/private
 use module/reached
 use source
 use token
@@ -45,7 +53,7 @@ function told(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [d
             continue
         written = source.span_text(s, used.name)
 
-        if !placed.is_package(written)
+        if !placed.is_package(written) || !private.reaches(from: source.module_at(s, used.span.start), name: written)
             continue
         entry = placed.entry_of(written)
         inside = placed.inside_of(written)
@@ -83,18 +91,24 @@ function refused(s: source.Source, entry: str, inside: str, listed: [str], span:
 # does not: none where the tree is no part or the version holds no such
 # module, the build's own words then standing. The part holds what the line
 # named when it was placed; a line changed since, or a module another package
-# reaches, is placed by `heroes fetch` or listed by `heroes add`.
+# reaches, is placed by `heroes fetch` or listed by `heroes add`; a private
+# module by `heroes fetch` alone, its owner's placing placing it, and never
+# listed (defect 2613).
 function part_lacks(package: reached.Package, inside: str, span: token.Span) -> [diag.Diagnostic]
     kept = fingerprint.kept_listing(package.opened).default("")
 
     if kept.len() == 0
         return []
+    repair: str @= "`heroes fetch` places what the line names now, and `heroes add " + package.alias + "/" + inside + "` adds a package it does not name"
+
+    if private.owner_of("<" + package.alias + ">/" + inside).len() > 0
+        repair @ "`heroes fetch` places what the line names now and the modules those use"
 
     # ORDER: none — an existence test, so every order gives one answer.
     for line in keys(fingerprint.kept_lines(kept))
         if fingerprint.name_of(line) == inside + ".hero"
             return [
-                diag.new_diagnostic(code: "package_unread", message: "`<" + package.alias + ">/" + inside + "` is a module of the package `" + package.alias + "`, and its tree at `" + package.root + "` does not hold it: a tree placed by the entry's `packages` line holds what that line named when it was placed and the modules those use — `heroes fetch` places what the line names now, and `heroes add " + package.alias + "/" + inside + "` adds a package it does not name", span: span)
+                diag.new_diagnostic(code: "package_unread", message: "`<" + package.alias + ">/" + inside + "` is a module of the package `" + package.alias + "`, and its tree at `" + package.root + "` does not hold it: a tree placed by the entry's `packages` line holds what that line named when it was placed and the modules those use — " + repair, span: span)
             ]
 
     return []

@@ -12,6 +12,11 @@
 # its source, an index, a git address or a folder, is no part of the operand,
 # and R6's sentence, *`heroes add kit/csv` adds one*, adds a name to an
 # entry the catalogue holds.
+#
+# **And a private module is never one** (defect 2613): `heroes add
+# kit/csv/internal/scan` wrote a module no program's `use` may name into the
+# line, and placed it; it is refused, `private_module` at exit 1, the
+# build's own code, whatever the catalogue holds (`private_refused`).
 
 use cli/argv
 use cli/process
@@ -20,6 +25,7 @@ use fetch/verb_place
 use module/catalogue
 use module/entry_name
 use module/listing
+use placed_use
 
 # Whether `operand` is written as a package of an entry, `<entry>/<path>`,
 # whatever the catalogue holds: a name of an entry's shape before its first
@@ -54,6 +60,10 @@ function unheld(inv: argv.Invocation, program: str, c: catalogue.Catalogue, oper
 
     if !listing.path_shaped(inside)
         return [no_path(name: name, inside: inside)]
+    private = private_refused(name: name, inside: inside)
+
+    if private.len() > 0
+        return private
     first: str @= "heroes add " + head
     given = argv.value_of(inv, spelling: "--index")
 
@@ -99,6 +109,25 @@ function no_path(name: str, inside: str) -> told.Said
         at: "",
         said: what + ": a package of `" + name + "` is named as a `use` writes it after `<" + name + ">/`, names joined by `/`, `heroes add " + name + "/csv`"
     )
+
+# The refusal of `heroes add <name>/<inside>` where `inside` is a module
+# private to another, none where it is not (defect 2613): a `packages` line
+# names what a program's `use` writes, and no module of a program names a
+# package's private module, so it is never written into the line, whatever
+# the catalogue holds; the module it belongs to is named instead.
+function private_refused(name: str, inside: str) -> [told.Said]
+    owner = listing.private_owner(entry: name, name: inside)
+
+    if owner.len() == 0
+        return []
+    held = listing.owner_inside(entry: name, owner: owner)
+    then: str @= "a program names the package's modules outside `internal`"
+
+    if held.len() > 0
+        then @ "a program names what `" + owner + "` offers, and `heroes add " + name + "/" + held + "` lists it"
+    return [
+        told.Said(code: "private_module", at: "", said: "`<" + name + ">/" + inside + "` is private to `" + owner + "`: " + placed_use.PRIVATE_RULE + ", so no program's `use` writes it and no `packages` line lists it; " + then)
+    ]
 
 # Where the operand's first `/` stands, -1 where it holds none.
 function slash_of(text: str) -> i64
@@ -151,3 +180,18 @@ test "an entry the catalogue lacks is told so with the commands that add it, and
     assert empty[0].code == "bad_usage"
     assert empty[0].said == "`rebel/` names no package after its `/`: a package of `rebel` is named as a `use` writes it after `<rebel>/`, names joined by `/`, `heroes add rebel/csv`"
     assert entries_said(none) == ", which holds none"
+
+test "a private module is never added to a packages line, whatever the catalogue holds (defect 2613)"
+    rule = placed_use.PRIVATE_RULE
+    held = catalogue.parsed(file: "app/heroes.toml", text: "[dependencies.json]\npath = \"../json\"\n")
+    deep = unheld(
+        invoked(["add", "rebel/csv/internal/scan"]),
+        program: "app/",
+        c: held,
+        operand: "rebel/csv/internal/scan"
+    )
+    assert deep.len() == 1 && deep[0].code == "private_module" && told.exit_of(deep[0].code) == 1
+    assert deep[0].said == "`<rebel>/csv/internal/scan` is private to `<rebel>/csv`: " + rule + ", so no program's `use` writes it and no `packages` line lists it; a program names what `<rebel>/csv` offers, and `heroes add rebel/csv` lists it"
+    root = private_refused(name: "kit", inside: "internal/scan")
+    assert root[0].said == "`<kit>/internal/scan` is private to `<kit>`: " + rule + ", so no program's `use` writes it and no `packages` line lists it; a program names the package's modules outside `internal`"
+    assert private_refused(name: "kit", inside: "internals/scan").len() == 0
