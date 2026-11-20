@@ -204,36 +204,43 @@ test "max_running: the runtime's ceiling, the same as its own door"
 
 ## Examples
 
-# A square computed on another thread.
+# A square computed on another thread; `samples.square` is
+# `function square(n: i64) -> i64`, `n * n`.
 test "spawn: a number squared on a thread of its own"
     t: Thread @= spawn(body: samples.square, arg: 12).must()
     assert wait(@t) == 144
 
-# A thread started with room for a deep body.
+# A thread started with room for a deep body; `samples.square` is
+# `function square(n: i64) -> i64`, `n * n`.
 test "spawn_sized: a thread with a stack of sixteen megabytes"
     t: Thread @= spawn_sized(body: samples.square, arg: 4, stack: 16777216).must()
     assert wait(@t) == 16
 
-# The answer of a thread, waited for.
+# The answer of a thread, waited for; `samples.sum_below` is
+# `function sum_below(n: i64) -> i64`, the sum of 0 to `n` less one.
 test "wait: the sum a thread computed"
     t: Thread @= spawn(body: samples.sum_below, arg: 5).must()
     assert wait(@t) == 10
 
-# A text handled on another thread.
+# A text handled on another thread; `samples.shout` is
+# `function shout(s: str) -> str`, `s + "!"`.
 test "spawn_text: a word made a shout on a thread of its own"
     t: TextThread @= spawn_text(body: samples.shout, arg: "hello")
     assert wait_text(@t) == "hello!"
 
-# The text a thread gave back.
+# The text a thread gave back; `samples.same_text` is
+# `function same_text(s: str) -> str`, answering `s` as it came.
 test "wait_text: a copy of what the thread returned"
     t: TextThread @= spawn_text(body: samples.same_text, arg: "è")
     assert wait_text(@t) == "è"
 
-# Numbers squared four at a time, the answers in order.
+# Numbers squared four at a time, the answers in order; `samples.square` is
+# `function square(n: i64) -> i64`, `n * n`.
 test "run_all: squares of a list, four threads at a time"
     assert run_all(body: samples.square, values: [1, 2, 3, 4, 5, 6], workers: 4).must() == [1, 4, 9, 16, 25, 36]
 
-# Words handled two at a time, in order.
+# Words handled two at a time, in order; `samples.shout` is
+# `function shout(s: str) -> str`, `s + "!"`.
 test "run_all_text: three words, two threads at a time"
     assert run_all_text(body: samples.shout, values: ["a", "b", "c"], workers: 2) == ["a!", "b!", "c!"]
 

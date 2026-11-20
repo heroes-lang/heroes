@@ -18,7 +18,7 @@ capability deque/make  an empty double-ended queue, or one over a list held
   note    a ring over the program's item list that doubles when full and is cut back when three quarters stand empty; Go's `ring.New(n)` makes n links holding nothing, which with no `nil` here is `new_bounded_deque(n)`, the use it is put to. A copy is `=` of the shape and the list
 
 capability deque/bounded  a deque that holds at most a number of items, the oldest dropped
-  heroes  deque.new_bounded, deque.limit
+  heroes  deque.new_bounded, deque.capacity
   go      -
   rust    -
   python  deque.maxlen

@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { referenceFaces, renderReferencePage } from '../../../lib/rebel-page.ts';
+
+export async function getStaticPaths() {
+  return (await referenceFaces()).map((face) => ({ params: { face } }));
+}
+
+const page = await renderReferencePage(Astro.params.face!, 'it');
+---
+<BaseLayout url={page.url} title={page.title} description={page.description}>
+<Fragment set:html={page.html} />
+</BaseLayout>

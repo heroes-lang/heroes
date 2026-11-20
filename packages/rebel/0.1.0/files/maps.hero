@@ -7,6 +7,12 @@
 # says what order its answer is in. The language names no removal: a map
 # without a key is built again, one insertion for each entry that stays.
 #
+# Other maps are other packages': one kept in the order of its keys, with the
+# keys around a bound and a range of them, is `containers/ordered`'s; one
+# whose entries are read by their place, `containers/indexed`'s; one that
+# forgets its oldest entries past a size, `containers/cache`'s; and a set,
+# a map whose values are all `true`, is `sets`'.
+#
 # A function handed to one of these names its two parameters as the type here
 # does wherever they are of one type, `key` and `value` or `left` and `right`:
 # the names are then all that says which is which, and the compiler asks for
@@ -25,6 +31,10 @@ constant INVALID: str
 
 # The values of `m`, in the order of `keys(m)`: the value at an index is the
 # one under the key at that index, so the two lists pair up.
+#
+# - `m`: the map to read; an empty map gives an empty list.
+#
+# See also `from_lists`, which builds a map back from the two lists.
 function values<K, V>(m: {K: V}) -> [V]
     out: [V] @= []
 
@@ -36,10 +46,15 @@ function values<K, V>(m: {K: V}) -> [V]
 ## Building
 
 # A map of each element of `key_list` under the element of `value_list` at the
-# same index. Fails `invalid` where the two lists differ in length. Aborts
-# where a key is a `nan`, which no map can hold. The keys stand in the order
-# of `key_list`; a key that occurs twice stands where it first occurred, under
-# the value of its last occurrence.
+# same index.
+#
+# - `key_list`: the keys, in the order they stand in the answer; a key that
+#   occurs twice stands where it first occurred.
+# - `value_list`: the values, one for each key, in the same order; a key that
+#   occurs twice takes the value of its last occurrence.
+#
+# Fails `invalid` where the two lists differ in length. Aborts where a key is a
+# `nan`, which no map can hold. See also `values`, `from_keys`.
 function from_lists<K, V>(key_list: [K], value_list: [V]) -> {K: V}?
     if key_list.len() != value_list.len()
         return fail(
@@ -55,9 +70,14 @@ function from_lists<K, V>(key_list: [K], value_list: [V]) -> {K: V}?
 
     return ok(out)
 
-# A map of each element of `key_list` under `value`. Aborts where a key is a
-# `nan`, which no map can hold. The keys stand in the order of `key_list`, one
-# that occurs twice standing once, where it first occurred.
+# A map of each element of `key_list` under `value`.
+#
+# - `key_list`: the keys, in the order they stand in the answer; one that
+#   occurs twice stands once, where it first occurred.
+# - `value`: the value every key takes.
+#
+# Aborts where a key is a `nan`, which no map can hold. See also `from_lists`,
+# `sets.from_list`.
 function from_keys<K, V>(key_list: [K], value: V) -> {K: V}
     out: {K: V} @= {}
 
@@ -68,17 +88,26 @@ function from_keys<K, V>(key_list: [K], value: V) -> {K: V}
 
 ## Removing and keeping
 
-# `m` without `key`, the other keys in the order they had. A key `m` does not
-# hold is no failure: the answer then equals `m`. It costs one insertion for
-# each entry that stays, where other languages remove in constant time, so
-# removing many keys one call at a time is quadratic: `remove_all` takes them
-# in one pass.
+# `m` without `key`, the other keys in the order they had.
+#
+# - `m`: the map to remove from.
+# - `key`: the key to take out; one `m` does not hold is no failure, and the
+#   answer then equals `m`.
+#
+# It costs one insertion for each entry that stays, where other languages
+# remove in constant time, so removing many keys one call at a time is
+# quadratic: `remove_all` takes them in one pass.
 function remove<K, V>(m: {K: V}, key: K) -> {K: V}
     return remove_all(m, [key])
 
-# `m` without the keys in `key_list`, the other keys in the order they had. A
-# key `m` does not hold, or one listed twice, changes nothing. It is one pass
-# over the list and one over `m`, however many keys go.
+# `m` without the keys in `key_list`, the other keys in the order they had.
+#
+# - `m`: the map to remove from.
+# - `key_list`: the keys to take out; one `m` does not hold, or one listed
+#   twice, changes nothing.
+#
+# It is one pass over the list and one over `m`, however many keys go. See
+# also `remove`, `pick`.
 function remove_all<K, V>(m: {K: V}, key_list: [K]) -> {K: V}
     gone = from_keys(key_list, true)
     out: {K: V} @= {}
@@ -90,7 +119,12 @@ function remove_all<K, V>(m: {K: V}, key_list: [K]) -> {K: V}
     return out
 
 # `m` without the entries `removes` accepts, the others in the order they had.
-# `removes` is called once for each entry, in the order of `keys(m)`.
+#
+# - `m`: the map to read.
+# - `removes`: called once for each entry, in the order of `keys(m)`, with the
+#   entry's `key` and `value`; an entry it accepts is left out.
+#
+# See also `keep_where`.
 function remove_where<K, V>(m: {K: V}, removes: (function(key: K, value: V) -> bool)) -> {K: V}
     out: {K: V} @= {}
 
@@ -102,8 +136,13 @@ function remove_where<K, V>(m: {K: V}, removes: (function(key: K, value: V) -> b
 
     return out
 
-# The entries of `m` that `keeps` accepts, in the order they had. `keeps` is
-# called once for each entry, in the order of `keys(m)`.
+# The entries of `m` that `keeps` accepts, in the order they had.
+#
+# - `m`: the map to read.
+# - `keeps`: called once for each entry, in the order of `keys(m)`, with the
+#   entry's `key` and `value`; an entry it accepts stays.
+#
+# See also `remove_where`, `pick`.
 function keep_where<K, V>(m: {K: V}, keeps: (function(key: K, value: V) -> bool)) -> {K: V}
     out: {K: V} @= {}
 
@@ -116,10 +155,15 @@ function keep_where<K, V>(m: {K: V}, keeps: (function(key: K, value: V) -> bool)
     return out
 
 # The entries of `m` under the keys in `key_list`, in the order of `key_list`
-# and not of `m`. A key `m` does not hold is left out, and one listed twice
-# stands where it was first listed. Given every key of `m` in another order it
-# answers `m` in that order, which is how a map is sorted: by the sorted list
-# of its keys.
+# and not of `m`.
+#
+# - `m`: the map to read.
+# - `key_list`: the keys to keep, in the order wanted; one `m` does not hold is
+#   left out, and one listed twice stands where it was first listed.
+#
+# Given every key of `m` in another order it answers `m` in that order, which
+# is how a map is sorted: by the sorted list of its keys. See also
+# `remove_all`.
 function pick<K, V>(m: {K: V}, key_list: [K]) -> {K: V}
     out: {K: V} @= {}
 
@@ -133,7 +177,12 @@ function pick<K, V>(m: {K: V}, key_list: [K]) -> {K: V}
 ## Changing
 
 # A map of the keys of `m`, in their order, each under what `change` answers
-# for its value. `change` is called once for each entry, in that order.
+# for its value.
+#
+# - `m`: the map to read.
+# - `change`: called once for each value, in the order of `keys(m)`.
+#
+# See also `keep_where`.
 function map_values<K, V, W>(m: {K: V}, change: (function(V) -> W)) -> {K: W}
     out: {K: W} @= {}
 
@@ -143,6 +192,8 @@ function map_values<K, V, W>(m: {K: V}, change: (function(V) -> W)) -> {K: W}
     return out
 
 # `m` with its keys in the opposite order, the last inserted first.
+#
+# - `m`: the map to read.
 function reverse<K, V>(m: {K: V}) -> {K: V}
     order = keys(m)
     out: {K: V} @= {}
@@ -157,9 +208,15 @@ function reverse<K, V>(m: {K: V}) -> {K: V}
 ## Merging
 
 # The entries of `base` and of `over` in one map; where both hold a key, the
-# value is `over`'s. The keys of `base` stand first, in their order, a key
-# both hold keeping its place among them; then the keys only `over` holds, in
-# theirs.
+# value is `over`'s.
+#
+# - `base`: the entries that come first.
+# - `over`: the entries added to them, its value winning where both hold a
+#   key.
+#
+# The keys of `base` stand first, in their order, a key both hold keeping its
+# place among them; then the keys only `over` holds, in theirs. See also
+# `merge_by`.
 function merge<K, V>(base: {K: V}, over: {K: V}) -> {K: V}
     out: {K: V} @= base
 
@@ -169,9 +226,14 @@ function merge<K, V>(base: {K: V}, over: {K: V}) -> {K: V}
     return out
 
 # The entries of `base` and of `over` in one map; where both hold a key, the
-# value is what `combine` answers, given `base`'s value as `left` and `over`'s
-# as `right`. The order is `merge`'s. `combine` is called once for each key
-# both hold, in the order of `keys(over)`.
+# value is what `combine` answers.
+#
+# - `base`: the entries that come first.
+# - `over`: the entries added to them.
+# - `combine`: called once for each key both hold, in the order of
+#   `keys(over)`, with `base`'s value as `left` and `over`'s as `right`.
+#
+# The order is `merge`'s.
 function merge_by<K, V>(base: {K: V}, over: {K: V}, combine: (function(left: V, right: V) -> V)) -> {K: V}
     out: {K: V} @= base
 
@@ -187,12 +249,17 @@ function merge_by<K, V>(base: {K: V}, over: {K: V}, combine: (function(left: V, 
 ## Comparing
 
 # Whether `left` and `right` hold the same keys and `same` accepts, for every
-# key, the two values under it, `left`'s first. The order of the keys does not
-# count. Two maps of different sizes answer false with no call of `same`,
-# which is otherwise called in the order of `keys(left)` and no more once a
-# key is missing from `right` or it refuses a pair. Where the values are of
-# one type and `==` is the comparison wanted, the built-in `==` on the two
-# maps asks the same.
+# key, the two values under it.
+#
+# - `left`: one map.
+# - `right`: the other; the order of its keys does not count.
+# - `same`: called in the order of `keys(left)` with `left`'s value as `left`
+#   and `right`'s as `right`, and no more once a key is missing from `right`
+#   or it refuses a pair.
+#
+# Two maps of different sizes answer false with no call of `same`. Where the
+# values are of one type and `==` is the comparison wanted, the built-in `==`
+# on the two maps asks the same.
 function equal_by<K, V, W>(left: {K: V}, right: {K: W}, same: (function(left: V, right: W) -> bool)) -> bool
     if left.len() != right.len()
         return false
@@ -209,8 +276,13 @@ function equal_by<K, V, W>(left: {K: V}, right: {K: W}, same: (function(left: V,
 ## Counting and grouping
 
 # How many times each element of `xs` occurs: a map of each distinct element
-# under its count. Aborts where an element is a `nan`, which no map can hold
-# as a key. The keys stand in the order the elements first occur.
+# under its count.
+#
+# - `xs`: the elements to count; an empty list gives an empty map.
+#
+# The keys stand in the order the elements first occur. Aborts where an element
+# is a `nan`, which no map can hold as a key. See also `most_common`,
+# `elements`.
 function counts<K>(xs: [K]) -> {K: i64}
     out: {K: i64} @= {}
 
@@ -219,15 +291,24 @@ function counts<K>(xs: [K]) -> {K: i64}
 
     return out
 
-# The entries of `m`, a map of counts, the largest count first. Entries of
-# equal count stand in the order they had.
+# The entries of `m`, a map of counts, the largest count first.
+#
+# - `m`: the counts, as `counts` answers them.
+#
+# Entries of equal count stand in the order they had. See also
+# `most_common_n`.
 function most_common<K>(m: {K: i64}) -> {K: i64}
     return most_common_n(m, m.len())
 
 # The `n` entries of `m`, a map of counts, with the largest counts, the largest
-# first: all of them where `m` holds fewer than `n`, none where `n` is below
-# one. Entries of equal count stand in the order they had, and that order
-# decides which of them are among the `n`.
+# first.
+#
+# - `m`: the counts, as `counts` answers them.
+# - `n`: how many entries to keep; all of them where `m` holds fewer, none
+#   where `n` is below one.
+#
+# Entries of equal count stand in the order they had, and that order decides
+# which of them are among the `n`.
 function most_common_n<K>(m: {K: i64}, n: i64) -> {K: i64}
     order = keys(m)
     ranked = rank.largest_first(values(m))
@@ -242,9 +323,12 @@ function most_common_n<K>(m: {K: i64}, n: i64) -> {K: i64}
     return out
 
 # Each key of `m`, a map of counts, repeated as many times as its count, the
-# keys in their order. A count below one gives nothing. The list is as long as
-# the sum of the counts, so a count read from outside decides how much memory
-# this asks for.
+# keys in their order.
+#
+# - `m`: the counts; a count below one gives nothing.
+#
+# The list is as long as the sum of the counts, so a count read from outside
+# decides how much memory this asks for. See also `counts`.
 function elements<K>(m: {K: i64}) -> [K]
     out: [K] @= []
 
@@ -258,12 +342,17 @@ function elements<K>(m: {K: i64}) -> [K]
     return out
 
 # The elements of `xs` gathered by the key `key_of` gives each: a map of each
-# key under the list of the elements that gave it. Aborts where a key is a
-# `nan`, which no map can hold. The keys stand in the order they first occur,
-# and the elements of a group in the order they had in `xs`. `key_of` is
-# called once for each element, in order. It costs one pass and no copy of a
-# group, where the built-in way, a push to the list under a key, copies that
-# list at every push.
+# key under the list of the elements that gave it.
+#
+# - `xs`: the elements to gather.
+# - `key_of`: called once for each element, in order; what it answers is the
+#   element's group.
+#
+# The keys stand in the order they first occur, and the elements of a group in
+# the order they had in `xs`. Aborts where a key is a `nan`, which no map can
+# hold. It costs one pass and no copy of a group, where the built-in way, a
+# push to the list under a key, copies that list at every push. See also
+# `counts`, `lists.runs_by`.
 function group_by<T, K>(xs: [T], key_of: (function(T) -> K)) -> {K: [T]}
     group_of: {K: i64} @= {}
     which: [i64] @= []
@@ -548,3 +637,88 @@ test "group_by: every element its own group, all in one, and two that alternate"
     by_oddness = group_by([1, 2, 3, 4, 5, -6], samples.oddness)
     assert keys(by_oddness) == [1, 0]
     assert values(by_oddness) == [[1, 3, 5], [2, 4, -6]]
+
+## Examples
+
+# The prices of a menu, in the order the dishes were written.
+test "values: the prices of a menu"
+    assert values({"soup": 4, "bread": 2}) == [4, 2]
+
+# A map built from a column of names and a column of ages.
+test "from_lists: two columns into a map"
+    ages = from_lists(["ada", "alan"], [36, 41]).must()
+    assert ages["alan"].must() == 41
+
+# Every guest starting with no seat.
+test "from_keys: every key under one value"
+    assert from_keys(["ada", "alan"], 0) == {"ada": 0, "alan": 0}
+
+# A setting taken out of a configuration.
+test "remove: one key out"
+    assert remove({"host": "a", "port": "80"}, "port") == {"host": "a"}
+
+# Several settings taken out in one pass.
+test "remove_all: two keys out"
+    assert remove_all({"a": 1, "b": 2, "c": 3}, ["a", "c"]) == {"b": 2}
+
+# The scores of two or less taken out; `samples.above_two` is
+# `function above_two(_: str, value: i64) -> bool`, true where `value > 2`.
+test "remove_where: the high scores taken out"
+    assert remove_where({"ada": 3, "alan": 1}, samples.above_two) == {"alan": 1}
+
+# The scores above two kept; `samples.above_two` is
+# `function above_two(_: str, value: i64) -> bool`, true where `value > 2`.
+test "keep_where: the high scores kept"
+    assert keep_where({"ada": 3, "alan": 1}, samples.above_two) == {"ada": 3}
+
+# A map sorted by its keys, through the built-in `sort`.
+test "pick: a map in the order of its sorted keys"
+    m = {"b": 2, "c": 3, "a": 1}
+    assert keys(pick(m, sort(keys(m)))) == ["a", "b", "c"]
+
+# Every price doubled; `samples.double` is `function double(n: i64) -> i64`,
+# `n * 2`.
+test "map_values: every value doubled"
+    assert map_values({"tea": 2, "cake": 3}, samples.double) == {"tea": 4, "cake": 6}
+
+# The most recent entry first.
+test "reverse: the last inserted first"
+    assert keys(reverse({"a": 1, "b": 2, "c": 3})) == ["c", "b", "a"]
+
+# Defaults overridden by a user's settings.
+test "merge: defaults and a user's settings"
+    defaults = {"colour": "auto", "width": "80"}
+    user = {"width": "120"}
+    assert merge(base: defaults, over: user) == {"colour": "auto", "width": "120"}
+
+# Two tallies added where both count a word; `samples.add` is
+# `function add(left: i64, right: i64) -> i64`, `left + right`.
+test "merge_by: two tallies added"
+    assert merge_by(base: {"a": 1, "b": 2}, over: {"b": 5, "c": 1}, combine: samples.add) == {"a": 1, "b": 7, "c": 1}
+
+# Two maps whose values are numbers and texts that say the same;
+# `samples.written_as` is `function written_as(left: i64, right: str) -> bool`,
+# true where `right` is `left` written as text.
+test "equal_by: numbers against their texts"
+    assert equal_by(left: {"a": 1, "b": 2}, right: {"b": "2", "a": "1"}, same: samples.written_as)
+
+# How often each word occurs.
+test "counts: the words of a sentence"
+    assert counts(["to", "be", "or", "not", "to", "be"]) == {"to": 2, "be": 2, "or": 1, "not": 1}
+
+# Words by how often they occur, the most frequent first.
+test "most_common: the most frequent first"
+    assert keys(most_common({"or": 1, "to": 2, "be": 3})) == ["be", "to", "or"]
+
+# The two most frequent words.
+test "most_common_n: the top two"
+    assert most_common_n({"or": 1, "to": 2, "be": 3}, 2) == {"be": 3, "to": 2}
+
+# A tally spelled out again.
+test "elements: each key as often as its count"
+    assert elements({"a": 2, "b": 1}) == ["a", "a", "b"]
+
+# Words grouped by their length in bytes; `samples.byte_length` is
+# `function byte_length(s: str) -> i64`, `s.len()`.
+test "group_by: words by their length"
+    assert group_by(["to", "be", "or", "not"], samples.byte_length) == {2: ["to", "be", "or"], 3: ["not"]}

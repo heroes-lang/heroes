@@ -1,0 +1,83 @@
+# The library's functions whose call ends the path it stands on, as a jump
+# word does: `exit(code:)`, which ends the program, and `skip_test(reason:)`,
+# which ends a test as skipped (design.md §4.7; panel 184's R4, panel 253's
+# R4). One predicate, asked of a declaration by the checker
+# (`check/path_end.hero`: a function's end, a value arm, a value block) and by
+# the emitter (`emit/heroes_call.hero`: the `hero_unreachable()` written after
+# the call), so the two can never disagree on which calls end a path.
+#
+# No program may declare either name, every declaration of the library being
+# taken (`resolve/builtin_names.hero`), so the name and the library's source
+# are the whole question.
+#
+# THE FALSIFIABLE CLAIM: every path through each of them ends in a call of
+# `hero_exit`, which `runtime/hero_os.h` declares `_Noreturn`, or in an abort,
+# and nothing follows it. `exit`'s body is held to it by
+# `emit/heroes_call.hero`'s test, `skip_test`'s by the test below, each reading
+# the library's own rows, so either fires the day its body could return.
+
+use ast
+use library_source
+use parse
+use source
+
+# The names, the library's declarations of which end a path.
+constant ENDING: [str]
+    ["exit", "skip_test"]
+
+# Whether declaration `decl` is the library's `exit` or `skip_test`.
+function ends_the_path(s: source.Source, decls: [ast.Decl], decl: i64) -> bool
+    if !source.is_library(s, decls[decl].name.start)
+        return false
+    name = source.span_text(s, decls[decl].name)
+
+    for one in ENDING
+        if one == name
+            return true
+
+    return false
+
+## Tests
+
+test "the library's exit and skip_test end a path, and a program's main does not"
+    s = source.with_library(
+        name: "main.hero",
+        user: "function main()\n    exit(code: 0)\n",
+        library: library_source.text()
+    )
+    decls = parse.parse_source(s).decls
+    found: [str] @= []
+    index: i64 @= 0
+
+    for _ in decls
+        if ends_the_path(s, decls, decl: index)
+            found @ found.push(source.span_text(s, decls[index].name))
+        index @ index + 1
+
+    assert found == ["exit", "skip_test"]
+
+# The premise, where it can die: `skip_test` stops where no `heroes test`
+# names it a file (`.must()` on a `fail`, whose abort is `_Noreturn`), writes
+# that file or stops (`.must()` on the write), and ends at 0 by the one call of
+# `hero_exit`, with no statement after it.
+test "every path through the library's skip_test ends in hero_exit or an abort (panel 253's R4)"
+    at: i64 @= 0
+
+    while at < library_source.LINES.len() && library_source.LINES[at] != "function skip_test(reason: str)"
+        at @ at + 1
+
+    assert at + 5 < library_source.LINES.len()
+    assert library_source.LINES[at + 1] == "    if hero_args_count() < 2"
+    assert library_source.LINES[at + 2].slice(from: 0, to: 28) == "        untold: i64? = fail("
+    assert library_source.LINES[at + 3] == "        _ = untold.must()"
+    assert library_source.LINES[at + 4].slice(from: 0, to: 15) == "    write_file("
+    assert strings_end(text: library_source.LINES[at + 4], tail: ").must()")
+    assert library_source.LINES[at + 5] == "    hero_exit(0)"
+
+    # The next line, if any, opens no statement of `skip_test`'s body.
+    if at + 6 < library_source.LINES.len()
+        after_it = library_source.LINES[at + 6]
+        assert after_it.len() == 0 || after_it[0] != 32
+
+function strings_end(text: str, tail: str) -> bool
+    return text.len() >= tail.len() && text.slice(from: text.len() - tail.len(), to: text.len()) == tail

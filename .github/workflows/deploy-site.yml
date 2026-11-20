@@ -38,7 +38,9 @@ on:
     # read this list does not cover and on a line here that nothing read. Two
     # shapes only, an exact path and `dir/**`; any other is refused, not guessed.
     #
-    # What the build reads beyond site/: examples/ for the programs it shows;
+    # What the build reads beyond site/: examples/ for the programs it shows,
+    # examples-rebel/ for those that use Rebel, and packages/ for Rebel's own
+    # tree, which its page and its reference pages read;
     # the compiler's own sources for the keywords it colours by, the version
     # and the verbs it prints, the sizes of the project page, and the claims it
     # checks; the spec and its suite for the type words and the ceiling; the
@@ -61,6 +63,7 @@ on:
     paths:
       - 'site/**'
       - 'examples/**'
+      - 'examples-rebel/**'
       - 'packages/**'
       - 'selfhost/**'
       - 'spec/heroes-spec.md'

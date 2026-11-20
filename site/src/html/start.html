@@ -127,11 +127,18 @@ we can be heroes</code></pre>
     <a href="/docs/packages/">the chapter on packages</a> describes. It refuses a
     name where a folder or a file is already there, and then writes nothing.
   </p>
+  <p>
+    Heroes imposes no standard library: beyond the built-ins, a program binds
+    a C library or takes a package. This project writes one,
+    <a href="/rebel/">Rebel</a>, a broad library of packages for text, files,
+    numbers, the network and data formats, which a program takes or leaves.
+    The compiler itself is written without it.
+  </p>
 
-  <h2>One command, sixteen verbs</h2>
+  <h2>One command, seventeen verbs</h2>
   <p>
     All the tools are available through <code>heroes</code>:
-    <code>lex</code>, <code>parse</code>, <code>check</code>,
+    <code>lex</code>, <code>parse</code>, <code>check</code>, <code>doc</code>,
     <code>build</code>, <code>run</code>, <code>test</code>, <code>fmt</code>,
     <code>add</code>, <code>fetch</code>, <code>new</code>,
     <code>doctor</code>, <code>mutate</code>, <code>probe</code>, <code>measure</code>,
@@ -141,9 +148,15 @@ we can be heroes</code></pre>
     <code>heroes fmt</code> formats code using fixed rules for indentation, line breaks and order. The project&rsquo;s source files, including the compiler, already follow those rules: the formatter returns them unchanged, byte for byte. This reduces formatting differences when you compare versions. Test files containing deliberate errors are preserved as written.
   </p>
   <p>
+    <code>heroes doc</code> prints a module&rsquo;s reference, read from the
+    comments above its declarations: each one&rsquo;s signature, what documents
+    it, the call a program writes and its examples. Rebel&rsquo;s reference
+    pages on this site are its output.
+  </p>
+  <p>
     <a href="/examples/">Every example on this site</a> is a file in
-    <code>examples/</code>, with the command that runs it and the output it
-    prints.
+    <code>examples/</code> or <code>examples-rebel/</code>, with the command
+    that runs it and the output it prints.
   </p>
 
   <h2>If something goes wrong</h2>

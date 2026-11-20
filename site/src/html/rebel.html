@@ -1,0 +1,64 @@
+  <p class="crumb"><a href="/">Heroes</a> / Rebel</p>
+
+  <div class="page-head">
+    <h1 class="page">Rebel</h1>
+    <span class="nod">· <a href="/about/thanks/#rebel-rebel">rebel rebel</a></span>
+  </div>
+  <p class="lede">
+    The library this project writes for Heroes. A program uses it, or does not.
+  </p>
+
+  <h2 id="what">What it is</h2>
+  <p>
+    Heroes imposes no standard library. The language gives a program its built-ins, reading and writing a file, the command line and little more, and everything beyond them a program takes from a C library or from a package of Heroes code it carries. Rebel is such a package, a broad one: text and numbers, files and folders, time and time zones, the network and the web, data formats from JSON to spreadsheets, compression, cryptography and databases, written from scratch in Heroes by this project.
+  </p>
+  <p>
+    It is optional, which is what its name says. Nothing of Rebel is compiled into the compiler or into the runtime, the piece of program that sits underneath every Heroes program; the compiler itself is written without it; and a program that does not take it carries none of it. The repository calls it the non-standard standard library.
+  </p>
+  <p>
+    Go&rsquo;s, Rust&rsquo;s and Python&rsquo;s libraries are its inspirations and its yardstick: a package of Rebel is complete when every capability those three offer in its area is offered here, or refused in writing with the reason. Its names, its tree and its code are its own. A program that uses Rebel owes nothing for it, as it owes nothing for the runtime, the exception in the licence that covers one covering the other, with one exception of its own: two pieces of Rebel are the work of others and keep their notices, the Public Suffix List in <code>http/suffixes</code> and the tables taken from tiktoken in <code>tokenizer/tables</code>. Their notices travel with those files, so a program whose catalogue lists neither package carries neither.
+  </p>
+
+  <h2 id="take">How a program takes it</h2>
+  <p>
+    A program names each package of Rebel it uses with the entry&rsquo;s name in angle brackets, the way any package is named. These are the first lines of a small jq, a tool that filters JSON, written with Rebel:
+  </p>
+  <figure class="example" data-src="examples-rebel/jq.hero" data-lines="17-23">
+<pre><code>use &lt;rebel&gt;/io
+use &lt;rebel&gt;/json
+use &lt;rebel&gt;/json/jq
+use &lt;rebel&gt;/os
+use &lt;rebel&gt;/time
+use &lt;rebel&gt;/toml
+use &lt;rebel&gt;/yaml</code></pre>
+    <figcaption>examples-rebel/jq.hero, lines 17&ndash;23</figcaption>
+  </figure>
+  <p>
+    Its catalogue, the file <code>heroes.toml</code> beside the program, holds one entry for Rebel and a line listing the packages the program uses. <code>heroes add rebel</code> writes the entry and <code>heroes add rebel/csv</code> adds a package to the line. The program then carries the packages it lists and the modules those use, and nothing else of Rebel: a program that reads CSV this way carries a few dozen files and under a megabyte of it, where the whole of Rebel is more than sixteen hundred files and thirty megabytes. A <code>use</code> of a package the line leaves out is refused, with the command that adds it.
+  </p>
+  <p>
+    The Heroes index on the web, the place <code>heroes add rebel</code> reads from, is not built yet. Until it is, a program takes Rebel from the folder of this repository that holds it, by its path:
+  </p>
+  <pre><code>$ heroes add --path ../../../packages/rebel/0.1.0/files --as rebel
+added rebel ../../../packages/rebel/0.1.0/files
+wrote heroes.toml
+$ heroes add rebel/csv
+added rebel/csv
+wrote heroes.toml</code></pre>
+  <p>
+    <a href="/docs/packages/">The chapter on packages</a> takes the same program through both routes, the index and the folder, with what the compiler says at each step.
+  </p>
+  <p>
+    Or it does not take Rebel at all. A program that would rather bind a C library itself does, as the programs in <code>examples/</code> do, and the rules Rebel follows for its own packages bind no program. <a href="/examples/#rebel">The programs written with Rebel</a> stand beside the others on the examples page.
+  </p>
+
+  <h2 id="packages">The packages, layer by layer</h2>
+{{packages}}
+
+  <p class="next away">
+    How it is made and how its code is written, for whoever writes the next package: <a href="https://github.com/heroes-lang/heroes/blob/main/examples-rebel/README.md">Rebel&rsquo;s guide for its writers</a>.
+  </p>
+
+  <footer>
+    <p>The list of packages is read from <code>examples-rebel/README.md</code>, section A1, when the site is built, and every reference page from what <code>heroes doc</code> prints for the package, so neither is copied by hand. The transcript is the program <code>examples-rebel/reach_csv.hero</code> in a folder of its own, taking Rebel from the repository&rsquo;s folder, and the sizes are that program&rsquo;s placed copy against the whole version, as the chapter on packages shows them.</p>
+  </footer>

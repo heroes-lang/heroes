@@ -194,7 +194,7 @@ capability qr/payloads  the text of a Wi-Fi network, a contact, a place, an emai
   go      -
   rust    -
   python  segno.helpers.make_wifi, segno.helpers.make_wifi_data, segno.helpers.make_mecard, segno.helpers.make_vcard, segno.helpers.make_geo, segno.helpers.make_email, segno.helpers.make_epc_qr
-  note    the Wi-Fi text, as readers share it; a contact (vCard, RFC 6350, and MeCard), a place (geo:, RFC 5870), an email and a payment (the EPC's guideline) are formats of their own a program writes as text, refused here
+  note    the Wi-Fi text, as readers share it, its security one of the three `T:` values readers name (`WPA`, `WEP`, `nopass`), a `qr.WifiSecurity`; a contact (vCard, RFC 6350, and MeCard), a place (geo:, RFC 5870), an email and a payment (the EPC's guideline) are formats of their own a program writes as text, refused here
 
 capability qr/styles  modules drawn rounded or as dots, gradients, a picture behind the code
   heroes  refused: rounded modules, gradients and pictures behind a code are drawing, which a program does from `modules` and `region_of` with `image`; they lower a code's contrast, which the standard's levels do not account for

@@ -1,0 +1,23 @@
+# Panel 253's R4, M-rebel-library step 61a, 2026-11-19: `skip_test(reason:)`
+# ends a test there as skipped, never passed. `heroes test` prints its title
+# and reason and counts it apart, and a skip beside a pass is a green run
+# (`skip-test-a-skipped-test-is-counted-apart-from-a-pass.tested`). A test
+# that prints a skip line and ends is what Rebel's 106 silent tests did, and
+# it reads `ok`, as it did: only the library's `skip_test` tells the runner.
+
+function server_named(name: str) -> bool
+    return name.len() > 0
+
+function main()
+    print(server_named(name: "db"))
+
+test "a: passes"
+    assert server_named(name: "db")
+
+test "b: skips where no server is named"
+    if !server_named(name: "")
+        skip_test(reason: "no server named")
+    assert false
+
+test "c: prints a skip line and ends, a pass"
+    print("skipped")

@@ -7,10 +7,11 @@
 # compile error**: it never runs, and a line an indentation slip moved under a
 # jump is a program that compiles and does something else (panel 184's blind
 # reading: a loop that never advances, a `print` that never prints). And
-# **`exit(code:)`, `assert false` and a `while true` with no `break` of its own
-# end a path**: a function whose path ends on one returns on every path that
-# reaches its end, and an arm or a block that ends on one gives no value and
-# owes none, as one that jumps does. All three are read by their SYNTAX and
+# **`exit(code:)`, `skip_test(reason:)`, `assert false` and a `while true`
+# with no `break` of its own end a path** (`skip_test` since panel 253's R4,
+# `ending_calls.hero`): a function whose path ends on one returns on every
+# path that reaches its end, and an arm or a block that ends on one gives no
+# value and owes none, as one that jumps does. All three are read by their SYNTAX and
 # never by a value: `assert OFF` over a constant `OFF` that is false, and a
 # `while true` whose only `break` sits under `if false`, end nothing (the
 # sitting's critic, B9), because a value is the run's to know.
@@ -35,6 +36,7 @@ use ast
 use check/join as joins
 use check/state
 use check/table
+use ending_calls
 use flow_errors
 use parse
 use resolved
@@ -93,10 +95,11 @@ function after_a_jump(@c: state.Checker, a: ast.Ast, s: source.Source, body: ast
 
 ## The three ends of a path that are not jumps
 
-# `exit(code:)` called by its own name: a call whose callee is the name `exit`
-# resolving to the library's function, which no program may declare again
-# (`builtin_name_taken`). Never a method's spelling: `h.exit(3)` calls a field
-# of `h` first where one is named `exit` (§4.11), and goes on.
+# `exit(code:)` or `skip_test(reason:)` called by its own name: a call whose
+# callee is a name resolving to the library's function of that name, which no
+# program may declare again (`builtin_name_taken`; `ending_calls.hero` holds
+# the two). Never a method's spelling: `h.exit(3)` calls a field of `h` first
+# where one is named `exit` (§4.11), and goes on.
 function calls_exit(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], value: i64) -> bool
     match a.exprs[value].kind
         .call cl =>
@@ -104,7 +107,7 @@ function calls_exit(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [
                 return false
 
             match r.uses[cl.callee]
-                .top t => return source.is_library(s, decls[t.at].name.start) && source.span_text(s, decls[t.at].name) == "exit"
+                .top t                                    => return ending_calls.ends_the_path(s, decls, decl: t.at)
                 .unresolved | .local | .builtin | .module => return false
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => return false
         .name | .hole | .unary | .binary | .field | .field_name | .index | .method     => return false

@@ -1,13 +1,15 @@
 # The codes `containers` fails with, and the abort every module uses for a
 # broken precondition, kept in one place so that every module fails alike.
 
-# The code of a search that found nothing, which the face names as
-# `containers.NOT_FOUND`.
+# The code of a search that found nothing, which each face of a container
+# names as its own `NOT_FOUND`: `deque.NOT_FOUND`, `heap.NOT_FOUND` and their
+# kin.
 constant NOT_FOUND: str
     "not_found"
 
-# The code of an input the function does not read, which the face names as
-# `containers.INVALID`.
+# The code of an input the function does not read, which each face that fails
+# with it names as its own `INVALID`, `deque.INVALID` and `bits.INVALID`
+# among them.
 constant INVALID: str
     "invalid"
 

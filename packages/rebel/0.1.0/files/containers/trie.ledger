@@ -187,15 +187,15 @@ capability trie/equal  two tries compared by their keys and values
   rust    Trie::eq, Trie::ne
   python  Trie.__eq__, Trie.strictly_equals
   java    equals
-  note    two tries hold the same keys where `trie.keys_with_prefix(t, "")` agree, and the same values where the values at their slots do; `==` compares the shapes node by node, which two built in other orders may not share, as Python's `strictly_equals` against its `==`
+  note    two tries hold the same keys where `trie.keys_in_order` agree, and the same values where the values at their slots do; `==` compares the shapes node by node, which two built in other orders may not share, as Python's `strictly_equals` against its `==`
 
 capability trie/copy  a trie copied, and emptied
-  heroes  trie.new_map, trie.new_set
+  heroes  trie.clear, trie.clear_set
   go      -
   rust    Trie::clone, Trie::clone_from
   python  Trie.copy, Trie.clear, PrefixSet.copy, PrefixSet.clear
   java    clear
-  note    a value is a copy (spec § 3), so `b = a` copies a trie with nothing more; a trie emptied is a new shape and the program's list emptied
+  note    a value is a copy (spec § 3), so `b = a` copies a trie with nothing more; a map's and a set's emptying apart, as `put` and `add` are
 
 ## Dropped
 

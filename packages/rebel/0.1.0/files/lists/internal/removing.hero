@@ -2,27 +2,26 @@
 # first or every one equal to a value, the repeats in each run of equal
 # neighbours, and a list's own beginning or end.
 
-use lists/internal/codes
 use lists/internal/samples
 use lists/internal/searching
 
-# `xs` without the elements `accepts` accepts.
-function remove_where<T>(xs: [T], accepts: (function(T) -> bool)) -> [T]
+# `xs` without the elements `removes` accepts.
+function remove_where<T>(xs: [T], removes: (function(T) -> bool)) -> [T]
     out: [T] @= []
 
     for x in xs
-        if !accepts(x)
+        if !removes(x)
             out @ out.push(x)
 
     return out
 
-# `xs` without its first element that `same` says is `value`, failing
-# `not_found` where there is none.
-function remove<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> [T]?
+# `xs` without its first element that `same` says is `value`; `xs` as it is
+# where there is none, as `remove_all`, `maps.remove` and `sets.remove` answer.
+function remove<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> [T]
     at = searching.first_same(xs, value, same)
 
     if at == xs.len()
-        return fail(code: codes.NOT_FOUND, msg: codes.none_is(count: xs.len(), what: "the value to remove"))
+        return xs
     out: [T] @= xs.slice(from: 0, to: at)
     rest: i64 @= at + 1
 
@@ -30,7 +29,7 @@ function remove<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool
         out @ out.push(xs[rest])
         rest @ rest + 1
 
-    return ok(out)
+    return out
 
 # `xs` without every element that `same` says is `value`.
 function remove_all<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> [T]
@@ -80,15 +79,11 @@ test "remove_where: some, none, all, and an empty list"
 
 test "remove: the first of two, the only one, absent, and an empty list"
     nothing: [i64] = []
-    assert remove([1, 2, 3, 2], 2, samples.same_number).must() == [1, 3, 2]
-    assert remove([2], 2, samples.same_number).must() == nothing
-    assert remove(["é", "a"], "é", samples.same_text).must() == ["a"]
-
-    match remove([1, 2], 9, samples.same_number)
-        .ok _  => assert false
-        .err e => assert e.code == "not_found" && e.msg == "none of the 2 elements of the list is the value to remove"
-
-    assert remove(nothing, 9, samples.same_number).is_err()
+    assert remove([1, 2, 3, 2], 2, samples.same_number) == [1, 3, 2]
+    assert remove([2], 2, samples.same_number) == nothing
+    assert remove(["é", "a"], "é", samples.same_text) == ["a"]
+    assert remove([1, 2], 9, samples.same_number) == [1, 2]
+    assert remove(nothing, 9, samples.same_number) == nothing
 
 test "remove_all: several, none, all, and an empty list"
     nothing: [i64] = []
