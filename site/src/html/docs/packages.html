@@ -201,10 +201,14 @@ placed rebel 0.1.0 heroes.packages/rebel@0.1.0-d15253004def87ef, 58 of 1637 file
     The second half, code that is never deleted, is one no index here promises yet: until a package reaches 1.0.0 an index may drop its older versions. That breaks no program that still holds one: its copy stands in its own folder, held to its own sum, and it builds and runs as before. A program keeps the version it fetched until it asks for another, and the command that moves it to the newest is the one that took the package. Here the small index has since published a version 0.1.1:
   </p>
   <pre><code>$ heroes fetch
-kept rebel 0.1.0 heroes.packages/rebel@0.1.0-83be38224fbe3cc9, 58 of 1637 files: what its `packages` line names and the modules those use
+kept rebel 0.1.0 heroes.packages/rebel@0.1.0-d15253004def87ef, 58 of 1637 files: what its `packages` line names and the modules those use
 $ heroes add rebel
 changed rebel 0.1.0 -&gt; 0.1.1
-wrote heroes.toml</code></pre>
+wrote heroes.toml
+removed rebel 0.1.0 heroes.packages/rebel@0.1.0-d15253004def87ef, which no entry names now</code></pre>
+  <p>
+    The same command took away the copy of 0.1.0, which no line of the catalogue names any more, and said so. A copy that holds a change of yours is never taken away: it stays where it is, and the command says that too.
+  </p>
   <p>
     So a change to a package never breaks a program&rsquo;s build: it reaches a program only when the program asks for it.
   </p>
