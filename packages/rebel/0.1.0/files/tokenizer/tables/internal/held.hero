@@ -23,22 +23,22 @@ function numbers_in(written: str) -> [i64]
     out @ out.push(n)
     return out
 
-# Whether `enc` makes of every text of the cases the tokens `expected` says,
-# and decodes them back to the text; prints the first case that differs.
-function holds_cases(enc: tokenizer.Encoding lent, expected: [str]) -> bool
+# Whether `encoding` makes of every text of the cases the tokens `expected`
+# says, and decodes them back to the text; prints the first case that differs.
+function holds_cases(encoding: tokenizer.Encoding lent, expected: [str]) -> bool
     at: i64 @= 0
 
     while at < cases.TEXTS.len()
         text = cases.TEXTS[at]
         want = numbers_in(expected[at])
-        got = tokenizer.encode_ordinary(enc, text: text)
+        got = tokenizer.encode_ordinary(encoding, text: text)
 
         if got != want
-            print(f"case {at} of {enc.name}: {got.len()} tokens where tiktoken makes {want.len()}")
+            print(f"case {at} of {encoding.name}: {got.len()} tokens where tiktoken makes {want.len()}")
             return false
 
-        if tokenizer.decode(enc, tokens: got).must() != text || tokenizer.count(enc, text: text) != want.len()
-            print(f"case {at} of {enc.name}: not decoded back, or not counted")
+        if tokenizer.decode(encoding, tokens: got).must() != text || tokenizer.count(encoding, text: text) != want.len()
+            print(f"case {at} of {encoding.name}: not decoded back, or not counted")
             return false
         at @ at + 1
 

@@ -1,9 +1,9 @@
 capability char/name  the name Unicode gives a character, and the character a name gives
-  heroes  unicode/names.name, unicode/names.from_name
+  heroes  unicode/names.name, unicode/names.character_named
   go      -
   rust    -
   python  unicodedata.name, unicodedata.lookup
-  note    Python's `lookup` matches a name, an alias or a named sequence ignoring case alone; `from_name` matches all three by UAX #44's rule LM2, spaces, underscores and medial hyphens ignored too, so "latin_small_letter_a" names "a" here and nothing there. A sweep of 2026-11-17 matched `name` to Python's on all 1,112,064 scalar values, and read back 160,282 names and aliases, each as Unicode writes it and in lower case with underscores, with no failure. A character with no name fails `not_found`, where Python raises ValueError; a control's names are its aliases, as in Python. A program using this package carries about 1.05 MB more than one using `unicode` alone (measured 2026-11-17, `heroes build` at -O0 on macOS), the 34,594 names written as 13,788 words
+  note    Python's `lookup` matches a name, an alias or a named sequence ignoring case alone; `character_named` matches all three by UAX #44's rule LM2, spaces, underscores and medial hyphens ignored too, so "latin_small_letter_a" names "a" here and nothing there. A sweep of 2026-11-17 matched `name` to Python's on all 1,112,064 scalar values, and read back 160,282 names and aliases, each as Unicode writes it and in lower case with underscores, with no failure. A character with no name fails `not_found`, where Python raises ValueError; a control's names are its aliases, as in Python. A program using this package carries about 1.05 MB more than one using `unicode` alone (measured 2026-11-17, `heroes build` at -O0 on macOS), the 34,594 names written as 13,788 words
 
 capability char/aliases  the aliases of a character: corrections, the names of controls, abbreviations
   heroes  unicode/names.aliases, unicode/names.Alias, unicode/names.ALIAS_CORRECTION, unicode/names.ALIAS_CONTROL, unicode/names.ALIAS_ALTERNATE, unicode/names.ALIAS_FIGMENT, unicode/names.ALIAS_ABBREVIATION

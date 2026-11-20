@@ -237,11 +237,11 @@ capability fs/copy-tree  a folder copied with everything it holds
   note    the destination must not be there, as Python's; links are followed, as Python's default, and one to nothing or one that loops fails before anything is written. Each folder takes its original's bits with this user's read, write and search added, since no door sets bits once its content is in
 
 capability fs/walk  every path under a folder, depth first, each folder's entries by name
-  heroes  fs.walk, fs.walk_following_links
-  go      filepath.Walk, filepath.WalkDir, filepath.WalkFunc, filepath.SkipDir, filepath.SkipAll
+  heroes  fs.walk, fs.walk_following_links, fs.walk_to_depth
+  go      filepath.Walk, filepath.WalkDir, filepath.WalkFunc, filepath.SkipDir
   rust    -
   python  os.walk, os.fwalk, Path.walk
-  note    a list, since no callback can hold state; links are not followed unless asked, and a link that leads back into a folder the walk is inside is never entered. A folder the walk cannot read fails it, where Python passes over it
+  note    a list, since no callback can hold state, so the list is held whole and every folder of the tree is read; a folder is left out, and never read, by `walk_ignoring`'s patterns or below `walk_to_depth`'s depth, which is what Go's `SkipDir` and Python's pruning of `dirnames` are for. Links are not followed unless asked, and a link that leads back into a folder the walk is inside is never entered. A folder the walk cannot read fails it, where Python passes over it
 
 capability fs/walk-ignoring  every path under a folder that its gitignore files leave in, each folder's file read as the walk enters it
   heroes  fs.walk_ignoring
@@ -440,7 +440,7 @@ capability fs/sync-all  every volume of the machine flushed
   note    -
 
 capability fs/archives  folders packed into an archive and unpacked
-  heroes  refused: an archive is a format, a package of its own, not a file system's
+  heroes  refused: an archive is a format, `archive`'s, a package above this one: a tree packed by `archive.add_tar_tree` or `archive.add_zip_tree`, unpacked by `archive.extract_tar` or `archive.extract_zip`
   go      -
   rust    -
   python  shutil.make_archive, shutil.unpack_archive, shutil.get_archive_formats, shutil.register_archive_format, shutil.unregister_archive_format, shutil.get_unpack_formats, shutil.register_unpack_format, shutil.unregister_unpack_format
@@ -480,6 +480,11 @@ dropped raw-facts  the facts are `fs.Info`'s fields; the numbers one platform ke
 
 dropped interfaces  an interface over a file system is what Heroes has not; the functions here act on the system's own
   go      os.DirFS, fs.FS, fs.Sub, fs.ValidPath, fs.ReadDirFS, fs.ReadFileFS, fs.StatFS, fs.GlobFS, fs.SubFS, fs.ReadLinkFS
+  rust    -
+  python  -
+
+dropped walk-stop  a walk ended early from inside it: no callback holds state, so a walk answers its whole list; a program that wants less walks less deep (`fs.walk_to_depth`) or leaves folders out (`fs.walk_ignoring`)
+  go      filepath.SkipAll
   rust    -
   python  -
 

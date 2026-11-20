@@ -69,15 +69,18 @@ specification.
 
 ## `spec-and-cards.md`
 
-The package arm of panel 234's R14, the paired run at M-core-packages' close
-(task 2300): the specification, then the heading *The packages beside the
-program*, one sentence saying that the program is compiled beside a catalogue
-holding the packages whose cards follow, then the card of every face of the
-tree its first line names, in E2's call form and in path order, a floor's card
+The package arm of the paired run's instrument (task 2300), which panel 234's
+R14 asked at M-core-packages' close and which went, with that row retired, to
+M-rebel-library's decision 15 (the register,
+https://github.com/heroes-lang/heroes/issues/2610, item 7): the
+specification, then the heading *The packages beside the program*, one
+sentence saying that the program is compiled beside a catalogue holding the
+packages whose cards follow, then the card of every face of the tree its first
+line names, in E2's call form and in path order, a floor's card
 left out (R5: only a program that reaches the floor reads it). It is written by
 a command, never by hand:
 
-    heroes run tests/harness/thesis.hero -- cards --packages build/thesis-packages -o tests/thesis/contexts/spec-and-cards.md
+    heroes run tests/harness/thesis.hero -- cards --packages build/thesis-packages -o tests/thesis/contexts/spec-and-cards.md  # none on 2026-11-20
 
 Its first line, `packages <tree> <digest> spec <digest>`, names the tree and the
 specification it was written from. The instrument drops that line from the
@@ -90,19 +93,18 @@ The tree is a folder git ignores, placed by the compiler from the repository's
 own index:
 
     mkdir -p build/thesis-packages
-    heroes add core --index file://../../packages -C build/thesis-packages
+    heroes add rebel --index file://../../packages -C build/thesis-packages
 
-and its digest leaves out the catalogue's `index` line and the key ending a
-placed folder's name, so one version placed from any spelling of the index is
-one tree (`tests/harness/thesis_packages.hero`).
+Run with Rebel on 2026-11-20, it answers `error[absent]`: the index publishes
+no version of Rebel, no `packages/rebel/versions` on 2026-11-20, and the
+instrument takes only entries a `sum` pins, so a run publishes Rebel's version
+there first. The tree's digest leaves out the catalogue's `index` line and the
+key ending a placed folder's name, so one version placed from any spelling of
+the index is one tree (`tests/harness/thesis_packages.hero`).
 
-Written 2026-11-15 from core 0.5.0, its six faces `encoding/json`, `net`,
-`net/http`, `slices`, `strconv` and `strings`, the floor `net/hero_net` left
-out, over the specification of sha256
-`1d532d514831aa70234ef0eb8ad77850ebd4c2e390234f22e973a363ed757001`; the tree's
-digest `c076bc950ef607fa0448fb9da6be761612d39c340e9276f459ebf7be310e7098`, the
-file's `72ca41bf187ff3fe30951e0397393aa8d41f4d73bbb778d99d8216c1a3977f92`;
-11,704 tokens on the vendored tables' maximum, beside the specification's
-8,702 (`heroes measure` of the file without its first line). **The run at the
-close writes it again** from the core of that day, before the run is
-registered: today's file then refuses itself against the newer tree, by name.
+**No such file stands today.** The one written on 2026-11-15 held the cards
+of the packages the index held then, and was removed on 2026-11-20 with them
+(M-rebel-library's decision 8): no index places that tree again, so its
+first line named a tree no run could place. A run of the instrument writes the file from the tree it places, before the run
+is registered, and commits it; the file's own first line then names that tree
+and that specification.

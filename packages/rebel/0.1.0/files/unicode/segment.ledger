@@ -96,6 +96,13 @@ capability text/truncate  a text cut to a width in columns, an ellipsis after it
   python  textwrap.shorten
   note    Python's `shorten` collapses white space and cuts at a word, with "[...]"; here the text is cut between graphemes with the ellipsis the program gives, every escape sequence kept, as a terminal's table cuts a cell. A program that wants whole words cuts at the last of `line_breaks` that fits
 
+capability text/pad-columns  a text padded to a width in columns, before it, after it or on both sides
+  heroes  unicode/segment.pad_start_columns, unicode/segment.pad_end_columns, unicode/segment.center_columns
+  go      -
+  rust    -
+  python  -
+  note    measured by `width_of`, as `wrap` and `truncate` measure, so a column of a table in any script lines up in a terminal; Python's `str.ljust`, `str.rjust` and `str.center`, and `strings.pad_start` and its kin, count characters, so "東京" padded to 8 there takes 10 columns. A pad grapheme that would pass the width is replaced by spaces, so the answer takes exactly the width asked wherever `s` is narrower
+
 capability segment/version  the version of Unicode the tables hold
   heroes  unicode/segment.UNICODE_VERSION
   go      -

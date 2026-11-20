@@ -1,0 +1,22 @@
+# What the face's tests read a list of tokens by, kept out of the face so
+# that it offers neither: the kinds' names and the texts, in order.
+
+use scanner
+
+# The name of each token's kind, in order.
+function kinds_of(tokens: [scanner.Token]) -> [str]
+    names: [str] @= []
+
+    for t in tokens
+        names @ names.push(scanner.kind_name(t.kind))
+
+    return names
+
+# The text of each token, in order.
+function texts_of(tokens: [scanner.Token]) -> [str]
+    texts: [str] @= []
+
+    for t in tokens
+        texts @ texts.push(t.text)
+
+    return texts

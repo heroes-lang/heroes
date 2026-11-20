@@ -3,15 +3,16 @@
 # value, however deep, is not written, as Go's slog JSONHandler leaves it out.
 
 use json
+use log
 use log/internal/piece
 
 # The line, without its line feed: one JSON object on one line, since every
 # character below U+0020 inside a string is escaped.
 function line(time_text: str, level_name: str, message: str, pieces: [piece.Piece]) -> str
     parts: [str] @= ["{"]
-    parts @ parts.push(json.quote(piece.TIME_KEY) + ":" + json.quote(time_text))
-    parts @ parts.push("," + json.quote(piece.LEVEL_KEY) + ":" + json.quote(level_name))
-    parts @ parts.push("," + json.quote(piece.MESSAGE_KEY) + ":" + json.quote(message))
+    parts @ parts.push(json.quote(log.TIME_KEY) + ":" + json.quote(time_text))
+    parts @ parts.push("," + json.quote(log.LEVEL_KEY) + ":" + json.quote(level_name))
+    parts @ parts.push("," + json.quote(log.MESSAGE_KEY) + ":" + json.quote(message))
 
     # Whether the object open at each depth holds a member yet, the line's own
     # object first; and the groups opened but not yet written, since a group is

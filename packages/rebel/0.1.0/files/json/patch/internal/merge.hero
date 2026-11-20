@@ -175,7 +175,7 @@ function diff(from: json.Value, to: json.Value) -> json.Value?
                     match left[name]
                         .err _ => out[name] @ whole(wanted, path: here)?
                         .ok had =>
-                            if !json.equal(a: had, b: wanted)
+                            if !json.equals(a: had, b: wanted)
                                 if is_object(had) && is_object(wanted)
                                     stack.put(items: @held_left, top: depth, item: left)
                                     stack.put(items: @held_right, top: depth, item: right)

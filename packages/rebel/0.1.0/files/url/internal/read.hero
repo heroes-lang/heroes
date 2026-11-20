@@ -7,6 +7,7 @@
 # module accepts is a URL, and one it refuses is told where and why.
 
 use strings
+use url
 use url/internal/classes
 use url/internal/escapes
 use url/internal/hosts
@@ -22,7 +23,7 @@ function decoded(s: str, from: i64, to: i64) -> str?
 
 # Reads the authority written between byte `from` and byte `to` of `s` into
 # `p`: the user and the password before an "@", the host and the port.
-function read_authority(@p: parts.Parts, s: str, from: i64, to: i64) -> ()?
+function read_authority(@p: url.Url, s: str, from: i64, to: i64) -> ()?
     host_from: i64 @= from
     at_sign = classes.first_of(s: s, b: '@', from: from, to: to)
 
@@ -45,7 +46,7 @@ function read_authority(@p: parts.Parts, s: str, from: i64, to: i64) -> ()?
 # The parts of `s`, a URL or a relative reference, by RFC 3986 § 3 and § 4.
 # Fails `invalid` at the first byte no part may hold, and `not_text` where
 # the escapes of the user, the password or the host are not UTF-8.
-function parse(s: str) -> parts.Parts?
+function parse(s: str) -> url.Url?
     n = s.len()
     hash = classes.first_of(s: s, b: '#', from: 0, to: n)
     question = classes.first_of(s: s, b: '?', from: 0, to: hash)
@@ -88,7 +89,7 @@ function parse(s: str) -> parts.Parts?
 # The parts of `s`, the target of an HTTP request: an absolute path and its
 # query, read as such even where it begins "//", or a URL with a scheme.
 # Fails `invalid` where it is neither or has a fragment, and as `parse` does.
-function parse_target(s: str) -> parts.Parts?
+function parse_target(s: str) -> url.Url?
     if s == ""
         return fail(code: classes.INVALID, msg: "an empty request target; the shortest is \"/\"")
 

@@ -1,6 +1,9 @@
-# The failure codes `compress` answers, and how its messages are made: the
-# face names its constants from these, since a private module cannot `use`
-# the face.
+# The failure codes `compress` and its five subpackages answer, and how their
+# messages are made: each face names its constants from these, and every
+# private module of the family fails with them, so a code is written once for
+# the six packages. A private module may use its face since panel 252's R1;
+# these stay here because the subpackages share them, and no face of the
+# family is the others'.
 
 # An input that is not what its format says, or options no compressor takes.
 constant INVALID: str

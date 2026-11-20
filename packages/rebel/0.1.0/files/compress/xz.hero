@@ -11,7 +11,8 @@
 # write piece by piece, nor through a stream: a program reads the whole
 # input first (`io.read_all`, `fs.read_bytes`). DEFLATE, gzip and zlib are
 # `compress`'s, bzip2 `compress/bzip2`'s, Zstandard `compress/zstd`'s,
-# Brotli `compress/brotli`'s.
+# Brotli `compress/brotli`'s, LZ4 `compress/lz4`'s; `compress` and
+# `compress/lz4` are the two that read and write through a stream.
 #
 # **A compressed input is not trusted.** Every function that decompresses
 # takes a `limit`, the most bytes it may produce, and fails `limit` before

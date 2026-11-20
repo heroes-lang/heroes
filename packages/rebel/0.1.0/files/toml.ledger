@@ -180,7 +180,7 @@ capability toml/lookup  a value reached by a path of keys
   go      -
   rust    -
   python  dict.__getitem__, dict.get
-  note    a key absent fails `not_found`; a key asked of a value that is not a table fails `invalid`
+  note    a key absent fails `not_found`, as does an index past an array; at an array a step is an index in decimal from "0", as `value_of` reads a document's path; a step into a value that is neither a table nor an array, or a step at an array that is no index, fails `invalid`
 
 capability toml/write  a tree of values written as TOML text that reads back as the same tree
   heroes  toml.format
@@ -237,6 +237,12 @@ capability toml/from-json  a JSON value crossed to a TOML value, a document wher
   rust    -
   python  -
   note    a whole number from -2^63 to 2^63 - 1 becomes an `integer`, every other number, `-0.0` included, a `float`; a string stays a `text` even where it reads as a date, since JSON names none; JSON's `null` fails `unsupported` with its JSON pointer, TOML having no such value
+
+capability toml/records  a table filled into a record of the program by its field names, and a record written as a table
+  heroes  refused: the language has no reflection; a program reads each value with `value_at` and builds its record by its `Record::field` names (spec § 9), which the compiler checks, as `msgpack`'s and `cbor`'s blocks of the same capability say; settings read in layers with typed getters are `config`'s
+  go      -
+  rust    -
+  python  -
 
 dropped
   python  TOMLDecodeError.add_note, TOMLDecodeError.args, TOMLDecodeError.with_traceback: what every Python exception has

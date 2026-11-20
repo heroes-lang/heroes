@@ -124,7 +124,7 @@ capability schema/subschema  a schema that a URI and a fragment name inside the 
   note    the URI may name a resource and a fragment, a pointer or an anchor's name
 
 capability schema/formats  `format` asserted where the caller asks, for every format the two dialects name
-  heroes  json/schema.Options, json/schema.is_format
+  heroes  json/schema.Options, json/schema.matches_format
   go      Compiler.AssertFormat
   rust    ValidationOptions::should_validate_formats, EmailOptions
   python  FormatChecker, FormatChecker.check, FormatChecker.conforms, FormatChecker.checkers, FormatError, Validator.FORMAT_CHECKER, Validator.format_checker

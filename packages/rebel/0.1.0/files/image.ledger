@@ -60,7 +60,7 @@ capability image/limits  a limit on the size a decoder may allocate, against dec
   note    every decoder takes Limits and fails `limit` before it allocates; Go has no limit (its documentation says to call DecodeConfig first), Pillow warns at MAX_IMAGE_PIXELS and fails at twice it. The defaults here are 65,536 a side and 2^26 pixels, 256 MiB of RGBA: a decision, not Pillow's number, which could not be read on this machine
 
 capability image/format-facts  what a format holds: channels, bits, bytes, alpha
-  heroes  image.channels_of, image.bits_of, image.pixel_bytes_of, image.has_alpha, image.format_with
+  heroes  image.channels_of, image.bits_of, image.pixel_bytes_of, image.has_alpha, image.format_of
   go      Image.ColorModel, Opaque (each type's), RGBA.Opaque, Model
   rust    -
   python  Image.getbands, Image.mode, Image.has_transparency_data, ImageMode.getmode

@@ -3,11 +3,11 @@
 # program dials, their bytes, the deadline that bounds a wait, and the stop
 # that ends every wait.
 #
-# The language offers no sockets of its own and leaves them to C (design.md
-# §1.11: there is no standard library), so this program binds the layer
-# itself and no library. Until 2026-11-19 it came from a package, which
-# M-rebel-library removed (its page's decisions 6 to 8); it is written here
-# from the header's contract alone.
+# The language offers no sockets of its own and leaves them to C, imposing no
+# standard library (design.md §1.11); a program of `examples/` takes no package
+# (M-rebel-library's decision 7), so this one binds the layer itself. Until
+# 2026-11-19 it came from a package, which M-rebel-library removed (its page's
+# decisions 6 to 8); it is written here from the header's contract alone.
 #
 # A CONNECTION IS A HANDLE. `accept`, `dial` and `of` begin its life, and
 # `close` ends it, or `number` gives it up so that a thread, handed one `i64`

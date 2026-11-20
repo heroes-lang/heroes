@@ -16,7 +16,7 @@
 # system's generator for every text and writes it before the ciphertext, so
 # no program reuses one by mistake, which would give two texts away and let
 # anyone forge. Random nonces of 96 bits collide past about 2^32 texts under
-# one key (NIST SP 800-38D § 8.3), so a key seals `SEALS_MOST` texts and then
+# one key (NIST SP 800-38D § 8.3), so a key seals `MAX_SEALS` texts and then
 # fails `limit`: make another key. Sealed bytes are the nonce, the
 # ciphertext, as long as the text, and the tag of 16 bytes: `OVERHEAD` bytes
 # more than the text, the layout Go's `NewGCMWithRandomNonce` writes.
@@ -30,12 +30,13 @@
 #
 # It does not derive keys from a password or a secret, digest or
 # authenticate with an HMAC (`crypto`), sign, agree on a key or encrypt to a
-# public key (`crypto/keypairs`), or draw random bytes (`random`).
+# public key (`crypto/keypairs`), or draw random bytes (`os.random_bytes`,
+# the system's generator).
 #
 # It fails with `invalid` (an argument refused, sealed bytes that do not
 # open: changed, cut, or sealed under another key or with other associated
 # data), `closed` (a key closed), `limit` (no memory or key left, or a key
-# past `SEALS_MOST`), `unsupported` (macOS, or a Linux machine with no
+# past `MAX_SEALS`), `unsupported` (macOS, or a Linux machine with no
 # `libcrypto.so.3`) and `failed` (the system failed, its words in the
 # message).
 
@@ -55,7 +56,7 @@ constant INVALID: str
 constant CLOSED: str
     "closed"
 
-# No memory or key left, or a key that has sealed `SEALS_MOST` texts:
+# No memory or key left, or a key that has sealed `MAX_SEALS` texts:
 # `generate`, `from_secret`, `seal`.
 constant LIMIT: str
     "limit"
@@ -105,7 +106,7 @@ constant OVERHEAD: i64
 
 # The most texts one key seals: past it, two random nonces of 96 bits meet
 # with a chance NIST SP 800-38D § 8.3 does not allow.
-constant SEALS_MOST: i64
+constant MAX_SEALS: i64
     4294967296
 
 # Whether this machine's own cryptography seals with `algorithm`: false on
@@ -173,6 +174,7 @@ function generate(algorithm: Algorithm) -> Key?
 # kept elsewhere. C copies the bytes once and this function overwrites the
 # language's copy it lent; the caller's own `secret` is the caller's.
 #
+# - `algorithm`: the cipher the key seals with.
 # - `secret`: `key_size(algorithm)` bytes.
 #
 # The key is the caller's to close. Fails `invalid` where `secret` is of
@@ -203,7 +205,7 @@ function close(@key: Key) -> ()?
 #   name the text is bound to; empty for none. They are not in the answer.
 #
 # Two seals of one text differ, their nonces drawn apart. Fails `closed`
-# where `key` is closed, `limit` past `SEALS_MOST` texts under one key,
+# where `key` is closed, `limit` past `MAX_SEALS` texts under one key,
 # `invalid` for a text past its bound, `unsupported` where the platform has
 # no such cipher. The text crosses to C in one copy the call overwrites.
 # See also `open`.

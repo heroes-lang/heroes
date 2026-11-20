@@ -16,7 +16,8 @@
 # against its block, and refuses a file that ends inside a scan, so a broken
 # or hostile file fails `invalid` or `limit` and never reads past its end.
 #
-# It fails with `invalid`, `limit` and `unsupported`.
+# It fails with `invalid`, `limit` and `unsupported`, whose constants are
+# `image`'s, and `orientation_of` fails `not_found`, this package's own.
 
 use bytes
 use image
@@ -24,6 +25,15 @@ use image/jpeg/internal/decode as reading
 use image/jpeg/internal/encode as writing
 use image/jpeg/internal/exif as tiff
 use image/jpeg/internal/samples
+
+## Codes
+
+# The code `orientation_of` fails with where an EXIF directory holds no
+# orientation. The other codes of this package, `invalid`, `limit` and
+# `unsupported`, are `image`'s: `image.INVALID`, `image.LIMIT`,
+# `image.UNSUPPORTED`.
+constant NOT_FOUND: str
+    "not_found"
 
 ## Reading
 
@@ -112,10 +122,6 @@ function info_of(data: [u8]) -> Info?
 # `image.apply_orientation`.
 function orientation_of(exif: [u8]) -> i64?
     return tiff.orientation_of(exif)
-
-# The code of an EXIF directory that holds no orientation.
-constant NOT_FOUND: str
-    "not_found"
 
 ## Writing
 

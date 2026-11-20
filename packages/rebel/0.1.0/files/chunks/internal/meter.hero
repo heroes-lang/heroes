@@ -1,39 +1,28 @@
-# What a piece's size counts, as the private modules read it: characters,
-# bytes, or the tokens of an encoding, which the face's `Measure` says and
-# hands down as a `Meter`, since a private module cannot read its face's
-# types.
+# What a piece's size counts, read from the face's own `Measure`, which a
+# private module may name since panel 252's R1: characters, bytes, or the
+# tokens of an encoding.
 
+use chunks
 use tokenizer
 
-# Code points.
-constant CHARACTERS: i64
-    1
-
-# Bytes of UTF-8.
-constant BYTES: i64
-    2
-
-# The tokens of the one encoding a meter holds.
-constant TOKENS: i64
-    3
-
-# What a size counts. Made by the face from its `Measure`.
-record Meter
-    # `CHARACTERS`, `BYTES` or `TOKENS`.
-    kind: i64
-    # The encoding that counts `TOKENS`, alone; empty for the other kinds.
-    encodings: [tokenizer.Encoding]
+# Whether `m` counts the tokens of an encoding, whose count of a text is not
+# the sum of its parts' counts.
+function counts_tokens(m: chunks.Measure lent) -> bool
+    return match m
+        .tokens _            => true
+        .characters | .bytes => false
 
 # The size of `s` from `from` to `to`, the second excluded, both a
 # character's first byte.
-function cost(m: Meter lent, s: str, from: i64, to: i64) -> i64
-    if m.kind == BYTES
-        return to - from
+function cost(m: chunks.Measure lent, s: str, from: i64, to: i64) -> i64
+    match m
+        .bytes => return to - from
+        .tokens t =>
+            if from == 0 && to == s.len()
+                return tokenizer.count(t.encoding, text: s)
+            return tokenizer.count(t.encoding, text: s.slice(from: from, to: to))
+        .characters => _ = 0
 
-    if m.kind == TOKENS
-        if from == 0 && to == s.len()
-            return tokenizer.count(m.encodings[0], text: s)
-        return tokenizer.count(m.encodings[0], text: s.slice(from: from, to: to))
     count: i64 @= 0
     at: i64 @= from
 
@@ -70,9 +59,11 @@ test "check: the smallest size, an overlap of 0 and of the size less 1, and each
         .ok _  => assert false
         .err e => assert e.code == "invalid" && e.msg == "an overlap must be from 0 to the size less 1, 3, and 4 was given"
 
-test "cost: characters of more than one byte, bytes, and an empty range"
-    m = Meter(kind: CHARACTERS, encodings: [])
+test "cost and counts_tokens: characters of more than one byte, bytes, and an empty range"
+    m: chunks.Measure = .characters
     assert cost(m, s: "aé世😀", from: 0, to: 10) == 4
     assert cost(m, s: "aé世😀", from: 1, to: 6) == 2
-    assert cost(Meter(kind: BYTES, encodings: []), s: "aé世😀", from: 0, to: 10) == 10
+    bytes_measure: chunks.Measure = .bytes
+    assert cost(bytes_measure, s: "aé世😀", from: 0, to: 10) == 10
     assert cost(m, s: "abc", from: 2, to: 2) == 0
+    assert !counts_tokens(m) && !counts_tokens(bytes_measure)

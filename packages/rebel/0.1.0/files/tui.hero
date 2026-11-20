@@ -33,8 +33,7 @@
 # terminal back by hand.
 #
 # It fails with `not_found`, `unsupported`, `invalid`, `timeout`, `closed` and
-# `failed`
-# (README § A4).
+# `failed` (README § A4).
 
 use io
 use os
@@ -84,6 +83,407 @@ constant CLOSED: str
 # its words. Every function that writes to the terminal fails with it.
 constant FAILED: str
     "failed"
+
+## The terminal
+
+# Where the cursor stands after a flush.
+variant Cursor
+    # Not shown.
+    hidden
+    # Shown in a cell.
+    at
+        # The column, from 0.
+        x: i64
+        # The row, from 0.
+        y: i64
+
+# What a terminal reports besides keys, asked at `start`.
+record Options
+    # Whether clicks, releases, drags and the wheel are reported, as
+    # `.mouse` events; the terminal's own selection of text then needs Shift.
+    mouse: bool
+    # Whether every move of the mouse is reported too, a button held or not.
+    mouse_motion: bool
+    # Whether a text pasted comes as one `.pasted` event, where false it comes
+    # as keys.
+    paste: bool
+    # Whether the terminal's window gaining and losing the focus is reported.
+    focus: bool
+
+# The options most programs start with: paste as one event, no mouse, no
+# focus reports.
+#
+# See also `start`.
+function default_options() -> Options
+    return Options(mouse: false, mouse_motion: false, paste: true, focus: false)
+
+# The program's terminal in full-screen mode, between `start` and `stop`: the
+# frame on the screen, its size, and the modes turned on. Made by `start`.
+record Terminal
+    # The standard output, where frames are written.
+    output: io.Stream
+    # The frame shown, the size and the modes. Only this package reads it.
+    screen: screen.Screen
+
+# Something that happened at the terminal, as the event readers answer it.
+variant Event
+    # A key pressed.
+    key
+        # The key, as `term.read_key` names it.
+        key: term.Key
+    # A click, a release, a drag, a move or the wheel, where the options asked
+    # for the mouse.
+    mouse
+        # What the mouse did.
+        action: MouseAction
+        # The button, `.none` for a move and the wheel.
+        button: MouseButton
+        # The column, from 0.
+        x: i64
+        # The row, from 0.
+        y: i64
+        # Whether Shift was held.
+        shift: bool
+        # Whether Alt was held.
+        alt: bool
+        # Whether Control was held.
+        control: bool
+    # A text pasted, whole, where the options asked for paste.
+    pasted
+        # The text; each line break as a line feed.
+        text: str
+    # The terminal's size changed; the next frame is drawn whole.
+    resized
+        # Its columns.
+        width: i64
+        # Its rows.
+        height: i64
+    # The terminal's window gained the focus, where the options asked.
+    focus_gained
+    # The terminal's window lost the focus, where the options asked.
+    focus_lost
+
+# What the mouse did.
+variant MouseAction
+    # A button pressed.
+    press
+    # A button released.
+    release
+    # Moved with a button held.
+    drag
+    # Moved with no button held, where the options asked for every move.
+    motion
+    # The wheel turned up.
+    scroll_up
+    # The wheel turned down.
+    scroll_down
+    # The wheel tilted left.
+    scroll_left
+    # The wheel tilted right.
+    scroll_right
+
+# A button of the mouse.
+variant MouseButton
+    # No button: a move or the wheel.
+    none
+    # The left button.
+    left
+    # The middle button, or the wheel pressed.
+    middle
+    # The right button.
+    right
+
+# Puts the program's terminal in full-screen mode: the raw mode, the alternate
+# screen cleared, the cursor hidden, and the reports `options` asks for.
+#
+# - `options`: what is reported besides keys.
+#
+# Fails `unsupported` where the standard output is no terminal or tells no
+# size, `failed` where the system refuses. See also `stop`, `frame_of`.
+function start(options: Options) -> Terminal?
+    out = io.stdout()
+
+    if !io.is_terminal(out).default(false)
+        return fail(code: UNSUPPORTED, msg: "starting the terminal: the standard output is no terminal")
+
+    size = match os.terminal_size()
+        .ok s  => s
+        .err e => return fail(code: UNSUPPORTED, msg: f"starting the terminal: {e.msg}")
+
+    term.enter_raw()?
+    sequence = screen.entering(
+        mouse: options.mouse,
+        motion: options.mouse_motion,
+        paste: options.paste,
+        focus: options.focus
+    )
+
+    match io.write_text(out, text: sequence)
+        .ok _ =>
+            _ = 0
+        .err e =>
+            _ = term.leave_raw().is_err()
+            return fail(code: FAILED, msg: f"starting the terminal: {e.msg}")
+
+    held = screen.Screen(
+        shown: grid.new(x: 0, y: 0, width: size.columns, height: size.rows),
+        whole: true,
+        columns: size.columns,
+        rows: size.rows,
+        mouse: options.mouse || options.mouse_motion,
+        motion: options.mouse_motion,
+        paste: options.paste,
+        focus: options.focus,
+        active: true
+    )
+    return ok(Terminal(output: io.stdout(), screen: held))
+
+# Puts the terminal back as it was before `start`: the reports off, the cursor
+# shown, the alternate screen left, the raw mode left. Nothing where it is
+# stopped already.
+#
+# - `terminal`: the terminal.
+#
+# Fails `failed` where the system refuses, after doing the rest. See also
+# `start`.
+function stop(@terminal: Terminal) -> ()?
+    s = terminal.screen
+
+    if !s.active
+        return ok()
+    wrote = io.write_text(
+        terminal.output,
+        text: screen.leaving(mouse: s.mouse, motion: s.motion, paste: s.paste, focus: s.focus)
+    )
+    left = term.leave_raw()
+    terminal.screen.active @ false
+    wrote?
+    return left
+
+# The screen as a rectangle at 0, 0, as the last event read or `start` found
+# it.
+#
+# - `terminal`: the terminal.
+#
+# See also `frame_of`.
+function area_of(terminal: Terminal) -> Rect
+    return Rect(x: 0, y: 0, width: terminal.screen.columns, height: terminal.screen.rows)
+
+# A blank buffer of the screen's size, for one frame.
+#
+# - `terminal`: the terminal.
+#
+# See also `flush`.
+function frame_of(terminal: Terminal) -> Buffer
+    return blank(area_of(terminal))
+
+# Writes `frame` to the screen: only the cells that differ from the frame
+# before, or every cell where the size changed or `redraw` was asked; then the
+# cursor where `cursor` says.
+#
+# - `terminal`: the terminal; it keeps `frame` as the frame shown.
+# - `frame`: the frame; one of another size than the screen is drawn at its
+#   own area, the rest of the screen blank.
+# - `cursor`: where the cursor stands after.
+#
+# Fails `closed` where the terminal is stopped or suspended, and as `io.write`
+# fails where the terminal refuses the write. See also `frame_of`, `diff`.
+function flush(@terminal: Terminal, frame: Buffer, cursor: Cursor) -> ()?
+    if !terminal.screen.active
+        return fail(code: CLOSED, msg: "flushing a frame: the terminal is stopped or suspended")
+    after = frame.grid
+    shown = terminal.screen.shown
+    same = shown.x == after.x && shown.y == after.y && shown.width == after.width && shown.height == after.height
+    whole = terminal.screen.whole || !same
+    parts: [str] @= []
+
+    if whole
+        parts @ parts.push("\u{1b}[0m" + term.clear_screen())
+
+    before = if whole
+        grid.new(x: after.x, y: after.y, width: after.width, height: after.height)
+    else
+        shown
+    parts @ parts.push(delta.format(delta.diff(before: before, after: after)))
+
+    place = match cursor
+        .hidden => term.cursor_hide()
+        .at c   => match term.cursor_to(row: c.y + 1, column: c.x + 1)
+            .ok moved => moved + term.cursor_show()
+            .err _    => term.cursor_hide()
+
+    parts @ parts.push(place)
+    io.write_text(terminal.output, text: parts.join(""))?
+    terminal.screen.shown @ after
+    terminal.screen.whole @ false
+    return ok()
+
+# Makes the next `flush` clear the screen and write every cell: after another
+# program, or a write of the program's own, changed the screen.
+#
+# - `terminal`: the terminal.
+#
+# See also `flush`.
+function redraw(@terminal: Terminal)
+    terminal.screen.whole @ true
+
+# The next event at the terminal, waiting as long as it takes.
+#
+# - `terminal`: the terminal; a new size is kept in it, and the next flush
+#   writes every cell.
+#
+# Fails `closed` where the terminal is gone, `unsupported` where the program
+# has none, `failed` where the system refuses. See also `read_event_within`.
+function read_event(@terminal: Terminal) -> Event?
+    return read_event_within(@terminal, limit_ms: 9223372036854775807)
+
+# The next event at the terminal, waiting at most `limit_ms` milliseconds: the
+# reader of a program that also moves on its own, a clock or an animation.
+#
+# - `terminal`: the terminal, as `read_event` keeps it.
+# - `limit_ms`: the longest to wait, in milliseconds; 0 answers an event
+#   already there and waits not at all.
+#
+# Fails `timeout` where none came in time, `invalid` where `limit_ms` is below
+# 0, and as `read_event` does. A pasted text is read whole, however long it
+# takes. See also `read_event`.
+function read_event_within(@terminal: Terminal, limit_ms: i64) -> Event?
+    if limit_ms < 0
+        return fail(code: INVALID, msg: f"reading an event: a time is 0 or more, and {limit_ms} ms was asked")
+    left @= limit_ms
+
+    while true
+        match os.terminal_size()
+            .ok size =>
+                if size.columns != terminal.screen.columns || size.rows != terminal.screen.rows
+                    terminal.screen.columns @ size.columns
+                    terminal.screen.rows @ size.rows
+                    terminal.screen.whole @ true
+                    return ok(.resized(width: size.columns, height: size.rows))
+            .err _ =>
+                _ = 0
+
+        wait_ms = if left < 50
+            left
+        else
+            50
+
+        match term.read_key_within(wait_ms)
+            .ok key =>
+                return match key
+                    .other o =>
+                        d = events.decode(o.bytes)
+
+                        if d.kind == events.MOUSE
+                            actions: [MouseAction] = [
+                                .press
+                                .release
+                                .drag
+                                .motion
+                                .scroll_up
+                                .scroll_down
+                                .scroll_left
+                                .scroll_right
+                            ]
+                            buttons: [MouseButton] = [.none, .left, .middle, .right]
+                            ok(
+                                .mouse(action: actions[d.action], button: buttons[d.button], x: d.x, y: d.y, shift: d.shift, alt: d.alt, control: d.control)
+                            )
+                        else if d.kind == events.FOCUS_IN
+                            ok(.focus_gained)
+                        else if d.kind == events.FOCUS_OUT
+                            ok(.focus_lost)
+                        else if d.kind == events.PASTE_START
+                            pasted: [str] @= []
+                            ended @= false
+
+                            while !ended
+                                next = term.read_key()?
+
+                                ends = match next
+                                    .other b => events.decode(b.bytes).kind == events.PASTE_END
+                                    .character _ | .enter | .tab | .backspace | .escape | .up | .down | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete => false
+                                    .function_key _ | .control _ => false
+
+                                if ends
+                                    ended @ true
+                                else
+                                    pasted @ pasted.push(events.text_of(next))
+
+                            ok(.pasted(text: pasted.join("")))
+                        else
+                            ok(.key(key: key))
+                    .character _ | .enter | .tab | .backspace | .escape | .up | .down | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete => ok(
+                        .key(key: key)
+                    )
+                    .function_key _ | .control _ => ok(.key(key: key))
+            .err e =>
+                if e.code != TIMEOUT
+                    return fail(code: e.code, msg: e.msg)
+
+                if left <= 0
+                    return fail(code: TIMEOUT, msg: f"reading an event: none came in {limit_ms} ms")
+                left @ left - wait_ms
+
+# Gives the terminal back to the person for a while, as `stop` does, so
+# another program can run in it (an editor, a pager); `resume` takes it again.
+#
+# - `terminal`: the terminal.
+#
+# Fails `failed` where the system refuses. See also `resume`.
+function suspend(@terminal: Terminal) -> ()?
+    s = terminal.screen
+
+    if !s.active
+        return ok()
+    wrote = io.write_text(
+        terminal.output,
+        text: screen.leaving(mouse: s.mouse, motion: s.motion, paste: s.paste, focus: s.focus)
+    )
+    left = term.leave_raw()
+    terminal.screen.active @ false
+    wrote?
+    return left
+
+# Takes the terminal again after `suspend`, as `start` took it, and asks the
+# next flush to write every cell.
+#
+# - `terminal`: the terminal.
+#
+# Fails as `start` does. See also `suspend`.
+function resume(@terminal: Terminal) -> ()?
+    s = terminal.screen
+
+    if s.active
+        return ok()
+
+    size = match os.terminal_size()
+        .ok found => found
+        .err e    => return fail(code: UNSUPPORTED, msg: f"resuming the terminal: {e.msg}")
+
+    term.enter_raw()?
+
+    match io.write_text(terminal.output, text: screen.entering(mouse: s.mouse, motion: s.motion, paste: s.paste, focus: s.focus))
+        .ok _ =>
+            _ = 0
+        .err e =>
+            _ = term.leave_raw().is_err()
+            return fail(code: FAILED, msg: f"resuming the terminal: {e.msg}")
+
+    terminal.screen.columns @ size.columns
+    terminal.screen.rows @ size.rows
+    terminal.screen.whole @ true
+    terminal.screen.active @ true
+    return ok()
+
+# Sets the title of the terminal's window.
+#
+# - `terminal`: the terminal.
+# - `title`: the title; a control character in it is left out.
+#
+# Fails `failed` where the terminal refuses the write. See also `start`.
+function set_title(terminal: Terminal lent, title: str) -> ()?
+    return io.write_text(terminal.output, text: screen.titled(title))
 
 ## Areas
 
@@ -2245,410 +2645,6 @@ function draw_input(@buffer: Buffer, area: Rect, @input: Input) -> Cursor
     _ = runs.place(@buffer.grid, x: area.x, y: area.y, pieces: runs.cut(every, columns: view), limit: end)
     return .at(x: area.x + column - view, y: area.y)
 
-## The terminal
-
-# Where the cursor stands after a flush.
-variant Cursor
-    # Not shown.
-    hidden
-    # Shown in a cell.
-    at
-        # The column, from 0.
-        x: i64
-        # The row, from 0.
-        y: i64
-
-# What a terminal reports besides keys, asked at `start`.
-record Options
-    # Whether clicks, releases, drags and the wheel are reported, as
-    # `.mouse` events; the terminal's own selection of text then needs Shift.
-    mouse: bool
-    # Whether every move of the mouse is reported too, a button held or not.
-    mouse_motion: bool
-    # Whether a text pasted comes as one `.pasted` event, where false it comes
-    # as keys.
-    paste: bool
-    # Whether the terminal's window gaining and losing the focus is reported.
-    focus: bool
-
-# The options most programs start with: paste as one event, no mouse, no
-# focus reports.
-#
-# See also `start`.
-function default_options() -> Options
-    return Options(mouse: false, mouse_motion: false, paste: true, focus: false)
-
-# The program's terminal in full-screen mode, between `start` and `stop`: the
-# frame on the screen, its size, and the modes turned on. Made by `start`.
-record Terminal
-    # The standard output, where frames are written.
-    output: io.Stream
-    # The frame shown, the size and the modes. Only this package reads it.
-    screen: screen.Screen
-
-# Something that happened at the terminal, as the event readers answer it.
-variant Event
-    # A key pressed.
-    key
-        # The key, as `term.read_key` names it.
-        key: term.Key
-    # A click, a release, a drag, a move or the wheel, where the options asked
-    # for the mouse.
-    mouse
-        # What the mouse did.
-        action: MouseAction
-        # The button, `.none` for a move and the wheel.
-        button: MouseButton
-        # The column, from 0.
-        x: i64
-        # The row, from 0.
-        y: i64
-        # Whether Shift was held.
-        shift: bool
-        # Whether Alt was held.
-        alt: bool
-        # Whether Control was held.
-        control: bool
-    # A text pasted, whole, where the options asked for paste.
-    pasted
-        # The text; each line break as a line feed.
-        text: str
-    # The terminal's size changed; the next frame is drawn whole.
-    resized
-        # Its columns.
-        width: i64
-        # Its rows.
-        height: i64
-    # The terminal's window gained the focus, where the options asked.
-    focus_gained
-    # The terminal's window lost the focus, where the options asked.
-    focus_lost
-
-# What the mouse did.
-variant MouseAction
-    # A button pressed.
-    press
-    # A button released.
-    release
-    # Moved with a button held.
-    drag
-    # Moved with no button held, where the options asked for every move.
-    motion
-    # The wheel turned up.
-    scroll_up
-    # The wheel turned down.
-    scroll_down
-    # The wheel tilted left.
-    scroll_left
-    # The wheel tilted right.
-    scroll_right
-
-# A button of the mouse.
-variant MouseButton
-    # No button: a move or the wheel.
-    none
-    # The left button.
-    left
-    # The middle button, or the wheel pressed.
-    middle
-    # The right button.
-    right
-
-# Puts the program's terminal in full-screen mode: the raw mode, the alternate
-# screen cleared, the cursor hidden, and the reports `options` asks for.
-#
-# - `options`: what is reported besides keys.
-#
-# Fails `unsupported` where the standard output is no terminal or tells no
-# size, `failed` where the system refuses. See also `stop`, `frame_of`.
-function start(options: Options) -> Terminal?
-    out = io.stdout()
-
-    if !io.is_terminal(out).default(false)
-        return fail(code: UNSUPPORTED, msg: "starting the terminal: the standard output is no terminal")
-
-    size = match os.terminal_size()
-        .ok s  => s
-        .err e => return fail(code: UNSUPPORTED, msg: f"starting the terminal: {e.msg}")
-
-    term.enter_raw()?
-    sequence = screen.entering(
-        mouse: options.mouse,
-        motion: options.mouse_motion,
-        paste: options.paste,
-        focus: options.focus
-    )
-
-    match io.write_text(out, text: sequence)
-        .ok _ =>
-            _ = 0
-        .err e =>
-            _ = term.leave_raw().is_err()
-            return fail(code: FAILED, msg: f"starting the terminal: {e.msg}")
-
-    held = screen.Screen(
-        shown: grid.new(x: 0, y: 0, width: size.columns, height: size.rows),
-        whole: true,
-        columns: size.columns,
-        rows: size.rows,
-        mouse: options.mouse || options.mouse_motion,
-        motion: options.mouse_motion,
-        paste: options.paste,
-        focus: options.focus,
-        active: true
-    )
-    return ok(Terminal(output: io.stdout(), screen: held))
-
-# Puts the terminal back as it was before `start`: the reports off, the cursor
-# shown, the alternate screen left, the raw mode left. Nothing where it is
-# stopped already.
-#
-# - `terminal`: the terminal.
-#
-# Fails `failed` where the system refuses, after doing the rest. See also
-# `start`.
-function stop(@terminal: Terminal) -> ()?
-    s = terminal.screen
-
-    if !s.active
-        return ok()
-    wrote = io.write_text(
-        terminal.output,
-        text: screen.leaving(mouse: s.mouse, motion: s.motion, paste: s.paste, focus: s.focus)
-    )
-    left = term.leave_raw()
-    terminal.screen.active @ false
-    wrote?
-    return left
-
-# The screen as a rectangle at 0, 0, as the last event read or `start` found
-# it.
-#
-# - `terminal`: the terminal.
-#
-# See also `frame_of`.
-function area_of(terminal: Terminal) -> Rect
-    return Rect(x: 0, y: 0, width: terminal.screen.columns, height: terminal.screen.rows)
-
-# A blank buffer of the screen's size, for one frame.
-#
-# - `terminal`: the terminal.
-#
-# See also `flush`.
-function frame_of(terminal: Terminal) -> Buffer
-    return blank(area_of(terminal))
-
-# Writes `frame` to the screen: only the cells that differ from the frame
-# before, or every cell where the size changed or `redraw` was asked; then the
-# cursor where `cursor` says.
-#
-# - `terminal`: the terminal; it keeps `frame` as the frame shown.
-# - `frame`: the frame; one of another size than the screen is drawn at its
-#   own area, the rest of the screen blank.
-# - `cursor`: where the cursor stands after.
-#
-# Fails `closed` where the terminal is stopped or suspended, and as `io.write`
-# fails where the terminal refuses the write. See also `frame_of`, `diff`.
-function flush(@terminal: Terminal, frame: Buffer, cursor: Cursor) -> ()?
-    if !terminal.screen.active
-        return fail(code: CLOSED, msg: "flushing a frame: the terminal is stopped or suspended")
-    after = frame.grid
-    shown = terminal.screen.shown
-    same = shown.x == after.x && shown.y == after.y && shown.width == after.width && shown.height == after.height
-    whole = terminal.screen.whole || !same
-    parts: [str] @= []
-
-    if whole
-        parts @ parts.push("\u{1b}[0m" + term.clear_screen())
-
-    before = if whole
-        grid.new(x: after.x, y: after.y, width: after.width, height: after.height)
-    else
-        shown
-    parts @ parts.push(delta.format(delta.diff(before: before, after: after)))
-
-    place = match cursor
-        .hidden => term.cursor_hide()
-        .at c   => match term.cursor_to(row: c.y + 1, column: c.x + 1)
-            .ok moved => moved + term.cursor_show()
-            .err _    => term.cursor_hide()
-
-    parts @ parts.push(place)
-    io.write_text(terminal.output, text: parts.join(""))?
-    terminal.screen.shown @ after
-    terminal.screen.whole @ false
-    return ok()
-
-# Makes the next `flush` clear the screen and write every cell: after another
-# program, or a write of the program's own, changed the screen.
-#
-# - `terminal`: the terminal.
-#
-# See also `flush`.
-function redraw(@terminal: Terminal)
-    terminal.screen.whole @ true
-
-# The next event at the terminal, waiting as long as it takes.
-#
-# - `terminal`: the terminal; a new size is kept in it, and the next flush
-#   writes every cell.
-#
-# Fails `closed` where the terminal is gone, `unsupported` where the program
-# has none, `failed` where the system refuses. See also `read_event_within`.
-function read_event(@terminal: Terminal) -> Event?
-    return read_event_within(@terminal, limit_ms: 9223372036854775807)
-
-# The next event at the terminal, waiting at most `limit_ms` milliseconds: the
-# reader of a program that also moves on its own, a clock or an animation.
-#
-# - `terminal`: the terminal, as `read_event` keeps it.
-# - `limit_ms`: the longest to wait, in milliseconds; 0 answers an event
-#   already there and waits not at all.
-#
-# Fails `timeout` where none came in time, `invalid` where `limit_ms` is below
-# 0, and as `read_event` does. A pasted text is read whole, however long it
-# takes. On macOS the limit is not kept while `term`'s key reader cannot wait
-# on a terminal there (its wait asks `poll(2)`, which refuses a device on
-# Darwin): the read waits for the next key, and a new size is told with it.
-# See also `read_event`.
-function read_event_within(@terminal: Terminal, limit_ms: i64) -> Event?
-    if limit_ms < 0
-        return fail(code: INVALID, msg: f"reading an event: a time is 0 or more, and {limit_ms} ms was asked")
-    left @= limit_ms
-
-    while true
-        match os.terminal_size()
-            .ok size =>
-                if size.columns != terminal.screen.columns || size.rows != terminal.screen.rows
-                    terminal.screen.columns @ size.columns
-                    terminal.screen.rows @ size.rows
-                    terminal.screen.whole @ true
-                    return ok(.resized(width: size.columns, height: size.rows))
-            .err _ =>
-                _ = 0
-
-        wait_ms = if left < 50
-            left
-        else
-            50
-
-        match term.read_key_within(wait_ms)
-            .ok key =>
-                return match key
-                    .other o =>
-                        d = events.decode(o.bytes)
-
-                        if d.kind == events.MOUSE
-                            actions: [MouseAction] = [
-                                .press
-                                .release
-                                .drag
-                                .motion
-                                .scroll_up
-                                .scroll_down
-                                .scroll_left
-                                .scroll_right
-                            ]
-                            buttons: [MouseButton] = [.none, .left, .middle, .right]
-                            ok(
-                                .mouse(action: actions[d.action], button: buttons[d.button], x: d.x, y: d.y, shift: d.shift, alt: d.alt, control: d.control)
-                            )
-                        else if d.kind == events.FOCUS_IN
-                            ok(.focus_gained)
-                        else if d.kind == events.FOCUS_OUT
-                            ok(.focus_lost)
-                        else if d.kind == events.PASTE_START
-                            pasted: [str] @= []
-                            ended @= false
-
-                            while !ended
-                                next = term.read_key()?
-
-                                ends = match next
-                                    .other b => events.decode(b.bytes).kind == events.PASTE_END
-                                    .character _ | .enter | .tab | .backspace | .escape | .up | .down | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete => false
-                                    .function_key _ | .control _ => false
-
-                                if ends
-                                    ended @ true
-                                else
-                                    pasted @ pasted.push(events.text_of(next))
-
-                            ok(.pasted(text: pasted.join("")))
-                        else
-                            ok(.key(key: key))
-                    .character _ | .enter | .tab | .backspace | .escape | .up | .down | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete => ok(
-                        .key(key: key)
-                    )
-                    .function_key _ | .control _ => ok(.key(key: key))
-            .err e =>
-                if e.code != TIMEOUT
-                    return fail(code: e.code, msg: e.msg)
-
-                if left <= 0
-                    return fail(code: TIMEOUT, msg: f"reading an event: none came in {limit_ms} ms")
-                left @ left - wait_ms
-
-# Gives the terminal back to the person for a while, as `stop` does, so
-# another program can run in it (an editor, a pager); `resume` takes it again.
-#
-# - `terminal`: the terminal.
-#
-# Fails `failed` where the system refuses. See also `resume`.
-function suspend(@terminal: Terminal) -> ()?
-    s = terminal.screen
-
-    if !s.active
-        return ok()
-    wrote = io.write_text(
-        terminal.output,
-        text: screen.leaving(mouse: s.mouse, motion: s.motion, paste: s.paste, focus: s.focus)
-    )
-    left = term.leave_raw()
-    terminal.screen.active @ false
-    wrote?
-    return left
-
-# Takes the terminal again after `suspend`, as `start` took it, and asks the
-# next flush to write every cell.
-#
-# - `terminal`: the terminal.
-#
-# Fails as `start` does. See also `suspend`.
-function resume(@terminal: Terminal) -> ()?
-    s = terminal.screen
-
-    if s.active
-        return ok()
-
-    size = match os.terminal_size()
-        .ok found => found
-        .err e    => return fail(code: UNSUPPORTED, msg: f"resuming the terminal: {e.msg}")
-
-    term.enter_raw()?
-
-    match io.write_text(terminal.output, text: screen.entering(mouse: s.mouse, motion: s.motion, paste: s.paste, focus: s.focus))
-        .ok _ =>
-            _ = 0
-        .err e =>
-            _ = term.leave_raw().is_err()
-            return fail(code: FAILED, msg: f"resuming the terminal: {e.msg}")
-
-    terminal.screen.columns @ size.columns
-    terminal.screen.rows @ size.rows
-    terminal.screen.whole @ true
-    terminal.screen.active @ true
-    return ok()
-
-# Sets the title of the terminal's window.
-#
-# - `terminal`: the terminal.
-# - `title`: the title; a control character in it is left out.
-#
-# Fails `failed` where the terminal refuses the write. See also `start`.
-function set_title(terminal: Terminal lent, title: str) -> ()?
-    return io.write_text(terminal.output, text: screen.titled(title))
-
 ## Tests
 
 # Every drawing below is what `ratatui` 0.30.2 drew for the same widget, run
@@ -2952,6 +2948,16 @@ test "read_event_within: a time below 0 refused, no terminal or no event"
 
     io.close(@p.writer).must()
     io.close(@p.reader).must()
+
+test "split: an area built with a negative width or a negative height cuts into empty parts, never aborting"
+    directions: [Direction] = [.horizontal, .vertical]
+
+    for direction in directions
+        layout = layout_of(direction, constraints: [.length(n: 3), .fill(weight: 1), .percentage(n: 50)])
+
+        for area in [Rect(x: 0, y: 0, width: -5, height: 3), Rect(x: 2, y: 2, width: 3, height: -5)]
+            for part in split(area, layout: layout)
+                assert part.width == 0 || part.height == 0
 
 ## Examples
 

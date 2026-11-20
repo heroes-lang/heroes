@@ -354,7 +354,7 @@ capability dotenv/parse  a `.env` text read into its names and values
   go      godotenv.Parse, Unmarshal, UnmarshalBytes
   rust    dotenvy::from_read_iter, Iter, Error, Error::LineParse
   python  dotenv.dotenv_values(stream=), dotenv.main.DotEnv, DotEnv.dict, DotEnv.get, DotEnv.parse, parse_stream, Binding
-  note    python-dotenv's reading, where the three disagree: a name holding `.` or `-` (godotenv and dotenvy refuse `-`), a quoted name, `	` and `   ` read between double quotes (godotenv writes `t`, dotenvy refuses), an unknown escape kept with its backslash, `\'` and `\` read between single quotes (godotenv keeps them), `A=#x` a value and `B= #y` empty, a byte order mark skipped. Refused where python-dotenv skips the line with a warning or reads `None`: a name with no `=`, `export` alone, `KEY: value` (godotenv reads it), text after a closing quote. A name written twice keeps its last value at its first place, as godotenv and python-dotenv answer
+  note    python-dotenv's reading, where the three disagree: a name holding `.` or `-` (godotenv and dotenvy refuse `-`), a quoted name, `\t` and `\a \b \f \v` read between double quotes (godotenv writes `t`, dotenvy refuses), an unknown escape kept with its backslash, `\'` and `\\` read between single quotes (godotenv keeps them), `A=#x` a value and `B= #y` empty, a byte order mark skipped. Refused where python-dotenv skips the line with a warning or reads `None`: a name with no `=`, `export` alone, `KEY: value` (godotenv reads it), text after a closing quote. A name written twice keeps its last value at its first place, as godotenv and python-dotenv answer
 
 capability dotenv/read  a `.env` file read by its path
   heroes  config.read_dotenv

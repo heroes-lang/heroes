@@ -4,6 +4,7 @@
 # digits read as numbers where asked, variable elements shifted to the
 # fourth level where asked, and the weights of each level written in turn.
 
+use bytes
 use i18n/collate/internal/root
 use unicode
 use unicode/normalize
@@ -382,17 +383,6 @@ test "sort_key: lower case before upper, and levels by strength"
         points: [0x41],
         settings: settings
     )
-    assert bytes_less(a: lower, b: upper)
+    assert bytes.compare(a: lower, b: upper) < 0
     settings.strength @ 2
     assert sort_key(ces: elements_of("a", tailored: empty, longest: 0, numeric: false), points: [0x61], settings: settings) == sort_key(ces: elements_of("A", tailored: empty, longest: 0, numeric: false), points: [0x41], settings: settings)
-
-# Whether `a` comes before `b`, byte by byte, for the tests.
-function bytes_less(a: [u8] lent, b: [u8] lent) -> bool
-    at @= 0
-
-    while at < a.len() && at < b.len()
-        if a[at] != b[at]
-            return a[at] < b[at]
-        at @ at + 1
-
-    return a.len() < b.len()

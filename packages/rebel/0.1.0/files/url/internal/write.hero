@@ -2,6 +2,7 @@
 # escaped by its own set, so that what is written is a URL and reads back to
 # the same parts.
 
+use url
 use url/internal/classes
 use url/internal/escapes
 use url/internal/hosts
@@ -21,7 +22,7 @@ function colon_first(path: str) -> bool
 
 # The text of `p`. Aborts where the scheme is not one or the port is not
 # digits alone, since no escape writes either.
-function format(p: parts.Parts) -> str
+function format(p: url.Url) -> str
     pieces: [str] @= []
 
     if p.scheme != ""

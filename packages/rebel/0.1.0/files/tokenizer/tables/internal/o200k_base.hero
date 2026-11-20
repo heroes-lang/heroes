@@ -1,13 +1,38 @@
 # The table of the encoding `o200k_base`, made data: its 199998 ordinary tokens, the
 # pattern that cuts a text into pieces before they are merged, and its
-# special tokens, as tiktoken 0.14.0 reads them. Nothing here is edited by
-# hand: a one-off program, `gen_tables.py`, kept outside the tree in the
+# special tokens, as tiktoken 0.14.0 reads them. Nothing below this header is
+# edited by hand: a one-off program, `gen_tables.py`, kept outside the tree in the
 # round's scratch folder (`.claude/worktrees/rebel-scratch/tokenizer/gen/`),
 # read the file OpenAI serves, fetched by tiktoken on 2026-11-18 from
 # https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken,
 # checked its SHA-256 against the one tiktoken expects, 446a9538cb6c348e,
 # held every line of it to the rank tiktoken loaded, and wrote this module
 # whole.
+#
+# Taken from OpenAI's tiktoken, whose licence travels with it here, as its
+# LICENSE states it:
+#
+# MIT License
+#
+# Copyright (c) 2022 OpenAI, Shantanu Jain
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 # The pattern, as tiktoken writes it, in the dialect of the Rust crate
 # `fancy-regex`; `tokenizer.new` reads it.

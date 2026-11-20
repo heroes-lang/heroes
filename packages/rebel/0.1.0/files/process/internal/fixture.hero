@@ -4,9 +4,22 @@
 # output and `sleep` waits; on Windows `cmd.exe` reads them, `sort` copies its
 # input (one line passes unchanged) and `ping` of 127.0.0.1 waits a second a
 # reply.
+#
+# The tests of the floor `process/hero_proc` stand here too, under
+# `## The floor's tests`: a child started through the floor's own doors, its
+# lists packed as C reads them, its pipe drained, and a folder made and
+# removed, the last bound to `hero_os.h` itself, so that the floor keeps one
+# function per C function and no policy (README § A2).
 
+use io/hero_stream
 use os
+use process/hero_proc
 use unicode
+
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_dir_remove_tree(path: cstr lent) -> i64
 
 # Whether the tests run on Windows.
 function on_windows() -> bool
@@ -159,3 +172,103 @@ function unix_lines(text: str) -> str
             kept @ kept.push(c)
 
     return kept.join("")
+
+## The floor's tests
+
+# The words as the one list C reads: each followed by a zero byte.
+function packed(words: [str]) -> [u8]
+    out: [u8] @= []
+
+    for word in words
+        for i in range(from: 0, to: word.len())
+            out @ out.push(word[i])
+
+        out @ out.push(0)
+
+    return out
+
+# Everything `s` holds up to its end.
+function drained(s: hero_stream.Stream) -> [u8]
+    out: [u8] @= []
+    part: [u8] @= []
+
+    while true
+        got = hero_stream.read(s, @part, n: 256)
+
+        if got <= 0
+            return out
+
+        for i in range(from: 0, to: got)
+            out @ out.push(part[i])
+
+# Whether `text` ends with `tail`.
+function ends_with(text: str, tail: str) -> bool
+    return text.len() >= tail.len() && text.slice(from: text.len() - tail.len(), to: text.len()) == tail
+
+# The three kinds of a child the tests neither feed nor read.
+function quiet() -> [i64]
+    return [hero_proc.HERO_PROC_STDIO_NOTHING, hero_proc.HERO_PROC_STDIO_NOTHING, hero_proc.HERO_PROC_STDIO_NOTHING]
+
+# A child with its lists already bytes and no stream of the program's.
+function begun(program: str, arguments: [u8], environment_kind: i64, environment: [u8], folder: str, kinds: [i64]) -> hero_proc.Proc
+    words: [u8] @= arguments
+    variables: [u8] @= environment
+    return hero_proc.start(
+        program: program,
+        arguments: @words,
+        arguments_count: words.len().to_u64().must(),
+        environment_kind: environment_kind,
+        environment: @variables,
+        environment_count: variables.len().to_u64().must(),
+        folder: folder,
+        in_kind: kinds[0],
+        in_stream: nullptr,
+        out_kind: kinds[1],
+        out_stream: nullptr,
+        err_kind: kinds[2],
+        err_stream: nullptr
+    )
+
+# A child of `program` with `words`, this process's environment, and `folder`.
+function child(program: str, words: [str], folder: str, kinds: [i64]) -> hero_proc.Proc
+    none: [u8] = []
+    return begun(
+        program: program,
+        arguments: packed(words),
+        environment_kind: hero_proc.HERO_PROC_ENV_PARENT,
+        environment: none,
+        folder: folder,
+        kinds: kinds
+    )
+
+# The shell's arguments for one command of `words`: `-c` and the command as
+# one word, and on Windows `/c` and each word, which `cmd.exe` joins itself.
+function shell_words(words: [str]) -> [str]
+    if on_windows()
+        out: [str] @= ["/c"]
+
+        for word in words
+            out @ out.push(word)
+
+        return out
+
+    return ["-c", join(words, " ")]
+
+# The shell, `shell_program`, running one command.
+function shell(words: [str], folder: str, kinds: [i64]) -> hero_proc.Proc
+    return child(program: shell_program(), words: shell_words(words), folder: folder, kinds: kinds)
+
+# The folder a test works in, made new under `build/` of the folder the tests
+# run from, and its name, which holds this process's number.
+function scratch_name(name: str) -> str
+    return f"rebel-hero_proc-{os.pid()}-{name}"
+
+# The folder of that name, made.
+function scratch(name: str) -> str
+    folder = "build/" + scratch_name(name)
+    _ = hero_fs_mkdir_all(folder.cstr())
+    return folder
+
+# Whether `folder` is gone, removed with everything a test left in it.
+function cleared(folder: str) -> bool
+    return hero_dir_remove_tree(folder.cstr()) == HERO_OS_OK

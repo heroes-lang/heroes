@@ -22,7 +22,7 @@ capability seal/sizes  the bytes of a nonce, of a tag, and what sealing adds
   rust    ring::aead::NONCE_LEN, ring::aead::MAX_TAG_LEN
   python  -
 capability seal/nonce-bound  a key that refuses to seal past the texts its random nonces allow
-  heroes  seal.SEALS_MOST
+  heroes  seal.MAX_SEALS
   go      -
   rust    ring::aead::NonceSequence
   python  -

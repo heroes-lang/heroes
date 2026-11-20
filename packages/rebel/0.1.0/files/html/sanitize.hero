@@ -133,6 +133,48 @@ function ugc_policy() -> Policy
 function rich_text_policy() -> Policy
     return Policy(rules: ready.rich_text())
 
+## Cleaning
+
+# `text` cleaned by `policy`: what it keeps of the fragment, written as
+# `html.format` writes a tree.
+#
+# - `policy`: the policy.
+# - `text`: the fragment, any text at all, read inside the policy's context
+#   element as a browser reads `innerHTML`.
+#
+# The answer read again inside that element is a tree the policy keeps
+# whole, and written again it is the same bytes: it is read, cleaned and
+# written again until a reading takes nothing out and writes what it read, at
+# most eight times, and where eight readings do not settle, the answer is the
+# text alone, escaped. Empty where nothing is kept.
+#
+# It costs a reading by `html.parse_fragment`, a walk of the tree and a
+# writing by `html.format` for each reading, two for most texts.
+#
+# See also `clean_fragment`, `has_markup`.
+function clean(policy: Policy, text: str) -> str
+    return walk.cleaned_text(policy.rules, text)
+
+# The tree of `clean`'s answer, read as a browser reads it inside the
+# policy's context element: a fragment whose node `html.ROOT` holds what was
+# kept.
+#
+# - `policy`: the policy.
+# - `text`: the fragment, any text at all.
+#
+# See also `clean`.
+function clean_fragment(policy: Policy, text: str) -> html.Document
+    return html.parse_fragment(text: walk.cleaned_text(policy.rules, text), context: policy.rules.context)
+
+# Whether `text` holds markup: an element, a comment, a doctype or a
+# processing instruction, read as a browser reads a `div`'s `innerHTML`, as
+# Rust's ammonia's `is_html` answers.
+#
+# - `text`: any text; a character reference and a lone `<` are text, not
+#   markup.
+function has_markup(text: str) -> bool
+    return walk.has_markup(text)
+
 ## Elements
 
 # Lets the elements `names` stay, with the attributes allowed on them.
@@ -582,48 +624,6 @@ function allow_lists(@policy: Policy)
 # - `policy`: the policy, changed in place.
 function allow_tables(@policy: Policy)
     ready.tables(@policy.rules)
-
-## Cleaning
-
-# `text` cleaned by `policy`: what it keeps of the fragment, written as
-# `html.format` writes a tree.
-#
-# - `policy`: the policy.
-# - `text`: the fragment, any text at all, read inside the policy's context
-#   element as a browser reads `innerHTML`.
-#
-# The answer read again inside that element is a tree the policy keeps
-# whole, and written again it is the same bytes: it is read, cleaned and
-# written again until a reading takes nothing out and writes what it read, at
-# most eight times, and where eight readings do not settle, the answer is the
-# text alone, escaped. Empty where nothing is kept.
-#
-# It costs a reading by `html.parse_fragment`, a walk of the tree and a
-# writing by `html.format` for each reading, two for most texts.
-#
-# See also `clean_fragment`, `has_markup`.
-function clean(policy: Policy, text: str) -> str
-    return walk.cleaned_text(policy.rules, text)
-
-# The tree of `clean`'s answer, read as a browser reads it inside the
-# policy's context element: a fragment whose node `html.ROOT` holds what was
-# kept.
-#
-# - `policy`: the policy.
-# - `text`: the fragment, any text at all.
-#
-# See also `clean`.
-function clean_fragment(policy: Policy, text: str) -> html.Document
-    return html.parse_fragment(text: walk.cleaned_text(policy.rules, text), context: policy.rules.context)
-
-# Whether `text` holds markup: an element, a comment, a doctype or a
-# processing instruction, read as a browser reads a `div`'s `innerHTML`, as
-# Rust's ammonia's `is_html` answers.
-#
-# - `text`: any text; a character reference and a lone `<` are text, not
-#   markup.
-function has_markup(text: str) -> bool
-    return walk.has_markup(text)
 
 ## Tests
 

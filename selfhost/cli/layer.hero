@@ -238,17 +238,40 @@ function linked_program(t: toolchain.Toolchain, dir: str, name: str, body: str) 
     assert ran.started && ran.code == 0
     return binary
 
-# The layer's functions `binary` defines, `hero_net_*` and `hero_time_*`, read
-# with the platform's `nm`, Darwin's names without the `_` its symbols open
-# with: those of type `T`, a function the binary defines and exports, the
-# members' own `static` helpers being `t`.
-function layer_defined(t: toolchain.Toolchain, binary: str) -> [str]
-    out_path = binary + ".nm.txt"
-    ran = process.run(program: "nm", words: ["nm", binary], out: out_path, err: process.discard())
+# A function a file defines and exports, and the member of an archive that
+# holds it, `hero_time` for `hero_time.o`; "" where the file is no archive.
+record Defined
+    member: str
+    name: str
+
+# The functions `path` defines, read with the platform's `nm`, Darwin's names
+# without the `_` its symbols open with: those of type `T`, a function the
+# file defines and exports, a member's own `static` helpers being `t`. For an
+# archive `nm` opens each member's lines with its name and a `:`, as
+# `lib.a(hero_time.o):` on Darwin and `hero_time.o:` in GNU's, and each
+# function is that member's: the layer as the archiver wrote it, so no name
+# of the layer is copied into a test (the round's base, 2026-11-20, found the
+# clock's member defining five functions where this read named one).
+function defined_by(t: toolchain.Toolchain, path: str) -> [Defined]
+    out_path = path + ".nm.txt"
+    ran = process.run(program: "nm", words: ["nm", path], out: out_path, err: process.discard())
     assert ran.started && ran.code == 0
-    found: [str] @= []
+    found: [Defined] @= []
+    member: str @= ""
 
     for line in deps.lines(read_back.words(out_path).must())
+        if strings.ends_with(text: line, suffix: ".o):") || strings.ends_with(text: line, suffix: ".o:")
+            open: i64 @= line.len() - 1
+
+            while open > 0 && line[open - 1] != '(' && line[open - 1] != '/'
+                open @ open - 1
+
+            close: i64 @= line.len() - 1
+
+            if strings.ends_with(text: line, suffix: ".o):")
+                close @ close - 1
+            member @ base_of(line.slice(from: open, to: close))
+            continue
         cut: i64 @= line.len()
 
         while cut > 0 && line[cut - 1] != ' '
@@ -258,16 +281,29 @@ function layer_defined(t: toolchain.Toolchain, binary: str) -> [str]
 
         if link_flags.apple(t.target) && strings.starts_with(text: name, prefix: "_")
             name @ name.slice(from: 1, to: name.len())
-        defined = cut >= 2 && line[cut - 2] == 'T'
 
-        if defined && (strings.starts_with(text: name, prefix: "hero_net_") || strings.starts_with(text: name, prefix: "hero_time_"))
-            found @ found.push(name)
+        if cut >= 2 && line[cut - 2] == 'T'
+            found @ found.push(Defined(member: member, name: name))
 
     return found
 
-function names_one(found: [str], prefix: str) -> bool
-    for name in found
-        if strings.starts_with(text: name, prefix: prefix)
+# The members of `members`, an archive's functions, of which `by` defines a
+# function, in the archive's order, each once: the linker takes a member
+# whole, so one of its functions defined is the member taken.
+function taken(members: [Defined], by: [Defined]) -> [str]
+    out: [str] @= []
+
+    for one in members
+        if one.member != "" && !has_name(out, one.member)
+            for own in by
+                if own.name == one.name && !has_name(out, one.member)
+                    out @ out.push(one.member)
+
+    return out
+
+function has_name(names: [str], name: str) -> bool
+    for one in names
+        if one == name
             return true
 
     return false
@@ -318,13 +354,21 @@ test "every link carries the layer, and a program takes only the members it call
     )
 
     if !link_flags.msvc(t.target)
-        assert layer_defined(t, binary: none).len() == 0
-        assert layer_defined(t, binary: clock) == ["hero_time_monotonic_ns"]
-        assert layer_defined(t, binary: named).len() == 0
-        assert names_one(layer_defined(t, binary: net), prefix: "hero_net_close")
-        assert !names_one(layer_defined(t, binary: net), prefix: "hero_time_")
-        assert names_one(layer_defined(t, binary: both), prefix: "hero_net_")
-        assert names_one(layer_defined(t, binary: both), prefix: "hero_time_")
+        archived = archive(t, level: "-O0", sanitize: false).must()[0]
+        members = defined_by(t, path: archived)
+
+        # Every member of the layer defines a function, so a member no
+        # binary below takes is still read here.
+        assert taken(members: members, by: defined_by(t, path: archived)).len() == runtime_key.layer_members(t.runtime).must().len()
+        assert taken(members: members, by: defined_by(t, path: none)).len() == 0
+        assert taken(members: members, by: defined_by(t, path: clock)) == ["hero_time"]
+        assert taken(members: members, by: defined_by(t, path: named)).len() == 0
+        net_took = taken(members: members, by: defined_by(t, path: net))
+        assert has_name(net_took, "hero_net")
+        assert !has_name(net_took, "hero_time")
+        both_took = taken(members: members, by: defined_by(t, path: both))
+        assert has_name(both_took, "hero_net")
+        assert has_name(both_took, "hero_time")
     assert !process.remove_tree(dir).is_err()
 
 # **Two cold builds in one `build/` write one archive, and the cache serves

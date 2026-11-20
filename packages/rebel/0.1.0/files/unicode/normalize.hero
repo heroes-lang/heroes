@@ -10,8 +10,8 @@
 # What it does NOT do: say what a character is, its class or its simple case
 # (`unicode`); change the case of a text by the rules every language shares
 # (`strings.to_lower`, `strings.to_upper`, `strings.to_casefold`); order texts
-# by the rules of a language (`i18n`); cut a text into what a reader sees as
-# characters (`unicode/segment`).
+# by the rules of a language (`i18n/collate`); cut a text into what a reader
+# sees as characters (`unicode/segment`).
 #
 # A text is a `str`, so it is UTF-8 already and nothing here reads bytes; a
 # function that takes a character aborts where it is handed the empty text or
@@ -32,7 +32,7 @@ use unicode/normalize/internal/tables
 constant NOT_FOUND: str
     "not_found"
 
-## Limits
+## Version
 
 # The version of Unicode the tables hold.
 constant UNICODE_VERSION: str

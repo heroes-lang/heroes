@@ -158,7 +158,7 @@ capability scan/end  the end of the text as a token
   note    the kind `end`, answered again at every call after it, as Go's EOF
 
 capability scan/values  the value a literal token spells: a string unquoted, an integer, a float
-  heroes  scanner.text_value, scanner.int_value, scanner.float_value
+  heroes  scanner.text_of, scanner.int_of, scanner.float_of
   go      strconv.Unquote, strconv.ParseInt, strconv.ParseFloat (beside the census, asked as oracles)
   rust    -
   python  -

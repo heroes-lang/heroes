@@ -2067,8 +2067,11 @@ test "a library defining a name the runtime calls or defines is refused, unless 
     )
 
     # An allocator replaces `malloc` on purpose only where its group binds
-    # every name of the C library it defines that the runtime calls.
-    for shape in [["alloc_main", "counting", "`calloc`, `free`, `malloc`"], ["alloc_bound", "counting2", "`calloc`, `free`"]]
+    # every name of the C library it defines that the runtime calls: all four,
+    # `realloc` among them since `hero_layer_grow`, the platform layer's
+    # memory in `runtime/parts/alloc.c`, calls it (`nm -u` of the runtime's
+    # object, 2026-11-20).
+    for shape in [["alloc_main", "counting", "`calloc`, `free`, `malloc`, `realloc`"], ["alloc_bound", "counting2", "`calloc`, `free`, `realloc`"]]
         alloc = built_against(scratch: scratch, compiler: compiler, dir: dir, program: shape[0])
         assert refused_at(
             alloc,

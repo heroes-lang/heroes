@@ -1,7 +1,7 @@
 # The platform layer's sockets, `hero_net.h`, bound thin: one function per C
 # function, each answering what C answers. They stand in C's order, and where
 # a call fails its socket is `nullptr` or its count -1, and `last_error` then
-# the kind. Rebel's floor of the network (`examples/packages/README.md` § 4.1):
+# the kind. Rebel's floor of the network (`examples-rebel/README.md` § A2):
 # no policy stands here, and the face above it turns every kind below into a
 # code. It began as the floor of `core`'s `net`, whose every line stands, and
 # after them come the layer's datagrams, names and a socket's two addresses.
