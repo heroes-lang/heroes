@@ -1,5 +1,5 @@
-# The pieces of OpenTelemetry's protocol, OTLP 1.x, that a metrics request is
-# built from, on `protobuf`'s wire: fields written in the order of their
+# The pieces of OpenTelemetry's protocol, OTLP 1.x, that every signal's
+# request is built from, on `protobuf`'s wire: fields written in the order of their
 # numbers, and a scalar at its default left out as proto3 leaves it out, so the
 # bytes are those Python's `opentelemetry-proto` writes for the same message.
 # Field numbers are the `.proto` files' of opentelemetry-proto 1.x, read from
@@ -8,10 +8,6 @@
 use bytes
 use math
 use protobuf
-
-# `AggregationTemporality`'s cumulative, the one a registry's values have.
-constant CUMULATIVE: u64
-    2
 
 # Writes the string `s` as field `number`, left out where it is empty.
 function put_text(@to: [u8], number: i64, s: str)
@@ -32,6 +28,20 @@ function put_varint(@to: [u8], number: i64, v: u64)
         return
     protobuf.push_tag(@to, number: number, wire: .varint)
     protobuf.push_uvarint(@to, v)
+
+# Writes `b` as field `number`, left out where it is empty, as a proto3
+# `bytes` field is.
+function put_bytes_unless_empty(@to: [u8], number: i64, b: [u8])
+    if b.len() == 0
+        return
+    put_bytes(to: @to, number: number, b: b)
+
+# Writes `v` as the `fixed32` field `number`, left out where it is 0.
+function put_fixed32(@to: [u8], number: i64, v: u32)
+    if v == 0
+        return
+    protobuf.push_tag(@to, number: number, wire: .fixed32)
+    protobuf.push_fixed32(@to, v)
 
 # Writes `v` as the `fixed64` field `number`, left out where it is 0.
 function put_fixed64(@to: [u8], number: i64, v: u64)
@@ -59,6 +69,27 @@ function unix_nanoseconds(n: i64) -> u64
     if n < 0
         return 0
     return to_u64(n).must()
+
+# `s` cut to its first `length` characters, as OpenTelemetry's attribute
+# length limit cuts a text; `s` whole where `length` is 0 or more than it
+# holds.
+function cut_text(s: str, length: i64) -> str
+    if length <= 0 || s.len() <= length
+        return s
+    seen @= 0
+    at @= 0
+
+    while at < s.len()
+        if seen == length
+            return s.slice(from: 0, to: at)
+        at @ at + 1
+
+        while at < s.len() && s[at] >= 128 && s[at] < 192
+            at @ at + 1
+
+        seen @ seen + 1
+
+    return s
 
 # `AnyValue` holding the string `s`: field 1, written even where empty, since
 # it is a oneof's member.
@@ -199,6 +230,13 @@ function status_message(body: [u8]) -> str
 
     return ""
 
+test "cut_text: no limit, a text shorter, one cut, and characters of two bytes cut whole"
+    assert cut_text("abc", length: 0) == "abc"
+    assert cut_text("abc", length: 5) == "abc"
+    assert cut_text("abcdef", length: 2) == "ab"
+    assert cut_text("éèê", length: 2) == "éè"
+    assert cut_text("aé", length: 1) == "a"
+
 test "twos_complement: zero, the largest, -1 and the smallest i64"
     assert twos_complement(0) == 0
     assert twos_complement(9_223_372_036_854_775_807) == 9_223_372_036_854_775_807
@@ -225,15 +263,25 @@ test "key_value and the AnyValues: the bytes Python's opentelemetry-proto writes
     # AnyValue(array_value=ArrayValue(values=[AnyValue(int_value=1)]))
     assert any_array([any_integer(1)]) == [42, 4, 10, 2, 24, 1]
 
+test "put_fixed32 and put_bytes_unless_empty: zero and empty left out"
+    out: [u8] @= []
+    put_fixed32(@out, number: 16, v: 0)
+    put_bytes_unless_empty(to: @out, number: 4, b: [])
+    assert out.len() == 0
+
+    # Span(flags=257) and Span(parent_span_id=b"\x01")
+    put_fixed32(@out, number: 16, v: 257)
+    assert out == [133, 1, 1, 1, 0, 0]
+
 test "scope and resource: empty fields left out"
     assert scope(name: "", version: "") == []
     assert scope(name: "m", version: "1") == [10, 1, 109, 18, 1, 49]
     assert resource([]) == []
 
-test "partial_of: an empty answer, and one refusing two points"
+test "partial_of: an empty answer, and one refusing two spans"
     assert partial_of([]).must() == Partial(rejected: 0, message: "")
 
-    # ExportMetricsServiceResponse(partial_success=ExportMetricsPartialSuccess(rejected_data_points=2, error_message="no"))
+    # ExportTraceServiceResponse(partial_success=ExportTracePartialSuccess(rejected_spans=2, error_message="no"))
     assert partial_of([10, 6, 8, 2, 18, 2, 110, 111]).must() == Partial(rejected: 2, message: "no")
     assert partial_of([10]).is_err()
 

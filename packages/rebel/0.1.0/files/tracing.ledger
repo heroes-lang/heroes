@@ -90,7 +90,7 @@ capability sampling/record-only  a span recorded and not exported
   note    A span is a value the program holds, recorded or not; only one sampled is kept by `end`
 
 capability tracer/provider  a tracer with its resource, scope, sampler, limits and clock
-  heroes  tracing.new_tracer, tracing.with_sampler, tracing.with_resource, tracing.with_scope, tracing.with_limits, tracing.with_clock, tracing.Scope
+  heroes  tracing.new_tracer, tracing.with_sampler, tracing.with_resource, tracing.with_scope, tracing.with_limits, tracing.with_clock, otlp.Scope
   go      sdk/trace.TracerProvider, NewTracerProvider, TracerProvider.Tracer, TracerProviderOption, WithSampler, WithResource, WithSpanLimits, WithRawSpanLimits, WithAttributeValueDepthLimit, trace.Tracer, TracerProvider, TracerConfig, NewTracerConfig, TracerOption, WithInstrumentationVersion, WithInstrumentationAttributes, WithInstrumentationAttributeSet, WithSchemaURL
   rust    opentelemetry_sdk::trace::SdkTracerProvider, TracerProviderBuilder, Config, SdkTracer, Tracer, opentelemetry::trace::Tracer, TracerProvider, InstrumentationScope, InstrumentationScopeBuilder
   python  sdk.trace.TracerProvider, TracerProvider.get_tracer, Tracer, InstrumentationScope, InstrumentationInfo
@@ -116,7 +116,7 @@ capability spans/current  the span current in a context passed through calls
   python  trace.get_current_span, set_span_in_context, use_span, Tracer.start_as_current_span, context
 
 capability spans/attributes  a span's attributes, a key set again replacing it
-  heroes  tracing.set_attribute, tracing.Attribute, tracing.AttributeValue
+  heroes  tracing.set_attribute, otlp.Attribute, otlp.AttributeValue
   go      trace.Span.SetAttributes, attribute.KeyValue, attribute.Key, attribute.Value, attribute.String, Int, Int64, Float64, Bool, StringSlice, Int64Slice, Float64Slice, BoolSlice, attribute.Set, NewSet, Distinct, Filter, Iterator, Sortable
   rust    opentelemetry::KeyValue, Key, Value, Array, StringValue, trace::Span::set_attribute, set_attributes
   python  Span.set_attribute, Span.set_attributes, util.types.Attributes, BoundedAttributes
@@ -164,7 +164,7 @@ capability spans/http-server  a server's span from a request, with OpenTelemetry
   note    What Go's `otelhttp` and Python's instrumentations of the contrib repositories do, which the census did not reach: the caller's `traceparent` read, `http.request.method`, `url.path`, `url.query`, `user_agent.original`, `client.address`, `http.response.status_code`, and an error for 500 and above
 
 capability export/otlp-http  spans posted to a collector by OTLP over HTTP, with retries and the environment's settings
-  heroes  tracing.encode_spans, tracing.export_spans, tracing.otlp_to, tracing.otlp_from_env, tracing.Otlp, tracing.Exported, tracing.Signal, tracing.TRACES_URL
+  heroes  tracing.encode_spans, tracing.export_spans, otlp.exporter_to, otlp.exporter_from_env, otlp.Exporter, otlp.Exported, otlp.Signal, otlp.TRACES_URL
   go      otlptracehttp.New, NewClient, NewUnstarted, Option, WithEndpoint, WithEndpointURL, WithURLPath, WithHeaders, WithCompression, Compression, WithEncoding, Encoding, WithRetry, RetryConfig, WithTimeout, WithInsecure, WithTLSClientConfig, WithProxy, HTTPTransportProxyFunc, WithHTTPClient, WithMaxRequestSize, WithMaxResponseSize, sdk/trace.SpanExporter, ReadOnlySpan, ReadWriteSpan
   rust    opentelemetry_otlp::SpanExporter, SpanExporterBuilder, OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, OTEL_EXPORTER_OTLP_TRACES_HEADERS, OTEL_EXPORTER_OTLP_TRACES_COMPRESSION, OTEL_EXPORTER_OTLP_TRACES_TIMEOUT, OTEL_EXPORTER_OTLP_TRACES_PROTOCOL, OTEL_EXPORTER_OTLP_TRACES_INSECURE, opentelemetry_sdk::trace::SpanData, SpanExporter, error::ExportError, OTelSdkError, OTelSdkResult
   python  trace_exporter.OTLPSpanExporter, DEFAULT_ENDPOINT, DEFAULT_TRACES_EXPORT_PATH, DEFAULT_TIMEOUT, DEFAULT_COMPRESSION, Compression, encode_spans, OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, OTEL_EXPORTER_OTLP_TRACES_HEADERS, OTEL_EXPORTER_OTLP_TRACES_COMPRESSION, OTEL_EXPORTER_OTLP_TRACES_TIMEOUT, OTEL_EXPORTER_OTLP_TRACES_CERTIFICATE, OTEL_EXPORTER_OTLP_TRACES_CLIENT_CERTIFICATE, OTEL_EXPORTER_OTLP_TRACES_CLIENT_KEY, SpanExportResult, ReadableSpan, RequestPayloadTooLargeError
@@ -191,14 +191,14 @@ capability export/transports  OTLP over gRPC, and OTLP/HTTP's JSON
   note    OTLP/HTTP with protobuf, which every collector takes, is written; gRPC would stand on `grpc`, not written yet
 
 capability resource  what produced the spans, set by the program
-  heroes  tracing.with_resource, tracing.Attribute
+  heroes  tracing.with_resource, otlp.Attribute
   go      sdk/resource.Resource, New, NewWithAttributes, NewSchemaless, Empty, Merge, Option, WithAttributes, WithSchemaURL, Resource.Attributes, Equal, Equivalent, Iter, Len, Set, String, SchemaURL, Encoded, MarshalJSON, MarshalLog
   rust    opentelemetry_sdk::Resource, resource::ResourceBuilder, resource::Iter
   python  sdk.resources.Resource, SERVICE_NAME, SERVICE_NAMESPACE, SERVICE_INSTANCE_ID and the other attribute names
   note    `new_tracer` sets `service.name`; the SDKs add the SDK's own name and version and Python a random instance id
 
 capability resource/environment  a resource read from `OTEL_SERVICE_NAME` and `OTEL_RESOURCE_ATTRIBUTES`
-  heroes  tracing.resource_from_env
+  heroes  otlp.resource_from_env
   go      resource.Environment, EnvironmentWithContext, WithFromEnv
   rust    opentelemetry_sdk::resource::EnvResourceDetector
   python  sdk.resources.OTELResourceDetector, OTEL_RESOURCE_ATTRIBUTES, OTEL_SERVICE_NAME
@@ -226,7 +226,7 @@ capability logs/trace-fields  the fields that tie a line of a log that is not OT
   note    `trace_id`, `span_id` and `trace_flags` in hexadecimal, the names of OpenTelemetry's specification for logs in other formats, which the SDKs' bridges of `slog` and `logging` write as their own
 
 capability logs/export  log records posted to a collector by OTLP over HTTP
-  heroes  tracing.encode_logs, tracing.export_logs, tracing.LOGS_URL, tracing.otlp_from_env
+  heroes  tracing.encode_logs, tracing.export_logs, otlp.LOGS_URL, otlp.exporter_from_env
   go      otlploghttp.New, Exporter, Exporter.Export, ForceFlush, Shutdown, Option, WithEndpoint, WithEndpointURL, WithURLPath, WithHeaders, WithCompression, Compression, WithRetry, RetryConfig, WithTimeout, WithInsecure, WithTLSClientConfig, WithProxy, HTTPTransportProxyFunc, WithHTTPClient, WithMaxRequestSize, WithMaxResponseSize, Version, sdk/log.Exporter
   rust    opentelemetry_otlp::LogExporter, LogExporterBuilder, OTEL_EXPORTER_OTLP_LOGS_ENDPOINT, OTEL_EXPORTER_OTLP_LOGS_HEADERS, OTEL_EXPORTER_OTLP_LOGS_COMPRESSION, OTEL_EXPORTER_OTLP_LOGS_TIMEOUT, OTEL_EXPORTER_OTLP_LOGS_PROTOCOL, OTEL_EXPORTER_OTLP_LOGS_INSECURE, opentelemetry_sdk::logs::LogExporter, LogBatch
   python  _log_exporter.OTLPLogExporter, DEFAULT_LOGS_EXPORT_PATH, OTEL_EXPORTER_OTLP_LOGS_ENDPOINT, OTEL_EXPORTER_OTLP_LOGS_HEADERS, OTEL_EXPORTER_OTLP_LOGS_COMPRESSION, OTEL_EXPORTER_OTLP_LOGS_TIMEOUT, OTEL_EXPORTER_OTLP_LOGS_CERTIFICATE, OTEL_EXPORTER_OTLP_LOGS_CLIENT_CERTIFICATE, OTEL_EXPORTER_OTLP_LOGS_CLIENT_KEY, LogRecordExportResult, LogRecordExporter

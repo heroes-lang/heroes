@@ -1,28 +1,16 @@
-# What this package sends over HTTP: an OTLP request posted with its
-# retries, and the exporter's settings read from OpenTelemetry's environment
-# variables.
+# What `otlp` sends over HTTP: an OTLP request posted with its retries, and
+# an exporter's settings read from OpenTelemetry's environment variables.
 
 use compress
 use http
 use lists
 use os
+use otlp
+use otlp/internal/wire
 use retries
 use strings
 use time
-use tracing/internal/otlp
 use url
-
-# The code of a setting no request can carry.
-constant INVALID: str
-    "invalid"
-
-# The code of a collector that refused.
-constant FAILED: str
-    "failed"
-
-# The code `os.env` fails with for a variable that is not set.
-constant NOT_FOUND: str
-    "not_found"
 
 # The value of the environment variable `name`, trimmed, "" where it is not
 # set, as OpenTelemetry reads an unset variable and an empty one alike.
@@ -30,7 +18,7 @@ function env_text(name: str) -> str?
     match os.env(name)
         .ok v => return ok(strings.trim(v))
         .err e =>
-            if e.code == NOT_FOUND
+            if e.code == os.NOT_FOUND
                 return ok("")
             return fail(code: e.code, msg: e.msg)
 
@@ -55,9 +43,9 @@ function env_headers(text: str) -> [http.Header]?
                 key = strings.trim(h.before)
 
                 if key == ""
-                    return fail(code: INVALID, msg: f"the OTLP header \"{pair}\" has no key")
+                    return fail(code: otlp.INVALID, msg: f"the OTLP header \"{pair}\" has no key")
                 out @ out.push(http.Header(name: key, value: url.unescape(strings.trim(h.after))?))
-            .err _ => return fail(code: INVALID, msg: f"the OTLP header \"{pair}\" holds no =")
+            .err _ => return fail(code: otlp.INVALID, msg: f"the OTLP header \"{pair}\" holds no =")
 
     return ok(out)
 
@@ -69,7 +57,7 @@ function same_status(left: i64, right: i64) -> bool
 # sending again after a status of `policy.statuses`, and answers what the
 # collector says it refused. Fails `failed` for a status other than 2xx after
 # every retry.
-function post(client: http.Client, target: str, headers: [http.Header], gzip: bool, policy: http.Retries, body: [u8]) -> otlp.Partial?
+function post(client: http.Client, target: str, headers: [http.Header], gzip: bool, policy: http.Retries, body: [u8]) -> wire.Partial?
     r @= http.request(method: http.METHOD_POST, target: target)?
 
     for h in headers
@@ -91,13 +79,13 @@ function post(client: http.Client, target: str, headers: [http.Header], gzip: bo
         response = http.send(client, r: r)?
 
         if response.status >= 200 && response.status < 300
-            return otlp.partial_of(response.body)
+            return wire.partial_of(response.body)
         again = attempt < policy.count && lists.contains(policy.statuses, value: response.status, same: same_status)
 
         if !again
             return fail(
-                code: FAILED,
-                msg: f"the collector at {target} answered {response.status}: {otlp.status_message(response.body)}"
+                code: otlp.FAILED,
+                msg: f"the collector at {target} answered {response.status}: {wire.status_message(response.body)}"
             )
         attempt @ attempt + 1
         wait = retries.drawn_wait(policy.backoff, failures: attempt, previous: last)?

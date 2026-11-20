@@ -104,6 +104,7 @@ packages = [
     "os",
     "os/hero_disk",
     "os/hero_sys",
+    "otlp",
     "path",
     "pdf",
     "pem",

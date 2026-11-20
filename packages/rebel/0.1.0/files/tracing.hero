@@ -31,22 +31,18 @@
 use bytes
 use http
 use log
-use numbers
+use otlp
 use random
-use retries
-use strings
 use time
 use tracing/internal/fixture
 use tracing/internal/ids
-use tracing/internal/otlp
-use tracing/internal/posting
 use tracing/internal/w3c
 
 ## Codes
 
 # The code of a field, an id or a setting that is not the format:
 # `parse_traceparent`, `parse_tracestate`, `parse_trace_id`, `extract`,
-# `with_state`, `otlp_from_env`.
+# `with_state`.
 constant INVALID: str
     "invalid"
 
@@ -351,52 +347,15 @@ record Limits
 function default_limits() -> Limits
     return Limits(attributes: 128, events: 128, links: 128, attribute_length: 0, queue: 2_048)
 
-# What an attribute holds, as OTLP's `AnyValue` does.
-variant AttributeValue
-    # A text.
-    text
-        # The text.
-        v: str
-    # `true` or `false`.
-    boolean
-        # The value.
-        v: bool
-    # A whole number.
-    integer
-        # The number.
-        v: i64
-    # A float.
-    number
-        # The number.
-        v: f64
-    # A list of texts.
-    texts
-        # The texts, in order.
-        v: [str]
-
-# An attribute: a key and its value, `http.request.method` and `GET`.
-record Attribute
-    # The key, by OpenTelemetry's semantic conventions where one names it.
-    key: str
-    # The value.
-    value: AttributeValue
-
-# The instrumentation scope: the library or program that made the spans.
-record Scope
-    # Its name, `myapp`.
-    name: str
-    # Its version, `1.2.0`; "" for none.
-    version: str
-
 # What makes spans and keeps the ended ones: the resource and scope they are
 # exported under, the sampler, the limits, the generator of ids, the clock, and
 # the spans ended and not yet exported. Made by `new_tracer`, changed by the
 # `with_` functions, passed `@` to `start` and `end`.
 record Tracer
     # What produced the spans: `service.name` above all.
-    resource: [Attribute]
+    resource: [otlp.Attribute]
     # The library or program that made them.
-    scope: Scope
+    scope: otlp.Scope
     # Which traces are recorded.
     sampler: Sampler
     # What each span keeps at most.
@@ -423,41 +382,8 @@ record Tracer
 # refuses. See also `start`.
 function new_tracer(service: str) -> Tracer?
     return ok(
-        Tracer(resource: [Attribute(key: "service.name", value: .text(v: service))], scope: Scope(name: service, version: ""), sampler: .parent_or_ratio(fraction: 1.0), limits: default_limits(), generator: random.from_system()?, clock: time.now, ended: [], dropped: 0)
+        Tracer(resource: [otlp.Attribute(key: "service.name", value: .text(v: service))], scope: otlp.Scope(name: service, version: ""), sampler: .parent_or_ratio(fraction: 1.0), limits: default_limits(), generator: random.from_system()?, clock: time.now, ended: [], dropped: 0)
     )
-
-# A resource as OpenTelemetry's environment variables describe it:
-# `service.name` from `OTEL_SERVICE_NAME`, else from
-# `OTEL_RESOURCE_ATTRIBUTES`, else `service`; then every other `key=value`
-# pair of `OTEL_RESOURCE_ATTRIBUTES`, between commas, trimmed and
-# percent-decoded, each a text, as Python's SDK reads them.
-#
-# - `service`: the service's name where neither variable names one.
-#
-# Fails `invalid` where a pair of `OTEL_RESOURCE_ATTRIBUTES` has no `=`, an
-# empty key or a bad escape, as Go's SDK refuses it (Python passes it over),
-# and as `os.env` fails with a code other than `not_found`. See also
-# `with_resource`.
-function resource_from_env(service: str) -> [Attribute]?
-    named @= ""
-    others: [Attribute] @= []
-
-    for h in posting.env_headers(posting.env_text("OTEL_RESOURCE_ATTRIBUTES")?)?
-        if h.name == "service.name"
-            named @ h.value
-        else
-            others @ others.push(Attribute(key: h.name, value: .text(v: h.value)))
-
-    name = posting.first_set(
-        specific: posting.env_text("OTEL_SERVICE_NAME")?,
-        general: posting.first_set(specific: named, general: service)
-    )
-    out: [Attribute] @= [Attribute(key: "service.name", value: .text(v: name))]
-
-    for a in others
-        out @ out.push(a)
-
-    return ok(out)
 
 # A copy of `tracer` sampling by `sampler`.
 #
@@ -473,7 +399,7 @@ function with_sampler(tracer: Tracer, sampler: Sampler) -> Tracer
 # - `tracer`: the tracer copied.
 # - `resource`: the resource's attributes, `service.name` among them by
 #   custom.
-function with_resource(tracer: Tracer, resource: [Attribute]) -> Tracer
+function with_resource(tracer: Tracer, resource: [otlp.Attribute]) -> Tracer
     out @= tracer
     out.resource @ resource
     return out
@@ -482,7 +408,7 @@ function with_resource(tracer: Tracer, resource: [Attribute]) -> Tracer
 #
 # - `tracer`: the tracer copied.
 # - `scope`: the library or program's name and version.
-function with_scope(tracer: Tracer, scope: Scope) -> Tracer
+function with_scope(tracer: Tracer, scope: otlp.Scope) -> Tracer
     out @= tracer
     out.scope @ scope
     return out
@@ -545,7 +471,7 @@ record Event
     # When.
     at: time.Instant
     # Its attributes.
-    attributes: [Attribute]
+    attributes: [otlp.Attribute]
     # How many attributes the limits dropped.
     dropped_attributes: i64
 
@@ -554,7 +480,7 @@ record Link
     # The context linked to.
     context: SpanContext
     # Its attributes.
-    attributes: [Attribute]
+    attributes: [otlp.Attribute]
     # How many attributes the limits dropped.
     dropped_attributes: i64
 
@@ -577,7 +503,7 @@ record Span
     # When it ended; its start until `end` sets it.
     end: time.Instant
     # Its attributes, each key once.
-    attributes: [Attribute]
+    attributes: [otlp.Attribute]
     # Its events, in order.
     events: [Event]
     # Its links, in order.
@@ -670,18 +596,18 @@ function start_server(@tracer: Tracer, r: http.Request) -> Span?
         .ok parent => start_child(@tracer, name: r.method, kind: .server, parent: parent)?
         .err _     => start(@tracer, name: r.method, kind: .server)?
 
-    set_attribute(@span, a: Attribute(key: "http.request.method", value: .text(v: r.method)))
-    set_attribute(@span, a: Attribute(key: "url.path", value: .text(v: r.url.path)))
+    set_attribute(@span, a: otlp.Attribute(key: "http.request.method", value: .text(v: r.method)))
+    set_attribute(@span, a: otlp.Attribute(key: "url.path", value: .text(v: r.url.path)))
 
     if r.url.query != ""
-        set_attribute(@span, a: Attribute(key: "url.query", value: .text(v: r.url.query)))
+        set_attribute(@span, a: otlp.Attribute(key: "url.query", value: .text(v: r.url.query)))
 
     match http.value_of(r.headers, name: "User-Agent")
-        .ok agent => set_attribute(@span, a: Attribute(key: "user_agent.original", value: .text(v: agent)))
+        .ok agent => set_attribute(@span, a: otlp.Attribute(key: "user_agent.original", value: .text(v: agent)))
         .err _    => _ = 0
 
     if r.remote != ""
-        set_attribute(@span, a: Attribute(key: "client.address", value: .text(v: r.remote)))
+        set_attribute(@span, a: otlp.Attribute(key: "client.address", value: .text(v: r.remote)))
     return ok(span)
 
 # Records the response a server's span answered: `http.response.status_code`,
@@ -691,7 +617,7 @@ function start_server(@tracer: Tracer, r: http.Request) -> Span?
 # - `span`: the span, which gains the attribute and maybe the status.
 # - `response`: the response.
 function set_response(@span: Span, response: http.Response)
-    set_attribute(@span, a: Attribute(key: "http.response.status_code", value: .integer(v: response.status)))
+    set_attribute(@span, a: otlp.Attribute(key: "http.response.status_code", value: .integer(v: response.status)))
 
     floor = match span.kind
         .client                                     => 400
@@ -708,7 +634,7 @@ function set_response(@span: Span, response: http.Response)
 #
 # A new key past the limits' `attributes` is dropped and counted in
 # `dropped_attributes`.
-function set_attribute(@span: Span, a: Attribute)
+function set_attribute(@span: Span, a: otlp.Attribute)
     for i in range(from: 0, to: span.attributes.len())
         if span.attributes[i].key == a.key
             span.attributes[i] @ a
@@ -729,11 +655,11 @@ function set_attribute(@span: Span, a: Attribute)
 #
 # An event past the limits' `events` is dropped and counted in
 # `dropped_events`. See also `record_error`.
-function add_event(@span: Span, name: str, at: time.Instant, attributes: [Attribute])
+function add_event(@span: Span, name: str, at: time.Instant, attributes: [otlp.Attribute])
     if span.events.len() >= span.limits.events
         span.dropped_events @ span.dropped_events + 1
         return
-    kept: [Attribute] @= []
+    kept: [otlp.Attribute] @= []
 
     for a in attributes
         if kept.len() < span.limits.attributes
@@ -751,14 +677,14 @@ function add_event(@span: Span, name: str, at: time.Instant, attributes: [Attrib
 # - `attributes`: its attributes, limited as an event's are.
 #
 # A link past the limits' `links` is dropped and counted in `dropped_links`.
-function add_link(@span: Span, context: SpanContext, attributes: [Attribute])
+function add_link(@span: Span, context: SpanContext, attributes: [otlp.Attribute])
     if !is_valid(context)
         return
 
     if span.links.len() >= span.limits.links
         span.dropped_links @ span.dropped_links + 1
         return
-    kept: [Attribute] @= []
+    kept: [otlp.Attribute] @= []
 
     for a in attributes
         if kept.len() < span.limits.attributes
@@ -783,7 +709,7 @@ function record_error(@span: Span, message: str, at: time.Instant)
         @span,
         name: "exception",
         at: at,
-        attributes: [Attribute(key: "exception.message", value: .text(v: message))]
+        attributes: [otlp.Attribute(key: "exception.message", value: .text(v: message))]
     )
 
 # Sets `span`'s status, by OpenTelemetry's rules: `ok` is final, `unset` is
@@ -833,113 +759,6 @@ function end(@tracer: Tracer, span: Span) -> ()?
 
 ## Exporting by OTLP
 
-# Where and how OTLP requests are sent over HTTP. Made by `otlp_to` or
-# `otlp_from_env`, its fields changed by the program.
-record Otlp
-    # How each request is sent; its own retries are not used, the method being
-    # `POST`.
-    client: http.Client
-    # The whole URL requests are posted to.
-    url: str
-    # Fields every request carries.
-    headers: [http.Header]
-    # Whether the body is sent compressed by gzip.
-    gzip: bool
-    # When a request is sent again, as `metrics`'s exporter does.
-    retries: http.Retries
-
-# The URL OTLP's spans are posted to where nothing else says.
-constant TRACES_URL: str
-    "http://localhost:4318/v1/traces"
-
-# The URL OTLP's log records are posted to where nothing else says.
-constant LOGS_URL: str
-    "http://localhost:4318/v1/logs"
-
-# Which of OTLP's signals an exporter sends.
-variant Signal
-    # Spans, to `/v1/traces`.
-    traces
-    # Log records, to `/v1/logs`.
-    logs
-
-# An exporter posting to `target`, uncompressed, with no field of its own,
-# sending again 3 times after a status of 429, 502, 503 or 504, from 1 second
-# doubled up to 30.
-#
-# - `target`: the whole URL, `TRACES_URL`, `LOGS_URL` or a collector's.
-#
-# See also `otlp_from_env`.
-function otlp_to(target: str) -> Otlp
-    return Otlp(
-        client: http.default_client(),
-        url: target,
-        headers: [],
-        gzip: false,
-        retries: http.Retries(count: 3, statuses: [429, 502, 503, 504], backoff: retries.backoff(first: time.seconds(1).must(), multiplier: 2.0, longest: time.seconds(30).must()).must())
-    )
-
-# An exporter of `signal` as OpenTelemetry's environment variables describe
-# it: `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` (or `_LOGS_`) taken whole, or
-# `OTEL_EXPORTER_OTLP_ENDPOINT` with `/v1/traces` or `/v1/logs` after it; the
-# headers, the compression and the timeout of `OTEL_EXPORTER_OTLP_HEADERS`,
-# `_COMPRESSION` and `_TIMEOUT` and their kin of the signal.
-#
-# - `signal`: which signal.
-#
-# Fails `invalid` where a header pair has no `=`, the compression is neither
-# `gzip` nor `none`, or the timeout is no whole number of milliseconds; and as
-# `os.env` fails with a code other than `not_found`.
-function otlp_from_env(signal: Signal) -> Otlp?
-    word = match signal
-        .traces => "TRACES"
-        .logs   => "LOGS"
-
-    path = match signal
-        .traces => "/v1/traces"
-        .logs   => "/v1/logs"
-
-    out @= otlp_to("http://localhost:4318" + path)
-    specific = posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_ENDPOINT")?
-    general = posting.env_text("OTEL_EXPORTER_OTLP_ENDPOINT")?
-
-    if specific != ""
-        out.url @ specific
-    else if general != ""
-        out.url @ strings.trim_suffix(s: general, suffix: "/") + path
-    out.headers @ posting.env_headers(posting.first_set(specific: posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_HEADERS")?, general: posting.env_text("OTEL_EXPORTER_OTLP_HEADERS")?))?
-    compression = posting.first_set(
-        specific: posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_COMPRESSION")?,
-        general: posting.env_text("OTEL_EXPORTER_OTLP_COMPRESSION")?
-    )
-
-    match compression
-        "gzip" => out.gzip @ true
-        "none" | "" => out.gzip @ false
-        _ => return fail(code: INVALID, msg: f"the OTLP compression \"{compression}\" is neither gzip nor none")
-
-    timeout = posting.first_set(
-        specific: posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_TIMEOUT")?,
-        general: posting.env_text("OTEL_EXPORTER_OTLP_TIMEOUT")?
-    )
-
-    if timeout != ""
-        match numbers.parse_int(timeout)
-            .ok ms => out.client.deadline_ms @ ms
-            .err _ => return fail(
-                code: INVALID,
-                msg: f"the OTLP timeout \"{timeout}\" is no whole number of milliseconds"
-            )
-    return ok(out)
-
-# The outcome of an export a collector accepted: how much of it it refused
-# none the less, and why.
-record Exported
-    # How many spans or records were refused; 0 for none.
-    rejected: i64
-    # The collector's words; "" where it refused nothing.
-    message: str
-
 # The OTLP request `spans` make: an `ExportTraceServiceRequest`, its bytes as
 # protobuf writes them, as Python's exporter fills it.
 #
@@ -950,11 +769,11 @@ record Exported
 # Each span's `flags` say whether its parent was remote, its status is always
 # written, an empty parent, state or attribute list is left out. See also
 # `export_spans`.
-function encode_spans(spans: [Span], resource: [Attribute], scope: Scope) -> [u8]
+function encode_spans(spans: [Span], resource: [otlp.Attribute], scope: otlp.Scope) -> [u8]
     # Every list of attributes the request writes, the resource's first, then
     # each span's, its events' and its links', each with its length limit;
     # encoded in one pass so one place reads an attribute's value.
-    groups: [[Attribute]] @= [resource]
+    groups: [[otlp.Attribute]] @= [resource]
     lengths: [i64] @= [0]
 
     for s in spans
@@ -975,25 +794,12 @@ function encode_spans(spans: [Span], resource: [Attribute], scope: Scope) -> [u8
         values: [[u8]] @= []
 
         for a in groups[g]
-            value = match a.value
-                .text t    => otlp.any_text(otlp.cut_text(t.v, length: lengths[g]))
-                .boolean b => otlp.any_boolean(b.v)
-                .integer n => otlp.any_integer(n.v)
-                .number x  => otlp.any_number(x.v)
-                .texts ts =>
-                    items: [[u8]] @= []
-
-                    for t in ts.v
-                        items @ items.push(otlp.any_text(otlp.cut_text(t, length: lengths[g])))
-
-                    otlp.any_array(items)
-
-            values @ values.push(otlp.key_value(key: a.key, value: value))
+            values @ values.push(otlp.attribute_bytes(a, length: lengths[g]))
 
         encoded @ encoded.push(values)
 
     scoped: [u8] @= []
-    otlp.put_bytes(to: @scoped, number: 1, b: otlp.scope(name: scope.name, version: scope.version))
+    otlp.put_bytes(to: @scoped, number: 1, b: otlp.scope_bytes(scope))
     next @= 1
 
     for s in spans
@@ -1012,8 +818,8 @@ function encode_spans(spans: [Span], resource: [Attribute], scope: Scope) -> [u8
             .consumer => 5
 
         otlp.put_varint(@span, number: 6, v: kind)
-        otlp.put_fixed64(@span, number: 7, v: otlp.unix_nanoseconds(s.start.unix_nanoseconds))
-        otlp.put_fixed64(@span, number: 8, v: otlp.unix_nanoseconds(s.end.unix_nanoseconds))
+        otlp.put_fixed64(@span, number: 7, v: otlp.unix_nanoseconds(s.start))
+        otlp.put_fixed64(@span, number: 8, v: otlp.unix_nanoseconds(s.end))
 
         for kv in encoded[next]
             otlp.put_bytes(to: @span, number: 9, b: kv)
@@ -1023,7 +829,7 @@ function encode_spans(spans: [Span], resource: [Attribute], scope: Scope) -> [u8
 
         for e in s.events
             event: [u8] @= []
-            otlp.put_fixed64(@event, number: 1, v: otlp.unix_nanoseconds(e.at.unix_nanoseconds))
+            otlp.put_fixed64(@event, number: 1, v: otlp.unix_nanoseconds(e.at))
             otlp.put_text(@event, number: 2, s: e.name)
 
             for kv in encoded[next]
@@ -1074,7 +880,7 @@ function encode_spans(spans: [Span], resource: [Attribute], scope: Scope) -> [u8
         otlp.put_bytes(to: @scoped, number: 2, b: span)
 
     resourced: [u8] @= []
-    otlp.put_bytes(to: @resourced, number: 1, b: otlp.resource(encoded[0]))
+    otlp.put_bytes(to: @resourced, number: 1, b: otlp.resource_bytes(encoded[0]))
     otlp.put_bytes(to: @resourced, number: 2, b: scoped)
     out: [u8] @= []
     otlp.put_bytes(to: @out, number: 1, b: resourced)
@@ -1089,7 +895,7 @@ function encode_spans(spans: [Span], resource: [Attribute], scope: Scope) -> [u8
 # What the collectors refused, added up. Fails `failed` where a collector
 # answers a status other than 2xx after every retry, the spans not sent kept;
 # `invalid` where its answer is no protobuf message; and as `http.send` fails.
-function export_spans(@tracer: Tracer, exporter: Otlp) -> Exported?
+function export_spans(@tracer: Tracer, exporter: otlp.Exporter) -> otlp.Exported?
     rejected @= 0
     messages: [str] @= []
 
@@ -1099,14 +905,14 @@ function export_spans(@tracer: Tracer, exporter: Otlp) -> Exported?
         else
             512
         batch = tracer.ended.slice(from: 0, to: count)
-        partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, policy: exporter.retries, body: encode_spans(batch, resource: tracer.resource, scope: tracer.scope))?
+        partial = otlp.export(exporter, body: encode_spans(batch, resource: tracer.resource, scope: tracer.scope))?
         tracer.ended @ tracer.ended.slice(from: count, to: tracer.ended.len())
         rejected @ rejected + partial.rejected
 
         if partial.message != ""
             messages @ messages.push(partial.message)
 
-    return ok(Exported(rejected: rejected, message: messages.join("; ")))
+    return ok(otlp.Exported(rejected: rejected, message: messages.join("; ")))
 
 ## Log records
 
@@ -1123,7 +929,7 @@ record LogRecord
     # The message.
     body: str
     # Its fields as attributes.
-    attributes: [Attribute]
+    attributes: [otlp.Attribute]
     # The trace's 16 bytes; none outside a span.
     trace_id: [u8]
     # The span's 8 bytes; none outside a span.
@@ -1146,7 +952,7 @@ record LogRecord
 #
 # See also `log_fields`, `export_logs`.
 function log_record(context: SpanContext, level: log.Level, msg: str, fields: [log.Field], at: time.Instant) -> LogRecord
-    attributes: [Attribute] @= []
+    attributes: [otlp.Attribute] @= []
     lists: [[log.Field]] @= [fields]
     places: [i64] @= [0]
     prefixes: [str] @= [""]
@@ -1173,13 +979,13 @@ function log_record(context: SpanContext, level: log.Level, msg: str, fields: [l
             prefixes[top] + "." + f.key
 
         match f.value
-            .text t     => attributes @ attributes.push(Attribute(key: key, value: .text(v: t.v)))
-            .integer n  => attributes @ attributes.push(Attribute(key: key, value: .integer(v: n.v)))
-            .number x   => attributes @ attributes.push(Attribute(key: key, value: .number(v: x.v)))
-            .boolean b  => attributes @ attributes.push(Attribute(key: key, value: .boolean(v: b.v)))
-            .duration d => attributes @ attributes.push(Attribute(key: key, value: .integer(v: d.v.nanoseconds)))
+            .text t     => attributes @ attributes.push(otlp.Attribute(key: key, value: .text(v: t.v)))
+            .integer n  => attributes @ attributes.push(otlp.Attribute(key: key, value: .integer(v: n.v)))
+            .number x   => attributes @ attributes.push(otlp.Attribute(key: key, value: .number(v: x.v)))
+            .boolean b  => attributes @ attributes.push(otlp.Attribute(key: key, value: .boolean(v: b.v)))
+            .duration d => attributes @ attributes.push(otlp.Attribute(key: key, value: .integer(v: d.v.nanoseconds)))
             .instant i  => attributes @ attributes.push(
-                Attribute(key: key, value: .text(v: time.format(i.v, .rfc3339)))
+                otlp.Attribute(key: key, value: .text(v: time.format(i.v, .rfc3339)))
             )
             .group g =>
                 lists @ lists.push(g.fields)
@@ -1235,8 +1041,8 @@ function log_fields(context: SpanContext) -> [log.Field]
 # A level is written as OpenTelemetry's severity: `DEBUG` 5, `INFO` 9, `WARN`
 # 13, `ERROR` 17, its text as `log.level_name` writes it. See also
 # `export_logs`.
-function encode_logs(records: [LogRecord], resource: [Attribute], scope: Scope) -> [u8]
-    groups: [[Attribute]] @= [resource]
+function encode_logs(records: [LogRecord], resource: [otlp.Attribute], scope: otlp.Scope) -> [u8]
+    groups: [[otlp.Attribute]] @= [resource]
 
     for r in records
         groups @ groups.push(r.attributes)
@@ -1247,30 +1053,17 @@ function encode_logs(records: [LogRecord], resource: [Attribute], scope: Scope) 
         values: [[u8]] @= []
 
         for a in groups[g]
-            value = match a.value
-                .text t    => otlp.any_text(otlp.cut_text(t.v, length: 0))
-                .boolean b => otlp.any_boolean(b.v)
-                .integer n => otlp.any_integer(n.v)
-                .number x  => otlp.any_number(x.v)
-                .texts ts =>
-                    items: [[u8]] @= []
-
-                    for t in ts.v
-                        items @ items.push(otlp.any_text(otlp.cut_text(t, length: 0)))
-
-                    otlp.any_array(items)
-
-            values @ values.push(otlp.key_value(key: a.key, value: value))
+            values @ values.push(otlp.attribute_bytes(a, length: 0))
 
         encoded @ encoded.push(values)
 
     scoped: [u8] @= []
-    otlp.put_bytes(to: @scoped, number: 1, b: otlp.scope(name: scope.name, version: scope.version))
+    otlp.put_bytes(to: @scoped, number: 1, b: otlp.scope_bytes(scope))
 
     for i in range(from: 0, to: records.len())
         r = records[i]
         entry: [u8] @= []
-        otlp.put_fixed64(@entry, number: 1, v: otlp.unix_nanoseconds(r.at.unix_nanoseconds))
+        otlp.put_fixed64(@entry, number: 1, v: otlp.unix_nanoseconds(r.at))
 
         severity: u64 = match r.level
             .debug => 5
@@ -1280,7 +1073,7 @@ function encode_logs(records: [LogRecord], resource: [Attribute], scope: Scope) 
 
         otlp.put_varint(@entry, number: 2, v: severity)
         otlp.put_text(@entry, number: 3, s: log.level_name(r.level))
-        otlp.put_bytes(to: @entry, number: 5, b: otlp.any_text(r.body))
+        otlp.put_bytes(to: @entry, number: 5, b: otlp.value_bytes(.text(v: r.body), length: 0))
 
         for kv in encoded[i + 1]
             otlp.put_bytes(to: @entry, number: 6, b: kv)
@@ -1288,11 +1081,11 @@ function encode_logs(records: [LogRecord], resource: [Attribute], scope: Scope) 
         otlp.put_fixed32(@entry, number: 8, v: to_u32(r.flags).must())
         otlp.put_bytes_unless_empty(to: @entry, number: 9, b: r.trace_id)
         otlp.put_bytes_unless_empty(to: @entry, number: 10, b: r.span_id)
-        otlp.put_fixed64(@entry, number: 11, v: otlp.unix_nanoseconds(r.observed.unix_nanoseconds))
+        otlp.put_fixed64(@entry, number: 11, v: otlp.unix_nanoseconds(r.observed))
         otlp.put_bytes(to: @scoped, number: 2, b: entry)
 
     resourced: [u8] @= []
-    otlp.put_bytes(to: @resourced, number: 1, b: otlp.resource(encoded[0]))
+    otlp.put_bytes(to: @resourced, number: 1, b: otlp.resource_bytes(encoded[0]))
     otlp.put_bytes(to: @resourced, number: 2, b: scoped)
     out: [u8] @= []
     otlp.put_bytes(to: @out, number: 1, b: resourced)
@@ -1300,17 +1093,16 @@ function encode_logs(records: [LogRecord], resource: [Attribute], scope: Scope) 
 
 # Sends `records` to `exporter`'s URL, as one request.
 #
-# - `exporter`: where and how, `otlp_to(LOGS_URL)` or `otlp_from_env(.logs)`.
+# - `exporter`: where and how, `otlp.exporter_to(otlp.LOGS_URL)` or `otlp.exporter_from_env(.logs)`.
 # - `records`: the records; none sends nothing.
 # - `resource`: what produced them.
 # - `scope`: what wrote them.
 #
 # Fails as `export_spans` does.
-function export_logs(exporter: Otlp, records: [LogRecord], resource: [Attribute], scope: Scope) -> Exported?
+function export_logs(exporter: otlp.Exporter, records: [LogRecord], resource: [otlp.Attribute], scope: otlp.Scope) -> otlp.Exported?
     if records.len() == 0
-        return ok(Exported(rejected: 0, message: ""))
-    partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, policy: exporter.retries, body: encode_logs(records, resource: resource, scope: scope))?
-    return ok(Exported(rejected: partial.rejected, message: partial.message))
+        return ok(otlp.Exported(rejected: 0, message: ""))
+    return otlp.export(exporter, body: encode_logs(records, resource: resource, scope: scope))
 
 ## Tests
 
@@ -1429,10 +1221,10 @@ test "set_attribute, add_event and add_link: a key replaced, each limit counting
         limits: Limits(attributes: 2, events: 1, links: 1, attribute_length: 0, queue: 10)
     )
     span @= start(@t, name: "x", kind: .internal).must()
-    set_attribute(@span, a: Attribute(key: "a", value: .integer(v: 1)))
-    set_attribute(@span, a: Attribute(key: "a", value: .integer(v: 2)))
-    set_attribute(@span, a: Attribute(key: "b", value: .boolean(v: true)))
-    set_attribute(@span, a: Attribute(key: "c", value: .text(v: "dropped")))
+    set_attribute(@span, a: otlp.Attribute(key: "a", value: .integer(v: 1)))
+    set_attribute(@span, a: otlp.Attribute(key: "a", value: .integer(v: 2)))
+    set_attribute(@span, a: otlp.Attribute(key: "b", value: .boolean(v: true)))
+    set_attribute(@span, a: otlp.Attribute(key: "c", value: .text(v: "dropped")))
     assert span.attributes.len() == 2
     assert span.attributes[0].value == .integer(v: 2)
     assert span.dropped_attributes == 1
@@ -1441,7 +1233,7 @@ test "set_attribute, add_event and add_link: a key replaced, each limit counting
         @span,
         name: "e",
         at: at,
-        attributes: [Attribute(key: "1", value: .text(v: "")), Attribute(key: "2", value: .text(v: "")), Attribute(key: "3", value: .text(v: ""))]
+        attributes: [otlp.Attribute(key: "1", value: .text(v: "")), otlp.Attribute(key: "2", value: .text(v: "")), otlp.Attribute(key: "3", value: .text(v: ""))]
     )
     add_event(@span, name: "f", at: at, attributes: [])
     assert span.events.len() == 1
@@ -1514,9 +1306,9 @@ test "encode_spans: the bytes opentelemetry-proto 1.45 writes for a server's spa
         kind: .server,
         start: at_start,
         end: at_end,
-        attributes: [Attribute(key: "a", value: .integer(v: 1)), Attribute(key: "s", value: .text(v: "abcdef"))],
-        events: [Event(name: "e", at: at_event, attributes: [Attribute(key: "x", value: .boolean(v: true))], dropped_attributes: 0)],
-        links: [Link(context: linked, attributes: [Attribute(key: "k", value: .text(v: "v"))], dropped_attributes: 0)],
+        attributes: [otlp.Attribute(key: "a", value: .integer(v: 1)), otlp.Attribute(key: "s", value: .text(v: "abcdef"))],
+        events: [Event(name: "e", at: at_event, attributes: [otlp.Attribute(key: "x", value: .boolean(v: true))], dropped_attributes: 0)],
+        links: [Link(context: linked, attributes: [otlp.Attribute(key: "k", value: .text(v: "v"))], dropped_attributes: 0)],
         status: Status(code: .error, message: "bad"),
         limits: limits,
         dropped_attributes: 2,
@@ -1542,8 +1334,8 @@ test "encode_spans: the bytes opentelemetry-proto 1.45 writes for a server's spa
     )
     body = encode_spans(
         [server, root],
-        resource: [Attribute(key: "service.name", value: .text(v: "svc"))],
-        scope: Scope(name: "m", version: "1")
+        resource: [otlp.Attribute(key: "service.name", value: .text(v: "svc"))],
+        scope: otlp.Scope(name: "m", version: "1")
     )
     assert bytes.format_hex(body) == "0a98020a170a150a0c736572766963652e6e616d6512050a0373766312fc010a060a016d12013112b1010a100af7651916cd43dd8448eb211c80319c120801020304050607081a06726f6a6f3d312208b7ad6b71692033312a03474554300239e80300000000000041d0070000000000004a070a0161120218014a0a0a017312050a0361626350025a1509dc050000000000001201651a070a0178120210016a2b0a100af7651916cd43dd8448eb211c80319c1208111111111111111122080a016b12030a017635000100007a0712036261641802850100030000123e0a100af7651916cd43dd8448eb211c80319c12080a0b0c0d0e0f10112a04726f6f74300139e80300000000000041d0070000000000007a00850100010000"
 
@@ -1574,8 +1366,8 @@ test "log_record, log_fields and encode_logs: a line in a span and one outside, 
     assert outside.trace_id.len() == 0
     body = encode_logs(
         [inside, outside],
-        resource: [Attribute(key: "service.name", value: .text(v: "svc"))],
-        scope: Scope(name: "m", version: "1")
+        resource: [otlp.Attribute(key: "service.name", value: .text(v: "svc"))],
+        scope: otlp.Scope(name: "m", version: "1")
     )
     assert bytes.format_hex(body) == "0aa0010a170a150a0c736572766963652e6e616d6512050a037376631284010a060a016d120131125909dc0500000000000010091a04494e464f2a070a0568656c6c6f32070a016e12021803320a0a03672e6b12030a017645010000004a100af7651916cd43dd8448eb211c80319c5208010203040506070859dc05000000000000121f094006000000000000100d1a045741524e2a030a0178594006000000000000"
     fields = log_fields(context)
@@ -1599,19 +1391,19 @@ test "log_record: a duration in nanoseconds, an instant as RFC 3339, a group wit
         fields: fields,
         at: time.epoch()
     )
-    assert r.attributes == [Attribute(key: "d", value: .integer(v: 2_000_000)), Attribute(key: "t", value: .text(v: "1970-01-01T00:00:00Z")), Attribute(key: "b", value: .boolean(v: true)), Attribute(key: "a.b.c", value: .number(v: 0.5))]
+    assert r.attributes == [otlp.Attribute(key: "d", value: .integer(v: 2_000_000)), otlp.Attribute(key: "t", value: .text(v: "1970-01-01T00:00:00Z")), otlp.Attribute(key: "b", value: .boolean(v: true)), otlp.Attribute(key: "a.b.c", value: .number(v: 0.5))]
 
 test "export_spans and export_logs: a collector that is not there, the spans kept, and nothing to send"
     t @= with_clock(new_tracer("svc").must(), clock: fixture.clock)
     span = start(@t, name: "x", kind: .internal).must()
     end(@t, span: span).must()
-    exporter @= otlp_to("http://127.0.0.1:9/v1/traces")
+    exporter @= otlp.exporter_to("http://127.0.0.1:9/v1/traces")
     exporter.client.deadline_ms @ 2_000
     assert export_spans(@t, exporter: exporter).is_err()
     assert t.ended.len() == 1
     empty @= with_clock(new_tracer("svc").must(), clock: fixture.clock)
-    assert export_spans(@empty, exporter: exporter).must() == Exported(rejected: 0, message: "")
-    assert export_logs(exporter, records: [], resource: [], scope: Scope(name: "", version: "")).must().rejected == 0
+    assert export_spans(@empty, exporter: exporter).must() == otlp.Exported(rejected: 0, message: "")
+    assert export_logs(exporter, records: [], resource: [], scope: otlp.Scope(name: "", version: "")).must().rejected == 0
 
 ## Examples
 
@@ -1694,10 +1486,6 @@ test "new_tracer: the checkout service"
     t = new_tracer("checkout").must()
     assert t.resource[0].value == .text(v: "checkout")
 
-# The resource the environment describes, here none but the name given.
-test "resource_from_env: a service's name"
-    assert resource_from_env("checkout").must()[0].key == "service.name"
-
 # A tracer keeping one trace in ten.
 test "with_sampler: one in ten"
     t = with_sampler(new_tracer("svc").must(), sampler: .parent_or_ratio(fraction: 0.1))
@@ -1707,13 +1495,13 @@ test "with_sampler: one in ten"
 test "with_resource: a name and a version"
     t = with_resource(
         new_tracer("svc").must(),
-        resource: [Attribute(key: "service.name", value: .text(v: "svc")), Attribute(key: "service.version", value: .text(v: "1.2.0"))]
+        resource: [otlp.Attribute(key: "service.name", value: .text(v: "svc")), otlp.Attribute(key: "service.version", value: .text(v: "1.2.0"))]
     )
     assert t.resource.len() == 2
 
 # A tracer whose spans name the library that made them.
 test "with_scope: a library's name"
-    assert with_scope(new_tracer("svc").must(), scope: Scope(name: "db", version: "1.0")).scope.name == "db"
+    assert with_scope(new_tracer("svc").must(), scope: otlp.Scope(name: "db", version: "1.0")).scope.name == "db"
 
 # A tracer keeping 16 attributes a span.
 test "with_limits: fewer attributes"
@@ -1759,7 +1547,7 @@ test "set_response: a 200"
 test "set_attribute: a user's id"
     t @= new_tracer("api").must()
     span @= start(@t, name: "x", kind: .internal).must()
-    set_attribute(@span, a: Attribute(key: "enduser.id", value: .text(v: "ada")))
+    set_attribute(@span, a: otlp.Attribute(key: "enduser.id", value: .text(v: "ada")))
     assert span.attributes.len() == 1
 
 # A cache missed, at a moment.
@@ -1808,14 +1596,6 @@ test "end: kept for export"
     end(@t, span: span).must()
     assert t.ended.len() == 1
 
-# An exporter to the collector on this machine.
-test "otlp_to: the local collector"
-    assert otlp_to(TRACES_URL).url == "http://localhost:4318/v1/traces"
-
-# An exporter of log records as the environment says, here nothing.
-test "otlp_from_env: logs"
-    assert otlp_from_env(.logs).must().url != ""
-
 # Ended spans as an OTLP request.
 test "encode_spans: one span"
     t @= new_tracer("api").must()
@@ -1827,7 +1607,7 @@ test "export_spans: no collector here"
     t @= new_tracer("api").must()
     span = start(@t, name: "x", kind: .internal).must()
     end(@t, span: span).must()
-    exporter @= otlp_to("http://127.0.0.1:9/v1/traces")
+    exporter @= otlp.exporter_to("http://127.0.0.1:9/v1/traces")
     exporter.client.deadline_ms @ 2_000
     assert export_spans(@t, exporter: exporter).is_err()
     assert t.ended.len() == 1
@@ -1858,11 +1638,11 @@ test "encode_logs: one record"
         fields: [],
         at: fixture.clock().must()
     )
-    assert encode_logs([r], resource: [], scope: Scope(name: "api", version: "")).len() > 0
+    assert encode_logs([r], resource: [], scope: otlp.Scope(name: "api", version: "")).len() > 0
 
 # An export to a collector that is not running here fails.
 test "export_logs: no collector here"
-    exporter @= otlp_to("http://127.0.0.1:9/v1/logs")
+    exporter @= otlp.exporter_to("http://127.0.0.1:9/v1/logs")
     exporter.client.deadline_ms @ 2_000
     r = log_record(
         parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must(),
@@ -1871,4 +1651,4 @@ test "export_logs: no collector here"
         fields: [],
         at: fixture.clock().must()
     )
-    assert export_logs(exporter, records: [r], resource: [], scope: Scope(name: "api", version: "")).is_err()
+    assert export_logs(exporter, records: [r], resource: [], scope: otlp.Scope(name: "api", version: "")).is_err()
