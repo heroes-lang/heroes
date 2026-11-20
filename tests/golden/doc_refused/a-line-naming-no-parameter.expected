@@ -1,0 +1,14 @@
+error[doc_unknown_parameter]: the comment of `sum` names a parameter `c`, and it has none of that name
+  at tests/golden/doc_refused/a-line-naming-no-parameter.hero:9:6
+    |
+  9 | # - `c`: the other
+    |      ^
+  note: its parameters are `a`, `b`, each named by one line in that order
+  fix (guess): name `b`, the parameter no line names
+
+error[doc_unknown_parameter]: the comment of `one` names a parameter `x`, and it has none of that name
+  at tests/golden/doc_refused/a-line-naming-no-parameter.hero:16:6
+     |
+  16 | # - `x`: nothing
+     |      ^
+  note: `one` takes no parameter, so its comment has no parameter line

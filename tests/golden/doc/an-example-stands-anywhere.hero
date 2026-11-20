@@ -1,0 +1,35 @@
+# An example is a documented `test` whose title opens with its function's name
+# and a colon, wherever it stands in the module (panel 253's R2: the prototype
+# took those under `## Examples` alone). A test with no comment is no example,
+# and a documented one whose title names no function is printed nowhere and
+# refused nothing.
+
+# The larger of two numbers.
+#
+# - `a`: one number
+# - `b`: the other
+function larger(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+# The larger first.
+test "larger: the first"
+    assert larger(a: 3, b: 2) == 3
+
+test "larger: no comment, so no example"
+    assert larger(a: 2, b: 2) == 2
+
+# A title naming no function of this module.
+test "smaller: not this module's"
+    assert larger(a: 1, b: 0) == 1
+
+# A title with no colon.
+test "larger and smaller"
+    assert larger(a: 0, b: 1) == 1
+
+## Tests
+
+# The larger second, under another heading.
+test "larger: the second"
+    assert larger(a: 2, b: 3) == 3

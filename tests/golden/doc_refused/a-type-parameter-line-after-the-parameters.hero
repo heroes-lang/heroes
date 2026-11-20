@@ -1,0 +1,11 @@
+# A type parameter's line may stand before every parameter's, as the
+# signature writes it first, and nowhere after them (spec § 1; panel 253's
+# R2; `examples-rebel/README.md` § A7).
+
+# The value handed back.
+#
+# - `kept`: the value
+#~v doc_parameter_order
+# - `A`: any type
+function same<A>(kept: A) -> A
+    return kept

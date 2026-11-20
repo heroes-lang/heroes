@@ -52,12 +52,17 @@ use strings
 #
 # `full/` since defect 289 (2026-10-04): `check`'s whole form, whose marks are
 # the normal arm's, so they witness its rules as `check/`'s do.
+#
+# `doc_refused/` since panel 253's R2 (2026-11-19): what `heroes doc` refuses,
+# told in `check`'s whole form, a line's refusal marked `#~v` on the comment
+# line above it.
 constant DIRECTORIES: [str]
     [
         "tests/golden/check"
         "tests/golden/unsupported"
         "tests/golden/permissive"
         "tests/golden/full"
+        "tests/golden/doc_refused"
     ]
 
 # The directories whose marks witness a thesis rule firing: the normal arm's.

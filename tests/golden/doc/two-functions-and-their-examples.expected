@@ -1,0 +1,40 @@
+# two-functions-and-their-examples
+
+Words counted and joined: the reference `heroes doc` prints of a module of
+two functions, each with its parameter lines, its call and an example under
+`## Examples` (spec § 1; panel 253's R2).
+
+## function count_words
+
+    function count_words(text: str) -> i64
+
+How many words `text` holds, a word being a run of bytes that are not
+spaces.
+
+- `text`: the words, spaced by one or more spaces
+
+    count_words(text)
+
+### Example
+
+    # Three words, two spaces between two of them.
+    test "count_words: three words"
+        assert count_words("one two  three") == 3
+
+## function joined
+
+    function joined(first: str, second: str, sep: str) -> str
+
+`first` then `second`, with `sep` between.
+
+- `first`: the text that opens the result
+- `second`: the text that closes it
+- `sep`: what stands between them
+
+    joined(first: first, second: second, sep: sep)
+
+### Example
+
+    # A dash between two words.
+    test "joined: a dash"
+        assert joined(first: "a", second: "b", sep: "-") == "a-b"

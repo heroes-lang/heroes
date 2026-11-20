@@ -1,0 +1,11 @@
+# a-comment-the-file-opens-with-documents-its-function
+
+## function opening
+
+    function opening() -> i64
+
+The comment a file opens with, directly above a function, is the function's
+and is printed once, under it, never as the module's as well (panel 253's
+critic, finding 6).
+
+    opening()

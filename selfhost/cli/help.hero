@@ -60,6 +60,7 @@ function help() -> str
             .optional_operand => operand @ " [file]"
             .package_operand  => operand @ " [package]"
             .name_operand     => operand @ " <name>"
+            .module_operand   => operand @ " <module>"
             .no_operand       => operand @ operand
 
         rows @ rows.push("  " + command.name + operand + "\n      " + command.summary + "\n")

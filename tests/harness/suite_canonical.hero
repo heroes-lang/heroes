@@ -86,6 +86,10 @@ use strings
 # `packages` joined them on 2026-11-08 (panel 238's R10): the package
 # index left `examples/` for the repository's root, and its newest version's
 # `files/` is the package's source, read by every program that places it.
+# `tests/golden/doc` joined them on 2026-11-19 (panel 253's R2), written in
+# form: its modules check clean, and the reference quotes their comments and
+# examples as written, so a case out of form would move its expectation.
+# `tests/golden/doc_refused` stays out with `full/`, for `full/`'s reasons.
 constant SOURCE_DIRS: [str]
     [
         "selfhost"
@@ -97,6 +101,7 @@ constant SOURCE_DIRS: [str]
         "tests/golden/emit"
         "tests/golden/fixedbugs"
         "tests/golden/lldb"
+        "tests/golden/doc"
     ]
 
 # The floor is `suite_layout`'s own idea and it exists for the same reason — a
@@ -200,8 +205,9 @@ test "the walk names the directories that were swept, and the floor is under the
     # The list is the check: a directory dropped from it is a directory
     # that silently stops being source, and no other instrument would
     # notice. Seven, measured 2026-08-28; eight since 2026-10-12, `lldb/`;
-    # nine since 2026-11-08, the index at the root, `packages/`.
-    assert SOURCE_DIRS.len() == 9
+    # nine since 2026-11-08, the index at the root, `packages/`; ten since
+    # 2026-11-19, `doc/`.
+    assert SOURCE_DIRS.len() == 10
 
     # 371 files were swept that day. The floor sits below it with room for
     # ordinary growth and shrinkage, and above any plausible partial walk.
@@ -240,6 +246,10 @@ test "the exempt directories are named nowhere in the walk"
         # strict build refuses, run by the control arm, three of them refused
         # at parse, which `fmt` cannot read.
         assert dir != "tests/golden/control"
+
+        # and tests/golden/doc_refused since 2026-11-19 (panel 253's R2), for
+        # `full/`'s reasons: its expectations cite lines and columns.
+        assert dir != "tests/golden/doc_refused"
 
 test "a module a package fetch placed is no source, at any depth, and a folder only holding the word is (batch 26)"
     assert !is_source("tests/golden/run/fixedbugs-2351-x.case/heroes.packages/a@1.0.0-0bf9de114969a539/av.hero")

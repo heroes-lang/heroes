@@ -1,0 +1,6 @@
+error[doc_parameter_order]: the comment of `same` names `A` after `kept`, and the signature takes `A` first
+  at tests/golden/doc_refused/a-type-parameter-line-after-the-parameters.hero:9:6
+    |
+  9 | # - `A`: any type
+    |      ^
+  note: a reader matches each line to the call by its place: write the parameter lines in the signature's order
