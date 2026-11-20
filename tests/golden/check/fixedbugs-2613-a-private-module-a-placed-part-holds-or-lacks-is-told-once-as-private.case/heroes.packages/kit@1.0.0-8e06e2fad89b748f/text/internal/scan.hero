@@ -1,0 +1,7 @@
+# Private to `text`: placed with it, named by no program.
+function first_at(line: str, mark: u8) -> i64
+    for at in range(from: 0, to: line.len())
+        if line[at] == mark
+            return at
+
+    return line.len()

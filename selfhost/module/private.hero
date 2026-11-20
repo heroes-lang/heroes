@@ -19,6 +19,7 @@ use diag
 use module/placed
 use placed_use
 use source
+use token
 
 # Every `use` naming a private module from outside its owner:
 # `<rebel>/strings/internal/scan` is `<rebel>/strings`'s, the module before the
@@ -41,12 +42,22 @@ function told(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [d
             continue
 
         if !reaches(from: from, name: name)
-            owner = owner_of(name)
-            out @ out.push(
-                diag.new_diagnostic(code: "private_module", message: "`" + name + "` is private to `" + owner + "`: " + placed_use.PRIVATE_RULE + "; name what `" + owner + "` offers instead", span: used.name)
-            )
+            out @ out.push(refusal(name: name, span: used.name))
 
     return out
+
+# The refusal of a `use` naming the private module `name` from outside its
+# owner, at `span`: asked by `told` of a module the compilation holds, and by
+# `module/package_told.hero` of one its version holds and a placed part does
+# not (defect 2613), so the rule is told once, in one set of words, wherever
+# the module stands.
+function refusal(name: str, span: token.Span) -> diag.Diagnostic
+    owner = owner_of(name)
+    return diag.new_diagnostic(
+        code: "private_module",
+        message: "`" + name + "` is private to `" + owner + "`: " + placed_use.PRIVATE_RULE + "; name what `" + owner + "` offers instead",
+        span: span
+    )
 
 # Whether a file of the compilation is the module `name`.
 function held(s: source.Source, name: str) -> bool

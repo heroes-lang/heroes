@@ -1,0 +1,5 @@
+# Defect 2613's case: a `packages` line naming a private module, which no
+# program's `use` writes.
+[dependencies.kit]
+path = "vendor/kit"
+packages = ["csv", "csv/internal/scan"]

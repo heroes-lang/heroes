@@ -1,0 +1,6 @@
+add kit@1.0.0 --index file://../../../../../tests/golden/fetch/fixedbugs-2614-a-tree-no-entry-names-after-an-add-is-removed.case/idx -C <work>/app
+add kit -C <work>/app
+add kit@1.0.0 -C <work>/app
+add kit/csv -C <work>/app
+add kit@1.1.0 -C <work>/app
+run <work>/app/main.hero

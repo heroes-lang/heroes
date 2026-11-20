@@ -1,0 +1,5 @@
+# Defect 2613's case: an entry whose `packages` line lists `csv`, read from a
+# folder of the author's own.
+[dependencies.kit]
+path = "vendor/kit"
+packages = ["csv"]

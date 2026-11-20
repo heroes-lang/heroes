@@ -1,0 +1,3 @@
+# Private to `flags`: in the version, and in no part placed for `csv`.
+function one() -> i64
+    return 1

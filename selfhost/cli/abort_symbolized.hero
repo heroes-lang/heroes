@@ -1,0 +1,297 @@
+# Each address an aborted program told, turned into the calls the build's
+# line tables hold there, innermost first (panel 253's R5; `cli/abort_calls`
+# tells them, `runtime/parts/calls.c` wrote them).
+#
+# **The symbolizer is asked, never chosen by platform**: this file is not
+# allowed to know what platform it is on (`cli/process.hero`'s `discard`),
+# so each is tried in turn and the first that starts, ends at 0 and answers
+# every address with a place is read:
+#
+# - `atos -fullPath -i -o <binary>`, Darwin's, which reads the line tables
+#   through the binary's debug map from the build's own objects (the binary
+#   carries none on Darwin, panel 253's brief, `otool -l`); per address a line
+#   per level, `<function> (in <image>) (<file>:<line>)`, and a blank line,
+#   the file whole, the compile's folder before it, where without the flag
+#   it gives the file's last part alone;
+# - `llvm-symbolizer --inlines --relativenames`, the file as the `#line`
+#   named it, relative to the compile's folder; per address a function line
+#   and a `<file>:<line>:<column>` line per level, and a blank line;
+# - `addr2line -f -i -a`, binutils', where no LLVM tool is: per address its
+#   `0x...` line, then a function line and a `<file>:<line>` line per level,
+#   the compile's folder before the file.
+#
+# A level a symbolizer cannot place, `??`, a line 0, or atos's `+ <offset>`,
+# has no place, and an answer holding one is not read: the runtime's own
+# lines are told instead, so a line is never a guess.
+
+use bytes
+use cli/process
+use cli/strings
+use module/listing
+
+# One inlined level of a resolved address: the function's C name, and where
+# its call stands, `<file>:<line>`, or "" where the symbolizer knew none.
+record Level
+    callee: str
+    place: str
+
+# Each address's levels, from the first symbolizer that answers every one.
+function resolved(binary: str, addresses: [str], scratch: str) -> [[Level]]?
+    atos = asked(
+        words: strings.with_all(list: ["atos", "-fullPath", "-i", "-o", binary], more: addresses),
+        scratch: scratch
+    )
+
+    if !atos.is_err()
+        read = atos_levels(atos.must())
+
+        if complete(read, count: addresses.len())
+            return ok(read)
+    llvm = asked(
+        words: strings.with_all(list: ["llvm-symbolizer", "--inlines", "--relativenames", "--functions=linkage", "--obj=" + binary], more: addresses),
+        scratch: scratch
+    )
+
+    if !llvm.is_err()
+        read = llvm_levels(llvm.must())
+
+        if complete(read, count: addresses.len())
+            return ok(read)
+    gnu = asked(
+        words: strings.with_all(list: ["addr2line", "-f", "-i", "-a", "-e", binary], more: addresses),
+        scratch: scratch
+    )
+
+    if !gnu.is_err()
+        read = addr2line_levels(gnu.must())
+
+        if complete(read, count: addresses.len())
+            return ok(read)
+    return fail(code: "unresolved", msg: "no symbolizer answered every address")
+
+# A symbolizer's stdout, where it started and ended at 0; its stderr thrown
+# away, since what it says there is not the program's.
+function asked(words: [str], scratch: str) -> str?
+    ran = process.run(program: words[0], words: words, out: scratch, err: process.discard())
+    text = read_file(scratch)
+    _ = process.remove_file(scratch).is_err()
+
+    if !ran.started || ran.code != 0
+        return fail(code: "unasked", msg: words[0] + " did not answer")
+    return text
+
+# One block of levels per address, each level with a place.
+function complete(read: [[Level]], count: i64) -> bool
+    if read.len() != count
+        return false
+
+    for block in read
+        if block.len() == 0
+            return false
+
+        for level in block
+            if level.place.len() == 0
+                return false
+
+    return true
+
+function atos_levels(text: str) -> [[Level]]
+    out: [[Level]] @= []
+    block: [Level] @= []
+
+    for line in listing.lines_of(text)
+        if strings.trimmed(line).len() == 0
+            if block.len() > 0
+                out @ out.push(block)
+                block @ []
+        else
+            block @ block.push(atos_level(line))
+
+    if block.len() > 0
+        out @ out.push(block)
+    return out
+
+# `<function> (in <image>) (<file>:<line>)`; `<function> (in <image>) +
+# <offset>` has no place.
+function atos_level(line: str) -> Level
+    image = located(text: line, needle: " (in ")
+
+    if image < 0
+        return Level(callee: line, place: "")
+    callee = line.slice(from: 0, to: image)
+    open = last_byte(text: line, byte: '(')
+
+    if !strings.ends_with(text: line, suffix: ")") || open <= image + 4
+        return Level(callee: callee, place: "")
+    return Level(callee: callee, place: line_place(line.slice(from: open + 1, to: line.len() - 1)))
+
+function llvm_levels(text: str) -> [[Level]]
+    out: [[Level]] @= []
+    block: [Level] @= []
+    callee: str @= ""
+    named: bool @= false
+
+    for line in listing.lines_of(text)
+        if strings.trimmed(line).len() == 0
+            if block.len() > 0
+                out @ out.push(block)
+                block @ []
+            named @ false
+        else if !named
+            callee @ line
+            named @ true
+        else
+            block @ block.push(Level(callee: callee, place: line_place(without_column(line))))
+            named @ false
+
+    if block.len() > 0
+        out @ out.push(block)
+    return out
+
+function addr2line_levels(text: str) -> [[Level]]
+    out: [[Level]] @= []
+    block: [Level] @= []
+    started: bool @= false
+    callee: str @= ""
+    named: bool @= false
+
+    for line in listing.lines_of(text)
+        if strings.starts_with(text: line, prefix: "0x")
+            if started
+                out @ out.push(block)
+            block @ []
+            started @ true
+            named @ false
+        else if !named
+            callee @ line
+            named @ true
+        else
+            block @ block.push(Level(callee: callee, place: line_place(without_discriminator(line))))
+            named @ false
+
+    if started
+        out @ out.push(block)
+    return out
+
+# `<file>:<line>:<column>` less its column; a text with one colon as it is.
+function without_column(line: str) -> str
+    last = last_byte(text: line, byte: ':')
+
+    if last <= 0 || last_byte(text: line.slice(from: 0, to: last), byte: ':') < 0
+        return line
+    return line.slice(from: 0, to: last)
+
+# `<file>:<line> (discriminator <n>)` less its discriminator.
+function without_discriminator(line: str) -> str
+    paren = located(text: line, needle: " (discriminator ")
+
+    if paren < 0
+        return line
+    return line.slice(from: 0, to: paren)
+
+# A place a symbolizer gave, `<file>:<line>`, or "" where it gave none: `??`,
+# no line, or line 0.
+function line_place(text: str) -> str
+    colon = last_byte(text: text, byte: ':')
+
+    if colon <= 0 || strings.starts_with(text: text, prefix: "??")
+        return ""
+    number = decimal(text.slice(from: colon + 1, to: text.len()))
+
+    if number.is_err() || number.must() <= 0
+        return ""
+    return text
+
+# A count written in decimal digits alone, at most eighteen of them so it
+# fits an `i64`, or a failure.
+function decimal(text: str) -> i64?
+    if text.len() == 0 || text.len() > 18
+        return fail(code: "not_decimal", msg: text)
+    value: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] < '0' || text[at] > '9'
+            return fail(code: "not_decimal", msg: text)
+        value @ value * 10 + to_i64(text[at] - '0').must()
+
+    return ok(value)
+
+# The first offset at or after `from` holding `byte`, or -1.
+function byte_at(text: str, byte: u8, from: i64) -> i64
+    if from < 0
+        return -1
+    at: i64 @= from
+
+    while at < text.len()
+        if text[at] == byte
+            return at
+        at @ at + 1
+
+    return -1
+
+# The last offset holding `byte`, or -1.
+function last_byte(text: str, byte: u8) -> i64
+    at: i64 @= text.len() - 1
+
+    while at >= 0
+        if text[at] == byte
+            return at
+        at @ at - 1
+
+    return -1
+
+# The first offset holding `needle`, or -1, asked of the bytes and never by
+# slicing, since a slice ending inside a character aborts (`strings.holds`'s
+# reason, defect 296).
+function located(text: str, needle: str) -> i64
+    at: i64 @= 0
+
+    while at + needle.len() <= text.len()
+        if bytes.bytes_at(text: text, at: at, needle: needle)
+            return at
+        at @ at + 1
+
+    return -1
+
+## Tests
+
+test "atos's inlined levels are read per address, a level with no line read as none"
+    read = atos_levels(
+        "h_deep_pick (in deep-O2) (deep.hero:3)\nh_deep_middle (in deep-O2) (deep.hero:6)\nh_deep_outer (in deep-O2) (deep.hero:10)\n\nh_deep_main (in deep-O2) (deep.hero:14)\n\n"
+    )
+    assert read.len() == 2
+    assert read[0].len() == 3
+    assert read[0][1].callee == "h_deep_middle"
+    assert read[0][1].place == "deep.hero:6"
+    assert read[1][0].place == "deep.hero:14"
+    assert complete(read, count: 2)
+    assert !complete(read, count: 3)
+    assert !complete(atos_levels("h_deep_outer (in deep-O2) + 248\n\n"), count: 1)
+    assert !complete(atos_levels("0x100018e07 (in deep-O2)\n\n"), count: 1)
+
+test "llvm-symbolizer's levels are read, a column left out and `??` read as no place"
+    read = llvm_levels(
+        "h_deep_pick\ndeep.hero:3:12\nh_deep_outer\ncheck/state.hero:10:5\n\nh_deep_main\ndeep.hero:14:5\n\n"
+    )
+    assert read.len() == 2
+    assert read[0][0].place == "deep.hero:3"
+    assert read[0][1].place == "check/state.hero:10"
+    assert read[1][0].callee == "h_deep_main"
+    assert !complete(llvm_levels("??\n??:0:0\n\n"), count: 1)
+    assert !complete(llvm_levels("h_deep_main\ndeep.hero:0:0\n\n"), count: 1)
+
+test "addr2line's levels are read per address, a discriminator left out"
+    read = addr2line_levels(
+        "0x0000000000001234\nh_deep_pick\n/w/deep.hero:3\nh_deep_outer\n/w/deep.hero:10 (discriminator 2)\n0x0000000000001240\nh_deep_main\n/w/deep.hero:14\n"
+    )
+    assert read.len() == 2
+    assert read[0][1].place == "/w/deep.hero:10"
+    assert read[1][0].place == "/w/deep.hero:14"
+    assert !complete(addr2line_levels("0x0000000000001234\n??\n??:0\n"), count: 1)
+
+test "a count is read from its decimal digits alone"
+    assert decimal("14").must() == 14
+    assert decimal("").is_err()
+    assert decimal("1_0").is_err()
+    assert decimal("0x1").is_err()
+    assert decimal("1234567890123456789").is_err()

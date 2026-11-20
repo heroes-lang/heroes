@@ -12,7 +12,7 @@
 # The nineteen — the bootstrap's thirteen in their order but `-g`, then
 # panel 103's, then panel 154's, then panel 161's, then panel 199's two, then
 # panel 202's, then panel 204's; the debug word is the level's since panel 197
-# (`debug_words` below):
+# (`debug_words` below); the frame words are the machine's (`frame_words`):
 # - gnu11 not c11: one predefined macro apart (__STRICT_ANSI__), whose
 #   only effect on glibc is to hide M_PI, strdup, fileno and most of
 #   what §1.11 says a program binds (panel 047, ratified).
@@ -129,6 +129,7 @@ use cli/process
 
 extern "hero_compiler.h"
     function hero_frame_probes_asked() -> i64
+    function hero_frame_records_asked() -> i64
 
 function flags() -> [str]
     return [
@@ -195,11 +196,30 @@ function debug_words(level: str) -> [str]
 # `__chkstk`) and their clang warns the word unused on every compile, so it is
 # the machine's to ask, as `link_flags` asks for `-rdynamic`: a fact about its
 # C (`runtime/hero_compiler.h`), never a platform this file names.
+#
+# **-fno-omit-frame-pointer WHERE AN ABORT'S WALK READS FRAME RECORDS** (panel
+# 253's R5, ratified 2026-11-19). An abort tells the calls that led to it by
+# reading the frame records up the thread's stack (`runtime/parts/calls.c`),
+# and x86-64's clang keeps none at `-O2`: `clang -###` says
+# `-mframe-pointer=none` for `x86_64-linux-gnu`, and `all` with the word, so
+# there the walk found no call at all (the sitting's ffi-pragmatist, in the
+# emulated Linux x86-64 image). Both AArch64 targets keep a record in every
+# function that calls another by default, `non-leaf`, and ask the same with
+# the word: this Mac's driver hands the compiler proper the same line for
+# `arm64-apple-macos` either way, and Linux arm64's binary was byte-identical
+# with it (the same seat, `cmp`). The runtime's own frames between the abort
+# and the program's take it too (`level_words`), since one with no record
+# would end the walk as surely. Windows' runtime walks nothing yet, so it is
+# not asked there, and a binary's speed moves nowhere it buys nothing.
 function frame_words() -> [str]
+    out: [str] @= []
+
     if hero_frame_probes_asked() == 1
-        return ["-fstack-clash-protection"]
-    none: [str] = []
-    return none
+        out @ out.push("-fstack-clash-protection")
+
+    if hero_frame_records_asked() == 1
+        out @ out.push("-fno-omit-frame-pointer")
+    return out
 
 # Every word a compile or a link at `level` takes from this file, in the order
 # each line takes them: the list, the frame word, the level, its debug word,
@@ -337,16 +357,22 @@ test "the optimised build keeps a call in tail position a call (panel 199's R2)"
 # **The frame word is the machine's answer, and never the list's** (defect
 # 2253): `-fstack-clash-protection` where this machine's clang probes a frame
 # only when a compile asks, nothing elsewhere.
-test "the frame word is the machine's to ask, and never the list's (defect 2253)"
-    asked = hero_frame_probes_asked()
-    assert asked == 0 || asked == 1
-    assert frame_words().len() == asked
+test "the frame words are the machine's to ask, and never the list's (defect 2253, panel 253's R5)"
+    probes = hero_frame_probes_asked()
+    records = hero_frame_records_asked()
+    assert probes == 0 || probes == 1
+    assert records == 0 || records == 1
+    words = frame_words()
+    assert words.len() == probes + records
 
-    for word in frame_words()
-        assert word == "-fstack-clash-protection"
+    if probes == 1
+        assert words[0] == "-fstack-clash-protection"
+
+    if records == 1
+        assert words[words.len() - 1] == "-fno-omit-frame-pointer"
 
     for flag in flags()
-        assert flag != "-fstack-clash-protection"
+        assert flag != "-fstack-clash-protection" && flag != "-fno-omit-frame-pointer"
 
 # **A frame larger than a page is probed under the words a unit compiles with,
 # asked of the platform's own clang** (defect 2253): a function holding 4 MiB,

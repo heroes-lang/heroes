@@ -1,0 +1,2 @@
+add kit -C <work>/app
+run <work>/app/main.hero

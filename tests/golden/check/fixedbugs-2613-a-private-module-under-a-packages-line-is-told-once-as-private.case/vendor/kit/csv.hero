@@ -1,0 +1,5 @@
+# The package the program lists; its own `use` reaches its private module.
+use csv/internal/scan
+
+function first(line: str) -> str
+    return line.slice(from: 0, to: scan.comma_at(line))

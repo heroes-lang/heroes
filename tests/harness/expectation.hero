@@ -65,6 +65,21 @@
 # in <function>`, its second line. The line is read as that place followed
 # by a comma, so `5:1` never matches `5:11`.
 #
+# AND AN ABORT MAY NAME THE CALLS THAT LED THERE, since panel 253's R5
+# (2026-11-20):
+#
+#   !called: <what follows `, in `>   one line per `called from` line, in order
+#
+# just before the `!at:` line, or before the `!panic:` where there is none,
+# and only before a `!panic:`. Every abort tells, beneath its place, the
+# calls of the program that led there (`runtime/parts/calls.c`), `called
+# from <where>, in <function>[, <n> times]`; the where is an address in a
+# binary run alone (the `-O0` leg) and a `.hero` line under `heroes run`
+# (`selfhost/cli/abort_calls.hero`), so a case pins what follows `, in `,
+# which both say alike. A case that declares the lines has its stderr's
+# `called from` lines held to them, as many and in the same order; a case
+# that declares none is judged as before, its calls unread.
+#
 # AND A SILENT ENDING IS SILENT ON STDERR TOO, since panel 175's landing
 # (2026-09-23). This header said so from the day it was ported, *exit 0 with
 # a silent stderr*, and `unmet` checked the exit code alone, so a program that
@@ -92,6 +107,10 @@ record Expectation
     # Where the abort must say it stopped, when the case declares it with
     # `!at:` (panel 231): `<file>:<line>:<column>`.
     place: str?
+    # The calls the abort must tell beneath its place, each what follows
+    # `, in ` on its `called from` line, when the case declares them with
+    # `!called:` (panel 253's R5); none declared, none read.
+    calls: [str]
 
 # Splits an expectation file into the stdout it promises and how it ends.
 #
@@ -138,6 +157,34 @@ function split(text: str) -> Expectation?
         place @ ok(where)
         kept @ kept.slice(from: 0, to: kept.len() - 1)
 
+    # The calls sit just before the place, or before the ending where the
+    # case names no place, and only before an abort's (panel 253's R5).
+    taken: [str] @= []
+
+    while kept.len() > 0 && strings.has_prefix(s: kept[kept.len() - 1], prefix: "!called: ")
+        call = strings.trimmed(strings.without_prefix(text: kept[kept.len() - 1], prefix: "!called: "))
+
+        match ending
+            .panics _ => _ = 0
+            .silent | .exits _ =>
+                return fail(
+                    code: "bad_expectation",
+                    msg: "`!called: " + call + "` names a call an abort tells, and this case does not end with a `!panic:`"
+                )
+
+        if call.len() == 0
+            return fail(code: "bad_expectation", msg: "`!called:` names no call")
+        taken @ taken.push(call)
+        kept @ kept.slice(from: 0, to: kept.len() - 1)
+
+    # Taken from the last line up, so read back in the file's order.
+    calls: [str] @= []
+    back: i64 @= taken.len() - 1
+
+    while back >= 0
+        calls @ calls.push(taken[back])
+        back @ back - 1
+
     # The sanitiser line sits BEFORE the ending, so it is read after the
     # ending has been taken off: a case declares both, and the two judge
     # different runs (panel 173).
@@ -165,7 +212,7 @@ function split(text: str) -> Expectation?
     # output and no case could say it.
     if kept.len() > 0
         out @ out + "\n"
-    return ok(Expectation(stdout: out, ending: ending, sanitizer: sanitizer, place: place))
+    return ok(Expectation(stdout: out, ending: ending, sanitizer: sanitizer, place: place, calls: calls))
 
 # What a run must satisfy, as one verdict. `where` names the
 # configuration, so a failure says which of the three disagreed with the
@@ -203,7 +250,25 @@ function unmet(e: Expectation, out: str, err: str, code: i64) -> str?
             if !e.place.is_err() && !strings.contains(s: err, substr: "  at " + e.place.must() + ",")
                 return ok("must abort at " + e.place.must() + ", and said:\n" + err)
 
+            if e.calls.len() > 0 && told_calls(err) != e.calls
+                return ok("must tell the calls " + e.calls.join(" · ") + ", and said:\n" + err)
+
     return fail(code: "met", msg: "the run matched its expectation")
+
+# What follows `, in ` on each `called from` line of an abort's report, in
+# order: the where before it is an address or a `.hero` line, neither of
+# which holds `, in `.
+function told_calls(err: str) -> [str]
+    out: [str] @= []
+
+    for line in strings.lines(err)
+        if strings.has_prefix(s: line, prefix: "  called from ")
+            at = strings.index_of(text: line, needle: ", in ")
+
+            if !at.is_err()
+                out @ out.push(line.slice(from: at.must() + 5, to: line.len()))
+
+    return out
 
 # What the `--sanitize` run must satisfy, for a case that declares one.
 # Answers the failure, so the caller reads it the way it reads `unmet`.
@@ -322,3 +387,20 @@ test "an expectation says one empty line, no output, a line and an ending apart"
     assert split("\n\n").must().stdout == "\n\n"
     assert split("!exit: 2\n").must().stdout == ""
     assert split("\n!exit: 1\n").must().stdout == "\n"
+
+test "an abort's calls are held where the case names them, in order, and only before a `!panic:`"
+    e = split(
+        "before\n!called: deep.middle\n!called: deep.down, 99 times\n!at: deep.hero:3:12\n!panic: array index out of range\n"
+    ).must()
+    assert e.stdout == "before\n"
+    assert e.calls == ["deep.middle", "deep.down, 99 times"]
+    assert e.place.must() == "deep.hero:3:12"
+    alone = "panic: array index out of range\n  at deep.hero:3:12, in deep.pick\n  called from 0x100000e48, in deep.middle\n  called from 0x100000eb4, in deep.down, 99 times\n"
+    resolved = "panic: array index out of range\n  at deep.hero:3:12, in deep.pick\n  called from deep.hero:6, in deep.middle\n  called from deep.hero:9, in deep.down, 99 times\n"
+    assert unmet(e, out: "before\n", err: alone, code: 134).is_err()
+    assert unmet(e, out: "before\n", err: resolved, code: 134).is_err()
+    fewer = "panic: array index out of range\n  at deep.hero:3:12, in deep.pick\n  called from 0x100000eb4, in deep.down, 99 times\n"
+    assert !unmet(e, out: "before\n", err: fewer, code: 134).is_err()
+    assert split("1\n!called: deep.main\n").is_err()
+    assert split("1\n!called: deep.main\n!exit: 3\n").is_err()
+    assert split("1\n!panic: x\n").must().calls.len() == 0

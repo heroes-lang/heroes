@@ -1,0 +1,19 @@
+# Panel 253's R5: an abort in a Heroes function C called back tells the
+# Heroes calls above the C that called it. The callback's thunk
+# (`h_0cb_...`) is a call no line of the program wrote, and is not told; the
+# C function between the callback and `outer` is C's frame, which the walk
+# passes over, and where `-O2` inlines it into `outer` it is not told
+# either, so both levels say `outer` and `main`.
+extern "abort-calls-through-a-callback-from-c.h"
+    function abort_calls_through(f: (function(i64) -> i64), x: i64) -> i64
+
+function pick(at: i64) -> i64
+    xs: [i64] = [2, 7, 1]
+    return xs[at]
+
+function outer() -> i64
+    return abort_calls_through(f: pick, x: 8)
+
+function main()
+    print("before")
+    print(outer())
