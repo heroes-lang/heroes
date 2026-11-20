@@ -210,8 +210,7 @@ which nothing builds, and `selfhost/` is Heroes.
 ## 6. Nim: copy the surface, never the implementation
 `importc`-style FFI, per-module cache, `nim r` becoming `heroes run`: yes.
 Macros, templates, effect systems, style-insensitive identifiers: never. The
-package-binary clause was retired for a false premise; what it reached for is
-§ 10's **never a second binary** (CL-015).
+retired package-binary clause is `.claude/rules/cli-surface.md`'s (CL-015).
 
 ## 7. Generated-C rules
 Home: `.claude/rules/generated-c.md`. In one line: the emitted C is C11 that
@@ -275,9 +274,10 @@ reaches furthest at the C boundary, `.claude/rules/c-boundary.md`.
 ## 13. Where not to go
 Performance as a **justification**: a non-goal, and not a licence, since
 slowness is no more acceptable; a cost that stops a needed program from running
-at all is compiler-need and goes to the panel (CL-006). A
-standard library. Anything in design.md Part 6. Anything in Part 7 before the
-closure list compiles itself.
+at all is compiler-need and goes to the panel (CL-006). A standard library
+shipped with the compiler or the runtime, or one the compiler is written with;
+Rebel is a package a program takes or leaves. Anything in design.md Part 6.
+Anything in Part 7 before the closure list compiles itself.
 
 ## 14. Documentation duty + git
 A step is not done without a commit, `M-<name> step <k>: <what>`, staging only
@@ -375,6 +375,7 @@ these rules reach the sessions that need them and cost nothing in the others.
 | which suites judge a change, and what may run beside a gate | `.claude/rules/verification.md` |
 | the records, names, releases and issues | `.claude/rules/records.md` |
 | the shape of the specification and its instruments | `.claude/rules/spec-shape.md` |
+| Rebel and the two groups of examples | `.claude/rules/rebel.md` |
 | the site's copy and every outward-facing text | `site/CLAUDE.md` |
 
 The skills are the process: `/step` (its protocol and the milestone-close

@@ -595,7 +595,9 @@ Linux among them, it types that library's functions by hand, and no header check
 So the language still ships its runtime and nothing a program could carry instead.
 
 **The compiler is written with no library.** It takes nothing of Rebel (M-rebel-library's decision 6)
-and holds no catalogue of its own. A package it ever took would meet panel 242's ruler: taken only
+and holds no catalogue of its own; the one exception that decision foresees is the package manager,
+written with Rebel on its own row, M-rebel-packages-manager. A package it takes would meet panel
+242's ruler: taken only
 where the compiler's own tree, every line of every placed file counted, is smaller after the step than
 before, or a copy the step deletes is measured crashing or answering wrong, the step deleting every
 live copy of that package's contract in the compiler (panel 242's R1 to R4, ratified 2026-11-10; the
