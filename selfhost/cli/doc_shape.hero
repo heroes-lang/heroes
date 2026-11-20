@@ -1,0 +1,369 @@
+# What `heroes doc` refuses in a function's comment (spec § 1; panel 253's R2,
+# ratified 2026-11-19; design.md §4.17 for the messages): a comment whose
+# parameter lines do not name each parameter once, in the signature's order.
+# `cli/doc.hero` prints the reference, and prints none while one of these
+# stands, so the shape the reference promises is the shape of every comment it
+# prints.
+#
+# A PARAMETER LINE is a comment line `# - `<name>`: ...`, the name between the
+# backticks. The lines are matched to the signature IN ORDER, one cursor
+# walking the signature: a line takes the first parameter of its name at or
+# after the cursor, which moves past it. So each line is told by one of four
+# refusals, and every parameter no line took by a fifth, but the one an
+# unknown line's guess already names, which is that mistake told once:
+#
+#   doc_unknown_parameter   a line naming no parameter of the function; a line
+#                           naming one with its mode mark, `@r` for `r`, is
+#                           told so, with the mark's removal as a certain fix
+#                           (the coordinator's ruling recorded in R2)
+#   doc_parameter_order     a line naming a parameter the cursor has passed:
+#                           out of order where that parameter has no line yet,
+#                           twice where it has
+#   doc_missing_parameter   a parameter no line names, told at the signature's
+#                           own word for it
+#
+# A TYPE PARAMETER (`<A>`) may have a line, before every parameter's, as
+# `examples-rebel/README.md` § A7 lets one that carries a condition the
+# compiler cannot state; it is never owed one, since the spec calls `A` a type
+# parameter and the sentence owes a line to each parameter.
+#
+# What is not refused: a function with no comment, which nothing documents and
+# the sentence refuses nothing of; a record's, a variant's, a constant's or a
+# test's comment; and a line that is not a parameter line, which is prose.
+
+use ast
+use cli/strings
+use diag
+use parse
+use source
+use token
+
+# One parameter line of a comment: the name between its backticks, and where
+# that name stands in the source.
+record ParamLine
+    name: str
+    at: token.Span
+
+# One name a function's lines are held to, in the signature's order: the
+# signature's own word for it, and whether a line is owed (a parameter) or
+# allowed (a type parameter).
+record Owed
+    name: str
+    at: token.Span
+    needed: bool
+
+# Every refusal of the functions of `target`, in source order.
+function refusals(s: source.Source, decls: [ast.Decl], target: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    for d in decls
+        if source.module_at(s, d.name.start) != target || d.doc.len() == 0
+            continue
+
+        match d.kind
+            .function_decl fd =>
+                for one in refused_lines(s, d: d, fd: fd.value)
+                    out @ out.push(one)
+            .record_decl | .variant_decl | .constant_decl | .test_decl => continue
+
+    return out
+
+# The names a function's lines are held to: its type parameters, then its
+# parameters.
+function owed_of(s: source.Source, fd: ast.FunctionDecl) -> [Owed]
+    out: [Owed] @= []
+
+    for g in fd.generics
+        out @ out.push(Owed(name: source.span_text(s, g), at: g, needed: false))
+
+    for p in fd.params
+        out @ out.push(Owed(name: source.span_text(s, p.name), at: p.name, needed: true))
+
+    return out
+
+# The refusals of one function's comment, each line in its order, then every
+# parameter no line named.
+function refused_lines(s: source.Source, d: ast.Decl, fd: ast.FunctionDecl) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    owed = owed_of(s, fd: fd)
+    function_name = source.span_text(s, d.name)
+    taken: [bool] @= []
+
+    # The parameter each line naming none is guessed to mean, by index.
+    offered: [bool] @= []
+
+    for _ in owed
+        taken @ taken.push(false)
+        offered @ offered.push(false)
+
+    lines = parameter_lines(s, doc: d.doc)
+    cursor: i64 @= 0
+    last_name: str @= ""
+
+    for one in lines
+        name: str @= one.name
+
+        if marked_name(name).len() > 0 && first_named(owed, name: marked_name(name), from: 0) >= 0
+            name @ marked_name(name)
+            out @ out.push(marked(one: one, bare: name, function_name: function_name))
+        else if first_named(owed, name: name, from: 0) < 0
+            offer = unnamed(owed, lines: lines, offered: offered)
+
+            if offer >= 0
+                offered[offer] @ true
+            out @ out.push(unknown(one: one, owed: owed, offer: offer, function_name: function_name))
+            continue
+        at = first_untaken(owed, taken: taken, name: name, from: cursor)
+
+        if at >= 0
+            taken[at] @ true
+            cursor @ at + 1
+            last_name @ name
+            continue
+        earlier = first_untaken(owed, taken: taken, name: name, from: 0)
+
+        if earlier < 0
+            out @ out.push(twice(one: one, name: name, function_name: function_name))
+            continue
+        taken[earlier] @ true
+        out @ out.push(out_of_order(one: one, name: name, before: last_name, function_name: function_name))
+
+    index: i64 @= 0
+
+    for o in owed
+        if o.needed && !taken[index] && !offered[index]
+            out @ out.push(missing(owed: o, function_name: function_name))
+        index @ index + 1
+
+    return out
+
+# The parameter lines of a comment, in its order.
+function parameter_lines(s: source.Source, doc: [token.Span]) -> [ParamLine]
+    out: [ParamLine] @= []
+
+    for span in doc
+        one = parameter_line(s, span: span)
+
+        if !one.is_err()
+            out @ out.push(one.must())
+
+    return out
+
+# A comment line `# - `<name>`: ...`, read as its name; any other line is not
+# one. The name holds no backtick, and the colon follows its closing one.
+function parameter_line(s: source.Source, span: token.Span) -> ParamLine?
+    line = source.span_text(s, span)
+    head = "# - `"
+    none: ParamLine? = fail(code: "none", msg: "not a parameter line")
+
+    if !strings.starts_with(text: line, prefix: head)
+        return none
+    at: i64 @= head.len()
+
+    while at < line.len() && line[at] != '`'
+        at @ at + 1
+
+    if at == head.len() || at + 1 >= line.len() || line[at + 1] != ':'
+        return none
+    return ok(
+        ParamLine(name: line.slice(from: head.len(), to: at), at: token.Span(start: span.start + head.len(), end: span.start + at))
+    )
+
+# `r` for a line's `@r`, "" for a name with no mode mark.
+function marked_name(name: str) -> str
+    if name.len() < 2 || name[0] != '@'
+        return ""
+    return name.slice(from: 1, to: name.len())
+
+# The first of `owed` at or after `from` named `name`, -1 where none is.
+function first_named(owed: [Owed], name: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at < owed.len()
+        if owed[at].name == name
+            return at
+        at @ at + 1
+
+    return -1
+
+# The first of `owed` at or after `from` named `name` that no line has taken,
+# -1 where none is.
+function first_untaken(owed: [Owed], taken: [bool], name: str, from: i64) -> i64
+    at: i64 @= first_named(owed, name: name, from: from)
+
+    while at >= 0 && taken[at]
+        at @ first_named(owed, name: name, from: at + 1)
+
+    return at
+
+# The parameters a reader is told a function has, each quoted.
+function quoted_parameters(owed: [Owed]) -> str
+    quoted: [str] @= []
+
+    for o in owed
+        if o.needed
+            quoted @ quoted.push("`" + o.name + "`")
+
+    return quoted.join(", ")
+
+# The first parameter no line names and no earlier unknown line was guessed to
+# mean, -1 where every one is.
+function unnamed(owed: [Owed], lines: [ParamLine], offered: [bool]) -> i64
+    at: i64 @= 0
+
+    for o in owed
+        if o.needed && !offered[at] && !named_by(lines, name: o.name)
+            return at
+        at @ at + 1
+
+    return -1
+
+# A line naming no parameter. Its guess names `owed[offer]`, a parameter no
+# line names (none where `offer` is -1): the line may describe that one
+# renamed, or a parameter the signature lost, which no rewrite of the line
+# repairs, so it is never certain.
+function unknown(one: ParamLine, owed: [Owed], offer: i64, function_name: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "doc_unknown_parameter",
+        message: "the comment of `" + function_name + "` names a parameter `" + one.name + "`, and it has none of that name",
+        span: one.at
+    )
+    listed = quoted_parameters(owed)
+
+    if listed.len() == 0
+        d.notes @ d.notes.push("`" + function_name + "` takes no parameter, so its comment has no parameter line")
+    else
+        d.notes @ d.notes.push("its parameters are " + listed + ", each named by one line in that order")
+
+    if offer >= 0
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "name `" + owed[offer].name + "`, the parameter no line names", replacement: owed[offer].name, span: one.at, certainty: .guess)
+        )
+    return d
+
+# Whether a line names `name`, with its mode mark or without.
+function named_by(lines: [ParamLine], name: str) -> bool
+    for one in lines
+        if one.name == name || marked_name(one.name) == name
+            return true
+
+    return false
+
+# A line naming a parameter with its mode mark: the line names the identifier,
+# and taking the mark away repairs exactly that.
+function marked(one: ParamLine, bare: str, function_name: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "doc_unknown_parameter",
+        message: "the comment of `" + function_name + "` names `" + one.name + "`, and a parameter line names the parameter `" + bare + "` without its mode mark",
+        span: one.at
+    )
+    d.notes @ d.notes.push("the `@` belongs to the signature and the call; the line names the identifier alone")
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `" + bare + "`", replacement: bare, span: one.at, certainty: .certain)
+    )
+    return d
+
+# A line naming a parameter the lines before it have passed, which has no line
+# yet.
+function out_of_order(one: ParamLine, name: str, before: str, function_name: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "doc_parameter_order",
+        message: "the comment of `" + function_name + "` names `" + name + "` after `" + before + "`, and the signature takes `" + name + "` first",
+        span: one.at
+    )
+    d.notes @ d.notes.push(
+        "a reader matches each line to the call by its place: write the parameter lines in the signature's order"
+    )
+    return d
+
+# A line naming a parameter that every line of its name before it has taken.
+function twice(one: ParamLine, name: str, function_name: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "doc_parameter_order",
+        message: "the comment of `" + function_name + "` names `" + name + "` twice, and the signature takes it once",
+        span: one.at
+    )
+    d.notes @ d.notes.push("each parameter has one line, in the signature's order: join the two")
+    return d
+
+# A parameter no line names, told where the signature writes it.
+function missing(owed: Owed, function_name: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "doc_missing_parameter",
+        message: "the comment of `" + function_name + "` has no line for its parameter `" + owed.name + "`",
+        span: owed.at
+    )
+    d.notes @ d.notes.push(
+        "a documented function's comment has one line per parameter, in the signature's order, `" + owed.name + "`'s written as: # - `" + owed.name + "`: what it is"
+    )
+    return d
+
+## Tests
+
+# The refusals of a module given as text, each as `<code> <line>`.
+function told(text: str) -> [str]
+    s = source.new_source(name: "t.hero", text: text)
+    parsed = parse_of(s)
+    out: [str] @= []
+
+    for d in refusals(s, decls: parsed, target: source.module_at(s, 0))
+        out @ out.push(d.code + " " + source.line_col(s, d.span.start).line.to_str())
+
+    return out
+
+function parse_of(s: source.Source) -> [ast.Decl]
+    return parse.parse_source(s).decls
+
+test "a parameter line is the name between backticks before a colon"
+    s = source.new_source(name: "t.hero", text: "# - `count`: how many\n")
+    one = parameter_line(s, span: token.Span(start: 0, end: 21)).must()
+    assert one.name == "count"
+    assert one.at.start == 5 && one.at.end == 10
+
+    # A line with no colon after the name, an empty name, or another opening
+    # is prose.
+    for text in ["# - `count` how many\n", "# - ``: nothing\n", "#  - `count`: two spaces\n", "# `count`: no dash\n"]
+        p = source.new_source(name: "t.hero", text: text)
+        assert parameter_line(p, span: token.Span(start: 0, end: text.len() - 1)).is_err()
+
+test "every parameter named once, in order, is refused nothing"
+    assert told("# Joined.\n#\n# - `a`: one\n# - `b`: two\nfunction f(a: str, b: str) -> str\n    return a + b\n").len() == 0
+
+    # No comment at all documents nothing, and is refused nothing.
+    assert told("function f(a: str) -> str\n    return a\n").len() == 0
+
+    # A function with no parameter has no list.
+    assert told("# One.\nfunction f() -> i64\n    return 1\n").len() == 0
+
+    # Two `_` parameters, a line each, in order.
+    assert told("# Two ignored.\n#\n# - `_`: one\n# - `_`: two\nfunction f(_: i64, _: str)\n    return\n").len() == 0
+
+test "a missing line is told at each parameter it misses, at the signature's word"
+    assert told("# Joined.\nfunction f(a: str, b: str) -> str\n    return a + b\n") == ["doc_missing_parameter 2", "doc_missing_parameter 2"]
+    assert told("# Joined.\n#\n# - `b`: two\nfunction f(a: str, b: str) -> str\n    return a + b\n") == ["doc_missing_parameter 4"]
+
+test "a line naming no parameter, out of order, or twice is told at its name"
+
+    # A line for `b` written `c` is one mistake, told once, its guess naming
+    # `b`; a second unknown line has no parameter left to guess, and a
+    # parameter neither names is missing.
+    assert told("# Sum.\n#\n# - `a`: one\n# - `c`: other\nfunction f(a: i64, b: i64) -> i64\n    return a + b\n") == ["doc_unknown_parameter 4"]
+    assert told("# Sum.\n#\n# - `c`: one\n# - `d`: other\nfunction f(a: i64, b: i64, e: i64) -> i64\n    return a + b + e\n") == ["doc_unknown_parameter 3", "doc_unknown_parameter 4", "doc_missing_parameter 5"]
+    assert told("# Joined.\n#\n# - `b`: two\n# - `a`: one\nfunction f(a: str, b: str) -> str\n    return a + b\n") == ["doc_parameter_order 4"]
+    assert told("# Joined.\n#\n# - `a`: one\n# - `a`: again\n# - `b`: two\nfunction f(a: str, b: str) -> str\n    return a + b\n") == ["doc_parameter_order 4"]
+
+test "a line naming a parameter with its mode mark is told so, and the mark's removal is certain"
+    text = "# Grows.\n#\n# - `@xs`: the list\nfunction f(@xs: [i64])\n    xs @ xs.push(1)\n"
+    s = source.new_source(name: "t.hero", text: text)
+    said = refusals(s, decls: parse_of(s), target: source.module_at(s, 0))
+    assert said.len() == 1
+    assert said[0].code == "doc_unknown_parameter"
+    assert said[0].fixes.len() == 1
+    assert said[0].fixes[0].certainty == .certain
+    assert said[0].fixes[0].replacement == "xs"
+    assert source.span_text(s, said[0].fixes[0].span) == "@xs"
+
+test "a type parameter may have a line before the parameters' lines, and is never owed one"
+    assert told("# Kept.\n#\n# - `A`: any\n# - `x`: the value\nfunction f<A>(x: A) -> A\n    return x\n").len() == 0
+    assert told("# Kept.\n#\n# - `x`: the value\nfunction f<A>(x: A) -> A\n    return x\n").len() == 0
+    assert told("# Kept.\n#\n# - `x`: the value\n# - `A`: any\nfunction f<A>(x: A) -> A\n    return x\n") == ["doc_parameter_order 4"]

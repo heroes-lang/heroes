@@ -120,12 +120,12 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
             take: bool @= false
 
             match command.tag
-                .run_cmd                                                        => take @ true
-                .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .test_cmd     => take @ take
-                .fmt_cmd | .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd => take @ take
-                .add_cmd | .fetch_cmd | .new_cmd                                => take @ take
-                .grammar_cmd | .probe_cmd                                       => take @ take
-                .version_cmd | .help_cmd                                        => take @ take
+                .run_cmd                                                               => take @ true
+                .lex_cmd | .parse_cmd | .check_cmd | .doc_cmd | .build_cmd | .test_cmd => take @ take
+                .fmt_cmd | .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd        => take @ take
+                .add_cmd | .fetch_cmd | .new_cmd                                       => take @ take
+                .grammar_cmd | .probe_cmd                                              => take @ take
+                .version_cmd | .help_cmd                                               => take @ take
 
             if !take
                 return fail(
@@ -213,8 +213,8 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
         no_operand: bool @= false
 
         match command.operand
-            .no_operand                                                          => no_operand @ true
-            .file_operand | .optional_operand | .package_operand | .name_operand => no_operand @ no_operand
+            .no_operand                                                                            => no_operand @ true
+            .file_operand | .optional_operand | .package_operand | .name_operand | .module_operand => no_operand @ no_operand
 
         if no_operand
             return fail(code: "bad_usage", msg: argv_told.no_operand(command, given: arg))
@@ -233,7 +233,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
     needs_file: bool @= false
 
     match command.operand
-        .file_operand | .name_operand                      => needs_file @ true
+        .file_operand | .name_operand | .module_operand    => needs_file @ true
         .no_operand | .optional_operand | .package_operand => needs_file @ needs_file
 
     if needs_file && file.is_err()
@@ -325,7 +325,7 @@ test "strict against the table, and every refusal names what is accepted"
 
     match bad
         .ok    => assert false
-        .err e => assert e.msg == "unknown command `explode` — the commands are lex, parse, check, build, run, test, fmt, add, fetch, new, doctor, mutate, probe, measure, grammar, this"
+        .err e => assert e.msg == "unknown command `explode` — the commands are lex, parse, check, doc, build, run, test, fmt, add, fetch, new, doctor, mutate, probe, measure, grammar, this"
 
     old: [str] = ["fmt", "main.hero", "--write"]
 
@@ -400,7 +400,7 @@ test "an argument that is not UTF-8 is told by what it is to the command (defect
     searched: [str] = ["build", "x.hero", "--include", "inc<0xE9>"]
     assert unheld(searched, at: 3)[0] == "error: the value of `--include`, `inc<0xE9>`, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"
     command: [str] = ["<0xE9>"]
-    assert unheld(command, at: 0) == ["error: unknown command `<0xE9>` — the commands are lex, parse, check, build, run, test, fmt, add, fetch, new, doctor, mutate, probe, measure, grammar, this"]
+    assert unheld(command, at: 0) == ["error: unknown command `<0xE9>` — the commands are lex, parse, check, doc, build, run, test, fmt, add, fetch, new, doctor, mutate, probe, measure, grammar, this"]
     flag: [str] = ["check", "x.hero", "--<0xE9>"]
     assert unheld(flag, at: 2) == ["error: `check` does not accept `--<0xE9>` — it accepts " + flag_list(name: "check")]
     program: [str] = ["run", "x.hero", "--", "-o", "<0xE9>"]
@@ -482,8 +482,8 @@ test "an empty operand is refused, naming the command, before anything is read (
         taken: bool @= true
 
         match c.operand
-            .no_operand                                                          => taken @ false
-            .file_operand | .optional_operand | .package_operand | .name_operand => taken @ true
+            .no_operand                                                                            => taken @ false
+            .file_operand | .optional_operand | .package_operand | .name_operand | .module_operand => taken @ true
 
         if taken
             asked @ asked + 1

@@ -9,14 +9,16 @@ use cli/table as cli_table
 
 # The operand as a usage line shows it, the help's form: `<file.hero>` where
 # one is needed, `[file]` where it may be left out, `[package]` for what `add`
-# adds, `<name>` for the folder `new` makes, and nothing for a command that
-# takes none, whose usage line would otherwise name a file it refuses.
+# adds, `<name>` for the folder `new` makes, `<module>` for what `doc` prints,
+# and nothing for a command that takes none, whose usage line would otherwise
+# name a file it refuses.
 function operand_said(command: cli_table.Command) -> str
     match command.operand
         .file_operand     => return " <file.hero>"
         .optional_operand => return " [file]"
         .package_operand  => return " [package]"
         .name_operand     => return " <name>"
+        .module_operand   => return " <module>"
         .no_operand       => return ""
 
 # What an empty operand is told, in the form the help gives the operand:
@@ -28,11 +30,13 @@ function empty_operand(command: cli_table.Command) -> str
             return "`" + command.name + "` was given an empty file, which names none: `heroes " + command.name + " [file]`, or no file for its default"
         .package_operand => return "`" + command.name + "` was given an empty package, which names none: `heroes " + command.name + " json`, or `--path` and a folder"
         .name_operand => return "`" + command.name + "` was given an empty name, which names no folder: `heroes " + command.name + " <name>`"
+        .module_operand => return "`" + command.name + "` was given an empty module, which names none: " + module_forms(command)
 
 # What a missing operand is told, in the help's form of it.
 function missing_operand(command: cli_table.Command) -> str
     match command.operand
         .name_operand => return "`" + command.name + "` needs the name of the folder it makes: `heroes " + command.name + " <name>`, or `heroes " + command.name + " <name> --package` for a package"
+        .module_operand => return "`" + command.name + "` needs a module: " + module_forms(command)
         .file_operand | .optional_operand | .package_operand | .no_operand => return "`" + command.name + "` needs a file: `heroes " + command.name + " <file.hero>`"
 
 # A second operand, told as the package or the folder it is, not *one file*.
@@ -40,7 +44,12 @@ function second_operand(command: cli_table.Command, first: str, second: str) -> 
     match command.operand
         .name_operand => return "`" + command.name + "` makes one folder, and was given two names, `" + first + "` and `" + second + "`: `heroes " + command.name + " <name>`"
         .package_operand => return "`" + command.name + "` adds one package at a time, and was given two, `" + first + "` and `" + second + "`: run `heroes " + command.name + "` once for each"
+        .module_operand => return "`" + command.name + "` reads one module, and was given two, `" + first + "` and `" + second + "`: run `heroes " + command.name + "` once for each"
         .file_operand | .optional_operand | .no_operand => return "`" + command.name + "` takes one file, and two were given"
+
+# The two forms of a module the help's `<module>` stands for.
+function module_forms(command: cli_table.Command) -> str
+    return "`heroes " + command.name + " <file.hero>`, or `heroes " + command.name + " '<name>/<module>'` for a package's module"
 
 # A word given to a command that takes none (defect 2542), told as the word it
 # is and never as a file: `heroes fetch json` was told *`fetch` takes no

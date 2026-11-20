@@ -1,0 +1,7 @@
+error[doc_unknown_parameter]: the comment of `grow` names `@list`, and a parameter line names the parameter `list` without its mode mark
+  at tests/golden/doc_refused/a-mode-mark-on-a-parameter-line.hero:8:6
+    |
+  8 | # - `@list`: the caller's list, which gains one value
+    |      ^^^^^
+  note: the `@` belongs to the signature and the call; the line names the identifier alone
+  fix (certain): write `list`

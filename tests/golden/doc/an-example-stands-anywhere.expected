@@ -1,0 +1,30 @@
+# an-example-stands-anywhere
+
+An example is a documented `test` whose title opens with its function's name
+and a colon, wherever it stands in the module (panel 253's R2: the prototype
+took those under `## Examples` alone). A test with no comment is no example,
+and a documented one whose title names no function is printed nowhere and
+refused nothing.
+
+## function larger
+
+    function larger(a: i64, b: i64) -> i64
+
+The larger of two numbers.
+
+- `a`: one number
+- `b`: the other
+
+    larger(a: a, b: b)
+
+### Example
+
+    # The larger first.
+    test "larger: the first"
+        assert larger(a: 3, b: 2) == 3
+
+### Example
+
+    # The larger second, under another heading.
+    test "larger: the second"
+        assert larger(a: 2, b: 3) == 3

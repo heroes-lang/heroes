@@ -1,0 +1,20 @@
+error[doc_missing_parameter]: the comment of `larger` has no line for its parameter `a`
+  at tests/golden/doc_refused/a-missing-parameter-line.hero:7:17
+    |
+  7 | function larger(a: i64, b: i64) -> i64  #~ doc_missing_parameter doc_missing_parameter
+    |                 ^
+  note: a documented function's comment has one line per parameter, in the signature's order, `a`'s written as: # - `a`: what it is
+
+error[doc_missing_parameter]: the comment of `larger` has no line for its parameter `b`
+  at tests/golden/doc_refused/a-missing-parameter-line.hero:7:25
+    |
+  7 | function larger(a: i64, b: i64) -> i64  #~ doc_missing_parameter doc_missing_parameter
+    |                         ^
+  note: a documented function's comment has one line per parameter, in the signature's order, `b`'s written as: # - `b`: what it is
+
+error[doc_missing_parameter]: the comment of `three` has no line for its parameter `b`
+  at tests/golden/doc_refused/a-missing-parameter-line.hero:16:24
+     |
+  16 | function three(a: str, b: str, c: str) -> str  #~ doc_missing_parameter
+     |                        ^
+  note: a documented function's comment has one line per parameter, in the signature's order, `b`'s written as: # - `b`: what it is
