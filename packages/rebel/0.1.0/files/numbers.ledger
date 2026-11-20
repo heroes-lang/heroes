@@ -257,11 +257,11 @@ capability number/ratio  a number as the exact ratio of two integers
   python  float.as_integer_ratio, int.as_integer_ratio
 
 capability number/complex  a complex number read and written
-  heroes  pending
+  heroes  refused: the number is `math.Complex`, and its text is `math.ledger`'s block `complex/text`, beside it; `numbers` and `math` are both layer 0 and neither may use the other
   go      strconv.ParseComplex, strconv.FormatComplex
   rust    -
   python  -
-  note    `math.Complex` holds the number since 2026-11-17; reading and writing it as text goes beside it in `math`, since `numbers` and `math` are both layer 0 and neither may use the other. Refused until that day for a type the language does not have
+  note    `math.Complex` holds the number since 2026-11-17. Refused until that day for a type the language does not have
 
 capability number/truthiness  any value read as a boolean
   heroes  refused: the language has no truthiness (spec § 8); a number is compared with zero

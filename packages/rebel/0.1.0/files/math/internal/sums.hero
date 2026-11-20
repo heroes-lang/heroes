@@ -100,9 +100,10 @@ function product(xs: [f64]) -> f64
 # and `sum` adds them all.
 #
 # - `a`: the first floats.
-# - `b`: the second floats, as many.
+# - `b`: the second floats, as many; a list of another length fails.
 function dot(a: [f64], b: [f64]) -> f64?
-    assert a.len() == b.len()
+    if a.len() != b.len()
+        return fail(code: limits.INVALID, msg: f"lists of {a.len()} and {b.len()} floats have no dot product")
     terms: [f64] @= []
     at: i64 @= 0
 
@@ -163,9 +164,10 @@ function norm(xs: [f64]) -> f64
 # The distance between the points `a` and `b`.
 #
 # - `a`: one point's coordinates.
-# - `b`: the other's, as many.
-function dist(a: [f64], b: [f64]) -> f64
-    assert a.len() == b.len()
+# - `b`: the other's, as many; a list of another length fails.
+function distance(a: [f64], b: [f64]) -> f64?
+    if a.len() != b.len()
+        return fail(code: limits.INVALID, msg: f"points of {a.len()} and {b.len()} coordinates have no distance")
     differences: [f64] @= []
     at: i64 @= 0
 
@@ -173,7 +175,7 @@ function dist(a: [f64], b: [f64]) -> f64
         differences @ differences.push(a[at] - b[at])
         at @ at + 1
 
-    return norm(differences)
+    return ok(norm(differences))
 
 # The smallest of `xs`.
 #
@@ -252,8 +254,12 @@ test "dot: empty, a cancellation, ten tenths squared rounded once, a product pas
         .ok _  => assert false
         .err e => assert e.code == "does_not_fit"
 
+    match dot(a: [1.0, 2.0], b: [1.0])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "lists of 2 and 1 floats have no dot product"
+
 # Python's `math.hypot` of many arguments and `math.dist`, run on 2026-11-16.
-test "norm and dist: empty, 3-4-12, the largest twice, a subnormal pair, an infinity beside a nan, a nan"
+test "norm and distance: empty, 3-4-12, the largest twice, a subnormal pair, an infinity beside a nan, a nan"
     nothing: [f64] = []
     assert norm(nothing) == 0.0
     assert norm([3.0, 4.0, 12.0]) == 13.0
@@ -265,9 +271,13 @@ test "norm and dist: empty, 3-4-12, the largest twice, a subnormal pair, an infi
     assert norm([tiny, tiny]) == limits.SMALLEST_F64 * 2862.0
     assert norm([limits.NAN, limits.INF]) == limits.INF
     assert floats.is_nan(norm([limits.NAN, 1.0]))
-    assert dist(a: [1.0, 2.0], b: [4.0, 6.0]) == 5.0
-    assert dist(a: nothing, b: nothing) == 0.0
-    assert dist(a: [0.1, 0.2], b: [0.3, 0.5]) == 0.3605551275463989
+    assert distance(a: [1.0, 2.0], b: [4.0, 6.0]).must() == 5.0
+    assert distance(a: nothing, b: nothing).must() == 0.0
+    assert distance(a: [0.1, 0.2], b: [0.3, 0.5]).must() == 0.3605551275463989
+
+    match distance(a: [1.0], b: nothing)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "points of 1 and 0 coordinates have no distance"
 
 test "min_of and max_of: empty, one, the zeros, a nan, the infinities"
     nothing: [f64] = []
