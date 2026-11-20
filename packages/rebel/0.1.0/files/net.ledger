@@ -112,7 +112,7 @@ capability address/equal  two addresses compared
   note    An IPv4 address and the IPv6 one that maps it differ, as in netip and Rust; Go's old `IP.Equal` holds them equal
 
 capability address/step  the address after or before another, or some steps away
-  heroes  net.next, net.prev, net.step
+  heroes  net.next, net.previous, net.step
   go      netip.Addr.Next, netip.Addr.Prev
   rust    Step for Ipv4Addr and Ipv6Addr: forward, backward, forward_checked, backward_checked, forward_unchecked, backward_unchecked, forward_overflowing, backward_overflowing
   python  IPv4Address + int, IPv4Address - int, IPv6Address + int
@@ -397,7 +397,7 @@ capability name/reverse  the name of an address
   note    Python's `getfqdn` is `name_of` of the first address `lookup` gives the host's name
 
 capability name/records  DNS records other than addresses
-  heroes  refused: the floor's resolver answers addresses and names; a DNS client reading records is a package of its own
+  heroes  refused: the floor's resolver answers addresses and names; a DNS client reading records is `dns`'s, a package above this one
   go      net.LookupCNAME, net.LookupMX, net.LookupNS, net.LookupSRV, net.LookupTXT, net.Resolver.LookupCNAME, net.Resolver.LookupMX, net.Resolver.LookupNS, net.Resolver.LookupSRV, net.Resolver.LookupTXT, net.MX, net.NS, net.SRV
   rust    -
   python  -
@@ -535,7 +535,7 @@ capability tcp/pair  two connected ends in one process
   note    Over IPv4 loopback, the accepted end checked to be the one this call connected; Python's `socketpair` is a pair of local sockets on POSIX, Go's `Pipe` a pipe in memory
 
 capability tcp/nonblocking  a call that answers at once instead of waiting
-  heroes  refused: a call waits, bounded by its deadline and the stop; a program that waits on several at once waits on each in a thread
+  heroes  refused: a call waits, bounded by its deadline and the stop; a program that waits on several at once adds them to a `poll.Set` and is told which are ready (`poll.wait`), so the call it then makes does not wait
   go      -
   rust    TcpStream::set_nonblocking, TcpListener::set_nonblocking, UdpSocket::set_nonblocking
   python  socket.socket.setblocking, socket.socket.getblocking
@@ -593,7 +593,7 @@ capability udp/connected  a UDP socket fixed to one peer
   python  -
 
 capability udp/broadcast-multicast  datagrams sent to a broadcast address, or a multicast group joined
-  heroes  net.set_broadcast, net.is_broadcast_on, net.join_group, net.leave_group
+  heroes  net.set_broadcast, net.broadcast_on, net.join_group, net.leave_group
   go      net.ListenMulticastUDP, net.Interface.MulticastAddrs
   rust    UdpSocket::set_broadcast, UdpSocket::broadcast, UdpSocket::join_multicast_v4, UdpSocket::join_multicast_v6, UdpSocket::leave_multicast_v4, UdpSocket::leave_multicast_v6
   python  socket.IP_ADD_MEMBERSHIP, socket.IP_DROP_MEMBERSHIP, socket.SO_BROADCAST
@@ -633,7 +633,7 @@ capability ipv6/available  whether the machine has IPv6
   python  socket.has_ipv6, socket.has_dualstack_ipv6
 
 capability unix/sockets  sockets of the local machine named by a path
-  heroes  refused: `net`'s area is TCP, UDP, names and addresses (README § A1); a local socket is `ipc`'s (README § A1, layer 4)
+  heroes  refused: `net`'s area is TCP, UDP, names and addresses (README § A1); a local socket is `ipc`'s (README § A1, layer 5)
   go      net.DialUnix, net.ListenUnix, net.ListenUnixgram, net.ResolveUnixAddr, net.UnixAddr, net.UnixAddr.Network, net.UnixAddr.String, net.UnixConn, net.UnixConn.Close, net.UnixConn.CloseRead, net.UnixConn.CloseWrite, net.UnixConn.File, net.UnixConn.LocalAddr, net.UnixConn.Read, net.UnixConn.ReadFrom, net.UnixConn.ReadFromUnix, net.UnixConn.ReadMsgUnix, net.UnixConn.RemoteAddr, net.UnixConn.SetDeadline, net.UnixConn.SetReadBuffer, net.UnixConn.SetReadDeadline, net.UnixConn.SetWriteBuffer, net.UnixConn.SetWriteDeadline, net.UnixConn.SyscallConn, net.UnixConn.Write, net.UnixConn.WriteMsgUnix, net.UnixConn.WriteTo, net.UnixConn.WriteToUnix, net.UnixListener, net.UnixListener.Accept, net.UnixListener.AcceptUnix, net.UnixListener.Addr, net.UnixListener.Close, net.UnixListener.File, net.UnixListener.SetDeadline, net.UnixListener.SetUnlinkOnClose, net.UnixListener.SyscallConn
   rust    -
   python  socket.AF_UNIX, socket.send_fds, socket.recv_fds

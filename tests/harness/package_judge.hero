@@ -5,10 +5,10 @@
 # `<path>.md` beside `<path>.hero`, and is held to three things:
 #
 # - it is what `write` writes from the face, byte for byte, so a card is true
-#   by construction and never written by hand (`examples-rebel/packages/README.md` § 8.2);
+#   by construction and never written by hand (task 2294);
 # - it spends at most `MOST` tokens by `heroes measure`'s `maximum`, and the
 #   face cards together no more than the specification's own `maximum` (panel
-#   234's R5, `examples-rebel/packages/README.md` § 8.3), a floor's card, a module
+#   234's R5), a floor's card, a module
 #   whose `extern` group binds a header (§ 4.1), counting apart, since only a
 #   program that reaches the floor reads it;
 # - every call it writes compiles as written: a program calling each function
@@ -58,7 +58,7 @@ record Wrote
     found: [str]
 
 # The faces of a tree, as their paths under `rebel/`: each `.hero` not under an
-# `internal/` directory (`examples-rebel/packages/README.md` § 1.2 and § 1.3). `rels` are the
+# `internal/` directory (`examples-rebel/README.md` § A2). `rels` are the
 # tree's files, each as a path under it.
 function faces_in(rels: [str]) -> [str]
     out: [str] @= []

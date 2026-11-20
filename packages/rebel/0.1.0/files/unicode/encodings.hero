@@ -10,9 +10,9 @@
 #
 # An encoding is named by a `str`: a label of the standard, in any case and
 # with white space around it, as a `charset` writes it, or its name, which the
-# constants below hold. `latin1`, `iso-8859-1` and `ascii` name windows-1252,
-# as in every browser; bytes that mean their own numbers, as an HTTP header's
-# do, are `decode_isomorphic`'s.
+# constants under `## The encodings` hold. `latin1`, `iso-8859-1` and `ascii`
+# name windows-1252, as in every browser; bytes that mean their own numbers,
+# as an HTTP header's do, are `decode_isomorphic`'s.
 #
 # It does not read the `charset` of a page, a header or a mail: `html`,
 # `http` and `mail` find the label, and call `decode` with it. It does not
@@ -27,7 +27,6 @@
 
 use bytes
 use unicode
-use unicode/encodings/internal/codes
 use unicode/encodings/internal/guess
 use unicode/encodings/internal/machine
 use unicode/encodings/internal/registry
@@ -40,187 +39,18 @@ use unicode/encodings/internal/single
 # takes an encoding fails with it, and `sniff_bom` where no byte order mark
 # begins the bytes.
 constant NOT_FOUND: str
-    codes.NOT_FOUND
+    "not_found"
 
 # The code of bytes an encoding cannot read, where the call is strict:
 # `decode_strict` and `decode_chunk_strict`.
 constant INVALID: str
-    codes.INVALID
+    "invalid"
 
 # The code of a character an encoding has no bytes for, where the call is
 # strict (`encode`, `encode_chunk`, `encode_isomorphic`), and of writing in the
 # encoding `replacement`.
 constant UNSUPPORTED: str
-    codes.UNSUPPORTED
-
-## The encodings
-
-# UTF-8, the encoding every new text is written in.
-constant UTF_8: str
-    "UTF-8"
-
-# IBM866, the DOS code page of Russian.
-constant IBM866: str
-    "IBM866"
-
-# ISO-8859-2, Latin-2, of Central Europe.
-constant ISO_8859_2: str
-    "ISO-8859-2"
-
-# ISO-8859-3, Latin-3, of Maltese and Esperanto.
-constant ISO_8859_3: str
-    "ISO-8859-3"
-
-# ISO-8859-4, Latin-4, of the Baltic languages.
-constant ISO_8859_4: str
-    "ISO-8859-4"
-
-# ISO-8859-5, of Cyrillic.
-constant ISO_8859_5: str
-    "ISO-8859-5"
-
-# ISO-8859-6, of Arabic.
-constant ISO_8859_6: str
-    "ISO-8859-6"
-
-# ISO-8859-7, of Greek.
-constant ISO_8859_7: str
-    "ISO-8859-7"
-
-# ISO-8859-8, of Hebrew written in the order it is shown.
-constant ISO_8859_8: str
-    "ISO-8859-8"
-
-# ISO-8859-8-I, of Hebrew written in the order it is read: ISO-8859-8's bytes,
-# which a browser lays out by the bidirectional algorithm.
-constant ISO_8859_8_I: str
-    "ISO-8859-8-I"
-
-# ISO-8859-10, Latin-6, of the Nordic languages.
-constant ISO_8859_10: str
-    "ISO-8859-10"
-
-# ISO-8859-13, Latin-7, of the Baltic languages.
-constant ISO_8859_13: str
-    "ISO-8859-13"
-
-# ISO-8859-14, Latin-8, of the Celtic languages.
-constant ISO_8859_14: str
-    "ISO-8859-14"
-
-# ISO-8859-15, Latin-9: Latin-1 with the euro sign.
-constant ISO_8859_15: str
-    "ISO-8859-15"
-
-# ISO-8859-16, Latin-10, of South-Eastern Europe.
-constant ISO_8859_16: str
-    "ISO-8859-16"
-
-# KOI8-R, of Russian.
-constant KOI8_R: str
-    "KOI8-R"
-
-# KOI8-U, of Ukrainian.
-constant KOI8_U: str
-    "KOI8-U"
-
-# The Mac OS Roman encoding.
-constant MACINTOSH: str
-    "macintosh"
-
-# windows-874, of Thai.
-constant WINDOWS_874: str
-    "windows-874"
-
-# windows-1250, of Central Europe.
-constant WINDOWS_1250: str
-    "windows-1250"
-
-# windows-1251, of Cyrillic.
-constant WINDOWS_1251: str
-    "windows-1251"
-
-# windows-1252, of Western Europe: the encoding `latin1`, `iso-8859-1` and
-# `ascii` name.
-constant WINDOWS_1252: str
-    "windows-1252"
-
-# windows-1253, of Greek.
-constant WINDOWS_1253: str
-    "windows-1253"
-
-# windows-1254, of Turkish, which `iso-8859-9` names.
-constant WINDOWS_1254: str
-    "windows-1254"
-
-# windows-1255, of Hebrew.
-constant WINDOWS_1255: str
-    "windows-1255"
-
-# windows-1256, of Arabic.
-constant WINDOWS_1256: str
-    "windows-1256"
-
-# windows-1257, of the Baltic languages.
-constant WINDOWS_1257: str
-    "windows-1257"
-
-# windows-1258, of Vietnamese.
-constant WINDOWS_1258: str
-    "windows-1258"
-
-# The Mac OS Cyrillic encoding, with the euro sign.
-constant X_MAC_CYRILLIC: str
-    "x-mac-cyrillic"
-
-# GBK, of simplified Chinese: gb18030 read, and written without its four-byte
-# sequences. `gb2312` names it.
-constant GBK: str
-    "GBK"
-
-# gb18030, of Chinese: GB18030-2022, which has bytes for every character.
-constant GB18030: str
-    "gb18030"
-
-# Big5, of traditional Chinese, with the Hong Kong Supplementary Character Set
-# read.
-constant BIG5: str
-    "Big5"
-
-# EUC-JP, of Japanese, with JIS X 0212 read.
-constant EUC_JP: str
-    "EUC-JP"
-
-# ISO-2022-JP, of Japanese in seven bits, switched by escape sequences.
-constant ISO_2022_JP: str
-    "ISO-2022-JP"
-
-# Shift_JIS, of Japanese, with the extensions of Windows code page 932.
-constant SHIFT_JIS: str
-    "Shift_JIS"
-
-# EUC-KR, of Korean, with the Unified Hangul Code of Windows code page 949.
-constant EUC_KR: str
-    "EUC-KR"
-
-# The encoding `replacement`, which reads any bytes as one U+FFFD and writes
-# nothing: the labels of ISO-2022-KR, ISO-2022-CN and HZ name it, so that text
-# in them cannot slip markup past a filter.
-constant REPLACEMENT: str
-    "replacement"
-
-# UTF-16 with the high byte of each unit first.
-constant UTF_16BE: str
-    "UTF-16BE"
-
-# UTF-16 with the low byte of each unit first: the encoding `utf-16` names.
-constant UTF_16LE: str
-    "UTF-16LE"
-
-# x-user-defined: ASCII, and each byte from 0x80 as U+F780 plus its number
-# less 0x80.
-constant X_USER_DEFINED: str
-    "x-user-defined"
+    "unsupported"
 
 ## Names and labels
 
@@ -648,6 +478,175 @@ function detect_all(data: [u8]) -> [Guess]
         out @ out.push(Guess(encoding: registry.name(c.number), confidence: c.confidence))
 
     return out
+
+## The encodings
+
+# UTF-8, the encoding every new text is written in.
+constant UTF_8: str
+    "UTF-8"
+
+# IBM866, the DOS code page of Russian.
+constant IBM866: str
+    "IBM866"
+
+# ISO-8859-2, Latin-2, of Central Europe.
+constant ISO_8859_2: str
+    "ISO-8859-2"
+
+# ISO-8859-3, Latin-3, of Maltese and Esperanto.
+constant ISO_8859_3: str
+    "ISO-8859-3"
+
+# ISO-8859-4, Latin-4, of the Baltic languages.
+constant ISO_8859_4: str
+    "ISO-8859-4"
+
+# ISO-8859-5, of Cyrillic.
+constant ISO_8859_5: str
+    "ISO-8859-5"
+
+# ISO-8859-6, of Arabic.
+constant ISO_8859_6: str
+    "ISO-8859-6"
+
+# ISO-8859-7, of Greek.
+constant ISO_8859_7: str
+    "ISO-8859-7"
+
+# ISO-8859-8, of Hebrew written in the order it is shown.
+constant ISO_8859_8: str
+    "ISO-8859-8"
+
+# ISO-8859-8-I, of Hebrew written in the order it is read: ISO-8859-8's bytes,
+# which a browser lays out by the bidirectional algorithm.
+constant ISO_8859_8_I: str
+    "ISO-8859-8-I"
+
+# ISO-8859-10, Latin-6, of the Nordic languages.
+constant ISO_8859_10: str
+    "ISO-8859-10"
+
+# ISO-8859-13, Latin-7, of the Baltic languages.
+constant ISO_8859_13: str
+    "ISO-8859-13"
+
+# ISO-8859-14, Latin-8, of the Celtic languages.
+constant ISO_8859_14: str
+    "ISO-8859-14"
+
+# ISO-8859-15, Latin-9: Latin-1 with the euro sign.
+constant ISO_8859_15: str
+    "ISO-8859-15"
+
+# ISO-8859-16, Latin-10, of South-Eastern Europe.
+constant ISO_8859_16: str
+    "ISO-8859-16"
+
+# KOI8-R, of Russian.
+constant KOI8_R: str
+    "KOI8-R"
+
+# KOI8-U, of Ukrainian.
+constant KOI8_U: str
+    "KOI8-U"
+
+# The Mac OS Roman encoding.
+constant MACINTOSH: str
+    "macintosh"
+
+# windows-874, of Thai.
+constant WINDOWS_874: str
+    "windows-874"
+
+# windows-1250, of Central Europe.
+constant WINDOWS_1250: str
+    "windows-1250"
+
+# windows-1251, of Cyrillic.
+constant WINDOWS_1251: str
+    "windows-1251"
+
+# windows-1252, of Western Europe: the encoding `latin1`, `iso-8859-1` and
+# `ascii` name.
+constant WINDOWS_1252: str
+    "windows-1252"
+
+# windows-1253, of Greek.
+constant WINDOWS_1253: str
+    "windows-1253"
+
+# windows-1254, of Turkish, which `iso-8859-9` names.
+constant WINDOWS_1254: str
+    "windows-1254"
+
+# windows-1255, of Hebrew.
+constant WINDOWS_1255: str
+    "windows-1255"
+
+# windows-1256, of Arabic.
+constant WINDOWS_1256: str
+    "windows-1256"
+
+# windows-1257, of the Baltic languages.
+constant WINDOWS_1257: str
+    "windows-1257"
+
+# windows-1258, of Vietnamese.
+constant WINDOWS_1258: str
+    "windows-1258"
+
+# The Mac OS Cyrillic encoding, with the euro sign.
+constant X_MAC_CYRILLIC: str
+    "x-mac-cyrillic"
+
+# GBK, of simplified Chinese: gb18030 read, and written without its four-byte
+# sequences. `gb2312` names it.
+constant GBK: str
+    "GBK"
+
+# gb18030, of Chinese: GB18030-2022, which has bytes for every character.
+constant GB18030: str
+    "gb18030"
+
+# Big5, of traditional Chinese, with the Hong Kong Supplementary Character Set
+# read.
+constant BIG5: str
+    "Big5"
+
+# EUC-JP, of Japanese, with JIS X 0212 read.
+constant EUC_JP: str
+    "EUC-JP"
+
+# ISO-2022-JP, of Japanese in seven bits, switched by escape sequences.
+constant ISO_2022_JP: str
+    "ISO-2022-JP"
+
+# Shift_JIS, of Japanese, with the extensions of Windows code page 932.
+constant SHIFT_JIS: str
+    "Shift_JIS"
+
+# EUC-KR, of Korean, with the Unified Hangul Code of Windows code page 949.
+constant EUC_KR: str
+    "EUC-KR"
+
+# The encoding `replacement`, which reads any bytes as one U+FFFD and writes
+# nothing: the labels of ISO-2022-KR, ISO-2022-CN and HZ name it, so that text
+# in them cannot slip markup past a filter.
+constant REPLACEMENT: str
+    "replacement"
+
+# UTF-16 with the high byte of each unit first.
+constant UTF_16BE: str
+    "UTF-16BE"
+
+# UTF-16 with the low byte of each unit first: the encoding `utf-16` names.
+constant UTF_16LE: str
+    "UTF-16LE"
+
+# x-user-defined: ASCII, and each byte from 0x80 as U+F780 plus its number
+# less 0x80.
+constant X_USER_DEFINED: str
+    "x-user-defined"
 
 ## Examples
 

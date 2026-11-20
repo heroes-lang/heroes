@@ -2,7 +2,7 @@
 # function, each answering what C answers, in C's order. Where a call fails
 # its stream or listener is `nullptr` or its count -1, and `last_error` then
 # names the kind, `last_message` the system's own words. Rebel's floor of
-# `tls` (`examples/packages/README.md` § 4.1): no policy stands here, and the
+# `tls` (`examples-rebel/README.md` § A2): no policy stands here, and the
 # face above it turns every kind into a code.
 #
 # The layer is C of the language's own beside the runtime, so this group

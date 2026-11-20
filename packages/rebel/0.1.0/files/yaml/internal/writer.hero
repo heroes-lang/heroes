@@ -8,9 +8,9 @@ use json
 use yaml/internal/stack
 use yaml/internal/style
 
-# The code of a value no YAML can say.
-constant INVALID: str
-    "invalid"
+# The code of a value no YAML can say: a `nan` or an infinity.
+constant UNSUPPORTED: str
+    "unsupported"
 
 # The node is a document's root.
 constant ROOT: i64
@@ -41,8 +41,8 @@ record Work
     # `:`, or its `-`.
     head: str
 
-# `v` as one document, ending with a line break. Fails `invalid` where it holds
-# a `nan` or an infinity.
+# `v` as one document, ending with a line break. Fails `unsupported` where it
+# holds a `nan` or an infinity.
 function document(v: json.Value) -> str?
     pieces: [str] @= []
     works: [Work] @= [Work(value: v, indent: 0, place: ROOT, head: "")]
@@ -64,7 +64,7 @@ function document(v: json.Value) -> str?
             .boolean b  => pieces @ pieces.push(f"{gap}{b.v}\n")
             .number n =>
                 if n.v != n.v || n.v - n.v != 0.0
-                    return fail(code: INVALID, msg: f"a number {n.v}, which YAML's JSON schema cannot write")
+                    return fail(code: UNSUPPORTED, msg: f"a number {n.v}, which YAML's JSON schema cannot write")
                 pieces @ pieces.push(gap + json.format(.number(v: n.v))? + "\n")
             .text t => pieces @ pieces.push(gap + scalar(s: t.v, w: w))
             .list l =>

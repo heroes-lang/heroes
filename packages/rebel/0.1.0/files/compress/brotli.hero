@@ -13,7 +13,8 @@
 # piece or through a stream: a program reads the whole input first
 # (`io.read_all`, `fs.read_bytes`). DEFLATE, gzip and zlib are
 # `compress`'s, bzip2 `compress/bzip2`'s, Zstandard `compress/zstd`'s, xz
-# and LZMA `compress/xz`'s.
+# and LZMA `compress/xz`'s, LZ4 `compress/lz4`'s; `compress` and
+# `compress/lz4` are the two that read and write through a stream.
 #
 # **A compressed input is not trusted.** Every function that decompresses
 # takes a `limit`, the most bytes it may produce, and fails `limit` before
@@ -49,9 +50,12 @@ constant LIMIT: str
 constant MIN_QUALITY: i64
     0
 
-# The highest quality, the `brotli` tool's usual: 512 earlier places tried
-# for each byte.
+# The highest quality: 512 earlier places tried for each byte.
 constant MAX_QUALITY: i64
+    11
+
+# The quality `defaults` sets, the `brotli` tool's usual and the highest.
+constant DEFAULT_QUALITY: i64
     11
 
 # The narrowest window: 2^10 - 16 bytes.
@@ -76,7 +80,7 @@ record Options
 #
 # See also `compress`.
 function defaults() -> Options
-    return Options(quality: MAX_QUALITY, window_bits: 22)
+    return Options(quality: DEFAULT_QUALITY, window_bits: 22)
 
 ## All at once
 
@@ -142,7 +146,7 @@ function decompress_leading(data: [u8], limit: i64) -> Leading?
 # The usual options, with a narrower window.
 test "defaults: quality 11 and 22 bits, then 16"
     o @= defaults()
-    assert o.quality == MAX_QUALITY && o.window_bits == 22
+    assert o.quality == DEFAULT_QUALITY && DEFAULT_QUALITY == MAX_QUALITY && o.window_bits == 22
     o.window_bits @ 16
     assert decompress(compress([0x61, 0x62], o).must(), limit: 2).must() == [0x61, 0x62]
 

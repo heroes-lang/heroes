@@ -6,6 +6,7 @@
 # starting words past 2^63 are written as the negative numbers that hold
 # their bits.
 
+use bytes
 use crypto/internal/rounds512
 use crypto/internal/word
 
@@ -134,9 +135,9 @@ function one_block(start: [i64], message: [u8]) -> [i64]
     return compress(start, block, 0)
 
 test "sha512 compress: the one block of the message abc, from SHA-512's words and from SHA-384's"
-    abc = one_block(start: START512, message: word.bytes_of("abc"))
+    abc = one_block(start: START512, message: bytes.from_text("abc"))
     assert word.shift_right(x: abc[0], n: 32) == 0xddaf35a1 && abc[0] & word.LOW32 == 0x93617aba
-    assert word.shift_right(x: one_block(start: START384, message: word.bytes_of("abc"))[0], n: 32) == 0xcb00753f
+    assert word.shift_right(x: one_block(start: START384, message: bytes.from_text("abc"))[0], n: 32) == 0xcb00753f
 
 test "sha512 starting words of SHA-512/224 and SHA-512/256: computed again as FIPS 180-4 5.3.6 makes them"
     seed: [i64] @= []
@@ -144,5 +145,5 @@ test "sha512 starting words of SHA-512/224 and SHA-512/256: computed again as FI
     for x in START512
         seed @ seed.push(x ^ -6510615555426900571)
 
-    assert one_block(start: seed, message: word.bytes_of("SHA-512/224")) == START512_224
-    assert one_block(start: seed, message: word.bytes_of("SHA-512/256")) == START512_256
+    assert one_block(start: seed, message: bytes.from_text("SHA-512/224")) == START512_224
+    assert one_block(start: seed, message: bytes.from_text("SHA-512/256")) == START512_256

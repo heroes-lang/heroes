@@ -3,6 +3,7 @@
 # by `new_scanner` and `set_rules`.
 
 use regex
+use scanner
 use strings
 
 # The rules, ready to read by.
@@ -59,15 +60,15 @@ record Config
 # empty texts of `line_comments` dropped, block comments off where either
 # delimiter is empty, the keywords made a map, the operators compiled for
 # the longest match, and the ASCII characters of `whitespace` made a table.
-function build(identifiers: bool, identifier_char: (function(str, i64) -> bool), go_identifiers: bool, keywords: [str], integers: bool, floats: bool, string_quotes: str, raw_quotes: str, char_quotes: str, multiline_strings: bool, line_comments: [str], block_open: str, block_close: str, nested: bool, keep_comments: bool, whitespace: str, keep_whitespace: bool, keep_newlines: bool, operators: [str], classes: [regex.Regex]) -> Config
+function build(rules: scanner.Rules, go_identifiers: bool) -> Config
     words: {str: bool} @= {}
 
-    for k in keywords
+    for k in rules.keywords
         words[k] @ true
 
     starts: [str] @= []
 
-    for c in line_comments
+    for c in rules.line_comments
         if c.len() > 0
             starts @ starts.push(c)
 
@@ -78,46 +79,46 @@ function build(identifiers: bool, identifier_char: (function(str, i64) -> bool),
 
     beyond: bool @= false
 
-    for c in whitespace.chars()
+    for c in rules.whitespace.chars()
         if c.len() == 1
             table[to_i64(c[0]).must()] @ true
         else
             beyond @ true
 
-    open: str @= block_open
+    open: str @= rules.block_comment_open
 
-    if block_close.len() == 0
+    if rules.block_comment_close.len() == 0
         open @ ""
     has_operators: bool @= false
 
-    for o in operators
+    for o in rules.operators
         if o.len() > 0
             has_operators @ true
 
     return Config(
-        identifiers: identifiers,
-        identifier_char: identifier_char,
+        identifiers: rules.identifiers,
+        identifier_char: rules.identifier_char,
         go_identifiers: go_identifiers,
         keywords: words,
-        integers: integers || floats,
-        floats: floats,
-        string_quotes: string_quotes,
-        raw_quotes: raw_quotes,
-        char_quotes: char_quotes,
-        multiline_strings: multiline_strings,
+        integers: rules.integers || rules.floats,
+        floats: rules.floats,
+        string_quotes: rules.string_quotes,
+        raw_quotes: rules.raw_quotes,
+        char_quotes: rules.char_quotes,
+        multiline_strings: rules.multiline_strings,
         line_comments: starts,
         block_open: open,
-        block_close: block_close,
-        nested: nested,
-        keep_comments: keep_comments,
-        whitespace: whitespace,
+        block_close: rules.block_comment_close,
+        nested: rules.nested_comments,
+        keep_comments: rules.keep_comments,
+        whitespace: rules.whitespace,
         space_table: table,
         space_beyond_ascii: beyond,
-        keep_whitespace: keep_whitespace,
-        keep_newlines: keep_newlines,
-        operators: strings.compile_patterns(operators, .leftmost_longest),
+        keep_whitespace: rules.keep_whitespace,
+        keep_newlines: rules.keep_newlines,
+        operators: strings.compile_patterns(rules.operators, .leftmost_longest),
         has_operators: has_operators,
-        classes: classes
+        classes: rules.classes
     )
 
 # Whether `c` is never an identifier's character: the rule of a config that
@@ -128,10 +129,9 @@ function never(c: str, at: i64) -> bool
 # A config that reads no kind and skips nothing, every character `other`:
 # what a scanner holds until its rules are compiled.
 function empty() -> Config
-    return build(
+    rules = scanner.Rules(
         identifiers: false,
         identifier_char: never,
-        go_identifiers: false,
         keywords: [],
         integers: false,
         floats: false,
@@ -140,9 +140,9 @@ function empty() -> Config
         char_quotes: "",
         multiline_strings: false,
         line_comments: [],
-        block_open: "",
-        block_close: "",
-        nested: false,
+        block_comment_open: "",
+        block_comment_close: "",
+        nested_comments: false,
         keep_comments: false,
         whitespace: "",
         keep_whitespace: false,
@@ -150,14 +150,14 @@ function empty() -> Config
         operators: [],
         classes: []
     )
+    return build(rules, go_identifiers: false)
 
 ## Tests
 
 test "build: empty comment starts dropped, a block comment with no close, keywords, white space beyond ASCII, and operators"
-    c = build(
+    rules = scanner.Rules(
         identifiers: true,
         identifier_char: never,
-        go_identifiers: false,
         keywords: ["if", "else"],
         integers: false,
         floats: true,
@@ -166,9 +166,9 @@ test "build: empty comment starts dropped, a block comment with no close, keywor
         char_quotes: "",
         multiline_strings: false,
         line_comments: ["", "#"],
-        block_open: "/*",
-        block_close: "",
-        nested: false,
+        block_comment_open: "/*",
+        block_comment_close: "",
+        nested_comments: false,
         keep_comments: false,
         whitespace: " \t·",
         keep_whitespace: false,
@@ -176,6 +176,7 @@ test "build: empty comment starts dropped, a block comment with no close, keywor
         operators: [""],
         classes: []
     )
+    c = build(rules, go_identifiers: false)
     assert c.line_comments == ["#"] && c.block_open == ""
     assert c.keywords["else"].must() && c.keywords["then"].is_err()
     assert c.integers && c.space_table[32] && c.space_table[9] && !c.space_table[10] && c.space_beyond_ascii

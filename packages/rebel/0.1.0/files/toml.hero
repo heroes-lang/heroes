@@ -10,8 +10,12 @@
 #
 # Its dates and times are `time` values: a date and a time with an offset is
 # held as written, with its offset, so that every year from 0 to 9999 is held,
-# and `instant_of` answers the instant where an `Instant` reaches it. The
-# compiler reads its own `heroes.toml` with its own code, not with this.
+# and `instant_of` answers the instant where an `Instant` reaches it.
+#
+# It fills no record by its fields' names, since the language has no
+# reflection: a program reads each value with `value_at` and builds its own
+# record. Settings read in layers, a TOML file among them, with getters that
+# name the layer a value came from, are `config`'s.
 #
 # A `Document` is a TOML text edited in place: a value set, added or taken
 # out by its path, every byte the edit does not touch kept, its comments,
@@ -21,7 +25,8 @@
 # Fails `invalid` where a text is not TOML 1.1.0, the message opening `line L,
 # column C:`, both from 1 and the column in characters; `does_not_fit` where an
 # integer is past an `i64`; `not_found` where a key looked up is not there;
-# `exists` where a table added is there already.
+# `exists` where a table added is there already; `unsupported` where a value
+# crossing to or from JSON has no form on the other side.
 
 use json
 use time
@@ -100,6 +105,11 @@ constant NOT_FOUND: str
 # The code of a table added where something stands already: `add_table`.
 constant EXISTS: str
     "exists"
+
+# The code of a value one side has no form for: a `nan` or an infinity, which
+# `to_json` fails with, and JSON's `null`, which `from_json` fails with.
+constant UNSUPPORTED: str
+    "unsupported"
 
 # The deepest a value may stand below the document: the keys of its path and
 # the arrays and inline tables around it counted together. `parse` and
@@ -189,15 +199,18 @@ function parse(text: str) -> Value?
 
     return ok(result)
 
-# The value under `path` in `v`, each key naming a member of the table the
-# one before it reached.
+# The value under `path` in `v`, each step a key of a table or the index of
+# an item of an array, read as `value_of` reads a document's path.
 #
-# - `v`: a value, a document or any table in it.
-# - `path`: the keys, outermost first; empty for `v` itself.
+# - `v`: a value, a document or any table or array in it.
+# - `path`: the steps, outermost first: a key names a member of a table, and
+#   at an array, an array of tables included, a step is an index in decimal
+#   from "0"; empty for `v` itself.
 #
-# Fails `not_found` where a table holds no such key, and `invalid` where a
-# key is asked of a value that is not a table, each message naming the path
-# that far.
+# Fails `not_found` where a table holds no such key or an array no such
+# index, and `invalid` where a step goes into a value that is no table or
+# array or is no index of an array, each message naming the path that far.
+# See also `value_of`.
 function value_at(v: Value, path: [str]) -> Value?
     here @= v
 
@@ -209,7 +222,13 @@ function value_at(v: Value, path: [str]) -> Value?
                 match t.members[path[at]]
                     .ok found => here @ found
                     .err _    => return fail(code: NOT_FOUND, msg: f"no key \"{so_far}\"")
-            .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ =>
+            .array a =>
+                i = layout.step_index(path[at])?
+
+                if i >= a.items.len()
+                    return fail(code: NOT_FOUND, msg: f"no item \"{so_far}\": the array holds {a.items.len()}")
+                here @ a.items[i]
+            .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ =>
                 return fail(code: INVALID, msg: f"\"{so_far}\" asks a key of a value that is not a table")
 
     return ok(here)
@@ -471,11 +490,6 @@ function add_table_entry(@d: Document, path: [str], entry: Value) -> i64?
     return ok(added.index)
 
 ## JSON
-
-# The code of a value one side has no form for: a `nan` or an infinity, which
-# `to_json` fails with, and JSON's `null`, which `from_json` fails with.
-constant UNSUPPORTED: str
-    "unsupported"
 
 # `v` as a `json.Value`: a table an object, an array a list, and a date or a
 # time the RFC 3339 text TOML writes for it.
@@ -799,10 +813,11 @@ test "parse: a table and a key in it"
     doc_value = parse("[server]\nhost = \"example.org\"\nport = 8080\n").must()
     assert value_at(doc_value, ["server", "port"]).must() == .integer(v: 8080)
 
-# A value under a path of keys.
+# A value under a path of keys, and through an array of tables by an index.
 test "value_at: a key of an array of tables' element is reached through the array's value"
-    doc_value = parse("title = \"Low\"\n[owner]\nname = \"Ana\"\n").must()
+    doc_value = parse("[owner]\nname = \"Ana\"\n[[bin]]\nname = \"a\"\n[[bin]]\nname = \"b\"\n").must()
     assert value_at(doc_value, ["owner", "name"]).must() == .text(v: "Ana")
+    assert value_at(doc_value, ["bin", "1", "name"]).must() == .text(v: "b")
 
 # The instant a date and time names.
 test "instant_of: 1979-05-27T00:32:00-07:00 is 07:32 in UTC"
@@ -907,6 +922,34 @@ test "value_of: the whole document, an index past an array, a key below a value,
 
     assert value_of(d, ["a", "first"]).is_err()
     assert value_of(d, ["b"]).is_err()
+
+test "value_at: an index into an array, past it, a leading zero, a word at an array, and a key below a value, each as value_of reads it"
+    text = "a = [1, [2, 3]]\n[t]\nx = 1\n"
+    v = parse(text).must()
+    d = parse_document(text).must()
+    assert value_at(v, ["a", "0"]).must() == .integer(v: 1)
+    assert value_at(v, ["a", "1", "1"]).must() == .integer(v: 3)
+    assert value_at(v, ["a", "1", "1"]).must() == value_of(d, ["a", "1", "1"]).must()
+
+    for refused in [["a", "2"], ["a", "1", "2"]]
+        match value_at(v, refused)
+            .ok _ => assert false
+            .err e =>
+                assert e.code == NOT_FOUND
+
+                match value_of(d, refused)
+                    .ok _      => assert false
+                    .err other => assert e.msg == other.msg
+
+    for refused in [["a", "01"], ["a", "first"], ["a", "-1"], ["a", ""], ["t", "x", "y"], ["a", "0", "0"]]
+        match value_at(v, refused)
+            .ok _ => assert false
+            .err e =>
+                assert e.code == INVALID
+
+                match value_of(d, refused)
+                    .ok _      => assert false
+                    .err other => assert e.msg == other.msg
 
 test "parse_document and the edits: a text that is not TOML refused, an edit that fails leaving the document as it was"
     assert parse_document("a = ").is_err()

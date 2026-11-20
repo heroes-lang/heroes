@@ -3,17 +3,45 @@
 # columns by place and by name, what a statement that changes rows answers,
 # the codes a database failure is told with, and an identifier quoted.
 #
-# It talks to no database. A driver does, and every driver of Rebel keeps one
-# API name for name over these types: `sql/postgres` speaks PostgreSQL's own
-# protocol over `net`, and `sql/sqlite` runs SQLite through its C library,
-# which only a program using that driver links. The contract is written in
-# `sql/postgres`'s opening comment.
+# It talks to no database. A driver does, and Rebel has four: `sql/postgres`
+# speaks PostgreSQL's own protocol over `net`, `sql/mysql` MySQL's and
+# MariaDB's, `sql/sqlite` runs SQLite through its C library, and `sql/odbc`
+# reaches any database through the system's ODBC driver manager; the last two
+# link their C libraries only into a program that uses them. A query composed
+# as a value and written for a driver is `sql/build`'s, and a schema's
+# numbered migrations, planned as steps a driver runs, are `sql/migrate`'s.
+#
+# ## The contract every driver keeps
+#
+# Every driver answers these calls, name for name, over this package's types;
+# only `open`'s argument, what names the database, is the driver's own. A
+# program moves from one database to another by changing its `use`, its
+# `open`, and the placeholders of its statements.
+#
+# - `open(...) -> Db?`: a connection; `close` ends it, and the program owes it.
+# - `close(@db: Db) -> ()?`
+# - `exec(@db: Db, statement: str, params: [sql.Value]) -> sql.Result?`: one
+#   statement that answers no rows, its values bound as parameters.
+# - `query(@db: Db, statement: str, params: [sql.Value]) -> sql.Rows?`: one
+#   statement's rows.
+# - `query_one(@db: Db, statement: str, params: [sql.Value]) -> sql.Row?`: its
+#   first row, failing `not_found` where it answers none.
+# - `exec_script(@db: Db, script: str) -> ()?`: several statements separated by
+#   semicolons, with no parameters, as a migration is.
+# - `prepare(@db: Db, statement: str) -> Statement?`: a statement read once and
+#   run many times; `close_statement` ends it.
+# - `exec_prepared(@db: Db, prepared: Statement, params: [sql.Value]) -> sql.Result?`
+# - `query_prepared(@db: Db, prepared: Statement, params: [sql.Value]) -> sql.Rows?`
+# - `close_statement(@db: Db, @prepared: Statement) -> ()?`
+# - `begin(@db: Db) -> ()?`, `commit(@db: Db) -> ()?`, `rollback(@db: Db) -> ()?`:
+#   a transaction, which `begin` refuses to open inside another.
 #
 # A value travels as a parameter, never inside the text of a statement: a
-# statement names its parameters with the database's own placeholders, `$1`
-# for PostgreSQL and `?1` for SQLite, and the values come in a list beside it.
-# So nothing here quotes a value; `quote_identifier` quotes a name, which a
-# parameter cannot carry.
+# statement names its parameters with the database's own placeholders, `$1`,
+# `$2` and on for PostgreSQL, `?1`, `?2` and on for SQLite, and `?` for MySQL
+# and ODBC, and the values come in a list beside it, in the placeholders'
+# order. So nothing here quotes a value; `quote_identifier` quotes a name,
+# which a parameter cannot carry.
 #
 # A database failure is told with one of the codes below, and its message
 # keeps the database's own code and words: `[23505] duplicate key value

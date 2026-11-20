@@ -158,7 +158,7 @@ capability compress/gzip-members  several gzip members read as one
   note    `decompress` and a `Reader` read every member; `decompress_leading` and a `Decompressor` read one
 
 capability compress/gzip-file  a gzip file opened by its path
-  heroes  refused: a path is `fs`'s, a package of the same layer; `fs.open` answers the stream `reader` and `writer` take
+  heroes  refused: a path is `fs`'s, a package above this one; `fs.open` answers the stream `reader` and `writer` take
   go      -
   rust    -
   python  gzip.open, GzipFile(filename=, mode="ab"), GzipFile(mode="xb"), gzip.open(encoding=, errors=, newline=), GzipFile.name, GzipFile.myfileobj, gzip.READ, gzip.WRITE

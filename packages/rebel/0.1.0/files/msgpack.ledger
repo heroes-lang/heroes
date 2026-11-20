@@ -63,7 +63,7 @@ capability msgpack/floats  float 32 and float 64 read, and written at their smal
   go      -
   rust    -
   python  -
-  note    every float is held as an `f64`, which holds every single exactly; the bits are made by exact arithmetic on powers of two, a module `cbor` holds too since neither package may use the other and no package below them offers a float's bits
+  note    every float is held as an `f64`, which holds every single exactly; the bits are read and made by `numbers`' exact conversions (`bits_to_f64`, `bits_to_f32`, `f64_to_bits`, `f32_to_bits`) since 2026-11-20, every NaN written as the one quiet NaN as `bson` writes it; until then by exact arithmetic on powers of two in a module of this package's own, whose opening comment said no package below offered a float's bits, which `numbers` did
 
 capability msgpack/float-width  a float written in 64 bits though a single holds it
   heroes  refused: the specification asks a serializer for the smallest format, and the value holds a number, not the width it came in; every reader of MessagePack reads both widths
@@ -104,6 +104,13 @@ capability msgpack/member  a map's value read by its string key
   rust    -
   python  -
   note    the first entry where a key stands twice
+
+capability msgpack/read-kind  an object's kind, truth, float, string, bytes, array items and map entries read out, each failing where the object is of another kind
+  heroes  msgpack.kind_of, msgpack.bool_of, msgpack.float_of, msgpack.text_of, msgpack.bytes_of, msgpack.items_of, msgpack.entries_of
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-20, `cbor`'s readers by the same names (cbor/read-kind), so a program moved from CBOR to MessagePack by its `use` line keeps its reads; each fails `invalid` naming the kind it expected and the kind it found in MessagePack's words; a string is no binary, an extension's bytes are no binary, and an integer no float, which `int_of` reads; `kind_of` answers the case's name as a `match` writes it
 
 capability msgpack/records  a record of the program written to and read from a map by its field names
   heroes  refused: the language has no reflection; a record is written by hand with its `Record::field` names (spec § 9), which the compiler checks, as `cbor`'s example of `encode` shows, and a generator of those functions would be a verb of `heroes`, which needs a design sitting

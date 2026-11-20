@@ -5,6 +5,7 @@
 # every pass moving past at least one byte.
 
 use regex
+use scanner
 use scanner/internal/config
 use scanner/internal/cursor
 use scanner/internal/kinds
@@ -263,36 +264,14 @@ function next(c: config.Config lent, s: str, from: cursor.Cursor) -> Lexed
 
 ## Tests
 
-# Go's rule of identifiers, the face's `is_identifier_char`, for the tests
-# below.
-function go_char(c: str, at: i64) -> bool
-    return c == "_" || unicode.is_letter(c) || at > 0 && unicode.is_digit(c)
-
-# A config of Go's rules with the program's operators, keywords and classes
-# given, for the tests below.
+# A config of Go's rules, the face's `go_rules`, with the program's
+# operators, keywords and classes given, for the tests below.
 function go_config(operators: [str], keywords: [str], classes: [regex.Regex]) -> config.Config
-    return config.build(
-        identifiers: true,
-        identifier_char: go_char,
-        go_identifiers: true,
-        keywords: keywords,
-        integers: true,
-        floats: true,
-        string_quotes: "\"",
-        raw_quotes: "`",
-        char_quotes: "'",
-        multiline_strings: false,
-        line_comments: ["//"],
-        block_open: "/*",
-        block_close: "*/",
-        nested: false,
-        keep_comments: false,
-        whitespace: " \t\n\r",
-        keep_whitespace: false,
-        keep_newlines: false,
-        operators: operators,
-        classes: classes
-    )
+    rules @= scanner.go_rules()
+    rules.operators @ operators
+    rules.keywords @ keywords
+    rules.classes @ classes
+    return config.build(rules, go_identifiers: true)
 
 test "line_end_at: a line feed, a carriage return before one, one alone, and none"
     assert line_end_at(s: "a\nb", at: 1) == 1
@@ -311,28 +290,19 @@ test "comment_at and block_comment: a line comment to its line end, a block clos
     assert comment_at(c: c, s: "/**/x", at: 0).end == 4
     assert comment_at(c: c, s: "/*/", at: 0) == Piece(kind: kinds.INVALID, end: 3, reason: "comment not terminated", index: -1)
     assert comment_at(c: c, s: "/ /", at: 0).end == 0
-    odd = config.build(
-        identifiers: false,
-        identifier_char: go_char,
-        go_identifiers: true,
-        keywords: [],
-        integers: false,
-        floats: false,
-        string_quotes: "",
-        raw_quotes: "",
-        char_quotes: "",
-        multiline_strings: false,
-        line_comments: ["\n"],
-        block_open: "",
-        block_close: "",
-        nested: false,
-        keep_comments: true,
-        whitespace: "",
-        keep_whitespace: false,
-        keep_newlines: false,
-        operators: [],
-        classes: []
-    )
+    odd_rules @= scanner.go_rules()
+    odd_rules.identifiers @ false
+    odd_rules.integers @ false
+    odd_rules.floats @ false
+    odd_rules.string_quotes @ ""
+    odd_rules.raw_quotes @ ""
+    odd_rules.char_quotes @ ""
+    odd_rules.line_comments @ ["\n"]
+    odd_rules.block_comment_open @ ""
+    odd_rules.block_comment_close @ ""
+    odd_rules.keep_comments @ true
+    odd_rules.whitespace @ ""
+    odd = config.build(odd_rules, go_identifiers: true)
     assert comment_at(c: odd, s: "a\nb\nc", at: 1) == piece(kind: kinds.COMMENT, end: 3)
 
 test "class_at: the longest of two, the first of two as long, and an empty match"

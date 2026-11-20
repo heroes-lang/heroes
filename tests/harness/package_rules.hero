@@ -2,8 +2,9 @@
 # test can ask it of a literal: how a path and a declared name are spelled,
 # what a code looks like, what a package may not do, what every function owes,
 # what a driver reaches, and how a local static index is written. The
-# conventions are `examples-rebel/packages/README.md`'s, each marked there
-# "(the `packages` suite)".
+# conventions are Rebel's rules page's, `examples-rebel/README.md`, each cited
+# at its rule below (the page they were first written from, `core`'s, left
+# the tree on 2026-11-20).
 #
 # **The `packages` suite that walked an index with these retired with the
 # package it walked** (M-rebel-library step 55f, 2026-11-19): it held one
@@ -316,7 +317,7 @@ function module_path(root: str, path: str) -> str
 
 # The parts of a path under a package's root that are not lower case: each
 # directory `[a-z][a-z0-9_]*`, and the file's name the same before its one
-# extension, `[a-z0-9]+` (`examples-rebel/packages/README.md` § 1.5). On a volume that
+# extension, `[a-z0-9]+` (defect 2290). On a volume that
 # folds case, two spellings are one file, and a module named in a capital
 # compiles there and nowhere else.
 function crooked_parts(rel: str) -> [str]
@@ -395,7 +396,7 @@ function folded(text: str) -> str
     return bytes.validated_bytes().must()
 
 # The records and variants not named in PascalCase, `[A-Z][A-Za-z0-9]*`, and the
-# constants not in SCREAMING_CASE, `[A-Z][A-Z0-9_]*` (`examples-rebel/packages/README.md` § 2.5):
+# constants not in SCREAMING_CASE, `[A-Z][A-Z0-9_]*` (`examples-rebel/README.md` § A3):
 # a declaration in column 0, or a member of an `extern` group indented under
 # one, since no statement opens with these words.
 function misnamed(text: str) -> [str]
@@ -438,7 +439,7 @@ function screaming(name: str) -> bool
     return true
 
 # The codes a module's `fail` calls write that are not snake_case,
-# `[a-z][a-z0-9_]*` (spec § 6, `examples-rebel/packages/README.md` § 3.2), tests included: each
+# `[a-z][a-z0-9_]*` (spec § 6, `examples-rebel/README.md` § A4), tests included: each
 # literal, and each `str` constant of the module a code is written through (the
 # conventions' § 3.3), read for its value.
 function crooked_codes(text: str) -> [str]

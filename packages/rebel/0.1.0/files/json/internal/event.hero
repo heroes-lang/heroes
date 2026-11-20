@@ -2,9 +2,9 @@
 # events in the order the text writes them, a container's opening, each of its
 # members' keys and values, and its closing.
 #
-# The package's private modules work on this list and never on `json.Value`,
-# which only the face can name: a module the face uses may not use the face.
-# The face turns the list into a value and a value into the list, each on a
+# The package's private modules work on this list and never on `json.Value`:
+# a text respaced as it was written, `to_compact`, is never made a value. The
+# face turns the list into a value and a value into the list, each on a
 # stack of its own, so that no function follows the data with recursion.
 
 # A `null`.

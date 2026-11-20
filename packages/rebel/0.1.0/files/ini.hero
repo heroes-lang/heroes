@@ -314,7 +314,7 @@ function section_of(doc: Document, name: str) -> {str: str}?
 # the section holds it, at the end otherwise, the section added at the end
 # where `doc` has none of that name.
 #
-# - `@doc`: the document; changes.
+# - `doc`: the document; changes.
 # - `section`: the section's name.
 # - `key`: the key; its comments stay.
 # - `value`: the value.
@@ -340,7 +340,7 @@ function set_value(@doc: Document, section: str, key: str, value: str)
 
 # Adds an empty section `name` at the end of `doc`.
 #
-# - `@doc`: the document; gains the section.
+# - `doc`: the document; gains the section.
 # - `name`: the section's name.
 #
 # Fails `exists` where `doc` holds a section of that name.
@@ -352,7 +352,7 @@ function add_section(@doc: Document, name: str) -> ()?
 
 # Removes the section `name` and every key in it.
 #
-# - `@doc`: the document; loses the section.
+# - `doc`: the document; loses the section.
 # - `name`: the section's name.
 #
 # Fails `not_found` where `doc` holds no such section.
@@ -376,7 +376,7 @@ function remove_section(@doc: Document, name: str) -> ()?
 
 # Removes `key` from the section `section`.
 #
-# - `@doc`: the document; loses the key.
+# - `doc`: the document; loses the key.
 # - `section`: the section's name.
 # - `key`: the key; one `DEFAULT_SECTION` holds is not removed from it.
 #

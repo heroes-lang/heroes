@@ -1,0 +1,26 @@
+# How a message names the kind of a MessagePack object it did not expect: the
+# name of a case of the face's `Value`, as `kind_of` answers it, in
+# MessagePack's own words with their article.
+
+# The words for the case named `kind`: "an unsigned integer", "a string",
+# "nil"; a name that is none of the ten is written in backticks.
+function described(kind: str) -> str
+    return match kind
+        "nil_value" => "nil"
+        "boolean"   => "a boolean"
+        "unsigned"  => "an unsigned integer"
+        "negative"  => "a negative integer"
+        "float"     => "a float"
+        "text"      => "a string"
+        "binary"    => "a binary"
+        "list"      => "an array"
+        "pairs"     => "a map"
+        "extension" => "an extension"
+        _           => f"`{kind}`"
+
+## Tests
+
+test "described: every case's name, and a name that is none"
+    assert described("nil_value") == "nil" && described("binary") == "a binary" && described("pairs") == "a map"
+    assert described("extension") == "an extension" && described("text") == "a string"
+    assert described("tagged") == "`tagged`"

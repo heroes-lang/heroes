@@ -35,13 +35,14 @@ use yaml/internal/writer
 
 ## Codes and limits
 
-# The code of a text that is not YAML, of a key that is not text, of a tag on a
-# node it cannot describe, and of a value no YAML can say.
+# The code of a text that is not YAML, of a key that is not text, and of a
+# tag on a node it cannot describe.
 constant INVALID: str
     "invalid"
 
-# The code of a tag that is not one of the core ones, and of a `%YAML`
-# directive naming a version past 1.
+# The code of a tag that is not one of the core ones, of a `%YAML` directive
+# naming a version past 1, and of a value that holds a `nan` or an infinity,
+# which the JSON schema cannot say: `format`, `format_all`.
 constant UNSUPPORTED: str
     "unsupported"
 
@@ -183,8 +184,8 @@ function is_valid(text: str) -> bool
 # written as a literal block, `|`, where its characters allow it. A number is
 # written as `json.format` writes it.
 #
-# Fails `invalid` where `v` holds a `nan` or an infinity, which the JSON schema
-# cannot say.
+# Fails `unsupported` where `v` holds a `nan` or an infinity, which the JSON
+# schema cannot say.
 #
 # The same value always gives the same bytes, its members in the order the map
 # holds them, and `parse` reads back what it writes as the same value. It holds
@@ -199,7 +200,7 @@ function format(v: json.Value) -> str?
 #
 # - `values`: the documents' values in order; none gives the empty text.
 #
-# Fails `invalid` where a value holds a `nan` or an infinity.
+# Fails `unsupported` where a value holds a `nan` or an infinity.
 #
 # `parse_all` reads back what it writes as the same values.
 #
@@ -425,7 +426,7 @@ test "format: nan and the infinities refused, and a value nested ten thousand de
 
     match format(.object(members: {"x": .number(v: inf)}))
         .ok _  => assert false
-        .err e => assert e.code == INVALID
+        .err e => assert e.code == UNSUPPORTED
 
     deep: json.Value @= .null_value
 

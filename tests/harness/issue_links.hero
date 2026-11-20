@@ -274,7 +274,8 @@ function url_of(t: Targets, kind: str, number: i64, own: i64) -> str
 # 2026-11-15): no `panel NNN` reaches it, since `linked_prose` reads six
 # digits at most, so its file is passed by. Until then the run was read by
 # `.must()`, and since defect 2545 made `to_number` refuse such a run by name,
-# `docs/panel/99999999999999999999-x.md` stopped `link` at exit 134.
+# a sitting named so, on 2026-11-15 `docs/panel/99999999999999999999-x.md`,
+# stopped `link` at exit 134.
 function sittings_of(paths: [str]) -> {i64: str}
     found: {i64: [str]} @= {}
     none: [str] = []

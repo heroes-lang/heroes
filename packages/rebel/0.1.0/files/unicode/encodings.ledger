@@ -19,7 +19,7 @@
 ## Names and labels
 
 capability label/lookup  the encoding a label names, as a browser reads a `charset`
-  heroes  encodings.name_of
+  heroes  unicode/encodings.name_of
   go      htmlindex.Get, ianaindex.Index.Encoding, ianaindex.MIME, ianaindex.IANA, ianaindex.MIB
   rust    Encoding::for_label, Encoding::for_label_no_replacement
   python  codecs.lookup, encodings.search_function, encodings.normalize_encoding, encodings.aliases.aliases, encodings.CodecRegistryError, LookupError
@@ -28,7 +28,7 @@ capability label/lookup  the encoding a label names, as a browser reads a `chars
   note    a label is matched as the standard says, ASCII white space taken off and ASCII case ignored, and nothing else is: `latin1`, `iso-8859-1` and `ascii` name windows-1252, `utf-16` names UTF-16LE, `gb2312` GBK, ISO-2022-KR, ISO-2022-CN and HZ `replacement`. Python's `lookup` normalizes `-` and `_` and reads `latin_1` as true Latin-1, Java and .NET read their own aliases; a label the standard does not read fails `not_found` (Go answers an error, Rust None, Python LookupError). 228 labels, `encodings.json` of the standard
 
 capability label/name  the name of an encoding, the one the standard writes
-  heroes  encodings.name_of
+  heroes  unicode/encodings.name_of
   go      htmlindex.Name, ianaindex.Index.Name, charmap.Charmap.String
   rust    Encoding::name
   python  codecs.CodecInfo.name
@@ -37,7 +37,7 @@ capability label/name  the name of an encoding, the one the standard writes
   note    the name as the standard writes it, `Shift_JIS`, `windows-1252`, `gb18030`; `name_of` of a name is that name
 
 capability label/labels  every label of an encoding
-  heroes  encodings.labels_of
+  heroes  unicode/encodings.labels_of
   go      -
   rust    -
   python  encodings.aliases.aliases
@@ -45,7 +45,7 @@ capability label/labels  every label of an encoding
   dotnet  -
 
 capability label/every-encoding  every encoding there is, in order
-  heroes  encodings.names
+  heroes  unicode/encodings.names
   go      charmap.All, japanese.All, korean.All, simplifiedchinese.All, traditionalchinese.All, unicode.All
   rust    -
   python  encodings.aliases.aliases
@@ -54,7 +54,7 @@ capability label/every-encoding  every encoding there is, in order
   note    the 40 of the standard and no other
 
 capability label/constants  each encoding named in the program's text, so a misspelt one is a compile error
-  heroes  encodings.UTF_8, encodings.IBM866, encodings.ISO_8859_2 to encodings.ISO_8859_16, encodings.ISO_8859_8_I, encodings.KOI8_R, encodings.KOI8_U, encodings.MACINTOSH, encodings.WINDOWS_874, encodings.WINDOWS_1250 to encodings.WINDOWS_1258, encodings.X_MAC_CYRILLIC, encodings.GBK, encodings.GB18030, encodings.BIG5, encodings.EUC_JP, encodings.ISO_2022_JP, encodings.SHIFT_JIS, encodings.EUC_KR, encodings.REPLACEMENT, encodings.UTF_16BE, encodings.UTF_16LE, encodings.X_USER_DEFINED
+  heroes  unicode/encodings.UTF_8, unicode/encodings.IBM866, unicode/encodings.ISO_8859_2 to unicode/encodings.ISO_8859_16, unicode/encodings.ISO_8859_8_I, unicode/encodings.KOI8_R, unicode/encodings.KOI8_U, unicode/encodings.MACINTOSH, unicode/encodings.WINDOWS_874, unicode/encodings.WINDOWS_1250 to unicode/encodings.WINDOWS_1258, unicode/encodings.X_MAC_CYRILLIC, unicode/encodings.GBK, unicode/encodings.GB18030, unicode/encodings.BIG5, unicode/encodings.EUC_JP, unicode/encodings.ISO_2022_JP, unicode/encodings.SHIFT_JIS, unicode/encodings.EUC_KR, unicode/encodings.REPLACEMENT, unicode/encodings.UTF_16BE, unicode/encodings.UTF_16LE, unicode/encodings.X_USER_DEFINED
   go      charmap.IBM866, charmap.CodePage866, charmap.ISO8859_2 to charmap.ISO8859_16, charmap.ISO8859_6E, charmap.ISO8859_6I, charmap.ISO8859_8E, charmap.ISO8859_8I, charmap.KOI8R, charmap.KOI8U, charmap.Macintosh, charmap.MacintoshCyrillic, charmap.Windows874, charmap.Windows1250 to charmap.Windows1258, charmap.XUserDefined, simplifiedchinese.GBK, simplifiedchinese.GB18030, traditionalchinese.Big5, japanese.EUCJP, japanese.ISO2022JP, japanese.ShiftJIS, korean.EUCKR, encoding.Replacement, unicode.UTF8, unicode.UTF16
   rust    encoding_rs::BIG5, EUC_JP, EUC_KR, GB18030, GBK, IBM866, ISO_2022_JP, ISO_8859_2 to ISO_8859_16, ISO_8859_8_I, KOI8_R, KOI8_U, MACINTOSH, REPLACEMENT, SHIFT_JIS, UTF_16BE, UTF_16LE, UTF_8, WINDOWS_874, WINDOWS_1250 to WINDOWS_1258, X_MAC_CYRILLIC, X_USER_DEFINED, and their `_INIT` twins
   python  -
@@ -63,7 +63,7 @@ capability label/constants  each encoding named in the program's text, so a miss
   note    a constant is the encoding's name, a `str`, which every function takes as it takes a label
 
 capability label/output-encoding  the encoding a form or a URL writes in, given the page's
-  heroes  encodings.output_encoding
+  heroes  unicode/encodings.output_encoding
   go      -
   rust    Encoding::output_encoding
   python  -
@@ -82,7 +82,7 @@ capability label/code-page  the number Windows or IANA gives an encoding
 ## What an encoding is
 
 capability property/single-byte  whether an encoding writes every character in one byte
-  heroes  encodings.is_single_byte
+  heroes  unicode/encodings.is_single_byte
   go      -
   rust    Encoding::is_single_byte
   python  -
@@ -91,7 +91,7 @@ capability property/single-byte  whether an encoding writes every character in o
   note    x-user-defined is single-byte, as encoding_rs answers, observed
 
 capability property/ascii-compatible  whether an encoding writes ASCII as ASCII and uses no ASCII byte for anything else
-  heroes  encodings.is_ascii_compatible
+  heroes  unicode/encodings.is_ascii_compatible
   go      -
   rust    Encoding::is_ascii_compatible
   python  -
@@ -100,7 +100,7 @@ capability property/ascii-compatible  whether an encoding writes ASCII as ASCII 
   note    false for ISO-2022-JP, UTF-16 and `replacement`, as encoding_rs answers, observed
 
 capability property/encodes-everything  whether an encoding has bytes for every character
-  heroes  encodings.can_encode_everything
+  heroes  unicode/encodings.can_encode_everything
   go      -
   rust    Encoding::can_encode_everything
   python  -
@@ -119,7 +119,7 @@ capability property/browser-flags  whether a browser or a mail reader shows or s
 ## Byte order marks
 
 capability bom/sniff  the encoding the byte order mark at the start of bytes names
-  heroes  encodings.sniff_bom
+  heroes  unicode/encodings.sniff_bom
   go      unicode.BOMOverride, unicode.UseBOM, unicode.ExpectBOM, unicode.IgnoreBOM, unicode.BOMPolicy, unicode.ErrMissingBOM
   rust    Encoding::for_bom
   python  -
@@ -128,7 +128,7 @@ capability bom/sniff  the encoding the byte order mark at the start of bytes nam
   note    the standard's BOM sniff: EF BB BF, FE FF, FF FE, in that order; no UTF-32 mark is looked for
 
 capability bom/bytes  the byte order mark an encoding writes
-  heroes  encodings.bom_of
+  heroes  unicode/encodings.bom_of
   go      unicode.UTF8BOM
   rust    -
   python  codecs.BOM, codecs.BOM_BE, codecs.BOM_LE, codecs.BOM_UTF8, codecs.BOM_UTF16, codecs.BOM_UTF16_BE, codecs.BOM_UTF16_LE
@@ -138,7 +138,7 @@ capability bom/bytes  the byte order mark an encoding writes
 ## Decoding
 
 capability decode/replacing  bytes read as text in an encoding, a byte order mark first, what cannot be read replaced by U+FFFD
-  heroes  encodings.decode
+  heroes  unicode/encodings.decode
   go      encoding.Decoder.Bytes, encoding.Decoder.String, charmap.Charmap.DecodeByte, charmap.Charmap.NewDecoder, encoding.Encoding.NewDecoder
   rust    Encoding::decode, Encoding::decode_with_bom_removal
   python  bytes.decode, codecs.decode, codecs.getdecoder, codecs.replace_errors, codecs.Codec.decode
@@ -147,7 +147,7 @@ capability decode/replacing  bytes read as text in an encoding, a byte order mar
   note    the standard's decode: a byte order mark overrules the label, each wrong sequence is one U+FFFD as the standard's decoders say. Differential of 2026-11-17 against encoding_rs 0.8.42 (built offline, its answers asked through a program of the round's scratch folder): every byte of every single-byte encoding, every pair from a lead 0x80 to 0xFF of the six double-byte encodings, every JIS X 0212 triple, 40,000 random four-byte gb18030 sequences and the ranges' edges, every code point of every index written both ways, every BMP code point and 3,000 others written in gb18030, and 3,500 ISO-2022-JP pairs: 628,034 cases, all equal; and twice 328,800 random cases (bytes read whole, without a mark, strict, and in random pieces; texts written strict, with references and in pieces) equal but for the shape `decode/valid-prefix` names. Python's codecs, where they are the standard's, agree on the single-byte indexes but for the bytes 0x80 to 0x9F that Windows leaves undefined (the standard reads them as the C1 controls, Python fails) and KOI8-U's 0xAE and 0xBE; `cp932` and `cp949` agree on every pointer of index jis0208 and EUC-KR; `gb18030` differs on 20 pointers, `big5hkscs` on 203, `euc_jp` and `iso2022_jp` on 463, `shift_jis` on 851
 
 capability decode/without-bom  bytes read in the encoding named, a byte order mark read as a character
-  heroes  encodings.decode_without_bom
+  heroes  unicode/encodings.decode_without_bom
   go      unicode.IgnoreBOM
   rust    Encoding::decode_without_bom_handling
   python  -
@@ -155,7 +155,7 @@ capability decode/without-bom  bytes read in the encoding named, a byte order ma
   dotnet  -
 
 capability decode/strict  bytes read in an encoding, failing at the first that cannot be read
-  heroes  encodings.decode_strict
+  heroes  unicode/encodings.decode_strict
   go      encoding.Decoder.Bytes
   rust    Encoding::decode_without_bom_handling_and_without_replacement
   python  codecs.strict_errors, UnicodeDecodeError
@@ -164,7 +164,7 @@ capability decode/strict  bytes read in an encoding, failing at the first that c
   note    the standard's "fatal" mode; no byte order mark is looked for, as encoding_rs's `_without_replacement` decoder does; the web-platform-tests' vectors, fetched 2026-11-17 into the round's scratch folder, answer as they say: the 34 of `encoding/textdecoder-fatal.any.js` each fail, and the 5 of `textdecoder-utf16-surrogates.any.js` read as they expect replacing and fail strict
 
 capability decode/valid-prefix  how many bytes at the start read without an error, where the first error is
-  heroes  encodings.valid_prefix_len
+  heroes  unicode/encodings.valid_prefix_len
   go      -
   rust    Encoding::utf8_valid_up_to, Encoding::ascii_valid_up_to, Encoding::iso_2022_jp_ascii_valid_up_to
   python  UnicodeDecodeError.start, UnicodeDecodeError.end
@@ -173,7 +173,7 @@ capability decode/valid-prefix  how many bytes at the start read without an erro
   note    the index where the first wrong sequence begins, encoding_rs's index on every case of the differential but one shape: where ISO-2022-JP holds two escape sequences in a row, encoding_rs names the first and this the second, where the bytes stop reading (11 of 1,500 random ISO-2022-JP cases)
 
 capability decode/stream  bytes read as text a piece at a time, a character cut between two pieces kept whole
-  heroes  encodings.decoder, encodings.decoder_without_bom, encodings.decode_chunk, encodings.decode_chunk_strict
+  heroes  unicode/encodings.decoder, unicode/encodings.decoder_without_bom, unicode/encodings.decode_chunk, unicode/encodings.decode_chunk_strict
   go      encoding.Decoder.Reader, transform.Transformer
   rust    Encoding::new_decoder, Encoding::new_decoder_with_bom_removal, Encoding::new_decoder_without_bom_handling, Decoder::decode_to_string, Decoder::decode_to_string_without_replacement, Decoder::decode_to_str, Decoder::decode_to_str_without_replacement, Decoder::decode_to_utf8, Decoder::decode_to_utf8_without_replacement, Decoder::encoding, DecoderResult, CoderResult
   python  codecs.getincrementaldecoder, codecs.IncrementalDecoder, codecs.BufferedIncrementalDecoder, codecs.iterdecode
@@ -184,7 +184,7 @@ capability decode/stream  bytes read as text a piece at a time, a character cut 
 ## Encoding
 
 capability encode/strict  text written as bytes in an encoding, failing at the first character it has no bytes for
-  heroes  encodings.encode
+  heroes  unicode/encodings.encode
   go      encoding.Encoder.Bytes, encoding.Encoder.String, charmap.Charmap.EncodeRune, charmap.Charmap.NewEncoder, encoding.Encoding.NewEncoder
   rust    Encoder::encode_from_utf8_without_replacement, Encoder::encode_from_utf8_to_vec_without_replacement, EncoderResult::Unmappable
   python  str.encode, codecs.encode, codecs.getencoder, codecs.Codec.encode, UnicodeEncodeError
@@ -193,7 +193,7 @@ capability encode/strict  text written as bytes in an encoding, failing at the f
   note    the standard's "fatal" mode; UTF-16BE and UTF-16LE are written as UTF-16, where the standard and encoding_rs write UTF-8 in their place (`output_encoding`); `replacement` fails `unsupported`
 
 capability encode/html  text written as bytes in an encoding, a character it has no bytes for written as an HTML numeric reference
-  heroes  encodings.encode_html
+  heroes  unicode/encodings.encode_html
   go      encoding.HTMLEscapeUnsupported
   rust    Encoding::encode, Encoder::encode_from_utf8, Encoder::encode_from_utf8_to_vec
   python  codecs.xmlcharrefreplace_errors
@@ -202,7 +202,7 @@ capability encode/html  text written as bytes in an encoding, a character it has
   note    the standard's "html" mode, which encoding_rs's `encode` uses; equal to it on every case of the differential
 
 capability encode/stream  text written as bytes a piece at a time, the state of a stateful encoding kept between pieces
-  heroes  encodings.encoder, encodings.encode_chunk, encodings.encode_chunk_html
+  heroes  unicode/encodings.encoder, unicode/encodings.encode_chunk, unicode/encodings.encode_chunk_html
   go      encoding.Encoder.Writer
   rust    Encoding::new_encoder, Encoder::encoding, Encoder::has_pending_state
   python  codecs.getincrementalencoder, codecs.IncrementalEncoder, codecs.BufferedIncrementalEncoder, codecs.iterencode
@@ -247,7 +247,7 @@ capability errors/handlers  a function of the program's called on each error, or
 ## Encodings outside the standard
 
 capability isomorphic/latin1  bytes read as the characters U+0000 to U+00FF of their numbers, and written back, the Infra standard's isomorphic decoding
-  heroes  encodings.decode_isomorphic, encodings.encode_isomorphic
+  heroes  unicode/encodings.decode_isomorphic, unicode/encodings.encode_isomorphic
   go      charmap.ISO8859_1
   rust    encoding_rs::mem::decode_latin1, mem::encode_latin1_lossy, mem::convert_latin1_to_utf8, mem::convert_latin1_to_str, mem::convert_utf8_to_latin1_lossy, mem::is_str_latin1, mem::is_utf8_latin1, mem::utf8_latin1_up_to, mem::str_latin1_up_to
   python  codecs.latin_1_decode, codecs.latin_1_encode, the codec latin_1
@@ -265,7 +265,7 @@ capability ascii/strict  bytes read as ASCII, failing on a byte above 127
   note    bytes that pass are text as they are, `bytes.to_text`; the standard reads `ascii` and `us-ascii` as windows-1252
 
 capability utf16/units  UTF-16 bytes with no byte order mark read and written, in either order
-  heroes  encodings.decode, encodings.encode
+  heroes  unicode/encodings.decode, unicode/encodings.encode
   go      unicode.UTF16, unicode.BigEndian, unicode.LittleEndian, unicode.Endianness
   rust    String::from_utf16le, String::from_utf16be, String::from_utf16le_lossy, String::from_utf16be_lossy
   python  codecs.utf_16_be_decode, codecs.utf_16_be_encode, codecs.utf_16_le_decode, codecs.utf_16_le_encode, codecs.utf_16_decode, codecs.utf_16_encode, codecs.utf_16_ex_decode, the codecs utf_16, utf_16_be, utf_16_le
@@ -301,7 +301,7 @@ capability legacy/outside-the-standard  an encoding the WHATWG standard does not
 ## Guessing an encoding
 
 capability detect/likeliest  the encoding of bytes whose encoding nobody declared, with how sure the guess is
-  heroes  encodings.detect
+  heroes  unicode/encodings.detect
   go      -
   rust    -
   python  -
@@ -310,7 +310,7 @@ capability detect/likeliest  the encoding of bytes whose encoding nobody declare
   note    no standard library guesses; PyPI's `charset-normalizer`, the seventh most downloaded project, is the program this answers to (the author's decision of 2026-11-17); measured 2026-11-17 on 3,626 samples of 40, 300 and 3,000 characters cut from macOS 27's localized strings of 31 languages (the frameworks', held out from the applications' strings the alphabets were measured on), each written by Python's codecs in an encoding its language is written in, a guess counted right where it reads the bytes as the text that made them: this package 3,537 right (97.5 %: 94.3 % at 40 characters, 99.2 % at 300 and at 3,000), charset-normalizer 3.5.2, installed in the round's scratch folder for the comparison, 2,784 (76.8 %: 64.6 %, 81.2 % and 85.1 %); on 3,616 samples of the applications' strings themselves, 97.3 % and 75.6 %. The confidence is a share among the readings, so a short text that several encodings read plausibly gets a low one: twelve bytes of Russian in windows-1251 are guessed right with 0.25
 
 capability detect/candidates  every encoding that reads the bytes, the likeliest first
-  heroes  encodings.detect_all
+  heroes  unicode/encodings.detect_all
   go      -
   rust    -
   python  -
