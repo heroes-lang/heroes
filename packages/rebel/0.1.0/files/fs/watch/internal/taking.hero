@@ -1,25 +1,38 @@
-# What a wait takes from a watch: the floor's events read one by one into
-# records of this module's own, which the face turns into its `Event`s (a
-# private module cannot name its face's types). The buffer the paths are read
-# into grows where a path is longer than it, and an event whose path is not
-# UTF-8 is told as an overflow of the watched path, since a program can hand
-# no such path on: it reads the folder again, as after any overflow.
+# What a wait takes from a watch: the floor's events read one by one into the
+# face's own `Event`s (panel 252's R1 lets a private module name its face's
+# types). The buffer the paths are read into grows where a path is longer
+# than it, and an event whose path is not UTF-8 is told as an overflow of the
+# watched path, since a program can hand no such path on: it reads the folder
+# again, as after any overflow.
 
 use fs
+use fs/watch
 use fs/watch/hero_watch
 use fs/watch/internal/failure
 use path as paths
 
-# One event as the floor told it, before the face names its kind.
-record Taken
-    # One of `hero_watch.HERO_WATCH_CREATED` to `HERO_WATCH_GONE`.
-    kind: i64
-    # Whether the entry is a folder.
-    directory: bool
-    # The entry's path, the watched path as given joined with its name.
-    path: str
-    # For a rename, the path it had before; "" for every other kind.
-    from: str
+# The face's change for the floor's kind `kind`, `from` the path a rename
+# had before; a kind the floor adds later is an overflow, so the program
+# reads the folder again.
+function change_of(kind: i64, from: str) -> watch.Change
+    if kind == hero_watch.HERO_WATCH_CREATED
+        return .created
+
+    if kind == hero_watch.HERO_WATCH_REMOVED
+        return .removed
+
+    if kind == hero_watch.HERO_WATCH_CHANGED
+        return .changed
+
+    if kind == hero_watch.HERO_WATCH_ATTRIBUTES
+        return .attributes
+
+    if kind == hero_watch.HERO_WATCH_RENAMED
+        return .renamed(from: from)
+
+    if kind == hero_watch.HERO_WATCH_GONE
+        return .gone
+    return .overflow
 
 # The bytes a wait's buffer starts with: a path is most often shorter.
 constant START: i64
@@ -59,10 +72,10 @@ function read(text: [u8] lent, from: i64, count: i64) -> Read
 # next call, so no event taken is lost. Fails as the floor's kinds say
 # (`failure.told`): `stopped`, `closed`, `file_not_found` once the watched
 # folder is gone and told, `invalid`, `failed`.
-function taken(w: hero_watch.Watch, limit_ns: i64, watched: str, asked: str) -> [Taken]?
+function taken(w: hero_watch.Watch, limit_ns: i64, watched: str, asked: str) -> [watch.Event]?
     numbers: [i64] @= [0, 0, 0, 0]
     text: [u8] @= []
-    out: [Taken] @= []
+    out: [watch.Event] @= []
     wait @= limit_ns
 
     grow(@text, to: START)
@@ -96,12 +109,24 @@ function taken(w: hero_watch.Watch, limit_ns: i64, watched: str, asked: str) -> 
         from = read(text, from: numbers[2], count: numbers[3])
 
         if path.ok && from.ok
-            out @ out.push(Taken(kind: numbers[0], directory: numbers[1] == 1, path: path.text, from: from.text))
+            out @ out.push(
+                watch.Event(path: path.text, change: change_of(kind: numbers[0], from: from.text), directory: numbers[1] == 1)
+            )
         else
-            out @ out.push(Taken(kind: hero_watch.HERO_WATCH_OVERFLOW, directory: false, path: watched, from: ""))
+            out @ out.push(watch.Event(path: watched, change: .overflow, directory: false))
         wait @ 0
 
     return ok(out)
+
+test "change_of: every kind of the floor, a rename's old path, and a kind it does not know"
+    assert change_of(kind: hero_watch.HERO_WATCH_CREATED, from: "") == .created
+    assert change_of(kind: hero_watch.HERO_WATCH_REMOVED, from: "") == .removed
+    assert change_of(kind: hero_watch.HERO_WATCH_CHANGED, from: "") == .changed
+    assert change_of(kind: hero_watch.HERO_WATCH_ATTRIBUTES, from: "") == .attributes
+    assert change_of(kind: hero_watch.HERO_WATCH_RENAMED, from: "a") == .renamed(from: "a")
+    assert change_of(kind: hero_watch.HERO_WATCH_GONE, from: "") == .gone
+    assert change_of(kind: hero_watch.HERO_WATCH_OVERFLOW, from: "") == .overflow
+    assert change_of(kind: 99, from: "") == .overflow
 
 test "grow: to a length below, at and above the text's, never shorter"
     text: [u8] @= [7, 7]
@@ -126,7 +151,7 @@ test "taken: none within a limit of 0, then a file made told created with its pa
     fs.touch(root + "/one").must()
     got = taken(w, limit_ns: 2000000000, watched: root, asked: "waiting").must()
     assert got.len() >= 1
-    assert got[0] == Taken(kind: hero_watch.HERO_WATCH_CREATED, directory: false, path: paths.join_all([root, "one"]), from: "")
+    assert got[0] == watch.Event(path: paths.join_all([root, "one"]), change: .created, directory: false)
     _ = hero_watch.close(@w)
     _ = fs.remove_all(root).is_err()
 
@@ -145,7 +170,7 @@ test "taken: a closed watch fails closed with what was asked; one whose folder i
     fs.remove_all(root).must()
     told = taken(w, limit_ns: 2000000000, watched: root, asked: "waiting").must()
     assert told.len() >= 1
-    assert told[told.len() - 1].kind == hero_watch.HERO_WATCH_GONE
+    assert told[told.len() - 1].change == .gone
     assert told[told.len() - 1].path == root
     after = taken(w, limit_ns: 0, watched: root, asked: "waiting")
 

@@ -7,6 +7,7 @@
 use asn1
 use big
 use crypto/keypairs
+use jose
 use jose/internal/jwk
 
 # The code of bytes or a key not of their form.
@@ -51,7 +52,7 @@ function curve_of_oid(dotted: str) -> str
         _                     => ""
 
 # The member `name` of `key`, which must be there.
-function member(key: jwk.Jwk, name: str) -> [u8]?
+function member(key: jose.Key, name: str) -> [u8]?
     match key.material[name]
         .ok b  => return ok(b)
         .err _ => return fail(code: INVALID, msg: f"a {key.key_type} key without its \"{name}\"")
@@ -93,7 +94,7 @@ function within<T>(r: T?, what: str) -> T?
         .err e => return fail(code: INVALID, msg: f"{what} is malformed: {e.msg}")
 
 # The AlgorithmIdentifier of `key`'s type and curve.
-function algorithm_of(key: jwk.Jwk) -> asn1.Value?
+function algorithm_of(key: jose.Key) -> asn1.Value?
     if key.key_type == "RSA"
         return ok(.sequence(items: [.oid(v: asn1.Oid(dotted: RSA_OID)), .null_value]))
     dotted = oid_of_curve(key.curve)
@@ -106,7 +107,7 @@ function algorithm_of(key: jwk.Jwk) -> asn1.Value?
     return ok(.sequence(items: [.oid(v: asn1.Oid(dotted: dotted))]))
 
 # The uncompressed point of an EC `key`: 4, then `x` and `y`.
-function point_of(key: jwk.Jwk) -> [u8]?
+function point_of(key: jose.Key) -> [u8]?
     point: [u8] @= [4]
 
     for b in member(key, name: "x")?
@@ -118,7 +119,7 @@ function point_of(key: jwk.Jwk) -> [u8]?
     return ok(point)
 
 # The bits of the public key a SubjectPublicKeyInfo holds for `key`.
-function public_bits(key: jwk.Jwk) -> [u8]?
+function public_bits(key: jose.Key) -> [u8]?
     if key.key_type == "RSA"
         inner: asn1.Value = .sequence(items: [unsigned(member(key, name: "n")?), unsigned(member(key, name: "e")?)])
         return within(r: asn1.encode_der(inner), what: "an RSA public key")
@@ -128,7 +129,7 @@ function public_bits(key: jwk.Jwk) -> [u8]?
     return member(key, name: "x")
 
 # `key`'s public half as SubjectPublicKeyInfo DER.
-function public_der(key: jwk.Jwk) -> [u8]?
+function public_der(key: jose.Key) -> [u8]?
     algorithm = algorithm_of(key)?
     bits = public_bits(key)?
     spki: asn1.Value = .sequence(
@@ -138,7 +139,7 @@ function public_der(key: jwk.Jwk) -> [u8]?
 
 # The private key's own structure `key` holds, as PKCS #8's OCTET STRING
 # carries it.
-function private_inner(key: jwk.Jwk) -> [u8]?
+function private_inner(key: jose.Key) -> [u8]?
     d = member(key, name: "d")?
 
     if key.key_type == "RSA"
@@ -164,7 +165,7 @@ function private_inner(key: jwk.Jwk) -> [u8]?
     return within(r: asn1.encode_der(.octet_string(v: d)), what: "a CurvePrivateKey")
 
 # `key` as PKCS #8 DER, unencrypted.
-function private_der(key: jwk.Jwk) -> [u8]?
+function private_der(key: jose.Key) -> [u8]?
     if key.key_type == "oct"
         return fail(code: INVALID, msg: "an oct key has no DER form: its secret is its bytes")
 
@@ -212,8 +213,8 @@ function named(v: asn1.Value) -> Named?
     return ok(Named(key_type: "OKP", curve: curve))
 
 # A key with no member but `material`, of `named`'s type and curve.
-function bare(n: Named, material: {str: [u8]}) -> jwk.Jwk
-    return jwk.Jwk(
+function bare(n: Named, material: {str: [u8]}) -> jose.Key
+    return jose.Key(
         key_type: n.key_type,
         curve: n.curve,
         id: "",
@@ -237,7 +238,7 @@ function is_point(point: [u8], curve: str) -> bool
     return point.len() == 1 + size * 2 && point[0] == 4
 
 # The key the SubjectPublicKeyInfo `der` holds.
-function read_public(der: [u8]) -> jwk.Jwk?
+function read_public(der: [u8]) -> jose.Key?
     v = within(r: asn1.decode_der(der), what: "a SubjectPublicKeyInfo")?
     items = within(r: asn1.items_of(v), what: "a SubjectPublicKeyInfo")?
 
@@ -271,7 +272,7 @@ function read_public(der: [u8]) -> jwk.Jwk?
 
 # The key the PKCS #8 `der` holds, with its public members; an EC key
 # without its point and an OKP key have them computed by `crypto/keypairs`.
-function read_private(der: [u8]) -> jwk.Jwk?
+function read_private(der: [u8]) -> jose.Key?
     v = within(r: asn1.decode_der(der), what: "a PKCS #8")?
     items = within(r: asn1.items_of(v), what: "a PKCS #8")?
 

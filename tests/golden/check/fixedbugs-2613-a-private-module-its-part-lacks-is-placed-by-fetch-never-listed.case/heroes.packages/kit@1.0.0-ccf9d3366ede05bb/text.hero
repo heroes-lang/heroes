@@ -1,0 +1,9 @@
+# Reached through `csv`; it reaches its own private module in turn, which
+# this case's part does not hold: a file of the version left out of a part is
+# no change to its sum, and the `use` below is told that the tree lacks it,
+# with `heroes fetch` and never a `heroes add` of a private module.
+use text/internal/scan  #~ package_unread
+
+# The text before the first `mark`, the whole text where there is none.
+function before(line: str, mark: u8) -> str
+    return line.slice(from: 0, to: scan.first_at(line, mark: mark))

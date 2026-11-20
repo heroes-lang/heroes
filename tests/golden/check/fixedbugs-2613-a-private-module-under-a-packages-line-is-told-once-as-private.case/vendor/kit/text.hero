@@ -1,0 +1,5 @@
+# Not listed; its private module is named by the program all the same.
+use text/internal/cut
+
+function halved(line: str) -> str
+    return cut.half(line)

@@ -8,13 +8,14 @@ use bytes
 use crypto
 use sql
 use sql/build
+use sql/migrate
 use time
 
 constant INVALID: str
-    "invalid"
+    migrate.INVALID
 
 constant NOT_FOUND: str
-    "not_found"
+    migrate.NOT_FOUND
 
 # A migration as the check knows it.
 record Known
@@ -117,7 +118,7 @@ function split(known: [Known], done: [Done], allow_out_of_order: bool, ignore_mi
 
 # The first line of a script that runs outside a transaction.
 constant NO_TRANSACTION: str
-    "-- no-transaction"
+    migrate.NO_TRANSACTION
 
 # Whether `script` runs outside a transaction: its first line, spaces, tabs
 # and a carriage return at either end aside, is `NO_TRANSACTION`.

@@ -135,7 +135,7 @@ capability acme/tls-alpn-01  the certificate of a TLS-ALPN-01 challenge (RFC 873
   note    its answer is a self-signed certificate carrying the acmeIdentifier extension, made on the spot: `x509` does not write certificates yet
 
 capability acme/respond  a challenge answered: the server told to validate it
-  heroes  acme.respond
+  heroes  acme.accept_challenge
   go      acme.Client.Accept
   rust    -
   python  acme.client.ClientV2.answer_challenge

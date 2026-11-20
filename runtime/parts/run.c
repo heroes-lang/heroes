@@ -293,6 +293,19 @@ int64_t hero_frame_probes_asked(void) {
 #endif
 }
 
+/* WHETHER EVERY UNIT KEEPS A FRAME RECORD (`hero_compiler.h`, panel 253's
+ * R5): where `parts/calls.c` walks the records at an abort, every POSIX
+ * system; its Windows arm walks nothing yet. Its falsifiers are the cases
+ * `tests/golden/run/abort-calls-*`, which tell no call at `-O2` on x86-64
+ * without it (the sitting's ffi-pragmatist, Linux x86-64 emulated). */
+int64_t hero_frame_records_asked(void) {
+#if defined(_WIN32)
+    return 0;
+#else
+    return 1;
+#endif
+}
+
 int64_t hero_os_pid(void) {
 #if defined(_WIN32)
     return (int64_t)GetCurrentProcessId();

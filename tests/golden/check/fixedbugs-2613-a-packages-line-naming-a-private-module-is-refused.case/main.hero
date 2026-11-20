@@ -1,0 +1,10 @@
+# Fixed defect 2613, 2026-11-20, lane umbrella-2: a `packages` line names
+# what a program's `use` writes after the brackets, and no program's module
+# names a private module of a package, so a line naming `csv/internal/scan`
+# is refused with its line, as `heroes add kit/csv/internal/scan` is; it was
+# read, and listed a module no program could name. The catalogue does not
+# read, and the `use` that reaches through it is refused.
+use <kit>/csv  #~ catalogue_refused
+
+function main()
+    print(csv.first("a,b"))

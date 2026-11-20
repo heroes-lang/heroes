@@ -509,17 +509,17 @@ function enqueue_due(@db: postgres.Db, schedules: [jobs.Periodic]) -> [i64]?
 
 ## Tests
 
-test "live: skipped where REBEL_POSTGRES_URL names no server"
+test "live: the version of the server REBEL_POSTGRES_URL names"
     match live.connect()
         .ok first =>
             db @= first
             print("jobs/postgres_store live: against ", postgres.parameter_of(db, "server_version").default("?"))
             postgres.close(@db).must()
-        .err e => print("jobs/postgres_store live: skipped, ", e.msg)
+        .err e => skip_test(reason: e.msg)
 
 test "enqueue live: each start, a past instant ready at once, a payload of more than one byte, and the refusals before the database"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
@@ -551,7 +551,7 @@ test "enqueue live: each start, a past instant ready at once, a payload of more 
 
 test "enqueue live: a unique key refused exists inside the program's transaction, which goes on, and free again once its job completes"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             j @= jobs.new_job("sync", .null_value)
@@ -576,7 +576,7 @@ test "enqueue live: a unique key refused exists inside the program's transaction
 
 test "enqueue_many live: none, all kept, and a duplicate keeping none on its own and under the program's transaction"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             assert enqueue_many(@db, []).must() == []
@@ -608,7 +608,7 @@ test "enqueue_many live: none, all kept, and a duplicate keeping none on its own
 
 test "claim live: by priority across queues, a queue paused passed over, a queue not named left, and a bad worker refused"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             low @= jobs.new_job("low", .null_value)
@@ -634,7 +634,7 @@ test "claim live: by priority across queues, a queue paused passed over, a queue
 
 test "claim live: two workers on two connections each claim another job, the first's lock passed over"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok probe =>
             p @= probe
             postgres.close(@p).must()
@@ -656,7 +656,7 @@ test "claim live: two workers on two connections each claim another job, the fir
 
 test "complete and fail_attempt live: a second completion refused, attempts spent fail for good with every error, and a zero byte kept as U+FFFD"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
@@ -691,7 +691,7 @@ test "complete and fail_attempt live: a second completion refused, attempts spen
 
 test "discard, snooze and extend live: failed for good at once, an attempt given back uncounted, a lease renewed, and a cancellation learnt"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
@@ -720,7 +720,7 @@ test "discard, snooze and extend live: failed for good at once, an attempt given
 
 test "rescue live: a lease run out given back counted, a late completion refused, and a job of one attempt failed for good"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             worker @= jobs.new_worker([jobs.DEFAULT_QUEUE])
@@ -744,7 +744,7 @@ test "rescue live: a lease run out given back counted, a late completion refused
 
 test "purge, get, list and counts live: the finished removed by age, a job not there, pages of a queue, and the refusals"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             worker = jobs.new_worker(["q"])
@@ -780,7 +780,7 @@ test "purge, get, list and counts live: the finished removed by age, a job not t
 
 test "pause, resume and paused_queues live: two paused in order, one resumed, a queue never seen, and a bad name"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             pause(@db, "zeta").must()
@@ -795,7 +795,7 @@ test "pause, resume and paused_queues live: two paused in order, one resumed, a 
 
 test "cancel, retry and delete live: each state answered, a running job kept, a held key refused, and a job not there"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
@@ -838,7 +838,7 @@ test "cancel, retry and delete live: each state answered, a running job kept, a 
 
 test "enqueue_due live: first seen nothing, due once enqueued once, called again nothing, a changed schedule kept anew, and a held key passed"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             job @= jobs.new_job("report", .null_value)
@@ -880,7 +880,7 @@ test "enqueue_due live: first seen nothing, due once enqueued once, called again
 
 test "install and schema live: the tables made again in the same schema, and the script's lock"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             install(@db).must()
@@ -897,7 +897,7 @@ test "schema: the tables of the store"
 # The tables made where they are not.
 test "install: the tables made twice, the second time doing nothing"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             install(@db).must()
@@ -907,7 +907,7 @@ test "install: the tables made twice, the second time doing nothing"
 # about.
 test "enqueue: a welcome email in the transaction of a sign-up"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             postgres.begin(@db).must()
@@ -919,7 +919,7 @@ test "enqueue: a welcome email in the transaction of a sign-up"
 # Two jobs enqueued, all or none.
 test "enqueue_many: two jobs"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             ids = enqueue_many(@db, [jobs.new_job("a", .null_value), jobs.new_job("b", .null_value)]).must()
@@ -929,7 +929,7 @@ test "enqueue_many: two jobs"
 # The job that holds a unique key.
 test "find_unique: a nightly sync not yet run"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             j @= jobs.new_job("sync", .null_value)
@@ -941,7 +941,7 @@ test "find_unique: a nightly sync not yet run"
 # A worker's loop: claim, run the program's own function, complete.
 test "claim: the next job, run and completed"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             _ = enqueue(@db, jobs.new_job("resize", .text(v: "photo.png"))).must()
@@ -954,7 +954,7 @@ test "claim: the next job, run and completed"
 # A job completed with what it answered.
 test "complete: a job and its output"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             id = enqueue(@db, jobs.new_job("count", .null_value)).must()
@@ -966,7 +966,7 @@ test "complete: a job and its output"
 # A failed attempt, the job waiting to run again.
 test "fail_attempt: the first attempt failed, the job waits"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             _ = enqueue(@db, jobs.new_job("charge", .null_value)).must()
@@ -979,7 +979,7 @@ test "fail_attempt: the first attempt failed, the job waits"
 # A job failed for good, whatever attempts it had left.
 test "discard: a payload the program cannot read"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             id = enqueue(@db, jobs.new_job("import", .text(v: "not a file"))).must()
@@ -991,7 +991,7 @@ test "discard: a payload the program cannot read"
 # An attempt given back, the job to run again in a minute.
 test "snooze: a resource busy"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             id = enqueue(@db, jobs.new_job("export", .null_value)).must()
@@ -1003,7 +1003,7 @@ test "snooze: a resource busy"
 # A long job renewing its lease.
 test "extend: the lease of a long job renewed"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             _ = enqueue(@db, jobs.new_job("render", .null_value)).must()
@@ -1016,7 +1016,7 @@ test "extend: the lease of a long job renewed"
 # The jobs of workers gone given back.
 test "rescue: no lease has run out"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             assert rescue(@db).must() == 0
@@ -1025,7 +1025,7 @@ test "rescue: no lease has run out"
 # The completed jobs of more than a day ago removed.
 test "purge: completed jobs older than a day"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             assert purge(@db, .completed, older_than: time.hours(24).must()).must() == 0
@@ -1034,7 +1034,7 @@ test "purge: completed jobs older than a day"
 # A queue paused, its jobs waiting.
 test "pause: the mail queue"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             pause(@db, "mail").must()
@@ -1044,7 +1044,7 @@ test "pause: the mail queue"
 # A queue paused, then claimed from again.
 test "resume: the mail queue"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             pause(@db, "mail").must()
@@ -1055,7 +1055,7 @@ test "resume: the mail queue"
 # The queues paused.
 test "paused_queues: none"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             assert paused_queues(@db).must() == []
@@ -1064,7 +1064,7 @@ test "paused_queues: none"
 # A job read by its id.
 test "get: a job just enqueued"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             id = enqueue(@db, jobs.new_job("thumbnail", .null_value)).must()
@@ -1074,7 +1074,7 @@ test "get: a job just enqueued"
 # The jobs waiting in a queue, in the order they would be claimed.
 test "list: the jobs waiting in the default queue"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             _ = enqueue(@db, jobs.new_job("a", .null_value)).must()
@@ -1085,7 +1085,7 @@ test "list: the jobs waiting in the default queue"
 # How many jobs stand in each queue and state.
 test "counts: one job waiting"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             _ = enqueue(@db, jobs.new_job("a", .null_value)).must()
@@ -1095,7 +1095,7 @@ test "counts: one job waiting"
 # A job cancelled before it ran.
 test "cancel: a job waiting"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             id = enqueue(@db, jobs.new_job("a", .null_value)).must()
@@ -1105,7 +1105,7 @@ test "cancel: a job waiting"
 # A job failed for good, run again.
 test "retry: a job discarded, run again"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             id = enqueue(@db, jobs.new_job("a", .null_value)).must()
@@ -1116,7 +1116,7 @@ test "retry: a job discarded, run again"
 # A job removed.
 test "delete: a job waiting"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             id = enqueue(@db, jobs.new_job("a", .null_value)).must()
@@ -1127,7 +1127,7 @@ test "delete: a job waiting"
 # A nightly report: its schedule kept the first time, enqueued once due.
 test "enqueue_due: a schedule first seen enqueues nothing yet"
     match live.connect()
-        .err _ => _ = 0
+        .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
             nightly = jobs.new_periodic(

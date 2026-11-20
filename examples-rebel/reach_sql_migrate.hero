@@ -55,11 +55,11 @@ function run_steps(@db: sqlite.Db, steps: [migrate.Step]) -> ()?
 
 # The versions `db` has applied, its table made first where it is not there.
 function applied_of(@db: sqlite.Db, opts: migrate.Options) -> [migrate.Applied]?
-    made = migrate.create_table(opts)?
+    made = migrate.create_table_statement(opts)?
     _ = sqlite.exec(@db, made.text, made.params)?
-    asked = migrate.select_applied(opts)?
+    asked = migrate.select_applied_statement(opts)?
     rows = sqlite.query(@db, asked.text, asked.params)?
-    return migrate.read_applied(rows)
+    return migrate.applied_of(rows)
 
 # The names of the tables of `db`, the table of versions aside, in order.
 function tables_of(@db: sqlite.Db) -> [str]?
@@ -214,11 +214,11 @@ function pg_run_steps(@db: postgres.Db, steps: [migrate.Step]) -> ()?
 
 # The versions the PostgreSQL database has applied, its table made first.
 function pg_applied_of(@db: postgres.Db, opts: migrate.Options) -> [migrate.Applied]?
-    made = migrate.create_table(opts)?
+    made = migrate.create_table_statement(opts)?
     _ = postgres.exec(@db, made.text, made.params)?
-    asked = migrate.select_applied(opts)?
+    asked = migrate.select_applied_statement(opts)?
     rows = postgres.query(@db, asked.text, asked.params)?
-    return migrate.read_applied(rows)
+    return migrate.applied_of(rows)
 
 # How many of the live test's two tables stand.
 function pg_tables(@db: postgres.Db) -> i64?

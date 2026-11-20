@@ -3,6 +3,7 @@
 # is (RFC 7797).
 
 use bytes
+use jose
 use jose/internal/algorithms
 use jose/internal/jwk
 use jose/internal/segments
@@ -24,7 +25,7 @@ record Verified
 
 # The protected header a signer writes: `alg`, then `header`'s members in
 # their order, then `kid` where `key` has one and neither header does.
-function protected_of(name: str, key: jwk.Jwk, header: {str: json.Value}, unprotected: {str: json.Value}) -> {str: json.Value}?
+function protected_of(name: str, key: jose.Key, header: {str: json.Value}, unprotected: {str: json.Value}) -> {str: json.Value}?
     if !header["alg"].is_err() || !unprotected["alg"].is_err()
         return fail(
             code: INVALID,

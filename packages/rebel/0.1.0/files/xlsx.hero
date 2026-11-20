@@ -737,29 +737,29 @@ function read_bytes(data: [u8], options: ReadOptions) -> Workbook?
 
 ## Writing
 
-# Writes `wb` to a new file at `path`, or over the file there.
+# Writes `workbook` to a new file at `path`, or over the file there.
 #
-# - `wb`: the workbook.
+# - `workbook`: the workbook.
 # - `path`: the file's path.
 #
 # Fails as `write` does, and as `fs.create` fails.
 #
 # See also `write`, `to_bytes`.
-function save(wb: Workbook, path: str) -> ()?
+function save(workbook: Workbook, path: str) -> ()?
     to @= fs.create(path)?
-    wrote = write(wb, to: to)
+    wrote = write(workbook, to: to)
     closed = io.close(@to)
     wrote?
     closed?
     return ok()
 
-# Writes `wb` to `to` as an `.xlsx` file: its sheets, cells, styles, names and
+# Writes `workbook` to `to` as an `.xlsx` file: its sheets, cells, styles, names and
 # properties.
 #
-# - `wb`: the workbook, holding one sheet or more.
+# - `workbook`: the workbook, holding one sheet or more.
 # - `to`: the stream; the caller closes it.
 #
-# Fails `invalid` where `wb` holds no sheet, two sheets of one name, a name
+# Fails `invalid` where `workbook` holds no sheet, two sheets of one name, a name
 # `add_sheet` refuses, two cells at one place, a cell outside a sheet, a text
 # past `MAX_TEXT_CHARS`, a style index outside `styles`, merged areas that
 # overlap, or a defined name `add_name` refuses; `unsupported` on a NaN, an
@@ -772,14 +772,14 @@ function save(wb: Workbook, path: str) -> ()?
 # opening. The same workbook always gives the same bytes.
 #
 # See also `save`, `read`.
-function write(wb: Workbook, to: io.Stream) -> ()?
-    from_1904 = match wb.epoch
+function write(workbook: Workbook, to: io.Stream) -> ()?
+    from_1904 = match workbook.epoch
         .from_1900 => false
         .from_1904 => true
 
     sheets: [model.Sheet] @= []
 
-    for s in wb.sheets
+    for s in workbook.sheets
         cells: [model.Cell] @= []
 
         for c in s.cells
@@ -865,7 +865,7 @@ function write(wb: Workbook, to: io.Stream) -> ()?
 
     styles: [model.Style] @= []
 
-    for s in wb.styles
+    for s in workbook.styles
         checks.color(s.font.color)?
         checks.color(s.fill.color)?
         checks.color(s.fill.background)?
@@ -950,31 +950,31 @@ function write(wb: Workbook, to: io.Stream) -> ()?
 
     defined: [model.Name] @= []
 
-    for n in wb.names
+    for n in workbook.names
         defined @ defined.push(model.Name(name: n.name, refers_to: n.refers_to, sheet: n.sheet, hidden: n.hidden))
 
-    p = wb.properties
+    p = workbook.properties
     book = model.Book(
         sheets: sheets,
         styles: styles,
         from_1904: from_1904,
         names: defined,
-        active: wb.active,
+        active: workbook.active,
         props: model.Props(title: p.title, subject: p.subject, creator: p.creator, keywords: p.keywords, description: p.description, last_modified_by: p.last_modified_by, category: p.category, created: p.created, modified: p.modified)
     )
     return book_write.write(to, book: book)
 
-# `wb` as the bytes of an `.xlsx` file.
+# `workbook` as the bytes of an `.xlsx` file.
 #
-# - `wb`: the workbook.
+# - `workbook`: the workbook.
 #
 # Fails as `write` does, and as `fs` fails to write a temporary file.
 #
 # It writes the file to a temporary file in the system's folder for them,
 # reads it back and removes it.
-function to_bytes(wb: Workbook) -> [u8]?
+function to_bytes(workbook: Workbook) -> [u8]?
     temp @= fs.make_temp_file(dir: "", pattern: "rebel-xlsx-*.xlsx")?
-    wrote = write(wb, to: temp.stream)
+    wrote = write(workbook, to: temp.stream)
     closed = io.close(@temp.stream)
     got: [u8]? @= fail(code: INVALID, msg: "the workbook was not written")
 
@@ -1023,32 +1023,32 @@ function new_sheet(name: str) -> Sheet
         links: []
     )
 
-# Adds `s` after the sheets of `wb`.
+# Adds `s` after the sheets of `workbook`.
 #
-# - `wb`: the workbook it is added to.
+# - `workbook`: the workbook it is added to.
 # - `s`: the sheet, copied in whole.
 #
 # Fails `invalid` where its name is empty, longer than 31 characters, holds
 # one of `[ ] : * ? / \`, opens or ends with `'`, or is the name of a sheet
-# of `wb` in any case of ASCII letters; or where a cell of it names a style
-# `wb` does not hold.
+# of `workbook` in any case of ASCII letters; or where a cell of it names a style
+# `workbook` does not hold.
 #
 # See also `new_sheet`, `sheet_of`.
-function add_sheet(@wb: Workbook, s: Sheet) -> ()?
+function add_sheet(@workbook: Workbook, s: Sheet) -> ()?
     checks.sheet_name(s.name)?
 
-    for other in wb.sheets
+    for other in workbook.sheets
         if checks.same_name(a: other.name, b: s.name)
             return fail(code: INVALID, msg: f"the workbook holds a sheet named \"{other.name}\" already")
 
     for c in s.cells
-        if c.style < 0 || c.style >= wb.styles.len()
+        if c.style < 0 || c.style >= workbook.styles.len()
             return fail(
                 code: INVALID,
-                msg: f"a cell of the sheet \"{s.name}\" names the style {c.style}, of the {wb.styles.len()} the workbook holds"
+                msg: f"a cell of the sheet \"{s.name}\" names the style {c.style}, of the {workbook.styles.len()} the workbook holds"
             )
 
-    grow.add_item(@wb.sheets, item: s)
+    grow.add_item(@workbook.sheets, item: s)
     return ok()
 
 # The style of a cell `default_style` answers: Calibri of 11 points, no fill,
@@ -1068,37 +1068,37 @@ function default_style() -> Style
 # The index in `wb.styles` of a style equal to `style`, added at the end
 # where none is.
 #
-# - `wb`: the workbook whose styles are searched and grown.
+# - `workbook`: the workbook whose styles are searched and grown.
 # - `style`: the style.
 #
 # See also `default_style`, `set_style`.
-function add_style(@wb: Workbook, style: Style) -> i64
+function add_style(@workbook: Workbook, style: Style) -> i64
     at: i64 @= 0
 
-    for s in wb.styles
+    for s in workbook.styles
         if s == style
             return at
         at @ at + 1
 
-    grow.add_item(@wb.styles, item: style)
+    grow.add_item(@workbook.styles, item: style)
     return at
 
-# Adds a defined name to `wb`.
+# Adds a defined name to `workbook`.
 #
-# - `wb`: the workbook.
+# - `workbook`: the workbook.
 # - `name`: the name, what it names, the sheet it is local to and whether it
 #   is hidden.
 #
 # Fails `invalid` where the name is not one, `name.sheet` names no sheet of
-# `wb`, or `wb` holds the same name at the same scope in any case of ASCII
+# `workbook`, or `workbook` holds the same name at the same scope in any case of ASCII
 # letters.
-function add_name(@wb: Workbook, name: DefinedName) -> ()?
+function add_name(@workbook: Workbook, name: DefinedName) -> ()?
     checks.defined_name(name.name)?
 
     if name.sheet != ""
         found: bool @= false
 
-        for s in wb.sheets
+        for s in workbook.sheets
             if s.name == name.sheet
                 found @ true
 
@@ -1108,11 +1108,11 @@ function add_name(@wb: Workbook, name: DefinedName) -> ()?
                 msg: f"the defined name \"{name.name}\" is local to the sheet \"{name.sheet}\", which the workbook does not hold"
             )
 
-    for n in wb.names
+    for n in workbook.names
         if n.sheet == name.sheet && checks.same_name(a: n.name, b: name.name)
             return fail(code: INVALID, msg: f"the workbook defines \"{n.name}\" over that scope already")
 
-    grow.add_item(@wb.names, item: name)
+    grow.add_item(@workbook.names, item: name)
     return ok()
 
 # Sets the value of the cell at `row` and `column` of `s`, made where it is
@@ -1401,32 +1401,32 @@ function add_link(@s: Sheet, link: Link) -> ()?
 
 ## Asking
 
-# The sheet of `wb` named `name`, its name compared byte for byte.
+# The sheet of `workbook` named `name`, its name compared byte for byte.
 #
-# - `wb`: the workbook.
+# - `workbook`: the workbook.
 # - `name`: the sheet's name.
 #
-# Fails `not_found` where `wb` holds none, and the message names the sheets it
+# Fails `not_found` where `workbook` holds none, and the message names the sheets it
 # holds.
 #
 # See also `sheet_names`.
-function sheet_of(wb: Workbook, name: str) -> Sheet?
-    for s in wb.sheets
+function sheet_of(workbook: Workbook, name: str) -> Sheet?
+    for s in workbook.sheets
         if s.name == name
             return ok(s)
 
     return fail(
         code: NOT_FOUND,
-        msg: f"no sheet \"{name}\" in the workbook, whose sheets are \"{sheet_names(wb).join("\", \"")}\""
+        msg: f"no sheet \"{name}\" in the workbook, whose sheets are \"{sheet_names(workbook).join("\", \"")}\""
     )
 
-# The names of the sheets of `wb`, in the order their tabs stand.
+# The names of the sheets of `workbook`, in the order their tabs stand.
 #
-# - `wb`: the workbook.
-function sheet_names(wb: Workbook) -> [str]
+# - `workbook`: the workbook.
+function sheet_names(workbook: Workbook) -> [str]
     found: [str] @= []
 
-    for s in wb.sheets
+    for s in workbook.sheets
         found @ found.push(s.name)
 
     return found

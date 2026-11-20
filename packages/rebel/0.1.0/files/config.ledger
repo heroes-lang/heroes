@@ -364,7 +364,7 @@ capability dotenv/read  a `.env` file read by its path
   note    -
 
 capability dotenv/expand  `${NAME}` in a value replaced by an earlier value or a variable
-  heroes  config.parse_dotenv_with, config.DotenvOptions
+  heroes  config.parse_dotenv_with, config.read_dotenv_with, config.DotenvOptions
   go      godotenv's expansion, always on
   rust    dotenvy's substitution, always on
   python  dotenv_values(interpolate=), resolve_variables, parse_variables, dotenv.variables

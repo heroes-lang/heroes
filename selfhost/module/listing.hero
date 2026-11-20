@@ -18,10 +18,18 @@
 # table, never empty, each name a path of names and none twice; on one line,
 # or over several as TOML writes an array, one name a line and a comment after
 # any (`joined`), which is how `heroes add` writes a long one.
+#
+# **No name is a private module** (defect 2613): a name is what a program's
+# `use` writes after the brackets, and no module of a program names a
+# package's private module, `csv/internal/scan` (R16), so a line naming one
+# is refused with its line and the package it belongs to named, as `heroes
+# add kit/csv/internal/scan` is (`fetch/package_operand.hero`). It was read,
+# and placed a module no program could name.
 
 use bytes
 use module/reached
 use module/toml_line
+use placed_use
 
 # What a program writes in a `packages` line, as every refusal shows it.
 constant EXAMPLE: str
@@ -46,6 +54,11 @@ function read(@listings: [reached.Listing], entry: str, row: str, at: i64) -> st
     for one in got.must()
         if !path_shaped(one)
             return "`packages` names `" + one + "` in the entry `" + entry + "`, and a name there is the path a `use` writes after `<" + entry + ">/`, names joined by `/`: " + EXAMPLE
+
+        owner = private_owner(entry: entry, name: one)
+
+        if owner.len() > 0
+            return "`packages` names `" + one + "` in the entry `" + entry + "`, a module private to `" + owner + "`: " + placed_use.PRIVATE_RULE + ", so no program's `use` writes it; " + owner_listed(entry: entry, owner: owner)
 
         if !seen[one].is_err()
             return "`packages` names `" + one + "` twice in the entry `" + entry + "`"
@@ -185,6 +198,29 @@ function names(packages: [str], wanted: str) -> bool
 
     return false
 
+# The module `<entry>/<name>` is private to (`placed_use.internal_owner`,
+# panel 235's R16), "" where it is private to none: `<kit>/csv` for
+# `csv/internal/scan`, `<kit>` for `internal/scan`.
+function private_owner(entry: str, name: str) -> str
+    return placed_use.internal_owner("<" + entry + ">/" + name)
+
+# The path inside the entry `entry` of `owner`, the module a private module
+# belongs to: "" where it belongs to the package's root.
+function owner_inside(entry: str, owner: str) -> str
+    head = "<" + entry + ">/"
+
+    if owner.len() <= head.len()
+        return ""
+    return owner.slice(from: head.len(), to: owner.len())
+
+# What a refusal of a private name says a line lists instead.
+function owner_listed(entry: str, owner: str) -> str
+    inside = owner_inside(entry: entry, owner: owner)
+
+    if inside.len() == 0
+        return "list the packages a program names, outside `internal`"
+    return "list `" + inside + "`, the package it belongs to"
+
 # Whether `name` is a path a `use` can write after the brackets: names of
 # letters, digits and `_`, each opening with a letter or `_`, joined by `/`.
 # A keyword in it is no name a `use` writes either, and the `use` that writes
@@ -254,3 +290,13 @@ test "a name in a packages line is a path of names, never a part empty or openin
 
     for bad in ["", "/csv", "csv/", "a//b", "1a", "a/2b", "a-b", "a.b", "<rebel>/csv", "a b"]
         assert !path_shaped(bad)
+
+test "a packages line naming a private module is refused, its owner named (defect 2613)"
+    out: [reached.Listing] @= []
+    assert read(@out, entry: "kit", row: "packages = [\"csv\", \"csv/internal/scan\"]", at: 11) == "`packages` names `csv/internal/scan` in the entry `kit`, a module private to `<kit>/csv`: " + placed_use.PRIVATE_RULE + ", so no program's `use` writes it; list `csv`, the package it belongs to"
+    assert read(@out, entry: "kit", row: "packages = [\"internal/scan\"]", at: 11) == "`packages` names `internal/scan` in the entry `kit`, a module private to `<kit>`: " + placed_use.PRIVATE_RULE + ", so no program's `use` writes it; list the packages a program names, outside `internal`"
+    assert out.len() == 0
+    assert read(@out, entry: "kit", row: "packages = [\"internals/scan\", \"csv/internal\"]", at: 11).len() > 0
+    assert private_owner(entry: "kit", name: "internals/scan") == ""
+    assert private_owner(entry: "kit", name: "a/internal/b/internal/c") == "<kit>/a/internal/b"
+    assert owner_inside(entry: "kit", owner: "<kit>/a/internal/b") == "a/internal/b"

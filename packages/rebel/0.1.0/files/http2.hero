@@ -43,7 +43,6 @@ use http2/internal/fixture
 use http2/internal/framer
 use http2/internal/frames
 use http2/internal/huffman
-use http2/internal/model
 use http2/internal/receiving
 use http2/internal/sending
 use http2/internal/values
@@ -58,29 +57,29 @@ use tls
 # A frame, a header block or an argument that RFC 9113 or RFC 7541 refuses;
 # the message names the RFC's error and says what was found.
 constant INVALID: str
-    model.INVALID
+    "invalid"
 
 # A bound of `Limits` or of the settings passed by the peer, or a body past
 # `Limits.body_bytes`.
 constant LIMIT: str
-    model.LIMIT
+    "limit"
 
 # A header field that is not UTF-8: `decode_fields`, and a session's peer.
 constant NOT_TEXT: str
-    model.NOT_TEXT
+    "not_text"
 
 # The connection or the stream is closed, reset, or past the peer's GOAWAY.
 constant CLOSED: str
-    model.CLOSED
+    "closed"
 
 # A name with no address, or an error code with no name: `connect`,
 # `connect_plain`, `error_name`, `frame_name`.
 constant NOT_FOUND: str
-    model.NOT_FOUND
+    "not_found"
 
 # A server whose TLS chose another protocol than `h2`: `connect`.
 constant UNSUPPORTED: str
-    model.UNSUPPORTED
+    "unsupported"
 
 # The time a connection allows ran out: the connection's functions.
 constant TIMEOUT: str
@@ -94,175 +93,7 @@ constant STOPPED: str
 constant FAILED: str
     "failed"
 
-## Error codes
-
-# NO_ERROR (RFC 9113 § 7): a graceful end, no error at all.
-constant NO_ERROR: i64
-    0x0
-
-# PROTOCOL_ERROR: the peer broke the protocol where no other code is more
-# specific.
-constant PROTOCOL_ERROR: i64
-    0x1
-
-# INTERNAL_ERROR: the end that sends it failed on its own.
-constant INTERNAL_ERROR: i64
-    0x2
-
-# FLOW_CONTROL_ERROR: a window was overrun or overflowed.
-constant FLOW_CONTROL_ERROR: i64
-    0x3
-
-# SETTINGS_TIMEOUT: settings sent were not acknowledged in time.
-constant SETTINGS_TIMEOUT: i64
-    0x4
-
-# STREAM_CLOSED: a frame came on a stream half closed already.
-constant STREAM_CLOSED: i64
-    0x5
-
-# FRAME_SIZE_ERROR: a frame of a size its type or the settings refuse.
-constant FRAME_SIZE_ERROR: i64
-    0x6
-
-# REFUSED_STREAM: the stream was refused before any of it was processed, so
-# a client may send it again.
-constant REFUSED_STREAM: i64
-    0x7
-
-# CANCEL: the stream is no longer wanted.
-constant CANCEL: i64
-    0x8
-
-# COMPRESSION_ERROR: a header block HPACK cannot read; the connection ends.
-constant COMPRESSION_ERROR: i64
-    0x9
-
-# CONNECT_ERROR: the connection a CONNECT request opened was reset or closed.
-constant CONNECT_ERROR: i64
-    0xa
-
-# ENHANCE_YOUR_CALM: the peer is sending more than this end allows.
-constant ENHANCE_YOUR_CALM: i64
-    0xb
-
-# INADEQUATE_SECURITY: the TLS under the connection is too weak.
-constant INADEQUATE_SECURITY: i64
-    0xc
-
-# HTTP_1_1_REQUIRED: the request must be sent over HTTP/1.1.
-constant HTTP_1_1_REQUIRED: i64
-    0xd
-
-# The name RFC 9113 § 7 gives an error code: `"PROTOCOL_ERROR"` for 1.
-#
-# - `code`: the error code, as a GOAWAY or a RST_STREAM carries it.
-#
-# Fails `not_found` for a code RFC 9113 does not name, which a peer may send
-# and which means `INTERNAL_ERROR`. See also `NO_ERROR`.
-function error_name(code: i64) -> str?
-    name = frames.error_name(code)
-
-    if name == ""
-        return fail(code: NOT_FOUND, msg: f"RFC 9113 names no error of code {code}")
-    return ok(name)
-
 ## Frames
-
-# The type of a DATA frame.
-constant FRAME_DATA: i64
-    0x0
-
-# The type of a HEADERS frame.
-constant FRAME_HEADERS: i64
-    0x1
-
-# The type of a PRIORITY frame.
-constant FRAME_PRIORITY: i64
-    0x2
-
-# The type of a RST_STREAM frame.
-constant FRAME_RST_STREAM: i64
-    0x3
-
-# The type of a SETTINGS frame.
-constant FRAME_SETTINGS: i64
-    0x4
-
-# The type of a PUSH_PROMISE frame.
-constant FRAME_PUSH_PROMISE: i64
-    0x5
-
-# The type of a PING frame.
-constant FRAME_PING: i64
-    0x6
-
-# The type of a GOAWAY frame.
-constant FRAME_GOAWAY: i64
-    0x7
-
-# The type of a WINDOW_UPDATE frame.
-constant FRAME_WINDOW_UPDATE: i64
-    0x8
-
-# The type of a CONTINUATION frame.
-constant FRAME_CONTINUATION: i64
-    0x9
-
-# The flag END_STREAM of DATA and HEADERS: the sender's last frame on the
-# stream.
-constant FLAG_END_STREAM: i64
-    0x1
-
-# The flag ACK of SETTINGS and PING: an acknowledgement.
-constant FLAG_ACK: i64
-    0x1
-
-# The flag END_HEADERS of HEADERS, PUSH_PROMISE and CONTINUATION: the header
-# block ends in this frame.
-constant FLAG_END_HEADERS: i64
-    0x4
-
-# The flag PADDED of DATA, HEADERS and PUSH_PROMISE: a byte of padding's
-# length opens the payload.
-constant FLAG_PADDED: i64
-    0x8
-
-# The flag PRIORITY of HEADERS: five bytes of priority follow the padding's
-# length.
-constant FLAG_PRIORITY: i64
-    0x20
-
-# The bytes of a frame's head: a length of 24 bits, a type, flags and a
-# stream identifier of 31 bits.
-constant FRAME_HEAD_BYTES: i64
-    9
-
-# The smallest SETTINGS_MAX_FRAME_SIZE, and its initial value: 16,384 bytes.
-constant MIN_FRAME_SIZE: i64
-    16384
-
-# The largest SETTINGS_MAX_FRAME_SIZE: 16,777,215 bytes.
-constant MAX_FRAME_SIZE: i64
-    16777215
-
-# The largest window and the largest stream identifier: 2^31 - 1.
-constant MAX_WINDOW: i64
-    2147483647
-
-# What a setting with no limit holds: 2^32 - 1, its largest value, which is
-# what SETTINGS_MAX_CONCURRENT_STREAMS and SETTINGS_MAX_HEADER_LIST_SIZE hold
-# before a peer says otherwise.
-constant NO_LIMIT: i64
-    4294967295
-
-# The bytes a client sends before its first frame (RFC 9113 § 3.4).
-constant PREFACE: str
-    "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
-
-# The name TLS's ALPN gives HTTP/2.
-constant ALPN: str
-    "h2"
 
 # A stream's priority as RFC 7540 § 5.3 wrote it, which RFC 9113 deprecates:
 # read from HEADERS and PRIORITY frames and ignored by a session, written by
@@ -396,7 +227,7 @@ variant Frame
 # defines, or a payload past `MAX_FRAME_SIZE`. See also `decode_frame`,
 # `write_frame`.
 function encode_frame(f: Frame) -> [u8]?
-    inner: model.Frame = match f
+    inner: Frame = match f
         .data d => .data(stream: d.stream, data: d.data, end_stream: d.end_stream, padding: d.padding)
         .headers h => .headers(
             stream: h.stream,
@@ -405,18 +236,18 @@ function encode_frame(f: Frame) -> [u8]?
             end_headers: h.end_headers,
             padding: h.padding,
             has_priority: h.has_priority,
-            priority: model.Priority(exclusive: h.priority.exclusive, depends_on: h.priority.depends_on, weight: h.priority.weight)
+            priority: Priority(exclusive: h.priority.exclusive, depends_on: h.priority.depends_on, weight: h.priority.weight)
         )
         .priority p => .priority(
             stream: p.stream,
-            priority: model.Priority(exclusive: p.priority.exclusive, depends_on: p.priority.depends_on, weight: p.priority.weight)
+            priority: Priority(exclusive: p.priority.exclusive, depends_on: p.priority.depends_on, weight: p.priority.weight)
         )
         .rst_stream r => .rst_stream(stream: r.stream, error: r.error)
         .settings s =>
-            list: [model.Setting] @= []
+            list: [Setting] @= []
 
             for one in s.settings
-                list @ list.push(model.Setting(id: one.id, value: one.value))
+                list @ list.push(Setting(id: one.id, value: one.value))
 
             .settings(ack: s.ack, settings: list)
         .push_promise p => .push_promise(
@@ -640,10 +471,10 @@ function encoder(table_size: i64) -> Encoder
 # table is not indexed, so it evicts nothing. A size update owed by
 # `resize_encoder` opens the block. See also `decode_fields`.
 function encode_fields(@e: Encoder, fields: [Field]) -> [u8]
-    inner: [model.Field] @= []
+    inner: [Field] @= []
 
     for f in fields
-        inner @ inner.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+        inner @ inner.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
 
     return encoding.encode(@e.state, fields: inner)
 
@@ -840,13 +671,13 @@ function initial_settings() -> Settings
 # (`FLOW_CONTROL_ERROR`), or a value passes 4,294,967,295. See also
 # `to_setting_list`.
 function apply_settings(before: Settings, list: [Setting]) -> Settings?
-    inner: [model.Setting] @= []
+    inner: [Setting] @= []
 
     for one in list
-        inner @ inner.push(model.Setting(id: one.id, value: one.value))
+        inner @ inner.push(Setting(id: one.id, value: one.value))
 
     a = values.apply(
-        model.Settings(header_table_size: before.header_table_size, enable_push: before.enable_push, max_concurrent_streams: before.max_concurrent_streams, initial_window_size: before.initial_window_size, max_frame_size: before.max_frame_size, max_header_list_size: before.max_header_list_size, enable_connect_protocol: before.enable_connect_protocol),
+        Settings(header_table_size: before.header_table_size, enable_push: before.enable_push, max_concurrent_streams: before.max_concurrent_streams, initial_window_size: before.initial_window_size, max_frame_size: before.max_frame_size, max_header_list_size: before.max_header_list_size, enable_connect_protocol: before.enable_connect_protocol),
         list: inner
     )
 
@@ -866,7 +697,7 @@ function apply_settings(before: Settings, list: [Setting]) -> Settings?
 function to_setting_list(s: Settings) -> [Setting]
     out: [Setting] @= []
 
-    for one in values.to_list(model.Settings(header_table_size: s.header_table_size, enable_push: s.enable_push, max_concurrent_streams: s.max_concurrent_streams, initial_window_size: s.initial_window_size, max_frame_size: s.max_frame_size, max_header_list_size: s.max_header_list_size, enable_connect_protocol: s.enable_connect_protocol))
+    for one in values.to_list(Settings(header_table_size: s.header_table_size, enable_push: s.enable_push, max_concurrent_streams: s.max_concurrent_streams, initial_window_size: s.initial_window_size, max_frame_size: s.max_frame_size, max_header_list_size: s.max_header_list_size, enable_connect_protocol: s.enable_connect_protocol))
         out @ out.push(Setting(id: one.id, value: one.value))
 
     return out
@@ -1063,7 +894,7 @@ record Session
 # See also `server_session`, `receive`.
 function client_session(options: Options) -> Session
     return Session(
-        state: engine.make(client: true, options: model.Options(settings: model.Settings(header_table_size: options.settings.header_table_size, enable_push: options.settings.enable_push, max_concurrent_streams: options.settings.max_concurrent_streams, initial_window_size: options.settings.initial_window_size, max_frame_size: options.settings.max_frame_size, max_header_list_size: options.settings.max_header_list_size, enable_connect_protocol: options.settings.enable_connect_protocol), connection_window: options.connection_window, limits: model.Limits(header_block_bytes: options.limits.header_block_bytes, header_frames: options.limits.header_frames, resets_per_second: options.limits.resets_per_second, control_per_second: options.limits.control_per_second, body_bytes: options.limits.body_bytes)))
+        state: engine.make(client: true, options: Options(settings: Settings(header_table_size: options.settings.header_table_size, enable_push: options.settings.enable_push, max_concurrent_streams: options.settings.max_concurrent_streams, initial_window_size: options.settings.initial_window_size, max_frame_size: options.settings.max_frame_size, max_header_list_size: options.settings.max_header_list_size, enable_connect_protocol: options.settings.enable_connect_protocol), connection_window: options.connection_window, limits: Limits(header_block_bytes: options.limits.header_block_bytes, header_frames: options.limits.header_frames, resets_per_second: options.limits.resets_per_second, control_per_second: options.limits.control_per_second, body_bytes: options.limits.body_bytes)))
     )
 
 # A server's session: its first SETTINGS and the connection's WINDOW_UPDATE
@@ -1076,7 +907,7 @@ function client_session(options: Options) -> Session
 # See also `client_session`, `receive`.
 function server_session(options: Options) -> Session
     return Session(
-        state: engine.make(client: false, options: model.Options(settings: model.Settings(header_table_size: options.settings.header_table_size, enable_push: options.settings.enable_push, max_concurrent_streams: options.settings.max_concurrent_streams, initial_window_size: options.settings.initial_window_size, max_frame_size: options.settings.max_frame_size, max_header_list_size: options.settings.max_header_list_size, enable_connect_protocol: options.settings.enable_connect_protocol), connection_window: options.connection_window, limits: model.Limits(header_block_bytes: options.limits.header_block_bytes, header_frames: options.limits.header_frames, resets_per_second: options.limits.resets_per_second, control_per_second: options.limits.control_per_second, body_bytes: options.limits.body_bytes)))
+        state: engine.make(client: false, options: Options(settings: Settings(header_table_size: options.settings.header_table_size, enable_push: options.settings.enable_push, max_concurrent_streams: options.settings.max_concurrent_streams, initial_window_size: options.settings.initial_window_size, max_frame_size: options.settings.max_frame_size, max_header_list_size: options.settings.max_header_list_size, enable_connect_protocol: options.settings.enable_connect_protocol), connection_window: options.connection_window, limits: Limits(header_block_bytes: options.limits.header_block_bytes, header_frames: options.limits.header_frames, resets_per_second: options.limits.resets_per_second, control_per_second: options.limits.control_per_second, body_bytes: options.limits.body_bytes)))
     )
 
 # The events `data` makes, reading it after the bytes held from before:
@@ -1179,10 +1010,10 @@ function take_output(@s: Session) -> [u8]
 # already or the identifiers are spent; `closed` where the session is closed
 # or past the server's GOAWAY. See also `send_headers`, `send_data`.
 function open_stream(@s: Session, headers: [Field], end_stream: bool) -> i64?
-    inner: [model.Field] @= []
+    inner: [Field] @= []
 
     for f in headers
-        inner @ inner.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+        inner @ inner.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
 
     return sending.open_stream(@s.state, headers: inner, end_stream: end_stream)
 
@@ -1201,10 +1032,10 @@ function open_stream(@s: Session, headers: [Field], end_stream: bool) -> i64?
 # where the stream is not open for this end to send. See also
 # `open_stream`.
 function send_headers(@s: Session, stream: i64, headers: [Field], end_stream: bool) -> ()?
-    inner: [model.Field] @= []
+    inner: [Field] @= []
 
     for f in headers
-        inner @ inner.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+        inner @ inner.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
 
     return sending.send_headers(@s.state, id: stream, headers: inner, end_stream: end_stream)
 
@@ -1272,7 +1103,7 @@ function send_ping(@s: Session, data: [u8]) -> ()?
 function change_settings(@s: Session, settings: Settings) -> ()?
     return sending.change_settings(
         @s.state,
-        settings: model.Settings(header_table_size: settings.header_table_size, enable_push: settings.enable_push, max_concurrent_streams: settings.max_concurrent_streams, initial_window_size: settings.initial_window_size, max_frame_size: settings.max_frame_size, max_header_list_size: settings.max_header_list_size, enable_connect_protocol: settings.enable_connect_protocol)
+        settings: Settings(header_table_size: settings.header_table_size, enable_push: settings.enable_push, max_concurrent_streams: settings.max_concurrent_streams, initial_window_size: settings.initial_window_size, max_frame_size: settings.max_frame_size, max_header_list_size: settings.max_header_list_size, enable_connect_protocol: settings.enable_connect_protocol)
     )
 
 # Sends GOAWAY: no stream the peer opens after those it opened already will
@@ -1644,10 +1475,10 @@ function accept_stream(@c: Conn) -> Event?
 # Fails as `open_stream` does, and as `read_event` does while it waits. See
 # also `write_data`, `start`.
 function start_stream(@c: Conn, headers: [Field], end_stream: bool) -> i64?
-    inner: [model.Field] @= []
+    inner: [Field] @= []
 
     for f in headers
-        inner @ inner.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+        inner @ inner.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
 
     return wire.start_stream(c.stream, @c.state, headers: inner, end_stream: end_stream)
 
@@ -1661,10 +1492,10 @@ function start_stream(@c: Conn, headers: [Field], end_stream: bool) -> i64?
 #
 # Fails as `send_headers` and `io.write` do. See also `write_data`.
 function write_headers(@c: Conn, stream: i64, headers: [Field], end_stream: bool) -> ()?
-    inner: [model.Field] @= []
+    inner: [Field] @= []
 
     for f in headers
-        inner @ inner.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+        inner @ inner.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
 
     return wire.write_headers(c.stream, @c.state, id: stream, headers: inner, end_stream: end_stream)
 
@@ -1712,17 +1543,17 @@ function ping(@c: Conn, data: [u8]) -> ()?
 # Fails as `start_stream` and `write_data` do. See also `finish`,
 # `round_trip`.
 function start(@c: Conn, r: Request) -> i64?
-    headers: [model.Field] @= []
+    headers: [Field] @= []
 
     for f in r.headers
-        headers @ headers.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+        headers @ headers.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
 
-    trailers: [model.Field] @= []
+    trailers: [Field] @= []
 
     for f in r.trailers
-        trailers @ trailers.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+        trailers @ trailers.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
 
-    inner = model.Request(
+    inner = Request(
         method: r.method,
         scheme: r.scheme,
         authority: r.authority,
@@ -1805,54 +1636,21 @@ function next_request(@c: Conn) -> Request?
 #
 # Fails as `write_headers` and `write_data` do. See also `next_request`.
 function answer(@c: Conn, stream: i64, response: Response) -> ()?
-    headers: [model.Field] @= []
+    headers: [Field] @= []
 
     for f in response.headers
-        headers @ headers.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+        headers @ headers.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
 
-    trailers: [model.Field] @= []
+    trailers: [Field] @= []
 
     for f in response.trailers
-        trailers @ trailers.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+        trailers @ trailers.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
 
     return wire.answer(
         c.stream,
         @c.state,
         id: stream,
-        response: model.Response(status: response.status, headers: headers, body: response.body, trailers: trailers)
-    )
-
-# A handler that sends the request's body back with status 200, its
-# `content-type` kept: what a test's server answers, and a server whose
-# client checks what it sent.
-#
-# - `r`: the request.
-#
-# See also `serve`.
-function echo(r: Request) -> Response
-    headers: [Field] @= []
-
-    for f in r.headers
-        if f.name == "content-type"
-            headers @ headers.push(f)
-
-    return Response(status: 200, headers: headers, body: r.body, trailers: [])
-
-# A handler that answers `text` as `text/plain; charset=utf-8` with status
-# 200, whatever was asked: the handler of `serve_with` whose state is the
-# text, as a health check answers.
-#
-# - `text`: the body.
-# - `r`: the request, not read.
-#
-# See also `serve_with`.
-function respond_text(text: str, r: Request) -> Response
-    _ = r.stream
-    return Response(
-        status: 200,
-        headers: [Field(name: "content-type", value: "text/plain; charset=utf-8", sensitive: false)],
-        body: bytes.from_text(text),
-        trailers: []
+        response: Response(status: response.status, headers: headers, body: response.body, trailers: trailers)
     )
 
 # A server's: answers every request of the connection with `handler`, one
@@ -1902,6 +1700,176 @@ function serve_with<S>(@c: Conn, state: S, handler: (function(S, Request) -> Res
             .err _ =>
                 if c.state.ended || !sending.is_open(c.state.session)
                     return answered
+
+## Error codes
+
+# NO_ERROR (RFC 9113 § 7): a graceful end, no error at all.
+constant NO_ERROR: i64
+    0x0
+
+# PROTOCOL_ERROR: the peer broke the protocol where no other code is more
+# specific.
+constant PROTOCOL_ERROR: i64
+    0x1
+
+# INTERNAL_ERROR: the end that sends it failed on its own.
+constant INTERNAL_ERROR: i64
+    0x2
+
+# FLOW_CONTROL_ERROR: a window was overrun or overflowed.
+constant FLOW_CONTROL_ERROR: i64
+    0x3
+
+# SETTINGS_TIMEOUT: settings sent were not acknowledged in time.
+constant SETTINGS_TIMEOUT: i64
+    0x4
+
+# STREAM_CLOSED: a frame came on a stream half closed already.
+constant STREAM_CLOSED: i64
+    0x5
+
+# FRAME_SIZE_ERROR: a frame of a size its type or the settings refuse.
+constant FRAME_SIZE_ERROR: i64
+    0x6
+
+# REFUSED_STREAM: the stream was refused before any of it was processed, so
+# a client may send it again.
+constant REFUSED_STREAM: i64
+    0x7
+
+# CANCEL: the stream is no longer wanted.
+constant CANCEL: i64
+    0x8
+
+# COMPRESSION_ERROR: a header block HPACK cannot read; the connection ends.
+constant COMPRESSION_ERROR: i64
+    0x9
+
+# CONNECT_ERROR: the connection a CONNECT request opened was reset or closed.
+constant CONNECT_ERROR: i64
+    0xa
+
+# ENHANCE_YOUR_CALM: the peer is sending more than this end allows.
+constant ENHANCE_YOUR_CALM: i64
+    0xb
+
+# INADEQUATE_SECURITY: the TLS under the connection is too weak.
+constant INADEQUATE_SECURITY: i64
+    0xc
+
+# HTTP_1_1_REQUIRED: the request must be sent over HTTP/1.1.
+constant HTTP_1_1_REQUIRED: i64
+    0xd
+
+# The name RFC 9113 § 7 gives an error code: `"PROTOCOL_ERROR"` for 1.
+#
+# - `code`: the error code, as a GOAWAY or a RST_STREAM carries it.
+#
+# Fails `not_found` for a code RFC 9113 does not name, which a peer may send
+# and which means `INTERNAL_ERROR`. See also `NO_ERROR`.
+function error_name(code: i64) -> str?
+    name = frames.error_name(code)
+
+    if name == ""
+        return fail(code: NOT_FOUND, msg: f"RFC 9113 names no error of code {code}")
+    return ok(name)
+
+## Frame types, flags and sizes
+
+# The type of a DATA frame.
+constant FRAME_DATA: i64
+    0x0
+
+# The type of a HEADERS frame.
+constant FRAME_HEADERS: i64
+    0x1
+
+# The type of a PRIORITY frame.
+constant FRAME_PRIORITY: i64
+    0x2
+
+# The type of a RST_STREAM frame.
+constant FRAME_RST_STREAM: i64
+    0x3
+
+# The type of a SETTINGS frame.
+constant FRAME_SETTINGS: i64
+    0x4
+
+# The type of a PUSH_PROMISE frame.
+constant FRAME_PUSH_PROMISE: i64
+    0x5
+
+# The type of a PING frame.
+constant FRAME_PING: i64
+    0x6
+
+# The type of a GOAWAY frame.
+constant FRAME_GOAWAY: i64
+    0x7
+
+# The type of a WINDOW_UPDATE frame.
+constant FRAME_WINDOW_UPDATE: i64
+    0x8
+
+# The type of a CONTINUATION frame.
+constant FRAME_CONTINUATION: i64
+    0x9
+
+# The flag END_STREAM of DATA and HEADERS: the sender's last frame on the
+# stream.
+constant FLAG_END_STREAM: i64
+    0x1
+
+# The flag ACK of SETTINGS and PING: an acknowledgement.
+constant FLAG_ACK: i64
+    0x1
+
+# The flag END_HEADERS of HEADERS, PUSH_PROMISE and CONTINUATION: the header
+# block ends in this frame.
+constant FLAG_END_HEADERS: i64
+    0x4
+
+# The flag PADDED of DATA, HEADERS and PUSH_PROMISE: a byte of padding's
+# length opens the payload.
+constant FLAG_PADDED: i64
+    0x8
+
+# The flag PRIORITY of HEADERS: five bytes of priority follow the padding's
+# length.
+constant FLAG_PRIORITY: i64
+    0x20
+
+# The bytes of a frame's head: a length of 24 bits, a type, flags and a
+# stream identifier of 31 bits.
+constant FRAME_HEAD_BYTES: i64
+    9
+
+# The smallest SETTINGS_MAX_FRAME_SIZE, and its initial value: 16,384 bytes.
+constant MIN_FRAME_SIZE: i64
+    16384
+
+# The largest SETTINGS_MAX_FRAME_SIZE: 16,777,215 bytes.
+constant MAX_FRAME_SIZE: i64
+    16777215
+
+# The largest window and the largest stream identifier: 2^31 - 1.
+constant MAX_WINDOW: i64
+    2147483647
+
+# What a setting with no limit holds: 2^32 - 1, its largest value, which is
+# what SETTINGS_MAX_CONCURRENT_STREAMS and SETTINGS_MAX_HEADER_LIST_SIZE hold
+# before a peer says otherwise.
+constant NO_LIMIT: i64
+    4294967295
+
+# The bytes a client sends before its first frame (RFC 9113 § 3.4).
+constant PREFACE: str
+    "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+
+# The name TLS's ALPN gives HTTP/2.
+constant ALPN: str
+    "h2"
 
 ## Examples
 
@@ -2239,24 +2207,25 @@ test "has_room: one stream allowed, then none"
 # HTTP/2 over TLS with a server of this process, its certificate signed by
 # the test authority, ALPN choosing `h2`.
 test "connect: a GET over TLS, ALPN choosing h2"
-    if tls.is_available()
-        port = fixture.free_port()
-        server @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port))
-        fixture.until_listening(port)
-        c @= connect(
-            host: "localhost",
-            port: port,
-            deadline_ms: 10000,
-            roots: tls.TEST_ROOT,
-            options: default_options()
-        ).must()
-        r = round_trip(
-            @c,
-            r: Request(method: "GET", scheme: "https", authority: "localhost", path: "/tls", protocol: "", headers: [], body: [], trailers: [], stream: 0)
-        ).must()
-        assert r.status == 200 && r.body == bytes.from_text("hello /tls")
-        close(@c).must()
-        assert threads.wait_text(@server) == "GET /tls 0"
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port))
+    fixture.until_listening(port)
+    c @= connect(
+        host: "localhost",
+        port: port,
+        deadline_ms: 10000,
+        roots: tls.TEST_ROOT,
+        options: default_options()
+    ).must()
+    r = round_trip(
+        @c,
+        r: Request(method: "GET", scheme: "https", authority: "localhost", path: "/tls", protocol: "", headers: [], body: [], trailers: [], stream: 0)
+    ).must()
+    assert r.status == 200 && r.body == bytes.from_text("hello /tls")
+    close(@c).must()
+    assert threads.wait_text(@server) == "GET /tls 0"
 
 # HTTP/2 in plain text by prior knowledge, with a server of this process.
 test "connect_plain: a GET over h2c"
@@ -2314,7 +2283,7 @@ test "close: GOAWAY sent, the stream closed, a second close refused"
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= server_of(@stream, options: default_options()).must()
-    assert serve(@c, handler: echo) == 1
+    assert serve(@c, handler: fixture.echo) == 1
     _ = threads.wait_text(@client)
     close(@c).must()
 
@@ -2516,7 +2485,7 @@ test "next_request: a request read whole"
     c @= server_of(@stream, options: default_options()).must()
     r = next_request(@c).must()
     assert r.method == "GET" && r.path == "/n?q=1" && r.authority == "localhost"
-    answer(@c, stream: r.stream, response: respond_text(text: "ok", r: r)).must()
+    answer(@c, stream: r.stream, response: fixture.respond_text(text: "ok", r: r)).must()
     assert threads.wait_text(@client) == "200 ok"
     close(@c).must()
     net.close_listener(@l).must()
@@ -2538,44 +2507,31 @@ test "answer: a response with trailers"
     close(@c).must()
     net.close_listener(@l).must()
 
-# A connection served with `echo` until the client ends it.
+# A connection served until the client ends it, by a handler of the tests'
+# that sends each request's body back.
 test "serve: one request echoed"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /s")
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= server_of(@stream, options: default_options()).must()
-    assert serve(@c, handler: echo) == 1
+    assert serve(@c, handler: fixture.echo) == 1
     assert threads.wait_text(@client) == "200 "
     close(@c).must()
     net.close_listener(@l).must()
 
-# A connection served with the program's own text as state.
+# A connection served with the program's own text as state, which a handler
+# of the tests' answers to every request.
 test "serve_with: a health check's text"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /health")
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= server_of(@stream, options: default_options()).must()
-    assert serve_with(@c, state: "SERVING", handler: respond_text) == 1
+    assert serve_with(@c, state: "SERVING", handler: fixture.respond_text) == 1
     assert threads.wait_text(@client) == "200 SERVING"
     close(@c).must()
     net.close_listener(@l).must()
-
-# A request's body sent back.
-test "echo: the body and its content-type sent back"
-    r = echo(
-        Request(method: "POST", scheme: "https", authority: "h", path: "/", protocol: "", headers: [Field(name: "content-type", value: "application/json", sensitive: false), Field(name: "x-a", value: "b", sensitive: false)], body: [123, 125], trailers: [], stream: 1)
-    )
-    assert r.status == 200 && r.body == [123, 125] && r.headers == [Field(name: "content-type", value: "application/json", sensitive: false)]
-
-# A fixed text answered whatever was asked.
-test "respond_text: OK as text"
-    r = respond_text(
-        text: "OK",
-        r: Request(method: "GET", scheme: "https", authority: "h", path: "/healthz", protocol: "", headers: [], body: [], trailers: [], stream: 1)
-    )
-    assert r.status == 200 && r.body == bytes.from_text("OK")
 
 # The next stream a client opens, while another's events wait.
 test "accept_stream: the second request's head, the first's held"
@@ -2591,7 +2547,7 @@ test "accept_stream: the second request's head, the first's held"
             answer(
                 @c,
                 stream: r.stream,
-                response: respond_text(text: "seen", r: Request(method: r.method, scheme: r.scheme, authority: r.authority, path: r.path, protocol: "", headers: [], body: [], trailers: [], stream: r.stream))
+                response: fixture.respond_text(text: "seen", r: Request(method: r.method, scheme: r.scheme, authority: r.authority, path: r.path, protocol: "", headers: [], body: [], trailers: [], stream: r.stream))
             ).must()
         .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => assert false
 

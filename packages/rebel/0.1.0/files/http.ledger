@@ -426,7 +426,7 @@ capability client/compressed-other  a Brotli or Zstandard response undone
   go      -
   rust    -
   python  requests' br and zstd where their libraries are installed
-  note    `compress` holds DEFLATE, zlib and gzip alone
+  note    `compress/brotli` and `compress/zstd` undo both, and `http` does not use them: every program that sends a request would carry their tables, Brotli's dictionary of 122,784 bytes among them; a `br` or `zstd` body comes as it came, its `Content-Encoding` kept, for the program to undo with them; done when a program can carry a decoder it does not call
 
 capability server/compressed  a response compressed where the client accepts it
   heroes  http.with_compression

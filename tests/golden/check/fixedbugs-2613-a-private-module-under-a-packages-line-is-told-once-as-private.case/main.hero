@@ -1,0 +1,15 @@
+# Fixed defect 2613, 2026-11-20, lane umbrella-2: a `use` of a package's
+# private module under a `packages` line was told twice, `package_not_listed`
+# first, its note offering `heroes add kit/csv/internal/scan`, a line that
+# would list a private module, then `private_module`. A program's own module
+# never names a private module of a package, so no line lists one: each such
+# `use` is told once, as private, whether the module's owner is listed
+# (`csv`) or not (`text`).
+use <kit>/csv
+use <kit>/csv/internal/scan  #~ private_module
+use <kit>/text/internal/cut  #~ private_module
+
+function main()
+    print(csv.first("a,b"))
+    print(scan.comma_at("a,b"))
+    print(cut.half("abcd"))

@@ -48,7 +48,7 @@ function open(host: str, port: i64, security: i64, roots: str, local_name: str, 
             msg: f"the port {port} is outside 1 to 65535, or the deadline {deadline_ms} is below 0"
         )
 
-    if local_name == "" || strings.contains_any(s: local_name, set: " \r\n\t") || !protocol.is_ascii(local_name)
+    if local_name == "" || strings.contains_any(s: local_name, set: " \r\n\t") || !strings.is_ascii(local_name)
         return fail(
             code: INVALID,
             msg: f"the client's name \"{protocol.escaped(local_name)}\" is empty, above ASCII, or holds a space or a line break"
@@ -421,10 +421,10 @@ function mail_params(s: wire.Session lent, from: str, to: [str], message: [u8]) 
                 msg: "the message's body holds bytes above 127 and the server offers no 8BITMIME: write it with quoted-printable or base 64"
             )
         out @ out.push(" BODY=8BITMIME")
-    utf8_envelope: bool @= !protocol.is_ascii(from)
+    utf8_envelope: bool @= !strings.is_ascii(from)
 
     for t in to
-        if !protocol.is_ascii(t)
+        if !strings.is_ascii(t)
             utf8_envelope @ true
 
     if utf8_envelope || protocol.has_high_byte(message, from: 0, to: head_end)

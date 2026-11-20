@@ -1,0 +1,48 @@
+$ heroes add kit@1.0.0 --index file://../../../../../tests/golden/fetch/fixedbugs-2614-a-tree-no-entry-names-after-an-add-is-removed.case/idx -C <work>/app
+exit 0
+stdout:
+added kit 1.0.0
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add kit -C <work>/app
+exit 0
+stdout:
+changed kit 1.0.0 -> 1.1.0
+wrote <work>/app/heroes.toml
+removed kit 1.0.0 <work>/app/heroes.packages/kit@1.0.0-c6bbbe0e65436834, which no entry names now
+stderr:
+$ heroes add kit@1.0.0 -C <work>/app
+exit 0
+stdout:
+changed kit 1.1.0 -> 1.0.0
+wrote <work>/app/heroes.toml
+removed kit 1.1.0 <work>/app/heroes.packages/kit@1.1.0-0585134c39a7bb9a, which no entry names now
+stderr:
+$ heroes add kit/csv -C <work>/app
+exit 0
+stdout:
+added kit/csv
+placed kit 1.0.0 <work>/app/heroes.packages/kit@1.0.0-c6bbbe0e65436834, 3 of 5 files: what its `packages` line names and the modules those use
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add kit@1.1.0 -C <work>/app
+exit 0
+stdout:
+changed kit 1.0.0 -> 1.1.0
+wrote <work>/app/heroes.toml
+removed kit 1.0.0 <work>/app/heroes.packages/kit@1.0.0-c6bbbe0e65436834, which no entry names now
+stderr:
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+one
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2614-a-tree-no-entry-names-after-an-add-is-removed.case/idx"
+
+[dependencies.kit]
+version = "1.1.0"
+sum = "sha256-1590f41e82238de77c661d4cd471040aeee797d69ff9af35bd0e4023a5ea83ab"
+packages = ["csv"]
+heroes.packages:
+kit@1.1.0-0585134c39a7bb9a

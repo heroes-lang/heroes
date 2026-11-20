@@ -1,0 +1,34 @@
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+placed kit 1.0.0 <work>/app/heroes.packages/kit@1.0.0-2877cf92d0cfa8b6, 3 of 5 files: what its `packages` line names and the modules those use
+stderr:
+$ heroes add kit/text/internal/scan -C <work>/app
+exit 1
+stdout:
+stderr:
+error[private_module]: `<kit>/text/internal/scan` is private to `<kit>/text`: a module whose path holds `internal` as a part after its first, a folder's name or its own, is named only by the module the path before the last such part names and by the modules under it, so no program's `use` writes it and no `packages` line lists it; a program names what `<kit>/text` offers, and `heroes add kit/text` lists it
+$ heroes add kit/internal/scan -C <work>/app
+exit 1
+stdout:
+stderr:
+error[private_module]: `<kit>/internal/scan` is private to `<kit>`: a module whose path holds `internal` as a part after its first, a folder's name or its own, is named only by the module the path before the last such part names and by the modules under it, so no program's `use` writes it and no `packages` line lists it; a program names the package's modules outside `internal`
+$ heroes add rebel/csv/internal/scan -C <work>/app
+exit 1
+stdout:
+stderr:
+error[private_module]: `<rebel>/csv/internal/scan` is private to `<rebel>/csv`: a module whose path holds `internal` as a part after its first, a folder's name or its own, is named only by the module the path before the last such part names and by the modules under it, so no program's `use` writes it and no `packages` line lists it; a program names what `<rebel>/csv` offers, and `heroes add rebel/csv` lists it
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+one
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2613-a-private-module-is-never-added-to-a-packages-line.case/idx"
+
+[dependencies.kit]
+version = "1.0.0"
+sum = "sha256-3fa9dbe4deeef7644ae780fc50a19184ea1a0c5e56315a2b092fa3164aad96b9"
+packages = ["csv"]
+heroes.packages:
+kit@1.0.0-2877cf92d0cfa8b6

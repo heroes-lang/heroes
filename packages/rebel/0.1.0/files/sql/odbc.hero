@@ -1,10 +1,11 @@
-# Any database the system's ODBC driver manager reaches, through the API
-# every driver of Rebel keeps over `sql`'s types, name for name, as
-# `sql/postgres`'s opening comment writes it: `open`, `close`, `exec`,
-# `query`, `query_one`, `exec_script`, `prepare`, `exec_prepared`,
-# `query_prepared`, `close_statement`, `begin`, `commit`, `rollback`. Only
-# `open`'s argument is this driver's own: a connection string, or a data
-# source by its name.
+# Any database the system's ODBC driver manager reaches, through the API every
+# driver of Rebel keeps over `sql`'s types, name for name, as `sql`'s opening
+# comment writes it: `open`, `close`, `is_closed`, `ping`, `exec`, `query`,
+# `query_one`, `exec_script`, `prepare`, `exec_prepared`, `query_prepared`,
+# `close_statement`, `begin`, `commit`, `rollback` and `in_transaction`. Only
+# `open`'s argument is this driver's own: a connection string, or a data source
+# by its name. `sql/build` and `sql/migrate` write PostgreSQL's and SQLite's
+# SQL, which a data source of either reads through its driver.
 #
 # **The driver manager is the system's**, loaded when a program first asks
 # for it and never linked: `odbc32.dll` on Windows, which every Windows
@@ -1183,284 +1184,292 @@ test "manager, drivers and data_sources: the library, SQLite's driver with its a
                 assert found
 
 test "every value travels to SQLite's driver as a parameter and comes back by its column's type"
-    if fixture.has_sqlite()
-        db @= open(options(fixture.sqlite_memory())).must()
-        exec_script(
-            @db,
-            "CREATE TABLE v(id INTEGER PRIMARY KEY, b BOOLEAN, n INTEGER, x REAL, s TEXT, data BLOB, at TIMESTAMP, day DATE)"
-        ).must()
-        at = time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 123000000).must()
-        day = time.date(year: 1972, month: 6, day: 16).must()
-        insert = "INSERT INTO v(b, n, x, s, data, at, day) VALUES (?, ?, ?, ?, ?, ?, ?)"
-        params: [sql.Value] = [
-            .boolean(v: true)
-            .integer(v: -9223372036854775807 - 1)
-            .float(v: -0.5)
-            .text(v: "città")
-            .blob(v: [0, 1, 255])
-            .instant(v: at)
-            .instant(v: day)
-        ]
-        assert exec(@db, insert, params).must().rows_affected == 1
-        nulls: [sql.Value] = [
-            .null_value
-            .null_value
-            .null_value
-            .text(v: "")
-            .blob(v: [])
-            .null_value
-            .null_value
-        ]
-        assert exec(@db, insert, nulls).must().rows_affected == 1
-        answer = query(@db, "SELECT b, n, x, s, data, at, day, 1 + 1 AS two FROM v ORDER BY id", []).must()
-        assert answer.columns.len() == 8
-        assert answer.columns[0] == sql.Column(name: "b", type_name: "BOOLEAN")
-        assert answer.columns[3] == sql.Column(name: "s", type_name: "TEXT")
-        first = answer.rows[0]
-        assert sql.boolean_named(first, "b").must()
-        assert sql.integer_named(first, "n").must() == -9223372036854775807 - 1
-        assert sql.float_named(first, "x").must() == -0.5
-        assert sql.text_named(first, "s").must() == "città"
-        assert sql.blob_named(first, "data").must() == [0, 1, 255]
-        assert sql.instant_named(first, "at").must() == at
-        assert sql.instant_named(first, "day").must() == day
-        assert sql.integer_named(first, "two").must() == 2
-        second = answer.rows[1]
-        assert sql.is_null_named(second, "b").must() && sql.is_null_named(second, "n").must() && sql.is_null_named(second, "at").must()
-        assert sql.text_named(second, "s").must() == "" && sql.blob_named(second, "data").must() == []
-        close(@db).must()
-    else
-        print("values through SQLite's ODBC driver: skipped, no driver named SQLite3 here")
+    if !fixture.has_sqlite()
+        skip_test(reason: "no SQLite ODBC driver is installed here")
+    db @= open(options(fixture.sqlite_memory())).must()
+    exec_script(
+        @db,
+        "CREATE TABLE v(id INTEGER PRIMARY KEY, b BOOLEAN, n INTEGER, x REAL, s TEXT, data BLOB, at TIMESTAMP, day DATE)"
+    ).must()
+    at = time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 123000000).must()
+    day = time.date(year: 1972, month: 6, day: 16).must()
+    insert = "INSERT INTO v(b, n, x, s, data, at, day) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    params: [sql.Value] = [
+        .boolean(v: true)
+        .integer(v: -9223372036854775807 - 1)
+        .float(v: -0.5)
+        .text(v: "città")
+        .blob(v: [0, 1, 255])
+        .instant(v: at)
+        .instant(v: day)
+    ]
+    assert exec(@db, insert, params).must().rows_affected == 1
+    nulls: [sql.Value] = [
+        .null_value
+        .null_value
+        .null_value
+        .text(v: "")
+        .blob(v: [])
+        .null_value
+        .null_value
+    ]
+    assert exec(@db, insert, nulls).must().rows_affected == 1
+    answer = query(@db, "SELECT b, n, x, s, data, at, day, 1 + 1 AS two FROM v ORDER BY id", []).must()
+    assert answer.columns.len() == 8
+    assert answer.columns[0] == sql.Column(name: "b", type_name: "BOOLEAN")
+    assert answer.columns[3] == sql.Column(name: "s", type_name: "TEXT")
+    first = answer.rows[0]
+    assert sql.boolean_named(first, "b").must()
+    assert sql.integer_named(first, "n").must() == -9223372036854775807 - 1
+    assert sql.float_named(first, "x").must() == -0.5
+    assert sql.text_named(first, "s").must() == "città"
+    assert sql.blob_named(first, "data").must() == [0, 1, 255]
+    assert sql.instant_named(first, "at").must() == at
+    assert sql.instant_named(first, "day").must() == day
+    assert sql.integer_named(first, "two").must() == 2
+    second = answer.rows[1]
+    assert sql.is_null_named(second, "b").must() && sql.is_null_named(second, "n").must() && sql.is_null_named(second, "at").must()
+    assert sql.text_named(second, "s").must() == "" && sql.blob_named(second, "data").must() == []
+    close(@db).must()
 
 test "exec: rows_affected for an insert of three, an update of two, an update of none, a create and a select; last_id unsupported"
-    if fixture.has_sqlite()
-        db @= open(options(fixture.sqlite_memory())).must()
-        made = exec(@db, "CREATE TABLE t(id INTEGER PRIMARY KEY, n INTEGER)", []).must()
-        assert made.rows_affected == 0
+    if !fixture.has_sqlite()
+        skip_test(reason: "no SQLite ODBC driver is installed here")
+    db @= open(options(fixture.sqlite_memory())).must()
+    made = exec(@db, "CREATE TABLE t(id INTEGER PRIMARY KEY, n INTEGER)", []).must()
+    assert made.rows_affected == 0
 
-        match made.last_id
-            .ok _  => assert false
-            .err e => assert e.code == sql.UNSUPPORTED
+    match made.last_id
+        .ok _  => assert false
+        .err e => assert e.code == sql.UNSUPPORTED
 
-        assert exec(@db, "INSERT INTO t(n) VALUES (?), (?), (?)", [.integer(v: 1), .integer(v: 2), .integer(v: 3)]).must().rows_affected == 3
-        assert exec(@db, "UPDATE t SET n = n + 10 WHERE n >= ?", [.integer(v: 2)]).must().rows_affected == 2
-        assert exec(@db, "UPDATE t SET n = 0 WHERE id = ?", [.integer(v: 99)]).must().rows_affected == 0
-        assert exec(@db, "SELECT * FROM t", []).must().rows_affected == 3
-        close(@db).must()
+    assert exec(@db, "INSERT INTO t(n) VALUES (?), (?), (?)", [.integer(v: 1), .integer(v: 2), .integer(v: 3)]).must().rows_affected == 3
+    assert exec(@db, "UPDATE t SET n = n + 10 WHERE n >= ?", [.integer(v: 2)]).must().rows_affected == 2
+    assert exec(@db, "UPDATE t SET n = 0 WHERE id = ?", [.integer(v: 99)]).must().rows_affected == 0
+    assert exec(@db, "SELECT * FROM t", []).must().rows_affected == 3
+    close(@db).must()
 
 test "exec: what the driver refuses, told by its SQLSTATE and words, and what this package refuses before it"
-    if fixture.has_sqlite()
-        db @= open(options(fixture.sqlite_memory())).must()
-        exec_script(@db, "CREATE TABLE t(id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE)").must()
-        _ = exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: "a")]).must()
+    if !fixture.has_sqlite()
+        skip_test(reason: "no SQLite ODBC driver is installed here")
+    db @= open(options(fixture.sqlite_memory())).must()
+    exec_script(@db, "CREATE TABLE t(id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE)").must()
+    _ = exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: "a")]).must()
 
-        match exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: "a")])
-            .ok _  => assert false
-            .err e => assert e.code == sql.FAILED && e.msg == "[HY000] [SQLite]UNIQUE constraint failed: t.name (19) (native error 19)"
+    match exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: "a")])
+        .ok _  => assert false
+        .err e => assert e.code == sql.FAILED && e.msg == "[HY000] [SQLite]UNIQUE constraint failed: t.name (19) (native error 19)"
 
-        match exec(@db, "SELECT * FROM nope", [])
-            .ok _  => assert false
-            .err e => assert e.code == sql.FAILED && sql.database_code_of(e.msg).must() == "HY000"
+    match exec(@db, "SELECT * FROM nope", [])
+        .ok _  => assert false
+        .err e => assert e.code == sql.FAILED && sql.database_code_of(e.msg).must() == "HY000"
 
-        match exec(@db, "INSERT INTO t(name) VALUES (?)", [])
-            .ok _  => assert false
-            .err e => assert e.code == sql.INVALID && e.msg == "the statement takes 1 parameter and no parameter were given"
+    match exec(@db, "INSERT INTO t(name) VALUES (?)", [])
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "the statement takes 1 parameter and no parameter were given"
 
-        match exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: "b"), .text(v: "c")])
-            .ok _  => assert false
-            .err e => assert e.msg == "the statement takes 1 parameter and 2 parameters were given"
+    match exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: "b"), .text(v: "c")])
+        .ok _  => assert false
+        .err e => assert e.msg == "the statement takes 1 parameter and 2 parameters were given"
 
-        match exec(@db, "SELECT 1; SELECT 2", [])
-            .ok _  => assert false
-            .err e => assert e.code == sql.INVALID
+    match exec(@db, "SELECT 1; SELECT 2", [])
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID
 
-        match exec(@db, "", [])
-            .ok _  => assert false
-            .err e => assert e.code == sql.INVALID && e.msg == "no statement in \"\""
+    match exec(@db, "", [])
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "no statement in \"\""
 
-        zero: [u8] = [97, 0, 98]
+    zero: [u8] = [97, 0, 98]
 
-        match exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: zero.validated_bytes().must())])
-            .ok _  => assert false
-            .err e => assert e.code == sql.INVALID && e.msg == "the text of parameter 1 holds a zero byte at byte 1, which a driver may cut the text at: send it as a blob"
+    match exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: zero.validated_bytes().must())])
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "the text of parameter 1 holds a zero byte at byte 1, which a driver may cut the text at: send it as a blob"
 
-        close(@db).must()
+    close(@db).must()
 
 test "query and query_one: rows in order, no row, a parameter in a select, and the rest of the rows dropped"
-    if fixture.has_sqlite()
-        db @= open(options(fixture.sqlite_memory())).must()
-        exec_script(
-            @db,
-            "CREATE TABLE n(v INTEGER); INSERT INTO n VALUES (3); INSERT INTO n VALUES (1); INSERT INTO n VALUES (2)"
-        ).must()
-        rows = query(@db, "SELECT v FROM n ORDER BY v", []).must()
-        assert rows.rows.len() == 3 && sql.integer_at(rows.rows[0], 0).must() == 1 && sql.integer_at(rows.rows[2], 0).must() == 3
-        assert sql.integer_at(query_one(@db, "SELECT v FROM n ORDER BY v DESC", []).must(), 0).must() == 3
-        assert sql.integer_named(query_one(@db, "SELECT ? + 1 AS next", [.integer(v: 41)]).must(), "next").must() == 42
-        empty = query(@db, "SELECT v FROM n WHERE v > 9", []).must()
-        assert empty.rows.len() == 0 && empty.columns.len() == 1
+    if !fixture.has_sqlite()
+        skip_test(reason: "no SQLite ODBC driver is installed here")
+    db @= open(options(fixture.sqlite_memory())).must()
+    exec_script(
+        @db,
+        "CREATE TABLE n(v INTEGER); INSERT INTO n VALUES (3); INSERT INTO n VALUES (1); INSERT INTO n VALUES (2)"
+    ).must()
+    rows = query(@db, "SELECT v FROM n ORDER BY v", []).must()
+    assert rows.rows.len() == 3 && sql.integer_at(rows.rows[0], 0).must() == 1 && sql.integer_at(rows.rows[2], 0).must() == 3
+    assert sql.integer_at(query_one(@db, "SELECT v FROM n ORDER BY v DESC", []).must(), 0).must() == 3
+    assert sql.integer_named(query_one(@db, "SELECT ? + 1 AS next", [.integer(v: 41)]).must(), "next").must() == 42
+    empty = query(@db, "SELECT v FROM n WHERE v > 9", []).must()
+    assert empty.rows.len() == 0 && empty.columns.len() == 1
 
-        match query_one(@db, "SELECT v FROM n WHERE v > ?", [.integer(v: 9)])
-            .ok _  => assert false
-            .err e => assert e.code == sql.NOT_FOUND && e.msg == "the statement answered no row"
+    match query_one(@db, "SELECT v FROM n WHERE v > ?", [.integer(v: 9)])
+        .ok _  => assert false
+        .err e => assert e.code == sql.NOT_FOUND && e.msg == "the statement answered no row"
 
-        assert query_sets(@db, "SELECT v FROM n", []).must().len() == 1
-        close(@db).must()
+    assert query_sets(@db, "SELECT v FROM n", []).must().len() == 1
+    close(@db).must()
 
 test "exec_script: statements in order, a trigger's body whole, a failure leaving the ones before done, nothing, and a zero byte"
-    if fixture.has_sqlite()
-        db @= open(options(fixture.sqlite_memory())).must()
-        exec_script(
-            @db,
-            "CREATE TABLE t(x UNIQUE); CREATE TABLE log(y); CREATE TRIGGER t_in AFTER INSERT ON t BEGIN INSERT INTO log VALUES (new.x); INSERT INTO log VALUES (new.x * 10); END; INSERT INTO t VALUES (1);"
-        ).must()
-        assert sql.integer_at(query_one(@db, "SELECT count(*) FROM log", []).must(), 0).must() == 2
-        exec_script(@db, "").must()
-        assert exec_script(@db, "INSERT INTO t VALUES (2); INSERT INTO t VALUES (1); INSERT INTO t VALUES (3)").is_err()
-        assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 2
-        zero: [u8] = [59, 0]
+    if !fixture.has_sqlite()
+        skip_test(reason: "no SQLite ODBC driver is installed here")
+    db @= open(options(fixture.sqlite_memory())).must()
+    exec_script(
+        @db,
+        "CREATE TABLE t(x UNIQUE); CREATE TABLE log(y); CREATE TRIGGER t_in AFTER INSERT ON t BEGIN INSERT INTO log VALUES (new.x); INSERT INTO log VALUES (new.x * 10); END; INSERT INTO t VALUES (1);"
+    ).must()
+    assert sql.integer_at(query_one(@db, "SELECT count(*) FROM log", []).must(), 0).must() == 2
+    exec_script(@db, "").must()
+    assert exec_script(@db, "INSERT INTO t VALUES (2); INSERT INTO t VALUES (1); INSERT INTO t VALUES (3)").is_err()
+    assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 2
+    zero: [u8] = [59, 0]
 
-        match exec_script(@db, "SELECT 1" + zero.validated_bytes().must())
-            .ok _  => assert false
-            .err e => assert e.code == sql.INVALID && e.msg == "the script holds a zero byte at byte 9"
+    match exec_script(@db, "SELECT 1" + zero.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "the script holds a zero byte at byte 9"
 
-        close(@db).must()
+    close(@db).must()
 
 test "prepare: run many times, its columns and parameters, a count refused, another connection's statement, and close refused while one is open"
-    if fixture.has_sqlite()
-        db @= open(options(fixture.sqlite_memory())).must()
-        other @= open(options(fixture.sqlite_memory())).must()
-        exec_script(@db, "CREATE TABLE t(id INTEGER PRIMARY KEY, name TEXT UNIQUE)").must()
-        insert @= prepare(@db, "INSERT INTO t(name) VALUES (?)").must()
-        assert insert.parameter_count == 1 && insert.columns.len() == 0
-        reading @= prepare(@db, "SELECT id, name FROM t WHERE id >= ? ORDER BY id").must()
-        assert reading.columns.len() == 2 && reading.columns[1].name == "name"
+    if !fixture.has_sqlite()
+        skip_test(reason: "no SQLite ODBC driver is installed here")
+    db @= open(options(fixture.sqlite_memory())).must()
+    other @= open(options(fixture.sqlite_memory())).must()
+    exec_script(@db, "CREATE TABLE t(id INTEGER PRIMARY KEY, name TEXT UNIQUE)").must()
+    insert @= prepare(@db, "INSERT INTO t(name) VALUES (?)").must()
+    assert insert.parameter_count == 1 && insert.columns.len() == 0
+    reading @= prepare(@db, "SELECT id, name FROM t WHERE id >= ? ORDER BY id").must()
+    assert reading.columns.len() == 2 && reading.columns[1].name == "name"
 
-        for name in ["a", "b", "c"]
-            assert exec_prepared(@db, insert, [.text(v: name)]).must().rows_affected == 1
+    for name in ["a", "b", "c"]
+        assert exec_prepared(@db, insert, [.text(v: name)]).must().rows_affected == 1
 
-        assert exec_prepared(@db, insert, [.text(v: "a")]).is_err()
-        assert query_prepared(@db, reading, [.integer(v: 2)]).must().rows.len() == 2
-        assert query_prepared(@db, reading, [.integer(v: 1)]).must().rows.len() == 3
+    assert exec_prepared(@db, insert, [.text(v: "a")]).is_err()
+    assert query_prepared(@db, reading, [.integer(v: 2)]).must().rows.len() == 2
+    assert query_prepared(@db, reading, [.integer(v: 1)]).must().rows.len() == 3
 
-        match exec_prepared(@db, insert, [])
-            .ok _  => assert false
-            .err e => assert e.code == sql.INVALID && e.msg == "the statement takes 1 parameter and no parameter were given"
+    match exec_prepared(@db, insert, [])
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "the statement takes 1 parameter and no parameter were given"
 
-        match query_prepared(@other, reading, [.integer(v: 1)])
-            .ok _  => assert false
-            .err e => assert e.code == sql.INVALID && e.msg == f"the statement \"SELECT id, name FROM t WHERE id >= ? ORDER BY id\" belongs to another connection than \"{db.name}\""
+    match query_prepared(@other, reading, [.integer(v: 1)])
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == f"the statement \"SELECT id, name FROM t WHERE id >= ? ORDER BY id\" belongs to another connection than \"{db.name}\""
 
-        match close(@db)
-            .ok _  => assert false
-            .err e => assert e.code == sql.INVALID && e.msg == f"2 statement(s) `prepare` made on \"{db.name}\" are not closed: `close_statement` each, then `close`"
+    match close(@db)
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == f"2 statement(s) `prepare` made on \"{db.name}\" are not closed: `close_statement` each, then `close`"
 
-        assert close_statement(@other, @reading).is_err()
-        close_statement(@db, @insert).must()
-        close_statement(@db, @reading).must()
+    assert close_statement(@other, @reading).is_err()
+    close_statement(@db, @insert).must()
+    close_statement(@db, @reading).must()
 
-        match exec_prepared(@db, insert, [.text(v: "d")])
-            .ok _  => assert false
-            .err e => assert e.code == sql.CLOSED && e.msg == "the statement \"INSERT INTO t(name) VALUES (?)\" is closed"
+    match exec_prepared(@db, insert, [.text(v: "d")])
+        .ok _  => assert false
+        .err e => assert e.code == sql.CLOSED && e.msg == "the statement \"INSERT INTO t(name) VALUES (?)\" is closed"
 
-        assert close_statement(@db, @insert).is_err()
-        assert prepare(@db, "SELECT * FROM nope").is_err() && db.prepared == 0
-        close(@db).must()
-        close(@other).must()
+    assert close_statement(@db, @insert).is_err()
+    assert prepare(@db, "SELECT * FROM nope").is_err() && db.prepared == 0
+    close(@db).must()
+    close(@other).must()
 
 test "transactions: begin twice, commit and rollback with none open, a rollback undoing, a failure leaving it open, a commit keeping"
-    if fixture.has_sqlite()
-        db @= open(options(fixture.sqlite_memory())).must()
-        exec_script(@db, "CREATE TABLE t(x UNIQUE)").must()
-        assert !in_transaction(db)
-        begin(@db).must()
-        assert in_transaction(db)
+    if !fixture.has_sqlite()
+        skip_test(reason: "no SQLite ODBC driver is installed here")
+    db @= open(options(fixture.sqlite_memory())).must()
+    exec_script(@db, "CREATE TABLE t(x UNIQUE)").must()
+    assert !in_transaction(db)
+    begin(@db).must()
+    assert in_transaction(db)
 
-        match begin(@db)
-            .ok _  => assert false
-            .err e => assert e.code == sql.INVALID && e.msg == f"a transaction is open already on \"{db.name}\""
+    match begin(@db)
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == f"a transaction is open already on \"{db.name}\""
 
-        _ = exec(@db, "INSERT INTO t VALUES (1)", []).must()
-        rollback(@db).must()
-        assert !in_transaction(db)
-        assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 0
+    _ = exec(@db, "INSERT INTO t VALUES (1)", []).must()
+    rollback(@db).must()
+    assert !in_transaction(db)
+    assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 0
 
-        match commit(@db)
-            .ok _  => assert false
-            .err e => assert e.code == sql.INVALID && e.msg == f"no transaction is open on \"{db.name}\" to commit"
+    match commit(@db)
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == f"no transaction is open on \"{db.name}\" to commit"
 
-        assert rollback(@db).is_err()
-        begin(@db).must()
-        _ = exec(@db, "INSERT INTO t VALUES (2)", []).must()
-        assert exec(@db, "INSERT INTO t VALUES (2)", []).is_err()
-        assert in_transaction(db)
-        commit(@db).must()
-        assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 1
-        close(@db).must()
+    assert rollback(@db).is_err()
+    begin(@db).must()
+    _ = exec(@db, "INSERT INTO t VALUES (2)", []).must()
+    assert exec(@db, "INSERT INTO t VALUES (2)", []).is_err()
+    assert in_transaction(db)
+    commit(@db).must()
+    assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 1
+    close(@db).must()
 
 test "close: twice fails closed, and every call on a closed connection fails closed"
-    if fixture.has_sqlite()
-        db @= open(options(fixture.sqlite_memory())).must()
-        close(@db).must()
-        assert is_closed(db) && !in_transaction(db)
+    if !fixture.has_sqlite()
+        skip_test(reason: "no SQLite ODBC driver is installed here")
+    db @= open(options(fixture.sqlite_memory())).must()
+    close(@db).must()
+    assert is_closed(db) && !in_transaction(db)
 
-        match close(@db)
-            .ok _  => assert false
-            .err e => assert e.code == sql.CLOSED && e.msg == f"the connection to \"{db.name}\" is closed"
+    match close(@db)
+        .ok _  => assert false
+        .err e => assert e.code == sql.CLOSED && e.msg == f"the connection to \"{db.name}\" is closed"
 
-        assert exec(@db, "SELECT 1", []).is_err() && query(@db, "SELECT 1", []).is_err() && query_one(@db, "SELECT 1", []).is_err()
-        assert exec_script(@db, "SELECT 1").is_err() && prepare(@db, "SELECT 1").is_err() && set_query_timeout(@db, 1).is_err()
-        assert begin(@db).is_err() && commit(@db).is_err() && rollback(@db).is_err() && ping(db).is_err() && info_of(db).is_err()
-        assert tables(db, catalog: "", schema: "", table: "", kinds: "").is_err() && isolation_of(db).is_err()
+    assert exec(@db, "SELECT 1", []).is_err() && query(@db, "SELECT 1", []).is_err() && query_one(@db, "SELECT 1", []).is_err()
+    assert exec_script(@db, "SELECT 1").is_err() && prepare(@db, "SELECT 1").is_err() && set_query_timeout(@db, 1).is_err()
+    assert begin(@db).is_err() && commit(@db).is_err() && rollback(@db).is_err() && ping(db).is_err() && info_of(db).is_err()
+    assert tables(db, catalog: "", schema: "", table: "", kinds: "").is_err() && isolation_of(db).is_err()
 
 test "the connection's settings: a query timeout in and out of range, the isolation SQLite keeps, reading only, ping and the driver's info"
-    if fixture.has_sqlite()
-        db @= open(options(fixture.sqlite_memory())).must()
-        set_query_timeout(@db, 30).must()
-        assert db.query_timeout_seconds == 30
-        assert set_query_timeout(@db, -1).is_err() && set_query_timeout(@db, 4294967296).is_err()
-        assert sql.integer_at(query_one(@db, "SELECT 1", []).must(), 0).must() == 1
-        assert isolation_of(db).must() == .serializable
-        set_read_only(db, read_only: false).must()
-        ping(db).must()
-        facts = info_of(db).must()
-        assert facts.dbms_name == "SQLite" && facts.driver_name != "" && facts.odbc_version != ""
-        begin(@db).must()
-        assert set_isolation(db, level: .serializable).is_err()
-        rollback(@db).must()
-        close(@db).must()
+    if !fixture.has_sqlite()
+        skip_test(reason: "no SQLite ODBC driver is installed here")
+    db @= open(options(fixture.sqlite_memory())).must()
+    set_query_timeout(@db, 30).must()
+    assert db.query_timeout_seconds == 30
+    assert set_query_timeout(@db, -1).is_err() && set_query_timeout(@db, 4294967296).is_err()
+    assert sql.integer_at(query_one(@db, "SELECT 1", []).must(), 0).must() == 1
+    assert isolation_of(db).must() == .serializable
+    set_read_only(db, read_only: false).must()
+    ping(db).must()
+    facts = info_of(db).must()
+    assert facts.dbms_name == "SQLite" && facts.driver_name != "" && facts.odbc_version != ""
+    begin(@db).must()
+    assert set_isolation(db, level: .serializable).is_err()
+    rollback(@db).must()
+    close(@db).must()
 
 test "the catalog: a table, its columns, its key, its indexes, a foreign key between two tables, the types, and none named refused"
-    if fixture.has_sqlite()
-        db @= open(options(fixture.sqlite_memory())).must()
-        exec_script(
-            @db,
-            "CREATE TABLE singer(id INTEGER PRIMARY KEY, name TEXT UNIQUE); CREATE TABLE song(id INTEGER PRIMARY KEY, singer INTEGER REFERENCES singer(id))"
-        ).must()
-        found = tables(db, catalog: "", schema: "", table: "singer", kinds: "").must()
-        assert found.rows.len() == 1 && sql.text_named(found.rows[0], "TABLE_NAME").must() == "singer"
-        assert tables(db, catalog: "", schema: "", table: "", kinds: "").must().rows.len() == 2
-        assert table_columns(db, catalog: "", schema: "", table: "singer", column: "").must().rows.len() == 2
-        assert sql.text_named(primary_keys(db, catalog: "", schema: "", table: "singer").must().rows[0], "COLUMN_NAME").must() == "id"
-        assert indexes(db, catalog: "", schema: "", table: "singer", unique_only: true).must().rows.len() >= 1
-        pointing = foreign_keys(
-            db,
-            catalog: "",
-            schema: "",
-            table: "",
-            foreign_catalog: "",
-            foreign_schema: "",
-            foreign_table: "song"
-        ).must()
-        assert pointing.rows.len() == 1 && sql.text_named(pointing.rows[0], "PKTABLE_NAME").must() == "singer"
-        assert data_types(db).must().rows.len() > 0
-        assert !procedures(db, catalog: "", schema: "", procedure: "").is_err()
+    if !fixture.has_sqlite()
+        skip_test(reason: "no SQLite ODBC driver is installed here")
+    db @= open(options(fixture.sqlite_memory())).must()
+    exec_script(
+        @db,
+        "CREATE TABLE singer(id INTEGER PRIMARY KEY, name TEXT UNIQUE); CREATE TABLE song(id INTEGER PRIMARY KEY, singer INTEGER REFERENCES singer(id))"
+    ).must()
+    found = tables(db, catalog: "", schema: "", table: "singer", kinds: "").must()
+    assert found.rows.len() == 1 && sql.text_named(found.rows[0], "TABLE_NAME").must() == "singer"
+    assert tables(db, catalog: "", schema: "", table: "", kinds: "").must().rows.len() == 2
+    assert table_columns(db, catalog: "", schema: "", table: "singer", column: "").must().rows.len() == 2
+    assert sql.text_named(primary_keys(db, catalog: "", schema: "", table: "singer").must().rows[0], "COLUMN_NAME").must() == "id"
+    assert indexes(db, catalog: "", schema: "", table: "singer", unique_only: true).must().rows.len() >= 1
+    pointing = foreign_keys(
+        db,
+        catalog: "",
+        schema: "",
+        table: "",
+        foreign_catalog: "",
+        foreign_schema: "",
+        foreign_table: "song"
+    ).must()
+    assert pointing.rows.len() == 1 && sql.text_named(pointing.rows[0], "PKTABLE_NAME").must() == "singer"
+    assert data_types(db).must().rows.len() > 0
+    assert !procedures(db, catalog: "", schema: "", procedure: "").is_err()
 
-        match foreign_keys(db, catalog: "", schema: "", table: "", foreign_catalog: "", foreign_schema: "", foreign_table: "")
-            .ok _  => assert false
-            .err e => assert e.code == sql.INVALID
+    match foreign_keys(db, catalog: "", schema: "", table: "", foreign_catalog: "", foreign_schema: "", foreign_table: "")
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID
 
-        close(@db).must()
+    close(@db).must()
 
 test "split_script, parse_connection and format_connection: the module's own walks, there and back"
     assert split_script("SELECT 'a;b'; -- c\nSELECT 2;") == ["SELECT 'a;b'", "-- c\nSELECT 2"]
@@ -1471,7 +1480,7 @@ test "split_script, parse_connection and format_connection: the module's own wal
 
 test "open live against the PostgreSQL server REBEL_ODBC_POSTGRES names, through PostgreSQL's ODBC driver, where one is named"
     match fixture.postgres()
-        .err _ => print("PostgreSQL through ODBC: skipped, REBEL_ODBC_POSTGRES names no server")
+        .err _ => skip_test(reason: "REBEL_ODBC_POSTGRES names no server")
         .ok connection =>
             db @= open(options(connection)).must()
             exec_script(
@@ -1527,10 +1536,10 @@ test "dsn_options: a data source, a user and a password"
     assert opts.target == .data_source(name: "shop", user: "ana", password: "s3cret")
 
 # A connection opened and closed, where this machine has SQLite's ODBC
-# driver; elsewhere it shows nothing.
+# driver; elsewhere it skips.
 test "open: a database in memory through SQLite's ODBC driver"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             assert !is_closed(db)
@@ -1539,7 +1548,7 @@ test "open: a database in memory through SQLite's ODBC driver"
 # A connection closed, after which every call fails `closed`.
 test "close: the end of a connection"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             close(@db).must()
@@ -1548,7 +1557,7 @@ test "close: the end of a connection"
 # Whether a connection is still open.
 test "is_closed: before and after close"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             assert !is_closed(db)
@@ -1558,7 +1567,7 @@ test "is_closed: before and after close"
 # A connection asked whether it still works.
 test "ping: a live connection"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             ping(db).must()
@@ -1567,7 +1576,7 @@ test "ping: a live connection"
 # Whether a transaction is open.
 test "in_transaction: inside begin and commit"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             begin(@db).must()
@@ -1578,7 +1587,7 @@ test "in_transaction: inside begin and commit"
 # A connection whose statements give up after ten seconds.
 test "set_query_timeout: ten seconds"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             set_query_timeout(@db, 10).must()
@@ -1587,7 +1596,7 @@ test "set_query_timeout: ten seconds"
 # Transactions that behave as if they ran one after another.
 test "set_isolation: serializable"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             set_isolation(db, level: .serializable).must()
@@ -1596,7 +1605,7 @@ test "set_isolation: serializable"
 # The isolation a connection's transactions have.
 test "isolation_of: SQLite's"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             assert isolation_of(db).must() == .serializable
@@ -1605,7 +1614,7 @@ test "isolation_of: SQLite's"
 # A connection that only reads, told to its driver.
 test "set_read_only: a reading connection"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             set_read_only(db, read_only: true).must()
@@ -1614,7 +1623,7 @@ test "set_read_only: a reading connection"
 # The database a connection reaches, as its driver names it.
 test "info_of: the database's name"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             assert info_of(db).must().dbms_name == "SQLite"
@@ -1623,7 +1632,7 @@ test "info_of: the database's name"
 # A row inserted, its value bound as a parameter.
 test "exec: an insert with a parameter"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             _ = exec(@db, "CREATE TABLE singer(name TEXT)", []).must()
@@ -1633,7 +1642,7 @@ test "exec: an insert with a parameter"
 # Every row a query answers, in order.
 test "query: rows in order"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE n(v INTEGER); INSERT INTO n VALUES (2); INSERT INTO n VALUES (1)").must()
@@ -1644,7 +1653,7 @@ test "query: rows in order"
 # The one row a query answers.
 test "query_one: a sum of two parameters"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             row = query_one(@db, "SELECT ? + ? AS total", [.integer(v: 2), .integer(v: 3)]).must()
@@ -1654,7 +1663,7 @@ test "query_one: a sum of two parameters"
 # The results of one call, where the driver answers one.
 test "query_sets: one result"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             assert query_sets(@db, "SELECT 1", []).must().len() == 1
@@ -1663,7 +1672,7 @@ test "query_sets: one result"
 # A schema made by a script of several statements.
 test "exec_script: a migration"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE a(x); CREATE TABLE b(y); CREATE INDEX b_y ON b(y);").must()
@@ -1676,7 +1685,7 @@ test "split_script: two statements, a semicolon quoted"
 # A statement read once by its driver.
 test "prepare: an insert read once"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE t(x)").must()
@@ -1688,7 +1697,7 @@ test "prepare: an insert read once"
 # A prepared insert run for each value of a list.
 test "exec_prepared: one insert, many rows"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE t(x)").must()
@@ -1703,7 +1712,7 @@ test "exec_prepared: one insert, many rows"
 # A prepared query run with two values.
 test "query_prepared: one query, two lookups"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE t(x); INSERT INTO t VALUES (1); INSERT INTO t VALUES (2)").must()
@@ -1716,7 +1725,7 @@ test "query_prepared: one query, two lookups"
 # A prepared statement given back.
 test "close_statement: the end of a prepared statement"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             s @= prepare(@db, "SELECT 1").must()
@@ -1726,7 +1735,7 @@ test "close_statement: the end of a prepared statement"
 # Two inserts that take effect together.
 test "begin: two inserts in one transaction"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE t(x)").must()
@@ -1739,7 +1748,7 @@ test "begin: two inserts in one transaction"
 # A transaction's changes made to stay.
 test "commit: an insert kept"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE t(x)").must()
@@ -1752,7 +1761,7 @@ test "commit: an insert kept"
 # A transaction's changes undone.
 test "rollback: an insert undone"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE t(x)").must()
@@ -1765,7 +1774,7 @@ test "rollback: an insert undone"
 # The tables a database holds, by a pattern of names.
 test "tables: the tables whose names begin with s"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE singer(x); CREATE TABLE album(y)").must()
@@ -1775,7 +1784,7 @@ test "tables: the tables whose names begin with s"
 # The columns of a table.
 test "table_columns: a table's two columns"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE singer(id INTEGER, name TEXT)").must()
@@ -1785,7 +1794,7 @@ test "table_columns: a table's two columns"
 # The column of a table's primary key.
 test "primary_keys: a key of one column"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE singer(id INTEGER PRIMARY KEY, name TEXT)").must()
@@ -1796,7 +1805,7 @@ test "primary_keys: a key of one column"
 # The foreign keys a table holds.
 test "foreign_keys: a song's singer"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(
@@ -1818,7 +1827,7 @@ test "foreign_keys: a song's singer"
 # The unique indexes of a table.
 test "indexes: a unique name"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE singer(name TEXT UNIQUE)").must()
@@ -1828,7 +1837,7 @@ test "indexes: a unique name"
 # The procedures a database holds, none in SQLite.
 test "procedures: SQLite's none"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             assert procedures(db, catalog: "", schema: "", procedure: "").must().rows.len() == 0
@@ -1837,7 +1846,7 @@ test "procedures: SQLite's none"
 # A procedure's parameters, none where it has none.
 test "procedure_columns: no procedure, no column"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             assert procedure_columns(db, catalog: "", schema: "", procedure: "", column: "").must().rows.len() == 0
@@ -1846,7 +1855,7 @@ test "procedure_columns: no procedure, no column"
 # The data types a database offers.
 test "data_types: SQLite's types"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             assert data_types(db).must().rows.len() > 0
@@ -1855,7 +1864,7 @@ test "data_types: SQLite's types"
 # The columns that tell a row apart.
 test "row_id_columns: a table's key"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE singer(id INTEGER PRIMARY KEY)").must()
@@ -1865,7 +1874,7 @@ test "row_id_columns: a table's key"
 # The columns a database changes with every row's change, none in SQLite.
 test "row_version_columns: none"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE singer(id INTEGER PRIMARY KEY)").must()
@@ -1875,7 +1884,7 @@ test "row_version_columns: none"
 # Who may do what to a table.
 test "table_privileges: a table's grants"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE singer(id INTEGER)").must()
@@ -1886,7 +1895,7 @@ test "table_privileges: a table's grants"
 # answer.
 test "column_privileges: a column's grants, or unsupported"
     match open(options("Driver={SQLite3};Database=:memory:"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TABLE singer(id INTEGER)").must()

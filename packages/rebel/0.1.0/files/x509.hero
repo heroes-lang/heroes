@@ -25,8 +25,8 @@
 # It does not write a certificate, a request or a list (each needs a
 # signature made by `crypto/keypairs` and is pending), process certificate
 # policies in `verify_chain`, fetch a list or ask OCSP (`http`), read the
-# system's store of roots (`tls` checks a connection by it), or read a key
-# (`crypto/keypairs`). It fails with `invalid`, `not_found`, `not_text`,
+# system's store of roots (`tls` checks a connection by it), or read a
+# private key (`crypto/keypairs`). It fails with `invalid`, `not_found`, `not_text`,
 # `does_not_fit` and `unsupported`.
 
 use asn1
@@ -70,191 +70,6 @@ constant NOT_TEXT: str
 constant DOES_NOT_FIT: str
     "does_not_fit"
 
-## Identifiers
-
-# The attribute `commonName`, `2.5.4.3`.
-constant COMMON_NAME: str
-    "2.5.4.3"
-
-# The attribute `countryName`, `2.5.4.6`.
-constant COUNTRY_NAME: str
-    "2.5.4.6"
-
-# The attribute `organizationName`, `2.5.4.10`.
-constant ORGANIZATION_NAME: str
-    "2.5.4.10"
-
-# The attribute `organizationalUnitName`, `2.5.4.11`.
-constant ORGANIZATIONAL_UNIT_NAME: str
-    "2.5.4.11"
-
-# The attribute `localityName`, `2.5.4.7`.
-constant LOCALITY_NAME: str
-    "2.5.4.7"
-
-# The attribute `stateOrProvinceName`, `2.5.4.8`.
-constant STATE_OR_PROVINCE_NAME: str
-    "2.5.4.8"
-
-# The attribute `serialNumber` of a name, `2.5.4.5`.
-constant SERIAL_NUMBER: str
-    "2.5.4.5"
-
-# The attribute `domainComponent`, `0.9.2342.19200300.100.1.25`.
-constant DOMAIN_COMPONENT: str
-    "0.9.2342.19200300.100.1.25"
-
-# The attribute `emailAddress` of PKCS #9, `1.2.840.113549.1.9.1`.
-constant EMAIL_ADDRESS: str
-    "1.2.840.113549.1.9.1"
-
-# The extension `subjectAltName`, `2.5.29.17`.
-constant SUBJECT_ALT_NAME: str
-    "2.5.29.17"
-
-# The extension `issuerAltName`, `2.5.29.18`.
-constant ISSUER_ALT_NAME: str
-    "2.5.29.18"
-
-# The extension `keyUsage`, `2.5.29.15`.
-constant KEY_USAGE: str
-    "2.5.29.15"
-
-# The extension `extKeyUsage`, `2.5.29.37`.
-constant EXTENDED_KEY_USAGE: str
-    "2.5.29.37"
-
-# The extension `basicConstraints`, `2.5.29.19`.
-constant BASIC_CONSTRAINTS: str
-    "2.5.29.19"
-
-# The extension `subjectKeyIdentifier`, `2.5.29.14`.
-constant SUBJECT_KEY_ID: str
-    "2.5.29.14"
-
-# The extension `authorityKeyIdentifier`, `2.5.29.35`.
-constant AUTHORITY_KEY_ID: str
-    "2.5.29.35"
-
-# The extension `cRLDistributionPoints`, `2.5.29.31`.
-constant CRL_DISTRIBUTION_POINTS: str
-    "2.5.29.31"
-
-# The extension `freshestCRL`, `2.5.29.46`.
-constant FRESHEST_CRL: str
-    "2.5.29.46"
-
-# The extension `authorityInfoAccess`, `1.3.6.1.5.5.7.1.1`.
-constant AUTHORITY_INFO_ACCESS: str
-    "1.3.6.1.5.5.7.1.1"
-
-# The extension `subjectInfoAccess`, `1.3.6.1.5.5.7.1.11`.
-constant SUBJECT_INFO_ACCESS: str
-    "1.3.6.1.5.5.7.1.11"
-
-# The extension `certificatePolicies`, `2.5.29.32`.
-constant CERTIFICATE_POLICIES: str
-    "2.5.29.32"
-
-# The extension `policyMappings`, `2.5.29.33`.
-constant POLICY_MAPPINGS: str
-    "2.5.29.33"
-
-# The extension `policyConstraints`, `2.5.29.36`.
-constant POLICY_CONSTRAINTS: str
-    "2.5.29.36"
-
-# The extension `inhibitAnyPolicy`, `2.5.29.54`.
-constant INHIBIT_ANY_POLICY: str
-    "2.5.29.54"
-
-# The extension `nameConstraints`, `2.5.29.30`.
-constant NAME_CONSTRAINTS: str
-    "2.5.29.30"
-
-# A revocation list's extension `cRLNumber`, `2.5.29.20`.
-constant CRL_NUMBER: str
-    "2.5.29.20"
-
-# A revocation list's extension `deltaCRLIndicator`, `2.5.29.27`.
-constant DELTA_CRL_INDICATOR: str
-    "2.5.29.27"
-
-# A revocation list's extension `issuingDistributionPoint`, `2.5.29.28`.
-constant ISSUING_DISTRIBUTION_POINT: str
-    "2.5.29.28"
-
-# A revoked entry's extension `reasonCode`, `2.5.29.21`.
-constant REASON_CODE: str
-    "2.5.29.21"
-
-# A revoked entry's extension `invalidityDate`, `2.5.29.24`.
-constant INVALIDITY_DATE: str
-    "2.5.29.24"
-
-# A revoked entry's extension `certificateIssuer`, `2.5.29.29`.
-constant CERTIFICATE_ISSUER: str
-    "2.5.29.29"
-
-# The purpose `serverAuth`, `1.3.6.1.5.5.7.3.1`: a TLS server.
-constant SERVER_AUTH: str
-    "1.3.6.1.5.5.7.3.1"
-
-# The purpose `clientAuth`, `1.3.6.1.5.5.7.3.2`: a TLS client.
-constant CLIENT_AUTH: str
-    "1.3.6.1.5.5.7.3.2"
-
-# The purpose `codeSigning`, `1.3.6.1.5.5.7.3.3`.
-constant CODE_SIGNING: str
-    "1.3.6.1.5.5.7.3.3"
-
-# The purpose `emailProtection`, `1.3.6.1.5.5.7.3.4`.
-constant EMAIL_PROTECTION: str
-    "1.3.6.1.5.5.7.3.4"
-
-# The purpose `timeStamping`, `1.3.6.1.5.5.7.3.8`.
-constant TIME_STAMPING: str
-    "1.3.6.1.5.5.7.3.8"
-
-# The purpose `OCSPSigning`, `1.3.6.1.5.5.7.3.9`.
-constant OCSP_SIGNING: str
-    "1.3.6.1.5.5.7.3.9"
-
-# The purpose `anyExtendedKeyUsage`, `2.5.29.37.0`: every purpose.
-constant ANY_EXTENDED_KEY_USAGE: str
-    "2.5.29.37.0"
-
-# The access method `id-ad-ocsp`, `1.3.6.1.5.5.7.48.1`: where OCSP answers.
-constant OCSP: str
-    "1.3.6.1.5.5.7.48.1"
-
-# The access method `id-ad-caIssuers`, `1.3.6.1.5.5.7.48.2`: where the
-# issuer's certificate is.
-constant CA_ISSUERS: str
-    "1.3.6.1.5.5.7.48.2"
-
-# The policy `anyPolicy`, `2.5.29.32.0`.
-constant ANY_POLICY: str
-    "2.5.29.32.0"
-
-# The policy qualifier `id-qt-cps`, `1.3.6.1.5.5.7.2.1`: a URI.
-constant CPS_QUALIFIER: str
-    "1.3.6.1.5.5.7.2.1"
-
-# The policy qualifier `id-qt-unotice`, `1.3.6.1.5.5.7.2.2`: a notice.
-constant USER_NOTICE_QUALIFIER: str
-    "1.3.6.1.5.5.7.2.2"
-
-# A request's attribute `extensionRequest` of PKCS #9,
-# `1.2.840.113549.1.9.14`: the extensions asked for.
-constant EXTENSION_REQUEST: str
-    "1.2.840.113549.1.9.14"
-
-# A request's attribute `challengePassword` of PKCS #9,
-# `1.2.840.113549.1.9.7`.
-constant CHALLENGE_PASSWORD: str
-    "1.2.840.113549.1.9.7"
-
 ## Names
 
 # One attribute of a name, `CN=example.com`: its type and its value.
@@ -267,7 +82,9 @@ record Attribute
 
 # A distinguished name: relative names in the order the certificate writes
 # them, the least specific first, each one attribute or more. Read by
-# `to_name`.
+# `to_name`. `format_name` writes it as RFC 4514's text, the form
+# `ldap.parse_dn` reads into an `ldap.Dn`, which holds a directory's names
+# with their values as text.
 record Name
     # The relative names, each a list of one attribute or more.
     rdns: [[Attribute]]
@@ -1572,47 +1389,47 @@ function parse_certificates(text: str) -> [Certificate]?
 
     return ok(certs)
 
-# `cert` as a `CERTIFICATE` block of PEM, lines of 64 characters each ending
+# `certificate` as a `CERTIFICATE` block of PEM, lines of 64 characters each ending
 # in `\n`.
 #
-# - `cert`: the certificate; its `der` is written.
+# - `certificate`: the certificate; its `der` is written.
 #
 # See also `parse_certificate`.
-function format_certificate(cert: Certificate) -> str
-    return pem.format(pem.Block(label: "CERTIFICATE", headers: [], data: cert.der)).must()
+function format_certificate(certificate: Certificate) -> str
+    return pem.format(pem.Block(label: "CERTIFICATE", headers: [], data: certificate.der)).must()
 
-# Whether `at` falls inside `cert`'s validity, both ends included.
+# Whether `at` falls inside `certificate`'s validity, both ends included.
 #
-# - `cert`: the certificate.
+# - `certificate`: the certificate.
 # - `at`: the moment asked about.
 #
 # See also `verify_chain`.
-function is_valid_at(cert: Certificate, at: time.Instant) -> bool
+function is_valid_at(certificate: Certificate, at: time.Instant) -> bool
     now = time.to_date_time(at)
-    return shapes.compare_date_times(a: cert.not_before, b: now) <= 0 && shapes.compare_date_times(a: now, b: cert.not_after) <= 0
+    return shapes.compare_date_times(a: certificate.not_before, b: now) <= 0 && shapes.compare_date_times(a: now, b: certificate.not_after) <= 0
 
-# Whether `cert` names itself as its issuer: a root, or a certificate an
+# Whether `certificate` names itself as its issuer: a root, or a certificate an
 # authority issued to itself.
 #
-# - `cert`: the certificate; its two names compared by their DER.
+# - `certificate`: the certificate; its two names compared by their DER.
 #
 # See also `chain_of`.
-function is_self_issued(cert: Certificate) -> bool
-    return cert.subject.der == cert.issuer.der
+function is_self_issued(certificate: Certificate) -> bool
+    return certificate.subject.der == certificate.issuer.der
 
-# Whether `issuer`'s key signed `cert`.
+# Whether `issuer`'s key signed `certificate`.
 #
-# - `cert`: the certificate whose signature is checked.
+# - `certificate`: the certificate whose signature is checked.
 # - `issuer`: the certificate whose public key checks it; its name is not
 #   compared, which `verify_chain` does.
 #
 # Fails as `verify_signature` does. See also `verify_chain`.
-function is_signed_by(cert: Certificate, issuer: Certificate) -> bool?
+function is_signed_by(certificate: Certificate, issuer: Certificate) -> bool?
     return verify_signature(
         key: issuer.public_key,
-        algorithm: cert.signature_algorithm,
-        message: cert.tbs,
-        signature: cert.signature
+        algorithm: certificate.signature_algorithm,
+        message: certificate.tbs,
+        signature: certificate.signature
     )
 
 ## Requests
@@ -1938,7 +1755,7 @@ function chain_of(leaf: Certificate, pool: [Certificate]) -> [Certificate]
                 fits @ false
 
             if fits
-                match is_signed_by(cert: current, issuer: candidate)
+                match is_signed_by(certificate: current, issuer: candidate)
                     .ok holds =>
                         if holds
                             chosen @ k
@@ -1988,7 +1805,7 @@ function verify_chain(chain: [Certificate], options: Verification) -> ()?
 
     if !anchored
         for root in options.roots
-            if !anchored && root.subject.der == last.issuer.der && is_signed_by(cert: last, issuer: root)?
+            if !anchored && root.subject.der == last.issuer.der && is_signed_by(certificate: last, issuer: root)?
                 path @ path.push(root)
                 anchored @ true
 
@@ -2003,7 +1820,7 @@ function verify_chain(chain: [Certificate], options: Verification) -> ()?
         c = path[i]
         label = f"certificate {i} of the chain, \"{format_name(c.subject)}\""
 
-        if !is_valid_at(cert: c, at: options.at)
+        if !is_valid_at(certificate: c, at: options.at)
             return fail(code: INVALID, msg: f"{label} is not valid at {time.format(t: options.at, layout: .rfc3339)}")
 
         for e in c.extensions.unknown
@@ -2020,7 +1837,7 @@ function verify_chain(chain: [Certificate], options: Verification) -> ()?
                     msg: f"{label} names an issuer that is not the subject of certificate {i + 1}"
                 )
 
-            if !is_signed_by(cert: c, issuer: path[i + 1])?
+            if !is_signed_by(certificate: c, issuer: path[i + 1])?
                 return fail(
                     code: INVALID,
                     msg: f"{label}'s signature does not hold under the key of certificate {i + 1}"
@@ -2184,29 +2001,29 @@ function verify_chain(chain: [Certificate], options: Verification) -> ()?
                         msg: f"certificate {i} of the chain is not for the purpose {options.purpose}"
                     )
 
-    if options.host != "" && !is_for_host(cert: leaf, host: options.host)
+    if options.host != "" && !is_for_host(certificate: leaf, host: options.host)
         return fail(code: INVALID, msg: f"the leaf is not for the host \"{options.host}\"")
     return ok()
 
 ## Hosts
 
-# Whether `cert` is for the host `host`, as RFC 6125 § 6.4 says: one of its
+# Whether `certificate` is for the host `host`, as RFC 6125 § 6.4 says: one of its
 # DNS names matches it, ASCII case ignored, a wildcard standing for the
 # whole first label alone; an IP literal is matched as `is_for_address`
 # matches an address.
 #
-# - `cert`: the certificate; its subject's common name is never read, as
+# - `certificate`: the certificate; its subject's common name is never read, as
 #   RFC 9525 and Go read none.
 # - `host`: a host name in ASCII, one trailing dot allowed, or an IP
 #   address, an IPv6 one in brackets or not.
 #
 # See also `is_for_address`, `verify_chain`.
-function is_for_host(cert: Certificate, host: str) -> bool
+function is_for_host(certificate: Certificate, host: str) -> bool
     match hosts.host_address(host)
-        .ok address => return is_for_address(cert: cert, address: address)
+        .ok address => return is_for_address(certificate: certificate, address: address)
         .err _      => _ = 0
 
-    for g in cert.extensions.alt_names
+    for g in certificate.extensions.alt_names
         match g
             .dns d =>
                 if hosts.host_matches(pattern: d.name, host: host)
@@ -2215,15 +2032,15 @@ function is_for_host(cert: Certificate, host: str) -> bool
 
     return false
 
-# Whether `cert` is for the address `address`: one of its IP addresses is
+# Whether `certificate` is for the address `address`: one of its IP addresses is
 # it, an IPv4 address and the IPv6 address that maps it being one.
 #
-# - `cert`: the certificate.
+# - `certificate`: the certificate.
 # - `address`: the address; its zone and port are not compared.
 #
 # See also `is_for_host`.
-function is_for_address(cert: Certificate, address: net.Address) -> bool
-    for g in cert.extensions.alt_names
+function is_for_address(certificate: Certificate, address: net.Address) -> bool
+    for g in certificate.extensions.alt_names
         match g
             .ip a =>
                 if hosts.same_address(a: a.address, b: address)
@@ -2231,6 +2048,191 @@ function is_for_address(cert: Certificate, address: net.Address) -> bool
             .other_name _ | .email _ | .dns _ | .x400_address _ | .directory _ | .edi_party _ | .uri _ | .ip_network _ | .registered_id _ => _ = 0
 
     return false
+
+## Identifiers
+
+# The attribute `commonName`, `2.5.4.3`.
+constant COMMON_NAME: str
+    "2.5.4.3"
+
+# The attribute `countryName`, `2.5.4.6`.
+constant COUNTRY_NAME: str
+    "2.5.4.6"
+
+# The attribute `organizationName`, `2.5.4.10`.
+constant ORGANIZATION_NAME: str
+    "2.5.4.10"
+
+# The attribute `organizationalUnitName`, `2.5.4.11`.
+constant ORGANIZATIONAL_UNIT_NAME: str
+    "2.5.4.11"
+
+# The attribute `localityName`, `2.5.4.7`.
+constant LOCALITY_NAME: str
+    "2.5.4.7"
+
+# The attribute `stateOrProvinceName`, `2.5.4.8`.
+constant STATE_OR_PROVINCE_NAME: str
+    "2.5.4.8"
+
+# The attribute `serialNumber` of a name, `2.5.4.5`.
+constant SERIAL_NUMBER: str
+    "2.5.4.5"
+
+# The attribute `domainComponent`, `0.9.2342.19200300.100.1.25`.
+constant DOMAIN_COMPONENT: str
+    "0.9.2342.19200300.100.1.25"
+
+# The attribute `emailAddress` of PKCS #9, `1.2.840.113549.1.9.1`.
+constant EMAIL_ADDRESS: str
+    "1.2.840.113549.1.9.1"
+
+# The extension `subjectAltName`, `2.5.29.17`.
+constant SUBJECT_ALT_NAME: str
+    "2.5.29.17"
+
+# The extension `issuerAltName`, `2.5.29.18`.
+constant ISSUER_ALT_NAME: str
+    "2.5.29.18"
+
+# The extension `keyUsage`, `2.5.29.15`.
+constant KEY_USAGE: str
+    "2.5.29.15"
+
+# The extension `extKeyUsage`, `2.5.29.37`.
+constant EXTENDED_KEY_USAGE: str
+    "2.5.29.37"
+
+# The extension `basicConstraints`, `2.5.29.19`.
+constant BASIC_CONSTRAINTS: str
+    "2.5.29.19"
+
+# The extension `subjectKeyIdentifier`, `2.5.29.14`.
+constant SUBJECT_KEY_ID: str
+    "2.5.29.14"
+
+# The extension `authorityKeyIdentifier`, `2.5.29.35`.
+constant AUTHORITY_KEY_ID: str
+    "2.5.29.35"
+
+# The extension `cRLDistributionPoints`, `2.5.29.31`.
+constant CRL_DISTRIBUTION_POINTS: str
+    "2.5.29.31"
+
+# The extension `freshestCRL`, `2.5.29.46`.
+constant FRESHEST_CRL: str
+    "2.5.29.46"
+
+# The extension `authorityInfoAccess`, `1.3.6.1.5.5.7.1.1`.
+constant AUTHORITY_INFO_ACCESS: str
+    "1.3.6.1.5.5.7.1.1"
+
+# The extension `subjectInfoAccess`, `1.3.6.1.5.5.7.1.11`.
+constant SUBJECT_INFO_ACCESS: str
+    "1.3.6.1.5.5.7.1.11"
+
+# The extension `certificatePolicies`, `2.5.29.32`.
+constant CERTIFICATE_POLICIES: str
+    "2.5.29.32"
+
+# The extension `policyMappings`, `2.5.29.33`.
+constant POLICY_MAPPINGS: str
+    "2.5.29.33"
+
+# The extension `policyConstraints`, `2.5.29.36`.
+constant POLICY_CONSTRAINTS: str
+    "2.5.29.36"
+
+# The extension `inhibitAnyPolicy`, `2.5.29.54`.
+constant INHIBIT_ANY_POLICY: str
+    "2.5.29.54"
+
+# The extension `nameConstraints`, `2.5.29.30`.
+constant NAME_CONSTRAINTS: str
+    "2.5.29.30"
+
+# A revocation list's extension `cRLNumber`, `2.5.29.20`.
+constant CRL_NUMBER: str
+    "2.5.29.20"
+
+# A revocation list's extension `deltaCRLIndicator`, `2.5.29.27`.
+constant DELTA_CRL_INDICATOR: str
+    "2.5.29.27"
+
+# A revocation list's extension `issuingDistributionPoint`, `2.5.29.28`.
+constant ISSUING_DISTRIBUTION_POINT: str
+    "2.5.29.28"
+
+# A revoked entry's extension `reasonCode`, `2.5.29.21`.
+constant REASON_CODE: str
+    "2.5.29.21"
+
+# A revoked entry's extension `invalidityDate`, `2.5.29.24`.
+constant INVALIDITY_DATE: str
+    "2.5.29.24"
+
+# A revoked entry's extension `certificateIssuer`, `2.5.29.29`.
+constant CERTIFICATE_ISSUER: str
+    "2.5.29.29"
+
+# The purpose `serverAuth`, `1.3.6.1.5.5.7.3.1`: a TLS server.
+constant SERVER_AUTH: str
+    "1.3.6.1.5.5.7.3.1"
+
+# The purpose `clientAuth`, `1.3.6.1.5.5.7.3.2`: a TLS client.
+constant CLIENT_AUTH: str
+    "1.3.6.1.5.5.7.3.2"
+
+# The purpose `codeSigning`, `1.3.6.1.5.5.7.3.3`.
+constant CODE_SIGNING: str
+    "1.3.6.1.5.5.7.3.3"
+
+# The purpose `emailProtection`, `1.3.6.1.5.5.7.3.4`.
+constant EMAIL_PROTECTION: str
+    "1.3.6.1.5.5.7.3.4"
+
+# The purpose `timeStamping`, `1.3.6.1.5.5.7.3.8`.
+constant TIME_STAMPING: str
+    "1.3.6.1.5.5.7.3.8"
+
+# The purpose `OCSPSigning`, `1.3.6.1.5.5.7.3.9`.
+constant OCSP_SIGNING: str
+    "1.3.6.1.5.5.7.3.9"
+
+# The purpose `anyExtendedKeyUsage`, `2.5.29.37.0`: every purpose.
+constant ANY_EXTENDED_KEY_USAGE: str
+    "2.5.29.37.0"
+
+# The access method `id-ad-ocsp`, `1.3.6.1.5.5.7.48.1`: where OCSP answers.
+constant OCSP: str
+    "1.3.6.1.5.5.7.48.1"
+
+# The access method `id-ad-caIssuers`, `1.3.6.1.5.5.7.48.2`: where the
+# issuer's certificate is.
+constant CA_ISSUERS: str
+    "1.3.6.1.5.5.7.48.2"
+
+# The policy `anyPolicy`, `2.5.29.32.0`.
+constant ANY_POLICY: str
+    "2.5.29.32.0"
+
+# The policy qualifier `id-qt-cps`, `1.3.6.1.5.5.7.2.1`: a URI.
+constant CPS_QUALIFIER: str
+    "1.3.6.1.5.5.7.2.1"
+
+# The policy qualifier `id-qt-unotice`, `1.3.6.1.5.5.7.2.2`: a notice.
+constant USER_NOTICE_QUALIFIER: str
+    "1.3.6.1.5.5.7.2.2"
+
+# A request's attribute `extensionRequest` of PKCS #9,
+# `1.2.840.113549.1.9.14`: the extensions asked for.
+constant EXTENSION_REQUEST: str
+    "1.2.840.113549.1.9.14"
+
+# A request's attribute `challengePassword` of PKCS #9,
+# `1.2.840.113549.1.9.7`.
+constant CHALLENGE_PASSWORD: str
+    "1.2.840.113549.1.9.7"
 
 ## Tests
 
@@ -2328,17 +2330,17 @@ test "is_signed_by: ECDSA over P-384, RSA PKCS #1, RSA-PSS, a key of another kin
     root = parse_certificate(samples.root()).must()
     inter = parse_certificate(samples.intermediate()).must()
     leaf = parse_certificate(samples.leaf()).must()
-    assert is_signed_by(cert: root, issuer: root).must()
-    assert is_signed_by(cert: inter, issuer: root).must()
-    assert is_signed_by(cert: leaf, issuer: inter).must()
-    assert is_signed_by(cert: parse_certificate(samples.pss()).must(), issuer: inter).must()
-    assert is_signed_by(cert: leaf, issuer: root).is_err()
+    assert is_signed_by(certificate: root, issuer: root).must()
+    assert is_signed_by(certificate: inter, issuer: root).must()
+    assert is_signed_by(certificate: leaf, issuer: inter).must()
+    assert is_signed_by(certificate: parse_certificate(samples.pss()).must(), issuer: inter).must()
+    assert is_signed_by(certificate: leaf, issuer: root).is_err()
     ed = parse_certificate(samples.ed25519()).must()
 
     if keypairs.is_available(.ed25519)
-        assert is_signed_by(cert: ed, issuer: ed).must()
+        assert is_signed_by(certificate: ed, issuer: ed).must()
     else
-        match is_signed_by(cert: ed, issuer: ed)
+        match is_signed_by(certificate: ed, issuer: ed)
             .ok _  => assert false
             .err e => assert e.code == UNSUPPORTED
 
@@ -2359,14 +2361,14 @@ test "scheme_of and kind_of: each certificate's"
 
 test "is_valid_at: inside, at both ends, outside, and the validity that does not end"
     leaf = parse_certificate(samples.leaf()).must()
-    assert is_valid_at(cert: leaf, at: time.date(year: 2026, month: 6, day: 1).must())
-    assert is_valid_at(cert: leaf, at: time.date(year: 2026, month: 1, day: 1).must())
-    assert is_valid_at(cert: leaf, at: time.date(year: 2027, month: 1, day: 1).must())
-    assert !is_valid_at(cert: leaf, at: time.date(year: 2027, month: 1, day: 2).must())
-    assert !is_valid_at(cert: leaf, at: time.date(year: 2025, month: 12, day: 31).must())
+    assert is_valid_at(certificate: leaf, at: time.date(year: 2026, month: 6, day: 1).must())
+    assert is_valid_at(certificate: leaf, at: time.date(year: 2026, month: 1, day: 1).must())
+    assert is_valid_at(certificate: leaf, at: time.date(year: 2027, month: 1, day: 1).must())
+    assert !is_valid_at(certificate: leaf, at: time.date(year: 2027, month: 1, day: 2).must())
+    assert !is_valid_at(certificate: leaf, at: time.date(year: 2025, month: 12, day: 31).must())
     ed = parse_certificate(samples.ed25519()).must()
     assert ed.not_after == time.DateTime(year: 9999, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
-    assert is_valid_at(cert: ed, at: time.max_instant())
+    assert is_valid_at(certificate: ed, at: time.max_instant())
 
 test "is_for_host: Go's answers on the leaf's names"
     leaf = parse_certificate(samples.leaf()).must()
@@ -2399,16 +2401,16 @@ test "is_for_host: Go's answers on the leaf's names"
     ]
 
     for h in yes
-        assert is_for_host(cert: leaf, host: h)
+        assert is_for_host(certificate: leaf, host: h)
 
     for h in no
-        assert !is_for_host(cert: leaf, host: h)
+        assert !is_for_host(certificate: leaf, host: h)
 
 test "is_for_address: both families, a mapped IPv4, and an address not named"
     leaf = parse_certificate(samples.leaf()).must()
-    assert is_for_address(cert: leaf, address: net.parse_address("2001:db8::1").must())
-    assert is_for_address(cert: leaf, address: net.parse_address("::ffff:192.0.2.1").must())
-    assert !is_for_address(cert: leaf, address: net.parse_address("192.0.2.2").must())
+    assert is_for_address(certificate: leaf, address: net.parse_address("2001:db8::1").must())
+    assert is_for_address(certificate: leaf, address: net.parse_address("::ffff:192.0.2.1").must())
+    assert !is_for_address(certificate: leaf, address: net.parse_address("192.0.2.2").must())
 
 test "chain_of: the leaf to its root from a pool in another order, a self-issued leaf, and an empty pool"
     root = parse_certificate(samples.root()).must()
@@ -2617,7 +2619,7 @@ test "format_certificate: read back"
 # Whether a certificate is valid on a day.
 test "is_valid_at: a day of 2026"
     assert is_valid_at(
-        cert: parse_certificate(samples.leaf()).must(),
+        certificate: parse_certificate(samples.leaf()).must(),
         at: time.date(year: 2026, month: 3, day: 1).must()
     )
 
@@ -2628,7 +2630,7 @@ test "is_self_issued: a root"
 # A certificate's signature checked against its issuer's.
 test "is_signed_by: an intermediate signed by its root"
     root = parse_certificate(samples.root()).must()
-    assert is_signed_by(cert: parse_certificate(samples.intermediate()).must(), issuer: root).must()
+    assert is_signed_by(certificate: parse_certificate(samples.intermediate()).must(), issuer: root).must()
 
 # A certificate request read from its DER.
 test "decode_request: a request's DER"
@@ -2683,11 +2685,11 @@ test "verify_chain: a server's chain"
 
 # Whether a certificate is for a host a client connects to.
 test "is_for_host: a wildcard's one label"
-    assert is_for_host(cert: parse_certificate(samples.leaf()).must(), host: "www.app.example.com")
+    assert is_for_host(certificate: parse_certificate(samples.leaf()).must(), host: "www.app.example.com")
 
 # Whether a certificate is for an address.
 test "is_for_address: an IPv4 address"
     assert is_for_address(
-        cert: parse_certificate(samples.leaf()).must(),
+        certificate: parse_certificate(samples.leaf()).must(),
         address: net.parse_address("192.0.2.1").must()
     )

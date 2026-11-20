@@ -1,0 +1,10 @@
+# Defect 2613's case: the part `heroes fetch` placed for `csv`, with
+# `text/internal/scan.hero` taken out of it since, which leaves its sum as it
+# was (a file of the version left out of a part is no change). The index is
+# not here.
+index = "file://../idxc"
+
+[dependencies.kit]
+version = "1.0.0"
+sum = "sha256-c1dde5032e6ae6139a9936adfeb66ac60d10f2410d49330452ce454ad22d647c"
+packages = ["csv"]

@@ -968,7 +968,7 @@ function nkey_verify(public_key: str, data: [u8], signature: [u8]) -> bool?
 #
 # Fails `unsupported` where the system has no Ed25519. See also
 # `nkey_public_of`.
-function generate_user_seed() -> str?
+function new_user_seed() -> str?
     return nkeys.generate_user()
 
 ## Tests
@@ -1015,7 +1015,7 @@ test "connect: options refused before any connection"
 
 test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a round trip, queue groups, a request, no responders, limits, a drain"
     match os.env("REBEL_NATS_URL")
-        .err _ => print("connect live: skipped, REBEL_NATS_URL names no server")
+        .err _ => skip_test(reason: "REBEL_NATS_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             i = server_info_of(c)
@@ -1116,7 +1116,7 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
 
 test "connect live, many clients on one thread: two clients' streams waited on by poll, each read when ready"
     match os.env("REBEL_NATS_URL")
-        .err _ => print("poll live: skipped, REBEL_NATS_URL names no server")
+        .err _ => skip_test(reason: "REBEL_NATS_URL names no server")
         .ok url =>
             a @= connect(parse_url(url).must()).must()
             b @= connect(parse_url(url).must()).must()
@@ -1163,9 +1163,9 @@ test "connect live, many clients on one thread: two clients' streams waited on b
             close(@a).must()
             close(@b).must()
 
-test "connect live, logins: the token, the user and password, and the NKey the variables name; a wrong one refused"
+test "connect live, a login by the token REBEL_NATS_TOKEN_URL names, and a wrong one refused"
     match os.env("REBEL_NATS_TOKEN_URL")
-        .err _ => print("token live: skipped, REBEL_NATS_TOKEN_URL names no server")
+        .err _ => skip_test(reason: "REBEL_NATS_TOKEN_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             flush(@c, wait_ms: 5000).must()
@@ -1177,8 +1177,9 @@ test "connect live, logins: the token, the user and password, and the NKey the v
                 .ok _  => assert false
                 .err e => assert e.code == "permission"
 
+test "connect live, a login by the user and password REBEL_NATS_USER_URL names, its permissions, and a wrong one refused"
     match os.env("REBEL_NATS_USER_URL")
-        .err _ => print("user live: skipped, REBEL_NATS_USER_URL names no server")
+        .err _ => skip_test(reason: "REBEL_NATS_USER_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             publish(@c, subject: "forbidden.x", data: [1]).must()
@@ -1193,8 +1194,9 @@ test "connect live, logins: the token, the user and password, and the NKey the v
                 .ok _  => assert false
                 .err e => assert e.code == "permission"
 
+test "connect live, a login by the NKey REBEL_NATS_NKEY_URL and REBEL_NATS_NKEY_SEED name, and a seed of nobody's refused"
     match os.env("REBEL_NATS_NKEY_URL")
-        .err _ => print("nkey live: skipped, REBEL_NATS_NKEY_URL names no server")
+        .err _ => skip_test(reason: "REBEL_NATS_NKEY_URL names no server")
         .ok url =>
             o @= parse_url(url).must()
             o.auth @ .nkey(seed: os.env("REBEL_NATS_NKEY_SEED").must())
@@ -1207,13 +1209,13 @@ test "connect live, logins: the token, the user and password, and the NKey the v
                 .err e => assert e.code == "unsupported"
 
             o.auth @ .nkey(
-                seed: generate_user_seed().default("SUAAAAICAMCAKBQHBAEQUCYMBUHA6EARCIJRIFIWC4MBSGQ3DQOR4H776Y")
+                seed: new_user_seed().default("SUAAAAICAMCAKBQHBAEQUCYMBUHA6EARCIJRIFIWC4MBSGQ3DQOR4H776Y")
             )
             assert connect(o).is_err()
 
-test "connect live, TLS: after INFO, from the first byte, and over a WebSocket, as the variables name them"
+test "connect live over TLS after INFO, against the server REBEL_NATS_TLS_URL names, its certificate signed by tls's test authority"
     match os.env("REBEL_NATS_TLS_URL")
-        .err _ => print("tls live: skipped, REBEL_NATS_TLS_URL names no server")
+        .err _ => skip_test(reason: "REBEL_NATS_TLS_URL names no server")
         .ok url =>
             o @= parse_url(url).must()
             o.roots @ tls.TEST_ROOT
@@ -1228,8 +1230,9 @@ test "connect live, TLS: after INFO, from the first byte, and over a WebSocket, 
                 .ok _  => assert false
                 .err e => assert e.code == "invalid" || e.code == "failed"
 
+test "connect live over TLS from the first byte, against the server REBEL_NATS_TLS_FIRST_URL names"
     match os.env("REBEL_NATS_TLS_FIRST_URL")
-        .err _ => print("tls first live: skipped, REBEL_NATS_TLS_FIRST_URL names no server")
+        .err _ => skip_test(reason: "REBEL_NATS_TLS_FIRST_URL names no server")
         .ok url =>
             o @= parse_url(url).must()
             o.roots @ tls.TEST_ROOT
@@ -1238,8 +1241,9 @@ test "connect live, TLS: after INFO, from the first byte, and over a WebSocket, 
             flush(@c, wait_ms: 5000).must()
             close(@c).must()
 
+test "connect live over a WebSocket, a message of 200,000 bytes, against the server REBEL_NATS_WS_URL names"
     match os.env("REBEL_NATS_WS_URL")
-        .err _ => print("websocket live: skipped, REBEL_NATS_WS_URL names no server")
+        .err _ => skip_test(reason: "REBEL_NATS_WS_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             sid = subscribe(@c, "ws.x").must()
@@ -1270,11 +1274,10 @@ test "parse_url: two servers and a login"
     o = parse_url("nats://app:pw@n1:4222,nats://n2:4222").must()
     assert o.servers == ["nats://n1:4222", "nats://n2:4222"] && o.auth == .user(name: "app", password: "pw")
 
-# A connection to a local server, where one answers; elsewhere it shows
-# nothing.
+# A connection to a local server, where one answers; elsewhere it skips.
 test "connect: a local server"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert !is_closed(c)
@@ -1283,7 +1286,7 @@ test "connect: a local server"
 # A client closed, after which every call fails `closed`.
 test "close: the end of a client"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             close(@c).must()
@@ -1292,7 +1295,7 @@ test "close: the end of a client"
 # A client drained: what came before is still read.
 test "drain: subscriptions ended, messages kept"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = subscribe(@c, "ex.drain").must()
@@ -1303,7 +1306,7 @@ test "drain: subscriptions ended, messages kept"
 # Whether a client is closed.
 test "is_closed: before and after close"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert !is_closed(c)
@@ -1313,7 +1316,7 @@ test "is_closed: before and after close"
 # A new connection asked for, the subscriptions kept.
 test "reconnect: a new connection"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             sid = subscribe(@c, "ex.again").must()
@@ -1324,7 +1327,7 @@ test "reconnect: a new connection"
 # What the server says of itself.
 test "server_info_of: the server's version"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert server_info_of(c).version != ""
@@ -1333,7 +1336,7 @@ test "server_info_of: the server's version"
 # The URL connected to.
 test "connected_url_of: no secret in it"
     match connect(parse_url("nats://user:pw@localhost:4222").must())
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert connected_url_of(c) == "nats://localhost:4222"
@@ -1342,7 +1345,7 @@ test "connected_url_of: no secret in it"
 # The largest message the server takes.
 test "max_payload_of: a megabyte by default"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert max_payload_of(c) >= 1024
@@ -1351,7 +1354,7 @@ test "max_payload_of: a megabyte by default"
 # The servers a reconnection would try.
 test "servers_of: the options' servers first"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert servers_of(c)[0] == "nats://localhost:4222"
@@ -1360,7 +1363,7 @@ test "servers_of: the options' servers first"
 # What a client has carried.
 test "stats_of: one message out"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             publish(@c, subject: "ex.stats", data: [1, 2]).must()
@@ -1370,7 +1373,7 @@ test "stats_of: one message out"
 # What a client holds before a program waits on its stream.
 test "held_of: nothing on a fresh client"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert held_of(c) == 0
@@ -1379,7 +1382,7 @@ test "held_of: nothing on a fresh client"
 # The stream a program waits on with `poll`.
 test "stream_of: the client's stream"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert !io.is_closed(stream_of(c).must())
@@ -1389,7 +1392,7 @@ test "stream_of: the client's stream"
 # The errors the server sent that left the connection open.
 test "take_errors: none on a fresh client"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert take_errors(@c) == []
@@ -1403,7 +1406,7 @@ test "message: a subject and data"
 # A message published.
 test "publish: data to a subject"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             publish(@c, subject: "ex.publish", data: bytes.from_text("hello")).must()
@@ -1412,7 +1415,7 @@ test "publish: data to a subject"
 # A message with a header published.
 test "publish_message: a header and a reply subject"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             m @= with_header(message("ex.headers", data: []), name: "Trace", value: "1")
@@ -1423,7 +1426,7 @@ test "publish_message: a header and a reply subject"
 # Everything written read by the server.
 test "flush: a round trip"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             flush(@c, wait_ms: 2000).must()
@@ -1432,7 +1435,7 @@ test "flush: a round trip"
 # The time of a round trip.
 test "rtt: under two seconds"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert rtt(@c, wait_ms: 2000).must().nanoseconds < 2000000000
@@ -1441,7 +1444,7 @@ test "rtt: under two seconds"
 # A subscription with a wildcard.
 test "subscribe: every subject under orders"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             sid = subscribe(@c, "orders.>").must()
@@ -1451,7 +1454,7 @@ test "subscribe: every subject under orders"
 # A member of a queue group.
 test "queue_subscribe: one of a group of workers"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert queue_subscribe(@c, subject: "jobs", queue: "workers").must() > 0
@@ -1460,7 +1463,7 @@ test "queue_subscribe: one of a group of workers"
 # A subscription ended.
 test "unsubscribe: no longer listening"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             sid = subscribe(@c, "ex.unsub").must()
@@ -1471,7 +1474,7 @@ test "unsubscribe: no longer listening"
 # A subscription that ends after one message.
 test "unsubscribe_after: one message"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             sid = subscribe(@c, "ex.once").must()
@@ -1481,7 +1484,7 @@ test "unsubscribe_after: one message"
 # The client's subscriptions.
 test "subscriptions_of: two"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             a = subscribe(@c, "ex.a").must()
@@ -1492,7 +1495,7 @@ test "subscriptions_of: two"
 # The next message of any subscription.
 test "next_message: a message published to itself"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = subscribe(@c, "ex.next").must()
@@ -1503,7 +1506,7 @@ test "next_message: a message published to itself"
 # The next message of one subscription.
 test "next_message_of: one subscription's"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             sid = subscribe(@c, "ex.one").must()
@@ -1514,7 +1517,7 @@ test "next_message_of: one subscription's"
 # What a client holds once its stream is readable.
 test "read_ready: the messages that came"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = subscribe(@c, "ex.ready").must()
@@ -1526,7 +1529,7 @@ test "read_ready: the messages that came"
 # The messages held of a subscription.
 test "pending_of: one held"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             sid = subscribe(@c, "ex.pending").must()
@@ -1538,7 +1541,7 @@ test "pending_of: one held"
 # The messages a subscription dropped.
 test "dropped_of: none"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             sid = subscribe(@c, "ex.dropped").must()
@@ -1548,7 +1551,7 @@ test "dropped_of: none"
 # The messages a subscription received.
 test "delivered_of: one"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             sid = subscribe(@c, "ex.delivered").must()
@@ -1560,7 +1563,7 @@ test "delivered_of: one"
 # An inbox of the client's own.
 test "new_inbox: under _INBOX"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert strings.has_prefix(s: new_inbox(c).must(), prefix: "_INBOX.")
@@ -1569,7 +1572,7 @@ test "new_inbox: under _INBOX"
 # A request no one answers.
 test "request: no responders"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
 
@@ -1582,7 +1585,7 @@ test "request: no responders"
 # A request with a header, no one answering.
 test "request_message: a header sent"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             m = with_header(message("ex.nobody", data: []), name: "Id", value: "7")
@@ -1592,7 +1595,7 @@ test "request_message: a header sent"
 # A reply to a request, here one the client asks of itself.
 test "respond: to a message's reply subject"
     match connect(options(["nats://localhost:4222"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = subscribe(@c, "ex.ask").must()
@@ -1659,7 +1662,7 @@ test "nkey_verify: a signature that holds"
         .err e  => assert e.code == "unsupported"
 
 # A new user's seed, where the system has Ed25519.
-test "generate_user_seed: 58 characters beginning SU"
-    match generate_user_seed()
+test "new_user_seed: 58 characters beginning SU"
+    match new_user_seed()
         .ok s  => assert s.len() == 58 && strings.has_prefix(s: s, prefix: "SU")
         .err e => assert e.code == "unsupported"

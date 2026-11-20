@@ -24,7 +24,7 @@
 # byte, with the certificates of `tls`'s tests.
 
 capability ldap/open  a connection to a directory server opened, in plain text, over TLS from the first byte or with StartTLS
-  heroes  ldap.open, ldap.Conn, ldap.Security
+  heroes  ldap.connect, ldap.Conn, ldap.Security
   java    InitialLdapContext, InitialDirContext, LdapContext.newInstance, LdapContext.reconnect
   dotnet  LdapConnection, LdapDirectoryIdentifier, DirectoryIdentifier, DirectoryConnection, LdapSessionOptions.SecureSocketLayer, LdapSessionOptions.ProtocolVersion
   go      Dial, DialTLS, DialURL, DialOpt, DialContext, DialWithDialer, DialWithTLSConfig, DialWithTLSDialer, NewConn, Conn, Conn.Start
@@ -66,7 +66,7 @@ capability ldap/start-tls  TLS begun on a connection already open (RFC 4511 § 4
   go      Conn.StartTLS, Conn.TLSConnectionState
   rust    -
   python  Connection.start_tls
-  note    on Linux and Windows TLS begins over the connection made (`tls.client_over`); on macOS, whose TLS begins only over a connection `tls` makes, `open` asks for StartTLS on a first connection, reads the answer, and makes the connection it keeps with `tls.connect_after`, expecting the same answer byte for byte (OpenLDAP 2.6.10 answered alike, run 2026-11-18); `start_tls` on an open connection fails `unsupported` there; TLS is never stopped (.NET's Stop)
+  note    on Linux and Windows TLS begins over the connection made (`tls.client_over`); on macOS, whose TLS begins only over a connection `tls` makes, `connect` asks for StartTLS on a first connection, reads the answer, and makes the connection it keeps with `tls.connect_after`, expecting the same answer byte for byte (OpenLDAP 2.6.10 answered alike, run 2026-11-18); `start_tls` on an open connection fails `unsupported` there; TLS is never stopped (.NET's Stop)
 
 capability ldap/deadline  each operation bounded in time on the client
   heroes  ldap.set_deadline, ldap.Options
@@ -474,7 +474,7 @@ capability ldap/filter-ber  a filter written as BER and read back from it
   note    TRUE written 0xff, as RFC 4511 § 5.1 asks and ldap3 writes, where Go writes 0x01
 
 capability ldap/result-codes  the result codes of RFC 4511 and its extensions as constants and names
-  heroes  ldap.format_result_code, ldap.SUCCESS, ldap.NO_SUCH_OBJECT and the other 43 result constants
+  heroes  ldap.result_name, ldap.SUCCESS, ldap.NO_SUCH_OBJECT and the other 43 result constants
   java    -
   dotnet  ResultCode
   go      LDAPResultCodeMap, every LDAPResult* constant
@@ -519,7 +519,7 @@ capability ldap/object-mapping  an entry read into a record, and a record writte
   note    -
 
 capability ldap/pool  a pool of servers tried in turn, and of connections reused
-  heroes  refused: a list of servers tried in turn is a loop the program writes with `open`, and a connection is one place one thread owns
+  heroes  refused: a list of servers tried in turn is a loop the program writes with `connect`, and a connection is one place one thread owns
   java    -
   dotnet  LdapSessionOptions.AutoReconnect, LdapSessionOptions.FastConcurrentBind
   go      -

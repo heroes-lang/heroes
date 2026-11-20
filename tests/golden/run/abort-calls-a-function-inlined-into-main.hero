@@ -1,0 +1,21 @@
+# Panel 253's R5: where the function an abort's place names is inlined into
+# its caller, the frame the abort is raised in is the caller's, and it is
+# told; what the report's place already says is not told again. `ratio`
+# divides by zero, and at `-O2` its body is `main`'s: the walk's first frame
+# is `main`, whose line tables hold `ratio`'s call, and `heroes run` leaves
+# out the level that is the place itself. At `-O0` `ratio` is a frame of its
+# own, the place's, and the walk tells the frame above it. Both say `main`
+# once.
+
+function ratio(total: i64, parts: i64) -> i64
+    return total / parts
+
+function main()
+    print("before")
+    parts: i64 @= 3
+
+    while parts > 0
+        print(ratio(total: 12, parts: parts))
+        parts @ parts - 3
+
+    print(ratio(total: 12, parts: parts))

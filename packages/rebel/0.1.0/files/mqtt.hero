@@ -1219,7 +1219,7 @@ function pairs_of(properties: [Property]) -> [Pair]
 # - `code`: the reason code.
 #
 # Fails `not_found` for a code MQTT 5 does not define. See also `Connack`.
-function reason_text(code: i64) -> str?
+function reason_name(code: i64) -> str?
     names: {i64: str} = {
         0: "Success"
         1: "Granted QoS 1"
@@ -1776,10 +1776,10 @@ test "number_of, text_of, data_of and pairs_of: found, absent, of another kind, 
     assert data_of(list, id: CORRELATION_DATA).must() == [1] && data_of([], id: CORRELATION_DATA).is_err()
     assert pairs_of(list) == [Pair(name: "a", value: "1"), Pair(name: "b", value: "2")] && pairs_of([]) == []
 
-test "reason_text: paho-mqtt's names, the first and the last, and a code MQTT 5 does not define"
-    assert reason_text(0).must() == "Success" && reason_text(135).must() == "Not authorized"
-    assert reason_text(162).must() == "Wildcard subscription not supported" && reason_text(17).must() == "No subscription found"
-    assert reason_text(3).is_err() && reason_text(163).is_err() && reason_text(-1).is_err()
+test "reason_name: paho-mqtt's names, the first and the last, and a code MQTT 5 does not define"
+    assert reason_name(0).must() == "Success" && reason_name(135).must() == "Not authorized"
+    assert reason_name(162).must() == "Wildcard subscription not supported" && reason_name(17).must() == "No subscription found"
+    assert reason_name(3).is_err() && reason_name(163).is_err() && reason_name(-1).is_err()
 
 test "encode and decode through the face: every kind of packet written and read back the same, in both versions"
     will = Message(
@@ -1859,7 +1859,7 @@ test "connect: options refused before any connection"
 
 test "connect live, against the server REBEL_MQTT_URL names, in MQTT 5 and 3.1.1: every QoS, retained messages, a will, properties, options, sessions, acknowledgements by hand, a reconnection"
     match os.env("REBEL_MQTT_URL")
-        .err _ => print("connect live: skipped, REBEL_MQTT_URL names no server")
+        .err _ => skip_test(reason: "REBEL_MQTT_URL names no server")
         .ok text =>
             for version in [5, 4]
                 o @= parse_url(text).must()
@@ -1988,7 +1988,7 @@ test "connect live, against the server REBEL_MQTT_URL names, in MQTT 5 and 3.1.1
 
 test "connect live, many clients on one thread: two clients' streams waited on by poll, each read when ready"
     match os.env("REBEL_MQTT_URL")
-        .err _ => print("poll live: skipped, REBEL_MQTT_URL names no server")
+        .err _ => skip_test(reason: "REBEL_MQTT_URL names no server")
         .ok text =>
             a @= connect(parse_url(text).must()).must()
             b @= connect(parse_url(text).must()).must()
@@ -2031,9 +2031,9 @@ test "connect live, many clients on one thread: two clients' streams waited on b
             close(@a).must()
             close(@b).must()
 
-test "connect live, a login, TLS and a WebSocket, as the variables name them; a wrong password refused"
+test "connect live, a login in MQTT 5 and 3.1.1 and a wrong password refused, against the server REBEL_MQTT_AUTH_URL names"
     match os.env("REBEL_MQTT_AUTH_URL")
-        .err _ => print("auth live: skipped, REBEL_MQTT_AUTH_URL names no server")
+        .err _ => skip_test(reason: "REBEL_MQTT_AUTH_URL names no server")
         .ok text =>
             for version in [5, 4]
                 o @= parse_url(text).must()
@@ -2047,8 +2047,9 @@ test "connect live, a login, TLS and a WebSocket, as the variables name them; a 
                     .ok _  => assert false
                     .err e => assert e.code == "permission"
 
+test "connect live over TLS, against the server REBEL_MQTT_TLS_URL names, its certificate signed by tls's test authority"
     match os.env("REBEL_MQTT_TLS_URL")
-        .err _ => print("tls live: skipped, REBEL_MQTT_TLS_URL names no server")
+        .err _ => skip_test(reason: "REBEL_MQTT_TLS_URL names no server")
         .ok text =>
             o @= parse_url(text).must()
             o.roots @ tls.TEST_ROOT
@@ -2058,8 +2059,9 @@ test "connect live, a login, TLS and a WebSocket, as the variables name them; a 
             assert next_message(@c, wait_ms: 5000).must().payload == [8]
             close(@c).must()
 
+test "connect live over a WebSocket in MQTT 5 and 3.1.1, a message of 200,000 bytes, against the server REBEL_MQTT_WS_URL names"
     match os.env("REBEL_MQTT_WS_URL")
-        .err _ => print("websocket live: skipped, REBEL_MQTT_WS_URL names no server")
+        .err _ => skip_test(reason: "REBEL_MQTT_WS_URL names no server")
         .ok text =>
             for version in [5, 4]
                 o @= parse_url(text).must()
@@ -2095,11 +2097,10 @@ test "parse_url: a login and a TLS port"
     o = parse_url("mqtts://app:pw@broker.lan").must()
     assert o.transport == .tls && o.port == 8883 && o.username == "app"
 
-# A connection to a local server, where one answers; elsewhere it shows
-# nothing.
+# A connection to a local server, where one answers; elsewhere it skips.
 test "connect: a local server"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert !is_closed(c)
@@ -2108,7 +2109,7 @@ test "connect: a local server"
 # A client closed with `DISCONNECT`.
 test "close: the end of a client"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             close(@c).must()
@@ -2117,7 +2118,7 @@ test "close: the end of a client"
 # A client ended asking the server to publish its will all the same.
 test "disconnect: with the will published"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             disconnect(@c, reason: 4, properties: []).must()
@@ -2125,7 +2126,7 @@ test "disconnect: with the will published"
 # A client dropped, as a crash would.
 test "drop: no DISCONNECT"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             drop(@c).must()
@@ -2134,7 +2135,7 @@ test "drop: no DISCONNECT"
 # Whether a client is closed.
 test "is_closed: before and after close"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert !is_closed(c)
@@ -2144,7 +2145,7 @@ test "is_closed: before and after close"
 # A new connection asked for.
 test "reconnect: a new connection"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             reconnect(@c).must()
@@ -2154,7 +2155,7 @@ test "reconnect: a new connection"
 # What the server's `CONNACK` said.
 test "connack_of: no session on a clean start"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert !connack_of(c).session_present
@@ -2163,7 +2164,7 @@ test "connack_of: no session on a clean start"
 # The identifier the server assigned.
 test "client_id_of: one assigned where none was given"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert client_id_of(c) != ""
@@ -2172,7 +2173,7 @@ test "client_id_of: one assigned where none was given"
 # What a client holds before a program waits on its stream.
 test "held_of: nothing on a fresh client"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert held_of(c) == 0
@@ -2181,7 +2182,7 @@ test "held_of: nothing on a fresh client"
 # The stream a program waits on with `poll`.
 test "stream_of: the client's stream"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert !io.is_closed(stream_of(c).must())
@@ -2190,7 +2191,7 @@ test "stream_of: the client's stream"
 # What a client has carried.
 test "stats_of: one message out"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             publish(@c, topic: "ex/stats", payload: [1], qos: 0, retain: false).must()
@@ -2206,7 +2207,7 @@ test "message: QoS 0 first"
 # A message published at QoS 1.
 test "publish: at least once"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             publish(@c, topic: "ex/publish", payload: [1, 2], qos: 1, retain: false).must()
@@ -2215,7 +2216,7 @@ test "publish: at least once"
 # A message published with MQTT 5's properties.
 test "publish_message: a content type and a user property"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             m @= message("ex/props", payload: [123, 125])
@@ -2234,7 +2235,7 @@ test "subscription: a filter and a QoS"
 # A subscription with a wildcard.
 test "subscribe: every sensor"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert subscribe(@c, topic_filter: "ex/sensors/#", qos: 1).must() == 1
@@ -2243,7 +2244,7 @@ test "subscribe: every sensor"
 # Two subscriptions at once, one with no local messages.
 test "subscribe_many: two filters"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             mine @= subscription("ex/chat/#", qos: 1)
@@ -2254,7 +2255,7 @@ test "subscribe_many: two filters"
 # A subscription ended.
 test "unsubscribe: no longer listening"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = subscribe(@c, topic_filter: "ex/unsub", qos: 0).must()
@@ -2264,7 +2265,7 @@ test "unsubscribe: no longer listening"
 # Two subscriptions ended at once, one of which never existed.
 test "unsubscribe_many: a code each"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = subscribe(@c, topic_filter: "ex/a", qos: 0).must()
@@ -2274,7 +2275,7 @@ test "unsubscribe_many: a code each"
 # A message published to itself and read back.
 test "next_message: one's own message"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = subscribe(@c, topic_filter: "ex/next", qos: 1).must()
@@ -2285,7 +2286,7 @@ test "next_message: one's own message"
 # What a client holds once its stream is readable.
 test "read_ready: the messages that came"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = subscribe(@c, topic_filter: "ex/ready", qos: 1).must()
@@ -2300,7 +2301,7 @@ test "ack: by hand"
     o.manual_acks @ true
 
     match connect(o)
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = subscribe(@c, topic_filter: "ex/ack", qos: 1).must()
@@ -2311,7 +2312,7 @@ test "ack: by hand"
 # A round trip to the server.
 test "ping: a PINGRESP"
     match connect(options("localhost"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             ping(@c, wait_ms: 2000).must()
@@ -2346,8 +2347,8 @@ test "pairs_of: one user property"
     assert pairs_of([Property(id: USER_PROPERTY, value: .pair(name: "a", value: "b"))]) == [Pair(name: "a", value: "b")]
 
 # A reason code's name.
-test "reason_text: a quota spent"
-    assert reason_text(151).must() == "Quota exceeded"
+test "reason_name: a quota spent"
+    assert reason_name(151).must() == "Quota exceeded"
 
 # A `PINGREQ` written.
 test "encode: the two bytes of a PINGREQ"

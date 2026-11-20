@@ -262,27 +262,7 @@ function wait(w: Watch, limit: time.Duration) -> [Event]?
             asked: asked,
             why: f"a limit is zero or more, and {limit.nanoseconds} ns was asked"
         )
-    raw = taking.taken(w.handle, limit_ns: limit.nanoseconds, watched: w.path, asked: asked)?
-    events: [Event] @= []
-
-    for t in raw
-        change: Change = if t.kind == hero_watch.HERO_WATCH_CREATED
-            .created
-        else if t.kind == hero_watch.HERO_WATCH_REMOVED
-            .removed
-        else if t.kind == hero_watch.HERO_WATCH_CHANGED
-            .changed
-        else if t.kind == hero_watch.HERO_WATCH_ATTRIBUTES
-            .attributes
-        else if t.kind == hero_watch.HERO_WATCH_RENAMED
-            .renamed(from: t.from)
-        else if t.kind == hero_watch.HERO_WATCH_GONE
-            .gone
-        else
-            .overflow
-        events @ events.push(Event(path: t.path, change: change, directory: t.directory))
-
-    return ok(events)
+    return taking.taken(w.handle, limit_ns: limit.nanoseconds, watched: w.path, asked: asked)
 
 # The events the watch holds, waiting as long as it takes: until one is told
 # or the stop is asked.

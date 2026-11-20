@@ -4,9 +4,9 @@
 # a block that names one large entry many times holds no more than the bound.
 
 use bytes
+use http2
 use http2/internal/huffman
 use http2/internal/integers
-use http2/internal/model
 use http2/internal/samples
 use http2/internal/statics
 use http2/internal/table
@@ -106,7 +106,7 @@ function is_entry(d: State lent, index: i64) -> bool
 # dropped or was not UTF-8.
 record Gathered
     # The fields kept.
-    fields: [model.Field]
+    fields: [http2.Field]
     # The size of every field read, kept or not.
     size: i64
     # Whether a field passed the list's size.
@@ -125,18 +125,18 @@ function gather(@g: Gathered, name: [u8], value: [u8], sensitive: bool, list_siz
     match bytes.to_text(name)
         .ok n =>
             match bytes.to_text(value)
-                .ok v  => keep(@g.fields, f: model.Field(name: n, value: v, sensitive: sensitive))
+                .ok v  => keep(@g.fields, f: http2.Field(name: n, value: v, sensitive: sensitive))
                 .err _ => g.not_text @ true
         .err _ => g.not_text @ true
 
 # Adds `f` to the fields kept.
-function keep(@fields: [model.Field], f: model.Field)
+function keep(@fields: [http2.Field], f: http2.Field)
     fields @ fields.push(f)
 
 # The header list `block` holds, the table changed as the peer's was. Fails
 # `invalid` (COMPRESSION_ERROR, the table no longer in step), `limit` where
 # the list passes its size, `not_text` where a field is not UTF-8.
-function decode(@d: State, block: [u8] lent) -> [model.Field]?
+function decode(@d: State, block: [u8] lent) -> [http2.Field]?
     g @= Gathered(fields: [], size: 0, over: false, not_text: false)
     at: i64 @= 0
 
@@ -239,13 +239,13 @@ test "decode: RFC 7541 C.5 and C.6's responses on a table of 256 bytes"
 test "decode: RFC 7541 C.2's four single fields, never indexed read as sensitive"
     d @= make(table_size: 4096, list_size: 65536)
     one = decode(@d, block: bytes.parse_hex("400a637573746f6d2d6b65790d637573746f6d2d686561646572").must()).must()
-    assert one == [model.Field(name: "custom-key", value: "custom-header", sensitive: false)]
+    assert one == [http2.Field(name: "custom-key", value: "custom-header", sensitive: false)]
     assert d.table.size == 55
     two = decode(@d, block: bytes.parse_hex("040c2f73616d706c652f70617468").must()).must()
-    assert two == [model.Field(name: ":path", value: "/sample/path", sensitive: false)]
+    assert two == [http2.Field(name: ":path", value: "/sample/path", sensitive: false)]
     three = decode(@d, block: bytes.parse_hex("100870617373776f726406736563726574").must()).must()
-    assert three == [model.Field(name: "password", value: "secret", sensitive: true)]
-    assert decode(@d, block: [0x82]).must() == [model.Field(name: ":method", value: "GET", sensitive: false)]
+    assert three == [http2.Field(name: "password", value: "secret", sensitive: true)]
+    assert decode(@d, block: [0x82]).must() == [http2.Field(name: ":method", value: "GET", sensitive: false)]
     assert d.table.size == 55
 
 test "decode: an empty block, index 0, an index past the tables, a string past the block"

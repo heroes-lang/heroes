@@ -1,0 +1,9 @@
+# Fixed defect 2613, 2026-11-20, lane umbrella-2: a module of the part's own
+# package names its private module, which the part lacks; the `use` in
+# `text.hero` is told that the tree does not hold it and that `heroes fetch`
+# places it, never that `heroes add kit/text/internal/scan` lists it, a line
+# naming a private module, as it was told until then.
+use <kit>/csv
+
+function main()
+    print(csv.first("a,b"))

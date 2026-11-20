@@ -35,6 +35,25 @@ use sql/build/internal/clauses
 use sql/build/internal/statements
 use sql/build/internal/tokens
 
+## Codes
+
+# The code of a query `to_sql` refuses: a name that is empty or holds a zero
+# byte, a row of the wrong length, an UPDATE or a DELETE with no condition, a
+# `NULL` where no comparison can match it, a fragment, an operator or a type
+# that could carry a value. Every maker of a fragment and `to_sql` fail with
+# it.
+constant INVALID: str
+    "invalid"
+
+# The code of what one dialect writes and the one asked does not: `to_sql`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of a statement with more parameters than PostgreSQL's protocol
+# carries, 65,535: `to_sql`.
+constant LIMIT: str
+    "limit"
+
 ## Databases
 
 # The database a statement is written for: the placeholders it reads and
@@ -662,7 +681,8 @@ record Join
     # but none for a `cross` join.
     on: [Condition]
 
-# `table` joined where `on` holds, keeping only the rows that match.
+# The table `name` names, joined where `on` holds, keeping only the rows
+# that match.
 #
 # - `name`: the table's name, cut at its dots; `Join` built whole takes
 #   `table_as` for another name.
@@ -672,7 +692,8 @@ record Join
 function inner_join(name: str, on: Condition) -> Join
     return Join(kind: .inner, table: table(name), on: [on])
 
-# `table` joined where `on` holds, keeping every row before it.
+# The table `name` names, joined where `on` holds, keeping every row
+# before it.
 #
 # - `name`: the table's name, cut at its dots.
 # - `on`: the condition.
@@ -681,7 +702,8 @@ function inner_join(name: str, on: Condition) -> Join
 function left_join(name: str, on: Condition) -> Join
     return Join(kind: .left, table: table(name), on: [on])
 
-# `table` joined where `on` holds, keeping every row of `table`.
+# The table `name` names, joined where `on` holds, keeping every row of
+# that table.
 #
 # - `name`: the table's name, cut at its dots.
 # - `on`: the condition.
@@ -690,7 +712,8 @@ function left_join(name: str, on: Condition) -> Join
 function right_join(name: str, on: Condition) -> Join
     return Join(kind: .right, table: table(name), on: [on])
 
-# `table` joined where `on` holds, keeping every row of both sides.
+# The table `name` names, joined where `on` holds, keeping every row of
+# both sides.
 #
 # - `name`: the table's name, cut at its dots.
 # - `on`: the condition.
@@ -699,7 +722,8 @@ function right_join(name: str, on: Condition) -> Join
 function full_join(name: str, on: Condition) -> Join
     return Join(kind: .full, table: table(name), on: [on])
 
-# `table` joined with no condition: each row with each of its rows.
+# The table `name` names, joined with no condition: each row with each of
+# its rows.
 #
 # - `name`: the table's name, cut at its dots.
 #

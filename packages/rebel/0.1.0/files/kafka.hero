@@ -181,82 +181,6 @@ record Fetched
     # offset asked where none was.
     next_offset: i64
 
-## The cluster
-
-# A broker of the cluster.
-record Broker
-    # Its node's identifier.
-    id: i64
-    # Its host.
-    host: str
-    # Its port.
-    port: i64
-    # Its rack, "" for none.
-    rack: str
-
-# A partition of a topic, as the metadata describes it.
-record Partition
-    # Its number, 0 or more.
-    id: i64
-    # The node that leads it, -1 where none does now.
-    leader: i64
-    # The leader's epoch.
-    leader_epoch: i64
-    # The nodes that hold a copy.
-    replicas: [i64]
-    # The nodes whose copy is in step with the leader.
-    isr: [i64]
-    # The nodes whose copy is offline.
-    offline: [i64]
-
-# A topic of the cluster, as the metadata describes it.
-record Topic
-    # Its name.
-    name: str
-    # Whether Kafka keeps it for itself: `__consumer_offsets`.
-    internal: bool
-    # Its partitions, in the order of their numbers.
-    partitions: [Partition]
-
-# What the cluster says of itself.
-record Metadata
-    # The cluster's identifier.
-    cluster_id: str
-    # The node that is the controller, -1 where it is not told.
-    controller_id: i64
-    # The brokers, in the order the broker answered them.
-    brokers: [Broker]
-    # The topics asked, in the order the broker answered them.
-    topics: [Topic]
-
-# The versions a broker reads of one request.
-record ApiVersion
-    # The request's key: 0 for Produce, 1 for Fetch, 3 for Metadata.
-    key: i64
-    # The oldest version it reads.
-    min: i64
-    # The newest version it reads.
-    max: i64
-
-# A topic to make.
-record NewTopic
-    # Its name: 1 to 249 letters, digits, `.`, `_` and `-`.
-    name: str
-    # Its partitions, 1 or more, or -1 for the broker's default.
-    partitions: i64
-    # The copies of each partition, 1 or more, or -1 for the broker's
-    # default.
-    replication: i64
-    # Its configuration: `cleanup.policy`, `retention.ms`; [] for none.
-    configs: [Config]
-
-# One entry of a topic's configuration.
-record Config
-    # The name: `retention.ms`.
-    name: str
-    # The value, as text.
-    value: str
-
 ## Offsets and groups
 
 # A partition of a topic.
@@ -397,6 +321,18 @@ variant Start
     # Nowhere: `poll` fails `not_found`.
     none
 
+# How every connection to the cluster is protected.
+variant Security
+    # Nothing encrypted and nothing checked: whoever sits between the two
+    # ends reads every byte, a password included. The default of `options`.
+    plain
+    # TLS from the first byte, each broker's certificate checked for its
+    # authority and its host.
+    checked
+        # The PEM of the only authorities a broker's certificate is checked
+        # against; "" for the system's own store.
+        roots: str
+
 # Where the cluster is and how to talk to it. `options` makes one; a program
 # changes the fields it needs with `@`.
 record Options
@@ -405,11 +341,9 @@ record Options
     brokers: [str]
     # The client's identifier, which brokers log and quotas count.
     client_id: str
-    # Whether TLS carries every connection from its first byte.
-    tls: bool
-    # The PEM of the only authorities a broker's certificate is checked
-    # against; "" for the system's own store.
-    roots: str
+    # Whether TLS carries every connection from its first byte, and the
+    # authorities a broker's certificate is checked against.
+    security: Security
     # How the client logs in.
     sasl: Sasl
     # Milliseconds a connection may take, its login included, 1 or more.
@@ -482,8 +416,7 @@ function options(brokers: [str]) -> Options
     return Options(
         brokers: brokers,
         client_id: "rebel",
-        tls: false,
-        roots: "",
+        security: .plain,
         sasl: .none,
         connect_ms: 10000,
         wait_ms: 10000,
@@ -527,11 +460,15 @@ function connect(opts: Options) -> Client?
         .read_uncommitted => .read_uncommitted
         .read_committed   => .read_committed
 
+    roots = match opts.security
+        .plain     => ""
+        .checked k => k.roots
+
     inner = model.Options(
         brokers: opts.brokers,
         client_id: opts.client_id,
-        tls: opts.tls,
-        roots: opts.roots,
+        tls: opts.security != .plain,
+        roots: roots,
         sasl: sasl,
         connect_ms: opts.connect_ms,
         wait_ms: opts.wait_ms,
@@ -577,6 +514,80 @@ function api_versions_of(c: Client) -> [ApiVersion]
     return out
 
 ## The cluster
+
+# A broker of the cluster.
+record Broker
+    # Its node's identifier.
+    id: i64
+    # Its host.
+    host: str
+    # Its port.
+    port: i64
+    # Its rack, "" for none.
+    rack: str
+
+# A partition of a topic, as the metadata describes it.
+record Partition
+    # Its number, 0 or more.
+    id: i64
+    # The node that leads it, -1 where none does now.
+    leader: i64
+    # The leader's epoch.
+    leader_epoch: i64
+    # The nodes that hold a copy.
+    replicas: [i64]
+    # The nodes whose copy is in step with the leader.
+    isr: [i64]
+    # The nodes whose copy is offline.
+    offline: [i64]
+
+# A topic of the cluster, as the metadata describes it.
+record Topic
+    # Its name.
+    name: str
+    # Whether Kafka keeps it for itself: `__consumer_offsets`.
+    internal: bool
+    # Its partitions, in the order of their numbers.
+    partitions: [Partition]
+
+# What the cluster says of itself.
+record Metadata
+    # The cluster's identifier.
+    cluster_id: str
+    # The node that is the controller, -1 where it is not told.
+    controller_id: i64
+    # The brokers, in the order the broker answered them.
+    brokers: [Broker]
+    # The topics asked, in the order the broker answered them.
+    topics: [Topic]
+
+# The versions a broker reads of one request.
+record ApiVersion
+    # The request's key: 0 for Produce, 1 for Fetch, 3 for Metadata.
+    key: i64
+    # The oldest version it reads.
+    min: i64
+    # The newest version it reads.
+    max: i64
+
+# A topic to make.
+record NewTopic
+    # Its name: 1 to 249 letters, digits, `.`, `_` and `-`.
+    name: str
+    # Its partitions, 1 or more, or -1 for the broker's default.
+    partitions: i64
+    # The copies of each partition, 1 or more, or -1 for the broker's
+    # default.
+    replication: i64
+    # Its configuration: `cleanup.policy`, `retention.ms`; [] for none.
+    configs: [Config]
+
+# One entry of a topic's configuration.
+record Config
+    # The name: `retention.ms`.
+    name: str
+    # The value, as text.
+    value: str
 
 # What the cluster says of itself and of the topics `topics`.
 #
@@ -1042,11 +1053,15 @@ function subscribe(opts: Options, group: GroupOptions) -> Consumer?
         .latest   => .latest
         .none     => .none
 
+    roots = match opts.security
+        .plain     => ""
+        .checked k => k.roots
+
     inner = model.Options(
         brokers: opts.brokers,
         client_id: opts.client_id,
-        tls: opts.tls,
-        roots: opts.roots,
+        tls: opts.security != .plain,
+        roots: roots,
         sasl: sasl,
         connect_ms: opts.connect_ms,
         wait_ms: opts.wait_ms,
@@ -1335,7 +1350,7 @@ test "connect: an option out of range refused before anything is sent, a broker 
 
 test "connect live, against the brokers REBEL_KAFKA_BROKERS names: topics made and deleted, keyed messages where Java's client puts them, batches with headers and nulls, offsets by time, gzip, a large message, records deleted, partitions added, a group's offsets"
     match os.env("REBEL_KAFKA_BROKERS")
-        .err _ => print("connect live: skipped, REBEL_KAFKA_BROKERS names no broker")
+        .err _ => skip_test(reason: "REBEL_KAFKA_BROKERS names no broker")
         .ok text =>
             o @= options([text])
             o.acks @ .all
@@ -1440,7 +1455,7 @@ test "connect live, against the brokers REBEL_KAFKA_BROKERS names: topics made a
 
 test "subscribe live: a consumer of a group joined, its partitions assigned, read, committed, described and listed, joined again from its offsets, and two members sharing the partitions"
     match os.env("REBEL_KAFKA_BROKERS")
-        .err _ => print("group live: skipped, REBEL_KAFKA_BROKERS names no broker")
+        .err _ => skip_test(reason: "REBEL_KAFKA_BROKERS names no broker")
         .ok text =>
             o @= options([text])
             o.acks @ .all
@@ -1540,9 +1555,9 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
             delete_topics(@c, names: [topic]).must()
             close(@c).must()
 
-test "connect live, a login by PLAIN, SCRAM-SHA-256 and SCRAM-SHA-512, a password refused, and TLS, as the variables name them"
+test "connect live, a login by PLAIN, SCRAM-SHA-256 and SCRAM-SHA-512 and a password refused, against the brokers REBEL_KAFKA_SASL_BROKERS names"
     match os.env("REBEL_KAFKA_SASL_BROKERS")
-        .err _ => print("login live: skipped, REBEL_KAFKA_SASL_BROKERS names no broker")
+        .err _ => skip_test(reason: "REBEL_KAFKA_SASL_BROKERS names no broker")
         .ok text =>
             for way in [0, 1, 2]
                 o @= options([text])
@@ -1572,12 +1587,12 @@ test "connect live, a login by PLAIN, SCRAM-SHA-256 and SCRAM-SHA-512, a passwor
                 .ok _  => assert false
                 .err e => assert e.code == "permission"
 
+test "connect live over TLS, against the brokers REBEL_KAFKA_TLS_BROKERS names, their certificates checked against REBEL_KAFKA_CA's authority, and refused against the system's store"
     match os.env("REBEL_KAFKA_TLS_BROKERS")
-        .err _ => print("TLS live: skipped, REBEL_KAFKA_TLS_BROKERS names no broker")
+        .err _ => skip_test(reason: "REBEL_KAFKA_TLS_BROKERS names no broker")
         .ok text =>
             o @= options([text])
-            o.tls @ true
-            o.roots @ read_file(os.env("REBEL_KAFKA_CA").must()).must()
+            o.security @ .checked(roots: read_file(os.env("REBEL_KAFKA_CA").must()).must())
             c @= connect(o).must()
             topic = f"rebel-tls-{os.pid()}"
             create_topics(@c, topics: [new_topic(topic, partitions: 1)]).must()
@@ -1586,7 +1601,7 @@ test "connect live, a login by PLAIN, SCRAM-SHA-256 and SCRAM-SHA-512, a passwor
             delete_topics(@c, names: [topic]).must()
             close(@c).must()
             untrusted @= options([text])
-            untrusted.tls @ true
+            untrusted.security @ .checked(roots: "")
 
             match connect(untrusted)
                 .ok _  => assert false
@@ -1600,10 +1615,10 @@ test "options: a local broker"
     o.acks @ .all
     assert o.brokers == ["localhost:9092"] && o.acks == .all
 
-# A client of a local broker, where one answers; elsewhere it shows nothing.
+# A client of a local broker, where one answers; elsewhere it skips.
 test "connect: a local broker"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert !is_closed(c)
@@ -1612,7 +1627,7 @@ test "connect: a local broker"
 # A client closed.
 test "close: the end of a client"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             close(@c).must()
@@ -1621,7 +1636,7 @@ test "close: the end of a client"
 # Whether a client is closed.
 test "is_closed: before and after close"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert !is_closed(c)
@@ -1630,7 +1645,7 @@ test "is_closed: before and after close"
 # The versions of Produce the broker reads.
 test "api_versions_of: Produce's versions"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
 
@@ -1643,7 +1658,7 @@ test "api_versions_of: Produce's versions"
 # The brokers of the cluster.
 test "metadata: the brokers and every topic"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert metadata(@c, topics: []).must().brokers.len() >= 1
@@ -1652,7 +1667,7 @@ test "metadata: the brokers and every topic"
 # A topic's partitions.
 test "partitions_of: a topic made with two"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-a"
@@ -1670,7 +1685,7 @@ test "new_topic: three partitions and a retention"
 # A topic made.
 test "create_topics: one topic"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-b"
@@ -1681,7 +1696,7 @@ test "create_topics: one topic"
 # A topic deleted.
 test "delete_topics: one topic"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-c"
@@ -1692,7 +1707,7 @@ test "delete_topics: one topic"
 # A topic given a second partition.
 test "create_partitions: from one to two"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-d"
@@ -1704,7 +1719,7 @@ test "create_partitions: from one to two"
 # The first message of a partition deleted.
 test "delete_records: before the second offset"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-e"
@@ -1736,7 +1751,7 @@ test "partition_of: the key a among seven partitions"
 # A batch written to one partition.
 test "produce: two messages to the partition 0"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-f"
@@ -1748,7 +1763,7 @@ test "produce: two messages to the partition 0"
 # Messages written to the partitions their keys choose.
 test "send: a keyed message"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-g"
@@ -1762,7 +1777,7 @@ test "send: a keyed message"
 # A partition's messages read from its start.
 test "fetch: from the offset 0"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-h"
@@ -1775,7 +1790,7 @@ test "fetch: from the offset 0"
 # The end of a partition's log.
 test "list_offset: the latest"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-i"
@@ -1787,7 +1802,7 @@ test "list_offset: the latest"
 # The broker that coordinates a group.
 test "find_coordinator: a group's coordinator"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert find_coordinator(@c, group_id: "rebel-example").must().port > 0
@@ -1796,7 +1811,7 @@ test "find_coordinator: a group's coordinator"
 # A group's offset kept by a program that assigns its own partitions.
 test "commit_offsets: one partition's offset"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-j"
@@ -1813,7 +1828,7 @@ test "commit_offsets: one partition's offset"
 # The offsets a group keeps.
 test "fetch_offsets: a group that keeps none"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert fetch_offsets(@c, group_id: f"rebel-example-{os.pid()}-none").must() == []
@@ -1822,7 +1837,7 @@ test "fetch_offsets: a group that keeps none"
 # The groups of the cluster.
 test "list_groups: every group"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = list_groups(@c).must()
@@ -1831,7 +1846,7 @@ test "list_groups: every group"
 # A group the cluster does not know.
 test "describe_group: a group nobody joined"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert describe_group(@c, group_id: f"rebel-example-{os.pid()}-nobody").must().members == []
@@ -1840,7 +1855,7 @@ test "describe_group: a group nobody joined"
 # A group deleted.
 test "delete_groups: a group that kept an offset"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-k"
@@ -1863,7 +1878,7 @@ test "group_options: commits by hand"
 # A consumer joined to its group.
 test "subscribe: a group of one"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-l"
@@ -1876,7 +1891,7 @@ test "subscribe: a group of one"
 # Messages read by a consumer.
 test "poll: what the partitions hold"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-m"
@@ -1891,7 +1906,7 @@ test "poll: what the partitions hold"
 # A consumer's positions committed.
 test "commit: after a poll"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-n"
@@ -1906,7 +1921,7 @@ test "commit: after a poll"
 # A consumer sent back to the start of a partition.
 test "seek: the offset 0"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-o"
@@ -1920,7 +1935,7 @@ test "seek: the offset 0"
 # A consumer's position in a partition.
 test "position_of: at the start of an empty partition"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-p"
@@ -1934,7 +1949,7 @@ test "position_of: at the start of an empty partition"
 # The partitions a consumer was assigned.
 test "assignment_of: every partition of a group of one"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-q"
@@ -1948,7 +1963,7 @@ test "assignment_of: every partition of a group of one"
 # A consumer's place in its group.
 test "member_of: the leader of a group of one"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-r"
@@ -1962,7 +1977,7 @@ test "member_of: the leader of a group of one"
 # A partition paused.
 test "pause: a partition left unread"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-s"
@@ -1976,7 +1991,7 @@ test "pause: a partition left unread"
 # A partition read again.
 test "resume: a partition paused, then read"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-t"
@@ -1991,7 +2006,7 @@ test "resume: a partition paused, then read"
 # A consumer that leaves its group.
 test "close_consumer: the group left"
     match connect(options(["localhost:9092"]))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no Kafka broker reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             name = f"rebel-example-{os.pid()}-u"

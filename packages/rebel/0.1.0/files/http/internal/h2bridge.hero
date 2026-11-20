@@ -5,6 +5,7 @@
 # this package, so the client's redirects, retries, cookies and decoding
 # hold for it as for HTTP/1.1.
 
+use http
 use http/internal/read
 use http/internal/wire
 use http2
@@ -127,7 +128,13 @@ function serve_h2_tls(arg: str) -> str
                     match http2.server_of(@stream, options: http2.default_options())
                         .ok made =>
                             c @= made
-                            answered @ http2.serve_with(@c, state: "over h2", handler: http2.respond_text)
+                            answered @ http.serve_h2_with(
+                                http.default_server(),
+                                @c,
+                                remote: "",
+                                state: "over h2",
+                                handler: over_h2
+                            )
                             http2.close(@c).must()
                         .err _ =>
                             io.close(@stream).must()
@@ -153,7 +160,13 @@ function serve_h2_plain(arg: str) -> str
                     match http2.server_of(@stream, options: http2.default_options())
                         .ok made =>
                             c @= made
-                            answered @ http2.serve_with(@c, state: "over h2", handler: http2.respond_text)
+                            answered @ http.serve_h2_with(
+                                http.default_server(),
+                                @c,
+                                remote: "",
+                                state: "over h2",
+                                handler: over_h2
+                            )
                             http2.close(@c).must()
                         .err _ =>
                             io.close(@stream).must()
@@ -161,6 +174,12 @@ function serve_h2_plain(arg: str) -> str
 
     net.close_listener(@l).must()
     return to_str(answered)
+
+# FOR TESTS, the handler of `serve_h2_tls` and `serve_h2_plain`, served by
+# the face's own `serve_h2_with`: `text`, status 200, whatever was asked.
+function over_h2(text: str, r: http.Request) -> http.Response
+    _ = r.method
+    return http.respond_text(http.STATUS_OK, text: text)
 
 # A GET of `/x` on `c`, as "status body".
 function ask_on(@c: http2.Conn) -> str

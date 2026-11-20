@@ -176,6 +176,13 @@ function in_package(s: source.Source, used: ast.Use, package: reached.Package, i
     lacks = unlisted.part_lacks(package, inside: inside, span: used.name)
 
     if lacks.len() > 0
+        # The version holds the module and the part does not: one private to
+        # a module the `use` may not name is told as private, as it is where
+        # the part holds it (defect 2613), and never as a module to place.
+        name = "<" + package.alias + ">/" + inside
+
+        if !private.reaches(from: source.module_at(s, used.span.start), name: name)
+            return private.refusal(name: name, span: used.name)
         return lacks[0]
     plain = diag.new_diagnostic(
         code: "unknown_package_module",

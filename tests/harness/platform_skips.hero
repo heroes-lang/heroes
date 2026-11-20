@@ -34,6 +34,7 @@
 # `build_reason` before its first build; `emission` claims its blessed file all
 # the same, so no orphan, and compares it on the platforms that build it.
 
+use expectation
 use freed_bytes
 use shell
 use strings
@@ -88,6 +89,9 @@ constant FRAME_NAMED_ON_WINDOWS: str
 constant INSTANCE_NAMED_ON_WINDOWS: str
     "Windows' stack guard says `stack exhausted` and names no function, the first sentence alone, and its room's bound says it without a name too, so a case pinning a generic function's instance by name, the frame or the room it ran out of, is judged where a name is said, Darwin and Linux, and defect 2253's cases judge Windows (defect 2371)"
 
+constant CALLS_ON_WINDOWS: str
+    "Windows' runtime tells no call beneath an abort's report yet (`runtime/parts/calls.c`'s Windows arm: a PE holds no names of its functions without DbgHelp and the PDB beside it, and `llvm-symbolizer` reads a Heroes function's lines from that PDB wrongly, defect 509's measurement on the box), so a case pinning the calls an abort tells is judged where they are told, Darwin and Linux; on the box, 2026-11-20, each of the six says its message and its place alone under `heroes run` (panel 253's R5)"
+
 constant LIBRARY_FILE_ON_WINDOWS: str
     "the Windows target links `-lh2476` as `h2476.lib` (`ffi_build.names_library`, measured on the box by panel 188 and beside defect 2398), a file of another name than the `libh2476.a` the case's folder holds for this Mac's ld64 and Linux's GNU ld, which read it under one name and refuse it in words read alike; so the file the expectation names cannot be the one the Windows link opens, and `link.exe`'s words for a file it cannot read are unrun (defect 2476)"
 
@@ -133,6 +137,12 @@ function windows() -> [Skip]
         Skip(name: "fixedbugs-2476-a-file-the-linker-cannot-read-for-a-link-is-told-at-the-group-that-links-it", why: LIBRARY_FILE_ON_WINDOWS)
         Skip(name: "the-platform-layer-ends-at-a-second-request-to-end", why: SECOND_EVENT_ON_WINDOWS)
         Skip(name: "the-platform-layer-ends-at-a-second-interrupt-after-the-program-asked-its-stop", why: SECOND_INTERRUPT_ON_WINDOWS)
+        Skip(name: "abort-calls-a-function-inlined-into-main", why: CALLS_ON_WINDOWS)
+        Skip(name: "abort-calls-above-the-librarys-own-stop", why: CALLS_ON_WINDOWS)
+        Skip(name: "abort-calls-on-a-thread", why: CALLS_ON_WINDOWS)
+        Skip(name: "abort-calls-three-deep", why: CALLS_ON_WINDOWS)
+        Skip(name: "abort-calls-through-a-callback-from-c", why: CALLS_ON_WINDOWS)
+        Skip(name: "abort-calls-through-a-recursion", why: CALLS_ON_WINDOWS)
     ]
 
 # The programs every other platform builds and the Windows target's C refuses,
@@ -264,16 +274,36 @@ function emission_reason(label: str) -> str?
     return fail(code: "judged", msg: "judged on this machine")
 
 # Whether the report a case's `!sanitizer:` line names is the runtime's to
-# tell on this machine: a stack overflow on Windows, where ASan wrote nothing
-# in 3 and 4 of 8 runs of one case and the runtime's handler keeps the fault
-# (`runtime/parts/stack.c`, defect 641, measured on the Windows box
-# 2026-10-11 with the CI's clang 20.1.8). Such a run is judged by the case's
-# own ending, `!panic: stack exhausted`, as its `-O0` and `-O2` runs are.
-function runtime_tells(needle: str) -> bool
-    return shell.exe_suffix() == ".exe" && needle == STACK_OVERFLOW
+# tell on this machine, the run then judged by the case's own ending, as its
+# `-O0` and `-O2` runs are (`runtime/parts/stack.c`). Two, on Windows alone:
+# a stack overflow, where ASan wrote nothing in 3 and 4 of 8 runs of one case
+# (defect 641, measured on the Windows box 2026-10-11 with the CI's clang
+# 20.1.8); and a call to address zero, where ASan wrote nothing and the
+# program never ended in 3 runs of 3 with the runtime defect 2578 was filed
+# on, its report hanging on what the stack held (measured on the box
+# 2026-11-20). The call's needle, `on unknown address`, is a null read's too,
+# whose report stays ASan's, so the call is known by the case's ending.
+function runtime_tells(want: expectation.Expectation) -> bool
+    if shell.exe_suffix() != ".exe" || want.sanitizer.is_err()
+        return false
+
+    if want.sanitizer.must() == STACK_OVERFLOW
+        return true
+
+    match want.ending
+        .panics p => return want.sanitizer.must() == UNKNOWN_ADDRESS && strings.has_prefix(s: p.message, prefix: NULL_CALL)
+        .silent | .exits _ => return false
 
 constant STACK_OVERFLOW: str
     "stack-overflow"
+
+# ASan's words for a fault at an address no mapping holds.
+constant UNKNOWN_ADDRESS: str
+    "on unknown address"
+
+# The runtime's words for a call to address zero.
+constant NULL_CALL: str
+    "a null function pointer was called"
 
 ## Tests
 
@@ -286,7 +316,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 21
+    assert windows().len() == 27
 
     for one in windows().slice(from: 5, to: 17)
         assert shell.exists("tests/golden/run/" + one.name + ".hero")
@@ -303,6 +333,12 @@ test "every name skipped on Windows is a case or a surface row that exists"
     # The second interrupt after the stop a program asked itself, whose end
     # Windows' own handler answers in a status of its own (panel 248's R4).
     assert shell.exists("tests/golden/run/" + windows()[20].name + ".hero")
+
+    # The calls an abort tells, which Windows' runtime does not tell yet
+    # (panel 253's R5).
+    for one in windows().slice(from: 21, to: 27)
+        assert shell.exists("tests/golden/run/" + one.name + ".hero")
+        assert one.why == CALLS_ON_WINDOWS
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).
@@ -395,8 +431,10 @@ test "every emission compared on Darwin alone names a blessed file and a case th
 
 # A stack overflow's report is the runtime's on Windows alone, and no other
 # report is (defect 641).
-test "only a stack overflow's report is the runtime's, and only on Windows"
+test "only a stack overflow's report and a null call's are the runtime's, and only on Windows (defects 641 and 2578)"
     on_windows = shell.exe_suffix() == ".exe"
-    assert runtime_tells("stack-overflow") == on_windows
-    assert !runtime_tells("on unknown address")
-    assert !runtime_tells("heap-use-after-free")
+    assert runtime_tells(expectation.split("!sanitizer: stack-overflow\n!panic: stack exhausted\n").must()) == on_windows
+    assert runtime_tells(expectation.split("before\n!sanitizer: on unknown address\n!panic: a null function pointer was called\n").must()) == on_windows
+    assert !runtime_tells(expectation.split("before\n!sanitizer: on unknown address\n!panic: a null pointer was read through, at offset 0x8\n").must())
+    assert !runtime_tells(expectation.split("!sanitizer: heap-use-after-free\n!panic: x\n").must())
+    assert !runtime_tells(expectation.split("!panic: a null function pointer was called\n").must())

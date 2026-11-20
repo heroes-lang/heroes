@@ -10,7 +10,7 @@
 # and Rebel extract Python's.
 
 capability archive/tar-read  a tar archive read entry by entry, plain or gzip
-  heroes  archive.tar_reader, archive.next_entry, archive.read_data, archive.read_rest, archive.Next, archive.Compression
+  heroes  archive.tar_reader, archive.next_tar_entry, archive.read_tar_data, archive.read_tar_rest, archive.Next, archive.Compression
   go      tar.NewReader, tar.Reader, tar.Reader.Next, tar.Reader.Read, tar.ErrHeader, tar.ErrInsecurePath
   rust    -
   python  tarfile.open, TarFile, TarFile.next, TarFile.extractfile, TarFile.fileobject, TarFile.gzopen, TarFile.taropen, TarFile.OPEN_METH, tarfile.ReadError, tarfile.HeaderError, tarfile.StreamError, tarfile.TarError, tarfile.CompressionError, TarFile.ignore_zeros, TarFile.errorlevel
@@ -24,7 +24,7 @@ capability archive/tar-header  what a tar header says of an entry
   note    PAX records apply to their fields (`path`, `linkpath`, `size`, `uid`, `gid`, `uname`, `gname`, `mtime` with its fraction); the others, `atime`, `ctime`, `comment`, `SCHILY.xattr.*`, stay in `records` and are written back. A type this reader does not know is read as a file, as POSIX and Python read it
 
 capability archive/tar-formats  the layouts of a tar header, read and written
-  heroes  archive.next_entry, archive.write_tar_header
+  heroes  archive.next_tar_entry, archive.write_tar_header
   go      tar.Format, tar.FormatUnknown, tar.FormatV7, tar.FormatUSTAR, tar.FormatPAX, tar.FormatGNU, tar.Format.String
   rust    -
   python  tarfile.USTAR_FORMAT, tarfile.GNU_FORMAT, tarfile.PAX_FORMAT, tarfile.DEFAULT_FORMAT, TarFile.format, TarInfo.create_ustar_header, TarInfo.create_gnu_header, TarInfo.create_pax_header, TarInfo.create_pax_global_header

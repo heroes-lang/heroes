@@ -163,7 +163,7 @@ function serve_http(s: mcp.Server, @state: State, port: i64)
                 .ok got => got
                 .err _  => break
 
-            handled = mcp.read_http(s, r: r)
+            handled = mcp.read_http(r, s: s)
 
             response = match handled
                 .respond x => x.response

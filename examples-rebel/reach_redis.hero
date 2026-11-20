@@ -9,7 +9,7 @@ function main()
     match redis.parse_url("redis://localhost:6379/0")
         .err e => print(e.code, ": ", e.msg)
         .ok opts =>
-            match redis.open(opts)
+            match redis.connect(opts)
                 .err e => print("no server: ", e.code, ": ", e.msg)
                 .ok first =>
                     c @= first
