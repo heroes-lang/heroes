@@ -3,9 +3,9 @@
 # peer's decoder's will.
 
 use bytes
+use http2
 use http2/internal/huffman
 use http2/internal/integers
-use http2/internal/model
 use http2/internal/samples
 use http2/internal/statics
 use http2/internal/table
@@ -48,14 +48,14 @@ function write_string(@out: [u8], s: [u8] lent, coded: bool)
         bytes.push_all(to: @out, from: s)
 
 # The block of `fields`, strings Huffman-coded where that is shorter.
-function encode(@e: State, fields: [model.Field] lent) -> [u8]
+function encode(@e: State, fields: [http2.Field] lent) -> [u8]
     return encode_with(@e, fields: fields, coded: true)
 
 # The block of `fields`, strings Huffman-coded where `coded` and shorter:
 # the size updates owed first, then each field as an index where a table
 # holds it whole, else as a literal, indexed unless sensitive or past three
 # quarters of the table.
-function encode_with(@e: State, fields: [model.Field] lent, coded: bool) -> [u8]
+function encode_with(@e: State, fields: [http2.Field] lent, coded: bool) -> [u8]
     out: [u8] @= []
 
     if e.last >= 0
@@ -138,13 +138,13 @@ test "encode: RFC 7541 C.5 and C.6's responses on a table of 256 bytes, eviction
 
 test "encode: a sensitive field never indexed, an empty list, and a table of 0"
     e @= make(4096)
-    secret = model.Field(name: "authorization", value: "secret", sensitive: true)
+    secret = http2.Field(name: "authorization", value: "secret", sensitive: true)
     first = encode_with(@e, fields: [secret], coded: false)
     assert first[0] == 0x1f
     assert table.count(e.table) == 0
     assert encode(@e, fields: []) == []
     z @= make(0)
-    got = encode(@z, fields: [model.Field(name: "x-a", value: "b", sensitive: false)])
+    got = encode(@z, fields: [http2.Field(name: "x-a", value: "b", sensitive: false)])
     assert got[0] == 0x00
     assert table.count(z.table) == 0
 

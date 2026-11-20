@@ -1,11 +1,15 @@
-# A peer for this package's tests and examples alone: the two ends of a
-# connection, on whose far end the answers of a server are written ahead,
-# one message a line, so that a client's requests are answered in order
-# with no thread. Nothing outside the tests calls it.
+# What this package's tests and examples share, and nothing outside them
+# calls: a peer, the two ends of a connection on whose far end the answers of
+# a server are written ahead, one message a line, so that a client's requests
+# are answered in order with no thread; and the server of the tests, over the
+# face's types, with its answers and the threads that serve it by lines and
+# over Streamable HTTP.
 
+use http
 use io
 use json
 use jsonrpc
+use mcp
 use net
 
 # The two ends of a connection whose second end has written `results` ahead,
@@ -26,3 +30,176 @@ function shut(two: net.Pair)
     io.close(@first).must()
     second @= two.second.stream
     io.close(@second).must()
+
+# The `_meta` every request of the tests carries: this revision, and a
+# client that asks its user by forms.
+constant TEST_META: str
+    "\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\", \"io.modelcontextprotocol/clientInfo\": {\"name\": \"t\", \"version\": \"1\"}, \"io.modelcontextprotocol/clientCapabilities\": {\"elicitation\": {}}}"
+
+# A request of the tests: `extra` members, each followed by a comma, then
+# `TEST_META`.
+#
+# - `id`: the request's id.
+# - `method`: its method.
+# - `extra`: its other members as JSON text, each with a comma after it.
+function test_request(id: f64, method: str, extra: str) -> jsonrpc.Message
+    return .request(id: .number(v: id), method: method, params: json.parse("{" + extra + TEST_META + "}").must())
+
+# The server of the tests: three tools on pages of two, a resource, a
+# template, a prompt, completions, and changes told.
+function test_server() -> mcp.Server
+    s @= mcp.new_server(mcp.implementation(name: "test", version: "1"))
+    add @= mcp.new_tool(
+        name: "add",
+        description: "adds",
+        input_schema: json.parse("{\"type\": \"object\", \"properties\": {\"a\": {\"type\": \"number\"}, \"b\": {\"type\": \"number\"}}, \"required\": [\"a\", \"b\"]}").must()
+    )
+    add.output_schema @ json.parse("{\"type\": \"object\", \"required\": [\"sum\"]}").must()
+    echo = mcp.new_tool(
+        name: "echo",
+        description: "echoes",
+        input_schema: json.parse("{\"type\": \"object\", \"properties\": {\"text\": {\"type\": \"string\", \"x-mcp-header\": \"Text\"}}}").must()
+    )
+    greet = mcp.new_tool(
+        name: "greet",
+        description: "greets",
+        input_schema: json.parse("{\"type\": \"object\"}").must()
+    )
+    s.tools @ [add, echo, greet]
+    s.resources @ [mcp.new_resource(uri: "notes://readme", name: "readme")]
+    s.templates @ [mcp.new_template(uri_template: "greeting://{name}", name: "greeting")]
+    s.prompts @ [
+        mcp.new_prompt(name: "review", description: "reviews", arguments: [mcp.PromptArgument(name: "code", title: "", description: "", required: true)])
+    ]
+    s.completions @ true
+    s.list_changed @ true
+    s.subscribe @ true
+    s.page_size @ 2
+    return s
+
+# The test server's answer to `request`, as a program writes its own. Fails
+# `not_found` where nothing answers it.
+#
+# - `s`: the test server.
+# - `request`: what a message asks.
+function test_answer(s: mcp.Server, request: mcp.Request) -> jsonrpc.Message?
+    match request
+        .answered a => return ok(a.answer)
+        .call_tool c =>
+            if c.call.name == "add"
+                a = json.number_of(json.member(c.call.arguments, key: "a").must()).must()
+                b = json.number_of(json.member(c.call.arguments, key: "b").must()).must()
+                sum: {str: json.Value} @= {}
+                sum["sum"] @ .number(v: a + b)
+                return ok(mcp.answer_tool(s, call: c.call, result: mcp.structured_result(.object(members: sum)).must()))
+
+            if c.call.name == "echo"
+                return ok(
+                    mcp.answer_tool(s, call: c.call, result: mcp.text_result(json.text_of(json.member(c.call.arguments, key: "text").must()).must()))
+                )
+
+            match mcp.elicited_of(c.call.inputs, key: "who")
+                .ok got => return ok(
+                    mcp.answer_tool(s, call: c.call, result: mcp.text_result(f"Hello, {json.text_of(got.content["name"].default(.null_value)).default("?")}"))
+                )
+                .err _ =>
+                    ask: {str: mcp.InputRequest} @= {}
+                    ask["who"] @ .form(
+                        message: "Who?",
+                        schema: json.parse("{\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\"}}}").must()
+                    )
+                    return ok(
+                        mcp.answer_input_required(s, id: c.call.id, meta: c.call.meta, input: mcp.InputRequired(requests: ask, state: "first"))
+                    )
+        .read_resource r => return ok(
+            mcp.answer_resource(s, read: r.read, contents: [.text(uri: r.read.uri, mime_type: "text/plain", text: r.read.values["name"].default("readme"))])
+        )
+        .get_prompt g => return ok(
+            mcp.answer_prompt(s, get: g.get, result: mcp.PromptResult(description: "d", messages: [mcp.PromptMessage(role: "user", content: mcp.text_content(g.get.arguments["code"].must()))]))
+        )
+        .complete c => return ok(mcp.answer_completion(s, completion: c.completion, values: ["Ada", "Alan"]))
+        .listen l => return ok(mcp.acknowledge(s, listen: l.listen))
+        .respond _ | .cancelled _ | .ignored => return fail(code: mcp.NOT_FOUND, msg: "nothing answers it")
+
+# A thread's body: serves the connection `accepted` names, one message a
+# line, until it closes; a subscription's acknowledgment is followed by a
+# change of the tools. Answers how many messages it read.
+#
+# - `accepted`: the number `net.accept_number` gave.
+function serve_lines(accepted: i64) -> i64
+    conn = net.conn_of(n: accepted, deadline_ms: 10_000).must()
+    reader @= io.reader(conn.stream)
+    s = test_server()
+    served: i64 @= 0
+
+    while true
+        request = match mcp.read_request(@reader, s: s)
+            .ok got => got
+            .err _  => break
+
+        match test_answer(s, request: request)
+            .ok m  => jsonrpc.write_message(reader.stream, m: m, framing: .lines).must()
+            .err _ => _ = 0
+
+        match request
+            .listen l => jsonrpc.write_message(
+                reader.stream,
+                m: mcp.changed_of(s, listen: l.listen, list: "tools").must(),
+                framing: .lines
+            ).must()
+            .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ => _ = 0
+
+        served @ served + 1
+
+    io.close(@reader.stream).must()
+    return served
+
+# A thread's body: listens on a port the system chooses, tells it to the
+# control listener at `control`, and serves Streamable HTTP, a request
+# without `Authorization` answered 401, until no connection comes for two
+# seconds. Answers how many requests it served.
+#
+# - `control`: the port of the test's control listener.
+function serve_http_many(control: i64) -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    told @= net.connect("127.0.0.1", port: control, deadline_ms: 10_000).must()
+    io.write_text(told.stream, text: f"{l.address.port}").must()
+    io.close(@told.stream).must()
+    net.set_accept_deadline(l, ms: 2_000).must()
+    s = test_server()
+    served: i64 @= 0
+
+    while true
+        conn = match net.accept(l, deadline_ms: 10_000)
+            .ok got => got
+            .err _  => break
+
+        reader @= io.reader(conn.stream)
+
+        while true
+            r = match http.next_request(@reader, limits: http.default_limits())
+                .ok got => got
+                .err _  => break
+
+            response = if http.value_of(r.headers, name: "Authorization").is_err()
+                mcp.unauthorized(
+                    metadata_url: "http://127.0.0.1/.well-known/oauth-protected-resource",
+                    scope: "mcp:tools"
+                )
+            else
+                handled = mcp.read_http(r, s: s)
+
+                match handled
+                    .respond x => x.response
+                    .answered _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ =>
+                        mcp.respond_http(test_answer(s, request: handled).must())
+            served @ served + 1
+            http.write_answer(reader.stream, r: r, response: response).must()
+
+            if r.closing || response.closing
+                break
+
+        io.close(@reader.stream).must()
+
+    net.close_listener(@l).must()
+    return served

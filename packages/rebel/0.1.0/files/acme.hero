@@ -18,10 +18,10 @@
 # It fails with `invalid`, where an answer of the server is not what RFC
 # 8555 writes; `not_found`, where no account has the key; `limit`, where
 # the server says a rate limit was reached; `timeout`, where a wait ran out;
+# `unsupported`, where the directory offers no `newAuthz` or `renewalInfo`;
 # `failed`, where the server refused for another reason, the problem's type
 # and detail in the message; and the codes of `http` and `jose`, handed on.
 
-use acme/internal/codes
 use acme/internal/fields
 use acme/internal/sample
 use acme/internal/wire
@@ -39,31 +39,31 @@ use x509
 # The code of an answer of the server that is not what RFC 8555 writes, and
 # of an argument refused.
 constant INVALID: str
-    codes.INVALID
+    "invalid"
 
 # The code of an account looked for and not there: `find_account`.
 constant NOT_FOUND: str
-    codes.NOT_FOUND
+    "not_found"
 
 # The code of a server's `rateLimited`.
 constant LIMIT: str
-    codes.LIMIT
+    "limit"
 
 # The code of a wait that ran out: `wait_authorization`, `wait_order`.
 constant TIMEOUT: str
-    codes.TIMEOUT
+    "timeout"
 
 # The code of what the server's directory does not offer:
 # `new_authorization` without `newAuthz`, `renewal_info` without
 # `renewalInfo`.
 constant UNSUPPORTED: str
-    codes.UNSUPPORTED
+    "unsupported"
 
 # The code of every other refusal of the server, and of an authorization or
 # an order that turned `invalid`: the problem's type and detail are in the
 # message.
 constant FAILED: str
-    codes.FAILED
+    "failed"
 
 ## The directory and the client
 
@@ -515,7 +515,8 @@ function new_authorization(@client: Client, identifier: Identifier) -> Authoriza
 # - `client`: a client with an account.
 # - `url`: the authorization's URL.
 #
-# See also `fetch_authorization`.
+# Fails `failed` where the server refuses, and `invalid` where its answer is
+# no authorization. See also `fetch_authorization`.
 function deactivate_authorization(@client: Client, url: str) -> Authorization?
     members: {str: json.Value} = {"status": .text(v: "deactivated")}
     answer = wire.post(@client.session, url: url, payload: wire.json_bytes(.object(members: members))?, with_jwk: false, accept: "application/json")?
@@ -549,7 +550,7 @@ function parse_authorization(text: str, url: str) -> Authorization?
 # - `text`: a challenge object, its URL among its members.
 #
 # Fails `invalid` where it is not an object with a `type`, a `url` and a
-# `status`. See also `respond`.
+# `status`. See also `accept_challenge`.
 function parse_challenge(text: str) -> Challenge?
     m = fields.object(text: text, what: "the challenge")?
     kind = fields.required(members: m, key: "type", what: "the challenge")?
@@ -570,7 +571,7 @@ function parse_challenge(text: str) -> Challenge?
 # - `authorization`: the authorization.
 # - `kind`: "http-01", "dns-01" or "tls-alpn-01".
 #
-# Fails `not_found` where it offers none of that type. See also `respond`.
+# Fails `not_found` where it offers none of that type. See also `accept_challenge`.
 function challenge_of(authorization: Authorization, kind: str) -> Challenge?
     for c in authorization.challenges
         if c.kind == kind
@@ -651,9 +652,10 @@ function dns01_value(client: Client, token: str) -> str?
 # - `client`: a client with an account.
 # - `challenge`: the challenge, its answer served or published first.
 #
-# The challenge as the server answers, usually "processing". See also
-# `wait_authorization`.
-function respond(@client: Client, challenge: Challenge) -> Challenge?
+# The challenge as the server answers, usually "processing". Fails `failed`
+# where the server refuses, and `invalid` where its answer is no challenge.
+# See also `wait_authorization`.
+function accept_challenge(@client: Client, challenge: Challenge) -> Challenge?
     url = challenge.url
     answer = wire.post(@client.session, url: url, payload: bytes.from_text("{}"), with_jwk: false, accept: "application/json")?
     return parse_challenge(wire.text_of(answer)?)
@@ -910,7 +912,7 @@ test "new_account_bound: an external account"
 # The account of a key found again.
 test "find_account: the account just made"
     match sample.directory_url()
-        .err _ => print("find_account: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -923,7 +925,7 @@ test "find_account: the account just made"
 # An account's contacts replaced.
 test "update_account: a new contact"
     match sample.directory_url()
-        .err _ => print("update_account: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -936,7 +938,7 @@ test "update_account: a new contact"
 # An account deactivated for ever.
 test "deactivate_account: deactivated"
     match sample.directory_url()
-        .err _ => print("deactivate_account: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -949,7 +951,7 @@ test "deactivate_account: deactivated"
 # An account's key rolled over.
 test "change_key: a new P-256 key"
     match sample.directory_url()
-        .err _ => print("change_key: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -981,7 +983,7 @@ test "order_for: two names, the rest the server's"
 # An order placed for one name.
 test "new_order: one name"
     match sample.directory_url()
-        .err _ => print("new_order: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -995,7 +997,7 @@ test "new_order: one name"
 # An order read again.
 test "fetch_order: the order just placed"
     match sample.directory_url()
-        .err _ => print("fetch_order: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -1104,7 +1106,7 @@ test "dns01_value: the digest of the key authorization"
 # An order's authorization read.
 test "fetch_authorization: one name, its challenges"
     match sample.directory_url()
-        .err _ => print("fetch_authorization: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -1119,7 +1121,7 @@ test "fetch_authorization: one name, its challenges"
 # An authorization asked before any order, which Pebble does not offer.
 test "new_authorization: unsupported where the directory has no newAuthz"
     match sample.directory_url()
-        .err _ => print("new_authorization: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -1135,7 +1137,7 @@ test "new_authorization: unsupported where the directory has no newAuthz"
 # An authorization given up.
 test "deactivate_authorization: deactivated"
     match sample.directory_url()
-        .err _ => print("deactivate_authorization: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -1147,9 +1149,9 @@ test "deactivate_authorization: deactivated"
             assert deactivate_authorization(@client, url: order.authorizations[0]).must().status == "deactivated"
 
 # A DNS-01 challenge answered, its record published at the challenge server.
-test "respond: a published TXT record"
+test "accept_challenge: a published TXT record"
     match sample.directory_url()
-        .err _ => print("respond: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -1164,12 +1166,12 @@ test "respond: a published TXT record"
                 name: dns01_name(authorization.identifier.value),
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
-            assert respond(@client, challenge: challenge).must().url == challenge.url
+            assert accept_challenge(@client, challenge: challenge).must().url == challenge.url
 
 # An authorization waited for until DNS-01 validated it.
 test "wait_authorization: valid"
     match sample.directory_url()
-        .err _ => print("wait_authorization: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -1184,14 +1186,14 @@ test "wait_authorization: valid"
                 name: dns01_name(authorization.identifier.value),
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
-            _ = respond(@client, challenge: challenge).must()
+            _ = accept_challenge(@client, challenge: challenge).must()
             _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
             assert fetch_authorization(@client, url: authorization.url).must().status == "valid"
 
 # An order finalized with a certificate request.
 test "finalize: a request for the one name"
     match sample.directory_url()
-        .err _ => print("finalize: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -1206,7 +1208,7 @@ test "finalize: a request for the one name"
                 name: dns01_name(authorization.identifier.value),
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
-            _ = respond(@client, challenge: challenge).must()
+            _ = accept_challenge(@client, challenge: challenge).must()
             _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
             ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
             finalized = finalize(@client, order: ready, csr: sample.CSR).must()
@@ -1215,7 +1217,7 @@ test "finalize: a request for the one name"
 # An order waited for until its certificate is issued.
 test "wait_order: valid, with a certificate"
     match sample.directory_url()
-        .err _ => print("wait_order: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -1230,7 +1232,7 @@ test "wait_order: valid, with a certificate"
                 name: dns01_name(authorization.identifier.value),
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
-            _ = respond(@client, challenge: challenge).must()
+            _ = accept_challenge(@client, challenge: challenge).must()
             _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
             ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
             assert ready.status == "ready"
@@ -1241,7 +1243,7 @@ test "wait_order: valid, with a certificate"
 # A certificate chain downloaded.
 test "download: the PEM of a chain"
     match sample.directory_url()
-        .err _ => print("download: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -1256,7 +1258,7 @@ test "download: the PEM of a chain"
                 name: dns01_name(authorization.identifier.value),
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
-            _ = respond(@client, challenge: challenge).must()
+            _ = accept_challenge(@client, challenge: challenge).must()
             _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
             ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
             _ = finalize(@client, order: ready, csr: sample.CSR).must()
@@ -1268,7 +1270,7 @@ test "download: the PEM of a chain"
 # A certificate revoked as superseded.
 test "revoke: reason 4"
     match sample.directory_url()
-        .err _ => print("revoke: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -1283,7 +1285,7 @@ test "revoke: reason 4"
                 name: dns01_name(authorization.identifier.value),
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
-            _ = respond(@client, challenge: challenge).must()
+            _ = accept_challenge(@client, challenge: challenge).must()
             _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
             ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
             _ = finalize(@client, order: ready, csr: sample.CSR).must()
@@ -1300,7 +1302,7 @@ test "renewal_id: a certificate of Pebble"
 # When the CA suggests renewing a certificate it issued.
 test "renewal_info: a window"
     match sample.directory_url()
-        .err _ => print("renewal_info: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -1315,7 +1317,7 @@ test "renewal_info: a window"
                 name: dns01_name(authorization.identifier.value),
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
-            _ = respond(@client, challenge: challenge).must()
+            _ = accept_challenge(@client, challenge: challenge).must()
             _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
             ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
             _ = finalize(@client, order: ready, csr: sample.CSR).must()

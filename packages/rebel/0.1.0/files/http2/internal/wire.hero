@@ -7,6 +7,7 @@
 # gives out are a stream's, a GOAWAY and a PING's answer.
 
 use bytes
+use http2
 use http2/internal/engine
 use http2/internal/model
 use http2/internal/receiving
@@ -21,7 +22,7 @@ record State
     # The session.
     session: engine.State
     # The events read and not yet given out, in the order they came.
-    held: [model.Event]
+    held: [http2.Event]
     # Whether the connection has ended: the peer closed it, or it failed.
     ended: bool
 
@@ -46,7 +47,7 @@ function flush(stream: io.Stream, @w: State) -> ()?
     return ok()
 
 # The stream an event belongs to, 0 for the connection's own.
-function stream_of(e: model.Event) -> i64
+function stream_of(e: http2.Event) -> i64
     return match e
         .request r       => r.stream
         .response r      => r.stream
@@ -64,17 +65,17 @@ function stream_of(e: model.Event) -> i64
 # Whether the connection keeps `e` for the program: a stream's events, a
 # GOAWAY and a PING's answer; the windows, the settings and a peer's PING it
 # handles itself.
-function is_kept(e: model.Event) -> bool
+function is_kept(e: http2.Event) -> bool
     return match e
         .window _ | .settings _ | .settings_acked | .ping _                                                  => false
         .request _ | .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .pong _ | .goaway _ => true
 
 # Adds `e` to the events held.
-function push_event(@held: [model.Event], e: model.Event)
+function push_event(@held: [http2.Event], e: http2.Event)
     held @ held.push(e)
 
 # Holds `e`, its data given back to the connection's window at once.
-function hold(@w: State, e: model.Event) -> ()?
+function hold(@w: State, e: http2.Event) -> ()?
     if !is_kept(e)
         return ok()
 
@@ -114,9 +115,9 @@ function read_more(stream: io.Stream, @w: State) -> ()?
 
 # Gives out the held event at `at`, a data event's bytes given back to its
 # stream's window.
-function give(stream: io.Stream, @w: State, at: i64) -> model.Event?
+function give(stream: io.Stream, @w: State, at: i64) -> http2.Event?
     e = w.held[at]
-    rest: [model.Event] @= []
+    rest: [http2.Event] @= []
 
     for i in range(from: 0, to: w.held.len())
         if i != at
@@ -133,7 +134,7 @@ function give(stream: io.Stream, @w: State, at: i64) -> model.Event?
     return ok(e)
 
 # The next event of any stream, held ones first.
-function next_event(stream: io.Stream, @w: State) -> model.Event?
+function next_event(stream: io.Stream, @w: State) -> http2.Event?
     while w.held.len() == 0
         read_more(stream, @w)?
 
@@ -148,7 +149,7 @@ function held_of(w: State lent, id: i64) -> i64
     return -1
 
 # The next event of the stream `id`, others held; of any stream for 0.
-function next_event_of(stream: io.Stream, @w: State, id: i64) -> model.Event?
+function next_event_of(stream: io.Stream, @w: State, id: i64) -> http2.Event?
     if id == 0
         return next_event(stream, @w)
 
@@ -183,7 +184,7 @@ function ping(stream: io.Stream, @w: State, data: [u8]) -> ()?
 
 # A client's: a stream opened with `headers` once the server lets one more
 # open.
-function start_stream(stream: io.Stream, @w: State, headers: [model.Field], end_stream: bool) -> i64?
+function start_stream(stream: io.Stream, @w: State, headers: [http2.Field], end_stream: bool) -> i64?
     while !sending.has_room(w.session) && sending.is_open(w.session) && !w.session.goaway_received
         read_more(stream, @w)?
 
@@ -192,7 +193,7 @@ function start_stream(stream: io.Stream, @w: State, headers: [model.Field], end_
     return ok(id)
 
 # A header list on `id`, written at once.
-function write_headers(stream: io.Stream, @w: State, id: i64, headers: [model.Field], end_stream: bool) -> ()?
+function write_headers(stream: io.Stream, @w: State, id: i64, headers: [http2.Field], end_stream: bool) -> ()?
     sending.send_headers(@w.session, id: id, headers: headers, end_stream: end_stream)?
     return flush(stream, @w)
 
@@ -221,20 +222,20 @@ function write_reset(stream: io.Stream, @w: State, id: i64, error: i64) -> ()?
     return flush(stream, @w)
 
 # A client's: the request sent on a new stream, head, body and trailers.
-function start(stream: io.Stream, @w: State, r: model.Request) -> i64?
-    head: [model.Field] @= [
-        model.Field(name: ":method", value: r.method, sensitive: false)
+function start(stream: io.Stream, @w: State, r: http2.Request) -> i64?
+    head: [http2.Field] @= [
+        http2.Field(name: ":method", value: r.method, sensitive: false)
     ]
 
     if r.method != "CONNECT" || r.protocol != ""
-        head @ head.push(model.Field(name: ":scheme", value: r.scheme, sensitive: false))
-        head @ head.push(model.Field(name: ":path", value: r.path, sensitive: false))
+        head @ head.push(http2.Field(name: ":scheme", value: r.scheme, sensitive: false))
+        head @ head.push(http2.Field(name: ":path", value: r.path, sensitive: false))
 
     if r.authority != ""
-        head @ head.push(model.Field(name: ":authority", value: r.authority, sensitive: false))
+        head @ head.push(http2.Field(name: ":authority", value: r.authority, sensitive: false))
 
     if r.protocol != ""
-        head @ head.push(model.Field(name: ":protocol", value: r.protocol, sensitive: false))
+        head @ head.push(http2.Field(name: ":protocol", value: r.protocol, sensitive: false))
 
     for f in r.headers
         head @ head.push(f)
@@ -250,11 +251,11 @@ function start(stream: io.Stream, @w: State, r: model.Request) -> i64?
     return ok(id)
 
 # A client's: the response on `id`, read whole within `limit` bytes of body.
-function finish(stream: io.Stream, @w: State, id: i64, limit: i64) -> model.Response?
+function finish(stream: io.Stream, @w: State, id: i64, limit: i64) -> http2.Response?
     status: i64 @= 0
-    headers: [model.Field] @= []
+    headers: [http2.Field] @= []
     body: [u8] @= []
-    trailers: [model.Field] @= []
+    trailers: [http2.Field] @= []
 
     while true
         match next_event_of(stream, @w, id: id)?
@@ -263,7 +264,7 @@ function finish(stream: io.Stream, @w: State, id: i64, limit: i64) -> model.Resp
                 headers @ r.headers
 
                 if r.end_stream
-                    return ok(model.Response(status: status, headers: headers, body: body, trailers: trailers))
+                    return ok(http2.Response(status: status, headers: headers, body: body, trailers: trailers))
             .data d =>
                 if body.len() + d.data.len() > limit
                     write_reset(stream, @w, id: id, error: engine.CANCEL)?
@@ -274,10 +275,10 @@ function finish(stream: io.Stream, @w: State, id: i64, limit: i64) -> model.Resp
                 bytes.push_all(to: @body, from: d.data)
 
                 if d.end_stream
-                    return ok(model.Response(status: status, headers: headers, body: body, trailers: trailers))
+                    return ok(http2.Response(status: status, headers: headers, body: body, trailers: trailers))
             .trailers t =>
                 trailers @ t.headers
-                return ok(model.Response(status: status, headers: headers, body: body, trailers: trailers))
+                return ok(http2.Response(status: status, headers: headers, body: body, trailers: trailers))
             .reset r =>
                 why = if r.remote
                     "the server reset it"
@@ -298,13 +299,13 @@ function finish(stream: io.Stream, @w: State, id: i64, limit: i64) -> model.Resp
 
 # A server's: the next request whose head has come, its body read whole
 # within `limit` bytes; one past it is answered 413 and the next is read.
-function next_request(stream: io.Stream, @w: State, limit: i64) -> model.Request?
+function next_request(stream: io.Stream, @w: State, limit: i64) -> http2.Request?
     while true
         e = next_event(stream, @w)?
 
         match e
             .request r =>
-                req @= model.Request(
+                req @= http2.Request(
                     method: r.method,
                     scheme: r.scheme,
                     authority: r.authority,
@@ -328,7 +329,7 @@ function next_request(stream: io.Stream, @w: State, limit: i64) -> model.Request
 
 # Reads the body and trailers of `req` whole: false where the client reset
 # it or it passed `limit`, answered 413.
-function collect(stream: io.Stream, @w: State, @req: model.Request, limit: i64) -> bool?
+function collect(stream: io.Stream, @w: State, @req: http2.Request, limit: i64) -> bool?
     id = req.stream
     body: [u8] @= []
 
@@ -336,7 +337,7 @@ function collect(stream: io.Stream, @w: State, @req: model.Request, limit: i64) 
         match next_event_of(stream, @w, id: id)?
             .data d =>
                 if body.len() + d.data.len() > limit
-                    write_headers(stream, @w, id: id, headers: [model.Field(name: ":status", value: "413", sensitive: false)], end_stream: true)?
+                    write_headers(stream, @w, id: id, headers: [http2.Field(name: ":status", value: "413", sensitive: false)], end_stream: true)?
                     write_reset(stream, @w, id: id, error: engine.NO_ERROR)?
                     return ok(false)
                 bytes.push_all(to: @body, from: d.data)
@@ -352,13 +353,13 @@ function collect(stream: io.Stream, @w: State, @req: model.Request, limit: i64) 
             .request _ | .response _ | .informational _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
 
 # A server's: `response` written on `id`, head, body and trailers.
-function answer(stream: io.Stream, @w: State, id: i64, response: model.Response) -> ()?
+function answer(stream: io.Stream, @w: State, id: i64, response: http2.Response) -> ()?
     status = if response.status < 200 || response.status > 999
         500
     else
         response.status
-    head: [model.Field] @= [
-        model.Field(name: ":status", value: to_str(status), sensitive: false)
+    head: [http2.Field] @= [
+        http2.Field(name: ":status", value: to_str(status), sensitive: false)
     ]
 
     for f in response.headers
@@ -418,20 +419,20 @@ function goodbye(stream: io.Stream, @w: State)
     w.ended @ true
 
 # Whether `e` opens a stream: a request's head.
-function is_request(e: model.Event) -> bool
+function is_request(e: http2.Event) -> bool
     return match e
         .request _ => true
         .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => false
 
 # Whether `e` is the peer's GOAWAY.
-function is_goaway(e: model.Event) -> bool
+function is_goaway(e: http2.Event) -> bool
     return match e
         .goaway _ => true
         .request _ | .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ => false
 
 # A server's: the head of the next stream a client opens, every other event
 # held. Fails `closed` once the client's GOAWAY is held.
-function next_head(stream: io.Stream, @w: State) -> model.Event?
+function next_head(stream: io.Stream, @w: State) -> http2.Event?
     while true
         for i in range(from: 0, to: w.held.len())
             if is_request(w.held[i])

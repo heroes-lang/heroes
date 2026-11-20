@@ -1690,7 +1690,7 @@ record Otlp
 constant OTLP_URL: str
     "http://localhost:4318/v1/metrics"
 
-# An exporter posting to `url`, uncompressed, with no field of its own, sending
+# An exporter posting to `target`, uncompressed, with no field of its own, sending
 # again 3 times after a status of 429, 502, 503 or 504, from 1 second doubled
 # up to 30, as OTLP's specification asks.
 #

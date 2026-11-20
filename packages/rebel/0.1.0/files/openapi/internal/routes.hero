@@ -144,17 +144,6 @@ function pattern(text: str) -> str?
 
     return ok("/" + out.join("/"))
 
-# Whether `s` holds `part` at the byte `at`.
-function has_at(s: str, at: i64, part: str) -> bool
-    if at + part.len() > s.len()
-        return false
-
-    for i in range(from: 0, to: part.len())
-        if s[at + i] != part[i]
-            return false
-
-    return true
-
 # Whether the byte `at` of `s` begins a character, or is its end.
 function is_boundary(s: str, at: i64) -> bool
     return at >= s.len() || s[at] < 0x80 || s[at] >= 0xc0
@@ -169,7 +158,7 @@ function match_pieces(pieces: [Piece], index: i64, s: str, from: i64, @captures:
     piece = pieces[index]
 
     if !piece.is_variable
-        if !has_at(s: s, at: from, part: piece.text)
+        if !strings.has_prefix_at(s: s, prefix: piece.text, at: from)
             return false
         return match_pieces(pieces, index: index + 1, s: s, from: from + piece.text.len(), @captures)
 

@@ -5,9 +5,12 @@
 #
 # It runs no statement and depends on no driver: every function answers the
 # statements, as `sql/build` writes them for PostgreSQL or SQLite, and the
-# program runs them with `sql/postgres` or `sql/sqlite`. A run is: the
-# statement of `create_table`, run with the driver's `exec`; the rows of
-# `select_applied`, read by `read_applied`; a plan, `plan_up` or another;
+# program runs them with `sql/postgres` or `sql/sqlite`. MySQL and ODBC are
+# not served: `sql/build` writes no MySQL yet, and the SQL of an ODBC data
+# source is its own database's. A run is: the statement of
+# `create_table_statement`, run with the driver's `exec`; the rows of
+# `select_applied_statement`, read by `applied_of`; a plan, `plan_up` or
+# another;
 # and for each step `begin` where `in_transaction` holds, `exec_script` of
 # its `script`, `exec` of its `version_statement`, then `commit`, or
 # `rollback` where one of them failed. `format_plan` writes a plan as text
@@ -39,6 +42,25 @@ use sql/migrate/internal/versions
 use strings
 use time
 
+## Codes
+
+# The code of a file named almost as a migration, two migrations of one
+# version, a migration whose up script changed after it ran, an older one
+# found after a newer ran, or an option refused: `read_migrations`,
+# `status`, `step` and the plans.
+constant INVALID: str
+    "invalid"
+
+# The code of a version no migration has, and of a step back with no down
+# script: `plan_up_to`, `plan_down`, `plan_down_to`, `step`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a lock SQLite has no form for: `lock_statement`,
+# `unlock_statement`.
+constant UNSUPPORTED: str
+    "unsupported"
+
 ## Migrations
 
 # The table of applied versions unless `Options` names another.
@@ -48,7 +70,7 @@ constant DEFAULT_TABLE: str
 # The first line of a script that runs outside a transaction, for a
 # statement neither database runs inside one; `step` reads it.
 constant NO_TRANSACTION: str
-    versions.NO_TRANSACTION
+    "-- no-transaction"
 
 # A change to a database's schema, with the way back where there is one.
 # Built directly, or read by `read_migrations`.
@@ -131,7 +153,7 @@ record Options
 function options(dialect: build.Dialect) -> Options
     return Options(dialect: dialect, table: DEFAULT_TABLE, allow_out_of_order: false, ignore_missing: false)
 
-# A version recorded in the table, as `read_applied` reads it.
+# A version recorded in the table, as `applied_of` reads it.
 record Applied
     # The version.
     version: i64
@@ -150,8 +172,8 @@ record Applied
 #
 # Run it with the driver's `exec` before anything else, every time: it does
 # nothing where the table is there. Fails `invalid` where the table's name
-# has an empty part or a zero byte. See also `select_applied`.
-function create_table(opts: Options) -> build.Statement?
+# has an empty part or a zero byte. See also `select_applied_statement`.
+function create_table_statement(opts: Options) -> build.Statement?
     table = match sql.quote_qualified(strings.split(s: opts.table, sep: "."))
         .ok q  => q
         .err e => return fail(code: e.code, msg: f"the table of versions \"{opts.table}\": {e.msg}")
@@ -167,9 +189,9 @@ function create_table(opts: Options) -> build.Statement?
 #
 # - `opts`: the database and the table.
 #
-# Run it with the driver's `query` and give the rows to `read_applied`.
-# Fails as `create_table` does. See also `read_applied`.
-function select_applied(opts: Options) -> build.Statement?
+# Run it with the driver's `query` and give the rows to `applied_of`.
+# Fails as `create_table_statement` does. See also `applied_of`.
+function select_applied_statement(opts: Options) -> build.Statement?
     q @= build.select(
         from: opts.table,
         columns: build.columns_named([Applied::version, Applied::name, Applied::checksum, Applied::applied_at])
@@ -178,15 +200,15 @@ function select_applied(opts: Options) -> build.Statement?
     q.order_by @ [build.ascending(Applied::version)]
     return build.to_sql(.select(query: q), opts.dialect)
 
-# The versions in `rows`, as `select_applied`'s query answers them.
+# The versions in `rows`, as `select_applied_statement`'s query answers them.
 #
 # - `rows`: the rows, each holding `version`, `name`, `checksum` and
 #   `applied_at` by name.
 #
 # The answer keeps the rows' order. Fails as `sql.integer_named` and the
 # other reads of a row do, `not_found` for a column missing and `invalid`
-# for a value of another kind. See also `select_applied`, `current_version`.
-function read_applied(rows: sql.Rows) -> [Applied]?
+# for a value of another kind. See also `select_applied_statement`, `current_version`.
+function applied_of(rows: sql.Rows) -> [Applied]?
     found: [Applied] @= []
 
     for row in rows.rows
@@ -225,7 +247,7 @@ record Status
 # its migration.
 #
 # - `migrations`: the migrations, in any order.
-# - `applied`: the versions applied, as `read_applied` reads them.
+# - `applied`: the versions applied, as `applied_of` reads them.
 # - `opts`: the options; `allow_out_of_order` and `ignore_missing` relax
 #   two refusals.
 #
@@ -289,7 +311,7 @@ record Step
 # Recording a version by its step's `version_statement` alone marks it
 # applied without running it, as for a database made before its migrations.
 # Fails `not_found` going down where the migration has no down script, and
-# as `create_table` does. See also `plan_up`.
+# as `create_table_statement` does. See also `plan_up`.
 function step(migration: Migration, direction: Direction, opts: Options) -> Step?
     script = match direction
         .up => migration.up
@@ -477,14 +499,14 @@ function format_plan(steps: [Step]) -> str
 # - `opts`: the database and the table.
 #
 # Run it with `query` on the connection that migrates, before
-# `select_applied`. Fails `unsupported` for SQLite, whose own lock lets one
+# `select_applied_statement`. Fails `unsupported` for SQLite, whose own lock lets one
 # writer at a time: a second program's step fails on the version's primary
 # key and rolls back. See also `unlock_statement`.
 function lock_statement(opts: Options) -> build.Statement?
     match opts.dialect
         .postgres => return versions.advisory(table: opts.table, function_name: "pg_advisory_lock")
         .sqlite => return fail(
-            code: sql.UNSUPPORTED,
+            code: UNSUPPORTED,
             msg: "SQLite has no advisory lock: its own lock lets one writer at a time, and the version's primary key refuses a second program's step"
         )
 
@@ -498,7 +520,7 @@ function unlock_statement(opts: Options) -> build.Statement?
     match opts.dialect
         .postgres => return versions.advisory(table: opts.table, function_name: "pg_advisory_unlock")
         .sqlite => return fail(
-            code: sql.UNSUPPORTED,
+            code: UNSUPPORTED,
             msg: "SQLite has no advisory lock: its own lock lets one writer at a time, and the version's primary key refuses a second program's step"
         )
 
@@ -535,30 +557,30 @@ test "read_migrations: in order, other files and folders left alone, a misnamed 
         .ok _  => assert false
         .err e => assert e.code == fs.FILE_NOT_FOUND
 
-test "create_table and select_applied: each database, a table in a schema, an empty part"
-    pg = create_table(options(.postgres)).must()
+test "create_table_statement and select_applied_statement: each database, a table in a schema, an empty part"
+    pg = create_table_statement(options(.postgres)).must()
     assert pg.text == "CREATE TABLE IF NOT EXISTS \"applied_migrations\" (\"version\" BIGINT PRIMARY KEY, \"name\" TEXT NOT NULL, \"checksum\" TEXT NOT NULL, \"applied_at\" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP)"
     assert pg.params == []
     opts @= options(.sqlite)
     opts.table @ "app.versions"
-    assert create_table(opts).must().text == "CREATE TABLE IF NOT EXISTS \"app\".\"versions\" (\"version\" BIGINT PRIMARY KEY, \"name\" TEXT NOT NULL, \"checksum\" TEXT NOT NULL, \"applied_at\" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
-    assert select_applied(opts).must().text == "SELECT \"version\", \"name\", \"checksum\", \"applied_at\" FROM \"app\".\"versions\" ORDER BY \"version\""
+    assert create_table_statement(opts).must().text == "CREATE TABLE IF NOT EXISTS \"app\".\"versions\" (\"version\" BIGINT PRIMARY KEY, \"name\" TEXT NOT NULL, \"checksum\" TEXT NOT NULL, \"applied_at\" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+    assert select_applied_statement(opts).must().text == "SELECT \"version\", \"name\", \"checksum\", \"applied_at\" FROM \"app\".\"versions\" ORDER BY \"version\""
     opts.table @ "app."
 
-    match create_table(opts)
+    match create_table_statement(opts)
         .ok _  => assert false
         .err e => assert e.code == sql.INVALID && e.msg == "the table of versions \"app.\": part 1 of the name is empty, and no database keeps an empty name"
 
-    assert select_applied(opts).is_err()
+    assert select_applied_statement(opts).is_err()
 
-test "read_applied and current_version: no row, several, a column missing, a value of another kind"
+test "applied_of and current_version: no row, several, a column missing, a value of another kind"
     names = ["version", "name", "checksum", "applied_at"]
     two = sql.Row(names: names, values: [.integer(v: 2), .text(v: "b"), .text(v: "c2"), .instant(v: time.epoch())])
     one = sql.Row(names: names, values: [.integer(v: 1), .text(v: "a"), .text(v: "c1"), .instant(v: time.epoch())])
-    found = read_applied(sql.Rows(columns: [], rows: [two, one])).must()
+    found = applied_of(sql.Rows(columns: [], rows: [two, one])).must()
     assert found == [Applied(version: 2, name: "b", checksum: "c2", applied_at: time.epoch()), Applied(version: 1, name: "a", checksum: "c1", applied_at: time.epoch())]
     assert current_version(found).must() == 2
-    assert read_applied(sql.Rows(columns: [], rows: [])).must() == []
+    assert applied_of(sql.Rows(columns: [], rows: [])).must() == []
 
     match current_version([])
         .ok _  => assert false
@@ -566,13 +588,13 @@ test "read_applied and current_version: no row, several, a column missing, a val
 
     short = sql.Row(names: ["version", "name", "checksum"], values: [.integer(v: 1), .text(v: "a"), .text(v: "c1")])
 
-    match read_applied(sql.Rows(columns: [], rows: [short]))
+    match applied_of(sql.Rows(columns: [], rows: [short]))
         .ok _  => assert false
         .err e => assert e.code == sql.NOT_FOUND
 
     texts = sql.Row(names: names, values: [.text(v: "1"), .text(v: "a"), .text(v: "c1"), .instant(v: time.epoch())])
 
-    match read_applied(sql.Rows(columns: [], rows: [texts]))
+    match applied_of(sql.Rows(columns: [], rows: [texts]))
         .ok _  => assert false
         .err e => assert e.code == sql.INVALID
 
@@ -705,7 +727,7 @@ test "lock_statement and unlock_statement: one key for both, SQLite unsupported"
 
     match lock_statement(options(.sqlite))
         .ok _  => assert false
-        .err e => assert e.code == sql.UNSUPPORTED
+        .err e => assert e.code == UNSUPPORTED
 
     assert unlock_statement(options(.sqlite)).is_err()
 
@@ -733,22 +755,22 @@ test "options: the default table"
     assert opts.table == DEFAULT_TABLE && !opts.allow_out_of_order && !opts.ignore_missing
 
 # The table of versions, made where it is not there.
-test "create_table: the table for SQLite"
-    s = create_table(options(.sqlite)).must()
+test "create_table_statement: the table for SQLite"
+    s = create_table_statement(options(.sqlite)).must()
     assert s.text == "CREATE TABLE IF NOT EXISTS \"applied_migrations\" (\"version\" BIGINT PRIMARY KEY, \"name\" TEXT NOT NULL, \"checksum\" TEXT NOT NULL, \"applied_at\" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
 
-# The query of the versions applied, which `read_applied` reads.
-test "select_applied: the query for PostgreSQL"
-    s = select_applied(options(.postgres)).must()
+# The query of the versions applied, which `applied_of` reads.
+test "select_applied_statement: the query for PostgreSQL"
+    s = select_applied_statement(options(.postgres)).must()
     assert s.text == "SELECT \"version\", \"name\", \"checksum\", \"applied_at\" FROM \"applied_migrations\" ORDER BY \"version\""
 
 # The versions a query answered, read by the record's field names.
-test "read_applied: one row"
+test "applied_of: one row"
     row = sql.Row(
         names: ["version", "name", "checksum", "applied_at"],
         values: [.integer(v: 1), .text(v: "create_users"), .text(v: "21b3"), .instant(v: time.epoch())]
     )
-    found = read_applied(sql.Rows(columns: [], rows: [row])).must()
+    found = applied_of(sql.Rows(columns: [], rows: [row])).must()
     assert found == [Applied(version: 1, name: "create_users", checksum: "21b3", applied_at: time.epoch())]
 
 # The version a database stands at.

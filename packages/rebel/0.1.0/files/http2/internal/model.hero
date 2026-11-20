@@ -1,312 +1,33 @@
-# The values the private modules of `http2` share: a mirror of each type the
-# face declares, field for field, since a private module cannot `use` its own
-# face. The face turns its own values into these at its edge and back; the
-# meaning of every field is the face's.
+# The codes the private modules of `http2` fail with, the face's own named
+# here. The types they share are the face's (panel 252's R1 lets a private
+# module name them): the mirror of each that stood here is gone.
+
+use http2
 
 ## Codes
 
 # An argument refused, or bytes a peer sent that HTTP/2 refuses.
 constant INVALID: str
-    "invalid"
+    http2.INVALID
 
 # A bound passed: a block, a list, a body, a rate.
 constant LIMIT: str
-    "limit"
+    http2.LIMIT
 
 # The connection or a stream is closed.
 constant CLOSED: str
-    "closed"
+    http2.CLOSED
 
 # A field that is not UTF-8.
 constant NOT_TEXT: str
-    "not_text"
+    http2.NOT_TEXT
 
 # A name that names nothing.
 constant NOT_FOUND: str
-    "not_found"
+    http2.NOT_FOUND
 
 # What the peer or this platform does not offer.
 constant UNSUPPORTED: str
-    "unsupported"
+    http2.UNSUPPORTED
 
 ## Values
-
-# A field of a header list: the face's `Field`.
-record Field
-    # The name, lower case on the wire.
-    name: str
-    # The value.
-    value: str
-    # Whether the value is never put in a table.
-    sensitive: bool
-
-# A stream's priority as RFC 7540 wrote it: the face's `Priority`.
-record Priority
-    # Whether it depends on `depends_on` alone.
-    exclusive: bool
-    # The stream it depends on, 0 for none.
-    depends_on: i64
-    # Its weight, 1 to 256.
-    weight: i64
-
-# One setting of a SETTINGS frame: the face's `Setting`.
-record Setting
-    # Its identifier.
-    id: i64
-    # Its value, 0 to 4,294,967,295.
-    value: i64
-
-# The settings of one end: the face's `Settings`.
-record Settings
-    # SETTINGS_HEADER_TABLE_SIZE, in bytes.
-    header_table_size: i64
-    # SETTINGS_ENABLE_PUSH.
-    enable_push: bool
-    # SETTINGS_MAX_CONCURRENT_STREAMS.
-    max_concurrent_streams: i64
-    # SETTINGS_INITIAL_WINDOW_SIZE, in bytes.
-    initial_window_size: i64
-    # SETTINGS_MAX_FRAME_SIZE, in bytes.
-    max_frame_size: i64
-    # SETTINGS_MAX_HEADER_LIST_SIZE, in bytes.
-    max_header_list_size: i64
-    # SETTINGS_ENABLE_CONNECT_PROTOCOL.
-    enable_connect_protocol: bool
-
-# The bounds one end holds a peer to: the face's `Limits`.
-record Limits
-    # The most bytes of one header block.
-    header_block_bytes: i64
-    # The most frames one header block spans.
-    header_frames: i64
-    # The most streams the peer may reset in one second.
-    resets_per_second: i64
-    # The most frames that carry nothing for the program in one second.
-    control_per_second: i64
-    # The most bytes of one body read whole.
-    body_bytes: i64
-
-# How one end runs a connection: the face's `Options`.
-record Options
-    # What it advertises.
-    settings: Settings
-    # The connection's receive window it keeps open, in bytes.
-    connection_window: i64
-    # The bounds it holds the peer to.
-    limits: Limits
-
-# A frame: the face's `Frame`, case for case.
-variant Frame
-    # DATA.
-    data
-        # The stream.
-        stream: i64
-        # The data.
-        data: [u8]
-        # END_STREAM.
-        end_stream: bool
-        # The padding's length.
-        padding: i64
-    # HEADERS.
-    headers
-        # The stream.
-        stream: i64
-        # The fragment of the header block.
-        block: [u8]
-        # END_STREAM.
-        end_stream: bool
-        # END_HEADERS.
-        end_headers: bool
-        # The padding's length.
-        padding: i64
-        # PRIORITY.
-        has_priority: bool
-        # The priority, where `has_priority`.
-        priority: Priority
-    # PRIORITY.
-    priority
-        # The stream.
-        stream: i64
-        # The priority.
-        priority: Priority
-    # RST_STREAM.
-    rst_stream
-        # The stream.
-        stream: i64
-        # The error code.
-        error: i64
-    # SETTINGS.
-    settings
-        # ACK.
-        ack: bool
-        # The settings.
-        settings: [Setting]
-    # PUSH_PROMISE.
-    push_promise
-        # The stream.
-        stream: i64
-        # The stream promised.
-        promised: i64
-        # The fragment of the header block.
-        block: [u8]
-        # END_HEADERS.
-        end_headers: bool
-        # The padding's length.
-        padding: i64
-    # PING.
-    ping
-        # ACK.
-        ack: bool
-        # The eight bytes.
-        data: [u8]
-    # GOAWAY.
-    goaway
-        # The last stream processed.
-        last_stream: i64
-        # The error code.
-        error: i64
-        # The debug data.
-        debug: [u8]
-    # WINDOW_UPDATE.
-    window_update
-        # The stream, 0 for the connection.
-        stream: i64
-        # The increment.
-        increment: i64
-    # CONTINUATION.
-    continuation
-        # The stream.
-        stream: i64
-        # The fragment of the header block.
-        block: [u8]
-        # END_HEADERS.
-        end_headers: bool
-    # A frame of a type RFC 9113 does not define.
-    unknown
-        # Its type.
-        kind: i64
-        # Its flags.
-        flags: i64
-        # Its stream.
-        stream: i64
-        # Its payload.
-        payload: [u8]
-
-# What a session tells: the face's `Event`, case for case.
-variant Event
-    # A request's head.
-    request
-        # The stream.
-        stream: i64
-        # `:method`.
-        method: str
-        # `:scheme`.
-        scheme: str
-        # `:authority`.
-        authority: str
-        # `:path`.
-        path: str
-        # `:protocol`.
-        protocol: str
-        # The other fields.
-        headers: [Field]
-        # END_STREAM.
-        end_stream: bool
-    # A response's head.
-    response
-        # The stream.
-        stream: i64
-        # `:status`.
-        status: i64
-        # The other fields.
-        headers: [Field]
-        # END_STREAM.
-        end_stream: bool
-    # A 1xx head.
-    informational
-        # The stream.
-        stream: i64
-        # `:status`.
-        status: i64
-        # The other fields.
-        headers: [Field]
-    # Trailers.
-    trailers
-        # The stream.
-        stream: i64
-        # The fields.
-        headers: [Field]
-    # Data.
-    data
-        # The stream.
-        stream: i64
-        # The bytes.
-        data: [u8]
-        # END_STREAM.
-        end_stream: bool
-    # A stream reset.
-    reset
-        # The stream.
-        stream: i64
-        # The error code.
-        error: i64
-        # Whether the peer reset it.
-        remote: bool
-    # The peer's settings changed.
-    settings
-        # Its settings now.
-        settings: Settings
-    # The peer acknowledged this end's settings.
-    settings_acked
-    # A ping from the peer, answered already.
-    ping
-        # Its eight bytes.
-        data: [u8]
-    # The answer to this end's ping.
-    pong
-        # Its eight bytes.
-        data: [u8]
-    # The peer's GOAWAY.
-    goaway
-        # The last stream it processes.
-        last_stream: i64
-        # Its error code.
-        error: i64
-        # Its debug data.
-        debug: [u8]
-    # The peer opened a window.
-    window
-        # The stream, 0 for the connection.
-        stream: i64
-
-# A request: the face's `Request`.
-record Request
-    # `:method`.
-    method: str
-    # `:scheme`.
-    scheme: str
-    # `:authority`.
-    authority: str
-    # `:path`.
-    path: str
-    # `:protocol`.
-    protocol: str
-    # The fields.
-    headers: [Field]
-    # The body.
-    body: [u8]
-    # The trailers.
-    trailers: [Field]
-    # The stream.
-    stream: i64
-
-# A response: the face's `Response`.
-record Response
-    # `:status`.
-    status: i64
-    # The fields.
-    headers: [Field]
-    # The body.
-    body: [u8]
-    # The trailers.
-    trailers: [Field]

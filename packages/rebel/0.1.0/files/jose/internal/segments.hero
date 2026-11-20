@@ -5,6 +5,7 @@
 # try.
 
 use bytes
+use jose
 use jose/internal/algorithms
 use jose/internal/jwk
 use jose/internal/signing
@@ -144,8 +145,8 @@ function accepted_facts(joined: {str: json.Value}, accepted: [str]) -> algorithm
     )
 
 # The keys of `trusted` read; a key that does not read is passed over.
-function readable(trusted: [json.Value]) -> [jwk.Jwk]
-    out: [jwk.Jwk] @= []
+function readable(trusted: [json.Value]) -> [jose.Key]
+    out: [jose.Key] @= []
 
     for v in trusted
         match jwk.read(v)
@@ -157,9 +158,9 @@ function readable(trusted: [json.Value]) -> [jwk.Jwk]
 # The keys of `trusted` that may have signed under `joined` with `facts`:
 # those with its `kid` where it names one, that serve `facts` for
 # `operation`.
-function candidates(trusted: [jwk.Jwk], joined: {str: json.Value}, facts: algorithms.Facts, operation: str) -> [jwk.Jwk]?
+function candidates(trusted: [jose.Key], joined: {str: json.Value}, facts: algorithms.Facts, operation: str) -> [jose.Key]?
     kid = text_of(joined, name: "kid")?
-    named: [jwk.Jwk] @= []
+    named: [jose.Key] @= []
 
     for k in trusted
         if joined["kid"].is_err() || k.id == kid
@@ -169,7 +170,7 @@ function candidates(trusted: [jwk.Jwk], joined: {str: json.Value}, facts: algori
         if !joined["kid"].is_err()
             return fail(code: NOT_FOUND, msg: f"no key given has the id \"{kid}\" the header names")
         return fail(code: INVALID, msg: "no key was given")
-    serving: [jwk.Jwk] @= []
+    serving: [jose.Key] @= []
     refusal: str @= ""
 
     for k in named
@@ -184,7 +185,7 @@ function candidates(trusted: [jwk.Jwk], joined: {str: json.Value}, facts: algori
     return ok(serving)
 
 # Whether one of `serving` verifies `signature` over `input` with `facts`.
-function verify_by_any(input: [u8], signature: [u8], serving: [jwk.Jwk], facts: algorithms.Facts) -> ()?
+function verify_by_any(input: [u8], signature: [u8], serving: [jose.Key], facts: algorithms.Facts) -> ()?
     for k in serving
         if signing.verify(input: input, signature: signature, key: k, facts: facts)?
             return ok()

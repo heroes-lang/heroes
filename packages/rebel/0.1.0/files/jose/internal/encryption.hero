@@ -10,6 +10,7 @@ use bytes
 use crypto
 use crypto/keypairs
 use crypto/seal
+use jose
 use jose/internal/algorithms
 use jose/internal/forms
 use jose/internal/jwk
@@ -104,7 +105,7 @@ function kind_of(curve: str) -> keypairs.Kind?
         _        => fail(code: UNSUPPORTED, msg: f"ECDH-ES on {curve}: P-256, P-384 and X25519 agree here")
 
 # The secret `mine`, a private JWK, agrees with `theirs`, a public one.
-function agreed(mine: jwk.Jwk, theirs: jwk.Jwk) -> [u8]?
+function agreed(mine: jose.Key, theirs: jose.Key) -> [u8]?
     private @= keypairs.parse_private_der(forms.private_der(mine)?)?
 
     match keypairs.parse_public_der(forms.public_der(theirs)?)
@@ -126,7 +127,7 @@ function member_bytes(members: {str: json.Value}, name: str) -> [u8]?
 
 # The facts every recipient's key must answer for `alg` with a content key
 # of `size` bytes, and its use: the operation it allows.
-function check_key(k: jwk.Jwk, alg: str, enc: str, size: i64, decrypting: bool) -> ()?
+function check_key(k: jose.Key, alg: str, enc: str, size: i64, decrypting: bool) -> ()?
     unwrap: str @= "wrapKey"
     content: str @= "encrypt"
 
@@ -231,7 +232,7 @@ function encrypt(plaintext: [u8], key: json.Value, alg: str, enc: str, header: {
     return ok(parts.join("."))
 
 # The content key `k` recovers from the token's header and wrapped key.
-function content_key_of(k: jwk.Jwk, alg: str, enc: str, size: i64, protected: {str: json.Value}, wrapped: [u8]) -> [u8]?
+function content_key_of(k: jose.Key, alg: str, enc: str, size: i64, protected: {str: json.Value}, wrapped: [u8]) -> [u8]?
     if alg == "dir" || alg == "ECDH-ES"
         if wrapped.len() != 0
             return fail(code: INVALID, msg: f"{alg} carries no encrypted key, and this token carries one")

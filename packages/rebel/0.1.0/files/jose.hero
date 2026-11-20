@@ -331,9 +331,7 @@ function to_key(v: json.Value) -> Key?
 #
 # See also `to_key`, `format_key`, `public_of`.
 function to_json(key: Key) -> json.Value
-    return jwk.write(
-        jwk.Jwk(key_type: key.key_type, curve: key.curve, id: key.id, usage: key.usage, operations: key.operations, algorithm: key.algorithm, material: key.material, chain: key.chain, extra: key.extra)
-    )
+    return jwk.write(key)
 
 # The key the JSON text `text` writes.
 #

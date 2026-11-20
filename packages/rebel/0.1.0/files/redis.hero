@@ -8,10 +8,10 @@
 # (`MULTI` and `EXEC`, `WATCH`), publishes and subscribes, and holds a lock
 # on one Redis server.
 #
-# **RESP3 by default**: `open` asks for it with `HELLO 3`, which Redis 6 and
+# **RESP3 by default**: `connect` asks for it with `HELLO 3`, which Redis 6 and
 # later speak, and falls back to RESP2 where the server knows no `HELLO`.
 # RESP3 tells a map, a set, a double, a boolean and a null apart, where RESP2
-# answers arrays and strings; the readers (`text_of`, `integer_of`,
+# answers arrays and strings; the readers (`text_of`, `int_of`,
 # `entries_of`, ...) read either, so a program reads one way whatever the
 # protocol. An attribute (`|`) is read and dropped.
 #
@@ -76,6 +76,7 @@ use net
 use numbers
 use os
 use redis/internal/failures
+use redis/internal/lock_scripts
 use redis/internal/pubsub
 use redis/internal/resp
 use redis/internal/script as server
@@ -189,7 +190,7 @@ record Options
 #
 # - `host`: the server's name or address, without brackets.
 #
-# See also `parse_url`, `open`.
+# See also `parse_url`, `connect`.
 function options(host: str) -> Options
     return Options(
         host: host,
@@ -289,7 +290,7 @@ function parse_url(text: str) -> Options?
 # `invalid` where `opts.port`, `opts.database` or `opts.protocol` is out of
 # range, or the database is past the server's count; `closed` where the
 # server ends the connection. See also `close`, `options`.
-function open(opts: Options) -> Client?
+function connect(opts: Options) -> Client?
     if opts.port < 1 || opts.port > 65535
         return fail(code: INVALID, msg: f"the port {opts.port} is outside 1 to 65535")
 
@@ -372,7 +373,7 @@ function open(opts: Options) -> Client?
 #
 # - `c`: the client, emptied.
 #
-# Fails `closed` where it is closed already. See also `open`, `is_closed`.
+# Fails `closed` where it is closed already. See also `connect`, `is_closed`.
 function close(@c: Client) -> ()?
     return session.close(@c.session)
 
@@ -409,7 +410,7 @@ function set_deadline(c: Client, ms: i64) -> ()?
 
 ## The client
 
-# A connection to a Redis server, which `open` makes and `close` ends. Its
+# A connection to a Redis server, which `connect` makes and `close` ends. Its
 # one field is the conversation's private state: the socket, the bytes read
 # and not yet given out, the protocol, the channels subscribed to and the
 # messages that came while a reply was awaited. Every call works on the
@@ -622,7 +623,9 @@ function encode_command(words: [[u8]]) -> [u8]
 #
 # - `r`: a reply, as `read_reply` and `pipeline` answer one.
 #
-# See also `error_code_of`.
+# Fails where `r` is an error reply, with the code its word chooses (the
+# module's comment): `invalid`, `permission`, `not_found`, `exists`,
+# `limit`, `unsupported` or `failed`. See also `error_code_of`.
 function checked(r: Reply) -> Reply?
     match r
         .error e =>
@@ -727,7 +730,7 @@ function bytes_of(r: Reply) -> [u8]?
 # Fails `not_found` where `r` is null, `invalid` where it is of another kind
 # or writes no number of an `i64`, and with its own failure where it is an
 # error.
-function integer_of(r: Reply) -> i64?
+function int_of(r: Reply) -> i64?
     _ = checked(r)?
 
     match r
@@ -746,7 +749,7 @@ function integer_of(r: Reply) -> i64?
 #
 # - `r`: the reply.
 #
-# Fails as `integer_of` does.
+# Fails as `int_of` does.
 function float_of(r: Reply) -> f64?
     _ = checked(r)?
 
@@ -765,9 +768,9 @@ function float_of(r: Reply) -> f64?
 #
 # - `r`: the reply.
 #
-# Fails as `integer_of` does, and `invalid` for an integer other than 0
+# Fails as `int_of` does, and `invalid` for an integer other than 0
 # and 1.
-function boolean_of(r: Reply) -> bool?
+function bool_of(r: Reply) -> bool?
     _ = checked(r)?
 
     match r
@@ -980,7 +983,7 @@ function delete(@c: Client, names: [str]) -> i64?
     for k in names
         words @ words.push(k)
 
-    return integer_of(call(@c, words)?)
+    return int_of(call(@c, words)?)
 
 # Adds `by` to the integer `key` holds, 0 where it is not there, and answers
 # the sum (`INCRBY`).
@@ -991,8 +994,8 @@ function delete(@c: Client, names: [str]) -> i64?
 #
 # Fails `invalid` where the key holds no integer or the sum passes an
 # `i64`, and as `call` does.
-function incr_by(@c: Client, key: str, by: i64) -> i64?
-    return integer_of(call(@c, ["INCRBY", key, to_str(by)])?)
+function increment(@c: Client, key: str, by: i64) -> i64?
+    return int_of(call(@c, ["INCRBY", key, to_str(by)])?)
 
 ## Pipelines and transactions
 
@@ -1133,7 +1136,7 @@ record Message
 #
 # Fails as `call` does. See also `subscribe`.
 function publish(@c: Client, channel: str, message: str) -> i64?
-    return integer_of(call(@c, ["PUBLISH", channel, message])?)
+    return int_of(call(@c, ["PUBLISH", channel, message])?)
 
 # Subscribes to `channels`, waiting until the server confirms each
 # (`SUBSCRIBE`); `receive` then reads their messages.
@@ -1251,22 +1254,6 @@ record Lock
     # has seen (the module's comment).
     fence: i64
 
-# The script that takes a lock: sets the key to the token where it is
-# absent, for the time to live, and counts the acquisition in the fencing
-# key.
-constant ACQUIRE_SCRIPT: str
-    "if redis.call('set', KEYS[1], ARGV[1], 'NX', 'PX', ARGV[2]) then return redis.call('incr', KEYS[2]) else return false end"
-
-# The script that gives a lock back: deletes the key only where it holds
-# the token.
-constant RELEASE_SCRIPT: str
-    "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end"
-
-# The script that extends a lock: sets the time to live again only where the
-# key holds the token.
-constant RENEW_SCRIPT: str
-    "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('pexpire', KEYS[1], ARGV[2]) else return 0 end"
-
 # Takes the lock `key` where nobody holds it, for `ttl_ms` milliseconds,
 # trying once.
 #
@@ -1284,11 +1271,11 @@ function try_lock(@c: Client, key: str, ttl_ms: i64) -> Lock?
     if ttl_ms < 1
         return fail(code: INVALID, msg: f"the time to live {ttl_ms} is below 1 millisecond")
     token = bytes.format_hex(os.random_bytes(20)?)
-    r = call(@c, ["EVAL", ACQUIRE_SCRIPT, "2", key, key + ":fence", token, to_str(ttl_ms)])?
+    r = call(@c, ["EVAL", lock_scripts.ACQUIRE, "2", key, key + ":fence", token, to_str(ttl_ms)])?
 
     if is_null(r) || r == .boolean(v: false)
         return fail(code: EXISTS, msg: f"the lock \"{key}\" is held by another")
-    return ok(Lock(key: key, token: token, ttl_ms: ttl_ms, fence: integer_of(r)?))
+    return ok(Lock(key: key, token: token, ttl_ms: ttl_ms, fence: int_of(r)?))
 
 # Takes the lock `key`, trying again until `wait_ms` milliseconds have
 # passed, each wait after a refusal longer than the one before, from 10 to
@@ -1344,9 +1331,9 @@ function lock(@c: Client, key: str, ttl_ms: i64, wait_ms: i64) -> Lock?
 # Fails `not_found` where the lock had expired, so another may hold it now,
 # and as `call` does. See also `renew`.
 function unlock(@c: Client, held: Lock) -> ()?
-    r = call(@c, ["EVAL", RELEASE_SCRIPT, "1", held.key, held.token])?
+    r = call(@c, ["EVAL", lock_scripts.RELEASE, "1", held.key, held.token])?
 
-    if integer_of(r)? == 0
+    if int_of(r)? == 0
         return fail(code: NOT_FOUND, msg: f"the lock \"{held.key}\" had expired and is no longer this holder's")
     return ok()
 
@@ -1359,9 +1346,9 @@ function unlock(@c: Client, held: Lock) -> ()?
 # Fails `not_found` where the lock had expired, and as `call` does. See also
 # `unlock`.
 function renew(@c: Client, held: Lock) -> ()?
-    r = call(@c, ["EVAL", RENEW_SCRIPT, "1", held.key, held.token, to_str(held.ttl_ms)])?
+    r = call(@c, ["EVAL", lock_scripts.RENEW, "1", held.key, held.token, to_str(held.ttl_ms)])?
 
-    if integer_of(r)? == 0
+    if int_of(r)? == 0
         return fail(code: NOT_FOUND, msg: f"the lock \"{held.key}\" had expired and is no longer this holder's")
     return ok()
 
@@ -1442,17 +1429,17 @@ test "readers: text, bytes, integers and floats from either protocol, nulls not_
     assert text_of(.bulk(v: bytes.from_text("città"))).must() == "città"
     assert text_of(.bulk(v: [255])).is_err()
     assert bytes_of(.bulk(v: [255])).must() == [255]
-    assert integer_of(.bulk(v: bytes.from_text("42"))).must() == 42
+    assert int_of(.bulk(v: bytes.from_text("42"))).must() == 42
     assert float_of(.bulk(v: bytes.from_text("inf"))).must() == 1.0 / 0.0
     assert float_of(.integer(v: 3)).must() == 3.0
-    assert boolean_of(.integer(v: 1)).must() && !boolean_of(.boolean(v: false)).must()
-    assert boolean_of(.integer(v: 2)).is_err()
+    assert bool_of(.integer(v: 1)).must() && !bool_of(.boolean(v: false)).must()
+    assert bool_of(.integer(v: 2)).is_err()
 
     match text_of(.null_value)
         .ok _  => assert false
         .err e => assert e.code == "not_found"
 
-    match integer_of(.error(code: "WRONGTYPE", message: "Operation against a key holding the wrong kind of value"))
+    match int_of(.error(code: "WRONGTYPE", message: "Operation against a key holding the wrong kind of value"))
         .ok _  => assert false
         .err e => assert e.code == "invalid" && e.msg == "[WRONGTYPE] Operation against a key holding the wrong kind of value" && error_code_of(e.msg).must() == "WRONGTYPE"
 
@@ -1563,9 +1550,9 @@ test "try_lock, unlock and renew: the scripts sent, a lock taken, held by anothe
     written = server.finish(@t)
     assert strings.has_prefix(
         s: written,
-        prefix: server.command(["EVAL", ACQUIRE_SCRIPT, "2", "job", "job:fence", held.token, "30000"])
+        prefix: server.command(["EVAL", lock_scripts.ACQUIRE, "2", "job", "job:fence", held.token, "30000"])
     )
-    assert strings.contains(s: written, substr: server.command(["EVAL", RELEASE_SCRIPT, "1", "job", held.token]))
+    assert strings.contains(s: written, substr: server.command(["EVAL", lock_scripts.RELEASE, "1", "job", held.token]))
 
 test "parse_url: plain and TLS, a password alone, a database, the protocol, and the refusals"
     plain = parse_url("redis://localhost:6380/2").must()
@@ -1583,27 +1570,27 @@ test "parse_url: plain and TLS, a password alone, a database, the protocol, and 
         .ok _  => assert false
         .err e => assert e.code == "unsupported"
 
-test "open: a port, a database and a protocol out of range, refused before connecting"
+test "connect: a port, a database and a protocol out of range, refused before connecting"
     bad @= options("localhost")
     bad.port @ 0
-    assert open(bad).is_err()
+    assert connect(bad).is_err()
     bad.port @ 6379
     bad.database @ -1
-    assert open(bad).is_err()
+    assert connect(bad).is_err()
     bad.database @ 0
     bad.protocol @ 4
-    assert open(bad).is_err()
+    assert connect(bad).is_err()
 
-test "open live, against the server REBEL_REDIS_URL names: both protocols, values, pipelines, transactions, a watch, messages, locks and failures"
+test "connect live, against the server REBEL_REDIS_URL names: both protocols, values, pipelines, transactions, a watch, messages, locks and failures"
     match os.env("REBEL_REDIS_URL")
-        .err _ => print("open live: skipped, REBEL_REDIS_URL names no server")
+        .err _ => skip_test(reason: "REBEL_REDIS_URL names no server")
         .ok text =>
             opts = parse_url(text).must()
-            c @= open(opts).must()
+            c @= connect(opts).must()
             assert protocol_of(c) == 3
             two_opts @= opts
             two_opts.protocol @ 2
-            old @= open(two_opts).must()
+            old @= connect(two_opts).must()
             assert protocol_of(old) == 2
             assert text_of(call(@c, ["PING"]).must()).must() == "PONG"
             set(@c, key: "live:s", value: "città 🎸").must()
@@ -1616,7 +1603,7 @@ test "open live, against the server REBEL_REDIS_URL names: both protocols, value
             _ = call_bytes(@c, [bytes.from_text("SET"), bytes.from_text("live:b"), [0, 255, 13, 10]]).must()
             assert bytes_of(call(@old, ["GET", "live:b"]).must()).must() == [0, 255, 13, 10]
             _ = delete(@c, ["live:n", "live:h", "live:z", "live:l", "live:w"]).must()
-            assert incr_by(@c, "live:n", by: 5).must() == 5 && incr_by(@old, "live:n", by: -7).must() == -2
+            assert increment(@c, "live:n", by: 5).must() == 5 && increment(@old, "live:n", by: -7).must() == -2
             _ = call(@c, ["HSET", "live:h", "f1", "1", "f2", "2"]).must()
             three = entries_of(call(@c, ["HGETALL", "live:h"]).must()).must()
             two = entries_of(call(@old, ["HGETALL", "live:h"]).must()).must()
@@ -1624,15 +1611,15 @@ test "open live, against the server REBEL_REDIS_URL names: both protocols, value
             _ = call(@c, ["ZADD", "live:z", "1.5", "a"]).must()
             assert float_of(call(@c, ["ZSCORE", "live:z", "a"]).must()).must() == 1.5
             assert float_of(call(@old, ["ZSCORE", "live:z", "a"]).must()).must() == 1.5
-            assert boolean_of(call(@c, ["EXISTS", "live:z"]).must()).must()
+            assert bool_of(call(@c, ["EXISTS", "live:z"]).must()).must()
             set_for(@c, key: "live:t", value: "x", ttl_ms: 60000).must()
-            assert integer_of(call(@c, ["PTTL", "live:t"]).must()).must() > 0
+            assert int_of(call(@c, ["PTTL", "live:t"]).must()).must() > 0
             big: [str] @= ["RPUSH", "live:l"]
 
             for i in range(from: 0, to: 10000)
                 big @ big.push(to_str(i))
 
-            assert integer_of(call(@c, big).must()).must() == 10000
+            assert int_of(call(@c, big).must()).must() == 10000
             assert texts_of(call(@c, ["LRANGE", "live:l", "0", "-1"]).must()).must().len() == 10000
             large = repeat("é", 1000000)
             set(@c, key: "live:large", value: large).must()
@@ -1643,7 +1630,7 @@ test "open live, against the server REBEL_REDIS_URL names: both protocols, value
                 many @ many.push(["INCR", "live:p"])
 
             replies = pipeline(@c, many).must()
-            assert replies.len() == 1000 && integer_of(replies[999]).must() == integer_of(replies[0]).must() + 999
+            assert replies.len() == 1000 && int_of(replies[999]).must() == int_of(replies[0]).must() + 999
             done = transaction(@c, [["SET", "live:w", "1"], ["INCR", "live:w"], ["LPUSH", "live:w", "x"]]).must()
             assert done.committed && done.replies.len() == 3 && checked(done.replies[2]).is_err()
             watch(@c, ["live:w"]).must()
@@ -1659,8 +1646,8 @@ test "open live, against the server REBEL_REDIS_URL names: both protocols, value
                 .ok _  => assert false
                 .err e => assert e.code == "unsupported"
 
-            listener @= open(opts).must()
-            old_listener @= open(two_opts).must()
+            listener @= connect(opts).must()
+            old_listener @= connect(two_opts).must()
             subscribe(@listener, ["live-chat"]).must()
             psubscribe(@old_listener, ["live-*"]).must()
             assert publish(@c, channel: "live-chat", message: "hi").must() == 2
@@ -1705,39 +1692,39 @@ test "open live, against the server REBEL_REDIS_URL names: both protocols, value
 
             # The server is asked first, on the connection already open,
             # whether it refuses this user a wrong password: one started with
-            # no password, or whose user is `nopass`, answers OK to any, and an
-            # open with a wrong one proves nothing there.
+            # no password, or whose user is `nopass`, answers OK to any, and a
+            # connection with a wrong one proves nothing there.
             match call(@c, ["AUTH", user, wrong.password])
                 .ok _ => print(
-                    "open live: a wrong password not tried, since the server takes any password for this user"
+                    "connect live: a wrong password not tried, since the server takes any password for this user"
                 )
                 .err asked =>
                     if asked.code == "permission"
-                        match open(wrong)
+                        match connect(wrong)
                             .ok _  => assert false
                             .err e => assert e.code == "permission"
                     else
                         print(
-                            f"open live: a wrong password not tried, since the server answered AUTH with {asked.code}"
+                            f"connect live: a wrong password not tried, since the server answered AUTH with {asked.code}"
                         )
 
             close(@c).must()
             print(
-                f"open live: RESP3 and RESP2, 10000 elements, 2 MB, 1000 in a pipeline, a watch, messages and a lock fenced {second.fence}"
+                f"connect live: RESP3 and RESP2, 10000 elements, 2 MB, 1000 in a pipeline, a watch, messages and a lock fenced {second.fence}"
             )
 
-test "open live over TLS, against the server REBEL_REDIS_TLS_PORT names on localhost, its certificate signed by tls's test authority"
+test "connect live over TLS, against the server REBEL_REDIS_TLS_PORT names on localhost, its certificate signed by tls's test authority"
     match os.env("REBEL_REDIS_TLS_PORT")
-        .err _ => print("open live over TLS: skipped, REBEL_REDIS_TLS_PORT names no server")
+        .err _ => skip_test(reason: "REBEL_REDIS_TLS_PORT names no server")
         .ok port =>
             opts @= options("localhost")
             opts.port @ numbers.parse_int(port).must()
             opts.password @ os.env("REBEL_REDIS_PASSWORD").default("")
             opts.security @ .checked(roots: tls.TEST_ROOT)
-            c @= open(opts).must()
+            c @= connect(opts).must()
             assert text_of(call(@c, ["PING"]).must()).must() == "PONG"
             print(
-                f"open live over TLS: RESP{protocol_of(c)} over TLS version {tls.version_of(c.session.out).default(0)}"
+                f"connect live over TLS: RESP{protocol_of(c)} over TLS version {tls.version_of(c.session.out).default(0)}"
             )
             close(@c).must()
 
@@ -1756,13 +1743,13 @@ test "parse_url: a password, a host and a database"
     assert opts.password == "s3cret" && opts.host == "cache.lan" && opts.port == 6380 && opts.database == 1
 
 # A client opened and closed, where a server answers on this machine in
-# plain text; elsewhere it shows nothing.
-test "open: a connection to a local server"
+# plain text; elsewhere it skips.
+test "connect: a connection to a local server"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert !is_closed(c)
@@ -1773,8 +1760,8 @@ test "close: the end of a connection"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             close(@c).must()
@@ -1785,8 +1772,8 @@ test "is_closed: before and after close"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert !is_closed(c)
@@ -1798,8 +1785,8 @@ test "protocol_of: RESP3 where the server speaks it"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert protocol_of(c) == 2 || protocol_of(c) == 3
@@ -1810,8 +1797,8 @@ test "set_deadline: a receive that times out"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             subscribe(@c, ["rebel-quiet"]).must()
@@ -1859,16 +1846,16 @@ test "bytes_of: bytes that are not text"
     assert bytes_of(.bulk(v: [0, 255])).must() == [0, 255]
 
 # An integer read from RESP2's string of digits.
-test "integer_of: a counter read by HGET"
-    assert integer_of(.bulk(v: bytes.from_text("12"))).must() == 12
+test "int_of: a counter read by HGET"
+    assert int_of(.bulk(v: bytes.from_text("12"))).must() == 12
 
 # A score read from a double.
 test "float_of: a score"
     assert float_of(.double(v: 1.5)).must() == 1.5
 
 # A truth read from RESP2's integer.
-test "boolean_of: EXISTS of a key"
-    assert boolean_of(.integer(v: 1)).must()
+test "bool_of: EXISTS of a key"
+    assert bool_of(.integer(v: 1)).must()
 
 # The elements of an array.
 test "list_of: an array of two"
@@ -1888,8 +1875,8 @@ test "send: a PING written"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             send(@c, [bytes.from_text("PING")]).must()
@@ -1901,8 +1888,8 @@ test "read_reply: the answer of an ECHO"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             send(@c, [bytes.from_text("ECHO"), bytes.from_text("hi")]).must()
@@ -1914,8 +1901,8 @@ test "call: SET then GET"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = call(@c, ["SET", "rebel:example", "Ziggy"]).must()
@@ -1927,8 +1914,8 @@ test "call_bytes: a value that is not text"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = call_bytes(@c, [bytes.from_text("SET"), bytes.from_text("rebel:raw"), [0, 255]]).must()
@@ -1940,8 +1927,8 @@ test "get: a key's text"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             set(@c, key: "rebel:get", value: "x").must()
@@ -1953,8 +1940,8 @@ test "set: a key's text"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             set(@c, key: "rebel:set", value: "y").must()
@@ -1965,8 +1952,8 @@ test "set_for: a key that expires"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             set_for(@c, key: "rebel:session", value: "z", ttl_ms: 60000).must()
@@ -1977,8 +1964,8 @@ test "delete: a key and one not there"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             set(@c, key: "rebel:gone", value: "1").must()
@@ -1986,16 +1973,16 @@ test "delete: a key and one not there"
             close(@c).must()
 
 # A counter moved.
-test "incr_by: a counter moved by five"
+test "increment: a counter moved by five"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             _ = delete(@c, ["rebel:count"]).must()
-            assert incr_by(@c, "rebel:count", by: 5).must() == 5
+            assert increment(@c, "rebel:count", by: 5).must() == 5
             close(@c).must()
 
 # Three commands in one round trip.
@@ -2003,8 +1990,8 @@ test "pipeline: three commands"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             replies = pipeline(@c, [["SET", "rebel:p", "1"], ["INCR", "rebel:p"], ["GET", "rebel:p"]]).must()
@@ -2016,8 +2003,8 @@ test "transaction: two counters moved together"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             done = transaction(@c, [["INCR", "rebel:a"], ["INCR", "rebel:b"]]).must()
@@ -2029,8 +2016,8 @@ test "watch: a check-and-set"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             watch(@c, ["rebel:balance"]).must()
@@ -2043,8 +2030,8 @@ test "unwatch: a watch given up"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             watch(@c, ["rebel:balance"]).must()
@@ -2056,8 +2043,8 @@ test "publish: a message nobody hears"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             assert publish(@c, channel: "rebel-nobody", message: "hello").must() >= 0
@@ -2068,8 +2055,8 @@ test "subscribe: a channel"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             subscribe(@c, ["rebel-news"]).must()
@@ -2081,8 +2068,8 @@ test "psubscribe: every channel of a family"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             psubscribe(@c, ["rebel-news.*"]).must()
@@ -2094,8 +2081,8 @@ test "unsubscribe: every channel"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             subscribe(@c, ["rebel-a", "rebel-b"]).must()
@@ -2108,8 +2095,8 @@ test "punsubscribe: one pattern"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             psubscribe(@c, ["rebel-x.*"]).must()
@@ -2121,11 +2108,11 @@ test "receive: a message published by another client"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             listener @= first
-            speaker @= open(opts).must()
+            speaker @= connect(opts).must()
             subscribe(@listener, ["rebel-chat"]).must()
             _ = publish(@speaker, channel: "rebel-chat", message: "hi").must()
             assert receive(@listener).must().payload == bytes.from_text("hi")
@@ -2144,8 +2131,8 @@ test "try_lock: a job run by one worker"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
 
@@ -2160,8 +2147,8 @@ test "lock: waiting a second at most"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             held = lock(@c, "rebel:report", ttl_ms: 10000, wait_ms: 1000).must()
@@ -2173,8 +2160,8 @@ test "unlock: the end of the work"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             held = lock(@c, "rebel:unlock", ttl_ms: 10000, wait_ms: 1000).must()
@@ -2187,8 +2174,8 @@ test "renew: a lock kept"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             held = lock(@c, "rebel:renew", ttl_ms: 10000, wait_ms: 1000).must()
@@ -2201,8 +2188,8 @@ test "is_held: a lock before and after it is given back"
     opts @= options("localhost")
     opts.security @ .plain
 
-    match open(opts)
-        .err _ => _ = 0
+    match connect(opts)
+        .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
             held = lock(@c, "rebel:held", ttl_ms: 10000, wait_ms: 1000).must()

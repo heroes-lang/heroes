@@ -1,29 +1,31 @@
-# The codes `acme` fails with, kept in one place so that every module of the
-# package fails alike.
+# The codes `acme` fails with, named here for the private modules so that
+# every module of the package fails alike; the face writes each one's text.
+
+use acme
 
 # An answer that is not RFC 8555's, or an argument refused.
 constant INVALID: str
-    "invalid"
+    acme.INVALID
 
 # No account has the key.
 constant NOT_FOUND: str
-    "not_found"
+    acme.NOT_FOUND
 
 # The server's rate limit.
 constant LIMIT: str
-    "limit"
+    acme.LIMIT
 
 # A wait ran out.
 constant TIMEOUT: str
-    "timeout"
+    acme.TIMEOUT
 
 # Every other refusal of the server.
 constant FAILED: str
-    "failed"
+    acme.FAILED
 
 # What the directory does not offer.
 constant UNSUPPORTED: str
-    "unsupported"
+    acme.UNSUPPORTED
 
 ## Tests
 

@@ -325,7 +325,7 @@ capability build/dialect-mysql  MySQL's and MariaDB's text: backquoted names, ba
   go      goqu's mysql dialect, squirrel.Question
   rust    MysqlQueryBuilder, MySqlType, IndexHint, IndexHintScope, IndexHintType, ExplainTable
   python  sqlalchemy.dialects.mysql
-  note    waits for `sql/mysql`, whose face is not written: its quoting of a name is that package's to say
+  note    `sql/mysql` is written (its `quote_identifier` writes backquotes), and the dialect waits for every word this package writes to be held to MySQL's grammar or refused: names in backquotes and bare `?` placeholders are the easy part, but `ON CONFLICT`, `excluded.`, `RETURNING`, `FULL JOIN`, `IS DISTINCT FROM` and a `CAST` to `numeric` are PostgreSQL's and SQLite's words MySQL reads otherwise or not at all, each to be judged against a live server
 
 capability build/dialects-registered  a dialect added at run time by a name
   heroes  refused: a dialect is a case of `Dialect`, which the compiler checks every `match` on; a registry by name needs an interface the language does not have

@@ -1,12 +1,14 @@
-# A server for this package's tests alone, run on a thread of its own while
-# the test's thread is the client: it answers one HTTP request with a body
-# written ahead and gives back what it read. Nothing outside the tests calls
-# it.
+# What this package's tests and examples share, and nothing else calls: a
+# server run on a thread of its own while the test's thread is the client,
+# which answers one HTTP request with a body written ahead and gives back
+# what it read; and the methods of the specification's examples with the
+# handler a server of no state writes for them, over the face's types.
 
 use bytes
 use http
 use io
 use json
+use jsonrpc
 use net
 use numbers
 use strings
@@ -76,3 +78,65 @@ function codes_of(text: str) -> [i64]
             .err _   => out @ out.push(0)
 
     return out
+
+# FOR TESTS AND EXAMPLES of the face: the methods of the specification's
+# examples, § 7: `subtract` by position
+# and by name, `sum` of up to three, `get_data`, and the notifications
+# `update` and `notify_hello`; `foobar` and `foo.get` are not there.
+function spec_methods() -> jsonrpc.Methods
+    m @= jsonrpc.new_methods()
+    jsonrpc.add_method(@m, name: "subtract", params: ["minuend", "subtrahend"], required: 2).must()
+    jsonrpc.add_method(@m, name: "sum", params: ["a", "b", "c"], required: 0).must()
+    jsonrpc.add_method(@m, name: "get_data", params: [], required: 0).must()
+    jsonrpc.add_method(@m, name: "update", params: ["a", "b", "c", "d", "e"], required: 0).must()
+    jsonrpc.add_method(@m, name: "notify_hello", params: ["n"], required: 1).must()
+    return m
+
+# The handler of `spec_methods`, as a server with no state writes it.
+#
+# - `found`: the method found and its parameters by name.
+#
+# Fails `invalid` where a parameter of `subtract` or `sum` is not a number.
+function spec_handler(found: jsonrpc.Found) -> json.Value?
+    if found.method == "subtract"
+        a = json.number_of(jsonrpc.param_of(found, name: "minuend")?)?
+        b = json.number_of(jsonrpc.param_of(found, name: "subtrahend")?)?
+        return ok(.number(v: a - b))
+
+    if found.method == "sum"
+        total: f64 @= 0.0
+
+        for name in keys(found.params)
+            total @ total + json.number_of(found.params[name].must())?
+
+        return ok(.number(v: total))
+
+    if found.method == "get_data"
+        return ok(json.parse("[\"hello\", 5]").must())
+    return ok(.null_value)
+
+# The answer of a server with no state to an HTTP request, as `http.exchange`
+# hands it: the body read, dispatched to `spec_handler`, and answered.
+#
+# - `r`: the request.
+function spec_over_http(r: http.Request) -> http.Response
+    received = match jsonrpc.read_http(r, limits: jsonrpc.default_limits())
+        .ok got => got
+        .err e  => return jsonrpc.refusal_http(code: e.code, msg: e.msg)
+
+    answers: [jsonrpc.Message] @= []
+
+    for item in received.messages
+        match item
+            .err e => answers @ answers.push(jsonrpc.invalid_request_of(e.msg))
+            .ok m =>
+                match m
+                    .request q =>
+                        answer = match jsonrpc.method_of(spec_methods(), method: q.method, params: q.params)
+                            .ok found => jsonrpc.answer_of(q.id, outcome: spec_handler(found))
+                            .err e    => jsonrpc.refusal_of(q.id, code: e.code, msg: e.msg)
+
+                        answers @ answers.push(answer)
+                    .notification _ | .response _ => _ = 0
+
+    return jsonrpc.respond_http(answers, batch: received.batch).must()

@@ -8,13 +8,13 @@
 #
 # Both libraries give a typed function to each of Redis's commands; here a
 # command is a list of arguments (`call`, `call_bytes`) and its reply a
-# `Reply`, read by `text_of`, `integer_of`, `float_of`, `boolean_of`,
+# `Reply`, read by `text_of`, `int_of`, `float_of`, `bool_of`,
 # `list_of`, `texts_of` and `entries_of`, which read RESP2's and RESP3's
 # answers alike. So a family of commands is one capability, done by `call`;
 # its typed function in Go and Python is named in its block, and a typed
 # record of one command's answer is dropped below. A handful of the commonest
 # have a function of their own (`get`, `set`, `set_for`, `delete`,
-# `incr_by`, `publish`).
+# `increment`, `publish`).
 #
 # Every expected value of the tests was written from Redis's "Protocol
 # specification" (RESP2 and RESP3) and "Redis serialization protocol" pages:
@@ -24,7 +24,7 @@
 # TLS (the certificates of `tls`'s tests), RESP3 and RESP2.
 
 capability redis/open  a connection opened, logged in, its protocol agreed and its database selected
-  heroes  redis.open, redis.options, redis.Options, redis.Client, redis.DEFAULT_PORT
+  heroes  redis.connect, redis.options, redis.Options, redis.Client, redis.DEFAULT_PORT
   go      NewClient, Options, Client, Conn, Client.Conn, Client.Options, Options.NewDialer, NewDialer
   rust    -
   python  Redis, StrictRedis, Connection, from_pool
@@ -45,21 +45,21 @@ capability redis/close  a connection closed, and asked whether it is
   note    the socket closed; Redis 7.2 deprecates `QUIT`, so none is sent
 
 capability redis/protocol  RESP3 asked for, RESP2 where the server knows no HELLO
-  heroes  redis.open, redis.protocol_of
+  heroes  redis.connect, redis.protocol_of
   go      Options (Protocol)
   rust    -
   python  Redis (protocol)
   note    `HELLO 3` with the login and the name in it; go-redis falls back the same way, redis-py asks RESP2 unless told
 
 capability redis/login  a password and a user of Redis 6's access lists sent at opening
-  heroes  redis.open, redis.Options
+  heroes  redis.connect, redis.Options
   go      Options (Username, Password, CredentialsProvider), Auth, AuthACL, Select, SwapDB, ClientSetName, ClientSetInfo, Hello
   rust    -
   python  auth, credentials, CredentialProvider, UsernamePasswordCredentialProvider, auth, client_setinfo, client_setname, hello, select, swapdb, reset
-  note    `HELLO 3 AUTH user password`, or `AUTH` over RESP2; `SELECT` and `CLIENT SETNAME` after it; `SWAPDB` and `RESET` run through `call`. A server started with no password, or whose user is `nopass`, takes any password in `HELLO 3 AUTH` (Redis 8.10.2, run 2026-11-19), so the live test asks the server first, `AUTH <user> <a wrong password>` on its open connection, and asserts that `open` with a wrong password fails `permission` only where the server refused that `AUTH`; elsewhere it prints why it did not try. Until that day it asserted the failure on every server and failed on one with no password (the jobs agent's report): held on both kinds that day, plain and `--sanitize`, 1201 tests passing each time
+  note    `HELLO 3 AUTH user password`, or `AUTH` over RESP2; `SELECT` and `CLIENT SETNAME` after it; `SWAPDB` and `RESET` run through `call`. A server started with no password, or whose user is `nopass`, takes any password in `HELLO 3 AUTH` (Redis 8.10.2, run 2026-11-19), so the live test asks the server first, `AUTH <user> <a wrong password>` on its open connection, and asserts that `connect` with a wrong password fails `permission` only where the server refused that `AUTH`; elsewhere it prints why it did not try. Until that day it asserted the failure on every server and failed on one with no password (the jobs agent's report): held on both kinds that day, plain and `--sanitize`, 1201 tests passing each time
 
 capability redis/tls  TLS from the first byte, the server's certificate checked for its authority and its host
-  heroes  redis.Security, redis.open, redis.parse_url
+  heroes  redis.Security, redis.connect, redis.parse_url
   go      Options (TLSConfig)
   rust    -
   python  SSLConnection
@@ -87,7 +87,7 @@ capability redis/command  any command run, its arguments a list never joined int
   note    an error reply fails with its code from `call`, and comes as `.error` from `read_reply`, which `checked` turns into a failure
 
 capability redis/replies  a reply read into a variant of RESP3's types, and read as text, bytes, numbers, truths, lists and maps
-  heroes  redis.Reply, redis.Entry, redis.text_of, redis.bytes_of, redis.integer_of, redis.float_of, redis.boolean_of, redis.list_of, redis.texts_of, redis.entries_of, redis.is_null, redis.kind_of
+  heroes  redis.Reply, redis.Entry, redis.text_of, redis.bytes_of, redis.int_of, redis.float_of, redis.bool_of, redis.list_of, redis.texts_of, redis.entries_of, redis.is_null, redis.kind_of
   go      Cmd.Result, Cmd.Text, Cmd.Int64, Cmd.Float64, Cmd.Bool, Cmd.Slice, Nil
   rust    -
   python  parse_response, set_response_callback
@@ -115,7 +115,7 @@ capability redis/errors  an error reply told by a code, its word kept and read b
   note    the word chooses the code (the module's comment); `error_code_of` answers the word, as Go's predicates ask it
 
 capability redis/strings  strings: GET, SET, INCR, APPEND, GETRANGE, MGET, ...
-  heroes  redis.call, redis.get, redis.set, redis.set_for, redis.incr_by
+  heroes  redis.call, redis.get, redis.set, redis.set_for, redis.increment
   go      Append, Decr, DecrBy, DelExArgs, Digest, Get, GetRange, GetSet, GetEx, GetDel, GetToBuffer, Incr, IncrBy, IncrByFloat, IncrEXInt, IncrEXFloat, LCS, MGet, MSet, MSetNX, MSetEX, Set, SetArgs, SetEx, SetFromBuffer, SetIFEQ, SetIFEQGet, SetIFNE, SetIFNEGet, SetIFDEQ, SetIFDEQGet, SetIFDNE, SetIFDNEGet, SetNX, SetXX, SetRange, StrLen
   rust    -
   python  append, decr, decrby, digest, get, getdel, getex, getrange, getset, incr, incrby, incrbyfloat, lcs, mget, mset, msetex, msetnx, set, setex, setnx, setrange, strlen, psetex, substr, stralgo, delex, digest_local, increx
@@ -350,7 +350,7 @@ capability redis/sentinel  the master found through Sentinel, and followed when 
   go      NewFailoverClient, FailoverOptions, ParseFailoverURL, SentinelClient, NewSentinelClient
   rust    -
   python  Sentinel, SentinelConnectionPool, SentinelManagedConnection, SentinelManagedSSLConnection, sentinel, sentinel_ckquorum, sentinel_failover, sentinel_flushconfig, sentinel_get_master_addr_by_name, sentinel_master, sentinel_masters, sentinel_monitor, sentinel_remove, sentinel_reset, sentinel_sentinels, sentinel_set, sentinel_slaves
-  note    `SENTINEL GET-MASTER-ADDR-BY-NAME` runs through `call` on a Sentinel, and `open` reaches the address it answers
+  note    `SENTINEL GET-MASTER-ADDR-BY-NAME` runs through `call` on a Sentinel, and `connect` reaches the address it answers
 
 capability redis/ring  keys spread over several servers by a hash of each key
   heroes  refused: a ring moves keys when a server is added or lost, so a key's value vanishes in silence; a cluster spreads keys with their slots

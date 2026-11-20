@@ -1,0 +1,364 @@
+# The calls an aborted program told, each given its `.hero` line by the
+# program's parent (panel 253's R5, ratified 2026-11-19; design.md §1.12,
+# §4.17, §3.5).
+#
+# **What the runtime tells and what this adds.** Every abort tells, beneath
+# its place, the calls of the program that led there, innermost first
+# (`runtime/parts/calls.c`): a binary run alone says each by the executable
+# file's own address and the function's name, `called from 0x100000e48, in
+# deep.middle`, since the runtime reads no line table (the sitting's ruling).
+# `heroes run` and `heroes test` start the program, so they ask it, through
+# the file `HEROES_CALLS` names, to write its frames there instead, and after
+# it ends they turn each address into the calls the build's own line tables
+# hold there, every inlined call with its own line (`cli/abort_symbolized`):
+#
+#     panic: array index out of range
+#       at deep.hero:3:12, in deep.pick
+#       called from deep.hero:6, in deep.middle
+#       called from deep.hero:10, in deep.outer
+#       called from deep.hero:14, in deep.main
+#
+# **Through a file, never the program's stderr**, which stays the terminal's:
+# a program asking whether its stderr is a terminal answers the same under
+# `heroes run` as alone, and nothing it writes waits on this process. The
+# program takes the variable out of its environment as it starts, so a
+# program it starts writes nothing here. Where no symbolizer answers every
+# address, the lines are the runtime's own, as a binary alone says them.
+#
+# **Which inlined calls are told** is the runtime's mark on each frame
+# (`hero_calls_choose`): 0 not told; 1 every inlined call told; 2 the place's
+# own function inlined into the frame, so its calls up to the place, which
+# the report already says, are left out: the leading ones that are not the
+# program's (the Heroes library's, which stop at their caller's place, and
+# C's), then the place's own. A thunk's level (`h_0cb_...`) is glue no line
+# of the program wrote, and is never told.
+
+use cli/abort_symbolized as symbolized
+use cli/environment
+use cli/io
+use cli/process
+use cli/strings
+use module/listing
+use module/paths
+
+constant VARIABLE: str
+    "HEROES_CALLS"
+
+# A frame the program told: its mark, how many frames in a row returned
+# there, the file's address of its call, and its name as the runtime spells
+# it.
+record Call
+    mark: i64
+    times: i64
+    address: str
+    name: str
+
+# What the program's file holds.
+record Told
+    spellings: {str: str}
+    calls: [Call]
+    beyond: i64
+    cut: bool
+
+# The file a run's calls are written to, under the build folder, named by
+# this process and a serial, so two runs at once never share one.
+function file_in(build: str) -> str
+    return build + "/calls-" + process.pid().to_str() + "-" + process.serial().to_str() + ".txt"
+
+# What the program is given at its start: the variables `beside` asks, and
+# the one naming the file.
+function given(file: str, beside: [process.Variable]) -> [process.Variable]
+    out: [process.Variable] @= beside
+    out @ out.push(process.Variable(name: VARIABLE, value: file))
+    return out
+
+# Before the program starts: no file of an earlier run, since the runtime
+# creates the file and never writes one that is there.
+function clear(file: str)
+    _ = process.remove_file(file).is_err()
+
+# After the program ended: the calls it told, resolved against `binary`, on
+# stderr after its report, the file gone; `root` is the program's root file
+# as the build was handed it, whose folder a resolved file is named from.
+function tell(file: str, binary: str, root: str)
+    text = read_file(file)
+    clear(file)
+
+    if text.is_err()
+        return
+    at = Naming(folder: paths.directory_text(root), here: environment.env("PWD").default(""))
+
+    for line in lines(t: parsed(text.must()), binary: binary, scratch: file + ".out", at: at)
+        io.eprint(text: line)
+
+# The file's records (`runtime/parts/calls.c`, `hero_calls_to_file`); a line
+# of no known shape is passed over.
+function parsed(text: str) -> Told
+    spellings: {str: str} @= {}
+    calls: [Call] @= []
+    beyond: i64 @= 0
+    cut: bool @= false
+
+    for line in listing.lines_of(text)
+        if strings.starts_with(text: line, prefix: "spell ")
+            row = line.slice(from: 6, to: line.len())
+            tab = symbolized.byte_at(text: row, byte: '\t', from: 0)
+
+            if tab >= 0
+                spellings[row.slice(from: 0, to: tab)] @ row.slice(from: tab + 1, to: row.len())
+        else if strings.starts_with(text: line, prefix: "call ")
+            one = call_of(line)
+
+            if !one.is_err()
+                calls @ calls.push(one.must())
+        else if strings.starts_with(text: line, prefix: "beyond ")
+            beyond @ symbolized.decimal(line.slice(from: 7, to: line.len())).default(0)
+        else if line == "cut"
+            cut @ true
+
+    return Told(spellings: spellings, calls: calls, beyond: beyond, cut: cut)
+
+# `call <mark> <times> 0x<address> <name>`, the name the rest of the line.
+function call_of(line: str) -> Call?
+    a = symbolized.byte_at(text: line, byte: ' ', from: 5)
+    b = symbolized.byte_at(text: line, byte: ' ', from: a + 1)
+    c = symbolized.byte_at(text: line, byte: ' ', from: b + 1)
+
+    if a < 0 || b < 0 || c < 0
+        return fail(code: "unread", msg: "not a call: " + line)
+    mark = symbolized.decimal(line.slice(from: 5, to: a))?
+    count = symbolized.decimal(line.slice(from: a + 1, to: b))?
+    return ok(
+        Call(mark: mark, times: count, address: line.slice(from: b + 1, to: c), name: line.slice(from: c + 1, to: line.len()))
+    )
+
+# The lines told beneath the report: resolved where a symbolizer answers
+# every told address, the runtime's own where none does.
+function lines(t: Told, binary: str, scratch: str, at: Naming) -> [str]
+    asked: [str] @= []
+
+    for one in t.calls
+        if one.mark > 0
+            asked @ asked.push(one.address)
+
+    if asked.len() == 0
+        return tail(t)
+    found = symbolized.resolved(binary: binary, addresses: asked, scratch: scratch)
+
+    if found.is_err()
+        return plain(t)
+    return told_with(t, levels: found.must(), at: at)
+
+# The runtime's own lines, as a binary run alone says them.
+function plain(t: Told) -> [str]
+    out: [str] @= []
+
+    for one in t.calls
+        if one.mark > 0
+            out @ out.push("  called from " + one.address + ", in " + one.name + times(one.times))
+
+    return strings.with_all(list: out, more: tail(t))
+
+# What the runtime says past its kept calls.
+function tail(t: Told) -> [str]
+    none: [str] = []
+
+    if t.cut
+        return ["  and more calls above these"]
+
+    if t.beyond > 0
+        return ["  and more calls above these, " + t.beyond.to_str()]
+    return none
+
+function times(n: i64) -> str
+    if n > 1
+        return ", " + n.to_str() + " times"
+    return ""
+
+# The resolved lines: each told frame's inlined calls, innermost first, the
+# Heroes ones alone (`told`), and where the frame holds the place, its calls
+# up to the place and the place's own left out.
+function told_with(t: Told, levels: [[symbolized.Level]], at: Naming) -> [str]
+    out: [str] @= []
+    asked: i64 @= 0
+
+    for one in t.calls
+        if one.mark > 0
+            for level in after_place(levels[asked], trimmed: one.mark == 2)
+                if told(level.callee)
+                    out @ out.push(
+                        "  called from " + file_named(level.place, at: at) + ", in " + spelled(level.callee, spellings: t.spellings) + times(one.times)
+                    )
+
+            asked @ asked + 1
+
+    return strings.with_all(list: out, more: tail(t))
+
+# **A resolved file is named as the report's place names it** (panel 230's
+# R1, `emit/stop_place.hero`'s `file_of`): the root by its own name, a module
+# by its path from the root's folder, the library as `<heroes library>`. A
+# `#line` names the root as the build was handed it and a module from the
+# root's folder (`mod/main.hero`, `mod/sub/helper.hero` for a root handed as
+# `mod/main.hero`), and a symbolizer gives that name, `llvm-symbolizer
+# --relativenames` as written and `atos -fullPath` and `addr2line` with the
+# compile's folder before it, which is this process's own, `PWD` where the
+# shell set it. So the root's folder is taken off, with that folder before
+# it where it stands there; a name neither begins with is told as given.
+record Naming
+    folder: str
+    here: str
+
+function file_named(place: str, at: Naming) -> str
+    colon = symbolized.last_byte(text: place, byte: ':')
+
+    if colon <= 0 || strings.starts_with(text: place, prefix: "<")
+        return place
+    file = place.slice(from: 0, to: colon)
+
+    for prefix in prefixes(at)
+        if prefix.len() > 0 && strings.starts_with(text: file, prefix: prefix) && file.len() > prefix.len()
+            return file.slice(from: prefix.len(), to: file.len()) + place.slice(from: colon, to: place.len())
+
+    return place
+
+# The folders a symbolizer's file may begin with: the root's, as written or
+# after the compile's folder where it is relative, and the compile's alone.
+function prefixes(at: Naming) -> [str]
+    if strings.starts_with(text: at.folder, prefix: "/")
+        return [at.folder]
+
+    if at.here.len() == 0
+        return [at.folder]
+    return [at.folder, at.here + "/" + at.folder]
+
+# A frame's levels from the first caller of the place: past the leading ones
+# that are not the program's (the library's, which stop at their caller's
+# place, a thunk's, C's), then past the place's own; every level where the
+# frame does not hold the place.
+function after_place(levels: [symbolized.Level], trimmed: bool) -> [symbolized.Level]
+    if !trimmed
+        return levels
+    at: i64 @= 0
+
+    while at < levels.len() && !of_program(levels[at])
+        at @ at + 1
+
+    if at < levels.len()
+        at @ at + 1
+    return levels.slice(from: at, to: levels.len())
+
+# A level of the program's own Heroes: never the library's, which stops at
+# its caller's place (`h_library_...`, `source.LIBRARY_MODULE`), never a
+# thunk's, never C's.
+function of_program(level: symbolized.Level) -> bool
+    return told(level.callee) && !strings.starts_with(text: level.callee, prefix: "h_library_")
+
+# A level told beneath the report: a Heroes function's, the library's
+# included, as the runtime tells a frame (`hero_stack_is_heroes`); never a
+# thunk's, and never C's, which the runtime's walk passes over as well, so
+# a C function a header inlined into a Heroes frame at `-O2` says no more
+# than it does at `-O0`, where its frame is C's.
+function told(callee: str) -> bool
+    return strings.starts_with(text: callee, prefix: "h_") && !is_glue(callee)
+
+# A C name whose component is the compiler's marker, a digit: a thunk.
+function is_glue(callee: str) -> bool
+    return strings.starts_with(text: callee, prefix: "h_") && callee.len() > 2 && callee[2] >= '0' && callee[2] <= '9'
+
+# A C name as the runtime spells it (`hero_calls_spell`): the program's own
+# spelling of the whole symbol or of its module, `<module>.<name>`, a marker
+# and an invented name's leading digit left out; a name that is not a Heroes
+# function as it is.
+function spelled(callee: str, spellings: {str: str}) -> str
+    whole = spellings[callee]
+
+    if !whole.is_err()
+        return whole.must()
+
+    if !strings.starts_with(text: callee, prefix: "h_") || callee.len() < 3
+        return callee
+    rest: str @= callee.slice(from: 2, to: callee.len())
+
+    if rest[0] >= '0' && rest[0] <= '9'
+        marker = symbolized.byte_at(text: rest, byte: '_', from: 0)
+
+        if marker >= 0 && marker + 1 < rest.len()
+            rest @ rest.slice(from: marker + 1, to: rest.len())
+    us = symbolized.byte_at(text: rest, byte: '_', from: 0)
+
+    if us < 0 || us + 1 >= rest.len()
+        return callee
+    component = rest.slice(from: 0, to: us)
+    named: str @= rest.slice(from: us + 1, to: rest.len())
+
+    if named.len() > 1 && named[0] >= '0' && named[0] <= '9'
+        named @ named.slice(from: 1, to: named.len())
+    return spellings[component].default(component) + "." + named
+
+## Tests
+
+test "the file's records are read, a name holding spaces whole"
+    t = parsed(
+        "heroes-calls 1\nspell h_t_0test1\ttest \"one two\"\nspell threaddeep\tthread_deep\ncall 2 1 0x100000e48 deep.outer\ncall 1 4095 0x100000eb4 test \"one two\"\nbeyond 3\n"
+    )
+    assert t.spellings["threaddeep"].must() == "thread_deep"
+    assert t.spellings["h_t_0test1"].must() == "test \"one two\""
+    assert t.calls.len() == 2
+    assert t.calls[0].mark == 2
+    assert t.calls[0].address == "0x100000e48"
+    assert t.calls[1].times == 4095
+    assert t.calls[1].name == "test \"one two\""
+    assert t.beyond == 3
+    assert !t.cut
+
+test "a C name is spelled as the runtime spells it"
+    spellings: {str: str} = {"threaddeep": "thread_deep", "h_t_0test1": "test \"one\""}
+    assert spelled("h_deep_middle", spellings: spellings) == "deep.middle"
+    assert spelled("h_threaddeep_worker", spellings: spellings) == "thread_deep.worker"
+    assert spelled("h_t_0test1", spellings: spellings) == "test \"one\""
+    assert spelled("h_0cb_main_pick", spellings: spellings) == "main.pick"
+    assert spelled("h_deep_0make_one_1a2b", spellings: spellings) == "deep.make_one_1a2b"
+    assert spelled("through_c", spellings: spellings) == "through_c"
+
+test "a frame holding the place leaves out its calls up to the place, and a thunk or C is never told"
+    t = Told(
+        spellings: {},
+        calls: [Call(mark: 2, times: 1, address: "0x10", name: "deep.outer"), Call(mark: 1, times: 1, address: "0x20", name: "deep.main")],
+        beyond: 0,
+        cut: false
+    )
+    levels: [[symbolized.Level]] = [
+        [symbolized.Level(callee: "hero_index_checked", place: "heroes_runtime.h:300"), symbolized.Level(callee: "h_deep_pick", place: "deep.hero:3"), symbolized.Level(callee: "h_deep_middle", place: "deep.hero:6"), symbolized.Level(callee: "through", place: "deep.h:4"), symbolized.Level(callee: "h_deep_outer", place: "deep.hero:10")]
+        [symbolized.Level(callee: "h_0cb_deep_main", place: "deep.c:90"), symbolized.Level(callee: "h_deep_main", place: "deep.hero:14")]
+    ]
+    assert told_with(t, levels: levels, at: Naming(folder: "", here: "")) == ["  called from deep.hero:6, in deep.middle", "  called from deep.hero:10, in deep.outer", "  called from deep.hero:14, in deep.main"]
+
+test "a frame under the library's own stop leaves out the library's levels and the place"
+    levels = [
+        symbolized.Level(callee: "h_library_exit", place: "<heroes library>:120")
+        symbolized.Level(callee: "h_main_foo", place: "main.hero:6")
+    ]
+    assert after_place(levels, trimmed: true).len() == 0
+    assert after_place(levels, trimmed: false).len() == 2
+
+test "where no symbolizer answers, the runtime's own lines are told, a recursion's count and the calls past the kept"
+    t = Told(
+        spellings: {},
+        calls: [Call(mark: 0, times: 1, address: "0x8", name: "deep.pick"), Call(mark: 1, times: 7, address: "0x10", name: "deep.down")],
+        beyond: 2,
+        cut: false
+    )
+    assert plain(t) == ["  called from 0x10, in deep.down, 7 times", "  and more calls above these, 2"]
+
+test "a resolved file is named as the report's place names it, from the root's folder"
+    at = Naming(folder: "mod/", here: "/w")
+    assert file_named("mod/main.hero:4", at: at) == "main.hero:4"
+    assert file_named("mod/sub/helper.hero:3", at: at) == "sub/helper.hero:3"
+    assert file_named("/w/mod/sub/helper.hero:3", at: at) == "sub/helper.hero:3"
+    assert file_named("<heroes library>:120", at: at) == "<heroes library>:120"
+    assert file_named("/elsewhere/x.hero:9", at: at) == "/elsewhere/x.hero:9"
+    alone = Naming(folder: "", here: "/w")
+    assert file_named("main.hero:4", at: alone) == "main.hero:4"
+    assert file_named("/w/sub/helper.hero:3", at: alone) == "sub/helper.hero:3"
+    whole = Naming(folder: "/abs/mod/", here: "/w")
+    assert file_named("/abs/mod/main.hero:4", at: whole) == "main.hero:4"

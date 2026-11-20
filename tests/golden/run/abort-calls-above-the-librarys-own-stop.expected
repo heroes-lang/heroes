@@ -1,0 +1,4 @@
+before
+!called: abort-calls-above-the-librarys-own-stop.main
+!at: abort-calls-above-the-librarys-own-stop.hero:7:5
+!panic: `exit(code:)` takes 0 to 255, the statuses a shell reads, and was given 300

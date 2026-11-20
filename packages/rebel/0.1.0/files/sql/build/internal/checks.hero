@@ -3,8 +3,10 @@
 # fragment of SQL. Each is held to the characters its kind is written with,
 # so that none can carry a value, a second statement or a comment.
 
+use sql/build
+
 constant INVALID: str
-    "invalid"
+    build.INVALID
 
 # Whether `c` is an ASCII letter or `_`.
 function is_letter(c: u8) -> bool

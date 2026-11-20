@@ -100,16 +100,7 @@ function canonical(name: str) -> str
 
 # `s` without the spaces and tabs at either end, RFC 9110's OWS.
 function trim_ows(s: str) -> str
-    from: i64 @= 0
-    to: i64 @= s.len()
-
-    while from < to && (s[from] == ' ' || s[from] == '\t')
-        from @ from + 1
-
-    while to > from && (s[to - 1] == ' ' || s[to - 1] == '\t')
-        to @ to - 1
-
-    return s.slice(from: from, to: to)
+    return strings.trim_any(s: s, set: " \t")
 
 # The members of the comma-separated list `value`, each trimmed, the empty
 # ones dropped, as RFC 9110 § 5.6.1 asks a reader to.
@@ -195,6 +186,39 @@ function shown_bytes(b: [u8]) -> str
 
 ## Tests
 
+# Whether `s` is a token of RFC 6750's `b64token`: letters, digits, `-`, `.`,
+# `_`, `~`, `+` and `/`, at least one, then `=` signs.
+function is_b64token(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len() && is_token68(s[at])
+        at @ at + 1
+
+    if at == 0
+        return false
+
+    while at < s.len() && s[at] == '='
+        at @ at + 1
+
+    return at == s.len()
+
+# Whether `c` stands in a `b64token` before its `=` signs.
+function is_token68(c: u8) -> bool
+    alnum = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+    return alnum || c == '-' || c == '.' || c == '_' || c == '~' || c == '+' || c == '/'
+
+# What an `Authorization` value `value` holds after its scheme `scheme`,
+# compared without case: the text after the scheme and its spaces. Fails
+# `not_found` where the value is of another scheme.
+function credentials_of(value: str, scheme: str) -> str?
+    halves = strings.split_once(s: strings.trim(value), sep: " ").default(
+        strings.Halves(before: strings.trim(value), after: "")
+    )
+
+    if strings.to_lower_ascii(halves.before) != strings.to_lower_ascii(scheme)
+        return fail(code: "not_found", msg: f"the `Authorization` field is not of the scheme {scheme}")
+    return ok(strings.trim(halves.after))
+
 test "is_token: letters, digits and the marks; nothing, a space, a colon or a byte above ASCII is none"
     assert !is_token("")
     assert is_token("Content-Type") && is_token("!#$%&'*+-.^_`|~09az")
@@ -246,3 +270,15 @@ test "shown and shown_bytes: escaped, quoted, cut after 60 bytes"
     assert shown("a\r\n") == "\"a\\r\\n\""
     assert shown("x".repeat(61)) == "\"" + "x".repeat(60) + "...\""
     assert shown_bytes([0, 255]) == "\"\\x00\\xff\""
+
+test "is_b64token: a token, padding, empty, a space, padding inside"
+    assert is_b64token("mF_9.B5f-4.1JqM") && is_b64token("abc==") && is_b64token("a/b+c~")
+    assert !is_b64token("") && !is_b64token("a b") && !is_b64token("a=b") && !is_b64token("==")
+
+test "is_token68: a letter, a slash, a space"
+    assert is_token68('a') && is_token68('/') && !is_token68(' ') && !is_token68('=')
+
+test "credentials_of: the scheme in any case, another scheme, nothing after"
+    assert credentials_of(value: "bearer  abc", scheme: "Bearer").must() == "abc"
+    assert credentials_of(value: "Basic abc", scheme: "Bearer").is_err()
+    assert credentials_of(value: "Bearer", scheme: "Bearer").must() == ""

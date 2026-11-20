@@ -49,23 +49,23 @@ use time
 # naming the byte; and of an entry refused by extraction, the message naming
 # the entry and why. Every function that reads or extracts fails with it.
 constant INVALID: str
-    codes.INVALID
+    "invalid"
 
 # The code of an archive, or an entry's data, that would pass the `limit`
 # the caller set. Every function that reads with a limit fails with it.
 constant LIMIT: str
-    codes.LIMIT
+    "limit"
 
 # The code of a zip entry asked for by a name the archive does not hold:
 # `entry_of`.
 constant NOT_FOUND: str
-    codes.NOT_FOUND
+    "not_found"
 
 # The code of what this package does not read: an encrypted zip member, a
 # zip method other than stored and deflated, a sparse tar member, an
 # archive split over disks.
 constant UNSUPPORTED: str
-    codes.UNSUPPORTED
+    "unsupported"
 
 ## Entries
 
@@ -190,9 +190,9 @@ function tar_entry(name: str, kind: Kind) -> TarEntry
         records: {}
     )
 
-# What `next_entry` answers: the next entry, or the archive's end.
+# What `next_tar_entry` answers: the next entry, or the archive's end.
 variant Next
-    # An entry, whose data `read_data` reads.
+    # An entry, whose data `read_tar_data` reads.
     entry
         # Its header.
         value: TarEntry
@@ -214,7 +214,7 @@ record TarReader
 # - `limit`: the most bytes of archive read, headers and padding included,
 #   after gzip; 0 or more.
 #
-# See also `next_entry` and `list_tar`.
+# See also `next_tar_entry` and `list_tar`.
 function tar_reader(from: io.Stream, compression: Compression, limit: i64) -> TarReader
     gzip = match compression
         .none => false
@@ -231,8 +231,8 @@ function tar_reader(from: io.Stream, compression: Compression, limit: i64) -> Ta
 # member, `limit` where the archive passes the reader's limit, and as the
 # stream fails.
 #
-# See also `read_data` and `read_rest`.
-function next_entry(@r: TarReader) -> Next?
+# See also `read_tar_data` and `read_tar_rest`.
+function next_tar_entry(@r: TarReader) -> Next?
     found = tar_read.next_header(@r.state)?
 
     if !found.found
@@ -275,23 +275,23 @@ function next_entry(@r: TarReader) -> Next?
 # Fails `invalid` where the archive ends inside the data, `limit` where it
 # passes the reader's limit, and as the stream fails.
 #
-# See also `read_rest`.
-function read_data(@r: TarReader, most: i64) -> [u8]?
+# See also `read_tar_rest`.
+function read_tar_data(@r: TarReader, most: i64) -> [u8]?
     return tar_read.read_data(@r.state, most: most)
 
 # The rest of the data of `r`'s entry in hand, whole.
 #
 # - `r`: the reader.
 #
-# Fails as `read_data` does. It holds the data whole, which the reader's
+# Fails as `read_tar_data` does. It holds the data whole, which the reader's
 # limit bounds.
 #
-# See also `read_data`.
-function read_rest(@r: TarReader) -> [u8]?
+# See also `read_tar_data`.
+function read_tar_rest(@r: TarReader) -> [u8]?
     out: [u8] @= []
 
     while true
-        got = read_data(@r, most: 65536)?
+        got = read_tar_data(@r, most: 65536)?
 
         if got.len() == 0
             return ok(out)
@@ -307,7 +307,7 @@ function read_rest(@r: TarReader) -> [u8]?
 # - `compression`: none, or gzip.
 # - `limit`: the most bytes of archive read, after gzip.
 #
-# Fails as `next_entry` does.
+# Fails as `next_tar_entry` does.
 #
 # See also `extract_tar`.
 function list_tar(from: io.Stream, compression: Compression, limit: i64) -> [TarEntry]?
@@ -315,7 +315,7 @@ function list_tar(from: io.Stream, compression: Compression, limit: i64) -> [Tar
     entries: [TarEntry] @= []
 
     while true
-        match next_entry(@r)?
+        match next_tar_entry(@r)?
             .end     => return ok(entries)
             .entry e => entries @ entries.push(e.value)
 
@@ -332,7 +332,7 @@ function list_tar(from: io.Stream, compression: Compression, limit: i64) -> [Tar
 #   is written.
 #
 # Fails `invalid` on the first entry refused, the entries before it
-# extracted; and as `next_entry` and `fs` fail.
+# extracted; and as `next_tar_entry` and `fs` fail.
 #
 # See also `list_tar` and `extract_zip`.
 function extract_tar(from: io.Stream, compression: Compression, to: str, limit: i64) -> [str]?
@@ -343,7 +343,7 @@ function extract_tar(from: io.Stream, compression: Compression, to: str, limit: 
     dir_times: [time.Instant] @= []
 
     while true
-        match next_entry(@r)?
+        match next_tar_entry(@r)?
             .end =>
                 extract.set_dir_times(dirs, times: dir_times)?
                 return ok(names)
@@ -1039,7 +1039,7 @@ test "extract_tar: every hostile archive is refused, and nothing lands outside"
     assert !fs.exists(path.join_all([inside, "d", "x.txt"])).must()
     fs.remove_all(root).must()
 
-test "write_tar_entry and next_entry: every kind, long and non-ASCII names, gzip, back"
+test "write_tar_entry and next_tar_entry: every kind, long and non-ASCII names, gzip, back"
     p @= io.pipe().must()
     w @= tar_writer(p.writer, compression: .gzip)
     long = repeat("x", 120) + "/" + repeat("y", 110) + "/z.txt"
@@ -1056,24 +1056,24 @@ test "write_tar_entry and next_entry: every kind, long and non-ASCII names, gzip
     io.close(@p.writer).must()
     r @= tar_reader(p.reader, compression: .gzip, limit: 1000000)
 
-    match next_entry(@r).must()
+    match next_tar_entry(@r).must()
         .end => assert false
         .entry e =>
             assert e.value.name == "héros/" + long
             assert e.value.mode == 0o600 && e.value.size == 4
             assert e.value.modified.unix_nanoseconds == 1700000000250000000
             assert e.value.records["comment"].must() == "kept"
-            assert read_rest(@r).must() == bytes.from_text("data")
+            assert read_tar_rest(@r).must() == bytes.from_text("data")
 
-    match next_entry(@r).must()
+    match next_tar_entry(@r).must()
         .end     => assert false
         .entry e => assert e.value.kind == .directory && e.value.name == "héros"
 
-    match next_entry(@r).must()
+    match next_tar_entry(@r).must()
         .end     => assert false
         .entry e => assert e.value.link == repeat("t", 150)
 
-    assert next_entry(@r).must() == .end
+    assert next_tar_entry(@r).must() == .end
     io.close(@p.reader).must()
 
 test "write_tar_header and write_tar_data: data owed at the next header and at the end, data past the size"
@@ -1246,40 +1246,40 @@ test "tar_reader: entries one at a time"
     io.close(@p.writer).must()
     r @= tar_reader(p.reader, compression: .gzip, limit: 100000)
 
-    match next_entry(@r).must()
+    match next_tar_entry(@r).must()
         .entry e => assert e.value.name == "u/one.txt"
         .end     => assert false
 
     io.close(@p.reader).must()
 
 # The next entry, or the end of the archive.
-test "next_entry: one entry, then the end"
+test "next_tar_entry: one entry, then the end"
     p @= io.pipe().must()
     io.write(p.writer, data: samples.of(samples.TAR_USTAR)).must()
     io.close(@p.writer).must()
     r @= tar_reader(p.reader, compression: .gzip, limit: 100000)
-    _ = next_entry(@r).must()
-    assert next_entry(@r).must() == .end
+    _ = next_tar_entry(@r).must()
+    assert next_tar_entry(@r).must() == .end
     io.close(@p.reader).must()
 
 # An entry's data, a few bytes at a time.
-test "read_data: two bytes of an entry"
+test "read_tar_data: two bytes of an entry"
     p @= io.pipe().must()
     io.write(p.writer, data: samples.of(samples.TAR_USTAR)).must()
     io.close(@p.writer).must()
     r @= tar_reader(p.reader, compression: .gzip, limit: 100000)
-    _ = next_entry(@r).must()
-    assert read_data(@r, most: 2).must() == bytes.from_text("on")
+    _ = next_tar_entry(@r).must()
+    assert read_tar_data(@r, most: 2).must() == bytes.from_text("on")
     io.close(@p.reader).must()
 
 # An entry's data, whole.
-test "read_rest: an entry's data"
+test "read_tar_rest: an entry's data"
     p @= io.pipe().must()
     io.write(p.writer, data: samples.of(samples.TAR_USTAR)).must()
     io.close(@p.writer).must()
     r @= tar_reader(p.reader, compression: .gzip, limit: 100000)
-    _ = next_entry(@r).must()
-    assert read_rest(@r).must() == bytes.from_text("one")
+    _ = next_tar_entry(@r).must()
+    assert read_tar_rest(@r).must() == bytes.from_text("one")
     io.close(@p.reader).must()
 
 # The names in a compressed archive.

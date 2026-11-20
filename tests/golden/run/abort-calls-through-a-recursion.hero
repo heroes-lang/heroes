@@ -1,0 +1,14 @@
+# Panel 253's R5: a call made again and again by a recursion is one line
+# with its count, `, 40 times`, where every frame returns to the same call,
+# so a deep recursion does not bury the calls above it; the frame of the
+# place's own function, the deepest, is not told again.
+
+function down(n: i64, xs: [i64]) -> i64
+    if n == 0
+        return xs[5]
+    return down(n: n - 1, xs: xs) + 1
+
+function main()
+    print("before")
+    xs: [i64] = [1, 2]
+    print(down(n: 40, xs: xs))

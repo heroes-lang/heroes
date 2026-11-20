@@ -187,7 +187,7 @@ capability streaming/close  a stream closed before or after its end
   python  MessageStream.close, Stream.close
 
 capability tokens/count  the input tokens a request would cost, counted by the API
-  heroes  llm/anthropic.count_tokens
+  heroes  llm/anthropic.count_input_tokens
   go      MessageService.CountTokens, MessageTokensCount
   rust    -
   python  messages.count_tokens

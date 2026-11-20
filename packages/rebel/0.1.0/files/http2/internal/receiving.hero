@@ -5,6 +5,7 @@
 # Header blocks are `blocks`'s.
 
 use bytes
+use http2
 use http2/internal/blocks
 use http2/internal/decoding
 use http2/internal/encoding
@@ -16,10 +17,10 @@ use http2/internal/values
 
 # The events the bytes `data` make after those held from before; a frame
 # cut short is held for the next call.
-function receive(@s: engine.State, data: [u8] lent, now_ms: i64) -> [model.Event]?
+function receive(@s: engine.State, data: [u8] lent, now_ms: i64) -> [http2.Event]?
     if s.failed
         return fail(code: model.CLOSED, msg: "receiving on an HTTP/2 connection that has ended")
-    events: [model.Event] @= []
+    events: [http2.Event] @= []
     bytes.push_all(to: @s.input, from: data)
     at: i64 @= 0
 
@@ -61,7 +62,7 @@ function receive(@s: engine.State, data: [u8] lent, now_ms: i64) -> [model.Event
     return ok(events)
 
 # Reads one frame.
-function handle(@s: engine.State, @events: [model.Event], head: frames.Head, payload: [u8], most: i64, now_ms: i64) -> ()?
+function handle(@s: engine.State, @events: [http2.Event], head: frames.Head, payload: [u8], most: i64, now_ms: i64) -> ()?
     if !s.settings_seen && (head.kind != 4 || head.flags & 0x1 != 0)
         return engine.fail_connection(
             @s,
@@ -133,7 +134,7 @@ function control(@s: engine.State, now_ms: i64) -> ()?
     return ok()
 
 # A DATA frame of `size` bytes, padding included, holding `data`.
-function on_data(@s: engine.State, @events: [model.Event], id: i64, data: [u8], end_stream: bool, size: i64, now_ms: i64) -> ()?
+function on_data(@s: engine.State, @events: [http2.Event], id: i64, data: [u8], end_stream: bool, size: i64, now_ms: i64) -> ()?
     if size > s.recv_window
         return engine.fail_connection(
             @s,
@@ -192,7 +193,7 @@ function on_data(@s: engine.State, @events: [model.Event], id: i64, data: [u8], 
 
 # A RST_STREAM: the stream ends, each counted against the rate a peer may
 # reset streams at.
-function on_reset(@s: engine.State, @events: [model.Event], id: i64, error: i64, now_ms: i64) -> ()?
+function on_reset(@s: engine.State, @events: [http2.Event], id: i64, error: i64, now_ms: i64) -> ()?
     state = engine.state_of(s, id: id)
 
     if state == engine.IDLE
@@ -216,7 +217,7 @@ function on_reset(@s: engine.State, @events: [model.Event], id: i64, error: i64,
 
 # A SETTINGS frame: an acknowledgement of this end's, or the peer's, applied
 # with every check and acknowledged.
-function on_settings(@s: engine.State, @events: [model.Event], ack: bool, list: [model.Setting], now_ms: i64) -> ()?
+function on_settings(@s: engine.State, @events: [http2.Event], ack: bool, list: [http2.Setting], now_ms: i64) -> ()?
     if ack
         if s.unacked.len() > 0
             done = s.unacked[0]
@@ -281,7 +282,7 @@ function decoding_limit(@s: engine.State, size: i64)
     decoding.set_limit(@s.decoder, size: size)
 
 # A PING: an answer to this end's is told, the peer's answered.
-function on_ping(@s: engine.State, @events: [model.Event], ack: bool, data: [u8], now_ms: i64) -> ()?
+function on_ping(@s: engine.State, @events: [http2.Event], ack: bool, data: [u8], now_ms: i64) -> ()?
     if ack
         engine.add(@events, e: .pong(data: data))
         return ok()
@@ -292,7 +293,7 @@ function on_ping(@s: engine.State, @events: [model.Event], ack: bool, data: [u8]
 
 # A GOAWAY: a client's streams past the last one the server processes are
 # refused, and may be sent again on another connection.
-function on_goaway(@s: engine.State, @events: [model.Event], last: i64, error: i64, debug: [u8]) -> ()?
+function on_goaway(@s: engine.State, @events: [http2.Event], last: i64, error: i64, debug: [u8]) -> ()?
     s.goaway_received @ true
 
     if last < s.peer_last
@@ -311,7 +312,7 @@ function on_goaway(@s: engine.State, @events: [model.Event], last: i64, error: i
 
 # A WINDOW_UPDATE: more bytes this end may send, on the connection or on a
 # stream.
-function on_window(@s: engine.State, @events: [model.Event], id: i64, increment: i64) -> ()?
+function on_window(@s: engine.State, @events: [http2.Event], id: i64, increment: i64) -> ()?
     if id == 0
         if s.send_window + increment > engine.MOST_WINDOW
             return engine.fail_connection(
@@ -346,11 +347,11 @@ function on_window(@s: engine.State, @events: [model.Event], id: i64, increment:
 ## Tests
 
 # A field.
-function field(name: str, value: str) -> model.Field
-    return model.Field(name: name, value: value, sensitive: false)
+function field(name: str, value: str) -> http2.Field
+    return http2.Field(name: name, value: value, sensitive: false)
 
 # A GET of `path`.
-function get_of(path: str) -> [model.Field]
+function get_of(path: str) -> [http2.Field]
     return [
         field(name: ":method", value: "GET")
         field(name: ":scheme", value: "https")
@@ -359,7 +360,7 @@ function get_of(path: str) -> [model.Field]
     ]
 
 # The events `to` makes of what `from` wrote.
-function pump(@from: engine.State, @to: engine.State, now_ms: i64) -> [model.Event]?
+function pump(@from: engine.State, @to: engine.State, now_ms: i64) -> [http2.Event]?
     out = from.out
     from.out @ []
     return receive(@to, data: out, now_ms: now_ms)
@@ -372,7 +373,7 @@ record Pair
     server: engine.State
 
 # Two sessions past their first frames.
-function paired(client: model.Options, server: model.Options) -> Pair
+function paired(client: http2.Options, server: http2.Options) -> Pair
     c @= engine.make(client: true, options: client)
     sv @= engine.make(client: false, options: server)
     _ = pump(from: @c, to: @sv, now_ms: 0).must()
@@ -448,7 +449,7 @@ test "receive: a CONTINUATION flood ends the connection with ENHANCE_YOUR_CALM"
     block = encoding.encode(@p.client.encoder, fields: get_of("/"))
     engine.emit(
         @p.client,
-        f: .headers(stream: 1, block: block, end_stream: true, end_headers: false, padding: 0, has_priority: false, priority: model.Priority(exclusive: false, depends_on: 0, weight: 16))
+        f: .headers(stream: 1, block: block, end_stream: true, end_headers: false, padding: 0, has_priority: false, priority: http2.Priority(exclusive: false, depends_on: 0, weight: 16))
     )
 
     for _ in range(from: 0, to: 70)
@@ -606,7 +607,7 @@ test "receive: a request with a body and trailers, and bytes handed over one at 
     _ = sending.send_from(@p.client, id: 1, data: [1, 2, 3], from: 0, end_stream: false).must()
     sending.send_headers(@p.client, id: 1, headers: [field(name: "x-sum", value: "6")], end_stream: true).must()
     out = sending.take_output(@p.client)
-    events: [model.Event] @= []
+    events: [http2.Event] @= []
 
     for b in out
         for e in receive(@p.server, data: [b], now_ms: 0).must()
@@ -621,8 +622,8 @@ test "receive: a server's SETTINGS with no push setting accepted, one sending pu
     sv @= engine.make(client: false, options: values.default_options())
     _ = pump(from: @c, to: @sv, now_ms: 0).must()
     sv.out @ []
-    engine.emit(@sv, f: .settings(ack: false, settings: [model.Setting(id: 3, value: 250)]))
+    engine.emit(@sv, f: .settings(ack: false, settings: [http2.Setting(id: 3, value: 250)]))
     assert pump(from: @sv, to: @c, now_ms: 0).must().len() == 1
-    engine.emit(@sv, f: .settings(ack: false, settings: [model.Setting(id: 2, value: 1)]))
+    engine.emit(@sv, f: .settings(ack: false, settings: [http2.Setting(id: 2, value: 1)]))
     assert pump(from: @sv, to: @c, now_ms: 0).is_err()
     assert goaway_error(c.out) == engine.PROTOCOL_ERROR

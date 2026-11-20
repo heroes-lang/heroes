@@ -305,7 +305,7 @@ capability pdf/read-structure  cross-reference tables and streams, object stream
   note    every revision is followed back through Prev and XRefStm, the newest entry of each object kept; where the table does not hold (a wrong startxref, offsets that miss their objects, no trailer), the file is scanned for its objects and its trailers, as pypdf's non-strict reader and Poppler do; pdfcpu's full validation against ISO 32000 is not offered: a file that reads is not thereby declared conforming
 
 capability pdf/read-objects  any object of a file: dictionaries, arrays, names, strings, numbers, references
-  heroes  pdf.Object, pdf.Kind, pdf.Reference, pdf.object_of, pdf.resolve, pdf.trailer_of, pdf.catalog_of, pdf.kind_of, pdf.bool_of, pdf.integer_of, pdf.number_of, pdf.bytes_of, pdf.name_of, pdf.items_of, pdf.entry_of, pdf.keys_of, pdf.reference_of
+  heroes  pdf.Object, pdf.Kind, pdf.Reference, pdf.object_of, pdf.resolve, pdf.trailer_of, pdf.catalog_of, pdf.kind_of, pdf.bool_of, pdf.int_of, pdf.number_of, pdf.bytes_of, pdf.name_of, pdf.items_of, pdf.entry_of, pdf.keys_of, pdf.reference_of
   go      -
   rust    lopdf::Object, Dictionary, ObjectId, StringFormat, Document::get_object, get_dictionary, get_dict_in_dict, dereference, catalog, has_object, traverse_objects, get_encrypted, lopdf::Document
   python  PdfReader.get_object, root_object, cache_get_indirect_object, cache_indirect_object, PdfReader.trailer; pypdf.generic ArrayObject, BooleanObject, ByteStringObject, DictionaryObject, FloatObject, IndirectObject, NameObject, NullObject, NumberObject, PdfObject, TextStringObject, RectangleObject, TreeObject, read_object, is_null_or_none, DirectReferenceLink, NamedReferenceLink, ReferenceLink

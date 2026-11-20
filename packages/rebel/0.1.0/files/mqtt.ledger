@@ -189,7 +189,7 @@ capability mqtt/topic-alias-out  a message published by a topic alias alone
   python  publish (properties TopicAlias)
 
 capability mqtt/reason-codes  MQTT 5's reason codes named, a refusal told by its code
-  heroes  mqtt.reason_text, the codes of README § A4 each refusal fails with
+  heroes  mqtt.reason_name, the codes of README § A4 each refusal fails with
   go      ConnectToken.ReturnCode
   rust    ConnectReturnCode, DisconnectReasonCode, PubAckReason, PubRecReason, PubRelReason, PubCompReason, SubscribeReasonCode, UnsubAckReason
   python  ReasonCode, ReasonCodes, ReasonCode.getName, ReasonCode.json, ReasonCode.pack, ReasonCode.unpack, connack_string, error_string, convert_connack_rc_to_reason_code, convert_disconnect_error_code_to_reason_code, ConnackCode, MQTTErrorCode

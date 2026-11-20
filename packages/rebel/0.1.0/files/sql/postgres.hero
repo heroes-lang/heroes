@@ -19,28 +19,13 @@
 #
 # ## The contract every driver keeps
 #
-# Every driver of Rebel answers these calls, name for name, over `sql`'s
-# types; only `open`'s argument, what names the database, is the driver's
-# own. A program moves from one database to another by changing its `use`,
-# its `open`, and the placeholders of its statements.
-#
-# - `open(...) -> Db?`: a connection; `close` ends it, and the program owes it.
-# - `close(@db: Db) -> ()?`
-# - `exec(@db: Db, statement: str, params: [sql.Value]) -> sql.Result?`: one
-#   statement that answers no rows, its values bound as parameters.
-# - `query(@db: Db, statement: str, params: [sql.Value]) -> sql.Rows?`: one
-#   statement's rows.
-# - `query_one(@db: Db, statement: str, params: [sql.Value]) -> sql.Row?`: its
-#   first row, failing `not_found` where it answers none.
-# - `exec_script(@db: Db, script: str) -> ()?`: several statements separated by
-#   semicolons, with no parameters, as a migration is.
-# - `prepare(@db: Db, statement: str) -> Statement?`: a statement read once and
-#   run many times; `close_statement` ends it.
-# - `exec_prepared(@db: Db, prepared: Statement, params: [sql.Value]) -> sql.Result?`
-# - `query_prepared(@db: Db, prepared: Statement, params: [sql.Value]) -> sql.Rows?`
-# - `close_statement(@db: Db, @prepared: Statement) -> ()?`
-# - `begin(@db: Db) -> ()?`, `commit(@db: Db) -> ()?`, `rollback(@db: Db) -> ()?`:
-#   a transaction, which `begin` refuses to open inside another.
+# This driver answers the calls `sql`'s opening comment lists, name for name,
+# over `sql`'s types: `open`, `close`, `is_closed`, `ping`, `exec`, `query`,
+# `query_one`, `exec_script`, `prepare`, `exec_prepared`, `query_prepared`,
+# `close_statement`, `begin`, `commit`, `rollback` and `in_transaction`. Only
+# `open`'s argument is its own. A statement may be built as a value by
+# `sql/build`, its dialect `.postgres`, and a schema changed by numbered
+# migrations by `sql/migrate`.
 #
 # A value never enters the text of a statement: PostgreSQL's placeholders are
 # `$1`, `$2` and on, and the list `params` gives their values in that order.
@@ -365,6 +350,16 @@ record Notice
     # The server's words, then its detail and hint where it gave them.
     message: str
 
+# Whether a transaction is open on `db`, as the server said after its last
+# answer: after `begin` until `commit` or `rollback` ends it, a failed one
+# included; the contract's question, which `transaction_of` answers in full.
+#
+# - `db`: the connection asked about; a closed one has none.
+#
+# See also `begin`, `transaction_of`.
+function in_transaction(db: Db) -> bool
+    return !is_closed(db) && transaction_of(db) != .idle
+
 # The transaction `db` stands in, as the server said after its last answer.
 #
 # - `db`: the connection asked about.
@@ -632,9 +627,9 @@ test "begin, commit and rollback: the statements sent, the state followed, and t
         server.joined([server.msg(kind: 'C', body: server.cstrs(["BEGIN"])), server.msg(kind: 'Z', body: ['T']), server.msg(kind: 'C', body: server.cstrs(["COMMIT"])), server.msg(kind: 'Z', body: ['I']), server.msg(kind: 'C', body: server.cstrs(["BEGIN"])), server.msg(kind: 'Z', body: ['T']), server.msg(kind: 'C', body: server.cstrs(["ROLLBACK"])), server.msg(kind: 'Z', body: ['I'])])
     )
     db @= Db(session: t.session)
-    assert transaction_of(db) == .idle
+    assert transaction_of(db) == .idle && !in_transaction(db)
     assert commit(@db).is_err() && rollback(@db).is_err()
-    assert !begin(@db).is_err() && transaction_of(db) == .open
+    assert !begin(@db).is_err() && transaction_of(db) == .open && in_transaction(db)
 
     match begin(@db)
         .ok _  => assert false
@@ -747,66 +742,69 @@ test "open: a port out of range and an empty user, refused before connecting"
         .err e => assert e.code == "invalid"
 
 test "open over TLS: a server answering N to the request for TLS fails unsupported, saying it offers none"
-    if tls.is_available()
-        port = tls_peer.free_port()
-        peer @= threads.spawn_text(body: tls_peer.serve, arg: "n " + to_str(port))
-        tls_peer.until_listening(port)
-        made = open(
-            Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
-        )
-        _ = threads.wait_text(@peer)
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    port = tls_peer.free_port()
+    peer @= threads.spawn_text(body: tls_peer.serve, arg: "n " + to_str(port))
+    tls_peer.until_listening(port)
+    made = open(
+        Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
+    )
+    _ = threads.wait_text(@peer)
 
-        match made
-            .ok d =>
-                db @= d
-                close(@db).must()
-                assert false
-            .err e =>
-                assert e.code == sql.UNSUPPORTED
-                assert e.msg == f"connecting to localhost:{port}: the server offers no TLS, answering \"N\" to the request for it; Security.plain connects in plain text, readable by whoever sits between"
+    match made
+        .ok d =>
+            db @= d
+            close(@db).must()
+            assert false
+        .err e =>
+            assert e.code == sql.UNSUPPORTED
+            assert e.msg == f"connecting to localhost:{port}: the server offers no TLS, answering \"N\" to the request for it; Security.plain connects in plain text, readable by whoever sits between"
 
 test "open over TLS: a server whose certificate names another host is refused invalid, saying so"
-    if tls.is_available()
-        port = tls_peer.free_port()
-        peer @= threads.spawn_text(body: tls_peer.serve, arg: "wrong " + to_str(port))
-        tls_peer.until_listening(port)
-        made = open(
-            Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
-        )
-        _ = threads.wait_text(@peer)
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    port = tls_peer.free_port()
+    peer @= threads.spawn_text(body: tls_peer.serve, arg: "wrong " + to_str(port))
+    tls_peer.until_listening(port)
+    made = open(
+        Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
+    )
+    _ = threads.wait_text(@peer)
 
-        match made
-            .ok d =>
-                db @= d
-                close(@db).must()
-                assert false
-            .err e =>
-                assert e.code == sql.INVALID
-                assert strings.contains(s: e.msg, substr: "the peer's certificate names other hosts")
+    match made
+        .ok d =>
+            db @= d
+            close(@db).must()
+            assert false
+        .err e =>
+            assert e.code == sql.INVALID
+            assert strings.contains(s: e.msg, substr: "the peer's certificate names other hosts")
 
 test "open over TLS: the request answered S, the handshake checked, and the server's FATAL answer read through TLS"
-    if tls.is_available()
-        port = tls_peer.free_port()
-        peer @= threads.spawn_text(body: tls_peer.serve, arg: "fatal " + to_str(port))
-        tls_peer.until_listening(port)
-        made = open(
-            Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
-        )
-        did = threads.wait_text(@peer)
-        assert strings.has_suffix(s: did, suffix: " bytes, answered FATAL")
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    port = tls_peer.free_port()
+    peer @= threads.spawn_text(body: tls_peer.serve, arg: "fatal " + to_str(port))
+    tls_peer.until_listening(port)
+    made = open(
+        Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
+    )
+    did = threads.wait_text(@peer)
+    assert strings.has_suffix(s: did, suffix: " bytes, answered FATAL")
 
-        match made
-            .ok d =>
-                db @= d
-                close(@db).must()
-                assert false
-            .err e =>
-                assert e.code == sql.PERMISSION
-                assert strings.contains(s: e.msg, substr: "28P01")
+    match made
+        .ok d =>
+            db @= d
+            close(@db).must()
+            assert false
+        .err e =>
+            assert e.code == sql.PERMISSION
+            assert strings.contains(s: e.msg, substr: "28P01")
 
 test "open live over TLS, against the server REBEL_POSTGRES_TLS_URL names, where one is named"
     match os.env("REBEL_POSTGRES_TLS_URL")
-        .err _ => print("open live over TLS: skipped, REBEL_POSTGRES_TLS_URL names no server")
+        .err _ => skip_test(reason: "REBEL_POSTGRES_TLS_URL names no server")
         .ok url =>
             db @= open(parse_url(url).must()).must()
             row = query_one(@db, "SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid()", []).must()
@@ -829,10 +827,10 @@ test "parse_url: a user, a host, a port and a database"
     assert opts.host == "db.lan" && opts.port == 6543 && opts.user == "ana" && opts.database == "shop"
 
 # A connection opened and closed, where a server answers on this machine as
-# `postgres` with no password; elsewhere it shows nothing.
+# `postgres` with no password; elsewhere it skips.
 test "open: a connection to a local server"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             assert !is_closed(db)
@@ -841,7 +839,7 @@ test "open: a connection to a local server"
 # A connection closed, after which every call fails `closed`.
 test "close: the end of a connection"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             close(@db).must()
@@ -850,7 +848,7 @@ test "close: the end of a connection"
 # Whether a connection is still open.
 test "is_closed: before and after close"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             assert !is_closed(db)
@@ -860,7 +858,7 @@ test "is_closed: before and after close"
 # A connection asked whether it still works.
 test "ping: a live connection"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             ping(@db).must()
@@ -869,7 +867,7 @@ test "ping: a live connection"
 # The transaction a connection stands in, before and inside one.
 test "transaction_of: idle, then open"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             assert transaction_of(db) == .idle
@@ -878,10 +876,22 @@ test "transaction_of: idle, then open"
             rollback(@db).must()
             close(@db).must()
 
+# Whether a transaction is open, before and inside one.
+test "in_transaction: none, then one open"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
+        .ok first =>
+            db @= first
+            assert !in_transaction(db)
+            begin(@db).must()
+            assert in_transaction(db)
+            rollback(@db).must()
+            close(@db).must()
+
 # The server's version, as it reported it on opening.
 test "parameter_of: the server's version"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             assert parameter_of(db, "server_version").must() != ""
@@ -890,7 +900,7 @@ test "parameter_of: the server's version"
 # The notice a `DROP TABLE IF EXISTS` of no table sends.
 test "take_notices: a table that was not there"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "DROP TABLE IF EXISTS pg_temp.not_there").must()
@@ -900,7 +910,7 @@ test "take_notices: a table that was not there"
 # A row inserted, its value bound as a parameter.
 test "exec: a row inserted with a parameter"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             _ = exec(@db, "CREATE TEMP TABLE bands (name text)", []).must()
@@ -911,7 +921,7 @@ test "exec: a row inserted with a parameter"
 # The rows of a query, each column read by its name.
 test "query: two rows of a series"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             found = query(@db, "SELECT n FROM generate_series(1, $1) AS n", [.integer(v: 2)]).must()
@@ -921,7 +931,7 @@ test "query: two rows of a series"
 # One row, the id an insert answered with `RETURNING`.
 test "query_one: the id of a row inserted"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TEMP TABLE people (id serial PRIMARY KEY, name text)").must()
@@ -932,7 +942,7 @@ test "query_one: the id of a row inserted"
 # Two statements run as one script.
 test "exec_script: a table made and filled"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TEMP TABLE t (n int); INSERT INTO t VALUES (1), (2)").must()
@@ -942,7 +952,7 @@ test "exec_script: a table made and filled"
 # A statement prepared once, its placeholders' types read.
 test "prepare: a statement of one placeholder"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             s @= prepare(@db, "SELECT $1::int8 + 1 AS next").must()
@@ -953,7 +963,7 @@ test "prepare: a statement of one placeholder"
 # A prepared statement run twice with different values.
 test "exec_prepared: two rows inserted by one statement"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TEMP TABLE t (n int)").must()
@@ -966,7 +976,7 @@ test "exec_prepared: two rows inserted by one statement"
 # A prepared query run with a value.
 test "query_prepared: a value read back"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             s @= prepare(@db, "SELECT $1::text AS name").must()
@@ -978,7 +988,7 @@ test "query_prepared: a value read back"
 # A prepared statement ended.
 test "close_statement: a statement no longer needed"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             s @= prepare(@db, "SELECT 1").must()
@@ -989,7 +999,7 @@ test "close_statement: a statement no longer needed"
 # A transaction opened and committed.
 test "begin: two inserts that commit together"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TEMP TABLE t (n int)").must()
@@ -1001,7 +1011,7 @@ test "begin: two inserts that commit together"
 # The statements of a transaction made to take effect.
 test "commit: an insert kept"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TEMP TABLE t (n int)").must()
@@ -1014,7 +1024,7 @@ test "commit: an insert kept"
 # The statements of a transaction undone.
 test "rollback: an insert undone"
     match open(options(host: "localhost", user: "postgres", database: "postgres"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no PostgreSQL server reached on this machine as postgres: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TEMP TABLE t (n int)").must()

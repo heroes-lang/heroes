@@ -1,0 +1,5 @@
+before
+4
+!called: abort-calls-a-function-inlined-into-main.main
+!at: abort-calls-a-function-inlined-into-main.hero:11:12
+!panic: division by zero

@@ -30,7 +30,7 @@ capability migrate/code  a migration written as code of the program rather than 
   python  alembic.op (add_column, alter_column, batch_alter_table, bulk_insert, create_check_constraint, create_exclude_constraint, create_foreign_key, create_index, create_primary_key, create_table, create_table_comment, create_unique_constraint, drop_column, drop_constraint, drop_index, drop_table, drop_table_comment, execute, rename_table, f, get_bind, get_context, invoke, implementation_for, register_operation, create_module_class_proxy, run_async, Operations)
 
 capability migrate/table  a table of the versions applied, made where it is not there
-  heroes  sql/migrate.create_table, sql/migrate.Options (`table`), sql/migrate.DEFAULT_TABLE
+  heroes  sql/migrate.create_table_statement, sql/migrate.Options (`table`), sql/migrate.DEFAULT_TABLE
   go      golang-migrate's `schema_migrations`, goose.DefaultTablename, goose.SetTableName, goose.TableName, goose.WithTableName, goose.EnsureDBVersion, EnsureDBVersionContext, goose.WithStore
   rust    `_sqlx_migrations`, Migrator::dangerous_set_table_name, Migrator::create_schema, Migrate::ensure_migrations_table
   python  `alembic_version`, the `version_table` option, alembic.command.ensure_version
@@ -76,7 +76,7 @@ capability migrate/redo  the last migration stepped back and applied again
   note    two plans, run one after the other: the step back, then the steps up
 
 capability migrate/current  the version a database stands at, and the migrations applied
-  heroes  sql/migrate.current_version, sql/migrate.read_applied, sql/migrate.select_applied
+  heroes  sql/migrate.current_version, sql/migrate.applied_of, sql/migrate.select_applied_statement
   go      migrate.Migrate.Version, goose.GetDBVersion, GetDBVersionContext, goose.Version, VersionContext, goose.Provider.GetDBVersion, goose.MigrationRecord
   rust    Migrator::version_exists, Migrate::list_applied_migrations, AppliedMigration
   python  alembic.command.current, alembic.command.heads

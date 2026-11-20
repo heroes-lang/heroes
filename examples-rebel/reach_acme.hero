@@ -118,12 +118,12 @@ function ceremony(directory: str)
                 name: acme.dns01_name(authorization.identifier.value),
                 value: acme.dns01_value(client: client, token: challenge.token).must()
             ).must()
-            _ = acme.respond(@client, challenge: challenge).must()
+            _ = acme.accept_challenge(@client, challenge: challenge).must()
         else
             challenge = acme.challenge_of(authorization: authorization, kind: "http-01").must()
             body = acme.http01_body(client: client, token: challenge.token).must()
             listener @= net.listen(host: "", port: 5002).must()
-            _ = acme.respond(@client, challenge: challenge).must()
+            _ = acme.accept_challenge(@client, challenge: challenge).must()
             net.set_accept_deadline(l: listener, ms: 4000).must()
 
             match http.serve_with(s: http.default_server(), l: listener, state: body, handler: answer)

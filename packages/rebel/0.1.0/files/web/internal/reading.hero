@@ -65,39 +65,6 @@ function with_vary(headers: [http.Header], name: str) -> [http.Header]
 function quoted(s: str) -> str
     return "\"" + strings.replace_all(s: strings.replace_all(s: s, old: "\\", new: "\\\\"), old: "\"", new: "\\\"") + "\""
 
-# Whether `s` is a token of RFC 6750's `b64token`: letters, digits, `-`, `.`,
-# `_`, `~`, `+` and `/`, at least one, then `=` signs.
-function is_b64token(s: str) -> bool
-    at: i64 @= 0
-
-    while at < s.len() && is_token68(s[at])
-        at @ at + 1
-
-    if at == 0
-        return false
-
-    while at < s.len() && s[at] == '='
-        at @ at + 1
-
-    return at == s.len()
-
-# Whether `c` stands in a `b64token` before its `=` signs.
-function is_token68(c: u8) -> bool
-    alnum = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
-    return alnum || c == '-' || c == '.' || c == '_' || c == '~' || c == '+' || c == '/'
-
-# What an `Authorization` value `value` holds after its scheme `scheme`,
-# compared without case: the text after the scheme and its spaces. Fails
-# `not_found` where the value is of another scheme.
-function credentials_of(value: str, scheme: str) -> str?
-    halves = strings.split_once(s: strings.trim(value), sep: " ").default(
-        strings.Halves(before: strings.trim(value), after: "")
-    )
-
-    if strings.to_lower_ascii(halves.before) != strings.to_lower_ascii(scheme)
-        return fail(code: "not_found", msg: f"the `Authorization` field is not of the scheme {scheme}")
-    return ok(strings.trim(halves.after))
-
 # The host and port an `Origin` value names, as written after its `://`;
 # "" for `null` or a value with none.
 function origin_host(origin: str) -> str
@@ -194,18 +161,6 @@ test "with_vary: added, grown, held already, a star"
 
 test "quoted: plain, a quote and a backslash"
     assert quoted("a b") == "\"a b\"" && quoted("a\"b\\c") == "\"a\\\"b\\\\c\""
-
-test "is_b64token: a token, padding, empty, a space, padding inside"
-    assert is_b64token("mF_9.B5f-4.1JqM") && is_b64token("abc==") && is_b64token("a/b+c~")
-    assert !is_b64token("") && !is_b64token("a b") && !is_b64token("a=b") && !is_b64token("==")
-
-test "is_token68: a letter, a slash, a space"
-    assert is_token68('a') && is_token68('/') && !is_token68(' ') && !is_token68('=')
-
-test "credentials_of: the scheme in any case, another scheme, nothing after"
-    assert credentials_of(value: "bearer  abc", scheme: "Bearer").must() == "abc"
-    assert credentials_of(value: "Basic abc", scheme: "Bearer").is_err()
-    assert credentials_of(value: "Bearer", scheme: "Bearer").must() == ""
 
 test "origin_host: a host and port, null"
     assert origin_host("https://example.com:8443") == "example.com:8443" && origin_host("null") == ""

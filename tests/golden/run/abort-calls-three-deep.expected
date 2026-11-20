@@ -1,0 +1,6 @@
+before
+!called: abort-calls-three-deep.middle
+!called: abort-calls-three-deep.outer
+!called: abort-calls-three-deep.main
+!at: abort-calls-three-deep.hero:11:12
+!panic: array index out of range
