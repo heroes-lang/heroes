@@ -1,0 +1,16 @@
+# Fixed 2026-11-20, defect 2583, lane-signals-2, beside the author's ruling A
+# of that day: a library's handler installed before `main` notes a SIGABRT and
+# returns, and another process sends the program one (a child it forks, which
+# sends it to its parent and ends).
+# Symptom: plain C goes on; the program died at 134 under *the process is
+# dying of SIGABRT, sent by process N*.
+# Cause: as `fixedbugs-2583-a-sigabrt-the-program-sends-itself-...`. No
+# `abort` sends a signal from another process, so nothing here is the ruling's
+# doubt: the signal is let go, as C lets it go, as a SIGTRAP another process
+# sends is.
+extern "fixedbugs-2583-a-library-that-notes-a-signal-and-returns.h"
+    function noted_abort_sent_by_a_child() -> i64
+
+function main()
+    print("noted: ", noted_abort_sent_by_a_child())
+    print("and on")

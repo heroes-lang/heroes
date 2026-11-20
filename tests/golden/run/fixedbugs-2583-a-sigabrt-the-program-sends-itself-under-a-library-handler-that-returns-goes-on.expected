@@ -1,0 +1,4 @@
+by raise: 1
+by kill: 2
+by pthread_kill: 3
+and on
