@@ -34,6 +34,7 @@
 # `build_reason` before its first build; `emission` claims its blessed file all
 # the same, so no orphan, and compares it on the platforms that build it.
 
+use expectation
 use freed_bytes
 use shell
 use strings
@@ -264,16 +265,36 @@ function emission_reason(label: str) -> str?
     return fail(code: "judged", msg: "judged on this machine")
 
 # Whether the report a case's `!sanitizer:` line names is the runtime's to
-# tell on this machine: a stack overflow on Windows, where ASan wrote nothing
-# in 3 and 4 of 8 runs of one case and the runtime's handler keeps the fault
-# (`runtime/parts/stack.c`, defect 641, measured on the Windows box
-# 2026-10-11 with the CI's clang 20.1.8). Such a run is judged by the case's
-# own ending, `!panic: stack exhausted`, as its `-O0` and `-O2` runs are.
-function runtime_tells(needle: str) -> bool
-    return shell.exe_suffix() == ".exe" && needle == STACK_OVERFLOW
+# tell on this machine, the run then judged by the case's own ending, as its
+# `-O0` and `-O2` runs are (`runtime/parts/stack.c`). Two, on Windows alone:
+# a stack overflow, where ASan wrote nothing in 3 and 4 of 8 runs of one case
+# (defect 641, measured on the Windows box 2026-10-11 with the CI's clang
+# 20.1.8); and a call to address zero, where ASan wrote nothing and the
+# program never ended in 3 runs of 3 with the runtime defect 2578 was filed
+# on, its report hanging on what the stack held (measured on the box
+# 2026-11-20). The call's needle, `on unknown address`, is a null read's too,
+# whose report stays ASan's, so the call is known by the case's ending.
+function runtime_tells(want: expectation.Expectation) -> bool
+    if shell.exe_suffix() != ".exe" || want.sanitizer.is_err()
+        return false
+
+    if want.sanitizer.must() == STACK_OVERFLOW
+        return true
+
+    match want.ending
+        .panics p => return want.sanitizer.must() == UNKNOWN_ADDRESS && strings.has_prefix(s: p.message, prefix: NULL_CALL)
+        .silent | .exits _ => return false
 
 constant STACK_OVERFLOW: str
     "stack-overflow"
+
+# ASan's words for a fault at an address no mapping holds.
+constant UNKNOWN_ADDRESS: str
+    "on unknown address"
+
+# The runtime's words for a call to address zero.
+constant NULL_CALL: str
+    "a null function pointer was called"
 
 ## Tests
 
@@ -395,8 +416,10 @@ test "every emission compared on Darwin alone names a blessed file and a case th
 
 # A stack overflow's report is the runtime's on Windows alone, and no other
 # report is (defect 641).
-test "only a stack overflow's report is the runtime's, and only on Windows"
+test "only a stack overflow's report and a null call's are the runtime's, and only on Windows (defects 641 and 2578)"
     on_windows = shell.exe_suffix() == ".exe"
-    assert runtime_tells("stack-overflow") == on_windows
-    assert !runtime_tells("on unknown address")
-    assert !runtime_tells("heap-use-after-free")
+    assert runtime_tells(expectation.split("!sanitizer: stack-overflow\n!panic: stack exhausted\n").must()) == on_windows
+    assert runtime_tells(expectation.split("before\n!sanitizer: on unknown address\n!panic: a null function pointer was called\n").must()) == on_windows
+    assert !runtime_tells(expectation.split("before\n!sanitizer: on unknown address\n!panic: a null pointer was read through, at offset 0x8\n").must())
+    assert !runtime_tells(expectation.split("!sanitizer: heap-use-after-free\n!panic: x\n").must())
+    assert !runtime_tells(expectation.split("!panic: a null function pointer was called\n").must())
