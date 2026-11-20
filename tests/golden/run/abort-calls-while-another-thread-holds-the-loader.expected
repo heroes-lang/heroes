@@ -1,0 +1,6 @@
+before
+1
+!called: abort-calls-while-another-thread-holds-the-loader.middle
+!called: abort-calls-while-another-thread-holds-the-loader.main
+!at: abort-calls-while-another-thread-holds-the-loader.hero:14:12
+!panic: array index out of range

@@ -618,21 +618,36 @@ __attribute__((unused)) static int hero_stack_regfile(void *ctx, HeroStackRegfil
 
 /* THE NAME OF THE FUNCTION WHOSE BYTES HOLD `addr`, or NULL: every name this
  * file and its neighbours tell is asked here (defect 2371, 2026-11-09). On
- * Linux the executable's own symbol table first (`parts/symbols.c`), because
+ * Linux the executable's own symbol table (`parts/symbols.c`), because
  * glibc's `dladdr` reads only the exported symbols and the compiler writes a
  * generic function's instance and the per-type functions `static`, so a frame
  * of `make_one<Held>` was told as `main`, the exported function under it, and
- * a generic recursion with no name at all; `dladdr` after it, for what lies
- * outside the executable. Darwin's `dladdr` reads the whole symbol table, the
- * local symbols too, and is asked alone. */
+ * a generic recursion with no name at all. Darwin's `dladdr` reads the whole
+ * symbol table, the local symbols too, and is asked alone.
+ *
+ * **AND ON LINUX NEVER `dladdr`** (defect 2622, 2026-11-20). It was asked
+ * after the table, for what lies outside the executable, and it waits on the
+ * loader's lock, which a thread inside `dlopen` holds: a null read inside
+ * libc while another thread's `dlopen` waited in its library's constructor
+ * was killed at a 20 s timeout, exit 137, with nothing said, where alone the
+ * same fault said its report and ended at 134 (lane-stack's probe in Linux
+ * arm64, glibc 2.41). Every name asked here is asked inside a signal handler
+ * or on the way to an abort, so a name the executable does not hold is not
+ * told on Linux: a C library's function the pc stands in, which the report
+ * passes over for the Heroes frame above it (`hero_stack_blame`), and a
+ * thread whose body a shared library holds, said without its name
+ * (`parts/spawn.c`). Darwin's `dladdr` answered at once while another thread
+ * held its loader, inside a constructor (panel 253's probe) and inside the
+ * read of a file (`tests/golden/run/fixedbugs-2622-the-loader-held.h`), and
+ * stays. */
 static const char *hero_stack_symbol(uintptr_t addr) {
 #if defined(__linux__)
-    const char *own = hero_own_symbol(addr);
-    if (own != NULL) return own;
-#endif
+    return hero_own_symbol(addr);
+#else
     Dl_info info;
     if (dladdr((void *)addr, &info) == 0) return NULL;
     return info.dli_sname;
+#endif
 }
 
 /* The Heroes function on the interrupted stack nearest the fault: the pc's own
