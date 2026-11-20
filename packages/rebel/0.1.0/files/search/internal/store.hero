@@ -17,7 +17,7 @@
 # before it is used, and a count is held to the bytes left before anything
 # is made for it.
 
-use numbers
+use math
 use search/internal/codes
 use search/internal/engine as postings
 use search/internal/score
@@ -35,7 +35,7 @@ function put_low(@out: [u8], value: i64, count: i64)
 
 # Adds the eight bytes of `value` to `out`, the lowest first.
 function put_f64(@out: [u8], value: f64)
-    rest @= numbers.f64_to_bits(value)
+    rest @= math.f64_to_bits(value)
 
     for _ in range(from: 0, to: 8)
         out @ out.push(to_u8(rest % 256).must())
@@ -126,7 +126,7 @@ function take_f64(bytes: [u8] lent, @at: i64, what: str) -> f64?
         index @ index - 1
 
     at @ at + 8
-    return ok(numbers.bits_to_f64(value))
+    return ok(math.bits_to_f64(value))
 
 # The text at `at`: its length, then that many bytes of UTF-8.
 function take_text(bytes: [u8] lent, @at: i64, what: str) -> str?

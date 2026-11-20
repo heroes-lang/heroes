@@ -96,7 +96,7 @@ function product(xs: [f64]) -> f64
     return total
 
 # The sum of the products of `a` and `b` in pairs, rounded once: each product
-# is a float and its exact error, `mul_add` of the factors less the product,
+# is a float and its exact error, `multiply_add` of the factors less the product,
 # and `sum` adds them all.
 #
 # - `a`: the first floats.

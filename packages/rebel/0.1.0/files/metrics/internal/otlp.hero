@@ -5,7 +5,7 @@
 # Field numbers are the `.proto` files' of opentelemetry-proto 1.x, read from
 # its descriptors.
 
-use numbers
+use math
 use protobuf
 use strings
 
@@ -44,12 +44,12 @@ function put_fixed64(@to: [u8], number: i64, v: u64)
 # `optional` field are written at zero too.
 function put_double(@to: [u8], number: i64, x: f64)
     protobuf.push_tag(@to, number: number, wire: .fixed64)
-    protobuf.push_fixed64(@to, v: numbers.f64_to_bits(x))
+    protobuf.push_fixed64(@to, v: math.f64_to_bits(x))
 
 # Writes `x` as the `double` field `number`, left out where it is 0, as a plain
 # proto3 field is.
 function put_double_unless_zero(@to: [u8], number: i64, x: f64)
-    if numbers.f64_to_bits(x) == 0
+    if math.f64_to_bits(x) == 0
         return
     put_double(@to, number: number, x: x)
 

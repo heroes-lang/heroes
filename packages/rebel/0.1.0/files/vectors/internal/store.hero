@@ -17,7 +17,7 @@
 # layer, a level stay within what the links can draw, a component be
 # finite, an id not live twice.
 
-use numbers
+use math
 use random
 use vectors/internal/arith
 use vectors/internal/codes
@@ -78,7 +78,7 @@ function write(graph: hnsw.Graph lent) -> [u8]
         first = node * graph.dimension
 
         for at in range(from: first, to: first + graph.dimension)
-            put_low(@out, value: to_i64(numbers.f32_to_bits(graph.data[at])).must(), count: 4)
+            put_low(@out, value: to_i64(math.f32_to_bits(graph.data[at])).must(), count: 4)
 
         base_at = node * base_width
 
@@ -228,7 +228,7 @@ function read(bytes: [u8] lent) -> hnsw.Graph?
 
         for index in range(from: 0, to: dimension)
             bits = take_low(bytes, at: @at, count: 4, what: f"the vector of node {node}")?
-            x = numbers.bits_to_f32(to_u32(bits).must())
+            x = math.bits_to_f32(to_u32(bits).must())
 
             if !arith.is_finite(x)
                 return fail(

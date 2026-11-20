@@ -1,19 +1,19 @@
-# A MessagePack float read and written through `numbers`' exact conversions
+# A MessagePack float read and written through `math`'s exact conversions
 # between a float and its IEEE 754 bits, the bytes most significant first:
 # written as a float 32 where a single holds the double exactly, both zeros
 # and both infinities included, else as a float 64. Every NaN is written as
 # the one quiet NaN, a float 32, its sign and payload lost, as
-# `numbers.f64_to_bits` says and as `bson` writes it.
+# `math.f64_to_bits` says and as `bson` writes it.
 
 use bytes
-use numbers
+use math
 
 # The value of the single whose 32 bits are `s`, widened to a double, which
 # holds every single exactly.
 #
 # - `s`: the bits, 0 to 2^32 - 1, the sign highest.
 function single_value(s: i64) -> f64
-    return to_f64(numbers.bits_to_f32(to_u32(s).must()))
+    return to_f64(math.bits_to_f32(to_u32(s).must()))
 
 # The value of the double whose eight bytes, most significant first, begin at
 # `at` of `data`. Aborts where fewer than eight bytes stand there; the decoder
@@ -22,7 +22,7 @@ function single_value(s: i64) -> f64
 # - `data`: the bytes read.
 # - `at`: where the double's first byte stands.
 function double_value(data: [u8], at: i64) -> f64
-    return numbers.bits_to_f64(bytes.decode_u64_be(data, at: at).must())
+    return math.bits_to_f64(bytes.decode_u64_be(data, at: at).must())
 
 # `x` as a MessagePack float at its shortest, its format byte first: float 32
 # where a single holds it exactly, every `nan` and both infinities included,
@@ -33,15 +33,15 @@ function shortest(x: f64) -> [u8]
     single = to_f32(x)
 
     if x != x || to_f64(single) == x
-        return bytes.concat([[0xca], bytes.encode_u32_be(numbers.f32_to_bits(single))])
-    return bytes.concat([[0xcb], bytes.encode_u64_be(numbers.f64_to_bits(x))])
+        return bytes.concat([[0xca], bytes.encode_u32_be(math.f32_to_bits(single))])
+    return bytes.concat([[0xcb], bytes.encode_u64_be(math.f64_to_bits(x))])
 
 ## Tests
 
 test "single_value: the smallest subnormal and normal, the largest, 100000, the infinities, a NaN"
-    assert single_value(0x00000001) == numbers.bits_to_f64(0x36a0000000000000)
-    assert single_value(0x00800000) == numbers.bits_to_f64(0x3810000000000000)
-    assert single_value(0x7f7fffff) == numbers.bits_to_f64(0x47efffffe0000000)
+    assert single_value(0x00000001) == math.bits_to_f64(0x36a0000000000000)
+    assert single_value(0x00800000) == math.bits_to_f64(0x3810000000000000)
+    assert single_value(0x7f7fffff) == math.bits_to_f64(0x47efffffe0000000)
     assert single_value(0x47c35000) == 100000.0
     assert single_value(0x7f800000) == 1.0 / 0.0
     assert single_value(0xff800000) == -1.0 / 0.0
@@ -53,8 +53,8 @@ test "single_value: the smallest subnormal and normal, the largest, 100000, the 
 test "double_value: 1.1, -4.1, the smallest subnormal, the largest, read at an offset"
     assert double_value(data: [0x3f, 0xf1, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9a], at: 0) == 1.1
     assert double_value(data: [0xff, 0xc0, 0x10, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66], at: 1) == -4.1
-    assert double_value(data: [0, 0, 0, 0, 0, 0, 0, 1], at: 0) == numbers.bits_to_f64(1)
-    assert double_value(data: [0x7f, 0xef, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], at: 0) == numbers.bits_to_f64(0x7fefffffffffffff)
+    assert double_value(data: [0, 0, 0, 0, 0, 0, 0, 1], at: 0) == math.bits_to_f64(1)
+    assert double_value(data: [0x7f, 0xef, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], at: 0) == math.bits_to_f64(0x7fefffffffffffff)
 
 test "shortest: zero, minus zero, the infinities and nan, as singles"
     assert shortest(0.0) == [0xca, 0, 0, 0, 0]
@@ -68,14 +68,14 @@ test "shortest: the singles, the largest and the subnormals included"
     assert shortest(1.5) == [0xca, 0x3f, 0xc0, 0, 0]
     assert shortest(-4.0) == [0xca, 0xc0, 0x80, 0, 0]
     assert shortest(100000.0) == [0xca, 0x47, 0xc3, 0x50, 0x00]
-    assert shortest(numbers.bits_to_f64(0x47efffffe0000000)) == [0xca, 0x7f, 0x7f, 0xff, 0xff]
-    assert shortest(numbers.bits_to_f64(0x36a0000000000000)) == [0xca, 0x00, 0x00, 0x00, 0x01]
-    assert shortest(numbers.bits_to_f64(0x3810000000000000)) == [0xca, 0x00, 0x80, 0x00, 0x00]
+    assert shortest(math.bits_to_f64(0x47efffffe0000000)) == [0xca, 0x7f, 0x7f, 0xff, 0xff]
+    assert shortest(math.bits_to_f64(0x36a0000000000000)) == [0xca, 0x00, 0x00, 0x00, 0x01]
+    assert shortest(math.bits_to_f64(0x3810000000000000)) == [0xca, 0x00, 0x80, 0x00, 0x00]
 
 test "shortest: the doubles, just past a single, a subnormal below a single's, and the largest"
     assert shortest(1.1) == [0xcb, 0x3f, 0xf1, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9a]
     assert shortest(-4.1) == [0xcb, 0xc0, 0x10, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]
-    assert shortest(numbers.bits_to_f64(0x47effffff0000000)) == [0xcb, 0x47, 0xef, 0xff, 0xff, 0xf0, 0x00, 0x00, 0x00]
-    assert shortest(numbers.bits_to_f64(0x3690000000000000)) == [0xcb, 0x36, 0x90, 0, 0, 0, 0, 0, 0]
-    assert shortest(numbers.bits_to_f64(1)) == [0xcb, 0, 0, 0, 0, 0, 0, 0, 1]
-    assert shortest(numbers.bits_to_f64(0x7fefffffffffffff)) == [0xcb, 0x7f, 0xef, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    assert shortest(math.bits_to_f64(0x47effffff0000000)) == [0xcb, 0x47, 0xef, 0xff, 0xff, 0xf0, 0x00, 0x00, 0x00]
+    assert shortest(math.bits_to_f64(0x3690000000000000)) == [0xcb, 0x36, 0x90, 0, 0, 0, 0, 0, 0]
+    assert shortest(math.bits_to_f64(1)) == [0xcb, 0, 0, 0, 0, 0, 0, 0, 1]
+    assert shortest(math.bits_to_f64(0x7fefffffffffffff)) == [0xcb, 0x7f, 0xef, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]

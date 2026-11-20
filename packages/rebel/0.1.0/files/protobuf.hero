@@ -19,10 +19,7 @@
 use bytes
 use json
 use maps
-
-# `numbers` is a word of this file's own (a group's field numbers), so the
-# package is read under another name.
-use numbers as numerics
+use math
 use protobuf/internal/bits as twos
 use protobuf/internal/carried
 use protobuf/internal/decoder
@@ -658,9 +655,9 @@ function parse_schema_texts(texts: {str: str}) -> Schema?
             .sint64
 
         fallback: Value = if c == model.DOUBLE
-            .double(v: numerics.bits_to_f64(b))
+            .double(v: math.bits_to_f64(b))
         else if c == model.FLOAT
-            .float(v: to_f32(numerics.bits_to_f64(b)))
+            .float(v: to_f32(math.bits_to_f64(b)))
         else if c == model.INT64 || c == model.SINT64 || c == model.SFIXED64
             .int64(v: twos.i64_of(b))
         else if c == model.INT32 || c == model.SINT32 || c == model.SFIXED32
@@ -2277,8 +2274,8 @@ function to_wrapper(v: Value) -> Message?
         .int64 x                                           => x.v == 0
         .uint32 x                                          => x.v == 0
         .uint64 x                                          => x.v == 0
-        .float x                                           => numerics.f32_to_bits(x.v) == 0
-        .double x                                          => numerics.f64_to_bits(x.v) == 0
+        .float x                                           => math.f32_to_bits(x.v) == 0
+        .double x                                          => math.f64_to_bits(x.v) == 0
         .text x                                            => x.v == ""
         .binary x                                          => x.v.len() == 0
         .enumeration _ | .message _ | .list _ | .entries _ => true
@@ -2522,7 +2519,7 @@ function push_varint(@to: [u8], v: u64)
 # - `to`: the bytes written so far, which this lengthens.
 # - `v`: any `u32`.
 #
-# See also `decode_fixed32`, `numbers.f32_to_bits`.
+# See also `decode_fixed32`, `math.f32_to_bits`.
 function push_fixed32(@to: [u8], v: u32)
     wires.push_fixed32(@to, v)
 
@@ -2531,7 +2528,7 @@ function push_fixed32(@to: [u8], v: u32)
 # - `to`: the bytes written so far, which this lengthens.
 # - `v`: any `u64`.
 #
-# See also `decode_fixed64`, `numbers.f64_to_bits`.
+# See also `decode_fixed64`, `math.f64_to_bits`.
 function push_fixed64(@to: [u8], v: u64)
     wires.push_fixed64(@to, v)
 
@@ -2588,7 +2585,7 @@ function decode_varint(data: [u8], at: i64) -> WireNumber?
 # - `at`: the index of the first, 0 to the length of `data`.
 #
 # Fails `invalid` where fewer than four bytes are left. See also
-# `push_fixed32`, `numbers.bits_to_f32`.
+# `push_fixed32`, `math.bits_to_f32`.
 function decode_fixed32(data: [u8], at: i64) -> WireNumber?
     got = wires.fixed32(data, at: at)?
     return ok(WireNumber(value: got.value, next: got.next))
@@ -2599,7 +2596,7 @@ function decode_fixed32(data: [u8], at: i64) -> WireNumber?
 # - `at`: the index of the first, 0 to the length of `data`.
 #
 # Fails `invalid` where fewer than eight bytes are left. See also
-# `push_fixed64`, `numbers.bits_to_f64`.
+# `push_fixed64`, `math.bits_to_f64`.
 function decode_fixed64(data: [u8], at: i64) -> WireNumber?
     got = wires.fixed64(data, at: at)?
     return ok(WireNumber(value: got.value, next: got.next))

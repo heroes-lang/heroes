@@ -1,13 +1,14 @@
 # IEEE 754's binary16, the half-precision float, made from a double and read
 # back by exact arithmetic: the language has no cast between a float and its
 # bits, so a double is split into its integer significand and its power of two
-# (`exact.split`), rounded half to even at the half's place, and a half's bits
-# are read back by multiplying by a power of two (`near.pow2`), exact for every
-# half. A half holds 1 sign bit, 5 bits of exponent biased by 15 and 10 bits of
-# fraction; every half is an `f32` and an `f64` exactly.
+# (`split`, by `ieee`'s exact steps), rounded half to even at the half's place,
+# and a half's bits are read back by multiplying by a power of two
+# (`ieee.scaled`), exact for every half. A half holds 1 sign bit, 5 bits of
+# exponent biased by 15 and 10 bits of fraction; every half is an `f32` and an
+# `f64` exactly.
 
-use numbers/internal/exact
-use numbers/internal/near
+use math/internal/ieee
+use math/internal/limits
 
 # The bits of the quiet NaN with its sign clear, which every NaN becomes: the
 # language reads neither a NaN's sign nor its payload.
@@ -21,6 +22,27 @@ constant INFINITY: i64
 # The sign bit.
 constant SIGN: i64
     0x8000
+
+# A finite float above zero as an integer times a power of two: `a` is
+# `significand` times 2 to the `exp`.
+record Split
+    # Under 2 to the 53rd; at or above 2 to the 52nd unless `a` is subnormal.
+    significand: i64
+    # At or above -1074, an `f64`'s smallest step.
+    exp: i64
+
+# `a`, finite and above zero, split as `Split` says: scaled by an exact power
+# of two to its 53 bits, or to the smallest step where it is subnormal.
+function split(a: f64) -> Split
+    e = ieee.exponent_of(a)
+
+    if e < -1022
+        return Split(significand: to_i64(ieee.scaled(x: a, power: 1074)).must(), exp: -1074)
+    return Split(significand: to_i64(ieee.scaled(x: a, power: 52 - e)).must(), exp: e - 52)
+
+# 2 to the `k`th, exactly, for `k` from -1074 to 1023.
+function pow2(k: i64) -> f64
+    return ieee.scaled(x: 1.0, power: k)
 
 # How many bits a number needs, 0 for 0; `n` is at or above 0.
 function bit_len(n: i64) -> i64
@@ -70,7 +92,7 @@ function bits_of(x: f64) -> i64
 
     if a - a != 0.0
         return sign | INFINITY
-    parts = exact.split(a)
+    parts = split(a)
     s = parts.significand
     e = parts.exp
 
@@ -112,12 +134,12 @@ function value_of(bits: i64) -> f64
 
     if field == 31
         if fraction != 0
-            return near.not_a_number()
-        magnitude @ near.infinity()
+            return limits.NAN
+        magnitude @ limits.INF
     else if field == 0
-        magnitude @ to_f64(fraction) * near.pow2(-24)
+        magnitude @ to_f64(fraction) * pow2(-24)
     else
-        magnitude @ to_f64(1024 + fraction) * near.pow2(field - 25)
+        magnitude @ to_f64(1024 + fraction) * pow2(field - 25)
 
     if negative
         return -magnitude
@@ -128,36 +150,36 @@ test "bits_of: zeros of both signs, one, the infinities, and every NaN the quiet
     assert bits_of(-0.0) == 0x8000
     assert bits_of(1.0) == 0x3c00
     assert bits_of(-1.0) == 0xbc00
-    assert bits_of(near.infinity()) == 0x7c00
-    assert bits_of(-near.infinity()) == 0xfc00
-    assert bits_of(near.not_a_number()) == 0x7e00
+    assert bits_of(limits.INF) == 0x7c00
+    assert bits_of(-limits.INF) == 0xfc00
+    assert bits_of(limits.NAN) == 0x7e00
 
 test "bits_of: the subnormals, the smallest normal, and what rounds to zero"
-    assert bits_of(near.pow2(-24)) == 0x0001
-    assert bits_of(near.pow2(-25)) == 0x0000
-    assert bits_of(near.pow2(-25) * 1.0000001) == 0x0001
-    assert bits_of(3.0 * near.pow2(-25)) == 0x0002
-    assert bits_of(1.5 * near.pow2(-25)) == 0x0001
-    assert bits_of(near.pow2(-14) - near.pow2(-24)) == 0x03ff
-    assert bits_of(near.pow2(-14)) == 0x0400
-    assert bits_of(near.pow2(-14) + near.pow2(-25)) == 0x0400
-    assert bits_of(near.pow2(-14) + 3.0 * near.pow2(-25)) == 0x0402
+    assert bits_of(pow2(-24)) == 0x0001
+    assert bits_of(pow2(-25)) == 0x0000
+    assert bits_of(pow2(-25) * 1.0000001) == 0x0001
+    assert bits_of(3.0 * pow2(-25)) == 0x0002
+    assert bits_of(1.5 * pow2(-25)) == 0x0001
+    assert bits_of(pow2(-14) - pow2(-24)) == 0x03ff
+    assert bits_of(pow2(-14)) == 0x0400
+    assert bits_of(pow2(-14) + pow2(-25)) == 0x0400
+    assert bits_of(pow2(-14) + 3.0 * pow2(-25)) == 0x0402
     assert bits_of(0.00000001) == 0x0000
-    assert bits_of(near.pow2(-1074)) == 0x0000
-    assert bits_of(-near.pow2(-1074)) == 0x8000
+    assert bits_of(pow2(-1074)) == 0x0000
+    assert bits_of(-pow2(-1074)) == 0x8000
 
 test "bits_of: the largest half, the last value that rounds to it, and the first that overflows"
     assert bits_of(65504.0) == 0x7bff
     assert bits_of(65519.99) == 0x7bff
-    assert bits_of(65520.0 - near.pow2(-30)) == 0x7bff
+    assert bits_of(65520.0 - pow2(-30)) == 0x7bff
     assert bits_of(65520.0) == 0x7c00
     assert bits_of(-65520.0) == 0xfc00
-    assert bits_of(near.pow2(1000)) == 0x7c00
+    assert bits_of(pow2(1000)) == 0x7c00
 
 test "bits_of: halfway cases going to the even fraction both ways, and a value just past halfway"
-    assert bits_of(1.0 + near.pow2(-11)) == 0x3c00
-    assert bits_of(1.0 + 3.0 * near.pow2(-11)) == 0x3c02
-    assert bits_of(1.0 + near.pow2(-11) + near.pow2(-40)) == 0x3c01
+    assert bits_of(1.0 + pow2(-11)) == 0x3c00
+    assert bits_of(1.0 + 3.0 * pow2(-11)) == 0x3c02
+    assert bits_of(1.0 + pow2(-11) + pow2(-40)) == 0x3c01
     assert bits_of(2049.0) == 0x6800
     assert bits_of(2050.0) == 0x6801
     assert bits_of(2051.0) == 0x6802
@@ -168,14 +190,14 @@ test "bits_of: values that are no half, rounded as clang's _Float16 rounds them"
     assert bits_of(1.0 / 3.0) == 0x3555
 
 test "value_of: the subnormals, the smallest normal, the largest, the infinities and the NaNs"
-    assert value_of(0x0001) == near.pow2(-24)
-    assert value_of(0x8001) == -near.pow2(-24)
-    assert value_of(0x03ff) == near.pow2(-14) - near.pow2(-24)
-    assert value_of(0x0400) == near.pow2(-14)
+    assert value_of(0x0001) == pow2(-24)
+    assert value_of(0x8001) == -pow2(-24)
+    assert value_of(0x03ff) == pow2(-14) - pow2(-24)
+    assert value_of(0x0400) == pow2(-14)
     assert value_of(0x7bff) == 65504.0
     assert value_of(0xfbff) == -65504.0
-    assert value_of(0x7c00) == near.infinity()
-    assert value_of(0xfc00) == -near.infinity()
+    assert value_of(0x7c00) == limits.INF
+    assert value_of(0xfc00) == -limits.INF
     assert value_of(0x7e00) != value_of(0x7e00)
     assert value_of(0x7c01) != value_of(0x7c01)
     assert value_of(0x3555) == 0.333251953125

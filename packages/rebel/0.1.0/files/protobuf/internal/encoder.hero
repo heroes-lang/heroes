@@ -5,7 +5,7 @@
 # group's two tags.
 
 use bytes
-use numbers
+use math
 use protobuf/internal/bits
 use protobuf/internal/event
 use protobuf/internal/linker
@@ -104,9 +104,9 @@ function push_scalar(@to: [u8], f: model.Field, e: event.Event, packed: bool) ->
     else if k == model.BOOL
         wire.push_varint(@to, bits.u64_of(e.number))
     else if k == model.FLOAT
-        wire.push_fixed32(@to, numbers.f32_to_bits(to_f32(e.real)))
+        wire.push_fixed32(@to, math.f32_to_bits(to_f32(e.real)))
     else if k == model.DOUBLE
-        wire.push_fixed64(@to, numbers.f64_to_bits(e.real))
+        wire.push_fixed64(@to, math.f64_to_bits(e.real))
     else if e.kind == event.TEXT
         wire.push_bytes(to: @to, v: bytes.from_text(e.text))
     else

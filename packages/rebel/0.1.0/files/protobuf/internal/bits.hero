@@ -1,7 +1,7 @@
 # The bits of numbers as the wire holds them: an `i64` and a `u64` read as the
 # same 64 bits in two's complement, and the low 32 bits of a varint. A float's
-# and a double's IEEE 754 bits are `numbers`' (`numbers.f32_to_bits`,
-# `numbers.f64_to_bits` and back) since 2026-11-18.
+# and a double's IEEE 754 bits are `math`'s (`math.f32_to_bits`,
+# `math.f64_to_bits` and back), `numbers`' from 2026-11-18 to 2026-11-20.
 
 # 2^63, the sign bit of a `u64` read as an `i64`.
 constant SIGN_64: u64

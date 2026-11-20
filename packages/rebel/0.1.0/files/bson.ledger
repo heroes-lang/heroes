@@ -28,7 +28,7 @@ capability bson/encode  a document written as its bytes
   go      Marshal, Encoder.Encode, NewEncoder
   rust    to_vec, Document::to_writer, RawDocumentBuf::from_document
   python  encode, BSON.encode
-  note    a regex's options are written sorted and an array's names as 0, 1, ..., as pymongo writes them; a name or pattern holding a zero byte is refused, `invalid`; a double is written by `numbers.f64_to_bits`, exact for every float but a NaN, whose sign and payload no route of Rebel keeps: every NaN is read and written as the quiet NaN, 0x7ff8000000000000, where Go and Rust keep a NaN's bits
+  note    a regex's options are written sorted and an array's names as 0, 1, ..., as pymongo writes them; a name or pattern holding a zero byte is refused, `invalid`; a double is written by `math.f64_to_bits`, exact for every float but a NaN, whose sign and payload no route of Rebel keeps: every NaN is read and written as the quiet NaN, 0x7ff8000000000000, where Go and Rust keep a NaN's bits
 
 capability bson/decode  bytes read into a document, every length and every text checked, the nesting bounded
   heroes  bson.decode, bson.decode_with, bson.DecodeOptions, bson.strict, bson.DEFAULT_MAX_DEPTH

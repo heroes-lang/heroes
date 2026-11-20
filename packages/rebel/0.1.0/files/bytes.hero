@@ -27,7 +27,7 @@ use bytes/internal/search
 use bytes/internal/text
 use bytes/internal/trimming
 use bytes/internal/varint
-use numbers
+use math
 
 ## Codes
 
@@ -1166,11 +1166,11 @@ function decode_i64_le(s: [u8], at: i64) -> i64?
 #
 # - `x`: any `f32`; both zeros, the subnormals and the infinities keep their
 #   bits, and every NaN is written as the quiet NaN `0x7fc00000`, as
-#   `numbers.f32_to_bits` says.
+#   `math.f32_to_bits` says.
 #
 # See also `decode_f32_be`, `encode_f32_le`.
 function encode_f32_be(x: f32) -> [u8]
-    return encode_u32_be(numbers.f32_to_bits(x))
+    return encode_u32_be(math.f32_to_bits(x))
 
 # The 4 bytes of `x` as IEEE 754 lays them out, the lowest byte first (little
 # endian), Python's `struct` format `<f`.
@@ -1179,7 +1179,7 @@ function encode_f32_be(x: f32) -> [u8]
 #
 # See also `decode_f32_le`, `encode_f32_be`.
 function encode_f32_le(x: f32) -> [u8]
-    return encode_u32_le(numbers.f32_to_bits(x))
+    return encode_u32_le(math.f32_to_bits(x))
 
 # The 8 bytes of `x` as IEEE 754 lays them out, the highest byte first (big
 # endian, the order of the network): what a binary format writes for an
@@ -1187,11 +1187,11 @@ function encode_f32_le(x: f32) -> [u8]
 #
 # - `x`: any `f64`; both zeros, the subnormals and the infinities keep their
 #   bits, and every NaN is written as the quiet NaN
-#   `0x7ff8000000000000`, as `numbers.f64_to_bits` says.
+#   `0x7ff8000000000000`, as `math.f64_to_bits` says.
 #
 # See also `decode_f64_be`, `encode_f64_le`.
 function encode_f64_be(x: f64) -> [u8]
-    return encode_u64_be(numbers.f64_to_bits(x))
+    return encode_u64_be(math.f64_to_bits(x))
 
 # The 8 bytes of `x` as IEEE 754 lays them out, the lowest byte first (little
 # endian), Python's `struct` format `<d`.
@@ -1200,7 +1200,7 @@ function encode_f64_be(x: f64) -> [u8]
 #
 # See also `decode_f64_le`, `encode_f64_be`.
 function encode_f64_le(x: f64) -> [u8]
-    return encode_u64_le(numbers.f64_to_bits(x))
+    return encode_u64_le(math.f64_to_bits(x))
 
 # The `f32` that the 4 bytes of `s` from index `at` hold as IEEE 754 lays
 # them out, the highest byte first (big endian, the order of the network).
@@ -1214,7 +1214,7 @@ function encode_f64_le(x: f64) -> [u8]
 # negative `at` or one past the end included. See also `encode_f32_be`,
 # `decode_f32_le`.
 function decode_f32_be(s: [u8], at: i64) -> f32?
-    return ok(numbers.bits_to_f32(to_u32(binary.decoded(s, at: at, width: 4, big: true, asked: "an f32")?).must()))
+    return ok(math.bits_to_f32(to_u32(binary.decoded(s, at: at, width: 4, big: true, asked: "an f32")?).must()))
 
 # The `f32` that the 4 bytes of `s` from index `at` hold as IEEE 754 lays
 # them out, the lowest byte first (little endian).
@@ -1226,7 +1226,7 @@ function decode_f32_be(s: [u8], at: i64) -> f32?
 # a negative `at` or one past the end included. See also `encode_f32_le`,
 # `decode_f32_be`.
 function decode_f32_le(s: [u8], at: i64) -> f32?
-    return ok(numbers.bits_to_f32(to_u32(binary.decoded(s, at: at, width: 4, big: false, asked: "an f32")?).must()))
+    return ok(math.bits_to_f32(to_u32(binary.decoded(s, at: at, width: 4, big: false, asked: "an f32")?).must()))
 
 # The `f64` that the 8 bytes of `s` from index `at` hold as IEEE 754 lays
 # them out, the highest byte first (big endian, the order of the network).
@@ -1238,7 +1238,7 @@ function decode_f32_le(s: [u8], at: i64) -> f32?
 # where fewer than 8 bytes stand from `at` to the end of `s`, a negative `at`
 # or one past the end included. See also `encode_f64_be`, `decode_f64_le`.
 function decode_f64_be(s: [u8], at: i64) -> f64?
-    return ok(numbers.bits_to_f64(binary.u64_of_bits(binary.decoded(s, at: at, width: 8, big: true, asked: "an f64")?)))
+    return ok(math.bits_to_f64(binary.u64_of_bits(binary.decoded(s, at: at, width: 8, big: true, asked: "an f64")?)))
 
 # The `f64` that the 8 bytes of `s` from index `at` hold as IEEE 754 lays
 # them out, the lowest byte first (little endian).
@@ -1251,7 +1251,7 @@ function decode_f64_be(s: [u8], at: i64) -> f64?
 # `decode_f64_be`.
 function decode_f64_le(s: [u8], at: i64) -> f64?
     return ok(
-        numbers.bits_to_f64(binary.u64_of_bits(binary.decoded(s, at: at, width: 8, big: false, asked: "an f64")?))
+        math.bits_to_f64(binary.u64_of_bits(binary.decoded(s, at: at, width: 8, big: false, asked: "an f64")?))
     )
 
 ## Varints

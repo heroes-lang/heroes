@@ -18,7 +18,7 @@
 # made by a `ObjectIdMaker` the program holds, since the language has no
 # mutable global to hold a process's counter.
 #
-# A double is written by `numbers.f64_to_bits`, exactly; every NaN as the one
+# A double is written by `math.f64_to_bits`, exactly; every NaN as the one
 # quiet NaN, its sign and payload lost. It speaks to no server: `mongodb` does. It fails with
 # `invalid`, `not_text`, `does_not_fit`, `not_found` and `unsupported`.
 
