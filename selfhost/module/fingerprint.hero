@@ -132,6 +132,7 @@ function same_files(a: str, b: str) -> bool
     left = names_in(a)
     right = names_in(b)
 
+    # ORDER: none — a count and an existence test, so every order gives one answer.
     if keys(left).len() != keys(right).len()
         return false
 
@@ -226,6 +227,7 @@ function added_to_part(listed: [str], kept: str, sum: str) -> [str]
     known = kept_lines(kept)
     names: {str: bool} @= {}
 
+    # ORDER: none — a table keyed by name.
     for line in keys(known)
         names[name_of(line)] @ true
 

@@ -91,6 +91,7 @@ function read(@w: Walk, file: str, text: str)
 function held_of(listing: str) -> {str: bool}
     out: {str: bool} @= {}
 
+    # ORDER: none — a table keyed by name.
     for line in keys(fingerprint.kept_lines(listing))
         out[fingerprint.name_of(line)] @ true
 
@@ -143,6 +144,7 @@ function holds_exactly(at: str, listed: [str]) -> bool
         read(@w, file: file, text: read_file(at + "/" + file).default(""))
         file @ next(@w)
 
+    # ORDER: none — a count, the same in every order.
     return w.order.len() + 1 == keys(present).len()
 
 # What a verb says after a tree's folder for a part placed by a `packages`
@@ -152,6 +154,8 @@ function counted(folder: str) -> str
 
     if kept.len() == 0
         return ""
+
+    # ORDER: none — two counts, the same in every order.
     return ", " + (keys(fingerprint.names_in(folder)).len() - 1).to_str() + " of " + keys(fingerprint.kept_lines(kept)).len().to_str() + " files: what its `packages` line names and the modules those use"
 
 # The folder `path` stands in: the part before its last `/`.

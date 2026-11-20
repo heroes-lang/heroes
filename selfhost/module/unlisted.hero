@@ -90,6 +90,7 @@ function part_lacks(package: reached.Package, inside: str, span: token.Span) -> 
     if kept.len() == 0
         return []
 
+    # ORDER: none — an existence test, so every order gives one answer.
     for line in keys(fingerprint.kept_lines(kept))
         if fingerprint.name_of(line) == inside + ".hero"
             return [

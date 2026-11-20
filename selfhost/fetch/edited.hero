@@ -76,6 +76,7 @@ function differences(placed: str, fetched: str) -> [str]
 function part_differences(now: [str], kept: str) -> [str]
     sums: {str: str} @= {}
 
+    # ORDER: none — a table keyed by name; the changes are sorted below.
     for line in keys(fingerprint.kept_lines(kept))
         sums[fingerprint.name_of(line)] @ line.slice(from: 0, to: fingerprint.NAME_AT)
 
