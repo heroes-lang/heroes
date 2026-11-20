@@ -978,6 +978,11 @@ not state (M') refused on them); Deno, the AWS SDK for Go v2 and Boost 1.56.
   register; the register, one `decision` issue with dated comments, naming each of the 66 catalogues before
   `packages/core` goes; law 18 in `doctor.hero` with the seed's refresh in the same change; CLAUDE.md:279's
   words.
+  **Corrected 2026-11-20** (lane-land-texts, M-rebel-library's steps 62): law 18 lands in a commit of its own
+  *without* the seed's refresh, as R1 above says since the coordinator's correction before this file's
+  commit; the seed is regenerated only where the two-stage build goes red or a release closes (the
+  author's rhythm of 2026-10-14), and until then the compiler clang builds from `seed/heroes.c` prints
+  the old law.
 - **Owed by R2**: the verb's two repairs, each built and run (an example wherever it stands, a missing
   parameter line refused); the `@` ruling; Rebel's 661 functions documented and its 18 `@` lines rewritten
   before the landing; the sentence with the verb.
