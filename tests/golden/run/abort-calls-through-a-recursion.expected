@@ -1,0 +1,5 @@
+before
+!called: abort-calls-through-a-recursion.down, 40 times
+!called: abort-calls-through-a-recursion.main
+!at: abort-calls-through-a-recursion.hero:8:16
+!panic: array index out of range

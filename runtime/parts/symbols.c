@@ -189,4 +189,16 @@ static const char *hero_own_symbol(uintptr_t addr) {
     return NULL;
 }
 
+/* The address the executable's file gives the byte at `addr`, the one a
+ * symbolizer of that file takes (`llvm-symbolizer`, `addr2line`), into `*out`:
+ * 1 where the table above was read and `addr` lies in this image, else 0.
+ * Asked by `parts/calls.c` for an address `hero_own_symbol` has already
+ * named, so the table is read by then (panel 253's R5). */
+static int hero_own_file_address(uintptr_t addr, uintptr_t *out) {
+    if (atomic_load_explicit(&hero_own_symbols_state, memory_order_acquire) != HERO_OWN_READ) return 0;
+    if (addr < hero_own_symbols.bias) return 0;
+    *out = addr - hero_own_symbols.bias;
+    return 1;
+}
+
 #endif

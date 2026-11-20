@@ -1,0 +1,19 @@
+# Panel 253's R5: an abort on a thread the program started tells the calls
+# on that thread's own stack, up to the function the thread runs; the
+# runtime's frames that start it are not the program's and are not told,
+# and the thread that waits for it is not walked. The walk reads the bounds
+# the runtime measured as the thread was claimed (`hero_spawn_enter`).
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function digit(at: i64) -> i64
+    xs: [i64] = [3, 1, 4]
+    return xs[at]
+
+function worker(at: i64) -> i64
+    return digit(at) + 1
+
+function main()
+    print("before")
+    print(hero_thread_join(hero_thread_spawn(body: worker, arg: 9)))

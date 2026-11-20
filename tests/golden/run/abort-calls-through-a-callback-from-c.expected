@@ -1,0 +1,5 @@
+before
+!called: abort-calls-through-a-callback-from-c.outer
+!called: abort-calls-through-a-callback-from-c.main
+!at: abort-calls-through-a-callback-from-c.hero:12:12
+!panic: array index out of range

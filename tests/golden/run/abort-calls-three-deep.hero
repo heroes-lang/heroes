@@ -1,0 +1,22 @@
+# Panel 253's R5 (ratified 2026-11-19): an abort tells, beneath its place,
+# the calls of the program that led there, innermost first
+# (`runtime/parts/calls.c`). An index out of range in `pick`, three calls
+# below `main`, said its place alone until then. At `-O0` each call is a
+# frame of its own; at `-O2` `pick` and `middle` are inlined into `outer`, so
+# the frame the abort is raised in is `outer`'s, and `heroes run` reads the
+# two inlined calls from the line tables at that frame's own address
+# (`selfhost/cli/abort_calls.hero`): the calls are the same at every level.
+
+function pick(xs: [i64], at: i64) -> i64
+    return xs[at]
+
+function middle(xs: [i64]) -> i64
+    return pick(xs: xs, at: 7)
+
+function outer() -> i64
+    xs: [i64] = [1, 2, 3]
+    return middle(xs)
+
+function main()
+    print("before")
+    print(outer())
