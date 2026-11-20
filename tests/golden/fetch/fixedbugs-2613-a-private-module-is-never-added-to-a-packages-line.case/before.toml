@@ -1,0 +1,6 @@
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2613-a-private-module-is-never-added-to-a-packages-line.case/idx"
+
+[dependencies.kit]
+version = "1.0.0"
+sum = "sha256-3fa9dbe4deeef7644ae780fc50a19184ea1a0c5e56315a2b092fa3164aad96b9"
+packages = ["csv"]

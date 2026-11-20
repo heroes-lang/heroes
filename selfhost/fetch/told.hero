@@ -27,8 +27,10 @@ use module/catalogue
 # there, a file past its bound, a tree holding a name no package may, a tag
 # that moved, a sum that does not match, an index's file in no shape it has,
 # a catalogue that does not read or a requirement it may not hold, no
-# catalogue where one is fetched from, and a `packages` line naming a package
-# its version holds no module of (panel 253's R6).
+# catalogue where one is fetched from, a `packages` line naming a package
+# its version holds no module of (panel 253's R6), and `heroes add
+# <entry>/<path>` naming an entry the catalogue does not hold (defect 2612)
+# or a private module (defect 2613), the build's own codes for those facts.
 constant INPUT_CODES: [str]
     [
         "source_refused"
@@ -44,6 +46,8 @@ constant INPUT_CODES: [str]
         "requirement_refused"
         "no_catalogue"
         "package_unknown"
+        "unknown_entry"
+        "private_module"
     ]
 
 # The codes that blame the tool or the machine, exit 2: a program this command

@@ -1,0 +1,7 @@
+# Reached through `csv`, never listed by the program; it reaches its own
+# private module in turn.
+use text/internal/scan
+
+# The text before the first `mark`, the whole text where there is none.
+function before(line: str, mark: u8) -> str
+    return line.slice(from: 0, to: scan.first_at(line, mark: mark))

@@ -1,0 +1,4 @@
+# Defect 2612: a package of the folder entry `rebel`, which `heroes add
+# rebel/strings` lists once the entry is in the catalogue.
+function first(text: str) -> str
+    return text

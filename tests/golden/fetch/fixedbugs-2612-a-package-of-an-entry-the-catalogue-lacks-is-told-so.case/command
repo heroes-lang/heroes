@@ -1,0 +1,8 @@
+add rebel/strings -C <work>/app
+add --path ../local/kit --as kit -C <work>/app
+add rebel/strings -C <work>/app
+add rebel/strings --index file://../idx -C <work>/app
+add rebel@0.1.1/strings -C <work>/app
+add rebel/ -C <work>/app
+add --path ../local/rebel --as rebel -C <work>/app
+add rebel/strings -C <work>/app

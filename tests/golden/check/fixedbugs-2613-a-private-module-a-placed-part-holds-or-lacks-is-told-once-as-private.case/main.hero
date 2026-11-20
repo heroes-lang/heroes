@@ -1,0 +1,15 @@
+# Fixed defect 2613, 2026-11-20, lane umbrella-2: a private module of a
+# placed part, named by the program, is told once, as private, whether the
+# part holds it (`text/internal/scan`, placed with `text`) or not, its
+# version holding it (`flags/internal/bits`). The first was told
+# `package_not_listed` with a note offering `heroes add
+# kit/text/internal/scan`, then `private_module`; the second
+# `package_not_listed` alone, its note offering the same kind of line.
+use <kit>/csv
+use <kit>/text/internal/scan  #~ private_module
+use <kit>/flags/internal/bits  #~ private_module
+
+function main()
+    print(csv.first("a,b"))
+    print(scan.first_at("a,b", mark: ','))
+    print(bits.one())

@@ -1,0 +1,2 @@
+function half(line: str) -> str
+    return line.slice(from: 0, to: line.len() / 2)

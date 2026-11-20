@@ -1,0 +1,5 @@
+fetch -C <work>/app
+add kit/text/internal/scan -C <work>/app
+add kit/internal/scan -C <work>/app
+add rebel/csv/internal/scan -C <work>/app
+run <work>/app/main.hero

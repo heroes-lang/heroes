@@ -1,0 +1,197 @@
+# The operand `heroes add <entry>/<path>` writes, read by its shape before
+# the catalogue is asked (spec § 1; panel 253's R6, ratified 2026-11-19),
+# and refused where the catalogue holds no such entry. What the verb does
+# with an entry the catalogue holds is `fetch/add_package.hero`'s.
+#
+# **An entry the catalogue does not hold is told so** (defect 2612): `heroes
+# add rebel/strings` with no entry `rebel` is refused as that,
+# `unknown_entry` at exit 1, the build's own code for the fact, with the
+# commands that write the entry and then the one that lists the package. It
+# was read as a git address, the one other operand holding a `/`, and told *a
+# git source is added at a tag* at exit 2. The entry is never written here:
+# its source, an index, a git address or a folder, is no part of the operand,
+# and R6's sentence, *`heroes add kit/csv` adds one*, adds a name to an
+# entry the catalogue holds.
+#
+# **And a private module is never one** (defect 2613): `heroes add
+# kit/csv/internal/scan` wrote a module no program's `use` may name into the
+# line, and placed it; it is refused, `private_module` at exit 1, the
+# build's own code, whatever the catalogue holds (`private_refused`).
+
+use cli/argv
+use cli/process
+use fetch/told
+use fetch/verb_place
+use module/catalogue
+use module/entry_name
+use module/listing
+use placed_use
+
+# Whether `operand` is written as a package of an entry, `<entry>/<path>`,
+# whatever the catalogue holds: a name of an entry's shape before its first
+# `/`, a version after an `@` there allowed, and no `:` or `\` anywhere. A git
+# source is never one: its address opens with `https://` or `file://`
+# (`fetch/address.hero`), and a git source is asked with `--tag`, which
+# leaves the operand to that reading, as `--path` leaves it to the folder's.
+function shaped(inv: argv.Invocation, operand: str) -> bool
+    at = slash_of(operand)
+
+    if at <= 0 || argv.has(inv, spelling: "--tag") || argv.has(inv, spelling: "--path")
+        return false
+
+    for probe in range(from: 0, to: operand.len())
+        if operand[probe] == ':' || operand[probe] == '\\'
+            return false
+
+    head = operand.slice(from: 0, to: at)
+    return entry_name.shaped(head.slice(from: 0, to: verb_place.at_of(head)))
+
+# What `heroes add <entry>/<path>` says where `shaped` reads the operand so
+# and the catalogue `c` of the program whose folder is `program` holds no
+# entry of that name, or where the name is written with a version: nothing
+# is written. The entry's source is no part of the operand, so the refusal
+# names the command that writes the entry from each source, then the one
+# that lists the package.
+function unheld(inv: argv.Invocation, program: str, c: catalogue.Catalogue, operand: str) -> [told.Said]
+    at = slash_of(operand)
+    head = operand.slice(from: 0, to: at)
+    name = head.slice(from: 0, to: verb_place.at_of(head))
+    inside = operand.slice(from: at + 1, to: operand.len())
+
+    if !listing.path_shaped(inside)
+        return [no_path(name: name, inside: inside)]
+    private = private_refused(name: name, inside: inside)
+
+    if private.len() > 0
+        return private
+    first: str @= "heroes add " + head
+    given = argv.value_of(inv, spelling: "--index")
+
+    if !given.is_err()
+        first @ first + " --index " + given.must()
+    listed = "`heroes add " + name + "/" + inside + "` adds `" + inside + "` to its `packages` line"
+
+    if name.len() < head.len()
+        return [
+            told.Said(code: "bad_usage", at: "", said: "`" + operand + "` writes a version inside a package's name, and a package of an entry is placed at the entry's own version: `" + first + "` writes the entry at that version, and then " + listed)
+        ]
+    held: str @= "there is no catalogue `" + program + catalogue.FILE + "` to hold it"
+
+    if c.file.len() > 0
+        held @ "the catalogue `" + c.file + "` holds no entry `" + name + "`" + entries_said(c)
+    return [
+        told.Said(code: "unknown_entry", at: "", said: "`" + operand + "` names the package `" + inside + "` of the entry `" + name + "`, and " + held + ": `" + first + "` writes the entry from the index, `heroes add --path <folder> --as " + name + "` from a folder of yours, or a git address with `--tag` and `--as " + name + "` from git; then " + listed)
+    ]
+
+# The entries a catalogue holds, as a refusal names them after its file.
+function entries_said(c: catalogue.Catalogue) -> str
+    if c.entries.len() == 0
+        return ", which holds none"
+    names: [str] @= []
+
+    for e in c.entries
+        names @ names.push("`" + e.name + "`")
+
+    if names.len() == 1
+        return ", whose one entry is " + names[0]
+    return ", whose entries are " + names.slice(from: 0, to: names.len() - 1).join(", ") + " and " + names[names.len() - 1]
+
+# The refusal of a package's path of no shape, `inside`, after the entry
+# `name`'s `/`; one written empty, `heroes add rebel/`, quoted as the
+# operand, since empty quotes name nothing a reader can find.
+function no_path(name: str, inside: str) -> told.Said
+    what: str @= "`" + inside + "` is no package's path"
+
+    if inside.len() == 0
+        what @ "`" + name + "/` names no package after its `/`"
+    return told.Said(
+        code: "bad_usage",
+        at: "",
+        said: what + ": a package of `" + name + "` is named as a `use` writes it after `<" + name + ">/`, names joined by `/`, `heroes add " + name + "/csv`"
+    )
+
+# The refusal of `heroes add <name>/<inside>` where `inside` is a module
+# private to another, none where it is not (defect 2613): a `packages` line
+# names what a program's `use` writes, and no module of a program names a
+# package's private module, so it is never written into the line, whatever
+# the catalogue holds; the module it belongs to is named instead.
+function private_refused(name: str, inside: str) -> [told.Said]
+    owner = listing.private_owner(entry: name, name: inside)
+
+    if owner.len() == 0
+        return []
+    held = listing.owner_inside(entry: name, owner: owner)
+    then: str @= "a program names the package's modules outside `internal`"
+
+    if held.len() > 0
+        then @ "a program names what `" + owner + "` offers, and `heroes add " + name + "/" + held + "` lists it"
+    return [
+        told.Said(code: "private_module", at: "", said: "`<" + name + ">/" + inside + "` is private to `" + owner + "`: " + placed_use.PRIVATE_RULE + ", so no program's `use` writes it and no `packages` line lists it; " + then)
+    ]
+
+# Where the operand's first `/` stands, -1 where it holds none.
+function slash_of(text: str) -> i64
+    for at in range(from: 0, to: text.len())
+        if text[at] == '/'
+            return at
+
+    return -1
+
+## Tests
+
+function invoked(words: [str]) -> argv.Invocation
+    return argv.parse(words, dir_probe: process.is_directory).must()
+
+test "an operand is a package of an entry by its shape alone, and an address or a flag of git or a folder keeps it from that reading (defect 2612)"
+    for one in ["rebel/strings", "rebel/csv/internal/scan", "rebel@0.1.1/strings", "kit_2/a", "rebel/"]
+        assert shaped(invoked(["add", one]), operand: one)
+
+    for one in ["file://./kit", "https://git.example.org/kit", "Rebel/strings", "./kit", "../kit", "/abs/kit", "1kit/csv", "kit", "a\\b/c", "git@host:kit/x"]
+        assert !shaped(invoked(["add", one]), operand: one)
+
+    assert !shaped(invoked(["add", "rebel/strings", "--tag", "v1"]), operand: "rebel/strings")
+    assert !shaped(invoked(["add", "rebel/strings", "--path", "x"]), operand: "rebel/strings")
+
+test "an entry the catalogue lacks is told so with the commands that add it, and a version inside the name is told where it goes (defect 2612)"
+    none = catalogue.parsed(file: "", text: "")
+    held = catalogue.parsed(
+        file: "app/heroes.toml",
+        text: "[dependencies.json]\npath = \"../json\"\n\n[dependencies.yaml]\npath = \"../yaml\"\n"
+    )
+    absent = unheld(invoked(["add", "rebel/strings"]), program: "app/", c: none, operand: "rebel/strings")
+    assert absent.len() == 1 && absent[0].code == "unknown_entry" && told.exit_of(absent[0].code) == 1
+    assert absent[0].said == "`rebel/strings` names the package `strings` of the entry `rebel`, and there is no catalogue `app/heroes.toml` to hold it: `heroes add rebel` writes the entry from the index, `heroes add --path <folder> --as rebel` from a folder of yours, or a git address with `--tag` and `--as rebel` from git; then `heroes add rebel/strings` adds `strings` to its `packages` line"
+    other = unheld(
+        invoked(["add", "rebel/strings", "--index", "file://../idx"]),
+        program: "app/",
+        c: held,
+        operand: "rebel/strings"
+    )
+    assert other[0].said == "`rebel/strings` names the package `strings` of the entry `rebel`, and the catalogue `app/heroes.toml` holds no entry `rebel`, whose entries are `json` and `yaml`: `heroes add rebel --index file://../idx` writes the entry from the index, `heroes add --path <folder> --as rebel` from a folder of yours, or a git address with `--tag` and `--as rebel` from git; then `heroes add rebel/strings` adds `strings` to its `packages` line"
+    versioned = unheld(
+        invoked(["add", "rebel@0.1.1/strings"]),
+        program: "app/",
+        c: held,
+        operand: "rebel@0.1.1/strings"
+    )
+    assert versioned[0].code == "bad_usage"
+    assert versioned[0].said == "`rebel@0.1.1/strings` writes a version inside a package's name, and a package of an entry is placed at the entry's own version: `heroes add rebel@0.1.1` writes the entry at that version, and then `heroes add rebel/strings` adds `strings` to its `packages` line"
+    empty = unheld(invoked(["add", "rebel/"]), program: "app/", c: held, operand: "rebel/")
+    assert empty[0].code == "bad_usage"
+    assert empty[0].said == "`rebel/` names no package after its `/`: a package of `rebel` is named as a `use` writes it after `<rebel>/`, names joined by `/`, `heroes add rebel/csv`"
+    assert entries_said(none) == ", which holds none"
+
+test "a private module is never added to a packages line, whatever the catalogue holds (defect 2613)"
+    rule = placed_use.PRIVATE_RULE
+    held = catalogue.parsed(file: "app/heroes.toml", text: "[dependencies.json]\npath = \"../json\"\n")
+    deep = unheld(
+        invoked(["add", "rebel/csv/internal/scan"]),
+        program: "app/",
+        c: held,
+        operand: "rebel/csv/internal/scan"
+    )
+    assert deep.len() == 1 && deep[0].code == "private_module" && told.exit_of(deep[0].code) == 1
+    assert deep[0].said == "`<rebel>/csv/internal/scan` is private to `<rebel>/csv`: " + rule + ", so no program's `use` writes it and no `packages` line lists it; a program names what `<rebel>/csv` offers, and `heroes add rebel/csv` lists it"
+    root = private_refused(name: "kit", inside: "internal/scan")
+    assert root[0].said == "`<kit>/internal/scan` is private to `<kit>`: " + rule + ", so no program's `use` writes it and no `packages` line lists it; a program names the package's modules outside `internal`"
+    assert private_refused(name: "kit", inside: "internals/scan").len() == 0

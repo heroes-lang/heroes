@@ -145,15 +145,20 @@ jobs:
         shell: bash
         run: ./heroes-from-seed${{ matrix.leg.exe }} run tests/harness/main.hero -- ./heroes${{ matrix.leg.exe }} rebel
 
-      # Every face of Rebel through the catalogue of its examples, as a program
-      # reaches it: `heroes doc <entry>/<module>` from `examples-rebel/`. The
-      # faces are the suite's own (`tests/harness/rebel_tree.hero`, `is_face`):
-      # every `.hero` file of the folder the catalogue's `path` names, but a
-      # private module (a part `internal` after the first) and a floor (a last
-      # part beginning `hero_`). A face the catalogue's `packages` line does not
-      # name is refused by the verb, `package_not_listed`, and is red here.
-      # `find` and `sort` by their path: Windows' System32 holds programs of
-      # those names that do something else.
+      # Every face of Rebel as a program reaches it, `heroes doc <entry>/<module>`
+      # through a catalogue, and through one of the step's own: the entry and
+      # the folder of `examples-rebel/heroes.toml`, written as one `path` entry
+      # with no `packages` line, so the whole version is placed. The examples'
+      # own line lists what their programs use (panel 253's R6, step 66b), and
+      # a face no program names, `tokenizer/tables/o200k_harmony` (reached
+      # through `tokenizer/tables`), is no name of it: through that catalogue
+      # the verb refuses such a face, `package_not_listed`, which is the line
+      # doing its work and no fault of the face's documentation. The faces are
+      # the suite's own (`tests/harness/rebel_tree.hero`, `is_face`): every
+      # `.hero` file of the folder the `path` names, but a private module (a
+      # part `internal` after the first) and a floor (a last part beginning
+      # `hero_`). `find` and `sort` by their path: Windows' System32 holds
+      # programs of those names that do something else.
       - name: heroes doc over every face
         if: ${{ !cancelled() && steps.stage2.outcome == 'success' }}
         shell: bash
@@ -168,11 +173,20 @@ jobs:
             echo "::error::$catalogue does not read as one entry with one \`path\`; read it, and teach this step its shape"
             exit 1
           fi
-          cd examples-rebel
-          if [ ! -d "$root" ]; then
-            echo "::error::the catalogue's path, $root, is no folder under examples-rebel/"
+          # The step's catalogue, one folder deeper than `examples-rebel/`,
+          # so a relative `path` takes one `../` more; an absolute one stands.
+          case "$root" in
+            /*) whole="$root" ;;
+            *) whole="../$root" ;;
+          esac
+          mkdir -p build/rebel-doc
+          printf '[dependencies.%s]\npath = "%s"\n' "$entry" "$whole" > build/rebel-doc/heroes.toml
+          cd build/rebel-doc
+          if [ ! -d "$whole" ]; then
+            echo "::error::the catalogue's path, $root, names no folder from examples-rebel/"
             exit 1
           fi
+          root="$whole"
           faces=0
           refused=0
           told=0
@@ -182,7 +196,7 @@ jobs:
             case "${module##*/}" in hero_*) continue ;; esac
             faces=$(( faces + 1 ))
             code=0
-            ../heroes${{ matrix.leg.exe }} doc "<$entry>/$module" > /dev/null 2> "$err" || code=$?
+            ../../heroes${{ matrix.leg.exe }} doc "<$entry>/$module" > /dev/null 2> "$err" || code=$?
             if [ "$code" -ne 0 ]; then
               refused=$(( refused + 1 ))
               n=$(grep -c '^error' "$err" || true)
