@@ -16,7 +16,9 @@
 # `tls`'s test certificate for `localhost`. The expected values of the unit
 # tests were observed: pymongo 4.20 read the connection strings and answered
 # SASLprep; Python computed RFC 7677's SCRAM exchange and MongoDB's SHA-1
-# digest; RFC 3454's tables were read from Python 3.15's `stringprep`.
+# digest; RFC 3454's tables were read from Python 3.15's `stringprep`. The
+# SCRAM exchange, SASLprep and the tables are the package `scram`'s since
+# 2026-11-20 (the coherence review's D15), and their tests went with them.
 
 capability mongodb/connect  a client connected by its options or a connection string
   heroes  mongodb.connect, mongodb.options, mongodb.parse_url, mongodb.Options, mongodb.Host, mongodb.Client, mongodb.DEFAULT_PORT
@@ -50,7 +52,7 @@ capability mongodb/auth-scram  a login by SCRAM-SHA-256 or SCRAM-SHA-1, negotiat
   go      options.Credential, ClientOptions.SetAuth
   rust    options::Credential, AuthMechanism::ScramSha1, AuthMechanism::ScramSha256
   python  username, password, authSource, authMechanism
-  note    run live against users of each mechanism, a SASLprep password (U+2168 logs in as IX), a wrong password and a forced mechanism the user lacks; the server's signature is checked and an iteration count below 4096 refused
+  note    run live against users of each mechanism, a SASLprep password (U+2168 logs in as IX), a wrong password and a forced mechanism the user lacks, on 2026-11-18; the server's signature is checked and an iteration count below 4096 refused. The exchange and SASLprep are `scram`'s since 2026-11-20, and MongoDB's SHA-1 digest stays here: a password SASLprep refuses is sent as its bytes now, the server answering, where it failed `invalid` before the login until then (`scram.ledger`'s `scram/password`)
 
 capability mongodb/auth-plain  a login by SASL PLAIN, LDAP's proxy
   heroes  mongodb.Mechanism.sasl_plain

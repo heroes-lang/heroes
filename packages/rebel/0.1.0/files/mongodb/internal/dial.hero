@@ -11,11 +11,11 @@ use crypto
 use dns
 use mongodb/internal/conn
 use mongodb/internal/replies
-use mongodb/internal/scram
 use mongodb/internal/session
 use mongodb/internal/uri
 use net
 use os
+use scram
 
 # The code of no server that suits.
 constant NOT_FOUND: str
@@ -100,6 +100,24 @@ function is_done(doc: bson.Document) -> bool
         .ok v  => bson.bool_of(v).default(false)
         .err _ => false
 
+# The least iteration count accepted from a server, as the drivers'
+# authentication specification asks.
+constant LEAST_ITERATIONS: i64
+    4096
+
+# The password SCRAM salts for `user`, before `scram` prepares it: SCRAM-SHA-1's
+# is MongoDB's own digest, the hexadecimal MD5 of `user:mongo:password`, as its
+# older scheme stored it; SCRAM-SHA-256's is the password, which `scram`
+# prepares by SASLprep.
+#
+# - `hash`: the mechanism's hash.
+# - `user`: the user's name.
+# - `password`: the password.
+function password_for(hash: scram.Hash, user: str, password: str) -> str
+    return match hash
+        .sha1             => bytes.format_hex(crypto.md5_text(user + ":mongo:" + password))
+        .sha256 | .sha512 => password
+
 # The SASL command `name` of `fields` on the credentials' database.
 function sasl(@s: session.State, fields: [bson.Field]) -> bson.Document?
     return session.command(
@@ -112,7 +130,8 @@ function sasl(@s: session.State, fields: [bson.Field]) -> bson.Document?
     )
 
 # Logs the user of `s`'s settings in, where one is named. Fails `permission`
-# where the server refuses the credentials, and as `scram` fails.
+# where the server refuses the credentials, and as `scram.client_final` and
+# `scram.verify` fail.
 function authenticate(@s: session.State) -> ()?
     if s.settings.username == ""
         return ok()
@@ -141,11 +160,11 @@ function authenticate(@s: session.State) -> ()?
             return fail(code: PERMISSION, msg: "the server did not end the PLAIN login")
         return ok()
 
-    algorithm: crypto.Algorithm = if mechanism == "SCRAM-SHA-256"
+    hash: scram.Hash = if mechanism == "SCRAM-SHA-256"
         .sha256
     else
         .sha1
-    exchange @= scram.start(algorithm: algorithm, user: user, nonce: scram.nonce_of(os.random_bytes(24)?))
+    exchange @= scram.start(hash, user: user, nonce: scram.new_nonce()?, least_iterations: LEAST_ITERATIONS)
     options = bson.Document(fields: [bson.Field(name: "skipEmptyExchange", value: .boolean(v: true))])
     first = sasl(s: @s, fields: [bson.Field(name: "saslStart", value: bson.from_int(1)), bson.Field(name: "mechanism", value: .text(v: mechanism)), bson.Field(name: "payload", value: .binary(subtype: 0, data: bytes.from_text(scram.client_first(exchange)))), bson.Field(name: "autoAuthorize", value: bson.from_int(1)), bson.Field(name: "options", value: .document(doc: options))])?
     conversation = bson.member(first, name: "conversationId")?
@@ -154,7 +173,7 @@ function authenticate(@s: session.State) -> ()?
         .ok t  => t
         .err _ => return fail(code: INVALID, msg: "the server's first SCRAM message is not UTF-8")
 
-    final = scram.client_final(@exchange, user: user, password: password, server_first: server_first)?
+    final = scram.client_final(@exchange, password: password_for(hash, user: user, password: password), server_first: server_first)?
     second = sasl(s: @s, fields: [bson.Field(name: "saslContinue", value: bson.from_int(1)), bson.Field(name: "conversationId", value: conversation), bson.Field(name: "payload", value: .binary(subtype: 0, data: bytes.from_text(final)))])?
 
     server_final = match bytes.to_text(payload_of(second, name: "payload")?)
@@ -343,3 +362,7 @@ test "hosts_named: one text, a list, and a name that is none"
     assert hosts_named(doc, name: "primary") == [uri.Address(host: "a", port: 1)]
     assert hosts_named(doc, name: "hosts").len() == 2
     assert hosts_named(doc, name: "none").len() == 0
+
+test "password_for: MongoDB's digest of SCRAM-SHA-1, and SCRAM-SHA-256's password as given"
+    assert password_for(.sha1, user: "user", password: "pencil") == "1c33006ec1ffd90f9cadcbcc0e118200"
+    assert password_for(.sha256, user: "user", password: "pencil") == "pencil"

@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and forty-six packages, in layers. **A package may use any package of a layer below
+A hundred and forty-seven packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
@@ -105,6 +105,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `i18n/locales` | what CLDR knows of a language tag: its likely script and region, and the tags old names are replaced by | `i18n`, `strings` |  |
 | 3 | `crypto/seal` | authenticated encryption by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
 | 3 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
+| 3 | `scram` | the client's side of SCRAM (RFC 5802, RFC 7677) by SHA-1, SHA-256 and SHA-512, and SASLprep (RFC 4013), so every login of Rebel prepares a password one way; RFC 3454's tables apart | `bytes`, `crypto`, `os`, `strings`, `unicode`, `unicode/normalize` |  |
 | 3 | `tokenizer/tables` | the encodings of OpenAI's models carried as data, by name, and which encoding a model reads; each table a module of its own, `tokenizer/tables/o200k_base`, `cl100k_base` and `o200k_harmony`, so a program carries the one it names | `tokenizer` |  |
 | 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
 | 4 | `msgpack` | MessagePack read into a value of its own, which keeps bytes and extensions, and crossed to and from a `json.Value` | `bytes`, `json`, `lists`, `time` |  |
@@ -134,7 +135,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `bytes`, `compress`, `crypto`, `hash` |  |
 | 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
-| 5 | `sql/postgres` | PostgreSQL over its own protocol, written in Heroes; the API every driver keeps | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `sql`, `strings`, `threads`, `time`, `tls` |  |
+| 5 | `sql/postgres` | PostgreSQL over its own protocol, written in Heroes; the API every driver keeps | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `scram`, `sql`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `sql/sqlite` | SQLite over its library, the same API name for name; only its users need the library | `sql`, `strings`, `time` | `sqlite3.h` |
 | 5 | `sql/mysql` | MySQL and MariaDB over their own protocol, written in Heroes; the same API as the other two drivers | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `sql`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `redis` | a Redis client over its protocol (RESP2 and RESP3): commands, pipelines, publish and subscribe | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url` |  |
@@ -147,8 +148,8 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `ldap` | an LDAP client: bind, search, change, over TLS | `asn1`, `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `config` | settings read in layers (files, the environment, flags, `.env` files) with a precedence, read by path | `flags`, `ini`, `json`, `numbers`, `os`, `path`, `strings`, `time`, `toml`, `yaml` |  |
 | 5 | `amqp` | an AMQP 0-9-1 client (RabbitMQ): channels, exchanges, queues, publish and consume, acknowledgements | `bytes`, `io`, `net`, `numbers`, `os`, `poll`, `strings`, `time`, `tls`, `url` |  |
-| 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `bytes`, `compress`, `crypto`, `hash`, `io`, `net`, `numbers`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
-| 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `bytes`, `crypto`, `dns`, `hash`, `io`, `net`, `numbers`, `os`, `strings`, `tls`, `unicode`, `unicode/normalize`, `url`, `uuid` |  |
+| 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `bytes`, `compress`, `crypto`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `bytes`, `crypto`, `dns`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `tls`, `url`, `uuid` |  |
 | 5 | `log/files` | logs written to files that rotate by size or by day, the old ones kept, counted and compressed | `compress`, `fs`, `io`, `log`, `path`, `strings`, `time` |  |
 | 5 | `pdf` | PDF documents written (text, standard fonts, images, simple tables) and their text read | `bytes`, `compress`, `crypto`, `image`, `image/png`, `math`, `time`, `unicode` |  |
 | 5 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads` | `hero_ipc.h` |

@@ -3,6 +3,7 @@
 # ready. A method not spoken here fails `unsupported` and ends the session.
 
 use bytes
+use scram
 use sql
 use sql/postgres/internal/auth
 use sql/postgres/internal/codes
@@ -59,13 +60,13 @@ function login(@s: session.Session, user: str, database: str, application_name: 
             )
 
     session.send(@s, data: frontend.startup(startup_pairs(user: user, database: database, application_name: application_name)))?
-    scram @= auth.start(user: "", nonce: nonce)
+    exchange @= scram.start(.sha256, user: "", nonce: nonce, least_iterations: 1)
 
     while true
         m = session.receive(@s)?
 
         match m
-            .authentication a => answer_login(@s, @scram, code: a.code, data: a.data, user: user, password: password)?
+            .authentication a => answer_login(@s, @exchange, code: a.code, data: a.data, user: user, password: password)?
             .backend_key k =>
                 s.process_id @ k.process_id
                 s.secret_key @ k.secret
@@ -85,12 +86,12 @@ function login(@s: session.Session, user: str, database: str, application_name: 
 # Answers one Authentication message of the login.
 #
 # - `s`: the session.
-# - `scram`: the SCRAM exchange, advanced.
+# - `exchange`: the SCRAM exchange, advanced.
 # - `code`: the message's code.
 # - `data`: what follows the code.
 # - `user`: the role.
 # - `password`: the password.
-function answer_login(@s: session.Session, @scram: auth.Scram, code: i64, data: [u8], user: str, password: str) -> ()?
+function answer_login(@s: session.Session, @exchange: scram.Exchange, code: i64, data: [u8], user: str, password: str) -> ()?
     if code == 0
         return ok()
 
@@ -124,16 +125,16 @@ function answer_login(@s: session.Session, @scram: auth.Scram, code: i64, data: 
             )
         return session.send(
             @s,
-            data: frontend.sasl_initial(mechanism: "SCRAM-SHA-256", data: bytes.from_text(auth.client_first(scram)))
+            data: frontend.sasl_initial(mechanism: "SCRAM-SHA-256", data: bytes.from_text(scram.client_first(exchange)))
         )
 
     if code == 11
         server_first = text_of(data)?
-        final = auth.client_final(@scram, password: password, server_first: server_first)?
+        final = scram.client_final(@exchange, password: password, server_first: server_first)?
         return session.send(@s, data: frontend.sasl_response(bytes.from_text(final)))
 
     if code == 12
-        return auth.verify(scram, server_final: text_of(data)?)
+        return scram.verify(exchange, server_final: text_of(data)?)
     s.ended @ true
 
     method = if code == 2

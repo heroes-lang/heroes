@@ -1,0 +1,11 @@
+# Reaches Rebel's `scram`, so that `heroes test` on this file runs the
+# package's own tests, RFC 5802's, RFC 7677's and RFC 4013's vectors among
+# them (spec § 12). It prepares a password holding a soft hyphen by SASLprep
+# and prints what SCRAM salts: "pencil".
+
+use <rebel>/bytes
+use <rebel>/scram
+
+function main()
+    password = "pen" + bytes.to_text([0xc2, 0xad]).must() + "cil"
+    print(bytes.to_text(scram.prepared_password(password)).must())

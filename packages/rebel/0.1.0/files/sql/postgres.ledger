@@ -52,11 +52,11 @@ capability sql-postgres/login  a password sent as the server asks: SCRAM-SHA-256
   note    SCRAM-SHA-256 from RFC 5802 and RFC 7677, its nonce from `os.random_bytes`, the server's signature checked in constant time; the password is never sent in clear unless the server asks for it so. Kerberos, GSSAPI and SSPI are refused `unsupported`
 
 capability sql-postgres/saslprep  a non-ASCII password normalized by SASLprep before SCRAM
-  heroes  pending
+  heroes  scram.prepared_password
   go      -
   rust    -
   python  -
-  note    the password is used as its UTF-8 bytes; one that NFKC would change, or that holds a space other than U+0020, fails the login. It needs Unicode's normalization tables, which `unicode` would carry
+  note    since 2026-11-20 (the coherence review's D15) the SCRAM login is the package `scram`'s, which prepares the password as PostgreSQL stores it: by SASLprep where SASLprep accepts it, as its own bytes where it refuses it, the rule of PostgreSQL's documentation (*SASL Authentication*). Until then the password was sent as its UTF-8 bytes, and one that NFKC changes, or that holds a space other than U+0020, failed the login. No server above ASCII was run
 
 capability sql-postgres/tls  the connection encrypted with TLS, the server's certificate checked for its authority and its host
   heroes  postgres.Security

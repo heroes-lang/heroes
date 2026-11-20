@@ -1,0 +1,112 @@
+# SASLprep (RFC 4013), the profile of stringprep (RFC 3454) a password takes
+# before SCRAM salts it: RFC 3454's tables B.1 and C.1.2 map, NFKC
+# normalizes, and the prohibited and unassigned code points and the
+# bidirectional rule refuse. Unassigned code points are refused, as RFC 4013
+# asks of a stored string, since a password was stored once by the server.
+
+use scram
+use scram/internal/stringprep
+use unicode
+use unicode/normalize
+
+# `s` prepared by SASLprep: B.1's code points left out, C.1.2's spaces
+# written as U+0020, the result in NFKC, then refused where it holds a
+# prohibited or unassigned code point or breaks the bidirectional rule.
+#
+# - `s`: the text; empty, it is answered empty.
+#
+# Fails `invalid`, the message naming the rule and the code point, never `s`,
+# since `s` is a password.
+function prepared(s: str) -> str?
+    mapped: [i64] @= []
+
+    for c in s.chars()
+        n = unicode.code_point(c)
+
+        if stringprep.holds(stringprep.mapped_to_nothing(), n: n)
+            continue
+        else if stringprep.holds(stringprep.non_ascii_space(), n: n)
+            mapped @ mapped.push(32)
+        else
+            mapped @ mapped.push(n)
+
+    text = normalize.to_nfkc(unicode.from_code_points(mapped).must())
+    points = unicode.code_points(text)
+    prohibited = stringprep.prohibited()
+    unassigned = stringprep.unassigned()
+    right_to_left = stringprep.rand_al_cat()
+    left_to_right = stringprep.l_cat()
+    any_rtl: bool @= false
+    any_ltr: bool @= false
+
+    for n in points
+        if stringprep.holds(prohibited, n: n)
+            return fail(
+                code: scram.INVALID,
+                msg: f"SASLprep prohibits the code point U+{to_upper_hex(n)} in a password"
+            )
+        else if stringprep.holds(unassigned, n: n)
+            return fail(
+                code: scram.INVALID,
+                msg: f"SASLprep refuses U+{to_upper_hex(n)}, unassigned in Unicode 3.2, in a password"
+            )
+
+        if stringprep.holds(right_to_left, n: n)
+            any_rtl @ true
+
+        if stringprep.holds(left_to_right, n: n)
+            any_ltr @ true
+
+    if any_rtl
+        first = points[0]
+        last = points[points.len() - 1]
+
+        if any_ltr || !stringprep.holds(right_to_left, n: first) || !stringprep.holds(right_to_left, n: last)
+            return fail(
+                code: scram.INVALID,
+                msg: "SASLprep's bidirectional rule refuses the password: right-to-left text must hold no left-to-right letter and begin and end right-to-left"
+            )
+    return ok(text)
+
+# `n` in uppercase hexadecimal, four digits at least, as a code point is
+# named: 7 is "0007".
+#
+# - `n`: a code point, 0 or more.
+function to_upper_hex(n: i64) -> str
+    digits = "0123456789ABCDEF"
+    out: [str] @= []
+    left: i64 @= n
+
+    while left > 0 || out.len() < 4
+        k = left % 16
+        out @ out.push(digits.slice(from: k, to: k + 1))
+        left @ left / 16
+
+    reversed: [str] @= []
+    at: i64 @= out.len()
+
+    while at > 0
+        at @ at - 1
+        reversed @ reversed.push(out[at])
+
+    return join(reversed, "")
+
+## Tests
+
+test "prepared: the mappings, NFKC, the prohibited and unassigned code points and the bidirectional rule, as pymongo 4.20 answers"
+    soft_hyphen = unicode.from_code_point(0xad).must()
+    assert prepared("I" + soft_hyphen + "X").must() == "IX"
+    assert prepared("user").must() == "user"
+    assert prepared("ª").must() == "a"
+    assert prepared("Ⅸ").must() == "IX"
+    assert prepared("a　b").must() == "a b"
+    assert prepared("ﬁ").must() == "fi"
+    assert prepared("ا1ب").must() == "ا1ب"
+    assert prepared("\u{7}").is_err()
+    assert prepared("ا1").is_err()
+    assert prepared("aا").is_err()
+    assert prepared("ȡ").is_err()
+    assert prepared("").must() == ""
+
+test "to_upper_hex: four digits and more"
+    assert to_upper_hex(7) == "0007" && to_upper_hex(0x10fffd) == "10FFFD"

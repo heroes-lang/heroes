@@ -43,7 +43,7 @@ capability kafka/sasl  SASL PLAIN, SCRAM-SHA-256 and SCRAM-SHA-512, over TLS or 
   go      Dialer.SASLMechanism, ScramMechanism, sasl/plain.Mechanism, sasl/scram.Mechanism, sasl/scram.SHA256, sasl/scram.SHA512, kgo.SASL
   rust    ClientConfig (sasl.mechanism, sasl.username, sasl.password)
   python  KafkaProducer(sasl_mechanism, sasl_plain_username, sasl_plain_password), confluent_kafka.Producer.set_sasl_credentials, confluent_kafka.Consumer.set_sasl_credentials, confluent_kafka.admin.AdminClient.set_sasl_credentials
-  note    the server's SCRAM signature is checked, so a server that does not know the password cannot pass for one that does
+  note    the server's SCRAM signature is checked, so a server that does not know the password cannot pass for one that does. The SCRAM exchange is the package `scram`'s since 2026-11-20 (the coherence review's D15): a wrong signature fails `permission`, where it failed `invalid` until then, and the password is prepared by SASLprep as for `sql/postgres` and `mongodb`, where it was sent as its bytes; whether a broker salts a password SASLprep changes as SASLprep writes it is unrun (`scram.ledger`'s `scram/password`)
 
 capability kafka/sasl-other  SASL GSSAPI (Kerberos), OAUTHBEARER, AWS's MSK IAM
   heroes  pending: OAUTHBEARER is one message carrying a token, which waits for a variant of `Sasl` and its refresh; GSSAPI needs the system's Kerberos library, which no package of Rebel binds; MSK IAM signs with AWS's Signature Version 4, `s3`'s, above this package's layer

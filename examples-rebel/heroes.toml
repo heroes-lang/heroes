@@ -119,6 +119,7 @@ packages = [
     "regex",
     "s3",
     "scanner",
+    "scram",
     "search",
     "semver",
     "serial",

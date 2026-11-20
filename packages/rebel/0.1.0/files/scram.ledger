@@ -1,0 +1,42 @@
+# The ledger of `scram`, made on 2026-11-20 by the coherence review's D15 from
+# the three SCRAM clients `sql/postgres`, `mongodb` and `kafka` each wrote, and
+# `mongodb`'s RFC 3454 tables. The vectors are RFC 5802's (SCRAM-SHA-1) and RFC
+# 7677's (SCRAM-SHA-256), each computed again by Python 3.15.2's `hashlib` and
+# `hmac` on 2026-11-20, a SHA-512 exchange and PostgreSQL's (the user "")
+# computed by them, RFC 4013's seven examples, and the SASLprep cases pymongo
+# 4.20 answered when `mongodb` was written.
+
+capability scram/exchange  the client's side of a SCRAM login: its first message, its proof, the server's signature checked
+  heroes  scram.Exchange, scram.Hash, scram.start, scram.client_first, scram.client_final, scram.verify
+  go      -
+  rust    -
+  python  -
+  note    RFC 5802 and RFC 7677 by SHA-1, SHA-256 and SHA-512; none of the three standard libraries speaks SCRAM. The server's signature is compared in constant time; an extension (`m=`) and an attribute named twice are refused; the iteration count is held between the caller's least (4096 for `mongodb`, as MongoDB's drivers' authentication specification asks; 1 for `sql/postgres` and `kafka`, as before 2026-11-20) and `scram.MOST_ITERATIONS`, ten million, so a server cannot make the client spend without end. Until 2026-11-20 the three packages each wrote the exchange: `kafka` answered a wrong server signature `invalid` where the others answered `permission`, `permission` for all three now; `sql/postgres` and `mongodb` held no upper bound on the count
+
+capability scram/nonce  a fresh nonce for one login
+  heroes  scram.new_nonce
+  go      -
+  rust    -
+  python  -
+  note    24 bytes of `os.random_bytes`, in base 64: 32 printable characters, no comma
+
+capability scram/saslprep  a text prepared by SASLprep (RFC 4013), stringprep's profile for user names and passwords
+  heroes  scram.saslprep
+  go      -
+  rust    -
+  python  -
+  note    as RFC 4013 asks of a stored string: an unassigned code point of Unicode 3.2 refused. RFC 3454's tables are Unicode 3.2's, as the RFC fixes them, read from Python 3.15's `stringprep` module on 2026-11-18 and carried in a private module of their own, so only the programs that log in carry them; Python's `stringprep` offers the tables and no profile, and its entries stand in `url/idna.ledger`'s `idna/nameprep`. A message names the rule and the code point and never the text, which is a password
+
+capability scram/password  the bytes a password is salted as, one way for every SCRAM login of Rebel
+  heroes  scram.prepared_password
+  go      -
+  rust    -
+  python  -
+  note    SASLprep's answer where it accepts the password, the password's own UTF-8 where it refuses it: PostgreSQL's rule, its documentation's *SASL Authentication* read on 2026-11-20 ("the raw password will be used without SASLprep processing, instead of throwing an error"). Until 2026-11-20 `mongodb` alone prepared a password, and refused `invalid`, before the login, one SASLprep refuses, as pymongo raises; it is sent as its bytes now and the server answers, and whether a MongoDB user can hold such a password is unrun. `sql/postgres` and `kafka` sent every password as its bytes. Kafka's KIP-84 writes `Hi(Normalize(password), salt, i)` and defines `Normalize` nowhere: whether a broker salts a password SASLprep changes as SASLprep writes it is unrun, so a Kafka password holding a compatibility character (U+2168, U+FB01), a space past ASCII or a soft hyphen is a question, not a premise. An ASCII password, and one in NFC with none of those, is the same bytes either way. No server above ASCII was run
+
+capability scram/channel-binding  SCRAM-SHA-256-PLUS: the login bound to its TLS connection
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    needs the TLS connection's `tls-server-end-point`, `tls`'s capability `tls/channel-binding`, pending there; the first message's header is `n,,`, no binding offered
