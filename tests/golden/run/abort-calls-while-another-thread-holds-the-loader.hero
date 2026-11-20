@@ -1,0 +1,22 @@
+# Panel 253's R5 beside defect 2622: an abort tells the calls that led to it
+# while another thread holds the dynamic loader for ever, since no name of a
+# frame is asked of the loader: on Linux the executable's own symbol table
+# names it (`runtime/parts/symbols.c`), and on Windows the PDB beside the
+# binary, read by the runtime itself (`runtime/parts/pdb.c`), never by
+# DbgHelp, which a held loader would stop. The header holds the loader on
+# each platform its own way (`fixedbugs-2622-the-loader-held.h`).
+
+extern "fixedbugs-2622-the-loader-held.h"
+    function fixedbugs_2622_hold_loader() -> i64
+
+function pick(at: i64) -> i64
+    xs: [i64] = [1, 2]
+    return xs[at]
+
+function middle(at: i64) -> i64
+    return pick(at) + 1
+
+function main()
+    print("before")
+    print(fixedbugs_2622_hold_loader())
+    print(middle(9))

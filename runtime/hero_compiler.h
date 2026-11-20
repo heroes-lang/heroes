@@ -112,4 +112,16 @@ hero_lock *hero_lock_take(const char *path, int64_t fresh, int64_t *status);
  * either way. */
 int64_t hero_lock_drop(hero_lock *lock, int64_t keep);
 
+/* The lines a Windows build's PDB holds at each of `addresses`, hexadecimal
+ * addresses of the binary at `binary` as its file gives them, between spaces
+ * (panel 253's R5, `parts/pdb_door.c`, bound by
+ * `selfhost/cli/abort_symbolized.hero`): per address, per inlined level from
+ * the innermost, the function's name on a line and `<file>:<line>:0` on the
+ * next, `??` and `??:0:0` where nothing is known, and a blank line after each,
+ * `llvm-symbolizer --inlines`'s words, the file named from this process's
+ * folder. `*status` is HERO_OS_OK with the text, else HERO_OS_FAILED with "":
+ * a binary that is not a PE32+ image, or whose PDB is not beside it or not the
+ * one it names. */
+HeroStr hero_pdb_symbolized(const char *binary, const char *addresses, int64_t *status);
+
 #endif

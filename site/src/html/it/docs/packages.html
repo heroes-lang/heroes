@@ -201,10 +201,14 @@ placed rebel 0.1.0 heroes.packages/rebel@0.1.0-d15253004def87ef, 58 of 1637 file
     La seconda metà, il codice che non si cancella mai, è una promessa che qui nessun indice fa ancora: finché un pacchetto non arriva alla 1.0.0 un indice può togliere le sue versioni vecchie. Questo non rompe nessun programma che ne tiene ancora una: la sua copia sta nella sua cartella, controllata con la sua <code>sum</code>, e si compila e gira come prima. Un programma tiene la versione che ha scaricato finché non ne chiede un&rsquo;altra, e il comando che lo porta alla più nuova è lo stesso che ha preso il pacchetto. Qui il piccolo indice ha poi pubblicato una versione 0.1.1:
   </p>
 <pre><code>$ heroes fetch
-kept rebel 0.1.0 heroes.packages/rebel@0.1.0-83be38224fbe3cc9, 58 of 1637 files: what its `packages` line names and the modules those use
+kept rebel 0.1.0 heroes.packages/rebel@0.1.0-d15253004def87ef, 58 of 1637 files: what its `packages` line names and the modules those use
 $ heroes add rebel
 changed rebel 0.1.0 -&gt; 0.1.1
-wrote heroes.toml</code></pre>
+wrote heroes.toml
+removed rebel 0.1.0 heroes.packages/rebel@0.1.0-d15253004def87ef, which no entry names now</code></pre>
+  <p>
+    Lo stesso comando ha tolto la copia della 0.1.0, che nessuna riga del catalogo nomina più, e lo ha detto. Una copia che contiene una tua modifica non viene mai tolta: resta dov&rsquo;è, e il comando dice anche questo.
+  </p>
   <p>
     Così un cambiamento a un pacchetto non rompe mai la build di un programma: lo raggiunge solo quando il programma lo chiede.
   </p>

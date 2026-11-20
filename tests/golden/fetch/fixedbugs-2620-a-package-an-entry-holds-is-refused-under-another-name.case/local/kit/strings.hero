@@ -1,0 +1,4 @@
+# Defect 2620: a package of the folder entry `kit`, which no `--as` names a
+# second time.
+function first() -> str
+    return "kit"

@@ -32,7 +32,7 @@ function entry_of(@ledger: staging.Ledger, inv: argv.Invocation, tools: transpor
     folder = argv.value_of(inv, spelling: "--path")
 
     if !folder.is_err()
-        return folder_entry(inv, program: program, folder: folder.must())
+        return folder_entry(inv, program: program, folder: folder.must(), c: c)
 
     if inv.file.is_err()
         return fail(
@@ -46,7 +46,7 @@ function entry_of(@ledger: staging.Ledger, inv: argv.Invocation, tools: transpor
     return index_entry(@ledger, inv, tools: tools, asked: asked, program: program, root: root, c: c)
 
 # A folder of the author's own, read where it stands (R6).
-function folder_entry(inv: argv.Invocation, program: str, folder: str) -> catalogue.Entry?
+function folder_entry(inv: argv.Invocation, program: str, folder: str, c: catalogue.Catalogue) -> catalogue.Entry?
     if !inv.file.is_err() || argv.has(inv, spelling: "--tag") || argv.has(inv, spelling: "--index")
         return fail(
             code: "bad_usage",
@@ -59,10 +59,37 @@ function folder_entry(inv: argv.Invocation, program: str, folder: str) -> catalo
             code: "bad_usage",
             msg: "`" + name + "` is no entry's name: " + entry_name.refused(name) + "; give one with `--as`"
         )
+    e = catalogue.Entry(name: name, version: "", git: "", tag: "", commit: "", path: folder, sum: "")
+    held_under_another(inv, e: e, program: program, c: c)?
 
     if !process.is_directory(program + folder)
         return fail(code: "absent", msg: "there is no folder `" + program + folder + "`")
-    return ok(catalogue.Entry(name: name, version: "", git: "", tag: "", commit: "", path: folder, sum: ""))
+    return ok(e)
+
+# A name `--as` gives a package an entry of the catalogue already holds under
+# another name, refused (defect 2620): a program holds each package under one
+# name (panel 235's R3, which the catalogue's reader holds,
+# `catalogue.one_package_twice`), so the entry cannot be written beside the
+# one that holds it. Until then the walk of the build list took the entry
+# that held it for the one asked (`fetch/build_list.hero`, `chosen`), the
+# name given was dropped, and `add` said `wrote` at exit 0 with no entry of
+# that name written. Without `--as` that entry is the one `add` moves, under
+# its own name, a line saying so where anything of it moved. Asked of the
+# catalogue's text and the command line alone, before a folder is read or a
+# source asked.
+function held_under_another(inv: argv.Invocation, e: catalogue.Entry, program: str, c: catalogue.Catalogue) -> ()?
+    if !argv.has(inv, spelling: "--as")
+        return ok()
+    asked = catalogue.source_of(e, index: c.index, folder: program)
+
+    for one in c.entries
+        if one.name != e.name && catalogue.source_of(one, index: c.index, folder: program) == asked
+            return fail(
+                code: "catalogue_refused",
+                msg: "the catalogue's entry `" + one.name + "` already names " + catalogue.said_source(one) + ", and a program holds each package under one name, so `--as " + e.name + "` would name it twice: a `use <" + one.name + ">/` reaches it as it is, or rename it by hand, `[dependencies." + one.name + "]` to `[dependencies." + e.name + "]` in `" + program + catalogue.FILE + "` and each `use <" + one.name + ">/` to `use <" + e.name + ">/`"
+            )
+
+    return ok()
 
 # A git source at a tag: its commit asked, its tree fetched and placed, and
 # its sum the tree's, trusted on first use.
@@ -88,6 +115,7 @@ function git_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: transpo
             code: "bad_usage",
             msg: "the entry of `" + address_text + "` has no name a `use` writes: " + entry_name.refused(name) + "; give one with `--as`"
         )
+    held_under_another(inv, e: catalogue.Entry(name: name, version: "", git: address_text, tag: tag.must(), commit: "", path: "", sum: ""), program: program, c: c)?
     s: staging.Staging @= staging.opened(program)?
     asked = transport.tag_commit(tools, source: at, tag: tag.must(), scratch: s.folder)
     commit = tag_absent.checked(tools, source: at, commit: asked, scratch: s.folder, entry: "")

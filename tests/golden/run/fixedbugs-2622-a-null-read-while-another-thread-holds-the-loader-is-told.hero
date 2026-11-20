@@ -1,0 +1,19 @@
+# DEFECT 2622 (2026-11-20): on Linux a fault the stack guard tells, a null read
+# inside the C library, hung for ever while another thread held the dynamic
+# loader inside a `dlopen`: the guard named the faulting function by `dladdr`
+# in its signal handler, which waits on the lock that `dlopen` holds, and the
+# process was killed at its timeout with nothing said, where alone it said its
+# report at once and ended at 134. The guard now names a frame from the
+# executable's own symbol table on Linux and never asks `dladdr` there
+# (`runtime/parts/stack.c`, `hero_stack_symbol`). The header holds the loader
+# on each platform its own way (`fixedbugs-2622-the-loader-held.h`), but
+# for AddressSanitizer's leg on Windows, whose report asks the loader itself.
+
+extern "fixedbugs-2622-the-loader-held.h"
+    function fixedbugs_2622_hold_loader_beside_a_fault() -> i64
+    function fixedbugs_2622_null_in_libc() -> i64
+
+function main()
+    print("before")
+    print(fixedbugs_2622_hold_loader_beside_a_fault())
+    print(fixedbugs_2622_null_in_libc())

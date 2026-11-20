@@ -181,20 +181,40 @@ static bool hero_stream_flushed_held(FILE *stream) {
  * one writer at a time uses it. Both streams are binary and stderr unbuffered
  * there (`parts/os.c`), so the bytes are the ones stdio wrote. A thread that
  * cannot be made leaves the piece to `WriteFile` on the caller, unbounded, as
- * before. */
+ * before.
+ *
+ * **AND A THREAD THAT CANNOT BEGIN IS NOT A READER THAT IS NOT READING**
+ * (defect 2622's shape on Windows, 2026-11-20). A new thread runs nothing of
+ * its own before the loader has told every DLL it exists, under the loader's
+ * lock, so while another thread holds that lock, inside a DLL's entry point
+ * that never returns, no writer thread ever began: its wait ran out, the
+ * report was marked stalled, and every byte of it was dropped. Measured on
+ * the box with a thread holding the lock by `LdrLockLoaderLock`
+ * (`run/fixedbugs-2622-the-loader-held.h`): an index's panic and a null read
+ * each ended at 127 with nothing said. So the piece is claimed by whoever
+ * writes it: the writer thread as it begins, or, where it has not begun when
+ * the wait runs out, the caller, which writes it inline by `WriteFile` and
+ * writes every later piece inline too, the claim never handed back, so a
+ * writer that begins at last finds it taken and writes nothing twice. A
+ * writer that began and waits in its `WriteFile` is still the reader that is
+ * not reading, cancelled as above. What stays, said: a report inline beside
+ * a held loader waits on a full pipe as it did before defect 2606. */
 #if defined(_WIN32)
 #define HERO_REPORT_PIECE 4096
 static volatile LONG hero_report_stalled = 0;
+static volatile LONG hero_report_inline = 0;
 static struct {
     HANDLE handle;
     DWORD count;
     DWORD put;
     BOOL ok;
+    volatile LONG claim; /* 0 unclaimed, 1 the writer thread's, 2 the caller's for good */
     char bytes[HERO_REPORT_PIECE];
 } hero_report_piece;
 
 static DWORD WINAPI hero_report_piece_write(LPVOID unused) {
     (void)unused;
+    if (InterlockedCompareExchange(&hero_report_piece.claim, 1, 0) != 0) return 0;
     hero_report_piece.ok = WriteFile(hero_report_piece.handle, hero_report_piece.bytes, hero_report_piece.count,
                                      &hero_report_piece.put, NULL);
     return 0;
@@ -213,11 +233,20 @@ static void hero_stderr_put(const char *p, size_t n) {
     while (n > 0 && InterlockedCompareExchange(&hero_report_stalled, 0, 0) == 0) {
         DWORD count = n < HERO_REPORT_PIECE ? (DWORD)n : HERO_REPORT_PIECE;
 
+        if (InterlockedCompareExchange(&hero_report_inline, 0, 0) != 0) {
+            DWORD put = 0;
+
+            if (!WriteFile((HANDLE)raw, p, count, &put, NULL) || put == 0) break;
+            p += put;
+            n -= put;
+            continue;
+        }
         memcpy(hero_report_piece.bytes, p, count);
         hero_report_piece.handle = (HANDLE)raw;
         hero_report_piece.count = count;
         hero_report_piece.put = 0;
         hero_report_piece.ok = FALSE;
+        InterlockedExchange(&hero_report_piece.claim, 0);
         HANDLE writer = CreateThread(NULL, 0, hero_report_piece_write, NULL, 0, NULL);
 
         if (writer == NULL) {
@@ -226,6 +255,12 @@ static void hero_stderr_put(const char *p, size_t n) {
             DWORD waited = WaitForSingleObject(writer, (DWORD)(HERO_REPORT_WAIT_NS / INT64_C(1000000)));
 
             if (waited != WAIT_OBJECT_0) {
+                if (InterlockedCompareExchange(&hero_report_piece.claim, 2, 0) == 0) {
+                    /* It never began: the loader's lock is held. */
+                    InterlockedExchange(&hero_report_inline, 1);
+                    (void)CloseHandle(writer);
+                    continue;
+                }
                 (void)CancelSynchronousIo(writer);
                 InterlockedExchange(&hero_report_stalled, 1);
                 (void)CloseHandle(writer);

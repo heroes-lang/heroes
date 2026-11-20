@@ -26,6 +26,7 @@ use fetch/placing
 use fetch/staging
 use fetch/told
 use fetch/transport
+use fetch/unnamed
 use fetch/verb_place
 use module/catalogue
 use module/fingerprint
@@ -108,10 +109,26 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
                 told.Said(code: "", at: "", said: "kept " + e.name + " " + placing.at_said(e) + " " + tree.must().folder + closure.counted(tree.must().folder))
             )
 
+    # Once every entry is placed, each tree a hand edit of the catalogue left
+    # beside them goes where it is the tree that was placed, and the rest is
+    # said (defect 2621, `fetch/unnamed.hero`); a run that refused an entry
+    # sweeps nothing.
+    if !refused_any(out)
+        for gone in unnamed.swept(program: folder, run: ledger.folder, c: c, judged: [])
+            out @ out.push(told.Said(code: "", at: "", said: gone))
+
     # Every tree fetch places is one its catalogue names, so the run is never
     # taken back: it ends, and what it placed stays.
     staging.ended(@ledger)
     return out
+
+# Whether a line of `out` is a refusal.
+function refused_any(out: [told.Said]) -> bool
+    for one in out
+        if one.code.len() > 0
+            return true
+
+    return false
 
 # What the build refuses a fetched package's catalogue for, the rule's words
 # (`module/path_entries.hero`, defect 2446), "" where nothing; a catalogue

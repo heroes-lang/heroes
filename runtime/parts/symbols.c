@@ -31,8 +31,10 @@
  * time a handler asks and only then: no program pays anything until it is
  * already dying. `hero_own_symbol` answers the name of the function whose
  * bytes hold an address, or NULL, and `parts/stack.c`'s `hero_stack_symbol`
- * asks it before `dladdr`, which still names what lies outside the
- * executable, `libc`'s `__vfprintf` say.
+ * asks nothing else on Linux since defect 2622: `dladdr`, which named what
+ * lies outside the executable, `libc`'s `__vfprintf` say, waits on the
+ * loader's lock while another thread is inside `dlopen`, and hung a fault's
+ * report for ever.
  *
  * WHAT A HANDLER MAY DO HERE. `open`, `fstat` and `close` are on POSIX's
  * async-signal-safe list; `mmap` is a system call with no lock in user
@@ -50,7 +52,12 @@
  * executable segment of that image, so an address in another object is
  * never matched against this one's table. A binary stripped of `.symtab`, a
  * system with no `/proc`, or a second thread that asks while the first is
- * still reading: no answer, and `dladdr` speaks as it did before this file.
+ * still reading: no answer, and no name is told.
+ *
+ * A BINARY STRIPPED OF `.symtab` keeps `.dynsym`, which `-rdynamic` fills with
+ * every global function (`selfhost/cli/link_flags.hero`), and it is read from
+ * the same file where `.symtab` is gone: the names `dladdr` gave such a binary
+ * before defect 2622, read without the loader.
  */
 
 #if defined(__linux__)
@@ -134,10 +141,12 @@ static int hero_own_read(HeroOwnSymbols *t) {
         }
     }
 
-    /* The one `SHT_SYMTAB`, and the string table its `sh_link` names. */
-    for (size_t i = 0; i < eh->e_shnum && biased; i++) {
-        const ElfW(Shdr) *s = &sections[i];
-        if (s->sh_type != SHT_SYMTAB || s->sh_entsize != sizeof(ElfW(Sym)) || s->sh_link >= eh->e_shnum) continue;
+    /* The one `SHT_SYMTAB`, and the string table its `sh_link` names; where
+     * the binary was stripped of it, the `SHT_DYNSYM` it keeps. */
+    for (size_t k = 0; k < 2 * (size_t)eh->e_shnum && biased; k++) {
+        const ElfW(Shdr) *s = &sections[k % eh->e_shnum];
+        unsigned wanted = k < eh->e_shnum ? SHT_SYMTAB : SHT_DYNSYM;
+        if (s->sh_type != wanted || s->sh_entsize != sizeof(ElfW(Sym)) || s->sh_link >= eh->e_shnum) continue;
         const ElfW(Shdr) *strings = &sections[s->sh_link];
         if (strings->sh_type != SHT_STRTAB || strings->sh_size == 0) continue;
         if (!hero_own_fits(size, s->sh_offset, s->sh_size / sizeof(ElfW(Sym)), sizeof(ElfW(Sym)), _Alignof(ElfW(Sym)))) continue;
