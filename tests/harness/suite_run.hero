@@ -324,6 +324,14 @@ function compiled(scratch: str, by: Starter, words: [str]) -> shell.Run?
 # computes failed under `test` alone. A case whose program holds a `test`
 # block is asked `heroes test` too, and every test must pass. Answers
 # whether it FAILED, the failure recorded.
+#
+# **Or say what its `.tested` says, since panel 253's R4** (2026-11-19): a
+# test now ends passed, failed or skipped, and a run whose every test skipped
+# fails, so what `heroes test` prints is a case's subject of its own. A case
+# with `<name>.tested` beside its expectation (`main.tested` in a folder) has
+# `heroes test`'s stdout and ending held to it, in `expectation.hero`'s
+# convention, `!exit: 1` for a red run; a case without one must pass, as
+# before.
 function tested_failed(@r: report.Report, scratch: str, compiler: str, item: cases.Case, by: Starter) -> bool
     text = read_file(item.source)
 
@@ -338,6 +346,24 @@ function tested_failed(@r: report.Report, scratch: str, compiler: str, item: cas
             detail: "  `test " + item.source + "`: " + shell.refusal(said)
         )
         return true
+    owed = tested_of(item)
+
+    match owed
+        .ok want =>
+            wrong = expectation.unmet(want, out: said.must().out, err: said.must().err, code: said.must().code)
+
+            if wrong.is_err()
+                return false
+            report.keep_failure(
+                @r,
+                label: "run/" + item.name + " under test",
+                detail: "  `test " + item.source + "` " + wrong.must()
+            )
+            return true
+        .err e =>
+            if e.code != "none"
+                report.keep_failure(@r, label: "run/" + item.name + " under test", detail: "  " + e.msg)
+                return true
 
     if said.must().code == 0
         return false
@@ -347,6 +373,23 @@ function tested_failed(@r: report.Report, scratch: str, compiler: str, item: cas
         detail: "  `test " + item.source + "` exited " + said.must().code.to_str() + ":\n" + said.must().out + said.must().err
     )
     return true
+
+# What `heroes test` owes on a case, read from the `.tested` beside its
+# expectation: the expectation, or `none` where the case holds no such file,
+# or the failure naming one that cannot be read as an expectation.
+function tested_of(item: cases.Case) -> expectation.Expectation?
+    path = strings.without_suffix(text: item.expected, suffix: ".expected") + ".tested"
+    text = read_file(path)
+
+    match text
+        .ok written =>
+            match expectation.split(written)
+                .ok want => return ok(want)
+                .err e   => return fail(code: "unreadable", msg: path + " is not a readable expectation: " + e.msg)
+        .err e =>
+            if e.code == "file_not_found"
+                return fail(code: "none", msg: "no .tested beside " + item.expected)
+            return fail(code: "unreadable", msg: "cannot read " + path)
 
 # One sanitised configuration, `run <case> <flags>` with the fill handed to
 # the program (`freed_bytes.filled`, defect 321): what ASan frees is

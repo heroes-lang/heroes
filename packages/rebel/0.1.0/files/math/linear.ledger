@@ -25,7 +25,7 @@ capability vector/type  a vector of two, three or four floats, built and read by
   note    a record of fixed size for each, since a record takes no type parameter; `f64` alone, as `math` is. .NET's `Vector2`, `Vector3`, `Vector4` and glam's `DVec2` to `DVec4` are the same three
 
 capability vector/arithmetic  vectors added, taken away, negated, scaled, multiplied part by part
-  heroes  linear.add_vec2, linear.sub_vec2, linear.neg_vec2, linear.scale_vec2, linear.mul_vec2, and the same for `vec3` and `vec4`
+  heroes  linear.add_vec2, linear.subtract_vec2, linear.negate_vec2, linear.scale_vec2, linear.multiply_vec2, and the same for `vec3` and `vec4`
   go      -
   rust    -
   python  -
@@ -181,7 +181,7 @@ capability matrix/identity  the identity matrix
   note    functions, since a constant may not hold a record
 
 capability matrix/arithmetic  matrices added, taken away and scaled, entry by entry
-  heroes  linear.add_mat2, linear.sub_mat2, linear.scale_mat2, and the same for `mat3` and `mat4`
+  heroes  linear.add_mat2, linear.subtract_mat2, linear.scale_mat2, and the same for `mat3` and `mat4`
   go      -
   rust    -
   python  -
@@ -189,7 +189,7 @@ capability matrix/arithmetic  matrices added, taken away and scaled, entry by en
   note    the product entry by entry, Odin's `matrix_comp_mul`, is not offered: no transform composes so
 
 capability matrix/product  a matrix times a matrix, and a matrix times a vector
-  heroes  linear.mul_mat2, linear.mul_mat2_vec2, and the same for `mat3` and `mat4`
+  heroes  linear.multiply_mat2, linear.multiply_mat2_vec2, and the same for `mat3` and `mat4`
   go      -
   rust    -
   python  -
@@ -281,7 +281,7 @@ capability transform/compose  a transform made of a translation, a rotation and 
   rust    -
   python  -
   odin    matrixN_from_trs
-  note    the making is two `linear.mul_mat4`; the taking apart (glam's `to_scale_rotation_translation`) was not written in time
+  note    the making is two `linear.multiply_mat4`; the taking apart (glam's `to_scale_rotation_translation`) was not written in time
 
 capability camera/look-at  the view matrix of a camera at a point looking at another
   heroes  linear.look_at
@@ -349,7 +349,7 @@ capability quat/matrix  a quaternion as a rotation matrix, and a rotation matrix
   note    Shepperd's method, its square root of the largest of four combinations; its four branches each taken back to their quaternion in the tests
 
 capability quat/product  quaternions multiplied, and a vector turned by one
-  heroes  linear.mul_quat, linear.rotate_vec3
+  heroes  linear.multiply_quat, linear.rotate_vec3
   go      -
   rust    -
   python  -
@@ -414,7 +414,7 @@ capability quat/look  the rotation that looks along a direction with an up
 ## The small operations of games
 
 capability scalar/lerp  the number a fraction of the way between two, and the fraction of a number's place
-  heroes  linear.lerp, linear.inverse_lerp
+  heroes  math.lerp, math.inverse_lerp
   go      -
   rust    -
   python  -
@@ -422,7 +422,7 @@ capability scalar/lerp  the number a fraction of the way between two, and the fr
   note    the inverse fails `invalid` for an empty range, where Odin's divides by zero
 
 capability scalar/remap  a number moved from one range to another
-  heroes  linear.remap
+  heroes  math.remap
   go      -
   rust    -
   python  -
@@ -430,7 +430,7 @@ capability scalar/remap  a number moved from one range to another
   note    not held inside the ranges; `math.clamp` holds it
 
 capability scalar/smoothstep  Hermite's smooth step and Perlin's smoother one
-  heroes  linear.smoothstep, linear.smootherstep
+  heroes  math.smoothstep, math.smootherstep
   go      -
   rust    -
   python  -

@@ -1,0 +1,27 @@
+# Panel 253's R4, M-rebel-library step 61a, 2026-11-19: `skip_test` ends the
+# path it stands on as `exit` does, so a `match` arm that skips owes no value
+# and the other arm gives it, the shape Rebel's tests that need a server take.
+# One test takes the arm that skips, the other the arm that passes, and the run
+# is green with one skip (`skip-test-one-path-skips-and-the-other-passes.tested`).
+
+function port_of(name: str) -> i64?
+    if name.len() == 0
+        return fail(code: "unnamed", msg: "no server named")
+    return ok(5432)
+
+function main()
+    print(port_of(name: "db").must())
+
+test "a: no server named, so it skips"
+    port = match port_of(name: "")
+        .ok p  => p
+        .err e => skip_test(reason: e.msg)
+
+    assert port == 5432
+
+test "b: a server named, so it passes"
+    port = match port_of(name: "db")
+        .ok p  => p
+        .err e => skip_test(reason: e.msg)
+
+    assert port == 5432

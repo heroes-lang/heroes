@@ -1,0 +1,63 @@
+# The library's `skip_test`, named outside a `test` block, refused where it is
+# written (panel 253's R4, ratified 2026-11-19; design.md §4.17, §1.12;
+# spec § 12).
+#
+# WHY ONLY A TEST BLOCK. A skip ends a test as skipped, and `heroes test` names
+# the test it skipped by the process it started for that test
+# (`cli/test_outcome.hero`), so the call belongs to the block whose title the
+# report prints. A function that skips hides which of its callers did, and a
+# program's `main` has no runner to tell: the library's `skip_test` writes into
+# the file named by the second argument (`library_source.hero`), which in a
+# program is whatever its user typed there. So the name is refused wherever a
+# test block does not hold it, a call and a function value alike, and a
+# program built with `heroes build` can never reach the function: its tests
+# are never compiled into it.
+#
+# NO `Fix`: none is certain, a guess deleting the call would change what the
+# test proves, so the note is the repair.
+#
+# A line after a skip is not refused, and neither is one after `exit` today:
+# `skip_test` ends a path as `exit` does (`ending_calls.hero`), no more.
+
+use ast
+use check/state
+use diag
+use source
+use token
+
+# The library's `skip_test`, asked of the declaration: no program may declare
+# the name (`builtin_name_taken`), so the name and the library's source are
+# the whole question.
+function is_skip(s: source.Source, decls: [ast.Decl], decl: i64) -> bool
+    return source.is_library(s, decls[decl].name.start) && source.span_text(s, decls[decl].name) == "skip_test"
+
+# After a call of declaration `decl` was checked, by name or by a dot (§4.11):
+# the library's `skip_test` outside a test block.
+function after_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, span: token.Span)
+    if !c.in_test && is_skip(s, decls, decl: decl)
+        state.push_diagnostic(@c, refused(span: span))
+
+# After the name of declaration `decl` was read as a value: the library's
+# `skip_test` handed on outside a test block, to be called where no test is.
+function after_name(@c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, span: token.Span)
+    after_call(@c, s, decls, decl: decl, span: span)
+
+function refused(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "skip_outside_test",
+        message: "`skip_test` ends a `test` block as skipped, and this is not one",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "only a `test` block's own lines name `skip_test`, so `heroes test` can say which test skipped and why; return a failure from this function, and let the test that calls it skip"
+    )
+    return d
+
+## Tests
+
+test "the refusal names its code, the form and where the skip belongs"
+    d = refused(span: token.Span(start: 4, end: 20))
+    assert d.code == "skip_outside_test"
+    assert d.span.start == 4 && d.span.end == 20
+    assert d.fixes.len() == 0
+    assert d.notes.len() == 1

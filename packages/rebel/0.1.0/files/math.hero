@@ -1,12 +1,23 @@
 # The functions of mathematics over `f64`, and the integer helpers that answer
 # where the language's own arithmetic aborts.
 #
+# What it leaves to its neighbours: an integer past 64 bits, a decimal and a
+# fraction held exactly (`big`); a mean, a median, a spread (`stats`); vectors
+# of two to four floats, matrices and quaternions (`math/linear`), and vectors
+# of any length compared and searched (`vectors`); random numbers (`random`);
+# a number read from text or written as text, a float rounded at a decimal
+# place and a float's bits (`numbers`).
+#
 # The functions of floats are the platform's C library's (`math/hero_math.hero`)
 # where C has them, and every one answers what IEEE 754 answers: a nan for a
 # question with no real answer, an infinity for one too large, never a failure,
-# so float arithmetic stays one expression and `is_nan` asks afterwards. A
-# function that orders floats looks for a nan first, since ordering one aborts
-# (spec § 7).
+# so float arithmetic stays one expression and `is_nan` asks afterwards. Two
+# functions of many floats are the exceptions, `sum` and `dot`: each rounds its
+# answer once, from an exact sum, so a sum that passes the largest float on the
+# way is told as `does_not_fit` rather than answered as an infinity that the
+# exact sum is not; and `dot` and `distance` fail `invalid` on two lists of
+# different lengths. A function that orders floats looks for a nan first, since
+# ordering one aborts (spec § 7).
 #
 # Overflow aborts in Heroes at every width, and division by zero too (spec
 # § 7). The integer helpers are the ones that answer instead: a `T?` failing
@@ -19,6 +30,7 @@
 # `pow`), and the integer one beside it says `_i64`.
 
 use math/internal/bits
+use math/internal/blending
 use math/internal/checked
 use math/internal/complex_arithmetic
 use math/internal/complex_arithmetic_cases
@@ -47,8 +59,9 @@ use math/internal/wrapping
 constant DOES_NOT_FIT: str
     limits.DOES_NOT_FIT
 
-# The input is not what the function reads, a negative count or a zero modulus;
-# the message says what was given.
+# The input is not what the function reads: a negative count, a zero modulus,
+# two lists of different lengths, a range from a number to itself; the message
+# says what was given.
 constant INVALID: str
     limits.INVALID
 
@@ -307,6 +320,68 @@ function midpoint(a: f64, b: f64) -> f64
 function is_close(a: f64, b: f64, relative: f64, absolute: f64) -> bool
     return floats.is_close(a: a, b: b, relative: relative, absolute: absolute)
 
+## Between two floats
+
+# The number a fraction `t` of the way from `from` to `to`: `(1 - t) * from + t
+# * to`, exactly `from` at 0 and exactly `to` at 1.
+#
+# - `from`: where `t` is 0.
+# - `to`: where `t` is 1.
+# - `t`: the fraction; outside 0 to 1 it goes on past either end.
+#
+# See also `inverse_lerp`, `midpoint`, and `math/linear`'s `lerp_vec3` and its
+# kin.
+function lerp(from: f64, to: f64, t: f64) -> f64
+    return blending.lerp(from: from, to: to, t: t)
+
+# The fraction of the way `x` stands from `from` to `to`, `lerp`'s inverse.
+#
+# - `from`: where the answer is 0.
+# - `to`: where the answer is 1.
+# - `x`: the number placed; a nan answers a nan.
+#
+# Fails `invalid` where `from` and `to` are equal, which places nothing.
+function inverse_lerp(from: f64, to: f64, x: f64) -> f64?
+    return blending.inverse_lerp(from: from, to: to, x: x)
+
+# `x` moved from the range `from_low` to `from_high` to the range `to_low` to
+# `to_high`, keeping its place: `lerp` of `inverse_lerp`, not held inside
+# either range.
+#
+# - `x`: the number moved.
+# - `from_low`: the start of the range it is in.
+# - `from_high`: that range's end, not `from_low`.
+# - `to_low`: where `from_low` goes.
+# - `to_high`: where `from_high` goes.
+#
+# Fails `invalid` where `from_low` and `from_high` are equal. Hold the answer
+# with `clamp` where it must stay inside.
+function remap(x: f64, from_low: f64, from_high: f64, to_low: f64, to_high: f64) -> f64?
+    t = blending.inverse_lerp(from: from_low, to: from_high, x: x)?
+    return ok(blending.lerp(from: to_low, to: to_high, t: t))
+
+# Hermite's smooth step: 0 up to `low`, 1 from `high` on, and between them
+# `3t^2 - 2t^3` of where `x` stands, so it leaves 0 and reaches 1 with a
+# slope of zero. GLSL's `smoothstep`.
+#
+# - `low`: where the answer leaves 0.
+# - `high`: where it reaches 1; equal to `low`, the step is sudden, 0 below
+#   it and 1 from it on, and below `low` the step runs backwards.
+# - `x`: the number placed; a nan answers a nan.
+#
+# See also `smootherstep`.
+function smoothstep(low: f64, high: f64, x: f64) -> f64
+    return blending.smoothstep(low: low, high: high, x: x)
+
+# Perlin's smoother step, `6t^5 - 15t^4 + 10t^3` of where `x` stands, whose
+# curvature is zero at both ends too.
+#
+# - `low`: where the answer leaves 0.
+# - `high`: where it reaches 1, as `smoothstep` reads it.
+# - `x`: the number placed; a nan answers a nan.
+function smootherstep(low: f64, high: f64, x: f64) -> f64
+    return blending.smootherstep(low: low, high: high, x: x)
+
 ## Rounding
 
 # The largest whole number at or below `x`.
@@ -335,6 +410,8 @@ function trunc(x: f64) -> f64
 #
 # - `x`: any float; a zero, an infinity and a nan answer themselves, and -0.5
 #   answers -1.0.
+#
+# See also `numbers.round_to`, which rounds at a decimal place.
 function round(x: f64) -> f64
     return rounding.round(x)
 
@@ -343,6 +420,8 @@ function round(x: f64) -> f64
 #
 # - `x`: any float; a zero, an infinity and a nan answer themselves, 2.5
 #   answers 2.0, and -0.5 answers minus zero.
+#
+# See also `numbers.round_to`, which rounds at a decimal place.
 function round_even(x: f64) -> f64
     return rounding.round_even(x)
 
@@ -736,9 +815,8 @@ function product(xs: [f64]) -> f64
 # - `a`: the first floats.
 # - `b`: the second floats, as many as `a`; two empty lists answer 0.0.
 #
-# Fails `does_not_fit` where the products sum past the largest float on the way.
-#
-# Aborts where `a` and `b` are not of one length.
+# Fails `does_not_fit` where the products sum past the largest float on the
+# way, and `invalid` where `a` and `b` are not of one length.
 function dot(a: [f64], b: [f64]) -> f64?
     return sums.dot(a: a, b: b)
 
@@ -754,11 +832,11 @@ function norm(xs: [f64]) -> f64
 # The distance between the points `a` and `b`, `norm` of their difference.
 #
 # - `a`: one point's coordinates.
-# - `b`: the other's, as many as `a`.
+# - `b`: the other's, as many as `a`; two empty lists answer 0.0.
 #
-# Aborts where `a` and `b` are not of one length.
-function dist(a: [f64], b: [f64]) -> f64
-    return sums.dist(a: a, b: b)
+# Fails `invalid` where `a` and `b` are not of one length.
+function distance(a: [f64], b: [f64]) -> f64?
+    return sums.distance(a: a, b: b)
 
 # The smallest of `xs`.
 #
@@ -786,7 +864,7 @@ function max_of(xs: [f64]) -> f64?
 # - `b`: any `i64`.
 #
 # Fails `does_not_fit` where the sum is outside `i64`.
-function add(a: i64, b: i64) -> i64?
+function add_i64(a: i64, b: i64) -> i64?
     return checked.add(a: a, b: b)
 
 # `a` less `b`.
@@ -795,7 +873,7 @@ function add(a: i64, b: i64) -> i64?
 # - `b`: any `i64`.
 #
 # Fails `does_not_fit` where the difference is outside `i64`.
-function sub(a: i64, b: i64) -> i64?
+function subtract_i64(a: i64, b: i64) -> i64?
     return checked.sub(a: a, b: b)
 
 # The product of `a` and `b`.
@@ -804,7 +882,7 @@ function sub(a: i64, b: i64) -> i64?
 # - `b`: any `i64`.
 #
 # Fails `does_not_fit` where the product is outside `i64`.
-function mul(a: i64, b: i64) -> i64?
+function multiply_i64(a: i64, b: i64) -> i64?
     return checked.mul(a: a, b: b)
 
 # `x` with its sign changed.
@@ -813,7 +891,7 @@ function mul(a: i64, b: i64) -> i64?
 #
 # Fails `does_not_fit` where `x` is `MIN_I64`, whose negation is one past
 # `MAX_I64`.
-function neg(x: i64) -> i64?
+function negate_i64(x: i64) -> i64?
     return checked.neg(x)
 
 # The quotient of `x` by `by`, rounded toward zero as `/` rounds.
@@ -823,7 +901,7 @@ function neg(x: i64) -> i64?
 #
 # Fails `invalid` where `by` is zero, and `does_not_fit` where `x` is
 # `MIN_I64` and `by` is -1.
-function div(x: i64, by: i64) -> i64?
+function divide_i64(x: i64, by: i64) -> i64?
     return checked.div(x: x, by: by)
 
 # The remainder of `x` by `by`, with the sign of `x` as `%` gives it.
@@ -832,7 +910,7 @@ function div(x: i64, by: i64) -> i64?
 # - `by`: the divisor; zero fails.
 #
 # Fails `invalid` where `by` is zero.
-function rem(x: i64, by: i64) -> i64?
+function remainder_i64(x: i64, by: i64) -> i64?
     return checked.rem(x: x, by: by)
 
 # `base` raised to the power `exponent`.
@@ -876,7 +954,7 @@ function add_u64(a: u64, b: u64) -> u64?
 # - `b`: any `u64`.
 #
 # Fails `does_not_fit` where `b` is above `a`.
-function sub_u64(a: u64, b: u64) -> u64?
+function subtract_u64(a: u64, b: u64) -> u64?
     return checked.sub_u64(a: a, b: b)
 
 # The product of `a` and `b`.
@@ -885,7 +963,7 @@ function sub_u64(a: u64, b: u64) -> u64?
 # - `b`: any `u64`.
 #
 # Fails `does_not_fit` where the product is above `MAX_U64`.
-function mul_u64(a: u64, b: u64) -> u64?
+function multiply_u64(a: u64, b: u64) -> u64?
     return checked.mul_u64(a: a, b: b)
 
 # The sum of `a` and `b`, or the limit of `i64` it passes.
@@ -899,14 +977,14 @@ function add_clamped(a: i64, b: i64) -> i64
 #
 # - `a`: any `i64`.
 # - `b`: any `i64`.
-function sub_clamped(a: i64, b: i64) -> i64
+function subtract_clamped(a: i64, b: i64) -> i64
     return wrapping.sub_clamped(a: a, b: b)
 
 # The product of `a` and `b`, or the limit of `i64` it passes.
 #
 # - `a`: any `i64`.
 # - `b`: any `i64`.
-function mul_clamped(a: i64, b: i64) -> i64
+function multiply_clamped(a: i64, b: i64) -> i64
     return wrapping.mul_clamped(a: a, b: b)
 
 # The sum of `a` and `b` modulo 2 to the 64, as a hash or a checksum wants it:
@@ -921,14 +999,14 @@ function add_wrapping(a: i64, b: i64) -> i64
 #
 # - `a`: any `i64`.
 # - `b`: any `i64`.
-function sub_wrapping(a: i64, b: i64) -> i64
+function subtract_wrapping(a: i64, b: i64) -> i64
     return wrapping.sub_wrapping(a: a, b: b)
 
 # The product of `a` and `b` modulo 2 to the 64, its lowest 64 bits.
 #
 # - `a`: any `i64`.
 # - `b`: any `i64`.
-function mul_wrapping(a: i64, b: i64) -> i64
+function multiply_wrapping(a: i64, b: i64) -> i64
     return wrapping.mul_wrapping(a: a, b: b)
 
 ## Integer division
@@ -1133,8 +1211,9 @@ function factorial(n: i64) -> i64?
 # - `k`: how many are chosen, 0 or more; above `n` the count is 0.
 #
 # Fails `invalid` where either is negative, and `does_not_fit` only where the
-# count itself is above `MAX_I64`.
-function comb(n: i64, k: i64) -> i64?
+# count itself is above `MAX_I64`. See also `lists.combinations`, which lists
+# them.
+function count_combinations(n: i64, k: i64) -> i64?
     return whole.comb(n: n, k: k)
 
 # The count of ways to arrange `k` things chosen from `n`, order counting.
@@ -1144,8 +1223,9 @@ function comb(n: i64, k: i64) -> i64?
 #   itself answers `factorial(n)`.
 #
 # Fails `invalid` where either is negative, and `does_not_fit` only where the
-# count itself is above `MAX_I64`.
-function perm(n: i64, k: i64) -> i64?
+# count itself is above `MAX_I64`. See also `lists.permutations`, which lists
+# them.
+function count_permutations(n: i64, k: i64) -> i64?
     return whole.perm(n: n, k: k)
 
 # `base` raised to `exponent`, modulo `modulus`, from 0 below `modulus`,
@@ -1274,7 +1354,7 @@ function add_complex(a: Complex, b: Complex) -> Complex
 #
 # - `a`: the number taken from.
 # - `b`: the number taken away.
-function sub_complex(a: Complex, b: Complex) -> Complex
+function subtract_complex(a: Complex, b: Complex) -> Complex
     return Complex(re: a.re - b.re, im: a.im - b.im)
 
 # The product `a * b`.
@@ -1285,7 +1365,7 @@ function sub_complex(a: Complex, b: Complex) -> Complex
 # Where the plain formula answers a nan in both parts though a factor is
 # infinite, or a partial product overflowed, the answer is the infinity Annex
 # G recovers: `(inf + nan i) * (2 + 1i)` is `inf + inf i`.
-function mul_complex(a: Complex, b: Complex) -> Complex
+function multiply_complex(a: Complex, b: Complex) -> Complex
     p = complex_arithmetic.mul(
         a: complex_arithmetic.Pair(re: a.re, im: a.im),
         b: complex_arithmetic.Pair(re: b.re, im: b.im)
@@ -1303,7 +1383,7 @@ function mul_complex(a: Complex, b: Complex) -> Complex
 # a finite number over an infinity a zero. A nan part is never read for its
 # sign, which no operation promises: `0 / (nan + inf i)` is `0 + 0i` on every
 # platform.
-function div_complex(a: Complex, b: Complex) -> Complex
+function divide_complex(a: Complex, b: Complex) -> Complex
     p = complex_arithmetic.div(
         a: complex_arithmetic.Pair(re: a.re, im: a.im),
         b: complex_arithmetic.Pair(re: b.re, im: b.im)
@@ -1313,7 +1393,7 @@ function div_complex(a: Complex, b: Complex) -> Complex
 # `z` with both parts negated.
 #
 # - `z`: any complex number.
-function neg_complex(z: Complex) -> Complex
+function negate_complex(z: Complex) -> Complex
     return Complex(re: -z.re, im: -z.im)
 
 # The conjugate of `z`: its imaginary part negated.
@@ -1451,7 +1531,7 @@ function log10_complex(z: Complex) -> Complex
 # - `z`: any complex number.
 # - `base`: the base; 1 answers an infinity or a nan, as dividing by zero does.
 function log_complex(z: Complex, base: Complex) -> Complex
-    return div_complex(a: ln_complex(z), b: ln_complex(base))
+    return divide_complex(a: ln_complex(z), b: ln_complex(base))
 
 # The principal square root of `z`: its real part never negative, its
 # imaginary part of the sign of `z.im`.
@@ -1603,25 +1683,587 @@ test "the complex functions' generated cases: one oracle for the four modules"
 
 ## Examples
 
+# The square root of a negative number is a nan, which only `is_nan` sees:
+# a nan equals nothing, itself included.
+test "is_nan: the square root of a negative number"
+    x = sqrt(-1.0)
+    assert is_nan(x) && x != x
+    assert !is_nan(1.0)
+
+# An overflow makes an infinity; the largest float is no infinity.
+test "is_inf: the largest float doubled"
+    assert is_inf(MAX_F64 * 2.0) && is_inf(-INF)
+    assert !is_inf(MAX_F64)
+
+# A float that is a number, against an infinity and a nan.
+test "is_finite: a number, an infinity and a nan"
+    assert is_finite(1.5)
+    assert !is_finite(INF) && !is_finite(NAN)
+
+# One is normal; zero and the smallest float are not.
+test "is_normal: one, zero and the smallest float"
+    assert is_normal(1.0)
+    assert !is_normal(0.0) && !is_normal(SMALLEST_F64)
+
+# The smallest float is subnormal; one is not.
+test "is_subnormal: the smallest float and one"
+    assert is_subnormal(SMALLEST_F64)
+    assert !is_subnormal(1.0)
+
+# Minus zero carries a sign that `<` does not see.
+test "has_minus_sign: minus zero"
+    assert has_minus_sign(-0.0) && !(-0.0 < 0.0)
+    assert !has_minus_sign(0.0)
+
+# The size of a negative number.
+test "abs: a negative number"
+    assert abs(-2.5) == 2.5
+
+# The sign of a negative number, and of zero.
+test "sign: a negative number and zero"
+    assert sign(-3.0) == -1.0
+    assert sign(0.0) == 0.0
+
+# A size given the sign of minus zero.
+test "with_sign: two with the sign of minus zero"
+    assert with_sign(x: 2.0, of: -0.0) == -2.0
+
+# The smaller of two floats.
+test "min: two floats"
+    assert min(a: 1.0, b: -2.0) == -2.0
+
+# The larger of two floats.
+test "max: two floats"
+    assert max(a: 1.0, b: -2.0) == 1.0
+
+# A volume held between 0 and 10.
+test "clamp: a value above the range"
+    assert clamp(x: 15.0, low: 0.0, high: 10.0) == 10.0
+    assert clamp(x: 5.0, low: 0.0, high: 10.0) == 5.0
+
+# The middle of two floats, the largest among them without overflow.
+test "midpoint: two floats, and the largest twice"
+    assert midpoint(a: 1.0, b: 4.0) == 2.5
+    assert midpoint(a: MAX_F64, b: MAX_F64) == MAX_F64
+
+# A sum that misses 0.3 by a hair, close within nine digits.
+test "is_close: one tenth and two tenths"
+    assert 0.1 + 0.2 != 0.3
+    assert is_close(a: 0.1 + 0.2, b: 0.3, relative: 0.000000001, absolute: 0.0)
+
+# A quarter of the way from 10 to 20.
+test "lerp: a quarter of the way"
+    assert lerp(from: 10.0, to: 20.0, t: 0.25) == 12.5
+
+# Where 12.5 stands from 10 to 20.
+test "inverse_lerp: a quarter of the way"
+    assert inverse_lerp(from: 10.0, to: 20.0, x: 12.5).must() == 0.25
+
+# A value from 0 to 10 moved onto 100 to 200.
+test "remap: from 0 to 10 onto 100 to 200"
+    assert remap(x: 5.0, from_low: 0.0, from_high: 10.0, to_low: 100.0, to_high: 200.0).must() == 150.0
+
+# Half way, the smooth step is half way too; past its edges it holds.
+test "smoothstep: half way, and past the high edge"
+    assert smoothstep(low: 0.0, high: 1.0, x: 0.5) == 0.5
+    assert smoothstep(low: 0.0, high: 1.0, x: 2.0) == 1.0
+
+# A quarter of the way, the smoother step is lower than the smooth one.
+test "smootherstep: a quarter of the way"
+    assert smootherstep(low: 0.0, high: 1.0, x: 0.25) == 0.103515625
+
+# Down to the whole number below, for a negative number too.
+test "floor: a negative half"
+    assert floor(-2.5) == -3.0
+    assert floor(2.5) == 2.0
+
+# Up to the whole number above.
+test "ceil: a little above two"
+    assert ceil(2.1) == 3.0
+
+# The fraction dropped, toward zero.
+test "trunc: a negative number"
+    assert trunc(-2.7) == -2.0
+
+# A half rounded away from zero.
+test "round: halves on both sides of zero"
+    assert round(2.5) == 3.0
+    assert round(-2.5) == -3.0
+
+# A half rounded to the even neighbour.
+test "round_even: two halves"
+    assert round_even(2.5) == 2.0
+    assert round_even(3.5) == 4.0
+
+# The part after the point keeps the sign.
+test "fraction: a positive and a negative number"
+    assert fraction(3.75) == 0.75
+    assert fraction(-3.75) == -0.75
+
+# A division rounded down, as Python's `//` does.
+test "div_floor: seven by two, either sign"
+    assert div_floor(x: 7.0, by: 2.0) == 3.0
+    assert div_floor(x: -7.0, by: 2.0) == -4.0
+
+# The remainder with the divisor's sign, as Python's `%` gives it.
+test "rem_floor: minus seven by two"
+    assert rem_floor(x: -7.0, by: 2.0) == 1.0
+
+# A quotient whose remainder is never negative.
+test "div_euclid: minus seven by two and by minus two"
+    assert div_euclid(x: -7.0, by: 2.0) == -4.0
+    assert div_euclid(x: -7.0, by: -2.0) == 4.0
+
+# A remainder that is never negative, whatever the signs.
+test "rem_euclid: minus seven by two and by minus two"
+    assert rem_euclid(x: -7.0, by: 2.0) == 1.0
+    assert rem_euclid(x: -7.0, by: -2.0) == 1.0
+
+# Seven by two: the quotient 3.5 rounds to 4, so the remainder is -1.
+test "rem_nearest: seven by two"
+    assert rem_nearest(x: 7.0, by: 2.0) == -1.0
+
+# A square root, and the nan of a negative number.
+test "sqrt: a square and a negative number"
+    assert sqrt(16.0) == 4.0
+    assert is_nan(sqrt(-1.0))
+
+# A cube root, of a negative number too.
+test "cbrt: a negative cube"
+    assert cbrt(-27.0) == -3.0
+
+# The hypotenuse of a 3-4-5 triangle.
+test "hypot: a 3-4-5 triangle"
+    assert hypot(x: 3.0, y: 4.0) == 5.0
+
+# Two to the tenth.
+test "pow: two to the tenth"
+    assert pow(base: 2.0, exponent: 10.0) == 1024.0
+
+# E to the zero is one; very large is an infinity.
+test "exp: zero, and past the largest"
+    assert exp(0.0) == 1.0
+    assert is_inf(exp(1000.0))
+
+# Two to the tenth, as a power of two.
+test "exp2: two to the tenth"
+    assert exp2(10.0) == 1024.0
+
+# Near zero, `exp(x) - 1.0` loses its digits and `exp_minus_1` keeps them.
+test "exp_minus_1: a tiny exponent"
+    x = 0.0000000001
+    assert is_close(a: exp_minus_1(x), b: x, relative: 0.000000001, absolute: 0.0)
+    assert !is_close(a: exp(x) - 1.0, b: x, relative: 0.000000001, absolute: 0.0)
+
+# The natural logarithm of e and of one.
+test "ln: e and one"
+    assert ln(E) == 1.0
+    assert ln(1.0) == 0.0
+
+# The logarithm in base 2 of a power of two.
+test "log2: eight"
+    assert log2(8.0) == 3.0
+
+# The logarithm in base 10 of a power of ten.
+test "log10: a thousand"
+    assert log10(1000.0) == 3.0
+
+# The logarithm of 8 in base 2, through two natural logarithms.
+test "log: eight in base two"
+    assert log(x: 8.0, base: 2.0) == 3.0
+
+# Near zero, `ln(1.0 + x)` loses its digits and `ln_1_plus` keeps them.
+test "ln_1_plus: a tiny number"
+    x = 0.0000000001
+    assert is_close(a: ln_1_plus(x), b: x, relative: 0.000000001, absolute: 0.0)
+    assert !is_close(a: ln(1.0 + x), b: x, relative: 0.000000001, absolute: 0.0)
+
+# The sine of a right angle.
+test "sin: a right angle"
+    assert sin(PI / 2.0) == 1.0
+    assert sin(0.0) == 0.0
+
+# The cosine of a half turn.
+test "cos: a half turn"
+    assert cos(PI) == -1.0
+
+# The tangent of an eighth of a turn, one to fifteen digits.
+test "tan: an eighth of a turn"
+    assert is_close(a: tan(PI / 4.0), b: 1.0, relative: 0.000000000000001, absolute: 0.0)
+
+# The angle whose sine is one.
+test "asin: one"
+    assert asin(1.0) == PI / 2.0
+
+# The angle whose cosine is minus one.
+test "acos: minus one"
+    assert acos(-1.0) == PI
+
+# The angle whose tangent is one.
+test "atan: one"
+    assert atan(1.0) == PI / 4.0
+
+# The angle of a point up and to the left, which `atan` of the quotient would
+# put in the wrong quadrant.
+test "atan2: a point up and to the left"
+    assert atan2(y: 1.0, x: -1.0) == PI * 0.75
+    assert atan(1.0 / -1.0) == -PI / 4.0
+
+# A half turn in degrees.
+test "to_degrees: pi"
+    assert to_degrees(PI) == 180.0
+
+# A half turn in radians.
+test "to_radians: 180 degrees"
+    assert to_radians(180.0) == PI
+
+# The hyperbolic sine of one.
+test "sinh: one"
+    assert is_close(a: sinh(1.0), b: 1.1752011936438014, relative: 0.000000000000001, absolute: 0.0)
+
+# The hyperbolic cosine of zero is one.
+test "cosh: zero"
+    assert cosh(0.0) == 1.0
+
+# The hyperbolic tangent of a large number is one.
+test "tanh: zero and twenty"
+    assert tanh(0.0) == 0.0
+    assert tanh(20.0) == 1.0
+
+# The inverse hyperbolic sine undoes the hyperbolic sine.
+test "asinh: the sine of one, undone"
+    assert is_close(a: asinh(sinh(1.0)), b: 1.0, relative: 0.000000000000001, absolute: 0.0)
+
+# The inverse hyperbolic cosine of one is zero.
+test "acosh: one"
+    assert acosh(1.0) == 0.0
+
+# The inverse hyperbolic tangent of a half.
+test "atanh: a half"
+    assert is_close(a: atanh(0.5), b: 0.5493061443340549, relative: 0.000000000000001, absolute: 0.0)
+
+# The error function at zero and at one.
+test "erf: zero and one"
+    assert erf(0.0) == 0.0
+    assert is_close(a: erf(1.0), b: 0.8427007929497149, relative: 0.000000000000001, absolute: 0.0)
+
+# At ten, `1.0 - erf` has lost every digit and `erfc` has not.
+test "erfc: zero and ten"
+    assert erfc(0.0) == 1.0
+    assert 1.0 - erf(10.0) == 0.0 && erfc(10.0) > 0.0
+
+# The gamma function at a whole number is a factorial: 4! at 5.
+test "gamma: five"
+    assert gamma(5.0) == 24.0
+
+# The logarithm of gamma, finite where gamma overflows.
+test "ln_gamma: five, and past gamma's overflow"
+    assert is_close(a: ln_gamma(5.0), b: ln(24.0), relative: 0.000000000000001, absolute: 0.0)
+    assert is_inf(gamma(200.0)) && is_finite(ln_gamma(200.0))
+
+# Three quarters times 2 to the fourth.
+test "scale: three quarters by a power of two"
+    assert scale(x: 0.75, exponent: 4) == 12.0
+
+# Ten lies between 2 to the 3 and 2 to the 4.
+test "exponent_of: ten"
+    assert exponent_of(10.0).must() == 3
+
+# The float after one is one plus `EPSILON`.
+test "next_after: up from one"
+    assert next_after(x: 1.0, toward: 2.0) == 1.0 + EPSILON
+
+# The `f32` after one, which is coarser than the `f64` after it.
+test "next_after_f32: up from one"
+    one: f32 = 1.0
+    two: f32 = 2.0
+    assert next_after_f32(x: one, toward: two) == 1.00000011920928955078125
+
+# The gap after one is `EPSILON`.
+test "ulp: one"
+    assert ulp(1.0) == EPSILON
+
+# A product and a sum rounded once keep what two roundings lose.
+test "mul_add: a tenth times ten, less one"
+    assert 0.1 * 10.0 - 1.0 == 0.0
+    assert mul_add(x: 0.1, times: 10.0, plus: -1.0) != 0.0
+
+# Ten tenths sum to one exactly.
+test "sum: ten tenths"
+    tenths = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+    assert sum(tenths).must() == 1.0
+
+# The product of three floats.
+test "product: three floats"
+    assert product([2.0, 3.0, 4.0]) == 24.0
+
+# The dot product of two vectors.
+test "dot: two vectors of three"
+    assert dot(a: [1.0, 2.0, 3.0], b: [4.0, 5.0, 6.0]).must() == 32.0
+
+# The length of a vector.
+test "norm: a 3-4-5 triangle"
+    assert norm([3.0, 4.0]) == 5.0
+
+# The distance between two points.
+test "distance: two points of a plane"
+    assert distance(a: [1.0, 2.0], b: [4.0, 6.0]).must() == 5.0
+
+# The smallest of a list of floats.
+test "min_of: three floats"
+    assert min_of([3.0, -1.0, 2.0]).must() == -1.0
+
+# The largest of a list of floats.
+test "max_of: three floats"
+    assert max_of([3.0, -1.0, 2.0]).must() == 3.0
+
+# A sum that fits, and one that does not.
+test "add_i64: a sum, and the largest plus one"
+    assert add_i64(a: 2, b: 3).must() == 5
+    assert add_i64(a: MAX_I64, b: 1).is_err()
+
+# A difference that fits, and one that does not.
+test "subtract_i64: a difference, and the smallest less one"
+    assert subtract_i64(a: 5, b: 7).must() == -2
+    assert subtract_i64(a: MIN_I64, b: 1).is_err()
+
+# A product that fits, and one that does not.
+test "multiply_i64: a product, and the largest doubled"
+    assert multiply_i64(a: 6, b: 7).must() == 42
+    assert multiply_i64(a: MAX_I64, b: 2).is_err()
+
+# A number negated, and the one number whose negation does not fit.
+test "negate_i64: five, and the smallest"
+    assert negate_i64(5).must() == -5
+    assert negate_i64(MIN_I64).is_err()
+
+# A quotient rounded toward zero, and a division by zero told.
+test "divide_i64: minus seven by two, and by zero"
+    assert divide_i64(x: -7, by: 2).must() == -3
+    assert divide_i64(x: 1, by: 0).is_err()
+
+# A remainder with the dividend's sign.
+test "remainder_i64: minus seven by two"
+    assert remainder_i64(x: -7, by: 2).must() == -1
+
+# Two to the tenth, and two to the 63rd, which does not fit.
+test "pow_i64: two to the tenth and to the 63rd"
+    assert pow_i64(base: 2, exponent: 10).must() == 1024
+    assert pow_i64(base: 2, exponent: 63).is_err()
+
+# The size of a negative number, and the one size that does not fit.
+test "abs_i64: minus five, and the smallest"
+    assert abs_i64(-5).must() == 5
+    assert abs_i64(MIN_I64).is_err()
+
+# The distance between the two ends of `i64`, which fits only in a `u64`.
+test "abs_diff: across zero, and from end to end"
+    assert abs_diff(a: 3, b: 10) == 7
+    assert abs_diff(a: MIN_I64, b: MAX_I64) == MAX_U64
+
+# A sum of two `u64`, and one past the largest.
+test "add_u64: a sum, and the largest plus one"
+    assert add_u64(a: 2, b: 3).must() == 5
+    assert add_u64(a: MAX_U64, b: 1).is_err()
+
+# A difference of two `u64`, and one below zero.
+test "subtract_u64: a difference, and one below zero"
+    assert subtract_u64(a: 7, b: 5).must() == 2
+    assert subtract_u64(a: 5, b: 7).is_err()
+
+# A product of two `u64`, and one past the largest.
+test "multiply_u64: a product, and the largest doubled"
+    assert multiply_u64(a: 6, b: 7).must() == 42
+    assert multiply_u64(a: MAX_U64, b: 2).is_err()
+
+# A sum held at the largest `i64`.
+test "add_clamped: the largest plus one"
+    assert add_clamped(a: MAX_I64, b: 1) == MAX_I64
+    assert add_clamped(a: 2, b: 3) == 5
+
+# A difference held at the smallest `i64`.
+test "subtract_clamped: the smallest less one"
+    assert subtract_clamped(a: MIN_I64, b: 1) == MIN_I64
+
+# A product held at the limit its sign points to.
+test "multiply_clamped: the largest times minus two"
+    assert multiply_clamped(a: MAX_I64, b: -2) == MIN_I64
+
+# A sum that goes on from the smallest past the largest.
+test "add_wrapping: the largest plus one"
+    assert add_wrapping(a: MAX_I64, b: 1) == MIN_I64
+
+# A difference that goes on from the largest below the smallest.
+test "subtract_wrapping: the smallest less one"
+    assert subtract_wrapping(a: MIN_I64, b: 1) == MAX_I64
+
+# The lowest 64 bits of a product, as a hash multiplies.
+test "multiply_wrapping: the largest doubled"
+    assert multiply_wrapping(a: MAX_I64, b: 2) == -2
+
+# A quotient rounded down, as Python's `//` rounds.
+test "div_floor_i64: minus seven by two"
+    assert div_floor_i64(x: -7, by: 2).must() == -4
+
+# A remainder with the divisor's sign, as Python's `%` gives it.
+test "rem_floor_i64: minus seven by two"
+    assert rem_floor_i64(x: -7, by: 2) == 1
+
+# A quotient whose remainder is never negative.
+test "div_euclid_i64: minus seven by minus two"
+    assert div_euclid_i64(x: -7, by: -2).must() == 4
+
+# The bucket of a negative number among three.
+test "rem_euclid_i64: minus seven among three buckets"
+    assert rem_euclid_i64(x: -7, by: 3) == 2
+
+# How many pages of three lines hold ten lines.
+test "div_ceil: ten lines, three a page"
+    assert div_ceil(x: 10, by: 3).must() == 4
+
+# The smaller of two integers.
+test "min_i64: two integers"
+    assert min_i64(a: 3, b: -2) == -2
+
+# The larger of two integers.
+test "max_i64: two integers"
+    assert max_i64(a: 3, b: -2) == 3
+
+# A percentage held between 0 and 100.
+test "clamp_i64: a value above the range"
+    assert clamp_i64(x: 120, low: 0, high: 100) == 100
+
+# The sign of a negative integer, and of zero.
+test "sign_i64: minus nine and zero"
+    assert sign_i64(-9) == -1
+    assert sign_i64(0) == 0
+
+# The middle of two integers, rounded toward zero, without overflow.
+test "midpoint_i64: a negative pair, and two large ones"
+    assert midpoint_i64(a: -3, b: 0) == -1
+    assert midpoint_i64(a: MAX_I64, b: MAX_I64 - 2) == MAX_I64 - 1
+
+# A sum, and one whose running total passes the limit and comes back.
+test "sum_i64: three numbers, and a total that comes back"
+    assert sum_i64([1, 2, 3]).must() == 6
+    assert sum_i64([MAX_I64, 1, -1]).must() == MAX_I64
+
+# The product of a list of integers.
+test "product_i64: three integers"
+    assert product_i64([2, 3, 4]).must() == 24
+
+# The smallest of a list of integers.
+test "min_of_i64: three integers"
+    assert min_of_i64([3, -1, 2]).must() == -1
+
+# The largest of a list of integers.
+test "max_of_i64: three integers"
+    assert max_of_i64([3, -1, 2]).must() == 3
+
+# The greatest common divisor of 12 and 18.
+test "gcd: twelve and eighteen"
+    assert gcd(a: 12, b: 18).must() == 6
+
+# The least common multiple of 4 and 6.
+test "lcm: four and six"
+    assert lcm(a: 4, b: 6).must() == 12
+
+# The whole square root of a number that is no square.
+test "isqrt: seventeen"
+    assert isqrt(17).must() == 4
+
+# The whole logarithm in base 2 of a power of two.
+test "log2_i64: 1024"
+    assert log2_i64(1024).must() == 10
+
+# A number of three digits has a whole logarithm of 2.
+test "log10_i64: 999"
+    assert log10_i64(999).must() == 2
+
+# The whole logarithm of 81 in base 3.
+test "log_i64: 81 in base three"
+    assert log_i64(x: 81, base: 3).must() == 4
+
+# Five factorial.
+test "factorial: five"
+    assert factorial(5).must() == 120
+
+# The ways to choose two of five.
+test "count_combinations: two of five"
+    assert count_combinations(n: 5, k: 2).must() == 10
+
+# The ways to arrange two of five.
+test "count_permutations: two of five"
+    assert count_permutations(n: 5, k: 2).must() == 20
+
+# A power taken modulo seven, and an inverse.
+test "pow_mod: three to the 200th modulo seven, and three's inverse"
+    assert pow_mod(base: 3, exponent: 200, modulus: 7).must() == 2
+    assert pow_mod(base: 3, exponent: -1, modulus: 7).must() == 5
+
+# The next multiple of five from 13, upward and downward.
+test "next_multiple: 13 by five and by minus five"
+    assert next_multiple(x: 13, of: 5).must() == 15
+    assert next_multiple(x: 13, of: -5).must() == 10
+
+# A power of two, and a number that is none.
+test "is_power_of_two: 64 and 48"
+    assert is_power_of_two(64)
+    assert !is_power_of_two(48)
+
+# The power of two that holds 100 items.
+test "next_power_of_two: a hundred"
+    assert next_power_of_two(100).must() == 128
+
+# The ones of eleven, binary 1011, and of minus one.
+test "count_ones: eleven and minus one"
+    assert count_ones(11) == 3
+    assert count_ones(-1) == 64
+
+# One begins with 63 zero bits.
+test "leading_zeros: one"
+    assert leading_zeros(1) == 63
+
+# Eight ends with three zero bits.
+test "trailing_zeros: eight"
+    assert trailing_zeros(8) == 3
+
+# 255 takes eight bits.
+test "bit_width: 255"
+    assert bit_width(255) == 8
+
+# The highest bit rotated round to the lowest.
+test "rotate_left: the highest bit round to the lowest"
+    assert rotate_left(x: MIN_I64, by: 1) == 1
+    assert rotate_left(x: 1, by: -1) == MIN_I64
+
+# The lowest bit becomes the highest.
+test "reverse_bits: one"
+    assert reverse_bits(1) == MIN_I64
+
+# Eight bytes read in the other byte order.
+test "swap_bytes: eight bytes reversed"
+    assert swap_bytes(0x0102030405060708) == 0x0807060504030201
+
 # Two complex numbers added.
 test "add_complex: two numbers"
     assert add_complex(a: Complex(re: 1.0, im: 2.0), b: Complex(re: 3.0, im: -1.0)) == Complex(re: 4.0, im: 1.0)
 
 # One complex number taken from another.
-test "sub_complex: two numbers"
-    assert sub_complex(a: Complex(re: 1.0, im: 2.0), b: Complex(re: 3.0, im: -1.0)) == Complex(re: -2.0, im: 3.0)
+test "subtract_complex: two numbers"
+    assert subtract_complex(a: Complex(re: 1.0, im: 2.0), b: Complex(re: 3.0, im: -1.0)) == Complex(re: -2.0, im: 3.0)
 
 # A product, `i * i` being -1.
-test "mul_complex: two numbers"
-    assert mul_complex(a: Complex(re: 1.0, im: 2.0), b: Complex(re: 3.0, im: -4.0)) == Complex(re: 11.0, im: 2.0)
+test "multiply_complex: two numbers"
+    assert multiply_complex(a: Complex(re: 1.0, im: 2.0), b: Complex(re: 3.0, im: -4.0)) == Complex(re: 11.0, im: 2.0)
 
 # The quotient undoes the product exactly.
-test "div_complex: the product divided back"
-    assert div_complex(a: Complex(re: 11.0, im: 2.0), b: Complex(re: 3.0, im: -4.0)) == Complex(re: 1.0, im: 2.0)
+test "divide_complex: the product divided back"
+    assert divide_complex(a: Complex(re: 11.0, im: 2.0), b: Complex(re: 3.0, im: -4.0)) == Complex(re: 1.0, im: 2.0)
 
 # A number negated.
-test "neg_complex: a number"
-    assert neg_complex(Complex(re: 1.0, im: -2.0)) == Complex(re: -1.0, im: 2.0)
+test "negate_complex: a number"
+    assert negate_complex(Complex(re: 1.0, im: -2.0)) == Complex(re: -1.0, im: 2.0)
 
 # The conjugate mirrors a number in the real axis.
 test "conjugate: a number"

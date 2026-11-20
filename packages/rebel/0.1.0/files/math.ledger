@@ -352,13 +352,13 @@ capability many/dot  the sum of the products of two lists of floats, rounded onc
   note    a product past the largest float fails `does_not_fit`, as `math.sum` does, where Python's `sumprod` answers an infinity
 
 capability many/norm  the length of a vector and the distance between two points, with no overflow on the way
-  heroes  math.norm, math.dist
+  heroes  math.norm, math.distance
   go      -
   rust    -
   python  hypot (many arguments), dist
 
 capability int/add-sub-mul  the sum, difference, product and negation of integers, or the failure that it does not fit
-  heroes  math.add, math.sub, math.mul, math.neg, math.add_u64, math.sub_u64, math.mul_u64
+  heroes  math.add_i64, math.subtract_i64, math.multiply_i64, math.negate_i64, math.add_u64, math.subtract_u64, math.multiply_u64
   go      -
   rust    i64::checked_add, checked_sub, checked_mul, checked_neg, u64::checked_add, checked_sub, checked_mul
   python  -
@@ -379,7 +379,7 @@ capability int/pow  an integer raised to a power, or the failure that it does no
   note    a negative exponent fails `invalid`
 
 capability int/div  the quotient and remainder of integers that answer where `/` and `%` abort
-  heroes  math.div, math.rem
+  heroes  math.divide_i64, math.remainder_i64
   go      -
   rust    i64::checked_div, checked_rem
   python  -
@@ -406,19 +406,19 @@ capability int/div-ceil  the integer quotient rounded up
   python  -
 
 capability int/clamped  the sum, difference and product that stop at the type's limit
-  heroes  math.add_clamped, math.sub_clamped, math.mul_clamped
+  heroes  math.add_clamped, math.subtract_clamped, math.multiply_clamped
   go      -
   rust    i64::saturating_add, saturating_sub, saturating_mul
   python  -
 
 capability int/clamped-others  negation, absolute value, division and power that stop at the limit
-  heroes  refused: the first three can only pass the largest i64, so `math.neg(x).default(math.MAX_I64)` is each, and a power's limit is read from `math.pow_i64`'s failure and the base's sign
+  heroes  refused: the first three can only pass the largest i64, so `math.negate_i64(x).default(math.MAX_I64)` is each, and a power's limit is read from `math.pow_i64`'s failure and the base's sign
   go      -
   rust    i64::saturating_neg, saturating_abs, saturating_div, saturating_pow
   python  -
 
 capability int/wrapping  the sum, difference and product modulo 2 to the 64, as a hash wants them
-  heroes  math.add_wrapping, math.sub_wrapping, math.mul_wrapping
+  heroes  math.add_wrapping, math.subtract_wrapping, math.multiply_wrapping
   go      -
   rust    i64::wrapping_add, wrapping_sub, wrapping_mul
   python  -
@@ -469,11 +469,11 @@ capability whole/log  the whole logarithm of an integer in base 2, 10 or any bas
   python  -
 
 capability whole/counting  the factorial, and the counts of combinations and of arrangements
-  heroes  math.factorial, math.comb, math.perm
+  heroes  math.factorial, math.count_combinations, math.count_permutations
   go      -
   rust    -
   python  factorial, comb, perm
-  note    each fails only where the answer itself does not fit; `perm` takes both arguments
+  note    each fails only where the answer itself does not fit; `math.count_permutations` takes both arguments, where Python's `perm` may leave out the second
 
 capability whole/pow-mod  a power modulo a number, with no overflow on the way
   heroes  math.pow_mod
@@ -550,10 +550,10 @@ capability complex/type  a complex number as a value: its two parts, built and r
   python  complex, complex.real, complex.imag, complex.from_number
   odin    complex128, complex64, complex32, real, imag (built-ins)
   zig     std.math.Complex, Complex.init
-  note    a record of two `f64`s, as `big.Decimal` is a record: this block was refused in `numbers.ledger` as `number/complex` for "the language has no complex type", and a record with functions is the type. Rust's standard library has none; its `num-complex` crate is outside it. The text of a complex number stays `numbers`' block
+  note    a record of two `f64`s, as `big.Decimal` is a record: this block was refused in `numbers.ledger` as `number/complex` for "the language has no complex type", and a record with functions is the type. Rust's standard library has none; its `num-complex` crate is outside it. The text of a complex number is the block `complex/text` below
 
 capability complex/arithmetic  the sum, the difference, the product, the quotient and the negation
-  heroes  math.add_complex, math.sub_complex, math.mul_complex, math.div_complex, math.neg_complex
+  heroes  math.add_complex, math.subtract_complex, math.multiply_complex, math.divide_complex, math.negate_complex
   go      + - * / on complex128
   rust    -
   python  complex.__add__, __sub__, __mul__, __truediv__, __neg__, __pos__, __radd__, __rsub__, __rmul__, __rtruediv__
@@ -669,7 +669,7 @@ capability complex/project  the point of the Riemann sphere a complex number sta
   note    C's `cproj`
 
 capability complex/cotangent  the cotangent of a complex number
-  heroes  refused: one `math.div_complex` of 1 by `math.tan_complex`; neither Python nor C names it
+  heroes  refused: one `math.divide_complex` of 1 by `math.tan_complex`; neither Python nor C names it
   go      cmplx.Cot
   rust    -
   python  -
@@ -684,6 +684,15 @@ capability complex/edge-values  the infinity and the nan as complex numbers
   odin    cmplx.inf_complex128, cmplx.nan_complex128
   zig     -
 
+capability complex/text  a complex number read from text and written as text
+  heroes  pending
+  go      strconv.ParseComplex, strconv.FormatComplex
+  rust    -
+  python  complex (from a text), complex.__format__, complex.__repr__
+  odin    strconv.parse_complex128, parse_complex64, parse_complex32
+  zig     -
+  note    the number is `math.Complex`, so its text is written beside it here, and `numbers.ledger`'s `number/complex` names this block: `numbers` and `math` are both layer 0 and neither may use the other. Pending until it is written; until then a program writes `numbers.format_float` of each part
+
 dropped
   rust    i64::overflowing_abs, overflowing_add, overflowing_add_unsigned, overflowing_div, overflowing_div_euclid, overflowing_mul, overflowing_neg, overflowing_pow, overflowing_rem, overflowing_rem_euclid, overflowing_shl, overflowing_shr, overflowing_sub, overflowing_sub_unsigned
   reason  a value beside a flag: a `T?` says both
@@ -692,7 +701,7 @@ dropped
   rust    i64::unchecked_add, unchecked_cast, unchecked_div_exact, unchecked_mul, unchecked_neg, unchecked_shl, unchecked_shl_exact, unchecked_shr, unchecked_shr_exact, unchecked_sub, f64::to_int_unchecked, u64::unchecked_disjoint_bitor, unchecked_funnel_shl, unchecked_funnel_shr
   reason  unchecked variants: Heroes has no arithmetic whose overflow is undefined
   rust    i64::wrapping_abs, wrapping_neg, wrapping_pow, wrapping_div, wrapping_div_euclid, wrapping_rem, wrapping_rem_euclid, wrapping_shl, wrapping_shr, wrapping_cast, wrapping_add_unsigned, wrapping_sub_unsigned, u64::wrapping_add_signed, wrapping_sub_signed, wrapping_next_power_of_two
-  reason  the three wrapping operations a hash is written with are offered; the rest wrap only at the smallest i64 divided or negated, which `math.div`, `math.rem` and `math.neg` answer
+  reason  the three wrapping operations a hash is written with are offered; the rest wrap only at the smallest i64 divided or negated, which `math.divide_i64`, `math.remainder_i64` and `math.negate_i64` answer
   rust    f64::algebraic_add, algebraic_sub, algebraic_mul, algebraic_div, algebraic_rem
   reason  licences for the compiler to reorder float arithmetic: Heroes keeps IEEE's order
   rust    i64::checked_add_unsigned, checked_sub_unsigned, saturating_add_unsigned, saturating_sub_unsigned, u64::checked_add_signed, checked_sub_signed, checked_signed_diff, saturating_add_signed, saturating_sub_signed, overflowing_add_signed, overflowing_sub_signed, strict_add_signed, strict_sub_signed
@@ -708,7 +717,7 @@ dropped
   rust    f64::nan_to
   reason  an `if math.is_nan(x)`
   rust    i64::div_exact, checked_div_exact
-  reason  `a % b == 0`, then `math.div`
+  reason  `a % b == 0`, then `math.divide_i64`
   rust    i64::clamp_magnitude
   reason  `math.clamp_i64(x: v, low: -limit, high: limit)`
   rust    i64::isolate_highest_one, isolate_lowest_one, highest_one, lowest_one, u64::deposit_bits, extract_bits, select, funnel_shl, funnel_shr, carryless_mul, carrying_carryless_mul, widening_carryless_mul
@@ -717,8 +726,8 @@ dropped
   reason  the integer functions of `math` under a second name
   python  cmath.pi, cmath.e, cmath.tau
   reason  `cmath`'s copies of `math`'s constants, which are `math.PI`, `math.E` and `math.TAU`
-  python  complex.__bool__, __complex__, __eq__, __hash__, __format__, __repr__, __getnewargs__, __reduce__, __reduce_ex__
-  reason  the language's own: `==` is structural on a record, nothing has truthiness, and a complex number as text is `numbers`'
+  python  complex.__bool__, __complex__, __eq__, __hash__, __getnewargs__, __reduce__, __reduce_ex__
+  reason  the language's own: `==` is structural on a record, and nothing has truthiness
   odin    cmplx.*_complex32, cmplx.*_complex64, complex32, complex64
   reason  every function again for parts of `f16` and `f32`: `math`'s floats are `f64`, and a narrower part is `to_f32` of the answer
   zig     std.math.complex.ldexp_cexp

@@ -6,6 +6,17 @@
 # nothing here does their work again. A heap the program keeps, the priority
 # queue, is `containers/heap`'s.
 #
+# What a newcomer looks for and finds elsewhere: how often each value occurs
+# is `maps.counts`, a list grouped by a key `maps.group_by`, each value kept
+# once wherever it stands `sets.from_list` (`compact` takes repeated
+# neighbours alone), and a sum or a product `math.sum_i64`, `math.product_i64`
+# and `math.sum`, which answer where a `fold` with `+` would abort. Two lists
+# walked together as pairs (`zip`), each element with its index (`enumerate`)
+# and a list cut in two by a test (`partition`) are refused: each answers a
+# pair of two types, and a record cannot take a type parameter. A loop over
+# `range(from: 0, to: xs.len())` reads the index, and two `filter`s the two
+# halves.
+#
 # A sorted list or an ordered set: a list kept sorted by `insert_sorted` and
 # searched by `binary_search`, `lower_bound` and `upper_bound` is the right
 # choice where elements are put in rarely and read often, since a search
@@ -55,343 +66,682 @@ constant NOT_FOUND: str
 
 ## The ends
 
-# The first element of `xs`. Fails `not_found` where `xs` is empty.
+# The first element of `xs`.
+#
+# - `xs`: the list to read.
+#
+# Fails `not_found` where `xs` is empty. See also `last`, `get`.
 function first<T>(xs: [T]) -> T?
     return ends.first(xs: xs)
 
-# The last element of `xs`. Fails `not_found` where `xs` is empty.
+# The last element of `xs`.
+#
+# - `xs`: the list to read.
+#
+# Fails `not_found` where `xs` is empty. See also `first`.
 function last<T>(xs: [T]) -> T?
     return ends.last(xs: xs)
 
-# The element of `xs` at `index`, counted from 0. Fails `not_found` where
-# `index` names no element: below zero, or at or past the length. It is
-# `xs[index]` for an index the program did not check, which aborts there.
-function get<T>(xs: [T], index: i64) -> T?
-    return ends.get(xs: xs, index: index)
+# The element of `xs` at the index `at`, counted from 0.
+#
+# - `xs`: the list to read.
+# - `at`: the index; below zero, or at or past the length, it names no
+#   element.
+#
+# It is `xs[at]` for an index the program did not check, which aborts there.
+# Fails `not_found` where `at` names no element.
+function get<T>(xs: [T], at: i64) -> T?
+    return ends.get(xs: xs, at: at)
 
 ## Parts
 
-# The first `n` elements of `xs`, or all of them where it holds fewer. Aborts
-# where `n` is below zero.
+# The first `n` elements of `xs`, or all of them where it holds fewer.
+#
+# - `xs`: the list to read.
+# - `n`: how many to keep, zero or more.
+#
+# Aborts where `n` is below zero. See also `skip`, `take_last`, `take_where`.
 function take<T>(xs: [T], n: i64) -> [T]
     return ends.take(xs: xs, n: n)
 
 # `xs` without its first `n` elements, empty where it holds no more than `n`.
-# Aborts where `n` is below zero.
+#
+# - `xs`: the list to read.
+# - `n`: how many to leave out, zero or more.
+#
+# Aborts where `n` is below zero. See also `take`, `skip_last`.
 function skip<T>(xs: [T], n: i64) -> [T]
     return ends.skip(xs: xs, n: n)
 
 # The last `n` elements of `xs` in their order, or all of them where it holds
-# fewer. Aborts where `n` is below zero.
+# fewer.
+#
+# - `xs`: the list to read.
+# - `n`: how many to keep, zero or more.
+#
+# Aborts where `n` is below zero. See also `take`, `skip_last`.
 function take_last<T>(xs: [T], n: i64) -> [T]
     return ends.take_last(xs: xs, n: n)
 
 # `xs` without its last `n` elements, empty where it holds no more than `n`.
-# Aborts where `n` is below zero.
+#
+# - `xs`: the list to read.
+# - `n`: how many to leave out, zero or more.
+#
+# Aborts where `n` is below zero. See also `skip`, `take_last`.
 function skip_last<T>(xs: [T], n: i64) -> [T]
     return ends.skip_last(xs: xs, n: n)
 
 # The elements of `xs` before the first one `accepts` refuses: all of them
 # where it refuses none, none where it refuses the first.
+#
+# - `xs`: the list to read.
+# - `accepts`: called on each element from the first, until it answers
+#   `false`.
+#
+# See also `skip_where`, `take`.
 function take_where<T>(xs: [T], accepts: (function(T) -> bool)) -> [T]
     return ends.take_where(xs: xs, accepts: accepts)
 
 # `xs` from the first element `accepts` refuses to its end: what `take_where`
-# leaves. Later elements are kept whether `accepts` would accept them or not.
+# leaves.
+#
+# - `xs`: the list to read.
+# - `accepts`: called on each element from the first, until it answers
+#   `false`.
+#
+# Later elements are kept whether `accepts` would accept them or not. See also
+# `take_where`, `remove_where`.
 function skip_where<T>(xs: [T], accepts: (function(T) -> bool)) -> [T]
     return ends.skip_where(xs: xs, accepts: accepts)
 
 # Every `by`-th element of `xs`, its first included: the elements at 0, `by`,
-# twice `by` and so on. Aborts where `by` is below one.
+# twice `by` and so on.
+#
+# - `xs`: the list to read.
+# - `by`: the distance between two elements kept, one or more; one keeps them
+#   all.
+#
+# Aborts where `by` is below one.
 function step<T>(xs: [T], by: i64) -> [T]
     return ends.step(xs: xs, by: by)
 
 ## Pieces
 
-# `xs` cut into pieces of `size` elements each, in order; the last piece holds
-# what is left and so may be shorter, and an empty list has no pieces. Aborts
-# where `size` is below one.
+# `xs` cut into pieces of `size` elements each, in order.
+#
+# - `xs`: the list to cut.
+# - `size`: the length of each piece, one or more.
+#
+# The last piece holds what is left and so may be shorter, and an empty list
+# has no pieces. Aborts where `size` is below one. See also `chunks_last`,
+# `windows`.
 function chunks<T>(xs: [T], size: i64) -> [[T]]
     return pieces.chunks(xs: xs, size: size)
 
 # `xs` cut into pieces of `size` elements each, counted from its end: the
-# piece that ends the list comes first, and the one that begins it last, which
-# holds what is left and so may be shorter. Each piece keeps the list's order.
-# Aborts where `size` is below one.
+# piece that ends the list comes first, and the one that begins it last.
+#
+# - `xs`: the list to cut.
+# - `size`: the length of each piece, one or more.
+#
+# The piece that begins the list holds what is left and so may be shorter.
+# Each piece keeps the list's order. Aborts where `size` is below one. See
+# also `chunks`.
 function chunks_last<T>(xs: [T], size: i64) -> [[T]]
     return pieces.chunks_last(xs: xs, size: size)
 
 # Every run of `size` neighbours of `xs`, in order: the run that starts at 0,
 # the one that starts at 1, and so on, each sharing all but one element with
-# the next. A list shorter than `size` has none. Aborts where `size` is below
-# one.
+# the next.
+#
+# - `xs`: the list to read.
+# - `size`: the length of each run, one or more.
+#
+# A list shorter than `size` has none. Aborts where `size` is below one. See
+# also `chunks`.
 function windows<T>(xs: [T], size: i64) -> [[T]]
     return pieces.windows(xs: xs, size: size)
 
 # The pieces of `xs` between the elements `accepts` accepts, which are left
-# out: one piece more than there are such elements, so two of them side by
+# out.
+#
+# - `xs`: the list to cut.
+# - `accepts`: called once on each element; an element it accepts is a
+#   separator.
+#
+# There is one piece more than there are separators, so two of them side by
 # side, or one at either end, leave an empty piece, and an empty list is one
-# empty piece.
+# empty piece. See also `split_where_n`, `split_after_where`.
 function split_where<T>(xs: [T], accepts: (function(T) -> bool)) -> [[T]]
     return pieces.split_where(xs: xs, accepts: accepts)
 
 # The pieces `split_where` answers, at most `n` of them: the last one holds
-# the rest of `xs` whole, the elements `accepts` accepts included. No pieces
-# where `n` is zero. Aborts where `n` is below zero.
+# the rest of `xs` whole, the elements `accepts` accepts included.
+#
+# - `xs`: the list to cut.
+# - `accepts`: called on each element until `n` less one separators are
+#   found; an element it accepts is a separator.
+# - `n`: the most pieces, zero or more; zero answers no pieces, and one the
+#   whole list as one piece.
+#
+# Aborts where `n` is below zero.
 function split_where_n<T>(xs: [T], accepts: (function(T) -> bool), n: i64) -> [[T]]
     return pieces.split_where_n(xs: xs, accepts: accepts, n: n)
 
 # `xs` cut after each element `accepts` accepts, nothing left out: every piece
-# but the last ends with such an element, and joined again the pieces are
-# `xs`. An empty list has no pieces, and no piece is empty.
+# but the last ends with such an element.
+#
+# - `xs`: the list to cut.
+# - `accepts`: called once on each element; the list is cut after each one it
+#   accepts.
+#
+# Joined again the pieces are `xs`. An empty list has no pieces, and no piece
+# is empty. See also `split_where`.
 function split_after_where<T>(xs: [T], accepts: (function(T) -> bool)) -> [[T]]
     return pieces.split_after_where(xs: xs, accepts: accepts)
 
 # The runs of `xs`: it is cut between two neighbours wherever `same` refuses
-# them, the earlier as `left` and the later as `right`, so each piece is a
-# stretch of neighbours that belong together. Joined again the pieces are
-# `xs`; an empty list has none. Elements that belong together but are not
-# neighbours stay in separate runs.
+# them, so each piece is a stretch of neighbours that belong together.
+#
+# - `xs`: the list to cut.
+# - `same`: called on each two neighbours, the earlier as `left` and the
+#   later as `right`; `false` cuts between them.
+#
+# Joined again the pieces are `xs`; an empty list has none. Elements that
+# belong together but are not neighbours stay in separate runs: `maps.group_by`
+# gathers them. See also `compact`.
 function runs_by<T>(xs: [T], same: (function(left: T, right: T) -> bool)) -> [[T]]
     return pieces.runs_by(xs: xs, same: same)
 
 ## Building
 
-# The elements of `xs` followed by those of `then`. It copies both, so a
-# program that grows one list many times pushes onto its own name instead.
+# The elements of `xs` followed by those of `then`.
+#
+# - `xs`: the elements that come first.
+# - `then`: the elements that follow.
+#
+# It copies both, so a program that grows one list many times pushes onto its
+# own name instead. See also `flatten`.
 function concat<T>(xs: [T], then: [T]) -> [T]
     return building.concat(xs: xs, then: then)
 
 # The elements of every list of `xss`, in order, as one list.
+#
+# - `xss`: the lists to join; empty lists add nothing.
+#
+# See also `concat`, `chunks`.
 function flatten<T>(xss: [[T]]) -> [T]
     return building.flatten(xss: xss)
 
-# The elements of `xs`, `times` times over; so many copies of one value is
-# the cycle of a list of one. Aborts where `times` is below zero.
+# The elements of `xs`, `times` times over; so many copies of one value is the
+# cycle of a list of one.
+#
+# - `xs`: the elements to repeat.
+# - `times`: how many times, zero or more; zero answers an empty list.
+#
+# Aborts where `times` is below zero.
 function cycle<T>(xs: [T], times: i64) -> [T]
     return building.cycle(xs: xs, times: times)
 
 # `xs` at the length `size`: its first `size` elements where it holds more,
-# and copies of `fill` added at its end where it holds fewer. Aborts where
-# `size` is below zero.
+# and copies of `fill` added at its end where it holds fewer.
+#
+# - `xs`: the list to shorten or lengthen.
+# - `size`: the length of the answer, zero or more.
+# - `fill`: the value added where `xs` is too short.
+#
+# Aborts where `size` is below zero. See also `take`.
 function resize<T>(xs: [T], size: i64, fill: T) -> [T]
     return building.resize(xs: xs, size: size, fill: fill)
 
 # The elements of `xs` with `sep` between each two: none before the first or
-# after the last, so a list of fewer than two elements is answered as it is.
+# after the last.
+#
+# - `xs`: the elements.
+# - `sep`: the value put between each two.
+#
+# A list of fewer than two elements is answered as it is.
 function intersperse<T>(xs: [T], sep: T) -> [T]
     return building.intersperse(xs: xs, sep: sep)
 
 # What `fold` holds after each element of `xs`: one answer per element, the
-# last of them `fold`'s own, and none for an empty list. `combine` is the
-# function `fold` takes, its parameters `acc` then `item`, and `start` is not
-# among the answers.
+# last of them `fold`'s own.
+#
+# - `xs`: the elements, folded from the first.
+# - `start`: what the fold holds before the first element; it is not among the
+#   answers.
+# - `combine`: the function `fold` takes, called once on each element with
+#   what the fold holds as `acc` and the element as `item`.
+#
+# An empty list answers none. A running sum is `accumulate` with an addition;
+# the sum alone is `math.sum_i64`.
 function accumulate<T, A>(xs: [T], start: A, combine: (function(acc: A, item: T) -> A)) -> [A]
     return building.accumulate(xs: xs, start: start, combine: combine)
 
-# The elements of `xs` whose place in `keeps` holds `true`, in order. It reads
-# as far as the shorter of the two, so an element with no place in `keeps` is
-# left out.
+# The elements of `xs` whose place in `keeps` holds `true`, in order.
+#
+# - `xs`: the elements.
+# - `keeps`: one flag for each element, at the element's index.
+#
+# It reads as far as the shorter of the two, so an element with no place in
+# `keeps` is left out.
 function select<T>(xs: [T], keeps: [bool]) -> [T]
     return building.select(xs: xs, keeps: keeps)
 
 ## Editing
 
 # `xs` with `value` put in at the index `at`, the elements from there on moved
-# one place up; `at` equal to the length puts it at the end. Aborts where `at`
-# is below zero or past the length. It copies the whole list.
+# one place up.
+#
+# - `xs`: the list to put into.
+# - `at`: the index the value takes, 0 to the length; the length puts it at
+#   the end.
+# - `value`: the element to put in.
+#
+# Aborts where `at` is below zero or past the length. It copies the whole list.
+# See also `insert_all`, `insert_sorted`.
 function insert<T>(xs: [T], at: i64, value: T) -> [T]
     return editing.insert(xs: xs, at: at, value: value)
 
 # `xs` with the elements of `new` put in at the index `at`, in their order.
-# Aborts where `at` is below zero or past the length.
+#
+# - `xs`: the list to put into.
+# - `at`: the index the first of them takes, 0 to the length.
+# - `new`: the elements to put in; an empty list changes nothing.
+#
+# Aborts where `at` is below zero or past the length. See also `insert`.
 function insert_all<T>(xs: [T], at: i64, new: [T]) -> [T]
     return editing.insert_all(xs: xs, at: at, new: new)
 
-# `xs` without the element at the index `at`. Aborts where `at` names no
-# element. It copies the whole list.
+# `xs` without the element at the index `at`.
+#
+# - `xs`: the list to remove from.
+# - `at`: the index of the element to remove.
+#
+# Aborts where `at` names no element. It copies the whole list. See also
+# `remove`, `remove_range`.
 function remove_at<T>(xs: [T], at: i64) -> [T]
     return editing.remove_at(xs: xs, at: at)
 
 # `xs` without the elements from the index `from` up to `to`, which is left
-# in. Aborts where the two are not a range of `xs`: `from` below zero, `to`
-# past the length, or `from` after `to`.
+# in.
+#
+# - `xs`: the list to remove from.
+# - `from`: the index of the first element removed.
+# - `to`: the index just past the last one removed; equal to `from`, nothing
+#   is removed.
+#
+# Aborts where the two are not a range of `xs`: `from` below zero, `to` past
+# the length, or `from` after `to`. See also `replace_range`.
 function remove_range<T>(xs: [T], from: i64, to: i64) -> [T]
     return editing.remove_range(xs: xs, from: from, to: to)
 
 # `xs` with the elements from the index `from` up to `to`, which is left in,
-# replaced by those of `new`, which may be more or fewer. Aborts where the two
-# are not a range of `xs`: `from` below zero, `to` past the length, or `from`
-# after `to`.
+# replaced by those of `new`, which may be more or fewer.
+#
+# - `xs`: the list to edit.
+# - `from`: the index of the first element replaced.
+# - `to`: the index just past the last one replaced; equal to `from`, `new` is
+#   put in and nothing removed.
+# - `new`: the elements that take their place.
+#
+# Aborts where the two are not a range of `xs`: `from` below zero, `to` past
+# the length, or `from` after `to`.
 function replace_range<T>(xs: [T], from: i64, to: i64, new: [T]) -> [T]
     return editing.replace_range(xs: xs, from: from, to: to, new: new)
 
-# `xs` with the elements at the indices `at` and `with` exchanged. Aborts
-# where either names no element. It copies the whole list, so a program that
-# exchanges many works on its own name with `@`.
+# `xs` with the elements at the indices `at` and `with` exchanged.
+#
+# - `xs`: the list to edit.
+# - `at`: the index of one element.
+# - `with`: the index of the other; equal to `at`, nothing moves.
+#
+# Aborts where either names no element. It copies the whole list, so a
+# program that exchanges many works on its own name with `@`.
 function swap<T>(xs: [T], at: i64, with: i64) -> [T]
     return editing.swap(xs: xs, at: at, with: with)
 
 # The elements of `xs` from the last to the first.
+#
+# - `xs`: the list to read.
 function reverse<T>(xs: [T]) -> [T]
     return editing.reverse(xs: xs)
 
-# `xs` with its first `by` elements moved to its end, in their order. Aborts
-# where `by` is below zero or past the length.
+# `xs` with its first `by` elements moved to its end, in their order.
+#
+# - `xs`: the list to turn.
+# - `by`: how many places, counted modulo the length; a negative one turns
+#   the list the other way, as `rotate_right` does.
+#
+# An empty list stays empty, whatever `by` is. The same count turns a
+# `containers/deque` the same way. See also `rotate_right`.
 function rotate_left<T>(xs: [T], by: i64) -> [T]
     return editing.rotate_left(xs: xs, by: by)
 
-# `xs` with its last `by` elements moved to its front, in their order. Aborts
-# where `by` is below zero or past the length.
+# `xs` with its last `by` elements moved to its front, in their order.
+#
+# - `xs`: the list to turn.
+# - `by`: how many places, counted modulo the length; a negative one turns
+#   the list the other way, as `rotate_left` does.
+#
+# An empty list stays empty, whatever `by` is. See also `rotate_left`.
 function rotate_right<T>(xs: [T], by: i64) -> [T]
     return editing.rotate_right(xs: xs, by: by)
 
 ## Removing
 
-# `xs` without the elements `accepts` accepts: what `filter` leaves out.
-function remove_where<T>(xs: [T], accepts: (function(T) -> bool)) -> [T]
-    return removing.remove_where(xs: xs, accepts: accepts)
+# `xs` without the elements `removes` accepts: what `filter` leaves out.
+#
+# - `xs`: the list to read.
+# - `removes`: called once on each element; an element it accepts is left
+#   out.
+#
+# See also `remove_all`, `sets.remove_where`, `maps.remove_where`.
+function remove_where<T>(xs: [T], removes: (function(T) -> bool)) -> [T]
+    return removing.remove_where(xs: xs, removes: removes)
 
-# `xs` without its first element that `same` says is `value`. Fails
-# `not_found` where it holds none.
-function remove<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> [T]?
+# `xs` without its first element that `same` says is `value`; `xs` as it is
+# where it holds none.
+#
+# - `xs`: the list to remove from.
+# - `value`: the element to remove.
+# - `same`: called on the elements of `xs` from the first, each as `left` and
+#   `value` as `right`, until it answers `true`.
+#
+# A caller that must know whether one was there asks `index_of`. See also
+# `remove_all`, `remove_at`.
+function remove<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> [T]
     return removing.remove(xs: xs, value: value, same: same)
 
 # `xs` without every element that `same` says is `value`; `xs` as it is where
 # it holds none.
+#
+# - `xs`: the list to remove from.
+# - `value`: the element to remove.
+# - `same`: called on each element of `xs` as `left`, with `value` as
+#   `right`.
+#
+# See also `remove`, `remove_where`.
 function remove_all<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> [T]
     return removing.remove_all(xs: xs, value: value, same: same)
 
 # `xs` with each run of neighbours that `same` says are the same reduced to
-# its first element. Equal elements that are not neighbours are all kept.
+# its first element.
+#
+# - `xs`: the list to read.
+# - `same`: called on each two neighbours, the earlier as `left`.
+#
+# Equal elements that are not neighbours are all kept: `sets.from_list` keeps
+# each value once wherever it stands. See also `runs_by`.
 function compact<T>(xs: [T], same: (function(left: T, right: T) -> bool)) -> [T]
     return removing.compact(xs: xs, same: same)
 
 # `xs` without `prefix` at its start, where `has_prefix` says it begins with
 # it; `xs` as it is where it does not.
+#
+# - `xs`: the list to trim.
+# - `prefix`: the elements to take off; the empty list takes nothing.
+# - `same`: called on each element of `xs` as `left` with its counterpart in
+#   `prefix` as `right`.
+#
+# See also `trim_suffix`, `has_prefix`.
 function trim_prefix<T>(xs: [T], prefix: [T], same: (function(left: T, right: T) -> bool)) -> [T]
     return removing.trim_prefix(xs: xs, prefix: prefix, same: same)
 
 # `xs` without `suffix` at its end, where `has_suffix` says it ends with it;
 # `xs` as it is where it does not.
+#
+# - `xs`: the list to trim.
+# - `suffix`: the elements to take off; the empty list takes nothing.
+# - `same`: called on each element of `xs` as `left` with its counterpart in
+#   `suffix` as `right`.
+#
+# See also `trim_prefix`, `has_suffix`.
 function trim_suffix<T>(xs: [T], suffix: [T], same: (function(left: T, right: T) -> bool)) -> [T]
     return removing.trim_suffix(xs: xs, suffix: suffix, same: same)
 
 ## Searching
 
 # Whether `xs` holds an element that `same` says is `value`.
+#
+# - `xs`: the list to search.
+# - `value`: the element to look for.
+# - `same`: called on the elements of `xs` from the first, each as `left` and
+#   `value` as `right`, until it answers `true`.
+#
+# See also `index_of`, `sets.contains`, which finds an element by hashing.
 function contains<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> bool
     return searching.contains(xs: xs, value: value, same: same)
 
-# The index of the first element of `xs` that `same` says is `value`. Fails
-# `not_found` where it holds none.
+# The index of the first element of `xs` that `same` says is `value`.
+#
+# - `xs`: the list to search.
+# - `value`: the element to look for.
+# - `same`: called on the elements of `xs` from the first, each as `left` and
+#   `value` as `right`, until it answers `true`.
+#
+# Fails `not_found` where `xs` holds none. See also `index_of_last`,
+# `binary_search`.
 function index_of<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> i64?
     return searching.index_of(xs: xs, value: value, same: same)
 
-# The index of the last element of `xs` that `same` says is `value`. Fails
-# `not_found` where it holds none.
+# The index of the last element of `xs` that `same` says is `value`.
+#
+# - `xs`: the list to search.
+# - `value`: the element to look for.
+# - `same`: called on the elements of `xs` from the last, each as `left` and
+#   `value` as `right`, until it answers `true`.
+#
+# Fails `not_found` where `xs` holds none. See also `index_of`.
 function index_of_last<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> i64?
     return searching.index_of_last(xs: xs, value: value, same: same)
 
-# The index of the first element of `xs` that `accepts` accepts. Fails
-# `not_found` where it accepts none. The element itself is the built-in
-# `find`'s.
+# The index of the first element of `xs` that `accepts` accepts.
+#
+# - `xs`: the list to search.
+# - `accepts`: called on the elements from the first, until it answers
+#   `true`.
+#
+# Fails `not_found` where it accepts none. The element itself is the built-in
+# `find`'s. See also `index_where_last`.
 function index_where<T>(xs: [T], accepts: (function(T) -> bool)) -> i64?
     return searching.index_where(xs: xs, accepts: accepts)
 
-# The index of the last element of `xs` that `accepts` accepts. Fails
-# `not_found` where it accepts none.
+# The index of the last element of `xs` that `accepts` accepts.
+#
+# - `xs`: the list to search.
+# - `accepts`: called on the elements from the last, until it answers `true`.
+#
+# Fails `not_found` where it accepts none. See also `index_where`.
 function index_where_last<T>(xs: [T], accepts: (function(T) -> bool)) -> i64?
     return searching.index_where_last(xs: xs, accepts: accepts)
 
 # How many elements of `xs` `same` says are `value`.
+#
+# - `xs`: the list to count in.
+# - `value`: the element to count.
+# - `same`: called on each element of `xs` as `left`, with `value` as
+#   `right`.
+#
+# Every element counted at once, each value with how often it occurs, is
+# `maps.counts`.
 function count_of<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> i64
     return searching.count_of(xs: xs, value: value, same: same)
 
 # Whether `xs` begins with the elements of `prefix`, each the same as its own
-# by `same`; every list begins with the empty one.
+# by `same`.
+#
+# - `xs`: the list to ask about.
+# - `prefix`: the elements it may begin with; every list begins with the
+#   empty one.
+# - `same`: called on each element of `xs` as `left` with its counterpart in
+#   `prefix` as `right`.
+#
+# See also `has_suffix`, `trim_prefix`.
 function has_prefix<T>(xs: [T], prefix: [T], same: (function(left: T, right: T) -> bool)) -> bool
     return searching.has_prefix(xs: xs, prefix: prefix, same: same)
 
 # Whether `xs` ends with the elements of `suffix`, each the same as its own by
-# `same`; every list ends with the empty one.
+# `same`.
+#
+# - `xs`: the list to ask about.
+# - `suffix`: the elements it may end with; every list ends with the empty
+#   one.
+# - `same`: called on each element of `xs` as `left` with its counterpart in
+#   `suffix` as `right`.
+#
+# See also `has_prefix`, `trim_suffix`.
 function has_suffix<T>(xs: [T], suffix: [T], same: (function(left: T, right: T) -> bool)) -> bool
     return searching.has_suffix(xs: xs, suffix: suffix, same: same)
 
 # Whether `left` and `right` hold as many elements and `same` accepts each
-# pair at one index. Where the type is known `==` asks it of structural
-# equality; this asks it of the caller's.
+# pair at one index.
+#
+# - `left`: one list.
+# - `right`: the other.
+# - `same`: called on the elements at each index, the one of `left` as `left`;
+#   the first `false` ends the comparison.
+#
+# Where the type is known `==` asks it of structural equality; this asks it of
+# the caller's.
 function equal_by<T>(left: [T], right: [T], same: (function(left: T, right: T) -> bool)) -> bool
     return searching.equal_by(left: left, right: right, same: same)
 
 ## Order
 
 # The elements of `xs` in the order `less` gives, elements that are equal by
-# it keeping the places they had among themselves. It calls `less` about n
-# times the logarithm of n for a list of n. An order that contradicts itself
-# gives a list in no promised order and never aborts.
+# it keeping the places they had among themselves.
+#
+# - `xs`: the list to sort; it is left as it was.
+# - `less`: the order; it is called about n times the logarithm of n for a
+#   list of n.
+#
+# An order that contradicts itself gives a list in no promised order and never
+# aborts. The built-in `sort` sorts numbers, texts and booleans; a list sorted
+# in its own place, with no copy and equal elements free to move, is
+# `containers/heap`'s `sort_in_place_by`. See also `is_sorted_by`,
+# `min_n_by`.
 function sort_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> [T]
     return ordering.sort_by(xs: xs, less: less)
 
 # Whether `xs` is in the order `less` gives: no element goes before the one
-# that precedes it. A list of fewer than two elements is.
+# that precedes it.
+#
+# - `xs`: the list to ask about; a list of fewer than two elements is.
+# - `less`: the order, called on each two neighbours.
+#
+# See also `sort_by`.
 function is_sorted_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> bool
     return ordering.is_sorted_by(xs: xs, less: less)
 
 # The smallest element of `xs` by the order `less`, the first of them where
-# several are equal. Fails `not_found` where `xs` is empty.
+# several are equal.
+#
+# - `xs`: the list to read.
+# - `less`: the order the elements are compared by.
+#
+# Fails `not_found` where `xs` is empty. See also `max_by`, `min_n_by`.
 function min_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> T?
     return ordering.min_by(xs: xs, less: less)
 
 # The largest element of `xs` by the order `less`, the first of them where
-# several are equal. Fails `not_found` where `xs` is empty.
+# several are equal.
+#
+# - `xs`: the list to read.
+# - `less`: the order the elements are compared by.
+#
+# Fails `not_found` where `xs` is empty. See also `min_by`, `max_n_by`.
 function max_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> T?
     return ordering.max_by(xs: xs, less: less)
 
 # Whether the list `a` goes before the list `b`, compared element by element
-# with `less`: the first index where one element goes before the other
-# decides, and where neither does up to the end of one, the shorter goes
-# first. False where the two are equal.
+# with `less`.
+#
+# - `a`: one list.
+# - `b`: the other.
+# - `less`: the order of the elements, called at each index until one goes
+#   before the other.
+#
+# The first index where one element goes before the other decides, and where
+# neither does up to the end of one, the shorter goes first. False where the
+# two are equal.
 function is_before<T>(a: [T], b: [T], less: (function(a: T, b: T) -> bool)) -> bool
     return ordering.is_before(a: a, b: b, less: less)
 
 ## Sorted lists
 
 # The index of `value` in `xs`, a list sorted by `less`: of several equal
-# elements, the first. Fails `not_found` where none is equal to it by the
-# order. It halves the list at each step; on a list that is not sorted by
-# `less` its answer means nothing, and it never aborts.
+# elements, the first.
+#
+# - `xs`: the list to search, sorted by `less`.
+# - `value`: the element to find.
+# - `less`: the order the list is sorted by, called about the logarithm of
+#   the length times.
+#
+# Fails `not_found` where no element is equal to `value` by the order. On a
+# list that is not sorted by `less` its answer means nothing, and it never
+# aborts. See also `lower_bound`, `index_of`.
 function binary_search<T>(xs: [T], value: T, less: (function(a: T, b: T) -> bool)) -> i64?
     return halving.binary_search(xs: xs, value: value, less: less)
 
 # How many elements of `xs`, a list sorted by `less`, go before `value`: the
-# index where it would enter the list ahead of its equals, from 0 to the
-# length. Found by halving.
+# index where it would enter the list ahead of its equals.
+#
+# - `xs`: the list to search, sorted by `less`.
+# - `value`: the element placed.
+# - `less`: the order the list is sorted by, called about the logarithm of
+#   the length times.
+#
+# The answer is 0 to the length. See also `upper_bound`, `binary_search`.
 function lower_bound<T>(xs: [T], value: T, less: (function(a: T, b: T) -> bool)) -> i64
     return halving.lower_bound(xs: xs, value: value, less: less)
 
 # How many elements of `xs`, a list sorted by `less`, do not go after `value`:
-# the index where it would enter the list behind its equals, from 0 to the
-# length. Found by halving.
+# the index where it would enter the list behind its equals.
+#
+# - `xs`: the list to search, sorted by `less`.
+# - `value`: the element placed.
+# - `less`: the order the list is sorted by, called about the logarithm of
+#   the length times.
+#
+# The answer is 0 to the length. See also `lower_bound`, `insert_sorted`.
 function upper_bound<T>(xs: [T], value: T, less: (function(a: T, b: T) -> bool)) -> i64
     return halving.upper_bound(xs: xs, value: value, less: less)
 
 # `xs`, a list sorted by `less`, with `value` put in where the order keeps:
-# behind the elements equal to it, so values entered one by one stay in the
-# order they came. It copies the whole list, so many values are better added
-# and sorted once.
+# behind the elements equal to it.
+#
+# - `xs`: the list to put into, sorted by `less`.
+# - `value`: the element to put in.
+# - `less`: the order the list is sorted by.
+#
+# Values entered one by one stay in the order they came. It copies the whole
+# list, so many values are better added and sorted once, and a set that is
+# changed as often as it is read is `containers/ordered`'s. See also
+# `upper_bound`.
 function insert_sorted<T>(xs: [T], value: T, less: (function(a: T, b: T) -> bool)) -> [T]
     return halving.insert_sorted(xs: xs, value: value, less: less)
 
 # How many leading elements of `xs` `accepts` accepts, for a list in which
-# every element it accepts stands before every one it refuses, as
-# `is_partitioned` asks. Found by halving, so it calls `accepts` about the
-# logarithm of the length times; on any other list its answer means nothing.
+# every element it accepts stands before every one it refuses.
+#
+# - `xs`: the list to read, partitioned as `is_partitioned` asks.
+# - `accepts`: called about the logarithm of the length times.
+#
+# On any other list its answer means nothing. See also `is_partitioned`,
+# `lower_bound`.
 function partition_point<T>(xs: [T], accepts: (function(T) -> bool)) -> i64
     return halving.partition_point(xs: xs, accepts: accepts)
 
 # Whether every element of `xs` that `accepts` accepts stands before every one
-# it refuses. An empty list is, and so is one it accepts or refuses whole.
+# it refuses.
+#
+# - `xs`: the list to ask about; an empty list is, and so is one `accepts`
+#   accepts or refuses whole.
+# - `accepts`: called on each element.
+#
+# See also `partition_point`.
 function is_partitioned<T>(xs: [T], accepts: (function(T) -> bool)) -> bool
     return halving.is_partitioned(xs: xs, accepts: accepts)
 
@@ -441,13 +791,22 @@ function merge_sorted_by<T>(xss: [[T]], less: (function(a: T, b: T) -> bool)) ->
 
 ## Lists of fallible values
 
-# The values of `results`, in order, where none is an error. Fails with the
-# first error among them, its code and its message as they were.
+# The values of `results`, in order, where none is an error.
+#
+# - `results`: the results to read; an empty list gives an empty list.
+#
+# Fails with the first error among them, its code and its message as they
+# were, and reads no further. See also `only_ok`, and `errors.collect`, which
+# reads them all and joins every failure into one.
 function all_ok<T>(results: [T?]) -> [T]?
     return fallible.all_ok(results: results)
 
-# The values of `results` that are not errors, in order. The errors are left
-# out and nothing says how many there were: `all_ok` is the one that tells.
+# The values of `results` that are not errors, in order.
+#
+# - `results`: the results to read.
+#
+# The errors are left out and nothing says how many there were: `all_ok` is
+# the one that tells.
 function only_ok<T>(results: [T?]) -> [T]
     return fallible.only_ok(results: results)
 
@@ -455,33 +814,51 @@ function only_ok<T>(results: [T?]) -> [T]
 
 # Every way to take `size` elements of `xs` one after another, each element
 # at most once and the order of taking counted: for `size` equal to the
-# length, every order of the whole list. They come in the order of the
-# indices taken, so a sorted list gives them sorted, and an element that
-# stands twice in `xs` is two elements. One empty arrangement where `size` is
-# zero, none where it is past the length. Aborts where `size` is below zero.
-# Their number is n times n-1 and so on, `size` factors: 3,628,800 for all
-# ten of ten.
+# length, every order of the whole list.
+#
+# - `xs`: the elements to arrange; one that stands twice is two elements.
+# - `size`: how many each arrangement takes, zero or more; zero gives one
+#   empty arrangement, and past the length none.
+#
+# They come in the order of the indices taken, so a sorted list gives them
+# sorted. Aborts where `size` is below zero. Their number is n times n-1 and
+# so on, `size` factors: 3,628,800 for all ten of ten, which
+# `math.count_permutations` counts without making them.
 function permutations<T>(xs: [T], size: i64) -> [[T]]
     return arrangements.permutations(xs: xs, size: size)
 
 # Every way to choose `size` elements of `xs`, each at most once, the order
-# of choosing not counted: each choice keeps the list's order, and they come
-# in the order of the indices chosen. One empty choice where `size` is zero,
-# none where it is past the length. Aborts where `size` is below zero.
+# of choosing not counted.
+#
+# - `xs`: the elements to choose from.
+# - `size`: how many each choice takes, zero or more; zero gives one empty
+#   choice, and past the length none.
+#
+# Each choice keeps the list's order, and they come in the order of the
+# indices chosen. Aborts where `size` is below zero. How many there are is
+# what `math.count_combinations` counts.
 function combinations<T>(xs: [T], size: i64) -> [[T]]
     return arrangements.combinations(xs: xs, size: size)
 
 # Every way to choose `size` elements of `xs` where one element may be chosen
-# again and again, the order of choosing not counted; they come in the order
-# of the indices chosen. One empty choice where `size` is zero, none from an
-# empty list otherwise. Aborts where `size` is below zero.
+# again and again, the order of choosing not counted.
+#
+# - `xs`: the elements to choose from.
+# - `size`: how many each choice takes, zero or more; zero gives one empty
+#   choice, and an empty list none otherwise.
+#
+# They come in the order of the indices chosen. Aborts where `size` is below
+# zero.
 function combinations_repeating<T>(xs: [T], size: i64) -> [[T]]
     return arrangements.combinations_repeating(xs: xs, size: size)
 
 # Every way to take one element from each list of `xss`, as a list of as many
 # elements as there are lists: the choices from the last list change fastest.
-# None where one of the lists is empty, and one empty choice where `xss`
-# holds no list. Their number is the product of the lengths.
+#
+# - `xss`: the lists to choose from, in order.
+#
+# None where one of the lists is empty, and one empty choice where `xss` holds
+# no list. Their number is the product of the lengths.
 function cartesian_product<T>(xss: [[T]]) -> [[T]]
     return arrangements.cartesian_product(xss: xss)
 
@@ -540,7 +917,7 @@ test "the face: editing"
 
 test "the face: removing"
     assert remove_where([1, 2, 3], samples.is_even) == [1, 3]
-    assert remove([1, 2, 1], 1, samples.same_number).must() == [2, 1]
+    assert remove([1, 2, 1], 1, samples.same_number) == [2, 1]
     assert remove_all([1, 2, 1], 1, samples.same_number) == [2]
     assert compact([1, 1, 2], samples.same_number) == [1, 2]
     assert trim_prefix(xs: [1, 2, 3], prefix: [1], same: samples.same_number) == [2, 3]
@@ -583,16 +960,358 @@ test "the face: lists of fallible values and arrangements"
 
 ## Examples
 
-# The two lowest cards of a hand, equal ranks in the hand's order.
+# The first word of a sentence, and an empty list told.
+test "first: the first word, and nothing in an empty list"
+    nothing: [str] = []
+    assert first(["to", "be", "or"]).must() == "to"
+    assert first(nothing).is_err()
+
+# The last line of a log.
+test "last: the last line"
+    assert last(["start", "work", "stop"]).must() == "stop"
+
+# An index read from outside, checked by the call instead of aborting.
+test "get: an index inside and one past the end"
+    xs = [10, 20, 30]
+    assert get(xs, 1).must() == 20
+    assert get(xs, 3).is_err()
+
+# The first three results of a search.
+test "take: the first three"
+    assert take([5, 4, 3, 2, 1], 3) == [5, 4, 3]
+
+# A header line skipped.
+test "skip: past a header"
+    assert skip(["name,age", "ada,36", "alan,41"], 1) == ["ada,36", "alan,41"]
+
+# The last two lines of a file, as `tail` shows them.
+test "take_last: the last two"
+    assert take_last(["a", "b", "c", "d"], 2) == ["c", "d"]
+
+# A list without its trailing total.
+test "skip_last: without the last one"
+    assert skip_last([3, 4, 7], 1) == [3, 4]
+
+# The leading even numbers; `samples.is_even` is
+# `function is_even(n: i64) -> bool`, true where `n % 2 == 0`.
+test "take_where: the even numbers at the start"
+    assert take_where([2, 4, 5, 6], samples.is_even) == [2, 4]
+
+# What follows the leading even numbers; `samples.is_even` is
+# `function is_even(n: i64) -> bool`, true where `n % 2 == 0`.
+test "skip_where: past the even numbers at the start"
+    assert skip_where([2, 4, 5, 6], samples.is_even) == [5, 6]
+
+# Every other element.
+test "step: every second element"
+    assert step([1, 2, 3, 4, 5], 2) == [1, 3, 5]
+
+# Seven items in pages of three.
+test "chunks: pages of three"
+    assert chunks([1, 2, 3, 4, 5, 6, 7], 3) == [[1, 2, 3], [4, 5, 6], [7]]
+
+# Digits grouped in threes from the right, as a thousands separator groups
+# them.
+test "chunks_last: digits in threes from the right"
+    assert chunks_last(["1", "2", "3", "4", "5"], 3) == [["3", "4", "5"], ["1", "2"]]
+
+# The pairs of neighbours of a series, to read the steps between them.
+test "windows: each two neighbours"
+    assert windows([1, 4, 9], 2) == [[1, 4], [4, 9]]
+
+# Fields between commas; `samples.is_comma` is
+# `function is_comma(s: str) -> bool`, true where `s == ","`.
+test "split_where: fields between commas"
+    assert split_where(["a", ",", "b", "c", ",", "d"], samples.is_comma) == [["a"], ["b", "c"], ["d"]]
+
+# A key and the rest of the line, split at the first comma alone;
+# `samples.is_comma` is `function is_comma(s: str) -> bool`, true where
+# `s == ","`.
+test "split_where_n: at the first separator alone"
+    assert split_where_n(["k", ",", "v", ",", "w"], samples.is_comma, 2) == [["k"], ["v", ",", "w"]]
+
+# Statements cut after each separator, which each keeps;
+# `samples.is_zero` is `function is_zero(n: i64) -> bool`, true where
+# `n == 0`.
+test "split_after_where: cut after each zero"
+    assert split_after_where([1, 2, 0, 3, 0, 4], samples.is_zero) == [[1, 2, 0], [3, 0], [4]]
+
+# The runs of equal neighbours, as `uniq -c` counts them;
+# `samples.same_number` is `function same_number(left: i64, right: i64) ->
+# bool`, true where `left == right`.
+test "runs_by: runs of equal neighbours"
+    assert runs_by([1, 1, 2, 3, 3, 3], samples.same_number) == [[1, 1], [2], [3, 3, 3]]
+
+# Two lists joined.
+test "concat: two lists"
+    assert concat(xs: [1, 2], then: [3]) == [1, 2, 3]
+
+# The pages of a result made one list again.
+test "flatten: pages back into one list"
+    assert flatten([[1, 2, 3], [4, 5], [6]]) == [1, 2, 3, 4, 5, 6]
+
+# A pattern repeated.
+test "cycle: a pattern three times"
+    assert cycle(["on", "off"], 3) == ["on", "off", "on", "off", "on", "off"]
+
+# A row padded to the width of a table.
+test "resize: a row padded and a row cut"
+    assert resize(["a", "b"], 4, "") == ["a", "b", "", ""]
+    assert resize([1, 2, 3], 2, 0) == [1, 2]
+
+# A separator put between the parts of a path.
+test "intersperse: a separator between parts"
+    assert intersperse(["usr", "local", "bin"], "/") == ["usr", "/", "local", "/", "bin"]
+
+# A running total; `samples.add` is `function add(acc: i64, item: i64) ->
+# i64`, `acc + item`.
+test "accumulate: a running total"
+    assert accumulate([3, 1, 4], 0, samples.add) == [3, 4, 8]
+
+# The rows a list of checks kept.
+test "select: the rows marked kept"
+    assert select(["a", "b", "c"], [true, false, true]) == ["a", "c"]
+
+# A value put into the middle of a list.
+test "insert: a value in the middle"
+    assert insert(["a", "c"], 1, "b") == ["a", "b", "c"]
+
+# Several values put in at once.
+test "insert_all: two values at once"
+    assert insert_all(xs: [1, 4], at: 1, new: [2, 3]) == [1, 2, 3, 4]
+
+# The element at an index taken out.
+test "remove_at: the second element"
+    assert remove_at(["a", "b", "c"], 1) == ["a", "c"]
+
+# A range taken out, its end left in.
+test "remove_range: from one up to three"
+    assert remove_range([0, 1, 2, 3, 4], from: 1, to: 3) == [0, 3, 4]
+
+# A range replaced by more elements than it held.
+test "replace_range: one element replaced by two"
+    assert replace_range(xs: [1, 2, 3], from: 1, to: 2, new: [7, 8]) == [1, 7, 8, 3]
+
+# Two elements exchanged.
+test "swap: the first and the last"
+    assert swap(["a", "b", "c"], at: 0, with: 2) == ["c", "b", "a"]
+
+# A list read backwards.
+test "reverse: a countdown"
+    assert reverse([1, 2, 3]) == [3, 2, 1]
+
+# A turn of the list by one place, and by one more than its length.
+test "rotate_left: by one, and by four of three"
+    assert rotate_left(["a", "b", "c"], 1) == ["b", "c", "a"]
+    assert rotate_left(["a", "b", "c"], 4) == ["b", "c", "a"]
+
+# A turn the other way, and a negative count that turns back.
+test "rotate_right: by one, and by minus one"
+    assert rotate_right(["a", "b", "c"], 1) == ["c", "a", "b"]
+    assert rotate_right(["a", "b", "c"], -1) == ["b", "c", "a"]
+
+# The odd numbers, the even ones left out; `samples.is_even` is
+# `function is_even(n: i64) -> bool`, true where `n % 2 == 0`.
+test "remove_where: the even numbers left out"
+    assert remove_where([1, 2, 3, 4], samples.is_even) == [1, 3]
+
+# The first occurrence taken out, and a list without the value left as it was;
+# `samples.same_number` is `function same_number(left: i64, right: i64) ->
+# bool`, true where `left == right`.
+test "remove: the first occurrence, and an absent value"
+    assert remove([1, 2, 1], 1, samples.same_number) == [2, 1]
+    assert remove([1, 2], 9, samples.same_number) == [1, 2]
+
+# Every occurrence taken out; `samples.same_text` is
+# `function same_text(left: str, right: str) -> bool`, true where
+# `left == right`.
+test "remove_all: every blank"
+    assert remove_all(["a", "", "b", ""], "", samples.same_text) == ["a", "b"]
+
+# Repeated neighbours made one, as `uniq` does; `samples.same_number` is
+# `function same_number(left: i64, right: i64) -> bool`, true where
+# `left == right`.
+test "compact: repeated neighbours"
+    assert compact([1, 1, 2, 2, 2, 1], samples.same_number) == [1, 2, 1]
+
+# A path without its leading part; `samples.same_text` is
+# `function same_text(left: str, right: str) -> bool`, true where
+# `left == right`.
+test "trim_prefix: a leading part"
+    assert trim_prefix(xs: ["home", "ada", "notes"], prefix: ["home", "ada"], same: samples.same_text) == ["notes"]
+
+# A path without its trailing part; `samples.same_text` is
+# `function same_text(left: str, right: str) -> bool`, true where
+# `left == right`.
+test "trim_suffix: a trailing part"
+    assert trim_suffix(xs: ["a", "b", "tmp"], suffix: ["tmp"], same: samples.same_text) == ["a", "b"]
+
+# Whether a list of names holds one; `samples.same_text` is
+# `function same_text(left: str, right: str) -> bool`, true where
+# `left == right`.
+test "contains: a name present and one absent"
+    names = ["ada", "grace"]
+    assert contains(names, "ada", samples.same_text)
+    assert !contains(names, "alan", samples.same_text)
+
+# Where a value first stands; `samples.same_number` is
+# `function same_number(left: i64, right: i64) -> bool`, true where
+# `left == right`.
+test "index_of: the first of two"
+    assert index_of([5, 7, 5], 5, samples.same_number).must() == 0
+
+# Where a value last stands; `samples.same_number` is
+# `function same_number(left: i64, right: i64) -> bool`, true where
+# `left == right`.
+test "index_of_last: the last of two"
+    assert index_of_last([5, 7, 5], 5, samples.same_number).must() == 2
+
+# The first even number's index; `samples.is_even` is
+# `function is_even(n: i64) -> bool`, true where `n % 2 == 0`.
+test "index_where: the first even number"
+    assert index_where([1, 3, 4, 6], samples.is_even).must() == 2
+
+# The last even number's index; `samples.is_even` is
+# `function is_even(n: i64) -> bool`, true where `n % 2 == 0`.
+test "index_where_last: the last even number"
+    assert index_where_last([1, 4, 6, 7], samples.is_even).must() == 2
+
+# How often a word occurs; `samples.same_text` is
+# `function same_text(left: str, right: str) -> bool`, true where
+# `left == right`.
+test "count_of: a word in a sentence"
+    assert count_of(["to", "be", "or", "not", "to", "be"], "be", samples.same_text) == 2
+
+# Whether a path begins with a folder; `samples.same_text` is
+# `function same_text(left: str, right: str) -> bool`, true where
+# `left == right`.
+test "has_prefix: a path under a folder"
+    assert has_prefix(xs: ["usr", "local", "bin"], prefix: ["usr", "local"], same: samples.same_text)
+
+# Whether a list ends with a pair; `samples.same_number` is
+# `function same_number(left: i64, right: i64) -> bool`, true where
+# `left == right`.
+test "has_suffix: the last two"
+    assert has_suffix(xs: [1, 2, 3], suffix: [2, 3], same: samples.same_number)
+
+# Two lists the same by the caller's equality, which `==` would also say of
+# numbers; `samples.same_number` is `function same_number(left: i64, right:
+# i64) -> bool`, true where `left == right`.
+test "equal_by: two lists, then one longer"
+    assert equal_by(left: [1, 2], right: [1, 2], same: samples.same_number)
+    assert !equal_by(left: [1, 2], right: [1, 2, 3], same: samples.same_number)
+
+# Words sorted by their length, words of one length keeping their order;
+# `samples.by_length` is `function by_length(a: str, b: str) -> bool`, true
+# where `a.len() < b.len()`.
+test "sort_by: words by their length"
+    assert sort_by(["ccc", "a", "bb", "d"], samples.by_length) == ["a", "d", "bb", "ccc"]
+
+# Whether numbers are already sorted; `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
+test "is_sorted_by: sorted and not"
+    assert is_sorted_by([1, 2, 2, 5], samples.ascending)
+    assert !is_sorted_by([2, 1], samples.ascending)
+
+# The shortest word, the first of two; `samples.by_length` is
+# `function by_length(a: str, b: str) -> bool`, true where
+# `a.len() < b.len()`.
+test "min_by: the shortest word"
+    assert min_by(["ccc", "a", "b"], samples.by_length).must() == "a"
+
+# The longest word, the first of two; `samples.by_length` is
+# `function by_length(a: str, b: str) -> bool`, true where
+# `a.len() < b.len()`.
+test "max_by: the longest word"
+    assert max_by(["bb", "a", "cc"], samples.by_length).must() == "bb"
+
+# Two versions compared part by part, as `1.2` goes before `1.10`;
+# `samples.ascending` is `function ascending(a: i64, b: i64) -> bool`, true
+# where `a < b`.
+test "is_before: two version numbers"
+    assert is_before(a: [1, 2], b: [1, 10], less: samples.ascending)
+    assert !is_before(a: [1, 10], b: [1, 2], less: samples.ascending)
+
+# A value found in a sorted list by halving; `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
+test "binary_search: a value present and one absent"
+    xs = [2, 3, 5, 7, 11]
+    assert binary_search(xs, 7, samples.ascending).must() == 3
+    assert binary_search(xs, 4, samples.ascending).is_err()
+
+# How many scores are below a mark; `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
+test "lower_bound: the scores below fifty"
+    assert lower_bound([20, 40, 50, 50, 80], 50, samples.ascending) == 2
+
+# How many scores are at most a mark; `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
+test "upper_bound: the scores at most fifty"
+    assert upper_bound([20, 40, 50, 50, 80], 50, samples.ascending) == 4
+
+# A value put into a sorted list where it belongs; `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
+test "insert_sorted: a value into its place"
+    assert insert_sorted([1, 3, 5], 4, samples.ascending) == [1, 3, 4, 5]
+
+# Where the small numbers end in a list that holds them first;
+# `samples.below_three` is `function below_three(n: i64) -> bool`, true where
+# `n < 3`.
+test "partition_point: the end of the small numbers"
+    assert partition_point([1, 2, 2, 5, 9], samples.below_three) == 3
+
+# Whether the small numbers all come first; `samples.below_three` is
+# `function below_three(n: i64) -> bool`, true where `n < 3`.
+test "is_partitioned: small numbers first, and mixed"
+    assert is_partitioned([1, 2, 7, 9], samples.below_three)
+    assert !is_partitioned([1, 7, 2], samples.below_three)
+
+# Words read as numbers, the whole list or its first failure;
+# `samples.parse_small` is `function parse_small(word: str) -> i64?`, reading
+# `"one"` and `"two"` and failing `invalid` on any other word.
+test "all_ok: every word read, then one that is not"
+    assert all_ok(["one", "two"].map(samples.parse_small)).must() == [1, 2]
+    assert all_ok(["one", "six"].map(samples.parse_small)).is_err()
+
+# The words that read as numbers, the others dropped; `samples.parse_small`
+# is `function parse_small(word: str) -> i64?`, reading `"one"` and `"two"`
+# and failing `invalid` on any other word.
+test "only_ok: the words that read"
+    assert only_ok(["one", "six", "two"].map(samples.parse_small)) == [1, 2]
+
+# Every order of three letters.
+test "permutations: every order of three"
+    orders = permutations(["a", "b", "c"], 3)
+    assert orders.len() == 6
+    assert orders[0] == ["a", "b", "c"] && orders[5] == ["c", "b", "a"]
+
+# Every pair of three people, each once.
+test "combinations: every pair of three"
+    assert combinations(["ada", "alan", "grace"], 2) == [["ada", "alan"], ["ada", "grace"], ["alan", "grace"]]
+
+# Every way to pick two scoops of two flavours, one flavour twice allowed.
+test "combinations_repeating: two scoops of two flavours"
+    assert combinations_repeating(["lemon", "mint"], 2) == [["lemon", "lemon"], ["lemon", "mint"], ["mint", "mint"]]
+
+# Every size in every colour.
+test "cartesian_product: sizes and colours"
+    assert cartesian_product([["s", "m"], ["red", "blue"]]) == [["s", "red"], ["s", "blue"], ["m", "red"], ["m", "blue"]]
+
+# The two lowest cards of a hand, equal ranks in the hand's order;
+# `samples.Card` is `record Card` of a `rank: i64` and a `suit: str`, and
+# `samples.by_rank` is `function by_rank(a: Card, b: Card) -> bool`, true
+# where `a.rank < b.rank`.
 test "min_n_by: the two lowest cards"
     hand = [samples.Card(rank: 9, suit: "h"), samples.Card(rank: 2, suit: "s"), samples.Card(rank: 2, suit: "d")]
     lowest = min_n_by(xs: hand, n: 2, less: samples.by_rank)
     assert lowest[0].suit == "s" && lowest[1].suit == "d"
 
-# The three highest scores.
+# The three highest scores; `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "max_n_by: the three highest scores"
     assert max_n_by(xs: [40, 95, 70, 88, 12], n: 3, less: samples.ascending) == [95, 88, 70]
 
-# Two sorted lists made one.
+# Two sorted lists made one; `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "merge_sorted_by: two sorted lists of times merged"
     assert merge_sorted_by(xss: [[1, 4, 9], [2, 3, 10]], less: samples.ascending) == [1, 2, 3, 4, 9, 10]

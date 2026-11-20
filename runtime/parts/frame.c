@@ -68,7 +68,7 @@ static _Atomic size_t hero_frame_held = 0;
  * runs out while the first is telling, of its room or of its stack, waits for
  * the process to end, so two messages never interleave. */
 static _Noreturn void hero_frame_exhausted(void *caller) {
-    hero_stdout_before_report();
+    hero_report_begin();
 #if !defined(_WIN32)
     hero_stack_tell_first();
     const char *who = caller != NULL ? hero_stack_symbol((uintptr_t)caller) : NULL;

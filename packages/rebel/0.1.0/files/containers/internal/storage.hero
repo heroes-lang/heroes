@@ -2,7 +2,8 @@
 # element written at a slot, the list growing by one where the slot is its
 # length, and a slot freed by moving the last one into it, the slot let go
 # holding a copy of a live element so nothing taken out stays alive, the list
-# cut back where three quarters of it stand unused.
+# cut back where three quarters of it stand unused; and the lookup map that a
+# map keeping one beside its keys builds again from its live keys.
 
 # Below this length a list is never cut back.
 constant KEPT: i64
@@ -31,6 +32,17 @@ function drop_slot<T>(@xs: [T], at: i64, end: i64, count: i64)
     if xs.len() >= KEPT && count * 4 <= xs.len()
         xs @ xs.slice(from: 0, to: count)
 
+# The lookup map of the first `count` keys of `key_list`, each under its
+# slot: what the cache and the indexed map build again from their live keys
+# alone once removed keys crowd their lookup.
+function lookup_of<K>(key_list: [K] lent, count: i64) -> {K: i64}
+    fresh: {K: i64} @= {}
+
+    for at in range(from: 0, to: count)
+        fresh[key_list[at]] @ at
+
+    return fresh
+
 ## Tests
 
 test "store: at the end, inside, and the list's length"
@@ -48,3 +60,9 @@ test "drop_slot: the last taken, one inside, and the list emptied"
     assert xs[0] == "c"
     drop_slot(@xs, at: 0, end: 0, count: 0)
     assert xs == []
+
+test "lookup_of: no key, the live keys alone, and keys of more than one byte"
+    none: [str] = []
+    assert lookup_of(none, 0).len() == 0
+    assert lookup_of(["a", "b", "gone"], 2) == {"a": 0, "b": 1}
+    assert lookup_of(["é", "ü"], 2) == {"é": 0, "ü": 1}

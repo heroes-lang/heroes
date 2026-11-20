@@ -152,4 +152,4 @@ law 19 here (*"There is no standard library, everything comes from C, the man wh
 world."*) and law 18 in `heroes this` since 2026-09-02 (*"There is no standard library; C is the
 man who sold the world."*), no longer holds. The author's decision 9 of 2026-11-15 made it
 *"There is no standard library to obey; there is a Rebel to call, or not."* The egg itself stands.
-Entry 3 of the register of the decisions M-rebel-library invalidates, <register>.
+Entry 3 of the register of the decisions M-rebel-library invalidates, https://github.com/heroes-lang/heroes/issues/2610.

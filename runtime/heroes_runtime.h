@@ -286,6 +286,15 @@ int64_t hero_str_cmp(HeroStr a, HeroStr b); /* <0, 0, >0 — the six comparisons
 int64_t hero_str_len(HeroStr s);
 int64_t hero_str_byte(HeroStr s, int64_t i);        /* aborts out of range */
 
+/* A `str` value of a `print` statement, the C this compiler writes for one
+ * calling it between the statement's first printer and `hero_print_end`, as
+ * it calls `hero_print_int`: the first printer takes stdout's lock and
+ * `hero_print_end` gives it back (`parts/panic.c`). No program binds it: one
+ * called alone opened that span and nothing closed it (defects 2605 and 2607),
+ * so the bytes of a `str` alone go out through `hero_os.h`'s
+ * `hero_write_out`. */
+void hero_print_str(HeroStr s);
+
 /* Aborts out of range, AND aborts on a cut that lands inside a multi-byte
  * sequence — design.md:809's "slicing that lands mid-sequence is an error",
  * which this runtime did not implement until panel 027 went looking for it.

@@ -237,12 +237,7 @@ function trim(@cache: Lru)
 
 # Builds the lookup map again from the live keys alone.
 function rebuild<K>(@cache: Lru, key_list: [K] lent, @lookup: {K: i64})
-    fresh: {K: i64} @= {}
-
-    for at in range(from: 0, to: cache.count)
-        fresh[key_list[at]] @ at
-
-    lookup @ fresh
+    lookup @ storage.lookup_of(key_list, count: cache.count)
     cache.dead @ 0
 
 # Takes the entry at `at` out, the last slot moving into it.

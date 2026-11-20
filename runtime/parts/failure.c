@@ -174,8 +174,11 @@ typedef struct {
     size_t used;
 } HeroReport;
 
+/* Through `hero_stderr_put` (`parts/panic.c`), never stdio: a thread blocked
+ * writing stderr holds its lock, and the report must still be said (defect
+ * 2606). */
 static void hero_report_flush(HeroReport *r) {
-    if (r->used > 0) fwrite(r->bytes, 1, r->used, stderr);
+    if (r->used > 0) hero_stderr_put(r->bytes, r->used);
     r->used = 0;
 }
 

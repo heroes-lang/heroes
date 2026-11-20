@@ -398,6 +398,35 @@ Given in conversation, meant as: *yes to everything*. Each written as what it se
 - **Nothing is installed on the Windows box**; Rebel's own pipeline installs SQLite where its tests
   need it.
 
+## The author's answer of 2026-11-20, in the first minutes after midnight: M-web-framework retired
+
+Given in conversation, meant as: *OK to the web framework out of the ROADMAP*. It confirms the
+retirement of **M-web-framework** into this milestone, which decision 23 decided (Rebel's `web`
+gives what Echo gives, and it encloses M-web-framework) and the landing carried out: the row left
+the chain, and the page stays as the record of what it held.
+
+## The author's answers of 2026-11-20, about 14:00: the licence and four rulings on signals
+
+Given in conversation, meant as: *OK to the licence, OK to A, B, C and D*, on the coordinator's
+recommendations put in plain words that afternoon.
+
+- **The licence (decision 11, amended in one sense).** Rebel keeps the two pieces written by others,
+  the Public Suffix List in `http/suffixes` (MPL-2.0) and the tables taken from tiktoken in
+  `tokenizer/tables` (MIT), each with its notice in its files and in `NOTICE`. Whoever uses Rebel owes
+  nobody anything but those notices, which travel with the two files; a program whose `packages` line
+  names neither does not carry them.
+- **A, defect 2583**: a SIGABRT the program raises itself, under a library's handler that returns, is
+  let go everywhere, as plain C lets it go; a real `abort()` still ends the process, only without the
+  runtime's line (panel 175's silence over a false line).
+- **B, defect 2522's rows 1 and 2**: a jump the runtime cannot tell safe (through a buffer it never saw
+  filled; the inline `__builtin_setjmp` pair at `-O0` on x86-64) stays refused, a known cost told in true
+  words and pinned in a case that gives its reason; robustness ranks first.
+- **C, defect 2522's row 3**: the route for an installer reached through `dlsym` is built and measured,
+  the runtime answering `dlsym` for the installers' names on Linux and re-trampolining lazily on Darwin;
+  where either breaks a sanitizer, the row becomes a known cost as in B.
+- **D, defect 2522's row 5**: no pinned census of the C library names the runtime defines; the census
+  stays a dated measurement, since a check listing a machine's libraries would turn red by machine.
+
 ## The coherence review's nineteen decisions, adopted by recommendation on 2026-11-19
 
 The review of decision 31 put nineteen questions, D01 to D19, each with its recommendation and the
@@ -596,6 +625,6 @@ Read from `git log` of the branch `rebel-round`, which opened from `main` at `f6
   reds the branch carries at its base. Then the three owed steps above, one at a time.
 
 **The register of the decisions this milestone invalidates** is one `decision` issue with dated
-comments (decision 10, panel 253's R1), <register>; this page carries no list of it. The records
+comments (decision 10, panel 253's R1), https://github.com/heroes-lang/heroes/issues/2610; this page carries no list of it. The records
 that held a superseded decision each end with a dated note pointing at it.
 

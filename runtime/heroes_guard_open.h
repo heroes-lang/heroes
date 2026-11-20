@@ -460,6 +460,7 @@
 #pragma push_macro("hero_utf8_valid")
 #pragma push_macro("hero_word_bits")
 #pragma push_macro("hero_write_err")
+#pragma push_macro("hero_write_out")
 #pragma push_macro("hypot")
 #pragma push_macro("hypotf")
 #pragma push_macro("hypotl")

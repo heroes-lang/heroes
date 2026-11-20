@@ -98,7 +98,7 @@ capability ordered/rank  how many keys go before a key, and the key of a given r
   note    none of the three offers it; each node keeps the size of its subtree, so both are logarithmic. A median or a percentile of a changing set is `ordered.slot_at_rank` of the size times the fraction
 
 capability ordered/walk  every key, or every entry, in order
-  heroes  ordered.slots, ordered.to_list
+  heroes  ordered.slots, ordered.keys_in_order
   go      -
   rust    BTreeMap::iter, BTreeMap::iter_mut, BTreeMap::keys, BTreeMap::values, BTreeMap::values_mut, BTreeMap::into_iter, BTreeMap::into_keys, BTreeMap::into_values, BTreeSet::iter, BTreeSet::into_iter, btree_map::Iter, btree_map::IterMut, btree_map::Keys, btree_map::Values, btree_map::ValuesMut, btree_map::IntoIter, btree_map::IntoKeys, btree_map::IntoValues, btree_set::Iter, btree_set::IntoIter
   python  -
@@ -112,11 +112,11 @@ capability ordered/size  how many keys an ordered map or set holds
   note    -
 
 capability ordered/clear  an ordered map or set emptied
-  heroes  ordered.new_map
+  heroes  ordered.clear, ordered.clear_set
   go      -
   rust    BTreeMap::clear, BTreeSet::clear
   python  -
-  note    a new shape and empty lists written over the old, which lets every key go
+  note    a new shape and empty lists written over the old, which lets every key go; a map's and a set's apart, as `put` and `add` are
 
 capability ordered/keep-where  the entries a function accepts kept, or taken out and answered
   heroes  ordered.remove_at

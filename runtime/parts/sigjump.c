@@ -177,7 +177,9 @@ static void hero_jmp_note(const void *buf, uintptr_t frame, uint32_t size) {
 }
 
 /* Before a jump to `buf`: the entries its target leaves, dropped, where its
- * record stands and its bytes are the C library's; otherwise none. */
+ * record stands and its bytes are the C library's; otherwise none, and every
+ * entry standing is marked as one this jump may have left (`unsure`), so a
+ * refusal resting on it says so (defect 2522's row, `parts/sigguard.c`). */
 static void hero_jmp_leave(const void *buf) {
     HeroSignalStack *own = hero_sig_own();
     if (own == NULL || own->depth == 0) return;
@@ -186,9 +188,13 @@ static void hero_jmp_leave(const void *buf) {
     for (int i = 0; i < HERO_SIG_JUMPS; i += 1) {
         if (own->jump_buf[i] != key) continue;
         bool refilled = own->jump_print[i] != 0 && own->jump_print[i] != hero_jmp_fingerprint(key, own->jump_size[i]);
-        if (!refilled) hero_sig_prune(own, own->jump_frame[i]);
-        return;
+        if (!refilled) {
+            hero_sig_prune(own, own->jump_frame[i]);
+            return;
+        }
+        break;
     }
+    own->unsure = own->depth;
 }
 
 static _Noreturn void hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *env, int val) {

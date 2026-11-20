@@ -25,7 +25,9 @@ Two practical notes for the implementation:
   has to parse them and by a model that has to learn them from a spec of about ten thousand tokens. A cute error
   message costs spec tokens and comprehension; a cute README costs nothing. This is the same
   discipline as Part 1.10 (ASCII-only syntax): personality in the packaging, precision in the
-  substrate.
+  substrate. The library as a whole may carry a name of the prose's register while what is inside it
+  stays plain: Rebel, the library this project writes, is `rebel` in a catalogue, and its packages
+  are `os`, `net`, `http` (M-rebel-library's decision 1).
 
 One thing worth checking before committing publicly: whether "Heroes" collides with an existing
 language, package registry entry, or trademark in this space. The name is unusual for a programming
@@ -479,7 +481,7 @@ considered and rejected as a symbol.
 
 ---
 
-### 1.11 The founding constraint: there is no standard library
+### 1.11 The founding constraint: Heroes imposes no standard library
 
 **This is where the project started, chronologically and logically. It is a hard requirement, not a
 convenience.** The original brief was: *a simple compiled language with modern syntax that can use
@@ -487,12 +489,21 @@ other languages' libraries, so I don't have to write a standard library.*
 
 Every architectural decision downstream serves this. Restating it as a rule:
 
-> **Heroes ships a minimal runtime and nothing else. Anything a real program needs — maths beyond
-> arithmetic, files, sockets, regex, JSON, crypto, compression, databases, HTTP — comes from C
-> libraries through the FFI. Writing a broad standard library is out of scope, permanently.**
+> **Heroes ships a minimal runtime and nothing else, and imposes no standard library. Anything a
+> real program needs beyond that runtime — maths beyond arithmetic, files, sockets, regex, JSON,
+> crypto, compression, databases, HTTP — comes from a package the program carries or from a C
+> library through the FFI, and the FFI is every package's door to the platform. Rebel, the broad
+> library this project writes, is such a package: a program takes it or leaves it, nothing of it
+> is compiled into the compiler or the runtime, and the compiler is not written with it. There is
+> no standard library to obey; there is a Rebel to call, or not.**
 
-This is not laziness, it is the leverage that makes a one-person language viable. A modern standard
-library is more work than a compiler.
+This is not laziness, it is the leverage that makes a one-person language viable: a modern standard
+library is more work than a compiler, so the language is whole without one, and a library is work a
+program may take on or leave. Rebel is written beside the language, not inside it. The compiler takes
+none of it; what Rebel needs of the platform beyond the runtime's own doors is the platform layer, C
+of this project's own archived beside the runtime, whose archive stands on every program's link
+line and whose members the linker takes into a program only where the program calls them
+(`selfhost/cli/layer.hero`).
 
 **Three levels of interoperability exist, and Heroes deliberately targets only the first:**
 
@@ -541,52 +552,62 @@ since `0503df194`, 2026-08-12). **The spec names all five, and `validated`, with
 and says nothing about which tier they live in**, because that is not something a reader of a program
 can observe.
 
-**That is the whole standard library.** Everything below is explicitly *not* provided, and is
-expected to arrive via FFI:
+**That is the whole of what the language provides.** Everything below is *not* provided by it: a
+program binds a C library for it through the FFI, writes it in Heroes, or takes a package that does.
+The third column names Rebel's package for the need where Rebel has one. Where each of Rebel's
+packages stands on C is its rules page's to say (`examples-rebel/README.md` § A1, its column *C
+under it*): over the system's own library, as `tls` stands over the platform's TLS; over a C library
+the page names, as `sql/sqlite` stands over SQLite's; and elsewhere in Heroes, what reads data from
+outside among it (M-rebel-library's decision 24, which admits a vendored C library for cryptographic
+primitives, since they read no outside data: the author's answer of 2026-11-19, decision 2594).
+**That rule is Rebel's, for Rebel's own packages, and binds no program**: a program binding cJSON,
+PCRE2 or zlib itself stands at §4.19's own fence, as first-class as any binding.
 
-| Need | Where it comes from |
-|---|---|
-| `sqrt`, `sin`, `pow`, floating-point maths | `libm` |
-| File and directory operations beyond `read_file`/`write_file` | `libc` |
-| Time, dates, clocks | `libc` |
-| Random numbers | `libc` |
-| Sockets, DNS, TLS | `libc`, OpenSSL |
-| HTTP | libcurl |
-| Regular expressions | PCRE2 |
-| JSON | write it in Heroes (a JSON value is literally a `variant` with payload — a good fit) or bind cJSON |
-| Hashing, crypto | OpenSSL, libsodium |
-| Compression | zlib |
-| SQL | SQLite |
-| Terminal UI, graphics, audio | ncurses, raylib, SDL |
+| Need | A C library a program binds | Rebel's package |
+|---|---|---|
+| `sqrt`, `sin`, `pow`, floating-point maths | `libm` | `math`, over `math.h` |
+| File and directory operations beyond `read_file`/`write_file` | `libc` | `fs`, `path`, `os` |
+| Time, dates, clocks | `libc` | `time` |
+| Random numbers | `libc` | `random` |
+| Sockets, DNS, TLS | `libc`, OpenSSL | `net`, `dns`, `tls` over the system's own TLS |
+| HTTP | libcurl | `http` |
+| Regular expressions | PCRE2 | `regex` |
+| JSON | cJSON, or write it in Heroes (a JSON value is literally a `variant` with payload — a good fit) | `json` |
+| Hashing, crypto | OpenSSL, libsodium | `hash`, `crypto` |
+| Compression | zlib | `compress` |
+| SQL | SQLite | `sql/sqlite`, over SQLite's library |
+| Terminal UI, graphics, audio | ncurses, raylib, SDL | `term` and `tui` for the terminal, `image` for images in memory; none for a window or for sound |
 
-**The core packages do not change this: a package is code a program carries** (panel 234's R1 and
-R2, ratified 2026-11-06; the critic's G15). The rule above says every one of those needs comes from
-C, and the table's JSON row says *write it in Heroes*; both hold, because a package of
-M-core-packages is a module a program carries in its own tree, as it carries its own: fetched by
-`heroes add` into the program's `heroes.packages/`, a folder no `use` can spell, from the index its
-catalogue names, and reached as `use <core>/strings` (panel 235's R15, ratified 2026-11-07, which
-amended R2: until then a program kept a copy under its own `core/`); written in Heroes alone where
-Heroes can say it, over a C library through a binding it carries where it cannot, and verified by
-the checker, by its own `test` blocks and, over C, by clang against the header it names. No
-package is shipped with the compiler or the runtime for programs: nothing a program reaches
-without an entry of its own catalogue is a package's code, and no package's source reaches
-`selfhost/library_source.hero` (panel 097's condition 5; panel 234's R1, whose word was
-*shipped*: such source is the standard library this section forbids). The compiler is a program
-like any other here, and may carry a package through a catalogue of its own beside its root
-module, none of which a program it compiles can reach; it checks every placed tree's fingerprint, its own
-included, with the runtime's SHA-256 door and never with a package's code, so no package verifies
-itself; and it takes one only where its own tree, every line of every placed file counted, is smaller
-after the step than before, or a copy the step deletes is measured crashing or answering wrong, the step deleting
-every live copy of that package's contract in the compiler (panel 242's R1 to R4, ratified 2026-11-10, the
-unit written by panel 250's R2, provisional, 2026-11-15;
-until 2026-11-10 this sentence read *"No package is compiled into the compiler or the runtime"*,
-wider than R1's *shipped*). And none ships platform C of its own:
-what a package needs of the platform is the runtime's `hero_os.h` or the platform layer archived
-beside the runtime (panel 234's R6, feature 2295). So the language still ships its runtime and
-nothing a program could carry instead.
+**A package does not change this: it is code a program carries.** A program takes one by an entry of
+its own catalogue (spec § 1): `heroes add` places it in the program's `heroes.packages/`, a folder no
+`use` can spell, from the index the catalogue names, and the program reaches it as
+`use <rebel>/strings`. A package is written in Heroes alone where Heroes can say it, and over a C
+library through a binding it carries where it cannot; it is verified by the checker, by its own
+`test` blocks and, over C, by clang against the header it names, as a program's own binding is.
+Nothing a program reaches without an entry of its own catalogue is a package's code, and no
+package's source reaches `selfhost/library_source.hero` (panel 097's condition 5; panel 234's B5
+veto). The compiler checks every placed tree's fingerprint with the runtime's SHA-256 door and never
+with a package's code, so no package verifies itself. And no package ships C of its own: what a
+package needs of the platform is the runtime's `hero_os.h`, the platform layer archived beside the
+runtime (panel 234's R6, feature 2295), or a C library it binds by an `extern` group, as Rebel's
+`sql/sqlite` binds SQLite's. Where a member of the layer opens a library at run time, OpenSSL's on
+Linux among them, it types that library's functions by hand, and no header checks them (task 2593).
+So the language still ships its runtime and nothing a program could carry instead.
+
+**The compiler is written with no library.** It takes nothing of Rebel (M-rebel-library's decision 6)
+and holds no catalogue of its own; the one exception that decision foresees is the package manager,
+written with Rebel on its own row, M-rebel-packages-manager. A package it takes would meet panel
+242's ruler: taken only
+where the compiler's own tree, every line of every placed file counted, is smaller after the step than
+before, or a copy the step deletes is measured crashing or answering wrong, the step deleting every
+live copy of that package's contract in the compiler (panel 242's R1 to R4, ratified 2026-11-10; the
+unit, every placed file, is panel 250's R2, ratified 2026-11-15).
 
 **The consequence for design priorities: FFI ergonomics rank alongside comprehension, not below it.**
-When a choice makes bindings harder, that is a serious cost, not a footnote. Several decisions
+Every package that reaches the platform reaches it through the FFI: Rebel 0.1.0 declares 433 C
+functions and 453 constants in 33 `extern` groups across 23 files, held to their headers exactly as a
+program's are (an `awk` over its groups, 2026-11-20). When a choice makes bindings harder, that is a
+serious cost, not a footnote. Several decisions
 already recorded in this document exist for this reason and should not be revisited:
 
 - **Indices from 0** — otherwise every boundary becomes a silent off-by-one (4.9).
@@ -621,8 +642,9 @@ tension become:
 ### 1.12 Robustness, and a boundary that is complete and defended
 
 Stated by the author, 2026-08-14, and it belongs beside §1.11 because it is that constraint's
-consequence rather than a separate wish. If everything a program touches comes from C, then the C
-boundary is where this language's guarantees end — and a guarantee that ends quietly is not one.
+consequence rather than a separate wish. Everything a program reaches of the platform comes through
+C, its own bindings' and its packages' alike, so the C boundary is where this language's guarantees
+end — and a guarantee that ends quietly is not one.
 
 > **A Heroes program must not segfault and must not corrupt memory.** That is a goal of the
 > language, not a quality of its implementation. And the boundary is **complete**: any C library
@@ -664,9 +686,11 @@ State these plainly so nobody drifts:
 - **Performance is not a goal.** Not a secondary goal, not a tiebreaker. Where a choice trades speed
   for simplicity, take simplicity every time. (This is what licenses value semantics with
   copy-on-write, aborting on overflow, boxing in an array for recursive types, etc.)
-- **No standard library beyond a minimal runtime.** See 1.11 — this is the founding constraint, not
-  a consequence. Do not accumulate convenience functions; every one you add is a permanent
-  maintenance obligation and a competitor to the FFI.
+- **No standard library is imposed: the language and its runtime stay minimal.** See 1.11 — this
+  is the founding constraint, not a consequence. The language and its runtime accumulate no
+  convenience functions, since every one added there is a permanent maintenance obligation and a
+  competitor to the FFI; a convenience a program may take or leave belongs to a package, Rebel's or
+  the program's own.
 - **Not a systems language.** This is a high-level language with an excellent C FFI. Low-level work
   is delegated to C. The runtime itself will be written in C.
 - **Not for the web, for a long time.** Frontend needs a wasm backend (a separate project, and wasm
@@ -907,9 +931,9 @@ Makefile, a script, or a separate formatter/test-runner/LSP/package tool. Inspec
 subcommands. `heroes run` is the dev loop: emit C, clang, execute, hash-keyed cache in `build/` —
 the runtime compiles once and never at the user's initiative.
 
-Dependencies, honestly: with no standard library (§1.11), a v1 "dependency" is a link flag declared
-in the source next to the `extern` that needs it. No package manager exists before modules do; when
-it arrives it will be `heroes add`/`heroes fetch` — inside the same binary.
+Dependencies, honestly: with no standard library imposed (§1.11), a dependency is a link flag
+declared in the source next to the `extern` that needs it, or a package the program's catalogue
+names, placed by `heroes add` and `heroes fetch` — inside the same binary.
 
 ***A per-project file is admitted once, as the program's catalogue*** (panel 235, the author's
 call of 2026-11-07, recorded `retro-record` and ratified the same day; examined and deliberately
@@ -977,7 +1001,12 @@ name = entity: type
   aesthetics, it is choosing the format the primary reader reads best.
 - **A comment adjacent to a declaration *is* its documentation.** No separate `///` form. A blank
   line between comment and declaration makes it an ordinary comment. This is Go's rule, proven at
-  ecosystem scale, and it saves a form from the budget.
+  ecosystem scale, and it saves a form from the budget. Its shape is spec § 1's: a first sentence
+  that stands alone, then one `` - `name`: `` line per parameter in the signature's order; a `test`
+  with a comment directly above it, titled with a function's name and a colon, is that function's
+  example. `heroes doc` prints a module's reference from them and refuses a comment whose parameter
+  lines do not name each parameter once, in order (M-rebel-library's decisions 13 and 22; panel
+  253's R2).
 - `##` is a section heading — reads as both "comment plus markdown h2" and, visually, as a heading.
 - The compiler reuses doc comments in `???` output, in error messages, and in `outline`.
 - Entry point: `function main()`.
@@ -2604,16 +2633,17 @@ obtain the identical stated benefit with **no second test mechanism**: the examp
 file where tests live, and the doc tool pulls it into the prose. That is the direction Part 6
 already chose in writing — *"`heroes doc` generates the document instead — one direction only"*. **A
 doctest reverses that arrow; a documented test block extends it**, and the form that returns is
-therefore the second one, homed at **M-doc-generator**, which is also the missing consumer: no
-`heroes doc` exists today, so a doctest would be the only reader of a doc fence.
+therefore the second one, which `heroes doc` reads (panel 253's R2): a `test` with a comment directly
+above it, titled with a function's name and a colon, is printed as that function's example, so a
+fence in a doc comment would be a second reader's text beside a tool that already reads the tests.
 
 **Return conditions, falsifiable, any one of which reopens it**: `grep -rn '^test "' selfhost/`
 falls from **641 to ≤ 591** under a candidate implementation with the suites green and
 `heroes fmt selfhost/parse/group.hero` byte-identical · a grep for comment fences finds **four or
 more whose first body line is not a declaration keyword**, today zero of one · **≥ 50 real fences**
 exist and `heroes mutate` shows them raising the `selfhost/` kill rate by **≥ 1 point** ·
-M-doc-generator ships the Go/D form and the question becomes whether a fence adds anything it does
-not. **If it ever enters**: route R1 only (a second bounded pass over the doc spans producing a
+`heroes doc` reads the Go/D form, and the question is whether a fence adds anything it does not.
+**If it ever enters**: route R1 only (a second bounded pass over the doc spans producing a
 synthetic `test_decl`, ~370-420 lines and zero exhaustive-match arms; the lexer route is vetoed,
 because it contradicts `selfhost/scan.hero:83-85`'s written invariant that comments never influence
 terminator insertion), the declaration-shaped fence decided in the specification's own text rather
@@ -2711,8 +2741,7 @@ none of the 496 tracked programs binding a header; the conservative alternative,
 leaving six words raw, is the sitting's record for the author.
 
 ***The contextual words are one family, and this is its rule*** (panel 234's R8, ratified
-2026-11-06, on question (vii) of M-core-packages' page; panels 094, 109 and 114 had each stated a
-part of it). A word the compiler reads in one position and nowhere else is a contextual word, never
+2026-11-06; panels 094, 109 and 114 had each stated a part of it). A word the compiler reads in one position and nowhere else is a contextual word, never
 a keyword (panel 109, of `owned`), and a name everywhere else, so a program may still call anything
 `owned` or `tag`: panel 234's critic bound POSIX `link` as `extern function link(...)` and ran it,
 and ran fields and parameters named `tag`, `owned`, `when`, `rest`, `zero` and `lent`. The family is
@@ -3607,7 +3636,7 @@ in `tests/golden/`; where it is a measurement, it belongs in `docs/measurements/
 | `private` on a top-level declaration, hiding it from every other module | **refused because its own hinge expired and its ancestry is for another form** — Part 7 item 14 until panel 141, 2026-09-13, where it was costed a second time and no seat supported the costed form. Panel 033 deferred it in 2026-08-12 on *"one whole-program translation unit gives visibility no linkage consequence"*, and **M-separate-compilation landed 2026-08-26**: the compiler emits 157 translation units and a never-called helper takes external linkage. The premise is gone and the conclusion survives anyway, because reachability pruning already leaves a neighbouring unit zero prototypes for that helper — so what the keyword adds is `static`, which is performance, a Part 2 non-goal. §1.7's subtraction is **zero**; the cost is ~90-110 lines in 9-10 files, re-priced against `partial`, the identical shape, measured at 100 lines across 24 files. **The ancestry cited for it is for a different form**: Modula-2, Oberon, Nim, Go, Zig and Erlang all default to hidden and **none marks hiding** — four mark exporting on the declaration, one uses a list, one uses the name — so a `private` keyword on a default-visible language has no ancestor in that set; and both reversal citations are wrong as cited, Rust RFC 0001 being about struct fields. **The direction was left to a count and the count cannot decide**: three methods read 49.5%, 50% and 50% private-able of 1868 declarations, where the 42% of 2026-08 was another method on a pre-port tree in another language. **The falsifier**: M-selfhost-probe reporting a blockage that needs visibility · a measured Part 11 effect · a `build/tu-*` symbol collision the mangler cannot prevent · or a demonstration that `static` on private definitions closes a **robustness** class (§1.12) rather than a performance one, which outranks compiler size and would be funded at once. What returns instead is a rule with no keyword, named under Part 7 item 14 |
 | A `raw` module, where every operation that breaks the language's guarantees would live, so a file is dangerous only by importing it (Oberon's `SYSTEM`, Modula-3's `UNSAFE`) | **refused because this document had already ruled against its premise, in this document** — Part 7 item 11 until panel 140, 2026-09-13. §4.10 names the exception in so many words, *"§4.19's `ptr`/`cstr` sits outside the guarantee"*, while Part 9 says everything breaking the guarantees goes in `raw`, **pointers first**; §1.11 decided between them before either was written, because a language with no standard library puts a pointer in **every** binding and a mark every binding carries carries no information. Measured: **56** extern declarations mention `ptr` across 37 files, while `ptr` escapes a group in a program's type position **11 times in 2 files**. **Re-measured 2026-09-14 at panel 146: the escape figure is now ZERO** — the 11 reproduces exactly at `00fb6c01`, the handle form took nine of them and the narrowing of `@tail` to `cstr` took the last two, so this refusal is stronger than when it was written and the row says so. The declaration figure is corrected as a **question**: its unit measures 58 across 24 files at that commit and 38 across 24 today, so the sentence's two halves were counted with different rulers and neither was written down (Part 9's own restatement of this row carries the full re-measurement). §1.7's subtraction is **zero** — the region deletes nothing, since the FFI keeps `ptr` in the core — and what it would add is core by §1.7's own test: `use X` resolves to a file on disk, so a qualified, conditional pseudo-module is a third kind of name the resolver has never had, ~100 lines across seven sites with **five of them already at their stop-on-growth ceiling**, while the operations themselves are reachable as Tier-1 builtins at **3 files**. The reader's seat found the sharper objection: `raw.load_u8` would **remove** a guarantee rather than fence a danger, since the same read through `[u8]` **aborts** at §4.13's bounds rule. And the language already implements the principle **better than the module would**: `cstr_in_a_record` and `pointer_element` confine by declaration rather than by import, cannot be renamed away as `use raw as x` could, and reach a `ptr` in a file with no `extern` group at all. **The falsifier**: a program on the §1.0 closure list, or a §4.19 ladder binding, needing a load, a store or a cast that **cannot** be written as a declaration-level builtin — so that the import line does work no annotation can do |
 | A variant's case as a value (`.product` alone, meaning the function that builds one) | **refused because the row's own justification names a parser this repository has never had** — Part 7 item 9 until panel 138, 2026-09-13, where every testable clause of it was measured false: the compiler's expression parser has been precedence climbing since the hour it was written, the `term`/`expression` pair is one example program written twice, the names that differ are three or four rather than two, and the unification the row promises **would not compile even with the feature granted**, because a function type cannot carry `@` and the sub-parser takes one. §1.7's subtraction is **zero**: a scan of every `.hero` in the tree for a function whose whole body is `return .case(...)` finds none in `selfhost/` and none in `examples/`. The cost is core by §1.7's own test — a case lowers to a `.construct` shape, so **no C function exists whose address a case value could take**, and `selfhost/emit/callback_guard.hero:77-82` indexes the thread guard **by declaration**, which a synthesised constructor has none of, so the guard cannot be attached (§1.12). Two files it must touch sit at exactly their DECIDED ceiling. The spelling also contradicts §4.5, which already makes `.plus` a value, so one bare form would mean a value or a nullary function depending on the expected type; and §4.3's *a function value compares as an address* would silently replace structural `==` for a stored case. Precedent runs against it: **OCaml refused for 25 years** and stalled on exactly this language's case — *"curried, tupled, or labelled"* — **Swift ships it and drops the labels** (SE-0111 forbids them in a function type) where this draft keeps them, and **Scala 3 un-shipped it and recommends the hand-written wrapper**. **The falsifier**: a corpus program where a variant constructor must be chosen at run time from data that is not itself a variant case already in scope, so no exhaustive `match` can dispatch it — **or** three or more one-line constructor wrappers passed as values in `selfhost/` itself, which reads zero today. What returns instead is `Expr::product` on the `::` operator, named under Part 7 item 9 |
-| Traits / interfaces (a named set of functions a type supplies, and a generic constrained to types that supply it) | **refused because the hole it fills is two operations wide and the corpus wants one of them** — Part 7 item 8 until panel 137, 2026-09-13. Measured that day, eight cases compiled: a generic needing two operations on one type parameter works, `==` on a type parameter over a user record works, a `{A: i64}` map key works, a recursive generic works, and a **cross-module generic `sort_by` works** — because §4.12's generics are unconstrained and §4.8's top-level functions are values, so the operation is passed explicitly. Only `<` on a type parameter, `sort([A])` and `print`/`to_str` on one are refused, and the reason is Part 5's descriptor pass, which generates `copy`, `drop`, `eq` and `hash` per reachable type and simply has no `ord` and no `show`. **The corpus does not want them**: all 26 `sort(` sites in `selfhost/` sort `[str]` from `keys(m)` and **none** sorts a record; `selfhost/` holds **zero** generic functions in 59,511 lines. The cost is **900-1400 lines**, two `DeclKind` arms against **219 enumeration sites in 53 modules**, and **coherence has no home** — `selfhost/resolved.hero` keys names `{module: {name: decl}}` precisely because two modules may each declare `Point`, and `ir/mono.hero`'s `Instance` carries no witness field. §1.7's subtraction returns **zero**, and what the four hand-written sorts actually want is a library function: `sort_by` is the seventh row of a table that already ships six. The strongest argument for traits — coherence, the one-canonical-instance guarantee — **evaporates under unconstrained generics**, because no site exists at which a container calls a user operation behind the programmer's back. Precedent: C++ voted concepts in (2008) and out (2009), returning eleven years later deliberately minimal. **The falsifier**: a compiled program on the §1.0 closure list that a passed function cannot express — heterogeneous dispatch over a collection whose element types are unknown where it is built, shown not to be carriable by a variant — **or** a decision to admit constrained generics, the day of which makes the coherence argument live and reopens this row. **Corrected 2026-11-06** (panel 234's R13, ratified that day; issue 1154): the sentence on `sort_by` is withdrawn. Panel 137's adoption of `sort_by` into the library never met panel 097's condition 5, so a stable sort by a caller's order is a function of the package `core/slices`, not a built-in and not a package named `sort`, a `use` binding a built-in's name being refused (panel 234's R3, feature 2299). Of the four hand-written sorts, `selfhost/ir/verify.hero` and `selfhost/resolve/cycles.hero` now call the built-in `sort`, `selfhost/resolve/constant_body.hero` calls `stable.order` (defect 363), and one insertion sort remains, `selfhost/modules.hero`'s, by a span's start, an `i64` key `stable.order` takes (read 2026-11-06). |
+| Traits / interfaces (a named set of functions a type supplies, and a generic constrained to types that supply it) | **refused because the hole it fills is two operations wide and the corpus wants one of them** — Part 7 item 8 until panel 137, 2026-09-13. Measured that day, eight cases compiled: a generic needing two operations on one type parameter works, `==` on a type parameter over a user record works, a `{A: i64}` map key works, a recursive generic works, and a **cross-module generic `sort_by` works** — because §4.12's generics are unconstrained and §4.8's top-level functions are values, so the operation is passed explicitly. Only `<` on a type parameter, `sort([A])` and `print`/`to_str` on one are refused, and the reason is Part 5's descriptor pass, which generates `copy`, `drop`, `eq` and `hash` per reachable type and simply has no `ord` and no `show`. **The corpus does not want them**: all 26 `sort(` sites in `selfhost/` sort `[str]` from `keys(m)` and **none** sorts a record; `selfhost/` holds **zero** generic functions in 59,511 lines. The cost is **900-1400 lines**, two `DeclKind` arms against **219 enumeration sites in 53 modules**, and **coherence has no home** — `selfhost/resolved.hero` keys names `{module: {name: decl}}` precisely because two modules may each declare `Point`, and `ir/mono.hero`'s `Instance` carries no witness field. §1.7's subtraction returns **zero**, and what the four hand-written sorts actually want is a library function: `sort_by` is the seventh row of a table that already ships six. The strongest argument for traits — coherence, the one-canonical-instance guarantee — **evaporates under unconstrained generics**, because no site exists at which a container calls a user operation behind the programmer's back. Precedent: C++ voted concepts in (2008) and out (2009), returning eleven years later deliberately minimal. **The falsifier**: a compiled program on the §1.0 closure list that a passed function cannot express — heterogeneous dispatch over a collection whose element types are unknown where it is built, shown not to be carriable by a variant — **or** a decision to admit constrained generics, the day of which makes the coherence argument live and reopens this row. **Corrected 2026-11-06** (panel 234's R13, ratified that day; issue 1154): the sentence on `sort_by` is withdrawn. Panel 137's adoption of `sort_by` into the library never met panel 097's condition 5, so a stable sort by a caller's order is a package's function and not a built-in, Rebel's `lists.sort_by` among them, a `use` binding a built-in's name being refused (feature 2299). Of the four hand-written sorts, `selfhost/ir/verify.hero` and `selfhost/resolve/cycles.hero` now call the built-in `sort`, `selfhost/resolve/constant_body.hero` calls `stable.order` (defect 363), and one insertion sort remains, `selfhost/modules.hero`'s, by a span's start, an `i64` key `stable.order` takes (read 2026-11-06). |
 | Closures that capture | **refused on cost alone**, which this Part's own preamble licenses and §1.1 makes legitimate by making simplicity the ceiling — Part 7 item 1 until panel 119, 2026-09-08. **282 exhaustive-match arms in 74 of 190 modules**, five DECIDED file ceilings breached, no legal home for the parser, **+118 spec tokens** against 70 free with six removals priced and none admissible, and four **compiled** corruption classes at the C boundary. **The falsifier**: a program on the §1.0 closure list, or a measured Part 11 effect, that a named top-level function cannot express — *together with* a representation, written down and compiled, in which a capturing closure has one type per signature, lets the ownership pass decide release from the type alone with no runtime descriptor pointer, and keeps eight bytes at every `extern` position. The paragraph below the table carries the measurements, and the **capture-free** narrowing is named there as the form that returns |
 | A releaser named on a HANDLE TYPE, fired at scope exit — `record Stmt tag sqlite3_stmt released sqlite3_finalize`, Vala's `free_function` in this language's spelling | **refused because ownership is a property of the CALL and not of the type, so the mark cannot know whether this handle was given or lent** (panel 147, 2026-09-14, M-cleanup-verdict; the census is `docs/measurements/030`). **This row refuses the AXIS and not the spelling**, which is why it is here rather than deferred: the same type is handed back owned by one C function and borrowed by another, and the ffi seat compiled it — `sqlite3_db_handle` gives a `sqlite3 *` the caller must not close, `borrowed == owned: true`, and with the release in place the program printed **0 rows where the table holds 3, exit 0, ASan silent**. `sqlite3_next_stmt` is the same shape, and it is the function the milestone's own census had used. The compiler seat cast the sitting's one formal veto from the other end: the single line the sweep would add, inserted by hand into the emitted C of the shipped binding's `opened()`, made the next statement answer **`rc = 21`** — `SQLITE_MISUSE`, the connection closed before its first use — at exit 0, with the sanitizer silent because the object is freed inside system libsqlite3 while a control in the same session fired `heap-use-after-free` at 134. **So the form trades a leak for a silent wrong answer**, which §1.12 and CLAUDE.md § Precedence rank 3 make a refusal rather than a price. The spec-warden measured the yield independently and it is **zero**: 22 of the 23 escaping paths acquire through a Heroes wrapper in another module, so the scope that acquires is not the scope that leaks, and the form's own *may not be returned or stored* would refuse the reference binding at `examples/ledger/db/sqlite.hero`'s `opened` and `prepared` — write the mark and the corpus stops compiling, omit it and nothing is checked, at +80 vendored tokens. **The rule was already written and three seats reached it the expensive way**: this document has placed an FFI lifetime fact four times and never once on a type — `owned` on a RESULT, `lease` on a DECLARATION'S INITIALISER, `consumes` on a PARAMETER POSITION, the `cstr` lend on an EXPRESSION'S POSITION — and CLAUDE.md §11's *a narrowing asks the value, never the world* settles it before any C is compiled. **Precedent is real and does not save it**: Vala ships exactly this, `free_function = "sqlite3_finalize"` on `sqlite3_stmt` in the GNOME binding, alive twenty years — and Vala pays for it with `owned`/`unowned` on every reference, which is the per-call fact this row says is missing, levied everywhere instead of where it is created. **The falsifier**: a rule, compiled, by which a type-keyed releaser is suppressed for a borrowed instance **without** the binding author marking the producing call — that is, a header-derivable signal separating a function that gives ownership from one that lends it. Panel 139 measured that no such signal exists in C headers (`sqlite3_column_count` is not const-qualified, so a mutating step and a pure read have the identical signature); produce one and this row becomes a cost argument. **What this row does NOT refuse**: a scope-bound release as such. Panel 147's R4 adopts one, marked on the acquiring CALL, and it has its own milestone |
 | An INFERRED release obligation — the compiler deduces that a call hands a handle over because the binding elsewhere declares a releaser for that type, so no mark is written on the acquiring call | **refused because twelve of nineteen real headers make it wrong, and the wrongness it produces is a compelled free** (panel 148, 2026-09-14, M-marked-acquisition; ratified 2026-09-14). **The count is the refusal and it was taken from headers rather than argued**: in twelve of nineteen libraries surveyed, the same library declares BOTH a releaser for a type AND a function handing back a *borrowed* instance of that same type, so an inference keyed on *this type has a releaser* marks the borrowed one too. `SSL_get0_peer_certificate` and `SSL_get1_peer_certificate` are **adjacent lines** in `openssl/ssl.h`, differ by one digit in their names, return the identical C type, and are opposite in ownership — and a probe taking both through one function type compiles with **zero warnings under `-Weverything`**, so clang cannot separate them either. The ffi seat then stopped arguing and reproduced the corruption **twice** against real libraries. **What makes this a refusal and not a price** is the direction of the error: an inference that is wrong does not omit a release, it COMPELS one the program does not own, which is §1.12's corruption rather than §1.12's leak, and CLAUDE.md § Precedence rank 3 settles it. **The falsifier, and it is the ffi seat's own words**: a rule, derivable from header text alone, separating `SSL_get0_peer_certificate` from `SSL_get1_peer_certificate`, with a measured false-acquire rate of **zero** across the twelve. Produce one and this row becomes a cost argument. **What this row does NOT refuse**: the obligation itself. It is written rather than inferred, and `acquires <releaser>` names the function that ends the life — panel 148's R2, in the language since 2026-09-14 |
@@ -3876,8 +3905,8 @@ are *on* the closure list.
    (a) `heroes measure` on a non-generic type spelling reads **12 or more tokens** and `grep -c`
    finds it **10 or more times in one file** of `selfhost/` or `examples/`, today's maximum
    being 6. (b) A commit in `selfhost/` whose diff changes one structural type spelling at
-   **8 or more sites** — Go's own warrant, scored by `git log -p`. (c) Part 7 item 10's sitting
-   at M-core-packages finds a header whose width vocabulary needs a name, which makes the form
+   **8 or more sites** — Go's own warrant, scored by `git log -p`. (c) Part 7 item 10's sitting,
+   panel 234, finds a header whose width vocabulary needs a name, which makes the form
    compiler-need rather than convenience — and that sitting, not this one, decides item 10.
    Registered as an observation that pays nothing under §1.6: when metric 2 first runs, a
    specification with `alias` beats one without by fewer than 1 task in 20 on first-try
@@ -3889,14 +3918,14 @@ are *on* the closure list.
    `8cd394643` (defect 267) removes 8 lines spelling `{str: {str: bool}}` for the record
    `name_rows.NameSets`, and `44c500b40` (defect 530) respells `[Dead]` as `[flow_groups.Dead]` on
    10 lines, a type moved between modules; both were repaired by a record and a qualified name,
-   with no alias. (a) reads 6 at most, as before. Issue 2209 takes item 5 to the item-10 sitting at
-   M-core-packages, which rules whether (b) measures what it was meant to.
+   with no alias. (a) reads 6 at most, as before. Issue 2209 takes item 5 to the item-10 sitting,
+   panel 234, which rules whether (b) measures what it was meant to.
    **Ruled 2026-11-06** (panel 234's R10, ratified that day; issue 2209): **(b) does not measure
    what it was meant to, and is replaced.** It counts a refactor's size, while Go's warrant is
    gradual repair, a type moved between packages whose users cannot all be changed in the commit
    that moves it; inside one repository every user can be, so (b) was met twice with no demand. It
-   becomes **(b') after `v1.0.0`, a type of a core package moved to another package while programs
-   outside this repository spell its old name**; (a) and (c) are kept, (c) not having fired at that
+   becomes **(b') after `v1.0.0`, a type of a package this project publishes, Rebel's, moved to
+   another package while programs outside this repository spell its old name**; (a) and (c) are kept, (c) not having fired at that
    sitting (item 10 below). Item 5 stays deferred and not refused, since (b') can come true; before
    `1.0.0` the one use that would warrant the form, an old spelling kept beside the new, is refused
    by CLAUDE.md § 2 (the spec-warden).
@@ -3911,8 +3940,8 @@ are *on* the closure list.
    — it holds an `extern` group, which is a Declaration and not a Statement, so the form would stop
    the compiler compiling itself on the day it landed. **The form that returns is not the doctest**
    but the **documented test block**, Go's and D's shape, which obtains the same benefit with no
-   second test mechanism and runs in the direction Part 6 already chose; its home is
-   **M-doc-generator**. The four return conditions and what an ENTERS verdict would compel are under
+   second test mechanism and runs in the direction Part 6 already chose; `heroes doc` reads it
+   (panel 253's R2). The four return conditions and what an ENTERS verdict would compel are under
    §4.18, beside the paragraph this line summarises.
 7. **String interpolation** — **ENTERS**, ruled 2026-09-09 (`M-interpolation-verdict`; panel 121,
    ratified the same day; the spelling the author's): `f"line {n}: {word}"`, the brace active only
@@ -4026,9 +4055,9 @@ are *on* the closure list.
     whose layout must match its header's, since a C `long` is four bytes on Windows and eight on the
     other legs. **The falsifier is therefore**: a program the closure list or §4.19's ladder needs
     that declares a C `long` or `unsigned long` **field** in a `.hero` file and must build on all
-    four CI legs. Produce one and this row is wrong. The one such field the core packages meet,
-    `struct timespec`'s `tv_nsec`, stays in the platform layer's C (panel 234's R6), which hands the
-    clock across as `int64_t` nanoseconds.
+    four CI legs. Produce one and this row is wrong. Such a field a package meets, `struct timespec`'s `tv_nsec`
+    first, stays in the platform layer's C (panel 234's R6), which hands the clock across as
+    `int64_t` nanoseconds.
     **Corrected 2026-11-10** (panel 243's R1, ratified 2026-11-11, defect
     2421; the spec-warden's wording widened to the sitting's whole scope): a parameter's shared
     spelling holds through a prototype, and past a header's `...` there is none. C converts nothing
@@ -4070,8 +4099,8 @@ are *on* the closure list.
     document had already ruled against Part 9's premise, in this document, and Part 9 was never
     told**: §4.10 above says *"§4.19's `ptr`/`cstr` sits outside the guarantee"* while Part 9 says
     *"everything that breaks the guarantees goes in `raw`: pointers"*, and §1.11 decided which one
-    won — a language whose founding constraint is that everything comes from C cannot put pointers
-    behind an import. Both of the item's stated preconditions **landed on 2026-08-12** and woke
+    won — a language whose founding constraint is that everything a program reaches of the platform
+    comes from C cannot put pointers behind an import. Both of the item's stated preconditions **landed on 2026-08-12** and woke
     nobody. And the escapes it would bound are **eleven, in two files**, against **56** extern
     declarations mentioning `ptr` across 37. The correction to Part 9 itself is beneath that Part.
 12. ~~**Inline blocks (Kotlin-style)** — `repeat 3` / `with file("x")` where the last parameter is a
@@ -4706,8 +4735,8 @@ fourth item of M-deferral-ledger whose stated condition expired in silence. **Th
 false of this language, and the reason is written two thousand lines up in this same document.**
 §4.10 names the exception in so many words — *"§4.19's `ptr`/`cstr` sits outside the guarantee"* —
 while the paragraph above says everything breaking the guarantees goes in `raw`, **pointers first**.
-§1.11 decided between them before either was written: everything comes from C, so a pointer appears
-in every binding, and a mark every binding carries carries no information. Measured 2026-09-13:
+§1.11 decided between them before either was written: everything a program reaches of the platform
+comes from C, so a pointer appears in every binding, and a mark every binding carries carries no information. Measured 2026-09-13:
 **56** extern declarations mention `ptr` across **37** files, and `ptr` escapes an `extern` group in
 a program's type position **11 times in 2 files**, both of them SQLite bindings — so the region
 would mark almost everything and bound almost nothing.
