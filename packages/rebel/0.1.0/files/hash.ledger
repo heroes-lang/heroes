@@ -75,7 +75,7 @@ capability hash/crc64-polynomial  a CRC-64 by a polynomial of the caller's
   note    the polynomial is the `crc64_poly` case's `poly`, its bits reversed as Go's `MakeTable` takes it
 
 capability hash/steps  a checksum or hash fed piece by piece, its value read at any moment
-  heroes  hash.start32, hash.update32, hash.update_text32, hash.start64, hash.update64, hash.update_text64
+  heroes  hash.start32, hash.update32, hash.update32_text, hash.start64, hash.update64, hash.update64_text
   go      crc32.New, crc32.NewIEEE, crc64.New, adler32.New, hash.Hash32.Sum32, hash.Hash64.Sum64
   rust    -
   python  -
@@ -116,7 +116,7 @@ capability hash/xxh64  xxHash's XXH64 of bytes or of text, with a seed
   note    added 2026-11-19 (repairs 6), so that `compress/zstd` holds no copy of its own (a frame's checksum is the XXH64's low 32 bits); held as XXH32 is, every XXH64 row of xxHash's sanity check and Python's `xxhash` for the seeds 0 and 2^64 - 1; XXH3 and XXH128, which Python's `xxhash` also offers, are in none of the three standard libraries and no format Rebel reads checks with them
 
 capability hash/xxh-steps  an XXH32 or an XXH64 fed piece by piece, its value read at any moment
-  heroes  hash.Xxh32, hash.start_xxh32, hash.update_xxh32, hash.update_text_xxh32, hash.Xxh64, hash.start_xxh64, hash.update_xxh64, hash.update_text_xxh64
+  heroes  hash.Xxh32, hash.start_xxh32, hash.update_xxh32, hash.update_xxh32_text, hash.Xxh64, hash.start_xxh64, hash.update_xxh64, hash.update_xxh64_text
   go      -
   rust    -
   python  -

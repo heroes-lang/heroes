@@ -1,5 +1,5 @@
 /**
- * Every program under `examples/`, as the pages need it.
+ * Every program under `examples/` and `examples-rebel/`, as the pages need it.
  *
  * The site shows the corpus itself rather than a copy of it, so this module is
  * the whole reading: it discovers the programs the way the net does, by looking,
@@ -8,10 +8,22 @@
  * a directory holding a `main.hero` IS a program, so a program joins by
  * existing and cannot be forgotten. One directory is not a program
  * directory: `gallery/`, because each of its files is its own program. The
- * local static index the programs' catalogues read the core packages from
- * (panel 235's R15) stands beside `examples/` at the repository's root,
- * `packages/` (panel 238's R10); it is checked for its shape on every build and
- * shown on no page of its own.
+ * local static index (panel 235's R15) stands beside `examples/` at the
+ * repository's root, `packages/` (panel 238's R10), and holds Rebel's tree
+ * today; it is checked for its shape on every build, and Rebel's page and its
+ * reference pages read it (`reference.ts`).
+ *
+ * **The examples are two groups** (`.claude/rules/rebel.md`, decision 7 of
+ * M-rebel-library): `examples/` uses no library, and `examples-rebel/` holds
+ * the programs written with Rebel. The second group's programs are the
+ * `.hero` files at the top of `examples-rebel/` that are no package's driver,
+ * and the folders there holding a `main.hero`, by `examples/`'s own rule; a
+ * driver, `reach_<package>.hero` (`examples-rebel/README.md` § A2), is the
+ * program a package's own tests run through, and its package is read on its
+ * reference page, not here. Their slugs open `rebel/`, so no name of one group
+ * can be read as the other's, and **a twin**, a program of one group whose
+ * name a program of the other bears, is shown with a link to the other, the
+ * same program with Rebel and without.
  *
  * A program that uses a package carries two more kinds of file, and each is
  * read as what it is: `heroes.toml`, its catalogue, a document shown beside the
@@ -45,8 +57,14 @@ import { splitExpectation, outputLines, type Expectation } from './expectation.t
 const EXAMPLES = 'examples';
 const GALLERY = 'examples/gallery';
 
-/** The local static index of the core packages (panel 235's R15), at the root (panel 238's R10). */
+/** The local static index (panel 235's R15), at the root (panel 238's R10). */
 const INDEX = 'packages';
+
+/** The programs written with Rebel, the second group. */
+const REBEL = 'examples-rebel';
+
+/** A package's driver in `examples-rebel/` (README § A2). */
+const DRIVER = /^reach_[a-z0-9_]+\.hero$/;
 
 /** A program's catalogue, beside its `main.hero` (spec § 1). */
 const CATALOGUE = 'heroes.toml';
@@ -71,6 +89,9 @@ function isDocument(path: string, dir: string): boolean {
 const PROGRAM_FLOOR = 44;
 const GALLERY_FLOOR = 10;
 
+/** The drivers `examples-rebel/` held when it was first read: 160. */
+const DRIVER_FLOOR = 150;
+
 export interface SourceFile {
   /** Repository-relative path, which is what a figure's `data-src` carries. */
   path: string;
@@ -83,7 +104,7 @@ export interface SourceFile {
 
 /** One tree `heroes add` placed under a program's `heroes.packages/`. */
 export interface FetchedPackage {
-  /** The catalogue's entry that names it, `core`. */
+  /** The catalogue's entry that names it, `rebel`. */
   name: string;
   version: string;
   /** The tree's folder, repository-relative. */
@@ -93,9 +114,14 @@ export interface FetchedPackage {
 }
 
 export interface Example {
-  /** `json`, or `gallery/03-fallible`. The URL is `/examples/<slug>/`. */
+  /** `json`, `gallery/03-fallible` or `rebel/jq`. The URL is `/examples/<slug>/`. */
   slug: string;
-  kind: 'program' | 'gallery';
+  /** A folder holding a `main.hero`, one file of the gallery, or one file of `examples-rebel/`. */
+  kind: 'program' | 'gallery' | 'file';
+  /** Which group it is in: the programs with no library, or those written with Rebel. */
+  group: 'examples' | 'rebel';
+  /** The other group's program bearing its name, where one does. */
+  twin: string | null;
   /** The directory the fingerprint is taken over. */
   dir: string;
   /** `main.hero` first, then the other modules in bytewise order. */
@@ -281,7 +307,7 @@ function checkIndex(): void {
 
 function buildExample(
   slug: string,
-  kind: 'program' | 'gallery',
+  kind: 'program' | 'gallery' | 'file',
   dir: string,
   heroPaths: string[],
   otherPaths: string[],
@@ -330,9 +356,11 @@ function buildExample(
     noOutputBecause =
       kind === 'gallery'
         ? 'gallery'
-        : groups.some((group) => group.header === 'curl/curl.h')
-          ? 'machine'
-          : 'unrecorded';
+        : kind === 'file'
+          ? 'rebel'
+          : groups.some((group) => group.header === 'curl/curl.h')
+            ? 'machine'
+            : 'unrecorded';
   }
 
   // What the program reads is asked of the program, never of its folder: a file
@@ -344,7 +372,7 @@ function buildExample(
   const named = new Set(args);
   const headers = new Set(groups.map((group) => `${dir}/${group.header}`));
   const cataloguePath = `${dir}/${CATALOGUE}`;
-  const catalogue = kind === 'program' && otherPaths.includes(cataloguePath) ? inputFile(cataloguePath, dir) : null;
+  const catalogue = kind !== 'gallery' && otherPaths.includes(cataloguePath) ? inputFile(cataloguePath, dir) : null;
   const fetched = fetchedOf(dir, fetchedPaths, catalogue === null ? null : readText(cataloguePath));
   const inputs: SourceFile[] = [];
   for (const path of otherPaths) {
@@ -370,6 +398,8 @@ function buildExample(
   return {
     slug,
     kind,
+    group: slug.startsWith('rebel/') ? 'rebel' : 'examples',
+    twin: null,
     dir,
     modules,
     inputs,
@@ -389,7 +419,7 @@ function buildExample(
     writesFile: vocabulary.has('write_file'),
     usesArgs: vocabulary.has('args') || vocabulary.has('args_checked'),
     fingerprint: fingerprintOf(dir, allPaths),
-    reproduce: reproduceCommand(dir, kind === 'gallery' ? allPaths : null),
+    reproduce: reproduceCommand(dir, kind === 'program' ? null : allPaths),
   };
 }
 
@@ -465,8 +495,75 @@ export function examples(): Example[] {
     );
   }
 
-  cached = [...programs, ...gallery];
+  const rebel = rebelPrograms();
+
+  // A twin is the same program in the two groups: `examples/<name>/` and a
+  // program of `examples-rebel/` named `<name>`. Each page links the other.
+  for (const one of rebel) {
+    const name = one.slug.slice('rebel/'.length);
+    const other = programs.find((program) => program.slug === name);
+    if (other !== undefined) {
+      one.twin = other.slug;
+      other.twin = one.slug;
+    }
+  }
+
+  cached = [...programs, ...gallery, ...rebel];
   return cached;
+}
+
+/**
+ * The programs written with Rebel: each `.hero` at the top of `examples-rebel/`
+ * that is no driver, and each folder there holding a `main.hero`. The folder's
+ * README and its catalogue are documents; any other file at its top, or a
+ * folder holding no `main.hero`, is a shape this module does not know, and a
+ * build error.
+ */
+function rebelPrograms(): Example[] {
+  const catalogue = `${REBEL}/${CATALOGUE}`;
+  const out: Example[] = [];
+  let drivers = 0;
+  for (const path of walk(REBEL)) {
+    const rest = path.slice(REBEL.length + 1);
+    if (rest.includes('/')) continue;
+    if (rest === 'README.md' || rest === CATALOGUE) continue;
+    if (DRIVER.test(rest)) {
+      drivers += 1;
+      continue;
+    }
+    if (!rest.endsWith('.hero')) {
+      throw new Error(
+        `${path} is at the top of ${REBEL}/ and is none of what stands there: a program, a package's\n` +
+          `  driver \`reach_<package>.hero\`, the README or the catalogue (examples-rebel/README.md § A2).`
+      );
+    }
+    const otherPaths = isFile(catalogue) ? [catalogue] : [];
+    out.push(buildExample(`rebel/${rest.slice(0, -'.hero'.length)}`, 'file', REBEL, [path], otherPaths));
+  }
+  for (const dir of directoriesIn(REBEL)) {
+    if (!isFile(`${dir}/main.hero`)) {
+      throw new Error(`${dir} is a folder of ${REBEL}/ holding no main.hero, so it is no program, and nothing else stands there.`);
+    }
+    const all = walk(dir);
+    const placed = `${dir}/${PLACED}/`;
+    const own = all.filter((path) => !path.startsWith(placed));
+    const hero = own.filter((path) => path.endsWith('.hero'));
+    const entry = `${dir}/main.hero`;
+    out.push(
+      buildExample(
+        `rebel/${dir.slice(REBEL.length + 1)}`,
+        'program',
+        dir,
+        [entry, ...hero.filter((path) => path !== entry)],
+        own.filter((path) => !path.endsWith('.hero')),
+        all.filter((path) => path.startsWith(placed))
+      )
+    );
+  }
+  if (drivers < DRIVER_FLOOR) {
+    throw new Error(`${REBEL}/ holds ${drivers} drivers and the floor is ${DRIVER_FLOOR}: a walk that finds fewer is a broken walk.`);
+  }
+  return out;
 }
 
 /** One example by slug, or a throw naming what exists. */

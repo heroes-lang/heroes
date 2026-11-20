@@ -167,7 +167,7 @@ capability map/by-sorted-key  the smallest key, the largest, and a walk from one
   note    `sort(keys(m))`, as the specification's own example walks a map; `sort` orders numbers, texts and booleans, and never a type parameter, so a key of another kind is ordered by a function of `lists`
 
 capability map/range-of-keys  the entries whose keys lie between two bounds, found without a walk
-  heroes  refused: the language's map finds by hash and keeps insertion order, so it has no index sorted by key to cut; a range is a walk of `sort(keys(m))` with the comparison the key's type has
+  heroes  refused: the language's map finds by hash and keeps insertion order, so it has no index sorted by key to cut; a range is a walk of `sort(keys(m))` with the comparison the key's type has, and a map kept in the order of its keys, Rust's `BTreeMap`, is `containers/ordered`, whose `slots_between` walks a range and `floor_slot` and `ceiling_slot` find the keys around a bound at the cost of the logarithm of the size
   go      -
   rust    BTreeMap::range, BTreeMap::range_mut, BTreeMap::split_off, BTreeMap::lower_bound, BTreeMap::lower_bound_mut, BTreeMap::upper_bound, BTreeMap::upper_bound_mut, btree_map::Cursor, btree_map::CursorMut, btree_map::CursorMutKey
   python  -

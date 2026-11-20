@@ -33,6 +33,13 @@ capability path/list-split  a list of paths such as PATH cut into its paths
   python  -
   note    POSIX's answers are Go's, observed: the empty list holds no path and an empty piece is kept; by Windows' rules a piece in double quotes holds a `;` and the quotes are dropped, unobserved here: Go chooses that reading by build and no reference on this Mac reads a list by Windows' rules
 
+capability path/list-join  a list of paths such as PATH written from its paths
+  heroes  path.join_list, path.join_list_by
+  go      -
+  rust    env::join_paths
+  python  -
+  note    POSIX's refuses a path holding `:`, as Rust's documentation says its join_paths does; by Windows' rules a path holding `;` is written in double quotes, which `path.split_list` reads back, and one holding `"` is refused, the character Rust's documentation names for Windows; Python's `os.pathsep.join` refuses nothing
+
 capability path/clean  the shortest path that names the same place, read as text
   heroes  path.clean, path.clean_by
   go      path.Clean, filepath.Clean
@@ -146,11 +153,11 @@ capability path/volume-kind  which kind of volume a path names
   note    -
 
 capability path/rel  the way from one path to another
-  heroes  path.rel, path.rel_by
+  heroes  path.relative, path.relative_by
   go      filepath.Rel
   rust    Path::strip_prefix, Path::trim_prefix
   python  posixpath.relpath, ntpath.relpath, PurePath.relative_to
-  note    Go's `filepath.Rel`, observed on nineteen pairs: both cleaned, and no way where a base climbs out of a folder the text does not name; Python's `relpath` asks the working folder, which reads the system, and `relative_to` and Rust's `strip_prefix` climb by no `..`, so they are `rel` where `is_under` holds. By Windows' rules volumes and names are compared with ASCII letters' case set aside, and the separator written is `\`
+  note    Go's `filepath.Rel`, observed on nineteen pairs: both cleaned, and no way where a base climbs out of a folder the text does not name; Python's `relpath` asks the working folder, which reads the system, and `relative_to` and Rust's `strip_prefix` climb by no `..`, so they are `relative` where `is_under` holds. By Windows' rules volumes and names are compared with ASCII letters' case set aside, and the separator written is `\`
 
 capability path/is-under  whether a path stands under another
   heroes  path.is_under, path.is_under_by
@@ -300,7 +307,7 @@ capability path/file-url  a path as a `file:` URL
   note    -
 
 capability path/absolute  a relative path made absolute from the working folder
-  heroes  refused: it asks the system where the program stands, so it is `os`'s; what is text in it is `path.join_all` and `path.clean`
+  heroes  refused: it asks the system where the program stands, so it is `fs.to_abs`, beside `fs.resolve`, which follows links too; what is text in it is `path.join_all` and `path.clean`
   go      filepath.Abs
   rust    path::absolute, Path::absolute
   python  posixpath.abspath, ntpath.abspath

@@ -59,24 +59,31 @@ function reverse<T>(xs: [T]) -> [T]
 
     return out
 
-# `xs` with its first `by` elements moved to its end; aborts where `by` is
-# below zero or past the length.
+# `xs` with its first `by` elements moved to its end, `by` counted modulo the
+# length and a negative one turning it the other way, as
+# `containers/deque`'s rotation counts; an empty list stays empty.
 function rotate_left<T>(xs: [T], by: i64) -> [T]
-    assert by >= 0 && by <= xs.len()
-    out: [T] @= xs.slice(from: by, to: xs.len())
+    if xs.len() == 0
+        return xs
+    turn: i64 @= by % xs.len()
+
+    if turn < 0
+        turn @ turn + xs.len()
+    out: [T] @= xs.slice(from: turn, to: xs.len())
     at: i64 @= 0
 
-    while at < by
+    while at < turn
         out @ out.push(xs[at])
         at @ at + 1
 
     return out
 
-# `xs` with its last `by` elements moved to its front; aborts where `by` is
-# below zero or past the length.
+# `xs` with its last `by` elements moved to its front, counted as
+# `rotate_left` counts.
 function rotate_right<T>(xs: [T], by: i64) -> [T]
-    assert by >= 0 && by <= xs.len()
-    return rotate_left(xs, xs.len() - by)
+    if xs.len() == 0
+        return xs
+    return rotate_left(xs, xs.len() - by % xs.len())
 
 ## Tests
 
@@ -131,16 +138,26 @@ test "reverse: several, one, and an empty list"
     assert reverse([1]) == [1]
     assert reverse(nothing) == nothing
 
-test "rotate_left: by some, by none, by the length, and an empty list"
+test "rotate_left: by some, by none, by the length, past it, below zero, the widest counts, and an empty list"
     nothing: [i64] = []
     assert rotate_left([1, 2, 3, 4, 5], 2) == [3, 4, 5, 1, 2]
     assert rotate_left([1, 2, 3], 0) == [1, 2, 3]
     assert rotate_left([1, 2, 3], 3) == [1, 2, 3]
     assert rotate_left(nothing, 0) == nothing
+    assert rotate_left([1, 2, 3], 4) == [2, 3, 1]
+    assert rotate_left([1, 2, 3], -1) == [3, 1, 2]
+    assert rotate_left([1, 2, 3], 9223372036854775807) == [2, 3, 1]
+    assert rotate_left([1, 2, 3], -9223372036854775808) == [2, 3, 1]
+    assert rotate_left(nothing, 5) == nothing
 
-test "rotate_right: by some, by none, by the length, and an empty list"
+test "rotate_right: by some, by none, by the length, past it, below zero, the widest counts, and an empty list"
     nothing: [i64] = []
     assert rotate_right([1, 2, 3, 4, 5], 2) == [4, 5, 1, 2, 3]
     assert rotate_right([1, 2, 3], 0) == [1, 2, 3]
     assert rotate_right([1, 2, 3], 3) == [1, 2, 3]
     assert rotate_right(nothing, 0) == nothing
+    assert rotate_right([1, 2, 3], 4) == [3, 1, 2]
+    assert rotate_right([1, 2, 3], -1) == [2, 3, 1]
+    assert rotate_right([1, 2, 3], 9223372036854775807) == [3, 1, 2]
+    assert rotate_right([1, 2, 3], -9223372036854775808) == [3, 1, 2]
+    assert rotate_right(nothing, -5) == nothing

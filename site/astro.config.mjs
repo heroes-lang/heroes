@@ -11,6 +11,7 @@ import { assertScriptsHonest } from './src/lib/scripts.ts';
 import { assertCrumbsMatchTheNav } from './src/lib/crumbs.ts';
 import { assertTriggersCoverReads } from './src/lib/triggers.ts';
 import { assertColouringLexed } from './src/lib/lexed.ts';
+import { assertReferenceWhole } from './src/lib/reference.ts';
 
 const ORIGIN = 'https://heroes-lang.org';
 
@@ -182,6 +183,7 @@ function priority(pathname) {
   if (path === '/examples/') return 0.8;
   if (path.startsWith('/examples/')) return 0.7;
   if (path === '/why/not/' || path === '/why/measured/') return 0.7;
+  if (path.startsWith('/rebel/') && path !== '/rebel/') return 0.6;
   return path.startsWith('/docs/') ? 0.6 : 0.8;
 }
 
@@ -254,6 +256,24 @@ function triggersAudit() {
   };
 }
 
+// Rebel's reference pages are what `heroes doc` prints for each face, and a
+// face it refuses has none (`src/lib/reference.ts`). So the build's last word
+// is whether every face has its page: the faces still owed, each with how many
+// refusals the compiler gave, end the build red, after every page and every
+// audit above has run, so what the build says of the rest is already said.
+// LISTED AFTER the triggers' audit, which it does not need: it reads only the
+// answers the pages wrote down, and removes them so nothing of them ships.
+function referenceAudit() {
+  return {
+    name: 'heroes:reference',
+    hooks: {
+      'astro:build:done': ({ logger }) => {
+        logger.info(assertReferenceWhole());
+      },
+    },
+  };
+}
+
 export default defineConfig({
   site: ORIGIN,
 
@@ -299,5 +319,6 @@ export default defineConfig({
     lastmodAudit(),
     lexedAudit(),
     triggersAudit(),
+    referenceAudit(),
   ],
 });
