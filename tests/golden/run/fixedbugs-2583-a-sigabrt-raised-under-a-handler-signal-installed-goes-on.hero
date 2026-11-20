@@ -1,0 +1,18 @@
+# Fixed 2026-11-20, defect 2583, lane-signals-2, the author's ruling A of that
+# day, on every platform: a library's handler, installed before `main` by
+# C11's `signal`, notes a SIGABRT and returns, and the program raises one
+# (`fixedbugs-2583-a-library-that-notes-sigabrt-by-signal.h`, C11's alone).
+# Symptom: plain C goes on; on Windows the program died under *the process is
+# dying of SIGABRT, raised by this process*, the runtime's handler there
+# calling the library's and then claiming the signal whatever it had done.
+# Cause: on POSIX, `fixedbugs-2583-a-sigabrt-the-program-sends-itself-...`;
+# on Windows, where no signal comes from another process, a SIGABRT whose
+# handler before the runtime's returned is now let go, and UCRT's `abort`
+# still ends the process itself once that handler returns, only without the
+# runtime's line.
+extern "fixedbugs-2583-a-library-that-notes-sigabrt-by-signal.h"
+    function twin_raise() -> i64
+
+function main()
+    print("noted: ", twin_raise())
+    print("and on")

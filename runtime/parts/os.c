@@ -259,10 +259,22 @@ static LONG WINAPI hero_lease_veh(EXCEPTION_POINTERS *ep) {
 static void (__cdecl *hero_lease_prev_abrt_win)(int) = SIG_DFL;
 static LPTOP_LEVEL_EXCEPTION_FILTER hero_lease_prev_filter = NULL;
 
+/* A SIGABRT WHOSE HANDLER BEFORE US RETURNED GOES ON (the author's ruling A
+ * of 2026-11-20 on defect 2583, *everywhere*, the POSIX arm's
+ * `hero_lease_sent` below). No signal here comes from another process, so
+ * every SIGABRT is the program's own `raise` or UCRT's `abort`: a `raise`
+ * under a library's handler that returns goes on in plain C, and `abort`
+ * ends the process itself once that handler returns, only without this
+ * runtime's line, which is silence over a line that would be false of a
+ * correct program (panel 175's principle). Until then this called the
+ * library's handler and then claimed the signal whatever it had done. */
 static void __cdecl hero_lease_abrt_win(int signum) {
     signal(SIGABRT, hero_lease_abrt_win);
     void (__cdecl *prev)(int) = hero_lease_prev_abrt_win;
-    if (prev != SIG_DFL && prev != SIG_IGN && prev != SIG_ERR && prev != NULL) prev(signum);
+    if (prev != SIG_DFL && prev != SIG_IGN && prev != SIG_ERR && prev != NULL) {
+        prev(signum);
+        return;
+    }
     if (!hero_runtime_spoke && hero_live_held > 0) {
         hero_lease_say_leases_win();
     } else if (!hero_runtime_spoke) {
