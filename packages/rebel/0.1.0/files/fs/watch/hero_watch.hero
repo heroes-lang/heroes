@@ -1,6 +1,6 @@
 # The platform layer's watches, `hero_watch.h`, bound thin: one function per C
 # function, in C's order, each answering what C answers. Rebel's floor of
-# `fs/watch` (`examples/packages/README.md` § 4.1): where a call fails its
+# `fs/watch` (`examples-rebel/README.md` § A2): where a call fails its
 # watch or bell is `nullptr` or its count -1, and `last_error` then the kind;
 # no policy stands here, and the face above it turns every kind into a code.
 #
