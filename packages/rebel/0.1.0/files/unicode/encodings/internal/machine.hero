@@ -5,8 +5,8 @@
 
 use bytes
 use unicode
+use unicode/encodings
 use unicode/encodings/internal/chinese
-use unicode/encodings/internal/codes
 use unicode/encodings/internal/japanese
 use unicode/encodings/internal/korean
 use unicode/encodings/internal/registry
@@ -295,7 +295,7 @@ function shift_start(n: i64) -> Shift
 function writable(n: i64) -> Shift?
     if n == registry.REPLACEMENT
         return fail(
-            code: codes.UNSUPPORTED,
+            code: encodings.UNSUPPORTED,
             msg: "the encoding replacement has no bytes for any character: it exists to read what must not be read"
         )
     return ok(shift_start(n))
@@ -308,7 +308,7 @@ function written(s: str, state: Shift, html: bool, last: bool) -> [u8]?
     at = encode_run(n: state.number, s: s, out: @out, html: html, last: last, set: @set)
 
     if at >= 0
-        return fail(code: codes.UNSUPPORTED, msg: no_bytes(s: s, at: at, n: state.number))
+        return fail(code: encodings.UNSUPPORTED, msg: no_bytes(s: s, at: at, n: state.number))
     return ok(out)
 
 # The message of a character the encoding numbered `n` has no bytes for, at

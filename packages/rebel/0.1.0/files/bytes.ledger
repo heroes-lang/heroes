@@ -6,11 +6,11 @@ capability bytes/from-text  the bytes of a text
   note    Go's is also the conversion `[]byte(s)`, Rust's `str::as_bytes` and Python's `str.encode`, entries outside this area
 
 capability bytes/to-text  the text of bytes that are UTF-8
-  heroes  bytes.to_text
+  heroes  bytes.to_text, built-in validated_bytes
   go      bytes.Buffer.String
   rust    -
   python  bytes.decode, bytearray.decode
-  note    it is the language's `validated_bytes`, failing `not_text`, with a message naming the index where the bytes stop being UTF-8; Go's conversion never fails and Python's `decode` raises without the index in a value
+  note    `bytes.to_text` is the built-in `validated_bytes` with a message that names the index where the bytes stop being UTF-8 and the byte there; it is the language's `validated_bytes`, failing `not_text`, with a message naming the index where the bytes stop being UTF-8; Go's conversion never fails and Python's `decode` raises without the index in a value
 
 capability bytes/to-text-lossy  the text of bytes, what is not UTF-8 replaced
   heroes  bytes.to_text_lossy
@@ -377,7 +377,7 @@ capability bytes/write-escaped  bytes as ASCII text, what is not printable writt
   note    Rust's, observed: `a\t\n\r\\\"\'\x00\x7f\xff z` for the test's bytes
 
 capability bytes/join  lists of bytes made one, a separator between them or nothing
-  heroes  bytes.join_all, bytes.concat
+  heroes  bytes.joined, bytes.concat
   go      bytes.Join
   rust    [T]::join, [T]::concat, [T]::connect
   python  bytes.join, bytearray.join
@@ -538,11 +538,11 @@ capability base64/strict  base 64 read only where its last character leaves no b
   note    the four readers are strict and no lax one is offered, so a text has one reading; the message names the character that a writer would have written instead
 
 capability base64/lines  base 64 written in lines of a width, and read with its line ends
-  heroes  refused: lines are a text's layout; the text is cut with `slice` and its line ends taken out with `strings.replace_all` before a reader, which skips nothing so that a text has one reading
+  heroes  mail.format_base64_lines, mail.parse_base64_lines
   go      base64.Encoding.DecodeString, base64.Encoding.Decode, base64.Encoding.AppendDecode
   rust    -
   python  base64.encodebytes, base64.decodebytes, base64.b64encode, base64.b64decode, binascii.b2a_base64, binascii.a2b_base64
-  note    Go's decoders skip "\r" and "\n"; Python's `encodebytes` writes lines of 76 characters
+  note    Go's decoders skip "\r" and "\n"; Python's `encodebytes` writes lines of 76 characters. Lines are MIME's layout (RFC 2045), so they are `mail`'s, whose reader skips white space anywhere; `bytes`' four readers skip nothing, so that a text has one reading
 
 capability base64/another-alphabet  base 64 in an alphabet or with a padding character the caller gives
   heroes  refused: RFC 4648 defines two alphabets and `bytes` reads and writes both; another one is a format of its own, which a value naming a form would let every call misread
@@ -580,11 +580,11 @@ capability quoted-printable/write-and-read  bytes as quoted-printable and back
   note    MIME's, RFC 2045; not written in this round
 
 capability checksum/crc  the cyclic redundancy check of bytes, 32 bits or 16
-  heroes  pending
+  heroes  hash.crc32, hash.crc32c
   go      -
   rust    -
   python  binascii.crc32, binascii.crc_hqx
-  note    Go's is `hash/crc32`, beside its hashes, and Rebel has no package of hashes yet; not written in this round
+  note    Go's is `hash/crc32`, beside its hashes, and so is Rebel's: `hash` holds CRC-32 and CRC-32C, and CRC-16 by the CCITT polynomial, Python's `crc_hqx`, is that ledger's hash/crc16, pending there
 
 capability binary/write  an integer of a fixed width written as bytes, the highest byte first or the lowest
   heroes  bytes.encode_i8, bytes.encode_u16_be, bytes.encode_u16_le, bytes.encode_i16_be, bytes.encode_i16_le, bytes.encode_u32_be, bytes.encode_u32_le, bytes.encode_i32_be, bytes.encode_i32_le, bytes.encode_u64_be, bytes.encode_u64_le, bytes.encode_i64_be, bytes.encode_i64_le
@@ -629,11 +629,11 @@ capability binary/format  values laid out by a format string, or by a record's f
   note    the formats beside the integers, decided here: `x` padding is `[0x00]` repeated, `c` and `s` are bytes as they are, `p` is a length byte then bytes, `?` is a byte compared with zero, so none needs a function; `n`, `N` and `P` have the machine's own size, refused as binary/native-order is; the floats are binary/floats
 
 capability binary/floats  a float written as its bytes and read back
-  heroes  pending
+  heroes  bytes.encode_f32_be, bytes.encode_f32_le, bytes.encode_f64_be, bytes.encode_f64_le, bytes.decode_f32_be, bytes.decode_f32_le, bytes.decode_f64_be, bytes.decode_f64_le
   go      -
-  rust    -
+  rust    f32::to_be_bytes, f32::to_le_bytes, f32::from_be_bytes, f32::from_le_bytes, f64::to_be_bytes, f64::to_le_bytes, f64::from_be_bytes, f64::from_le_bytes
   python  struct (its formats `e`, `f` and `d`)
-  note    the language has no door from a float to its bits yet, which `math`'s float/bits awaits; the bytes follow from those bits
+  note    over `numbers`' bits of a float, so a NaN is written as the quiet NaN with its sign clear, which `numbers.f64_to_bits` says; Go writes `binary.BigEndian.PutUint64(b, math.Float64bits(f))`, two calls. The half-precision float, Python's `e`, has no type of the language, so it is two calls here too: `bytes.encode_u16_be(numbers.f64_to_f16_bits(x))` and `numbers.f16_bits_to_f64(bytes.decode_u16_be(s, at: at)?)`. Python's bytes for 1.5, -0.1, 0.25 and pi, observed 2026-11-20, are the examples'
 
 capability bytes/many-patterns  many patterns of bytes compiled once into one automaton, and bytes searched for all of them in one pass: the first match, from an index, anchored at an index, all one after another, all overlapping, whether any is there, by each of three kinds, ASCII letters in either case as an option
   heroes  bytes.compile_patterns, bytes.compile_patterns_ignoring_case_ascii, bytes.MatchKind, bytes.Patterns, bytes.PatternMatch, bytes.has_match, bytes.search_patterns, bytes.search_patterns_from, bytes.match_patterns_at, bytes.search_patterns_all, bytes.search_patterns_overlapping

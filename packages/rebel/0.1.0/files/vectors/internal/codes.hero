@@ -1,5 +1,5 @@
-# The codes `vectors` fails with, and the numbers its private modules name a
-# metric by, since a private module cannot read the face's `Metric`.
+# The codes `vectors` fails with, which the face names again, and the numbers
+# its private modules name a metric by.
 
 # The code of a vector or a setting a function cannot read.
 constant INVALID: str

@@ -192,6 +192,24 @@ function nameOf(slug: string): string {
   return slug.startsWith('gallery/') ? slug.slice('gallery/'.length) : slug;
 }
 
+/**
+ * The link to a twin, the same program in the other group (`examples-model.ts`):
+ * one with Rebel and one with no library, side by side.
+ */
+function twinLine(twin: string, lang: Lang): string {
+  const withRebel = twin.startsWith('rebel/');
+  const link = `<a href="${root(lang)}/examples/${twin}/"><code>${escape(nameOf(twin))}</code></a>`;
+  const said =
+    lang === 'en'
+      ? withRebel
+        ? `The same program written with <a href="/rebel/">Rebel</a>: ${link}.`
+        : `The same program written with no library: ${link}.`
+      : withRebel
+        ? `Lo stesso programma scritto con <a href="/it/rebel/">Rebel</a>: ${link}.`
+        : `Lo stesso programma scritto senza librerie: ${link}.`;
+  return `  <p class="twin">${said}</p>`;
+}
+
 /** One example page. */
 export function renderExamplePage(slug: string, lang: Lang): RenderedPage {
   const example = exampleBySlug(slug);
@@ -209,6 +227,7 @@ export function renderExamplePage(slug: string, lang: Lang): RenderedPage {
   parts.push(`  <h1 class="chapter"><code>${escape(entry)}</code></h1>`);
   parts.push(`  <p class="tagline">${description.tagline}</p>`);
   parts.push(badges(example, lang));
+  if (example.twin !== null) parts.push(twinLine(example.twin, lang));
   if (description.body.length > 0) parts.push(`  ${description.body}`);
   parts.push(runBlock(example, lang));
   parts.push(`  <h2>${t('theProgram', lang)}</h2>`);

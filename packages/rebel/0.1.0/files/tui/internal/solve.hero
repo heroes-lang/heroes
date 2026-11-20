@@ -6,6 +6,8 @@
 # and where none can grow, the flex places the space. Each edge is then
 # rounded to a cell, a half away from 0, and kept inside the span.
 
+use math
+
 # A part of an exact length.
 constant LENGTH: i64
     0
@@ -110,10 +112,12 @@ function gap_between(from: i64, to: i64) -> Part
     return Part(at: from, size: to - from)
 
 # The part from the real edge `from` to `to`, each rounded and kept in the
-# span.
+# span. `total` is never below 0: the face's `inner` answers an empty area
+# for a negative width or height, so `math.clamp_i64` never sees a bound
+# below its floor.
 function placed(start: i64, total: i64, from: f64, to: f64) -> Part
-    a = kept(n: rounded(from), total: total)
-    z = kept(n: rounded(to), total: total)
+    a = math.clamp_i64(x: rounded(from), low: 0, high: total)
+    z = math.clamp_i64(x: rounded(to), low: 0, high: total)
 
     size = if z > a
         z - a
@@ -122,7 +126,7 @@ function placed(start: i64, total: i64, from: f64, to: f64) -> Part
     return Part(at: start + a, size: size)
 
 # `x` rounded to the nearest whole number, a half away from 0; beyond a
-# quadrillion, or NaN, it is taken as that bound or 0, which `kept` brings
+# quadrillion, or NaN, it is taken as that bound or 0, which `placed` brings
 # inside any span.
 function rounded(x: f64) -> i64
     bound = 1000000000000000.0
@@ -139,15 +143,6 @@ function rounded(x: f64) -> i64
     if x < 0.0
         return -to_i64(-x + 0.5).must()
     return to_i64(x + 0.5).must()
-
-# `n` kept between 0 and `total`.
-function kept(n: i64, total: i64) -> i64
-    if n < 0
-        return 0
-
-    if n > total
-        return total
-    return n
 
 # `n` as a real, below 0 taken as 0.
 function real(n: i64) -> f64

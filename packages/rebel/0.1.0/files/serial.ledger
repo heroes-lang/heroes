@@ -166,7 +166,7 @@ capability serial/modem-out  DTR and RTS raised and dropped
   note    both raised at the open, as Go's default and pyserial's; .NET's start dropped
 
 capability serial/modem-in  CTS, DSR, CD and RI read
-  heroes  serial.lines_of
+  heroes  serial.modem_lines_of
   dotnet  SerialPort.CtsHolding, SerialPort.DsrHolding, SerialPort.CDHolding
   go      Port.GetModemStatusBits, serial.ModemStatusBits
   rust    -

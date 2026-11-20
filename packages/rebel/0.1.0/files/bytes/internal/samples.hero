@@ -1,0 +1,9 @@
+# The functions the face's examples hand to a function of the face, kept out
+# of the face so that it offers none of them: no closure stands in the
+# language, so an example's function is a top-level one somewhere.
+
+use bytes
+
+# A match written twice: `replace_patterns_all_by`'s example.
+function doubled(m: bytes.PatternMatch) -> [u8]
+    return bytes.concat([m.text, m.text])

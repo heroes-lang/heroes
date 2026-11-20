@@ -200,7 +200,7 @@ function unique(@out: [Problem], items: [json.Value])
                     .err _ => seen[text] @ at
             .err _ =>
                 for before in range(from: 0, to: at)
-                    if json.equal(a: items[before], b: items[at])
+                    if json.equals(a: items[before], b: items[at])
                         out @ out.push(
                             Problem(keyword: "uniqueItems", message: f"the elements at {before} and {at} are equal")
                         )
@@ -257,7 +257,7 @@ function problems(c: model.Compiled, n: i64, v: json.Value) -> [Problem]
             found: bool @= false
 
             for at in range(from: 0, to: t.counts[listed])
-                if !found && json.equal(a: v, b: t.values[table.child(t, n: listed, at: at)])
+                if !found && json.equals(a: v, b: t.values[table.child(t, n: listed, at: at)])
                     found @ true
 
             if !found
@@ -266,7 +266,7 @@ function problems(c: model.Compiled, n: i64, v: json.Value) -> [Problem]
                 )
         fixed = table.member(t, n: n, name: "const")
 
-        if fixed >= 0 && !json.equal(a: v, b: t.values[fixed])
+        if fixed >= 0 && !json.equals(a: v, b: t.values[fixed])
             out @ out.push(Problem(keyword: "const", message: f"{shown(v)}, where const asks {shown(t.values[fixed])}"))
 
         match v

@@ -26,8 +26,8 @@ program must reach the headers that program names.
 **The number that makes this hard, measured 2026-09-06.** Of **56** programs
 under `examples/`, **20** declare an `extern`: `hero_os.h` (10), `math.h` (3),
 `stdio.h` (2), `sqlite3.h` (2), `time.h`, `raylib.h`, `curl/curl.h`,
-`SDL3/SDL.h`, with two linking `raylib` and two `sdl3`. §1.11 is why — there is
-no standard library, so the programs that show what the language is *for* are
+`SDL3/SDL.h`, with two linking `raylib` and two `sdl3`. §1.11 is why — the language
+imposes no standard library, so the programs that show what the language is *for* are
 exactly the ones that open a window, a socket or a database. **A playground that
 refuses `extern` demonstrates a language that does not exist; one that allows it
 on a public server is a remote shell**, and `extern "stdlib.h" { function

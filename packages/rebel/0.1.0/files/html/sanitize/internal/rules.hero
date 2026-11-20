@@ -1,8 +1,8 @@
 # The policy as the package holds it: what becomes of each element, which
 # attributes and style properties stay and how their values are checked,
 # which URLs stay, and what is added to what stays. The face's `Policy` holds
-# one `Rules`, since a private module cannot name the face; every function
-# here reads or changes a `Rules` and nothing else.
+# one `Rules`; every function here reads or changes a `Rules` and nothing
+# else.
 #
 # An element is named by its key: its local name for an HTML element, in
 # lower case, `svg:` before it for an SVG element and `math:` for a MathML

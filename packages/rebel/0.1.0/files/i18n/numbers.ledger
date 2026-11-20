@@ -10,7 +10,7 @@
 # the number and CLDR's data after it.
 
 capability number/decimal  a number written as a language writes it
-  heroes  numbers.format_decimal, numbers.format_int, numbers.format_number
+  heroes  i18n/numbers.format_decimal, i18n/numbers.format_int, i18n/numbers.format_number
   go      number.Decimal, message.Printer.Sprint
   rust    -
   python  locale.format_string, locale.str, locale.localize
@@ -20,7 +20,7 @@ capability number/decimal  a number written as a language writes it
   note    a number is decimal text, any number of digits; CLDR's minimum grouping digits are kept (Spanish writes 1234), as ICU's NumberFormatter and JavaScript's Intl do and Java does not
 
 capability number/percent  a fraction written as a percentage
-  heroes  numbers.format_percent
+  heroes  i18n/numbers.format_percent
   go      number.Percent, number.PerMille
   rust    -
   python  -
@@ -29,7 +29,7 @@ capability number/percent  a fraction written as a percentage
   icu     NumberFormatter percent
 
 capability number/scientific  a number with an exponent
-  heroes  numbers.format_number (.scientific)
+  heroes  i18n/numbers.format_number (.scientific)
   go      number.Scientific, number.Engineering
   rust    -
   python  -
@@ -38,7 +38,7 @@ capability number/scientific  a number with an exponent
   icu     NumberFormatter scientific, engineering
 
 capability number/currency  an amount with its currency's symbol, code or narrow symbol and digits, and accounting's negatives
-  heroes  numbers.format_currency, numbers.format_number (.currency, .accounting), numbers.CurrencyDisplay
+  heroes  i18n/numbers.format_currency, i18n/numbers.format_number (.currency, .accounting), i18n/numbers.CurrencyDisplay
   go      currency.Symbol, currency.NarrowSymbol, currency.ISO, currency.Amount, currency.Unit.Amount, currency.Formatter, currency.Kind, currency.Standard, currency.Cash, currency.Accounting
   rust    -
   python  locale.currency
@@ -48,7 +48,7 @@ capability number/currency  an amount with its currency's symbol, code or narrow
   note    CLDR's currency spacing puts a space between a symbol of letters and the digits, `CHF 1,234.50`; cash rounding is not applied
 
 capability number/compact  a number cut short, 1.2K, 1,2 Mio.
-  heroes  numbers.format_compact, numbers.format_number (.compact_short, .compact_long)
+  heroes  i18n/numbers.format_compact, i18n/numbers.format_number (.compact_short, .compact_long)
   go      -
   rust    -
   python  -
@@ -58,7 +58,7 @@ capability number/compact  a number cut short, 1.2K, 1,2 Mio.
   note    two significant digits under ten of the unit, grouped from five digits, the plural of the rounded number choosing the pattern, as ICU writes them
 
 capability number/options  digits, significant digits, rounding, sign and grouping chosen
-  heroes  numbers.NumberOptions, numbers.number_options, numbers.Rounding, numbers.SignDisplay, numbers.Grouping
+  heroes  i18n/numbers.NumberOptions, i18n/numbers.number_options, i18n/numbers.Rounding, i18n/numbers.SignDisplay, i18n/numbers.Grouping
   go      number.MinIntegerDigits, number.MaxIntegerDigits, number.MinFractionDigits, number.MaxFractionDigits, number.Precision, number.Scale, number.NoSeparator, number.FormatWidth, number.Pad, number.IncrementString, number.NewFormat, number.Option, number.Formatter
   rust    -
   python  -
@@ -68,7 +68,7 @@ capability number/options  digits, significant digits, rounding, sign and groupi
   note    integer digits are never cut, as ICU leaves them; padding and rounding increments are not offered (Java has neither)
 
 capability number/pattern  a number written by a CLDR pattern, DecimalFormat's
-  heroes  numbers.format_pattern
+  heroes  i18n/numbers.format_pattern
   go      number.PatternOverrides
   rust    -
   python  -
@@ -78,7 +78,7 @@ capability number/pattern  a number written by a CLDR pattern, DecimalFormat's
   note    a pattern with padding `*` or a rounding increment `#0.05` is `invalid`, read by neither Java nor here
 
 capability number/parse  a number written in a language read back
-  heroes  numbers.parse_number
+  heroes  i18n/numbers.parse_number
   go      -
   rust    -
   python  locale.atof, locale.atoi, locale.delocalize
@@ -88,7 +88,7 @@ capability number/parse  a number written in a language read back
   note    strict on the groups' places, lenient on spaces and bidirectional marks; answers decimal text with its written digits
 
 capability number/parse-currency  an amount read back with its currency
-  heroes  numbers.parse_currency, numbers.Amount
+  heroes  i18n/numbers.parse_currency, i18n/numbers.Amount
   go      -
   rust    -
   python  -
@@ -97,7 +97,7 @@ capability number/parse-currency  an amount read back with its currency
   icu     unum_parseCurrency
 
 capability number/symbols  a language's decimal and group separators, signs and digits
-  heroes  numbers.symbols_of, numbers.symbols_in, numbers.Symbols
+  heroes  i18n/numbers.symbols_of, i18n/numbers.symbols_in, i18n/numbers.Symbols
   go      -
   rust    -
   python  locale.localeconv, locale.nl_langinfo(RADIXCHAR, THOUSEP, CRNCYSTR, ALT_DIGITS)
@@ -106,7 +106,7 @@ capability number/symbols  a language's decimal and group separators, signs and 
   icu     DecimalFormatSymbols
 
 capability number/systems  numbering systems and their digits
-  heroes  numbers.numbering_system_of, numbers.digits_of
+  heroes  i18n/numbers.numbering_system_of, i18n/numbers.digits_of
   go      -
   rust    -
   python  -
@@ -116,7 +116,7 @@ capability number/systems  numbering systems and their digits
   note    algorithmic systems (`roman`) are `not_found`; written by rules this package does not carry
 
 capability number/pattern-of  a language's standard pattern of a style
-  heroes  numbers.pattern_of
+  heroes  i18n/numbers.pattern_of
   go      -
   rust    -
   python  -
@@ -125,7 +125,7 @@ capability number/pattern-of  a language's standard pattern of a style
   icu     unum_toPattern
 
 capability currency/symbol  a currency's symbol in a language
-  heroes  numbers.currency_symbol
+  heroes  i18n/numbers.currency_symbol
   go      currency.Symbol, currency.NarrowSymbol
   rust    -
   python  locale.localeconv()["currency_symbol"]
@@ -134,7 +134,7 @@ capability currency/symbol  a currency's symbol in a language
   icu     ucurr_getName
 
 capability currency/digits  a currency's digits after the point
-  heroes  numbers.currency_digits
+  heroes  i18n/numbers.currency_digits
   go      currency.Kind.Rounding
   rust    -
   python  locale.localeconv()["frac_digits"]
@@ -143,7 +143,7 @@ capability currency/digits  a currency's digits after the point
   icu     ucurr_getDefaultFractionDigits
 
 capability currency/of-region  the currency a region uses today
-  heroes  numbers.currency_of
+  heroes  i18n/numbers.currency_of
   go      currency.FromRegion, currency.FromTag, currency.Query, currency.Region, currency.Date, currency.Historical, currency.NonTender
   rust    -
   python  -

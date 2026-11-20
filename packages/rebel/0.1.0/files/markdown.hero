@@ -8,9 +8,11 @@
 # Reading never fails: CommonMark gives every text a meaning. Raw HTML in the
 # text is escaped by default, so it shows as text, and a link or an image to
 # `javascript:`, `vbscript:`, `file:` or `data:` (but for an image of PNG,
-# GIF, JPEG or WebP) gets an empty destination; `Options` keeps either. Block
-# quotes and lists nest at most `max_depth` deep, the markers beyond read as
-# text. Nothing follows the text with recursion: blocks are matched against
+# GIF, JPEG or WebP) gets an empty destination; `Options` keeps either, and
+# raw HTML kept from a text a program does not trust is cleaned after the
+# HTML is written, by `html/sanitize.clean` and a policy. Block quotes and
+# lists nest at most `max_depth` deep, the markers beyond read as text.
+# Nothing follows the text with recursion: blocks are matched against
 # the open ones, inlines wait in lists, and the tree is walked and written by
 # following its links.
 #
@@ -23,7 +25,10 @@
 # Python-Markdown's or other dialects' extensions, front matter, or math.
 #
 # Fails `not_found` where a node asked about has no parent or sibling, and
-# where a node is added beside one that has no parent.
+# `invalid` where a node is added beside one that has no parent. A node is
+# made here from a value, `append_child`, `insert_before` and `insert_after`
+# answering its number, where `html`'s functions of the same names move a
+# node that stands already.
 
 use html
 use markdown/internal/examples
@@ -37,10 +42,14 @@ use markdown/internal/write_blocks
 ## Codes
 
 # The code of a node with no parent or no sibling where one is asked for:
-# `parent`, `next_sibling`, `previous_sibling`, `insert_before`,
-# `insert_after`.
+# `parent`, `next_sibling`, `previous_sibling`.
 constant NOT_FOUND: str
     "not_found"
+
+# The code of a node added beside one that has no parent, which nothing can
+# stand beside: `insert_before`, `insert_after`, as `html`'s fail.
+constant INVALID: str
+    "invalid"
 
 # The node of the document itself, the root of every tree `parse` reads.
 constant ROOT: i64
@@ -71,7 +80,8 @@ record Options
     # Whether GFM's task list items, `- [ ]` and `- [x]`, are read.
     task_lists: bool
     # Whether raw HTML is written as it stands; else it is escaped and shows
-    # as text.
+    # as text. HTML kept from a text a program does not trust is cleaned
+    # after it is written, by `html/sanitize.clean`.
     keep_html: bool
     # Whether a link or an image to a dangerous scheme keeps its destination;
     # else the destination is empty.
@@ -585,18 +595,18 @@ function references_of(doc: Document) -> {str: Reference}
 
 ## Changing
 
-# Adds a node holding `value` as the last child of `under`, and answers its
-# number.
+# Makes a node holding `value` the last child of `to`, and answers its
+# number: a node made, where `html.append_child` moves one that stands.
 #
-# - `@doc`: the document; gains the node.
-# - `under`: the parent's number.
+# - `doc`: the document; gains the node.
+# - `to`: the parent's number.
 # - `value`: what the node is; it has no children until some are added.
 #
 # Nothing checks that the parent may hold such a node: a paragraph under a
 # text is written as the writer meets it. It copies the node list, so a
 # document built a node at a time costs the square of its size. Aborts where
-# `under` is not a node of `doc`.
-function add_child(@doc: Document, under: i64, value: Node) -> i64
+# `to` is not a node of `doc`.
+function append_child(@doc: Document, to: i64, value: Node) -> i64
     made = match value
         .document    => tree.make(tree.DOCUMENT)
         .block_quote => tree.make(tree.BLOCK_QUOTE)
@@ -676,44 +686,46 @@ function add_child(@doc: Document, under: i64, value: Node) -> i64
         .html_inline h => tree.make_literal(tree.HTML_INLINE, literal: h.text)
 
     nodes @= doc.nodes
-    at = tree.append(@nodes, parent: under, node: made)
+    at = tree.append(@nodes, parent: to, node: made)
     doc.nodes @ nodes
     return at
 
-# Adds a node holding `value` just before `sibling`, and answers its number.
+# Makes a node holding `value` and puts it just before `sibling`, and
+# answers its number: a node made, where `html.insert_before` moves one.
 #
-# - `@doc`: the document; gains the node.
+# - `doc`: the document; gains the node.
 # - `sibling`: the node it goes before.
 # - `value`: what the node is.
 #
-# Fails `not_found` where `sibling` has no parent. Aborts where `sibling` is
+# Fails `invalid` where `sibling` has no parent. Aborts where `sibling` is
 # not a node of `doc`.
 function insert_before(@doc: Document, sibling: i64, value: Node) -> i64?
     holder = doc.nodes[sibling].parent
 
     if holder == tree.NONE
-        return fail(code: NOT_FOUND, msg: f"node {sibling} has no parent to hold a node before it")
-    at = add_child(@doc, under: holder, value: value)
+        return fail(code: INVALID, msg: f"node {sibling} has no parent to hold a node before it")
+    at = append_child(@doc, to: holder, value: value)
     nodes @= doc.nodes
     tree.unlink(@nodes, at)
     tree.link_before(@nodes, sibling: sibling, node: at)
     doc.nodes @ nodes
     return ok(at)
 
-# Adds a node holding `value` just after `sibling`, and answers its number.
+# Makes a node holding `value` and puts it just after `sibling`, and
+# answers its number: a node made, where `html.insert_after` moves one.
 #
-# - `@doc`: the document; gains the node.
+# - `doc`: the document; gains the node.
 # - `sibling`: the node it goes after.
 # - `value`: what the node is.
 #
-# Fails `not_found` where `sibling` has no parent. Aborts where `sibling` is
+# Fails `invalid` where `sibling` has no parent. Aborts where `sibling` is
 # not a node of `doc`.
 function insert_after(@doc: Document, sibling: i64, value: Node) -> i64?
     holder = doc.nodes[sibling].parent
 
     if holder == tree.NONE
-        return fail(code: NOT_FOUND, msg: f"node {sibling} has no parent to hold a node after it")
-    at = add_child(@doc, under: holder, value: value)
+        return fail(code: INVALID, msg: f"node {sibling} has no parent to hold a node after it")
+    at = append_child(@doc, to: holder, value: value)
     nodes @= doc.nodes
     tree.unlink(@nodes, at)
     tree.link_after(@nodes, sibling: sibling, node: at)
@@ -723,7 +735,7 @@ function insert_after(@doc: Document, sibling: i64, value: Node) -> i64?
 # Takes `node` and its children out of the tree; their numbers stay, linked
 # to nothing.
 #
-# - `@doc`: the document; loses the node.
+# - `doc`: the document; loses the node.
 # - `node`: the node's number; `ROOT` and a node already out change nothing.
 function remove(@doc: Document, node: i64)
     nodes @= doc.nodes
@@ -733,14 +745,14 @@ function remove(@doc: Document, node: i64)
 # Makes `node` hold `value` instead of what it held; its children and its
 # place stay.
 #
-# - `@doc`: the document; the node changes.
+# - `doc`: the document; the node changes.
 # - `node`: the node's number.
 # - `value`: what it is now.
 #
 # The node list grows by one number, linked to nothing. Aborts where `node`
 # is not a node of `doc`.
 function set_node(@doc: Document, node: i64, value: Node)
-    temp = add_child(@doc, under: ROOT, value: value)
+    temp = append_child(@doc, to: ROOT, value: value)
     nodes @= doc.nodes
     tree.unlink(@nodes, temp)
     made @= nodes[temp]
@@ -834,10 +846,10 @@ test "references_of: one definition"
     assert references_of(doc)["low"].must() == Reference(destination: "/low", title: "1977")
 
 # A node added at the end.
-test "add_child: a paragraph after a heading"
+test "append_child: a paragraph after a heading"
     doc @= parse("# a\n")
-    p = add_child(@doc, under: ROOT, value: .paragraph)
-    _ = add_child(@doc, under: p, value: .text(text: "b"))
+    p = append_child(@doc, to: ROOT, value: .paragraph)
+    _ = append_child(@doc, to: p, value: .text(text: "b"))
     assert format_html(doc, default_options()) == "<h1>a</h1>\n<p>b</p>\n"
 
 # A node added before another.

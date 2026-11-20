@@ -6,6 +6,7 @@
 # never read for ever.
 
 use bytes
+use keyring
 use keyring/hero_keyring
 use keyring/internal/failure
 use keyring/internal/names
@@ -34,7 +35,7 @@ function system() -> str?
         return failure.last(asked)
 
     if got > SYSTEM_ROOM
-        return fail(code: failure.FAILED, msg: f"{asked}: its name takes {got} bytes, past the {SYSTEM_ROOM} given")
+        return fail(code: keyring.FAILED, msg: f"{asked}: its name takes {got} bytes, past the {SYSTEM_ROOM} given")
     return bytes.to_text(buffer.slice(from: 0, to: got))
 
 # `secret` stored under `service` and `account`.
@@ -49,12 +50,12 @@ function store(service: str, account: str, secret: [u8]) -> ()?
     return ok()
 
 # The secret under `service` and `account`, read with room for
-# `names.SECRET_MOST` bytes first and, where another program stored a longer
-# one, again with room for it.
+# `keyring.MAX_SECRET_BYTES` bytes first and, where another program stored a
+# longer one, again with room for it.
 function read(service: str, account: str) -> [u8]?
     asked = f"reading the secret of \"{account}\" under \"{service}\""
     names.checked(service: service, account: account, asked: asked)?
-    room: i64 @= names.SECRET_MOST
+    room: i64 @= keyring.MAX_SECRET_BYTES
     round: i64 @= 0
 
     while round < ROUNDS
@@ -69,7 +70,7 @@ function read(service: str, account: str) -> [u8]?
         room @ got
         round @ round + 1
 
-    return fail(code: failure.FAILED, msg: f"{asked}: the secret grew each of the {ROUNDS} times it was read")
+    return fail(code: keyring.FAILED, msg: f"{asked}: the secret grew each of the {ROUNDS} times it was read")
 
 # The secret under `service` and `account` removed.
 function remove(service: str, account: str) -> ()?
@@ -109,7 +110,7 @@ function accounts(service: str) -> [str]?
         room @ got
         round @ round + 1
 
-    return fail(code: failure.FAILED, msg: f"{asked}: the list grew each of the {ROUNDS} times it was read")
+    return fail(code: keyring.FAILED, msg: f"{asked}: the list grew each of the {ROUNDS} times it was read")
 
 # The accounts a listing of the layer holds, each one's UTF-8 ended by a zero
 # byte, ordered by their bytes and each once: a keychain that searches two
@@ -145,7 +146,7 @@ test "read, store, remove, remove_all, accounts: a name the layer cannot take is
     match store(service: "", account: "a", secret: secret)
         .ok _ => assert false
         .err e =>
-            assert e.code == failure.INVALID
+            assert e.code == keyring.INVALID
             assert e.msg == "storing the secret of \"a\" under \"\": the service is empty, and a service names the program's secrets"
 
     assert read(service: "s", account: bytes.to_text([0]).must()).is_err()

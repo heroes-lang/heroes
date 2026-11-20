@@ -39,7 +39,7 @@ constant INVALID: str
 constant NOT_FOUND: str
     codes.NOT_FOUND
 
-# The code of an id an index already holds, which `add` fails with.
+# The code of an id an index already holds, which `insert` fails with.
 constant EXISTS: str
     codes.EXISTS
 
@@ -169,7 +169,7 @@ function terms(text: str, stop_words: [str]) -> [str]
 # in each, and each text's length in terms, so a query reaches only the
 # texts that hold its words.
 #
-# Made by `new_index` or `from_bytes`, and changed only by `add` and
+# Made by `new_index` or `from_bytes`, and changed only by `insert` and
 # `remove`. Copied with `=`, the copy is an index of its own.
 record Index
     # The postings and the counts, held by the package itself: a program
@@ -182,7 +182,7 @@ record Index
 #
 # Fails `invalid` where `k1` is below zero or not finite, `b` is outside 0
 # to 1, or the formula's `epsilon` or `delta` is below zero or not finite.
-# See also `add`, `default_options`.
+# See also `insert`, `default_options`.
 function new_index(options: Options) -> Index?
     formula = match options.formula
         .standard    => codes.STANDARD
@@ -215,7 +215,7 @@ function new_index(options: Options) -> Index?
 #   the index's size and its mean length, and found by no query.
 #
 # Fails `exists` where `index` holds `id`. See also `remove`, `search`.
-function add(@index: Index, id: i64, text: str) -> ()?
+function insert(@index: Index, id: i64, text: str) -> ()?
     if engine.live_slot(index.engine, id: id) != engine.NONE
         return fail(code: codes.EXISTS, msg: f"the index holds a text under id {id} already")
     found = analyze.tokens(text, stop: index.engine.stop)
@@ -229,7 +229,7 @@ function add(@index: Index, id: i64, text: str) -> ()?
 # - `id`: the id of a text the index holds.
 #
 # Fails `not_found` where it holds none under `id`. Its places stay in
-# memory until `compact`. See also `add`, `compact`.
+# memory until `compact`. See also `insert`, `compact`.
 function remove(@index: Index, id: i64) -> ()?
     slot = engine.live_slot(index.engine, id: id)
 
@@ -379,22 +379,22 @@ test "new_index: k1, b, epsilon and delta out of range"
     assert new_index(Options(k1: 1.2, b: 0.75, formula: .bm25l(delta: 1.0 / zero), stop_words: [])).is_err()
     assert !new_index(Options(k1: 0.0, b: 1.0, formula: .bm25_plus(delta: 0.0), stop_words: ["The"])).is_err()
 
-test "add: an id held, and an id removed added again"
+test "insert: an id held, and an id removed added again"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "first").must()
+    insert(@index, id: 1, text: "first").must()
 
-    match add(@index, id: 1, text: "second")
+    match insert(@index, id: 1, text: "second")
         .ok _  => assert false
         .err e => assert e.code == EXISTS && e.msg == "the index holds a text under id 1 already"
 
     remove(@index, id: 1).must()
-    add(@index, id: 1, text: "second").must()
+    insert(@index, id: 1, text: "second").must()
     assert search(index, query: "first", limit: 5).must() == [] && search(index, query: "second", limit: 5).must().len() == 1
 
-test "add: a text of no term counts in the size and the mean length"
+test "insert: a text of no term counts in the size and the mean length"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "...").must()
-    add(@index, id: 2, text: "word").must()
+    insert(@index, id: 1, text: "...").must()
+    insert(@index, id: 2, text: "word").must()
     assert size(index) == 2 && search(index, query: "word", limit: 5).must()[0].id == 2
 
 test "remove: an id never held, and one removed twice"
@@ -404,29 +404,29 @@ test "remove: an id never held, and one removed twice"
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND && e.msg == "the index holds no text under id 4"
 
-    add(@index, id: 4, text: "x").must()
+    insert(@index, id: 4, text: "x").must()
     remove(@index, id: 4).must()
     assert remove(@index, id: 4).is_err() && !contains(index, id: 4) && size(index) == 0
 
 test "document_frequency: a term unknown, one in upper case, and one of a text removed"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "Tea").must()
-    add(@index, id: 2, text: "tea").must()
+    insert(@index, id: 1, text: "Tea").must()
+    insert(@index, id: 2, text: "tea").must()
     remove(@index, id: 2).must()
     assert document_frequency(index, term: "tea") == 1
     assert document_frequency(index, term: "Tea") == 0 && document_frequency(index, term: "coffee") == 0
 
 test "terms_with_prefix: none, every term, and a term only a removed text held"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "beta alpha").must()
-    add(@index, id: 2, text: "alpine").must()
+    insert(@index, id: 1, text: "beta alpha").must()
+    insert(@index, id: 2, text: "alpine").must()
     remove(@index, id: 2).must()
     assert terms_with_prefix(index, prefix: "z") == []
     assert terms_with_prefix(index, prefix: "") == ["alpha", "beta"]
 
 test "search: a limit below zero, an unclosed quote, and the empty query"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "a b").must()
+    insert(@index, id: 1, text: "a b").must()
     assert search(index, query: "a", limit: -1).is_err()
 
     match search(index, query: "\"a b", limit: 5)
@@ -437,8 +437,8 @@ test "search: a limit below zero, an unclosed quote, and the empty query"
 
 test "search: stop words left out of the query as out of the texts"
     index @= new_index(Options(k1: 1.2, b: 0.75, formula: .standard, stop_words: english_stop_words())).must()
-    add(@index, id: 1, text: "the bank of america").must()
-    add(@index, id: 2, text: "america the bank").must()
+    insert(@index, id: 1, text: "the bank of america").must()
+    insert(@index, id: 2, text: "america the bank").must()
     assert search(index, query: "the", limit: 5).must() == []
     found = search(index, query: "\"bank of america\"", limit: 5).must()
     assert found.len() == 1 && found[0].id == 1
@@ -451,7 +451,7 @@ test "search: the four formulas rank one query alike here, their scores apart"
         index @= new_index(Options(k1: 1.5, b: 0.75, formula: formula, stop_words: [])).must()
 
         for at in range(from: 0, to: texts.len())
-            add(@index, id: at, text: texts[at]).must()
+            insert(@index, id: at, text: texts[at]).must()
 
         found = search(index, query: "red apple", limit: 5).must()
         assert found.len() == 3 && found[0].id == 0
@@ -485,52 +485,52 @@ test "new_index: an empty index"
     assert size(new_index(default_options()).must()) == 0
 
 # Two texts added and one found.
-test "add: two texts, one found"
+test "insert: two texts, one found"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "the cat sat on the mat").must()
-    add(@index, id: 2, text: "a dog barked").must()
+    insert(@index, id: 1, text: "the cat sat on the mat").must()
+    insert(@index, id: 2, text: "a dog barked").must()
     assert search(index, query: "cat", limit: 10).must()[0].id == 1
 
 # A text taken out is no longer found.
 test "remove: a text no longer found"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "red apple").must()
+    insert(@index, id: 1, text: "red apple").must()
     remove(@index, id: 1).must()
     assert search(index, query: "apple", limit: 10).must() == []
 
 # Whether an index holds an id.
 test "contains: an id held and one not"
     index @= new_index(default_options()).must()
-    add(@index, id: 3, text: "hello").must()
+    insert(@index, id: 3, text: "hello").must()
     assert contains(index, id: 3) && !contains(index, id: 4)
 
 # How many texts an index holds.
 test "size: two texts"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "one").must()
-    add(@index, id: 2, text: "two").must()
+    insert(@index, id: 1, text: "one").must()
+    insert(@index, id: 2, text: "two").must()
     assert size(index) == 2
 
 # How many texts hold a term.
 test "document_frequency: a term in two of three texts"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "green tea").must()
-    add(@index, id: 2, text: "black tea").must()
-    add(@index, id: 3, text: "coffee").must()
+    insert(@index, id: 1, text: "green tea").must()
+    insert(@index, id: 2, text: "black tea").must()
+    insert(@index, id: 3, text: "coffee").must()
     assert document_frequency(index, term: "tea") == 2
 
 # The words a search box completes.
 test "terms_with_prefix: the words beginning with ser"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "serial server").must()
-    add(@index, id: 2, text: "service set").must()
+    insert(@index, id: 1, text: "serial server").must()
+    insert(@index, id: 2, text: "service set").must()
     assert terms_with_prefix(index, prefix: "Ser") == ["serial", "server", "service"]
 
 # An index rebuilt without what was removed.
 test "compact: the same scores"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "alpha beta").must()
-    add(@index, id: 2, text: "beta gamma").must()
+    insert(@index, id: 1, text: "alpha beta").must()
+    insert(@index, id: 2, text: "beta gamma").must()
     remove(@index, id: 1).must()
     assert search(compact(index), query: "beta", limit: 5).must() == search(index, query: "beta", limit: 5).must()
 
@@ -541,15 +541,15 @@ test "to_bytes: the format's first bytes"
 # An index written and read back.
 test "from_bytes: an index read back"
     index @= new_index(default_options()).must()
-    add(@index, id: 9, text: "written and read").must()
+    insert(@index, id: 9, text: "written and read").must()
     again = from_bytes(to_bytes(index)).must()
     assert search(again, query: "read", limit: 1).must() == search(index, query: "read", limit: 1).must()
 
 # A phrase, a required word and a refused one.
 test "search: a phrase, a word required and a word refused"
     index @= new_index(default_options()).must()
-    add(@index, id: 1, text: "new york city").must()
-    add(@index, id: 2, text: "york new city").must()
-    add(@index, id: 3, text: "new york state").must()
+    insert(@index, id: 1, text: "new york city").must()
+    insert(@index, id: 2, text: "york new city").must()
+    insert(@index, id: 3, text: "new york state").must()
     found = search(index, query: "+\"new york\" city -state", limit: 10).must()
     assert found.len() == 1 && found[0].id == 1

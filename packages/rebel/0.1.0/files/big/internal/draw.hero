@@ -21,3 +21,18 @@ function below(@generator: random.Generator, n: [i64]) -> [i64]
 
         if limbs.compare(a: m, b: n) < 0
             return m
+
+# A magnitude from 0 to `n` less one, `n` above zero, drawn from a ChaCha8.
+function below_chacha8(@generator: random.ChaCha8, n: [i64]) -> [i64]
+    assert n.len() > 0
+    bits = limbs.bit_len(n)
+    count = (bits + 7) / 8
+    mask = (1 << bits - (count - 1) * 8) - 1
+
+    while true
+        b: [u8] @= random.next_bytes_chacha8(@generator, count)
+        b[count - 1] @ to_u8(to_i64(b[count - 1]).must() & mask).must()
+        m = octets.magnitude_of(b)
+
+        if limbs.compare(a: m, b: n) < 0
+            return m

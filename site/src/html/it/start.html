@@ -130,11 +130,19 @@ we can be heroes</code></pre>
     <a href="/it/docs/packages/">il capitolo sui pacchetti</a>. Rifiuta un nome
     dove c&rsquo;è già una cartella o un file, e allora non scrive niente.
   </p>
+  <p>
+    Heroes non impone una libreria standard: oltre alle funzioni
+    predefinite, un programma collega una libreria C o prende un pacchetto.
+    Questo progetto ne scrive uno, <a href="/it/rebel/">Rebel</a>, una
+    libreria ampia di pacchetti per il testo, i file, i numeri, la rete e i
+    formati di dati, che un programma prende o lascia. Il compilatore stesso
+    è scritto senza.
+  </p>
 
-  <h2>Un comando, sedici verbi</h2>
+  <h2>Un comando, diciassette verbi</h2>
   <p>
     Tutti gli strumenti si usano tramite <code>heroes</code>:
-    <code>lex</code>, <code>parse</code>, <code>check</code>,
+    <code>lex</code>, <code>parse</code>, <code>check</code>, <code>doc</code>,
     <code>build</code>, <code>run</code>, <code>test</code>, <code>fmt</code>,
     <code>add</code>, <code>fetch</code>, <code>new</code>,
     <code>doctor</code>, <code>mutate</code>, <code>probe</code>, <code>measure</code>,
@@ -145,8 +153,15 @@ we can be heroes</code></pre>
     <code>heroes fmt</code> formatta il codice secondo regole fisse per indentazione, ritorni a capo e ordine. I sorgenti del progetto, compilatore compreso, seguono già queste regole: il formattatore li restituisce identici, byte per byte. Questo riduce le differenze dovute alla formattazione quando confronti due versioni. I file di test che contengono errori intenzionali vengono conservati così come sono.
   </p>
   <p>
+    <code>heroes doc</code> stampa il riferimento di un modulo, letto dai
+    commenti sopra le sue dichiarazioni: la firma di ognuna, che cosa la
+    documenta, la chiamata che un programma scrive e i suoi esempi. Le pagine
+    di riferimento di Rebel su questo sito sono il suo output.
+  </p>
+  <p>
     <a href="/it/examples/">Ogni esempio di questo sito</a> è un file in
-    <code>examples/</code>, con il comando che lo esegue e l&rsquo;output che stampa.
+    <code>examples/</code> o in <code>examples-rebel/</code>, con il comando
+    che lo esegue e l&rsquo;output che stampa.
   </p>
 
   <h2>Se qualcosa va storto</h2>

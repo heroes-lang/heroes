@@ -4,6 +4,7 @@
 # instructions after it. Every character is checked first, so that no later
 # step meets one XML cannot hold.
 
+use strings
 use xml/internal/characters
 use xml/internal/content
 use xml/internal/doctype
@@ -37,7 +38,7 @@ function read(text: str, max_depth: i64) -> Reading?
         i @ 3
     prolog: event.Prolog @= event.undeclared()
 
-    if markup.holds_at(text: text, at: i, word: "<?xml") && i + 5 < text.len() && characters.is_space(text[i + 5])
+    if strings.has_prefix_at(s: text, prefix: "<?xml", at: i) && i + 5 < text.len() && characters.is_space(text[i + 5])
         declared = markup.read_declaration(text: text, at: i)?
         prolog @ event.Prolog(
             declared: true,
@@ -52,15 +53,15 @@ function read(text: str, max_depth: i64) -> Reading?
     while true
         next = markup.skip_space(text: text, at: i)
 
-        if markup.holds_at(text: text, at: next, word: "<!--")
+        if strings.has_prefix_at(s: text, prefix: "<!--", at: next)
             got = markup.read_comment(text: text, at: next)?
             events @ events.push(event.of_text(kind: event.COMMENT, s: got.value))
             i @ got.end
-        else if markup.holds_at(text: text, at: next, word: "<?")
+        else if strings.has_prefix_at(s: text, prefix: "<?", at: next)
             got = markup.read_instruction(text: text, at: next)?
             events @ events.push(event.instruction(target: got.target, data: got.data))
             i @ got.end
-        else if markup.holds_at(text: text, at: next, word: "<!DOCTYPE")
+        else if strings.has_prefix_at(s: text, prefix: "<!DOCTYPE", at: next)
             if typed
                 return fail(
                     code: scan.INVALID,
@@ -85,11 +86,11 @@ function read(text: str, max_depth: i64) -> Reading?
         if next >= text.len()
             break
 
-        if markup.holds_at(text: text, at: next, word: "<!--")
+        if strings.has_prefix_at(s: text, prefix: "<!--", at: next)
             got = markup.read_comment(text: text, at: next)?
             events @ events.push(event.of_text(kind: event.COMMENT, s: got.value))
             i @ got.end
-        else if markup.holds_at(text: text, at: next, word: "<?")
+        else if strings.has_prefix_at(s: text, prefix: "<?", at: next)
             got = markup.read_instruction(text: text, at: next)?
             events @ events.push(event.instruction(target: got.target, data: got.data))
             i @ got.end

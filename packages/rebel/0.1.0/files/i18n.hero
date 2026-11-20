@@ -19,6 +19,7 @@
 # character set other than UTF-8.
 
 use i18n/internal/locale_syntax
+use i18n/internal/lookup
 use i18n/internal/matching
 use i18n/internal/mo_file
 use i18n/internal/plural_expr
@@ -35,8 +36,9 @@ use strings
 constant INVALID: str
     "invalid"
 
-# The code `find_message`, `header_field`, `unicode_keyword`, `parent_of` and
-# `lookup_tag` fail with where what they look for is absent.
+# The code `find_message`, `find_message_in`, `header_field`,
+# `unicode_keyword`, `parent_of` and `lookup_tag` fail with where what they
+# look for is absent.
 constant NOT_FOUND: str
     "not_found"
 
@@ -111,7 +113,7 @@ function parse_locale(tag: str) -> Locale?
 # - `locale`: the locale; an empty language is written `und`.
 #
 # The answer reads back through `parse_locale` as the same locale where the
-# fields hold well-formed subtags. See also `parse_locale`, `to_posix`.
+# fields hold well-formed subtags. See also `parse_locale`, `format_posix`.
 function format_locale(locale: Locale) -> str
     return locale_syntax.format(
         locale_syntax.Parts(language: locale.language, script: locale.script, region: locale.region, variants: locale.variants, extensions: locale.extensions, private_use: locale.private_use)
@@ -127,7 +129,7 @@ function format_locale(locale: Locale) -> str
 # The code set is dropped, a text being UTF-8 here; a modifier that names a
 # script (`latin`, `cyrillic`, `devanagari`) becomes the script, `euro` is
 # dropped, and any other becomes a variant. Fails `invalid` where what
-# remains is not a well-formed tag. See also `to_posix`.
+# remains is not a well-formed tag. See also `format_posix`.
 function parse_posix(name: str) -> Locale?
     p = locale_syntax.parse_posix(name)?
     return ok(
@@ -141,7 +143,7 @@ function parse_posix(name: str) -> Locale?
 # A script that POSIX names by a modifier (`Latn`, `Cyrl`, `Deva`) is
 # written so, a variant as a modifier, and any other part is dropped. See
 # also `parse_posix`.
-function to_posix(locale: Locale) -> str
+function format_posix(locale: Locale) -> str
     return locale_syntax.to_posix(
         locale_syntax.Parts(language: locale.language, script: locale.script, region: locale.region, variants: locale.variants, extensions: locale.extensions, private_use: locale.private_use)
     )
@@ -795,29 +797,29 @@ function encode_mo(catalog: Catalog) -> [u8]
 
     return mo_file.encode(entries)
 
-# The message of `catalog` with `context` and `id`.
+# The message of `catalog` with `id` and no context.
 #
 # - `catalog`: the catalog.
-# - `has_context`: whether the message looked for has a context.
-# - `context`: the context, read only where `has_context`.
+# - `id`: the text the program writes; the empty id is the catalog's header.
+#
+# Fails `not_found` where the catalog has no such message; a message with a
+# context is not found here, whatever its id. See also `find_message_in`,
+# `translate`.
+function find_message(catalog: Catalog, id: str) -> Message?
+    return lookup.message_of(catalog, has_context: false, context: "", id: id)
+
+# The message of `catalog` with `context` and `id`, gettext's `pgettext`'s
+# message.
+#
+# - `catalog`: the catalog.
+# - `context`: the context, as the message's `msgctxt` writes it; the empty
+#   context is a context, which a message with none does not have.
 # - `id`: the text the program writes.
 #
 # Fails `not_found` where the catalog has no such message. See also
-# `translate`.
-function find_message(catalog: Catalog, has_context: bool, context: str, id: str) -> Message?
-    key = po_file.key_of(has_context: has_context, context: context, id: id)
-
-    match catalog.index[key]
-        .ok at =>
-            if at >= 0 && at < catalog.messages.len()
-                return ok(catalog.messages[at])
-        .err _ => _ = 0
-
-    if catalog.index.len() == 0
-        for m in catalog.messages
-            if !m.obsolete && m.has_context == has_context && m.id == id && (!has_context || m.context == context)
-                return ok(m)
-    return fail(code: NOT_FOUND, msg: f"no message \"{id}\" in the catalog")
+# `find_message`, `translate_in`.
+function find_message_in(catalog: Catalog, context: str, id: str) -> Message?
+    return lookup.message_of(catalog, has_context: true, context: context, id: id)
 
 # The translation of `id`, or `id` itself where the catalog has none, as
 # gettext's `gettext` answers.
@@ -828,7 +830,7 @@ function find_message(catalog: Catalog, has_context: bool, context: str, id: str
 # A message that is fuzzy, obsolete or untranslated is not a translation.
 # See also `translate_plural`, `translate_in`.
 function translate(catalog: Catalog, id: str) -> str
-    match find_message(catalog, has_context: false, context: "", id: id)
+    match find_message(catalog, id: id)
         .ok m =>
             if po_file.is_usable(obsolete: m.obsolete, flags: m.flags, translations: m.translations)
                 return m.translations[0]
@@ -844,7 +846,7 @@ function translate(catalog: Catalog, id: str) -> str
 #
 # `id` itself where the catalog has none. See also `translate`.
 function translate_in(catalog: Catalog, context: str, id: str) -> str
-    match find_message(catalog, has_context: true, context: context, id: id)
+    match find_message_in(catalog, context: context, id: id)
         .ok m =>
             if po_file.is_usable(obsolete: m.obsolete, flags: m.flags, translations: m.translations)
                 return m.translations[0]
@@ -866,7 +868,7 @@ function translate_in(catalog: Catalog, context: str, id: str) -> str
 # past the last takes the first form, as GNU gettext does. See also
 # `translate_plural_in`.
 function translate_plural(catalog: Catalog, id: str, plural_id: str, n: i64) -> str
-    match find_message(catalog, has_context: false, context: "", id: id)
+    match find_message(catalog, id: id)
         .ok m =>
             if po_file.is_usable(obsolete: m.obsolete, flags: m.flags, translations: m.translations)
                 index = plural_index(catalog.plural_forms, n: n).default(0)
@@ -890,7 +892,7 @@ function translate_plural(catalog: Catalog, id: str, plural_id: str, n: i64) -> 
 #
 # See also `translate_plural`.
 function translate_plural_in(catalog: Catalog, context: str, id: str, plural_id: str, n: i64) -> str
-    match find_message(catalog, has_context: true, context: context, id: id)
+    match find_message_in(catalog, context: context, id: id)
         .ok m =>
             if po_file.is_usable(obsolete: m.obsolete, flags: m.flags, translations: m.translations)
                 index = plural_index(catalog.plural_forms, n: n).default(0)
@@ -913,7 +915,7 @@ function translate_plural_in(catalog: Catalog, context: str, id: str, plural_id:
 # catalog has no header or the header no such field. See also
 # `parse_plural_forms`.
 function header_field(catalog: Catalog, name: str) -> str?
-    header = find_message(catalog, has_context: false, context: "", id: "")?
+    header = find_message(catalog, id: "")?
 
     if header.translations.len() == 0
         return fail(code: NOT_FOUND, msg: "the header holds no text")
@@ -980,8 +982,8 @@ test "parse_posix: a name with a code set and a modifier"
     assert format_locale(parse_posix("sr_RS.UTF-8@latin").must()) == "sr-Latn-RS"
 
 # A locale written as POSIX names it.
-test "to_posix: a language and a region"
-    assert to_posix(parse_locale("pt-BR").must()) == "pt_BR"
+test "format_posix: a language and a region"
+    assert format_posix(parse_locale("pt-BR").must()) == "pt_BR"
 
 # The calendar a tag asks for.
 test "unicode_keyword: the calendar of a tag"
@@ -1107,7 +1109,7 @@ test "encode_mo: the magic number"
     assert data.slice(from: 0, to: 4) == [0xde, 0x12, 0x04, 0x95]
 
 # A message looked up with its context.
-test "find_message: a message in a context"
+test "find_message_in: a message in a context"
     message = Message(
         has_context: true,
         context: "menu",
@@ -1123,7 +1125,27 @@ test "find_message: a message in a context"
         obsolete: false
     )
     catalog = catalog_of([message]).must()
-    assert find_message(catalog, has_context: true, context: "menu", id: "File").must().translations == ["Datei"]
+    assert find_message_in(catalog, context: "menu", id: "File").must().translations == ["Datei"]
+
+# A message looked up by its id alone.
+test "find_message: a message with no context"
+    message = Message(
+        has_context: false,
+        context: "",
+        id: "File",
+        has_plural: false,
+        plural_id: "",
+        translations: ["Datei"],
+        comments: [],
+        extracted_comments: [],
+        references: [],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+    catalog = catalog_of([message]).must()
+    assert find_message(catalog, id: "File").must().translations == ["Datei"]
+    assert find_message_in(catalog, context: "", id: "File").is_err()
 
 # A message with no translation is its own text.
 test "translate: a translation and a text with none"

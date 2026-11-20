@@ -1,8 +1,7 @@
 # The types the package's modules share: a schema's documents flattened into
 # one table of nodes, what the scan learns of each node, and an error as the
 # validator finds it. The face holds a `Compiled` and converts `Issue` and
-# `Settings` to and from its own records, since a private module cannot read
-# the face.
+# `Settings` to and from its own records.
 
 use json
 use regex

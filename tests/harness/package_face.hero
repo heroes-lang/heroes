@@ -20,7 +20,7 @@
 #
 # **An `extern` group was refused so until 2026-11-13**, when `net`'s floor,
 # `net/hero_net.hero`, was the first module over C a package published
-# (`examples-rebel/packages/README.md` § 4.1, M-core-packages step 16). A floor's
+# (`examples-rebel/README.md` § A2, M-core-packages step 16). A floor's
 # card is taught (`Bound`): the group's header, each record of the header and
 # each run of its constants, which a program names through the module, and
 # none of its functions, which a program cannot call: an `extern` is called in
@@ -494,7 +494,7 @@ test "what the form has no line for is refused by name, and so is what cannot be
     assert face.refused[5] == "`function h` has no doc, whose first sentence its card line writes"
     assert face_of(path: "y", text: "# Documents f.\nfunction f()\n    _ = 0\n").refused[0] == "the module has no doc, whose first sentence a card opens with"
 
-# A floor's group (`examples-rebel/packages/README.md` § 4.1): its records and its runs
+# A floor's group (`examples-rebel/README.md` § A2): its records and its runs
 # of constants are read, each with the doc above it inside the group, and its
 # functions, which no program can call across the module, are not.
 test "a floor's group is read: its header, its records, its runs of constants, and no function of C"

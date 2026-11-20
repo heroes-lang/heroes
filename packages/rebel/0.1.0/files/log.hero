@@ -51,15 +51,15 @@ constant FAILED: str
 
 # The key of a line's time in the JSON form, `time`.
 constant TIME_KEY: str
-    piece.TIME_KEY
+    "time"
 
 # The key of a line's level in the JSON form, `level`.
 constant LEVEL_KEY: str
-    piece.LEVEL_KEY
+    "level"
 
 # The key of a line's message in the JSON form, `msg`.
 constant MESSAGE_KEY: str
-    piece.MESSAGE_KEY
+    "msg"
 
 ## Levels
 

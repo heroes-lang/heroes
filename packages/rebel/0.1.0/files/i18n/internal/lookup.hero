@@ -1,0 +1,23 @@
+# The message a catalog holds under a context and an id: what
+# `i18n.find_message` and `i18n.find_message_in` answer, by the catalog's
+# index where it has one, else by a walk over its messages.
+
+use i18n
+use i18n/internal/po_file
+
+# The message of `catalog` with `id`, and with `context` where
+# `has_context`; a message's context must be there exactly where it is asked.
+function message_of(catalog: i18n.Catalog, has_context: bool, context: str, id: str) -> i18n.Message?
+    key = po_file.key_of(has_context: has_context, context: context, id: id)
+
+    match catalog.index[key]
+        .ok at =>
+            if at >= 0 && at < catalog.messages.len()
+                return ok(catalog.messages[at])
+        .err _ => _ = 0
+
+    if catalog.index.len() == 0
+        for m in catalog.messages
+            if !m.obsolete && m.has_context == has_context && m.id == id && (!has_context || m.context == context)
+                return ok(m)
+    return fail(code: i18n.NOT_FOUND, msg: f"no message \"{id}\" in the catalog")

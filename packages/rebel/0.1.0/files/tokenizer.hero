@@ -10,10 +10,10 @@
 # The tables of tiktoken's encodings are modules apart, so that a program
 # carries only those it uses: `tokenizer/tables/o200k_base`,
 # `tokenizer/tables/cl100k_base` and `tokenizer/tables/o200k_harmony`, and
-# `tokenizer/tables` to find one by its name or by a model's. Claude's tokenizer is not
-# published: Claude's tokens are counted by Anthropic's API, which
-# `llm/anthropic`'s `count_tokens` asks. Text cut into pieces of a number of
-# tokens is `chunks`'.
+# `tokenizer/tables` to find one by its name or by a model's. Claude's
+# tokenizer is not published: Claude's tokens are counted by Anthropic's API,
+# which `llm/anthropic`'s `count_tokens` asks. Text cut into pieces of a
+# number of tokens is `chunks`'.
 #
 # The pattern is read in the dialect tiktoken writes it in, that of the Rust
 # crate fancy-regex, and matched by `regex` (`tokenizer/internal/dialect`
@@ -118,124 +118,127 @@ function parse_ranks(text: str) -> [[u8]]?
 function format_ranks(ranks: [[u8]]) -> str
     return ranks_file.format(ranks)
 
-# The pattern of `enc`, as it was given to `new`.
+# The pattern of `encoding`, as it was given to `new`.
 #
-# - `enc`: the encoding.
-function pattern_of(enc: Encoding lent) -> str
-    return enc.core.pattern
+# - `encoding`: the encoding.
+function pattern_of(encoding: Encoding lent) -> str
+    return encoding.core.pattern
 
-# How many numbers the tokens of `enc` may take: its largest token plus 1,
-# tiktoken's `n_vocab`.
+# How many numbers the tokens of `encoding` may take: its largest token plus
+# 1, tiktoken's `n_vocab`.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 #
 # See also `max_token`.
-function vocabulary_size(enc: Encoding lent) -> i64
-    return enc.core.max_token + 1
+function vocabulary_size(encoding: Encoding lent) -> i64
+    return encoding.core.max_token + 1
 
-# The largest number of a token of `enc`, ordinary or special.
+# The largest number of a token of `encoding`, ordinary or special.
 #
-# - `enc`: the encoding.
-function max_token(enc: Encoding lent) -> i64
-    return enc.core.max_token
+# - `encoding`: the encoding.
+function max_token(encoding: Encoding lent) -> i64
+    return encoding.core.max_token
 
-# The bytes of every ordinary token of `enc`, its rank its index.
+# The bytes of every ordinary token of `encoding`, its rank its index.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 #
 # It copies every token's bytes. See also `decode_token`.
-function ranks_of(enc: Encoding lent) -> [[u8]]
+function ranks_of(encoding: Encoding lent) -> [[u8]]
     out: [[u8]] @= []
     rank: i64 @= 0
 
-    while rank < vocabulary.size(enc.core.table)
-        out @ out.push(vocabulary.bytes_of(enc.core.table, rank: rank))
+    while rank < vocabulary.size(encoding.core.table)
+        out @ out.push(vocabulary.bytes_of(encoding.core.table, rank: rank))
         rank @ rank + 1
 
     return out
 
-# The text of every special token of `enc`, in the order of its number.
+# The text of every special token of `encoding`, in the order of its number.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 #
 # Empty where it has none. See also `is_special`.
-function special_tokens(enc: Encoding lent) -> [str]
-    return enc.core.special_texts
+function special_tokens(encoding: Encoding lent) -> [str]
+    return encoding.core.special_texts
 
-# Whether `token` is a special token of `enc`.
+# Whether `token` is a special token of `encoding`.
 #
-# - `enc`: the encoding.
-# - `token`: any number; one that is no token of `enc` answers false.
-function is_special(enc: Encoding lent, token: i64) -> bool
-    return !enc.core.special_by_number[token].is_err()
+# - `encoding`: the encoding.
+# - `token`: any number; one that is no token of `encoding` answers false.
+function is_special(encoding: Encoding lent, token: i64) -> bool
+    return !encoding.core.special_by_number[token].is_err()
 
-# The number of the special token `<|endoftext|>` of `enc`, tiktoken's
+# The number of the special token `<|endoftext|>` of `encoding`, tiktoken's
 # `eot_token`.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 #
-# Fails `not_found` where `enc` has no such special token.
-function end_of_text(enc: Encoding lent) -> i64?
-    match enc.core.special_by_text["<|endoftext|>"]
-        .ok n  => return ok(n)
-        .err _ => return fail(code: NOT_FOUND, msg: f"the encoding \"{enc.name}\" has no special token <|endoftext|>")
+# Fails `not_found` where `encoding` has no such special token.
+function end_of_text(encoding: Encoding lent) -> i64?
+    match encoding.core.special_by_text["<|endoftext|>"]
+        .ok n => return ok(n)
+        .err _ => return fail(
+            code: NOT_FOUND,
+            msg: f"the encoding \"{encoding.name}\" has no special token <|endoftext|>"
+        )
 
 ## Encoding
 
 # The tokens of `text`, every special token's text in it refused, as
 # tiktoken's `encode` does by default.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `text`: the text; the empty text has no tokens.
 #
-# Fails `invalid` where `text` holds the text of a special token of `enc`,
-# naming it and its byte index: a text from outside that holds
+# Fails `invalid` where `text` holds the text of a special token of
+# `encoding`, naming it and its byte index: a text from outside that holds
 # `<|endoftext|>` must not end a prompt early. See also `encode_ordinary`,
 # which reads such text as text, and `encode_with_specials`.
-function encode(enc: Encoding lent, text: str) -> [i64]?
-    return encoder.refusing_all(enc.core, text: text)
+function encode(encoding: Encoding lent, text: str) -> [i64]?
+    return encoder.refusing_all(encoding.core, text: text)
 
 # The tokens of `text`, a special token's text in it encoded as ordinary
 # text, as tiktoken's `encode_ordinary` does.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `text`: the text; the empty text has no tokens.
 #
 # See also `encode` and `count`.
-function encode_ordinary(enc: Encoding lent, text: str) -> [i64]
-    return encoder.ordinary(enc.core, text: text)
+function encode_ordinary(encoding: Encoding lent, text: str) -> [i64]
+    return encoder.ordinary(encoding.core, text: text)
 
 # The tokens of `text`, the special tokens `allowed` encoded as special
 # tokens wherever their text stands in it, and those `refused` failing.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `text`: the text.
 # - `allowed`: the texts of the special tokens to encode as such; where two
 #   begin at one place, the longer is taken. Empty for none.
 # - `refused`: the texts of the special tokens that may not stand in `text`;
-#   one named in `allowed` too is allowed. `special_tokens(enc)` refuses
+#   one named in `allowed` too is allowed. `special_tokens(encoding)` refuses
 #   every one not allowed, tiktoken's default; empty refuses none, and a
 #   special token neither allowed nor refused is encoded as ordinary text.
 #
 # Fails `invalid` where `text` holds the text of a refused special token,
 # naming it and its byte index, and where `allowed` or `refused` names a text
-# that is no special token of `enc`. See also `encode`.
-function encode_with_specials(enc: Encoding lent, text: str, allowed: [str], refused: [str]) -> [i64]?
-    return encoder.with_specials(enc.core, text: text, allowed: allowed, refused: refused)
+# that is no special token of `encoding`. See also `encode`.
+function encode_with_specials(encoding: Encoding lent, text: str, allowed: [str], refused: [str]) -> [i64]?
+    return encoder.with_specials(encoding.core, text: text, allowed: allowed, refused: refused)
 
 # How many tokens `encode_ordinary` makes of `text`.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `text`: the text; the empty text counts 0.
 #
 # See also `truncate`.
-function count(enc: Encoding lent, text: str) -> i64
-    return encoder.ordinary(enc.core, text: text).len()
+function count(encoding: Encoding lent, text: str) -> i64
+    return encoder.ordinary(encoding.core, text: text).len()
 
 # The longest beginning of `text` that encodes to at most `most` tokens,
 # never cutting inside a character.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `text`: the text.
 # - `most`: the most tokens; 0 or less answers the empty text.
 #
@@ -243,123 +246,124 @@ function count(enc: Encoding lent, text: str) -> i64
 # may encode its last piece otherwise, and the cut then moves back a token
 # at a time until it does. It costs an encoding of the text, and one more for
 # each such move.
-function truncate(enc: Encoding lent, text: str, most: i64) -> str
-    return encoder.truncated(enc.core, text: text, most: most)
+function truncate(encoding: Encoding lent, text: str, most: i64) -> str
+    return encoder.truncated(encoding.core, text: text, most: most)
 
-# The token of `enc` that is exactly the bytes `piece`, ordinary or special,
-# tiktoken's `encode_single_token`.
+# The token of `encoding` that is exactly the bytes `piece`, ordinary or
+# special, tiktoken's `encode_single_token`.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `piece`: the bytes.
 #
 # Fails `not_found` where no token is exactly those bytes. See also
 # `decode_token`.
-function token_of(enc: Encoding lent, piece: [u8]) -> i64?
+function token_of(encoding: Encoding lent, piece: [u8]) -> i64?
     if piece.len() > 0
-        rank = vocabulary.rank_of(enc.core.table, s: piece, from: 0, to: piece.len())
+        rank = vocabulary.rank_of(encoding.core.table, s: piece, from: 0, to: piece.len())
 
         if rank != vocabulary.NO_RANK
             return ok(rank)
         at: i64 @= 0
 
-        while at < enc.core.special_texts.len()
-            if bytes.from_text(enc.core.special_texts[at]) == piece
-                return ok(enc.core.special_numbers[at])
+        while at < encoding.core.special_texts.len()
+            if bytes.from_text(encoding.core.special_texts[at]) == piece
+                return ok(encoding.core.special_numbers[at])
             at @ at + 1
 
     return fail(
         code: NOT_FOUND,
-        msg: f"no token of \"{enc.name}\" is exactly the {piece.len()} bytes {bytes.format_hex(piece)}"
+        msg: f"no token of \"{encoding.name}\" is exactly the {piece.len()} bytes {bytes.format_hex(piece)}"
     )
 
 # The tokens of the bytes `piece` merged whole, as one piece, with no pattern
 # cutting them first and no special token read: tiktoken's
 # `_encode_single_piece`.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `piece`: any bytes, UTF-8 or not; none answers no token, where tiktoken
 #   0.14.0 panics.
 #
 # See also `encode_ordinary`, which cuts a text into pieces first.
-function encode_piece(enc: Encoding lent, piece: [u8]) -> [i64]
+function encode_piece(encoding: Encoding lent, piece: [u8]) -> [i64]
     out: [i64] @= []
 
     if piece.len() > 0
-        merge.add_ranks(@out, t: enc.core.table, s: piece, from: 0, to: piece.len())
+        merge.add_ranks(@out, t: encoding.core.table, s: piece, from: 0, to: piece.len())
     return out
 
-# The pieces the pattern of `enc` cuts `text` into, which are then merged
+# The pieces the pattern of `encoding` cuts `text` into, which are then merged
 # into tokens each apart.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `text`: the text.
 #
 # In order; text no match of the pattern reaches is in no piece, as tiktoken
 # drops it.
-function pieces_of(enc: Encoding lent, text: str) -> [str]
-    return pieces.split(enc.core.splitter, s: text)
+function pieces_of(encoding: Encoding lent, text: str) -> [str]
+    return pieces.split(encoding.core.splitter, s: text)
 
 ## Decoding
 
 # The text the tokens `tokens` write, each byte that is no part of UTF-8
 # replaced by U+FFFD, as tiktoken's `decode` does.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `tokens`: the tokens, ordinary or special; none answers the empty text.
 #
-# Fails `invalid` where a token is no token of `enc`, naming it and its
+# Fails `invalid` where a token is no token of `encoding`, naming it and its
 # index. The bytes of a character cut between two lists of tokens are
 # replaced; `decode_next` keeps them. See also `decode_bytes`.
-function decode(enc: Encoding lent, tokens: [i64]) -> str?
-    written = decoder.bytes_of(enc.core, tokens: tokens)?
+function decode(encoding: Encoding lent, tokens: [i64]) -> str?
+    written = decoder.bytes_of(encoding.core, tokens: tokens)?
     return ok(bytes.to_text_lossy(written))
 
 # The bytes the tokens `tokens` write, end to end.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `tokens`: the tokens, ordinary or special.
 #
-# Fails `invalid` where a token is no token of `enc`. See also `decode`.
-function decode_bytes(enc: Encoding lent, tokens: [i64]) -> [u8]?
-    return decoder.bytes_of(enc.core, tokens: tokens)
+# Fails `invalid` where a token is no token of `encoding`. See also `decode`.
+function decode_bytes(encoding: Encoding lent, tokens: [i64]) -> [u8]?
+    return decoder.bytes_of(encoding.core, tokens: tokens)
 
 # The bytes of the token `token`, tiktoken's `decode_single_token_bytes`.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `token`: an ordinary or special token.
 #
-# Fails `invalid` where `token` is no token of `enc`. See also `token_of`.
-function decode_token(enc: Encoding lent, token: i64) -> [u8]?
-    return decoder.bytes_of(enc.core, tokens: [token])
+# Fails `invalid` where `token` is no token of `encoding`. See also
+# `token_of`.
+function decode_token(encoding: Encoding lent, token: i64) -> [u8]?
+    return decoder.bytes_of(encoding.core, tokens: [token])
 
 # The bytes of each token of `tokens`, in order.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `tokens`: the tokens.
 #
-# Fails `invalid` where a token is no token of `enc`.
-function decode_tokens(enc: Encoding lent, tokens: [i64]) -> [[u8]]?
-    return decoder.each_bytes(enc.core, tokens: tokens)
+# Fails `invalid` where a token is no token of `encoding`.
+function decode_tokens(encoding: Encoding lent, tokens: [i64]) -> [[u8]]?
+    return decoder.each_bytes(encoding.core, tokens: tokens)
 
 # Where each token of `tokens` begins in the bytes `decode_bytes` answers,
 # as a byte index, which is its place in the text it was encoded from.
 #
-# - `enc`: the encoding.
+# - `encoding`: the encoding.
 # - `tokens`: the tokens.
 #
 # One index a token, the first 0. A token that begins inside a character, the
 # rest of one an earlier token began, gives that index too;
 # `unicode.floor_char_boundary` gives the character's first byte, which
 # tiktoken's `decode_with_offsets` counts in characters. Fails `invalid`
-# where a token is no token of `enc`.
-function offsets_of(enc: Encoding lent, tokens: [i64]) -> [i64]?
-    return decoder.offsets(enc.core, tokens: tokens)
+# where a token is no token of `encoding`.
+function offsets_of(encoding: Encoding lent, tokens: [i64]) -> [i64]?
+    return decoder.offsets(encoding.core, tokens: tokens)
 
 # The text `token` completes, after the bytes `held` keeps of the tokens
 # before it: a model's answer decoded token by token as it streams.
 #
-# - `enc`: the encoding.
-# - `@held`: the bytes of a character not yet whole, which the caller keeps
+# - `encoding`: the encoding.
+# - `held`: the bytes of a character not yet whole, which the caller keeps
 #   empty at first and between calls; the token's bytes are added to them,
 #   and they keep afterwards only those of a character still cut, at most
 #   three.
@@ -368,17 +372,22 @@ function offsets_of(enc: Encoding lent, tokens: [i64]) -> [i64]?
 # The answer holds every whole character, U+FFFD in place of each byte that
 # no more bytes can make UTF-8, and may be empty. At the end of the stream
 # `bytes.to_text_lossy(held)` is what is left. Fails `invalid` where `token`
-# is no token of `enc`, `held` left as it was.
-function decode_next(enc: Encoding lent, @held: [u8], token: i64) -> str?
-    return decoder.next_text(enc.core, @held, token: token)
+# is no token of `encoding`, `held` left as it was.
+function decode_next(encoding: Encoding lent, @held: [u8], token: i64) -> str?
+    return decoder.next_text(encoding.core, @held, token: token)
 
 ## Examples
 
 # An encoding made from its parts: the 256 bytes, twelve merged tokens and a
 # special token numbered 300.
 test "new: an encoding of the 256 bytes, twelve merges and a special token"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: {"<|endoftext|>": 300}).must()
-    assert encode_ordinary(enc, text: "hello world") == [260, 264]
+    encoding = new(
+        name: "tiny",
+        pattern: sample.PATTERN,
+        ranks: sample.ranks(),
+        specials: {"<|endoftext|>": 300}
+    ).must()
+    assert encode_ordinary(encoding, text: "hello world") == [260, 264]
 
 # The lines of a `.tiktoken` file read, each token at its rank.
 test "parse_ranks: two tokens"
@@ -390,114 +399,114 @@ test "format_ranks: two tokens"
 
 # The pattern an encoding was made with.
 test "pattern_of: the pattern given to new"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert pattern_of(enc) == sample.PATTERN
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert pattern_of(encoding) == sample.PATTERN
 
 # How many numbers an encoding's tokens take, its special token's included.
 test "vocabulary_size: 268 ordinary tokens and a special token numbered 300"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert vocabulary_size(enc) == 301
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert vocabulary_size(encoding) == 301
 
 # The largest token, here the special one.
 test "max_token: the special token numbered 300"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert max_token(enc) == 300
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert max_token(encoding) == 300
 
 # The bytes of every ordinary token, by rank.
 test "ranks_of: the token of rank 260"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    every = ranks_of(enc)
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    every = ranks_of(encoding)
     assert every.len() == 268 && every[260] == bytes.from_text("hello")
 
 # The texts of an encoding's special tokens.
 test "special_tokens: the one special token"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert special_tokens(enc) == ["<|endoftext|>"]
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert special_tokens(encoding) == ["<|endoftext|>"]
 
 # Whether a token is a special one.
 test "is_special: a special token and an ordinary one"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert is_special(enc, token: 300) && !is_special(enc, token: 260)
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert is_special(encoding, token: 300) && !is_special(encoding, token: 260)
 
 # The number of `<|endoftext|>`, which ends a document.
 test "end_of_text: the number of <|endoftext|>"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert end_of_text(enc).must() == 300
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert end_of_text(encoding).must() == 300
 
 # A text encoded, and a text holding a special token's text refused.
 test "encode: two words, and a special token's text refused"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert encode(enc, text: "hello world").must() == [260, 264]
-    assert encode(enc, text: "hello<|endoftext|>").is_err()
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert encode(encoding, text: "hello world").must() == [260, 264]
+    assert encode(encoding, text: "hello<|endoftext|>").is_err()
 
 # A special token's text encoded as the text it is.
 test "encode_ordinary: a special token's text read as text"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert encode_ordinary(enc, text: "hello<|endoftext|>") == [260, 60, 124, 101, 110, 100, 111, 102, 116, 101, 120, 116, 124, 62]
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert encode_ordinary(encoding, text: "hello<|endoftext|>") == [260, 60, 124, 101, 110, 100, 111, 102, 116, 101, 120, 116, 124, 62]
 
 # A special token allowed between two words.
 test "encode_with_specials: <|endoftext|> allowed"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert encode_with_specials(enc, text: "hello<|endoftext|> world", allowed: ["<|endoftext|>"], refused: []).must() == [260, 300, 264]
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert encode_with_specials(encoding, text: "hello<|endoftext|> world", allowed: ["<|endoftext|>"], refused: []).must() == [260, 300, 264]
 
 # How many tokens a text takes.
 test "count: a short sentence"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert count(enc, text: "hello world, hello") == 7
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert count(encoding, text: "hello world, hello") == 7
 
 # A text cut to the first three of its tokens.
 test "truncate: at most three tokens"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert truncate(enc, text: "hello world, hello", most: 3) == "hello world,"
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert truncate(encoding, text: "hello world, hello", most: 3) == "hello world,"
 
 # The token that is exactly some bytes.
 test "token_of: the bytes of hello"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert token_of(enc, piece: bytes.from_text("hello")).must() == 260
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert token_of(encoding, piece: bytes.from_text("hello")).must() == 260
 
 # Bytes merged whole, the space and the word after it in one piece.
 test "encode_piece: two words merged as one piece, and bytes that are not UTF-8"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert encode_piece(enc, piece: bytes.from_text("hello world")) == [256, 257, 111, 264]
-    assert encode_piece(enc, piece: [0xe2, 0x82, 0xac, 0xff]) == [267, 255]
-    assert encode_piece(enc, piece: []) == []
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert encode_piece(encoding, piece: bytes.from_text("hello world")) == [256, 257, 111, 264]
+    assert encode_piece(encoding, piece: [0xe2, 0x82, 0xac, 0xff]) == [267, 255]
+    assert encode_piece(encoding, piece: []) == []
 
 # The pieces a text is cut into before merging, a run of white space giving
 # its last space to the word after it.
 test "pieces_of: words, white space, digits by three, and a mark"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert pieces_of(enc, text: "hello  world 12345!") == ["hello", " ", " world", " 123", "45", "!"]
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert pieces_of(encoding, text: "hello  world 12345!") == ["hello", " ", " world", " 123", "45", "!"]
 
 # Tokens written back as text.
 test "decode: two tokens"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert decode(enc, tokens: [260, 264]).must() == "hello world"
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert decode(encoding, tokens: [260, 264]).must() == "hello world"
 
 # Tokens written back as bytes, a special token's text among them.
 test "decode_bytes: an ordinary token and the special one"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert decode_bytes(enc, tokens: [260, 300]).must() == bytes.from_text("hello<|endoftext|>")
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert decode_bytes(encoding, tokens: [260, 300]).must() == bytes.from_text("hello<|endoftext|>")
 
 # The bytes of one token.
 test "decode_token: the token of the euro sign"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert decode_token(enc, token: 267).must() == [0xe2, 0x82, 0xac]
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert decode_token(encoding, token: 267).must() == [0xe2, 0x82, 0xac]
 
 # The bytes of each token apart.
 test "decode_tokens: two tokens"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert decode_tokens(enc, tokens: [260, 264]).must() == [bytes.from_text("hello"), bytes.from_text(" world")]
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert decode_tokens(encoding, tokens: [260, 264]).must() == [bytes.from_text("hello"), bytes.from_text(" world")]
 
 # Where each token begins in the text.
 test "offsets_of: three tokens"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
-    assert offsets_of(enc, tokens: [260, 264, 267]).must() == [0, 5, 11]
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    assert offsets_of(encoding, tokens: [260, 264, 267]).must() == [0, 5, 11]
 
 # A stream decoded token by token, a character cut between two tokens held
 # until it is whole.
 test "decode_next: the euro sign cut in two"
-    enc = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
+    encoding = new(name: "tiny", pattern: sample.PATTERN, ranks: sample.ranks(), specials: sample.specials()).must()
     held: [u8] @= []
-    assert decode_next(enc, @held, token: 260).must() == "hello"
-    assert decode_next(enc, @held, token: 266).must() == ""
-    assert decode_next(enc, @held, token: 172).must() == "€"
+    assert decode_next(encoding, @held, token: 260).must() == "hello"
+    assert decode_next(encoding, @held, token: 266).must() == ""
+    assert decode_next(encoding, @held, token: 172).must() == "€"

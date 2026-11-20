@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { referenceFaces, renderReferencePage } from '../../lib/rebel-page.ts';
+
+// One page per face of Rebel that `heroes doc` accepts, its body that
+// command's output (`reference.ts`). A face it refuses has no page, and the
+// build's last audit says so.
+export async function getStaticPaths() {
+  return (await referenceFaces()).map((face) => ({ params: { face } }));
+}
+
+const page = await renderReferencePage(Astro.params.face!, 'en');
+---
+<BaseLayout url={page.url} title={page.title} description={page.description}>
+<Fragment set:html={page.html} />
+</BaseLayout>

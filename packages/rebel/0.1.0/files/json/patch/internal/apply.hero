@@ -271,7 +271,7 @@ function one(doc: json.Value, op: ops.Op, loose: Loose) -> json.Value?
     if op.kind == ops.TEST
         found = get(doc, pointer: op.path, loose: loose)?
 
-        if !json.equal(a: found, b: op.value)
+        if !json.equals(a: found, b: op.value)
             return fail(
                 code: INVALID,
                 msg: f"the test of \"{op.path}\" expected {json.format(op.value).default("a value")} and found {json.format(found).default("another")}"

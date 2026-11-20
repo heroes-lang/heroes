@@ -1,11 +1,11 @@
-# A float's bits made and read by exact arithmetic: the language has no cast
-# between a float and its bits, and every step here multiplies or divides by a
-# power of two, which an `f64` does exactly while the result stays in range.
-# A double is held as its three fields, each an `i64` so that the bitwise
-# operators reach them; halves and singles are read from their bits and
-# chosen, for writing, only where they hold the double exactly.
+# A float's bits made and read through `numbers`' doors between a float and
+# its bits (`numbers.f64_to_bits` and its kin) and `bytes`' readers of a
+# float's bytes. A double is held as its three fields, each an `i64` so that
+# the bitwise operators reach them; halves and singles are read from their
+# bits and chosen, for writing, only where they hold the double exactly.
 
 use bytes
+use numbers
 
 # 2^64, the largest step a scaling takes at once.
 constant STEP: f64
@@ -13,6 +13,14 @@ constant STEP: f64
 
 # 2^52, the weight of a double's hidden bit.
 constant HIDDEN: i64
+    4503599627370496
+
+# 2^63, the weight of a double's sign bit among its 64.
+constant SIGN_BIT: u64
+    9223372036854775808
+
+# 2^52 as a `u64`, the weight of the lowest bit of a double's exponent.
+constant EXPONENT_UNIT: u64
     4503599627370496
 
 # The three fields of a double.
@@ -24,7 +32,9 @@ record Parts
     # The fraction's 52 bits.
     fraction: i64
 
-# 2^`k` exactly, for `k` from -1074 to 1023.
+# 2^`k` exactly, for `k` from -1074 to 1023, by multiplying and dividing by
+# powers of two: what the tests below build their edges with, apart from the
+# doors under test.
 function pow2(k: i64) -> f64
     result: f64 @= 1.0
     left: i64 @= k
@@ -47,113 +57,45 @@ function pow2(k: i64) -> f64
 
     return result
 
-# The fields of the double `x`; every `nan` is the quiet one, its sign clear.
+# The fields of the double `x`; every `nan` is the quiet one, its sign clear,
+# as `numbers.f64_to_bits` answers it.
 function parts_of(x: f64) -> Parts
-    if x != x
-        return Parts(sign: 0, exponent: 2047, fraction: HIDDEN / 2)
+    bits = numbers.f64_to_bits(x)
+    negative = bits >= SIGN_BIT
 
-    negative = x < 0.0 || x == 0.0 && 1.0 / x < 0.0
+    rest = if negative
+        bits - SIGN_BIT
+    else
+        bits
 
     sign = if negative
         1
     else
         0
 
-    a = if negative
-        -x
-    else
-        x
-
-    if a == 0.0
-        return Parts(sign: sign, exponent: 0, fraction: 0)
-    else if a == 1.0 / 0.0
-        return Parts(sign: sign, exponent: 2047, fraction: 0)
-
-    y: f64 @= a
-    e: i64 @= 0
-
-    while y >= STEP
-        y @ y / STEP
-        e @ e + 64
-
-    while y >= 2.0
-        y @ y / 2.0
-        e @ e + 1
-
-    while y < 1.0 / STEP
-        y @ y * STEP
-        e @ e - 64
-
-    while y < 1.0
-        y @ y * 2.0
-        e @ e - 1
-
-    if e >= -1022
-        return Parts(sign: sign, exponent: e + 1023, fraction: to_i64((y - 1.0) * pow2(52)).must())
-    return Parts(sign: sign, exponent: 0, fraction: to_i64(y * pow2(e + 1074)).must())
+    return Parts(
+        sign: sign,
+        exponent: to_i64(rest / EXPONENT_UNIT).must(),
+        fraction: to_i64(rest % EXPONENT_UNIT).must()
+    )
 
 # The double whose fields are `p`.
 function value_of(p: Parts) -> f64
-    magnitude = if p.exponent == 2047 && p.fraction != 0
-        0.0 / 0.0
-    else if p.exponent == 2047
-        1.0 / 0.0
-    else if p.exponent == 0
-        to_f64(p.fraction) * pow2(-1074)
-    else
-        to_f64(p.fraction + HIDDEN) * pow2(p.exponent - 1075)
-
-    if p.sign == 1
-        return -magnitude
-    return magnitude
+    bits = to_u64(p.sign).must() * SIGN_BIT + to_u64(p.exponent).must() * EXPONENT_UNIT + to_u64(p.fraction).must()
+    return numbers.bits_to_f64(bits)
 
 # The value of the half whose 16 bits are `h`.
 function half_value(h: i64) -> f64
-    exponent = h >> 10 & 31
-    fraction = h & 1023
-
-    magnitude = if exponent == 31 && fraction != 0
-        0.0 / 0.0
-    else if exponent == 31
-        1.0 / 0.0
-    else if exponent == 0
-        to_f64(fraction) * pow2(-24)
-    else
-        to_f64(fraction + 1024) * pow2(exponent - 25)
-
-    if h >> 15 == 1
-        return -magnitude
-    return magnitude
+    return numbers.f16_bits_to_f64(to_u16(h).must())
 
 # The value of the single whose 32 bits are `s`.
 function single_value(s: i64) -> f64
-    exponent = s >> 23 & 255
-    fraction = s & 8388607
-
-    magnitude = if exponent == 255 && fraction != 0
-        0.0 / 0.0
-    else if exponent == 255
-        1.0 / 0.0
-    else if exponent == 0
-        to_f64(fraction) * pow2(-149)
-    else
-        to_f64(fraction + 8388608) * pow2(exponent - 150)
-
-    if s >> 31 == 1
-        return -magnitude
-    return magnitude
+    return to_f64(numbers.bits_to_f32(to_u32(s).must()))
 
 # The value of the double whose eight bytes, most significant first, begin at
-# `at` of `data`.
+# `at` of `data`, which holds them.
 function double_value(data: [u8], at: i64) -> f64
-    b0 = to_i64(data[at]).must()
-    b1 = to_i64(data[at + 1]).must()
-    fraction: i64 @= b1 & 15
-
-    for k in range(from: 2, to: 8)
-        fraction @ fraction << 8 | to_i64(data[at + k]).must()
-
-    return value_of(Parts(sign: b0 >> 7, exponent: (b0 & 127) << 4 | b1 >> 4, fraction: fraction))
+    return bytes.decode_f64_be(data, at: at).must()
 
 # `n`'s lowest `count` bytes, the most significant first.
 function bytes_of(n: i64, count: i64) -> [u8]

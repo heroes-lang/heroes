@@ -39,6 +39,7 @@ import { join } from 'node:path';
 import { repoRoot, isFile } from './repo.ts';
 import { examples } from './examples-model.ts';
 import { CHAIN_FILE, CHAIN_ROW_PATTERN } from './chain.ts';
+import { rebelVersion } from './reference.ts';
 
 /**
  * The history is deep enough to date a page, or the build stops before it runs.
@@ -172,6 +173,12 @@ export function sourcesFor(pathname: string): string[] {
     }
     const prefix = lang === 'it' ? 'site/src/html/it/examples' : 'site/src/html/examples';
     return [program, `${prefix}/${slug}.html`];
+  }
+
+  // A reference page of Rebel, whose body is what `heroes doc` prints from the
+  // face: the face's own file is what changes it (`reference.ts`).
+  if (bare.startsWith('/rebel/') && bare !== '/rebel/') {
+    return [`packages/rebel/${rebelVersion()}/files/${bare.slice('/rebel/'.length, -1)}.hero`, 'site/src/lib/rebel-page.ts'];
   }
 
   const stem = pathname === '/' ? 'index' : pathname.slice(1, -1);

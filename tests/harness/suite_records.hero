@@ -159,6 +159,126 @@ constant GENERATED: [str]
         "tests/thesis/held-out/runs/c1e3d004.enc"
     ]
 
+# REBEL'S FILES THAT HOLD ANOTHER STANDARD'S DATA, each read apart by the
+# rules it would trip and by no other (M-rebel-library's landing, 2026-11-20).
+# Rebel carries data a standard spells: CLDR's tables and ICU's answers,
+# Unicode's names, a POSIX TZ rule's `M3.5.0`, base64, an SVG path's `M1,1`,
+# the Micro QR versions `M1` to `M4` of ISO/IEC 18004. A rule of this suite
+# reads such text as this project's prose: `numbered` takes an `M` and a
+# digit for a retired milestone, `names` an `M-` and a letter for an id, and
+# `english` a locale's own words, or a code literal `"*"` paired as a
+# quotation's `*"`, for Italian. The rules stand as they are and a file is
+# read apart from one by its exact path, never by a prefix, since a package
+# grows and a file beside one of these is prose until a row says otherwise.
+#
+# A row is the path and then the rules it is read apart from, each the label's
+# last word. `records/exemptions` holds every row to selecting a file and
+# naming only those three rules. Each row's file is one its rules reported at
+# the round's base, `48d762034`, the day the list was written; a file a rule
+# did not report there has no row.
+constant FOREIGN_DATA: [str]
+    [
+        # CLDR 49's collation elements, six characters each of an alphabet
+        # holding `+` and `/`.
+        "packages/rebel/0.1.0/files/i18n/collate/internal/collate_tables.hero numbered"
+        # CLDR 49's calendars: `M11` a month's number, `M-d` a skeleton, and
+        # every locale's words, Italian's among them.
+        "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero numbered names english"
+        # ICU 79.1's answers, `31 M12 1999` among them.
+        "packages/rebel/0.1.0/files/i18n/dates/internal/icu_cases.hero numbered"
+        # CLDR 49's number patterns.
+        "packages/rebel/0.1.0/files/i18n/numbers/internal/number_tables.hero numbered"
+        # The LDAP fake's script, whose `expect: "*"` reads as a quotation's
+        # opening `*"`.
+        "packages/rebel/0.1.0/files/ldap/internal/fake.hero english"
+        # ISO/IEC 18004's Micro QR versions, M1 to M4.
+        "packages/rebel/0.1.0/files/qr.ledger numbered"
+        # SVG path data, `M1,1h2v1h-2z`.
+        "packages/rebel/0.1.0/files/qr/internal/render.hero numbered"
+        # A checksum in base64, `M3eFcAZSQlc=`.
+        "packages/rebel/0.1.0/files/s3.hero numbered"
+        "packages/rebel/0.1.0/files/s3/internal/checksums.hero numbered"
+        # POSIX TZ rules, `M3.5.0` the last Sunday of March.
+        "packages/rebel/0.1.0/files/time.hero numbered"
+        "packages/rebel/0.1.0/files/time/internal/tzif.hero numbered"
+        "packages/rebel/0.1.0/files/time/internal/zone_files.hero numbered"
+        "packages/rebel/0.1.0/files/time/internal/zone_rule.hero numbered"
+        "packages/rebel/0.1.0/files/time/internal/zone_table.hero numbered"
+        # Zone files in base64.
+        "packages/rebel/0.1.0/files/time/internal/carried_blobs.hero numbered"
+        # A certificate and a key in base64.
+        "packages/rebel/0.1.0/files/tls/internal/fixture.hero numbered"
+        "packages/rebel/0.1.0/files/x509/internal/samples.hero numbered"
+        # tiktoken's `o200k_base` ranks, their tokens in base64.
+        "packages/rebel/0.1.0/files/tokenizer/tables/internal/o200k_base.hero numbered"
+        # Unicode 17.0.0's names, `MENDE KIKAKUI SYLLABLE M172 MBO` among them.
+        "packages/rebel/0.1.0/files/unicode/names/internal/name_table.hero numbered"
+    ]
+
+# The rules a `FOREIGN_DATA` row may read a file apart from.
+constant FOREIGN_RULES: [str]
+    [
+        "numbered"
+        "names"
+        "english"
+    ]
+
+# Whether `path` is read apart from `rule` by a row of `FOREIGN_DATA`.
+function reads_apart(path: str, rule: str) -> bool
+    for row in FOREIGN_DATA
+        words = strings.words(row)
+
+        if words.len() > 1 && words[0] == path
+            for one in words.slice(from: 1, to: words.len())
+                if one == rule
+                    return true
+
+    return false
+
+# What is wrong with a row of `FOREIGN_DATA` against the tracked `present`:
+# its file not there, no rule, or a rule this list does not name.
+function foreign_offences(row: str, present: [str]) -> [str]
+    out: [str] @= []
+    words = strings.words(row)
+
+    if words.len() < 2
+        out @ out.push("FOREIGN_DATA names no rule: " + row)
+        return out
+
+    if !selects_exactly(entry: words[0], present: present)
+        out @ out.push("FOREIGN_DATA: " + words[0])
+
+    for one in words.slice(from: 1, to: words.len())
+        known: bool @= false
+
+        for rule in FOREIGN_RULES
+            if rule == one
+                known @ true
+
+        if !known
+            out @ out.push("FOREIGN_DATA names a rule it may not read a file apart from, `" + one + "`: " + words[0])
+
+    return out
+
+test "a file of another standard's data is read apart from the rules its row names, by its exact path, and from no other"
+    tzif = "packages/rebel/0.1.0/files/time/internal/tzif.hero"
+    assert reads_apart(path: tzif, rule: "numbered")
+    assert !reads_apart(path: tzif, rule: "english")
+    assert !reads_apart(path: tzif, rule: "names")
+    assert !reads_apart(path: "packages/rebel/0.1.0/files/time/internal/tzif.hero.md", rule: "numbered")
+    assert !reads_apart(path: "packages/rebel/0.1.0/files/time/internal", rule: "numbered")
+    assert !reads_apart(path: "packages/rebel/0.1.0/files/time.ledger", rule: "numbered")
+    tables = "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero"
+
+    for rule in FOREIGN_RULES
+        assert reads_apart(path: tables, rule: rule)
+
+    present = [tables, tzif]
+    assert foreign_offences(tables + " numbered names english", present: present).len() == 0
+    assert foreign_offences(tables, present: present)[0] == "FOREIGN_DATA names no rule: " + tables
+    assert foreign_offences("gone.hero numbered", present: present) == ["FOREIGN_DATA: gone.hero"]
+    assert foreign_offences(tzif + " citations", present: present) == ["FOREIGN_DATA names a rule it may not read a file apart from, `citations`: " + tzif]
+
 # The blessed emissions: 5.4 MB of generated C, derived from the
 # programs under `tests/golden/` and `examples/`. Reading it here
 # would scan a megabyte-scale COPY of text this walk already reads
@@ -878,9 +998,17 @@ constant QUOTED_MARKERS: [str]
 #
 # Exact match and one entry, so the exemption cannot spread: any OTHER harness
 # file that grows an Italian line is reported like anything else.
+#
+# **A second entry since 2026-11-20, for the same argument**: the final check
+# of M-rebel-library, `tests/harness/superseded.hero`, refuses the Italian
+# wordings decision 9 retired from the site's Italian edition, so it holds
+# them in `RETIRED_WORDINGS`, and its test folds one of them as the page
+# writes it; read at the round's base, the test's line was what this check
+# reported of the file. Still by exact name, so nothing beside it is excused.
 constant QUOTES_THE_ITALIAN: [str]
     [
         "tests/harness/suite_records.hero"
+        "tests/harness/superseded.hero"
     ]
 
 function run_all(scratch: str, only: str) -> report.Report?
@@ -996,10 +1124,15 @@ function run_all(scratch: str, only: str) -> report.Report?
     # in no file that is not a record, generated or a closed issue, CLAUDE.md
     # and names.md included, which `living` leaves out for the old spelling's
     # reason alone; and every record the register lists carrying its note.
+    # **A question of the learning list is a record here, open or answered**
+    # (2026-11-20): a dated file, named for the minute it was asked, whose
+    # words are never rewritten and whose correction is a dated note beneath
+    # them, as a sitting's is; the two that named `core` and the old founding
+    # sentence carry theirs.
     open_text: [str] @= []
 
     for path in walked
-        if !is_record(path) && !is_generated(path) && closed[path].is_err()
+        if !is_record(path) && !is_generated(path) && closed[path].is_err() && !is_question(path)
             open_text @ open_text.push(path)
 
     bodies: {i64: str} @= {}
@@ -1998,6 +2131,10 @@ function exemptions(@r: report.Report, present: [str], bootstrap: Archive)
         if !selects_suffix(entry: entry, present: present)
             dead @ dead.push("    QUOTES_THE_OLD_SPELLING: " + entry)
 
+    for row in FOREIGN_DATA
+        for one in foreign_offences(row, present: present)
+            dead @ dead.push("    " + one)
+
     # THE OTHER ELEVEN LISTS, none of which was covered until 2026-09-12. Three
     # were checked and eleven were not, which is the same asymmetry this function
     # exists to close one level down: a list nobody asks about goes on reading
@@ -2575,6 +2712,8 @@ function numbered(@r: report.Report, living: [str])
     offenders: [str] @= []
 
     for path in living
+        if reads_apart(path: path, rule: "numbered")
+            continue
         text = read_file(path)
 
         if text.is_err()
@@ -2618,6 +2757,8 @@ function named(@r: report.Report, living: [str])
     unknown: [str] @= []
 
     for path in living
+        if reads_apart(path: path, rule: "names")
+            continue
         text = read_file(path)
 
         if text.is_err()
@@ -3895,7 +4036,7 @@ function english(@r: report.Report, present: [str], closed: {str: bool})
         if is_record(path) || is_generated(path) || !closed[path].is_err()
             continue
 
-        if quotes_the_italian(path)
+        if quotes_the_italian(path) || reads_apart(path: path, rule: "english")
             continue
 
         if !reads_as_prose(path) || italian_by_design(path)

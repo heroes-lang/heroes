@@ -17,14 +17,14 @@
 # write a store of its own (a machine has one keyring, and this package reaches
 # it); prompt for a secret at the terminal (`term.read_secret`).
 #
-# **A secret is bytes**, at most `SECRET_MOST` of them on every platform,
+# **A secret is bytes**, at most `MAX_SECRET_BYTES` of them on every platform,
 # Windows' own bound, so a program that stores a secret on one platform stores
-# it on all; `store_text` and `read_text` keep text. No message of this package
-# ever holds a secret. **A service and an account are text** of at most
-# `NAME_MOST` bytes with no zero byte; the service is never empty. On macOS a
-# secret belongs to the program that stored it: another program, a new build of
-# the same one included, is asked about by the system, which may show the
-# person a dialog, or refuse where none can be shown.
+# it on all; `store_text` and `read_text` keep text. No message of this
+# package ever holds a secret. **A service and an account are text** of at
+# most `MAX_NAME_BYTES` bytes with no zero byte; the service is never empty.
+# On macOS a secret belongs to the program that stored it: another program, a
+# new build of the same one included, is asked about by the system, which may
+# show the person a dialog, or refuse where none can be shown.
 #
 # It fails with `invalid`, `not_found`, `permission`, `limit`, `unsupported`,
 # `not_text` and `failed` (README § A4).
@@ -35,9 +35,9 @@ use keyring/internal/calls
 
 ## Codes
 
-# A service empty, a name holding a zero byte or past `NAME_MOST` bytes, or a
-# secret past `SECRET_MOST` bytes. Every function that takes a name fails with
-# it.
+# A service empty, a name holding a zero byte or past `MAX_NAME_BYTES` bytes,
+# or a secret past `MAX_SECRET_BYTES` bytes. Every function that takes a name
+# fails with it.
 constant INVALID: str
     "invalid"
 
@@ -77,12 +77,12 @@ constant FAILED: str
 ## Bounds
 
 # The most bytes a service or an account holds.
-constant NAME_MOST: i64
+constant MAX_NAME_BYTES: i64
     1024
 
 # The most bytes a secret holds, on every platform: Windows' Credential Manager
 # holds no more.
-constant SECRET_MOST: i64
+constant MAX_SECRET_BYTES: i64
     2560
 
 ## The system's keyring
@@ -105,10 +105,10 @@ function system() -> str?
 # stood there.
 #
 # - `service`: what the secret belongs to, a program's or a site's name; not
-#   empty, at most `NAME_MOST` bytes, no zero byte.
+#   empty, at most `MAX_NAME_BYTES` bytes, no zero byte.
 # - `account`: whose secret it is under that service, a user's name; may be
-#   empty, at most `NAME_MOST` bytes, no zero byte.
-# - `secret`: the bytes kept, at most `SECRET_MOST`; may be empty.
+#   empty, at most `MAX_NAME_BYTES` bytes, no zero byte.
+# - `secret`: the bytes kept, at most `MAX_SECRET_BYTES`; may be empty.
 #
 # Fails `invalid` where a name or the secret is out of its bounds,
 # `permission`, `limit`, `unsupported` and `failed` where the keyring refuses.
@@ -119,11 +119,11 @@ function store(service: str, account: str, secret: [u8]) -> ()?
 # Stores the text `secret` under `service` and `account`, as its UTF-8,
 # replacing the secret that stood there.
 #
-# - `service`: what the secret belongs to; not empty, at most `NAME_MOST`
+# - `service`: what the secret belongs to; not empty, at most `MAX_NAME_BYTES`
 #   bytes, no zero byte.
-# - `account`: whose secret it is; may be empty, at most `NAME_MOST` bytes,
-#   no zero byte.
-# - `secret`: the text kept, at most `SECRET_MOST` bytes of UTF-8; may be
+# - `account`: whose secret it is; may be empty, at most `MAX_NAME_BYTES`
+#   bytes, no zero byte.
+# - `secret`: the text kept, at most `MAX_SECRET_BYTES` bytes of UTF-8; may be
 #   empty.
 #
 # Fails as `store` fails. See also `read_text`.
@@ -132,13 +132,14 @@ function store_text(service: str, account: str, secret: str) -> ()?
 
 # The secret stored under `service` and `account`.
 #
-# - `service`: what the secret belongs to; not empty, at most `NAME_MOST`
+# - `service`: what the secret belongs to; not empty, at most `MAX_NAME_BYTES`
 #   bytes, no zero byte.
-# - `account`: whose secret it is; may be empty, at most `NAME_MOST` bytes,
-#   no zero byte.
+# - `account`: whose secret it is; may be empty, at most `MAX_NAME_BYTES`
+#   bytes, no zero byte.
 #
 # Its bytes as they were stored; empty where an empty secret was. A secret
-# another program stored may be longer than `SECRET_MOST`, and is read whole.
+# another program stored may be longer than `MAX_SECRET_BYTES`, and is read
+# whole.
 #
 # Fails `not_found` where none stands, `invalid` where a name is out of its
 # bounds, `permission`, `limit`, `unsupported` and `failed` where the keyring
@@ -148,10 +149,10 @@ function read(service: str, account: str) -> [u8]?
 
 # The secret stored under `service` and `account`, as text.
 #
-# - `service`: what the secret belongs to; not empty, at most `NAME_MOST`
+# - `service`: what the secret belongs to; not empty, at most `MAX_NAME_BYTES`
 #   bytes, no zero byte.
-# - `account`: whose secret it is; may be empty, at most `NAME_MOST` bytes,
-#   no zero byte.
+# - `account`: whose secret it is; may be empty, at most `MAX_NAME_BYTES`
+#   bytes, no zero byte.
 #
 # Fails as `read` fails, and `not_text` where the secret is not UTF-8. See
 # also `store_text`.
@@ -161,10 +162,10 @@ function read_text(service: str, account: str) -> str?
 
 # Removes the secret stored under `service` and `account`.
 #
-# - `service`: what the secret belongs to; not empty, at most `NAME_MOST`
+# - `service`: what the secret belongs to; not empty, at most `MAX_NAME_BYTES`
 #   bytes, no zero byte.
-# - `account`: whose secret it is; may be empty, at most `NAME_MOST` bytes,
-#   no zero byte.
+# - `account`: whose secret it is; may be empty, at most `MAX_NAME_BYTES`
+#   bytes, no zero byte.
 #
 # Fails `not_found` where none stood, `invalid` where a name is out of its
 # bounds, `permission`, `unsupported` and `failed` where the keyring refuses.
@@ -176,12 +177,12 @@ function remove(service: str, account: str) -> ()?
 
 # The accounts that hold a secret under `service`.
 #
-# - `service`: the service asked about; not empty, at most `NAME_MOST`
+# - `service`: the service asked about; not empty, at most `MAX_NAME_BYTES`
 #   bytes, no zero byte.
 #
 # Ordered by their bytes, each once; empty where none holds one. An account
 # another program stored that is no name this package takes (a zero byte in
-# it, past `NAME_MOST` bytes) is left out.
+# it, past `MAX_NAME_BYTES` bytes) is left out.
 #
 # Fails `invalid` where the service is out of its bounds, `permission`,
 # `limit`, `unsupported` and `failed` where the keyring refuses. See also
@@ -192,8 +193,8 @@ function accounts(service: str) -> [str]?
 # Removes every secret stored under `service`, whatever its account; done also
 # where none stood.
 #
-# - `service`: the service whose secrets go; not empty, at most `NAME_MOST`
-#   bytes, no zero byte.
+# - `service`: the service whose secrets go; not empty, at most
+#   `MAX_NAME_BYTES` bytes, no zero byte.
 #
 # Fails `invalid` where the service is out of its bounds, `permission`,
 # `unsupported` and `failed` where the keyring refuses. See also `remove` and
@@ -201,16 +202,9 @@ function accounts(service: str) -> [str]?
 function remove_all(service: str) -> ()?
     return calls.remove_all(service)
 
-test "the face's codes and bounds are the private modules' and the layer's"
-    assert INVALID == "invalid"
-    assert NOT_FOUND == "not_found"
-    assert PERMISSION == "permission"
-    assert LIMIT == "limit"
-    assert UNSUPPORTED == "unsupported"
-    assert NOT_TEXT == "not_text"
-    assert FAILED == "failed"
-    assert NAME_MOST == hero_keyring.HERO_KEYRING_NAME_MOST
-    assert SECRET_MOST == hero_keyring.HERO_KEYRING_SECRET_MOST
+test "the face's bounds are the layer's"
+    assert MAX_NAME_BYTES == hero_keyring.HERO_KEYRING_NAME_MOST
+    assert MAX_SECRET_BYTES == hero_keyring.HERO_KEYRING_SECRET_MOST
 
 test "read_text: a secret that is no UTF-8 is not_text, and an absent one not_found, or the machine's refusal"
     service = hero_keyring.test_service("face-not-text")

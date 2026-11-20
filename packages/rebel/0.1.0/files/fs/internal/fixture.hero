@@ -1,7 +1,9 @@
 # What the tests of `fs` stand on, and nothing else here calls: a folder each
 # test makes under `build/` and removes, and a symbolic link made, which no
-# floor of `fs` binds. It binds `hero_os.h` itself, so that a test of the
-# modules that make and remove trees does not lean on what it tests.
+# floor of `fs` binds. It binds `hero_os.h`'s tree calls itself, so that a
+# test of the modules that make and remove trees does not lean on what it
+# tests; the process's number and the system's executable suffix it asks
+# `os`, which has them publicly.
 
 use os
 
@@ -10,8 +12,6 @@ extern "hero_os.h"
     function hero_fs_mkdir_all(path: cstr lent) -> i64
     function hero_dir_remove_tree(path: cstr lent) -> i64
     function hero_fs_symlink(target: cstr lent, name: cstr lent) -> i64
-    function hero_os_pid() -> i64
-    function hero_run_exe_suffix() -> str
 
 # The path of a new, empty folder for one test, under `build/` of the folder
 # the tests run from.
@@ -19,7 +19,7 @@ extern "hero_os.h"
 # - `name`: the test's own word; with this process's number it keeps two
 #   tests and two runs apart.
 function folder(name: str) -> str
-    made = f"build/rebel-fs-{hero_os_pid()}-{name}"
+    made = f"build/rebel-fs-{os.pid()}-{name}"
     _ = hero_dir_remove_tree(made.cstr())
     assert hero_fs_mkdir_all(made.cstr()) == HERO_OS_OK
     return made
@@ -40,9 +40,9 @@ function linked(target: str, name: str) -> bool
     return hero_fs_symlink(target: target.cstr(), name: name.cstr()) == HERO_OS_OK
 
 # Whether the tests run on Windows, whose answers differ where a function's
-# comment says so (round 3, 2026-11-16).
+# comment says so.
 function windows() -> bool
-    return hero_run_exe_suffix() == ".exe"
+    return os.executable_suffix() == ".exe"
 
 # The size `link_info` answers for a symbolic link holding `target`: the
 # target's length in bytes on POSIX, and 0 on Windows, which gives a link's

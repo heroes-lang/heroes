@@ -361,7 +361,7 @@ capability text/replace-all  a text with every occurrence of another replaced
   go      strings.ReplaceAll
   rust    str::replace, String::remove_matches
   python  str.replace
-  note    an empty text to replace stands before every character and at the end, as all three say
+  note    an empty text to replace stands before every character and at the end, as all three say. There is no plain `strings.replace`: Python's `str.replace` and Rust's `str::replace` replace every occurrence while `regex.replace` replaces the first, as Rust's `Regex::replace` does, so a bare word here would mean the one or the other by package; each name says its count, `replace_all`, `replace_n` with `n` of 1 for the first, `replace_last`
 
 capability text/replace-first-n  a text with the first n occurrences of another replaced
   heroes  strings.replace_n
@@ -544,7 +544,7 @@ capability text/slug-decomposed  a slug's letters decomposed first, so that an a
   go      -
   rust    -
   python  -
-  note    waits on the package `unicode/normalize`, not written yet: with it `to_slug` decomposes by NFKD before taking the marks away, so "Café" gives "cafe" as Django's does, where it gives "café" now; an accent already written as a mark of its own is taken away today
+  note    `unicode/normalize` is written, at this package's layer, so `strings` may not use it: a program writes `strings.to_slug(normalize.to_nfkd(s))`, and "Café au lait" gives "cafe-au-lait" as Django's does (run 2026-11-20), where `to_slug` alone gives "café-au-lait"; an accent already written as a mark of its own is taken away by `to_slug` alone. One call waits for a home above both layers, or for `to_slug` to move to a package of layer 2
 
 capability text/is-lower  whether the letters of a text are all lower case
   heroes  strings.is_lower
@@ -605,10 +605,11 @@ capability text/to-bytes  the bytes of a text
   python  str.encode (as UTF-8)
 
 capability text/from-bytes  the text some bytes are, where they are UTF-8
-  heroes  built-in validated_bytes
+  heroes  built-in validated_bytes, bytes.to_text
   go      -
   rust    str::from_utf8, String::from_utf8
   python  -
+  note    `bytes.to_text` answers what the built-in answers, and its message names the index where the bytes stop being UTF-8
 
 capability text/repair-utf8  a text with what is not UTF-8 replaced
   heroes  refused: a `str` is UTF-8 by construction, so no text needs the repair; bytes that are not text fail `not_text` where they are read

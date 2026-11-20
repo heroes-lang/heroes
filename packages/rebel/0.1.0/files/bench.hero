@@ -6,13 +6,12 @@
 # alternately in one sitting, the change read by the sign test and counted
 # none under a floor of effect.
 #
-# It keeps the rules the Heroes project measures its own compiler by
-# (`tests/harness/latency_clock.hero`): the first round is discarded; a round
-# whose wall time stands more than a share above the processor time the
-# process spent in it waited on something other than its work, and is
-# discarded; the best of the rounds kept is the number, and the worst less
-# the best its spread. Two results of two sittings are two dates, not a
-# measurement, so no function here compares them.
+# It keeps the rules the Heroes project measures its own compiler by: the
+# first round is discarded; a round whose wall time stands more than a share
+# above the processor time the process spent in it waited on something other
+# than its work, and is discarded; the best of the rounds kept is the number,
+# and the worst less the best its spread. Two results of two sittings are two
+# dates, not a measurement, so no function here compares them.
 #
 # The work is called through a function value and its answer dropped, which
 # the compiler cannot see through, so no call is removed. It does not count
@@ -31,13 +30,13 @@ use time
 
 ## Codes
 
-# The code `measure` and `compare` fail with where the monotonic clock or the
-# process's processor time cannot be read.
+# The code `measure` and `compare_versions` fail with where the monotonic
+# clock or the process's processor time cannot be read.
 constant FAILED: str
     clock.FAILED
 
-# The code `measure` and `compare` fail with where the time allowed ran out
-# before a round, or a pair, could be kept: every one waited.
+# The code `measure` and `compare_versions` fail with where the time allowed
+# ran out before a round, or a pair, could be kept: every one waited.
 constant TIMEOUT: str
     clock.TIMEOUT
 
@@ -55,11 +54,12 @@ record Settings
     # before the rounds that count: 1 or more, the first round being the
     # project's rule.
     warmups: i64
-    # Rounds kept at most, or pairs kept for `compare`: 1 or more.
+    # Rounds kept at most, or pairs kept for `compare_versions`: 1 or more.
     rounds: i64
     # The time a measurement may take, counted from its start: measuring
     # stops at the first round that ends after it, kept rounds or not; at
-    # least one round is run after the warm-ups, and two pairs by `compare`.
+    # least one round is run after the warm-ups, and two pairs by
+    # `compare_versions`.
     most: time.Duration
     # How long a round lasts at least: its calls are as many as reach it,
     # settled before the warm-ups. Above 0.
@@ -70,9 +70,9 @@ record Settings
     # milliseconds, the step some systems count processor time in, is never
     # waiting.
     waiting: f64
-    # The floor of effect of `compare`: a change of the median smaller than
-    # this share of the first version's median is counted no change. 0 or
-    # more.
+    # The floor of effect of `compare_versions`: a change of the median
+    # smaller than this share of the first version's median is counted no
+    # change. 0 or more.
     floor: f64
 
 # The settings of a measurement no program changed: one warm-up, 20 rounds
@@ -111,7 +111,7 @@ function with_warmups(settings: Settings, warmups: i64) -> Settings
 # A copy of `settings` keeping `rounds` rounds at most.
 #
 # - `settings`: the settings copied.
-# - `rounds`: rounds, or pairs for `compare`, kept at most, 1 or more.
+# - `rounds`: rounds, or pairs for `compare_versions`, kept at most, 1 or more.
 #
 # Aborts where `rounds` is below 1. See also `with_time`.
 function with_rounds(settings: Settings, rounds: i64) -> Settings
@@ -184,9 +184,10 @@ function with_waiting(settings: Settings, share: f64) -> Settings
 #
 # - `settings`: the settings copied.
 # - `share`: the change of the median, as a share of the first version's,
-#   below which `compare` counts no change, 0 or more and finite.
+#   below which `compare_versions` counts no change, 0 or more and finite.
 #
-# Aborts where `share` is negative, infinite or a nan. See also `compare`.
+# Aborts where `share` is negative, infinite or a nan. See also
+# `compare_versions`.
 function with_floor(settings: Settings, share: f64) -> Settings
     assert share >= 0.0 && math.is_finite(share)
     return Settings(
@@ -280,7 +281,7 @@ variant Change
     # Too few pairs were kept for a verdict: the machine was not still.
     unknown
 
-# What `compare` and `compare_pairs` found.
+# What `compare_versions` and `compare_pairs` found.
 record Comparison
     # The verdict.
     change: Change
@@ -322,7 +323,7 @@ record Comparison
 #
 # Fails `failed` where a clock cannot be read, and `timeout` where
 # `settings.most` passed with every round discarded as waiting. A `work` that
-# aborts ends the program there. See also `compare` and `summarize`.
+# aborts ends the program there. See also `compare_versions` and `summarize`.
 function measure<T, R>(work: (function(T) -> R), input: T, settings: Settings) -> Report?
     began = time.mark()?
     settled = clock.settle(work: work, input: input, round_ns: settings.round.nanoseconds)?
@@ -387,7 +388,7 @@ function measure<T, R>(work: (function(T) -> R), input: T, settings: Settings) -
 # Fails `failed` where a clock cannot be read, and `timeout` where
 # `settings.most` passed with no pair kept. See also `compare_pairs` and
 # `measure`.
-function compare<T, R>(before: (function(T) -> R), after: (function(T) -> R), input: T, settings: Settings) -> Comparison?
+function compare_versions<T, R>(before: (function(T) -> R), after: (function(T) -> R), input: T, settings: Settings) -> Comparison?
     began = time.mark()?
     first = clock.settle(work: before, input: input, round_ns: settings.round.nanoseconds)?
     second = clock.settle(work: after, input: input, round_ns: settings.round.nanoseconds)?
@@ -446,7 +447,7 @@ function summarize(times: [f64]) -> Summary?
 #
 # Fewer than 5 pairs is `unknown`. Fails `invalid` where the lists are empty,
 # of two lengths, or hold a time that is negative, infinite or a nan, and
-# where `floor` is negative or a nan. See also `compare`.
+# where `floor` is negative or a nan. See also `compare_versions`.
 function compare_pairs(before: [f64], after: [f64], floor: f64) -> Comparison?
     read = paired.read(before: before, after: after, floor: floor)?
     first = summarize(before)?
@@ -471,8 +472,12 @@ function compare_pairs(before: [f64], after: [f64], floor: f64) -> Comparison?
 # - `ns`: the time in nanoseconds, any float; one below 0 is written with its
 #   minus sign, and an infinity or a nan as itself.
 #
-# See also `throughput`.
-function format_time(ns: f64) -> str
+# It takes a float, where `time.format_duration` takes a `time.Duration` of
+# whole nanoseconds, because a timing is a median or a mean of many calls,
+# often a fraction of a nanosecond for work that takes less than one, and
+# writes three figures, where `time.format_duration` writes every digit.
+# See also `throughput`, `time.format_duration`.
+function format_nanoseconds(ns: f64) -> str
     return text.time(ns)
 
 # How many units a second the work handles at the median of `summary`: bytes
@@ -481,7 +486,7 @@ function format_time(ns: f64) -> str
 # - `summary`: the figures of the times a call.
 # - `per_call`: the units one call handles, 0 or more.
 #
-# An infinity where the median is 0. See also `format_time`.
+# An infinity where the median is 0. See also `format_nanoseconds`.
 function throughput(summary: Summary, per_call: f64) -> f64
     return per_call * 1000000000.0 / summary.median
 
@@ -526,9 +531,14 @@ test "measure: a sum of a thousand numbers"
     assert report.calls >= 1
 
 # A loop against Gauss's formula: the formula is faster.
-test "compare: a loop against a formula"
+test "compare_versions: a loop against a formula"
     settings = with_rounds(with_round(defaults(), round: time.milliseconds(1).must()), rounds: 8)
-    comparison = compare(before: samples.sum_to, after: samples.sum_by_formula, input: 10000, settings: settings).must()
+    comparison = compare_versions(
+        before: samples.sum_to,
+        after: samples.sum_by_formula,
+        input: 10000,
+        settings: settings
+    ).must()
     assert comparison.change == .faster
 
 # The figures of times a program took itself.
@@ -547,8 +557,8 @@ test "compare_pairs: slower in six pairs of six"
     assert c.change == .slower && c.slower == 6
 
 # A time in microseconds.
-test "format_time: one and a half microseconds"
-    assert format_time(1500.0) == "1.50 µs"
+test "format_nanoseconds: one and a half microseconds"
+    assert format_nanoseconds(1500.0) == "1.50 µs"
 
 # Bytes a second at a median of a microsecond a call of a kilobyte.
 test "throughput: a kilobyte a microsecond"

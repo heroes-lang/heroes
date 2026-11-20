@@ -1,8 +1,10 @@
-# A message as this package's private modules hold it: the face's types
-# flattened, since a private module cannot name its face's types. A record's
-# data is a `Slots`, its numbers, names and byte fields in the order its
-# type's form lays them out (`codec_read` and `codec_write` say each form),
-# and the face turns a `Slots` into its `Data` case and back, once each way.
+# A message as this package's codec holds it: the face's types flattened. A
+# record's data is a `Slots`, its numbers, names and byte fields in the order
+# its type's form lays them out (`codec_read` and `codec_write` say each
+# form), so one walk reads and writes every type by its form, where the
+# face's `Data` has a case of its own for each; the face turns a `Slots` into
+# its `Data` case and back, once each way. A private module may name the
+# face's types since panel 252's R1; the flat form is kept for that one walk.
 
 # A question.
 record Ask

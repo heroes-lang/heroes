@@ -1,9 +1,16 @@
 # Files and folders by path: a file read or written whole, a file opened as
 # an `io.Stream`, the facts of a path, folders made, read and removed, trees
-# walked, globbed and copied, links read and resolved, temporaries made, and a
-# path's times, length and owner set. Text is the language's own:
-# `read_file` and `write_file` read and write a file as UTF-8 text, and
-# nothing here does it a second way.
+# walked, globbed and copied, links made, read and resolved, temporaries
+# made, a path's times, length, permission and owner set, a file written
+# atomically, locked, or mapped in memory and read and written by copy, and a
+# walk that leaves out what a tree's gitignore files ignore. Text is the
+# language's own: `read_file` and `write_file` read and write a file as UTF-8
+# text, and nothing here does it a second way.
+#
+# What it does NOT do: watch a folder for changes (`fs/watch`); pack a tree
+# into an archive or unpack one (`archive`); make, join, clean or match a path
+# as text, which touches no disk (`path`); the working folder and the
+# system's folders, home, temporaries and caches (`os`).
 #
 # **Every failure is a code of README § A4.** Besides the codes each function
 # names, every one fails `invalid` where a path holds a zero byte or is longer
@@ -18,15 +25,11 @@
 # goes down a tree holds its own list of what is left to do, so no tree is
 # too deep for it.
 #
-# The floors are `os/hero_disk` (`hero_disk.h`), a path's facts and changes;
-# `io/hero_stream` (`hero_stream.h`), a file opened; and `os/hero_os`
-# (`hero_os.h`), a path resolved. Since round 3 (2026-11-16) links are made,
-# permission bits set, owners and times of making read, and files locked
-# through `hero_disk.h`'s own doors; what is still not here is in the ledger,
-# `fs.ledger`, as `pending`. Since round 4 (2026-11-17) a file is written
-# atomically, and a file is mapped in memory and read and written by copy,
-# no address of it reaching the program. Since round 5 (2026-11-17) a walk
-# leaves out what a tree's gitignore files ignore, by `path`'s patterns.
+# The floors are `os/hero_disk` (`hero_disk.h`), a path's facts and changes,
+# its links, permission bits, owners, times and locks; `io/hero_stream`
+# (`hero_stream.h`), a file opened; and `os/hero_os` (`hero_os.h`), a path
+# resolved. What is not here yet is in the ledger, `fs.ledger`, as
+# `pending`.
 
 use fs/internal/atomic
 use fs/internal/changes
@@ -197,16 +200,25 @@ record Space
 
 ## Whole files
 
-# The bytes of the file at `path`, all of them. Fails `file_not_found` where
-# nothing is there and `is_a_directory` where it is a folder. It reads the
-# whole file into memory.
+# The bytes of the file at `path`, all of them.
+#
+# - `path`: the file's path; every link on it is followed.
+#
+# Fails `file_not_found` where nothing is there and `is_a_directory` where it is
+# a folder. It reads the whole file into memory.
 function read_bytes(path: str) -> [u8]?
     return whole.read_all(path)
 
-# Writes `data` as the whole of the file at `path`, made where it is not
-# there and emptied first where it is. Fails `file_not_found` where the
-# folder it would stand in is not there, `is_a_directory` where `path` is a
-# folder. A file it makes has the permission 0o666 less the process's mask.
+# Writes `data` as the whole of the file at `path`, made where it is not there
+# and emptied first where it is.
+#
+# - `path`: the file's path; every link on it is followed, and its folder must
+#   be there.
+# - `data`: the bytes, all of the file once written; none leaves it empty.
+#
+# Fails `file_not_found` where the folder it would stand in is not there,
+# `is_a_directory` where `path` is a folder. A file it makes has the permission
+# 0o666 less the process's mask.
 function write_bytes(path: str, data: [u8]) -> ()?
     return whole.written(
         at: path,
@@ -216,6 +228,11 @@ function write_bytes(path: str, data: [u8]) -> ()?
     )
 
 # Adds `text` at the end of the file at `path`, made where it is not there.
+#
+# - `path`: the file's path; every link on it is followed.
+# - `text`: the text added, as its UTF-8 bytes; "" adds nothing and still makes
+#   the file.
+#
 # Fails as `write_bytes` does.
 function append_text(path: str, text: str) -> ()?
     return whole.written_text(
@@ -226,6 +243,10 @@ function append_text(path: str, text: str) -> ()?
     )
 
 # Adds `data` at the end of the file at `path`, made where it is not there.
+#
+# - `path`: the file's path; every link on it is followed.
+# - `data`: the bytes added; none adds nothing and still makes the file.
+#
 # Fails as `write_bytes` does.
 function append_bytes(path: str, data: [u8]) -> ()?
     return whole.written(
@@ -235,10 +256,14 @@ function append_bytes(path: str, data: [u8]) -> ()?
         asked: f"appending to \"{path}\""
     )
 
-# Writes `text` as a new file at `path`. Fails `exists` where anything is
-# there, nothing written, and otherwise as `write_bytes` does. Whether
-# anything is there and the making are one step of the system, so two
-# programs never both make it.
+# Writes `text` as a new file at `path`.
+#
+# - `path`: the new file's path; its folder must be there.
+# - `text`: the text, all of the file, as its UTF-8 bytes.
+#
+# Fails `exists` where anything is there, nothing written, and otherwise as
+# `write_bytes` does. Whether anything is there and the making are one step of
+# the system, so two programs never both make it.
 function write_new_text(path: str, text: str) -> ()?
     return whole.written_text(
         at: path,
@@ -248,6 +273,11 @@ function write_new_text(path: str, text: str) -> ()?
     )
 
 # Writes `data` as a new file at `path`, as `write_new_text` writes text.
+#
+# - `path`: the new file's path; its folder must be there.
+# - `data`: the bytes, all of the file.
+#
+# Fails as `write_new_text` does.
 function write_new_bytes(path: str, data: [u8]) -> ()?
     return whole.written(
         at: path,
@@ -300,16 +330,23 @@ function write_atomic_text(path: str, text: str) -> ()?
     return atomic.written_text(at: path, text: text)
 
 # Makes an empty file at `path` where nothing is there, and sets the times of
-# what is there to now where something is. Fails `file_not_found` where the
-# folder it would stand in is not there.
+# what is there to now where something is.
+#
+# - `path`: the path; every link on it is followed.
+#
+# Fails `file_not_found` where the folder it would stand in is not there.
 function touch(path: str) -> ()?
     return whole.touched(path)
 
 ## Files as streams
 
 # The file at `path` opened to read, as a stream the caller closes with
-# `io.close`. Fails `file_not_found` where nothing is there and
-# `is_a_directory` where it is a folder.
+# `io.close`.
+#
+# - `path`: the file's path; every link on it is followed.
+#
+# Fails `file_not_found` where nothing is there and `is_a_directory` where it is
+# a folder.
 function open(path: str) -> io.Stream?
     return whole.opened(
         at: path,
@@ -318,10 +355,13 @@ function open(path: str) -> io.Stream?
         asked: f"opening \"{path}\" to read"
     )
 
-# The file at `path` opened to write from its start, made where it is not
-# there with the permission 0o666 less the process's mask, and emptied where
-# it is. Fails as `open` does, and `file_not_found` where the folder it would
-# stand in is not there.
+# The file at `path` opened to write from its start, made where it is not there
+# with the permission 0o666 less the process's mask, and emptied where it is.
+#
+# - `path`: the file's path; every link on it is followed.
+#
+# Fails as `open` does, and `file_not_found` where the folder it would stand in
+# is not there.
 function create(path: str) -> io.Stream?
     return whole.opened(
         at: path,
@@ -331,9 +371,17 @@ function create(path: str) -> io.Stream?
     )
 
 # The file at `path` opened for `access`, a file the call makes taking
-# `permission` less the process's mask. Fails `invalid` where `permission` is
-# outside 0 to 0o777, `exists` for `create_new` where anything is there, and
-# as `open` does. Windows keeps only whether a file it makes is read-only.
+# `permission` less the process's mask.
+#
+# - `path`: the file's path; every link on it is followed.
+# - `access`: what the stream does, and what is made or emptied, as its cases
+#   say.
+# - `permission`: the bits a file the call makes takes, such as 0o644; read only
+#   where one is made.
+#
+# Fails `invalid` where `permission` is outside 0 to 0o777, `exists` for
+# `create_new` where anything is there, and as `open` does. Windows keeps only
+# whether a file it makes is read-only.
 function open_with(path: str, access: Access, permission: i64) -> io.Stream?
     code = match access
         .read       => hero_stream.HERO_STREAM_ACCESS_READ
@@ -346,8 +394,11 @@ function open_with(path: str, access: Access, permission: i64) -> io.Stream?
 
 ## Facts of a path
 
-# The facts of what `path` names, every link followed. Fails
-# `file_not_found` where nothing is there, a link to nothing included, and
+# The facts of what `path` names, every link followed.
+#
+# - `path`: the path; every link on it is followed.
+#
+# Fails `file_not_found` where nothing is there, a link to nothing included, and
 # `not_a_directory` where a part on the way is not a folder.
 function info(path: str) -> Info?
     found = facts.of(at: path, through: true, asked: f"reading the facts of \"{path}\"")?
@@ -357,7 +408,12 @@ function info(path: str) -> Info?
     )
 
 # The facts of `path` itself: of the link where it is one, never of what it
-# names. Fails as `info` does.
+# names.
+#
+# - `path`: the path; a link at its end is read itself, the links on the way
+#   followed.
+#
+# Fails as `info` does.
 function link_info(path: str) -> Info?
     found = facts.of(at: path, through: false, asked: f"reading the facts of the link \"{path}\"")?
     kinds: [Kind] = [.file, .directory, .link, .other]
@@ -365,65 +421,165 @@ function link_info(path: str) -> Info?
         Info(kind: kinds[found.kind], size: found.size, permission: found.permission, written: found.written, read: found.read, links: found.links)
     )
 
+# The permission bits of what `path` names, every link followed, 0 to
+# 0o7777.
+#
+# - `path`: the path.
+#
+# Fails `file_not_found` where nothing is there. Windows keeps only whether
+# a file is read-only: 0o444 where it is, 0o666 where not.
+#
+# It answers what `info(path).permission` holds, by the same one call to the
+# system: what it buys is the pair it makes with `set_permission`, for a
+# program that copies or checks the bits alone, and a failure whose message
+# says it was the permission that was read. See also `info`,
+# `set_permission`.
+function permission_of(path: str) -> i64?
+    return special.permission_of(at: path, follow: true)
+
+# When what `path` names was made, every link followed.
+#
+# - `path`: the path.
+#
+# Fails `file_not_found` where nothing is there, and `unsupported` where the
+# system or the volume keeps no such time: Darwin and Windows keep it, Linux
+# where the volume does (`statx`). See also `info`.
+function created(path: str) -> time.Instant?
+    return special.made_at(at: path, follow: true)
+
+# The user and the group that own what `path` names, every link followed.
+#
+# - `path`: the path.
+#
+# Fails `file_not_found` where nothing is there, and `unsupported` on
+# Windows, which names an owner by no number. See also `link_owner`,
+# `set_owner`.
+function owner(path: str) -> Owner?
+    found = special.owner_of(at: path, follow: true)?
+    return ok(Owner(user: found.user, group: found.group))
+
+# The user and the group that own the link itself where `path` names one,
+# and what it names where it names no link.
+#
+# - `path`: the path.
+#
+# Fails as `owner` does. See also `owner`, `set_link_owner`.
+function link_owner(path: str) -> Owner?
+    found = special.owner_of(at: path, follow: false)?
+    return ok(Owner(user: found.user, group: found.group))
+
+# Which other kind `path` names, every link followed, where `info` says its
+# kind is `other`.
+#
+# - `path`: the path.
+#
+# Fails `invalid` where it names a file, a folder or a link to one, and
+# `file_not_found` where nothing is there. POSIX tells all four; Windows
+# tells a pipe and a character device and calls a socket's file a file. See
+# also `info`.
+function other_kind(path: str) -> OtherKind?
+    which = special.other_of(path)?
+    kinds: [OtherKind] = [.pipe, .socket, .character_device, .block_device, .unknown]
+    return ok(kinds[which - 1])
+
 # Whether `path` names something, every link followed, so a link to nothing
-# answers false, as a path whose way holds a file does. Fails where the
-# system will not say, never answering false for it.
+# answers false, as a path whose way holds a file does.
+#
+# - `path`: the path; every link on it is followed.
+#
+# Fails where the system will not say, never answering false for it.
 function exists(path: str) -> bool?
     return ok(facts.presence(at: path, through: true, asked: f"asking whether \"{path}\" is there")? != facts.NOTHING)
 
 # Whether `path` names a file, every link followed; false where nothing is
-# there. Fails where the system will not say.
+# there.
+#
+# - `path`: the path; every link on it is followed.
+#
+# Fails where the system will not say.
 function is_file(path: str) -> bool?
     return ok(facts.presence(at: path, through: true, asked: f"asking whether \"{path}\" is a file")? == facts.FILE)
 
 # Whether `path` names a folder, every link followed; false where nothing is
-# there. Fails where the system will not say.
+# there.
+#
+# - `path`: the path; every link on it is followed.
+#
+# Fails where the system will not say.
 function is_dir(path: str) -> bool?
     return ok(
         facts.presence(at: path, through: true, asked: f"asking whether \"{path}\" is a folder")? == facts.DIRECTORY
     )
 
-# Whether `path` is a symbolic link, whatever it names; false where nothing
-# is there. Fails where the system will not say.
+# Whether `path` is a symbolic link, whatever it names; false where nothing is
+# there.
+#
+# - `path`: the path; a link at its end is asked about itself.
+#
+# Fails where the system will not say.
 function is_link(path: str) -> bool?
     return ok(facts.presence(at: path, through: false, asked: f"asking whether \"{path}\" is a link")? == facts.LINK)
 
-# Whether `path` and `other` name one file, every link followed. Fails
-# `file_not_found` where either names nothing.
+# Whether `path` and `other` name one file, every link followed.
+#
+# - `path`: one path; every link on it is followed.
+# - `other`: the other path; every link on it is followed.
+#
+# Fails `file_not_found` where either names nothing.
 function is_same_file(path: str, other: str) -> bool?
     return changes.same(first: path, second: other)
 
-# The space of the volume `path` stands on. Fails `file_not_found` where
-# nothing is there.
+# The space of the volume `path` stands on.
+#
+# - `path`: any path on the volume asked about.
+#
+# Fails `file_not_found` where nothing is there.
 function space(path: str) -> Space?
     room = changes.room(path)?
     return ok(Space(available: room.available, total: room.total))
 
 ## Folders
 
-# Makes one folder at `path`, with the permission 0o777 less the process's
-# mask. Fails `exists` where anything is there, `file_not_found` where its
-# parent is not.
+# Makes one folder at `path`, with the permission 0o777 less the process's mask.
+#
+# - `path`: the new folder's path; its parent must be there.
+#
+# Fails `exists` where anything is there, `file_not_found` where its parent is
+# not.
 function make_dir(path: str) -> ()?
     return changes.made_dir(path, permission: 0o777)
 
-# Makes one folder at `path` with the permission `permission`, 0 to 0o7777,
-# less the process's mask. Fails as `make_dir` does, and `invalid` where
-# `permission` is outside its range.
+# Makes one folder at `path` with the permission `permission`, 0 to 0o7777, less
+# the process's mask.
+#
+# - `path`: the new folder's path; its parent must be there.
+# - `permission`: the bits it takes, 0 to 0o7777, such as 0o700 for this user
+#   alone.
+#
+# Fails as `make_dir` does, and `invalid` where `permission` is outside its
+# range.
 function make_dir_with(path: str, permission: i64) -> ()?
     return changes.made_dir(path, permission: permission)
 
-# Makes the folder `path` and every folder above it that is not there, each
-# with the permission 0o777 less the process's mask. A folder there already
-# is no failure. Fails `not_a_directory` where `path`, or a part on its way,
-# is something other than a folder, and `file_not_found` for the empty path.
+# Makes the folder `path` and every folder above it that is not there, each with
+# the permission 0o777 less the process's mask.
+#
+# - `path`: the folder's path; the folders on its way are made where they are
+#   not there.
+#
+# A folder there already is no failure. Fails `not_a_directory` where `path`, or
+# a part on its way, is something other than a folder, and `file_not_found` for
+# the empty path.
 function make_dir_all(path: str) -> ()?
     return tree.made_all(path)
 
-# The entries of the folder `path`, sorted by their names' bytes, `.` and
-# `..` never among them; a link is listed as a link. Fails `file_not_found`
-# where nothing is there, `not_a_directory` where it is no folder, and
-# `not_text` where a name is not UTF-8.
+# The entries of the folder `path`, sorted by their names' bytes, `.` and `..`
+# never among them; a link is listed as a link.
+#
+# - `path`: the folder's path; every link on it is followed.
+#
+# Fails `file_not_found` where nothing is there, `not_a_directory` where it is
+# no folder, and `not_text` where a name is not UTF-8.
 function read_dir(path: str) -> [Entry]?
     found = listing.listed(dir: path, asked: f"reading the folder \"{path}\"")?
     kinds: [Kind] = [.file, .directory, .link, .other]
@@ -434,32 +590,48 @@ function read_dir(path: str) -> [Entry]?
 
     return ok(entries)
 
-# Removes the file, the link or the empty folder at `path`; a link is
-# removed, never what it names. Fails `file_not_found` where nothing is
-# there and `not_empty` where the folder holds something.
+# Removes the file, the link or the empty folder at `path`; a link is removed,
+# never what it names.
+#
+# - `path`: the path; a link at its end is removed itself.
+#
+# Fails `file_not_found` where nothing is there and `not_empty` where the folder
+# holds something.
 function remove(path: str) -> ()?
     return changes.removed(path)
 
 # Removes `path` with everything it holds; a link inside is removed, never
-# followed. Fails `file_not_found` where nothing is at `path`, and on the
-# first entry that cannot be removed, leaving what it had not reached. An
-# entry another program removes meanwhile is no failure.
+# followed.
+#
+# - `path`: the path; a link at its end is removed itself, never what it names.
+#
+# Fails `file_not_found` where nothing is at `path`, and on the first entry that
+# cannot be removed, leaving what it had not reached. An entry another program
+# removes meanwhile is no failure.
 function remove_all(path: str) -> ()?
     return tree.removed_all(path)
 
-# Gives `from` the name `to`, on the same volume. Where `to` is there, a file
-# takes the place of a file and never of a folder (`is_a_directory`), and a
-# folder takes the place of nothing (`exists`), on every system. Fails
-# `file_not_found` where `from` names nothing or the folder of `to` is not
-# there, and `failed` where the two are on different volumes, which `move`
-# crosses.
+# Gives `from` the name `to`, on the same volume.
+#
+# - `from`: the path that changes name.
+# - `to`: its new name, on the same volume.
+#
+# Where `to` is there, a file takes the place of a file and never of a folder
+# (`is_a_directory`), and a folder takes the place of nothing (`exists`), on
+# every system. Fails `file_not_found` where `from` names nothing or the folder
+# of `to` is not there, and `failed` where the two are on different volumes,
+# which `move` crosses.
 function rename(from: str, to: str) -> ()?
     return changes.renamed(from: from, to: to)
 
 # Moves `from` to `to`: renamed where both stand on one volume, and across
-# volumes copied, with the times of each file, then removed. It takes the
-# place of what is at `to` as `rename` does, and fails as it does but for
-# the volumes; a copy across volumes that fails leaves `from` whole.
+# volumes copied, with the times of each file, then removed.
+#
+# - `from`: the path moved, a file, a link or a folder with what it holds.
+# - `to`: where it goes, on this volume or another.
+#
+# It takes the place of what is at `to` as `rename` does, and fails as it does
+# but for the volumes; a copy across volumes that fails leaves `from` whole.
 function move(from: str, to: str) -> ()?
     return copying.moved(from: from, to: to)
 
@@ -484,10 +656,19 @@ function sync_dir(path: str) -> ()?
 
 # Every path under the folder `root`, depth first, the entries of each folder
 # by their names' bytes, `root` itself not listed; each entry's `name` is its
-# path below `root`. A link is listed as a link and never entered; `root`
-# itself is followed where it is one. Fails `file_not_found` where nothing is
-# at `root`, `not_a_directory` where it is no folder, and on the first folder
-# it cannot read, never answering a list that misses it.
+# path below `root`.
+#
+# - `root`: the folder walked; it is followed where it is a link.
+#
+# A link is listed as a link and never entered. The list is answered whole:
+# every folder of the tree is read and its entries held before the call
+# returns, and none is left out; a walk that should not enter a folder
+# (`node_modules`, `.git`) or go below a depth asks `walk_ignoring` or
+# `walk_to_depth`, which never read what they leave out.
+#
+# Fails `file_not_found` where nothing is at `root`, `not_a_directory` where
+# it is no folder, and on the first folder it cannot read, never answering a
+# list that misses it.
 function walk(root: str) -> [Entry]?
     found = walking.walked(root: root, follow: false, most_depth: -1, asked: f"walking \"{root}\"")?
     kinds: [Kind] = [.file, .directory, .link, .other]
@@ -499,11 +680,38 @@ function walk(root: str) -> [Entry]?
     return ok(entries)
 
 # What `walk` answers, every link followed: a link to a folder is entered and
-# listed as a folder, a link to a file listed as a file. A link to nothing,
-# and one that leads back into a folder the walk is inside, are listed as
-# links and not entered, so a tree that loops is walked once.
+# listed as a folder, a link to a file listed as a file.
+#
+# - `root`: the folder walked; it is followed where it is a link.
+#
+# A link to nothing, and one that leads back into a folder the walk is inside,
+# are listed as links and not entered, so a tree that loops is walked once.
+#
+# Fails as `walk` does, and on a link it cannot follow.
 function walk_following_links(root: str) -> [Entry]?
     found = walking.walked(root: root, follow: true, most_depth: -1, asked: f"walking \"{root}\" through its links")?
+    kinds: [Kind] = [.file, .directory, .link, .other]
+    entries: [Entry] @= []
+
+    for f in found
+        entries @ entries.push(Entry(name: f.name, kind: kinds[f.kind]))
+
+    return ok(entries)
+
+# What `walk` answers down to `depth` levels below `root`, and nothing deeper:
+# what a program listing a folder and its children asks.
+#
+# - `root`: the folder walked; it is followed where it is a link.
+# - `depth`: the deepest level listed, 1 for the entries of `root` alone, 2
+#   for theirs as well; a folder at that level is listed and never read. Below
+#   1 fails `invalid`.
+#
+# A link is listed as a link and never entered, as `walk` lists it. Fails
+# `invalid` as said, and as `walk` does.
+function walk_to_depth(root: str, depth: i64) -> [Entry]?
+    if depth < 1
+        return fail(code: INVALID, msg: f"walking \"{root}\" to a depth of {depth}: a depth is 1 or more")
+    found = walking.walked(root: root, follow: false, most_depth: depth, asked: f"walking \"{root}\" {depth} deep")?
     kinds: [Kind] = [.file, .directory, .link, .other]
     entries: [Entry] @= []
 
@@ -551,99 +759,96 @@ function walk_ignoring(root: str, ignores: paths.Ignores, name: str) -> [Entry]?
     return ok(entries)
 
 # The paths that match `pattern`, sorted, each written as the pattern begins:
-# relative where it is relative. The pattern is `path.matches`'s, `*` and `?`
-# within one part, classes, and `**` for any number of parts; `*` matches a
-# name that begins with a dot. Links are followed, and a tree that loops is
-# walked once. Fails `invalid` where the pattern is malformed, and on the
-# first folder it cannot read; a folder the pattern begins with that is not
-# there answers no paths.
+# relative where it is relative.
+#
+# - `pattern`: the pattern, `path.matches`'s, a path whose parts may hold `*`,
+#   `?`, classes and `**`.
+#
+# The pattern is `path.matches`'s, `*` and `?` within one part, classes, and
+# `**` for any number of parts; `*` matches a name that begins with a dot. Links
+# are followed, and a tree that loops is walked once. Fails `invalid` where the
+# pattern is malformed, and on the first folder it cannot read; a folder the
+# pattern begins with that is not there answers no paths.
 function glob(pattern: str) -> [str]?
     return walking.globbed(pattern)
 
-# Copies the file `from` to `to` and answers how many bytes it copied. A file
-# it makes takes the permission bits of `from` less the process's mask; one
-# there keeps its own and loses its bytes. Fails `file_not_found` where
-# `from` names nothing, `is_a_directory` where either is a folder, and
-# `invalid` where the two name one file, which would empty it.
+# Copies the file `from` to `to` and answers how many bytes it copied.
+#
+# - `from`: the file copied; every link on it is followed.
+# - `to`: the copy's path; a file there is replaced, and its folder must be
+#   there.
+#
+# A file it makes takes the permission bits of `from` less the process's mask;
+# one there keeps its own and loses its bytes. Fails `file_not_found` where
+# `from` names nothing, `is_a_directory` where either is a folder, and `invalid`
+# where the two name one file, which would empty it.
 function copy_file(from: str, to: str) -> i64?
     return copying.copied_file(from: from, to: to, keep_times: false, access: hero_stream.HERO_STREAM_ACCESS_WRITE)
 
-# Copies the folder `from`, with everything it holds, to a new folder `to`,
-# each folder and file taking the permission bits of its original less the
-# process's mask. Links are followed. Fails `exists` where anything is at
-# `to`, `not_a_directory` where `from` is no folder, and, before anything is
-# written, `file_not_found` for a link to nothing, `invalid` for a link that
-# loops and `unsupported` for what is neither a file nor a folder.
+# Copies the file `from` to `to`, as `copy_file` does, and then gives the
+# copy the permission bits and the times of `from`, as Python's
+# `shutil.copy2`: answers how many bytes it copied.
+#
+# - `from`: the original, every link followed.
+# - `to`: the copy's path; a file there loses its bytes and takes the bits
+#   and the times of `from`.
+#
+# Fails as `copy_file` does, and as `copy_facts` does once the bytes are
+# copied, the copy then whole with its own facts. See also `copy_file`,
+# `copy_facts`.
+function copy_file_with_facts(from: str, to: str) -> i64?
+    copied = copy_file(from: from, to: to)?
+    copy_facts(from: from, to: to)?
+    return ok(copied)
+
+# Gives `to` the permission bits of `from`, every link followed in both, as
+# Python's `shutil.copymode`.
+#
+# - `from`: the path whose bits are read.
+# - `to`: the path whose bits are set, as given, no mask taking any away.
+#
+# Fails `file_not_found` where either is not there, and as `set_permission`
+# does. See also `copy_facts`, `copy_file_with_facts`.
+function copy_permission(from: str, to: str) -> ()?
+    return special.permission_copied(from: from, to: to)
+
+# Gives `to` the permission bits and the times of the last write and the
+# last read of `from`, every link followed in both, as Python's
+# `shutil.copystat` gives the three.
+#
+# - `from`: the path whose facts are read.
+# - `to`: the path whose facts are set: the times first, then the bits.
+#
+# Fails as `copy_permission` and `set_times` do. See also
+# `copy_permission`, `copy_file_with_facts`.
+function copy_facts(from: str, to: str) -> ()?
+    return special.facts_copied(from: from, to: to)
+
+# Copies the folder `from`, with everything it holds, to a new folder `to`, each
+# folder and file taking the permission bits of its original less the process's
+# mask.
+#
+# - `from`: the folder copied.
+# - `to`: the new folder's path, where nothing must be.
+#
+# Links are followed. Fails `exists` where anything is at `to`,
+# `not_a_directory` where `from` is no folder, and, before anything is written,
+# `file_not_found` for a link to nothing, `invalid` for a link that loops and
+# `unsupported` for what is neither a file nor a folder.
 function copy_tree(from: str, to: str) -> ()?
     return copying.copied_tree(from: from, to: to, keep_times: false)
 
 ## Links and absolute paths
 
-# The target the symbolic link `path` holds, as the link holds it, relative
-# or not. Fails `file_not_found` where nothing is there, `invalid` where it
-# is no link, and `not_text` where the target is not UTF-8.
+# The target the symbolic link `path` holds, as the link holds it, relative or
+# not.
+#
+# - `path`: the link's path.
+#
+# Fails `file_not_found` where nothing is there, `invalid` where it is no link,
+# and `not_text` where the target is not UTF-8.
 function read_link(path: str) -> str?
     return links.target_of(path)
-
-# The absolute path `path` names, every link on the way followed, cleaned.
-# Fails `file_not_found` where it names nothing, a link to nothing included,
-# and `not_text` where the answer is not UTF-8.
-function resolve(path: str) -> str?
-    return links.resolved(at: path, asked: f"resolving \"{path}\"")
-
-# `path` made absolute against the working folder and cleaned, reading no
-# link: a `..` takes away the part before it even where that part is a link.
-# An absolute `path` is only cleaned. Fails where the working folder cannot be
-# read, as `os.working_dir` does.
-function to_abs(path: str) -> str?
-    return links.absolute(path)
-
-## Temporaries
-
-# Makes a new folder in `dir` whose name is `pattern` with its last `*`
-# replaced by sixteen random hexadecimal digits, or followed by them where it
-# holds no `*`, and answers its path. The folder is 0o700, this user's alone.
-# An empty `dir` is the system's folder for temporary files. Fails `invalid`
-# where `pattern` holds a separator, and `file_not_found` where `dir` is not
-# there. Nothing removes the folder but the caller.
-function make_temp_dir(dir: str, pattern: str) -> str?
-    return temporary.made_dir(dir: dir, pattern: pattern)
-
-# Makes a new file in `dir`, named as `make_temp_dir` names a folder, 0o600,
-# and answers its path with a stream open to write it. Fails as
-# `make_temp_dir` does. The caller closes the stream and removes the file.
-function make_temp_file(dir: str, pattern: str) -> TempFile?
-    made = temporary.made_file(dir: dir, pattern: pattern)?
-    return ok(TempFile(path: made.at, stream: made.stream))
-
-## Changing a path's facts
-
-# Sets the times of the last write and the last read of what `path` names,
-# every link followed, as fine as the volume keeps them. Fails
-# `file_not_found` where nothing is there.
-function set_times(path: str, written: time.Instant, read: time.Instant) -> ()?
-    return changes.timed(path, written: written, read: read)
-
-# Makes the file `path` names, every link followed, `length` bytes long:
-# shorter, it loses its end; longer, its new bytes are zero. Fails `invalid`
-# where `length` is below 0, `is_a_directory` for a folder, `file_not_found`
-# where nothing is there.
-function truncate(path: str, length: i64) -> ()?
-    return changes.truncated(path, length: length)
-
-# Gives what `path` names, every link followed, to the user and the group of
-# those numbers, -1 leaving either as it is. Fails `invalid` where a number is
-# none the system has, `permission` where this user may not give it,
-# `file_not_found` where nothing is there, and `unsupported` on Windows,
-# which has no owner by number.
-function set_owner(path: str, user: i64, group: i64) -> ()?
-    return changes.owned(path, user: user, group: group, through: true)
-
-# What `set_owner` does, to the link itself where `path` is one.
-function set_link_owner(path: str, user: i64, group: i64) -> ()?
-    return changes.owned(path, user: user, group: group, through: false)
-
-## Links, permission, owners and locks
 
 # Makes `name` a second name of the file `existing` names, a hard link: the
 # two names are then one file, its bytes and its facts shared.
@@ -674,16 +879,92 @@ function hard_link(existing: str, name: str) -> ()?
 function symlink(target: str, name: str) -> ()?
     return special.symlinked(target: target, name: name)
 
-# The permission bits of what `path` names, every link followed, 0 to
-# 0o7777.
+# The absolute path `path` names, every link on the way followed, cleaned.
+#
+# - `path`: the path, relative to the working folder or absolute.
+#
+# Fails `file_not_found` where it names nothing, a link to nothing included, and
+# `not_text` where the answer is not UTF-8.
+function resolve(path: str) -> str?
+    return links.resolved(at: path, asked: f"resolving \"{path}\"")
+
+# `path` made absolute against the working folder and cleaned, reading no link:
+# a `..` takes away the part before it even where that part is a link.
+#
+# - `path`: the path, relative to the working folder or absolute.
+#
+# An absolute `path` is only cleaned. Fails where the working folder cannot be
+# read, as `os.working_dir` does.
+function to_abs(path: str) -> str?
+    return links.absolute(path)
+
+## Temporaries
+
+# Makes a new folder in `dir` whose name is `pattern` with its last `*` replaced
+# by sixteen random hexadecimal digits, or followed by them where it holds no
+# `*`, and answers its path.
+#
+# - `dir`: the folder it is made in, or "" for the system's folder for temporary
+#   files.
+# - `pattern`: the name, its last `*` replaced by the random digits, such as
+#   `build-*`; "" is the digits alone.
+#
+# The folder is 0o700, this user's alone. An empty `dir` is the system's folder
+# for temporary files. Fails `invalid` where `pattern` holds a separator, and
+# `file_not_found` where `dir` is not there. Nothing removes the folder but the
+# caller.
+function make_temp_dir(dir: str, pattern: str) -> str?
+    return temporary.made_dir(dir: dir, pattern: pattern)
+
+# Makes a new file in `dir`, named as `make_temp_dir` names a folder, 0o600, and
+# answers its path with a stream open to write it.
+#
+# - `dir`: the folder it is made in, or "" for the system's folder for temporary
+#   files.
+# - `pattern`: the name, as `make_temp_dir` takes it, such as `report-*.txt`.
+#
+# Fails as `make_temp_dir` does. The caller closes the stream and removes the
+# file.
+function make_temp_file(dir: str, pattern: str) -> TempFile?
+    made = temporary.made_file(dir: dir, pattern: pattern)?
+    return ok(TempFile(path: made.at, stream: made.stream))
+
+## Changing a path's facts
+
+# Sets the times of the last write and the last read of what `path` names, every
+# link followed, as fine as the volume keeps them.
+#
+# - `path`: the path; every link on it is followed.
+# - `written`: the time of the last write.
+# - `read`: the time of the last read.
+#
+# Fails `file_not_found` where nothing is there.
+function set_times(path: str, written: time.Instant, read: time.Instant) -> ()?
+    return changes.timed(path, written: written, read: read)
+
+# Sets the times of the last write and the last read of the link itself
+# where `path` names one, and of what it names where it names no link.
 #
 # - `path`: the path.
+# - `written`: the time of the last write, kept as fine as the volume keeps
+#   it.
+# - `read`: the time of the last read, as `written`.
 #
-# Fails `file_not_found` where nothing is there. Windows keeps only whether
-# a file is read-only: 0o444 where it is, 0o666 where not. See also `info`,
-# `set_permission`.
-function permission_of(path: str) -> i64?
-    return special.permission_of(at: path, follow: true)
+# Fails `file_not_found` where nothing is there; Windows keeps no time at or
+# before 1601 and fails `invalid` for one. See also `set_times`.
+function set_link_times(path: str, written: time.Instant, read: time.Instant) -> ()?
+    return special.link_timed(at: path, written: written, read: read)
+
+# Makes the file `path` names, every link followed, `length` bytes long:
+# shorter, it loses its end; longer, its new bytes are zero.
+#
+# - `path`: the file's path; every link on it is followed.
+# - `length`: its length afterwards, in bytes, 0 or more.
+#
+# Fails `invalid` where `length` is below 0, `is_a_directory` for a folder,
+# `file_not_found` where nothing is there.
+function truncate(path: str, length: i64) -> ()?
+    return changes.truncated(path, length: length)
 
 # Sets the permission bits of what `path` names, every link followed.
 #
@@ -711,102 +992,30 @@ function set_permission(path: str, permission: i64) -> ()?
 function set_link_permission(path: str, permission: i64) -> ()?
     return special.permission_set(at: path, permission: permission, follow: false)
 
-# Sets the times of the last write and the last read of the link itself
-# where `path` names one, and of what it names where it names no link.
+# Gives what `path` names, every link followed, to the user and the group of
+# those numbers, -1 leaving either as it is.
 #
-# - `path`: the path.
-# - `written`: the time of the last write, kept as fine as the volume keeps
-#   it.
-# - `read`: the time of the last read, as `written`.
+# - `path`: the path; every link on it is followed.
+# - `user`: the user's number, or -1 to keep it.
+# - `group`: the group's number, or -1 to keep it.
 #
-# Fails `file_not_found` where nothing is there; Windows keeps no time at or
-# before 1601 and fails `invalid` for one. See also `set_times`.
-function set_link_times(path: str, written: time.Instant, read: time.Instant) -> ()?
-    return special.link_timed(at: path, written: written, read: read)
+# Fails `invalid` where a number is none the system has, `permission` where this
+# user may not give it, `file_not_found` where nothing is there, and
+# `unsupported` on Windows, which has no owner by number.
+function set_owner(path: str, user: i64, group: i64) -> ()?
+    return changes.owned(path, user: user, group: group, through: true)
 
-# When what `path` names was made, every link followed.
+# What `set_owner` does, to the link itself where `path` is one.
 #
-# - `path`: the path.
+# - `path`: the path; a link at its end is given away itself.
+# - `user`: the user's number, or -1 to keep it.
+# - `group`: the group's number, or -1 to keep it.
 #
-# Fails `file_not_found` where nothing is there, and `unsupported` where the
-# system or the volume keeps no such time: Darwin and Windows keep it, Linux
-# where the volume does (`statx`). See also `info`.
-function created(path: str) -> time.Instant?
-    return special.made_at(at: path, follow: true)
+# Fails as `set_owner` does, `unsupported` on Windows among it.
+function set_link_owner(path: str, user: i64, group: i64) -> ()?
+    return changes.owned(path, user: user, group: group, through: false)
 
-# The user and the group that own what `path` names, every link followed.
-#
-# - `path`: the path.
-#
-# Fails `file_not_found` where nothing is there, and `unsupported` on
-# Windows, which names an owner by no number. See also `link_owner`,
-# `set_owner`.
-function owner(path: str) -> Owner?
-    found = special.owner_of(at: path, follow: true)?
-    return ok(Owner(user: found.user, group: found.group))
-
-# The user and the group that own the link itself where `path` names one,
-# and what it names where it names no link.
-#
-# - `path`: the path.
-#
-# Fails as `owner` does. See also `owner`, `set_link_owner`.
-function link_owner(path: str) -> Owner?
-    found = special.owner_of(at: path, follow: false)?
-    return ok(Owner(user: found.user, group: found.group))
-
-# Which other kind `path` names, every link followed, where `info` says its
-# kind is `other`.
-#
-# - `path`: the path.
-#
-# Fails `invalid` where it names a file, a folder or a link to one, and
-# `file_not_found` where nothing is there. POSIX tells all four; Windows
-# tells a pipe and a character device and calls a socket's file a file. See
-# also `info`.
-function other_kind(path: str) -> OtherKind?
-    which = special.other_of(path)?
-    kinds: [OtherKind] = [.pipe, .socket, .character_device, .block_device, .unknown]
-    return ok(kinds[which - 1])
-
-# Gives `to` the permission bits of `from`, every link followed in both, as
-# Python's `shutil.copymode`.
-#
-# - `from`: the path whose bits are read.
-# - `to`: the path whose bits are set, as given, no mask taking any away.
-#
-# Fails `file_not_found` where either is not there, and as `set_permission`
-# does. See also `copy_facts`, `copy_file_with_facts`.
-function copy_permission(from: str, to: str) -> ()?
-    return special.permission_copied(from: from, to: to)
-
-# Gives `to` the permission bits and the times of the last write and the
-# last read of `from`, every link followed in both, as Python's
-# `shutil.copystat` gives the three.
-#
-# - `from`: the path whose facts are read.
-# - `to`: the path whose facts are set: the times first, then the bits.
-#
-# Fails as `copy_permission` and `set_times` do. See also
-# `copy_permission`, `copy_file_with_facts`.
-function copy_facts(from: str, to: str) -> ()?
-    return special.facts_copied(from: from, to: to)
-
-# Copies the file `from` to `to`, as `copy_file` does, and then gives the
-# copy the permission bits and the times of `from`, as Python's
-# `shutil.copy2`: answers how many bytes it copied.
-#
-# - `from`: the original, every link followed.
-# - `to`: the copy's path; a file there loses its bytes and takes the bits
-#   and the times of `from`.
-#
-# Fails as `copy_file` does, and as `copy_facts` does once the bytes are
-# copied, the copy then whole with its own facts. See also `copy_file`,
-# `copy_facts`.
-function copy_file_with_facts(from: str, to: str) -> i64?
-    copied = copy_file(from: from, to: to)?
-    copy_facts(from: from, to: to)?
-    return ok(copied)
+## Locks
 
 # Locks the whole file the stream `s` stands on, waiting as long as another
 # holds a lock that excludes this one.
@@ -1194,6 +1403,32 @@ test "walk, walk_following_links and glob: the empty folder, entries with their 
 
     assert fixture.cleared(dir)
 
+test "walk_to_depth: the root's own entries, two levels, deeper than the tree, an unreadable folder below the bound left unread, and a depth below 1"
+    dir = fixture.folder("face-walk-depth")
+    assert !make_dir_all(dir + "/a/b/c").is_err()
+    assert !write_file(path: dir + "/top.txt", text: "x").is_err()
+    assert !write_file(path: dir + "/a/b/c/deep.txt", text: "y").is_err()
+    sep = paths.sep()
+    assert walk_to_depth(dir, depth: 1).must() == [Entry(name: "a", kind: .directory), Entry(name: "top.txt", kind: .file)]
+    two = walk_to_depth(dir, depth: 2).must()
+    assert two == [Entry(name: "a", kind: .directory), Entry(name: "a" + sep + "b", kind: .directory), Entry(name: "top.txt", kind: .file)]
+    assert walk_to_depth(dir, depth: 9).must() == walk(dir).must()
+
+    if !fixture.windows()
+        assert !set_permission(dir + "/a/b", permission: 0).is_err()
+
+        # A folder this user may not read stands at the bound: listed, and
+        # never read, so the walk does not fail on it.
+        assert walk_to_depth(dir, depth: 2).must() == two
+        assert !set_permission(dir + "/a/b", permission: 0o755).is_err()
+
+    for bad in [0, -1]
+        match walk_to_depth(dir, depth: bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID && e.msg == f"walking \"{dir}\" to a depth of {bad}: a depth is 1 or more"
+
+    assert fixture.cleared(dir)
+
 test "copy_file and copy_tree: bytes and their count, a tree, onto itself, and onto a folder there"
     dir = fixture.folder("face-copy")
     assert !write_file(path: dir + "/a", text: "caffè").is_err()
@@ -1427,6 +1662,341 @@ test "lock, try_lock and unlock: shared beside shared, exclusive refused at once
     assert fixture.cleared(dir)
 
 ## Examples
+
+# A file read whole as bytes, as an image or an archive is.
+test "read_bytes: the bytes a file holds"
+    dir = fixture.folder("example-read-bytes")
+    assert !write_bytes(path: dir + "/data.bin", data: [0, 1, 255]).is_err()
+    assert read_bytes(dir + "/data.bin").must() == [0, 1, 255]
+    assert fixture.cleared(dir)
+
+# A file written whole from bytes, replacing what it held.
+test "write_bytes: a file made, then replaced"
+    dir = fixture.folder("example-write-bytes")
+    assert !write_bytes(path: dir + "/data.bin", data: [1, 2, 3]).is_err()
+    assert !write_bytes(path: dir + "/data.bin", data: [9]).is_err()
+    assert read_bytes(dir + "/data.bin").must() == [9]
+    assert fixture.cleared(dir)
+
+# A line added at the end of a log file.
+test "append_text: two lines added to a log"
+    dir = fixture.folder("example-append-text")
+    assert !append_text(path: dir + "/app.log", text: "started\n").is_err()
+    assert !append_text(path: dir + "/app.log", text: "stopped\n").is_err()
+    assert read_file(dir + "/app.log").must() == "started\nstopped\n"
+    assert fixture.cleared(dir)
+
+# Bytes added at the end of a file.
+test "append_bytes: a record added to a file of records"
+    dir = fixture.folder("example-append-bytes")
+    assert !append_bytes(path: dir + "/records", data: [1]).is_err()
+    assert !append_bytes(path: dir + "/records", data: [2]).is_err()
+    assert read_bytes(dir + "/records").must() == [1, 2]
+    assert fixture.cleared(dir)
+
+# A file made only where none is there, as a lock file or a claim is.
+test "write_new_text: a second writer is told the file exists"
+    dir = fixture.folder("example-write-new-text")
+    assert !write_new_text(path: dir + "/claim", text: "mine").is_err()
+
+    match write_new_text(path: dir + "/claim", text: "theirs")
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    assert read_file(dir + "/claim").must() == "mine"
+    assert fixture.cleared(dir)
+
+# Bytes written to a file made only where none is there.
+test "write_new_bytes: a new file of bytes"
+    dir = fixture.folder("example-write-new-bytes")
+    assert !write_new_bytes(path: dir + "/new.bin", data: [7]).is_err()
+    assert read_bytes(dir + "/new.bin").must() == [7]
+    assert fixture.cleared(dir)
+
+# An empty file made, as a marker a build leaves.
+test "touch: an empty marker file"
+    dir = fixture.folder("example-touch")
+    assert !touch(dir + "/done").is_err()
+    assert info(dir + "/done").must().size == 0
+    assert fixture.cleared(dir)
+
+# A file opened as a stream and read line by line with `io`.
+test "open: a file read through a stream"
+    dir = fixture.folder("example-open")
+    assert !write_file(path: dir + "/lines.txt", text: "one\ntwo\n").is_err()
+    s @= open(dir + "/lines.txt").must()
+    lines @= io.reader(s)
+    assert io.read_line(@lines).must() == "one"
+    io.close(@s).must()
+    assert fixture.cleared(dir)
+
+# A file made and written through a stream.
+test "create: a file written through a stream"
+    dir = fixture.folder("example-create")
+    s @= create(dir + "/out.txt").must()
+    io.write_text(s, text: "hello").must()
+    io.close(@s).must()
+    assert read_file(dir + "/out.txt").must() == "hello"
+    assert fixture.cleared(dir)
+
+# A file opened to add at its end, made where it is not there.
+test "open_with: a log opened to append"
+    dir = fixture.folder("example-open-with")
+    s @= open_with(dir + "/app.log", access: .append, permission: 0o644).must()
+    io.write_text(s, text: "line\n").must()
+    io.close(@s).must()
+    assert read_file(dir + "/app.log").must() == "line\n"
+    assert fixture.cleared(dir)
+
+# The facts of a file: its kind and its size.
+test "info: a file of five bytes"
+    dir = fixture.folder("example-info")
+    assert !write_file(path: dir + "/f.txt", text: "hello").is_err()
+    found = info(dir + "/f.txt").must()
+    assert found.kind == .file && found.size == 5
+    assert fixture.cleared(dir)
+
+# The facts of a link itself, not of what it names.
+test "link_info: a link is a link"
+    dir = fixture.folder("example-link-info")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+
+    if fixture.linked(target: "f", name: dir + "/l")
+        assert link_info(dir + "/l").must().kind == .link
+    assert fixture.cleared(dir)
+
+# Whether a path names something.
+test "exists: a file there, and a name of nothing"
+    dir = fixture.folder("example-exists")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert exists(dir + "/f").must() && !exists(dir + "/none").must()
+    assert fixture.cleared(dir)
+
+# Whether a path names a file.
+test "is_file: a file is, a folder is not"
+    dir = fixture.folder("example-is-file")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert is_file(dir + "/f").must() && !is_file(dir).must()
+    assert fixture.cleared(dir)
+
+# Whether a path names a folder.
+test "is_dir: a folder is, a file is not"
+    dir = fixture.folder("example-is-dir")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert is_dir(dir).must() && !is_dir(dir + "/f").must()
+    assert fixture.cleared(dir)
+
+# Whether a path is a symbolic link.
+test "is_link: a link is, its target is not"
+    dir = fixture.folder("example-is-link")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+
+    if fixture.linked(target: "f", name: dir + "/l")
+        assert is_link(dir + "/l").must() && !is_link(dir + "/f").must()
+    assert fixture.cleared(dir)
+
+# Whether two paths name one file, as a copy onto itself is caught.
+test "is_same_file: a file and a path through its folder"
+    dir = fixture.folder("example-is-same-file")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert is_same_file(path: dir + "/f", other: dir + "/./f").must()
+    assert fixture.cleared(dir)
+
+# The room left on the volume a path stands on.
+test "space: the working folder's volume"
+    room = space(".").must()
+    assert room.total > 0 && room.available <= room.total
+
+# A folder made.
+test "make_dir: one folder"
+    dir = fixture.folder("example-make-dir")
+    assert !make_dir(dir + "/cache").is_err()
+    assert is_dir(dir + "/cache").must()
+    assert fixture.cleared(dir)
+
+# A folder made for this user alone.
+test "make_dir_with: a private folder"
+    dir = fixture.folder("example-make-dir-with")
+    assert !make_dir_with(dir + "/private", permission: 0o700).is_err()
+    assert is_dir(dir + "/private").must()
+    assert fixture.cleared(dir)
+
+# A folder made with every folder above it.
+test "make_dir_all: a folder three levels down"
+    dir = fixture.folder("example-make-dir-all")
+    assert !make_dir_all(dir + "/a/b/c").is_err()
+    assert is_dir(dir + "/a/b/c").must()
+    assert fixture.cleared(dir)
+
+# The entries of a folder, sorted by name.
+test "read_dir: a folder's files and folders"
+    dir = fixture.folder("example-read-dir")
+    assert !write_file(path: dir + "/b.txt", text: "").is_err()
+    assert !make_dir(dir + "/a").is_err()
+    assert read_dir(dir).must() == [Entry(name: "a", kind: .directory), Entry(name: "b.txt", kind: .file)]
+    assert fixture.cleared(dir)
+
+# A file removed.
+test "remove: a file gone"
+    dir = fixture.folder("example-remove")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert !remove(dir + "/f").is_err()
+    assert !exists(dir + "/f").must()
+    assert fixture.cleared(dir)
+
+# A folder removed with everything in it.
+test "remove_all: a tree gone"
+    dir = fixture.folder("example-remove-all")
+    assert !make_dir_all(dir + "/t/u").is_err()
+    assert !write_file(path: dir + "/t/u/f", text: "x").is_err()
+    assert !remove_all(dir + "/t").is_err()
+    assert !exists(dir + "/t").must()
+    assert fixture.cleared(dir)
+
+# A file renamed in its folder.
+test "rename: a draft becomes the final file"
+    dir = fixture.folder("example-rename")
+    assert !write_file(path: dir + "/draft.txt", text: "x").is_err()
+    assert !rename(from: dir + "/draft.txt", to: dir + "/final.txt").is_err()
+    assert read_file(dir + "/final.txt").must() == "x" && !exists(dir + "/draft.txt").must()
+    assert fixture.cleared(dir)
+
+# A file moved into another folder, on this volume or another.
+test "move: a file into an archive folder"
+    dir = fixture.folder("example-move")
+    assert !make_dir(dir + "/archive").is_err()
+    assert !write_file(path: dir + "/old.log", text: "x").is_err()
+    assert !move(from: dir + "/old.log", to: dir + "/archive/old.log").is_err()
+    assert read_file(dir + "/archive/old.log").must() == "x"
+    assert fixture.cleared(dir)
+
+# Every path of a tree.
+test "walk: a folder and the file in it"
+    dir = fixture.folder("example-walk")
+    assert !make_dir(dir + "/d").is_err()
+    assert !write_file(path: dir + "/d/f.txt", text: "x").is_err()
+    assert walk(dir).must() == [Entry(name: "d", kind: .directory), Entry(name: "d" + paths.sep() + "f.txt", kind: .file)]
+    assert fixture.cleared(dir)
+
+# Every path of a tree, a link to a folder entered.
+test "walk_following_links: a link to a folder walked into"
+    dir = fixture.folder("example-walk-following")
+    assert !make_dir(dir + "/d").is_err()
+    assert !write_file(path: dir + "/d/f", text: "x").is_err()
+
+    if fixture.linked(target: "d", name: dir + "/l")
+        assert walk_following_links(dir).must()[2] == Entry(name: "l", kind: .directory)
+    assert fixture.cleared(dir)
+
+# A folder's children and grandchildren, nothing deeper read.
+test "walk_to_depth: two levels of a tree"
+    dir = fixture.folder("example-walk-to-depth")
+    assert !make_dir_all(dir + "/src/lib/deep").is_err()
+    found = walk_to_depth(dir, depth: 2).must()
+    assert found == [Entry(name: "src", kind: .directory), Entry(name: "src" + paths.sep() + "lib", kind: .directory)]
+    assert fixture.cleared(dir)
+
+# The files a pattern names.
+test "glob: the text files of a folder"
+    dir = fixture.folder("example-glob")
+    assert !write_file(path: dir + "/a.txt", text: "").is_err()
+    assert !write_file(path: dir + "/b.md", text: "").is_err()
+    assert glob(dir + "/*.txt").must() == [dir + "/a.txt"]
+    assert fixture.cleared(dir)
+
+# A file copied, and how many bytes it held.
+test "copy_file: a backup copy"
+    dir = fixture.folder("example-copy-file")
+    assert !write_file(path: dir + "/notes.txt", text: "abc").is_err()
+    assert copy_file(from: dir + "/notes.txt", to: dir + "/notes.bak").must() == 3
+    assert read_file(dir + "/notes.bak").must() == "abc"
+    assert fixture.cleared(dir)
+
+# A folder copied with everything in it.
+test "copy_tree: a project's folder copied"
+    dir = fixture.folder("example-copy-tree")
+    assert !make_dir_all(dir + "/src/lib").is_err()
+    assert !write_file(path: dir + "/src/lib/a.hero", text: "x").is_err()
+    assert !copy_tree(from: dir + "/src", to: dir + "/copy").is_err()
+    assert read_file(dir + "/copy/lib/a.hero").must() == "x"
+    assert fixture.cleared(dir)
+
+# The target a symbolic link holds.
+test "read_link: the target as the link holds it"
+    dir = fixture.folder("example-read-link")
+
+    if fixture.linked(target: "elsewhere.txt", name: dir + "/l")
+        assert read_link(dir + "/l").must() == "elsewhere.txt"
+    assert fixture.cleared(dir)
+
+# The absolute path a path names, its links followed.
+test "resolve: a path made absolute through its folder"
+    dir = fixture.folder("example-resolve")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    full = resolve(dir + "/./f").must()
+    assert paths.is_abs(full) && is_same_file(path: full, other: dir + "/f").must()
+    assert fixture.cleared(dir)
+
+# A relative path made absolute, no link read.
+test "to_abs: a relative path against the working folder"
+    full = to_abs("notes/today.txt").must()
+    assert paths.is_abs(full) && paths.name(full).must() == "today.txt"
+
+# A scratch folder of its own, removed by the program when done.
+test "make_temp_dir: a scratch folder"
+    dir = fixture.folder("example-temp-dir")
+    scratch = make_temp_dir(dir: dir, pattern: "work-*").must()
+    assert is_dir(scratch).must() && paths.name(scratch).must().len() == 21
+    assert fixture.cleared(dir)
+
+# A scratch file and the stream that writes it.
+test "make_temp_file: a scratch file written"
+    dir = fixture.folder("example-temp-file")
+    made @= make_temp_file(dir: dir, pattern: "report-*.txt").must()
+    io.write_text(made.stream, text: "draft").must()
+    io.close(@made.stream).must()
+    assert read_file(made.path).must() == "draft"
+    assert fixture.cleared(dir)
+
+# A file's times set, as an archive's extraction keeps them.
+test "set_times: a file dated 2017"
+    dir = fixture.folder("example-set-times")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    then = time.Instant(unix_nanoseconds: 1_500_000_000_000_000_000)
+    assert !set_times(dir + "/f", written: then, read: then).is_err()
+    assert info(dir + "/f").must().written == then
+    assert fixture.cleared(dir)
+
+# A file cut to a length.
+test "truncate: a file cut to its first two bytes"
+    dir = fixture.folder("example-truncate")
+    assert !write_file(path: dir + "/f", text: "hello").is_err()
+    assert !truncate(dir + "/f", length: 2).is_err()
+    assert read_file(dir + "/f").must() == "he"
+    assert fixture.cleared(dir)
+
+# A file given to a user and a group, -1 keeping both: what a program that
+# runs as root does to hand a file over.
+test "set_owner: an owner kept as it is"
+    dir = fixture.folder("example-set-owner")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+
+    match set_owner(dir + "/f", user: -1, group: -1)
+        .ok _  => assert !fixture.windows()
+        .err e => assert e.code == UNSUPPORTED && fixture.windows()
+
+    assert fixture.cleared(dir)
+
+# A link given to a user and a group, the file it names left alone.
+test "set_link_owner: a link's owner kept as it is"
+    dir = fixture.folder("example-set-link-owner")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+
+    if fixture.linked(target: "f", name: dir + "/l")
+        match set_link_owner(dir + "/l", user: -1, group: -1)
+            .ok _  => assert !fixture.windows()
+            .err e => assert e.code == UNSUPPORTED && fixture.windows()
+    assert fixture.cleared(dir)
 
 # The files of a project git would see, its build output and git's own folder
 # left out.

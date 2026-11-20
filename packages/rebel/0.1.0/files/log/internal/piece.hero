@@ -1,21 +1,10 @@
 # A line's fields flattened into the steps both forms write: a value with its
-# key, a group opened under its key, a group closed. The face walks its fields
-# into these, since a private module may not name the face's types; the keys
-# every line opens with are here for the same reason.
+# key, a group opened under its key, a group closed. The face walks its
+# fields, groups inside groups, into these with a stack of its own, so the two
+# forms write a line in one loop each and nothing follows the fields with
+# recursion, however deep the groups go.
 
 use json
-
-# The key of a line's time in the JSON form.
-constant TIME_KEY: str
-    "time"
-
-# The key of a line's level in the JSON form.
-constant LEVEL_KEY: str
-    "level"
-
-# The key of a line's message in the JSON form.
-constant MESSAGE_KEY: str
-    "msg"
 
 # A step that writes a value.
 constant VALUE: i64

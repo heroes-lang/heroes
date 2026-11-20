@@ -257,7 +257,7 @@ function with_hidden(a: Argument) -> Argument
 
 # Adds `a` to `c`, after the arguments it takes already.
 #
-# - `@c`: the command; gains `a`.
+# - `c`: the command; gains `a`.
 # - `a`: the argument.
 #
 # Aborts where a name of `a` is taken in `c`: its long name, its short name,
@@ -270,7 +270,7 @@ function add(@c: Command, a: Argument)
 # Adds `sub` to `c` as a subcommand: the first positional of the arguments
 # then names one, and every argument after it is `sub`'s.
 #
-# - `@c`: the command; gains `sub`.
+# - `c`: the command; gains `sub`.
 # - `sub`: the subcommand, its name the word that chooses it.
 #
 # Aborts where `c` has a subcommand of that name already or takes a
@@ -280,7 +280,7 @@ function add_command(@c: Command, sub: Command)
 
 # Adds to `c` a group of options of which at most one may be given.
 #
-# - `@c`: the command; gains the group.
+# - `c`: the command; gains the group.
 # - `names`: two options or more, each named as `value_of` names it, all of
 #   them added to `c` already.
 # - `required`: whether one of them must be given.
@@ -471,7 +471,7 @@ function with_external_commands(c: Command) -> Command
 # Adds to `c` that the argument `name` needs `needs` given with it: a parse
 # where `name` is given and `needs` is not fails `invalid`.
 #
-# - `@c`: the command; gains the rule.
+# - `c`: the command; gains the rule.
 # - `name`: the argument that needs, named as `value_of` names it, added
 #   already.
 # - `needs`: the argument needed, the same way.
@@ -784,12 +784,16 @@ function completion_of(c: Command, shell: Shell) -> str
 
 ## Examples
 
-# A command with a flag, an option of an integer and a positional, built.
+# A command declared in the two shapes the package writes: a setting is a
+# copy, `with_version` answering a new command and `with_kind` a new option,
+# and an argument is added to the command in place, `add(@c, ...)`. The
+# usage is Python's `argparse`'s for the same declaration.
 test "command: a small program's declaration"
-    c @= command(name: "grep", about: "Searches files for a pattern.")
+    c @= with_version(command(name: "grep", about: "Searches files for a pattern."), version: "1.0")
     add(@c, flag(long: "count", short: "c", help: "print only a count"))
+    add(@c, with_kind(option(long: "max", short: "m", value_name: "NUM", help: "stop after NUM"), .integer))
     add(@c, positional(name: "PATTERN", help: "what to find"))
-    assert usage_of(c) == "usage: grep [-h] [-c] PATTERN"
+    assert usage_of(c) == "usage: grep [-h] [-V] [-c] [-m NUM] PATTERN"
 
 # A flag given in its short form.
 test "flag: given as -c"

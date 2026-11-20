@@ -12,6 +12,7 @@ use mail/internal/tree
 use mail/internal/words
 use numbers
 use strings
+use url/idna
 
 # The code of a message that cannot be written as it stands.
 constant INVALID: str
@@ -231,12 +232,14 @@ function is_free(boundary: str, kids: [[u8]], node: tree.Node) -> bool
 ## A header's text above ASCII
 
 # The value of the field `name` as it is written: itself where it is ASCII or
-# `utf8` is asked; otherwise an address field's names as encoded words, a
-# MIME field's parameters by RFC 2231, any other field's words above ASCII as
-# encoded words. Fails `unsupported` for a mailbox above ASCII, `invalid`
-# where an address or a MIME field does not read.
+# `utf8` is asked; otherwise an address field's names as encoded words and
+# its domains above ASCII as their A-labels, a MIME field's parameters by RFC
+# 2231, any other field's words above ASCII as encoded words. Fails
+# `unsupported` for a local part above ASCII, which has no ASCII form, and as
+# `ascii_mailbox` fails; `invalid` where an address or a MIME field does not
+# read.
 function prepared(name: str, value: str, utf8: bool) -> str?
-    if utf8 || is_ascii(value)
+    if utf8 || strings.is_ascii(value)
         return ok(value)
     lowered = strings.to_lower_ascii(name)
 
@@ -245,14 +248,20 @@ function prepared(name: str, value: str, utf8: bool) -> str?
             .ok e  => e
             .err e => return fail(code: INVALID, msg: f"the field \"{name}\" is no address list: {e.msg}")
 
-        for m in address.flatten(entries)
-            if !address.is_ascii(m)
-                return fail(
-                    code: UNSUPPORTED,
-                    msg: f"the address \"{address.spec_of(m)}\" of the field \"{name}\" is above ASCII, which only a server that took SMTPUTF8 accepts: write it with UTF-8 allowed"
-                )
+        written: [address.Entry] @= []
 
-        return ok(address.format_entries(entries))
+        for e in entries
+            match e
+                .one o => written @ written.push(.one(box: ascii_mailbox(o.box, field: name)?))
+                .group g =>
+                    members: [address.Mailbox] @= []
+
+                    for m in g.members
+                        members @ members.push(ascii_mailbox(m, field: name)?)
+
+                    written @ written.push(.group(name: g.name, members: members))
+
+        return ok(address.format_entries(written))
 
     if lowered == "content-type" || lowered == "content-disposition"
         v = match params.parse(value, typed: lowered == "content-type")
@@ -262,6 +271,40 @@ function prepared(name: str, value: str, utf8: bool) -> str?
         return params.format(head: v.head, params: v.params, typed: lowered == "content-type")
     return ok(encode_unstructured(value))
 
+# `m` with its domain in ASCII, its labels above ASCII written as IDNA's
+# A-labels by `url/idna.to_ascii` with every check of a name looked up in DNS,
+# `bücher.de` as `xn--bcher-kva.de`; `m` itself where it is ASCII. Its name
+# stays as it is, which `address.format` writes as encoded words.
+#
+# - `m`: the mailbox.
+# - `field`: the field's name, for a failure's message.
+#
+# Fails `unsupported` where its local part is above ASCII, which only a server
+# that took SMTPUTF8 accepts, and where `url/idna` cannot yet write the domain;
+# `invalid` where the domain is no name IDNA writes, the message saying why.
+function ascii_mailbox(m: address.Mailbox, field: str) -> address.Mailbox?
+    if address.is_ascii(m)
+        return ok(m)
+
+    if !strings.is_ascii(m.local)
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"the address \"{address.spec_of(m)}\" of the field \"{field}\" has a local part above ASCII, which only a server that took SMTPUTF8 accepts: write it with UTF-8 allowed"
+        )
+
+    match idna.to_ascii(m.domain, options: idna.strict_options())
+        .ok domain => return ok(address.Mailbox(name: m.name, local: m.local, domain: domain))
+        .err e =>
+            if e.code == idna.UNSUPPORTED
+                return fail(
+                    code: UNSUPPORTED,
+                    msg: f"the domain of \"{address.spec_of(m)}\" in the field \"{field}\" has no A-labels yet: {e.msg}"
+                )
+            return fail(
+                code: INVALID,
+                msg: f"the domain of \"{address.spec_of(m)}\" in the field \"{field}\" is no name IDNA writes in ASCII: {e.msg}"
+            )
+
 # Whether a field of the lower-case `name` holds addresses.
 function is_address_field(name: str) -> bool
     for known in ["from", "to", "cc", "bcc", "reply-to", "sender", "resent-from", "resent-to", "resent-cc", "resent-bcc", "resent-sender", "disposition-notification-to"]
@@ -269,17 +312,6 @@ function is_address_field(name: str) -> bool
             return true
 
     return false
-
-# Whether every byte of `s` is ASCII.
-function is_ascii(s: str) -> bool
-    at: i64 @= 0
-
-    while at < s.len()
-        if s[at] >= 0x80
-            return false
-        at @ at + 1
-
-    return true
 
 # `value` with the words from its first above ASCII to its last written as
 # encoded words, Q unless B is shorter by five bytes, and the words before
@@ -291,7 +323,7 @@ function encode_unstructured(value: str) -> str
     last: i64 @= -1
 
     for k in range(from: 0, to: pieces.len())
-        if !is_ascii(pieces[k]) || strings.contains(s: pieces[k], substr: "=?")
+        if !strings.is_ascii(pieces[k]) || strings.contains(s: pieces[k], substr: "=?")
             if first < 0
                 first @ k
             last @ k
@@ -403,6 +435,20 @@ test "prepared: ASCII as it is, a subject's words above ASCII, a name, a filenam
     assert prepared(name: "Subject", value: "Grüße", utf8: true).must() == "Grüße"
     assert prepared(name: "To", value: "Jörg <bad", utf8: false).is_err()
     assert prepared(name: "Subject", value: "日本語のテキスト", utf8: false).must() == "=?utf-8?b?5pel5pys6Kqe44Gu44OG44Kt44K544OI?="
+
+test "prepared and ascii_mailbox: a domain above ASCII as its A-labels, in a name's address and a group, a local part above ASCII refused, a domain IDNA refuses"
+    assert prepared(name: "To", value: "ana@bücher.de", utf8: false).must() == "ana@xn--bcher-kva.de"
+    assert prepared(name: "From", value: "Jörg <j@münchen.example>", utf8: false).must() == "=?utf-8?q?J=C3=B6rg?= <j@xn--mnchen-3ya.example>"
+    assert prepared(name: "Cc", value: "Team: a@bücher.de, b@example.org;", utf8: false).must() == "Team: a@xn--bcher-kva.de, b@example.org;"
+    assert prepared(name: "To", value: "ana@bücher.de", utf8: true).must() == "ana@bücher.de"
+
+    match prepared(name: "To", value: "jörg@bücher.de", utf8: false)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED && e.msg == "the address \"jörg@bücher.de\" of the field \"To\" has a local part above ASCII, which only a server that took SMTPUTF8 accepts: write it with UTF-8 allowed"
+
+    match prepared(name: "To", value: "ana@-bü.de", utf8: false)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
 
 test "is_boundary: RFC 2046's characters, lengths, a space at the end"
     assert is_boundary("a") && is_boundary("=_abc_0") && is_boundary("a b") && !is_boundary("") && !is_boundary("a ")

@@ -1,7 +1,8 @@
 # The shape of a pixel buffer, which the other private modules of `image`
-# work on: they cannot name the face's `Image`, so the face hands them its
-# fields as a `Shape` and the bytes beside it. A sample is one byte, or two
-# with the high one first where the shape is wide.
+# work on: the face hands them an `Image`'s size with its format read once
+# into the samples a pixel and their width, and the bytes beside it, so that
+# a module writes the bytes in place. A sample is one byte, or two with the
+# high one first where the shape is wide.
 
 # The size of a pixel buffer and how its pixels are held.
 record Shape

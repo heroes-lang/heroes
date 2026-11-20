@@ -1,40 +1,11 @@
-# The parts of a URL as the package's private modules pass them: field for
-# field the face's `Url`, which they cannot name, since the face uses them and
-# a module may not use the face back. The face copies one into the other.
+# What the package's private modules ask of a URL's parts, the face's `Url`:
+# the empty reference they start from, and whether an authority is written.
 
-# A URL in its parts, read and written as the face's `Url` says of each
-# field.
-record Parts
-    # The scheme, in lower case; "" in a relative reference.
-    scheme: str
-    # The user name, unescaped.
-    user: str
-    # The password, unescaped.
-    password: str
-    # The host, unescaped, in lower case, an IPv6 address without brackets.
-    host: str
-    # The port's digits.
-    port: str
-    # The path, raw.
-    path: str
-    # The query without its "?", raw.
-    query: str
-    # The fragment without its "#", raw.
-    fragment: str
-    # Whether "//" is written with nothing of an authority after it.
-    empty_authority: bool
-    # Whether an "@" is written with nothing before it.
-    empty_userinfo: bool
-    # Whether a password's ":" is written with no password.
-    empty_password: bool
-    # Whether a "?" is written with no query.
-    empty_query: bool
-    # Whether a "#" is written with no fragment.
-    empty_fragment: bool
+use url
 
 # The parts of the empty reference, "".
-function empty() -> Parts
-    return Parts(
+function empty() -> url.Url
+    return url.Url(
         scheme: "",
         user: "",
         password: "",
@@ -51,7 +22,7 @@ function empty() -> Parts
     )
 
 # Whether `p` writes an authority, the "//" and what follows it.
-function has_authority(p: Parts) -> bool
+function has_authority(p: url.Url) -> bool
     return p.user != "" || p.password != "" || p.host != "" || p.port != "" || p.empty_authority || p.empty_userinfo || p.empty_password
 
 ## Tests

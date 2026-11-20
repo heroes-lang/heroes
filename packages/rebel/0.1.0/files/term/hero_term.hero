@@ -1,7 +1,7 @@
 # The platform layer's terminal, `hero_term.h`, bound thin: one function per C
 # function, each answering what C answers, in C's order. Where a call fails it
 # answers -1, and `last_error` then the kind. Rebel's floor of `term`
-# (`examples/packages/README.md` § 4.1): no policy stands here, and the face
+# (`examples-rebel/README.md` § A2): no policy stands here, and the face
 # above it turns every kind into a code and every key's bytes into a key.
 #
 # The layer is C of the language's own beside the runtime, so this group names

@@ -333,9 +333,69 @@ function might_retire(text: str) -> bool
 
     return false
 
-# The retired wordings `text` holds, folded.
+# The retired wordings `text` holds, folded, and every other place it holds
+# the old founding sentence (`old_sentence_in`).
 function retired_in(text: str) -> [str]
-    return found_in(text: folded(text), needles: RETIRED_WORDINGS)
+    held = folded(text)
+    out: [str] @= found_in(text: held, needles: RETIRED_WORDINGS)
+
+    for one in old_sentence_in(held)
+        out @ out.push(one)
+
+    return out
+
+# The founding sentence as design.md §1.11 said it before decision 9, folded,
+# and the one way law 18 goes on from it.
+constant OLD_SENTENCE: str
+    "there is no standard library"
+
+constant LAW_18_GOES_ON: str
+    " to obey"
+
+# Every place the folded `text` holds the old sentence in a form no wording of
+# `RETIRED_WORDINGS` names and law 18 does not go on from, as the sentence and
+# the byte after it where that byte is a mark: `there is no standard
+# library)`. **The listed wordings named the forms the site and the contract
+# wrote, each with what followed it, and the examples' own form was none of
+# them**: sixteen modules of `examples/` wrote *(design.md §1.11: there is no
+# standard library)*, which the walk passed and the site showed on its
+# example pages (lane-land-site's finding, 2026-11-20). So the sentence
+# itself is the needle, whatever follows it, law 18's continuation alone
+# excepted; a place a listed wording already names is told once, by it.
+function old_sentence_in(text: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at + OLD_SENTENCE.len() <= text.len()
+        if !strings.holds_at(s: text, part: OLD_SENTENCE, at: at)
+            at @ at + 1
+            continue
+        end = at + OLD_SENTENCE.len()
+        goes_on = end + LAW_18_GOES_ON.len() <= text.len() && strings.holds_at(s: text, part: LAW_18_GOES_ON, at: end)
+
+        if !goes_on && !listed_at(text: text, at: at)
+            shown: str @= OLD_SENTENCE
+
+            if end < text.len() && text[end] != ' ' && text[end] < 128
+                shown @ OLD_SENTENCE + text.slice(from: end, to: end + 1)
+            out @ out.push(shown)
+        at @ end
+
+    return out
+
+# Whether a wording of `RETIRED_WORDINGS` that holds the old sentence stands
+# in `text` around the sentence beginning at `at`.
+function listed_at(text: str, at: i64) -> bool
+    for wording in RETIRED_WORDINGS
+        inner = strings.index_of(text: wording, needle: OLD_SENTENCE)
+
+        if !inner.is_err() && at >= inner.must()
+            begin = at - inner.must()
+
+            if begin + wording.len() <= text.len() && strings.holds_at(s: text, part: wording, at: begin)
+                return true
+
+    return false
 
 # The spellings of `core` as a package `text` holds, folded.
 function core_in(text: str) -> [str]
@@ -643,6 +703,15 @@ test "part 2 fires on every retired wording, English and Italian, and not on the
     assert retired_in("<dd>Una libreria standard non c&rsquo;è, di proposito") == ["una libreria standard non c'è"]
     assert retired_in("<span class=\"when\">Niente libreria standard</span>") == ["niente libreria standard"]
     assert retired_in("18. There is no standard library to obey; there is a Rebel to call, or not.").len() == 0
+
+    # The examples' form, as sixteen modules wrote it, on one line and
+    # wrapped across two; the sentence at a text's end; and a listed wording
+    # told once, by its own words.
+    assert retired_in("# to the program (design.md §1.11: there is no standard library), so each") == ["there is no standard library)"]
+    assert retired_in("# leaves them to C (design.md\n# §1.11: there is no standard library), so this") == ["there is no standard library)"]
+    assert retired_in("There is no standard library") == ["there is no standard library"]
+    assert retired_in("There is no standard library.") == ["there is no standard library."]
+    assert retired_in("There is no standard library to obey, and there is no standard library: twice.") == ["there is no standard library:"]
     assert retired_in("Heroes imposes no standard library and offers one that is optional.").len() == 0
     assert might_retire("a Library") && might_retire("permanently") && !might_retire("nothing here")
 
