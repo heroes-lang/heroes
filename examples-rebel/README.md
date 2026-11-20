@@ -58,7 +58,6 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 1 | `stats` | mean, median, mode, variance, deviation, quantiles, correlation | `lists`, `math` |  |
 | 1 | `math/complex` | complex numbers and their functions as C11's Annex G computes them: arithmetic, the polar form, exponentials, logarithms, powers, the circular and hyperbolic functions and their inverses | `math` |  |
 | 1 | `math/linear` | vectors of two, three and four, matrices, quaternions, transforms, cameras and Euler angles in all twelve orders | `math` |  |
-| 1 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode` |  |
 | 1 | `image` | images in memory, gray to RGBA at 8 and 16 bits: crop, resize, rotate, flip, convert, paste with alpha, simple drawing, a histogram; each file format a subpackage; a broken file is `invalid`, never a memory fault | `math` |  |
 | 2 | `io` | the stream: read, write, close, seek; buffers; lines; copying | `bytes` | `hero_stream.h` |
 | 2 | `json` | a JSON value parsed and rendered | `numbers`, `strings`, `unicode` |  |
@@ -84,6 +83,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `image/gif` | GIF read and written: every frame of an animation, laid one over another as a viewer shows it | `bytes`, `image` |  |
 | 2 | `image/bmp` | BMP read and written: 1 to 32 bits a pixel under every header, run-length coded files read | `bytes`, `image` |  |
 | 2 | `image/netpbm` | PBM, PGM, PPM and PAM read and written, plain or raw | `bytes`, `image` |  |
+| 2 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode`, `unicode/normalize` |  |
 | 2 | `i18n` | locales, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` |  |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings` | `hero_net.h`, `hero_stream_net.h` |

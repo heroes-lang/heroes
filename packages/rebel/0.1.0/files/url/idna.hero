@@ -5,20 +5,15 @@
 # "xn--bcher-kva.de", the name DNS and TLS are asked, and back.
 #
 # It does not read a URL (`url` does, and leaves its host as written), nor
-# ask DNS for a name (`net`). Its tables are apart from `url` so that only
-# the programs that convert a host carry them.
-#
-# **The normalization to NFC is pending.** UTS #46 normalizes the mapped
-# text to NFC and holds every label to it, and `unicode/normalize`, which
-# would, does not exist yet. The quick check of UAX #15 settles most texts
-# without it; where it cannot, the call fails `unsupported` rather than
-# answer a host that may be another. Of UTS #46's own 6,389 test cases a
-# `str` can hold, 844 answer `unsupported` in at least one operation.
+# ask DNS for a name (`net`), nor normalize a text (`unicode/normalize`, which
+# makes UTS #46's normalization to NFC here). Its tables are apart from `url`
+# so that only the programs that convert a host carry them. Every one of UTS
+# #46's own 6,389 test cases a `str` can hold is answered as the test file
+# says.
 #
 # It fails with `invalid`, a host UTS #46 refuses, the message naming the
 # label, its number and the rule, with the rule's code in UTS #46's test
-# file (`V2`, `B1`, `P4`); and `unsupported`, a host whose answer waits for
-# the normalization to NFC.
+# file (`V1`, `B1`, `P4`).
 
 use unicode
 use url/idna/internal/conformance_cases
@@ -33,11 +28,6 @@ use url/idna/internal/written
 # the message names the label and the rule.
 constant INVALID: str
     "invalid"
-
-# The code of a host whose answer needs a normalization to NFC this package
-# cannot make yet, since `unicode/normalize` does not exist.
-constant UNSUPPORTED: str
-    "unsupported"
 
 # The version of Unicode whose IDNA mapping table and properties the tables
 # hold.
@@ -111,8 +101,8 @@ function url_options() -> Options
 #
 # - `host`: a domain name, labels joined by "." or by one of the full stops
 #   UTS #46 maps to it ("。", "．", "｡"); capitals and the other mapped
-#   characters are mapped first, and a label already in Punycode is decoded
-#   and checked. Empty, it is refused under `options.verify_dns_length`, and
+#   characters are mapped first, the text normalized to NFC, and a label
+#   already in Punycode is decoded and checked. Empty, it is refused under `options.verify_dns_length`, and
 #   answered empty otherwise.
 # - `options`: the checks, from `strict_options` or `url_options`.
 #
@@ -120,10 +110,9 @@ function url_options() -> Options
 # trailing "." where `options.verify_dns_length` is false.
 #
 # Fails `invalid` where UTS #46 refuses `host`: a character disallowed, a
-# label against a criterion or a rule `options` asks, Punycode that does not
-# decode, or a length past DNS's; the message names the label, its number and
-# the rule. Fails `unsupported` where the mapped host, or a label written in
-# Punycode, may need normalizing to NFC, which waits for `unicode/normalize`.
+# label against a criterion or a rule `options` asks (a label written in
+# Punycode that is not in NFC among them), Punycode that does not decode, or a
+# length past DNS's; the message names the label, its number and the rule.
 # Each character is looked up by a binary search of the tables, and a label's
 # Punycode costs n log n of its characters. See also `to_unicode`.
 function to_ascii(host: str, options: Options) -> str?
@@ -148,7 +137,7 @@ function to_ascii(host: str, options: Options) -> str?
 #
 # The answer is mapped as `to_ascii`'s is: "Bücher.DE" is "bücher.de".
 #
-# Fails `invalid` and `unsupported` as `to_ascii` does, the lengths aside.
+# Fails `invalid` as `to_ascii` does, the lengths aside.
 # See also `to_ascii`.
 function to_unicode(host: str, options: Options) -> str?
     checks = criteria.Checks(
@@ -224,6 +213,15 @@ test "format_punycode and parse_punycode: empty, ASCII alone, one character abov
 
 test "conformance: every case of UTS #46's test file a text can hold is run by the module that holds them"
     assert conformance_cases.CASES == 6389
+
+test "to_ascii and to_unicode: a host whose mapping must be normalized to NFC, and a Punycode label that is not in NFC"
+    apart = unicode.from_code_points([0x61, 0x301]).must() + ".example"
+    assert to_ascii(apart, options: strict_options()).must() == "xn--1ca.example"
+    assert to_unicode(apart, options: url_options()).must() == unicode.from_code_points([0xe1]).must() + ".example"
+
+    match to_unicode("xn--a-xbb.example", options: strict_options())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
 
 ## Examples
 
