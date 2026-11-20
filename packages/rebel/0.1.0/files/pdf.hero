@@ -36,7 +36,6 @@ use image
 use image/png
 use math
 use pdf/internal/assemble
-use pdf/internal/codes
 use pdf/internal/compose
 use pdf/internal/dates
 use pdf/internal/filters
@@ -62,24 +61,24 @@ use time
 # `parse_date`, `parse_color`, `add_jpeg`, `add_png`, `to_bytes` and the
 # readers of objects fail with it.
 constant INVALID: str
-    codes.INVALID
+    "invalid"
 
 # The code of a file that would pass the caller's `Limits`. `parse`,
 # `text_of`, `pieces_of` and `stream_data_of` fail with it.
 constant LIMIT: str
-    codes.LIMIT
+    "limit"
 
 # The code of a key a dictionary does not hold (`entry_of`) and of a font
 # name that is none of the 14 (`parse_font`).
 constant NOT_FOUND: str
-    codes.NOT_FOUND
+    "not_found"
 
 # The code of what this package does not do: a character a standard font
 # has no glyph for (`width_of`, `draw_text`), an image it does not embed
 # (`add_png`), a file encrypted with AES (`parse`), a stream of an image
 # filter (`stream_data_of`).
 constant UNSUPPORTED: str
-    codes.UNSUPPORTED
+    "unsupported"
 
 ## Sizes and units
 
@@ -1528,7 +1527,7 @@ variant Kind
     null_value
     # `true` or `false`: `bool_of`.
     boolean
-    # A whole number: `integer_of` and `number_of`.
+    # A whole number: `int_of` and `number_of`.
     integer
     # A number with a point: `number_of`.
     real
@@ -1961,7 +1960,7 @@ function bool_of(o: Object) -> bool?
 # Fails `invalid` where `o` is no integer.
 #
 # See also `number_of`.
-function integer_of(o: Object) -> i64?
+function int_of(o: Object) -> i64?
     return match o.state
         .integer n => ok(n.value)
         .null_value | .boolean _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => fail(
@@ -1975,7 +1974,7 @@ function integer_of(o: Object) -> i64?
 #
 # Fails `invalid` where `o` is no number.
 #
-# See also `integer_of`.
+# See also `int_of`.
 function number_of(o: Object) -> f64?
     return match o.state
         .integer n => ok(to_f64(n.value))
@@ -2804,7 +2803,7 @@ test "resolve: the trailer's Root"
 # The trailer of a file.
 test "trailer_of: its Size"
     f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
-    assert integer_of(entry_of(trailer_of(f), key: "Size").must()).must() > 5
+    assert int_of(entry_of(trailer_of(f), key: "Size").must()).must() > 5
 
 # The catalogue of a file.
 test "catalog_of: its page tree"
@@ -2822,9 +2821,9 @@ test "bool_of: a boolean, and a name that is none"
     assert bool_of(Object(state: .name(value: "x"))).is_err()
 
 # An integer of a file.
-test "integer_of: the page count"
+test "int_of: the page count"
     f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
-    assert integer_of(entry_of(resolve(f, o: entry_of(catalog_of(f), key: "Pages").must()), key: "Count").must()).must() == 1
+    assert int_of(entry_of(resolve(f, o: entry_of(catalog_of(f), key: "Pages").must()), key: "Count").must()).must() == 1
 
 # A number, whole or not.
 test "number_of: the width of an A4 page"

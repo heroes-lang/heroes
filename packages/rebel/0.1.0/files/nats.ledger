@@ -80,7 +80,7 @@ capability nats/auth-callback  a login computed by a function of the program at 
   python  signature_cb, user_jwt_cb
 
 capability nats/nkeys  NKeys read and written: a seed's public key, a signature, a check, a new user's seed
-  heroes  nats.nkey_public_of, nats.nkey_sign, nats.nkey_verify, nats.generate_user_seed
+  heroes  nats.nkey_public_of, nats.nkey_sign, nats.nkey_verify, nats.new_user_seed
   go      nkeys.FromSeed, nkeys.FromRawSeed, nkeys.FromPublicKey, nkeys.CreateUser, nkeys.KeyPair, nkeys.Decode, nkeys.Encode, nkeys.EncodeSeed, nkeys.DecodeSeed, nkeys.IsValidPublicUserKey, nkeys.ParseDecoratedJWT, nkeys.ParseDecoratedNKey, nkeys.ParseDecoratedUserNKey, nkeys.PrefixByte
   rust    -
   python  -

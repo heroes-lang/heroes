@@ -1,24 +1,25 @@
-# The failure codes `pdf` answers, which the face names its constants from,
-# since a private module cannot `use` the face; and the messages built
-# around them.
+# The failure codes `pdf` answers, named here for the private modules, the
+# face writing each one's text; and the messages built around them.
+
+use pdf
 
 # A file that is not what PDF says, or a value given to a writer that PDF
 # has no form for.
 constant INVALID: str
-    "invalid"
+    pdf.INVALID
 
 # A file that would pass a limit the caller set.
 constant LIMIT: str
-    "limit"
+    pdf.LIMIT
 
 # What this package does not read or write: a security handler other than
 # RC4's, a filter of images, a character a standard font has no glyph for.
 constant UNSUPPORTED: str
-    "unsupported"
+    pdf.UNSUPPORTED
 
 # A key a dictionary does not hold, a font or a page that is not there.
 constant NOT_FOUND: str
-    "not_found"
+    pdf.NOT_FOUND
 
 # A failure of code `invalid` about the file at byte `at`.
 function invalid_at<T>(at: i64, why: str) -> T?

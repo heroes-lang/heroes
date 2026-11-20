@@ -12,7 +12,7 @@ function main()
     match os.env("REBEL_REDIS_URL")
         .err _ => print("REBEL_REDIS_URL names no server")
         .ok url =>
-            match redis.open(redis.parse_url(url).must())
+            match redis.connect(redis.parse_url(url).must())
                 .err e => print("no server: ", e.code, ": ", e.msg)
                 .ok first =>
                     c @= first

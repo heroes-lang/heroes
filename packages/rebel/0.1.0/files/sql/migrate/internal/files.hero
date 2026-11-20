@@ -4,10 +4,11 @@
 # then gives the names and the texts here.
 
 use numbers
+use sql/migrate
 use strings
 
 constant INVALID: str
-    "invalid"
+    migrate.INVALID
 
 # What a migration's file name says.
 record Named

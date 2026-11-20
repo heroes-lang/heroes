@@ -1,9 +1,12 @@
-# SQLite from Heroes: a database in a file or in memory, run inside the
-# program through SQLite's own C library, with the API every driver of Rebel
-# keeps over `sql`'s types, name for name, as `sql/postgres`'s opening comment
-# writes it: `open`, `close`, `exec`, `query`, `query_one`, `exec_script`,
+# SQLite from Heroes: a database in a file or in memory, run inside the program
+# through SQLite's own C library, with the API every driver of Rebel keeps over
+# `sql`'s types, name for name, as `sql`'s opening comment writes it: `open`,
+# `close`, `is_closed`, `ping`, `exec`, `query`, `query_one`, `exec_script`,
 # `prepare`, `exec_prepared`, `query_prepared`, `close_statement`, `begin`,
-# `commit`, `rollback`. Only `open`'s argument is this driver's own: a path.
+# `commit`, `rollback` and `in_transaction`. Only `open`'s argument is this
+# driver's own: a path. A statement may be built as a value by `sql/build`, its
+# dialect `.sqlite`, and a schema changed by numbered migrations by
+# `sql/migrate`.
 #
 # **Only a program that uses this package needs SQLite's library**: its floor,
 # `sql/sqlite/hero_sqlite3`, binds `sqlite3.h` and links `sqlite3`, which the
@@ -208,6 +211,15 @@ record Db
     # How many statements `prepare` made on it that `close_statement` has not
     # ended; `close` refuses while one is.
     prepared: i64
+
+# Answers whether the connection still works: SQLite runs in this process,
+# so a connection that is open works, and nothing is asked of the database.
+#
+# - `db`: the connection.
+#
+# Fails `closed` where the connection is closed. See also `is_closed`.
+function ping(db: Db) -> ()?
+    return connections.live(db.connection, path: db.path)
 
 # Whether a transaction is open on `db`: after `begin`, or a `BEGIN` run as a
 # statement, until `commit` or `rollback` ends it, or SQLite rolls it back on
@@ -890,6 +902,13 @@ test "is_closed: before and after close"
     assert !is_closed(db)
     close(@db).must()
     assert is_closed(db)
+
+# A connection that works, and one closed.
+test "ping: open, then closed"
+    db @= open_memory().must()
+    ping(db).must()
+    close(@db).must()
+    assert ping(db).is_err()
 
 # A connection that gives up on a lock after a second.
 test "set_busy_timeout: one second"

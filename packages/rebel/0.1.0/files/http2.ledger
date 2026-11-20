@@ -229,7 +229,7 @@ capability server/over-stream  a server's connection over a stream accepted, TLS
   note    run against Go's client over TLS and h2c, and Python h2 4.4.1's, on 2026-11-18
 
 capability server/loop  a server's requests read whole and answered by the program's own handler with its own state
-  heroes  http2.next_request, http2.answer, http2.accept_stream, http2.serve, http2.serve_with, http2.echo, http2.respond_text
+  heroes  http2.next_request, http2.answer, http2.accept_stream, http2.serve, http2.serve_with
   go      net/http2.ConfigureServer, net/http2.Handler, net/http2.Server
   rust    -
   python  -

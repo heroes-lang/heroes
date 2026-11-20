@@ -34,14 +34,20 @@
 #
 # ## The contract every driver keeps
 #
-# This driver answers the calls `sql/postgres`'s opening comment lists, name
-# for name, over `sql`'s types: `open`, `close`, `exec`, `query`,
+# This driver answers the calls `sql`'s opening comment lists, name for name,
+# over `sql`'s types: `open`, `close`, `is_closed`, `ping`, `exec`, `query`,
 # `query_one`, `exec_script`, `prepare`, `exec_prepared`, `query_prepared`,
-# `close_statement`, `begin`, `commit` and `rollback`. Only `open`'s
-# argument is its own. MySQL's placeholders are `?`, and the list `params`
-# gives their values in order: a statement with parameters is prepared, run
-# and closed, so a value never enters the text of a statement; one with none
-# runs in the text protocol.
+# `close_statement`, `begin`, `commit`, `rollback` and `in_transaction`. Only
+# `open`'s argument is its own. MySQL's placeholders are `?`, and the list
+# `params` gives their values in order: a statement with parameters is prepared,
+# run and closed, so a value never enters the text of a statement; one with none
+# runs in the text protocol. `sql/build` writes no MySQL yet, and `sql/migrate`
+# does not serve it: their SQL is PostgreSQL's and SQLite's.
+#
+# **A name is quoted by this package's `quote_identifier`**, between
+# backquotes, as MySQL reads one. `sql.quote_identifier` writes standard
+# SQL's double quotes, which MySQL reads as a string unless its
+# `ANSI_QUOTES` mode is on.
 #
 # ## How a value travels
 #
@@ -299,7 +305,7 @@ function ping(@db: Db) -> ()?
 # A connection to a MySQL or MariaDB server, which `open` makes and `close`
 # ends. Its one field is the conversation's private state: the socket, the
 # reader of the server's answers, the server's status flags and version;
-# `transaction_of`, `server_version_of` and `warning_count_of` read them.
+# `in_transaction`, `server_version_of` and `warning_count_of` read them.
 # Every call works on the caller's own place, through `@`, since each one
 # reads what the server sends and changes that state. Two places holding one
 # connection read one socket: a program keeps one place per connection.
@@ -307,23 +313,15 @@ record Db
     # The conversation's state, which only this package reads and writes.
     session: session.Session
 
-# The transaction a connection stands in.
-variant Transaction
-    # No transaction is open: each statement commits on its own.
-    idle
-    # `begin` opened one, and its statements commit together.
-    open
-
-# The transaction `db` stands in, as the server's status said after its
-# last answer.
+# Whether a transaction is open on `db`, as the server's status said after
+# its last answer: after `begin`, or a `BEGIN` run as a statement, until
+# `commit` or `rollback` ends it.
 #
-# - `db`: the connection asked about.
+# - `db`: the connection asked about; a closed one has none.
 #
 # See also `begin`.
-function transaction_of(db: Db) -> Transaction
-    if !db.session.ended && db.session.status & answers.IN_TRANSACTION != 0
-        return .open
-    return .idle
+function in_transaction(db: Db) -> bool
+    return !db.session.ended && db.session.status & answers.IN_TRANSACTION != 0
 
 # The server's version as its greeting wrote it: `8.4.3` for MySQL,
 # `5.5.5-10.11.6-MariaDB` or `11.4.2-MariaDB` for MariaDB.
@@ -360,6 +358,41 @@ function connection_id_of(db: Db) -> i64
 # See also `exec`.
 function warning_count_of(db: Db) -> i64
     return db.session.warnings
+
+## Identifiers
+
+# `name` as MySQL quotes an identifier: inside backquotes, each backquote in
+# it doubled. A quoted name may hold any character, a space or a keyword
+# included; MySQL keeps a table's name in the case written where its server
+# keeps names so (`lower_case_table_names`).
+#
+# - `name`: the table's, column's or database's name, as it should be
+#   stored.
+#
+# Fails `invalid` where `name` is empty or holds a zero byte, which MySQL
+# keeps in no name. See also `sql.quote_identifier`, standard SQL's form,
+# which MySQL reads as a string.
+function quote_identifier(name: str) -> str?
+    if name.len() == 0
+        return fail(code: sql.INVALID, msg: "the identifier is empty, and MySQL keeps no empty name")
+    pieces: [str] @= ["`"]
+    at: i64 @= 0
+
+    for c in name.chars()
+        if c[0] == 0
+            return fail(
+                code: sql.INVALID,
+                msg: f"the identifier holds a zero byte at byte {at}, which MySQL keeps in no name"
+            )
+
+        if c == "`"
+            pieces @ pieces.push("``")
+        else
+            pieces @ pieces.push(c)
+        at @ at + c.len()
+
+    pieces @ pieces.push("`")
+    return ok(pieces.join(""))
 
 ## Running a statement
 
@@ -533,9 +566,9 @@ function close_statement(@db: Db, @prepared: Statement) -> ()?
 # commits the open transaction at once: MySQL's rule, not this driver's.
 #
 # Fails `invalid` where a transaction is open already, and `closed` where the
-# connection is closed. See also `commit`, `rollback`, `transaction_of`.
+# connection is closed. See also `commit`, `rollback`, `in_transaction`.
 function begin(@db: Db) -> ()?
-    if transaction_of(db) == .open
+    if in_transaction(db)
         return fail(code: sql.INVALID, msg: "a transaction is open already, and MySQL would commit it to open another")
     _ = requests.query_text(@db.session, text: "START TRANSACTION")?
     return ok()
@@ -547,7 +580,7 @@ function begin(@db: Db) -> ()?
 # Fails `invalid` where no transaction is open, and with the server's
 # failure where it cannot commit. See also `begin`, `rollback`.
 function commit(@db: Db) -> ()?
-    if !db.session.ended && transaction_of(db) == .idle
+    if !db.session.ended && !in_transaction(db)
         return fail(code: sql.INVALID, msg: "no transaction is open to commit")
     _ = requests.query_text(@db.session, text: "COMMIT")?
     return ok()
@@ -558,12 +591,26 @@ function commit(@db: Db) -> ()?
 #
 # Fails `invalid` where no transaction is open. See also `begin`, `commit`.
 function rollback(@db: Db) -> ()?
-    if !db.session.ended && transaction_of(db) == .idle
+    if !db.session.ended && !in_transaction(db)
         return fail(code: sql.INVALID, msg: "no transaction is open to roll back")
     _ = requests.query_text(@db.session, text: "ROLLBACK")?
     return ok()
 
 ## Tests
+
+test "quote_identifier: plain, a backquote doubled, a double quote kept, more than one byte, empty and a zero byte refused"
+    assert quote_identifier("users").must() == "`users`"
+    assert quote_identifier("a`b").must() == "`a``b`"
+    assert quote_identifier("say \"hi\"").must() == "`say \"hi\"`"
+    assert quote_identifier("città").must() == "`città`"
+
+    match quote_identifier("")
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID
+
+    match quote_identifier("a\u{1}b")
+        .ok got => assert got == "`a\u{1}b`"
+        .err _  => assert false
 
 test "begin, commit and rollback: the statements sent, the state followed, and the refusals"
     s = server.modern()
@@ -572,17 +619,17 @@ test "begin, commit and rollback: the statements sent, the state followed, and t
         capabilities: s
     )
     db @= Db(session: t.session)
-    assert transaction_of(db) == .idle
+    assert !in_transaction(db)
     assert commit(@db).is_err() && rollback(@db).is_err()
-    assert !begin(@db).is_err() && transaction_of(db) == .open
+    assert !begin(@db).is_err() && in_transaction(db)
 
     match begin(@db)
         .ok _  => assert false
         .err e => assert e.code == "invalid"
 
-    assert !commit(@db).is_err() && transaction_of(db) == .idle
+    assert !commit(@db).is_err() && !in_transaction(db)
     assert !begin(@db).is_err()
-    assert !rollback(@db).is_err() && transaction_of(db) == .idle
+    assert !rollback(@db).is_err() && !in_transaction(db)
     t.session @ db.session
     written = server.finish(@t)
     assert written == server.joined([server.query("START TRANSACTION"), server.query("COMMIT"), server.query("START TRANSACTION"), server.query("ROLLBACK"), server.command([0x01])])
@@ -661,7 +708,7 @@ test "open: a port out of range, an empty user and a zero byte, refused before c
 
 test "open live, against the server REBEL_MYSQL_URL names: every kind of value through both protocols, ids, scripts, transactions and failures"
     match os.env("REBEL_MYSQL_URL")
-        .err _ => print("open live: skipped, REBEL_MYSQL_URL names no server")
+        .err _ => skip_test(reason: "REBEL_MYSQL_URL names no server")
         .ok text =>
             db @= open(parse_url(text).must()).must()
             ping(@db).must()
@@ -738,14 +785,14 @@ test "open live, against the server REBEL_MYSQL_URL names: every kind of value t
             close_statement(@db, @s).must()
             count = "SELECT COUNT(*) FROM live_t"
             begin(@db).must()
-            assert transaction_of(db) == .open
+            assert in_transaction(db)
             _ = exec(@db, "INSERT INTO live_t (s) VALUES ('z')", []).must()
             rollback(@db).must()
             assert sql.integer_at(query_one(@db, count, []).must(), 0).must() == 3
             begin(@db).must()
             _ = exec(@db, "INSERT INTO live_t (s) VALUES ('z')", []).must()
             commit(@db).must()
-            assert sql.integer_at(query_one(@db, count, []).must(), 0).must() == 4 && transaction_of(db) == .idle
+            assert sql.integer_at(query_one(@db, count, []).must(), 0).must() == 4 && !in_transaction(db)
 
             match exec(@db, "INSERT INTO live_t (id) VALUES (1)", [])
                 .ok _  => assert false
@@ -795,7 +842,7 @@ test "open live, against the server REBEL_MYSQL_URL names: every kind of value t
 
 test "open live over TLS, against the server REBEL_MYSQL_TLS_HOST names, its certificate signed by tls's test authority"
     match os.env("REBEL_MYSQL_TLS_HOST")
-        .err _ => print("open live over TLS: skipped, REBEL_MYSQL_TLS_HOST names no server")
+        .err _ => skip_test(reason: "REBEL_MYSQL_TLS_HOST names no server")
         .ok host =>
             opts @= options(host: host, user: "rebel", database: "rebel")
             opts.password @ "secret"
@@ -823,6 +870,10 @@ test "open live over TLS, against the server REBEL_MYSQL_TLS_HOST names, its cer
 
 ## Examples
 
+# A table's name as MySQL reads it.
+test "quote_identifier: a name with a space"
+    assert quote_identifier("order lines").must() == "`order lines`"
+
 # The options of a connection, and one field changed.
 test "options: a database on this machine, with a password"
     opts @= options(host: "localhost", user: "ana", database: "shop")
@@ -835,10 +886,10 @@ test "parse_url: a user, a host, a port and a database"
     assert opts.host == "db.lan" && opts.port == 3307 && opts.user == "ana" && opts.database == "shop"
 
 # A connection opened and closed, where a server answers on this machine as
-# `root` with no password; elsewhere it shows nothing.
+# `root` with no password; elsewhere it skips.
 test "open: a connection to a local server"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             assert !is_closed(db)
@@ -847,7 +898,7 @@ test "open: a connection to a local server"
 # A connection closed, after which every call fails `closed`.
 test "close: the end of a connection"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             close(@db).must()
@@ -856,7 +907,7 @@ test "close: the end of a connection"
 # Whether a connection is still open.
 test "is_closed: before and after close"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             assert !is_closed(db)
@@ -866,28 +917,28 @@ test "is_closed: before and after close"
 # A connection asked whether it still works.
 test "ping: a live connection"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             ping(@db).must()
             close(@db).must()
 
 # The transaction a connection stands in, before and inside one.
-test "transaction_of: idle, then open"
+test "in_transaction: none, then one open"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
-            assert transaction_of(db) == .idle
+            assert !in_transaction(db)
             begin(@db).must()
-            assert transaction_of(db) == .open
+            assert in_transaction(db)
             rollback(@db).must()
             close(@db).must()
 
 # The server's version, as its greeting wrote it.
 test "server_version_of: the version of a local server"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             assert server_version_of(db) != ""
@@ -896,7 +947,7 @@ test "server_version_of: the version of a local server"
 # Whether the server is MariaDB.
 test "is_mariadb: the kind of a local server"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
 
@@ -910,7 +961,7 @@ test "is_mariadb: the kind of a local server"
 # The connection's number, as the server answers it too.
 test "connection_id_of: the number of a connection"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             row = query_one(@db, "SELECT CONNECTION_ID() AS id", []).must()
@@ -920,7 +971,7 @@ test "connection_id_of: the number of a connection"
 # The warning a division by zero raises.
 test "warning_count_of: one warning"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             _ = query(@db, "SELECT 1 / 0", []).must()
@@ -930,7 +981,7 @@ test "warning_count_of: one warning"
 # A row inserted, its value bound as a parameter.
 test "exec: a row inserted with a parameter"
     match open(options(host: "localhost", user: "root", database: "test"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             _ = exec(@db, "CREATE TEMPORARY TABLE bands (id INT AUTO_INCREMENT PRIMARY KEY, name TEXT)", []).must()
@@ -941,7 +992,7 @@ test "exec: a row inserted with a parameter"
 # The rows of a query, each column read by its name.
 test "query: two rows of a table"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             found = query(@db, "SELECT 1 AS n UNION ALL SELECT ?", [.integer(v: 2)]).must()
@@ -951,7 +1002,7 @@ test "query: two rows of a table"
 # One row read.
 test "query_one: the server's time zone"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             row = query_one(@db, "SELECT @@session.time_zone AS zone", []).must()
@@ -961,7 +1012,7 @@ test "query_one: the server's time zone"
 # Two statements run as one script.
 test "exec_script: a table made and filled"
     match open(options(host: "localhost", user: "root", database: "test"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TEMPORARY TABLE t (n INT); INSERT INTO t VALUES (1), (2)").must()
@@ -971,7 +1022,7 @@ test "exec_script: a table made and filled"
 # A statement prepared once, its placeholders counted.
 test "prepare: a statement of one placeholder"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             s @= prepare(@db, "SELECT ? + 1 AS next").must()
@@ -982,7 +1033,7 @@ test "prepare: a statement of one placeholder"
 # A prepared statement run twice with different values.
 test "exec_prepared: two rows inserted by one statement"
     match open(options(host: "localhost", user: "root", database: "test"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TEMPORARY TABLE t (n INT)").must()
@@ -995,7 +1046,7 @@ test "exec_prepared: two rows inserted by one statement"
 # A prepared query run with a value.
 test "query_prepared: a value read back"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             s @= prepare(@db, "SELECT CONCAT(?, '') AS name").must()
@@ -1007,7 +1058,7 @@ test "query_prepared: a value read back"
 # A prepared statement ended.
 test "close_statement: a statement no longer needed"
     match open(options(host: "localhost", user: "root", database: ""))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             s @= prepare(@db, "SELECT 1").must()
@@ -1018,7 +1069,7 @@ test "close_statement: a statement no longer needed"
 # A transaction opened and committed.
 test "begin: two inserts that commit together"
     match open(options(host: "localhost", user: "root", database: "test"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TEMPORARY TABLE t (n INT) ENGINE=InnoDB").must()
@@ -1030,7 +1081,7 @@ test "begin: two inserts that commit together"
 # The statements of a transaction made to take effect.
 test "commit: an insert kept"
     match open(options(host: "localhost", user: "root", database: "test"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TEMPORARY TABLE t (n INT) ENGINE=InnoDB").must()
@@ -1043,7 +1094,7 @@ test "commit: an insert kept"
 # The statements of a transaction undone.
 test "rollback: an insert undone"
     match open(options(host: "localhost", user: "root", database: "test"))
-        .err _ => _ = 0
+        .err e => skip_test(reason: f"no MySQL server reached on this machine as root: {e.msg}")
         .ok first =>
             db @= first
             exec_script(@db, "CREATE TEMPORARY TABLE t (n INT) ENGINE=InnoDB").must()

@@ -42,6 +42,7 @@ use oauth2/internal/exchange as wire
 use oauth2/internal/loopback
 use oauth2/internal/oidc
 use oauth2/internal/pkce
+use strings
 use time
 use url
 
@@ -204,7 +205,7 @@ function new_state() -> str?
 #   `prompt`, `login_hint`; empty for none.
 #
 # Fails `invalid` where the authorization endpoint is no absolute URL. See
-# also `read_redirect`.
+# also `parse_redirect`.
 function authorization_url(c: Config, state: str, challenge: str, extra: [url.Pair]) -> str?
     u @= discovery.absolute(target: c.authorization_endpoint, what: "the authorization endpoint")?
     pairs: [url.Pair] @= [
@@ -248,8 +249,8 @@ function authorization_url(c: Config, state: str, challenge: str, extra: [url.Pa
 # Fails `invalid` where the state is not `state`, the issuer not `issuer`,
 # or no code is given; `failed` where the redirect carries an `error`, its
 # code and description in the message, `permission` for `access_denied`.
-# See also `authorization_url`, `exchange`.
-function read_redirect(target: str, state: str, issuer: str) -> str?
+# See also `authorization_url`, `exchange_code`.
+function parse_redirect(target: str, state: str, issuer: str) -> str?
     if state == ""
         return fail(code: INVALID, msg: "a redirect read with no state to expect: `new_state` makes one")
 
@@ -297,13 +298,13 @@ function read_redirect(target: str, state: str, issuer: str) -> str?
 # `verifier` and the client's redirect and resources.
 #
 # - `c`: the client.
-# - `code`: the code `read_redirect` answered.
+# - `code`: the code `parse_redirect` answered.
 # - `verifier`: the verifier whose challenge the authorization URL carried.
 #
 # Fails `failed` where the server answers an OAuth error (`invalid_grant`
 # for a code used or a verifier that does not match), `invalid` where its
 # answer is not a token, and as `http.send` does. See also `refresh`.
-function exchange(c: Config, code: str, verifier: str) -> Token?
+function exchange_code(c: Config, code: str, verifier: str) -> Token?
     form: [url.Pair] @= [
         url.Pair(key: "grant_type", value: "authorization_code")
         url.Pair(key: "code", value: code)
@@ -372,7 +373,7 @@ function post_form(c: Config, endpoint: str, form: [url.Pair]) -> http.Response?
 # Fails `failed` for a status other than 200, its OAuth error in the
 # message; `invalid` where the body is no JSON object, holds no
 # `access_token`, or a member of the wrong kind. See also `request_token`.
-function read_token(r: http.Response, now: time.Instant) -> Token?
+function token_of(r: http.Response, now: time.Instant) -> Token?
     f = wire.read_token(r, now: now)?
     return ok(
         Token(access_token: f.access_token, token_type: f.token_type, refresh_token: f.refresh_token, expiry: f.expiry, scopes: f.scopes, id_token: f.id_token, members: f.members)
@@ -385,7 +386,7 @@ function read_token(r: http.Response, now: time.Instant) -> Token?
 #
 # - `c`: the client, which must authenticate.
 #
-# Fails as `exchange` does. See also `request_token`.
+# Fails as `exchange_code` does. See also `request_token`.
 function client_credentials(c: Config) -> Token?
     form: [url.Pair] @= [url.Pair(key: "grant_type", value: "client_credentials")]
 
@@ -403,7 +404,7 @@ function client_credentials(c: Config) -> Token?
 # - `c`: the client.
 # - `token`: a token holding a refresh token.
 #
-# Fails `invalid` where `token` holds none, and as `exchange` does. See also
+# Fails `invalid` where `token` holds none, and as `exchange_code` does. See also
 # `renewed`.
 function refresh(c: Config, token: Token) -> Token?
     if token.refresh_token == ""
@@ -440,7 +441,7 @@ function renewed(c: Config, token: Token, now: time.Instant) -> Token?
 # - `c`: the client.
 # - `assertion`: the JWT, as `jose.sign_token` makes it.
 #
-# Fails as `exchange` does. See also `request_token`.
+# Fails as `exchange_code` does. See also `request_token`.
 function exchange_assertion(c: Config, assertion: str) -> Token?
     form: [url.Pair] @= [
         url.Pair(key: "grant_type", value: "urn:ietf:params:oauth:grant-type:jwt-bearer")
@@ -462,12 +463,12 @@ function exchange_assertion(c: Config, assertion: str) -> Token?
 # - `c`: the client; its scopes and resources are not added.
 # - `form`: the parameters, `grant_type` first, in their order.
 #
-# Fails as `exchange` does. See also `exchange`.
+# Fails as `exchange_code` does. See also `exchange_code`.
 function request_token(c: Config, form: [url.Pair]) -> Token?
     if c.token_endpoint == ""
         return fail(code: INVALID, msg: "a token asked of a client with no token endpoint")
     response = post_form(c, endpoint: c.token_endpoint, form: form)?
-    return read_token(response, now: time.now()?)
+    return token_of(response, now: time.now()?)
 
 ## Devices
 
@@ -556,7 +557,7 @@ function poll_device(c: Config, device: DeviceAuthorization) -> Token?
         response = post_form(c, endpoint: c.token_endpoint, form: form)?
 
         if response.status == 200
-            return read_token(response, now: now)
+            return token_of(response, now: now)
         e = wire.error_of(response)
 
         if e.error == ""
@@ -1158,8 +1159,8 @@ test "the authorization code grant on the loopback: metadata, the URL, the redir
     assert url.value_of(query, key: "code_challenge").must() == "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
     assert url.value_of(query, key: "resource").must() == base + "/mcp"
     redirect = "http://127.0.0.1/callback?code=code-1&state=xyz&iss=" + url.escape_query(base)
-    code = read_redirect(target: redirect, state: "xyz", issuer: base).must()
-    t = exchange(c, code: code, verifier: loopback.VERIFIER).must()
+    code = parse_redirect(target: redirect, state: "xyz", issuer: base).must()
+    t = exchange_code(c, code: code, verifier: loopback.VERIFIER).must()
     assert t.access_token == "access-1" && t.token_type == "Bearer" && t.refresh_token == "refresh-1"
     provider_keys = fetch_key_set(transport, jwks_uri: m.jwks_uri).must()
     rules @= id_token_rules(m, client_id: loopback.CLIENT_ID, nonce: loopback.NONCE).must()
@@ -1179,14 +1180,14 @@ test "the authorization code grant on the loopback: metadata, the URL, the redir
     seen = introspect(c, token: "access-1", hint: "access_token").must()
     assert seen.active && seen.subject == loopback.SUBJECT && seen.audiences == [base + "/mcp"]
     assert !introspect(c, token: "spent", hint: "").must().active
-    wrong = exchange(c, code: code, verifier: repeat("a", 43))
+    wrong = exchange_code(c, code: code, verifier: repeat("a", 43))
 
     match wrong
         .ok _  => assert false
         .err e => assert e.code == FAILED
 
     log = loopback.stop(s)
-    assert strings_hold(log: log, piece: "code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
+    assert strings.contains(s: log, substr: "code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
 
 test "a protected resource on the loopback: its 401 read, its metadata followed to its server, a token for it, the resource answering"
     s = loopback.start()
@@ -1203,7 +1204,7 @@ test "a protected resource on the loopback: its 401 read, its metadata followed 
     c.client_secret @ loopback.CLIENT_SECRET
     c.authentication @ .post
     c.resources @ [rm.resource]
-    t = exchange(c, code: "code-1", verifier: loopback.VERIFIER).must()
+    t = exchange_code(c, code: "code-1", verifier: loopback.VERIFIER).must()
     answered = http.send(
         transport,
         r: authorize(http.request(method: http.METHOD_GET, target: base + "/mcp").must(), token: t)
@@ -1244,39 +1245,28 @@ test "the device grant, client credentials, a JWT bearer grant, private_key_jwt,
     assert fetch_metadata(transport, issuer: base + "/nobody").is_err()
     _ = loopback.stop(s)
 
-# Whether `log` holds `piece`, for the tests.
-function strings_hold(log: str, piece: str) -> bool
-    if piece.len() > log.len()
-        return false
-
-    for at in range(from: 0, to: log.len() - piece.len() + 1)
-        if log[at] == piece[0] && log.slice(from: at, to: at + piece.len()) == piece
-            return true
-
-    return false
-
-test "read_redirect: refused, another state, no state expected, another issuer, no issuer, an error, access denied, two codes"
+test "parse_redirect: refused, another state, no state expected, another issuer, no issuer, an error, access denied, two codes"
     good = "https://app.example/cb?code=c&state=s&iss=https%3A%2F%2Fa.example"
-    assert read_redirect(target: good, state: "s", issuer: "https://a.example").must() == "c"
-    assert read_redirect(target: good, state: "t", issuer: "https://a.example").is_err()
-    assert read_redirect(target: good, state: "", issuer: "").is_err()
-    assert read_redirect(target: good, state: "s", issuer: "https://b.example").is_err()
-    assert read_redirect(
+    assert parse_redirect(target: good, state: "s", issuer: "https://a.example").must() == "c"
+    assert parse_redirect(target: good, state: "t", issuer: "https://a.example").is_err()
+    assert parse_redirect(target: good, state: "", issuer: "").is_err()
+    assert parse_redirect(target: good, state: "s", issuer: "https://b.example").is_err()
+    assert parse_redirect(
         target: "https://app.example/cb?code=c&state=s",
         state: "s",
         issuer: "https://a.example"
     ).is_err()
-    assert read_redirect(target: "https://app.example/cb?code=c&state=s", state: "s", issuer: "").must() == "c"
+    assert parse_redirect(target: "https://app.example/cb?code=c&state=s", state: "s", issuer: "").must() == "c"
 
-    match read_redirect(target: "https://app.example/cb?error=server_error&state=s", state: "s", issuer: "")
+    match parse_redirect(target: "https://app.example/cb?error=server_error&state=s", state: "s", issuer: "")
         .ok _  => assert false
         .err e => assert e.code == FAILED
 
-    match read_redirect(target: "https://app.example/cb?error=access_denied&state=s", state: "s", issuer: "")
+    match parse_redirect(target: "https://app.example/cb?error=access_denied&state=s", state: "s", issuer: "")
         .ok _  => assert false
         .err e => assert e.code == PERMISSION
 
-    assert read_redirect(target: "https://app.example/cb?code=c&code=d&state=s", state: "s", issuer: "").is_err()
+    assert parse_redirect(target: "https://app.example/cb?code=c&code=d&state=s", state: "s", issuer: "").is_err()
 
 test "parse_metadata: RFC 8414 § 3.2's example, another issuer refused, a member of the wrong kind"
     text = "{\"issuer\":\"https://server.example.com\",\"authorization_endpoint\":\"https://server.example.com/authorize\",\"token_endpoint\":\"https://server.example.com/token\",\"token_endpoint_auth_methods_supported\":[\"client_secret_basic\",\"private_key_jwt\"],\"token_endpoint_auth_signing_alg_values_supported\":[\"RS256\",\"ES256\"],\"userinfo_endpoint\":\"https://server.example.com/userinfo\",\"jwks_uri\":\"https://server.example.com/jwks.json\",\"registration_endpoint\":\"https://server.example.com/register\",\"scopes_supported\":[\"openid\",\"profile\",\"email\",\"address\",\"phone\",\"offline_access\"],\"response_types_supported\":[\"code\",\"code token\"],\"service_documentation\":\"http://server.example.com/service_documentation.html\",\"ui_locales_supported\":[\"en-US\",\"en-GB\",\"en-CA\",\"fr-FR\",\"fr-CA\"]}"
@@ -1375,17 +1365,17 @@ test "authorization_url: the code, the state and the challenge"
     assert link == "https://server.example.com/authorize?response_type=code&client_id=s6BhdRkqt3&redirect_uri=https%3A%2F%2Fclient.example.com%2Fcb&state=xyz&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256"
 
 # The code of RFC 6749 § 4.1.2's redirect.
-test "read_redirect: RFC 6749 § 4.1.2's redirect"
-    assert read_redirect(target: "https://client.example.com/cb?code=SplxlOBeZQQYbYS6WxSbIA&state=xyz", state: "xyz", issuer: "").must() == "SplxlOBeZQQYbYS6WxSbIA"
+test "parse_redirect: RFC 6749 § 4.1.2's redirect"
+    assert parse_redirect(target: "https://client.example.com/cb?code=SplxlOBeZQQYbYS6WxSbIA&state=xyz", state: "xyz", issuer: "").must() == "SplxlOBeZQQYbYS6WxSbIA"
 
 # A code exchanged for tokens, on the loopback.
-test "exchange: a code and its verifier"
+test "exchange_code: a code and its verifier"
     s = loopback.start()
     c @= default_config(loopback.CLIENT_ID)
     c.token_endpoint @ f"http://127.0.0.1:{s.port}/token"
     c.client_secret @ loopback.CLIENT_SECRET
     c.authentication @ .basic
-    assert exchange(c, code: "code-1", verifier: loopback.VERIFIER).must().id_token != ""
+    assert exchange_code(c, code: "code-1", verifier: loopback.VERIFIER).must().id_token != ""
     _ = loopback.stop(s)
 
 # A form posted to an endpoint with the client authenticated.
@@ -1398,9 +1388,9 @@ test "post_form: a revocation by hand"
     _ = loopback.stop(s)
 
 # A token read from a token endpoint's response.
-test "read_token: RFC 6749 § 5.1's example"
+test "token_of: RFC 6749 § 5.1's example"
     body = "{\"access_token\":\"2YotnFZFEjr1zCsicMWpAA\",\"token_type\":\"example\",\"expires_in\":3600,\"refresh_token\":\"tGzv3JOkF0XG5Qx2TlKWIA\"}"
-    t = read_token(
+    t = token_of(
         http.respond(200, content_type: "application/json", body: bytes.from_text(body)),
         now: time.epoch()
     ).must()
@@ -1635,7 +1625,7 @@ test "verify_id_token: the loopback provider's"
     c @= config_from(m, client_id: loopback.CLIENT_ID)
     c.client_secret @ loopback.CLIENT_SECRET
     c.authentication @ .basic
-    t = exchange(c, code: "code-1", verifier: loopback.VERIFIER).must()
+    t = exchange_code(c, code: "code-1", verifier: loopback.VERIFIER).must()
     provider_keys = fetch_key_set(http.default_client(), jwks_uri: m.jwks_uri).must()
     id = verify_id_token(
         t.id_token,

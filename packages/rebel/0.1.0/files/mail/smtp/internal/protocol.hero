@@ -142,17 +142,6 @@ function joined_params(params: [str]) -> str
         return ""
     return " " + params.join(" ")
 
-# Whether every byte of `s` is ASCII.
-function is_ascii(s: str) -> bool
-    at: i64 @= 0
-
-    while at < s.len()
-        if s[at] >= 0x80
-            return false
-        at @ at + 1
-
-    return true
-
 # Where the header of `message` ends: the first byte of its empty line, or
 # its end.
 function header_end(message: [u8]) -> i64

@@ -99,7 +99,7 @@ function from_value(name: str, value: json.Value) -> Layer?
 # Sets the setting `path` of `layer` to `value`, the objects on the way made
 # where they are not there.
 #
-# - `@layer`: the layer; its `value` gains the setting, a value already at
+# - `layer`: the layer; its `value` gains the setting, a value already at
 #   `path` replaced in its place.
 # - `path`: a dotted path, `server.port`, as `value_of` reads one; not empty.
 # - `value`: any value; `null` sets nothing when the layer is merged.
@@ -817,14 +817,28 @@ function parse_dotenv(text: str) -> {str: str}?
 function parse_dotenv_with(text: str, options: DotenvOptions) -> {str: str}?
     return dotwrite.values_of(text, expand: options.expand, env: options.env)
 
+# The names and values of the `.env` file at `path`, as `parse_dotenv` reads
+# them: no `${NAME}` replaced.
+#
+# - `path`: the file's path.
+#
+# Fails where `read_file` fails, with its code, and as `parse_dotenv` does,
+# the message opening with `path`. See also `read_dotenv_with`.
+function read_dotenv(path: str) -> {str: str}?
+    text = read_file(path)?
+
+    match parse_dotenv(text)
+        .ok values => return ok(values)
+        .err e     => return fail(code: e.code, msg: f"{path}: {e.msg}")
+
 # The names and values of the `.env` file at `path`, read as `options` say.
 #
 # - `path`: the file's path.
 # - `options`: whether and from what `${NAME}` is replaced.
 #
 # Fails where `read_file` fails, with its code, and as `parse_dotenv_with`
-# does, the message opening with `path`.
-function read_dotenv(path: str, options: DotenvOptions) -> {str: str}?
+# does, the message opening with `path`. See also `read_dotenv`.
+function read_dotenv_with(path: str, options: DotenvOptions) -> {str: str}?
     text = read_file(path)?
 
     match parse_dotenv_with(text, options)
@@ -1195,16 +1209,21 @@ test "path_of: relative to the folder of a file's layer, absolute kept, from the
     assert path_of(s, "ca").must() == "ca.pem"
     assert source_of(s, "cert").must().file == "conf/app.json"
 
-test "read_dotenv: a file read, its failure's message opening with its path"
+test "read_dotenv and read_dotenv_with: a file read plain and replaced, its failure's message opening with its path"
     write_file(path: "build/rebel-config-test.env", text: "A=1\nB=${A}2\n").must()
-    assert read_dotenv("build/rebel-config-test.env", DotenvOptions(expand: true, env: {})).must() == {"A": "1", "B": "12"}
+    assert read_dotenv_with("build/rebel-config-test.env", DotenvOptions(expand: true, env: {})).must() == {"A": "1", "B": "12"}
+    assert read_dotenv("build/rebel-config-test.env").must() == {"A": "1", "B": "${A}2"}
     write_file(path: "build/rebel-config-bad.env", text: "A=1\nB\n").must()
 
-    match read_dotenv("build/rebel-config-bad.env", DotenvOptions(expand: false, env: {}))
+    match read_dotenv("build/rebel-config-bad.env")
         .ok _  => assert false
         .err e => assert e.code == INVALID && e.msg == "build/rebel-config-bad.env: line 2: expected `=` after the name \"B\""
 
-    assert read_dotenv("build/rebel-config-absent-zz.env", DotenvOptions(expand: false, env: {})).is_err()
+    match read_dotenv_with("build/rebel-config-bad.env", DotenvOptions(expand: false, env: {}))
+        .ok _  => assert false
+        .err e => assert e.msg == "build/rebel-config-bad.env: line 2: expected `=` after the name \"B\""
+
+    assert read_dotenv("build/rebel-config-absent-zz.env").is_err() && read_dotenv_with("build/rebel-config-absent-zz.env", DotenvOptions(expand: false, env: {})).is_err()
 
 ## Examples
 
@@ -1434,9 +1453,18 @@ test "parse_dotenv_with: a value built from another"
 # A `.env` file read into a layer like the environment's.
 test "read_dotenv: a file as a layer"
     write_file(path: "build/rebel-config-example-layer.env", text: "APP_PORT=9090\n").must()
-    values = read_dotenv("build/rebel-config-example-layer.env", DotenvOptions(expand: false, env: {})).must()
+    values = read_dotenv("build/rebel-config-example-layer.env").must()
     layer = from_env(name: ".env", env: values, options: env_options("APP_")).must()
     assert int_of(merge([layer]), "port").must() == 9090
+
+# A `.env` file whose values name the environment's.
+test "read_dotenv_with: HOME replaced"
+    write_file(path: "build/rebel-config-example-home.env", text: "DATA=${HOME}/data\n").must()
+    values = read_dotenv_with(
+        "build/rebel-config-example-home.env",
+        DotenvOptions(expand: true, env: {"HOME": "/home/ana"})
+    ).must()
+    assert values == {"DATA": "/home/ana/data"}
 
 # Names and values written as a `.env` text.
 test "format_dotenv: two names"

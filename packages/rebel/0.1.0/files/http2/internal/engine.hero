@@ -6,6 +6,7 @@
 # error (§ 5.4), the rates a peer is held to counted.
 
 use bytes
+use http2
 use http2/internal/decoding
 use http2/internal/encoding
 use http2/internal/framer
@@ -134,15 +135,15 @@ record State
     # Whether this end is the client.
     client: bool
     # What this end advertised last.
-    ours: model.Settings
+    ours: http2.Settings
     # What the peer acknowledged last.
-    acked: model.Settings
+    acked: http2.Settings
     # The settings sent and not yet acknowledged, the oldest first.
-    unacked: [model.Settings]
+    unacked: [http2.Settings]
     # The peer's settings.
-    theirs: model.Settings
+    theirs: http2.Settings
     # The bounds the peer is held to.
-    limits: model.Limits
+    limits: http2.Limits
     # The HPACK encoder of this end's blocks.
     encoder: encoding.State
     # The HPACK decoder of the peer's blocks.
@@ -208,7 +209,7 @@ record State
 
 # A session's state as `client` or not: the first frames waiting in its
 # output, the preface first for a client.
-function make(client: bool, options: model.Options) -> State
+function make(client: bool, options: http2.Options) -> State
     ours @= options.settings
     ours.enable_push @ false
 
@@ -280,7 +281,7 @@ function make(client: bool, options: model.Options) -> State
 
 # Writes `f` to the output. Every frame the session makes is made within its
 # fields' ranges, so its encoding never fails.
-function emit(@s: State, f: model.Frame)
+function emit(@s: State, f: http2.Frame)
     bytes.push_all(to: @s.out, from: framer.encode(f).must())
 
 # Writes a header block on `stream`: a HEADERS frame, and CONTINUATIONs
@@ -291,12 +292,12 @@ function emit_block(@s: State, stream: i64, block: [u8], end_stream: bool)
     if block.len() <= most
         emit(
             @s,
-            f: .headers(stream: stream, block: block, end_stream: end_stream, end_headers: true, padding: 0, has_priority: false, priority: model.Priority(exclusive: false, depends_on: 0, weight: 16))
+            f: .headers(stream: stream, block: block, end_stream: end_stream, end_headers: true, padding: 0, has_priority: false, priority: http2.Priority(exclusive: false, depends_on: 0, weight: 16))
         )
         return
     emit(
         @s,
-        f: .headers(stream: stream, block: block.slice(from: 0, to: most), end_stream: end_stream, end_headers: false, padding: 0, has_priority: false, priority: model.Priority(exclusive: false, depends_on: 0, weight: 16))
+        f: .headers(stream: stream, block: block.slice(from: 0, to: most), end_stream: end_stream, end_headers: false, padding: 0, has_priority: false, priority: http2.Priority(exclusive: false, depends_on: 0, weight: 16))
     )
     at: i64 @= most
 
@@ -479,12 +480,12 @@ function fail_connection<T>(@s: State, error: i64, why: str) -> T?
     return fail(code: code_of(error), msg: f"{name_of(error)}: {why}")
 
 # Adds `e` to the events answered.
-function add(@events: [model.Event], e: model.Event)
+function add(@events: [http2.Event], e: http2.Event)
     events @ events.push(e)
 
 # Ends one stream for `error` (RFC 9113 § 5.4.2): RST_STREAM in the output,
 # the stream closed, and a `reset` event where the program knows the stream.
-function fail_stream(@s: State, @events: [model.Event], id: i64, error: i64)
+function fail_stream(@s: State, @events: [http2.Event], id: i64, error: i64)
     emit(@s, f: .rst_stream(stream: id, error: error))
 
     if !has(s, id: id)

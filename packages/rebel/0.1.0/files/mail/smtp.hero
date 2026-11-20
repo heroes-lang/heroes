@@ -77,135 +77,6 @@ constant UNSUPPORTED: str
 constant FAILED: str
     "failed"
 
-## Ports
-
-# SMTP between servers, in plain text or with STARTTLS: 25.
-constant PORT_SMTP: i64
-    25
-
-# Message submission with STARTTLS (RFC 6409): 587.
-constant PORT_SUBMISSION: i64
-    587
-
-# Message submission over TLS from the first byte (RFC 8314): 465.
-constant PORT_SUBMISSIONS: i64
-    465
-
-## Reply codes
-
-# 211: a system status or a help reply.
-constant SYSTEM_STATUS: i64
-    211
-
-# 214: a help message.
-constant HELP_MESSAGE: i64
-    214
-
-# 220: the service is ready; the greeting, and the answer to STARTTLS.
-constant SERVICE_READY: i64
-    220
-
-# 221: the service closes the connection, the answer to QUIT.
-constant SERVICE_CLOSING: i64
-    221
-
-# 235: the login succeeded (RFC 4954).
-constant AUTH_SUCCEEDED: i64
-    235
-
-# 250: the command was done.
-constant OK: i64
-    250
-
-# 251: the recipient is not local and will be forwarded.
-constant WILL_FORWARD: i64
-    251
-
-# 252: the server cannot verify the user but will take the message.
-constant CANNOT_VERIFY: i64
-    252
-
-# 334: a login's challenge, the server waiting for the next line (RFC 4954).
-constant AUTH_CONTINUE: i64
-    334
-
-# 354: the server waits for the message, ended by a line holding `.`.
-constant START_MAIL_INPUT: i64
-    354
-
-# 421: the service is not available and closes the connection.
-constant SERVICE_UNAVAILABLE: i64
-    421
-
-# 450: the mailbox is busy or unavailable for now.
-constant MAILBOX_BUSY: i64
-    450
-
-# 451: a local error in processing; try later.
-constant LOCAL_ERROR: i64
-    451
-
-# 452: the server has no room now.
-constant INSUFFICIENT_STORAGE: i64
-    452
-
-# 454: TLS or a login is not available for now.
-constant TEMPORARY_FAILURE: i64
-    454
-
-# 500: a command the server cannot read.
-constant SYNTAX_ERROR: i64
-    500
-
-# 501: a parameter the server cannot read.
-constant PARAMETER_ERROR: i64
-    501
-
-# 502: a command the server does not have.
-constant NOT_IMPLEMENTED: i64
-    502
-
-# 503: a command out of its order.
-constant BAD_SEQUENCE: i64
-    503
-
-# 504: a parameter, or a login mechanism, the server does not have.
-constant PARAMETER_NOT_IMPLEMENTED: i64
-    504
-
-# 530: a login is required first (RFC 4954).
-constant AUTH_REQUIRED: i64
-    530
-
-# 535: the credentials were refused (RFC 4954).
-constant AUTH_FAILED: i64
-    535
-
-# 550: the mailbox is unavailable, or the server will not take the message
-# for it.
-constant MAILBOX_UNAVAILABLE: i64
-    550
-
-# 551: the user is not local.
-constant USER_NOT_LOCAL: i64
-    551
-
-# 552: the message is larger than the server takes.
-constant EXCEEDED_STORAGE: i64
-    552
-
-# 553: the mailbox's name is not allowed.
-constant MAILBOX_NAME_NOT_ALLOWED: i64
-    553
-
-# 554: the transaction failed, or the server will not serve this client.
-constant TRANSACTION_FAILED: i64
-    554
-
-# 555: a parameter of MAIL or RCPT the server does not know.
-constant PARAMETERS_NOT_RECOGNIZED: i64
-    555
-
 ## Replies
 
 # A reply of the server: its code, and the text of its lines.
@@ -318,10 +189,10 @@ record Client
     # Whether TLS protects the connection.
     is_tls: bool
 
-# A session with the server `o` names: connected, protected as `o` says, its
+# A session with the server `opts` names: connected, protected as `opts` says, its
 # greeting read and its EHLO answered.
 #
-# - `o`: the options.
+# - `opts`: the options.
 #
 # The client is the caller's to end with `quit` or `close`. EHLO is sent
 # after TLS begins, as RFC 3207 asks; where the server refuses EHLO on a
@@ -329,14 +200,14 @@ record Client
 # where an option is refused or the server's certificate is (`tls`'s
 # reason), or the greeting is not 220; as `net` and `tls` fail to connect;
 # and with the code a refusal of EHLO means. See also `options`, `quit`.
-function connect(o: Options) -> Client?
-    kind = match o.security
+function connect(opts: Options) -> Client?
+    kind = match opts.security
         .starttls => flow.STARTTLS
         .implicit => flow.IMPLICIT
         .plain    => flow.PLAIN
 
-    s = flow.open(host: o.host, port: o.port, security: kind, roots: o.roots, local_name: o.local_name, deadline_ms: o.deadline_ms)?
-    return ok(Client(session: s, host: o.host, is_tls: kind != flow.PLAIN))
+    s = flow.open(host: opts.host, port: opts.port, security: kind, roots: opts.roots, local_name: opts.local_name, deadline_ms: opts.deadline_ms)?
+    return ok(Client(session: s, host: opts.host, is_tls: kind != flow.PLAIN))
 
 # Says EHLO again and reads the extensions anew, as after a change of the
 # server's state.
@@ -527,7 +398,7 @@ function mail_from(@c: Client, from: str, params: [str]) -> ()?
         protocol.check_line(text: p, asked: "a parameter of MAIL FROM")?
 
     line = "MAIL FROM:<" + from + ">" + protocol.joined_params(params)
-    _ = flow.expect(@c.session, line: line, want: [OK], shown_as: line)?
+    _ = flow.expect(@c.session, line: line, want: [REPLY_OK], shown_as: line)?
     return ok()
 
 # Says RCPT TO, adding a recipient to the transaction.
@@ -547,7 +418,7 @@ function rcpt_to(@c: Client, to: str, params: [str]) -> ()?
         protocol.check_line(text: p, asked: "a parameter of RCPT TO")?
 
     line = "RCPT TO:<" + to + ">" + protocol.joined_params(params)
-    _ = flow.expect(@c.session, line: line, want: [OK, WILL_FORWARD], shown_as: line)?
+    _ = flow.expect(@c.session, line: line, want: [REPLY_OK, REPLY_WILL_FORWARD], shown_as: line)?
     return ok()
 
 # Says DATA and sends `message`, its lines ended by `\r\n` and its dots
@@ -560,7 +431,7 @@ function rcpt_to(@c: Client, to: str, params: [str]) -> ()?
 # the message. Fails with the code a refusal means. See also `dot_stuff`,
 # `send`.
 function data(@c: Client, message: [u8]) -> Reply?
-    _ = flow.expect(@c.session, line: "DATA", want: [START_MAIL_INPUT], shown_as: "DATA")?
+    _ = flow.expect(@c.session, line: "DATA", want: [REPLY_START_MAIL_INPUT], shown_as: "DATA")?
     a = flow.body(@c.session, message: message)?
     return ok(Reply(code: a.code, enhanced: a.enhanced, lines: a.lines))
 
@@ -570,7 +441,7 @@ function data(@c: Client, message: [u8]) -> Reply?
 #
 # Fails with the code a refusal means. See also `send`.
 function reset(@c: Client) -> ()?
-    _ = flow.expect(@c.session, line: "RSET", want: [OK], shown_as: "RSET")?
+    _ = flow.expect(@c.session, line: "RSET", want: [REPLY_OK], shown_as: "RSET")?
     return ok()
 
 # Says NOOP, which keeps the connection alive and asks that the server
@@ -580,7 +451,7 @@ function reset(@c: Client) -> ()?
 #
 # Fails with the code a refusal means. See also `command`.
 function noop(@c: Client) -> ()?
-    _ = flow.expect(@c.session, line: "NOOP", want: [OK], shown_as: "NOOP")?
+    _ = flow.expect(@c.session, line: "NOOP", want: [REPLY_OK], shown_as: "NOOP")?
     return ok()
 
 # Says VRFY, asking whether the server knows the mailbox `address`.
@@ -592,7 +463,7 @@ function noop(@c: Client) -> ()?
 # saying nothing). Fails with the code a refusal means. See also `expand`.
 function verify(@c: Client, address: str) -> Reply?
     protocol.check_line(text: address, asked: "the address VRFY asks about")?
-    a = flow.expect(@c.session, line: "VRFY " + address, want: [OK, WILL_FORWARD, CANNOT_VERIFY], shown_as: "VRFY " + address)?
+    a = flow.expect(@c.session, line: "VRFY " + address, want: [REPLY_OK, REPLY_WILL_FORWARD, REPLY_CANNOT_VERIFY], shown_as: "VRFY " + address)?
     return ok(Reply(code: a.code, enhanced: a.enhanced, lines: a.lines))
 
 # Says EXPN, asking the server for the members of the mailing list `list`.
@@ -604,7 +475,7 @@ function verify(@c: Client, address: str) -> Reply?
 # See also `verify`.
 function expand(@c: Client, list: str) -> Reply?
     protocol.check_line(text: list, asked: "the list EXPN asks about")?
-    a = flow.expect(@c.session, line: "EXPN " + list, want: [OK], shown_as: "EXPN " + list)?
+    a = flow.expect(@c.session, line: "EXPN " + list, want: [REPLY_OK], shown_as: "EXPN " + list)?
     return ok(Reply(code: a.code, enhanced: a.enhanced, lines: a.lines))
 
 # Says HELP, about `topic` or about the server.
@@ -620,7 +491,7 @@ function help(@c: Client, topic: str) -> Reply?
         "HELP"
     else
         "HELP " + topic
-    a = flow.expect(@c.session, line: line, want: [SYSTEM_STATUS, HELP_MESSAGE], shown_as: line)?
+    a = flow.expect(@c.session, line: line, want: [REPLY_SYSTEM_STATUS, REPLY_HELP_MESSAGE], shown_as: line)?
     return ok(Reply(code: a.code, enhanced: a.enhanced, lines: a.lines))
 
 # Sends `line` and answers the server's reply, whatever its code.
@@ -743,10 +614,10 @@ variant Auth
         # The access token.
         token: str
 
-# Sends `message` in one call: connects as `o` says, logs in as `auth` says,
+# Sends `message` in one call: connects as `opts` says, logs in as `auth` says,
 # sends, and says QUIT.
 #
-# - `o`: the connection's options.
+# - `opts`: the connection's options.
 # - `auth`: the login, `.none` for none.
 # - `from`: the sender's address alone.
 # - `to`: the recipients' addresses.
@@ -754,8 +625,8 @@ variant Auth
 #
 # The connection is closed whatever happens. Fails as `connect`, `login`,
 # `auth_xoauth2` and `send` fail. See also `send`.
-function send_mail(o: Options, auth: Auth, from: str, to: [str], message: [u8]) -> Sent?
-    c @= connect(o)?
+function send_mail(opts: Options, auth: Auth, from: str, to: [str], message: [u8]) -> Sent?
+    c @= connect(opts)?
 
     match auth
         .none => _ = 0
@@ -795,6 +666,135 @@ function send_mail(o: Options, auth: Auth, from: str, to: [str], message: [u8]) 
 # See also `data`.
 function dot_stuff(message: [u8]) -> [u8]
     return protocol.dot_stuff(message)
+
+## Ports
+
+# SMTP between servers, in plain text or with STARTTLS: 25.
+constant PORT_SMTP: i64
+    25
+
+# Message submission with STARTTLS (RFC 6409): 587.
+constant PORT_SUBMISSION: i64
+    587
+
+# Message submission over TLS from the first byte (RFC 8314): 465.
+constant PORT_SUBMISSIONS: i64
+    465
+
+## Reply codes
+
+# 211: a system status or a help reply.
+constant REPLY_SYSTEM_STATUS: i64
+    211
+
+# 214: a help message.
+constant REPLY_HELP_MESSAGE: i64
+    214
+
+# 220: the service is ready; the greeting, and the answer to STARTTLS.
+constant REPLY_SERVICE_READY: i64
+    220
+
+# 221: the service closes the connection, the answer to QUIT.
+constant REPLY_SERVICE_CLOSING: i64
+    221
+
+# 235: the login succeeded (RFC 4954).
+constant REPLY_AUTH_SUCCEEDED: i64
+    235
+
+# 250: the command was done.
+constant REPLY_OK: i64
+    250
+
+# 251: the recipient is not local and will be forwarded.
+constant REPLY_WILL_FORWARD: i64
+    251
+
+# 252: the server cannot verify the user but will take the message.
+constant REPLY_CANNOT_VERIFY: i64
+    252
+
+# 334: a login's challenge, the server waiting for the next line (RFC 4954).
+constant REPLY_AUTH_CONTINUE: i64
+    334
+
+# 354: the server waits for the message, ended by a line holding `.`.
+constant REPLY_START_MAIL_INPUT: i64
+    354
+
+# 421: the service is not available and closes the connection.
+constant REPLY_SERVICE_UNAVAILABLE: i64
+    421
+
+# 450: the mailbox is busy or unavailable for now.
+constant REPLY_MAILBOX_BUSY: i64
+    450
+
+# 451: a local error in processing; try later.
+constant REPLY_LOCAL_ERROR: i64
+    451
+
+# 452: the server has no room now.
+constant REPLY_INSUFFICIENT_STORAGE: i64
+    452
+
+# 454: TLS or a login is not available for now.
+constant REPLY_TEMPORARY_FAILURE: i64
+    454
+
+# 500: a command the server cannot read.
+constant REPLY_SYNTAX_ERROR: i64
+    500
+
+# 501: a parameter the server cannot read.
+constant REPLY_PARAMETER_ERROR: i64
+    501
+
+# 502: a command the server does not have.
+constant REPLY_NOT_IMPLEMENTED: i64
+    502
+
+# 503: a command out of its order.
+constant REPLY_BAD_SEQUENCE: i64
+    503
+
+# 504: a parameter, or a login mechanism, the server does not have.
+constant REPLY_PARAMETER_NOT_IMPLEMENTED: i64
+    504
+
+# 530: a login is required first (RFC 4954).
+constant REPLY_AUTH_REQUIRED: i64
+    530
+
+# 535: the credentials were refused (RFC 4954).
+constant REPLY_AUTH_FAILED: i64
+    535
+
+# 550: the mailbox is unavailable, or the server will not take the message
+# for it.
+constant REPLY_MAILBOX_UNAVAILABLE: i64
+    550
+
+# 551: the user is not local.
+constant REPLY_USER_NOT_LOCAL: i64
+    551
+
+# 552: the message is larger than the server takes.
+constant REPLY_EXCEEDED_STORAGE: i64
+    552
+
+# 553: the mailbox's name is not allowed.
+constant REPLY_MAILBOX_NAME_NOT_ALLOWED: i64
+    553
+
+# 554: the transaction failed, or the server will not serve this client.
+constant REPLY_TRANSACTION_FAILED: i64
+    554
+
+# 555: a parameter of MAIL or RCPT the server does not know.
+constant REPLY_PARAMETERS_NOT_RECOGNIZED: i64
+    555
 
 ## Tests
 
@@ -854,7 +854,7 @@ test "send: every recipient refused, the transaction reset, the reply kept as th
         .ok _  => assert false
         .err e => assert e.code == FAILED && e.msg == "550 5.1.1 no x: the server refused every recipient, the first <x@example.org>"
 
-    assert last_reply_of(c).code == MAILBOX_UNAVAILABLE
+    assert last_reply_of(c).code == REPLY_MAILBOX_UNAVAILABLE
     quit(@c).must()
     assert threads.wait_text(@server) == "EHLO client.test|MAIL FROM:<ana@example.org> SIZE=15|RCPT TO:<x@example.org>|RCPT TO:<y@example.org>|RSET|QUIT"
 
@@ -876,7 +876,7 @@ test "send: larger than SIZE refused before a byte, 8-bit and UTF-8 asked of the
         to: ["bob@example.org"],
         message: bytes.from_text("Subject: é\r\n\r\nbodé")
     ).must()
-    assert sent.refused.len() == 0 && sent.reply.code == OK
+    assert sent.refused.len() == 0 && sent.reply.code == REPLY_OK
     assert send(@c, from: "a@x", to: [], message: []).is_err() && send(@c, from: "a@x", to: ["b@y>"], message: []).is_err()
     quit(@c).must()
     heard = threads.wait_text(@server)
@@ -1210,7 +1210,7 @@ test "data: a line beginning with a dot"
     ).must()
     mail_from(@c, from: "ana@example.org", params: []).must()
     rcpt_to(@c, to: "bob@example.org", params: []).must()
-    assert data(@c, message: bytes.from_text("Subject: x\n\n.hidden\n")).must().code == OK
+    assert data(@c, message: bytes.from_text("Subject: x\n\n.hidden\n")).must().code == REPLY_OK
     quit(@c).must()
     assert threads.wait_text(@server) == "EHLO client.test|MAIL FROM:<ana@example.org>|RCPT TO:<bob@example.org>|DATA|DATA Subject: x\\r\\n\\r\\n..hidden\\r\\n|QUIT"
 
@@ -1246,7 +1246,7 @@ test "verify: 252"
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
-    assert verify(@c, address: "ana").must().code == CANNOT_VERIFY
+    assert verify(@c, address: "ana").must().code == REPLY_CANNOT_VERIFY
     quit(@c).must()
     _ = threads.wait_text(@server)
 
@@ -1270,7 +1270,7 @@ test "help: 214"
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
-    assert help(@c, topic: "").must().code == HELP_MESSAGE
+    assert help(@c, topic: "").must().code == REPLY_HELP_MESSAGE
     quit(@c).must()
     assert threads.wait_text(@server) == "EHLO client.test|HELP|QUIT"
 
@@ -1282,7 +1282,7 @@ test "command: a command the server does not know"
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
-    assert command(@c, line: "XYZZY").must().code == SYNTAX_ERROR && command(@c, line: "NOOP\r\nQUIT").is_err()
+    assert command(@c, line: "XYZZY").must().code == REPLY_SYNTAX_ERROR && command(@c, line: "NOOP\r\nQUIT").is_err()
     quit(@c).must()
     _ = threads.wait_text(@server)
 
@@ -1346,7 +1346,7 @@ test "send_mail: connect, log in, send, quit"
         to: ["bob@example.org"],
         message: bytes.from_text("Subject: x\r\n\r\ny")
     ).must()
-    assert sent.reply.code == OK
+    assert sent.reply.code == REPLY_OK
     assert threads.wait_text(@server) == "EHLO client.test|AUTH PLAIN AGFuYQBzZWNyZXQ=|MAIL FROM:<ana@example.org> SIZE=15|RCPT TO:<bob@example.org>|DATA|DATA Subject: x\\r\\n\\r\\ny\\r\\n|QUIT"
 
 # A message as DATA sends it.

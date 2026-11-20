@@ -3,7 +3,7 @@
 # those of a request or of a response, values with no line end; a list that
 # breaks one is malformed, and its stream is reset.
 
-use http2/internal/model
+use http2
 
 # A request's head as its pseudo-headers name it, the other fields apart.
 record RequestHead
@@ -18,7 +18,7 @@ record RequestHead
     # `:protocol`, "" where none came.
     protocol: str
     # The other fields.
-    headers: [model.Field]
+    headers: [http2.Field]
     # The value of `content-length`, -1 where none came.
     length: i64
 
@@ -27,12 +27,12 @@ record ResponseHead
     # `:status`.
     status: i64
     # The other fields.
-    headers: [model.Field]
+    headers: [http2.Field]
     # The value of `content-length`, -1 where none came.
     length: i64
 
 # Why a regular field is refused, "" where it is not.
-function field_refusal(f: model.Field) -> str
+function field_refusal(f: http2.Field) -> str
     if f.name.len() == 0
         return "a field with an empty name"
 
@@ -105,7 +105,7 @@ function length_of(value: str) -> i64
 # What the other fields hold: their refusal, or the content length.
 record Others
     # The fields, pseudo-headers left out.
-    headers: [model.Field]
+    headers: [http2.Field]
     # `content-length`'s count, -1 for none.
     length: i64
     # Why the list is refused, "" where it is not.
@@ -113,8 +113,8 @@ record Others
 
 # The regular fields of `fields` from `from` on, each checked; a
 # pseudo-header among them is refused.
-function others(fields: [model.Field] lent, from: i64) -> Others
-    out: [model.Field] @= []
+function others(fields: [http2.Field] lent, from: i64) -> Others
+    out: [http2.Field] @= []
     length: i64 @= -1
 
     for i in range(from: from, to: fields.len())
@@ -147,7 +147,7 @@ record Request
 # The request head `fields` hold, its pseudo-headers checked as RFC 9113 §
 # 8.3.1 and RFC 8441 § 4 check them; `extended` says whether this end
 # allows `:protocol`.
-function request(fields: [model.Field] lent, extended: bool) -> Request
+function request(fields: [http2.Field] lent, extended: bool) -> Request
     method: str @= ""
     scheme: str @= ""
     authority: str @= ""
@@ -212,7 +212,7 @@ record Response
 
 # The response head `fields` hold: one `:status` of three digits, 100 to
 # 999, and no other pseudo-header.
-function response(fields: [model.Field] lent) -> Response
+function response(fields: [http2.Field] lent) -> Response
     empty = ResponseHead(status: 0, headers: [], length: -1)
 
     if fields.len() == 0 || fields[0].name != ":status"
@@ -230,12 +230,12 @@ function response(fields: [model.Field] lent) -> Response
 
 # Why `fields` are no trailers, "" where they are: no pseudo-header, each
 # field as `field_refusal` reads it.
-function trailers_refusal(fields: [model.Field] lent) -> str
+function trailers_refusal(fields: [http2.Field] lent) -> str
     return others(fields, from: 0).why
 
 # A field named `name` holding `value`.
-function plain(name: str, value: str) -> model.Field
-    return model.Field(name: name, value: value, sensitive: false)
+function plain(name: str, value: str) -> http2.Field
+    return http2.Field(name: name, value: value, sensitive: false)
 
 test "request: a GET, a CONNECT, an extended CONNECT, and the fields kept"
     got = request(

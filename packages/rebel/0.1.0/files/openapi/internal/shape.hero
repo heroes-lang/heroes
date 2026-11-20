@@ -6,6 +6,7 @@
 
 use json
 use openapi/internal/objects
+use strings
 
 # The kind of a whole document.
 constant DOCUMENT: str
@@ -444,7 +445,7 @@ function step(@out: [Problem], @found: [Item], each: Item)
             )
         return
 
-    if kind == "texts" || strings_begin(s: kind, prefix: "list:")
+    if kind == "texts" || strings.has_prefix(s: kind, prefix: "list:")
         inner = if kind == "texts"
             "text"
         else
@@ -471,7 +472,7 @@ function step(@out: [Problem], @found: [Item], each: Item)
             out @ out.push(Problem(pointer: each.pointer, message: f"{name_of(kind)} is expected, found {found_of(v)}"))
             return
 
-    if strings_begin(s: kind, prefix: "map:")
+    if strings.has_prefix(s: kind, prefix: "map:")
         inner = kind.slice(from: 4, to: kind.len())
 
         for k in keys(members)
@@ -554,17 +555,6 @@ function fields_checked(@out: [Problem], @found: [Item], each: Item, members: {s
             found @ found.push(Item(pointer: at, value: value, kind: known, depth: each.depth))
         else if !objects.is_extension(k) || kind == "reference"
             out @ out.push(Problem(pointer: at, message: f"`{k}` is not a field of {name_of(kind)}, nor an `x-` field"))
-
-# Whether `s` begins with `prefix`.
-function strings_begin(s: str, prefix: str) -> bool
-    if s.len() < prefix.len()
-        return false
-
-    for i in range(from: 0, to: prefix.len())
-        if s[i] != prefix[i]
-            return false
-
-    return true
 
 # Nothing where `v` is of the form of `kind`; else fails `invalid` with the
 # first problem, its pointer before it.

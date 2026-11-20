@@ -177,7 +177,7 @@ capability sql-mysql/long-data  a parameter's bytes sent in pieces before the st
   note    `COM_STMT_SEND_LONG_DATA`; a value is sent whole, up to the server's `max_allowed_packet`
 
 capability sql-mysql/transactions  a transaction opened, committed and rolled back, and its state read
-  heroes  mysql.begin, mysql.commit, mysql.rollback, mysql.transaction_of
+  heroes  mysql.begin, mysql.commit, mysql.rollback, mysql.in_transaction
   go      -
   rust    -
   python  Connection.begin, Connection.commit, Connection.rollback

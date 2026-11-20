@@ -6,16 +6,17 @@
 # parameters for PostgreSQL or for SQLite.
 
 use sql
+use sql/build
 use strings
 
 constant INVALID: str
-    "invalid"
+    build.INVALID
 
 constant UNSUPPORTED: str
-    "unsupported"
+    build.UNSUPPORTED
 
 constant LIMIT: str
-    "limit"
+    build.LIMIT
 
 # The most parameters one statement carries to PostgreSQL: its `Bind`
 # message counts them in sixteen bits.

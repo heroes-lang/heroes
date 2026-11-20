@@ -1,0 +1,29 @@
+# The three Lua scripts a lock of the face runs on the server, each run whole
+# by `EVAL` so no other client's command falls between its steps. They are
+# the inside of `try_lock`, `unlock` and `renew`, which a program calls; a
+# program never runs one itself, so none stands on the face.
+
+use strings
+
+# The script that takes a lock: sets the key `KEYS[1]` to the token
+# `ARGV[1]` where it is absent, for `ARGV[2]` milliseconds, and counts the
+# acquisition in the fencing key `KEYS[2]`, answering the count, or false
+# where another holds the lock.
+constant ACQUIRE: str
+    "if redis.call('set', KEYS[1], ARGV[1], 'NX', 'PX', ARGV[2]) then return redis.call('incr', KEYS[2]) else return false end"
+
+# The script that gives a lock back: deletes the key `KEYS[1]` only where it
+# holds the token `ARGV[1]`, answering 1, else 0.
+constant RELEASE: str
+    "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end"
+
+# The script that extends a lock: sets the key `KEYS[1]`'s time to live to
+# `ARGV[2]` milliseconds again only where it holds the token `ARGV[1]`,
+# answering 1, else 0.
+constant RENEW: str
+    "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('pexpire', KEYS[1], ARGV[2]) else return 0 end"
+
+test "ACQUIRE, RELEASE and RENEW: each script compares the token before it changes the key"
+    assert strings.contains(s: ACQUIRE, substr: "'NX'") && strings.contains(s: ACQUIRE, substr: "'incr'")
+    assert strings.contains(s: RELEASE, substr: "== ARGV[1]") && strings.contains(s: RELEASE, substr: "'del'")
+    assert strings.contains(s: RENEW, substr: "== ARGV[1]") && strings.contains(s: RENEW, substr: "'pexpire'")

@@ -198,7 +198,7 @@ function start_tls(@s: Session, roots: str) -> ()?
     if os.system() == .darwin
         return fail(
             code: UNSUPPORTED,
-            msg: f"StartTLS on {s.target}: macOS begins TLS only over a connection tls makes; open the connection with .start_tls"
+            msg: f"StartTLS on {s.target}: macOS begins TLS only over a connection tls makes; connect with .start_tls"
         )
     id = send(@s, op: requests.extended(name: START_TLS_OID, value: []), controls: [])?
     answer = receive(@s, id: id)?

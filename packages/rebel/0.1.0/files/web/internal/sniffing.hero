@@ -4,6 +4,8 @@
 # audio and video, fonts, archives, WebAssembly, and text where no byte is a
 # binary one.
 
+use bytes
+
 # The bytes read: the standard's resource header.
 constant HEADER_BYTES: i64
     512
@@ -97,17 +99,6 @@ function has_tag(head: [u8], at: i64, tag: str) -> bool
     end = at + tag.len()
     return has_folded(head, at: at, text: tag) && end < head.len() && (head[end] == ' ' || head[end] == '>')
 
-# Whether `head` begins with `prefix`, byte for byte.
-function begins(head: [u8], prefix: [u8]) -> bool
-    if prefix.len() > head.len()
-        return false
-
-    for i in range(from: 0, to: prefix.len())
-        if head[i] != prefix[i]
-            return false
-
-    return true
-
 # Whether `head` holds `text`'s bytes at `at`.
 function holds_at(head: [u8], at: i64, text: str) -> bool
     if at + text.len() > head.len()
@@ -127,13 +118,13 @@ function by_prefix(head: [u8]) -> str
     if holds_at(head, at: 0, text: "%!PS-Adobe-")
         return "application/postscript"
 
-    if begins(head: head, prefix: [254, 255])
+    if bytes.has_prefix(s: head, prefix: [254, 255])
         return "text/plain; charset=utf-16be"
 
-    if begins(head: head, prefix: [255, 254])
+    if bytes.has_prefix(s: head, prefix: [255, 254])
         return "text/plain; charset=utf-16le"
 
-    if begins(head: head, prefix: [239, 187, 191])
+    if bytes.has_prefix(s: head, prefix: [239, 187, 191])
         return "text/plain; charset=utf-8"
     image = image_of(head)
 
@@ -150,10 +141,10 @@ function image_of(head: [u8]) -> str
     if holds_at(head, at: 0, text: "GIF87a") || holds_at(head, at: 0, text: "GIF89a")
         return "image/gif"
 
-    if begins(head: head, prefix: [137, 80, 78, 71, 13, 10, 26, 10])
+    if bytes.has_prefix(s: head, prefix: [137, 80, 78, 71, 13, 10, 26, 10])
         return "image/png"
 
-    if begins(head: head, prefix: [255, 216, 255])
+    if bytes.has_prefix(s: head, prefix: [255, 216, 255])
         return "image/jpeg"
 
     if holds_at(head, at: 0, text: "BM")
@@ -162,7 +153,7 @@ function image_of(head: [u8]) -> str
     if holds_at(head, at: 0, text: "RIFF") && holds_at(head, at: 8, text: "WEBPVP")
         return "image/webp"
 
-    if begins(head: head, prefix: [0, 0, 1, 0]) || begins(head: head, prefix: [0, 0, 2, 0])
+    if bytes.has_prefix(s: head, prefix: [0, 0, 1, 0]) || bytes.has_prefix(s: head, prefix: [0, 0, 2, 0])
         return "image/x-icon"
     return ""
 
@@ -180,35 +171,35 @@ function media_of(head: [u8]) -> str
     if holds_at(head, at: 0, text: "ID3")
         return "audio/mpeg"
 
-    if begins(head: head, prefix: [79, 103, 103, 83, 0])
+    if bytes.has_prefix(s: head, prefix: [79, 103, 103, 83, 0])
         return "application/ogg"
 
-    if begins(head: head, prefix: [77, 84, 104, 100, 0, 0, 0, 6])
+    if bytes.has_prefix(s: head, prefix: [77, 84, 104, 100, 0, 0, 0, 6])
         return "audio/midi"
 
-    if begins(head: head, prefix: [26, 69, 223, 163])
+    if bytes.has_prefix(s: head, prefix: [26, 69, 223, 163])
         return "video/webm"
     return ""
 
 # The font, archive or WebAssembly type `head` begins with, "" for none.
 function archive_of(head: [u8]) -> str
-    if begins(head: head, prefix: [0, 1, 0, 0])
+    if bytes.has_prefix(s: head, prefix: [0, 1, 0, 0])
         return "font/ttf"
 
     for pair in [["OTTO", "font/otf"], ["ttcf", "font/collection"], ["wOFF", "font/woff"], ["wOF2", "font/woff2"]]
         if holds_at(head, at: 0, text: pair[0])
             return pair[1]
 
-    if begins(head: head, prefix: [31, 139, 8])
+    if bytes.has_prefix(s: head, prefix: [31, 139, 8])
         return "application/x-gzip"
 
-    if begins(head: head, prefix: [80, 75, 3, 4])
+    if bytes.has_prefix(s: head, prefix: [80, 75, 3, 4])
         return "application/zip"
 
-    if begins(head: head, prefix: [82, 97, 114, 33, 26, 7, 0]) || begins(head: head, prefix: [82, 97, 114, 33, 26, 7, 1, 0])
+    if bytes.has_prefix(s: head, prefix: [82, 97, 114, 33, 26, 7, 0]) || bytes.has_prefix(s: head, prefix: [82, 97, 114, 33, 26, 7, 1, 0])
         return "application/x-rar-compressed"
 
-    if begins(head: head, prefix: [0, 97, 115, 109])
+    if bytes.has_prefix(s: head, prefix: [0, 97, 115, 109])
         return "application/wasm"
     return ""
 
