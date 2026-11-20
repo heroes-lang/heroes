@@ -8,6 +8,7 @@ use json/jq/internal/arith
 use json/jq/internal/values
 use json/jq/internal/write
 use numbers
+use strings
 use unicode
 
 # How deep `fromjson` reads, as jq's own parser.
@@ -166,36 +167,13 @@ function texts_of(v: json.Value, arg: json.Value) -> Pair
                 .null_value | .boolean _ | .number _ | .list _ | .object _ => return Pair(s: "", part: "", both: false)
         .null_value | .boolean _ | .number _ | .list _ | .object _ => return Pair(s: "", part: "", both: false)
 
-# Whether `s` begins with `part`.
-function begins(s: str, part: str) -> bool
-    if part.len() > s.len()
-        return false
-
-    for i in range(from: 0, to: part.len())
-        if s[i] != part[i]
-            return false
-
-    return true
-
-# Whether `s` ends with `part`.
-function ends(s: str, part: str) -> bool
-    if part.len() > s.len()
-        return false
-    offset = s.len() - part.len()
-
-    for i in range(from: 0, to: part.len())
-        if s[offset + i] != part[i]
-            return false
-
-    return true
-
 # jq's `startswith`.
 function startswith(v: json.Value, arg: json.Value) -> json.Value?
     p = texts_of(v: v, arg: arg)
 
     if !p.both
         return values.raised("startswith() requires string inputs")
-    return ok(.boolean(v: begins(s: p.s, part: p.part)))
+    return ok(.boolean(v: strings.has_prefix(s: p.s, prefix: p.part)))
 
 # jq's `endswith`.
 function endswith(v: json.Value, arg: json.Value) -> json.Value?
@@ -203,14 +181,14 @@ function endswith(v: json.Value, arg: json.Value) -> json.Value?
 
     if !p.both
         return values.raised("endswith() requires string inputs")
-    return ok(.boolean(v: ends(s: p.s, part: p.part)))
+    return ok(.boolean(v: strings.has_suffix(s: p.s, suffix: p.part)))
 
 # jq 1.7.1's `ltrimstr`: the input without the prefix where both are texts
 # and it has it, and otherwise the input as it is.
 function ltrimstr(v: json.Value, arg: json.Value) -> json.Value
     p = texts_of(v: v, arg: arg)
 
-    if p.both && begins(s: p.s, part: p.part)
+    if p.both && strings.has_prefix(s: p.s, prefix: p.part)
         return .text(v: p.s.slice(from: p.part.len(), to: p.s.len()))
     return v
 
@@ -218,7 +196,7 @@ function ltrimstr(v: json.Value, arg: json.Value) -> json.Value
 function rtrimstr(v: json.Value, arg: json.Value) -> json.Value
     p = texts_of(v: v, arg: arg)
 
-    if p.both && ends(s: p.s, part: p.part) && p.part.len() > 0
+    if p.both && strings.has_suffix(s: p.s, suffix: p.part) && p.part.len() > 0
         return .text(v: p.s.slice(from: 0, to: p.s.len() - p.part.len()))
     return v
 

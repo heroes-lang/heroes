@@ -8,7 +8,8 @@
 # lists docs.rs prints for the three jaq crates, and `dir()` of the Python
 # module installed there. The language is jq 1.7's, its manual of the tag
 # jq-1.7.1; the installed jq answers 1.8.2, and where 1.7.1 and 1.8.2 differ the
-# note says which was taken. The tests are jq 1.7.1's own `tests/jq.test`.
+# note says which was taken. The tests are jq 1.7.1's own, as this ledger of
+# 2026-11-18 took them from its `tests/jq.test`.
 
 capability jq/parse  a filter read and checked once, to be run any number of times
   heroes  json/jq.parse, json/jq.is_valid, json/jq.Program, json/jq.MAX_NESTING

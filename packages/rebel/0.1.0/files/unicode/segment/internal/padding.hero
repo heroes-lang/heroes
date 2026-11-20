@@ -1,0 +1,82 @@
+# A text padded to a width in columns, as `width_of` counts them: the pad
+# written grapheme by grapheme, again and again, as many whole graphemes as
+# fit, and a space for each column a wide grapheme of the pad would pass. A
+# width compares before it subtracts, so no width overflows.
+
+use unicode
+use unicode/segment/internal/graphemes
+use unicode/segment/internal/text
+use unicode/segment/internal/width
+
+# `count` columns of `pad`, written grapheme by grapheme again and again: the
+# first grapheme that would pass `count` ends the run, and spaces fill the
+# columns left. A `pad` that takes no column is a space. `count` is not below
+# 0.
+function filled(pad: str, count: i64) -> str
+    if count == 0
+        return ""
+    pieces = text.pieces(s: pad, bounds: graphemes.boundaries(text.decode(pad)))
+    widths: [i64] @= []
+    total: i64 @= 0
+
+    for piece in pieces
+        taken = width.width_of(s: piece, east_asian: false)
+        widths @ widths.push(taken)
+        total @ total + taken
+
+    if total == 0
+        return repeat(" ", to_u64(count).must())
+    out: [str] @= []
+    used: i64 @= 0
+    at: i64 @= 0
+
+    while used < count
+        if widths[at] > count - used
+            break
+        out @ out.push(pieces[at])
+        used @ used + widths[at]
+        at @ (at + 1) % pieces.len()
+
+    return out.join("") + repeat(" ", to_u64(count - used).must())
+
+# `s` with `pad` before it to `columns` columns.
+function pad_start(s: str, columns: i64, pad: str) -> str
+    taken = width.width_of(s: s, east_asian: false)
+
+    if columns <= taken
+        return s
+    return filled(pad: pad, count: columns - taken) + s
+
+# `s` with `pad` after it to `columns` columns.
+function pad_end(s: str, columns: i64, pad: str) -> str
+    taken = width.width_of(s: s, east_asian: false)
+
+    if columns <= taken
+        return s
+    return s + filled(pad: pad, count: columns - taken)
+
+# `s` with `pad` on both sides to `columns` columns, the odd column after.
+function center(s: str, columns: i64, pad: str) -> str
+    taken = width.width_of(s: s, east_asian: false)
+
+    if columns <= taken
+        return s
+    need = columns - taken
+    before = need / 2
+    return filled(pad: pad, count: before) + s + filled(pad: pad, count: need - before)
+
+## Tests
+
+test "filled: none, a narrow pad, a wide pad with an odd count, a pad of no column, and a pad of two graphemes"
+    assert filled(pad: ".", count: 0) == ""
+    assert filled(pad: ".", count: 3) == "..."
+    assert filled(pad: "日", count: 5) == "日日 "
+    assert filled(pad: unicode.from_code_point(0x301).must(), count: 2) == "  "
+    assert filled(pad: "-=", count: 5) == "-=-=-"
+
+test "pad_start, pad_end and center: a wide text, a text wider than the width, and a negative width"
+    assert pad_start(s: "日本", columns: 6, pad: " ") == "  日本"
+    assert pad_end(s: "日本", columns: 5, pad: ".") == "日本."
+    assert center(s: "日", columns: 5, pad: "*") == "*日**"
+    assert pad_end(s: "日本語", columns: 4, pad: " ") == "日本語"
+    assert pad_start(s: "ab", columns: -5, pad: " ") == "ab"

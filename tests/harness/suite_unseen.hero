@@ -106,6 +106,60 @@ function known() -> [Found]
         Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-linux-embedded-summary.txt", line: 1, code: 0)
     ]
 
+# THE FILES WHOSE STRINGS CARRY ONE OF THE ZERO-WIDTH KIN AS DATA, each with
+# the codes it carries, in decimal (M-rebel-library's landing, 2026-11-20).
+# A string writes such a character only as itself: `\u{200b}` is refused,
+# `escape_not_needed`, since one character has one spelling and this one
+# needs no escape (`selfhost/code_escape.hero`), and a constant's body, where
+# these tables stand, may call nothing that would build it from bytes,
+# `constant_body`. Measured that day with the round's compiler on each of
+# the thirteen this file's header names: written as itself in a string, each
+# checks at exit 0, and its `\u{…}` is refused; a control character, U+061C,
+# U+200E, U+202E and U+2028 the other way round. So here a document refuses
+# what the language has no other way to write, and only the data's own
+# files stand in that place: CLDR 49's Khmer and Lao texts, which break a
+# line between words at U+200B, and tiktoken's cases of a text holding one.
+#
+# Only a code a row names is excused, and only one of `AS_ITSELF`: a control
+# or a bidirectional character in one of these files has its escape, and is
+# refused there as anywhere. A row whose file is gone, or which no longer
+# holds a code it names, is red, as `known`'s are.
+constant DATA: [str]
+    [
+        "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero 8203"
+        "packages/rebel/0.1.0/files/i18n/numbers/internal/number_tables.hero 8203"
+        "packages/rebel/0.1.0/files/tokenizer/tables/internal/cases.hero 8203"
+    ]
+
+# The zero-width kin of the header, which a string writes only as itself:
+# U+00AD, U+115F, U+1160, U+180E, U+200B, U+2060 to U+2064, U+3164, U+FEFF
+# and U+FFA0.
+constant AS_ITSELF: [i64]
+    [173, 4447, 4448, 6158, 8203, 8288, 8289, 8290, 8291, 8292, 12644, 65279, 65440]
+
+# The codes `DATA` excuses in `path`, none where no row names it.
+function data_codes(path: str) -> [i64]
+    out: [i64] @= []
+
+    for row in DATA
+        words = strings.words(row)
+
+        if words.len() > 1 && words[0] == path
+            for word in words.slice(from: 1, to: words.len())
+                code = strings.to_number(word)
+
+                if !code.is_err() && held_in(code.must(), within: AS_ITSELF)
+                    out @ out.push(code.must())
+
+    return out
+
+function held_in(code: i64, within: [i64]) -> bool
+    for one in within
+        if one == code
+            return true
+
+    return false
+
 ## The characters
 
 # WHAT IS REFUSED, as data: each row the first and the last code point of a
@@ -286,6 +340,45 @@ function listed(one: Found, among: [Found]) -> bool
 
     return false
 
+# What is wrong with `DATA` against the walk: a row whose file `files` does
+# not hold, a code that is not one of `AS_ITSELF`, and a code no character
+# `carried` holds in its file, each told by its row.
+function data_offences(files: [str], carried: [Found]) -> [str]
+    out: [str] @= []
+
+    for row in DATA
+        words = strings.words(row)
+
+        if words.len() < 2
+            out @ out.push("DATA names no code: " + row)
+            continue
+        there: bool @= false
+
+        for path in files
+            if path == words[0]
+                there @ true
+
+        if !there
+            out @ out.push("DATA names a file that is not there: " + words[0])
+            continue
+
+        for word in words.slice(from: 1, to: words.len())
+            code = strings.to_number(word)
+
+            if code.is_err() || !held_in(code.must(), within: AS_ITSELF)
+                out @ out.push("DATA names a code that has an escape or is no code: " + words[0] + " " + word)
+                continue
+            seen: bool @= false
+
+            for one in carried
+                if one.path == words[0] && one.code == code.must()
+                    seen @ true
+
+            if !seen
+                out @ out.push(words[0] + ": " + named(code.must()))
+
+    return out
+
 ## The walk
 
 function run_all(scratch: str) -> report.Report?
@@ -310,9 +403,12 @@ function run_all(scratch: str) -> report.Report?
 
     excused = known()
     unexcused: [str] @= []
+    carried: [Found] @= []
 
     for one in found
-        if !listed(one, among: excused)
+        if held_in(one.code, within: data_codes(one.path))
+            carried @ carried.push(one)
+        else if !listed(one, among: excused)
             unexcused @ unexcused.push("    " + one.path + ":" + one.line.to_str() + ": " + named(one.code))
 
     stale: [str] @= []
@@ -321,11 +417,14 @@ function run_all(scratch: str) -> report.Report?
         if !listed(one, among: found)
             stale @ stale.push("    " + one.path + ":" + one.line.to_str() + ": " + named(one.code))
 
+    for line in data_offences(files: files, carried: carried)
+        stale @ stale.push("    " + line)
+
     if unexcused.len() > 0
         report.keep_failure(
             @r,
             label: "unseen",
-            detail: "  a document holds a character its reader cannot see, written as itself: a control character, a bidirectional control, U+2028 or U+2029, or a zero-width space or its kin (defect 356):\n" + unexcused.join("\n") + "\n  Write it as the text means: its name, `U+200B`, or the escape a quoted program spells it with, `\\u{200b}`. A tool that decodes a written escape is how they arrive."
+            detail: "  a document holds a character its reader cannot see, written as itself: a control character, a bidirectional control, U+2028 or U+2029, or a zero-width space or its kin (defect 356):\n" + unexcused.join("\n") + "\n  Write it as the text means: its name, `U+200B`. In a program's string, a control or bidirectional character is its escape, `\\u{1b}`; one of the zero-width kin has no escape, a string writing it only as itself, so a program builds it from its bytes as it runs, and a table a constant must hold names its file and the code in `DATA`. A tool that decodes a written escape is how they arrive."
         )
     else
         report.keep_pass(@r)
@@ -334,7 +433,7 @@ function run_all(scratch: str) -> report.Report?
         report.keep_failure(
             @r,
             label: "unseen/known",
-            detail: "  `known` excuses a character a record holds, and these places no longer hold theirs: a record is only appended to, so the list is what moved. Remove the rows:\n" + stale.join("\n")
+            detail: "  `known` excuses a character a record holds, or `DATA` a code a file carries, and these no longer hold theirs: a record is only appended to, so the list is what moved. Remove the rows:\n" + stale.join("\n")
         )
     else
         report.keep_pass(@r)
@@ -401,3 +500,34 @@ test "a placed tree is exempt by its folder's name, and the package's source bes
     assert !exempt("examples/ini/heroes.packagesx/strings.md")
     assert !exempt("examples/ini/my.heroes.packages/strings.md")
     assert !exempt("examples/ini/main.hero")
+
+# The kin `DATA` may name are refused written as themselves in a document,
+# and none of them is a control or a bidirectional character, which a string
+# writes by its escape: the line `AS_ITSELF` draws is the language's.
+test "the zero-width kin a data file may carry are refused characters with no escape, and a row excuses only its own file's codes"
+    for code in AS_ITSELF
+        assert refused(code)
+        assert code > 159
+        assert code != 1564 && code != 8206 && code != 8207
+        assert code < 8232 || code > 8238
+        assert code < 8294 || code > 8297
+
+    tables = "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero"
+    assert data_codes(tables) == [8203]
+    assert data_codes(tables + ".md").len() == 0
+    assert data_codes("packages/rebel/0.1.0/files/i18n/dates/internal").len() == 0
+    assert data_codes("docs/panel/192-reports/historian.md").len() == 0
+
+test "a data row is held to its file and to a code that file still carries"
+    tables = "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero"
+    numbers = "packages/rebel/0.1.0/files/i18n/numbers/internal/number_tables.hero"
+    cases = "packages/rebel/0.1.0/files/tokenizer/tables/internal/cases.hero"
+    files = [tables, numbers, cases]
+    carried = [
+        Found(path: tables, line: 1, code: 8203)
+        Found(path: numbers, line: 2, code: 8203)
+        Found(path: cases, line: 3, code: 8203)
+    ]
+    assert data_offences(files: files, carried: carried).len() == 0
+    assert data_offences(files: [tables, numbers], carried: carried) == ["DATA names a file that is not there: " + cases]
+    assert data_offences(files: files, carried: [carried[0], carried[1]]) == [cases + ": U+200B"]

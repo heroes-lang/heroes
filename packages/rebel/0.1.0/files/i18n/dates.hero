@@ -291,8 +291,8 @@ function date_time_pattern(locale: i18n.Locale, date_style: DateStyle, time_styl
 # - `locale`: the locale.
 # - `text`: the text; its letters compared ignoring case, and runs of spaces
 #   matching any space the pattern writes.
-# - `pattern`: the pattern it was written by.
 # - `zone`: the zone a text with no offset is read in.
+# - `pattern`: the pattern it was written by.
 #
 # A field the pattern leaves out takes 1970-01-01T00:00 for its value: the
 # year 1970, January, the first, midnight. A two-letter year is read within
@@ -300,7 +300,7 @@ function date_time_pattern(locale: i18n.Locale, date_style: DateStyle, time_styl
 # pattern does not parse or the text does not hold what it asks, the
 # message naming the field, and where a date does not exist. See also
 # `format_pattern`.
-function parse_pattern(locale: i18n.Locale, text: str, pattern: str, zone: time.Zone) -> time.Instant?
+function parse_pattern(locale: i18n.Locale, text: str, zone: time.Zone, pattern: str) -> time.Instant?
     return date_parse.parse(date_data.load(locale), text: text, pattern: pattern, zone: zone)
 
 # The names of the months in `locale`'s language, January first.
@@ -309,7 +309,8 @@ function parse_pattern(locale: i18n.Locale, text: str, pattern: str, zone: time.
 # - `width`: how long; `short` answers the abbreviated names.
 # - `context`: inside a date or alone.
 #
-# Always twelve. See also `weekday_names`.
+# Always twelve. See also `weekday_names`, and `time.month_name`, the one
+# English name of a month.
 function month_names(locale: i18n.Locale, width: Width, context: NameContext) -> [str]
     data = date_data.load(locale)
 
@@ -334,7 +335,8 @@ function month_names(locale: i18n.Locale, width: Width, context: NameContext) ->
 # - `width`: how long.
 # - `context`: inside a date or alone.
 #
-# Always seven. See also `first_weekday`.
+# Always seven. See also `first_weekday`, and `time.weekday_name`, the one
+# English name of a day.
 function weekday_names(locale: i18n.Locale, width: Width, context: NameContext) -> [str]
     data = date_data.load(locale)
 
@@ -641,8 +643,8 @@ test "parse_pattern: a German date"
     t = parse_pattern(
         i18n.parse_locale("de").must(),
         text: "5. März 2024",
-        pattern: "d. MMMM y",
-        zone: time.utc_zone()
+        zone: time.utc_zone(),
+        pattern: "d. MMMM y"
     ).must()
     assert t == time.date(year: 2024, month: 3, day: 5).must()
 

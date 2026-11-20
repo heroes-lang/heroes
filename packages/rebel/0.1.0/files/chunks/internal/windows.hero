@@ -12,6 +12,7 @@
 # The recursion follows the list of cutters, never the text, so its depth is
 # that list's length.
 
+use chunks
 use chunks/internal/cuts
 use chunks/internal/meter
 use unicode
@@ -20,7 +21,7 @@ use unicode/segment
 # Adds to `spans` the pieces the parts make: part `k` is `s` from
 # `bounds[k]` to `bounds[k + 1]` and measures `costs[k]`; two indices a
 # piece.
-function add_windows(@spans: [i64], s: str, bounds: [i64] lent, costs: [i64] lent, size: i64, overlap: i64, m: meter.Meter lent)
+function add_windows(@spans: [i64], s: str, bounds: [i64] lent, costs: [i64] lent, size: i64, overlap: i64, m: chunks.Measure lent)
     k = costs.len()
     i: i64 @= 0
 
@@ -32,7 +33,7 @@ function add_windows(@spans: [i64], s: str, bounds: [i64] lent, costs: [i64] len
             total @ total + costs[j]
             j @ j + 1
 
-        if m.kind == meter.TOKENS
+        if meter.counts_tokens(m)
             while j - i > 1 && meter.cost(m, s: s, from: bounds[i], to: bounds[j]) > size
                 j @ j - 1
 
@@ -54,7 +55,7 @@ function add_windows(@spans: [i64], s: str, bounds: [i64] lent, costs: [i64] len
 # `cutters[depth]`, a part too large cut by the cutters after it; at the last
 # cutter a part too large is a piece alone. `graphemes` are the grapheme
 # boundaries of all of `s`.
-function add_split(@spans: [i64], s: str, from: i64, to: i64, cutters: [cuts.Cutter] lent, depth: i64, size: i64, overlap: i64, m: meter.Meter lent, graphemes: [i64] lent)
+function add_split(@spans: [i64], s: str, from: i64, to: i64, cutters: [cuts.Cutter] lent, depth: i64, size: i64, overlap: i64, m: chunks.Measure lent, graphemes: [i64] lent)
     b = cuts.bounds(s, from: from, to: to, cutter: cutters[depth], graphemes: graphemes)
     run_bounds: [i64] @= []
     run_costs: [i64] @= []
@@ -162,7 +163,7 @@ function texts_of(s: str, spans: [i64]) -> [str]
     return out
 
 test "add_windows: parts joined to the size, an overlap of one part, a part too large alone, and none"
-    m = meter.Meter(kind: meter.BYTES, encodings: [])
+    m: chunks.Measure = .bytes
     spans: [i64] @= []
     add_windows(spans: @spans, s: "aabbccdd", bounds: [0, 2, 4, 6, 8], costs: [2, 2, 2, 2], size: 4, overlap: 2, m: m)
     assert spans == [0, 4, 2, 6, 4, 8]
@@ -174,7 +175,7 @@ test "add_windows: parts joined to the size, an overlap of one part, a part too 
     assert none == []
 
 test "add_windows: an overlap that would leave no room for the next part is shortened"
-    m = meter.Meter(kind: meter.BYTES, encodings: [])
+    m: chunks.Measure = .bytes
     spans: [i64] @= []
     add_windows(spans: @spans, s: "abcdef", bounds: [0, 1, 2, 3, 6], costs: [1, 1, 1, 3], size: 4, overlap: 3, m: m)
     assert spans == [0, 3, 2, 6]
@@ -191,7 +192,7 @@ test "add_split: paragraphs joined, a paragraph too large cut at its sentences, 
         depth: 0,
         size: 12,
         overlap: 0,
-        m: meter.Meter(kind: meter.CHARACTERS, encodings: []),
+        m: .characters,
         graphemes: segment_of(s)
     )
     assert texts_of(s, spans: trimmed(s, spans: spans)) == ["Aa.\n\nBb.", "One two.", "Three four", "five.", "Cc."]

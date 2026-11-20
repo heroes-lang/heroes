@@ -4,6 +4,7 @@
 # for that place and no more.
 
 use json
+use strings
 
 # `doc` with `value` in place of the value at `pointer`, which is there.
 # Aborts where it is not, since only a place a query selected in `doc` is
@@ -52,16 +53,6 @@ function child(v: json.Value, token: str) -> json.Value
             assert false
             return v
 
-# How many tokens `pointer` has: how deep the place it names lies.
-function depth_of(pointer: str) -> i64
-    count: i64 @= 0
-
-    for at in range(from: 0, to: pointer.len())
-        if pointer[at] == '/'
-            count @ count + 1
-
-    return count
-
 # The pointers of `pointers` each once, the deepest first and, of one depth,
 # in the order given.
 function deepest_first(pointers: [str]) -> [str]
@@ -72,7 +63,7 @@ function deepest_first(pointers: [str]) -> [str]
     for pointer in pointers
         if !seen[pointer].default(false)
             seen[pointer] @ true
-            d = depth_of(pointer)
+            d = strings.count_of(s: pointer, substr: "/")
             here @= by_depth[d].default([])
             here @ here.push(pointer)
             by_depth[d] @ here

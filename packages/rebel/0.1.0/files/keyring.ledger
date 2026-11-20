@@ -22,7 +22,7 @@ capability keyring/read  the secret under a service and an account read back
   go      Get
   rust    v1::Entry::get_password, v1::Entry::get_secret, v1::Error::BadEncoding
   python  get_password, core.get_password, KeyringBackend.get_password
-  note    An absent secret fails `not_found`, as Go's `ErrNotFound` and Rust's `NoEntry`, where Python answers `None`. `read_text` fails `not_text` on bytes that are no UTF-8, Rust's `BadEncoding`. A secret another program stored that is longer than `SECRET_MOST` is read whole, the buffer grown to what the system answers
+  note    An absent secret fails `not_found`, as Go's `ErrNotFound` and Rust's `NoEntry`, where Python answers `None`. `read_text` fails `not_text` on bytes that are no UTF-8, Rust's `BadEncoding`. A secret another program stored that is longer than `MAX_SECRET_BYTES` is read whole, the buffer grown to what the system answers
 
 capability keyring/remove  the secret under a service and an account removed
   heroes  keyring.remove
@@ -60,7 +60,7 @@ capability keyring/failures  why a call failed, told apart by a program
   note    A locked keyring, a dialog the person refused and a secret another program owns are `permission` (Rust's `NoStorageAccess`, Python's `KeyringLocked`); no keyring here is `unsupported`. Rust's `Ambiguous` has no case: one pair of names reaches one secret on every platform; where the macOS keychain held the same pair in two keychains, `read` would answer the first the system gives and `remove` remove every match (unrun: no second keychain on this machine)
 
 capability keyring/bounds  how long a name and a secret may be
-  heroes  keyring.NAME_MOST, keyring.SECRET_MOST
+  heroes  keyring.MAX_NAME_BYTES, keyring.MAX_SECRET_BYTES
   go      ErrSetDataTooBig
   rust    v1::Error::TooLong
   python  -

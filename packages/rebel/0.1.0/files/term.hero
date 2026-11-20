@@ -6,10 +6,10 @@
 #
 # What it does NOT do: read or write a stream (`io`); tell the terminal's size
 # (`os.terminal_size`); tell whether a stream is a terminal (`io.is_terminal`);
-# answer how many cells a text takes as a function of its own, which waits for
-# `unicode/segment` (the ledger says `pending`; the line editor and the tables
-# measure with a table of Unicode 17.0.0's widths kept inside this package);
-# draw windows (a screen library's area, `tui`'s).
+# answer how many cells a text takes, which `unicode/segment.width_of` does and
+# by which the line editor, the menus and the tables here measure; draw
+# windows, a screen of the program's own, or read the mouse, a paste and a
+# resize as events (`tui`, over this package).
 #
 # **Prompts, menus, links and the clipboard**: a question answered yes or
 # no, a menu of one choice or of several, filtered as the person types, and a
@@ -96,23 +96,45 @@ constant NOT_TEXT: str
 variant Color
     # The terminal's own colour, as it was before any style.
     default
-    # The eight colours every colour terminal has, which its theme names.
+    # Black, colour 0 of the eight every colour terminal has, as its
+    # theme draws it.
     black
+    # Red, colour 1 of the eight every colour terminal has, as its
+    # theme draws it.
     red
+    # Green, colour 2 of the eight every colour terminal has, as its
+    # theme draws it.
     green
+    # Yellow, colour 3 of the eight every colour terminal has, as its
+    # theme draws it.
     yellow
+    # Blue, colour 4 of the eight every colour terminal has, as its
+    # theme draws it.
     blue
+    # Magenta, colour 5 of the eight every colour terminal has, as its
+    # theme draws it.
     magenta
+    # Cyan, colour 6 of the eight every colour terminal has, as its
+    # theme draws it.
     cyan
+    # White, colour 7 of the eight every colour terminal has, as its
+    # theme draws it.
     white
-    # Their bright forms.
+    # Bright black, colour 8, the bright form of `black`.
     bright_black
+    # Bright red, colour 9, the bright form of `red`.
     bright_red
+    # Bright green, colour 10, the bright form of `green`.
     bright_green
+    # Bright yellow, colour 11, the bright form of `yellow`.
     bright_yellow
+    # Bright blue, colour 12, the bright form of `blue`.
     bright_blue
+    # Bright magenta, colour 13, the bright form of `magenta`.
     bright_magenta
+    # Bright cyan, colour 14, the bright form of `cyan`.
     bright_cyan
+    # Bright white, colour 15, the bright form of `white`.
     bright_white
     # One of the 256 colours of the terminal's palette: 0 to 15 the sixteen
     # above, 16 to 231 a cube of 6 by 6 by 6, 232 to 255 greys.
@@ -264,21 +286,21 @@ function styled(text: str, style: Style) -> str
 #
 # False for a closed stream, a file, a pipe and a connection. See also
 # `write_styled`.
-function colors_on(s: io.Stream) -> bool
+function has_colors(s: io.Stream) -> bool
     if os.env("NO_COLOR").default("") != ""
         return false
     return stream.controls_on(s)
 
 # Writes `text` to `s` drawn in `style` where colour shows there
-# (`colors_on`), and as plain text everywhere else.
+# (`has_colors`), and as plain text everywhere else.
 #
 # - `s`: the stream; it stays the caller's, who closes it.
 # - `text`: the text.
 # - `style`: how to draw it where colour shows.
 #
-# Fails as `io.write` fails. See also `styled`, `colors_on`.
+# Fails as `io.write` fails. See also `styled`, `has_colors`.
 function write_styled(s: io.Stream, text: str, style: Style) -> ()?
-    if colors_on(s)
+    if has_colors(s)
         return io.write_text(s, text: styled(text, style: style))
     return io.write_text(s, text: text)
 
@@ -415,19 +437,25 @@ variant Key
     backspace
     # Escape, alone.
     escape
-    # The four arrows.
+    # The arrow up.
     up
+    # The arrow down.
     down
+    # The arrow left.
     left
+    # The arrow right.
     right
-    # Home and End.
+    # Home.
     home
+    # End.
     end
-    # Page Up and Page Down.
+    # Page Up.
     page_up
+    # Page Down.
     page_down
-    # Insert and Delete.
+    # Insert.
     insert
+    # Delete, the key that removes the character after the cursor.
     delete
     # A function key.
     function_key
@@ -818,8 +846,8 @@ function read_line_completing<S>(@editor: Editor, input: io.Stream, complete: (f
 #
 # Fails `invalid` where a line of the history holds a line break, which a
 # file of lines could not keep, naming it; and where `write_file` fails, with
-# its code. See also `load_history`.
-function save_history(editor: Editor, path: str) -> ()?
+# its code. See also `read_history`.
+function write_history(editor: Editor, path: str) -> ()?
     return reading.save(editor.history, path: path)
 
 # Adds the lines of the file at `path` to `editor`'s history, the file's
@@ -827,13 +855,13 @@ function save_history(editor: Editor, path: str) -> ()?
 # does; the oldest are dropped past `history_most`.
 #
 # - `editor`: the editor whose history grows.
-# - `path`: the file, as `save_history` writes it; a carriage return before a
+# - `path`: the file, as `write_history` writes it; a carriage return before a
 #   line feed is left out.
 #
 # Fails where `read_file` fails, with its code: `file_not_found` where no file
 # is there, which a program reading its history the first time expects. See
-# also `save_history`.
-function load_history(@editor: Editor, path: str) -> ()?
+# also `write_history`.
+function read_history(@editor: Editor, path: str) -> ()?
     return reading.load(@editor.history, path: path, most: editor.history_most)
 
 # The words of `state` that begin with the word before the cursor, the text
@@ -1323,7 +1351,7 @@ record Spinner
 # - `s`: the stream it draws on; it stays the caller's.
 # - `label`: what it shows after its mark.
 #
-# Fails as `io.write` fails. See also `spin`, `stop_spinner`.
+# Fails as `io.write` fails. See also `spin`, `finish_spinner`.
 function spinner(s: io.Stream, label: str) -> Spinner?
     sp = Spinner(stream: s, label: label, frame: 0, shown: stream.controls_on(s))
 
@@ -1336,7 +1364,7 @@ function spinner(s: io.Stream, label: str) -> Spinner?
 #
 # - `sp`: the spinner; its `frame` grows by one.
 #
-# Fails as `io.write` fails. See also `stop_spinner`.
+# Fails as `io.write` fails. See also `finish_spinner`.
 function spin(@sp: Spinner) -> ()?
     sp.frame @ (sp.frame + 1) % 4
 
@@ -1352,7 +1380,7 @@ function spin(@sp: Spinner) -> ()?
 # - `message`: the line written in its place; "" for an empty line.
 #
 # Fails as `io.write` fails. See also `spinner`.
-function stop_spinner(@sp: Spinner, message: str) -> ()?
+function finish_spinner(@sp: Spinner, message: str) -> ()?
     clear = if sp.shown
         "\r" + clear_to_line_end()
     else
@@ -1476,9 +1504,9 @@ test "styled: an indexed colour and a colour of 24 bits"
     assert styled("x", style: with_background(plain(), color: .rgb(red: 10, green: 20, blue: 30))) == "\u{1b}[48;2;10;20;30mx\u{1b}[0m"
 
 # A pipe takes no colour.
-test "colors_on: a pipe takes none"
+test "has_colors: a pipe takes none"
     p @= io.pipe().must()
-    assert !colors_on(p.writer)
+    assert !has_colors(p.writer)
     io.close(@p.reader).must()
     io.close(@p.writer).must()
 
@@ -1617,7 +1645,7 @@ test "spinner: on a pipe, nothing drawn"
     pipe @= io.pipe().must()
     sp @= spinner(pipe.writer, label: "waiting").must()
     assert !sp.shown
-    stop_spinner(@sp, message: "").must()
+    finish_spinner(@sp, message: "").must()
     io.close(@pipe.writer).must()
     io.close(@pipe.reader).must()
 
@@ -1630,15 +1658,15 @@ test "spin: five turns"
         spin(@sp).must()
 
     assert sp.frame == 1
-    stop_spinner(@sp, message: "").must()
+    finish_spinner(@sp, message: "").must()
     io.close(@pipe.writer).must()
     io.close(@pipe.reader).must()
 
 # A spinner stopped writes its message, on a pipe too.
-test "stop_spinner: the message written on a pipe"
+test "finish_spinner: the message written on a pipe"
     pipe @= io.pipe().must()
     sp @= spinner(pipe.writer, label: "fetching").must()
-    stop_spinner(@sp, message: "fetched").must()
+    finish_spinner(@sp, message: "fetched").must()
     io.close(@pipe.writer).must()
     assert io.read_all_text(pipe.reader).must() == "fetched\n"
     io.close(@pipe.reader).must()
@@ -1703,25 +1731,25 @@ test "read_line_completing: a line from a pipe"
 
 # A history saved to a file, then read into a new editor; the file is in
 # `build/`, the folder `heroes test` builds in.
-test "save_history: two lines written and read back"
+test "write_history: two lines written and read back"
     path = "build/rebel-term-save-example.txt"
     ed @= line_editor("> ")
     ed.history @ ["ls", "cd /"]
-    save_history(ed, path: path).must()
+    write_history(ed, path: path).must()
     again @= line_editor("> ")
-    load_history(@again, path: path).must()
+    read_history(@again, path: path).must()
     assert again.history == ["ls", "cd /"]
 
 # A history read from a file written before; no file is told
 # `file_not_found`.
-test "load_history: a file of three lines, and none"
+test "read_history: a file of three lines, and none"
     path = "build/rebel-term-load-example.txt"
     write_file(path: path, text: "a\nb\nc\n").must()
     ed @= line_editor("> ")
-    load_history(@ed, path: path).must()
+    read_history(@ed, path: path).must()
     assert ed.history == ["a", "b", "c"]
 
-    match load_history(@ed, path: path + ".none")
+    match read_history(@ed, path: path + ".none")
         .ok _  => assert false
         .err e => assert e.code == "file_not_found"
 

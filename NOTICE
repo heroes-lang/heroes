@@ -31,3 +31,20 @@ Third-party material redistributed in this repository:
 Both tables are vendored so that a spec measurement taken today is reproducible
 years from now, with no network and no dependency. Provenance, sha256 and the
 licence re-check of 2026-09-08 are recorded in vendor/tokenizers/README.md.
+
+Third-party material Rebel carries, each file with its notice at its head:
+
+  packages/rebel/0.1.0/files/http/suffixes/internal/rules.hero
+      The rules of the Public Suffix List, as publicsuffix.org served it on
+      2026-11-18, version 2026-11-17_06-40-19_UTC, made a module of Rebel's
+      `http/suffixes`. Mozilla Public License, Version 2.0
+      (https://mozilla.org/MPL/2.0/); the list's own notice travels at the
+      head of the file.
+
+  packages/rebel/0.1.0/files/tokenizer/tables/internal/cl100k_base.hero
+  packages/rebel/0.1.0/files/tokenizer/tables/internal/o200k_base.hero
+  packages/rebel/0.1.0/files/tokenizer/tables/internal/o200k_harmony.hero
+      The `cl100k_base`, `o200k_base` and `o200k_harmony` tables of OpenAI's
+      `tiktoken` 0.14.0, made modules of Rebel's `tokenizer/tables`.
+      MIT License, Copyright (c) 2022 OpenAI, Shantanu Jain; its text travels
+      at the head of each file.

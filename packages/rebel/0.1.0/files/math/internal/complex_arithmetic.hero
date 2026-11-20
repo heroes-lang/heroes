@@ -4,8 +4,9 @@
 # the angle and the polar form; and the comparison the tests of every complex
 # module judge with.
 #
-# A private module cannot name the face's types, so a complex number here is a
-# `Pair` and the face converts. Every function answers a value and never a
+# A complex number here is a `Pair`, the face's `Complex` made plain, and the
+# face converts; a ring to the face, which panel 252's R1 allows, waits for the
+# subpackage `math/complex` the coherence review proposes (its plan's D16). Every function answers a value and never a
 # failure, as the float functions of `math` do.
 
 use math/internal/elementary

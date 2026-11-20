@@ -12,6 +12,12 @@
 # function cuts at is beside a separator, a dot or a colon, so none splits a
 # character. The patterns of gitignore files are read by git's rules alone,
 # `/` separating, on every system, so they have no `_by` form.
+#
+# What asks the disk or the system is elsewhere: a path made absolute from
+# where the program stands is `fs.to_abs`, its links followed `fs.resolve`,
+# the paths a pattern matches on the disk `fs.glob`, a tree walked `fs.walk`,
+# all of `fs`; the user's home folder is `os.home_dir`, and the environment's
+# PATH itself `os.env`.
 
 use path/hero_os
 use path/internal/change
@@ -60,17 +66,23 @@ function sep() -> str
     return sep_by(system_rules())
 
 # The separator `rules` write a path with: `/` by POSIX's, `\` by Windows'.
+#
+# - `rules`: the rules, whatever the system.
 function sep_by(rules: Rules) -> str
     return scan.separator(rules == .windows)
 
 # Whether `c` is a character that separates the parts of a path on this
-# system: `/` everywhere, and `\` too on Windows. A text of any other length is
-# none.
+# system: `/` everywhere, and `\` too on Windows.
+#
+# - `c`: the character to ask about; a text of any other length is none.
 function is_sep(c: str) -> bool
     return is_sep_by(c, system_rules())
 
 # Whether `c` is a character that separates the parts of a path by `rules`:
 # `/` by both, and `\` too by Windows'.
+#
+# - `c`: the character to ask about; a text of any other length is none.
+# - `rules`: the rules, whatever the system.
 function is_sep_by(c: str, rules: Rules) -> bool
     return c.len() == 1 && scan.is_sep(c[0], rules == .windows)
 
@@ -81,48 +93,94 @@ function list_sep() -> str
 
 # The separator between the paths of a list by `rules`: `:` by POSIX's, `;` by
 # Windows'.
+#
+# - `rules`: the rules, whatever the system.
 function list_sep_by(rules: Rules) -> str
     return match rules
         .posix   => ":"
         .windows => ";"
 
 # The paths of `list`, a list such as the environment's PATH, cut at each
-# `list_sep`. The empty list holds no path; an empty piece is kept as "", which
-# a system reads as the folder the program stands in. By Windows' rules a piece
-# may stand in double quotes to hold a `;`, and the quotes are dropped.
+# `list_sep`.
+#
+# - `list`: the list's text; the empty text holds no path, and an empty piece
+#   is kept as "", which a system reads as the folder the program stands in.
+#   By Windows' rules a piece may stand in double quotes to hold a `;`, and
+#   the quotes are dropped.
+#
+# See also `join_list`, which builds such a list.
 function split_list(list: str) -> [str]
     return split_list_by(list, system_rules())
 
 # What `split_list` answers, cutting by `rules` and not by the system's own.
+#
+# - `list`: the list's text, as `split_list` reads it.
+# - `rules`: the rules, whatever the system.
 function split_list_by(list: str, rules: Rules) -> [str]
     return local.split_list(list, rules == .windows)
+
+# `paths` written as one list such as the environment's PATH, `list_sep`
+# between each two: what `split_list` reads back.
+#
+# - `paths`: the paths, in order; an empty one is written as an empty piece,
+#   which a system reads as the folder the program stands in, and no paths
+#   answer "".
+#
+# By Windows' rules a path that holds `;` is written in double quotes, as
+# `split_list` reads it. Fails `invalid` where a path holds what the list
+# cannot carry: by POSIX's rules a `:`, by Windows' a `"`. A list of one empty
+# path is "", which `split_list` reads as no path.
+function join_list(paths: [str]) -> str?
+    return join_list_by(paths, system_rules())
+
+# What `join_list` answers, writing by `rules` and not by the system's own.
+#
+# - `paths`: the paths, in order, as `join_list` writes them.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `invalid` where a path holds what the list cannot carry.
+function join_list_by(paths: [str], rules: Rules) -> str?
+    return local.join_list(paths, rules == .windows)
 
 ## A path cleaned and joined
 
 # The shortest path that names what `path` names, by its text alone:
 # separators that repeat become one, every `.` goes, every `..` goes with the
 # part before it, a `..` at a root goes, and no separator is left at the end.
-# The empty path answers `.`. By Windows' rules every separator is written
-# `\`, and a drive with no root keeps the `..` it cannot resolve: `C:..\a`.
-# It reads no disk: where a part is a link, the cleaned path may name another
-# place.
+#
+# - `path`: the path to clean; the empty path answers `.`.
+#
+# By Windows' rules every separator is written `\`, and a drive with no root
+# keeps the `..` it cannot resolve: `C:..\a`. It reads no disk: where a part is
+# a link, the cleaned path may name another place, and `fs.resolve` follows
+# the links. See also `join_all`.
 function clean(path: str) -> str
     return clean_by(path, system_rules())
 
 # What `clean` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to clean.
+# - `rules`: the rules, whatever the system.
 function clean_by(path: str, rules: Rules) -> str
     return lexical.clean(path, rules == .windows)
 
 # `paths` joined into one path, each read from the one before it: a separator
-# goes between two where none stands, an empty one adds nothing, and one that
-# is absolute starts the path over, since it names the same place from
-# anywhere. By Windows' rules a path with a root and no volume keeps the volume
-# so far, and a path with another volume starts over. Nothing is cleaned, and
-# no paths answer "".
+# goes between two where none stands.
+#
+# - `paths`: the paths, in order; an empty one adds nothing, and one that is
+#   absolute starts the path over, since it names the same place from
+#   anywhere. No paths answer "".
+#
+# By Windows' rules a path with a root and no volume keeps the volume so far,
+# and a path with another volume starts over. Nothing is cleaned: `clean` does
+# that. See also `parts`.
 function join_all(paths: [str]) -> str
     return join_all_by(paths, system_rules())
 
 # What `join_all` answers, by `rules` and not by the system's own.
+#
+# - `paths`: the paths, in order, as `join_all` joins them.
+# - `rules`: the rules, whatever the system.
 function join_all_by(paths: [str], rules: Rules) -> str
     return lexical.join_paths(paths, rules == .windows)
 
@@ -135,109 +193,175 @@ record NameSplit
     # The last part, as `name` answers it.
     name: str
 
-# `path` without its last part: `a/b` answers `a`. A path of one part answers
-# `.`, and a root or a volume alone answers itself, so the answer always names
-# a folder. Separators at the end and `.` parts are skipped first. It drops
-# the last part as written, a `..` included: the parent of `..` is `.` here,
-# since no text says what stands above it.
+# `path` without its last part: `a/b` answers `a`.
+#
+# - `path`: the path; separators at the end and `.` parts are skipped first.
+#
+# A path of one part answers `.`, and a root or a volume alone answers itself,
+# so the answer always names a folder. It drops the last part as written, a
+# `..` included: the parent of `..` is `.` here, since no text says what
+# stands above it. See also `name`, `ancestors`.
 function parent(path: str) -> str
     return parent_by(path, system_rules())
 
 # What `parent` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path, as `parent` reads it.
+# - `rules`: the rules, whatever the system.
 function parent_by(path: str, rules: Rules) -> str
     return lexical.parent(path, rules == .windows)
 
-# The last part of `path`, where it is a name: `a/b.txt` answers `b.txt`, and
-# `a/b/` answers `b`, since separators at the end and `.` parts are skipped.
-# Fails `not_found` where the path ends in no name: the empty path, `.`, a root
-# or a volume alone, and a path whose last part is `..`. So an answer is never
-# empty, never `.` or `..`, and holds no separator.
+# The last part of `path`, where it is a name: `a/b.txt` answers `b.txt`.
+#
+# - `path`: the path; separators at the end and `.` parts are skipped, so
+#   `a/b/` answers `b`.
+#
+# Fails `not_found` where the path ends in no name: the empty path, `.`, a
+# root or a volume alone, and a path whose last part is `..`. So an answer is
+# never empty, never `.` or `..`, and holds no separator. See also `parent`,
+# `stem`, `ext`.
 function name(path: str) -> str?
     return name_by(path, system_rules())
 
-# What `name` answers, by `rules` and not by the system's own. Fails
-# `not_found` where the path ends in no name.
+# What `name` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path, as `name` reads it.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `not_found` where the path ends in no name.
 function name_by(path: str, rules: Rules) -> str?
     return lexical.last_name(path, rules == .windows)
 
 # The name of `path` without its extension: `a/b.tar.gz` answers `b.tar`.
-# Fails `not_found` where the path ends in no name. A name with no extension is
-# its own stem, so the stem and the extension together are always the name.
+#
+# - `path`: the path whose name is read.
+#
+# A name with no extension is its own stem, so the stem and the extension
+# together are always the name. Fails `not_found` where the path ends in no
+# name. See also `stem_all`, `ext`.
 function stem(path: str) -> str?
     return stem_by(path, system_rules())
 
-# What `stem` answers, by `rules` and not by the system's own. Fails
-# `not_found` where the path ends in no name.
+# What `stem` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path whose name is read.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `not_found` where the path ends in no name.
 function stem_by(path: str, rules: Rules) -> str?
     return lexical.stem(path, rules == .windows)
 
 # The name of `path` without any of its extensions: `a/b.tar.gz` answers `b`.
-# Fails `not_found` where the path ends in no name. It is what stands before
-# the extensions `ext_all` answers.
+#
+# - `path`: the path whose name is read.
+#
+# It is what stands before the extensions `ext_all` answers. Fails `not_found`
+# where the path ends in no name.
 function stem_all(path: str) -> str?
     return stem_all_by(path, system_rules())
 
-# What `stem_all` answers, by `rules` and not by the system's own. Fails
-# `not_found` where the path ends in no name.
+# What `stem_all` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path whose name is read.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `not_found` where the path ends in no name.
 function stem_all_by(path: str, rules: Rules) -> str?
     return lexical.stem_all(path, rules == .windows)
 
 # The extension of the name of `path`, with its dot: `a/b.tar.gz` answers
-# `.gz`. Fails `not_found` where the path ends in no name, or the name has no
-# extension. An extension begins at the name's last dot, unless only dots stand
-# before it: `.bashrc` has none, and `a.` has the extension `.`.
+# `.gz`.
+#
+# - `path`: the path whose name is read.
+#
+# An extension begins at the name's last dot, unless only dots stand before
+# it: `.bashrc` has none, and `a.` has the extension `.`. Fails `not_found`
+# where the path ends in no name, or the name has no extension. See also
+# `ext_all`, `with_ext`.
 function ext(path: str) -> str?
     return ext_by(path, system_rules())
 
-# What `ext` answers, by `rules` and not by the system's own. Fails `not_found`
-# where the path ends in no name, or the name has no extension.
+# What `ext` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path whose name is read.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `not_found` where the path ends in no name, or the name has no
+# extension.
 function ext_by(path: str, rules: Rules) -> str?
     return lexical.ext(path, rules == .windows)
 
 # Every extension of the name of `path`, each with its dot, in the order they
-# stand: `a/b.tar.gz` answers `[".tar", ".gz"]`. A path with no name, or a name
-# with no extension, has none. The dots a name begins with open no extension.
+# stand: `a/b.tar.gz` answers `[".tar", ".gz"]`.
+#
+# - `path`: the path whose name is read.
+#
+# A path with no name, or a name with no extension, has none. The dots a name
+# begins with open no extension.
 function ext_all(path: str) -> [str]
     return ext_all_by(path, system_rules())
 
 # What `ext_all` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path whose name is read.
+# - `rules`: the rules, whatever the system.
 function ext_all_by(path: str, rules: Rules) -> [str]
     return lexical.ext_all(path, rules == .windows)
 
 # `path` cut before its last part: its parent and its name, as `parent` and
-# `name` answer them. Fails `not_found` where the path ends in no name.
+# `name` answer them.
+#
+# - `path`: the path to cut.
+#
+# Fails `not_found` where the path ends in no name.
 function split_name(path: str) -> NameSplit?
     return split_name_by(path, system_rules())
 
-# What `split_name` answers, by `rules` and not by the system's own. Fails
-# `not_found` where the path ends in no name.
+# What `split_name` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to cut.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `not_found` where the path ends in no name.
 function split_name_by(path: str, rules: Rules) -> NameSplit?
     windows = rules == .windows
     last = lexical.last_name(path, windows)?
     return ok(NameSplit(parent: lexical.parent(path, windows), name: last))
 
 # Every part of `path` in order: first its volume and root as one part, where
-# it has either, then each name and each `..`. Empty parts and `.` parts are
-# skipped, each name stands as written, and the first part is written with the
-# separator of the rules and its root as one: `/usr//lib/` answers
-# `["/", "usr", "lib"]`, and by Windows' rules `C:/a` answers `["C:\", "a"]`.
-# The empty path and `.` have no part. `join_all` of the parts names what the
-# path names.
+# it has either, then each name and each `..`.
+#
+# - `path`: the path; the empty path and `.` have no part.
+#
+# Empty parts and `.` parts are skipped, each name stands as written, and the
+# first part is written with the separator of the rules and its root as one:
+# `/usr//lib/` answers `["/", "usr", "lib"]`, and by Windows' rules `C:/a`
+# answers `["C:\", "a"]`. `join_all` of the parts names what the path names.
 function parts(path: str) -> [str]
     return parts_by(path, system_rules())
 
 # What `parts` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path, as `parts` reads it.
+# - `rules`: the rules, whatever the system.
 function parts_by(path: str, rules: Rules) -> [str]
     return lexical.parts(path, rules == .windows)
 
 # Every path above `path`, nearest first: its parent, the parent of that, and
-# so on to the root, or to `.` where the path is relative. `/a/b` answers
-# `["/a", "/"]` and `a/b` answers `["a", "."]`. A root, a volume alone, `.` and
-# the empty path have none.
+# so on to the root, or to `.` where the path is relative.
+#
+# - `path`: the path; a root, a volume alone, `.` and the empty path have
+#   none.
+#
+# `/a/b` answers `["/a", "/"]` and `a/b` answers `["a", "."]`. See also
+# `parent`.
 function ancestors(path: str) -> [str]
     return ancestors_by(path, system_rules())
 
 # What `ancestors` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path, as `ancestors` reads it.
+# - `rules`: the rules, whatever the system.
 function ancestors_by(path: str, rules: Rules) -> [str]
     return lexical.ancestors(path, rules == .windows)
 
@@ -256,35 +380,58 @@ record RootSplit
     # What follows: the parts of the path, which never begin with a separator.
     rest: str
 
-# Whether `path` names one place wherever the program stands. By POSIX's rules
-# it begins with `/`. By Windows' it has a volume and a root, `C:\a`, or its
-# volume is a share or a device; `\a`, which lacks the volume, and `C:a`, which
-# lacks the root, are not absolute.
+# Whether `path` names one place wherever the program stands.
+#
+# - `path`: the path to ask about.
+#
+# By POSIX's rules it begins with `/`. By Windows' it has a volume and a root,
+# `C:\a`, or its volume is a share or a device; `\a`, which lacks the volume,
+# and `C:a`, which lacks the root, are not absolute. A relative path made
+# absolute from where the program stands is `fs.to_abs`'s. See also
+# `has_root`.
 function is_abs(path: str) -> bool
     return is_abs_by(path, system_rules())
 
 # What `is_abs` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to ask about.
+# - `rules`: the rules, whatever the system.
 function is_abs_by(path: str, rules: Rules) -> bool
     windows = rules == .windows
     return roots.is_abs(roots.split(path, windows), windows)
 
 # Whether `path` begins at the top of its volume: `/a`, and by Windows' rules
 # `\a`, `C:\a` and every share and device, but not `C:a`.
+#
+# - `path`: the path to ask about.
+#
+# See also `is_abs`, `split_root`.
 function has_root(path: str) -> bool
     return has_root_by(path, system_rules())
 
 # What `has_root` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to ask about.
+# - `rules`: the rules, whatever the system.
 function has_root_by(path: str, rules: Rules) -> bool
     return roots.has_root(roots.split(path, rules == .windows))
 
 # The volume `path` begins with, as written: a drive `C:`, a share
-# `\\host\share`, a device `\\.\pipe`. Fails `not_found` where the path begins
-# with none, as every path does by POSIX's rules.
+# `\\host\share`, a device `\\.\pipe`.
+#
+# - `path`: the path to read.
+#
+# Fails `not_found` where the path begins with none, as every path does by
+# POSIX's rules.
 function volume(path: str) -> str?
     return volume_by(path, system_rules())
 
-# What `volume` answers, by `rules` and not by the system's own. Fails
-# `not_found` where the path begins with no volume.
+# What `volume` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to read.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `not_found` where the path begins with no volume.
 function volume_by(path: str, rules: Rules) -> str?
     anchor = roots.split(path, rules == .windows)
 
@@ -292,12 +439,19 @@ function volume_by(path: str, rules: Rules) -> str?
         return fail(code: NOT_FOUND, msg: f"no volume begins \"{path}\"")
     return ok(anchor.volume)
 
-# `path` in three pieces: its volume, its root, and the rest. A piece the path
-# lacks is "", and the three written one after the other are the path.
+# `path` in three pieces: its volume, its root, and the rest.
+#
+# - `path`: the path to cut.
+#
+# A piece the path lacks is "", and the three written one after the other are
+# the path.
 function split_root(path: str) -> RootSplit
     return split_root_by(path, system_rules())
 
 # What `split_root` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to cut.
+# - `rules`: the rules, whatever the system.
 function split_root_by(path: str, rules: Rules) -> RootSplit
     anchor = roots.split(path, rules == .windows)
     return RootSplit(volume: anchor.volume, root: anchor.root, rest: anchor.rest)
@@ -305,239 +459,375 @@ function split_root_by(path: str, rules: Rules) -> RootSplit
 ## One path against another
 
 # The way from `base` to `path`: the relative path that, joined to `base`,
-# names what `path` names. It goes up with `..` where `path` is not under
-# `base`, and answers `.` where the two are the same. Both are cleaned first.
-# Fails `invalid` where the text holds no way: one begins at a root and the
-# other does not, the two begin with different volumes, or `base` goes up by a
-# `..` that `path` does not share, so that the folder to come back into has no
-# name.
-function rel(path: str, base: str) -> str?
-    return rel_by(path: path, base: base, rules: system_rules())
+# names what `path` names.
+#
+# - `path`: where the way leads; cleaned first.
+# - `base`: where it starts; cleaned first.
+#
+# It goes up with `..` where `path` is not under `base`, and answers `.` where
+# the two are the same. Fails `invalid` where the text holds no way: one
+# begins at a root and the other does not, the two begin with different
+# volumes, or `base` goes up by a `..` that `path` does not share, so that the
+# folder to come back into has no name. See also `is_under`.
+function relative(path: str, base: str) -> str?
+    return relative_by(path: path, base: base, rules: system_rules())
 
-# What `rel` answers, by `rules` and not by the system's own. Fails `invalid`
-# where the text holds no way from `base` to `path`.
-function rel_by(path: str, base: str, rules: Rules) -> str?
-    return relation.rel(path: path, base: base, windows: rules == .windows)
+# What `relative` answers, by `rules` and not by the system's own.
+#
+# - `path`: where the way leads.
+# - `base`: where it starts.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `invalid` where the text holds no way from `base` to `path`.
+function relative_by(path: str, base: str, rules: Rules) -> str?
+    return relation.relative(path: path, base: base, windows: rules == .windows)
 
 # Whether `path` is `root` or stands under it, both cleaned first: `/a/b` is
-# under `/a`, and `/a/../b` is not. A relative path is under `.` unless it
-# begins with `..`, and under `..` always; where `root` climbs further up than
-# `path` and then names a folder, as `../b` does for `a`, the text cannot say
-# and the answer is false. It reads the text alone: a link on the disk may
-# still lead out of `root`.
+# under `/a`, and `/a/../b` is not.
+#
+# - `path`: the path to ask about.
+# - `root`: the folder it may stand under; a relative path is under `.`
+#   unless it begins with `..`, and under `..` always.
+#
+# Where `root` climbs further up than `path` and then names a folder, as
+# `../b` does for `a`, the text cannot say and the answer is false. It reads
+# the text alone: a link on the disk may still lead out of `root`.
 function is_under(path: str, root: str) -> bool
     return is_under_by(path: path, root: root, rules: system_rules())
 
 # What `is_under` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to ask about.
+# - `root`: the folder it may stand under.
+# - `rules`: the rules, whatever the system.
 function is_under_by(path: str, root: str, rules: Rules) -> bool
     return relation.is_under(path: path, root: root, windows: rules == .windows)
 
 # Whether the last parts of `path` are the parts of `tail`, whole parts only:
-# `/etc/resolv.conf` has the tails `resolv.conf` and `etc/resolv.conf`, and not
-# `conf`. A tail that begins with a root or a volume is a tail only of the
-# path that has the same parts from its own beginning.
+# `/etc/resolv.conf` has the tails `resolv.conf` and `etc/resolv.conf`, and
+# not `conf`.
+#
+# - `path`: the path to ask about.
+# - `tail`: the parts it may end with; one that begins with a root or a volume
+#   is a tail only of the path that has the same parts from its own
+#   beginning.
 function has_tail(path: str, tail: str) -> bool
     return has_tail_by(path: path, tail: tail, rules: system_rules())
 
 # What `has_tail` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to ask about.
+# - `tail`: the parts it may end with.
+# - `rules`: the rules, whatever the system.
 function has_tail_by(path: str, tail: str, rules: Rules) -> bool
     return relation.has_tail(path: path, tail: tail, windows: rules == .windows)
 
 # Whether `path` stays under the folder it is read from, whichever folder that
-# is: it is not empty, has no root and no volume, and its `..` parts never
-# climb above where it began, so `a/../b` is local and `a/../../b` is not. By
+# is.
+#
+# - `path`: the path to ask about.
+#
+# It is not empty, has no root and no volume, and its `..` parts never climb
+# above where it began, so `a/../b` is local and `a/../../b` is not. By
 # Windows' rules it also holds no name `is_reserved` refuses. It reads the
-# text alone: a link on the disk may still lead out.
+# text alone: a link on the disk may still lead out. See also `localize`.
 function is_local(path: str) -> bool
     return is_local_by(path, system_rules())
 
 # What `is_local` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to ask about.
+# - `rules`: the rules, whatever the system.
 function is_local_by(path: str, rules: Rules) -> bool
     return local.is_local(path, rules == .windows)
 
 # Whether a part of `path` is a name Windows keeps for itself, so that no file
-# may bear it: a device's name such as `NUL`, `CON` or `COM1`, with or without
-# an extension or a stream after a colon, and in any case of its letters; a
-# name that ends with a dot or a space; and a name that holds a control
-# character or one of `*?"<>|`. `.` and `..` are not reserved. By POSIX's
-# rules no name is.
+# may bear it.
+#
+# - `path`: the path whose parts are asked.
+#
+# A reserved name is a device's name such as `NUL`, `CON` or `COM1`, with or
+# without an extension or a stream after a colon, and in any case of its
+# letters; a name that ends with a dot or a space; and a name that holds a
+# control character or one of `*?"<>|`. `.` and `..` are not reserved. By
+# POSIX's rules no name is.
 function is_reserved(path: str) -> bool
     return is_reserved_by(path, system_rules())
 
 # What `is_reserved` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path whose parts are asked.
+# - `rules`: the rules, whatever the system.
 function is_reserved_by(path: str, rules: Rules) -> bool
     return local.is_reserved(path, rules == .windows)
 
 # `path`, written with slashes as an archive or a URL writes one, as a local
-# path of this system. `.` alone is itself. Fails `invalid` where the path is
+# path of this system.
+#
+# - `path`: the slash-separated path; `.` alone is itself.
+#
+# An answer is local, as `is_local` reads it. Fails `invalid` where the path is
 # not a plain relative one: empty, or with an empty part, a `.` or a `..`, a
 # slash at either end; and where the system cannot hold it as written: a zero
 # byte, and by Windows' rules a part that holds `\` or `:` or that
-# `is_reserved` refuses. An answer is local, as `is_local` reads it.
+# `is_reserved` refuses. See also `from_slash`, which checks nothing.
 function localize(path: str) -> str?
     return localize_by(path, system_rules())
 
-# What `localize` answers, by `rules` and not by the system's own. Fails
-# `invalid` where the path is not a plain relative one, or the rules cannot
-# hold it as written.
+# What `localize` answers, by `rules` and not by the system's own.
+#
+# - `path`: the slash-separated path.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `invalid` where the path is not a plain relative one, or the rules
+# cannot hold it as written.
 function localize_by(path: str, rules: Rules) -> str?
     return local.localize(path, rules == .windows)
 
 # The longest path that every one of `paths` is or stands under, cleaned:
-# `/usr/lib` and `/usr/local/bin` answer `/usr`. Relative paths with nothing
-# in common answer `.`, and where they climb by different numbers of `..`,
-# the highest of those folders: `../a` and `b` answer `..`. Fails `invalid`
-# where `paths` is empty, where some begin at a root and others do not, and
-# where two begin with different volumes.
+# `/usr/lib` and `/usr/local/bin` answer `/usr`.
+#
+# - `paths`: the paths, one or more.
+#
+# Relative paths with nothing in common answer `.`, and where they climb by
+# different numbers of `..`, the highest of those folders: `../a` and `b`
+# answer `..`. Fails `invalid` where `paths` is empty, where some begin at a
+# root and others do not, and where two begin with different volumes.
 function common(paths: [str]) -> str?
     return common_by(paths, system_rules())
 
-# What `common` answers, by `rules` and not by the system's own. Fails
-# `invalid` where `paths` is empty or the paths share no beginning.
+# What `common` answers, by `rules` and not by the system's own.
+#
+# - `paths`: the paths, one or more.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `invalid` where `paths` is empty or the paths share no beginning.
 function common_by(paths: [str], rules: Rules) -> str?
     return relation.common(paths, rules == .windows)
 
-# Whether `path` and `other` are the same path once cleaned. By Windows' rules
-# `\` and `/` are the same separator and ASCII letters are compared without
-# their case. It reads the text alone: two different texts may still name one
-# file on the disk.
+# Whether `path` and `other` are the same path once cleaned.
+#
+# - `path`: one path.
+# - `other`: the other.
+#
+# By Windows' rules `\` and `/` are the same separator and ASCII letters are
+# compared without their case. It reads the text alone: two different texts
+# may still name one file on the disk. See also `compare`.
 function is_same(path: str, other: str) -> bool
     return is_same_by(path: path, other: other, rules: system_rules())
 
 # What `is_same` answers, by `rules` and not by the system's own.
+#
+# - `path`: one path.
+# - `other`: the other.
+# - `rules`: the rules, whatever the system.
 function is_same_by(path: str, other: str, rules: Rules) -> bool
     return relation.compare(path: path, other: other, windows: rules == .windows) == 0
 
 # The order of `path` and `other`, part by part once cleaned: below zero where
 # `path` comes first, zero where the two are the same path as `is_same` reads
-# them, above zero where `path` comes after. A part is ordered by its bytes,
-# and a path comes before every path under it, so a sorted list keeps a folder
-# together with what it holds. By Windows' rules ASCII letters are ordered as
-# small ones. Before the names come the volumes, and a path with no root
-# before one with a root.
+# them, above zero where `path` comes after.
+#
+# - `path`: one path.
+# - `other`: the other.
+#
+# A part is ordered by its bytes, and a path comes before every path under it,
+# so a sorted list keeps a folder together with what it holds. By Windows'
+# rules ASCII letters are ordered as small ones. Before the names come the
+# volumes, and a path with no root before one with a root.
 function compare(path: str, other: str) -> i64
     return compare_by(path: path, other: other, rules: system_rules())
 
 # What `compare` answers, by `rules` and not by the system's own.
+#
+# - `path`: one path.
+# - `other`: the other.
+# - `rules`: the rules, whatever the system.
 function compare_by(path: str, other: str, rules: Rules) -> i64
     return relation.compare(path: path, other: other, windows: rules == .windows)
 
 ## A path changed
 
 # `path` with its last part changed to the name `to`: `a/b.txt` changed to `c`
-# answers `a/c`. Fails `not_found` where the path ends in no name, and
-# `invalid` where `to` is not one name: empty, `.`, `..`, or holding a
-# separator or, by Windows' rules, a volume.
+# answers `a/c`.
+#
+# - `path`: the path to change.
+# - `to`: the new name, one name.
+#
+# Fails `not_found` where the path ends in no name, and `invalid` where `to` is
+# not one name: empty, `.`, `..`, or holding a separator or, by Windows'
+# rules, a volume. See also `with_stem`, `with_ext`.
 function with_name(path: str, to: str) -> str?
     return with_name_by(path: path, to: to, rules: system_rules())
 
-# What `with_name` answers, by `rules` and not by the system's own. Fails
-# `not_found` where the path ends in no name, and `invalid` where `to` is not
-# one name.
+# What `with_name` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to change.
+# - `to`: the new name.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `not_found` where the path ends in no name, and `invalid` where `to` is
+# not one name.
 function with_name_by(path: str, to: str, rules: Rules) -> str?
     return change.with_name(path: path, to: to, windows: rules == .windows)
 
 # `path` with the stem of its name changed to `to` and its extension kept:
-# `a/b.txt` changed to `c` answers `a/c.txt`. Fails `not_found` where the
-# path ends in no name, and `invalid` where the new name would not be one
-# name, as `with_name` reads it.
+# `a/b.txt` changed to `c` answers `a/c.txt`.
+#
+# - `path`: the path to change.
+# - `to`: the new stem.
+#
+# Fails `not_found` where the path ends in no name, and `invalid` where the new
+# name would not be one name, as `with_name` reads it.
 function with_stem(path: str, to: str) -> str?
     return with_stem_by(path: path, to: to, rules: system_rules())
 
-# What `with_stem` answers, by `rules` and not by the system's own. Fails
-# `not_found` where the path ends in no name, and `invalid` where the new name
-# would not be one name.
+# What `with_stem` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to change.
+# - `to`: the new stem.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `not_found` where the path ends in no name, and `invalid` where the new
+# name would not be one name.
 function with_stem_by(path: str, to: str, rules: Rules) -> str?
     return change.with_stem(path: path, to: to, windows: rules == .windows)
 
-# `path` with the extension of its name changed to `to`, added where the name
-# has none and removed where `to` is "": `a/b.txt` changed to `.md` answers
-# `a/b.md`. Fails `not_found` where the path ends in no name, and `invalid`
-# where `to` is neither empty nor a dot followed by text that holds no
-# separator.
+# `path` with the extension of its name changed to `to`: `a/b.txt` changed to
+# `.md` answers `a/b.md`.
+#
+# - `path`: the path to change; a name with no extension gains one.
+# - `to`: the new extension with its dot, or "" to remove the extension.
+#
+# Fails `not_found` where the path ends in no name, and `invalid` where `to` is
+# neither empty nor a dot followed by text that holds no separator.
 function with_ext(path: str, to: str) -> str?
     return with_ext_by(path: path, to: to, rules: system_rules())
 
-# What `with_ext` answers, by `rules` and not by the system's own. Fails
-# `not_found` where the path ends in no name, and `invalid` where `to` is not
-# an extension.
+# What `with_ext` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to change.
+# - `to`: the new extension with its dot, or "".
+# - `rules`: the rules, whatever the system.
+#
+# Fails `not_found` where the path ends in no name, and `invalid` where `to` is
+# not an extension.
 function with_ext_by(path: str, to: str, rules: Rules) -> str?
     return change.with_ext(path: path, to: to, windows: rules == .windows)
 
 # `path` with every separator of this system written `/`, the form a URL, an
-# archive and a configuration file write a path in. Where `/` is the only
-# separator the path is answered as it is.
+# archive and a configuration file write a path in.
+#
+# - `path`: the path; where `/` is the only separator it is answered as it
+#   is.
+#
+# See also `from_slash`.
 function to_slash(path: str) -> str
     return to_slash_by(path, system_rules())
 
 # `path` with every separator of `rules` written `/`: by Windows' rules each
-# `\` becomes `/`, and by POSIX's, where `\` is a character of a name, the
-# path is answered as it is.
+# `\` becomes `/`.
+#
+# - `path`: the path; by POSIX's rules, where `\` is a character of a name, it
+#   is answered as it is.
+# - `rules`: the rules, whatever the system.
 function to_slash_by(path: str, rules: Rules) -> str
     return scan.with_seps(path: path, to: "/", windows: rules == .windows)
 
-# `path` with every `/` written as the separator of this system. It checks
-# nothing: `localize` is the form that refuses a path the system cannot hold.
+# `path` with every `/` written as the separator of this system.
+#
+# - `path`: the slash-separated path.
+#
+# It checks nothing: `localize` is the form that refuses a path the system
+# cannot hold. See also `to_slash`.
 function from_slash(path: str) -> str
     return from_slash_by(path, system_rules())
 
-# `path` with every `/` written as the separator of `rules`: `\` by Windows',
-# and by POSIX's the path is answered as it is.
+# `path` with every `/` written as the separator of `rules`: `\` by Windows'.
+#
+# - `path`: the slash-separated path; by POSIX's rules it is answered as it
+#   is.
+# - `rules`: the rules, whatever the system.
 function from_slash_by(path: str, rules: Rules) -> str
     windows = rules == .windows
     return scan.with_seps(path: path, to: scan.separator(windows), windows: windows)
 
 # Whether `path` ends with a separator after a part, the way a program says
-# that it means a folder: `a/` does, and `a` does not. A root or a volume
-# alone, which ends with the separator that makes it one, does not.
+# that it means a folder: `a/` does, and `a` does not.
+#
+# - `path`: the path to ask about; a root or a volume alone, which ends with
+#   the separator that makes it one, does not.
 function has_trailing_sep(path: str) -> bool
     return has_trailing_sep_by(path, system_rules())
 
 # What `has_trailing_sep` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to ask about.
+# - `rules`: the rules, whatever the system.
 function has_trailing_sep_by(path: str, rules: Rules) -> bool
     return change.has_trailing_sep(path, rules == .windows)
 
-# `path` ending with a separator: `a` answers `a/`, and a path that ends with
-# one already, a root included, is answered as it is. Where a separator alone
-# would turn the path into a root, as after the empty path or a drive `C:`, a
-# `.` goes before it: `./`.
+# `path` ending with a separator: `a` answers `a/`.
+#
+# - `path`: the path; one that ends with a separator already, a root
+#   included, is answered as it is.
+#
+# Where a separator alone would turn the path into a root, as after the empty
+# path or a drive `C:`, a `.` goes before it: `./`.
 function with_trailing_sep(path: str) -> str
     return with_trailing_sep_by(path, system_rules())
 
 # What `with_trailing_sep` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to end with a separator.
+# - `rules`: the rules, whatever the system.
 function with_trailing_sep_by(path: str, rules: Rules) -> str
     return change.with_trailing_sep(path, rules == .windows)
 
-# `path` without the separators at its end: `a//` answers `a`. A root keeps
-# its own, so `/` answers `/`.
+# `path` without the separators at its end: `a//` answers `a`.
+#
+# - `path`: the path; a root keeps its own, so `/` answers `/`.
 function trim_trailing_sep(path: str) -> str
     return trim_trailing_sep_by(path, system_rules())
 
 # What `trim_trailing_sep` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to trim.
+# - `rules`: the rules, whatever the system.
 function trim_trailing_sep_by(path: str, rules: Rules) -> str
     return change.trim_trailing_sep(path, rules == .windows)
 
 ## A pattern matched
 
-# Whether the whole of `path` matches `pattern`. In a pattern `*` stands for
-# any run of characters within one part, `?` for one character within a part,
-# `[abc]` and `[a-z]` for one character of a class, `[!abc]` or `[^abc]` for
-# one outside it, and a part that is `**` alone for any number of whole parts,
-# none included, or for one or more where it ends the pattern, so `a/**`
-# matches what `a` holds and not `a` itself. A `]` first in a class and a `-`
-# at either end of one stand for themselves. Empty parts and `.` parts of both
-# are skipped, and the volume and root of the pattern are compared as written
-# with the path's. By POSIX's rules `\` before a character makes it stand for
-# itself; by Windows' rules `\` is a separator, a character stands for itself
-# inside a class, and ASCII letters match without their case. Fails `invalid`
-# where the pattern is malformed, a class left open or a `\` at its end,
-# whatever the path. It takes time in proportion to the path times the
-# pattern at most.
+# Whether the whole of `path` matches `pattern`.
+#
+# - `path`: the path to ask about.
+# - `pattern`: `*` stands for any run of characters within one part, `?` for
+#   one character within a part, `[abc]` and `[a-z]` for one character of a
+#   class, `[!abc]` or `[^abc]` for one outside it, and a part that is `**`
+#   alone for any number of whole parts, none included, or for one or more
+#   where it ends the pattern, so `a/**` matches what `a` holds and not `a`
+#   itself. A `]` first in a class and a `-` at either end of one stand for
+#   themselves.
+#
+# Empty parts and `.` parts of both are skipped, and the volume and root of
+# the pattern are compared as written with the path's. By POSIX's rules `\`
+# before a character makes it stand for itself; by Windows' rules `\` is a
+# separator, a character stands for itself inside a class, and ASCII letters
+# match without their case. Fails `invalid` where the pattern is malformed, a
+# class left open or a `\` at its end, whatever the path. It takes time in
+# proportion to the path times the pattern at most. The paths a pattern
+# matches on the disk are `fs.glob`'s to find.
 function matches(path: str, pattern: str) -> bool?
     return matches_by(path: path, pattern: pattern, rules: system_rules())
 
-# What `matches` answers, by `rules` and not by the system's own. Fails
-# `invalid` where the pattern is malformed.
+# What `matches` answers, by `rules` and not by the system's own.
+#
+# - `path`: the path to ask about.
+# - `pattern`: the pattern, as `matches` reads it.
+# - `rules`: the rules, whatever the system.
+#
+# Fails `invalid` where the pattern is malformed.
 function matches_by(path: str, pattern: str, rules: Rules) -> bool?
     return wildcard.matches(path: path, pattern: pattern, windows: rules == .windows)
 
@@ -721,6 +1011,348 @@ test "to_slash_by and from_slash_by: Windows' separators turned each way, POSIX'
     assert from_slash_by("a/b", .posix) == "a/b"
 
 ## Examples
+
+# The rules of this system, which every short form reads a path by.
+test "system_rules: what the short forms read by"
+    assert clean("a//b") == clean_by("a//b", system_rules())
+
+# A path built by hand with this system's separator.
+test "sep: a path built by hand"
+    assert "usr" + sep() + "bin" == from_slash("usr/bin")
+
+# Each rules' separator.
+test "sep_by: POSIX's and Windows'"
+    assert sep_by(.posix) == "/"
+    assert sep_by(.windows) == "\\"
+
+# A slash separates on every system; a letter never does.
+test "is_sep: a slash and a letter"
+    assert is_sep("/")
+    assert !is_sep("a")
+
+# A backslash separates by Windows' rules and is a character of a name by
+# POSIX's.
+test "is_sep_by: a backslash by each rules"
+    assert is_sep_by("\\", .windows)
+    assert !is_sep_by("\\", .posix)
+
+# A list of two paths built with this system's list separator.
+test "list_sep: a list built by hand"
+    assert split_list("a" + list_sep() + "b") == ["a", "b"]
+
+# Each rules' list separator.
+test "list_sep_by: POSIX's and Windows'"
+    assert list_sep_by(.posix) == ":"
+    assert list_sep_by(.windows) == ";"
+
+# The folders a PATH lists, cut by this system's separator.
+test "split_list: the folders of a PATH"
+    assert split_list("/usr/bin" + list_sep() + "/bin") == ["/usr/bin", "/bin"]
+
+# A PATH of each system cut, Windows' with a quoted folder that holds a `;`.
+test "split_list_by: POSIX's list and Windows' quoted one"
+    assert split_list_by("/usr/bin:/bin", .posix) == ["/usr/bin", "/bin"]
+    assert split_list_by("C:\\a;\"C:\\b;c\"", .windows) == ["C:\\a", "C:\\b;c"]
+
+# A folder added to a list of folders, written back as one list.
+test "join_list: a list written back"
+    assert join_list(["/usr/bin", "/bin"]).must() == "/usr/bin" + list_sep() + "/bin"
+
+# A list of each system written, a folder with a `:` refused by POSIX's rules.
+test "join_list_by: POSIX's list, Windows' quoted one, and a path refused"
+    assert join_list_by(["/usr/bin", "/bin"], .posix).must() == "/usr/bin:/bin"
+    assert join_list_by(["C:\\b;c"], .windows).must() == "\"C:\\b;c\""
+    assert join_list_by(["/usr/bi:n"], .posix).is_err()
+
+# A path cleaned of repeated separators, `.` and `..`.
+test "clean: a path written carelessly"
+    assert to_slash(clean("a//b/../c/.")) == "a/c"
+
+# A path cleaned by each rules.
+test "clean_by: by POSIX's rules and by Windows'"
+    assert clean_by("/a/./b/../c/", .posix) == "/a/c"
+    assert clean_by("C:/a/../b", .windows) == "C:\\b"
+
+# Folder names joined into one path.
+test "join_all: folders into a path"
+    assert to_slash(join_all(["usr", "local", "bin"])) == "usr/local/bin"
+
+# An absolute path among the parts starts the path over.
+test "join_all_by: a later absolute path starts over"
+    assert join_all_by(["/usr", "lib"], .posix) == "/usr/lib"
+    assert join_all_by(["a", "/etc"], .posix) == "/etc"
+
+# The folder a file stands in.
+test "parent: the folder of a file"
+    assert to_slash(parent("docs/notes/today.md")) == "docs/notes"
+
+# The parent of an absolute path, and of a path of one part.
+test "parent_by: an absolute path and a name alone"
+    assert parent_by("/a/b", .posix) == "/a"
+    assert parent_by("a", .posix) == "."
+
+# A file's name, and a path that ends in none.
+test "name: a file's name, and `..`"
+    assert name("docs/today.md").must() == "today.md"
+    assert name("..").is_err()
+
+# A Windows path's name, read on any system.
+test "name_by: a name by Windows' rules"
+    assert name_by("C:\\a\\b.txt", .windows).must() == "b.txt"
+
+# A name without its last extension.
+test "stem: an archive's name"
+    assert stem("a/b.tar.gz").must() == "b.tar"
+
+# A Windows path's stem.
+test "stem_by: by Windows' rules"
+    assert stem_by("C:\\a\\report.pdf", .windows).must() == "report"
+
+# A name without any extension.
+test "stem_all: an archive's name"
+    assert stem_all("a/b.tar.gz").must() == "b"
+
+# A Windows path's name without any extension.
+test "stem_all_by: by Windows' rules"
+    assert stem_all_by("C:\\a\\b.tar.gz", .windows).must() == "b"
+
+# A file's extension, and a hidden file that has none.
+test "ext: an archive's last extension, and a dotfile"
+    assert ext("a/b.tar.gz").must() == ".gz"
+    assert ext(".bashrc").is_err()
+
+# A Windows path's extension.
+test "ext_by: by Windows' rules"
+    assert ext_by("C:\\a\\b.TXT", .windows).must() == ".TXT"
+
+# Every extension of a name.
+test "ext_all: an archive's extensions"
+    assert ext_all("a/b.tar.gz") == [".tar", ".gz"]
+
+# Every extension of a Windows path's name.
+test "ext_all_by: by Windows' rules"
+    assert ext_all_by("C:\\b.tar.gz", .windows) == [".tar", ".gz"]
+
+# A path cut into its folder and its name.
+test "split_name: a folder and a name"
+    s = split_name("docs/today.md").must()
+    assert to_slash(s.parent) == "docs" && s.name == "today.md"
+
+# A Windows path cut into its folder and its name.
+test "split_name_by: by Windows' rules"
+    assert split_name_by("C:\\a\\b.txt", .windows).must() == NameSplit(parent: "C:\\a", name: "b.txt")
+
+# The parts of a path, empty ones skipped.
+test "parts: a relative path"
+    assert parts("usr//lib/") == ["usr", "lib"]
+
+# The parts of an absolute path, its root first.
+test "parts_by: a root and a volume as the first part"
+    assert parts_by("/usr//lib/", .posix) == ["/", "usr", "lib"]
+    assert parts_by("C:/a", .windows) == ["C:\\", "a"]
+
+# Every folder above a relative path, nearest first.
+test "ancestors: the folders above a file"
+    assert ancestors("a/b/c").map(to_slash) == ["a/b", "a", "."]
+
+# Every folder above an absolute path.
+test "ancestors_by: up to the root"
+    assert ancestors_by("/a/b", .posix) == ["/a", "/"]
+
+# A relative path names a place only from where the program stands.
+test "is_abs: a relative path"
+    assert !is_abs("notes/today.md")
+
+# What is absolute by each rules.
+test "is_abs_by: a root alone, and a drive with a root"
+    assert is_abs_by("/usr", .posix)
+    assert !is_abs_by("/usr", .windows)
+    assert is_abs_by("C:\\Users", .windows)
+
+# A path from the top of its volume, and one from where the program stands.
+test "has_root: a rooted path and a relative one"
+    assert has_root("/a")
+    assert !has_root("a/b")
+
+# By Windows' rules a drive without its root has none.
+test "has_root_by: a drive with and without a root"
+    assert has_root_by("C:\\a", .windows)
+    assert !has_root_by("C:a", .windows)
+
+# A relative path begins with no volume.
+test "volume: none in a relative path"
+    assert volume("a/b").is_err()
+
+# A drive and a share by Windows' rules.
+test "volume_by: a drive and a share"
+    assert volume_by("C:\\a", .windows).must() == "C:"
+    assert volume_by("\\\\host\\share\\x", .windows).must() == "\\\\host\\share"
+
+# A relative path is all rest.
+test "split_root: a relative path"
+    assert split_root("a/b") == RootSplit(volume: "", root: "", rest: "a/b")
+
+# A Windows path in its three pieces.
+test "split_root_by: a drive, its root and the rest"
+    assert split_root_by("C:\\x", .windows) == RootSplit(volume: "C:", root: "\\", rest: "x")
+
+# The way from a project's folder to a file inside it.
+test "relative: a file below a folder"
+    assert to_slash(relative(path: "a/b/c", base: "a").must()) == "b/c"
+
+# The way up and across, by POSIX's rules.
+test "relative_by: up one folder and down another"
+    assert relative_by(path: "/a/x", base: "/a/b", rules: .posix).must() == "../x"
+
+# A path below a folder, and one that climbs out of it.
+test "is_under: inside, and out through `..`"
+    assert is_under(path: "a/b", root: "a")
+    assert !is_under(path: "a/../b", root: "a")
+
+# A Windows path under a folder, the case of its letters set aside.
+test "is_under_by: by Windows' rules"
+    assert is_under_by(path: "C:\\Data\\x", root: "c:\\data", rules: .windows)
+
+# A path's last parts, whole parts only.
+test "has_tail: a file's name and part of it"
+    assert has_tail(path: "etc/resolv.conf", tail: "resolv.conf")
+    assert !has_tail(path: "etc/resolv.conf", tail: "conf")
+
+# A Windows path's last two parts.
+test "has_tail_by: by Windows' rules"
+    assert has_tail_by(path: "C:\\etc\\hosts", tail: "etc/hosts", rules: .windows)
+
+# A path from an archive that stays where it is unpacked, and one that climbs
+# out.
+test "is_local: staying in, and climbing out"
+    assert is_local("a/../b")
+    assert !is_local("a/../../b")
+
+# A drive is no local path by Windows' rules, and a plain name by POSIX's.
+test "is_local_by: `C:a` by each rules"
+    assert !is_local_by("C:a", .windows)
+    assert is_local_by("C:a", .posix)
+
+# An ordinary name is reserved nowhere.
+test "is_reserved: an ordinary name"
+    assert !is_reserved("a/notes.txt")
+
+# A device's name Windows keeps for itself, whatever its extension.
+test "is_reserved_by: `NUL.txt` by each rules"
+    assert is_reserved_by("NUL.txt", .windows)
+    assert !is_reserved_by("NUL.txt", .posix)
+
+# A path read from an archive made a path of this system, and one that would
+# climb out refused.
+test "localize: an archive's path, and one that climbs"
+    assert to_slash(localize("docs/a.txt").must()) == "docs/a.txt"
+    assert localize("../a").is_err()
+
+# By Windows' rules a colon cannot stand in a name.
+test "localize_by: by Windows' rules"
+    assert localize_by("a/b", .windows).must() == "a\\b"
+    assert localize_by("a:b", .windows).is_err()
+
+# The folder two paths share.
+test "common: two paths under one folder"
+    assert to_slash(common(["usr/lib", "usr/local/bin"]).must()) == "usr"
+
+# The folder two absolute paths share.
+test "common_by: by POSIX's rules"
+    assert common_by(["/usr/lib", "/usr/local/bin"], .posix).must() == "/usr"
+
+# Two texts of one path.
+test "is_same: a path written two ways"
+    assert is_same(path: "a/./b/", other: "a/b")
+
+# By Windows' rules case and separators do not count.
+test "is_same_by: by Windows' rules"
+    assert is_same_by(path: "C:/A/b", other: "c:\\a\\B\\", rules: .windows)
+
+# A folder sorts before what it holds.
+test "compare: a folder before its contents"
+    assert compare(path: "a", other: "a/b") < 0
+
+# By Windows' rules two cases of one name are the same.
+test "compare_by: by Windows' rules"
+    assert compare_by(path: "A", other: "a", rules: .windows) == 0
+
+# A file renamed in its folder.
+test "with_name: a new name"
+    assert to_slash(with_name(path: "a/b.txt", to: "c").must()) == "a/c"
+
+# A Windows file renamed in its folder.
+test "with_name_by: by Windows' rules"
+    assert with_name_by(path: "C:\\a\\b.txt", to: "c.md", rules: .windows).must() == "C:\\a\\c.md"
+
+# A file's stem changed, its extension kept.
+test "with_stem: a new stem"
+    assert to_slash(with_stem(path: "a/b.txt", to: "c").must()) == "a/c.txt"
+
+# A Windows file's stem changed.
+test "with_stem_by: by Windows' rules"
+    assert with_stem_by(path: "C:\\a\\b.txt", to: "c", rules: .windows).must() == "C:\\a\\c.txt"
+
+# A file's extension changed, and removed.
+test "with_ext: a new extension, and none"
+    assert to_slash(with_ext(path: "a/b.txt", to: ".md").must()) == "a/b.md"
+    assert to_slash(with_ext(path: "a/b.txt", to: "").must()) == "a/b"
+
+# A Windows file's extension changed.
+test "with_ext_by: by Windows' rules"
+    assert with_ext_by(path: "C:\\a\\b.txt", to: ".md", rules: .windows).must() == "C:\\a\\b.md"
+
+# A path built on this system written as a URL writes it.
+test "to_slash: a path for a URL"
+    assert to_slash(join_all(["a", "b"])) == "a/b"
+
+# Windows' separators turned to slashes, on any system.
+test "to_slash_by: by Windows' rules"
+    assert to_slash_by("C:\\a\\b", .windows) == "C:/a/b"
+
+# A path from a configuration file made a path of this system.
+test "from_slash: a configured path"
+    assert from_slash("a/b") == join_all(["a", "b"])
+
+# Slashes turned to Windows' separators, on any system.
+test "from_slash_by: by Windows' rules"
+    assert from_slash_by("a/b", .windows) == "a\\b"
+
+# A trailing separator says a folder is meant.
+test "has_trailing_sep: a folder meant, and a name"
+    assert has_trailing_sep("a/")
+    assert !has_trailing_sep("a")
+
+# A root alone has no trailing separator.
+test "has_trailing_sep_by: the root"
+    assert !has_trailing_sep_by("/", .posix)
+
+# A separator added to say a folder is meant.
+test "with_trailing_sep: a folder"
+    assert to_slash(with_trailing_sep("a")) == "a/"
+
+# A separator after the empty path, which a `.` keeps from being a root.
+test "with_trailing_sep_by: the empty path"
+    assert with_trailing_sep_by("", .posix) == "./"
+
+# The separators at a path's end taken off.
+test "trim_trailing_sep: a folder"
+    assert trim_trailing_sep("a//") == "a"
+
+# A root keeps its separator.
+test "trim_trailing_sep_by: the root"
+    assert trim_trailing_sep_by("/", .posix) == "/"
+
+# Source files matched by a pattern, and everything below a folder.
+test "matches: a pattern within a part, and one across parts"
+    assert matches(path: "src/main.go", pattern: "src/*.go").must()
+    assert matches(path: "a/b/c.txt", pattern: "a/**").must()
+    assert !matches(path: "src/sub/main.go", pattern: "src/*.go").must()
+
+# By Windows' rules letters match without their case.
+test "matches_by: case set aside by Windows' rules"
+    assert matches_by(path: "README.MD", pattern: "*.md", rules: .windows).must()
+    assert !matches_by(path: "README.MD", pattern: "*.md", rules: .posix).must()
 
 # The patterns of one file asked of a file and a folder.
 test "parse_ignore: a project's own patterns read"

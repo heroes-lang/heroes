@@ -5,7 +5,7 @@
 # An encoding's number is its index in `names_table.NAMES`, the standard's
 # order; the constants below name the numbers the other modules switch on.
 
-use unicode/encodings/internal/codes
+use unicode/encodings
 use unicode/encodings/internal/names_table
 
 # UTF-8's number.
@@ -107,7 +107,7 @@ function number_of(label: str) -> i64?
         else
             low @ middle + 1
 
-    return fail(code: codes.NOT_FOUND, msg: f"\"{label}\" is no label of the WHATWG Encoding Standard")
+    return fail(code: encodings.NOT_FOUND, msg: f"\"{label}\" is no label of the WHATWG Encoding Standard")
 
 # Whether `b` is ASCII white space as the standard counts it: tab, line feed,
 # form feed, carriage return and space.

@@ -37,7 +37,7 @@ capability cache/remove  an entry taken out, every expired one forgotten, or all
   note    Python's `lru_cache` offers `cache.clear` alone
 
 capability cache/inspect  the entries by their last use, the next to be forgotten, how many are held
-  heroes  cache.slots, cache.oldest, cache.size
+  heroes  cache.slots, cache.oldest_slot, cache.size
   go      -
   rust    -
   python  -

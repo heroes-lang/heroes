@@ -83,17 +83,6 @@ function push_little(@out: [u8], x: i64, count: i64)
         out @ out.push(to_u8(shift_right(x: x, n: 8 * at) & 0xff).must())
         at @ at + 1
 
-# The bytes of `s`, its UTF-8.
-function bytes_of(s: str) -> [u8]
-    out: [u8] @= []
-    at: i64 @= 0
-
-    while at < s.len()
-        out @ out.push(s[at])
-        at @ at + 1
-
-    return out
-
 test "crypto word shift_right: by 0, 1 and 63, of a word with its top bit set"
     assert shift_right(x: -1, n: 0) == -1
     assert shift_right(x: -1, n: 1) == 0x7fffffffffffffff
@@ -133,8 +122,3 @@ test "crypto word loads and pushes: both orders, the top bit set, and back again
     top: [u8] @= []
     push_big(@top, x: TOP, count: 8)
     assert top == [0x80, 0, 0, 0, 0, 0, 0, 0]
-
-test "crypto word bytes_of: empty, ASCII and a character of three bytes"
-    assert bytes_of("").len() == 0
-    assert bytes_of("ab") == [0x61, 0x62]
-    assert bytes_of("☃") == [0xe2, 0x98, 0x83]

@@ -1,12 +1,12 @@
 # The text work this program does, written for it: the words of a text, between runs of white space.
 #
-# The language offers `len`, `slice`, `chars` and `join` and leaves the rest
-# to the program (design.md §1.11: there is no standard library), so each
-# program of `examples/` that takes text apart carries the few functions it
-# calls and no library. Until 2026-11-19 these came from a package, which
-# M-rebel-library removed (its page's decisions 6 to 8); they are written
-# here from their contract alone. Each walks bytes and cuts only where a
-# character begins, so no `slice` below splits one (spec § 10).
+# The language offers `len`, `slice`, `chars` and `join` and imposes no
+# standard library (design.md §1.11), and a program of `examples/` takes no
+# package (M-rebel-library's decision 7), so each that takes text apart
+# carries the few functions it calls. Until 2026-11-19 these came from a
+# package, which M-rebel-library removed (its page's decisions 6 to 8); they
+# are written here from their contract alone. Each walks bytes and cuts only
+# where a character begins, so no `slice` below splits one (spec § 10).
 
 # The words of `s`: the pieces between runs of white space (`space_at`), none
 # of them empty, so "  a b  " is ["a", "b"] and a text of white space alone

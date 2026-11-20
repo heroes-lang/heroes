@@ -130,10 +130,7 @@ function by_tokens(encoding: tokenizer.Encoding, size: i64, overlap: i64) -> Opt
 #
 # 0 for the empty text.
 function size_of(text: str, measure: Measure) -> i64
-    m = match measure
-        .characters => meter.Meter(kind: meter.CHARACTERS, encodings: [])
-        .bytes      => meter.Meter(kind: meter.BYTES, encodings: [])
-        .tokens t   => meter.Meter(kind: meter.TOKENS, encodings: [t.encoding])
+    m = measure
 
     return meter.cost(m, s: text, from: 0, to: text.len())
 
@@ -174,10 +171,7 @@ variant Level
 function split(text: str, options: Options) -> [Chunk]
     assert options.size >= 1 && options.overlap >= 0 && options.overlap < options.size
 
-    m = match options.measure
-        .characters => meter.Meter(kind: meter.CHARACTERS, encodings: [])
-        .bytes      => meter.Meter(kind: meter.BYTES, encodings: [])
-        .tokens t   => meter.Meter(kind: meter.TOKENS, encodings: [t.encoding])
+    m = options.measure
 
     spans: [i64] @= []
     windows.add_split(
@@ -221,10 +215,7 @@ function split(text: str, options: Options) -> [Chunk]
 function split_at(text: str, level: Level, options: Options) -> [Chunk]
     assert options.size >= 1 && options.overlap >= 0 && options.overlap < options.size
 
-    m = match options.measure
-        .characters => meter.Meter(kind: meter.CHARACTERS, encodings: [])
-        .bytes      => meter.Meter(kind: meter.BYTES, encodings: [])
-        .tokens t   => meter.Meter(kind: meter.TOKENS, encodings: [t.encoding])
+    m = options.measure
 
     spans: [i64] @= []
 
@@ -280,10 +271,7 @@ function split_at(text: str, level: Level, options: Options) -> [Chunk]
 function split_separators(text: str, separators: [str], options: Options) -> [Chunk]?
     assert options.size >= 1 && options.overlap >= 0 && options.overlap < options.size
 
-    m = match options.measure
-        .characters => meter.Meter(kind: meter.CHARACTERS, encodings: [])
-        .bytes      => meter.Meter(kind: meter.BYTES, encodings: [])
-        .tokens t   => meter.Meter(kind: meter.TOKENS, encodings: [t.encoding])
+    m = options.measure
 
     cutters: [cuts.Cutter] @= []
 
@@ -374,10 +362,7 @@ function split_tokens(text: str, encoding: tokenizer.Encoding, size: i64, overla
 function split_markdown(text: str, options: Options) -> [Chunk]?
     assert options.size >= 1 && options.overlap >= 0 && options.overlap < options.size
 
-    m = match options.measure
-        .characters => meter.Meter(kind: meter.CHARACTERS, encodings: [])
-        .bytes      => meter.Meter(kind: meter.BYTES, encodings: [])
-        .tokens t   => meter.Meter(kind: meter.TOKENS, encodings: [t.encoding])
+    m = options.measure
 
     graphemes = segment.grapheme_boundaries(text)
     out: [Chunk] @= []

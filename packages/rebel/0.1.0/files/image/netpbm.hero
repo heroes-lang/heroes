@@ -59,7 +59,7 @@ function decode(data: [u8], limits: image.Limits) -> image.Image?
         16
     else
         8
-    format = image.format_with(channels: h.depth, bits: bits).must()
+    format = image.format_of(channels: h.depth, bits: bits).must()
     pixels: [u8] @= []
     bitmap = h.kind == 1 || h.kind == 4
 

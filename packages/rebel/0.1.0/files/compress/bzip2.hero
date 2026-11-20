@@ -7,7 +7,9 @@
 # It does not read or write piece by piece, nor through a stream: a program
 # reads the whole input first (`io.read_all`, `fs.read_bytes`). DEFLATE,
 # gzip and zlib are `compress`'s, Zstandard `compress/zstd`'s, xz and LZMA
-# `compress/xz`'s, Brotli `compress/brotli`'s.
+# `compress/xz`'s, Brotli `compress/brotli`'s, LZ4 `compress/lz4`'s;
+# `compress` and `compress/lz4` are the two that read and write through a
+# stream.
 #
 # **A compressed input is not trusted.** Every function that decompresses
 # takes a `limit`, the most bytes it may produce, and fails `limit` before
@@ -43,37 +45,53 @@ constant LIMIT: str
 constant UNSUPPORTED: str
     decoder.UNSUPPORTED
 
-## Levels
+## Options
 
 # The smallest level: blocks of 100,000 bytes, the least memory.
 constant MIN_LEVEL: i64
     1
 
-# The largest level and the usual one, as the `bzip2` tool's and Python's:
-# blocks of 900,000 bytes.
+# The largest level: blocks of 900,000 bytes.
 constant MAX_LEVEL: i64
     9
 
+# The level `defaults` sets, the `bzip2` tool's usual and Python's, the
+# largest.
+constant DEFAULT_LEVEL: i64
+    9
+
+# How `compress` writes a stream, as its siblings' `Options` say it of
+# theirs. `defaults` makes the usual one.
+record Options
+    # 1 (`MIN_LEVEL`) to 9 (`MAX_LEVEL`): the block size in hundreds of
+    # thousands of bytes. A larger block finds more repeats and takes more
+    # memory to write and to read.
+    level: i64
+
+# Options at level 9, as the `bzip2` tool's and Python's usual.
+#
+# See also `compress`.
+function defaults() -> Options
+    return Options(level: DEFAULT_LEVEL)
+
 ## All at once
 
-# `data` compressed whole into one bzip2 stream, in blocks of `level` times
-# 100,000 bytes.
+# `data` compressed whole into one bzip2 stream, in blocks of `options.level`
+# times 100,000 bytes.
 #
 # - `data`: the bytes to compress; none make a stream of 14 bytes that
 #   decompresses to none.
-# - `level`: 1 (`MIN_LEVEL`) to 9 (`MAX_LEVEL`): the block size in hundreds
-#   of thousands of bytes. A larger block finds more repeats and takes more
-#   memory to write and to read.
+# - `options`: the level, from `defaults` or built directly.
 #
-# The same `data` and `level` answer the same bytes every time.
+# The same `data` and `options` answer the same bytes every time.
 #
-# Fails `invalid` where `level` is outside 1 to 9.
+# Fails `invalid` where `options.level` is outside 1 to 9.
 #
 # The transform of each block sorts its rotations by doubling their prefix,
 # so the time grows as n log n in the block's size whatever it holds. See
 # also `decompress`.
-function compress(data: [u8], level: i64) -> [u8]?
-    return encoder.stream(data, level: level)
+function compress(data: [u8], options: Options) -> [u8]?
+    return encoder.stream(data, level: options.level)
 
 # The bytes `data` decompresses to: one bzip2 stream or several, one after
 # another, as the `bzip2` tool writes them for files joined by `cat`.
@@ -116,17 +134,39 @@ function decompress_leading(data: [u8], limit: i64) -> Leading?
     one = decoder.one_stream(data, at: 0, limit: limit)?
     return ok(Leading(data: one.data, used: one.used))
 
+## Tests
+
+test "compress and defaults: the usual level is the largest, every level from 1 to 9 read back, and 0, 10 and a negative level refused"
+    assert defaults() == Options(level: DEFAULT_LEVEL) && DEFAULT_LEVEL == MAX_LEVEL
+    data: [u8] = [0x61, 0x62, 0x61, 0x62, 0x61, 0x62, 0x63]
+
+    for level in range(from: MIN_LEVEL, to: MAX_LEVEL + 1)
+        assert decompress(compress(data, Options(level: level)).must(), limit: 7).must() == data
+
+    assert compress(data, defaults()).must() == compress(data, Options(level: 9)).must()
+
+    for level in [0, 10, -1]
+        match compress(data, Options(level: level))
+            .ok _  => assert false
+            .err e => assert e.code == INVALID && e.msg == f"a level of {level}, where bzip2's are 1 to 9"
+
 ## Examples
+
+# The options of the usual stream, the level changed where a program wants
+# less memory.
+test "defaults: level 9, and a smaller block"
+    small = Options(level: MIN_LEVEL)
+    assert defaults().level == 9 && small.level == 1
 
 # A line compressed at the usual level and read back.
 test "compress: a line, and back"
     line: [u8] = [0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x20, 0x68, 0x65, 0x72, 0x6f, 0x65, 0x73]
-    packed = compress(line, level: MAX_LEVEL).must()
+    packed = compress(line, defaults()).must()
     assert decompress(packed, limit: 100).must() == line
 
 # A stream read whole, under a limit on what it may expand to.
 test "decompress: under a limit"
-    packed = compress([0x61, 0x61, 0x61, 0x61, 0x61, 0x61], level: MIN_LEVEL).must()
+    packed = compress([0x61, 0x61, 0x61, 0x61, 0x61, 0x61], Options(level: MIN_LEVEL)).must()
     assert decompress(packed, limit: 6).must().len() == 6
 
     match decompress(packed, limit: 5)
@@ -135,7 +175,7 @@ test "decompress: under a limit"
 
 # A stream followed by bytes of the caller's own.
 test "decompress_leading: a stream, then other bytes"
-    packed @= compress([0x7a, 0x69, 0x67, 0x67, 0x79], level: MAX_LEVEL).must()
+    packed @= compress([0x7a, 0x69, 0x67, 0x67, 0x79], Options(level: MAX_LEVEL)).must()
     size = packed.len()
     packed @ packed.push(0x21)
     led = decompress_leading(packed, limit: 100).must()

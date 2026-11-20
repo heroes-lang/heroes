@@ -1,0 +1,28 @@
+# What the face's tests share and a program never calls: the index of the
+# machine's loopback interface, read through the face itself, which a private
+# module may use since panel 252's R1.
+
+use net
+
+# The index of the interface holding 127.0.0.1, the machine's loopback, 0
+# where none is listed: what the tests join and send on, since it holds on
+# any network.
+function loopback_index() -> i64
+    for i in net.interfaces().must()
+        for n in i.addresses
+            if i.loopback && n.address == net.loopback_v4()
+                return i.index
+
+    return 0
+
+test "loopback_index: the interface named holds 127.0.0.1, or none is listed"
+    index = loopback_index()
+
+    if index != 0
+        found: bool @= false
+
+        for i in net.interfaces().must()
+            if i.index == index
+                found @ i.loopback
+
+        assert found

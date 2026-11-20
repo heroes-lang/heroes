@@ -3,10 +3,10 @@
 # sends, and the client's, `round_trip`, which sends one request and reads
 # its answer.
 #
-# The language offers no protocol of its own (design.md §1.11: there is no
-# standard library), so this program carries the part of HTTP it speaks and
-# no library. Until 2026-11-19 it came from a package, which M-rebel-library
-# removed (its page's decisions 6 to 8); it is written here from the RFC.
+# The language offers no protocol of its own and imposes no standard library
+# (design.md §1.11); an example takes no package (M-rebel-library's decision
+# 7), so this one carries the part of HTTP it speaks. Until 2026-11-19 it came
+# from a package, which that milestone removed; it is written from the RFC.
 #
 # WHAT IT SPEAKS: a request line or a status line, header fields, and a body
 # whose length `Content-Length` gives, every answer carrying one; no chunked

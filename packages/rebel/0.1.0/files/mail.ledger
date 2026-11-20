@@ -91,7 +91,7 @@ capability header/typed  a field read as what it holds: addresses, a date, a con
   python  email.headerregistry.HeaderRegistry, email.headerregistry.AddressHeader, email.headerregistry.SingleAddressHeader, email.headerregistry.UniqueAddressHeader, email.headerregistry.UniqueSingleAddressHeader, email.headerregistry.DateHeader, email.headerregistry.UniqueDateHeader, email.headerregistry.UnstructuredHeader, email.headerregistry.UniqueUnstructuredHeader, email.headerregistry.ContentTypeHeader, email.headerregistry.ContentDispositionHeader, email.headerregistry.ContentTransferEncodingHeader, email.headerregistry.ParameterizedMIMEHeader, email.headerregistry.MIMEVersionHeader, email.headerregistry.MessageIDHeader, email.headerregistry.ReferencesHeader, email.headerregistry.BaseHeader, email.headerregistry.BaseHeader.name, email.headerregistry.BaseHeader.init, email.policy.EmailPolicy.header_factory
   note    a function per kind of field, where Python's registry makes each header an object; `MIME-Version` is read with `value_of`
 
-capability address/parse  one mailbox read: a name, a quoted local part, a domain literal, comments, encoded words in the name
+capability mailbox/parse  one mailbox read: a name, a quoted local part, a domain literal, comments, encoded words in the name
   heroes  mail.parse_address, mail.Address
   go      net/mail.ParseAddress, net/mail.Address, net/mail.Address.Name, net/mail.Address.Address, net/mail.AddressParser, net/mail.AddressParser.Parse, net/mail.AddressParser.WordDecoder
   rust    lettre::message::Mailbox, lettre::Address, lettre::address::Address, lettre::address::AddressError, mail_parser::Mailbox, mail_parser::parse_address_local_part, mail_parser::parse_address_domain
@@ -117,14 +117,14 @@ capability address/utf8  an address above ASCII (RFC 6532), read, written, and t
   go      net/mail.ParseAddress
   rust    -
   python  email.policy.SMTPUTF8, email.errors.NonASCIILocalPartDefect
-  note    a local part or a domain above ASCII is read and written as UTF-8; writing it with `standard_options` fails `unsupported`, where Python writes it raw and only the server refuses
+  note    a local part or a domain above ASCII is read and written as UTF-8; with `standard_options` a domain is written as its A-labels (address/idna) and a local part fails `unsupported`, where Python writes it raw and only the server refuses
 
 capability address/idna  a domain above ASCII written in ASCII (IDNA's A-labels)
-  heroes  pending
+  heroes  mail.format_message, mail.format_header, mail.format_field, url/idna.to_ascii
   go      -
   rust    lettre::Address
   python  -
-  note    IDNA 2008 needs `unicode/normalize` and the IDNA mapping tables, which no package of Rebel holds yet; RFC 6532's UTF-8 is written meanwhile
+  note    a message written with no UTF-8 allowed writes an address's domain above ASCII by `url/idna.to_ascii` with `strict_options`, every check of a name looked up in DNS, `bücher.de` as `xn--bcher-kva.de`; a local part above ASCII has no ASCII form and fails `unsupported`; with UTF-8 allowed (RFC 6532) the domain is written as it is
 
 capability address/subaddress  the detail after `+` in a local part
   heroes  refused: a convention of some servers (RFC 5233 names it for Sieve), not of a message; `strings.split_once(s: a.local, sep: "+")` answers it
@@ -158,14 +158,14 @@ capability charsets/read  the charsets of words, parameters and parts decoded
   go      -
   rust    mail_parser::decoders::charsets::Charset, mail_parser::decoders::charsets::charset_decoder, mail_parser::decoders::charsets::decode, mail_parser::decoders::charsets::decode_append
   python  email.charset.Charset, email.charset.Charset.get_output_charset, email.charset.ALIASES, email.charset.CHARSETS, email.charset.CODEC_MAP, email.charset.DEFAULT_CHARSET, email.charset.UNKNOWN8BIT, email.message.EmailMessage.get_charsets, email.message.EmailMessage.get_content_charset
-  note    UTF-8, US-ASCII and ISO-8859-1 by their names and aliases; the WHATWG legacy encodings (Windows-1252, the ISO-8859 family, Shift_JIS, EUC-JP, GB18030, Big5, EUC-KR, KOI8) wait for `unicode/encodings`, queued and not written: they fail `unsupported` and `decode_words` keeps their bytes. The charset of a part is `content_type_of(m).params["charset"]`
+  note    UTF-8, US-ASCII and ISO-8859-1 by their names and aliases, read here; every other WHATWG encoding (Windows-1252, the ISO-8859 family, Shift_JIS, EUC-JP, GB18030, Big5, EUC-KR, KOI8) through `unicode/encodings` (charsets/legacy). A charset no encoding names fails `unsupported` and `decode_words` keeps its bytes. The charset of a part is `content_type_of(m).params["charset"]`
 
 capability charsets/legacy  the WHATWG legacy encodings read in mail
-  heroes  pending
+  heroes  mail.text_of, mail.decode_header, mail.decode_words, unicode/encodings.decode_strict
   go      -
   rust    mail_parser::decoders::charsets::Charset
   python  email.charset.Charset, email.charset.CODEC_MAP
-  note    waits for `unicode/encodings` (README § A1, layer 2), queued and not written on 2026-11-17
+  note    every label `unicode/encodings.name_of` reads, decoded strictly, a byte the encoding cannot read failing `not_text` as a byte not UTF-8 does; ISO-8859-1 stays Latin-1, each byte the character of its number, and US-ASCII refuses a byte above 127, where WHATWG reads both labels as Windows-1252; the labels WHATWG reads as `replacement` (ISO-2022-KR, ISO-2022-CN, HZ) fail `unsupported`, their bytes kept, as Python's `email` reads them and WHATWG refuses them
 
 capability charsets/register  a program's own charset or alias registered
   heroes  refused: a registry is a mutable global, which Heroes has not; `decode_words` hands a program the bytes and the charset's name to decode itself

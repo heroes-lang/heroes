@@ -127,7 +127,8 @@ function sort_in_place_by<T>(@xs: [T], less: (function(a: T, b: T) -> bool))
 
 ## Examples
 
-# Tasks taken by their priority, the smallest number first.
+# Tasks taken by their priority, the smallest number first. `samples.ascending`
+# is `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "add: tasks queued by priority"
     queue: [i64] @= []
 
@@ -136,14 +137,16 @@ test "add: tasks queued by priority"
 
     assert peek(queue).must() == 1
 
-# The smallest element taken out, and the next.
+# The smallest element taken out, and the next. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "pop: the two smallest, one after the other"
     queue: [i64] @= [5, 1, 4]
     heapify(xs: @queue, less: samples.ascending)
     assert pop(heap: @queue, less: samples.ascending).must() == 1
     assert pop(heap: @queue, less: samples.ascending).must() == 4
 
-# What a heap would give next, left in it.
+# What a heap would give next, left in it. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "peek: the next element of a queue"
     queue: [i64] @= [7, 2, 9]
     heapify(xs: @queue, less: samples.ascending)
@@ -151,6 +154,9 @@ test "peek: the next element of a queue"
     assert queue.len() == 3
 
 # A list made a heap in one pass; the largest first with the opposite order.
+# `samples.ascending` is `function ascending(a: i64, b: i64) -> bool`, true
+# where `a < b`. `samples.descending` is
+# `function descending(a: i64, b: i64) -> bool`, true where `a > b`.
 test "heapify: a list made a heap, the smallest first and then the largest"
     xs: [i64] @= [5, 3, 8, 1]
     heapify(xs: @xs, less: samples.ascending)
@@ -159,19 +165,23 @@ test "heapify: a list made a heap, the smallest first and then the largest"
     assert xs[0] == 8
 
 # A heap repaired after the program changed one of its elements.
+# `samples.ascending` is `function ascending(a: i64, b: i64) -> bool`, true
+# where `a < b`.
 test "fix: the first element made the largest"
     queue: [i64] @= [1, 3, 2]
     queue[0] @ 9
     fix(heap: @queue, at: 0, less: samples.ascending)
     assert peek(queue).must() == 2
 
-# An element taken out of the middle of a heap.
+# An element taken out of the middle of a heap. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "remove_at: the element at an index taken out"
     queue: [i64] @= [1, 3, 2]
     assert remove_at(heap: @queue, at: 1, less: samples.ascending) == 3
     assert queue == [1, 2]
 
-# A list sorted where it stands.
+# A list sorted where it stands. `samples.ascending` is
+# `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.
 test "sort_in_place_by: a list sorted in its own place"
     xs: [i64] @= [3, 1, 2]
     sort_in_place_by(xs: @xs, less: samples.ascending)

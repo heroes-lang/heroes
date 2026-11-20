@@ -1,8 +1,8 @@
 # The platform layer's keyring, `hero_keyring.h`, bound thin: one function per
 # C function, each answering what C answers, in C's order. Where a call fails
 # it answers -1, and `last_error` then names the kind, `last_message` the
-# system's own words. Rebel's floor of `keyring` (`examples/packages/README.md`
-# § 4.1): no policy stands here, and the face above it turns every kind into a
+# system's own words. Rebel's floor of `keyring` (`examples-rebel/README.md`
+# § A2): no policy stands here, and the face above it turns every kind into a
 # code and every buffer into a value.
 #
 # The layer is C of the language's own beside the runtime, so this group names

@@ -4,6 +4,7 @@
 # caller gives. Bytes are compared, and a slice is cut only between ASCII
 # spaces, so no value can make it split a character.
 
+use strings
 use time/internal/arith
 use time/internal/forms
 use time/internal/reading
@@ -11,20 +12,6 @@ use time/internal/reading
 # The code of a value that is neither seconds nor a date.
 constant INVALID: str
     "invalid"
-
-# `s` without the spaces and tabs at either end, which a field's value may
-# carry (RFC 9110's optional white space).
-function trimmed(s: str) -> str
-    from: i64 @= 0
-    to: i64 @= s.len()
-
-    while from < to && (s[from] == ' ' || s[from] == '\t')
-        from @ from + 1
-
-    while to > from && (s[to - 1] == ' ' || s[to - 1] == '\t')
-        to @ to - 1
-
-    return s.slice(from: from, to: to)
 
 # Whether `s` is one ASCII digit or more and nothing else.
 function is_digits(s: str) -> bool
@@ -76,7 +63,10 @@ function date_of(s: str) -> i64?
 function wait_of(s: str, now: i64, longest: i64) -> i64?
     if longest < 0
         return fail(code: INVALID, msg: f"the longest wait, {longest} nanoseconds, is below 0")
-    value = trimmed(s)
+
+    # A field's value may carry optional white space at either end (RFC 9110's
+    # OWS), spaces and tabs alone.
+    value = strings.trim_any(s: s, set: " \t")
 
     if value.len() == 0
         return fail(code: INVALID, msg: "the Retry-After value is empty")
@@ -98,12 +88,6 @@ function wait_of(s: str, now: i64, longest: i64) -> i64?
                 return ok(longest)
             return ok(0)
 
-test "trimmed: empty, spaces alone, tabs and spaces at both ends, and inside kept"
-    assert trimmed("") == ""
-    assert trimmed("   ") == ""
-    assert trimmed("\t 120 \t") == "120"
-    assert trimmed("a b") == "a b"
-
 test "is_digits: empty, one, many, a sign, a point, and a character of two bytes"
     assert !is_digits("")
     assert is_digits("0")
@@ -121,11 +105,12 @@ test "seconds_wait: zero, a minute, past the cap, and a count past any i64"
     assert seconds_wait(digits: "9223372037", longest: arith.MAX) == arith.MAX
     assert seconds_wait(digits: "1", longest: 0) == 0
 
-test "wait_of: seconds, the three date forms, a date past, a date far ahead, and refusals"
+test "wait_of: seconds, the white space around them, the three date forms, a date past, a date far ahead, and refusals"
     # 2015-10-21T07:28:00Z, RFC 9110's own example, minus 60 seconds.
     now = 1_445_412_420_000_000_000
     assert wait_of(s: "120", now: now, longest: arith.MAX).must() == 120_000_000_000
     assert wait_of(s: " 120 ", now: now, longest: 60_000_000_000).must() == 60_000_000_000
+    assert wait_of(s: "\t 120 \t", now: now, longest: arith.MAX).must() == 120_000_000_000
     assert wait_of(s: "Wed, 21 Oct 2015 07:28:00 GMT", now: now, longest: arith.MAX).must() == 60_000_000_000
     assert wait_of(s: "Wednesday, 21-Oct-15 07:28:00 GMT", now: now, longest: arith.MAX).must() == 60_000_000_000
     assert wait_of(s: "Wed Oct 21 07:28:00 2015", now: now, longest: arith.MAX).must() == 60_000_000_000
@@ -133,7 +118,7 @@ test "wait_of: seconds, the three date forms, a date past, a date far ahead, and
     assert wait_of(s: "Wed, 21 Oct 2015 07:28:00 GMT", now: arith.MIN, longest: 5).must() == 5
     assert wait_of(s: "Wed, 21 Oct 2015 07:28:00 GMT", now: arith.MAX, longest: 5).must() == 0
 
-    for bad in ["", "  ", "-5", "1.5", "+5", "soon", "Wed, 21 Oct 2015 07:28:00 CET", "120s"]
+    for bad in ["", "  ", "\t \t", "1 20", "-5", "1.5", "+5", "soon", "Wed, 21 Oct 2015 07:28:00 CET", "120s"]
         match wait_of(s: bad, now: now, longest: arith.MAX)
             .ok _  => assert false
             .err e => assert e.code == INVALID

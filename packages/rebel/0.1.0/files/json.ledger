@@ -103,7 +103,7 @@ capability json/format-non-finite  nan and the infinities
   go      UnsupportedValueError, UnsupportedValueError.Error
   rust    -
   python  dumps(allow_nan=), JSONEncoder(allow_nan=)
-  note    they have no JSON, and writing one fails `invalid`, as Go does and as Python does under allow_nan=False; `FormatOptions.non_finite` writes Python's `NaN`, `Infinity` and `-Infinity` for a caller who asks
+  note    they have no JSON, and writing one fails `unsupported`, README § A4's code for a value a format has no form for, where Go and Python under allow_nan=False refuse it with an error of their own; `FormatOptions.non_finite` writes Python's `NaN`, `Infinity` and `-Infinity` for a caller who asks
 
 capability json/format-indented  a value written over several lines, indented
   heroes  json.format_indented, json.FormatOptions
@@ -190,11 +190,11 @@ capability json/copy  an independent copy of a value
   note    every value of the language is an independent copy (spec section 3)
 
 capability json/equal  two values compared as JSON compares them, however deep
-  heroes  json.equal
+  heroes  json.equals
   go      -
   rust    -
   python  -
-  note    the language's `==` answers the same, objects equal whatever the order of their members, and follows the nesting with recursion; `equal` walks a stack of its own, so a value nested a hundred thousand deep compares. Go compares two `any` with `reflect.DeepEqual`, Python two dicts with `==`, neither a function of their json packages. Until 2026-11-19 `json/patch`, `json/path` and `json/schema` each held a copy of this function, and they call this one since
+  note    the language's `==` answers the same, objects equal whatever the order of their members, and follows the nesting with recursion; `equals` walks a stack of its own, so a value nested a hundred thousand deep compares. Go compares two `any` with `reflect.DeepEqual`, Python two dicts with `==`, neither a function of their json packages. Until 2026-11-19 `json/patch`, `json/path` and `json/schema` each held a copy of this function, and they call this one since
 
 capability json/records  a record filled from JSON by its field names, and written as JSON
   heroes  refused: needs reflection

@@ -1,0 +1,9 @@
+# The functions the face's examples hand to a function of the face, kept out
+# of the face so that it offers none of them: no closure stands in the
+# language, so an example's function is a top-level one somewhere.
+
+use strings
+
+# A match written between brackets: `replace_patterns_all_by`'s example.
+function bracketed(m: strings.PatternMatch) -> str
+    return "[" + m.text + "]"

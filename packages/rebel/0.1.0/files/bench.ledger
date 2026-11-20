@@ -88,7 +88,7 @@ capability bench/outliers  the rounds far from the others, counted by Tukey's fe
   note    criterion's classification by Tukey's fences, 1.5 and 3 interquartile ranges; the outliers are counted and kept, never clipped as Rust's `winsorize` clips, the median and the best not moving with them
 
 capability bench/compare  two versions measured in pairs and the change judged against a floor
-  heroes  bench.compare, bench.with_floor
+  heroes  bench.compare_versions, bench.with_floor
   go      -
   rust    criterion::Criterion::noise_threshold, significance_level, confidence_level, nresamples, criterion::BenchmarkGroup::noise_threshold, significance_level, confidence_level, nresamples
   python  -
@@ -116,7 +116,7 @@ capability bench/throughput  bytes or elements a second
   note    units a second at the median: bytes, elements or bits as the program counts them
 
 capability bench/format  a time written for a reader in its unit
-  heroes  bench.format_time
+  heroes  bench.format_nanoseconds
   go      BenchmarkResult.String
   rust    test::bench::fmt_bench_samples
   python  pyperf.Benchmark.format_value, pyperf.Benchmark.format_values, pyperf.Benchmark.get_unit
@@ -160,7 +160,7 @@ capability bench/groups  benchmarks named and grouped, a filter choosing which r
   python  pyperf.BenchmarkSuite, BenchmarkSuite.add_benchmark, BenchmarkSuite.get_benchmark, BenchmarkSuite.get_benchmark_names, BenchmarkSuite.get_benchmarks, pyperf.Benchmark.get_name
 
 capability bench/baselines  results saved and compared with a later sitting's
-  heroes  refused: two sittings are two dates, not a measurement (`docs/measurements/061-the-latency-ledger.md`); two versions are compared by `compare` in one sitting
+  heroes  refused: two sittings are two dates, not a measurement (`docs/measurements/061-the-latency-ledger.md`); two versions are compared by `compare_versions` in one sitting
   go      -
   rust    criterion::Criterion::save_baseline, criterion::Criterion::retain_baseline, criterion::Baseline, Baseline::CompareLenient, Baseline::CompareStrict, Baseline::Discard, Baseline::Save
   python  pyperf.Benchmark.dump, pyperf.Benchmark.load, pyperf.Benchmark.loads, pyperf.Benchmark.add_run, pyperf.Benchmark.add_runs, pyperf.add_runs, pyperf.BenchmarkSuite.dump, pyperf.BenchmarkSuite.load, pyperf.BenchmarkSuite.loads, pyperf.BenchmarkSuite.add_runs

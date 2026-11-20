@@ -7,6 +7,6 @@ use <rebel>/hash
 function main()
     print(hash.crc32_text("Heroes"))
     state @= hash.start64(.fnv1a_64)
-    hash.update_text64(@state, "Her")
-    hash.update_text64(@state, "oes")
+    hash.update64_text(@state, "Her")
+    hash.update64_text(@state, "oes")
     print(state.value)

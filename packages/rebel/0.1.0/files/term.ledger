@@ -18,7 +18,7 @@ capability term/is-terminal  whether a stream is a terminal
   go      term.IsTerminal
   rust    std::io::IsTerminal, crossterm::tty::IsTty
   python  os.isatty, io.IOBase.isatty
-  note    `io`'s, which every stream has; `term.colors_on` asks it with the environment's words besides
+  note    `io`'s, which every stream has; `term.has_colors` asks it with the environment's words besides
 
 capability term/size  the terminal's columns and rows
   heroes  os.terminal_size
@@ -68,14 +68,14 @@ capability term/attributes  bold, dim, italic, underline, blink, reverse, hidden
   note    the eight every terminal of ECMA-48 takes; crossterm's double underline, framed, encircled and overlined are left out, most terminals drawing none of them
 
 capability term/no-color  colour written only where it shows, and plain text elsewhere
-  heroes  term.colors_on, term.write_styled
+  heroes  term.has_colors, term.write_styled
   go      -
   rust    crossterm::style::force_color_output, crossterm's own NO_COLOR reading
   python  rich.console.Console (no_color, force_terminal, color_system)
   note    no colour where the stream is no terminal, `NO_COLOR` is set and not empty (no-color.org's words), or `TERM` is `dumb`; a program that wants colour in a file writes `styled` itself
 
 capability term/windows-sequences  the Windows console made to take the sequences
-  heroes  term.colors_on, term.write_control
+  heroes  term.has_colors, term.write_control
   go      -
   rust    crossterm::ansi_support::supports_ansi
   python  rich.console.Console (legacy_windows)
@@ -130,11 +130,11 @@ capability term/bell  the terminal's bell
   python  curses.beep, curses.flash
 
 capability term/alternate-screen  a screen of the program's own, the person's put back after
-  heroes  pending
+  heroes  tui.start, tui.stop
   go      -
   rust    crossterm::terminal::EnterAlternateScreen, crossterm::terminal::LeaveAlternateScreen
   python  rich.console.Console.screen, curses.initscr, curses.endwin, curses.isendwin
-  note    it must be left at the program's end as the raw mode is, by the layer's `atexit` and signal handlers; their sequence for it is the work, not yet done
+  note    done one layer up by `tui`, whose `start` enters it with the raw mode and whose `stop` leaves it; at `term`'s level it stays undone, since it must be left at the program's end as the raw mode is, by the layer's `atexit` and signal handlers, whose sequence for it is not written: after an abort the shell's `reset` puts the terminal back by hand
 
 capability term/scroll  the screen's lines scrolled
   heroes  pending
@@ -174,7 +174,7 @@ capability term/read-key-timeout  a key waited for at most a given time
   go      -
   rust    crossterm::event::poll
   python  curses.halfdelay, curses.napms, curses.typeahead
-  note    in milliseconds, `net`'s unit for its deadlines: `time` is not in this package's row. Repaired 2026-11-19: on macOS a limited read never timed out and an Escape alone waited for the next key, since Darwin's poll(2) answers POLLNVAL for `/dev/tty` ("does not support devices", its BUGS) and the layer then waited in a read; the layer's wait is now poll, and select(2) where poll answers POLLNVAL, a descriptor at or past FD_SETSIZE waited on through a copy below it and `failed` (EMFILE) where every one below is taken. Measured in a pseudo-terminal (`rebel-scratch/repairs4/term`): with no key sent, `read_key_within(200)` ended `timeout` after 200 to 210 ms on this Mac, where it hung until killed at 6 s before; Escape alone was told 53 and 59 ms after it was sent, where it waited 605 and 200 ms for the next key; with 1,100 files open first, `failed` at once with every descriptor below 1,024 taken and `timeout` after 205 ms with one freed. Linux arm64 answered alike before and after (200 ms; 51 and 52 ms). The floor's tests run in a pseudo-terminal hung at their first wait before the repair and pass after, a 200 ms limit among them
+  note    in milliseconds, `net`'s unit for its deadlines: `time` is a package of the same layer, which this one may not use. Repaired 2026-11-19: on macOS a limited read never timed out and an Escape alone waited for the next key, since Darwin's poll(2) answers POLLNVAL for `/dev/tty` ("does not support devices", its BUGS) and the layer then waited in a read; the layer's wait is now poll, and select(2) where poll answers POLLNVAL, a descriptor at or past FD_SETSIZE waited on through a copy below it and `failed` (EMFILE) where every one below is taken. Measured in a pseudo-terminal (`rebel-scratch/repairs4/term`): with no key sent, `read_key_within(200)` ended `timeout` after 200 to 210 ms on this Mac, where it hung until killed at 6 s before; Escape alone was told 53 and 59 ms after it was sent, where it waited 605 and 200 ms for the next key; with 1,100 files open first, `failed` at once with every descriptor below 1,024 taken and `timeout` after 205 ms with one freed. Linux arm64 answered alike before and after (200 ms; 51 and 52 ms). The floor's tests run in a pseudo-terminal hung at their first wait before the repair and pass after, a 200 ms limit among them
 
 capability term/key-modifiers  Ctrl, Alt and Shift told beside any key
   heroes  pending
@@ -184,10 +184,11 @@ capability term/key-modifiers  Ctrl, Alt and Shift told beside any key
   note    Ctrl with a letter is `Key.control`; a modified arrow (`ESC [ 1 ; 5 A`) is `Key.other` with its bytes, until its parameters are read into a key of their own
 
 capability term/mouse-paste-focus-resize  the mouse, a paste, the focus and the window's resizing as events
-  heroes  pending
+  heroes  tui.read_event, tui.read_event_within, tui.Event
   go      term.Terminal.SetBracketedPasteMode, term.ErrPasteIndicator
   rust    crossterm::event::EnableMouseCapture, crossterm::event::DisableMouseCapture, crossterm::event::MouseEvent, crossterm::event::EnableBracketedPaste, crossterm::event::Event::Paste, crossterm::event::EnableFocusChange, crossterm::event::Event::FocusGained, crossterm::event::Event::Resize
   python  curses.mousemask, curses.getmouse, curses.ungetmouse, curses.mouseinterval, curses.KEY_RESIZE
+  note    done one layer up by `tui`, which turns the reports on at `start` as its `Options` ask and reads them as events; at `term`'s level a report read by `read_key` is `Key.other` with its bytes
 
 capability term/read-secret  a line read with nothing echoed, as a password
   heroes  term.read_secret
@@ -211,7 +212,7 @@ capability term/line-editor  a line read with editing: the cursor moved by a cha
   note    Emacs's keys as GNU Readline and x/term bind them: Ctrl-A, E, B, F, K, U, W, Y, D, L, P, N, Alt-B, Alt-F, Alt-D, Alt-Backspace, Ctrl and Alt with the arrows; kills in a row add up, as Readline's do. Alt comes as Escape and the key, Readline's Meta prefix, the layer handing Escape alone. `press` is the machine, a key in and the bytes to draw out, so every key is tested with no terminal; driven in a pseudo-terminal on this Mac (2026-11-17, `rebel-scratch/term-probe/small`): words, a kill and its yank, a completion listed, the history, Ctrl-C and Ctrl-D, the terminal put back after. The line is drawn on one row, a window of it around the cursor where it is wider (linenoise's way), and the cursor put back by DEC's `ESC 7`/`ESC 8` so the terminal's own widths place it; Readline's lines that wrap over several rows are not drawn. An input that is no terminal is read as it stands with no prompt, as Python's own prompt and rustyline do, where Python's `input` writes its prompt; a letter and its accents move and go as one, where Readline takes one code point
 
 capability term/line-history  the lines entered kept, browsed with Up and Down, and saved to a file and read back
-  heroes  term.Editor, term.save_history, term.load_history
+  heroes  term.Editor, term.write_history, term.read_history
   go      term.History, term.Terminal.History
   rust    -
   python  readline.add_history, readline.clear_history, readline.get_current_history_length, readline.get_history_item, readline.get_history_length, readline.set_history_length, readline.remove_history_item, readline.replace_history_item, readline.read_history_file, readline.write_history_file, readline.set_auto_history
@@ -271,7 +272,7 @@ capability term/progress-style  the bar drawn by a template of the program's
   python  rich.progress.BarColumn, rich.progress.TextColumn
 
 capability term/progress-rate  the time left and the rate, beside the bar
-  heroes  refused: they need a clock, and `time` is not in this package's row (README § A1); a program shows them in the label
+  heroes  refused: they need a clock, and `time` is a package of the same layer, which this one may not use (README § A1); a program shows them in the label
   go      -
   rust    indicatif::ProgressBar::eta, indicatif::ProgressBar::per_sec, indicatif::HumanDuration, indicatif::HumanBytes
   python  rich.progress.TimeRemainingColumn, rich.progress.TransferSpeedColumn
@@ -283,7 +284,7 @@ capability term/multi-progress  several bars drawn together
   python  rich.progress.Progress (several tasks)
 
 capability term/spinner  a turning mark for work of unknown length
-  heroes  term.spinner, term.spin, term.stop_spinner, term.Spinner
+  heroes  term.spinner, term.spin, term.finish_spinner, term.Spinner
   go      -
   rust    indicatif::ProgressBar::new_spinner, indicatif::ProgressBar::tick
   python  rich.status.Status, rich.spinner.Spinner
@@ -331,11 +332,11 @@ capability term/clipboard  a text put on the clipboard through the terminal, ssh
   note    added 2026-11-17, from the community census: OSC 52 as xterm defines it, `ESC ] 52 ; c ; base64 ST`, the clipboard `c`, written to the program's terminal; `unsupported` with no terminal or `TERM=dumb`. Reading the clipboard back (`?` in place of the data) is not offered: a terminal answers it only where allowed, on the input, and most refuse it for safety. Whether the terminal took it, or how many bytes it keeps, no terminal tells; tmux passes it on only with `set-clipboard`
 
 capability term/text-width  how many cells a text takes on screen
-  heroes  pending
+  heroes  unicode/segment.width_of
   go      -
   rust    - (the unicode-width crate, outside the area's libraries)
   python  rich.cells.cell_len, unicodedata.east_asian_width
-  note    East Asian wide characters take two cells and marks none: Unicode's table of East Asian Widths, which `unicode` does not hold (its tables are Unicode 17.0.0's categories and cases) and `unicode/segment` is to hold with UAX #29's clusters. Since 2026-11-17 the line editor and the tables measure with a table inside this package, `term/internal/width_table.hero`, made by a program from Python's `unicodedata` 17.0.0 (Wide and Fullwidth two cells; marks, format characters, controls and the Hangul medial vowels none; a style's sequences none) and held to Python's answer on all 1,114,112 code points; it is not offered as a function, so that the one public measure is `unicode/segment`'s when it comes, with its clusters
+  note    `unicode/segment.width_of`, a package below this one, by grapheme with Unicode 17.0.0's East Asian widths, an ECMA-48 sequence taking none; the line editor, the menus and the tables measure with it since 2026-11-20. Until then they measured with a table inside this package, `term/internal/width_table.hero`, one character at a time, made from Python's `unicodedata` 17.0.0 and held to it on all 1,114,112 code points; the table went, so the library holds one measure, and a sequence of emoji joined into one picture now counts once. Where the two part in the tests: the soft hyphen, U+00AD, took one cell in the table and takes none by `width_of`
 
 capability term/rendering  markup, tables, panels, trees, Markdown and highlighted code drawn on a terminal
   heroes  refused: a rendering library's area, which a program or a package builds over `styled`
@@ -358,7 +359,7 @@ capability term/columns  a list laid in as many columns as a width holds
   note    down each column first in the fewest rows that fit, as `columnize` lays them, answered the same for every case tried (2026-11-17); no list is "" where Python writes `<empty>`, and no line ends in spaces, where Python pads its last column
 
 capability term/screen-library  windows, pads and panels over a screen
-  heroes  refused: curses' screen model, a library of its own over this package's sequences
+  heroes  refused: curses' screen model is `tui`'s, a package above this one over this package's raw mode and keys: areas and layouts, buffers drawn by their difference, widgets (`tui.start`, `tui.frame_of`, `tui.flush`)
   go      -
   rust    -
   python  curses.newwin, curses.newpad, curses.getwin, curses.doupdate, curses.filter, curses.window (all its methods), curses.panel, curses.textpad

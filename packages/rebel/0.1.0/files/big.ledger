@@ -213,11 +213,11 @@ capability integer/shift  an integer shifted left and right by a count of bits
   note    a right shift rounds toward the floor, as Go's Rsh and Python's `>>`
 
 capability integer/random  an integer drawn evenly from 0 up to a bound
-  heroes  big.random_below
+  heroes  big.random_below, big.random_below_chacha8
   go      Int.Rand
   rust    -
   python  -
-  note    by drawing again past the bound, so every value is as likely; the generator is `random`'s, a seeded one or one from the system
+  note    by drawing again past the bound, so every value is as likely; the generator is `random`'s. A key or a secret exponent is drawn by `random_below_chacha8` from a ChaCha8 the system seeded (`random.from_system_chacha8`), never by `random_below`, whose PCG anyone who sees a few numbers can foretell, as `random`'s header says of its `Generator`
 
 capability decimal/value  a decimal number held exactly: an integer and a count of digits after the point
   heroes  big.Decimal
@@ -231,7 +231,7 @@ capability decimal/parse  a decimal read from text, with an exponent or without
   go      -
   rust    -
   python  Decimal(str), Context.create_decimal
-  note    Python also reads spaces around the number, `_`, `NaN` and `Infinity`, here `invalid`; "-0" is zero where Python keeps a negative zero; an exponent past `EXPONENT_MAX`, the Emax of Python's default context, fails `does_not_fit` rather than build a number of a million digits
+  note    Python also reads spaces around the number, `_`, `NaN` and `Infinity`, here `invalid`; "-0" is zero where Python keeps a negative zero; an exponent past `MAX_EXPONENT`, the Emax of Python's default context, fails `does_not_fit` rather than build a number of a million digits
 
 capability decimal/format  a decimal written with its point and no exponent
   heroes  big.format_decimal
@@ -360,7 +360,7 @@ capability decimal/special  the values of a floating decimal that are no number:
   note    -
 
 capability decimal/bounded  a decimal of bounded precision and exponent: its limits, its next value, its classes
-  heroes  refused: limits, a next value and classes of normal and subnormal belong to a decimal of bounded precision and exponent, a floating decimal; an exact decimal has none, and its exponent is bounded only where text is read, by `EXPONENT_MAX`
+  heroes  refused: limits, a next value and classes of normal and subnormal belong to a decimal of bounded precision and exponent, a floating decimal; an exact decimal has none, and its exponent is bounded only where text is read, by `MAX_EXPONENT`
   go      -
   rust    -
   python  Context.Emax, Context.Emin, Context.Etiny, Context.Etop, Context.clamp, Decimal.next_minus, Decimal.next_plus, Decimal.next_toward, Decimal.is_normal, Decimal.is_subnormal, Decimal.number_class, decimal.MAX_EMAX, decimal.MIN_EMIN, decimal.MIN_ETINY, decimal.IEEEContext, decimal.IEEE_CONTEXT_MAX_BITS, decimal.Subnormal, decimal.Underflow, decimal.Overflow, decimal.Clamped, decimal.Inexact, decimal.Rounded and the same of Context

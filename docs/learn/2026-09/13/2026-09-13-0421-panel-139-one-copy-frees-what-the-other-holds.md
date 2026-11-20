@@ -12,3 +12,12 @@
     library. The row still stands — but on cost and on the founding constraint,
     not on *there is nothing to check*, and the difference is what a reader has to
     understand before trusting a signature.
+
+    **Noted 2026-11-20:** the clause *because there is no standard library*
+    above is the founding constraint as design.md §1.11 said it until
+    M-rebel-library's decision 9 of 2026-11-15: Heroes imposes no standard
+    library and offers one that is optional, Rebel, and what that decision
+    invalidated is the register, https://github.com/heroes-lang/heroes/issues/2610.
+    The question is unchanged: Rebel reaches C through `extern` groups, as a
+    program does (design.md §1.11), so the addresses it borrows are the second
+    half the paragraph names.

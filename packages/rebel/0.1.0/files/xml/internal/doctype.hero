@@ -7,6 +7,7 @@
 # attack this refusal closes, and an attribute list's defaults and types
 # would add attributes and change values.
 
+use strings
 use xml/internal/characters
 use xml/internal/markup
 use xml/internal/scan
@@ -25,7 +26,7 @@ function read_doctype(text: str, at: i64) -> i64?
     i: i64 @= name_after(text: text, at: markup.skip_space(text: text, at: first), what: "the root element's name")?
     next: i64 @= markup.skip_space(text: text, at: i)
 
-    if next > i && (markup.holds_at(text: text, at: next, word: "SYSTEM") || markup.holds_at(text: text, at: next, word: "PUBLIC"))
+    if next > i && (strings.has_prefix_at(s: text, prefix: "SYSTEM", at: next) || strings.has_prefix_at(s: text, prefix: "PUBLIC", at: next))
         i @ external_id(text: text, at: next, system_needed: true)?
         next @ markup.skip_space(text: text, at: i)
 
@@ -62,9 +63,9 @@ function name_after(text: str, at: i64, what: str) -> i64?
 # Where `system_needed` is false, as in a notation, `PUBLIC` may stand with no
 # system literal.
 function external_id(text: str, at: i64, system_needed: bool) -> i64?
-    public = markup.holds_at(text: text, at: at, word: "PUBLIC")
+    public = strings.has_prefix_at(s: text, prefix: "PUBLIC", at: at)
 
-    if !public && !markup.holds_at(text: text, at: at, word: "SYSTEM")
+    if !public && !strings.has_prefix_at(s: text, prefix: "SYSTEM", at: at)
         return fail(code: scan.INVALID, msg: scan.expected(text: text, at: at, what: "`SYSTEM` or `PUBLIC`"))
     gap = at + 6
 
@@ -144,16 +145,16 @@ function internal_subset(text: str, at: i64) -> i64?
         if text[i] == ']'
             return ok(i + 1)
 
-        if markup.holds_at(text: text, at: i, word: "<!--")
+        if strings.has_prefix_at(s: text, prefix: "<!--", at: i)
             i @ markup.read_comment(text: text, at: i)?.end
-        else if markup.holds_at(text: text, at: i, word: "<?")
+        else if strings.has_prefix_at(s: text, prefix: "<?", at: i)
             i @ markup.read_instruction(text: text, at: i)?.end
-        else if markup.holds_at(text: text, at: i, word: "<!ENTITY")
+        else if strings.has_prefix_at(s: text, prefix: "<!ENTITY", at: i)
             return fail(
                 code: scan.INVALID,
                 msg: scan.said(text: text, at: i, what: "the internal subset declares an entity, and no DTD is read: an entity is never expanded, so that no document can make the reader grow without end")
             )
-        else if markup.holds_at(text: text, at: i, word: "<!ATTLIST")
+        else if strings.has_prefix_at(s: text, prefix: "<!ATTLIST", at: i)
             return fail(
                 code: scan.INVALID,
                 msg: scan.said(text: text, at: i, what: "the internal subset declares an attribute list, and no DTD is read: its defaults and its types would change the attributes read")
@@ -163,9 +164,9 @@ function internal_subset(text: str, at: i64) -> i64?
                 code: scan.INVALID,
                 msg: scan.said(text: text, at: i, what: "a parameter entity reference, and no DTD is read: no entity is ever expanded")
             )
-        else if markup.holds_at(text: text, at: i, word: "<!ELEMENT")
+        else if strings.has_prefix_at(s: text, prefix: "<!ELEMENT", at: i)
             i @ element_declaration(text: text, at: i)?
-        else if markup.holds_at(text: text, at: i, word: "<!NOTATION")
+        else if strings.has_prefix_at(s: text, prefix: "<!NOTATION", at: i)
             i @ notation_declaration(text: text, at: i)?
         else
             return fail(
@@ -190,9 +191,9 @@ function element_declaration(text: str, at: i64) -> i64?
             msg: scan.expected(text: text, at: i, what: "white space after the element's name")
         )
 
-    if markup.holds_at(text: text, at: i, word: "EMPTY")
+    if strings.has_prefix_at(s: text, prefix: "EMPTY", at: i)
         i @ i + 5
-    else if markup.holds_at(text: text, at: i, word: "ANY")
+    else if strings.has_prefix_at(s: text, prefix: "ANY", at: i)
         i @ i + 3
     else if i < text.len() && text[i] == '('
         i @ content_model_end(text: text, at: i)?

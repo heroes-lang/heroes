@@ -1,7 +1,7 @@
 # The numbers beneath `math/linear`: the length of three and four floats
-# without overflow on the way, the comparisons that answer false for a nan
-# where ordering one would abort (spec § 7), and the small operations of games
-# (`lerp`, `inverse_lerp`, `smoothstep`, `smootherstep`) on plain floats.
+# without overflow on the way, and the comparisons that answer false for a nan
+# where ordering one would abort (spec § 7). The small operations of games on
+# plain floats, `lerp` and its kin, are `math`'s.
 
 use math
 
@@ -118,77 +118,6 @@ function inverse4(x: f64, y: f64, z: f64, w: f64) -> [f64]
         math.scale(x: d / n2, exponent: -e)
     ]
 
-# The number a fraction `t` of the way from `from` to `to`: `(1 - t) * from + t
-# * to`, exactly `from` at 0 and exactly `to` at 1.
-#
-# - `from`: where `t` is 0.
-# - `to`: where `t` is 1.
-# - `t`: the fraction; outside 0 to 1 it goes on past either end.
-function lerp(from: f64, to: f64, t: f64) -> f64
-    return (1.0 - t) * from + t * to
-
-# The fraction of the way `x` stands from `from` to `to`, `lerp`'s inverse.
-#
-# - `from`: where the answer is 0.
-# - `to`: where the answer is 1.
-# - `x`: the number placed; a nan answers a nan.
-#
-# Fails `invalid` where `from` and `to` are equal, which places nothing.
-function inverse_lerp(from: f64, to: f64, x: f64) -> f64?
-    if from == to
-        return fail(code: math.INVALID, msg: f"no fraction places {x} between {from} and itself")
-    return ok((x - from) / (to - from))
-
-# `t` held from 0 to 1, a nan answering a nan.
-#
-# - `t`: any float.
-function clamp01(t: f64) -> f64
-    if math.is_nan(t)
-        return t
-
-    if t < 0.0
-        return 0.0
-
-    if t > 1.0
-        return 1.0
-    return t
-
-# Where `x` stands from `low` to `high`, held from 0 to 1, for the steps below;
-# where `low` and `high` are equal, 0 below them and 1 from them on.
-#
-# - `low`: where the answer is 0.
-# - `high`: where the answer is 1.
-# - `x`: the number placed.
-function placed(low: f64, high: f64, x: f64) -> f64
-    if math.is_nan(x) || math.is_nan(low) || math.is_nan(high)
-        return math.NAN
-
-    if low == high
-        if x < low
-            return 0.0
-        return 1.0
-    return clamp01((x - low) / (high - low))
-
-# Hermite's smooth step from 0 at `low` to 1 at `high`: `3t^2 - 2t^3` of where
-# `x` stands between them, held from 0 to 1.
-#
-# - `low`: where the answer leaves 0.
-# - `high`: where it reaches 1.
-# - `x`: the number placed.
-function smoothstep(low: f64, high: f64, x: f64) -> f64
-    t = placed(low: low, high: high, x: x)
-    return t * t * (3.0 - 2.0 * t)
-
-# Perlin's smoother step, `6t^5 - 15t^4 + 10t^3`, whose second derivative is
-# zero at both ends too.
-#
-# - `low`: where the answer leaves 0.
-# - `high`: where it reaches 1.
-# - `x`: the number placed.
-function smootherstep(low: f64, high: f64, x: f64) -> f64
-    t = placed(low: low, high: high, x: x)
-    return t * t * t * (t * (6.0 * t - 15.0) + 10.0)
-
 ## Tests
 
 test "is_positive and is_above: a nan is neither"
@@ -204,26 +133,6 @@ test "length4: zero, a 3-4-5 triangle, the largest and the smallest parts, an in
     assert length4(x: math.SMALLEST_F64 * 3.0, y: math.SMALLEST_F64 * 4.0, z: 0.0, w: 0.0) == math.SMALLEST_F64 * 5.0
     assert length4(x: math.NAN, y: math.INF, z: 0.0, w: 0.0) == math.INF
     assert math.is_nan(length4(x: math.NAN, y: 1.0, z: 0.0, w: 0.0))
-
-test "lerp and inverse_lerp: both ends exactly, the middle, past the end, an empty range"
-    assert lerp(from: 0.1, to: 0.7, t: 0.0) == 0.1
-    assert lerp(from: 0.1, to: 0.7, t: 1.0) == 0.7
-    assert lerp(from: -2.0, to: 2.0, t: 0.5) == 0.0
-    assert lerp(from: 0.0, to: 10.0, t: 1.5) == 15.0
-    assert inverse_lerp(from: 10.0, to: 20.0, x: 15.0).must() == 0.5
-    assert inverse_lerp(from: 10.0, to: 20.0, x: 30.0).must() == 2.0
-    assert inverse_lerp(from: 3.0, to: 3.0, x: 3.0).is_err()
-
-test "smoothstep and smootherstep: below, at both ends, the middle, above, an empty range, a nan"
-    assert smoothstep(low: 0.0, high: 1.0, x: -1.0) == 0.0
-    assert smoothstep(low: 0.0, high: 1.0, x: 0.5) == 0.5
-    assert smoothstep(low: 0.0, high: 1.0, x: 0.25) == 0.15625
-    assert smoothstep(low: 0.0, high: 1.0, x: 2.0) == 1.0
-    assert smoothstep(low: 1.0, high: 1.0, x: 0.5) == 0.0 && smoothstep(low: 1.0, high: 1.0, x: 1.0) == 1.0
-    assert math.is_nan(smoothstep(low: 0.0, high: 1.0, x: math.NAN))
-    assert smootherstep(low: 0.0, high: 1.0, x: 0.5) == 0.5
-    assert smootherstep(low: 0.0, high: 1.0, x: 0.25) == 0.103515625
-    assert smootherstep(low: 0.0, high: 2.0, x: 2.0) == 1.0
 
 test "unit4 and inverse4: the largest parts, the smallest, zero, an infinity, a nan"
     huge = unit4(x: math.MAX_F64, y: math.MAX_F64, z: 0.0, w: 0.0)

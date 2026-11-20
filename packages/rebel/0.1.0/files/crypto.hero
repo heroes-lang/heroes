@@ -19,8 +19,9 @@
 # the bytes, and says how far that goes. Ciphers and signatures by the
 # system's own cryptography are the packages `crypto/seal` and
 # `crypto/keypairs`. Checksums that are not cryptographic are the package
-# `hash`'s, and random bytes, a key's or a salt's, are the package
-# `random`'s: no function here makes a salt, so that `crypto` stands on no C.
+# `hash`'s, and random bytes, a key's or a salt's, are the system's,
+# `os.random_bytes` (`random` holds the generators a program seeds): no
+# function here makes a salt, so that `crypto` stands on no C.
 #
 # MD5 and SHA-1 are broken for security: two inputs that answer alike can be
 # made. They are kept for the formats and protocols that name them, never to
@@ -29,7 +30,7 @@
 # It fails with `invalid` where a length, a count or a cost is outside what a
 # function can make, a name names no algorithm, or a stored password hash is
 # not one, and with `not_found` where a one-time password matches no counter
-# tried; the memory a derivation fills is bounded by `MOST_MEMORY`. No
+# tried; the memory a derivation fills is bounded by `MAX_MEMORY`. No
 # function here reads a clock: a TOTP code is made for the time its caller
 # gives.
 
@@ -68,7 +69,7 @@ constant NOT_FOUND: str
 # most steps `verify_totp` tries on either side of the time's own, so that
 # a window read from a setting cannot make a check take the time without
 # bound: each counter tried costs one HMAC.
-constant MOST_OTP_WINDOW: i64
+constant MAX_OTP_WINDOW: i64
     1000
 
 # The most memory, in bytes, that `scrypt` and `argon2` may be asked to
@@ -76,7 +77,7 @@ constant MOST_OTP_WINDOW: i64
 # 2 GiB) and RFC 7914's largest vector (1 GiB). Parameters read from a
 # stored password hash ask no more than this, so verifying one cannot be
 # made to take the memory without bound.
-constant MOST_MEMORY: i64
+constant MAX_MEMORY: i64
     2147483648
 
 ## Algorithms
@@ -689,32 +690,32 @@ record Blake2State
     # The work so far, its last block held back. Only this package reads it.
     run: blake2_work.Run
 
-# The BLAKE2b digest of `data`, `size` bytes, under `key` when it is not
+# The BLAKE2b digest of `data`, `length` bytes, under `key` when it is not
 # empty: a digest at least as strong as SHA-3, faster, and a MAC of its own
 # when keyed, with no HMAC around it.
 #
-# - `data`: the bytes to digest.
-# - `size`: the digest's length in bytes, 1 to 64; 64 is Python's default.
 # - `key`: the secret key, 0 to 64 bytes; empty for a plain digest.
+# - `data`: the bytes to digest.
+# - `length`: the digest's length in bytes, 1 to 64; 64 is Python's default.
 #
-# Fails `invalid` where `size` or the key's length is outside those. See
+# Fails `invalid` where `length` or the key's length is outside those. See
 # also `blake2s` and `start_blake2`.
-function blake2b(data: [u8], size: i64, key: [u8]) -> [u8]?
-    state @= start_blake2(blake2: .blake2b, size: size, key: key, salt: [], person: [])?
+function blake2b(key: [u8], data: [u8], length: i64) -> [u8]?
+    state @= start_blake2(blake2: .blake2b, key: key, salt: [], person: [], length: length)?
     update_blake2(@state, data)
     return ok(digest_blake2(state))
 
-# The BLAKE2s digest of `data`, `size` bytes, under `key` when it is not
+# The BLAKE2s digest of `data`, `length` bytes, under `key` when it is not
 # empty: BLAKE2 for machines of 32 bits and for small digests.
 #
-# - `data`: the bytes to digest.
-# - `size`: the digest's length in bytes, 1 to 32; 32 is Python's default.
 # - `key`: the secret key, 0 to 32 bytes; empty for a plain digest.
+# - `data`: the bytes to digest.
+# - `length`: the digest's length in bytes, 1 to 32; 32 is Python's default.
 #
-# Fails `invalid` where `size` or the key's length is outside those. See
+# Fails `invalid` where `length` or the key's length is outside those. See
 # also `blake2b`.
-function blake2s(data: [u8], size: i64, key: [u8]) -> [u8]?
-    state @= start_blake2(blake2: .blake2s, size: size, key: key, salt: [], person: [])?
+function blake2s(key: [u8], data: [u8], length: i64) -> [u8]?
+    state @= start_blake2(blake2: .blake2s, key: key, salt: [], person: [], length: length)?
     update_blake2(@state, data)
     return ok(digest_blake2(state))
 
@@ -722,19 +723,19 @@ function blake2s(data: [u8], size: i64, key: [u8]) -> [u8]?
 # the sequential mode Python's `hashlib` takes.
 #
 # - `blake2`: BLAKE2b or BLAKE2s.
-# - `size`: the digest's length in bytes, 1 to 64 for BLAKE2b and 1 to 32
-#   for BLAKE2s; it changes every byte of the digest, not only its length.
 # - `key`: the secret key, 0 to 64 bytes for BLAKE2b and 0 to 32 for
 #   BLAKE2s; empty for a plain digest.
 # - `salt`: 0 to 16 bytes for BLAKE2b and 0 to 8 for BLAKE2s, padded with
 #   zeros; empty for none.
 # - `person`: a personalization of the same lengths, which keeps one use of
 #   the digest apart from another; empty for none.
+# - `length`: the digest's length in bytes, 1 to 64 for BLAKE2b and 1 to 32
+#   for BLAKE2s; it changes every byte of the digest, not only its length.
 #
 # Fails `invalid` where a length is outside those; the message names which.
 # BLAKE2's tree mode (fanout, depth, node offsets) is not offered. See also
 # `update_blake2` and `digest_blake2`.
-function start_blake2(blake2: Blake2, size: i64, key: [u8], salt: [u8], person: [u8]) -> Blake2State?
+function start_blake2(blake2: Blake2, key: [u8], salt: [u8], person: [u8], length: i64) -> Blake2State?
     wide = blake2 == .blake2b
 
     most: i64 = if wide
@@ -742,8 +743,8 @@ function start_blake2(blake2: Blake2, size: i64, key: [u8], salt: [u8], person: 
     else
         32
 
-    if size < 1 || size > most
-        return fail(code: INVALID, msg: f"a digest of {size} bytes, where {format_blake2(blake2)} makes 1 to {most}")
+    if length < 1 || length > most
+        return fail(code: INVALID, msg: f"a digest of {length} bytes, where {format_blake2(blake2)} makes 1 to {most}")
 
     if key.len() > most
         return fail(code: INVALID, msg: f"a key of {key.len()} bytes, where {format_blake2(blake2)} takes 0 to {most}")
@@ -759,7 +760,7 @@ function start_blake2(blake2: Blake2, size: i64, key: [u8], salt: [u8], person: 
             code: INVALID,
             msg: f"a personalization of {person.len()} bytes, where {format_blake2(blake2)} takes 0 to {most / 4}"
         )
-    run = blake2_work.begin(wide: wide, size: size, key: key, salt: salt, person: person)
+    run = blake2_work.begin(wide: wide, size: length, key: key, salt: salt, person: person)
     return ok(Blake2State(blake2: blake2, run: run))
 
 # Feeds `data` to `state`, whose digest then covers what it was fed before
@@ -1010,14 +1011,14 @@ function pbkdf2(algorithm: Algorithm, password: [u8], salt: [u8], iterations: i6
 #
 # Fails `invalid` where `n` is not such a power of two, `r` or `p` is below
 # 1, `r` × `p` reaches 2^30, 128 × `r` × (`n` + `p`) bytes pass
-# `MOST_MEMORY`, or `length` is outside its range; Python refuses each. It
+# `MAX_MEMORY`, or `length` is outside its range; Python refuses each. It
 # takes 128 × `r` × (`n` + `p`) bytes and 4 × `n` × `r` × `p` Salsa20/8
 # rounds of 64 bytes. See also `pbkdf2` and `argon2`.
 function scrypt(password: [u8], salt: [u8], n: i64, r: i64, p: i64, length: i64) -> [u8]?
-    if n < 2 || n > MOST_MEMORY || n & n - 1 != 0
+    if n < 2 || n > MAX_MEMORY || n & n - 1 != 0
         return fail(code: INVALID, msg: f"a cost n of {n}, where scrypt takes a power of two from 2")
 
-    if r < 1 || p < 1 || r > MOST_MEMORY || p > MOST_MEMORY
+    if r < 1 || p < 1 || r > MAX_MEMORY || p > MAX_MEMORY
         return fail(
             code: INVALID,
             msg: f"a block size r of {r} and a parallelization p of {p}, where scrypt takes 1 or more of each"
@@ -1029,10 +1030,10 @@ function scrypt(password: [u8], salt: [u8], n: i64, r: i64, p: i64, length: i64)
     if r < 4 && n >= 1 << 16 * r
         return fail(code: INVALID, msg: f"a cost n of {n} with r of {r}, where scrypt takes n below 2^{16 * r}")
 
-    if n + p > MOST_MEMORY / (128 * r)
+    if n + p > MAX_MEMORY / (128 * r)
         return fail(
             code: INVALID,
-            msg: f"n of {n}, r of {r} and p of {p}, which ask more than the {MOST_MEMORY} bytes of memory scrypt takes here"
+            msg: f"n of {n}, r of {r} and p of {p}, which ask more than the {MAX_MEMORY} bytes of memory scrypt takes here"
         )
 
     if length < 1 || length > 4294967295 * 32
@@ -1063,7 +1064,7 @@ record Argon2Params
     # How many passes over the memory, 1 to 2^32 - 1: the time each guess
     # costs beyond the memory's own.
     passes: i64
-    # The memory filled, in KiB, from 8 a lane to `MOST_MEMORY` / 1024;
+    # The memory filled, in KiB, from 8 a lane to `MAX_MEMORY` / 1024;
     # Argon2 rounds it down to a multiple of 4 × `lanes`.
     memory: i64
     # How many lanes the memory is cut into, 1 to 2^24 - 1; computed one
@@ -1162,7 +1163,7 @@ function hash_argon2(params: Argon2Params, password: [u8], salt: [u8]) -> str?
 #   writes it; with no `v=`, version 16 (Argon2 1.0) is read.
 #
 # Fails `invalid` where `hash` is not such a string, or asks a cost
-# `argon2` refuses, more memory than `MOST_MEMORY` included, so a string
+# `argon2` refuses, more memory than `MAX_MEMORY` included, so a string
 # from outside cannot make it allocate without bound. Its cost is what the
 # string asks. See also `hash_argon2` and `parse_argon2`.
 function verify_argon2(password: [u8], hash: str) -> bool?
@@ -1317,7 +1318,7 @@ function totp(otp: Otp, seconds: i64) -> str?
 #   matches nothing.
 # - `counter`: the counter the caller expects next.
 # - `window`: how many counters after `counter` are tried too, 0 to
-#   `MOST_OTP_WINDOW`; none past the largest `u64`.
+#   `MAX_OTP_WINDOW`; none past the largest `u64`.
 #
 # Fails `not_found` where no counter tried makes `code`, and `invalid` where
 # `window` is outside its bounds or `hotp` would fail for `otp`. Its cost is
@@ -1326,8 +1327,8 @@ function verify_hotp(otp: Otp, code: str, counter: u64, window: i64) -> u64?
     kind = start(otp.algorithm).run.kind
     otp_work.check(kind: kind, key_len: otp.key.len(), digits: otp.digits, period: 1)?
 
-    if window < 0 || window > MOST_OTP_WINDOW
-        return fail(code: INVALID, msg: f"a window of {window} counters, where it is 0 to {MOST_OTP_WINDOW}")
+    if window < 0 || window > MAX_OTP_WINDOW
+        return fail(code: INVALID, msg: f"a window of {window} counters, where it is 0 to {MAX_OTP_WINDOW}")
     counters = otp_work.counters_ahead(counter: counter, window: to_u64(window).must())
     found = otp_work.first_match(
         keyed: engine.begin_keyed(kind, otp.key),
@@ -1356,7 +1357,7 @@ function verify_hotp(otp: Otp, code: str, counter: u64, window: i64) -> u64?
 # - `seconds`: the time it is received, in seconds since 1970 as `totp`
 #   reads it, 0 or more.
 # - `window`: how many steps on either side are tried too, 0 to
-#   `MOST_OTP_WINDOW`; RFC 6238 recommends at most one, and no step below 0
+#   `MAX_OTP_WINDOW`; RFC 6238 recommends at most one, and no step below 0
 #   is tried.
 #
 # Fails `not_found` where no step tried makes `code`, and `invalid` where
@@ -1369,8 +1370,8 @@ function verify_totp(otp: Otp, code: str, seconds: i64, window: i64) -> u64?
     if seconds < 0
         return fail(code: INVALID, msg: f"a time of {seconds} seconds, before 1970, where TOTP counts from it")
 
-    if window < 0 || window > MOST_OTP_WINDOW
-        return fail(code: INVALID, msg: f"a window of {window} steps, where it is 0 to {MOST_OTP_WINDOW}")
+    if window < 0 || window > MAX_OTP_WINDOW
+        return fail(code: INVALID, msg: f"a window of {window} steps, where it is 0 to {MAX_OTP_WINDOW}")
     step = to_u64(seconds / otp.period).must()
     steps = otp_work.steps_around(step: step, window: to_u64(window).must())
     found = otp_work.first_match(
@@ -1538,49 +1539,49 @@ test "shake128, shake256 and digest_shake: a length of 0, a negative one, and a 
 # ValueError on 2026-11-17, and answered the longest key, salt and
 # personalization.
 test "start_blake2: sizes of 0, 65 and 33, keys, salts and personalizations one byte too long, and the longest of each"
-    match start_blake2(blake2: .blake2b, size: 0, key: [], salt: [], person: [])
+    match start_blake2(blake2: .blake2b, key: [], salt: [], person: [], length: 0)
         .ok _  => assert false
         .err e => assert e.code == INVALID && e.msg == "a digest of 0 bytes, where blake2b makes 1 to 64"
 
-    assert start_blake2(blake2: .blake2b, size: 65, key: [], salt: [], person: []).is_err()
-    assert start_blake2(blake2: .blake2s, size: 33, key: [], salt: [], person: []).is_err()
-    assert blake2s(data: [], size: 32, key: bytes.repeated([1], 33)).is_err()
-    assert start_blake2(blake2: .blake2b, size: 64, key: [], salt: bytes.repeated([1], 17), person: []).is_err()
-    assert start_blake2(blake2: .blake2s, size: 32, key: [], salt: [], person: bytes.repeated([1], 9)).is_err()
-    assert bytes.format_hex(blake2b(data: [], size: 64, key: bytes.repeated([1], 64)).must()).slice(from: 0, to: 16) == "7b13175b4043c658"
-    assert bytes.format_hex(blake2s(data: bytes.from_text("x"), size: 1, key: []).must()) == "e4"
+    assert start_blake2(blake2: .blake2b, key: [], salt: [], person: [], length: 65).is_err()
+    assert start_blake2(blake2: .blake2s, key: [], salt: [], person: [], length: 33).is_err()
+    assert blake2s(key: bytes.repeated([1], 33), data: [], length: 32).is_err()
+    assert start_blake2(blake2: .blake2b, key: [], salt: bytes.repeated([1], 17), person: [], length: 64).is_err()
+    assert start_blake2(blake2: .blake2s, key: [], salt: [], person: bytes.repeated([1], 9), length: 32).is_err()
+    assert bytes.format_hex(blake2b(key: bytes.repeated([1], 64), data: [], length: 64).must()).slice(from: 0, to: 16) == "7b13175b4043c658"
+    assert bytes.format_hex(blake2s(key: [], data: bytes.from_text("x"), length: 1).must()) == "e4"
     long_b = start_blake2(
         blake2: .blake2b,
-        size: 64,
         key: [],
         salt: bytes.from_text("0123456789abcdef"),
-        person: bytes.from_text("fedcba9876543210")
+        person: bytes.from_text("fedcba9876543210"),
+        length: 64
     )
     fed_b @= long_b.must()
     update_blake2(@fed_b, bytes.repeated([0x61], 200))
     assert bytes.format_hex(digest_blake2(fed_b)) == "fb3a3ab950c2c7de4779a5b0aa29f377aae6fa313c578ea7dbc9f22a1ca4b96ab5f73d91ac79bb9776d6dbaad94fe48b61b9d8a62563f22cea5b077f94c0ae5e"
     long_s = start_blake2(
         blake2: .blake2s,
-        size: 32,
         key: [],
         salt: bytes.from_text("01234567"),
-        person: bytes.from_text("76543210")
+        person: bytes.from_text("76543210"),
+        length: 32
     )
     fed_s @= long_s.must()
     update_blake2(@fed_s, bytes.repeated([0x61], 200))
     assert bytes.format_hex(digest_blake2(fed_s)) == "9aa70a73f38099ea8c4f32673b10ce44879eaf10300a28e740bad9023f55340a"
 
-test "start_blake2: a size, a key, a salt and a personalization together, by BLAKE2b and BLAKE2s"
+test "start_blake2: a length, a key, a salt and a personalization together, by BLAKE2b and BLAKE2s"
     both: [Blake2] = [.blake2b, .blake2s]
     answers: [str] = ["612c276bb1dc743547d3018eee41e28bd58afb27", "9befd4490a26fb5c0b5c421777a1b38010f571bc"]
 
     for i in range(from: 0, to: 2)
         state @= start_blake2(
             blake2: both[i],
-            size: 20,
             key: bytes.from_text("key"),
             salt: bytes.from_text("salt"),
-            person: bytes.from_text("me")
+            person: bytes.from_text("me"),
+            length: 20
         ).must()
         update_blake2(@state, bytes.from_text("abc"))
         assert bytes.format_hex(digest_blake2(state)) == answers[i]
@@ -1655,8 +1656,8 @@ test "digest_blake3_from: every offset from 0 to 130 reads the bytes the whole o
     for offset in range(from: 0, to: 131)
         assert digest_blake3_from(state: state, offset: offset, length: 7).must() == whole.slice(from: offset, to: offset + 7)
 
-test "MOST_MEMORY is the bound the stored strings are read under"
-    assert MOST_MEMORY == passwords.MOST_MEMORY && INVALID == passwords.INVALID
+test "MAX_MEMORY is the bound the stored strings are read under"
+    assert MAX_MEMORY == passwords.MAX_MEMORY && INVALID == passwords.INVALID
 
 # Zig's `std.crypto.pwhash.argon2.strHash` wrote the three strings on
 # 2026-11-17, each with its own salt of 32 bytes; OpenSSL's `kdf` answered
@@ -1792,10 +1793,10 @@ test "verify_hotp: the counter itself, one ahead, past the window, the window's 
     assert verify_hotp(otp, code: "755224", counter: 0, window: 0).must() == 0
     assert verify_hotp(otp, code: "359152", counter: 0, window: 2).must() == 2
     assert verify_hotp(otp, code: "969429", counter: 0, window: 2).is_err()
-    assert verify_hotp(otp, code: "969429", counter: 0, window: MOST_OTP_WINDOW).must() == 3
+    assert verify_hotp(otp, code: "969429", counter: 0, window: MAX_OTP_WINDOW).must() == 3
     assert verify_hotp(otp, code: "094451", counter: 18446744073709551615, window: 5).must() == 18446744073709551615
     assert verify_hotp(otp, code: "755224", counter: 0, window: -1).is_err()
-    assert verify_hotp(otp, code: "755224", counter: 0, window: MOST_OTP_WINDOW + 1).is_err()
+    assert verify_hotp(otp, code: "755224", counter: 0, window: MAX_OTP_WINDOW + 1).is_err()
 
     match verify_hotp(otp, code: "000000", counter: 4, window: 1)
         .ok _  => assert false
@@ -2063,36 +2064,42 @@ test "digest_shake: read twice, the second longer"
 
 # A BLAKE2b digest of 32 bytes, and a keyed one of 16, a MAC.
 test "blake2b: a digest of 32 bytes and a keyed one of 16"
-    assert bytes.format_hex(blake2b(data: bytes.from_text("abc"), size: 32, key: []).must()) == "bddd813c634239723171ef3fee98579b94964e3bb1cb3e427262c8c068d52319"
-    tag = blake2b(data: bytes.from_text("message"), size: 16, key: bytes.from_text("secret key")).must()
+    assert bytes.format_hex(blake2b(key: [], data: bytes.from_text("abc"), length: 32).must()) == "bddd813c634239723171ef3fee98579b94964e3bb1cb3e427262c8c068d52319"
+    tag = blake2b(key: bytes.from_text("secret key"), data: bytes.from_text("message"), length: 16).must()
     assert bytes.format_hex(tag) == "db5104a95c3d7a3e12dcdd0d07b445d8"
 
 # BLAKE2s of three letters, RFC 7693's example, and keyed.
 test "blake2s: RFC 7693's example, and a keyed digest of 16 bytes"
-    assert bytes.format_hex(blake2s(data: bytes.from_text("abc"), size: 32, key: []).must()) == "508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982"
-    assert bytes.format_hex(blake2s(data: bytes.from_text("abc"), size: 16, key: bytes.from_text("k")).must()) == "f335237426ff5582d0c607ef240684b5"
+    assert bytes.format_hex(blake2s(key: [], data: bytes.from_text("abc"), length: 32).must()) == "508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982"
+    assert bytes.format_hex(blake2s(key: bytes.from_text("k"), data: bytes.from_text("abc"), length: 16).must()) == "f335237426ff5582d0c607ef240684b5"
 
 # A BLAKE2b kept apart for one program's use by a personalization.
 test "start_blake2: a digest personalized for one program"
-    state @= start_blake2(blake2: .blake2b, size: 32, key: [], salt: [], person: bytes.from_text("MyApp files")).must()
+    state @= start_blake2(
+        blake2: .blake2b,
+        key: [],
+        salt: [],
+        person: bytes.from_text("MyApp files"),
+        length: 32
+    ).must()
     update_blake2(@state, bytes.from_text("data"))
     assert bytes.format_hex(digest_blake2(state)) == "acbd5be61b9455f879ee6e04c3f1dc33d39b7016b303632b90a58a86e52e6335"
 
 # A BLAKE2b fed in two pieces.
 test "update_blake2: a BLAKE2b fed in two pieces"
-    state @= start_blake2(blake2: .blake2b, size: 20, key: [], salt: [], person: []).must()
+    state @= start_blake2(blake2: .blake2b, key: [], salt: [], person: [], length: 20).must()
     update_blake2(@state, bytes.from_text("hello "))
     update_blake2(@state, bytes.from_text("world"))
     assert bytes.format_hex(digest_blake2(state)) == "70e8ece5e293e1bda064deef6b080edde357010f"
 
 # A digest read, the state fed further, and read again.
 test "digest_blake2: read, fed further, and read again"
-    state @= start_blake2(blake2: .blake2s, size: 32, key: [], salt: [], person: []).must()
+    state @= start_blake2(blake2: .blake2s, key: [], salt: [], person: [], length: 32).must()
     update_blake2(@state, bytes.from_text("ab"))
     first = digest_blake2(state)
     update_blake2(@state, bytes.from_text("c"))
     assert first != digest_blake2(state)
-    assert digest_blake2(state) == blake2s(data: bytes.from_text("abc"), size: 32, key: []).must()
+    assert digest_blake2(state) == blake2s(key: [], data: bytes.from_text("abc"), length: 32).must()
 
 # The name Python gives BLAKE2b.
 test "format_blake2: BLAKE2b's name"
