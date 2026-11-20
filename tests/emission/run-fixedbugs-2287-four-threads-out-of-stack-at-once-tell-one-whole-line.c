@@ -246,7 +246,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("00641a38473b6873", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("57908a6048917a02", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2287fourthreadsoutofstackatoncetellonewholeline\tfixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line\n");

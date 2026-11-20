@@ -493,7 +493,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("38880eae38ee5b18", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0fb47ed73a446ca7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2512alimitpastwhatonewaitcanaskiskeptwhole\tfixedbugs-2512-a-limit-past-what-one-wait-can-ask-is-kept-whole\n");

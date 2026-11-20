@@ -524,7 +524,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6550279764513ddf", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3c7c97c065a74f6e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2346thebitsbesideabitfieldinachainofnamedhalvesarezerowherecreadsthem\tfixedbugs-2346-the-bits-beside-a-bit-field-in-a-chain-of-named-halves-are-zero-where-c-reads-them\n");

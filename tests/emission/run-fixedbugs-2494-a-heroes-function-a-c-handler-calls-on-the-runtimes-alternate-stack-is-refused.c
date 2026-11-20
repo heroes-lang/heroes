@@ -335,7 +335,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("06cca3c97b7da310", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5df913f17cd3b49f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2494aheroesfunctionachandlercallsontheruntimesalternatestackisrefused\tfixedbugs-2494-a-heroes-function-a-c-handler-calls-on-the-runtimes-alternate-stack-is-refused\n");

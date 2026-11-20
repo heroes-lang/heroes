@@ -273,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3befd0ce69166c15", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("131c40f76a6c7da4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2558anullreadontheprogramsownstackistoldbeforealibraryisasked\tfixedbugs-2558-a-null-read-on-the-programs-own-stack-is-told-before-a-library-is-asked\n");

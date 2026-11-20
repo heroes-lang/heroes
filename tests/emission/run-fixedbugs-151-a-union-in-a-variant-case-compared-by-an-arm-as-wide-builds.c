@@ -377,7 +377,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("054ff03b7e65c415", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5c7c60637fbbd5a4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds\tfixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds\n");

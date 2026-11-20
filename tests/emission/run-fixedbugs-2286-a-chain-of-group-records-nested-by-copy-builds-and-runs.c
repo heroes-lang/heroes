@@ -887,7 +887,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1bc114665eec6932", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("72ed848e60427ac1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns\tfixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs\n");

@@ -281,7 +281,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("27e88cff6b137f15", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7f14fd276c6990a4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2554aclosedlistenerletsitsportgo\tfixedbugs-2554-a-closed-listener-lets-its-port-go\n");

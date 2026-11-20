@@ -330,7 +330,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3edc9b0257b5a6a7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("16090b2b590bb836", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2464adoorcallingsprintfwithfortifyoffbuildssilent\tfixedbugs-2464-a-door-calling-sprintf-with-fortify-off-builds-silent\n");

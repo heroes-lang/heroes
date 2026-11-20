@@ -334,7 +334,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c0fd34d0bfda28a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("033c43760d53b419", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396sha256finalpastsixteenaborts\tfixedbugs-396-sha256-final-past-sixteen-aborts\n");

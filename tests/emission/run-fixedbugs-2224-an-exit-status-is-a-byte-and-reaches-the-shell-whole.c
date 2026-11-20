@@ -254,7 +254,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("247c429a27179512", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ba8b2c2286da6a1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2224anexitstatusisabyteandreachestheshellwhole\tfixedbugs-2224-an-exit-status-is-a-byte-and-reaches-the-shell-whole\n");

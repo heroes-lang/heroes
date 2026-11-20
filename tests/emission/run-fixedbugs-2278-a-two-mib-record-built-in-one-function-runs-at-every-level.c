@@ -537,7 +537,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("222719fd4845b09a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("79538a25499bc229", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278atwomibrecordbuiltinonefunctionrunsateverylevel\tfixedbugs-2278-a-two-mib-record-built-in-one-function-runs-at-every-level\n");

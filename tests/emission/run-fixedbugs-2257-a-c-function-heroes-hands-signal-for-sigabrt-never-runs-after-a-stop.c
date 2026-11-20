@@ -424,7 +424,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("31e8cc7e290f0a15", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("09153ca72a651ba4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2257acfunctionheroeshandssignalforsigabrtneverrunsafterastop\tfixedbugs-2257-a-c-function-heroes-hands-signal-for-sigabrt-never-runs-after-a-stop\n");

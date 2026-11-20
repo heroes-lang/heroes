@@ -413,7 +413,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("068c82dc4bc84a15", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5db8f3044d1e5ba4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2490abortaworkingfolderforachildholdinganul\tfixedbugs-2490-abort-a-working-folder-for-a-child-holding-a-nul\n");

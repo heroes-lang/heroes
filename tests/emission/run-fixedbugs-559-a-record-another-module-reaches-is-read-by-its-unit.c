@@ -390,7 +390,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("546391a679a70917", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b9001cf7afd1aa6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs559arecordanothermodulereachesisreadbyitsunit\tfixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit\nfixedbugs559holder\tholder\nfixedbugs559points\tpoints\n");
