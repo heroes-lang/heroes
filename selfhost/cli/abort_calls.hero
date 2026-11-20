@@ -34,10 +34,12 @@
 # of the program wrote, and is never told.
 
 use cli/abort_symbolized as symbolized
+use cli/environment
 use cli/io
 use cli/process
 use cli/strings
 use module/listing
+use module/paths
 
 constant VARIABLE: str
     "HEROES_CALLS"
@@ -76,15 +78,17 @@ function clear(file: str)
     _ = process.remove_file(file).is_err()
 
 # After the program ended: the calls it told, resolved against `binary`, on
-# stderr after its report, the file gone.
-function tell(file: str, binary: str)
+# stderr after its report, the file gone; `root` is the program's root file
+# as the build was handed it, whose folder a resolved file is named from.
+function tell(file: str, binary: str, root: str)
     text = read_file(file)
     clear(file)
 
     if text.is_err()
         return
+    at = Naming(folder: paths.directory_text(root), here: environment.env("PWD").default(""))
 
-    for line in lines(t: parsed(text.must()), binary: binary, scratch: file + ".out")
+    for line in lines(t: parsed(text.must()), binary: binary, scratch: file + ".out", at: at)
         io.eprint(text: line)
 
 # The file's records (`runtime/parts/calls.c`, `hero_calls_to_file`); a line
@@ -130,7 +134,7 @@ function call_of(line: str) -> Call?
 
 # The lines told beneath the report: resolved where a symbolizer answers
 # every told address, the runtime's own where none does.
-function lines(t: Told, binary: str, scratch: str) -> [str]
+function lines(t: Told, binary: str, scratch: str, at: Naming) -> [str]
     asked: [str] @= []
 
     for one in t.calls
@@ -143,7 +147,7 @@ function lines(t: Told, binary: str, scratch: str) -> [str]
 
     if found.is_err()
         return plain(t)
-    return told_with(t, levels: found.must())
+    return told_with(t, levels: found.must(), at: at)
 
 # The runtime's own lines, as a binary run alone says them.
 function plain(t: Told) -> [str]
@@ -174,7 +178,7 @@ function times(n: i64) -> str
 # The resolved lines: each told frame's inlined calls, innermost first, the
 # Heroes ones alone (`told`), and where the frame holds the place, its calls
 # up to the place and the place's own left out.
-function told_with(t: Told, levels: [[symbolized.Level]]) -> [str]
+function told_with(t: Told, levels: [[symbolized.Level]], at: Naming) -> [str]
     out: [str] @= []
     asked: i64 @= 0
 
@@ -183,12 +187,49 @@ function told_with(t: Told, levels: [[symbolized.Level]]) -> [str]
             for level in after_place(levels[asked], trimmed: one.mark == 2)
                 if told(level.callee)
                     out @ out.push(
-                        "  called from " + level.place + ", in " + spelled(level.callee, spellings: t.spellings) + times(one.times)
+                        "  called from " + file_named(level.place, at: at) + ", in " + spelled(level.callee, spellings: t.spellings) + times(one.times)
                     )
 
             asked @ asked + 1
 
     return strings.with_all(list: out, more: tail(t))
+
+# **A resolved file is named as the report's place names it** (panel 230's
+# R1, `emit/stop_place.hero`'s `file_of`): the root by its own name, a module
+# by its path from the root's folder, the library as `<heroes library>`. A
+# `#line` names the root as the build was handed it and a module from the
+# root's folder (`mod/main.hero`, `mod/sub/helper.hero` for a root handed as
+# `mod/main.hero`), and a symbolizer gives that name, `llvm-symbolizer
+# --relativenames` as written and `atos -fullPath` and `addr2line` with the
+# compile's folder before it, which is this process's own, `PWD` where the
+# shell set it. So the root's folder is taken off, with that folder before
+# it where it stands there; a name neither begins with is told as given.
+record Naming
+    folder: str
+    here: str
+
+function file_named(place: str, at: Naming) -> str
+    colon = symbolized.last_byte(text: place, byte: ':')
+
+    if colon <= 0 || strings.starts_with(text: place, prefix: "<")
+        return place
+    file = place.slice(from: 0, to: colon)
+
+    for prefix in prefixes(at)
+        if prefix.len() > 0 && strings.starts_with(text: file, prefix: prefix) && file.len() > prefix.len()
+            return file.slice(from: prefix.len(), to: file.len()) + place.slice(from: colon, to: place.len())
+
+    return place
+
+# The folders a symbolizer's file may begin with: the root's, as written or
+# after the compile's folder where it is relative, and the compile's alone.
+function prefixes(at: Naming) -> [str]
+    if strings.starts_with(text: at.folder, prefix: "/")
+        return [at.folder]
+
+    if at.here.len() == 0
+        return [at.folder]
+    return [at.folder, at.here + "/" + at.folder]
 
 # A frame's levels from the first caller of the place: past the leading ones
 # that are not the program's (the library's, which stop at their caller's
@@ -290,7 +331,7 @@ test "a frame holding the place leaves out its calls up to the place, and a thun
         [symbolized.Level(callee: "hero_index_checked", place: "heroes_runtime.h:300"), symbolized.Level(callee: "h_deep_pick", place: "deep.hero:3"), symbolized.Level(callee: "h_deep_middle", place: "deep.hero:6"), symbolized.Level(callee: "through", place: "deep.h:4"), symbolized.Level(callee: "h_deep_outer", place: "deep.hero:10")]
         [symbolized.Level(callee: "h_0cb_deep_main", place: "deep.c:90"), symbolized.Level(callee: "h_deep_main", place: "deep.hero:14")]
     ]
-    assert told_with(t, levels: levels) == ["  called from deep.hero:6, in deep.middle", "  called from deep.hero:10, in deep.outer", "  called from deep.hero:14, in deep.main"]
+    assert told_with(t, levels: levels, at: Naming(folder: "", here: "")) == ["  called from deep.hero:6, in deep.middle", "  called from deep.hero:10, in deep.outer", "  called from deep.hero:14, in deep.main"]
 
 test "a frame under the library's own stop leaves out the library's levels and the place"
     levels = [
@@ -308,3 +349,16 @@ test "where no symbolizer answers, the runtime's own lines are told, a recursion
         cut: false
     )
     assert plain(t) == ["  called from 0x10, in deep.down, 7 times", "  and more calls above these, 2"]
+
+test "a resolved file is named as the report's place names it, from the root's folder"
+    at = Naming(folder: "mod/", here: "/w")
+    assert file_named("mod/main.hero:4", at: at) == "main.hero:4"
+    assert file_named("mod/sub/helper.hero:3", at: at) == "sub/helper.hero:3"
+    assert file_named("/w/mod/sub/helper.hero:3", at: at) == "sub/helper.hero:3"
+    assert file_named("<heroes library>:120", at: at) == "<heroes library>:120"
+    assert file_named("/elsewhere/x.hero:9", at: at) == "/elsewhere/x.hero:9"
+    alone = Naming(folder: "", here: "/w")
+    assert file_named("main.hero:4", at: alone) == "main.hero:4"
+    assert file_named("/w/sub/helper.hero:3", at: alone) == "sub/helper.hero:3"
+    whole = Naming(folder: "/abs/mod/", here: "/w")
+    assert file_named("/abs/mod/main.hero:4", at: whole) == "main.hero:4"

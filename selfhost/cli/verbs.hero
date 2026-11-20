@@ -112,7 +112,7 @@ function run_run(path: str, s: source.Source, inv: argv.Invocation, t: toolchain
     abort_calls.clear(calls)
     given = abort_calls.given(file: calls, beside: symbolized.prepare(sanitize: options.sanitize))
     ran = process.run_given(program: made.must().binary, words: words, out: "", err: "", given: given)
-    abort_calls.tell(file: calls, binary: made.must().binary)
+    abort_calls.tell(file: calls, binary: made.must().binary, root: path)
 
     if !ran.started
         io.eprint(text: "error: cannot execute " + made.must().binary)
@@ -204,7 +204,7 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
             err: "",
             given: given
         )
-        abort_calls.tell(file: calls, binary: made.must().binary)
+        abort_calls.tell(file: calls, binary: made.must().binary, root: path)
         outcome = test_outcome.of(ended_at_zero: one.started && one.code == 0, told: read_file(told))
         print(test_outcome.line(outcome, title: title))
 

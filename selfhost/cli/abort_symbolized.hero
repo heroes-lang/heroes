@@ -7,10 +7,12 @@
 # so each is tried in turn and the first that starts, ends at 0 and answers
 # every address with a place is read:
 #
-# - `atos -i -o <binary>`, Darwin's, which reads the line tables through the
-#   binary's debug map from the build's own objects (the binary carries none
-#   on Darwin, panel 253's brief, `otool -l`); per address a line per level,
-#   `<function> (in <image>) (<file>:<line>)`, and a blank line;
+# - `atos -fullPath -i -o <binary>`, Darwin's, which reads the line tables
+#   through the binary's debug map from the build's own objects (the binary
+#   carries none on Darwin, panel 253's brief, `otool -l`); per address a line
+#   per level, `<function> (in <image>) (<file>:<line>)`, and a blank line,
+#   the file whole, the compile's folder before it, where without the flag
+#   it gives the file's last part alone;
 # - `llvm-symbolizer --inlines --relativenames`, the file as the `#line`
 #   named it, relative to the compile's folder; per address a function line
 #   and a `<file>:<line>:<column>` line per level, and a blank line;
@@ -35,7 +37,10 @@ record Level
 
 # Each address's levels, from the first symbolizer that answers every one.
 function resolved(binary: str, addresses: [str], scratch: str) -> [[Level]]?
-    atos = asked(words: strings.with_all(list: ["atos", "-i", "-o", binary], more: addresses), scratch: scratch)
+    atos = asked(
+        words: strings.with_all(list: ["atos", "-fullPath", "-i", "-o", binary], more: addresses),
+        scratch: scratch
+    )
 
     if !atos.is_err()
         read = atos_levels(atos.must())
