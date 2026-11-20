@@ -245,6 +245,29 @@ static void hero_stderr_put(const char *p, size_t n) {
 #endif
 }
 
+#if defined(_WIN32)
+/* A report's bytes written inline, on the calling thread, by `WriteFile` on
+ * the handle under descriptor 2: past stdio's locks as `hero_stderr_put` is,
+ * and with no bound. For the one caller no thread can be made for: the
+ * sanitizer's vectored handler (`parts/stack.c`). Under ASan a writer thread
+ * made inside that handler ended the process by a second access violation
+ * (139) or wrote nothing (127), 4 runs of 4 on the box (2026-11-20), the wait
+ * made 5 s changing nothing; written here, the line was said 2 runs of 2. */
+__attribute__((unused)) static void hero_stderr_put_here(const char *p, size_t n) {
+    intptr_t raw = _get_osfhandle(2);
+
+    if (raw == -1 || raw == -2) return;
+    while (n > 0) {
+        DWORD count = n < HERO_REPORT_PIECE ? (DWORD)n : HERO_REPORT_PIECE;
+        DWORD put = 0;
+
+        if (!WriteFile((HANDLE)raw, p, count, &put, NULL) || put == 0) return;
+        p += put;
+        n -= put;
+    }
+}
+#endif
+
 /* A report's line with C's formatting, written by `hero_stderr_put`. The
  * buffer is on the stack, so the report allocates nothing on its failing path;
  * every format the runtime hands here, its names written in, is under a

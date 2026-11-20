@@ -662,7 +662,9 @@ void hero_stack_spell(const char *text) { (void)text; }
  * it tells it at `-O0` and `-O2`, by `ExceptionAddress`, before ASan's
  * filter is reached; a null read keeps ASan's words, its program counter
  * being a function's. `tests/harness/platform_skips.hero`'s `runtime_tells`
- * judges such a case by its ending on Windows. */
+ * judges such a case by its ending on Windows. Both lines here are written
+ * inline (`hero_stderr_put_here`, `parts/panic.c`): a writer thread made
+ * inside this handler under ASan lost the line, measured. */
 #if defined(_WIN32)
 #include <windows.h>
 #include <io.h>
@@ -670,13 +672,13 @@ void hero_stack_spell(const char *text) { (void)text; }
 static LONG WINAPI hero_stack_asan_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
         hero_stack_tell_first();
-        hero_stderr_put("panic: stack exhausted\n", 23);
+        hero_stderr_put_here("panic: stack exhausted\n", 23);
         hero_abort();
     }
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
         hero_stack_tell_first();
-        hero_stderr_put(HERO_NULL_CALL_SAID, strlen(HERO_NULL_CALL_SAID));
+        hero_stderr_put_here(HERO_NULL_CALL_SAID, strlen(HERO_NULL_CALL_SAID));
         hero_abort();
     }
     return EXCEPTION_CONTINUE_SEARCH;
