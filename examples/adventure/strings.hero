@@ -1,12 +1,12 @@
 # The text work this program does, written for it: the lines of a script, and a line without the white space at its ends.
 #
-# The language offers `len`, `slice`, `chars` and `join` and leaves the rest
-# to the program (design.md §1.11: there is no standard library), so each
-# program of `examples/` that takes text apart carries the few functions it
-# calls and no library. Until 2026-11-19 these came from a package, which
-# M-rebel-library removed (its page's decisions 6 to 8); they are written
-# here from their contract alone. Each walks bytes and cuts only where a
-# character begins, so no `slice` below splits one (spec § 10).
+# The language offers `len`, `slice`, `chars` and `join` and imposes no
+# standard library (design.md §1.11), and a program of `examples/` takes no
+# package (M-rebel-library's decision 7), so each that takes text apart
+# carries the few functions it calls. Until 2026-11-19 these came from a
+# package, which M-rebel-library removed (its page's decisions 6 to 8); they
+# are written here from their contract alone. Each walks bytes and cuts only
+# where a character begins, so no `slice` below splits one (spec § 10).
 
 # The lines of `s`, each without its end, "\n" or "\r\n"; the last line's end
 # may be left out, so "a\nb" and "a\nb\n" are both ["a", "b"], "" holds no
