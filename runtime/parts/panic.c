@@ -26,7 +26,12 @@
 #include <stdarg.h>
 /* `clock_gettime`, for how long a report waits on a stream's lock (below). */
 #include <time.h>
-#if !defined(_WIN32)
+#if defined(_WIN32)
+/* `_get_osfhandle`, `WriteFile` and a thread waited for with a bound, for a
+ * report's bytes (below). */
+#include <io.h>
+#include <windows.h>
+#else
 /* `poll`, `write` and `PIPE_BUF`, for a report's bytes (below). */
 #include <errno.h>
 #include <limits.h>
@@ -156,22 +161,83 @@ static bool hero_stream_flushed_held(FILE *stream) {
  * scrolled whose pipe is full, loses the report where it once waited for the
  * reader; the program ends instead, at the status it always had.
  *
- * WINDOWS HAS NO `poll` ON A PIPE, and its C library's `_write` takes the
- * descriptor's own lock, which a blocked writer holds: its arm writes through
- * stderr as it always has, and a writer blocked there still holds a report
- * back, unrun on the box. */
-#if !defined(_WIN32)
+ * WINDOWS HAS NO `poll` ON A PIPE, and its C library's `fwrite` and `_write`
+ * take stderr's locks, which a blocked writer holds: until 2026-11-20 its arm
+ * wrote through stderr, and on the box a runtime panic beside a thread keeping
+ * stderr's lock (`_lock_file`), and beside one blocked writing stderr into a
+ * pipe nobody reads, never ended, 3 runs of 3 each killed at 20 s with the
+ * report unsaid (defect 2606's two shapes, built by hand on a header with a
+ * Windows arm; the lock's is `run/fixedbugs-2606-a-runtime-panic-is-said-
+ * while-a-thread-keeps-stderrs-lock-on-every-platform`). After this arm the
+ * lock's panic was said in about 0.5 s and the pipe's program ended in 0.6 to
+ * 0.7 s, 3 runs of 3 each; the pipe's has no case there, its only witness
+ * being a status an abort ends with, which the run form reads as 0xC0000409
+ * plain and 127 under the sanitizer. So each piece is written past both
+ * locks, by `WriteFile` on the handle under descriptor 2, on a thread of its
+ * own the report waits for at most `HERO_REPORT_WAIT_NS`: a write that has not
+ * ended by then is cancelled (`CancelSynchronousIo`) and every report byte
+ * after it is dropped, as POSIX drops them. The piece is copied into static
+ * storage first, so a write left behind never reads a frame that is gone, and
+ * one writer at a time uses it. Both streams are binary and stderr unbuffered
+ * there (`parts/os.c`), so the bytes are the ones stdio wrote. A thread that
+ * cannot be made leaves the piece to `WriteFile` on the caller, unbounded, as
+ * before. */
+#if defined(_WIN32)
+#define HERO_REPORT_PIECE 4096
+static volatile LONG hero_report_stalled = 0;
+static struct {
+    HANDLE handle;
+    DWORD count;
+    DWORD put;
+    BOOL ok;
+    char bytes[HERO_REPORT_PIECE];
+} hero_report_piece;
+
+static DWORD WINAPI hero_report_piece_write(LPVOID unused) {
+    (void)unused;
+    hero_report_piece.ok = WriteFile(hero_report_piece.handle, hero_report_piece.bytes, hero_report_piece.count,
+                                     &hero_report_piece.put, NULL);
+    return 0;
+}
+#else
 static _Atomic int hero_report_stalled = 0;
 #endif
 
 static void hero_stderr_put(const char *p, size_t n) {
 #if defined(_WIN32)
-    while (n > 0) {
-        size_t put = fwrite(p, 1, n, stderr);
-        if (put == 0) return;
-        p += put;
-        n -= put;
+    static SRWLOCK one_writer = SRWLOCK_INIT;
+    intptr_t raw = _get_osfhandle(2);
+
+    if (raw == -1 || raw == -2) return;
+    AcquireSRWLockExclusive(&one_writer);
+    while (n > 0 && InterlockedCompareExchange(&hero_report_stalled, 0, 0) == 0) {
+        DWORD count = n < HERO_REPORT_PIECE ? (DWORD)n : HERO_REPORT_PIECE;
+
+        memcpy(hero_report_piece.bytes, p, count);
+        hero_report_piece.handle = (HANDLE)raw;
+        hero_report_piece.count = count;
+        hero_report_piece.put = 0;
+        hero_report_piece.ok = FALSE;
+        HANDLE writer = CreateThread(NULL, 0, hero_report_piece_write, NULL, 0, NULL);
+
+        if (writer == NULL) {
+            (void)hero_report_piece_write(NULL);
+        } else {
+            DWORD waited = WaitForSingleObject(writer, (DWORD)(HERO_REPORT_WAIT_NS / INT64_C(1000000)));
+
+            if (waited != WAIT_OBJECT_0) {
+                (void)CancelSynchronousIo(writer);
+                InterlockedExchange(&hero_report_stalled, 1);
+                (void)CloseHandle(writer);
+                break;
+            }
+            (void)CloseHandle(writer);
+        }
+        if (!hero_report_piece.ok || hero_report_piece.put == 0) break;
+        p += hero_report_piece.put;
+        n -= hero_report_piece.put;
     }
+    ReleaseSRWLockExclusive(&one_writer);
 #else
     while (n > 0 && atomic_load_explicit(&hero_report_stalled, memory_order_relaxed) == 0) {
         struct pollfd out = {.fd = STDERR_FILENO, .events = POLLOUT, .revents = 0};
@@ -189,6 +255,29 @@ static void hero_stderr_put(const char *p, size_t n) {
     }
 #endif
 }
+
+#if defined(_WIN32)
+/* A report's bytes written inline, on the calling thread, by `WriteFile` on
+ * the handle under descriptor 2: past stdio's locks as `hero_stderr_put` is,
+ * and with no bound. For the one caller no thread can be made for: the
+ * sanitizer's vectored handler (`parts/stack.c`). Under ASan a writer thread
+ * made inside that handler ended the process by a second access violation
+ * (139) or wrote nothing (127), 4 runs of 4 on the box (2026-11-20), the wait
+ * made 5 s changing nothing; written here, the line was said 2 runs of 2. */
+__attribute__((unused)) static void hero_stderr_put_here(const char *p, size_t n) {
+    intptr_t raw = _get_osfhandle(2);
+
+    if (raw == -1 || raw == -2) return;
+    while (n > 0) {
+        DWORD count = n < HERO_REPORT_PIECE ? (DWORD)n : HERO_REPORT_PIECE;
+        DWORD put = 0;
+
+        if (!WriteFile((HANDLE)raw, p, count, &put, NULL) || put == 0) return;
+        p += put;
+        n -= put;
+    }
+}
+#endif
 
 /* A report's line with C's formatting, written by `hero_stderr_put`. The
  * buffer is on the stack, so the report allocates nothing on its failing path;
@@ -220,28 +309,34 @@ static void hero_report_printf(const char *format, ...) {
  * is making, which is bounded now, every wait of a report having a bound. The
  * thread that holds it passes, so a report that stops inside itself is still
  * said. Its mark is a thread-local's address, unique to its thread and never
- * 0. Windows keeps its reports as they were (above), so it takes none. */
-#if !defined(_WIN32)
+ * 0. On Windows too since its reports go past stderr's lock (defect 2606). */
 static _Atomic uintptr_t hero_report_owner = 0;
 static _Thread_local char hero_report_here;
-#endif
 
 static void hero_report_latch(void) {
-#if !defined(_WIN32)
     uintptr_t me = (uintptr_t)&hero_report_here;
     uintptr_t none = 0;
     if (atomic_compare_exchange_strong(&hero_report_owner, &none, me) || none == me) return;
+#if defined(_WIN32)
+    for (;;) Sleep(INFINITE);
+#else
     for (;;) pause();
 #endif
 }
 
 /* The beginning of every report: the latch, stdout flushed where its lock can
  * be had, and stderr's lock asked the same way, so no other thread's line on
- * stderr falls inside the report; each lock is KEPT where had. */
+ * stderr falls inside the report; each lock is KEPT where had. Windows asks
+ * no stderr lock: it has no bound to ask it with (above), stderr is unbuffered
+ * there, so nothing waits in it to be flushed, and the report goes past the
+ * lock, another thread's line free to fall inside it, as POSIX's may where
+ * the lock was not had. */
 static void hero_report_begin(void) {
     hero_report_latch();
     (void)hero_stream_flushed_held(stdout);
+#if !defined(_WIN32)
     (void)hero_stream_flushed_held(stderr);
+#endif
 }
 
 _Noreturn void hero_panic(const char *msg) {

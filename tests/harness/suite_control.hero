@@ -159,10 +159,10 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
     # A case may declare that the sanitiser speaks (`!sanitizer:`, panel 173),
     # as `run/`'s do for a stack exhausted: the report is then the artifact,
     # held to its needle, and the runtime's own words stay judged at `-O0` and
-    # `-O2` above; on Windows the runtime tells a stack overflow under the
-    # sanitiser too (defect 641).
+    # `-O2` above; on Windows the runtime tells a stack overflow and a call to
+    # address zero under the sanitiser too (defects 641 and 2578).
     if !want.sanitizer.is_err()
-        if platform_skips.runtime_tells(want.sanitizer.must())
+        if platform_skips.runtime_tells(want)
             if judged(@r, item: item, level: "--permissive --sanitize", want: want, said: sanitised)
                 return
             report.keep_pass(@r)

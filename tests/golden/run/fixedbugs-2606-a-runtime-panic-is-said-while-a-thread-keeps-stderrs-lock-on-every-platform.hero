@@ -1,0 +1,27 @@
+# Fixed 2026-11-20, defect 2606, lane-platform: the twin, on a header with a
+# Windows arm, of `fixedbugs-2606-a-runtime-panic-is-said-while-a-thread-
+# keeps-stderrs-lock`, whose `unistd.h` the Windows box lacks: `main` joins a
+# handle the program was never given, a runtime panic, while a thread of its
+# own holds stderr's lock and never gives it back.
+# Symptom: on the Windows box the program never ended and said nothing, 3
+# runs of 3 killed at 20 s: the report went through stderr's stdio, which
+# waited on the lock the thread holds.
+# Cause: Windows' report kept its stdio path when POSIX's left it. Its bytes
+# now go past the lock, written by `WriteFile` on a thread of their own that
+# the report waits for with a bound.
+extern "fixedbugs-2606-every-platform.h"
+    function keep_stderr(n: i64) -> i64
+    function pause_us(us: i64) -> i64
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function keep(n: i64) -> i64
+    return keep_stderr(n: n)
+
+function main()
+    t = hero_thread_spawn(body: keep, arg: 7)
+    _ = pause_us(us: 300000)
+    print("main stops now")
+    _ = hero_thread_join(handle: t + 1000)

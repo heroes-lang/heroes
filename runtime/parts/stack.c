@@ -183,6 +183,11 @@
     "  a copy of its handle the program kept, since a freed object's fields read as zero. This\n" \
     "  runtime raised neither.\n"
 
+/* WHAT A CALL TO ADDRESS ZERO SAYS, one string for every arm that tells it,
+ * POSIX's, Windows' and Windows' under the sanitizer (defect 2578). */
+#define HERO_NULL_CALL_SAID \
+    "panic: a null function pointer was called \xe2\x80\x94 a call went through a function pointer that held none, such as a `ptr` holding `nullptr` handed to C as a callback, or an `extern` function its header declares as a pointer, called while the pointer held none\n"
+
 /* A DEAD C HANDLE USED INSIDE C, and the region that makes it a fault (panel
  * 177's item 1; the landing's skeptic, probe `a2d`, 2026-09-25). A call that
  * ends a handle's life leaves `hero_handle_dead()` in the place its argument
@@ -676,7 +681,25 @@ void hero_stack_spell(const char *text) { (void)text; }
  * fault's words in the runtime, as `-O0` and `-O2` do, and every other fault,
  * a null read, a dead handle, a lend overrun, stays ASan's to name; the
  * guarantee gives the handler its room on every thread the runtime starts.
- * POSIX's ASan runs on an alternate stack of its own and keeps all of it. */
+ * POSIX's ASan runs on an alternate stack of its own and keeps all of it.
+ *
+ * **AND A CALL TO ADDRESS ZERO ON WINDOWS** (defect 2578): defect 2558's case
+ * that a library declines, `run/fixedbugs-2558-a-null-call-a-library-declines-
+ * is-told` built `--sanitize -O0`, printed `before` and then nothing, never
+ * ending, 3 runs of 3 from an ssh session on the box (2026-11-20) with the
+ * runtime it was filed on, `cc83b4d91`, and with every runtime up to
+ * `cec8bd9e5`. From `8a78b5e3b` (defect 2587's report path, which touches no
+ * fault) ASan said `access-violation on unknown address` 9 runs of 9: a
+ * change of what the stack held, not of how the fault is told, which leaves
+ * ASan's report at the mercy of the next one (its filter unwinds from a
+ * program counter of 0, through a frame the call left without the unwind
+ * data it describes; unrun as the cause). So the runtime tells this fault as
+ * it tells it at `-O0` and `-O2`, by `ExceptionAddress`, before ASan's
+ * filter is reached; a null read keeps ASan's words, its program counter
+ * being a function's. `tests/harness/platform_skips.hero`'s `runtime_tells`
+ * judges such a case by its ending on Windows. Both lines here are written
+ * inline (`hero_stderr_put_here`, `parts/panic.c`): a writer thread made
+ * inside this handler under ASan lost the line, measured. */
 #if defined(_WIN32)
 #include <windows.h>
 #include <io.h>
@@ -684,14 +707,13 @@ void hero_stack_spell(const char *text) { (void)text; }
 static LONG WINAPI hero_stack_asan_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
         hero_stack_tell_first();
-        const char *s = "panic: stack exhausted\n";
-        size_t n = strlen(s);
-        while (n > 0) {
-            int put = _write(2, s, (unsigned int)n);
-            if (put <= 0) break;
-            s += (size_t)put;
-            n -= (size_t)put;
-        }
+        hero_stderr_put_here("panic: stack exhausted\n", 23);
+        hero_abort();
+    }
+    if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
+        && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
+        hero_stack_tell_first();
+        hero_stderr_put_here(HERO_NULL_CALL_SAID, strlen(HERO_NULL_CALL_SAID));
         hero_abort();
     }
     return EXCEPTION_CONTINUE_SEARCH;
@@ -1053,7 +1075,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
     if (pc == 0) {
         if (hero_stack_foreign(sp) && hero_stack_prior_recovered(signum, si, ctx)) return;
         hero_stack_tell_first();
-        hero_stack_say("panic: a null function pointer was called — a call went through a function pointer that held none, such as a `ptr` holding `nullptr` handed to C as a callback, or an `extern` function its header declares as a pointer, called while the pointer held none\n");
+        hero_stack_say(HERO_NULL_CALL_SAID);
         hero_abort();
     }
 
@@ -1246,20 +1268,13 @@ static void hero_stack_guard_install(void) {
 #include <windows.h>
 #include <io.h>
 
-/* `_write` until every byte is out, as `hero_stack_say` loops on POSIX: the
- * CRT may write fewer bytes than it was handed, and a sentence cut short is a
- * contract broken on the one platform nobody reads it on. */
-static void hero_stack_veh_say(const char *s) {
-    size_t n = strlen(s);
-    while (n > 0) {
-        int put = _write(2, s, (unsigned int)n);
-        if (put <= 0) return;
-        s += (size_t)put;
-        n -= (size_t)put;
-    }
-}
+/* Through `hero_stderr_put` (`parts/panic.c`), as `hero_stack_say` writes on
+ * POSIX: every byte out, a piece at a time, past stderr's locks, and never
+ * waiting on a reader that takes nothing (defect 2606). It looped on `_write`
+ * until then, which waits on the descriptor's lock a blocked writer holds. */
+static void hero_stack_veh_say(const char *s) { hero_stderr_put(s, strlen(s)); }
 
-/* The POSIX arm's `hero_stack_say_hex`, in this platform's `_write`: the same
+/* The POSIX arm's `hero_stack_say_hex`, through the same writer: the same
  * digits, from the one writer above the platform split. */
 static void hero_stack_veh_say_hex(uintptr_t v) {
     char buf[HERO_HEX_BUF];
@@ -1287,7 +1302,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
         hero_stack_tell_first();
-        hero_stack_veh_say("panic: a null function pointer was called \xe2\x80\x94 a call went through a function pointer that held none, such as a `ptr` holding `nullptr` handed to C as a callback, or an `extern` function its header declares as a pointer, called while the pointer held none\n");
+        hero_stack_veh_say(HERO_NULL_CALL_SAID);
         hero_abort();
     }
 
