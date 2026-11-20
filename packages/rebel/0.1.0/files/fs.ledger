@@ -185,7 +185,7 @@ capability fs/rename  a path given another name on the same volume, replacing a 
   go      os.Rename
   rust    fs::rename
   python  os.rename, os.replace, Path.rename, Path.replace
-  note    a file takes the place of a file and never of a folder, and a folder of nothing, on every system
+  note    a file takes the place of a file and never of a folder, and a folder of nothing, on every system; the folder told by what the target is, since the systems' numbers differ (defect 2608, 2026-11-20): a file onto the folder that holds it, or one above, is EISDIR on Darwin and ENOTEMPTY on Linux, onto `<folder>/.` EINVAL and EBUSY, and every one is `is_a_directory`
 
 capability fs/write-atomic  a file written whole in one step that no reader and no crash of the machine sees half done
   heroes  fs.write_atomic_bytes, fs.write_atomic_text
