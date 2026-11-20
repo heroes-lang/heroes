@@ -1,7 +1,7 @@
 
   <div class="page-head">
     <h1 class="page">Perché Heroes</h1>
-    <span class="nod">· <a href="/it/about/thanks/#rebel-rebel">rebel rebel</a></span>
+    <span class="nod">· <a href="/it/about/thanks/#life-on-mars">life on mars?</a></span>
   </div>
   <p class="lede">
     Heroes nasce da due vincoli: il codice deve essere facile da leggere per un modello e deve poter usare le librerie C.
@@ -140,7 +140,7 @@ record Rect
     Ognuna è una scelta, e questo è quello che costa.
   </p>
   <ul class="pillars">
-    <li><b>Non c&rsquo;è una libreria standard.</b> Le funzioni predefinite
+    <li><b>Heroes non impone una libreria standard.</b> Le funzioni predefinite
     sono una riga della specifica: stampare, la lunghezza,
     <code>push</code>, <code>slice</code>, <code>chars</code>,
     <code>keys</code>, <code>join</code>, <code>repeat</code>,
@@ -151,10 +151,13 @@ record Rect
     scrivere un file, gli argomenti della riga di comando ed <code>exit</code>.
     Tutto il resto è una libreria C che dichiari tu, oppure un pacchetto di
     codice Heroes che il tuo programma porta con sé, e che
-    <code>heroes add</code> scarica da un repository git o da un indice, il
-    posto dove i pacchetti vengono pubblicati. Per ora il progetto pubblica
-    solo i pacchetti di base, per il testo, i numeri e il JSON, in una cartella
-    del suo repository, e il suo indice sul web è ancora da costruire.</li>
+    <code>heroes add</code> scarica da un indice, il posto dove i pacchetti
+    vengono pubblicati, da un repository git o da una cartella. Il progetto
+    scrive un pacchetto di questo tipo, <a href="/it/rebel/">Rebel</a>, una
+    libreria ampia per il testo, i file, i numeri, la rete e i formati di
+    dati, che un programma prende o lascia; il compilatore stesso è scritto
+    senza. L&rsquo;indice sul web è ancora da costruire, quindi oggi un
+    programma prende Rebel dalla cartella del repository che lo contiene.</li>
     <li><b>Il lavoro in parallelo porta un numero solo.</b> Un thread prende
     un <code>i64</code> e ne restituisce uno. Se metti una lista dentro il
     tipo di una callback, il compilatore la rifiuta prima che il programma

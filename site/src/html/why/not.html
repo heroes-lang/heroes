@@ -22,8 +22,8 @@
   <h2 id="refusals">The no&rsquo;s, largest first</h2>
   <ol class="log">
     <li id="standard-library">
-      <span class="when">No standard library</span>
-      <b>Everything beyond the specification, from files to sockets to databases, comes from C libraries you declare yourself, or from packages of Heroes code your program carries with it.</b> It is the language&rsquo;s founding constraint and the author set it before anything else: every function provided on top is a permanent maintenance commitment and a competitor to the libraries that already exist. The C pragmatist guards it at every sitting: it compiles the C a binding would need, or shows why it does not compile. It is a declared non-goal in the design document, outside the refusals table, and it carries no written falsifier.
+      <span class="when">No standard library imposed</span>
+      <b>Heroes imposes no standard library: everything beyond the specification, from files to sockets to databases, comes from C libraries you declare yourself, or from packages of Heroes code your program carries with it.</b> It is the language&rsquo;s founding constraint and the author set it before anything else: every function the language or its runtime provides on top is a permanent maintenance commitment and a competitor to the libraries that already exist. So the library this project writes, <a href="/rebel/">Rebel</a>, is a package like any other: a program takes it or leaves it, nothing of it is compiled into the compiler or the runtime, and the compiler is written without it. The C pragmatist guards the boundary at every sitting: it compiles the C a binding would need, or shows why it does not compile. It is a declared non-goal in the design document, outside the refusals table, and it carries no written falsifier.
       <a class="more" href="/docs/the-c-boundary/">The C boundary</a>
     </li>
     <li id="null">
