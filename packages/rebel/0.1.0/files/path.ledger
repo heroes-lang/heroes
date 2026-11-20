@@ -157,7 +157,7 @@ capability path/rel  the way from one path to another
   go      filepath.Rel
   rust    Path::strip_prefix, Path::trim_prefix
   python  posixpath.relpath, ntpath.relpath, PurePath.relative_to
-  note    Go's `filepath.Rel`, observed on nineteen pairs: both cleaned, and no way where a base climbs out of a folder the text does not name; Python's `relpath` asks the working folder, which reads the system, and `relative_to` and Rust's `strip_prefix` climb by no `..`, so they are `rel` where `is_under` holds. By Windows' rules volumes and names are compared with ASCII letters' case set aside, and the separator written is `\`
+  note    Go's `filepath.Rel`, observed on nineteen pairs: both cleaned, and no way where a base climbs out of a folder the text does not name; Python's `relpath` asks the working folder, which reads the system, and `relative_to` and Rust's `strip_prefix` climb by no `..`, so they are `relative` where `is_under` holds. By Windows' rules volumes and names are compared with ASCII letters' case set aside, and the separator written is `\`
 
 capability path/is-under  whether a path stands under another
   heroes  path.is_under, path.is_under_by

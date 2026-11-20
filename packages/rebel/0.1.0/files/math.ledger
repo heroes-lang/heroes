@@ -473,7 +473,7 @@ capability whole/counting  the factorial, and the counts of combinations and of 
   go      -
   rust    -
   python  factorial, comb, perm
-  note    each fails only where the answer itself does not fit; `perm` takes both arguments
+  note    each fails only where the answer itself does not fit; `math.count_permutations` takes both arguments, where Python's `perm` may leave out the second
 
 capability whole/pow-mod  a power modulo a number, with no overflow on the way
   heroes  math.pow_mod
