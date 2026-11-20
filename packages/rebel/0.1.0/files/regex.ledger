@@ -59,7 +59,7 @@ capability regex/unicode-scripts  a class of characters named by a script
   go      regexp.Compile (`\p{Greek}`, `\P{Greek}`)
   rust    -
   python  -
-  note    waits for `unicode` to answer a character's script, its own block `class/script` being pending; `\p{Greek}` fails `invalid` until then
+  note    the table of scripts is `unicode/names`' (`unicode/names.script`), a package of this one's layer, which `regex` may not use; `unicode`'s own block `class/script` is pending. `regex` does not climb to reach it, since `scanner` and `tokenizer` use it and would climb too; `\p{Greek}` fails `invalid` until a table of scripts stands below layer 1
 
 capability regex/ascii-classes  a class of ASCII named inside brackets
   heroes  regex.compile
@@ -128,7 +128,7 @@ capability regex/name-escapes  a character written by its Unicode name
   go      -
   rust    -
   python  re.compile (`\N{NAME}`)
-  note    waits for a table of Unicode's character names, which `unicode` does not hold
+  note    the table of names is `unicode/names`' (`unicode/names.character_named` reads a name), a package of this one's layer, which `regex` may not use, and `unicode` does not hold it; `regex` does not climb to reach it, as `regex/unicode-scripts` says, and `\N{NAME}` fails `invalid`
 
 capability regex/literal-run  a run of text inside a pattern taken as it is
   heroes  refused: one way: `regex.escape` quotes a text
