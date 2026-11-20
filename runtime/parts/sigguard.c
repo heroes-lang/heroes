@@ -395,20 +395,39 @@ static void hero_signal_measure(void) {
 }
 
 /* How a refusal was reached, which its first words say. */
-#define HERO_SIGNAL_CALLED 0    /* a handler of C's called the function */
+#define HERO_SIGNAL_CALLED 0    /* the delivery's own frame is live beneath it */
 #define HERO_SIGNAL_DELIVERED 1 /* the system called it itself */
 #define HERO_SIGNAL_UNFOLLOWED 2
+#define HERO_SIGNAL_STANDING 3
 
-/* HERO_SIGNAL_UNFOLLOWED: the handler the refusal rests on was seen to begin,
- * and then C jumped, while it ran, to a buffer this runtime never saw filled
- * (panel 251's R1: a jump to a buffer with no trusted record keeps every
- * entry). Whether that jump left the handler or landed inside it is not known
- * here, so the words say that and no more (defect 2522's row, *it owes words
- * of its own*): R1's *C called it while handling a signal* was false of a
- * correct program that copied its buffer with `memcpy`, jumped out of the
- * handler through the copy and later called the function. The refusal stands, R1's error toward a told refusal. Measured before these words: 40 runs of
- * 40 at `-O0` and at `-O2` on this Mac and 20 of 20 at `-O0` in Linux arm64,
- * 2026-11-20, each refused with R1's. */
+/* EVERY REFUSAL THE FOURTH QUESTION MAKES SAYS WHAT THE RUNTIME KNOWS, never
+ * more (the author's ruling B of 2026-11-20 on defect 2522's rows 1 and 2).
+ * The runtime saw the handler begin and has not seen it end; it cannot tell a
+ * handler still running from one C left by a jump it sees no event for, and
+ * running the function would then be a bet on memory, so the refusal stands,
+ * a known cost of a correct program (robustness ranks first, CLAUDE.md §
+ * Precedence), and its words are true of both.
+ *
+ * HERO_SIGNAL_STANDING: no jump since the handler began is known to have
+ * passed over it. R1's words, *C called it while handling a signal*, were
+ * false where C left the handler by a jump that is no call of the C
+ * library's: the inline `__builtin_setjmp` pair at `-O0` on x86-64 refused a
+ * correct jump out 20 runs of 20 in the emulated Linux x86-64 image
+ * (lane-signals, 2026-11-20), and a jump made inside a system library or a
+ * C++ exception leaves no event either. R1's words stay for the exact test,
+ * ONSTACK and the walk, which find the delivery's own frame live beneath the
+ * function, so are true.
+ *
+ * HERO_SIGNAL_UNFOLLOWED: C jumped, while the handler ran, to a buffer this
+ * runtime holds no trusted record of (panel 251's R1: such a jump keeps every
+ * entry), so whether the jump left the handler or landed inside it is not
+ * known. R1's words were false of a correct program that copied its buffer
+ * with `memcpy`, jumped out of the handler through the copy and later called
+ * the function: 40 runs of 40 at `-O0` and at `-O2` on this Mac and 20 of 20
+ * at `-O0` in Linux arm64, 2026-11-20 (defect 2522's row 1, step 70d). And
+ * *a buffer this runtime never saw filled*, the words of that day, was false
+ * of a buffer it saw filled and that was refilled since, or whose record a
+ * full table overwrote: the record is of the buffer as it now stands. */
 static _Noreturn void hero_signal_refuse(const char *what, int how) {
     const char *const said[] = {
         "panic: ",
@@ -416,10 +435,17 @@ static _Noreturn void hero_signal_refuse(const char *what, int how) {
         how == HERO_SIGNAL_DELIVERED
             ? " ran as a signal handler: the system called it inside a signal, where neither this "
               "runtime's memory nor the C library's is safe to use. "
+        : how == HERO_SIGNAL_STANDING
+            ? " was called while a signal handler of C's that this runtime saw begin had not been seen "
+              "to end: either C called it from inside that handler, or C left the handler in a way this "
+              "runtime does not follow (an inline `__builtin_longjmp`, a C++ exception, a jump inside a "
+              "system library). A handler not seen to end is held to be running, where neither this "
+              "runtime's memory nor the C library's is safe to use. "
         : how == HERO_SIGNAL_UNFOLLOWED
-            ? " was called after C, inside a signal handler, jumped to a buffer this runtime never saw "
-              "filled (copied with `memcpy`, or saved where it does not look), so whether the jump left "
-              "the handler is not known: a handler not seen to end is held to be running, where neither "
+            ? " was called after C, inside a signal handler, jumped to a buffer this runtime holds no "
+              "record of as it now stands (copied with `memcpy`, refilled where the runtime does not "
+              "look, or saved before more save points than it keeps), so whether the jump left the "
+              "handler is not known: a handler not seen to end is held to be running, where neither "
               "this runtime's memory nor the C library's is safe to use. "
             : " was called from inside a signal handler: C called it while handling a signal, where "
               "neither this runtime's memory nor the C library's is safe to use. ",
@@ -453,7 +479,7 @@ void hero_callback_entered(const char *what, void *ret, void *frame) {
 #else
     int inside = HERO_SIG_OUTSIDE;
 #endif
-    if (inside != HERO_SIG_OUTSIDE) hero_signal_refuse(what, inside == HERO_SIG_UNSURE ? HERO_SIGNAL_UNFOLLOWED : HERO_SIGNAL_CALLED);
+    if (inside != HERO_SIG_OUTSIDE) hero_signal_refuse(what, inside == HERO_SIG_UNSURE ? HERO_SIGNAL_UNFOLLOWED : HERO_SIGNAL_STANDING);
     if (plain == 0 || own == NULL) return;
     uintptr_t lo = own->lo;
     uintptr_t hi = own->hi;

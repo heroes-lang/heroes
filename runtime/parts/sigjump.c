@@ -40,9 +40,10 @@
  * A JUMP TO A BUFFER WITH NO RECORD KEEPS EVERY ENTRY: one overwritten in a
  * full record, copied by `memcpy`, filled by the C library inside itself, or
  * on a thread nothing claimed. The error is then a told refusal (R1), never
- * Heroes code running inside a signal; its price is defect 2522's row, a
+ * Heroes code running inside a signal; its price is defect 2522's row 1, a
  * correct program that copies a buffer and jumps OUT of a handler through the
- * copy, refused with words that say a handler is running when none is.
+ * copy, refused, a known cost by the author's ruling B of 2026-11-20, in words
+ * that say the jump could not be followed (`parts/sigguard.c`).
  *
  * THE C LIBRARY'S OWN are found by `dlsym(RTLD_NEXT)` before `main` (a
  * constructor beside `parts/siginstall.c`'s), never inside a handler; a save

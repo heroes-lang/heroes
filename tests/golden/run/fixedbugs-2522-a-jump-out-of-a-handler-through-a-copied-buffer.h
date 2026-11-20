@@ -5,8 +5,9 @@
  * a frame far deeper than the handler's was. The copy is a buffer the runtime
  * never saw filled, so it cannot tell this jump from one that lands inside the
  * handler, and keeps the handler as running. POSIX's, which a platform without
- * POSIX's signals lacks: such a platform is told the header is missing and
- * skips the case (`absence.hero`). */
+ * POSIX's signals lacks: `unistd.h` is asked first, so such a platform is
+ * told the header is missing and skips the case (`absence.hero`). */
+#include <unistd.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <stdint.h>

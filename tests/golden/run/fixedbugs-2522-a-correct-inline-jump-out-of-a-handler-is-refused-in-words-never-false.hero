@@ -1,0 +1,31 @@
+# Defect 2522's row 2, a known cost by the author's ruling B of 2026-11-20,
+# lane-signals-2: a correct program whose handler jumps out of itself by a
+# jump no function of the C library makes (the inline `__builtin_setjmp`
+# pair on x86-64, the same jump written by hand on arm64:
+# `fixedbugs-2522-an-inline-jump-out-of-a-handler.h`), and which, the signal
+# over, calls the function from far deeper.
+# Why it is refused: the runtime sees the handler begin and sees no event for
+# this jump, so the handler is never seen to end, and the runtime cannot tell
+# this program from one that jumps within its handler and then calls the
+# function inside the signal, where neither its memory nor the C library's is
+# safe. Running the function here would be a bet on memory; robustness ranks
+# first (CLAUDE.md § Precedence), so the refusal stands.
+# The ruling: every refusal resting on a handler not seen to end takes words
+# never false of a correct program. Until then this one said *C called it
+# while handling a signal*, false here (20 runs of 20 at `-O0` in the
+# emulated Linux x86-64 image, lane-signals, 2026-11-20).
+extern "fixedbugs-2522-an-inline-jump-out-of-a-handler.h"
+    function inline_install(sig: i32) -> i32
+    function inline_escape(sig: i32) -> i32
+    function inline_call(cb: (function(i64) -> i64)) -> i64
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function answer(n: i64) -> i64
+    return n + 1
+
+function main()
+    print("installed ", inline_install(sig: SIGUSR1))
+    print("escaped ", inline_escape(sig: SIGUSR1))
+    print("called ", inline_call(cb: answer))
