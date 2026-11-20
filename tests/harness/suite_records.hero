@@ -85,6 +85,15 @@ constant RECORD: [str]
         "tests/emission"
         "docs/records/contract"
         "vendor"
+        # Monocypher 4.0.3's files, third-party bytes the runtime carries as
+        # released and never edits (M-rebel-library's steps 69): its comment
+        # `chi(a)*chi(b)` read as Italian on 2026-11-20. Each by its exact
+        # path, so the folder's README.md, this project's, stays read.
+        "runtime/vendor/monocypher/LICENCE.md"
+        "runtime/vendor/monocypher/monocypher.c"
+        "runtime/vendor/monocypher/monocypher.h"
+        "runtime/vendor/monocypher/monocypher-ed25519.c"
+        "runtime/vendor/monocypher/monocypher-ed25519.h"
         "editors/vscode/icons"
     ]
 

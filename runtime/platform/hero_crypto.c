@@ -93,7 +93,7 @@
  * reference for CNG; RFC 5208, 5280, 5915, 5958, 8017 and 8410 for the
  * forms; Monocypher's manual pages for the five functions the Apple arm
  * calls, whose source is compiled in as released, not one byte edited
- * (`vendor/monocypher/README.md`); no other library's source.
+ * (`runtime/vendor/monocypher/README.md`); no other library's source.
  */
 
 #include "hero_crypto.h"
@@ -1915,10 +1915,11 @@ int64_t hero_crypto_decrypt(hero_crypto_key *k, int64_t scheme, const void *data
  * reads an RSA key as PKCS #1 and an EC key as X9.63's `04 || X || Y [||
  * K]`, which THE FORMS build from the material.
  *
- * ED25519 AND X25519 ARE MONOCYPHER'S, vendored (`vendor/monocypher/`, its
- * README; decision 2594): `SecKey` takes no Curve25519 key, and CryptoKit's
- * Ed25519 signs differently every time, so it gives neither RFC 8032's
- * signatures nor the deterministic one the face promises (panel 253's R3).
+ * ED25519 AND X25519 ARE MONOCYPHER'S, vendored
+ * (`runtime/vendor/monocypher/README.md`; decision 2594): `SecKey` takes no
+ * Curve25519 key, and CryptoKit's Ed25519 signs differently every time, so
+ * it gives neither RFC 8032's signatures nor the deterministic one the face
+ * promises (panel 253's R3).
  * Its two files are compiled inside this arm, every function and object of
  * theirs given internal linkage, so this object exports none of their
  * names and a program binding Monocypher or libsodium itself meets no second

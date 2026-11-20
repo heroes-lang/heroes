@@ -6,12 +6,13 @@
  *
  * platform/hero_crypto_cryptokit.swift: the authenticated ciphers of macOS,
  * AES-GCM and ChaCha20-Poly1305, by the system's CryptoKit, for
- * `hero_crypto.c`'s Apple arm (panel 253's R3, the mixed route; M-rebel-
- * library's steps 69). macOS offers neither cipher to C: CommonCrypto's
- * public modes hold no authenticated one and its GCM is in a header the SDK
- * does not ship; CryptoKit has both and is Swift's alone. So this file is
- * Swift, and exports two functions to C by `@c`, which `swiftc` 6.4.2 prints
- * in its generated header's C section, outside `#if defined(__OBJC__)`.
+ * `hero_crypto.c`'s Apple arm (panel 253's R3, the mixed route;
+ * M-rebel-library's steps 69). macOS offers neither cipher to C:
+ * CommonCrypto's public modes hold no authenticated one and its GCM is in a
+ * header the SDK does not ship; CryptoKit has both and is Swift's alone. So
+ * this file is Swift, and exports two functions to C by `@c`, which `swiftc`
+ * 6.4.2 prints in its generated header's C section, outside `#if
+ * defined(__OBJC__)`.
  *
  * ITS C DECLARATIONS ARE `hero_crypto_cryptokit.h`'s, and the layer holds the
  * two to each other at every compile: it compiles a C unit that includes the

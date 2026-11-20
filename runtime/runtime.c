@@ -342,7 +342,8 @@
  * names under `platform/` that end in `.swift`); and Monocypher's, which
  * `hero_crypto.c` compiles inside itself on macOS and which stand under
  * `vendor/`, outside `platform/`, so none is archived alone
- * (`vendor/monocypher/README.md`; decision 2594), its licence with them. */
+ * (`runtime/vendor/monocypher/README.md`; decision 2594), its licence with
+ * them. */
 #if 0
 #include "platform/hero_handle_tag.h"
 #include "hero_crypto.h"

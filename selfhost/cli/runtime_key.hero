@@ -81,8 +81,8 @@ function made_of(runtime: str) -> [str]?
 # runtime a test changes one file of. Each folder is asked of the list,
 # never written here, since a vendored library's files stand under
 # `vendor/` beside `parts/` and `platform/` (M-rebel-library's steps 69,
-# `vendor/monocypher/`), and a copy that made two folders by name failed to
-# write the third's files.
+# `runtime/vendor/monocypher/`), and a copy that made two folders by name
+# failed to write the third's files.
 function copy_made(runtime: str, copy: str) -> ()?
     for path in made_of(runtime)?
         name = path.slice(from: runtime.len() + 1, to: path.len())

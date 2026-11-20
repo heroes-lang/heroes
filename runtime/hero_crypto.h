@@ -31,7 +31,7 @@
  *     macOS alone**: `SecKey` takes no Curve25519 key and CryptoKit's
  *     Ed25519 signs differently every time, never RFC 8032's bytes, so both
  *     are Monocypher 4.0.3's, a small C library vendored into the runtime
- *     (`vendor/monocypher/README.md`), as decision 2594 admits for
+ *     (`runtime/vendor/monocypher/README.md`), as decision 2594 admits for
  *     primitives that read no outside data; its manual says *"No secret
  *     dependent indices, no secret dependent branches"*, a claim of its
  *     authors this project has not measured. A security update of the
