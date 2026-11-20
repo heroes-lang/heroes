@@ -1,0 +1,10 @@
+# Defect 2624: each package is reached by the name its entry holds; the
+# refused adds left `yaml` and `json` naming their own folders.
+use <json>/parse
+use <other>/extra
+use <yaml>/load
+
+function main()
+    print(load.size().to_str())
+    print(extra.size().to_str())
+    print(parse.x().to_str())

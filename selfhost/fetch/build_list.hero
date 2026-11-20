@@ -65,9 +65,14 @@ function chosen(@ledger: staging.Ledger, tools: transport.Tools, program: str, r
             picks @ picks.push(Pick(entry: renamed(wanted, name: e.name), identity: id, for_whom: ""))
             placed_wanted @ true
         else if e.name == wanted.name
+            # `fetch/add_wanted.hero` (`name_held`) refuses every shape of
+            # this before a source is asked, with the routes its command line
+            # leaves (defect 2624); this guard keeps the walk from writing
+            # two entries of one name, and tells the fact as that refusal
+            # does, with the route every shape has.
             return fail(
-                code: "bad_usage",
-                msg: "the catalogue's entry `" + e.name + "` is " + catalogue.said_source(e) + ", another package than " + catalogue.said_source(wanted) + ": name the new one with `--as`"
+                code: "catalogue_refused",
+                msg: "the catalogue's entry `" + e.name + "` already names " + catalogue.said_source(e) + ", another package than " + catalogue.said_source(wanted) + ", and an entry names one package: for the new one to take its place, take `[dependencies." + e.name + "]` out of `" + program + catalogue.FILE + "` by hand and run this add again"
             )
         else
             picks @ picks.push(Pick(entry: e, identity: id, for_whom: ""))

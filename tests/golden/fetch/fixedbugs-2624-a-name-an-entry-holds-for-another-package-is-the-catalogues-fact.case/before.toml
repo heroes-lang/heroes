@@ -1,0 +1,18 @@
+# Defect 2624: a name an entry holds for another package is the catalogue's
+# fact, `catalogue_refused` at exit 1, told before a folder is read, a git
+# source asked or the index read, with the routes the command line leaves;
+# until then `bad_usage` at exit 2, advising `--as` to a command that had
+# given it and to an index package, which takes none. `yaml` names
+# `../local/yaml`: the folder `../local/other` under `--as yaml`, the folder
+# `../local/more/yaml` under its last part, and `file://../git/yaml` at its
+# tag and, under `--as yaml`, at a tag it lacks, are refused. `json` names
+# `../local/json`: the index's `json` is refused, at the highest version and
+# at one it does not list, the index (no folder here) never read. `--as
+# other` is added, and `yaml`'s own folder under `yaml` moves nothing.
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2624-a-name-an-entry-holds-for-another-package-is-the-catalogues-fact.case/idx"
+
+[dependencies.yaml]
+path = "../local/yaml"
+
+[dependencies.json]
+path = "../local/json"
