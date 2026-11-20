@@ -294,4 +294,4 @@ package manager rewritten over the core packages with its interface unchanged, a
 catalogue entry fourteen programs fetched, no longer hold. `core` no longer exists (the author's
 decision 8 of 2026-11-15), and the package manager written with Rebel is row 78,
 M-rebel-packages-manager (decisions 4 and 6). The first version this row delivered, over C, stands.
-Entries 10 and 16 of the register of the decisions M-rebel-library invalidates, <register>.
+Entries 10 and 16 of the register of the decisions M-rebel-library invalidates, https://github.com/heroes-lang/heroes/issues/2610.

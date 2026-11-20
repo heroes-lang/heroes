@@ -529,7 +529,7 @@ this row in M-rebel-library (`docs/roadmap/milestones/M-rebel-library.md`): `cor
 (decision 8), the library a program may take or leave is Rebel, written from scratch with its own
 tree and its own names (decision 2), and the compiler, its examples and its net use no library
 (decisions 6 and 7). What this page ruled and no longer holds is entered in the register of the
-decisions M-rebel-library invalidates, <register>: panel 234's admission by need, Go's tree under
+decisions M-rebel-library invalidates, https://github.com/heroes-lang/heroes/issues/2610: panel 234's admission by need, Go's tree under
 `core/` and Go's names, the conventions page, the cards and their ceiling, the paired run at this
 row's close, the author's *no copy by hand survives a package's arrival* of 2026-11-05, and the
 package manager rewritten over these packages as this row's acceptance. Panel 234's thick face over

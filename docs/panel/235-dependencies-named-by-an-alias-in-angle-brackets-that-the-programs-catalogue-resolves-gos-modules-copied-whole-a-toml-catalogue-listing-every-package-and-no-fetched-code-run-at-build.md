@@ -987,4 +987,4 @@ fingerprinted entry of a local static index, and R20 as amended above for `core`
 longer hold: `core` no longer exists (the author's decision 8 of 2026-11-15). Rebel is one entry
 with one version, placing only the packages its `packages` list names (decision 35, panel 253's
 R6). R1 to R14 and R16 to R20 otherwise stand. Entry 10 of the register of the decisions
-M-rebel-library invalidates, <register>.
+M-rebel-library invalidates, https://github.com/heroes-lang/heroes/issues/2610.

@@ -47,4 +47,4 @@ with no closures reaches Echo's level or collapses into the package it wraps, is
 the retirement: it stands for whoever measures `web` against Echo with a running application. The
 row left § The chain on 2026-11-19, at M-rebel-library's landing. Decisions 819 and 853, which
 scheduled this row with packages organised as Go's tree, are entered in the register of the
-decisions M-rebel-library invalidates, <register>. The page above stands as it was written.
+decisions M-rebel-library invalidates, https://github.com/heroes-lang/heroes/issues/2610. The page above stands as it was written.
