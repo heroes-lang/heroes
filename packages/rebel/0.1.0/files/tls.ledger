@@ -168,7 +168,7 @@ capability tls/addresses  the two addresses of a TLS connection, and the connect
   go      tls.Conn.LocalAddr, tls.Conn.RemoteAddr, tls.Conn.NetConn
   rust    native_tls::TlsStream::get_ref, rustls::StreamOwned::get_ref
   python  ssl.SSLSocket.getpeername, ssl.SSLSocket.getsockname
-  note    A connection of `client_over` has them in its `net.Conn`; one of `connect` does not tell them. Not written
+  note    A connection of `client_over` has them in its `net.Conn`; one of `connect` does not tell them through the face yet. The layer tells them since 2026-11-20 (M-rebel-library step 83b): `hero_tls_local` and `hero_tls_remote`, bound by the floor as `hero_tls.local` and `hero_tls.remote`, ask on Windows and Linux the socket under the stream, a stream `client_over` began over a `net.Conn` included, and give on macOS the addresses of the path Network.framework's connection took, read when its handshake ended. The face's answer, `tls.connect` and `tls.accept` handing a `net.Conn` (the review's X13), waits for the face's renames
 
 capability tls/half-close  TLS's end sent while the other way is still read
   heroes  pending

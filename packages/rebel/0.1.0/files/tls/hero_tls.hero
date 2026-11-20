@@ -67,8 +67,10 @@ extern "hero_tls.h"
     # The bytes a buffer must have for `protocol` to write a protocol's name.
     constant HERO_TLS_PROTOCOL_MOST: u64
     # What a call taking a time takes for no limit, -1; 0 is then a time
-    # already passed (2026-11-20).
+    # already passed (2026-11-20). And the bytes a buffer must have for
+    # `local` and `remote` to write an address.
     constant HERO_TLS_FOREVER: i64
+    constant HERO_TLS_ADDRESS_MOST: u64
     # The two calls the marks below name: the one that ends a stream's life,
     # which the header declares through `hero_stream.h`, and the listener's.
     function hero_stream_close(s: hero_stream.Stream consumes) -> i64
@@ -86,6 +88,8 @@ extern "hero_tls.h"
     function hero_tls_protocol(s: hero_stream.Stream, @buffer: [u8] counted_by count lent, count: u64) -> i64
     function hero_tls_set_deadline(s: hero_stream.Stream, ms: i64) -> i64
     function hero_tls_set_accept_deadline(l: Listener, ms: i64) -> i64
+    function hero_tls_local(s: hero_stream.Stream, @address: [u8] counted_by m lent, m: u64, @port: i64) -> i64
+    function hero_tls_remote(s: hero_stream.Stream, @address: [u8] counted_by m lent, m: u64, @port: i64) -> i64
     function hero_tls_last_error() -> i64
     function hero_tls_last_os_error() -> i64
     function hero_tls_last_message(@buffer: [u8] counted_by count lent, count: u64) -> i64
@@ -259,6 +263,31 @@ function set_deadline(s: hero_stream.Stream, ms: i64) -> i64
 #   deadline away; below -1 fails `HERO_TLS_INVALID`.
 function set_accept_deadline(l: Listener, ms: i64) -> i64
     return hero_tls_set_accept_deadline(l, ms: ms)
+
+# The bytes of the address the TLS stream `s` stands on, or -1: the text, a
+# number, goes into `address`, a zero byte after it, and the port into
+# `port`.
+#
+# - `s`: a TLS stream; it stays open. One that is no TLS stream fails
+#   `HERO_TLS_NOT_OPEN`, and on Windows and Linux one begun over a stream
+#   that stands on no socket `HERO_TLS_UNSUPPORTED`.
+# - `address`: where the text is written; left `m` bytes long.
+# - `m`: `address`'s bytes, at least `HERO_TLS_ADDRESS_MOST`, else
+#   `HERO_TLS_INVALID`.
+# - `port`: where the port is written.
+function local(s: hero_stream.Stream, @address: [u8], m: u64, @port: i64) -> i64
+    return hero_tls_local(s, @address, m: m, @port)
+
+# The bytes of the address of the peer the TLS stream `s` is connected to,
+# or -1, written as `local` writes its own.
+#
+# - `s`: a TLS stream; it stays open, and fails as `local` says.
+# - `address`: where the text is written; left `m` bytes long.
+# - `m`: `address`'s bytes, at least `HERO_TLS_ADDRESS_MOST`, else
+#   `HERO_TLS_INVALID`.
+# - `port`: where the port is written.
+function remote(s: hero_stream.Stream, @address: [u8], m: u64, @port: i64) -> i64
+    return hero_tls_remote(s, @address, m: m, @port)
 
 # The kind of the last call's failure on this thread, `HERO_TLS_OK` after a
 # call that did not fail.
@@ -550,7 +579,7 @@ test "set_deadline and set_accept_deadline: a stream that is no TLS stream and a
     assert hero_stream.close(@out_end) == 0
     assert hero_stream.close(@in_end) == 0
 
-## Tests of the times 0 and HERO_TLS_FOREVER (2026-11-20, M-rebel-library step 83a)
+## Tests of the times 0 and HERO_TLS_FOREVER, and of a stream's two addresses (2026-11-20, M-rebel-library steps 83a and 83b)
 
 # Milliseconds since `began`, a reading of `hero_time.monotonic_ns`.
 #
@@ -729,6 +758,41 @@ function test_late_client(port: i64) -> i64
         return 3
     return 0
 
+# One end of `s` as `"<address> <port>"`, or `"none"` where the door failed.
+#
+# - `s`: a TLS stream; it stays open.
+# - `peer`: the peer's end where true, the stream's own where false.
+function test_end_text(s: hero_stream.Stream, peer: bool) -> str
+    address: [u8] @= []
+    port: i64 @= 0
+    length: i64 @= 0
+
+    if peer
+        length @ remote(s, @address, m: HERO_TLS_ADDRESS_MOST, @port)
+    else
+        length @ local(s, @address, m: HERO_TLS_ADDRESS_MOST, @port)
+
+    if length < 0
+        return "none"
+    return address.slice(from: 0, to: length).validated_bytes().must() + " " + to_str(port)
+
+# A client of the test listener at the port `port`'s digits write, on a
+# thread of its own: it reads its own two ends, waits for the server's one
+# byte, and closes. Answers `"<local> <port> <remote> <port>"`, or
+# `"failed"` where it made no stream.
+#
+# - `port`: the listener's port, as decimal digits.
+function test_ends_client(port: str) -> str
+    s @= test_unchecked(hero_net.test_number(port))
+
+    if s == nullptr
+        return "failed"
+    told = test_end_text(s, peer: false) + " " + test_end_text(s, peer: true)
+    byte: [u8] @= []
+    _ = hero_stream.read(s, @byte, n: 1)
+    _ = hero_stream.close(@s)
+    return told
+
 # THE TIME 0 AND `HERO_TLS_FOREVER` of a connection (step 83a): with no
 # limit the handshake waits for a server that never answers until it closes,
 # and fails for that, not its time; with 0 the call fails timed out at once.
@@ -864,3 +928,44 @@ test "set_accept_deadline: 0 ends an accept with no client at once, timed out, a
         assert hero_stream.close(@s) == 0
         assert threads_floor.finish(far) == 0
         assert close_listener(@l) == 0
+
+# A TLS STREAM'S TWO ADDRESSES (step 83b): the server's own end is the
+# listener's address and port, and each end's own address is the other's
+# peer, the client's told from its thread.
+test "local and remote: a TLS stream's two ends, each one's own the other's peer"
+    if available() == 1
+        l @= test_listener()
+        assert l != nullptr
+        port = port_of(l)
+        why: i64 @= 0
+        far = threads_floor.start_text(test_ends_client, arg: to_str(port), bytes: 0, why: @why)
+        assert far >= 0
+        s @= accept(l, ms: 15000)
+        assert s != nullptr
+        here = test_end_text(s, peer: false)
+        there = test_end_text(s, peer: true)
+        assert here == "127.0.0.1 " + to_str(port)
+        one: [u8] @= [1]
+        assert hero_stream.write(s, @one, n: 1) == 1
+        assert threads_floor.finish_text(far) == there + " " + here
+        short: [u8] @= []
+        at: i64 @= 0
+        assert local(s, @short, m: 8, @at) == -1
+        assert last_error() == HERO_TLS_INVALID
+        assert hero_stream.close(@s) == 0
+        assert close_listener(@l) == 0
+
+test "local and remote: a stream that is no TLS stream fails not open, a short buffer invalid before it"
+    out_end: hero_stream.Stream @= nullptr
+    in_end: hero_stream.Stream @= nullptr
+    assert hero_stream.pipe(reader: @out_end, writer: @in_end) == 0
+    address: [u8] @= []
+    at: i64 @= 0
+    assert local(out_end, @address, m: HERO_TLS_ADDRESS_MOST, @at) == -1
+    assert last_error() == HERO_TLS_NOT_OPEN
+    assert remote(out_end, @address, m: HERO_TLS_ADDRESS_MOST, @at) == -1
+    assert last_error() == HERO_TLS_NOT_OPEN
+    assert remote(out_end, @address, m: 63, @at) == -1
+    assert last_error() == HERO_TLS_INVALID
+    assert hero_stream.close(@out_end) == 0
+    assert hero_stream.close(@in_end) == 0

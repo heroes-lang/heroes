@@ -82,7 +82,9 @@
 #include <arpa/inet.h>
 #include <dispatch/dispatch.h>
 #include <errno.h>
+#include <netdb.h>
 #include <pthread.h>
+#include <sys/socket.h>
 /* The frameworks the arm calls, named in the object, so that the linker
  * links them into a program that takes this member and into no other. */
 __asm__(".linker_option \"-framework\", \"Network\"");
@@ -305,15 +307,27 @@ static size_t hero_tls_protocols_wire(const char *protocols, unsigned char *into
 }
 #endif
 
-/* A time a door hands to `hero_net.h` as it was given: the two headers'
- * numbers are one. */
+/* A time a door hands to `hero_net.h` as it was given, and an address
+ * buffer it hands on: the two headers' numbers are one. */
 _Static_assert(HERO_TLS_FOREVER == HERO_NET_FOREVER, "HERO_TLS_FOREVER is HERO_NET_FOREVER");
+_Static_assert(HERO_TLS_ADDRESS_MOST == HERO_NET_ADDRESS_MOST, "HERO_TLS_ADDRESS_MOST is HERO_NET_ADDRESS_MOST");
 
 /* Whether `ms` is a time a door takes: 0 or more, or `HERO_TLS_FOREVER`;
  * says `HERO_TLS_INVALID` where it is not. */
 static bool hero_tls_time_given(int64_t ms) {
     if (ms < 0 && ms != HERO_TLS_FOREVER) {
         hero_tls_said(HERO_TLS_INVALID, 0, "the time given is below 0 and is not HERO_TLS_FOREVER (-1)");
+        return false;
+    }
+    return true;
+}
+
+/* Whether an address, its buffer of `count` bytes and its port were given,
+ * the buffer at least `HERO_TLS_ADDRESS_MOST`; says `HERO_TLS_INVALID` where
+ * they were not. */
+static bool hero_tls_address_given(const void *address, uint64_t count, const int64_t *port) {
+    if (address == NULL || count < HERO_TLS_ADDRESS_MOST || port == NULL) {
+        hero_tls_said(HERO_TLS_INVALID, 0, "the address buffer is shorter than HERO_TLS_ADDRESS_MOST, or no buffer or port was given");
         return false;
     }
     return true;
@@ -3308,6 +3322,61 @@ int64_t hero_tls_set_deadline(hero_stream *s, int64_t ms) {
     return 0;
 }
 
+/* One end's address of `s`, its own or the peer's: asked of the socket under
+ * the stream, whoever made it, reached through `hero_stream_net.h` and held
+ * there while it is asked, as `hero_tls_set_deadline` reaches it. */
+static int64_t hero_tls_end(hero_stream *s, void *address, uint64_t address_count, int64_t *port, bool peer) {
+    hero_tls_session *session;
+    hero_net_socket *socket;
+    int64_t answer;
+    int64_t kind;
+    int64_t os;
+
+    if (!hero_tls_address_given(address, address_count, port)) {
+        return -1;
+    }
+    session = hero_tls_held(s);
+    if (session == NULL) {
+        return -1;
+    }
+    socket = hero_stream_net_socket(session->inner);
+    if (socket == NULL) {
+        int64_t stream_kind = hero_stream_last_error();
+        int64_t stream_os = hero_stream_last_os_error();
+
+        (void)hero_stream_release(s);
+        if (stream_kind == HERO_STREAM_INVALID) {
+            hero_tls_said(HERO_TLS_UNSUPPORTED, stream_os, "the stream under this TLS stream is no socket, and tells no address");
+        } else {
+            int64_t tls_kind = hero_tls_from_stream(stream_kind);
+
+            hero_tls_said(tls_kind, stream_os, hero_tls_net_words(tls_kind));
+        }
+        return -1;
+    }
+    answer = peer ? hero_net_remote(socket, address, address_count, port) : hero_net_local(socket, address, address_count, port);
+    kind = hero_net_last_error();
+    os = hero_net_last_os_error();
+    (void)hero_stream_release(session->inner);
+    (void)hero_stream_release(s);
+    if (answer < 0) {
+        int64_t tls_kind = hero_tls_from_net(kind);
+
+        hero_tls_said(tls_kind, os, hero_tls_net_words(tls_kind));
+        return -1;
+    }
+    hero_tls_fine();
+    return answer;
+}
+
+int64_t hero_tls_local(hero_stream *s, void *address, uint64_t address_count, int64_t *port) {
+    return hero_tls_end(s, address, address_count, port, false);
+}
+
+int64_t hero_tls_remote(hero_stream *s, void *address, uint64_t address_count, int64_t *port) {
+    return hero_tls_end(s, address, address_count, port, true);
+}
+
 int64_t hero_tls_available(void) {
     return hero_tls_arm_ready() ? 1 : 0;
 }
@@ -3817,6 +3886,14 @@ typedef struct hero_tls_apple {
     /* What the handshake chose, read once it was ready. */
     int64_t version;
     char protocol[HERO_TLS_PROTOCOL_MOST];
+    /* The two ends' addresses as text and their ports, read with it from
+     * the connection's path; `*_known` false where it told none. */
+    bool local_known;
+    char local_text[HERO_TLS_ADDRESS_MOST];
+    int64_t local_port;
+    bool remote_known;
+    char remote_text[HERO_TLS_ADDRESS_MOST];
+    int64_t remote_port;
 } hero_tls_apple;
 
 static hero_tls_apple *hero_tls_apple_new(void) {
@@ -4024,6 +4101,72 @@ static void hero_tls_apple_chosen(hero_tls_apple *a) {
     nw_release(definition);
 }
 
+/* The text and the port of `endpoint`, an address endpoint, into `text`
+ * (`HERO_TLS_ADDRESS_MOST` bytes) and `*port`, written as `hero_net.c`
+ * writes a socket's: `getnameinfo`'s number, the scope after a `%` where
+ * the address has one. false, nothing written, where the endpoint holds no
+ * IPv4 or IPv6 address or the system would not write it in so many bytes. */
+static bool hero_tls_apple_endpoint_text(nw_endpoint_t endpoint, char *text, int64_t *port) {
+    const struct sockaddr *where;
+    socklen_t size;
+    char written[HERO_TLS_ADDRESS_MOST];
+    int64_t at;
+
+    if (endpoint == NULL || nw_endpoint_get_type(endpoint) != nw_endpoint_type_address) {
+        return false;
+    }
+    where = nw_endpoint_get_address(endpoint);
+    if (where == NULL) {
+        return false;
+    }
+    if (where->sa_family == AF_INET && where->sa_len >= sizeof(struct sockaddr_in)) {
+        struct sockaddr_in four;
+
+        memcpy(&four, where, sizeof four);
+        at = (int64_t)ntohs(four.sin_port);
+        size = (socklen_t)sizeof four;
+    } else if (where->sa_family == AF_INET6 && where->sa_len >= sizeof(struct sockaddr_in6)) {
+        struct sockaddr_in6 six;
+
+        memcpy(&six, where, sizeof six);
+        at = (int64_t)ntohs(six.sin6_port);
+        size = (socklen_t)sizeof six;
+    } else {
+        return false;
+    }
+    if (getnameinfo(where, size, written, (socklen_t)sizeof written, NULL, 0, NI_NUMERICHOST) != 0) {
+        return false;
+    }
+    (void)hero_tls_copy_text(text, HERO_TLS_ADDRESS_MOST, written);
+    *port = at;
+    return true;
+}
+
+/* Reads the two ends' addresses of the path the connection took. On the
+ * connection's queue, once ready, under the state's lock. */
+static void hero_tls_apple_ends(hero_tls_apple *a) {
+    nw_path_t path = nw_connection_copy_current_path(a->connection);
+    nw_endpoint_t local;
+    nw_endpoint_t remote;
+
+    a->local_known = false;
+    a->remote_known = false;
+    if (path == NULL) {
+        return;
+    }
+    local = nw_path_copy_effective_local_endpoint(path);
+    remote = nw_path_copy_effective_remote_endpoint(path);
+    a->local_known = hero_tls_apple_endpoint_text(local, a->local_text, &a->local_port);
+    a->remote_known = hero_tls_apple_endpoint_text(remote, a->remote_text, &a->remote_port);
+    if (local != NULL) {
+        nw_release(local);
+    }
+    if (remote != NULL) {
+        nw_release(remote);
+    }
+    nw_release(path);
+}
+
 /* The handler of every state the connection reaches, holding a count of
  * the state until it is cancelled. */
 static void hero_tls_apple_watch(hero_tls_apple *a) {
@@ -4037,6 +4180,7 @@ static void hero_tls_apple_watch(hero_tls_apple *a) {
         case nw_connection_state_ready:
             if (a->state == HERO_TLS_APPLE_WAITING) {
                 hero_tls_apple_chosen(a);
+                hero_tls_apple_ends(a);
                 a->state = HERO_TLS_APPLE_READY;
             }
             break;
@@ -4904,6 +5048,49 @@ int64_t hero_tls_set_deadline(hero_stream *s, int64_t ms) {
     (void)hero_stream_release(s);
     hero_tls_fine();
     return 0;
+}
+
+/* One end's address of `s`, its own or the peer's, as the connection's path
+ * told it once ready (`hero_tls_apple_ends`). */
+static int64_t hero_tls_end(hero_stream *s, void *address, uint64_t address_count, int64_t *port, bool peer) {
+    hero_tls_apple *a;
+    bool known;
+    char text[HERO_TLS_ADDRESS_MOST];
+    int64_t at = 0;
+    size_t length;
+
+    if (!hero_tls_address_given(address, address_count, port)) {
+        return -1;
+    }
+    a = hero_tls_apple_held(s);
+    if (a == NULL) {
+        return -1;
+    }
+    (void)pthread_mutex_lock(&a->lock);
+    known = peer ? a->remote_known : a->local_known;
+    if (known) {
+        (void)hero_tls_copy_text(text, sizeof text, peer ? a->remote_text : a->local_text);
+        at = peer ? a->remote_port : a->local_port;
+    }
+    (void)pthread_mutex_unlock(&a->lock);
+    (void)hero_stream_release(s);
+    if (!known) {
+        hero_tls_said(HERO_TLS_OTHER, 0, peer ? "Network.framework told no address for the peer of this connection" : "Network.framework told no address for this end of the connection");
+        return -1;
+    }
+    length = strlen(text);
+    memcpy(address, text, length + 1);
+    *port = at;
+    hero_tls_fine();
+    return (int64_t)length;
+}
+
+int64_t hero_tls_local(hero_stream *s, void *address, uint64_t address_count, int64_t *port) {
+    return hero_tls_end(s, address, address_count, port, false);
+}
+
+int64_t hero_tls_remote(hero_stream *s, void *address, uint64_t address_count, int64_t *port) {
+    return hero_tls_end(s, address, address_count, port, true);
 }
 
 int64_t hero_tls_available(void) {

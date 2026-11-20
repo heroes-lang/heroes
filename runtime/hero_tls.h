@@ -302,6 +302,33 @@ int64_t hero_tls_set_deadline(hero_stream *s, int64_t ms);
  * where `l` is no open listener. */
 int64_t hero_tls_set_accept_deadline(hero_tls_listener *l, int64_t ms);
 
+/* -- A TLS STREAM'S TWO ADDRESSES (M-rebel-library, step 83b, 2026-11-20) --
+ *
+ * The address the stream's own end stands on, `hero_tls_local`, and the
+ * peer's, `hero_tls_remote`, told as `hero_net.h`'s `hero_net_local` and
+ * `hero_net_remote` tell a socket's: the text into `address`, a number
+ * (`127.0.0.1`, `::1`, with the scope the system writes after a `%` where
+ * the address has one) ended by a zero byte the answer does not count, the
+ * port into `*port`, and the answer the text's bytes; or -1, nothing
+ * written. `address_count` is at least `HERO_TLS_ADDRESS_MOST`, the same
+ * number as `HERO_NET_ADDRESS_MOST`, else `HERO_TLS_INVALID` before anything
+ * else, as for a NULL `address` or `port`; `HERO_TLS_NOT_OPEN` where `s` is
+ * no open TLS stream. Neither waits, so neither is ended by the stop.
+ *
+ * On Windows and Linux they are asked of the socket under the stream at the
+ * call: the one `hero_tls_connect` or `hero_tls_accept` made, or the one
+ * under a `hero_stream_net.h` stream handed to `hero_tls_client` or
+ * `hero_tls_server`, whose failure is answered as this layer's kind; a
+ * stream handed there that stands on no socket (a pipe, a file, another
+ * member's stream) fails `HERO_TLS_UNSUPPORTED`. On macOS they are the
+ * addresses of the path Network.framework's connection took, read once when
+ * its handshake ended, and an end it told no address for fails
+ * `HERO_TLS_OTHER`. */
+#define HERO_TLS_ADDRESS_MOST UINT64_C(64)
+
+int64_t hero_tls_local(hero_stream *s, void *address, uint64_t address_count, int64_t *port);
+int64_t hero_tls_remote(hero_stream *s, void *address, uint64_t address_count, int64_t *port);
+
 /* The kind of the last call's failure on this thread, `HERO_TLS_OK` after a
  * call that did not fail, and the platform's own number for it (0 where the
  * layer itself refused). */
