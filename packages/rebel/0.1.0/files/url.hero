@@ -122,10 +122,7 @@ record Url
 # none. A text with no "//" after its scheme has no host: "localhost:80" is
 # the scheme "localhost" and the path "80", and "mailto:a@b" the path "a@b".
 function parse(s: str) -> Url?
-    p = read.parse(s)?
-    return ok(
-        Url(scheme: p.scheme, user: p.user, password: p.password, host: p.host, port: p.port, path: p.path, query: p.query, fragment: p.fragment, empty_authority: p.empty_authority, empty_userinfo: p.empty_userinfo, empty_password: p.empty_password, empty_query: p.empty_query, empty_fragment: p.empty_fragment)
-    )
+    return read.parse(s)
 
 # The parts of the URL `s` writes, read as `parse` reads them after every byte
 # its part may not hold is written as an escape: a space, a quote, a `[` in a
@@ -151,10 +148,7 @@ function parse_loose(s: str) -> Url?
 # "//" is a path, never a host. The target "*" and the "host:port" of CONNECT
 # are no URLs: the first is compared, the second read by `parse_host_port`.
 function parse_request_target(s: str) -> Url?
-    p = read.parse_target(s)?
-    return ok(
-        Url(scheme: p.scheme, user: p.user, password: p.password, host: p.host, port: p.port, path: p.path, query: p.query, fragment: p.fragment, empty_authority: p.empty_authority, empty_userinfo: p.empty_userinfo, empty_password: p.empty_password, empty_query: p.empty_query, empty_fragment: p.empty_fragment)
-    )
+    return read.parse_target(s)
 
 # The text of `u`, its parts joined by RFC 3986 § 5.3: the user, the password
 # and the host are escaped, and in a raw part every byte the part may not hold
@@ -172,9 +166,7 @@ function parse_request_target(s: str) -> Url?
 # that is not a digit, since no escape writes either: neither comes out of
 # `parse`.
 function format(u: Url) -> str
-    return write.format(
-        parts.Parts(scheme: u.scheme, user: u.user, password: u.password, host: u.host, port: u.port, path: u.path, query: u.query, fragment: u.fragment, empty_authority: u.empty_authority, empty_userinfo: u.empty_userinfo, empty_password: u.empty_password, empty_query: u.empty_query, empty_fragment: u.empty_fragment)
-    )
+    return write.format(u)
 
 # The text of `u` with its password written "xxxxx", for a log, an empty
 # password that is written included.
@@ -228,9 +220,8 @@ function without_fragment(u: Url) -> Url
 # has none either.
 function resolve(base: Url, reference: Url) -> Url
     out @= reference
-    authority = reference.user != "" || reference.password != "" || reference.host != "" || reference.port != "" || reference.empty_authority || reference.empty_userinfo || reference.empty_password
 
-    if reference.scheme != "" || authority
+    if reference.scheme != "" || parts.has_authority(reference)
         out.path @ paths.remove_dot_segments(reference.path)
 
         if reference.scheme == ""
@@ -251,8 +242,9 @@ function resolve(base: Url, reference: Url) -> Url
     if reference.path[0] == '/'
         out.path @ paths.remove_dot_segments(reference.path)
         return out
-    above = base.user != "" || base.password != "" || base.host != "" || base.port != "" || base.empty_authority || base.empty_userinfo || base.empty_password
-    out.path @ paths.remove_dot_segments(paths.merge(base: base.path, reference: reference.path, authority: above))
+    out.path @ paths.remove_dot_segments(
+        paths.merge(base: base.path, reference: reference.path, authority: parts.has_authority(base))
+    )
     return out
 
 ## Host and port
@@ -348,8 +340,7 @@ function format_path(segments: [str]) -> str
 # it for a dot-segment: refuse those names first where they come from outside.
 function add_segments(u: Url, segments: [str]) -> Url
     out @= u
-    authority = u.user != "" || u.password != "" || u.host != "" || u.port != "" || u.empty_authority || u.empty_userinfo || u.empty_password
-    out.path @ paths.add(path: u.path, segments: segments, authority: authority)
+    out.path @ paths.add(path: u.path, segments: segments, authority: parts.has_authority(u))
     return out
 
 # The raw path `path` without its "." and ".." segments, by RFC 3986 § 5.2.4:
