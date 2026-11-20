@@ -11,7 +11,7 @@
 # keys over buckets; none of them resists a person who wants two inputs to
 # answer alike, so a digest that must, SHA-256 or an HMAC, is the package
 # `crypto`'s. A map's own keys are hashed by the language's `{K: V}`, and a
-# seeded hash for a table of one's own is not here.
+# keyed hash that resists chosen collisions, SipHash, is not here.
 #
 # Nothing here fails. These algorithms wrap their words by design and Heroes
 # aborts on an overflow, so every sum and product is written modulo 2^32 or
@@ -268,7 +268,7 @@ variant Algorithm32
     fnv1a_32
 
 # A checksum or hash of 32 bits computed in steps: the caller holds it and
-# feeds it piece by piece with `update32` and `update_text32`, and its
+# feeds it piece by piece with `update32` and `update32_text`, and its
 # `value` is at every moment what feeding all the pieces at once answers. It
 # is made by `start32` or `resume32`, and copied with `=` like any value;
 # one built directly with a `table` that is not its polynomial's answers
@@ -325,7 +325,7 @@ function resume32(algorithm: Algorithm32, value: u32) -> State32
 # - `state`: the state fed, which the caller holds; only its `value` changes.
 # - `data`: the bytes fed; no bytes leave `value` as it was.
 #
-# See also `update_text32`.
+# See also `update32_text`.
 function update32(@state: State32, data: [u8])
     before = to_i64(state.value).must()
 
@@ -344,7 +344,7 @@ function update32(@state: State32, data: [u8])
 #   it was.
 #
 # See also `update32`.
-function update_text32(@state: State32, s: str)
+function update32_text(@state: State32, s: str)
     before = to_i64(state.value).must()
 
     after = match state.algorithm
@@ -375,7 +375,7 @@ variant Algorithm64
     fnv1a_64
 
 # A checksum or hash of 64 bits computed in steps: the caller holds it and
-# feeds it piece by piece with `update64` and `update_text64`, and its
+# feeds it piece by piece with `update64` and `update64_text`, and its
 # `value` is at every moment what feeding all the pieces at once answers. It
 # is made by `start64` or `resume64`; one built directly with a `table` that
 # is not its polynomial's answers wrong values.
@@ -430,7 +430,7 @@ function resume64(algorithm: Algorithm64, value: u64) -> State64
 # - `state`: the state fed, which the caller holds; only its `value` changes.
 # - `data`: the bytes fed; no bytes leave `value` as it was.
 #
-# See also `update_text64`.
+# See also `update64_text`.
 function update64(@state: State64, data: [u8])
     before = word.from_unsigned(state.value)
 
@@ -448,7 +448,7 @@ function update64(@state: State64, data: [u8])
 #   it was.
 #
 # See also `update64`.
-function update_text64(@state: State64, s: str)
+function update64_text(@state: State64, s: str)
     before = word.from_unsigned(state.value)
 
     after = match state.algorithm
@@ -508,7 +508,7 @@ function xxh64_text(s: str, seed: u64) -> u64
     return word.unsigned(xxhash.hash64_text(s, seed: word.from_unsigned(seed)))
 
 # An XXH32 computed in steps: the caller holds it and feeds it piece by piece
-# with `update_xxh32` and `update_text_xxh32`, and its `value` is at every
+# with `update_xxh32` and `update_xxh32_text`, and its `value` is at every
 # moment what `xxh32` answers for all the pieces at once. It is made by
 # `start_xxh32` and copied with `=` like any value, so one prefix may go on
 # two ways; one built directly answers wrong values. It cannot be taken up
@@ -543,7 +543,7 @@ function start_xxh32(seed: u32) -> Xxh32
 # - `data`: the bytes fed, each whole stripe of 16 mixed where it stands; no
 #   bytes leave `value` as it was.
 #
-# See also `update_text_xxh32`.
+# See also `update_xxh32_text`.
 function update_xxh32(@state: Xxh32, data: [u8])
     xxhash.feed32(@state.lanes, held: @state.held, data: data)
     state.fed @ state.fed + data.len()
@@ -559,7 +559,7 @@ function update_xxh32(@state: Xxh32, data: [u8])
 #   `value` as it was.
 #
 # See also `update_xxh32`.
-function update_text_xxh32(@state: Xxh32, s: str)
+function update_xxh32_text(@state: Xxh32, s: str)
     xxhash.feed32_text(@state.lanes, held: @state.held, s: s)
     state.fed @ state.fed + s.len()
     seed = to_i64(state.seed).must()
@@ -568,7 +568,7 @@ function update_text_xxh32(@state: Xxh32, s: str)
     ).must()
 
 # An XXH64 computed in steps, as an `Xxh32` computes an XXH32: made by
-# `start_xxh64`, fed by `update_xxh64` and `update_text_xxh64`, its `value`
+# `start_xxh64`, fed by `update_xxh64` and `update_xxh64_text`, its `value`
 # at every moment what `xxh64` answers for all the pieces at once.
 record Xxh64
     # The seed it was started with.
@@ -607,7 +607,7 @@ function start_xxh64(seed: u64) -> Xxh64
 # - `data`: the bytes fed, each whole stripe of 32 mixed where it stands; no
 #   bytes leave `value` as it was.
 #
-# See also `update_text_xxh64`.
+# See also `update_xxh64_text`.
 function update_xxh64(@state: Xxh64, data: [u8])
     xxhash.feed64(@state.lanes, held: @state.held, data: data)
     state.fed @ state.fed + data.len()
@@ -623,7 +623,7 @@ function update_xxh64(@state: Xxh64, data: [u8])
 #   `value` as it was.
 #
 # See also `update_xxh64`.
-function update_text_xxh64(@state: Xxh64, s: str)
+function update_xxh64_text(@state: Xxh64, s: str)
     xxhash.feed64_text(@state.lanes, held: @state.held, s: s)
     state.fed @ state.fed + s.len()
     seed = word.from_unsigned(state.seed)
@@ -642,13 +642,13 @@ test "xxh32, xxh64 and their steps: nothing, the largest seeds, bytes and text a
     assert xxh64(word.bytes_of("héros ☃"), seed: 1) == 14061231710036351315 && xxh64_text("héros ☃", seed: 1) == 14061231710036351315
     a @= start_xxh32(1)
     b @= start_xxh64(1)
-    update_text_xxh32(@a, "hé")
-    update_text_xxh64(@b, "hé")
+    update_xxh32_text(@a, "hé")
+    update_xxh64_text(@b, "hé")
     update_xxh32(@a, [])
     update_xxh64(@b, [])
     fork_a = a
     update_xxh32(@a, word.bytes_of("ros ☃"))
-    update_text_xxh64(@b, "ros ☃")
+    update_xxh64_text(@b, "ros ☃")
     assert a.value == 716561019 && b.value == 14061231710036351315 && a.fed == 10 && b.fed == 10
     assert fork_a.value == xxh32_text("hé", seed: 1) && fork_a.seed == 1
 
@@ -666,8 +666,8 @@ test "the steps of every 32-bit algorithm answer what feeding at once does, by b
     for i in range(from: 0, to: all32.len())
         state @= start32(all32[i])
         update32(@state, word.bytes_of("hé"))
-        update_text32(@state, "")
-        update_text32(@state, "ros ☃")
+        update32_text(@state, "")
+        update32_text(@state, "ros ☃")
         assert state.value == whole[i]
         again @= resume32(algorithm: all32[i], value: state.value)
         update32(@again, [])
@@ -686,14 +686,14 @@ test "the steps of every 64-bit algorithm answer what feeding at once does, by b
     for i in range(from: 0, to: all64.len())
         state @= start64(all64[i])
         update64(@state, word.bytes_of("hé"))
-        update_text64(@state, "")
-        update_text64(@state, "ros ☃")
+        update64_text(@state, "")
+        update64_text(@state, "ros ☃")
         assert state.value == whole[i]
 
 # Go's `crc64.Update` from 2^63 answered this on 2026-11-15.
 test "resume64: from a value with its top bit set"
     state @= resume64(algorithm: .crc64_ecma, value: 9223372036854775808)
-    update_text64(@state, "123456789")
+    update64_text(@state, "123456789")
     assert state.value == 695445988102215951
 
 test "the one-shot functions answer alike over bytes and over text, and for nothing"
@@ -801,7 +801,7 @@ test "start32: a CRC-32 by Koopman's polynomial, fed nothing yet"
 test "resume32: going on from a saved CRC-32"
     saved = crc32_text("1234")
     state @= resume32(algorithm: .crc32, value: saved)
-    update_text32(@state, "56789")
+    update32_text(@state, "56789")
     assert state.value == crc32_text("123456789")
 
 # A file's bytes fed as they arrive, a piece at a time.
@@ -812,10 +812,10 @@ test "update32: a CRC-32 fed in two pieces"
     assert state.value == 0xcbf43926
 
 # Lines fed one by one to an Adler-32.
-test "update_text32: an Adler-32 fed line by line"
+test "update32_text: an Adler-32 fed line by line"
     state @= start32(.adler32)
-    update_text32(@state, "hello, ")
-    update_text32(@state, "world")
+    update32_text(@state, "hello, ")
+    update32_text(@state, "world")
     assert state.value == adler32_text("hello, world")
 
 # A CRC-64 begun before any byte.
@@ -827,7 +827,7 @@ test "start64: a CRC-64 by ECMA's polynomial, fed nothing yet"
 test "resume64: going on from a saved CRC-64"
     saved = crc64_iso_text("1234")
     state @= resume64(algorithm: .crc64_iso, value: saved)
-    update_text64(@state, "56789")
+    update64_text(@state, "56789")
     assert state.value == crc64_iso_text("123456789")
 
 # An FNV-1a hash of 64 bits fed in two pieces.
@@ -838,9 +838,9 @@ test "update64: an FNV-1a hash fed in two pieces"
     assert state.value == fnv1a_64_text("123456789")
 
 # A CRC-64 by a polynomial of the caller's, ISO's written out, fed a text.
-test "update_text64: a CRC-64 by a polynomial given as a number"
+test "update64_text: a CRC-64 by a polynomial given as a number"
     state @= start64(.crc64_poly(poly: 0xd800000000000000))
-    update_text64(@state, "123456789")
+    update64_text(@state, "123456789")
     assert state.value == crc64_iso_text("123456789")
 
 # The XXH32 of a byte, as Python's `xxhash.xxh32_intdigest(b"a")` answers it.
@@ -873,10 +873,10 @@ test "update_xxh32: a greeting fed in two pieces"
     assert state.value == 1336278999
 
 # An XXH32 fed line by line.
-test "update_text_xxh32: a greeting fed as text"
+test "update_xxh32_text: a greeting fed as text"
     state @= start_xxh32(0)
-    update_text_xxh32(@state, "hello, ")
-    update_text_xxh32(@state, "world")
+    update_xxh32_text(@state, "hello, ")
+    update_xxh32_text(@state, "world")
     assert state.value == xxh32_text("hello, world", seed: 0)
 
 # An XXH64 begun with a seed before any byte.
@@ -892,8 +892,8 @@ test "update_xxh64: the check text fed in two pieces"
     assert state.value == 13419003385674707777
 
 # An XXH64 fed a text in two pieces.
-test "update_text_xxh64: the check text fed as text"
+test "update_xxh64_text: the check text fed as text"
     state @= start_xxh64(5)
-    update_text_xxh64(@state, "1234")
-    update_text_xxh64(@state, "56789")
+    update_xxh64_text(@state, "1234")
+    update_xxh64_text(@state, "56789")
     assert state.value == xxh64_text("123456789", seed: 5)

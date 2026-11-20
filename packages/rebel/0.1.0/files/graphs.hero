@@ -45,14 +45,6 @@ constant INVALID: str
 
 ## Orders, components and paths
 
-# A graph is a `{K: [K]}`: each key a node, and its list the nodes it points
-# to, which for an order are the nodes it depends on. A node met only in a
-# list is a node pointing to none; a node named twice in one list points to
-# it once more, which changes no answer here. A weighted graph is a
-# `{K: {K: f64}}`, each node's map giving the weight of the edge to each node
-# it points to. Every function walks with a list for its stack, so a deep
-# graph never runs out of stack, and costs the nodes and edges it reads.
-
 # Every node of `graph` once: each key, followed by the nodes of its list not
 # met before, in the order the graph gives them.
 #

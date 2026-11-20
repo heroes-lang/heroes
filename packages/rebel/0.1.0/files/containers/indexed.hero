@@ -490,7 +490,9 @@ test "swap: the first and last columns swapped"
     assert keys_in_order(columns, names) == ["c", "b", "a"]
     assert position_of(columns, lookup, key: "c").must() == 0
 
-# The entries put in the order of their keys.
+# The entries put in the order of their keys. `samples.by_bytes` is
+# `function by_bytes(a: str, b: str) -> bool`, true where `a` goes before `b` by
+# their bytes, the order `sort` gives texts.
 test "sort_by_key: columns sorted by name"
     columns @= new()
     names: [str] @= []

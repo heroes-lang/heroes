@@ -88,7 +88,7 @@ capability list/fold  one value built from every element
   go      -
   rust    Iterator::fold, Iterator::reduce, Iterator::sum, Iterator::product
   python  sum
-  note    a sum is a fold with the addition of its own type, which the caller writes because `+` is refused on a type parameter; `reduce` is a fold that starts at the first element
+  note    a sum or a product of integers is `math.sum_i64` or `math.product_i64`, and a sum of floats `math.sum`, each failing `does_not_fit` where a fold with `+` aborts; of any other type a sum is a fold with the addition of its own type, which the caller writes because `+` is refused on a type parameter; `reduce` is a fold that starts at the first element
 
 capability list/find  the first element a function accepts
   heroes  built-in find
@@ -322,12 +322,14 @@ capability list/rotate-left  a list with its first elements moved to its end
   go      -
   rust    slice::rotate_left
   python  -
+  note    the count is taken modulo the length and a negative one turns the other way, as `collections.deque.rotate` and `containers/deque` count it, where Rust panics past the length
 
 capability list/rotate-right  a list with its last elements moved to its front
   heroes  lists.rotate_right
   go      -
   rust    slice::rotate_right
   python  -
+  note    counted as `lists.rotate_left` counts
 
 capability list/select  the elements a list of bools marks
   heroes  lists.select
@@ -355,7 +357,7 @@ capability list/remove  a list without the first element equal to a value
   go      -
   rust    -
   python  list.remove
-  note    absent is `not_found`, as Python raises
+  note    absent leaves the list as it was, as `lists.remove_all`, `maps.remove` and `sets.remove` answer, where Python raises; `lists.index_of` tells whether it was there
 
 capability list/remove-all  a list without every element equal to a value
   heroes  lists.remove_all

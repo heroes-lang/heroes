@@ -91,7 +91,8 @@ function combine<T>(results: [T?]) -> ()?
 # - `results`: the results to read; an empty list gives an empty list.
 #
 # Fails where any result fails: with that failure as it is where it is the only
-# one, else with the joined failure `combine` answers. See also `combine`.
+# one, else with the joined failure `combine` answers. See also `combine`, and
+# `lists.all_ok`, which stops at the first failure and answers it alone.
 function collect<T>(results: [T?]) -> [T]?
     return wrap.collect(results)
 
@@ -185,7 +186,8 @@ test "context: a missing key read while loading a configuration"
             assert e.code == "not_found"
             assert e.msg == "reading the configuration: no \"port\" in \"server\""
 
-# Context made by a function, only where the result fails.
+# Context made by a function, only where the result fails; `samples.reading`
+# is `function reading(path: str) -> str`, answering `f"reading \"{path}\""`.
 test "context_by: the path being read named in the failure"
     r: str? = fail(code: "file_not_found", msg: "no such file")
     told = format_line(context_by(r, describe: samples.reading, subject: "app.toml"))

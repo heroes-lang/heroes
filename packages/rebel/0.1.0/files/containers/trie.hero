@@ -398,6 +398,36 @@ function previous_slot(trie: Trie, at: i64) -> i64?
         msg: f"no key before \"{trie.nodes.texts[at]}\", the first of {trie.nodes.count}"
     )
 
+# Every key of a trie in byte order: `keys_with_prefix` of the empty text.
+#
+# - `trie`: the trie.
+#
+# Empty for an empty trie. It costs the bytes of every key. See also
+# `keys_with_prefix`, `slots_with_prefix`.
+function keys_in_order(trie: Trie) -> [str]
+    return keys_with_prefix(trie, "")
+
+# Empties a trie of texts to values, every key and value let go.
+#
+# - `trie`: the map's shape; it holds no key after, and stays a map's.
+# - `value_list`: the map's values, emptied.
+#
+# Aborts where `trie` is a set's shape or `value_list` is shorter than its
+# size. See also `clear_set`, `new_map`.
+function clear<V>(@trie: Trie, @value_list: [V])
+    edit.require_kind(trie.nodes, as_map: true, values_held: value_list.len())
+    trie.nodes @ layout.empty(holds_values: true)
+    value_list @ []
+
+# Empties a trie of texts alone, every key let go.
+#
+# - `trie`: the set's shape; it holds no key after, and stays a set's.
+#
+# Aborts where `trie` is a map's shape. See also `clear`, `new_set`.
+function clear_set(@trie: Trie)
+    edit.require_kind(trie.nodes, as_map: false, values_held: 0)
+    trie.nodes @ layout.empty(holds_values: false)
+
 ## Examples
 
 # An empty map, ready for routes and their handlers' numbers.
@@ -642,3 +672,28 @@ test "previous_slot: the word before the last"
         _ = add(@words, word)
 
     assert key_at(words, previous_slot(words, last_slot(words).must()).must()) == "tea"
+
+# The words of a dictionary, in the order a printed one keeps.
+test "keys_in_order: the words of a dictionary in byte order"
+    words @= new_set()
+
+    for word in ["to", "tea", "a"]
+        _ = add(@words, word)
+
+    assert keys_in_order(words) == ["a", "tea", "to"]
+
+# A map of routes emptied, ready for a new table.
+test "clear: a map of routes emptied"
+    routes @= new_map()
+    handlers: [i64] @= []
+    put(@routes, @handlers, key: "/users", value: 1)
+    clear(@routes, @handlers)
+    assert size(routes) == 0 && handlers.len() == 0
+
+# A dictionary emptied, then a word added again.
+test "clear_set: a dictionary emptied and filled again"
+    words @= new_set()
+    _ = add(@words, "tea")
+    clear_set(@words)
+    assert size(words) == 0
+    assert add(@words, "tea")

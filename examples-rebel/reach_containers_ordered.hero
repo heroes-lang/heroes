@@ -23,4 +23,4 @@ function main()
     for word in ["to", "be", "or", "not", "to", "be"]
         _ = ordered.add(@words, @held, key: word, less: before)
 
-    print(ordered.to_list(words, held).join(" "))
+    print(ordered.keys_in_order(words, held).join(" "))

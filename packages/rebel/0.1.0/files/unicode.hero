@@ -3,6 +3,15 @@
 # says; a code point that version leaves unassigned is in no class and has no
 # case.
 #
+# It reads one character at a time, and a text is read whole elsewhere: its
+# case changed, a text compared ignoring case and searched, by `strings`; two
+# texts that write one character in different code points made equal, and
+# a text folded for comparing, by `unicode/normalize`; a text cut into what a
+# reader sees as one character, into words and sentences, and measured in the
+# columns a terminal draws, by `unicode/segment`; a character's name, its
+# script and its block by `unicode/names`; and bytes in an encoding other than
+# UTF-8 and UTF-16, Latin-1 and Shift_JIS among them, by `unicode/encodings`.
+#
 # A character is a `str` of exactly one character, which is what the built-in
 # `chars()` yields; a code point is an `i64`. `code_point` and
 # `from_code_point` go between the two. A function that takes a character
@@ -167,19 +176,31 @@ constant UNASSIGNED: str
 
 ## Characters and code points
 
-# The code point of `c`, one character. Aborts where `c` is not exactly one
-# character.
+# The code point of `c`, one character.
+#
+# - `c`: the character to read, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character. See also `from_code_point`,
+# `code_points`.
 function code_point(c: str) -> i64
     return utf8.one(c)
 
-# The character whose code point is `n`. Fails `invalid` where `n` is no
-# scalar value: below 0, above `MAX_CODE_POINT`, or a surrogate, U+D800 to
-# U+DFFF.
+# The character whose code point is `n`.
+#
+# - `n`: the code point, 0 to `MAX_CODE_POINT`.
+#
+# Fails `invalid` where `n` is no scalar value: below 0, above
+# `MAX_CODE_POINT`, or a surrogate, U+D800 to U+DFFF. See also `code_point`,
+# `is_scalar_value`.
 function from_code_point(n: i64) -> str?
     utf8.check_scalar_value(n)?
     return ok(utf8.text_of([n]))
 
 # The code points of `s`, one for each character, in order.
+#
+# - `s`: the text to read; the empty text gives an empty list.
+#
+# See also `from_code_points`, `char_count`.
 function code_points(s: str) -> [i64]
     points: [i64] @= []
     at: i64 @= 0
@@ -190,9 +211,12 @@ function code_points(s: str) -> [i64]
 
     return points
 
-# The text that `points` write, one character for each. Fails `invalid` at the
-# first number that is no scalar value, as `from_code_point` does, and the
-# message says which and where.
+# The text that `points` write, one character for each.
+#
+# - `points`: the code points, in order; an empty list gives the empty text.
+#
+# Fails `invalid` at the first number that is no scalar value, as
+# `from_code_point` does, and the message says which and where.
 function from_code_points(points: [i64]) -> str?
     at: i64 @= 0
 
@@ -205,204 +229,319 @@ function from_code_points(points: [i64]) -> str?
 
 # Whether `n` is a scalar value, a code point a character can have: 0 to
 # `MAX_CODE_POINT`, the surrogates U+D800 to U+DFFF left out.
+#
+# - `n`: the number to ask about, any `i64`.
 function is_scalar_value(n: i64) -> bool
     return utf8.is_scalar_value(n)
 
 ## Classes
 
 # Whether `c` is a letter: its general category is one of the five that begin
-# with `L`. Aborts where `c` is not exactly one character.
+# with `L`.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character. See also `is_alphabetic`.
 function is_letter(c: str) -> bool
     return classes.is_letter(utf8.one(c))
 
 # Whether `c` is alphabetic, Unicode's Alphabetic property: a letter, a number
 # written as a letter, or a sign a script writes as part of a word, a vowel
-# sign among them. Aborts where `c` is not exactly one character.
+# sign among them.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character. See also `is_letter`.
 function is_alphabetic(c: str) -> bool
     return classes.is_alphabetic(utf8.one(c))
 
 # Whether `c` is a decimal digit, general category `Nd`: one of the ten digits
-# of some script. `digit_value` answers which. Aborts where `c` is not exactly
-# one character.
+# of some script.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# `digit_value` answers which digit it is. Aborts where `c` is not exactly one
+# character. See also `is_number`.
 function is_digit(c: str) -> bool
     return classes.is_digit(utf8.one(c))
 
 # Whether `c` is a number of any kind, a general category that begins with
-# `N`: a decimal digit, a Roman numeral, a fraction, a circled number. Aborts
-# where `c` is not exactly one character.
+# `N`: a decimal digit, a Roman numeral, a fraction, a circled number.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character. See also `is_digit`.
 function is_number(c: str) -> bool
     return classes.is_number(utf8.one(c))
 
-# Whether `c` is alphabetic or a number: `is_alphabetic` or `is_number`. Aborts
-# where `c` is not exactly one character.
+# Whether `c` is alphabetic or a number: `is_alphabetic` or `is_number`.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character.
 function is_alphanumeric(c: str) -> bool
     return classes.is_alphanumeric(utf8.one(c))
 
 # Whether `c` is white space, Unicode's White_Space property: space, tab, line
 # feed, vertical tab, form feed, carriage return, U+0085, U+00A0, and the
-# spaces and separators above them, 25 code points in all. Aborts where `c` is
-# not exactly one character.
+# spaces and separators above them, 25 code points in all.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character.
 function is_space(c: str) -> bool
     return classes.is_space(utf8.one(c))
 
 # Whether `c` is upper case, Unicode's Uppercase property: an upper case
 # letter, or a sign that is one by its use, as a Roman numeral or a circled
-# capital. Aborts where `c` is not exactly one character.
+# capital.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character. See also `is_cased`.
 function is_upper(c: str) -> bool
     return classes.is_upper(utf8.one(c))
 
 # Whether `c` is lower case, Unicode's Lowercase property: a lower case
-# letter, or a sign that is one by its use, as the ordinal indicators. Aborts
-# where `c` is not exactly one character.
+# letter, or a sign that is one by its use, as the ordinal indicators.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character. See also `is_cased`.
 function is_lower(c: str) -> bool
     return classes.is_lower(utf8.one(c))
 
 # Whether `c` is a title case letter, general category `Lt`: one character
-# that writes two letters, the first upper case. Aborts where `c` is not
-# exactly one character.
+# that writes two letters, the first upper case.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character. See also `to_title`.
 function is_title(c: str) -> bool
     return classes.is_title(utf8.one(c))
 
 # Whether `c` has a case, Unicode's Cased property: `is_upper`, `is_lower` or
-# `is_title`. Aborts where `c` is not exactly one character.
+# `is_title`.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character.
 function is_cased(c: str) -> bool
     return classes.is_cased(utf8.one(c))
 
 # Whether `c` is passed over when the letters around it are asked their case,
 # Unicode's Case_Ignorable property: a mark, a modifier, an apostrophe, a full
-# stop. A sigma that ends a word is told from one inside it by this class.
-# Aborts where `c` is not exactly one character.
+# stop.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# A sigma that ends a word is told from one inside it by this class. Aborts
+# where `c` is not exactly one character.
 function is_case_ignorable(c: str) -> bool
     return classes.is_case_ignorable(utf8.one(c))
 
-# Whether `c` is punctuation, a general category that begins with `P`. The
-# signs of mathematics and of currencies are symbols, not punctuation: `+`,
-# `$` and `^` answer false here and true to `is_symbol`. Aborts where `c` is
-# not exactly one character.
+# Whether `c` is punctuation, a general category that begins with `P`.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# The signs of mathematics and of currencies are symbols, not punctuation:
+# `+`, `$` and `^` answer false here and true to `is_symbol`. Aborts where `c`
+# is not exactly one character.
 function is_punctuation(c: str) -> bool
     return classes.is_punctuation(utf8.one(c))
 
-# Whether `c` is a symbol, a general category that begins with `S`. Aborts
-# where `c` is not exactly one character.
+# Whether `c` is a symbol, a general category that begins with `S`: a sign of
+# mathematics, of a currency, a modifier such as `^`, or any other symbol.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character. See also `is_punctuation`.
 function is_symbol(c: str) -> bool
     return classes.is_symbol(utf8.one(c))
 
 # Whether `c` is a mark, a general category that begins with `M`: an accent or
-# a sign that combines with the character before it. Aborts where `c` is not
-# exactly one character.
+# a sign that combines with the character before it.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character.
 function is_mark(c: str) -> bool
     return classes.is_mark(utf8.one(c))
 
 # Whether `c` is a control code, general category `Cc`: U+0000 to U+001F and
-# U+007F to U+009F. Aborts where `c` is not exactly one character.
+# U+007F to U+009F.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character.
 function is_control(c: str) -> bool
     return classes.is_control(utf8.one(c))
 
 # Whether `c` is drawn or leaves a space: a letter, a mark, a number,
-# punctuation, a symbol, or a space of category `Zs`. Aborts where `c` is not
-# exactly one character.
+# punctuation, a symbol, or a space of category `Zs`.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character. See also `is_printable`.
 function is_graphic(c: str) -> bool
     return classes.is_graphic(utf8.one(c))
 
 # Whether `c` may be printed as itself: `is_graphic`, with U+0020 the only
-# space. Aborts where `c` is not exactly one character.
+# space.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# A space other than U+0020, the no-break space among them, answers false.
+# Aborts where `c` is not exactly one character.
 function is_printable(c: str) -> bool
     return classes.is_printable(utf8.one(c))
 
-# Whether `c` is ASCII, a code point below 128. Aborts where `c` is not
-# exactly one character.
+# Whether `c` is ASCII, a code point below 128.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# Aborts where `c` is not exactly one character.
 function is_ascii(c: str) -> bool
     return utf8.one(c) < 0x80
 
 # The general category of `c`, Unicode's two letters for it: one of the
-# constants `UPPERCASE_LETTER` to `UNASSIGNED` above. The first letter is the
-# major class, so a category that begins with `Z` is a separator. Aborts where
-# `c` is not exactly one character.
+# constants `UPPERCASE_LETTER` to `UNASSIGNED` above.
+#
+# - `c`: the character to ask about, a text of exactly one character.
+#
+# The first letter is the major class, so a category that begins with `Z` is a
+# separator; a code point this version leaves unassigned answers
+# `UNASSIGNED`. Aborts where `c` is not exactly one character.
 function category(c: str) -> str
     return classes.name_of(utf8.one(c))
 
 ## Numbers
 
-# The value of `c`, a decimal digit of any script, 0 to 9. Fails `invalid`
-# where `c` is not one, which is where `is_digit` answers false. Aborts where
-# `c` is not exactly one character.
+# The value of `c`, a decimal digit of any script, 0 to 9.
+#
+# - `c`: the character to read, a text of exactly one character.
+#
+# Fails `invalid` where `c` is no decimal digit, which is where `is_digit`
+# answers false. Aborts where `c` is not exactly one character. See also
+# `to_digit`, which reads a digit of a base in ASCII.
 function digit_value(c: str) -> i64?
     return classes.digit_value(utf8.one(c))
 
 ## Digits of a base
 
 # The value of `c` as a digit of `base`, 0 to `base` less one: `0` to `9`,
-# then the letters `a` to `z`, of either case, for ten to thirty-five. Fails
-# `invalid` where `c` is no digit of `base`. Aborts where `base` is not 2 to
-# 36, or `c` is not exactly one character. It reads ASCII alone, as a number
-# is written in a base; `digit_value` reads the decimal digits of every
-# script.
+# then the letters `a` to `z`, of either case, for ten to thirty-five.
+#
+# - `c`: the character to read, a text of exactly one character.
+# - `base`: the base the digit is written in, 2 to 36.
+#
+# It reads ASCII alone, as a number is written in a base; `digit_value` reads
+# the decimal digits of every script. Fails `invalid` where `c` is no digit of
+# `base`. Aborts where `base` is not 2 to 36, or `c` is not exactly one
+# character. See also `from_digit`.
 function to_digit(c: str, base: i64) -> i64?
     return radix.digit_of(n: utf8.one(c), base: base)
 
 # The character that writes `value` as a digit of `base`: `0` to `9`, then a
-# letter in lower case. Fails `invalid` where `value` is not 0 to `base` less
-# one. Aborts where `base` is not 2 to 36.
+# letter in lower case.
+#
+# - `value`: the digit's value, 0 to `base` less one.
+# - `base`: the base the digit is written in, 2 to 36.
+#
+# Fails `invalid` where `value` is not 0 to `base` less one. Aborts where
+# `base` is not 2 to 36. See also `to_digit`.
 function from_digit(value: i64, base: i64) -> str?
     return radix.digit_text(value: value, base: base)
 
 ## Case
 
 # The upper case of `c`, one character, as a text of one to three characters:
-# the upper case of `ß` is `SS`. A character with no upper case is answered as
-# it is. Aborts where `c` is not exactly one character.
+# the upper case of `ß` is `SS`.
+#
+# - `c`: the character to change, a text of exactly one character.
+#
+# A character with no upper case is answered as it is. Aborts where `c` is not
+# exactly one character. See also `simple_upper`, which answers one code
+# point.
 function to_upper(c: str) -> str
     n = utf8.one(c)
     return casing.mapped_text(c: c, n: n, packed: casing.full_upper(n))
 
-# The lower case of `c`, one character, as a text of one or two characters. A
-# character with no lower case is answered as it is. It reads `c` alone: a
+# The lower case of `c`, one character, as a text of one or two characters.
+#
+# - `c`: the character to change, a text of exactly one character.
+#
+# A character with no lower case is answered as it is. It reads `c` alone: a
 # sigma that ends a word is the caller's to tell. Aborts where `c` is not
-# exactly one character.
+# exactly one character. See also `simple_lower`.
 function to_lower(c: str) -> str
     n = utf8.one(c)
     return casing.mapped_text(c: c, n: n, packed: casing.full_lower(n))
 
 # The title case of `c`, one character, as a text of one to three characters:
 # the form a word's first letter takes, where the title case of `ǆ` is `ǅ` and
-# its upper case is `Ǆ`. A character with no title case is answered as it is.
-# Aborts where `c` is not exactly one character.
+# its upper case is `Ǆ`.
+#
+# - `c`: the character to change, a text of exactly one character.
+#
+# A character with no title case is answered as it is. Aborts where `c` is not
+# exactly one character. See also `simple_title`.
 function to_title(c: str) -> str
     n = utf8.one(c)
     return casing.mapped_text(c: c, n: n, packed: casing.full_title(n))
 
 # The folded form of `c`, one character, as a text of one to three characters:
 # two texts are the same ignoring case where their characters fold to the same
-# texts. It is Unicode's full case folding, so `ß` folds to `ss`; a folded
-# text is for comparing, never for showing. Aborts where `c` is not exactly
-# one character.
+# texts.
+#
+# - `c`: the character to fold, a text of exactly one character.
+#
+# It is Unicode's full case folding, so `ß` folds to `ss`; a folded text is for
+# comparing, never for showing. Aborts where `c` is not exactly one character.
+# See also `simple_fold`.
 function to_casefold(c: str) -> str
     n = utf8.one(c)
     return casing.mapped_text(c: c, n: n, packed: casing.full_fold(n))
 
 # The next code point that is the same letter as `n` ignoring case, one to
 # one: the smallest such above `n`, or the smallest of all where `n` is the
-# largest. Asked again and again it walks the whole set and comes back: `K`,
-# `k`, U+212A the kelvin sign, `K`. A number with no such other, a number that
-# is no code point among them, is answered as it is.
+# largest.
+#
+# - `n`: the code point to start from, any `i64`.
+#
+# Asked again and again it walks the whole set and comes back: `K`, `k`,
+# U+212A the kelvin sign, `K`. A number with no such other, a number that is
+# no code point among them, is answered as it is. See also `to_casefold`.
 function simple_fold(n: i64) -> i64
     return casing.next_in_fold(n)
 
 # The upper case of the code point `n` where that is one code point, by
-# Unicode's simple mapping, which leaves `ß` as it is. A number with none, a
-# number that is no code point among them, is answered as it is.
+# Unicode's simple mapping, which leaves `ß` as it is.
+#
+# - `n`: the code point to change, any `i64`.
+#
+# A number with none, a number that is no code point among them, is answered
+# as it is. See also `to_upper`.
 function simple_upper(n: i64) -> i64
     return casing.simple_upper(n)
 
 # The lower case of the code point `n` where that is one code point, by
-# Unicode's simple mapping. A number with none, a number that is no code point
-# among them, is answered as it is.
+# Unicode's simple mapping.
+#
+# - `n`: the code point to change, any `i64`.
+#
+# A number with none, a number that is no code point among them, is answered
+# as it is. See also `to_lower`.
 function simple_lower(n: i64) -> i64
     return casing.simple_lower(n)
 
 # The title case of the code point `n` where that is one code point, by
-# Unicode's simple mapping. A number with none, a number that is no code point
-# among them, is answered as it is.
+# Unicode's simple mapping.
+#
+# - `n`: the code point to change, any `i64`.
+#
+# A number with none, a number that is no code point among them, is answered
+# as it is. See also `to_title`.
 function simple_title(n: i64) -> i64
     return casing.simple_title(n)
 
@@ -415,31 +554,44 @@ record Decoded
     # How many bytes write it, 1 to 4.
     width: i64
 
-# The bytes that write the code point `n` in UTF-8, one to four. Fails
-# `invalid` where `n` is no scalar value.
+# The bytes that write the code point `n` in UTF-8, one to four.
+#
+# - `n`: the code point to write.
+#
+# Fails `invalid` where `n` is no scalar value. See also `from_utf8`,
+# `utf8_len`.
 function to_utf8(n: i64) -> [u8]?
     utf8.check_scalar_value(n)?
     out: [u8] @= []
     utf8.add_encoded(@out, n)
     return ok(out)
 
-# How many bytes write the code point `n` in UTF-8, 1 to 4. Fails `invalid`
-# where `n` is no scalar value.
+# How many bytes write the code point `n` in UTF-8, 1 to 4.
+#
+# - `n`: the code point to measure.
+#
+# Fails `invalid` where `n` is no scalar value. See also `utf8_width`.
 function utf8_len(n: i64) -> i64?
     utf8.check_scalar_value(n)?
     return ok(utf8.len_of(n))
 
 # How many bytes the character takes whose first byte is `first`, 1 to 4.
+#
+# - `first`: the first byte of a character.
+#
 # Fails `invalid` where no character begins with `first`: a byte that
 # continues one, 0x80 to 0xBF, and the bytes UTF-8 never holds, 0xC0, 0xC1 and
-# 0xF5 to 0xFF.
+# 0xF5 to 0xFF. See also `utf8_len`.
 function utf8_width(first: u8) -> i64?
     return utf8.width_of(first)
 
-# The code points that `bytes` write in UTF-8, in order. Fails `not_text`
-# where the bytes are not UTF-8, and the message says the index of the first
-# byte that is not. The built-in `validated_bytes` reads the same bytes as a
-# text.
+# The code points that `bytes` write in UTF-8, in order.
+#
+# - `bytes`: the bytes to read; none give an empty list.
+#
+# Fails `not_text` where the bytes are not UTF-8, and the message says the
+# index of the first byte that is not. The built-in `validated_bytes` reads the
+# same bytes as a text. See also `to_utf8`, `is_utf8`.
 function from_utf8(bytes: [u8]) -> [i64]?
     points: [i64] @= []
     at: i64 @= 0
@@ -451,59 +603,94 @@ function from_utf8(bytes: [u8]) -> [i64]?
 
     return ok(points)
 
-# The character that begins at `index` of `bytes`. Fails `not_text` where the
-# bytes from there begin no whole character of UTF-8: a wrong byte, a
-# character the end cuts short, a surrogate, a form longer than the shortest.
-# Aborts where `index` is not an index of `bytes`.
+# The character that begins at `index` of `bytes`.
+#
+# - `bytes`: the bytes to read from.
+# - `index`: the byte index where the character begins.
+#
+# Fails `not_text` where the bytes from there begin no whole character of
+# UTF-8: a wrong byte, a character the end cuts short, a surrogate, a form
+# longer than the shortest. Aborts where `index` is not an index of `bytes`.
+# See also `decode_before`.
 function decode_at(bytes: [u8], index: i64) -> Decoded?
     n = utf8.decode(bytes, index)?
     return ok(Decoded(code_point: n, width: utf8.len_of(n)))
 
 # The character that ends just before `end` in `bytes`: its last byte is
-# `bytes[end - 1]`. Fails `not_text` where no whole character of UTF-8 ends
-# there. Aborts where `end` is below 1 or above the length of `bytes`.
+# `bytes[end - 1]`.
+#
+# - `bytes`: the bytes to read from.
+# - `end`: the byte index just past the character, 1 to the length of `bytes`.
+#
+# Fails `not_text` where no whole character of UTF-8 ends there. Aborts where
+# `end` is below 1 or above the length of `bytes`. See also `decode_at`.
 function decode_before(bytes: [u8], end: i64) -> Decoded?
     n = utf8.decode_ending(bytes, end)?
     return ok(Decoded(code_point: n, width: utf8.len_of(n)))
 
-# Whether `bytes` are UTF-8 from the first to the last. No bytes are.
+# Whether `bytes` are UTF-8 from the first to the last.
+#
+# - `bytes`: the bytes to ask about; empty bytes answer true.
+#
+# See also `utf8_prefix_len`, `is_utf8_prefix`.
 function is_utf8(bytes: [u8]) -> bool
     return utf8.valid_len(bytes) == bytes.len()
 
-# How many bytes at the start of `bytes` are whole characters of UTF-8: the
-# length of `bytes` where `is_utf8`, else the index of the first byte that is
-# not.
+# How many bytes at the start of `bytes` are whole characters of UTF-8.
+#
+# - `bytes`: the bytes to read.
+#
+# The answer is the length of `bytes` where `is_utf8`, else the index of the
+# first byte that is not.
 function utf8_prefix_len(bytes: [u8]) -> i64
     return utf8.valid_len(bytes)
 
 # Whether `bytes` are the beginning of UTF-8: they are UTF-8, or they stop
-# inside a last character that more bytes could complete. A reader of a stream
-# asks it to tell bytes cut short, which wait for more, from bytes that are
-# wrong.
+# inside a last character that more bytes could complete.
+#
+# - `bytes`: the bytes read so far; empty bytes answer true.
+#
+# A reader of a stream asks it to tell bytes cut short, which wait for more,
+# from bytes that are wrong.
 function is_utf8_prefix(bytes: [u8]) -> bool
     valid = utf8.valid_len(bytes)
     return valid == bytes.len() || utf8.is_cut_short(bytes, valid)
 
 # Whether `byte` continues a character, 0x80 to 0xBF: in UTF-8 no such byte
 # begins one, and every byte of a character after its first is one.
+#
+# - `byte`: the byte to ask about.
 function is_continuation(byte: u8) -> bool
     return utf8.is_continuation(byte)
 
 ## UTF-8, on a text
 
-# The code point of the character that begins at `index` of `s`. It cuts no
-# slice. Aborts where `index` is not the first byte of a character of `s`.
+# The code point of the character that begins at `index` of `s`.
+#
+# - `s`: the text to read from.
+# - `index`: the byte index where the character begins.
+#
+# It cuts no slice. Aborts where `index` is not the first byte of a character
+# of `s`. See also `width_at`.
 function code_point_at(s: str, index: i64) -> i64
     return utf8.code_point_at(s, index)
 
 # How many bytes the character takes that begins at `index` of `s`, 1 to 4, so
-# the next begins at `index` plus it. Aborts where `index` is not the first
-# byte of a character of `s`.
+# the next begins at `index` plus it.
+#
+# - `s`: the text to read from.
+# - `index`: the byte index where the character begins.
+#
+# Aborts where `index` is not the first byte of a character of `s`. See also
+# `code_point_at`.
 function width_at(s: str, index: i64) -> i64
     return utf8.width_at(s, index)
 
-# How many characters `s` holds, where `s.len()` counts its bytes. It reads
-# every byte once and builds nothing.
+# How many characters `s` holds, where `s.len()` counts its bytes.
+#
+# - `s`: the text to count; the empty text holds none.
+#
+# It reads every byte once and builds nothing.
 function char_count(s: str) -> i64
     count: i64 @= 0
     at: i64 @= 0
@@ -516,8 +703,12 @@ function char_count(s: str) -> i64
     return count
 
 # Whether `index` is where a character of `s` begins, or the end of `s`: where
-# a slice may cut. Any other number, one outside `s` among them, answers
-# false.
+# a slice may cut.
+#
+# - `s`: the text to ask about.
+# - `index`: the byte index to ask about; one outside `s` answers false.
+#
+# See also `floor_char_boundary`, `ceil_char_boundary`.
 function is_char_boundary(s: str, index: i64) -> bool
     if index == s.len()
         return true
@@ -525,7 +716,11 @@ function is_char_boundary(s: str, index: i64) -> bool
 
 # The nearest index at or before `index` where a character of `s` begins, or
 # the end of `s`: the largest that `is_char_boundary` accepts and is not above
-# `index`. An `index` below 0 answers 0, one above the length the length.
+# `index`.
+#
+# - `s`: the text to cut.
+# - `index`: the byte index to start from; below 0 answers 0, and above the
+#   length answers the length.
 function floor_char_boundary(s: str, index: i64) -> i64
     if index >= s.len()
         return s.len()
@@ -541,8 +736,11 @@ function floor_char_boundary(s: str, index: i64) -> i64
 
 # The nearest index at or after `index` where a character of `s` begins, or
 # the end of `s`: the smallest that `is_char_boundary` accepts and is not
-# below `index`. An `index` below 0 answers 0, one above the length the
-# length.
+# below `index`.
+#
+# - `s`: the text to cut.
+# - `index`: the byte index to start from; below 0 answers 0, and above the
+#   length answers the length.
 function ceil_char_boundary(s: str, index: i64) -> i64
     if index <= 0
         return 0
@@ -559,20 +757,31 @@ function ceil_char_boundary(s: str, index: i64) -> i64
 ## UTF-16
 
 # The units that write the code point `n` in UTF-16: one, or the two
-# surrogates of a code point above U+FFFF, the high one first. Fails `invalid`
-# where `n` is no scalar value.
+# surrogates of a code point above U+FFFF, the high one first.
+#
+# - `n`: the code point to write.
+#
+# Fails `invalid` where `n` is no scalar value. See also `from_utf16`.
 function to_utf16(n: i64) -> [u16]?
     utf8.check_scalar_value(n)?
     return ok(utf16.units_of(n))
 
-# The code points that `units` write in UTF-16, in order. Fails `invalid` at a
-# surrogate with no partner, and the message says its index.
+# The code points that `units` write in UTF-16, in order.
+#
+# - `units`: the units to read; none give an empty list.
+#
+# Fails `invalid` at a surrogate with no partner, and the message says its
+# index. See also `to_utf16`, `from_surrogates`.
 function from_utf16(units: [u16]) -> [i64]?
     return utf16.decoded(units)
 
 # The code point that the surrogates `high` and `low` write together, U+10000
-# or above. Fails `invalid` where `high` is not U+D800 to U+DBFF or `low` is
-# not U+DC00 to U+DFFF.
+# or above.
+#
+# - `high`: the first unit of the pair, U+D800 to U+DBFF.
+# - `low`: the second unit of the pair, U+DC00 to U+DFFF.
+#
+# Fails `invalid` where `high` or `low` is outside its range.
 function from_surrogates(high: i64, low: i64) -> i64?
     return utf16.joined(high: high, low: low)
 
@@ -1412,3 +1621,262 @@ test "to_digit and from_digit: a digit of each run, either case, a digit of anot
     assert from_digit(value: 10, base: 16).must() == "a"
     assert from_digit(value: 35, base: 36).must() == "z"
     assert from_digit(value: 36, base: 36).is_err()
+
+## Examples
+
+# The code points of a letter of ASCII and of an accented one.
+test "code_point: a letter and an accented letter"
+    assert code_point("A") == 65
+    assert code_point("é") == 0xe9
+
+# A character made from its code point, the smiling face U+263A.
+test "from_code_point: a character from its number"
+    assert from_code_point(0x263a).must() == "☺"
+
+# A word taken apart into its code points.
+test "code_points: the code points of a word"
+    assert code_points("café") == [0x63, 0x61, 0x66, 0xe9]
+
+# A word put back together from its code points.
+test "from_code_points: a word from its code points"
+    assert from_code_points([0x63, 0x61, 0x66, 0xe9]).must() == "café"
+
+# A number checked before it is used as a code point: a surrogate is none.
+test "is_scalar_value: a letter's number and a surrogate"
+    assert is_scalar_value(0x41)
+    assert !is_scalar_value(0xd800)
+
+# Letters of two scripts, and a digit that is no letter.
+test "is_letter: letters and a digit"
+    assert is_letter("é") && is_letter("京")
+    assert !is_letter("7")
+
+# A Roman numeral is alphabetic though it is no letter.
+test "is_alphabetic: a letter and a Roman numeral"
+    assert is_alphabetic("a")
+    assert is_alphabetic("Ⅻ") && !is_letter("Ⅻ")
+
+# A decimal digit of ASCII and one of the Arabic script; a fraction is none.
+test "is_digit: two scripts' digits and a fraction"
+    assert is_digit("7") && is_digit("٣")
+    assert !is_digit("½")
+
+# A fraction is a number, though no digit.
+test "is_number: a fraction and a letter"
+    assert is_number("½")
+    assert !is_number("x")
+
+# Which characters of an identifier are letters or numbers.
+test "is_alphanumeric: a letter, a digit and a hyphen"
+    assert is_alphanumeric("x") && is_alphanumeric("9")
+    assert !is_alphanumeric("-")
+
+# White space of ASCII and the ideographic space; an underscore is none.
+test "is_space: a space, a tab and the ideographic space"
+    assert is_space(" ") && is_space("\t") && is_space(from_code_point(0x3000).must())
+    assert !is_space("_")
+
+# A capital letter and a capital Roman numeral are upper case.
+test "is_upper: a capital and a small letter"
+    assert is_upper("A") && is_upper("Ⅻ")
+    assert !is_upper("a")
+
+# A small letter, the German sharp s among them.
+test "is_lower: two small letters and a capital"
+    assert is_lower("a") && is_lower("ß")
+    assert !is_lower("A")
+
+# The one character that writes a capital D and a small z with a caron.
+test "is_title: a title case letter and a plain capital"
+    assert is_title("ǅ")
+    assert !is_title("D")
+
+# Letters of Latin have a case; an ideograph has none.
+test "is_cased: a Latin letter and an ideograph"
+    assert is_cased("a")
+    assert !is_cased("京")
+
+# An apostrophe and a full stop are passed over when a word's case is read.
+test "is_case_ignorable: an apostrophe, a full stop and a letter"
+    assert is_case_ignorable("'") && is_case_ignorable(".")
+    assert !is_case_ignorable("a")
+
+# An exclamation mark is punctuation; a plus sign is a symbol.
+test "is_punctuation: punctuation and a symbol"
+    assert is_punctuation("!") && is_punctuation("«")
+    assert !is_punctuation("+")
+
+# Signs of mathematics and of currencies are symbols.
+test "is_symbol: a sign of mathematics and a currency"
+    assert is_symbol("+") && is_symbol("€")
+    assert !is_symbol("a")
+
+# The combining acute accent is a mark; the letter it sits on is not.
+test "is_mark: a combining accent and a letter"
+    assert is_mark(from_code_point(0x301).must())
+    assert !is_mark("e")
+
+# A line feed is a control code; a space is not.
+test "is_control: a line feed and a space"
+    assert is_control("\n")
+    assert !is_control(" ")
+
+# A letter and a space are drawn or leave room; a line feed does neither.
+test "is_graphic: a letter, a space and a line feed"
+    assert is_graphic("a") && is_graphic(" ")
+    assert !is_graphic("\n")
+
+# The space prints as itself; the no-break space, U+00A0, does not.
+test "is_printable: the space and the no-break space"
+    assert is_printable(" ") && is_printable("é")
+    assert !is_printable(from_code_point(0xa0).must())
+
+# A letter of ASCII and one beyond it.
+test "is_ascii: a plain letter and an accented one"
+    assert is_ascii("z")
+    assert !is_ascii("é")
+
+# The categories of a small letter, a currency sign and a digit.
+test "category: three characters, three categories"
+    assert category("a") == LOWERCASE_LETTER
+    assert category("€") == CURRENCY_SYMBOL
+    assert category("7") == DECIMAL_NUMBER
+
+# The value of a digit of the Arabic script.
+test "digit_value: an Arabic-Indic three"
+    assert digit_value("٣").must() == 3
+
+# A digit of hexadecimal, read in either case.
+test "to_digit: a digit of base sixteen"
+    assert to_digit(c: "f", base: 16).must() == 15
+    assert to_digit(c: "F", base: 16).must() == 15
+
+# The digit eleven written in base sixteen.
+test "from_digit: eleven in hexadecimal"
+    assert from_digit(value: 11, base: 16).must() == "b"
+
+# Upper case may write more than one character.
+test "to_upper: an accented letter and the sharp s"
+    assert to_upper("é") == "É"
+    assert to_upper("ß") == "SS"
+
+# The lower case of a Greek capital sigma.
+test "to_lower: a Greek capital"
+    assert to_lower("Σ") == "σ"
+
+# The title case of a digraph is its capital followed by a small letter.
+test "to_title: a digraph at the start of a word"
+    assert to_title("ǆ") == "ǅ"
+    assert to_upper("ǆ") == "Ǆ"
+
+# Two letters compared ignoring case, the sharp s folding to two.
+test "to_casefold: letters folded for comparing"
+    assert to_casefold("K") == to_casefold("k")
+    assert to_casefold("ß") == "ss"
+
+# The letters `K`, `k` and the kelvin sign, walked round by folding.
+test "simple_fold: the three forms of k"
+    k = code_point("K")
+    assert simple_fold(k) == code_point("k")
+    assert simple_fold(code_point("k")) == 0x212a
+    assert simple_fold(0x212a) == k
+
+# A small letter's capital by the simple mapping; the sharp s has none.
+test "simple_upper: one code point to one"
+    assert simple_upper(code_point("a")) == code_point("A")
+    assert simple_upper(code_point("ß")) == code_point("ß")
+
+# A capital's small letter by the simple mapping.
+test "simple_lower: one code point to one"
+    assert simple_lower(code_point("A")) == code_point("a")
+
+# A digraph's title case by the simple mapping.
+test "simple_title: one code point to one"
+    assert simple_title(code_point("ǆ")) == code_point("ǅ")
+
+# The two bytes that write `é`.
+test "to_utf8: an accented letter's bytes"
+    assert to_utf8(0xe9).must() == [0xc3, 0xa9]
+
+# How many bytes the euro sign takes.
+test "utf8_len: the euro sign takes three bytes"
+    assert utf8_len(0x20ac).must() == 3
+
+# How long a character is, read from its first byte.
+test "utf8_width: the first byte of the euro sign"
+    assert utf8_width(0xe2).must() == 3
+
+# Bytes read as code points.
+test "from_utf8: the bytes of a word"
+    assert from_utf8([0x63, 0x61, 0x66, 0xc3, 0xa9]).must() == [0x63, 0x61, 0x66, 0xe9]
+
+# The second character of some bytes, and how far to step past it.
+test "decode_at: an accented letter after a plain one"
+    d = decode_at(bytes: [0x61, 0xc3, 0xa9], index: 1).must()
+    assert d.code_point == 0xe9 && d.width == 2
+
+# The last character of some bytes, read from the end.
+test "decode_before: the last character of a word"
+    d = decode_before(bytes: [0x61, 0xc3, 0xa9], end: 3).must()
+    assert d.code_point == 0xe9 && d.width == 2
+
+# Bytes checked before they are read as a text.
+test "is_utf8: good bytes and a stray byte"
+    assert is_utf8([0x61, 0xc3, 0xa9])
+    assert !is_utf8([0x61, 0xff])
+
+# How far some bytes hold good UTF-8.
+test "utf8_prefix_len: the good part before a stray byte"
+    assert utf8_prefix_len([0x61, 0x62, 0xff, 0x63]) == 2
+
+# Bytes cut inside a character wait for more; a stray byte is wrong.
+test "is_utf8_prefix: bytes cut short and bytes that are wrong"
+    assert is_utf8_prefix([0x61, 0xe2, 0x82])
+    assert !is_utf8_prefix([0x61, 0xff])
+
+# The second byte of `é` continues it; the first begins it.
+test "is_continuation: the two bytes of an accented letter"
+    assert is_continuation(0xa9)
+    assert !is_continuation(0xc3)
+
+# The code point of a character found inside a text.
+test "code_point_at: the euro sign in a price"
+    assert code_point_at(s: "9€", index: 1) == 0x20ac
+
+# Walking a text a character at a time.
+test "width_at: from one character to the next"
+    s = "a€b"
+    assert width_at(s: s, index: 1) == 3
+    assert code_point_at(s: s, index: 1 + width_at(s: s, index: 1)) == code_point("b")
+
+# The characters of a word, against its bytes.
+test "char_count: characters and bytes"
+    assert char_count("café") == 4
+    assert "café".len() == 5
+
+# Where a slice of a text may cut.
+test "is_char_boundary: inside and around an accented letter"
+    assert is_char_boundary(s: "é", index: 0)
+    assert !is_char_boundary(s: "é", index: 1)
+    assert is_char_boundary(s: "é", index: 2)
+
+# A text cut to at most eleven bytes without splitting a character.
+test "floor_char_boundary: a cut that splits no character"
+    s = "naïve café"
+    assert s.slice(from: 0, to: floor_char_boundary(s: s, index: 11)) == "naïve caf"
+
+# The first place at or after an index where a character begins.
+test "ceil_char_boundary: past the middle of a character"
+    assert ceil_char_boundary(s: "aé", index: 2) == 3
+
+# A character above U+FFFF written as two surrogates.
+test "to_utf16: the grinning face as a pair"
+    assert to_utf16(0x1f600).must() == [0xd83d, 0xde00]
+
+# Units of UTF-16 read back as code points.
+test "from_utf16: a letter and a pair"
+    assert from_utf16([0x61, 0xd83d, 0xde00]).must() == [0x61, 0x1f600]
+
+# Two surrogates joined into one code point.
+test "from_surrogates: the grinning face"
+    assert from_surrogates(high: 0xd83d, low: 0xde00).must() == 0x1f600

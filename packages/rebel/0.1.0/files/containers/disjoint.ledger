@@ -54,7 +54,7 @@ capability disjoint/merge  the sets of two elements merged into one
   note    answers whether the two were apart, as petgraph's `union` does (observed: true, true, then false for an edge closing a triangle); networkx answers nothing. Union by rank, the root of the lower rank hung under the other; the name is `merge` since `union` is a keyword of C and Rust that the compiler refuses
 
 capability disjoint/same  whether two elements stand in one set
-  heroes  disjoint.same
+  heroes  disjoint.is_same_set
   go      -
   rust    UnionFind::equiv, UnionFind::try_equiv
   python  -

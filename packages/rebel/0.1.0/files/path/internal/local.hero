@@ -1,7 +1,8 @@
 # What a path may hold and still be used where it stands: the names Windows
 # keeps for itself, whether a path stays under the folder it is read from, a
 # slash-separated path turned into a local one, and a list of paths such as
-# PATH cut into its paths. A rules value reaches it as `windows`.
+# PATH cut into its paths and written again. A rules value reaches it as
+# `windows`.
 
 use path/internal/codes
 use path/internal/roots
@@ -164,6 +165,48 @@ function split_list(list: str, windows: bool) -> [str]
 
     return out
 
+# `paths` written as one list, `:` between each two by POSIX's rules and `;`
+# by Windows', where a path that holds `;` stands in double quotes, as
+# `split_list` reads it; fails `invalid` at the first path that holds what the
+# list cannot carry, `:` by POSIX's rules and `"` by Windows'.
+function join_list(paths: [str], windows: bool) -> str?
+    cut: u8 = if windows
+        ';'
+    else
+        ':'
+
+    sep: str = if windows
+        ";"
+    else
+        ":"
+
+    pieces: [str] @= []
+
+    for path in paths
+        quoted: bool @= false
+
+        for at in range(from: 0, to: path.len())
+            if windows && path[at] == '"'
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"\"{path}\" holds a double quote, which no list of paths carries by Windows' rules"
+                )
+
+            if path[at] == cut
+                if !windows
+                    return fail(
+                        code: codes.INVALID,
+                        msg: f"\"{path}\" holds `:`, which separates the paths of a list by POSIX's rules"
+                    )
+                quoted @ true
+
+        if quoted
+            pieces @ pieces.push("\"" + path + "\"")
+        else
+            pieces @ pieces.push(path)
+
+    return ok(pieces.join(sep))
+
 ## Tests
 
 test "is_reserved_name: the answers Python's `ntpath.isreserved` gave on 2026-11-15"
@@ -229,3 +272,27 @@ test "split_list by Windows' rules: a semicolon, quotes that hold one, an open q
     assert split_list("\"a\"b", true) == ["ab"]
     assert split_list("a;\"b;c", true) == ["a", "b;c"]
     assert split_list("a:b", true) == ["a:b"]
+
+# Rust's `env::join_paths` refuses a `:` by POSIX's rules, as its
+# documentation says (read 2026-11-20); by Windows' rules a `;` is quoted,
+# which `split_list` reads back, and a `"` is refused, as Rust's documentation
+# says of Windows.
+test "join_list: each rules' separator, no paths, an empty path, a separator quoted or refused, and split_list reading it back"
+    none: [str] = []
+    assert join_list(["/usr/bin", "/bin"], false).must() == "/usr/bin:/bin"
+    assert join_list(none, false).must() == ""
+    assert join_list(none, true).must() == ""
+    assert join_list(["a", "", "b"], false).must() == "a::b"
+    assert join_list(["a;b", "é"], false).must() == "a;b:é"
+    assert join_list(["C:\\a", "C:\\b;c"], true).must() == "C:\\a;\"C:\\b;c\""
+    assert join_list(["x:y"], true).must() == "x:y"
+    assert split_list(join_list(["C:\\a", "C:\\b;c", ""], true).must(), true) == ["C:\\a", "C:\\b;c", ""]
+    assert split_list(join_list(["/usr/bin", "", "/bin"], false).must(), false) == ["/usr/bin", "", "/bin"]
+
+    match join_list(["/bin", "/usr/bi:n"], false)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID && e.msg == "\"/usr/bi:n\" holds `:`, which separates the paths of a list by POSIX's rules"
+
+    match join_list(["a\"b"], true)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID && e.msg == "\"a\"b\" holds a double quote, which no list of paths carries by Windows' rules"

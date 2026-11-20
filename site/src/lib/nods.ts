@@ -114,6 +114,7 @@ export const ROWS: Row[] = [
   // the last four were removed from the edition.
   { nod: 'hunky dory', record: 'the album itself', recordIt: 'l&rsquo;album stesso', year: 1971, hear: 'https://en.wikipedia.org/wiki/Hunky_Dory' },
   { nod: 'changes', record: '<i>Hunky Dory</i>', year: 1971, hear: 'https://www.youtube.com/watch?v=7fdhI3qUdSs' },
+  { nod: 'life on mars?', record: '<i>Hunky Dory</i>', year: 1971, hear: 'https://www.youtube.com/watch?v=AZKcl4-tcuo' },
   { nod: 'quicksand, avoided', record: 'Quicksand, on <i>Hunky Dory</i>', recordIt: 'Quicksand, su <i>Hunky Dory</i>', year: 1971, hear: 'https://www.youtube.com/watch?v=kFN_bEgDE0M' },
   { nod: 'five years', record: '<i>Ziggy Stardust</i>', year: 1972, hear: 'https://www.youtube.com/watch?v=2ObjtVdsV3I' },
   { nod: 'moonage daydream', record: '<i>Ziggy Stardust</i>', year: 1972, hear: 'https://www.youtube.com/watch?v=RPUAldgS7Sg' },
