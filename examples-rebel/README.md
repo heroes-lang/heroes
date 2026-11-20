@@ -22,13 +22,13 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and forty-five packages, in layers. **A package may use any package of a layer below
+A hundred and forty-six packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
 |---|---|---|---|---|
 | 0 | `unicode` | what a character is: classes, case, the tables, UTF-8 read and written |  |  |
-| 0 | `math` | the functions of mathematics, complex numbers by C11 Annex G, and the integer helpers that cannot overflow in silence |  | `math.h` |
+| 0 | `math` | the functions of mathematics over floats, and the integer helpers that cannot overflow in silence |  | `math.h` |
 | 0 | `lists` | what the built-ins do not do for a `[T]`: a stable sort by an order, search, slices of a list; pairs of two lists or of an index and an element refused, the language having no generic record |  |  |
 | 0 | `maps` | what the built-ins do not do for a `{K: V}`: values, merging, removing; its entries as one list of pairs refused, the language having no generic record |  |  |
 | 0 | `numbers` | a number read from text and written as text, in every base and precision |  |  |
@@ -56,6 +56,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 1 | `regex` | a regular expression matched in linear time | `unicode` |  |
 | 1 | `random` | a seeded generator, ranges, shuffling, choosing, sampling; secure values from `os` | `math`, `os` |  |
 | 1 | `stats` | mean, median, mode, variance, deviation, quantiles, correlation | `lists`, `math` |  |
+| 1 | `math/complex` | complex numbers and their functions as C11's Annex G computes them: arithmetic, the polar form, exponentials, logarithms, powers, the circular and hyperbolic functions and their inverses | `math` |  |
 | 1 | `math/linear` | vectors of two, three and four, matrices, quaternions, transforms, cameras and Euler angles in all twelve orders | `math` |  |
 | 1 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode` |  |
 | 1 | `image` | images in memory, gray to RGBA at 8 and 16 bits: crop, resize, rotate, flip, convert, paste with alpha, simple drawing, a histogram; each file format a subpackage; a broken file is `invalid`, never a memory fault | `math` |  |

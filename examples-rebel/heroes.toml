@@ -87,6 +87,7 @@ packages = [
     "maps",
     "markdown",
     "math",
+    "math/complex",
     "math/linear",
     "mcp",
     "metrics",

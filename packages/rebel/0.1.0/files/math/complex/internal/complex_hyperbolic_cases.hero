@@ -5,9 +5,9 @@
 # extremes and at 28 random points; the answers are `ORACLE`'s, written as
 # `misses` reads them, four floats a case.
 
-use math/internal/complex_arithmetic
-use math/internal/complex_hyperbolic
-use math/internal/limits
+use math
+use math/complex/internal/complex_arithmetic
+use math/complex/internal/complex_hyperbolic
 
 # Where the cases' answers come from: the face's tests name it, which is how a
 # program's tests reach this module.
@@ -18,8 +18,8 @@ constant ORACLE: str
 
 # Python 3.15.2's `cmath.sin` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "sin (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, nan, -inf]
         [-inf, -1.5, nan, nan]
@@ -113,8 +113,8 @@ test "sin (generated): the branch cuts' two sides, the extremes and 28 random po
 
 # Python 3.15.2's `cmath.cos` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "cos (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, inf, nan]
         [-inf, -1.5, nan, nan]
@@ -208,8 +208,8 @@ test "cos (generated): the branch cuts' two sides, the extremes and 28 random po
 
 # Python 3.15.2's `cmath.tan` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "tan (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, 0.0, -1.0]
         [-inf, -1.5, nan, nan]
@@ -304,8 +304,8 @@ test "tan (generated): the branch cuts' two sides, the extremes and 28 random po
 
 # Python 3.15.2's `cmath.sinh` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "sinh (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, -inf, nan]
         [-inf, -1.5, -inf, -inf]
@@ -361,7 +361,7 @@ test "sinh (generated): every pairing of minus the infinity, -1.5, the two zeros
 
 # Python 3.15.2's `cmath.sinh` on this machine, 2026-11-17, at points beside its cuts and its extremes and at 28 points drawn with the seed 20261117.
 test "sinh (generated): the branch cuts' two sides, the extremes and 28 random points"
-    inf = limits.INF
+    inf = math.INF
     cases: [[f64]] = [
         [711.0, 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001, inf, 303631368.8864997]
         [0.0, 3.0, -0.0, 0.1411200080598672]
@@ -400,8 +400,8 @@ test "sinh (generated): the branch cuts' two sides, the extremes and 28 random p
 
 # Python 3.15.2's `cmath.cosh` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "cosh (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, inf, nan]
         [-inf, -1.5, inf, inf]
@@ -457,7 +457,7 @@ test "cosh (generated): every pairing of minus the infinity, -1.5, the two zeros
 
 # Python 3.15.2's `cmath.cosh` on this machine, 2026-11-17, at points beside its cuts and its extremes and at 28 points drawn with the seed 20261117.
 test "cosh (generated): the branch cuts' two sides, the extremes and 28 random points"
-    inf = limits.INF
+    inf = math.INF
     cases: [[f64]] = [
         [711.0, 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001, inf, 303631368.8864997]
         [0.0, 3.0, -0.9899924966004454, 0.0]
@@ -496,8 +496,8 @@ test "cosh (generated): the branch cuts' two sides, the extremes and 28 random p
 
 # Python 3.15.2's `cmath.tanh` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "tanh (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, -1.0, 0.0]
         [-inf, -1.5, -1.0, -0.0]

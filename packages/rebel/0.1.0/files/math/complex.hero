@@ -1,0 +1,569 @@
+# Complex numbers, `re + im i`, and their functions as C11's Annex G computes
+# them: arithmetic, the size and the angle, the polar form, the exponential,
+# the logarithms and the powers, and the circular and hyperbolic functions
+# with their inverses, each branch cut on an axis.
+#
+# It does not hold the functions of one float (`math`, whose face these are
+# written over), nor vectors, matrices and quaternions (`math/linear`). A
+# complex number read from text and written as text is pending (the ledger's
+# `complex/text`); until then a program writes `numbers.format_float` of each
+# part.
+#
+# It fails with no code. As `math`'s float functions do, every function
+# answers a value, never a failure: a nan where no number answers, an infinity
+# where the answer is too large, so complex arithmetic stays one expression
+# and `is_nan` asks afterwards. Where Python's `cmath` raises (the logarithm of
+# zero, an overflow, a division by zero) the answer is Annex G's.
+
+use math
+use math/complex/internal/complex_arithmetic
+use math/complex/internal/complex_arithmetic_cases
+use math/complex/internal/complex_exponential
+use math/complex/internal/complex_exponential_cases
+use math/complex/internal/complex_hyperbolic
+use math/complex/internal/complex_hyperbolic_cases
+use math/complex/internal/complex_inverse
+use math/complex/internal/complex_inverse_cases
+
+## The numbers
+
+# A complex number, `re + im i`, built directly: `complex.Complex(re: 1.0,
+# im: -2.0)`. Any two floats make one. Its functions answer as C11's Annex G
+# does, and so as Python's `cmath` does wherever Python answers: never a
+# failure, a nan where no number answers, an infinity where the answer is too
+# large, and each branch cut on an axis, the sign of a zero part choosing its
+# side. Where Python raises (the logarithm of zero, an overflow, a division by
+# zero) the answer is Annex G's.
+record Complex
+    # The real part.
+    re: f64
+    # The imaginary part.
+    im: f64
+
+# A complex number by its size and its angle: what `to_polar` answers and
+# `from_polar` reads. Built directly; any two floats make one.
+record Polar
+    # The size, the distance from zero; `to_polar` never answers it negative.
+    modulus: f64
+    # The angle from the positive real axis in radians, from -pi to pi as
+    # `to_polar` answers it.
+    phase: f64
+
+## Arithmetic
+
+# The sum `a + b`, part by part.
+#
+# - `a`: one number.
+# - `b`: the other.
+function add(a: Complex, b: Complex) -> Complex
+    return Complex(re: a.re + b.re, im: a.im + b.im)
+
+# The difference `a - b`, part by part.
+#
+# - `a`: the number taken from.
+# - `b`: the number taken away.
+function subtract(a: Complex, b: Complex) -> Complex
+    return Complex(re: a.re - b.re, im: a.im - b.im)
+
+# The product `a * b`.
+#
+# - `a`: one factor.
+# - `b`: the other.
+#
+# Where the plain formula answers a nan in both parts though a factor is
+# infinite, or a partial product overflowed, the answer is the infinity Annex
+# G recovers: `(inf + nan i) * (2 + 1i)` is `inf + inf i`.
+function multiply(a: Complex, b: Complex) -> Complex
+    return complex_arithmetic.mul(a: a, b: b)
+
+# The quotient `a / b`, by Baudin and Smith's robust algorithm, which scales
+# away from overflow and underflow on the way.
+#
+# - `a`: the dividend.
+# - `b`: the divisor; a zero answers an infinity for a dividend that is not a
+#   nan or zero, as Annex G says, where Python raises.
+#
+# A zero over a zero is a nan; an infinity over a finite number an infinity;
+# a finite number over an infinity a zero. A nan part is never read for its
+# sign, which no operation promises: `0 / (nan + inf i)` is `0 + 0i` on every
+# platform.
+function divide(a: Complex, b: Complex) -> Complex
+    return complex_arithmetic.div(a: a, b: b)
+
+# `z` with both parts negated.
+#
+# - `z`: any complex number.
+function negate(z: Complex) -> Complex
+    return Complex(re: -z.re, im: -z.im)
+
+# The conjugate of `z`: its imaginary part negated.
+#
+# - `z`: any complex number.
+function conjugate(z: Complex) -> Complex
+    return Complex(re: z.re, im: -z.im)
+
+## Size, angle and the polar form
+
+# The size of `z`, its distance from zero, computed without overflow on the
+# way.
+#
+# - `z`: any complex number; an infinite part answers the infinity, even
+#   beside a nan.
+function abs(z: Complex) -> f64
+    return complex_arithmetic.size(re: z.re, im: z.im)
+
+# The angle of `z` from the positive real axis, in radians from -pi to pi.
+#
+# - `z`: any complex number; on the negative real axis the sign of a zero
+#   imaginary part chooses pi or -pi.
+function phase(z: Complex) -> f64
+    return complex_arithmetic.angle(re: z.re, im: z.im)
+
+# `z` by its size and its angle.
+#
+# - `z`: any complex number.
+#
+# The size overflows to the infinity only where `z`'s does. See also
+# `from_polar`.
+function to_polar(z: Complex) -> Polar
+    return Polar(
+        modulus: complex_arithmetic.size(re: z.re, im: z.im),
+        phase: complex_arithmetic.angle(re: z.re, im: z.im)
+    )
+
+# The complex number `p` stands for: `p.modulus * (cos(p.phase) +
+# sin(p.phase) i)`.
+#
+# - `p`: a size and an angle; a zero angle answers a real number exactly, an
+#   infinite size at a finite angle an infinity in that direction, and a zero
+#   size at an infinite angle zero.
+#
+# See also `to_polar`.
+function from_polar(p: Polar) -> Complex
+    return complex_arithmetic.from_polar(modulus: p.modulus, phase: p.phase)
+
+# The point of the Riemann sphere `z` stands for: `z` itself where neither
+# part is infinite, and the one infinity `inf + 0i` where either is, the zero
+# signed as `z.im`. C's `cproj`.
+#
+# - `z`: any complex number.
+function project(z: Complex) -> Complex
+    return complex_arithmetic.project(re: z.re, im: z.im)
+
+## Classified and compared
+
+# Whether a part of `z` is a nan and neither is infinite: of `is_nan`,
+# `is_inf` and `is_finite`, exactly one holds of any number.
+#
+# - `z`: any complex number; `inf + nan i` is an infinity, as Annex G reads
+#   it, and Go's `cmplx.IsNaN`, where Python's `cmath.isnan` says nan.
+function is_nan(z: Complex) -> bool
+    return (math.is_nan(z.re) || math.is_nan(z.im)) && !is_inf(z)
+
+# Whether a part of `z` is infinite, whatever the other is.
+#
+# - `z`: any complex number.
+function is_inf(z: Complex) -> bool
+    return math.is_inf(z.re) || math.is_inf(z.im)
+
+# Whether both parts of `z` are finite.
+#
+# - `z`: any complex number.
+function is_finite(z: Complex) -> bool
+    return math.is_finite(z.re) && math.is_finite(z.im)
+
+# Whether `a` and `b` are equal, or the size of their difference is within
+# `relative` times the larger of their sizes, or within `absolute`: Python's
+# `cmath.isclose`.
+#
+# - `a`: one number.
+# - `b`: the other.
+# - `relative`: the tolerance relative to the larger size, 0.0 or more;
+#   `0.000000001` is Python's default.
+# - `absolute`: the tolerance in size alone, 0.0 or more, for numbers near
+#   zero.
+#
+# Two infinities are close only where equal, and a nan is close to nothing.
+# See also `math.is_close`.
+function is_close(a: Complex, b: Complex, relative: f64, absolute: f64) -> bool
+    return complex_arithmetic.is_close(a: a, b: b, relative: relative, absolute: absolute)
+
+## Exponential, logarithms and powers
+
+# E raised to the power `z`.
+#
+# - `z`: any complex number; its imaginary part is an angle in radians. A real
+#   part past about 709.78 answers an infinity in the direction of that angle,
+#   computed so that a small sine or cosine keeps its part finite where it is.
+#
+# Python raises where the answer overflows, and where the imaginary part is
+# infinite beside a finite real part; the answer is Annex G's there, an
+# infinity, or a nan in both parts.
+function exp(z: Complex) -> Complex
+    return complex_exponential.exp(re: z.re, im: z.im)
+
+# The natural logarithm of `z`, the principal one: its imaginary part is the
+# angle of `z`, from -pi to pi.
+#
+# - `z`: any complex number; the cut is the negative real axis, the sign of a
+#   zero imaginary part choosing its side, and zero answers minus the infinity
+#   (Annex G), where Python raises.
+#
+# The real part keeps its digits for a size a hair from 1. See also `log`,
+# `log10`.
+function ln(z: Complex) -> Complex
+    return complex_exponential.ln(re: z.re, im: z.im)
+
+# The logarithm in base 10 of `z`: `ln` with both parts divided by the natural
+# logarithm of 10.
+#
+# - `z`: any complex number; the cut is `ln`'s.
+function log10(z: Complex) -> Complex
+    return complex_exponential.log10(re: z.re, im: z.im)
+
+# The logarithm of `z` in the base `base`: `ln(z)` divided by `ln(base)`, as
+# Python's `cmath.log` with two arguments.
+#
+# - `z`: any complex number.
+# - `base`: the base; 1 answers an infinity or a nan, as dividing by zero does.
+function log(z: Complex, base: Complex) -> Complex
+    return divide(a: ln(z), b: ln(base))
+
+# The principal square root of `z`: its real part never negative, its
+# imaginary part of the sign of `z.im`.
+#
+# - `z`: any complex number; the cut is the negative real axis, the sign of a
+#   zero imaginary part choosing the side, so `-4 - 0i` answers `-2i`.
+#
+# Computed without overflow or underflow on the way, at every size.
+function sqrt(z: Complex) -> Complex
+    return complex_exponential.sqrt(re: z.re, im: z.im)
+
+# `base` raised to the power `exponent`, the principal power `exp(exponent *
+# ln(base))`.
+#
+# - `base`: the base; zero answers zero where the exponent's real part is
+#   positive, `inf + nan i` where it is negative, and a nan where it is zero
+#   and the exponent is not, where Python raises for a complex or negative
+#   exponent.
+# - `exponent`: the power; zero answers 1 for every base, a nan included. A
+#   whole real exponent below 2 to the 63rd in size is multiplied out by
+#   squaring, no step overflowing before the answer does, so `(1 + 1i)^2` is
+#   exactly `2i`, `i` to any whole power is exact, and the answer is the same
+#   on every platform, within about `|n|` units in the last place of its size;
+#   any other is taken through the polar form, whose last digits are the C
+#   library's. Python multiplies out only to 100.
+function pow(base: Complex, exponent: Complex) -> Complex
+    return complex_exponential.pow(base: base, exponent: exponent)
+
+## Circular functions
+
+# The sine of `z`.
+#
+# - `z`: any complex number; `sin(z) = -i sinh(iz)`, so its edges are those of
+#   `sinh` turned a quarter.
+function sin(z: Complex) -> Complex
+    return complex_hyperbolic.sin(re: z.re, im: z.im)
+
+# The cosine of `z`.
+#
+# - `z`: any complex number; `cos(z) = cosh(iz)`.
+function cos(z: Complex) -> Complex
+    return complex_hyperbolic.cos(re: z.re, im: z.im)
+
+# The tangent of `z`.
+#
+# - `z`: any complex number; `tan(z) = -i tanh(iz)`, so a huge imaginary part
+#   answers `i` or `-i` and never overflows.
+function tan(z: Complex) -> Complex
+    return complex_hyperbolic.tan(re: z.re, im: z.im)
+
+# The inverse sine of `z`, its real part from -pi/2 to pi/2.
+#
+# - `z`: any complex number; the cuts are the real axis beyond -1 and 1, the
+#   sign of a zero imaginary part choosing the side.
+function asin(z: Complex) -> Complex
+    return complex_inverse.asin(re: z.re, im: z.im)
+
+# The inverse cosine of `z`, its real part from 0 to pi.
+#
+# - `z`: any complex number; the cuts are the real axis beyond -1 and 1, so
+#   `2 + 0i` answers `-1.3169...i` and `2 - 0i` its conjugate.
+function acos(z: Complex) -> Complex
+    return complex_inverse.acos(re: z.re, im: z.im)
+
+# The inverse tangent of `z`, its real part from -pi/2 to pi/2.
+#
+# - `z`: any complex number; the cuts are the imaginary axis beyond `i` and
+#   `-i`, and `i` itself answers an infinite imaginary part (Annex G), where
+#   Python raises.
+function atan(z: Complex) -> Complex
+    return complex_inverse.atan(re: z.re, im: z.im)
+
+## Hyperbolic functions
+
+# The hyperbolic sine of `z`.
+#
+# - `z`: any complex number; a real part past about 710 answers an infinity
+#   in the direction of the imaginary part, a part kept finite where its sine
+#   or cosine is small enough.
+function sinh(z: Complex) -> Complex
+    return complex_hyperbolic.sinh(re: z.re, im: z.im)
+
+# The hyperbolic cosine of `z`.
+#
+# - `z`: any complex number; as `sinh` at its edges.
+function cosh(z: Complex) -> Complex
+    return complex_hyperbolic.cosh(re: z.re, im: z.im)
+
+# The hyperbolic tangent of `z`.
+#
+# - `z`: any complex number; a real part past 20 answers 1 or -1 and a tiny
+#   imaginary part, and never overflows.
+function tanh(z: Complex) -> Complex
+    return complex_hyperbolic.tanh(re: z.re, im: z.im)
+
+# The inverse hyperbolic sine of `z`, its imaginary part from -pi/2 to pi/2.
+#
+# - `z`: any complex number; the cuts are the imaginary axis beyond `i` and
+#   `-i`, the sign of a zero real part choosing the side.
+function asinh(z: Complex) -> Complex
+    return complex_inverse.asinh(re: z.re, im: z.im)
+
+# The inverse hyperbolic cosine of `z`, its real part never negative, its
+# imaginary part from -pi to pi.
+#
+# - `z`: any complex number; the cut is the real axis below 1, the sign of a
+#   zero imaginary part choosing the side.
+function acosh(z: Complex) -> Complex
+    return complex_inverse.acosh(re: z.re, im: z.im)
+
+# The inverse hyperbolic tangent of `z`, its imaginary part from -pi/2 to
+# pi/2.
+#
+# - `z`: any complex number; the cuts are the real axis beyond -1 and 1, and
+#   1 itself answers `inf + 0i` (Annex G), where Python raises and Apple's C
+#   library answers `inf + 0.785...i`.
+function atanh(z: Complex) -> Complex
+    return complex_inverse.atanh(re: z.re, im: z.im)
+
+## Tests
+
+# The generated cases of the complex functions are the tests of four modules
+# of their own, reached from here; all four name one oracle.
+test "the complex functions' generated cases: one oracle for the four modules"
+    assert complex_arithmetic_cases.ORACLE == complex_exponential_cases.ORACLE
+    assert complex_exponential_cases.ORACLE == complex_hyperbolic_cases.ORACLE
+    assert complex_hyperbolic_cases.ORACLE == complex_inverse_cases.ORACLE
+
+## Examples
+
+# Two complex numbers added.
+test "add: two numbers"
+    assert add(a: Complex(re: 1.0, im: 2.0), b: Complex(re: 3.0, im: -1.0)) == Complex(re: 4.0, im: 1.0)
+
+# One complex number taken from another.
+test "subtract: two numbers"
+    assert subtract(a: Complex(re: 1.0, im: 2.0), b: Complex(re: 3.0, im: -1.0)) == Complex(re: -2.0, im: 3.0)
+
+# A product, `i * i` being -1.
+test "multiply: two numbers"
+    assert multiply(a: Complex(re: 1.0, im: 2.0), b: Complex(re: 3.0, im: -4.0)) == Complex(re: 11.0, im: 2.0)
+
+# The quotient undoes the product exactly.
+test "divide: the product divided back"
+    assert divide(a: Complex(re: 11.0, im: 2.0), b: Complex(re: 3.0, im: -4.0)) == Complex(re: 1.0, im: 2.0)
+
+# A number negated.
+test "negate: a number"
+    assert negate(Complex(re: 1.0, im: -2.0)) == Complex(re: -1.0, im: 2.0)
+
+# The conjugate mirrors a number in the real axis.
+test "conjugate: a number"
+    assert conjugate(Complex(re: 1.0, im: 2.0)) == Complex(re: 1.0, im: -2.0)
+
+# The size of `3 + 4i`.
+test "abs: a 3-4-5 triangle"
+    assert abs(Complex(re: 3.0, im: -4.0)) == 5.0
+
+# The angle of -1, on either side of the cut.
+test "phase: minus one, above and below the cut"
+    assert phase(Complex(re: -1.0, im: 0.0)) == math.PI
+    assert phase(Complex(re: -1.0, im: -0.0)) == -math.PI
+
+# `2i` by its size and angle.
+test "to_polar: two i"
+    assert to_polar(Complex(re: 0.0, im: 2.0)) == Polar(modulus: 2.0, phase: math.PI * 0.5)
+
+# A size at a zero angle is a real number, exactly.
+test "from_polar: a zero angle"
+    assert from_polar(Polar(modulus: 2.0, phase: 0.0)) == Complex(re: 2.0, im: 0.0)
+
+# Every infinity is the one point of the sphere.
+test "project: an infinite part beside a nan"
+    assert project(Complex(re: math.NAN, im: math.INF)) == Complex(re: math.INF, im: 0.0)
+
+# A nan part makes a nan, unless the other is infinite.
+test "is_nan: a nan part, and one beside an infinity"
+    assert is_nan(Complex(re: math.NAN, im: 1.0))
+    assert !is_nan(Complex(re: math.INF, im: math.NAN))
+
+# An infinite part makes an infinity, whatever the other is.
+test "is_inf: an infinity beside a nan"
+    assert is_inf(Complex(re: math.INF, im: math.NAN))
+
+# Two finite parts.
+test "is_finite: a number"
+    assert is_finite(Complex(re: 1.0, im: -2.0))
+
+# Two numbers within Python's default relative tolerance.
+test "is_close: a hair apart"
+    assert is_close(
+        a: Complex(re: 1.0, im: 1.0),
+        b: Complex(re: 1.0, im: 1.0000000001),
+        relative: 0.000000001,
+        absolute: 0.0
+    )
+
+# Euler's identity, to the last bits.
+test "exp: e to the i pi"
+    assert is_close(
+        a: exp(Complex(re: 0.0, im: math.PI)),
+        b: Complex(re: -1.0, im: 0.0),
+        relative: 0.0,
+        absolute: 0.000000000000001
+    )
+
+# The logarithm of -1 is `pi i`.
+test "ln: minus one"
+    assert ln(Complex(re: -1.0, im: 0.0)) == Complex(re: 0.0, im: math.PI)
+
+# The logarithm in base 10 of 1000.
+test "log10: a thousand"
+    assert is_close(
+        a: log10(Complex(re: 1000.0, im: 0.0)),
+        b: Complex(re: 3.0, im: 0.0),
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The logarithm of 8 in base 2.
+test "log: eight in base two"
+    assert is_close(
+        a: log(z: Complex(re: 8.0, im: 0.0), base: Complex(re: 2.0, im: 0.0)),
+        b: Complex(re: 3.0, im: 0.0),
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The square roots of -4 on the two sides of the cut.
+test "sqrt: minus four, above and below the cut"
+    assert sqrt(Complex(re: -4.0, im: 0.0)) == Complex(re: 0.0, im: 2.0)
+    assert sqrt(Complex(re: -4.0, im: -0.0)) == Complex(re: 0.0, im: -2.0)
+
+# A whole power is multiplied out exactly.
+test "pow: one plus i, squared"
+    assert pow(base: Complex(re: 1.0, im: 1.0), exponent: Complex(re: 2.0, im: 0.0)) == Complex(re: 0.0, im: 2.0)
+
+# The sine of `i` is `i sinh(1)`.
+test "sin: i"
+    assert is_close(
+        a: sin(Complex(re: 0.0, im: 1.0)),
+        b: Complex(re: 0.0, im: 1.1752011936438014),
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The cosine of `i` is `cosh(1)`.
+test "cos: i"
+    assert is_close(
+        a: cos(Complex(re: 0.0, im: 1.0)),
+        b: Complex(re: 1.5430806348152437, im: 0.0),
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The tangent of `1 + i`.
+test "tan: one plus i"
+    assert is_close(
+        a: tan(Complex(re: 1.0, im: 1.0)),
+        b: Complex(re: 0.2717525853195118, im: 1.0839233273386943),
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The inverse sine of 2, past the real one's domain.
+test "asin: two"
+    assert is_close(
+        a: asin(Complex(re: 2.0, im: 0.0)),
+        b: Complex(re: math.PI * 0.5, im: 1.3169578969248166),
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The inverse cosine of 2, above the cut.
+test "acos: two"
+    assert is_close(
+        a: acos(Complex(re: 2.0, im: 0.0)),
+        b: Complex(re: 0.0, im: -1.3169578969248166),
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The inverse tangent of `i / 2`.
+test "atan: half i"
+    assert is_close(
+        a: atan(Complex(re: 0.0, im: 0.5)),
+        b: Complex(re: 0.0, im: 0.5493061443340549),
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The hyperbolic sine of a quarter turn is `i`.
+test "sinh: a quarter turn"
+    assert is_close(
+        a: sinh(Complex(re: 0.0, im: math.PI * 0.5)),
+        b: Complex(re: 0.0, im: 1.0),
+        relative: 0.0,
+        absolute: 0.000000000000001
+    )
+
+# The hyperbolic cosine of a half turn is -1.
+test "cosh: a half turn"
+    assert is_close(
+        a: cosh(Complex(re: 0.0, im: math.PI)),
+        b: Complex(re: -1.0, im: 0.0),
+        relative: 0.0,
+        absolute: 0.000000000000001
+    )
+
+# The hyperbolic tangent of 1, a real number.
+test "tanh: one"
+    assert is_close(
+        a: tanh(Complex(re: 1.0, im: 0.0)),
+        b: Complex(re: 0.7615941559557649, im: 0.0),
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The inverse hyperbolic sine of `i / 2` is `i asin(1/2)`.
+test "asinh: half i"
+    assert is_close(
+        a: asinh(Complex(re: 0.0, im: 0.5)),
+        b: Complex(re: 0.0, im: 0.5235987755982989),
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The inverse hyperbolic cosine of -1 is `pi i`.
+test "acosh: minus one"
+    assert acosh(Complex(re: -1.0, im: 0.0)) == Complex(re: 0.0, im: math.PI)
+
+# The inverse hyperbolic tangent of a half.
+test "atanh: a half"
+    assert is_close(
+        a: atanh(Complex(re: 0.5, im: 0.0)),
+        b: Complex(re: 0.5493061443340549, im: 0.0),
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )

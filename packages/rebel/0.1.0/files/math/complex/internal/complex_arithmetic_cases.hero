@@ -5,9 +5,8 @@
 # extremes and at 28 random points; the answers are `ORACLE`'s, written as
 # `misses` reads them, four floats a case.
 
-use math/internal/complex_arithmetic
-use math/internal/floats
-use math/internal/limits
+use math
+use math/complex/internal/complex_arithmetic
 
 # Where the cases' answers come from: the face's tests name it, which is how a
 # program's tests reach this module.
@@ -29,8 +28,8 @@ function nans_signed(cases: [[f64]], sign: f64) -> [[f64]]
         row: [f64] @= []
 
         for x in c
-            if floats.is_nan(x)
-                row @ row.push(floats.with_sign(x: x, of: sign))
+            if math.is_nan(x)
+                row @ row.push(math.with_sign(x: x, of: sign))
             else
                 row @ row.push(x)
 
@@ -42,8 +41,8 @@ function nans_signed(cases: [[f64]], sign: f64) -> [[f64]]
 
 # Python 3.15.2's complex `*` on this machine, 2026-11-17, at the 64 pairings of eight numbers with an infinite, a nan or a zero part (where Python raises, this machine's C), then the exact quotient or product of 24 pairs drawn with the seed 202611172, at every scale from the subnormal to the overflow, rounded once.
 test "mul (generated): the pairings of eight edges, then 24 pairs at every scale"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [1.5, -0.5, 1.5, -0.5, 2.0, -1.5]
         [1.5, -0.5, inf, nan, inf, -inf]
@@ -138,8 +137,8 @@ test "mul (generated): the pairings of eight edges, then 24 pairs at every scale
 
 # Python 3.15.2's complex `/` on this machine, 2026-11-17, at the 64 pairings of eight numbers with an infinite, a nan or a zero part (where Python raises, this machine's C), then the exact quotient or product of 24 pairs drawn with the seed 202611172, at every scale from the subnormal to the overflow, rounded once.
 test "div (generated): the pairings of eight edges, then 24 pairs at every scale"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [1.5, -0.5, 1.5, -0.5, 1.0, 0.0]
         [1.5, -0.5, inf, nan, 0.0, -0.0]
@@ -236,8 +235,8 @@ test "div (generated): the pairings of eight edges, then 24 pairs at every scale
 
 # Python 3.15.2's `cmath.rect` on this machine, 2026-11-17, at the 49 pairings of seven sizes and seven angles, then at 16 random ones; where Python raises, the values `from_polar` documents.
 test "from_polar (generated): every pairing of seven sizes and seven angles, then 16 random ones"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, inf, nan]
         [-inf, -1.5, -inf, inf]
