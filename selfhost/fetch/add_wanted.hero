@@ -61,6 +61,7 @@ function folder_entry(inv: argv.Invocation, program: str, folder: str, c: catalo
         )
     e = catalogue.Entry(name: name, version: "", git: "", tag: "", commit: "", path: folder, sum: "")
     held_under_another(inv, e: e, program: program, c: c)?
+    name_held(inv, e: e, program: program, c: c)?
 
     if !process.is_directory(program + folder)
         return fail(code: "absent", msg: "there is no folder `" + program + folder + "`")
@@ -91,6 +92,44 @@ function held_under_another(inv: argv.Invocation, e: catalogue.Entry, program: s
 
     return ok()
 
+# The name a folder or a git source would be written under, held by an
+# entry naming another package, refused as the catalogue's fact it is
+# (defect 2624), `catalogue_refused` at exit 1: an entry names one package
+# (panel 235's R3). Until then the walk of the build list found it
+# (`fetch/build_list.hero`, `chosen`), after the source was asked, and told
+# it `bad_usage` at exit 2, *name the new one with `--as`*, to a command that
+# had named it with `--as` already, and to an index package, which takes no
+# `--as`. Asked of the catalogue's text and the command line alone, before a
+# folder is read or a source asked; `held_under_another` is asked first.
+function name_held(inv: argv.Invocation, e: catalogue.Entry, program: str, c: catalogue.Catalogue) -> ()?
+    held = catalogue.entry(c, name: e.name)
+
+    if held.is_err()
+        return ok()
+
+    if catalogue.source_of(held.must(), index: c.index, folder: program) == catalogue.source_of(e, index: c.index, folder: program)
+        return ok()
+    return fail(
+        code: "catalogue_refused",
+        msg: name_taken(inv, held: held.must(), asked: catalogue.said_source(e), program: program, index_package: false)
+    )
+
+# The words of a name `held` holds for another package than `asked`, with
+# the routes the command line leaves: another name with `--as` for a folder
+# or a git source, the program's own entry renamed by hand for an index
+# package, or `held` taken out by hand for the new package to take its place.
+function name_taken(inv: argv.Invocation, held: catalogue.Entry, asked: str, program: str, index_package: bool) -> str
+    file = program + catalogue.FILE
+    fact = "the catalogue's entry `" + held.name + "` already names " + catalogue.said_source(held) + ", another package than " + asked + ", and an entry names one package: "
+    in_place = "or, for the new one to take its place, take `[dependencies." + held.name + "]` out of `" + file + "` by hand and run this add again"
+
+    if index_package
+        return fact + "an index package keeps the index's name, so the program's own entry is the one to rename, by hand, `[dependencies." + held.name + "]` to `[dependencies.<name>]` in `" + file + "` and each `use <" + held.name + ">/` to `use <name>/`, " + in_place
+
+    if argv.has(inv, spelling: "--as")
+        return fact + "name the new one other than `" + held.name + "` with `--as`, " + in_place
+    return fact + "name the new one with `--as`, " + in_place
+
 # A git source at a tag: its commit asked, its tree fetched and placed, and
 # its sum the tree's, trusted on first use.
 function git_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: transport.Tools, address_text: str, program: str, root: address.Root, c: catalogue.Catalogue) -> catalogue.Entry?
@@ -115,7 +154,17 @@ function git_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: transpo
             code: "bad_usage",
             msg: "the entry of `" + address_text + "` has no name a `use` writes: " + entry_name.refused(name) + "; give one with `--as`"
         )
-    held_under_another(inv, e: catalogue.Entry(name: name, version: "", git: address_text, tag: tag.must(), commit: "", path: "", sum: ""), program: program, c: c)?
+    asked_entry = catalogue.Entry(
+        name: name,
+        version: "",
+        git: address_text,
+        tag: tag.must(),
+        commit: "",
+        path: "",
+        sum: ""
+    )
+    held_under_another(inv, e: asked_entry, program: program, c: c)?
+    name_held(inv, e: asked_entry, program: program, c: c)?
     s: staging.Staging @= staging.opened(program)?
     asked = transport.tag_commit(tools, source: at, tag: tag.must(), scratch: s.folder)
     commit = tag_absent.checked(tools, source: at, commit: asked, scratch: s.folder, entry: "")
@@ -200,6 +249,17 @@ function index_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: trans
                 code: "bad_usage",
                 msg: "`" + version + "` is no version: a version is exact, three numbers with no leading zero, `1.4.2`"
             )
+
+    # Every index entry of the catalogue is read from the one index its
+    # `index` line names, so an entry of this name is this package unless it
+    # names a folder or a git source.
+    held = catalogue.entry(c, name: name)
+
+    if !held.is_err() && held.must().version.len() == 0
+        return fail(
+            code: "catalogue_refused",
+            msg: name_taken(inv, held: held.must(), asked: "the index's `" + name + "`", program: program, index_package: true)
+        )
     index = address.judged(index_source.written_index(c.index), root: root)?
     listed = index_source.versions(tools, index: index, name: name, scratch: ledger.folder)?
     pick = verb_place.version_picked(listed, asked: asked, at: at_sign, index: index.written)?

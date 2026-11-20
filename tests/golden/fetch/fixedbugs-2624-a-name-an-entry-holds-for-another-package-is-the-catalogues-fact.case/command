@@ -1,0 +1,9 @@
+add --path ../local/other --as yaml -C <work>/app
+add --path ../local/more/yaml -C <work>/app
+add file://../git/yaml --tag v1.0.0 -C <work>/app
+add file://../git/yaml --tag v9.9.9 --as yaml -C <work>/app
+add json -C <work>/app
+add json@9.9.9 -C <work>/app
+add --path ../local/other --as other -C <work>/app
+add --path ../local/yaml --as yaml -C <work>/app
+run <work>/app/main.hero

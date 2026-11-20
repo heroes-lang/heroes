@@ -1,5 +1,7 @@
 # Task 2312: what `heroes add` refuses in its own words and flags, each
 # refused before anything is placed or written, the catalogue left as it was.
+# `--as yaml` for another folder than `yaml`'s is the catalogue's fact, exit 1
+# since defect 2624, and no longer a usage error.
 index = "file://../../../../../tests/golden/fetch/add-refused-by-its-flags.case/idx"
 
 [dependencies.yaml]

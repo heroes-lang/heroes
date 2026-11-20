@@ -1,0 +1,75 @@
+$ heroes add --path ../local/other --as yaml -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `yaml` already names the folder `../local/yaml`, another package than the folder `../local/other`, and an entry names one package: name the new one other than `yaml` with `--as`, or, for the new one to take its place, take `[dependencies.yaml]` out of `<work>/app/heroes.toml` by hand and run this add again
+$ heroes add --path ../local/more/yaml -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `yaml` already names the folder `../local/yaml`, another package than the folder `../local/more/yaml`, and an entry names one package: name the new one with `--as`, or, for the new one to take its place, take `[dependencies.yaml]` out of `<work>/app/heroes.toml` by hand and run this add again
+$ heroes add file://../git/yaml --tag v1.0.0 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `yaml` already names the folder `../local/yaml`, another package than `file://../git/yaml`, and an entry names one package: name the new one with `--as`, or, for the new one to take its place, take `[dependencies.yaml]` out of `<work>/app/heroes.toml` by hand and run this add again
+$ heroes add file://../git/yaml --tag v9.9.9 --as yaml -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `yaml` already names the folder `../local/yaml`, another package than `file://../git/yaml`, and an entry names one package: name the new one other than `yaml` with `--as`, or, for the new one to take its place, take `[dependencies.yaml]` out of `<work>/app/heroes.toml` by hand and run this add again
+$ heroes add json -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `json` already names the folder `../local/json`, another package than the index's `json`, and an entry names one package: an index package keeps the index's name, so the program's own entry is the one to rename, by hand, `[dependencies.json]` to `[dependencies.<name>]` in `<work>/app/heroes.toml` and each `use <json>/` to `use <name>/`, or, for the new one to take its place, take `[dependencies.json]` out of `<work>/app/heroes.toml` by hand and run this add again
+$ heroes add json@9.9.9 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `json` already names the folder `../local/json`, another package than the index's `json`, and an entry names one package: an index package keeps the index's name, so the program's own entry is the one to rename, by hand, `[dependencies.json]` to `[dependencies.<name>]` in `<work>/app/heroes.toml` and each `use <json>/` to `use <name>/`, or, for the new one to take its place, take `[dependencies.json]` out of `<work>/app/heroes.toml` by hand and run this add again
+$ heroes add --path ../local/other --as other -C <work>/app
+exit 0
+stdout:
+added other ../local/other
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add --path ../local/yaml --as yaml -C <work>/app
+exit 0
+stdout:
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+1
+2
+3
+stderr:
+note: the package `json` is read from the folder `<work>/app/../local/json/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+note: the package `other` is read from the folder `<work>/app/../local/other/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+note: the package `yaml` is read from the folder `<work>/app/../local/yaml/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+heroes.toml:
+# Defect 2624: a name an entry holds for another package is the catalogue's
+# fact, `catalogue_refused` at exit 1, told before a folder is read, a git
+# source asked or the index read, with the routes the command line leaves;
+# until then `bad_usage` at exit 2, advising `--as` to a command that had
+# given it and to an index package, which takes none. `yaml` names
+# `../local/yaml`: the folder `../local/other` under `--as yaml`, the folder
+# `../local/more/yaml` under its last part, and `file://../git/yaml` at its
+# tag and, under `--as yaml`, at a tag it lacks, are refused. `json` names
+# `../local/json`: the index's `json` is refused, at the highest version and
+# at one it does not list, the index (no folder here) never read. `--as
+# other` is added, and `yaml`'s own folder under `yaml` moves nothing.
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2624-a-name-an-entry-holds-for-another-package-is-the-catalogues-fact.case/idx"
+
+[dependencies.yaml]
+path = "../local/yaml"
+
+[dependencies.json]
+path = "../local/json"
+
+[dependencies.other]
+path = "../local/other"
+heroes.packages:
+(none)

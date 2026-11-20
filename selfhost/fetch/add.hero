@@ -574,3 +574,62 @@ test "a package an entry holds is never added under another name (defect 2620)"
         assert read_file(app + "/heroes.toml").must() == both
 
     assert !process.remove_tree(SCRATCH).is_err()
+
+# Defect 2624: a name an entry holds for another package is the catalogue's
+# fact, `catalogue_refused` at exit 1, told before a folder is read, a source
+# asked or the index read, the catalogue left as it was; until then
+# `bad_usage` at exit 2, advising `--as` to a command that had given it and to
+# an index package, which takes none. Each route its words offer is run.
+test "a name an entry holds for another package is refused as the catalogue's fact (defect 2624)"
+    _ = index_made()
+    app = SCRATCH + "/app"
+    file = app + "/heroes.toml"
+
+    for folder in ["yaml", "other", "more/yaml", "json"]
+        process.mkdir_all(SCRATCH + "/local/" + folder).must()
+
+    # `--index` beside `--path` is refused, so the index line is written
+    # first, by hand.
+    assert !write_file(path: file, text: "index = \"file://../idx\"\n").is_err()
+    assert said(["add", "--path", "../local/yaml", "-C", app], tools: transport.path_tools()) == ["added yaml ../local/yaml", "wrote " + file]
+    assert said(["add", "--path", "../local/json", "-C", app], tools: transport.path_tools()) == ["added json ../local/json", "wrote " + file]
+    held = read_file(file).must()
+    made_repo.made(SCRATCH + "/src").must()
+    _ = made_repo.committed(
+        dir: SCRATCH + "/src",
+        files: ["lib.hero", "function y() -> i64\n    return 3\n"],
+        message: "one"
+    ).must()
+    made_repo.tagged(dir: SCRATCH + "/src", tag: "v1.0.0", annotated: false).must()
+    yaml_out = "or, for the new one to take its place, take `[dependencies.yaml]` out of `" + file + "` by hand and run this add again"
+    other = "the catalogue's entry `yaml` already names the folder `../local/yaml`, another package than the folder `../local/other`, and an entry names one package: "
+    more = "the catalogue's entry `yaml` already names the folder `../local/yaml`, another package than the folder `../local/more/yaml`, and an entry names one package: "
+    git = "the catalogue's entry `yaml` already names the folder `../local/yaml`, another package than `file://../src`, and an entry names one package: "
+    index = "the catalogue's entry `json` already names the folder `../local/json`, another package than the index's `json`, and an entry names one package: an index package keeps the index's name, so the program's own entry is the one to rename, by hand, `[dependencies.json]` to `[dependencies.<name>]` in `" + file + "` and each `use <json>/` to `use <name>/`, or, for the new one to take its place, take `[dependencies.json]` out of `" + file + "` by hand and run this add again"
+    refusals = [
+        [["add", "--path", "../local/other", "--as", "yaml", "-C", app], [other + "name the new one other than `yaml` with `--as`, " + yaml_out]]
+        [["add", "--path", "../local/more/yaml", "-C", app], [more + "name the new one with `--as`, " + yaml_out]]
+        [["add", "file://../src", "--tag", "v1.0.0", "-C", app, "--as", "yaml"], [git + "name the new one other than `yaml` with `--as`, " + yaml_out]]
+        [["add", "file://../src", "--tag", "v9.9.9", "--as", "yaml", "-C", app], [git + "name the new one other than `yaml` with `--as`, " + yaml_out]]
+        [["add", "json", "-C", app], [index]]
+        [["add", "json@9.9.9", "-C", app], [index]]
+    ]
+
+    for one in refusals
+        got = outcome(invoked(one[0]), tools: transport.path_tools())
+        assert got.len() == 1 && got[0].code == "catalogue_refused" && told.exit_of(got[0].code) == 1
+        assert got[0].said == one[1][0]
+        assert read_file(file).must() == held
+
+    assert !process.path_exists(app + "/heroes.packages")
+
+    # The routes: another name; the entry taken out by hand, then the same
+    # add, for a folder and for the index's package.
+    assert said(["add", "--path", "../local/other", "--as", "other", "-C", app], tools: transport.path_tools()) == ["added other ../local/other", "wrote " + file]
+    assert !write_file(path: file, text: "index = \"file://../idx\"\n\n[dependencies.other]\npath = \"../local/other\"\n").is_err()
+    assert said(["add", "--path", "../local/more/yaml", "-C", app], tools: transport.path_tools()) == ["added yaml ../local/more/yaml", "wrote " + file]
+    assert said(["add", "json", "-C", app], tools: transport.path_tools()) == ["added json 2.0.0", "added strings 1.1.0 for json", "wrote " + file]
+    after = catalogue.read(opened: app + "/", named: "")
+    assert after.problem == "" && catalogue.entry(after, name: "yaml").must().path == "../local/more/yaml"
+    assert catalogue.entry(after, name: "json").must().version == "2.0.0"
+    assert !process.remove_tree(SCRATCH).is_err()
