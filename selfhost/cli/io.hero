@@ -31,14 +31,15 @@
 # from a whole one. `hero_write_err` writes all of it or the process
 # has no error channel left, so there is no count left to discard.
 
-# And the bytes of a `str` to stdout, nothing added: the half of `print`
-# before its newline (`runtime/parts/str.c`), on the stream `print` writes, so
-# the two never reorder. Bound for `print_artifact` (defect 141), from
-# `heroes_runtime.h` until defect 2256, which no program may name.
+# And the bytes of a `str` to stdout, nothing added, on the stream `print`
+# writes, so the two never reorder, as one span that ends with the call
+# (`runtime/parts/os.c`). Bound for `print_artifact` (defect 141); until
+# defect 2607 it was `print`'s own printer of a `str`, which opens a span only
+# `print`'s newline closes.
 extern "hero_os.h"
     function hero_write_err(text: str)
     function hero_word_bits() -> i64
-    function hero_print_str(text: str)
+    function hero_write_out(text: str)
 
 # One line to stderr, newline included — the eprintln the commands
 # share.
@@ -86,7 +87,7 @@ function eprint_raw(text: str)
 # back, whose last line is the author's to end or not, and 22 bytes with one
 # certain fix came out 29 where 28 were owed.
 function print_artifact(text: str)
-    hero_print_str(text: text)
+    hero_write_out(text: text)
 
 ## Tests
 

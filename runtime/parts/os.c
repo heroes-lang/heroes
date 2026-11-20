@@ -1185,6 +1185,45 @@ void hero_write_err(HeroStr text) {
     }
 }
 
+/* THE BYTES OF A `str` TO STDOUT ALONE, AS ONE SPAN THAT ENDS WITH THE CALL
+ * (defect 2607, 2026-11-20). A `print` statement's span is opened by its first
+ * printer and closed by `hero_print_end` (`parts/panic.c`); `print`'s printer
+ * of a `str`, bound alone, opened one nothing closed, held while its thread
+ * ran: a worker that wrote this way and then slept for 3 s held stdout's lock
+ * for the 3 s, and `main`'s `print` at 0.2 s came out at 3.0 s, 3 runs of 3 on
+ * this Mac (lane-impl-rt's `span_open_while_running`); a worker that never
+ * ended would have stopped every other printer. Defect 2605's repair gave such
+ * a span back at its thread's end, and that is still where a span left open
+ * goes, but a thread running is the shape it left. So this door takes
+ * stdout's lock, writes every byte, and gives the lock back before it returns:
+ * the bytes are never torn by another thread's line, as a statement's are not,
+ * and nothing waits on them after the call. The lock counts its holder's
+ * takings, so a thread inside a span of its own takes it at once. */
+void hero_write_out(HeroStr text) {
+    hero_str_require(text);
+    int64_t len = hero_str_len(text);
+    if (len <= 0) return;
+    hero_stdout_is_bytes();
+    const char *bytes = hero_str_cstr(text);
+    size_t left = (size_t)len;
+#if defined(_WIN32)
+    _lock_file(stdout);
+#else
+    flockfile(stdout);
+#endif
+    while (left > 0) {
+        size_t put = fwrite(bytes, 1, left, stdout);
+        if (put == 0) break;
+        bytes += put;
+        left -= put;
+    }
+#if defined(_WIN32)
+    _unlock_file(stdout);
+#else
+    funlockfile(stdout);
+#endif
+}
+
 /* The truncation is deliberate and is the reason `exit` is not a plain `extern`:
  * C's `exit` takes an `i64`, Heroes' `i64` is `int64_t`, and binding one to the
  * other is `conflicting types for 'exit'` (panel 030 R3, reproduced on clang 21).

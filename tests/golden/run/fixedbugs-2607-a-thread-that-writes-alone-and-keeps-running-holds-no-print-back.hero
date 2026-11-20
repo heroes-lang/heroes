@@ -1,0 +1,31 @@
+# Fixed 2026-11-20, defect 2607, lane-signals: a thread writes a line to
+# stdout alone, outside a `print` statement, and keeps running; `main` prints
+# meanwhile, and the thread waits to see `main`'s line before it ends.
+# Symptom: `main`'s `print` waited until the thread ended (3.0 s in the
+# defect's reproducer, its worker's three sleeps): the door the thread wrote
+# through was `print`'s own printer of a `str`, which opens a span of stdout
+# that only `print`'s newline closes, so the lock stayed with the thread while
+# it ran. Here the thread would have given up its wait after 5 s and said 0.
+# Cause: a lone write held stdout's lock past its call. `hero_os.h`'s door is
+# now `hero_write_out`, which writes its bytes as one span and gives the lock
+# back before it returns; `print`'s printer is the runtime interface's alone.
+extern "fixedbugs-2607-two-flags-two-threads-raise.h"
+    function flag_raise(which: i64)
+    function flag_waited(which: i64) -> i64
+
+extern "hero_os.h"
+    function hero_write_out(text: str)
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+# Writes alone, says so on flag 0, and waits for `main`'s line on flag 1.
+function quiet(_: i64) -> i64
+    hero_write_out(text: "the thread wrote alone and runs on\n")
+    flag_raise(which: 0)
+    return flag_waited(which: 1)
+
+function main()
+    t = hero_thread_spawn(body: quiet, arg: 7)
+    print("the thread wrote: ", flag_waited(which: 0))
+    flag_raise(which: 1)
+    print("the thread saw main's line: ", hero_thread_join(handle: t))

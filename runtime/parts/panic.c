@@ -391,7 +391,17 @@ void hero_print_end(void) {
  * at once, so it is never held for ever, whoever holds the lock; this keeps a
  * lock from outliving its thread at all, so that end finds it free and runs
  * whole, stdout flushed and C's own end with it. The bound is left for a
- * holder still running. */
+ * holder still running.
+ *
+ * AND NO PROGRAM OPENS A SPAN ALONE SINCE DEFECT 2607 (2026-11-20): a thread
+ * that wrote with `hero_print_str` alone and kept running held the span while
+ * it ran, and `main`'s `print` waited on it. The door a program and the
+ * compiler bind is now `hero_os.h`'s `hero_write_out`, which gives the lock
+ * back before it returns (`parts/os.c`), and `hero_print_str` is declared in
+ * `heroes_runtime.h` alone, which no program binds. What still opens a span
+ * nothing closes is C that calls the printer itself, and a compiler built from
+ * a seed written before that repair, whose artifacts take the old door: for
+ * those, this give-back stands. */
 static void hero_print_thread_leave(void) {
     if (!hero_print_open) return;
     hero_print_open = false;
