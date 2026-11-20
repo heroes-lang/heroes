@@ -1,0 +1,52 @@
+$ heroes add rebel/strings -C <work>/app
+exit 1
+stdout:
+stderr:
+error[unknown_entry]: `rebel/strings` names the package `strings` of the entry `rebel`, and there is no catalogue `<work>/app/heroes.toml` to hold it: `heroes add rebel` writes the entry from the index, `heroes add --path <folder> --as rebel` from a folder of yours, or a git address with `--tag` and `--as rebel` from git; then `heroes add rebel/strings` adds `strings` to its `packages` line
+$ heroes add --path ../local/kit --as kit -C <work>/app
+exit 0
+stdout:
+added kit ../local/kit
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add rebel/strings -C <work>/app
+exit 1
+stdout:
+stderr:
+error[unknown_entry]: `rebel/strings` names the package `strings` of the entry `rebel`, and the catalogue `<work>/app/heroes.toml` holds no entry `rebel`, whose one entry is `kit`: `heroes add rebel` writes the entry from the index, `heroes add --path <folder> --as rebel` from a folder of yours, or a git address with `--tag` and `--as rebel` from git; then `heroes add rebel/strings` adds `strings` to its `packages` line
+$ heroes add rebel/strings --index file://../idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[unknown_entry]: `rebel/strings` names the package `strings` of the entry `rebel`, and the catalogue `<work>/app/heroes.toml` holds no entry `rebel`, whose one entry is `kit`: `heroes add rebel --index file://../idx` writes the entry from the index, `heroes add --path <folder> --as rebel` from a folder of yours, or a git address with `--tag` and `--as rebel` from git; then `heroes add rebel/strings` adds `strings` to its `packages` line
+$ heroes add rebel@0.1.1/strings -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `rebel@0.1.1/strings` writes a version inside a package's name, and a package of an entry is placed at the entry's own version: `heroes add rebel@0.1.1` writes the entry at that version, and then `heroes add rebel/strings` adds `strings` to its `packages` line
+$ heroes add rebel/ -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `rebel/` names no package after its `/`: a package of `rebel` is named as a `use` writes it after `<rebel>/`, names joined by `/`, `heroes add rebel/csv`
+$ heroes add --path ../local/rebel --as rebel -C <work>/app
+exit 0
+stdout:
+added rebel ../local/rebel
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add rebel/strings -C <work>/app
+exit 0
+stdout:
+added rebel/strings
+wrote <work>/app/heroes.toml
+stderr:
+heroes.toml:
+[dependencies.kit]
+path = "../local/kit"
+
+[dependencies.rebel]
+path = "../local/rebel"
+packages = ["strings"]
+heroes.packages:
+(none)

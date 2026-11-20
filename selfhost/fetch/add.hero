@@ -41,6 +41,7 @@ use fetch/git_source
 use fetch/leftover
 use fetch/made_index
 use fetch/made_repo
+use fetch/package_operand
 use fetch/placing
 use fetch/staging
 use fetch/told
@@ -70,9 +71,16 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
         return [told.of_catalogue(c)]
 
     # `rebel/csv`: a package of an entry the catalogue holds, added to its
-    # `packages` line (panel 253's R6, `fetch/add_package.hero`).
-    if add_package.asks(c, operand: inv.file.default(""))
-        return add_package.added(inv, tools: tools, program: program.must(), c: c, operand: inv.file.default(""))
+    # `packages` line (panel 253's R6, `fetch/add_package.hero`); and the same
+    # operand where the catalogue holds no such entry, told so (defect 2612),
+    # never read as a git address.
+    operand = inv.file.default("")
+
+    if add_package.asks(c, operand: operand)
+        return add_package.added(inv, tools: tools, program: program.must(), c: c, operand: operand)
+
+    if package_operand.shaped(inv, operand: operand)
+        return package_operand.unheld(inv, program: program.must(), c: c, operand: operand)
     out: [told.Said] @= []
 
     match added(inv, tools: tools, program: program.must(), c: c)
@@ -332,6 +340,8 @@ test "an add that cannot be is refused with its code, and the catalogue is left 
         [["add", "yaml", "-C", SCRATCH + "/app", "--index", "file://../idx"], ["absent"]]
         [["add", "json@9.9.9", "-C", SCRATCH + "/app", "--index", "file://../idx"], ["absent"]]
         [["add", "file://../src", "-C", SCRATCH + "/app"], ["bad_usage"]]
+        [["add", "rebel/strings", "-C", SCRATCH + "/app"], ["unknown_entry"]]
+        [["add", "rebel@0.1.1/strings", "-C", SCRATCH + "/app"], ["bad_usage"]]
         [["add", "http://git.example.org/x", "--tag", "v1", "-C", SCRATCH + "/app"], ["source_refused"]]
         [["add", "--path", "../none", "-C", SCRATCH + "/app"], ["absent"]]
     ]

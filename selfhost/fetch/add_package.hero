@@ -17,6 +17,9 @@
 # is written (`fetch/placing.hero`), a name the version holds no module of
 # refused at exit 1, and a run that is refused takes back what it placed and
 # writes nothing (defect 2434), as every `heroes add` does.
+#
+# An operand of this shape whose entry the catalogue does not hold is
+# `fetch/package_operand.hero`'s to tell (defect 2612).
 
 use cli/argv
 use cli/files
@@ -26,6 +29,7 @@ use cli/strings
 use fetch/catalogue_edit
 use fetch/closure
 use fetch/leftover
+use fetch/package_operand
 use fetch/placing
 use fetch/staging
 use fetch/told
@@ -44,20 +48,13 @@ constant WIDE: i64
 # Whether `operand` names a package of an entry the catalogue holds,
 # `<entry>/<path>`: an address names no entry before its first `/`.
 function asks(c: catalogue.Catalogue, operand: str) -> bool
-    at = slash_of(operand)
+    at = package_operand.slash_of(operand)
     return at > 0 && !catalogue.entry(c, name: operand.slice(from: 0, to: at)).is_err()
-
-function slash_of(text: str) -> i64
-    for at in range(from: 0, to: text.len())
-        if text[at] == '/'
-            return at
-
-    return -1
 
 # What the command says: the name added, the part placed and the file
 # written, or the refusal, nothing written.
 function added(inv: argv.Invocation, tools: transport.Tools, program: str, c: catalogue.Catalogue, operand: str) -> [told.Said]
-    at = slash_of(operand)
+    at = package_operand.slash_of(operand)
     name = operand.slice(from: 0, to: at)
     inside = operand.slice(from: at + 1, to: operand.len())
 
@@ -68,9 +65,7 @@ function added(inv: argv.Invocation, tools: transport.Tools, program: str, c: ca
             ]
 
     if !listing.path_shaped(inside)
-        return [
-            told.Said(code: "bad_usage", at: "", said: "`" + inside + "` is no package's path: a package of `" + name + "` is named as a `use` writes it after `<" + name + ">/`, names joined by `/`, `heroes add " + name + "/csv`")
-        ]
+        return [package_operand.no_path(name: name, inside: inside)]
     listed = listing.of(c.listings, entry: name)
 
     if listing.names(listed, wanted: inside)
