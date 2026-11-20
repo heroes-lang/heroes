@@ -160,8 +160,13 @@ static bool hero_stream_flushed_held(FILE *stream) {
  * wrote through stderr, and on the box a runtime panic beside a thread keeping
  * stderr's lock (`_lock_file`), and beside one blocked writing stderr into a
  * pipe nobody reads, never ended, 3 runs of 3 each killed at 20 s with the
- * report unsaid (defect 2606's two shapes on a header with a Windows arm,
- * `run/fixedbugs-2606-every-platform.h`). So each piece is written past both
+ * report unsaid (defect 2606's two shapes, built by hand on a header with a
+ * Windows arm; the lock's is `run/fixedbugs-2606-a-runtime-panic-is-said-
+ * while-a-thread-keeps-stderrs-lock-on-every-platform`). After this arm the
+ * lock's panic was said in about 0.5 s and the pipe's program ended in 0.6 to
+ * 0.7 s, 3 runs of 3 each; the pipe's has no case there, its only witness
+ * being a status an abort ends with, which the run form reads as 0xC0000409
+ * plain and 127 under the sanitizer. So each piece is written past both
  * locks, by `WriteFile` on the handle under descriptor 2, on a thread of its
  * own the report waits for at most `HERO_REPORT_WAIT_NS`: a write that has not
  * ended by then is cancelled (`CancelSynchronousIo`) and every report byte
