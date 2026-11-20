@@ -259,10 +259,22 @@ static LONG WINAPI hero_lease_veh(EXCEPTION_POINTERS *ep) {
 static void (__cdecl *hero_lease_prev_abrt_win)(int) = SIG_DFL;
 static LPTOP_LEVEL_EXCEPTION_FILTER hero_lease_prev_filter = NULL;
 
+/* A SIGABRT WHOSE HANDLER BEFORE US RETURNED GOES ON (the author's ruling A
+ * of 2026-11-20 on defect 2583, *everywhere*, the POSIX arm's
+ * `hero_lease_sent` below). No signal here comes from another process, so
+ * every SIGABRT is the program's own `raise` or UCRT's `abort`: a `raise`
+ * under a library's handler that returns goes on in plain C, and `abort`
+ * ends the process itself once that handler returns, only without this
+ * runtime's line, which is silence over a line that would be false of a
+ * correct program (panel 175's principle). Until then this called the
+ * library's handler and then claimed the signal whatever it had done. */
 static void __cdecl hero_lease_abrt_win(int signum) {
     signal(SIGABRT, hero_lease_abrt_win);
     void (__cdecl *prev)(int) = hero_lease_prev_abrt_win;
-    if (prev != SIG_DFL && prev != SIG_IGN && prev != SIG_ERR && prev != NULL) prev(signum);
+    if (prev != SIG_DFL && prev != SIG_IGN && prev != SIG_ERR && prev != NULL) {
+        prev(signum);
+        return;
+    }
     if (!hero_runtime_spoke && hero_live_held > 0) {
         hero_lease_say_leases_win();
     } else if (!hero_runtime_spoke) {
@@ -430,16 +442,15 @@ static int hero_lease_call_prior(int signum, siginfo_t *si, void *ctx) {
  *
  * What that leaves, said: a file that comes back as it was from a signal
  * whose pc is already past it, where the thread would go on, is let go where
- * a process sent it (`hero_lease_sent`, below, defect 2583); an x86-64 `int3`,
- * whose pc is past it with no sender, is still claimed, and so is a SIGABRT a
- * process sent, which `abort` raises too and itself ends by the default once
- * the handler returns, so claiming it is what keeps its line. */
+ * a process sent it (`hero_lease_sent`, below, defect 2583), a SIGABRT among
+ * them since the author's ruling of 2026-11-20; an x86-64 `int3`, whose pc is
+ * past it with no sender, is still claimed. */
 static int hero_lease_sent(const siginfo_t *si);
 
 static int hero_lease_prior_recovered(int signum, siginfo_t *si, void *ctx) {
     HeroStackRegfile before;
     int known = hero_stack_regfile(ctx, &before);
-    int sent = signum != SIGABRT && hero_lease_sent(si);
+    int sent = hero_lease_sent(si);
     if (!hero_lease_call_prior(signum, si, ctx)) return 0;
     if (sent) return 1;
     if (!known) return 0;
@@ -448,8 +459,8 @@ static int hero_lease_prior_recovered(int signum, siginfo_t *si, void *ctx) {
     return memcmp(&before, &after, sizeof before) != 0;
 }
 
-/* A SIGTRAP OR A SIGILL A PROCESS SENT GOES ON WHERE THE HANDLER BEFORE US
- * RETURNED (defect 2583, 2026-11-20). `raise`, `kill`, `pthread_kill` or
+/* A SIGNAL A PROCESS SENT GOES ON WHERE THE HANDLER BEFORE US RETURNED
+ * (defect 2583, 2026-11-20). `raise`, `kill`, `pthread_kill` or
  * another process's `kill` deliver the signal after the call that sent it, so
  * a handler that returns sends the thread back past that call, and a C
  * program goes on: a library's handler that only notes the signal, then
@@ -464,16 +475,36 @@ static int hero_lease_prior_recovered(int signum, siginfo_t *si, void *ctx) {
  * below 0 (Darwin's `SI_USER` with them) and a sender is one a process sent,
  * and, its handler returned, is let go with nothing said.
  *
- * NOT SIGABRT: `abort` raises it the same way, and where the handler returns,
- * ends the process itself by the default with no line, so claiming it is what
- * keeps its line; this Mac tells the two apart by the mask `abort` blocks every
- * other signal with, and glibc's `abort` blocks none (both measured that day).
- * Whether a raised SIGABRT is let go is the defect's open question, a ruling.
- * Nor what arrives with no sender, a trap instruction: Darwin's `raise(SIGILL)`
- * arrives as a `udf` does, `si_code` 2 and no sender, and stays claimed. */
+ * ON DARWIN THE SENDER ALONE TELLS IT. Its `siginfo_t` keeps `si_pid` in a
+ * field of its own, never over `si_addr`, and a trap instruction arrives with
+ * it 0; but the kernel fills the `si_code` of such a signal from the last code
+ * any signal recorded for the process, so a child that sends SIGTRAP and
+ * exits at once has its exit's `CLD_EXITED` (1) read in its place: 13 runs of
+ * 60 of plain C on this Mac, and 0 of 60 where the child lived until the
+ * parent had noted the signal (lane-signals-2, 2026-11-20). The case
+ * `fixedbugs-2583-a-sigtrap-another-process-sends-...` died at 133 in 3 runs
+ * of 20 for it. The kernel clears the field once it is read, so a trap
+ * instruction that met a sender's stale pid is let go once, runs again, and
+ * is claimed on its second arrival with no sender.
+ *
+ * A SIGABRT TOO, the author's ruling of 2026-11-20 on defect 2583, as plain C
+ * lets it go. `abort` raises one the same way, and nothing in what the signal
+ * carries tells the two apart in Linux arm64 (glibc 2.41, `SI_TKILL` and the
+ * process's own pid for both, measured that day); a real `abort` still ends
+ * the process itself, by the default it puts back once the handler has
+ * returned, only without this runtime's line: silence over a line that would
+ * be false of a correct program (panel 175's principle).
+ *
+ * Nor what arrives with no sender, a trap instruction: Darwin's
+ * `raise(SIGILL)` arrives as a `udf` does, `si_code` 2 and no sender, and
+ * stays claimed. */
 static int hero_lease_sent(const siginfo_t *si) {
     if (si == NULL || si->si_pid == 0) return 0;
+#if defined(__APPLE__)
+    return 1;
+#else
     return si->si_code <= 0 || si->si_code == SI_USER;
+#endif
 }
 
 /* PANEL 175 CHANGED THE ORDER AND THE WORD, and each change is a defect that

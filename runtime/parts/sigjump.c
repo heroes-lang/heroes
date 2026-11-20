@@ -40,12 +40,14 @@
  * A JUMP TO A BUFFER WITH NO RECORD KEEPS EVERY ENTRY: one overwritten in a
  * full record, copied by `memcpy`, filled by the C library inside itself, or
  * on a thread nothing claimed. The error is then a told refusal (R1), never
- * Heroes code running inside a signal; its price is defect 2522's row, a
+ * Heroes code running inside a signal; its price is defect 2522's row 1, a
  * correct program that copies a buffer and jumps OUT of a handler through the
- * copy, refused with words that say a handler is running when none is.
+ * copy, refused, a known cost by the author's ruling B of 2026-11-20, in words
+ * that say the jump could not be followed (`parts/sigguard.c`).
  *
- * THE C LIBRARY'S OWN are found by `dlsym(RTLD_NEXT)` before `main` (a
- * constructor beside `parts/siginstall.c`'s), never inside a handler; a save
+ * THE C LIBRARY'S OWN are found by the C library's own `dlsym(RTLD_NEXT)`
+ * (`parts/siglookup.c`) before `main` (a constructor beside
+ * `parts/siginstall.c`'s), never inside a handler; a save
  * point reached before that constructor (a shared library's constructor) finds
  * them there, once. A save point reaches the C library's own by a tail call
  * (`musttail`), so the C library saves this function's CALLER and returns
@@ -99,7 +101,7 @@ static _Atomic(hero_ctx_set_fn) hero_ctx_real_set = NULL;
 static _Atomic(hero_ctx_swap_fn) hero_ctx_real_swap = NULL;
 
 static void *hero_jmp_next(const char *name) {
-    void *found = dlsym(RTLD_NEXT, name);
+    void *found = hero_dl_next(name);
     if (found == NULL) {
         hero_signal_say("panic: the C library's own ");
         hero_signal_say(name);

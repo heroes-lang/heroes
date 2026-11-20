@@ -1,0 +1,20 @@
+# Fixed 2026-11-20, defect 2583, lane-signals-2, the author's ruling A of that
+# day: a library's handler installed before `main` notes a SIGABRT and
+# returns, and the program sends itself one by `raise`, by `kill` of its own
+# process and by `pthread_kill` of its own thread
+# (`fixedbugs-2583-a-library-that-notes-a-signal-and-returns.h`).
+# Symptom: plain C goes on; the program died at 134 under *the process is
+# dying of SIGABRT, raised by this process*, on this Mac and in Linux arm64.
+# Cause: the lease handler let go a SIGTRAP or a SIGILL a process sent once
+# the handler before it returned, and claimed a SIGABRT, since `abort` raises
+# one the same way. The ruling: a SIGABRT the program raises itself is let go
+# as C lets it go; a real `abort` still ends the process, only without the
+# runtime's line (`fixedbugs-2583-an-abort-under-a-library-handler-that-...`).
+extern "fixedbugs-2583-a-library-that-notes-a-signal-and-returns.h"
+    function noted_abort_sent_self(how: i64) -> i64
+
+function main()
+    print("by raise: ", noted_abort_sent_self(how: 1))
+    print("by kill: ", noted_abort_sent_self(how: 2))
+    print("by pthread_kill: ", noted_abort_sent_self(how: 3))
+    print("and on")

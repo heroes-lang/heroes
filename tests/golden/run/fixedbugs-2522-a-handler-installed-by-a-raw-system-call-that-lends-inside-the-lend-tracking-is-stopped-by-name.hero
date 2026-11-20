@@ -1,12 +1,14 @@
 # Added 2026-11-19, defect 2522, lane-251 (panel 251's R1): defect 2494's
-# lend-tracking case with its handler installed through the C library's own
-# `sigaction`, found by `dlsym`, which no route of the runtime sees (defect
-# 2522's row; the header says why). Where a route sees the handler, the thunk
+# lend-tracking case with its handler installed where no route of the runtime
+# sees it, by a `sigaction` found by `dlsym` until the author's ruling C of
+# 2026-11-20, and since then by a raw system call (lane-signals-2;
+# `fixedbugs-2522-a-raw-install.h`), so the lend tracking's guard keeps a
+# case. Where a route sees the handler, the thunk
 # refuses first (defect 2494's case of the same shape, its expectation moved
 # that day); here only the lend tracking's guard stands, as it did before the
 # routes, and it must still stop the program by name (panel 247's R2).
 
-extern "fixedbugs-2522-a-handler-installed-through-dlsym-in-a-storm-of-lends.h"
+extern "fixedbugs-2522-a-handler-installed-by-a-raw-system-call-in-a-storm-of-lends.h"
     function lender_install(called: (function(i32) -> ())) -> i32
     function lender_touch(@cell: i32) -> i32
     function lender_fill(@buf: [u8] counted_by n lent, n: u64) -> i32

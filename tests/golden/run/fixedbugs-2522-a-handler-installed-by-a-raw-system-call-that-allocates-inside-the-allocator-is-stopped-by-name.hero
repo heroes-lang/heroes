@@ -1,7 +1,9 @@
 # Added 2026-11-19, defect 2522, lane-251 (panel 251's R1): defect 2494's
-# allocator case with its handler installed through the C library's own
-# `sigaction`, found by `dlsym`, which no route of the runtime sees (defect
-# 2522's row; the header says why on each platform). Where a route sees the
+# allocator case with its handler installed where no route of the runtime
+# sees it, by a `sigaction` found by `dlsym` until the author's ruling C of
+# 2026-11-20 made `dlsym` answer the runtime's own, and since then by a raw
+# system call (lane-signals-2; `fixedbugs-2522-a-raw-install.h` says how on
+# each platform), so the allocator's guard keeps a case. Where a route sees the
 # handler, the thunk refuses first (defect 2494's case of the same shape, its
 # expectation moved that day); here only the allocator's guard stands, as it
 # did before the routes, and it must still stop the program by name before
@@ -11,7 +13,7 @@
 # allocator early. Neither side formats a number (defect 2494's case says
 # why). `main` prints its one line before the sender starts.
 
-extern "fixedbugs-2522-a-handler-installed-through-dlsym-in-a-storm.h"
+extern "fixedbugs-2522-a-handler-installed-by-a-raw-system-call-in-a-storm.h"
     function storm_install(called: (function(i32) -> ())) -> i32
     function storm_start() -> i64
     function storm_stop()

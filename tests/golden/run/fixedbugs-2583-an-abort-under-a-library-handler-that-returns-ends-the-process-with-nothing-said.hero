@@ -1,0 +1,20 @@
+# Defect 2583, the known cost of the author's ruling A, 2026-11-20,
+# lane-signals-2: a library's handler installed before `main` notes a SIGABRT
+# and returns, and the program calls `abort`, which then ends the process
+# itself by the default, at 134 as plain C ends.
+# The ruling: a SIGABRT the program raises itself is let go once that handler
+# returns, as C lets it go (`fixedbugs-2583-a-sigabrt-the-program-sends-...`),
+# and `abort` raises one the same way: nothing in what the signal carries
+# tells the two apart in Linux arm64 (glibc 2.41, `SI_TKILL` and the program's
+# own pid for both, measured 2026-11-20). So this death says nothing of its
+# own where it said *the process is dying of SIGABRT, raised by this
+# process*: silence over a line that would be false of a correct program
+# (panel 175's principle). The header moves stderr onto stdout before
+# `abort`, so a line the runtime wrote would be judged in the stdout below.
+extern "fixedbugs-2583-a-library-that-notes-a-signal-and-returns.h"
+    function noted_abort()
+
+function main()
+    print("before")
+    noted_abort()
+    print("not reached")
