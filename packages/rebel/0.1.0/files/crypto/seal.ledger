@@ -3,13 +3,13 @@ capability seal/aes-gcm  a text sealed and opened under an AES key of 128 or 256
   go      aes.NewCipher, cipher.NewGCM, cipher.NewGCMWithRandomNonce, cipher.AEAD, cipher.AEAD.Seal, cipher.AEAD.Open
   rust    ring::aead::AES_128_GCM, ring::aead::AES_256_GCM, ring::aead::LessSafeKey, ring::aead::Aad
   python  AESGCM, AESGCM.encrypt, AESGCM.decrypt
-  note    The system's own cipher on each platform: OpenSSL 3's `EVP_aes_*_gcm` on Linux (every NIST CAVP case of a 96-bit IV and a 128-bit tag, 1113 valid held and 387 FAIL refused, and Wycheproof's 133, run through the member's C probe on Linux arm64 2026-11-17), CNG's AES in GCM chaining on Windows (written from the Win32 reference, compiled against MinGW-w64's headers, UNRUN: the box was off). PENDING on macOS: CommonCrypto's public modes are ECB, CBC, CFB, CTR, OFB, RC4 and CFB8 (`CommonCryptor.h`, macOS 27.2 SDK), its GCM is in a private header the SDK does not ship, and CryptoKit, which has it, is Swift's alone; `is_available` answers false there and every call fails `unsupported`, never a cipher of Heroes' own. Sealed bytes are the nonce, the ciphertext and the tag, Go's `NewGCMWithRandomNonce` layout
+  note    The system's own cipher on each platform: OpenSSL 3's `EVP_aes_*_gcm` on Linux (every NIST CAVP case of a 96-bit IV and a 128-bit tag, 1113 valid held and 387 FAIL refused, and Wycheproof's 133, run through the member's C probe on Linux arm64 2026-11-17), CNG's AES in GCM chaining on Windows (written from the Win32 reference, compiled against MinGW-w64's headers, UNRUN: the box was off). On macOS CryptoKit's `AES.GCM`, through the platform layer's member written in Swift, since CommonCrypto's public modes are ECB, CBC, CFB, CTR, OFB, RC4 and CFB8 (`CommonCryptor.h`, macOS 27.2 SDK), its GCM in a private header the SDK does not ship, and CryptoKit is Swift's alone (panel 253's R3, 2026-11-20): the package's CAVP and Wycheproof cases sealed with their nonce, opened and a forged tag refused on this Mac (`crypto/seal/internal/known`'s `cases`, and `seal`'s own tests), never a cipher of Heroes' own. Sealed bytes are the nonce, the ciphertext and the tag, Go's `NewGCMWithRandomNonce` layout
 capability seal/chacha20-poly1305  a text sealed and opened under ChaCha20-Poly1305 (RFC 8439), with associated data
   heroes  seal.seal, seal.open, seal.Algorithm
   go      -
   rust    ring::aead::CHACHA20_POLY1305
   python  ChaCha20Poly1305, ChaCha20Poly1305.encrypt, ChaCha20Poly1305.decrypt
-  note    Go's is `golang.org/x/crypto/chacha20poly1305`, outside the standard library. RFC 8439 § 2.8.2's vector and Wycheproof's 316 cases held on Linux (`EVP_chacha20_poly1305`); CNG's CHACHA20_POLY1305 on Windows, documented from Windows 10, UNRUN; PENDING on macOS as AES-GCM is
+  note    Go's is `golang.org/x/crypto/chacha20poly1305`, outside the standard library. RFC 8439 § 2.8.2's vector and Wycheproof's 316 cases held on Linux (`EVP_chacha20_poly1305`); CNG's CHACHA20_POLY1305 on Windows, documented from Windows 10, UNRUN; on macOS CryptoKit's `ChaChaPoly`, as AES-GCM is, RFC 8439 § 2.8.2's vector sealed to its bytes and opened on this Mac 2026-11-20 (`known`'s `answered`)
 capability seal/keys  a secret key drawn by the system or made of bytes, its size, and its end
   heroes  seal.generate, seal.from_secret, seal.key_size, seal.close, seal.Key
   go      -
@@ -70,7 +70,7 @@ capability seal/availability  whether this machine seals with an algorithm, aske
   go      -
   rust    -
   python  -
-  note    false on macOS for every algorithm (`seal/aes-gcm`), and on a Linux machine with no `libcrypto.so.3`, which the member opens at its first call
+  note    false for every algorithm on a Linux machine with no `libcrypto.so.3`, which the member opens at its first call; true on macOS since 2026-11-20 (`seal/aes-gcm`)
 capability seal/protocol-keys  ciphers shaped for one protocol: QUIC's header protection, OpenSSH's ChaCha20-Poly1305
   heroes  refused: each is that protocol's own construction, and belongs to a package of that protocol over the system's own cipher
   go      -

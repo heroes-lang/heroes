@@ -124,10 +124,16 @@ test "rfc8439_sealed: the nonce, 114 bytes of ciphertext and the tag"
     assert bytes.format_hex(sealed.slice(from: 0, to: 12)) == "070000004041424344454647"
 
 test "cases: CAVP's and Wycheproof's answers, sealed with their nonce and opened, a forged tag refused, on every platform that seals"
+    if hero_crypto.offers(hero_crypto.HERO_CRYPTO_AES_128_GCM) == 0
+        skip_test(reason: "this platform's own cryptography does not seal")
+
     for c in cases()
         assert answered(c) == ""
 
 test "answered: RFC 8439's own vector sealed with its nonce gives its bytes"
+    if hero_crypto.offers(hero_crypto.HERO_CRYPTO_CHACHA20_POLY1305) == 0
+        skip_test(reason: "this platform's own cryptography does not seal with ChaCha20-Poly1305")
+
     c = Case(
         name: "RFC 8439 2.8.2",
         kind: hero_crypto.HERO_CRYPTO_CHACHA20_POLY1305,

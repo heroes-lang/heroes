@@ -2,16 +2,19 @@
 # the system's own cryptography: Ed25519 (RFC 8032), ECDSA on P-256 and
 # P-384 (FIPS 186-5, signatures in X9.62's DER), RSA-PSS and RSA PKCS #1
 # v1.5 signatures and RSA-OAEP encryption (RFC 8017), X25519 (RFC 7748) and
-# ECDH on P-256 and P-384 (SEC 1). Every computation on a secret is the
-# system's library's, never Heroes': the Security framework on macOS, CNG
-# on Windows, OpenSSL 3's `libcrypto.so.3` on Linux, which keep the promise
-# that a key's arithmetic takes a time its secret does not decide.
+# ECDH on P-256 and P-384 (SEC 1). Every computation on a secret is a C
+# library's, never Heroes': the system's, the Security framework on macOS,
+# CNG on Windows, OpenSSL 3's `libcrypto.so.3` on Linux; and on macOS alone
+# Ed25519 and X25519 are Monocypher's, a small C library the runtime carries,
+# since Apple offers C no Curve25519 key and CryptoKit's Ed25519 signs
+# differently every time (panel 253's R3, decision 2594, since 2026-11-20).
+# Each says a key's arithmetic takes a time its secret does not decide.
 #
-# **What each platform offers, measured 2026-11-17** (`is_available` asks
-# it): Linux everything here; macOS P-256, P-384 and RSA, and no Ed25519 or
-# X25519, which Apple offers to Swift alone; Windows everything but Ed25519,
-# which CNG lacks, and X25519, which waits for a measurement on the machine.
-# A kind a platform lacks fails `unsupported` there at every call.
+# **What each platform offers** (`is_available` asks it): Linux and macOS
+# everything here; Windows everything but Ed25519, which CNG lacks, and
+# X25519, which waits for a measurement on the machine (measured
+# 2026-11-17, macOS's Ed25519 and X25519 on 2026-11-20). A kind a platform
+# lacks fails `unsupported` there at every call.
 #
 # **A key is a handle, and its secret stays in C.** A private key made by
 # `generate` or read never stands in the program's memory but where the
@@ -64,8 +67,7 @@ constant LIMIT: str
     "limit"
 
 # This platform's own cryptography lacks the kind: Ed25519 and X25519 on
-# macOS, Ed25519 and X25519 on Windows, everything on a Linux machine with
-# no `libcrypto.so.3`.
+# Windows, everything on a Linux machine with no `libcrypto.so.3`.
 constant UNSUPPORTED: str
     "unsupported"
 
@@ -130,7 +132,7 @@ record PublicKey
     kind: Kind
 
 # Whether this machine's own cryptography makes and uses keys of `kind`:
-# false for Ed25519 and X25519 on macOS and Windows.
+# false for Ed25519 and X25519 on Windows.
 #
 # - `kind`: the kind asked about; an RSA kind's bits are not looked at.
 #
@@ -505,7 +507,7 @@ test "parse_private_raw and sign: RFC 8032's TEST 1 to 3 where the platform has 
 
 test "verify_der: a changed signature does not hold, bytes of no key are invalid, and a scheme of another kind is invalid"
     if !is_available(.p256)
-        return
+        skip_test(reason: "this platform's own cryptography has no P-256")
     key @= generate(.p256).must()
     public @= public_of(key).must()
     der = format_public_der(public).must()
@@ -576,7 +578,7 @@ test "parse_public_raw and format_public_raw: a P-256 point read and written bac
         .err e => assert e.code == INVALID
 
     if !is_available(.p256)
-        return
+        skip_test(reason: "this platform's own cryptography has no P-256")
     key @= generate(.p256).must()
     public @= public_of(key).must()
     point = format_public_raw(public).must()
@@ -607,7 +609,7 @@ test "sign: a message signed by ECDSA and checked"
     close_public(@public).must()
     close(@key).must()
 
-# Whether this machine makes Ed25519 keys: false on macOS and Windows.
+# Whether this machine makes Ed25519 keys: false on Windows.
 test "is_available: asked before a key is made"
     if is_available(.ed25519)
         key @= generate(.ed25519).must()
