@@ -86,10 +86,10 @@ is stage 2, what this one builds from `selfhost/`:
 
 **Corrected 2026-11-08** (defect 2352): *the real one* above is a release's
 sentence. Between two refreshes the compiler clang makes from this file lacks
-whatever entered `selfhost/` since, and on that day it refused `use <core>/` with
-`error[expected_module_name]` and listed `add` and `fetch` as not built, while
-18 programs of `examples/` wrote `use <core>/` and the site taught `heroes add
-core`. The pages that teach building the compiler, `README.md` § Build and try
+whatever entered `selfhost/` since, and on that day it refused a package's
+`use`, its alias in angle brackets, with `error[expected_module_name]` and
+listed `add` and `fetch` as not built, while 18 programs of `examples/` named a
+package so and the site taught `heroes add`. The pages that teach building the compiler, `README.md` § Build and try
 it and the site's start, home and FAQ pages, have taught the two stages since,
 `clang ... -o heroes-seed` and then `./heroes-seed build selfhost/main.hero -o
 heroes`, so the compiler a reader holds is the tree's; this file's rhythm is

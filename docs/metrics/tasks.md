@@ -115,17 +115,21 @@ A task's digest is the sha256 of `task.md` and its cases in order; its prose dig
 
 ## A package task: the paired run's suite (task 2300)
 
-Panel 234's R14 measures what the core packages buy a model by a paired run at M-core-packages'
-close: one compiler, one specification, one sealed suite of package tasks the author writes, twenty
+Panel 234's R14 asked a paired run at M-core-packages' close, measuring what a library of packages
+buys a model; that row was retired into M-rebel-library, so no close holds the run, and the
+instrument written for it (decision 2562) went to that milestone's decision 15, building Rebel as a
+measure of how well models write Heroes (the register,
+https://github.com/heroes-lang/heroes/issues/2610, item 7; noted 2026-11-20). The instrument as it
+stands: one compiler, one specification, one sealed suite of package tasks the author writes, twenty
 and ten in reserve, and two arms that differ in the packages alone, `--context spec` against
-`--context tests/thesis/contexts/spec-and-cards.md`, whose first line places the package tree
+`--context tests/thesis/contexts/spec-and-cards.md` (none stands on 2026-11-20), whose first line places the package tree
 beside every answer of that context and of no other (`tests/thesis/contexts/README.md`). A package
 task keeps every rule above, its prose naming no package, so one `task.md` serves both arms (the
-spec-warden's § 8); its natural program uses a core package, and it carries one file more:
+spec-warden's § 8); its natural program uses a package of Rebel, and it carries one file more:
 
 - **`reference-packages.hero`**, the task solved over the packages, beside `reference.hero`, which
   stays its solution without them and the one the size rule reads; the rule *no `use`* is the bare
-  reference's, and this one names its packages by `use <core>/...`. `dry <folder> --packages
+  reference's, and this one names its packages by `use <rebel>/...`. `dry <folder> --packages
   <tree>` grades it with the tree beside it, and every mutant with the tree beside it too, red where
   it is missing, where it names no package by a `use <...>` line (a task the packages do not touch is
   replaced from the reserve before the freeze, the spec-warden's condition) or where a case fails;
@@ -146,8 +150,9 @@ spec-warden's § 8); its natural program uses a core package, and it carries one
   (`tests/harness/thesis_contexts.hero`); `--primary` names the pre-registered row.
 
 What the instrument cannot give a package task, said here so no task asks it: the sandbox denies the
-network and a fork (panel 226's R11), so a package that opens a socket has no task; core 0.5.0's HTTP
-client reads no `file://` address, which the spec-warden's § 8 expected for its case; and a package
+network and a fork (panel 226's R11), so a package that opens a socket has no task; the HTTP client
+of the packages the instrument was first written against read no `file://` address, which the
+spec-warden's § 8 expected for its case, and Rebel's is unasked; and a package
 carrying a file that is not text is refused by the tree's digest, which reads every placed file as
 text.
 
