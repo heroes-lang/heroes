@@ -6,6 +6,7 @@
 # the text.
 
 use numbers
+use strings
 use unicode
 
 # The code of a text that is not jq.
@@ -170,17 +171,6 @@ function is_single_symbol(c: u8) -> bool
 function long_symbols() -> [str]
     return ["?//=", "?//", "//=", "|=", "+=", "-=", "*=", "/=", "%=", "==", "!=", "<=", ">=", "//", ".."]
 
-# Whether `text` holds `symbol` at byte `at`.
-function holds_at(text: str, at: i64, symbol: str) -> bool
-    if at + symbol.len() > text.len()
-        return false
-
-    for i in range(from: 0, to: symbol.len())
-        if text[at + i] != symbol[i]
-            return false
-
-    return true
-
 # The value of four hexadecimal digits at byte `at`, or -1 where they are not.
 function hex4(text: str, at: i64) -> i64
     if at + 4 > text.len()
@@ -328,7 +318,7 @@ function tokens_of(text: str) -> [Token]?
                 taken: i64 @= 0
 
                 for symbol in long_symbols()
-                    if taken == 0 && holds_at(text: text, at: at, symbol: symbol)
+                    if taken == 0 && strings.has_prefix_at(s: text, prefix: symbol, at: at)
                         put(@tokens, kind: SYMBOL, at: at, text: symbol)
                         taken @ symbol.len()
 
@@ -389,7 +379,7 @@ function escape_of(text: str, at: i64) -> Escaped?
         if high < 0
             return refuse(text: text, at: at, what: "an escape `\\u` not followed by four hexadecimal digits")
 
-        if high >= 0xd800 && high <= 0xdbff && holds_at(text: text, at: at + 6, symbol: "\\u")
+        if high >= 0xd800 && high <= 0xdbff && strings.has_prefix_at(s: text, prefix: "\\u", at: at + 6)
             low = hex4(text, at: at + 8)
 
             if low >= 0xdc00 && low <= 0xdfff

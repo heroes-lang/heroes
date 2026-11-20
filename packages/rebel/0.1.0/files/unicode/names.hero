@@ -30,7 +30,7 @@ use unicode/names/internal/property_tables
 constant NOT_FOUND: str
     "not_found"
 
-## Limits
+## Version
 
 # The version of Unicode the tables hold.
 constant UNICODE_VERSION: str
@@ -47,7 +47,7 @@ constant UNICODE_VERSION: str
 # "HANGUL SYLLABLE GA". Fails `not_found` where `c` has no name: a control
 # (whose names are its aliases, `aliases`), a private use character, a
 # noncharacter or a code point no character has yet. Aborts where `c` is not
-# exactly one character. See also `from_name`, `aliases`.
+# exactly one character. See also `character_named`, `aliases`.
 function name(c: str) -> str?
     n = unicode.code_point(c)
 
@@ -66,7 +66,7 @@ function name(c: str) -> str?
 #
 # Fails `not_found` where `text` names nothing, the message quoting it. See
 # also `name`.
-function from_name(text: str) -> str?
+function character_named(text: str) -> str?
     match naming.points_named(text)
         .ok points => return ok(unicode.from_code_points(points).must())
         .err _     => return fail(code: NOT_FOUND, msg: f"no character is named \"{text}\"")
@@ -108,7 +108,7 @@ record Alias
 # - `c`: one character.
 #
 # Empty where `c` has none, as most characters do. Aborts where `c` is not
-# exactly one character. See also `name`, `from_name`, which reads every
+# exactly one character. See also `name`, `character_named`, which reads every
 # alias.
 function aliases(c: str) -> [Alias]
     n = unicode.code_point(c)
@@ -384,17 +384,17 @@ function mirror(c: str) -> str?
 # answered for the same input, observed 2026-11-17; the generators of the
 # tables held every code point to them before the tables were written.
 
-test "name and from_name: a character with no name, its message, a name with no character, and a named sequence"
+test "name and character_named: a character with no name, its message, a name with no character, and a named sequence"
     match name(unicode.from_code_point(0).must())
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND && e.msg == "U+0000 has no name"
 
-    match from_name("LATIN LETTER NOTHING")
+    match character_named("LATIN LETTER NOTHING")
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND && e.msg == "no character is named \"LATIN LETTER NOTHING\""
 
-    assert from_name("KEYCAP NUMBER SIGN").must() == unicode.from_code_points([0x23, 0xfe0f, 0x20e3]).must()
-    assert from_name("hangul syllable gag").must() == "각"
+    assert character_named("KEYCAP NUMBER SIGN").must() == unicode.from_code_points([0x23, 0xfe0f, 0x20e3]).must()
+    assert character_named("hangul syllable gag").must() == "각"
     assert name("각").must() == "HANGUL SYLLABLE GAG"
 
 test "aliases: none, and a control's two"
@@ -437,8 +437,8 @@ test "name: a letter with an acute accent"
     assert name("é").must() == "LATIN SMALL LETTER E WITH ACUTE"
 
 # A character found by its name written in lower case.
-test "from_name: a name in lower case"
-    assert from_name("latin small letter e with acute").must() == "é"
+test "character_named: a name in lower case"
+    assert character_named("latin small letter e with acute").must() == "é"
 
 # The aliases of the byte order mark.
 test "aliases: the byte order mark"

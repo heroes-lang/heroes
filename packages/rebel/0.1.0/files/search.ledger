@@ -81,7 +81,7 @@ capability index/new  an index made empty with its ranking's settings
   note    k1 1.2 and b 0.75 by default, as Lucene and tantivy: tantivy's Python binding offers no setting for them, and its scores are this package's at 1.2 and 0.75 within 1e-5; rank-bm25's default k1 is 1.5. k1, epsilon and delta from 0 to a million, b from 0 to 1: past them a score could overflow, and ordering the nan it would make aborts
 
 capability index/add  a text added under an id
-  heroes  search.add
+  heroes  search.insert
   go      -
   rust    -
   python  tantivy.IndexWriter.add_document, tantivy.IndexWriter.commit, tantivy.Document.add_text

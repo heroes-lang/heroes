@@ -50,7 +50,7 @@ capability locale/parts  a tag's language, script, region, variants, extensions 
   icu     ULocale.getLanguage, ULocale.getScript, ULocale.getCountry, ULocale.getVariant
 
 capability locale/posix  a POSIX locale name read and written
-  heroes  i18n.parse_posix, i18n.to_posix
+  heroes  i18n.parse_posix, i18n.format_posix
   go      -
   rust    -
   python  locale.normalize, locale.locale_alias, locale.windows_locale, locale.getlocale
@@ -212,7 +212,7 @@ capability plural/categories  the categories a language uses, and their names
 ## Message catalogs
 
 capability gettext/lookup  a message's translation, with its context and plural forms
-  heroes  i18n.translate, i18n.translate_in, i18n.translate_plural, i18n.translate_plural_in, i18n.find_message
+  heroes  i18n.translate, i18n.translate_in, i18n.translate_plural, i18n.translate_plural_in, i18n.find_message, i18n.find_message_in
   go      message.Printer.Sprintf, message.SetString, message.Set, catalog.Builder.SetString, catalog.Builder.Set, catalog.Catalog.Matcher, catalog.String, catalog.Var, plural.Selectf, catalog.ErrNotFound
   rust    -
   python  gettext.gettext, gettext.ngettext, gettext.pgettext, gettext.npgettext, gettext.dgettext, gettext.dngettext, gettext.dpgettext, gettext.dnpgettext, GNUTranslations.gettext, GNUTranslations.ngettext, GNUTranslations.pgettext, GNUTranslations.npgettext, NullTranslations.gettext, NullTranslations.ngettext, NullTranslations.pgettext, NullTranslations.npgettext

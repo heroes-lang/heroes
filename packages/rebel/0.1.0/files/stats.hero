@@ -10,9 +10,14 @@
 # `does_not_fit` where Python raises or answers an infinity, and a nan in data
 # that must be ordered fails `invalid` where Python answers what its sort left.
 #
-# It does not draw random samples, which is `random`'s, nor hold a normal
-# distribution. It fails with `invalid`, for data a statistic cannot read (too
-# few values, a nan to order, lists of different lengths), and `does_not_fit`.
+# A percentile is a point of `quantiles` with `parts` of 100. It does not
+# draw random samples, which is `random`'s, nor hold a normal distribution;
+# nor count values into the bins of a histogram, which a program chooses, nor
+# keep a mean as values arrive one at a time: such a mean is a sum and a
+# count the program holds, and `mean` answers for the values it kept.
+#
+# It fails with `invalid`, for data a statistic cannot read (too few values,
+# a nan to order, lists of different lengths), and `does_not_fit`.
 
 use stats/internal/exact
 use stats/internal/order

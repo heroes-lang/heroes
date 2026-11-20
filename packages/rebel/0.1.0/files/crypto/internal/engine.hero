@@ -9,6 +9,7 @@
 # is the rate, and they are finished by their own padding, a byte naming the
 # function, zeros and a last bit (`crypto/internal/keccak`).
 
+use bytes
 use crypto/internal/keccak
 use crypto/internal/md5
 use crypto/internal/sha1
@@ -286,8 +287,8 @@ test "engine size and block: every kind"
 
 test "engine absorb: a block filled across three calls, then compressed once"
     run @= begin(.sha256)
-    absorb(@run, word.bytes_of("a".repeat(30)))
-    absorb(@run, word.bytes_of("a".repeat(30)))
+    absorb(@run, bytes.from_text("a".repeat(30)))
+    absorb(@run, bytes.from_text("a".repeat(30)))
     assert run.pending.len() == 60 && run.words == sha256.START256
-    absorb(@run, word.bytes_of("a".repeat(10)))
+    absorb(@run, bytes.from_text("a".repeat(10)))
     assert run.pending.len() == 6 && run.length == 70 && run.words != sha256.START256

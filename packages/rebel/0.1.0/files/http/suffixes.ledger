@@ -7,28 +7,28 @@
 # the list's own test file's (tests/test_psl.txt, public domain), 77 cases.
 
 capability psl/suffix  the public suffix of a domain name, and whether ICANN's section says it
-  heroes  suffixes.suffix_of, suffixes.Suffix
+  heroes  http/suffixes.suffix_of, http/suffixes.Suffix
   go      net/http/cookiejar.PublicSuffixList.PublicSuffix
   rust    -
   python  -
   note    the list's algorithm: an exception prevails, else the longest rule, a wildcard's label taken for any, else the implicit `*`; `icann` says the prevailing rule's section, false for the implicit rule, as x/net/publicsuffix reports it. A name is read in ASCII, a label in another script as its A-label, as the rules are held; an address and a name with an empty label are refused `invalid`, where the list's test file answers null
 
 capability psl/registrable  the registrable domain of a host: its public suffix and one label more
-  heroes  suffixes.registrable_domain_of
+  heroes  http/suffixes.registrable_domain_of
   go      -
   rust    -
   python  -
   note    `not_found` where the host is a public suffix itself; all 77 cases of the list's test file answered as it writes them, its names in other scripts given as A-labels
 
 capability psl/is-suffix  whether a name is a public suffix itself, as a cookie's `Domain` is asked
-  heroes  suffixes.is_public_suffix
+  heroes  http/suffixes.is_public_suffix
   go      net/http/cookiejar.PublicSuffixList
   rust    -
   python  -
   note    a value of `(function(str) -> bool)` for `http.Session`'s `is_public_suffix`, which `http.store_cookies_by` asks
 
 capability psl/version  which list the rules are made from
-  heroes  suffixes.VERSION
+  heroes  http/suffixes.VERSION
   go      net/http/cookiejar.PublicSuffixList.String
   rust    -
   python  -

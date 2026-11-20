@@ -6,6 +6,7 @@
 # say where.
 
 use json
+use strings
 
 ## Pieces
 
@@ -68,23 +69,12 @@ function of_text(source: str, msg: str) -> str
 function is_space(b: u8) -> bool
     return b == ' ' || b == '\t' || b == '\r' || b == '\n'
 
-# Whether `text` holds `what` at byte `at`.
-function holds_at(text: str, at: i64, what: str) -> bool
-    if at < 0 || at + what.len() > text.len()
-        return false
-
-    for k in range(from: 0, to: what.len())
-        if text[at + k] != what[k]
-            return false
-
-    return true
-
 # Where `what` first stands in `text` from byte `from`, or -1.
 function next_of(text: str, what: str, from: i64) -> i64
     at: i64 @= from
 
     while at + what.len() <= text.len()
-        if holds_at(text: text, at: at, what: what)
+        if strings.has_prefix_at(s: text, prefix: what, at: at)
             return at
         at @ at + 1
 
@@ -167,7 +157,7 @@ function pieces_of(text: str, left: str, right: str) -> [Piece]?
             while first < text.len() && is_space(text[first])
                 first @ first + 1
 
-        if holds_at(text: text, at: first, what: "/*")
+        if strings.has_prefix_at(s: text, prefix: "/*", at: first)
             # A comment: it ends at `*/`, then the delimiter, a trim mark
             # between them or none.
             close_comment = next_of(text: text, what: "*/", from: first + 2)
@@ -177,13 +167,13 @@ function pieces_of(text: str, left: str, right: str) -> [Piece]?
             after: i64 @= close_comment + 2
             trim_next: bool @= false
 
-            if !holds_at(text: text, at: after, what: right)
+            if !strings.has_prefix_at(s: text, prefix: right, at: after)
                 k: i64 @= after
 
                 while k < text.len() && is_space(text[k])
                     k @ k + 1
 
-                if k > after && holds_at(text: text, at: k + 1, what: right) && text[k] == '-'
+                if k > after && strings.has_prefix_at(s: text, prefix: right, at: k + 1) && text[k] == '-'
                     trim_next @ true
                     after @ k + 1
                 else
@@ -202,7 +192,7 @@ function pieces_of(text: str, left: str, right: str) -> [Piece]?
         close: i64 @= -1
 
         while k < text.len() && close < 0
-            if holds_at(text: text, at: k, what: right)
+            if strings.has_prefix_at(s: text, prefix: right, at: k)
                 close @ k
             else if text[k] == '"'
                 k @ string_end(text, at: k, place: advance(text, from: open, to: k, start: opened))?

@@ -2,11 +2,17 @@
 # publicsuffix.org served it on 2026-11-18, version 2026-11-17_06-40-19_UTC, commit
 # 88df16b430cd, SHA-256 da4e972c64017bea..., each label of a name in another
 # script written as its A-label (`xn--` and Punycode), sorted by bytes, and
-# whether it stands in the list's ICANN section. Nothing here is edited by
-# hand: a one-off program read the list and wrote this module whole.
+# whether it stands in the list's ICANN section. Nothing below this header
+# is edited by hand: a one-off program read the list and wrote this module
+# whole.
 #
 # The list is the Mozilla Foundation's, under the Mozilla Public License
 # 2.0 (https://mozilla.org/MPL/2.0/), and so are these rules made from it.
+# The list's own notice, as its file states it, travels with them:
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 # The list's version.
 constant VERSION: str

@@ -1,0 +1,10 @@
+# The functions the face's tests and examples hand to a function of the face,
+# kept out of the face so that it offers none of them: no closure stands in
+# the language, so an example's function is a top-level one somewhere.
+
+use regex
+
+# A match written between angle brackets: what `replace_by` and its forms
+# replace a match by in the tests and examples.
+function bracketed(m: regex.Match) -> str
+    return "<" + m.text + ">"
