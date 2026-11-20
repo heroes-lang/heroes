@@ -352,6 +352,41 @@ static void hero_stack_tell_first(void) {
 static _Thread_local uintptr_t hero_stack_lo = 0;
 static _Thread_local uintptr_t hero_stack_hi = 0;
 
+/* THE BOUNDS THE ABORT'S WALK READS UNDER THE SANITIZER (panel 253's R5,
+ * `parts/calls.c`). There the guard yields and `lo` and `hi` above stay zero,
+ * as `parts/os.c`'s crash handler is written to expect, so the walk of an
+ * abort's calls has bounds of its own, measured by the sanitizer's
+ * `hero_stack_guard_enter` below on the same two doors; elsewhere it reads the
+ * guard's. */
+#if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
+static _Thread_local uintptr_t hero_stack_walk_lo = 0;
+static _Thread_local uintptr_t hero_stack_walk_hi = 0;
+#endif
+
+/* The calling thread's stack, its lowest address and the one past its
+ * highest, asked of the system once as the thread is claimed: glibc's
+ * `pthread_getattr_np` allocates for the main thread, so never inside a
+ * signal or an abort. */
+static void hero_stack_measure(uintptr_t *lo, uintptr_t *hi) {
+#if defined(__APPLE__)
+    pthread_t self = pthread_self();
+    uintptr_t top = (uintptr_t)pthread_get_stackaddr_np(self);
+    size_t size = pthread_get_stacksize_np(self);
+    *hi = top;
+    *lo = top - size;
+#else
+    pthread_attr_t attr;
+    void *addr = NULL;
+    size_t size = 0;
+    if (pthread_getattr_np(pthread_self(), &attr) == 0) {
+        pthread_attr_getstack(&attr, &addr, &size);
+        pthread_attr_destroy(&attr);
+    }
+    *lo = (uintptr_t)addr;
+    *hi = (uintptr_t)addr + size;
+#endif
+}
+
 /* How far below `lo` a fault still counts as exhaustion, beside a second
  * witness. Until defect 2253 this said *clang emits no stack probes on Darwin,
  * so a frame larger than the guard page can land past it*, against this file's
@@ -687,10 +722,17 @@ static void hero_stack_guard_install(void) {
     AddVectoredExceptionHandler(0, hero_stack_asan_veh);
 }
 #else
-static void hero_stack_guard_install(void) {}
-static void hero_stack_guard_enter(void) {}
+/* No handler, and the bounds the abort's walk reads (above), on the two doors
+ * the guard's own measuring takes. */
+static void hero_stack_guard_enter(void) { hero_stack_measure(&hero_stack_walk_lo, &hero_stack_walk_hi); }
+static void hero_stack_guard_install(void) { hero_stack_guard_enter(); }
 #endif
-static void hero_stack_guard_leave(void) {}
+static void hero_stack_guard_leave(void) {
+#if !defined(_WIN32)
+    hero_stack_walk_lo = 0;
+    hero_stack_walk_hi = 0;
+#endif
+}
 
 #elif !defined(_WIN32)
 
@@ -708,25 +750,7 @@ static _Thread_local size_t hero_stack_alt_size = 0;
 static struct sigaction hero_stack_prev_segv;
 static struct sigaction hero_stack_prev_bus;
 
-static void hero_stack_bounds(void) {
-#if defined(__APPLE__)
-    pthread_t self = pthread_self();
-    uintptr_t top = (uintptr_t)pthread_get_stackaddr_np(self);
-    size_t size = pthread_get_stacksize_np(self);
-    hero_stack_hi = top;
-    hero_stack_lo = top - size;
-#else
-    pthread_attr_t attr;
-    void *addr = NULL;
-    size_t size = 0;
-    if (pthread_getattr_np(pthread_self(), &attr) == 0) {
-        pthread_attr_getstack(&attr, &addr, &size);
-        pthread_attr_destroy(&attr);
-    }
-    hero_stack_lo = (uintptr_t)addr;
-    hero_stack_hi = (uintptr_t)addr + size;
-#endif
-}
+static void hero_stack_bounds(void) { hero_stack_measure(&hero_stack_lo, &hero_stack_hi); }
 
 /* An address as `0x…`, written with `write(2)` like everything else here, in
  * the digits `hero_stack_hex` above the platform split gives both platforms. */

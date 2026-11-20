@@ -70,6 +70,12 @@ HeroStr hero_text_sha256(HeroStr text);
  * `selfhost/cli/flags.hero`). */
 int64_t hero_frame_probes_asked(void);
 
+/* 1 where this runtime's abort reads the frame records up the stack to tell
+ * the calls that led to it (`parts/calls.c`, panel 253's R5), so every unit
+ * keeps one, `-fno-omit-frame-pointer`; 0 where it walks nothing (Windows).
+ * Bound by `selfhost/cli/flags.hero`. */
+int64_t hero_frame_records_asked(void);
+
 /* The binary32 nearest a decimal's value, read once in the C locale
  * (`parts/f32-literal.c`, bound by `selfhost/emit/literal.hero`, defect 2276): what an
  * `f32` literal holds. A double narrowed to a float rounds twice, and at a

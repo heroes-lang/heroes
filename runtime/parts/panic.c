@@ -53,8 +53,14 @@ static volatile sig_atomic_t hero_runtime_spoke = 0;
  * the report on stderr and the status stay. On Windows the UCRT's `abort`
  * raises `SIGABRT` only to an installed handler, then fails fast; with the
  * default it fails fast at once, as the lease handler's own re-abort ended a
- * runtime stop there before (unrun on the box). */
+ * runtime stop there before (unrun on the box).
+ *
+ * And before the stop, the calls that led to it, beneath the report every
+ * caller has written by then (panel 253's R5, `parts/calls.c`). */
+static void hero_calls_tell(void);
+
 static _Noreturn void hero_abort(void) {
+    hero_calls_tell();
     hero_runtime_spoke = 1;
     signal(SIGABRT, SIG_DFL);
     abort();

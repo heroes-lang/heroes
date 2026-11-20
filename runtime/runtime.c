@@ -153,6 +153,11 @@
  * from hero_args_set, in os.c below. */
 #include "parts/stack.c"
 
+/* The calls that led to an abort, told beneath its report (panel 253's R5):
+ * the frame walk and the names of the two above it. Called by panic.c's
+ * `hero_abort`, by place.c's place line and by os.c's `hero_args_set`. */
+#include "parts/calls.c"
+
 /* No Heroes code inside a signal handler (panel 247's R1, defect 2494): the
  * question every thunk asks first, the delivery's address it is asked against,
  * and the one stop every refusal of a signal's re-entrance ends through, which

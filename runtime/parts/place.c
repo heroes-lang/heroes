@@ -67,9 +67,12 @@ static void hero_report_where(HeroReport *r, const char *file, const char *funct
     hero_report_message(r, hero_place_text(function));
 }
 
-/* The report's second line: `  at <file>:<line>:<column>, in <function>`. */
+/* The report's second line: `  at <file>:<line>:<column>, in <function>`. Its
+ * function is the one the calls told beneath it start above
+ * (`parts/calls.c`, panel 253's R5). */
 static void hero_report_place(HeroReport *r, const char *file, const char *function, int64_t line,
                               int64_t column) {
+    hero_calls_note_place(function);
     HERO_REPORT_OWN(r, "  at ");
     hero_report_where(r, file, function, line, column);
     HERO_REPORT_OWN(r, "\n");

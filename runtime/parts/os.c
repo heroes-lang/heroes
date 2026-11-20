@@ -637,6 +637,10 @@ void hero_args_set(int argc, char **argv) {
      * this is the one call every generated `main` makes first — so the
      * emitted C and the ABI stamp are untouched (panel 104). */
     hero_stack_guard_install();
+    /* And the file the program's parent asked an abort's calls to be written
+     * to, taken out of the environment before the program can start another
+     * (panel 253's R5, `parts/calls.c`). */
+    hero_calls_channel();
     /* And the lease handler, after the guard whose alternate stack it runs on
      * (panel 172 R1; the mechanism panel 173 judged). */
     hero_lease_crash_install();
