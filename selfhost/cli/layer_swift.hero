@@ -1,0 +1,296 @@
+# The platform layer's members written in Swift (design.md §4.19, §1.11;
+# panel 253's R3, the mixed route; M-rebel-library's steps 69).
+#
+# **WHY SWIFT.** The layer is C of the project's own (`cli/layer.hero`), and
+# what macOS offers C covers every capability but two ciphers: AES-GCM and
+# ChaCha20-Poly1305 are CryptoKit's, which is Swift's alone (CommonCrypto's
+# public modes hold no authenticated one). So the runtime names, beside its C
+# members, members ending in `.swift` (`runtime_key.swift_members`), and this
+# file compiles them into objects the layer archives with the C members, on an
+# Apple target and on no other; the linker takes such an object only into a
+# program that takes the C member calling it, as it takes every member.
+#
+# **HOW ONE IS COMPILED.** `xcrun swiftc`, since a bare `swiftc` under the
+# Command Line Tools alone cannot load its standard library (panel 253's
+# critic, finding 10), against the SDK clang's own answer names after
+# `-isysroot` (`sysroot`), so both halves of the layer read one SDK and the
+# key already holds it (`toolchain.compiler_key`); its module cache under
+# `build/`, its temporary files in the layer's private folder, `TMPDIR`
+# given to that process alone, and its object where the layer's key names it.
+#
+# **WHY THE OBJECT STANDS AT A PATH THE KEY NAMES.** Measured 2026-11-20 with
+# `swiftc` 6.4.2 on this Mac: a Swift object's `__swift_modhash` section, 16
+# bytes, follows the path the object is written to. Two compiles of one file
+# to two paths differ in those bytes; to one path, one after the other or two
+# at once, they are the same bytes. The C members are compiled in the private
+# folder and name their object by the key's path (`toolchain.object_words`);
+# a Swift object is written at that path itself, `<stem>-<member>.o`, so an
+# archive is one set of bytes in a `build/` as the C members keep it.
+#
+# **HELD TO ITS C HEADER AT EVERY COMPILE.** `swiftc` writes the header its
+# `@c` functions mean (`-emit-clang-header-path`), in the C section, outside
+# `#if defined(__OBJC__)`, and a C unit including it beside the member's own
+# header, `<member>.h` beside it, compiles under the layer's words: a
+# declaration of the member's header that differs from the Swift is clang's
+# `conflicting types`, the compiler's own refusal (the ffi-pragmatist's
+# standing concern of panel 253, measured then only in Objective-C because
+# `@_cdecl` printed inside that guard; `@c` prints outside it).
+#
+# **WHAT THE KEY HOLDS.** The member's words (`key_text`); the SDK, through
+# clang's answer; and every file the compile read, its dependency listing's
+# rows, which the record vouches for at every warm build (`cli/deps.hero`).
+# Not `swiftc --version`'s answer: asked at every build it would cost 0.2 s
+# (measured), and a toolchain upgraded in place replaces the prebuilt modules
+# its rows name.
+#
+# **A MAC WITH NO `swiftc`** is told so where the archive is cold, as the
+# machine's failure and not the compiler's, with the way to install it;
+# every Mac that builds C has the Command Line Tools or Xcode, and both carry
+# `swiftc` (the critic's finding 10, read on this Mac).
+
+use bytes
+use cli/deps
+use cli/files
+use cli/flags
+use cli/link_flags
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/runtime_key
+use cli/strings
+use cli/supplied_kept
+use cli/toolchain
+
+# The Swift members this target's layer compiles: none where the target is
+# not Apple's.
+function members(t: toolchain.Toolchain) -> [str]?
+    none: [str] = []
+
+    if !link_flags.apple(t.target)
+        return ok(none)
+    return runtime_key.swift_members(t.runtime)
+
+# What the Swift members add to the layer's key: their words, "" where none
+# is compiled, so no other target's key moves.
+function key_text(t: toolchain.Toolchain, level: str, sanitize: bool) -> str
+    match members(t)
+        .ok named =>
+            if named.len() == 0
+                return ""
+            return "|swift:" + words(level: level, sanitize: sanitize).join(" ")
+        .err _ => return "|swift:unread"
+
+# The words a member compiles with at `level`: unoptimised with its
+# variables' debug information at `-O0`, as `flags.debug_words` gives the C
+# members, optimised with line tables above it, and AddressSanitizer under
+# `--sanitize`, which Swift objects share with the C ones (Swift has no
+# UndefinedBehaviorSanitizer; its own checks trap).
+function words(level: str, sanitize: bool) -> [str]
+    out: [str] @= ["-parse-as-library"]
+
+    if level == "-O0"
+        out @ out.push("-Onone").push("-g")
+    else
+        out @ out.push("-O").push("-gline-tables-only")
+
+    if sanitize
+        out @ out.push("-sanitize=address")
+    return out
+
+# A Swift member's name, its folder and `.swift` left out.
+function name_of(member: str) -> str
+    cut: i64 @= member.len()
+
+    while cut > 0 && member[cut - 1] != '/'
+        cut @ cut - 1
+
+    return member.slice(from: cut, to: member.len() - 6)
+
+# The SDK clang's answer names after `-isysroot`, "" where it names none:
+# `"-isysroot" "<path>"`, the path's `\` and `"` escaped by a `\`.
+function sysroot(answer: str) -> str
+    head = "\"-isysroot\" \""
+    found = bytes.locate(text: answer, needle: head, from: 0)
+
+    if found.is_err()
+        return ""
+    at: i64 @= found.must() + head.len()
+    start: i64 @= at
+    parts: [str] @= []
+
+    while at < answer.len() && answer[at] != '"'
+        if answer[at] == '\\' && at + 1 < answer.len()
+            parts @ parts.push(answer.slice(from: start, to: at))
+            start @ at + 1
+            at @ at + 2
+            continue
+        at @ at + 1
+
+    if at >= answer.len()
+        return ""
+    parts @ parts.push(answer.slice(from: start, to: at))
+    return parts.join("")
+
+# `text` as a JSON string, its quotes around it.
+function json_text(text: str) -> str
+    parts: [str] @= ["\""]
+    start: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == '"' || text[at] == '\\'
+            parts @ parts.push(text.slice(from: start, to: at)).push("\\")
+            start @ at
+
+    parts @ parts.push(text.slice(from: start, to: text.len())).push("\"")
+    return parts.join("")
+
+# What the members came to: each object, in the members' order, the rows of
+# every file their compiles read, and what each needs from outside it, as
+# `<member>\t<name>` (`supplied_kept.alone_needs`, defect 2489), so the names
+# a Swift member calls are judged as a C member's are.
+record Built
+    objects: [str]
+    rows: [str]
+    needs: [str]
+
+# Every Swift member compiled at `level`, each object at `<stem>-<name>.o`
+# and archived by its second name `<folder>/<name>.o`,
+# its listing, its header and its check in `folder`, the layer's private one;
+# nothing where this target compiles none. A member `swiftc` refuses, or
+# whose header disagrees with its Swift, is code `clang`, the compiler's own;
+# no `swiftc` on this Mac is the machine's.
+function compiled(t: toolchain.Toolchain, stem: str, folder: str, level: str, sanitize: bool, @memo: {str: str}) -> Built?
+    named = members(t)?
+    built: Built @= Built(objects: [], rows: [], needs: [])
+
+    if named.len() == 0
+        return ok(built)
+    located()?
+
+    for member in named
+        name = name_of(member)
+        object = stem + "-" + name + ".o"
+        listing = folder + "/" + name + ".d"
+        header = folder + "/" + name + "-swift.h"
+        outputs = folder + "/" + name + ".map.json"
+
+        # The module's own listing named too, under `""`: unnamed, `swiftc`
+        # writes it in the folder the build runs in, a file in the program's
+        # folder (measured 2026-11-20).
+        module_listing = folder + "/" + name + ".module.d"
+        write_file(path: outputs, text: "{\"\": {\"emit-module-dependencies\": " + json_text(module_listing) + "}, " + json_text(member) + ": {\"object\": " + json_text(object) + ", \"dependencies\": " + json_text(listing) + "}}\n")?
+        line: [str] @= ["xcrun", "swiftc"]
+        sdk = sysroot(t.asked_answer)
+
+        if sdk.len() > 0
+            line @ line.push("-sdk").push(sdk)
+        line @ strings.with_all(list: line, more: ["-emit-object", "-module-name", name])
+        line @ strings.with_all(list: line, more: words(level: level, sanitize: sanitize))
+        line @ strings.with_all(
+            list: line,
+            more: ["-module-cache-path", t.build + "/swift-module-cache", "-emit-dependencies", "-output-file-map", outputs, "-emit-clang-header-path", header, member]
+        )
+        swift(line: line, folder: folder, what: "compiling the platform layer's " + name)?
+        held(t, member: member, level: level, sanitize: sanitize, folder: folder)?
+        rows = deps.rows_of(depfile: listing, skip: t.runtime + "/", @memo)
+
+        if rows.is_err()
+            return fail(code: "failed", msg: "cannot record what the platform layer's " + name + " read")
+
+        # Archived under the member's own name, as a C member's object is,
+        # so the linker's map and the record of its needs name it alike: a
+        # second name in the private folder, the same bytes (the archive of
+        # the first build named it `layer-<key>-<member>`, and its needs were
+        # recorded under a name no link would give).
+        archived = folder + "/" + name + ".o"
+        files.second_name(existing: object, name: archived)?
+        built.objects @ built.objects.push(archived)
+        built.rows @ built.rows.push(rows.must())
+
+        for needed in supplied_kept.alone_needs(t, object: object, what: "asking which names the platform layer's " + name + " needs")
+            built.needs @ built.needs.push(name + "\t" + needed)
+
+    return ok(built)
+
+# `swiftc` as `xcrun` finds it, or the machine's failure naming it.
+function located() -> ()?
+    ran = process.run(
+        program: "xcrun",
+        words: ["xcrun", "--find", "swiftc"],
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    if ran.started && ran.code == 0
+        return ok()
+    return fail(
+        code: "failed",
+        msg: "this Mac has no swiftc, which the platform layer needs on macOS for CryptoKit's ciphers (`xcrun --find swiftc` found none); the Command Line Tools carry it: `xcode-select --install`, and `heroes doctor` says what this machine has"
+    )
+
+# One `swiftc` line run, `TMPDIR` its private folder's; its words on failure.
+function swift(line: [str], folder: str, what: str) -> ()?
+    err_path = folder + "/swiftc.err.txt"
+    ran = process.run_given(
+        program: line[0],
+        words: line,
+        out: process.discard(),
+        err: err_path,
+        given: [process.Variable(name: "TMPDIR", value: folder)]
+    )
+    told = read_back.words(err_path).default("")
+    publish.discard(err_path)
+
+    if !ran.started
+        return fail(
+            code: "failed",
+            msg: "xcrun could not be started, so " + what + " did not run; the operating system's own reason is " + ran.why.to_str()
+        )
+
+    if ran.code != 0
+        return fail(code: "clang", msg: what + " failed: swiftc exited " + ran.code.to_str() + "\n" + told)
+    return ok()
+
+# The member's own C header held to the one `swiftc` wrote: a unit including
+# both, compiled under the layer's words with nothing written.
+function held(t: toolchain.Toolchain, member: str, level: str, sanitize: bool, folder: str) -> ()?
+    unit = folder + "/" + name_of(member) + "-check.c"
+    own = "platform/" + name_of(member) + ".h"
+
+    # The unit stands beside the header, which it names alone: a quoted name
+    # is read from the unit's own folder first.
+    write_file(path: unit, text: "#include \"" + name_of(member) + "-swift.h\"\n#include \"" + own + "\"\n")?
+    line = strings.with_all(
+        list: strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize)),
+        more: ["-fsyntax-only", "-I", t.runtime, unit]
+    )
+    return toolchain.run_clang(
+        line: line,
+        what: "holding " + own + " to the header swiftc wrote for its member",
+        err_path: folder + "/check.err.txt"
+    )
+
+## Tests
+
+test "a Swift member's name, its words at each level, and the key of a target that compiles none (panel 253's R3)"
+    assert name_of("runtime/platform/hero_crypto_cryptokit.swift") == "hero_crypto_cryptokit"
+    assert name_of("x.swift") == "x"
+    assert words(level: "-O0", sanitize: false) == ["-parse-as-library", "-Onone", "-g"]
+    assert words(level: "-O2", sanitize: true) == ["-parse-as-library", "-O", "-gline-tables-only", "-sanitize=address"]
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.target @ "aarch64-unknown-linux-gnu"
+    assert members(t).must().len() == 0
+    assert key_text(t, level: "-O0", sanitize: false) == ""
+    t.target @ "arm64-apple-darwin27.2.0"
+    assert members(t).must().len() >= 1
+    assert key_text(t, level: "-O0", sanitize: false) == "|swift:-parse-as-library -Onone -g"
+
+test "the SDK is read from clang's answer, its escapes undone, and none where it names none (panel 253's R3)"
+    assert sysroot("\"-cc1\" \"-isysroot\" \"/Applications/X.app/MacOSX.sdk\" \"-v\"") == "/Applications/X.app/MacOSX.sdk"
+    assert sysroot("\"-isysroot\" \"/a\\\"b\\\\c\"") == "/a\"b\\c"
+    assert sysroot("\"-cc1\" \"-v\"") == ""
+    assert sysroot("\"-isysroot\" \"/cut") == ""
+
+test "a path is written as JSON's string (panel 253's R3)"
+    assert json_text("/a/b.swift") == "\"/a/b.swift\""
+    assert json_text("a\"b\\c") == "\"a\\\"b\\\\c\""

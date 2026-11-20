@@ -32,6 +32,21 @@ Both tables are vendored so that a spec measurement taken today is reproducible
 years from now, with no network and no dependency. Provenance, sha256 and the
 licence re-check of 2026-09-08 are recorded in vendor/tokenizers/README.md.
 
+Third-party material the runtime carries, its licence with its files:
+
+  runtime/vendor/monocypher/monocypher.c
+  runtime/vendor/monocypher/monocypher.h
+  runtime/vendor/monocypher/monocypher-ed25519.c
+  runtime/vendor/monocypher/monocypher-ed25519.h
+      Monocypher 4.0.3, Copyright (c) 2017-2023 Loup Vaillant, Michael Savage
+      and Fabio Scotoni, compiled into the platform layer's macOS member for
+      Ed25519 and X25519. Dual-licensed, the 2-clause BSD licence or Creative
+      Commons' CC0 1.0 at the recipient's choice; Heroes takes it under CC0
+      1.0, so a program that carries these functions owes nothing for them,
+      as for the rest of the runtime. Its text travels with it:
+      runtime/vendor/monocypher/LICENCE.md; the release, its hashes and how it
+      is compiled are recorded in runtime/vendor/monocypher/README.md.
+
 Third-party material Rebel carries, each file with its notice at its head:
 
   packages/rebel/0.1.0/files/http/suffixes/internal/rules.hero

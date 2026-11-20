@@ -48,6 +48,7 @@ use cli/digest
 use cli/files
 use cli/flags
 use cli/io
+use cli/layer_swift
 use cli/link
 use cli/link_flags
 use cli/opening
@@ -94,7 +95,7 @@ function archive(t: toolchain.Toolchain, level: str, sanitize: bool) -> [str]?
     process.mkdir_all(t.build)?
     reach = reaches(t, members: members, words: words, @memo)
     key = digest.digest(
-        t.fingerprint + "|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key + "|layer|reaches:" + opening.key_text(reach)
+        t.fingerprint + "|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key + "|layer|reaches:" + opening.key_text(reach) + layer_swift.key_text(t, level: level, sanitize: sanitize)
     )
     stem = t.build + "/layer-" + key
     listed = stem + ".deps.txt"
@@ -104,26 +105,36 @@ function archive(t: toolchain.Toolchain, level: str, sanitize: bool) -> [str]?
     if !reach.is_err() && !known.is_err() && served.serves(stem + "-" + known.must() + suffix) && process.path_exists(supplied_kept.layer_needs_path(stem + "-" + known.must() + suffix))
         return ok([stem + "-" + known.must() + suffix])
     folder = publish.private_name(stem)
-    made = compiled(t, members: members, words: words, stem: stem, folder: folder, suffix: suffix, @memo)
+    made = compiled(
+        t,
+        members: members,
+        words: words,
+        stem: stem,
+        folder: folder,
+        suffix: suffix,
+        level: level,
+        sanitize: sanitize,
+        @memo
+    )
     _ = process.remove_tree(folder).is_err()
     built = made?
 
-    # Recorded only where the reach holds every file the compiles read.
-    if opening.covers(reach, listed: built.rows)
+    # Recorded only where the reach holds every file the C compiles read.
+    if opening.covers(reach, listed: built.covered)
         publish.write_whole(path: listed, text: built.listing, keyed: true)?
     return ok([built.path])
 
-# What a cold archive came to: where it was published, and the record that
-# names it with the rows it holds.
+# What a cold archive came to: where it was published, the record naming it,
+# and the C members' rows, which the reach covers (`cli/layer_swift.hero`).
 record Archived
     path: str
     listing: str
-    rows: str
+    covered: str
 
 # Every member compiled into `folder` under its own name, the archive written
 # there, sealed and published beside `stem`; the folder is the caller's to
 # remove.
-function compiled(t: toolchain.Toolchain, members: [str], words: [str], stem: str, folder: str, suffix: str, @memo: {str: str}) -> Archived?
+function compiled(t: toolchain.Toolchain, members: [str], words: [str], stem: str, folder: str, suffix: str, level: str, sanitize: bool, @memo: {str: str}) -> Archived?
     process.mkdir_all(folder)?
     objects: [str] @= []
     rows: [str] @= []
@@ -153,6 +164,14 @@ function compiled(t: toolchain.Toolchain, members: [str], words: [str], stem: st
         for name_needed in supplied_kept.alone_needs(t, object: object, what: "asking which names the platform layer's " + name + " needs")
             needs @ needs.push(name + "\t" + name_needed)
 
+    # The members in Swift, on an Apple target: archived, asked, vouched for
+    # by the record as a C member is, and kept out of what the reach covers.
+    covered = rows.join("\n")
+    swift = layer_swift.compiled(t, stem: stem, folder: folder, level: level, sanitize: sanitize, @memo)?
+    objects @ strings.with_all(list: objects, more: swift.objects)
+    rows @ strings.with_all(list: rows, more: swift.rows)
+    needs @ strings.with_all(list: needs, more: swift.needs)
+
     staged = folder + "/layer" + suffix
     archiver.archived(t, staged: staged, objects: objects, err_path: folder + "/archiver.err.txt")?
     listing = deps.pointer_text(rows.join("\n"))
@@ -162,7 +181,7 @@ function compiled(t: toolchain.Toolchain, members: [str], words: [str], stem: st
     # The record first: an archive that stands has its members' needs.
     publish.write_whole(path: supplied_kept.layer_needs_path(path), text: needs.join("\n") + "\n", keyed: true)?
     publish.publish(staged: staged, path: path, keyed: true)?
-    return ok(Archived(path: path, listing: listing, rows: rows.join("\n")))
+    return ok(Archived(path: path, listing: listing, covered: covered))
 
 # What every member's includes reach under `words` now, each asked of clang
 # alone (a listing of two inputs keeps only the second's under `-MF`,
@@ -358,8 +377,9 @@ test "every link carries the layer, and a program takes only the members it call
         members = defined_by(t, path: archived)
 
         # Every member of the layer defines a function, so a member no
-        # binary below takes is still read here.
-        assert taken(members: members, by: defined_by(t, path: archived)).len() == runtime_key.layer_members(t.runtime).must().len()
+        # binary below takes is still read here, the Swift ones on an Apple
+        # target among them.
+        assert taken(members: members, by: defined_by(t, path: archived)).len() == runtime_key.layer_members(t.runtime).must().len() + layer_swift.members(t).must().len()
         assert taken(members: members, by: defined_by(t, path: none)).len() == 0
         assert taken(members: members, by: defined_by(t, path: clock)) == ["hero_time"]
         assert taken(members: members, by: defined_by(t, path: named)).len() == 0
@@ -369,6 +389,39 @@ test "every link carries the layer, and a program takes only the members it call
         both_took = taken(members: members, by: defined_by(t, path: both))
         assert has_name(both_took, "hero_net")
         assert has_name(both_took, "hero_time")
+    assert !process.remove_tree(dir).is_err()
+
+# **On an Apple target the archive holds the member written in Swift** (panel
+# 253's R3, M-rebel-library's steps 69): a program sealing Wycheproof's
+# AES-256-GCM case 92 through the layer gets its tag, opens it and has a
+# forged tag refused, and takes `hero_crypto` and the CryptoKit member; on
+# any other target the layer compiles no Swift.
+test "an Apple target's layer seals by its CryptoKit member, which only a program calling hero_crypto takes (panel 253's R3)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+
+    if !link_flags.apple(t.target)
+        assert layer_swift.members(t).must().len() == 0
+        return
+    dir = "build/selftest-layer-cryptokit"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    sealing = linked_program(
+        t,
+        dir: dir,
+        name: "sealing",
+        body: "#include \"hero_crypto.h\"\n#include <string.h>\nint main(void) {\n    static const unsigned char key[32] = { 0x29, 0xd3, 0xa4, 0x4f, 0x87, 0x23, 0xdc, 0x64, 0x02, 0x39, 0x10, 0x0c, 0x36, 0x54, 0x23, 0xa3, 0x12, 0x93, 0x4a, 0xc8, 0x02, 0x39, 0x21, 0x2a, 0xc3, 0xdf, 0x34, 0x21, 0xa2, 0x09, 0x81, 0x23 };\n    static const unsigned char nonce[12] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb };\n    static const unsigned char ad[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };\n    static const unsigned char tag[16] = { 0x2a, 0x7d, 0x77, 0xfa, 0x52, 0x6b, 0x82, 0x50, 0xcb, 0x29, 0x60, 0x78, 0x92, 0x6b, 0x50, 0x20 };\n    unsigned char sealed[28];\n    unsigned char none[1];\n    hero_crypto_key *k = hero_crypto_from_secret(HERO_CRYPTO_AES_256_GCM, key, 32);\n    if (k == NULL || hero_crypto_seal_nonce_for_tests(k, nonce, 12, NULL, 0, ad, 6, sealed, 28) != 28 || memcmp(sealed + 12, tag, 16) != 0 || hero_crypto_open(k, sealed, 28, ad, 6, none, 0) != 0) {\n        return 1;\n    }\n    sealed[27] ^= 1;\n    return hero_crypto_open(k, sealed, 28, ad, 6, none, 0) == -1 && hero_crypto_last_error() == HERO_CRYPTO_FORGED && hero_crypto_close(k) == 0 ? 0 : 1;\n}\n"
+    )
+    archived = archive(t, level: "-O0", sanitize: false).must()[0]
+    took = taken(members: defined_by(t, path: archived), by: defined_by(t, path: sealing))
+    assert has_name(took, "hero_crypto")
+    assert has_name(took, "hero_crypto_cryptokit")
+
+    # Its needs recorded under the name the archive gives it, the one a
+    # link's map names (defect 2489's record).
+    assert strings.holds(
+        text: read_file(supplied_kept.layer_needs_path(archived)).must(),
+        needle: "\nhero_crypto_cryptokit\t"
+    )
     assert !process.remove_tree(dir).is_err()
 
 # **Two cold builds in one `build/` write one archive, and the cache serves
@@ -404,16 +457,8 @@ test "an archive is one archive byte for byte, and a cache wiped mid-way archive
     # runtime whose sockets member would not compile, under the same key,
     # the archive is served; a compile would have refused it.
     copy = t.build + "/runtime-copy"
-    assert !process.mkdir_all(copy + "/parts").is_err()
-    assert !process.mkdir_all(copy + "/platform").is_err()
-
-    for path in runtime_key.made_of(t.runtime).must()
-        name = path.slice(from: t.runtime.len() + 1, to: path.len())
-        held: str @= read_file(path).must()
-
-        if name == "platform/hero_net.c"
-            held @ held + "int heroes_2295_not_compiled = ;\n"
-        assert !write_file(path: copy + "/" + name, text: held).is_err()
+    assert !runtime_key.copy_made(runtime: t.runtime, copy: copy).is_err()
+    assert !write_file(path: copy + "/platform/hero_net.c", text: read_file(t.runtime + "/platform/hero_net.c").must() + "int heroes_2295_not_compiled = ;\n").is_err()
 
     gone: toolchain.Toolchain @= t
     gone.runtime @ copy
@@ -453,12 +498,7 @@ test "an archive is one archive byte for byte, and a cache wiped mid-way archive
 test "a runtime with no layer adds nothing to the link, and a member clang refuses is its refusal (feature 2295)"
     t = fresh_toolchain("build/selftest-layer-runtimes")
     copy = t.build + "/runtime"
-    assert !process.mkdir_all(copy + "/parts").is_err()
-    assert !process.mkdir_all(copy + "/platform").is_err()
-
-    for path in runtime_key.made_of(t.runtime).must()
-        name = path.slice(from: t.runtime.len() + 1, to: path.len())
-        assert !write_file(path: copy + "/" + name, text: read_file(path).must()).is_err()
+    assert !runtime_key.copy_made(runtime: t.runtime, copy: copy).is_err()
 
     # `runtime.c` with the lines naming the members left out: no layer.
     named: [str] @= []
