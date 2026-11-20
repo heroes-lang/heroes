@@ -1,5 +1,5 @@
 # A package's `link` group naming a library the package carries in its own
-# tree (defect 2557; examples-rebel/packages/README.md § 4, rule 5; design.md
+# tree (defect 2557; design.md §1.11, *no package ships C of its own*, and
 # §4.19): `ffi_build.missing_library` tells it `ffi_missing_library`, and this
 # adds the rule that decides it.
 #
@@ -47,7 +47,7 @@ function noted(s: source.Source, d: diag.Diagnostic) -> diag.Diagnostic
         return d
     out: diag.Diagnostic @= d
     out.notes @ out.notes.push(
-        "the package `" + place.alias + "` carries `" + carried + "` in its tree, and no linker searches a package's tree: a package ships no platform C of its own (examples-rebel/packages/README.md § 4, rule 5), and a compiled library is C built for one platform, so the library its `link` names is the machine's, installed with its development files"
+        "the package `" + place.alias + "` carries `" + carried + "` in its tree, and no linker searches a package's tree: a package ships no platform C of its own (design.md §1.11), and a compiled library is C built for one platform, so the library its `link` names is the machine's, installed with its development files"
     )
     return out
 

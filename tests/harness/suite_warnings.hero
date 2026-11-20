@@ -74,7 +74,8 @@ constant LEAST_EMIT: i64
 # floor to fit it** (M-rebel-library step 55g), as `corpus`'s at step 55b:
 # the author's decision of 2026-11-15 splits the examples in two groups, and
 # `packages`, the one program that held a package's own tests, moved to
-# `examples-rebel/packages/`; this suite's walk read 55 folders holding a
+# `examples-rebel/packages/` (removed 2026-11-20 with the package it tested);
+# this suite's walk read 55 folders holding a
 # `main.hero` that day, and failed on its floor of 56 alone.
 constant LEAST_EXAMPLES: i64
     55

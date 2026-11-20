@@ -223,7 +223,8 @@ function trees() -> [Tree]
     # **The packages row lowered 2026-11-14**, the world changed on purpose
     # and not the floor to fit it: the author's decision of that day removed
     # the package's 0.1.0, 0.2.0 and 0.2.1 from the index once every program
-    # held 0.3.0 (`examples-rebel/packages/README.md` § 10, steps 5 and 6), their 26 `.hero`
+    # held 0.3.0 (the packages' conventions page of 2026-11-14, its § 10, steps 5
+    # and 6), their 26 `.hero`
     # files with them, so the row reads 0.3.0's twenty alone: 20 seeds and 180
     # variants, measured by `heroes probe packages --family multi` that day.
     # And 0.4.0 took 0.3.0's place the same day by the same decision, with
