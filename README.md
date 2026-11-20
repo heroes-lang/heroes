@@ -162,6 +162,15 @@ working is a calculator, spread over four modules, with its own tests.
 | `read_file`/`write_file`, `args()`, `exit(code)` | |
 | a guide, chapter by chapter, in English and Italian, at [heroes-lang.org/docs](https://heroes-lang.org/docs/) | |
 
+**Heroes imposes no standard library.** The language ships its compiler and a
+minimal runtime, and what a program needs beyond them comes from C through the
+FFI, every declaration checked by clang against the real header, or from a
+package the program carries. Rebel, the library this project writes in Heroes
+under `packages/rebel/`, is one such package: a program takes it through its
+catalogue or leaves it, and the compiler is written without it. There is no
+standard library to obey; there is a Rebel to call, or not. Why is
+`docs/design.md` §1.11.
+
 The chain from here is `ROADMAP.md` § The chain. What is already built has
 one journal each, indexed at `docs/records/journal/README.md`.
 
@@ -265,8 +274,10 @@ bug), and measurement beats opinion.
 
 Apache-2.0 (`LICENSE`), with the **Heroes runtime exception**
 (`LICENSE-RUNTIME-EXCEPTION`): a program you compile with Heroes contains part of
-the C runtime and owes nothing for it: no copy of the license, no notice to
-reproduce. Attribution is owed by whoever redistributes Heroes itself.
+the C runtime, and of Rebel where it takes Rebel, and owes nothing for either:
+no copy of the license, no notice to reproduce. Material by others that Rebel
+carries keeps the licence its own files name. Attribution is owed by whoever
+redistributes Heroes or Rebel itself.
 
 ## Contributing
 

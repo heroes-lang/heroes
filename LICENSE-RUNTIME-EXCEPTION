@@ -1,32 +1,41 @@
-Heroes runtime exception, version 1.0
+Heroes runtime exception, version 1.1
 
 This exception accompanies the Apache License, Version 2.0 (see LICENSE). It
-applies to the files in `runtime/` — the Heroes C runtime — and to the C source
-and binaries that the Heroes compiler produces from them.
+applies to the files in `runtime/` — the Heroes C runtime — and to the files in
+`packages/rebel/` — Rebel, the library a Heroes program may take or leave —
+and to the C source and binaries that the Heroes compiler produces from them.
 
 Why it exists. Compiling a Heroes program emits C that `#include`s
 `runtime/heroes_runtime.h`, and linking it places parts of the Heroes runtime
-inside the resulting binary. Read without this exception, section 4 of the
-Apache License would follow every program anybody ever compiles with Heroes:
-its author would owe recipients a copy of the License, a reproduction of the
-NOTICE file, and notices of any modification. No language should charge that
-toll for the act of being used, and this one does not. The mechanism is GCC's
-Runtime Library Exception; the wording is this project's own and is deliberately
-shorter.
+inside the resulting binary; a program that takes Rebel carries the packages of
+Rebel it uses, which the compiler compiles into that same C and that same
+binary. Read without this exception, section 4 of the Apache License would
+follow every program anybody ever compiles with Heroes: its author would owe
+recipients a copy of the License, a reproduction of the NOTICE file, and
+notices of any modification. No language should charge that toll for the act of
+being used, nor its library for the act of being called, and this one does not.
+The mechanism is GCC's Runtime Library Exception; the wording is this project's
+own and is deliberately shorter.
 
 Grant. You may use, reproduce and distribute the C source and the binaries
-produced by the Heroes compiler, including any portion of the Heroes runtime
-they contain, under terms of your choice, and you are released from every
-obligation of section 4 of the Apache License with respect to those artifacts —
-including the requirement to deliver the License, to reproduce the NOTICE file,
-and to mark modified files. Your programs are yours, and the runtime travelling
-inside them changes nothing about that.
+produced by the Heroes compiler, including any portion of the Heroes runtime or
+of Rebel they contain, under terms of your choice, and you are released from
+every obligation of section 4 of the Apache License with respect to those
+artifacts — including the requirement to deliver the License, to reproduce the
+NOTICE file, and to mark modified files. The same release covers the copy of
+Rebel's files that `heroes add` or `heroes fetch` places in a program's tree,
+distributed unmodified as part of that program. Your programs are yours, and
+the runtime and the library travelling inside them change nothing about that.
 
 What the exception does not cover. The Apache License applies in full to the
-Heroes runtime *itself* — to distributing `runtime/` as source, as part of a
-distribution of the Heroes compiler, or as part of a work derived from either.
-Attribution is owed by whoever redistributes Heroes; never by somebody who
-merely uses it.
+Heroes runtime *itself* and to Rebel *itself* — to distributing `runtime/` or
+`packages/rebel/` as source, apart from the placed copy above, as part of a
+distribution of the Heroes compiler or of Rebel, or as part of a work derived
+from either. Attribution is owed by whoever redistributes Heroes or Rebel;
+never by somebody who merely uses them. Material by others that Rebel carries,
+each piece under the licence its own files name, keeps that licence: this
+exception releases only what this project owns.
 
 The patent grant of section 3 and the disclaimers of sections 7 and 8 are
-untouched by this exception, and apply to the runtime as to everything else.
+untouched by this exception, and apply to the runtime and to Rebel as to
+everything else.

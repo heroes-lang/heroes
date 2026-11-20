@@ -3,10 +3,12 @@ Copyright 2026 Giuseppe Arici
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
-The Heroes C runtime (`runtime/`) carries the Heroes runtime exception: see
-LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes contains part of that
-runtime and owes nothing for it — no copy of the License, no reproduction of
-this NOTICE. Attribution is owed by whoever redistributes Heroes itself.
+The Heroes C runtime (`runtime/`) and Rebel (`packages/rebel/`) carry the
+Heroes runtime exception: see LICENSE-RUNTIME-EXCEPTION. A program compiled with
+Heroes contains part of that runtime, and of Rebel where it takes Rebel, and
+owes nothing for either — no copy of the License, no reproduction of this
+NOTICE. Material by others that Rebel carries keeps the licence its own files
+name. Attribution is owed by whoever redistributes Heroes or Rebel itself.
 
 Third-party material redistributed in this repository:
 
