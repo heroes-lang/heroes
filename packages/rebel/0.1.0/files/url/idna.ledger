@@ -1,26 +1,26 @@
 capability idna/to-ascii  a host name written in ASCII for DNS and TLS, its labels above ASCII in Punycode after "xn--", by UTS #46's ToASCII
-  heroes  idna.to_ascii
+  heroes  url/idna.to_ascii
   go      -
   rust    -
   python  encodings.idna.ToASCII, str.encode("idna")
-  note    UTS #46 for Unicode 17.0.0 (tr46-35), nontransitional by default, every one of its seven flags in `idna.Options`. The yardsticks: PyPI's `idna` (IDNA 2008 with UTS #46's mapping as an option, the fifth most downloaded project; not on this machine), Go's `golang.org/x/net/idna` (outside Go's standard library, which vendors it for `net/http`; run here as an oracle, v0.49.0, whose tables are Unicode 15.0.0) and Rust's crate `idna` (outside the standard library). Python's own codec is IDNA 2003 (RFC 3490, nameprep), and answers otherwise: "faß.de" is "fass.de" there and "xn--fa-hia.de" here (as Go's `Lookup`), "Bücher.DE" keeps "DE" there, "a_b.de" and "ab--c.de" pass there and are `invalid` here under `strict_options`, and "xn--a.de" passes there undecoded where its label decodes to U+0080, disallowed. Go's `Lookup` checks no length ("example.com." passes, here only under `url_options`) and reads "xn--a-.com" as "a.com", where UTS #46 refuses a Punycode label that writes nothing above ASCII (P4), as here. Where the mapped host may need normalizing to NFC the answer is `unsupported`: see idna/nfc. The UTS #46 test file (IdnaTestV2.txt, 17.0.0) is the package's test: 6,389 of its 6,391 lines, the two left out holding a surrogate, which no `str` holds; ToUnicode, ToASCII and transitional ToASCII each, every check on, 19,167 operations, all as the file says but the 2,532 operations, on 844 lines, that answer `unsupported`; X4_2 in ToUnicode read as no error, since ToUnicode reads no length
+  note    UTS #46 for Unicode 17.0.0 (tr46-35), nontransitional by default, every one of its seven flags in `url/idna.Options`. The yardsticks: PyPI's `idna` (IDNA 2008 with UTS #46's mapping as an option, the fifth most downloaded project; not on this machine), Go's `golang.org/x/net/idna` (outside Go's standard library, which vendors it for `net/http`; run here as an oracle, v0.49.0, whose tables are Unicode 15.0.0) and Rust's crate `idna` (outside the standard library). Python's own codec is IDNA 2003 (RFC 3490, nameprep), and answers otherwise: "faß.de" is "fass.de" there and "xn--fa-hia.de" here (as Go's `Lookup`), "Bücher.DE" keeps "DE" there, "a_b.de" and "ab--c.de" pass there and are `invalid` here under `strict_options`, and "xn--a.de" passes there undecoded where its label decodes to U+0080, disallowed. Go's `Lookup` checks no length ("example.com." passes, here only under `url_options`) and reads "xn--a-.com" as "a.com", where UTS #46 refuses a Punycode label that writes nothing above ASCII (P4), as here. Where the mapped host may need normalizing to NFC the answer is `unsupported`: see idna/nfc. The UTS #46 test file (IdnaTestV2.txt, 17.0.0) is the package's test: 6,389 of its 6,391 lines, the two left out holding a surrogate, which no `str` holds; ToUnicode, ToASCII and transitional ToASCII each, every check on, 19,167 operations, all as the file says but the 2,532 operations, on 844 lines, that answer `unsupported`; X4_2 in ToUnicode read as no error, since ToUnicode reads no length
 
 capability idna/to-unicode  a host name for a person to read, its Punycode labels decoded, by UTS #46's ToUnicode
-  heroes  idna.to_unicode
+  heroes  url/idna.to_unicode
   go      -
   rust    -
   python  encodings.idna.ToUnicode, bytes.decode("idna")
   note    UTS #46's ToUnicode always writes a text and flags an error beside it; here a host with an error fails `invalid`, the message naming the label and the rule, since a `T?` carries one or the other. Python's IDNA 2003 decoder refuses "xn--fa-hia.de", which does not round-trip under nameprep, where it is "faß.de" here and in Go
 
 capability idna/options  how strict a conversion is: hyphens, bidi, joiners, the STD3 rules, transitional processing, DNS lengths, Punycode that does not decode
-  heroes  idna.Options, idna.strict_options, idna.url_options
+  heroes  url/idna.Options, url/idna.strict_options, url/idna.url_options
   go      -
   rust    -
   python  -
   note    UTS #46's seven input flags, named as it names them. `strict_options` sets them as UTS #46's test file runs ToASCII; `url_options` as WHATWG's URL Standard's "domain to ASCII" does, not strict. Go's x/net offers profiles built of options (`idna.New`, `idna.Lookup`, `idna.Display`, `idna.Registration`, `idna.Punycode`, and the options `BidiRule`, `CheckHyphens`, `CheckJoiners`, `MapForLookup`, `StrictDomainName`, `Transitional`, `VerifyDNSLength`, `ValidateLabels`, `ValidateForRegistration`, `RemoveLeadingDots`); PyPI's `idna` takes `uts46`, `std3_rules` and `transitional` as arguments
 
 capability idna/punycode  a text written in Punycode and read back, RFC 3492, without the "xn--" of a host's label
-  heroes  idna.format_punycode, idna.parse_punycode
+  heroes  url/idna.format_punycode, url/idna.parse_punycode
   go      -
   rust    -
   python  str.encode("punycode"), bytes.decode("punycode"), encodings.punycode.punycode_encode, encodings.punycode.punycode_decode
@@ -41,7 +41,7 @@ capability idna/registration  IDNA 2008's own validity for a name being register
   note    UTS #46 is the processing for looking a name up; a registry holds a label to IDNA 2008's stricter table, which refuses what UTS #46's mapping table marks NV8 and XV8, and to the CONTEXTO rules of RFC 5892's Appendix A.3 to A.9 (the middle dot, the Greek keraia, Hebrew geresh and gershayim, the Katakana middle dot, the two kinds of Arabic-Indic digits), which read the script of a character, a table this package does not carry. PyPI's `idna` does it by default, Go's x/net in `Registration`
 
 capability idna/version  the version of Unicode the tables hold
-  heroes  idna.UNICODE_VERSION
+  heroes  url/idna.UNICODE_VERSION
   go      -
   rust    -
   python  -
@@ -58,7 +58,7 @@ dropped codec-plumbing  what makes a codec of Python's: the classes its registry
   rust    -
   python  encodings.idna.Codec, encodings.idna.IncrementalDecoder, encodings.idna.IncrementalEncoder, encodings.idna.StreamReader, encodings.idna.StreamWriter, encodings.idna.getregentry, encodings.idna.ace_prefix, encodings.idna.sace_prefix, encodings.idna.dots, encodings.punycode.Codec, encodings.punycode.IncrementalDecoder, encodings.punycode.IncrementalEncoder, encodings.punycode.StreamReader, encodings.punycode.StreamWriter, encodings.punycode.getregentry
 
-dropped punycode-steps  the steps of RFC 3492 that Python's module names apart, which here are the inside of `idna.format_punycode` and `idna.parse_punycode`
+dropped punycode-steps  the steps of RFC 3492 that Python's module names apart, which here are the inside of `url/idna.format_punycode` and `url/idna.parse_punycode`
   go      -
   rust    -
   python  encodings.punycode.T, encodings.punycode.adapt, encodings.punycode.digits, encodings.punycode.decode_generalized_number, encodings.punycode.generate_generalized_integer, encodings.punycode.generate_integers, encodings.punycode.insertion_sort, encodings.punycode.insertion_unsort, encodings.punycode.segregate, encodings.punycode.selective_find, encodings.punycode.selective_len
