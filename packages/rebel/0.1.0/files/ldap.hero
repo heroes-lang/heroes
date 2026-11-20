@@ -13,7 +13,7 @@
 # crosses in plain text unless the program asks for `.plain`; `.direct` is
 # TLS from the first byte, `ldaps://` on port 636. On Linux and Windows
 # StartTLS begins over the connection already made (`tls.client_over`); on
-# macOS, whose TLS begins only over a connection `tls` makes itself, `open`
+# macOS, whose TLS begins only over a connection `tls` makes itself, `connect`
 # first asks the server for StartTLS on a connection of its own, reads its
 # answer, and then makes the connection it keeps with `tls.connect_after`,
 # whose exchange before TLS sends the same request and expects the same
@@ -95,7 +95,7 @@ constant NOT_EMPTY: str
 # The server refuses the identity or its rights (invalidCredentials,
 # insufficientAccessRights, inappropriateAuthentication,
 # strongerAuthRequired, confidentialityRequired): every operation; and
-# `open` and `start_tls` where `tls` refuses.
+# `connect` and `start_tls` where `tls` refuses.
 constant PERMISSION: str
     "permission"
 
@@ -127,205 +127,10 @@ constant UNSUPPORTED: str
     "unsupported"
 
 # A result none of the codes above names (operationsError, other, a loop
-# detected), the message carrying the server's own words; and `open` where
+# detected), the message carrying the server's own words; and `connect` where
 # the network fails as `net` says.
 constant FAILED: str
     "failed"
-
-## Result codes
-
-# The operation succeeded.
-constant SUCCESS: i64
-    0
-
-# The operation could not be done in the right order (operationsError).
-constant OPERATIONS_ERROR: i64
-    1
-
-# The server could not read the request (protocolError).
-constant PROTOCOL_ERROR: i64
-    2
-
-# The search's time limit passed (timeLimitExceeded).
-constant TIME_LIMIT_EXCEEDED: i64
-    3
-
-# The search's size limit was reached (sizeLimitExceeded).
-constant SIZE_LIMIT_EXCEEDED: i64
-    4
-
-# A compare found the value absent (compareFalse).
-constant COMPARE_FALSE: i64
-    5
-
-# A compare found the value present (compareTrue).
-constant COMPARE_TRUE: i64
-    6
-
-# The server knows no such authentication method (authMethodNotSupported).
-constant AUTH_METHOD_NOT_SUPPORTED: i64
-    7
-
-# The server asks for a stronger authentication (strongerAuthRequired).
-constant STRONGER_AUTH_REQUIRED: i64
-    8
-
-# Another server holds the entry, which the result's referrals name
-# (referral).
-constant REFERRAL: i64
-    10
-
-# A limit the administrator set was passed (adminLimitExceeded).
-constant ADMIN_LIMIT_EXCEEDED: i64
-    11
-
-# A control marked critical is unknown to the server
-# (unavailableCriticalExtension).
-constant UNAVAILABLE_CRITICAL_EXTENSION: i64
-    12
-
-# The server asks for TLS first (confidentialityRequired).
-constant CONFIDENTIALITY_REQUIRED: i64
-    13
-
-# A SASL bind goes on: the server sent a challenge (saslBindInProgress).
-constant SASL_BIND_IN_PROGRESS: i64
-    14
-
-# The entry has no such attribute or value (noSuchAttribute).
-constant NO_SUCH_ATTRIBUTE: i64
-    16
-
-# The attribute type is not in the schema (undefinedAttributeType).
-constant UNDEFINED_ATTRIBUTE_TYPE: i64
-    17
-
-# The attribute has no such matching rule (inappropriateMatching).
-constant INAPPROPRIATE_MATCHING: i64
-    18
-
-# A value breaks a constraint of the schema (constraintViolation).
-constant CONSTRAINT_VIOLATION: i64
-    19
-
-# The value is there already (attributeOrValueExists).
-constant ATTRIBUTE_OR_VALUE_EXISTS: i64
-    20
-
-# A value is not of its attribute's syntax (invalidAttributeSyntax).
-constant INVALID_ATTRIBUTE_SYNTAX: i64
-    21
-
-# No entry has the name (noSuchObject).
-constant NO_SUCH_OBJECT: i64
-    32
-
-# An alias names no entry (aliasProblem).
-constant ALIAS_PROBLEM: i64
-    33
-
-# A name is not a distinguished name (invalidDNSyntax).
-constant INVALID_DN_SYNTAX: i64
-    34
-
-# An alias could not be followed (aliasDereferencingProblem).
-constant ALIAS_DEREFERENCING_PROBLEM: i64
-    36
-
-# The authentication fits nothing the entry holds
-# (inappropriateAuthentication).
-constant INAPPROPRIATE_AUTHENTICATION: i64
-    48
-
-# The name or the password is wrong (invalidCredentials).
-constant INVALID_CREDENTIALS: i64
-    49
-
-# The identity has no right to do this (insufficientAccessRights).
-constant INSUFFICIENT_ACCESS_RIGHTS: i64
-    50
-
-# The server is too busy (busy).
-constant BUSY: i64
-    51
-
-# The server is shutting down or cannot serve (unavailable).
-constant UNAVAILABLE: i64
-    52
-
-# The server will not do this (unwillingToPerform).
-constant UNWILLING_TO_PERFORM: i64
-    53
-
-# A loop was found following aliases or referrals (loopDetect).
-constant LOOP_DETECT: i64
-    54
-
-# The name breaks the directory's naming rules (namingViolation).
-constant NAMING_VIOLATION: i64
-    64
-
-# The entry breaks its object classes' rules (objectClassViolation).
-constant OBJECT_CLASS_VIOLATION: i64
-    65
-
-# The entry has entries below it (notAllowedOnNonLeaf).
-constant NOT_ALLOWED_ON_NON_LEAF: i64
-    66
-
-# The change would remove a value of the entry's name (notAllowedOnRDN).
-constant NOT_ALLOWED_ON_RDN: i64
-    67
-
-# An entry has the name already (entryAlreadyExists).
-constant ENTRY_ALREADY_EXISTS: i64
-    68
-
-# The entry's structural object class may not change
-# (objectClassModsProhibited).
-constant OBJECT_CLASS_MODS_PROHIBITED: i64
-    69
-
-# The change would reach more than one server (affectsMultipleDSAs).
-constant AFFECTS_MULTIPLE_DSAS: i64
-    71
-
-# A failure no other code names (other).
-constant OTHER: i64
-    80
-
-# The operation was cancelled (canceled, RFC 3909).
-constant CANCELED: i64
-    118
-
-# The operation to cancel is unknown (noSuchOperation, RFC 3909).
-constant NO_SUCH_OPERATION: i64
-    119
-
-# The operation to cancel is too far along (tooLate, RFC 3909).
-constant TOO_LATE: i64
-    120
-
-# The operation cannot be cancelled (cannotCancel, RFC 3909).
-constant CANNOT_CANCEL: i64
-    121
-
-# The assertion control's filter does not hold (assertionFailed, RFC 4528).
-constant ASSERTION_FAILED: i64
-    122
-
-# The proxied identity is refused (authorizationDenied, RFC 4370).
-constant AUTHORIZATION_DENIED: i64
-    123
-
-# The name RFC 4511 and its extensions give `code`: `noSuchObject` for 32,
-# `success` for 0.
-#
-# - `code`: any result code.
-#
-# A code no RFC names is written `code 99`. See also `result_of`.
-function format_result_code(code: i64) -> str
-    return codes.name_of(code)
 
 ## Results
 
@@ -353,7 +158,7 @@ record Result
 #
 # Before any answer, a `SUCCESS` with nothing else. A failure of the
 # connection itself (a deadline, a notice of disconnection) leaves the last
-# answer the server gave. See also `format_result_code`.
+# answer the server gave. See also `result_name`.
 function result_of(c: Conn) -> Result
     held: [Control] @= []
 
@@ -617,7 +422,7 @@ record Options
 #
 # - `host`: the server's name or address.
 #
-# See also `open`, `to_options`.
+# See also `connect`, `to_options`.
 function options(host: str) -> Options
     return Options(
         host: host,
@@ -628,7 +433,7 @@ function options(host: str) -> Options
     )
 
 # A connection to a directory server, anonymous until a bind. Made only by
-# `open`; it holds the connection's stream, which `close` closes, and one
+# `connect`; it holds the connection's stream, which `close` closes, and one
 # nobody closes is told when `main` returns.
 record Conn
     # The conversation with the server: the stream, the bytes read and not
@@ -650,7 +455,7 @@ record Conn
 # server whose second answer differs from its first by a byte fails
 # `invalid` (the module's comment). See also `options`, `close`,
 # `start_tls`.
-function open(opts: Options) -> Conn?
+function connect(opts: Options) -> Conn?
     if opts.host == ""
         return fail(code: INVALID, msg: "opening a connection to the host \"\"")
 
@@ -681,7 +486,7 @@ function open(opts: Options) -> Conn?
 # - `c`: the caller's connection, closed by this call whatever it answers.
 #
 # Fails `closed` where it is closed already; a connection an earlier failure
-# ended is closed without a word. See also `open`, `is_closed`.
+# ended is closed without a word. See also `connect`, `is_closed`.
 function close(@c: Conn) -> ()?
     return session.close(@c.session)
 
@@ -713,8 +518,8 @@ function is_secured(c: Conn) -> bool
 #
 # Fails `invalid` where `c` is already over TLS; with the code of the
 # server's result where it refuses; as `tls.client_over` fails, which ends
-# the connection; `unsupported` on macOS, where `open` with `.start_tls` is
-# the way. See also `open`, `is_secured`.
+# the connection; `unsupported` on macOS, where `connect` with `.start_tls` is
+# the way. See also `connect`, `is_secured`.
 function start_tls(@c: Conn, roots: str) -> ()?
     if c.session.searching != 0
         return fail(code: INVALID, msg: f"StartTLS on {c.session.target}: a search is running")
@@ -1532,7 +1337,10 @@ record Rdn
     parts: [Ava]
 
 # A distinguished name (RFC 4514): relative names from the entry up to the
-# root, as written left to right. Built by `parse_dn` or directly.
+# root, as written left to right. Built by `parse_dn` or directly. Its
+# values are text, as LDAP writes them; `x509.Name` holds a name as a
+# certificate carries it, each value typed by ASN.1, and `x509.format_name`
+# writes it in this same form.
 record Dn
     # The relative names, the entry's own first; [] for the root, "".
     rdns: [Rdn]
@@ -2068,7 +1876,7 @@ function format_url(u: Url) -> str?
 #
 # - `u`: the URL; a `host` of "" is `localhost`.
 #
-# See also `to_query`, `open`.
+# See also `to_query`, `connect`.
 function to_options(u: Url) -> Options
     host = if u.host == ""
         "localhost"
@@ -2093,9 +1901,204 @@ function to_query(u: Url) -> Query
     q.attributes @ u.attributes
     return q
 
+## Result codes
+
+# The operation succeeded.
+constant SUCCESS: i64
+    0
+
+# The operation could not be done in the right order (operationsError).
+constant OPERATIONS_ERROR: i64
+    1
+
+# The server could not read the request (protocolError).
+constant PROTOCOL_ERROR: i64
+    2
+
+# The search's time limit passed (timeLimitExceeded).
+constant TIME_LIMIT_EXCEEDED: i64
+    3
+
+# The search's size limit was reached (sizeLimitExceeded).
+constant SIZE_LIMIT_EXCEEDED: i64
+    4
+
+# A compare found the value absent (compareFalse).
+constant COMPARE_FALSE: i64
+    5
+
+# A compare found the value present (compareTrue).
+constant COMPARE_TRUE: i64
+    6
+
+# The server knows no such authentication method (authMethodNotSupported).
+constant AUTH_METHOD_NOT_SUPPORTED: i64
+    7
+
+# The server asks for a stronger authentication (strongerAuthRequired).
+constant STRONGER_AUTH_REQUIRED: i64
+    8
+
+# Another server holds the entry, which the result's referrals name
+# (referral).
+constant REFERRAL: i64
+    10
+
+# A limit the administrator set was passed (adminLimitExceeded).
+constant ADMIN_LIMIT_EXCEEDED: i64
+    11
+
+# A control marked critical is unknown to the server
+# (unavailableCriticalExtension).
+constant UNAVAILABLE_CRITICAL_EXTENSION: i64
+    12
+
+# The server asks for TLS first (confidentialityRequired).
+constant CONFIDENTIALITY_REQUIRED: i64
+    13
+
+# A SASL bind goes on: the server sent a challenge (saslBindInProgress).
+constant SASL_BIND_IN_PROGRESS: i64
+    14
+
+# The entry has no such attribute or value (noSuchAttribute).
+constant NO_SUCH_ATTRIBUTE: i64
+    16
+
+# The attribute type is not in the schema (undefinedAttributeType).
+constant UNDEFINED_ATTRIBUTE_TYPE: i64
+    17
+
+# The attribute has no such matching rule (inappropriateMatching).
+constant INAPPROPRIATE_MATCHING: i64
+    18
+
+# A value breaks a constraint of the schema (constraintViolation).
+constant CONSTRAINT_VIOLATION: i64
+    19
+
+# The value is there already (attributeOrValueExists).
+constant ATTRIBUTE_OR_VALUE_EXISTS: i64
+    20
+
+# A value is not of its attribute's syntax (invalidAttributeSyntax).
+constant INVALID_ATTRIBUTE_SYNTAX: i64
+    21
+
+# No entry has the name (noSuchObject).
+constant NO_SUCH_OBJECT: i64
+    32
+
+# An alias names no entry (aliasProblem).
+constant ALIAS_PROBLEM: i64
+    33
+
+# A name is not a distinguished name (invalidDNSyntax).
+constant INVALID_DN_SYNTAX: i64
+    34
+
+# An alias could not be followed (aliasDereferencingProblem).
+constant ALIAS_DEREFERENCING_PROBLEM: i64
+    36
+
+# The authentication fits nothing the entry holds
+# (inappropriateAuthentication).
+constant INAPPROPRIATE_AUTHENTICATION: i64
+    48
+
+# The name or the password is wrong (invalidCredentials).
+constant INVALID_CREDENTIALS: i64
+    49
+
+# The identity has no right to do this (insufficientAccessRights).
+constant INSUFFICIENT_ACCESS_RIGHTS: i64
+    50
+
+# The server is too busy (busy).
+constant BUSY: i64
+    51
+
+# The server is shutting down or cannot serve (unavailable).
+constant UNAVAILABLE: i64
+    52
+
+# The server will not do this (unwillingToPerform).
+constant UNWILLING_TO_PERFORM: i64
+    53
+
+# A loop was found following aliases or referrals (loopDetect).
+constant LOOP_DETECT: i64
+    54
+
+# The name breaks the directory's naming rules (namingViolation).
+constant NAMING_VIOLATION: i64
+    64
+
+# The entry breaks its object classes' rules (objectClassViolation).
+constant OBJECT_CLASS_VIOLATION: i64
+    65
+
+# The entry has entries below it (notAllowedOnNonLeaf).
+constant NOT_ALLOWED_ON_NON_LEAF: i64
+    66
+
+# The change would remove a value of the entry's name (notAllowedOnRDN).
+constant NOT_ALLOWED_ON_RDN: i64
+    67
+
+# An entry has the name already (entryAlreadyExists).
+constant ENTRY_ALREADY_EXISTS: i64
+    68
+
+# The entry's structural object class may not change
+# (objectClassModsProhibited).
+constant OBJECT_CLASS_MODS_PROHIBITED: i64
+    69
+
+# The change would reach more than one server (affectsMultipleDSAs).
+constant AFFECTS_MULTIPLE_DSAS: i64
+    71
+
+# A failure no other code names (other).
+constant OTHER: i64
+    80
+
+# The operation was cancelled (canceled, RFC 3909).
+constant CANCELED: i64
+    118
+
+# The operation to cancel is unknown (noSuchOperation, RFC 3909).
+constant NO_SUCH_OPERATION: i64
+    119
+
+# The operation to cancel is too far along (tooLate, RFC 3909).
+constant TOO_LATE: i64
+    120
+
+# The operation cannot be cancelled (cannotCancel, RFC 3909).
+constant CANNOT_CANCEL: i64
+    121
+
+# The assertion control's filter does not hold (assertionFailed, RFC 4528).
+constant ASSERTION_FAILED: i64
+    122
+
+# The proxied identity is refused (authorizationDenied, RFC 4370).
+constant AUTHORIZATION_DENIED: i64
+    123
+
+# The name RFC 4511 and its extensions give `code`: `noSuchObject` for 32,
+# `success` for 0.
+#
+# - `code`: any result code.
+#
+# A code no RFC names is written `code 99`. See also `result_of`.
+function result_name(code: i64) -> str
+    return codes.name_of(code)
+
 ## Tests
 
-test "options and open: arguments refused before any connection is made"
+test "options and connect: arguments refused before any connection is made"
     for host in ["", "127.0.0.1"]
         opts @= options(host)
         opts.security @ .plain
@@ -2103,23 +2106,23 @@ test "options and open: arguments refused before any connection is made"
         if host != ""
             opts.port @ 0
 
-        match open(opts)
+        match connect(opts)
             .ok _  => assert false
             .err e => assert e.code == "invalid"
 
     opts @= options("127.0.0.1")
     opts.deadline_ms @ -1
-    assert open(opts).is_err()
+    assert connect(opts).is_err()
     opts.deadline_ms @ 0
     opts.max_message @ 63
-    assert open(opts).is_err()
+    assert connect(opts).is_err()
 
-test "open: nothing listening fails closed"
+test "connect: nothing listening fails closed"
     opts @= options("127.0.0.1")
     opts.port @ fake.free_port()
     opts.security @ .plain
 
-    match open(opts)
+    match connect(opts)
         .ok _  => assert false
         .err e => assert e.code == "closed"
 
@@ -2130,7 +2133,7 @@ test "bind: a wrong password fails permission, and result_of tells invalidCreden
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
 
     match bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret")
         .ok _  => assert false
@@ -2148,7 +2151,7 @@ test "bind: an empty password and an unauthenticated bind without a name are ref
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
 
     match bind(@c, dn: "cn=admin,dc=example,dc=org", password: "")
         .ok _  => assert false
@@ -2175,7 +2178,7 @@ test "bind_sasl: a step the server answers with a challenge, saslBindInProgress"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     step = bind_sasl(@c, mechanism: "EXTERNAL", credentials: []).must()
     assert !step.finished && step.credentials == bytes.from_text("challenge")
     assert result_of(c).code == SASL_BIND_IN_PROGRESS
@@ -2189,7 +2192,7 @@ test "search: the server's own size limit fails limit, and no such base fails no
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     q @= query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
     q.attributes @ ["cn", "mail"]
@@ -2204,7 +2207,7 @@ test "search: the server's own size limit fails limit, and no such base fails no
     server_2 @= threads.spawn_text(body: fake.serve, arg: f"plain {port_2} search-nosuch")
     fake.until_listening(port_2)
     opts.port @ port_2
-    c_2 @= open(opts).must()
+    c_2 @= connect(opts).must()
     bind(@c_2, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
 
     match search(@c_2, q)
@@ -2221,7 +2224,7 @@ test "search: a size limit, a time limit and types only the query asks, answered
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     q @= query(base: "dc=example,dc=org", f: .present(attribute: "cn"))
     q.size_limit @ 1
@@ -2242,7 +2245,7 @@ test "lookup: a base with no entry answered fails not_found"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
 
     match lookup(@c, dn: "cn=Ana,dc=example,dc=org", attributes: ["cn"])
@@ -2259,7 +2262,7 @@ test "add: an entry that exists fails exists; an entry with no attribute or an a
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert add(@c, dn: "cn=Ana,dc=example,dc=org", attributes: []).is_err()
     assert add(@c, dn: "cn=Ana,dc=example,dc=org", attributes: [text_attribute(name: "cn", values: [])]).is_err()
@@ -2285,7 +2288,7 @@ test "delete: no such entry fails not_found, entries below fail not_empty, a ref
         opts @= options("127.0.0.1")
         opts.port @ port
         opts.security @ .plain
-        c @= open(opts).must()
+        c @= connect(opts).must()
         bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
 
         match delete(@c, dn: "cn=Ana,dc=example,dc=org")
@@ -2313,7 +2316,7 @@ test "a notice of disconnection, bytes that are no LDAP, a message past its boun
         opts.security @ .plain
         opts.deadline_ms @ 300
         opts.max_message @ 1000
-        c @= open(opts).must()
+        c @= connect(opts).must()
         bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
 
         match who_am_i(@c)
@@ -2342,7 +2345,7 @@ test "abandon_search: a search given up, its late answer read past, and no opera
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert next_item(@c).is_err()
     assert abandon_search(@c).is_err()
@@ -2365,35 +2368,35 @@ test "abandon_search: a search given up, its late answer read past, and no opera
     close(@c).must()
     assert threads.wait_text(@server) == "ok"
 
-test "open over TLS from the first byte, the server's certificate checked against tls's test authority"
+test "connect over TLS from the first byte, the server's certificate checked against tls's test authority"
     port = fake.free_port()
     server @= threads.spawn_text(body: fake.serve, arg: f"ldaps {port} bind")
     fake.until_listening(port)
     opts @= options("localhost")
     opts.port @ port
     opts.security @ .direct(roots: tls.TEST_ROOT)
-    c @= open(opts).must()
+    c @= connect(opts).must()
     assert is_secured(c)
     assert start_tls(@c, roots: tls.TEST_ROOT).is_err()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     close(@c).must()
     assert threads.wait_text(@server) == "ok"
 
-test "open with StartTLS: the request, its answer, then TLS, then a bind numbered after it"
+test "connect with StartTLS: the request, its answer, then TLS, then a bind numbered after it"
     port = fake.free_port()
     server @= threads.spawn_text(body: fake.serve, arg: f"starttls {port} starttls")
     fake.until_listening(port)
     opts @= options("localhost")
     opts.port @ port
     opts.security @ .start_tls(roots: tls.TEST_ROOT)
-    c @= open(opts).must()
+    c @= connect(opts).must()
     assert is_secured(c)
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert who_am_i(@c).must() == "dn:cn=admin,dc=example,dc=org"
     close(@c).must()
     assert threads.wait_text(@server) == "ok"
 
-test "open with StartTLS: a server that knows no StartTLS fails unsupported"
+test "connect with StartTLS: a server that knows no StartTLS fails unsupported"
     port = fake.free_port()
     server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} starttls-refused")
     fake.until_listening(port)
@@ -2401,7 +2404,7 @@ test "open with StartTLS: a server that knows no StartTLS fails unsupported"
     opts.port @ port
     opts.security @ .start_tls(roots: tls.TEST_ROOT)
 
-    match open(opts)
+    match connect(opts)
         .ok _  => assert false
         .err e => assert e.code == "unsupported" && e.msg == f"StartTLS on 127.0.0.1:{port}: protocolError (2): unsupported extended operation"
 
@@ -2415,7 +2418,7 @@ test "start_tls: on macOS a connection already open fails unsupported, before an
         opts @= options("127.0.0.1")
         opts.port @ port
         opts.security @ .plain
-        c @= open(opts).must()
+        c @= connect(opts).must()
 
         match start_tls(@c, roots: tls.TEST_ROOT)
             .ok _  => assert false
@@ -2516,14 +2519,14 @@ test "entries: values by name with case ignored, text and binary values, an attr
 
 test "live: StartTLS, binds, searches, pages, sorting, changes and passwords against the server REBEL_LDAP_PORT names, dc=example,dc=org with cn=admin, cleaned up after"
     match os.env("REBEL_LDAP_PORT")
-        .err _ => print("live: skipped, REBEL_LDAP_PORT names no server")
+        .err _ => skip_test(reason: "REBEL_LDAP_PORT names no server")
         .ok port_text =>
             opts @= options(os.env("REBEL_LDAP_HOST").default("localhost"))
             opts.port @ numbers.parse_int(port_text).must()
             opts.security @ .start_tls(roots: tls.TEST_ROOT)
             password = os.env("REBEL_LDAP_PASSWORD").default("secret")
             admin = "cn=admin,dc=example,dc=org"
-            c @= open(opts).must()
+            c @= connect(opts).must()
             assert is_secured(c)
 
             match bind(@c, dn: admin, password: "not the password")
@@ -2682,12 +2685,12 @@ test "live: StartTLS, binds, searches, pages, sorting, changes and passwords aga
 
 test "live over TLS from the first byte, against the server REBEL_LDAP_TLS_PORT names"
     match os.env("REBEL_LDAP_TLS_PORT")
-        .err _ => print("live over TLS: skipped, REBEL_LDAP_TLS_PORT names no server")
+        .err _ => skip_test(reason: "REBEL_LDAP_TLS_PORT names no server")
         .ok port_text =>
             opts @= options(os.env("REBEL_LDAP_HOST").default("localhost"))
             opts.port @ numbers.parse_int(port_text).must()
             opts.security @ .direct(roots: tls.TEST_ROOT)
-            c @= open(opts).must()
+            c @= connect(opts).must()
             bind(@c, dn: "cn=admin,dc=example,dc=org", password: os.env("REBEL_LDAP_PASSWORD").default("secret")).must()
             assert who_am_i(@c).must() == "dn:cn=admin,dc=example,dc=org"
             close(@c).must()
@@ -2696,8 +2699,8 @@ test "live over TLS from the first byte, against the server REBEL_LDAP_TLS_PORT 
 ## Examples
 
 # The name of a result code.
-test "format_result_code: noSuchObject"
-    assert format_result_code(NO_SUCH_OBJECT) == "noSuchObject"
+test "result_name: noSuchObject"
+    assert result_name(NO_SUCH_OBJECT) == "noSuchObject"
 
 # The whole result after a refused bind: its code and the server's words.
 test "result_of: after a wrong password"
@@ -2707,7 +2710,7 @@ test "result_of: after a wrong password"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
 
     match bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret")
         .ok _  => assert false
@@ -2724,7 +2727,7 @@ test "set_controls: ManageDsaIT with a delete"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     set_controls(@c, controls: [manage_dsa_it_control()])
     delete(@c, dn: "cn=Ana,dc=example,dc=org").must()
@@ -2778,14 +2781,14 @@ test "options: the defaults"
     assert opts.port == 389 && opts.security == .start_tls(roots: "")
 
 # A connection in plain text to a server on this machine, bound and closed.
-test "open: in plain text"
+test "connect: in plain text"
     port = fake.free_port()
     server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind")
     fake.until_listening(port)
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert !is_secured(c)
     close(@c).must()
@@ -2799,7 +2802,7 @@ test "close: after a bind"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     close(@c).must()
     assert is_closed(c)
@@ -2813,7 +2816,7 @@ test "is_closed: open, then closed"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert !is_closed(c)
     close(@c).must()
@@ -2828,7 +2831,7 @@ test "is_secured: ldaps"
     opts @= options("localhost")
     opts.port @ port
     opts.security @ .direct(roots: tls.TEST_ROOT)
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert is_secured(c)
     close(@c).must()
@@ -2836,7 +2839,7 @@ test "is_secured: ldaps"
 
 # TLS begun on a connection opened in plain text, where the platform begins
 # TLS over a connection it holds; macOS answers `unsupported`, and there
-# `open` with `.start_tls` is the way.
+# `connect` with `.start_tls` is the way.
 test "start_tls: on an open connection"
     port = fake.free_port()
     darwin = os.system() == .darwin
@@ -2856,7 +2859,7 @@ test "start_tls: on an open connection"
     opts @= options("localhost")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
 
     match start_tls(@c, roots: tls.TEST_ROOT)
         .ok _ =>
@@ -2878,7 +2881,7 @@ test "set_deadline: five seconds"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     set_deadline(@c, ms: 5000).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     close(@c).must()
@@ -2892,7 +2895,7 @@ test "bind: a name and a password"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     close(@c).must()
     assert threads.wait_text(@server) == "ok"
@@ -2905,7 +2908,7 @@ test "bind_anonymous: anonymous"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind_anonymous(@c).must()
     close(@c).must()
     assert threads.wait_text(@server) == "ok"
@@ -2918,7 +2921,7 @@ test "bind_unauthenticated: refused by default"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
 
     match bind_unauthenticated(@c, dn: "cn=guest")
         .ok _  => assert false
@@ -2935,7 +2938,7 @@ test "bind_sasl: a challenge"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     assert bind_sasl(@c, mechanism: "EXTERNAL", credentials: []).must().credentials == bytes.from_text("challenge")
     close(@c).must()
     assert threads.wait_text(@server) == "ok"
@@ -2948,7 +2951,7 @@ test "bind_external: no identity asked"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind_external(@c, authz_id: "").must()
     close(@c).must()
     assert threads.wait_text(@server) == "ok"
@@ -2961,7 +2964,7 @@ test "bind_plain: a user"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind_plain(@c, authz_id: "", user: "ana", password: "secret").must()
     close(@c).must()
     assert threads.wait_text(@server) == "ok"
@@ -2974,7 +2977,7 @@ test "who_am_i: the administrator"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert who_am_i(@c).must() == "dn:cn=admin,dc=example,dc=org"
     close(@c).must()
@@ -2993,7 +2996,7 @@ test "search: entries and a reference"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     q @= query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
     q.attributes @ ["cn", "mail"]
@@ -3012,7 +3015,7 @@ test "lookup: by name"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert text_of(lookup(@c, dn: "cn=Ana,dc=example,dc=org", attributes: ["cn"]).must(), name: "cn").must() == "Bea"
     close(@c).must()
@@ -3026,7 +3029,7 @@ test "root_dse: its naming contexts"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert texts_of(root_dse(@c).must(), name: "namingContexts").must() == ["dc=example,dc=org"]
     close(@c).must()
@@ -3040,7 +3043,7 @@ test "start_search: one at a time"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     q @= query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
     q.attributes @ ["cn", "mail"]
@@ -3066,7 +3069,7 @@ test "next_item: an entry"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     q @= query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
     q.attributes @ ["cn", "mail"]
@@ -3095,7 +3098,7 @@ test "abandon_search: after one entry"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     q @= query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
     q.attributes @ ["cn", "mail"]
@@ -3113,7 +3116,7 @@ test "search_page: the first page"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     page = search_page(
         @c,
@@ -3133,7 +3136,7 @@ test "search_paged: two pages"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     found = search_paged(
         @c,
@@ -3176,7 +3179,7 @@ test "add: a person"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     add(
         @c,
@@ -3194,7 +3197,7 @@ test "modify: four changes"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     changes = [
         Change(kind: .replace, attribute: text_attribute(name: "mail", values: ["ana@example.org"]))
@@ -3214,7 +3217,7 @@ test "delete: absent"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
 
     match delete(@c, dn: "cn=Ana,dc=example,dc=org")
@@ -3232,7 +3235,7 @@ test "rename: renamed and moved"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     rename(
         @c,
@@ -3252,7 +3255,7 @@ test "compare: true then false"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert compare(@c, dn: "cn=Ana,dc=example,dc=org", attribute: "sn", value: bytes.from_text("Rossi")).must()
     assert !compare(@c, dn: "cn=Ana,dc=example,dc=org", attribute: "sn", value: bytes.from_text("Rossi")).must()
@@ -3267,7 +3270,7 @@ test "change_password: changed"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert change_password(@c, user: "cn=Ana,dc=example,dc=org", old: "old", new: "new").must() == "Xy12"
     close(@c).must()
@@ -3281,7 +3284,7 @@ test "extended: Who am I?"
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
-    c @= open(opts).must()
+    c @= connect(opts).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     assert extended(@c, name: WHO_AM_I, value: []).must().value == bytes.from_text("dn:cn=admin,dc=example,dc=org")
     close(@c).must()
