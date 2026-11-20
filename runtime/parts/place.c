@@ -81,7 +81,7 @@ static void hero_report_place(HeroReport *r, const char *file, const char *funct
  * line if it held a line feed. */
 _Noreturn void hero_panic_at(const char *msg, const char *file, const char *function, int64_t line,
                              int64_t column) {
-    hero_stdout_before_report();
+    hero_report_begin();
     HeroReport r = {.used = 0};
     HERO_REPORT_OWN(&r, "panic: ");
     hero_report_message(&r, hero_place_text(msg));
@@ -231,7 +231,7 @@ _Noreturn void hero_panic_must_at(HeroFailure f, const char *file, const char *f
                                   int64_t column) {
     hero_str_require(f.code);
     hero_str_require(f.msg);
-    hero_stdout_before_report();
+    hero_report_begin();
     HeroReport r = {.used = 0};
     HERO_REPORT_OWN(&r, "panic: .must() on an error: ");
     hero_report_message(&r, f.code);
@@ -255,7 +255,7 @@ _Noreturn void hero_panic_library_at(HeroFailure f, const char *file, const char
                                      int64_t column) {
     hero_str_require(f.code);
     hero_str_require(f.msg);
-    hero_stdout_before_report();
+    hero_report_begin();
     HeroReport r = {.used = 0};
     HERO_REPORT_OWN(&r, "panic: ");
     hero_report_message(&r, f.msg);
@@ -277,7 +277,7 @@ _Noreturn void hero_panic_library_at(HeroFailure f, const char *file, const char
 _Noreturn void hero_panic_assert_at(HeroStr text, const char *file, const char *function, int64_t line,
                                     int64_t column) {
     hero_str_require(text);
-    hero_stdout_before_report();
+    hero_report_begin();
     HeroReport r = {.used = 0};
     HERO_REPORT_OWN(&r, "assert failed: ");
     hero_report_message(&r, text);
@@ -292,7 +292,7 @@ _Noreturn void hero_panic_assert_sides_at(HeroStr text, HeroStr left, HeroStr ri
     hero_str_require(text);
     hero_str_require(left);
     hero_str_require(right);
-    hero_stdout_before_report();
+    hero_report_begin();
     HeroReport r = {.used = 0};
     HERO_REPORT_OWN(&r, "assert failed: ");
     hero_report_message(&r, text);
@@ -312,7 +312,7 @@ _Noreturn void hero_panic_assert_str_sides_at(HeroStr text, HeroStr left, HeroSt
     hero_str_require(text);
     hero_str_require(left);
     hero_str_require(right);
-    hero_stdout_before_report();
+    hero_report_begin();
     HeroReport r = {.used = 0};
     HERO_REPORT_OWN(&r, "assert failed: ");
     hero_report_message(&r, text);
@@ -350,7 +350,7 @@ _Noreturn void hero_panic_unmatched_case_at(int64_t index, HeroStr text, const c
     }
     const char *end = start;
     while (end < end_of && *end != ',') end++;
-    hero_stdout_before_report();
+    hero_report_begin();
     HeroReport r = {.used = 0};
     HERO_REPORT_OWN(&r, "panic: this match has no arm for .");
     hero_report_message(&r, (HeroStr){start, (int64_t)(end - start)});
@@ -363,7 +363,7 @@ _Noreturn void hero_panic_unmatched_case_at(int64_t index, HeroStr text, const c
 _Noreturn void hero_panic_unmatched_value_at(HeroStr text, const char *file, const char *function, int64_t line,
                                              int64_t column) {
     hero_str_require(text);
-    hero_stdout_before_report();
+    hero_report_begin();
     HeroReport r = {.used = 0};
     HERO_REPORT_OWN(&r, "panic: this match has no arm for ");
     hero_report_message(&r, text);
@@ -376,7 +376,7 @@ _Noreturn void hero_panic_unmatched_value_at(HeroStr text, const char *file, con
 _Noreturn void hero_panic_unmatched_str_at(HeroStr text, const char *file, const char *function, int64_t line,
                                            int64_t column) {
     hero_str_require(text);
-    hero_stdout_before_report();
+    hero_report_begin();
     HeroReport r = {.used = 0};
     HERO_REPORT_OWN(&r, "panic: this match has no arm for ");
     hero_report_value(&r, text);

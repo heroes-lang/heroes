@@ -115,21 +115,22 @@
 /* 0 until the first refusal takes the stop. */
 static _Atomic int hero_signal_stopping = 0;
 
-/* Every byte of `text` to stderr by `write(2)`, `_write` on Windows. */
+/* Every byte of `text` to stderr: by `write(2)` through `hero_stderr_put`
+ * (`parts/panic.c`), which never waits for a reader that takes nothing
+ * (defect 2606); by `_write` on Windows. */
 static void hero_signal_say(const char *text) {
     size_t left = 0;
     while (text[left] != '\0') left++;
-    while (left > 0) {
 #if defined(_WIN32)
+    while (left > 0) {
         int put = _write(2, text, (unsigned int)left);
-#else
-        ssize_t put = write(2, text, left);
-        if (put < 0 && errno == EINTR) continue;
-#endif
         if (put <= 0) return;
         text += put;
         left -= (size_t)put;
     }
+#else
+    hero_stderr_put(text, left);
+#endif
 }
 
 /* The stop. `parts` are written one after another, then a line feed: one

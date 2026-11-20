@@ -11,18 +11,28 @@
  *
  * Every abort in the language funnels through `hero_panic` or a report of
  * its kind: an out-of-range index, integer overflow, a `.must()` on an error, a
- * slice that splits a character. Each flushes stdout first, because the
- * interesting half of a failing program is what it printed before it stopped,
- * and since defect 2587 only where stdout's lock can be had
- * (`hero_stdout_before_report`, below), so a thread blocked printing never
- * holds a report back.
+ * slice that splits a character. Each begins by `hero_report_begin`, below:
+ * one report per process, stdout flushed first, because the interesting half
+ * of a failing program is what it printed before it stopped, and since defect
+ * 2587 only where stdout's lock can be had, and stderr's lock asked the same
+ * way; and each writes its bytes by `hero_stderr_put`, which never waits for
+ * a reader that is not reading (defect 2606), so a thread blocked printing on
+ * either stream never holds a report back.
  *
- * design.md §4.14 (arithmetic edges abort), §4.20.
+ * design.md §1.12, §4.14 (arithmetic edges abort), §4.20.
  */
 
 #include <signal.h>
-/* `clock_gettime`, for how long a report waits on stdout's lock (below). */
+#include <stdarg.h>
+/* `clock_gettime`, for how long a report waits on a stream's lock (below). */
 #include <time.h>
+#if !defined(_WIN32)
+/* `poll`, `write` and `PIPE_BUF`, for a report's bytes (below). */
+#include <errno.h>
+#include <limits.h>
+#include <poll.h>
+#include <unistd.h>
+#endif
 
 /* THE RUNTIME HAS SPOKEN, and this is the one bit that says so. Every death
  * the runtime initiates is a line on stderr followed by `hero_abort()`, which
@@ -113,13 +123,126 @@ static bool hero_stream_flushed_held(FILE *stream) {
 #endif
 }
 
-static void hero_stdout_before_report(void) {
+/* A REPORT'S BYTES NEVER WAIT FOR A READER THAT IS NOT READING (defect 2606,
+ * 2026-11-20; defect 2587's shape one stream over). A thread blocked writing
+ * stderr into a pipe nobody reads holds stderr's lock inside that `write`, as
+ * a blocked printer holds stdout's, and the report's `fprintf(stderr, ...)`
+ * waited on it: an index's panic on `main` beside such a thread never ended,
+ * killed at 6 s, 3 runs of 3 on this Mac (lane-impl-rt's
+ * `panic_stderr_blocked`). And the lock is half of it: the pipe is full, so a
+ * report written past the lock, straight to the descriptor, waits in its own
+ * `write` for as long.
+ *
+ * So no report byte goes through stdio or a `write` that may wait. Each piece
+ * is written only once `poll` says the descriptor takes it, and at most
+ * `PIPE_BUF` bytes at once, the most a pipe that `poll` calls writable takes
+ * without waiting (POSIX's atomic write; Darwin calls a pipe writable with
+ * `PIPE_BUF` bytes free, Linux with a page). A reader that reads keeps the
+ * report going however slowly it drains, since the wait starts again at each
+ * piece; one that takes nothing for `HERO_REPORT_WAIT_NS` ends every report
+ * byte after it, this one's and any later one's, and the program ends without
+ * them, as it ends without stdout's unflushed bytes (defect 2587). `poll` and
+ * `write` are async-signal-safe, so the reports made inside a signal, a stack
+ * exhausted, a handler refused, a crash told (`parts/stack.c`,
+ * `parts/sigguard.c`, `parts/os.c`), write through here too.
+ *
+ * What it costs, said: a terminal stopped by Ctrl-S, or a pager not yet
+ * scrolled whose pipe is full, loses the report where it once waited for the
+ * reader; the program ends instead, at the status it always had.
+ *
+ * WINDOWS HAS NO `poll` ON A PIPE, and its C library's `_write` takes the
+ * descriptor's own lock, which a blocked writer holds: its arm writes through
+ * stderr as it always has, and a writer blocked there still holds a report
+ * back, unrun on the box. */
+#if !defined(_WIN32)
+static _Atomic int hero_report_stalled = 0;
+#endif
+
+static void hero_stderr_put(const char *p, size_t n) {
+#if defined(_WIN32)
+    while (n > 0) {
+        size_t put = fwrite(p, 1, n, stderr);
+        if (put == 0) return;
+        p += put;
+        n -= put;
+    }
+#else
+    while (n > 0 && atomic_load_explicit(&hero_report_stalled, memory_order_relaxed) == 0) {
+        struct pollfd out = {.fd = STDERR_FILENO, .events = POLLOUT, .revents = 0};
+        int ready = poll(&out, 1, (int)(HERO_REPORT_WAIT_NS / INT64_C(1000000)));
+        if (ready < 0 && errno == EINTR) continue;
+        if (ready <= 0 || (out.revents & POLLOUT) == 0) {
+            atomic_store_explicit(&hero_report_stalled, 1, memory_order_relaxed);
+            return;
+        }
+        ssize_t put = write(STDERR_FILENO, p, n < PIPE_BUF ? n : PIPE_BUF);
+        if (put < 0 && (errno == EINTR || errno == EAGAIN)) continue;
+        if (put <= 0) return;
+        p += (size_t)put;
+        n -= (size_t)put;
+    }
+#endif
+}
+
+/* A report's line with C's formatting, written by `hero_stderr_put`. The
+ * buffer is on the stack, so the report allocates nothing on its failing path;
+ * every format the runtime hands here, its names written in, is under a
+ * quarter of it, and a longer one would leave cut, ended by its line feed. */
+#define HERO_REPORT_PRINTED 4096
+
+static void hero_report_printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
+static void hero_report_printf(const char *format, ...) {
+    char text[HERO_REPORT_PRINTED];
+    va_list args;
+    va_start(args, format);
+    int n = vsnprintf(text, sizeof text, format, args);
+    va_end(args);
+    if (n < 0) return;
+    if ((size_t)n < sizeof text) {
+        hero_stderr_put(text, (size_t)n);
+        return;
+    }
+    hero_stderr_put(text, sizeof text - 1);
+    hero_stderr_put("\n", 1);
+}
+
+/* ONE REPORT PER PROCESS (defect 2606). Every report ends the process, and
+ * since its bytes go past stderr's lock, two threads' reports at once would
+ * cross byte by byte; before, a second report waited on that lock until the
+ * first one's abort ended it. So the first report to begin is the only one
+ * written: a second thread that begins one waits here for the end the first
+ * is making, which is bounded now, every wait of a report having a bound. The
+ * thread that holds it passes, so a report that stops inside itself is still
+ * said. Its mark is a thread-local's address, unique to its thread and never
+ * 0. Windows keeps its reports as they were (above), so it takes none. */
+#if !defined(_WIN32)
+static _Atomic uintptr_t hero_report_owner = 0;
+static _Thread_local char hero_report_here;
+#endif
+
+static void hero_report_latch(void) {
+#if !defined(_WIN32)
+    uintptr_t me = (uintptr_t)&hero_report_here;
+    uintptr_t none = 0;
+    if (atomic_compare_exchange_strong(&hero_report_owner, &none, me) || none == me) return;
+    for (;;) pause();
+#endif
+}
+
+/* The beginning of every report: the latch, stdout flushed where its lock can
+ * be had, and stderr's lock asked the same way, so no other thread's line on
+ * stderr falls inside the report; each lock is KEPT where had. */
+static void hero_report_begin(void) {
+    hero_report_latch();
     (void)hero_stream_flushed_held(stdout);
+    (void)hero_stream_flushed_held(stderr);
 }
 
 _Noreturn void hero_panic(const char *msg) {
-    hero_stdout_before_report();
-    fprintf(stderr, "panic: %s\n", msg);
+    hero_report_begin();
+    hero_stderr_put("panic: ", 7);
+    hero_stderr_put(msg, strlen(msg));
+    hero_stderr_put("\n", 1);
     hero_abort();
 }
 
@@ -207,7 +330,7 @@ _Noreturn void hero_unreachable(void) {
  * between two printers of one statement but the printers: every argument is
  * computed before the first (`printing.hero` prints values already held), so
  * no `print` can open inside another. A panic inside the span, a `str` refused
- * by its printer, finds the lock already its own (`hero_stdout_before_report`).
+ * by its printer, finds the lock already its own (`hero_report_begin`).
  * Its price, in instructions retired over 100,000 `print`s of three values
  * into `/dev/null` (`/usr/bin/time -l`, best of five after the first, this Mac,
  * 2026-11-19): 562,888,637 without the lock and 579,266,753 with it, about 160
