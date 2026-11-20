@@ -41,7 +41,13 @@ __attribute__((naked, noinline, returns_twice)) static int inline_save(inline_bu
                      "mov w0, #0\n\t"
                      "ret");
 }
-__attribute__((naked, noinline, noreturn)) static void inline_jump(inline_buf b) {
+/* Naked and NOT `noreturn`: under UndefinedBehaviorSanitizer clang instruments
+ * the end of a `noreturn` function with a call, and at `-O2` it set that call's
+ * argument in x0 before the assembly, which then read its buffer from the wrong
+ * place (SIGILL in Linux arm64 under `--sanitize -O2`, 2026-11-20, read in its
+ * disassembly); so the stack unpoisoning AddressSanitizer gives a `noreturn`
+ * call is asked by hand before the jump (`INLINE_JUMP`). */
+__attribute__((naked, noinline)) static void inline_jump(inline_buf b) {
     __asm__ volatile("ldp x19, x20, [x0, #0]\n\t"
                      "ldp x21, x22, [x0, #16]\n\t"
                      "ldp x23, x24, [x0, #32]\n\t"
@@ -57,8 +63,17 @@ __attribute__((naked, noinline, noreturn)) static void inline_jump(inline_buf b)
                      "mov w0, #1\n\t"
                      "ret");
 }
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+void __asan_handle_no_return(void);
+#define INLINE_UNPOISON() __asan_handle_no_return()
+#endif
+#endif
+#if !defined(INLINE_UNPOISON)
+#define INLINE_UNPOISON() ((void)0)
+#endif
 #define INLINE_SAVE(b) inline_save(b)
-#define INLINE_JUMP(b) inline_jump(b)
+#define INLINE_JUMP(b) (INLINE_UNPOISON(), inline_jump(b))
 #else
 #error this case names no jump of its own for this machine
 #endif

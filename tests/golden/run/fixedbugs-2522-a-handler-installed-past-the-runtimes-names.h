@@ -10,7 +10,12 @@
  * `dlsym`, then calls the function, the signal over, from far deeper. POSIX's
  * signals and `dlfcn.h`, which a platform without them lacks: `unistd.h` is
  * asked first, so such a platform is told the header is missing and skips the
- * case (`absence.hero`). */
+ * case (`absence.hero`). `sigset`, `siginterrupt` and `RTLD_NEXT` are glibc's
+ * only under `_GNU_SOURCE`, which glibc reads at its first header, so it is
+ * defined here first, before any (a unit reads none before its groups). */
+#if !defined(_GNU_SOURCE)
+#define _GNU_SOURCE 1
+#endif
 #include <unistd.h>
 #include <dlfcn.h>
 #include <setjmp.h>
@@ -54,7 +59,11 @@ static void past_action(struct sigaction *sa, void (*handler)(int)) {
 /* SIGUSR1's handler installed by `how`: 1 the `sigaction` `dlsym` finds with
  * the C library's own handle, 2 the one it finds next after this program, 3
  * `sigset`, 4 `signal` and then `siginterrupt`. 0, or -1 where one was not
- * found or the system refused. */
+ * found or the system refused. `sigset` and `siginterrupt` are installers a
+ * library calls still, which glibc marks deprecated; that warning is held off
+ * here alone. */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 static inline int32_t past_install(int32_t how, int64_t (*called)(int64_t)) {
     struct sigaction sa;
     past_called = called;
@@ -75,6 +84,7 @@ static inline int32_t past_install(int32_t how, int64_t (*called)(int64_t)) {
     }
     return -1;
 }
+#pragma clang diagnostic pop
 
 /* SIGUSR1 raised once; the handler's call of the function is what is judged. */
 static inline int32_t past_raise(void) { return raise(SIGUSR1); }
