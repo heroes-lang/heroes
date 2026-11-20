@@ -3,6 +3,7 @@
 # the longest start some texts share, and the words of a list that begin with
 # the word before the cursor.
 
+use strings
 use term/internal/width
 use unicode
 
@@ -12,7 +13,7 @@ use unicode
 function group_start(s: str lent, at: i64) -> i64
     back: i64 @= width.previous_at(s, at)
 
-    while back > 0 && width.cells_of_point(width.point_at(s, back)) == 0
+    while back > 0 && width.takes_no_cell(s, back)
         back @ width.previous_at(s, back)
 
     return back
@@ -22,7 +23,7 @@ function group_start(s: str lent, at: i64) -> i64
 function group_end(s: str lent, at: i64) -> i64
     end: i64 @= width.next_at(s, at)
 
-    while end < s.len() && width.cells_of_point(width.point_at(s, end)) == 0
+    while end < s.len() && width.takes_no_cell(s, end)
         end @ width.next_at(s, end)
 
     return end
@@ -103,17 +104,6 @@ record Found
     # The words that begin with it, in their order.
     candidates: [str]
 
-# Whether the bytes of `s` begin with those of `prefix`.
-function begins_with(s: str lent, prefix: str lent) -> bool
-    if prefix.len() > s.len()
-        return false
-
-    for i in range(from: 0, to: prefix.len())
-        if s[i] != prefix[i]
-            return false
-
-    return true
-
 # The words of `words` that begin with the text of `line` from the last space
 # before `cursor` to it; `cursor` past the end is the end, inside a character
 # that character's start.
@@ -138,7 +128,7 @@ function words_from(words: [str], line: str, cursor: i64) -> Found
     kept: [str] @= []
 
     for w in words
-        if begins_with(s: w, prefix: typed)
+        if strings.has_prefix(s: w, prefix: typed)
             kept @ kept.push(w)
 
     return Found(from: from, candidates: kept)
