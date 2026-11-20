@@ -6,9 +6,12 @@
 # written. The compiler's own artifacts take this route (`print_artifact`, on
 # the thread every command runs on), so `parse --dump-ast` hung the same way.
 # Now a thread leaving its body gives back a span it holds
-# (`runtime/parts/panic.c`'s `hero_print_thread_leave`).
+# (`runtime/parts/panic.c`'s `hero_print_thread_leave`). Since defect 2607 the
+# door a program and the compiler write through alone is `hero_write_out`,
+# which opens no span past its call, and this case writes through it as the
+# compiler's artifacts now do.
 extern "hero_os.h"
-    function hero_print_str(text: str)
+    function hero_write_out(text: str)
     function hero_thread_spawn_sized(body: (function(i64) -> i64), arg: i64, bytes: i64, @why: i64) -> i64
     function hero_thread_join(handle: i64) -> i64
     function hero_exit(code: i64)
@@ -20,5 +23,5 @@ function main()
 
 # Writes a line the way the compiler writes an artifact, and ends.
 function command(_: i64) -> i64
-    hero_print_str(text: "written by a thread that then ended\n")
+    hero_write_out(text: "written by a thread that then ended\n")
     return 0

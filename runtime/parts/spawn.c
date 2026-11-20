@@ -718,7 +718,7 @@ int64_t hero_thread_limit(void) { return HERO_SPAWN_SLOTS; }
  * `hero_abort`, as every report of the gate ends: C's `exit` would flush
  * stdout and wait on the lock a worker blocked in a `print` holds, which is
  * also why stdout is flushed here only where its lock can be had
- * (`hero_stdout_before_report`, `parts/panic.c`). */
+ * (`hero_report_begin`, `parts/panic.c`). */
 #define HERO_SPAWN_NAMED 8
 
 #if !defined(_WIN32)
@@ -761,13 +761,13 @@ static void hero_spawn_check_joined(void) {
     HERO_SPAWN_DROP();
     if (left == 0) return;
 
-    hero_stdout_before_report();
-    fprintf(stderr,
+    hero_report_begin();
+    hero_report_printf(
             "panic: %lld thread(s) never joined when `main` returned, %lld of them still running — every thread a "
             "program starts is joined before `main` returns, and this program is missing that many\n",
             (long long)left, (long long)running);
     for (int64_t k = 0; k < left && k < HERO_SPAWN_NAMED; k += 1) {
-        fprintf(stderr, "  thread %lld, %s", (long long)handle[k], state[k] == 1 ? "still running" : "finished");
+        hero_report_printf("  thread %lld, %s", (long long)handle[k], state[k] == 1 ? "still running" : "finished");
 #if !defined(_WIN32)
         hero_spawn_say_function(" ", runs[k]);
         /* A return address names the instruction after the call; one byte
@@ -777,8 +777,8 @@ static void hero_spawn_check_joined(void) {
         (void)runs[k];
         (void)from[k];
 #endif
-        fputs("\n", stderr);
+        hero_stderr_put("\n", 1);
     }
-    if (left > HERO_SPAWN_NAMED) fprintf(stderr, "  and %lld more\n", (long long)(left - HERO_SPAWN_NAMED));
+    if (left > HERO_SPAWN_NAMED) hero_report_printf("  and %lld more\n", (long long)(left - HERO_SPAWN_NAMED));
     hero_abort();
 }

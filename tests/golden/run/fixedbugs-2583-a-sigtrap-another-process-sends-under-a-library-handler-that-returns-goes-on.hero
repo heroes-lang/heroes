@@ -1,0 +1,13 @@
+# Fixed 2026-11-20, defect 2583, lane-signals: a library's handler installed
+# before `main` notes a SIGTRAP and returns, and another process sends the
+# program one (a child it forks, which sends it to its parent and ends).
+# Symptom: plain C goes on; the program died at 133 under *the process is
+# dying of SIGTRAP, sent by process N*, on this Mac and in Linux arm64.
+# Cause: as `fixedbugs-2583-a-sigtrap-the-program-sends-itself-...`: a signal
+# a process sent, its handler returned, is let go, as C lets it go.
+extern "fixedbugs-2583-a-library-that-notes-a-signal-and-returns.h"
+    function noted_sent_by_a_child() -> i64
+
+function main()
+    print("noted: ", noted_sent_by_a_child())
+    print("and on")

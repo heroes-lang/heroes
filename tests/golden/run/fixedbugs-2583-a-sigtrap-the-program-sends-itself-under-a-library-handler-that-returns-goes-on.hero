@@ -1,0 +1,20 @@
+# Fixed 2026-11-20, defect 2583, lane-signals: a library's handler installed
+# before `main` notes a SIGTRAP and returns, and the program sends itself one
+# by `raise`, by `kill` of its own process and by `pthread_kill` of its own
+# thread (`fixedbugs-2583-a-library-that-notes-a-signal-and-returns.h`).
+# Symptom: plain C goes on; the program died at 133 under *the process is
+# dying of SIGTRAP, raised by this process*, 3 runs of 3 on this Mac, and in
+# Linux arm64 too.
+# Cause: the runtime's lease handler, called after the library's, read a
+# register file it had not edited as a trap declined, which would run again,
+# and ended the process. A signal a process sent is delivered after the call
+# that sent it, so the handler's return sends the thread on: one with a sender
+# and `si_code` at or below 0 is now let go, as C lets it go.
+extern "fixedbugs-2583-a-library-that-notes-a-signal-and-returns.h"
+    function noted_sent_self(how: i64) -> i64
+
+function main()
+    print("by raise: ", noted_sent_self(how: 1))
+    print("by kill: ", noted_sent_self(how: 2))
+    print("by pthread_kill: ", noted_sent_self(how: 3))
+    print("and on")

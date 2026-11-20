@@ -249,8 +249,8 @@ int64_t hero_runtime_live(void) { return hero_live_blocks; }
  * shipped goldens went red on a message that was right. Last, the sentence a
  * case asserts is contiguous and the address a reader needs is still here. */
 static void hero_handle_report_stray(size_t strays, const void *first_stray, const HeroPlace *site) {
-    hero_stdout_before_report();
-    fprintf(stderr, "panic: %llu C handle(s) given back that were never taken — "
+    hero_report_begin();
+    hero_report_printf("panic: %llu C handle(s) given back that were never taken — "
                     "the set of live handles did not hold that address when a "
                     "call that ends or transfers it ran. Three things do this: "
                     "the same handle given back TWICE, which is a double release "
@@ -273,8 +273,8 @@ static void hero_handle_report_stray(size_t strays, const void *first_stray, con
  * of ABI 24 came after C had already freed twice (the landing review,
  * 2026-09-24). Panel 176 ruled it a message and a shim, not a word. */
 static void hero_handle_report_twice_in_one_call(const void *h, size_t held, const HeroPlace *site) {
-    hero_stdout_before_report();
-    fprintf(stderr, "panic: one call takes the same C handle at two consuming positions, "
+    hero_report_begin();
+    hero_report_printf("panic: one call takes the same C handle at two consuming positions, "
                     "and the handle holds %llu reference(s) — the library takes one "
                     "reference where the binding says it takes two, as OpenSSL's "
                     "`SSL_set_bio(s, b, b)` does, so the binding needs a shim that "
@@ -315,8 +315,8 @@ void hero_runtime_check_leaks(void) {
     hero_lend_audit_given("found when the program ended");
     int64_t blocks = hero_live_blocks;
     if (blocks != 0) {
-        hero_stdout_before_report();
-        fprintf(stderr, "panic: %lld heap blocks still live at exit "
+        hero_report_begin();
+        hero_report_printf("panic: %lld heap blocks still live at exit "
                         "(a missing decref) — this is a compiler bug\n",
                 (long long)blocks);
         hero_abort();
@@ -335,33 +335,33 @@ void hero_runtime_check_leaks(void) {
         int64_t names = hero_dir_names_held_at_exit();
         int64_t listing = names + hero_dir_blocks_held_at_exit();
         int64_t rest = scratch - words - variables - folders - listing;
-        hero_stdout_before_report();
+        hero_report_begin();
         if (words > 0) {
-            fprintf(stderr, "panic: a launch's argument list still holds %lld word(s) at exit — "
+            hero_report_printf("panic: a launch's argument list still holds %lld word(s) at exit — "
                             "`hero_run_arg` keeps each word until `hero_run_reset()` gives the list "
                             "back, and this program did not call it after its last `hero_run_arg`\n",
                     (long long)words);
         }
         if (variables > 0) {
-            fprintf(stderr, "panic: a launch still holds %lld variable(s) for its child at exit — "
+            hero_report_printf("panic: a launch still holds %lld variable(s) for its child at exit — "
                             "`hero_run_env` keeps each until `hero_run_reset()` gives them "
                             "back, and this program did not call it after its last `hero_run_env`\n",
                     (long long)variables);
         }
         if (folders > 0) {
-            fprintf(stderr, "panic: a launch still holds %lld working folder(s) for its child at exit — "
+            hero_report_printf("panic: a launch still holds %lld working folder(s) for its child at exit — "
                             "`hero_run_dir` keeps one until `hero_run_reset()` gives it back, and "
                             "this program did not call it after its last `hero_run_dir`\n",
                     (long long)folders);
         }
         if (listing > 0) {
-            fprintf(stderr, "panic: a directory listing of %lld name(s) is still held at exit — "
+            hero_report_printf("panic: a directory listing of %lld name(s) is still held at exit — "
                             "`hero_dir_scan` keeps its listing until `hero_dir_release()` gives it "
                             "back, and this program did not call it after its last scan\n",
                     (long long)names);
         }
         if (rest != 0) {
-            fprintf(stderr, "panic: %lld scratch buffers still live at exit "
+            hero_report_printf("panic: %lld scratch buffers still live at exit "
                             "(a runtime call kept what it borrowed) — this is a "
                             "runtime bug\n",
                     (long long)rest);
@@ -375,8 +375,8 @@ void hero_runtime_check_leaks(void) {
     if (held != 0) {
         HeroPlaces taken = {.used = 0};
         hero_lease_places(&taken);
-        hero_stdout_before_report();
-        fprintf(stderr, "panic: %lld lease(s) never ended — every `.lease()` owes "
+        hero_report_begin();
+        hero_report_printf("panic: %lld lease(s) never ended — every `.lease()` owes "
                         "one `end_lease`, and this program is missing that "
                         "many\n",
                 (long long)held);
@@ -485,8 +485,8 @@ void hero_runtime_check_leaks(void) {
         const char *began = doors == 0      ? "a mark began, `acquires` or `retains`,"
                             : doors >= live ? "a door of the runtime began"
                                             : "a mark began, `acquires` or `retains`, or a door of the runtime began,";
-        hero_stdout_before_report();
-        fprintf(stderr, "panic: %llu C handle(s) never given back — every life %s owes one "
+        hero_report_begin();
+        hero_report_printf("panic: %llu C handle(s) never given back — every life %s owes one "
                         "release, and this program is missing that many. The first is at %p\n",
                 (unsigned long long)live, began, first_live);
         hero_places_write(&taken, live);
@@ -1045,8 +1045,8 @@ static int hero_dead_holds_locked(const void *h) {
  * a runtime abort can name is the C's, not the author's. The address goes
  * last, for the stray report's reason. */
 static void hero_handle_report_poisoned(const char *where, const HeroPlace *site) {
-    hero_stdout_before_report();
-    fprintf(stderr, "panic: a dead C handle reached %s: a call marked `consumes` or `transfers` "
+    hero_report_begin();
+    hero_report_printf("panic: a dead C handle reached %s: a call marked `consumes` or `transfers` "
                     "ended this handle's life and emptied the binding, field or element it "
                     "was read from, so the program is using a handle after giving it back. "
                     "Give a handle back once, after its last use; a handle that must outlive "
@@ -1057,8 +1057,8 @@ static void hero_handle_report_poisoned(const char *where, const HeroPlace *site
 }
 
 static void hero_handle_report_remembered(const char *where, const void *h, const HeroPlace *site) {
-    hero_stdout_before_report();
-    fprintf(stderr, "panic: a C handle reached %s at an address a call marked `consumes` or "
+    hero_report_begin();
+    hero_report_printf("panic: a C handle reached %s at an address a call marked `consumes` or "
                     "`transfers` ended, and nothing has handed that address out since: a "
                     "copy made before the ending call, which C would read or free after "
                     "the program gave it back. The handle is at %p\n",
@@ -1123,8 +1123,8 @@ void hero_handle_eq_from(const HeroPlace *site) { hero_handle_eq_where = site; }
 bool hero_handle_eq_at(const void *a, const void *b, const HeroPlace *site) {
     void *dead = atomic_load_explicit(&hero_handle_dead_page, memory_order_acquire);
     if (dead != NULL && (a == dead || b == dead)) {
-        hero_stdout_before_report();
-        fprintf(stderr, "panic: `==` read a dead C handle: a call marked `consumes` or `transfers` "
+        hero_report_begin();
+        hero_report_printf("panic: `==` read a dead C handle: a call marked `consumes` or `transfers` "
                         "ended its life and emptied the binding, field or element it was read "
                         "from, and a dead value holds no address to compare. Compare a handle "
                         "before giving it back, or keep a reference with `retains`\n");
@@ -1141,8 +1141,8 @@ bool hero_handle_eq(const void *a, const void *b) { return hero_handle_eq_at(a, 
  * like the stray, and it says what the two declarations say and nothing about
  * why they disagree. */
 static void hero_handle_report_crossed(const void *h, const char *owed, const char *by, const HeroPlace *site) {
-    hero_stdout_before_report();
-    fprintf(stderr, "panic: a C handle was given back to `%s`, and the mark that began its "
+    hero_report_begin();
+    hero_report_printf("panic: a C handle was given back to `%s`, and the mark that began its "
                     "life names `%s` — the set names the calls that may end this "
                     "handle's life, and `%s` is not one of them. The handle is at %p\n",
             by, owed, by, h);
@@ -1302,8 +1302,8 @@ void hero_handle_kept(const void *h, uint64_t life) {
  * is refused here, and so is a real `BIO_new_fp(BIO_CLOSE)` over a `popen`
  * stream, which C would end with `fclose` and leave a child unwaited. */
 static void hero_handle_report_misdirected(const void *h, const char *owed, const char *into, const HeroPlace *site) {
-    hero_stdout_before_report();
-    fprintf(stderr, "panic: a C handle was handed into a value that will end it with `%s`, "
+    hero_report_begin();
+    hero_report_printf("panic: a C handle was handed into a value that will end it with `%s`, "
                     "and the mark that began its life names `%s` — the set names the "
                     "calls that may end this handle's life, and `%s` is not one of them. "
                     "The handle is at %p\n",
@@ -1334,8 +1334,8 @@ uint64_t hero_handle_transferring_at(const void *h, const char *into, const Hero
 uint64_t hero_handle_transferring(const void *h, const char *into) { return hero_handle_transferring_at(h, into, NULL); }
 
 static void hero_handle_report_joined_wrong(const void *h, const char *owed, const char *set, const HeroPlace *site) {
-    hero_stdout_before_report();
-    fprintf(stderr, "panic: a reference marked `retains %s` was taken to a C handle whose "
+    hero_report_begin();
+    hero_report_printf("panic: a reference marked `retains %s` was taken to a C handle whose "
                     "life a mark owed to `%s` — the two name no releaser in common, so one "
                     "of the two releases the program now owes would end the other's life "
                     "the wrong way. The handle is at %p\n",

@@ -115,21 +115,22 @@
 /* 0 until the first refusal takes the stop. */
 static _Atomic int hero_signal_stopping = 0;
 
-/* Every byte of `text` to stderr by `write(2)`, `_write` on Windows. */
+/* Every byte of `text` to stderr: by `write(2)` through `hero_stderr_put`
+ * (`parts/panic.c`), which never waits for a reader that takes nothing
+ * (defect 2606); by `_write` on Windows. */
 static void hero_signal_say(const char *text) {
     size_t left = 0;
     while (text[left] != '\0') left++;
-    while (left > 0) {
 #if defined(_WIN32)
+    while (left > 0) {
         int put = _write(2, text, (unsigned int)left);
-#else
-        ssize_t put = write(2, text, left);
-        if (put < 0 && errno == EINTR) continue;
-#endif
         if (put <= 0) return;
         text += put;
         left -= (size_t)put;
     }
+#else
+    hero_stderr_put(text, left);
+#endif
 }
 
 /* The stop. `parts` are written one after another, then a line feed: one
@@ -319,9 +320,12 @@ typedef struct {
     uintptr_t lo;
     uintptr_t hi;
 #if defined(HERO_SIG_WRAPS)
-    /* B': the frames of the wrappers this thread is inside, innermost last. */
+    /* B': the frames of the wrappers this thread is inside, innermost last;
+     * and how many of them, from the outermost, a jump J could not follow
+     * passed over (`parts/sigjump.c`), each of which may have been left. */
     uintptr_t entries[HERO_SIG_DEPTH];
     int depth;
+    int unsure;
     /* J: which buffer each save point filled, the frame of the call that
      * filled it, the buffer's bytes as the C library left them (0 until read
      * at this thread's next save point or jump), and how many bytes it holds;
@@ -335,6 +339,13 @@ typedef struct {
 } HeroSignalStack;
 
 static _Thread_local HeroSignalStack hero_signal_stack;
+
+/* The fourth question's three answers: no handler stands; one stands that
+ * this runtime saw begin and no jump since passed over; or one stands that a
+ * jump it could not follow passed over, which may have left it. */
+#define HERO_SIG_OUTSIDE 0
+#define HERO_SIG_INSIDE 1
+#define HERO_SIG_UNSURE 2
 
 #if defined(HERO_SIG_WRAPS)
 /* `parts/siginstall.c`, below: is a wrapper still running above `frame`? */
@@ -383,16 +394,35 @@ static void hero_signal_measure(void) {
     }
 }
 
-/* The refusal: `delivered` where the system called the function itself, else
- * a handler of C's called it. */
-static _Noreturn void hero_signal_refuse(const char *what, int delivered) {
+/* How a refusal was reached, which its first words say. */
+#define HERO_SIGNAL_CALLED 0    /* a handler of C's called the function */
+#define HERO_SIGNAL_DELIVERED 1 /* the system called it itself */
+#define HERO_SIGNAL_UNFOLLOWED 2
+
+/* HERO_SIGNAL_UNFOLLOWED: the handler the refusal rests on was seen to begin,
+ * and then C jumped, while it ran, to a buffer this runtime never saw filled
+ * (panel 251's R1: a jump to a buffer with no trusted record keeps every
+ * entry). Whether that jump left the handler or landed inside it is not known
+ * here, so the words say that and no more (defect 2522's row, *it owes words
+ * of its own*): R1's *C called it while handling a signal* was false of a
+ * correct program that copied its buffer with `memcpy`, jumped out of the
+ * handler through the copy and later called the function. The refusal stands, R1's error toward a told refusal. Measured before these words: 40 runs of
+ * 40 at `-O0` and at `-O2` on this Mac and 20 of 20 at `-O0` in Linux arm64,
+ * 2026-11-20, each refused with R1's. */
+static _Noreturn void hero_signal_refuse(const char *what, int how) {
     const char *const said[] = {
         "panic: ",
         what,
-        delivered ? " ran as a signal handler: the system called it inside a signal, where neither this "
-                    "runtime's memory nor the C library's is safe to use. "
-                  : " was called from inside a signal handler: C called it while handling a signal, where "
-                    "neither this runtime's memory nor the C library's is safe to use. ",
+        how == HERO_SIGNAL_DELIVERED
+            ? " ran as a signal handler: the system called it inside a signal, where neither this "
+              "runtime's memory nor the C library's is safe to use. "
+        : how == HERO_SIGNAL_UNFOLLOWED
+            ? " was called after C, inside a signal handler, jumped to a buffer this runtime never saw "
+              "filled (copied with `memcpy`, or saved where it does not look), so whether the jump left "
+              "the handler is not known: a handler not seen to end is held to be running, where neither "
+              "this runtime's memory nor the C library's is safe to use. "
+            : " was called from inside a signal handler: C called it while handling a signal, where "
+              "neither this runtime's memory nor the C library's is safe to use. ",
         HERO_SIGNAL_REMEDY,
     };
     hero_signal_stop(said, sizeof said / sizeof said[0]);
@@ -409,25 +439,28 @@ void hero_callback_entered(const char *what, void *ret, void *frame) {
     uintptr_t wrapped = atomic_load_explicit(&hero_signal_returns[2], memory_order_relaxed);
     uintptr_t wrapped_info = atomic_load_explicit(&hero_signal_returns[3], memory_order_relaxed);
     uintptr_t back = (uintptr_t)ret;
-    if (plain != 0 && (back == plain || back == info)) hero_signal_refuse(what, 1);
-    if (wrapped != 0 && (back == wrapped || back == wrapped_info)) hero_signal_refuse(what, 1);
+    if (plain != 0 && (back == plain || back == info)) hero_signal_refuse(what, HERO_SIGNAL_DELIVERED);
+    if (wrapped != 0 && (back == wrapped || back == wrapped_info)) hero_signal_refuse(what, HERO_SIGNAL_DELIVERED);
     HeroSignalStack *own = NULL;
     if (atomic_load_explicit(&hero_signal_keyed, memory_order_acquire) == 2) {
         own = pthread_getspecific(atomic_load_explicit(&hero_signal_key, memory_order_relaxed));
         if (own == NULL) hero_thread_refuse(what);
     }
 #if defined(HERO_SIG_WRAPS)
-    if (hero_sig_inside(own, (uintptr_t)frame)) hero_signal_refuse(what, 0);
+    int inside = hero_sig_inside(own, (uintptr_t)frame);
 #elif defined(HERO_SIG_REBIND)
-    if (hero_rebind_inside()) hero_signal_refuse(what, 0);
+    int inside = hero_rebind_inside();
+#else
+    int inside = HERO_SIG_OUTSIDE;
 #endif
+    if (inside != HERO_SIG_OUTSIDE) hero_signal_refuse(what, inside == HERO_SIG_UNSURE ? HERO_SIGNAL_UNFOLLOWED : HERO_SIGNAL_CALLED);
     if (plain == 0 || own == NULL) return;
     uintptr_t lo = own->lo;
     uintptr_t hi = own->hi;
     uintptr_t fp = (uintptr_t)frame;
     if (fp < lo || fp >= hi) {
         stack_t now;
-        if (sigaltstack(NULL, &now) == 0 && (now.ss_flags & SS_ONSTACK) != 0) hero_signal_refuse(what, 0);
+        if (sigaltstack(NULL, &now) == 0 && (now.ss_flags & SS_ONSTACK) != 0) hero_signal_refuse(what, HERO_SIGNAL_CALLED);
         return;
     }
     /* A record is two words, so the highest one the walk may read starts at
@@ -437,8 +470,8 @@ void hero_callback_entered(const char *what, void *ret, void *frame) {
         uintptr_t next = ((const uintptr_t *)fp)[0];
         if (next <= fp || next > top || (next & (sizeof(uintptr_t) - 1)) != 0) return;
         uintptr_t above = ((const uintptr_t *)next)[1];
-        if (above == plain || above == info) hero_signal_refuse(what, 0);
-        if (wrapped != 0 && (above == wrapped || above == wrapped_info)) hero_signal_refuse(what, 0);
+        if (above == plain || above == info) hero_signal_refuse(what, HERO_SIGNAL_CALLED);
+        if (wrapped != 0 && (above == wrapped || above == wrapped_info)) hero_signal_refuse(what, HERO_SIGNAL_CALLED);
         fp = next;
     }
 }
