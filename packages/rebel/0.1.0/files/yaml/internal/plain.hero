@@ -72,7 +72,7 @@ function read(text: str, at: i64, indent: i64, in_flow: bool) -> token.Lexeme?
                     code: INVALID,
                     msg: source.said(text: text, at: i, what: f"{name} stands in a plain scalar, and YAML allows it only between double quotes, as an escape")
                 )
-            i @ i + unicode.width_at(text, i)
+            i @ i + unicode.len_at(text, i)
 
         last: i64 @= i
 

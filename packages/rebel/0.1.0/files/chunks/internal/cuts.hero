@@ -95,7 +95,7 @@ function space_width(s: str, at: i64) -> i64
         if b == ' ' || b >= 9 && b <= 13
             return 1
         return 0
-    width = unicode.width_at(s, index: at)
+    width = unicode.len_at(s, index: at)
 
     if unicode.is_space(s.slice(from: at, to: at + width))
         return width
@@ -111,7 +111,7 @@ function word_bounds(s: str) -> [i64]
         width = space_width(s, at: at)
 
         if width == 0
-            at @ at + unicode.width_at(s, index: at)
+            at @ at + unicode.len_at(s, index: at)
         else
             while at < s.len() && space_width(s, at: at) > 0
                 at @ at + space_width(s, at: at)

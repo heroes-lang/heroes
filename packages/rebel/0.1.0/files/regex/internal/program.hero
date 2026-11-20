@@ -61,7 +61,7 @@ record Set
     # The ranges, sorted and apart, as `sets.normalized` leaves them: two
     # entries for each, its first code point and its last.
     ranges: [i64]
-    # General categories it holds, as `unicode.category` writes them, one
+    # General categories it holds, as `unicode.letter_of` writes them, one
     # letter standing for every category it begins.
     categories: [str]
     # General categories whose every character outside it holds.

@@ -307,19 +307,12 @@ capability network/counters  the counters of every network interface: bytes, pac
   python  -
   note    added 2026-11-17 (queue 58); psutil's `net_io_counters(pernic=True)` the yardstick, one record per interface (a sum over them is a loop of the program's); Darwin's are the interface MIB's exact 64-bit counts (`IFMIB_IFDATA`), measured equal to `netstat -ib` (31,016,318,425 bytes received on en0) where `sysctl`'s `NET_RT_IFLIST2` and `getifaddrs` gave this process 950,809,600, cut to 32 bits and rounded to KiB; its dropped sent are its send queue's, 32 bits; Linux's `/proc/net/dev`, equal in the arm64 container; Windows' `GetIfTable2`, its filter interfaces left out since they count again what is below them, unrun
 
-capability machine/family  whether the system is Windows or keeps POSIX's rules
-  heroes  os.family
-  go      -
-  rust    env::consts::FAMILY
-  python  os.name
-  note    told by the floor's `hero_run_exe_suffix`, ".exe" on Windows alone, as the package `path` tells its rules
-
 capability machine/system-name  which system the program runs on: Linux, Darwin, Windows, another
   heroes  os.system
   go      -
-  rust    env::consts::OS
-  python  sys.platform, platform.system, platform.platform
-  note    a variant, `darwin`, `linux`, `windows` or `other`, where Rust and Python answer text; the platform layer's own arm answers it as it is compiled (`__APPLE__`, `__linux__`, `_WIN32`), so it never fails and reads no convention XDG_CACHE_HOME could imitate. `family` stays, the question of the path rules
+  rust    env::consts::OS, env::consts::FAMILY
+  python  sys.platform, platform.system, platform.platform, os.name
+  note    a variant, `darwin`, `linux`, `windows` or `other`, where Rust and Python answer text; the platform layer's own arm answers it as it is compiled (`__APPLE__`, `__linux__`, `_WIN32`), so it never fails and reads no convention XDG_CACHE_HOME could imitate. `family` stays, the question of the path rules; whether the system keeps POSIX's rules, Rust's FAMILY and Python's os.name, is `os.system() != .windows`, and how it writes a path `path.system_rules()`, so no second function tells it (the coherence review's X04, 2026-11-20)
 
 capability machine/system-version  the system's release and version
   heroes  os.system_version

@@ -136,7 +136,7 @@ function encode_euc_jp(s: str lent, @out: [u8], html: bool) -> i64
                     run.add_reference(out: @out, n: point)
                 else
                     return at
-            at @ at + unicode.width_at(s, at)
+            at @ at + unicode.len_at(s, at)
 
     return -1
 
@@ -274,7 +274,7 @@ function encode_iso_2022_jp(s: str lent, @out: [u8], html: bool, last: bool, @se
 
     while at < s.len()
         point = unicode.code_point_at(s, at)
-        width = unicode.width_at(s, at)
+        width = unicode.len_at(s, at)
 
         if set != JIS0208 && (point == 0x0e || point == 0x0f || point == 0x1b)
             if !html
@@ -434,7 +434,7 @@ function encode_shift_jis(s: str lent, @out: [u8], html: bool) -> i64
                     run.add_reference(out: @out, n: point)
                 else
                     return at
-            at @ at + unicode.width_at(s, at)
+            at @ at + unicode.len_at(s, at)
 
     return -1
 

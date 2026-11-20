@@ -72,15 +72,13 @@ function checked(name: str) -> ()?
 function named(name: str) -> [u8]?
     checked(name)?
 
-    match os.family()
-        .posix =>
-            for dir in system_dirs()
-                match file_bytes(f"{dir}/{name}")
-                    .ok data => return ok(data)
-                    .err e =>
-                        if e.code != "file_not_found" && e.code != "not_a_directory" && e.code != "is_a_directory"
-                            return fail(code: e.code, msg: e.msg)
-        .windows => _ = 0
+    if os.system() != .windows
+        for dir in system_dirs()
+            match file_bytes(f"{dir}/{name}")
+                .ok data => return ok(data)
+                .err e =>
+                    if e.code != "file_not_found" && e.code != "not_a_directory" && e.code != "is_a_directory"
+                        return fail(code: e.code, msg: e.msg)
 
     return carried(name)
 
@@ -132,9 +130,8 @@ function local() -> Source?
             if e.code != "not_found"
                 return fail(code: INVALID, msg: f"the variable TZ cannot be read: {e.msg}")
 
-    match os.family()
-        .posix => _ = 0
-        .windows => return fail(
+    if os.system() == .windows
+        return fail(
             code: UNSUPPORTED,
             msg: "TZ is not set, and Windows names its own zone in its registry, which this does not read"
         )

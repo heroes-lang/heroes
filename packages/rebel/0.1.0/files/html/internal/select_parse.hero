@@ -154,7 +154,7 @@ function message(r: Reader lent, expected: str) -> str
 function width(r: Reader lent) -> i64
     if r.text[r.at] < 0x80
         return 1
-    return unicode.width_at(r.text, r.at)
+    return unicode.len_at(r.text, r.at)
 
 # Moves past ASCII white space; whether there was any.
 function skip_white(@r: Reader) -> bool

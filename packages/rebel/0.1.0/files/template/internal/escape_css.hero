@@ -46,7 +46,7 @@ function css_decoded(s: str) -> str?
             if at < s.len() && escape_text.is_space(s[at])
                 at @ at + 1
         else
-            width = unicode.width_at(s, at)
+            width = unicode.len_at(s, at)
             pieces @ pieces.push(s.slice(from: at, to: at + width))
             at @ at + width
         kept @ at

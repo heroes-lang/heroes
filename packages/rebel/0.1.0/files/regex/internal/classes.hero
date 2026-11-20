@@ -138,7 +138,7 @@ function member_at(pattern: str, at: i64) -> escapes.Escaped?
     if pattern[at] == '\\'
         return escapes.escape_at(pattern: pattern, at: at, in_class: true)
     code = unicode.code_point_at(pattern, at)
-    return ok(escapes.Escaped(escape: .char(code: code), next: at + unicode.width_at(pattern, at)))
+    return ok(escapes.Escaped(escape: .char(code: code), next: at + unicode.len_at(pattern, at)))
 
 # ASCII's named class `[:name:]` or `[:^name:]`, its `[` being the byte `at`.
 #

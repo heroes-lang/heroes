@@ -195,7 +195,7 @@ function encode_gb18030(s: str lent, @out: [u8], html: bool, gbk: bool) -> i64
                 rest @ rest % 1260
                 out @ out.push(run.narrow(rest / 10 + 0x81))
                 out @ out.push(run.narrow(rest % 10 + 0x30))
-            at @ at + unicode.width_at(s, at)
+            at @ at + unicode.len_at(s, at)
 
     return -1
 
@@ -308,7 +308,7 @@ function encode_big5(s: str lent, @out: [u8], html: bool) -> i64
                 run.add_reference(out: @out, n: point)
             else
                 return at
-            at @ at + unicode.width_at(s, at)
+            at @ at + unicode.len_at(s, at)
 
     return -1
 

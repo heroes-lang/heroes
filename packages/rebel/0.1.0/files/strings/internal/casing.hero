@@ -146,7 +146,7 @@ function is_lower(s: str) -> bool
     cased: bool @= false
 
     for c in s.chars()
-        if unicode.is_upper(c) || unicode.is_title(c)
+        if unicode.is_upper(c) || unicode.is_title_letter(c)
             return false
 
         if unicode.is_lower(c)
@@ -159,7 +159,7 @@ function is_upper(s: str) -> bool
     cased: bool @= false
 
     for c in s.chars()
-        if unicode.is_lower(c) || unicode.is_title(c)
+        if unicode.is_lower(c) || unicode.is_title_letter(c)
             return false
 
         if unicode.is_upper(c)
@@ -174,7 +174,7 @@ function is_title(s: str) -> bool
     previous_cased: bool @= false
 
     for c in s.chars()
-        if unicode.is_upper(c) || unicode.is_title(c)
+        if unicode.is_upper(c) || unicode.is_title_letter(c)
             if previous_cased
                 return false
             previous_cased @ true

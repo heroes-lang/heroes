@@ -53,7 +53,7 @@ function char_before(s: str, at: i64) -> str
 function is_whitespace(c: str) -> bool
     if c == "\t" || c == "\n" || c == "\r" || c == "\u{c}"
         return true
-    return unicode.category(c) == unicode.SPACE_SEPARATOR
+    return unicode.category(c) == .space_separator
 
 # Whether `c` is Unicode punctuation as CommonMark 0.31 reads it: a
 # character of the P or S categories.

@@ -23,7 +23,7 @@ extern "hero_os.h"
 
 # Whether the tests run on Windows.
 function on_windows() -> bool
-    return os.family() == .windows
+    return os.system() == .windows
 
 # A script that ends with the exit code `code`.
 function exit_script(code: i64) -> str

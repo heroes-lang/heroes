@@ -294,7 +294,7 @@ function command(program: str, arguments: [str]) -> Command
 # be done; where a shell is needed, put each outside word through `quote`. The
 # shells of POSIX and of Windows read the same script differently.
 function shell(script: str) -> Command?
-    if os.family() == .posix
+    if os.system() != .windows
         return ok(command("/bin/sh", ["-c", script]))
 
     for i in range(from: 0, to: script.len())

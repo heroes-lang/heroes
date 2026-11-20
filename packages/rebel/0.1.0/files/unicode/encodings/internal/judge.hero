@@ -153,7 +153,7 @@ function plausibility(text: str, n: i64) -> f64
     while at < text.len()
         b = text[at]
         characters @ characters + 1
-        width = unicode.width_at(text, at)
+        width = unicode.len_at(text, at)
         point = unicode.code_point_at(text, at)
         letter: bool @= false
         lower: bool @= false
@@ -170,7 +170,7 @@ function plausibility(text: str, n: i64) -> f64
                 mess @ mess + 3.0
         else
             above @ above + 1
-            kind = unicode.category(text.slice(from: at, to: at + width))
+            kind = unicode.letter_of(unicode.category(text.slice(from: at, to: at + width)))
             major = kind.slice(from: 0, to: 1)
 
             if kind == "Cc" || kind == "Co" || kind == "Cn" || kind == "Cs" || point == 0xfffd

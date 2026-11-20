@@ -184,7 +184,7 @@ function found(text: str, at: i64) -> str
 
     if end > at
         return f"\"{text.slice(from: at, to: end)}\""
-    width = unicode.width_at(text, at)
+    width = unicode.len_at(text, at)
     c = text.slice(from: at, to: at + width)
 
     if c == "\"" || c == "`"

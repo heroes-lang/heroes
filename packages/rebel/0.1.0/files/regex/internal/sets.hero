@@ -146,7 +146,7 @@ function is_category(name: str) -> bool
 # - `name`: a name `is_category` accepts; one letter matches every category
 #   it begins.
 function in_category(c: str, name: str) -> bool
-    found = unicode.category(c)
+    found = unicode.letter_of(unicode.category(c))
 
     if name.len() == 1
         return found[0] == name[0]

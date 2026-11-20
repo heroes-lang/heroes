@@ -86,7 +86,7 @@ function encode(s: str lent, @out: [u8], html: bool) -> i64
                 run.add_reference(out: @out, n: point)
             else
                 return at
-            at @ at + unicode.width_at(s, at)
+            at @ at + unicode.len_at(s, at)
 
     return -1
 

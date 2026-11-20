@@ -13,7 +13,7 @@ constant INVALID: str
 
 # The character of `pattern` that begins at byte `at`.
 function char_at(pattern: str, at: i64) -> str
-    width = unicode.utf8_width(pattern[at]).default(1)
+    width = unicode.utf8_len_of_first(pattern[at]).default(1)
     return pattern.slice(from: at, to: at + width)
 
 # `c`, one character, as `regex` reads it as itself, inside a class or out of

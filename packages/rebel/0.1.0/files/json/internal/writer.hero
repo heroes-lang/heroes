@@ -242,7 +242,7 @@ function quote(s: str, layout: Layout) -> str
         width = if b < 0x80
             1
         else
-            unicode.width_at(s, i)
+            unicode.len_at(s, i)
         escape = escape_of(s: s, at: i, layout: layout)
 
         if escape != ""

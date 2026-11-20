@@ -34,7 +34,7 @@ function text_of(points: [i64] lent, from: i64, to: i64) -> str
 function digit_value(point: i64) -> i64
     c = unicode.from_code_point(point).must()
 
-    if unicode.category(c) != "Nd"
+    if unicode.category(c) != .decimal_number
         return -1
     return unicode.digit_value(c).default(-1)
 

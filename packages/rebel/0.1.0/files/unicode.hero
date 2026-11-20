@@ -16,7 +16,7 @@
 # `chars()` yields; a code point is an `i64`. `code_point` and
 # `from_code_point` go between the two. A function that takes a character
 # aborts where it is handed the empty text or more than one character: cut a
-# text with `chars()` first. Every index and every width is counted in bytes.
+# text with `chars()` first. Every index and every length is counted in bytes.
 
 use unicode/internal/casing
 use unicode/internal/classes
@@ -55,124 +55,69 @@ constant MAX_UTF8_LEN: i64
 
 ## The general categories
 
-# What `category` answers for an upper case letter.
-constant UPPERCASE_LETTER: str
-    "Lu"
-
-# What `category` answers for a lower case letter.
-constant LOWERCASE_LETTER: str
-    "Ll"
-
-# What `category` answers for a title case letter, one character that writes
-# an upper case letter and a lower case one.
-constant TITLECASE_LETTER: str
-    "Lt"
-
-# What `category` answers for a modifier letter.
-constant MODIFIER_LETTER: str
-    "Lm"
-
-# What `category` answers for a letter with no case, an ideograph among them.
-constant OTHER_LETTER: str
-    "Lo"
-
-# What `category` answers for a mark that takes no room of its own.
-constant NONSPACING_MARK: str
-    "Mn"
-
-# What `category` answers for a mark that takes room.
-constant SPACING_MARK: str
-    "Mc"
-
-# What `category` answers for a mark that encloses the character before it.
-constant ENCLOSING_MARK: str
-    "Me"
-
-# What `category` answers for a decimal digit.
-constant DECIMAL_NUMBER: str
-    "Nd"
-
-# What `category` answers for a number written as a letter, a Roman numeral
-# among them.
-constant LETTER_NUMBER: str
-    "Nl"
-
-# What `category` answers for any other number, a fraction among them.
-constant OTHER_NUMBER: str
-    "No"
-
-# What `category` answers for punctuation that joins two words, as `_` does.
-constant CONNECTOR_PUNCTUATION: str
-    "Pc"
-
-# What `category` answers for a dash or a hyphen.
-constant DASH_PUNCTUATION: str
-    "Pd"
-
-# What `category` answers for an opening bracket.
-constant OPEN_PUNCTUATION: str
-    "Ps"
-
-# What `category` answers for a closing bracket.
-constant CLOSE_PUNCTUATION: str
-    "Pe"
-
-# What `category` answers for an opening quotation mark.
-constant INITIAL_PUNCTUATION: str
-    "Pi"
-
-# What `category` answers for a closing quotation mark.
-constant FINAL_PUNCTUATION: str
-    "Pf"
-
-# What `category` answers for any other punctuation.
-constant OTHER_PUNCTUATION: str
-    "Po"
-
-# What `category` answers for a symbol of mathematics.
-constant MATH_SYMBOL: str
-    "Sm"
-
-# What `category` answers for a sign of a currency.
-constant CURRENCY_SYMBOL: str
-    "Sc"
-
-# What `category` answers for a modifier symbol, as `^` is.
-constant MODIFIER_SYMBOL: str
-    "Sk"
-
-# What `category` answers for any other symbol.
-constant OTHER_SYMBOL: str
-    "So"
-
-# What `category` answers for a space.
-constant SPACE_SEPARATOR: str
-    "Zs"
-
-# What `category` answers for U+2028, the line separator.
-constant LINE_SEPARATOR: str
-    "Zl"
-
-# What `category` answers for U+2029, the paragraph separator.
-constant PARAGRAPH_SEPARATOR: str
-    "Zp"
-
-# What `category` answers for a control code.
-constant CONTROL: str
-    "Cc"
-
-# What `category` answers for a format character, drawn as nothing.
-constant FORMAT: str
-    "Cf"
-
-# What `category` answers for a character kept for private use.
-constant PRIVATE_USE: str
-    "Co"
-
-# What `category` answers for a code point this version of Unicode assigns
-# nothing to.
-constant UNASSIGNED: str
-    "Cn"
+# A character's general category, one of Unicode's thirty, in the order Unicode
+# lists them; `letter_of` gives its two letters.
+variant Category
+    # `Lu`: an upper case letter.
+    uppercase_letter
+    # `Ll`: a lower case letter.
+    lowercase_letter
+    # `Lt`: a title case letter, one character that writes an upper case letter and a lower case one.
+    titlecase_letter
+    # `Lm`: a modifier letter.
+    modifier_letter
+    # `Lo`: a letter with no case, an ideograph among them.
+    other_letter
+    # `Mn`: a mark that takes no room of its own.
+    nonspacing_mark
+    # `Mc`: a mark that takes room.
+    spacing_mark
+    # `Me`: a mark that encloses the character before it.
+    enclosing_mark
+    # `Nd`: a decimal digit.
+    decimal_number
+    # `Nl`: a number written as a letter, a Roman numeral among them.
+    letter_number
+    # `No`: any other number, a fraction among them.
+    other_number
+    # `Pc`: punctuation that joins two words, as `_` does.
+    connector_punctuation
+    # `Pd`: a dash or a hyphen.
+    dash_punctuation
+    # `Ps`: an opening bracket.
+    open_punctuation
+    # `Pe`: a closing bracket.
+    close_punctuation
+    # `Pi`: an opening quotation mark.
+    initial_punctuation
+    # `Pf`: a closing quotation mark.
+    final_punctuation
+    # `Po`: any other punctuation.
+    other_punctuation
+    # `Sm`: a symbol of mathematics.
+    math_symbol
+    # `Sc`: a sign of a currency.
+    currency_symbol
+    # `Sk`: a modifier symbol, as `^` is.
+    modifier_symbol
+    # `So`: any other symbol.
+    other_symbol
+    # `Zs`: a space.
+    space_separator
+    # `Zl`: U+2028, the line separator.
+    line_separator
+    # `Zp`: U+2029, the paragraph separator.
+    paragraph_separator
+    # `Cc`: a control code.
+    control
+    # `Cf`: a format character, drawn as nothing.
+    format
+    # `Cs`: a surrogate, half of a UTF-16 pair, which no text holds, so `category` never answers it.
+    surrogate
+    # `Co`: a character kept for private use.
+    private_use
+    # `Cn`: a code point this version of Unicode assigns nothing to.
+    unassigned
 
 ## Characters and code points
 
@@ -316,12 +261,14 @@ function is_lower(c: str) -> bool
 #
 # - `c`: the character to ask about, a text of exactly one character.
 #
-# Aborts where `c` is not exactly one character. See also `to_title`.
-function is_title(c: str) -> bool
+# Aborts where `c` is not exactly one character. Whether a text is in title
+# case, each word's first letter upper case, is `strings.is_title`'s. See also
+# `to_title`.
+function is_title_letter(c: str) -> bool
     return classes.is_title(utf8.one(c))
 
 # Whether `c` has a case, Unicode's Cased property: `is_upper`, `is_lower` or
-# `is_title`.
+# `is_title_letter`.
 #
 # - `c`: the character to ask about, a text of exactly one character.
 #
@@ -404,16 +351,56 @@ function is_printable(c: str) -> bool
 function is_ascii(c: str) -> bool
     return utf8.one(c) < 0x80
 
-# The general category of `c`, Unicode's two letters for it: one of the
-# constants `UPPERCASE_LETTER` to `UNASSIGNED` above.
+# The general category of `c`.
 #
 # - `c`: the character to ask about, a text of exactly one character.
 #
-# The first letter is the major class, so a category that begins with `Z` is a
-# separator; a code point this version leaves unassigned answers
-# `UNASSIGNED`. Aborts where `c` is not exactly one character.
-function category(c: str) -> str
-    return classes.name_of(utf8.one(c))
+# A code point this version leaves unassigned answers `.unassigned`; Unicode's
+# two letters for the answer are `letter_of`'s. Aborts where `c` is not exactly
+# one character. See also `letter_of`, `is_letter`, `is_mark`.
+function category(c: str) -> Category
+    return classes.CATEGORIES[classes.category_of(utf8.one(c))]
+
+# Unicode's two letters for the category `kind`, the major class first: `Lu`
+# for `.uppercase_letter`, `Zs` for `.space_separator`.
+#
+# - `kind`: any of the thirty.
+#
+# The first letter is the class a program asks about by `is_letter`,
+# `is_mark`, `is_number`, `is_punctuation` and `is_symbol`, so a category whose
+# letters begin with `Z` is a separator. See also `category`.
+function letter_of(kind: Category) -> str
+    match kind
+        .uppercase_letter      => return "Lu"
+        .lowercase_letter      => return "Ll"
+        .titlecase_letter      => return "Lt"
+        .modifier_letter       => return "Lm"
+        .other_letter          => return "Lo"
+        .nonspacing_mark       => return "Mn"
+        .spacing_mark          => return "Mc"
+        .enclosing_mark        => return "Me"
+        .decimal_number        => return "Nd"
+        .letter_number         => return "Nl"
+        .other_number          => return "No"
+        .connector_punctuation => return "Pc"
+        .dash_punctuation      => return "Pd"
+        .open_punctuation      => return "Ps"
+        .close_punctuation     => return "Pe"
+        .initial_punctuation   => return "Pi"
+        .final_punctuation     => return "Pf"
+        .other_punctuation     => return "Po"
+        .math_symbol           => return "Sm"
+        .currency_symbol       => return "Sc"
+        .modifier_symbol       => return "Sk"
+        .other_symbol          => return "So"
+        .space_separator       => return "Zs"
+        .line_separator        => return "Zl"
+        .paragraph_separator   => return "Zp"
+        .control               => return "Cc"
+        .format                => return "Cf"
+        .surrogate             => return "Cs"
+        .private_use           => return "Co"
+        .unassigned            => return "Cn"
 
 ## Numbers
 
@@ -552,7 +539,7 @@ record Decoded
     # The code point of the character.
     code_point: i64
     # How many bytes write it, 1 to 4.
-    width: i64
+    len: i64
 
 # The bytes that write the code point `n` in UTF-8, one to four.
 #
@@ -570,7 +557,7 @@ function to_utf8(n: i64) -> [u8]?
 #
 # - `n`: the code point to measure.
 #
-# Fails `invalid` where `n` is no scalar value. See also `utf8_width`.
+# Fails `invalid` where `n` is no scalar value. See also `utf8_len_of_first`.
 function utf8_len(n: i64) -> i64?
     utf8.check_scalar_value(n)?
     return ok(utf8.len_of(n))
@@ -582,7 +569,7 @@ function utf8_len(n: i64) -> i64?
 # Fails `invalid` where no character begins with `first`: a byte that
 # continues one, 0x80 to 0xBF, and the bytes UTF-8 never holds, 0xC0, 0xC1 and
 # 0xF5 to 0xFF. See also `utf8_len`.
-function utf8_width(first: u8) -> i64?
+function utf8_len_of_first(first: u8) -> i64?
     return utf8.width_of(first)
 
 # The code points that `bytes` write in UTF-8, in order.
@@ -614,7 +601,7 @@ function from_utf8(bytes: [u8]) -> [i64]?
 # See also `decode_before`.
 function decode_at(bytes: [u8], index: i64) -> Decoded?
     n = utf8.decode(bytes, index)?
-    return ok(Decoded(code_point: n, width: utf8.len_of(n)))
+    return ok(Decoded(code_point: n, len: utf8.len_of(n)))
 
 # The character that ends just before `end` in `bytes`: its last byte is
 # `bytes[end - 1]`.
@@ -626,7 +613,7 @@ function decode_at(bytes: [u8], index: i64) -> Decoded?
 # `end` is below 1 or above the length of `bytes`. See also `decode_at`.
 function decode_before(bytes: [u8], end: i64) -> Decoded?
     n = utf8.decode_ending(bytes, end)?
-    return ok(Decoded(code_point: n, width: utf8.len_of(n)))
+    return ok(Decoded(code_point: n, len: utf8.len_of(n)))
 
 # Whether `bytes` are UTF-8 from the first to the last.
 #
@@ -671,7 +658,7 @@ function is_continuation(byte: u8) -> bool
 # - `index`: the byte index where the character begins.
 #
 # It cuts no slice. Aborts where `index` is not the first byte of a character
-# of `s`. See also `width_at`.
+# of `s`. See also `len_at`.
 function code_point_at(s: str, index: i64) -> i64
     return utf8.code_point_at(s, index)
 
@@ -683,7 +670,7 @@ function code_point_at(s: str, index: i64) -> i64
 #
 # Aborts where `index` is not the first byte of a character of `s`. See also
 # `code_point_at`.
-function width_at(s: str, index: i64) -> i64
+function len_at(s: str, index: i64) -> i64
     return utf8.width_at(s, index)
 
 # How many characters `s` holds, where `s.len()` counts its bytes.
@@ -842,7 +829,7 @@ test "is_letter to is_ascii: 36 characters, the six edges among them, each answe
         is_space
         is_upper
         is_lower
-        is_title
+        is_title_letter
         is_cased
         is_case_ignorable
         is_punctuation
@@ -985,39 +972,39 @@ test "category: 36 characters, the six edges among them"
     at: i64 @= 0
 
     while at < samples.len()
-        assert [to_str(code_point(samples[at])), category(samples[at])] == [to_str(code_point(samples[at])), expected[at]]
+        assert [to_str(code_point(samples[at])), letter_of(category(samples[at]))] == [to_str(code_point(samples[at])), expected[at]]
         at @ at + 1
 
-test "the category constants: each is what category answers for the first character of it"
-    assert category("A") == UPPERCASE_LETTER
-    assert category("a") == LOWERCASE_LETTER
-    assert category("ǅ") == TITLECASE_LETTER
-    assert category("ʰ") == MODIFIER_LETTER
-    assert category("ª") == OTHER_LETTER
-    assert category(from_code_point(0x300).must()) == NONSPACING_MARK
-    assert category(from_code_point(0x903).must()) == SPACING_MARK
-    assert category(from_code_point(0x488).must()) == ENCLOSING_MARK
-    assert category("0") == DECIMAL_NUMBER
-    assert category("ᛮ") == LETTER_NUMBER
-    assert category("²") == OTHER_NUMBER
-    assert category("_") == CONNECTOR_PUNCTUATION
-    assert category("-") == DASH_PUNCTUATION
-    assert category("(") == OPEN_PUNCTUATION
-    assert category(")") == CLOSE_PUNCTUATION
-    assert category("«") == INITIAL_PUNCTUATION
-    assert category("»") == FINAL_PUNCTUATION
-    assert category("!") == OTHER_PUNCTUATION
-    assert category("+") == MATH_SYMBOL
-    assert category("$") == CURRENCY_SYMBOL
-    assert category("^") == MODIFIER_SYMBOL
-    assert category("¦") == OTHER_SYMBOL
-    assert category(from_code_point(0x20).must()) == SPACE_SEPARATOR
-    assert category(from_code_point(0x2028).must()) == LINE_SEPARATOR
-    assert category(from_code_point(0x2029).must()) == PARAGRAPH_SEPARATOR
-    assert category(from_code_point(0x0).must()) == CONTROL
-    assert category(from_code_point(0xad).must()) == FORMAT
-    assert category(from_code_point(0xe000).must()) == PRIVATE_USE
-    assert category(from_code_point(0x378).must()) == UNASSIGNED
+test "the categories: each is what category answers for a character of it, and letter_of its two letters"
+    assert category("A") == .uppercase_letter
+    assert category("a") == .lowercase_letter
+    assert category("ǅ") == .titlecase_letter
+    assert category("ʰ") == .modifier_letter
+    assert category("ª") == .other_letter
+    assert category(from_code_point(0x300).must()) == .nonspacing_mark
+    assert category(from_code_point(0x903).must()) == .spacing_mark
+    assert category(from_code_point(0x488).must()) == .enclosing_mark
+    assert category("0") == .decimal_number
+    assert category("ᛮ") == .letter_number
+    assert category("²") == .other_number
+    assert category("_") == .connector_punctuation
+    assert category("-") == .dash_punctuation
+    assert category("(") == .open_punctuation
+    assert category(")") == .close_punctuation
+    assert category("«") == .initial_punctuation
+    assert category("»") == .final_punctuation
+    assert category("!") == .other_punctuation
+    assert category("+") == .math_symbol
+    assert category("$") == .currency_symbol
+    assert category("^") == .modifier_symbol
+    assert category("¦") == .other_symbol
+    assert category(from_code_point(0x20).must()) == .space_separator
+    assert category(from_code_point(0x2028).must()) == .line_separator
+    assert category(from_code_point(0x2029).must()) == .paragraph_separator
+    assert category(from_code_point(0x0).must()) == .control
+    assert category(from_code_point(0xad).must()) == .format
+    assert category(from_code_point(0xe000).must()) == .private_use
+    assert category(from_code_point(0x378).must()) == .unassigned
 
 test "to_upper: 27 characters, the six edges and characters that become several among them"
     samples = [
@@ -1477,16 +1464,16 @@ test "utf8_len: as Go's RuneLen answers, and what it answers -1 for refused"
     assert utf8_len(0x110000).is_err()
     assert utf8_len(-1).is_err()
 
-test "utf8_width: a first byte of each width, a continuation, and the bytes UTF-8 never holds"
-    assert utf8_width(0).must() == 1
-    assert utf8_width(0x61).must() == 1
-    assert utf8_width(0xc3).must() == 2
-    assert utf8_width(0xe2).must() == 3
-    assert utf8_width(0xf0).must() == 4
-    assert utf8_width(0xc0).is_err()
-    assert utf8_width(255).is_err()
+test "utf8_len_of_first: a first byte of each width, a continuation, and the bytes UTF-8 never holds"
+    assert utf8_len_of_first(0).must() == 1
+    assert utf8_len_of_first(0x61).must() == 1
+    assert utf8_len_of_first(0xc3).must() == 2
+    assert utf8_len_of_first(0xe2).must() == 3
+    assert utf8_len_of_first(0xf0).must() == 4
+    assert utf8_len_of_first(0xc0).is_err()
+    assert utf8_len_of_first(255).is_err()
 
-    match utf8_width(0x80)
+    match utf8_len_of_first(0x80)
         .ok _  => assert false
         .err e => assert e.code == INVALID && e.msg == "the byte 0x80 continues a character and begins none"
 
@@ -1505,11 +1492,11 @@ test "from_utf8: nothing, characters of each width, and the first wrong byte nam
 
 test "decode_at: as Go's DecodeRune answers, and where it answers RuneError"
     first = decode_at(bytes: [0x61, 0xc3, 0xa9], index: 0).must()
-    assert first.code_point == 0x61 && first.width == 1
+    assert first.code_point == 0x61 && first.len == 1
     second = decode_at(bytes: [0x61, 0xc3, 0xa9], index: 1).must()
-    assert second.code_point == 0xe9 && second.width == 2
+    assert second.code_point == 0xe9 && second.len == 2
     euro = decode_at(bytes: [0xe2, 0x82, 0xac, 0x80], index: 0).must()
-    assert euro.code_point == 0x20ac && euro.width == 3
+    assert euro.code_point == 0x20ac && euro.len == 3
     assert decode_at(bytes: [0xc0, 0x80], index: 0).is_err()
     assert decode_at(bytes: [0xed, 0xa0, 0x80], index: 0).is_err()
     assert decode_at(bytes: [0xf4, 0x90, 0x80, 0x80], index: 0).is_err()
@@ -1517,9 +1504,9 @@ test "decode_at: as Go's DecodeRune answers, and where it answers RuneError"
 
 test "decode_before: as Go's DecodeLastRune answers, and where it answers RuneError"
     last = decode_before(bytes: [0x61, 0xc3, 0xa9], end: 3).must()
-    assert last.code_point == 0xe9 && last.width == 2
+    assert last.code_point == 0xe9 && last.len == 2
     before = decode_before(bytes: [0x61, 0xc3, 0xa9], end: 1).must()
-    assert before.code_point == 0x61 && before.width == 1
+    assert before.code_point == 0x61 && before.len == 1
     assert decode_before(bytes: [0xe2, 0x82, 0xac, 0x80], end: 4).is_err()
     assert decode_before(bytes: [0xc0, 0x80], end: 2).is_err()
     assert decode_before(bytes: [0xed, 0xa0, 0x80], end: 3).is_err()
@@ -1556,12 +1543,12 @@ test "is_continuation: as Go's RuneStart answers, the other way round"
     assert !is_continuation(0xc0)
     assert !is_continuation(255)
 
-test "code_point_at and width_at: the first byte of a character of each width"
+test "code_point_at and len_at: the first byte of a character of each width"
     s = "aé€😀"
-    assert code_point_at(s: s, index: 0) == 0x61 && width_at(s: s, index: 0) == 1
-    assert code_point_at(s: s, index: 1) == 0xe9 && width_at(s: s, index: 1) == 2
-    assert code_point_at(s: s, index: 3) == 0x20ac && width_at(s: s, index: 3) == 3
-    assert code_point_at(s: s, index: 6) == 0x1f600 && width_at(s: s, index: 6) == 4
+    assert code_point_at(s: s, index: 0) == 0x61 && len_at(s: s, index: 0) == 1
+    assert code_point_at(s: s, index: 1) == 0xe9 && len_at(s: s, index: 1) == 2
+    assert code_point_at(s: s, index: 3) == 0x20ac && len_at(s: s, index: 3) == 3
+    assert code_point_at(s: s, index: 6) == 0x1f600 && len_at(s: s, index: 6) == 4
 
 test "char_count: nothing, one byte, and characters of each width, as Rust's chars().count() answers"
     assert char_count("") == 0
@@ -1687,9 +1674,9 @@ test "is_lower: two small letters and a capital"
     assert !is_lower("A")
 
 # The one character that writes a capital D and a small z with a caron.
-test "is_title: a title case letter and a plain capital"
-    assert is_title("ǅ")
-    assert !is_title("D")
+test "is_title_letter: a title case letter and a plain capital"
+    assert is_title_letter("ǅ")
+    assert !is_title_letter("D")
 
 # Letters of Latin have a case; an ideograph has none.
 test "is_cased: a Latin letter and an ideograph"
@@ -1738,9 +1725,15 @@ test "is_ascii: a plain letter and an accented one"
 
 # The categories of a small letter, a currency sign and a digit.
 test "category: three characters, three categories"
-    assert category("a") == LOWERCASE_LETTER
-    assert category("€") == CURRENCY_SYMBOL
-    assert category("7") == DECIMAL_NUMBER
+    assert category("a") == .lowercase_letter
+    assert category("€") == .currency_symbol
+    assert category("7") == .decimal_number
+
+# Unicode's two letters for a category, as Python's `unicodedata.category`
+# writes them.
+test "letter_of: a capital and a space"
+    assert letter_of(category("A")) == "Lu"
+    assert letter_of(.space_separator) == "Zs"
 
 # The value of a digit of the Arabic script.
 test "digit_value: an Arabic-Indic three"
@@ -1803,8 +1796,8 @@ test "utf8_len: the euro sign takes three bytes"
     assert utf8_len(0x20ac).must() == 3
 
 # How long a character is, read from its first byte.
-test "utf8_width: the first byte of the euro sign"
-    assert utf8_width(0xe2).must() == 3
+test "utf8_len_of_first: the first byte of the euro sign"
+    assert utf8_len_of_first(0xe2).must() == 3
 
 # Bytes read as code points.
 test "from_utf8: the bytes of a word"
@@ -1813,12 +1806,12 @@ test "from_utf8: the bytes of a word"
 # The second character of some bytes, and how far to step past it.
 test "decode_at: an accented letter after a plain one"
     d = decode_at(bytes: [0x61, 0xc3, 0xa9], index: 1).must()
-    assert d.code_point == 0xe9 && d.width == 2
+    assert d.code_point == 0xe9 && d.len == 2
 
 # The last character of some bytes, read from the end.
 test "decode_before: the last character of a word"
     d = decode_before(bytes: [0x61, 0xc3, 0xa9], end: 3).must()
-    assert d.code_point == 0xe9 && d.width == 2
+    assert d.code_point == 0xe9 && d.len == 2
 
 # Bytes checked before they are read as a text.
 test "is_utf8: good bytes and a stray byte"
@@ -1844,10 +1837,10 @@ test "code_point_at: the euro sign in a price"
     assert code_point_at(s: "9€", index: 1) == 0x20ac
 
 # Walking a text a character at a time.
-test "width_at: from one character to the next"
+test "len_at: from one character to the next"
     s = "a€b"
-    assert width_at(s: s, index: 1) == 3
-    assert code_point_at(s: s, index: 1 + width_at(s: s, index: 1)) == code_point("b")
+    assert len_at(s: s, index: 1) == 3
+    assert code_point_at(s: s, index: 1 + len_at(s: s, index: 1)) == code_point("b")
 
 # The characters of a word, against its bytes.
 test "char_count: characters and bytes"

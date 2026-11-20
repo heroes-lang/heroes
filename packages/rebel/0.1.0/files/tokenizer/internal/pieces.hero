@@ -81,9 +81,9 @@ function add_spans_by_regex(@spans: [i64], sp: Splitter lent, s: str)
                         taken @ false
 
                 if !taken
-                    at @ m.start + unicode.width_at(s, index: m.start)
+                    at @ m.start + unicode.len_at(s, index: m.start)
                 else if end == m.start
-                    at @ m.start + unicode.width_at(s, index: m.start)
+                    at @ m.start + unicode.len_at(s, index: m.start)
                 else
                     spans @ spans.push(m.start)
                     spans @ spans.push(end)

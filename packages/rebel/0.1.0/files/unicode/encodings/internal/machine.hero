@@ -315,7 +315,7 @@ function written(s: str, state: Shift, html: bool, last: bool) -> [u8]?
 # byte `at` of `s`.
 function no_bytes(s: str, at: i64, n: i64) -> str
     point = unicode.code_point_at(s, at)
-    return f"{registry.name(n)} has no bytes for {run.code_name(point)} \"{s.slice(from: at, to: at + unicode.width_at(s, at))}\", at byte {at}"
+    return f"{registry.name(n)} has no bytes for {run.code_name(point)} \"{s.slice(from: at, to: at + unicode.len_at(s, at))}\", at byte {at}"
 
 # The message of bytes the encoding numbered `n` cannot read, from `at`.
 function wrong_bytes(data: [u8], at: i64, n: i64) -> str

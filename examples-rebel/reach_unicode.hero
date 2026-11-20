@@ -5,4 +5,4 @@
 use <rebel>/unicode
 
 function main()
-    print(unicode.UNICODE_VERSION, " ", unicode.category("a"))
+    print(unicode.UNICODE_VERSION, " ", unicode.letter_of(unicode.category("a")))

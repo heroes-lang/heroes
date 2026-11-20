@@ -152,7 +152,7 @@ function reference_at(s: str, at: i64) -> Read
 
         if b == '\t' || b == '\n' || b == 0x0c || b == ' ' || b == '<' || b == '&' || b == '#' || b == ';'
             break
-        run_end @ run_end + unicode.width_at(s, run_end)
+        run_end @ run_end + unicode.len_at(s, run_end)
         characters @ characters + 1
 
     if run_end == k

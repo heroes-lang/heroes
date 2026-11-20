@@ -93,12 +93,12 @@ function opens_with_digit(s: str) -> bool
     if s == ""
         return false
     first = s.chars()[0]
-    return unicode.category(first) == "Nd"
+    return unicode.category(first) == .decimal_number
 
 # Whether `c` matches CLDR's currency match `[[:^S:]&[:^Z:]]`: no symbol and
 # no separator.
 function is_currency_match(c: str) -> bool
-    category = unicode.category(c)
+    category = unicode.letter_of(unicode.category(c))
     return !strings.has_prefix(s: category, prefix: "S") && !strings.has_prefix(s: category, prefix: "Z")
 
 # The last character of `s`, or the empty text.
@@ -533,7 +533,7 @@ function write(d: decimal.Decimal, p: pattern.Pattern, profile: data.Profile, se
 # Whether the last character of `s` is a decimal digit.
 function closes_with_digit(s: str) -> bool
     last = last_char(s)
-    return last != "" && unicode.category(last) == "Nd"
+    return last != "" && unicode.category(last) == .decimal_number
 
 # `long` where `wanted`, else `short`.
 function if_long(wanted: bool, short: [str], long: [str]) -> [str]

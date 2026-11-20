@@ -121,7 +121,7 @@ function trimmed(s: str, spans: [i64] lent) -> [i64]
         end: i64 @= spans[k + 1]
 
         while start < end
-            width = unicode.width_at(s, index: start)
+            width = unicode.len_at(s, index: start)
 
             if !unicode.is_space(s.slice(from: start, to: start + width))
                 break

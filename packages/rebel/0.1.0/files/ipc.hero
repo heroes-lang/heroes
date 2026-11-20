@@ -837,37 +837,36 @@ test "remove_memory, remove_semaphore and remove_lock after the last close: kept
     l @= open_lock(lock_name, permission: 0o600).must()
     assert close_lock(@l) == ok()
 
-    match os.family()
-        .windows =>
-            match open_memory(memory_name)
-                .ok _  => assert false
-                .err e => assert e.code == NOT_FOUND
+    if os.system() == .windows
+        match open_memory(memory_name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
 
-            match remove_memory(memory_name)
-                .ok _  => assert false
-                .err e => assert e.code == NOT_FOUND
+        match remove_memory(memory_name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
 
-            match open_semaphore(semaphore_name)
-                .ok _  => assert false
-                .err e => assert e.code == NOT_FOUND
+        match open_semaphore(semaphore_name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
 
-            match remove_semaphore(semaphore_name)
-                .ok _  => assert false
-                .err e => assert e.code == NOT_FOUND
+        match remove_semaphore(semaphore_name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
 
-            match remove_lock(lock_name)
-                .ok _  => assert false
-                .err e => assert e.code == NOT_FOUND
-        .posix =>
-            again @= open_memory(memory_name).must()
-            assert read_at(again, offset: 0, count: 1).must() == [7]
-            assert close_memory(@again) == ok()
-            assert remove_memory(memory_name) == ok()
-            opened @= open_semaphore(semaphore_name).must()
-            assert acquire_semaphore(opened, within_ms: 0) == ok()
-            assert close_semaphore(@opened) == ok()
-            assert remove_semaphore(semaphore_name) == ok()
-            assert remove_lock(lock_name) == ok()
+        match remove_lock(lock_name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
+    else
+        again @= open_memory(memory_name).must()
+        assert read_at(again, offset: 0, count: 1).must() == [7]
+        assert close_memory(@again) == ok()
+        assert remove_memory(memory_name) == ok()
+        opened @= open_semaphore(semaphore_name).must()
+        assert acquire_semaphore(opened, within_ms: 0) == ok()
+        assert close_semaphore(@opened) == ok()
+        assert remove_semaphore(semaphore_name) == ok()
+        assert remove_lock(lock_name) == ok()
 
 # Defect 2609: a connect to a path where no socket stands is told by what
 # stands there, on every platform: a folder is `is_a_directory`, its message

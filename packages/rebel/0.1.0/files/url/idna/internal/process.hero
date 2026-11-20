@@ -84,7 +84,7 @@ function converted(host: str, checks: criteria.Checks) -> Converted?
 
     while at < host.len()
         lookup.add_mapped(@mapped, n: unicode.code_point_at(host, at), transitional: checks.transitional)
-        at @ at + unicode.width_at(host, at)
+        at @ at + unicode.len_at(host, at)
 
     if criteria.quick_check(mapped) != lookup.QUICK_YES
         return fail(

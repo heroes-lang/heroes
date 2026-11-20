@@ -15,7 +15,7 @@ record Given
 
 # Whether names compare without their ASCII case, as Windows compares them.
 function folds() -> bool
-    return os.family() == .windows
+    return os.system() == .windows
 
 # The ASCII upper case of `b`, any other byte as it is.
 function upper(b: u8) -> u8

@@ -87,7 +87,7 @@ test "target_of: a relative target, an absolute one, a long one, no link, and no
         # link's target with its own separator, `\`.
         rooted: str @= "/a/b"
 
-        if os.family() == .windows
+        if os.system() == .windows
             rooted @ "\\a\\b"
 
         assert fixture.linked(target: rooted, name: dir + "/abs")

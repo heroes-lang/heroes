@@ -172,7 +172,7 @@ function describe_at(source: str, at: i64) -> str
 
     if b >= 0x20 && b <= 0x7e
         return f"\"{source.slice(from: at, to: at + 1)}\""
-    width = unicode.utf8_width(b).default(1)
+    width = unicode.utf8_len_of_first(b).default(1)
 
     end = if at + width <= source.len()
         at + width
@@ -427,7 +427,7 @@ function cut_chars(source: str, at: i64, count: i64) -> str
     n @= 0
 
     while i < source.len() && n < count
-        i @ i + unicode.utf8_width(source[i]).default(1)
+        i @ i + unicode.utf8_len_of_first(source[i]).default(1)
         n @ n + 1
 
     if i > source.len()

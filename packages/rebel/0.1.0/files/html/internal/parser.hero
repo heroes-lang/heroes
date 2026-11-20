@@ -62,7 +62,7 @@ function stream_errors(s: str, @codes: [str], @places: [i64])
             else if n >= 0xfdd0 && n <= 0xfdef || n & 0xfffe == 0xfffe
                 codes @ codes.push("noncharacter-in-input-stream")
                 places @ places.push(at)
-            at @ at + unicode.width_at(s, at)
+            at @ at + unicode.len_at(s, at)
 
 # The tokenizer state the builder asked for.
 function state_of(switch_to: i64) -> lexer.State

@@ -50,7 +50,7 @@ function windows() -> bool
 #
 # - `target`: the text the link holds.
 function link_size(target: str) -> i64
-    if os.family() == .windows
+    if os.system() == .windows
         return 0
     return target.len()
 
