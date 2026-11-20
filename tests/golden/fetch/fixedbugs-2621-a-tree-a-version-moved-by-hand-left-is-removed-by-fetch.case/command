@@ -1,0 +1,3 @@
+fetch -C <work>/app
+fetch -C <work>/app
+run <work>/app/main.hero

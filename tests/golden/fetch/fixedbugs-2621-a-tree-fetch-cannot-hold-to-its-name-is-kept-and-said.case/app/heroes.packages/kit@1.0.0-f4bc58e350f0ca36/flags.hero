@@ -1,0 +1,4 @@
+# Not listed and reached by nothing listed: never placed.
+function on() -> bool
+    return true
+# mine

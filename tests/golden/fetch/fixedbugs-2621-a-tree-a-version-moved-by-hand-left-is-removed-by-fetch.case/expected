@@ -1,0 +1,34 @@
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+placed kit 1.1.0 <work>/app/heroes.packages/kit@1.1.0-05f7780c2b0ddfcc, 3 of 5 files: what its `packages` line names and the modules those use
+placed strings 1.1.0 <work>/app/heroes.packages/strings@1.1.0-63336669f8379b88
+removed kit 1.0.0 <work>/app/heroes.packages/kit@1.0.0-309b51851fceaada, which no entry names now
+removed strings 1.0.0 <work>/app/heroes.packages/strings@1.0.0-31c40169c0356d7b, which no entry names now
+stderr:
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+kept kit 1.1.0 <work>/app/heroes.packages/kit@1.1.0-05f7780c2b0ddfcc, 3 of 5 files: what its `packages` line names and the modules those use
+kept strings 1.1.0 <work>/app/heroes.packages/strings@1.1.0-63336669f8379b88
+stderr:
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+one
+two
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2621-a-tree-a-version-moved-by-hand-left-is-removed-by-fetch.case/idx"
+
+[dependencies.kit]
+version = "1.1.0"
+sum = "sha256-1590f41e82238de77c661d4cd471040aeee797d69ff9af35bd0e4023a5ea83ab"
+packages = ["csv"]
+
+[dependencies.strings]
+version = "1.1.0"
+sum = "sha256-23b4959e722a1bc8dec095d4362fc91e5c96e75f5fdf83fd8e0681a87310538c"
+heroes.packages:
+kit@1.1.0-05f7780c2b0ddfcc
+strings@1.1.0-63336669f8379b88

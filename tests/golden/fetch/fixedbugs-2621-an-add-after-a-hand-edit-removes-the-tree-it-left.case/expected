@@ -1,0 +1,26 @@
+$ heroes add strings@1.0.0 -C <work>/app
+exit 0
+stdout:
+added strings 1.0.0
+wrote <work>/app/heroes.toml
+removed kit 1.0.0 <work>/app/heroes.packages/kit@1.0.0-c1b4efe9dbbb3262, which no entry names now
+stderr:
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+one
+one
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2621-an-add-after-a-hand-edit-removes-the-tree-it-left.case/idx"
+
+[dependencies.kit]
+version = "1.1.0"
+sum = "sha256-1590f41e82238de77c661d4cd471040aeee797d69ff9af35bd0e4023a5ea83ab"
+
+[dependencies.strings]
+version = "1.0.0"
+sum = "sha256-e11755ee0ff693c446590f08839ede884f20fa7ce594122df4ffd7d584d4bf7c"
+heroes.packages:
+kit@1.1.0-ee3c6b3205771e0a
+strings@1.0.0-b2db31dcac5a26bc

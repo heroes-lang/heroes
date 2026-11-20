@@ -1,0 +1,12 @@
+# Fixed defect 2621, 2026-11-20, lane umbrella-3: what a hand edit left that
+# `heroes fetch` cannot hold to its folder's name stays, said with why and how
+# to keep or remove it: the tree of `kit` 1.0.0 with a line of the author's
+# added, and the git tree of `yml` at the tag the catalogue named before, whose
+# commit no folder's name holds. The author's own folder `notes/`, whose name
+# is no key, is not asked.
+use <kit>/csv
+use <yml>/load
+
+function main()
+    print(csv.first("one,two"))
+    print(load.load().to_str())
