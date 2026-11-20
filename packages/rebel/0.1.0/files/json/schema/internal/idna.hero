@@ -189,7 +189,7 @@ function encode(points: [i64]) -> str
 # Whether `cp` is a combining mark, whose category begins with `M`.
 function is_mark(cp: i64) -> bool
     c = unicode.from_code_point(cp).default("a")
-    return unicode.category(c)[0] == 'M'
+    return unicode.is_mark(c)
 
 # Whether the contextual rule of RFC 5892's Appendix A allows `points[at]`.
 function context_allows(points: [i64], at: i64) -> bool

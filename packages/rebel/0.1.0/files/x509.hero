@@ -235,7 +235,7 @@ function to_general_name(v: asn1.Value) -> GeneralName?
         return ok(.uri(uri: shapes.implicit_ia5(v: v, what: "a uniformResourceIdentifier")?))
 
     if number == 7
-        octets = shapes.within(r: asn1.octets_of(shapes.implicit(v: v, number: asn1.OCTET_STRING, what: "an iPAddress")?), what: "an iPAddress")?
+        octets = shapes.within(r: asn1.bytes_of(shapes.implicit(v: v, number: asn1.OCTET_STRING, what: "an iPAddress")?), what: "an iPAddress")?
 
         if octets.len() == 4 || octets.len() == 16
             return ok(.ip(address: net.from_bytes(octets)?))
@@ -673,7 +673,7 @@ function to_extension(v: asn1.Value) -> Extension?
 
     if items.len() == 3
         critical @ shapes.within(r: asn1.bool_of(items[1]), what: f"the extension {oid.dotted}")?
-    value = shapes.within(r: asn1.octets_of(items[items.len() - 1]), what: f"the extension {oid.dotted}")?
+    value = shapes.within(r: asn1.bytes_of(items[items.len() - 1]), what: f"the extension {oid.dotted}")?
     return ok(Extension(oid: oid, critical: critical, value: value))
 
 # The extensions `list`, the ones this package knows decoded.
@@ -889,7 +889,7 @@ function to_extensions(list: [Extension]) -> Extensions?
             basic_constraints @ BasicConstraints(is_ca: is_ca, has_path_len: has_length, path_len: length)
         else if id == SUBJECT_KEY_ID
             has_subject_key_id @ true
-            subject_key_id @ shapes.within(r: asn1.octets_of(v), what: what)?
+            subject_key_id @ shapes.within(r: asn1.bytes_of(v), what: what)?
         else if id == AUTHORITY_KEY_ID
             has_key_id @= false
             key_id @= no_bytes
@@ -902,7 +902,7 @@ function to_extensions(list: [Extension]) -> Extensions?
 
                 if n == 0
                     has_key_id @ true
-                    key_id @ shapes.within(r: asn1.octets_of(shapes.implicit(v: part, number: asn1.OCTET_STRING, what: what)?), what: what)?
+                    key_id @ shapes.within(r: asn1.bytes_of(shapes.implicit(v: part, number: asn1.OCTET_STRING, what: what)?), what: what)?
                 else if n == 1
                     for item in shapes.tagged_items(v: part, what: what)?
                         issuer_names @ issuer_names.push(shapes.within(r: to_general_name(item), what: what)?)

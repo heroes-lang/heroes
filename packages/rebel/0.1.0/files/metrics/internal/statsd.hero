@@ -4,6 +4,7 @@
 # and service checks `_sc|...`. Each part is checked here, so no text a program
 # gives can end a line early or begin another one.
 
+use bytes
 use metrics/internal/floats
 use net
 use numbers
@@ -135,7 +136,7 @@ function sampled(@generator: random.Generator, rate: f64) -> bool?
 
 # Sends `text` and a line feed as one datagram from `socket` to `to`.
 function send_line(socket: net.UdpSocket, to: net.Address, text: str) -> ()?
-    return net.send_to(socket, data: strings.to_bytes(text + "\n"), to: to)
+    return net.send_to(socket, data: bytes.from_text(text + "\n"), to: to)
 
 # Sends one metric's line where `rate` lets it: the client's `prefix` before
 # `name`, its tags `own` before the line's `tags`.

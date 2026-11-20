@@ -5,13 +5,14 @@
 # `FLOAT` read as text is rounded to the single it holds, as the binary
 # protocol sends it.
 #
-# A float's bits are read and written by `numbers`' functions
-# (`numbers.f64_to_bits` and its three siblings), exact for every value a
+# A float's bits are read and written by `math`'s functions
+# (`math.f64_to_bits` and its three siblings), exact for every value a
 # `FLOAT` or a `DOUBLE` column holds. Until 2026-11-18 they were `protobuf`'s,
 # and carrying `protobuf` made a MySQL program 2,164,032 bytes larger on macOS
 # (`reach_sql_mysql`, 7,062,784 bytes against 4,898,752).
 
 use bytes
+use math
 use numbers
 use sql
 use sql/mysql/internal/answers
@@ -217,11 +218,11 @@ function binary_value(d: answers.ColumnDef, @c: wire.Cursor) -> sql.Value?
             return ok(.integer(v: n))
         4 =>
             bits = wire.read_le(@c, 4)?
-            return ok(.float(v: to_f64(numbers.bits_to_f32(to_u32(bits).must()))))
+            return ok(.float(v: to_f64(math.bits_to_f32(to_u32(bits).must()))))
         5 =>
             at = c.at
             _ = wire.read_n(@c, 8)?
-            return ok(.float(v: numbers.bits_to_f64(u64_at(c.data, at: at))))
+            return ok(.float(v: math.bits_to_f64(u64_at(c.data, at: at))))
         6                => return ok(.null_value)
         7 | 10 | 12 | 14 => return ok(binary_instant(d, c: @c)?)
         11               => return ok(.text(v: binary_time(d, c: @c)?))
@@ -382,7 +383,7 @@ function params_block(params: [sql.Value]) -> [u8]
                 wire.push_le(@data, n: n.v, width: 8)
                 8
             .float x =>
-                push_u64(@data, n: numbers.f64_to_bits(x.v))
+                push_u64(@data, n: math.f64_to_bits(x.v))
                 5
             .text t =>
                 wire.push_lenenc_bytes(out: @data, data: bytes.from_text(t.v))

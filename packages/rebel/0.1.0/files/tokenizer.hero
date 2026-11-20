@@ -12,7 +12,7 @@
 # `tokenizer/tables/cl100k_base` and `tokenizer/tables/o200k_harmony`, and
 # `tokenizer/tables` to find one by its name or by a model's. Claude's
 # tokenizer is not published: Claude's tokens are counted by Anthropic's API,
-# which `llm/anthropic`'s `count_tokens` asks. Text cut into pieces of a
+# which `llm/anthropic`'s `count_input_tokens` asks. Text cut into pieces of a
 # number of tokens is `chunks`'.
 #
 # The pattern is read in the dialect tiktoken writes it in, that of the Rust

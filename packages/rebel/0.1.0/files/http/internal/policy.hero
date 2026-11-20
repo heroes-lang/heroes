@@ -261,7 +261,7 @@ function connected(secure: bool, host: str, port: i64, deadline_ms: i64, roots: 
             msg: f"sending a request to {host}: its {deadline_ms} ms ran out in the TLS handshake"
         )
 
-    match tls.set_deadline(stream, ms: left)
+    match tls.set_deadline(stream, deadline_ms: left)
         .ok _ => return ok(stream)
         .err e =>
             match io.close(@stream)

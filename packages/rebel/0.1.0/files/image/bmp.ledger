@@ -13,7 +13,7 @@
 # 255.
 
 capability bmp/decode  a BMP read: every header, depth and compression of Windows and OS/2
-  heroes  image/bmp.decode
+  heroes  image/bmp.decode, image/bmp.decode_image
   go      -
   rust    -
   python  Image.open, BmpImagePlugin.BmpImageFile, BmpImagePlugin.DibImageFile

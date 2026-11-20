@@ -263,7 +263,7 @@ function read_escape(p: str, at: i64, in_class: bool) -> Piece?
 
 # The width of the character at byte `at`.
 function width_at(p: str, at: i64) -> i64
-    return unicode.utf8_width(p[at]).default(1)
+    return unicode.utf8_len_of_first(p[at]).default(1)
 
 # The class beginning with the `[` at byte `at`.
 function read_class(p: str, at: i64) -> Piece?

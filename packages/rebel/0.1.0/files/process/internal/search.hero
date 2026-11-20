@@ -85,7 +85,7 @@ function located(program: str) -> str?
 
     if launch.holds_zero(program)
         return codes.of(code: codes.INVALID, asked: asked, why: "the name holds a zero byte")
-    windows = os.family() == .windows
+    windows = os.system() == .windows
     name: str @= program
 
     if windows

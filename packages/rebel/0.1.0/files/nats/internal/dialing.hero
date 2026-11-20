@@ -352,7 +352,7 @@ function dial_for_test(url: str) -> str
 
 test "dial: INFO, CONNECT with the URL's user and password, PING and PONG; then a server that refuses the login"
     l @= net.listen("127.0.0.1", port: 0).must()
-    t @= threads.spawn_text(body: dial_for_test, arg: f"nats://bob:pw@127.0.0.1:{l.address.port}")
+    t @= threads.spawn_text(body: dial_for_test, arg: f"nats://bob:pw@127.0.0.1:{l.address.port}").must()
     c @= net.accept(l, deadline_ms: 5000).must()
     io.write_text(c.stream, text: "INFO {\"server_name\":\"fake\",\"max_payload\":2048,\"headers\":true}\r\n").must()
     r @= io.reader(c.stream)
@@ -362,7 +362,7 @@ test "dial: INFO, CONNECT with the URL's user and password, PING and PONG; then 
     io.write_text(c.stream, text: "+OK\r\nPONG\r\n").must()
     assert threads.wait_text(@t) == "open fake 2048 1"
     io.close(@c.stream).must()
-    t2 @= threads.spawn_text(body: dial_for_test, arg: f"nats://127.0.0.1:{l.address.port}")
+    t2 @= threads.spawn_text(body: dial_for_test, arg: f"nats://127.0.0.1:{l.address.port}").must()
     c2 @= net.accept(l, deadline_ms: 5000).must()
     io.write_text(c2.stream, text: "INFO {\"auth_required\":true}\r\n").must()
     r2 @= io.reader(c2.stream)
@@ -375,7 +375,7 @@ test "dial: INFO, CONNECT with the URL's user and password, PING and PONG; then 
 
 test "dial: a server that begins with something other than INFO"
     l @= net.listen("127.0.0.1", port: 0).must()
-    t @= threads.spawn_text(body: dial_for_test, arg: f"nats://127.0.0.1:{l.address.port}")
+    t @= threads.spawn_text(body: dial_for_test, arg: f"nats://127.0.0.1:{l.address.port}").must()
     c @= net.accept(l, deadline_ms: 5000).must()
     io.write_text(c.stream, text: "PONG\r\n").must()
     assert strings.has_prefix(s: threads.wait_text(@t), prefix: "invalid: ")
@@ -409,8 +409,8 @@ test "dial: TLS begun after the INFO line, over the connection where tls can, on
     # refused connection takes 2 s and the client's 1,000 ms ran out there
     # (measured on the box, 2026-11-19). A client that fails ends the wait for
     # it, and the test fails with the client's words.
-    tls.set_accept_deadline(l, ms: 30000).must()
-    t @= threads.spawn_text(body: dial_tls_for_test, arg: f"tls://127.0.0.1:{l.port}")
+    tls.set_accept_deadline(l, deadline_ms: 30000).must()
+    t @= threads.spawn_text(body: dial_tls_for_test, arg: f"tls://127.0.0.1:{l.port}").must()
     tries: i64 @= 0
     done: bool @= false
 

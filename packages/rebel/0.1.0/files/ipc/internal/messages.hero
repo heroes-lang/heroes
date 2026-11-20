@@ -39,11 +39,11 @@ function read(s: io.Stream, most: i64) -> [u8]?
 
     if most < 0
         return failure.of(code: failure.INVALID, asked: asked, why: f"the most is 0 or more bytes, and {most} is not")
-    short = bytes.decode_i32_be(io.read_exact(s, count: 4)?, at: 0)?
+    short = bytes.decode_i32_be(io.read_exact(s, n: 4)?, at: 0)?
     count @= short.to_i64().must()
 
     if short == -1
-        long = bytes.decode_u64_be(io.read_exact(s, count: 8)?, at: 0)?
+        long = bytes.decode_u64_be(io.read_exact(s, n: 8)?, at: 0)?
 
         match long.to_i64()
             .ok n => count @ n
@@ -61,7 +61,7 @@ function read(s: io.Stream, most: i64) -> [u8]?
             asked: asked,
             why: f"the message holds {count} bytes, past the most of {most}"
         )
-    return io.read_exact(s, count: count)
+    return io.read_exact(s, n: count)
 
 ## Tests
 
@@ -87,7 +87,7 @@ test "write and read through a pipe: an empty message, one of three bytes, one p
             assert e.code == failure.INVALID
             assert e.msg == "reading a message of a pipe's reading end: the message holds 4 bytes, past the most of 3"
 
-    assert io.read_exact(reader, count: 4).must() == [1, 2, 3, 4]
+    assert io.read_exact(reader, n: 4).must() == [1, 2, 3, 4]
     assert io.write(writer, data: [0, 0, 0, 9, 1]) == ok()
     assert io.close(@writer) == ok()
 

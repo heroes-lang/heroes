@@ -2,8 +2,9 @@
 # `hero_disk.h`, bound thin: one function per C function, in C's order, each
 # answering what C answers. The floor of `os` and `fs`: where a call fails its
 # answer is -1 and `last_error` then the kind, which the face turns into a
-# code. Nothing here opens, reads or writes a file's bytes, which is
-# `hero_stream.h`'s.
+# code. Nothing here opens, reads, writes or locks a file's bytes: a stream is
+# `hero_stream.h`'s, and the lock on one, which names a stream, is the floor of
+# `fs`, `fs/hero_disk`.
 #
 # The layer is C of the language's own beside the runtime, so this group names
 # its header and no `link`, and the same lines bind it on every platform. A
@@ -17,8 +18,6 @@
 # a folder may grow between two calls. A name C gives back is the bytes that
 # name it, which are text wherever the system holds text: the face asks
 # `validated_bytes` of them.
-
-use io/hero_stream
 
 extern "hero_disk.h"
     # The kinds of failure `last_error` answers. They are the same numbers on
@@ -83,9 +82,6 @@ extern "hero_disk.h"
     constant HERO_DISK_OTHER_CHARACTER_DEVICE: i64
     constant HERO_DISK_OTHER_BLOCK_DEVICE: i64
     constant HERO_DISK_OTHER_UNKNOWN: i64
-    # The two locks `lock` asks for.
-    constant HERO_DISK_LOCK_SHARED: i64
-    constant HERO_DISK_LOCK_EXCLUSIVE: i64
     function hero_disk_other_kind(path: cstr lent, through: i64) -> i64
     function hero_disk_made(path: cstr lent, through: i64, @made: i64) -> i64
     function hero_disk_owner(path: cstr lent, through: i64, @user: i64, @group: i64) -> i64
@@ -94,8 +90,6 @@ extern "hero_disk.h"
     function hero_disk_set_permission(path: cstr lent, permission: i64) -> i64
     function hero_disk_set_link_permission(path: cstr lent, permission: i64) -> i64
     function hero_disk_set_link_times(path: cstr lent, written: i64, read: i64) -> i64
-    function hero_disk_lock(s: hero_stream.Stream, how: i64, wait: i64) -> i64
-    function hero_disk_unlock(s: hero_stream.Stream) -> i64
     # Round 4 (2026-11-17): a file mapped in memory, a handle the layer issues
     # and checks. One closed already, `nullptr`, or one it never issued is
     # `HERO_DISK_NOT_OPEN`, never a read of memory no longer mapped; no door
@@ -289,18 +283,6 @@ function set_link_permission(path: str, permission: i64) -> i64
 # where `path` names one, else of what it names, are those given, or -1.
 function set_link_times(path: str, written: i64, read: i64) -> i64
     return hero_disk_set_link_times(path.cstr(), written: written, read: read)
-
-# 0 once the stream `s` holds a lock on its whole file, `how` one of
-# `HERO_DISK_LOCK_SHARED` and `HERO_DISK_LOCK_EXCLUSIVE`, or -1:
-# `HERO_DISK_BUSY` where `wait` is 0 and another holds a lock that excludes
-# it, `HERO_DISK_NOT_OPEN` where `s` is no open stream. `wait` 1 waits as long
-# as it takes. Advisory on POSIX, enforced on Windows (`hero_disk.h`).
-function lock(s: hero_stream.Stream, how: i64, wait: i64) -> i64
-    return hero_disk_lock(s, how: how, wait: wait)
-
-# 0 once the stream `s` holds no lock, also where it held none, or -1.
-function unlock(s: hero_stream.Stream) -> i64
-    return hero_disk_unlock(s)
 
 # 0 once the file `from` stands in the place of `to`, the old one gone, in
 # one step of the system on POSIX, or -1 with nothing moved:
@@ -966,57 +948,6 @@ test "set_link_times: a link's own times read back, its target's left as they we
     assert set_link_times(dir + "/none", written: first, read: first) == -1
     assert last_error() == HERO_DISK_NOT_FOUND
     test_clear(dir, holds: ["f", "l"])
-
-test "lock and unlock: shared beside shared, exclusive refused at once and then given, unlocked twice, no stream, and a how or a wait that is none"
-    dir = test_folder("lock", holds: ["f"])
-    assert !write_file(path: dir + "/f", text: "x").is_err()
-    a @= hero_stream.open(dir + "/f", access: hero_stream.HERO_STREAM_ACCESS_READ, perm: 0)
-    b @= hero_stream.open(dir + "/f", access: hero_stream.HERO_STREAM_ACCESS_READ, perm: 0)
-    assert a != nullptr && b != nullptr
-    assert lock(a, how: HERO_DISK_LOCK_SHARED, wait: 0) == 0
-    assert lock(b, how: HERO_DISK_LOCK_SHARED, wait: 0) == 0
-    assert lock(b, how: HERO_DISK_LOCK_EXCLUSIVE, wait: 0) == -1
-    assert last_error() == HERO_DISK_BUSY
-    assert unlock(a) == 0
-    assert lock(b, how: HERO_DISK_LOCK_EXCLUSIVE, wait: 0) == 0
-    assert lock(a, how: HERO_DISK_LOCK_SHARED, wait: 0) == -1
-    assert last_error() == HERO_DISK_BUSY
-    assert unlock(b) == 0
-    assert lock(a, how: HERO_DISK_LOCK_EXCLUSIVE, wait: 1) == 0
-    assert unlock(a) == 0
-    assert unlock(a) == 0
-    assert lock(a, how: 3, wait: 0) == -1
-    assert last_error() == HERO_DISK_INVALID
-    assert lock(a, how: HERO_DISK_LOCK_SHARED, wait: 2) == -1
-    assert last_error() == HERO_DISK_INVALID
-    none: hero_stream.Stream = nullptr
-    assert lock(none, how: HERO_DISK_LOCK_SHARED, wait: 0) == -1
-    assert last_error() == HERO_DISK_NOT_OPEN
-    assert unlock(none) == -1
-    assert last_error() == HERO_DISK_NOT_OPEN
-    assert hero_stream.close(@a) == 0
-    assert hero_stream.close(@b) == 0
-    test_clear(dir, holds: ["f"])
-
-# The one place the systems part: POSIX's lock is advisory, so a write
-# through a stream holding a shared lock goes; Windows' is enforced, and a
-# shared lock refuses a write through its own stream.
-test "lock: a write through a stream holding a shared lock, which POSIX lets through and Windows refuses"
-    dir = test_folder("enforced", holds: ["f"])
-    assert !write_file(path: dir + "/f", text: "x").is_err()
-    s @= hero_stream.open(dir + "/f", access: hero_stream.HERO_STREAM_ACCESS_READ_WRITE, perm: 0)
-    assert s != nullptr
-    assert lock(s, how: HERO_DISK_LOCK_SHARED, wait: 0) == 0
-    data: [u8] @= [1, 2]
-    wrote = hero_stream.write(s, @data, n: 2)
-
-    if test_windows()
-        assert wrote == -1
-    else
-        assert wrote == 2
-    assert unlock(s) == 0
-    assert hero_stream.close(@s) == 0
-    test_clear(dir, holds: ["f"])
 
 # Round 4 (2026-11-17): a file put in place for good.
 test "replace: a file over a file, over nothing, a folder either side, a link replaced itself, the same name, and a source not there"

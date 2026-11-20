@@ -20,17 +20,6 @@ function is_ascii(s: str) -> bool
 
     return true
 
-# The bytes of `s`.
-function to_bytes(s: str) -> [u8]
-    out: [u8] @= []
-    at: i64 @= 0
-
-    while at < s.len()
-        out @ out.push(s[at])
-        at @ at + 1
-
-    return out
-
 # The part of `s` from byte `from` up to `to`, failing `invalid` where the
 # built-in `slice` would abort.
 function slice_checked(s: str, from: i64, to: i64) -> str?
@@ -57,12 +46,6 @@ test "is_ascii: the empty text, ASCII up to 127, and a character of more than on
     assert is_ascii("abc\u{7f}")
     assert !is_ascii("é")
     assert !is_ascii("abcé")
-
-test "to_bytes: the empty text, ASCII, and a character of more than one byte"
-    nothing: [u8] = []
-    assert to_bytes("") == nothing
-    assert to_bytes("a") == [0x61]
-    assert to_bytes("é") == [0xc3, 0xa9]
 
 test "slice_checked: a part, a whole character, an empty text, inside a character, past the end, below 0, and the wrong order"
     assert slice_checked(s: "città", from: 0, to: 3).must() == "cit"

@@ -194,7 +194,7 @@ function current(lx: Lexer lent) -> str
 function width(lx: Lexer lent) -> i64
     if lx.text[lx.at] < 0x80
         return 1
-    return unicode.width_at(lx.text, lx.at)
+    return unicode.len_at(lx.text, lx.at)
 
 # The byte index just past the run from the cursor of bytes that are not
 # `stop_a`, `stop_b`, `stop_c` nor 0; at least one past the cursor where the

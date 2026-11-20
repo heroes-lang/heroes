@@ -71,7 +71,7 @@ function found(text: str, at: i64) -> str
 
     if b < 0x80
         return f"\"{text.slice(from: at, to: at + 1)}\""
-    c = text.slice(from: at, to: at + unicode.width_at(text, at))
+    c = text.slice(from: at, to: at + unicode.len_at(text, at))
 
     if !unicode.is_graphic(c)
         return code_name(unicode.code_point_at(text, at))

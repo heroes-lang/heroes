@@ -22,7 +22,7 @@ record Rig
 function rig_bytes(script: [u8]) -> Rig
     two = net.pair(5000).must()
     s @= state.fresh(state.sample_options())
-    s.link @ .plain(conn: two.first)
+    s.link @ .connected(stream: two.first.stream, secured: false)
     s.open @ true
     s.target @ "the test's server"
 
@@ -41,10 +41,10 @@ function rig(script: str) -> Rig
 # - `c`: the server's end.
 function heard(c: net.Conn) -> [u8]
     out: [u8] @= []
-    net.set_deadline(c, ms: 100).must()
+    net.set_deadline(c.stream, deadline_ms: 100).must()
 
     while true
-        match io.read(c.stream, most: 65536)
+        match io.read(c.stream, n: 65536)
             .ok got =>
                 if got.len() == 0
                     return out

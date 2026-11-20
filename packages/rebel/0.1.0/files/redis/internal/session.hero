@@ -130,7 +130,7 @@ function append(@out: [u8], data: [u8])
 # - `s`: the session, its bytes grown, ended where the read fails or the
 #   connection ends.
 function fill(@s: Session) -> ()?
-    match io.read(s.input, most: CHUNK)
+    match io.read(s.input, n: CHUNK)
         .ok got =>
             if got.len() == 0
                 s.ended @ true
@@ -313,8 +313,8 @@ function set_deadline(s: Session, ms: i64) -> ()?
         return closed_failure(s)
 
     match s.link
-        .plain p  => return net.set_deadline(p.conn, ms: ms)
-        .secured  => return tls.set_deadline(s.out, ms: ms)
+        .plain p  => return net.set_deadline(p.conn.stream, deadline_ms: ms)
+        .secured  => return tls.set_deadline(s.out, deadline_ms: ms)
         .scripted => return fail(code: UNSUPPORTED, msg: "a scripted server has no deadline")
 
 # Closes the connection's stream and ends the session.

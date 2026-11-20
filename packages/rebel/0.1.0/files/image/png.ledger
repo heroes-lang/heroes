@@ -13,7 +13,7 @@
 # png.Decode the same day, pixel for pixel equal.
 
 capability png/decode  a PNG file read into an image
-  heroes  image/png.decode, image/png.decoding, image/png.DecodeOptions, image/png.Png
+  heroes  image/png.decode, image/png.decode_with, image/png.decode_image, image/png.decoding, image/png.DecodeOptions, image/png.Png
   go      Decode, FormatError, FormatError.Error, UnsupportedError, UnsupportedError.Error
   rust    -
   python  Image.open, PngImagePlugin.PngImageFile

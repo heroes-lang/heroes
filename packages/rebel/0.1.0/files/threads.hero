@@ -28,8 +28,8 @@ use threads/internal/lives
 use threads/internal/pool
 use threads/internal/samples
 
-# The code of a thread the system refused to start: `spawn`, `spawn_sized`
-# and `run_all` fail with it.
+# The code of a thread the system refused to start: `spawn`, `spawn_sized`,
+# `spawn_text`, `run_all` and `run_all_text` fail with it.
 constant LIMIT: str
     pool.LIMIT
 
@@ -107,12 +107,16 @@ record TextThread
 # - `arg`: the one text the thread is given, copied, of any length; the empty
 #   text crosses too.
 #
-# Aborts where the system refuses to start a thread, since the runtime's text
-# door answers no refusal, and where `max_running()` threads of the program
-# are running. See also `wait_text`, `run_all_text`.
-function spawn_text(body: (function(str) -> str), arg: str) -> TextThread
-    handle = hero_os.start_text(body: body, arg: arg)
-    return TextThread(handle: handle, life: lives.begin())
+# Fails `limit` where the system refuses to start a thread, its own number
+# in the message. Aborts where `max_running()` threads of the program are
+# running, none of them waited for. See also `wait_text`, `run_all_text`.
+function spawn_text(body: (function(str) -> str), arg: str) -> TextThread?
+    why: i64 @= 0
+    handle = hero_os.start_text(body: body, arg: arg, bytes: 0, why: @why)
+
+    if handle < 0
+        return fail(code: LIMIT, msg: f"the system refused to start a thread (its own number {why})")
+    return ok(TextThread(handle: handle, life: lives.begin()))
 
 # Waits for `thread` to end and answers a copy of what its body returned.
 #
@@ -154,11 +158,11 @@ function run_all(body: (function(i64) -> i64), values: [i64], workers: i64) -> [
 # - `workers`: at most how many threads run at once, from one; past
 #   `max_running()` it is taken as that.
 #
-# Every thread it starts is waited for before it answers. Aborts where
-# `workers` is below one, where the system refuses a thread, and where the
-# program's other threads leave the runtime no room for one more. See also
-# `spawn_text`, `run_all`.
-function run_all_text(body: (function(str) -> str), values: [str], workers: i64) -> [str]
+# Every thread it starts is waited for before it answers. Fails `limit`
+# where the system refuses a thread, once those it started have ended.
+# Aborts where `workers` is below one, and where the program's other threads
+# leave the runtime no room for one more. See also `spawn_text`, `run_all`.
+function run_all_text(body: (function(str) -> str), values: [str], workers: i64) -> [str]?
     return pool.run_all_text(body: body, values: values, workers: workers)
 
 # How many threads the runtime runs at once, the program's started and not
@@ -193,8 +197,8 @@ test "spawn_sized: a stack the runtime's own, and one of eight megabytes"
     assert wait(@deep) == 36
 
 test "spawn_text and wait_text: the empty text, text of more than one byte, several at once"
-    empty: TextThread @= spawn_text(body: samples.shout, arg: "")
-    wide: TextThread @= spawn_text(body: samples.same_text, arg: "caffè über 日本")
+    empty: TextThread @= spawn_text(body: samples.shout, arg: "").must()
+    wide: TextThread @= spawn_text(body: samples.same_text, arg: "caffè über 日本").must()
     assert wait_text(@wide) == "caffè über 日本"
     assert wait_text(@empty) == "!"
 
@@ -225,13 +229,13 @@ test "wait: the sum a thread computed"
 # A text handled on another thread; `samples.shout` is
 # `function shout(s: str) -> str`, `s + "!"`.
 test "spawn_text: a word made a shout on a thread of its own"
-    t: TextThread @= spawn_text(body: samples.shout, arg: "hello")
+    t: TextThread @= spawn_text(body: samples.shout, arg: "hello").must()
     assert wait_text(@t) == "hello!"
 
 # The text a thread gave back; `samples.same_text` is
 # `function same_text(s: str) -> str`, answering `s` as it came.
 test "wait_text: a copy of what the thread returned"
-    t: TextThread @= spawn_text(body: samples.same_text, arg: "è")
+    t: TextThread @= spawn_text(body: samples.same_text, arg: "è").must()
     assert wait_text(@t) == "è"
 
 # Numbers squared four at a time, the answers in order; `samples.square` is
@@ -242,7 +246,7 @@ test "run_all: squares of a list, four threads at a time"
 # Words handled two at a time, in order; `samples.shout` is
 # `function shout(s: str) -> str`, `s + "!"`.
 test "run_all_text: three words, two threads at a time"
-    assert run_all_text(body: samples.shout, values: ["a", "b", "c"], workers: 2) == ["a!", "b!", "c!"]
+    assert run_all_text(body: samples.shout, values: ["a", "b", "c"], workers: 2).must() == ["a!", "b!", "c!"]
 
 # How many threads may run at once.
 test "max_running: the runtime's ceiling"

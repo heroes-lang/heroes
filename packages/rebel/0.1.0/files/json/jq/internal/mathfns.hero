@@ -234,7 +234,7 @@ function fma(a: json.Value, b: json.Value, c: json.Value) -> json.Value?
     x = number(a)?
     y = number(b)?
     z = number(c)?
-    return ok(of(math.mul_add(x: x, times: y, plus: z)))
+    return ok(of(math.multiply_add(x: x, times: y, plus: z)))
 
 ## Tests
 

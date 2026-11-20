@@ -47,7 +47,7 @@ record Clause
 
 # The byte width of the character of `query` at `at`.
 function width_at(query: str, at: i64) -> i64
-    return unicode.width_at(query, index: at)
+    return unicode.len_at(query, index: at)
 
 # Whether the character of `query` at `at` is white space.
 function space_at(query: str, at: i64) -> bool

@@ -158,7 +158,7 @@ function next_boundary(s: str, at: i64) -> i64
     position: i64 @= sure_start(s, at)
     value: i64 @= value_at(s, position)
     context: Context @= advanced(fresh(), value)
-    position @ position + unicode.width_at(s, position)
+    position @ position + unicode.len_at(s, position)
 
     while position < s.len()
         next_value = value_at(s, position)
@@ -167,7 +167,7 @@ function next_boundary(s: str, at: i64) -> i64
             return position
         context @ advanced(context, next_value)
         value @ next_value
-        position @ position + unicode.width_at(s, position)
+        position @ position + unicode.len_at(s, position)
 
     return s.len()
 
@@ -182,7 +182,7 @@ function previous_boundary(s: str, at: i64) -> i64
     found: i64 @= position
     value: i64 @= value_at(s, position)
     context: Context @= advanced(fresh(), value)
-    position @ position + unicode.width_at(s, position)
+    position @ position + unicode.len_at(s, position)
 
     while position < at
         next_value = value_at(s, position)
@@ -191,7 +191,7 @@ function previous_boundary(s: str, at: i64) -> i64
             found @ position
         context @ advanced(context, next_value)
         value @ next_value
-        position @ position + unicode.width_at(s, position)
+        position @ position + unicode.len_at(s, position)
 
     return found
 

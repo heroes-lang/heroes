@@ -43,7 +43,7 @@ function start_tls(text: str) -> Started
 # `text`, and the port it tells back read.
 function started(body: (function(str) -> str), text: str) -> Started
     control @= net.listen(host: "127.0.0.1", port: 0).must()
-    t = threads.spawn_text(body: body, arg: f"{control.address.port}" + SEPARATOR + text)
+    t = threads.spawn_text(body: body, arg: f"{control.address.port}" + SEPARATOR + text).must()
     told = net.accept(control, deadline_ms: 10_000).must()
     r @= io.reader(told.stream)
     port = syntax.decimal(s: io.read_rest_text(@r).must(), what: "the port told").must()
@@ -91,7 +91,7 @@ function serve(arg: str) -> str
     control = syntax.decimal(s: parts[0], what: "the control port").must()
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     tell(control: control, port: l.address.port)
-    net.set_accept_deadline(l, ms: 10_000).must()
+    net.set_accept_deadline(l, deadline_ms: 10_000).must()
     seen: [str] @= []
     at: i64 @= 1
 

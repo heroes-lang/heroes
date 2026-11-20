@@ -498,6 +498,16 @@ int64_t hero_thread_join(int64_t handle);
 int64_t hero_thread_spawn_str(HeroStr (*body)(HeroStr), HeroStr arg);
 HeroStr hero_thread_join_str(int64_t handle);
 
+/* The same, on a stack of at least `bytes`, and a refusal ANSWERED rather
+ * than panicked: -1, `*why` the operating system's own number, as
+ * `hero_thread_spawn_sized` answers one (the coherence review of Rebel's X08,
+ * 2026-11-20), so a library that starts a thread of text can fail where the
+ * system refuses one instead of stopping the program. 0 bytes asks the
+ * runtime's own floor; fewer than 0 is a panic. Bound from Heroes as
+ * `hero_thread_spawn_str_sized(body: (function(str) -> str), arg: str,
+ * bytes: i64, @why: i64) -> i64`, joined by `hero_thread_join_str`. */
+int64_t hero_thread_spawn_str_sized(HeroStr (*body)(HeroStr), HeroStr arg, int64_t bytes, int64_t *why);
+
 /* How many may run at once, so a program can ask instead of meeting the panic.
  * A value rather than a form — `hero_word_bits`'s precedent. */
 int64_t hero_thread_limit(void);

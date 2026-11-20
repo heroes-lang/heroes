@@ -57,6 +57,18 @@ function decode(data: [u8], limits: image.Limits) -> image.Image?
         .rgb
     return ok(image.Image(width: h.width, height: h.height, format: format, pixels: pixels))
 
+# The image `data` holds, alone: what a program that reads any of the
+# formats asks of each, by one call of one shape in `image/bmp`, `image/gif`,
+# `image/jpeg`, `image/netpbm` and `image/png`.
+#
+# - `data`: a whole BMP file.
+# - `limits`: the largest image the caller allows; `image.default_limits`
+#   makes the usual ones.
+#
+# The answer is `decode`'s, which is the image alone already. Fails as `decode` fails. See also `decode`.
+function decode_image(data: [u8], limits: image.Limits) -> image.Image?
+    return decode(data, limits: limits)
+
 # The size, depth and format of the BMP `data`, read from its headers.
 #
 # - `data`: a BMP file, or at least its headers.
@@ -191,3 +203,9 @@ test "encode: a gray image as 8 bits of a gray palette"
     file = encode(image.from_pixels(width: 1, height: 1, format: .gray, pixels: [77]).must()).must()
     assert info_of(file).must().bits == 8
     assert decode(file, image.default_limits()).must().pixels == [77, 77, 77]
+
+# The image alone, by the call every format answers.
+test "decode_image: what decode answers"
+    img = image.from_pixels(width: 1, height: 1, format: .rgb, pixels: [1, 2, 3]).must()
+    data = encode(img).must()
+    assert decode_image(data, limits: image.default_limits()).must() == decode(data, limits: image.default_limits()).must()

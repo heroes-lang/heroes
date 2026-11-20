@@ -102,7 +102,7 @@ function needs_escape_somewhere(s: str) -> bool
     while i < s.len()
         if is_unwritable(s: s, at: i) || s[i] == '\t'
             return true
-        i @ i + unicode.width_at(s, i)
+        i @ i + unicode.len_at(s, i)
 
     return false
 
@@ -191,7 +191,7 @@ function quoted(s: str) -> str
 
     while i < s.len()
         escape = escape_of(s: s, at: i)
-        width = unicode.width_at(s, i)
+        width = unicode.len_at(s, i)
 
         if escape != ""
             pieces @ pieces.push(s.slice(from: start, to: i))
@@ -228,7 +228,7 @@ function literal_fits(s: str) -> bool
 
         if b != '\n' && b != ' ' && b != '\t'
             seen @ true
-        i @ i + unicode.width_at(s, i)
+        i @ i + unicode.len_at(s, i)
 
     return seen
 

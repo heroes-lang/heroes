@@ -192,18 +192,18 @@ capability html/trusted  a value marked as trusted HTML, CSS, JavaScript or URL,
   note    -
 
 capability html/escape  a text escaped as HTML
-  heroes  template.escape_html
+  heroes  html.escape
   go      HTMLEscape, HTMLEscapeString, HTMLEscaper, html
   rust    -
   python  html.escape
-  note    Go's references, `&#34;` and `&#39;`, where Python writes `&quot;` and `&#x27;`; both escape the quotes always, so the text stands in an attribute too
+  note    `html`'s, which writes `&quot;` and `&#39;`; Go writes `&#34;` and `&#39;`, Python `&quot;` and `&#x27;`; all escape the quotes always, so the text stands in an attribute too. Until 2026-11-20 `template` kept a copy of its own writing Go's references; the coherence review's X01 took it out
 
 capability html/unescape  HTML's character references read
-  heroes  template.unescape_html
+  heroes  html.unescape, html.unescape_attribute
   go      -
   rust    -
   python  html.unescape, html.entities
-  note    every rule Python's: a name whole with its `;`, else the longest of the 106 read without one; a number 0, a surrogate or past U+10FFFF as U+FFFD, 0x80 to 0x9F through Windows-1252, a control or a noncharacter dropped; the 2231 names are the HTML standard's, as `html.entities.html5` holds them
+  note    `html`'s, by the HTML standard's reading and its table of names, which `template` reads an attribute's value by (`html.unescape_attribute`, so `?a=1&copy=2` keeps its `&copy`). Until 2026-11-20 `template` carried a second table and Python's rules, a control or a noncharacter dropped; the coherence review's X01 took them out
 
 capability js/escape  a text escaped for a JavaScript string
   heroes  template.escape_js

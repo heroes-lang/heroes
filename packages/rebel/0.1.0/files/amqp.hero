@@ -46,6 +46,7 @@ use amqp/internal/state
 use amqp/internal/waiting
 use bytes
 use io
+use math
 use numbers
 use os
 use poll
@@ -1452,12 +1453,12 @@ function encode_table(fields: [Field]) -> [u8]?
             .float32 v =>
                 out @ out.push('f')
 
-                for b in bytes.encode_u32_be(numbers.f32_to_bits(v.v))
+                for b in bytes.encode_u32_be(math.f32_to_bits(v.v))
                     out @ out.push(b)
             .float64 v =>
                 out @ out.push('d')
 
-                for b in bytes.encode_u64_be(numbers.f64_to_bits(v.v))
+                for b in bytes.encode_u64_be(math.f64_to_bits(v.v))
                     out @ out.push(b)
             .decimal v =>
                 out @ out.push('D')
@@ -1650,9 +1651,9 @@ function decode_table(data: [u8]) -> [Field]?
         else if kind == 'l' || kind == 'L'
             .int64(v: bytes.decode_i64_be(data, at: at).must())
         else if kind == 'f'
-            .float32(v: numbers.bits_to_f32(bytes.decode_u32_be(data, at: at).must()))
+            .float32(v: math.bits_to_f32(bytes.decode_u32_be(data, at: at).must()))
         else if kind == 'd'
-            .float64(v: numbers.bits_to_f64(bytes.decode_u64_be(data, at: at).must()))
+            .float64(v: math.bits_to_f64(bytes.decode_u64_be(data, at: at).must()))
         else if kind == 'D'
             .decimal(scale: data[at], digits: bytes.decode_i32_be(data, at: at + 1).must())
         else if kind == 'T'

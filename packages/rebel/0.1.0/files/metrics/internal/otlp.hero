@@ -5,9 +5,9 @@
 # Field numbers are the `.proto` files' of opentelemetry-proto 1.x, read from
 # its descriptors.
 
-use numbers
+use bytes
+use math
 use protobuf
-use strings
 
 # `AggregationTemporality`'s cumulative, the one a registry's values have.
 constant CUMULATIVE: u64
@@ -18,7 +18,7 @@ function put_text(@to: [u8], number: i64, s: str)
     if s.len() == 0
         return
     protobuf.push_tag(@to, number: number, wire: .length_delimited)
-    protobuf.push_length_delimited(to: @to, v: strings.to_bytes(s))
+    protobuf.push_length_delimited(to: @to, v: bytes.from_text(s))
 
 # Writes `b` as field `number`, the bytes of a string, of `bytes` or of a
 # message, written even where empty.
@@ -31,7 +31,7 @@ function put_varint(@to: [u8], number: i64, v: u64)
     if v == 0
         return
     protobuf.push_tag(@to, number: number, wire: .varint)
-    protobuf.push_varint(@to, v)
+    protobuf.push_uvarint(@to, v)
 
 # Writes `v` as the `fixed64` field `number`, left out where it is 0.
 function put_fixed64(@to: [u8], number: i64, v: u64)
@@ -44,12 +44,12 @@ function put_fixed64(@to: [u8], number: i64, v: u64)
 # `optional` field are written at zero too.
 function put_double(@to: [u8], number: i64, x: f64)
     protobuf.push_tag(@to, number: number, wire: .fixed64)
-    protobuf.push_fixed64(@to, v: numbers.f64_to_bits(x))
+    protobuf.push_fixed64(@to, v: math.f64_to_bits(x))
 
 # Writes `x` as the `double` field `number`, left out where it is 0, as a plain
 # proto3 field is.
 function put_double_unless_zero(@to: [u8], number: i64, x: f64)
-    if numbers.f64_to_bits(x) == 0
+    if math.f64_to_bits(x) == 0
         return
     put_double(@to, number: number, x: x)
 
@@ -64,7 +64,7 @@ function unix_nanoseconds(n: i64) -> u64
 # it is a oneof's member.
 function any_text(s: str) -> [u8]
     out: [u8] @= []
-    put_bytes(to: @out, number: 1, b: strings.to_bytes(s))
+    put_bytes(to: @out, number: 1, b: bytes.from_text(s))
     return out
 
 # `AnyValue` holding the bool `b`: field 2.
@@ -73,9 +73,9 @@ function any_boolean(b: bool) -> [u8]
     protobuf.push_tag(@out, number: 2, wire: .varint)
 
     if b
-        protobuf.push_varint(@out, v: 1)
+        protobuf.push_uvarint(@out, v: 1)
     else
-        protobuf.push_varint(@out, v: 0)
+        protobuf.push_uvarint(@out, v: 0)
     return out
 
 # `AnyValue` holding the `int64` `n`: field 3, a negative written in ten bytes
@@ -83,7 +83,7 @@ function any_boolean(b: bool) -> [u8]
 function any_integer(n: i64) -> [u8]
     out: [u8] @= []
     protobuf.push_tag(@out, number: 3, wire: .varint)
-    protobuf.push_varint(@out, v: twos_complement(n))
+    protobuf.push_uvarint(@out, v: twos_complement(n))
     return out
 
 # `AnyValue` holding the `double` `x`: field 4.

@@ -110,6 +110,27 @@ function decode(data: [u8], limits: image.Limits) -> Gif?
         Gif(width: p.width, height: p.height, palette: p.palette, background: p.background, loop_count: p.loop_count, frames: frames)
     )
 
+# The image `data` holds, alone: what a program that reads any of the
+# formats asks of each, by one call of one shape in `image/bmp`, `image/gif`,
+# `image/jpeg`, `image/netpbm` and `image/png`.
+#
+# - `data`: a whole GIF file.
+# - `limits`: the largest image the caller allows; `image.default_limits`
+#   makes the usual ones.
+#
+# The answer is the first frame laid on the screen as a viewer first shows it, RGBA of the screen's size; every frame is `decode`'s and `composite`'s. Fails as `decode` fails. See also `decode`.
+function decode_image(data: [u8], limits: image.Limits) -> image.Image?
+    p = blocks.parsed(data, limits: limits)?
+    first = blocks.Parsed(
+        width: p.width,
+        height: p.height,
+        palette: p.palette,
+        background: p.background,
+        loop_count: p.loop_count,
+        frames: [p.frames[0]]
+    )
+    return ok(canvas.composited(first, limits: limits)?[0])
+
 # What the header of a GIF file says.
 record Info
     # The screen's columns.
@@ -423,3 +444,9 @@ test "encode_image: a picture of two colours"
     img = image.from_pixels(width: 2, height: 1, format: .rgb, pixels: [255, 0, 0, 0, 255, 0]).must()
     g = decode(encode_image(img, dither: false).must(), image.default_limits()).must()
     assert image.from_indexed(g.frames[0].image).must().pixels == img.pixels
+
+# The first frame alone, as every format answers an image.
+test "decode_image: the first frame on its screen"
+    img = image.from_pixels(width: 2, height: 1, format: .rgba, pixels: [255, 0, 0, 255, 0, 0, 255, 255]).must()
+    back = decode_image(encode_image(img, dither: false).must(), limits: image.default_limits()).must()
+    assert back.width == 2 && back.height == 1

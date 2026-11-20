@@ -31,6 +31,7 @@ use mail/internal/address
 use mail/internal/build
 use mail/internal/charsets
 use mail/internal/dates
+use mail/internal/extensions
 use mail/internal/fields as field_lines
 use mail/internal/ids
 use mail/internal/mbox
@@ -40,6 +41,7 @@ use mail/internal/tree
 use mail/internal/words
 use mail/internal/write
 use os
+use path
 use strings
 use time
 
@@ -768,6 +770,23 @@ function data_part(data: [u8], media_type: str) -> Message?
 
     return ok(Message(fields: converted, body: b.body, parts: [], preamble: [], epilogue: [], defects: []))
 
+# The media type of a file named `name`, by its extension compared without
+# case, as an attachment gives it: `application/pdf` for `report.PDF`.
+#
+# - `name`: a file's name or path.
+#
+# The table is one Rebel carries, the same on every machine: Go's
+# `mime.TypeByExtension` on macOS, and Python's `mimetypes` where Go has none;
+# a type of text carries `charset=utf-8`. Fails `not_found` where the name has
+# no extension, or one the table does not hold. See also `attachment_part`.
+function media_type_of(name: str) -> str?
+    ext = path.ext(name)?
+    kind = extensions.type_of(ext)
+
+    if kind == ""
+        return fail(code: NOT_FOUND, msg: f"no media type is known for the extension \"{ext}\"")
+    return ok(kind)
+
 # A part holding a file attached, in base 64, named `filename`.
 #
 # - `data`: the file's bytes.
@@ -775,7 +794,7 @@ function data_part(data: [u8], media_type: str) -> Message?
 # - `filename`: its name; text above ASCII is written by RFC 2231.
 #
 # Fails `invalid` where `media_type` is not a content type. See also
-# `inline_part`, `compose`.
+# `media_type_of`, `inline_part`, `compose`.
 function attachment_part(data: [u8], media_type: str, filename: str) -> Message?
     b = build.attachment_part(data, media_type: media_type, filename: filename)?
     converted: [Field] @= []
@@ -1358,6 +1377,14 @@ test "body_of and attachments_of: a related HTML body and its inline image"
     assert attachments_of(m).len() == 1 && body_of(m, preferring: ["plain"]).is_err()
     assert compose(text: "", html: "", attachments: []).is_err()
 
+test "media_type_of: by its extension in any case, a path, none, unknown"
+    assert media_type_of("a/b/Photo.JPG").must() == "image/jpeg"
+
+    for name in ["README", "a.unknown", "dir/"]
+        match media_type_of(name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
+
 ## Examples
 
 # The options a message is sent with.
@@ -1687,3 +1714,7 @@ test "make_message_id: on example.org"
 # The identifiers of a `References` field.
 test "parse_message_ids: two"
     assert parse_message_ids("<a@x.org> <b@x.org>").must() == ["a@x.org", "b@x.org"]
+
+# A file's type by its name, for an attachment.
+test "media_type_of: a style sheet"
+    assert media_type_of("site.css").must() == "text/css; charset=utf-8"

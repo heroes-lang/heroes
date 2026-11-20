@@ -82,7 +82,7 @@ function sign(input: [u8], key: jose.Key, facts: algorithms.Facts) -> [u8]?
     der = forms.private_der(key)?
     private @= keypairs.parse_private_der(der)?
     made = keypairs.sign(key: private, scheme: facts.scheme, message: input)
-    keypairs.close(@private)?
+    keypairs.close_private(@private)?
     signature = made?
 
     if facts.family == "ecdsa"

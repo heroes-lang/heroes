@@ -517,7 +517,7 @@ function format_private_pem(key: Key) -> str?
 function generate_key(kind: keypairs.Kind) -> Key?
     made @= keypairs.generate(kind)?
     der = keypairs.format_private_der(made)
-    keypairs.close(@made)?
+    keypairs.close_private(@made)?
     return key_from_private_der(der?)
 
 # `key` with its private members taken out: what may be published.
@@ -933,7 +933,7 @@ test "key_from_private_der and format_private_der: RFC 7520's RSA key through PK
     assert back.material == key.material
     handle @= keypairs.parse_private_der(der).must()
     assert handle.kind == .rsa(bits: 2048)
-    keypairs.close(@handle).must()
+    keypairs.close_private(@handle).must()
     assert key_from_public_der(format_public_der(key).must()).must().material == public_of(key).must().material
 
 test "generate_key: P-256 and P-384 made, signed with and verified, their public halves alone verifying"
@@ -1135,7 +1135,7 @@ test "format_private_der: an EC private key read by crypto/keypairs"
     key = generate_key(.p256).must()
     handle @= keypairs.parse_private_der(format_private_der(key).must()).must()
     assert handle.kind == .p256
-    keypairs.close(@handle).must()
+    keypairs.close_private(@handle).must()
 
 # A public key written as PEM.
 test "format_public_pem: the PUBLIC KEY block"

@@ -96,17 +96,17 @@ capability class/upper  whether a character is upper case
   go      unicode.IsUpper, unicode.Upper, unicode.Lu, unicode.Other_Uppercase
   rust    char::is_uppercase
   python  str.isupper
-  note    the Uppercase property, Rust's and Python's isupper; Go's IsUpper is category Lu alone, which `unicode.category(c) == unicode.UPPERCASE_LETTER` asks
+  note    the Uppercase property, Rust's and Python's isupper; Go's IsUpper is category Lu alone, which `unicode.category(c) == .uppercase_letter` asks
 
 capability class/lower  whether a character is lower case
   heroes  unicode.is_lower
   go      unicode.IsLower, unicode.Lower, unicode.Ll, unicode.Other_Lowercase
   rust    char::is_lowercase
   python  str.islower
-  note    the Lowercase property, Rust's and Python's islower; Go's IsLower is category Ll alone, which `unicode.category(c) == unicode.LOWERCASE_LETTER` asks
+  note    the Lowercase property, Rust's and Python's islower; Go's IsLower is category Ll alone, which `unicode.category(c) == .lowercase_letter` asks
 
 capability class/title  whether a character is a title case letter
-  heroes  unicode.is_title
+  heroes  unicode.is_title_letter
   go      unicode.IsTitle, unicode.Title, unicode.Lt
   rust    char::is_titlecase
   python  str.istitle
@@ -176,11 +176,11 @@ capability class/ascii-classes  the classes of ASCII alone: its letters, digits,
   python  -
 
 capability class/general-category  the general category of a character, one of Unicode's thirty
-  heroes  unicode.category
+  heroes  unicode.category, unicode.Category, unicode.letter_of
   go      unicode.Categories, unicode.CategoryAliases, unicode.Is, unicode.In, unicode.IsOneOf, unicode.Other, unicode.C, unicode.Cf, unicode.Cn, unicode.Co, unicode.Cs, unicode.Lm, unicode.Lo, unicode.Mc, unicode.Me, unicode.Mn, unicode.Nl, unicode.No, unicode.Pc, unicode.Pd, unicode.Pe, unicode.Pf, unicode.Pi, unicode.Po, unicode.Ps, unicode.Sc, unicode.Sk, unicode.Sm, unicode.So, unicode.Space, unicode.Z, unicode.Zl, unicode.Zp, unicode.Zs
   rust    char::is_assigned, char::is_private_use
   python  unicodedata.category
-  note    with a constant for each of the thirty categories but Cs, which no `str` holds; Rust's is_assigned is `category(c) != UNASSIGNED` and is_private_use `category(c) == PRIVATE_USE`; Go's Is, In and IsOneOf over a table of a script or a property are `unicode/names.script` and `unicode/names.has_property` of the subpackage `unicode/names`
+  note    a variant, `unicode.Category`, of the thirty, so a comparison with a misspelt category is refused where a text compared would be false for ever (the coherence review's X06, 2026-11-20); Unicode's two letters are `unicode.letter_of`, and `.surrogate` is never answered, since no `str` holds one; Rust's is_assigned is `category(c) != .unassigned` and is_private_use `category(c) == .private_use`; Go's Is, In and IsOneOf over a table of a script or a property are `unicode/names.script` and `unicode/names.has_property` of the subpackage `unicode/names`
 
 capability class/identifier  whether a character may begin a name, or go on inside one
   heroes  unicode/names.is_identifier_start, unicode/names.is_identifier_continue, unicode/names.is_identifier
@@ -314,7 +314,7 @@ capability utf8/longest  the most bytes a character takes in UTF-8
   python  -
 
 capability utf8/width-from-first-byte  how many bytes a character takes, read from its first byte
-  heroes  unicode.utf8_width
+  heroes  unicode.utf8_len_of_first
   go      -
   rust    -
   python  -
@@ -346,7 +346,7 @@ capability utf8/decode-last  the code point that ends at an index of bytes, and 
   note    fails `not_text` where Go answers U+FFFD of width 1
 
 capability utf8/walk-a-text  the code point at an index of a text, and where the next character begins
-  heroes  unicode.code_point_at, unicode.width_at
+  heroes  unicode.code_point_at, unicode.len_at
   go      utf8.DecodeRuneInString
   rust    str::char_indices, CharIndices
   python  -
@@ -414,7 +414,7 @@ capability char/escape  a character written as an escape of a program's source
   python  -
 
 capability char/name  the name Unicode gives a character, and the character a name gives
-  heroes  unicode/names.name, unicode/names.from_name, unicode/names.aliases
+  heroes  unicode/names.name, unicode/names.character_named, unicode/names.aliases
   go      -
   rust    -
   python  unicodedata.name, unicodedata.lookup

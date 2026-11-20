@@ -284,7 +284,7 @@ capability image/kind  which format a file is in, from its first bytes
   note    -
 
 capability image/open-any  a file of any format decoded by one call
-  heroes  refused: each format is a subpackage, so that a program carries only the codecs it uses (README A2); `kind_of` says which, and a program calls that format's `decode`
+  heroes  refused: each format is a subpackage, so that a program carries only the codecs it uses (README A2); `kind_of` says which, and a program calls that format's `decode_image(data, limits)`, one shape in all five since 2026-11-20 (the coherence review's X09), or its `decode` for what the format alone says
   go      Decode, DecodeConfig, RegisterFormat, Config
   rust    -
   python  Image.open, Image.Image.save (format by extension), Image.register_open, Image.register_save, Image.register_extension, Image.register_mime

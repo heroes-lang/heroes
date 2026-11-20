@@ -1,7 +1,7 @@
 # Reaches Rebel's package `web`, so that `heroes test` on this file runs the
 # tests of its face and its private modules (spec § 12). It prints the media
-# type of `index.html`, `text/html; charset=utf-8`, on every run, touching no
-# network and no file.
+# type `web.sniff` reads in the first bytes of a page,
+# `text/html; charset=utf-8`, on every run, touching no network and no file.
 #
 # It also holds the two shapes of a program that serves, as a program writes
 # them: `app`, the one function of a program with no state, which `web.serve`
@@ -80,7 +80,7 @@ function serve_conn(@state: App, stream: io.Stream) -> i64
             return answered
 
 function main()
-    print(web.content_type_of("index.html").default(""))
+    print(web.sniff([60, 104, 116, 109, 108, 62]))
 
 test "app: a program with no state served on the loopback"
     two @= net.pair(deadline_ms: 5_000).must()

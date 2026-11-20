@@ -265,7 +265,7 @@ function atom_at(pattern: str, at: i64, flags: groups.Flags, @sets: [program.Set
                 return ok(Atom(insts: [.set(index: sets.len() - 1)], kind: ITEM, next: escaped.next))
             .assertion a => return ok(Atom(insts: [a.inst], kind: ANCHOR, next: escaped.next))
     return ok(
-        char_atom(code: unicode.code_point_at(pattern, at), folded: flags.fold, next: at + unicode.width_at(pattern, at))
+        char_atom(code: unicode.code_point_at(pattern, at), folded: flags.fold, next: at + unicode.len_at(pattern, at))
     )
 
 # The instruction reading the character `code`, ignoring its case where

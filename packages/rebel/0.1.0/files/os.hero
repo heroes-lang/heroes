@@ -326,13 +326,6 @@ function open_path(path: str) -> ()?
 
 ## Who runs the process, and where
 
-# The families of systems a program runs on, by what tells them apart here.
-variant Family
-    # Linux, Darwin and every other system that keeps POSIX's rules.
-    posix
-    # Windows.
-    windows
-
 # What `terminal_size` answers: how many characters the terminal shows.
 record TerminalSize
     # Characters in a line, above 0.
@@ -388,13 +381,6 @@ record Memory
     # Bytes the system could give programs now without writing anything out
     # to disk, from 0 to `total_bytes`.
     available_bytes: i64
-
-# The family of the system the program runs on, told by the suffix the system
-# gives an executable: `.exe` on Windows and none on every other.
-function family() -> Family
-    if hero_os.run_exe_suffix() == ".exe"
-        return .windows
-    return .posix
 
 # The suffix an executable's file takes on this system: `.exe` on Windows,
 # where a program without it cannot be started, and "" on every other.
@@ -459,8 +445,10 @@ function processor_count() -> i64?
 
 # The system the program runs on, the one it was built for.
 #
-# `other` is a system that keeps POSIX's rules and is neither Darwin nor Linux.
-# Nothing is asked of the machine, so it never fails.
+# `other` is a system that keeps POSIX's rules and is neither Darwin nor Linux,
+# so `system() != .windows` asks whether POSIX's rules hold; how a path is
+# written there is `path.system_rules`'s. Nothing is asked of the machine, so
+# it never fails.
 function system() -> System
     named = hero_sys.system()
 
@@ -862,16 +850,16 @@ test "temp_dir: TMPDIR without the separator at its end where it is set, /tmp wh
     temp = temp_dir().must()
     assert temp.len() > 0
 
-    match family()
-        .windows => assert temp[temp.len() - 1] != '\\'
-        .posix =>
-            given = env("TMPDIR").default("")
+    if system() == .windows
+        assert temp[temp.len() - 1] != '\\'
+    else
+        given = env("TMPDIR").default("")
 
-            if given == ""
-                assert temp == "/tmp"
-            else
-                assert temp != "/" && temp[temp.len() - 1] != '/'
-                assert given.slice(from: 0, to: temp.len()) == temp
+        if given == ""
+            assert temp == "/tmp"
+        else
+            assert temp != "/" && temp[temp.len() - 1] != '/'
+            assert given.slice(from: 0, to: temp.len()) == temp
 
 test "home_dir, cache_dir and config_dir: HOME on POSIX where it is set, and three folders apart"
     home = home_dir().must()
@@ -879,21 +867,22 @@ test "home_dir, cache_dir and config_dir: HOME on POSIX where it is set, and thr
     config = config_dir().must()
     assert home != cache && home != config && cache != config
 
-    match family()
-        .windows => assert home.len() > 2
-        .posix =>
-            given = env("HOME").default("")
-            assert given == "" || home == given
+    if system() == .windows
+        assert home.len() > 2
+    else
+        given = env("HOME").default("")
+        assert given == "" || home == given
 
-test "executable_path, executable_suffix and family: an absolute file, one of two suffixes, the family they tell"
+test "executable_path, executable_suffix and system: an absolute file, one of two suffixes, the system they tell"
     exe = executable_path().must()
     suffix = executable_suffix()
     assert exe.len() > suffix.len()
     assert exe.slice(from: exe.len() - suffix.len(), to: exe.len()) == suffix
 
-    match family()
-        .windows => assert suffix == ".exe"
-        .posix   => assert suffix == "" && exe[0] == '/'
+    if system() == .windows
+        assert suffix == ".exe"
+    else
+        assert suffix == "" && exe[0] == '/'
 
 test "pid and parent_pid: above 0, the same twice, and two processes"
     assert pid() > 0 && pid() == pid()
@@ -905,14 +894,14 @@ test "user_id, effective_user_id, group_id, effective_group_id, group_ids: numbe
 
     for id in ids
         match id
-            .ok n  => assert n >= 0 && family() == .posix
-            .err e => assert e.code == UNSUPPORTED && family() == .windows
+            .ok n  => assert n >= 0 && system() != .windows
+            .err e => assert e.code == UNSUPPORTED && system() == .windows
 
     match group_ids()
         .ok groups =>
             for g in groups
                 assert g >= 0
-        .err e => assert e.code == UNSUPPORTED && family() == .windows
+        .err e => assert e.code == UNSUPPORTED && system() == .windows
 
 test "host_name, page_size and processor_count: a name, a power of two, at least one"
     host = host_name().must()
@@ -921,10 +910,10 @@ test "host_name, page_size and processor_count: a name, a power of two, at least
     assert page > 0 && page & page - 1 == 0
     assert processor_count().must() >= 1
 
-test "system and architecture: the family the system belongs to, and the same answers twice"
+test "system and architecture: Windows or a system of POSIX's rules, and the same answers twice"
     match system()
-        .windows                  => assert family() == .windows
-        .darwin | .linux | .other => assert family() == .posix
+        .windows                  => assert system() == .windows
+        .darwin | .linux | .other => assert system() != .windows
 
     assert system() == system()
     assert architecture() == architecture()
@@ -946,9 +935,9 @@ test "process_times: at or above 0, and a second reading never below the first"
 test "load_average: three averages at or above 0 on POSIX, unsupported on Windows"
     match load_average()
         .ok load =>
-            assert family() == .posix
+            assert system() != .windows
             assert load.one_minute >= 0 && load.five_minutes >= 0 && load.fifteen_minutes >= 0
-        .err e => assert e.code == UNSUPPORTED && family() == .windows
+        .err e => assert e.code == UNSUPPORTED && system() == .windows
 
 test "memory: a total above 0, the available above 0 and never above it, read twice, or unsupported on another POSIX system"
     match memory()
@@ -1154,14 +1143,6 @@ test "executable_path: the program's own file"
     match executable_path()
         .ok exe => assert exe.len() > 0
         .err e  => assert e.code == NOT_FOUND
-
-# The family of this system, which the suffix of an executable tells.
-test "family: posix or windows"
-    windows = executable_suffix() == ".exe"
-
-    match family()
-        .windows => assert windows
-        .posix   => assert !windows
 
 # A program's file name, written as this system names one.
 test "executable_suffix: a tool's file name"

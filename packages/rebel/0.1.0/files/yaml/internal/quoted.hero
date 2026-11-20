@@ -64,7 +64,7 @@ function read(text: str, at: i64, indent: i64) -> token.Lexeme?
             j: i64 @= i
 
             while j < text.len() && !ends_run(b: text[j], double: double)
-                j @ j + unicode.width_at(text, j)
+                j @ j + unicode.len_at(text, j)
 
             pieces @ pieces.push(text.slice(from: i, to: j))
             i @ j

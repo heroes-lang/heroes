@@ -31,8 +31,8 @@ function lossy(s: [u8]) -> str
     while at < s.len()
         match unicode.decode_at(s, at)
             .ok d =>
-                raw.push_range(out: @out, s: s, from: at, to: at + d.width)
-                at @ at + d.width
+                raw.push_range(out: @out, s: s, from: at, to: at + d.len)
+                at @ at + d.len
             .err _ =>
                 raw.push_text(@out, "�")
                 at @ at + broken_len(s, at)
@@ -43,7 +43,7 @@ function lossy(s: [u8]) -> str
 # How many bytes from `at` in `s` begin a character and cannot go on: at
 # least one, and at most one fewer than the character's first byte asks for.
 function broken_len(s: [u8], at: i64) -> i64
-    width = unicode.utf8_width(s[at]).default(1)
+    width = unicode.utf8_len_of_first(s[at]).default(1)
     longest: i64 @= 1
     k: i64 @= 2
 

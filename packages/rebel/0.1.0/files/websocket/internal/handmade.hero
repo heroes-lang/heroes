@@ -39,7 +39,7 @@ record Raw
 #
 # Fails `closed` where the stream ends first.
 function read_frame(s: io.Stream) -> Raw?
-    held = io.read_exact(s, count: 2)?
+    held = io.read_exact(s, n: 2)?
     second = to_i64(held[1]).must() & 127
     more: i64 @= 0
 
@@ -50,11 +50,11 @@ function read_frame(s: io.Stream) -> Raw?
 
     if to_i64(held[1]).must() & 128 != 0
         more @ more + 4
-    head = bytes.concat([held, io.read_exact(s, count: more)?])
+    head = bytes.concat([held, io.read_exact(s, n: more)?])
 
     match frames.head_at(head, at: 0)
         .head f =>
-            data = io.read_exact(s, count: f.h.length)?
+            data = io.read_exact(s, n: f.h.length)?
             return ok(
                 Raw(opcode: f.h.opcode, fin: f.h.fin, rsv: f.h.rsv, payload: frames.unmasked(data: data, key: f.h.key))
             )

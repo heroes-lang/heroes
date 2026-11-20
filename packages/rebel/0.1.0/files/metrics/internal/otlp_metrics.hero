@@ -4,10 +4,10 @@
 # each series' labels its points' attributes. Field numbers are
 # opentelemetry-proto 1.x's.
 
+use math
 use metrics/internal/ckms
 use metrics/internal/otlp
 use metrics/internal/store
-use numbers
 use protobuf
 
 # The request's bytes.
@@ -100,7 +100,7 @@ function put_points(@to: [u8], f: store.Family, series: store.Series, begin: u64
                 bounds: [u8] @= []
 
                 for b in f.buckets
-                    protobuf.push_fixed64(@bounds, v: numbers.f64_to_bits(b))
+                    protobuf.push_fixed64(@bounds, v: math.f64_to_bits(b))
 
                 otlp.put_bytes(to: @point, number: 7, b: bounds)
             put_attributes(@point, number: 9, pairs: pairs, extra: "", extra_value: "")

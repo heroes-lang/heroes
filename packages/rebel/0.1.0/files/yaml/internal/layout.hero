@@ -106,7 +106,7 @@ function skip_to_token(text: str, @s: State) -> ()?
                         code: INVALID,
                         msg: source.said(text: text, at: i, what: f"{name} stands in a comment, and YAML allows it only between double quotes")
                     )
-                i @ i + unicode.width_at(text, i)
+                i @ i + unicode.len_at(text, i)
 
             s.at @ e
 

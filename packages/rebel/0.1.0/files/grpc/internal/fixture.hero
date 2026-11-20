@@ -103,7 +103,7 @@ function serve_on(@c: http2.Conn) -> i64
 function serve(arg: str) -> str
     port = numbers.parse_int(arg).must()
     l @= net.listen(host: "127.0.0.1", port: port).must()
-    net.set_accept_deadline(l, ms: 10000).must()
+    net.set_accept_deadline(l, deadline_ms: 10000).must()
     answered: i64 @= 0
 
     for _ in range(from: 0, to: 10)
@@ -135,7 +135,7 @@ function serve_tls(arg: str) -> str
         port: port,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2"])
     ).must()
-    tls.set_accept_deadline(l, ms: 10000).must()
+    tls.set_accept_deadline(l, deadline_ms: 10000).must()
     answered: i64 @= 0
 
     for _ in range(from: 0, to: 10)
@@ -143,7 +143,7 @@ function serve_tls(arg: str) -> str
             match tls.accept(l, deadline_ms: 10000)
                 .ok accepted =>
                     stream @= accepted
-                    tls.set_deadline(stream, ms: 15000).must()
+                    tls.set_deadline(stream, deadline_ms: 15000).must()
 
                     match http2.server_of(@stream, options: http2.default_options())
                         .ok made =>

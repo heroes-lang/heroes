@@ -48,7 +48,7 @@ function options() -> model.Options
 function wired() -> Wired
     two = net.pair(5000).must()
     s @= state.fresh(options(), target: "server")
-    s.link @ .plain(conn: two.first)
+    s.link @ .connected(stream: two.first.stream, secured: false)
     s.open @ true
     s.frame_max @ 4096
     s.channel_max @ 8
@@ -95,7 +95,7 @@ function delivery(channel: i64, tag: i64, body: [u8]) -> [u8]
 #
 # - `peer`: the server's end.
 function written(peer: io.Stream) -> [u8]
-    return io.read(peer, most: 65536).must()
+    return io.read(peer, n: 65536).must()
 
 # Closes both ends of a test's connection.
 #

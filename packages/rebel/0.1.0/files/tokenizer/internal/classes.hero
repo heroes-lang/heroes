@@ -75,25 +75,25 @@ function class_at(s: str, at: i64, width: i64) -> i64
         return SPACE
     cat = unicode.category(s.slice(from: at, to: at + width))
 
-    if cat == unicode.UPPERCASE_LETTER
+    if cat == .uppercase_letter
         return UPPER
 
-    if cat == unicode.LOWERCASE_LETTER
+    if cat == .lowercase_letter
         return LOWER
 
-    if cat == unicode.TITLECASE_LETTER
+    if cat == .titlecase_letter
         return TITLE
 
-    if cat == unicode.MODIFIER_LETTER
+    if cat == .modifier_letter
         return MODIFIER
 
-    if cat == unicode.OTHER_LETTER
+    if cat == .other_letter
         return LETTER_OTHER
 
-    if cat == unicode.NONSPACING_MARK || cat == unicode.SPACING_MARK || cat == unicode.ENCLOSING_MARK
+    if cat == .nonspacing_mark || cat == .spacing_mark || cat == .enclosing_mark
         return MARK
 
-    if cat == unicode.DECIMAL_NUMBER || cat == unicode.LETTER_NUMBER || cat == unicode.OTHER_NUMBER
+    if cat == .decimal_number || cat == .letter_number || cat == .other_number
         return NUMBER
     return ELSE
 
@@ -138,7 +138,7 @@ function chars_of(s: str) -> Chars
     at: i64 @= 0
 
     while at < s.len()
-        width = unicode.width_at(s, index: at)
+        width = unicode.len_at(s, index: at)
         kinds @ kinds.push(class_at(s, at: at, width: width))
         starts @ starts.push(at)
         at @ at + width

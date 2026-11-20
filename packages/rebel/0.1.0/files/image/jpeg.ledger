@@ -19,7 +19,7 @@
 # package reads from it.
 
 capability jpeg/decode-baseline  a baseline file read
-  heroes  image/jpeg.decode, image/jpeg.Jpeg
+  heroes  image/jpeg.decode, image/jpeg.decode_image, image/jpeg.Jpeg
   go      Decode, FormatError, FormatError.Error, UnsupportedError, UnsupportedError.Error, Reader
   rust    -
   python  Image.open, JpegImagePlugin.JpegImageFile

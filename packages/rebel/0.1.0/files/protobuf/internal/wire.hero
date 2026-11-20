@@ -116,8 +116,9 @@ function varint_size(v: u64) -> i64
 
     return size
 
-# The varint at byte `at` of `data`.
-function varint(data: [u8], at: i64) -> Number?
+# The varint at byte `at` of `data`: `invalid` where the bytes end first,
+# `does_not_fit` where it passes 64 bits, as `bytes.decode_uvarint` answers.
+function uvarint(data: [u8], at: i64) -> Number?
     if at < 0 || at >= data.len()
         return fail(code: "invalid", msg: f"byte {at}: the bytes end where a varint begins")
 
@@ -125,8 +126,15 @@ function varint(data: [u8], at: i64) -> Number?
         .ok read => return ok(Number(value: read.value, next: at + read.width))
         .err e =>
             if e.code == "does_not_fit"
-                return fail(code: "invalid", msg: f"byte {at}: a varint passes 64 bits")
+                return fail(code: "does_not_fit", msg: f"byte {at}: a varint passes 64 bits")
             return fail(code: "invalid", msg: f"byte {at}: the bytes end inside a varint")
+
+# The varint at byte `at` of a message: as `uvarint`, and `invalid` for one
+# past 64 bits too, since such a message is not one.
+function varint(data: [u8], at: i64) -> Number?
+    match uvarint(data, at: at)
+        .ok n  => return ok(n)
+        .err e => return fail(code: "invalid", msg: e.msg)
 
 # The four bytes at byte `at` of `data`, the lowest first.
 function fixed32(data: [u8], at: i64) -> Number?

@@ -374,7 +374,7 @@ function under_domain(host: str, srv_name: str) -> bool
 function resolve_srv(s: Settings, resolver: dns.Resolver) -> Settings?
     if s.srv_name == ""
         return ok(s)
-    records = dns.lookup_srv(resolver, service: s.srv_service_name, proto: "tcp", name: s.srv_name)?
+    records = dns.lookup_srv(resolver, service: s.srv_service_name, protocol: "tcp", name: s.srv_name)?
     out @= s
     found: [Address] @= []
 

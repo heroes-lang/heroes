@@ -782,7 +782,7 @@ function read(@r: Reader, most: i64) -> [u8]?
 
         if unframer.pending_count(r.decompressor.state) > 0 || status == unframer.ENDED
             return ok(unframer.take(@r.decompressor.state, most: most))
-        more = io.read(r.from, most: 65536)?
+        more = io.read(r.from, n: 65536)?
 
         if more.len() == 0
             unframer.end_input(@r.decompressor.state)
@@ -828,7 +828,7 @@ function compress_stream(from: io.Stream, to: io.Stream, options: Options) -> i6
     written: i64 @= 0
 
     while true
-        more = io.read(from, most: 65536)?
+        more = io.read(from, n: 65536)?
 
         if more.len() == 0
             break
@@ -1387,7 +1387,7 @@ test "flush: written so far, readable so far"
     write(@w, data: bytes.from_text("heroes")).must()
     flush(@w).must()
     d @= decompressor(100)
-    assert decompress_part(@d, data: io.read(p.reader, most: 1000).must(), most: 100).must() == bytes.from_text("heroes")
+    assert decompress_part(@d, data: io.read(p.reader, n: 1000).must(), most: 100).must() == bytes.from_text("heroes")
     finish(@w).must()
     io.close(@p.writer).must()
     io.close(@p.reader).must()

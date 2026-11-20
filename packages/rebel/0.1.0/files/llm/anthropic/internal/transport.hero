@@ -188,8 +188,8 @@ function send(s: Settings, method: str, path: str, body: str) -> http.Response?
 # Moves the deadline of `o`'s connection to `ms` from now; 0 takes it away.
 function set_deadline(o: Opened lent, ms: i64) -> ()?
     match o.link
-        .plain p => return net.set_deadline(p.conn, ms: ms)
-        .secure  => return tls.set_deadline(o.reader.stream, ms: ms)
+        .plain p => return net.set_deadline(p.conn.stream, deadline_ms: ms)
+        .secure  => return tls.set_deadline(o.reader.stream, deadline_ms: ms)
 
 # Closes `o`'s connection; a failure closing is no news to its caller.
 function close(@o: Opened)

@@ -154,7 +154,7 @@ function last_before(f: Finder lent, s: str, end: i64) -> i64?
 # Where the character that begins at byte `at` of `s` ends, which is where
 # the next one begins. Aborts where `at` is not a character's first byte.
 function next_at(s: str, at: i64) -> i64
-    return at + unicode.width_at(s, at)
+    return at + unicode.len_at(s, at)
 
 # Where the character that ends at byte `end` of `s` begins; `end` is above
 # 0 and where a character ends.

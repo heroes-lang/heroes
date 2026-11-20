@@ -126,7 +126,7 @@ function run(@m: Machine, prog: program.Program lent, s: str, search: Search) ->
 
         if pos < s.len()
             code @ unicode.code_point_at(s, pos)
-            width @ unicode.width_at(s, pos)
+            width @ unicode.len_at(s, pos)
         m.round @ m.round + 1
         m.nxt_count @ 0
         i: i64 @= 0

@@ -86,19 +86,34 @@ static int64_t hero_spawn_str_run(int64_t number) {
 }
 
 /* `hero_spawn_start` refuses a missing function, and sees only the trampoline
- * below it here, so the program's own is asked first. */
-int64_t hero_thread_spawn_str(HeroThreadBodyStr body, HeroStr arg) {
+ * below it here, so the program's own is asked first. The box is the
+ * runtime's own until the thread takes it, so a refusal gives it back here:
+ * -1 with the system's number in `*why`, and nothing of `arg` held. */
+static int64_t hero_spawn_str_started(HeroThreadBodyStr body, HeroStr arg, int64_t bytes, int64_t *why, uintptr_t from) {
     if (body == NULL) hero_panic("a thread was started with no function to run");
+    if (bytes < 0) hero_panic("a thread was asked for a negative number of bytes of stack");
     HeroSpawnStrBox *in = hero_spawn_str_box(body, arg);
-    int64_t why = 0;
-    int64_t at = hero_spawn_start(hero_spawn_str_run, (int64_t)(uintptr_t)in, 0, HERO_SPAWN_STR, &why, (uintptr_t)body,
-                                  (uintptr_t)__builtin_return_address(0));
+    int64_t at = hero_spawn_start(hero_spawn_str_run, (int64_t)(uintptr_t)in, (size_t)bytes, HERO_SPAWN_STR, why,
+                                  (uintptr_t)body, from);
 
     if (at < 0) {
         hero_free_raw(in);
-        hero_panic("the operating system refused to start a thread");
+        return -1;
     }
     return at;
+}
+
+int64_t hero_thread_spawn_str(HeroThreadBodyStr body, HeroStr arg) {
+    int64_t why = 0;
+    int64_t at = hero_spawn_str_started(body, arg, 0, &why, (uintptr_t)__builtin_return_address(0));
+
+    if (at < 0) hero_panic("the operating system refused to start a thread");
+    return at;
+}
+
+/* The same on a stack the caller chooses, a refusal answered (`hero_os.h`). */
+int64_t hero_thread_spawn_str_sized(HeroThreadBodyStr body, HeroStr arg, int64_t bytes, int64_t *why) {
+    return hero_spawn_str_started(body, arg, bytes, why, (uintptr_t)__builtin_return_address(0));
 }
 
 HeroStr hero_thread_join_str(int64_t handle) {

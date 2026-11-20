@@ -5,13 +5,13 @@
 
 use bytes
 use fs
+use html
 use http
+use mail
 use path
 use strings
-use template
 use time
 use url
-use web/internal/extensions
 use web/internal/fixture
 use web/internal/sniffing
 
@@ -90,7 +90,7 @@ function file_answer(r: http.Request, name: str, data: [u8], written: time.Insta
         out @= http.respond_status(http.STATUS_NOT_MODIFIED)
         out.headers @ [http.Header(name: "Last-Modified", value: date)]
         return out
-    kind: str @= extensions.type_of(path.ext(name).default(""))
+    kind: str @= mail.media_type_of(name).default("")
 
     if kind == ""
         kind @ sniffing.sniff(data)
@@ -375,7 +375,7 @@ function listing_page(entries: [fs.Entry], hidden: bool) -> http.Response
         if folders[name].default(false)
             tail @ "/"
         lines @ lines.push(
-            f"<a href=\"{template.escape_html(url.escape_segment(name))}{tail}\">{template.escape_html(name)}{tail}</a>"
+            f"<a href=\"{html.escape(url.escape_segment(name))}{tail}\">{html.escape(name)}{tail}</a>"
         )
 
     lines @ lines.push("</pre>")

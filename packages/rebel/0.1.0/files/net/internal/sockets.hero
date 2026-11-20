@@ -359,9 +359,9 @@ test "connect and accept: a connection on loopback written and read both ways th
     assert client.stream.name == f"the connection to 127.0.0.1:{l.address.port}"
     assert server.stream.name == f"the connection from 127.0.0.1:{client.local.port}"
     io.write(client.stream, data: [104, 105]).must()
-    assert io.read_exact(server.stream, count: 2).must() == [104, 105]
+    assert io.read_exact(server.stream, n: 2).must() == [104, 105]
     io.write(server.stream, data: [33]).must()
-    assert io.read_exact(client.stream, count: 1).must() == [33]
+    assert io.read_exact(client.stream, n: 1).must() == [33]
 
     # The client's close is the server's end: nothing more to read, no failure.
     io.close(@client.stream).must()
@@ -435,7 +435,7 @@ test "accept: the deadline given ends a read of the connection timeout, and a ne
 
     server @= accept(l.socket, deadline_ms: 200, asked: "accepting").must()
 
-    match io.read(server.stream, most: 8)
+    match io.read(server.stream, n: 8)
         .ok _  => assert false
         .err e => assert e.code == io.TIMEOUT
 
@@ -480,7 +480,7 @@ test "accept_number and conn_of: a connection given up as a number, taken back o
     back @= conn_of(n: n, deadline_ms: 5000).must()
     assert back.remote == client.local
     io.write(back.stream, data: [7]).must()
-    assert io.read_exact(client.stream, count: 1).must() == [7]
+    assert io.read_exact(client.stream, n: 1).must() == [7]
 
     match conn_of(n: n, deadline_ms: 0)
         .ok _  => assert false
@@ -531,7 +531,7 @@ test "pair: two ends of one connection, each written and read, closed one by one
     two @= both.second
     assert one.local == two.remote && one.remote == two.local
     io.write(one.stream, data: [1, 2]).must()
-    assert io.read_exact(two.stream, count: 2).must() == [1, 2]
+    assert io.read_exact(two.stream, n: 2).must() == [1, 2]
     io.close(@one.stream).must()
     assert io.read_all(two.stream).must() == []
     io.close(@two.stream).must()

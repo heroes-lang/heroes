@@ -158,7 +158,7 @@ function encode_utf16(s: str lent, @out: [u8], big: bool)
         else
             add_unit(out: @out, unit: 0xd800 + (point - 0x10000 >> 10), big: big)
             add_unit(out: @out, unit: 0xdc00 + (point - 0x10000 & 0x3ff), big: big)
-        at @ at + unicode.width_at(s, at)
+        at @ at + unicode.len_at(s, at)
 
 # Writes the unit `unit` as two bytes at the end of `out`.
 function add_unit(@out: [u8], unit: i64, big: bool)

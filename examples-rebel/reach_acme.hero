@@ -124,7 +124,7 @@ function ceremony(directory: str)
             body = acme.http01_body(client: client, token: challenge.token).must()
             listener @= net.listen(host: "", port: 5002).must()
             _ = acme.accept_challenge(@client, challenge: challenge).must()
-            net.set_accept_deadline(l: listener, ms: 4000).must()
+            net.set_accept_deadline(l: listener, deadline_ms: 4000).must()
 
             match http.serve_with(s: http.default_server(), l: listener, state: body, handler: answer)
                 .ok _  => _ = 0

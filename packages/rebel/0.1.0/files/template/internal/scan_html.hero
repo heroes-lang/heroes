@@ -6,11 +6,11 @@
 # an event handler opens a string as `'` would. A script or a style sheet ends
 # at its closing tag wherever that stands, as a browser ends it.
 
+use html
 use strings
 use template/internal/context
 use template/internal/lex
 use template/internal/names
-use template/internal/references
 use template/internal/scan_css
 use template/internal/scan_js
 
@@ -167,7 +167,7 @@ function scan(text: str, start: context.Context, place: lex.Place) -> context.Sc
             chunk = text.slice(from: at, to: end)
             out @ out.push(chunk)
 
-            match inside_value(c, references.unescape(chunk))
+            match inside_value(c, html.unescape_attribute(chunk))
                 .ok next => c @ next
                 .err e => return fail(
                     code: "invalid",

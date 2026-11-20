@@ -1082,11 +1082,11 @@ function respond(registry: Registry lent, r: http.Request) -> http.Response
 
     if chosen == posting.OFFER_OPENMETRICS
         return http.with_compression(
-            http.respond(status: http.STATUS_OK, content_type: CONTENT_TYPE_OPENMETRICS, body: strings.to_bytes(format_openmetrics(families))),
+            http.respond(status: http.STATUS_OK, content_type: CONTENT_TYPE_OPENMETRICS, body: bytes.from_text(format_openmetrics(families))),
             r: r
         )
     return http.with_compression(
-        http.respond(status: http.STATUS_OK, content_type: CONTENT_TYPE_TEXT, body: strings.to_bytes(format_text(families))),
+        http.respond(status: http.STATUS_OK, content_type: CONTENT_TYPE_TEXT, body: bytes.from_text(format_text(families))),
         r: r
     )
 
@@ -2039,7 +2039,7 @@ test "linear_buckets, exponential_buckets and exponential_buckets_range: client_
         13592989575310999552
         4591870180066957712
     ]
-    assert lb.map(numbers.f64_to_bits) == lb_bits
+    assert lb.map(math.f64_to_bits) == lb_bits
     eb_bits: [u64] = [
         4562254508917369340
         4569063951553953530
@@ -2048,7 +2048,7 @@ test "linear_buckets, exponential_buckets and exponential_buckets_range: client_
         4590501085780237092
         4597923017966143670
     ]
-    assert eb.map(numbers.f64_to_bits) == eb_bits
+    assert eb.map(math.f64_to_bits) == eb_bits
 
     # Python's `math.pow`, which is C's, gives these; Go's `math.Pow` is less
     # exact, 1.0000000000000007 where the fourth bound is 1.
@@ -2059,7 +2059,7 @@ test "linear_buckets, exponential_buckets and exponential_buckets_range: client_
         4607182418800017408
         4621819117588971520
     ]
-    assert er.map(numbers.f64_to_bits) == er_bits
+    assert er.map(math.f64_to_bits) == er_bits
     assert linear_buckets(start: 0.0, width: 0.0, count: 3).is_err()
     assert linear_buckets(start: 0.0 / 0.0, width: 1.0, count: 3).is_err()
     assert linear_buckets(start: 0.0, width: 0.0 / 0.0, count: 3).is_err()
@@ -2138,7 +2138,7 @@ test "register_http and observe_request: one request counted and timed, its meth
 
 test "send_count and its kin: datadog-go's lines, received on a socket of this machine"
     server @= net.open_udp("127.0.0.1", port: 0).must()
-    net.set_udp_deadline(server, ms: 2_000).must()
+    net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
     client.prefix @ "app."
     client.tags @ ["env:prod"]
@@ -2172,7 +2172,7 @@ test "send_count and its kin: datadog-go's lines, received on a socket of this m
 
 test "send_event and send_service_check: datadog-go's lines, the client's prefix not written"
     server @= net.open_udp("127.0.0.1", port: 0).must()
-    net.set_udp_deadline(server, ms: 2_000).must()
+    net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
     client.prefix @ "app."
     e @= event(title: "Title é", text: "Body\nline")
@@ -2557,7 +2557,7 @@ test "close_statsd: a client closed"
 # One count sent, received by a socket of the test.
 test "send_count: a page view"
     server @= net.open_udp("127.0.0.1", port: 0).must()
-    net.set_udp_deadline(server, ms: 2_000).must()
+    net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
     send_count(@client, name: "page.views", value: 1, rate: 1.0, tags: []).must()
     assert bytes.to_text(net.receive(server).must().data).must() == "page.views:1|c\n"
@@ -2567,7 +2567,7 @@ test "send_count: a page view"
 # A gauge's value sent.
 test "send_gauge: a temperature"
     server @= net.open_udp("127.0.0.1", port: 0).must()
-    net.set_udp_deadline(server, ms: 2_000).must()
+    net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
     send_gauge(@client, name: "temp", value: 21.5, rate: 1.0, tags: ["room:kitchen"]).must()
     assert bytes.to_text(net.receive(server).must().data).must() == "temp:21.5|g|#room:kitchen\n"
@@ -2577,7 +2577,7 @@ test "send_gauge: a temperature"
 # A gauge raised by 3 for Etsy's StatsD.
 test "send_gauge_change: raised by 3"
     server @= net.open_udp("127.0.0.1", port: 0).must()
-    net.set_udp_deadline(server, ms: 2_000).must()
+    net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
     send_gauge_change(@client, name: "level", change: 3.0, rate: 1.0, tags: []).must()
     assert bytes.to_text(net.receive(server).must().data).must() == "level:+3|g\n"
@@ -2587,7 +2587,7 @@ test "send_gauge_change: raised by 3"
 # A timing in milliseconds.
 test "send_timing: a query of 12 milliseconds"
     server @= net.open_udp("127.0.0.1", port: 0).must()
-    net.set_udp_deadline(server, ms: 2_000).must()
+    net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
     send_timing(@client, name: "db.query", d: time.milliseconds(12).must(), rate: 1.0, tags: []).must()
     assert bytes.to_text(net.receive(server).must().data).must() == "db.query:12.000000|ms\n"
@@ -2597,7 +2597,7 @@ test "send_timing: a query of 12 milliseconds"
 # A histogram's observation.
 test "send_histogram: a size"
     server @= net.open_udp("127.0.0.1", port: 0).must()
-    net.set_udp_deadline(server, ms: 2_000).must()
+    net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
     send_histogram(@client, name: "size", value: 512.0, rate: 1.0, tags: []).must()
     assert bytes.to_text(net.receive(server).must().data).must() == "size:512|h\n"
@@ -2607,7 +2607,7 @@ test "send_histogram: a size"
 # A distribution's observation.
 test "send_distribution: a latency"
     server @= net.open_udp("127.0.0.1", port: 0).must()
-    net.set_udp_deadline(server, ms: 2_000).must()
+    net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
     send_distribution(@client, name: "latency", value: 0.25, rate: 1.0, tags: []).must()
     assert bytes.to_text(net.receive(server).must().data).must() == "latency:0.25|d\n"
@@ -2617,7 +2617,7 @@ test "send_distribution: a latency"
 # A user counted once whatever the number of visits.
 test "send_set: a user seen"
     server @= net.open_udp("127.0.0.1", port: 0).must()
-    net.set_udp_deadline(server, ms: 2_000).must()
+    net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
     send_set(@client, name: "users", member: "ada", rate: 1.0, tags: []).must()
     assert bytes.to_text(net.receive(server).must().data).must() == "users:ada|s\n"
@@ -2632,7 +2632,7 @@ test "event: a deploy"
 # An event sent.
 test "send_event: a deploy"
     server @= net.open_udp("127.0.0.1", port: 0).must()
-    net.set_udp_deadline(server, ms: 2_000).must()
+    net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
     send_event(client, e: event(title: "Deployed", text: "1.2.0")).must()
     assert bytes.to_text(net.receive(server).must().data).must() == "_e{8,5}:Deployed|1.2.0\n"
@@ -2646,7 +2646,7 @@ test "service_check: a database that is up"
 # A check sent.
 test "send_service_check: a database that is down"
     server @= net.open_udp("127.0.0.1", port: 0).must()
-    net.set_udp_deadline(server, ms: 2_000).must()
+    net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
     send_service_check(client, c: service_check(name: "db.up", status: .critical)).must()
     assert bytes.to_text(net.receive(server).must().data).must() == "_sc|db.up|2\n"

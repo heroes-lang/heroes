@@ -242,7 +242,7 @@ function fill(@stream: io.Stream, @s: State) -> ()?
         s.inbox @ s.inbox.slice(from: s.at, to: s.inbox.len())
         s.at @ 0
 
-    got = match io.read(stream, most: READ_MOST)
+    got = match io.read(stream, n: READ_MOST)
         .ok bytes => bytes
         .err e =>
             if e.code != TIMEOUT && e.code != STOPPED
@@ -281,15 +281,8 @@ function deadline(stream: io.Stream, ms: i64) -> ()?
     if ms < 0
         return fail(code: INVALID, msg: f"placing a deadline {ms} ms from now on {stream.name}, where it is 0 or more")
 
-    match tls.set_deadline(stream, ms: ms)
-        .ok _  => return ok()
-        .err _ => _ = 0
-
-    # `net.set_deadline` reads the stream of the connection it is handed,
-    # and nothing else of it.
-    anywhere = net.unspecified_v4()
-
-    match net.set_deadline(net.Conn(stream: stream, local: anywhere, remote: anywhere), ms: ms)
+    # `tls.set_deadline` moves a TLS stream's deadline and a socket's alike.
+    match tls.set_deadline(stream, deadline_ms: ms)
         .ok _ => return ok()
         .err e =>
             if io.is_closed(stream)
@@ -329,7 +322,7 @@ test "deadline: a socket's, a time below zero, a closed stream's, and a pipe's"
     two @= net.pair(deadline_ms: 0).must()
     deadline(two.first.stream, ms: 20).must()
 
-    match io.read(two.first.stream, most: 1)
+    match io.read(two.first.stream, n: 1)
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -364,7 +357,7 @@ test "failing: a close of the code written once, the stream ended, and the reads
         .ok _  => assert false
         .err e => assert e.code == LIMIT
 
-    assert io.read_exact(two.first.stream, count: 4).must() == [136, 2, 3, 241]
+    assert io.read_exact(two.first.stream, n: 4).must() == [136, 2, 3, 241]
     assert s.ended && s.sent_code == 1009 && !can_read(s) && !is_open(s)
 
     later: i64? = refused(s)

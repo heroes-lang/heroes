@@ -1085,7 +1085,7 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
                 .err e => assert e.code == "not_found"
 
             ready = subscribe(@c, "svc.ready").must()
-            t @= threads.spawn_text(body: live.responder, arg: url)
+            t @= threads.spawn_text(body: live.responder, arg: url).must()
             _ = next_message_of(@c, sid: ready, wait_ms: 10000).must()
             answer = request(@c, subject: "svc.echo", data: bytes.from_text("ping"), wait_ms: 10000).must()
             assert answer.data == bytes.from_text("ping!") && header_of(answer, name: "Seen").must() == "yes"

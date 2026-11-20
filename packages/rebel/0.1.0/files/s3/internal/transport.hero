@@ -53,8 +53,8 @@ function open(target: url.Url, deadline_ms: i64, roots: str) -> Opened?
 # Moves the deadline of `o`'s connection to `ms` from now; 0 takes it away.
 function set_deadline(o: Opened lent, ms: i64) -> ()?
     match o.link
-        .plain p => return net.set_deadline(p.conn, ms: ms)
-        .secure  => return tls.set_deadline(o.reader.stream, ms: ms)
+        .plain p => return net.set_deadline(p.conn.stream, deadline_ms: ms)
+        .secure  => return tls.set_deadline(o.reader.stream, deadline_ms: ms)
 
 # Closes `o`'s connection; a failure closing is no news to its caller.
 function close(@o: Opened)
@@ -146,7 +146,7 @@ function read_up_to(s: io.Stream, count: i64) -> [u8]?
 
         if most > 65_536
             most @ 65_536
-        piece = io.read(s, most: most)?
+        piece = io.read(s, n: most)?
 
         if piece.len() == 0
             return ok(bytes.concat(pieces))

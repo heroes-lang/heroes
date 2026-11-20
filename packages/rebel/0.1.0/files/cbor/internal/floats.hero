@@ -1,11 +1,11 @@
-# A float's bits made and read through `numbers`' doors between a float and
-# its bits (`numbers.f64_to_bits` and its kin) and `bytes`' readers of a
+# A float's bits made and read through `math`'s doors between a float and
+# its bits (`math.f64_to_bits` and its kin) and `bytes`' readers of a
 # float's bytes. A double is held as its three fields, each an `i64` so that
 # the bitwise operators reach them; halves and singles are read from their
 # bits and chosen, for writing, only where they hold the double exactly.
 
 use bytes
-use numbers
+use math
 
 # 2^64, the largest step a scaling takes at once.
 constant STEP: f64
@@ -58,9 +58,9 @@ function pow2(k: i64) -> f64
     return result
 
 # The fields of the double `x`; every `nan` is the quiet one, its sign clear,
-# as `numbers.f64_to_bits` answers it.
+# as `math.f64_to_bits` answers it.
 function parts_of(x: f64) -> Parts
-    bits = numbers.f64_to_bits(x)
+    bits = math.f64_to_bits(x)
     negative = bits >= SIGN_BIT
 
     rest = if negative
@@ -82,15 +82,15 @@ function parts_of(x: f64) -> Parts
 # The double whose fields are `p`.
 function value_of(p: Parts) -> f64
     bits = to_u64(p.sign).must() * SIGN_BIT + to_u64(p.exponent).must() * EXPONENT_UNIT + to_u64(p.fraction).must()
-    return numbers.bits_to_f64(bits)
+    return math.bits_to_f64(bits)
 
 # The value of the half whose 16 bits are `h`.
 function half_value(h: i64) -> f64
-    return numbers.f16_bits_to_f64(to_u16(h).must())
+    return math.f16_bits_to_f64(to_u16(h).must())
 
 # The value of the single whose 32 bits are `s`.
 function single_value(s: i64) -> f64
-    return to_f64(numbers.bits_to_f32(to_u32(s).must()))
+    return to_f64(math.bits_to_f32(to_u32(s).must()))
 
 # The value of the double whose eight bytes, most significant first, begin at
 # `at` of `data`, which holds them.

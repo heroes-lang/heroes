@@ -171,7 +171,7 @@ function go_string(s: str) -> str
 
     while at < s.len()
         b = s[at]
-        width = unicode.width_at(s, at)
+        width = unicode.len_at(s, at)
         written: str @= ""
 
         if b < 0x80

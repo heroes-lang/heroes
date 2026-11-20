@@ -85,7 +85,7 @@ function name_end(text: str, at: i64) -> i64
         i @ if b < 0x80
             i + 1
         else
-            i + unicode.width_at(text, i)
+            i + unicode.len_at(text, i)
 
     return i
 

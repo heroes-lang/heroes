@@ -19,10 +19,7 @@
 use bytes
 use json
 use maps
-
-# `numbers` is a word of this file's own (a group's field numbers), so the
-# package is read under another name.
-use numbers as numerics
+use math
 use protobuf/internal/bits as twos
 use protobuf/internal/carried
 use protobuf/internal/decoder
@@ -658,9 +655,9 @@ function parse_schema_texts(texts: {str: str}) -> Schema?
             .sint64
 
         fallback: Value = if c == model.DOUBLE
-            .double(v: numerics.bits_to_f64(b))
+            .double(v: math.bits_to_f64(b))
         else if c == model.FLOAT
-            .float(v: to_f32(numerics.bits_to_f64(b)))
+            .float(v: to_f32(math.bits_to_f64(b)))
         else if c == model.INT64 || c == model.SINT64 || c == model.SFIXED64
             .int64(v: twos.i64_of(b))
         else if c == model.INT32 || c == model.SINT32 || c == model.SFIXED32
@@ -2277,8 +2274,8 @@ function to_wrapper(v: Value) -> Message?
         .int64 x                                           => x.v == 0
         .uint32 x                                          => x.v == 0
         .uint64 x                                          => x.v == 0
-        .float x                                           => numerics.f32_to_bits(x.v) == 0
-        .double x                                          => numerics.f64_to_bits(x.v) == 0
+        .float x                                           => math.f32_to_bits(x.v) == 0
+        .double x                                          => math.f64_to_bits(x.v) == 0
         .text x                                            => x.v == ""
         .binary x                                          => x.v.len() == 0
         .enumeration _ | .message _ | .list _ | .entries _ => true
@@ -2513,8 +2510,8 @@ function push_tag(@to: [u8], number: i64, wire: WireType)
 # - `to`: the bytes written so far, which this lengthens.
 # - `v`: any `u64`; one byte up to 127, ten for the largest.
 #
-# See also `decode_varint`, `to_zigzag`.
-function push_varint(@to: [u8], v: u64)
+# See also `decode_uvarint`, `to_zigzag`.
+function push_uvarint(@to: [u8], v: u64)
     wires.push_varint(@to, v)
 
 # Writes `v` as four bytes, the lowest first, at the end of `to`.
@@ -2522,7 +2519,7 @@ function push_varint(@to: [u8], v: u64)
 # - `to`: the bytes written so far, which this lengthens.
 # - `v`: any `u32`.
 #
-# See also `decode_fixed32`, `numbers.f32_to_bits`.
+# See also `decode_fixed32`, `math.f32_to_bits`.
 function push_fixed32(@to: [u8], v: u32)
     wires.push_fixed32(@to, v)
 
@@ -2531,7 +2528,7 @@ function push_fixed32(@to: [u8], v: u32)
 # - `to`: the bytes written so far, which this lengthens.
 # - `v`: any `u64`.
 #
-# See also `decode_fixed64`, `numbers.f64_to_bits`.
+# See also `decode_fixed64`, `math.f64_to_bits`.
 function push_fixed64(@to: [u8], v: u64)
     wires.push_fixed64(@to, v)
 
@@ -2575,11 +2572,13 @@ function decode_tag(data: [u8], at: i64) -> WireTag?
 # - `data`: the bytes.
 # - `at`: the index of its first byte, 0 to the length of `data`.
 #
-# A varint written longer than it needs is read, up to ten bytes. Fails
-# `invalid` where the bytes end inside it, and where it has an eleventh byte or
-# a tenth above 1, which pass 64 bits. See also `push_varint`.
-function decode_varint(data: [u8], at: i64) -> WireNumber?
-    got = wires.varint(data, at: at)?
+# A varint written longer than it needs is read, up to ten bytes, as
+# `bytes.decode_uvarint` reads it. Fails `invalid` where the bytes end inside
+# it, and `does_not_fit` where it has an eleventh byte or a tenth above 1,
+# which pass 64 bits; inside a message `decode` fails `invalid` for both. See
+# also `push_uvarint`, `bytes.decode_uvarint`.
+function decode_uvarint(data: [u8], at: i64) -> WireNumber?
+    got = wires.uvarint(data, at: at)?
     return ok(WireNumber(value: got.value, next: got.next))
 
 # The four bytes that begin at byte `at` of `data`, the lowest first.
@@ -2588,7 +2587,7 @@ function decode_varint(data: [u8], at: i64) -> WireNumber?
 # - `at`: the index of the first, 0 to the length of `data`.
 #
 # Fails `invalid` where fewer than four bytes are left. See also
-# `push_fixed32`, `numbers.bits_to_f32`.
+# `push_fixed32`, `math.bits_to_f32`.
 function decode_fixed32(data: [u8], at: i64) -> WireNumber?
     got = wires.fixed32(data, at: at)?
     return ok(WireNumber(value: got.value, next: got.next))
@@ -2599,7 +2598,7 @@ function decode_fixed32(data: [u8], at: i64) -> WireNumber?
 # - `at`: the index of the first, 0 to the length of `data`.
 #
 # Fails `invalid` where fewer than eight bytes are left. See also
-# `push_fixed64`, `numbers.bits_to_f64`.
+# `push_fixed64`, `math.bits_to_f64`.
 function decode_fixed64(data: [u8], at: i64) -> WireNumber?
     got = wires.fixed64(data, at: at)?
     return ok(WireNumber(value: got.value, next: got.next))
@@ -2655,12 +2654,12 @@ function to_zigzag(n: i64) -> u64
 function from_zigzag(n: u64) -> i64
     return twos.unzigzag(n)
 
-# How many bytes `push_varint` writes for `v`, 1 to 10.
+# How many bytes `push_uvarint` writes for `v`, 1 to 10.
 #
 # - `v`: any `u64`.
 #
-# See also `push_varint`.
-function size_of_varint(v: u64) -> i64
+# See also `push_uvarint`.
+function size_of_uvarint(v: u64) -> i64
     return wires.varint_size(v)
 
 ## Bytes read with no schema
@@ -2965,9 +2964,9 @@ test "push_tag: field 1, a varint"
     assert out == [0x08]
 
 # 300 takes two bytes.
-test "push_varint: 300"
+test "push_uvarint: 300"
     out: [u8] @= []
-    push_varint(@out, 300)
+    push_uvarint(@out, 300)
     assert out == [0xac, 0x02]
 
 # Four bytes, the lowest first.
@@ -2994,9 +2993,18 @@ test "decode_tag: field 2, length-delimited"
     assert tag.number == 2 && tag.wire == .length_delimited && tag.next == 1
 
 # A varint and where the next byte is.
-test "decode_varint: 150"
-    got = decode_varint([0x96, 0x01], at: 0).must()
+test "decode_uvarint: 150"
+    got = decode_uvarint([0x96, 0x01], at: 0).must()
     assert got.value == 150 && got.next == 2
+
+test "decode_uvarint: a varint past 64 bits does not fit, one cut short is invalid"
+    match decode_uvarint([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x02], at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+    match decode_uvarint([0x96], at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
 
 # Four bytes read as a number.
 test "decode_fixed32: 7"
@@ -3026,8 +3034,8 @@ test "from_zigzag: three"
     assert from_zigzag(3) == -2
 
 # How long a varint is.
-test "size_of_varint: 300"
-    assert size_of_varint(300) == 2
+test "size_of_uvarint: 300"
+    assert size_of_uvarint(300) == 2
 
 # A message read with no schema: a varint and a string.
 test "decode_raw: two fields"

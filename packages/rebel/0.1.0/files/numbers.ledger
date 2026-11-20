@@ -288,21 +288,6 @@ capability text/printable  whether a character is one a reader sees
   rust    -
   python  -
 
-capability number/float-bits  a float's IEEE 754 bits as an unsigned integer, and the float a pattern of bits holds
-  heroes  numbers.f64_to_bits, numbers.bits_to_f64, numbers.f32_to_bits, numbers.bits_to_f32
-  go      math.Float64bits, math.Float64frombits, math.Float32bits, math.Float32frombits
-  rust    f64::to_bits, f64::from_bits, f32::to_bits, f32::from_bits
-  python  struct.pack, struct.unpack (formats `d` and `f`)
-  note    added 2026-11-18 (repair queue 74), so `protobuf` and `sql/mysql` share one and a MySQL program no longer carries `protobuf` for it. Exact for every float but a NaN, both zeros' signs, the subnormals and the infinities included: every exponent's first, middle and last pattern of both widths and both signs goes to its float and back unchanged, and the patterns tested are Python's `struct.pack`'s. Every NaN gives the quiet NaN with its sign clear, where Go and Rust keep a NaN's sign and payload: the language reads neither (no arithmetic shows them, `to_str` writes every NaN as `nan`), and C's `memcpy` cannot be bound for it, since its `void *` takes only bytes on both sides and `.ptr()` lends only a field of bytes (the compiler's `ffi_parameter_type` and `bad_operand`, run 2026-11-18). Keeping them needs a door of the language, a built-in or a function of its runtime
-
-capability number/half-float  a float rounded to IEEE 754's binary16, the half-precision float, as its 16 bits, and those bits read back as the value they hold
-  heroes  numbers.f64_to_f16_bits, numbers.f32_to_f16_bits, numbers.f16_bits_to_f64, numbers.f16_bits_to_f32
-  go      -
-  rust    f16::from_bits, f16::to_bits, f16::from (into f32 and f64), `as f16` from f32 and f64 (the primitive unstable in Rust 1.100)
-  python  struct.pack, struct.unpack, struct.calcsize (format `e`)
-  note    added 2026-11-17 (queue 58), the yardstick Rust's crate half (f16::from_f32, f16::from_f64, f16::to_f32, f16::to_f64, f16::from_bits, f16::to_bits); rounded half to even from the exact value, as IEEE 754 asks and clang's `_Float16` rounds: 35 values against Python's struct and clang 21 on 2026-11-17 and every one of the 65536 halves read and written back. A value of 65520 or more is an infinity of its sign, as IEEE 754, clang and half answer, where Python's struct raises OverflowError. Every NaN becomes the quiet NaN 0x7e00, its sign and payload lost, since the language reads neither; Python and clang keep the sign (-nan is 0xfe00)
-
-
 capability number/byte-size  a count of bytes written for people, `1.2 MB` or `1.2 MiB`, and read back
   heroes  numbers.format_size, numbers.parse_size, numbers.SizeUnits
   go      -

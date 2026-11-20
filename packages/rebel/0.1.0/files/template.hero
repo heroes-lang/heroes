@@ -68,9 +68,7 @@ use strings
 use template/internal/analyze
 use template/internal/assemble
 use template/internal/escape_js as scripts
-use template/internal/escape_text
 use template/internal/program
-use template/internal/references
 use template/internal/run
 use template/internal/values
 
@@ -259,30 +257,6 @@ function is_true(v: json.Value) -> bool
     return values.is_true(v)
 
 ## Escaping
-
-# `s` with `&`, `<`, `>`, `"` and `'` written as HTML's references, so that it
-# stands as text in an element or in a quoted attribute, as `escape` writes it.
-#
-# - `s`: any text, the empty one included.
-#
-# The references are `&amp;`, `&lt;`, `&gt;`, `&#34;` and `&#39;`, as Go
-# writes them, and U+0000 is written U+FFFD. See also `unescape_html`.
-function escape_html(s: str) -> str
-    return escape_text.html_plain(s)
-
-# `s` with HTML's character references read: named, decimal and hexadecimal,
-# as a browser reads them in text.
-#
-# - `s`: any text; a `&` that begins no reference stays as it is.
-#
-# A named reference is read from the table of HTML's standard, those a browser
-# reads with no `;` after them included; a number past U+10FFFF, a surrogate
-# and 0 are read as U+FFFD, a number of Windows-1252's C1 range as the
-# character that code page gives it, and a control character or a
-# noncharacter is dropped, as Python's `html.unescape` reads them. See also
-# `escape_html`.
-function unescape_html(s: str) -> str
-    return references.unescape(s)
 
 # `s` written so that it stands inside a JavaScript string between `"` or `'`
 # and inside HTML, as Go's `JSEscapeString` writes it.
@@ -477,14 +451,6 @@ test "paths_of: two paths, one read twice"
 # What `if` takes as true.
 test "is_true: an empty text, a zero and a list"
     assert !is_true(.text(v: "")) && !is_true(.number(v: 0.0)) && is_true(.list(items: [.null_value]))
-
-# A text made safe for HTML.
-test "escape_html: a tag and its quotes"
-    assert escape_html("<a href='x'>&\"") == "&lt;a href=&#39;x&#39;&gt;&amp;&#34;"
-
-# References read back.
-test "unescape_html: named, decimal and hexadecimal"
-    assert unescape_html("&lt;p&gt; &amp;amp; &#233;&#x41;") == "<p> &amp; éA"
 
 # A text made safe inside a script's string.
 test "escape_js: quotes and a tag"

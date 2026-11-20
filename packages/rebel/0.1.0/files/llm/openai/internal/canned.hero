@@ -54,7 +54,7 @@ function events(pairs: [str]) -> str
 # over a connection to a listener of this thread, so none is assumed free.
 function start(answers: [str]) -> Started
     control @= net.listen(host: "127.0.0.1", port: 0).must()
-    t = threads.spawn_text(body: serve, arg: f"{control.address.port}" + SEPARATOR + answers.join(SEPARATOR))
+    t = threads.spawn_text(body: serve, arg: f"{control.address.port}" + SEPARATOR + answers.join(SEPARATOR)).must()
     told = net.accept(control, deadline_ms: 10_000).must()
     r @= io.reader(told.stream)
     port = numbers.parse_int(io.read_rest_text(@r).must()).must()
@@ -82,7 +82,7 @@ function serve(arg: str) -> str
     c @= net.connect("127.0.0.1", port: control, deadline_ms: 10_000).must()
     io.write_text(c.stream, text: f"{l.address.port}").must()
     io.close(@c.stream).must()
-    net.set_accept_deadline(l, ms: 10_000).must()
+    net.set_accept_deadline(l, deadline_ms: 10_000).must()
     seen: [str] @= []
     at: i64 @= 1
 

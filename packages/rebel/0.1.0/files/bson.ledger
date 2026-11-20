@@ -28,7 +28,7 @@ capability bson/encode  a document written as its bytes
   go      Marshal, Encoder.Encode, NewEncoder
   rust    to_vec, Document::to_writer, RawDocumentBuf::from_document
   python  encode, BSON.encode
-  note    a regex's options are written sorted and an array's names as 0, 1, ..., as pymongo writes them; a name or pattern holding a zero byte is refused, `invalid`; a double is written by `numbers.f64_to_bits`, exact for every float but a NaN, whose sign and payload no route of Rebel keeps: every NaN is read and written as the quiet NaN, 0x7ff8000000000000, where Go and Rust keep a NaN's bits
+  note    a regex's options are written sorted and an array's names as 0, 1, ..., as pymongo writes them; a name or pattern holding a zero byte is refused, `invalid`; a double is written by `math.f64_to_bits`, exact for every float but a NaN, whose sign and payload no route of Rebel keeps: every NaN is read and written as the quiet NaN, 0x7ff8000000000000, where Go and Rust keep a NaN's bits
 
 capability bson/decode  bytes read into a document, every length and every text checked, the nesting bounded
   heroes  bson.decode, bson.decode_with, bson.DecodeOptions, bson.strict, bson.DEFAULT_MAX_DEPTH
@@ -78,7 +78,7 @@ capability bson/path  a value reached by a dotted path, as a query names one
   python  -
 
 capability bson/typed-reading  a value read as a given type, failing on another
-  heroes  bson.text_of, bson.int_of, bson.number_of, bson.bool_of, bson.document_of, bson.items_of, bson.object_id_of, bson.binary_of, bson.instant_of, bson.decimal_of, bson.kind_of, bson.type_code_of
+  heroes  bson.text_of, bson.int_of, bson.number_of, bson.bool_of, bson.document_of, bson.items_of, bson.object_id_of, bson.bytes_of, bson.instant_of, bson.decimal_of, bson.kind_of, bson.type_code_of
   go      RawValue.StringValue, RawValue.Int32, RawValue.Int64, RawValue.AsInt64, RawValue.AsFloat64, RawValue.Double, RawValue.Boolean, RawValue.Document, RawValue.Array, RawValue.ObjectID, RawValue.Binary, RawValue.DateTime, RawValue.Time, RawValue.Decimal128, RawValue.Regex, RawValue.Timestamp, RawValue.JavaScript, RawValue.CodeWithScope, RawValue.DBPointer, RawValue.Symbol, RawValue.IsNumber, the *OK forms of each
   rust    Bson::as_str, Bson::as_i32, Bson::as_i64, Bson::as_f64, Bson::as_bool, Bson::as_document, Bson::as_array, Bson::as_object_id, Bson::as_datetime, Bson::as_timestamp, Bson::as_null, Bson::as_symbol, Bson::as_db_pointer, Bson::element_type, Document::get_str, Document::get_i32, Document::get_i64, Document::get_f64, Document::get_bool, Document::get_document, Document::get_array, Document::get_object_id, Document::get_datetime, Document::get_timestamp, Document::get_binary_generic, Document::get_decimal128, Document::is_null
   python  -
@@ -111,7 +111,7 @@ capability bson/timestamp  a replication timestamp held and ordered
   python  Timestamp, Timestamp.time, Timestamp.inc, Timestamp.as_datetime
 
 capability bson/binary  binary data of every subtype
-  heroes  bson.Value.binary, bson.binary_of, bson.SUBTYPE_GENERIC, bson.SUBTYPE_FUNCTION, bson.SUBTYPE_BINARY_OLD, bson.SUBTYPE_UUID_OLD, bson.SUBTYPE_UUID, bson.SUBTYPE_MD5, bson.SUBTYPE_ENCRYPTED, bson.SUBTYPE_COLUMN, bson.SUBTYPE_SENSITIVE, bson.SUBTYPE_VECTOR, bson.SUBTYPE_USER_DEFINED
+  heroes  bson.Value.binary, bson.bytes_of, bson.SUBTYPE_GENERIC, bson.SUBTYPE_FUNCTION, bson.SUBTYPE_BINARY_OLD, bson.SUBTYPE_UUID_OLD, bson.SUBTYPE_UUID, bson.SUBTYPE_MD5, bson.SUBTYPE_ENCRYPTED, bson.SUBTYPE_COLUMN, bson.SUBTYPE_SENSITIVE, bson.SUBTYPE_VECTOR, bson.SUBTYPE_USER_DEFINED
   go      Binary, Binary.Equal, Binary.IsZero, the TypeBinary* constants
   rust    Binary, Binary::from_base64, spec::BinarySubtype
   python  Binary, Binary.subtype, the *_SUBTYPE constants

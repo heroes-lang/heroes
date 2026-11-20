@@ -187,7 +187,7 @@ function printable(text: str, from: i64, to: i64) -> ()?
                 code: INVALID,
                 msg: source.said(text: text, at: i, what: f"{name} stands in a block scalar, and YAML allows it only between double quotes, as an escape")
             )
-        i @ i + unicode.width_at(text, i)
+        i @ i + unicode.len_at(text, i)
 
     return ok()
 

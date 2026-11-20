@@ -338,21 +338,21 @@ test "api_name, check_version: a name known and not, a version inside the range,
 test "request: the header written, the answer read whole across reads, a correlation that disagrees, an answer past the bound"
     two = net.pair(5000).must()
     c @= closed(1, target: "peer")
-    c.link @ .plain(conn: two.first)
+    c.link @ .connected(stream: two.first.stream, secured: false)
     c.open @ true
     c.versions @ [model.ApiVersion(key: 3, min: 0, max: 12)]
     peer @= two.second.stream
     io.write(peer, data: [0, 0, 0, 7, 0, 0, 0, 1, 9, 8, 7]).must()
     r @= request(@c, key: 3, version: 8, body: [5], client_id: "id", wait_ms: 2000, most: 100, answered: true).must()
     assert wire.take_raw(@r, n: 3, what: "x").must() == [9, 8, 7]
-    assert io.read(peer, most: 100).must() == [0, 0, 0, 13, 0, 3, 0, 8, 0, 0, 0, 1, 0, 2, 'i', 'd', 5]
+    assert io.read(peer, n: 100).must() == [0, 0, 0, 13, 0, 3, 0, 8, 0, 0, 0, 1, 0, 2, 'i', 'd', 5]
     io.write(peer, data: [0, 0, 0, 4, 0, 0, 0, 9]).must()
     assert request(@c, key: 3, version: 8, body: [], client_id: "", wait_ms: 2000, most: 100, answered: true).is_err() && !c.open
     c.link @ .gone
     io.close(@peer).must()
     three = net.pair(5000).must()
     d @= closed(1, target: "peer")
-    d.link @ .plain(conn: three.first)
+    d.link @ .connected(stream: three.first.stream, secured: false)
     d.open @ true
     d.versions @ [model.ApiVersion(key: 3, min: 0, max: 12)]
     other @= three.second.stream

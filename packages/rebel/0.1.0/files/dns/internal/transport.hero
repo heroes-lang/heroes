@@ -95,7 +95,7 @@ function over_udp(query: [u8], server: net.Address, timeout_ms: i64) -> [u8]?
 # after sending it, every datagram before it passed over. Fails `timeout`
 # where none comes within `timeout_ms`.
 function udp_answer(socket: net.UdpSocket, query: [u8], server: net.Address, timeout_ms: i64) -> [u8]?
-    net.set_udp_deadline(socket, ms: timeout_ms)?
+    net.set_udp_deadline(socket, deadline_ms: timeout_ms)?
     net.send_to(socket, data: query, to: server)?
 
     while true
@@ -128,9 +128,9 @@ function framed_answer(s: io.Stream, query: [u8]) -> [u8]?
         framed @ framed.push(b)
 
     io.write(s, data: framed)?
-    head = io.read_exact(s, count: 2)?
+    head = io.read_exact(s, n: 2)?
     length = to_i64(head[0]).must() << 8 | to_i64(head[1]).must()
-    answer = io.read_exact(s, count: length)?
+    answer = io.read_exact(s, n: length)?
 
     if !answers(query: query, answer: answer)
         return fail(
@@ -162,9 +162,9 @@ function transfer(s: io.Stream, query: [u8]) -> [[u8]]?
     while soas < 2
         if messages.len() >= MOST_MESSAGES
             return fail(code: failure.INVALID, msg: f"a zone transfer of more than {MOST_MESSAGES} messages")
-        head = io.read_exact(s, count: 2)?
+        head = io.read_exact(s, n: 2)?
         length = to_i64(head[0]).must() << 8 | to_i64(head[1]).must()
-        body = io.read_exact(s, count: length)?
+        body = io.read_exact(s, n: length)?
 
         if length < 12 || body[0] != query[0] || body[1] != query[1]
             return fail(

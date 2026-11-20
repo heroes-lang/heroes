@@ -47,7 +47,7 @@ function read_name(text: str, at: i64) -> token.Lexeme?
                 code: INVALID,
                 msg: source.said(text: text, at: i, what: f"{source.code_name(unicode.code_point_at(text, i))} stands in a name, which holds no such character")
             )
-        i @ i + unicode.width_at(text, i)
+        i @ i + unicode.len_at(text, i)
 
     if i == at + 1
         sign = text.slice(from: at, to: at + 1)

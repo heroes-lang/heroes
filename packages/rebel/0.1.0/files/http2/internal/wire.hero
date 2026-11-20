@@ -13,7 +13,6 @@ use http2/internal/model
 use http2/internal/receiving
 use http2/internal/sending
 use io
-use net
 use time
 use tls
 
@@ -92,7 +91,7 @@ function hold(@w: State, e: http2.Event) -> ()?
 function read_more(stream: io.Stream, @w: State) -> ()?
     if w.ended
         return fail(code: model.CLOSED, msg: "reading an HTTP/2 connection that has ended")
-    data = io.read(stream, most: 65536)?
+    data = io.read(stream, n: 65536)?
 
     if data.len() == 0
         w.ended @ true
@@ -376,26 +375,18 @@ function answer(stream: io.Stream, @w: State, id: i64, response: http2.Response)
             write_headers(stream, @w, id: id, headers: response.trailers, end_stream: true)?
     return ok()
 
-# Makes every read and write of `stream` end by `ms` milliseconds from now,
-# 0 for no end: by `tls` where it is TLS's, by `net` where it is a socket's.
-function set_wait(stream: io.Stream, ms: i64)
-    match tls.set_deadline(stream, ms: ms)
-        .ok _  => return
-        .err _ => _ = 0
-
-    match net.set_deadline(net.Conn(stream: stream, local: net.unspecified_v4(), remote: net.unspecified_v4()), ms: ms)
-        .ok _  => _ = 0
-        .err _ => _ = 0
-
 # Reads and drops what the peer still sends, for a second at most, until it
 # closes: a server that closed at once while bytes it had not read waited
 # would make its system reset the connection, and the peer lose the last
 # answer it was sent.
 function linger(stream: io.Stream)
-    set_wait(stream, ms: 1000)
+    # A stream that takes no deadline is not waited on, so a peer that never
+    # closes cannot hold the server here.
+    if tls.set_deadline(stream, deadline_ms: 1000).is_err()
+        return
 
     for _ in range(from: 0, to: 64)
-        match io.read(stream, most: 65536)
+        match io.read(stream, n: 65536)
             .ok data =>
                 if data.len() == 0
                     return

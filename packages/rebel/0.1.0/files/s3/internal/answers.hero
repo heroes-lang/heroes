@@ -343,7 +343,7 @@ function versions_of(body: [u8]) -> VersionsPage?
     encoded = text_at(root, name: "EncodingType") == "url"
     out: [VersionEntry] @= []
 
-    for e in xml.elements_of(root)
+    for e in xml.child_elements(root)
         marker = e.name.local == "DeleteMarker"
 
         if marker || e.name.local == "Version"

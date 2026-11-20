@@ -14,7 +14,7 @@
 # `r50k_base`, `p50k_base`, `p50k_edit` and `gpt2`, of GPT-3 and GPT-2, are
 # not carried: `name_for_model` names them, and `named` and `for_model` fail
 # `not_found` for them. Claude's tokenizer is not published: Claude's tokens
-# are counted by Anthropic's API, `llm/anthropic`'s `count_tokens`.
+# are counted by Anthropic's API, `llm/anthropic`'s `count_input_tokens`.
 #
 # A function here fails `not_found` where a name names no encoding carried
 # or a model none known.

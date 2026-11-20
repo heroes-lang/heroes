@@ -1,9 +1,8 @@
 # A call's deadline on the connection under it: the time `time.mark` counts,
 # and the wait of every read and write of the stream set to what is left,
-# by `tls` where the stream is TLS's and by `net` where it is a socket's.
+# by `tls.set_deadline`, which moves a TLS stream's and a socket's alike.
 
 use io
-use net
 use time
 use tls
 
@@ -14,15 +13,11 @@ function now_ms() -> i64
         .err _ => return 0
 
 # Makes every read and write of `stream` end by `ms` milliseconds from now,
-# 0 for no end; a stream that takes no deadline is left as it is.
-function set_wait(stream: io.Stream, ms: i64)
-    match tls.set_deadline(stream, ms: ms)
-        .ok _  => return
-        .err _ => _ = 0
-
-    match net.set_deadline(net.Conn(stream: stream, local: net.unspecified_v4(), remote: net.unspecified_v4()), ms: ms)
-        .ok _  => _ = 0
-        .err _ => _ = 0
+# 0 for no end, a TLS stream's or a socket's alike (`tls.set_deadline`).
+# Fails `closed` where `stream` is closed and `unsupported` where it takes no
+# deadline.
+function set_wait(stream: io.Stream, ms: i64) -> ()?
+    return tls.set_deadline(stream, deadline_ms: ms)
 
 # The milliseconds left before `deadline_at`, -1 where there is none, 0
 # where it has passed.
@@ -36,13 +31,13 @@ function left_of(deadline_at: i64) -> i64
     return left
 
 # Makes every read and write of `stream` end when `deadline_at` passes, or
-# never where it is 0.
-function wait_until(stream: io.Stream, deadline_at: i64)
+# never where it is 0. Fails as `set_wait` fails.
+function wait_until(stream: io.Stream, deadline_at: i64) -> ()?
     left = left_of(deadline_at)
 
     if left < 0
-        set_wait(stream, ms: 0)
-    else if left == 0
-        set_wait(stream, ms: 1)
-    else
-        set_wait(stream, ms: left)
+        return set_wait(stream, ms: 0)
+
+    if left == 0
+        return set_wait(stream, ms: 1)
+    return set_wait(stream, ms: left)

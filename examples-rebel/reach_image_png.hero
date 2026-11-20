@@ -17,7 +17,7 @@ function main()
             match png.encode(img, png.encoding())
                 .err e => print(e.code, ": ", e.msg)
                 .ok file =>
-                    match png.decode(file, png.decoding())
+                    match png.decode_with(file, png.decoding())
                         .err e => print(e.code, ": ", e.msg)
                         .ok back => print(
                             file.len(),

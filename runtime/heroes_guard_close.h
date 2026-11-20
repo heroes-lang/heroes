@@ -455,6 +455,7 @@
 #pragma pop_macro("hero_thread_spawn")
 #pragma pop_macro("hero_thread_spawn_sized")
 #pragma pop_macro("hero_thread_spawn_str")
+#pragma pop_macro("hero_thread_spawn_str_sized")
 #pragma pop_macro("hero_uint_to_str")
 #pragma pop_macro("hero_unreachable")
 #pragma pop_macro("hero_utf8_valid")

@@ -7,7 +7,7 @@
 # sign of a zero included. A NaN's sign and payload are not read: no
 # arithmetic shows them, and `to_str` writes every NaN as `nan`.
 
-use numbers/internal/near
+use math/internal/limits
 
 # 2^63, the sign bit of an `f64`'s pattern.
 constant SIGN_64: u64
@@ -125,7 +125,7 @@ function of_f64(x: f64) -> u64
     else
         x
 
-    if size == near.infinity()
+    if size == limits.INF
         return sign + INFINITY_64
 
     if size == 0.0
@@ -154,8 +154,8 @@ function f64_of(bits: u64) -> f64
 
     if exponent == 2047
         if fraction != 0.0
-            return near.not_a_number()
-        size @ near.infinity()
+            return limits.NAN
+        size @ limits.INF
     else if exponent == 0
         size @ scaled(x: fraction, power: -1074)
     else
@@ -184,7 +184,7 @@ function of_f32(x: f32) -> u32
     else
         wide
 
-    if size == near.infinity()
+    if size == limits.INF
         return sign + INFINITY_32
 
     if size == 0.0
@@ -213,8 +213,8 @@ function f32_of(bits: u32) -> f32
 
     if exponent == 255
         if fraction != 0.0
-            return to_f32(near.not_a_number())
-        size @ near.infinity()
+            return to_f32(limits.NAN)
+        size @ limits.INF
     else if exponent == 0
         size @ scaled(x: fraction, power: -149)
     else
@@ -235,8 +235,8 @@ test "of_f64: both zeros, one, -2.5, the smallest subnormal, the largest subnorm
     assert of_f64(scaled(x: 4503599627370495.0, power: -1074)) == 4503599627370495
     assert of_f64(scaled(x: 1.0, power: -1022)) == 4503599627370496
     assert of_f64(scaled(x: 9007199254740991.0, power: 971)) == 9218868437227405311
-    assert of_f64(near.infinity()) == 9218868437227405312 && of_f64(-near.infinity()) == 18442240474082181120
-    assert of_f64(near.not_a_number()) == QUIET_NAN_64 && of_f64(-near.not_a_number()) == QUIET_NAN_64
+    assert of_f64(limits.INF) == 9218868437227405312 && of_f64(-limits.INF) == 18442240474082181120
+    assert of_f64(limits.NAN) == QUIET_NAN_64 && of_f64(-limits.NAN) == QUIET_NAN_64
 
 test "f64_of: both zeros, one, the smallest and largest subnormals, the largest, the infinities, NaN patterns of either sign and payload"
     assert f64_of(0) == 0.0 && !has_sign(f64_of(0)) && has_sign(f64_of(9223372036854775808))
@@ -244,7 +244,7 @@ test "f64_of: both zeros, one, the smallest and largest subnormals, the largest,
     assert f64_of(1) == scaled(x: 1.0, power: -1074)
     assert f64_of(4503599627370495) == scaled(x: 4503599627370495.0, power: -1074)
     assert of_f64(f64_of(9218868437227405311)) == 9218868437227405311
-    assert f64_of(9218868437227405312) == near.infinity() && f64_of(18442240474082181120) == -near.infinity()
+    assert f64_of(9218868437227405312) == limits.INF && f64_of(18442240474082181120) == -limits.INF
 
     patterns: [u64] = [9218868437227405313, 9221120237041090560, 18446744073709551615, 18444492273895866368]
 
@@ -258,13 +258,13 @@ test "of_f32 and f32_of: both zeros, one, -1.5, the smallest and largest subnorm
     assert of_f32(to_f32(scaled(x: 1.0, power: -149))) == 1
     assert of_f32(to_f32(scaled(x: 8388607.0, power: -149))) == 8388607
     assert of_f32(to_f32(scaled(x: 16777215.0, power: 104))) == 2139095039
-    assert of_f32(to_f32(near.infinity())) == 2139095040 && of_f32(to_f32(-near.infinity())) == 4286578688
-    assert of_f32(to_f32(near.not_a_number())) == QUIET_NAN_32
+    assert of_f32(to_f32(limits.INF)) == 2139095040 && of_f32(to_f32(-limits.INF)) == 4286578688
+    assert of_f32(to_f32(limits.NAN)) == QUIET_NAN_32
     assert f32_of(1065353216) == 1.0 && f32_of(3217031168) == -1.5
     assert has_sign(to_f64(f32_of(2147483648))) && f32_of(2147483648) == 0.0
     assert to_f64(f32_of(1)) == scaled(x: 1.0, power: -149)
     assert to_f64(f32_of(2139095039)) == scaled(x: 16777215.0, power: 104)
-    assert to_f64(f32_of(4286578688)) == -near.infinity()
+    assert to_f64(f32_of(4286578688)) == -limits.INF
 
     patterns: [u32] = [2139095041, 2143289344, 4294967295, 4290772992]
 

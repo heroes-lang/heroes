@@ -53,7 +53,7 @@ function read(stream: io.Stream, head_bytes: i64, field_count: i64) -> Answer?
     while end < 0
         if got.len() >= head_bytes
             return fail(code: LIMIT, msg: f"the server's answer has a head past {head_bytes} bytes")
-        more = io.read(stream, most: PIECE)?
+        more = io.read(stream, n: PIECE)?
 
         if more.len() == 0
             return fail(code: CLOSED, msg: f"the server ended the stream {got.len()} bytes into its answer's head")

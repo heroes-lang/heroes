@@ -55,7 +55,7 @@ record Typed
 function found_at(text: str, at: i64) -> str
     if at >= text.len()
         return "the end of the query"
-    width = unicode.utf8_width(text[at]).default(1)
+    width = unicode.utf8_len_of_first(text[at]).default(1)
 
     end = if at + width > text.len()
         text.len()

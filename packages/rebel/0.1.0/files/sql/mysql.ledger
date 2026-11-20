@@ -132,7 +132,7 @@ capability sql-mysql/query  a statement's rows read into values by their column'
   go      NullTime, NullTime.Scan, NullTime.Value
   rust    -
   python  Cursor.execute, Cursor.fetchone, Cursor.fetchall, Cursor.fetchmany, Connection.query
-  note    every row read before it answers; the same value from the text and the binary protocols, a `FLOAT` rounded to its single in both (Go and Python read the text's decimal as a double); a `FLOAT`'s and a `DOUBLE`'s bits are read and written by `numbers.bits_to_f32`, `numbers.bits_to_f64` and `numbers.f64_to_bits` since 2026-11-18, where they were `protobuf`'s, which this package no longer uses: the program `reach_sql_mysql` built on macOS went from 7,062,784 bytes to 4,898,752
+  note    every row read before it answers; the same value from the text and the binary protocols, a `FLOAT` rounded to its single in both (Go and Python read the text's decimal as a double); a `FLOAT`'s and a `DOUBLE`'s bits are read and written by `math.bits_to_f32`, `math.bits_to_f64` and `math.f64_to_bits` since 2026-11-18, where they were `protobuf`'s, which this package no longer uses: the program `reach_sql_mysql` built on macOS went from 7,062,784 bytes to 4,898,752
 
 capability sql-mysql/stream-rows  rows read one at a time as the server sends them, never all held
   heroes  pending

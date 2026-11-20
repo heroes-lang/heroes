@@ -251,7 +251,7 @@ test "next: a close echoed with its code, frames after it ignored, and read as c
         # The server closed its end with the ping after the close unread, so
         # the system may end the client's with a reset: the end of the
         # stream, or `closed`.
-        match io.read(two.first.stream, most: 16)
+        match io.read(two.first.stream, n: 16)
             .ok rest => assert rest.len() == 0
             .err e   => assert e.code == engine.CLOSED
 

@@ -10,7 +10,7 @@
 # vectors of two, three and four `f64`, their matrices and quaternions,
 # the geometry of games and of the screen, are `math/linear`'s. The
 # numbers the vectors are made of come from elsewhere: `random` draws them,
-# `json` reads them, `numbers.f32_to_f16_bits` halves their precision. A text
+# `json` reads them, `math.f32_to_f16_bits` halves their precision. A text
 # is searched by its words in `search`.
 #
 # It fails with `invalid`, where vectors differ in length, hold a nan or an

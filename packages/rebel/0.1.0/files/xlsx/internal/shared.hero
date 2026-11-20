@@ -11,11 +11,11 @@ use xml
 function item_text(e: xml.Element) -> str
     pieces: [str] @= []
 
-    for c in xml.elements_of(e)
+    for c in xml.child_elements(e)
         if c.name.local == "t"
             pieces @ pieces.push(xml.text_of(c))
         else if c.name.local == "r"
-            for t in xml.elements_of(c)
+            for t in xml.child_elements(c)
                 if t.name.local == "t"
                     pieces @ pieces.push(xml.text_of(t))
 
@@ -25,7 +25,7 @@ function item_text(e: xml.Element) -> str
 function read_shared(root: xml.Element) -> [str]
     found: [str] @= []
 
-    for si in xml.elements_of(root)
+    for si in xml.child_elements(root)
         if si.name.local == "si"
             found @ found.push(item_text(si))
 

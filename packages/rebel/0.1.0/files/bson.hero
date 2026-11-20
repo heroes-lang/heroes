@@ -18,7 +18,7 @@
 # made by a `ObjectIdMaker` the program holds, since the language has no
 # mutable global to hold a process's counter.
 #
-# A double is written by `numbers.f64_to_bits`, exactly; every NaN as the one
+# A double is written by `math.f64_to_bits`, exactly; every NaN as the one
 # quiet NaN, its sign and payload lost. It speaks to no server: `mongodb` does. It fails with
 # `invalid`, `not_text`, `does_not_fit`, `not_found` and `unsupported`.
 
@@ -783,7 +783,7 @@ function object_id_of(v: Value) -> ObjectId?
 # - `v`: the value.
 #
 # Fails `invalid` where `v` is no binary. See also `uuid_of`.
-function binary_of(v: Value) -> [u8]?
+function bytes_of(v: Value) -> [u8]?
     return match v
         .binary b => ok(b.data)
         .double _ | .text _ | .document _ | .array _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
@@ -1747,8 +1747,8 @@ test "object_id_of: the id of a document"
     assert object_id_of(.object_id(id: id)).must() == id
 
 # Binary data read out of a value.
-test "binary_of: two bytes"
-    assert binary_of(.binary(subtype: SUBTYPE_GENERIC, data: [1, 2])).must() == [1, 2]
+test "bytes_of: two bytes"
+    assert bytes_of(.binary(subtype: SUBTYPE_GENERIC, data: [1, 2])).must() == [1, 2]
 
 # A datetime read as an instant.
 test "instant_of: the epoch"

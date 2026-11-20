@@ -20,7 +20,7 @@
 # `generate` or read never stands in the program's memory but where the
 # program asks for its bytes (`format_private_der`, `format_private_pem`,
 # `format_private_raw`); a cell the language lends C a secret through is
-# overwritten before the call answers, and `close` overwrites C's copy. A
+# overwritten before the call answers, and `close_private` overwrites C's copy. A
 # private key and a public key are two types, so a public key never signs
 # and a private key's public half is taken by `public_of`.
 #
@@ -115,10 +115,10 @@ variant Scheme
     rsa_pkcs1_sha512
 
 # A private key, made by `generate` or read by a `parse_private_*`
-# function. It holds a handle: `close` closes it, overwriting its secret,
+# function. It holds a handle: `close_private` closes it, overwriting its secret,
 # and one nobody closes is told when `main` returns.
 record PrivateKey
-    # The layer's key, `nullptr` once `close` has emptied this place.
+    # The layer's key, `nullptr` once `close_private` has emptied this place.
     handle: hero_crypto.Key
     # Its kind.
     kind: Kind
@@ -206,7 +206,7 @@ function parse_scheme(name: str) -> Scheme?
 #
 # The key is the caller's to close. Fails `invalid` for RSA of other bits,
 # `unsupported` where `is_available` is false. RSA of 4096 bits takes
-# seconds. See also `public_of`, `close`.
+# seconds. See also `public_of`, `close_private`.
 function generate(kind: Kind) -> PrivateKey?
     bits = match kind
         .rsa r                             => r.bits
@@ -230,14 +230,14 @@ function public_of(key: PrivateKey) -> PublicKey?
 # - `key`: the caller's private key, emptied.
 #
 # Fails `closed` where `key` is closed already. See also `close_public`.
-function close(@key: PrivateKey) -> ()?
+function close_private(@key: PrivateKey) -> ()?
     return operations.close(@key.handle)
 
 # Closes the public `key`; the place is emptied.
 #
 # - `key`: the caller's public key, emptied.
 #
-# Fails `closed` where `key` is closed already. See also `close`.
+# Fails `closed` where `key` is closed already. See also `close_private`.
 function close_public(@key: PublicKey) -> ()?
     return operations.close(@key.handle)
 
@@ -503,7 +503,7 @@ test "parse_private_raw and sign: RFC 8032's TEST 1 to 3 where the platform has 
                     signature: signature
                 ).must()
                 close_public(@public).must()
-                close(@key).must()
+                close_private(@key).must()
 
 test "verify_der: a changed signature does not hold, bytes of no key are invalid, and a scheme of another kind is invalid"
     if !is_available(.p256)
@@ -525,7 +525,7 @@ test "verify_der: a changed signature does not hold, bytes of no key are invalid
         .err e => assert e.code == INVALID
 
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 test "generate, close and close_public: RSA of 1024 bits invalid, a key closed twice closed, and Ed25519 and X25519 unsupported where the platform lacks them"
     match generate(.rsa(bits: 1024))
@@ -544,9 +544,9 @@ test "generate, close and close_public: RSA of 1024 bits invalid, a key closed t
                 assert key.kind == kind
                 public @= public_of(key).must()
                 close_public(@public).must()
-                close(@key).must()
+                close_private(@key).must()
 
-                match close(@key)
+                match close_private(@key)
                     .ok _  => assert false
                     .err e => assert e.code == CLOSED
 
@@ -593,7 +593,7 @@ test "parse_public_raw and format_public_raw: a P-256 point read and written bac
 
     close_public(@again).must()
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 ## Examples
 
@@ -607,13 +607,13 @@ test "sign: a message signed by ECDSA and checked"
     signature = sign(key: key, scheme: .ecdsa_sha256, message: message).must()
     assert verify(key: public, scheme: .ecdsa_sha256, message: message, signature: signature).must()
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # Whether this machine makes Ed25519 keys: false on Windows.
 test "is_available: asked before a key is made"
     if is_available(.ed25519)
         key @= generate(.ed25519).must()
-        close(@key).must()
+        close_private(@key).must()
 
 # A kind written as its name, an RSA kind's bits left out.
 test "format_kind: P-384 and RSA"
@@ -632,7 +632,7 @@ test "parse_scheme: ECDSA with SHA-384"
 test "generate: a P-256 key"
     key @= generate(.p256).must()
     assert key.kind == .p256
-    close(@key).must()
+    close_private(@key).must()
 
 # A private key's public half, a key of its own to close.
 test "public_of: the public half of a P-384 key"
@@ -640,19 +640,19 @@ test "public_of: the public half of a P-384 key"
     public @= public_of(key).must()
     assert public.kind == .p384
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # A private key closed, its secret overwritten.
 test "close: a key made and closed"
     key @= generate(.p256).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # A public key closed.
 test "close_public: a public half closed before its private key"
     key @= generate(.p256).must()
     public @= public_of(key).must()
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # A signature checked by the public half of the key that made it.
 test "verify: an RSA-PSS signature that holds and one of another message that does not"
@@ -662,7 +662,7 @@ test "verify: an RSA-PSS signature that holds and one of another message that do
     assert verify(key: public, scheme: .rsa_pss_sha256, message: [1, 2, 3], signature: signature).must()
     assert !verify(key: public, scheme: .rsa_pss_sha256, message: [1, 2, 4], signature: signature).must()
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # A signature checked against a public key's SubjectPublicKeyInfo, as a
 # certificate's issuer holds it.
@@ -673,7 +673,7 @@ test "verify_der: a signature checked against a key's DER"
     signature = sign(key: key, scheme: .ecdsa_sha256, message: [9]).must()
     assert verify_der(public_der: der, scheme: .ecdsa_sha256, message: [9], signature: signature).must()
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # Two sides agree on one secret, each with its private key and the other's
 # public key.
@@ -687,8 +687,8 @@ test "agree: ECDH on P-256 both ways"
     assert agree(mine: theirs, theirs: mine_public).must() == secret
     close_public(@mine_public).must()
     close_public(@theirs_public).must()
-    close(@mine).must()
-    close(@theirs).must()
+    close_private(@mine).must()
+    close_private(@theirs).must()
 
 # A short secret encrypted to an RSA public key.
 test "encrypt: RSA-OAEP to a key of 2048 bits"
@@ -697,7 +697,7 @@ test "encrypt: RSA-OAEP to a key of 2048 bits"
     data = encrypt(key: public, text: bytes.from_text("a key of 16 byte")).must()
     assert data.len() == 256
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # Data encrypted to a public key, decrypted by its private half.
 test "decrypt: what encrypt wrote, read back"
@@ -706,7 +706,7 @@ test "decrypt: what encrypt wrote, read back"
     data = encrypt(key: public, text: [1, 2, 3]).must()
     assert decrypt(key: key, data: data).must() == [1, 2, 3]
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # A private key read from PKCS #8, the form Go and Python write.
 test "parse_private_der: a P-256 key Python wrote"
@@ -716,7 +716,7 @@ test "parse_private_der: a P-256 key Python wrote"
     key @= parse_private_der(der).must()
     assert key.kind == .p256
     assert format_private_der(key).must() == der
-    close(@key).must()
+    close_private(@key).must()
 
 # A public key read from SubjectPublicKeyInfo.
 test "parse_public_der: a key's own DER read back"
@@ -726,13 +726,13 @@ test "parse_public_der: a key's own DER read back"
     assert again.kind == .p384
     close_public(@again).must()
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # A private key written as PKCS #8, the secret handed to the program.
 test "format_private_der: a P-256 key's PKCS #8 of 138 bytes"
     key @= generate(.p256).must()
     assert format_private_der(key).must().len() == 138
-    close(@key).must()
+    close_private(@key).must()
 
 # A public key written as SubjectPublicKeyInfo.
 test "format_public_der: a P-256 key's 91 bytes"
@@ -740,15 +740,15 @@ test "format_public_der: a P-256 key's 91 bytes"
     public @= public_of(key).must()
     assert format_public_der(public).must().len() == 91
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # A private key read from PEM's `PRIVATE KEY`.
 test "parse_private_pem: a key's PEM read back"
     key @= generate(.p256).must()
     again @= parse_private_pem(format_private_pem(key).must()).must()
     assert format_private_der(again).must() == format_private_der(key).must()
-    close(@again).must()
-    close(@key).must()
+    close_private(@again).must()
+    close_private(@key).must()
 
 # A public key read from PEM's `PUBLIC KEY`.
 test "parse_public_pem: a public key's PEM read back"
@@ -758,13 +758,13 @@ test "parse_public_pem: a public key's PEM read back"
     assert again.kind == .p256
     close_public(@again).must()
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # A private key written as PEM.
 test "format_private_pem: its first line"
     key @= generate(.p256).must()
     assert format_private_pem(key).must().slice(from: 0, to: 27) == "-----BEGIN PRIVATE KEY-----"
-    close(@key).must()
+    close_private(@key).must()
 
 # A public key written as PEM.
 test "format_public_pem: its first line"
@@ -772,7 +772,7 @@ test "format_public_pem: its first line"
     public @= public_of(key).must()
     assert format_public_pem(public).must().slice(from: 0, to: 26) == "-----BEGIN PUBLIC KEY-----"
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # An X25519 private key read from its 32 bytes, RFC 7748's Alice.
 test "parse_private_raw: RFC 7748's Alice"
@@ -785,7 +785,7 @@ test "parse_private_raw: RFC 7748's Alice"
     public @= public_of(key).must()
     assert bytes.format_hex(format_public_raw(public).must()) == "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a"
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()
 
 # An Ed25519 public key read from its 32 bytes, RFC 8032's TEST 1.
 test "parse_public_raw: RFC 8032's TEST 1 key checks its signature"
@@ -800,7 +800,7 @@ test "parse_public_raw: RFC 8032's TEST 1 key checks its signature"
 test "format_private_raw: a P-256 scalar"
     key @= generate(.p256).must()
     assert format_private_raw(key).must().len() == 32
-    close(@key).must()
+    close_private(@key).must()
 
 # A P-256 public key's point, uncompressed.
 test "format_public_raw: a P-256 point of 65 bytes"
@@ -808,4 +808,4 @@ test "format_public_raw: a P-256 point of 65 bytes"
     public @= public_of(key).must()
     assert format_public_raw(public).must().len() == 65
     close_public(@public).must()
-    close(@key).must()
+    close_private(@key).must()

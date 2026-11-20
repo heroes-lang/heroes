@@ -187,7 +187,7 @@ function public_of(seed: str) -> str?
 
     raw = match keypairs.public_of(key)
         .err e =>
-            _ = keypairs.close(@key).is_err()
+            _ = keypairs.close_private(@key).is_err()
             return fail(code: e.code, msg: e.msg)
         .ok got =>
             pk @= got
@@ -195,7 +195,7 @@ function public_of(seed: str) -> str?
             _ = keypairs.close_public(@pk).is_err()
             answer
 
-    _ = keypairs.close(@key).is_err()
+    _ = keypairs.close_private(@key).is_err()
     return ok(write_public(prefix: s.prefix, raw: raw?))
 
 # The signature of `data` by the seed's key.
@@ -205,7 +205,7 @@ function public_of(seed: str) -> str?
 function sign(seed: str, data: [u8]) -> [u8]?
     key @= private_of(seed)?
     signed = keypairs.sign(key, scheme: .ed25519, message: data)
-    _ = keypairs.close(@key).is_err()
+    _ = keypairs.close_private(@key).is_err()
     return signed
 
 # Whether `signature` signs `data` by the key `public_key` writes.
@@ -227,7 +227,7 @@ function verify(public_key: str, data: [u8], signature: [u8]) -> bool?
 function generate_user() -> str?
     key @= keypairs.generate(.ed25519)?
     raw = keypairs.format_private_raw(key)
-    _ = keypairs.close(@key).is_err()
+    _ = keypairs.close_private(@key).is_err()
     return ok(write_seed(prefix: USER, raw: raw?))
 
 # The content of the block whose opening line holds `label`: the first line

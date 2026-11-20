@@ -319,7 +319,7 @@ function serve(arg: str) -> str
             .ok made => made
             .err e   => return "listen failed: " + e.code + ": " + e.msg
 
-        net.set_accept_deadline(l, ms: 15000).must()
+        net.set_accept_deadline(l, deadline_ms: 15000).must()
 
         heard = match net.accept(l, deadline_ms: 15000)
             .err e => e.code + ": " + e.msg
@@ -338,7 +338,7 @@ function serve(arg: str) -> str
         .ok made => made
         .err e   => return "listen failed: " + e.code + ": " + e.msg
 
-    tls.set_accept_deadline(l, ms: 15000).must()
+    tls.set_accept_deadline(l, deadline_ms: 15000).must()
     heard: str @= "closed: no client finished its handshake"
     tries @= 0
 

@@ -1866,7 +1866,7 @@ function serve_tls(s: Server, l: tls.Listener, handler: (function(Request) -> Re
             .ok accepted =>
                 wait_ms @ 5
                 stream @= accepted
-                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, ms: s.deadline_ms).is_err()
+                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline_ms: s.deadline_ms).is_err()
 
                 if timed
                     _ = serve_stream(s, stream: stream, remote: "", handler: handler)
@@ -2017,7 +2017,7 @@ function serve_tls_with<S>(s: Server, l: tls.Listener, state: S, handler: (funct
             .ok accepted =>
                 wait_ms @ 5
                 stream @= accepted
-                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, ms: s.deadline_ms).is_err()
+                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline_ms: s.deadline_ms).is_err()
 
                 if timed
                     _ = serve_stream_with(s, stream: stream, remote: "", state: state, handler: handler)
@@ -3490,7 +3490,7 @@ test "serve: a connection of nonsense answered 400, and serving goes on to the l
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     bad = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
     io.write_text(bad.stream, text: "\u{1}\u{2}\r\n\r\n").must()
-    net.set_accept_deadline(l, ms: 300).must()
+    net.set_accept_deadline(l, deadline_ms: 300).must()
 
     match serve(default_server(), l: l, handler: respond_trace)
         .ok _  => assert false
@@ -3718,7 +3718,7 @@ test "serve_stream: a request over TLS from a client of the test authority"
     t @= threads.spawn_text(
         body: canned.ask_tls,
         arg: f"{l.port}" + canned.SEPARATOR + "TRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
-    )
+    ).must()
     stream @= tls.accept(l, deadline_ms: 10_000).must()
     assert serve_stream(default_server(), stream: stream, remote: "", handler: respond_trace) == 1
     io.close(@stream).must()
@@ -3847,8 +3847,8 @@ test "serve_tls: a client silent after its handshake dropped at the deadline, th
         port: 0,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["http/1.1"])
     ).must()
-    t @= threads.spawn_text(body: canned.ask_tls, arg: f"{l.port}" + canned.SEPARATOR)
-    tls.set_accept_deadline(l, ms: 3_000).must()
+    t @= threads.spawn_text(body: canned.ask_tls, arg: f"{l.port}" + canned.SEPARATOR).must()
+    tls.set_accept_deadline(l, deadline_ms: 3_000).must()
     s @= default_server()
     s.deadline_ms @ 300
     began = time.mark().must()
@@ -4293,7 +4293,7 @@ test "serve: one connection answered, then the listener's deadline"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     conn = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
     io.write_text(conn.stream, text: "TRACE /t HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n").must()
-    net.set_accept_deadline(l, ms: 300).must()
+    net.set_accept_deadline(l, deadline_ms: 300).must()
 
     match serve(default_server(), l: l, handler: respond_trace)
         .ok _  => assert false
@@ -4385,7 +4385,7 @@ test "serve_with: a redirector serving one connection, then the listener's deadl
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     conn = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
     io.write_text(conn.stream, text: "GET /x HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n").must()
-    net.set_accept_deadline(l, ms: 300).must()
+    net.set_accept_deadline(l, deadline_ms: 300).must()
 
     match serve_with(default_server(), l: l, state: "https://example.com", handler: respond_moved_to)
         .ok _  => assert false
@@ -4734,7 +4734,7 @@ test "serve_until_stopped: one connection answered, then the listener's deadline
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     conn = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
     io.write_text(conn.stream, text: "TRACE /t HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n").must()
-    net.set_accept_deadline(l, ms: 300).must()
+    net.set_accept_deadline(l, deadline_ms: 300).must()
 
     match serve_until_stopped(default_server(), l: l, state: "https://example.org", handler: respond_moved_to, grace_ms: 1_000)
         .ok _  => assert false
@@ -4810,7 +4810,7 @@ test "send: https:// over HTTP/2 where the server's ALPN chooses h2"
     if !tls.is_available()
         skip_test(reason: "this platform offers no TLS library to tls")
     port = h2bridge.free_port()
-    t @= threads.spawn_text(body: h2bridge.serve_h2_tls, arg: to_str(port))
+    t @= threads.spawn_text(body: h2bridge.serve_h2_tls, arg: to_str(port)).must()
     h2bridge.until_listening(port)
     c @= default_client()
     c.roots @ tls.TEST_ROOT
@@ -4827,8 +4827,8 @@ test "serve_tls: an HTTP/2 client answered over HTTP/2"
         port: 0,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2", "http/1.1"])
     ).must()
-    t @= threads.spawn_text(body: h2bridge.ask_h2_tls, arg: to_str(l.port))
-    tls.set_accept_deadline(l, ms: 5000).must()
+    t @= threads.spawn_text(body: h2bridge.ask_h2_tls, arg: to_str(l.port)).must()
+    tls.set_accept_deadline(l, deadline_ms: 5000).must()
 
     match serve_tls(default_server(), l: l, handler: respond_not_found)
         .ok _  => assert false
@@ -4840,7 +4840,7 @@ test "serve_tls: an HTTP/2 client answered over HTTP/2"
 # Two requests on one HTTP/2 connection the program holds.
 test "round_trip_h2: two requests on one connection"
     port = h2bridge.free_port()
-    t @= threads.spawn_text(body: h2bridge.serve_h2_plain, arg: to_str(port))
+    t @= threads.spawn_text(body: h2bridge.serve_h2_plain, arg: to_str(port)).must()
     h2bridge.until_listening(port)
     c @= http2.connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: http2.default_options()).must()
     first = round_trip_h2(
@@ -4860,7 +4860,7 @@ test "round_trip_h2: two requests on one connection"
 # An HTTP/2 connection served with a handler of this package.
 test "serve_h2: one request answered 404 by respond_not_found"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port))
+    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= http2.server_of(@stream, options: http2.default_options()).must()
@@ -4872,7 +4872,7 @@ test "serve_h2: one request answered 404 by respond_not_found"
 # An HTTP/2 connection served with the program's own value as state.
 test "serve_h2_with: a redirector over HTTP/2"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port))
+    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= http2.server_of(@stream, options: http2.default_options()).must()

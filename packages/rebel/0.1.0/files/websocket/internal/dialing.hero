@@ -30,7 +30,7 @@ function opened(u: url.Url, deadline_ms: i64, secure: tls.Client) -> io.Stream?
 
         if deadline_ms > 0
             match left_of(began, deadline_ms: deadline_ms)
-                .ok left => tls.set_deadline(stream, ms: left).must()
+                .ok left => tls.set_deadline(stream, deadline_ms: left).must()
                 .err e =>
                     ended(@stream)
                     return fail(code: e.code, msg: e.msg)
@@ -39,7 +39,7 @@ function opened(u: url.Url, deadline_ms: i64, secure: tls.Client) -> io.Stream?
 
     if deadline_ms > 0
         match left_of(began, deadline_ms: deadline_ms)
-            .ok left => net.set_deadline(conn, ms: left).must()
+            .ok left => net.set_deadline(conn.stream, deadline_ms: left).must()
             .err e =>
                 ended(@conn.stream)
                 return fail(code: e.code, msg: e.msg)
@@ -72,7 +72,7 @@ test "opened: a TCP connection to a ws URL, the time left of a deadline, and not
     ).must()
     accepted = net.accept(l, deadline_ms: 5_000).must()
     io.write(accepted.stream, data: [7]).must()
-    assert io.read(stream, most: 1).must() == [7]
+    assert io.read(stream, n: 1).must() == [7]
     ended(@stream)
     ended(@stream)
     other @= accepted.stream

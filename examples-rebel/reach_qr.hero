@@ -20,6 +20,6 @@ test "a code as PNG through image and image/png, read back"
     pixels = qr.to_pixels(code: code, scale: 4, border: 4)
     img = image.from_pixels(width: side, height: side, format: .gray, pixels: pixels).must()
     data = png.encode(img: img, options: png.encoding()).must()
-    back = png.decode(data: data, options: png.decoding()).must()
+    back = png.decode_with(data: data, options: png.decoding()).must()
     assert back.image.width == side
     assert back.image.pixels == pixels

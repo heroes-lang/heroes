@@ -110,13 +110,13 @@ function agreed(mine: jose.Key, theirs: jose.Key) -> [u8]?
 
     match keypairs.parse_public_der(forms.public_der(theirs)?)
         .err e =>
-            keypairs.close(@private)?
+            keypairs.close_private(@private)?
             return fail(code: e.code, msg: e.msg)
         .ok p =>
             public @= p
             z = keypairs.agree(mine: private, theirs: public)
             keypairs.close_public(@public)?
-            keypairs.close(@private)?
+            keypairs.close_private(@private)?
             return z
 
 # The bytes the base64url member `name` of `members` holds; empty where it
@@ -197,7 +197,7 @@ function encrypt(plaintext: [u8], key: json.Value, alg: str, enc: str, header: {
     else if alg == "ECDH-ES"
         own @= keypairs.generate(kind_of(k.curve)?)?
         own_der = keypairs.format_private_der(own)
-        keypairs.close(@own)?
+        keypairs.close_private(@own)?
         mine = forms.read_private(own_der?)?
         z = agreed(mine: mine, theirs: jwk.public_of(k)?)?
         epk = jwk.public_of(mine)?
@@ -255,7 +255,7 @@ function content_key_of(k: jose.Key, alg: str, enc: str, size: i64, protected: {
     if alg == "RSA-OAEP-256"
         private @= keypairs.parse_private_der(forms.private_der(k)?)?
         got = keypairs.decrypt(private, data: wrapped)
-        keypairs.close(@private)?
+        keypairs.close_private(@private)?
 
         match got
             .ok cek =>

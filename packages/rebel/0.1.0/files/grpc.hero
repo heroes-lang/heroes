@@ -521,10 +521,11 @@ function send(@channel: Channel, @c: Call, message: [u8]) -> ()?
             details: []
         )
         return fail(code: "timeout", msg: f"sending on the call {c.path}: its deadline passed")
-    clock.wait_until(channel.conn.stream, deadline_at: c.deadline_at)
+    clock.wait_until(channel.conn.stream, deadline_at: c.deadline_at)?
     sent = http2.write_data(@channel.conn, stream: c.stream, data: data, end_stream: false)
-    clock.set_wait(channel.conn.stream, ms: 0)
-    return sent
+    cleared = clock.set_wait(channel.conn.stream, ms: 0)
+    sent?
+    return cleared
 
 # Tells the server this end sends no more messages on the call.
 #
@@ -558,9 +559,9 @@ function receive(@channel: Channel, @c: Call) -> Incoming?
             cancel(@channel, @c)?
             c.status @ Status(code: STATUS_DEADLINE_EXCEEDED, message: "the deadline passed", details: [])
         else
-            clock.wait_until(channel.conn.stream, deadline_at: c.deadline_at)
+            clock.wait_until(channel.conn.stream, deadline_at: c.deadline_at)?
             got = http2.read_event_of(@channel.conn, stream: c.stream)
-            clock.set_wait(channel.conn.stream, ms: 0)
+            clock.set_wait(channel.conn.stream, ms: 0)?
 
             match got
                 .err e =>
@@ -1349,7 +1350,7 @@ test "connect: a unary call over TLS"
     if !tls.is_available()
         skip_test(reason: "this platform offers no TLS library to tls")
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect(
         host: "localhost",
@@ -1366,7 +1367,7 @@ test "connect: a unary call over TLS"
 # A channel in plain text, HTTP/2 by prior knowledge.
 test "connect_plain: a unary call over h2c"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     r = call(
@@ -1383,7 +1384,7 @@ test "connect_plain: a unary call over h2c"
 # A channel over a connection the program made itself.
 test "channel_of: over http2.connect_plain"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     conn = http2.connect_plain(host: "127.0.0.1", port: port, deadline_ms: 0, options: http2.default_options()).must()
     ch @= channel_of(conn, authority: "localhost", scheme: "http", options: default_options())
@@ -1394,7 +1395,7 @@ test "channel_of: over http2.connect_plain"
 # A channel closed, and closed again.
 test "close: a second close refused"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     _ = call(@ch, path: "/test.Echo/Echo", request: [], metadata: [], timeout_ms: 0).must()
@@ -1406,7 +1407,7 @@ test "close: a second close refused"
 # whose server streams.
 test "call: echoed, NOT_FOUND with its details, three messages streamed"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     assert call(@ch, path: "/test.Echo/Echo", request: [9], metadata: [], timeout_ms: 0).must().messages == [[9]]
@@ -1420,7 +1421,7 @@ test "call: echoed, NOT_FOUND with its details, three messages streamed"
 # A call whose client streams: every message echoed.
 test "call_many: three requests echoed"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     r = call_many(@ch, path: "/test.Echo/Echo", requests: [[1], [2], [3]], metadata: [], timeout_ms: 0).must()
@@ -1431,7 +1432,7 @@ test "call_many: three requests echoed"
 # A call driven by hand: messages sent, the side closed, the answers read.
 test "start_call: a call driven message by message"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
@@ -1446,7 +1447,7 @@ test "start_call: a call driven message by message"
 # One message sent on a call.
 test "send: a message past the bound refused"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     o @= default_options()
     o.max_message_bytes @ 4
@@ -1466,7 +1467,7 @@ test "send: a message past the bound refused"
 # The client's side closed: the server answers once it has read every message.
 test "close_send: the server answers after the client's last message"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Many", metadata: [], timeout_ms: 0).must()
@@ -1478,7 +1479,7 @@ test "close_send: the server answers after the client's last message"
 # A call's end read after its messages, and a deadline that passes.
 test "receive: the end with its status, and DEADLINE_EXCEEDED"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
@@ -1496,7 +1497,7 @@ test "receive: the end with its status, and DEADLINE_EXCEEDED"
 # A call cancelled by its client.
 test "cancel: the call ends CANCELLED"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
@@ -1530,7 +1531,7 @@ test "path_of: /test.Notes/GetNote"
 # A call described by a `.proto`: its request a message of the schema.
 test "call_proto: a Note echoed and decoded"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     schema = protobuf.parse_schema_text(
         name: "echo.proto",
@@ -1556,7 +1557,7 @@ test "methods_of: a unary method and one whose server streams"
 # A server's connection over what `net` accepted; the client calls once.
 test "server_of: one call found, read and answered"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Upper hello")
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Upper hello").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
@@ -1579,7 +1580,7 @@ test "server_of: one call found, read and answered"
 # A server closed after its calls.
 test "close_server: closed once, refused twice"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Unknown x")
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Unknown x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
@@ -1593,7 +1594,7 @@ test "close_server: closed once, refused twice"
 # the server itself.
 test "next_call: an unknown method answered UNIMPLEMENTED, then the connection's end"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /other.Svc/Do x")
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /other.Svc/Do x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
@@ -1609,7 +1610,7 @@ test "next_call: an unknown method answered UNIMPLEMENTED, then the connection's
 # Requests read until the client's last.
 test "read_request: one request, then the end"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Count abc")
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Count abc").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
@@ -1633,7 +1634,7 @@ test "read_request: one request, then the end"
 # The call's first metadata sent before its response.
 test "write_headers: metadata before the response"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x")
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
@@ -1656,7 +1657,7 @@ test "write_headers: metadata before the response"
 # Responses streamed by a server.
 test "write_response: three responses, then OK"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Three x")
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Three x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
@@ -1676,7 +1677,7 @@ test "write_response: three responses, then OK"
 # A call ended with an error and no response: gRPC's trailers-only answer.
 test "finish: PERMISSION_DENIED with no response"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x")
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
@@ -1693,7 +1694,7 @@ test "finish: PERMISSION_DENIED with no response"
 # A call with no deadline.
 test "left_ms: -1 where the client sent no grpc-timeout"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x")
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
@@ -1710,7 +1711,7 @@ test "left_ms: -1 where the client sent no grpc-timeout"
 # A health watch told of a change.
 test "set_health: a watcher told the server is serving"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ")
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
@@ -1727,7 +1728,7 @@ test "set_health: a watcher told the server is serving"
 # A health check answered by the server itself.
 test "answer_health: the server as a whole serving"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Check ")
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Check ").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
@@ -1740,7 +1741,7 @@ test "answer_health: the server as a whole serving"
 # A health watch answered with the status now.
 test "watch_health: service_unknown for a service with no health kept"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ")
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()
@@ -1759,7 +1760,7 @@ test "answer_reflection: the list of services"
     client @= threads.spawn_text(
         body: fixture.call,
         arg: f"{l.address.port} /grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo :\u{1}*"
-    )
+    ).must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     s @= server_of(@stream, options: default_options()).must()

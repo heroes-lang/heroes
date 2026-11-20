@@ -208,17 +208,18 @@ function connect_timeout(host: str, port: i64, timeout_ms: i64, deadline_ms: i64
         Conn(stream: e.stream, local: Address(bytes: e.local.bytes, zone: e.local.zone, has_port: e.local.has_port, port: e.local.port), remote: Address(bytes: e.remote.bytes, zone: e.remote.zone, has_port: e.remote.has_port, port: e.remote.port))
     )
 
-# Makes every later and waiting `accept` on `l` end by `ms` milliseconds from
-# now, failing `timeout`; 0 takes the deadline away.
+# Makes every later and waiting `accept` on `l` end by `deadline_ms`
+# milliseconds from now, failing `timeout`; 0 takes the deadline away.
 #
 # - `l`: the listener.
-# - `ms`: milliseconds from now; 0 takes the deadline away.
+# - `deadline_ms`: milliseconds from now; 0 takes the deadline away.
 #
-# Fails `invalid` where `ms` is below 0, `closed` where `l` is closed.
-function set_accept_deadline(l: Listener, ms: i64) -> ()?
+# Fails `invalid` where `deadline_ms` is below 0, `closed` where `l` is
+# closed.
+function set_accept_deadline(l: Listener, deadline_ms: i64) -> ()?
     return sockets.set_deadline(
         l.socket,
-        ms: ms,
+        ms: deadline_ms,
         asked: "setting a deadline on the listener on " + format_address(l.address)
     )
 
@@ -347,17 +348,19 @@ function receive(s: UdpSocket) -> Datagram?
         Datagram(data: r.data, sender: Address(bytes: r.sender.bytes, zone: r.sender.zone, has_port: r.sender.has_port, port: r.sender.port))
     )
 
-# Makes every later and waiting `receive` and `send_to` on `s` end by `ms`
-# milliseconds from now, failing `timeout`; 0 takes the deadline away.
+# Makes every later and waiting `receive` and `send_to` on `s` end by
+# `deadline_ms` milliseconds from now, failing `timeout`; 0 takes the
+# deadline away.
 #
 # - `s`: the socket.
-# - `ms`: milliseconds from now; 0 takes the deadline away.
+# - `deadline_ms`: milliseconds from now; 0 takes the deadline away.
 #
-# Fails `invalid` where `ms` is below 0, `closed` where `s` is closed.
-function set_udp_deadline(s: UdpSocket, ms: i64) -> ()?
+# Fails `invalid` where `deadline_ms` is below 0, `closed` where `s` is
+# closed.
+function set_udp_deadline(s: UdpSocket, deadline_ms: i64) -> ()?
     return sockets.set_deadline(
         s.socket,
-        ms: ms,
+        ms: deadline_ms,
         asked: "setting a deadline on the UDP socket on " + format_address(s.address)
     )
 
@@ -372,17 +375,19 @@ function close_udp(@s: UdpSocket) -> ()?
 
 ## Connections and datagram sockets after they are made
 
-# Moves the deadline of `c`: every read and write of its stream that waits,
-# those waiting now among them, ends by `ms` milliseconds from now, failing
-# `timeout`.
+# Moves the deadline of `s`, a connection's stream: every read and write of
+# it that waits, those waiting now among them, ends by `deadline_ms`
+# milliseconds from now, failing `timeout`.
 #
-# - `c`: the connection.
-# - `ms`: milliseconds from now; 0 takes the deadline away, below 0 fails
-#   `invalid`.
+# - `s`: the stream of a `Conn`, as `tls.set_deadline` and
+#   `ipc.set_deadline` take theirs.
+# - `deadline_ms`: milliseconds from now; 0 takes the deadline away, below 0
+#   fails `invalid`.
 #
-# Fails `closed` where `c` is closed. See also `connect`, `accept`.
-function set_deadline(c: Conn, ms: i64) -> ()?
-    return control.deadline_moved(c.stream, ms: ms, asked: "setting a deadline on " + c.stream.name)
+# Fails `closed` where `s` is closed, and as the system refuses where it is
+# no socket's stream. See also `connect`, `accept`.
+function set_deadline(s: io.Stream, deadline_ms: i64) -> ()?
+    return control.deadline_moved(s, ms: deadline_ms, asked: "setting a deadline on " + s.name)
 
 # Closes the reading side of `c`: a read then answers its end, as at the
 # peer's close, and the connection still writes.
@@ -1756,19 +1761,19 @@ test "listen, connect, accept: a connection written and read through its stream 
 
 test "set_accept_deadline, accept_number, conn_of: an accept ending timeout, a connection handed over as a number"
     l @= listen("::1", port: 0).must()
-    set_accept_deadline(l, ms: 100).must()
+    set_accept_deadline(l, deadline_ms: 100).must()
 
     match accept(l, deadline_ms: 0)
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
-    set_accept_deadline(l, ms: 0).must()
+    set_accept_deadline(l, deadline_ms: 0).must()
     client @= connect("::1", port: l.address.port, deadline_ms: 5000).must()
     n = accept_number(l).must()
     taken @= conn_of(n: n, deadline_ms: 200).must()
     assert taken.remote == client.local
 
-    match io.read(taken.stream, most: 1)
+    match io.read(taken.stream, n: 1)
         .ok _  => assert false
         .err e => assert e.code == io.TIMEOUT
 
@@ -1779,8 +1784,8 @@ test "set_accept_deadline, accept_number, conn_of: an accept ending timeout, a c
 test "open_udp, send_to, receive, set_udp_deadline, close_udp: datagrams both ways on IPv6 loopback, an address without a port refused"
     a @= open_udp("::1", port: 0).must()
     b @= open_udp("::1", port: 0).must()
-    set_udp_deadline(a, ms: 5000).must()
-    set_udp_deadline(b, ms: 5000).must()
+    set_udp_deadline(a, deadline_ms: 5000).must()
+    set_udp_deadline(b, deadline_ms: 5000).must()
     send_to(a, data: [1, 2, 3], to: b.address).must()
     got = receive(b).must()
     assert got.data == [1, 2, 3] && got.sender == a.address
@@ -1829,7 +1834,7 @@ test "pair: what one end writes the other reads, through io"
     first @= both.first
     second @= both.second
     io.write_text(first.stream, text: "ping").must()
-    assert io.read_exact(second.stream, count: 4).must() == [112, 105, 110, 103]
+    assert io.read_exact(second.stream, n: 4).must() == [112, 105, 110, 103]
     assert first.remote == second.local
     io.close(@first.stream).must()
     io.close(@second.stream).must()
@@ -1867,27 +1872,27 @@ test "set_deadline, close_read and close_write: a deadline moved on a quiet conn
     both = pair(0).must()
     first @= both.first
     second @= both.second
-    set_deadline(first, ms: 150).must()
+    set_deadline(first.stream, deadline_ms: 150).must()
 
-    match io.read(first.stream, most: 8)
+    match io.read(first.stream, n: 8)
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
-    set_deadline(first, ms: 0).must()
+    set_deadline(first.stream, deadline_ms: 0).must()
     close_write(second).must()
-    assert io.read(first.stream, most: 8).must().len() == 0
+    assert io.read(first.stream, n: 8).must().len() == 0
     io.write_text(first.stream, text: "x").must()
-    assert io.read(second.stream, most: 8).must() == [120]
+    assert io.read(second.stream, n: 8).must() == [120]
     close_read(first).must()
-    assert io.read(first.stream, most: 8).must().len() == 0
+    assert io.read(first.stream, n: 8).must().len() == 0
 
-    match set_deadline(first, ms: -1)
+    match set_deadline(first.stream, deadline_ms: -1)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
     io.close(@first.stream).must()
 
-    match set_deadline(first, ms: 100)
+    match set_deadline(first.stream, deadline_ms: 100)
         .ok _  => assert false
         .err e => assert e.code == CLOSED
 
@@ -1922,7 +1927,7 @@ test "set_broadcast, broadcast_on, join_group and leave_group: broadcast off whe
     assert !broadcast_on(s).must()
     set_broadcast(s, on: true).must()
     assert broadcast_on(s).must()
-    set_udp_deadline(s, ms: 3000).must()
+    set_udp_deadline(s, deadline_ms: 3000).must()
     loopback = fixture.loopback_index()
     assert loopback > 0
     group = parse_address("239.255.77.78").must()
@@ -2027,7 +2032,7 @@ test "connect: a line sent to a local server"
 # A server that waits for a client a short time, then no more.
 test "set_accept_deadline: an accept that ends after 50 ms"
     l @= listen("127.0.0.1", port: 0).must()
-    set_accept_deadline(l, ms: 50).must()
+    set_accept_deadline(l, deadline_ms: 50).must()
 
     match accept(l, deadline_ms: 0)
         .ok _  => assert false
@@ -2061,7 +2066,7 @@ test "conn_of: a number taken back as its connection"
     client @= connect("127.0.0.1", port: l.address.port, deadline_ms: 5000).must()
     taken @= conn_of(n: accept_number(l).must(), deadline_ms: 5000).must()
     io.write_text(client.stream, text: "hi").must()
-    assert io.read(taken.stream, most: 2).must() == [104, 105]
+    assert io.read(taken.stream, n: 2).must() == [104, 105]
     io.close(@taken.stream).must()
     io.close(@client.stream).must()
     close_listener(@l).must()
@@ -2073,7 +2078,7 @@ test "pair: what one end writes the other reads"
     first @= both.first
     second @= both.second
     io.write_text(first.stream, text: "ping").must()
-    assert io.read(second.stream, most: 4).must() == [112, 105, 110, 103]
+    assert io.read(second.stream, n: 4).must() == [112, 105, 110, 103]
     io.close(@first.stream).must()
     io.close(@second.stream).must()
 
@@ -2087,7 +2092,7 @@ test "open_udp: a socket on a port the system chooses"
 test "send_to: a datagram to a socket on the loopback"
     sender @= open_udp("127.0.0.1", port: 0).must()
     receiver @= open_udp("127.0.0.1", port: 0).must()
-    set_udp_deadline(receiver, ms: 5000).must()
+    set_udp_deadline(receiver, deadline_ms: 5000).must()
     send_to(sender, data: [1, 2, 3], to: receiver.address).must()
     assert receive(receiver).must().data == [1, 2, 3]
     close_udp(@sender).must()
@@ -2097,7 +2102,7 @@ test "send_to: a datagram to a socket on the loopback"
 test "receive: a datagram and its sender"
     sender @= open_udp("127.0.0.1", port: 0).must()
     receiver @= open_udp("127.0.0.1", port: 0).must()
-    set_udp_deadline(receiver, ms: 5000).must()
+    set_udp_deadline(receiver, deadline_ms: 5000).must()
     send_to(sender, data: [9], to: receiver.address).must()
     got = receive(receiver).must()
     assert got.data == [9] && got.sender == sender.address
@@ -2107,7 +2112,7 @@ test "receive: a datagram and its sender"
 # A socket that waits a short time for a datagram, then no more.
 test "set_udp_deadline: a receive that ends after 50 ms"
     s @= open_udp("127.0.0.1", port: 0).must()
-    set_udp_deadline(s, ms: 50).must()
+    set_udp_deadline(s, deadline_ms: 50).must()
 
     match receive(s)
         .ok _  => assert false
@@ -2453,9 +2458,9 @@ test "set_deadline: a read that ends after 100 ms"
     both = pair(0).must()
     first @= both.first
     second @= both.second
-    set_deadline(first, ms: 100).must()
+    set_deadline(first.stream, deadline_ms: 100).must()
 
-    match io.read(first.stream, most: 8)
+    match io.read(first.stream, n: 8)
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -2479,7 +2484,7 @@ test "close_read: a read answers the end"
     first @= both.first
     second @= both.second
     close_read(first).must()
-    assert io.read(first.stream, most: 8).must().len() == 0
+    assert io.read(first.stream, n: 8).must().len() == 0
     io.close(@first.stream).must()
     io.close(@second.stream).must()
 
@@ -2536,7 +2541,7 @@ test "broadcast_on: off on a new socket"
 # the same interface heard back: the pattern that holds on any network.
 test "join_group: a datagram to a group heard back on the loopback"
     s @= open_udp("0.0.0.0", port: 0).must()
-    set_udp_deadline(s, ms: 3000).must()
+    set_udp_deadline(s, deadline_ms: 3000).must()
     loopback: i64 @= 0
 
     for i in interfaces().must()

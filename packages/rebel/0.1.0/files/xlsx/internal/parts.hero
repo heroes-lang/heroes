@@ -53,7 +53,7 @@ record Rel
 # OLE compound file, which an encrypted workbook and an `.xls` are.
 function open(from: io.Stream, budget: i64) -> Package?
     _ = io.seek(from, offset: 0, from: .start)?
-    head = io.read(from, most: 8)?
+    head = io.read(from, n: 8)?
     _ = io.seek(from, offset: 0, from: .start)?
 
     if head.len() == 8 && head[0] == 0xd0 && head[1] == 0xcf && head[2] == 0x11 && head[3] == 0xe0 && head[4] == 0xa1 && head[5] == 0xb1 && head[6] == 0x1a && head[7] == 0xe1
@@ -136,7 +136,7 @@ function rels_of(@p: Package, part: str) -> [Rel]?
         return ok(found)
     root = part_xml(@p, name: name)?
 
-    for e in xml.elements_of(root)
+    for e in xml.child_elements(root)
         if e.name.local == "Relationship"
             id = xml.attribute(e, name: "Id").default("")
             kind_uri = xml.attribute(e, name: "Type").default("")

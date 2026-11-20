@@ -333,7 +333,7 @@ capability static/range  part of a file answered
   note    one range 206, unsatisfiable ones dropped (`bytes=20-,0-1` gives `0-1`), none left 416 with `Content-Range: bytes */N`, a range that does not read 416, as Go (observed); several left answered whole 200, where Go writes multipart/byteranges; `bytes=-0` 416, where Go answers 206 `bytes 11-10/11` (observed) and RFC 9110 § 14.1.2 calls it unsatisfiable; a unit other than bytes ignored, as RFC 9110 § 14.2 allows, where Go answers 416
 
 capability static/type-by-name  a file's type by its extension
-  heroes  web.content_type_of
+  heroes  mail.media_type_of
   go      mime.TypeByExtension, mime.ExtensionsByType, mime.AddExtensionType
   rust    -
   python  mimetypes.guess_type, guess_file_type, guess_extension, guess_all_extensions, types_map, common_types, add_type, init, inited, knownfiles, read_mime_types, MimeTypes, suffix_map, encodings_map

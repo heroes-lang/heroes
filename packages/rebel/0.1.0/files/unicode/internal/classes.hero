@@ -3,6 +3,7 @@
 # the sets of `property_tables`. Every function takes a code point from 0 to
 # U+10FFFF, a surrogate included, and reads about thirteen entries of a table.
 
+use unicode
 use unicode/internal/category_table
 use unicode/internal/property_tables
 use unicode/internal/search
@@ -82,6 +83,41 @@ constant CC: i64
 # The index of `Cf`, a format character.
 constant CF: i64
     26
+
+# Every general category, at its index in `category_table.NAMES`.
+constant CATEGORIES: [unicode.Category]
+    [
+        .uppercase_letter
+        .lowercase_letter
+        .titlecase_letter
+        .modifier_letter
+        .other_letter
+        .nonspacing_mark
+        .spacing_mark
+        .enclosing_mark
+        .decimal_number
+        .letter_number
+        .other_number
+        .connector_punctuation
+        .dash_punctuation
+        .open_punctuation
+        .close_punctuation
+        .initial_punctuation
+        .final_punctuation
+        .other_punctuation
+        .math_symbol
+        .currency_symbol
+        .modifier_symbol
+        .other_symbol
+        .space_separator
+        .line_separator
+        .paragraph_separator
+        .control
+        .format
+        .surrogate
+        .private_use
+        .unassigned
+    ]
 
 # The run of `category_table.RUNS` that holds `n`: its first code point
 # shifted left by 5, and its category's index.

@@ -286,17 +286,17 @@ function close_listener(@l: Listener) -> ()?
     )
 
 # Makes every later and waiting read and write of the channel `s` end by
-# `ms` milliseconds from now, failing `timeout`: a time, not a span.
+# `deadline_ms` milliseconds from now, failing `timeout`: a time, not a span.
 #
 # - `s`: a stream `accept` or a `connect` answered.
-# - `ms`: milliseconds from now, 0 taking the deadline away.
+# - `deadline_ms`: milliseconds from now, 0 taking the deadline away.
 #
-# Fails `invalid` where `ms` is below 0 or `s` is no channel of this package,
-# `closed` where `s` is closed.
+# Fails `invalid` where `deadline_ms` is below 0 or `s` is no channel of this
+# package, `closed` where `s` is closed.
 #
 # See also `accept`, `connect`.
-function set_deadline(s: io.Stream, ms: i64) -> ()?
-    return channels.set_deadline(s, ms: ms)
+function set_deadline(s: io.Stream, deadline_ms: i64) -> ()?
+    return channels.set_deadline(s, ms: deadline_ms)
 
 # Closes the writing side of the channel `s`, so its peer reads its end once
 # the bytes written are read, while `s` still reads what the peer writes.
@@ -837,37 +837,36 @@ test "remove_memory, remove_semaphore and remove_lock after the last close: kept
     l @= open_lock(lock_name, permission: 0o600).must()
     assert close_lock(@l) == ok()
 
-    match os.family()
-        .windows =>
-            match open_memory(memory_name)
-                .ok _  => assert false
-                .err e => assert e.code == NOT_FOUND
+    if os.system() == .windows
+        match open_memory(memory_name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
 
-            match remove_memory(memory_name)
-                .ok _  => assert false
-                .err e => assert e.code == NOT_FOUND
+        match remove_memory(memory_name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
 
-            match open_semaphore(semaphore_name)
-                .ok _  => assert false
-                .err e => assert e.code == NOT_FOUND
+        match open_semaphore(semaphore_name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
 
-            match remove_semaphore(semaphore_name)
-                .ok _  => assert false
-                .err e => assert e.code == NOT_FOUND
+        match remove_semaphore(semaphore_name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
 
-            match remove_lock(lock_name)
-                .ok _  => assert false
-                .err e => assert e.code == NOT_FOUND
-        .posix =>
-            again @= open_memory(memory_name).must()
-            assert read_at(again, offset: 0, count: 1).must() == [7]
-            assert close_memory(@again) == ok()
-            assert remove_memory(memory_name) == ok()
-            opened @= open_semaphore(semaphore_name).must()
-            assert acquire_semaphore(opened, within_ms: 0) == ok()
-            assert close_semaphore(@opened) == ok()
-            assert remove_semaphore(semaphore_name) == ok()
-            assert remove_lock(lock_name) == ok()
+        match remove_lock(lock_name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
+    else
+        again @= open_memory(memory_name).must()
+        assert read_at(again, offset: 0, count: 1).must() == [7]
+        assert close_memory(@again) == ok()
+        assert remove_memory(memory_name) == ok()
+        opened @= open_semaphore(semaphore_name).must()
+        assert acquire_semaphore(opened, within_ms: 0) == ok()
+        assert close_semaphore(@opened) == ok()
+        assert remove_semaphore(semaphore_name) == ok()
+        assert remove_lock(lock_name) == ok()
 
 # Defect 2609: a connect to a path where no socket stands is told by what
 # stands there, on every platform: a folder is `is_a_directory`, its message
@@ -936,7 +935,7 @@ test "connect: bytes through a channel, and nothing at the path"
     client @= connect(path, within_ms: 1000).must()
     server @= accept(l, within_ms: 1000).must()
     assert io.write_text(client, text: "ping") == ok()
-    assert io.read_exact(server, count: 4).must() == [112, 105, 110, 103]
+    assert io.read_exact(server, n: 4).must() == [112, 105, 110, 103]
     assert io.close(@client) == ok()
     assert io.close(@server) == ok()
     assert close_listener(@l) == ok()
@@ -974,9 +973,9 @@ test "set_deadline: a read past 20 ms"
     l @= listen(path, permission: 0o600).must()
     client @= connect(path, within_ms: 1000).must()
     server @= accept(l, within_ms: 1000).must()
-    assert set_deadline(server, ms: 20) == ok()
+    assert set_deadline(server, deadline_ms: 20) == ok()
 
-    match io.read(server, most: 1)
+    match io.read(server, n: 1)
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -1014,7 +1013,7 @@ test "write_message: the length, then the bytes"
     reader @= p.reader
     writer @= p.writer
     assert write_message(writer, data: [97, 98, 99]) == ok()
-    assert io.read_exact(reader, count: 7).must() == [0, 0, 0, 3, 97, 98, 99]
+    assert io.read_exact(reader, n: 7).must() == [0, 0, 0, 3, 97, 98, 99]
     assert io.close(@writer) == ok()
     assert io.close(@reader) == ok()
 

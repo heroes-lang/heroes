@@ -51,7 +51,7 @@ function workbook_part(@p: parts.Package) -> str?
 function props_of(root: xml.Element) -> model.Props
     props @= model.no_props()
 
-    for e in xml.elements_of(root)
+    for e in xml.child_elements(root)
         v = xml.text_of(e)
         local = e.name.local
 
@@ -99,24 +99,24 @@ function read(from: io.Stream, max_bytes: i64, max_cells: i64) -> model.Book?
     listed: [Listed] @= []
     defined: [xml.Element] @= []
 
-    for e in xml.elements_of(root)
+    for e in xml.child_elements(root)
         local = e.name.local
 
         if local == "workbookPr"
             v = xml.attribute(e, name: "date1904").default("0")
             from_1904 @ v == "1" || v == "true"
         else if local == "bookViews"
-            for view in xml.elements_of(e)
+            for view in xml.child_elements(e)
                 if view.name.local == "workbookView"
                     active @ numbers.parse_int(xml.attribute(view, name: "activeTab").default("0")).default(0)
         else if local == "sheets"
-            for s in xml.elements_of(e)
+            for s in xml.child_elements(e)
                 if s.name.local == "sheet"
                     listed @ listed.push(
                         Listed(name: xml.attribute(s, name: "name").default(""), state: xml.attribute(s, name: "state").default("visible"), id: parts.namespaced(s, local: "id"))
                     )
         else if local == "definedNames"
-            for d in xml.elements_of(e)
+            for d in xml.child_elements(e)
                 if d.name.local == "definedName"
                     defined @ defined.push(d)
 

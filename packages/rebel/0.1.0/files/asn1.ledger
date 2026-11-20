@@ -125,7 +125,7 @@ capability asn1/bit-string  a BIT STRING read and written, and a bit of it asked
   note    BER's unused bits that are not zero are cleared on reading, DER's refused
 
 capability asn1/octet-string  an OCTET STRING read and written
-  heroes  asn1.octets_of
+  heroes  asn1.bytes_of
   go      asn1.Unmarshal (into a []byte)
   rust    -
   python  -

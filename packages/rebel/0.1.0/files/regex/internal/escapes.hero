@@ -51,7 +51,7 @@ function escape_at(pattern: str, at: i64, in_class: bool) -> Escaped?
     next = at + 2
 
     if letter >= 0x80
-        written = pattern.slice(from: at, to: at + 1 + unicode.width_at(pattern, at + 1))
+        written = pattern.slice(from: at, to: at + 1 + unicode.len_at(pattern, at + 1))
         return codes.invalid(
             pattern: pattern,
             at: at,

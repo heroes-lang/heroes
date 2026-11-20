@@ -599,7 +599,7 @@ capability text/characters  the characters of a text
   note    each character's byte index is the running sum of `c.len()`
 
 capability text/to-bytes  the bytes of a text
-  heroes  strings.to_bytes
+  heroes  bytes.from_text
   go      -
   rust    str::as_bytes, str::bytes, String::into_bytes
   python  str.encode (as UTF-8)

@@ -104,8 +104,8 @@ function set_deadline(s: Session lent, ms: i64) -> ()?
         return fail(code: CLOSED, msg: "the SMTP connection is closed")
 
     return match s.link
-        .plain p => net.set_deadline(p.conn, ms: ms)
-        .secure  => tls.set_deadline(s.reader.stream, ms: ms)
+        .plain p => net.set_deadline(p.conn.stream, deadline_ms: ms)
+        .secure  => tls.set_deadline(s.reader.stream, deadline_ms: ms)
 
 # Writes `data` to the server.
 function write(s: Session lent, data: [u8]) -> ()?

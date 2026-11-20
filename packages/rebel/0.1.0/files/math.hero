@@ -5,8 +5,8 @@
 # fraction held exactly (`big`); a mean, a median, a spread (`stats`); vectors
 # of two to four floats, matrices and quaternions (`math/linear`), and vectors
 # of any length compared and searched (`vectors`); random numbers (`random`);
-# a number read from text or written as text, a float rounded at a decimal
-# place and a float's bits (`numbers`).
+# a number read from text or written as text, and a float rounded at a decimal
+# place (`numbers`).
 #
 # The functions of floats are the platform's C library's (`math/hero_math.hero`)
 # where C has them, and every one answers what IEEE 754 answers: a nan for a
@@ -29,7 +29,7 @@
 # `does_not_fit` itself. A float function holds the plain name (`abs`, `min`,
 # `pow`), and the integer one beside it says `_i64`.
 
-use math/internal/bits
+use math/internal/bits as word_bits
 use math/internal/blending
 use math/internal/checked
 use math/internal/complex_arithmetic
@@ -42,6 +42,8 @@ use math/internal/complex_inverse
 use math/internal/complex_inverse_cases
 use math/internal/elementary
 use math/internal/floats
+use math/internal/half
+use math/internal/ieee
 use math/internal/integers
 use math/internal/limits
 use math/internal/modular
@@ -785,8 +787,107 @@ function ulp(x: f64) -> f64
 # - `plus`: what is added to the exact product.
 #
 # A nan anywhere, or an infinity times zero, answers a nan.
-function mul_add(x: f64, times: f64, plus: f64) -> f64
+function multiply_add(x: f64, times: f64, plus: f64) -> f64
     return parts.mul_add(x: x, times: times, plus: plus)
+
+## A float's bits
+
+# The 64 bits of `x` as IEEE 754 lays them out, the sign highest, then 11 bits
+# of exponent biased by 1023 and 52 of fraction: what a binary format writes
+# for a double, and what C's `memcpy` of it gives.
+#
+# - `x`: any `f64`; both zeros, the subnormals and the infinities give their
+#   own bits, `-0.0` giving `0x8000000000000000`, and every NaN the quiet NaN
+#   with its sign clear, `0x7ff8000000000000`.
+#
+# A NaN loses its sign and its payload: the language reads neither, so no
+# function of Rebel can, and Go's `math.Float64bits` and Rust's `f64::to_bits`
+# keep both. Every other float goes to its bits and back unchanged through
+# `bits_to_f64`. See also `f32_to_bits`.
+function f64_to_bits(x: f64) -> u64
+    return ieee.of_f64(x)
+
+# The `f64` whose 64 bits, as IEEE 754 lays them out, are `bits`.
+#
+# - `bits`: any `u64`, the sign highest; an exponent of all ones is an
+#   infinity with a fraction of zero, and the language's one NaN with any
+#   other.
+#
+# Every pattern that is not a NaN's gives the float `f64_to_bits` gives it
+# back for, the sign of a zero included. See also `bits_to_f32`.
+function bits_to_f64(bits: u64) -> f64
+    return ieee.f64_of(bits)
+
+# The 32 bits of `x` as IEEE 754 lays them out, the sign highest, then 8 bits
+# of exponent biased by 127 and 23 of fraction: what a binary format writes
+# for a float.
+#
+# - `x`: any `f32`; both zeros, the subnormals and the infinities give their
+#   own bits, and every NaN the quiet NaN with its sign clear, `0x7fc00000`.
+#
+# A NaN loses its sign and its payload, as `f64_to_bits` says. See also
+# `bits_to_f32`.
+function f32_to_bits(x: f32) -> u32
+    return ieee.of_f32(x)
+
+# The `f32` whose 32 bits, as IEEE 754 lays them out, are `bits`.
+#
+# - `bits`: any `u32`, the sign highest; an exponent of all ones is an
+#   infinity with a fraction of zero, and the language's one NaN with any
+#   other.
+#
+# Every pattern that is not a NaN's gives the float `f32_to_bits` gives it
+# back for. See also `f32_to_bits`.
+function bits_to_f32(bits: u32) -> f32
+    return ieee.f32_of(bits)
+
+## Half-precision floats
+
+# The bits of the half-precision float (IEEE 754's binary16) nearest to `x`,
+# ties going to the even one.
+#
+# - `x`: any `f64`; a value past the largest half, 65504, by half a step or
+#   more (65520 and above) is an infinity of its sign, a value under half the
+#   smallest half above zero (2 to the -24th) a zero of its sign, and every
+#   NaN the quiet NaN 0x7e00.
+#
+# A half is 1 sign bit, 5 bits of exponent biased by 15 and 10 of fraction,
+# the sign highest. A NaN loses its sign and its payload, which the language
+# does not read. See also `f32_to_f16_bits` and `f16_bits_to_f64`.
+function f64_to_f16_bits(x: f64) -> u16
+    return to_u16(half.bits_of(x)).must()
+
+# The bits of the half-precision float nearest to `x`, an `f32`, ties going
+# to the even one, as `f64_to_f16_bits` rounds the same value.
+#
+# - `x`: any `f32`; 65520 and above is an infinity of its sign, and every NaN
+#   the quiet NaN 0x7e00.
+#
+# The `f32` is widened exactly before it is rounded, so it is rounded once.
+# See also `f16_bits_to_f32`.
+function f32_to_f16_bits(x: f32) -> u16
+    return to_u16(half.bits_of(to_f64(x))).must()
+
+# The value the half-precision float `bits` holds, as an `f64`, exactly.
+#
+# - `bits`: a binary16's 16 bits, the sign highest; every one of the 65536 is
+#   a value: an exponent of all ones is an infinity with a fraction of zero
+#   and a NaN with any other.
+#
+# The answer is one of the halves, 65504 at most either way, the infinities,
+# or the language's one NaN; `f64_to_f16_bits` gives `bits` back for every
+# value that is not a NaN. See also `f16_bits_to_f32`.
+function f16_bits_to_f64(bits: u16) -> f64
+    return half.value_of(to_i64(bits).must())
+
+# The value the half-precision float `bits` holds, as an `f32`, exactly.
+#
+# - `bits`: a binary16's 16 bits, the sign highest, read as
+#   `f16_bits_to_f64` reads them.
+#
+# Every half is an `f32` exactly. See also `f32_to_f16_bits`.
+function f16_bits_to_f32(bits: u16) -> f32
+    return to_f32(half.value_of(to_i64(bits).must()))
 
 ## Many floats at once
 
@@ -1276,26 +1377,26 @@ function next_power_of_two(x: i64) -> i64?
 # - `x`: any `i64`; a negative number counts its two's complement bits, so -1
 #   answers 64.
 function count_ones(x: i64) -> i64
-    return bits.count_ones(x)
+    return word_bits.count_ones(x)
 
 # How many zero bits `x` begins with, from its highest bit.
 #
 # - `x`: any `i64`; 0 answers 64, and a negative number 0.
 function leading_zeros(x: i64) -> i64
-    return bits.leading_zeros(x)
+    return word_bits.leading_zeros(x)
 
 # How many zero bits `x` ends with, from its lowest bit.
 #
 # - `x`: any `i64`; 0 answers 64.
 function trailing_zeros(x: i64) -> i64
-    return bits.trailing_zeros(x)
+    return word_bits.trailing_zeros(x)
 
 # How many bits `x` needs, its highest one bit's place plus one: 64 less its
 # leading zeros.
 #
 # - `x`: any `i64`; 0 answers 0, and a negative number 64.
 function bit_width(x: i64) -> i64
-    return bits.bit_width(x)
+    return word_bits.bit_width(x)
 
 # `x` with its 64 bits rotated toward the highest by `by` places, the ones
 # shifted out coming back at the lowest.
@@ -1304,20 +1405,20 @@ function bit_width(x: i64) -> i64
 # - `by`: the places, any `i64`; a negative count rotates the other way, and
 #   every count is taken modulo 64.
 function rotate_left(x: i64, by: i64) -> i64
-    return bits.rotate_left(x: x, by: by)
+    return word_bits.rotate_left(x: x, by: by)
 
 # `x` with its 64 bits in the opposite order.
 #
 # - `x`: any `i64`.
 function reverse_bits(x: i64) -> i64
-    return bits.reverse_bits(x)
+    return word_bits.reverse_bits(x)
 
 # `x` with its 8 bytes in the opposite order, a number read in the other byte
 # order.
 #
 # - `x`: any `i64`.
 function swap_bytes(x: i64) -> i64
-    return bits.swap_bytes(x)
+    return word_bits.swap_bytes(x)
 
 ## Complex numbers
 
@@ -1984,9 +2085,49 @@ test "ulp: one"
     assert ulp(1.0) == EPSILON
 
 # A product and a sum rounded once keep what two roundings lose.
-test "mul_add: a tenth times ten, less one"
+test "multiply_add: a tenth times ten, less one"
     assert 0.1 * 10.0 - 1.0 == 0.0
-    assert mul_add(x: 0.1, times: 10.0, plus: -1.0) != 0.0
+    assert multiply_add(x: 0.1, times: 10.0, plus: -1.0) != 0.0
+
+# A double's bits as a binary format writes them, and minus zero's.
+test "f64_to_bits: one and minus zero"
+    assert f64_to_bits(1.0) == 0x3ff0000000000000
+    assert f64_to_bits(-0.0) == 0x8000000000000000
+
+# Eight bytes read from a binary format as the double they hold.
+test "bits_to_f64: minus two and a half"
+    assert bits_to_f64(0xc004000000000000) == -2.5
+
+# A float's bits.
+test "f32_to_bits: minus one and a half"
+    x: f32 = -1.5
+    assert f32_to_bits(x) == 0xbfc00000
+
+# Four bytes read as the float they hold.
+test "bits_to_f32: one"
+    one: f32 = 1.0
+    assert bits_to_f32(0x3f800000) == one
+
+# A float rounded to the half-precision float nearest to it, as a GPU or a
+# model's weights store it.
+test "f64_to_f16_bits: one and a third, and a value past the largest half"
+    assert f64_to_f16_bits(1.0 / 3.0) == 0x3555
+    assert f64_to_f16_bits(65520.0) == 0x7c00
+
+# An `f32` rounded to half precision.
+test "f32_to_f16_bits: one tenth"
+    tenth: f32 = 0.1
+    assert f32_to_f16_bits(tenth) == 0x2e66
+
+# A half's bits read back as the value they hold.
+test "f16_bits_to_f64: the largest half and the smallest above zero"
+    assert f16_bits_to_f64(0x7bff) == 65504.0
+    assert f16_bits_to_f64(0x0001) == 0.000000059604644775390625
+
+# A half's bits read as an `f32`.
+test "f16_bits_to_f32: one and a half"
+    one_and_a_half: f32 = 1.5
+    assert f16_bits_to_f32(0x3e00) == one_and_a_half
 
 # Ten tenths sum to one exactly.
 test "sum: ten tenths"

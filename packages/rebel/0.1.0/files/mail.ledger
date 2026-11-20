@@ -272,11 +272,11 @@ capability mime/compose  a message of text, HTML and files in the structure read
   note    mixed around alternative around related, each only where needed; the envelope fields are the program's, through `with_field`, as lettre's builder sets them
 
 capability mime/types-by-extension  a media type guessed from a file's extension, and the extensions of a type
-  heroes  pending
+  heroes  mail.media_type_of
   go      mime.TypeByExtension, mime.ExtensionsByType, mime.AddExtensionType
   rust    -
   python  mimetypes.guess_type, mimetypes.guess_file_type, mimetypes.guess_extension, mimetypes.guess_all_extensions, mimetypes.add_type, mimetypes.init, mimetypes.inited, mimetypes.knownfiles, mimetypes.read_mime_types, mimetypes.types_map, mimetypes.common_types, mimetypes.encodings_map, mimetypes.suffix_map, mimetypes.MimeTypes
-  note    needs a table of its own (Go's built-in one and the system's `mime.types`, which `fs`, of `mail`'s own layer, would read); not written in this round
+  note    one table carried here, the same on every machine, moved from `web` on 2026-11-20 (the coherence review's X18) so that `attachment_part` has it below `web`: Go's answer on macOS where Go and Python disagree (`xml`, `ico`, `wav`, `rar`), Python's built-in table where Go has none (`md`, `yaml`, `webmanifest`), observed 2026-11-16; a type of text carries `charset=utf-8`. The extensions of a type, Go's ExtensionsByType and Python's guess_extension, are not offered, and the table is not the system's `mime.types`, which no program adds to
 
 capability transfer/quoted-printable  quoted-printable written and read
   heroes  mail.format_quoted_printable, mail.parse_quoted_printable
