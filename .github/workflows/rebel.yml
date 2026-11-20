@@ -13,18 +13,16 @@
 #   - **`heroes doc` over every face** of Rebel, the part of
 #     `examples-rebel/README.md` § A7 the verb holds today: a comment whose
 #     parameter lines do not name each parameter once, in order, is refused.
-#     Measured at `9149e72d0` with its stage 2: 148 faces, 125 documented and
-#     23 refused with 1,069 diagnostics (1,050 `doc_missing_parameter`, 18
-#     `doc_unknown_parameter`, one `package_not_listed`), so this step is red
-#     until the documentation lanes land theirs;
+#     The step prints how many faces it read and refused, and is red while
+#     one is refused; the counts it first read are step 65a's commit body;
 #   - **Rebel's example program**, `examples-rebel/jq.hero`, built and run on
 #     one filter of its own usage lines;
 #   - **every package's own tests**, through the drivers
-#     `examples-rebel/reach_*.hero` (160 at `9149e72d0`), each `heroes test`
-#     plain, and on the two Linux legs also under `--sanitize`, since
-#     LeakSanitizer is there and a driver reaches the floors' C bindings
-#     (`.claude/rules/platforms.md` § Linux is where a leak in a binding is
-#     visible).
+#     `examples-rebel/reach_*.hero` (the `plan` job counts them), each
+#     `heroes test` plain, and on the two Linux legs also under
+#     `--sanitize`, since LeakSanitizer is there and a driver reaches the
+#     floors' C bindings (`.claude/rules/platforms.md` § Linux is where a leak
+#     in a binding is visible).
 #
 # Every system library a Rebel package links or loads is installed below, on
 # the platform that lacks it (the author's decision 6 of 2026-11-19: nothing is
@@ -40,11 +38,11 @@
 # No server runs here (MongoDB, AMQP, Kafka, LDAP, MQTT, NATS, Redis, S3,
 # MySQL, PostgreSQL, an ACME directory, a model's API): no secret and no
 # address is given, and a paid run is never one. A test that needs one is
-# owed `skip_test` with its reason (spec § 12), printed by the drivers' step
-# below; five call it at `9149e72d0` (acme's three, mongodb's two), and the 101
-# more panel 253 counted, which print a skip line or nothing and read `ok`,
-# are a later lane's. No driver's every test needs a server, so none is an
-# all-skipped run.
+# owed `skip_test` with its reason (spec § 12), which the drivers' step
+# prints. Panel 253 counted 106 tests that print a skip line or nothing and
+# read `ok` instead (2026-11-19), and step 61b converted five of them; the
+# rest are owed the same. No driver's every test needs a server, so none is
+# an all-skipped run.
 #
 # **Its first run is the landing push's**: a workflow cannot run before it is
 # pushed, and no line below has run on a runner. The install steps were written
@@ -221,9 +219,9 @@ jobs:
 
   # ──────────────── The drivers, dealt into parts, on every leg ────────────────
   #
-  # Whether one job running all 160 drivers ends inside GitHub's six hours on
-  # Windows is unrun. The box's sweep at step 53 ran them in two lanes side by
-  # side from 13:32 to 18:23 on 2026-11-19 (the coordinator's record of it),
+  # Whether one job running every driver ends inside GitHub's six hours on
+  # Windows is unrun. The box's sweep at step 53 ran its 160 in two lanes side
+  # by side from 13:32 to 18:23 on 2026-11-19 (the coordinator's record of it),
   # about five hours of wall for two; one lane alone reading near that or more
   # is an inference, and too close to the ceiling to rest a leg on. So each leg
   # runs them in `PARTS` parts, each its own job building its own compiler, as
