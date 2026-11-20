@@ -21,11 +21,16 @@ variant Operand
     # What `heroes new` makes, the new folder's name, which the help shows as
     # `<name>`: needed, and never a file the command reads (panel 244's R2).
     name_operand
+    # What `heroes doc` prints the reference of, one module, which the help
+    # shows as `<module>`: a `.hero` file, or `<name>/<module>`, a package's
+    # module read through the catalogue (panel 253's R2).
+    module_operand
 
 variant Tag
     lex_cmd
     parse_cmd
     check_cmd
+    doc_cmd
     build_cmd
     run_cmd
     test_cmd
@@ -187,6 +192,7 @@ function commands() -> [Command]
         Command(tag: .lex_cmd, name: "lex", operand: .file_operand, flags: lex_flags, summary: "check the token stream")
         Command(tag: .parse_cmd, name: "parse", operand: .file_operand, flags: parse_flags, summary: "check the syntax")
         Command(tag: .check_cmd, name: "check", operand: .file_operand, flags: check_flags, summary: "check names and types")
+        Command(tag: .doc_cmd, name: "doc", operand: .module_operand, flags: no_flags, summary: "print a module's reference, a `.hero` file or `<name>/<module>` through heroes.toml: each declaration's signature, what documents it, the call a program writes and its examples; refuses a comment whose parameter lines do not name each parameter once, in order")
         Command(tag: .build_cmd, name: "build", operand: .file_operand, flags: build_flags, summary: "compile to a native binary")
         Command(tag: .run_cmd, name: "run", operand: .file_operand, flags: run_flags, summary: "compile and execute (the dev loop, -O2); `-- a b` passes a and b to the program")
         Command(tag: .test_cmd, name: "test", operand: .file_operand, flags: test_flags, summary: "run the file's `test` blocks")
@@ -274,15 +280,18 @@ test "the table is the pipeline's order and the flags carry their shapes"
     # (panel 235's R11, ratified 2026-11-07).
     # **15 -> 16 on 2026-11-10**, `new`, which writes a new program or package
     # (panel 244's R2, provisional, author ratification pending; feature 2441).
-    assert table.len() == 16
+    # **16 -> 17 on 2026-11-19**, `doc`, a module's reference, after `check`
+    # since it runs check's stages first (panel 253's R2, ratified 2026-11-19).
+    assert table.len() == 17
     assert table[0].name == "lex"
-    assert table[3].name == "build"
+    assert table[3].name == "doc"
+    assert table[4].name == "build"
 
     # -o takes a value; --include repeats and names a directory.
     o_found: bool @= false
     inc_found: bool @= false
 
-    for f in table[3].flags
+    for f in table[4].flags
         if f.spelling == "-o"
             assert f.value
             assert !f.repeatable

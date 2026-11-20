@@ -252,6 +252,8 @@ function main()
         suite_golden.shape_unsupported()
         suite_golden.shape_permissive()
         suite_golden.shape_full()
+        suite_golden.shape_doc()
+        suite_golden.shape_doc_refused()
     ]
 
     total: report.Report @= report.empty()
@@ -687,8 +689,9 @@ function main()
     if !clean
         exit(1)
 
-# The suites the third word may narrow: the ones that walk cases (the six
-# golden forms, `run`, `fixes`, `annotations`, `lldb`), `emission`, to the
+# The suites the third word may narrow: the ones that walk cases (the eight
+# golden forms, `doc` and `doc_refused` since panel 253's R2, `run`, `fixes`,
+# `annotations`, `lldb`), `emission`, to the
 # programs whose label holds it since its walk became `cases.programs`
 # (defect 2341), `layout`, which walks modules and is asked about one file by
 # the write-time hook, and `records`, asked by the same hook about one issue
@@ -702,19 +705,19 @@ function main()
 # `cases.collect` or `cases.programs`, is named here, which the test below
 # holds against the suites' own code.
 function takes_cases(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records", "generated", "fetch", "emission", "determinism", "lines", "warnings"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "doc", "doc_refused", "run", "control", "fixes", "annotations", "lldb", "layout", "records", "generated", "fetch", "emission", "determinism", "lines", "warnings"]
         if name == suite
             return true
 
     return false
 
-# The suites a shard binds: the ones whose cases are one sorted list, the six
+# The suites a shard binds: the ones whose cases are one sorted list, the eight
 # golden forms, `run` (defect 537), `lldb`, and `lines` since it took the third
 # word (defect 2529), whose walk is `run/`'s list alone. `annotations`, `fixes`,
 # `layout`, `determinism` and `warnings` take a filter and no shard, `main`
 # says why.
 function takes_shards(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "lldb", "lines"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "doc", "doc_refused", "run", "control", "lldb", "lines"]
         if name == suite
             return true
 
@@ -1274,7 +1277,7 @@ function code_lines(text: str) -> [str]
 # is held to the suites' own code** (defect 2529): a suite whose code walks a
 # golden directory's cases, `cases.collect` or `cases.programs`, takes the
 # third word, by the word that selects it, `suite_<name>.hero`'s `<name>` and
-# the six forms for `suite_golden.hero`. Ten such suites on the day this was
+# the eight forms for `suite_golden.hero`. Ten such suites on the day this was
 # written, the floor below, so a reading that finds none is a red and not a
 # vacuous green.
 test "every suite whose code walks a golden directory's cases takes the third word (defect 2529)"
@@ -1303,6 +1306,8 @@ test "every suite whose code walks a golden directory's cases takes the third wo
                 suite_golden.shape_unsupported().name
                 suite_golden.shape_permissive().name
                 suite_golden.shape_full().name
+                suite_golden.shape_doc().name
+                suite_golden.shape_doc_refused().name
             ]
 
         for word in words
@@ -1322,7 +1327,7 @@ test "a narrowed suite says so on its line"
     assert shown(name: "run", pick: "2/6") == "run (shard 2 of 6, its floor asked of the whole directory)"
 
 test "a shard binds the suites whose cases are one list, and says why a word names none"
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "lldb", "lines"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "doc", "doc_refused", "run", "control", "lldb", "lines"]
         assert takes_shards(name)
         assert takes_cases(name)
 

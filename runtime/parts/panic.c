@@ -82,27 +82,39 @@ static _Noreturn void hero_abort(void) {
  *
  * WINDOWS' C LIBRARY HAS NO TRY-LOCK ON A STREAM (`_lock_file` waits), so its
  * arm flushes as it always has, and a writer blocked there can still hold a
- * report back: unrun on the box. */
+ * report back: unrun on the box. Measured since by a C probe on the box
+ * (2026-11-19, defect 2600's lane): with stdout unbuffered, as
+ * `hero_streams_survive_abort` sets it there, `fflush(stdout)` returned at once
+ * while another thread was blocked writing into an unread pipe.
+ *
+ * The same question is asked of a stream at `exit(code:)`'s end (defect 2600,
+ * `parts/os.c`'s `hero_exit_end`), which needs its answer: true where the lock
+ * was had and the stream flushed, false where it was not. */
 #define HERO_REPORT_WAIT_NS INT64_C(50000000)
 
-static void hero_stdout_before_report(void) {
+static bool hero_stream_flushed_held(FILE *stream) {
 #if defined(_WIN32)
-    fflush(stdout);
+    fflush(stream);
+    return true;
 #else
     struct timespec from;
     int timed = clock_gettime(CLOCK_MONOTONIC, &from) == 0;
 
     for (;;) {
-        if (ftrylockfile(stdout) == 0) {
-            fflush(stdout);
-            return;
+        if (ftrylockfile(stream) == 0) {
+            fflush(stream);
+            return true;
         }
         struct timespec now;
-        if (!timed || clock_gettime(CLOCK_MONOTONIC, &now) != 0) return;
+        if (!timed || clock_gettime(CLOCK_MONOTONIC, &now) != 0) return false;
         int64_t waited = (int64_t)(now.tv_sec - from.tv_sec) * INT64_C(1000000000) + (now.tv_nsec - from.tv_nsec);
-        if (waited >= HERO_REPORT_WAIT_NS) return;
+        if (waited >= HERO_REPORT_WAIT_NS) return false;
     }
 #endif
+}
+
+static void hero_stdout_before_report(void) {
+    (void)hero_stream_flushed_held(stdout);
 }
 
 _Noreturn void hero_panic(const char *msg) {
@@ -249,7 +261,14 @@ void hero_print_end(void) {
  * of 10 s, and so did 14 lines binding `hero_print_str` in a thread
  * (2026-11-19, this Mac). So a thread leaving
  * its body gives back a span it holds, with no newline, since nothing of a
- * statement was left to write (`parts/spawn.c`). */
+ * statement was left to write (`parts/spawn.c`).
+ *
+ * One account with the end `exit(code:)` asks (defect 2600, `parts/os.c`'s
+ * `hero_exit_end`): that end waits on stdout's lock for a bound and then ends
+ * at once, so it is never held for ever, whoever holds the lock; this keeps a
+ * lock from outliving its thread at all, so that end finds it free and runs
+ * whole, stdout flushed and C's own end with it. The bound is left for a
+ * holder still running. */
 static void hero_print_thread_leave(void) {
     if (!hero_print_open) return;
     hero_print_open = false;

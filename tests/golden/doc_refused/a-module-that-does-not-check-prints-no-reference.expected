@@ -1,0 +1,5 @@
+error[type_mismatch]: expected `i64`, found `str`
+  at tests/golden/doc_refused/a-module-that-does-not-check-prints-no-reference.hero:6:12
+    |
+  6 |     return "one"  #~ type_mismatch
+    |            ^^^^^

@@ -55,7 +55,7 @@ function told(inv: argv.Invocation) -> bool
 # kind, and for an operand that may be left out, the verb's own answer.
 function one_file(c: cli_table.Command) -> bool
     match c.operand
-        .file_operand                                  => return true
+        .file_operand | .module_operand                => return true
         .optional_operand                              => return one_file_given(c.tag)
         .no_operand | .package_operand | .name_operand => return false
 
@@ -66,7 +66,7 @@ function one_file_given(tag: cli_table.Tag) -> bool
     match tag
         .measure_cmd             => return true
         .mutate_cmd | .probe_cmd => return false
-        .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .run_cmd | .test_cmd | .fmt_cmd | .add_cmd | .fetch_cmd | .new_cmd | .doctor_cmd | .grammar_cmd | .this_cmd | .version_cmd | .help_cmd =>
+        .lex_cmd | .parse_cmd | .check_cmd | .doc_cmd | .build_cmd | .run_cmd | .test_cmd | .fmt_cmd | .add_cmd | .fetch_cmd | .new_cmd | .doctor_cmd | .grammar_cmd | .this_cmd | .version_cmd | .help_cmd =>
             return false
 
 # The refusal of `path` as the operand of `c`.
@@ -79,6 +79,7 @@ function takes(tag: cli_table.Tag) -> str
         .lex_cmd     => return "lexes one `.hero` file"
         .parse_cmd   => return "parses one `.hero` file"
         .check_cmd   => return "checks one `.hero` file, and a directory only with `--apply --in-place`"
+        .doc_cmd     => return "prints the reference of one module, a `.hero` file or `<name>/<module>`"
         .build_cmd   => return "builds the program whose root is one `.hero` file"
         .run_cmd     => return "builds and runs the program whose root is one `.hero` file"
         .test_cmd    => return "runs the tests of the program whose root is one `.hero` file"
@@ -125,7 +126,9 @@ test "a verb that reads one file refuses a directory, by a link too, naming what
             assert asked([c.name, inner]).must() == said(c, path: inner)
             assert strings.holds(text: said(c, path: inner), needle: "`" + c.name + "` ")
 
-    assert walked == 8
+    # Nine since 2026-11-19: `doc`, whose operand is one module (panel 253's
+    # R2).
+    assert walked == 9
     assert !process.remove_tree(dir).is_err()
 
 # Defect 2486's case and the shapes beside it: `measure` on a directory, a

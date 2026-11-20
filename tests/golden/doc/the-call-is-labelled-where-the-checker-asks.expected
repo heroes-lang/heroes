@@ -1,0 +1,41 @@
+# the-call-is-labelled-where-the-checker-asks
+
+The call `heroes doc` derives labels exactly the arguments the checker's label
+rule asks a label of, two parameters of one type, marks an `@` parameter
+with `@`, writes a `_` parameter bare, and holds a type parameter's line
+before the parameters' (spec § 9; panel 253's R2).
+
+## function copies
+
+    function copies(fill: str, sep: str, count: i64) -> str
+
+`count` copies of `fill` joined by `sep`.
+
+- `fill`: the text repeated
+- `sep`: what stands between two copies
+- `count`: how many copies, 0 giving the empty text
+
+    copies(fill: fill, sep: sep, count)
+
+## function grow
+
+    function grow(@list: [i64], more: i64)
+
+Adds `more` to `list`, in its place.
+
+- `list`: the caller's list, which gains one value
+- `more`: the value it gains
+
+    grow(@list, more)
+
+## function first
+
+    function first<A>(kept: A, _: i64) -> A
+
+The value handed back, whatever the second is.
+
+- `A`: any type
+- `kept`: the value handed back
+- `_`: not read
+
+    first(kept, _)

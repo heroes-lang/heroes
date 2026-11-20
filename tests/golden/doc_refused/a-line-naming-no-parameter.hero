@@ -1,0 +1,18 @@
+# A parameter line naming no parameter of its function is refused at the name
+# it writes, its guess the parameter no line names; that parameter is not told
+# missing as well, one mistake told once (spec § 1; panel 253's R2).
+
+# The sum of two numbers.
+#
+# - `a`: one number
+#~v doc_unknown_parameter
+# - `c`: the other
+function sum(a: i64, b: i64) -> i64
+    return a + b
+
+# A function with no parameter has no list.
+#
+#~v doc_unknown_parameter
+# - `x`: nothing
+function one() -> i64
+    return 1

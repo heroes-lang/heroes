@@ -50,7 +50,13 @@ commit = "9fceb02d0ae598e95dc970b74767f19372d61af8"
 sum = "sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9"
 ```
 - `#` comments to end of line, markdown inside. A comment directly above a
-  declaration documents it; `##` is a section heading.
+  declaration, a field or a case documents it: a first sentence that stands
+  alone, then, after a line holding `#` alone, one `` - `name`: `` line per
+  parameter in the signature's order. A `test` with a comment directly above
+  it and a title opening with a function's name and a colon is that
+  function's example. `heroes doc` prints a module's declarations, what
+  documents them and their examples, and refuses a comment whose lines do
+  not name each parameter once, in order. `##` is a section heading.
 - Indentation is significant and rigid: exactly 4 spaces per level; a tab is a
   compile error. No braces, no semicolons; a condition needs no parentheses.
 - Syntax is ASCII-only; comments and strings hold UTF-8 but no raw control

@@ -1,0 +1,36 @@
+# Fixed 2026-11-19, defect 2600, lane-impl-rt: the shape beside the defect's
+# own, a worker blocked writing STDERR into a pipe nobody reads when `main`
+# asks `exit(code: 0)`.
+# Symptom: the program never ended (a C probe of the shape killed at 5 s on
+# this Mac, before the repair): C's `exit` flushes stderr too, in libc++'s
+# stream destructor on this Mac, and waited on the lock the blocked worker
+# holds.
+# Cause: the defect's own, one stream over. The end `exit` asks takes stdout's
+# lock and then stderr's, each within a bound, and ends at once where either
+# cannot be had.
+# The program makes its own stderr the unread pipe (its header), so nothing
+# reaches the harness's stderr.
+extern "fixedbugs-2600-stderr-into-a-pipe-nobody-reads.h"
+    function unread_stderr() -> i64
+
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_write_err(text: str)
+
+function talk(n: i64) -> i64
+    i @= 0
+
+    while i < 1_000_000_000
+        hero_write_err(f"worker {i}\n")
+        i @ i + 1
+
+    return n
+
+function main()
+    if unread_stderr() == 1
+        _ = hero_thread_spawn(body: talk, arg: 7)
+        _ = usleep(useconds: 300000)
+        exit(code: 0)
