@@ -1,9 +1,9 @@
 ## Everything else comes from C
 #
-# There is no standard library, permanently. Maths beyond arithmetic,
-# files, sockets, databases: they arrive through `extern`, and clang checks
-# every declaration against the real header — a wrong type here is a
-# compile error, not a crash at runtime.
+# Heroes imposes no standard library. Maths beyond arithmetic, files,
+# sockets, databases: a program binds them through `extern`, or takes a
+# package that does, and clang checks every declaration against the real
+# header — a wrong type here is a compile error, not a crash at runtime.
 #
 # A group names the header its signatures come from. That is not decoration:
 # the header is what clang checks against, and without one a declaration
