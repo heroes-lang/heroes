@@ -338,7 +338,7 @@ test "api_name, check_version: a name known and not, a version inside the range,
 test "request: the header written, the answer read whole across reads, a correlation that disagrees, an answer past the bound"
     two = net.pair(5000).must()
     c @= closed(1, target: "peer")
-    c.link @ .plain(conn: two.first)
+    c.link @ .connected(stream: two.first.stream, secured: false)
     c.open @ true
     c.versions @ [model.ApiVersion(key: 3, min: 0, max: 12)]
     peer @= two.second.stream
@@ -352,7 +352,7 @@ test "request: the header written, the answer read whole across reads, a correla
     io.close(@peer).must()
     three = net.pair(5000).must()
     d @= closed(1, target: "peer")
-    d.link @ .plain(conn: three.first)
+    d.link @ .connected(stream: three.first.stream, secured: false)
     d.open @ true
     d.versions @ [model.ApiVersion(key: 3, min: 0, max: 12)]
     other @= three.second.stream

@@ -27,7 +27,7 @@ function pair() -> net.Pair
 function rig(script: str) -> Rig
     two = pair()
     s @= state.sample()
-    s.link @ .plain(conn: two.first)
+    s.link @ .connected(stream: two.first.stream, secured: false)
     s.open @ true
     s.target @ "the test's server"
     s.info @ model.default_info()

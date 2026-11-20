@@ -20,14 +20,13 @@ constant MOST_FRAME: i64
 
 # What carries the bytes.
 variant Link
-    # A TCP connection, whose deadline `net` moves.
-    plain
-        # The connection.
-        conn: net.Conn
-    # A TLS stream, whose deadline `tls` moves.
-    secured
-        # The stream.
+    # A TCP connection of `net` or a TLS stream of `tls`, one `io.Stream`
+    # whose deadline `tls.set_deadline` moves alike.
+    connected
+        # The connection's stream.
         stream: io.Stream
+        # Whether it is TLS.
+        secured: bool
     # A WebSocket, binary messages carrying the protocol's bytes.
     socket
         # The connection.
@@ -48,7 +47,7 @@ function closed_failure<T>(target: str) -> T?
 # - `ms`: milliseconds, 1 or more.
 function open_plain(host: str, port: i64, ms: i64) -> Link?
     c = net.connect_timeout(host, port: port, timeout_ms: ms, deadline_ms: 0)?
-    return ok(.plain(conn: c))
+    return ok(.connected(stream: c.stream, secured: false))
 
 # A TLS connection to `host` at `port`, TLS from its first byte.
 #
@@ -58,7 +57,7 @@ function open_plain(host: str, port: i64, ms: i64) -> Link?
 # - `roots`: the authorities trusted, "" for the system's.
 function open_tls(host: str, port: i64, ms: i64, roots: str) -> Link?
     s = tls.connect(host: host, port: port, deadline_ms: ms, client: tls.Client(roots: roots, protocols: []))?
-    return ok(.secured(stream: s))
+    return ok(.connected(stream: s, secured: true))
 
 # A TLS connection to `host` at `port` begun after the server's first line,
 # which begins `INFO` and is read and dropped below TLS.
@@ -69,7 +68,7 @@ function open_tls(host: str, port: i64, ms: i64, roots: str) -> Link?
 # - `roots`: the authorities trusted.
 function open_after_info(host: str, port: i64, ms: i64, roots: str) -> Link?
     s = tls.connect_after(host: host, port: port, deadline_ms: ms, client: tls.Client(roots: roots, protocols: []), steps: [.expect_line(prefix: "INFO")])?
-    return ok(.secured(stream: s))
+    return ok(.connected(stream: s, secured: true))
 
 # A WebSocket to `target`.
 #
@@ -97,18 +96,19 @@ function open_socket(target: str, ms: i64, roots: str) -> Link?
 # Fails as `tls.client_over` fails, `unsupported` on macOS.
 function upgrade(@l: Link, host: str, roots: str) -> ()?
     match l
-        .plain p =>
-            inner @= p.conn.stream
+        .connected c =>
+            if c.secured
+                return ok()
+            inner @= c.stream
 
             match tls.client_over(@inner, host: host, client: tls.Client(roots: roots, protocols: []))
                 .ok s =>
-                    l @ .secured(stream: s)
+                    l @ .connected(stream: s, secured: true)
                     return ok()
                 .err e =>
                     _ = io.close(@inner).is_err()
                     l @ .gone
                     return fail(code: e.code, msg: e.msg)
-        .secured _        => return ok()
         .socket _ | .gone => return fail(code: model.UNSUPPORTED, msg: "TLS begins only over a TCP connection")
 
 # Whether `l` is TLS, or a WebSocket over TLS.
@@ -117,10 +117,9 @@ function upgrade(@l: Link, host: str, roots: str) -> ()?
 # - `secure`: whether a WebSocket was made over TLS.
 function is_secured(l: Link, secure: bool) -> bool
     return match l
-        .plain _   => false
-        .secured _ => true
-        .socket _  => secure
-        .gone      => false
+        .connected c => c.secured
+        .socket _    => secure
+        .gone        => false
 
 # Makes every read and write of `l` end by `ms` milliseconds from now, 0
 # for none.
@@ -129,10 +128,9 @@ function is_secured(l: Link, secure: bool) -> bool
 # - `ms`: milliseconds, 0 or more.
 function arm(l: Link, ms: i64) -> ()?
     return match l
-        .plain p   => net.set_deadline(p.conn.stream, deadline_ms: ms)
-        .secured s => tls.set_deadline(s.stream, deadline_ms: ms)
-        .socket w  => websocket.set_deadline(w.conn, ms: ms)
-        .gone      => fail(code: model.CLOSED, msg: "the connection is closed")
+        .connected c => tls.set_deadline(c.stream, deadline_ms: ms)
+        .socket w    => websocket.set_deadline(w.conn, ms: ms)
+        .gone        => fail(code: model.CLOSED, msg: "the connection is closed")
 
 # The bytes one read of `l` brings, at least one.
 #
@@ -143,8 +141,7 @@ function arm(l: Link, ms: i64) -> ()?
 # fails.
 function read(@l: Link, target: str) -> [u8]?
     got = match l
-        .plain p   => io.read(p.conn.stream, n: CHUNK)?
-        .secured s => io.read(s.stream, n: CHUNK)?
+        .connected c => io.read(c.stream, n: CHUNK)?
         .socket w =>
             c @= w.conn
             answer = websocket.read_message(@c)
@@ -162,8 +159,7 @@ function read(@l: Link, target: str) -> [u8]?
 # - `data`: the bytes.
 function write(@l: Link, data: [u8]) -> ()?
     match l
-        .plain p   => return io.write(p.conn.stream, data: data)
-        .secured s => return io.write(s.stream, data: data)
+        .connected c => return io.write(c.stream, data: data)
         .socket w =>
             c @= w.conn
             done = websocket.write_binary(@c, data: data)
@@ -176,11 +172,8 @@ function write(@l: Link, data: [u8]) -> ()?
 # - `l`: the link.
 function close(@l: Link)
     match l
-        .plain p =>
-            s @= p.conn.stream
-            _ = io.close(@s).is_err()
-        .secured t =>
-            s @= t.stream
+        .connected c =>
+            s @= c.stream
             _ = io.close(@s).is_err()
         .socket w =>
             c @= w.conn
@@ -194,22 +187,21 @@ function close(@l: Link)
 # - `l`: the link.
 function is_gone(l: Link) -> bool
     return match l
-        .gone                             => true
-        .plain _ | .secured _ | .socket _ => false
+        .gone                    => true
+        .connected _ | .socket _ => false
 
 # The stream under `l`, for a program that waits on it.
 #
 # - `l`: the link.
 function stream_of(l: Link) -> io.Stream?
     return match l
-        .plain p   => ok(p.conn.stream)
-        .secured s => ok(s.stream)
-        .socket w  => ok(w.conn.stream)
-        .gone      => fail(code: model.CLOSED, msg: "the client is closed")
+        .connected c => ok(c.stream)
+        .socket w    => ok(w.conn.stream)
+        .gone        => fail(code: model.CLOSED, msg: "the client is closed")
 
 test "a link over a pair of connections: written, read, armed, closed, and gone after"
     two = net.pair(5000).must()
-    l: Link @= .plain(conn: two.first)
+    l: Link @= .connected(stream: two.first.stream, secured: false)
     peer @= two.second.stream
     write(@l, data: [1, 2, 3]).must()
     assert io.read_exact(peer, n: 3).must() == [1, 2, 3]

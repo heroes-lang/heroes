@@ -48,7 +48,7 @@ function options() -> model.Options
 function wired() -> Wired
     two = net.pair(5000).must()
     s @= state.fresh(options(), target: "server")
-    s.link @ .plain(conn: two.first)
+    s.link @ .connected(stream: two.first.stream, secured: false)
     s.open @ true
     s.frame_max @ 4096
     s.channel_max @ 8
