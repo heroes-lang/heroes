@@ -820,8 +820,9 @@ static bool hero_tls_key_of(const void *pem, uint64_t pem_count, hero_tls_key *k
  * since it remembers an address with no type beside it; a value without
  * this table's tag is no listener, `HERO_TLS_NOT_OPEN` as the header says
  * of one the layer never issued. A call on a listener holds its slot busy; a close marks the slot
- * closing, so no later call reaches it, wakes the calls inside it, and the
- * last of them to leave gives the arm's listener back. */
+ * closing, so no later call reaches it, holds it busy too while it wakes the
+ * calls inside it and waits until the port listens no more, and the last of
+ * them to leave, the close among them, gives the arm's listener back. */
 
 /* The arm's listener: an `nw_listener_t` on macOS, a socket and the
  * settings every connection shares elsewhere. */
@@ -866,8 +867,9 @@ static void hero_tls_table_unlock(void) {
 }
 
 /* The arm's own: wakes every call waiting on `spot`, which then answers
- * `HERO_TLS_NOT_OPEN`; and gives back what `spot` holds, once nothing is
- * inside it. Both are called without the table's lock. */
+ * `HERO_TLS_NOT_OPEN`, and returns once nothing listens on its port any
+ * more; and gives back what `spot` holds, once nothing is inside it. Both
+ * are called without the table's lock. */
 static void hero_tls_spot_wake(hero_tls_spot *spot);
 static void hero_tls_spot_free(hero_tls_spot *spot);
 
@@ -977,10 +979,13 @@ static bool hero_tls_closing(hero_tls_slot *slot) {
     return closing;
 }
 
+/* The close holds the slot busy while it wakes the calls inside and waits
+ * for the arm's listener to stop listening, so the listener is given back
+ * by whichever leaves last, this close where no call is inside, and never
+ * while the close still reads it. */
 int64_t hero_tls_close_listener(hero_tls_listener *l) {
     hero_tls_slot *slot;
     hero_tls_spot *spot;
-    bool now;
 
     hero_tls_table_lock();
     slot = hero_tls_slot_of(l);
@@ -990,16 +995,11 @@ int64_t hero_tls_close_listener(hero_tls_listener *l) {
         return -1;
     }
     slot->closing = true;
+    slot->busy += 1;
     spot = slot->spot;
-    now = slot->busy == 0;
-    if (now) {
-        hero_tls_give_back(slot);
-    }
     hero_tls_table_unlock();
     hero_tls_spot_wake(spot);
-    if (now) {
-        hero_tls_spot_free(spot);
-    }
+    hero_tls_leave(slot);
     hero_tls_fine();
     return 0;
 }
@@ -4928,6 +4928,9 @@ struct hero_tls_spot {
     /* The deadline of the wait for a client, monotonic, 0 for none. Under
      * `lock`. */
     int64_t accept_until;
+    /* Whether `nw_listener_cancel` was asked, so it is asked once. Under
+     * `lock`. */
+    bool cancel_asked;
 };
 
 static void hero_tls_spot_drop(hero_tls_spot *spot) {
@@ -4947,11 +4950,47 @@ static void hero_tls_spot_drop(hero_tls_spot *spot) {
     hero_layer_free(spot);
 }
 
+/* Asks the listener's cancel, the first time only. Without `lock`. */
+static void hero_tls_spot_cancel(hero_tls_spot *spot) {
+    bool first;
+
+    (void)pthread_mutex_lock(&spot->lock);
+    first = !spot->cancel_asked;
+    spot->cancel_asked = true;
+    (void)pthread_mutex_unlock(&spot->lock);
+    if (first && spot->listener != NULL) {
+        nw_listener_cancel(spot->listener);
+    }
+}
+
+/* Marks the listener closed, so a call waiting in it answers
+ * `HERO_TLS_NOT_OPEN`, and returns once it has stopped listening: at the
+ * cancelled state its handler reports, or at the stop, the cancel then
+ * going on alone. `nw_listener_cancel` only asks: until the listener's
+ * queue reaches the cancelled state its port still takes a connection and
+ * drops it unaccepted, so a client connecting there after the close had
+ * returned saw its TLS handshake broken off, `failed` ("server closed
+ * session with no notification", -9816), where nothing listened (defect
+ * 2623: 7 connects of 200, and a plain TCP connect taken 1 time in 200, on
+ * a loaded Mac). The socket arm's close is a socket's close, done before it
+ * returns. The caller holds the slot busy, so the table's count keeps the
+ * spot while this waits. */
 static void hero_tls_spot_wake(hero_tls_spot *spot) {
     (void)pthread_mutex_lock(&spot->lock);
     spot->closed = true;
     (void)pthread_mutex_unlock(&spot->lock);
     dispatch_semaphore_signal(spot->changed);
+    hero_tls_spot_cancel(spot);
+    for (;;) {
+        int state;
+
+        (void)pthread_mutex_lock(&spot->lock);
+        state = spot->state;
+        (void)pthread_mutex_unlock(&spot->lock);
+        if (state == HERO_TLS_APPLE_CANCELLED || hero_tls_apple_sleep(spot->changed, 0) != 0) {
+            return;
+        }
+    }
 }
 
 static void hero_tls_spot_free(hero_tls_spot *spot) {
@@ -4967,9 +5006,7 @@ static void hero_tls_spot_free(hero_tls_spot *spot) {
         nw_release(c);
     }
     (void)pthread_mutex_unlock(&spot->lock);
-    if (spot->listener != NULL) {
-        nw_listener_cancel(spot->listener);
-    }
+    hero_tls_spot_cancel(spot);
     hero_tls_spot_drop(spot);
 }
 

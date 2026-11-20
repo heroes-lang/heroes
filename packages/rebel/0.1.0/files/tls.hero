@@ -628,6 +628,79 @@ test "close_listener: then accept fails closed"
             .ok _  => assert false
             .err e => assert e.code == CLOSED
 
+# Defect 2623: once `close_listener` returns its port listens no more, on
+# macOS too, where Network.framework's cancel ends on the listener's own
+# queue; until then a connect made at once was taken and dropped, and over
+# TLS answered `failed` where nothing listened (3 to 13 rounds of 200 on a
+# Mac at load 7). A connect over TLS and a plain one to the port are refused
+# each time, and the port can be listened on again.
+test "close_listener: the port listens no more once it returns"
+    if is_available()
+        rounds @= 0
+
+        while rounds < 200
+            rounds @ rounds + 1
+            l @= listen(
+                host: "127.0.0.1",
+                port: 0,
+                server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
+            ).must()
+            port = l.port
+            close_listener(@l).must()
+            secured = connect(
+                host: "127.0.0.1",
+                port: port,
+                deadline_ms: 10000,
+                client: Client(roots: "", protocols: [])
+            )
+
+            match secured
+                .ok s =>
+                    stream @= s
+                    loopback.closed_or_given(@stream)
+                    assert false
+                .err e =>
+                    said = "connecting over TLS to 127.0.0.1 port " + to_str(port) + ": nothing listens there"
+                    assert e.code == CLOSED
+                    assert e.msg.len() >= said.len() && e.msg.slice(from: 0, to: said.len()) == said
+
+            probe = net.connect(host: "127.0.0.1", port: port, deadline_ms: 10000)
+
+            match probe
+                .ok c =>
+                    s @= c.stream
+                    loopback.closed_or_given(@s)
+                    assert false
+                .err e => assert e.code == CLOSED
+
+            again @= listen(
+                host: "127.0.0.1",
+                port: port,
+                server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
+            ).must()
+            close_listener(@again).must()
+
+# A connection made whose handshake nobody answers is told `timeout` when
+# its deadline passes, never `failed` nor `closed`: the listener is plain
+# TCP and accepts nothing, so the connection waits in its backlog.
+test "connect: a handshake nobody answers ends timeout"
+    if is_available()
+        l @= net.listen(host: "127.0.0.1", port: 0).must()
+        port = l.address.port
+        silent = connect(host: "127.0.0.1", port: port, deadline_ms: 300, client: Client(roots: "", protocols: []))
+
+        match silent
+            .ok s =>
+                stream @= s
+                loopback.closed_or_given(@stream)
+                assert false
+            .err e =>
+                said = "connecting over TLS to 127.0.0.1 port " + to_str(port) + ": the time allowed ran out"
+                assert e.code == TIMEOUT
+                assert e.msg.len() >= said.len() && e.msg.slice(from: 0, to: said.len()) == said
+
+        net.close_listener(@l).must()
+
 # TLS begun by the server over a connection `net` accepted, the client on
 # a thread of its own beginning it too; macOS answers `unsupported` to both.
 test "server_over: a connection of net made a TLS server's"
