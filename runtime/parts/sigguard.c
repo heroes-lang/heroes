@@ -61,8 +61,9 @@
  * WHAT IT DOES NOT SEE, said, and `parts/alloc.c`'s guard (D) stays beneath it
  * for that (panel 247's R2 and R3): where no route stands or a route's own
  * residue lies (defect 2522's rows: a handler installed by a raw system call,
- * by a `sigaction` a library reached by `dlsym`, or inside Darwin's shared
- * cache), a handler whose frames keep no record (a library built
+ * by a `sigaction` a library reached by `dlvsym` or by a `dlsym` made inside
+ * Darwin's shared cache, or by the cache on its own account), a handler whose
+ * frames keep no record (a library built
  * `-fomit-frame-pointer`), one more than HERO_SIGNAL_WALK frames below the
  * Heroes function (glibc's `qsort` of 10,000 values), and Windows,
  * where a console's Ctrl-C runs on a thread Windows makes, which

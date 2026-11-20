@@ -1,0 +1,22 @@
+# Fixed 2026-11-20, defect 2522's row 3, lane-signals-2, the author's ruling C
+# of that day: a handler installed by `sigset`.
+# The handler calls the function through 24 frames of its own, more than the
+# thunk's walk reads, and the function allocates nothing and lends nothing,
+# so only the route's entry tells that it runs inside the signal
+# (`fixedbugs-2522-a-handler-installed-past-the-runtimes-names.h`).
+# Symptom: the function ran inside the signal, 20 runs of 20 at `-O0`, `-O2`
+# and `--sanitize` on this Mac (lane-signals-2).
+# Cause: on Darwin `sigset` is libsystem_c's and installs through libsystem_c's
+# own `sigaction` inside the shared cache, which no rewrite reaches; now the
+# kernel's action is trampolined again once it returns. On Linux the runtime
+# defines `sigset`, so the case was refused there before.
+extern "fixedbugs-2522-a-handler-installed-past-the-runtimes-names.h"
+    function past_install(how: i32, called: (function(i64) -> i64)) -> i32
+    function past_raise() -> i32
+
+function answer(n: i64) -> i64
+    return n * 2
+
+function main()
+    print("installed ", past_install(how: 3, called: answer))
+    print("raised ", past_raise())

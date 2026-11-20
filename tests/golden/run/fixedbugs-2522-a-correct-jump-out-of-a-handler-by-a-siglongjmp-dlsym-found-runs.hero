@@ -1,0 +1,23 @@
+# Fixed 2026-11-20, defect 2522's row 3, lane-signals-2, the author's ruling C
+# of that day: a correct program whose handler jumps out of itself by the
+# `siglongjmp` `dlsym` finds with the C library's own handle, and which, the
+# signal over, calls the function from far deeper
+# (`fixedbugs-2522-a-handler-installed-past-the-runtimes-names.h`).
+# Symptom: refused, 20 runs of 20 at `-O0`, `-O2` and `--sanitize` on this
+# Mac, in words that said C called it while handling a signal.
+# Cause: `dlsym` answered the C library's own `siglongjmp`, past the jump the
+# runtime defines (Linux) or rewrites (Darwin), so the jump left no event and
+# the handler stood as running. Now `dlsym` answers the runtime's own, the
+# jump is followed, and the function runs.
+extern "fixedbugs-2522-a-handler-installed-past-the-runtimes-names.h"
+    function past_jump_install() -> i32
+    function past_escape() -> i32
+    function past_call(cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    return n + 1
+
+function main()
+    print("installed ", past_jump_install())
+    print("escaped ", past_escape())
+    print("called ", past_call(cb: answer))

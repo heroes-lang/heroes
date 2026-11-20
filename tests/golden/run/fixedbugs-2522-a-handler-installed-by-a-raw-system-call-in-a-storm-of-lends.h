@@ -1,9 +1,8 @@
 /* Defect 2522 (panel 251's R1): the program's own C for its case, defect
  * 2494's lender (`fixedbugs-2494-a-thread-of-cs-own-sends-the-signal-to-a-lender.h`)
- * with its handler installed through the C library's own `sigaction`, found
- * by `dlsym`, which no route of the runtime sees, for the reason
- * `fixedbugs-2522-a-handler-installed-through-dlsym-in-a-storm.h` gives; so
- * the lend tracking's guard is what stands there (panel 247's R2).
+ * with its handler installed by a raw system call, which no route of the
+ * runtime sees, as `fixedbugs-2522-a-handler-installed-by-a-raw-system-call-in-a-storm.h`
+ * says; so the lend tracking's guard is what stands there (panel 247's R2).
  *
  * A thread C starts sends SIGUSR1 to the thread that started it as fast as
  * `pthread_kill` returns, for at most 20 seconds or until told to stop, while
@@ -11,8 +10,8 @@
  * so it never runs the handler. The handler calls the Heroes function it was
  * handed through DEEP_FRAMES frames of its own, more than the thunk's walk
  * reads. */
-#include <dlfcn.h>
 #include <unistd.h>
+#include "fixedbugs-2522-a-raw-install.h"
 #include <pthread.h>
 #include <sched.h>
 #include <signal.h>
@@ -39,26 +38,11 @@ __attribute__((noinline, disable_tail_calls)) static int lender_down(int left, i
 
 static void lender_handler(int sig) { (void)lender_down(DEEP_FRAMES, sig); }
 
-#if defined(__APPLE__)
-#define LENDER_C_LIBRARY "/usr/lib/libSystem.B.dylib"
-#else
-#define LENDER_C_LIBRARY "libc.so.6"
-#endif
-
-typedef int (*lender_action_fn)(int, const struct sigaction *, struct sigaction *);
-
-/* The handler, installed for SIGUSR1 with the C library's own `sigaction`,
- * found by `dlsym`: 0, or -1 where it was not found or the system refused. */
+/* The handler, installed for SIGUSR1 by a raw system call: 0, or -1 where
+ * the system refused. */
 static inline int32_t lender_install(void (*called)(int32_t)) {
-    struct sigaction sa;
-    void *library = dlopen(LENDER_C_LIBRARY, RTLD_NOW);
-    lender_action_fn install = library != NULL ? (lender_action_fn)dlsym(library, "sigaction") : NULL;
-    if (install == NULL) return -1;
     lender_called = called;
-    memset(&sa, 0, sizeof sa);
-    sa.sa_handler = lender_handler;
-    sigemptyset(&sa.sa_mask);
-    return install(SIGUSR1, &sa, NULL) == 0 ? 0 : -1;
+    return raw_install(SIGUSR1, lender_handler) == 0 ? 0 : -1;
 }
 
 /* What a lend reaches: the cell C was lent, one more. */

@@ -43,16 +43,18 @@
  * function deeper than the dead entry was refused (panel 249's twelve depth
  * programs, three at `-O0`).
  *
- * THE C LIBRARY'S OWN `sigaction` is found by `dlsym(RTLD_NEXT)` before
- * `main` (a constructor), never inside a signal; a shared library's
+ * THE C LIBRARY'S OWN `sigaction` is found by the C library's own
+ * `dlsym(RTLD_NEXT)` (`parts/siglookup.c`) before `main` (a constructor),
+ * never inside a signal; a shared library's
  * constructor that installs before this one runs finds it there, once. Every
  * step below is an atomic load or store or one system call, so each
  * definition is async-signal-safe, in a handler and in a forked child alike
  * (`parts/run.c`'s child, `platform/hero_proc.c`'s).
  *
  * WHAT IT DOES NOT REACH, said (defect 2522's rows): a raw `rt_sigaction`
- * system call, a `sigaction` a library reaches by `dlsym(RTLD_NEXT)`, glibc's
- * own internal installs, a thread nothing claimed (the thunk refuses there in
+ * system call, a `sigaction` a library reaches by `dlvsym` (`dlsym` is
+ * answered with this file's since the author's ruling C of 2026-11-20,
+ * `parts/siglookup.c`), glibc's own internal installs, a thread nothing claimed (the thunk refuses there in
  * defect 2492's words), and Darwin, whose two-level namespace binds a
  * library's call to libSystem's own name (`parts/rebind.c` is Darwin's). A
  * program library that defines one of these names is told
@@ -79,9 +81,14 @@ static _Atomic uint64_t hero_sig_interrupting = 0;
 
 static _Atomic(hero_sig_action_fn) hero_sig_real_action = NULL;
 
+/* `parts/siglookup.c`, below: the definition after the executable's, asked of
+ * the C library's own `dlsym`, which `dlsym` itself would answer with this
+ * runtime's. */
+static void *hero_dl_next(const char *name);
+
 static void hero_sig_find(void) {
     if (atomic_load_explicit(&hero_sig_real_action, memory_order_acquire) != NULL) return;
-    void *found = dlsym(RTLD_NEXT, "sigaction");
+    void *found = hero_dl_next("sigaction");
     if (found == NULL) {
         hero_signal_say("panic: the C library's own sigaction was not found\n");
         _exit(134);
