@@ -2,8 +2,8 @@
 # by AES-GCM under a content key, and the key brought to its recipient by
 # `dir`, `RSA-OAEP-256`, `ECDH-ES` with RFC 7518's Concat KDF, or a GCM key
 # wrap. Every cipher is `crypto/seal`'s and every key agreement and RSA
-# decryption `crypto/keypairs`', so macOS, which offers C no AES-GCM,
-# answers `unsupported`. A key that does not open a token is never told
+# decryption `crypto/keypairs`', so what they lack answers `unsupported`:
+# X25519 on Windows. A key that does not open a token is never told
 # apart from a token changed: both are "no key opens it".
 
 use bytes

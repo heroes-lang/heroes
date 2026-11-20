@@ -65,7 +65,7 @@ capability jws/eddsa  EdDSA and Ed25519 (RFC 8037, RFC 9864) over Ed25519
   go      jwt.SigningMethodEd25519, jwt.SigningMethodEdDSA
   rust    Algorithm::EdDSA, EncodingKey::from_ed_pem, DecodingKey::from_ed_components
   python  jwt.algorithms.OKPAlgorithm, authlib.jose.OKPKey, joserfc.jwk.OKPKey
-  note    The system's own Ed25519: Linux has it, macOS and Windows answer `unsupported`
+  note    `crypto/keypairs`' Ed25519: Linux's OpenSSL 3, and on macOS Monocypher, a C library the runtime vendors (since 2026-11-20); Windows' CNG has none and answers `unsupported`. RFC 8037 Appendix A.4 signed byte for byte through `sign_compact` on this Mac 2026-11-20 (and `jose/internal/vectors`' test)
 
 capability jws/ed448  EdDSA over Ed448
   heroes  pending
@@ -294,7 +294,7 @@ capability jwe/json  the general and flattened JSON serializations, several reci
   go      -
   rust    -
   python  JsonWebEncryption.serialize_json, JsonWebEncryption.deserialize_json, JsonWebEncryption.parse_json, joserfc.jwe.encrypt_json, joserfc.jwe.decrypt_json, joserfc.jwe.GeneralJSONEncryption, joserfc.jwe.FlattenedJSONEncryption, joserfc.jwe.Recipient, joserfc.jwe.extract_general_json, joserfc.jwe.extract_flattened_json, joserfc.jwe.represent_general_json, joserfc.jwe.represent_flattened_json
-  note    Not written in this wave: its ciphers run nowhere this package was tested (macOS has no AES-GCM for C), and RFC 7520's JSON examples use AES key wrap and AES-CBC, which nothing below offers, so none of them could be held
+  note    Not written in this wave: RFC 7520's JSON examples use AES key wrap and AES-CBC, which nothing below offers, so none of them could be held
 
 capability jwe/direct  `dir`: the key is the content key
   heroes  jose.KeyAlgorithm.direct

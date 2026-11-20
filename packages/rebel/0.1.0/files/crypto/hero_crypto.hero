@@ -8,11 +8,15 @@
 #
 # The layer is C of the language's own beside the runtime, so this group
 # names its header and no `link`: on Windows the member links CNG's
-# `bcrypt` itself, on macOS the Security framework, and on Linux it opens
+# `bcrypt` itself; on macOS the Security framework, CryptoKit through a
+# member of the layer written in Swift for the two ciphers, and Monocypher,
+# a C library the runtime vendors, compiled inside it for Ed25519 and
+# X25519 (panel 253's R3, 2026-11-20); and on Linux it opens
 # `libcrypto.so.3` at the first call that needs it, so the same lines bind
 # it everywhere. What each platform offers is `offers`'s answer, measured in
-# the member's opening comment: macOS has no authenticated cipher, no
-# Ed25519 and no X25519 for C; Windows has no Ed25519.
+# the member's opening comment: Linux, where `libcrypto.so.3` opens, and
+# macOS everything here; Windows no Ed25519, and no X25519 until the box
+# measures CNG's byte orders for it.
 #
 # Bytes cross by the fill form: a call that answers bytes is handed a list
 # and the count of bytes C may write, and answers how many the whole answer

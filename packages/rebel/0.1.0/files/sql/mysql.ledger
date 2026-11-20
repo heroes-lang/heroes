@@ -76,7 +76,7 @@ capability sql-mysql/mariadb-plugins  MariaDB's own plugins, client_ed25519 and 
   go      -
   rust    -
   python  -
-  note    `client_ed25519` signs with a key whose seed is the password of any length, which no Ed25519 of `crypto/keypairs` takes; `parsec` (MariaDB 11.6) derives a seed by PBKDF2 and signs with Ed25519, which macOS's own cryptography lacks
+  note    `client_ed25519` signs with a key whose seed is the password of any length, which no Ed25519 of `crypto/keypairs` takes; `parsec` (MariaDB 11.6) derives a seed by PBKDF2 and signs with Ed25519, which `crypto/keypairs` computes on Linux and macOS and Windows' CNG lacks
 
 capability sql-mysql/tls  TLS begun after the greeting, the server's certificate checked for its authority and host
   heroes  mysql.open, mysql.Security, mysql.parse_url

@@ -64,7 +64,7 @@ capability nats/auth-nkey  a login by an NKey: the server's nonce signed with Ed
   go      Nkey, NkeyOptionFromSeed
   rust    ConnectOptions::with_nkey, ConnectOptions::nkey
   python  nkeys_seed, nkeys_seed_str, signature_cb
-  note    the signature is the system's (`crypto/keypairs`): Linux has Ed25519, macOS and Windows do not, and there it fails `unsupported`; a signature made by a function of the program (Python's signature_cb) is refused below
+  note    the signature is `crypto/keypairs`': Ed25519 by Linux's OpenSSL 3, and on macOS by Monocypher, a C library the runtime vendors, since 2026-11-20 (Go's public key and signature for one seed held on this Mac 2026-11-20, `nats/internal/nkeys`' test; a live server's login unrun here); Windows' CNG has none, and there it fails `unsupported`; a signature made by a function of the program (Python's signature_cb) is refused below
 
 capability nats/auth-jwt  a login by a user's JWT and its seed, as a .creds file holds them
   heroes  nats.Auth (credentials), nats.parse_credentials, nats.Credentials

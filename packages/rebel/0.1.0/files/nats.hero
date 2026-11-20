@@ -92,8 +92,8 @@ constant STOPPED: str
 constant LIMIT: str
     "limit"
 
-# What this platform cannot do: an NKey's signature where the system's
-# cryptography has no Ed25519 (macOS, Windows).
+# What this platform cannot do: an NKey's signature where `crypto/keypairs`
+# has no Ed25519 (Windows).
 constant UNSUPPORTED: str
     "unsupported"
 

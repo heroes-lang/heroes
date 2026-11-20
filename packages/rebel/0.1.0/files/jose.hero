@@ -15,10 +15,9 @@
 # **What computes**: HMAC is `crypto`'s, every signature, key agreement and
 # RSA encryption is `crypto/keypairs`', every AES-GCM is `crypto/seal`'s, so
 # a secret is never computed on by Heroes code but in an HMAC. What the
-# system lacks fails `unsupported`: Ed25519 on macOS and Windows, and every
-# encryption on macOS, which offers C no AES-GCM; P-521 (`ES512`), Ed448,
-# AES key wrap, AES-CBC and AES-192 on every platform, since no package
-# below offers them.
+# system lacks fails `unsupported`: Ed25519 and X25519 on Windows; P-521
+# (`ES512`), Ed448, AES key wrap, AES-CBC and AES-192 on every platform,
+# since no package below offers them.
 #
 # **A key is a value**, never a handle: a JWK's private members stand in
 # the program's memory as its JSON held them, and each signature or
@@ -76,8 +75,8 @@ constant DOES_NOT_FIT: str
     "does_not_fit"
 
 # An algorithm, a curve or a key type that this platform's cryptography, or
-# Rebel's, lacks: Ed25519 on macOS and Windows, every encryption on macOS,
-# `ES512`, Ed448, AES key wrap and AES-CBC everywhere.
+# Rebel's, lacks: Ed25519 and X25519 on Windows; `ES512`, Ed448, AES key
+# wrap and AES-CBC everywhere.
 constant UNSUPPORTED: str
     "unsupported"
 
@@ -206,7 +205,7 @@ function parse_algorithm(name: str) -> Algorithm?
     return fail(code: INVALID, msg: f"no JWS algorithm is named \"{name}\"")
 
 # Whether this machine's cryptography signs and verifies by `algorithm`:
-# false for `EdDSA` and `Ed25519` on macOS and Windows.
+# false for `EdDSA` and `Ed25519` on Windows.
 #
 # - `algorithm`: the algorithm asked about.
 #
@@ -512,8 +511,8 @@ function format_private_pem(key: Key) -> str?
 # - `kind`: the kind, as `crypto/keypairs.generate` takes it.
 #
 # Fails as `crypto/keypairs.generate` does: `unsupported` for Ed25519 and
-# X25519 on macOS and Windows. An RSA key of 4096 bits takes seconds. See
-# also `key_from_secret`, `public_of`.
+# X25519 on Windows. An RSA key of 4096 bits takes seconds. See also
+# `key_from_secret`, `public_of`.
 function generate_key(kind: keypairs.Kind) -> Key?
     made @= keypairs.generate(kind)?
     der = keypairs.format_private_der(made)
@@ -881,7 +880,8 @@ record Decrypted
 # The content key and the nonces are drawn by the system for each call, so
 # two calls answer two tokens. Fails `invalid` for a key of the wrong type or
 # length, a `header` holding `alg`, `enc`, `epk`, `iv` or `tag`;
-# `unsupported` on macOS, whose cryptography offers C no AES-GCM. See also
+# `unsupported` where the system lacks the curve or the cipher: X25519 on
+# Windows, every one on a Linux machine with no `libcrypto.so.3`. See also
 # `decrypt_compact`.
 function encrypt_compact(plaintext: [u8], key: Key, algorithm: KeyAlgorithm, encryption: ContentAlgorithm, header: {str: json.Value}) -> str?
     return sealing.encrypt(
@@ -903,7 +903,7 @@ function encrypt_compact(plaintext: [u8], key: Key, algorithm: KeyAlgorithm, enc
 # Fails `invalid` where `token` is not of the form, its algorithms are not
 # accepted, its `crit` names a member, or no key opens it, and then nothing
 # of the plaintext is told; `not_found` where no key has the header's `kid`;
-# `unsupported` on macOS. See also `encrypt_compact`.
+# `unsupported` as `encrypt_compact` fails. See also `encrypt_compact`.
 function decrypt_compact(token: str, trusted: [Key], algorithms: [KeyAlgorithm], encryptions: [ContentAlgorithm]) -> Decrypted?
     got = sealing.decrypt(token, trusted: trusted.map(to_json), accepted_algorithms: algorithms.map(format_key_algorithm), accepted_encryptions: encryptions.map(format_content_algorithm))?
     return ok(Decrypted(protected: got.protected, plaintext: got.plaintext))
@@ -1041,7 +1041,7 @@ test "parse_algorithm: ES256 read, none refused, ES512 lacking"
         .ok _  => assert false
         .err e => assert e.code == UNSUPPORTED
 
-# Whether this machine signs by Ed25519: false on macOS and Windows.
+# Whether this machine signs by Ed25519: false on Windows.
 test "is_available: HMAC everywhere, EdDSA where the system has Ed25519"
     assert is_available(.hs256)
     assert is_available(.eddsa) == keypairs.is_available(.ed25519)

@@ -7,14 +7,14 @@
 # It reads the attestation formats "none", "packed" (self attestation and a
 # certificate's) and "fido-u2f" and verifies them; "apple", "tpm",
 # "android-key" and "android-safetynet" are read, kept and said unverified.
-# A credential's key is a COSE key, checked by the system's own
-# cryptography through `crypto/keypairs`: ES256 and RS256 everywhere,
-# ES384, PS256 to PS512 and RS384 to RS512, and EdDSA where the system has
-# Ed25519 (not macOS). It does not check an attestation's certificates to a
-# root, nor read the FIDO Metadata Service: `x509` and `jose` stand above
-# it, and `Registration.certificates` and `Registration.aaguid` are what a
-# program hands them. It keeps no session: the program keeps the challenge
-# it sent and the credentials it registered.
+# A credential's key is a COSE key, checked through `crypto/keypairs` by
+# the system's own cryptography, and by Monocypher for Ed25519 on macOS:
+# ES256 and RS256 everywhere, ES384, PS256 to PS512 and RS384 to RS512, and
+# EdDSA where the platform has Ed25519 (not Windows). It does not check an
+# attestation's certificates to a root, nor read the FIDO Metadata Service:
+# `x509` and `jose` stand above it, and `Registration.certificates` and
+# `Registration.aaguid` are what a program hands them. It keeps no session:
+# the program keeps the challenge it sent and the credentials it registered.
 #
 # It fails with `invalid`, where a response is not well formed or does not
 # verify, the message saying which check; `unsupported`, where a key's
@@ -45,7 +45,7 @@ constant INVALID: str
     codes.INVALID
 
 # The code of a key whose algorithm or curve this system's cryptography
-# lacks: EdDSA on macOS and Windows, ES512 everywhere; `parse_public_key`,
+# lacks: EdDSA on Windows, ES512 everywhere; `parse_public_key`,
 # `verify_signature` and the `verify_*` functions answer it.
 constant UNSUPPORTED: str
     codes.UNSUPPORTED

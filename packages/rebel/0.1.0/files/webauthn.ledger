@@ -104,7 +104,7 @@ capability webauthn/cose-key  a COSE key read: its algorithm, its kind, its key 
   go      webauthncose.ParsePublicKey, webauthncose.EC2PublicKeyData, webauthncose.RSAPublicKeyData, webauthncose.OKPPublicKeyData, webauthncose.COSEAlgorithmIdentifier
   rust    -
   python  webauthn.helpers.decode_credential_public_key, webauthn.helpers.cose.COSEAlgorithmIdentifier, webauthn.helpers.cose.COSEKTY, webauthn.helpers.cose.COSECRV
-  note    written as SubjectPublicKeyInfo by a DER writer of its own, `asn1` standing at this package's layer; ES512 is `unsupported` (no P-521 in `crypto/keypairs`), EdDSA `unsupported` on macOS (measured: the recorded EdDSA registration answers so here); RS1 (SHA-1) refused as no key's algorithm
+  note    written as SubjectPublicKeyInfo by a DER writer of its own, `asn1` standing at this package's layer; ES512 is `unsupported` (no P-521 in `crypto/keypairs`), EdDSA `unsupported` on Windows, whose CNG has no Ed25519, and computed on macOS by Monocypher, which the runtime vendors, since 2026-11-20 (measured: the recorded EdDSA registration verified on this Mac 2026-11-20, through `verify_registration` and `webauthn/internal/flow`'s test); RS1 (SHA-1) refused as no key's algorithm
 
 capability webauthn/signature  a signature checked against a COSE key
   heroes  webauthn.verify_signature

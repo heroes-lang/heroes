@@ -90,7 +90,8 @@ function associated(name: str) -> [u8]
 
 # `value` sealed for the cookie `name` under `ring[0]`, valid before
 # `expires`, in Unix seconds: the end's decimal, `.`, the value, sealed, in
-# URL-safe base 64. Fails as `seal.seal` does, `unsupported` on macOS.
+# URL-safe base 64. Fails as `seal.seal` does, `unsupported` on a Linux
+# machine with no `libcrypto.so.3`.
 function seal_value(ring: [seal.Key], name: str, value: str, expires: i64) -> str?
     sealed = seal.seal(ring[0], text: bytes.from_text(f"{expires}.{value}"), associated: associated(name))?
     return ok(bytes.format_base64_url_unpadded(sealed))
@@ -153,7 +154,7 @@ test "verify fails invalid: another name, another key, a byte changed, its end c
             .ok _  => assert false
             .err e => assert e.code == INVALID
 
-test "seal_value and open_value: read back with a second key on a machine that seals; unsupported on macOS"
+test "seal_value and open_value: read back with a second key on a machine that seals; unsupported on one that does not"
     if !seal.is_available(.aes_256_gcm)
         match seal.generate(.aes_256_gcm)
             .ok _  => assert false

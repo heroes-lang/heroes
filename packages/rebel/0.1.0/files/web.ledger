@@ -506,7 +506,7 @@ capability cookie/sealed  a cookie's value encrypted and authenticated, its end 
   go      -
   rust    -
   python  -
-  note    sealed by `crypto/seal` (AES-GCM or ChaCha20-Poly1305 of the system), the name authenticated beside it, the first key sealing and any opening, where gorilla/securecookie encrypts with AES-CTR then signs with HMAC; on macOS `crypto/seal` has no cipher and every seal fails `unsupported`, so a program there signs
+  note    sealed by `crypto/seal` (AES-GCM or ChaCha20-Poly1305 of the system), the name authenticated beside it, the first key sealing and any opening, where gorilla/securecookie encrypts with AES-CTR then signs with HMAC; where `crypto/seal` has no cipher, a Linux machine with no `libcrypto.so.3`, every seal fails `unsupported`, and a program there signs (`cookie/signed`). On macOS CryptoKit seals since 2026-11-20: a value sealed, read back before its end and refused at it on this Mac 2026-11-20 (`web`'s own tests)
 
 capability session/cookie  a session's values kept in a signed or sealed cookie
   heroes  web.Session, web.new_session, web.session_of, web.with_session
@@ -569,7 +569,7 @@ capability webhook/standard-asymmetric  webhooks signed and verified with Ed2551
   go      -
   rust    -
   python  -
-  note    the specification's optional asymmetric form; it would stand on `crypto/keypairs`'s Ed25519, which the system's cryptography offers on Linux alone (macOS offers it to Swift alone, Windows not at all), so it waits for an Ed25519 that runs on every platform
+  note    the specification's optional asymmetric form; it would stand on `crypto/keypairs`'s Ed25519, which computes on Linux (OpenSSL 3) and on macOS (Monocypher, which the runtime vendors, since 2026-11-20) and not on Windows, whose CNG has none, so it waits for an Ed25519 that runs on every platform
 
 dropped  a context, an interface, a handler type or an error type: the language has none (README § A4, § B3)
   go      echo.Context and its Get, Set, Request, SetRequest, Response, Logger, Echo, Reset, echo.Response, echo.Map, echo.Echo.NewContext, AcquireContext, ReleaseContext, echo.WrapHandler, WrapMiddleware, gin.Context.Copy, Keys, Errors, Error, gin.WrapF, WrapH, gin.HandlerFunc, chi.RouteContext, chi.NewRouteContext, chi.Context, echo.Echo.Validator, Binder, JSONSerializer, IPExtractor as fields

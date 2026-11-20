@@ -92,7 +92,7 @@ capability x509/check-signature  a signature checked against a key: a certificat
   go      x509.Certificate.CheckSignature, x509.Certificate.CheckSignatureFrom
   rust    webpki::EndEntityCert::verify_signature
   python  x509.Certificate.verify_directly_issued_by
-  note    by `keypairs.verify_der`, the system's own cryptography: RSA PKCS #1 v1.5 and PSS over SHA-2, ECDSA over P-256 and P-384, Ed25519. Ed25519 is `unsupported` on macOS and Windows, which lack it for C (crypto/keypairs, 2026-11-17): the samples' Ed25519 certificate is checked on Linux and refused saying so here. SHA-1 and SHA-224 are `unsupported`, as `crypto/keypairs` offers neither
+  note    by `keypairs.verify_der`, the system's own cryptography, and Monocypher's for Ed25519 on macOS since 2026-11-20: RSA PKCS #1 v1.5 and PSS over SHA-2, ECDSA over P-256 and P-384, Ed25519. Ed25519 is `unsupported` on Windows, whose CNG lacks it (crypto/keypairs): the samples' Ed25519 certificate is checked on Linux, and on this Mac since 2026-11-20 (`is_signed_by`, measured that day), and where the kind is lacking the test asks `unsupported`. SHA-1 and SHA-224 are `unsupported`, as `crypto/keypairs` offers neither
 
 capability x509/extensions  every extension read as written, unknown ones kept with their criticality, one found by its identifier
   heroes  x509.Extension, x509.Extensions, x509.to_extension, x509.to_extensions, x509.extension_of

@@ -72,7 +72,7 @@ capability keyring/protect  data encrypted so that only this user (or this machi
   rust    -
   python  -
   dotnet  ProtectedData.Protect, ProtectedData.Unprotect, ProtectedData.TryProtect, ProtectedData.TryUnprotect, DataProtectionScope.CurrentUser, DataProtectionScope.LocalMachine
-  note    Windows' data protection (`CryptProtectData`) has no call of its own on macOS or Linux, where the same capability is a key kept in the keyring and a cipher of the system's; `keyring` stands on the layer below `crypto/seal` and may not use it, and `crypto/seal` is pending on macOS (its ledger: no AES-GCM reachable from C there). So it waits for a package above both, `keyring` holding the key and `crypto/seal` the cipher, rather than three schemes written here; .NET itself answers `PlatformNotSupportedException` off Windows (Microsoft's reference)
+  note    Windows' data protection (`CryptProtectData`) has no call of its own on macOS or Linux, where the same capability is a key kept in the keyring and a cipher of the system's; `keyring` stands on the layer below `crypto/seal` and may not use it. So it waits for a package above both, `keyring` holding the key and `crypto/seal` the cipher, rather than three schemes written here; .NET itself answers `PlatformNotSupportedException` off Windows (Microsoft's reference)
 
 capability keyring/choose-store  another store chosen instead of the system's: a file, a database, the kernel's keys, a mock for tests
   heroes  refused: a machine has one keyring, and this package reaches it; a store of the program's own is a file the program writes, and a test runs against the real keyring under a service of its own that it removes, as this package's tests do

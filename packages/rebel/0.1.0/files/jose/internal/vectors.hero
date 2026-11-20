@@ -3,8 +3,8 @@
 # each figure written here as compact JSON, generated from the RFC's text by
 # reading its figures and writing them again with no white space, so no
 # value is copied by hand. What a platform lacks (P-521 everywhere, Ed25519
-# and AES-GCM on macOS) is asked to fail `unsupported`, and runs where the
-# platform has it.
+# on Windows) is asked to fail `unsupported`, and runs where the platform
+# has it.
 
 use bytes
 use jose/internal/compact

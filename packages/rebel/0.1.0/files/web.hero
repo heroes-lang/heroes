@@ -58,8 +58,9 @@
 # (a reverse proxy), and HTTP sent to HTTPS or a host to its `www.` form.
 #
 # The codes it fails with: `invalid`, `not_found`, `exists`, `not_text`,
-# `limit` (a cookie too long), `unsupported` (a cookie sealed on macOS), and,
-# from the connection, `closed`, `timeout`, `stopped`, `limit` and `failed`.
+# `limit` (a cookie too long), `unsupported` (a cookie sealed on a Linux
+# machine with no `libcrypto.so.3`), and, from the connection, `closed`,
+# `timeout`, `stopped`, `limit` and `failed`.
 
 use bytes
 use compress
@@ -1414,8 +1415,8 @@ function verify_value(ring: [[u8]], name: str, signed: str, now: time.Instant) -
 # - `value`: any text.
 # - `expires`: the instant from which `open_value` refuses it.
 #
-# URL-safe base 64. Fails as `seal.seal` does: `unsupported` on macOS, whose
-# system offers no such cipher. See also `open_value`.
+# URL-safe base 64. Fails as `seal.seal` does: `unsupported` on a Linux
+# machine with no `libcrypto.so.3`. See also `open_value`.
 function seal_value(ring: [seal.Key], name: str, value: str, expires: time.Instant) -> str?
     assert ring.len() > 0
     return signing.seal_value(ring, name: name, value: value, expires: time.unix_seconds(expires))
@@ -2898,7 +2899,7 @@ test "without_cookie: an empty value, Max-Age=0, an end in 1970"
     field = http.value_of(got.headers, name: "Set-Cookie").must()
     assert strings.has_prefix(s: field, prefix: "s=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT") && strings.has_suffix(s: field, suffix: "; Max-Age=0")
 
-test "seal_value and open_value through the face: unsupported on macOS, read back elsewhere"
+test "seal_value and open_value through the face: read back before its end and refused at it, where the platform seals"
     now = fixture.clock().must()
     later = time.add(now, d: time.seconds(60).must()).must()
 

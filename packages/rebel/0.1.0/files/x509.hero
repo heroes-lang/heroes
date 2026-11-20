@@ -15,8 +15,7 @@
 # RSA-PSS over SHA-256, SHA-384 and SHA-512 (PSS with MGF1 over the same hash
 # and a salt as long as it), ECDSA on P-256 and P-384 over SHA-256 and
 # SHA-384, and Ed25519. Any other algorithm fails `unsupported`, SHA-1's
-# among them, and so does Ed25519 on macOS and Windows, whose own
-# cryptography lacks it for a program in C (measured 2026-11-17, see
+# among them, and so does Ed25519 on Windows, whose CNG lacks it (see
 # `crypto/keypairs`).
 #
 # **A moment is a `time.DateTime`**, so RFC 5280's `99991231235959Z`, the
@@ -377,8 +376,8 @@ function kind_of(key: PublicKey) -> keypairs.Kind?
 #
 # False, never a failure, for a signature that does not hold. Fails as
 # `scheme_of` does, `invalid` where the key is not of the algorithm's kind,
-# and `unsupported` where this platform lacks the kind (Ed25519 on macOS and
-# Windows). See also `is_signed_by`, `keypairs.verify_der`.
+# and `unsupported` where this platform lacks the kind (Ed25519 on Windows).
+# See also `is_signed_by`, `keypairs.verify_der`.
 function verify_signature(key: PublicKey, algorithm: Algorithm, message: [u8], signature: [u8]) -> bool?
     scheme = scheme_of(algorithm)?
     return keypairs.verify_der(public_der: key.der, scheme: scheme, message: message, signature: signature)
