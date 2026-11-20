@@ -38,7 +38,7 @@ capability idna/registration  IDNA 2008's own validity for a name being register
   go      -
   rust    -
   python  -
-  note    UTS #46 is the processing for looking a name up; a registry holds a label to IDNA 2008's stricter table, which refuses what UTS #46's mapping table marks NV8 and XV8, and to the CONTEXTO rules of RFC 5892's Appendix A.3 to A.9 (the middle dot, the Greek keraia, Hebrew geresh and gershayim, the Katakana middle dot, the two kinds of Arabic-Indic digits), which read the script of a character, a table this package does not carry. PyPI's `idna` does it by default, Go's x/net in `Registration`
+  note    UTS #46 is the processing for looking a name up; a registry holds a label to IDNA 2008's stricter table, which refuses what UTS #46's mapping table marks NV8 and XV8, and to the CONTEXTO rules of RFC 5892's Appendix A.3 to A.9 (the middle dot, the Greek keraia, Hebrew geresh and gershayim, the Katakana middle dot, the two kinds of Arabic-Indic digits), which read the script of a character, a table this package does not carry: `unicode/names.script` holds it, at layer 1, and this package stands at the same layer, so the route opens once `url/idna` moves to layer 2 (the coherence review's D17, waiting on the author). PyPI's `idna` does it by default, Go's x/net in `Registration`
 
 capability idna/version  the version of Unicode the tables hold
   heroes  url/idna.UNICODE_VERSION

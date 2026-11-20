@@ -10,7 +10,13 @@
 # carry.
 #
 # A number is handed and answered as decimal text, `-1234.5`, `1e21`, so that
-# no digit is lost to a float: `to_str` writes an `f64` or an `i64` so. It
+# no digit is lost to a float: `to_str` writes an `f64` or an `i64` so.
+#
+# `use <rebel>/i18n/numbers` binds the name `numbers`, which `use
+# <rebel>/numbers` binds too, and the compiler refuses a file that binds one
+# name twice (`module_binding_taken`): a program that uses both writes `use
+# <rebel>/i18n/numbers as i18n_numbers`. The two share `format_int` and
+# `format_percent`, here in a language's way and there in C's. It
 # fails `invalid` where a number, a pattern or a text to read is not what the
 # function reads, and `not_found` where a numbering system or a currency is
 # unknown.
@@ -296,7 +302,8 @@ function format_decimal(locale: i18n.Locale, number: str) -> str?
 # - `locale`: the locale.
 # - `n`: the number, `i64`'s least included.
 #
-# See also `format_decimal`.
+# See also `format_decimal`; `numbers.format_int` writes `n` with no
+# grouping, in a base, as C and a program's own text write it.
 function format_int(locale: i18n.Locale, n: i64) -> str
     return format_number(locale, number: to_str(n), options: number_options(.decimal)).must()
 
@@ -307,7 +314,8 @@ function format_int(locale: i18n.Locale, n: i64) -> str
 # - `number`: the fraction as decimal text; 1 is a hundred percent.
 #
 # Fails `invalid` where `number` is not decimal text. See also
-# `format_number`.
+# `format_number`; `numbers.format_percent` writes an `f64` times 100 with
+# the digits asked and a `%`, "12.5%", in no language's way.
 function format_percent(locale: i18n.Locale, number: str) -> str?
     return format_number(locale, number: number, options: number_options(.percent))
 

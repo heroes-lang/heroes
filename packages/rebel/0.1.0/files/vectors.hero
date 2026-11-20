@@ -1,12 +1,14 @@
 # Vectors of `f32` compared and searched: the dot product, the cosine, the
 # euclidean and manhattan distances, a vector normalized, added or averaged,
-# the k nearest of a list found by exact search, and an HNSW index in memory
+# the nearest of a list found by exact search, and an HNSW index in memory
 # that finds them fast, deterministic from its seed and saved as bytes.
 #
 # A vector is a `[f32]`, as hnswlib, faiss and pgvector hold one, and every
 # sum is taken in `f64` over products that are exact there, then rounded once
 # to `f32`: an answer may differ from faiss's or numpy's, which sum in `f32`,
-# in its last bits. Matrices and arrays of more dimensions are not held. The
+# in its last bits. Matrices and arrays of more dimensions are not held here:
+# vectors of two, three and four `f64`, their matrices and quaternions,
+# the geometry of games and of the screen, are `math/linear`'s. The
 # numbers the vectors are made of come from elsewhere: `random` draws them,
 # `json` reads them, `numbers.f32_to_f16_bits` halves their precision. A text
 # is searched by its words in `search`.
@@ -340,29 +342,29 @@ record Neighbor
     # Its distance from the query, as the search's metric measures it.
     distance: f32
 
-# The `k` vectors of `vectors` nearest to `query`, the nearest first, by
-# measuring every one: faiss's `IndexFlat`.
+# The `limit` vectors of `vectors` nearest to `query`, the nearest first,
+# by measuring every one: faiss's `IndexFlat`.
 #
 # - `query`: the vector searched from, its components finite.
 # - `vectors`: the vectors searched, each as long as `query`, with finite
 #   components.
-# - `k`: how many to answer, 0 or more; fewer are answered where `vectors`
-#   holds fewer, and 0 answers none.
+# - `limit`: how many to answer, 0 or more; fewer are answered where
+#   `vectors` holds fewer, and 0 answers none.
 # - `metric`: the measure.
 #
 # Vectors at one distance come in the order of their index. Fails `invalid`
 # where a length differs from the query's, a component is a nan or an
-# infinity, `k` is below 0, or under `.cosine` a vector is all zeros. It
-# costs the count of `vectors` times their length, and the logarithm of `k`
-# for each. See also `within`, `search`.
-function nearest(query: [f32], vectors: [[f32]], k: i64, metric: Metric) -> [Neighbor]?
+# infinity, `limit` is below 0, or under `.cosine` a vector is all zeros.
+# It costs the count of `vectors` times their length, and the logarithm of
+# `limit` for each. See also `within`, `search`.
+function nearest(query: [f32], vectors: [[f32]], limit: i64, metric: Metric) -> [Neighbor]?
     code = match metric
         .euclidean     => codes.EUCLIDEAN
         .cosine        => codes.COSINE
         .inner_product => codes.INNER_PRODUCT
         .manhattan     => codes.MANHATTAN
 
-    found = exact.nearest(query, vectors, k: k, metric: code)?
+    found = exact.nearest(query, vectors, k: limit, metric: code)?
     out: [Neighbor] @= []
 
     for at in range(from: 0, to: found.indices.len())
@@ -531,46 +533,46 @@ function restore(@index: Index, id: i64) -> ()?
     graph.mark(@index.graph, node: node, removed: false)
     return ok()
 
-# The `k` vectors of `index` nearest to `query` as its walk finds them, the
-# nearest first.
+# The `limit` vectors of `index` nearest to `query` as its walk finds them,
+# the nearest first.
 #
 # - `index`: the index searched.
 # - `query`: as long as the index's dimension, with finite components; under
 #   `.cosine` not all zeros.
-# - `k`: how many to answer, 0 or more; fewer where the index holds fewer.
+# - `limit`: how many to answer, 0 or more; fewer where the index holds fewer.
 # - `ef`: how many candidates the walk keeps on the lowest layer, 1 or more,
-#   hnswlib's `ef`; below `k` it is taken as `k`. More find more of the true
-#   nearest, more slowly.
+#   hnswlib's `ef`; below `limit` it is taken as `limit`. More find more of
+#   the true nearest, more slowly.
 #
 # Vectors at one distance come in the order of their ids. Fails `invalid`
 # where the query's length is not the dimension, a component is a nan or an
-# infinity, under `.cosine` it is all zeros, `k` is below 0 or `ef` below 1.
-# See also `search_where`, `nearest`.
-function search(index: Index lent, query: [f32], k: i64, ef: i64) -> [Neighbor]?
-    return search_where(index, query, k: k, ef: ef, accepts: walk.every)
+# infinity, under `.cosine` it is all zeros, `limit` is below 0 or `ef`
+# below 1. See also `search_where`, `nearest`.
+function search(index: Index lent, query: [f32], limit: i64, ef: i64) -> [Neighbor]?
+    return search_where(index, query, limit: limit, ef: ef, accepts: walk.every)
 
-# The `k` vectors of `index` nearest to `query` among those whose id
+# The `limit` vectors of `index` nearest to `query` among those whose id
 # `accepts` takes, as `search` finds them: a filter on what the program
 # knows of each vector.
 #
 # - `index`: the index searched.
 # - `query`: as `search` takes it.
-# - `k`: how many to answer, 0 or more.
+# - `limit`: how many to answer, 0 or more.
 # - `ef`: how many candidates the walk keeps, 1 or more; where `accepts`
-#   takes few ids, more are needed to find `k`.
+#   takes few ids, more are needed to find `limit`.
 # - `accepts`: called with the id of each vector the walk reaches that is
 #   not removed, at most once each; true keeps it among the answers. The
 #   walk goes through the vectors it refuses all the same.
 #
 # Fails `invalid` as `search` does. See also `search`.
-function search_where(index: Index lent, query: [f32], k: i64, ef: i64, accepts: (function(i64) -> bool)) -> [Neighbor]?
-    if k < 0
-        return fail(code: codes.INVALID, msg: f"k is {k}, where a search answers 0 vectors or more")
+function search_where(index: Index lent, query: [f32], limit: i64, ef: i64, accepts: (function(i64) -> bool)) -> [Neighbor]?
+    if limit < 0
+        return fail(code: codes.INVALID, msg: f"a limit of {limit}, where a search answers 0 vectors or more")
 
     if ef < 1
         return fail(code: codes.INVALID, msg: f"ef is {ef}, where a search keeps 1 candidate or more")
     held = walk.admit(index.graph, vector: query, what: "the query")?
-    found = walk.search(index.graph, query: held, k: k, ef: ef, accepts: accepts, filtered: accepts != walk.every)
+    found = walk.search(index.graph, query: held, k: limit, ef: ef, accepts: accepts, filtered: accepts != walk.every)
     out: [Neighbor] @= []
 
     for at in range(from: 0, to: found.ids.len())
@@ -792,32 +794,32 @@ test "remove and restore: ids the index never held"
 
     assert restore(@index, id: 3).is_err()
 
-test "search: an empty index, k of zero, k and ef out of range, and a query too long"
+test "search: an empty index, a limit of zero, a limit and ef out of range, and a query too long"
     index @= new_index(dimension: 2, metric: .euclidean, options: default_options()).must()
-    assert search(index, query: [1.0, 1.0], k: 5, ef: 5).must() == []
+    assert search(index, query: [1.0, 1.0], limit: 5, ef: 5).must() == []
     insert(@index, id: 1, vector: [1.0, 1.0]).must()
-    assert search(index, query: [1.0, 1.0], k: 0, ef: 5).must() == []
-    assert search(index, query: [1.0, 1.0], k: -1, ef: 5).is_err()
-    assert search(index, query: [1.0, 1.0], k: 1, ef: 0).is_err()
-    assert search(index, query: [1.0, 1.0, 1.0], k: 1, ef: 5).is_err()
-    assert search(index, query: [1.0, 1.0], k: 9, ef: 1).must() == [Neighbor(id: 1, distance: 0.0)]
+    assert search(index, query: [1.0, 1.0], limit: 0, ef: 5).must() == []
+    assert search(index, query: [1.0, 1.0], limit: -1, ef: 5).is_err()
+    assert search(index, query: [1.0, 1.0], limit: 1, ef: 0).is_err()
+    assert search(index, query: [1.0, 1.0, 1.0], limit: 1, ef: 5).is_err()
+    assert search(index, query: [1.0, 1.0], limit: 9, ef: 1).must() == [Neighbor(id: 1, distance: 0.0)]
 
 test "search: the cosine and the inner product answer their distances"
     cosine @= new_index(dimension: 2, metric: .cosine, options: default_options()).must()
     insert(@cosine, id: 1, vector: [2.0, 0.0]).must()
     insert(@cosine, id: 2, vector: [0.0, 3.0]).must()
-    assert search(cosine, query: [5.0, 0.0], k: 2, ef: 8).must() == [Neighbor(id: 1, distance: 0.0), Neighbor(id: 2, distance: 1.0)]
-    assert search(cosine, query: [0.0, 0.0], k: 1, ef: 8).is_err()
+    assert search(cosine, query: [5.0, 0.0], limit: 2, ef: 8).must() == [Neighbor(id: 1, distance: 0.0), Neighbor(id: 2, distance: 1.0)]
+    assert search(cosine, query: [0.0, 0.0], limit: 1, ef: 8).is_err()
     product @= new_index(dimension: 2, metric: .inner_product, options: default_options()).must()
     insert(@product, id: 1, vector: [1.0, 0.0]).must()
     insert(@product, id: 2, vector: [3.0, 3.0]).must()
-    assert search(product, query: [1.0, 1.0], k: 1, ef: 8).must() == [Neighbor(id: 2, distance: -6.0)]
+    assert search(product, query: [1.0, 1.0], limit: 1, ef: 8).must() == [Neighbor(id: 2, distance: -6.0)]
 
 test "search_where: every id refused answers none"
     index @= new_index(dimension: 1, metric: .euclidean, options: default_options()).must()
     insert(@index, id: 3, vector: [1.0]).must()
     insert(@index, id: 5, vector: [3.0]).must()
-    assert search_where(index, query: [1.0], k: 2, ef: 8, accepts: math.is_power_of_two).must() == []
+    assert search_where(index, query: [1.0], limit: 2, ef: 8, accepts: math.is_power_of_two).must() == []
 
 test "metric_of: each metric back"
     for_metric = new_index(dimension: 1, metric: .euclidean, options: default_options()).must()
@@ -836,7 +838,7 @@ test "compact: the same answers for the vectors kept, and an empty index"
 
     again = compact(index)
     assert ids_of(again) == ids_of(index) && size(again) == 30
-    assert search(again, query: [3.0, 3.0], k: 5, ef: 32).must() == search(index, query: [3.0, 3.0], k: 5, ef: 32).must()
+    assert search(again, query: [3.0, 3.0], limit: 5, ef: 32).must() == search(index, query: [3.0, 3.0], limit: 5, ef: 32).must()
     assert size(compact(new_index(dimension: 1, metric: .euclidean, options: default_options()).must())) == 0
 
 test "to_bytes and from_bytes: the same index back, every cut refused, and another format"
@@ -940,7 +942,7 @@ test "nearest: two of four points"
     found = nearest(
         query: [0.0, 0.0],
         vectors: [[3.0, 4.0], [1.0, 0.0], [0.0, 2.0], [9.0, 9.0]],
-        k: 2,
+        limit: 2,
         metric: .euclidean
     ).must()
     assert found == [Neighbor(id: 1, distance: 1.0), Neighbor(id: 2, distance: 2.0)]
@@ -970,7 +972,7 @@ test "insert: three points, then the nearest"
     insert(@index, id: 10, vector: [0.0, 0.0]).must()
     insert(@index, id: 20, vector: [5.0, 5.0]).must()
     insert(@index, id: 30, vector: [1.0, 1.0]).must()
-    assert search(index, query: [4.0, 4.0], k: 1, ef: 10).must()[0].id == 20
+    assert search(index, query: [4.0, 4.0], limit: 1, ef: 10).must()[0].id == 20
 
 # A point removed is no longer found.
 test "remove: a point no longer found"
@@ -978,7 +980,7 @@ test "remove: a point no longer found"
     insert(@index, id: 1, vector: [0.0, 0.0]).must()
     insert(@index, id: 2, vector: [1.0, 1.0]).must()
     remove(@index, id: 2).must()
-    assert search(index, query: [1.0, 1.0], k: 1, ef: 10).must()[0].id == 1
+    assert search(index, query: [1.0, 1.0], limit: 1, ef: 10).must()[0].id == 1
 
 # A point removed, then restored.
 test "restore: a point found again"
@@ -995,7 +997,7 @@ test "search: the two nearest of four points"
     insert(@index, id: 2, vector: [1.0, 0.0]).must()
     insert(@index, id: 3, vector: [0.0, 2.0]).must()
     insert(@index, id: 4, vector: [9.0, 9.0]).must()
-    found = search(index, query: [0.0, 0.0], k: 2, ef: 16).must()
+    found = search(index, query: [0.0, 0.0], limit: 2, ef: 16).must()
     assert found == [Neighbor(id: 2, distance: 1.0), Neighbor(id: 3, distance: 2.0)]
 
 # The nearest among the ids a function of the program accepts, here the
@@ -1006,7 +1008,7 @@ test "search_where: the nearest id that is a power of two"
     for id in range(from: 3, to: 9)
         insert(@index, id: id, vector: [to_f32(to_f64(id))]).must()
 
-    assert search_where(index, query: [7.0], k: 1, ef: 10, accepts: math.is_power_of_two).must()[0].id == 8
+    assert search_where(index, query: [7.0], limit: 1, ef: 10, accepts: math.is_power_of_two).must()[0].id == 8
 
 # How many vectors an index holds.
 test "size: two vectors, one removed"
