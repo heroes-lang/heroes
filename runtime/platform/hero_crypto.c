@@ -20,13 +20,13 @@
  * `OPENSSL_NO_DEPRECATED`, every capability exercised and checked back:
  *
  *   capability                  macOS 27.2           Linux (OpenSSL 3.5.7)   Windows (CNG)
- *   AES-128/256-GCM             no (1)               EVP_aes_*_gcm           BCrypt AES + GCM (3)
- *   ChaCha20-Poly1305           no (1)               EVP_chacha20_poly1305   BCrypt CHACHA20_POLY1305 (3)
- *   Ed25519 sign, verify        no (2)               EVP_DigestSign          no algorithm (3)
+ *   AES-128/256-GCM             CryptoKit (1)        EVP_aes_*_gcm           BCrypt AES + GCM (3)
+ *   ChaCha20-Poly1305           CryptoKit (1)        EVP_chacha20_poly1305   BCrypt CHACHA20_POLY1305 (3)
+ *   Ed25519 sign, verify        Monocypher (2)       EVP_DigestSign          no algorithm (3)
  *   ECDSA P-256, P-384          SecKeyCreateSignature EVP_DigestSign          BCryptSignHash (3)
  *   RSA-PSS, PKCS #1 v1.5       SecKeyCreateSignature EVP_DigestSign          BCryptSignHash (3)
  *   RSA-OAEP                    SecKeyCreateEncryptedData EVP_PKEY_encrypt   BCryptEncrypt (3)
- *   X25519                      no (2)               EVP_PKEY_derive         curve25519, unmeasured (4)
+ *   X25519                      Monocypher (2)       EVP_PKEY_derive         curve25519, unmeasured (4)
  *   ECDH P-256, P-384           SecKeyCopyKeyExchangeResult EVP_PKEY_derive  BCryptSecretAgreement (3)
  *   key generation              SecKeyCreateRandomKey EVP_PKEY_generate      BCryptGenerateKeyPair (3)
  *   PKCS #8 private, DER        no (5)               i2d/d2i PKCS8           no (5)
@@ -35,9 +35,17 @@
  *
  *   (1) CommonCrypto's public modes are ECB, CBC, CFB, CTR, OFB, RC4 and
  *       CFB8 (`CommonCryptor.h`); its GCM is in a private header the SDK
- *       does not ship. CryptoKit has both ciphers and is Swift's alone.
+ *       does not ship. CryptoKit has both ciphers and is Swift's alone, so
+ *       since 2026-11-20 the layer holds a member written in Swift for them,
+ *       `hero_crypto_cryptokit.swift` (panel 253's R3, the mixed route;
+ *       `selfhost/cli/layer_swift.hero` compiles it on an Apple target).
  *   (2) `SecKey` takes RSA and the NIST curves (`kSecAttrKeyType*`), no
- *       Curve25519 key; CryptoKit's `Curve25519` is Swift's alone.
+ *       Curve25519 key; CryptoKit's `Curve25519` is Swift's alone and its
+ *       Ed25519 signs differently every time, never RFC 8032's bytes (panel
+ *       253's ffi-pragmatist and critic, each by a build). So since
+ *       2026-11-20 both are Monocypher 4.0.3's, vendored and compiled inside
+ *       this member (THE APPLE ARM; decision 2594 admits a vendored C
+ *       library for primitives that read no outside data).
  *   (3) From CNG's documentation, read 2026-11-17: ChaCha20-Poly1305 is
  *       listed from Windows 10, no identifier names Ed25519 or EdDSA. The
  *       Windows box was off: every Windows line is unrun.
@@ -70,9 +78,10 @@
  * THE LIBRARIES ARE LINKED BY THE MEMBER ITSELF, as `hero_tls.c` links
  * its own: on Windows `bcrypt` by `#pragma comment(lib)`, on macOS the
  * Security and CoreFoundation frameworks by a `.linker_option` the object
- * carries, and on Linux nothing, since `libcrypto.so.3` is opened with
- * `dlopen` at the first call that needs it. A program that never calls
- * this member links none of them.
+ * carries, and CryptoKit, Foundation and the Swift runtime by the entries the
+ * CryptoKit member's Swift object carries; on Linux nothing, since
+ * `libcrypto.so.3` is opened with `dlopen` at the first call that needs it.
+ * A program that never calls this member links none of them.
  *
  * MEMORY. Every block is the layer's (`hero_layer_alloc.h`, given by
  * `parts/alloc.c`, the single allocation point); a block that is not there
@@ -82,7 +91,9 @@
  * Written from the platforms' documentation: Apple's headers for the
  * Security framework and CommonCrypto, OpenSSL's manual pages, the Win32
  * reference for CNG; RFC 5208, 5280, 5915, 5958, 8017 and 8410 for the
- * forms; no other library's source.
+ * forms; Monocypher's manual pages for the five functions the Apple arm
+ * calls, whose source is compiled in as released, not one byte edited
+ * (`runtime/vendor/monocypher/README.md`); no other library's source.
  */
 
 #include "hero_crypto.h"
@@ -111,6 +122,7 @@
 #define BCRYPT_CHACHA20_POLY1305_ALGORITHM L"CHACHA20_POLY1305"
 #endif
 #elif defined(__APPLE__)
+#include "hero_crypto_cryptokit.h"
 #include <CoreFoundation/CoreFoundation.h>
 #include <Security/Security.h>
 #include <pthread.h>
@@ -925,14 +937,18 @@ typedef struct hero_crypto_held {
     bool is_public;
     /* How many texts the key has sealed, under the table's lock. */
     uint64_t sealed;
-    /* A secret key's bytes. */
+    /* A secret key's bytes; on macOS also an Ed25519 or X25519 private
+     * key's 32, which Monocypher computes with. */
     hero_crypto_blob secret;
     /* An RSA key's modulus, as many bytes as a signature has, which every
      * check of a signature holds the signature below. */
     hero_crypto_blob modulus;
 #if defined(__APPLE__)
-    /* The pair's half `SecKeyCreate*` made. */
+    /* The pair's half `SecKeyCreate*` made: RSA, P-256 and P-384. */
     SecKeyRef key;
+    /* An Ed25519 or X25519 key's public 32 bytes, Monocypher's answer for
+     * a private key, private or public alike. */
+    unsigned char curve_public[32];
 #elif defined(_WIN32)
     /* The pair's fields, from which each call makes CNG's blob for the
      * algorithm it runs: an EC key is one blob for ECDSA and another for
@@ -1897,10 +1913,116 @@ int64_t hero_crypto_decrypt(hero_crypto_key *k, int64_t scheme, const void *data
  * A key is a `SecKeyRef` made by `SecKeyCreateRandomKey` or
  * `SecKeyCreateWithData` and kept in no keychain. `SecKeyCreateWithData`
  * reads an RSA key as PKCS #1 and an EC key as X9.63's `04 || X || Y [||
- * K]`, which THE FORMS build from the material. Sealing, Ed25519 and X25519
- * are not here (the opening's table).
+ * K]`, which THE FORMS build from the material.
+ *
+ * ED25519 AND X25519 ARE MONOCYPHER'S, vendored
+ * (`runtime/vendor/monocypher/README.md`; decision 2594): `SecKey` takes no
+ * Curve25519 key, and CryptoKit's Ed25519 signs differently every time, so
+ * it gives neither RFC 8032's signatures nor the deterministic one the face
+ * promises (panel 253's R3).
+ * Its two files are compiled inside this arm, every function and object of
+ * theirs given internal linkage, so this object exports none of their
+ * names and a program binding Monocypher or libsodium itself meets no second
+ * definition (panel 253's R1); the second file's six macros of the same
+ * names as the first's are taken back and its `hash_reduce` renamed, its
+ * bytes untouched. Their unused functions are not compiled in, which is why
+ * their warning is off here alone. The key's 32 private bytes live in the
+ * layer's block (`secret`), overwritten when it is given back, and every
+ * copy this arm makes on its stack is overwritten before it returns.
  * ========================================================================== */
 #if defined(__APPLE__)
+
+/* `<sys/param.h>`, which `Security.h` includes, defines `MIN` and `MAX` as
+ * Monocypher does: the SDK's are kept aside and given back after it. */
+#pragma push_macro("MIN")
+#pragma push_macro("MAX")
+#undef MIN
+#undef MAX
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+/* The attribute stands on each name's first declaration, the headers', the
+ * one object `crypto_argon2_no_extras` among them; over the sources it takes
+ * functions alone, since an object subject there would also reach a
+ * `static` inside a function, which clang then names as a file's object
+ * nobody defines (`base_point`, `half_mod_L`: undefined at the link,
+ * measured on this Mac). */
+#pragma clang attribute push(__attribute__((internal_linkage)), apply_to = any(function, variable(is_global)))
+#include "vendor/monocypher/monocypher.h"
+#include "vendor/monocypher/monocypher-ed25519.h"
+#pragma clang attribute pop
+#pragma clang attribute push(__attribute__((internal_linkage)), apply_to = function)
+#include "vendor/monocypher/monocypher.c"
+#undef COPY
+#undef FOR
+#undef MIN
+#undef WIPE_BUFFER
+#undef WIPE_CTX
+#undef ZERO
+#define hash_reduce hero_crypto_monocypher_ed25519_hash_reduce
+#include "vendor/monocypher/monocypher-ed25519.c"
+#undef hash_reduce
+#pragma clang attribute pop
+#pragma clang diagnostic pop
+/* Every macro the two files define, taken back, so none reaches the code
+ * below: `monocypher.c`'s eighteen, the second file's six among them. */
+#undef FOR_T
+#undef FOR
+#undef COPY
+#undef ZERO
+#undef WIPE_CTX
+#undef WIPE_BUFFER
+#undef MIN
+#undef MAX
+#undef QUARTERROUND
+#undef BLAKE2_G
+#undef BLAKE2_ROUND
+#undef LSB
+#undef G
+#undef ROUND
+#undef FE_CARRY
+#undef P_W_WIDTH
+#undef B_W_WIDTH
+#undef P_W_SIZE
+#pragma pop_macro("MAX")
+#pragma pop_macro("MIN")
+
+static bool hero_crypto_is_curve(int64_t kind) {
+    return kind == HERO_CRYPTO_ED25519 || kind == HERO_CRYPTO_X25519;
+}
+
+/* A 25519 key's public half from its 32 private bytes, into
+ * `held->curve_public`: Ed25519's by RFC 8032's key generation (the seed
+ * hashed by SHA-512), X25519's by RFC 7748's base point. */
+static void hero_crypto_curve_public_of(hero_crypto_held *held) {
+    if (held->kind == HERO_CRYPTO_X25519) {
+        crypto_x25519_public_key(held->curve_public, held->secret.bytes);
+        return;
+    }
+    {
+        /* Monocypher wipes the seed it is given and writes the seed and
+         * the public key as its secret key: both copies are the stack's,
+         * overwritten here. */
+        unsigned char seed[32];
+        unsigned char both[64];
+
+        memcpy(seed, held->secret.bytes, 32);
+        crypto_ed25519_key_pair(both, held->curve_public, seed);
+        hero_crypto_wipe(seed, sizeof seed);
+        hero_crypto_wipe(both, sizeof both);
+    }
+}
+
+/* `held`'s 32 private bytes taken from `bytes`, and its public half. */
+static bool hero_crypto_curve_take(hero_crypto_held *held, const unsigned char *bytes) {
+    const unsigned char *parts[] = { bytes };
+    const size_t counts[] = { 32 };
+
+    if (!hero_crypto_join(&held->secret, parts, counts, 1)) {
+        return false;
+    }
+    hero_crypto_curve_public_of(held);
+    return true;
+}
 
 /* A CoreFoundation error said: its code and its description, which the
  * error's owner releases. */
@@ -1943,7 +2065,7 @@ static bool hero_crypto_arm_ready(void) {
 }
 
 static bool hero_crypto_arm_offers(int64_t what) {
-    return what == HERO_CRYPTO_P256 || what == HERO_CRYPTO_P384 || what == HERO_CRYPTO_RSA || (what >= HERO_CRYPTO_SIGN_ECDSA_SHA256 && what <= HERO_CRYPTO_SIGN_RSA_PKCS1_SHA512) || what == HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256;
+    return hero_crypto_is_aead(what) || hero_crypto_is_curve(what) || what == HERO_CRYPTO_P256 || what == HERO_CRYPTO_P384 || what == HERO_CRYPTO_RSA || (what >= HERO_CRYPTO_SIGN_ED25519 && what <= HERO_CRYPTO_SIGN_RSA_PKCS1_SHA512) || what == HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256;
 }
 
 static bool hero_crypto_arm_random(unsigned char *into, size_t count) {
@@ -1985,9 +2107,20 @@ static CFMutableDictionaryRef hero_crypto_cf_attributes(int64_t kind, CFStringRe
 
 static bool hero_crypto_arm_generate(hero_crypto_held *held, int64_t bits) {
     int64_t size = held->kind == HERO_CRYPTO_RSA ? bits : held->kind == HERO_CRYPTO_P256 ? 256 : 384;
-    CFMutableDictionaryRef d = hero_crypto_cf_attributes(held->kind, NULL, size);
+    CFMutableDictionaryRef d;
     CFErrorRef error = NULL;
 
+    if (hero_crypto_is_curve(held->kind)) {
+        /* 32 bytes from the system's generator, as RFC 8032 § 5.1.5 and
+         * RFC 7748 § 6.1 draw a private key. */
+        unsigned char drawn[32];
+        bool good = hero_crypto_arm_random(drawn, sizeof drawn) && hero_crypto_curve_take(held, drawn);
+
+        hero_crypto_wipe(drawn, sizeof drawn);
+        held->bits = held->kind == HERO_CRYPTO_ED25519 ? 256 : 255;
+        return good;
+    }
+    d = hero_crypto_cf_attributes(held->kind, NULL, size);
     if (d == NULL) {
         return false;
     }
@@ -2011,6 +2144,16 @@ static bool hero_crypto_arm_load(hero_crypto_held *held, const hero_crypto_mater
 
     (void)der;
     (void)der_count;
+    if (hero_crypto_is_curve(m->kind)) {
+        /* A private key's public half is computed, as Linux's is: RFC
+         * 8410's PKCS #8 holds none, and a version 2's is passed over by
+         * THE FORMS on every platform. */
+        if (m->is_private) {
+            return hero_crypto_curve_take(held, m->scalar);
+        }
+        memcpy(held->curve_public, m->point, sizeof held->curve_public);
+        return true;
+    }
     if (m->kind == HERO_CRYPTO_RSA) {
         bytes = m->rsa.bytes;
         count = m->rsa.count;
@@ -2051,7 +2194,7 @@ static bool hero_crypto_arm_load(hero_crypto_held *held, const hero_crypto_mater
 
 static bool hero_crypto_arm_material(const hero_crypto_held *held, hero_crypto_material *m) {
     CFErrorRef error = NULL;
-    CFDataRef data = SecKeyCopyExternalRepresentation(held->key, &error);
+    CFDataRef data;
     const unsigned char *bytes;
     size_t count;
     bool good = true;
@@ -2060,6 +2203,16 @@ static bool hero_crypto_arm_material(const hero_crypto_held *held, hero_crypto_m
     m->kind = held->kind;
     m->bits = held->bits;
     m->is_private = !held->is_public;
+    if (hero_crypto_is_curve(held->kind)) {
+        m->width = 32;
+        memcpy(m->point, held->curve_public, 32);
+        m->point_count = 32;
+        if (m->is_private) {
+            memcpy(m->scalar, held->secret.bytes, 32);
+        }
+        return true;
+    }
+    data = SecKeyCopyExternalRepresentation(held->key, &error);
     if (data == NULL) {
         hero_crypto_cf_said(HERO_CRYPTO_OTHER, "SecKeyCopyExternalRepresentation failed", error);
         return false;
@@ -2089,6 +2242,10 @@ static bool hero_crypto_arm_material(const hero_crypto_held *held, hero_crypto_m
 }
 
 static bool hero_crypto_arm_public(const hero_crypto_held *from, hero_crypto_held *to) {
+    if (hero_crypto_is_curve(from->kind)) {
+        memcpy(to->curve_public, from->curve_public, sizeof to->curve_public);
+        return true;
+    }
     to->key = SecKeyCopyPublicKey(from->key);
     if (to->key == NULL) {
         hero_crypto_said(HERO_CRYPTO_OTHER, 0, "SecKeyCopyPublicKey answered no key");
@@ -2097,29 +2254,31 @@ static bool hero_crypto_arm_public(const hero_crypto_held *from, hero_crypto_hel
     return true;
 }
 
+/* AES-GCM and ChaCha20-Poly1305 by CryptoKit, through the layer's Swift
+ * member (`hero_crypto_cryptokit.swift`): macOS offers neither to C. Every
+ * count is below `HERO_CRYPTO_TEXT_MOST`, the common part's check, so it is
+ * an `int64_t` as Swift's `Int64` takes it. */
 static bool hero_crypto_arm_seal(const hero_crypto_held *held, const unsigned char *nonce, const unsigned char *text, size_t text_count, const unsigned char *associated, size_t associated_count, unsigned char *out, unsigned char *tag) {
-    (void)held;
-    (void)nonce;
-    (void)text;
-    (void)text_count;
-    (void)associated;
-    (void)associated_count;
-    (void)out;
-    (void)tag;
-    hero_crypto_said(HERO_CRYPTO_UNSUPPORTED, 0, "macOS offers no authenticated cipher to C");
-    return false;
+    char words[HERO_CRYPTO_WORDS_MOST];
+
+    words[0] = '\0';
+    if (hero_crypto_cryptokit_seal(held->kind, held->secret.bytes, (int64_t)held->secret.count, nonce, text, (int64_t)text_count, associated, (int64_t)associated_count, out, tag, words, (int64_t)sizeof words) != 1) {
+        hero_crypto_said(HERO_CRYPTO_OTHER, 0, words[0] != '\0' ? words : "CryptoKit refused to seal");
+        return false;
+    }
+    return true;
 }
 
 static int hero_crypto_arm_open(const hero_crypto_held *held, const unsigned char *nonce, const unsigned char *data, size_t data_count, const unsigned char *associated, size_t associated_count, const unsigned char *tag, unsigned char *out) {
-    (void)held;
-    (void)nonce;
-    (void)data;
-    (void)data_count;
-    (void)associated;
-    (void)associated_count;
-    (void)tag;
-    (void)out;
-    hero_crypto_said(HERO_CRYPTO_UNSUPPORTED, 0, "macOS offers no authenticated cipher to C");
+    char words[HERO_CRYPTO_WORDS_MOST];
+    int64_t opened;
+
+    words[0] = '\0';
+    opened = hero_crypto_cryptokit_open(held->kind, held->secret.bytes, (int64_t)held->secret.count, nonce, data, (int64_t)data_count, associated, (int64_t)associated_count, tag, out, words, (int64_t)sizeof words);
+    if (opened == 1 || opened == 0) {
+        return (int)opened;
+    }
+    hero_crypto_said(HERO_CRYPTO_OTHER, 0, words[0] != '\0' ? words : "CryptoKit refused to open");
     return -1;
 }
 
@@ -2162,10 +2321,24 @@ static int64_t hero_crypto_cf_give(CFDataRef data, unsigned char *out, size_t mo
 }
 
 static int64_t hero_crypto_arm_sign(const hero_crypto_held *held, int64_t scheme, const unsigned char *message, size_t count, unsigned char *out, size_t most) {
-    CFDataRef lent = hero_crypto_cf_lend(message, count);
+    CFDataRef lent;
     CFErrorRef error = NULL;
     CFDataRef signature;
 
+    if (scheme == HERO_CRYPTO_SIGN_ED25519) {
+        /* RFC 8032's signature, deterministic: Monocypher's secret key is
+         * the seed then the public key, on the stack for this call alone.
+         * `most` is 64, the common part's measure. */
+        unsigned char both[64];
+
+        (void)most;
+        memcpy(both, held->secret.bytes, 32);
+        memcpy(both + 32, held->curve_public, 32);
+        crypto_ed25519_sign(out, both, message, count);
+        hero_crypto_wipe(both, sizeof both);
+        return 64;
+    }
+    lent = hero_crypto_cf_lend(message, count);
     if (lent == NULL) {
         hero_crypto_said(HERO_CRYPTO_LIMIT, 0, "no memory left for the message");
         return -1;
@@ -2180,12 +2353,21 @@ static int64_t hero_crypto_arm_sign(const hero_crypto_held *held, int64_t scheme
 }
 
 static int hero_crypto_arm_verify(const hero_crypto_held *held, int64_t scheme, const unsigned char *message, size_t count, const unsigned char *signature, size_t signature_count) {
-    SecKeyRef key = held->is_public ? (SecKeyRef)CFRetain(held->key) : SecKeyCopyPublicKey(held->key);
-    CFDataRef lent = hero_crypto_cf_lend(message, count);
-    CFDataRef sig = hero_crypto_cf_lend(signature, signature_count);
+    SecKeyRef key;
+    CFDataRef lent;
+    CFDataRef sig;
     CFErrorRef error = NULL;
     int answer;
 
+    if (scheme == HERO_CRYPTO_SIGN_ED25519) {
+        /* 64 bytes, the common part's check of the form; Monocypher refuses
+         * an S not below the group's order, RFC 8032 § 5.1.7's first check. */
+        (void)signature_count;
+        return crypto_ed25519_check(signature, held->curve_public, message, count) == 0 ? 1 : 0;
+    }
+    key = held->is_public ? (SecKeyRef)CFRetain(held->key) : SecKeyCopyPublicKey(held->key);
+    lent = hero_crypto_cf_lend(message, count);
+    sig = hero_crypto_cf_lend(signature, signature_count);
     if (key == NULL || lent == NULL || sig == NULL) {
         answer = -1;
         hero_crypto_said(HERO_CRYPTO_LIMIT, 0, "no memory left to check the signature");
@@ -2208,12 +2390,20 @@ static int hero_crypto_arm_verify(const hero_crypto_held *held, int64_t scheme, 
 }
 
 static int64_t hero_crypto_arm_agree(const hero_crypto_held *mine, const hero_crypto_held *theirs, unsigned char *out, size_t width) {
-    SecKeyRef peer = theirs->is_public ? (SecKeyRef)CFRetain(theirs->key) : SecKeyCopyPublicKey(theirs->key);
-    CFMutableDictionaryRef none = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    SecKeyRef peer;
+    CFMutableDictionaryRef none;
     CFErrorRef error = NULL;
     CFDataRef secret = NULL;
     int64_t answer = -1;
 
+    if (mine->kind == HERO_CRYPTO_X25519) {
+        /* RFC 7748 § 5's function on the peer's public bytes; an all-zero
+         * answer is the common part's refusal. `width` is 32. */
+        crypto_x25519(out, mine->secret.bytes, theirs->curve_public);
+        return (int64_t)width;
+    }
+    peer = theirs->is_public ? (SecKeyRef)CFRetain(theirs->key) : SecKeyCopyPublicKey(theirs->key);
+    none = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
     if (peer == NULL || none == NULL) {
         hero_crypto_said(HERO_CRYPTO_LIMIT, 0, "no memory left to agree");
     } else {

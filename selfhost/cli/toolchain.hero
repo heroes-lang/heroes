@@ -441,16 +441,8 @@ test "a warm ask for the runtime's object compiles nothing, wherever the runtime
         assert !process.remove_tree(dir).is_err()
 
     object = runtime_object(t, level: "-O0", sanitize: false).must()
-    assert !process.mkdir_all(copy + "/parts").is_err()
-    assert !process.mkdir_all(copy + "/platform").is_err()
-
-    for path in runtime_key.made_of(t.runtime).must()
-        name = path.slice(from: t.runtime.len() + 1, to: path.len())
-        held: str @= read_file(path).must()
-
-        if name == "runtime.c"
-            held @ held + "int heroes_435_not_compiled = ;\n"
-        assert !write_file(path: copy + "/" + name, text: held).is_err()
+    assert !runtime_key.copy_made(runtime: t.runtime, copy: copy).is_err()
+    assert !write_file(path: copy + "/runtime.c", text: read_file(t.runtime + "/runtime.c").must() + "int heroes_435_not_compiled = ;\n").is_err()
 
     gone: Toolchain @= t
     gone.runtime @ copy
@@ -478,13 +470,7 @@ test "a header written into the runtime's search after a build is another runtim
     for dir in [t.build, copy]
         assert !process.remove_tree(dir).is_err()
 
-    assert !process.mkdir_all(copy + "/parts").is_err()
-    assert !process.mkdir_all(copy + "/platform").is_err()
-
-    for path in runtime_key.made_of(t.runtime).must()
-        name = path.slice(from: t.runtime.len() + 1, to: path.len())
-        assert !write_file(path: copy + "/" + name, text: read_file(path).must()).is_err()
-
+    assert !runtime_key.copy_made(runtime: t.runtime, copy: copy).is_err()
     t.runtime @ copy
     first = runtime_object(t, level: "-O0", sanitize: false).must()
     assert runtime_object(t, level: "-O0", sanitize: false).must() == first

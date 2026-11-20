@@ -23,11 +23,19 @@
  *
  *   - Windows: CNG, `bcrypt.dll` (BCrypt), which only a program that takes
  *     this member links.
- *   - macOS: the Security framework's `SecKey`. CommonCrypto's public modes
- *     hold no authenticated one and `SecKey` takes no Curve25519 key;
- *     CryptoKit, which has both, is Swift's alone, and no private header is
- *     read. So on macOS sealing, Ed25519 and X25519 answer
- *     `HERO_CRYPTO_UNSUPPORTED` (measured 2026-11-17, the member's comment).
+ *   - macOS: the Security framework's `SecKey`, and for sealing CryptoKit,
+ *     reached by a member of the layer written in Swift, since CommonCrypto's
+ *     public modes hold no authenticated one and CryptoKit is Swift's alone;
+ *     no private header is read (panel 253's R3, 2026-11-20).
+ *     **Ed25519 and X25519 are the one exception to the system's, on
+ *     macOS alone**: `SecKey` takes no Curve25519 key and CryptoKit's
+ *     Ed25519 signs differently every time, never RFC 8032's bytes, so both
+ *     are Monocypher 4.0.3's, a small C library vendored into the runtime
+ *     (`runtime/vendor/monocypher/README.md`), as decision 2594 admits for
+ *     primitives that read no outside data; its manual says *"No secret
+ *     dependent indices, no secret dependent branches"*, a claim of its
+ *     authors this project has not measured. A security update of the
+ *     system does not reach them; a release of Heroes does.
  *   - Linux: OpenSSL 3's `libcrypto.so.3`, loaded when a program first asks
  *     and never named on the link line, so the layer compiles and links on a
  *     machine with no OpenSSL, and there every call answers
@@ -89,8 +97,8 @@ typedef struct hero_crypto_key hero_crypto_key;
 /* No memory or no slot left, or a key that has sealed
  * `HERO_CRYPTO_SEALS_MOST` texts. */
 #define HERO_CRYPTO_LIMIT 8
-/* This platform has no such thing: the kind or the scheme on macOS or
- * Windows (`hero_crypto_offers`), or no `libcrypto.so.3` on this Linux. */
+/* This platform has no such thing: Ed25519 and X25519 on Windows
+ * (`hero_crypto_offers`), or no `libcrypto.so.3` on this Linux. */
 #define HERO_CRYPTO_UNSUPPORTED 11
 /* The system failed for a reason none of these names; its words say it. */
 #define HERO_CRYPTO_OTHER 12
@@ -141,9 +149,9 @@ typedef struct hero_crypto_key hero_crypto_key;
 #define HERO_CRYPTO_RSA_BITS_MOST 8192
 
 /* 1 where this machine computes `what`, a kind or a scheme above, 0 where
- * it does not (the kinds macOS and Windows lack, every one on a Linux
- * machine with no `libcrypto.so.3`); -1 with `HERO_CRYPTO_INVALID` for a
- * number that names neither. */
+ * it does not (the kinds Windows lacks, every one on a Linux machine with
+ * no `libcrypto.so.3`); -1 with `HERO_CRYPTO_INVALID` for a number that
+ * names neither. */
 int64_t hero_crypto_offers(int64_t what);
 
 /* A new key of `kind`, drawn by the system: `bits` is an RSA key's size,

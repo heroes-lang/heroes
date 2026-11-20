@@ -76,6 +76,26 @@ function made_of(runtime: str) -> [str]?
 
     return ok(out)
 
+# A copy of the runtime at `runtime` written under `copy`, every file of
+# `made_of` at its own name and the folders its names hold made first: the
+# runtime a test changes one file of. Each folder is asked of the list,
+# never written here, since a vendored library's files stand under
+# `vendor/` beside `parts/` and `platform/` (M-rebel-library's steps 69,
+# `runtime/vendor/monocypher/`), and a copy that made two folders by name
+# failed to write the third's files.
+function copy_made(runtime: str, copy: str) -> ()?
+    for path in made_of(runtime)?
+        name = path.slice(from: runtime.len() + 1, to: path.len())
+        cut: i64 @= name.len()
+
+        while cut > 0 && name[cut - 1] != '/'
+            cut @ cut - 1
+
+        process.mkdir_all(copy + "/" + name.slice(from: 0, to: cut))?
+        write_file(path: copy + "/" + name, text: read_file(path)?)?
+
+    return ok()
+
 # **THE PLATFORM LAYER'S MEMBERS ARE NAMED BY `runtime.c` TOO** (panel 234's
 # R6; feature 2295; `cli/layer.hero`): one C file per capability under
 # `platform/`, each archived alone, so `runtime.c` names them in a block its
@@ -100,6 +120,24 @@ constant LAYER: str
 
 function is_member(name: str) -> bool
     return name.len() > LAYER.len() + 2 && bytes.bytes_at(text: name, at: 0, needle: LAYER) && bytes.bytes_at(text: name, at: name.len() - 2, needle: ".c")
+
+# **AND THE MEMBERS WRITTEN IN SWIFT**, its names under `platform/` that end
+# in `.swift`, in the order written (panel 253's R3, M-rebel-library's steps
+# 69): what macOS offers only to Swift, CryptoKit's ciphers, reached by a
+# member `cli/layer_swift.hero` compiles on an Apple target and on no other.
+# Named in the same block, so the key covers them on every platform.
+function swift_members(runtime: str) -> [str]?
+    root = reading.keyed(runtime + "/runtime.c")?
+    out: [str] @= []
+
+    for name in included_names(text: root.text)
+        if is_swift_member(name)
+            out @ out.push(runtime + "/" + name)
+
+    return ok(out)
+
+function is_swift_member(name: str) -> bool
+    return name.len() > LAYER.len() + 6 && bytes.bytes_at(text: name, at: 0, needle: LAYER) && bytes.bytes_at(text: name, at: name.len() - 6, needle: ".swift")
 
 # Every `#include "…"` target in the text, in the order written. The
 # quoted form only: `<stdio.h>` is the platform's and is not ours to
@@ -290,6 +328,43 @@ test "every C file under the runtime's platform folder is a member runtime.c nam
 
     for path in named
         assert has(found, path)
+
+# The members written in Swift are names under `platform/` ending in
+# `.swift`, and the folder and `runtime.c` say the same ones (panel 253's
+# R3): one that `runtime.c` does not name would be keyed and compiled by no
+# build, one named and gone a build that fails.
+test "a Swift member is a name under platform/ ending in .swift, and the folder and runtime.c name the same ones (panel 253's R3)"
+    assert is_swift_member("platform/hero_crypto_cryptokit.swift")
+
+    for name in ["platform/.swift", "platform/hero_net.c", "vendor/x.swift", "platform/x.swiftinterface", "swift"]
+        assert !is_swift_member(name)
+
+    named = swift_members("runtime").must()
+    assert named.len() >= 1
+    found: [str] @= []
+
+    for path in process.files_under("runtime/platform").must()
+        if is_swift_member(path.slice(from: "runtime/".len(), to: path.len()))
+            found @ found.push(path)
+
+    for path in found
+        assert has(named, path)
+
+    for path in named
+        assert has(found, path)
+
+# A copy made from the list holds every file the list names, the folders
+# beside `parts/` and `platform/` among them (`copy_made`).
+test "a copy of the runtime made from its list holds every file it names, vendor/ among them (panel 253's R3)"
+    copy = "build/selftest-runtime-copy-made"
+    assert !process.remove_tree(copy).is_err()
+    assert !copy_made(runtime: "runtime", copy: copy).is_err()
+
+    for path in made_of("runtime").must()
+        assert read_file(copy + path.slice(from: "runtime".len(), to: path.len())).must() == read_file(path).must()
+
+    assert process.path_exists(copy + "/vendor/monocypher/monocypher.c")
+    assert !process.remove_tree(copy).is_err()
 
 # A member edited moves the runtime's key; a C file of the folder that
 # `runtime.c` does not name does not, since nothing compiles it.

@@ -3,14 +3,16 @@
 # changes a byte of it, or of the associated data beside it, unseen.
 # AES-128-GCM, AES-256-GCM (NIST SP 800-38D) and ChaCha20-Poly1305 (RFC
 # 8439), computed by the system's library and never by Heroes: CNG on
-# Windows, OpenSSL 3's `libcrypto.so.3` on Linux. A cipher must compute in a
-# time its key and its text do not decide, and the system's library keeps
-# that promise where nothing proves it of the C the compiler makes.
+# Windows, OpenSSL 3's `libcrypto.so.3` on Linux, CryptoKit on macOS. A
+# cipher must compute in a time its key and its text do not decide, and the
+# system's library keeps that promise where nothing proves it of the C the
+# compiler makes.
 #
-# **On macOS nothing here works, and `is_available` says so**: Apple offers
-# C no authenticated cipher (CommonCrypto's public modes hold none, CryptoKit
-# is Swift's alone, measured 2026-11-17), so every function fails
-# `unsupported` there.
+# **On macOS the ciphers are CryptoKit's, reached through Swift**: Apple
+# offers C no authenticated cipher (CommonCrypto's public modes hold none,
+# measured 2026-11-17) and CryptoKit is Swift's alone, so the platform layer
+# holds a member written in Swift for these two (panel 253's R3, since
+# 2026-11-20).
 #
 # **The nonce is the call's own.** `seal` draws a nonce of 12 bytes from the
 # system's generator for every text and writes it before the ciphertext, so
@@ -36,7 +38,7 @@
 # It fails with `invalid` (an argument refused, sealed bytes that do not
 # open: changed, cut, or sealed under another key or with other associated
 # data), `closed` (a key closed), `limit` (no memory or key left, or a key
-# past `MAX_SEALS`), `unsupported` (macOS, or a Linux machine with no
+# past `MAX_SEALS`), `unsupported` (a Linux machine with no
 # `libcrypto.so.3`) and `failed` (the system failed, its words in the
 # message).
 
@@ -62,7 +64,7 @@ constant LIMIT: str
     "limit"
 
 # This platform's own cryptography does not offer the algorithm: every
-# function on macOS, and on a Linux machine with no `libcrypto.so.3`.
+# function on a Linux machine with no `libcrypto.so.3`.
 constant UNSUPPORTED: str
     "unsupported"
 
@@ -109,8 +111,8 @@ constant OVERHEAD: i64
 constant MAX_SEALS: i64
     4294967296
 
-# Whether this machine's own cryptography seals with `algorithm`: false on
-# macOS for every one, and on a Linux machine with no `libcrypto.so.3`.
+# Whether this machine's own cryptography seals with `algorithm`: false for
+# every one on a Linux machine with no `libcrypto.so.3`, true elsewhere.
 #
 # - `algorithm`: the cipher asked about.
 #
@@ -283,7 +285,7 @@ test "seal and open: an empty text, empty associated data, a text of every lengt
 
 test "seal: two seals of one text draw two nonces, and one key's sealed bytes do not open under another"
     if !is_available(.chacha20_poly1305)
-        return
+        skip_test(reason: "this platform's own cryptography does not seal with ChaCha20-Poly1305")
     first @= generate(.chacha20_poly1305).must()
     second @= generate(.chacha20_poly1305).must()
     a = seal(key: first, text: [1, 2, 3], associated: []).must()
@@ -301,7 +303,7 @@ test "from_secret: RFC 8439's key opens RFC 8439's sealed bytes, and a key of 31
         .err e => assert e.code == INVALID
 
     if !is_available(.chacha20_poly1305)
-        return
+        skip_test(reason: "this platform's own cryptography does not seal with ChaCha20-Poly1305")
     key @= from_secret(.chacha20_poly1305, secret: secret).must()
     associated = bytes.parse_hex("50515253c0c1c2c3c4c5c6c7").must()
     text = open(key: key, sealed: known.rfc8439_sealed(), associated: associated).must()
@@ -330,7 +332,8 @@ test "open: another header is refused"
     assert open(key: key, sealed: sealed, associated: [2]).is_err()
     close(@key).must()
 
-# Whether this machine seals with ChaCha20-Poly1305: false on macOS.
+# Whether this machine seals with ChaCha20-Poly1305: false on a Linux
+# machine with no `libcrypto.so.3`.
 test "is_available: asked before a key is made"
     if is_available(.chacha20_poly1305)
         key @= generate(.chacha20_poly1305).must()

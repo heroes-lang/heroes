@@ -118,6 +118,9 @@ test "changed: a byte below 255 and 255 itself become another byte"
     assert changed(255) == 0
 
 test "rfc8032: TEST 1, 2 and 3 signed by their secret keys give their signatures and public keys, where the platform has Ed25519"
+    if !operations.offers("ed25519")
+        skip_test(reason: "this platform's own cryptography has no Ed25519")
+
     for t in rfc8032()
         assert ed25519_answered(t) == ""
 
@@ -127,7 +130,7 @@ test "signed: Wycheproof's signatures hold or do not as they say, on every platf
 
 test "rfc7748: Alice's and Bob's keys agree on RFC 7748 6.1's secret, and an all-zero public key is refused, where the platform has X25519"
     if !operations.offers("x25519")
-        return
+        skip_test(reason: "this platform's own cryptography has no X25519")
     alice_der: [u8] @= []
     bob_der: [u8] @= []
     forms.private_der_of_raw(

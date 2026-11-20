@@ -313,7 +313,7 @@ test "read_private, read_public, write_private and write_public: Python's P-256 
         .err e => assert e.code == failure.INVALID
 
     if !operations.offers("p256")
-        return
+        skip_test(reason: "this platform's own cryptography has no P-256")
     read = read_private(bytes.parse_hex(hex).must()).must()
     handle @= read.handle
     assert read.facts.name == "p256"
@@ -328,7 +328,7 @@ test "read_private, read_public, write_private and write_public: Python's P-256 
 
 test "private_der_of_pem, write_private_pem, public_der_of_pem and write_public_pem: a key written and read back, and a public block read as a private one refused"
     if !operations.offers("p384")
-        return
+        skip_test(reason: "this platform's own cryptography has no P-384")
     made @= operations.generate(name: "p384", bits: 0).must()
     pem = write_private_pem(made).must()
     assert pem.slice(from: 0, to: 28) == "-----BEGIN PRIVATE KEY-----\n"

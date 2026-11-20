@@ -283,7 +283,7 @@ test "facts, generate and public_of: a P-256 key's facts, a public half's, and a
         .err e => assert e.code == failure.INVALID
 
     if !offers("p256")
-        return
+        skip_test(reason: "this platform's own cryptography has no P-256")
     k @= generate(name: "p256", bits: 0).must()
     f = facts(k).must()
     assert f.name == "p256"
@@ -327,7 +327,7 @@ test "close, sign, verify, agree, encrypt and decrypt of a place emptied: closed
 
 test "sign and verify: an empty message, a scheme of another kind invalid, and a signature of no form that does not hold"
     if !offers("p384")
-        return
+        skip_test(reason: "this platform's own cryptography has no P-384")
     k @= generate(name: "p384", bits: 0).must()
     p @= public_of(k).must()
     signature = sign(handle: k, scheme: "ecdsa_sha384", message: []).must()
@@ -348,7 +348,7 @@ test "sign and verify: an empty message, a scheme of another kind invalid, and a
 
 test "agree, encrypt and decrypt: P-384's 48 bytes both ways, RSA-OAEP of an empty text and of 190 bytes, a text of 191 invalid"
     if !offers("p384")
-        return
+        skip_test(reason: "this platform's own cryptography has no P-384")
     a @= generate(name: "p384", bits: 0).must()
     b @= generate(name: "p384", bits: 0).must()
     x = agree(mine: a, theirs: b).must()

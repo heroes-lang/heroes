@@ -346,11 +346,26 @@
  * are the names below under `platform/`, in the order written, each after its
  * own header; the first name is the header the members alone include, the tags
  * of their handle tables, so the key covers it and a copy of the runtime made
- * from this list holds it (named 2026-11-20). */
+ * from this list holds it (named 2026-11-20). A member's own files follow it:
+ * the CryptoKit member written in Swift and its C header, which the layer
+ * compiles on an Apple target alone (`selfhost/cli/layer_swift.hero`, the
+ * names under `platform/` that end in `.swift`); and Monocypher's, which
+ * `hero_crypto.c` compiles inside itself on macOS and which stand under
+ * `vendor/`, outside `platform/`, so none is archived alone
+ * (`runtime/vendor/monocypher/README.md`; decision 2594), its licence with
+ * them. */
 #if 0
 #include "platform/hero_handle_tag.h"
 #include "hero_crypto.h"
 #include "platform/hero_crypto.c"
+#include "platform/hero_crypto_cryptokit.h"
+#include "platform/hero_crypto_cryptokit.swift"
+#include "vendor/monocypher/LICENCE.md"
+#include "vendor/monocypher/README.md"
+#include "vendor/monocypher/monocypher.h"
+#include "vendor/monocypher/monocypher.c"
+#include "vendor/monocypher/monocypher-ed25519.h"
+#include "vendor/monocypher/monocypher-ed25519.c"
 #include "hero_disk.h"
 #include "platform/hero_disk.c"
 #include "hero_ipc.h"
