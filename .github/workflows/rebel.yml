@@ -1,0 +1,518 @@
+# Rebel's own pipeline: Rebel compiled and tested on the four machines of
+# `.github/workflows/ci.yml`, and nothing else (the author's decision 7 of
+# 2026-11-15, on the page `docs/roadmap/milestones/M-rebel-library.md`: *Rebel
+# has a CI pipeline of its own, which compiles and tests Rebel and nothing
+# else, and starts only when a push touches Rebel*).
+#
+# What it runs, each on Linux x86-64, Linux arm64, Darwin arm64 and Windows
+# x86-64, with the compiler built as `ci.yml` builds it (stage 1 from the seed
+# by `seed/README.md`'s line, then stage 2, this commit's source, which judges):
+#
+#   - **the `rebel` suite of the net** (`tests/harness/suite_rebel.hero`), the
+#     coherence review's instruments over `packages/rebel` and its rules page;
+#   - **`heroes doc` over every face** of Rebel, the part of
+#     `examples-rebel/README.md` § A7 the verb holds today: a comment whose
+#     parameter lines do not name each parameter once, in order, is refused.
+#     Measured at `9149e72d0` with its stage 2: 148 faces, 125 documented and
+#     23 refused with 1,069 diagnostics (1,050 `doc_missing_parameter`, 18
+#     `doc_unknown_parameter`, one `package_not_listed`), so this step is red
+#     until the documentation lanes land theirs;
+#   - **Rebel's example program**, `examples-rebel/jq.hero`, built and run on
+#     one filter of its own usage lines;
+#   - **every package's own tests**, through the drivers
+#     `examples-rebel/reach_*.hero` (160 at `9149e72d0`), each `heroes test`
+#     plain, and on the two Linux legs also under `--sanitize`, since
+#     LeakSanitizer is there and a driver reaches the floors' C bindings
+#     (`.claude/rules/platforms.md` § Linux is where a leak in a binding is
+#     visible).
+#
+# Every system library a Rebel package links or loads is installed below, on
+# the platform that lacks it (the author's decision 6 of 2026-11-19: nothing is
+# installed on the Windows box, so the CI installs it), each asked for by the
+# name the code asks and then asked to answer, so a leg meant to run a test
+# never skips it quietly. Read from the tree, never from a list: the `link`
+# lines of `packages/rebel/` (`git grep -n '^link\|link "' packages/rebel/`
+# names two, `m` and `sqlite3`), the `#pragma comment(lib)` and `.linker_option`
+# lines of `runtime/platform/` (Windows SDK libraries and macOS frameworks,
+# which every image carries), and its `dlopen` calls (OpenSSL's `libssl` and
+# `libcrypto`, `libsecret-1`, unixODBC's `libodbc`).
+#
+# No server runs here (MongoDB, AMQP, Kafka, LDAP, MQTT, NATS, Redis, S3,
+# MySQL, PostgreSQL, an ACME directory, a model's API): no secret and no
+# address is given, and a paid run is never one. A test that needs one is
+# owed `skip_test` with its reason (spec § 12), printed by the drivers' step
+# below; five call it at `9149e72d0` (acme's three, mongodb's two), and the 101
+# more panel 253 counted, which print a skip line or nothing and read `ok`,
+# are a later lane's. No driver's every test needs a server, so none is an
+# all-skipped run.
+#
+# **Its first run is the landing push's**: a workflow cannot run before it is
+# pushed, and no line below has run on a runner. The install steps were written
+# from the packages' and the images' documentation and the Windows box's
+# measurements, and say so where they rest on one.
+
+name: rebel
+
+on:
+  # A push to `main` touching Rebel's packages, its examples, the platform
+  # layer its floors bind, or this file. A compiler change alone does not
+  # start it, which is decision 7's trade: what such a change breaks in Rebel
+  # is seen at the next push that touches Rebel, at the next release tag, or
+  # by a dispatch. The `rebel` suite's own instruments live in `tests/harness/`
+  # and are part of the net, so `ci.yml` runs them on every push.
+  push:
+    branches: [main]
+    # GitHub evaluates no path filter on a tag's push (its workflow syntax
+    # reference, read 2026-11-20), so every release tag runs this whole.
+    tags: ['v*']
+    paths:
+      - 'packages/rebel/**'
+      - 'examples-rebel/**'
+      - 'runtime/platform/**'
+      - '.github/workflows/rebel.yml'
+  # A pull request touching the same paths, so a change to Rebel is judged
+  # before it reaches `main`. A fork's run gets a read-only token and no secret.
+  pull_request:
+    paths:
+      - 'packages/rebel/**'
+      - 'examples-rebel/**'
+      - 'runtime/platform/**'
+      - '.github/workflows/rebel.yml'
+  # By hand, the door for a compiler change suspected of breaking Rebel.
+  workflow_dispatch:
+
+# One run per ref: a second push cancels the first.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # The parts the drivers are dealt into on each leg (job `plan`).
+  PARTS: 8
+  # A driver's run that has not ended after this many seconds is stopped and
+  # read as red, so one hung test costs one driver rather than its part.
+  LIMIT: 3600
+  # The most bytes of one run's output kept; a run that writes more is cut
+  # there and read as red, so a program writing without end fills no disk.
+  BYTES: 20000000
+
+jobs:
+  # ─────────────── The suite, the documentation and the example ───────────────
+  coherence:
+    name: ${{ matrix.leg.name }}, Rebel's suite, documentation and example
+    runs-on: ${{ matrix.leg.os }}
+    timeout-minutes: 120
+    strategy:
+      # No platform's failure hides another's.
+      fail-fast: false
+      matrix:
+        leg:
+          - { name: 'Linux x86-64', os: ubuntu-26.04, exe: '' }
+          - { name: 'Linux arm64', os: ubuntu-26.04-arm, exe: '' }
+          - { name: 'Darwin arm64', os: macos-26, exe: '' }
+          - { name: 'Windows x86-64', os: windows-latest, exe: '.exe' }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      # clang is the backend (CLAUDE.md § 7), named rather than found by chance
+      # on the image, as `ci.yml` names it.
+      - name: Install clang
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+
+      # `seed/README.md`'s line, with the stack flag it prints for Windows.
+      - name: Build the compiler from the seed
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then STACK="-Wl,/STACK:67108864"; else STACK=""; fi
+          clang --version
+          clang -I runtime seed/heroes.c runtime/runtime.c $STACK -o heroes-from-seed${{ matrix.leg.exe }}
+          ./heroes-from-seed${{ matrix.leg.exe }} --version
+
+      - name: Stage 2, the compiler this commit's source builds
+        id: stage2
+        shell: bash
+        run: |
+          ./heroes-from-seed${{ matrix.leg.exe }} build selfhost/main.hero -o heroes${{ matrix.leg.exe }}
+          ./heroes${{ matrix.leg.exe }} --version
+
+      # The harness built by stage 1 and judging stage 2, as `ci.yml`'s net is
+      # (panel 231's R2). The suite reads files and runs no compiler.
+      - name: The rebel suite
+        shell: bash
+        run: ./heroes-from-seed${{ matrix.leg.exe }} run tests/harness/main.hero -- ./heroes${{ matrix.leg.exe }} rebel
+
+      # Every face of Rebel through the catalogue of its examples, as a program
+      # reaches it: `heroes doc <entry>/<module>` from `examples-rebel/`. The
+      # faces are the suite's own (`tests/harness/rebel_tree.hero`, `is_face`):
+      # every `.hero` file of the folder the catalogue's `path` names, but a
+      # private module (a part `internal` after the first) and a floor (a last
+      # part beginning `hero_`). A face the catalogue's `packages` line does not
+      # name is refused by the verb, `package_not_listed`, and is red here.
+      # `find` and `sort` by their path: Windows' System32 holds programs of
+      # those names that do something else.
+      - name: heroes doc over every face
+        if: ${{ !cancelled() && steps.stage2.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -u
+          mkdir -p build
+          err="$PWD/build/doc-err.txt"
+          catalogue=examples-rebel/heroes.toml
+          entry=$(sed -n 's/^\[dependencies\.\([a-z0-9_]*\)\]$/\1/p' "$catalogue")
+          root=$(sed -n 's/^path = "\(.*\)"$/\1/p' "$catalogue")
+          if [ "$(printf '%s\n' "$entry" | wc -l | tr -d ' ')" != 1 ] || [ -z "$entry" ] || [ "$(printf '%s\n' "$root" | wc -l | tr -d ' ')" != 1 ] || [ -z "$root" ]; then
+            echo "::error::$catalogue does not read as one entry with one \`path\`; read it, and teach this step its shape"
+            exit 1
+          fi
+          cd examples-rebel
+          if [ ! -d "$root" ]; then
+            echo "::error::the catalogue's path, $root, is no folder under examples-rebel/"
+            exit 1
+          fi
+          faces=0
+          refused=0
+          told=0
+          for file in $(cd "$root" && /usr/bin/find . -name '*.hero' | sed 's:^\./::' | LC_ALL=C /usr/bin/sort); do
+            module=${file%.hero}
+            case "$module" in */internal | */internal/*) continue ;; esac
+            case "${module##*/}" in hero_*) continue ;; esac
+            faces=$(( faces + 1 ))
+            code=0
+            ../heroes${{ matrix.leg.exe }} doc "<$entry>/$module" > /dev/null 2> "$err" || code=$?
+            if [ "$code" -ne 0 ]; then
+              refused=$(( refused + 1 ))
+              n=$(grep -c '^error' "$err" || true)
+              told=$(( told + n ))
+              echo "::group::<$entry>/$module: exit $code, $n diagnostics"
+              head -n 40 "$err"
+              echo "::endgroup::"
+            fi
+          done
+          echo "$faces faces of <$entry>, $refused refused, $told diagnostics"
+          if [ "$faces" -eq 0 ]; then
+            echo "::error::no face was read under $root, so this step judged nothing"
+            exit 1
+          fi
+          if [ "$refused" -ne 0 ]; then
+            echo "::error::heroes doc refused $refused of $faces faces of <$entry>, $told diagnostics (examples-rebel/README.md § A7)"
+            exit 1
+          fi
+
+      # One of the example's own usage lines, its output compared byte for
+      # byte: the runtime writes stdout in binary mode on Windows
+      # (`runtime/parts/os.c`), so the bytes are the same on every leg.
+      # Measured on the author's Mac at `9149e72d0`: built in 58 s, it printed
+      # these two lines at exit 0.
+      - name: Rebel's example program, built and run
+        if: ${{ !cancelled() && steps.stage2.outcome == 'success' }}
+        shell: bash
+        run: |
+          mkdir -p build
+          ./heroes${{ matrix.leg.exe }} build examples-rebel/jq.hero -o build/jq${{ matrix.leg.exe }}
+          printf '%s' '{"albums":[{"title":"Low"},{"title":"Lodger"}]}' | ./build/jq${{ matrix.leg.exe }} -r '.albums[] | .title' > build/jq.out
+          printf 'Low\nLodger\n' > build/jq.want
+          cmp build/jq.want build/jq.out
+
+  # ──────────────── The drivers, dealt into parts, on every leg ────────────────
+  #
+  # Whether one job running all 160 drivers ends inside GitHub's six hours on
+  # Windows is unrun. The box's sweep at step 53 ran them in two lanes side by
+  # side from 13:32 to 18:23 on 2026-11-19 (the coordinator's record of it),
+  # about five hours of wall for two; one lane alone reading near that or more
+  # is an inference, and too close to the ceiling to rest a leg on. So each leg
+  # runs them in `PARTS` parts, each its own job building its own compiler, as
+  # `ci.yml`'s Windows and Darwin nets do. The drivers are dealt round by their
+  # sorted index, the `run` suite's way with its shards, since no runner has
+  # timed them yet; every run's seconds go to the job's summary, so a later
+  # commit can place them by their minutes as `ci.yml`'s tables are placed.
+  plan:
+    name: Rebel's drivers in parts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      parts: ${{ steps.plan.outputs.parts }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Every driver in exactly one part
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          drivers=()
+          for file in $(ls examples-rebel/reach_*.hero | LC_ALL=C sort); do
+            name=$(basename "$file" .hero)
+            if ! printf '%s\n' "$name" | grep -Eqx 'reach_[a-z0-9_]+'; then
+              echo "::error::$file is named outside \`reach_[a-z0-9_]+\`, which this step writes into JSON and a shell's words"
+              exit 1
+            fi
+            drivers+=("$name")
+          done
+          if [ "${#drivers[@]}" -eq 0 ]; then
+            echo "::error::no examples-rebel/reach_*.hero, so no package's tests would run"
+            exit 1
+          fi
+          json=""
+          dealt=""
+          for k in $(seq 1 "$PARTS"); do
+            words=""
+            for i in "${!drivers[@]}"; do
+              if [ $(( i % PARTS + 1 )) -eq "$k" ]; then words="$words${words:+ }${drivers[$i]}"; fi
+            done
+            if [ -z "$words" ]; then continue; fi
+            dealt="$dealt${dealt:+ }$words"
+            echo "part $k of $PARTS, $(printf '%s\n' $words | wc -l | tr -d ' ') drivers: $words"
+            json="$json${json:+,}{\"part\":\"$k of $PARTS\",\"drivers\":\"$words\"}"
+          done
+          if [ "$(printf '%s\n' $dealt | LC_ALL=C sort)" != "$(printf '%s\n' "${drivers[@]}" | LC_ALL=C sort)" ]; then
+            echo "::error::the parts do not hold every driver exactly once"
+            exit 1
+          fi
+          echo "${#drivers[@]} drivers in $PARTS parts"
+          echo "parts=[$json]" >> "$GITHUB_OUTPUT"
+
+  tests:
+    name: ${{ matrix.leg.name }}, Rebel's tests, part ${{ matrix.slice.part }}
+    needs: plan
+    runs-on: ${{ matrix.leg.os }}
+    # GitHub's own ceiling for a hosted runner.
+    timeout-minutes: 360
+    strategy:
+      # No part's failure hides another's.
+      fail-fast: false
+      matrix:
+        # `runs`: the configurations each driver is tested in on that leg.
+        leg:
+          - { name: 'Linux x86-64', os: ubuntu-26.04, exe: '', runs: 'plain sanitize' }
+          - { name: 'Linux arm64', os: ubuntu-26.04-arm, exe: '', runs: 'plain sanitize' }
+          - { name: 'Darwin arm64', os: macos-26, exe: '', runs: 'plain' }
+          - { name: 'Windows x86-64', os: windows-latest, exe: '.exe', runs: 'plain' }
+        slice: ${{ fromJSON(needs.plan.outputs.parts) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      # LINUX: clang; SQLite's header and library (`sql/sqlite`'s `link
+      # "sqlite3"`); OpenSSL, which `runtime/platform/hero_tls.c` and
+      # `hero_crypto.c` open by `dlopen` as `libssl.so.3` and
+      # `libcrypto.so.3`; `libsecret-1.so.0`, opened by
+      # `runtime/platform/hero_keyring.c`, with GNOME Keyring and a session
+      # bus to serve it (the drivers' step below); unixODBC's `libodbc.so.2`,
+      # opened by `runtime/platform/hero_odbc.c`; and SQLite's ODBC driver,
+      # `libsqliteodbc`, which registers itself as `SQLite3`, the name
+      # `sql/odbc`'s live tests look for
+      # (`packages/rebel/0.1.0/files/sql/odbc/internal/fixture.hero`). Each
+      # asked for by the name the code asks, after the install.
+      - name: Install what Rebel binds and opens, Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libsqlite3-dev openssl libsecret-1-0 libsecret-tools gnome-keyring dbus unixodbc libsqliteodbc
+          test -f /usr/include/sqlite3.h \
+            || { echo '::error::sqlite3.h is not in /usr/include after the install, so sql/sqlite would be refused `ffi_missing_header`'; exit 1; }
+          for wanted in 'libssl\.so\.[34]' 'libcrypto\.so\.[34]' 'libsecret-1\.so\.0' 'libodbc\.so\.2'; do
+            ldconfig -p | grep -Eq "^[[:space:]]+$wanted " \
+              || { echo "::error::the loader knows no $wanted after the install, so the member that opens it would answer \`unsupported\`"; exit 1; }
+          done
+          odbcinst -q -d | grep -qx '\[SQLite3\]' \
+            || { echo '::error::unixODBC knows no driver named SQLite3 after the install, so sql/odbc would skip its SQLite tests'; exit 1; }
+          command -v dbus-run-session gnome-keyring-daemon secret-tool > /dev/null \
+            || { echo '::error::dbus-run-session, gnome-keyring-daemon or secret-tool is missing, so keyring would answer `unsupported`'; exit 1; }
+
+      # DARWIN: the SDK carries SQLite (`examples/sqlite` binds it on this leg
+      # of `ci.yml`), and the frameworks the floors name (Network, Security,
+      # CoreFoundation, CoreServices). Homebrew gives unixODBC, whose
+      # `libodbc.2.dylib` `hero_odbc.c` opens by `/opt/homebrew/lib`'s path;
+      # SQLite's ODBC driver (`sqliteodbc`, 0.99991 with a bottle for macOS 26,
+      # read from Homebrew's API 2026-11-20), which its formula registers with
+      # no driver manager, so this step registers it as `SQLite3`; and GNU's
+      # `timeout`, as `gtimeout`, which bounds each driver (macOS has none of
+      # its own; Linux and Git bash on Windows carry it as `/usr/bin/timeout`).
+      # The untap and the auto-update
+      # are `ci.yml`'s, for its reasons.
+      - name: Install what Rebel opens, Darwin
+        if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: |
+          brew untap aws/tap >/dev/null 2>&1 || true
+          command -v gtimeout > /dev/null || brew install coreutils
+          brew list --versions unixodbc > /dev/null || brew install unixodbc
+          brew list --versions sqliteodbc > /dev/null || brew install sqliteodbc
+          test -f /opt/homebrew/lib/libodbc.2.dylib || test -f /usr/local/lib/libodbc.2.dylib \
+            || { echo '::error::no libodbc.2.dylib where hero_odbc.c looks for it, so sql/odbc would answer `unsupported`'; exit 1; }
+          driver="$(brew --prefix sqliteodbc)/lib/libsqlite3odbc.dylib"
+          test -f "$driver" \
+            || { echo "::error::$driver is not there after the install"; exit 1; }
+          printf '[SQLite3]\nDescription=SQLite3 ODBC Driver\nDriver=%s\n' "$driver" > "$RUNNER_TEMP/sqlite3-odbc.ini"
+          odbcinst -i -d -f "$RUNNER_TEMP/sqlite3-odbc.ini"
+          odbcinst -q -d | grep -qx '\[SQLite3\]' \
+            || { echo '::error::unixODBC knows no driver named SQLite3 after registering it, so sql/odbc would skip its SQLite tests'; exit 1; }
+          command -v gtimeout > /dev/null \
+            || { echo '::error::gtimeout is missing after the install, and every driver runs under it'; exit 1; }
+
+      # WINDOWS: the SDK's libraries the floors link by `#pragma comment(lib)`
+      # come with the image's Visual Studio. SQLite does not: on the Windows
+      # box, 2026-11-19, `sql_sqlite`, `sql_build` and `sql_migrate` were
+      # refused `ffi_missing_header` for `sqlite3.h`, the box carrying no
+      # SQLite either. It comes from the image's vcpkg, as SDL3 does in
+      # `ci.yml`, and only its header, import library and DLL are copied into
+      # folders of their own, handed to every driver by the compiler's own
+      # `--include` and `--library`: a folder holding nothing else holds no
+      # file that could stand in for a header the runtime reads, which the
+      # compiler refuses (panel 237's R2). The DLL reaches the programs through
+      # PATH. SQLite's ODBC driver has no package on this image (vcpkg holds
+      # none, and Chocolatey answered 404 for `sqliteodbc`, 2026-11-20), so
+      # `sql/odbc`'s SQLite tests skip here with their reason; its other tests
+      # run against the system's `odbc32.dll`, as on the box (943 passed,
+      # 2026-11-18). The port's file names are unrun here: a name it does not
+      # install stops this step by name.
+      - name: Install SQLite with vcpkg, Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          set -e
+          root="$VCPKG_INSTALLATION_ROOT/installed/x64-windows-release"
+          "$VCPKG_INSTALLATION_ROOT/vcpkg.exe" install sqlite3:x64-windows-release --disable-metrics
+          dir="$RUNNER_TEMP/sqlite3"
+          mkdir -p "$dir/include" "$dir/lib" "$dir/bin"
+          cp "$root/include/sqlite3.h" "$dir/include/"
+          cp "$root/lib/sqlite3.lib" "$dir/lib/"
+          cp "$root/bin/sqlite3.dll" "$dir/bin/"
+          cygpath -w "$dir/bin" >> "$GITHUB_PATH"
+          echo "SQLITE_INCLUDE=$(cygpath -m "$dir/include")" >> "$GITHUB_ENV"
+          echo "SQLITE_LIB=$(cygpath -m "$dir/lib")" >> "$GITHUB_ENV"
+
+      # The question `sql/sqlite`'s group asks, asked of clang alone before
+      # any driver: its header found, `-lsqlite3` linked, the library loaded
+      # and answering its version.
+      - name: SQLite answers clang
+        shell: bash
+        run: |
+          mkdir -p build
+          printf '#include <stdio.h>\n#include <sqlite3.h>\nint main(void) { printf("SQLite %%s\\n", sqlite3_libversion()); return sqlite3_libversion_number() > 0 ? 0 : 1; }\n' > build/sqlite-probe.c
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            clang build/sqlite-probe.c -I"$SQLITE_INCLUDE" -L"$SQLITE_LIB" -lsqlite3 -o build/sqlite-probe.exe
+            ./build/sqlite-probe.exe
+          else
+            clang build/sqlite-probe.c -lsqlite3 -o build/sqlite-probe
+            ./build/sqlite-probe
+          fi
+
+      - name: Build the compiler from the seed
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then STACK="-Wl,/STACK:67108864"; else STACK=""; fi
+          clang --version
+          clang -I runtime seed/heroes.c runtime/runtime.c $STACK -o heroes-from-seed${{ matrix.leg.exe }}
+          ./heroes-from-seed${{ matrix.leg.exe }} --version
+
+      - name: Stage 2, the compiler this commit's source builds
+        shell: bash
+        run: |
+          ./heroes-from-seed${{ matrix.leg.exe }} build selfhost/main.hero -o heroes${{ matrix.leg.exe }}
+          ./heroes${{ matrix.leg.exe }} --version
+
+      # Each driver of the part, in each of the leg's configurations: `heroes
+      # test` bounded by `LIMIT` seconds and its output by `BYTES`, its whole
+      # output kept under build/rebel-logs/, its count line and its skipped
+      # tests printed, and a red one's FAIL lines and last lines with them.
+      # After a run stopped for time, the test program it started is stopped
+      # too: `heroes` gives it a process group of its own and forwards no
+      # signal when it is itself killed (defect 425), so it would go on beside
+      # the next driver. Each driver's own build products are removed after
+      # its runs and the packages' objects kept, as the box's sweep did. Every
+      # run is a row of the job's summary with its seconds. The step ends with
+      # the worst exit.
+      #
+      # On Linux the part runs inside a session bus of its own, where GNOME
+      # Keyring, unlocked with a password of this job, serves the Secret
+      # Service `hero_keyring.c` reaches through libsecret; a secret stored and
+      # read back first, so `keyring`'s tests never answer `unsupported` on a
+      # leg meant to run them. Darwin's login keychain and Windows' Credential
+      # Manager are the runner's own.
+      - name: The part's drivers
+        shell: bash
+        env:
+          LEG: ${{ matrix.leg.name }}
+          RUNS: ${{ matrix.leg.runs }}
+          PART: ${{ matrix.slice.part }}
+          DRIVERS: ${{ matrix.slice.drivers }}
+          EXE: ${{ matrix.leg.exe }}
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ] && [ -z "${REBEL_SESSION:-}" ]; then
+            export REBEL_SESSION=1
+            exec dbus-run-session -- bash --noprofile --norc "$0"
+          fi
+          set +e
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            printf '%s' "rebel-ci-$GITHUB_RUN_ID" | gnome-keyring-daemon --unlock --components=secrets > /dev/null \
+              || { echo '::error::gnome-keyring-daemon did not start in the session'; exit 1; }
+            printf '%s' probe | secret-tool store --label='Rebel CI probe' service rebel-ci account probe \
+              && [ "$(secret-tool lookup service rebel-ci account probe)" = probe ] \
+              && secret-tool clear service rebel-ci account probe \
+              || { echo "::error::the Secret Service keeps no secret in this session, so keyring's tests would answer \`unsupported\` on a leg meant to run them"; exit 1; }
+            echo "the Secret Service keeps a secret in this session"
+          fi
+          # GNU's `timeout` by its path, since Windows' System32 holds a
+          # `timeout.exe` that waits instead, and asked that it is GNU's.
+          case "$RUNNER_OS" in macOS) bound=gtimeout ;; *) bound=/usr/bin/timeout ;; esac
+          "$bound" --version 2> /dev/null | head -n 1 | grep -q 'GNU coreutils' \
+            || { echo "::error::$bound is not GNU's timeout on this runner, and every driver runs under it"; exit 1; }
+          logs=build/rebel-logs
+          mkdir -p "$logs"
+          {
+            echo "### $LEG, part $PART"
+            echo
+            echo "| driver | run | exit | seconds | tests |"
+            echo "|---|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          worst=0
+          red=""
+          for name in $DRIVERS; do
+            base=$(printf '%s' "$name" | tr -d _)
+            for run in $RUNS; do
+              set -- "examples-rebel/$name.hero"
+              if [ "$RUNNER_OS" = "Windows" ]; then set -- "$@" --include "$SQLITE_INCLUDE" --library "$SQLITE_LIB"; fi
+              if [ "$run" = "sanitize" ]; then set -- "$@" --sanitize; fi
+              log="$logs/$name.$run.log"
+              echo "::group::$name, $run"
+              start=$(date +%s)
+              "$bound" -k 30 "$LIMIT" "./heroes$EXE" test "$@" 2>&1 | head -c "$BYTES" > "$log"
+              code=${PIPESTATUS[0]}
+              took=$(( $(date +%s) - start ))
+              said=""
+              if [ "$code" -eq 124 ] || [ "$code" -eq 137 ]; then
+                said="stopped after $LIMIT s"
+                if [ "$RUNNER_OS" = "Windows" ]; then
+                  MSYS_NO_PATHCONV=1 taskkill /F /T /FI "IMAGENAME eq $base*" > /dev/null 2>&1
+                else
+                  pkill -9 -f "build/.*$base" 2> /dev/null
+                fi
+              elif [ "$(wc -c < "$log" | tr -d ' ')" -ge "$BYTES" ]; then
+                said="output cut at $BYTES bytes"
+                if [ "$code" -eq 0 ]; then code=1; fi
+              fi
+              count=$(grep -E '^[0-9]+ tests?[ ,]' "$log" | tail -n 1)
+              echo "$name, $run: exit $code, $took s: ${count:-no count line}${said:+ ($said)}"
+              grep -E -A1 '^SKIP ' "$log" | head -n 200
+              if [ "$code" -ne 0 ]; then
+                grep -E '^FAIL' "$log" | head -n 60
+                echo "--- the last lines"
+                tail -n 60 "$log" | cut -c1-400
+                red="$red $name/$run"
+                if [ "$code" -gt "$worst" ]; then worst=$code; fi
+              fi
+              echo "::endgroup::"
+              if [ "$code" -ne 0 ]; then echo "::error title=$name, $run::exit $code, ${count:-no count line}${said:+ ($said)}"; fi
+              echo "| $name | $run | $code | $took | ${count:-none}${said:+ ($said)} |" >> "$GITHUB_STEP_SUMMARY"
+            done
+            /usr/bin/find build -maxdepth 2 \( -name "$base" -o -name "$base.*" -o -name "$base-*" \) -exec rm -rf {} + 2> /dev/null
+          done
+          if [ -n "$red" ]; then echo "::error::the runs of this part that did not end green:$red"; fi
+          exit "$worst"
