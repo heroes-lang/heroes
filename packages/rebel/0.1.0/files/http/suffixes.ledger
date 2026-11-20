@@ -4,7 +4,8 @@
 # answers it; Python and Rust have none. The list is publicsuffix.org's,
 # version 2026-11-17_06-40-19_UTC, fetched 2026-11-18 into the scratch folder
 # and made data by a one-off program; every expected value of the tests is
-# the list's own test file's (tests/test_psl.txt, public domain), 77 cases.
+# the list's own test file's (tests/test_psl.txt, fetched 2026-11-18, public
+# domain), 77 cases.
 
 capability psl/suffix  the public suffix of a domain name, and whether ICANN's section says it
   heroes  http/suffixes.suffix_of, http/suffixes.Suffix

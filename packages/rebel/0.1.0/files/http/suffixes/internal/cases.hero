@@ -1,4 +1,4 @@
-# The cases of the list's own test file, tests/test_psl.txt of
+# The cases of the list's own test file of 2026-11-18, tests/test_psl.txt of
 # github.com/publicsuffix/list (public domain, CC0; SHA-256 8f50ad958916d6a8...),
 # fetched on 2026-11-18: each a host and the registrable domain the list
 # gives it, "" where it gives none. A name in another script is written in

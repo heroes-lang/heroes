@@ -109,19 +109,23 @@ task either; every other word and command reads it.
 
 ## A package task (the paired run, task 2300)
 
-The suite of package tasks panel 234's R14 asks of you, twenty and ten in reserve, is written as
-above, its rules `docs/metrics/tasks.md` § A package task, in folders of its own under the draft
-folder, so no session reads them either: `held-out-draft/packages/suite/` (01 to 20) and
+The suite of package tasks the paired run's instrument reads, twenty and ten in reserve, is written
+as above (panel 234's R14 asked it at M-core-packages' close; that run no longer holds, and the
+instrument went to M-rebel-library's decision 15, the register's item 7, noted 2026-11-20), its
+rules `docs/metrics/tasks.md` § A package task, in folders of its own under the draft folder, so no
+session reads them either: `held-out-draft/packages/suite/` (01 to 20) and
 `held-out-draft/packages/reserve/` (21 to 30), each with its `LABEL`, `traps.txt` and
 `constructs.txt`. What differs:
 
 1. **The tree**, once, a folder git ignores, placed by the compiler from the repository's index:
 
        mkdir -p build/thesis-packages
-       ./heroes-next add core --index file://../../packages -C build/thesis-packages
+       ./heroes-next add rebel --index file://../../packages -C build/thesis-packages
 
+   Run on 2026-11-20 it answers `error[absent]`: the index publishes no version of Rebel yet
+   (`tests/thesis/contexts/README.md` says what that asks first).
 2. **Each task** carries `reference-packages.hero` beside `reference.hero`: the same task solved
-   over the packages, naming them by `use <core>/...`.
+   over the packages, naming them by `use <rebel>/...`.
 3. **`dry`** four times on each folder, the strict and the control arm, without the tree and with
    it: `dry held-out-draft/packages/suite` and `dry held-out-draft/packages/suite --packages
    build/thesis-packages`, each again with `--arm control`, and `--mute` anywhere a model might read.
@@ -131,8 +135,9 @@ folder, so no session reads them either: `held-out-draft/packages/suite/` (01 to
        ./heroes-next run tests/harness/thesis.hero -- seal held-out-draft/packages/reserve -o tests/thesis/packages/reserve.enc --key HEROES_PACKAGES_RESERVE_KEY  # none until the freeze, 2026-11-15
 
    the folder a recommendation of task 2300's lane, the place being yours (none on 2026-11-15).
-5. **The context**, written again from the tree of the close before the run is registered:
-   `cards --packages build/thesis-packages -o tests/thesis/contexts/spec-and-cards.md`, committed.
+5. **The context**, written again from the tree the run places before the run is registered,
+   `cards --packages build/thesis-packages -o tests/thesis/contexts/spec-and-cards.md` (none on 2026-11-20),
+   committed.
 
 ## Afterwards
 

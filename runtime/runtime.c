@@ -329,8 +329,11 @@
  * so by every compiler since that condition, the seed's among them, and by
  * both mirrors of the key, the hooks' and the harness's. The layer's members
  * are the names below under `platform/`, in the order written, each after its
- * own header. */
+ * own header; the first name is the header the members alone include, the tags
+ * of their handle tables, so the key covers it and a copy of the runtime made
+ * from this list holds it (named 2026-11-20). */
 #if 0
+#include "platform/hero_handle_tag.h"
 #include "hero_crypto.h"
 #include "platform/hero_crypto.c"
 #include "hero_disk.h"

@@ -1,6 +1,6 @@
 # A connected socket as a stream, `hero_stream_net.h`, bound thin: its one C
 # function and one Heroes function answering what it answers. Rebel's floor
-# (`examples/packages/README.md` § 4.1): no policy stands here, and the face
+# (`examples-rebel/README.md` § A2): no policy stands here, and the face
 # above it turns the stream's kinds into codes.
 #
 # THE SOCKET'S LIFE PASSES INTO THE STREAM, AND THE MARK THAT SAYS SO IS

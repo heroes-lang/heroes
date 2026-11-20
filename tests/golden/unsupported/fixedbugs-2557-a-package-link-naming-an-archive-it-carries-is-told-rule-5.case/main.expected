@@ -4,4 +4,4 @@ error[ffi_missing_library]: this machine has no library called `pkl` — the gro
   4 | extern "pkl.h" link "pkl"  #~ ffi_missing_library
     |                     ^^^^^
   note: install its development files, or pass `--library <dir>`; where the library ships a `.pc`, `pkgconfig "pkl"` asks the machine for both its headers and its libraries
-  note: the package `lnk` carries `libpkl.a` in its tree, and no linker searches a package's tree: a package ships no platform C of its own (examples-rebel/packages/README.md § 4, rule 5), and a compiled library is C built for one platform, so the library its `link` names is the machine's, installed with its development files
+  note: the package `lnk` carries `libpkl.a` in its tree, and no linker searches a package's tree: a package ships no platform C of its own (design.md §1.11), and a compiled library is C built for one platform, so the library its `link` names is the machine's, installed with its development files

@@ -1,6 +1,6 @@
 # The platform layer's communication between processes, `hero_ipc.h`, bound
 # thin: one function per C function, in C's order, each answering what C
-# answers. Rebel's floor of `ipc` (`examples/packages/README.md` § 4.1): where
+# answers. Rebel's floor of `ipc` (`examples-rebel/README.md` § A2): where
 # a call fails its handle or stream is `nullptr` or its count -1, and
 # `last_error` then the kind; no policy stands here, and the face above it
 # turns every kind into a code.

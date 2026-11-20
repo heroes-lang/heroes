@@ -2,11 +2,11 @@
 # 8259) into a `Value`, `render` writes a value back in one canonical form,
 # and `field` finds a member of an object.
 #
-# The language offers no reader of any format and leaves it to the program
-# (design.md §1.11: there is no standard library), so this program carries
-# the one it needs and no library. Until 2026-11-19 it came from a package,
-# which M-rebel-library removed (its page's decisions 6 to 8); it is written
-# here from the RFC alone.
+# The language offers no reader of any format and imposes no standard library
+# (design.md §1.11), and a program of `examples/` takes no package
+# (M-rebel-library's decision 7), so this program carries the one it needs.
+# Until 2026-11-19 it came from a package, which M-rebel-library removed (its
+# page's decisions 6 to 8); it is written here from the RFC alone.
 #
 # A NUMBER IS ROUNDED ONCE, BY THE C LIBRARY. The digits are read here, to
 # the RFC's grammar, and the text they make is handed to `strtod` (spec
