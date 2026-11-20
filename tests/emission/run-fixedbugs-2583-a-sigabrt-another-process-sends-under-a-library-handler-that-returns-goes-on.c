@@ -272,7 +272,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("61392d2678c0866e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("29f6f95d47cd72e4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2583asigabrtanotherprocesssendsunderalibraryhandlerthatreturnsgoeson\tfixedbugs-2583-a-sigabrt-another-process-sends-under-a-library-handler-that-returns-goes-on\n");

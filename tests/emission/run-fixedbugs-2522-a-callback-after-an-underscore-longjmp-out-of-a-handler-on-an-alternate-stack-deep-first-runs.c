@@ -338,7 +338,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("332b55b45ee9073d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("45b6be480fd74990", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2522acallbackafteranunderscorelongjmpoutofahandleronanalternatestackdeepfirstruns\tfixedbugs-2522-a-callback-after-an-underscore-longjmp-out-of-a-handler-on-an-alternate-stack-deep-first-runs\n");
