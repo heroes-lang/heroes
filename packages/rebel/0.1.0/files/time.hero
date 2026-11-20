@@ -20,7 +20,22 @@
 # It also computes what a program that waits must know, every time the
 # caller's: the waits of a retry loop and the wait a `Retry-After` asks, the
 # runs of a cron schedule on a zone's clocks, and the state of a circuit
-# breaker. The program sleeps and calls; nothing here does either.
+# breaker. Nothing of the retries, the schedules or the breakers sleeps or
+# calls: the program does, with `sleep`.
+#
+# What it does NOT do: write or read a date in a language's words or by a
+# pattern, "Tuesday, March 5, 2024" or "dd/MM/yyyy", which `i18n/dates` does
+# (`i18n/dates.format_pattern`, `i18n/dates.parse_pattern`,
+# `i18n/dates.month_names`): a text here is one of the fixed `Layout`s, and
+# the names of days and months are English. Nor does it wait on more than one
+# thing at once, or end a wait at the program's stop (`net.catch_stop`):
+# `poll` does both.
+#
+# It fails `invalid` where a text or a value is not what the function reads,
+# `does_not_fit` where a result leaves the range above, `not_found`,
+# `permission` and `unsupported` where a zone cannot be read, `failed` where
+# the system's clock cannot, and `limit` and `timeout` where a retry loop is
+# spent.
 
 use time/hero_time
 use time/internal/arith
@@ -278,7 +293,10 @@ function between_marks(from: Mark, to: Mark) -> Duration?
 #
 # It may wait longer, as long as the system takes to run the program again; a
 # signal does not cut it short, and it does not count the time the machine
-# itself sleeps.
+# itself sleeps. The program's stop (`net.catch_stop`, `net.ask_stop`) does
+# not end it either, where every wait of `io`, `poll`, `serial` and `net` ends
+# at a stop: a loop that must end on Ctrl-C waits in slices short enough to
+# ask `net.is_stop_asked` between them, or waits on a `poll.add_timer`.
 function sleep(d: Duration)
     if d.nanoseconds > 0
         _ = hero_time.sleep_ns(d.nanoseconds)
@@ -690,6 +708,8 @@ function weekday_of(t: Instant) -> Weekday
 # The English name of `day`, "Monday" to "Sunday".
 #
 # - `day`: the weekday.
+#
+# See also `i18n/dates.weekday_names`, a language's names for every day.
 function weekday_name(day: Weekday) -> str
     return forms.weekday_names()[weekday_number(day) - 1]
 
@@ -710,7 +730,8 @@ function weekday_number(day: Weekday) -> i64
 #
 # - `month`: the month's number, 1 to 12.
 #
-# Fails `invalid` where `month` is outside 1 to 12.
+# Fails `invalid` where `month` is outside 1 to 12. See also
+# `i18n/dates.month_names`, a language's names for every month.
 function month_name(month: i64) -> str?
     if month < 1 || month > 12
         return fail(code: INVALID, msg: f"the month {month} is outside 1 to 12")
@@ -2396,6 +2417,293 @@ test "new_breaker: a policy built directly with no trials refuses every call onc
     assert breaker_state(breaker, at: add(t: start, d: seconds(5).must()).must()) == .half_open
 
 ## Examples
+
+# What time it is, by the wall clock.
+test "now: the wall clock reads a moment after 2026 began"
+    assert is_after(a: now().must(), b: date(year: 2026, month: 1, day: 1).must())
+
+# How long ago a moment was.
+test "since: 2020 began more than six years ago"
+    ago = since(date(year: 2020, month: 1, day: 1).must()).must()
+    assert is_longer(a: ago, b: days(6 * 365).must())
+
+# How long is left before a moment.
+test "until: 2100 is still ahead"
+    assert until(date(year: 2100, month: 1, day: 1).must()).must().nanoseconds > 0
+
+# A reading of the monotonic clock, to measure a span with.
+test "mark: a reading taken before some work"
+    start = mark().must()
+    assert elapsed(start).must().nanoseconds >= 0
+
+# How long some work took.
+test "elapsed: the time a sleep of five milliseconds took"
+    start = mark().must()
+    sleep(milliseconds(5).must())
+    assert !is_shorter(a: elapsed(start).must(), b: milliseconds(5).must())
+
+# The span between two readings a program kept.
+test "between_marks: two readings in order"
+    first = mark().must()
+    second = mark().must()
+    assert between_marks(from: first, to: second).must().nanoseconds >= 0
+
+# A pause of a few milliseconds.
+test "sleep: a pause of two milliseconds"
+    start = mark().must()
+    sleep(milliseconds(2).must())
+    assert !is_shorter(a: elapsed(start).must(), b: milliseconds(2).must())
+
+# The instant the Unix clock counts from.
+test "epoch: 1970 began at midnight UTC"
+    assert format(epoch(), layout: .rfc3339) == "1970-01-01T00:00:00Z"
+
+# The earliest instant an `Instant` holds.
+test "min_instant: a September night of 1677"
+    assert format(min_instant(), layout: .rfc3339) == "1677-09-21T00:12:43.145224192Z"
+
+# The latest instant an `Instant` holds.
+test "max_instant: an April night of 2262"
+    assert format(max_instant(), layout: .rfc3339) == "2262-04-11T23:47:16.854775807Z"
+
+# A Unix time in seconds, as a system call or a file's header writes it.
+test "from_unix: the billionth second"
+    t = from_unix(whole_seconds: 1_000_000_000, extra_nanoseconds: 0).must()
+    assert format(t, layout: .rfc3339) == "2001-09-09T01:46:40Z"
+
+# A Unix time in milliseconds, as JavaScript writes one.
+test "from_unix_milliseconds: a moment of November 2023"
+    assert format(from_unix_milliseconds(1_700_000_000_000).must(), layout: .rfc3339) == "2023-11-14T22:13:20Z"
+
+# A Unix time in microseconds.
+test "from_unix_microseconds: one second after the epoch"
+    assert format(from_unix_microseconds(1_000_000).must(), layout: .rfc3339) == "1970-01-01T00:00:01Z"
+
+# An instant as a Unix time in seconds, the nanoseconds left out.
+test "unix_seconds: the billionth second and 999 nanoseconds"
+    assert unix_seconds(from_unix(whole_seconds: 1_000_000_000, extra_nanoseconds: 999).must()) == 1_000_000_000
+
+# An instant as a Unix time in milliseconds.
+test "unix_milliseconds: one and a half seconds after the epoch"
+    assert unix_milliseconds(from_unix(whole_seconds: 1, extra_nanoseconds: 500_000_000).must()) == 1_500
+
+# An instant as a Unix time in microseconds.
+test "unix_microseconds: one and a half seconds after the epoch"
+    assert unix_microseconds(from_unix(whole_seconds: 1, extra_nanoseconds: 500_000_000).must()) == 1_500_000
+
+# A moment a day and a half later.
+test "add: 36 hours after midnight"
+    later = add(t: date(year: 2026, month: 1, day: 1).must(), d: hours(36).must()).must()
+    assert format(later, layout: .rfc3339) == "2026-01-02T12:00:00Z"
+
+# The span from one moment to another.
+test "between: a week from one Thursday to the next"
+    from = date(year: 2026, month: 1, day: 1).must()
+    to = date(year: 2026, month: 1, day: 8).must()
+    assert between(from: from, to: to).must() == days(7).must()
+
+# Which of two moments comes first.
+test "is_before: New Year's Day before the day after"
+    assert is_before(a: date(year: 2026, month: 1, day: 1).must(), b: date(year: 2026, month: 1, day: 2).must())
+
+# Which of two moments comes later.
+test "is_after: the day after New Year's Day"
+    assert is_after(a: date(year: 2026, month: 1, day: 2).must(), b: date(year: 2026, month: 1, day: 1).must())
+
+# A moment cut to the start of its hour.
+test "truncate: 12:34:56 to the hour"
+    t = parse("2026-03-05T12:34:56Z", layout: .rfc3339).must()
+    assert format(truncate(t, unit: hours(1).must()).must(), layout: .rfc3339) == "2026-03-05T12:00:00Z"
+
+# A moment rounded to the nearest minute.
+test "round: 12:34:56 to the minute"
+    t = parse("2026-03-05T12:34:56Z", layout: .rfc3339).must()
+    assert format(round(t, unit: minutes(1).must()).must(), layout: .rfc3339) == "2026-03-05T12:35:00Z"
+
+# One unit as a duration, for a function that takes a `Duration`.
+test "duration_of: a minute is sixty seconds"
+    assert duration_of(.minute) == seconds(60).must()
+
+# A duration counted in nanoseconds.
+test "nanoseconds: 1,500 of them"
+    assert format_duration(nanoseconds(1_500)) == "1.5µs"
+
+# A duration counted in microseconds.
+test "microseconds: three of them"
+    assert microseconds(3).must() == nanoseconds(3_000)
+
+# A duration counted in milliseconds.
+test "milliseconds: a quarter of a second"
+    assert milliseconds(250).must() == nanoseconds(250_000_000)
+
+# A duration counted in seconds.
+test "seconds: a minute and a half"
+    assert format_duration(seconds(90).must()) == "1m30s"
+
+# A duration counted in minutes.
+test "minutes: an hour and a half"
+    assert format_duration(minutes(90).must()) == "1h30m0s"
+
+# A duration counted in hours.
+test "hours: two of them"
+    assert hours(2).must() == minutes(120).must()
+
+# A duration counted in days of 24 hours.
+test "days: one day is 24 hours"
+    assert days(1).must() == hours(24).must()
+
+# A duration counted in weeks.
+test "weeks: one week is seven days"
+    assert weeks(1).must() == days(7).must()
+
+# The longest duration, about 292 years.
+test "max_duration: the longest span written out"
+    assert format_duration(max_duration()) == "2562047h47m16.854775807s"
+
+# The most negative duration, which has no positive twin.
+test "min_duration: the shortest span written out"
+    assert format_duration(min_duration()) == "-2562047h47m16.854775808s"
+
+# Two spans added.
+test "sum: a second and half a second"
+    assert sum(a: seconds(1).must(), b: milliseconds(500).must()).must() == milliseconds(1_500).must()
+
+# One span taken from another.
+test "difference: a second less a quarter of one"
+    assert difference(a: seconds(1).must(), b: milliseconds(250).must()).must() == milliseconds(750).must()
+
+# A span turned the other way.
+test "negate: five seconds back"
+    assert negate(seconds(5).must()).must() == seconds(-5).must()
+
+# A span without its sign.
+test "abs: five seconds back is five seconds long"
+    assert abs(seconds(-5).must()).must() == seconds(5).must()
+
+# A span taken several times.
+test "scale: three waits of 100 milliseconds"
+    assert scale(milliseconds(100).must(), by: 3).must() == milliseconds(300).must()
+
+# A span cut into equal parts.
+test "divide: a second in four"
+    assert divide(seconds(1).must(), by: 4).must() == milliseconds(250).must()
+
+# How many whole units a span holds.
+test "to_units: 90 minutes hold one whole hour"
+    assert to_units(minutes(90).must(), unit: .hour) == 1
+
+# What is left over once the whole units are out.
+test "remainder: 90 minutes less the whole hour"
+    assert remainder(minutes(90).must(), unit: .hour) == minutes(30).must()
+
+# A span as a fraction of a unit, for a rate or a chart.
+test "to_float: 90 minutes are an hour and a half"
+    assert to_float(minutes(90).must(), unit: .hour) == 1.5
+
+# Which of two spans is shorter.
+test "is_shorter: a second is shorter than a minute"
+    assert is_shorter(a: seconds(1).must(), b: minutes(1).must())
+
+# Which of two spans is longer.
+test "is_longer: a minute is longer than a second"
+    assert is_longer(a: minutes(1).must(), b: seconds(1).must())
+
+# A span cut to whole hours.
+test "truncate_duration: 1h40m to the hour"
+    assert truncate_duration(d: minutes(100).must(), unit: hours(1).must()).must() == hours(1).must()
+
+# A span rounded to the nearest hour.
+test "round_duration: 1h40m to the nearest hour"
+    assert round_duration(d: minutes(100).must(), unit: hours(1).must()).must() == hours(2).must()
+
+# The calendar's parts of a moment, in UTC.
+test "to_date_time: half past nine on a summer day"
+    t = parse("2026-07-01T09:30:00Z", layout: .rfc3339).must()
+    parts = to_date_time(t)
+    assert parts.year == 2026 && parts.month == 7 && parts.day == 1 && parts.hour == 9 && parts.minute == 30
+
+# A moment from its calendar's parts, in UTC.
+test "from_date_time: half past nine on a summer day"
+    parts = DateTime(year: 2026, month: 7, day: 1, hour: 9, minute: 30, second: 0, nanosecond: 0)
+    assert format(from_date_time(parts).must(), layout: .rfc3339) == "2026-07-01T09:30:00Z"
+
+# Midnight of a day, the plainest way to name a date.
+test "date: the fifth of March"
+    assert format(date(year: 2026, month: 3, day: 5).must(), layout: .date_only) == "2026-03-05"
+
+# The day of the week a date falls on.
+test "weekday_of: 2026 began on a Thursday"
+    assert weekday_of(date(year: 2026, month: 1, day: 1).must()) == .thursday
+
+# A weekday's English name.
+test "weekday_name: Monday"
+    assert weekday_name(.monday) == "Monday"
+
+# A weekday's ISO 8601 number.
+test "weekday_number: Sunday is the seventh"
+    assert weekday_number(.sunday) == 7
+
+# A month's English name.
+test "month_name: the third month"
+    assert month_name(3).must() == "March"
+
+# The day of its year a date falls on.
+test "day_of_year: the first of February is the 32nd"
+    assert day_of_year(date(year: 2026, month: 2, day: 1).must()) == 32
+
+# The ISO 8601 week a date falls in.
+test "iso_week: New Year's Day of 2026 is in week 1"
+    assert iso_week(date(year: 2026, month: 1, day: 1).must()) == IsoWeek(year: 2026, week: 1)
+
+# A day of an ISO 8601 week, which may fall in the year before.
+test "from_iso_week: the Monday of 2026's first week"
+    monday = from_iso_week(year: 2026, week: 1, day: .monday).must()
+    assert format(monday, layout: .date_only) == "2025-12-29"
+
+# Whether a year has a February 29.
+test "is_leap_year: 2024 is, 2026 is not"
+    assert is_leap_year(2024) && !is_leap_year(2026)
+
+# How many leap years a span of years holds.
+test "leap_years_between: seven from 2000 up to 2026"
+    assert leap_years_between(from: 2000, to: 2026) == 7
+
+# How many days a month has.
+test "days_in_month: February of a leap year"
+    assert days_in_month(year: 2024, month: 2).must() == 29
+
+# How many days a year has.
+test "days_in_year: a leap year has 366"
+    assert days_in_year(2024) == 366
+
+# A date a month on, the end of a month kept inside the next.
+test "add_months: January 31 and a month is February 28"
+    t = add_months(date(year: 2026, month: 1, day: 31).must(), months: 1).must()
+    assert format(t, layout: .date_only) == "2026-02-28"
+
+# A date a year on, a leap day kept inside the next year.
+test "add_years: February 29 and a year is February 28"
+    t = add_years(date(year: 2024, month: 2, day: 29).must(), years: 1).must()
+    assert format(t, layout: .date_only) == "2025-02-28"
+
+# A moment written in a standard's form.
+test "format: a moment as RFC 3339 and as an HTTP date"
+    t = parse("2026-03-05T14:30:00Z", layout: .rfc3339).must()
+    assert format(t, layout: .rfc3339) == "2026-03-05T14:30:00Z"
+    assert format(t, layout: .http) == "Thu, 05 Mar 2026 14:30:00 GMT"
+
+# A moment read back from a standard's form, its offset moved to UTC.
+test "parse: half past three in a zone an hour east"
+    t = parse("2026-03-05T15:30:00+01:00", layout: .rfc3339).must()
+    assert format(t, layout: .rfc3339) == "2026-03-05T14:30:00Z"
+
+# A span written for a person or a log.
+test "format_duration: an hour and a half"
+    assert format_duration(minutes(90).must()) == "1h30m0s"
+
+# A span read from a setting's text.
+test "parse_duration: 1h30m"
+    assert parse_duration("1h30m").must() == minutes(90).must()
 
 # A zone read by its name, and the offset it keeps at an instant.
 test "load_zone: Rome's offset on a summer day"
