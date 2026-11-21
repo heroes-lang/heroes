@@ -305,6 +305,35 @@ function free_port() -> i64
     net.close_listener(@l).must()
     return port
 
+# A port of the loopback address that no system gives a socket of its own
+# choosing, for rounds that let a port go and then ask it: a port the system
+# chose, let go, may be given at once to another program's connect or
+# listener, and was in 5 of 40,000 rounds of `close_listener`'s test, run
+# beside seven programs taking ports as fast as they could (defect 2623),
+# where a port of its own choosing gave none in 80,000. Drawn by
+# the system's generator from 20000 to 31999, below Linux's 32768 to 60999
+# and macOS's and Windows' 49152 to 65535, so two runs at once seldom draw
+# the same; and one a listener can stand on (`held_elsewhere`), so a port
+# another program holds, or a range a system keeps for itself, is passed
+# over, a hundred draws at most.
+function quiet_port() -> i64
+    tries @= 0
+
+    while tries < 100
+        tries @ tries + 1
+        drawn = os.random_bytes(2).must()
+        port = 20000 + (drawn[0].to_i64().must() * 256 + drawn[1].to_i64().must()) % 12000
+
+        match net.listen(host: "127.0.0.1", port: port)
+            .ok l =>
+                held @= l
+                net.close_listener(@held).must()
+                return port
+            .err _ => _ = 0
+
+    assert false
+    return 0
+
 # Whether a socket other than the caller's holds `port` of the loopback
 # address: a listen there fails `exists`, as it does on macOS where another
 # program listens on that address or on every address (the four listeners

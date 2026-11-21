@@ -620,19 +620,22 @@ test "close_listener: then accept fails closed"
 # queue; until then a connect made at once was taken and dropped, and over
 # TLS answered `failed` where nothing listened (3 to 13 rounds of 200 on a
 # Mac at load 7). A connect over TLS and a plain one to the port are refused
-# each time, and the port can be listened on again.
+# each time, and the port can be listened on again. The port is one no
+# system gives a socket of its own choosing (`loopback.quiet_port`): one the
+# system chose for the listener, let go, was another program's at once in 5
+# rounds of 40,000, beside seven programs taking ports as fast as they could.
 test "close_listener: the port listens no more once it returns"
     if is_available()
+        port = loopback.quiet_port()
         rounds @= 0
 
         while rounds < 200
             rounds @ rounds + 1
             l @= listen(
                 host: "127.0.0.1",
-                port: 0,
+                port: port,
                 server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
             ).must()
-            port = l.port
             close_listener(@l).must()
             secured = connect(
                 host: "127.0.0.1",
