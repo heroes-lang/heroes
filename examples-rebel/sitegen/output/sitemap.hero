@@ -1,0 +1,105 @@
+# The site's `sitemap.xml` (the sitemaps.org protocol 0.9): every page's
+# absolute URL, its date as `lastmod` where it has one, and, for a page
+# written in several languages, an `xhtml:link` to each of them with its
+# `hreflang`, the form a sitemap uses to say that the pages are one page
+# translated. Every URL is ASCII, the base URL's host written by IDNA.
+
+use <rebel>/bytes
+use <rebel>/lists
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/xml
+
+use site/model
+use site/places
+
+## Namespaces
+
+# The sitemap protocol's namespace.
+constant SITEMAP: str
+    "http://www.sitemaps.org/schemas/sitemap/0.9"
+
+# XHTML's namespace, which the `xhtml:link` of an alternate is in.
+constant XHTML: str
+    "http://www.w3.org/1999/xhtml"
+
+## The sitemap
+
+# One page the sitemap lists.
+record Entry
+    # Its URL under the base path.
+    url: str
+    # Its date; `not_found` where it has none.
+    modified: time.Instant?
+    # The page in every language it is written in, itself among them; empty
+    # where it is written in one.
+    alternates: [Alternate]
+
+# One language a page is written in.
+record Alternate
+    # The language's tag.
+    tag: str
+    # The page's URL in it, under the base path.
+    url: str
+
+# The sitemap of the pages `entries`, by their URLs' bytes.
+#
+# - `site`: the site, whose base URL makes each URL absolute and whose zone
+#   gives each date's day.
+# - `entries`: the pages.
+#
+# Fails as `xml.format_indented` does.
+function sitemap(site: model.Site, entries: [Entry]) -> model.Output?
+    urls: [xml.Node] @= []
+
+    for entry in lists.sort_by(entries, url_before)
+        children: [xml.Node] @= [leaf(name: "loc", text: places.absolute(site, local: entry.url))]
+
+        match entry.modified
+            .ok at => children @ children.push(leaf(name: "lastmod", text: day_of(at, zone: site.zone)))
+            .err _ => _ = 0
+
+        for a in entry.alternates
+            alternate = xml.with_attribute(
+                xml.with_attribute(xml.with_attribute(xml.element_in(space: XHTML, name: "xhtml:link"), name: "rel", value: "alternate"), name: "hreflang", value: a.tag),
+                name: "href",
+                value: places.absolute(site, local: a.url)
+            )
+            children @ children.push(.element(v: alternate))
+
+        tag = xml.element_in(space: SITEMAP, name: "url")
+        urls @ urls.push(.element(v: xml.Element(name: tag.name, attributes: [], children: children)))
+
+    top = xml.with_namespace(
+        xml.with_namespace(xml.element_in(space: SITEMAP, name: "urlset"), prefix: "", space: SITEMAP),
+        prefix: "xhtml",
+        space: XHTML
+    )
+    root = xml.Element(name: top.name, attributes: top.attributes, children: urls)
+    text = xml.format_indented(xml.document(root), 2)?
+    return ok(model.Output(path: "sitemap.xml", data: bytes.from_text(text + "\n")))
+
+function url_before(a: Entry, b: Entry) -> bool
+    return strings.compare(a: a.url, b: b.url) < 0
+
+# A sitemap element holding `text`.
+function leaf(name: str, text: str) -> xml.Node
+    return .element(v: xml.with_text(xml.element_in(space: SITEMAP, name: name), text))
+
+# The day of `at` in `zone`, as W3C's date form writes it: `2026-03-14`.
+#
+# - `at`: the instant.
+# - `zone`: the zone whose calendar day is written.
+function day_of(at: time.Instant, zone: time.Zone) -> str
+    local = time.to_date_time_in(at, zone)
+    month = strings.pad_zeros(to_str(local.month), 2)
+    day = strings.pad_zeros(to_str(local.day), 2)
+    return f"{local.year}-{month}-{day}"
+
+## Tests
+
+test "day_of: midnight in Stockholm is the day before in UTC, and the day itself here"
+    stockholm = time.fixed_zone("CET", time.hours(1).must()).must()
+    at = time.parse("2026-03-13T23:00:00Z", .rfc3339).must()
+    assert day_of(at, zone: stockholm) == "2026-03-14"
+    assert day_of(at, zone: time.utc_zone()) == "2026-03-13"

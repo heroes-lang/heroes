@@ -1,0 +1,126 @@
+# Each language of the site made ready from what `site.toml` says of it: its
+# tag read and put in canonical form, the direction its script is written in,
+# and where its pages stand. A site author writes tags as they come to hand,
+# `sv-se`, `iw`, `de`; a page's `lang` attribute, the sitemap's `hreflang`
+# and CLDR's data all want the one canonical form of the tag.
+
+use <rebel>/i18n
+use <rebel>/i18n/locales
+
+use site/model
+
+## Codes
+
+# The code of a language whose code or tag cannot be used.
+constant INVALID: str
+    "invalid"
+
+## Direction
+
+# The ISO 15924 codes of the scripts written from right to left that a
+# language's likely script can be; a script not listed is written left to
+# right, and a page that needs otherwise says so in its own markup.
+constant RTL_SCRIPTS: [str]
+    ["Adlm", "Arab", "Hebr", "Mand", "Mend", "Nkoo", "Rohg", "Samr", "Syrc", "Thaa", "Yezi"]
+
+# `rtl` where the script `script` is written from right to left, `ltr`
+# otherwise.
+#
+# - `script`: an ISO 15924 code in title case, as `Arab`; empty where none
+#   is known, which is written left to right.
+function direction_of(script: str) -> str
+    for rtl in RTL_SCRIPTS
+        if rtl == script
+            return "rtl"
+
+    return "ltr"
+
+## Making a language
+
+# Whether `code` can name a language in a file name and a URL: one or more
+# lower-case ASCII letters, digits and `-`, not beginning with `-`.
+#
+# - `code`: the key `site.toml` gives the language.
+function is_code(code: str) -> bool
+    if code.len() == 0 || code[0] == '-'
+        return false
+
+    for c in code.chars()
+        letter = c[0] >= 'a' && c[0] <= 'z'
+        digit = c[0] >= '0' && c[0] <= '9'
+
+        if !letter && !digit && c[0] != '-'
+            return false
+
+    return true
+
+# The language `site.toml` names `code`, its tag read, made canonical and
+# its direction found from the likely script.
+#
+# - `code`: the key of its table under `[languages]`.
+# - `tag`: its BCP 47 tag as written; an alias CLDR replaces, as `iw`, is
+#   replaced by the tag CLDR gives, `he`.
+# - `title`: the site's title in it.
+# - `first`: whether it is the site's first language, whose pages stand at the
+#   root.
+#
+# Fails `invalid` where `code` is not one `is_code` accepts or `tag` is not a
+# well-formed tag, the message naming the language.
+function language(code: str, tag: str, title: str, first: bool) -> model.Language?
+    if !is_code(code)
+        return fail(
+            code: INVALID,
+            msg: f"site.toml: the language code \"{code}\" is not lower-case letters, digits and \"-\""
+        )
+
+    read = match i18n.parse_locale(tag)
+        .ok l => l
+        .err e => return fail(
+            code: INVALID,
+            msg: f"site.toml: the language \"{code}\" has the tag \"{tag}\", which is not a BCP 47 tag: {e.msg}"
+        )
+
+    canonical = locales.canonicalize(read)
+    likely = locales.add_likely_subtags(canonical)
+
+    prefix = if first
+        ""
+    else
+        code + "/"
+
+    return ok(
+        model.Language(code: code, tag: i18n.format_locale(canonical), locale: canonical, title: title, direction: direction_of(likely.script), prefix: prefix)
+    )
+
+## Tests
+
+test "direction_of: Arabic and Hebrew right to left, Latin and an unknown script left to right"
+    assert direction_of("Arab") == "rtl"
+    assert direction_of("Hebr") == "rtl"
+    assert direction_of("Latn") == "ltr"
+    assert direction_of("") == "ltr"
+
+test "is_code: letters, digits and a hyphen; empty, a leading hyphen, upper case and a dot refused"
+    assert is_code("en")
+    assert is_code("zh-hant")
+    assert !is_code("")
+    assert !is_code("-en")
+    assert !is_code("EN")
+    assert !is_code("en.us")
+
+test "language: a lower-case tag made canonical, the first at the root, the others under their code"
+    sv = language(code: "sv", tag: "sv-se", title: "Hamn", first: false).must()
+    assert sv.tag == "sv-SE"
+    assert sv.prefix == "sv/"
+    assert sv.direction == "ltr"
+    en = language(code: "en", tag: "en", title: "Harbour", first: true).must()
+    assert en.prefix == ""
+
+test "language: an old tag replaced, its script found right to left"
+    he = language(code: "he", tag: "iw", title: "Namal", first: false).must()
+    assert he.tag == "he"
+    assert he.direction == "rtl"
+
+test "language: a code with upper case and a tag that is no tag refused"
+    assert language(code: "EN", tag: "en", title: "x", first: true).is_err()
+    assert language(code: "en", tag: "not a tag", title: "x", first: true).is_err()

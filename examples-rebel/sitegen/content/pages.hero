@@ -1,0 +1,316 @@
+# A Markdown file of the content folder read into a `model.Page`: its
+# language and translation key from its name (`harbour.de.md` is the German
+# `posts/harbour`), its front matter, its title, summary and word count from
+# its body, its slug and URL, and the other sources its body links to.
+#
+# A page's URL is made of URL-escaped segments and its output path of the
+# same segments as written (`places.place_of`), so the page whose slug is
+# `港` is linked as `/posts/%E6%B8%AF/` and written to `posts/港/index.html`.
+
+use <rebel>/i18n
+use <rebel>/markdown
+use <rebel>/path
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/unicode/segment
+use <rebel>/url
+
+use content/frontmatter
+use content/slugs
+use site/model
+use site/places
+
+## Codes
+
+# The code of a page whose front matter cannot be read.
+constant INVALID: str
+    "invalid"
+
+## Limits
+
+# The most characters a summary taken from the body holds before its
+# sentences are cut, so a list of pages stays a list.
+constant SUMMARY_CHARACTERS: i64
+    160
+
+## Where a file stands
+
+# What a content file's path says of it, before it is read.
+record Place
+    # Its language's code.
+    lang: str
+    # Its translation key.
+    key: str
+    # The first folder under `content/`, empty at the top.
+    section: str
+    # Which kind of page it is.
+    kind: model.PageKind
+    # Its name without its language and extension: `harbour`, `_index`.
+    base: str
+
+# Where the content file `source` stands.
+#
+# - `source`: its path under the site, `content/posts/harbour.de.md`.
+# - `languages`: the site's languages; a name whose last part before `.md`
+#   is none of their codes belongs to the first.
+function place_of(source: str, languages: [model.Language]) -> Place
+    under = source.slice(from: 8, to: source.len())
+    folder = path.parent_by(under, .posix)
+
+    dir = if folder == "."
+        ""
+    else
+        folder
+    stem = path.stem_by(under, .posix).default(under)
+    lang @= languages[0].code
+    base @= stem
+
+    match strings.split_once_last(s: stem, sep: ".")
+        .ok halves =>
+            for language in languages
+                if language.code == halves.after
+                    lang @ language.code
+                    base @ halves.before
+        .err _ => _ = 0
+
+    key = if dir.len() == 0
+        base
+    else
+        dir + "/" + base
+
+    section = if dir.len() == 0
+        ""
+    else
+        path.parts_by(dir, .posix)[0]
+
+    kind: model.PageKind = if base != "_index"
+        .single
+    else if dir.len() == 0
+        .home
+    else
+        .section
+
+    return Place(lang: lang, key: key, section: section, kind: kind, base: base)
+
+## Reading
+
+# The page `source` holds, read and placed.
+#
+# - `site`: the site, whose languages, zone and base path place the page.
+# - `source`: its path under the site.
+# - `text`: what the file holds.
+#
+# Fails `invalid` where the front matter cannot be read or its date is not
+# one `frontmatter.instant_of` reads, the message naming the source.
+function read_page(site: model.Site, source: str, text: str) -> model.Page?
+    place = place_of(source, site.languages)
+    language = model.language_of(site.languages, code: place.lang)
+
+    parts = match frontmatter.split(text)
+        .ok p  => p
+        .err e => return fail(code: INVALID, msg: f"{source}: {e.msg}")
+
+    meta = match frontmatter.read(parts)
+        .ok m  => m
+        .err e => return fail(code: INVALID, msg: f"{source}: {e.msg}")
+
+    doc = markdown.parse(parts.body)
+
+    title = match meta.title
+        .ok t  => t
+        .err _ => title_of(doc, place: place, language: language)
+
+    date: time.Instant? = match meta.date
+        .ok written => match frontmatter.instant_of(written, site.zone)
+            .ok at => ok(at)
+            .err e => return fail(code: INVALID, msg: f"{source}: {e.msg}")
+        .err e      => fail(code: e.code, msg: e.msg)
+
+    slug = match meta.slug
+        .ok s  => s
+        .err _ => slug_or(slug: slugs.slug_of(title), fallback: place.base)
+
+    spot = places.place_of(site, language: language, parts: segments_of(place: place, slug: slug), file: "")
+
+    return ok(
+        model.Page(source: source, lang: place.lang, key: place.key, section: place.section, kind: place.kind, title: title, date: date, draft: meta.draft, tags: meta.tags, summary: meta.summary.default(summary_of(doc)), words: segment.words(markdown.text_of(doc, markdown.ROOT)).len(), body: parts.body, slug: slug, url: spot.url, output: spot.output, links: links_of(doc, source), weight: meta.weight, params: meta.params)
+    )
+
+# A slug, or `fallback` made a slug where it is empty: a title of
+# punctuation alone still names its page.
+function slug_or(slug: str, fallback: str) -> str
+    if slug.len() > 0
+        return slug
+    made = slugs.slug_of(fallback)
+
+    if made.len() > 0
+        return made
+    return "page"
+
+# The parts of a page's path below its language's folder, as written: its
+# section and, for a page of its own, its slug.
+function segments_of(place: Place, slug: str) -> [str]
+    out: [str] @= []
+
+    if place.section.len() > 0
+        out @ out.push(place.section)
+
+    match place.kind
+        .single          => out @ out.push(slug)
+        .home | .section => _ = 0
+
+    return out
+
+# The title of a page whose front matter gives none: its first heading's
+# text, else the language's site title for the home page, else its section's
+# or its file's name.
+function title_of(doc: markdown.Document, place: Place, language: model.Language) -> str
+    for node in markdown.descendants(doc, markdown.ROOT)
+        if kind_name(markdown.node_of(doc, node)) == "heading"
+            return markdown.text_of(doc, node)
+
+    return match place.kind
+        .home    => language.title
+        .section => strings.capitalize(place.section)
+        .single  => place.base
+
+# The text of the first paragraph, its sentences kept while they fit in
+# `SUMMARY_CHARACTERS`, at least one; empty where the body has no paragraph.
+function summary_of(doc: markdown.Document) -> str
+    for node in markdown.descendants(doc, markdown.ROOT)
+        if kind_name(markdown.node_of(doc, node)) == "paragraph"
+            return first_sentences(markdown.text_of(doc, node))
+
+    return ""
+
+function first_sentences(text: str) -> str
+    kept: [str] @= []
+    count @= 0
+
+    for sentence in segment.sentences(text)
+        length = segment.graphemes(sentence).len()
+
+        if kept.len() > 0 && count + length > SUMMARY_CHARACTERS
+            break
+        kept @ kept.push(sentence)
+        count @ count + length
+
+    return strings.trim(kept.join(""))
+
+## Nodes
+
+# The name of what `node` is, among the kinds a page is read for:
+# `heading`, `paragraph`, `link`, `image`; empty for every other kind.
+#
+# - `node`: a node of a Markdown document.
+function kind_name(node: markdown.Node) -> str
+    return match node
+        .heading _ => "heading"
+        .paragraph => "paragraph"
+        .link _    => "link"
+        .image _   => "image"
+        .document | .block_quote | .list _ | .item _ | .thematic_break | .code_block _ | .html_block _ | .table _ | .table_row _ | .table_cell _ | .text _ | .soft_break | .line_break | .code _ | .emphasis | .strong | .strikethrough | .html_inline _ => ""
+
+# Where `node` leads where it is a link or an image, as Markdown wrote the
+# destination; empty for every other kind.
+#
+# - `node`: a node of a Markdown document.
+function destination_of(node: markdown.Node) -> str
+    return match node
+        .link l  => l.destination
+        .image i => i.destination
+        .document | .block_quote | .list _ | .item _ | .paragraph | .heading _ | .thematic_break | .code_block _ | .html_block _ | .table _ | .table_row _ | .table_cell _ | .text _ | .soft_break | .line_break | .code _ | .emphasis | .strong | .strikethrough | .html_inline _ => ""
+
+## Links
+
+# The sources the body of `source` links to or shows: each destination that
+# names a file of the content folder, relative to the page or from the
+# content folder's root when it begins with `/`, without its query and
+# fragment, in the order they stand and each once.
+#
+# - `doc`: the page's Markdown.
+# - `source`: the page's path under the site.
+function links_of(doc: markdown.Document, source: str) -> [str]
+    out: [str] @= []
+    seen: {str: bool} @= {}
+
+    for node in markdown.descendants(doc, markdown.ROOT)
+        match local_target(source: source, destination: destination_of(markdown.node_of(doc, node)))
+            .ok target =>
+                if !seen[target].default(false)
+                    seen[target] @ true
+                    out @ out.push(target)
+            .err _ => _ = 0
+
+    return out
+
+# The content file `destination` names from the page `source`. Fails
+# `not_found` where it names none: an empty destination, a fragment alone,
+# a URL with a scheme or a host, a path outside `content/`.
+#
+# - `source`: the page's path under the site.
+# - `destination`: a link's destination as Markdown wrote it, escaped.
+function local_target(source: str, destination: str) -> str?
+    if destination.len() == 0 || destination[0] == '#'
+        return fail(code: "not_found", msg: "a link inside the page")
+
+    parsed = match url.parse_loose(destination)
+        .ok u  => u
+        .err e => return fail(code: "not_found", msg: e.msg)
+
+    if parsed.scheme.len() > 0 || parsed.host.len() > 0 || parsed.empty_authority || parsed.path.len() == 0
+        return fail(code: "not_found", msg: "a link to another site")
+
+    plain = url.unescape(parsed.path).default(parsed.path)
+
+    joined = if plain[0] == '/'
+        "content" + plain
+    else
+        path.join_all_by([path.parent_by(source, .posix), plain], .posix)
+    target = path.clean_by(joined, .posix)
+
+    if !path.is_under_by(path: target, root: "content", rules: .posix)
+        return fail(code: "not_found", msg: f"{destination} is outside the content folder")
+    return ok(target)
+
+## Tests
+
+function test_languages() -> [model.Language]
+    return [
+        model.Language(code: "en", tag: "en", locale: i18n.parse_locale("en").must(), title: "Harbour", direction: "ltr", prefix: "")
+        model.Language(code: "de", tag: "de", locale: i18n.parse_locale("de").must(), title: "Hafen", direction: "ltr", prefix: "de/")
+    ]
+
+test "place_of: a page at the top, a translation, a section's index, the home page"
+    top = place_of("content/about.md", test_languages())
+    assert top.lang == "en" && top.key == "about" && top.section == "" && top.kind == .single
+    de = place_of("content/posts/harbour.de.md", test_languages())
+    assert de.lang == "de" && de.key == "posts/harbour" && de.section == "posts"
+    index = place_of("content/posts/_index.md", test_languages())
+    assert index.kind == .section && index.key == "posts/_index"
+    home = place_of("content/_index.de.md", test_languages())
+    assert home.kind == .home && home.lang == "de"
+
+test "place_of: a dot that names no language stays in the name"
+    odd = place_of("content/posts/v1.2.md", test_languages())
+    assert odd.lang == "en" && odd.base == "v1.2"
+
+test "local_target: relative, from the root, with a fragment, and the ones that are not local"
+    assert local_target(source: "content/posts/a.md", destination: "b.md#x").must() == "content/posts/b.md"
+    assert local_target(source: "content/posts/a.md", destination: "../images/h%C3%A4fen.jpg").must() == "content/images/häfen.jpg"
+    assert local_target(source: "content/posts/a.md", destination: "/about.md").must() == "content/about.md"
+    assert local_target(source: "content/posts/a.md", destination: "#top").is_err()
+    assert local_target(source: "content/posts/a.md", destination: "https://example.org/x.md").is_err()
+    assert local_target(source: "content/posts/a.md", destination: "//example.org/x").is_err()
+    assert local_target(source: "content/posts/a.md", destination: "../../etc/passwd").is_err()
+
+test "first_sentences: one sentence too long kept whole, two that fit, and none"
+    long = repeat("word ", 50) + "end."
+    assert first_sentences(long) == strings.trim(long)
+    assert first_sentences("One. Two.") == "One. Two."
+    assert first_sentences("") == ""
+
+test "slug_or: a title of punctuation takes the file's name"
+    assert slug_or(slug: "", fallback: "Hello World") == "hello-world"
+    assert slug_or(slug: "", fallback: "!!") == "page"
+    assert slug_or(slug: "x", fallback: "y") == "x"

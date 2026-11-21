@@ -1,0 +1,326 @@
+# The site's settings, read from the `site.toml` at its root: its title and
+# base URL, its theme and zone, its languages, and how images and outputs
+# are written. Every value is checked here, with a message naming the key, so
+# that the stages after it can rely on what they are handed.
+#
+# The base URL may name its host in Unicode, `https://bücher.example/`, as
+# its author reads it; every URL the site writes for a machine (the sitemap,
+# the feeds, `hreflang` links) needs the host in ASCII, which IDNA (UTS #46)
+# gives, `xn--bcher-kva.example`.
+
+use <rebel>/compress/brotli
+use <rebel>/json
+use <rebel>/lists
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/toml
+use <rebel>/url
+use <rebel>/url/idna
+
+use locale/languages
+use site/model
+
+## Codes
+
+# The code of a `site.toml` that does not parse or holds a value the
+# generator cannot use.
+constant INVALID: str
+    "invalid"
+
+## Defaults
+
+# The image kinds a browser shows, which a conversion may write.
+constant SHOWN_KINDS: [str]
+    ["png", "jpeg", "gif"]
+
+# Every image kind the generator reads, by the names `image.Kind`'s cases
+# have.
+constant READ_KINDS: [str]
+    ["png", "jpeg", "gif", "bmp", "netpbm"]
+
+# The extensions a Brotli copy is made for where `site.toml` names none:
+# the text a site serves.
+constant TEXT_EXTENSIONS: [str]
+    ["html", "css", "js", "json", "svg", "txt", "xml"]
+
+## Reading
+
+# The site at `root`, from the text of its `site.toml`.
+#
+# - `root`: the site's folder, kept in the answer.
+# - `text`: the text of `site.toml`.
+#
+# Fails `invalid` where the text is not TOML or a key holds a value the
+# generator cannot use: no `title`, `base_url` or `theme`; a base URL that is
+# not an absolute `http` or `https` URL or whose host IDNA refuses; no
+# language; a thumbnail size, a quality or a conversion out of range. Fails
+# as `time.load_zone` does where the zone is unknown.
+function read(root: str, text: str) -> model.Site?
+    table = match toml.parse(text)
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: f"site.toml does not parse: {e.msg}")
+
+    doc = match toml.to_json(table)
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: f"site.toml: {e.msg}")
+
+    title = text_of(doc, "/title")?
+    base = base_of(text_of(doc, "/base_url")?)?
+    zone_name = text_or(doc, pointer: "/timezone", fallback: "UTC")?
+
+    zone = if zone_name == "UTC"
+        time.utc_zone()
+    else
+        time.load_zone(zone_name)?
+
+    return ok(
+        model.Site(root: root, title: title, base_url: base.written, base_ascii: base.ascii, base_path: base.path, theme: text_of(doc, "/theme")?, zone: zone, languages: languages_of(doc, title)?, feed_section: text_or(doc, pointer: "/feed_section", fallback: "posts")?, feed_size: int_or(doc, "/feed_size", 20)?, images: images_of(doc)?, precompress: precompress_of(doc)?, output: text_or(doc, pointer: "/output", fallback: "public")?)
+    )
+
+## The base URL
+
+# The base URL in its three forms.
+record Base
+    # As written.
+    written: str
+    # With its host in ASCII and its path ending in `/`.
+    ascii: str
+    # Its path, beginning and ending with `/`.
+    path: str
+
+# The base URL `written` checked and put in its three forms.
+#
+# - `written`: the URL as `site.toml` writes it; its host may be Unicode.
+#
+# Fails `invalid` where it is not an absolute `http` or `https` URL with a
+# host, or where IDNA refuses its host.
+function base_of(written: str) -> Base?
+    parsed = match url.parse_loose(written)
+        .ok u  => u
+        .err e => return fail(code: INVALID, msg: f"site.toml: base_url \"{written}\" is not a URL: {e.msg}")
+
+    if parsed.scheme != "http" && parsed.scheme != "https" || parsed.host.len() == 0
+        return fail(code: INVALID, msg: f"site.toml: base_url \"{written}\" is not an absolute http or https URL")
+
+    host = match idna.to_ascii(parsed.host, idna.url_options())
+        .ok h => h
+        .err e => return fail(
+            code: INVALID,
+            msg: f"site.toml: the host of base_url \"{written}\" is not a domain name IDNA accepts: {e.msg}"
+        )
+
+    path = if parsed.path.len() == 0
+        "/"
+    else if parsed.path[parsed.path.len() - 1] == '/'
+        parsed.path
+    else
+        parsed.path + "/"
+
+    ascii = url.Url(
+        scheme: parsed.scheme,
+        user: "",
+        password: "",
+        host: host,
+        port: parsed.port,
+        path: path,
+        query: "",
+        fragment: "",
+        empty_authority: false,
+        empty_userinfo: false,
+        empty_password: false,
+        empty_query: false,
+        empty_fragment: false
+    )
+    return ok(Base(written: written, ascii: url.format(ascii), path: path))
+
+## Languages
+
+# The languages `[languages]` names, by `weight` then code, the first the
+# default. A site with no `[languages]` table has one language, English.
+function languages_of(doc: json.Value, title: str) -> [model.Language]?
+    table = json.value_at(doc, "/languages").default(.null_value)
+
+    if json.is_null(table)
+        return ok([languages.language(code: "en", tag: "en", title: title, first: true)?])
+
+    members = match json.members_of(table)
+        .ok m  => m
+        .err _ => return fail(code: INVALID, msg: "site.toml: [languages] is not a table")
+
+    found: [Ranked] @= []
+
+    for code in keys(members)
+        entry = members[code].must()
+        pointer = f"/languages/{code}"
+        found @ found.push(
+            Ranked(weight: int_or(doc, pointer + "/weight", 0)?, code: code, tag: text_or(entry, pointer: "/locale", fallback: code)?, title: text_or(entry, pointer: "/title", fallback: title)?)
+        )
+
+    if found.len() == 0
+        return fail(code: INVALID, msg: "site.toml: [languages] names no language")
+    ranked = lists.sort_by(found, ranks_before)
+    out: [model.Language] @= []
+
+    for r in ranked
+        out @ out.push(languages.language(code: r.code, tag: r.tag, title: r.title, first: out.len() == 0)?)
+
+    return ok(out)
+
+# A language as `site.toml` lists it, before it is made.
+record Ranked
+    # Its `weight`, lower first.
+    weight: i64
+    # Its key.
+    code: str
+    # Its `locale`, or its key where none is written.
+    tag: str
+    # Its `title`, or the site's.
+    title: str
+
+function ranks_before(a: Ranked, b: Ranked) -> bool
+    if a.weight != b.weight
+        return a.weight < b.weight
+    return strings.compare(a: a.code, b: b.code) < 0
+
+## Images and precompression
+
+function images_of(doc: json.Value) -> model.ImageSettings?
+    width = int_or(doc, "/images/thumbnail/0", 320)?
+    height = int_or(doc, "/images/thumbnail/1", 320)?
+    quality = int_or(doc, "/images/jpeg_quality", 82)?
+
+    if width < 1 || height < 1
+        return fail(
+            code: INVALID,
+            msg: f"site.toml: images.thumbnail {width} by {height} is not at least one pixel each way"
+        )
+
+    if quality < 1 || quality > 100
+        return fail(code: INVALID, msg: f"site.toml: images.jpeg_quality {quality} is not 1 to 100")
+
+    convert: {str: str} @= {"bmp": "png", "netpbm": "png"}
+    table = json.value_at(doc, "/images/convert").default(.null_value)
+
+    if !json.is_null(table)
+        members = match json.members_of(table)
+            .ok m  => m
+            .err _ => return fail(code: INVALID, msg: "site.toml: images.convert is not a table")
+
+        for kind in keys(members)
+            target = text_of(table, "/" + kind)?
+
+            if !is_among(kind, READ_KINDS) || !is_among(target, SHOWN_KINDS)
+                return fail(
+                    code: INVALID,
+                    msg: f"site.toml: images.convert writes \"{kind}\" as \"{target}\"; it reads png, jpeg, gif, bmp and netpbm, and writes png, jpeg and gif"
+                )
+            convert[kind] @ target
+
+    return ok(model.ImageSettings(thumb_width: width, thumb_height: height, jpeg_quality: quality, convert: convert))
+
+function precompress_of(doc: json.Value) -> model.PrecompressSettings?
+    quality = int_or(doc, "/precompress/quality", brotli.DEFAULT_QUALITY)?
+
+    if quality < brotli.MIN_QUALITY || quality > brotli.MAX_QUALITY
+        return fail(
+            code: INVALID,
+            msg: f"site.toml: precompress.quality {quality} is not {brotli.MIN_QUALITY} to {brotli.MAX_QUALITY}"
+        )
+
+    extensions = match json.value_at(doc, "/precompress/extensions")
+        .ok v  => texts_of(v, "precompress.extensions")?
+        .err _ => TEXT_EXTENSIONS
+
+    return ok(
+        model.PrecompressSettings(quality: quality, min_bytes: int_or(doc, "/precompress/min_bytes", 256)?, extensions: extensions)
+    )
+
+## Reading values
+
+function is_among(word: str, words: [str]) -> bool
+    for w in words
+        if w == word
+            return true
+
+    return false
+
+# The text at `pointer`. Fails `invalid` where it is absent or not text.
+function text_of(doc: json.Value, pointer: str) -> str?
+    value = match json.value_at(doc, pointer)
+        .ok v  => v
+        .err _ => return fail(code: INVALID, msg: f"site.toml has no {key_name(pointer)}")
+
+    return match json.text_of(value)
+        .ok t  => ok(t)
+        .err _ => fail(code: INVALID, msg: f"site.toml: {key_name(pointer)} is not a text")
+
+# The text at `pointer`, or `fallback` where it is absent. Fails `invalid`
+# where it is there and not text.
+function text_or(doc: json.Value, pointer: str, fallback: str) -> str?
+    return match json.value_at(doc, pointer)
+        .ok _  => text_of(doc, pointer)
+        .err _ => ok(fallback)
+
+# The whole number at `pointer`, or `fallback` where it is absent. Fails
+# `invalid` where it is there and not a whole number.
+function int_or(doc: json.Value, pointer: str, fallback: i64) -> i64?
+    value = match json.value_at(doc, pointer)
+        .ok v  => v
+        .err _ => return ok(fallback)
+
+    return match json.int_of(value)
+        .ok n  => ok(n)
+        .err _ => fail(code: INVALID, msg: f"site.toml: {key_name(pointer)} is not a whole number")
+
+function texts_of(v: json.Value, name: str) -> [str]?
+    items = match json.items_of(v)
+        .ok xs => xs
+        .err _ => return fail(code: INVALID, msg: f"site.toml: {name} is not a list")
+
+    out: [str] @= []
+
+    for item in items
+        match json.text_of(item)
+            .ok t  => out @ out.push(t)
+            .err _ => return fail(code: INVALID, msg: f"site.toml: {name} holds a value that is not a text")
+
+    return ok(out)
+
+# The key a JSON pointer names, as `site.toml` writes it: `/images/convert`
+# is `images.convert`.
+function key_name(pointer: str) -> str
+    return strings.replace_all(s: pointer.slice(from: 1, to: pointer.len()), old: "/", new: ".")
+
+## Tests
+
+test "read: the least a site says, one language and every default"
+    site = read(root: "s", text: "title = \"T\"\nbase_url = \"https://example.org\"\ntheme = \"plain\"\n").must()
+    assert site.base_ascii == "https://example.org/"
+    assert site.base_path == "/"
+    assert site.languages.len() == 1 && site.languages[0].code == "en" && site.languages[0].prefix == ""
+    assert site.images.thumb_width == 320 && site.images.convert["bmp"].must() == "png"
+    assert site.output == "public" && site.feed_size == 20
+
+test "read: a Unicode host in ASCII, a path kept with its slash, languages by weight"
+    text = "title = \"T\"\nbase_url = \"https://bücher.example/blog\"\ntheme = \"p\"\n[languages.sv]\nlocale = \"sv-se\"\nweight = 2\n[languages.de]\nweight = 1\n"
+    site = read(root: "s", text: text).must()
+    assert site.base_ascii == "https://xn--bcher-kva.example/blog/"
+    assert site.base_path == "/blog/"
+    assert site.languages[0].code == "de" && site.languages[0].prefix == ""
+    assert site.languages[1].tag == "sv-SE" && site.languages[1].prefix == "sv/"
+
+test "read: no title, a base URL that is a path, a quality out of range and a conversion to BMP refused"
+    assert read(root: "s", text: "base_url = \"https://e.org\"\ntheme = \"p\"\n").is_err()
+    assert read(root: "s", text: "title = \"T\"\nbase_url = \"/blog/\"\ntheme = \"p\"\n").is_err()
+    assert read(
+        root: "s",
+        text: "title = \"T\"\nbase_url = \"https://e.org\"\ntheme = \"p\"\n[images]\njpeg_quality = 0\n"
+    ).is_err()
+    assert read(
+        root: "s",
+        text: "title = \"T\"\nbase_url = \"https://e.org\"\ntheme = \"p\"\n[images.convert]\npng = \"bmp\"\n"
+    ).is_err()
+
+test "key_name: a pointer written as a TOML key"
+    assert key_name("/images/convert") == "images.convert"
+    assert key_name("/title") == "title"

@@ -1,0 +1,133 @@
+# One planned job run: what it writes, the facts an image leaves for the
+# pages that show it, and what it could not resolve. Images are run before
+# the context's targets are complete, since the targets hold their facts;
+# an image job reads nothing else of the context.
+
+use content/sources
+use media/images
+use output/feeds
+use output/sitemap
+use pipeline/plan
+use render/indexes
+use render/rendering
+use site/model
+use site/places
+
+## Running
+
+# What one job did.
+record Done
+    # The files it writes.
+    outputs: [model.Output]
+    # The facts of the image it built; empty for any other job.
+    facts: [model.ImageFacts]
+    # What it could not resolve, one sentence each.
+    warnings: [str]
+
+# The job `job` run in `context`.
+#
+# - `context`: the build's context; an image job reads only its site.
+# - `job`: the job.
+#
+# Fails as the job's own stage does: a source that cannot be read, an image
+# that does not decode, a template that does not render.
+function run(context: rendering.Context, job: plan.Job) -> Done?
+    site = context.site
+
+    return match job
+        .page p     => rendered(rendering.render_page(context, source: p.source)?)
+        .listing l  => rendered(rendering.render_listing(context, lang: l.lang, section: l.section)?)
+        .alphabet a => rendered(rendering.render_alphabet(context, lang: a.lang)?)
+        .tag t      => rendered(rendering.render_tag(context, lang: t.lang, tag: t.tag)?)
+        .feed f =>
+            language = model.language_of(site.languages, code: f.lang)
+            ok(Done(outputs: [feeds.feed(site, language: language, pages: context.pages)?], facts: [], warnings: []))
+        .sitemap => ok(Done(outputs: [sitemap.sitemap(site, entries: entries_of(context))?], facts: [], warnings: []))
+        .picture p =>
+            data = sources.read(root: site.root, name: p.source)?
+            built = images.build(source: p.source, data: data, settings: site.images, base_path: site.base_path)?
+            ok(Done(outputs: built.outputs, facts: [built.facts], warnings: []))
+        .copy c =>
+            data = sources.read(root: site.root, name: c.source)?
+            ok(Done(outputs: [model.Output(path: c.target, data: data)], facts: [], warnings: []))
+
+function rendered(r: rendering.Rendered) -> Done?
+    return ok(Done(outputs: [r.output], facts: [], warnings: r.warnings))
+
+## The sitemap's pages
+
+# Every page the sitemap lists: each page of its own with its date and its
+# translations, each language's home page, section lists and A to Z index
+# with the same page in the other languages, and each tag's page.
+#
+# - `context`: the build's context.
+function entries_of(context: rendering.Context) -> [sitemap.Entry]
+    site = context.site
+    pages = context.pages
+    out: [sitemap.Entry] @= []
+
+    for page in pages
+        if page.kind == .single
+            alternates: [sitemap.Alternate] @= []
+
+            for language in site.languages
+                for other in pages
+                    if other.key == page.key && other.lang == language.code
+                        alternates @ alternates.push(sitemap.Alternate(tag: language.tag, url: other.url))
+
+            none: [sitemap.Alternate] = []
+
+            shown = if alternates.len() > 1
+                alternates
+            else
+                none
+            out @ out.push(sitemap.Entry(url: page.url, modified: page.date, alternates: shown))
+
+    for language in site.languages
+        for section in plan.sections_of(site, pages: pages, lang: language.code)
+            out @ out.push(
+                sitemap.Entry(url: list_url(site, language: language, section: section), modified: fail(code: "not_found", msg: "a list has no date"), alternates: list_alternates(site, pages: pages, section: section))
+            )
+
+        out @ out.push(
+            sitemap.Entry(url: places.alphabet(site, language: language).url, modified: fail(code: "not_found", msg: "an index has no date"), alternates: alphabet_alternates(site))
+        )
+
+        for t in indexes.tags_of(indexes.singles(pages, lang: language.code, section: ""))
+            out @ out.push(
+                sitemap.Entry(url: places.tag_page(site, language: language, tag: t).url, modified: fail(code: "not_found", msg: "a tag has no date"), alternates: [])
+            )
+
+    return out
+
+function list_url(site: model.Site, language: model.Language, section: str) -> str
+    if section.len() == 0
+        return places.home(site, language: language).url
+    return places.section_list(site, language: language, section: section).url
+
+# The list of `section` in every language that has it, where more than one
+# does.
+function list_alternates(site: model.Site, pages: [model.Page], section: str) -> [sitemap.Alternate]
+    out: [sitemap.Alternate] @= []
+
+    for language in site.languages
+        for s in plan.sections_of(site, pages: pages, lang: language.code)
+            if s == section
+                out @ out.push(
+                    sitemap.Alternate(tag: language.tag, url: list_url(site, language: language, section: section))
+                )
+
+    if out.len() > 1
+        return out
+    return []
+
+function alphabet_alternates(site: model.Site) -> [sitemap.Alternate]
+    if site.languages.len() < 2
+        return []
+
+    out: [sitemap.Alternate] @= []
+
+    for language in site.languages
+        out @ out.push(sitemap.Alternate(tag: language.tag, url: places.alphabet(site, language: language).url))
+
+    return out

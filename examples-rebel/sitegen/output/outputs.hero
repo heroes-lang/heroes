@@ -1,0 +1,157 @@
+# The output folder, written and read back. A file is written only where
+# its bytes differ from what stands there, atomically, so a server reading
+# the folder while a build runs never sees half a page and a rebuild leaves
+# an unchanged file's time alone; a file no build makes any more is
+# removed with the folders it leaves empty; and the folder is listed, each
+# file with its size and the start of its SHA-256, for a person comparing
+# two builds.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/strings
+
+use content/sources
+use site/model
+
+## Writing
+
+# What writing a build's outputs did.
+record Writes
+    # The outputs whose bytes were new, by path.
+    written: [str]
+    # The outputs whose bytes stood there already.
+    unchanged: [str]
+    # The fingerprint of every output now in the folder, the ones handed in
+    # added to `known`.
+    known: {str: str}
+
+# Where the output `name` of `site` stands on disk.
+#
+# - `site`: the site.
+# - `name`: a slash-separated path under the output folder.
+function on_disk(site: model.Site, name: str) -> str
+    return sources.on_disk(root: site.root, name: site.output + "/" + name)
+
+# `outputs` written under the site's output folder, each only where its
+# bytes are new.
+#
+# - `site`: the site.
+# - `outputs`: the files, each path once.
+# - `known`: the fingerprint of each output as the last build left it; a
+#   path it lacks is compared with the file on disk, where there is one.
+#
+# Fails as `fs.make_dir_all` and `fs.write_atomic_bytes` do, the message
+# naming the output.
+function write_all(site: model.Site, outputs: [model.Output], known: {str: str}) -> Writes?
+    written: [str] @= []
+    unchanged: [str] @= []
+    now @= known
+
+    for o in outputs
+        digest = sources.fingerprint(o.data)
+        target = on_disk(site, name: o.path)
+
+        before = match known[o.path]
+            .ok d  => d
+            .err _ => match fs.read_bytes(target)
+                .ok data => sources.fingerprint(data)
+                .err _   => ""
+
+        if before == digest
+            unchanged @ unchanged.push(o.path)
+        else
+            match fs.make_dir_all(path.parent(target))
+                .ok _  => _ = 0
+                .err e => return fail(code: e.code, msg: f"{site.output}/{o.path}: {e.msg}")
+
+            match fs.write_atomic_bytes(target, o.data)
+                .ok _  => _ = 0
+                .err e => return fail(code: e.code, msg: f"{site.output}/{o.path}: {e.msg}")
+
+            written @ written.push(o.path)
+        now[o.path] @ digest
+
+    return ok(Writes(written: sort(written), unchanged: sort(unchanged), known: now))
+
+## Removing
+
+# The files of the output folder that `keep` does not hold, sorted; empty
+# where the folder is not there yet.
+#
+# - `site`: the site.
+# - `keep`: the outputs the build makes.
+function stale(site: model.Site, keep: {str: bool}) -> [str]?
+    folder = sources.on_disk(root: site.root, name: site.output)
+
+    if !fs.is_dir(folder).default(false)
+        return ok([])
+
+    out: [str] @= []
+
+    for entry in fs.walk(folder)?
+        name = path.to_slash(entry.name)
+
+        if entry.kind == .file && !keep[name].default(false)
+            out @ out.push(name)
+
+    return ok(sort(out))
+
+# The outputs `names` removed, and every folder they leave empty, up to the
+# output folder itself.
+#
+# - `site`: the site.
+# - `names`: slash-separated paths under the output folder; one already gone
+#   is passed over.
+#
+# Fails as `fs.remove` does, naming the output.
+function remove_all(site: model.Site, names: [str]) -> ()?
+    for name in names
+        target = on_disk(site, name: name)
+
+        if fs.exists(target).default(false)
+            match fs.remove(target)
+                .ok _  => _ = 0
+                .err e => return fail(code: e.code, msg: f"{site.output}/{name}: {e.msg}")
+
+        folder @= path.parent_by(name, .posix)
+
+        while folder != "." && folder.len() > 0
+            held = fs.read_dir(on_disk(site, name: folder)).default([])
+
+            if held.len() > 0
+                break
+
+            match fs.remove(on_disk(site, name: folder))
+                .ok _  => _ = 0
+                .err _ => break
+
+            folder @ path.parent_by(folder, .posix)
+
+    return ok()
+
+## Listing
+
+# One line for each file of the output folder, by its path's bytes: its size
+# in bytes right-aligned, the first twelve hexadecimal digits of its
+# SHA-256, and its path.
+#
+# - `site`: the site.
+#
+# Fails as `fs.walk` and `fs.read_bytes` do.
+function listing(site: model.Site) -> [str]?
+    folder = sources.on_disk(root: site.root, name: site.output)
+    names: [str] @= []
+
+    for entry in fs.walk(folder)?
+        if entry.kind == .file
+            names @ names.push(path.to_slash(entry.name))
+
+    lines: [str] @= []
+
+    for name in sort(names)
+        data = fs.read_bytes(on_disk(site, name: name))?
+        size = strings.pad_start(s: to_str(data.len()), width: 7, pad: " ")
+        digest = sources.fingerprint(data).slice(from: 0, to: 12)
+        lines @ lines.push(f"{size}  {digest}  {name}")
+
+    return ok(lines)

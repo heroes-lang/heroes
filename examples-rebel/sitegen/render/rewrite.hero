@@ -1,0 +1,347 @@
+# The HTML of a page's body made ready for the site, after Markdown wrote
+# it: every heading given an `id` from its text, so a reader can link to it,
+# and the second and third levels listed as the page's contents; every link
+# to another content file pointed at the URL it is written to, in the
+# page's own language where a translation exists; every link to another
+# site given its host in ASCII by IDNA; and every image shown as its
+# thumbnail, with its size, inside a link to the image itself.
+#
+# Markdown leaves a heading without an `id` (a `pending` capability of
+# `markdown`), and knows nothing of the site's URLs, so the page is read as
+# HTML and changed as a tree rather than as text.
+
+use <rebel>/html
+use <rebel>/i18n
+use <rebel>/strings
+use <rebel>/url
+use <rebel>/url/idna
+
+use content/pages
+use content/slugs
+use locale/localized
+use site/model
+
+## Codes
+
+# The code of a link the pass cannot resolve.
+constant NOT_FOUND: str
+    "not_found"
+
+## What a page links to
+
+# Where every file a page may link to is written. Built once for a build by
+# the caller, from every page, image and copied file.
+record Targets
+    # Each page's URL by its translation key and language code, joined by a
+    # space: `posts/harbour de`.
+    urls: {str: str}
+    # Each page's translation key and language, by its source, joined by a
+    # space as in `urls`.
+    keys: {str: str}
+    # The facts of every built image, by its source.
+    images: {str: model.ImageFacts}
+    # The URL of every file copied from the content folder, by its source.
+    files: {str: str}
+
+# One heading of a page's contents.
+record Heading
+    # The `id` the heading was given.
+    id: str
+    # The heading's text.
+    text: str
+    # Its level, 2 or 3.
+    level: i64
+
+# A page's body after the pass.
+record Rewritten
+    # The body's HTML.
+    html: str
+    # The headings of levels 2 and 3, in order.
+    toc: [Heading]
+    # What the pass could not do, one sentence each, naming the page.
+    warnings: [str]
+
+# A link's destination as the site writes it.
+record Written
+    # The new `href`.
+    href: str
+    # Whether it leads to another site.
+    external: bool
+
+## The pass
+
+# The body `body` of the page `page` made ready, as the module's comment
+# says.
+#
+# - `body`: the HTML Markdown wrote for the page.
+# - `page`: the page; its source resolves relative links and its language
+#   chooses among translations.
+# - `targets`: where every page, image and file is written.
+# - `words`: the theme's words in the page's language, whose numbers write
+#   an image's size.
+#
+# A link or an image the pass cannot resolve is left as written and told in
+# `warnings`.
+function rewrite(body: str, page: model.Page, targets: Targets, words: localized.Words) -> Rewritten
+    doc @= html.parse_fragment(text: body, context: "body")
+    toc: [Heading] @= []
+    warnings: [str] @= []
+    used: {str: bool} @= {}
+
+    for node in html.select_all(doc, html.ROOT, "h1, h2, h3, h4, h5, h6").default([])
+        text = strings.trim(html.text_of(doc, node))
+        id = slugs.unique_id(@used, slugs.slug_of(text))
+        html.set_attribute(@doc, node, name: "id", value: id)
+        level = heading_level(html.name_of(doc, node).default("h6"))
+
+        if level == 2 || level == 3
+            toc @ toc.push(Heading(id: id, text: text, level: level))
+
+    for node in html.select_all(doc, html.ROOT, "a[href]").default([])
+        href = html.attribute(doc, node, "href").default("")
+
+        match link_of(href, page: page, targets: targets)
+            .ok written =>
+                html.set_attribute(@doc, node, name: "href", value: written.href)
+
+                if written.external
+                    html.set_attribute(@doc, node, name: "rel", value: "external")
+            .err e => warnings @ warnings.push(f"{page.source}: {e.msg}")
+
+    for node in html.select_all(doc, html.ROOT, "img[src]").default([])
+        src = html.attribute(doc, node, "src").default("")
+
+        match pages.local_target(source: page.source, destination: src)
+            .ok target =>
+                match targets.images[target]
+                    .ok facts => show_thumbnail(@doc, node, facts: facts, words: words)
+                    .err _    => warnings @ warnings.push(
+                        f"{page.source}: the image \"{src}\" names no image of the content folder"
+                    )
+            .err _ => _ = 0
+
+    return Rewritten(html: html.format_inner(doc, html.ROOT), toc: toc, warnings: warnings)
+
+# The level of a heading element by its name: `h2` is 2.
+#
+# - `name`: `h1` to `h6`; any other name is read as 6.
+function heading_level(name: str) -> i64
+    return match name
+        "h1" => 1
+        "h2" => 2
+        "h3" => 3
+        "h4" => 4
+        "h5" => 5
+        _    => 6
+
+## Links
+
+# Where the link `href` of `page` leads on the site. Fails `not_found` where
+# it names a file of the content folder that is not there, or another site
+# whose host IDNA refuses, the message saying which.
+#
+# - `href`: the destination as Markdown wrote it.
+# - `page`: the page holding the link.
+# - `targets`: where every file is written.
+function link_of(href: str, page: model.Page, targets: Targets) -> Written?
+    parsed = match url.parse_loose(href)
+        .ok u  => u
+        .err _ => return ok(Written(href: href, external: false))
+
+    if parsed.scheme == "http" || parsed.scheme == "https"
+        return external_link(href, parsed: parsed)
+
+    target = match pages.local_target(source: page.source, destination: href)
+        .ok t  => t
+        .err _ => return ok(Written(href: href, external: false))
+
+    fragment = if parsed.fragment.len() > 0
+        "#" + parsed.fragment
+    else
+        ""
+
+    match targets.keys[target]
+        .ok key_lang =>
+            key = strings.split_once_last(s: key_lang, sep: " ").must().before
+            local = targets.urls[key + " " + page.lang].default(targets.urls[key_lang].default(href))
+            return ok(Written(href: local + fragment, external: false))
+        .err _ => _ = 0
+
+    match targets.images[target]
+        .ok facts => return ok(Written(href: facts.url + fragment, external: false))
+        .err _    => _ = 0
+
+    match targets.files[target]
+        .ok file => return ok(Written(href: file + fragment, external: false))
+        .err _   => _ = 0
+
+    return fail(
+        code: NOT_FOUND,
+        msg: f"the link to \"{href}\" names {target}, which is no page, image or file this build writes"
+    )
+
+# A link to another site, its host written in ASCII. Fails `not_found` where
+# IDNA refuses the host.
+#
+# - `href`: the destination as written.
+# - `parsed`: it, parsed.
+function external_link(href: str, parsed: url.Url) -> Written?
+    if strings.is_ascii(parsed.host)
+        return ok(Written(href: href, external: true))
+
+    host = match idna.to_ascii(parsed.host, idna.url_options())
+        .ok h  => h
+        .err e => return fail(code: NOT_FOUND, msg: f"the link to \"{href}\" names a host IDNA refuses: {e.msg}")
+
+    ascii = url.Url(
+        scheme: parsed.scheme,
+        user: parsed.user,
+        password: parsed.password,
+        host: host,
+        port: parsed.port,
+        path: parsed.path,
+        query: parsed.query,
+        fragment: parsed.fragment,
+        empty_authority: parsed.empty_authority,
+        empty_userinfo: parsed.empty_userinfo,
+        empty_password: parsed.empty_password,
+        empty_query: parsed.empty_query,
+        empty_fragment: parsed.empty_fragment
+    )
+    return ok(Written(href: url.format(ascii), external: true))
+
+## Images
+
+# The image `node` shown as its thumbnail, with its width and height so the
+# page does not move as it loads, loaded lazily, inside a link to the image
+# itself unless a link holds it already; its title says the image's size in
+# pixels and bytes, in the page's numbers, so a reader knows what the link
+# will load.
+#
+# - `doc`: the body, changed in place.
+# - `node`: the `img` element.
+# - `facts`: the built image.
+# - `words`: the theme's words in the page's language.
+#
+# Aborts where `node` stands in no parent, which an element `select_all`
+# found inside the body never does.
+function show_thumbnail(@doc: html.Document, node: i64, facts: model.ImageFacts, words: localized.Words)
+    html.set_attribute(@doc, node, name: "src", value: facts.thumb_url)
+    html.set_attribute(@doc, node, name: "width", value: to_str(facts.thumb_width))
+    html.set_attribute(@doc, node, name: "height", value: to_str(facts.thumb_height))
+    html.set_attribute(@doc, node, name: "loading", value: "lazy")
+    width = localized.count_text(words.language, facts.width)
+    height = localized.count_text(words.language, facts.height)
+    html.set_attribute(
+        @doc,
+        node,
+        name: "title",
+        value: f"{width} × {height}, {localized.size_text(words.language, facts.size)}"
+    )
+
+    if !html.closest(doc, node, "a").is_err()
+        return
+
+    link = html.create_element(@doc, "a")
+    html.set_attribute(@doc, link, name: "href", value: facts.url)
+    html.set_attribute(@doc, link, name: "class", value: "image")
+    html.insert_before(@doc, node: link, sibling: node).must()
+    html.append_child(@doc, to: link, child: node).must()
+
+## Tests
+
+function test_page(source: str, lang: str) -> model.Page
+    return model.Page(
+        source: source,
+        lang: lang,
+        key: "posts/a",
+        section: "posts",
+        kind: .single,
+        title: "A",
+        date: fail(code: "not_found", msg: "undated"),
+        draft: false,
+        tags: [],
+        summary: "",
+        words: 0,
+        body: "",
+        slug: "a",
+        url: "/a/",
+        output: "a/index.html",
+        links: [],
+        weight: 0,
+        params: .null_value
+    )
+
+function test_words(tag: str) -> localized.Words
+    language = model.Language(
+        code: tag,
+        tag: tag,
+        locale: i18n.parse_locale(tag).must(),
+        title: "",
+        direction: "ltr",
+        prefix: ""
+    )
+    return localized.words_of(language, po: "", name: "test.po").must()
+
+function no_targets() -> Targets
+    return Targets(urls: {}, keys: {}, images: {}, files: {})
+
+test "rewrite: headings given ids from their text, a repeat numbered, the second and third levels listed"
+    body = "<h2>Where to moor</h2><h3>Café</h3><h2>Where to moor</h2><h4>Deep</h4>"
+    r = rewrite(
+        body,
+        page: test_page(source: "content/posts/a.md", lang: "en"),
+        targets: no_targets(),
+        words: test_words("en")
+    )
+    assert r.toc.len() == 3
+    assert r.toc[1].id == "cafe" && r.toc[1].level == 3
+    assert r.toc[2].id == "where-to-moor-1"
+    assert strings.contains(s: r.html, substr: "<h4 id=\"deep\">")
+
+test "rewrite: a link to a page goes to its translation with its fragment, another site's host in ASCII, a missing file warned"
+    targets = Targets(
+        urls: {"posts/b en": "/b/", "posts/b de": "/de/b/"},
+        keys: {"content/posts/b.md": "posts/b en"},
+        images: {},
+        files: {}
+    )
+    body = "<a href=\"b.md#x\">B</a> <a href=\"https://b%C3%BCcher.example/k\">K</a> <a href=\"c.md\">C</a> <a href=\"#top\">T</a>"
+    r = rewrite(
+        body,
+        page: test_page(source: "content/posts/a.de.md", lang: "de"),
+        targets: targets,
+        words: test_words("de")
+    )
+    assert strings.contains(s: r.html, substr: "href=\"/de/b/#x\"")
+    assert strings.contains(s: r.html, substr: "href=\"https://xn--bcher-kva.example/k\" rel=\"external\"")
+    assert strings.contains(s: r.html, substr: "href=\"#top\"")
+    assert r.warnings.len() == 1
+
+test "rewrite: an image shown as its thumbnail inside a link to it, its size in German numbers"
+    facts = model.ImageFacts(
+        source: "content/images/x.png",
+        url: "/images/x.png",
+        thumb_url: "/images/x.thumb.png",
+        width: 1200,
+        height: 800,
+        thumb_width: 48,
+        thumb_height: 32,
+        size: 1234
+    )
+    targets = Targets(urls: {}, keys: {}, images: {"content/images/x.png": facts}, files: {})
+    r = rewrite(
+        "<p><img src=\"../images/x.png\" alt=\"X\"></p>",
+        page: test_page(source: "content/posts/a.de.md", lang: "de"),
+        targets: targets,
+        words: test_words("de")
+    )
+    assert strings.contains(
+        s: r.html,
+        substr: "<a href=\"/images/x.png\" class=\"image\"><img src=\"/images/x.thumb.png\""
+    )
+    assert strings.contains(
+        s: r.html,
+        substr: "width=\"48\" height=\"32\" loading=\"lazy\" title=\"1.200 × 800, 1,2 kB\""
+    )
+    assert r.warnings.len() == 0

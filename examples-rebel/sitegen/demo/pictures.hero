@@ -1,0 +1,240 @@
+# The demo site's images, drawn here and written in each kind the generator
+# reads, so the demo carries no binary file and every byte of its output can
+# be made again: a harbour photograph as a JPEG whose EXIF says it was taken
+# with the camera turned (orientation 6), a chart with transparency as a
+# PNG, waves as an animated GIF, a lighthouse as a Windows bitmap, and a
+# scanned page as a raw PGM.
+
+use <rebel>/bytes
+use <rebel>/image
+use <rebel>/image/bmp
+use <rebel>/image/gif
+use <rebel>/image/jpeg
+use <rebel>/image/netpbm
+use <rebel>/image/png
+
+## The files
+
+# An image file of the demo: its path under the site's folder and its
+# bytes.
+record File
+    # The path, slash-separated.
+    name: str
+    # The file's bytes.
+    data: [u8]
+
+# Every image of the demo, encoded.
+#
+# Aborts where an encoder refuses a picture drawn here, which every one of
+# them takes: each is valid by construction and inside every encoder's
+# limits.
+function files() -> [File]
+    return [
+        File(name: "content/images/harbour.jpg", data: turned(jpeg.encode(harbour(), jpeg.EncodeOptions(quality: 85, subsampling: .half)).must(), orientation: 6))
+        File(name: "content/images/chart.png", data: png.encode(chart(), png.default_encode_options()).must())
+        File(name: "content/images/waves.gif", data: gif.encode(waves()).must())
+        File(name: "content/images/lighthouse.bmp", data: bmp.encode(lighthouse(night: false)).must())
+        File(name: "content/images/scan.pgm", data: netpbm.encode(scan(), plain: false).must())
+    ]
+
+# The lighthouse at night, taller and darker, which the demo writes over the
+# first one to show a watch rebuilding an image and the pages that show it.
+function night_lighthouse() -> File
+    return File(name: "content/images/lighthouse.bmp", data: bmp.encode(lighthouse(night: true)).must())
+
+## Pictures
+
+function color(r: i64, g: i64, b: i64, a: i64) -> image.Color
+    return image.Color(r: to_u8(r).must(), g: to_u8(g).must(), b: to_u8(b).must(), a: to_u8(a).must())
+
+# A harbour at dusk, 96 by 64: a sky that lightens toward the horizon, a
+# sea, and a boat with its mast.
+function harbour() -> image.Image
+    img @= image.blank(width: 96, height: 64, format: .rgb).must()
+
+    for y in range(from: 0, to: 64)
+        for x in range(from: 0, to: 96)
+            shade = if y < 36
+                color(r: 110 + y * 3, g: 150 + y * 2, b: 220, a: 255)
+            else
+                color(r: 16, g: 60 + (x + y) % 24, b: 110 + y, a: 255)
+            image.set_color(@img, x: x, y: y, color: shade)
+
+    image.fill_rect(@img, x: 30, y: 32, width: 32, height: 7, color: color(r: 112, g: 62, b: 32, a: 255))
+    image.fill_rect(@img, x: 45, y: 10, width: 2, height: 22, color: color(r: 40, g: 30, b: 24, a: 255))
+    image.fill_circle(@img, center_x: 80, center_y: 12, radius: 6, color: color(r: 250, g: 210, b: 120, a: 255))
+    return img
+
+# A bar chart of a week's catches, 80 by 60, its background transparent.
+function chart() -> image.Image
+    img @= image.blank(width: 80, height: 60, format: .rgba).must()
+    heights = [22, 38, 30, 50, 44]
+
+    for i in range(from: 0, to: heights.len())
+        image.fill_rect(
+            @img,
+            x: 6 + i * 15,
+            y: 56 - heights[i],
+            width: 11,
+            height: heights[i],
+            color: color(r: 11, g: 79 + i * 30, b: 108, a: 255)
+        )
+
+    image.draw_line(@img, from_x: 2, from_y: 57, to_x: 78, to_y: 57, color: color(r: 30, g: 30, b: 30, a: 255))
+    return img
+
+# Three frames of a wave rolling right, 60 by 40, played for ever.
+function waves() -> gif.Gif
+    palette = [
+        color(r: 150, g: 200, b: 235, a: 255)
+        color(r: 20, g: 90, b: 150, a: 255)
+        color(r: 245, g: 250, b: 255, a: 255)
+    ]
+    frames: [gif.Frame] @= []
+
+    for shift in [0, 4, 8]
+        indices: [u8] @= []
+
+        for y in range(from: 0, to: 40)
+            for x in range(from: 0, to: 60)
+                crest = if (x + 60 - shift) % 12 < 6
+                    22
+                else
+                    25
+
+                index: u8 = if y < crest - 1
+                    0
+                else if y < crest
+                    2
+                else
+                    1
+                indices @ indices.push(index)
+
+        picture = image.Indexed(width: 60, height: 40, palette: palette, indices: indices)
+        frames @ frames.push(gif.Frame(image: picture, left: 0, top: 0, delay: 20, disposal: .keep, interlaced: false))
+
+    return gif.Gif(width: 60, height: 40, palette: palette, background: 0, loop_count: 0, frames: frames)
+
+# A lighthouse of red and white bands, 40 by 80 by day, or 60 by 90 at
+# night with its light lit.
+#
+# - `night`: whether it is drawn at night.
+function lighthouse(night: bool) -> image.Image
+    width = if night
+        60
+    else
+        40
+
+    height = if night
+        90
+    else
+        80
+
+    sky = if night
+        color(r: 12, g: 18, b: 46, a: 255)
+    else
+        color(r: 170, g: 210, b: 240, a: 255)
+    img @= image.blank(width: width, height: height, format: .rgb).must()
+    image.fill_rect(@img, x: 0, y: 0, width: width, height: height, color: sky)
+    left = width / 2 - 6
+
+    for band in range(from: 0, to: 6)
+        paint = if band % 2 == 0
+            color(r: 200, g: 40, b: 40, a: 255)
+        else
+            color(r: 245, g: 245, b: 245, a: 255)
+        image.fill_rect(@img, x: left, y: 20 + band * 10, width: 12, height: 10, color: paint)
+
+    if night
+        image.fill_circle(
+            @img,
+            center_x: width / 2,
+            center_y: 14,
+            radius: 7,
+            color: color(r: 255, g: 236, b: 140, a: 255)
+        )
+    return img
+
+# A scanned page, 64 by 48 in gray: paper with lines of text.
+function scan() -> image.Image
+    img @= image.blank(width: 64, height: 48, format: .gray).must()
+    image.fill_rect(@img, x: 0, y: 0, width: 64, height: 48, color: color(r: 236, g: 236, b: 236, a: 255))
+
+    for line in range(from: 0, to: 7)
+        length = 40 + line * 13 % 17
+        image.fill_rect(
+            @img,
+            x: 6,
+            y: 6 + line * 6,
+            width: length,
+            height: 2,
+            color: color(r: 60, g: 60, b: 60, a: 255)
+        )
+
+    return img
+
+## EXIF
+
+# `photo`, a JPEG file, with an EXIF segment naming `orientation` put after
+# its start of image, as a camera writes one: APP1, `Exif` and two zero
+# bytes, then a big-endian TIFF header (TIFF 6.0) and one directory entry,
+# EXIF's orientation tag (274) as one SHORT, and no next directory.
+#
+# - `photo`: a JPEG file, opening with its start-of-image marker.
+# - `orientation`: the EXIF orientation, 1 to 8.
+function turned(photo: [u8], orientation: u8) -> [u8]
+    segment: [u8] = [
+        0xff
+        0xe1
+        0x00
+        0x22
+        'E'
+        'x'
+        'i'
+        'f'
+        0
+        0
+        'M'
+        'M'
+        0x00
+        0x2a
+        0x00
+        0x00
+        0x00
+        0x08
+        0x00
+        0x01
+        0x01
+        0x12
+        0x00
+        0x03
+        0x00
+        0x00
+        0x00
+        0x01
+        0x00
+        orientation
+        0x00
+        0x00
+        0x00
+        0x00
+        0x00
+        0x00
+    ]
+    return bytes.concat([photo.slice(from: 0, to: 2), segment, photo.slice(from: 2, to: photo.len())])
+
+## Tests
+
+test "turned: the decoder reads the orientation written, and the picture stays whole"
+    photo = turned(jpeg.encode(harbour(), jpeg.default_encode_options()).must(), orientation: 6)
+    read = jpeg.decode(photo, image.default_limits()).must()
+    assert read.orientation == 6
+    assert read.image.width == 96 && read.image.height == 64
+
+test "files: every kind the generator reads, each recognised by its signature"
+    kinds: [image.Kind] @= []
+
+    for f in files()
+        kinds @ kinds.push(image.kind_of(f.data).must())
+
+    assert kinds == [.jpeg, .png, .gif, .bmp, .netpbm]

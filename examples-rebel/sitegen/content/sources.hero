@@ -1,0 +1,208 @@
+# The files a site is built from, found on disk and sorted by what they are:
+# the pages and images of `content/`, the files copied as they are (from
+# `static/`, the theme's `static/`, and whatever else `content/` holds), and
+# the theme's layouts, partials and catalogs. Every source is named by its
+# path under the site's folder, slash-separated, `content/posts/harbour.md`,
+# so a name is the same on every system and in every message; `on_disk`
+# turns it into the system's own path.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/strings
+
+use site/model
+
+## Codes
+
+# The code of two sources that would write one output.
+constant EXISTS: str
+    "exists"
+
+## Kinds of file
+
+# The extensions, lower case and with their dot, of the images `content/`
+# may hold: those `image.kind_of` recognises.
+constant IMAGE_EXTENSIONS: [str]
+    [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".pbm", ".pgm", ".ppm", ".pnm", ".pam"]
+
+# Whether `name`, a path under the site, is an image by its extension.
+#
+# - `name`: a slash-separated path.
+function is_image(name: str) -> bool
+    extension = strings.to_lower(path.ext_by(name, .posix).default(""))
+
+    for e in IMAGE_EXTENSIONS
+        if e == extension
+            return true
+
+    return false
+
+# Whether `name` is a page: a Markdown file.
+#
+# - `name`: a slash-separated path.
+function is_page(name: str) -> bool
+    return strings.to_lower(path.ext_by(name, .posix).default("")) == ".md"
+
+# Whether a path under the site is left out of every build: a part beginning
+# with `.` (`.git`, `.DS_Store`) or an editor's backup ending with `~`.
+#
+# - `name`: a slash-separated path.
+function is_ignored(name: str) -> bool
+    for part in path.parts_by(name, .posix)
+        if strings.has_prefix(s: part, prefix: ".") || strings.has_suffix(s: part, suffix: "~")
+            return true
+
+    return false
+
+## Finding
+
+# A file copied to the output as it is.
+record Copy
+    # Its path under the site.
+    source: str
+    # Its path under the output folder.
+    target: str
+
+# Every source of a site, each list sorted by its paths' bytes.
+record Found
+    # The Markdown files of `content/`.
+    pages: [str]
+    # The images of `content/`.
+    images: [str]
+    # The files copied as they are.
+    copies: [Copy]
+    # The theme's files that make pages: its layouts, partials and catalogs.
+    theme: [str]
+
+# The sources of the site at `site.root`.
+#
+# - `site`: the site, whose folder is walked and whose theme names the
+#   theme's folder.
+#
+# A site with no `static/` folder copies only its theme's. Fails as
+# `fs.walk` does where `content/` or the theme's folder is missing or
+# unreadable, naming the folder; fails `exists` where a file of `static/`
+# and a file of `content/` would both write one output.
+function discover(site: model.Site) -> Found?
+    pages: [str] @= []
+    images: [str] @= []
+    copies: [Copy] @= []
+
+    for name in walked(root: site.root, folder: "content")?
+        if is_page(name)
+            pages @ pages.push(name)
+        else if is_image(name)
+            images @ images.push(name)
+        else
+            copies @ copies.push(Copy(source: name, target: name.slice(from: 8, to: name.len())))
+
+    targets: {str: str} @= {}
+
+    for c in copies
+        targets[c.target] @ c.source
+
+    if is_folder(root: site.root, folder: "static")
+        for name in walked(root: site.root, folder: "static")?
+            target = name.slice(from: 7, to: name.len())
+
+            match targets[target]
+                .ok other => return fail(code: EXISTS, msg: f"{name} and {other} would both write {target}")
+                .err _    => _ = 0
+
+            targets[target] @ name
+            copies @ copies.push(Copy(source: name, target: target))
+
+    themed = f"themes/{site.theme}"
+    theme: [str] @= []
+
+    for name in walked(root: site.root, folder: themed)?
+        under = name.slice(from: themed.len() + 1, to: name.len())
+
+        if strings.has_prefix(s: under, prefix: "static/")
+            target = under.slice(from: 7, to: under.len())
+
+            if targets[target].default("").len() == 0
+                targets[target] @ name
+                copies @ copies.push(Copy(source: name, target: target))
+        else
+            theme @ theme.push(name)
+
+    return ok(Found(pages: pages, images: images, copies: copies, theme: theme))
+
+# The files under the folder `folder` of `root`, each as its slash-separated
+# path under `root`, sorted, the ignored ones left out.
+function walked(root: str, folder: str) -> [str]?
+    entries = match fs.walk(on_disk(root: root, name: folder))
+        .ok es => es
+        .err e => return fail(code: e.code, msg: f"{folder}: {e.msg}")
+
+    out: [str] @= []
+
+    for entry in entries
+        name = folder + "/" + path.to_slash(entry.name)
+
+        if entry.kind == .file && !is_ignored(name)
+            out @ out.push(name)
+
+    return ok(sort(out))
+
+function is_folder(root: str, folder: str) -> bool
+    return fs.is_dir(on_disk(root: root, name: folder)).default(false)
+
+## Reading
+
+# The system's path of the source `name` of the site at `root`.
+#
+# - `root`: the site's folder, as the command line named it.
+# - `name`: the slash-separated path under it.
+function on_disk(root: str, name: str) -> str
+    return path.join_all([root, path.from_slash(name)])
+
+# The bytes of the source `name`. Fails as `fs.read_bytes` does, the message
+# naming the source.
+#
+# - `root`: the site's folder.
+# - `name`: the source's slash-separated path under it.
+function read(root: str, name: str) -> [u8]?
+    return match fs.read_bytes(on_disk(root: root, name: name))
+        .ok data => ok(data)
+        .err e   => fail(code: e.code, msg: f"{name}: {e.msg}")
+
+# The text of the source `name`. Fails as `read` does, and `not_text` where
+# it is not UTF-8.
+#
+# - `root`: the site's folder.
+# - `name`: the source's slash-separated path under it.
+function read_text(root: str, name: str) -> str?
+    data = read(root: root, name: name)?
+
+    return match bytes.to_text(data)
+        .ok text => ok(text)
+        .err e   => fail(code: e.code, msg: f"{name} is not UTF-8 text: {e.msg}")
+
+# The SHA-256 of `data` in hexadecimal: what a build remembers of a source
+# or an output to tell later whether it changed.
+#
+# - `data`: the bytes.
+function fingerprint(data: [u8]) -> str
+    return bytes.format_hex(crypto.sha256(data))
+
+## Tests
+
+test "is_image and is_page: by extension, in any case; a Markdown name is no image"
+    assert is_image("content/a/b.JPG")
+    assert is_image("content/scan.pgm")
+    assert !is_image("content/a.md")
+    assert is_page("content/A.MD")
+    assert !is_page("content/md")
+
+test "is_ignored: a hidden file, a hidden folder, a backup, and an ordinary path"
+    assert is_ignored("content/.DS_Store")
+    assert is_ignored("content/.git/config")
+    assert is_ignored("content/a.md~")
+    assert !is_ignored("content/posts/a.md")
+
+test "fingerprint: the SHA-256 of nothing"
+    assert fingerprint([]) == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"

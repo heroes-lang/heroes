@@ -1,0 +1,77 @@
+# What a build tells the person who ran it, as lines of text: one line
+# that sums the build up, then the sources that changed, the files written
+# and removed, and every warning, each on its own line. Nothing here names
+# a time or an absolute path, so two builds of the same change print the
+# same lines.
+
+use pipeline/builder
+
+## Lines
+
+# The line that sums `report` up: `9 pages, 5 images, 1 file; 31 of 31 jobs
+# run; 58 written, 0 unchanged, 0 removed`.
+#
+# - `report`: a build's report.
+function summary(report: builder.Report) -> str
+    site = f"{counted(report.pages, one: "page", many: "pages")}, {counted(report.images, one: "image", many: "images")}, {counted(report.copies, one: "file", many: "files")}"
+    work = f"{report.ran} of {report.jobs} jobs run"
+    files = f"{report.written.len()} written, {report.unchanged} unchanged, {report.removed.len()} removed"
+    return f"{site}; {work}; {files}"
+
+# `n` and the noun that counts it, in English.
+function counted(n: i64, one: str, many: str) -> str
+    if n == 1
+        return f"1 {one}"
+    return f"{n} {many}"
+
+# Every line of `report` after its summary: the changed sources, the files
+# written, the files removed and the warnings, each line opening with what
+# it is.
+#
+# - `report`: a build's report.
+# - `changed`: whether to list the changed sources, which a first build,
+#   where every source is new, would rather not.
+# - `written`: whether to list the files written one by one, which a whole
+#   build of a large site would rather not.
+function details(report: builder.Report, changed: bool, written: bool) -> [str]
+    out: [str] @= []
+
+    if changed
+        for c in report.changed
+            out @ out.push("changed  " + c)
+
+    if written
+        for w in report.written
+            out @ out.push("written  " + w)
+
+    for r in report.removed
+        out @ out.push("removed  " + r)
+
+    for w in report.warnings
+        out @ out.push("warning  " + w)
+
+    return out
+
+## Tests
+
+function test_report() -> builder.Report
+    return builder.Report(
+        changed: ["content/a.md"],
+        jobs: 31,
+        ran: 4,
+        pages: 1,
+        images: 0,
+        copies: 2,
+        written: ["a/index.html"],
+        unchanged: 3,
+        removed: [],
+        warnings: ["content/a.md: the link to \"b.md\" names content/b.md, which the content folder does not hold"]
+    )
+
+test "summary: one page, no image, two files"
+    assert summary(test_report()) == "1 page, 0 images, 2 files; 4 of 31 jobs run; 1 written, 3 unchanged, 0 removed"
+
+test "details: the changed sources and the written files listed only when asked"
+    assert details(test_report(), changed: true, written: false).len() == 2
+    assert details(test_report(), changed: true, written: true)[1] == "written  a/index.html"
+    assert details(test_report(), changed: false, written: false).len() == 1

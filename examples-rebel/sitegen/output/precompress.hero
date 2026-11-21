@@ -1,0 +1,84 @@
+# Brotli copies of the site's text files, each written beside its file as
+# `<name>.br`, so a server can send the copy to a browser that accepts `br`
+# without compressing the file on every request. A copy is made only of the
+# extensions `site.toml` names, only of a file at least its `min_bytes`
+# long, and only where it is smaller than the file.
+#
+# Each copy is read back and compared with its file before it is kept:
+# a copy that did not decompress to the file would break the page for every
+# browser served it, and the check costs one decompression of a small file.
+
+use <rebel>/bytes
+use <rebel>/compress/brotli
+use <rebel>/path
+use <rebel>/strings
+
+use site/model
+
+## Codes
+
+# The code of a copy that does not read back as its file.
+constant INVALID: str
+    "invalid"
+
+## Copies
+
+# Whether the output `name` gets a copy: its extension, without its dot and
+# in lower case, is one of `settings.extensions`.
+#
+# - `name`: a slash-separated path under the output folder.
+# - `settings`: the site's precompression settings.
+function is_compressed(name: str, settings: model.PrecompressSettings) -> bool
+    extension = strings.to_lower(path.ext_by(name, .posix).default(""))
+
+    for e in settings.extensions
+        if "." + strings.to_lower(e) == extension
+            return true
+
+    return false
+
+# The Brotli copies of `outputs` that the settings ask for, in their order.
+#
+# - `outputs`: the files a build writes.
+# - `settings`: the site's precompression settings.
+#
+# Fails `invalid` where a copy does not decompress to its file, naming it,
+# and as `brotli.compress` does where the quality is out of range.
+function copies(outputs: [model.Output], settings: model.PrecompressSettings) -> [model.Output]?
+    options = brotli.Options(quality: settings.quality, window_bits: brotli.default_options().window_bits)
+    out: [model.Output] @= []
+
+    for o in outputs
+        if is_compressed(o.path, settings) && o.data.len() >= settings.min_bytes
+            packed = brotli.compress(o.data, options)?
+            back = brotli.decompress(packed, o.data.len())
+
+            if back.is_err() || back.default([]) != o.data
+                return fail(code: INVALID, msg: f"the Brotli copy of {o.path} does not decompress to it")
+
+            if packed.len() < o.data.len()
+                out @ out.push(model.Output(path: o.path + ".br", data: packed))
+
+    return ok(out)
+
+## Tests
+
+test "is_compressed: by extension in any case, a name with no extension never"
+    settings = model.PrecompressSettings(quality: 5, min_bytes: 0, extensions: ["html", "CSS"])
+    assert is_compressed("de/index.HTML", settings)
+    assert is_compressed("style.css", settings)
+    assert !is_compressed("images/a.png", settings)
+    assert !is_compressed("LICENSE", settings)
+
+test "copies: a repetitive page compressed and read back, a short one and an image left alone"
+    settings = model.PrecompressSettings(quality: 5, min_bytes: 64, extensions: ["html"])
+    page = model.Output(path: "index.html", data: repeat_text("<p>harbour</p>\n", 40))
+    short = model.Output(path: "a.html", data: repeat_text("x", 10))
+    picture = model.Output(path: "a.png", data: repeat_text("y", 100))
+    made = copies([page, short, picture], settings: settings).must()
+    assert made.len() == 1
+    assert made[0].path == "index.html.br"
+    assert brotli.decompress(made[0].data, 10_000).must() == page.data
+
+function repeat_text(s: str, n: u64) -> [u8]
+    return bytes.from_text(repeat(s, n))
