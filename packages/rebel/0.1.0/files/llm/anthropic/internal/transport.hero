@@ -184,6 +184,34 @@ function tls_deadline(ms: i64) -> time.Duration?
         return ok(time.max_duration())
     return time.milliseconds(ms)
 
+# The milliseconds of a client's `deadline` as the transport counts them:
+# `time.max_duration()` is 0, none; any other is rounded up to a whole
+# millisecond and is 1 at least, so zero ends every wait within one.
+#
+# - `d`: zero or more, which the face checked.
+function deadline_ms_of(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return 0
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+
+    if whole == 0
+        return 1
+    return whole
+
+# The whole milliseconds of `d`, a part of one counting as a whole one: a
+# client's `max_wait`, zero sleeping never.
+#
+# - `d`: zero or more, which the face checked.
+function wait_ms_of(d: time.Duration) -> i64
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+    return whole
+
 # Moves the deadline of `o`'s connection to `ms` from now; 0 takes it away.
 function set_deadline(o: Opened lent, ms: i64) -> ()?
     return tls.set_deadline(o.reader.stream, deadline: tls_deadline(ms)?)

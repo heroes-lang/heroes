@@ -9,6 +9,7 @@ use bytes
 use crypto
 use numbers
 use strings
+use time
 
 # The code of a secret, a field or a signature that does not read or does not
 # match.
@@ -91,6 +92,19 @@ function has_v1(field: str) -> bool
     return false
 
 ## Tests
+
+# The whole seconds of `d`, a part of one counting as a whole one, as a
+# header or a cookie writes a time; below zero, -1.
+#
+# - `d`: the time.
+function whole_seconds(d: time.Duration) -> i64
+    if d.nanoseconds < 0
+        return -1
+    whole = d.nanoseconds / 1_000_000_000
+
+    if d.nanoseconds % 1_000_000_000 != 0
+        return whole + 1
+    return whole
 
 test "secret_bytes: with its prefix, without, no base 64, and empty"
     assert secret_bytes("whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw").must().len() == 24

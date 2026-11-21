@@ -5,6 +5,7 @@
 # the face where it matters, and a member of another kind reads as absent.
 
 use json
+use time
 
 # The text of the member `key` of `v`, "" where `v` holds none, holds `null`
 # or holds another kind there.
@@ -127,6 +128,15 @@ function usage_counts(u: json.Value) -> [i64]
     cached = int_at(value_at_key(u, key: "prompt_tokens_details"), key: "cached_tokens") + int_at(value_at_key(u, key: "input_tokens_details"), key: "cached_tokens")
     reasoning = int_at(value_at_key(u, key: "completion_tokens_details"), key: "reasoning_tokens") + int_at(value_at_key(u, key: "output_tokens_details"), key: "reasoning_tokens")
     return [input, output, int_at(u, key: "total_tokens"), cached, reasoning]
+
+# The moment the member `key` of `v` writes in seconds since 1970, as the
+# API writes `created`: a failure, `does_not_fit`, past what an instant
+# holds.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+function moment_at(v: json.Value, key: str) -> time.Instant?
+    return time.from_unix(whole_seconds: int_at(v, key: key), extra_nanoseconds: 0)
 
 test "text_at: present, absent, null, of another kind, and on a list"
     v = json.parse("{\"a\":\"x\",\"b\":null,\"c\":1}").must()

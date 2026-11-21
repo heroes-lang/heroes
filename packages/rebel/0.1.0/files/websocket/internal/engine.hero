@@ -270,14 +270,13 @@ function can_read(s: State lent) -> bool
     return s.kept_code == "" && !s.ended
 
 # Places a deadline `ms` milliseconds from now on every read and write of
-# `stream`, as `tls.set_deadline` places one on a TLS stream and
-# `net.set_deadline` on a socket's.
+# `stream`, 0 taking it away: `deadline_in` for this package's own waits,
+# which count milliseconds.
 #
 # - `stream`: the stream.
 # - `ms`: 0 or more, 0 taking the deadline away.
 #
-# Fails `invalid` where `ms` is below 0, `closed` where `stream` is closed,
-# `unsupported` where it is neither TLS nor a socket.
+# Fails `invalid` where `ms` is below 0, and as `deadline_in` does.
 function deadline(stream: io.Stream, ms: i64) -> ()?
     if ms < 0
         return fail(code: INVALID, msg: f"placing a deadline {ms} ms from now on {stream.name}, where it is 0 or more")
@@ -286,6 +285,40 @@ function deadline(stream: io.Stream, ms: i64) -> ()?
         time.max_duration()
     else
         time.milliseconds(ms)?
+    return deadline_in(stream, span: span)
+
+# The whole milliseconds of `d` as a `Bounds` counts them:
+# `time.max_duration()` is 0, no limit; any other is rounded up to a whole
+# millisecond and is 1 at least, so zero ends a wait within one.
+#
+# - `d`: zero or more, which the face checked.
+function ms_of(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return 0
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+
+    if whole == 0
+        return 1
+    return whole
+
+# Places a deadline `span` from now on every read and write of `stream`, as
+# `tls.set_deadline` places one on a TLS stream and `net.set_deadline` on a
+# socket's: zero a deadline already passed, `time.max_duration()` none.
+#
+# - `stream`: the stream.
+# - `span`: how long from now.
+#
+# Fails `invalid` where `span` is below zero, `closed` where `stream` is
+# closed, `unsupported` where it is neither TLS nor a socket.
+function deadline_in(stream: io.Stream, span: time.Duration) -> ()?
+    if span.nanoseconds < 0
+        return fail(
+            code: INVALID,
+            msg: f"placing a deadline {time.format_duration(span)} from now on {stream.name}, where it is zero or more"
+        )
 
     # `tls.set_deadline` moves a TLS stream's deadline and a socket's alike.
     match tls.set_deadline(stream, deadline: span)

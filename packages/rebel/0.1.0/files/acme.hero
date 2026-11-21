@@ -32,6 +32,7 @@ use http
 use jose
 use json
 use pem
+use time
 use x509
 
 ## The codes
@@ -327,14 +328,15 @@ record Order
     url: str
     # "pending", "ready", "processing", "valid" or "invalid".
     status: str
-    # When it expires, as RFC 3339 writes it; "" where not said.
-    expires: str
+    # When it expires: a failure, `not_found`, where the server did not
+    # say, and `invalid` where it wrote no RFC 3339 time.
+    expires: time.Instant?
     # What the certificate is for.
     identifiers: [Identifier]
-    # The validity asked, RFC 3339; "" where not asked.
-    not_before: str
-    # The same, its end.
-    not_after: str
+    # The start of the validity asked, as `expires` reads it.
+    not_before: time.Instant?
+    # The end of the validity asked, as `expires` reads it.
+    not_after: time.Instant?
     # The URLs of its authorizations, one per identifier.
     authorizations: [str]
     # The URL it is finalized at.
@@ -350,10 +352,11 @@ record Order
 record OrderRequest
     # The identifiers.
     identifiers: [Identifier]
-    # The validity's start, RFC 3339; "" leaves it to the server.
-    not_before: str
-    # Its end; "" leaves it to the server.
-    not_after: str
+    # The validity's start, written in RFC 3339; a failure leaves it to the
+    # server.
+    not_before: time.Instant?
+    # Its end, the same way.
+    not_after: time.Instant?
     # A profile of the directory's; "" for the server's default.
     profile: str
 
@@ -369,7 +372,12 @@ function order_for(names: [str]) -> OrderRequest
     for name in names
         identifiers @ identifiers.push(Identifier(kind: "dns", value: name))
 
-    return OrderRequest(identifiers: identifiers, not_before: "", not_after: "", profile: "")
+    return OrderRequest(
+        identifiers: identifiers,
+        not_before: fail(code: NOT_FOUND, msg: "the server chooses the validity's start"),
+        not_after: fail(code: NOT_FOUND, msg: "the server chooses the validity's end"),
+        profile: ""
+    )
 
 # An order placed.
 #
@@ -389,11 +397,13 @@ function new_order(@client: Client, request: OrderRequest) -> Order?
 
     members: {str: json.Value} @= {"identifiers": .list(items: list)}
 
-    if request.not_before.len() > 0
-        members["notBefore"] @ .text(v: request.not_before)
+    match request.not_before
+        .ok t  => members["notBefore"] @ .text(v: time.format(t, layout: .rfc3339))
+        .err _ => _ = 0
 
-    if request.not_after.len() > 0
-        members["notAfter"] @ .text(v: request.not_after)
+    match request.not_after
+        .ok t  => members["notAfter"] @ .text(v: time.format(t, layout: .rfc3339))
+        .err _ => _ = 0
 
     if request.profile.len() > 0
         members["profile"] @ .text(v: request.profile)
@@ -441,7 +451,7 @@ function parse_order(text: str, url: str) -> Order?
         .err _ => _ = 0
 
     return ok(
-        Order(url: url, status: status, expires: fields.text_of(members: m, key: "expires"), identifiers: identifiers, not_before: fields.text_of(members: m, key: "notBefore"), not_after: fields.text_of(members: m, key: "notAfter"), authorizations: fields.texts(members: m, key: "authorizations"), finalize: finalize_url, certificate: fields.text_of(members: m, key: "certificate"), profile: fields.text_of(members: m, key: "profile"), problems: problems)
+        Order(url: url, status: status, expires: fields.moment_of(members: m, key: "expires"), identifiers: identifiers, not_before: fields.moment_of(members: m, key: "notBefore"), not_after: fields.moment_of(members: m, key: "notAfter"), authorizations: fields.texts(members: m, key: "authorizations"), finalize: finalize_url, certificate: fields.text_of(members: m, key: "certificate"), profile: fields.text_of(members: m, key: "profile"), problems: problems)
     )
 
 ## Authorizations and challenges
@@ -456,8 +466,9 @@ record Challenge
     status: str
     # Its token, which the answer is made from.
     token: str
-    # When it was validated, RFC 3339; "" before.
-    validated: str
+    # When it was validated: a failure, `not_found`, before, and `invalid`
+    # where the server wrote no RFC 3339 time.
+    validated: time.Instant?
     # The problem that made it invalid: one, or none.
     problems: [Problem]
 
@@ -470,8 +481,9 @@ record Authorization
     status: str
     # The identifier, without the "*." of a wildcard.
     identifier: Identifier
-    # When it expires, RFC 3339; "" where not said.
-    expires: str
+    # When it expires: a failure, `not_found`, where the server did not
+    # say, and `invalid` where it wrote no RFC 3339 time.
+    expires: time.Instant?
     # The challenges, any one of which proves control.
     challenges: [Challenge]
     # Whether the order asked a wildcard of the identifier.
@@ -542,7 +554,7 @@ function parse_authorization(text: str, url: str) -> Authorization?
         challenges @ challenges.push(parse_challenge(json.format(item)?)?)
 
     return ok(
-        Authorization(url: url, status: status, identifier: Identifier(kind: fields.text_of(members: named, key: "type"), value: fields.text_of(members: named, key: "value")), expires: fields.text_of(members: m, key: "expires"), challenges: challenges, wildcard: fields.flag(members: m, key: "wildcard"))
+        Authorization(url: url, status: status, identifier: Identifier(kind: fields.text_of(members: named, key: "type"), value: fields.text_of(members: named, key: "value")), expires: fields.moment_of(members: m, key: "expires"), challenges: challenges, wildcard: fields.flag(members: m, key: "wildcard"))
     )
 
 # The challenge the JSON `text` writes.
@@ -563,7 +575,7 @@ function parse_challenge(text: str) -> Challenge?
         .err _ => _ = 0
 
     return ok(
-        Challenge(url: url, kind: kind, status: status, token: fields.text_of(members: m, key: "token"), validated: fields.text_of(members: m, key: "validated"), problems: problems)
+        Challenge(url: url, kind: kind, status: status, token: fields.text_of(members: m, key: "token"), validated: fields.moment_of(members: m, key: "validated"), problems: problems)
     )
 
 # The challenge of `authorization` whose type is `kind`.
@@ -666,12 +678,14 @@ function accept_challenge(@client: Client, challenge: Challenge) -> Challenge?
 #
 # - `client`: a client with an account.
 # - `url`: the authorization's URL.
-# - `timeout_ms`: the most milliseconds to wait, 0 or more.
+# - `timeout`: the longest to wait, zero or more, a part of a millisecond
+#   counting as a whole one: zero asks once.
 #
 # Fails `failed` where it turns "invalid", the challenge's problem said;
-# `timeout` where it is still pending after `timeout_ms`. See also
-# `wait_order`.
-function wait_authorization(@client: Client, url: str, timeout_ms: i64) -> Authorization?
+# `timeout` where it is still pending after `timeout`; `invalid` where
+# `timeout` is below zero. See also `wait_order`.
+function wait_authorization(@client: Client, url: str, timeout: time.Duration) -> Authorization?
+    timeout_ms = wire.ms_of(timeout)?
     waited: i64 @= 0
 
     while true
@@ -728,11 +742,12 @@ function finalize(@client: Client, order: Order, csr: [u8]) -> Order?
 #
 # - `client`: a client with an account.
 # - `url`: the order's URL.
-# - `timeout_ms`: the most milliseconds to wait.
+# - `timeout`: the longest to wait, as `wait_authorization` takes it.
 #
-# Fails `failed` where it turns "invalid"; `timeout` past `timeout_ms`.
-# See also `finalize`.
-function wait_order(@client: Client, url: str, timeout_ms: i64) -> Order?
+# Fails `failed` where it turns "invalid"; `timeout` past `timeout`;
+# `invalid` where `timeout` is below zero. See also `finalize`.
+function wait_order(@client: Client, url: str, timeout: time.Duration) -> Order?
+    timeout_ms = wire.ms_of(timeout)?
     waited: i64 @= 0
 
     while true
@@ -1025,12 +1040,18 @@ test "parse_authorization: RFC 8555 § 7.1.4"
     text = "{\"status\":\"valid\",\"expires\":\"2015-03-01T14:09:07.99Z\",\"identifier\":{\"type\":\"dns\",\"value\":\"www.example.org\"},\"challenges\":[{\"url\":\"https://example.com/acme/chall/prV_B7yEyA4\",\"type\":\"http-01\",\"status\":\"valid\",\"token\":\"DGyRejmCefe7v4NfDGDKfA\",\"validated\":\"2014-12-01T12:05:58.16Z\"}],\"wildcard\":false}"
     authorization = parse_authorization(text: text, url: "https://example.com/acme/authz/PAniVnsZcis").must()
     assert authorization.identifier.value == "www.example.org" && authorization.challenges.len() == 1 && !authorization.wildcard
+    assert time.format(authorization.expires.must(), layout: .rfc3339) == "2015-03-01T14:09:07.99Z"
+    assert time.unix_milliseconds(authorization.challenges[0].validated.must()) == 1417435558160
 
 # A challenge of RFC 8555 § 8.3's example.
 test "parse_challenge: an HTTP-01 challenge"
     text = "{\"type\":\"http-01\",\"url\":\"https://example.com/acme/chall/prV_B7yEyA4\",\"status\":\"pending\",\"token\":\"LoqXcYV8q5ONbJQxbmR7SCTNo3tiAXDfowyjxAjEuX0\"}"
     challenge = parse_challenge(text).must()
     assert challenge.kind == "http-01" && challenge.token == "LoqXcYV8q5ONbJQxbmR7SCTNo3tiAXDfowyjxAjEuX0"
+
+    match challenge.validated
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
 
 # The HTTP-01 challenge of an authorization, and a type it does not offer.
 test "challenge_of: http-01 and dns-01"
@@ -1192,7 +1213,7 @@ test "wait_authorization: valid"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
             assert fetch_authorization(@client, url: authorization.url).must().status == "valid"
 
 # An order finalized with a certificate request.
@@ -1214,8 +1235,8 @@ test "finalize: a request for the one name"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
-            ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
+            ready = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
             finalized = finalize(@client, order: ready, csr: sample.CSR).must()
             assert finalized.status == "processing" || finalized.status == "valid"
 
@@ -1238,11 +1259,11 @@ test "wait_order: valid, with a certificate"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
-            ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
+            ready = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
             assert ready.status == "ready"
             _ = finalize(@client, order: ready, csr: sample.CSR).must()
-            done = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            done = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
             assert done.status == "valid" && done.certificate.len() > 0
 
 # A certificate chain downloaded.
@@ -1264,10 +1285,10 @@ test "download: the PEM of a chain"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
-            ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
+            ready = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
             _ = finalize(@client, order: ready, csr: sample.CSR).must()
-            done = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            done = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
             chain = download(@client, url: done.certificate).must()
             leaf = pem.parse(chain.pem).must().data
             assert pem.parse_all(chain.pem).must().len() >= 2 && leaf.len() > 0
@@ -1291,10 +1312,10 @@ test "revoke: reason 4"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
-            ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
+            ready = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
             _ = finalize(@client, order: ready, csr: sample.CSR).must()
-            done = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            done = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
             chain = download(@client, url: done.certificate).must()
             leaf = pem.parse(chain.pem).must().data
             revoke(@client, certificate: leaf, reason: 4).must()
@@ -1323,10 +1344,10 @@ test "fetch_renewal_info: a window"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
-            ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
+            ready = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
             _ = finalize(@client, order: ready, csr: sample.CSR).must()
-            done = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            done = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
             chain = download(@client, url: done.certificate).must()
             leaf = pem.parse(chain.pem).must().data
             window = fetch_renewal_info(client: client, certificate: leaf).must()

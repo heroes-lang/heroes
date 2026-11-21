@@ -37,7 +37,7 @@ function access_hash(access_token: str, alg: str) -> str
 
 # Whether `claims`, of a token signed by `alg`, answer OpenID Connect's
 # checks for `client_id`, `nonce`, `max_age` and `access_token`.
-function check(claims: {str: json.Value}, alg: str, client_id: str, nonce: str, max_age: i64, access_token: str, leeway: time.Duration, now: time.Instant) -> ()?
+function check(claims: {str: json.Value}, alg: str, client_id: str, nonce: str, max_age: time.Duration, access_token: str, leeway: time.Duration, now: time.Instant) -> ()?
     audiences = jose.claim_texts(claims, name: "aud")?
     party: str @= ""
 
@@ -58,7 +58,7 @@ function check(claims: {str: json.Value}, alg: str, client_id: str, nonce: str, 
         if got != nonce
             return fail(code: INVALID, msg: "the ID token's nonce is not the one sent")
 
-    if max_age > 0
+    if max_age != time.max_duration()
         auth = match jose.claim_time(claims, name: "auth_time")
             .ok t => t
             .err e => return fail(
@@ -66,10 +66,10 @@ function check(claims: {str: json.Value}, alg: str, client_id: str, nonce: str, 
                 msg: f"max_age was asked, and the ID token's auth_time is not read: {e.msg}"
             )
 
-        allowed = time.sum(a: time.seconds(max_age)?, b: leeway)?
+        allowed = time.sum(a: max_age, b: leeway)?
 
         if time.is_after(a: now, b: time.add(auth, d: allowed)?)
-            return fail(code: INVALID, msg: f"the user authenticated more than {max_age} seconds ago")
+            return fail(code: INVALID, msg: f"the user authenticated more than {time.format_duration(max_age)} ago")
 
     if access_token != "" && !claims["at_hash"].is_err()
         got = jose.claim_text(claims, name: "at_hash")?
@@ -91,13 +91,13 @@ test "check: one audience, several with azp and without, a nonce right and wrong
     now = time.from_unix(whole_seconds: 1000, extra_nanoseconds: 0).must()
     none = time.nanoseconds(0)
     one = json.members_of(json.parse("{\"aud\":\"c\",\"nonce\":\"n\",\"auth_time\":900}").must()).must()
-    assert !check(one, alg: "RS256", client_id: "c", nonce: "n", max_age: 100, access_token: "", leeway: none, now: now).is_err()
+    assert !check(one, alg: "RS256", client_id: "c", nonce: "n", max_age: time.seconds(100).must(), access_token: "", leeway: none, now: now).is_err()
     assert check(
         one,
         alg: "RS256",
         client_id: "c",
         nonce: "m",
-        max_age: 0,
+        max_age: time.max_duration(),
         access_token: "",
         leeway: none,
         now: now
@@ -107,7 +107,7 @@ test "check: one audience, several with azp and without, a nonce right and wrong
         alg: "RS256",
         client_id: "c",
         nonce: "",
-        max_age: 50,
+        max_age: time.seconds(50).must(),
         access_token: "",
         leeway: none,
         now: now
@@ -118,21 +118,21 @@ test "check: one audience, several with azp and without, a nonce right and wrong
         alg: "RS256",
         client_id: "c",
         nonce: "",
-        max_age: 0,
+        max_age: time.max_duration(),
         access_token: "",
         leeway: none,
         now: now
     ).is_err()
     party = json.members_of(json.parse("{\"aud\":[\"c\",\"d\"],\"azp\":\"c\"}").must()).must()
-    assert !check(party, alg: "RS256", client_id: "c", nonce: "", max_age: 0, access_token: "", leeway: none, now: now).is_err()
+    assert !check(party, alg: "RS256", client_id: "c", nonce: "", max_age: time.max_duration(), access_token: "", leeway: none, now: now).is_err()
     hashed = json.members_of(json.parse("{\"aud\":\"c\",\"at_hash\":\"77QmUPtjPfzWtF2AnpK9RQ\"}").must()).must()
-    assert !check(hashed, alg: "RS256", client_id: "c", nonce: "", max_age: 0, access_token: "jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y", leeway: none, now: now).is_err()
+    assert !check(hashed, alg: "RS256", client_id: "c", nonce: "", max_age: time.max_duration(), access_token: "jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y", leeway: none, now: now).is_err()
     assert check(
         hashed,
         alg: "RS256",
         client_id: "c",
         nonce: "",
-        max_age: 0,
+        max_age: time.max_duration(),
         access_token: "other",
         leeway: none,
         now: now

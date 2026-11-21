@@ -53,7 +53,7 @@ capability client/retries  a request sent again after a transient failure, waiti
   go      option.WithMaxRetries
   rust    -
   python  Anthropic.max_retries
-  note    408, 409, 429 and 5xx and a connection that failed, unless `x-should-retry` says otherwise, as both SDKs; a `retry-after` longer than `max_wait_ms` is told to the program in its failure rather than slept, where the SDKs fall back to their own backoff
+  note    408, 409, 429 and 5xx and a connection that failed, unless `x-should-retry` says otherwise, as both SDKs; a `retry-after` longer than `max_wait` is told to the program in its failure rather than slept, where the SDKs fall back to their own backoff
 
 capability client/timeout  a time limit on an attempt, and on the wait for a stream's next bytes
   heroes  llm/anthropic.Client
@@ -259,7 +259,7 @@ capability errors/advice  whether a failure may pass if sent again, and after ho
   go      -
   rust    -
   python  RetryableError
-  note    `retryable` and `wait_ms` from the status, `x-should-retry` and `retry-after` (seconds or a date, through `retries.parse_retry_after`); the SDKs keep this inside their retry loop
+  note    `retryable` and `wait` from the status, `x-should-retry` and `retry-after` (seconds or a date, through `retries.parse_retry_after`); the SDKs keep this inside their retry loop
 
 capability errors/request-id  the id of a request, for support
   heroes  llm/anthropic.ApiError

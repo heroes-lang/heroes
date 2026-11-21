@@ -48,7 +48,7 @@ capability open/tls  wss: the server's certificate checked by the system's store
   note    tls's own check; nothing turns it off
 
 capability open/timeout  the time the connection and its opening handshake may take
-  heroes  websocket.Client.deadline_ms
+  heroes  websocket.Client.deadline
   go      -
   rust    -
   python  -

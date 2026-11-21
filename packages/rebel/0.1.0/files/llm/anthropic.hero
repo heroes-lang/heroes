@@ -53,6 +53,7 @@ use llm/anthropic/internal/streaming
 use llm/anthropic/internal/transport
 use os
 use strings
+use time
 use url
 
 ## Codes
@@ -168,12 +169,14 @@ record Client
     # after a connection that failed, and after 408, 409, 429 and every 5xx
     # unless the answer's `x-should-retry` says `false`.
     max_retries: i64
-    # The longest wait, in milliseconds, the client sleeps before a retry; an
-    # answer asking a longer one fails with its advice instead.
-    max_wait_ms: i64
-    # The milliseconds one attempt may take; for a stream, the longest wait
-    # for its next bytes. 0 for no limit.
-    deadline_ms: i64
+    # The longest wait the client sleeps before a retry, a part of a
+    # millisecond counting as a whole one; an answer asking a longer one
+    # fails with its advice instead, and zero sleeps never.
+    max_wait: time.Duration
+    # How long one attempt may take; for a stream, the longest wait for its
+    # next bytes: a part of a millisecond counting as a whole one, zero
+    # ending every wait at once, `time.max_duration()` for no limit.
+    deadline: time.Duration
     # The PEM of the only authorities trusted for `https://`, "" for the
     # system's own store.
     roots: str
@@ -197,8 +200,8 @@ function default_client(api_key: str) -> Client
         betas: [],
         headers: [],
         max_retries: 2,
-        max_wait_ms: 60_000,
-        deadline_ms: 600_000,
+        max_wait: time.minutes(1).must(),
+        deadline: time.minutes(10).must(),
         roots: "",
         limits: http.default_limits()
     )
@@ -766,9 +769,9 @@ record ApiError
     # Whether the same request sent again may succeed: 408, 409, 429 and
     # every 5xx, unless the answer's `x-should-retry` said otherwise.
     retryable: bool
-    # The milliseconds to wait before sending it again: the answer's
-    # `retry-after`, else a backoff from 500 ms; 0 where it is not retryable.
-    wait_ms: i64
+    # How long to wait before sending it again: the answer's `retry-after`,
+    # else a backoff from 500 ms; zero where it is not retryable.
+    wait: time.Duration
 
 # The failure the API answered that `msg` tells, as every call of this
 # package writes one: `[429 rate_limit_error req_01 1500] words`.
@@ -780,7 +783,7 @@ record ApiError
 function failure_of(msg: str) -> ApiError?
     f = failures.read_back(msg)?
     return ok(
-        ApiError(status: f.status, kind: f.kind, message: f.message, request_id: f.request_id, retryable: f.retryable, wait_ms: f.wait_ms)
+        ApiError(status: f.status, kind: f.kind, message: f.message, request_id: f.request_id, retryable: f.retryable, wait: time.milliseconds(f.wait_ms).default(time.max_duration()))
     )
 
 ## Sending
@@ -810,8 +813,8 @@ function send_raw(c: Client, method: str, path: str, body: json.Value) -> http.R
         betas: c.betas,
         headers: c.headers,
         max_retries: c.max_retries,
-        max_wait_ms: c.max_wait_ms,
-        deadline_ms: c.deadline_ms,
+        max_wait_ms: transport.wait_ms_of(c.max_wait),
+        deadline_ms: transport.deadline_ms_of(c.deadline),
         roots: c.roots,
         limits: c.limits
     )
@@ -825,7 +828,7 @@ function send_raw(c: Client, method: str, path: str, body: json.Value) -> http.R
 # Check `stop_reason` before reading its content (`require_complete`). Fails
 # as `request_json` fails on `r`, as `send_raw` fails, and `invalid` where the
 # answer is no message. A long answer is safer streamed (`stream`): an
-# attempt waits at most `c.deadline_ms`. See also `stream`.
+# attempt waits at most `c.deadline`. See also `stream`.
 function create(c: Client, r: Request) -> Message?
     answer = send_raw(c, method: http.METHOD_POST, path: "/v1/messages", body: request_json(r)?)?
     return message_of(http.json_of(answer)?)
@@ -927,7 +930,7 @@ variant Event
 # A stream of the message the model answers to `r`, its head read and no
 # event yet.
 #
-# - `c`: the client; `c.deadline_ms` bounds each wait for the next bytes.
+# - `c`: the client; `c.deadline` bounds each wait for the next bytes.
 # - `r`: the request, sent with `stream: true`.
 #
 # The stream is the caller's to close with `close_stream`. Fails as `create`
@@ -944,14 +947,14 @@ function stream(c: Client, r: Request) -> Stream?
         betas: c.betas,
         headers: c.headers,
         max_retries: c.max_retries,
-        max_wait_ms: c.max_wait_ms,
-        deadline_ms: c.deadline_ms,
+        max_wait_ms: transport.wait_ms_of(c.max_wait),
+        deadline_ms: transport.deadline_ms_of(c.deadline),
         roots: c.roots,
         limits: c.limits
     )
     o @= transport.open(s, method: http.METHOD_POST, path: "/v1/messages", body: json.format(body)?)?
 
-    match streaming.begin(o, limits: c.limits, idle_ms: c.deadline_ms)
+    match streaming.begin(o, limits: c.limits, idle_ms: transport.deadline_ms_of(c.deadline))
         .ok st => return ok(Stream(state: st))
         .err e =>
             transport.close(@o)
@@ -1066,8 +1069,9 @@ record ModelInfo
     id: str
     # A name for people.
     display_name: str
-    # When it was released, RFC 3339.
-    created_at: str
+    # When it was released: a failure, `not_found`, where the answer said
+    # none, `invalid` where it wrote no RFC 3339 time.
+    created_at: time.Instant?
     # Its context window in tokens, 0 where the API says none.
     max_input_tokens: i64
     # The most tokens of an answer, 0 where the API says none.
@@ -1111,7 +1115,7 @@ function model_info_of(v: json.Value) -> ModelInfo?
     if id == ""
         return fail(code: INVALID, msg: "a model with no id")
     return ok(
-        ModelInfo(id: id, display_name: fields.text_at(v, key: "display_name"), created_at: fields.text_at(v, key: "created_at"), max_input_tokens: fields.int_at(v, key: "max_input_tokens"), max_tokens: fields.int_at(v, key: "max_tokens"), raw: v)
+        ModelInfo(id: id, display_name: fields.text_at(v, key: "display_name"), created_at: fields.moment_at(v, key: "created_at"), max_input_tokens: fields.int_at(v, key: "max_input_tokens"), max_tokens: fields.int_at(v, key: "max_tokens"), raw: v)
     )
 
 # A page of the models the API serves.
@@ -1174,16 +1178,18 @@ record Batch
     processing_status: str
     # Its requests by state.
     request_counts: RequestCounts
-    # When it was made, RFC 3339.
-    created_at: str
-    # When it ended, "" before.
-    ended_at: str
+    # When it was made. Each moment of a batch is a failure, `not_found`,
+    # where the answer said none, and `invalid` where it wrote no RFC 3339
+    # time.
+    created_at: time.Instant?
+    # When it ended; `not_found` before.
+    ended_at: time.Instant?
     # When it expires unfinished, 24 hours after it was made.
-    expires_at: str
-    # When its cancelling began, "" where none.
-    cancel_initiated_at: str
-    # When it was archived, "" where it was not.
-    archived_at: str
+    expires_at: time.Instant?
+    # When its cancelling began; `not_found` where none.
+    cancel_initiated_at: time.Instant?
+    # When it was archived; `not_found` where it was not.
+    archived_at: time.Instant?
     # Where its results are, "" before it ends.
     results_url: str
 
@@ -1233,7 +1239,7 @@ function batch_of(v: json.Value) -> Batch?
         )
     n = fields.value_at_key(v, key: "request_counts")
     return ok(
-        Batch(id: fields.text_at(v, key: "id"), processing_status: fields.text_at(v, key: "processing_status"), request_counts: RequestCounts(processing: fields.int_at(n, key: "processing"), succeeded: fields.int_at(n, key: "succeeded"), errored: fields.int_at(n, key: "errored"), canceled: fields.int_at(n, key: "canceled"), expired: fields.int_at(n, key: "expired")), created_at: fields.text_at(v, key: "created_at"), ended_at: fields.text_at(v, key: "ended_at"), expires_at: fields.text_at(v, key: "expires_at"), cancel_initiated_at: fields.text_at(v, key: "cancel_initiated_at"), archived_at: fields.text_at(v, key: "archived_at"), results_url: fields.text_at(v, key: "results_url"))
+        Batch(id: fields.text_at(v, key: "id"), processing_status: fields.text_at(v, key: "processing_status"), request_counts: RequestCounts(processing: fields.int_at(n, key: "processing"), succeeded: fields.int_at(n, key: "succeeded"), errored: fields.int_at(n, key: "errored"), canceled: fields.int_at(n, key: "canceled"), expired: fields.int_at(n, key: "expired")), created_at: fields.moment_at(v, key: "created_at"), ended_at: fields.moment_at(v, key: "ended_at"), expires_at: fields.moment_at(v, key: "expires_at"), cancel_initiated_at: fields.moment_at(v, key: "cancel_initiated_at"), archived_at: fields.moment_at(v, key: "archived_at"), results_url: fields.text_at(v, key: "results_url"))
     )
 
 # Sends `requests` as one batch.
@@ -1345,7 +1351,7 @@ function batch_result_of(line: json.Value) -> BatchResult?
             message: fields.text_at(e, key: "message"),
             request_id: request_id,
             retryable: failures.is_retryable(status),
-            wait_ms: 0
+            wait: time.nanoseconds(0)
         )
         return ok(BatchResult(custom_id: custom_id, outcome: .errored(error: error)))
 
@@ -1395,8 +1401,8 @@ function batch_results(c: Client, id: str) -> [BatchResult]?
         betas: c.betas,
         headers: c.headers,
         max_retries: c.max_retries,
-        max_wait_ms: c.max_wait_ms,
-        deadline_ms: c.deadline_ms,
+        max_wait_ms: transport.wait_ms_of(c.max_wait),
+        deadline_ms: transport.deadline_ms_of(c.deadline),
         roots: c.roots,
         limits: c.limits
     )
@@ -1553,12 +1559,12 @@ test "create: a 429 with no retry left fails limit, its status, type, request id
         .err e =>
             f = failure_of(e.msg).must()
             assert e.code == LIMIT && f.status == 429 && f.kind == "rate_limit_error" && f.request_id == "req_018E"
-            assert f.retryable && f.wait_ms == 7000 && f.message == "Number of requests has exceeded your rate limit"
+            assert f.retryable && f.wait == time.seconds(7).must() && f.message == "Number of requests has exceeded your rate limit"
             assert !strings.contains(s: e.msg, substr: "sk-secret-1")
 
     assert canned.requests_of(@t).len() == 1
 
-test "create: a wait past max_wait_ms told rather than slept, a 400 never sent again, a 529 told not to retry"
+test "create: a wait past max_wait told rather than slept, a 400 never sent again, a 529 told not to retry"
     t @= canned.start(
         [canned.json_answer(status: 429, body: canned.error_body(kind: "rate_limit_error", words: "later"), fields: ["retry-after: 120"]), canned.json_answer(status: 400, body: canned.error_body(kind: "invalid_request_error", words: "bad"), fields: []), canned.json_answer(status: 529, body: canned.error_body(kind: "overloaded_error", words: "Overloaded"), fields: ["x-should-retry: false"]), canned.json_answer(status: 502, body: "<html>bad gateway</html>", fields: [])]
     )
@@ -1568,7 +1574,7 @@ test "create: a wait past max_wait_ms told rather than slept, a 400 never sent a
 
     match create(c, r: r)
         .ok _  => assert false
-        .err e => assert e.code == LIMIT && failure_of(e.msg).must().wait_ms == 120_000
+        .err e => assert e.code == LIMIT && failure_of(e.msg).must().wait == time.minutes(2).must()
 
     match create(c, r: r)
         .ok _  => assert false
@@ -1781,7 +1787,7 @@ test "live: the smallest request, where REBEL_ANTHROPIC_LIVE_KEY gives a key of 
 # A client of the API with a key the program holds.
 test "default_client: the version, the address and two retries"
     c = default_client("sk-example")
-    assert c.version == API_VERSION && c.base_url == BASE_URL && c.max_retries == 2 && c.deadline_ms == 600_000
+    assert c.version == API_VERSION && c.base_url == BASE_URL && c.max_retries == 2 && c.deadline == time.minutes(10).must()
 
 # A client whose key the environment holds, or the program told it is unset.
 test "client_from_env: a key from ANTHROPIC_API_KEY"
@@ -1973,7 +1979,7 @@ test "with_tool_results: a tool loop the program drives"
 # The advice of a failure the API answered, read back from its message.
 test "failure_of: a rate limit's advice"
     f = failure_of("[429 rate_limit_error req_01 1500] slow down").must()
-    assert f.status == 429 && f.retryable && f.wait_ms == 1500 && f.message == "slow down"
+    assert f.status == 429 && f.retryable && f.wait == time.milliseconds(1500).must() && f.message == "slow down"
 
 # An endpoint this package does not wrap, reached with the client's key.
 test "send_raw: GET /v1/files"
@@ -2189,7 +2195,7 @@ test "fetch_model: claude-opus-5-5"
 # A batch read from its JSON.
 test "batch_of: a batch's counts"
     b = batch_of(json.parse(canned.batch_json(id: "msgbatch_1", status: "ended")).must()).must()
-    assert b.processing_status == BATCH_ENDED && b.request_counts.succeeded == 2 && b.ended_at == ""
+    assert b.processing_status == BATCH_ENDED && b.request_counts.succeeded == 2 && b.ended_at.is_err()
 
 # Two requests sent as one batch.
 test "create_batch: two requests"

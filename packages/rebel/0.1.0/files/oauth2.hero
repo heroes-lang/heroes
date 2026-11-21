@@ -484,8 +484,10 @@ record DeviceAuthorization
     verification_uri_complete: str
     # When the codes expire.
     expiry: time.Instant
-    # The seconds to wait between two polls, 5 where the server names none.
-    interval: i64
+    # How long to wait between two polls, five seconds where the server
+    # names none; counted in whole seconds, a part of one counting as a
+    # whole one.
+    interval: time.Duration
 
 # The codes a device asks (RFC 8628 § 3.1), its scopes and resources asked.
 #
@@ -529,7 +531,7 @@ function start_device(c: Config) -> DeviceAuthorization?
     if interval < 0
         interval @ 5
     return ok(
-        DeviceAuthorization(device_code: device_code, user_code: user_code, verification_uri: verification, verification_uri_complete: wire.text_member(members, name: "verification_uri_complete")?, expiry: wire.after(now, seconds: lasts), interval: interval)
+        DeviceAuthorization(device_code: device_code, user_code: user_code, verification_uri: verification, verification_uri_complete: wire.text_member(members, name: "verification_uri_complete")?, expiry: wire.after(now, seconds: lasts), interval: time.seconds(interval).default(time.max_duration()))
     )
 
 # The token the user's approval gives, the token endpoint asked at the
@@ -543,7 +545,10 @@ function start_device(c: Config) -> DeviceAuthorization?
 # `timeout` where the code expires, `failed` for another OAuth error. See
 # also `start_device`.
 function poll_device(c: Config, device: DeviceAuthorization) -> Token?
-    wait: i64 @= device.interval
+    wait: i64 @= time.to_units(device.interval, unit: .second)
+
+    if time.remainder(device.interval, unit: .second).nanoseconds > 0
+        wait @ wait + 1
     form = [
         url.Pair(key: "grant_type", value: "urn:ietf:params:oauth:grant-type:device_code")
         url.Pair(key: "device_code", value: device.device_code)
@@ -1038,9 +1043,9 @@ record IdTokenRules
     leeway: time.Duration
     # The time the token is judged at.
     now: time.Instant
-    # The seconds since `auth_time` allowed, as `max_age` asked; 0 for no
-    # bound.
-    max_age: i64
+    # How long since `auth_time` is allowed, as `max_age` asked;
+    # `time.max_duration()` for no bound.
+    max_age: time.Duration
     # The access token issued beside it, whose `at_hash` is checked where
     # the ID token has one; "" for none.
     access_token: str
@@ -1066,7 +1071,7 @@ function id_token_rules(metadata: Metadata, client_id: str, nonce: str) -> IdTok
     if metadata.id_token_signing_alg_values_supported.len() == 0
         accepted @ [.rs256]
     return ok(
-        IdTokenRules(issuer: metadata.issuer, client_id: client_id, nonce: nonce, algorithms: accepted, leeway: time.seconds(60)?, now: time.now()?, max_age: 0, access_token: "")
+        IdTokenRules(issuer: metadata.issuer, client_id: client_id, nonce: nonce, algorithms: accepted, leeway: time.seconds(60)?, now: time.now()?, max_age: time.max_duration(), access_token: "")
     )
 
 # The ID token `id_token` verified by one of `trusted` and checked by
@@ -1220,7 +1225,7 @@ test "the device grant, client credentials, a JWT bearer grant, private_key_jwt,
     m = fetch_metadata(transport, issuer: base).must()
     c = config_from(m, client_id: "tv")
     device = start_device(c).must()
-    assert device.user_code == "WDJB-MJHT" && device.interval == 0
+    assert device.user_code == "WDJB-MJHT" && device.interval == time.nanoseconds(0)
     t = poll_device(c, device: device).must()
     assert t.access_token == "device-1"
     denied @= device

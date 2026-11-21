@@ -5,6 +5,7 @@
 # the face where it matters, and a member of another kind reads as absent.
 
 use json
+use time
 
 # The text of the member `key` of `v`, "" where `v` holds none, holds `null`
 # or holds another kind there.
@@ -120,6 +121,19 @@ function is_name(s: str, most: i64) -> bool
         at @ at + 1
 
     return true
+
+# The moment the member `key` of `v` writes in RFC 3339: a failure,
+# `not_found`, where it is absent or "", `invalid` where it is no RFC 3339
+# time.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+function moment_at(v: json.Value, key: str) -> time.Instant?
+    written = text_at(v, key: key)
+
+    if written == ""
+        return fail(code: "not_found", msg: f"the answer said no {key}")
+    return time.parse(written, layout: .rfc3339)
 
 test "text_at: present, absent, null, of another kind, and on a list"
     v = json.parse("{\"a\":\"x\",\"b\":null,\"c\":1}").must()

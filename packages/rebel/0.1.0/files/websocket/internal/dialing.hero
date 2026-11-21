@@ -21,54 +21,51 @@ constant TIMEOUT: str
 #
 # Fails `timeout` where the time runs out, and as `url.port_of`,
 # `net.connect_timeout` and `tls.connect` fail.
-function opened(u: url.Url, deadline_ms: i64, secure: tls.Client) -> io.Stream?
+function opened(u: url.Url, deadline: time.Duration, secure: tls.Client) -> io.Stream?
     port = url.port_of(u)?
     began = time.mark()?
+    bounded = deadline != time.max_duration()
 
     if u.scheme == "wss"
-        stream @= tls.connect(host: u.host, port: port, deadline: tls_deadline(deadline_ms)?, client: secure)?.stream
+        stream @= tls.connect(host: u.host, port: port, deadline: deadline, client: secure)?.stream
 
-        if deadline_ms > 0
-            match left_of(began, deadline_ms: deadline_ms)
-                .ok left => tls.set_deadline(stream, deadline: time.milliseconds(left).must()).must()
+        if bounded
+            match left_of(began, deadline: deadline)
+                .ok left => tls.set_deadline(stream, deadline: left).must()
                 .err e =>
                     ended(@stream)
                     return fail(code: e.code, msg: e.msg)
         return ok(stream)
+    whole = deadline.nanoseconds / 1_000_000
 
-    connect_ms = if deadline_ms == 0
+    connect_ms = if !bounded
         net.FOREVER
+    else if deadline.nanoseconds % 1_000_000 != 0
+        whole + 1
     else
-        deadline_ms
+        whole
     conn @= net.connect_timeout(host: u.host, port: port, timeout_ms: connect_ms, deadline_ms: net.FOREVER)?
 
-    if deadline_ms > 0
-        match left_of(began, deadline_ms: deadline_ms)
-            .ok left => net.set_deadline(conn.stream, deadline_ms: left).must()
+    if bounded
+        match left_of(began, deadline: deadline)
+            .ok left => tls.set_deadline(conn.stream, deadline: left).must()
             .err e =>
                 ended(@conn.stream)
                 return fail(code: e.code, msg: e.msg)
     return ok(conn.stream)
 
-# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
-# being `time.max_duration()` (until this package's own step of D07; `tls`
-# takes a `time.Duration` since M-rebel-library step 88c).
+# What is left of `deadline` since `began`, above zero.
 #
-# - `ms`: milliseconds, 0 for no limit.
-function tls_deadline(ms: i64) -> time.Duration?
-    if ms == 0
-        return ok(time.max_duration())
-    return time.milliseconds(ms)
+# Fails `timeout` where nothing is left.
+function left_of(began: time.Mark, deadline: time.Duration) -> time.Duration?
+    spent = time.elapsed(began)?
+    left = time.difference(a: deadline, b: spent)?
 
-# The milliseconds left of `deadline_ms` since `began`, 1 at least.
-#
-# Fails `timeout` where none are left.
-function left_of(began: time.Mark, deadline_ms: i64) -> i64?
-    spent = time.elapsed(began)?.nanoseconds / 1_000_000
-    left = deadline_ms - spent
-
-    if left <= 0
-        return fail(code: TIMEOUT, msg: f"the connection took {spent} ms of the {deadline_ms} allowed")
+    if left.nanoseconds <= 0
+        return fail(
+            code: TIMEOUT,
+            msg: f"the connection took {time.format_duration(spent)} of the {time.format_duration(deadline)} allowed"
+        )
     return ok(left)
 
 # Closes `stream`, whatever the system answers: a stream given up.
@@ -82,7 +79,7 @@ test "opened: a TCP connection to a ws URL, the time left of a deadline, and not
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     stream @= opened(
         url.parse(f"ws://127.0.0.1:{l.address.port}/").must(),
-        deadline_ms: 5_000,
+        deadline: time.seconds(5).must(),
         secure: tls.Client(roots: "", protocols: [])
     ).must()
     accepted = net.accept(l, deadline_ms: 5_000).must()
@@ -95,14 +92,14 @@ test "opened: a TCP connection to a ws URL, the time left of a deadline, and not
     net.close_listener(@l).must()
     assert opened(
         url.parse("ws://127.0.0.1:1/").must(),
-        deadline_ms: 1_000,
+        deadline: time.seconds(1).must(),
         secure: tls.Client(roots: "", protocols: [])
     ).is_err()
 
 test "left_of: what is left of the time, and none"
     began = time.mark().must()
-    assert left_of(began, deadline_ms: 60_000).must() > 59_000
+    assert left_of(began, deadline: time.minutes(1).must()).must().nanoseconds > 59_000_000_000
 
-    match left_of(began, deadline_ms: -1)
+    match left_of(began, deadline: time.milliseconds(-1).must())
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT

@@ -19,6 +19,7 @@ use <rebel>/net
 use <rebel>/os
 use <rebel>/pem
 use <rebel>/process
+use <rebel>/time
 
 function main()
     match os.env("ACME_DIRECTORY")
@@ -131,17 +132,17 @@ function ceremony(directory: str)
                 .err e => assert e.code == "timeout"
 
             net.close_listener(@listener).must()
-        settled = acme.wait_authorization(@client, url: url, timeout_ms: 30000).must()
+        settled = acme.wait_authorization(@client, url: url, timeout: time.seconds(30).must()).must()
         assert settled.status == "valid"
 
-    ready = acme.wait_order(@client, url: order.url, timeout_ms: 30000).must()
+    ready = acme.wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
     assert ready.status == "ready"
 
     match request_for(names)
         .err e => print(f"acme live: the authorizations held; finalize skipped, no openssl: {e.msg}")
         .ok csr =>
             _ = acme.finalize(@client, order: ready, csr: csr).must()
-            done = acme.wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            done = acme.wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
             assert done.status == "valid"
             chain = acme.download(@client, url: done.certificate).must()
             blocks = pem.parse_all(chain.pem).must()

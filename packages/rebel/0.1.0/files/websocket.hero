@@ -282,15 +282,21 @@ record Settings
     # The most bytes of payload of one frame written: a longer message is
     # written in fragments of this size, 0 for one frame whatever its size.
     fragment_bytes: i64
-    # The milliseconds `close` waits for the peer's close, and a client for
-    # the server's end of the stream after it, 0 for no limit.
-    close_wait_ms: i64
+    # How long `close` waits for the peer's close, and a client for the
+    # server's end of the stream after it, a part of a millisecond counting
+    # as a whole one; `time.max_duration()` for no limit.
+    close_wait: time.Duration
 
 # The usual settings, as Python's `websockets` sets them: frames and
 # messages of 1 MiB at most, every message in one frame, and 10 seconds for
 # the peer's close.
 function default_settings() -> Settings
-    return Settings(frame_bytes: 1_048_576, message_bytes: 1_048_576, fragment_bytes: 0, close_wait_ms: 10_000)
+    return Settings(
+        frame_bytes: 1_048_576,
+        message_bytes: 1_048_576,
+        fragment_bytes: 0,
+        close_wait: time.seconds(10).must()
+    )
 
 # Whether and how messages are compressed, by permessage-deflate (RFC 7692):
 # what a client offers and a server accepts. Made by `default_compression`,
@@ -353,10 +359,10 @@ record Client
     # The authorities a `wss://` server's certificate is checked against, and
     # the application protocols offered, as `tls.connect` takes them.
     tls: tls.Client
-    # The milliseconds the connection and its opening handshake may take
-    # together, 0 for no limit; reads and writes after it wait as long as
-    # the peer takes.
-    deadline_ms: i64
+    # How long the connection and its opening handshake may take together:
+    # zero fails `timeout` at once, `time.max_duration()` is no limit; reads
+    # and writes after it wait as long as the peer takes.
+    deadline: time.Duration
     # The most redirects followed, 0 for none: a 301, 302, 303, 307 or 308
     # with a `Location` is followed to a `ws://` or `wss://` URL, never from
     # `wss` to `ws`.
@@ -376,7 +382,7 @@ function default_client() -> Client
         origin: "",
         headers: [],
         tls: tls.Client(roots: "", protocols: []),
-        deadline_ms: 10_000,
+        deadline: time.seconds(10).must(),
         redirects: 10,
         head: http.default_limits()
     )
@@ -530,7 +536,7 @@ function connect(target: str, client: Client) -> Conn?
 
     while true
         u = opening.target_of(at)?
-        stream @= dialing.opened(u, deadline_ms: client.deadline_ms, secure: client.tls)?
+        stream @= dialing.opened(u, deadline: client.deadline, secure: client.tls)?
 
         outcome = match opening.handshake(stream, u: u, a: asking)
             .ok got => got
@@ -721,7 +727,7 @@ function conn_of(@stream: io.Stream, role: Role, settings: Settings) -> Conn
 # 1009; and as `io.read` fails, `timeout` and `stopped` leaving the
 # connection as it was. See also `read_ready`, `read_part`.
 function read_message(@c: Conn) -> Message?
-    got = reading.next(@c.stream, @c.state, b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms), parts: false)?
+    got = reading.next(@c.stream, @c.state, b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: engine.ms_of(c.settings.close_wait)), parts: false)?
 
     if got.text
         return ok(.text(text: bytes.to_text(got.data).must()))
@@ -741,7 +747,7 @@ function read_message(@c: Conn) -> Message?
 function read_ready(@c: Conn) -> [Message]?
     out: [Message] @= []
 
-    for got in reading.ready(@c.stream, @c.state, b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms))?
+    for got in reading.ready(@c.stream, @c.state, b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: engine.ms_of(c.settings.close_wait)))?
         if got.text
             out @ out.push(.text(text: bytes.to_text(got.data).must()))
         else
@@ -760,7 +766,7 @@ function read_ready(@c: Conn) -> [Message]?
 # `read_message` is called. Fails as `read_message` does, and `invalid`
 # where `read_message` began the message. See also `write_part`.
 function read_part(@c: Conn) -> Part?
-    got = reading.next(@c.stream, @c.state, b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms), parts: true)?
+    got = reading.next(@c.stream, @c.state, b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: engine.ms_of(c.settings.close_wait)), parts: true)?
 
     if got.text
         return ok(Part(kind: .text, data: got.data, last: got.last))
@@ -794,14 +800,14 @@ function write_message(@c: Conn, m: Message) -> ()?
         .text t => return writing.message(
             @c.stream,
             @c.state,
-            b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms),
+            b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: engine.ms_of(c.settings.close_wait)),
             text: true,
             data: bytes.from_text(t.text)
         )
         .binary b => return writing.message(
             @c.stream,
             @c.state,
-            b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms),
+            b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: engine.ms_of(c.settings.close_wait)),
             text: false,
             data: b.data
         )
@@ -816,7 +822,7 @@ function write_text(@c: Conn, text: str) -> ()?
     return writing.message(
         @c.stream,
         @c.state,
-        b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms),
+        b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: engine.ms_of(c.settings.close_wait)),
         text: true,
         data: bytes.from_text(text)
     )
@@ -831,7 +837,7 @@ function write_binary(@c: Conn, data: [u8]) -> ()?
     return writing.message(
         @c.stream,
         @c.state,
-        b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms),
+        b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: engine.ms_of(c.settings.close_wait)),
         text: false,
         data: data
     )
@@ -963,7 +969,7 @@ function close(@c: Conn, code: i64, reason: str) -> ()?
     return writing.close_all(
         @c.stream,
         @c.state,
-        b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: c.settings.close_wait_ms),
+        b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: engine.ms_of(c.settings.close_wait)),
         code: code,
         reason: reason
     )
@@ -979,20 +985,21 @@ function drop(@c: Conn) -> ()?
 
 ## Time
 
-# Makes every later and waiting read and write of `c`'s stream end by `ms`
-# milliseconds from now, failing `timeout`: a read so ended loses nothing,
+# Makes every later and waiting read and write of `c`'s stream end by
+# `deadline` from now, failing `timeout`: a read so ended loses nothing,
 # and the next read goes on.
 #
 # - `c`: the connection, over a TCP connection or TLS.
-# - `ms`: milliseconds from now, 0 to take the deadline away.
+# - `deadline`: how long from now; zero ends at once every read and write
+#   that would wait, `time.max_duration()` takes the deadline away.
 #
-# Fails `invalid` where `ms` is below 0, `closed` where `c` is closed, and
-# `unsupported` where its stream is neither a socket nor TLS: a pipe. See
-# also `net.set_deadline`, `tls.set_deadline`.
-function set_deadline(c: Conn, ms: i64) -> ()?
+# Fails `invalid` where `deadline` is below zero, `closed` where `c` is
+# closed, and `unsupported` where its stream is neither a socket nor TLS: a
+# pipe. See also `net.set_deadline`, `tls.set_deadline`.
+function set_deadline(c: Conn, deadline: time.Duration) -> ()?
     if c.state.ended
         return fail(code: CLOSED, msg: engine.closed_message(c.state))
-    return engine.deadline(c.stream, ms: ms)
+    return engine.deadline_in(c.stream, span: deadline)
 
 ## Tests
 
@@ -1192,19 +1199,19 @@ test "set_deadline: a read ended by its deadline goes on after it, and a closed 
     two @= net.pair(deadline_ms: net.FOREVER).must()
     client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
     server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
-    set_deadline(server, ms: 20).must()
+    set_deadline(server, deadline: time.milliseconds(20).must()).must()
 
     match read_message(@server)
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
     assert is_open(server)
-    set_deadline(server, ms: 0).must()
+    set_deadline(server, deadline: time.max_duration()).must()
     write_text(@client, text: "late").must()
     assert data_of(read_message(@server).must()) == bytes.from_text("late")
     drop(@server).must()
 
-    match set_deadline(server, ms: 10)
+    match set_deadline(server, deadline: time.milliseconds(10).must())
         .ok _  => assert false
         .err e => assert e.code == CLOSED
 
@@ -1233,7 +1240,7 @@ test "kind_of: a text and a message of bytes"
 # The usual settings, and a server that takes larger messages.
 test "default_settings: 1 MiB at most, and a larger message allowed"
     s @= default_settings()
-    assert s.message_bytes == 1_048_576 && s.frame_bytes == 1_048_576 && s.close_wait_ms == 10_000
+    assert s.message_bytes == 1_048_576 && s.frame_bytes == 1_048_576 && s.close_wait == time.seconds(10).must()
     s.message_bytes @ 16_777_216
     assert s.message_bytes > s.frame_bytes
 
@@ -1248,7 +1255,7 @@ test "default_compression: off, and turned on with a narrower window"
 # A client that offers a subprotocol and an origin.
 test "default_client: ten seconds, ten redirects, and a subprotocol offered"
     c @= default_client()
-    assert c.deadline_ms == 10_000 && c.redirects == 10 && !c.compression.enabled
+    assert c.deadline == time.seconds(10).must() && c.redirects == 10 && !c.compression.enabled
     c.protocols @ ["chat"]
     c.origin @ "https://example.com"
     assert c.protocols.len() == 1
@@ -1615,7 +1622,7 @@ test "drop: the stream closed with no handshake"
 test "set_deadline: a read that times out"
     two @= net.pair(deadline_ms: net.FOREVER).must()
     client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
-    set_deadline(client, ms: 50).must()
+    set_deadline(client, deadline: time.milliseconds(50).must()).must()
 
     match read_message(@client)
         .ok _  => assert false

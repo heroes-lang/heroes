@@ -42,6 +42,20 @@ record Answer
 constant USER_AGENT: str
     "heroes-rebel-acme/0.1.0"
 
+# The whole milliseconds of `d`, a part of one counting as a whole one.
+#
+# - `d`: a time a face was handed.
+#
+# Fails `invalid` where `d` is below zero.
+function ms_of(d: time.Duration) -> i64?
+    if d.nanoseconds < 0
+        return fail(code: codes.INVALID, msg: f"a time of {time.format_duration(d)}, below zero")
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return ok(whole + 1)
+    return ok(whole)
+
 # `r` with this package's User-Agent.
 function stamped(r: http.Request) -> http.Request
     out @= r

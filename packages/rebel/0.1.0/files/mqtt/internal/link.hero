@@ -75,11 +75,11 @@ function open_socket(target: str, ms: i64, roots: str, most: i64) -> Link?
     client @= websocket.default_client()
     client.tls @ tls.Client(roots: roots, protocols: [])
     client.protocols @ ["mqtt"]
-    client.deadline_ms @ ms
+    client.deadline @ tls_deadline(ms)?
     client.redirects @ 0
     client.settings.frame_bytes @ most
     client.settings.message_bytes @ most
-    client.settings.close_wait_ms @ 1000
+    client.settings.close_wait @ time.seconds(1).must()
     c = websocket.connect(target, client: client)?
 
     if c.protocol != "mqtt"
@@ -106,7 +106,7 @@ function is_secured(l: Link, secure: bool) -> bool
 function arm(l: Link, ms: i64) -> ()?
     return match l
         .connected c => tls.set_deadline(c.stream, deadline: tls_deadline(ms)?)
-        .socket w    => websocket.set_deadline(w.conn, ms: ms)
+        .socket w    => websocket.set_deadline(w.conn, deadline: tls_deadline(ms)?)
         .gone        => fail(code: model.CLOSED, msg: "the connection is closed")
 
 # The bytes one read of `l` brings, at least one.

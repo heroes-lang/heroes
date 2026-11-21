@@ -5,6 +5,7 @@
 # credential of this machine.
 
 use <rebel>/s3
+use <rebel>/time
 
 function main()
     example = s3.Credentials(
@@ -17,5 +18,5 @@ function main()
     c.addressing @ .virtual_host
     at = s3.parse_amz_date("20130524T000000Z").must()
     print(
-        s3.presign_url(c, method: "GET", bucket: "examplebucket", key: "test.txt", headers: [], at: at, expires_seconds: 86_400).must()
+        s3.presign_url(c, method: "GET", bucket: "examplebucket", key: "test.txt", headers: [], at: at, expires: time.days(1).must()).must()
     )

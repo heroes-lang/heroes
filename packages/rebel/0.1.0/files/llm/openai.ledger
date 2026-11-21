@@ -54,7 +54,7 @@ capability client/retries  a request sent again after a transient failure, waiti
   go      option.WithMaxRetries, option.WithMaxRetryDelay
   rust    -
   python  OpenAI.max_retries
-  note    408, 409, 429 and 5xx and a connection that failed, unless `x-should-retry` says otherwise; `retry-after-ms` first, then `retry-after`; a wait longer than `max_wait_ms` is told rather than slept
+  note    408, 409, 429 and 5xx and a connection that failed, unless `x-should-retry` says otherwise; `retry-after-ms` first, then `retry-after`; a wait longer than `max_wait` is told rather than slept
 
 capability client/timeout  a time limit on an attempt, and on the wait for a stream's next bytes
   heroes  llm/openai.Client
@@ -204,7 +204,7 @@ capability errors/advice  whether a failure may pass if sent again, and after ho
   go      -
   rust    -
   python  -
-  note    `retryable` and `wait_ms` from the status, `x-should-retry`, `retry-after-ms` and `retry-after`; the SDKs keep this inside their retry loop
+  note    `retryable` and `wait` from the status, `x-should-retry`, `retry-after-ms` and `retry-after`; the SDKs keep this inside their retry loop
 
 capability errors/connection  a connection refused, cut or timed out
   heroes  llm/openai.CLOSED, llm/openai.TIMEOUT

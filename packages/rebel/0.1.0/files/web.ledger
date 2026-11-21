@@ -558,7 +558,7 @@ capability serve/health  health, liveness and readiness endpoints answered from 
   note    added 2026-11-17, from the community census; none of the three frameworks the census read (Echo, Flask, werkzeug) offers it. The program runs its checks with its own state, as it dispatches its routes, and hands what they found; the answer is 200 or 503 and never cached. Text is Kubernetes's: `ok`, or `[+]name ok` and `[-]name failed: reason` a line each and `health check passed` or `failed`, with `?verbose` listing every check and a failure's reason withheld unless the caller trusts the client. JSON is the IETF draft "Health Check Response Format for HTTP APIs" (draft-inadarei-api-health-check-06), `application/health+json`, chosen where `Accept` weighs it or `application/json` above text
 
 capability webhook/standard  webhooks signed and verified by the Standard Webhooks specification
-  heroes  web.sign_webhook, web.verify_webhook, web.webhook_signature, web.new_webhook_secret, web.WEBHOOK_TOLERANCE_S
+  heroes  web.sign_webhook, web.verify_webhook, web.webhook_signature, web.new_webhook_secret, web.default_webhook_tolerance
   go      -
   rust    -
   python  -

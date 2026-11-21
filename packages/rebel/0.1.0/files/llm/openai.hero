@@ -50,6 +50,7 @@ use llm/openai/internal/response_events
 use llm/openai/internal/transport
 use os
 use strings
+use time
 use url
 
 ## Codes
@@ -162,12 +163,14 @@ record Client
     # after a connection that failed, and after 408, 409, 429 and every 5xx
     # unless the answer's `x-should-retry` says `false`.
     max_retries: i64
-    # The longest wait, in milliseconds, the client sleeps before a retry; an
-    # answer asking a longer one fails with its advice instead.
-    max_wait_ms: i64
-    # The milliseconds one attempt may take; for a stream, the longest wait
-    # for its next bytes. 0 for no limit.
-    deadline_ms: i64
+    # The longest wait the client sleeps before a retry, a part of a
+    # millisecond counting as a whole one; an answer asking a longer one
+    # fails with its advice instead, and zero sleeps never.
+    max_wait: time.Duration
+    # How long one attempt may take; for a stream, the longest wait for its
+    # next bytes: a part of a millisecond counting as a whole one, zero
+    # ending every wait at once, `time.max_duration()` for no limit.
+    deadline: time.Duration
     # The PEM of the only authorities trusted for `https://`, "" for the
     # system's own store.
     roots: str
@@ -188,8 +191,8 @@ function default_client(api_key: str) -> Client
         project: "",
         headers: [],
         max_retries: 2,
-        max_wait_ms: 60_000,
-        deadline_ms: 600_000,
+        max_wait: time.minutes(1).must(),
+        deadline: time.minutes(10).must(),
         roots: "",
         limits: http.default_limits()
     )
@@ -337,10 +340,10 @@ record ApiError
     # Whether the same request sent again may succeed: 408, 409, 429 and
     # every 5xx, unless the answer's `x-should-retry` said otherwise.
     retryable: bool
-    # The milliseconds to wait before sending it again: the answer's
+    # How long to wait before sending it again: the answer's
     # `retry-after-ms`, else its `retry-after`, else a backoff from 500 ms;
-    # 0 where it is not retryable.
-    wait_ms: i64
+    # zero where it is not retryable.
+    wait: time.Duration
 
 # The failure the server answered that `msg` tells, as every call of this
 # package writes one: `[429 requests rate_limit_exceeded req_1 1500] words`.
@@ -352,7 +355,7 @@ record ApiError
 function failure_of(msg: str) -> ApiError?
     f = failures.read_back(msg)?
     return ok(
-        ApiError(status: f.status, kind: f.kind, code: f.code, message: f.message, request_id: f.request_id, retryable: f.retryable, wait_ms: f.wait_ms)
+        ApiError(status: f.status, kind: f.kind, code: f.code, message: f.message, request_id: f.request_id, retryable: f.retryable, wait: time.milliseconds(f.wait_ms).default(time.max_duration()))
     )
 
 ## Sending
@@ -381,8 +384,8 @@ function send_raw(c: Client, method: str, path: str, body: json.Value) -> http.R
         project: c.project,
         headers: c.headers,
         max_retries: c.max_retries,
-        max_wait_ms: c.max_wait_ms,
-        deadline_ms: c.deadline_ms,
+        max_wait_ms: transport.wait_ms_of(c.max_wait),
+        deadline_ms: transport.deadline_ms_of(c.deadline),
         roots: c.roots,
         limits: c.limits
     )
@@ -427,8 +430,9 @@ record Completion
     id: str
     # The model that answered.
     model: str
-    # When it was made, in seconds since 1970.
-    created: i64
+    # When it was made, to the second: a failure, `does_not_fit`, where the
+    # answer's number is past what an instant holds.
+    created: time.Instant?
     # Its choices, one unless the request asked `n`.
     choices: [Choice]
     # The tokens counted; zeros where the server told none.
@@ -615,7 +619,7 @@ function completion_of(v: json.Value) -> Completion?
 
     counts = fields.usage_counts(fields.value_at_key(v, key: "usage"))
     return ok(
-        Completion(id: fields.text_at(v, key: "id"), model: fields.text_at(v, key: "model"), created: fields.int_at(v, key: "created"), choices: choices, usage: Usage(input_tokens: counts[0], output_tokens: counts[1], total_tokens: counts[2], cached_tokens: counts[3], reasoning_tokens: counts[4]))
+        Completion(id: fields.text_at(v, key: "id"), model: fields.text_at(v, key: "model"), created: fields.moment_at(v, key: "created"), choices: choices, usage: Usage(input_tokens: counts[0], output_tokens: counts[1], total_tokens: counts[2], cached_tokens: counts[3], reasoning_tokens: counts[4]))
     )
 
 # The chat completion the JSON text `text` holds.
@@ -727,7 +731,7 @@ record Chunk
 # A stream of the chat completion the model answers to `r`, its head read
 # and no chunk yet; the usage is asked for in a last chunk.
 #
-# - `c`: the client; `c.deadline_ms` bounds each wait for the next bytes.
+# - `c`: the client; `c.deadline` bounds each wait for the next bytes.
 # - `r`: the request, sent with `stream: true` and `stream_options`
 #   asking the usage, unless `r.fields` sets `stream_options`.
 #
@@ -750,14 +754,14 @@ function chat_stream(c: Client, r: ChatRequest) -> ChatStream?
         project: c.project,
         headers: c.headers,
         max_retries: c.max_retries,
-        max_wait_ms: c.max_wait_ms,
-        deadline_ms: c.deadline_ms,
+        max_wait_ms: transport.wait_ms_of(c.max_wait),
+        deadline_ms: transport.deadline_ms_of(c.deadline),
         roots: c.roots,
         limits: c.limits
     )
     o @= transport.open(s, method: http.METHOD_POST, path: "/chat/completions", body: json.format(body)?)?
 
-    match chat_chunks.begin(o, limits: c.limits, idle_ms: c.deadline_ms)
+    match chat_chunks.begin(o, limits: c.limits, idle_ms: transport.deadline_ms_of(c.deadline))
         .ok st => return ok(ChatStream(state: st))
         .err e =>
             transport.close(@o)
@@ -1228,7 +1232,7 @@ variant ResponseEvent
 # A stream of the response the model makes for `r`, its head read and no
 # event yet.
 #
-# - `c`: the client; `c.deadline_ms` bounds each wait for the next bytes.
+# - `c`: the client; `c.deadline` bounds each wait for the next bytes.
 # - `r`: the request, sent with `stream: true`.
 #
 # The stream is the caller's to close with `close_response_stream`. Fails
@@ -1243,14 +1247,14 @@ function response_stream(c: Client, r: ResponseRequest) -> ResponseStream?
         project: c.project,
         headers: c.headers,
         max_retries: c.max_retries,
-        max_wait_ms: c.max_wait_ms,
-        deadline_ms: c.deadline_ms,
+        max_wait_ms: transport.wait_ms_of(c.max_wait),
+        deadline_ms: transport.deadline_ms_of(c.deadline),
         roots: c.roots,
         limits: c.limits
     )
     o @= transport.open(s, method: http.METHOD_POST, path: "/responses", body: json.format(body)?)?
 
-    match response_events.begin(o, limits: c.limits, idle_ms: c.deadline_ms)
+    match response_events.begin(o, limits: c.limits, idle_ms: transport.deadline_ms_of(c.deadline))
         .ok st => return ok(ResponseStream(state: st))
         .err e =>
             transport.close(@o)
@@ -1425,8 +1429,9 @@ record Model
     id: str
     # Who owns it: `openai`, `system`, a user or `library`.
     owned_by: str
-    # When it was made, in seconds since 1970.
-    created: i64
+    # When it was made, to the second: a failure, `does_not_fit`, where the
+    # answer's number is past what an instant holds.
+    created: time.Instant?
 
 # The models the server serves.
 #
@@ -1440,7 +1445,7 @@ function list_models(c: Client) -> [Model]?
 
     for v in json.items_of(json.member(answer, key: "data")?)?
         out @ out.push(
-            Model(id: fields.text_at(v, key: "id"), owned_by: fields.text_at(v, key: "owned_by"), created: fields.int_at(v, key: "created"))
+            Model(id: fields.text_at(v, key: "id"), owned_by: fields.text_at(v, key: "owned_by"), created: fields.moment_at(v, key: "created"))
         )
 
     return ok(out)
@@ -1458,7 +1463,7 @@ function fetch_model(c: Client, id: str) -> Model?
     if fields.text_at(v, key: "id") == ""
         return fail(code: INVALID, msg: "a model with no id")
     return ok(
-        Model(id: fields.text_at(v, key: "id"), owned_by: fields.text_at(v, key: "owned_by"), created: fields.int_at(v, key: "created"))
+        Model(id: fields.text_at(v, key: "id"), owned_by: fields.text_at(v, key: "owned_by"), created: fields.moment_at(v, key: "created"))
     )
 
 ## Tests
@@ -1496,7 +1501,7 @@ test "arguments_of: none written, a list, and a text cut short"
         .err e => assert e.code == INVALID
 
 test "require_finished: no choice, a refusal, a filter and a cut; a stop and a reason added since pass"
-    match require_finished(Completion(id: "", model: "", created: 0, choices: [], usage: parse_completion(canned.completion(message: "{}", finish_reason: "stop")).must().usage))
+    match require_finished(Completion(id: "", model: "", created: time.from_unix(whole_seconds: 0, extra_nanoseconds: 0), choices: [], usage: parse_completion(canned.completion(message: "{}", finish_reason: "stop")).must().usage))
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -1584,7 +1589,7 @@ test "chat: a 401 not sent again, its type, code and request id read back; vLLM'
         .ok _ => assert false
         .err e =>
             f = failure_of(e.msg).must()
-            assert e.code == LIMIT && f.retryable && f.wait_ms == 1500 && f.message == "Rate limit reached"
+            assert e.code == LIMIT && f.retryable && f.wait == time.milliseconds(1500).must() && f.message == "Rate limit reached"
 
     assert canned.requests_of(@t).len() == 4
 
@@ -1751,7 +1756,7 @@ test "arguments_of: an object"
 # The advice of a failure, read back from its message.
 test "failure_of: a rate limit's advice"
     f = failure_of("[429 requests rate_limit_exceeded req_1 1500] Rate limit reached").must()
-    assert f.status == 429 && f.code == "rate_limit_exceeded" && f.retryable && f.wait_ms == 1500
+    assert f.status == 429 && f.code == "rate_limit_exceeded" && f.retryable && f.wait == time.milliseconds(1500).must()
 
 # An endpoint this package does not wrap.
 test "send_raw: GET /files"
@@ -2286,4 +2291,4 @@ test "fetch_model: gpt-test"
     c.base_url @ canned.base(t.port)
     m = fetch_model(c, id: "gpt-test").must()
     seen = canned.requests_of(@t)
-    assert m.created == 1686935002 && strings.has_prefix(s: seen[0], prefix: "GET /models/gpt-test\n")
+    assert time.unix_seconds(m.created.must()) == 1686935002 && strings.has_prefix(s: seen[0], prefix: "GET /models/gpt-test\n")

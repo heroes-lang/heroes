@@ -5,6 +5,7 @@
 
 use acme/internal/codes
 use json
+use time
 
 # The object `text` writes, `what` naming it in a failure.
 function object(text: str, what: str) -> {str: json.Value}?
@@ -20,6 +21,19 @@ function text_of(members: {str: json.Value}, key: str) -> str
     match members[key]
         .ok v  => return json.text_of(v).default("")
         .err _ => return ""
+
+# The moment the string member `key` of `members` writes in RFC 3339: a
+# failure, `not_found`, where the member is not there or is "", and
+# `invalid` where it is no RFC 3339 time.
+#
+# - `members`: the object's members.
+# - `key`: the member's name.
+function moment_of(members: {str: json.Value}, key: str) -> time.Instant?
+    text = text_of(members: members, key: key)
+
+    if text == ""
+        return fail(code: codes.NOT_FOUND, msg: f"the server said no {key}")
+    return time.parse(text, layout: .rfc3339)
 
 # The string member `key` of `members`, which must be there.
 function required(members: {str: json.Value}, key: str, what: str) -> str?

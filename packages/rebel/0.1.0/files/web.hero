@@ -708,8 +708,9 @@ record Cors
     # Whether the browser sends its cookies and credentials; the origin is
     # then written, never `*`.
     credentials: bool
-    # The seconds a browser may keep a preflight's answer, 0 for none written.
-    max_age_seconds: i64
+    # How long a browser may keep a preflight's answer, written in whole
+    # seconds, a part of one counting as a whole one; zero writes none.
+    max_age: time.Duration
 
 # The usual CORS for `origins`: the methods `GET`, `HEAD`, `PUT`, `PATCH`,
 # `POST` and `DELETE`, the fields the browser asks, no credentials, no age.
@@ -722,7 +723,7 @@ function default_cors(origins: [str]) -> Cors
         headers: [],
         exposed: [],
         credentials: false,
-        max_age_seconds: 0
+        max_age: time.nanoseconds(0)
     )
 
 # Answers `r` 204 where it is a CORS preflight, and lets every other request
@@ -761,8 +762,12 @@ function preflight(r: http.Request, cors: Cors) -> Step
         else if asked.len() > 0
             fields @ http.with_header(fields, name: "Access-Control-Allow-Headers", value: asked.join(", "))
 
-        if cors.max_age_seconds > 0
-            fields @ http.with_header(fields, name: "Access-Control-Max-Age", value: to_str(cors.max_age_seconds))
+        if cors.max_age.nanoseconds > 0
+            fields @ http.with_header(
+                fields,
+                name: "Access-Control-Max-Age",
+                value: to_str(webhooks.whole_seconds(cors.max_age))
+            )
 
     out.headers @ fields
     return .answer(response: out)
@@ -1330,10 +1335,10 @@ record CookieOptions
     path: str
     # The host it is sent to with its subdomains; "" for this host alone.
     domain: str
-    # The seconds it lasts, 1 or more: written as `Max-Age` and signed or
-    # sealed inside the value, so a client that keeps it longer has it
-    # refused.
-    max_age_s: i64
+    # How long it lasts, a second or more, written in whole seconds as
+    # `Max-Age`, a part of one counting as a whole one, and signed or sealed
+    # inside the value, so a client that keeps it longer has it refused.
+    max_age: time.Duration
     # Whether the browser sends it over HTTPS alone.
     secure: bool
     # Whether no script of the page may read it.
@@ -1364,7 +1369,7 @@ function default_cookie_options(name: str, ring: [[u8]]) -> CookieOptions
         name: name,
         path: "/",
         domain: "",
-        max_age_s: 2_592_000,
+        max_age: time.days(30).must(),
         secure: true,
         http_only: true,
         same_site: "Lax",
@@ -1451,11 +1456,11 @@ function secure_cookie_of(r: http.Request, options: CookieOptions, now: time.Ins
     return verify_value(options.keys, name: options.name, signed: said, now: now)
 
 # A copy of `response` setting the cookie `options.name` to `value`, signed
-# or sealed as `options` says, for `options.max_age_s` from `now`.
+# or sealed as `options` says, for `options.max_age` from `now`.
 #
 # - `response`: the response; a `Set-Cookie` field is added after its own.
 # - `options`: how the cookie is written; aborts where its name is no token,
-#   its `max_age_s` below 1, or its keys as `sign_value` refuses them.
+#   its `max_age` below a second, or its keys as `sign_value` refuses them.
 # - `value`: any text.
 # - `now`: the instant the cookie's life counts from.
 #
@@ -1463,8 +1468,9 @@ function secure_cookie_of(r: http.Request, options: CookieOptions, now: time.Ins
 # field's value would pass `MOST_COOKIE_BYTES`, and as `seal_value` does.
 # See also `secure_cookie_of`, `without_cookie`.
 function with_secure_cookie(response: http.Response, options: CookieOptions, value: str, now: time.Instant) -> http.Response?
-    assert options.max_age_s >= 1
-    expires = time.add(now, d: time.seconds(options.max_age_s).default(time.max_duration())).default(time.max_instant())
+    max_age_seconds = webhooks.whole_seconds(options.max_age)
+    assert max_age_seconds >= 1
+    expires = time.add(now, d: time.seconds(max_age_seconds).default(time.max_duration())).default(time.max_instant())
     written: str @= ""
 
     if options.sealing.len() > 0
@@ -1483,7 +1489,7 @@ function with_secure_cookie(response: http.Response, options: CookieOptions, val
         http_only: options.http_only,
         same_site: options.same_site
     )
-    field = http.format_set_cookie(c) + f"; Max-Age={options.max_age_s}"
+    field = http.format_set_cookie(c) + f"; Max-Age={max_age_seconds}"
 
     if field.len() > MOST_COOKIE_BYTES
         return fail(
@@ -1739,7 +1745,7 @@ record SecurityHeaders
 function default_security_headers() -> SecurityHeaders
     return SecurityHeaders(
         content_security_policy: "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
-        strict_transport_security: format_hsts(max_age_s: 31_536_000, subdomains: true, preload: false),
+        strict_transport_security: format_hsts(max_age: time.days(365).must(), subdomains: true, preload: false),
         content_type_options: "nosniff",
         frame_options: "SAMEORIGIN",
         referrer_policy: "no-referrer",
@@ -1772,15 +1778,17 @@ function minimal_security_headers() -> SecurityHeaders
 
 # A `Strict-Transport-Security` value, RFC 6797 § 6.1.
 #
-# - `max_age_s`: the seconds the browser comes back over HTTPS alone, 0 or
-#   more; 0 makes it forget.
+# - `max_age`: how long the browser comes back over HTTPS alone, written in
+#   whole seconds, a part of one counting as a whole one; zero makes it
+#   forget.
 # - `subdomains`: whether `includeSubDomains` is written.
 # - `preload`: whether `preload` is written, which browsers' lists read.
 #
 # A browser reads it only over HTTPS (RFC 6797 § 8.1), so it is written
 # whatever the connection, as helmet writes it; Django writes it only on a
-# request it knows came over HTTPS. Aborts where `max_age_s` is below 0.
-function format_hsts(max_age_s: i64, subdomains: bool, preload: bool) -> str
+# request it knows came over HTTPS. Aborts where `max_age` is below zero.
+function format_hsts(max_age: time.Duration, subdomains: bool, preload: bool) -> str
+    max_age_s = webhooks.whole_seconds(max_age)
     assert max_age_s >= 0
     out: [str] @= [f"max-age={max_age_s}"]
 
@@ -2002,13 +2010,14 @@ function exchange(r: http.Request, router: Router, handler: (function(Router, ht
 # - `l`: the listener; its owner closes it.
 # - `router`: handed to `handler` with each request.
 # - `handler`: called once for each request, with `router` and the request.
-# - `grace_ms`: the milliseconds after the stop during which a request whose
-#   bytes have come may still begin to be answered, 0 or more.
+# - `grace`: how long after the stop a request whose bytes have come may
+#   still begin to be answered, zero or more, a part of a millisecond
+#   counting as a whole one.
 #
 # The counts of what it served and what the stop cut. Fails as
 # `http.serve_until_stopped` does. See also `serve`.
-function serve_until_stopped(server: http.Server, l: net.Listener, router: Router, handler: (function(Router, http.Request) -> http.Response), grace_ms: i64) -> http.Served?
-    return http.serve_until_stopped(server, l: l, state: router, handler: handler, grace: time.milliseconds(grace_ms)?)
+function serve_until_stopped(server: http.Server, l: net.Listener, router: Router, handler: (function(Router, http.Request) -> http.Response), grace: time.Duration) -> http.Served?
+    return http.serve_until_stopped(server, l: l, state: router, handler: handler, grace: grace)
 
 ## Health and readiness
 
@@ -2089,10 +2098,10 @@ function health_response(r: http.Request, checks: [Check], detail: bool) -> http
 
 ## Webhooks signed as Standard Webhooks signs them
 
-# How far a webhook's timestamp may stand from the clock that reads it, in
-# seconds, either way: five minutes, as the specification's libraries allow.
-constant WEBHOOK_TOLERANCE_S: i64
-    300
+# How far a webhook's timestamp may stand from the clock that reads it,
+# either way: five minutes, as the specification's libraries allow.
+function default_webhook_tolerance() -> time.Duration
+    return time.minutes(5).must()
 
 # A new secret for signing webhooks: `whsec_` and the standard base 64 of 32
 # bytes the system's generator draws.
@@ -2137,7 +2146,7 @@ function sign_webhook(secret: str, id: str, sent: time.Instant, payload: [u8]) -
 
 # The id of the webhook `headers` and `payload` carry, where one of
 # `secrets` signed it as the Standard Webhooks specification says and it was
-# sent within `tolerance_s` of `now`.
+# sent within `tolerance` of `now`.
 #
 # - `headers`: the request's header fields; `webhook-id`,
 #   `webhook-timestamp` and `webhook-signature` are read, in any case.
@@ -2146,17 +2155,24 @@ function sign_webhook(secret: str, id: str, sent: time.Instant, payload: [u8]) -
 #   signature by any of them passes, so a secret rotates without a message
 #   lost.
 # - `now`: the time it is read.
-# - `tolerance_s`: how far the timestamp may stand from `now`, in seconds,
-#   either way; `WEBHOOK_TOLERANCE_S` is the specification's libraries'.
+# - `tolerance`: how far the timestamp may stand from `now`, either way,
+#   counted in whole seconds, a part of one counting as a whole one;
+#   `default_webhook_tolerance()` is the specification's libraries'.
 #
 # Fails `invalid` where a field is missing or does not read, a secret does
-# not read, the timestamp is further than `tolerance_s` from `now`, or no
+# not read, the timestamp is further than `tolerance` from `now` or
+# `tolerance` is below zero, or no
 # `v1` signature of the field matches one of `secrets`, compared in constant
 # time; the message says which. A signature of another version, `v1a`, is
 # passed over. A receiver keeps the id to refuse the same message twice.
 #
 # See also `sign_webhook`.
-function verify_webhook(headers: [http.Header], payload: [u8], secrets: [str], now: time.Instant, tolerance_s: i64) -> str?
+function verify_webhook(headers: [http.Header], payload: [u8], secrets: [str], now: time.Instant, tolerance: time.Duration) -> str?
+    tolerance_s = webhooks.whole_seconds(tolerance)
+
+    if tolerance_s < 0
+        return fail(code: INVALID, msg: f"a tolerance of {time.format_duration(tolerance)}, below zero")
+
     id = match http.value_of(headers, name: "webhook-id")
         .ok v  => v
         .err _ => return fail(code: INVALID, msg: "the webhook carries no webhook-id field")
@@ -2965,8 +2981,8 @@ test "with_security_headers: every field written where none stands, a handler's 
     assert got.headers.len() == own.headers.len() + 11
 
 test "format_hsts: forgetting, every part, and none"
-    assert format_hsts(max_age_s: 0, subdomains: false, preload: false) == "max-age=0"
-    assert format_hsts(max_age_s: 63_072_000, subdomains: true, preload: true) == "max-age=63072000; includeSubDomains; preload"
+    assert format_hsts(max_age: time.nanoseconds(0), subdomains: false, preload: false) == "max-age=0"
+    assert format_hsts(max_age: time.hours(17520).must(), subdomains: true, preload: true) == "max-age=63072000; includeSubDomains; preload"
 
 test "trusted_networks: addresses and networks of both families, a mapped address, what reads as neither"
     got = trusted_networks(["10.0.0.1", "::1", "192.168.0.0/16", "fd00::/8", "::ffff:10.0.0.2"]).must()
@@ -3123,11 +3139,11 @@ test "verify_webhook: signed and verified, a rotated secret, the tolerance's edg
     sent = time.from_unix(whole_seconds: 1614265330, extra_nanoseconds: 0).must()
     payload = bytes.from_text("{\"a\":1}")
     headers = sign_webhook(secret: old_secret, id: "msg_1", sent: sent, payload: payload).must()
-    assert verify_webhook(headers, payload: payload, secrets: [new_secret, old_secret], now: sent, tolerance_s: WEBHOOK_TOLERANCE_S).must() == "msg_1"
+    assert verify_webhook(headers, payload: payload, secrets: [new_secret, old_secret], now: sent, tolerance: default_webhook_tolerance()).must() == "msg_1"
     late = time.from_unix(whole_seconds: 1614265330 + 300, extra_nanoseconds: 0).must()
     early = time.from_unix(whole_seconds: 1614265330 - 300, extra_nanoseconds: 0).must()
-    assert verify_webhook(headers, payload: payload, secrets: [old_secret], now: late, tolerance_s: 300).must() == "msg_1"
-    assert verify_webhook(headers, payload: payload, secrets: [old_secret], now: early, tolerance_s: 300).must() == "msg_1"
+    assert verify_webhook(headers, payload: payload, secrets: [old_secret], now: late, tolerance: time.minutes(5).must()).must() == "msg_1"
+    assert verify_webhook(headers, payload: payload, secrets: [old_secret], now: early, tolerance: time.minutes(5).must()).must() == "msg_1"
     too_late = time.from_unix(whole_seconds: 1614265330 + 301, extra_nanoseconds: 0).must()
     too_early = time.from_unix(whole_seconds: 1614265330 - 301, extra_nanoseconds: 0).must()
     two = [
@@ -3135,16 +3151,16 @@ test "verify_webhook: signed and verified, a rotated secret, the tolerance's edg
         http.Header(name: "webhook-timestamp", value: "1614265330")
         http.Header(name: "webhook-signature", value: "v1a,x v1,AAAA " + http.value_of(headers, name: "webhook-signature").must())
     ]
-    assert verify_webhook(two, payload: payload, secrets: [old_secret], now: sent, tolerance_s: 300).must() == "msg_1"
+    assert verify_webhook(two, payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5).must()).must() == "msg_1"
     refused = [
-        verify_webhook(headers, payload: payload, secrets: [old_secret], now: too_late, tolerance_s: 300)
-        verify_webhook(headers, payload: payload, secrets: [old_secret], now: too_early, tolerance_s: 300)
-        verify_webhook(headers, payload: bytes.from_text("{\"a\":2}"), secrets: [old_secret], now: sent, tolerance_s: 300)
-        verify_webhook(headers, payload: payload, secrets: [new_secret], now: sent, tolerance_s: 300)
-        verify_webhook([headers[0], headers[1]], payload: payload, secrets: [old_secret], now: sent, tolerance_s: 300)
-        verify_webhook([headers[0], headers[1], http.Header(name: "webhook-signature", value: "v1a,abc")], payload: payload, secrets: [old_secret], now: sent, tolerance_s: 300)
-        verify_webhook([headers[0], http.Header(name: "webhook-timestamp", value: "+1614265330"), headers[2]], payload: payload, secrets: [old_secret], now: sent, tolerance_s: 300)
-        verify_webhook(headers, payload: payload, secrets: ["whsec_"], now: sent, tolerance_s: 300)
+        verify_webhook(headers, payload: payload, secrets: [old_secret], now: too_late, tolerance: time.minutes(5).must())
+        verify_webhook(headers, payload: payload, secrets: [old_secret], now: too_early, tolerance: time.minutes(5).must())
+        verify_webhook(headers, payload: bytes.from_text("{\"a\":2}"), secrets: [old_secret], now: sent, tolerance: time.minutes(5).must())
+        verify_webhook(headers, payload: payload, secrets: [new_secret], now: sent, tolerance: time.minutes(5).must())
+        verify_webhook([headers[0], headers[1]], payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5).must())
+        verify_webhook([headers[0], headers[1], http.Header(name: "webhook-signature", value: "v1a,abc")], payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5).must())
+        verify_webhook([headers[0], http.Header(name: "webhook-timestamp", value: "+1614265330"), headers[2]], payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5).must())
+        verify_webhook(headers, payload: payload, secrets: ["whsec_"], now: sent, tolerance: time.minutes(5).must())
     ]
 
     for one in refused
@@ -3647,7 +3663,7 @@ test "limit_rate: 429 and Retry-After past one request a second"
 # The options of a session's cookie.
 test "default_cookie_options: a month, secure, the path /"
     options = default_cookie_options("session", ring: fixture.ring())
-    assert options.max_age_s == 2_592_000 && options.secure && options.http_only && options.same_site == "Lax" && options.path == "/"
+    assert options.max_age == time.days(30).must() && options.secure && options.http_only && options.same_site == "Lax" && options.path == "/"
 
 # A value signed for a cookie, then verified.
 test "sign_value: a user's name kept by the client, unchangeable"
@@ -3804,7 +3820,7 @@ test "minimal_security_headers: nosniff for a page"
 
 # A two-year HSTS value for a site in browsers' preload lists.
 test "format_hsts: two years, subdomains, preload"
-    assert format_hsts(max_age_s: 63_072_000, subdomains: true, preload: true) == "max-age=63072000; includeSubDomains; preload"
+    assert format_hsts(max_age: time.hours(17520).must(), subdomains: true, preload: true) == "max-age=63072000; includeSubDomains; preload"
 
 # A response given helmet's fields, a policy of the program's own among them.
 test "with_security_headers: a stricter frame policy"
@@ -3864,7 +3880,7 @@ test "serve_until_stopped: a listener with no client, its deadline passed"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     net.set_accept_deadline(l, deadline_ms: 100).must()
 
-    match serve_until_stopped(http.default_server(), l: l, router: new_router(), handler: not_routed, grace_ms: 1_000)
+    match serve_until_stopped(http.default_server(), l: l, router: new_router(), handler: not_routed, grace: time.seconds(1).must())
         .ok _  => assert false
         .err e => assert e.code == "timeout"
 
@@ -3917,4 +3933,4 @@ test "verify_webhook: a message received"
         payload: body
     ).must()
     secrets = [new_webhook_secret().must(), "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"]
-    assert verify_webhook(fields, payload: body, secrets: secrets, now: sent, tolerance_s: WEBHOOK_TOLERANCE_S).must() == "msg_1"
+    assert verify_webhook(fields, payload: body, secrets: secrets, now: sent, tolerance: default_webhook_tolerance()).must() == "msg_1"
