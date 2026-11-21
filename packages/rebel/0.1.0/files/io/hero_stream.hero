@@ -89,18 +89,38 @@ extern "hero_os.h"
 # `HERO_STREAM_ACCESS_*` and `perm` the permission of a file the call creates,
 # 0 to `0o777`, which Windows does not have and ignores. It aborts where `path`
 # holds a zero byte, which C cannot read.
+#
+# - `path`: the file opened; a folder is `HERO_STREAM_IS_A_DIRECTORY`, and to
+#   `HERO_STREAM_ACCESS_CREATE` `HERO_STREAM_EXISTS`.
+# - `access`: `HERO_STREAM_ACCESS_READ` (the file must be there),
+#   `HERO_STREAM_ACCESS_WRITE` (created where absent, emptied where there),
+#   `HERO_STREAM_ACCESS_CREATE` (made by this call, else
+#   `HERO_STREAM_EXISTS`), `HERO_STREAM_ACCESS_APPEND` (created where absent,
+#   every write at the end) or `HERO_STREAM_ACCESS_READ_WRITE` (there, and not
+#   emptied).
+# - `perm`: the nine bits of a file the call creates, 0 to 0o777 whatever the
+#   access, less what the process's mask takes away; a file already there
+#   keeps its own. Outside that range is `HERO_STREAM_INVALID`.
 function open(path: str, access: i64, perm: i64) -> Stream
     return hero_stream_open(path: path.cstr(), access: access, perm: perm)
 
 # One of the process's own three streams, or `nullptr` where it was started
 # without it. `which` is one of `HERO_STREAM_STD_*`; the handle is borrowed,
 # the same at every call, and never closed.
+#
+# - `which`: `HERO_STREAM_STD_IN`, `HERO_STREAM_STD_OUT` or
+#   `HERO_STREAM_STD_ERR`; any other number is `HERO_STREAM_INVALID`.
 function std(which: i64) -> Stream
     return hero_stream_std(which)
 
 # 0 with a pipe's two ends in `reader` and `writer`, or -1 with both
 # `nullptr`. What is written to `writer` is read from `reader`, and each end
 # is closed by its own `close`.
+#
+# - `reader`: set to the end read from, a handle the caller closes; `nullptr`
+#   on -1.
+# - `writer`: set to the end written to, a handle the caller closes; `nullptr`
+#   on -1. Once every writer is closed a read of `reader` answers 0.
 function pipe(@reader: Stream, @writer: Stream) -> i64
     return hero_stream_pipe(reader: @reader, writer: @writer)
 
@@ -108,6 +128,10 @@ function pipe(@reader: Stream, @writer: Stream) -> i64
 # one byte and may answer fewer than `n`; it leaves `buffer` `n` bytes long,
 # the read ones first, and refuses an `n` of 0, whose answer would read as the
 # end.
+#
+# - `s`: the stream read from; it stays open.
+# - `buffer`: filled from its first byte with what was read; left `n` long.
+# - `n`: the most bytes to read, 1 or more; 0 is `HERO_STREAM_INVALID`.
 function read(s: Stream, @buffer: [u8], n: u64) -> i64
     return hero_stream_read(s, @buffer, n: n)
 
@@ -115,40 +139,70 @@ function read(s: Stream, @buffer: [u8], n: u64) -> i64
 # fewer, and the caller writes the rest; `data` is left as it was handed, `n`
 # bytes long. To a pipe or a socket whose reader is gone it answers -1 with
 # `HERO_STREAM_CLOSED_PEER`.
+#
+# - `s`: the stream written to; it stays open.
+# - `data`: the bytes written, from its first; left as it was handed.
+# - `n`: the most bytes of `data` to write; 0 answers 0.
 function write(s: Stream, @data: [u8], n: u64) -> i64
     return hero_stream_write(s, @data, n: n)
 
 # The position `s` stands at after moving `offset` bytes from `from`, or -1.
 # `from` is one of `HERO_STREAM_FROM_*`; a pipe, a terminal or a socket
 # answers -1 with `HERO_STREAM_NOT_SEEKABLE`.
+#
+# - `s`: the stream moved; it stays open.
+# - `offset`: bytes from `from`, negative to move back; a position past the
+#   end is allowed, one before the start `HERO_STREAM_INVALID`. 0 from
+#   `HERO_STREAM_FROM_CURRENT` reads the position and moves nothing.
+# - `from`: `HERO_STREAM_FROM_START`, `HERO_STREAM_FROM_CURRENT` or
+#   `HERO_STREAM_FROM_END`.
 function seek(s: Stream, offset: i64, from: i64) -> i64
     return hero_stream_seek(s, offset: offset, from: from)
 
 # The size of the file `s` stands on, in bytes, or -1. What is no file
 # answers -1 with `HERO_STREAM_NOT_SEEKABLE`.
+#
+# - `s`: the stream asked about; it stays open.
 function size(s: Stream) -> i64
     return hero_stream_size(s)
 
 # 0 once the system says everything written to the file is on the storage
 # itself, or -1. What is no file answers -1 with `HERO_STREAM_UNSUPPORTED`.
+#
+# - `s`: the stream whose writes are put on the storage, opened to write, else
+#   `HERO_STREAM_DENIED`; it stays open.
 function sync(s: Stream) -> i64
     return hero_stream_sync(s)
 
 # 0 once the file is `to` bytes long, or -1. It cuts what is past `to` or adds
 # bytes to reach it, and the position does not move.
+#
+# - `s`: the stream on the file changed, opened to write and not to append,
+#   else `HERO_STREAM_DENIED`; it stays open.
+# - `to`: the file's new length in bytes, 0 or more; negative is
+#   `HERO_STREAM_INVALID`. Bytes added read as zero on POSIX, and are
+#   undefined on Windows.
 function truncate(s: Stream, to: i64) -> i64
     return hero_stream_truncate(s, size: to)
 
 # What `s` is, one of `HERO_STREAM_KIND_*`, or -1.
+#
+# - `s`: the stream asked about; it stays open.
 function kind(s: Stream) -> i64
     return hero_stream_kind(s)
 
 # 1 where `s` is a terminal, 0 where it is not, or -1.
+#
+# - `s`: the stream asked about; it stays open.
 function is_terminal(s: Stream) -> i64
     return hero_stream_is_terminal(s)
 
 # 0, or -1 where the system failed; `s` is given back either way. A call
 # another thread is still in on it runs to its end.
+#
+# - `s`: the stream closed and given back, one `open` or `pipe` handed out;
+#   no later call reaches it. A borrowed one, from `std`, aborts the program
+#   before C runs.
 function close(@s: Stream) -> i64
     return hero_stream_close(s)
 
@@ -167,12 +221,17 @@ function last_os_error() -> i64
 # The folder a test works in, made new under `build/` of the folder the tests
 # run from. Its name holds this process's number and the test's own word, so
 # no two tests and no two runs share one.
+#
+# - `name`: the test's own word, which names the folder with this process's
+#   id.
 function scratch(name: str) -> str
     folder = f"build/rebel-hero_stream-{hero_os_pid()}-{name}"
     _ = hero_fs_mkdir_all(folder.cstr())
     return folder
 
 # Whether `folder` is gone, removed with everything a test left in it.
+#
+# - `folder`: the folder removed with everything in it.
 function cleared(folder: str) -> bool
     return hero_dir_remove_tree(folder.cstr()) == HERO_OS_OK
 

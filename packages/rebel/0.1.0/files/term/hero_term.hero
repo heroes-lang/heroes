@@ -41,19 +41,37 @@ function leave() -> i64
     return hero_term_leave()
 
 # How many bytes of `buffer`, `n` long, one key takes, waiting at most `ms`
-# milliseconds for it (0 not at all, -1 with no limit); 0 where the terminal
-# is gone; or -1. `n` is `HERO_TERM_KEY_MOST` or more. It leaves `buffer` `n`
-# bytes long, the key's first.
+# milliseconds for it; 0 where the terminal is gone (hung up, or its input
+# ended); or -1.
+#
+# - `buffer`: where the key's bytes are written, from its first; it is left
+#   `n` bytes long, the bytes past the key's as they were.
+# - `n`: the bytes `buffer` holds, `HERO_TERM_KEY_MOST` or more, else
+#   `HERO_TERM_INVALID`.
+# - `ms`: milliseconds to wait for a key; 0 asks without waiting, -1 waits
+#   with no limit, below -1 is `HERO_TERM_INVALID`. A time passed with no key
+#   is `HERO_TERM_TIMED_OUT`.
+#
+# A key is one UTF-8 character, a control byte, or one escape sequence whole;
+# bytes typed ahead are kept for the next call.
 function read_key(@buffer: [u8], n: u64, ms: i64) -> i64
     return hero_term_read_key(@buffer, n: n, ms: ms)
 
 # The `n` first bytes of `data` written to the terminal, answered as `n`; or
-# -1. It leaves `data` as it was handed.
+# -1.
+#
+# - `data`: the bytes, UTF-8; it is left as it was handed. Windows refuses
+#   UTF-8 it cannot convert with `HERO_TERM_INVALID`.
+# - `n`: how many of `data`'s first bytes to write, every one of them.
 function write(@data: [u8], n: u64) -> i64
     return hero_term_write(@data, n: n)
 
 # 1 where the stream `s` is a terminal that takes escape sequences, 0 where it
 # takes none, -1 with `HERO_TERM_NOT_OPEN` where it is no open stream.
+#
+# - `s`: the stream asked about; a file, a pipe or a socket answers 0. It
+#   stays open. On Windows the console's processing of sequences is turned on
+#   where it was off, and put back when the program ends.
 function sequences(s: hero_stream.Stream) -> i64
     return hero_term_sequences(s)
 

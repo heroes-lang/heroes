@@ -33,7 +33,12 @@ function wall_ns() -> i64
 
 # 0, once at least `ns` nanoseconds have passed on the clock `monotonic_ns`
 # reads, or -1 with `HERO_TIME_INVALID` where `ns` is below 0. A signal does
-# not cut it short, and 0 returns at once.
+# not cut it short.
+#
+# - `ns`: the nanoseconds to wait at least; 0 returns at once, below 0 is
+#   refused with `HERO_TIME_INVALID`. It may take longer, as long as the
+#   system takes to run the thread again, and that clock stands still while
+#   the machine sleeps on Darwin and Linux.
 function sleep_ns(ns: i64) -> i64
     return hero_time_sleep_ns(ns)
 
