@@ -1,0 +1,113 @@
+# What a stand-in checks of a request's body before it answers: each rule a jq
+# filter that outputs `true` for a body the real API would take (`json/jq`),
+# beside the words of the error the stand-in answers where it outputs
+# anything else. A rule is one the API's reference states, so the demo fails
+# loudly where the agent sends what the real API would refuse, rather than
+# passing a check of its own invention; the words of each error are the
+# stand-in's own, not the API's.
+#
+# The filters are this program's own text, parsed once when a stand-in
+# starts; a filter that does not parse is this program's mistake and aborts
+# at the start, never in the middle of the demo.
+
+use <rebel>/json
+use <rebel>/json/jq
+
+# One rule of a body.
+record Rule
+    # The filter, outputting `true` where the body keeps the rule.
+    filter: jq.Program
+    # What the error says where it does not.
+    says: str
+
+# A rule of the filter `text` and `says`, the filter parsed.
+#
+# - `text`: jq text outputting `true` for a body that keeps the rule.
+# - `says`: the error's words where it does not.
+function rule(text: str, says: str) -> Rule
+    return Rule(filter: jq.parse(text).must(), says: says)
+
+# The rules of the Messages API's body: `create` and `count_tokens`, the
+# second without `max_tokens`, as Anthropic's API reference states them, the
+# reference `llm/anthropic`'s module comment names.
+#
+# - `counting`: whether the body is `count_tokens`'.
+function messages_rules(counting: bool) -> [Rule]
+    out: [Rule] @= [
+        rule(text: ".model | type == \"string\" and length > 0", says: "model: Field required")
+        rule(text: ".messages | type == \"array\" and length > 0", says: "messages: at least one message is required")
+        rule(text: "all(.messages[]; .role == \"user\" or .role == \"assistant\")", says: "messages: each message's role must be user or assistant")
+        rule(text: ".messages[0].role == \"user\"", says: "messages: the first message must use the user role")
+        rule(text: "[range(1; .messages | length) as $i | ([.messages[$i].content | arrays | .[] | select(.type == \"tool_result\") | .tool_use_id]) as $ids | ([.messages[$i - 1].content | arrays | .[] | select(.type == \"tool_use\") | .id]) as $uses | all($ids[]; . as $id | any($uses[]; . == $id))] | all", says: "messages: each tool_result block must answer a tool_use block of the message just before it")
+        rule(text: "(.tools // []) | all(.[]; (.name | type == \"string\" and test(\"^[a-zA-Z0-9_-]{1,128}$\")) and .input_schema.type == \"object\")", says: "tools: each tool needs a name of letters, digits, _ and -, and an input_schema of type object")
+        rule(text: "(.tools // []) | (map(.name) | length) == (map(.name) | unique | length)", says: "tools: tool names must be unique")
+    ]
+
+    if !counting
+        out @ out.push(
+            rule(text: ".max_tokens | type == \"number\" and . >= 1 and . == floor", says: "max_tokens: an integer of at least 1 is required")
+        )
+
+    return out
+
+# The rules of Chat Completions' body, as OpenAI's API reference states them,
+# the reference `llm/openai`'s module comment names.
+function chat_rules() -> [Rule]
+    return [
+        rule(text: ".model | type == \"string\" and length > 0", says: "you must provide a model parameter")
+        rule(text: ".messages | type == \"array\" and length > 0", says: "messages: at least one message is required")
+        rule(text: "all(.messages[]; .role == \"system\" or .role == \"developer\" or .role == \"user\" or .role == \"assistant\" or .role == \"tool\")", says: "messages: a role must be system, developer, user, assistant or tool")
+        rule(text: ". as $doc | [range(0; $doc.messages | length) as $i | $doc.messages[$i] | select(.role == \"tool\") | .tool_call_id as $id | ([$doc.messages[0:$i][] | select(.role == \"assistant\")] | last // {} | (.tool_calls // []) | any(.[]; .id == $id))] | all", says: "messages with role 'tool' must be a response to a preceding message with 'tool_calls'")
+        rule(text: "(.tools // []) | all(.[]; .type == \"function\" and (.function.name | type == \"string\"))", says: "tools: each tool must be of type function and name its function")
+    ]
+
+# The rules of the embeddings endpoint's body.
+function embedding_rules() -> [Rule]
+    return [
+        rule(text: ".model | type == \"string\" and length > 0", says: "you must provide a model parameter")
+        rule(text: ".input | (type == \"string\") or (type == \"array\" and length > 0 and all(.[]; type == \"string\"))", says: "input: a text or a list of texts is required")
+    ]
+
+# What `body` breaks of `rules`, the first broken first; none for a body every
+# rule keeps.
+#
+# - `rules`: the rules.
+# - `body`: the request's body.
+function broken(rules: [Rule], body: json.Value) -> [str]
+    out: [str] @= []
+
+    for r in rules
+        match jq.first(r.filter, input: body)
+            .ok v =>
+                if v != .boolean(v: true)
+                    out @ out.push(r.says)
+            .err _ => out @ out.push(r.says)
+
+    return out
+
+test "broken: a body every rule of the Messages API keeps"
+    body = json.parse(
+        "{\"model\": \"m\", \"max_tokens\": 8, \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}]}"
+    ).must()
+    assert broken(messages_rules(counting: false), body: body) == []
+
+test "broken: a tool_result answering no tool_use, and a first turn of the assistant"
+    body = json.parse(
+        "{\"model\": \"m\", \"max_tokens\": 8, \"messages\": [{\"role\": \"assistant\", \"content\": \"x\"}, {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"t1\", \"content\": \"7\"}]}]}"
+    ).must()
+    assert broken(messages_rules(counting: false), body: body) == ["messages: the first message must use the user role", "messages: each tool_result block must answer a tool_use block of the message just before it"]
+
+test "broken: a tool message answering a call, and one answering none"
+    good = json.parse(
+        "{\"model\": \"m\", \"messages\": [{\"role\": \"user\", \"content\": \"x\"}, {\"role\": \"assistant\", \"content\": null, \"tool_calls\": [{\"id\": \"c1\", \"type\": \"function\", \"function\": {\"name\": \"f\", \"arguments\": \"{}\"}}]}, {\"role\": \"tool\", \"tool_call_id\": \"c1\", \"content\": \"7\"}]}"
+    ).must()
+    assert broken(chat_rules(), body: good) == []
+    bad = json.parse(
+        "{\"model\": \"m\", \"messages\": [{\"role\": \"user\", \"content\": \"x\"}, {\"role\": \"tool\", \"tool_call_id\": \"c9\", \"content\": \"7\"}]}"
+    ).must()
+    assert broken(chat_rules(), body: bad) == ["messages with role 'tool' must be a response to a preceding message with 'tool_calls'"]
+
+test "broken: a count of tokens needs no max_tokens"
+    body = json.parse("{\"model\": \"m\", \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}]}").must()
+    assert broken(messages_rules(counting: true), body: body) == []
+    assert broken(messages_rules(counting: false), body: body) == ["max_tokens: an integer of at least 1 is required"]

@@ -1,0 +1,189 @@
+# The store an index is kept in: a folder of three files, made by `agent
+# index` and read by every other command. `manifest.json` says what was
+# indexed and how; `pieces.json` holds every passage; `vectors.hnsw` holds the
+# vector index, as `vectors.to_bytes` writes it. A store is read whole and
+# checked before it is used: a count that disagrees between the files, a
+# version this program does not write, or bytes that are not an index fail
+# `invalid` and never abort.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/path
+use <rebel>/vectors
+
+use index/chunking
+use support/fields
+
+# The version of the store's files this program writes and reads.
+constant VERSION: i64
+    1
+
+# The code of a store whose files disagree or are not of their form.
+constant INVALID: str
+    "invalid"
+
+# What one indexed document gave.
+record DocumentFacts
+    # Its path below the folder, parts joined by `/`.
+    path: str
+    # Its size in bytes.
+    size: i64
+    # Its tokens in the store's encoding.
+    tokens: i64
+    # How many passages it was cut into.
+    pieces: i64
+
+# What a store says of itself.
+record Manifest
+    # The folder indexed, as it was given to `agent index`.
+    root: str
+    # What made the vectors: `local` or `openai`.
+    embedder: str
+    # The embedding model, `hashed-words` for the local function.
+    embedding_model: str
+    # The vectors' length.
+    dimensions: i64
+    # The model whose tokens size the passages.
+    model: str
+    # The encoding that counted them.
+    encoding: str
+    # Whether that encoding is the model's own.
+    exact: bool
+    # The documents, in the order of their paths.
+    documents: [DocumentFacts]
+
+# An index, read or about to be written.
+record Store
+    # What it says of itself.
+    manifest: Manifest
+    # Every passage, its `id` its place in this list.
+    pieces: [chunking.Piece]
+    # The vectors, each under its passage's id.
+    index: vectors.Index
+
+# The total of the documents' tokens.
+#
+# - `m`: the manifest.
+function tokens_of(m: Manifest) -> i64
+    total: i64 @= 0
+
+    for d in m.documents
+        total @ total + d.tokens
+
+    return total
+
+# Writes `s` into the folder `dir`, made where it is not there; each file is
+# replaced whole or not at all (`fs.write_atomic_text`).
+#
+# - `s`: the store.
+# - `dir`: the folder.
+#
+# Fails as `fs` fails to make the folder or write a file.
+function save(s: Store lent, dir: str) -> ()?
+    fs.make_dir_all(dir)?
+    fs.write_atomic_text(path: path.join_all([dir, "manifest.json"]), text: json.format_indented(manifest_json(s.manifest), width: 2)? + "\n")?
+    items: [json.Value] @= []
+
+    for p in s.pieces
+        items @ items.push(chunking.piece_json(p))
+
+    fs.write_atomic_text(path: path.join_all([dir, "pieces.json"]), text: json.format(.list(items: items))? + "\n")?
+    fs.write_atomic_bytes(path.join_all([dir, "vectors.hnsw"]), data: vectors.to_bytes(s.index))?
+    return ok()
+
+# The store in the folder `dir`, read and checked.
+#
+# - `dir`: the folder `save` wrote.
+#
+# Fails `file_not_found` where a file is missing; `invalid` where a file is not
+# of its form, the version is not `VERSION`, or the passages, the documents
+# and the index do not agree on their counts and the vectors' length.
+function load(dir: str) -> Store?
+    manifest_text = fs.read_bytes(path.join_all([dir, "manifest.json"]))?
+    m = manifest_of(json.parse(text_of(manifest_text)?)?)?
+    pieces_value = json.parse(text_of(fs.read_bytes(path.join_all([dir, "pieces.json"]))?)?)?
+    pieces: [chunking.Piece] @= []
+
+    for item in json.items_of(pieces_value)?
+        p = chunking.piece_of(item)?
+
+        if p.id != pieces.len()
+            return fail(code: INVALID, msg: f"passage {pieces.len()} of pieces.json says it is {p.id}")
+
+        pieces @ pieces.push(p)
+
+    index = vectors.from_bytes(fs.read_bytes(path.join_all([dir, "vectors.hnsw"]))?)?
+    expected: i64 @= 0
+
+    for d in m.documents
+        expected @ expected + d.pieces
+
+    if expected != pieces.len() || vectors.size(index) != pieces.len()
+        return fail(
+            code: INVALID,
+            msg: f"the store disagrees with itself: the manifest counts {expected} passages, pieces.json holds {pieces.len()} and the index {vectors.size(index)}"
+        )
+
+    if vectors.dimension_of(index) != m.dimensions
+        return fail(
+            code: INVALID,
+            msg: f"the index holds vectors of {vectors.dimension_of(index)} and the manifest says {m.dimensions}"
+        )
+
+    return ok(Store(manifest: m, pieces: pieces, index: index))
+
+# The UTF-8 text of a file's bytes.
+function text_of(data: [u8]) -> str?
+    match bytes.to_text(data)
+        .ok t  => return ok(t)
+        .err _ => return fail(code: INVALID, msg: "a file of the store is not UTF-8")
+
+# `m` as the object `manifest.json` holds.
+function manifest_json(m: Manifest) -> json.Value
+    docs: [json.Value] @= []
+
+    for d in m.documents
+        docs @ docs.push(
+            .object(members: {"path": .text(v: d.path), "size": fields.number(d.size), "tokens": fields.number(d.tokens), "pieces": fields.number(d.pieces)})
+        )
+
+    return .object(
+        members: {"version": fields.number(VERSION), "root": .text(v: m.root), "embedder": .text(v: m.embedder), "embedding_model": .text(v: m.embedding_model), "dimensions": fields.number(m.dimensions), "model": .text(v: m.model), "encoding": .text(v: m.encoding), "exact": .boolean(v: m.exact), "documents": .list(items: docs)}
+    )
+
+# The manifest `v` holds, as `manifest_json` writes it.
+function manifest_of(v: json.Value) -> Manifest?
+    version = fields.int_at(v, key: "version")?
+
+    if version != VERSION
+        return fail(code: INVALID, msg: f"the store is of version {version}, and this program reads version {VERSION}")
+
+    docs: [DocumentFacts] @= []
+
+    for d in fields.list_at(v, key: "documents")?
+        docs @ docs.push(
+            DocumentFacts(path: fields.text_at(d, key: "path")?, size: fields.int_at(d, key: "size")?, tokens: fields.int_at(d, key: "tokens")?, pieces: fields.int_at(d, key: "pieces")?)
+        )
+
+    exact = match json.member(v, key: "exact")
+        .ok b  => json.bool_of(b)?
+        .err _ => false
+
+    return ok(
+        Manifest(root: fields.text_at(v, key: "root")?, embedder: fields.text_at(v, key: "embedder")?, embedding_model: fields.text_at(v, key: "embedding_model")?, dimensions: fields.int_at(v, key: "dimensions")?, model: fields.text_at(v, key: "model")?, encoding: fields.text_at(v, key: "encoding")?, exact: exact, documents: docs)
+    )
+
+test "manifest_of: a manifest read back, and another version refused"
+    m = Manifest(
+        root: "docs",
+        embedder: "local",
+        embedding_model: "hashed-words",
+        dimensions: 8,
+        model: "gpt-4o",
+        encoding: "o200k_base",
+        exact: true,
+        documents: [DocumentFacts(path: "a.md", size: 10, tokens: 3, pieces: 1)]
+    )
+    assert manifest_of(manifest_json(m)).must() == m && tokens_of(m) == 3
+    assert manifest_of(json.parse("{\"version\": 9}").must()).is_err()

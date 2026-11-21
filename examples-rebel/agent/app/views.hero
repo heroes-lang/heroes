@@ -1,0 +1,54 @@
+# How a store and a search are shown to a person, the same in a command's
+# output and in the demo's transcript: a table of the documents indexed, a
+# line saying what the store holds, and a table of the passages found.
+
+use <rebel>/term
+
+use index/chunking
+use index/store
+use retrieval/nearest
+
+# A table of `m`'s documents: path, bytes, tokens, passages, with the totals.
+#
+# - `m`: the manifest.
+function documents_table(m: store.Manifest) -> term.Table
+    rows: [[str]] @= []
+    bytes_total: i64 @= 0
+    pieces_total: i64 @= 0
+
+    for d in m.documents
+        rows @ rows.push([d.path, f"{d.size}", f"{d.tokens}", f"{d.pieces}"])
+        bytes_total @ bytes_total + d.size
+        pieces_total @ pieces_total + d.pieces
+
+    rows @ rows.push(["total", f"{bytes_total}", f"{store.tokens_of(m)}", f"{pieces_total}"])
+    return term.Table(header: ["document", "bytes", "tokens", "passages"], rows: rows, align: [.left], border: .ascii)
+
+# What `m` holds and how it was made, in one line.
+#
+# - `m`: the manifest.
+function store_line(m: store.Manifest) -> str
+    estimate = if m.exact
+        ""
+    else
+        ", an estimate"
+
+    return f"{m.documents.len()} documents, {store.tokens_of(m)} tokens of {m.model} ({m.encoding}{estimate}), vectors of {m.dimensions} by {m.embedder} {m.embedding_model}"
+
+# A table of `hits`: rank, score, place, and the passage's first line.
+#
+# - `hits`: the passages found, the nearest first.
+function hits_table(hits: [nearest.Hit]) -> term.Table
+    rows: [[str]] @= []
+
+    for h in hits
+        rows @ rows.push(
+            [f"{h.rank}", nearest.format_score(h.score), chunking.place_of(h.piece), chunking.first_line(h.piece)]
+        )
+
+    return term.Table(
+        header: ["#", "score", "passage", "first line"],
+        rows: rows,
+        align: [.right, .right, .left, .left],
+        border: .simple
+    )

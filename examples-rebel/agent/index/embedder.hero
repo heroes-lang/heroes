@@ -1,0 +1,240 @@
+# Texts made vectors for retrieval: by OpenAI's embeddings endpoint, or any
+# server that speaks it (`llm/openai.embed`), or by a function this program
+# carries, which needs no network and answers the same vector for the same
+# text on every machine.
+#
+# The local function hashes features into a vector of fixed length, the
+# "hashing trick" of Weinberger and others (ICML 2009): every word, and every
+# three letters of a word, is hashed by FNV-1a 64; the hash's remainder picks
+# a component and one of its high bits the sign, so features that collide
+# tend to cancel rather than add up. The counts are integers until the vector
+# is normalized once (`vectors.normalize`), so no sum depends on the order of
+# floating additions and the vector is the same bit for bit everywhere. It
+# finds the passages that share words with a question, which is what the demo
+# needs; it knows no synonym, which a model's embeddings do.
+
+use <rebel>/hash
+use <rebel>/llm/openai
+use <rebel>/strings
+use <rebel>/vectors
+
+# The length of a local vector where the user asks none.
+constant DEFAULT_DIMENSIONS: i64
+    256
+
+# How many texts one request to the embeddings endpoint carries; the API takes
+# up to 2048.
+constant BATCH: i64
+    64
+
+# How many times a whole word counts against each of its three-letter parts.
+constant WORD_WEIGHT: i64
+    3
+
+# What makes vectors.
+variant Embedder
+    # The function this program carries.
+    local
+        # The vectors' length, at least 1.
+        dimensions: i64
+    # An embeddings endpoint.
+    remote
+        # The client of the server.
+        client: openai.Client
+        # The model, `text-embedding-3-small`.
+        model: str
+        # The length asked of each vector, 0 for the model's own.
+        dimensions: i64
+
+# The name a store keeps for `e`'s kind: `local` or `openai`.
+#
+# - `e`: the embedder.
+function kind_of(e: Embedder) -> str
+    match e
+        .local _  => return "local"
+        .remote _ => return "openai"
+
+# The model a store keeps for `e`: `hashed-words` for the local function.
+#
+# - `e`: the embedder.
+function model_of(e: Embedder) -> str
+    match e
+        .local _  => return "hashed-words"
+        .remote r => return r.model
+
+# The vector of each of `texts`, in order.
+#
+# - `e`: the embedder.
+# - `texts`: the texts; none answers none.
+#
+# Fails as `openai.embed` fails, for a remote embedder.
+function embed_all(e: Embedder, texts: [str]) -> [[f32]]?
+    match e
+        .local l =>
+            out: [[f32]] @= []
+
+            for t in texts
+                out @ out.push(embed_local(t, dimensions: l.dimensions))
+
+            return ok(out)
+        .remote r =>
+            out: [[f32]] @= []
+            at: i64 @= 0
+
+            while at < texts.len()
+                end = if at + BATCH < texts.len()
+                    at + BATCH
+                else
+                    texts.len()
+
+                asked @= openai.embedding_request(model: r.model, inputs: texts.slice(from: at, to: end))
+                asked.dimensions @ r.dimensions
+
+                for v in openai.embed(r.client, r: asked)?.vectors
+                    out @ out.push(v)
+
+                at @ end
+
+            return ok(out)
+
+# The local vector of `text`, of length `dimensions`, normalized: its words and
+# their three-letter parts hashed into components. A text holding no word is
+# the first unit vector, so that every text has a direction the cosine can
+# measure.
+#
+# - `text`: any text.
+# - `dimensions`: the length, at least 1; below 1 it is taken as 1.
+function embed_local(text: str, dimensions: i64) -> [f32]
+    size = if dimensions < 1
+        1
+    else
+        dimensions
+
+    counts: [i64] @= []
+
+    for _ in range(from: 0, to: size)
+        counts @ counts.push(0)
+
+    for word in words_of(text)
+        add_feature(@counts, feature: "w:" + word, weight: WORD_WEIGHT)
+
+        for part in trigrams_of(word)
+            add_feature(@counts, feature: "t:" + part, weight: 1)
+
+    v: [f32] @= []
+
+    for c in counts
+        v @ v.push(to_f32(c))
+
+    match vectors.normalize(v)
+        .ok unit => return unit
+        .err _ =>
+            first: [f32] @= [1.0]
+
+            for _ in range(from: 1, to: size)
+                first @ first.push(0.0)
+
+            return first
+
+# Adds `weight` to the component `feature` hashes to, with the sign the hash's
+# 33rd bit gives.
+function add_feature(@counts: [i64], feature: str, weight: i64)
+    h = hash.fnv1a_64_text(feature)
+    size = counts.len().to_u64().default(1)
+    at = (h % size).to_i64().default(0)
+
+    if h / 4_294_967_296 % 2 == 0
+        counts[at] @ counts[at] + weight
+    else
+        counts[at] @ counts[at] - weight
+
+# The words of `text`, lower-cased where ASCII, in order, each of at least two
+# bytes and none of `STOP_WORDS`. A word is a run of ASCII letters and digits
+# and of bytes past ASCII, so a word of another script is kept whole and no
+# character is ever cut.
+#
+# - `text`: any text.
+function words_of(text: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= text.len()
+        if at == text.len() || is_separator(text, at: at)
+            if at - start >= 2
+                word = strings.to_lower_ascii(text.slice(from: start, to: at))
+
+                if !is_stop_word(word)
+                    out @ out.push(word)
+
+            start @ at + 1
+
+        at @ at + 1
+
+    return out
+
+# Whether the byte of `text` at `at` separates words: ASCII, neither a letter
+# nor a digit, and not a `.` between two digits, so a version such as `2.1.0`
+# is one word.
+function is_separator(text: str, at: i64) -> bool
+    b = text[at]
+
+    if b >= 128 || is_digit(b) || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+        return false
+
+    if b == '.' && at > 0 && at + 1 < text.len()
+        return !(is_digit(text[at - 1]) && is_digit(text[at + 1]))
+
+    return true
+
+# Whether the byte `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# The three-byte parts of `word` with a `#` at either end, so `ab` gives
+# `#ab` and `ab#`; a word holding a byte past ASCII gives none, since a part
+# could cut one of its characters.
+function trigrams_of(word: str) -> [str]
+    out: [str] @= []
+
+    if !strings.is_ascii(word)
+        return out
+
+    marked = "#" + word + "#"
+
+    for at in range(from: 0, to: marked.len() - 2)
+        out @ out.push(marked.slice(from: at, to: at + 3))
+
+    return out
+
+# Whether `word`, lower-cased, is one of the English words too common to tell
+# passages apart.
+function is_stop_word(word: str) -> bool
+    for stop in ["the", "and", "or", "of", "to", "in", "is", "it", "on", "for", "by", "as", "at", "an", "be", "do", "does", "how", "what", "which", "with", "that", "this", "are", "from", "when", "its", "my", "me", "you", "your", "can"]
+        if word == stop
+            return true
+
+    return false
+
+test "words_of: lower-cased words, short and common ones left out, a word of another script whole"
+    assert words_of("How do I install Beacon on macOS?") == ["install", "beacon", "macos"]
+    assert words_of("What changed in 2.1.0? See buffer.lines.") == ["changed", "2.1.0", "see", "buffer", "lines"]
+    assert words_of("Zürich, a city") == ["zürich", "city"]
+    assert words_of("") == []
+
+test "trigrams_of: the parts of a short word, none of a word past ASCII"
+    assert trigrams_of("ab") == ["#ab", "ab#"]
+    assert trigrams_of("zü") == []
+
+test "embed_local: one length, normalized, the same twice, and a text of no word a unit vector"
+    a = embed_local("install beacon on macos", dimensions: 64)
+    assert a.len() == 64 && a == embed_local("install beacon on macos", dimensions: 64)
+    assert vectors.norm(a) > 0.999 && vectors.norm(a) < 1.001
+    blank = embed_local("?!", dimensions: 8)
+    assert blank[0] == 1.0 && vectors.norm(blank) == 1.0
+
+test "embed_local: a question is nearer the passage that shares its words"
+    q = embed_local("which port does the status endpoint listen on", dimensions: 256)
+    near = embed_local("The status endpoint listens on port 7461.", dimensions: 256)
+    far = embed_local("Batches are compressed with zstd instead of gzip.", dimensions: 256)
+    assert vectors.cosine_similarity(a: q, b: near).must() > vectors.cosine_similarity(a: q, b: far).must()

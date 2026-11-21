@@ -1,0 +1,145 @@
+# Which provider answers a question: the first of the user's list whose
+# circuit breaker lets a call through, the next where it fails. A provider
+# that keeps failing opens its breaker (`retries.Breaker`) and is passed over
+# for a while without being asked, so a question in a long `chat` does not pay
+# four failed attempts against an API that is down; once the open time has
+# passed, one trial call is let through, and its success closes the breaker.
+
+use <rebel>/retries
+use <rebel>/time
+
+use llm/attempts
+use llm/claude
+use llm/conversation
+use llm/gpt
+use support/timing
+use tools/executor
+
+# The code of a question no provider answered.
+constant FAILED: str
+    "failed"
+
+# One provider and how to talk to it.
+variant Provider
+    # Claude, through the Messages API.
+    anthropic
+        # The settings.
+        settings: claude.Settings
+    # A server of Chat Completions: OpenAI's, Ollama, vLLM.
+    openai
+        # The settings.
+        settings: gpt.Settings
+
+# The providers and what is known of each.
+record Router
+    # The providers, the one asked first first.
+    providers: [Provider]
+    # Each provider's breaker, in the same order.
+    breakers: [retries.Breaker]
+    # The clock the retries wait on and the breakers read.
+    clock: timing.Clock
+    # How the retries of one request wait.
+    policy: retries.Backoff
+
+# The failed questions in a row that open a provider's breaker where the user
+# says nothing.
+constant OPENS_AFTER: i64
+    3
+
+# A router over `providers`, each behind a breaker that opens after
+# `opens_after` failed questions in a row and lets a trial through a minute
+# later.
+#
+# - `providers`: the providers, the one to ask first first.
+# - `clock`: the clock retries wait on.
+# - `opens_after`: the failed questions in a row that open a breaker, at least
+#   1; `OPENS_AFTER` where the user says nothing.
+#
+# Fails `invalid` where `opens_after` is below 1.
+function new_router(providers: [Provider], clock: timing.Clock, opens_after: i64) -> Router?
+    policy = retries.breaker_policy(failures: opens_after, open_for: time.minutes(1).must())?
+    breakers: [retries.Breaker] @= []
+
+    for _ in providers
+        breakers @ breakers.push(retries.new_breaker(policy))
+
+    return ok(Router(providers: providers, breakers: breakers, clock: clock, policy: attempts.default_policy()))
+
+# The name a transcript gives `p`.
+#
+# - `p`: the provider.
+function name_of(p: Provider) -> str
+    match p
+        .anthropic _ => return "anthropic"
+        .openai _    => return "openai"
+
+# What the first provider able to answer says to `turn`, the tools of `exec`
+# offered; a provider passed over or failed is told in the answer's notes.
+#
+# - `r`: the router; its breakers and its clock move on.
+# - `exec`: where the tools run.
+# - `turn`: the user's turn, passages and question.
+#
+# Fails `failed` where every provider failed or was passed over, the message
+# saying why for each.
+function ask(@r: Router, @exec: executor.Executor, turn: str) -> conversation.Answer?
+    passed: [str] @= []
+
+    for at in range(from: 0, to: r.providers.len())
+        provider = r.providers[at]
+        breaker @= r.breakers[at]
+        now = timing.now(r.clock)?
+
+        if !retries.allow_call(@breaker, at: now)
+            passed @ passed.push(f"{name_of(provider)} was passed over: its breaker is open after failing")
+        else
+            clock @= r.clock
+            answered = ask_one(provider, exec: @exec, turn: turn, clock: @clock, policy: r.policy)
+            r.clock @ clock
+            ended = timing.now(r.clock)?
+
+            match answered
+                .ok a =>
+                    retries.record_success(@breaker, at: ended)
+                    r.breakers[at] @ breaker
+                    told @= a
+                    told.notes @ notes_after(first: passed, then: a.notes)
+                    return ok(told)
+                .err e =>
+                    retries.record_failure(@breaker, at: ended)
+                    passed @ passed.push(f"{name_of(provider)} failed ({e.code}): {e.msg}")
+
+        r.breakers[at] @ breaker
+
+    return fail(code: FAILED, msg: f"no provider answered: {passed.join("; ")}")
+
+# `first`, then `then`.
+function notes_after(first: [str], then: [str]) -> [str]
+    out: [str] @= first
+
+    for n in then
+        out @ out.push(n)
+
+    return out
+
+# What `p` answers to `turn`.
+function ask_one(p: Provider, @exec: executor.Executor, turn: str, @clock: timing.Clock, policy: retries.Backoff) -> conversation.Answer?
+    match p
+        .anthropic a => return claude.ask(a.settings, exec: @exec, turn: turn, clock: @clock, policy: policy)
+        .openai o    => return gpt.ask(o.settings, exec: @exec, turn: turn, clock: @clock, policy: policy)
+
+# Where the breaker of the provider at `at` stands, for a transcript:
+# `closed`, `open` or `half-open`.
+#
+# - `r`: the router.
+# - `at`: the provider's place in `r.providers`.
+#
+# Fails where the clock cannot be read.
+function breaker_state_of(r: Router lent, at: i64) -> str?
+    match retries.breaker_state(r.breakers[at], at: timing.now(r.clock)?)
+        .closed    => return ok("closed")
+        .open _    => return ok("open")
+        .half_open => return ok("half-open")
+
+test "notes_after: the router's notes first"
+    assert notes_after(first: ["a"], then: ["b", "c"]) == ["a", "b", "c"]

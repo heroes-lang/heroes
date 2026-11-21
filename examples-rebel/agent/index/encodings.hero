@@ -1,0 +1,71 @@
+# The tokens of a model counted on this machine: by the model's own encoding
+# where it is one of OpenAI's, whose tables `tokenizer/tables` carries, and by
+# `o200k_base` as an estimate for any other model, Claude's among them, whose
+# tokenizer is not published. Claude's exact count is the API's own
+# (`llm/anthropic.count_input_tokens`), which the agent asks before it sends a
+# conversation to Claude.
+#
+# Making an encoding reads its whole table: 0.95 s for `o200k_base` in a
+# build at -O0, measured once on 2026-11-21 by a program that made one and
+# counted a sentence. A program makes one once and keeps it.
+
+use <rebel>/tokenizer
+use <rebel>/tokenizer/tables
+
+# The encoding that stands in for a model whose own is not carried: the
+# newest of tiktoken's, read by GPT-4o and every OpenAI model after it.
+constant FALLBACK_ENCODING: str
+    "o200k_base"
+
+# How a model's tokens are counted here.
+record Counter
+    # The model asked for.
+    model: str
+    # The encoding's name, `o200k_base`.
+    encoding_name: str
+    # Whether the encoding is the model's own, so the count is the model's
+    # exactly; false for an estimate.
+    exact: bool
+    # The encoding.
+    encoding: tokenizer.Encoding
+
+# The counter of `model`: its own encoding where `tokenizer/tables` knows the
+# model, else `FALLBACK_ENCODING` as an estimate.
+#
+# - `model`: a model's name as its API spells it, `gpt-4o`,
+#   `claude-opus-5-5`, `llama3.2`.
+function counter_for(model: str) -> Counter
+    match tables.for_model(model)
+        .ok enc => return Counter(model: model, encoding_name: enc.name, exact: true, encoding: enc)
+        .err _  => return Counter(model: model, encoding_name: FALLBACK_ENCODING, exact: false, encoding: fallback())
+
+# The encoding `FALLBACK_ENCODING` names, which `tokenizer/tables` carries: a
+# failure here would be the package's table missing, not anything a user
+# gave.
+function fallback() -> tokenizer.Encoding
+    return tables.named(FALLBACK_ENCODING).must()
+
+# How many tokens `text` is for `c`'s model.
+#
+# - `c`: the counter.
+# - `text`: any text; the empty text is 0.
+function count(c: Counter lent, text: str) -> i64
+    return tokenizer.count(c.encoding, text: text)
+
+# What a count of `c` is, said after the number: the encoding, and whether
+# it is an estimate.
+#
+# - `c`: the counter.
+function describe(c: Counter lent) -> str
+    if c.exact
+        return f"{c.encoding_name}, {c.model}'s own"
+
+    return f"{c.encoding_name}, an estimate for {c.model}"
+
+test "counter_for: GPT-4o's own encoding, and an estimate for a model of another maker"
+    gpt = counter_for("gpt-4o")
+    assert gpt.exact && gpt.encoding_name == "o200k_base"
+    assert count(gpt, text: "hello world") == 2
+    claude = counter_for("claude-opus-5-5")
+    assert !claude.exact && claude.encoding_name == FALLBACK_ENCODING
+    assert describe(claude) == "o200k_base, an estimate for claude-opus-5-5"

@@ -1,0 +1,135 @@
+# A question asked of Claude through the Messages API (`llm/anthropic`): the
+# input tokens counted by the API first, since Claude's tokenizer is not
+# published and only the API knows the exact count; then the conversation
+# sent, and while the model stops to call tools, each call run through the
+# executor and every result sent back in one user turn, as the API asks,
+# until it answers or the rounds run out.
+
+use <rebel>/json
+use <rebel>/llm/anthropic
+use <rebel>/retries
+use <rebel>/time
+
+use llm/attempts
+use llm/conversation
+use retrieval/prompting
+use support/timing
+use tools/executor
+use tools/outcomes
+use tools/toolbox
+
+# How the agent talks to Claude.
+record Settings
+    # The client: key, address, version; its `max_retries` 0, the agent
+    # retrying itself.
+    client: anthropic.Client
+    # The model, `claude-opus-5-5`.
+    model: str
+    # The most tokens of each answer.
+    max_tokens: i64
+    # The most requests of one question's tool loop, at least 1.
+    max_rounds: i64
+    # The most input tokens a question may take, as the API counts them; 0
+    # for no limit.
+    budget: i64
+
+# What Claude answers to `turn`, the tools of `exec` offered and run.
+#
+# - `s`: the settings.
+# - `exec`: where the tools run; a remote one's client moves on.
+# - `turn`: the user's turn, passages and question (`prompting.user_turn`).
+# - `clock`: the clock retries wait on.
+# - `policy`: how retries wait and when they give up.
+#
+# Fails as the API fails after the retries, `limit` where the question is
+# past `s.budget` or the answer was cut at `max_tokens`, and `permission`
+# where the model refused.
+function ask(s: Settings, @exec: executor.Executor, turn: str, @clock: timing.Clock, policy: retries.Backoff) -> conversation.Answer?
+    notes: [str] @= []
+    r @= anthropic.new_request(model: s.model, max_tokens: s.max_tokens, turns: [anthropic.user(turn)])
+    r.system @ prompting.INSTRUCTIONS
+    r.tools @ tools_of(executor.specs_of(exec))
+    counted = attempts.send_retrying(send: anthropic.count_input_tokens, client: s.client, request: r, advise: advise, clock: @clock, policy: policy, notes: @notes)?
+    notes @ notes.push(f"the API counts {counted} input tokens")
+
+    if s.budget > 0 && counted > s.budget
+        return fail(
+            code: anthropic.LIMIT,
+            msg: f"the question takes {counted} input tokens, past the budget of {s.budget}"
+        )
+
+    reply @= anthropic.require_complete(attempts.send_retrying(send: anthropic.create, client: s.client, request: r, advise: advise, clock: @clock, policy: policy, notes: @notes)?)?
+    uses: [conversation.ToolUse] @= []
+    rounds: i64 @= 1
+    input_tokens: i64 @= reply.usage.input_tokens
+    output_tokens: i64 @= reply.usage.output_tokens
+
+    while reply.stop_reason == anthropic.STOP_TOOL_USE && rounds < s.max_rounds
+        results: [json.Value] @= []
+
+        for call in anthropic.tool_calls_of(reply)
+            outcome = run_call(@exec, call: call)
+            uses @ uses.push(conversation.ToolUse(name: call.name, input: call.input_json, outcome: outcome))
+            results @ results.push(
+                anthropic.tool_result(tool_use_id: call.id, content: outcome.text, is_error: outcome.is_error)
+            )
+
+        r @ anthropic.with_tool_results(r, reply: reply, results: results)
+        reply @ anthropic.require_complete(attempts.send_retrying(send: anthropic.create, client: s.client, request: r, advise: advise, clock: @clock, policy: policy, notes: @notes)?)?
+        rounds @ rounds + 1
+        input_tokens @ input_tokens + reply.usage.input_tokens
+        output_tokens @ output_tokens + reply.usage.output_tokens
+
+    if reply.stop_reason == anthropic.STOP_TOOL_USE
+        notes @ notes.push(f"the model still called tools after {rounds} rounds, the most allowed")
+
+    return ok(
+        conversation.Answer(provider: "anthropic", model: reply.model, text: anthropic.text_of(reply), uses: uses, rounds: rounds, input_tokens: input_tokens, output_tokens: output_tokens, notes: notes)
+    )
+
+# What one call of a tool answers: its input checked whole first, since a
+# streamed or cut input may not be JSON, and a broken one answered as an
+# error the model reads.
+function run_call(@exec: executor.Executor, call: anthropic.ToolCall) -> outcomes.Outcome
+    match anthropic.input_of(call)
+        .ok input => return executor.call(@exec, name: call.name, input: input)
+        .err e    => return outcomes.refused(f"the input of {call.name} is not a JSON object: {e.msg}")
+
+# The tools of `specs` as the Messages API declares them.
+#
+# - `specs`: the tools offered.
+function tools_of(specs: [toolbox.Spec]) -> [anthropic.Tool]
+    out: [anthropic.Tool] @= []
+
+    for t in specs
+        out @ out.push(
+            anthropic.Tool(name: t.name, description: t.description, input_schema: t.schema, strict: false, eager_input_streaming: false)
+        )
+
+    return out
+
+# Whether a failure of the API is worth another attempt, as the API's own
+# answer says (`anthropic.failure_of`): 408, 409, 429 and every 5xx, unless
+# `x-should-retry` said otherwise. A failure of the connection is retried; a
+# failure the agent found itself, an invalid request, is not.
+#
+# - `code`: the failure's code.
+# - `msg`: its message.
+function advise(code: str, msg: str) -> attempts.Advice
+    match anthropic.failure_of(msg)
+        .ok f => return attempts.Advice(
+            retryable: f.retryable,
+            wait: f.wait,
+            summary: f"{f.status} {f.kind}",
+            words: f.message
+        )
+        .err _ => return attempts.Advice(
+            retryable: code == anthropic.CLOSED || code == anthropic.TIMEOUT,
+            wait: zero(),
+            summary: code,
+            words: msg
+        )
+
+# A wait of nothing.
+function zero() -> time.Duration
+    return time.nanoseconds(0)

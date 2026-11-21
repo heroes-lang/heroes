@@ -1,0 +1,80 @@
+# The agent's user turn read back by a stand-in, as `retrieval/prompting`
+# writes it: the passages, each opened by a line `[n] place (score s)`, then
+# the question after the last `Question: `. What the stand-ins' script
+# answers from.
+
+use <rebel>/numbers
+use <rebel>/strings
+
+use standins/script
+
+# The passages and the question of the user turn `text`, as `prompting` writes
+# it: a line `[n] place (score s)` opens each passage.
+#
+# - `text`: the user turn.
+function read_turn(text: str) -> script.Asked
+    question: str @= ""
+    body: str @= text
+
+    match strings.split_once_last(s: text, sep: "\n\n" + script.QUESTION_MARKER)
+        .ok halves =>
+            question @ halves.after
+            body @ halves.before
+        .err _ => _ = 0
+
+    passages: [script.Passage] @= []
+    current: [str] @= []
+    title: str @= ""
+    number: i64 @= 0
+
+    for l in strings.lines(body)
+        match passage_number(l)
+            .ok n =>
+                if number > 0
+                    passages @ passages.push(script.Passage(number: number, title: title, text: current.join("\n")))
+
+                number @ n
+                title @ l
+                current @ []
+            .err _ =>
+                if number > 0
+                    current @ current.push(l)
+
+    if number > 0
+        passages @ passages.push(script.Passage(number: number, title: title, text: current.join("\n")))
+
+    return script.Asked(question: question, passages: passages, tools: [], results: [])
+
+# The number of the passage line `line` opens, `[3] ...`.
+function passage_number(line: str) -> i64?
+    if !strings.has_prefix(s: line, prefix: "[")
+        return fail(code: "not_found", msg: "no passage")
+
+    halves = strings.split_once(s: line, sep: "] ")?
+    digits = strings.trim_prefix(s: halves.before, prefix: "[")
+
+    if digits == "" || !all_digits(digits)
+        return fail(code: "not_found", msg: "no passage")
+
+    return numbers.parse_int(digits)
+
+# Whether `s` holds ASCII digits alone.
+function all_digits(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        if s[at] < '0' || s[at] > '9'
+            return false
+
+    return true
+
+test "read_turn: two passages and the question"
+    asked = read_turn(
+        "Passages:\n\n[1] a.md > A (score 0.900)\n## A\n\nRun it.\n\n[2] b.md (score 0.100)\nOther.\n\nQuestion: How do I run it?"
+    )
+    assert asked.question == "How do I run it?" && asked.passages.len() == 2
+    assert asked.passages[0].number == 1 && strings.contains(s: asked.passages[0].text, substr: "Run it.")
+
+test "reply_to: a passage's best line and the next, cited"
+    asked = read_turn(
+        "Passages:\n\n[1] install.md > Installing Beacon > Linux (score 0.5)\n## Linux\n\nUnpack it.\n\n[2] install.md > Installing Beacon > macOS (score 0.4)\n## macOS\n\nRun `brew install beacon`.\nThe formula installs a launchd agent.\n\nQuestion: How do I install Beacon on macOS?"
+    )
+    assert script.reply_to(asked) == .text(text: "Run `brew install beacon`. The formula installs a launchd agent. [2]")

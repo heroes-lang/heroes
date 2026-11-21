@@ -1,0 +1,85 @@
+# The tools that read the documents' folder: `read_file`, a file or some of its
+# lines, and `list_files`, every file with its size. Every path a model gives
+# is held inside the folder (`corpus.inside`), so no question can make the
+# agent read `/etc/passwd` or `../.ssh`.
+
+use <rebel>/json
+use <rebel>/strings
+
+use index/corpus
+use support/fields
+use tools/outcomes
+
+# The most lines `read_file` answers at once, so one call cannot fill the
+# model's window; a model asks the next lines by `first_line`.
+constant MOST_LINES: i64
+    400
+
+# What the tool `read_file` answers: the lines `input` asks of the file it
+# names below `root`, by `path`, and `first_line` and `last_line`, counted
+# from 1, where given. The name `read_file` is the language's built-in, so
+# the function is named for what it answers.
+#
+# - `root`: the documents' folder.
+# - `input`: the call's arguments.
+function read_lines_of(root: str, input: json.Value) -> outcomes.Outcome
+    match read_lines(root: root, input: input)
+        .ok text => return outcomes.done(text)
+        .err e   => return outcomes.refused(e.msg)
+
+# What `read_file` answers, or why not.
+function read_lines(root: str, input: json.Value) -> str?
+    relative = fields.text_at(input, key: "path")?
+    text = corpus.read_text(root: root, relative: relative)?
+    all_lines = strings.lines(text)
+    first = fields.int_or(input, key: "first_line", fallback: 1)?
+    last_asked = fields.int_or(input, key: "last_line", fallback: all_lines.len())?
+
+    if first < 1 || last_asked < first
+        return fail(
+            code: fields.INVALID,
+            msg: f"lines {first} to {last_asked} name no lines: the first is 1 and the last not before it"
+        )
+
+    last = if last_asked > all_lines.len()
+        all_lines.len()
+    else
+        last_asked
+
+    shown = if last - first + 1 > MOST_LINES
+        first + MOST_LINES - 1
+    else
+        last
+
+    if first > all_lines.len()
+        return ok(f"{relative} has {all_lines.len()} lines")
+
+    out: [str] @= []
+
+    for at in range(from: first - 1, to: shown)
+        out @ out.push(all_lines[at])
+
+    if shown < last
+        out @ out.push(f"[lines {shown + 1} to {last} not shown: ask from first_line {shown + 1}]")
+
+    return ok(out.join("\n"))
+
+# Every file of `root`, one a line: its path, its size, and whether it is
+# indexed.
+#
+# - `root`: the documents' folder.
+function list_files(root: str) -> outcomes.Outcome
+    match corpus.list_files(root)
+        .ok listed =>
+            out: [str] @= []
+
+            for l in listed
+                mark = if l.indexed
+                    "indexed"
+                else
+                    "not indexed"
+
+                out @ out.push(f"{l.path}  {l.size} bytes  {mark}")
+
+            return outcomes.done(out.join("\n"))
+        .err e => return outcomes.refused(e.msg)

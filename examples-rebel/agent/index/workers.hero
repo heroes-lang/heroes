@@ -1,0 +1,160 @@
+# The workers' side of indexing: what a worker thread is handed, what it does
+# with it, and what it hands back, all as JSON text, since only text crosses
+# to a thread (`threads.run_all_text`) and its answer cannot be a `T?`. A
+# worker makes its own encoding, reads its share of the documents, counts and
+# cuts them, and, where the store's embedder is the local one, makes their
+# vectors; a failure crosses back as `{"error": ...}`.
+
+use <rebel>/json
+
+use index/chunking
+use index/corpus
+use index/embedder
+use index/encodings
+use index/store
+use support/fields
+
+# The code of a worker's failure, crossed back as text.
+constant INVALID: str
+    "invalid"
+
+# What one worker gave back for one document.
+record Cut
+    # The document's facts, its pieces counted.
+    facts: store.DocumentFacts
+    # Its passages, numbered from 0 within the document.
+    pieces: [chunking.Piece]
+    # Their local vectors, in order; none where the embedder is remote.
+    vectors: [[f32]]
+
+# The job a worker reads: the folder, the model whose tokens size the
+# passages, the sizes, the local vectors' length, and the documents of its
+# share.
+#
+# - `root`: the folder of documents.
+# - `model`: the model whose tokens size the passages.
+# - `size`: the most tokens of a passage.
+# - `overlap`: the tokens a passage may repeat of the one before.
+# - `local`: the local vectors' length, 0 where the embedder is remote.
+# - `paths`: the documents of the share, below `root`.
+function job_text(root: str, model: str, size: i64, overlap: i64, local: i64, paths: [str]) -> str
+    return fields.compact(
+        .object(members: {"root": .text(v: root), "model": .text(v: model), "size": fields.number(size), "overlap": fields.number(overlap), "local": fields.number(local), "paths": fields.texts(paths)})
+    )
+
+# A worker's body: the documents of the job `job` read, counted, cut and,
+# where the job asks, made local vectors. It answers JSON, `{"cuts": [...]}`,
+# or `{"error": "..."}` where anything failed.
+#
+# - `job`: what `job_text` wrote.
+function cut_share(job: str) -> str
+    match cut_job(job)
+        .ok cuts =>
+            items: [json.Value] @= []
+
+            for c in cuts
+                items @ items.push(cut_json(c))
+
+            return fields.compact(.object(members: {"cuts": .list(items: items)}))
+        .err e => return fields.compact(.object(members: {"error": .text(v: e.code + ": " + e.msg)}))
+
+# The cuts of the job `job`, as `cut_share` answers them.
+function cut_job(job: str) -> [Cut]?
+    v = json.parse(job)?
+    root = fields.text_at(v, key: "root")?
+    counter = encodings.counter_for(fields.text_at(v, key: "model")?)
+    size = fields.int_at(v, key: "size")?
+    overlap = fields.int_at(v, key: "overlap")?
+    local = fields.int_at(v, key: "local")?
+    out: [Cut] @= []
+
+    for p in fields.texts_or_none(v, key: "paths")?
+        text = corpus.read_text(root: root, relative: p)?
+        doc = corpus.Document(path: p, text: text, markdown: !is_plain(p))
+        pieces = chunking.pieces_of(doc, encoding: counter.encoding, size: size, overlap: overlap)?
+        made: [[f32]] @= []
+
+        if local > 0
+            for piece in pieces
+                made @ made.push(embedder.embed_local(embedded_text(piece), dimensions: local))
+
+        facts = store.DocumentFacts(
+            path: p,
+            size: text.len(),
+            tokens: encodings.count(counter, text: text),
+            pieces: pieces.len()
+        )
+        out @ out.push(Cut(facts: facts, pieces: pieces, vectors: made))
+
+    return ok(out)
+
+# What is made a passage's vector: its place, the document and the headings
+# above it, then its text, so a section is found by the words of its headings
+# as well as its own ("contextual chunk headers"): the second section of a
+# changelog holds no word of "changelog" but its place does.
+#
+# - `p`: the passage.
+function embedded_text(p: chunking.Piece) -> str
+    return chunking.place_of(p) + "\n" + p.text
+
+# Whether `path` is a plain text, cut at its paragraphs rather than its
+# headings.
+function is_plain(path: str) -> bool
+    return path.len() >= 4 && path.slice(from: path.len() - 4, to: path.len()) == ".txt"
+
+# `c` as the JSON a worker answers.
+function cut_json(c: Cut) -> json.Value
+    pieces: [json.Value] @= []
+
+    for p in c.pieces
+        pieces @ pieces.push(chunking.piece_json(p))
+
+    made: [json.Value] @= []
+
+    for v in c.vectors
+        components: [json.Value] @= []
+
+        for x in v
+            components @ components.push(.number(v: to_f64(x)))
+
+        made @ made.push(.list(items: components))
+
+    return .object(
+        members: {"path": .text(v: c.facts.path), "tokens": fields.number(c.facts.tokens), "pieces": .list(items: pieces), "vectors": .list(items: made)}
+    )
+
+# The cuts a worker's answer holds, or its failure.
+function cuts_of(answer: str) -> [Cut]?
+    v = json.parse(answer)?
+
+    match json.member(v, key: "error")
+        .ok said => return fail(code: INVALID, msg: json.text_of(said)?)
+        .err _   => _ = 0
+
+    out: [Cut] @= []
+
+    for c in fields.list_at(v, key: "cuts")?
+        pieces: [chunking.Piece] @= []
+
+        for p in fields.list_at(c, key: "pieces")?
+            pieces @ pieces.push(chunking.piece_of(p)?)
+
+        made: [[f32]] @= []
+
+        for item in fields.list_at(c, key: "vectors")?
+            components: [f32] @= []
+
+            for x in json.items_of(item)?
+                components @ components.push(to_f32(json.number_of(x)?))
+
+            made @ made.push(components)
+
+        path = fields.text_at(c, key: "path")?
+        facts = store.DocumentFacts(path: path, size: 0, tokens: fields.int_at(c, key: "tokens")?, pieces: pieces.len())
+        out @ out.push(Cut(facts: facts, pieces: pieces, vectors: made))
+
+    return ok(out)
+
+test "cuts_of: a worker's failure crosses back as a failure"
+    assert cuts_of("{\"error\": \"file_not_found: a.md\"}").is_err()
+    assert cuts_of("{\"cuts\": []}").must() == []

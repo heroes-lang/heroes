@@ -1,0 +1,178 @@
+# The documents the demo indexes, carried inside the program so that its
+# session needs no file of the repository: the manual of Beacon, a log
+# shipper invented for this demo, as six small documents and one JSON
+# configuration. The demo writes them into its own folder and indexes that
+# folder as a user's would be indexed.
+#
+# The questions the demo asks are answered from these texts, and the
+# configuration is the one fact the passages never state, so that answering
+# it needs a tool.
+
+# One file of the bundle: where it goes below the corpus folder, and its text.
+record File
+    # Its path below the corpus folder, parts joined by `/`.
+    path: str
+    # Its whole text, ending with a line feed.
+    text: str
+
+# Every file of the bundle, in the order they are written.
+function files() -> [File]
+    return [
+        File(path: "README.md", text: readme().join("\n") + "\n")
+        File(path: "install.md", text: install().join("\n") + "\n")
+        File(path: "configuration.md", text: configuration().join("\n") + "\n")
+        File(path: "troubleshooting.md", text: troubleshooting().join("\n") + "\n")
+        File(path: "CHANGELOG.md", text: changelog().join("\n") + "\n")
+        File(path: "faq.txt", text: faq().join("\n") + "\n")
+        File(path: "beacon.json", text: settings().join("\n") + "\n")
+    ]
+
+# The lines of `README.md`: what Beacon is and how a batch leaves its buffer.
+function readme() -> [str]
+    return [
+        "# Beacon"
+        ""
+        "Beacon ships log lines from the machines that write them to the stores that keep them."
+        "It reads files and the system journal, batches the lines, compresses each batch and sends it over HTTPS."
+        ""
+        "## Quick start"
+        ""
+        "Install Beacon as install.md says, write a configuration file, then run `beacon --config beacon.json`."
+        "Beacon prints one line a minute with the lines it read and the batches it sent."
+        ""
+        "## How it works"
+        ""
+        "Every input is read by a reader of its own."
+        "Lines wait in a buffer in memory, and a batch leaves the buffer when it holds 1,000 lines or when two seconds have passed, whichever comes first."
+        "A batch that cannot be sent is kept on disk and sent again later."
+    ]
+
+# The lines of `install.md`: one section a system, then the check.
+function install() -> [str]
+    return [
+        "# Installing Beacon"
+        ""
+        "## Linux"
+        ""
+        "Download the archive for your architecture, unpack it into /opt/beacon and run `sudo /opt/beacon/install.sh`."
+        "The script adds a systemd unit named beacon.service."
+        ""
+        "## macOS"
+        ""
+        "Run `brew install beacon`."
+        "The formula installs a launchd agent; start it with `brew services start beacon`."
+        ""
+        "## Windows"
+        ""
+        "Run the MSI installer as an administrator."
+        "Beacon is installed as a Windows service named Beacon and starts at boot."
+        ""
+        "## Checking the installation"
+        ""
+        "Run `beacon --version`, which prints the version and the day it was built."
+    ]
+
+# The lines of `configuration.md`: the sections of the file, but not the
+# values of `listen`, which only `beacon.json` holds.
+function configuration() -> [str]
+    return [
+        "# Configuration"
+        ""
+        "Beacon reads one JSON file, named by `--config`."
+        "The file has four sections: listen, inputs, outputs and buffer."
+        ""
+        "## Inputs"
+        ""
+        "Each input names a path pattern, such as /var/log/*.log, and a parser: plain, json or syslog."
+        ""
+        "## Outputs"
+        ""
+        "An output names a URL and a token."
+        "Beacon sends each batch to every output, and an output that fails is tried again with a growing wait, at most every five minutes."
+        ""
+        "## Buffer"
+        ""
+        "The buffer holds lines in memory until a batch is full."
+        "Its size is set in lines by buffer.lines; when it is full, Beacon stops reading until a batch leaves."
+    ]
+
+# The lines of `troubleshooting.md`: three errors and what each means.
+function troubleshooting() -> [str]
+    return [
+        "# Troubleshooting"
+        ""
+        "## The error buffer full"
+        ""
+        "Beacon logs buffer full when its outputs cannot keep up and the buffer reached buffer.lines."
+        "Reading pauses until a batch is sent."
+        "Raise buffer.lines, or add an output closer to the machine."
+        ""
+        "## The error token refused"
+        ""
+        "An output answered 401 or 403."
+        "The token in the configuration is wrong or has expired: make a new one in the store's console and restart Beacon."
+        ""
+        "## Lines arrive twice"
+        ""
+        "A batch whose answer was lost is sent again, though the store may have kept it."
+        "Stores that keep a batch id drop the second copy."
+    ]
+
+# The lines of `CHANGELOG.md`: three versions, the newest first.
+function changelog() -> [str]
+    return [
+        "# Changelog"
+        ""
+        "## 2.1.0"
+        ""
+        "Batches are compressed with zstd instead of gzip, which halves their size."
+        "The syslog parser reads the structured data of RFC 5424."
+        ""
+        "## 2.0.0"
+        ""
+        "The configuration file is JSON instead of INI."
+        "Outputs are tried again with a growing wait instead of a fixed one."
+        ""
+        "## 1.4.0"
+        ""
+        "Windows is supported, Beacon running as a service."
+    ]
+
+# The lines of `faq.txt`, a plain text the agent cuts at its paragraphs.
+function faq() -> [str]
+    return [
+        "Frequently asked questions"
+        ""
+        "Does Beacon read compressed log files?"
+        "Yes: a file ending in .gz is read as gzip."
+        ""
+        "Can Beacon run without root?"
+        "Yes, as long as it may read the log files it is given."
+        ""
+        "Where does Beacon keep the batches it could not send?"
+        "In the folder named by buffer.spool, /var/lib/beacon/spool unless it is set."
+    ]
+
+# The lines of `beacon.json`, the default configuration: JSON the agent does
+# not index, and reads only through its `query_json` tool.
+function settings() -> [str]
+    return [
+        "{"
+        "  \"listen\": {\"host\": \"127.0.0.1\", \"port\": 7461},"
+        "  \"inputs\": ["
+        "    {\"path\": \"/var/log/*.log\", \"parser\": \"plain\"},"
+        "    {\"path\": \"/var/log/app/*.json\", \"parser\": \"json\"}"
+        "  ],"
+        "  \"outputs\": [{\"url\": \"https://logs.example.com/ingest\", \"token\": \"${BEACON_TOKEN}\"}],"
+        "  \"buffer\": {\"lines\": 50000, \"batch_lines\": 1000, \"flush_seconds\": 2, \"spool\": \"/var/lib/beacon/spool\"}"
+        "}"
+    ]
+
+test "files: seven files, each ending with a line feed, the configuration last"
+    bundled = files()
+    assert bundled.len() == 7
+
+    for f in bundled
+        assert f.text.len() > 0 && f.text[f.text.len() - 1] == '\n'
+
+    assert bundled[6].path == "beacon.json"

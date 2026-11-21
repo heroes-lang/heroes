@@ -1,0 +1,137 @@
+# The folder of documents the agent answers about: which of its files are
+# indexed, every file listed with its size, and a path a tool is given held
+# inside the folder.
+#
+# A path is kept with `/` between its parts on every system (`path.to_slash`),
+# so a store made on one machine names the same documents on another and a
+# transcript is the same on all three platforms.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/strings
+
+# The code of a path that leaves the folder or names no file in it.
+constant INVALID: str
+    "invalid"
+
+# One file of the folder, read.
+record Document
+    # Its path below the folder, parts joined by `/`.
+    path: str
+    # Its text, UTF-8.
+    text: str
+    # Whether it is cut at its Markdown headings (`.md`, `.markdown`) or at
+    # its paragraphs (`.txt`).
+    markdown: bool
+
+# One file of the folder, as a listing shows it.
+record Listed
+    # Its path below the folder, parts joined by `/`.
+    path: str
+    # Its size in bytes.
+    size: i64
+    # Whether the agent indexes it.
+    indexed: bool
+
+# Whether a file named `name` is indexed: Markdown and plain text. Everything
+# else is listed, and read by a tool where asked, but not cut into passages.
+#
+# - `name`: the file's name or path.
+function is_indexed(name: str) -> bool
+    lower = strings.to_lower(name)
+    return strings.has_suffix(s: lower, suffix: ".md") || strings.has_suffix(s: lower, suffix: ".markdown") || strings.has_suffix(s: lower, suffix: ".txt")
+
+# Every file below `root`, in the order of their paths' bytes, its hidden
+# files and folders (a name starting with `.`) left out.
+#
+# - `root`: the folder.
+#
+# Fails as `fs.walk` and `fs.info` fail: `file_not_found`, `not_a_directory`.
+function list_files(root: str) -> [Listed]?
+    out: [Listed] @= []
+
+    for entry in fs.walk(root)?
+        name = path.to_slash(entry.name)
+
+        if !is_hidden(name)
+            match entry.kind
+                .file =>
+                    facts = fs.info(path.join_all([root, entry.name]))?
+                    out @ out.push(Listed(path: name, size: facts.size, indexed: is_indexed(name)))
+                .directory | .link | .other => _ = 0
+
+    return ok(out)
+
+# Whether a path below the folder has a part starting with `.`.
+function is_hidden(slashed: str) -> bool
+    for part in strings.split(s: slashed, sep: "/")
+        if strings.has_prefix(s: part, prefix: ".")
+            return true
+
+    return false
+
+# The indexed documents below `root`, read, in the order `list_files` gives.
+#
+# - `root`: the folder.
+#
+# Fails as `list_files` fails; `not_text` where a document is not UTF-8, the
+# message naming it.
+function read_documents(root: str) -> [Document]?
+    out: [Document] @= []
+
+    for listed in list_files(root)?
+        if listed.indexed
+            text = read_text(root: root, relative: listed.path)?
+            out @ out.push(
+                Document(path: listed.path, text: text, markdown: !strings.has_suffix(s: strings.to_lower(listed.path), suffix: ".txt"))
+            )
+
+    return ok(out)
+
+# The text of the file `relative` below `root`.
+#
+# - `root`: the folder.
+# - `relative`: a path below it, held to `inside`.
+#
+# Fails as `inside` fails, as `fs.read_bytes` fails, and `not_text` where the
+# file is not UTF-8.
+function read_text(root: str, relative: str) -> str?
+    data = fs.read_bytes(inside(root: root, relative: relative)?)?
+
+    match bytes.to_text(data)
+        .ok t  => return ok(t)
+        .err e => return fail(code: e.code, msg: f"{relative} is not UTF-8 text")
+
+# The path of `relative` below `root`, where `relative` stays inside it: no
+# absolute path, no `..` that climbs out, nothing empty, no name Windows
+# reserves (`path.is_local`).
+#
+# - `root`: the folder.
+# - `relative`: the path a tool was given, `/` or the system's separator
+#   between its parts.
+#
+# Fails `invalid` where it would leave the folder: the check is lexical, so
+# a link inside the folder that points out of it is followed, as `git` and
+# Python's `os.path.commonpath` checks follow one.
+function inside(root: str, relative: str) -> str?
+    local = path.from_slash(relative)
+
+    if !path.is_local(local)
+        return fail(code: INVALID, msg: f"{relative} is not a path inside the documents' folder")
+
+    return ok(path.join_all([root, local]))
+
+test "is_indexed: Markdown and text, any case; JSON not"
+    assert is_indexed("guide.md") && is_indexed("NOTES.TXT") && is_indexed("a/b.markdown")
+    assert !is_indexed("beacon.json") && !is_indexed("md")
+
+test "inside: a path below, one that climbs out, an absolute one, an empty one"
+    assert inside(root: "docs", relative: "a/b.md").must() == path.join_all(["docs", path.from_slash("a/b.md")])
+    assert inside(root: "docs", relative: "../secret").is_err()
+    assert inside(root: "docs", relative: "a/../../x").is_err()
+    assert inside(root: "docs", relative: "/etc/passwd").is_err()
+    assert inside(root: "docs", relative: "").is_err()
+
+test "is_hidden: a hidden folder anywhere on the path"
+    assert is_hidden(".git/config") && is_hidden("a/.cache/b") && !is_hidden("a/b.md")

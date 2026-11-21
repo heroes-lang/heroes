@@ -1,0 +1,132 @@
+# A document cut into the passages the agent retrieves: a Markdown document
+# at its headings, each section too long cut at its paragraphs, sentences and
+# words (`chunks.split_markdown`); a plain text at its paragraphs
+# (`chunks.split`). A passage's size is counted in the tokens of the model the
+# store is made for, so the passages a prompt holds fit the window that model
+# reads, and each passage keeps the headings above it, which a citation
+# names.
+
+use <rebel>/chunks
+use <rebel>/json
+use <rebel>/strings
+use <rebel>/tokenizer
+
+use index/corpus
+use support/fields
+
+# What stands between the headings of a passage's place: `Guide > Install`.
+constant HEADING_SEPARATOR: str
+    " > "
+
+# One passage of a document.
+record Piece
+    # Its number in the store, from 0: its id in the vector index.
+    id: i64
+    # The document's path below the folder, parts joined by `/`.
+    doc: str
+    # The headings above it, the outermost first, joined by
+    # `HEADING_SEPARATOR`; "" where it stands before any heading.
+    heading: str
+    # Where it begins in the document, a byte index.
+    start: i64
+    # Where it ends, the byte index after its last byte.
+    end: i64
+    # Its tokens in the store's encoding.
+    tokens: i64
+    # Its text.
+    text: str
+
+# The passages of `doc`, numbered from 0 in their order.
+#
+# - `doc`: the document.
+# - `encoding`: what counts a passage's size.
+# - `size`: the most tokens a passage holds, at least 1.
+# - `overlap`: how many tokens of the passage before one may repeat, from 0 to
+#   `size` less 1.
+#
+# Fails `invalid` where `size` or `overlap` is out of its range. A Markdown
+# heading `chunks` cannot place is not a failure: the document is then cut as
+# plain text.
+function pieces_of(doc: corpus.Document, encoding: tokenizer.Encoding, size: i64, overlap: i64) -> [Piece]?
+    options = chunks.by_tokens(encoding, size: size, overlap: overlap)?
+    cut: [chunks.Chunk] @= chunks.split(doc.text, options: options)
+
+    if doc.markdown
+        match chunks.split_markdown(doc.text, options: options)
+            .ok parts => cut @ parts
+            .err _    => _ = 0
+
+    out: [Piece] @= []
+
+    for c in cut
+        out @ out.push(
+            Piece(id: out.len(), doc: doc.path, heading: c.path.join(HEADING_SEPARATOR), start: c.start, end: c.end, tokens: tokenizer.count(encoding, text: c.text), text: c.text)
+        )
+
+    return ok(out)
+
+# Where `p` stands, as a citation names it: its document, then its headings.
+#
+# - `p`: the passage.
+function place_of(p: Piece) -> str
+    if p.heading == ""
+        return p.doc
+
+    return p.doc + HEADING_SEPARATOR + p.heading
+
+# `p` as the object the store's file holds.
+#
+# - `p`: the passage.
+function piece_json(p: Piece) -> json.Value
+    return .object(
+        members: {"id": fields.number(p.id), "doc": .text(v: p.doc), "heading": .text(v: p.heading), "start": fields.number(p.start), "end": fields.number(p.end), "tokens": fields.number(p.tokens), "text": .text(v: p.text)}
+    )
+
+# The passage the object `v` holds, as `piece_json` writes it.
+#
+# - `v`: the object.
+#
+# Fails `invalid` where a member is missing or of another kind.
+function piece_of(v: json.Value) -> Piece?
+    return ok(
+        Piece(id: fields.int_at(v, key: "id")?, doc: fields.text_at(v, key: "doc")?, heading: fields.text_at(v, key: "heading")?, start: fields.int_at(v, key: "start")?, end: fields.int_at(v, key: "end")?, tokens: fields.int_at(v, key: "tokens")?, text: fields.text_at(v, key: "text")?)
+    )
+
+# The first line of `p`'s text that is not a heading, for a listing.
+#
+# - `p`: the passage.
+function first_line(p: Piece) -> str
+    for l in strings.lines(p.text)
+        trimmed = strings.trim(l)
+
+        if trimmed != "" && !strings.has_prefix(s: trimmed, prefix: "#")
+            return trimmed
+
+    return strings.trim(p.text)
+
+test "pieces_of: a guide cut at its headings, each piece with its place"
+    doc = corpus.Document(
+        path: "guide.md",
+        text: "# Guide\n\nRead this first.\n\n## Install\n\nRun the installer.\n",
+        markdown: true
+    )
+    enc = tokenizer.new(name: "bytes", pattern: ".|\n", ranks: byte_ranks(), specials: {}).must()
+    pieces = pieces_of(doc, encoding: enc, size: 100, overlap: 0).must()
+    assert pieces.len() == 2
+    assert place_of(pieces[1]) == "guide.md > Guide > Install" && pieces[1].id == 1
+    assert first_line(pieces[1]) == "Run the installer."
+    assert pieces[1].tokens == "## Install\n\nRun the installer.".len()
+
+test "piece_of: a piece read back as it was written"
+    p = Piece(id: 3, doc: "a.md", heading: "", start: 0, end: 2, tokens: 1, text: "hi")
+    assert piece_of(piece_json(p)).must() == p && place_of(p) == "a.md"
+
+# The ranks of an encoding whose tokens are the 256 bytes, for tests that need
+# a token to be a byte.
+function byte_ranks() -> [[u8]]
+    out: [[u8]] @= []
+
+    for b in range(from: 0, to: 256)
+        out @ out.push([b.to_u8().must()])
+
+    return out

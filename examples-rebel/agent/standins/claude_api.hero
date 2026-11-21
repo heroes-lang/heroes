@@ -1,0 +1,246 @@
+# A stand-in of Anthropic's Messages API on the loopback, for the demo: it
+# answers `POST /v1/messages` and `POST /v1/messages/count_tokens` in the
+# shapes the API reference gives them, the reference `llm/anthropic` was
+# written from, and checks what the API checks before answering: the key in
+# `x-api-key`, an `anthropic-version`, a JSON body, and the body's rules
+# (`judge.messages_rules`). A request the API would refuse is refused with the
+# API's status and error type, so the demo fails where the agent is wrong.
+#
+# What it answers is the script's (`script.reply_to`), written as the API
+# writes a message: text blocks, `tool_use` blocks with ids the next turn's
+# `tool_result` blocks must name, a stop reason, and usage. Claude's tokenizer
+# is not published, so its token counts are `o200k_base`'s, an estimate that
+# keeps the demo's numbers the same at every run; no real API is reached and
+# no token is spent.
+#
+# It can be told to answer the first message request with 529
+# `overloaded_error` and a `retry-after` of one second, as the API answers
+# when it is overloaded, so the demo shows the agent's retry.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/json
+use <rebel>/net
+
+use index/encodings
+use standins/claude_wire
+use standins/judge
+use standins/loopback
+use standins/script
+use support/fields
+
+# The fault that makes the first message request answer 529.
+constant OVERLOADED: str
+    "overloaded"
+
+# What the stand-in holds while it runs.
+record Book
+    # The key it takes in `x-api-key`.
+    key: str
+    # The faults still to answer, one a message request, in order.
+    faults: [str]
+    # The requests read.
+    requests: i64
+    # The requests answered 200.
+    answered: i64
+    # Each refusal, `401 authentication_error`, in order.
+    refusals: [str]
+    # The rules of `create`'s body.
+    create_rules: [judge.Rule]
+    # The rules of `count_tokens`' body.
+    count_rules: [judge.Rule]
+    # What counts its tokens.
+    counter: encodings.Counter
+
+# The stand-in's settings, as `serve` reads them: the key it takes, and the
+# faults to answer.
+#
+# - `key`: the key.
+# - `faults`: `OVERLOADED` or nothing.
+function settings(key: str, faults: [str]) -> str
+    return fields.compact(.object(members: {"key": .text(v: key), "faults": fields.texts(faults)}))
+
+# The stand-in's thread: it serves until the stop, then answers its report,
+# `loopback.report_json`'s text.
+#
+# - `arg`: what `loopback.start` gives.
+function serve(arg: str) -> str
+    match loopback.open(arg)
+        .ok opened =>
+            b @= book_of(opened.settings)
+            listener @= opened.listener
+
+            while true
+                match loopback.next(listener)
+                    .ok ex =>
+                        exchange @= ex
+
+                        if loopback.is_stop(exchange.request)
+                            loopback.answer(@exchange, response: http.respond_text(200, text: "stopping"))
+                            break
+
+                        response = handle(@b, q: exchange.request)
+                        loopback.answer(@exchange, response: response)
+                    .err e =>
+                        if e.code == net.TIMEOUT
+                            break
+
+            loopback.closed(net.close_listener(@listener))
+            return loopback.report_json(requests: b.requests, answered: b.answered, refusals: b.refusals)
+        .err e => return loopback.report_json(
+            requests: 0,
+            answered: 0,
+            refusals: [f"the stand-in did not start: {e.msg}"]
+        )
+
+# A book from `settings`, its rules parsed and its counter made.
+function book_of(settings_text: str) -> Book
+    v = json.parse(settings_text).default(.object(members: {}))
+    return Book(
+        key: fields.text_or(v, key: "key", fallback: "").default(""),
+        faults: fields.texts_or_none(v, key: "faults").default([]),
+        requests: 0,
+        answered: 0,
+        refusals: [],
+        create_rules: judge.messages_rules(counting: false),
+        count_rules: judge.messages_rules(counting: true),
+        counter: encodings.counter_for("claude")
+    )
+
+# What the API answers to `q`.
+#
+# - `b`: the book; it counts the request and its outcome.
+# - `q`: the request.
+function handle(@b: Book, q: http.Request) -> http.Response
+    b.requests @ b.requests + 1
+    id = f"req_standin_{b.requests}"
+    path = q.url.path
+    counting = path == "/v1/messages/count_tokens"
+
+    if q.method != "POST" || path != "/v1/messages" && !counting
+        return refuse(
+            @b,
+            status: 404,
+            kind: "not_found_error",
+            words: f"{q.method} {path} is no endpoint of this API",
+            id: id
+        )
+
+    if http.value_of(q.headers, name: "x-api-key").default("") != b.key || b.key == ""
+        return refuse(@b, status: 401, kind: "authentication_error", words: "invalid x-api-key", id: id)
+
+    if http.value_of(q.headers, name: "anthropic-version").default("") == ""
+        return refuse(
+            @b,
+            status: 400,
+            kind: "invalid_request_error",
+            words: "anthropic-version: header is required",
+            id: id
+        )
+
+    if !is_json_type(http.value_of(q.headers, name: "content-type").default(""))
+        return refuse(
+            @b,
+            status: 400,
+            kind: "invalid_request_error",
+            words: "the body must be application/json",
+            id: id
+        )
+
+    match json.parse(bytes.to_text_lossy(q.body))
+        .ok body =>
+            rules = if counting
+                b.count_rules
+            else
+                b.create_rules
+
+            broken = judge.broken(rules, body: body)
+
+            if broken.len() > 0
+                return refuse(@b, status: 400, kind: "invalid_request_error", words: broken[0], id: id)
+
+            if counting
+                b.answered @ b.answered + 1
+                return loopback.json_response(
+                    200,
+                    body: fields.compact(.object(members: {"input_tokens": fields.number(claude_wire.input_tokens(b.counter, body: body))})),
+                    extra: [request_id(id)]
+                )
+
+            if b.faults.len() > 0 && b.faults[0] == OVERLOADED
+                b.faults @ b.faults.slice(from: 1, to: b.faults.len())
+                return refuse_after(
+                    @b,
+                    status: 529,
+                    kind: "overloaded_error",
+                    words: "Overloaded",
+                    id: id,
+                    retry_after: "1"
+                )
+
+            b.answered @ b.answered + 1
+            return loopback.json_response(
+                200,
+                body: fields.compact(message_json(b.counter, body: body, id: b.requests)),
+                extra: [request_id(id)]
+            )
+        .err e => return refuse(
+            @b,
+            status: 400,
+            kind: "invalid_request_error",
+            words: f"the body is not JSON: {e.msg}",
+            id: id
+        )
+
+# Whether a `Content-Type` names JSON.
+function is_json_type(value: str) -> bool
+    return value.len() >= 16 && value.slice(from: 0, to: 16) == "application/json"
+
+# The `request-id` field of a response.
+function request_id(id: str) -> http.Header
+    return http.Header(name: "request-id", value: id)
+
+# A refusal as the API writes one, counted in `b`.
+function refuse(@b: Book, status: i64, kind: str, words: str, id: str) -> http.Response
+    return refuse_after(@b, status: status, kind: kind, words: words, id: id, retry_after: "")
+
+# A refusal advising a wait of `retry_after` seconds, "" for none.
+function refuse_after(@b: Book, status: i64, kind: str, words: str, id: str, retry_after: str) -> http.Response
+    b.refusals @ b.refusals.push(f"{status} {kind}")
+    body: json.Value = .object(
+        members: {"type": .text(v: "error"), "error": .object(members: {"type": .text(v: kind), "message": .text(v: words)}), "request_id": .text(v: id)}
+    )
+    headers: [http.Header] @= [request_id(id)]
+
+    if retry_after != ""
+        headers @ headers.push(http.Header(name: "retry-after", value: retry_after))
+
+    return loopback.json_response(status, body: fields.compact(body), extra: headers)
+
+# The message the script answers to `body`, as the API writes one.
+function message_json(counter: encodings.Counter lent, body: json.Value, id: i64) -> json.Value
+    model = fields.text_or(body, key: "model", fallback: "").default("")
+    blocks: [json.Value] @= []
+    stop: str @= "end_turn"
+    written: str @= ""
+
+    match script.reply_to(claude_wire.asked_of(body))
+        .text t =>
+            blocks @ blocks.push(claude_wire.text_block(t.text))
+            written @ t.text
+        .call c =>
+            lead = f"I will use {c.tool}."
+            input = json.parse(c.input).default(.object(members: {}))
+            blocks @ blocks.push(claude_wire.text_block(lead))
+            blocks @ blocks.push(
+                .object(members: {"type": .text(v: "tool_use"), "id": .text(v: f"toolu_standin_{id}"), "name": .text(v: c.tool), "input": input})
+            )
+            stop @ "tool_use"
+            written @ lead + c.input
+
+    usage: json.Value = .object(
+        members: {"input_tokens": fields.number(claude_wire.input_tokens(counter, body: body)), "output_tokens": fields.number(encodings.count(counter, text: written)), "cache_creation_input_tokens": fields.number(0), "cache_read_input_tokens": fields.number(0)}
+    )
+    return .object(
+        members: {"id": .text(v: f"msg_standin_{id}"), "type": .text(v: "message"), "role": .text(v: "assistant"), "model": .text(v: model), "content": .list(items: blocks), "stop_reason": .text(v: stop), "stop_sequence": .null_value, "stop_details": .null_value, "usage": usage}
+    )

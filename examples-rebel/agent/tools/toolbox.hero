@@ -1,0 +1,178 @@
+# The agent's tools, declared once and run in one place: the declarations are
+# what a model is offered through either API and what the MCP server lists,
+# and `run` is what answers a call from any of them, so a tool means the same
+# to Claude, to GPT and to another agent.
+#
+# Each declaration's input is a JSON Schema, written here as JSON text: the
+# MCP server holds a call's arguments to it before the call reaches `run`, and
+# `run` checks the arguments it reads all the same, since a model's call
+# through an API is held to no schema.
+
+use <rebel>/json
+use <rebel>/strings
+use <rebel>/time
+
+use index/embedder
+use index/store
+use retrieval/nearest
+use support/fields
+use tools/computing
+use tools/outcomes
+use tools/reading
+use tools/running
+
+# The most passages `search_documents` answers.
+constant MOST_HITS: i64
+    10
+
+# One tool, as a model and a client are told of it.
+record Spec
+    # Its name, letters, digits and `_`.
+    name: str
+    # Its name for a person.
+    title: str
+    # What it does and when to call it, for the model.
+    description: str
+    # The JSON Schema of its arguments, an object schema.
+    schema: json.Value
+    # Whether it changes nothing; `run_command` may change anything.
+    read_only: bool
+
+# What the tools work on.
+record Toolbox
+    # The documents' folder: what `read_file`, `list_files`, `query_json` and
+    # `count_tokens` read in, and where `run_command` runs.
+    root: str
+    # The store `search_documents` searches.
+    store: store.Store
+    # The embedder that made the store's vectors.
+    embedder: embedder.Embedder
+    # The commands `run_command` may run, by the name a model calls them.
+    allowed: {str: str}
+    # The model `count_tokens` counts for where a call names none.
+    model: str
+    # How long a command may run.
+    command_limit: time.Duration
+
+# The tools `box` offers, in the order every listing gives them;
+# `run_command` only where some command is allowed.
+#
+# - `box`: the toolbox.
+function specs(box: Toolbox lent) -> [Spec]
+    out: [Spec] @= [
+        spec(name: "search_documents", title: "Search the documents", description: "Finds the passages of the indexed documents nearest to a query, each with its file, its headings and its score.", schema: "{\"type\": \"object\", \"properties\": {\"query\": {\"type\": \"string\", \"description\": \"What to look for.\"}, \"limit\": {\"type\": \"integer\", \"minimum\": 1, \"maximum\": 10, \"description\": \"How many passages, 4 when left out.\"}}, \"required\": [\"query\"], \"additionalProperties\": false}", read_only: true)
+        spec(name: "read_file", title: "Read a file", description: "Reads a file of the documents' folder, or some of its lines, counted from 1.", schema: "{\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"The file's path inside the folder.\"}, \"first_line\": {\"type\": \"integer\", \"minimum\": 1}, \"last_line\": {\"type\": \"integer\", \"minimum\": 1}}, \"required\": [\"path\"], \"additionalProperties\": false}", read_only: true)
+        spec(name: "list_files", title: "List the files", description: "Lists every file of the documents' folder with its size, and whether it is indexed.", schema: "{\"type\": \"object\", \"properties\": {}, \"additionalProperties\": false}", read_only: true)
+        spec(name: "count_tokens", title: "Count tokens", description: "Counts the tokens of a file of the folder, or of a text, for a model.", schema: "{\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\"}, \"text\": {\"type\": \"string\"}, \"model\": {\"type\": \"string\", \"description\": \"The model, gpt-4o for instance.\"}}, \"additionalProperties\": false}", read_only: true)
+        spec(name: "query_json", title: "Query a JSON file", description: "Runs a jq filter over a JSON file of the folder, such as a configuration, and answers each value it outputs.", schema: "{\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\"}, \"filter\": {\"type\": \"string\", \"description\": \"A jq filter, .listen.port for instance.\"}}, \"required\": [\"path\", \"filter\"], \"additionalProperties\": false}", read_only: true)
+    ]
+
+    if box.allowed.len() > 0
+        names = sort(keys(box.allowed)).join(", ")
+        out @ out.push(
+            spec(name: "run_command", title: "Run a command", description: f"Runs one of the commands the user allowed ({names}) in the documents' folder, with arguments, and answers what it wrote. No shell reads it.", schema: "{\"type\": \"object\", \"properties\": {\"command\": {\"type\": \"string\"}, \"arguments\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}}, \"required\": [\"command\"], \"additionalProperties\": false}", read_only: false)
+        )
+
+    return out
+
+# A declaration whose schema is the JSON text `schema`, written in this module
+# and so read whole: a schema that does not parse is this program's mistake.
+function spec(name: str, title: str, description: str, schema: str, read_only: bool) -> Spec
+    return Spec(
+        name: name,
+        title: title,
+        description: description,
+        schema: json.parse(schema).must(),
+        read_only: read_only
+    )
+
+# What the tool `name` answers to the arguments `input`.
+#
+# - `box`: the toolbox.
+# - `name`: one of `specs(box)`'s names; another is refused as an outcome.
+# - `input`: the call's arguments, an object.
+function run(box: Toolbox lent, name: str, input: json.Value) -> outcomes.Outcome
+    if name == "search_documents"
+        return search(box, input: input)
+
+    if name == "read_file"
+        return reading.read_lines_of(root: box.root, input: input)
+
+    if name == "list_files"
+        return reading.list_files(box.root)
+
+    if name == "count_tokens"
+        return computing.count_tokens(root: box.root, input: input, default_model: box.model)
+
+    if name == "query_json"
+        return computing.query_json(root: box.root, input: input)
+
+    if name == "run_command" && box.allowed.len() > 0
+        return running.run_command(root: box.root, allowed: box.allowed, input: input, limit: box.command_limit)
+
+    return outcomes.refused(f"there is no tool named {name}")
+
+# The passages nearest to the query `input` gives, as `search_documents`
+# answers them.
+function search(box: Toolbox lent, input: json.Value) -> outcomes.Outcome
+    match search_text(box, input: input)
+        .ok text => return outcomes.done(text)
+        .err e   => return outcomes.refused(e.msg)
+
+# What `search_documents` answers, or why not.
+function search_text(box: Toolbox lent, input: json.Value) -> str?
+    query = query_of(input)?
+    limit = limit_of(input)?
+    hits = nearest.search(box.store, e: box.embedder, question: query, limit: limit)?
+
+    if hits.len() == 0
+        return ok("no passage found")
+
+    return ok(passages_text(hits))
+
+# The query of a search's arguments.
+function query_of(input: json.Value) -> str?
+    match json.member(input, key: "query")
+        .ok q  => return json.text_of(q)
+        .err _ => return fail(code: fields.INVALID, msg: "search_documents needs a query")
+
+# How many passages a search's arguments ask, from 1 to `MOST_HITS`, 4 where
+# they ask none.
+function limit_of(input: json.Value) -> i64?
+    match json.member(input, key: "limit")
+        .ok n =>
+            asked = json.int_of(n)?
+
+            if asked < 1 || asked > MOST_HITS
+                return fail(code: fields.INVALID, msg: f"limit {asked} is not from 1 to {MOST_HITS}")
+
+            return ok(asked)
+        .err _ => return ok(4)
+
+# `hits` as the text a model reads: each passage after a line naming its
+# number, its place and its score.
+#
+# - `hits`: the passages, the nearest first.
+function passages_text(hits: [nearest.Hit]) -> str
+    out: [str] @= []
+
+    for h in hits
+        out @ out.push(f"[{h.rank}] {place(h)} (score {nearest.format_score(h.score)})\n{strings.trim(h.piece.text)}")
+
+    return out.join("\n\n")
+
+# Where a hit stands: its document, then its headings.
+function place(h: nearest.Hit) -> str
+    if h.piece.heading == ""
+        return h.piece.doc
+
+    return h.piece.doc + " > " + h.piece.heading
+
+test "spec: the schema of a tool parsed from its text"
+    s = spec(name: "t", title: "T", description: "d", schema: "{\"type\": \"object\"}", read_only: true)
+    assert s.schema == .object(members: {"type": .text(v: "object")})
+
+test "limit_of: four by default, a limit out of range refused"
+    assert limit_of(json.parse("{}").must()).must() == 4
+    assert limit_of(json.parse("{\"limit\": 2}").must()).must() == 2
+    assert limit_of(json.parse("{\"limit\": 11}").must()).is_err()

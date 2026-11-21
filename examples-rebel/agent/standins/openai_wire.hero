@@ -1,0 +1,83 @@
+# What the OpenAI stand-in reads of a Chat Completions body, as the API
+# reference writes one: the question and passages of the agent's first user
+# message, the functions offered, and the tool messages after the last
+# assistant message with the names of the calls they answer, a result the
+# agent marked `Error: ` read as an error. Also the prompt tokens the stand-in
+# counts for a body.
+
+use <rebel>/json
+
+use index/encodings
+use standins/script
+use standins/turns
+use support/fields
+
+# What the script reads of a chat's body: the question and passages of the
+# first user message, the functions offered, and the tool messages after the
+# last assistant message with the names of the calls they answer.
+function asked_of(body: json.Value) -> script.Asked
+    messages = fields.list_at(body, key: "messages").default([])
+    asked @= script.Asked(question: "", passages: [], tools: [], results: [])
+
+    for m in messages
+        if fields.text_or(m, key: "role", fallback: "").default("") == "user" && asked.question == ""
+            asked @ turns.read_turn(fields.text_or(m, key: "content", fallback: "").default(""))
+
+    for t in fields.list_at(body, key: "tools").default([])
+        match json.member(t, key: "function")
+            .ok f  => asked.tools @ asked.tools.push(fields.text_or(f, key: "name", fallback: "").default(""))
+            .err _ => _ = 0
+
+    calls: {str: str} @= {}
+    results: [script.Result] @= []
+
+    for m in messages
+        role = fields.text_or(m, key: "role", fallback: "").default("")
+
+        if role == "assistant"
+            results @ []
+
+            for c in fields.list_at(m, key: "tool_calls").default([])
+                name = match json.member(c, key: "function")
+                    .ok f  => fields.text_or(f, key: "name", fallback: "").default("")
+                    .err _ => ""
+
+                calls[fields.text_or(c, key: "id", fallback: "").default("")] @ name
+
+        if role == "tool"
+            text = fields.text_or(m, key: "content", fallback: "").default("")
+            tool = calls[fields.text_or(m, key: "tool_call_id", fallback: "").default("")].default("")
+            error_mark = "Error: "
+            failed = text.len() >= error_mark.len() && text.slice(from: 0, to: error_mark.len()) == error_mark
+
+            said = if failed
+                text.slice(from: error_mark.len(), to: text.len())
+            else
+                text
+
+            results @ results.push(script.Result(tool: tool, text: said, is_error: failed))
+
+    asked.results @ results
+    return asked
+
+# The prompt tokens of a chat's body as the stand-in counts them: every text
+# of its messages, and its functions' declarations.
+function input_tokens(counter: encodings.Counter lent, body: json.Value) -> i64
+    total: i64 @= 0
+
+    for m in fields.list_at(body, key: "messages").default([])
+        total @ total + encodings.count(counter, text: fields.text_or(m, key: "content", fallback: "").default(""))
+
+    match json.member(body, key: "tools")
+        .ok tools => total @ total + encodings.count(counter, text: fields.compact(tools))
+        .err _    => _ = 0
+
+    return total
+
+test "asked_of: a tool message named by the call it answers, an error marked"
+    body = json.parse(
+        "{\"messages\": [{\"role\": \"system\", \"content\": \"x\"}, {\"role\": \"user\", \"content\": \"Passages:\\n\\nNo passage was found.\\n\\nQuestion: Remove it with rm.\"}, {\"role\": \"assistant\", \"content\": null, \"tool_calls\": [{\"id\": \"c1\", \"type\": \"function\", \"function\": {\"name\": \"run_command\", \"arguments\": \"{}\"}}]}, {\"role\": \"tool\", \"tool_call_id\": \"c1\", \"content\": \"Error: not allowed\"}], \"tools\": [{\"type\": \"function\", \"function\": {\"name\": \"run_command\"}}]}"
+    ).must()
+    asked = asked_of(body)
+    assert asked.question == "Remove it with rm." && asked.tools == ["run_command"]
+    assert asked.results == [script.Result(tool: "run_command", text: "not allowed", is_error: true)]

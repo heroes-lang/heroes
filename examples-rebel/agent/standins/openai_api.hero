@@ -1,0 +1,308 @@
+# A stand-in of OpenAI's API on the loopback, for the demo: `POST
+# /v1/chat/completions`, `POST /v1/embeddings` and `GET /v1/models`, in the
+# shapes the API reference gives them, the reference `llm/openai` was written
+# from. It checks the bearer key, the JSON body and the body's rules
+# (`judge.chat_rules`, `judge.embedding_rules`), and refuses as the API
+# refuses, with its status and its error's type and code.
+#
+# A chat is answered by the script (`script.reply_to`), as a completion with
+# `tool_calls` whose ids the next request's tool messages must name. An
+# embedding is the agent's own local vector of the text (`embedder`), so the
+# demo can show that a store made through the endpoint finds what the local
+# function finds. Token counts are `o200k_base`'s, GPT-4o's own.
+#
+# It can be told to answer the first chat with 429 `rate_limit_exceeded` and
+# a `retry-after-ms` of 250, and to answer every chat for a model it names with
+# 503 `server_error`, as an overloaded model is answered, so the demo shows a
+# retry and a circuit breaker opening.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/json
+use <rebel>/net
+
+use index/embedder
+use index/encodings
+use standins/judge
+use standins/loopback
+use standins/openai_wire
+use standins/script
+use support/fields
+
+# The fault that makes the first chat answer 429.
+constant RATE_LIMITED: str
+    "rate_limited"
+
+# The instant every completion says it was made: 2026-11-21T00:00:00Z, so no
+# reading of a clock reaches the demo's answers.
+constant CREATED: i64
+    1_795_219_200
+
+# What the stand-in holds while it runs.
+record Book
+    # The key it takes after `Bearer`.
+    key: str
+    # The faults still to answer, one a chat, in order.
+    faults: [str]
+    # The models every chat of which is answered 503.
+    unavailable: [str]
+    # The requests read.
+    requests: i64
+    # The requests answered 200.
+    answered: i64
+    # Each refusal, `429 rate_limit_exceeded`, in order.
+    refusals: [str]
+    # The rules of a chat's body.
+    chat_rules: [judge.Rule]
+    # The rules of an embedding's body.
+    embedding_rules: [judge.Rule]
+    # What counts its tokens.
+    counter: encodings.Counter
+
+# The stand-in's settings, as `serve` reads them.
+#
+# - `key`: the key it takes.
+# - `faults`: `RATE_LIMITED` or nothing.
+# - `unavailable`: the models answered 503.
+function settings(key: str, faults: [str], unavailable: [str]) -> str
+    return fields.compact(
+        .object(members: {"key": .text(v: key), "faults": fields.texts(faults), "unavailable": fields.texts(unavailable)})
+    )
+
+# The stand-in's thread: it serves until the stop, then answers its report.
+#
+# - `arg`: what `loopback.start` gives.
+function serve(arg: str) -> str
+    match loopback.open(arg)
+        .ok opened =>
+            b @= book_of(opened.settings)
+            listener @= opened.listener
+
+            while true
+                match loopback.next(listener)
+                    .ok ex =>
+                        exchange @= ex
+
+                        if loopback.is_stop(exchange.request)
+                            loopback.answer(@exchange, response: http.respond_text(200, text: "stopping"))
+                            break
+
+                        response = handle(@b, q: exchange.request)
+                        loopback.answer(@exchange, response: response)
+                    .err e =>
+                        if e.code == net.TIMEOUT
+                            break
+
+            loopback.closed(net.close_listener(@listener))
+            return loopback.report_json(requests: b.requests, answered: b.answered, refusals: b.refusals)
+        .err e => return loopback.report_json(
+            requests: 0,
+            answered: 0,
+            refusals: [f"the stand-in did not start: {e.msg}"]
+        )
+
+# A book from `settings_text`, its rules parsed and its counter made.
+function book_of(settings_text: str) -> Book
+    v = json.parse(settings_text).default(.object(members: {}))
+    return Book(
+        key: fields.text_or(v, key: "key", fallback: "").default(""),
+        faults: fields.texts_or_none(v, key: "faults").default([]),
+        unavailable: fields.texts_or_none(v, key: "unavailable").default([]),
+        requests: 0,
+        answered: 0,
+        refusals: [],
+        chat_rules: judge.chat_rules(),
+        embedding_rules: judge.embedding_rules(),
+        counter: encodings.counter_for("gpt-4o")
+    )
+
+# What the API answers to `q`.
+#
+# - `b`: the book; it counts the request and its outcome.
+# - `q`: the request.
+function handle(@b: Book, q: http.Request) -> http.Response
+    b.requests @ b.requests + 1
+    id = f"req_standin_{b.requests}"
+    path = q.url.path
+
+    if http.value_of(q.headers, name: "authorization").default("") != "Bearer " + b.key || b.key == ""
+        return refuse(
+            @b,
+            status: 401,
+            kind: "invalid_request_error",
+            code: "invalid_api_key",
+            words: "Incorrect API key provided.",
+            id: id
+        )
+
+    if q.method == "GET" && path == "/v1/models"
+        b.answered @ b.answered + 1
+        return loopback.json_response(
+            200,
+            body: "{\"object\":\"list\",\"data\":[{\"id\":\"gpt-4o\",\"object\":\"model\",\"created\":1715367049,\"owned_by\":\"system\"}]}",
+            extra: [request_id(id)]
+        )
+
+    if q.method != "POST" || path != "/v1/chat/completions" && path != "/v1/embeddings"
+        return refuse(
+            @b,
+            status: 404,
+            kind: "invalid_request_error",
+            code: "unknown_url",
+            words: f"Unknown request URL: {q.method} {path}.",
+            id: id
+        )
+
+    match json.parse(bytes.to_text_lossy(q.body))
+        .ok body =>
+            if path == "/v1/embeddings"
+                return embeddings(@b, body: body, id: id)
+
+            return chat(@b, body: body, id: id)
+        .err e => return refuse(
+            @b,
+            status: 400,
+            kind: "invalid_request_error",
+            code: "invalid_json",
+            words: f"We could not parse the JSON body of your request: {e.msg}",
+            id: id
+        )
+
+# The answer to a chat's `body`.
+function chat(@b: Book, body: json.Value, id: str) -> http.Response
+    broken = judge.broken(b.chat_rules, body: body)
+
+    if broken.len() > 0
+        return refuse(@b, status: 400, kind: "invalid_request_error", code: "invalid_value", words: broken[0], id: id)
+
+    model = fields.text_or(body, key: "model", fallback: "").default("")
+
+    for m in b.unavailable
+        if m == model
+            return refuse(
+                @b,
+                status: 503,
+                kind: "server_error",
+                code: "model_overloaded",
+                words: f"The model {model} is overloaded with other requests.",
+                id: id
+            )
+
+    if b.faults.len() > 0 && b.faults[0] == RATE_LIMITED
+        b.faults @ b.faults.slice(from: 1, to: b.faults.len())
+        b.refusals @ b.refusals.push("429 rate_limit_exceeded")
+        error_body = error_json(
+            kind: "requests",
+            code: "rate_limit_exceeded",
+            words: "Rate limit reached for requests."
+        )
+        return loopback.json_response(
+            429,
+            body: error_body,
+            extra: [request_id(id), http.Header(name: "retry-after-ms", value: "250")]
+        )
+
+    b.answered @ b.answered + 1
+    return loopback.json_response(
+        200,
+        body: fields.compact(completion_json(b.counter, body: body, id: b.requests)),
+        extra: [request_id(id)]
+    )
+
+# The answer to an embedding's `body`: each input's local vector.
+function embeddings(@b: Book, body: json.Value, id: str) -> http.Response
+    broken = judge.broken(b.embedding_rules, body: body)
+
+    if broken.len() > 0
+        return refuse(@b, status: 400, kind: "invalid_request_error", code: "invalid_value", words: broken[0], id: id)
+
+    inputs: [str] @= []
+
+    match json.member(body, key: "input")
+        .ok v =>
+            match v
+                .text t => inputs @ inputs.push(t.v)
+                .list l =>
+                    for item in l.items
+                        inputs @ inputs.push(json.text_of(item).default(""))
+                .null_value | .boolean _ | .number _ | .object _ => _ = 0
+        .err _ => _ = 0
+
+    dimensions = fields.int_or(body, key: "dimensions", fallback: embedder.DEFAULT_DIMENSIONS).default(
+        embedder.DEFAULT_DIMENSIONS
+    )
+    data: [json.Value] @= []
+    tokens: i64 @= 0
+
+    for at in range(from: 0, to: inputs.len())
+        components: [json.Value] @= []
+
+        for x in embedder.embed_local(inputs[at], dimensions: dimensions)
+            components @ components.push(.number(v: to_f64(x)))
+
+        data @ data.push(
+            .object(members: {"object": .text(v: "embedding"), "index": fields.number(at), "embedding": .list(items: components)})
+        )
+        tokens @ tokens + encodings.count(b.counter, text: inputs[at])
+
+    b.answered @ b.answered + 1
+    usage: json.Value = .object(
+        members: {"prompt_tokens": fields.number(tokens), "total_tokens": fields.number(tokens)}
+    )
+    answer: json.Value = .object(
+        members: {"object": .text(v: "list"), "data": .list(items: data), "model": json.member(body, key: "model").default(.text(v: "")), "usage": usage}
+    )
+    return loopback.json_response(200, body: fields.compact(answer), extra: [request_id(id)])
+
+# The completion the script answers to `body`, as the API writes one.
+function completion_json(counter: encodings.Counter lent, body: json.Value, id: i64) -> json.Value
+    message: json.Value @= .null_value
+    finish: str @= "stop"
+    written: str @= ""
+
+    match script.reply_to(openai_wire.asked_of(body))
+        .text t =>
+            message @ .object(
+                members: {"role": .text(v: "assistant"), "content": .text(v: t.text), "refusal": .null_value}
+            )
+            written @ t.text
+        .call c =>
+            call: json.Value = .object(
+                members: {"id": .text(v: f"call_standin_{id}"), "type": .text(v: "function"), "function": .object(members: {"name": .text(v: c.tool), "arguments": .text(v: c.input)})}
+            )
+            message @ .object(
+                members: {"role": .text(v: "assistant"), "content": .null_value, "tool_calls": .list(items: [call]), "refusal": .null_value}
+            )
+            finish @ "tool_calls"
+            written @ c.input
+
+    prompt = openai_wire.input_tokens(counter, body: body)
+    completion = encodings.count(counter, text: written)
+    choice: json.Value = .object(
+        members: {"index": fields.number(0), "message": message, "finish_reason": .text(v: finish), "logprobs": .null_value}
+    )
+    usage: json.Value = .object(
+        members: {"prompt_tokens": fields.number(prompt), "completion_tokens": fields.number(completion), "total_tokens": fields.number(prompt + completion)}
+    )
+    return .object(
+        members: {"id": .text(v: f"chatcmpl-standin-{id}"), "object": .text(v: "chat.completion"), "created": fields.number(CREATED), "model": json.member(body, key: "model").default(.text(v: "")), "choices": .list(items: [choice]), "usage": usage}
+    )
+
+# The `x-request-id` field of a response.
+function request_id(id: str) -> http.Header
+    return http.Header(name: "x-request-id", value: id)
+
+# An error's body as the API writes one.
+function error_json(kind: str, code: str, words: str) -> str
+    return fields.compact(
+        .object(members: {"error": .object(members: {"message": .text(v: words), "type": .text(v: kind), "param": .null_value, "code": .text(v: code)})})
+    )
+
+# A refusal as the API writes one, counted in `b`.
+function refuse(@b: Book, status: i64, kind: str, code: str, words: str, id: str) -> http.Response
+    b.refusals @ b.refusals.push(f"{status} {code}")
+    return loopback.json_response(
+        status,
+        body: error_json(kind: kind, code: code, words: words),
+        extra: [request_id(id)]
+    )

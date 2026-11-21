@@ -1,0 +1,215 @@
+# The agent's tools served to other agents over the Model Context Protocol,
+# revision 2026-07-28, on standard streams, one JSON-RPC message a line
+# (`mcp`, `jsonrpc`): an editor or another assistant starts `agent serve` as a
+# child and calls the same tools the agent's own model calls.
+#
+# Besides its tools it offers each indexed document as a resource
+# (`doc:///install.md`), every file of the folder through one resource
+# template (`doc:///{+path}`), whose `path` it completes as a client types, and
+# one prompt, `answer_with_sources`, which retrieves the passages of a
+# question and writes the turn the agent itself would send.
+#
+# What `mcp.handle` can answer from the description alone it answers (the
+# lists, discovery, every refusal, a call whose arguments the tool's schema
+# refuses); the rest comes here, where the program calls its own function with
+# its own toolbox and answers. A server logs to its standard error, as the
+# revision asks, so its standard output holds the protocol alone.
+
+use <rebel>/io
+use <rebel>/jsonrpc
+use <rebel>/mcp
+use <rebel>/strings
+
+use index/corpus
+use retrieval/nearest
+use retrieval/prompting
+use tools/outcomes
+use tools/toolbox
+
+# The server's name, as discovery tells it.
+constant NAME: str
+    "agent"
+
+# The server's version.
+constant VERSION: str
+    "1.0.0"
+
+# The scheme of the documents' URIs.
+constant SCHEME: str
+    "doc:///"
+
+# The template every file of the folder is read through.
+constant TEMPLATE: str
+    "doc:///{+path}"
+
+# The prompt the server offers.
+constant PROMPT: str
+    "answer_with_sources"
+
+# The description of the agent's tools, documents and prompt that `box`
+# works on.
+#
+# - `box`: the toolbox.
+function server_of(box: toolbox.Toolbox lent) -> mcp.Server
+    s @= mcp.new_server(mcp.implementation(name: NAME, version: VERSION))
+    s.instructions @ "Searches and reads the documents of one folder. Call search_documents first; cite a passage by its file and headings."
+    tools: [mcp.Tool] @= []
+
+    for spec in toolbox.specs(box)
+        t @= mcp.new_tool(name: spec.name, description: spec.description, input_schema: spec.schema)
+        t.title @ spec.title
+        t.hints.title @ spec.title
+        t.hints.read_only @ spec.read_only
+        t.hints.destructive @ !spec.read_only
+        t.hints.idempotent @ spec.read_only
+        t.hints.open_world @ !spec.read_only
+        tools @ tools.push(t)
+
+    s.tools @ tools
+    resources: [mcp.Resource] @= []
+
+    for d in box.store.manifest.documents
+        r @= mcp.new_resource(uri: SCHEME + d.path, name: d.path)
+        r.mime_type @ mime_of(d.path)
+        r.size @ ok(d.size)
+        resources @ resources.push(r)
+
+    s.resources @ resources
+    template @= mcp.new_template(uri_template: TEMPLATE, name: "files")
+    template.description @ "Any file of the documents' folder, by its path."
+    s.templates @ [template]
+    s.prompts @ [
+        mcp.new_prompt(name: PROMPT, description: "The passages of a question, retrieved, before the question, as the agent asks its own model.", arguments: [mcp.PromptArgument(name: "question", title: "Question", description: "What to ask.", required: true)])
+    ]
+    s.completions @ true
+    return s
+
+# The media type a file is served as, by its name.
+function mime_of(path: str) -> str
+    lower = strings.to_lower(path)
+
+    if strings.has_suffix(s: lower, suffix: ".md") || strings.has_suffix(s: lower, suffix: ".markdown")
+        return "text/markdown"
+
+    if strings.has_suffix(s: lower, suffix: ".json")
+        return "application/json"
+
+    return "text/plain"
+
+# Serves `box` on the standard streams until its input ends, which is how a
+# client asks a server of standard streams to stop.
+#
+# - `box`: the toolbox.
+#
+# Fails where the input is past `jsonrpc.default_limits()` or cannot be read,
+# and where the output cannot be written.
+function serve_stdio(box: toolbox.Toolbox) -> ()?
+    s = server_of(box)
+    reader @= io.reader(io.stdin())
+
+    while true
+        match mcp.read_request(@reader, s: s)
+            .ok asked =>
+                match answer_of(s, box: box, asked: asked)
+                    .ok m  => jsonrpc.write_message(io.stdout(), m: m, framing: .lines)?
+                    .err _ => _ = 0
+            .err e =>
+                if e.code == jsonrpc.CLOSED
+                    return ok()
+
+                return fail(code: e.code, msg: e.msg)
+
+# The message that answers `asked`, or nothing where it asks no answer: a
+# notification, an answer, a cancellation of a call this server has finished,
+# since it answers each call before reading the next.
+#
+# - `s`: the server's description.
+# - `box`: the toolbox.
+# - `asked`: what one message asks, as `mcp.read_request` read it.
+#
+# Fails `not_found` where nothing is to be written.
+function answer_of(s: mcp.Server, box: toolbox.Toolbox lent, asked: mcp.Request) -> jsonrpc.Message?
+    match asked
+        .answered a => return ok(a.answer)
+        .call_tool c => return ok(
+            mcp.answer_tool(s, call: c.call, result: result_of(toolbox.run(box, name: c.call.name, input: c.call.arguments)))
+        )
+        .read_resource r => return ok(answer_read(s, box: box, read: r.read))
+        .get_prompt g    => return ok(answer_prompt(s, box: box, get: g.get))
+        .complete c => return ok(
+            mcp.answer_completion(s, completion: c.completion, values: completions_of(box, completion: c.completion))
+        )
+        .listen l                            => return ok(mcp.acknowledge(s, listen: l.listen))
+        .respond _ | .cancelled _ | .ignored => return fail(code: mcp.NOT_FOUND, msg: "nothing to answer")
+
+# A tool's outcome as MCP's result: a failure the model can correct is a
+# result marked an error, never a protocol error.
+function result_of(o: outcomes.Outcome) -> mcp.ToolResult
+    if o.is_error
+        return mcp.error_result(o.text)
+
+    return mcp.text_result(o.text)
+
+# The answer to a resource read: the file the URI names, a listed document or
+# one the template matched, or `INVALID_PARAMS` naming it where it is no file
+# of the folder.
+function answer_read(s: mcp.Server, box: toolbox.Toolbox lent, read: mcp.ResourceRead) -> jsonrpc.Message
+    relative = if read.template == ""
+        strings.trim_prefix(s: read.uri, prefix: SCHEME)
+    else
+        read.values["path"].default("")
+
+    match corpus.read_text(root: box.root, relative: relative)
+        .ok text => return mcp.answer_resource(
+            s,
+            read: read,
+            contents: [.text(uri: read.uri, mime_type: mime_of(relative), text: text)]
+        )
+        .err _ => return jsonrpc.answer_error(
+            read.id,
+            code: jsonrpc.INVALID_PARAMS,
+            message: f"Resource not found: {read.uri}"
+        )
+
+# The answer to the prompt `answer_with_sources`: the passages of its
+# question, retrieved, and the turn the agent would send its own model.
+function answer_prompt(s: mcp.Server, box: toolbox.Toolbox lent, get: mcp.PromptGet) -> jsonrpc.Message
+    question = get.arguments["question"].default("")
+
+    match nearest.search(box.store, e: box.embedder, question: question, limit: 4)
+        .ok hits =>
+            text = prompting.INSTRUCTIONS + "\n\n" + prompting.user_turn(question, hits: hits)
+            result = mcp.PromptResult(
+                description: f"{hits.len()} passages, then the question",
+                messages: [mcp.PromptMessage(role: "user", content: mcp.text_content(text))]
+            )
+            return mcp.answer_prompt(s, get: get, result: result)
+        .err e => return jsonrpc.answer_error(
+            get.id,
+            code: jsonrpc.INTERNAL_ERROR,
+            message: f"the passages could not be retrieved: {e.msg}"
+        )
+
+# The values a client may complete an argument with: the folder's files whose
+# path begins with what was typed, for the template's `path`; none for any
+# other argument.
+function completions_of(box: toolbox.Toolbox lent, completion: mcp.Completion) -> [str]
+    out: [str] @= []
+
+    if completion.kind != "ref/resource" || completion.argument != "path"
+        return out
+
+    match corpus.list_files(box.root)
+        .ok listed =>
+            for l in listed
+                if strings.has_prefix(s: l.path, prefix: completion.value)
+                    out @ out.push(l.path)
+        .err _ => _ = 0
+
+    return out
+
+test "mime_of: Markdown, JSON and the rest as text"
+    assert mime_of("a.MD") == "text/markdown" && mime_of("b.json") == "application/json" && mime_of("faq.txt") == "text/plain"
+
+test "result_of: an outcome refused is a result marked an error"
+    assert result_of(outcomes.refused("no")).is_error && !result_of(outcomes.done("yes")).is_error

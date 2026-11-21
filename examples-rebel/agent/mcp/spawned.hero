@@ -1,0 +1,47 @@
+# An MCP server of standard streams started as a child and spoken to as its
+# client: the child's input and output are pipes (`process.start`), the client
+# writes a request a line on one and reads the answers on the other
+# (`mcp.stream_client`), and closing the child's input is how the revision
+# asks such a server to stop. The child's standard error stays the agent's, so
+# what a server logs reaches the person running the agent.
+
+use <rebel>/mcp
+use <rebel>/process
+
+use mcp/server
+
+# A server running as a child, and the agent's client of it.
+record Link
+    # The child; `stop` waits for it.
+    child: process.Child
+    # The client, over the child's pipes.
+    client: mcp.Client
+
+# The server `program` runs with `arguments`, started, and a client of it that
+# declares no capability.
+#
+# - `program`: the server's program, a path or a name in the folders of PATH.
+# - `arguments`: its arguments, each reaching it whole.
+#
+# Fails as `process.start` fails: `not_found` where there is no such program.
+function start(program: str, arguments: [str]) -> Link?
+    asked = process.with_output(
+        process.with_input(process.command(program, arguments: arguments), from: .pipe),
+        to: .pipe
+    )
+    child = process.start(asked)?
+    client = mcp.stream_client(
+        reading: child.output,
+        writing: child.input,
+        info: mcp.implementation(name: server.NAME + "-client", version: server.VERSION)
+    )
+    return ok(Link(child: child, client: client))
+
+# Asks the server of `link` to stop, by the end of its input, and waits for
+# it: how it ended.
+#
+# - `link`: the link; its child is waited for and its pipes closed.
+#
+# Fails as `process.wait` fails.
+function stop(@link: Link) -> process.Status?
+    return process.wait(@link.child)
