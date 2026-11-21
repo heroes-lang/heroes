@@ -814,8 +814,9 @@ typedef struct {
 #else
     int fd;
 #endif
-    /* When every read and write ends, on `hero_ipc_now`'s clock; 0 for no
-     * deadline. Moved by `hero_ipc_set_deadline` while a read waits. */
+    /* When every read and write ends, on `hero_ipc_now`'s clock;
+     * `HERO_IPC_NEVER` for no deadline, which a new channel starts with.
+     * Moved by `hero_ipc_set_deadline` while a read waits. */
     _Atomic int64_t deadline;
     /* Who the peer is, read once when the connection is made and never
      * written after, since Darwin answers no peer once it has closed its
@@ -828,11 +829,12 @@ typedef struct {
     int64_t peer_os;
 } hero_ipc_channel;
 
-/* The bound a channel's wait has now: its deadline, or none. */
+/* The bound a channel's wait has now: its deadline, `HERO_IPC_NEVER` for
+ * none. No value of the clock is read as none, so a deadline of 0 ms, set
+ * at a `now` of any value, is a time already passed (since 2026-11-21,
+ * M-rebel-library step 88a). */
 static int64_t hero_ipc_channel_until(hero_ipc_channel *c) {
-    int64_t deadline = atomic_load(&c->deadline);
-
-    return deadline == 0 ? HERO_IPC_NEVER : deadline;
+    return atomic_load(&c->deadline);
 }
 
 #if defined(_WIN32)
@@ -1172,7 +1174,7 @@ static hero_ipc_channel *hero_ipc_channel_new(void) {
         return NULL;
     }
     memset(c, 0, sizeof *c);
-    atomic_init(&c->deadline, 0);
+    atomic_init(&c->deadline, HERO_IPC_NEVER);
     return c;
 }
 
@@ -2163,11 +2165,7 @@ int64_t hero_ipc_listener_close(hero_ipc_listener *l) {
 int64_t hero_ipc_set_deadline(hero_stream *s, int64_t ms) {
     int64_t until = 0;
 
-    if (ms < 0) {
-        hero_ipc_fail(HERO_IPC_INVALID, 0);
-        return -1;
-    }
-    if (ms > 0 && !hero_ipc_deadline(ms, &until)) {
+    if (!hero_ipc_deadline(ms, &until)) {
         return -1;
     }
     hero_ipc_channel *c = hero_ipc_channel_held(s);

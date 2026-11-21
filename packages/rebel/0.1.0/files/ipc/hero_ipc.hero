@@ -13,6 +13,7 @@
 # ended by `hero_stream_close`, which the floor `io/hero_stream` binds.
 
 use io/hero_stream
+use threads/hero_os as threads_floor
 
 extern "hero_ipc.h"
     # A listening channel the layer holds open. Each of the four is a handle
@@ -124,7 +125,12 @@ function close_listener(@l: Listener) -> i64
     return hero_ipc_listener_close(l)
 
 # 0 once every read and write of the channel `s` ends by `ms` milliseconds
-# from now, 0 taking the deadline away; or -1.
+# from now, `HERO_IPC_FOREVER` taking the deadline away and 0 a deadline
+# already passed; or -1, `HERO_IPC_INVALID` below -1.
+#
+# - `s`: a channel `accept` or `connect` answered.
+# - `ms`: the milliseconds from now; 0 ends at once a read or a write that
+#   would wait and spares one that need not, `HERO_IPC_FOREVER` is no limit.
 function set_deadline(s: hero_stream.Stream, ms: i64) -> i64
     return hero_ipc_set_deadline(s, ms: ms)
 
@@ -470,7 +476,7 @@ test "accept: within 0 and within 50 time out, -2 is refused, and no listener is
     assert nothing == nullptr
     assert last_error() == HERO_IPC_NOT_OPEN
 
-test "set_deadline: a read past it times out, -1 is refused, and a stream of another member is no channel"
+test "set_deadline: a read past it times out, 0 spares a byte there and ends the next read at once, FOREVER takes it away, -2 is refused, and a stream of another member is no channel"
     path = f"build/{test_name("late")}.sock"
     l @= listen(path, space: HERO_IPC_SPACE_PATH, perm: 0o600)
     client @= connect(path, space: HERO_IPC_SPACE_PATH, within_ms: 1000)
@@ -479,8 +485,17 @@ test "set_deadline: a read past it times out, -1 is refused, and a stream of ano
     got: [u8] @= [0]
     assert hero_stream.read(server, @got, n: 1) == -1
     assert hero_stream.last_error() == hero_stream.HERO_STREAM_TIMED_OUT
+    sent: [u8] @= [7]
+    assert hero_stream.write(client, @sent, n: 1) == 1
     assert set_deadline(server, ms: 0) == 0
-    assert set_deadline(server, ms: -1) == -1
+    assert hero_stream.read(server, @got, n: 1) == 1
+    assert got[0] == 7
+    assert hero_stream.read(server, @got, n: 1) == -1
+    assert hero_stream.last_error() == hero_stream.HERO_STREAM_TIMED_OUT
+    assert set_deadline(server, ms: HERO_IPC_FOREVER) == 0
+    assert hero_stream.write(client, @sent, n: 1) == 1
+    assert hero_stream.read(server, @got, n: 1) == 1
+    assert set_deadline(server, ms: -2) == -1
     assert last_error() == HERO_IPC_INVALID
     reader: hero_stream.Stream @= nullptr
     writer: hero_stream.Stream @= nullptr
@@ -490,6 +505,61 @@ test "set_deadline: a read past it times out, -1 is refused, and a stream of ano
     assert hero_stream.close(@reader) == 0
     assert hero_stream.close(@writer) == 0
     assert hero_stream.close(@client) == 0
+    assert hero_stream.close(@server) == 0
+    assert close_listener(@l) == 0
+
+# The far end of the test of the time 0 and `HERO_IPC_FOREVER`, on a thread
+# of its own: it connects to the listener at `path`, waits 400 ms on its own
+# channel for a byte that never comes, its own deadline ending that wait,
+# then writes one byte, 42, and closes. "" where every step held, else the
+# step that did not.
+#
+# - `path`: the listener's socket file.
+function test_send_late(path: str) -> str
+    s @= connect(path, space: HERO_IPC_SPACE_PATH, within_ms: 1000)
+
+    if s == nullptr
+        return "connect"
+    answer: str @= ""
+    quiet: [u8] @= [0]
+
+    if set_deadline(s, ms: 400) != 0
+        answer @ "set_deadline"
+    else if hero_stream.read(s, @quiet, n: 1) != -1 || hero_stream.last_error() != hero_stream.HERO_STREAM_TIMED_OUT
+        answer @ "wait"
+    else
+        late: [u8] @= [42]
+
+        if hero_stream.write(s, @late, n: 1) != 1
+            answer @ "write"
+
+    if hero_stream.close(@s) != 0 && answer == ""
+        answer @ "close"
+    return answer
+
+# THE TIME 0 AND `HERO_IPC_FOREVER` (2026-11-21, M-rebel-library step 88a):
+# 0 is a deadline already passed, so a read with nothing come ends at once,
+# well before the byte the far end writes 400 ms after it connects;
+# `HERO_IPC_FOREVER` takes the deadline away, and the next read waits for
+# that byte.
+test "set_deadline: 0 ends a wait at once, before a byte written 400 ms later, and HERO_IPC_FOREVER waits for that byte"
+    path = f"build/{test_name("zero")}.sock"
+    l @= listen(path, space: HERO_IPC_SPACE_PATH, perm: 0o600)
+    assert l != nullptr
+    why: i64 @= 0
+    far = threads_floor.start_text(test_send_late, arg: path, bytes: 0, why: @why)
+    assert far >= 0
+    server @= accept(l, within_ms: HERO_IPC_FOREVER)
+    assert server != nullptr
+    got: [u8] @= [0]
+    assert set_deadline(server, ms: 0) == 0
+    assert hero_stream.read(server, @got, n: 1) == -1
+    assert hero_stream.last_error() == hero_stream.HERO_STREAM_TIMED_OUT
+    assert set_deadline(server, ms: HERO_IPC_FOREVER) == 0
+    assert hero_stream.read(server, @got, n: 1) == 1
+    assert got[0] == 42
+    assert threads_floor.finish_text(far) == ""
+    assert hero_stream.read(server, @got, n: 1) == 0
     assert hero_stream.close(@server) == 0
     assert close_listener(@l) == 0
 

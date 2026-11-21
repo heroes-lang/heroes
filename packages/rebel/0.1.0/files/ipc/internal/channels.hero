@@ -113,7 +113,10 @@ function close(@handle: hero_ipc.Listener, where: str) -> ()?
     handle @ nullptr
     return failure.done(answer, asked: asked)
 
-# Makes every read and write of the channel `s` end by `ms` from now.
+# Makes every read and write of the channel `s` end by `ms` from now, the
+# face's 0 taking the deadline away: the floor's `HERO_IPC_FOREVER`, since
+# the floor's 0 is a deadline already passed (2026-11-21, M-rebel-library
+# step 88a).
 function set_deadline(s: io.Stream, ms: i64) -> ()?
     asked = f"setting a deadline of {ms} ms on {s.name}"
 
@@ -122,7 +125,11 @@ function set_deadline(s: io.Stream, ms: i64) -> ()?
 
     if s.handle == nullptr
         return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
-    return failure.done(hero_ipc.set_deadline(s.handle, ms: ms), asked: asked)
+    floor_ms: i64 @= ms
+
+    if ms == 0
+        floor_ms @ hero_ipc.HERO_IPC_FOREVER
+    return failure.done(hero_ipc.set_deadline(s.handle, ms: floor_ms), asked: asked)
 
 # Closes the writing side of the channel `s`.
 function close_write(s: io.Stream) -> ()?

@@ -186,9 +186,14 @@ int64_t hero_ipc_listener_close(hero_ipc_listener *l);
 
 /* Makes every later and waiting read and write of the channel `s` end by
  * `ms` milliseconds from now, failing the stream's `HERO_STREAM_TIMED_OUT`;
- * 0 takes the deadline away. 0, or -1: `HERO_IPC_INVALID` where `ms` is
- * below 0 or `s` is no channel of this member, `HERO_IPC_NOT_OPEN` where it
- * is no open stream. */
+ * `HERO_IPC_FOREVER` takes the deadline away, and 0 is a deadline already
+ * passed, so a read or a write that would wait ends at once and one that
+ * need not wait is spared, as `within_ms`'s 0 tries once. 0, or -1:
+ * `HERO_IPC_INVALID` where `ms` is below 0 and not `HERO_IPC_FOREVER` or
+ * `s` is no channel of this member, `HERO_IPC_NOT_OPEN` where it is no open
+ * stream. Since 2026-11-21 (M-rebel-library, step 88a): until then 0 took
+ * the deadline away and -1 was refused, so no value said "do not wait",
+ * the shape `hero_net.h`'s deadlines left on 2026-11-20. */
 int64_t hero_ipc_set_deadline(hero_stream *s, int64_t ms);
 
 /* Closes the writing side of the channel `s`, so its peer reads its end
