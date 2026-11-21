@@ -67,6 +67,21 @@ and renames the second's `hash_reduce` before it includes it. Nothing in
 these files is edited; an upgrade replaces the five and this page, and a new
 clash between the two is a compile error.
 
+The member checks an Ed25519 signature by RFC 8032 § 5.1.7's equation
+without the cofactor, `[S]B = R + [k]A`, which OpenSSL checks on Linux,
+and not by `crypto_ed25519_check`, which checks it multiplied by 8 and so
+holds signatures with a part of small order that OpenSSL refuses (defect
+2642). No public function of these files computes that equation, so the
+member's `hero_crypto_ed25519_holds` computes it with the point arithmetic
+`monocypher.c` defines for its own check and that the include brings into
+the member's unit: `ge_frombytes_neg_vartime`, `ge_double`, `ge_cache`,
+`ge_add`, `ge_sub`, `ge_madd`, `ge_msub`, `ge_zero`, `ge_tobytes`,
+`slide_init`, `slide_step` and the table `b_window`, whose eight entries an
+assertion holds to the window's width. An upgrade that renames one of them
+does not compile, and one that changes what they compute fails
+`crypto/keypairs`' known answers, so an upgrade re-reads
+`crypto_eddsa_check_equation` beside that function.
+
 These files are named in `runtime/runtime.c`'s list, so the runtime's key
 covers them and a copy of the runtime made from that list holds them; they
 stand outside `platform/`, so the layer does not archive them as members.

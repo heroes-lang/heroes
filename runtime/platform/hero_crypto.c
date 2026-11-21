@@ -69,7 +69,11 @@
  * encoding RFC 8032 § 5.1.3 does not decode, and Monocypher and OpenSSL
  * alike an Ed25519 key of such an encoding, so the common part reads a
  * signature's one form, and the key's, before any arm sees them
- * (`hero_crypto_signature_formed`, defect 2641).
+ * (`hero_crypto_signature_formed`, defect 2641). And Monocypher's own
+ * Ed25519 check multiplies RFC 8032 § 5.1.7's equation by the cofactor,
+ * where OpenSSL checks it without, so the Apple arm computes OpenSSL's
+ * equation over Monocypher's arithmetic (`hero_crypto_ed25519_holds`,
+ * defect 2642).
  *
  * THREE ARMS, ONE SHAPE. The common part (the last failure, the table of
  * keys, THE FORMS, the checks of every argument) is written once; each arm
@@ -94,9 +98,11 @@
  * Written from the platforms' documentation: Apple's headers for the
  * Security framework and CommonCrypto, OpenSSL's manual pages, the Win32
  * reference for CNG; RFC 5208, 5280, 5915, 5958, 8017 and 8410 for the
- * forms; Monocypher's manual pages for the five functions the Apple arm
- * calls, whose source is compiled in as released, not one byte edited
- * (`runtime/vendor/monocypher/README.md`); no other library's source.
+ * forms; Monocypher's manual pages for the public functions the Apple arm
+ * calls, and its source for the point arithmetic its Ed25519 check reaches
+ * by name (`hero_crypto_ed25519_holds`), compiled in as released, not one
+ * byte edited (`runtime/vendor/monocypher/README.md`); no other library's
+ * source.
  */
 
 #include "hero_crypto.h"
@@ -1988,7 +1994,11 @@ int64_t hero_crypto_decrypt(hero_crypto_key *k, int64_t scheme, const void *data
  * (`runtime/vendor/monocypher/README.md`; decision 2594): `SecKey` takes no
  * Curve25519 key, and CryptoKit's Ed25519 signs differently every time, so
  * it gives neither RFC 8032's signatures nor the deterministic one the face
- * promises (panel 253's R3).
+ * promises (panel 253's R3). A signature is checked by RFC 8032 § 5.1.7's
+ * equation without the cofactor, as the Linux arm's OpenSSL checks it,
+ * computed here over Monocypher's point arithmetic rather than by its
+ * `crypto_ed25519_check`, which multiplies by the cofactor
+ * (`hero_crypto_ed25519_holds`, defect 2642).
  * Its two files are compiled inside this arm, every function and object of
  * theirs given internal linkage, so this object exports none of their
  * names and a program binding Monocypher or libsodium itself meets no second
@@ -2421,6 +2431,125 @@ static int64_t hero_crypto_arm_sign(const hero_crypto_held *held, int64_t scheme
     return hero_crypto_cf_give(signature, out, most);
 }
 
+/* The widths of the sliding windows `hero_crypto_ed25519_holds` reads its
+ * two scalars by, Monocypher's own for `crypto_eddsa_check_equation`: the
+ * key's odd multiples are this function's table, two of them, and B's are
+ * Monocypher's `b_window`, eight, whose size the assertion holds to the
+ * width. */
+#define HERO_CRYPTO_ED25519_KEY_WIDTH 3
+#define HERO_CRYPTO_ED25519_BASE_WIDTH 5
+_Static_assert(sizeof b_window / sizeof b_window[0] == 1 << (HERO_CRYPTO_ED25519_BASE_WIDTH - 2), "Monocypher's table of B's odd multiples is as wide as the base's window");
+
+/* Whether `signature` is `public_key`'s signature of `message` by RFC 8032
+ * § 5.1.7's equation without the cofactor, [S]B = R + [k]A, with k the
+ * SHA-512 of R, the key's 32 bytes and the message, modulo the group's
+ * order L: [S]B - [k]A is computed, encoded, and compared with R's 32
+ * bytes, which is how OpenSSL, the Linux arm, checks it (OpenSSL 3.5.7's
+ * `ossl_ed25519_verify`, read 2026-11-21: S below L, the key decoded and
+ * negated, k reduced, [k](-A) + [S]B encoded and compared byte for byte).
+ *
+ * § 5.1.7 lets a verifier check that equation or the one multiplied by
+ * the cofactor 8, [8][S]B = [8]R + [8][k]A, which Monocypher's own
+ * `crypto_ed25519_check` checks. The two differ where R or the key has a
+ * part of small order, which the multiplication by 8 erases: Monocypher
+ * held signatures that OpenSSL and CryptoKit refuse, an R with the point
+ * of order 2 added under an honest key and most messages under the key
+ * whose 32 bytes are zero, a point of order 4 (defect 2642). The face
+ * promises one answer for one signature on every platform, so this arm
+ * answers OpenSSL's.
+ *
+ * The public functions `monocypher.h` declares do not compute it:
+ * `crypto_eddsa_check_equation` multiplies by 8 itself,
+ * `crypto_eddsa_scalarbase` multiplies B alone, and the two that multiply
+ * a point the caller gives, `crypto_x25519` and `crypto_x25519_inverse`,
+ * make the scalar a multiple of 8 first, which erases the part of small
+ * order, and answer a Montgomery u, which has no sign. So this is `crypto_eddsa_check_equation`'s own computation
+ * of [S]B - [k]A, by the point arithmetic of Monocypher 4.0.3 that its
+ * source, included above, brings into this unit, its last step, R added
+ * and the sum multiplied by 8, replaced by the comparison. An upgrade that
+ * renames one of those functions does not compile here, and one that
+ * changes what they compute fails the package's known answers
+ * (`crypto/keypairs/internal/known`).
+ *
+ * The common part has checked the form (`hero_crypto_signature_formed`):
+ * S below L, which the windows read as a number below 2^253, and R and
+ * the key encodings § 5.1.3 decodes. Every value here is public, so the
+ * time it takes may depend on them. */
+static bool hero_crypto_ed25519_holds(const unsigned char signature[64], const unsigned char public_key[32], const unsigned char *message, size_t count) {
+    const unsigned char *s = signature + 32;
+    crypto_sha512_ctx hashing;
+    unsigned char hashed[64];
+    unsigned char k[32];
+    unsigned char computed[32];
+    ge minus_a;
+    ge sum;
+    ge_cached multiples[1 << (HERO_CRYPTO_ED25519_KEY_WIDTH - 2)];
+    slide_ctx k_slide;
+    slide_ctx s_slide;
+    int bit;
+
+    /* -A, refused where the key's y gives no point on the curve. */
+    if (ge_frombytes_neg_vartime(&minus_a, public_key) != 0) {
+        return false;
+    }
+    crypto_sha512_init(&hashing);
+    crypto_sha512_update(&hashing, signature, 32);
+    crypto_sha512_update(&hashing, public_key, 32);
+    crypto_sha512_update(&hashing, message, count);
+    crypto_sha512_final(&hashing, hashed);
+    crypto_eddsa_reduce(k, hashed);
+
+    /* -A, -3A: the odd multiples a digit of k's window adds or takes. */
+    {
+        ge twice;
+        ge scratch;
+        size_t i;
+
+        ge_double(&twice, &minus_a, &scratch);
+        ge_cache(&multiples[0], &minus_a);
+        for (i = 1; i < sizeof multiples / sizeof multiples[0]; i++) {
+            ge_add(&scratch, &twice, &multiples[i - 1]);
+            ge_cache(&multiples[i], &scratch);
+        }
+    }
+
+    /* [S]B + [k](-A), both scalars read from their highest bit down in one
+     * ladder: double, then add each scalar's digit where its window ends. */
+    slide_init(&k_slide, k);
+    slide_init(&s_slide, s);
+    bit = k_slide.next_check > s_slide.next_check ? k_slide.next_check : s_slide.next_check;
+    ge_zero(&sum);
+    while (bit >= 0) {
+        ge scratch;
+        fe t1;
+        fe t2;
+        int k_digit;
+        int s_digit;
+
+        ge_double(&sum, &sum, &scratch);
+        k_digit = slide_step(&k_slide, HERO_CRYPTO_ED25519_KEY_WIDTH, bit, k);
+        s_digit = slide_step(&s_slide, HERO_CRYPTO_ED25519_BASE_WIDTH, bit, s);
+        if (k_digit > 0) {
+            ge_add(&sum, &sum, &multiples[k_digit / 2]);
+        }
+        if (k_digit < 0) {
+            ge_sub(&sum, &sum, &multiples[-k_digit / 2]);
+        }
+        if (s_digit > 0) {
+            ge_madd(&sum, &sum, b_window + s_digit / 2, t1, t2);
+        }
+        if (s_digit < 0) {
+            ge_msub(&sum, &sum, b_window + -s_digit / 2, t1, t2);
+        }
+        bit--;
+    }
+
+    /* The sum's one encoding, which equals R's bytes exactly where the sum
+     * is R's point, since the common part holds R to its one encoding. */
+    ge_tobytes(computed, &sum);
+    return crypto_verify32(computed, signature) == 0;
+}
+
 static int hero_crypto_arm_verify(const hero_crypto_held *held, int64_t scheme, const unsigned char *message, size_t count, const unsigned char *signature, size_t signature_count) {
     SecKeyRef key;
     CFDataRef lent;
@@ -2432,9 +2561,10 @@ static int hero_crypto_arm_verify(const hero_crypto_held *held, int64_t scheme, 
         /* The common part has checked the form: 64 bytes, R and the key
          * encodings RFC 8032 § 5.1.3 decodes and S below the group's order
          * (`hero_crypto_signature_formed`), since Monocypher reduces y
-         * modulo p and takes either sign of a zero x in both. */
+         * modulo p and takes either sign of a zero x in both; the equation
+         * is the one without the cofactor, OpenSSL's. */
         (void)signature_count;
-        return crypto_ed25519_check(signature, held->curve_public, message, count) == 0 ? 1 : 0;
+        return hero_crypto_ed25519_holds(signature, held->curve_public, message, count) ? 1 : 0;
     }
     key = held->is_public ? (SecKeyRef)CFRetain(held->key) : SecKeyCopyPublicKey(held->key);
     lent = hero_crypto_cf_lend(message, count);
