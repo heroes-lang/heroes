@@ -1,0 +1,192 @@
+# One row of the table, and the deterministic generator that writes five
+# thousand of them.
+#
+# **The numbers come from a linear congruential generator, so the file is a
+# fact and not a fixture.** The same seed gives the same five thousand rows on
+# every machine and in every configuration, which is what lets the expected
+# output hold the answers: a random source would make this program
+# untestable, and a committed 5,000-line CSV would make the repository carry
+# data nobody can check. The recurrence is `x = (a * x + c) mod m`, with
+# glibc's constants, and the modulus is chosen so that `a * x` cannot overflow
+# an `i64`: `1103515245 * 2147483647` is 2.4e18 against `i64`'s 9.2e18
+# ceiling, and an overflow here would abort rather than wrap (spec § 7).
+# Rebel's `random` is a generator of its own, and the rows must be these.
+
+use <rebel>/csv
+
+# The generator's multiplier, glibc's.
+constant MULTIPLIER: i64
+    1103515245
+
+# The generator's increment, glibc's.
+constant INCREMENT: i64
+    12345
+
+# The generator's modulus, 2 to the 31.
+constant MODULUS: i64
+    2147483648
+
+# The seed. Written down rather than derived, because the whole point is that
+# this file is the same everywhere.
+constant SEED: i64
+    20260903
+
+# How many rows the table holds: the engine sorts and filters this array
+# whole, several times per query.
+constant ROWS: i64
+    5000
+
+# One player of the table.
+record Row
+    # Its number, from 1.
+    id: i64
+    # Its team, one of `TEAMS`.
+    team: str
+    # `p` and its number.
+    name: str
+    # Whether it plays.
+    active: bool
+    # Its score, 0 to 999.
+    score: i64
+    # Its rate, 0 to 99.99, in hundredths.
+    rate: f64
+
+# A team and its region, the small side of the join.
+record Team
+    # The team's name.
+    team: str
+    # Where it plays.
+    region: str
+
+# The eight teams, in the order the generator picks them.
+constant TEAMS: [str]
+    [
+        "argo"
+        "borea"
+        "cetra"
+        "delta"
+        "eolia"
+        "fauno"
+        "gerbo"
+        "halo"
+    ]
+
+# Each team's region, in the order of `TEAMS`.
+constant REGIONS: [str]
+    [
+        "north"
+        "north"
+        "south"
+        "south"
+        "east"
+        "east"
+        "west"
+        "west"
+    ]
+
+# The team table as values: two arrays walked in step, which is what the
+# language gives without a tuple.
+function teams() -> [Team]
+    out: [Team] @= []
+
+    for at in range(from: 0, to: TEAMS.len())
+        out @ out.push(Team(team: TEAMS[at], region: REGIONS[at]))
+
+    return out
+
+# The next number in the sequence: the one place an overflow could hide, and
+# the module's comment is the argument that it cannot.
+#
+# - `seed`: the number before, 0 to `MODULUS` less one.
+function stepped(seed: i64) -> i64
+    return (MULTIPLIER * seed + INCREMENT) % MODULUS
+
+# The part of a seed worth using. The low bits of a linear congruential
+# generator with a power-of-two modulus have short periods of their own, the
+# lowest three cycling every eight steps (Knuth, TAOCP vol. 2, § 3.2.1.1), so
+# a team read off them would leave whole teams out; sixteen bits down is the
+# part with the full period.
+#
+# - `seed`: a number of the sequence.
+function spread(seed: i64) -> i64
+    return seed >> 16
+
+# The whole table, generated. The seed is threaded by hand rather than kept in
+# a cell, because there are no mutable globals (spec § 4), and a generator
+# whose output depended on who called it first would be no fact.
+#
+# - `rows`: how many rows, zero or more.
+function generated(rows: i64) -> [Row]
+    out: [Row] @= []
+    seed: i64 @= SEED
+
+    for id in range(from: 1, to: rows + 1)
+        seed @ stepped(seed)
+        team = TEAMS[spread(seed) % TEAMS.len()]
+        seed @ stepped(seed)
+        score = spread(seed) % 1000
+        seed @ stepped(seed)
+        active = spread(seed) % 3 != 0
+        seed @ stepped(seed)
+        rate = to_f64(spread(seed) % 10000) / 100.0
+        out @ out.push(
+            Row(id: id, team: team, name: "p" + id.to_str(), active: active, score: score, rate: rate)
+        )
+
+    return out
+
+## Writing the table out
+
+# The table's first line, the names of its columns.
+constant HEADER: [str]
+    ["id", "team", "name", "active", "score", "rate"]
+
+# One row as its six fields. `rate` is written through `to_str`, which writes
+# the digits that read back as the same value (spec § 11); the reader takes
+# it back, and the round trip is asserted rather than assumed.
+#
+# - `r`: the row.
+function fields_of(r: Row) -> [str]
+    return [r.id.to_str(), r.team, r.name, r.active.to_str(), r.score.to_str(), r.rate.to_str()]
+
+# How the table is written: RFC 4180's CSV, each row ended by a line feed.
+function write_options() -> csv.WriteOptions
+    o: csv.WriteOptions @= csv.minimal_write_options()
+    o.line_end @ "\n"
+    return o
+
+# The whole table as CSV text, its header first.
+#
+# - `rows`: the rows.
+function written(rows: [Row]) -> str
+    lines: [[str]] @= [HEADER]
+
+    for r in rows
+        lines @ lines.push(fields_of(r))
+
+    return csv.format_with(lines, write_options())
+
+test "the generator is a fact: the same seed gives the same first rows"
+    made = generated(4)
+    assert made.len() == 4
+    assert made[0].id == 1
+    assert made[0].name == "p1"
+    assert made[3].id == 4
+    assert generated(4) == made
+
+test "every generated field is inside the range its column promises"
+    for r in generated(200)
+        assert r.score >= 0 && r.score < 1000
+        assert r.rate >= 0.0 && r.rate < 100.0
+        assert r.name == "p" + r.id.to_str()
+        assert r.team.len() > 0
+
+test "a row is written as six comma-separated fields, no field quoted"
+    r = Row(id: 7, team: "argo", name: "p7", active: true, score: 42, rate: 1.5)
+    assert written([r]) == "id,team,name,active,score,rate\n7,argo,p7,true,42,1.5\n"
+
+test "the team table pairs eight teams with their regions"
+    ts = teams()
+    assert ts.len() == 8
+    assert ts[0] == Team(team: "argo", region: "north")
+    assert ts[7] == Team(team: "halo", region: "west")

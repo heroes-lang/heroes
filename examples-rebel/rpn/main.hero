@@ -1,0 +1,184 @@
+# The twin of `examples/rpn/`: Reverse Polish evaluated on a stack, written
+# with Rebel. It prints byte for byte what `examples/rpn/` prints, so that
+# program's `main.expected` is this one's test too.
+#
+#     heroes run examples-rebel/rpn/main.hero
+#
+# What Rebel does here that `examples/rpn/` writes for itself:
+#
+# - `strings.words` cuts an expression into its words between runs of
+#   Unicode's white space, in place of that program's `strings.hero`
+#   (`fields`, `space_at`);
+# - `numbers.parse_int` reads a signed decimal integer and refuses any other
+#   text and one past an `i64`, in place of its `numbers.hero` (`atoi`, its
+#   two cut-off constants and `quoted`).
+#
+# What stays this program's own is the stack: the three arity mistakes, none
+# of them a syntax error, and the check before a division, since integer
+# division by zero aborts (spec § 7) and an evaluator reading its input must
+# refuse a typed zero rather than end the process.
+
+use <rebel>/numbers
+use <rebel>/strings
+
+# One word of an expression: a number, or one of the four operators.
+variant Token
+    # An integer the expression writes.
+    number
+        # Its value.
+        value: i64
+    # `+`.
+    plus
+    # `-` standing alone; a `-` with digits after it is a number.
+    minus
+    # `*`.
+    times
+    # `/`, which truncates toward zero.
+    divide
+
+# The tokens of `text`, one for each of its words.
+#
+# - `text`: the expression.
+#
+# Fails where a word is neither an operator nor an integer, with
+# `numbers.parse_int`'s code.
+function tokens_of(text: str) -> [Token]?
+    out: [Token] @= []
+
+    for word in strings.words(text)
+        one = token_of(word)?
+        out @ out.push(one)
+
+    return ok(out)
+
+# The token one word writes.
+#
+# - `word`: one word of an expression, never empty.
+#
+# Fails `invalid` where `word` is no operator and no integer, `does_not_fit`
+# where it writes an integer past an `i64`.
+function token_of(word: str) -> Token?
+    if word == "+"
+        return ok(.plus)
+
+    if word == "-"
+        return ok(.minus)
+
+    if word == "*"
+        return ok(.times)
+
+    if word == "/"
+        return ok(.divide)
+    return ok(.number(value: numbers.parse_int(word)?))
+
+# The value of the expression `text`.
+#
+# - `text`: the expression, its words between white space.
+#
+# Fails `too_few` where an operator has fewer than two numbers under it,
+# `too_many` where numbers are left over, `empty` where there is nothing,
+# `divide_by_zero` where a division's right side is zero, and as
+# `tokens_of` fails where a word is no token.
+function evaluate(text: str) -> i64?
+    stack: [i64] @= []
+
+    for one in tokens_of(text)?
+        match one
+            .number n => stack @ stack.push(n.value)
+            .plus | .minus | .times | .divide =>
+                if stack.len() < 2
+                    return fail(code: "too_few", msg: "an operator with fewer than two numbers under it")
+                right = stack[stack.len() - 1]
+                left = stack[stack.len() - 2]
+                stack @ stack.slice(from: 0, to: stack.len() - 2)
+                stack @ stack.push(applied(one, left: left, right: right)?)
+
+    if stack.len() == 0
+        return fail(code: "empty", msg: "nothing to evaluate")
+
+    if stack.len() > 1
+        return fail(code: "too_many", msg: "numbers left over: an operator is missing")
+
+    return ok(stack[0])
+
+# `op` applied to `left` and `right`.
+#
+# - `op`: an operator; a number fails `not_an_operator`.
+# - `left`: the number deeper in the stack.
+# - `right`: the number on top of it.
+#
+# Fails `divide_by_zero` where `op` divides by a zero `right`.
+function applied(op: Token, left: i64, right: i64) -> i64?
+    return match op
+        .plus  => ok(left + right)
+        .minus => ok(left - right)
+        .times => ok(left * right)
+        .divide =>
+            # Integer division by zero ABORTS (spec § 7). A program reading
+            # its input from anywhere must check first, or a typed zero ends
+            # the process rather than producing a diagnostic.
+            if right == 0
+                fail(code: "divide_by_zero", msg: "cannot divide by zero")
+            else
+                ok(left / right)
+        .number _ => fail(code: "not_an_operator", msg: "a number is not an operator")
+
+function main()
+    for one in ["3 4 +", "3 4 + 2 *", "5 1 2 + 4 * + 3 -", "-7 3 /", "7 -3 /"]
+        print(one + " = " + evaluate(one).must().to_str())
+
+    # The three arity failures, none of which is a syntax error.
+    print(evaluate("3 +").is_err())
+    print(evaluate("3 4").is_err())
+    print(evaluate("").is_err())
+
+    # And the one the abort rule forces a check for.
+    print(evaluate("4 0 /").is_err())
+    print(evaluate("4 0 x").is_err())
+
+test "the ordinary case, and the one everybody uses as an example"
+    assert evaluate("3 4 +").must() == 7
+    assert evaluate("3 4 + 2 *").must() == 14
+    assert evaluate("5 1 2 + 4 * + 3 -").must() == 14
+    assert evaluate("2").must() == 2
+
+test "the four operators mean what they mean, and order is not commutative"
+    assert evaluate("7 3 -").must() == 4
+    assert evaluate("3 7 -").must() == -4
+    assert evaluate("7 3 /").must() == 2
+    assert evaluate("3 7 /").must() == 0
+    assert evaluate("7 3 *").must() == 21
+
+test "division truncates toward zero, on both signs"
+    assert evaluate("-7 3 /").must() == -2
+    assert evaluate("7 -3 /").must() == -2
+    assert evaluate("-7 -3 /").must() == 2
+
+test "dividing by zero is a failure and not an abort"
+    assert evaluate("4 0 /").is_err()
+    assert evaluate("0 0 /").is_err()
+    assert !evaluate("4 2 /").is_err()
+
+test "the three arity failures are three different codes"
+    for pair in [["3 +", "too_few"], ["+", "too_few"], ["3 4", "too_many"], ["1 2 3 +", "too_many"], ["", "empty"], ["   ", "empty"]]
+        match evaluate(pair[0])
+            .ok _  => assert false
+            .err e => assert e.code == pair[1]
+
+test "a word that is neither a number nor an operator fails with the reader's code"
+    for text in ["3 4 x", "hello", "3 4.5 +"]
+        match evaluate(text)
+            .ok _  => assert false
+            .err e => assert e.code == numbers.INVALID
+
+    assert evaluate("- +").is_err()
+    assert evaluate("99999999999999999999").is_err()
+
+test "a negative number is a number and a minus is an operator"
+    assert evaluate("-3").must() == -3
+    assert evaluate("-3 -4 +").must() == -7
+    assert evaluate("3 -4 -").must() == 7
+
+test "the words of an expression are cut at Unicode's white space"
+    nbsp: [u8] = [0xc2, 0xa0]
+    assert evaluate("3\t4" + nbsp.validated_bytes().must() + "+").must() == 7

@@ -1,0 +1,139 @@
+# One log line, taken apart, and the lines that are not one.
+#
+#     2026-08-13T22:04:11 ERROR emit: the thing broke
+#     └─ stamp ────────┘ └level┘ └src┘ └─ message ──┘
+#
+# **A line that does not fit is skipped and counted, never fatal.** A
+# summariser that refuses a whole file because one line was truncated is a
+# summariser nobody can use on a real log, where the last line is half-written
+# as often as not. The count is reported, so "skipped" is a number the reader
+# sees rather than a silence.
+
+use <rebel>/strings
+
+## Error codes
+
+# A line with fewer than three words before its message.
+constant ERR_SHORT_LINE: str
+    "short_line"
+
+# A third word that does not end in `:`, so names no source.
+constant ERR_NO_SOURCE: str
+    "no_source"
+
+# A first word with no `T`, so no timestamp.
+constant ERR_NO_STAMP: str
+    "no_stamp"
+
+# One line of the log.
+record Entry
+    # When, as written: `DATEThh:mm:ss`.
+    stamp: str
+    # How serious: `INFO`, `WARN`, `ERROR` and the like.
+    level: str
+    # What wrote the line, its `:` taken off.
+    source: str
+    # Everything after the source, "" where nothing follows it.
+    message: str
+
+# A whole file read.
+record Reading
+    # The lines that are log lines, in the file's order.
+    entries: [Entry]
+    # The numbers, from 1, of the lines that are not, blank lines aside.
+    skipped: [i64]
+
+## One line
+
+# `stamp LEVEL source: message`, or an error saying which part was missing.
+#
+# - `text`: one line of the file.
+#
+# Fails `short_line` where it holds fewer than three words, `no_source` where
+# the third does not end in `:`, and `no_stamp` where the first holds no `T`.
+function read_line(text: str) -> Entry?
+    # Three words, and the message as one piece: splitting on every space
+    # would lose the message, which holds them.
+    parts = strings.words_n(s: strings.trim(text), n: 4)
+
+    if parts.len() < 3
+        return fail(code: ERR_SHORT_LINE, msg: "a line is `stamp LEVEL source: message`")
+
+    if !strings.has_suffix(s: parts[2], suffix: ":")
+        return fail(code: ERR_NO_SOURCE, msg: "the third word must end in `:`")
+
+    if !strings.contains(s: parts[0], substr: "T")
+        return fail(code: ERR_NO_STAMP, msg: "the first word must be a timestamp, `DATEThh:mm:ss`")
+    source = strings.trim_suffix(s: parts[2], suffix: ":")
+    message: str @= ""
+
+    if parts.len() > 3
+        message @ parts[3]
+    return ok(Entry(stamp: parts[0], level: parts[1], source: source, message: message))
+
+# The whole file: what could be read, and the line numbers of what could not.
+#
+# - `text`: the file's text.
+function read(text: str) -> Reading
+    entries: [Entry] @= []
+    skipped: [i64] @= []
+    number: i64 @= 0
+
+    for line in strings.lines(text)
+        number @ number + 1
+
+        if strings.trim(line) == ""
+            continue
+
+        match read_line(line)
+            .ok entry => entries @ entries.push(entry)
+            .err _    => skipped @ skipped.push(number)
+
+    return Reading(entries: entries, skipped: skipped)
+
+# The hour a stamp names: `2026-08-13T22:04:11` is `22`, the two characters
+# after the `T`, which is why `read_line` insists there is one; `??` where
+# they are not there.
+#
+# - `entry`: a line read.
+function hour_of(entry: Entry) -> str
+    match strings.split_once(s: entry.stamp, sep: "T")
+        .ok halves =>
+            if halves.after.len() < 2 || !strings.is_boundary(s: halves.after, at: 2)
+                return "??"
+            return halves.after.slice(from: 0, to: 2)
+        .err _ => return "??"
+
+test "a line comes apart into four pieces, message included"
+    one = read_line("2026-08-13T22:04:11 ERROR emit: the thing broke, twice").must()
+    assert one.stamp == "2026-08-13T22:04:11"
+    assert one.level == "ERROR"
+    assert one.source == "emit"
+    assert one.message == "the thing broke, twice"
+
+test "a line with nothing after its source has an empty message"
+    assert read_line("2026-08-13T22:04:11 ERROR emit:").must().message == ""
+
+test "each way of not being a log line has its own code"
+    assert code_of("") == ERR_SHORT_LINE
+    assert code_of("2026-08-13T22:04:11 ERROR") == ERR_SHORT_LINE
+    assert code_of("2026-08-13T22:04:11 ERROR emit the thing") == ERR_NO_SOURCE
+    assert code_of("yesterday ERROR emit: the thing") == ERR_NO_STAMP
+
+test "a file keeps what it could read and counts what it could not"
+    r = read("2026-08-13T09:00:00 INFO a: one\nnonsense\n\n2026-08-13T10:00:00 WARN b: two\n")
+    assert r.entries.len() == 2
+    assert r.skipped == [2]
+
+test "the hour is the two characters after the T"
+    assert hour_of(read_line("2026-08-13T22:04:11 INFO a: x").must()) == "22"
+    assert hour_of(read_line("2026-08-13T07:04:11 INFO a: x").must()) == "07"
+    assert hour_of(read_line("T€ INFO a: x").must()) == "??"
+
+# The code `read_line` fails with on `text`, or `no_error`.
+#
+# - `text`: one line.
+function code_of(text: str) -> str
+    return match read_line(text)
+        .ok _  => "no_error"
+        .err e => e.code

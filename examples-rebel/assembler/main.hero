@@ -1,0 +1,142 @@
+# The twin of `examples/assembler/`: a tiny assembler, and the machine it
+# assembles for, written with Rebel. It prints byte for byte what
+# `examples/assembler/` prints from the same arguments, so that program's
+# `main.expected` is this one's test too.
+#
+#     heroes run examples-rebel/assembler/main.hero -- examples/assembler/sample.asm
+#     heroes run examples-rebel/assembler/main.hero -- examples/assembler/sample.asm listing
+#
+#     main.hero       the program: arguments, the file, the two views
+#     machine.hero    four registers, a program counter, and fuel
+#     assemble.hero   two passes: where the labels are, then the words
+#     program.hero    the instruction set, and one line of assembly
+#
+# What Rebel does here that `examples/assembler/` writes for itself:
+#
+# - `strings.lines`, `trim`, `split_once` and `split` take a line of assembly
+#   apart, in place of that program's `strings.hero` (`split_lines`,
+#   `trim_space`, `space_ending`, `space_at`, `split_once`, `first_at`,
+#   `holds_at`) and its `split_on`;
+# - `numbers.parse_int` reads an immediate operand and a register's digit, in
+#   place of its `numbers.hero` (`atoi`, its two cut-off constants and
+#   `quoted`) and of the byte subtraction its `register_of` reads the digit
+#   with;
+# - `math.add_i64` and `math.subtract_i64` add and subtract in the machine,
+#   failing `does_not_fit` where its `+` and `-` would leave an `i64`.
+#
+# What stays this program's own is the machine and its assembler: one set of
+# constants for the encoding and the decoding, two passes because a jump may
+# name a label further down, and a run bounded by fuel.
+
+use assemble
+use machine
+use program
+
+# The most instructions a program runs before the machine stops it.
+constant FUEL: i64
+    10000
+
+function main()
+    given = args()
+
+    if given.len() == 0
+        print("usage: assembler <file.asm> [listing]")
+        exit(code: 2)
+
+    match read_file(given[0])
+        .err e   => stop("cannot read " + given[0] + ": " + e.code)
+        .ok text => build(text, given)
+
+# Every unhappy ending in one place, so the exit code is decided once.
+#
+# - `message`: what is printed before the program ends with 1.
+function stop(message: str)
+    print(message)
+    exit(code: 1)
+
+# The program `text` holds, assembled and shown as the command line asks.
+#
+# - `text`: the file's assembly.
+# - `given`: the command line, its second word `listing` for the listing.
+function build(text: str, given: [str])
+    match assemble.assemble(program.read(text))
+        .err e  => stop(e.code + ": " + e.msg)
+        .ok out => show(out, given)
+
+# The listing of an assembled program, or what it prints when it runs.
+#
+# - `out`: the program assembled.
+# - `given`: the command line.
+function show(out: assemble.Assembled, given: [str])
+    if given.len() > 1 && given[1] == "listing"
+        for line in listing(out.code)
+            print(line)
+
+        return
+
+    match machine.run(out.code, FUEL)
+        .err e => stop(e.code + ": " + e.msg)
+        .ok output =>
+            for line in output
+                print(line)
+
+            print(out.code.len() / program.WORDS, " instructions, ", output.len(), " lines out")
+
+# The assembled words, three to a row, with the instruction's index beside
+# them: the view that shows a jump target is an offset and not a line number.
+#
+# - `code`: the words.
+function listing(code: [i64]) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at + program.WORDS <= code.len()
+        row = [(at / program.WORDS).to_str(), name_of(code[at]), code[at + 1].to_str(), code[at + 2].to_str()]
+        out @ out.push(join(row, " "))
+        at @ at + program.WORDS
+
+    return out
+
+# The mnemonic of an opcode, `?` for a number that is none.
+#
+# - `opcode`: a word in an opcode's place.
+function name_of(opcode: i64) -> str
+    if opcode == program.OP_LOAD
+        return "load"
+
+    if opcode == program.OP_COPY
+        return "copy"
+
+    if opcode == program.OP_ADD
+        return "add"
+
+    if opcode == program.OP_SUB
+        return "sub"
+
+    if opcode == program.OP_PRINT
+        return "print"
+
+    if opcode == program.OP_JMPZ
+        return "jmpz"
+
+    if opcode == program.OP_JMP
+        return "jmp"
+
+    if opcode == program.OP_HALT
+        return "halt"
+    return "?"
+
+test "the sample assembles, runs, and prints the first eight Fibonacci numbers"
+    text = read_file("examples/assembler/sample.asm").must()
+    out = assemble.assemble(program.read(text)).must()
+    assert machine.run(out.code, FUEL).must() == ["1", "1", "2", "3", "5", "8", "13", "21"]
+
+test "the listing has one row per instruction"
+    out = assemble.assemble(program.read("load r0, 1\nprint r0\nhalt\n")).must()
+    assert listing(out.code) == ["0 load 0 1", "1 print 0 0", "2 halt 0 0"]
+
+test "every opcode has a name, and the names are the mnemonics"
+    for opcode in range(from: 0, to: 8)
+        assert name_of(opcode) != "?"
+
+    assert name_of(99) == "?"

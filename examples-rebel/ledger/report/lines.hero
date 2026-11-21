@@ -1,0 +1,75 @@
+# The report's text, and nothing else. Every decision about *what the answer
+# is* lives in `book/entry.hero` and in the queries, so the tests that check
+# the arithmetic never read text, and the tests that check the text never open
+# a database.
+
+use <rebel>/strings
+
+use book/entry
+
+# The heading over the balances, its columns as `balance_line` writes them.
+constant BALANCE_HEADING: str
+    "account  kind     entries      total"
+
+# One line of the book for each entry: its own fields, and the account's kind
+# fetched through the join the program also asks the database to do.
+#
+# - `entries`: the book.
+# - `accounts`: the accounts, for each entry's kind; `?` for one not there.
+function book_lines(entries: [entry.Entry], accounts: [entry.Account]) -> [str]
+    out: [str] @= []
+
+    for e in entries
+        kind = entry.kind_of(e.account, accounts).default("?")
+        out @ out.push(
+            "  " + wide(text: e.id.to_str(), to: 3) + wide(text: e.account, to: 9) + wide(text: kind, to: 9) + wide(text: e.memo, to: 17) + right(text: entry.shown(e.amount), to: 10)
+        )
+
+    return out
+
+# One line of the balances, under `BALANCE_HEADING`.
+#
+# - `b`: the balance.
+# - `kind`: its account's kind.
+function balance_line(b: entry.Balance, kind: str) -> str
+    return wide(text: b.account, to: 9) + wide(text: kind, to: 9) + right(text: b.entries.to_str(), to: 7) + right(text: entry.shown(b.total), to: 11)
+
+# `text` and at least one space after it, padded on the right to `to`
+# characters and never cut: a report that cuts a value to fit shows the wrong
+# value.
+#
+# - `text`: the cell's text.
+# - `to`: the column's width, in characters, its space included.
+function wide(text: str, to: i64) -> str
+    return strings.pad_end(s: text + " ", width: to, pad: " ")
+
+# `text` and at least one space before it, padded on the LEFT to `to`
+# characters, which is what a column of numbers wants: the digits line up
+# under each other, and a longer number pushes the column rather than hiding
+# in it.
+#
+# - `text`: the cell's text.
+# - `to`: the column's width, in characters, its space included.
+function right(text: str, to: i64) -> str
+    return strings.pad_start(s: " " + text, width: to, pad: " ")
+
+test "a cell is padded and never cut, on both sides"
+    assert wide(text: "ab", to: 5) == "ab   "
+    assert wide(text: "abcdef", to: 3) == "abcdef "
+    assert right(text: "7", to: 4) == "   7"
+    assert right(text: "1234567", to: 4) == " 1234567"
+
+test "a cell is as wide in characters as in bytes for ASCII, and in characters otherwise"
+    assert wide(text: "café", to: 6) == "café  "
+
+test "a book line carries the entry, its account's kind and the amount"
+    line = book_lines(entry.book(), entry.accounts())[0]
+
+    for part in ["rent", "housing", "september", "-1200.00"]
+        assert strings.contains(s: line, substr: part)
+
+test "a balance line carries the account and its total"
+    line = balance_line(entry.balances(entry.book())[1], "living")
+
+    for part in ["food", "living", "-110.80"]
+        assert strings.contains(s: line, substr: part)

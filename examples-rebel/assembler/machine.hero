@@ -1,0 +1,145 @@
+# The machine the assembler assembles for.
+#
+# Assembling without running proves nothing: an encoding is only right if
+# something decodes it, and the two halves are written from the same constants
+# in `program.hero` so they cannot drift apart.
+#
+# **The run is bounded by fuel.** A program that loops forever is a program and
+# not a defect in the machine, but a test suite has no operator to press ^C, so
+# the machine stops and says `out_of_fuel`, a result the caller can assert.
+#
+# **A sum past an `i64` is a failure, not an abort.** The program is input, and
+# `+` on two `i64`s aborts where the sum leaves the type (spec § 7), so the
+# machine adds and subtracts through `math.add_i64` and `math.subtract_i64`,
+# which answer `does_not_fit` instead.
+
+use <rebel>/math
+
+use assemble
+use program
+
+## Error codes
+
+# A word in an opcode's place that names no instruction.
+constant ERR_BAD_OPCODE: str
+    "bad_opcode"
+
+# A program that did not halt within its fuel.
+constant ERR_OUT_OF_FUEL: str
+    "out_of_fuel"
+
+# A program counter past the last instruction.
+constant ERR_RAN_OFF_THE_END: str
+    "ran_off_the_end"
+
+# The machine between two instructions.
+record Machine
+    # The four registers, `r0` first.
+    registers: [i64]
+    # The word the next instruction begins at.
+    pc: i64
+    # What `print` wrote, a line each.
+    output: [str]
+
+# What the program `code` prints, run from its first word until it halts.
+#
+# - `code`: the words, as `assemble.assemble` writes them.
+# - `fuel`: the most instructions run, `halt` included.
+#
+# Fails `out_of_fuel` where it does not halt within `fuel`, `ran_off_the_end`
+# where it steps past its last instruction, `bad_opcode` where it reaches a
+# word that is no instruction, and `does_not_fit` where a sum or a difference
+# leaves an `i64`.
+function run(code: [i64], fuel: i64) -> [str]?
+    m: Machine @= Machine(registers: [0, 0, 0, 0], pc: 0, output: [])
+    left: i64 @= fuel
+
+    while left > 0
+        left @ left - 1
+
+        if m.pc < 0 || m.pc + program.WORDS > code.len()
+            return fail(code: ERR_RAN_OFF_THE_END, msg: "the machine stepped past the last instruction")
+        opcode = code[m.pc]
+        a = code[m.pc + 1]
+        b = code[m.pc + 2]
+
+        if opcode == program.OP_HALT
+            return ok(m.output)
+        _ = step(@m, opcode: opcode, a: a, b: b)?
+
+    return fail(code: ERR_OUT_OF_FUEL, msg: "the program ran for " + fuel.to_str() + " steps without halting")
+
+# One instruction. The program counter moves here and nowhere else, so a jump
+# is the arm that does *not* fall through to the advance.
+#
+# - `m`: the machine; its registers, counter and output change.
+# - `opcode`: the instruction.
+# - `a`: its first operand.
+# - `b`: its second operand.
+#
+# Fails `bad_opcode` where `opcode` is no instruction, and `does_not_fit` where
+# a sum or a difference leaves an `i64`.
+function step(@m: Machine, opcode: i64, a: i64, b: i64) -> i64?
+    if opcode == program.OP_LOAD
+        m.registers[a] @ b
+    else if opcode == program.OP_COPY
+        m.registers[a] @ m.registers[b]
+    else if opcode == program.OP_ADD
+        m.registers[a] @ math.add_i64(a: m.registers[a], b: m.registers[b])?
+    else if opcode == program.OP_SUB
+        m.registers[a] @ math.subtract_i64(a: m.registers[a], b: m.registers[b])?
+    else if opcode == program.OP_PRINT
+        m.output @ m.output.push(m.registers[a].to_str())
+    else if opcode == program.OP_JMP
+        m.pc @ a
+        return ok(opcode)
+    else if opcode == program.OP_JMPZ
+        if m.registers[a] == 0
+            m.pc @ b
+            return ok(opcode)
+    else
+        return fail(code: ERR_BAD_OPCODE, msg: "the code holds " + opcode.to_str() + ", which is not an instruction")
+    m.pc @ m.pc + program.WORDS
+    return ok(opcode)
+
+# Assemble and run, which is what the program does and what every test below
+# asks, so the encoding and the decoding are checked against each other.
+#
+# - `text`: a program's text.
+# - `fuel`: the most instructions run.
+function execute(text: str, fuel: i64) -> [str]?
+    out = assemble.assemble(program.read(text))?
+    return run(out.code, fuel)
+
+test "load, add and print do what their names say"
+    assert execute("load r0, 2\nload r1, 3\nadd r0, r1\nprint r0\nhalt\n", 100).must() == ["5"]
+
+test "copy and sub, and a register left alone stays zero"
+    assert execute("load r0, 9\ncopy r1, r0\nsub r1, r0\nprint r1\nprint r3\nhalt\n", 100).must() == ["0", "0"]
+
+test "a loop counts down and stops"
+    countdown = "load r0, 3\nload r1, 1\nagain:\n  print r0\n  sub r0, r1\n  jmpz r0, done\n  jmp again\ndone:\n  halt\n"
+    assert execute(countdown, 100).must() == ["3", "2", "1"]
+
+test "a program that never halts runs out of fuel instead of running forever"
+    assert code_of("here:\n  jmp here\n", 50) == ERR_OUT_OF_FUEL
+
+test "falling off the end is not the same as halting"
+    assert code_of("load r0, 1\n", 100) == ERR_RAN_OFF_THE_END
+
+test "the fuel is spent per instruction, so a short program needs little"
+    assert execute("halt\n", 1).must() == []
+    assert code_of("load r0, 1\nhalt\n", 1) == ERR_OUT_OF_FUEL
+
+test "a sum or a difference past an i64 fails instead of stopping the program"
+    assert code_of("load r0, 9223372036854775807\nadd r0, r0\nhalt\n", 100) == math.DOES_NOT_FIT
+    assert code_of("load r0, -9223372036854775807\nload r1, 2\nsub r0, r1\nhalt\n", 100) == math.DOES_NOT_FIT
+
+# The code `execute` fails with on `text`, or `no_error`.
+#
+# - `text`: a program's text.
+# - `fuel`: the most instructions run.
+function code_of(text: str, fuel: i64) -> str
+    return match execute(text, fuel)
+        .ok _  => "no_error"
+        .err e => e.code

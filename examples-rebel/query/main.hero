@@ -1,0 +1,224 @@
+# The twin of `examples/query/`: a relational engine over a table this
+# program writes, five thousand rows out to a file, read back, filtered,
+# joined, ordered, grouped and counted, written with Rebel. It prints byte for
+# byte what `examples/query/` prints from the same arguments, so that
+# program's `main.expected` is this one's test too.
+#
+#     heroes run examples-rebel/query/main.hero -- build/query-table.csv
+#
+#     main.hero         the program: the round trip, then the report
+#     data/row.hero     a row, the generator, and the table written as CSV
+#     data/table.hero   the table read back, strictly
+#     query/plan.hero   a query as a value: filters, orders, aggregates
+#     run/engine.hero   filter, join, order, group, aggregate
+#     fmt/report.hero   the answer as columns that line up
+#
+# HOW IT IS CHECKED. Every number this program prints is computed **twice,
+# by two routes that share no line**: the engine's aggregates against a plain
+# loop over the same rows, the grouped totals against the ungrouped ones, the
+# joined count against the unjoined one. There is no published answer for a
+# table this program invented, so the second opinion is built rather than
+# fetched.
+#
+# What Rebel does here that `examples/query/` writes for itself:
+#
+# - `csv.format_with` and `csv.parse_with` write the table and read it back
+#   by RFC 4180, in place of that program's `split` and `lines_of` and the
+#   lines it joins by hand;
+# - `numbers.parse_int` and `numbers.parse_float` read a field, rounded once,
+#   in place of its `numbers.hero` (`atoi`, `parse_float`, `decimal`,
+#   `digits_from`, `quoted`, the cut-off constants and the `strtod` it binds
+#   from C);
+# - `lists.sort_by` orders the rows, stably, in place of its `sorting.hero`
+#   (`sort_by`, `end_of_run`); `lists.take` keeps the first rows;
+#   `strings.compare` orders two texts by bytes, in place of its
+#   `text_before`; and a group's keys are ordered by `lists.sort_by` too, in
+#   place of the labels it writes for each group and reads back;
+# - `numbers.format_float` writes a mean to two places, rounded from the
+#   exact value, in place of its `rounded`;
+# - `strings.pad_end` pads a cell; `strings.lines`, `contains`, `has_prefix`
+#   and `has_suffix`, in its tests, in place of its `strings.hero`.
+#
+# What stays this program's own is the generator, whose rows must be these,
+# the strict shape each field is held to, the query as a value, and the
+# engine. Rebel's `numbers.parse_float` reads a number past the largest `f64`
+# as an infinity, as Python's `float` does; this table refuses one, so the
+# refusal is asked of the value in `data/table.hero`.
+
+use data/row
+use data/table
+use fmt/report
+use query/plan
+use run/engine
+
+# Where the table is written where the command line names no file.
+constant DEFAULT_PATH: str
+    "build/query-table.csv"
+
+function main()
+    given = args()
+    path: str @= DEFAULT_PATH
+
+    if given.len() > 0
+        path @ given[0]
+    made = row.generated(row.ROWS)
+
+    match write_file(path: path, text: row.written(made))
+        .ok _  => print("wrote ", made.len().to_str(), " rows to ", path)
+        .err e => print("cannot write ", path, ": ", e.msg)
+
+    match read_file(path)
+        .err _ =>
+            print("cannot read back ", path)
+            exit(code: 1)
+        .ok text =>
+            match table.read(text)
+                .err _ =>
+                    print("the table this program wrote does not read back — that is a defect, not bad input")
+                    exit(code: 1)
+                .ok back =>
+                    print("read back ", back.len().to_str(), " rows")
+
+                    # The round trip, asserted at run time and not only in a
+                    # test: the file is what the program answers from, so a
+                    # difference here makes every number below meaningless.
+                    if back != made
+                        print("the round trip changed the table")
+                        exit(code: 1)
+                    print("")
+                    report_of(back)
+
+# The whole report, one section after another.
+#
+# - `rows`: the table as read back.
+function report_of(rows: [row.Row])
+    # 1. The top of the table by score, joined to its region.
+    print("the ten highest scores, with their region")
+    top = engine.limited(engine.ordered(rows, .by_score_high_first), 10)
+    columns: [plan.Column] = [.id, .team, .name, .score]
+    print(report.joined_table(columns, engine.joined_with(top, row.teams())))
+    print("")
+
+    # 2. One team, active only, by name: the filter that composes.
+    print("argo's active players, by name, first five")
+    both: [plan.Where] = [.team_is(team: "argo"), .active_is(want: true)]
+    argo = engine.limited(engine.ordered(engine.filtered(rows, .both(left: both)), .by_name), 5)
+    by_name: [plan.Column] = [.name, .score, .rate]
+    print(report.table(by_name, argo))
+    print("")
+
+    # 3. The groups, in the fixed order the map does not have.
+    print("every team, active and idle")
+    print(report.GROUP_HEADING)
+    groups = engine.grouped(rows)
+
+    for key in engine.group_order(groups)
+        print(report.group_line(key, groups[key].must()))
+
+    print("")
+
+    # 4. The aggregates over the whole table, and the same numbers again by a
+    # route that shares no line with the engine.
+    print("the whole table")
+    print("rows   ", engine.aggregate(rows, .how_many).to_str())
+    print("total  ", engine.aggregate(rows, .total_score).to_str())
+    print("best   ", engine.aggregate(rows, .best_score).to_str())
+
+    counted: i64 @= 0
+    summed: i64 @= 0
+
+    for r in rows
+        counted @ counted + 1
+        summed @ summed + r.score
+
+    print(
+        "agree  ",
+        agreement(counted == engine.aggregate(rows, .how_many) && summed == engine.aggregate(rows, .total_score))
+    )
+
+# The word a check prints: a `bool` printed as `true` would read as data, and
+# this reads as a verdict.
+#
+# - `holds`: whether the two routes agreed.
+function agreement(holds: bool) -> str
+    if holds
+        return "yes"
+    return "no"
+
+test "the table this program writes reads back as the table it wrote"
+    made = row.generated(300)
+    assert table.read(row.written(made)).must() == made
+
+test "a file the program writes is the file the program reads"
+    path = "build/twin-query-selftest.csv"
+    made = row.generated(120)
+    write_file(path: path, text: row.written(made)).must()
+    assert table.read(read_file(path).must()).must() == made
+
+    # And writing it again is the same bytes, which is what makes the
+    # expected output stable.
+    write_file(path: path, text: row.written(made)).must()
+    assert read_file(path).must() == row.written(made)
+
+test "the grouped totals add up to the ungrouped ones"
+    rows = row.generated(1000)
+    groups = engine.grouped(rows)
+    counted: i64 @= 0
+    summed: i64 @= 0
+
+    for key in engine.group_order(groups)
+        s = groups[key].must()
+        counted @ counted + s.rows
+        summed @ summed + s.total
+
+    assert counted == engine.aggregate(rows, .how_many)
+    assert summed == engine.aggregate(rows, .total_score)
+
+test "the engine's aggregates agree with a plain loop over the same rows"
+    rows = engine.filtered(row.generated(800), .active_is(want: true))
+    counted: i64 @= 0
+    summed: i64 @= 0
+    best: i64 @= -1
+
+    for r in rows
+        counted @ counted + 1
+        summed @ summed + r.score
+
+        if r.score > best
+            best @ r.score
+
+    assert engine.aggregate(rows, .how_many) == counted
+    assert engine.aggregate(rows, .total_score) == summed
+    assert engine.aggregate(rows, .best_score) == best
+
+test "filtering then ordering answers the same rows as ordering then filtering"
+    rows = row.generated(600)
+    keep: plan.Where = .score_at_least(least: 500)
+    first_filtered = engine.ordered(engine.filtered(rows, keep), .by_score_high_first)
+    first_ordered = engine.filtered(engine.ordered(rows, .by_score_high_first), keep)
+    assert first_filtered == first_ordered
+
+test "the join neither invents nor loses a row, and every region is a real one"
+    rows = row.generated(500)
+    with_region = engine.joined_with(rows, row.teams())
+    assert with_region.len() == rows.len()
+    regions: {str: bool} @= {}
+
+    for j in with_region
+        regions[j.region] @ true
+
+    assert sort(keys(regions)) == ["east", "north", "south", "west"]
+
+test "the whole table at its real size, which is the size the report prints"
+    rows = row.generated(row.ROWS)
+    assert rows.len() == 5000
+    ordered = engine.ordered(rows, .by_score_high_first)
+    assert ordered.len() == 5000
+    best: i64 @= -1
+
+    for r in rows
+        if r.score > best
+            best @ r.score
+
+    assert ordered[0].score == best
+    assert ordered[0].score >= ordered[4999].score

@@ -1,0 +1,230 @@
+# What an expression means, and the ways arithmetic can stop a program that
+# this module refuses instead of suffering.
+#
+# **This module's name is `syn/expr.hero`'s too, on purpose**: that
+# file reads an expression, this one gives it a meaning.
+#
+# HOW THIS MODULE CALLS A FUNCTION WITHOUT KNOWING HOW TO RUN A BODY. A script
+# function's body is statements, and statements are
+# `run/eval.hero`'s job, but an expression can hold a call, so the
+# two need each other. `evaluated` takes
+# `(function(value.Request) -> value.Frame?)`, and `run/eval.hero`
+# hands it its own `called`: the recursion crosses a `use` in one direction
+# only.
+#
+# THE REFUSALS, each of them Heroes aborting if it is not caught here (spec
+# § 7): a division or a remainder by zero; `+`, `-` and `*` overflowing; the
+# smallest number negated or divided by -1. A script is INPUT, and a program
+# that a line of its input can kill has a hole in it, so the arithmetic goes
+# through `math`'s functions that answer `does_not_fit` instead of aborting,
+# and each refusal is told in this language's words, `arithmetic`, with the
+# two numbers. `math.remainder_i64` answers the smallest number's remainder by
+# -1, which is 0, where `examples/interpreter/` refuses it.
+
+use <rebel>/math
+
+use run/value
+use syn/tree
+
+# A name nothing was let to.
+constant ERR_NAME: str
+    "unknown_name"
+
+# Arithmetic with no answer that fits.
+constant ERR_MATH: str
+    "arithmetic"
+
+# A value of the wrong kind for its operator.
+constant ERR_TYPE: str
+    "type"
+
+# A value, and the frame the evaluation left behind: a call can define nothing
+# but it can print, so the frame comes back even from an expression.
+record Answer
+    frame: value.Frame
+    got: value.Value
+
+# One expression. `call` is `run/eval.hero`'s door: see the module header.
+function evaluated(nodes: tree.Tree, id: i64, f: value.Frame, call: (function(value.Request) -> value.Frame?)) -> Answer?
+    return match nodes.exprs[id]
+        .number n => ok(Answer(frame: f, got: .number(v: n.value)))
+        .text x   => ok(Answer(frame: f, got: .text(s: x.value)))
+        .truth b  => ok(Answer(frame: f, got: .truth(b: b.value)))
+        .name n   => looked_up(f: f, word: n.value)
+        .negate u => negated(nodes: nodes, id: u.on, f: f, call: call)
+        .invert u => inverted(nodes: nodes, id: u.on, f: f, call: call)
+        .binary b => joined(nodes: nodes, op: b.op, left: b.left, right: b.right, f: f, call: call)
+        .call c   => applied(nodes: nodes, name: c.name, ids: c.args, f: f, call: call)
+
+function looked_up(f: value.Frame, word: str) -> Answer?
+    held = f.vars[word]
+
+    if held.is_err()
+        return fail(code: ERR_NAME, msg: "`" + word + "` has no value — nothing has been let to that name")
+
+    return ok(Answer(frame: f, got: held.must()))
+
+function negated(nodes: tree.Tree, id: i64, f: value.Frame, call: (function(value.Request) -> value.Frame?)) -> Answer?
+    inner = evaluated(nodes, id, f, call)?
+
+    match math.negate_i64(value.number_of(inner.got)?)
+        .ok n  => return ok(Answer(frame: inner.frame, got: .number(v: n)))
+        .err _ => return fail(code: ERR_MATH, msg: "negating the smallest number has no answer that fits")
+
+function inverted(nodes: tree.Tree, id: i64, f: value.Frame, call: (function(value.Request) -> value.Frame?)) -> Answer?
+    inner = evaluated(nodes, id, f, call)?
+    return ok(Answer(frame: inner.frame, got: .truth(b: !value.condition_of(inner.got)?)))
+
+# Two sides, or one where the operator short-circuits. `&&` and `||` do not
+# evaluate their right side when the left decides the answer, which is the
+# rule Heroes keeps for its own (spec § Operators) and the reason they cannot
+# go through the same path as `+`.
+function joined(nodes: tree.Tree, op: tree.Op, left: i64, right: i64, f: value.Frame, call: (function(value.Request) -> value.Frame?)) -> Answer?
+    first = evaluated(nodes, left, f, call)?
+
+    if op == .both
+        if !value.condition_of(first.got)?
+            return ok(Answer(frame: first.frame, got: .truth(b: false)))
+        second = evaluated(nodes, right, first.frame, call)?
+        return ok(Answer(frame: second.frame, got: .truth(b: value.condition_of(second.got)?)))
+
+    if op == .either
+        if value.condition_of(first.got)?
+            return ok(Answer(frame: first.frame, got: .truth(b: true)))
+        second = evaluated(nodes, right, first.frame, call)?
+        return ok(Answer(frame: second.frame, got: .truth(b: value.condition_of(second.got)?)))
+    second = evaluated(nodes, right, first.frame, call)?
+    got = combined(op: op, a: first.got, b: second.got)?
+    return ok(Answer(frame: second.frame, got: got))
+
+# The operators that want both sides. Kept apart from `joined` so that the
+# arithmetic can be tested without a frame, which is what the extremes at the
+# bottom of this file do.
+function combined(op: tree.Op, a: value.Value, b: value.Value) -> value.Value?
+    if op == .add
+        if is_text(a) || is_text(b)
+            return ok(.text(s: value.text_of(a)? + value.text_of(b)?))
+
+        return ok(.number(v: plus(a: value.number_of(a)?, b: value.number_of(b)?)?))
+
+    if op == .subtract
+        return ok(.number(v: minus(a: value.number_of(a)?, b: value.number_of(b)?)?))
+
+    if op == .multiply
+        return ok(.number(v: times(a: value.number_of(a)?, b: value.number_of(b)?)?))
+
+    if op == .divide
+        return ok(.number(v: over(a: value.number_of(a)?, b: value.number_of(b)?)?))
+
+    if op == .remainder
+        return ok(.number(v: rest(a: value.number_of(a)?, b: value.number_of(b)?)?))
+
+    if op == .equal
+        return ok(.truth(b: a == b))
+
+    if op == .unequal
+        return ok(.truth(b: a != b))
+
+    return ordered(op: op, a: value.number_of(a)?, b: value.number_of(b)?)
+
+function ordered(op: tree.Op, a: i64, b: i64) -> value.Value?
+    if op == .less
+        return ok(.truth(b: a < b))
+
+    if op == .less_equal
+        return ok(.truth(b: a <= b))
+
+    if op == .greater
+        return ok(.truth(b: a > b))
+
+    if op == .greater_equal
+        return ok(.truth(b: a >= b))
+
+    return fail(code: ERR_TYPE, msg: "`" + tree.shown_op(op) + "` does not take two values here")
+
+function is_text(v: value.Value) -> bool
+    return match v
+        .text _   => true
+        .number _ => false
+        .truth _  => false
+        .nothing  => false
+
+# `a + b`, refused rather than aborting where it does not fit.
+#
+# - `a`: the left side.
+# - `b`: the right side.
+function plus(a: i64, b: i64) -> i64?
+    return fitted(math.add_i64(a: a, b: b), a: a, b: b, op: "+")
+
+# `a - b`, refused rather than aborting where it does not fit.
+#
+# - `a`: the left side.
+# - `b`: the right side.
+function minus(a: i64, b: i64) -> i64?
+    return fitted(math.subtract_i64(a: a, b: b), a: a, b: b, op: "-")
+
+# `a * b`, refused rather than aborting where it does not fit.
+#
+# - `a`: the left side.
+# - `b`: the right side.
+function times(a: i64, b: i64) -> i64?
+    return fitted(math.multiply_i64(a: a, b: b), a: a, b: b, op: "*")
+
+# `a / b`, truncated toward zero, refused where `b` is zero and where the
+# quotient does not fit.
+#
+# - `a`: the dividend.
+# - `b`: the divisor.
+function over(a: i64, b: i64) -> i64?
+    if b == 0
+        return fail(code: ERR_MATH, msg: "dividing " + a.to_str() + " by zero has no answer")
+    return fitted(math.divide_i64(x: a, by: b), a: a, b: b, op: "/")
+
+# `a % b`, with the sign of `a`, refused where `b` is zero.
+#
+# - `a`: the dividend.
+# - `b`: the divisor.
+function rest(a: i64, b: i64) -> i64?
+    if b == 0
+        return fail(code: ERR_MATH, msg: "the remainder of " + a.to_str() + " by zero has no answer")
+    return fitted(math.remainder_i64(x: a, by: b), a: a, b: b, op: "%")
+
+# `got`, or this language's refusal of `a op b` where `math` refused it.
+#
+# - `got`: what `math` answered.
+# - `a`: the left side, for the message.
+# - `b`: the right side, for the message.
+# - `op`: the operator, for the message.
+function fitted(got: i64?, a: i64, b: i64, op: str) -> i64?
+    match got
+        .ok n  => return ok(n)
+        .err _ => return too_big(a: a, b: b, op: op)
+
+# The refusal of `a op b`, which has no answer that fits.
+#
+# - `a`: the left side.
+# - `b`: the right side.
+# - `op`: the operator.
+function too_big(a: i64, b: i64, op: str) -> i64?
+    return fail(
+        code: ERR_MATH,
+        msg: a.to_str() + " " + op + " " + b.to_str() + " does not fit in a 64-bit number"
+    )
+
+# A call: the arguments first, left to right, then the door into
+# `run/eval.hero`.
+function applied(nodes: tree.Tree, name: str, ids: [i64], f: value.Frame, call: (function(value.Request) -> value.Frame?)) -> Answer?
+    walking: value.Frame @= f
+    given: [value.Value] @= []
+
+    for id in ids
+        step = evaluated(nodes, id, walking, call)?
+        walking @ step.frame
+        given @ given.push(step.got)
+
+    after = call(value.Request(nodes: nodes, name: name, given: given, frame: walking))?
+    result = after.result
+    home: value.Frame @= after
+    home.returned @ false
+    home.result @ .nothing
+    return ok(Answer(frame: home, got: result))

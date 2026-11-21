@@ -1,0 +1,292 @@
+# The twin of `examples/interpreter/`: a whole little language, scanned,
+# parsed and run, written with Rebel. It prints byte for byte what
+# `examples/interpreter/` prints from the same arguments, and ends with the
+# same status, so that program's `main.expected` is this one's test too.
+#
+#     heroes run examples-rebel/interpreter/main.hero -- examples/interpreter/scripts/tour.script
+#
+#     main.hero         the program: the script, its output, its exit
+#     lex/token.hero    what a token is
+#     lex/scan.hero     source text into tokens
+#     syn/tree.hero     the shapes a parsed program has
+#     syn/cursor.hero   a place in a token list
+#     syn/expr.hero     tokens into an expression tree
+#     syn/parse.hero    statements, blocks and a whole program
+#     run/value.hero    a value, and the state one run carries
+#     run/expr.hero     what an expression means
+#     run/eval.hero     what a statement does
+#
+# A language's scanner, parser and evaluator are the program, and Rebel takes
+# the parts no language of its own owns. What Rebel does here that
+# `examples/interpreter/` writes for itself:
+#
+# - `numbers.parse_int` reads a number a script writes and refuses one past an
+#   `i64`, in place of that program's `numbers.hero` (`atoi`, its two cut-off
+#   constants and `quoted`);
+# - `math.add_i64`, `subtract_i64`, `multiply_i64`, `divide_i64`,
+#   `remainder_i64` and `negate_i64` do the script's arithmetic, failing where
+#   Heroes' own operators would abort, in place of its guards before each
+#   operator (`plus`, `minus`, `times`, `size_of`, its `MIN` and `MAX`);
+# - `sets.from_list` tells a parameter named twice, in place of its `repeats`;
+# - the built-ins `map`, `join`, `all` and `filter` walk a list, in place of
+#   its `util/each.hero` (`counted`, `first_of`, `joined`, `every`), which
+#   Rebel leaves to the language as it leaves every built-in.
+#
+# Rebel's `scanner` reads Go's tokens, its escapes and its numbers; this
+# language has four escapes and a newline that is a token, so its scanner
+# stays its own.
+
+use lex/scan
+use lex/token
+use run/eval
+use run/expr
+use run/value
+use syn/cursor
+use syn/expr as parse_expr
+use syn/parse
+use syn/tree
+
+function main()
+    given = args()
+
+    if given.len() != 1
+        print("usage: interpreter <script>")
+        exit(code: 2)
+    source = read_file(given[0])
+
+    if source.is_err()
+        print("cannot read ", given[0])
+        exit(code: 2)
+    nodes = parse.program(source.must())
+
+    if nodes.is_err()
+        print(complaint(nodes))
+        exit(code: 1)
+    said = eval.run(nodes.must())
+
+    if said.is_err()
+        print(complaint_of_run(said))
+        exit(code: 1)
+    f = said.must()
+
+    for line in f.lines
+        print(line)
+
+    # THE SCRIPT'S OWN `exit` BECOMES THIS PROGRAM'S. A script that says
+    # `exit 0` has asked to end, and the honest way to obey it is the
+    # language's own `exit`, which ends the program before the runtime's count
+    # of what was never freed.
+    if f.stopping
+        # A status is 0 to 255, the statuses a shell reads (defect 2224): a
+        # script's code outside them cannot be obeyed, so it is said and the
+        # program fails, where `exit` itself would stop the program.
+        if f.code < 0 || f.code > 255
+            print("exit ", f.code, " is outside 0 to 255, the statuses a shell reads")
+            exit(code: 1)
+        exit(code: f.code)
+
+# A parse refusal, as the one line a script author reads.
+function complaint(said: tree.Tree?) -> str
+    return match said
+        .ok _  => "nothing was refused"
+        .err e => "error[" + e.code + "]: " + e.msg
+
+function complaint_of_run(said: value.Frame?) -> str
+    return match said
+        .ok _  => "nothing was refused"
+        .err e => "error[" + e.code + "]: " + e.msg
+
+test "the pieces are wired together"
+    got = scan.scanned("print 1 + 2").must()
+    assert got.len() == 6
+    assert got[0] == .kw_print
+    assert got[1] == .number(value: 1)
+    assert token.shown(got[2]) == "+"
+    assert got.filter(token.opens_a_value).len() == 2
+    built: tree.Tree @= tree.empty()
+    one = tree.added_expr(@built, .number(value: 1))
+    two = tree.added_expr(@built, .number(value: 2))
+    sum = tree.added_expr(@built, .binary(op: .add, left: one, right: two))
+    assert tree.shown_expr(built, sum) == "(1 + 2)"
+    walking: cursor.Cursor @= cursor.over(got)
+    assert cursor.bump(@walking) == .kw_print
+    assert cursor.here(walking) == .number(value: 1)
+
+test "an expression is read into the tree the renderer describes"
+    assert rendering("1 + 2 * 3") == "(1 + (2 * 3))"
+    assert rendering("(1 + 2) * 3") == "((1 + 2) * 3)"
+    assert rendering("-x + !ok") == "((-x) + (!ok))"
+    assert rendering("f(1, g(2))") == "f(1, g(2))"
+
+test "a program is a list of statements, in the order they were written"
+    t = parse.program("let x = 1\nprint x\n").must()
+    assert t.top.len() == 2
+    assert t.stmts.len() == 2
+    assert value.shown(.number(v: 3)) == "3"
+
+test "a script runs and its output is what it printed"
+    assert ran("print 1 + 2") == "3"
+    assert ran("let x = 4\nprint x * x") == "16"
+
+test "both modules named expr are in this file, and one had to be renamed"
+    # `use syn/expr as parse_expr` above is the whole
+    # demonstration: a file may not bind one name twice (spec § 1), and this
+    # program has two modules whose last path part is `expr`, the one that
+    # READS an expression and the one that gives it a MEANING. The parser
+    # builds `2 * 3`, the evaluator's own arithmetic is asked for the same
+    # product, and they agree.
+    assert rendering("2 * 3") == "(2 * 3)"
+    assert value.shown(expr.combined(op: .multiply, a: .number(v: 2), b: .number(v: 3)).must()) == "6"
+    assert ran("print 2 * 3") == "6"
+
+test "deep nesting works, to half the tightest ceiling measured"
+    # 83 is half the deepest `print (((...1...)))` that
+    # `examples/interpreter/`, whose parser this one is, prints under
+    # `--sanitize`: 166, as `examples/interpreter/main.hero` records it (heroes
+    # 0.6.0 at `sources 45824e7205ca021e`, Apple clang 21.0.0, 2026-11-10;
+    # 323 at `-O0`, 760 at `-O2`). A source nested past what the stack holds
+    # aborts (spec § 9), and the test runs in every build.
+    deep = "print " + repeat("(", 83) + "1" + repeat(")", 83)
+    assert ran(deep) == "1"
+
+    # And the tree really is that deep, so a parser that quietly flattened the
+    # parentheses could not pass this.
+    nodes = parse.program(deep).must()
+    assert nodes.exprs.len() == 1
+
+    # And 150, 16 under that tightest ceiling, says 83 is not sitting on a
+    # cliff.
+    hundred = "print " + repeat("(", 150) + "2" + repeat(")", 150)
+    assert ran(hundred) == "2"
+
+test "a script that recurses without an end is refused, and does not crash"
+    # The other side of the same coin: `run/eval.hero`'s `DEPTH`
+    # stops this with a message naming the function, rather than letting it
+    # run the interpreter's own stack out.
+    forever = "fn down(n)\n    return down(n + 1)\nend\nprint down(0)"
+    assert refusal_code(forever) == "too_deep"
+
+    # And a script that recurses deeply but finitely still works, up to the
+    # guard: 30 nested calls, under `DEPTH`'s 38.
+    counted = "fn down(n)\n    if n <= 0\n        return 0\n    end\n    return 1 + down(n - 1)\nend\nprint down(30)"
+    assert ran(counted) == "30"
+
+    # And 50, which is over it, is the guard's refusal rather than a crash.
+    assert refusal_code("fn down(n)\n    if n <= 0\n        return 0\n    end\n    return 1 + down(n - 1)\nend\nprint down(50)") == "too_deep"
+
+test "every way arithmetic can stop this language is a refusal, not an abort"
+    # Each of these is Heroes itself aborting if `run/expr.hero`
+    # did not refuse it first. A script is input; input must not be able to
+    # kill the program reading it.
+    assert refusal_code("print 1 / 0") == "arithmetic"
+    assert refusal_code("print 1 % 0") == "arithmetic"
+    assert refusal_code("print 9223372036854775807 + 1") == "arithmetic"
+    assert refusal_code("print -9223372036854775807 - 2") == "arithmetic"
+    assert refusal_code("print 4611686018427387904 * 2") == "arithmetic"
+    assert refusal_code("print 9223372036854775808") == "number_too_large"
+
+    # The extremes that DO fit still work, which is what says the guards are
+    # not simply refusing everything large.
+    assert ran("print 9223372036854775807") == "9223372036854775807"
+    assert ran("print 9223372036854775806 + 1") == "9223372036854775807"
+    assert ran("print 4611686018427387903 * 2") == "9223372036854775806"
+    assert ran("print -9223372036854775807 - 1") == "-9223372036854775808"
+
+    # The smallest number's remainder by -1 is 0, which `math.remainder_i64`
+    # answers.
+    assert ran("print (-9223372036854775807 - 1) % -1") == "0"
+
+test "a script that says exit stops the run and carries its code"
+    nodes = parse.program("print 1\nexit 3\nprint 2").must()
+    f = eval.run(nodes).must()
+    assert f.stopping
+    assert f.code == 3
+
+    # The statement after the `exit` did not run.
+    assert f.lines.len() == 1
+    assert f.lines[0] == "1"
+
+# `main` above turns this into the language's own `exit(3)`.
+
+test "the runtime refuses what it cannot mean, each with its own code"
+    assert refusal_code("print missing") == "unknown_name"
+    assert refusal_code("print nope(1)") == "unknown_name"
+    assert refusal_code("print 1 + true") == "type"
+    assert refusal_code("if 1\n    print 2\nend") == "type"
+    assert refusal_code("fn f(a)\n    return a\nend\nprint f(1, 2)") == "arity"
+    assert refusal_code("let x = 1\nprint x(2)") == "unknown_name"
+
+test "the parser refuses what it cannot read, each with a message"
+    assert refusal_code("let = 1") == "parse"
+    assert refusal_code("print 1 +") == "parse"
+    assert refusal_code("if true\n    print 1") == "parse"
+    assert refusal_code("end") == "parse"
+    assert refusal_code("print 1 2") == "parse"
+    assert refusal_code("print 1 < 2 < 3") == "parse"
+    assert refusal_code("fn f(a, a)\n    return a\nend") == "parse"
+
+test "the strings a script can hold, including the ones with escapes"
+    assert ran("print \"a\\tb\"") == "a\tb"
+    assert ran("print \"one\" + \"two\"") == "onetwo"
+    assert ran("print \"\"") == ""
+    assert ran("print \"quote: \\\"\"") == "quote: \""
+
+test "a comment may hold any text at all, characters of several bytes included"
+    # A scanner that sliced one byte at a time would split a character here
+    # and abort (`lex/scan.hero`'s header says why it does not).
+    assert ran("print 1 # a note — with an em dash") == "1"
+    assert ran("# accented: cafe\nprint 2") == "2"
+
+test "short-circuit means the right side is never evaluated"
+    # `1 / 0` on the right of a decided `&&` or `||` must not be reached, if
+    # it were, these two would be refusals rather than answers.
+    assert ran("print false && 1 / 0 == 0") == "false"
+    assert ran("print true || 1 / 0 == 0") == "true"
+
+    # And when the right side IS reached, it decides.
+    assert ran("print true && false") == "false"
+    assert refusal_code("print true && 1 / 0 == 0") == "arithmetic"
+
+test "a function sees its parameters and nothing else"
+    # The scope rule `run/eval.hero` states in one line: a script
+    # function cannot see the caller's variables.
+    assert refusal_code("let outer = 1\nfn peek()\n    return outer\nend\nprint peek()") == "unknown_name"
+
+    # And the caller's variables survive the call unchanged.
+    assert ran("let x = 1\nfn f(x)\n    return x + 1\nend\nprint f(10)\nprint x") == "11\n1"
+
+# The code a run or a parse refused with, the shape every refusal test above
+# uses.
+function refusal_code(source: str) -> str
+    nodes = parse.program(source)
+
+    if nodes.is_err()
+        return code_of_tree(nodes)
+
+    return code_of_frame(eval.run(nodes.must()))
+
+function code_of_tree(said: tree.Tree?) -> str
+    return match said
+        .ok _  => "nothing was refused"
+        .err e => e.code
+
+function code_of_frame(said: value.Frame?) -> str
+    return match said
+        .ok _  => "nothing was refused"
+        .err e => e.code
+
+# One script, run, with its output lines joined, the shape every runtime test
+# in this file uses.
+function ran(source: str) -> str
+    nodes = parse.program(source).must()
+    f = eval.run(nodes).must()
+    return join(f.lines, "\n")
+
+# One expression, parsed and written back out, the shape every parser test in
+# this file uses, because it checks the TREE without naming an index.
+function rendering(source: str) -> str
+    tokens = scan.scanned(source).must()
+    c: cursor.Cursor @= cursor.over(tokens)
+    t: tree.Tree @= tree.empty()
+    id = parse_expr.parsed(@c, @t).must()
+    return tree.shown_expr(t, id)

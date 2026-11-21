@@ -1,0 +1,368 @@
+# The formula language, and the thing a spreadsheet is actually for: a cell
+# that reads other cells.
+#
+#     expression := term (('+' | '-') term)*
+#     term       := factor (('*' | '/') factor)*
+#     factor     := number | cell | 'SUM' '(' range ')' | '(' expression ')' | '-' factor
+#
+# **The cycle is the interesting part.** `A1 = B1` and `B1 = A1` is a program
+# that would recur until the stack ends, and no type in this language can
+# prevent it, so the chain of cells being evaluated travels with the
+# evaluation, as a plain `[str]`. Value semantics is what makes that cheap to
+# say: `visiting.push(name)` hands the callee a **copy**, so there is nothing
+# to pop on the way back and no way to forget to.
+
+use <rebel>/numbers
+
+use sheet
+
+## Error codes
+
+# A cell defined, through any chain of cells, in terms of itself.
+constant ERR_CIRCULAR_REFERENCE: str
+    "circular_reference"
+
+# A division whose divisor is zero.
+constant ERR_DIVISION_BY_ZERO: str
+    "division_by_zero"
+
+# `SUM` with no `(` after it.
+constant ERR_EXPECTED_PAREN: str
+    "expected_paren"
+
+# A literal past the largest `f64`.
+constant ERR_DOES_NOT_FIT: str
+    "does_not_fit"
+
+# A formula with text left after its expression.
+constant ERR_TRAILING_INPUT: str
+    "trailing_input"
+
+# A `(` never closed.
+constant ERR_UNCLOSED_PAREN: str
+    "unclosed_paren"
+
+# A byte that opens no value.
+constant ERR_UNEXPECTED_CHARACTER: str
+    "unexpected_character"
+
+# A formula that ends where a value was expected.
+constant ERR_UNEXPECTED_END: str
+    "unexpected_end"
+
+# A word that is neither a cell nor `SUM`.
+constant ERR_UNKNOWN_NAME: str
+    "unknown_name"
+
+# A formula being read: its text and the byte the reader stands on.
+record Parse
+    # The formula.
+    text: str
+    # The byte read next.
+    pos: i64
+
+# Whether `p` has read the whole formula.
+#
+# - `p`: the reader.
+function at_end(p: Parse) -> bool
+    return p.pos >= p.text.len()
+
+# The byte `p` stands on.
+#
+# - `p`: the reader, not at its end.
+function here(p: Parse) -> u8
+    return p.text[p.pos]
+
+# Moves `p` one byte on.
+#
+# - `p`: the reader; its position grows by one.
+function advance(@p: Parse)
+    p.pos @ p.pos + 1
+
+# Moves `p` past spaces and tabs.
+#
+# - `p`: the reader; its position moves to the next other byte.
+function skip_space(@p: Parse)
+    while !at_end(p) && (here(p) == ' ' || here(p) == '\t')
+        advance(@p)
+
+# Whether `known` holds `name`.
+#
+# - `known`: the chain of cells being evaluated.
+# - `name`: a cell's name.
+function contains(known: [str], name: str) -> bool
+    for one in known
+        if one == name
+            return true
+
+    return false
+
+## Cells
+
+# What a cell is worth. A cell nothing was written into is 0, which is what
+# makes `SUM(A1:A9)` over a short column mean what a reader expects.
+#
+# - `s`: the sheet.
+# - `name`: the cell's name.
+# - `visiting`: the cells whose evaluation is under way, outermost first; `[]`
+#   from the outside.
+#
+# Fails `circular_reference` where `name` is among `visiting`, and with any
+# code of this module or of `sheet` where its formula is wrong.
+function value_of(s: sheet.Sheet, name: str, visiting: [str]) -> f64?
+    if contains(visiting, name)
+        return fail(code: ERR_CIRCULAR_REFERENCE, msg: "cell " + name + " is defined in terms of itself")
+    source = s.cells[name].default("")
+
+    if source == ""
+        return ok(0.0)
+    p: Parse @= Parse(text: source, pos: 0)
+    v = expression(@p, s, visiting.push(name))?
+    skip_space(@p)
+
+    if !at_end(p)
+        return fail(code: ERR_TRAILING_INPUT, msg: name + ": the formula does not end at " + p.pos.to_str())
+    return ok(v)
+
+## The grammar
+
+# `term (('+' | '-') term)*`.
+#
+# - `p`: the reader; moves past the expression.
+# - `s`: the sheet.
+# - `visiting`: the cells whose evaluation is under way.
+function expression(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
+    total: f64 @= term(@p, s, visiting)?
+    more: bool @= true
+
+    while more
+        skip_space(@p)
+
+        if !at_end(p) && here(p) == '+'
+            advance(@p)
+            total @ total + term(@p, s, visiting)?
+        else if !at_end(p) && here(p) == '-'
+            advance(@p)
+            total @ total - term(@p, s, visiting)?
+        else
+            more @ false
+
+    return ok(total)
+
+# `factor (('*' | '/') factor)*`.
+#
+# - `p`: the reader; moves past the term.
+# - `s`: the sheet.
+# - `visiting`: the cells whose evaluation is under way.
+#
+# Fails `division_by_zero` where a divisor is zero.
+function term(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
+    total: f64 @= factor(@p, s, visiting)?
+    more: bool @= true
+
+    while more
+        skip_space(@p)
+
+        if !at_end(p) && here(p) == '*'
+            advance(@p)
+            total @ total * factor(@p, s, visiting)?
+        else if !at_end(p) && here(p) == '/'
+            advance(@p)
+            divisor = factor(@p, s, visiting)?
+
+            if divisor == 0.0
+                return fail(code: ERR_DIVISION_BY_ZERO, msg: "a formula divides by zero")
+            total @ total / divisor
+        else
+            more @ false
+
+    return ok(total)
+
+# A number, a cell, `SUM(...)`, a parenthesised expression or a negated
+# factor.
+#
+# - `p`: the reader; moves past the factor.
+# - `s`: the sheet.
+# - `visiting`: the cells whose evaluation is under way.
+function factor(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
+    skip_space(@p)
+
+    if at_end(p)
+        return fail(code: ERR_UNEXPECTED_END, msg: "the formula ends where a value was expected")
+    c = here(p)
+
+    if c == '('
+        advance(@p)
+        inner = expression(@p, s, visiting)?
+        skip_space(@p)
+
+        if at_end(p) || here(p) != ')'
+            return fail(code: ERR_UNCLOSED_PAREN, msg: "expected `)` at " + p.pos.to_str())
+        advance(@p)
+        return ok(inner)
+
+    if c == '-'
+        advance(@p)
+        return ok(-factor(@p, s, visiting)?)
+
+    if sheet.is_digit(c)
+        return number(@p)
+
+    if sheet.is_letter(c)
+        return named(@p, s, visiting)
+    return fail(code: ERR_UNEXPECTED_CHARACTER, msg: "no value starts at " + p.pos.to_str())
+
+# A literal: its digits and an optional point and more digits, read as one
+# text and rounded once by `numbers.parse_float`, so `0.3` is the `f64` that
+# `0.3` is.
+#
+# - `p`: the reader, on a digit; moves past the literal.
+#
+# Fails `does_not_fit` where the literal lies past the largest `f64`:
+# `numbers.parse_float` answers an infinity there, as Python's `float` does,
+# and a sheet that showed `inf` for a number somebody typed would be showing
+# a value nobody wrote.
+function number(@p: Parse) -> f64?
+    start = p.pos
+
+    while !at_end(p) && sheet.is_digit(here(p))
+        advance(@p)
+
+    if !at_end(p) && here(p) == '.'
+        advance(@p)
+
+        while !at_end(p) && sheet.is_digit(here(p))
+            advance(@p)
+
+    literal = p.text.slice(from: start, to: p.pos)
+    value = numbers.parse_float(literal)?
+
+    # An infinity is the one number, `nan` aside, that taken from itself is
+    # not 0, and digits and a point never write `nan`.
+    if value - value != 0.0
+        return fail(
+            code: ERR_DOES_NOT_FIT,
+            msg: "the literal of " + literal.len().to_str() + " bytes lies past the largest f64"
+        )
+    return ok(value)
+
+# A name: either `SUM(` and a range, or a cell.
+#
+# - `p`: the reader, on a capital; moves past the name.
+# - `s`: the sheet.
+# - `visiting`: the cells whose evaluation is under way.
+#
+# Fails `unknown_name` where the word is neither.
+function named(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
+    word = word_at(@p)
+
+    if word == "SUM"
+        return sum_of(@p, s, visiting)
+
+    if !sheet.is_name(word)
+        return fail(code: ERR_UNKNOWN_NAME, msg: "`" + word + "` is neither a cell nor `SUM`")
+    return value_of(s, word, visiting)
+
+# The run of capitals and digits `p` stands on.
+#
+# - `p`: the reader; moves past the run.
+function word_at(@p: Parse) -> str
+    start = p.pos
+
+    while !at_end(p) && (sheet.is_letter(here(p)) || sheet.is_digit(here(p)))
+        advance(@p)
+
+    return p.text.slice(from: start, to: p.pos)
+
+# `SUM(A1:C2)`: the one function this language has, and enough to make ranges
+# worth having at all.
+#
+# - `p`: the reader, after `SUM`; moves past its `)`.
+# - `s`: the sheet.
+# - `visiting`: the cells whose evaluation is under way.
+#
+# Fails `expected_paren` where no `(` follows, `unclosed_paren` where no `)`
+# closes it, and as `sheet.expand` fails on the range.
+function sum_of(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
+    skip_space(@p)
+
+    if at_end(p) || here(p) != '('
+        return fail(code: ERR_EXPECTED_PAREN, msg: "`SUM` needs a range in parentheses")
+    advance(@p)
+    start = p.pos
+
+    while !at_end(p) && here(p) != ')'
+        advance(@p)
+
+    if at_end(p)
+        return fail(code: ERR_UNCLOSED_PAREN, msg: "`SUM(` is never closed")
+    inside = p.text.slice(from: start, to: p.pos)
+    advance(@p)
+    total: f64 @= 0.0
+
+    for name in sheet.expand(inside)?
+        total @ total + value_of(s, name, visiting)?
+
+    return ok(total)
+
+test "arithmetic, with the usual precedence"
+    s = sheet.read("A1 = 2 + 3 * 4\nA2 = (2 + 3) * 4\nA3 = 10 / 4\nA4 = -3 + 1\n").must()
+    assert value_of(s, "A1", []).must() == 14.0
+    assert value_of(s, "A2", []).must() == 20.0
+    assert value_of(s, "A3", []).must() == 2.5
+    assert value_of(s, "A4", []).must() == -2.0
+
+test "a cell reads another cell, as deep as it likes"
+    s = sheet.read("A1 = 2\nB1 = A1 * 3\nC1 = B1 + A1\n").must()
+    assert value_of(s, "C1", []).must() == 8.0
+
+test "an empty cell is zero, so a range may be longer than the column"
+    s = sheet.read("A1 = 1\nA2 = 2\nB1 = SUM(A1:A9)\n").must()
+    assert value_of(s, "B1", []).must() == 3.0
+    assert value_of(s, "Z9", []).must() == 0.0
+
+test "a rectangle sums row by row"
+    s = sheet.read("A1 = 1\nB1 = 2\nA2 = 3\nB2 = 4\nC1 = SUM(A1:B2)\n").must()
+    assert value_of(s, "C1", []).must() == 10.0
+
+test "a cycle is a diagnosis, not a stack overflow"
+    for text in ["A1 = A1\n", "A1 = B1 + 1\nB1 = A1 + 1\n", "A1 = B1\nB1 = C1\nC1 = A1\n", "A1 = SUM(B1:B2)\nB1 = A1\n"]
+        assert code_of(sheet.read(text).must(), "A1") == ERR_CIRCULAR_REFERENCE
+
+test "a cell that is read twice without a cycle is not one"
+    s = sheet.read("A1 = 1\nB1 = A1 + A1\nC1 = B1 + A1\n").must()
+    assert value_of(s, "C1", []).must() == 3.0
+
+test "every other failure says what and where"
+    assert code_of(sheet.read("A1 = 1 / 0\n").must(), "A1") == ERR_DIVISION_BY_ZERO
+    assert code_of(sheet.read("A1 = 1 +\n").must(), "A1") == ERR_UNEXPECTED_END
+    assert code_of(sheet.read("A1 = (1\n").must(), "A1") == ERR_UNCLOSED_PAREN
+    assert code_of(sheet.read("A1 = 1 2\n").must(), "A1") == ERR_TRAILING_INPUT
+    assert code_of(sheet.read("A1 = TOTAL\n").must(), "A1") == ERR_UNKNOWN_NAME
+    assert code_of(sheet.read("A1 = SUM A1\n").must(), "A1") == ERR_EXPECTED_PAREN
+    assert code_of(sheet.read("A1 = SUM(A1\n").must(), "A1") == ERR_UNCLOSED_PAREN
+    assert code_of(sheet.read("A1 = SUM(B1)\n").must(), "A1") == sheet.ERR_BAD_RANGE
+    assert code_of(sheet.read("A1 = $\n").must(), "A1") == ERR_UNEXPECTED_CHARACTER
+
+test "a literal is rounded once, to the nearest f64"
+    s = sheet.read("A1 = 0.3\nA2 = 1.15\nA3 = 0.7\nA4 = 2.\nA5 = 0.1 + 0.2\n").must()
+    assert value_of(s, "A1", []).must() == 0.3 && value_of(s, "A1", []).must().to_str() == "0.3"
+    assert value_of(s, "A2", []).must().to_str() == "1.15"
+    assert value_of(s, "A3", []).must().to_str() == "0.7"
+    assert value_of(s, "A4", []).must() == 2.0
+    assert value_of(s, "A5", []).must().to_str() == "0.30000000000000004"
+
+test "a literal past the largest f64 is told, never read as inf"
+    huge = "1" + repeat("0", 400)
+    assert code_of(sheet.read("A1 = " + huge + "\n").must(), "A1") == ERR_DOES_NOT_FIT
+    assert value_of(sheet.read("A1 = 179769313486231570" + repeat("0", 291) + "\n").must(), "A1", []).must() > 0.0
+
+# The code a cell fails with, or `no_error`, which no arm above can produce, so
+# a test asserting a failure cannot pass by the cell turning out to be fine.
+#
+# - `s`: the sheet.
+# - `name`: the cell's name.
+function code_of(s: sheet.Sheet, name: str) -> str
+    return match value_of(s, name, [])
+        .ok _  => "no_error"
+        .err e => e.code

@@ -1,0 +1,141 @@
+# The map: rooms, the ways between them, and what is lying about.
+#
+# Written in code rather than read from a file: a world is the case where the
+# data *is* the program. A `{str: Room}` keyed by name, each room holding a
+# `{str: str}` from a direction to another room's name, so the map is a graph
+# with no pointers in it, which is the only kind this language has.
+#
+# Names are the links. An index would be shorter, and a reader would then have
+# to hold a numbering in their head to know where `2` goes.
+
+use <rebel>/graphs
+use <rebel>/maps
+
+## Error codes
+
+# A direction the room has no exit for.
+constant ERR_NO_WAY: str
+    "no_way"
+
+# One room of the world.
+record Room
+    # Its name, the key it stands under in `World.rooms`.
+    name: str
+    # What `look` and an arrival print.
+    description: str
+    # Each direction to the name of the room it leads to.
+    exits: {str: str}
+    # The one item lying here, "" for none.
+    item: str
+
+# The whole map, and where a game begins.
+record World
+    # Every room under its name.
+    rooms: {str: Room}
+    # The name of the room a game starts in.
+    start: str
+
+# The one world the game is played in: five rooms, a lantern and a key.
+function make() -> World
+    rooms: {str: Room} @= {}
+    rooms["gate"] @ Room(
+        name: "gate",
+        description: "A gate of black iron, standing open. A path leads north.",
+        exits: {"north": "yard"},
+        item: ""
+    )
+    rooms["yard"] @ Room(
+        name: "yard",
+        description: "A walled yard, gone to grass. Doors east and west, the gate south.",
+        exits: {"south": "gate", "east": "kitchen", "west": "library"},
+        item: "lantern"
+    )
+    rooms["kitchen"] @ Room(
+        name: "kitchen",
+        description: "Cold ovens and a long table. Something glints under it.",
+        exits: {"west": "yard"},
+        item: "key"
+    )
+    rooms["library"] @ Room(
+        name: "library",
+        description: "Shelves to the ceiling, all of them empty. A small door north.",
+        exits: {"east": "yard", "north": "vault"},
+        item: ""
+    )
+    rooms["vault"] @ Room(
+        name: "vault",
+        description: "A round room with one locked door in the floor.",
+        exits: {"south": "library"},
+        item: ""
+    )
+    return World(rooms: rooms, start: "gate")
+
+# The room named `name`.
+#
+# - `w`: the world.
+# - `name`: a room's name.
+#
+# Fails `missing_key` where the world has no such room.
+function room_at(w: World, name: str) -> Room?
+    return w.rooms[name]
+
+# Where `direction` leads from here, or an error naming the ways that do
+# exist, which is the whole difference between a game and a guessing game.
+#
+# - `w`: the world.
+# - `here`: the room's name.
+# - `direction`: the way asked for.
+#
+# Fails `no_way` where the room has no such exit, and `missing_key` where
+# `here` names no room.
+function through(w: World, here: str, direction: str) -> str?
+    room = room_at(w, here)?
+
+    match room.exits[direction]
+        .ok there => return ok(there)
+        .err _ => return fail(
+            code: ERR_NO_WAY,
+            msg: "there is no way " + direction + " — try " + join(sort(keys(room.exits)), ", ")
+        )
+
+# Every room a walker can get to from the start, sorted: the map read as a
+# graph whose edges are the exits. A world with an unreachable room is a world
+# with a bug in it.
+#
+# - `w`: the world.
+function reachable(w: World) -> [str]
+    graph: {str: [str]} @= {}
+
+    for name in keys(w.rooms)
+        graph[name] @ maps.values(w.rooms[name].must().exits)
+
+    # `w.start` is a key of `graph`, the one failure `reachable_from` has.
+    return sort(graphs.reachable_from(graph, from: w.start).must())
+
+test "every exit leads to a room that exists"
+    w = make()
+
+    for name in sort(keys(w.rooms))
+        room = room_at(w, name).must()
+
+        for direction in sort(keys(room.exits))
+            assert !room_at(w, room.exits[direction].must()).is_err()
+
+test "the world is connected: every room is reachable from the start"
+    w = make()
+    assert reachable(w) == sort(keys(w.rooms))
+
+test "a direction that is not there names the ones that are"
+    w = make()
+    assert through(w, here: "gate", direction: "north").must() == "yard"
+
+    match through(w, here: "gate", direction: "west")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == ERR_NO_WAY
+            assert e.msg == "there is no way west — try north"
+
+test "the only item worth having is behind two doors"
+    w = make()
+    assert room_at(w, "kitchen").must().item == "key"
+    assert room_at(w, "vault").must().item == ""

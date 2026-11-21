@@ -1,0 +1,186 @@
+# The levels, as a set of bits.
+#
+# One bit per level, `|` to add, `&` to test, `~` to take away, `^` to toggle.
+# It is the shape a flag set has had since C: a **flag union**, written `|`
+# rather than `+`, where `+` is a silent wrong answer the moment one flag is
+# added twice.
+#
+# Why a mask at all, rather than a `[str]` of level names: the question the
+# program asks is *is this line in the set*, once per line, and a mask answers
+# it with one `&` where a list answers it with a loop.
+#
+# `PROBLEMS` is the constant this buys: `WARN | ERROR` written once, named,
+# and impossible to get wrong at a call site.
+
+use <rebel>/math
+use <rebel>/strings
+
+# `TRACE`.
+constant BIT_TRACE: i64
+    1
+
+# `DEBUG`.
+constant BIT_DEBUG: i64
+    1 << 1
+
+# `INFO`.
+constant BIT_INFO: i64
+    1 << 2
+
+# `WARN`.
+constant BIT_WARN: i64
+    1 << 3
+
+# `ERROR`.
+constant BIT_ERROR: i64
+    1 << 4
+
+# Every level there is. Written as a union rather than as `31`, because `31`
+# is a number a reader has to decode and this is a list they can read.
+constant EVERY: i64
+    BIT_TRACE | BIT_DEBUG | BIT_INFO | BIT_WARN | BIT_ERROR
+
+# The two levels somebody woken at night is looking for.
+constant PROBLEMS: i64
+    BIT_WARN | BIT_ERROR
+
+# A name in a list of levels that is no level.
+constant ERR_NO_SUCH_LEVEL: str
+    "no_such_level"
+
+# The bit a level's name stands for, or 0 for a name that is not a level. Zero
+# is the right answer for "no bits at all", and it makes `holds` false for
+# every mask, which is what a caller wants from a name that means nothing.
+#
+# - `level`: a level's name, in capitals.
+function bit_of(level: str) -> i64
+    if level == "TRACE"
+        return BIT_TRACE
+
+    if level == "DEBUG"
+        return BIT_DEBUG
+
+    if level == "INFO"
+        return BIT_INFO
+
+    if level == "WARN"
+        return BIT_WARN
+
+    if level == "ERROR"
+        return BIT_ERROR
+    return 0
+
+# Whether `level` is in `mask`. `mask & bit != 0` needs no parentheses, the
+# opposite of C, where `&` binds looser than `!=`: the spec's chain puts `&`
+# above the comparisons (spec § 7), so what is written is what is meant.
+#
+# - `mask`: a set of levels.
+# - `level`: a level's name.
+function holds(mask: i64, level: str) -> bool
+    return mask & bit_of(level) != 0
+
+# `mask` with `level` in it.
+#
+# - `mask`: a set of levels.
+# - `level`: a level's name.
+function added(mask: i64, level: str) -> i64
+    return mask | bit_of(level)
+
+# `mask` without `level`.
+#
+# - `mask`: a set of levels.
+# - `level`: a level's name.
+function removed(mask: i64, level: str) -> i64
+    return mask & ~bit_of(level)
+
+# `mask` with `level` turned over: in where it was out, out where it was in.
+#
+# - `mask`: a set of levels.
+# - `level`: a level's name.
+function toggled(mask: i64, level: str) -> i64
+    return mask ^ bit_of(level)
+
+# How many levels are in the set: its one bits.
+#
+# - `mask`: a set of levels, never negative.
+function how_many(mask: i64) -> i64
+    return math.count_ones(mask)
+
+# The names in the set, in the order the levels are declared, which is the
+# order of severity and the one a reader expects a level list in.
+#
+# - `mask`: a set of levels.
+function names_of(mask: i64) -> [str]
+    out: [str] @= []
+
+    for level in ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
+        if holds(mask, level)
+            out @ out.push(level)
+
+    return out
+
+# `ERROR,WARN`: a comma-separated list of level names, as one mask; an empty
+# name between two commas is passed over.
+#
+# - `text`: the list, as the command line gives it.
+#
+# Fails `no_such_level` at the first name that is no level.
+function read(text: str) -> i64?
+    mask: i64 @= 0
+
+    for name in strings.split(s: text, sep: ",")
+        if name == ""
+            continue
+
+        if bit_of(name) == 0
+            return fail(
+                code: ERR_NO_SUCH_LEVEL,
+                msg: "`" + name + "` is not a level — try " + join(names_of(EVERY), ", ")
+            )
+        mask @ added(mask, name)
+
+    return ok(mask)
+
+test "a bit is a level, and a name that is not a level is no bits at all"
+    assert bit_of("ERROR") == BIT_ERROR
+    assert bit_of("TRACE") == 1
+    assert bit_of("SHOUT") == 0
+    assert holds(EVERY, "SHOUT") == false
+
+test "the union is what the constants say it is"
+    assert PROBLEMS == BIT_WARN | BIT_ERROR
+    assert EVERY == 31
+    assert how_many(EVERY) == 5
+    assert how_many(PROBLEMS) == 2
+    assert how_many(0) == 0
+
+test "adding twice is adding once, which is the whole reason it is not `+`"
+    once = added(0, "ERROR")
+    twice = added(once, "ERROR")
+    assert once == twice
+    assert once == BIT_ERROR
+    assert BIT_ERROR + BIT_ERROR != BIT_ERROR
+
+test "taking away leaves the rest, and toggling puts it back"
+    without_error = removed(EVERY, "ERROR")
+    assert holds(without_error, "ERROR") == false
+    assert holds(without_error, "WARN") == true
+    assert how_many(without_error) == 4
+    assert toggled(without_error, "ERROR") == EVERY
+
+test "the names come back in severity order, whatever order they went in"
+    assert names_of(PROBLEMS) == ["WARN", "ERROR"]
+    assert names_of(read("ERROR,TRACE").must()) == ["TRACE", "ERROR"]
+    assert names_of(0) == []
+
+test "a list of names is a mask, and a name that is not a level says so"
+    assert read("ERROR").must() == BIT_ERROR
+    assert read("WARN,ERROR").must() == PROBLEMS
+    assert read("ERROR,,WARN").must() == PROBLEMS
+    assert read(",").must() == 0
+
+    match read("ERROR,SHOUT")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == ERR_NO_SUCH_LEVEL
+            assert e.msg == "`SHOUT` is not a level — try TRACE, DEBUG, INFO, WARN, ERROR"

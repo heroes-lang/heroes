@@ -1,0 +1,215 @@
+# The grid: cell names, ranges, and the file they are read from.
+#
+# A cell name is **one letter and one or more digits**, `A1`, `C12`. One letter
+# rather than Excel's `AA`, because it makes a column a number between 0 and
+# 25, so `A1:C1` is a loop and not a base-26 conversion. A program that needed
+# 27 columns would change this file and nothing else.
+#
+# The file is one cell per line, `NAME = formula`. Blank lines and `#` comments
+# are skipped, which is what makes the sample readable.
+
+use <rebel>/math
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/unicode
+
+## Error codes
+
+# A name that is not one letter and a row from 1.
+constant ERR_BAD_CELL_NAME: str
+    "bad_cell_name"
+
+# A range that is not two cells joined by `:`.
+constant ERR_BAD_RANGE: str
+    "bad_range"
+
+# A line that is not `NAME = formula`.
+constant ERR_NO_ASSIGNMENT: str
+    "no_assignment"
+
+# Where a cell stands.
+record Cell
+    # Its letter, from 0 for `A` to 25 for `Z`.
+    column: i64
+    # Its row, from 1.
+    row: i64
+
+# A sheet read: each cell's formula under its name.
+record Sheet
+    # Cell names to their formulas, as written after the `=`.
+    cells: {str: str}
+
+# Whether the byte `c` is an ASCII capital, a column's letter.
+#
+# - `c`: a byte of a name or a formula.
+function is_letter(c: u8) -> bool
+    return c >= 'A' && c <= 'Z'
+
+# Whether the byte `c` is an ASCII digit.
+#
+# - `c`: a byte of a name or a formula.
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+## Names
+
+# `A1` as a `Cell`, or an error naming what was wrong with it.
+#
+# - `name`: the name, as written.
+#
+# Fails `bad_cell_name` where it is not one capital and digits, its row is 0,
+# or its row does not fit an `i64`. The row is read by `numbers.parse_int`
+# once every byte after the letter is known to be a digit, since it would also
+# take a sign.
+function cell_of(name: str) -> Cell?
+    if name.len() < 2 || !is_letter(name[0])
+        return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` is not a cell: one letter then digits")
+    i: i64 @= 1
+
+    while i < name.len()
+        if !is_digit(name[i])
+            return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` is not a cell: one letter then digits")
+        i @ i + 1
+
+    row = match numbers.parse_int(name.slice(from: 1, to: name.len()))
+        .ok n  => n
+        .err _ => return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` has a row too long for an i64")
+
+    if row == 0
+        return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` has no row: rows start at 1")
+    return ok(Cell(column: to_i64(name[0] - 'A').must(), row: row))
+
+# The name a `Cell` has.
+#
+# - `c`: a cell, its column 0 to 25.
+function name_of(c: Cell) -> str
+    # A column from 0 to 25 is a capital from U+0041 to U+005A, every one a
+    # scalar value, so the conversion cannot fail.
+    return unicode.from_code_point('A' + c.column).must() + c.row.to_str()
+
+# Whether `word` is a cell's name.
+#
+# - `word`: any text.
+function is_name(word: str) -> bool
+    return !cell_of(word).is_err()
+
+## Ranges
+
+# `A1:C2` as the names it covers, row by row. Both corners are inclusive, and
+# a range whose end is before its start is empty rather than an error, the
+# same answer `range(from: 3, to: 1)` gives, so there is one rule to remember.
+#
+# - `text`: the range, as written inside `SUM(...)`.
+#
+# Fails `bad_range` where it holds no `:`, and as `cell_of` fails on a corner.
+function expand(text: str) -> [str]?
+    corners = match strings.split_once(s: text, sep: ":")
+        .ok halves => halves
+        .err _     => return fail(code: ERR_BAD_RANGE, msg: "`" + text + "` is not a range: two cells joined by `:`")
+
+    from = cell_of(strings.trim(corners.before))?
+    to = cell_of(strings.trim(corners.after))?
+    out: [str] @= []
+
+    for row in range(from: from.row, to: to.row + 1)
+        for column in range(from: from.column, to: to.column + 1)
+            out @ out.push(name_of(Cell(column: column, row: row)))
+
+    return ok(out)
+
+## The file
+
+# `NAME = formula` per line, `#` a comment, blank lines skipped.
+#
+# - `text`: the file's text.
+#
+# Fails `no_assignment` where a line holds no `=`, and `bad_cell_name` where
+# what stands before it is no cell's name.
+function read(text: str) -> Sheet?
+    cells: {str: str} @= {}
+
+    for line in strings.lines(text)
+        head = strings.trim(line)
+
+        if head == "" || strings.has_prefix(s: head, prefix: "#")
+            continue
+
+        assignment = match strings.split_once(s: head, sep: "=")
+            .ok halves => halves
+            .err _     => return fail(code: ERR_NO_ASSIGNMENT, msg: "`" + head + "` is not `NAME = formula`")
+
+        name = strings.trim(assignment.before)
+
+        if !is_name(name)
+            return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` is not a cell name")
+        cells[name] @ strings.trim(assignment.after)
+
+    return ok(Sheet(cells: cells))
+
+# Every cell the sheet has, in the order a reader expects: down the rows, then
+# across the columns. `sort(keys(m))` would put `A10` before `A2`, because that
+# is what sorting text does.
+#
+# - `s`: the sheet.
+function names(s: Sheet) -> [str]
+    out: [str] @= []
+
+    for row in range(from: 1, to: highest_row(keys(s.cells)) + 1)
+        for column in range(from: 0, to: 26)
+            name = name_of(Cell(column: column, row: row))
+
+            if !s.cells[name].is_err()
+                out @ out.push(name)
+
+    return out
+
+# The highest row any of `known` names, 0 for none.
+#
+# - `known`: cell names, as the sheet holds them.
+function highest_row(known: [str]) -> i64
+    best: i64 @= 0
+
+    for name in known
+        match cell_of(name)
+            .ok c  => best @ math.max_i64(a: best, b: c.row)
+            .err _ => continue
+
+    return best
+
+test "a cell name is one letter and digits"
+    assert cell_of("A1").must() == Cell(column: 0, row: 1)
+    assert cell_of("C12").must() == Cell(column: 2, row: 12)
+
+    for word in ["1A", "A", "A0", "AA1", "A+1", "a1"]
+        assert cell_of(word).is_err()
+
+test "a row too long for an i64 is a failure the program reports, never an abort"
+    assert cell_of("A9223372036854775807").must() == Cell(column: 0, row: 9223372036854775807)
+
+    for word in ["A9223372036854775808", "A99999999999999999999"]
+        match cell_of(word)
+            .ok _  => assert false
+            .err e => assert e.code == ERR_BAD_CELL_NAME
+
+test "a name survives a round trip"
+    assert name_of(cell_of("Z9").must()) == "Z9"
+    assert name_of(Cell(column: 25, row: 100)) == "Z100"
+
+test "a range is a rectangle, row by row"
+    assert expand("A1:A3").must() == ["A1", "A2", "A3"]
+    assert expand("A1:C1").must() == ["A1", "B1", "C1"]
+    assert expand("A1:B2").must() == ["A1", "B1", "A2", "B2"]
+    assert expand("B2:A1").must() == []
+    assert expand("A1").is_err()
+
+test "the file is one cell per line, with comments"
+    s = read("# a note\n\nA1 = 2\nB1 = A1 * 3\n").must()
+    assert s.cells.len() == 2
+    assert s.cells["B1"].must() == "A1 * 3"
+    assert read("A1 2\n").is_err()
+    assert read("1A = 2\n").is_err()
+
+test "the cells come back in reading order, not in sorted order"
+    s = read("A10 = 1\nA2 = 1\nB2 = 1\n").must()
+    assert names(s) == ["A2", "B2", "A10"]
+    assert sort(keys(s.cells)) == ["A10", "A2", "B2"]

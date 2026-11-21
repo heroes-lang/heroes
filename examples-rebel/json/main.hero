@@ -1,0 +1,154 @@
+# The twin of `examples/json/`: a JSON document in, its shape and its
+# canonical form out, written with Rebel. It prints byte for byte what
+# `examples/json/` prints from the same arguments, so that program's
+# `main.expected` is this one's test too.
+#
+#     heroes run examples-rebel/json/main.hero -- examples/json/sample.json title
+#
+# What Rebel does here that `examples/json/` writes for itself:
+#
+# - `json.parse` reads the document by RFC 8259, its depth bounded and each
+#   number rounded once, in place of that program's reader in its `json.hero`
+#   (`parse`, its `Reader`, the object, array, string, escape, surrogate and
+#   number readers, and the `strtod` it binds from C);
+# - `json.format_canonical` writes a value as RFC 8785 gives it, one line, the
+#   members ordered by their keys, in place of its writer (`render`, `quoted`,
+#   `number_text`);
+# - `json.member` finds a member of an object, in place of its `field`;
+# - `maps.values` gives an object's values in the order they were written, in
+#   place of its loop over `keys`.
+#
+# What stays this program's own is its question of a document, how many values
+# it holds and how deep they nest, a walk with an arm for each of the six
+# kinds; and its three exits, 0 for a document it read, 1 for one it could
+# not, 2 for being asked wrong.
+#
+# Where the two answer otherwise, none of it in that program's expected
+# output: a text that is not JSON fails `invalid` here, its message opening
+# `line L, column C:`, and `not_json` there, opening `byte N:`; a missing
+# member fails `not_found` here, or `invalid` on a value that is no object,
+# and `no_field` there for both. RFC 8785's form, written here, orders keys by
+# their UTF-16 code units, writes `\b` and `\f` by name and a small number as
+# `1e-7`; that program's form orders keys by their bytes, writes `\u0008` and
+# `\u000c`, and writes `1e-07`.
+
+use <rebel>/json
+use <rebel>/maps
+
+function main()
+    given = args()
+
+    if given.len() == 0
+        print("usage: json <file> [key]")
+        exit(code: 2)
+
+    match read_file(given[0])
+        .err e   => stop("cannot read " + given[0] + ": " + e.code)
+        .ok text => report(text, given)
+
+# Every unhappy ending in one place, so the exit code is decided once.
+#
+# - `message`: what is printed before the program ends with 1.
+function stop(message: str)
+    print(message)
+    exit(code: 1)
+
+# The document `text` reads described, or why it could not be read.
+#
+# - `text`: the file's text.
+# - `given`: the command line, its second word a member to show.
+function report(text: str, given: [str])
+    match json.parse(text)
+        .err e  => stop(e.code + ": " + e.msg)
+        .ok doc => describe(doc, given)
+
+# The document's size, depth and canonical form, and the member the command
+# line names.
+#
+# - `doc`: the document.
+# - `given`: the command line, its second word a member to show.
+function describe(doc: json.Value, given: [str])
+    print("values: ", size(doc))
+    print("depth: ", depth(doc))
+    print(shown(doc))
+
+    if given.len() > 1
+        match json.member(doc, key: given[1])
+            .err e  => print("field ", given[1], ": ", e.code)
+            .ok got => print("field ", given[1], ": ", shown(got))
+
+# A value as canonical JSON text. `parse` reads no number JSON cannot write,
+# so a value the document held always has a text, and the failure arm is the
+# answer `format_canonical` gives a value a program built with a `nan` or an
+# infinity.
+#
+# - `v`: the value.
+function shown(v: json.Value) -> str
+    return match json.format_canonical(v)
+        .ok text => text
+        .err e   => "(" + e.code + ")"
+
+# How many values the tree holds, counting itself.
+#
+# - `v`: the value; `json.parse` bounds its nesting, so the recursion is
+#   bounded too.
+function size(v: json.Value) -> i64
+    return match v
+        .null_value | .boolean _ | .number _ | .text _ => 1
+        .list l                                        => 1 + size_of_all(l.items)
+        .object o                                      => 1 + size_of_all(maps.values(o.members))
+
+# The values every one of `items` holds, each counting itself.
+#
+# - `items`: the values.
+function size_of_all(items: [json.Value]) -> i64
+    total: i64 @= 0
+
+    for item in items
+        total @ total + size(item)
+
+    return total
+
+# How deep the tree goes: a value holding no other is 1.
+#
+# - `v`: the value.
+function depth(v: json.Value) -> i64
+    return match v
+        .null_value | .boolean _ | .number _ | .text _ => 1
+        .list l                                        => 1 + deepest(l.items)
+        .object o                                      => 1 + deepest(maps.values(o.members))
+
+# The depth of the deepest of `items`, 0 for none.
+#
+# - `items`: the values.
+function deepest(items: [json.Value]) -> i64
+    best: i64 @= 0
+
+    for item in items
+        d = depth(item)
+
+        if d > best
+            best @ d
+
+    return best
+
+test "the report reads its own sample"
+    doc = json.parse(read_file("examples/json/sample.json").must()).must()
+    assert shown(json.member(doc, key: "title").must()) == "\"Heroes\""
+    assert size(doc) == 12
+    assert depth(doc) == 3
+    assert json.member(doc, key: "nothing_here").is_err()
+    assert json.member(.number(v: 1.0), key: "title").is_err()
+
+test "size and depth count the tree, a value that holds no other counting one"
+    leaf: json.Value = .number(v: 1.0)
+    nested: json.Value = .list(items: [leaf, .list(items: [leaf])])
+    assert size(nested) == 4
+    assert depth(nested) == 3
+    assert depth(leaf) == 1
+    assert size(.object(members: {"a": leaf, "b": .null_value})) == 3
+    assert shown(.number(v: 1.0 / 0.0)) == "(unsupported)"
+
+test "a document survives a round trip through its own canonical form"
+    first = shown(json.parse(read_file("examples/json/sample.json").must()).must())
+    assert shown(json.parse(first).must()) == first
