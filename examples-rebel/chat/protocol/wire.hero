@@ -1,0 +1,147 @@
+# What a client asks the server over its WebSocket: one JSON object per text
+# message, its `type` naming the request, written by `encode` and read back
+# by `decode`. The server reads every frame through `decode`, so a frame that
+# is no request, or names a member of the wrong kind, is answered with a
+# failure notice and never acted on.
+
+use <rebel>/json
+
+use protocol/objects
+
+# The code of a frame that is no request.
+constant INVALID: str
+    "invalid"
+
+# A request of a client.
+variant Command
+    # Enter a room, made where it is new, and stay in it across connections.
+    join
+        # The room's name.
+        room: str
+    # Leave a room.
+    leave
+        # The room's name.
+        room: str
+    # Post a message in a room the client is in.
+    say
+        # The room's name.
+        room: str
+        # The text, its shortcodes not yet resolved.
+        text: str
+    # Send a message to one user.
+    direct
+        # The user's name.
+        to: str
+        # The text, its shortcodes not yet resolved.
+        text: str
+    # Tell a room's other members that this user is typing.
+    typing
+        # The room's name.
+        room: str
+    # Ask for a page of a room's history.
+    history
+        # The room's name.
+        room: str
+        # The id of the oldest message the client holds, "" for the newest
+        # page.
+        before: str
+        # The most messages the page holds, 0 for the server's own size.
+        limit: i64
+    # Change the text of a message this user posted.
+    edit
+        # The message's id.
+        id: str
+        # The new text, its shortcodes not yet resolved.
+        text: str
+    # Ask to be told once every notice of the requests before this one has
+    # been written: what a client waits on to know the server has caught up.
+    sync
+        # A number of the client's, which the answer carries back.
+        ref: i64
+
+# `c` as the JSON object written on the wire.
+#
+# - `c`: the request.
+function command_json(c: Command) -> json.Value
+    members: {str: json.Value} = match c
+        .join j   => {"type": objects.text("join"), "room": objects.text(j.room)}
+        .leave l  => {"type": objects.text("leave"), "room": objects.text(l.room)}
+        .say s    => {"type": objects.text("say"), "room": objects.text(s.room), "text": objects.text(s.text)}
+        .direct d => {"type": objects.text("direct"), "to": objects.text(d.to), "text": objects.text(d.text)}
+        .typing t => {"type": objects.text("typing"), "room": objects.text(t.room)}
+        .history h => {
+            "type": objects.text("history")
+            "room": objects.text(h.room)
+            "before": objects.text(h.before)
+            "limit": objects.number(h.limit)
+        }
+        .edit e => {"type": objects.text("edit"), "id": objects.text(e.id), "text": objects.text(e.text)}
+        .sync s => {"type": objects.text("sync"), "ref": objects.number(s.ref)}
+
+    return .object(members: members)
+
+# The request the JSON object `v` writes.
+#
+# - `v`: the object, as `command_json` writes one.
+#
+# Fails `invalid` where `v` is no object, names no request in its `type`, or
+# lacks a member its request needs.
+function command_of(v: json.Value) -> Command?
+    kind = objects.text_of(v, key: "type")?
+
+    return match kind
+        "join"   => ok(.join(room: objects.text_of(v, key: "room")?))
+        "leave"  => ok(.leave(room: objects.text_of(v, key: "room")?))
+        "say"    => ok(.say(room: objects.text_of(v, key: "room")?, text: objects.text_of(v, key: "text")?))
+        "direct" => ok(.direct(to: objects.text_of(v, key: "to")?, text: objects.text_of(v, key: "text")?))
+        "typing" => ok(.typing(room: objects.text_of(v, key: "room")?))
+        "history" => ok(
+            .history(room: objects.text_of(v, key: "room")?, before: objects.text_or(v, key: "before", otherwise: "")?, limit: objects.int_or(v, key: "limit", otherwise: 0)?)
+        )
+        "edit" => ok(.edit(id: objects.text_of(v, key: "id")?, text: objects.text_of(v, key: "text")?))
+        "sync" => ok(.sync(ref: objects.int_of(v, key: "ref")?))
+        _      => fail(code: INVALID, msg: f"no request is named \"{kind}\"")
+
+# `c` as the text of one WebSocket message.
+#
+# - `c`: the request.
+function encode(c: Command) -> str
+    # A request holds texts and whole numbers alone, never a `nan`, so it is
+    # always written.
+    return json.format(command_json(c)).must()
+
+# The request one WebSocket message's text writes.
+#
+# - `text`: the message's text.
+#
+# Fails `invalid` where it is no JSON or no request, the message saying why.
+function decode(text: str) -> Command?
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: f"a request is one JSON object: {e.msg}")
+
+    return command_of(v)
+
+test "decode: every request written and read back"
+    asked: [Command] = [
+        .join(room: "general")
+        .leave(room: "general")
+        .say(room: "general", text: "hi :wave:")
+        .direct(to: "bob", text: "psst")
+        .typing(room: "iot")
+        .history(room: "general", before: "", limit: 20)
+        .edit(id: "0190", text: "fixed")
+        .sync(ref: 3)
+    ]
+
+    for c in asked
+        assert decode(encode(c)).must() == c
+
+test "decode: no JSON, no type, an unknown type, and a member missing"
+    assert decode("hello").is_err()
+    assert decode("{}").is_err()
+    assert decode("{\"type\":\"shout\"}").is_err()
+    assert decode("{\"type\":\"say\",\"room\":\"general\"}").is_err()
+
+test "decode: a history with its paging left out asks for the newest page"
+    assert decode("{\"type\":\"history\",\"room\":\"general\"}").must() == .history(room: "general", before: "", limit: 0)

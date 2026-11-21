@@ -1,0 +1,331 @@
+# A loopback stand-in for an MQTT broker, so the demo's bridge talks MQTT
+# 3.1.1 and 5 to something on this machine rather than to a broker of the
+# network. It runs on a thread of its own, serves every connection on one
+# poll loop, and does what the demo leans on the way a broker must: CONNECT
+# answered with CONNACK (MQTT 5's Maximum QoS 1 and Retain Available 0 said,
+# since it keeps nothing), SUBSCRIBE granted at most QoS 1, PUBLISH routed to
+# every matching subscription with MQTT 5's No Local honoured and QoS 1
+# acknowledged by PUBACK, PINGREQ answered and DISCONNECT closing. A packet
+# before CONNECT, a second CONNECT, QoS 2, or bytes that are no MQTT end the
+# connection, as a broker ends it. Each packet is read and written by `mqtt`'s
+# own `decode` and `encode`; this module answers them, and `mqtt_routes`
+# frames them and routes what is published.
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/math
+use <rebel>/mqtt
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/poll
+use <rebel>/time
+
+use standins/mqtt_routes
+use standins/told
+
+# MQTT 5's reason code for a topic filter refused (§ 3.9.3, 0x8F).
+constant FILTER_INVALID: i64
+    143
+
+# MQTT 3.1.1's return code of a subscription refused (§ 3.9.3, 0x80).
+constant FAILURE_V4: i64
+    128
+
+# Answers the CONNECT of peer `i`: its level and identifier kept, and CONNACK
+# written, with what this broker does not offer said in MQTT 5.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `version`: the level its CONNECT asked, 4 or 5.
+# - `client_id`: the identifier it gave, "" asking for one.
+function accept_connect(@b: mqtt_routes.Broker, i: i64, version: i64, client_id: str)
+    assigned = client_id == ""
+
+    id = if assigned
+        f"standin-{i}"
+    else
+        client_id
+
+    b.peers[i].version @ version
+    b.peers[i].client_id @ id
+    said: [mqtt.Property] @= []
+
+    if version == 5
+        said @ said.push(mqtt.Property(id: mqtt.MAXIMUM_QOS, value: .number(v: 1)))
+        said @ said.push(mqtt.Property(id: mqtt.RETAIN_AVAILABLE, value: .number(v: 0)))
+
+        if assigned
+            said @ said.push(mqtt.Property(id: mqtt.ASSIGNED_CLIENT_IDENTIFIER, value: .text(v: id)))
+
+    _ = mqtt_routes.send(b.peers[i], p: .connack(session_present: false, reason: 0, properties: said))
+
+# Keeps the subscriptions of a SUBSCRIBE of peer `i`, each at QoS 1 at most,
+# and answers it with SUBACK.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `packet_id`: the SUBSCRIBE's identifier.
+# - `asked`: its subscriptions.
+function subscribe(@b: mqtt_routes.Broker, i: i64, packet_id: i64, asked: [mqtt.Subscription])
+    kept @= b.peers[i].subscriptions
+    reasons: [i64] @= []
+
+    for s in asked
+        if !mqtt.is_valid_filter(s.filter)
+            if b.peers[i].version == 5
+                reasons @ reasons.push(FILTER_INVALID)
+            else
+                reasons @ reasons.push(FAILURE_V4)
+            continue
+
+        granted @= s
+        granted.qos @ math.min_i64(a: s.qos, b: 1)
+        replaced @= false
+        j @= 0
+
+        while j < kept.len()
+            if kept[j].filter == s.filter
+                kept[j] @ granted
+                replaced @ true
+            j @ j + 1
+
+        if !replaced
+            kept @ kept.push(granted)
+
+        reasons @ reasons.push(granted.qos)
+
+    b.peers[i].subscriptions @ kept
+    _ = mqtt_routes.send(b.peers[i], p: .suback(packet_id: packet_id, reasons: reasons, properties: []))
+
+# Drops the subscriptions of an UNSUBSCRIBE of peer `i`, and answers it.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `packet_id`: the UNSUBSCRIBE's identifier.
+# - `filters`: the filters it names.
+function unsubscribe(@b: mqtt_routes.Broker, i: i64, packet_id: i64, filters: [str])
+    kept: [mqtt.Subscription] @= []
+
+    for s in b.peers[i].subscriptions
+        gone @= false
+
+        for f in filters
+            if f == s.filter
+                gone @ true
+
+        if !gone
+            kept @ kept.push(s)
+
+    b.peers[i].subscriptions @ kept
+    reasons: [i64] @= []
+
+    if b.peers[i].version == 5
+        for _ in filters
+            reasons @ reasons.push(0)
+
+    _ = mqtt_routes.send(b.peers[i], p: .unsuback(packet_id: packet_id, reasons: reasons, properties: []))
+
+# Acts on one packet of peer `i`.
+#
+# - `b`: the broker.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `p`: the packet.
+function on_packet(@b: mqtt_routes.Broker, set: poll.Set, i: i64, p: mqtt.Packet)
+    connected = b.peers[i].version != 0
+
+    match p
+        .connect c =>
+            # A second CONNECT is a protocol error (MQTT 5 § 3.1).
+            if connected
+                mqtt_routes.drop_peer(@b, set: set, i: i)
+            else
+                accept_connect(@b, i: i, version: c.version, client_id: c.client_id)
+        .publish m =>
+            # This broker grants QoS 1 at most and said so in CONNACK.
+            if !connected || m.message.qos > 1
+                mqtt_routes.drop_peer(@b, set: set, i: i)
+            else
+                mqtt_routes.route(@b, from: i, m: m.message)
+
+                if m.message.qos == 1
+                    _ = mqtt_routes.send(
+                        b.peers[i],
+                        p: .puback(packet_id: m.message.packet_id, reason: 0, properties: [])
+                    )
+        .subscribe s =>
+            if connected
+                subscribe(@b, i: i, packet_id: s.packet_id, asked: s.subscriptions)
+            else
+                mqtt_routes.drop_peer(@b, set: set, i: i)
+        .unsubscribe u =>
+            if connected
+                unsubscribe(@b, i: i, packet_id: u.packet_id, filters: u.filters)
+            else
+                mqtt_routes.drop_peer(@b, set: set, i: i)
+        .pingreq =>
+            if connected
+                _ = mqtt_routes.send(b.peers[i], p: .pingresp)
+            else
+                mqtt_routes.drop_peer(@b, set: set, i: i)
+        # A delivery's acknowledgement: nothing is sent again, so nothing
+        # waits on it.
+        .puback _     => _ = 0
+        .disconnect _ => mqtt_routes.drop_peer(@b, set: set, i: i)
+        # A packet only a server sends, or one of QoS 2's exchange, which this
+        # broker never began: a protocol error.
+        .connack _ | .suback _ | .unsuback _ | .pubrec _ | .pubrel _ | .pubcomp _ | .pingresp | .auth _ => mqtt_routes.drop_peer(
+            @b,
+            set: set,
+            i: i
+        )
+
+# Reads what peer `i` sent and acts on every whole packet of it.
+#
+# - `b`: the broker.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+function on_readable(@b: mqtt_routes.Broker, set: poll.Set, i: i64)
+    data = match io.read(b.peers[i].stream, n: 65_536)
+        .ok d => d
+        .err _ =>
+            mqtt_routes.drop_peer(@b, set: set, i: i)
+            return
+
+    if data.len() == 0
+        mqtt_routes.drop_peer(@b, set: set, i: i)
+        return
+
+    bytes.push_all(to: @b.peers[i].held, from: data)
+
+    while b.peers[i].open
+        n = mqtt_routes.packet_length(b.peers[i].held)
+
+        if n == 0
+            return
+
+        if n < 0
+            mqtt_routes.drop_peer(@b, set: set, i: i)
+            return
+
+        held = b.peers[i].held
+        b.peers[i].held @ held.slice(from: n, to: held.len())
+
+        # A CONNECT is read at its own level whatever is asked here.
+        version = if b.peers[i].version == 0
+            5
+        else
+            b.peers[i].version
+
+        match mqtt.decode(held.slice(from: 0, to: n), version: version)
+            .ok p  => on_packet(@b, set: set, i: i, p: p)
+            .err _ => mqtt_routes.drop_peer(@b, set: set, i: i)
+
+# The index of the open peer whose key is `key`, -1 where none.
+#
+# - `b`: the broker.
+# - `key`: a key of the poll set.
+function peer_of(b: mqtt_routes.Broker lent, key: i64) -> i64
+    i @= 0
+
+    while i < b.peers.len()
+        if b.peers[i].open && b.peers[i].key == key
+            return i
+        i @ i + 1
+
+    return -1
+
+# Serves every connection until the program's stop is asked, then closes
+# them.
+#
+# - `b`: the broker.
+# - `set`: the poll set, the listener in it.
+# - `l`: the listener.
+# - `listening`: the listener's key in the set.
+function serve(@b: mqtt_routes.Broker, set: poll.Set, l: net.Listener lent, listening: i64)
+    while true
+        events = match poll.wait(set, limit: time.hours(1).must())
+            .ok got => got
+            .err _  => break
+
+        for e in events
+            if e.key == listening
+                accept(@b, set: set, l: l)
+            else
+                i = peer_of(b, key: e.key)
+
+                if i >= 0
+                    on_readable(@b, set: set, i: i)
+
+    i @= 0
+
+    while i < b.peers.len()
+        mqtt_routes.drop_peer(@b, set: set, i: i)
+        i @ i + 1
+
+# Accepts the connection `l` holds and adds it to the set.
+#
+# - `b`: the broker, which gains the peer.
+# - `set`: the poll set.
+# - `l`: the listener.
+function accept(@b: mqtt_routes.Broker, set: poll.Set, l: net.Listener lent)
+    conn @= match net.accept(l, deadline_ms: net.FOREVER)
+        .ok c  => c
+        .err _ => return
+
+    key = match poll.add_stream(set, s: conn.stream, interest: .read)
+        .ok k => k
+        .err _ =>
+            # A set with no room refuses the connection: it is closed unserved.
+            _ = io.close(@conn.stream).is_err()
+            return
+
+    peers @= b.peers
+    peers @ peers.push(
+        mqtt_routes.Peer(key: key, stream: conn.stream, held: [], version: 0, client_id: "", subscriptions: [], next_id: 1, open: true)
+    )
+    b.peers @ peers
+
+# Listens on the loopback, tells the starter at `told_port` where, and
+# serves until the program's stop; answers what it carried.
+#
+# - `told_port`: the port of the starter's socket.
+function serve_on(told_port: i64) -> str?
+    l @= match net.listen(host: "127.0.0.1", port: 0)
+        .ok got => got
+        .err e =>
+            told.failed(port: told_port, why: e.msg)?
+            return fail(code: e.code, msg: e.msg)
+
+    set @= match poll.make(256)
+        .ok got => got
+        .err e =>
+            _ = net.close_listener(@l).is_err()
+            _ = told.failed(port: told_port, why: e.msg).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    listening = match poll.add_listener(set, l: l)
+        .ok key => key
+        .err e  => return told.give_up(@set, @l, port: told_port, why: e.msg)
+
+    match told.ready(port: told_port, listening: l.address.port)
+        .ok _  => _ = 0
+        .err e => return told.give_up(@set, @l, port: told_port, why: e.msg)
+
+    b @= mqtt_routes.Broker(peers: [], published: 0, delivered: 0)
+    serve(@b, set: set, l: l, listening: listening)
+    poll.close(@set)?
+    net.close_listener(@l)?
+    return ok(f"mqtt stand-in: {b.peers.len()} connections, {b.published} published, {b.delivered} delivered")
+
+# The body of the stand-in's thread: serves until the program's stop.
+#
+# - `arg`: the port of the starter's socket, in decimal.
+function run(arg: str) -> str
+    told_port = match numbers.parse_int(arg)
+        .ok p  => p
+        .err _ => return f"mqtt stand-in: \"{arg}\" is no port"
+
+    return match serve_on(told_port)
+        .ok said => said
+        .err e   => f"mqtt stand-in failed: {e.msg}"

@@ -1,0 +1,175 @@
+# Shortcodes: `:name:` in a message's text written as the emoji it names. A
+# name is read first in a short table of the names people type (`:wave:`,
+# `:+1:`), then as a Unicode character name with `_` for its spaces
+# (`:waving_hand_sign:`, `:thermometer:`), which `unicode/names` matches
+# loosely, case and spaces aside. Only a name that gives an emoji is replaced:
+# `:note:` or `:a:` in ordinary prose names a character that is no picture,
+# and stays as it was typed.
+
+use <rebel>/strings
+use <rebel>/unicode
+use <rebel>/unicode/names
+
+# The code of a shortcode that names no emoji.
+constant NOT_FOUND: str
+    "not_found"
+
+# The most bytes of a name between two colons: the longest Unicode name is
+# 88 characters, and a run past this is prose, not a shortcode.
+constant MOST_NAME_BYTES: i64
+    96
+
+# U+FE0F, which asks for a character's picture where its text form is its
+# default (UTS #51's emoji presentation selector). It is made from its code
+# point, since the character is invisible in a source.
+function emoji_selector() -> str
+    return unicode.from_code_point(0xfe0f).must()
+
+# The Unicode name a short name people type stands for, or "" where it is
+# none of them. The short names are the common ones of chat programs; each
+# maps to the character's name in Unicode 17.0.0.
+#
+# - `short`: the name between the colons, lower case.
+function alias_of(short: str) -> str
+    return match short
+        "+1" | "thumbsup"   => "THUMBS UP SIGN"
+        "-1" | "thumbsdown" => "THUMBS DOWN SIGN"
+        "wave"              => "WAVING HAND SIGN"
+        "smile"             => "SMILING FACE WITH OPEN MOUTH AND SMILING EYES"
+        "joy"               => "FACE WITH TEARS OF JOY"
+        "heart"             => "HEAVY BLACK HEART"
+        "tada"              => "PARTY POPPER"
+        "ok"                => "OK HAND SIGN"
+        "eyes"              => "EYES"
+        "fire"              => "FIRE"
+        "coffee"            => "HOT BEVERAGE"
+        "pizza"             => "SLICE OF PIZZA"
+        "sun"               => "BLACK SUN WITH RAYS"
+        "warning"           => "WARNING SIGN"
+        "check"             => "WHITE HEAVY CHECK MARK"
+        _                   => ""
+
+# Whether `c`, one character, is drawn as a picture: UTS #51's
+# `Extended_Pictographic`, which a digit, `#` and `*` are not, though their
+# `Emoji` property says yes for the keycaps they begin.
+#
+# - `c`: one character.
+function is_pictograph(c: str) -> bool
+    return names.has_property(c: c, property: "Extended_Pictographic").default(false)
+
+# The emoji the shortcode name `name` gives, ready to be written.
+#
+# - `name`: the text between the colons, a short name or a Unicode name with
+#   `_` for its spaces.
+#
+# A single character whose default is its text form gets `emoji_selector`
+# after it, so `:heart:` is drawn red rather than as a black glyph. A named
+# sequence, which is several characters, is answered as Unicode writes it.
+# Fails `not_found` where `name` names nothing, or a character that is no
+# picture.
+function resolve(name: str) -> str?
+    short = alias_of(strings.to_lower(name))
+
+    looked = if short == ""
+        name
+    else
+        short
+
+    found = match names.character_named(looked)
+        .ok c  => c
+        .err _ => return fail(code: NOT_FOUND, msg: f"\":{name}:\" names no character")
+
+    first = found.chars()[0]
+
+    if !is_pictograph(first)
+        return fail(code: NOT_FOUND, msg: f"\":{name}:\" names {looked}, which is no emoji")
+
+    if found.chars().len() == 1 && !names.has_property(c: first, property: "Emoji_Presentation").default(true)
+        return ok(found + emoji_selector())
+
+    return ok(found)
+
+# Whether `c`, one byte of a name, may stand between the two colons of a
+# shortcode: an ASCII letter, a digit, `_`, `+` or `-`.
+#
+# - `c`: the byte.
+function is_name_byte(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '+' || c == '-'
+
+# Where the name that begins at byte `from` of `text` ends: the index of the
+# colon closing it, or -1 where a byte that is no name's comes first, the text
+# ends, or the name runs past `MOST_NAME_BYTES`.
+#
+# - `text`: the text.
+# - `from`: the byte after an opening colon.
+function name_end(text: str, from: i64) -> i64
+    at @= from
+
+    while at < text.len() && at - from <= MOST_NAME_BYTES
+        if text[at] == ':'
+            if at == from
+                return -1
+            return at
+
+        if !is_name_byte(text[at])
+            return -1
+        at @ at + 1
+
+    return -1
+
+# `text` with every shortcode that names an emoji written as that emoji, and
+# every other colon kept as typed.
+#
+# - `text`: the text of a message.
+#
+# Two shortcodes may touch, `:wave::tada:`. A colon that opens no shortcode is
+# kept and the search goes on at the byte after it, so `at 10:30 :wave:`
+# keeps its time. It cuts the text only at colons, which are one byte, so it
+# never splits a character.
+function expand(text: str) -> str
+    pieces: [str] @= []
+    kept_from @= 0
+    at @= 0
+
+    while at < text.len()
+        if text[at] != ':'
+            at @ at + 1
+            continue
+
+        end = name_end(text, from: at + 1)
+
+        if end < 0
+            at @ at + 1
+            continue
+
+        match resolve(text.slice(from: at + 1, to: end))
+            .ok emoji =>
+                pieces @ pieces.push(text.slice(from: kept_from, to: at))
+                pieces @ pieces.push(emoji)
+                kept_from @ end + 1
+                at @ end + 1
+            .err _ => at @ at + 1
+
+    pieces @ pieces.push(text.slice(from: kept_from, to: text.len()))
+    return pieces.join("")
+
+test "resolve: a short name, a Unicode name, a text-default character, and a letter"
+    assert resolve("wave").must() == "👋"
+    assert resolve("waving_hand_sign").must() == "👋"
+    assert resolve("thermometer").must() == "🌡" + emoji_selector()
+    assert resolve("heart").must() == "❤" + emoji_selector()
+    assert resolve("latin_small_letter_a").is_err()
+    assert resolve("no_such_thing").is_err()
+
+test "expand: one shortcode, two touching, a time kept, an unknown name kept, and an empty pair"
+    assert expand("hi :wave:") == "hi 👋"
+    assert expand(":wave::tada:") == "👋🎉"
+    assert expand("at 10:30 :rocket:") == "at 10:30 🚀"
+    assert expand("a :nope: b") == "a :nope: b"
+    assert expand("::") == "::"
+    assert expand("") == ""
+
+test "expand: a colon at the end, a name that is no emoji, and text of more than one byte"
+    assert expand("note:") == "note:"
+    assert expand("see :note: here") == "see :note: here"
+    assert expand("città :fire:") == "città 🔥"

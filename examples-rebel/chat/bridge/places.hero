@@ -1,0 +1,211 @@
+# Where rooms are mirrored and what crosses: a mirror ties a room to an MQTT
+# topic or a NATS subject; a message of the room crosses as a JSON payload
+# marked as the chat's own, and a payload a device or a service publishes
+# comes in as a message for the room under the author it names. The bridge's
+# connections are `mirroring`'s; this module is what they carry.
+
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/mqtt
+use <rebel>/nats
+use <rebel>/strings
+use <rebel>/time
+
+use core/model
+use protocol/objects
+
+# The code of a mirror that is not written as one, or a payload dropped.
+constant INVALID: str
+    "invalid"
+
+# The code of a payload the bridge itself published, which it drops.
+constant OWN: str
+    "own"
+
+# Where a room is mirrored.
+variant Broker
+    # An MQTT topic, no wildcard in it.
+    mqtt
+        # The topic.
+        topic: str
+    # A NATS subject, no wildcard in it.
+    nats
+        # The subject.
+        subject: str
+
+# One room tied to one place of a broker.
+record Mirror
+    # The room's name.
+    room: str
+    # Where it is mirrored.
+    broker: Broker
+
+# A message a broker brought, for a room.
+record Inbound
+    # The room it is for.
+    room: str
+    # The author it names, or the broker's name where it names none.
+    author: str
+    # Which broker it came from.
+    origin: model.Origin
+    # Its text, not yet checked.
+    text: str
+
+# The mirror `text` writes: `<room>=mqtt:<topic>` or `<room>=nats:<subject>`.
+#
+# - `text`: the setting, `iot=mqtt:chat/rooms/iot`.
+#
+# Fails `invalid` where it is not of that form, its room is no room's name,
+# or its topic or subject holds a wildcard.
+function parse_mirror(text: str) -> Mirror?
+    halves = strings.split_n(s: text, sep: "=", n: 2)
+
+    if halves.len() != 2
+        return fail(code: INVALID, msg: f"a mirror is written room=mqtt:topic or room=nats:subject, not \"{text}\"")
+
+    model.check_room(halves[0])?
+    place = halves[1]
+
+    if strings.has_prefix(s: place, prefix: "mqtt:")
+        topic = place.slice(from: 5, to: place.len())
+
+        if !mqtt.is_valid_topic(topic)
+            return fail(code: INVALID, msg: f"\"{topic}\" is no MQTT topic to publish to")
+
+        return ok(Mirror(room: halves[0], broker: .mqtt(topic: topic)))
+
+    if strings.has_prefix(s: place, prefix: "nats:")
+        subject = place.slice(from: 5, to: place.len())
+
+        if !nats.is_valid_subject(subject)
+            return fail(code: INVALID, msg: f"\"{subject}\" is no NATS subject to publish to")
+
+        return ok(Mirror(room: halves[0], broker: .nats(subject: subject)))
+
+    return fail(code: INVALID, msg: f"a mirror's broker is mqtt: or nats:, not \"{place}\"")
+
+# Whether a mirror of `mirrors` uses MQTT, or NATS where `of_nats`.
+#
+# - `mirrors`: the mirrors.
+# - `of_nats`: whether NATS is asked about rather than MQTT.
+function uses(mirrors: [Mirror], of_nats: bool) -> bool
+    for m in mirrors
+        match m.broker
+            .mqtt _ =>
+                if !of_nats
+                    return true
+            .nats _ =>
+                if of_nats
+                    return true
+
+    return false
+
+# The room a topic, or a subject where `of_nats`, is mirrored to; "" where
+# none.
+#
+# - `mirrors`: the mirrors.
+# - `place`: the topic or subject.
+# - `of_nats`: whether `place` is a NATS subject.
+function room_of(mirrors: [Mirror], place: str, of_nats: bool) -> str
+    for m in mirrors
+        match m.broker
+            .mqtt t =>
+                if !of_nats && t.topic == place
+                    return m.room
+            .nats s =>
+                if of_nats && s.subject == place
+                    return m.room
+
+    return ""
+
+# `m` as the payload published to a broker: a JSON object with its id, room,
+# author, text and time, marked as the chat's own.
+#
+# - `m`: the message.
+function payload_of(m: model.Message) -> [u8]
+    v: json.Value = .object(
+        members: {"origin": objects.text("chat"), "id": objects.text(m.id), "room": objects.text(m.room), "author": objects.text(m.author), "text": objects.text(m.text), "at": objects.instant(m.at)}
+    )
+    return bytes.from_text(json.format(v).must())
+
+# The message a payload brought for `room` from `origin`: a JSON object with
+# a `text` and, where it has one, an `author`; or text that is no JSON
+# object, which is the message itself.
+#
+# - `data`: the payload.
+# - `room`: the room the topic or subject is mirrored to.
+# - `origin`: which broker it came from.
+#
+# The author is the one named where it is a user's name, else the broker's
+# name. Fails `own` for a payload marked as the chat's own, and `invalid`
+# where it is not UTF-8 or its `text` is no text.
+function inbound_of(data: [u8], room: str, origin: model.Origin) -> Inbound?
+    text = match bytes.to_text(data)
+        .ok t  => t
+        .err _ => return fail(code: INVALID, msg: "a payload that is not UTF-8")
+
+    fallback = model.origin_name(origin)
+
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err _     => return ok(Inbound(room: room, author: fallback, origin: origin, text: text))
+
+    match json.members_of(v)
+        .err _ => return ok(Inbound(room: room, author: fallback, origin: origin, text: text))
+        .ok _  => _ = 0
+
+    if objects.text_or(v, key: "origin", otherwise: "")? == "chat"
+        return fail(code: OWN, msg: "a payload the chat published")
+
+    named = objects.text_or(v, key: "author", otherwise: fallback)?
+
+    author = if model.check_user(named).is_err()
+        fallback
+    else
+        named
+
+    return ok(Inbound(room: room, author: author, origin: origin, text: objects.text_of(v, key: "text")?))
+
+test "parse_mirror: an MQTT topic, a NATS subject, a wildcard, and no broker"
+    assert parse_mirror("iot=mqtt:chat/rooms/iot").must() == Mirror(room: "iot", broker: .mqtt(topic: "chat/rooms/iot"))
+    assert parse_mirror("ops=nats:chat.rooms.ops").must() == Mirror(room: "ops", broker: .nats(subject: "chat.rooms.ops"))
+    assert parse_mirror("iot=mqtt:chat/#").is_err()
+    assert parse_mirror("ops=nats:chat.>").is_err()
+    assert parse_mirror("ops=kafka:x").is_err()
+    assert parse_mirror("Ops=nats:x").is_err()
+
+test "inbound_of: JSON with an author, plain text, the chat's own, and an author that is no name"
+    named = inbound_of(
+        bytes.from_text("{\"author\":\"sensor-7\",\"text\":\"21 C\"}"),
+        room: "iot",
+        origin: .mqtt
+    ).must()
+    assert named.author == "sensor-7" && named.text == "21 C"
+    plain = inbound_of(bytes.from_text("door open"), room: "iot", origin: .mqtt).must()
+    assert plain.author == "mqtt" && plain.text == "door open"
+
+    match inbound_of(bytes.from_text("{\"origin\":\"chat\",\"text\":\"x\"}"), room: "ops", origin: .nats)
+        .ok _  => assert false
+        .err e => assert e.code == OWN
+
+    odd = inbound_of(bytes.from_text("{\"author\":\"Big Boss\",\"text\":\"go\"}"), room: "ops", origin: .nats).must()
+    assert odd.author == "nats"
+    assert inbound_of([255], room: "iot", origin: .mqtt).is_err()
+
+test "payload_of: read back as the chat's own"
+    m = model.Message(
+        id: "1",
+        room: "iot",
+        author: "alice",
+        origin: .chat,
+        text: "fan on",
+        at: time.epoch(),
+        edited: false
+    )
+    assert inbound_of(payload_of(m), room: "iot", origin: .mqtt).is_err()
+
+test "room_of: a topic, a subject, and a place of no mirror"
+    mirrors = [Mirror(room: "iot", broker: .mqtt(topic: "a/b")), Mirror(room: "ops", broker: .nats(subject: "a.b"))]
+    assert room_of(mirrors, place: "a/b", of_nats: false) == "iot"
+    assert room_of(mirrors, place: "a.b", of_nats: true) == "ops"
+    assert room_of(mirrors, place: "a.b", of_nats: false) == ""

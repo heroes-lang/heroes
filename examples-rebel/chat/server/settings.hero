@@ -1,0 +1,189 @@
+# What a chat server is started with: where it listens, the file its history
+# is kept in, the secret its tokens are signed with, the rooms it mirrors and
+# the brokers it mirrors them to. `chat serve` reads them from its flags and
+# the environment; the demo writes them itself. A server started on a thread
+# takes them as one text, so they cross as JSON (`encode`, `decode`).
+
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/time
+
+use auth/passwords
+use bridge/places
+use protocol/objects
+
+# The code of settings that are not what a server can start with.
+constant INVALID: str
+    "invalid"
+
+# How long a token lives where the settings say nothing: one day.
+constant TOKEN_HOURS: i64
+    24
+
+# What a chat server is started with.
+record Settings
+    # The address it listens on, `127.0.0.1` or "" for every address.
+    host: str
+    # The port, 0 for one the system chooses.
+    port: i64
+    # The SQLite file the history is kept in.
+    database: str
+    # The secret tokens are signed with, 32 bytes or more.
+    secret: [u8]
+    # How long a token lives.
+    token_hours: i64
+    # The PBKDF2 iterations a new password is kept with.
+    iterations: i64
+    # The rooms mirrored to brokers.
+    mirrors: [places.Mirror]
+    # The MQTT server, `mqtt://127.0.0.1:1883`, read where a mirror uses MQTT.
+    mqtt_url: str
+    # The NATS server, `nats://127.0.0.1:4222`, read where a mirror uses NATS.
+    nats_url: str
+    # Whether messages are stamped by a fixed clock: the demo's, so the times
+    # it prints are the same on every run.
+    fixed_clock: bool
+    # The port of a starter's socket to tell where the server listens, 0 for
+    # none (`told`).
+    told_port: i64
+
+# The settings of a server on `host` and `port` keeping `database`, signing
+# with `secret`, with nothing mirrored and the usual lifetimes and costs.
+#
+# - `host`: the address it listens on.
+# - `port`: the port, 0 for one the system chooses.
+# - `database`: the SQLite file.
+# - `secret`: the token secret.
+function default_settings(host: str, port: i64, database: str, secret: [u8]) -> Settings
+    return Settings(
+        host: host,
+        port: port,
+        database: database,
+        secret: secret,
+        token_hours: TOKEN_HOURS,
+        iterations: passwords.DEFAULT_ITERATIONS,
+        mirrors: [],
+        mqtt_url: "mqtt://127.0.0.1:1883",
+        nats_url: "nats://127.0.0.1:4222",
+        fixed_clock: false,
+        told_port: 0
+    )
+
+# How long the server's tokens live.
+#
+# - `s`: the settings.
+#
+# Fails `does_not_fit` past what a duration holds.
+function token_lifetime(s: Settings) -> time.Duration?
+    return time.hours(s.token_hours)
+
+# `m` written as a setting, as `places.parse_mirror` reads one.
+#
+# - `m`: the mirror.
+function mirror_text(m: places.Mirror) -> str
+    return match m.broker
+        .mqtt t => f"{m.room}=mqtt:{t.topic}"
+        .nats s => f"{m.room}=nats:{s.subject}"
+
+# `s` as one text, which `decode` reads back.
+#
+# - `s`: the settings.
+function encode(s: Settings) -> str
+    v: json.Value = .object(
+        members: {"host": objects.text(s.host), "port": objects.number(s.port), "database": objects.text(s.database), "secret": objects.text(bytes.format_hex(s.secret)), "token_hours": objects.number(s.token_hours), "iterations": objects.number(s.iterations), "mirrors": objects.texts(s.mirrors.map(mirror_text)), "mqtt_url": objects.text(s.mqtt_url), "nats_url": objects.text(s.nats_url), "fixed_clock": .boolean(v: s.fixed_clock), "told_port": objects.number(s.told_port)}
+    )
+
+    # Settings hold texts, flags and whole numbers, never a `nan`.
+    return json.format(v).must()
+
+# The settings `text` writes, as `encode` writes them, checked by `check`.
+#
+# - `text`: the settings as one text.
+#
+# Fails `invalid` where it is not such a text or the settings are refused.
+function decode(text: str) -> Settings?
+    v = json.parse(text)?
+    mirrors: [places.Mirror] @= []
+
+    for m in objects.texts_of(v, key: "mirrors")?
+        mirrors @ mirrors.push(places.parse_mirror(m)?)
+
+    s = Settings(
+        host: objects.text_of(v, key: "host")?,
+        port: objects.int_of(v, key: "port")?,
+        database: objects.text_of(v, key: "database")?,
+        secret: bytes.parse_hex(objects.text_of(v, key: "secret")?)?,
+        token_hours: objects.int_of(v, key: "token_hours")?,
+        iterations: objects.int_of(v, key: "iterations")?,
+        mirrors: mirrors,
+        mqtt_url: objects.text_of(v, key: "mqtt_url")?,
+        nats_url: objects.text_of(v, key: "nats_url")?,
+        fixed_clock: objects.bool_of(v, key: "fixed_clock")?,
+        told_port: objects.int_of(v, key: "told_port")?
+    )
+    check(s)?
+    return ok(s)
+
+# Fails `invalid` where `s` is not what a server can start with: a port
+# outside 0 to 65535, no database, a secret under 32 bytes, a token that lives
+# no time or past a year, fewer than one iteration, or one room mirrored twice
+# to one broker's kind.
+#
+# - `s`: the settings.
+function check(s: Settings) -> ()?
+    if s.port < 0 || s.port > 65_535
+        return fail(code: INVALID, msg: f"a port is 0 to 65535, not {s.port}")
+
+    if s.database == ""
+        return fail(code: INVALID, msg: "a server keeps its history in a database file, and none is named")
+
+    if s.secret.len() < 32
+        return fail(
+            code: INVALID,
+            msg: f"the token secret holds at least 32 bytes, and this one holds {s.secret.len()}"
+        )
+
+    if s.token_hours < 1 || s.token_hours > 8_760
+        return fail(code: INVALID, msg: f"a token lives 1 to 8760 hours, not {s.token_hours}")
+
+    if s.iterations < 1
+        return fail(code: INVALID, msg: "a password is kept with at least one iteration")
+
+    seen: {str: bool} @= {}
+
+    for m in s.mirrors
+        kind = match m.broker
+            .mqtt _ => "mqtt"
+            .nats _ => "nats"
+
+        place = f"{m.room} {kind}"
+
+        if seen[place].default(false)
+            return fail(code: INVALID, msg: f"#{m.room} is mirrored to {kind} twice")
+
+        seen[place] @ true
+
+    return ok()
+
+test "decode: settings written and read back"
+    s @= default_settings(host: "127.0.0.1", port: 0, database: "chat.db", secret: bytes.from_text(repeat("s", 32)))
+    s.mirrors @ [
+        places.parse_mirror("iot=mqtt:chat/rooms/iot").must()
+        places.parse_mirror("ops=nats:chat.rooms.ops").must()
+    ]
+    s.fixed_clock @ true
+    s.told_port @ 5000
+    assert decode(encode(s)).must() == s
+
+test "check: a short secret, a port too high, and a room mirrored twice to MQTT"
+    good = default_settings(host: "", port: 8080, database: "a.db", secret: bytes.from_text(repeat("s", 32)))
+    assert !check(good).is_err()
+    short @= good
+    short.secret @ [1, 2, 3]
+    assert check(short).is_err()
+    high @= good
+    high.port @ 70_000
+    assert check(high).is_err()
+    twice @= good
+    twice.mirrors @ [places.parse_mirror("a=mqtt:x").must(), places.parse_mirror("a=mqtt:y").must()]
+    assert check(twice).is_err()

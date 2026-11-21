@@ -1,0 +1,232 @@
+# What the server tells a client over its WebSocket: one JSON object per text
+# message, its `type` naming the notice, written by `encode` and read back by
+# `decode`. A message and a direct message travel as objects of their own,
+# their times in RFC 3339 to the millisecond, so a client in any zone and any
+# language writes them as its reader reads time.
+
+use <rebel>/json
+
+use core/model
+use protocol/objects
+
+# The code of a frame that is no notice.
+constant INVALID: str
+    "invalid"
+
+# A notice of the server.
+variant Notice
+    # The connection is signed in: who it is, the rooms it is in, and who is
+    # online.
+    welcome
+        # The user signed in.
+        user: str
+        # The rooms the user is in, in the order joined.
+        rooms: [str]
+        # The users online, this one among them, sorted.
+        online: [str]
+    # A user came online or went offline: the first connection of theirs
+    # opened, or the last closed.
+    presence
+        # The user.
+        user: str
+        # Whether they are online now.
+        online: bool
+    # A user entered a room this connection is in.
+    joined
+        # The room's name.
+        room: str
+        # The user.
+        user: str
+    # A user left a room this connection is in.
+    left
+        # The room's name.
+        room: str
+        # The user.
+        user: str
+    # A message was posted in a room this connection is in.
+    posted
+        # The message.
+        message: model.Message
+    # A direct message to or from this user.
+    direct
+        # The message.
+        message: model.Direct
+    # A user is typing in a room this connection is in.
+    typing
+        # The room's name.
+        room: str
+        # The user.
+        user: str
+    # A page of a room's history, the answer to a `history` request.
+    page
+        # The page.
+        page: model.Page
+    # A message of a room this connection is in was changed by its author.
+    edited
+        # The message, its new text in it.
+        message: model.Message
+    # A request of this connection was refused.
+    refused
+        # The code: `invalid`, `not_found`, `permission`.
+        code: str
+        # Why, in words a person can act on.
+        reason: str
+    # Every notice of the requests before the `sync` that carried `ref` has
+    # been written.
+    synced
+        # The number the `sync` carried.
+        ref: i64
+
+# `m` as a JSON object.
+#
+# - `m`: the message.
+function message_json(m: model.Message) -> json.Value
+    return .object(
+        members: {"id": objects.text(m.id), "room": objects.text(m.room), "author": objects.text(m.author), "origin": objects.text(model.origin_name(m.origin)), "text": objects.text(m.text), "at": objects.instant(m.at), "edited": .boolean(v: m.edited)}
+    )
+
+# The message the JSON object `v` writes, as `message_json` writes it.
+#
+# - `v`: the object.
+#
+# Fails `invalid` where a member is absent or of the wrong kind.
+function message_of(v: json.Value) -> model.Message?
+    return ok(
+        model.Message(id: objects.text_of(v, key: "id")?, room: objects.text_of(v, key: "room")?, author: objects.text_of(v, key: "author")?, origin: model.parse_origin(objects.text_of(v, key: "origin")?)?, text: objects.text_of(v, key: "text")?, at: objects.instant_of(v, key: "at")?, edited: objects.bool_of(v, key: "edited")?)
+    )
+
+# `d` as a JSON object.
+#
+# - `d`: the direct message.
+function direct_json(d: model.Direct) -> json.Value
+    return .object(
+        members: {"id": objects.text(d.id), "from": objects.text(d.sender), "to": objects.text(d.recipient), "text": objects.text(d.text), "at": objects.instant(d.at)}
+    )
+
+# The direct message the JSON object `v` writes.
+#
+# - `v`: the object.
+#
+# Fails `invalid` where a member is absent or of the wrong kind.
+function direct_of(v: json.Value) -> model.Direct?
+    return ok(
+        model.Direct(id: objects.text_of(v, key: "id")?, sender: objects.text_of(v, key: "from")?, recipient: objects.text_of(v, key: "to")?, text: objects.text_of(v, key: "text")?, at: objects.instant_of(v, key: "at")?)
+    )
+
+# `n` as the JSON object written on the wire.
+#
+# - `n`: the notice.
+function notice_json(n: Notice) -> json.Value
+    members: {str: json.Value} = match n
+        .welcome w => {
+            "type": objects.text("welcome")
+            "user": objects.text(w.user)
+            "rooms": objects.texts(w.rooms)
+            "online": objects.texts(w.online)
+        }
+        .presence p => {"type": objects.text("presence"), "user": objects.text(p.user), "online": .boolean(v: p.online)}
+        .joined j   => {"type": objects.text("joined"), "room": objects.text(j.room), "user": objects.text(j.user)}
+        .left l     => {"type": objects.text("left"), "room": objects.text(l.room), "user": objects.text(l.user)}
+        .posted p   => {"type": objects.text("posted"), "message": message_json(p.message)}
+        .direct d   => {"type": objects.text("direct"), "message": direct_json(d.message)}
+        .typing t   => {"type": objects.text("typing"), "room": objects.text(t.room), "user": objects.text(t.user)}
+        .page p => {
+            "type": objects.text("page")
+            "room": objects.text(p.page.room)
+            "messages": .list(items: p.page.messages.map(message_json))
+            "more": .boolean(v: p.page.more)
+        }
+        .edited e  => {"type": objects.text("edited"), "message": message_json(e.message)}
+        .refused r => {"type": objects.text("refused"), "code": objects.text(r.code), "reason": objects.text(r.reason)}
+        .synced s  => {"type": objects.text("synced"), "ref": objects.number(s.ref)}
+
+    return .object(members: members)
+
+# The messages of the list in the member `key` of `v`.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is absent, no list, or an element is no message.
+function messages_of(v: json.Value, key: str) -> [model.Message]?
+    found: [model.Message] @= []
+
+    for item in objects.items_of(v, key: key)?
+        found @ found.push(message_of(item)?)
+
+    return ok(found)
+
+# The notice the JSON object `v` writes.
+#
+# - `v`: the object, as `notice_json` writes one.
+#
+# Fails `invalid` where `v` is no object, names no notice in its `type`, or
+# lacks a member its notice needs.
+function notice_of(v: json.Value) -> Notice?
+    kind = objects.text_of(v, key: "type")?
+
+    return match kind
+        "welcome" => ok(
+            .welcome(user: objects.text_of(v, key: "user")?, rooms: objects.texts_of(v, key: "rooms")?, online: objects.texts_of(v, key: "online")?)
+        )
+        "presence" => ok(.presence(user: objects.text_of(v, key: "user")?, online: objects.bool_of(v, key: "online")?))
+        "joined"   => ok(.joined(room: objects.text_of(v, key: "room")?, user: objects.text_of(v, key: "user")?))
+        "left"     => ok(.left(room: objects.text_of(v, key: "room")?, user: objects.text_of(v, key: "user")?))
+        "posted"   => ok(.posted(message: message_of(objects.member_of(v, key: "message")?)?))
+        "direct"   => ok(.direct(message: direct_of(objects.member_of(v, key: "message")?)?))
+        "typing"   => ok(.typing(room: objects.text_of(v, key: "room")?, user: objects.text_of(v, key: "user")?))
+        "page" => ok(
+            .page(page: model.Page(room: objects.text_of(v, key: "room")?, messages: messages_of(v, key: "messages")?, more: objects.bool_of(v, key: "more")?))
+        )
+        "edited"  => ok(.edited(message: message_of(objects.member_of(v, key: "message")?)?))
+        "refused" => ok(.refused(code: objects.text_of(v, key: "code")?, reason: objects.text_of(v, key: "reason")?))
+        "synced"  => ok(.synced(ref: objects.int_of(v, key: "ref")?))
+        _         => fail(code: INVALID, msg: f"no notice is named \"{kind}\"")
+
+# `n` as the text of one WebSocket message.
+#
+# - `n`: the notice.
+function encode(n: Notice) -> str
+    # A notice holds texts, flags, whole numbers and instants, never a `nan`,
+    # so it is always written.
+    return json.format(notice_json(n)).must()
+
+# The notice one WebSocket message's text writes.
+#
+# - `text`: the message's text.
+#
+# Fails `invalid` where it is no JSON or no notice, the message saying why.
+function decode(text: str) -> Notice?
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: f"a notice is one JSON object: {e.msg}")
+
+    return notice_of(v)
+
+test "decode: every notice written and read back"
+    at = objects.instant_of(.object(members: {"t": objects.text("2026-11-21T14:00:00.250Z")}), key: "t").must()
+    m = model.Message(id: "a", room: "general", author: "alice", origin: .mqtt, text: "hi 👋", at: at, edited: false)
+    d = model.Direct(id: "b", sender: "bob", recipient: "alice", text: "psst", at: at)
+    told: [Notice] = [
+        .welcome(user: "alice", rooms: ["general"], online: ["alice", "bob"])
+        .presence(user: "bob", online: false)
+        .joined(room: "general", user: "bob")
+        .left(room: "general", user: "bob")
+        .posted(message: m)
+        .direct(message: d)
+        .typing(room: "general", user: "bob")
+        .page(page: model.Page(room: "general", messages: [m, m], more: true))
+        .edited(message: m)
+        .refused(code: "invalid", reason: "no such room")
+        .synced(ref: 9)
+    ]
+
+    for n in told
+        assert decode(encode(n)).must() == n
+
+test "decode: no JSON, an unknown type, and a message whose origin is none"
+    assert decode("[").is_err()
+    assert decode("{\"type\":\"party\"}").is_err()
+    assert decode(
+        "{\"type\":\"posted\",\"message\":{\"id\":\"a\",\"room\":\"r\",\"author\":\"x\",\"origin\":\"irc\",\"text\":\"t\",\"at\":\"2026-11-21T14:00:00Z\",\"edited\":false}}"
+    ).is_err()

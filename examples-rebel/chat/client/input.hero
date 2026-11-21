@@ -1,0 +1,134 @@
+# What a line typed in the client means: a message for the room on screen,
+# or a command that begins with `/`. A line in a direct conversation (`@bob`)
+# is a direct message to that user. `//` at the start writes a message that
+# begins with one `/`, as IRC clients read it.
+#
+#     /join <room>         enter a room, made where it is new
+#     /leave               leave the room on screen
+#     /go <room>           show a room or conversation you are in
+#     /dm <user> <text>    send a direct message
+#     /history             ask for the page before the oldest message shown
+#     /help                list the commands
+#     /quit                end the client
+
+use <rebel>/strings
+
+use protocol/wire
+
+# What a line asks the client to do.
+variant Action
+    # Send a request to the server.
+    request
+        # The request.
+        command: wire.Command
+    # Show another room or conversation.
+    show
+        # Its name.
+        room: str
+    # Ask for the page before the oldest message held.
+    older
+    # List the commands.
+    help
+    # End the client.
+    quit
+    # A line that means nothing: why.
+    unknown
+        # What was wrong, to show.
+        reason: str
+
+# The words of the help, one line each.
+function help_lines() -> [str]
+    return [
+        "/join <room>  /leave  /go <room>  /dm <user> <text>  /history  /quit"
+        "Up on an empty line edits your last message; Tab completes a :shortcode"
+    ]
+
+# The action `line` asks, typed while `current` is on screen.
+#
+# - `line`: the line, as the composer submitted it.
+# - `current`: the room or conversation on screen, "" for none.
+function action_of(line: str, current: str) -> Action
+    text = strings.trim(line)
+
+    if strings.has_prefix(s: text, prefix: "//")
+        return say(text: text.slice(from: 1, to: text.len()), current: current)
+
+    if !strings.has_prefix(s: text, prefix: "/")
+        return say(text: text, current: current)
+
+    words = strings.words(text)
+    verb = words[0]
+
+    return match verb
+        "/join" =>
+            if words.len() != 2
+                return .unknown(reason: "/join takes one room's name")
+            .request(command: .join(room: words[1]))
+        "/leave" =>
+            if current == "" || strings.has_prefix(s: current, prefix: "@")
+                return .unknown(reason: "/leave leaves the room on screen, and no room is")
+            .request(command: .leave(room: current))
+        "/go" =>
+            if words.len() != 2
+                return .unknown(reason: "/go takes one room's name")
+            .show(room: words[1])
+        "/dm" =>
+            if words.len() < 3
+                return .unknown(reason: "/dm takes a user's name and a text")
+            .request(command: .direct(to: words[1], text: rest_after(text, words: 2)))
+        "/history" => .older
+        "/help"    => .help
+        "/quit"    => .quit
+        _          => .unknown(reason: f"{verb} is no command; /help lists them")
+
+# The text of `line` after its first `words` words and the spaces after
+# them.
+#
+# - `line`: the line, trimmed.
+# - `words`: how many words to skip.
+function rest_after(line: str, words: i64) -> str
+    at @= 0
+    skipped @= 0
+
+    while skipped < words && at < line.len()
+        while at < line.len() && line[at] != ' '
+            at @ at + 1
+
+        while at < line.len() && line[at] == ' '
+            at @ at + 1
+
+        skipped @ skipped + 1
+
+    return line.slice(from: at, to: line.len())
+
+# A message for the room or conversation on screen.
+#
+# - `text`: the message.
+# - `current`: the room or conversation on screen.
+function say(text: str, current: str) -> Action
+    if current == ""
+        return .unknown(reason: "no room is on screen: /join one")
+
+    if strings.has_prefix(s: current, prefix: "@")
+        return .request(command: .direct(to: current.slice(from: 1, to: current.len()), text: text))
+
+    return .request(command: .say(room: current, text: text))
+
+test "action_of: a message, a message in a conversation, and one that begins with a slash"
+    assert action_of(line: "hi all", current: "general") == .request(command: .say(room: "general", text: "hi all"))
+    assert action_of(line: "psst", current: "@bob") == .request(command: .direct(to: "bob", text: "psst"))
+    assert action_of(line: "//etc", current: "general") == .request(command: .say(room: "general", text: "/etc"))
+
+test "action_of: every command, and one that is none"
+    assert action_of(line: "/join iot", current: "") == .request(command: .join(room: "iot"))
+    assert action_of(line: "/leave", current: "iot") == .request(command: .leave(room: "iot"))
+    assert action_of(line: "/go @bob", current: "iot") == .show(room: "@bob")
+    assert action_of(line: "/dm bob see  you", current: "iot") == .request(command: .direct(to: "bob", text: "see  you"))
+    assert action_of(line: "/history", current: "iot") == .older
+    assert action_of(line: "/quit", current: "") == .quit
+    assert action_of(line: "/shout x", current: "iot") == .unknown(reason: "/shout is no command; /help lists them")
+
+test "action_of: a command missing its words, and a message with no room on screen"
+    assert action_of(line: "/join", current: "") == .unknown(reason: "/join takes one room's name")
+    assert action_of(line: "/dm bob", current: "") == .unknown(reason: "/dm takes a user's name and a text")
+    assert action_of(line: "hello", current: "") == .unknown(reason: "no room is on screen: /join one")

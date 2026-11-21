@@ -1,0 +1,172 @@
+# Reading and writing the JSON objects the chat speaks: a member read as a
+# text, a number, a flag, a list or an instant, each failing `invalid` with a
+# message that names the member, and the values the protocol writes. Every
+# frame a client sends and every payload a broker brings is read through
+# these, so a member of the wrong kind is refused with its name in the
+# message, never read as a default.
+
+use <rebel>/json
+use <rebel>/time
+
+# The code of a member absent or of the wrong kind.
+constant INVALID: str
+    "invalid"
+
+# The member `key` of the object `v`.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where `v` is no object or holds no such member.
+function member_of(v: json.Value, key: str) -> json.Value?
+    return match json.member(v, key: key)
+        .ok found => ok(found)
+        .err e    => fail(code: INVALID, msg: f"the member \"{key}\": {e.msg}")
+
+# The text of the member `key` of `v`.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is absent or no text.
+function text_of(v: json.Value, key: str) -> str?
+    return match json.text_of(member_of(v, key: key)?)
+        .ok t  => ok(t)
+        .err e => fail(code: INVALID, msg: f"the member \"{key}\": {e.msg}")
+
+# The text of the member `key` of `v`, or `otherwise` where it is absent.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+# - `otherwise`: the text answered where it is absent.
+#
+# Fails `invalid` where it stands and is no text.
+function text_or(v: json.Value, key: str, otherwise: str) -> str?
+    match json.member(v, key: key)
+        .err _ => return ok(otherwise)
+        .ok _  => return text_of(v, key: key)
+
+# The whole number of the member `key` of `v`.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is absent, no number, or one with a fraction.
+function int_of(v: json.Value, key: str) -> i64?
+    return match json.int_of(member_of(v, key: key)?)
+        .ok n  => ok(n)
+        .err e => fail(code: INVALID, msg: f"the member \"{key}\": {e.msg}")
+
+# The whole number of the member `key` of `v`, or `otherwise` where it is
+# absent.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+# - `otherwise`: the number answered where it is absent.
+#
+# Fails `invalid` where it stands and is no whole number.
+function int_or(v: json.Value, key: str, otherwise: i64) -> i64?
+    match json.member(v, key: key)
+        .err _ => return ok(otherwise)
+        .ok _  => return int_of(v, key: key)
+
+# The flag of the member `key` of `v`.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is absent or no boolean.
+function bool_of(v: json.Value, key: str) -> bool?
+    return match json.bool_of(member_of(v, key: key)?)
+        .ok b  => ok(b)
+        .err e => fail(code: INVALID, msg: f"the member \"{key}\": {e.msg}")
+
+# The elements of the list in the member `key` of `v`.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is absent or no list.
+function items_of(v: json.Value, key: str) -> [json.Value]?
+    return match json.items_of(member_of(v, key: key)?)
+        .ok items => ok(items)
+        .err e    => fail(code: INVALID, msg: f"the member \"{key}\": {e.msg}")
+
+# The texts of the list in the member `key` of `v`.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is absent, no list, or holds an element that is no
+# text.
+function texts_of(v: json.Value, key: str) -> [str]?
+    found: [str] @= []
+
+    for item in items_of(v, key: key)?
+        match json.text_of(item)
+            .ok t  => found @ found.push(t)
+            .err e => return fail(code: INVALID, msg: f"an element of \"{key}\": {e.msg}")
+
+    return ok(found)
+
+# The instant the member `key` of `v` writes in RFC 3339.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is absent, no text, or no RFC 3339 time.
+function instant_of(v: json.Value, key: str) -> time.Instant?
+    return match time.parse(text_of(v, key: key)?, layout: .rfc3339)
+        .ok t  => ok(t)
+        .err e => fail(code: INVALID, msg: f"the member \"{key}\": {e.msg}")
+
+# `s` as a JSON text.
+#
+# - `s`: the text.
+function text(s: str) -> json.Value
+    return .text(v: s)
+
+# `n` as a JSON number. The protocol's numbers are counts and references far
+# below 2^53, which an `f64` holds exactly.
+#
+# - `n`: the number.
+function number(n: i64) -> json.Value
+    return .number(v: to_f64(n))
+
+# `t` as the JSON text of its RFC 3339 form, to the millisecond.
+#
+# - `t`: the instant.
+function instant(t: time.Instant) -> json.Value
+    return .text(v: time.format(t, layout: .rfc3339_milliseconds))
+
+# `items` as a JSON list of texts.
+#
+# - `items`: the texts.
+function texts(items: [str]) -> json.Value
+    return .list(items: items.map(text))
+
+test "text_of: a member, an absent one, and one of the wrong kind"
+    v = json.parse("{\"a\":\"x\",\"n\":1}").must()
+    assert text_of(v, key: "a").must() == "x"
+    assert text_of(v, key: "b").is_err()
+    assert text_of(v, key: "n").is_err()
+    assert text_or(v, key: "b", otherwise: "y").must() == "y"
+    assert text_or(v, key: "n", otherwise: "y").is_err()
+
+test "int_of: a whole number, a fraction, and a member absent given a default"
+    v = json.parse("{\"n\":7,\"f\":1.5}").must()
+    assert int_of(v, key: "n").must() == 7
+    assert int_of(v, key: "f").is_err()
+    assert int_or(v, key: "m", otherwise: 3).must() == 3
+
+test "texts_of: a list of texts, an empty one, and one holding a number"
+    v = json.parse("{\"a\":[\"x\",\"y\"],\"e\":[],\"b\":[\"x\",1]}").must()
+    assert texts_of(v, key: "a").must() == ["x", "y"]
+    assert texts_of(v, key: "e").must().len() == 0
+    assert texts_of(v, key: "b").is_err()
+
+test "instant_of: an instant written and read back, and a text that is none"
+    t = time.date(year: 2026, month: 11, day: 21).must()
+    v: json.Value = .object(members: {"at": instant(t), "x": text("noon")})
+    assert instant_of(v, key: "at").must() == t
+    assert instant_of(v, key: "x").is_err()

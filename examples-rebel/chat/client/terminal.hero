@@ -1,0 +1,127 @@
+# The terminal client, `chat client <url>`: the password read with nothing
+# echoed, an account made where `--register` asks, a token asked for, then a
+# full screen drawn by `tui` and kept up to date. One loop waits a tenth of a
+# second for a key, then reads whatever the server sent meanwhile, then draws
+# the frame again, writing only the cells that changed; so a message that
+# comes while nobody types shows within a tenth of a second, and a key is
+# never waited on longer than that. Times are written in the reader's
+# language on the clocks of the machine's zone.
+
+use <rebel>/io
+use <rebel>/net
+use <rebel>/poll
+use <rebel>/term
+use <rebel>/time
+use <rebel>/tui
+
+use client/app
+use client/screen
+use client/session
+use client/speech
+
+# How long a wait for a key lasts before the connection is read, in
+# milliseconds.
+constant TICK_MS: i64
+    100
+
+# What a person asked of `chat client`.
+record Asked
+    # The server's URL.
+    target: str
+    # The user's name.
+    user: str
+    # Whether to make the account first.
+    register: bool
+    # The reader's language tag, `en-US`, `it-IT`.
+    language: str
+
+# Runs the client until the person quits or the server ends the connection.
+#
+# - `asked`: the server, the user and the reader's language.
+#
+# Fails where the URL names no server, the password is refused, the terminal
+# cannot be put in full-screen mode, or the connection fails.
+function run(asked: Asked) -> ()?
+    ends = session.endpoints_of(asked.target)?
+    password = term.read_secret(f"password for {asked.user}: ")?
+
+    if asked.register
+        _ = session.register(api: ends.api, user: asked.user, password: password)?
+
+    token = session.sign_in(api: ends.api, user: asked.user, password: password)?
+    zone = time.local_zone().default(time.utc_zone())
+    sp = speech.speech_of(asked.language, zone: zone)?
+    s = session.open(socket_url: ends.socket, token: token, now: time.now()?)?
+
+    # A page fills the pane of a screen of the usual 24 rows.
+    a @= app.new_app(s, sp: sp, page_rows: 18)
+    ended = in_full_screen(@a)
+
+    # The session ends whatever the screen answered.
+    _ = session.close(@a.s).is_err()
+    return ended
+
+# Runs the client in full-screen mode, the connection waited on with `poll`,
+# and puts the terminal back as it was, whatever the loop answered, so an
+# error is read on the shell's own screen.
+#
+# - `a`: the client.
+#
+# Fails as `poll.make`, `tui.start` and `loop` fail.
+function in_full_screen(@a: app.App) -> ()?
+    # The client waits on the connection with `poll`, never in a read; a
+    # stream that refuses the deadline is closed, which the loop's first read
+    # says.
+    _ = net.set_deadline(a.s.socket.stream, deadline_ms: net.FOREVER).is_err()
+    set @= poll.make(4)?
+
+    screen_held @= match start_screen(set, stream: a.s.socket.stream)
+        .ok held => held
+        .err e =>
+            _ = poll.close(@set).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    ended = loop(@a, @screen_held, set: set)
+    stopped = tui.stop(@screen_held)
+    _ = poll.close(@set).is_err()
+    stopped?
+    return ended
+
+# Adds the connection's stream to `set` and puts the terminal in full-screen
+# mode.
+#
+# - `set`: the poll set.
+# - `stream`: the connection's stream.
+#
+# Fails as `poll.add_stream` and `tui.start` fail.
+function start_screen(set: poll.Set, stream: io.Stream) -> tui.Terminal?
+    _ = poll.add_stream(set, s: stream, interest: .read)?
+    return tui.start(tui.default_options())
+
+# Draws, reads a key, reads the connection, until the client is done.
+#
+# - `a`: the client.
+# - `screen_held`: the terminal in full-screen mode.
+# - `set`: the poll set holding the connection's stream.
+function loop(@a: app.App, @screen_held: tui.Terminal, set: poll.Set) -> ()?
+    tick = time.milliseconds(TICK_MS)?
+
+    while !a.done
+        now = time.now()?
+        frame = screen.draw(a.s.view, draft: a.draft, sp: a.sp, now: now, area: tui.area_of(screen_held))
+        tui.flush(@screen_held, frame: frame.buffer, cursor: frame.cursor)?
+
+        match tui.read_event_within(@screen_held, limit: tick)
+            .ok e =>
+                match e
+                    .key k                                              => app.press(@a, key: k.key, now: now)?
+                    .pasted p                                           => app.paste(@a, text: p.text, now: now)?
+                    .mouse _ | .resized _ | .focus_gained | .focus_lost => _ = 0
+            .err e =>
+                if e.code != tui.TIMEOUT
+                    return fail(code: e.code, msg: e.msg)
+
+        if poll.wait(set, limit: time.seconds(0)?)?.len() > 0
+            session.receive_ready(@a.s, now: now)?
+
+    return ok()

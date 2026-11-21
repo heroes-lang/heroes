@@ -1,0 +1,161 @@
+# The demo's scenes after the sign-in: an edit across a grapheme cluster,
+# a direct message, the two mirrored rooms with their outside speakers, and
+# the HTTP API beside the WebSocket. Each prints what a person would notice,
+# never a port, an id or a time of the machine's clock.
+
+use <rebel>/http
+use <rebel>/mqtt
+use <rebel>/nats
+use <rebel>/time
+use <rebel>/unicode/segment
+
+use client/app
+use client/screen
+use client/session
+use core/model
+use demo/hands
+use demo/outside
+use protocol/objects
+
+# The topic the room `iot` is mirrored to.
+constant TOPIC: str
+    "chat/rooms/iot"
+
+# The subject the room `ops` is mirrored to.
+constant SUBJECT: str
+    "chat.rooms.ops"
+
+# alice types a line holding a family, sends it, then calls it back and
+# edits it across that one grapheme of seven code points; bob sees her
+# typing, then the edit.
+#
+# - `alice`: alice's client.
+# - `bob`: bob's client.
+# - `now`: the clients' time.
+function edit_across_graphemes(@alice: app.App, @bob: app.App, now: time.Instant) -> ()?
+    print("")
+    print("== alice types, sends, then edits across a grapheme cluster ==")
+    hands.type_text(@alice, text: f"team {hands.family()} ready", now: now)?
+    session.sync(@alice.s, now: now)?
+    session.sync(@bob.s, now: now)?
+    print(
+        f"alice typed {segment.graphemes(alice.draft.text).len()} graphemes from {alice.draft.text.chars().len()} keys: {hands.caret_of(alice)}"
+    )
+    print(f"bob's status line: {screen.status_of(bob.s.view, sp: bob.sp, now: now)}")
+    hands.press(@alice, key: .enter, now: now)?
+    session.sync(@alice.s, now: now)?
+    session.sync(@bob.s, now: now)?
+    print(f"bob's status line once it is sent: \"{screen.status_of(bob.s.view, sp: bob.sp, now: now)}\"")
+    hands.press(@alice, key: .up, now: now)?
+    print(f"Up calls her message back to edit: {hands.caret_of(alice)}")
+
+    for _ in range(from: 0, to: 6)
+        hands.press(@alice, key: .left, now: now)?
+
+    print(f"six times Left: {hands.caret_of(alice)}")
+    hands.press(@alice, key: .left, now: now)?
+    print(f"once more Left steps over the family: {hands.caret_of(alice)}")
+    hands.press(@alice, key: .right, now: now)?
+    hands.press(@alice, key: .backspace, now: now)?
+    print(f"Right, then Backspace takes the family whole: {hands.caret_of(alice)}")
+    app.paste(@alice, text: hands.technologist(), now: now)?
+    print(f"a technologist pasted: {hands.caret_of(alice)}")
+    hands.press(@alice, key: .enter, now: now)?
+    session.sync(@alice.s, now: now)?
+    session.sync(@bob.s, now: now)?
+    hands.print_screen(bob, who: "bob", now: now)
+    return ok()
+
+# bob writes to alice directly; alice is told of it while #general is on
+# her screen.
+#
+# - `alice`: alice's client.
+# - `bob`: bob's client.
+# - `now`: the clients' time.
+function directs(@alice: app.App, @bob: app.App, now: time.Instant) -> ()?
+    print("")
+    print("== a direct message ==")
+    hands.type_line(@bob, line: "/dm alice ci vediamo alle 15 :coffee:", now: now)?
+    session.sync(@bob.s, now: now)?
+    session.sync(@alice.s, now: now)?
+    print(f"alice's status line: {screen.status_of(alice.s.view, sp: alice.sp, now: now)}")
+    hands.type_line(@bob, line: "/dm nobody hello", now: now)?
+    session.sync(@bob.s, now: now)?
+    print(f"bob writes to nobody, his status line: {screen.status_of(bob.s.view, sp: bob.sp, now: now)}")
+    return ok()
+
+# The bridge both ways: a sensor on MQTT and a bot on NATS speak in the
+# mirrored rooms, and alice's answers reach them.
+#
+# - `alice`: alice's client.
+# - `mqtt_port`: the MQTT stand-in's port.
+# - `nats_port`: the NATS stand-in's port.
+# - `now`: the clients' time.
+function bridged(@alice: app.App, mqtt_port: i64, nats_port: i64, now: time.Instant) -> ()?
+    print("")
+    print("== #iot, mirrored to MQTT ==")
+    sensor @= outside.sensor(mqtt_port, name: "sensor-7", topic: TOPIC)?
+    hands.type_line(@alice, line: "/join iot", now: now)?
+    session.sync(@alice.s, now: now)?
+    outside.sensor_says(@sensor, topic: TOPIC, author: "sensor-7", text: "temperature 21.5 C :thermometer:")?
+    m = session.until_posted(@alice.s, room: "iot", now: now)?
+    print(f"the sensor published; alice's client got from {m.author} by {mirrored_by(m.origin)}: {m.text}")
+    hands.type_line(@alice, line: "fan on :cyclone:", now: now)?
+    session.sync(@alice.s, now: now)?
+    print(f"alice answered; the sensor heard on {TOPIC}: {outside.sensor_hears(@sensor)?}")
+    mqtt.close(@sensor)?
+
+    print("")
+    print("== #ops, mirrored to NATS ==")
+    deployer @= outside.bot(nats_port, name: "deploy-bot", subject: SUBJECT)?
+    hands.type_line(@alice, line: "/join ops", now: now)?
+    session.sync(@alice.s, now: now)?
+    outside.bot_says(@deployer, subject: SUBJECT, author: "deploy-bot", text: "release 1.4 is out :rocket:")?
+    n = session.until_posted(@alice.s, room: "ops", now: now)?
+    print(f"the bot published; alice's client got from {n.author} by {mirrored_by(n.origin)}: {n.text}")
+    hands.type_line(@alice, line: "thanks :tada:", now: now)?
+    session.sync(@alice.s, now: now)?
+    print(f"alice answered; the bot heard on {SUBJECT}: {outside.bot_hears(@deployer)?}")
+    nats.close(@deployer)?
+    hands.type_line(@alice, line: "/go iot", now: now)?
+    hands.print_screen(alice, who: "alice", now: now)
+    return ok()
+
+# The broker a message came through, in words.
+#
+# - `origin`: where it came from.
+function mirrored_by(origin: model.Origin) -> str
+    return match origin
+        .chat => "the chat itself"
+        .mqtt => "MQTT"
+        .nats => "NATS"
+
+# The HTTP API beside the WebSocket: a page of history with alice's token,
+# the same without one, and the server's health.
+#
+# - `api`: the API's base.
+# - `token`: alice's token.
+function api_calls(api: str, token: str) -> ()?
+    print("")
+    print("== the HTTP API ==")
+    c = http.default_client()
+    asked = http.with_bearer_auth(
+        http.request(method: http.METHOD_GET, target: api + "/rooms/general/messages?limit=2")?,
+        token: token
+    )
+    page = http.send(c, r: asked)?
+    body = http.json_of(page)?
+    texts: [str] @= []
+
+    for item in objects.items_of(body, key: "messages")?
+        texts @ texts.push(objects.text_of(item, key: "text")?)
+
+    print(
+        f"GET /rooms/general/messages?limit=2 with a token: {page.status}, {texts.join(" | ")}, more {objects.bool_of(body, key: "more")?}"
+    )
+    bare = http.get(c, target: api + "/rooms/general/messages")?
+    print(f"the same with no token: {bare.status}, {objects.text_of(http.json_of(bare)?, key: "message")?}")
+    health = http.get(c, target: api + "/health")?
+    online = objects.int_of(http.json_of(health)?, key: "online")?
+    print(f"GET /health: {health.status}, {online} online")
+    return ok()

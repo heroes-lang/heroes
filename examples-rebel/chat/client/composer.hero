@@ -1,0 +1,375 @@
+# The line a person types a message in, edited by grapheme clusters: every
+# move and every deletion steps over what a reader sees as one character, so
+# a flag (two regional indicators), a family joined by zero-width joiners or
+# a letter with its accents is one step of the cursor and one Backspace,
+# never half a character left on the screen. The cursor is a byte index that
+# stands only at a grapheme boundary, and `unicode/segment` says where those
+# are; word moves stop at UAX #29's word boundaries. Up on an empty line
+# recalls the person's last message to edit it, and Tab completes a
+# `:shortcode` before the cursor.
+
+use <rebel>/strings
+use <rebel>/term
+use <rebel>/unicode/segment
+
+use core/shortcodes
+
+# The line being typed. Made by `new_composer`; changed by this module's
+# functions alone, which keep `cursor` at a grapheme boundary of `text`.
+record Composer
+    # The text typed, one line.
+    text: str
+    # Where the next character goes: a byte index of `text` at a grapheme
+    # boundary, 0 to its length.
+    cursor: i64
+    # The id of the message being edited, "" while a new one is typed.
+    editing: str
+
+# What a key did to the line, for the program to act on.
+variant Outcome
+    # The text or the cursor changed: draw it again.
+    changed
+    # Nothing changed: the key means nothing here.
+    unchanged
+    # Enter on a line with text: send it.
+    submitted
+        # The text, as typed.
+        text: str
+        # The id of the message it replaces, "" for a new one.
+        editing: str
+    # Up on an empty line: put the person's last message in it to edit.
+    recall
+    # Escape while editing: the edit is given up and the line emptied.
+    cancelled
+
+# An empty line, its cursor at 0, editing nothing.
+function new_composer() -> Composer
+    return Composer(text: "", cursor: 0, editing: "")
+
+# Puts `piece` in at the cursor and moves the cursor past it. A line break in
+# a pasted text becomes a space, since a message is one line.
+#
+# - `c`: the line.
+# - `piece`: the text typed or pasted.
+#
+# Where `piece` joins the grapheme before it (a combining accent, the second
+# regional indicator of a flag), the cursor stands after the whole grapheme.
+function insert(@c: Composer, piece: str)
+    flat = strings.replace_all(s: strings.replace_all(s: piece, old: "\r\n", new: " "), old: "\n", new: " ")
+    before = c.text.slice(from: 0, to: c.cursor)
+    after = c.text.slice(from: c.cursor, to: c.text.len())
+    c.text @ before + flat + after
+    c.cursor @ boundary_at_or_after(c.text, at: before.len() + flat.len())
+
+# The first grapheme boundary of `text` at or after byte `at`, which stands at
+# a character's first byte.
+#
+# - `text`: the text.
+# - `at`: a byte index at a character's start, 0 to the length.
+function boundary_at_or_after(text: str, at: i64) -> i64
+    start = segment.previous_grapheme_boundary(text, at: at)
+
+    if start == at
+        return at
+
+    return segment.next_grapheme_boundary(text, at: start)
+
+# Moves the cursor one grapheme left, and answers whether it moved.
+#
+# - `c`: the line.
+function left(@c: Composer) -> bool
+    if c.cursor == 0
+        return false
+
+    c.cursor @ segment.previous_grapheme_boundary(c.text, at: c.cursor)
+    return true
+
+# Moves the cursor one grapheme right, and answers whether it moved.
+#
+# - `c`: the line.
+function right(@c: Composer) -> bool
+    if c.cursor == c.text.len()
+        return false
+
+    c.cursor @ segment.next_grapheme_boundary(c.text, at: c.cursor)
+    return true
+
+# Takes out the grapheme before the cursor, and answers whether there was one.
+#
+# - `c`: the line.
+function backspace(@c: Composer) -> bool
+    if c.cursor == 0
+        return false
+
+    start = segment.previous_grapheme_boundary(c.text, at: c.cursor)
+    c.text @ c.text.slice(from: 0, to: start) + c.text.slice(from: c.cursor, to: c.text.len())
+    c.cursor @ start
+    return true
+
+# Takes out the grapheme after the cursor, and answers whether there was one.
+#
+# - `c`: the line.
+function delete_forward(@c: Composer) -> bool
+    if c.cursor == c.text.len()
+        return false
+
+    end = segment.next_grapheme_boundary(c.text, at: c.cursor)
+    c.text @ c.text.slice(from: 0, to: c.cursor) + c.text.slice(from: end, to: c.text.len())
+    return true
+
+# Whether `piece`, one piece between two word boundaries, is a word: not white
+# space, and not one mark of ASCII punctuation.
+#
+# - `piece`: the piece.
+function is_word(piece: str) -> bool
+    if strings.trim(piece) == ""
+        return false
+
+    if piece.len() == 1
+        b = piece[0]
+        return b >= '0' && b <= '9' || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_'
+
+    return true
+
+# Where the word before the cursor begins: the start of the last word that
+# begins before it, 0 where none does.
+#
+# - `c`: the line.
+function word_start_before(c: Composer lent) -> i64
+    bounds = segment.word_boundaries(c.text)
+    found @= 0
+    i @= 0
+
+    while i + 1 < bounds.len() && bounds[i] < c.cursor
+        if is_word(c.text.slice(from: bounds[i], to: bounds[i + 1]))
+            found @ bounds[i]
+        i @ i + 1
+
+    return found
+
+# Where the word after the cursor ends: the end of the first word that ends
+# after it, the text's end where none does.
+#
+# - `c`: the line.
+function word_end_after(c: Composer lent) -> i64
+    bounds = segment.word_boundaries(c.text)
+    i @= 0
+
+    while i + 1 < bounds.len()
+        if bounds[i + 1] > c.cursor && is_word(c.text.slice(from: bounds[i], to: bounds[i + 1]))
+            return bounds[i + 1]
+        i @ i + 1
+
+    return c.text.len()
+
+# Moves the cursor to `to`, a boundary, and answers whether it moved.
+#
+# - `c`: the line.
+# - `to`: a grapheme boundary of the text.
+function move_to(@c: Composer, to: i64) -> bool
+    if to == c.cursor
+        return false
+
+    c.cursor @ to
+    return true
+
+# Takes out the text from `from` to `to`, both boundaries, and puts the cursor
+# at `from`; answers whether anything was taken.
+#
+# - `c`: the line.
+# - `from`: where the cut begins.
+# - `to`: where it ends, `from` or after.
+function cut(@c: Composer, from: i64, to: i64) -> bool
+    if from == to
+        return false
+
+    c.text @ c.text.slice(from: 0, to: from) + c.text.slice(from: to, to: c.text.len())
+    c.cursor @ from
+    return true
+
+# Replaces a `:name` that ends at the cursor with the emoji it names, and
+# answers whether one did. The name is what follows the last colon before the
+# cursor, with no space in it.
+#
+# - `c`: the line.
+function complete_shortcode(@c: Composer) -> bool
+    at @= c.cursor - 1
+
+    while at >= 0 && c.text[at] != ':' && shortcodes.is_name_byte(c.text[at])
+        at @ at - 1
+
+    if at < 0 || c.text[at] != ':' || at == c.cursor - 1
+        return false
+
+    match shortcodes.resolve(c.text.slice(from: at + 1, to: c.cursor))
+        .ok emoji =>
+            c.text @ c.text.slice(from: 0, to: at) + emoji + c.text.slice(from: c.cursor, to: c.text.len())
+            c.cursor @ at + emoji.len()
+            return true
+        .err _ => return false
+
+# Puts the message `id`, whose text is `text`, in the line to be edited, the
+# cursor at its end.
+#
+# - `c`: the line.
+# - `id`: the message's id.
+# - `text`: its text now.
+function start_edit(@c: Composer, id: str, text: str)
+    c.text @ text
+    c.cursor @ text.len()
+    c.editing @ id
+
+# Empties the line and ends any edit.
+#
+# - `c`: the line.
+function clear(@c: Composer)
+    c.text @ ""
+    c.cursor @ 0
+    c.editing @ ""
+
+# `changed` where `moved`, else `unchanged`.
+#
+# - `moved`: whether a key changed the line.
+function outcome_of(moved: bool) -> Outcome
+    if moved
+        return .changed
+    return .unchanged
+
+# Does `key` to the line, and answers what the program does next.
+#
+# - `c`: the line.
+# - `key`: the key pressed.
+#
+# Left, Right, Home, End, Ctrl-B, Ctrl-F, Ctrl-A and Ctrl-E move by a grapheme
+# or to an end; Alt-B and Alt-F, and xterm's Ctrl-Left and Ctrl-Right, by a
+# word. Backspace, Delete and Ctrl-D take a grapheme out; Ctrl-W the word
+# before the cursor, Ctrl-U all before it, Ctrl-K all after it. Tab completes
+# a shortcode. Enter submits a line with text and empties it; Up recalls on an
+# empty line; Escape gives up an edit.
+function press(@c: Composer, key: term.Key) -> Outcome
+    match key
+        .character ch =>
+            insert(@c, piece: ch.text)
+            return .changed
+        .left      => return outcome_of(left(@c))
+        .right     => return outcome_of(right(@c))
+        .home      => return outcome_of(move_to(@c, to: 0))
+        .end       => return outcome_of(move_to(@c, to: c.text.len()))
+        .backspace => return outcome_of(backspace(@c))
+        .delete    => return outcome_of(delete_forward(@c))
+        .tab       => return outcome_of(complete_shortcode(@c))
+        .up =>
+            if c.text == ""
+                return .recall
+            return .unchanged
+        .escape =>
+            if c.editing == ""
+                return .unchanged
+            clear(@c)
+            return .cancelled
+        .enter =>
+            if strings.trim(c.text) == ""
+                return .unchanged
+            sent: Outcome = .submitted(text: c.text, editing: c.editing)
+            clear(@c)
+            return sent
+        .control k                                                => return press_control(@c, letter: k.letter)
+        .other o                                                  => return press_sequence(@c, sequence: o.bytes)
+        .down | .page_up | .page_down | .insert | .function_key _ => return .unchanged
+
+# Does Ctrl with `letter` to the line.
+#
+# - `c`: the line.
+# - `letter`: the letter, lower case.
+function press_control(@c: Composer, letter: str) -> Outcome
+    return match letter
+        "a" => outcome_of(move_to(@c, to: 0))
+        "e" => outcome_of(move_to(@c, to: c.text.len()))
+        "b" => outcome_of(left(@c))
+        "f" => outcome_of(right(@c))
+        "d" => outcome_of(delete_forward(@c))
+        "w" => outcome_of(cut(@c, from: word_start_before(c), to: c.cursor))
+        "u" => outcome_of(cut(@c, from: 0, to: c.cursor))
+        "k" => outcome_of(cut(@c, from: c.cursor, to: c.text.len()))
+        _   => .unchanged
+
+# Does a key `term` names no case for: Alt-B and Alt-F (ESC and the letter),
+# and xterm's Ctrl-Left and Ctrl-Right (`ESC [ 1 ; 5 D` and `C`).
+#
+# - `c`: the line.
+# - `sequence`: the bytes the terminal sent.
+function press_sequence(@c: Composer, sequence: [u8]) -> Outcome
+    if sequence == [27, 98] || sequence == [27, 91, 49, 59, 53, 68]
+        return outcome_of(move_to(@c, to: word_start_before(c)))
+
+    if sequence == [27, 102] || sequence == [27, 91, 49, 59, 53, 67]
+        return outcome_of(move_to(@c, to: word_end_after(c)))
+
+    return .unchanged
+
+# The columns of a terminal the text before the cursor takes: where the
+# cursor is drawn after the prompt.
+#
+# - `c`: the line.
+function column_of(c: Composer lent) -> i64
+    return segment.width_of(c.text.slice(from: 0, to: c.cursor))
+
+# How many graphemes stand before the cursor: its place as a reader counts.
+#
+# - `c`: the line.
+function graphemes_before(c: Composer lent) -> i64
+    return segment.graphemes(c.text.slice(from: 0, to: c.cursor)).len()
+
+test "left: one step over a flag and one over a family joined by ZWJ"
+    c @= new_composer()
+    insert(@c, piece: "a🇮🇹👨‍👩‍👧‍👦b")
+    assert left(@c) && c.cursor == c.text.len() - 1
+    assert left(@c) && c.text.slice(from: c.cursor, to: c.text.len()) == "👨‍👩‍👧‍👦b"
+    assert left(@c) && c.cursor == 1
+    assert left(@c) && c.cursor == 0
+    assert !left(@c)
+
+test "backspace: a flag goes whole, then a letter, and nothing at the start"
+    c @= new_composer()
+    insert(@c, piece: "ok🇫🇷")
+    assert backspace(@c) && c.text == "ok"
+    assert backspace(@c) && c.text == "o"
+    c.cursor @ 0
+    assert !backspace(@c) && c.text == "o"
+
+test "insert: the second regional indicator of a flag joins the first, and a paste of two lines"
+    c @= new_composer()
+    insert(@c, piece: "🇮")
+    insert(@c, piece: "🇹")
+    assert graphemes_before(c) == 1 && column_of(c) == 2
+    insert(@c, piece: "a\nb")
+    assert c.text == "🇮🇹a b"
+
+test "press: a word moved over, a word cut, and Enter submitting and emptying"
+    c @= new_composer()
+
+    for ch in "see you there".chars()
+        _ = press(@c, key: .character(text: ch))
+
+    assert press(@c, key: .other(bytes: [27, 98])) == .changed && c.cursor == 8
+    assert press(@c, key: .control(letter: "w")) == .changed && c.text == "see there"
+    assert press(@c, key: .enter) == .submitted(text: "see there", editing: "")
+    assert c.text == "" && press(@c, key: .enter) == .unchanged
+
+test "press: Up recalls on an empty line, and Escape gives an edit up"
+    c @= new_composer()
+    assert press(@c, key: .up) == .recall
+    start_edit(@c, id: "m1", text: "typo")
+    assert press(@c, key: .up) == .unchanged
+    assert press(@c, key: .escape) == .cancelled && c.text == "" && c.editing == ""
+
+test "complete_shortcode: a name before the cursor, a name of none, and no colon"
+    c @= new_composer()
+    insert(@c, piece: "go :rocket")
+    assert complete_shortcode(@c) && c.text == "go 🚀" && c.cursor == c.text.len()
+    d @= new_composer()
+    insert(@d, piece: "go :nothing_here")
+    assert !complete_shortcode(@d)
+    e @= new_composer()
+    insert(@e, piece: "plain")
+    assert !complete_shortcode(@e)

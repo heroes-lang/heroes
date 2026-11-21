@@ -1,0 +1,473 @@
+# What a client knows, built from the notices its server sends: the rooms it
+# is in with the messages it holds of each, the direct conversations, who is
+# online, who is typing, what is unread, and what the server last refused.
+# `apply` is the one function that changes it, a notice at a time, so the
+# screen drawn from it is the same whichever way the notices came: the
+# terminal client and the demo's headless clients share it whole.
+#
+# A direct conversation is a room of its own named `@` and the other user's
+# name, so it pages, counts its unread messages and is switched to like any
+# room.
+
+use <rebel>/time
+
+use core/model
+use protocol/notices
+
+# How long a typing notice is shown after it came: a little past the pause
+# after which a client sends another while its person keeps typing.
+constant TYPING_SECONDS: i64
+    6
+
+# One line of a room as a client holds it.
+variant Entry
+    # A message posted in the room.
+    posted
+        # The message.
+        message: model.Message
+    # A direct message of the conversation.
+    direct
+        # The message.
+        message: model.Direct
+    # A user entered the room.
+    joined
+        # The user.
+        user: str
+    # A user left the room.
+    left
+        # The user.
+        user: str
+
+# A user typing in a room, and when the client was told.
+record Typist
+    # The user.
+    user: str
+    # When the notice came, by the client's clock.
+    at: time.Instant
+
+# One room, or one direct conversation, as a client holds it.
+record Room
+    # The room's name, or `@` and the other user's name for a conversation.
+    name: str
+    # Its lines, the oldest first.
+    entries: [Entry]
+    # Whether the server holds older messages than the first held here.
+    more: bool
+    # Messages that came while another room was on screen.
+    unread: i64
+    # Who is typing.
+    typists: [Typist]
+
+# Something the client says once on its status line: a presence that
+# changed, a request refused, or a word of its own.
+variant Note
+    # A user came online.
+    came
+        # The user.
+        user: str
+    # A user went offline.
+    went
+        # The user.
+        user: str
+    # A request of this client was refused.
+    refused
+        # Why, in the server's words.
+        reason: str
+    # Something the client itself says: a line of help, a line it could not
+    # read.
+    told
+        # The words.
+        text: str
+
+# Everything a client knows. Made by `new_view`, changed by `apply`.
+record View
+    # The user the client is signed in as, "" before the welcome.
+    user: str
+    # The name of the room on screen, "" for none.
+    current: str
+    # The rooms and conversations, in the order they were first known.
+    rooms: [Room]
+    # The users online, sorted.
+    online: [str]
+    # The last note, alone in the list; empty where there is none.
+    notes: [Note]
+    # The `ref` of the last `synced` notice.
+    synced: i64
+
+# A view of nothing, before the welcome.
+function new_view() -> View
+    return View(user: "", current: "", rooms: [], online: [], notes: [], synced: 0)
+
+# The index of the room `name` in `v`, -1 where it holds none.
+#
+# - `v`: the view.
+# - `name`: the room's name.
+function room_index(v: View lent, name: str) -> i64
+    i @= 0
+
+    while i < v.rooms.len()
+        if v.rooms[i].name == name
+            return i
+        i @ i + 1
+
+    return -1
+
+# The index of the room `name`, made empty at the end where it is new.
+#
+# - `v`: the view.
+# - `name`: the room's name.
+function ensure_room(@v: View, name: str) -> i64
+    i = room_index(v, name: name)
+
+    if i >= 0
+        return i
+
+    rooms @= v.rooms
+    rooms @ rooms.push(Room(name: name, entries: [], more: false, unread: 0, typists: []))
+    v.rooms @ rooms
+
+    if v.current == ""
+        v.current @ name
+
+    return v.rooms.len() - 1
+
+# The name of the conversation with the other user of `d`.
+#
+# - `v`: the view.
+# - `d`: a direct message to or from this user.
+function conversation_of(v: View lent, d: model.Direct) -> str
+    other = if d.sender == v.user
+        d.recipient
+    else
+        d.sender
+    return "@" + other
+
+# The id of the message `e` holds, "" for a line that holds none.
+#
+# - `e`: the line.
+function id_of(e: Entry) -> str
+    return match e
+        .posted p           => p.message.id
+        .direct d           => d.message.id
+        .joined _ | .left _ => ""
+
+# Whether room `i` holds a line of the message `id`.
+#
+# - `v`: the view.
+# - `i`: the room's index.
+# - `id`: the message's id.
+function holds(v: View lent, i: i64, id: str) -> bool
+    for e in v.rooms[i].entries
+        if id_of(e) == id
+            return true
+
+    return false
+
+# Adds `e` at the end of room `i`, counted unread where another room is on
+# screen.
+#
+# - `v`: the view.
+# - `i`: the room's index.
+# - `e`: the line.
+# - `counts`: whether it is a message that counts as unread.
+function append(@v: View, i: i64, e: Entry, counts: bool)
+    entries @= v.rooms[i].entries
+    entries @ entries.push(e)
+    v.rooms[i].entries @ entries
+
+    if counts && v.rooms[i].name != v.current
+        v.rooms[i].unread @ v.rooms[i].unread + 1
+
+# Takes `user` off room `i`'s typists.
+#
+# - `v`: the view.
+# - `i`: the room's index.
+# - `user`: the user.
+function stop_typing(@v: View, i: i64, user: str)
+    kept: [Typist] @= []
+
+    for t in v.rooms[i].typists
+        if t.user != user
+            kept @ kept.push(t)
+
+    v.rooms[i].typists @ kept
+
+# Puts room `name` on screen, its unread count cleared; a room the view does
+# not hold changes nothing.
+#
+# - `v`: the view.
+# - `name`: the room's name.
+function switch_to(@v: View, name: str)
+    i = room_index(v, name: name)
+
+    if i >= 0
+        v.current @ name
+        v.rooms[i].unread @ 0
+
+# Says `text` on the status line, in place of the last note.
+#
+# - `v`: the view.
+# - `text`: the words.
+function tell(@v: View, text: str)
+    v.notes @ [.told(text: text)]
+
+# Changes `v` by the notice `n`, which came at `now` by the client's clock.
+#
+# - `v`: the view.
+# - `n`: the notice.
+# - `now`: when it came, which a typing notice is shown from.
+function apply(@v: View, n: notices.Notice, now: time.Instant)
+    match n
+        .welcome w =>
+            v.user @ w.user
+            v.online @ w.online
+
+            for r in w.rooms
+                _ = ensure_room(@v, name: r)
+        .presence p =>
+            kept: [str] @= []
+
+            for u in v.online
+                if u != p.user
+                    kept @ kept.push(u)
+
+            if p.online
+                kept @ kept.push(p.user)
+                v.notes @ [.came(user: p.user)]
+            else
+                v.notes @ [.went(user: p.user)]
+
+            v.online @ sort(kept)
+        .joined j =>
+            i = ensure_room(@v, name: j.room)
+
+            if j.user == v.user
+                switch_to(@v, name: j.room)
+            else
+                append(@v, i: i, e: .joined(user: j.user), counts: false)
+        .left l   => leave(@v, room: l.room, user: l.user)
+        .posted p => post(@v, m: p.message)
+        .direct d =>
+            i = ensure_room(@v, name: conversation_of(v, d: d.message))
+
+            if !holds(v, i: i, id: d.message.id)
+                append(@v, i: i, e: .direct(message: d.message), counts: d.message.sender != v.user)
+        .typing t =>
+            i = ensure_room(@v, name: t.room)
+            stop_typing(@v, i: i, user: t.user)
+            typists @= v.rooms[i].typists
+            typists @ typists.push(Typist(user: t.user, at: now))
+            v.rooms[i].typists @ typists
+        .page p    => put_page(@v, page: p.page)
+        .edited e  => edit(@v, m: e.message)
+        .refused r => v.notes @ [.refused(reason: r.reason)]
+        .synced s  => v.synced @ s.ref
+
+# `user` left `room`: this user's leaving drops the room from the view and
+# puts the first room left on screen; another's is a line of the room.
+#
+# - `v`: the view.
+# - `room`: the room's name.
+# - `user`: who left.
+function leave(@v: View, room: str, user: str)
+    i = room_index(v, name: room)
+
+    if i < 0
+        return
+
+    if user != v.user
+        append(@v, i: i, e: .left(user: user), counts: false)
+        return
+
+    kept: [Room] @= []
+
+    for r in v.rooms
+        if r.name != room
+            kept @ kept.push(r)
+
+    v.rooms @ kept
+
+    if v.current == room
+        v.current @ ""
+
+        if kept.len() > 0
+            switch_to(@v, name: kept[0].name)
+
+# The message `m` was posted: a line at the end of its room, its author no
+# longer typing.
+#
+# - `v`: the view.
+# - `m`: the message.
+function post(@v: View, m: model.Message)
+    i = ensure_room(@v, name: m.room)
+    stop_typing(@v, i: i, user: m.author)
+
+    if !holds(v, i: i, id: m.id)
+        append(@v, i: i, e: .posted(message: m), counts: m.author != v.user)
+
+# A page of history: its messages put before the room's first line, those
+# held already left out, and whether older ones remain kept.
+#
+# - `v`: the view.
+# - `page`: the page, the oldest first.
+function put_page(@v: View, page: model.Page)
+    i = ensure_room(@v, name: page.room)
+    entries: [Entry] @= []
+
+    for m in page.messages
+        if !holds(v, i: i, id: m.id)
+            entries @ entries.push(.posted(message: m))
+
+    for e in v.rooms[i].entries
+        entries @ entries.push(e)
+
+    v.rooms[i].entries @ entries
+    v.rooms[i].more @ page.more
+
+# The message `m` was changed: its line takes the new text and the mark.
+#
+# - `v`: the view.
+# - `m`: the message, its new text in it.
+function edit(@v: View, m: model.Message)
+    i = room_index(v, name: m.room)
+
+    if i < 0
+        return
+
+    j @= 0
+
+    while j < v.rooms[i].entries.len()
+        if id_of(v.rooms[i].entries[j]) == m.id
+            v.rooms[i].entries[j] @ .posted(message: m)
+        j @ j + 1
+
+# The id of the oldest message held of the room on screen, "" where none: what
+# a request for the page before it names.
+#
+# - `v`: the view.
+function oldest_of(v: View lent) -> str
+    i = room_index(v, name: v.current)
+
+    if i < 0
+        return ""
+
+    for e in v.rooms[i].entries
+        id = id_of(e)
+
+        if id != ""
+            return id
+
+    return ""
+
+# This user's last message in the room on screen, which Up puts in the line
+# to edit.
+#
+# - `v`: the view.
+#
+# Fails `not_found` where no room is on screen or they posted none there.
+function last_own(v: View lent) -> model.Message?
+    i = room_index(v, name: v.current)
+
+    if i < 0
+        return fail(code: "not_found", msg: "no room is on screen")
+
+    found: [model.Message] @= []
+
+    for e in v.rooms[i].entries
+        match e
+            .posted p =>
+                if p.message.author == v.user && p.message.origin == .chat
+                    found @ [p.message]
+            .direct _ | .joined _ | .left _ => _ = 0
+
+    if found.len() == 0
+        return fail(code: "not_found", msg: "you posted nothing here yet")
+
+    return ok(found[0])
+
+# The users typing in room `i` at `now`, those told within `TYPING_SECONDS`,
+# in the order they began.
+#
+# - `v`: the view.
+# - `i`: the room's index.
+# - `now`: the client's time now.
+function typing_in(v: View lent, i: i64, now: time.Instant) -> [str]
+    found: [str] @= []
+
+    for t in v.rooms[i].typists
+        if time.unix_seconds(now) - time.unix_seconds(t.at) < TYPING_SECONDS
+            found @ found.push(t.user)
+
+    return found
+
+# A message of `room` by `author` for a test, its text made from its id.
+#
+# - `id`: its id.
+# - `room`: its room.
+# - `author`: who wrote it.
+function sample(id: str, room: str, author: str) -> model.Message
+    return model.Message(
+        id: id,
+        room: room,
+        author: author,
+        origin: .chat,
+        text: f"text {id}",
+        at: time.epoch(),
+        edited: false
+    )
+
+test "apply: a welcome, a post in the room on screen, and one elsewhere counted unread"
+    v @= new_view()
+    t = time.epoch()
+    apply(@v, n: .welcome(user: "bob", rooms: ["general", "iot"], online: ["alice", "bob"]), now: t)
+    assert v.current == "general"
+    apply(@v, n: .posted(message: sample(id: "1", room: "general", author: "alice")), now: t)
+    apply(@v, n: .posted(message: sample(id: "2", room: "iot", author: "alice")), now: t)
+    apply(@v, n: .posted(message: sample(id: "2", room: "iot", author: "alice")), now: t)
+    assert v.rooms[0].unread == 0 && v.rooms[1].unread == 1 && v.rooms[1].entries.len() == 1
+    switch_to(@v, name: "iot")
+    assert v.rooms[1].unread == 0
+
+test "apply: a page put before what is held, a message held already left out"
+    v @= new_view()
+    t = time.epoch()
+    apply(@v, n: .welcome(user: "bob", rooms: ["general"], online: ["bob"]), now: t)
+    apply(@v, n: .posted(message: sample(id: "3", room: "general", author: "alice")), now: t)
+    apply(
+        @v,
+        n: .page(page: model.Page(room: "general", messages: [sample(id: "1", room: "general", author: "alice"), sample(id: "3", room: "general", author: "alice")], more: true)),
+        now: t
+    )
+    assert v.rooms[0].entries.map(id_of) == ["1", "3"] && v.rooms[0].more
+    assert oldest_of(v) == "1"
+
+test "apply: typing shown, then cleared by the typist's post, and a direct message's conversation"
+    v @= new_view()
+    t = time.epoch()
+    apply(@v, n: .welcome(user: "alice", rooms: ["general"], online: ["alice"]), now: t)
+    apply(@v, n: .typing(room: "general", user: "bob"), now: t)
+    assert typing_in(v, i: 0, now: t) == ["bob"]
+    assert typing_in(v, i: 0, now: time.add(t, d: time.seconds(7).must()).must()).len() == 0
+    apply(@v, n: .posted(message: sample(id: "9", room: "general", author: "bob")), now: t)
+    assert typing_in(v, i: 0, now: t).len() == 0
+    d = model.Direct(id: "d", sender: "bob", recipient: "alice", text: "psst", at: t)
+    apply(@v, n: .direct(message: d), now: t)
+    assert v.rooms[1].name == "@bob" && v.rooms[1].unread == 1
+
+test "apply: an edit replaces the line, and this user's last message is found to edit"
+    v @= new_view()
+    t = time.epoch()
+    apply(@v, n: .welcome(user: "alice", rooms: ["general"], online: ["alice"]), now: t)
+    apply(@v, n: .posted(message: sample(id: "1", room: "general", author: "alice")), now: t)
+    changed @= sample(id: "1", room: "general", author: "alice")
+    changed.text @ "fixed"
+    changed.edited @ true
+    apply(@v, n: .edited(message: changed), now: t)
+    assert last_own(v).must().text == "fixed"
+
+test "apply: this user leaving drops the room and shows the next"
+    v @= new_view()
+    t = time.epoch()
+    apply(@v, n: .welcome(user: "alice", rooms: ["general", "iot"], online: ["alice"]), now: t)
+    apply(@v, n: .left(room: "general", user: "alice"), now: t)
+    assert v.rooms.len() == 1 && v.current == "iot"

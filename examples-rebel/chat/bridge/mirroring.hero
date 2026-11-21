@@ -1,0 +1,283 @@
+# The bridge's connections: one MQTT client and one NATS client, made where
+# a mirror needs them, each subscribed to its mirrored places, publishing a
+# room's messages there and bringing in what devices and services publish.
+# Two guards keep a message from going round: the bridge's own publications
+# never come back to it (MQTT 5's No Local on its subscriptions, NATS's
+# `echo` off), and a payload marked as the chat's own is dropped if one comes
+# all the same (`places.inbound_of`). A message that came in from one broker
+# is still sent to the other where its room is mirrored to both. A client
+# makes no reconnection inside a call, which would hold the server's whole
+# loop; the loop calls `relink` on a timer instead.
+
+use <rebel>/mqtt
+use <rebel>/nats
+use <rebel>/time
+
+use bridge/places
+use core/model
+
+# The bridge's connections: one MQTT client where a mirror needs one, one
+# NATS client where a mirror needs one, where they connect, and what has
+# crossed. Made by `connect`, which the program owes a `close`. A client
+# whose broker went away is closed and stays out until `relink` makes it
+# again.
+record Bridge
+    # The mirrors, in the order the settings name them.
+    mirrors: [places.Mirror]
+    # The MQTT server, read where a mirror uses MQTT.
+    mqtt_url: str
+    # The NATS server, read where a mirror uses NATS.
+    nats_url: str
+    # The name the clients give the brokers.
+    name: str
+    # The MQTT client, none where no mirror uses MQTT.
+    mqtt_clients: [mqtt.Client]
+    # The NATS client, none where no mirror uses NATS.
+    nats_clients: [nats.Client]
+    # Messages published to a broker.
+    sent: i64
+    # Messages a broker brought into a room.
+    received: i64
+
+# How long one attempt to reach a broker may take, in seconds: the server's
+# loop waits that long at most when a broker is away.
+constant LINK_SECONDS: i64
+    2
+
+# The bridge of `mirrors`, its clients connected and subscribed.
+#
+# - `mirrors`: the mirrors.
+# - `mqtt_url`: the MQTT server, `mqtt://host:1883`; read only where a mirror
+#   uses MQTT.
+# - `nats_url`: the NATS server, `nats://host:4222`; read only where a mirror
+#   uses NATS.
+# - `name`: the name the clients give the brokers: MQTT's client identifier
+#   and NATS's connection name.
+#
+# Fails as `link_mqtt` and `link_nats` fail; a client made before a failure
+# is closed.
+function connect(mirrors: [places.Mirror], mqtt_url: str, nats_url: str, name: str) -> Bridge?
+    b @= Bridge(
+        mirrors: mirrors,
+        mqtt_url: mqtt_url,
+        nats_url: nats_url,
+        name: name,
+        mqtt_clients: [],
+        nats_clients: [],
+        sent: 0,
+        received: 0
+    )
+    link_mqtt(@b)?
+
+    match link_nats(@b)
+        .ok _ => return ok(b)
+        .err e =>
+            close(@b)
+            return fail(code: e.code, msg: e.msg)
+
+# Connects the MQTT client where a mirror uses MQTT, and subscribes it to
+# every mirrored topic with No Local. The client makes no reconnection of its
+# own: a call of it never waits through attempts, and the server's loop links
+# again on its own timer (`relink`).
+#
+# - `b`: the bridge, which gains the client.
+#
+# Fails as `mqtt.parse_url`, `mqtt.connect` and `mqtt.subscribe_many` fail.
+function link_mqtt(@b: Bridge) -> ()?
+    if !places.uses(b.mirrors, of_nats: false)
+        return ok()
+
+    opts @= mqtt.parse_url(b.mqtt_url)?
+    opts.client_id @ b.name
+    opts.reconnect.attempts @ 0
+    opts.connect_timeout @ time.seconds(LINK_SECONDS)?
+    client @= mqtt.connect(opts)?
+    wanted: [mqtt.Subscription] @= []
+
+    for m in b.mirrors
+        match m.broker
+            .mqtt t =>
+                s @= mqtt.subscription(t.topic, qos: 1)
+                s.no_local @ true
+                wanted @ wanted.push(s)
+            .nats _ => _ = 0
+
+    match mqtt.subscribe_many(@client, subscriptions: wanted, properties: [])
+        .ok _ =>
+            b.mqtt_clients @ [client]
+            return ok()
+        .err e =>
+            _ = mqtt.close(@client).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Connects the NATS client where a mirror uses NATS, echo off, and subscribes
+# it to every mirrored subject; like `link_mqtt`, it makes no reconnection of
+# its own.
+#
+# - `b`: the bridge, which gains the client.
+#
+# Fails as `nats.connect` and `nats.subscribe` fail.
+function link_nats(@b: Bridge) -> ()?
+    if !places.uses(b.mirrors, of_nats: true)
+        return ok()
+
+    opts @= nats.options([b.nats_url])
+    opts.name @ b.name
+    opts.echo @ false
+    opts.reconnect.attempts @ 0
+    opts.connect_timeout @ time.seconds(LINK_SECONDS)?
+    client @= nats.connect(opts)?
+
+    for m in b.mirrors
+        match m.broker
+            .nats s =>
+                match nats.subscribe(@client, subject: s.subject)
+                    .ok _ => _ = 0
+                    .err e =>
+                        _ = nats.close(@client).is_err()
+                        return fail(code: e.code, msg: e.msg)
+            .mqtt _ => _ = 0
+
+    b.nats_clients @ [client]
+    return ok()
+
+# Makes again each client whose broker went away, one attempt each, and
+# answers how many were made.
+#
+# - `b`: the bridge.
+function relink(@b: Bridge) -> i64
+    made @= 0
+
+    if places.uses(b.mirrors, of_nats: false) && (b.mqtt_clients.len() == 0 || mqtt.is_closed(b.mqtt_clients[0]))
+        b.mqtt_clients @ []
+
+        if !link_mqtt(@b).is_err()
+            made @ made + 1
+
+    if places.uses(b.mirrors, of_nats: true) && (b.nats_clients.len() == 0 || nats.is_closed(b.nats_clients[0]))
+        b.nats_clients @ []
+
+        if !link_nats(@b).is_err()
+            made @ made + 1
+
+    return made
+
+# Closes the bridge's clients; one that fails to close is closed all the
+# same.
+#
+# - `b`: the bridge, its clients emptied.
+function close(@b: Bridge)
+    i @= 0
+
+    while i < b.mqtt_clients.len()
+        # Closing writes DISCONNECT; where the broker is gone the connection
+        # is closed all the same, which is all that is wanted here.
+        _ = mqtt.close(@b.mqtt_clients[i]).is_err()
+        i @ i + 1
+
+    i @ 0
+
+    while i < b.nats_clients.len()
+        _ = nats.close(@b.nats_clients[i]).is_err()
+        i @ i + 1
+
+    b.mqtt_clients @ []
+    b.nats_clients @ []
+
+# Publishes `m` to every mirror of its room but one of the broker it came
+# from, and answers how many places it went to.
+#
+# - `b`: the bridge.
+# - `m`: the message, stored already.
+#
+# Fails as `mqtt.publish` and `nats.publish` fail; the mirrors before the
+# failing one have their copy.
+function mirror_out(@b: Bridge, m: model.Message) -> i64?
+    went @= 0
+
+    for mirror in b.mirrors
+        if mirror.room == m.room
+            match mirror.broker
+                .mqtt t =>
+                    if m.origin != .mqtt && b.mqtt_clients.len() == 1
+                        mqtt.publish(@b.mqtt_clients[0], topic: t.topic, payload: places.payload_of(m), qos: 1, retain: false)?
+                        went @ went + 1
+                .nats s =>
+                    if m.origin != .nats && b.nats_clients.len() == 1
+                        nats.publish(@b.nats_clients[0], subject: s.subject, data: places.payload_of(m))?
+                        went @ went + 1
+
+    b.sent @ b.sent + went
+    return ok(went)
+
+# The messages the MQTT client holds and one read of its stream completes,
+# each for its room; a payload of none of the mirrors, the chat's own, or not
+# UTF-8 is dropped.
+#
+# - `b`: the bridge.
+#
+# Fails as `mqtt.read_ready` fails.
+function take_mqtt(@b: Bridge) -> [places.Inbound]?
+    found: [places.Inbound] @= []
+
+    if b.mqtt_clients.len() == 0
+        return ok(found)
+
+    for m in mqtt.read_ready(@b.mqtt_clients[0])?
+        room = places.room_of(b.mirrors, place: m.topic, of_nats: false)
+
+        if room != ""
+            match places.inbound_of(m.payload, room: room, origin: .mqtt)
+                .ok got => found @ found.push(got)
+                .err _  => _ = 0
+
+    b.received @ b.received + found.len()
+    return ok(found)
+
+# The messages the NATS client holds and one read of its stream completes,
+# each for its room, as `take_mqtt` takes MQTT's.
+#
+# - `b`: the bridge.
+#
+# Fails as `nats.read_ready` fails.
+function take_nats(@b: Bridge) -> [places.Inbound]?
+    found: [places.Inbound] @= []
+
+    if b.nats_clients.len() == 0
+        return ok(found)
+
+    for m in nats.read_ready(@b.nats_clients[0])?
+        room = places.room_of(b.mirrors, place: m.subject, of_nats: true)
+
+        if room != ""
+            match places.inbound_of(m.data, room: room, origin: .nats)
+                .ok got => found @ found.push(got)
+                .err _  => _ = 0
+
+    b.received @ b.received + found.len()
+    return ok(found)
+
+# How many messages the MQTT client holds read already: what a program
+# waiting with `poll` takes before it waits, since a stream does not tell of
+# bytes read while a publish waited for its acknowledgement.
+#
+# - `b`: the bridge.
+function held_mqtt(b: Bridge lent) -> i64
+    held @= 0
+
+    for c in b.mqtt_clients
+        held @ held + mqtt.held_of(c)
+
+    return held
+
+# How many messages the NATS client holds read already, as `held_mqtt` says
+# of MQTT's.
+#
+# - `b`: the bridge.
+function held_nats(b: Bridge lent) -> i64
+    held @= 0
+
+    for c in b.nats_clients
+        held @ held + nats.held_of(c)
+
+    return held

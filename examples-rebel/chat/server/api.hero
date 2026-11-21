@@ -1,0 +1,338 @@
+# The server's HTTP API, beside its WebSocket: `POST /register` makes an
+# account, `POST /login` answers a token for one, `GET
+# /rooms/:room/messages` answers a page of a room's history to a member who
+# carries a token, and `GET /health` says the server answers. `GET /socket`
+# is the WebSocket's route, which the server's loop upgrades itself. Every
+# body is JSON, and every error is `{"message": ...}` with its status.
+
+use <rebel>/crypto
+use <rebel>/http
+use <rebel>/json
+use <rebel>/numbers
+use <rebel>/os
+use <rebel>/web
+
+use auth/passwords
+use auth/tokens
+use core/model
+use protocol/notices
+use protocol/objects
+use server/hashing
+use server/hub
+use server/state
+use store/database
+
+# The route the server upgrades to a WebSocket.
+constant SOCKET_ROUTE: str
+    "socket"
+
+# The route of `POST /register`, whose answer waits for a hash
+# (`begin_register`, `finish`).
+constant REGISTER_ROUTE: str
+    "register"
+
+# The route of `POST /login`, whose answer waits for a hash (`begin_login`,
+# `finish`).
+constant LOGIN_ROUTE: str
+    "login"
+
+# The path of the WebSocket's route.
+constant SOCKET_PATH: str
+    "/socket"
+
+# The router of the API, every route named for `answer`'s dispatch.
+function new_router() -> web.Router
+    r @= web.new_router()
+    r.errors @ .json
+
+    # Each pattern and name below is fixed and well formed, and none repeats.
+    web.add(@r, method: http.METHOD_POST, pattern: "/register", name: REGISTER_ROUTE).must()
+    web.add(@r, method: http.METHOD_POST, pattern: "/login", name: LOGIN_ROUTE).must()
+    web.add(@r, method: http.METHOD_GET, pattern: "/rooms/:room/messages", name: "history").must()
+    web.add(@r, method: http.METHOD_GET, pattern: "/health", name: "health").must()
+    web.add(@r, method: http.METHOD_GET, pattern: SOCKET_PATH, name: SOCKET_ROUTE).must()
+    return r
+
+# The token a request carries: in `Authorization: Bearer`, or in the query's
+# `token` for a browser's WebSocket, which sets no header of its own.
+#
+# - `r`: the request.
+#
+# Fails `not_found` where it carries none.
+function token_of(r: http.Request) -> str?
+    match http.bearer_token_of(r)
+        .ok t  => return ok(t)
+        .err _ => _ = 0
+
+    for pair in http.query_of(r).default([])
+        if pair.key == "token"
+            return ok(pair.value)
+
+    return fail(code: "not_found", msg: "the request carries no token")
+
+# The user `r` is signed in as, by its token.
+#
+# - `srv`: the server.
+# - `r`: the request.
+#
+# Fails `invalid` where it carries no token or one this server refuses.
+function user_of(srv: state.Server lent, r: http.Request) -> str?
+    token = match token_of(r)
+        .ok t  => t
+        .err e => return fail(code: tokens.INVALID, msg: e.msg)
+
+    return tokens.verify(srv.signer, token: token, now: state.now(srv)?)
+
+# An error answered as JSON.
+#
+# - `status`: the status.
+# - `message`: what went wrong.
+function error_of(status: i64, message: str) -> http.Response
+    return web.error_response(.json, status: status, message: message)
+
+# The answer to `r`, which the route `found` takes: the routes answered at
+# once, all but the sign-ins and the WebSocket, which the server's loop
+# takes itself.
+#
+# - `srv`: the server.
+# - `found`: the route.
+# - `r`: the request.
+function answer(@srv: state.Server, found: web.Found, r: http.Request) -> http.Response
+    srv.requests @ srv.requests + 1
+
+    return match found.name
+        "history" => history(@srv, found: found, r: r)
+        "health"  => health(srv)
+        _         => error_of(http.STATUS_NOT_FOUND, message: f"no handler for the route {found.name}")
+
+# The user's name and password of a body `{"user": ..., "password": ...}`.
+record Credentials
+    # The user's name.
+    user: str
+    # The password.
+    password: str
+
+# The credentials of `r`'s JSON body.
+#
+# - `r`: the request.
+#
+# Fails `invalid` where the body is no JSON object holding both texts.
+function credentials_of(r: http.Request) -> Credentials?
+    body = web.json_of(r)?
+    return ok(Credentials(user: objects.text_of(body, key: "user")?, password: objects.text_of(body, key: "password")?))
+
+# What a sign-in's request comes to before its hash: an answer at once, or
+# the hash it waits for.
+variant Begun
+    # The request is answered at once: a mistake in it, or a name taken.
+    answered
+        # The answer.
+        response: http.Response
+    # The request waits for a hash made off the loop (`hashing`).
+    hashing
+        # What the hash is made of.
+        work: hashing.Work
+
+# `POST /register` up to its hash: 400 at once where the name or the
+# password is refused, 409 where the name is taken, else a fresh salt to
+# hash the password with.
+#
+# - `srv`: the server.
+# - `r`: the request.
+function begin_register(@srv: state.Server, r: http.Request) -> Begun
+    asked = match credentials_of(r)
+        .ok c  => c
+        .err e => return .answered(response: error_of(http.STATUS_BAD_REQUEST, message: e.msg))
+
+    match model.check_user(asked.user)
+        .ok _  => _ = 0
+        .err e => return .answered(response: error_of(http.STATUS_BAD_REQUEST, message: e.msg))
+
+    match passwords.check(asked.password)
+        .ok _  => _ = 0
+        .err e => return .answered(response: error_of(http.STATUS_BAD_REQUEST, message: e.msg))
+
+    if database.has_user(@srv.db, name: asked.user).default(false)
+        return .answered(response: taken(asked.user))
+
+    salt = match os.random_bytes(passwords.SALT_BYTES)
+        .ok got => got
+        .err e  => return .answered(response: error_of(http.STATUS_INTERNAL_SERVER_ERROR, message: e.msg))
+
+    secret = passwords.Secret(salt: salt, hash: [], iterations: srv.settings.iterations)
+    return .hashing(work: hashing.Work(purpose: .register(user: asked.user), password: asked.password, secret: secret))
+
+# `POST /login` up to its hash: 400 at once where the body is no sign-in,
+# else the kept secret to hold the password's hash to; a name no account has
+# is hashed against a stand-in all the same, so its answer takes as long.
+#
+# - `srv`: the server.
+# - `r`: the request.
+function begin_login(@srv: state.Server, r: http.Request) -> Begun
+    asked = match credentials_of(r)
+        .ok c  => c
+        .err e => return .answered(response: error_of(http.STATUS_BAD_REQUEST, message: e.msg))
+
+    stand_in = passwords.Secret(
+        salt: repeat_byte(passwords.SALT_BYTES),
+        hash: repeat_byte(passwords.HASH_BYTES),
+        iterations: srv.settings.iterations
+    )
+
+    return match database.secret_of(@srv.db, name: asked.user)
+        .ok kept => .hashing(
+            work: hashing.Work(purpose: .login(user: asked.user, known: true), password: asked.password, secret: kept)
+        )
+        .err _ => .hashing(
+            work: hashing.Work(purpose: .login(user: asked.user, known: false), password: asked.password, secret: stand_in)
+        )
+
+# `n` zero bytes: a stand-in salt or hash.
+#
+# - `n`: how many.
+function repeat_byte(n: i64) -> [u8]
+    zeros: [u8] @= []
+
+    for _ in range(from: 0, to: n)
+        zeros @ zeros.push(0)
+
+    return zeros
+
+# The 409 of a name taken.
+#
+# - `user`: the name.
+function taken(user: str) -> http.Response
+    return error_of(http.STATUS_CONFLICT, message: f"the name \"{user}\" is taken")
+
+# The answer to a sign-in whose hash is made: for `/register` the account
+# kept, 201, or 409 where the name was taken meanwhile; for `/login` a token,
+# 200, or 401 where the name or the password is wrong, saying the same for
+# both so a name cannot be found out.
+#
+# - `srv`: the server.
+# - `done`: the job done, its hash in it.
+function finish(@srv: state.Server, done: hashing.Done) -> http.Response
+    hash = match done.hash
+        .ok h  => h
+        .err e => return error_of(http.STATUS_INTERNAL_SERVER_ERROR, message: e.msg)
+
+    match done.work.purpose
+        .register g =>
+            kept @= done.work.secret
+            kept.hash @ hash
+
+            at = match state.now(srv)
+                .ok t  => t
+                .err e => return error_of(http.STATUS_INTERNAL_SERVER_ERROR, message: e.msg)
+
+            match database.add_user(@srv.db, name: g.user, secret: kept, at: at)
+                .ok _ => _ = 0
+                .err e =>
+                    if e.code == database.EXISTS
+                        return taken(g.user)
+                    return error_of(http.STATUS_INTERNAL_SERVER_ERROR, message: e.msg)
+
+            v: json.Value = .object(members: {"user": objects.text(g.user)})
+            return http.respond_json(http.STATUS_CREATED, value: v).must()
+        .login l =>
+            if !l.known || !crypto.equals_constant_time(a: hash, b: done.work.secret.hash)
+                return error_of(http.STATUS_UNAUTHORIZED, message: "the name or the password is wrong")
+
+            issued = match issue(srv, user: l.user)
+                .ok t  => t
+                .err e => return error_of(http.STATUS_INTERNAL_SERVER_ERROR, message: e.msg)
+
+            v: json.Value = .object(
+                members: {"token": objects.text(issued), "expires_in": objects.number(srv.settings.token_hours * 3600)}
+            )
+            return http.respond_json(http.STATUS_OK, value: v).must()
+
+# A token for `user`, issued now.
+#
+# - `srv`: the server.
+# - `user`: the user.
+function issue(srv: state.Server lent, user: str) -> str?
+    at = state.now(srv)?
+    return tokens.issue(srv.signer, user: user, now: at, id: state.new_id(at)?)
+
+# `GET /rooms/:room/messages?before=&limit=`: a page of the room's history,
+# the oldest first, to a member; 401 without a token, 403 to one not in the
+# room, 404 where `before` names no message of it.
+#
+# - `srv`: the server.
+# - `found`: the route, its `room` in it.
+# - `r`: the request.
+function history(@srv: state.Server, found: web.Found, r: http.Request) -> http.Response
+    user = match user_of(srv, r: r)
+        .ok u  => u
+        .err e => return error_of(http.STATUS_UNAUTHORIZED, message: e.msg)
+
+    room = web.param_of(found, name: "room").default("")
+    rooms = database.rooms_of(@srv.db, member: user).default([])
+
+    if !holds(rooms, room: room)
+        return error_of(http.STATUS_FORBIDDEN, message: f"{user} is not in #{room}")
+
+    before @= ""
+    limit @= 0
+
+    for pair in http.query_of(r).default([])
+        if pair.key == "before"
+            before @ pair.value
+        else if pair.key == "limit"
+            limit @ to_limit(pair.value)
+
+    page = match database.page_of(@srv.db, room: room, before: before, limit: model.page_size(limit))
+        .ok p  => p
+        .err e => return error_of(http.STATUS_NOT_FOUND, message: e.msg)
+
+    v: json.Value = .object(
+        members: {"room": objects.text(room), "messages": .list(items: page.messages.map(notices.message_json)), "more": .boolean(v: page.more)}
+    )
+    return http.respond_json(http.STATUS_OK, value: v).must()
+
+# Whether `rooms` holds `room`.
+#
+# - `rooms`: the rooms of a user.
+# - `room`: the room asked about.
+function holds(rooms: [str], room: str) -> bool
+    for r in rooms
+        if r == room
+            return true
+
+    return false
+
+# The page size a query's `limit` asks, 0 where it is no number, which asks
+# for the server's own size.
+#
+# - `text`: the query's value.
+function to_limit(text: str) -> i64
+    return numbers.parse_int(text).default(0)
+
+# `GET /health`: 200 and how many people are online, while the server
+# answers.
+#
+# - `srv`: the server.
+function health(srv: state.Server lent) -> http.Response
+    v: json.Value = .object(
+        members: {"status": objects.text("ok"), "online": objects.number(hub.online_of(srv.routing).len())}
+    )
+    return http.respond_json(http.STATUS_OK, value: v).must()
+
+test "token_of: a bearer token, a token in the query, and none"
+    bearer = http.with_bearer_auth(http.request(method: http.METHOD_GET, target: "/socket").must(), token: "abc")
+    assert token_of(bearer).must() == "abc"
+    queried = http.request(method: http.METHOD_GET, target: "/socket?token=xyz").must()
+    assert token_of(queried).must() == "xyz"
+    assert token_of(http.request(method: http.METHOD_GET, target: "/socket").must()).is_err()
+
+test "new_router: each route found by its method and path"
+    r = new_router()
+    asked = http.request(method: http.METHOD_GET, target: "/rooms/general/messages?limit=3").must()
+    found = web.route(r, r: asked).must()
+    assert found.name == "history" && web.param_of(found, name: "room").must() == "general"
+    assert web.route(r, r: http.request(method: http.METHOD_POST, target: "/login").must()).must().name == "login"
+    assert web.route(r, r: http.request(method: http.METHOD_GET, target: "/login").must()).is_err()
+
+test "to_limit: a number, a word, and nothing"
+    assert to_limit("20") == 20 && to_limit("all") == 0 && to_limit("") == 0

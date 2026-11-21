@@ -1,0 +1,372 @@
+# The chat's history in SQLite: the accounts with their kept passwords, the
+# rooms and who is in each, every message of every room and every direct
+# message. A room's history is paged by the order messages were stored in,
+# `seq`, never by their times, so two messages of one millisecond, or a clock
+# set back, still page in the order the server took them. The schema carries
+# its version in SQLite's `user_version`, and `open` brings an older file up
+# to date in one transaction.
+
+use <rebel>/sql
+use <rebel>/sql/sqlite
+use <rebel>/time
+
+use auth/passwords
+use core/model
+
+# The version of the schema this program writes.
+constant SCHEMA_VERSION: i64
+    1
+
+# The code of an account or a message that is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of an account made twice.
+constant EXISTS: str
+    "exists"
+
+# The code of a file whose schema is newer than this program's.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The statements that make the schema of version 1, in order.
+function schema_v1() -> [str]
+    return [
+        "CREATE TABLE users (name TEXT PRIMARY KEY, salt BLOB NOT NULL, hash BLOB NOT NULL, iterations INTEGER NOT NULL, created_at DATETIME NOT NULL)"
+        "CREATE TABLE rooms (name TEXT PRIMARY KEY, created_at DATETIME NOT NULL)"
+        "CREATE TABLE memberships (member TEXT NOT NULL REFERENCES users (name), room TEXT NOT NULL REFERENCES rooms (name), joined_at DATETIME NOT NULL, PRIMARY KEY (member, room))"
+        "CREATE TABLE messages (seq INTEGER PRIMARY KEY, id TEXT NOT NULL UNIQUE, room TEXT NOT NULL REFERENCES rooms (name), author TEXT NOT NULL, origin TEXT NOT NULL, body TEXT NOT NULL, at DATETIME NOT NULL, edited BOOLEAN NOT NULL)"
+        "CREATE INDEX messages_by_room ON messages (room, seq)"
+        "CREATE TABLE directs (seq INTEGER PRIMARY KEY, id TEXT NOT NULL UNIQUE, sender TEXT NOT NULL REFERENCES users (name), recipient TEXT NOT NULL REFERENCES users (name), body TEXT NOT NULL, at DATETIME NOT NULL)"
+    ]
+
+# How many of each thing a store holds.
+record Counts
+    # Accounts.
+    users: i64
+    # Rooms.
+    rooms: i64
+    # Messages of rooms.
+    messages: i64
+    # Direct messages.
+    directs: i64
+
+# The database at `path`, made where it is new and brought to
+# `SCHEMA_VERSION`, with its foreign keys checked.
+#
+# - `path`: the file's path; its folder is there already.
+#
+# The program owes the answer a `sqlite.close`. Fails `unsupported` where the
+# file's schema is newer than this program's, and as `sqlite.open` and the
+# statements fail.
+function open(path: str) -> sqlite.Db?
+    db @= sqlite.open(path)?
+
+    match prepare(@db)
+        .ok _ => return ok(db)
+        .err e =>
+            # The failure told is the one that stopped the opening; a close
+            # that fails after it adds nothing the caller could act on.
+            _ = sqlite.close(@db).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# A database in memory with the schema made, for a test.
+function open_memory() -> sqlite.Db?
+    db @= sqlite.open_memory()?
+    prepare(@db)?
+    return ok(db)
+
+# Sets the connection's pragmas and brings its schema up to date.
+#
+# - `db`: the open database.
+#
+# Fails as `open` does.
+function prepare(@db: sqlite.Db) -> ()?
+    sqlite.exec_script(@db, script: "PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL")?
+    version = sql.integer_named(sqlite.query_one(@db, statement: "PRAGMA user_version", params: [])?, "user_version")?
+
+    if version > SCHEMA_VERSION
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"the database's schema is of version {version}, and this program writes {SCHEMA_VERSION}"
+        )
+
+    if version == SCHEMA_VERSION
+        return ok()
+
+    sqlite.begin(@db)?
+
+    for statement in schema_v1()
+        match sqlite.exec(@db, statement: statement, params: [])
+            .ok _ => _ = 0
+            .err e =>
+                # The statement's failure is the one told; SQLite rolls the
+                # transaction back at the close where this fails too.
+                _ = sqlite.rollback(@db).is_err()
+                return fail(code: e.code, msg: e.msg)
+
+    sqlite.exec_script(@db, script: f"PRAGMA user_version = {SCHEMA_VERSION}")?
+    return sqlite.commit(@db)
+
+# Keeps an account for `name`.
+#
+# - `db`: the database.
+# - `name`: the user's name, checked by `model.check_user`.
+# - `secret`: the password as `passwords.make` kept it.
+# - `at`: when it was made.
+#
+# Fails `exists` where the name is taken.
+function add_user(@db: sqlite.Db, name: str, secret: passwords.Secret, at: time.Instant) -> ()?
+    _ = sqlite.exec(@db, statement: "INSERT INTO users (name, salt, hash, iterations, created_at) VALUES (?1, ?2, ?3, ?4, ?5)", params: [.text(v: name), .blob(v: secret.salt), .blob(v: secret.hash), .integer(v: secret.iterations), .instant(v: at)])?
+    return ok()
+
+# What was kept of `name`'s password.
+#
+# - `db`: the database.
+# - `name`: the user's name.
+#
+# Fails `not_found` where no account has the name.
+function secret_of(@db: sqlite.Db, name: str) -> passwords.Secret?
+    row = sqlite.query_one(@db, statement: "SELECT salt, hash, iterations FROM users WHERE name = ?1", params: [.text(v: name)])?
+    return ok(
+        passwords.Secret(salt: sql.blob_named(row, "salt")?, hash: sql.blob_named(row, "hash")?, iterations: sql.integer_named(row, "iterations")?)
+    )
+
+# Whether an account has the name `name`.
+#
+# - `db`: the database.
+# - `name`: the user's name.
+function has_user(@db: sqlite.Db, name: str) -> bool?
+    rows = sqlite.query(@db, statement: "SELECT 1 AS one FROM users WHERE name = ?1", params: [.text(v: name)])?
+    return ok(rows.rows.len() == 1)
+
+# Puts `member` in `room`, making the room where it is new, and answers
+# whether they were not in it before.
+#
+# - `db`: the database.
+# - `member`: the user's name, an account's.
+# - `room`: the room's name, checked by `model.check_room`.
+# - `at`: when.
+function join_room(@db: sqlite.Db, member: str, room: str, at: time.Instant) -> bool?
+    _ = sqlite.exec(@db, statement: "INSERT OR IGNORE INTO rooms (name, created_at) VALUES (?1, ?2)", params: [.text(v: room), .instant(v: at)])?
+    added = sqlite.exec(@db, statement: "INSERT OR IGNORE INTO memberships (member, room, joined_at) VALUES (?1, ?2, ?3)", params: [.text(v: member), .text(v: room), .instant(v: at)])?
+    return ok(added.rows_affected == 1)
+
+# Takes `member` out of `room`, and answers whether they were in it.
+#
+# - `db`: the database.
+# - `member`: the user's name.
+# - `room`: the room's name.
+function leave_room(@db: sqlite.Db, member: str, room: str) -> bool?
+    gone = sqlite.exec(@db, statement: "DELETE FROM memberships WHERE member = ?1 AND room = ?2", params: [.text(v: member), .text(v: room)])?
+    return ok(gone.rows_affected == 1)
+
+# The rooms `member` is in, in the order they joined them.
+#
+# - `db`: the database.
+# - `member`: the user's name.
+function rooms_of(@db: sqlite.Db, member: str) -> [str]?
+    rows = sqlite.query(@db, statement: "SELECT room FROM memberships WHERE member = ?1 ORDER BY rowid", params: [.text(v: member)])?
+    found: [str] @= []
+
+    for row in rows.rows
+        found @ found.push(sql.text_named(row, "room")?)
+
+    return ok(found)
+
+# Whether a room named `room` has been made.
+#
+# - `db`: the database.
+# - `room`: the room's name.
+function has_room(@db: sqlite.Db, room: str) -> bool?
+    rows = sqlite.query(@db, statement: "SELECT 1 AS one FROM rooms WHERE name = ?1", params: [.text(v: room)])?
+    return ok(rows.rows.len() == 1)
+
+# Makes the room `room` where it is new: what a mirrored room needs before a
+# broker's message can be stored in it.
+#
+# - `db`: the database.
+# - `room`: the room's name.
+# - `at`: when.
+function ensure_room(@db: sqlite.Db, room: str, at: time.Instant) -> ()?
+    _ = sqlite.exec(@db, statement: "INSERT OR IGNORE INTO rooms (name, created_at) VALUES (?1, ?2)", params: [.text(v: room), .instant(v: at)])?
+    return ok()
+
+# Keeps the message `m`; its room is made already.
+#
+# - `db`: the database.
+# - `m`: the message.
+function add_message(@db: sqlite.Db, m: model.Message) -> ()?
+    _ = sqlite.exec(@db, statement: "INSERT INTO messages (id, room, author, origin, body, at, edited) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)", params: [.text(v: m.id), .text(v: m.room), .text(v: m.author), .text(v: model.origin_name(m.origin)), .text(v: m.text), .instant(v: m.at), .boolean(v: m.edited)])?
+    return ok()
+
+# The message `row` holds, its columns those `MESSAGE_COLUMNS` names.
+#
+# - `row`: the row.
+#
+# Fails `invalid` where a column is absent or of another kind.
+function message_of_row(row: sql.Row) -> model.Message?
+    return ok(
+        model.Message(id: sql.text_named(row, "id")?, room: sql.text_named(row, "room")?, author: sql.text_named(row, "author")?, origin: model.parse_origin(sql.text_named(row, "origin")?)?, text: sql.text_named(row, "body")?, at: sql.instant_named(row, "at")?, edited: sql.boolean_named(row, "edited")?)
+    )
+
+# The columns every read of a message names, in `message_of_row`'s order.
+constant MESSAGE_COLUMNS: str
+    "id, room, author, origin, body, at, edited"
+
+# The message whose id is `id`.
+#
+# - `db`: the database.
+# - `id`: the message's id.
+#
+# Fails `not_found` where no message has it.
+function message_of(@db: sqlite.Db, id: str) -> model.Message?
+    row = sqlite.query_one(@db, statement: f"SELECT {MESSAGE_COLUMNS} FROM messages WHERE id = ?1", params: [.text(v: id)])?
+    return message_of_row(row)
+
+# Changes the text of the message `id`, and marks it edited.
+#
+# - `db`: the database.
+# - `id`: the message's id.
+# - `text`: its new text, checked.
+#
+# Fails `not_found` where no message has the id.
+function edit_message(@db: sqlite.Db, id: str, text: str) -> ()?
+    changed = sqlite.exec(@db, statement: "UPDATE messages SET body = ?1, edited = 1 WHERE id = ?2", params: [.text(v: text), .text(v: id)])?
+
+    if changed.rows_affected == 0
+        return fail(code: NOT_FOUND, msg: f"no message has the id \"{id}\"")
+
+    return ok()
+
+# The page of `room`'s history that ends just before the message `before`:
+# the newest `limit` messages older than it, the oldest first.
+#
+# - `db`: the database.
+# - `room`: the room's name.
+# - `before`: the id of a message of the room, "" for the newest page.
+# - `limit`: the most messages, 1 or more.
+#
+# Fails `not_found` where `before` names no message of the room.
+function page_of(@db: sqlite.Db, room: str, before: str, limit: i64) -> model.Page?
+    # One more than the page holds, which says whether older ones stand.
+    asked = limit + 1
+
+    rows = if before == ""
+        sqlite.query(@db, statement: f"SELECT {MESSAGE_COLUMNS} FROM messages WHERE room = ?1 ORDER BY seq DESC LIMIT ?2", params: [.text(v: room), .integer(v: asked)])?
+    else
+        anchor = match sqlite.query_one(@db, statement: "SELECT seq FROM messages WHERE id = ?1 AND room = ?2", params: [.text(v: before), .text(v: room)])
+            .ok row => sql.integer_named(row, "seq")?
+            .err _  => return fail(code: NOT_FOUND, msg: f"no message of #{room} has the id \"{before}\"")
+
+        sqlite.query(@db, statement: f"SELECT {MESSAGE_COLUMNS} FROM messages WHERE room = ?1 AND seq < ?2 ORDER BY seq DESC LIMIT ?3", params: [.text(v: room), .integer(v: anchor), .integer(v: asked)])?
+
+    newest_first: [model.Message] @= []
+
+    for row in rows.rows
+        if newest_first.len() < limit
+            newest_first @ newest_first.push(message_of_row(row)?)
+
+    oldest_first: [model.Message] @= []
+    at @= newest_first.len() - 1
+
+    while at >= 0
+        oldest_first @ oldest_first.push(newest_first[at])
+        at @ at - 1
+
+    return ok(model.Page(room: room, messages: oldest_first, more: rows.rows.len() > limit))
+
+# Keeps the direct message `d`.
+#
+# - `db`: the database.
+# - `d`: the message, between two accounts.
+function add_direct(@db: sqlite.Db, d: model.Direct) -> ()?
+    _ = sqlite.exec(@db, statement: "INSERT INTO directs (id, sender, recipient, body, at) VALUES (?1, ?2, ?3, ?4, ?5)", params: [.text(v: d.id), .text(v: d.sender), .text(v: d.recipient), .text(v: d.text), .instant(v: d.at)])?
+    return ok()
+
+# How many accounts, rooms, messages and direct messages the store holds.
+#
+# - `db`: the database.
+function counts_of(@db: sqlite.Db) -> Counts?
+    row = sqlite.query_one(@db, statement: "SELECT (SELECT COUNT(*) FROM users) AS users, (SELECT COUNT(*) FROM rooms) AS rooms, (SELECT COUNT(*) FROM messages) AS messages, (SELECT COUNT(*) FROM directs) AS directs", params: [])?
+    return ok(
+        Counts(users: sql.integer_named(row, "users")?, rooms: sql.integer_named(row, "rooms")?, messages: sql.integer_named(row, "messages")?, directs: sql.integer_named(row, "directs")?)
+    )
+
+# A message of `room` for a test.
+#
+# - `room`: its room.
+# - `id`: its id.
+# - `text`: its text.
+function sample(room: str, id: str, text: str) -> model.Message
+    return model.Message(
+        id: id,
+        room: room,
+        author: "alice",
+        origin: .chat,
+        text: text,
+        at: time.date(year: 2026, month: 11, day: 21).must(),
+        edited: false
+    )
+
+test "page_of: the newest page, the page before it, the last page, and an id of none"
+    db @= open_memory().must()
+    at = time.date(year: 2026, month: 11, day: 21).must()
+    add_user(@db, name: "alice", secret: passwords.Secret(salt: [1], hash: [2], iterations: 1), at: at).must()
+    assert join_room(@db, member: "alice", room: "general", at: at).must()
+
+    for n in range(from: 1, to: 6)
+        add_message(@db, m: sample(room: "general", id: f"m{n}", text: f"text {n}")).must()
+
+    newest = page_of(@db, room: "general", before: "", limit: 2).must()
+    assert newest.messages.map(text_of) == ["text 4", "text 5"] && newest.more
+    older = page_of(@db, room: "general", before: "m4", limit: 2).must()
+    assert older.messages.map(text_of) == ["text 2", "text 3"] && older.more
+    last = page_of(@db, room: "general", before: "m2", limit: 2).must()
+    assert last.messages.map(text_of) == ["text 1"] && !last.more
+    assert page_of(@db, room: "general", before: "zz", limit: 2).is_err()
+    sqlite.close(@db).must()
+
+test "add_user: an account kept, read back, and made twice"
+    db @= open_memory().must()
+    at = time.date(year: 2026, month: 11, day: 21).must()
+    kept = passwords.Secret(salt: [1, 2], hash: [3, 4], iterations: 7)
+    add_user(@db, name: "alice", secret: kept, at: at).must()
+    assert secret_of(@db, name: "alice").must() == kept
+    assert has_user(@db, name: "alice").must() && !has_user(@db, name: "bob").must()
+
+    match add_user(@db, name: "alice", secret: kept, at: at)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    assert secret_of(@db, name: "bob").is_err()
+    sqlite.close(@db).must()
+
+test "join_room: a room joined, joined again, its rooms in order, and left"
+    db @= open_memory().must()
+    at = time.date(year: 2026, month: 11, day: 21).must()
+    add_user(@db, name: "bob", secret: passwords.Secret(salt: [1], hash: [2], iterations: 1), at: at).must()
+    assert join_room(@db, member: "bob", room: "random", at: at).must()
+    assert join_room(@db, member: "bob", room: "general", at: at).must()
+    assert !join_room(@db, member: "bob", room: "random", at: at).must()
+    assert rooms_of(@db, member: "bob").must() == ["random", "general"]
+    assert leave_room(@db, member: "bob", room: "random").must()
+    assert !leave_room(@db, member: "bob", room: "random").must()
+    assert counts_of(@db).must() == Counts(users: 1, rooms: 2, messages: 0, directs: 0)
+    sqlite.close(@db).must()
+
+test "edit_message: a text changed and marked, and an id of none"
+    db @= open_memory().must()
+    ensure_room(@db, room: "general", at: time.date(year: 2026, month: 11, day: 21).must()).must()
+    add_message(@db, m: sample(room: "general", id: "x", text: "befor")).must()
+    edit_message(@db, id: "x", text: "before").must()
+    changed = message_of(@db, id: "x").must()
+    assert changed.text == "before" && changed.edited
+    assert edit_message(@db, id: "y", text: "no").is_err()
+    sqlite.close(@db).must()
+
+# The text of `m`, for a test that compares a page's texts.
+#
+# - `m`: the message.
+function text_of(m: model.Message) -> str
+    return m.text

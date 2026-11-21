@@ -1,0 +1,199 @@
+# The client's words and times in its reader's language: the screen's few
+# phrases looked up in a gettext catalog with their plural forms, and every
+# message's time and day written as the reader's locale writes them on the
+# clocks of the reader's zone. English is the program's own language, so its
+# catalog is empty and every phrase is its own text; Italian is carried as a
+# `.po` text, read once when the client starts.
+
+use <rebel>/i18n
+use <rebel>/i18n/dates
+use <rebel>/strings
+use <rebel>/time
+
+# The languages a catalog is carried for, the program's own first.
+function languages() -> [str]
+    return ["en", "it"]
+
+# The Italian catalog, as a `.po` file writes it, one line of the file
+# each.
+function italian_po() -> str
+    lines: [str] = [
+        "msgid \"\""
+        "msgstr \"\""
+        "\"Content-Type: text/plain; charset=UTF-8\\n\""
+        "\"Language: it\\n\""
+        "\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\""
+        ""
+        "msgid \"%s is typing…\""
+        "msgstr \"%s sta scrivendo…\""
+        ""
+        "msgid \"%s and %s are typing…\""
+        "msgstr \"%s e %s stanno scrivendo…\""
+        ""
+        "msgid \"%s came online\""
+        "msgstr \"%s è in linea\""
+        ""
+        "msgid \"%s went offline\""
+        "msgstr \"%s non è più in linea\""
+        ""
+        "msgid \"%s is in #%s now\""
+        "msgstr \"%s ora è in #%s\""
+        ""
+        "msgid \"%s left #%s\""
+        "msgstr \"%s ha lasciato #%s\""
+        ""
+        "msgid \"edited\""
+        "msgstr \"modificato\""
+        ""
+        "msgid \"older messages above: /history\""
+        "msgstr \"messaggi precedenti sopra: /history\""
+        ""
+        "msgid \"refused: %s\""
+        "msgstr \"rifiutato: %s\""
+        ""
+        "msgid \"%d unread in %s\""
+        "msgid_plural \"%d unread in %s\""
+        "msgstr[0] \"%d non letto in %s\""
+        "msgstr[1] \"%d non letti in %s\""
+        ""
+        "msgid \"%d person online\""
+        "msgid_plural \"%d people online\""
+        "msgstr[0] \"%d persona in linea\""
+        "msgstr[1] \"%d persone in linea\""
+        ""
+    ]
+    return lines.join("\n")
+
+# How one reader is spoken to: their locale, the catalog of their language,
+# and the zone whose clocks their times are written on. Made by `speech_of`.
+record Speech
+    # The reader's locale, which chooses the forms of times and days.
+    locale: i18n.Locale
+    # The phrases of the reader's language.
+    catalog: i18n.Catalog
+    # The zone the reader's clocks keep.
+    zone: time.Zone
+
+# How a reader who asks for `tag` and lives in `zone` is spoken to: the
+# catalog of the first carried language RFC 4647's lookup finds for the tag,
+# English where none.
+#
+# - `tag`: the reader's language tag, `it-IT`, or a POSIX name, `it_IT.UTF-8`
+#   read as its tag.
+# - `zone`: the zone of the reader's clocks.
+#
+# Fails `invalid` where `tag` is no language tag.
+function speech_of(tag: str, zone: time.Zone) -> Speech?
+    posix_free = strings.split(s: tag, sep: ".")[0]
+    locale = i18n.parse_locale(posix_free)?
+    language = i18n.lookup_tag(ranges: [i18n.format_locale(locale)], tags: languages()).default("en")
+
+    catalog = if language == "it"
+        i18n.parse_po(italian_po())?
+    else
+        i18n.new_catalog([])?
+
+    return ok(Speech(locale: locale, catalog: catalog, zone: zone))
+
+# `template` with each `%s` replaced by the next of `values`, in order; a
+# `%s` past the last value is kept as written.
+#
+# - `template`: the phrase, its places marked `%s`.
+# - `values`: what fills them.
+function fill(template: str, values: [str]) -> str
+    pieces: [str] @= []
+    next @= 0
+    kept_from @= 0
+    at @= 0
+
+    while at + 1 < template.len()
+        if template[at] == '%' && template[at + 1] == 's' && next < values.len()
+            pieces @ pieces.push(template.slice(from: kept_from, to: at))
+            pieces @ pieces.push(values[next])
+            next @ next + 1
+            at @ at + 2
+            kept_from @ at
+        else
+            at @ at + 1
+
+    pieces @ pieces.push(template.slice(from: kept_from, to: template.len()))
+    return pieces.join("")
+
+# The phrase `id` in the reader's language, its `%s` filled from `values`.
+#
+# - `sp`: how the reader is spoken to.
+# - `id`: the phrase as the program writes it in English.
+# - `values`: what fills its `%s`, in order.
+function say(sp: Speech lent, id: str, values: [str]) -> str
+    return fill(i18n.translate(sp.catalog, id: id), values: values)
+
+# The phrase of `n` things in the reader's language and its plural form for
+# `n`, its `%d` written as `n` and its `%s` filled from `values`.
+#
+# - `sp`: how the reader is spoken to.
+# - `one`: the English phrase for one, its count `%d`.
+# - `many`: the English phrase for another count.
+# - `n`: the count.
+# - `values`: what fills its `%s`, in order.
+function say_count(sp: Speech lent, one: str, many: str, n: i64, values: [str]) -> str
+    chosen = i18n.translate_plural(sp.catalog, id: one, plural_id: many, n: n)
+    return fill(strings.replace_all(s: chosen, old: "%d", new: to_str(n)), values: values)
+
+# The time of day of `t` on the reader's clocks, short, as their locale
+# writes it: `9:00 AM` in American English, `15:00` in Italian.
+#
+# - `sp`: how the reader is spoken to.
+# - `t`: the instant.
+function clock_of(sp: Speech lent, t: time.Instant) -> str
+    return dates.format_time(sp.locale, t: t, zone: sp.zone, style: .short)
+
+# The day of `t` on the reader's clocks, in full, as their locale writes it:
+# `Saturday, November 21, 2026`, `sabato 21 novembre 2026`.
+#
+# - `sp`: how the reader is spoken to.
+# - `t`: the instant.
+function day_of(sp: Speech lent, t: time.Instant) -> str
+    return dates.format_date(sp.locale, t: t, zone: sp.zone, style: .full)
+
+# Which day `t` falls on for the reader, as a key two times compare by:
+# `2026-11-21` on the reader's clocks.
+#
+# - `sp`: how the reader is spoken to.
+# - `t`: the instant.
+function day_key(sp: Speech lent, t: time.Instant) -> str
+    d = time.to_date_time_in(t, zone: sp.zone)
+    return f"{d.year}-{d.month}-{d.day}"
+
+test "fill: two places, one value short, and no place"
+    assert fill("%s and %s", values: ["a", "b"]) == "a and b"
+    assert fill("%s and %s", values: ["a"]) == "a and %s"
+    assert fill("100%", values: ["x"]) == "100%"
+
+test "say: an English phrase is its own text, an Italian one its translation"
+    utc = time.utc_zone()
+    english = speech_of("en-US", zone: utc).must()
+    italian = speech_of("it_IT.UTF-8", zone: utc).must()
+    assert say(english, id: "%s is typing…", values: ["bob"]) == "bob is typing…"
+    assert say(italian, id: "%s is typing…", values: ["bob"]) == "bob sta scrivendo…"
+    assert say(italian, id: "not in the catalog", values: []) == "not in the catalog"
+
+test "say_count: one and two, in English and in Italian"
+    utc = time.utc_zone()
+    english = speech_of("en", zone: utc).must()
+    italian = speech_of("it", zone: utc).must()
+    assert say_count(english, one: "%d unread in %s", many: "%d unread in %s", n: 1, values: ["#iot"]) == "1 unread in #iot"
+    assert say_count(italian, one: "%d unread in %s", many: "%d unread in %s", n: 1, values: ["#iot"]) == "1 non letto in #iot"
+    assert say_count(italian, one: "%d unread in %s", many: "%d unread in %s", n: 2, values: ["#iot"]) == "2 non letti in #iot"
+
+test "speech_of: a language not carried falls back to English, and a tag that is none"
+    sp = speech_of("de-CH", zone: time.utc_zone()).must()
+    assert say(sp, id: "edited", values: []) == "edited"
+    assert speech_of("", zone: time.utc_zone()).is_err()
+
+test "clock_of: one instant on two readers' clocks"
+    t = time.from_date_time(
+        time.DateTime(year: 2026, month: 11, day: 21, hour: 14, minute: 5, second: 0, nanosecond: 0)
+    ).must()
+    italian = speech_of("it-IT", zone: time.utc_zone()).must()
+    assert clock_of(italian, t: t) == "14:05"
+    assert day_key(italian, t: t) == "2026-11-21"

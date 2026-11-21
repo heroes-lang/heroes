@@ -1,0 +1,120 @@
+# What a running chat server holds, in one record its loop, its HTTP
+# handlers and its request handlers all work on: the database, the clock, the
+# token issuer, the router, the routing of notices, the open WebSocket
+# connections, the bridge and the sign-ins waiting for their hashes. The
+# language has no global, so this record is the server's state and every
+# function that changes it takes it by `@`.
+# `deliver` writes the notices the routing answered, in its order.
+
+use <rebel>/net
+use <rebel>/sql/sqlite
+use <rebel>/time
+use <rebel>/uuid
+use <rebel>/web
+use <rebel>/websocket
+
+use auth/tokens
+use bridge/mirroring
+use core/clocks
+use protocol/notices
+use server/hashing
+use server/hub
+use server/settings
+
+# One WebSocket connection of the server, signed in.
+record Conn
+    # Its key in the poll set, which the routing names it by.
+    key: i64
+    # The connection.
+    socket: websocket.Conn
+    # The user it is signed in as.
+    user: str
+    # Whether a write to it failed, so the loop closes it after the event.
+    broken: bool
+
+# Everything a running server holds. Made by the server at its start; the
+# program owes its database, its connections and its bridge their closes.
+record Server
+    # What it was started with.
+    settings: settings.Settings
+    # The history.
+    db: sqlite.Db
+    # The clock messages are stamped by.
+    clock: clocks.Clock
+    # What signs and checks tokens.
+    signer: tokens.Issuer
+    # The routes of its HTTP API.
+    router: web.Router
+    # Who is connected, and who hears what.
+    routing: hub.Hub
+    # The open WebSocket connections, in the order they opened.
+    conns: [Conn]
+    # The mirrors to brokers.
+    links: mirroring.Bridge
+    # The sign-ins waiting for their passwords' hashes.
+    jobs: hashing.Jobs
+    # The loopback socket a hashing thread tells when it is done.
+    hasher: net.UdpSocket
+    # HTTP requests answered, upgrades among them.
+    requests: i64
+    # Requests of WebSocket clients acted on.
+    commands: i64
+
+# The index in `srv.conns` of the connection `key`, -1 where none.
+#
+# - `srv`: the server.
+# - `key`: the connection's key.
+function conn_of(srv: Server lent, key: i64) -> i64
+    i @= 0
+
+    while i < srv.conns.len()
+        if srv.conns[i].key == key
+            return i
+        i @ i + 1
+
+    return -1
+
+# Writes each notice of `told` to its connection, in order. A connection
+# whose write fails is marked broken and skipped from then on; the loop
+# closes it.
+#
+# - `srv`: the server.
+# - `told`: the deliveries, as the routing answered them.
+function deliver(@srv: Server, told: [hub.Delivery])
+    for d in told
+        i = conn_of(srv, key: d.key)
+
+        if i >= 0 && !srv.conns[i].broken
+            if websocket.write_text(@srv.conns[i].socket, text: notices.encode(d.notice)).is_err()
+                srv.conns[i].broken @ true
+
+# The time of a new message, by the server's clock.
+#
+# - `srv`: the server, whose fixed clock moves one step.
+#
+# Fails as `clocks.stamp` fails.
+function stamp(@srv: Server) -> time.Instant?
+    return clocks.stamp(@srv.clock)
+
+# The time now, by the server's clock, moving nothing: what a token is
+# issued and judged at.
+#
+# - `srv`: the server.
+#
+# Fails as `clocks.now` fails.
+function now(srv: Server lent) -> time.Instant?
+    return clocks.now(srv.clock)
+
+# A new identifier for a message made at `at`: a UUID of version 7 whose time
+# is `at`'s, so identifiers sort as their messages were stamped.
+#
+# - `at`: the message's time, after 1970.
+#
+# Fails as `uuid.new_v7_at` fails.
+function new_id(at: time.Instant) -> str?
+    return ok(uuid.format(uuid.new_v7_at(time.unix_milliseconds(at))?))
+
+test "new_id: a version 7 identifier whose time is the message's, to the millisecond"
+    at = time.date(year: 2026, month: 11, day: 21).must()
+    id = new_id(at).must()
+    assert uuid.time_of(uuid.parse(id).must()).must() == at

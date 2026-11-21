@@ -1,0 +1,131 @@
+== the servers ==
+the MQTT stand-in listens on the loopback
+the NATS stand-in listens on the loopback
+the chat server listens, #iot mirrored to MQTT chat/rooms/iot, #ops to NATS chat.rooms.ops
+
+== accounts ==
+alice registers: a new account
+bob registers: a new account
+alice registers again: the name is taken
+alice signs in with a wrong password: refused, "the name or the password is wrong"
+alice and bob sign in and get their tokens
+
+== alice opens #general ==
+[alice's screen]
+   alice · #general · 1 person online
+  ┌ general ─────────────────────────────────────────────────────┐
+  │── Saturday, November 21, 2026 ──                             │
+  │9:00 AM alice: good morning ☀️                                │
+  │9:01 AM alice: standup in ten minutes                         │
+  │9:02 AM alice: the build is green ✅                          │
+  │9:03 AM alice: coffee first ☕                                │
+  │                                                              │
+  │                                                              │
+  └──────────────────────────────────────────────────────────────┘
+  
+  >
+
+== bob signs in, joins, and pages back ==
+alice's status line: bob came online
+[bob's screen]
+   bob · #general · 2 persone in linea
+  ┌ general ─────────────────────────────────────────────────────┐
+  │messaggi precedenti sopra: /history                           │
+  │── sabato 21 novembre 2026 ──                                 │
+  │15:01 alice: standup in ten minutes                           │
+  │15:02 alice: the build is green ✅                            │
+  │15:03 alice: coffee first ☕                                  │
+  │                                                              │
+  │                                                              │
+  └──────────────────────────────────────────────────────────────┘
+  
+  >
+bob asks for the page before:
+[bob's screen]
+   bob · #general · 2 persone in linea
+  ┌ general ─────────────────────────────────────────────────────┐
+  │── sabato 21 novembre 2026 ──                                 │
+  │15:00 alice: good morning ☀️                                  │
+  │15:01 alice: standup in ten minutes                           │
+  │15:02 alice: the build is green ✅                            │
+  │15:03 alice: coffee first ☕                                  │
+  │                                                              │
+  │                                                              │
+  └──────────────────────────────────────────────────────────────┘
+  
+  >
+
+== alice types, sends, then edits across a grapheme cluster ==
+alice typed 12 graphemes from 18 keys: "team 👨‍👩‍👧‍👦 ready|" byte 36, grapheme 12, column 13
+bob's status line: alice sta scrivendo…
+bob's status line once it is sent: ""
+Up calls her message back to edit: "team 👨‍👩‍👧‍👦 ready|" byte 36, grapheme 12, column 13
+six times Left: "team 👨‍👩‍👧‍👦| ready" byte 30, grapheme 6, column 7
+once more Left steps over the family: "team |👨‍👩‍👧‍👦 ready" byte 5, grapheme 5, column 5
+Right, then Backspace takes the family whole: "team | ready" byte 5, grapheme 5, column 5
+a technologist pasted: "team 👩‍💻| ready" byte 16, grapheme 6, column 7
+[bob's screen]
+   bob · #general · 2 persone in linea
+  ┌ general ─────────────────────────────────────────────────────┐
+  │── sabato 21 novembre 2026 ──                                 │
+  │15:00 alice: good morning ☀️                                  │
+  │15:01 alice: standup in ten minutes                           │
+  │15:02 alice: the build is green ✅                            │
+  │15:03 alice: coffee first ☕                                  │
+  │15:04 alice: team 👩‍💻 ready (modificato)                       │
+  │                                                              │
+  └──────────────────────────────────────────────────────────────┘
+  
+  >
+
+== a direct message ==
+alice's status line: 1 unread in @bob
+bob writes to nobody, his status line: rifiutato: no one is named "nobody"
+
+== #iot, mirrored to MQTT ==
+the sensor published; alice's client got from sensor-7 by MQTT: temperature 21.5 C 🌡️
+alice answered; the sensor heard on chat/rooms/iot: alice: fan on 🌀
+
+== #ops, mirrored to NATS ==
+the bot published; alice's client got from deploy-bot by NATS: release 1.4 is out 🚀
+alice answered; the bot heard on chat.rooms.ops: alice: thanks 🎉
+[alice's screen]
+   alice · #iot · 2 people online
+  ┌ iot ─────────────────────────────────────────────────────────┐
+  │── Saturday, November 21, 2026 ──                             │
+  │9:06 AM sensor-7@mqtt: temperature 21.5 C 🌡️                  │
+  │9:07 AM alice: fan on 🌀                                      │
+  │                                                              │
+  │                                                              │
+  │                                                              │
+  │                                                              │
+  └──────────────────────────────────────────────────────────────┘
+  1 unread in @bob
+  >
+
+== the HTTP API ==
+GET /rooms/general/messages?limit=2 with a token: 200, coffee first ☕ | team 👩‍💻 ready, more true
+the same with no token: 401, the request carries no token
+GET /health: 200, 2 online
+
+== bob leaves ==
+bob pressed Ctrl-C: done true
+[alice's screen]
+   alice · @bob · 1 person online
+  ┌ @bob ────────────────────────────────────────────────────────┐
+  │── Saturday, November 21, 2026 ──                             │
+  │9:05 AM bob → alice: ci vediamo alle 15 ☕                    │
+  │                                                              │
+  │                                                              │
+  │                                                              │
+  │                                                              │
+  │                                                              │
+  └──────────────────────────────────────────────────────────────┘
+  bob went offline
+  >
+
+== the stop ==
+chat server: 11 requests, 45 commands; 2 users, 3 rooms, 9 messages, 1 direct; bridge 2 out, 2 in
+nats stand-in: 2 connections, 2 published, 2 delivered
+mqtt stand-in: 2 connections, 2 published, 2 delivered
+the demo's database folder removed: true
