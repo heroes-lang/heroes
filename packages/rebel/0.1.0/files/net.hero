@@ -2651,3 +2651,30 @@ test "ping: the loopback answers 64 bytes"
     match ping("127.0.0.1", sequence: 0, size: 56, timeout_ms: 1000)
         .ok e  => assert e.bytes == 64 && format_address(e.from) == "127.0.0.1"
         .err e => assert e.code == PERMISSION || e.code == UNSUPPORTED
+
+# Defect 2623: a connect whose port the system chooses may be given the very
+# port it connects to, where nothing listens there. Darwin refuses that
+# connect at once, EINVAL, and it was `failed`, "the system failed, its error
+# 22"; Linux makes it, a socket connected to itself. On macOS the system
+# gives those ports in order, so a listener on port 0 shows the last one and a
+# connect to the next is given it: 500 rounds of 500 failed so before the
+# repair, on a Mac. Elsewhere a round is a plain refusal. A port another
+# program holds, which the system passes over, is left out
+# (`fixture.held_elsewhere`), and one another program takes in the moment
+# before the connect is told apart by the same witness after it.
+test "connect: the very port the system gives the connect, nothing listening there, fails closed"
+    rounds @= 0
+
+    while rounds < 20
+        rounds @ rounds + 1
+        l @= listen("127.0.0.1", port: 0).must()
+        target = l.address.port + 1
+        close_listener(@l).must()
+
+        if target <= 65535 && !fixture.held_elsewhere(target)
+            match connect("127.0.0.1", port: target, deadline_ms: 10000)
+                .ok c =>
+                    s @= c.stream
+                    io.close(@s).must()
+                    assert c.local.port != c.remote.port
+                .err e => assert e.code == CLOSED || fixture.held_elsewhere(target)

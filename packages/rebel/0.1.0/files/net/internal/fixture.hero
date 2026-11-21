@@ -15,6 +15,19 @@ function loopback_index() -> i64
 
     return 0
 
+# Whether a socket other than the caller's holds `port` of the loopback
+# address: a listen there fails `exists`, as it does on macOS where another
+# program listens on that address or on every address (the four listeners
+# other programs held on a Mac, Tailscale's on every address among them,
+# defect 2623); a listener made instead is closed at once.
+function held_elsewhere(port: i64) -> bool
+    match net.listen("127.0.0.1", port: port)
+        .ok l =>
+            held @= l
+            net.close_listener(@held).must()
+            return false
+        .err e => return e.code == net.EXISTS
+
 test "loopback_index: the interface named holds 127.0.0.1, or none is listed"
     index = loopback_index()
 

@@ -628,19 +628,22 @@ test "close_listener: then accept fails closed"
 # queue; until then a connect made at once was taken and dropped, and over
 # TLS answered `failed` where nothing listened (3 to 13 rounds of 200 on a
 # Mac at load 7). A connect over TLS and a plain one to the port are refused
-# each time, and the port can be listened on again.
+# each time, and the port can be listened on again. The port is one no
+# system gives a socket of its own choosing (`loopback.quiet_port`): one the
+# system chose for the listener, let go, was another program's at once in 5
+# rounds of 40,000, beside seven programs taking ports as fast as they could.
 test "close_listener: the port listens no more once it returns"
     if is_available()
+        port = loopback.quiet_port()
         rounds @= 0
 
         while rounds < 200
             rounds @ rounds + 1
             l @= listen(
                 host: "127.0.0.1",
-                port: 0,
+                port: port,
                 server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
             ).must()
-            port = l.port
             close_listener(@l).must()
             secured = connect(
                 host: "127.0.0.1",
@@ -674,6 +677,47 @@ test "close_listener: the port listens no more once it returns"
                 server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
             ).must()
             close_listener(@again).must()
+
+# Defect 2623: Network.framework's TCP takes its port where a plain connect
+# takes its own, so a TLS connect may be given the very port it connects to,
+# where nothing listens there; Darwin refused it, EINVAL, and it was
+# `failed`, "the system failed (Invalid argument)". On macOS the system
+# gives those ports in order, so a plain listener on port 0 shows the last
+# one and a connect to the next is given it: 495 rounds of 500 failed so
+# before the repair, on a Mac. Elsewhere a round is a plain refusal. A port
+# another program holds, which the system passes over, is left out
+# (`loopback.held_elsewhere`), and one another program takes in the moment
+# before the connect is told apart by the same witness after it, which a
+# connect the system refused leaves free (296 rounds of 296 before the
+# repair).
+test "connect: the very port the system gives the connect, nothing listening there, fails closed"
+    if is_available()
+        rounds @= 0
+
+        while rounds < 20
+            rounds @ rounds + 1
+            l @= net.listen(host: "127.0.0.1", port: 0).must()
+            target = l.address.port + 1
+            net.close_listener(@l).must()
+
+            if target <= 65535 && !loopback.held_elsewhere(target)
+                secured = connect(
+                    host: "127.0.0.1",
+                    port: target,
+                    deadline: time.seconds(10).must(),
+                    client: Client(roots: "", protocols: [])
+                )
+
+                match secured
+                    .ok s =>
+                        stream @= s.stream
+                        loopback.closed_or_given(@stream)
+                        assert s.local.port != s.remote.port && loopback.held_elsewhere(target)
+                    .err e =>
+                        said = "connecting over TLS to 127.0.0.1 port " + to_str(target) + ": nothing listens there"
+
+                        if e.code != CLOSED || e.msg.len() < said.len() || e.msg.slice(from: 0, to: said.len()) != said
+                            assert loopback.held_elsewhere(target)
 
 # A connection made whose handshake nobody answers is told `timeout` when
 # its deadline passes, never `failed` nor `closed`: the listener is plain
