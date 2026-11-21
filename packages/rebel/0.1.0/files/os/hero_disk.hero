@@ -484,14 +484,18 @@ function map_close(@m: Mapping) -> i64
 ## Tests
 
 # The folder a test works in, under the build area of the folder the tests
-# run from, made new: what an earlier run left of `holds` is removed first.
+# run from, named for this process and made new: what an earlier run left of
+# `holds` is removed first. Two copies of the tests run at once, as a shared
+# machine and a CI's parts run them, never share one; named for the test
+# alone, one copy's folder was removed or made under the other's, and 15
+# copies of 32 failed, run in 16 pairs at once (2026-11-21).
 #
 # - `name`: the test's own word, which names the folder
-#   `build/rebel-disk-<name>`.
+#   `build/rebel-disk-<name>-<process id>`.
 # - `holds`: the names, inside the folder, an earlier run may have left,
 #   removed first in this order.
 function test_folder(name: str, holds: [str]) -> str
-    dir = "build/rebel-disk-" + name
+    dir = f"build/rebel-disk-{name}-{hero_os_pid()}"
     test_clear(dir, holds: holds)
     assert make_folder(dir, permission: 0o755) == 0
     return dir
