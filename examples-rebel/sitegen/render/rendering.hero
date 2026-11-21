@@ -1,0 +1,231 @@
+# The pages the theme writes: a page of its own with the `single` layout
+# (or the one its front matter names), the home page with `home`, a
+# section's list with `list`, the A to Z index with `alphabet` and a tag's
+# page with `tag`. Each is its Markdown made HTML, passed through `rewrite`,
+# and set inside the layout with the values `values` builds.
+
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/markdown
+
+use locale/localized
+use pipeline/plan
+use render/indexes
+use render/rewrite
+use render/theme
+use render/values
+use site/model
+use site/places
+
+## Limits
+
+# How many of the newest pages the home page shows.
+constant HOME_PAGES: i64
+    5
+
+## What rendering needs
+
+# Everything a page is rendered from, the same for every page of a build.
+record Context
+    # The site.
+    site: model.Site
+    # The theme.
+    theme: theme.Theme
+    # The theme's words in every language, by its code.
+    words: {str: localized.Words}
+    # Every page, drafts left out.
+    pages: [model.Page]
+    # Where every page, image and file is written.
+    targets: rewrite.Targets
+
+# A page rendered.
+record Rendered
+    # The file.
+    output: model.Output
+    # What could not be resolved in it.
+    warnings: [str]
+
+## A page of its own
+
+# The page `source` rendered.
+#
+# - `context`: the build's context.
+# - `source`: the page's source, one of `context.pages`.
+#
+# Fails as `theme.render` does, the message naming the page. Aborts where
+# no page has `source`, which a job planned from the pages never asks.
+function render_page(context: Context, source: str) -> Rendered?
+    page = page_named(context.pages, source: source)
+    language = model.language_of(context.site.languages, code: page.lang)
+    words = context.words[page.lang].must()
+    rewritten = rewrite.rewrite(markdown.to_html(page.body), page: page, targets: context.targets, words: words)
+    shared = values.common(
+        context.site,
+        language: language,
+        words: words,
+        title: page.title,
+        alternates: translations(context.site.languages, pages: context.pages, key: page.key)
+    )
+    value = values.page_value(
+        shared,
+        page: page,
+        site: context.site,
+        words: words,
+        rewritten: rewritten,
+        params: page.params
+    )
+    layout = json.text_of(json.member(page.params, "layout").default(.null_value)).default("single")
+    text = written(context, layout: layout, body: rewritten.html, value: value, name: page.source)?
+    return ok(
+        Rendered(output: model.Output(path: page.output, data: bytes.from_text(text)), warnings: rewritten.warnings)
+    )
+
+function page_named(pages: [model.Page], source: str) -> model.Page
+    for page in pages
+        if page.source == source
+            return page
+
+    assert false
+
+# The page with the key `key` in every language it is written in, in the
+# site's order of languages.
+function translations(languages: [model.Language], pages: [model.Page], key: str) -> [values.Alternate]
+    out: [values.Alternate] @= []
+
+    for language in languages
+        for page in pages
+            if page.key == key && page.lang == language.code
+                out @ out.push(values.Alternate(lang: page.lang, url: page.url))
+
+    return out
+
+# `body` set in the layout `layout` with `value`, the failure naming `name`.
+function written(context: Context, layout: str, body: str, value: json.Value, name: str) -> str?
+    return match theme.render(context.theme, layout: layout, body: body, value: value)
+        .ok text => ok(text)
+        .err e   => fail(code: e.code, msg: f"{name}: {e.msg}")
+
+## Lists
+
+# The home page of `lang`, where the section is empty, or the list of the
+# section `section`, rendered: the section page's own text where
+# `content/<section>/_index.md` holds one in the language, then its pages
+# newest first (the home page shows the feed section's newest).
+#
+# - `context`: the build's context.
+# - `lang`: the language's code.
+# - `section`: the section's folder, or empty for the home page.
+#
+# Fails as `theme.render` does.
+function render_listing(context: Context, lang: str, section: str) -> Rendered?
+    site = context.site
+    language = model.language_of(site.languages, code: lang)
+    words = context.words[lang].must()
+    home = section.len() == 0
+
+    shown = if home
+        first_of(indexes.by_date(indexes.singles(context.pages, lang: lang, section: site.feed_section)), HOME_PAGES)
+    else
+        indexes.by_date(indexes.singles(context.pages, lang: lang, section: section))
+
+    place = if home
+        places.home(site, language: language)
+    else
+        places.section_list(site, language: language, section: section)
+    alternates: [values.Alternate] @= []
+
+    for other in site.languages
+        for s in plan.sections_of(site, pages: context.pages, lang: other.code)
+            if s == section
+                there = if home
+                    places.home(site, language: other)
+                else
+                    places.section_list(site, language: other, section: section)
+                alternates @ alternates.push(values.Alternate(lang: other.code, url: there.url))
+
+    body @= ""
+    warnings: [str] @= []
+
+    title @= if home
+        language.title
+    else
+        localized.word(words, section)
+
+    for page in context.pages
+        if page.lang == lang && page.kind != .single && page.section == section
+            rewritten = rewrite.rewrite(markdown.to_html(page.body), page: page, targets: context.targets, words: words)
+            body @ rewritten.html
+            warnings @ rewritten.warnings
+            title @ page.title
+
+    shared = values.common(
+        site,
+        language: language,
+        words: words,
+        title: title,
+        alternates: alternates
+    )
+    value = values.list_value(shared, heading: title, shown: shown, every: context.pages, site: site, words: words)
+
+    layout = if home
+        "home"
+    else
+        "list"
+    text = written(context, layout: layout, body: body, value: value, name: place.output)?
+    return ok(Rendered(output: model.Output(path: place.output, data: bytes.from_text(text)), warnings: warnings))
+
+# The first `n` of `pages`.
+function first_of(pages: [model.Page], n: i64) -> [model.Page]
+    if pages.len() <= n
+        return pages
+    return pages.slice(from: 0, to: n)
+
+# The A to Z index of `lang` rendered: every page of its own, in groups by
+# letter, ordered as the language orders text.
+#
+# - `context`: the build's context.
+# - `lang`: the language's code.
+#
+# Fails as `theme.render` does.
+function render_alphabet(context: Context, lang: str) -> Rendered?
+    site = context.site
+    language = model.language_of(site.languages, code: lang)
+    words = context.words[lang].must()
+    place = places.alphabet(site, language: language)
+    alternates: [values.Alternate] @= []
+
+    for other in site.languages
+        alternates @ alternates.push(
+            values.Alternate(lang: other.code, url: places.alphabet(site, language: other).url)
+        )
+
+    title = localized.word(words, "A–Z")
+    groups = indexes.alphabet(indexes.singles(context.pages, lang: lang, section: ""), language: language)
+    shared = values.common(
+        site,
+        language: language,
+        words: words,
+        title: title,
+        alternates: alternates
+    )
+    value = values.groups_value(shared, heading: title, groups: groups, every: context.pages, site: site, words: words)
+    text = written(context, layout: "alphabet", body: "", value: value, name: place.output)?
+    return ok(Rendered(output: model.Output(path: place.output, data: bytes.from_text(text)), warnings: []))
+
+# The page of the tag `tag` in `lang` rendered: its pages newest first.
+#
+# - `context`: the build's context.
+# - `lang`: the language's code.
+# - `tag`: the tag as written.
+#
+# Fails as `theme.render` does.
+function render_tag(context: Context, lang: str, tag: str) -> Rendered?
+    site = context.site
+    language = model.language_of(site.languages, code: lang)
+    words = context.words[lang].must()
+    place = places.tag_page(site, language: language, tag: tag)
+    shown = indexes.by_date(indexes.tagged(indexes.singles(context.pages, lang: lang, section: ""), tag: tag))
+    shared = values.common(site, language: language, words: words, title: tag, alternates: [])
+    value = values.list_value(shared, heading: tag, shown: shown, every: context.pages, site: site, words: words)
+    text = written(context, layout: "tag", body: "", value: value, name: place.output)?
+    return ok(Rendered(output: model.Output(path: place.output, data: bytes.from_text(text)), warnings: []))

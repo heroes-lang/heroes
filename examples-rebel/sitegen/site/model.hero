@@ -1,0 +1,189 @@
+# The records every stage of the generator shares: the site as its
+# `site.toml` describes it, each language of it, a page read from the content
+# folder, the facts a built image leaves for the pages that show it, and a
+# file the build writes. They hold values only; the modules that make them
+# say how.
+
+use <rebel>/i18n
+use <rebel>/json
+use <rebel>/time
+
+## The site
+
+# The site a build reads: its settings, its languages, and where it writes.
+# Made only by `settings.read`, which checks every value it holds.
+record Site
+    # The folder the site stands in, as the command line named it.
+    root: str
+    # The site's title in its first language, used where a language gives
+    # none.
+    title: str
+    # The base URL as `site.toml` writes it, its host in Unicode where the
+    # author wrote one so.
+    base_url: str
+    # The base URL with its host in ASCII by IDNA and a final `/`: what every
+    # absolute link, the sitemap and the feeds begin with.
+    base_ascii: str
+    # The path of the base URL, beginning and ending with `/`: what every
+    # link inside a page begins with.
+    base_path: str
+    # The folder under `themes/` whose layouts, partials and catalogs the
+    # pages are made with.
+    theme: str
+    # The zone a date with no offset is read in, and every date is written
+    # in.
+    zone: time.Zone
+    # The languages, the first one the default, whose pages stand at the
+    # root and the others under their code.
+    languages: [Language]
+    # The section whose pages each language's Atom feed carries.
+    feed_section: str
+    # The most entries a feed carries, the newest first.
+    feed_size: i64
+    # How images are scaled and converted.
+    images: ImageSettings
+    # Which outputs get a Brotli copy beside them.
+    precompress: PrecompressSettings
+    # The folder under `root` the site is written to.
+    output: str
+
+# One language of the site, and how its pages are written.
+record Language
+    # The key `site.toml` gives it, which content files carry in their name,
+    # `harbour.de.md`: lower case letters.
+    code: str
+    # The language's BCP 47 tag in canonical form, which `lang` and
+    # `hreflang` attributes carry.
+    tag: str
+    # The tag read, which dates, numbers, ordering and plural rules are
+    # asked with.
+    locale: i18n.Locale
+    # The site's title in this language.
+    title: str
+    # `ltr` or `rtl`, from the language's likely script.
+    direction: str
+    # What the language's paths begin with: empty for the first language,
+    # its code and `/` for the others.
+    prefix: str
+
+# How the images of the content folder are written.
+record ImageSettings
+    # The widest a thumbnail is, in pixels, 1 or more.
+    thumb_width: i64
+    # The tallest a thumbnail is, in pixels, 1 or more.
+    thumb_height: i64
+    # The quality a JPEG is written at, 1 to 100.
+    jpeg_quality: i64
+    # For each kind of file a browser does not show, the kind it is written
+    # as: `bmp` and `netpbm` to `png`, `jpeg` or `gif`.
+    convert: {str: str}
+
+# Which outputs get a Brotli copy beside them, so a server sends it to a
+# browser that accepts `br` without compressing on every request.
+record PrecompressSettings
+    # The Brotli quality, from `brotli.MIN_QUALITY` to `brotli.MAX_QUALITY`.
+    quality: i64
+    # The smallest output compressed, in bytes; a smaller one gains nothing
+    # a request's own headers do not cost.
+    min_bytes: i64
+    # The extensions compressed, without their dot.
+    extensions: [str]
+
+## Pages
+
+# What a page is in its section.
+variant PageKind
+    # The front page of a language, from `content/_index.md`.
+    home
+    # The list of a section's pages, from its `_index.md` where it has one.
+    section
+    # A page of its own.
+    single
+
+# A page of the content folder in one language, read and placed but not yet
+# written. Made by `sources.read_page`.
+record Page
+    # Its file, under the site's folder, slash-separated:
+    # `content/posts/harbour.de.md`.
+    source: str
+    # The code of its language.
+    lang: str
+    # What its translations share: the path under `content/` without the
+    # language and the extension, `posts/harbour`.
+    key: str
+    # The first folder under `content/`, empty at the top.
+    section: str
+    # Which kind of page it is.
+    kind: PageKind
+    # The title, from the front matter or else the first heading.
+    title: str
+    # When it was written; `not_found` where the front matter gives no date.
+    date: time.Instant?
+    # Whether the front matter calls it a draft, which a build leaves out.
+    draft: bool
+    # Its tags, as the front matter writes them.
+    tags: [str]
+    # A sentence or two for lists and feeds: the front matter's, or the
+    # text of the first paragraph.
+    summary: str
+    # How many words its body holds, by Unicode's word boundaries.
+    words: i64
+    # The Markdown after the front matter.
+    body: str
+    # The last part of its URL.
+    slug: str
+    # Its URL under the base path, beginning and ending with `/`.
+    url: str
+    # The file it is written to, under the output folder.
+    output: str
+    # The other sources its body links to, pages and images, as their
+    # `source` paths; its output changes when one of them does.
+    links: [str]
+    # Where it stands among pages of one date; lower first.
+    weight: i64
+    # Its whole front matter, which the theme reads as `.page.params`.
+    params: json.Value
+
+## Images and outputs
+
+# What a built image leaves for the pages that show it.
+record ImageFacts
+    # The image's file, under the site's folder.
+    source: str
+    # The URL of the image as written, under the base path.
+    url: str
+    # The URL of its thumbnail.
+    thumb_url: str
+    # The image's width in pixels, after its orientation is applied.
+    width: i64
+    # Its height in pixels.
+    height: i64
+    # The thumbnail's width in pixels.
+    thumb_width: i64
+    # The thumbnail's height in pixels.
+    thumb_height: i64
+    # The size of the image as written, in bytes.
+    size: i64
+
+# A file the build writes: its path under the output folder, slash
+# separated, and its bytes.
+record Output
+    # The path under the output folder.
+    path: str
+    # What the file holds.
+    data: [u8]
+
+# The language of `code` among `languages`, which `settings.read` made sure
+# holds it.
+#
+# - `languages`: the site's languages.
+# - `code`: a code one of them has.
+#
+# Aborts where none has it: every page's language was checked against the
+# site's when the page was read.
+function language_of(languages: [Language], code: str) -> Language
+    for language in languages
+        if language.code == code
+            return language
+
+    assert false

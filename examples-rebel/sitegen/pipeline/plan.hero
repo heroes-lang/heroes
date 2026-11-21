@@ -1,0 +1,267 @@
+# What a build makes, as jobs, and which sources each job reads. A watch
+# rebuilds only the jobs that read a changed source, so a job's `reads` must
+# name every source whose change can change its output, and no more:
+#
+# - every job but a copy reads `site.toml`, and every page the theme writes
+#   reads the theme's files;
+# - a page reads its own source, its translations' (the language menu shows
+#   their titles), the sources its body links to and their translations
+#   (a link goes to the translation in the page's language), and the images
+#   it shows (their sizes stand in its HTML);
+# - a list, the A to Z index, a tag's page and a feed read every page of
+#   their language, the sitemap every page;
+# - an image reads itself, and so does a copy.
+#
+# Jobs are listed in the order they run: images first, since a page writes
+# their sizes, then the copies, the pages and lists, the feeds and the
+# sitemap.
+
+use content/sources
+use render/indexes
+use site/model
+
+## Jobs
+
+# One thing a build makes.
+variant Job
+    # A page of its own.
+    page
+        # Its source.
+        source: str
+    # A section's list, or the home page where the section is empty.
+    listing
+        # The language's code.
+        lang: str
+        # The section's folder, or empty for the home page.
+        section: str
+    # The A to Z index of a language.
+    alphabet
+        # The language's code.
+        lang: str
+    # The page of one tag in one language.
+    tag
+        # The language's code.
+        lang: str
+        # The tag as written.
+        tag: str
+    # A language's Atom feed.
+    feed
+        # The language's code.
+        lang: str
+    # The sitemap.
+    sitemap
+    # An image and its thumbnail.
+    picture
+        # Its source.
+        source: str
+    # A file copied as it is.
+    copy
+        # Its source.
+        source: str
+        # Its path under the output folder.
+        target: str
+
+# A job with its name and what it reads.
+record Planned
+    # The job.
+    job: Job
+    # Its name, the same in every build of the same site: `page
+    # content/posts/harbour.md`, `list de posts`.
+    name: str
+    # The sources it reads, slash-separated paths under the site.
+    reads: [str]
+
+## Planning
+
+# The jobs of `plan` that must run: each that no earlier build made, and
+# each that reads a source of `changed`, now or as the last build recorded
+# it. The last build's reads are asked too because a removed source is in
+# no job's reads any more: the list that showed a page removed read it then.
+#
+# - `plan`: the jobs of this build.
+# - `before`: what each job of the last build read, by the job's name; empty
+#   for a first build, which runs every job.
+# - `changed`: the sources added, changed or removed since the last build.
+function affected(plan: [Planned], before: {str: [str]}, changed: {str: bool}) -> [Planned]
+    out: [Planned] @= []
+
+    for planned in plan
+        match before[planned.name]
+            .ok old =>
+                if reads_any(planned.reads, changed: changed) || reads_any(old, changed: changed)
+                    out @ out.push(planned)
+            .err _ => out @ out.push(planned)
+
+    return out
+
+# Whether `reads` names a source of `changed`.
+function reads_any(reads: [str], changed: {str: bool}) -> bool
+    for source in reads
+        if changed[source].default(false)
+            return true
+
+    return false
+
+# What each job of `plan` reads, by its name: what a build records for the
+# next one's `affected`.
+#
+# - `plan`: the jobs.
+function reads_of(plan: [Planned]) -> {str: [str]}
+    out: {str: [str]} @= {}
+
+    for planned in plan
+        out[planned.name] @ planned.reads
+
+    return out
+
+# The jobs that build the site, in the order they run.
+#
+# - `site`: the site.
+# - `found`: its sources.
+# - `pages`: its pages, drafts left out.
+function make(site: model.Site, found: sources.Found, pages: [model.Page]) -> [Planned]
+    out: [Planned] @= []
+
+    for image in found.images
+        out @ out.push(Planned(job: .picture(source: image), name: "image " + image, reads: ["site.toml", image]))
+
+    for c in found.copies
+        out @ out.push(
+            Planned(job: .copy(source: c.source, target: c.target), name: "copy " + c.source, reads: [c.source])
+        )
+
+    themed: [str] @= ["site.toml"]
+
+    for t in found.theme
+        themed @ themed.push(t)
+
+    keyed = by_key(pages)
+    key_of: {str: str} @= {}
+
+    for page in pages
+        key_of[page.source] @ page.key
+
+    for page in pages
+        if page.kind == .single
+            out @ out.push(
+                Planned(job: .page(source: page.source), name: "page " + page.source, reads: page_reads(page, keyed: keyed, key_of: key_of, themed: themed))
+            )
+
+    every: [str] @= ["site.toml"]
+
+    for page in pages
+        every @ every.push(page.source)
+
+    for language in site.languages
+        own: [str] @= []
+
+        for page in pages
+            if page.lang == language.code
+                own @ own.push(page.source)
+
+        listed = joined(first: themed, second: own)
+        code = language.code
+
+        for section in sections_of(site, pages: pages, lang: code)
+            name = if section.len() == 0
+                f"list {code}"
+            else
+                f"list {code} {section}"
+            out @ out.push(Planned(job: .listing(lang: code, section: section), name: name, reads: listed))
+
+        out @ out.push(Planned(job: .alphabet(lang: code), name: f"a-z {code}", reads: listed))
+
+        for t in indexes.tags_of(indexes.singles(pages, lang: code, section: ""))
+            out @ out.push(Planned(job: .tag(lang: code, tag: t), name: f"tag {code} {t}", reads: listed))
+
+        out @ out.push(
+            Planned(job: .feed(lang: code), name: f"feed {code}", reads: joined(first: ["site.toml"], second: own))
+        )
+
+    out @ out.push(Planned(job: .sitemap, name: "sitemap", reads: every))
+    return out
+
+# The lists a language has: its home page, the feed section (which the menu
+# links to whether it holds pages or not), and every other section that
+# holds a page of the language or a section page of it, by their names'
+# bytes after the home page.
+#
+# - `site`: the site.
+# - `pages`: every page.
+# - `lang`: the language's code.
+function sections_of(site: model.Site, pages: [model.Page], lang: str) -> [str]
+    seen: {str: bool} @= {}
+
+    seen[site.feed_section] @ true
+
+    for page in pages
+        if page.lang == lang && page.section.len() > 0
+            seen[page.section] @ true
+
+    out: [str] @= [""]
+
+    for s in sort(keys(seen))
+        out @ out.push(s)
+
+    return out
+
+# Every page's source by its translation key.
+function by_key(pages: [model.Page]) -> {str: [str]}
+    out: {str: [str]} @= {}
+
+    for page in pages
+        held @= out[page.key].default([])
+        held @ held.push(page.source)
+        out[page.key] @ held
+
+    return out
+
+# What the page `page` reads, as the module's comment lists it.
+#
+# - `page`: the page.
+# - `keyed`: every page's source by translation key.
+# - `key_of`: every page's translation key by source.
+# - `themed`: `site.toml` and the theme's files.
+function page_reads(page: model.Page, keyed: {str: [str]}, key_of: {str: str}, themed: [str]) -> [str]
+    out @= joined(first: themed, second: keyed[page.key].default([page.source]))
+
+    for target in page.links
+        match key_of[target]
+            .ok key =>
+                for s in keyed[key].default([])
+                    out @ out.push(s)
+            .err _ => out @ out.push(target)
+
+    return out
+
+# `first` followed by `second`.
+function joined(first: [str], second: [str]) -> [str]
+    out @= first
+
+    for s in second
+        out @ out.push(s)
+
+    return out
+
+## Tests
+
+test "affected: a first build runs every job, a change runs its readers alone, a new job runs, a removed source runs its old readers"
+    jobs = [
+        Planned(job: .sitemap, name: "sitemap", reads: ["site.toml", "content/a.md", "content/b.md"])
+        Planned(job: .page(source: "content/a.md"), name: "page content/a.md", reads: ["site.toml", "content/a.md"])
+        Planned(job: .copy(source: "static/x.css", target: "x.css"), name: "copy static/x.css", reads: ["static/x.css"])
+    ]
+    assert affected(jobs, before: {}, changed: {}).len() == 3
+    before = reads_of(jobs)
+    names: [str] @= []
+
+    for p in affected(jobs, before: before, changed: {"content/b.md": true})
+        names @ names.push(p.name)
+
+    assert names == ["sitemap"]
+    assert affected(jobs, before: {"sitemap": [], "page content/a.md": []}, changed: {}).len() == 1
+    assert affected(jobs, before: before, changed: {"site.toml": true}).len() == 2
+    gone = [
+        Planned(job: .page(source: "content/a.md"), name: "page content/a.md", reads: ["site.toml", "content/a.md"])
+    ]
+    assert affected(gone, before: {"page content/a.md": ["site.toml", "content/a.md", "content/a.de.md"]}, changed: {"content/a.de.md": true}).len() == 1

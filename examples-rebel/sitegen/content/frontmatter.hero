@@ -1,0 +1,301 @@
+# The front matter of a content file: the block of YAML between `---` lines,
+# or of TOML between `+++` lines, that opens it, as Jekyll and Hugo read one.
+# It is read into what the generator itself needs of a page (`Meta`), and
+# kept whole as a JSON value for the theme, which may read any key of it.
+# Both languages arrive as one `json.Value`, so the keys are checked once.
+
+use <rebel>/json
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/toml
+use <rebel>/yaml
+
+## Codes
+
+# The code of front matter that does not parse, that is not a table, or
+# whose known key holds a value of the wrong kind.
+constant INVALID: str
+    "invalid"
+
+# The code of a key the front matter does not write.
+constant NOT_FOUND: str
+    "not_found"
+
+## Splitting
+
+# A content file cut in two: its front matter and its Markdown.
+record Split
+    # The front matter's text without its fences; empty where there is none.
+    head: str
+    # `yaml`, `toml`, or empty where the file has no front matter.
+    format: str
+    # The Markdown after the closing fence, or the whole file.
+    body: str
+
+# `text` cut into its front matter and its body, line endings made `\n`.
+#
+# - `text`: the whole file.
+#
+# A file that does not open with `---` or `+++` on a line of its own has no
+# front matter. Fails `invalid` where the opening fence is never closed.
+function split(text: str) -> Split?
+    normalized = strings.replace_all(s: text, old: "\r\n", new: "\n")
+
+    fence = if strings.has_prefix(s: normalized, prefix: "---\n")
+        "---"
+    else if strings.has_prefix(s: normalized, prefix: "+++\n")
+        "+++"
+    else
+        ""
+
+    if fence.len() == 0
+        return ok(Split(head: "", format: "", body: normalized))
+
+    format = if fence == "---"
+        "yaml"
+    else
+        "toml"
+    rest = normalized.slice(from: 4, to: normalized.len())
+
+    if strings.has_prefix(s: rest, prefix: fence + "\n") || rest == fence
+        return ok(Split(head: "", format: format, body: rest.slice(from: fence.len(), to: rest.len())))
+
+    at = match strings.index_of(s: rest, substr: "\n" + fence + "\n")
+        .ok i => i
+        .err _ =>
+            if strings.has_suffix(s: rest, suffix: "\n" + fence)
+                rest.len() - fence.len() - 1
+            else
+                return fail(
+                    code: INVALID,
+                    msg: f"the front matter opened by \"{fence}\" on the first line is never closed"
+                )
+
+    after = at + fence.len() + 2
+
+    body = if after <= rest.len()
+        rest.slice(from: after, to: rest.len())
+    else
+        ""
+    return ok(Split(head: rest.slice(from: 0, to: at + 1), format: format, body: body))
+
+## Reading
+
+# What the generator reads from a page's front matter.
+record Meta
+    # The page's title; `not_found` where the key is absent.
+    title: str?
+    # The page's date as written; `not_found` where absent.
+    date: str?
+    # Whether the page is a draft.
+    draft: bool
+    # Its tags; a single text is one tag.
+    tags: [str]
+    # The last part of its URL where the author chose it; `not_found` where
+    # absent.
+    slug: str?
+    # A summary written by hand; `not_found` where absent.
+    summary: str?
+    # Where it stands among pages of one date, lower first; 0 where absent.
+    weight: i64
+    # The whole front matter as a JSON object, for the theme to read.
+    params: json.Value
+
+# The front matter `split` found, read and checked.
+#
+# - `parts`: the file cut by `split`.
+#
+# Fails `invalid` where the front matter does not parse, is not a table, or
+# gives `title`, `date`, `slug` or `summary` a value that is not text,
+# `draft` one that is not a boolean, `tags` one that is not text or a list of
+# texts, or `weight` one that is not a whole number; the message names the
+# key.
+function read(parts: Split) -> Meta?
+    value: json.Value = match parts.format
+        "yaml" => parsed_yaml(parts.head)?
+        "toml" => parsed_toml(parts.head)?
+        _      => .object(members: {})
+
+    members = if json.is_null(value)
+        empty: {str: json.Value} = {}
+        empty
+    else
+        match json.members_of(value)
+            .ok m  => m
+            .err _ => return fail(code: INVALID, msg: "the front matter is not a table of keys and values")
+
+    title = text_at(members, "title")
+    passed(title)?
+    date = text_at(members, "date")
+    passed(date)?
+    slug = text_at(members, "slug")
+    passed(slug)?
+    summary = text_at(members, "summary")
+    passed(summary)?
+
+    return ok(
+        Meta(title: title, date: date, draft: bool_at(members, "draft")?, tags: tags_at(members)?, slug: slug, summary: summary, weight: int_at(members, "weight")?, params: .object(members: members))
+    )
+
+function parsed_yaml(head: str) -> json.Value?
+    return match yaml.parse(head)
+        .ok v  => ok(v)
+        .err e => fail(code: INVALID, msg: f"the YAML front matter does not parse: {e.msg}")
+
+function parsed_toml(head: str) -> json.Value?
+    table = match toml.parse(head)
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: f"the TOML front matter does not parse: {e.msg}")
+
+    return match toml.to_json(table)
+        .ok v  => ok(v)
+        .err e => fail(code: INVALID, msg: f"the TOML front matter has no JSON form: {e.msg}")
+
+# Succeeds where `r` holds a value or failed `not_found`; fails as `r` did
+# otherwise, so a key of the wrong kind stops the read and an absent one
+# does not.
+function passed(r: str?) -> ()?
+    return match r
+        .ok _ => ok()
+        .err e =>
+            if e.code == NOT_FOUND
+                ok()
+            else
+                fail(code: e.code, msg: e.msg)
+
+# The text the key `key` holds. Fails `not_found` where the key is absent or
+# null, `invalid` where it holds another kind of value.
+function text_at(members: {str: json.Value}, key: str) -> str?
+    value = match members[key]
+        .ok v  => v
+        .err _ => return fail(code: NOT_FOUND, msg: f"no \"{key}\" in the front matter")
+
+    if json.is_null(value)
+        return fail(code: NOT_FOUND, msg: f"\"{key}\" is null in the front matter")
+
+    return match json.text_of(value)
+        .ok t  => ok(t)
+        .err _ => fail(code: INVALID, msg: f"\"{key}\" in the front matter is a {json.kind_of(value)}, not a text")
+
+function bool_at(members: {str: json.Value}, key: str) -> bool?
+    value = members[key].default(.null_value)
+
+    if json.is_null(value)
+        return ok(false)
+
+    return match json.bool_of(value)
+        .ok b => ok(b)
+        .err _ => fail(
+            code: INVALID,
+            msg: f"\"{key}\" in the front matter is a {json.kind_of(value)}, not true or false"
+        )
+
+function int_at(members: {str: json.Value}, key: str) -> i64?
+    value = members[key].default(.null_value)
+
+    if json.is_null(value)
+        return ok(0)
+
+    return match json.int_of(value)
+        .ok n  => ok(n)
+        .err _ => fail(code: INVALID, msg: f"\"{key}\" in the front matter is not a whole number")
+
+function tags_at(members: {str: json.Value}) -> [str]?
+    value = members["tags"].default(.null_value)
+
+    if json.is_null(value)
+        return ok([])
+
+    match json.text_of(value)
+        .ok one => return ok([one])
+        .err _  => _ = 0
+
+    items = match json.items_of(value)
+        .ok xs => xs
+        .err _ => return fail(code: INVALID, msg: "\"tags\" in the front matter is neither a text nor a list of texts")
+
+    out: [str] @= []
+
+    for item in items
+        match json.text_of(item)
+            .ok t  => out @ out.push(t)
+            .err _ => return fail(code: INVALID, msg: "\"tags\" in the front matter holds a value that is not a text")
+
+    return ok(out)
+
+## Dates
+
+# The instant a front matter date names, read in `zone` where it carries no
+# offset.
+#
+# - `text`: an RFC 3339 date and time with its offset, a date and time with
+#   a `T` or a space and no offset, or a date alone, which is its midnight.
+# - `zone`: the site's zone.
+#
+# Fails `invalid` where `text` is none of these, the message quoting it.
+function instant_of(text: str, zone: time.Zone) -> time.Instant?
+    match time.parse(text, .rfc3339)
+        .ok at => return ok(at)
+        .err _ => _ = 0
+
+    spaced = strings.replace_all(s: text, old: "T", new: " ")
+
+    local = match time.parse(spaced, .date_time)
+        .ok at => at
+        .err _ => match time.parse(text, .date_only)
+            .ok at => at
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the date \"{text}\" is not 2026-03-14, 2026-03-14 09:30:00 or an RFC 3339 time"
+            )
+
+    return time.from_date_time_in(time.to_date_time(local), zone, .compatible)
+
+## Tests
+
+test "split: no front matter, an empty one, and a fence never closed"
+    plain = split("# Hello\n").must()
+    assert plain.format == "" && plain.body == "# Hello\n"
+    empty = split("---\n---\nbody\n").must()
+    assert empty.format == "yaml" && empty.head == "" && empty.body == "\nbody\n"
+    assert split("---\ntitle: x\n").is_err()
+
+test "split: YAML and TOML, Windows line endings, a fence at the very end"
+    y = split("---\r\ntitle: A\r\n---\r\nText\r\n").must()
+    assert y.head == "title: A\n" && y.body == "Text\n"
+    t = split("+++\ntitle = \"B\"\n+++\n").must()
+    assert t.format == "toml" && t.head == "title = \"B\"\n" && t.body == ""
+    last = split("---\ntitle: C\n---").must()
+    assert last.head == "title: C\n" && last.body == ""
+
+test "read: every key, the tags as a list, the date kept as text"
+    meta = read(
+        split("---\ntitle: Äpfel\ndate: 2026-03-14\ntags: [a, b]\ndraft: true\nweight: 3\nsummary: Short.\n---\n").must()
+    ).must()
+    assert meta.title.must() == "Äpfel"
+    assert meta.date.must() == "2026-03-14"
+    assert meta.tags == ["a", "b"]
+    assert meta.draft
+    assert meta.weight == 3
+    assert meta.summary.must() == "Short."
+    assert meta.slug.is_err()
+
+test "read: TOML with one tag as text, and no front matter at all"
+    meta = read(split("+++\ntitle = \"Hamn\"\ntags = \"resa\"\ndate = 2026-03-14\n+++\n").must()).must()
+    assert meta.tags == ["resa"]
+    assert meta.date.must() == "2026-03-14"
+    none = read(split("text").must()).must()
+    assert none.title.is_err() && !none.draft && none.tags.len() == 0
+
+test "read: a title that is a number, tags holding a number, and a list as the whole matter refused"
+    assert read(split("---\ntitle: 3\n---\n").must()).is_err()
+    assert read(split("---\ntags: [a, 1]\n---\n").must()).is_err()
+    assert read(split("---\n- a\n- b\n---\n").must()).is_err()
+    assert read(split("---\nweight: 1.5\n---\n").must()).is_err()
+
+test "instant_of: a date alone at the zone's midnight, an offset kept, a local time, and nonsense"
+    berlin = time.fixed_zone("CET", time.hours(1).must()).must()
+    assert time.format(instant_of("2026-03-14", berlin).must(), .rfc3339) == "2026-03-13T23:00:00Z"
+    assert time.format(instant_of("2026-03-14T09:30:00+02:00", berlin).must(), .rfc3339) == "2026-03-14T07:30:00Z"
+    assert time.format(instant_of("2026-03-14T09:30:00", berlin).must(), .rfc3339) == "2026-03-14T08:30:00Z"
+    assert instant_of("March", berlin).is_err()

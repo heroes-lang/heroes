@@ -1,0 +1,234 @@
+# The values a theme's templates read, built as JSON from the site's
+# records, since `template` reads a value by its paths and the language has
+# no reflection. Every key a theme may name is always there, empty where a
+# page has nothing to say, so a template asks `if .page.date` and never
+# fails on a key that is missing.
+#
+# What every page holds:
+#
+# - `title`: the page's own title, for `<title>`;
+# - `site`: the language's site title, its home URL and the base path;
+# - `lang`: the language's code, tag, direction and feed URL;
+# - `languages`: each language with its title, the URL of this page in it
+#   (or its home where the page has no translation), and whether it is this
+#   one;
+# - `alternates`: the absolute URL of this page in each language it has,
+#   for `hreflang` links;
+# - `nav`: the section list and the A to Z index, named in the language;
+# - `t`: the theme's words, translated.
+#
+# A page of its own adds `page`; a list adds `heading`, `pages` and
+# `counted`, the language's pages and words counted in its own numbers; the A
+# to Z index adds `groups` to those. Only a list counts over the language's
+# pages, because only a list reads every one of them (`plan`): a page of its
+# own that showed such a count would have to be rebuilt on every change of
+# its language.
+
+use <rebel>/json
+use <rebel>/time
+
+use locale/localized
+use render/indexes
+use render/rewrite
+use site/model
+use site/places
+
+## JSON in short
+
+# A text value.
+#
+# - `s`: the text.
+function text(s: str) -> json.Value
+    return .text(v: s)
+
+# A boolean value.
+#
+# - `b`: the boolean.
+function flag(b: bool) -> json.Value
+    return .boolean(v: b)
+
+# A list value.
+#
+# - `elements`: the values, in order.
+function items(elements: [json.Value]) -> json.Value
+    return .list(items: elements)
+
+# An object value.
+#
+# - `members`: the members, in the order a template loops over them.
+function object(members: {str: json.Value}) -> json.Value
+    return .object(members: members)
+
+## What every page holds
+
+# Where one page stands in another language.
+record Alternate
+    # The language's code.
+    lang: str
+    # The page's URL in it, under the base path.
+    url: str
+
+# What every page of `language` holds, as the module's comment lists it.
+#
+# - `site`: the site.
+# - `language`: the page's language.
+# - `words`: the theme's words in it.
+# - `title`: the page's title.
+# - `alternates`: the page in every language it is written in, itself among
+#   them.
+function common(site: model.Site, language: model.Language, words: localized.Words, title: str, alternates: [Alternate]) -> {str: json.Value}
+    languages: [json.Value] @= []
+
+    for other in site.languages
+        here = alternate_in(alternates, lang: other.code).default(places.home(site, language: other).url)
+        languages @ languages.push(
+            object({"code": text(other.code), "tag": text(other.tag), "title": text(other.title), "url": text(here), "current": flag(other.code == language.code)})
+        )
+
+    links: [json.Value] @= []
+
+    if alternates.len() > 1
+        for a in alternates
+            other = model.language_of(site.languages, code: a.lang)
+            links @ links.push(object({"tag": text(other.tag), "url": text(places.absolute(site, local: a.url))}))
+
+    return {
+        "title": text(title)
+        "site": object({"title": text(language.title), "root": text(places.home(site, language: language).url), "base": text(site.base_path)})
+        "lang": object({"code": text(language.code), "tag": text(language.tag), "dir": text(language.direction), "feed": text(places.feed(site, language: language).url)})
+        "languages": items(languages)
+        "alternates": items(links)
+        "nav": items([object({"title": text(localized.word(words, site.feed_section)), "url": text(places.section_list(site, language: language, section: site.feed_section).url)}), object({"title": text(localized.word(words, "A–Z")), "url": text(places.alphabet(site, language: language).url)})])
+        "t": object({"contents": text(localized.word(words, "Contents")), "read_more": text(localized.word(words, "Read more")), "tags": text(localized.word(words, "Tags")), "recent": text(localized.word(words, "Recent posts")), "languages": text(localized.word(words, "Languages")), "tagged": text(localized.word(words, "Pages tagged"))})
+    }
+
+# The URL `alternates` give the language `lang`. Fails `not_found` where the
+# page is not written in it.
+function alternate_in(alternates: [Alternate], lang: str) -> str?
+    for a in alternates
+        if a.lang == lang
+            return ok(a.url)
+
+    return fail(code: "not_found", msg: f"no page in {lang}")
+
+## Pages
+
+# A page as a list shows it: its title, URL, date in words and as RFC 3339,
+# summary and reading time.
+#
+# - `page`: the page.
+# - `words`: the theme's words in its language.
+# - `zone`: the site's zone.
+function card(page: model.Page, words: localized.Words, zone: time.Zone) -> json.Value
+    dated = match page.date
+        .ok at => Dated(
+            words: localized.date_text(words.language, at: at, zone: zone),
+            machine: time.format(at, .rfc3339_seconds)
+        )
+        .err _ => Dated(words: "", machine: "")
+
+    return object(
+        {"title": text(page.title), "url": text(page.url), "date": text(dated.words), "datetime": text(dated.machine), "summary": text(page.summary), "reading": text(localized.reading_time(words, page.words))}
+    )
+
+# A date in two forms.
+record Dated
+    # As the language writes it in words.
+    words: str
+    # As RFC 3339, for a `datetime` attribute.
+    machine: str
+
+# Everything the page `page` holds: `common`, and `page` with its card's
+# keys, its contents, its tags with their URLs, and its front matter as
+# `params`.
+#
+# - `shared`: what `common` built for it.
+# - `page`: the page.
+# - `site`: the site.
+# - `words`: the theme's words in its language.
+# - `rewritten`: its body after `rewrite`, whose contents are listed.
+# - `params`: its front matter.
+function page_value(shared: {str: json.Value}, page: model.Page, site: model.Site, words: localized.Words, rewritten: rewrite.Rewritten, params: json.Value) -> json.Value
+    members @= json.members_of(card(page, words: words, zone: site.zone)).must()
+    toc: [json.Value] @= []
+
+    for h in rewritten.toc
+        toc @ toc.push(object({"id": text(h.id), "text": text(h.text), "level": json.from_int(h.level).must()}))
+
+    tags: [json.Value] @= []
+
+    for t in page.tags
+        tags @ tags.push(
+            object({"name": text(t), "url": text(places.tag_page(site, language: words.language, tag: t).url)})
+        )
+
+    members["toc"] @ items(toc)
+    members["tags"] @ items(tags)
+    members["params"] @ params
+    whole @= shared
+    whole["page"] @ object(members)
+    return object(whole)
+
+# Everything a list holds: `common`, a heading, its pages' cards, and the
+# language's pages and words counted.
+#
+# - `shared`: what `common` built for it.
+# - `heading`: the list's heading.
+# - `shown`: the pages, in the order shown.
+# - `every`: every page of the site, of which the language's are counted.
+# - `site`: the site.
+# - `words`: the theme's words in its language.
+function list_value(shared: {str: json.Value}, heading: str, shown: [model.Page], every: [model.Page], site: model.Site, words: localized.Words) -> json.Value
+    cards: [json.Value] @= []
+
+    for page in shown
+        cards @ cards.push(card(page, words: words, zone: site.zone))
+
+    whole @= shared
+    whole["heading"] @ text(heading)
+    whole["pages"] @ items(cards)
+    whole["counted"] @ counted_of(every, words: words)
+    return object(whole)
+
+# The pages of the words' language and the words they hold, each counted
+# as the language writes a count: `{"pages": "4 Seiten", "words": "1.234
+# Wörter"}`.
+function counted_of(every: [model.Page], words: localized.Words) -> json.Value
+    total @= 0
+    count @= 0
+
+    for page in every
+        if page.lang == words.language.code && page.kind == .single
+            total @ total + page.words
+            count @ count + 1
+
+    return object(
+        {"pages": text(localized.counted(words, one: "%d page", many: "%d pages", n: count)), "words": text(localized.counted(words, one: "%d word", many: "%d words", n: total))}
+    )
+
+# Everything the A to Z index holds: `list_value`'s keys, its `pages`
+# empty, and `groups`, each a letter and its pages' cards.
+#
+# - `shared`: what `common` built for it.
+# - `heading`: the index's heading.
+# - `groups`: the pages in groups, in order.
+# - `every`: every page of the site, of which the language's are counted.
+# - `site`: the site.
+# - `words`: the theme's words in its language.
+function groups_value(shared: {str: json.Value}, heading: str, groups: [indexes.Group], every: [model.Page], site: model.Site, words: localized.Words) -> json.Value
+    out: [json.Value] @= []
+
+    for g in groups
+        cards: [json.Value] @= []
+
+        for page in g.pages
+            cards @ cards.push(card(page, words: words, zone: site.zone))
+
+        out @ out.push(object({"letter": text(g.letter), "pages": items(cards)}))
+
+    whole @= shared
+    whole["heading"] @ text(heading)
+    whole["pages"] @ items([])
+    whole["counted"] @ counted_of(every, words: words)
+    whole["groups"] @ items(out)
+    return object(whole)

@@ -1,0 +1,143 @@
+sitegen demo: Harbour Notes, in English, German and Swedish
+build: 17 pages, 5 images, 3 files; 47 of 47 jobs run; 92 written, 0 unchanged, 0 removed
+public/
+     1556  44a12eac37be  a-z/index.html
+      639  cbfef7776959  a-z/index.html.br
+     1087  9ac244cbbe78  about/index.html
+      546  877744dc9745  about/index.html.br
+     1636  9963ecf5d348  de/a-z/index.html
+      663  1d4c6355ed95  de/a-z/index.html.br
+     1880  fc26cf115733  de/feed.xml
+      610  3b3381837930  de/feed.xml.br
+     2334  cc81c75d2a46  de/index.html
+      975  3a96cba69a52  de/index.html.br
+     2301  c4fd36a3206a  de/posts/ankunft/index.html
+     1073  5482afe988ec  de/posts/ankunft/index.html.br
+     2093  1ea91af7b718  de/posts/apfel-am-hafen/index.html
+      990  928e40af89a1  de/posts/apfel-am-hafen/index.html.br
+     2211  73c446809c88  de/posts/index.html
+      897  8481adfdea87  de/posts/index.html.br
+     1880  36473ab44df4  de/posts/oresundbrucke/index.html
+      917  df7f6c19a473  de/posts/oresundbrucke/index.html.br
+     1885  fd144e7999b4  de/posts/zebrastreifen/index.html
+      855  208e64583622  de/posts/zebrastreifen/index.html.br
+     1099  4454e0f4f787  de/tags/boote/index.html
+      622  2b7827f8bd3c  de/tags/boote/index.html.br
+     1101  b687b4e991c6  de/tags/brucken/index.html
+      623  f84e5b6e7aba  de/tags/brucken/index.html.br
+     1377  ddd2acf99b09  de/tags/hafen/index.html
+      708  b1f4aee30a61  de/tags/hafen/index.html.br
+     1087  7e7068f73f3e  de/tags/markt/index.html
+      618  8cb90198540f  de/tags/markt/index.html.br
+     1100  08edbbab1ddd  de/uber-uns/index.html
+      558  e93a98bdc253  de/uber-uns/index.html.br
+     1879  c1d20feb6f8a  feed.xml
+      597  f4699fa197d9  feed.xml.br
+       66  f2e79f40303d  files/tide-table.txt
+      297  7830ad7bb973  images/chart.png
+      506  17b49bf0676f  images/chart.thumb.png
+     1770  19fb2037d70e  images/harbour.jpg
+     1029  be9ef62bce15  images/harbour.thumb.jpg
+      188  47e2fdf833fc  images/lighthouse.png
+      380  73dd48c4b4aa  images/lighthouse.thumb.png
+     1336  9c556f10fbad  images/scan.jpg
+     1060  b5c678f9f67e  images/scan.thumb.jpg
+      445  31f7eefb757c  images/waves.gif
+     2195  2bd89511be7b  images/waves.thumb.gif
+     2311  673a18589c70  index.html
+      945  db20cb76e196  index.html.br
+     2061  95b38f2a54d5  posts/apples-by-the-harbour/index.html
+      951  f100082c5368  posts/apples-by-the-harbour/index.html.br
+     2260  681f548bdf8d  posts/arrival/index.html
+     1014  369412238d4c  posts/arrival/index.html.br
+     2186  f7fd17928a15  posts/index.html
+      869  5f4eff144ebe  posts/index.html.br
+     1939  203c6bc960ba  posts/oresund-bridge/index.html
+      899  5f160f9fdea8  posts/oresund-bridge/index.html.br
+     1848  fdd0157a96a9  posts/zebra-crossing/index.html
+      815  ea03e7d6152b  posts/zebra-crossing/index.html.br
+       23  16ceb5ee3e0d  robots.txt
+    10628  0ffa03d10618  sitemap.xml
+      651  9bfb0883fb58  sitemap.xml.br
+      878  368754af29a5  style.css
+      408  d02faf4f76a2  style.css.br
+     1602  92b7f27adad8  sv/a-z/index.html
+      638  343b9db44f7d  sv/a-z/index.html.br
+     1874  47f499493635  sv/feed.xml
+      604  1532038eea28  sv/feed.xml.br
+     2316  20d976eec198  sv/index.html
+      953  a07d0372b2c9  sv/index.html.br
+     2308  7a830dac2f83  sv/posts/ankomst/index.html
+     1080  8b81eb79740a  sv/posts/ankomst/index.html.br
+     2078  1be154493e51  sv/posts/applen-vid-hamnen/index.html
+      977  8b112694c6f8  sv/posts/applen-vid-hamnen/index.html.br
+     2191  9ef781cb7712  sv/posts/index.html
+      879  821b181368b2  sv/posts/index.html.br
+     1836  7466a2507a73  sv/posts/oresundsbron/index.html
+      879  317cd5bbfb25  sv/posts/oresundsbron/index.html.br
+     1859  d0c58d976d07  sv/posts/zebra-vid-kajen/index.html
+      845  31bf3a2e5fcd  sv/posts/zebra-vid-kajen/index.html.br
+     1097  36ab9c09c061  sv/tags/batar/index.html
+      620  02155786dfab  sv/tags/batar/index.html.br
+     1076  791d2a454738  sv/tags/broar/index.html
+      599  3cc2340a19f8  sv/tags/broar/index.html.br
+     1372  b5c9c7472e5f  sv/tags/hamn/index.html
+      701  b09ade8e00ac  sv/tags/hamn/index.html.br
+     1089  50e06967373c  sv/tags/marknad/index.html
+      610  0a12bb6f887e  sv/tags/marknad/index.html.br
+     1066  7bd14316eed0  tags/boats/index.html
+      593  e5b69a2f348b  tags/boats/index.html.br
+     1070  f6a03406d011  tags/bridges/index.html
+      595  c2746945eecf  tags/bridges/index.html.br
+     1347  71d768060739  tags/harbour/index.html
+      680  e452ae537c7c  tags/harbour/index.html.br
+     1073  80ce129e71e0  tags/market/index.html
+      594  49626114dd34  tags/market/index.html.br
+rendered:
+  en a-z    A: About, Apples by the harbour, Arrival | Ö: Öresund Bridge | Z: Zebra crossing
+  de a-z    A: Ankunft, Äpfel am Hafen | Ö: Öresundbrücke | Ü: Über uns | Z: Zebrastreifen
+  sv a-z    A: Ankomst | Z: Zebra vid kajen | Ä: Äpplen vid hamnen | Ö: Öresundsbron
+  en date   March 14, 2026 · 1 minute read
+  de date   14. März 2026 · 1 Minute Lesezeit
+  sv date   14 mars 2026 · 1 minuts läsning
+  de image  <a href="/images/lighthouse.png" class="image"><img src="/images/lighthouse.thumb.png" alt="Der Leuchtturm" width="24" height="48" loading="lazy" title="40 × 80, 0,1 kB"></a>
+  en link   https://xn--bcher-kva.example/%C3%A4pfel
+  en toc    #the-harbour-master #where-to-moor
+  sitemap   35 URLs, the first https://xn--hafenbcher-feb.example/
+watch: content/posts/zebra.sv.md edited
+  rebuilt: 17 pages, 5 images, 3 files; 12 of 47 jobs run; 6 written, 18 unchanged, 0 removed
+  changed  content/posts/zebra.sv.md
+  written  sv/a-z/index.html
+  written  sv/a-z/index.html.br
+  written  sv/index.html
+  written  sv/index.html.br
+  written  sv/posts/zebra-vid-kajen/index.html
+  written  sv/posts/zebra-vid-kajen/index.html.br
+watch: content/images/lighthouse.bmp replaced
+  rebuilt: 17 pages, 5 images, 3 files; 4 of 47 jobs run; 8 written, 0 unchanged, 0 removed
+  changed  content/images/lighthouse.bmp
+  written  de/posts/zebrastreifen/index.html
+  written  de/posts/zebrastreifen/index.html.br
+  written  images/lighthouse.png
+  written  images/lighthouse.thumb.png
+  written  posts/zebra-crossing/index.html
+  written  posts/zebra-crossing/index.html.br
+  written  sv/posts/zebra-vid-kajen/index.html
+  written  sv/posts/zebra-vid-kajen/index.html.br
+watch: content/about.de.md removed
+  rebuilt: 16 pages, 5 images, 3 files; 10 of 46 jobs run; 10 written, 10 unchanged, 2 removed
+  changed  content/about.de.md
+  written  about/index.html
+  written  about/index.html.br
+  written  de/a-z/index.html
+  written  de/a-z/index.html.br
+  written  de/index.html
+  written  de/index.html.br
+  written  de/posts/index.html
+  written  de/posts/index.html.br
+  written  sitemap.xml
+  written  sitemap.xml.br
+  removed  de/uber-uns/index.html
+  removed  de/uber-uns/index.html.br
+after the edits: 46 jobs, 90 files in public/
+whole build, to check the watch's rebuilds: 16 pages, 5 images, 3 files; 46 of 46 jobs run; 0 written, 90 unchanged, 0 removed

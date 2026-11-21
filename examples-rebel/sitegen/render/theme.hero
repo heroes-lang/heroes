@@ -1,0 +1,152 @@
+# A theme: the layouts, partials and catalogs under `themes/<name>/` that
+# every page is written with. `layouts/base.html` is the skeleton of every
+# page and includes `main`, which is the layout of the page's kind
+# (`single`, `list`, `home`, `alphabet`, `tag`); each file of `partials/` is
+# a template of its own, by its name, which any layout may include; and
+# `i18n/<code>.po` holds the theme's words in a language.
+#
+# A page's body is HTML that Markdown and `rewrite` made, and `template`'s
+# HTML mode writes no value as markup unescaped: its ledger refuses trusted
+# HTML and names the way, a template of the set that a layout includes. So
+# each page is rendered with its body added to the set as the template
+# `content`, its braces written as character references so that no `{{` of
+# the text is read as an action.
+
+use <rebel>/json
+use <rebel>/path
+use <rebel>/strings
+use <rebel>/template
+
+use content/sources
+
+## Codes
+
+# The code of a theme that lacks a layout or holds a partial whose name a
+# layout already takes.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a partial named as a template the generator names itself.
+constant INVALID: str
+    "invalid"
+
+## The names the generator gives
+
+# The templates every set holds besides the partials: the skeleton, the
+# kind's layout, and the page's body.
+constant RESERVED: [str]
+    ["base", "main", "content"]
+
+## Loading
+
+# A theme read.
+record Theme
+    # Its name, its folder under `themes/`.
+    name: str
+    # Each layout's text by its name without `.html`.
+    layouts: {str: str}
+    # Each partial's text by its name without `.html`.
+    partials: {str: str}
+    # Each catalog's text by its language code.
+    catalogs: {str: str}
+
+# The theme `name` of the site at `root`, from its files `files`.
+#
+# - `root`: the site's folder.
+# - `name`: the theme's folder under `themes/`.
+# - `files`: the theme's files under the site, as `sources.discover` found
+#   them; its `static/` files are not among them.
+#
+# Fails `not_found` where the theme has no `layouts/base.html`; `invalid`
+# where a partial is named `base`, `main` or `content`; and as
+# `sources.read_text` does.
+function load(root: str, name: str, files: [str]) -> Theme?
+    prefix = f"themes/{name}/"
+    layouts: {str: str} @= {}
+    partials: {str: str} @= {}
+    catalogs: {str: str} @= {}
+
+    for file in files
+        under = file.slice(from: prefix.len(), to: file.len())
+        folder = path.parent_by(under, .posix)
+        stem = path.stem_by(under, .posix).default(under)
+        extension = path.ext_by(under, .posix).default("")
+
+        if folder == "layouts" && extension == ".html"
+            layouts[stem] @ sources.read_text(root: root, name: file)?
+        else if folder == "partials" && extension == ".html"
+            for reserved in RESERVED
+                if reserved == stem
+                    return fail(
+                        code: INVALID,
+                        msg: f"{file}: a partial may not be named \"{stem}\", which names the generator's own template"
+                    )
+
+            partials[stem] @ sources.read_text(root: root, name: file)?
+        else if folder == "i18n" && extension == ".po"
+            catalogs[stem] @ sources.read_text(root: root, name: file)?
+
+    if layouts["base"].is_err()
+        return fail(code: NOT_FOUND, msg: f"{prefix}layouts/base.html is missing: every page is written inside it")
+    return ok(Theme(name: name, layouts: layouts, partials: partials, catalogs: catalogs))
+
+## Rendering
+
+# `body` with its braces written as the character references HTML reads
+# back as braces, `&#123;` and `&#125;`, so a template reads none of them.
+#
+# - `body`: HTML.
+function escape_braces(body: str) -> str
+    return strings.replace_pairs(body, {"{": "&#123;", "}": "&#125;"})
+
+# The page written by the layout `layout` of `theme`, with `body` as its
+# `content` and `value` as the `.` of every template.
+#
+# - `theme`: the theme.
+# - `layout`: the name of the kind's layout.
+# - `body`: the page's body as HTML; empty for a page that has none.
+# - `value`: what the templates read.
+#
+# Fails `not_found` where the theme has no such layout, and as
+# `template.parse_all` and `template.render` do, the message naming the
+# layout.
+function render(theme: Theme, layout: str, body: str, value: json.Value) -> str?
+    main = match theme.layouts[layout]
+        .ok text => text
+        .err _   => return fail(code: NOT_FOUND, msg: f"themes/{theme.name}/layouts/{layout}.html is missing")
+
+    texts: {str: str} @= {"base": theme.layouts["base"].must(), "main": main}
+
+    for name in keys(theme.partials)
+        texts[name] @ theme.partials[name].must()
+
+    texts["content"] @ escape_braces(body)
+
+    set = match template.parse_all(texts, template.html_options())
+        .ok t  => t
+        .err e => return fail(code: e.code, msg: f"themes/{theme.name}, layout {layout}: {e.msg}")
+
+    return match template.render(set, value)
+        .ok page => ok(page)
+        .err e   => fail(code: e.code, msg: f"themes/{theme.name}, layout {layout}: {e.msg}")
+
+## Tests
+
+test "escape_braces: an action in a code sample written as references, other text kept"
+    assert escape_braces("<code>{{ x }}</code>") == "<code>&#123;&#123; x &#125;&#125;</code>"
+    assert escape_braces("") == ""
+
+test "render: the body included as written, a value escaped, braces of the body never read"
+    theme = Theme(
+        name: "t",
+        layouts: {"base": "<main>{{ include \"main\" . }}</main>", "single": "<h1>{{ .title }}</h1>{{ include \"content\" . }}"},
+        partials: {},
+        catalogs: {}
+    )
+    value: json.Value = .object(members: {"title": .text(v: "A & B")})
+    page = render(theme, layout: "single", body: "<p>{{ .title }}</p>", value: value).must()
+    assert page == "<main><h1>A &amp; B</h1><p>&#123;&#123; .title &#125;&#125;</p></main>"
+
+test "render: a layout the theme lacks"
+    theme = Theme(name: "t", layouts: {"base": "x"}, partials: {}, catalogs: {})
+    assert render(theme, layout: "tag", body: "", value: .null_value).is_err()

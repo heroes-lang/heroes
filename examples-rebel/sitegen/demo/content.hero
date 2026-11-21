@@ -1,0 +1,324 @@
+# The demo site, `Harbour Notes`, as the text files `sitegen demo` writes
+# into its folder: `site.toml`, the pages in English, German and Swedish
+# (front matter in YAML and in TOML, one page left untranslated into
+# Swedish, one draft), a file the pages link to, the site's own static file,
+# and the edits the demo makes while it watches.
+#
+# The titles are chosen so the A to Z index shows each language's order:
+# German files `Äpfel` with the A's and `Öresundbrücke` with the O's, Swedish
+# puts `Äpplen` and `Öresundsbron` after `Zebra`.
+
+## The files
+
+# A text file of the demo: its path under the site's folder and its text.
+record File
+    # The path, slash-separated.
+    name: str
+    # What it holds.
+    text: str
+
+function file(name: str, lines: [str]) -> File
+    return File(name: name, text: lines.join("\n") + "\n")
+
+# Every text file of the demo site but the theme's.
+function files() -> [File]
+    return [
+        file(name: "site.toml", lines: settings())
+        file(name: "content/_index.md", lines: ["---", "title: Harbour Notes", "---", "Notes from a small harbour on the Öresund: boats, markets, weather, and the bridge."])
+        file(name: "content/_index.de.md", lines: ["---", "title: Hafennotizen", "---", "Notizen aus einem kleinen Hafen am Öresund: Boote, Märkte, Wetter und die Brücke."])
+        file(name: "content/_index.sv.md", lines: ["+++", "title = \"Hamnanteckningar\"", "+++", "Anteckningar från en liten hamn vid Öresund: båtar, marknader, väder och bron."])
+        file(name: "content/about.md", lines: ["---", "title: About", "---", "These notes are written from a small harbour on the Öresund, in three languages."])
+        file(name: "content/about.de.md", lines: ["---", "title: Über uns", "---", "Diese Notizen entstehen in einem kleinen Hafen am Öresund, in drei Sprachen."])
+        file(name: "content/posts/arrival.md", lines: arrival_en())
+        file(name: "content/posts/arrival.de.md", lines: arrival_de())
+        file(name: "content/posts/arrival.sv.md", lines: arrival_sv())
+        file(name: "content/posts/apples.md", lines: apples_en())
+        file(name: "content/posts/apples.de.md", lines: apples_de())
+        file(name: "content/posts/apples.sv.md", lines: apples_sv())
+        file(name: "content/posts/oresund.md", lines: oresund_en())
+        file(name: "content/posts/oresund.de.md", lines: oresund_de())
+        file(name: "content/posts/oresund.sv.md", lines: oresund_sv())
+        file(name: "content/posts/zebra.md", lines: zebra_en())
+        file(name: "content/posts/zebra.de.md", lines: zebra_de())
+        file(name: "content/posts/zebra.sv.md", lines: zebra_sv())
+        file(name: "content/posts/draft.md", lines: ["---", "title: Not yet", "draft: true", "---", "This page is left out of every build."])
+        file(name: "content/files/tide-table.txt", lines: ["Tides, 2 March 2026", "high 06:12   low 12:30", "high 18:41   low 00:55"])
+        file(name: "static/robots.txt", lines: ["User-agent: *", "Allow: /"])
+    ]
+
+function settings() -> [str]
+    return [
+        "title = \"Harbour Notes\""
+        "base_url = \"https://hafenbücher.example/\""
+        "theme = \"harbour\""
+        "timezone = \"Europe/Stockholm\""
+        "feed_section = \"posts\""
+        "feed_size = 10"
+        ""
+        "[languages.en]"
+        "locale = \"en\""
+        "title = \"Harbour Notes\""
+        "weight = 1"
+        ""
+        "[languages.de]"
+        "locale = \"de-de\""
+        "title = \"Hafennotizen\""
+        "weight = 2"
+        ""
+        "[languages.sv]"
+        "locale = \"sv-se\""
+        "title = \"Hamnanteckningar\""
+        "weight = 3"
+        ""
+        "[images]"
+        "thumbnail = [48, 48]"
+        "jpeg_quality = 80"
+        ""
+        "[images.convert]"
+        "bmp = \"png\""
+        "netpbm = \"jpeg\""
+        ""
+        "[precompress]"
+        "quality = 5"
+        "min_bytes = 512"
+    ]
+
+## Arrival
+
+function arrival_en() -> [str]
+    return [
+        "---"
+        "title: Arrival"
+        "date: 2026-03-02"
+        "tags: [harbour, boats]"
+        "---"
+        "We came in on the evening tide, past the breakwater and the green light at its end."
+        ""
+        "![The harbour at dusk](../images/harbour.jpg)"
+        ""
+        "## The harbour master"
+        ""
+        "The harbour master keeps a [tide table](../files/tide-table.txt) on the office door, and a kettle on the stove."
+        ""
+        "## Where to moor"
+        ""
+        "Visiting boats moor along the east quay. The fishing boats leave before dawn, so a berth near the fuel dock is quiet by nine."
+        ""
+        "Next: [apples by the harbour](apples.md)."
+    ]
+
+function arrival_de() -> [str]
+    return [
+        "---"
+        "title: Ankunft"
+        "date: 2026-03-02"
+        "tags: [Hafen, Boote]"
+        "---"
+        "Wir kamen mit der Abendflut, vorbei an der Mole und dem grünen Licht an ihrem Ende."
+        ""
+        "![Der Hafen in der Dämmerung](../images/harbour.jpg)"
+        ""
+        "## Der Hafenmeister"
+        ""
+        "Der Hafenmeister hängt eine [Gezeitentafel](../files/tide-table.txt) an die Bürotür und hält einen Kessel auf dem Herd."
+        ""
+        "## Wo man festmacht"
+        ""
+        "Gastboote liegen am Ostkai. Die Fischer fahren vor Sonnenaufgang hinaus, also ist ein Platz an der Tankstelle ab neun ruhig."
+        ""
+        "Weiter: [Äpfel am Hafen](apples.md)."
+    ]
+
+function arrival_sv() -> [str]
+    return [
+        "+++"
+        "title = \"Ankomst\""
+        "date = 2026-03-02"
+        "tags = [\"hamn\", \"båtar\"]"
+        "+++"
+        "Vi kom in med kvällsfloden, förbi vågbrytaren och det gröna ljuset längst ut."
+        ""
+        "![Hamnen i skymningen](../images/harbour.jpg)"
+        ""
+        "## Hamnkaptenen"
+        ""
+        "Hamnkaptenen sätter upp en [tidvattentabell](../files/tide-table.txt) på kontorsdörren och har alltid en kittel på spisen."
+        ""
+        "## Var man lägger till"
+        ""
+        "Gästbåtar ligger vid östra kajen. Fiskebåtarna går ut före gryningen, så en plats vid bränslebryggan är lugn redan vid nio."
+        ""
+        "Nästa: [äpplen vid hamnen](apples.md)."
+    ]
+
+## Apples
+
+function apples_en() -> [str]
+    return [
+        "---"
+        "title: Apples by the harbour"
+        "date: 2026-03-14"
+        "tags: [market]"
+        "---"
+        "Every Saturday the market fills the square behind the quay."
+        ""
+        "| Stall | Apples | Price |"
+        "|---|---|---:|"
+        "| Lund | Ingrid Marie | 2.50 |"
+        "| Berg | Cox Orange | 3.00 |"
+        ""
+        "![This week's catches](../images/chart.png)"
+        ""
+        "Old books about apples are at [the bookshop on the hill](https://bücher.example/äpfel), which ships anywhere."
+    ]
+
+function apples_de() -> [str]
+    return [
+        "---"
+        "title: Äpfel am Hafen"
+        "date: 2026-03-14"
+        "tags: [Markt]"
+        "---"
+        "Jeden Samstag füllt der Markt den Platz hinter dem Kai."
+        ""
+        "| Stand | Äpfel | Preis |"
+        "|---|---|---:|"
+        "| Lund | Ingrid Marie | 2,50 |"
+        "| Berg | Cox Orange | 3,00 |"
+        ""
+        "![Die Fänge dieser Woche](../images/chart.png)"
+        ""
+        "Alte Bücher über Äpfel gibt es im [Buchladen auf dem Hügel](https://bücher.example/äpfel), der überallhin liefert."
+    ]
+
+function apples_sv() -> [str]
+    return [
+        "+++"
+        "title = \"Äpplen vid hamnen\""
+        "date = 2026-03-14"
+        "tags = [\"marknad\"]"
+        "+++"
+        "Varje lördag fyller marknaden torget bakom kajen."
+        ""
+        "| Stånd | Äpplen | Pris |"
+        "|---|---|---:|"
+        "| Lund | Ingrid Marie | 2,50 |"
+        "| Berg | Cox Orange | 3,00 |"
+        ""
+        "![Veckans fångst](../images/chart.png)"
+        ""
+        "Gamla böcker om äpplen finns i [bokhandeln på kullen](https://bücher.example/äpfel), som skickar överallt."
+    ]
+
+## The bridge
+
+function oresund_en() -> [str]
+    return [
+        "---"
+        "title: Öresund Bridge"
+        "date: 2026-04-02"
+        "tags: [bridges]"
+        "---"
+        "From the end of the pier the bridge is a grey line drawn to Denmark."
+        ""
+        "![Waves under the bridge](../images/waves.gif)"
+        ""
+        "The ferry board is printed by a script that writes `{{ departure }}` for every boat:"
+        ""
+        "```"
+        "for boat in boats: print(\"{{ departure }}\")"
+        "```"
+        ""
+        "The [harbour master](arrival.md#the-harbour-master) knows when the last ferry leaves."
+    ]
+
+function oresund_de() -> [str]
+    return [
+        "---"
+        "title: Öresundbrücke"
+        "date: 2026-04-02"
+        "tags: [Brücken]"
+        "---"
+        "Vom Ende der Pier ist die Brücke eine graue Linie nach Dänemark."
+        ""
+        "![Wellen unter der Brücke](../images/waves.gif)"
+        ""
+        "Die Fährtafel druckt ein Skript, das für jedes Boot `{{ departure }}` schreibt."
+        ""
+        "Der [Hafenmeister](arrival.md#der-hafenmeister) weiß, wann die letzte Fähre fährt."
+    ]
+
+function oresund_sv() -> [str]
+    return [
+        "+++"
+        "title = \"Öresundsbron\""
+        "date = 2026-04-02"
+        "tags = [\"broar\"]"
+        "+++"
+        "Från piren är bron ett grått streck mot Danmark."
+        ""
+        "![Vågor under bron](../images/waves.gif)"
+        ""
+        "Färjetavlan skrivs ut av ett skript som skriver `{{ departure }}` för varje båt."
+        ""
+        "[Hamnkaptenen](arrival.md#hamnkaptenen) vet när sista färjan går."
+    ]
+
+## The crossing
+
+function zebra_en() -> [str]
+    return [
+        "---"
+        "title: Zebra crossing"
+        "date: 2026-04-20"
+        "tags: [harbour]"
+        "---"
+        "The new crossing between the quay and the lighthouse was painted on Tuesday."
+        ""
+        "![The lighthouse](../images/lighthouse.bmp)"
+        ""
+        "The council's notice, scanned:"
+        ""
+        "![The council's notice](../images/scan.pgm)"
+    ]
+
+function zebra_de() -> [str]
+    return [
+        "---"
+        "title: Zebrastreifen"
+        "date: 2026-04-20"
+        "tags: [Hafen]"
+        "---"
+        "Der neue Übergang zwischen Kai und Leuchtturm wurde am Dienstag gemalt."
+        ""
+        "![Der Leuchtturm](../images/lighthouse.bmp)"
+        ""
+        "Die Mitteilung der Gemeinde, eingescannt:"
+        ""
+        "![Die Mitteilung der Gemeinde](../images/scan.pgm)"
+    ]
+
+function zebra_sv() -> [str]
+    return [
+        "+++"
+        "title = \"Zebra vid kajen\""
+        "date = 2026-04-20"
+        "tags = [\"hamn\"]"
+        "+++"
+        "Det nya övergångsstället mellan kajen och fyren målades i tisdags."
+        ""
+        "![Fyren](../images/lighthouse.bmp)"
+        ""
+        "Kommunens meddelande, inskannat:"
+        ""
+        "![Kommunens meddelande](../images/scan.pgm)"
+    ]
+
+## The edits the demo makes while it watches
+
+# The Swedish crossing page with a sentence added at its end.
+function zebra_sv_edited() -> File
+    lines @= zebra_sv()
+    lines @ lines.push("")
+    lines @ lines.push("Fyren tänds klockan sju om kvällen.")
+    return file(name: "content/posts/zebra.sv.md", lines: lines)

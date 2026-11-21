@@ -1,0 +1,160 @@
+# sitegen: a static site generator. A folder holding `site.toml`, a
+# `content/` folder of Markdown pages with YAML (`---`) or TOML (`+++`) front
+# matter, a theme under `themes/<name>/` and a `static/` folder is written to
+# its output folder as a site: each page in each of its languages, with its
+# dates and numbers written as the language writes them; a home page, a list
+# for each section, an A to Z index ordered as the language orders text, and
+# a page for each tag; the images scaled to thumbnails and converted to a
+# kind a browser shows; a sitemap and an Atom feed for each language; and a
+# Brotli copy beside every text file. Its watch mode builds again after each
+# change, running only the jobs the changed files feed.
+#
+#     sitegen build <dir>    write the site of <dir> once
+#     sitegen watch <dir>    write it, then again after every change, until Ctrl-C
+#     sitegen demo [<dir>]   write the bundled site (build/sitegen-demo), build it,
+#                            list its files, and watch three edits
+#
+# The demo is this program's test: `main.args` runs it and its transcript is
+# `main.expected`. A command that fails prints `sitegen: ` and the reason,
+# which names the file at fault, and exits 1; arguments it cannot read exit
+# 2.
+#
+# What it uses of Rebel, and for what:
+#
+# - `markdown` reads each page; `template` (its HTML mode) sets it in the
+#   theme's layouts and partials; `html` reads the page again to give its
+#   headings ids, list its contents, point its links and show its images as
+#   thumbnails; `yaml` and `toml` read the front matter and `site.toml`.
+# - `i18n` reads the theme's gettext catalogs and their plural forms;
+#   `i18n/locales` makes each language's tag canonical and finds its script's
+#   direction; `i18n/dates` and `i18n/numbers` write dates, counts and sizes
+#   as the language does; `i18n/collate` orders the A to Z index.
+# - `unicode/normalize` and `unicode/segment` make slugs from titles and
+#   heading ids, count words and cut summaries at sentence boundaries;
+#   `url` parses, resolves and escapes links; `url/idna` writes the base
+#   URL's host and every link to an internationalized domain in ASCII.
+# - `image` scales and converts pictures, read and written by `image/png`,
+#   `image/jpeg` (its EXIF orientation applied), `image/gif` (an animated
+#   thumbnail), `image/bmp` and `image/netpbm`.
+# - `xml` writes the sitemap and the feeds; `compress/brotli` the
+#   precompressed copies; `crypto` fingerprints sources and outputs so only
+#   changed files are rebuilt and written.
+# - `fs` and `path` find, read and write the files; `fs/watch` tells the
+#   watch mode what changed; `os` catches Ctrl-C; `time` reads dates in the
+#   site's zone; `flags` reads the command line; `strings`, `bytes`, `lists`
+#   and `json` hold the rest together.
+
+use <rebel>/flags
+
+use content/sources
+use demo/session
+use pipeline/builder
+use pipeline/reports
+use site/settings
+use watch/watching
+
+## Exits
+
+# The exit status of a command that failed.
+constant FAILED: i64
+    1
+
+# The exit status of arguments the program cannot read.
+constant USAGE: i64
+    2
+
+# The version `--version` prints.
+constant VERSION: str
+    "0.1.0"
+
+# The folder `sitegen demo` writes to where none is named.
+constant DEMO_FOLDER: str
+    "build/sitegen-demo"
+
+## The declaration
+
+# The command line `sitegen` reads.
+function command_line() -> flags.Command
+    top @= flags.with_version(
+        flags.command(name: "sitegen", about: "A static site generator: Markdown pages in several languages, a theme, images, a sitemap and feeds."),
+        VERSION
+    )
+    build @= flags.command(name: "build", about: "Write the site of a folder to its output folder, once.")
+    flags.add(@build, flags.positional(name: "dir", help: "the site's folder, holding site.toml"))
+    watch @= flags.command(
+        name: "watch",
+        about: "Build the site, then build it again after every change, until Ctrl-C."
+    )
+    flags.add(@watch, flags.positional(name: "dir", help: "the site's folder, holding site.toml"))
+    show @= flags.command(name: "demo", about: "Write the bundled site Harbour Notes, build it, and watch three edits.")
+    flags.add(
+        @show,
+        flags.with_default(flags.with_arity(flags.positional(name: "dir", help: "the folder to write the bundled site to"), .optional), DEMO_FOLDER)
+    )
+    flags.add_command(c: @top, sub: build)
+    flags.add_command(c: @top, sub: watch)
+    flags.add_command(c: @top, sub: show)
+    return top
+
+## Running
+
+# The program run with `arguments`, the arguments after its name; answers
+# the exit status.
+#
+# - `arguments`: as `args()` answers them.
+function run(arguments: [str]) -> i64
+    found = match flags.parse(command_line(), arguments)
+        .ok f => f
+        .err e =>
+            print(e.msg)
+            return USAGE
+
+    if flags.is_help(found)
+        print(flags.help_text(found))
+        return 0
+
+    if flags.is_version(found)
+        print(flags.version_text(found))
+        return 0
+
+    chosen = match flags.subcommand(found)
+        .ok s => s
+        .err _ =>
+            print(flags.help_text(found))
+            return USAGE
+
+    dir = flags.value_of(chosen, "dir").default(DEMO_FOLDER)
+
+    done = match flags.name_of(chosen)
+        "build" => build_once(dir)
+        "watch" => watch_folder(dir)
+        _       => session.run(dir)
+
+    return match done
+        .ok _ => 0
+        .err e =>
+            print("sitegen: " + e.msg)
+            FAILED
+
+# The site of `dir` built once, its summary and warnings printed.
+function build_once(dir: str) -> ()?
+    result = builder.build(dir, state: builder.empty_state(), look: .everything)?
+    print(reports.summary(result.report))
+
+    for line in reports.details(result.report, changed: false, written: false)
+        print(line)
+
+    return ok()
+
+# The site of `dir` built and watched until the program is asked to stop.
+function watch_folder(dir: str) -> ()?
+    site = settings.read(root: dir, text: sources.read_text(root: dir, name: "site.toml")?)?
+    return watching.run(root: dir, output: site.output)
+
+## The entry
+
+function main()
+    status = run(args())
+
+    if status != 0
+        exit(code: status)

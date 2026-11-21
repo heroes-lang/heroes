@@ -1,0 +1,91 @@
+# The thumbnail of an animated GIF, which moves as its image does: every
+# frame laid over the ones before it as a viewer shows them, scaled to the
+# site's bound, and written again as one frame of a new animation with the
+# same delays and the same number of plays.
+#
+# Scaling a frame as the file stores it would not do: a GIF frame is often a
+# small rectangle that changes part of the screen, and its pixels mean
+# nothing without what lies under them. So the frames are composited first,
+# each scaled screen has its own palette of at most 256 colours, and each is
+# written whole, its rectangle cleared before the next.
+
+use <rebel>/image
+use <rebel>/image/gif
+
+## The thumbnail
+
+# An animated thumbnail written.
+record Moving
+    # The GIF file's bytes.
+    data: [u8]
+    # Its width in pixels.
+    width: i64
+    # Its height in pixels.
+    height: i64
+
+# The animation `animation` scaled to fit `max_width` by `max_height`.
+#
+# - `animation`: the GIF read, with at least one frame.
+# - `max_width`: the widest the thumbnail is, in pixels, 1 or more.
+# - `max_height`: the tallest it is, in pixels, 1 or more.
+# - `limits`: the most pixels the composited frames may hold together.
+#
+# Fails `limit` where the frames composited pass `limits`, and as
+# `gif.composite`, `image.thumbnail` and `gif.encode` fail otherwise.
+function thumbnail(animation: gif.Gif, max_width: i64, max_height: i64, limits: image.Limits) -> Moving?
+    screens = gif.composite(animation, limits)?
+    frames: [gif.Frame] @= []
+    width @= 1
+    height @= 1
+
+    for i in range(from: 0, to: screens.len())
+        small = image.thumbnail(screens[i], max_width: max_width, max_height: max_height, resampling: .bicubic)?
+        width @ small.width
+        height @ small.height
+        palette = image.palette_of(small, 256)?
+        indexed = image.to_indexed(small, palette, dither: false)?
+        frames @ frames.push(
+            gif.Frame(image: indexed, left: 0, top: 0, delay: animation.frames[i].delay, disposal: .background, interlaced: false)
+        )
+
+    moving = gif.Gif(
+        width: width,
+        height: height,
+        palette: [],
+        background: 0,
+        loop_count: animation.loop_count,
+        frames: frames
+    )
+    return ok(Moving(data: gif.encode(moving)?, width: width, height: height))
+
+## Tests
+
+function test_animation() -> gif.Gif
+    red = image.Color(r: 200, g: 0, b: 0, a: 255)
+    blue = image.Color(r: 0, g: 0, b: 200, a: 255)
+    first = image.Indexed(width: 20, height: 10, palette: [red, blue], indices: repeat_byte(0, 200))
+    second = image.Indexed(width: 20, height: 10, palette: [red, blue], indices: repeat_byte(1, 200))
+    return gif.Gif(
+        width: 20,
+        height: 10,
+        palette: [],
+        background: 0,
+        loop_count: 0,
+        frames: [gif.Frame(image: first, left: 0, top: 0, delay: 10, disposal: .keep, interlaced: false), gif.Frame(image: second, left: 0, top: 0, delay: 30, disposal: .keep, interlaced: false)]
+    )
+
+function repeat_byte(value: u8, count: i64) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: count)
+        out @ out.push(value)
+
+    return out
+
+test "thumbnail: two frames scaled, their delays and endless loop kept"
+    moving = thumbnail(test_animation(), max_width: 10, max_height: 10, limits: image.default_limits()).must()
+    assert moving.width == 10 && moving.height == 5
+    again = gif.decode(moving.data, image.default_limits()).must()
+    assert again.frames.len() == 2
+    assert again.frames[0].delay == 10 && again.frames[1].delay == 30
+    assert again.loop_count == 0

@@ -1,0 +1,246 @@
+# A build of the site, whole or after a change, as one function: the
+# sources are found and fingerprinted, the ones that changed since the last
+# build (by their SHA-256, not by their times) are read again, the plan is
+# made, and only the jobs that read a changed source, or that no earlier
+# build made, run. What it needs between builds is a `State`, empty before
+# the first; a whole build is a build from the empty state.
+#
+# The sources to read can be narrowed to the ones a watch was told of
+# (`Look.only`); every other source keeps the fingerprint it had. A change
+# to `site.toml` reads every page again, since the languages and the base
+# path place every page.
+
+use <rebel>/bytes
+
+use content/pages as page_reader
+use content/sources
+use locale/localized
+use output/outputs as output_folder
+use pipeline/plan
+use pipeline/running
+use render/theme
+use site/model
+use site/settings as site_settings
+
+## State and report
+
+# What a build leaves for the next one.
+record State
+    # The fingerprint of every source as the build read it, by path.
+    digests: {str: str}
+    # Every page read, drafts among them, by source.
+    pages: {str: model.Page}
+    # Every built image's facts, by source.
+    facts: {str: model.ImageFacts}
+    # The outputs each job wrote, by the job's name.
+    produced: {str: [str]}
+    # The sources each job read, by the job's name.
+    reads: {str: [str]}
+    # The fingerprint of every output written, by path.
+    known: {str: str}
+
+# The state before the first build.
+function empty_state() -> State
+    return State(digests: {}, pages: {}, facts: {}, produced: {}, reads: {}, known: {})
+
+# Which sources a build reads again.
+variant Look
+    # Every source: a whole build.
+    everything
+    # These sources, slash-separated paths under the site; every other one
+    # keeps its fingerprint.
+    only
+        # The sources a watch was told of.
+        paths: [str]
+
+# What a build did.
+record Report
+    # The sources added, changed or removed since the last build, sorted.
+    changed: [str]
+    # How many jobs the plan holds.
+    jobs: i64
+    # How many of them ran.
+    ran: i64
+    # The pages, images and copied files the site holds.
+    pages: i64
+    # Its images.
+    images: i64
+    # Its copied files.
+    copies: i64
+    # The outputs written because their bytes were new, sorted.
+    written: [str]
+    # How many outputs were made again with the bytes they had.
+    unchanged: i64
+    # The outputs removed, sorted.
+    removed: [str]
+    # What could not be resolved, one sentence each.
+    warnings: [str]
+
+# A build's report and the state it leaves.
+record Result
+    # What the build did.
+    report: Report
+    # What it leaves for the next build.
+    state: State
+
+## Building
+
+# The site at `root` built from `state`.
+#
+# - `root`: the site's folder.
+# - `state`: what the last build left; `empty_state()` for a whole build.
+# - `look`: which sources to read again.
+#
+# A whole build (`.everything`) also removes every file of the output folder
+# that no job makes. Fails as each stage does, the message naming the file;
+# fails `exists` where two jobs would write one output (`running.owners`). Nothing is written
+# where a stage fails before the outputs are.
+function build(root: str, state: State, look: Look) -> Result?
+    site_text = sources.read_text(root: root, name: "site.toml")?
+    site = site_settings.read(root: root, text: site_text)?
+    found = sources.discover(site)?
+    asked: {str: bool} @= {}
+
+    match look
+        .only o =>
+            for p in o.paths
+                asked[p] @ true
+        .everything => _ = 0
+
+    whole = match look
+        .everything => true
+        .only _     => false
+
+    every = all_sources(found)
+    digests: {str: str} @= {}
+    texts: {str: str} @= {}
+    changed: {str: bool} @= {}
+
+    for name in every
+        old = state.digests[name]
+
+        if whole || asked[name].default(false) || old.is_err()
+            data = sources.read(root: root, name: name)?
+            digest = sources.fingerprint(data)
+            digests[name] @ digest
+
+            if sources.is_page(name)
+                texts[name] @ bytes.to_text(data).default("")
+
+            if old.default("") != digest
+                changed[name] @ true
+        else
+            digests[name] @ old.must()
+
+    for name in keys(state.digests)
+        if digests[name].is_err()
+            changed[name] @ true
+
+    settings_changed = changed["site.toml"].default(false)
+    all_pages: {str: model.Page} @= {}
+
+    for name in found.pages
+        reread = changed[name].default(false) || settings_changed || state.pages[name].is_err()
+
+        if reread
+            text = match texts[name]
+                .ok t  => t
+                .err _ => sources.read_text(root: root, name: name)?
+
+            all_pages[name] @ page_reader.read_page(site, source: name, text: text)?
+        else
+            all_pages[name] @ state.pages[name].must()
+
+    live: [model.Page] @= []
+
+    for name in found.pages
+        page = all_pages[name].must()
+
+        if !page.draft
+            live @ live.push(page)
+
+    look_and_feel = theme.load(root: root, name: site.theme, files: found.theme)?
+    words: {str: localized.Words} @= {}
+
+    for language in site.languages
+        po = look_and_feel.catalogs[language.code].default("")
+        words[language.code] @ localized.words_of(language, po: po, name: f"themes/{site.theme}/i18n/{language.code}.po")?
+
+    planned = plan.make(site, found: found, pages: live)
+    todo = plan.affected(planned, before: state.reads, changed: changed)
+    run = running.run_jobs(site, todo: todo, known_facts: state.facts, found: found, look_and_feel: look_and_feel, words: words, live: live)?
+    produced = running.owners(planned, before: state.produced, ran: run.produced)?
+    writes = output_folder.write_all(site, outputs: run.outputs, known: state.known)?
+    keep: {str: bool} @= {}
+
+    for name in keys(produced)
+        for p in produced[name].must()
+            keep[p] @ true
+
+    gone: {str: bool} @= {}
+
+    for name in keys(state.produced)
+        for p in state.produced[name].must()
+            if !keep[p].default(false)
+                gone[p] @ true
+
+    if whole
+        for p in output_folder.stale(site, keep: keep)?
+            gone[p] @ true
+
+    removed = sort(keys(gone))
+    output_folder.remove_all(site, names: removed)?
+    known @= writes.known
+
+    for p in removed
+        known @ without(known, key: p)
+
+    report = Report(
+        changed: sort(keys(changed)),
+        jobs: planned.len(),
+        ran: todo.len(),
+        pages: live.len(),
+        images: found.images.len(),
+        copies: found.copies.len(),
+        written: writes.written,
+        unchanged: writes.unchanged.len(),
+        removed: removed,
+        warnings: run.warnings
+    )
+    next = State(
+        digests: digests,
+        pages: all_pages,
+        facts: run.facts,
+        produced: produced,
+        reads: plan.reads_of(planned),
+        known: known
+    )
+    return ok(Result(report: report, state: next))
+
+# Every source of `found`, `site.toml` first.
+function all_sources(found: sources.Found) -> [str]
+    out: [str] @= ["site.toml"]
+
+    for p in found.pages
+        out @ out.push(p)
+
+    for i in found.images
+        out @ out.push(i)
+
+    for c in found.copies
+        out @ out.push(c.source)
+
+    for t in found.theme
+        out @ out.push(t)
+
+    return out
+
+# `m` without `key`.
+function without(m: {str: str}, key: str) -> {str: str}
+    out: {str: str} @= {}
+
+    for k in keys(m)
+        if k != key
+            out[k] @ m[k].must()
+
+    return out

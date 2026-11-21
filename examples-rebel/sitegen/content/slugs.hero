@@ -1,0 +1,86 @@
+# The slug of a title, the part of a URL that names a page, and the `id` of
+# a heading, the part after `#` that names a place in one.
+#
+# A slug is made character by character as a reader sees characters
+# (Unicode's graphemes, UAX #29), each folded for case and compatibility
+# (`ß` to `ss`, `ﬁ` to `fi`, a full-width `Ａ` to `a`). A character whose
+# decomposition begins with an ASCII letter loses its marks, `ä` to `a`, as a
+# reader typing the URL on an ASCII keyboard expects; any other character is
+# kept whole, in NFC, because stripping a mark from a Japanese or Greek
+# character changes the word (`デ` without its voicing mark is `テ`). The
+# result goes through `strings.to_slug`, which keeps letters and digits of
+# every script and turns each run of spaces and hyphens into one `-`.
+
+use <rebel>/strings
+use <rebel>/unicode/normalize
+use <rebel>/unicode/segment
+
+## Slugs
+
+# The slug of `title`: lower case, Latin letters without their marks, other
+# scripts kept, words joined by `-`.
+#
+# - `title`: any text; one holding no letter and no digit answers the empty
+#   text, which the caller replaces by a name of its own.
+function slug_of(title: str) -> str
+    pieces: [str] @= []
+
+    for g in segment.graphemes(normalize.to_nfc(title))
+        folded = normalize.to_nfkc_casefold(g)
+        decomposed = normalize.to_nfkd(folded)
+
+        if decomposed.len() > 0 && decomposed[0] < 128
+            for c in decomposed.chars()
+                if c[0] < 128
+                    pieces @ pieces.push(c)
+        else
+            pieces @ pieces.push(normalize.to_nfc(folded))
+
+    return strings.to_slug(pieces.join(""))
+
+# `base` made unique among the ids `used` holds, as GitHub numbers a heading
+# that repeats: `notes`, then `notes-1`, `notes-2`; the answer is added to
+# `used`.
+#
+# - `used`: the ids given so far in one page; the answer is added to it.
+# - `base`: the id wanted; the empty one is written `section`.
+function unique_id(@used: {str: bool}, base: str) -> str
+    wanted = if base.len() == 0
+        "section"
+    else
+        base
+    candidate @= wanted
+    n @= 0
+
+    while used[candidate].default(false)
+        n @ n + 1
+        candidate @ f"{wanted}-{n}"
+
+    used[candidate] @ true
+    return candidate
+
+## Tests
+
+test "slug_of: the empty title, punctuation alone, and spaces at both ends"
+    assert slug_of("") == ""
+    assert slug_of(" -- !? ") == ""
+    assert slug_of("  Harbour  notes ") == "harbour-notes"
+
+test "slug_of: Latin marks dropped, sharp s and a ligature folded"
+    assert slug_of("Äpfel am Hafen") == "apfel-am-hafen"
+    assert slug_of("Öresundsbron") == "oresundsbron"
+    assert slug_of("Straße") == "strasse"
+    assert slug_of("ﬁsh Café") == "fish-cafe"
+
+test "slug_of: a Japanese voicing mark and a Greek accent kept, a full-width letter folded"
+    assert slug_of("データ") == "データ"
+    assert slug_of("Άλφα") == "άλφα"
+    assert slug_of("ＡＢＣ 1") == "abc-1"
+
+test "unique_id: the empty base, a repeat numbered, the answers remembered"
+    used: {str: bool} @= {}
+    assert unique_id(@used, "") == "section"
+    assert unique_id(@used, "notes") == "notes"
+    assert unique_id(@used, "notes") == "notes-1"
+    assert unique_id(@used, "notes") == "notes-2"
+    assert unique_id(@used, "notes-1") == "notes-1-1"

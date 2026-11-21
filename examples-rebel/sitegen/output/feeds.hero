@@ -1,0 +1,82 @@
+# Each language's Atom feed (RFC 4287): the newest dated pages of the
+# site's feed section, each with its title, its absolute URL as its link
+# and its id, its date as `updated`, and its summary. The feed's own
+# `updated` is its newest entry's date, never the clock's, so a build of
+# the same content writes the same feed.
+
+use <rebel>/bytes
+use <rebel>/time
+use <rebel>/xml
+
+use render/indexes
+use site/model
+use site/places
+
+## Namespaces
+
+# Atom's namespace, RFC 4287 § 2.
+constant ATOM: str
+    "http://www.w3.org/2005/Atom"
+
+## The feed
+
+# The feed of `language`, written to `places.feed`.
+#
+# - `site`: the site, whose feed section, size and base URL apply.
+# - `language`: the feed's language.
+# - `pages`: every page of the site.
+#
+# A language with no dated page in the section has a feed with no entry,
+# `updated` at the Unix epoch. Fails as `xml.format_indented` does, which a
+# title holding a character XML cannot hold makes it do.
+function feed(site: model.Site, language: model.Language, pages: [model.Page]) -> model.Output?
+    entries: [model.Page] @= []
+
+    for page in indexes.by_date(indexes.singles(pages, lang: language.code, section: site.feed_section))
+        if !page.date.is_err() && entries.len() < site.feed_size
+            entries @ entries.push(page)
+
+    newest = if entries.len() > 0
+        entries[0].date.must()
+    else
+        time.epoch()
+    home = places.absolute(site, local: places.home(site, language: language).url)
+    self = places.feed(site, language: language)
+    children: [xml.Node] @= [
+        leaf(name: "id", text: home)
+        leaf(name: "title", text: language.title)
+        leaf(name: "updated", text: time.format(newest, .rfc3339_seconds))
+        link(rel: "self", href: places.absolute(site, local: self.url))
+        link(rel: "alternate", href: home)
+        .element(v: xml.with_child(e: xml.element_in(space: ATOM, name: "author"), inner: xml.with_text(xml.element_in(space: ATOM, name: "name"), language.title)))
+        leaf(name: "generator", text: "sitegen")
+    ]
+
+    for page in entries
+        address = places.absolute(site, local: page.url)
+        entry = xml.Element(
+            name: xml.element_in(space: ATOM, name: "entry").name,
+            attributes: [],
+            children: [leaf(name: "id", text: address), leaf(name: "title", text: page.title), leaf(name: "updated", text: time.format(page.date.must(), .rfc3339_seconds)), link(rel: "alternate", href: address), leaf(name: "summary", text: page.summary)]
+        )
+        children @ children.push(.element(v: entry))
+
+    top = xml.with_attribute_in(
+        xml.with_namespace(xml.element_in(space: ATOM, name: "feed"), prefix: "", space: ATOM),
+        space: xml.XML_SPACE,
+        name: "xml:lang",
+        value: language.tag
+    )
+    root = xml.Element(name: top.name, attributes: top.attributes, children: children)
+    text = xml.format_indented(xml.document(root), 2)?
+    return ok(model.Output(path: self.output, data: bytes.from_text(text + "\n")))
+
+# An Atom element holding `text`.
+function leaf(name: str, text: str) -> xml.Node
+    return .element(v: xml.with_text(xml.element_in(space: ATOM, name: name), text))
+
+# An Atom `link` element.
+function link(rel: str, href: str) -> xml.Node
+    return .element(
+        v: xml.with_attribute(xml.with_attribute(xml.element_in(space: ATOM, name: "link"), name: "rel", value: rel), name: "href", value: href)
+    )

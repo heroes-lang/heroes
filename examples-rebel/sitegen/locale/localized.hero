@@ -1,0 +1,170 @@
+# What a page says in its reader's language beyond its own text: a date as
+# the language writes one, a count and a size with its separators, and the
+# theme's own words (`Read more`, `3 minutes read`) from the theme's gettext
+# catalog for the language, plural forms and all.
+
+use <rebel>/i18n
+use <rebel>/i18n/dates
+use <rebel>/i18n/numbers as i18n_numbers
+use <rebel>/strings
+use <rebel>/time
+
+use site/model
+
+## Words a reader reads in a minute
+
+# The words a reader is taken to read in a minute, which the reading time
+# is counted from. It is this program's choice and not a measurement: a
+# slow pace, so that the time a page announces is rarely too short.
+constant WORDS_PER_MINUTE: i64
+    200
+
+## Dates and numbers
+
+# The date `at` as `language` writes a date in full words, "March 14, 2026",
+# "14. März 2026", in the site's zone.
+#
+# - `language`: the page's language.
+# - `at`: the instant.
+# - `zone`: the zone the date is read in, the site's.
+function date_text(language: model.Language, at: time.Instant, zone: time.Zone) -> str
+    return dates.format_date(language.locale, at, zone, .long)
+
+# The count `n` as `language` writes a whole number: "12,345", "12.345".
+#
+# - `language`: the page's language.
+# - `n`: the number.
+function count_text(language: model.Language, n: i64) -> str
+    return i18n_numbers.format_int(language.locale, n)
+
+# `size` bytes as kilobytes with one decimal, as `language` writes the
+# number: "3.2 kB", "3,2 kB".
+#
+# - `language`: the page's language.
+# - `size`: the size in bytes, 0 or more.
+#
+# The tenth is cut, never rounded up, so a size never reads larger than it
+# is.
+function size_text(language: model.Language, size: i64) -> str
+    whole = size / 1000
+    tenth = size % 1000 / 100
+    options = i18n_numbers.NumberOptions(
+        style: .decimal,
+        currency: "",
+        currency_display: .symbol,
+        min_integer_digits: 1,
+        min_fraction_digits: 1,
+        max_fraction_digits: 1,
+        min_significant_digits: 0,
+        max_significant_digits: 0,
+        rounding: .down,
+        sign: .auto,
+        grouping: .auto,
+        numbering_system: ""
+    )
+    decimal = f"{whole}.{tenth}"
+    number = i18n_numbers.format_number(language.locale, decimal, options).default(decimal)
+    return number + " kB"
+
+## The theme's words
+
+# The theme's words in one language: its gettext catalog, or an empty one
+# where the theme has none, which gives every word back as written.
+record Words
+    # The catalog read from the theme's `i18n/<code>.po`.
+    catalog: i18n.Catalog
+    # The language the words are written in.
+    language: model.Language
+
+# The words of `language` from the text of its `.po` file.
+#
+# - `language`: the language.
+# - `po`: the catalog's text; empty where the theme has none for it.
+# - `name`: the file's name, for the message.
+#
+# Fails `invalid` where `po` is not a gettext catalog, the message naming the
+# file.
+function words_of(language: model.Language, po: str, name: str) -> Words?
+    if po.len() == 0
+        return ok(Words(catalog: i18n.new_catalog([]).must(), language: language))
+
+    catalog = match i18n.parse_po(po)
+        .ok c  => c
+        .err e => return fail(code: e.code, msg: f"{name}: {e.msg}")
+
+    return ok(Words(catalog: catalog, language: language))
+
+# The theme's word `id` in the words' language, or `id` itself where the
+# catalog has no translation of it.
+#
+# - `words`: the language's words.
+# - `id`: the word as the theme writes it in English.
+function word(words: Words, id: str) -> str
+    return i18n.translate(words.catalog, id)
+
+# The theme's phrase for `n` things in the words' language, the plural form
+# chosen by the language's rule for `n`, its `%d` written as `count_text`
+# writes `n`.
+#
+# - `words`: the language's words.
+# - `one`: the English form for one, holding `%d`.
+# - `many`: the English form for any other count, holding `%d`.
+# - `n`: the count, 0 or more.
+function counted(words: Words, one: str, many: str, n: i64) -> str
+    form = i18n.translate_plural(words.catalog, id: one, plural_id: many, n: n)
+    return strings.replace_all(s: form, old: "%d", new: count_text(words.language, n))
+
+# How long a page of `words_count` words takes to read, in the words'
+# language: "3 minutes read", at least one minute.
+#
+# - `words`: the language's words.
+# - `words_count`: the words the page's body holds, 0 or more.
+function reading_time(words: Words, words_count: i64) -> str
+    minutes = (words_count + WORDS_PER_MINUTE - 1) / WORDS_PER_MINUTE
+
+    shown = if minutes < 1
+        1
+    else
+        minutes
+    return counted(words, one: "%d minute read", many: "%d minutes read", n: shown)
+
+## Tests
+
+function test_language(code: str, tag: str) -> model.Language
+    return model.Language(
+        code: code,
+        tag: tag,
+        locale: i18n.parse_locale(tag).must(),
+        title: "",
+        direction: "ltr",
+        prefix: ""
+    )
+
+test "date_text: one instant in English, German and Swedish"
+    at = time.date(year: 2026, month: 3, day: 14).must()
+    utc = time.utc_zone()
+    assert date_text(test_language(code: "en", tag: "en"), at, utc) == "March 14, 2026"
+    assert date_text(test_language(code: "de", tag: "de"), at, utc) == "14. März 2026"
+    assert date_text(test_language(code: "sv", tag: "sv"), at, utc) == "14 mars 2026"
+
+test "size_text: under a kilobyte, a tenth cut and not rounded, German separators"
+    en = test_language(code: "en", tag: "en")
+    assert size_text(en, 0) == "0.0 kB"
+    assert size_text(en, 999) == "0.9 kB"
+    assert size_text(en, 12_399) == "12.3 kB"
+    assert size_text(test_language(code: "de", tag: "de"), 1_234_567) == "1.234,5 kB"
+
+test "reading_time: no words reads in a minute, the plural from the catalog"
+    po = "msgid \"\"\nmsgstr \"\"\n\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n\nmsgid \"%d minute read\"\nmsgid_plural \"%d minutes read\"\nmsgstr[0] \"%d Minute Lesezeit\"\nmsgstr[1] \"%d Minuten Lesezeit\"\n"
+    de = words_of(test_language(code: "de", tag: "de"), po: po, name: "de.po").must()
+    assert reading_time(de, 0) == "1 Minute Lesezeit"
+    assert reading_time(de, 201) == "2 Minuten Lesezeit"
+    en = words_of(test_language(code: "en", tag: "en"), po: "", name: "en.po").must()
+    assert reading_time(en, 450) == "3 minutes read"
+
+test "words_of: a catalog that does not parse names its file"
+    broken = words_of(test_language(code: "de", tag: "de"), po: "msgid \"x", name: "de.po")
+
+    match broken
+        .ok _  => assert false
+        .err e => assert strings.has_prefix(s: e.msg, prefix: "de.po: ")

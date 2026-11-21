@@ -1,0 +1,263 @@
+# An image of the content folder written for the web: read whatever its
+# kind (PNG, JPEG, GIF, BMP, or a Netpbm scan), turned as its camera's EXIF
+# orientation says, written in a kind a browser shows where it is not one
+# (`site.toml`'s `[images.convert]`), and shown on its pages as a thumbnail
+# that fits the site's bound.
+#
+# An image whose kind a browser shows is copied as it is, so its metadata
+# and its quality stay the author's; only a converted image and the
+# thumbnails are encoded here. A thumbnail keeps its image's kind, but a JPEG
+# thumbnail of an image with transparency is laid over white first, since
+# JPEG holds no alpha, and an animated GIF keeps every frame (`gifs`).
+
+use <rebel>/image
+use <rebel>/image/bmp
+use <rebel>/image/gif
+use <rebel>/image/jpeg
+use <rebel>/image/netpbm
+use <rebel>/image/png
+use <rebel>/path
+use <rebel>/url
+
+use media/gifs
+use site/model
+
+## Codes
+
+# The code of a file that is not an image this generator reads.
+constant INVALID: str
+    "invalid"
+
+## Kinds
+
+# The name `site.toml` gives `kind`: `png`, `jpeg`, `gif`, `bmp` or `netpbm`.
+#
+# - `kind`: a kind of image file.
+function kind_name(kind: image.Kind) -> str
+    return match kind
+        .png    => "png"
+        .jpeg   => "jpeg"
+        .gif    => "gif"
+        .bmp    => "bmp"
+        .netpbm => "netpbm"
+
+# The extension an image written as `kind` takes, with its dot.
+#
+# - `kind`: `png`, `jpeg` or `gif`, a kind a browser shows; any other name
+#   is written as PNG.
+function extension_of(kind: str) -> str
+    return match kind
+        "jpeg" => ".jpg"
+        "gif"  => ".gif"
+        _      => ".png"
+
+# The kind an image of kind `read` is written as.
+#
+# - `read`: the kind the file is.
+# - `settings`: the site's image settings, whose `convert` names the kind
+#   to write where `read` is not to be shown as it is.
+function written_kind(read: str, settings: model.ImageSettings) -> str
+    return settings.convert[read].default(read)
+
+## Paths
+
+# Where an image and its thumbnail are written, under the output folder.
+record Places
+    # The image, its extension its written kind's.
+    full: str
+    # The thumbnail: the image's name with `.thumb` before the extension.
+    thumb: str
+
+# Where the image `source` is written.
+#
+# - `source`: its path under the site, `content/images/harbour.jpg`.
+# - `kind`: the kind it is written as.
+# - `converted`: whether that kind is not the one it was read as, so its
+#   extension becomes the kind's; else its name is kept as written.
+function places_of(source: str, kind: str, converted: bool) -> Places
+    under = source.slice(from: 8, to: source.len())
+
+    full = if converted
+        path.with_ext_by(path: under, to: extension_of(kind), rules: .posix).default(under + extension_of(kind))
+    else
+        under
+    extension = path.ext_by(full, .posix).default("")
+    stem = full.slice(from: 0, to: full.len() - extension.len())
+    return Places(full: full, thumb: stem + ".thumb" + extension)
+
+# The URL of an output path under the site's base path, each segment
+# escaped.
+#
+# - `base_path`: the site's base path, ending with `/`.
+# - `output`: a slash-separated path under the output folder.
+function url_of(base_path: str, output: str) -> str
+    escaped: [str] @= []
+
+    for part in path.parts_by(output, .posix)
+        escaped @ escaped.push(url.escape_segment(part))
+
+    return base_path + escaped.join("/")
+
+## Building
+
+# An image built: what its pages need to know, and the files it writes.
+record Built
+    # Its sizes and URLs.
+    facts: model.ImageFacts
+    # The image and its thumbnail.
+    outputs: [model.Output]
+
+# The image `source`, whose bytes are `data`, built as the module's comment
+# says.
+#
+# - `source`: its path under the site.
+# - `data`: its bytes.
+# - `settings`: the site's image settings.
+# - `base_path`: the site's base path.
+#
+# Fails `invalid` where `data` is no image this generator reads, and as the
+# decoders and encoders do, the message naming the source. A file larger
+# than `image.default_limits` allows fails `limit` before it is decoded.
+function build(source: str, data: [u8], settings: model.ImageSettings, base_path: str) -> Built?
+    kind = match image.kind_of(data)
+        .ok k  => k
+        .err e => return fail(code: INVALID, msg: f"{source} is not a PNG, JPEG, GIF, BMP or Netpbm file: {e.msg}")
+
+    read = kind_name(kind)
+    target = written_kind(read, settings)
+    places = places_of(source: source, kind: target, converted: target != read)
+
+    built = match made(data, kind: kind, target: target, settings: settings)
+        .ok b  => b
+        .err e => return fail(code: e.code, msg: f"{source}: {e.msg}")
+
+    full = if target == read
+        data
+    else
+        built.full
+
+    facts = model.ImageFacts(
+        source: source,
+        url: url_of(base_path: base_path, output: places.full),
+        thumb_url: url_of(base_path: base_path, output: places.thumb),
+        width: built.width,
+        height: built.height,
+        thumb_width: built.thumb_width,
+        thumb_height: built.thumb_height,
+        size: full.len()
+    )
+    outputs = [model.Output(path: places.full, data: full), model.Output(path: places.thumb, data: built.thumb)]
+    return ok(Built(facts: facts, outputs: outputs))
+
+# The pixels made from a file: the image converted where it must be, and
+# its thumbnail.
+record Made
+    # The image written as its target kind; empty where it is copied as it is.
+    full: [u8]
+    # The thumbnail's bytes.
+    thumb: [u8]
+    # The image's width after its orientation.
+    width: i64
+    # Its height.
+    height: i64
+    # The thumbnail's width.
+    thumb_width: i64
+    # The thumbnail's height.
+    thumb_height: i64
+
+function made(data: [u8], kind: image.Kind, target: str, settings: model.ImageSettings) -> Made?
+    limits = image.default_limits()
+    img = decoded(data, kind: kind, limits: limits)?
+
+    full: [u8] = if target == kind_name(kind)
+        []
+    else
+        encoded(img, kind: target, settings: settings)?
+
+    if kind == .gif && target == "gif"
+        animation = gif.decode(data, limits)?
+
+        if animation.frames.len() > 1
+            moving = gifs.thumbnail(animation, max_width: settings.thumb_width, max_height: settings.thumb_height, limits: limits)?
+            return ok(
+                Made(full: full, thumb: moving.data, width: img.width, height: img.height, thumb_width: moving.width, thumb_height: moving.height)
+            )
+
+    small = image.thumbnail(img, max_width: settings.thumb_width, max_height: settings.thumb_height, resampling: .bicubic)?
+    return ok(
+        Made(full: full, thumb: encoded(small, kind: target, settings: settings)?, width: img.width, height: img.height, thumb_width: small.width, thumb_height: small.height)
+    )
+
+# The pixels of `data`, a file of the kind `kind`, turned upright where it is
+# a JPEG whose EXIF says it is not.
+function decoded(data: [u8], kind: image.Kind, limits: image.Limits) -> image.Image?
+    return match kind
+        .png    => png.decode_image(data, limits)
+        .jpeg   => upright(jpeg.decode(data, limits)?)
+        .gif    => gif.decode_image(data, limits)
+        .bmp    => bmp.decode_image(data, limits)
+        .netpbm => netpbm.decode_image(data, limits)
+
+function upright(photo: jpeg.Jpeg) -> image.Image?
+    return image.apply_orientation(photo.image, photo.orientation)
+
+# `img` as a file of the kind `kind`: `png`, `jpeg` or `gif`.
+function encoded(img: image.Image, kind: str, settings: model.ImageSettings) -> [u8]?
+    return match kind
+        "jpeg" => jpeg.encode(for_jpeg(img), jpeg.EncodeOptions(quality: settings.jpeg_quality, subsampling: .half))
+        "gif"  => gif.encode_image(img, dither: false)
+        _      => png.encode(img, png.default_encode_options())
+
+# `img` as JPEG holds an image: laid over white where it has alpha, and at 8
+# bits a sample, gray or RGB as it was.
+function for_jpeg(img: image.Image) -> image.Image
+    opaque = if image.has_alpha(img.format)
+        image.flatten(img, image.Color(r: 255, g: 255, b: 255, a: 255))
+    else
+        img
+
+    target: image.Format = if image.channels_of(opaque.format) <= 2
+        .gray
+    else
+        .rgb
+    return image.convert(opaque, to: target)
+
+## Tests
+
+test "places_of: a JPEG kept with its own extension, a BMP written as PNG, a thumbnail beside each"
+    photo = places_of(source: "content/images/harbour.jpg", kind: "jpeg", converted: false)
+    assert photo.full == "images/harbour.jpg" && photo.thumb == "images/harbour.thumb.jpg"
+    long = places_of(source: "content/images/boat.jpeg", kind: "jpeg", converted: false)
+    assert long.full == "images/boat.jpeg" && long.thumb == "images/boat.thumb.jpeg"
+    bitmap = places_of(source: "content/images/light.bmp", kind: "png", converted: true)
+    assert bitmap.full == "images/light.png" && bitmap.thumb == "images/light.thumb.png"
+
+test "url_of: a segment above ASCII escaped, the base path first"
+    assert url_of(base_path: "/blog/", output: "images/häfen.png") == "/blog/images/h%C3%A4fen.png"
+
+test "written_kind: a BMP converted, a PNG kept"
+    settings = model.ImageSettings(thumb_width: 8, thumb_height: 8, jpeg_quality: 80, convert: {"bmp": "png"})
+    assert written_kind("bmp", settings) == "png"
+    assert written_kind("png", settings) == "png"
+
+test "build: a PNG kept as it is, its thumbnail within the bound and its proportions kept"
+    img = image.blank(width: 40, height: 20, format: .rgb).must()
+    data = png.encode(img, png.default_encode_options()).must()
+    settings = model.ImageSettings(thumb_width: 10, thumb_height: 10, jpeg_quality: 80, convert: {})
+    built = build(source: "content/a.png", data: data, settings: settings, base_path: "/").must()
+    assert built.outputs[0].data == data
+    assert built.facts.thumb_width == 10 && built.facts.thumb_height == 5
+    assert built.facts.width == 40 && built.facts.size == data.len()
+
+test "build: bytes that are no image refused, naming the source"
+    settings = model.ImageSettings(thumb_width: 10, thumb_height: 10, jpeg_quality: 80, convert: {})
+
+    match build(source: "content/x.png", data: [1, 2, 3], settings: settings, base_path: "/")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "for_jpeg: alpha laid over white, sixteen bits made eight"
+    clear = image.blank(width: 2, height: 2, format: .rgba16).must()
+    flat = for_jpeg(clear)
+    assert flat.format == .rgb
+    assert image.color_at(flat, x: 0, y: 0) == image.Color(r: 255, g: 255, b: 255, a: 255)

@@ -1,0 +1,240 @@
+# The watch mode: the site's folder watched as a tree, and after each burst
+# of changes the site built again from the last build's state, reading
+# again only the sources the system told of (`builder.Look.only`), so only
+# the jobs those sources feed run again.
+#
+# What the system tells is a hint and not a record (`fs/watch`'s comment:
+# changes close together may be told as one, a change made just before the
+# watch began may be told, a burst past the watch's room is told as one
+# `overflow`). So a told source is fingerprinted and rebuilt only where its
+# bytes changed; a folder, a rename or an overflow, which name no single
+# source, make every source be read again; and the output folder's own
+# changes, the build's writes, are passed over.
+
+use <rebel>/fs/watch
+use <rebel>/os
+use <rebel>/path
+use <rebel>/strings
+use <rebel>/time
+
+use content/sources
+use pipeline/builder
+use pipeline/reports
+
+## Codes
+
+# The code `watch.wait` fails with once the program is asked to stop.
+constant STOPPED: str
+    "stopped"
+
+## What a wait saw
+
+# The sources a burst of changes touched.
+record Seen
+    # The sources told of, slash-separated paths under the site, sorted, each
+    # once; the output folder's files left out.
+    paths: [str]
+    # Whether something was told that names no single source: a folder, a
+    # rename, an overflow. Every source is then read again.
+    everything: bool
+
+# What `seen` asks the next build to read again.
+#
+# - `seen`: what a wait saw.
+function look_of(seen: Seen) -> builder.Look
+    if seen.everything
+        return .everything
+    return .only(paths: seen.paths)
+
+# The source the event path `told` names, slash-separated under the site.
+# Fails `not_found` where it is not under the site, stands in the output
+# folder, or is a file every build passes over.
+#
+# - `root`: the site's folder, as the watch was opened on it.
+# - `output`: the output folder's name under it.
+# - `told`: an event's path.
+function source_of(root: str, output: str, told: str) -> str?
+    under = match path.relative(path: told, base: root)
+        .ok r  => path.to_slash(r)
+        .err e => return fail(code: "not_found", msg: e.msg)
+
+    if under == "." || strings.has_prefix(s: under, prefix: "../") || under == ".."
+        return fail(code: "not_found", msg: f"{told} is not under {root}")
+
+    if under == output || strings.has_prefix(s: under, prefix: output + "/")
+        return fail(code: "not_found", msg: f"{told} is an output")
+
+    if sources.is_ignored(under)
+        return fail(code: "not_found", msg: f"{told} is passed over")
+    return ok(under)
+
+# `events` added to what was seen so far.
+#
+# - `seen`: the sources and the flag so far; changed in place. A rename
+#   names both its paths, which is how an editor's save by a temporary file
+#   is told; a folder's change, an overflow or the watched folder gone ask
+#   for every source.
+# - `events`: what the watch told.
+# - `root`: the site's folder.
+# - `output`: the output folder's name.
+function take(@seen: Seen, events: [watch.Event], root: str, output: str)
+    for event in events
+        told: [str] = match event.change
+            .renamed r                                                       => [r.from, event.path]
+            .overflow | .gone | .created | .removed | .changed | .attributes => [event.path]
+
+        whole = match event.change
+            .overflow | .gone                                         => true
+            .renamed _ | .created | .removed | .changed | .attributes => event.directory
+
+        if whole
+            seen.everything @ true
+        else
+            for p in told
+                match source_of(root: root, output: output, told: p)
+                    .ok source => seen.paths @ sorted_with(seen.paths, added: source)
+                    .err _     => _ = 0
+
+# `names` with `added` among them, sorted, each once.
+function sorted_with(names: [str], added: str) -> [str]
+    for n in names
+        if n == added
+            return names
+
+    grown @= names
+    grown @ grown.push(added)
+    return sort(grown)
+
+## Waiting
+
+# The next burst of changes: the first event waited for up to `limit`, then
+# every event told until `quiet` passes with none, so an editor's save of
+# several files is one rebuild.
+#
+# - `w`: the watch of the site's folder.
+# - `root`: the site's folder.
+# - `output`: the output folder's name.
+# - `limit`: the longest to wait for the first event.
+# - `quiet`: the pause that ends a burst.
+#
+# Empty where `limit` passed with nothing told. Fails as `watch.wait` does:
+# `stopped` once the program is asked to stop.
+function burst(w: watch.Watch, root: str, output: str, limit: time.Duration, quiet: time.Duration) -> Seen?
+    seen @= Seen(paths: [], everything: false)
+    first = watch.wait(w, limit)?
+
+    if first.len() == 0
+        return ok(seen)
+
+    take(@seen, events: first, root: root, output: output)
+    more @= watch.wait(w, quiet)?
+
+    while more.len() > 0
+        take(@seen, events: more, root: root, output: output)
+        more @ watch.wait(w, quiet)?
+
+    return ok(seen)
+
+# The changes that follow an edit the caller makes itself: bursts taken for
+# up to `limit` until one names `expected`, every source told on the way
+# kept. Where `limit` passes without it, every source is read again, so the
+# next build finds the change by its fingerprint all the same.
+#
+# - `w`: the watch of the site's folder.
+# - `root`: the site's folder.
+# - `output`: the output folder's name.
+# - `expected`: the source the caller changed.
+# - `limit`: the longest to wait.
+#
+# Fails as `watch.wait` does.
+function until_told(w: watch.Watch, root: str, output: str, expected: str, limit: time.Duration) -> Seen?
+    start = time.mark()?
+    seen @= Seen(paths: [], everything: false)
+    step = time.milliseconds(250).must()
+
+    while true
+        got = burst(w, root: root, output: output, limit: step, quiet: step)?
+
+        for p in got.paths
+            seen.paths @ sorted_with(seen.paths, added: p)
+
+        if got.everything
+            seen.everything @ true
+
+        for p in seen.paths
+            if p == expected
+                return ok(seen)
+
+        if seen.everything || time.is_longer(a: time.elapsed(start)?, b: limit)
+            return ok(Seen(paths: seen.paths, everything: true))
+
+## The loop
+
+# The site at `root` built, then built again after each burst of changes,
+# until the program is asked to stop (Ctrl-C or SIGTERM); each build's
+# summary and details printed. A build that fails is told and leaves the
+# last good state in place, so the next save tries again.
+#
+# - `root`: the site's folder.
+# - `output`: the output folder's name, whose changes are passed over.
+#
+# Fails where the first build fails, or where the watch cannot be opened or
+# fails otherwise than by the stop.
+function run(root: str, output: str) -> ()?
+    os.catch_stop()?
+    first = builder.build(root, state: builder.empty_state(), look: .everything)?
+    print(reports.summary(first.report))
+    state @= first.state
+    w @= watch.open_tree(root)?
+    print(f"watching {root} (Ctrl-C stops)")
+
+    while true
+        seen = match burst(w, root: root, output: output, limit: time.max_duration(), quiet: time.milliseconds(150).must())
+            .ok s => s
+            .err e =>
+                if e.code == STOPPED
+                    break
+                watch.close(@w)?
+                return fail(code: e.code, msg: e.msg)
+
+        if seen.paths.len() == 0 && !seen.everything
+            continue
+
+        match builder.build(root, state: state, look: look_of(seen))
+            .ok r =>
+                print(reports.summary(r.report))
+
+                for line in reports.details(r.report, changed: true, written: true)
+                    print(line)
+
+                state @ r.state
+            .err e => print(f"build failed: {e.msg}")
+
+    watch.close(@w)?
+    print("stopped")
+    return ok()
+
+## Tests
+
+test "source_of: a page, the output folder, a hidden file, and a path outside the site"
+    assert source_of(root: "site", output: "public", told: path.join_all(["site", "content", "a.md"])).must() == "content/a.md"
+    assert source_of(root: "site", output: "public", told: path.join_all(["site", "public", "index.html"])).is_err()
+    assert source_of(root: "site", output: "public", told: path.join_all(["site", "content", ".a.md.swp"])).is_err()
+    assert source_of(root: "site", output: "public", told: "elsewhere/a.md").is_err()
+
+test "take: a file kept once, a rename naming both paths, a folder reading everything, an output passed over"
+    seen @= Seen(paths: [], everything: false)
+    changed = watch.Event(path: path.join_all(["site", "content", "a.md"]), change: .changed, directory: false)
+    output = watch.Event(path: path.join_all(["site", "public", "a.html"]), change: .created, directory: false)
+    take(@seen, events: [changed, changed, output], root: "site", output: "public")
+    assert seen.paths == ["content/a.md"] && !seen.everything
+    saved = watch.Event(
+        path: path.join_all(["site", "content", "b.md"]),
+        change: .renamed(from: path.join_all(["site", "content", ".b.md.tmp"])),
+        directory: false
+    )
+    take(@seen, events: [saved], root: "site", output: "public")
+    assert seen.paths == ["content/a.md", "content/b.md"] && !seen.everything
+    folder = watch.Event(path: path.join_all(["site", "content", "new"]), change: .created, directory: true)
+    take(@seen, events: [folder], root: "site", output: "public")
+    assert seen.everything

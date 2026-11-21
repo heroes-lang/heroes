@@ -1,0 +1,212 @@
+# The demo: `sitegen demo <dir>` writes the bundled site `Harbour Notes`
+# into `<dir>` (its text from `content` and `theme_files`, its images drawn
+# by `pictures`), builds it, prints the output folder's files with their
+# sizes and digests and a few lines read back from the pages, then watches
+# the folder while it makes three edits of its own, printing after each what
+# the rebuild changed.
+#
+# Everything printed is the same on every run and every machine: no time, no
+# absolute path, and the watch's own events never printed, only the
+# rebuild they lead to, which is decided by the sources' fingerprints (see
+# `watching.until_told`). Last, the edited site is built whole from nothing:
+# where the watch's rebuilds missed a file a source feeds, that build writes
+# it, so its line, `0 written`, checks the plan's dependencies. The folder is
+# made afresh at the start and left in place at the end, so the site can be
+# opened in a browser.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/fs/watch
+use <rebel>/html
+use <rebel>/path
+use <rebel>/strings
+use <rebel>/time
+
+use content/sources
+use demo/content
+use demo/pictures
+use demo/theme_files
+use output/outputs
+use pipeline/builder
+use pipeline/reports
+use site/model
+use site/settings
+use watch/watching
+
+## The session
+
+# The demo run in the folder `root`, as the module's comment says.
+#
+# - `root`: the folder the site is written to; whatever stands there is
+#   removed first.
+#
+# Fails as writing the files, building or watching fails.
+function run(root: str) -> ()?
+    if fs.exists(root).default(false)
+        fs.remove_all(root)?
+
+    for f in content.files()
+        put_text(root: root, name: f.name, text: f.text)?
+
+    for f in theme_files.files()
+        put_text(root: root, name: f.name, text: f.text)?
+
+    for f in pictures.files()
+        put_bytes(root: root, name: f.name, data: f.data)?
+
+    print("sitegen demo: Harbour Notes, in English, German and Swedish")
+    first = builder.build(root, state: builder.empty_state(), look: .everything)?
+    print("build: " + reports.summary(first.report))
+
+    for line in reports.details(first.report, changed: false, written: false)
+        print("  " + line)
+
+    site = settings.read(root: root, text: sources.read_text(root: root, name: "site.toml")?)?
+    print(site.output + "/")
+
+    for line in outputs.listing(site)?
+        print("  " + line)
+
+    print("rendered:")
+
+    for line in rendered(site, pages: first.state.pages)?
+        print("  " + line)
+
+    w @= watch.open_tree(root)?
+    watched = edits(w, site: site, state: first.state)
+    watch.close(@w)?
+    last = watched?
+    print(f"after the edits: {last.produced.len()} jobs, {last.known.len()} files in {site.output}/")
+    again = builder.build(root, state: builder.empty_state(), look: .everything)?
+    print("whole build, to check the watch's rebuilds: " + reports.summary(again.report))
+    return ok()
+
+# The three edits made one after another while `w` watches, each rebuilt
+# from the state the one before left; answers the last state. The caller
+# closes `w` whether this succeeds or fails.
+function edits(w: watch.Watch, site: model.Site, state: builder.State) -> builder.State?
+    after_text = edited(w, site: site, state: state, edit: Edit(name: "content/posts/zebra.sv.md", text: content.zebra_sv_edited().text, data: [], remove: false))?
+    after_image = edited(w, site: site, state: after_text, edit: Edit(name: "content/images/lighthouse.bmp", text: "", data: pictures.night_lighthouse().data, remove: false))?
+    return edited(
+        w,
+        site: site,
+        state: after_image,
+        edit: Edit(name: "content/about.de.md", text: "", data: [], remove: true)
+    )
+
+## Edits
+
+# One edit the demo makes while it watches.
+record Edit
+    # The source edited.
+    name: str
+    # Its new text, where it is a text.
+    text: str
+    # Its new bytes, where it is an image.
+    data: [u8]
+    # Whether it is removed instead.
+    remove: bool
+
+# `edit` made, the watch waited on until it tells of it, and the site
+# rebuilt from `state`; what the rebuild did printed. Answers the state the
+# rebuild leaves.
+function edited(w: watch.Watch, site: model.Site, state: builder.State, edit: Edit) -> builder.State?
+    if edit.remove
+        fs.remove(sources.on_disk(root: site.root, name: edit.name))?
+        print(f"watch: {edit.name} removed")
+    else if edit.data.len() > 0
+        put_bytes(root: site.root, name: edit.name, data: edit.data)?
+        print(f"watch: {edit.name} replaced")
+    else
+        put_text(root: site.root, name: edit.name, text: edit.text)?
+        print(f"watch: {edit.name} edited")
+
+    seen = watching.until_told(w, root: site.root, output: site.output, expected: edit.name, limit: time.seconds(20).must())?
+    result = builder.build(site.root, state: state, look: watching.look_of(seen))?
+    print("  rebuilt: " + reports.summary(result.report))
+
+    for line in reports.details(result.report, changed: true, written: true)
+        print("  " + line)
+
+    return ok(result.state)
+
+## Writing the site
+
+function put_text(root: str, name: str, text: str) -> ()?
+    return put_bytes(root: root, name: name, data: bytes.from_text(text))
+
+# `data` written to the source `name` of the site at `root`, its folders made
+# first. The folder is the written path's `path.parent`, never `<root>/.`,
+# which `fs.make_dir_all` refuses while `<root>` is missing (defect draft
+# d-app-sitegen-1).
+function put_bytes(root: str, name: str, data: [u8]) -> ()?
+    target = sources.on_disk(root: root, name: name)
+    fs.make_dir_all(path.parent(target))?
+    return fs.write_atomic_bytes(target, data)
+
+## Lines read back
+
+# A few lines read back from the built pages, which show what the
+# generator did with the text: each language's A to Z index in its own
+# order, a date and a reading time in each language, a thumbnail with its
+# size in German numbers, a link to an internationalized domain written in
+# ASCII, a page's contents, and the sitemap's first URL.
+#
+# - `site`: the site.
+# - `pages`: every page read, by source.
+function rendered(site: model.Site, pages: {str: model.Page}) -> [str]?
+    out: [str] @= []
+
+    for code in ["en", "de", "sv"]
+        prefix = if code == "en"
+            ""
+        else
+            code + "/"
+        index = page_html(site, name: prefix + "a-z/index.html")?
+        groups: [str] @= []
+
+        for section in html.select_all(index, html.ROOT, "section.letter").default([])
+            letter = html.text_of(index, html.select(index, section, "h2").must())
+            titles: [str] @= []
+
+            for item in html.select_all(index, section, "li").default([])
+                titles @ titles.push(html.text_of(index, item))
+
+            groups @ groups.push(letter + ": " + titles.join(", "))
+
+        out @ out.push(f"{code} a-z    {groups.join(" | ")}")
+
+    for code in ["en", "de", "sv"]
+        source = if code == "en"
+            "content/posts/apples.md"
+        else
+            f"content/posts/apples.{code}.md"
+        doc = page_html(site, name: pages[source].must().output)?
+        meta = html.select(doc, html.ROOT, "p.meta").must()
+        out @ out.push(f"{code} date   {html.text_of(doc, meta)}")
+
+    zebra = page_html(site, name: pages["content/posts/zebra.de.md"].must().output)?
+    out @ out.push("de image  " + html.format_node(zebra, html.select(zebra, html.ROOT, "a.image").must()))
+
+    apples = page_html(site, name: pages["content/posts/apples.md"].must().output)?
+    out @ out.push(
+        "en link   " + html.attribute(apples, html.select(apples, html.ROOT, "a[rel=external]").must(), "href").must()
+    )
+
+    arrival = page_html(site, name: pages["content/posts/arrival.md"].must().output)?
+    anchors: [str] @= []
+
+    for a in html.select_all(arrival, html.ROOT, "nav.toc a").default([])
+        anchors @ anchors.push(html.attribute(arrival, a, "href").must())
+
+    out @ out.push("en toc    " + anchors.join(" "))
+
+    listed = sources.read_text(root: site.root, name: site.output + "/sitemap.xml")?
+    locs = strings.split(s: listed, sep: "<loc>")
+    first = strings.split_once(s: locs[1], sep: "</loc>").must().before
+    out @ out.push(f"sitemap   {locs.len() - 1} URLs, the first {first}")
+    return ok(out)
+
+# The built page `name` of the output folder, read as HTML.
+function page_html(site: model.Site, name: str) -> html.Document?
+    return ok(html.parse(sources.read_text(root: site.root, name: site.output + "/" + name)?))

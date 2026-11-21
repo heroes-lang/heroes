@@ -1,0 +1,284 @@
+# The demo site's theme, `harbour`, as the files `sitegen demo` writes
+# under `themes/harbour/`: the skeleton every page is written inside, a
+# layout for each kind of page, the partials they share, a style sheet, and
+# the theme's words in English, German and Swedish as gettext catalogs.
+#
+# The layouts are `template`'s HTML mode, so every value is escaped where it
+# lands; a page's body comes in as the template `content`, which a layout
+# includes. Each text is kept as its lines, joined when the file is written.
+
+## The files
+
+# A file of the theme: its path under the site's folder and its text.
+record File
+    # The path, slash-separated, under the site's folder.
+    name: str
+    # What it holds.
+    text: str
+
+# Every file of the theme.
+function files() -> [File]
+    return [
+        theme_file(name: "layouts/base.html", lines: base())
+        theme_file(name: "layouts/single.html", lines: single())
+        theme_file(name: "layouts/home.html", lines: home())
+        theme_file(name: "layouts/list.html", lines: list_layout())
+        theme_file(name: "layouts/alphabet.html", lines: alphabet())
+        theme_file(name: "layouts/tag.html", lines: tag())
+        theme_file(name: "partials/header.html", lines: header())
+        theme_file(name: "partials/footer.html", lines: footer())
+        theme_file(name: "partials/card.html", lines: card())
+        theme_file(name: "static/style.css", lines: style())
+        theme_file(name: "i18n/en.po", lines: po_en())
+        theme_file(name: "i18n/de.po", lines: po_de())
+        theme_file(name: "i18n/sv.po", lines: po_sv())
+    ]
+
+function theme_file(name: str, lines: [str]) -> File
+    return File(name: "themes/harbour/" + name, text: lines.join("\n") + "\n")
+
+## Layouts
+
+function base() -> [str]
+    return [
+        "<!doctype html>"
+        "<html lang=\"{{ .lang.tag }}\" dir=\"{{ .lang.dir }}\">"
+        "<head>"
+        "<meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        "<title>{{ .title }} · {{ .site.title }}</title>"
+        "<link rel=\"stylesheet\" href=\"{{ .site.base }}style.css\">"
+        "<link rel=\"alternate\" type=\"application/atom+xml\" title=\"{{ .site.title }}\" href=\"{{ .lang.feed }}\">"
+        "{{- for $a in .alternates }}"
+        "<link rel=\"alternate\" hreflang=\"{{ $a.tag }}\" href=\"{{ $a.url }}\">"
+        "{{- end }}"
+        "</head>"
+        "<body>"
+        "{{ include \"header\" . }}"
+        "{{ include \"main\" . }}"
+        "{{ include \"footer\" . }}"
+        "</body>"
+        "</html>"
+    ]
+
+function single() -> [str]
+    return [
+        "<main>"
+        "<article>"
+        "<h1>{{ .page.title }}</h1>"
+        "{{ if .page.date }}<p class=\"meta\"><time datetime=\"{{ .page.datetime }}\">{{ .page.date }}</time> · {{ .page.reading }}</p>{{ end }}"
+        "{{ if .page.toc }}<nav class=\"toc\"><p>{{ .t.contents }}</p><ol>"
+        "{{- for $h in .page.toc }}"
+        "<li class=\"level-{{ $h.level }}\"><a href=\"#{{ $h.id }}\">{{ $h.text }}</a></li>"
+        "{{- end }}"
+        "</ol></nav>{{ end }}"
+        "{{ include \"content\" . }}"
+        "{{ if .page.tags }}<ul class=\"tags\" aria-label=\"{{ .t.tags }}\">"
+        "{{- for $t in .page.tags }}"
+        "<li><a href=\"{{ $t.url }}\">{{ $t.name }}</a></li>"
+        "{{- end }}"
+        "</ul>{{ end }}"
+        "</article>"
+        "</main>"
+    ]
+
+function home() -> [str]
+    return [
+        "<main>"
+        "<section class=\"intro\">"
+        "{{ include \"content\" . }}"
+        "</section>"
+        "<h2>{{ .t.recent }}</h2>"
+        "{{- for $p in .pages }}"
+        "{{ include \"card\" $p }}"
+        "{{- end }}"
+        "<p class=\"counted\">{{ .counted.pages }} · {{ .counted.words }}</p>"
+        "</main>"
+    ]
+
+function list_layout() -> [str]
+    return [
+        "<main>"
+        "<h1>{{ .heading }}</h1>"
+        "{{ include \"content\" . }}"
+        "{{- for $p in .pages }}"
+        "{{ include \"card\" $p }}"
+        "{{- else }}"
+        "<p class=\"empty\">—</p>"
+        "{{- end }}"
+        "<p class=\"counted\">{{ .counted.pages }}</p>"
+        "</main>"
+    ]
+
+function alphabet() -> [str]
+    return [
+        "<main>"
+        "<h1>{{ .heading }}</h1>"
+        "{{- for $g in .groups }}"
+        "<section class=\"letter\">"
+        "<h2>{{ $g.letter }}</h2>"
+        "<ol>"
+        "{{- for $p in $g.pages }}"
+        "<li><a href=\"{{ $p.url }}\">{{ $p.title }}</a></li>"
+        "{{- end }}"
+        "</ol>"
+        "</section>"
+        "{{- end }}"
+        "<p class=\"counted\">{{ .counted.pages }} · {{ .counted.words }}</p>"
+        "</main>"
+    ]
+
+function tag() -> [str]
+    return [
+        "<main>"
+        "<h1>{{ .t.tagged }}: {{ .heading }}</h1>"
+        "{{- for $p in .pages }}"
+        "{{ include \"card\" $p }}"
+        "{{- end }}"
+        "</main>"
+    ]
+
+## Partials
+
+function header() -> [str]
+    return [
+        "<header>"
+        "<a class=\"home\" href=\"{{ .site.root }}\">{{ .site.title }}</a>"
+        "<nav>"
+        "{{- for $n in .nav }}"
+        "<a href=\"{{ $n.url }}\">{{ $n.title }}</a>"
+        "{{- end }}"
+        "</nav>"
+        "<ul class=\"languages\" aria-label=\"{{ .t.languages }}\">"
+        "{{- for $l in .languages }}"
+        "<li>{{ if $l.current }}<strong>{{ $l.title }}</strong>{{ else }}<a href=\"{{ $l.url }}\" hreflang=\"{{ $l.tag }}\">{{ $l.title }}</a>{{ end }}</li>"
+        "{{- end }}"
+        "</ul>"
+        "</header>"
+    ]
+
+function footer() -> [str]
+    return [
+        "<footer>"
+        "<p><a href=\"{{ .lang.feed }}\">Atom</a> · sitegen</p>"
+        "</footer>"
+    ]
+
+function card() -> [str]
+    return [
+        "<article class=\"card\">"
+        "<h2><a href=\"{{ .url }}\">{{ .title }}</a></h2>"
+        "{{ if .date }}<p class=\"meta\"><time datetime=\"{{ .datetime }}\">{{ .date }}</time> · {{ .reading }}</p>{{ end }}"
+        "<p>{{ .summary }}</p>"
+        "</article>"
+    ]
+
+## The style sheet
+
+function style() -> [str]
+    return [
+        "body {"
+        "    max-width: 42rem;"
+        "    margin: 2rem auto;"
+        "    padding: 0 1rem;"
+        "    font: 1.05rem/1.55 Georgia, serif;"
+        "    color: #1d2b36;"
+        "    background: #fbfaf7;"
+        "}"
+        "header, footer {"
+        "    display: flex;"
+        "    flex-wrap: wrap;"
+        "    gap: 1rem;"
+        "    align-items: baseline;"
+        "    font-family: system-ui, sans-serif;"
+        "}"
+        "header .home {"
+        "    font-weight: bold;"
+        "    color: #0b4f6c;"
+        "}"
+        ".languages {"
+        "    display: flex;"
+        "    gap: 0.5rem;"
+        "    list-style: none;"
+        "    margin: 0 0 0 auto;"
+        "    padding: 0;"
+        "}"
+        ".meta, .counted {"
+        "    color: #5b6b75;"
+        "    font-size: 0.9rem;"
+        "}"
+        ".toc {"
+        "    border-left: 3px solid #0b4f6c;"
+        "    padding-left: 1rem;"
+        "}"
+        ".toc .level-3 {"
+        "    margin-left: 1rem;"
+        "}"
+        "a.image img {"
+        "    border: 1px solid #c9d3d9;"
+        "    border-radius: 4px;"
+        "}"
+        "pre {"
+        "    overflow-x: auto;"
+        "    padding: 0.75rem;"
+        "    background: #eef2f4;"
+        "}"
+        ".tags {"
+        "    display: flex;"
+        "    gap: 0.5rem;"
+        "    list-style: none;"
+        "    padding: 0;"
+        "}"
+    ]
+
+## The theme's words
+
+# The header every catalog opens with: UTF-8, and the plural rule of the
+# languages here, one form for one and another for every other count.
+function po_header() -> [str]
+    return [
+        "msgid \"\""
+        "msgstr \"\""
+        "\"Content-Type: text/plain; charset=UTF-8\\n\""
+        "\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\""
+        ""
+    ]
+
+# A catalog of `pairs`, each a word and its translation, then the three
+# phrases with plural forms, each with its two forms.
+function po_of(pairs: [str], plurals: [str]) -> [str]
+    out @= po_header()
+
+    for i in range(from: 0, to: pairs.len() / 2)
+        out @ out.push(f"msgid \"{pairs[2 * i]}\"")
+        out @ out.push(f"msgstr \"{pairs[2 * i + 1]}\"")
+        out @ out.push("")
+
+    english = ["%d minute read", "%d minutes read", "%d page", "%d pages", "%d word", "%d words"]
+
+    for i in range(from: 0, to: 3)
+        out @ out.push(f"msgid \"{english[2 * i]}\"")
+        out @ out.push(f"msgid_plural \"{english[2 * i + 1]}\"")
+        out @ out.push(f"msgstr[0] \"{plurals[2 * i]}\"")
+        out @ out.push(f"msgstr[1] \"{plurals[2 * i + 1]}\"")
+        out @ out.push("")
+
+    return out
+
+function po_en() -> [str]
+    return po_of(
+        pairs: ["posts", "Posts", "A–Z", "A–Z"],
+        plurals: ["%d minute read", "%d minutes read", "%d page", "%d pages", "%d word", "%d words"]
+    )
+
+function po_de() -> [str]
+    return po_of(
+        pairs: ["posts", "Beiträge", "A–Z", "A–Z", "Contents", "Inhalt", "Tags", "Schlagwörter", "Recent posts", "Neueste Beiträge", "Languages", "Sprachen", "Pages tagged", "Seiten mit dem Schlagwort"],
+        plurals: ["%d Minute Lesezeit", "%d Minuten Lesezeit", "%d Seite", "%d Seiten", "%d Wort", "%d Wörter"]
+    )
+
+function po_sv() -> [str]
+    return po_of(
+        pairs: ["posts", "Inlägg", "A–Z", "A–Ö", "Contents", "Innehåll", "Tags", "Taggar", "Recent posts", "Senaste inläggen", "Languages", "Språk", "Pages tagged", "Sidor med taggen"],
+        plurals: ["%d minuts läsning", "%d minuters läsning", "%d sida", "%d sidor", "%d ord", "%d ord"]
+    )

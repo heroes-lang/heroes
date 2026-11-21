@@ -1,0 +1,171 @@
+# The jobs of one build run, in two passes: the images first, since every
+# page that shows one writes its size, then every other job with the
+# images' facts in hand. Each job's Brotli copies are made with it, so what
+# a job is recorded to have written is exactly what it wrote; and two jobs
+# that would write one path are refused before anything is written.
+
+use content/sources
+use locale/localized
+use media/images
+use output/precompress
+use pipeline/jobs
+use pipeline/plan
+use render/rendering
+use render/rewrite
+use render/theme
+use site/model
+
+## Codes
+
+# The code of two jobs that would write one output.
+constant EXISTS: str
+    "exists"
+
+## Running
+
+# What running a build's jobs made.
+record Ran
+    # Every file the jobs write, Brotli copies among them.
+    outputs: [model.Output]
+    # The outputs of each job that ran, Brotli copies among them, by name.
+    produced: {str: [str]}
+    # Every image's facts after the run.
+    facts: {str: model.ImageFacts}
+    # What the jobs could not resolve.
+    warnings: [str]
+
+# The jobs `todo` run, the images first.
+#
+# - `site`: the site.
+# - `todo`: the jobs to run, in the plan's order.
+# - `known_facts`: every image's facts as the last build left them, kept for
+#   the images that do not run again.
+# - `found`: the site's sources.
+# - `look_and_feel`: the theme.
+# - `words`: the theme's words in every language.
+# - `live`: the pages, drafts left out.
+#
+# Fails as the first job that fails does.
+function run_jobs(site: model.Site, todo: [plan.Planned], known_facts: {str: model.ImageFacts}, found: sources.Found, look_and_feel: theme.Theme, words: {str: localized.Words}, live: [model.Page]) -> Ran?
+    facts: {str: model.ImageFacts} @= {}
+
+    for image in found.images
+        match known_facts[image]
+            .ok f  => facts[image] @ f
+            .err _ => _ = 0
+
+    made: [model.Output] @= []
+    produced: {str: [str]} @= {}
+    warnings: [str] @= []
+    early = rendering.Context(
+        site: site,
+        theme: look_and_feel,
+        words: words,
+        pages: live,
+        targets: rewrite.Targets(urls: {}, keys: {}, images: {}, files: {})
+    )
+
+    for planned in todo
+        match planned.job
+            .picture _ =>
+                done = jobs.run(early, job: planned.job)?
+
+                for f in done.facts
+                    facts[f.source] @ f
+
+                written = with_copies(done.outputs, settings: site.precompress)?
+                produced[planned.name] @ paths_of(written)
+
+                for o in written
+                    made @ made.push(o)
+            .page _ | .listing _ | .alphabet _ | .tag _ | .feed _ | .sitemap | .copy _ => _ = 0
+
+    context = rendering.Context(
+        site: site,
+        theme: look_and_feel,
+        words: words,
+        pages: live,
+        targets: targets_of(site, pages: live, facts: facts, copies: found.copies)
+    )
+
+    for planned in todo
+        match planned.job
+            .picture _ => _ = 0
+            .page _ | .listing _ | .alphabet _ | .tag _ | .feed _ | .sitemap | .copy _ =>
+                done = jobs.run(context, job: planned.job)?
+                written = with_copies(done.outputs, settings: site.precompress)?
+                produced[planned.name] @ paths_of(written)
+
+                for o in written
+                    made @ made.push(o)
+
+                for w in done.warnings
+                    warnings @ warnings.push(w)
+
+    return ok(Ran(outputs: made, produced: produced, facts: facts, warnings: warnings))
+
+# `outputs` followed by the Brotli copies the settings ask of them. Fails as
+# `precompress.copies` does.
+function with_copies(outputs: [model.Output], settings: model.PrecompressSettings) -> [model.Output]?
+    out @= outputs
+
+    for c in precompress.copies(outputs, settings: settings)?
+        out @ out.push(c)
+
+    return ok(out)
+
+# The paths `outputs` write.
+function paths_of(outputs: [model.Output]) -> [str]
+    out: [str] @= []
+
+    for o in outputs
+        out @ out.push(o.path)
+
+    return out
+
+# The outputs of every planned job: the ones that ran from `ran`, the others
+# from `before`, the last build's. Fails `exists` where two jobs write one
+# path.
+#
+# - `planned`: every job of the plan.
+# - `before`: the outputs of each job as the last build recorded them.
+# - `ran`: the outputs of each job that ran.
+function owners(planned: [plan.Planned], before: {str: [str]}, ran: {str: [str]}) -> {str: [str]}?
+    out: {str: [str]} @= {}
+    owner: {str: str} @= {}
+
+    for p in planned
+        paths = match ran[p.name]
+            .ok mine => mine
+            .err _   => before[p.name].default([])
+
+        for written in paths
+            match owner[written]
+                .ok other => return fail(code: EXISTS, msg: f"{other} and {p.name} would both write {written}")
+                .err _    => owner[written] @ p.name
+
+        out[p.name] @ paths
+
+    return ok(out)
+
+# Where every page, image and copied file of the content folder is written.
+#
+# - `site`: the site.
+# - `pages`: the pages.
+# - `facts`: every image's facts.
+# - `copies`: the copied files.
+function targets_of(site: model.Site, pages: [model.Page], facts: {str: model.ImageFacts}, copies: [sources.Copy]) -> rewrite.Targets
+    urls: {str: str} @= {}
+    keys_of: {str: str} @= {}
+
+    for page in pages
+        urls[page.key + " " + page.lang] @ page.url
+        keys_of[page.source] @ page.key + " " + page.lang
+
+    files: {str: str} @= {}
+
+    for c in copies
+        if c.source.len() > 8 && c.source.slice(from: 0, to: 8) == "content/"
+            files[c.source] @ images.url_of(base_path: site.base_path, output: c.target)
+
+    return rewrite.Targets(urls: urls, keys: keys_of, images: facts, files: files)

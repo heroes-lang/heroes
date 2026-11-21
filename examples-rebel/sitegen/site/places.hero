@@ -1,0 +1,156 @@
+# Where each page the generator makes itself is written and linked from: a
+# language's home, a section's list, the A to Z index, a tag's page and the
+# feed, each as a URL under the site's base path (its segments escaped) and
+# as a path under the output folder (its segments as written), and any of
+# them made absolute for the sitemap and the feeds.
+
+use <rebel>/i18n
+use <rebel>/path
+use <rebel>/time
+use <rebel>/url
+
+use content/slugs
+use site/model
+
+## A place
+
+# A page's URL and output path.
+record Place
+    # The URL under the base path, ending with `/` for a page and with the
+    # file's name for a file.
+    url: str
+    # The path under the output folder.
+    output: str
+
+# The place of the parts `parts` under the language's prefix: a folder
+# holding `index.html` where `file` is empty, else the file `file` in it.
+#
+# - `site`: the site, whose base path begins the URL.
+# - `language`: the language, whose code is the first part where it is not
+#   the first language.
+# - `parts`: the folders below, as written.
+# - `file`: the file's name, or empty for a page.
+function place_of(site: model.Site, language: model.Language, parts: [str], file: str) -> Place
+    segments: [str] @= []
+
+    if language.prefix.len() > 0
+        segments @ segments.push(language.code)
+
+    for part in parts
+        segments @ segments.push(part)
+
+    escaped: [str] @= []
+
+    for part in segments
+        escaped @ escaped.push(url.escape_segment(part) + "/")
+
+    written = path.join_all_by(segments, .posix)
+
+    folder = if written.len() == 0
+        ""
+    else
+        written + "/"
+
+    if file.len() == 0
+        return Place(url: site.base_path + escaped.join(""), output: folder + "index.html")
+    return Place(url: site.base_path + escaped.join("") + url.escape_segment(file), output: folder + file)
+
+## The generator's own pages
+
+# The language's home page.
+#
+# - `site`: the site.
+# - `language`: the language.
+function home(site: model.Site, language: model.Language) -> Place
+    return place_of(site, language: language, parts: [], file: "")
+
+# The list of the section `section`.
+#
+# - `site`: the site.
+# - `language`: the language.
+# - `section`: the section's folder under `content/`.
+function section_list(site: model.Site, language: model.Language, section: str) -> Place
+    return place_of(site, language: language, parts: [section], file: "")
+
+# The index of every page by title, A to Z as the language orders letters.
+#
+# - `site`: the site.
+# - `language`: the language.
+function alphabet(site: model.Site, language: model.Language) -> Place
+    return place_of(site, language: language, parts: ["a-z"], file: "")
+
+# The page of the tag `tag`, under `tags/` by the tag's slug.
+#
+# - `site`: the site.
+# - `language`: the language.
+# - `tag`: the tag as the front matter writes it.
+function tag_page(site: model.Site, language: model.Language, tag: str) -> Place
+    slug = slugs.slug_of(tag)
+
+    name = if slug.len() == 0
+        "tag"
+    else
+        slug
+    return place_of(site, language: language, parts: ["tags", name], file: "")
+
+# The language's Atom feed.
+#
+# - `site`: the site.
+# - `language`: the language.
+function feed(site: model.Site, language: model.Language) -> Place
+    return place_of(site, language: language, parts: [], file: "feed.xml")
+
+# `local`, a URL under the base path, as an absolute URL with the base's
+# host in ASCII.
+#
+# - `site`: the site.
+# - `local`: a URL beginning with the base path.
+function absolute(site: model.Site, local: str) -> str
+    return site.base_ascii + local.slice(from: site.base_path.len(), to: local.len())
+
+## Tests
+
+function test_site() -> model.Site
+    return model.Site(
+        root: "s",
+        title: "T",
+        base_url: "https://bücher.example/blog/",
+        base_ascii: "https://xn--bcher-kva.example/blog/",
+        base_path: "/blog/",
+        theme: "t",
+        zone: time.utc_zone(),
+        languages: [],
+        feed_section: "posts",
+        feed_size: 10,
+        images: model.ImageSettings(thumb_width: 8, thumb_height: 8, jpeg_quality: 80, convert: {}),
+        precompress: model.PrecompressSettings(quality: 5, min_bytes: 0, extensions: []),
+        output: "public"
+    )
+
+function test_language(code: str, prefix: str) -> model.Language
+    return model.Language(
+        code: code,
+        tag: code,
+        locale: i18n.parse_locale(code).must(),
+        title: "",
+        direction: "ltr",
+        prefix: prefix
+    )
+
+test "home: the first language at the base path, another under its code"
+    en = home(test_site(), language: test_language(code: "en", prefix: ""))
+    assert en.url == "/blog/" && en.output == "index.html"
+    sv = home(test_site(), language: test_language(code: "sv", prefix: "sv/"))
+    assert sv.url == "/blog/sv/" && sv.output == "sv/index.html"
+
+test "tag_page: a tag above ASCII escaped in the URL and written as is on disk, a tag of punctuation named tag"
+    de = tag_page(test_site(), language: test_language(code: "de", prefix: "de/"), tag: "Häfen")
+    assert de.url == "/blog/de/tags/hafen/" && de.output == "de/tags/hafen/index.html"
+    jp = tag_page(test_site(), language: test_language(code: "en", prefix: ""), tag: "港")
+    assert jp.url == "/blog/tags/%E6%B8%AF/" && jp.output == "tags/港/index.html"
+    assert tag_page(test_site(), language: test_language(code: "en", prefix: ""), tag: "!").output == "tags/tag/index.html"
+
+test "feed and absolute: a file at the language's root, made absolute with the ASCII host"
+    f = feed(test_site(), language: test_language(code: "de", prefix: "de/"))
+    assert f.url == "/blog/de/feed.xml" && f.output == "de/feed.xml"
+    assert absolute(test_site(), local: f.url) == "https://xn--bcher-kva.example/blog/de/feed.xml"

@@ -1,0 +1,247 @@
+# The orders a language's pages are listed in: a section's pages newest
+# first, every page A to Z as the language orders its letters, and the
+# pages of each tag.
+#
+# A to Z is the language's own order (`i18n/collate`, CLDR's tailoring): in
+# German `Äpfel` stands with the A's, in Swedish after `Z`, because there
+# `ä` is a letter of its own. The letter a group is headed by is the first
+# character of its first title, upper case in the language; the next title
+# joins the group where its own first character differs from it only by
+# accents and case, which is what the collator's primary strength compares.
+
+use <rebel>/bytes
+use <rebel>/i18n
+use <rebel>/i18n/collate
+use <rebel>/lists
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/unicode/normalize
+use <rebel>/unicode/segment
+
+use site/model
+
+## Choosing
+
+# The pages of their own (not a home page or a section's list) in the
+# language `lang`, those of the section `section` alone where it is not
+# empty, in the order of `pages`.
+#
+# - `pages`: every page of the site.
+# - `lang`: a language's code.
+# - `section`: a section's folder, or empty for every section.
+function singles(pages: [model.Page], lang: str, section: str) -> [model.Page]
+    out: [model.Page] @= []
+
+    for page in pages
+        if page.lang == lang && page.kind == .single && (section.len() == 0 || page.section == section)
+            out @ out.push(page)
+
+    return out
+
+# The pages of `pages` whose tags hold `tag`.
+#
+# - `pages`: the pages looked through.
+# - `tag`: the tag, as written.
+function tagged(pages: [model.Page], tag: str) -> [model.Page]
+    out: [model.Page] @= []
+
+    for page in pages
+        for t in page.tags
+            if t == tag
+                out @ out.push(page)
+                break
+
+    return out
+
+# Every tag `pages` hold, each once, by its text's bytes.
+#
+# - `pages`: the pages.
+function tags_of(pages: [model.Page]) -> [str]
+    seen: {str: bool} @= {}
+
+    for page in pages
+        for t in page.tags
+            seen[t] @ true
+
+    return sort(keys(seen))
+
+## By date
+
+# `pages` newest first: a dated page before an undated one, then by date
+# from the newest, then by weight from the lowest, then by title.
+#
+# - `pages`: the pages.
+function by_date(pages: [model.Page]) -> [model.Page]
+    return lists.sort_by(pages, newer_first)
+
+function newer_first(a: model.Page, b: model.Page) -> bool
+    a_dated = !a.date.is_err()
+    b_dated = !b.date.is_err()
+
+    if a_dated != b_dated
+        return a_dated
+
+    if a_dated
+        a_at = a.date.must().unix_nanoseconds
+        b_at = b.date.must().unix_nanoseconds
+
+        if a_at != b_at
+            return a_at > b_at
+
+    if a.weight != b.weight
+        return a.weight < b.weight
+    return strings.compare(a: a.title, b: b.title) < 0
+
+## A to Z
+
+# A page with the key its title sorts by.
+record Keyed
+    # The collator's sort key of the title.
+    key: [u8]
+    # The page.
+    page: model.Page
+
+# Pages under one letter.
+record Group
+    # The letter, upper case in the language.
+    letter: str
+    # The pages, A to Z.
+    pages: [model.Page]
+
+# `pages` by title as `language` orders text, in groups by first letter.
+#
+# - `pages`: the pages.
+# - `language`: the language whose collation and case rules apply.
+#
+# Empty where `pages` is. Titles equal for the collator keep the order of
+# `pages`.
+function alphabet(pages: [model.Page], language: model.Language) -> [Group]
+    collator = collate.collator_of(language.locale)
+    keyed: [Keyed] @= []
+
+    for page in pages
+        keyed @ keyed.push(Keyed(key: collate.sort_key(collator, page.title), page: page))
+
+    sorted = lists.sort_by(keyed, key_before)
+    options = collate.default_options()
+    primary = collate.collator_with(
+        language.locale,
+        collate.CollateOptions(strength: .primary, alternate: options.alternate, max_variable: options.max_variable, case_first: options.case_first, case_level: options.case_level, backwards: options.backwards, numeric: options.numeric)
+    )
+    groups: [Group] @= []
+    letter @= ""
+    members: [model.Page] @= []
+
+    for k in sorted
+        initial = initial_of(title: k.page.title, language: language.code)
+
+        if members.len() > 0 && !collate.equals(primary, a: initial, b: letter)
+            groups @ groups.push(Group(letter: letter, pages: members))
+            members @ []
+
+        if members.len() == 0
+            letter @ initial
+        members @ members.push(k.page)
+
+    if members.len() > 0
+        groups @ groups.push(Group(letter: letter, pages: members))
+    return groups
+
+function key_before(a: Keyed, b: Keyed) -> bool
+    return bytes.compare(a: a.key, b: b.key) < 0
+
+# The first character a reader sees in `title`, upper case in `language`;
+# `#` for an empty title.
+#
+# - `title`: the title.
+# - `language`: the language's code, whose case rules apply.
+function initial_of(title: str, language: str) -> str
+    graphemes = segment.graphemes(normalize.to_nfc(strings.trim(title)))
+
+    if graphemes.len() == 0
+        return "#"
+    return normalize.to_upper_for(s: graphemes[0], language: language)
+
+## Tests
+
+function test_page(title: str, lang: str, day: i64) -> model.Page
+    date: time.Instant? = if day > 0
+        time.date(year: 2026, month: 3, day: day)
+    else
+        fail(code: "not_found", msg: "undated")
+    return model.Page(
+        source: "content/" + title + ".md",
+        lang: lang,
+        key: title,
+        section: "posts",
+        kind: .single,
+        title: title,
+        date: date,
+        draft: false,
+        tags: [],
+        summary: "",
+        words: 0,
+        body: "",
+        slug: title,
+        url: "/" + title + "/",
+        output: title + "/index.html",
+        links: [],
+        weight: 0,
+        params: .null_value
+    )
+
+function test_language(code: str) -> model.Language
+    return model.Language(
+        code: code,
+        tag: code,
+        locale: i18n.parse_locale(code).must(),
+        title: "",
+        direction: "ltr",
+        prefix: ""
+    )
+
+function titles_of(groups: [Group]) -> [str]
+    out: [str] @= []
+
+    for g in groups
+        names: [str] @= []
+
+        for p in g.pages
+            names @ names.push(p.title)
+
+        out @ out.push(g.letter + ": " + names.join(", "))
+
+    return out
+
+test "alphabet: German puts Ä with A and Ö with O, Swedish puts both after Z"
+    titles = ["Zebra", "Äpfel", "Ankunft", "Öl", "Ofen"]
+    pages: [model.Page] @= []
+
+    for t in titles
+        pages @ pages.push(test_page(title: t, lang: "de", day: 1))
+
+    assert titles_of(alphabet(pages, language: test_language("de"))) == ["A: Ankunft, Äpfel", "O: Ofen, Öl", "Z: Zebra"]
+    assert titles_of(alphabet(pages, language: test_language("sv"))) == ["A: Ankunft", "O: Ofen", "Z: Zebra", "Ä: Äpfel", "Ö: Öl"]
+
+test "alphabet: no pages, and a title in lower case headed by its upper case"
+    assert alphabet([], language: test_language("en")).len() == 0
+    assert titles_of(alphabet([test_page(title: "ångest", lang: "sv", day: 1)], language: test_language("sv"))) == ["Å: ångest"]
+
+test "by_date: newest first, an undated page last, one date ordered by title"
+    pages = [
+        test_page(title: "b", lang: "en", day: 3)
+        test_page(title: "old", lang: "en", day: 1)
+        test_page(title: "none", lang: "en", day: 0)
+        test_page(title: "a", lang: "en", day: 3)
+    ]
+    ordered: [str] @= []
+
+    for p in by_date(pages)
+        ordered @ ordered.push(p.title)
+
+    assert ordered == ["a", "b", "old", "none"]
+
+test "initial_of: an empty title, a decomposed accent kept with its letter, Turkish dotted i"
+    assert initial_of(title: "  ", language: "en") == "#"
+    assert initial_of(title: "éclair", language: "fr") == "É"
+    assert initial_of(title: "istanbul", language: "tr") == "İ"
