@@ -122,7 +122,7 @@ function serve_h2_tls(arg: str) -> str
         if answered == 0
             match tls.accept(l, deadline_ms: 10000)
                 .ok accepted =>
-                    stream @= accepted
+                    stream @= accepted.stream
                     tls.set_deadline(stream, deadline_ms: 10000).must()
 
                     match http2.server(@stream, options: http2.default_options())

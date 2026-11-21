@@ -26,7 +26,7 @@ function opened(u: url.Url, deadline_ms: i64, secure: tls.Client) -> io.Stream?
     began = time.mark()?
 
     if u.scheme == "wss"
-        stream @= tls.connect(host: u.host, port: port, deadline_ms: deadline_ms, client: secure)?
+        stream @= tls.connect(host: u.host, port: port, deadline_ms: deadline_ms, client: secure)?.stream
 
         if deadline_ms > 0
             match left_of(began, deadline_ms: deadline_ms)

@@ -224,7 +224,7 @@ function attempt_open(s: Settings, r: http.Request) -> Opened?
     port = url.port_of(u)?
 
     if u.scheme == "https"
-        stream = tls.connect(u.host, port: port, deadline_ms: s.deadline_ms, client: tls.Client(roots: s.roots, protocols: ["http/1.1"]))?
+        stream = tls.connect(u.host, port: port, deadline_ms: s.deadline_ms, client: tls.Client(roots: s.roots, protocols: ["http/1.1"]))?.stream
         o @= Opened(reader: io.reader(stream), link: .secure, head: http.respond_status(200))
         return headed(@o, r: r, s: s)
 

@@ -306,7 +306,7 @@ function connect(opts: Options) -> Client?
             conn = net.connect(opts.host, port: opts.port, deadline_ms: opts.deadline_ms)?
             session.over(out: conn.stream, input: conn.stream, link: .plain(conn: conn), target: target)
         .checked k =>
-            stream = tls.connect(host: opts.host, port: opts.port, deadline_ms: opts.deadline_ms, client: tls.Client(roots: k.roots, protocols: []))?
+            stream = tls.connect(host: opts.host, port: opts.port, deadline_ms: opts.deadline_ms, client: tls.Client(roots: k.roots, protocols: []))?.stream
             session.over(out: stream, input: stream, link: .secured, target: target)
 
     c @= Client(session: s)

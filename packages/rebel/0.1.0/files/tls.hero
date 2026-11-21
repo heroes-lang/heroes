@@ -23,9 +23,9 @@
 # Not here yet (`tls.ledger`, `pending`): a client that presents a
 # certificate and a server that asks for one (mutual TLS), the peer's
 # certificate handed to the program, a server choosing its certificate by
-# the name the client sent (SNI), the two addresses of a connection `connect`
-# made, an identity read from PKCS #12, TLS 1.3 asked as the least, a
-# half-close, a revocation asked, channel binding and an encrypted hello.
+# the name the client sent (SNI), an identity read from PKCS #12, TLS 1.3
+# asked as the least, a half-close, a revocation asked, channel binding and
+# an encrypted hello.
 #
 # **On macOS TLS runs only over a connection Network.framework makes**:
 # `connect` and `accept` work everywhere, and `client_over` and
@@ -185,11 +185,12 @@ function is_available() -> bool
 #   then wait as long as the peer takes.
 # - `client`: the authorities trusted and the protocols offered.
 #
-# The stream answered is the caller's to close with `io.close`, which
-# sends the peer TLS's end (close_notify) first. A read answers its end
-# where the peer closes, with or without TLS's end before it, as Python's
-# `ssl` does by default: a protocol that counts its bytes sees what is
-# missing.
+# The connection answered, a `net.Conn` as `net.connect` answers one, holds
+# the TLS stream and the two ends' addresses, its own and the peer's; the
+# stream is the caller's to close with `io.close`, which sends the peer
+# TLS's end (close_notify) first. A read answers its end where the peer
+# closes, with or without TLS's end before it, as Python's `ssl` does by
+# default: a protocol that counts its bytes sees what is missing.
 #
 # Fails `invalid` where `host` is "" or holds a zero byte, `port` or
 # `deadline_ms` is out of range, a protocol's name is empty, longer than 255
@@ -203,15 +204,9 @@ function is_available() -> bool
 # On Windows a closed port on the loopback address is refused after about
 # two seconds per address, the system's own retries. See also
 # `client_over`, `version_of`, `protocol_of`.
-function connect(host: str, port: i64, deadline_ms: i64, client: Client) -> io.Stream?
-    return connections.connect(
-        host: host,
-        port: port,
-        deadline_ms: deadline_ms,
-        roots: client.roots,
-        protocols: client.protocols,
-        checks: hero_tls.HERO_TLS_CHECK_ALL
-    )
+function connect(host: str, port: i64, deadline_ms: i64, client: Client) -> net.Conn?
+    s = connections.connect(host: host, port: port, deadline_ms: deadline_ms, roots: client.roots, protocols: client.protocols, checks: hero_tls.HERO_TLS_CHECK_ALL)?
+    return connections.conn_of(s, asked: "connecting over TLS to " + connections.place(host: host, port: port))
 
 # FOR TESTS ONLY: a TLS connection to `host` at `port` whose peer's
 # certificate is not checked at all, neither its authority, nor its dates,
@@ -224,15 +219,9 @@ function connect(host: str, port: i64, deadline_ms: i64, client: Client) -> io.S
 # - `protocols`: the application protocols offered, as `Client`'s.
 #
 # Fails as `connect` does, but never for a certificate. See also `connect`.
-function connect_unchecked_for_tests(host: str, port: i64, deadline_ms: i64, protocols: [str]) -> io.Stream?
-    return connections.connect(
-        host: host,
-        port: port,
-        deadline_ms: deadline_ms,
-        roots: "",
-        protocols: protocols,
-        checks: hero_tls.HERO_TLS_CHECK_NOTHING_FOR_TESTS
-    )
+function connect_unchecked_for_tests(host: str, port: i64, deadline_ms: i64, protocols: [str]) -> net.Conn?
+    s = connections.connect(host: host, port: port, deadline_ms: deadline_ms, roots: "", protocols: protocols, checks: hero_tls.HERO_TLS_CHECK_NOTHING_FOR_TESTS)?
+    return connections.conn_of(s, asked: "connecting over TLS to " + connections.place(host: host, port: port))
 
 # TLS as the client of `host` over `inner`, a stream already connected to
 # it: what Postgres's `sslmode` and a proxy's tunnel need, where a protocol
@@ -274,8 +263,9 @@ function client_over(@inner: io.Stream, host: str, client: Client) -> io.Stream?
 # - `steps`: the exchange, at most 64 steps, met in order; [] is `connect`.
 #
 # No byte of TLS is sent before the last step is met, and no byte the peer
-# sends after it is read as the exchange's. The stream is the caller's to
-# close.
+# sends after it is read as the exchange's. The connection answered holds
+# the TLS stream, the caller's to close, and the two ends' addresses, as
+# `connect`'s does.
 #
 # Fails `invalid` where a step is empty or past its bound or there are more
 # than 64, where the peer answers other bytes than a step expects (the
@@ -284,7 +274,7 @@ function client_over(@inner: io.Stream, host: str, client: Client) -> io.Stream?
 # `closed` where the peer closes during the exchange, its message showing
 # what it sent; `timeout` where `deadline_ms` passes first; and as `connect`
 # fails otherwise. See also `connect`, `listen_after`, `Step`.
-function connect_after(host: str, port: i64, deadline_ms: i64, client: Client, steps: [Step]) -> io.Stream?
+function connect_after(host: str, port: i64, deadline_ms: i64, client: Client, steps: [Step]) -> net.Conn?
     plain: [connections.Plain] @= []
 
     for step in steps
@@ -298,15 +288,8 @@ function connect_after(host: str, port: i64, deadline_ms: i64, client: Client, s
 
         plain @ plain.push(one)
 
-    return connections.connect_after(
-        host: host,
-        port: port,
-        deadline_ms: deadline_ms,
-        roots: client.roots,
-        protocols: client.protocols,
-        checks: hero_tls.HERO_TLS_CHECK_ALL,
-        steps: plain
-    )
+    s = connections.connect_after(host: host, port: port, deadline_ms: deadline_ms, roots: client.roots, protocols: client.protocols, checks: hero_tls.HERO_TLS_CHECK_ALL, steps: plain)?
+    return connections.conn_of(s, asked: "connecting over TLS to " + connections.place(host: host, port: port))
 
 ## A server
 
@@ -362,14 +345,16 @@ function listen_after(host: str, port: i64, server: Server, steps: [Step]) -> Li
     b = connections.listen_after(host: host, port: port, chain: server.chain, key: server.key, protocols: server.protocols, steps: plain)?
     return ok(Listener(handle: b.handle, port: b.port))
 
-# The next connection `l` holds, once its handshake has ended, as a stream.
+# The next connection `l` holds, once its handshake has ended: its TLS
+# stream and its two ends' addresses, the listener's own and the client's.
 #
 # - `l`: the listener, which stays open.
 # - `deadline_ms`: the milliseconds the handshake may take once a client
 #   has connected, 0 for no limit; the wait for a client has none.
 #
-# The stream answered is the caller's to close. A client whose handshake
-# fails is closed and its failure answered: the caller accepts again.
+# The connection's stream is the caller's to close. A client whose
+# handshake fails is closed and its failure answered: the caller accepts
+# again.
 #
 # Fails `closed` where `l` is closed, or closed on another thread while
 # this waits, or the client closes during the handshake; `timeout` where
@@ -377,18 +362,15 @@ function listen_after(host: str, port: i64, server: Server, steps: [Step]) -> Li
 # the handshake fails. On Windows a client that refuses this server's
 # certificate does so after the handshake, so its accept succeeds and the
 # stream's first read finds the client gone. See also `listen`.
-function accept(l: Listener, deadline_ms: i64) -> io.Stream?
+function accept(l: Listener, deadline_ms: i64) -> net.Conn?
     if deadline_ms < 0
         return failure.of(
             code: INVALID,
             asked: "accepting a TLS connection on port " + to_str(l.port),
             why: "the deadline is below 0"
         )
-    return connections.accept(
-        l.handle,
-        deadline_ms: deadline_ms,
-        asked: "accepting a TLS connection on port " + to_str(l.port)
-    )
+    s = connections.accept(l.handle, deadline_ms: deadline_ms, asked: "accepting a TLS connection on port " + to_str(l.port))?
+    return connections.conn_of(s, asked: "accepting a TLS connection on port " + to_str(l.port))
 
 # Closes `l` and empties the place, so every later call through it fails
 # `closed`; an `accept` another thread waits in ends at once.
@@ -547,7 +529,7 @@ test "connect: example.com at port 443, offering HTTP/1.1"
 
     match made
         .ok s =>
-            stream @= s
+            stream @= s.stream
             assert version_of(stream).must() >= 12
             io.close(@stream).must()
         .err e => assert e.code != INVALID
@@ -559,7 +541,7 @@ test "connect_unchecked_for_tests: example.com, its certificate not looked at"
 
     match made
         .ok s =>
-            stream @= s
+            stream @= s.stream
             io.close(@stream).must()
         .err e => assert e.code != INVALID
 
@@ -594,7 +576,7 @@ test "listen: on the loopback address, a port the system chooses"
             server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: ["http/1.1"])
         ).must()
         client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port)).must()
-        assert loopback.heard_on(accept(l, deadline_ms: 10000)) == "ping"
+        assert loopback.heard_on_conn(accept(l, deadline_ms: 10000)) == "ping"
         assert threads.wait_text(@client) == "ok http/1.1 pong"
         close_listener(@l).must()
 
@@ -608,7 +590,10 @@ test "accept: one client, four bytes each way"
             server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
         ).must()
         client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port)).must()
-        s @= accept(l, deadline_ms: 10000).must()
+        c = accept(l, deadline_ms: 10000).must()
+        assert net.format_address(c.local) == "127.0.0.1:" + to_str(l.port)
+        assert net.is_loopback(c.remote) && c.remote.port != l.port
+        s @= c.stream
         assert io.read_exact(s, n: 4).must() == [112, 105, 110, 103]
         io.write_text(s, text: "pong").must()
         io.close(@s).must()
@@ -658,7 +643,7 @@ test "close_listener: the port listens no more once it returns"
 
             match secured
                 .ok s =>
-                    stream @= s
+                    stream @= s.stream
                     loopback.closed_or_given(@stream)
                     assert false
                 .err e =>
@@ -693,7 +678,7 @@ test "connect: a handshake nobody answers ends timeout"
 
         match silent
             .ok s =>
-                stream @= s
+                stream @= s.stream
                 loopback.closed_or_given(@stream)
                 assert false
             .err e =>
@@ -731,7 +716,7 @@ test "version_of: TLS 1.2 or 1.3, never less"
             server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
         ).must()
         client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port)).must()
-        s @= accept(l, deadline_ms: 10000).must()
+        s @= accept(l, deadline_ms: 10000).must().stream
         version = version_of(s).must()
         assert version == 12 || version == 13
         assert loopback.answer_once(s).must() == "ping"
@@ -749,7 +734,7 @@ test "protocol_of: http/1.1 chosen of the server's two"
             server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: ["h2", "http/1.1"])
         ).must()
         client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port)).must()
-        s @= accept(l, deadline_ms: 10000).must()
+        s @= accept(l, deadline_ms: 10000).must().stream
         assert protocol_of(s).must() == "http/1.1"
         assert loopback.answer_once(s).must() == "ping"
         io.close(@s).must()
@@ -764,13 +749,7 @@ test "connect_after: Postgres's SSLRequest, then TLS"
         server @= threads.spawn_text(body: loopback.serve_after, arg: "postgres " + to_str(port)).must()
         loopback.until_listening(port)
         request: [u8] = [0, 0, 0, 8, 4, 210, 22, 47]
-        s @= connect_after(
-            host: "localhost",
-            port: port,
-            deadline_ms: 10000,
-            client: Client(roots: fixture.ROOT, protocols: []),
-            steps: [.send(data: request), .expect(answer: [83])]
-        ).must()
+        s @= connect_after(host: "localhost", port: port, deadline_ms: 10000, client: Client(roots: fixture.ROOT, protocols: []), steps: [.send(data: request), .expect(answer: [83])]).must().stream
         io.write_text(s, text: "ping").must()
         assert io.read_exact(s, n: 4).must() == [112, 111, 110, 103]
         io.close(@s).must()
@@ -795,7 +774,7 @@ test "listen_after: an SMTP server's STARTTLS, then TLS"
             steps: steps
         ).must()
         client @= threads.spawn_text(body: loopback.client_side, arg: "smtp " + to_str(l.port)).must()
-        assert loopback.heard_on(accept(l, deadline_ms: 10000)) == "ping"
+        assert loopback.heard_on_conn(accept(l, deadline_ms: 10000)) == "ping"
         assert threads.wait_text(@client) == "ok http/1.1 pong"
         close_listener(@l).must()
 
@@ -809,7 +788,7 @@ test "set_deadline: a server's read ended, then the client's bytes read"
             server: Server(chain: TEST_LOCALHOST_CHAIN, key: TEST_LOCALHOST_KEY, protocols: [])
         ).must()
         client @= threads.spawn_text(body: loopback.client_side, arg: "late " + to_str(l.port)).must()
-        s @= accept(l, deadline_ms: 10000).must()
+        s @= accept(l, deadline_ms: 10000).must().stream
         set_deadline(s, deadline_ms: 300).must()
         early = io.read(s, n: 4)
 
@@ -836,7 +815,7 @@ test "set_accept_deadline: no client within 200 ms"
 
         match nobody
             .ok s =>
-                stream @= s
+                stream @= s.stream
                 io.close(@stream).must()
                 assert false
             .err e => assert e.code == TIMEOUT

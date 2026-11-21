@@ -158,7 +158,8 @@ function serve_tls(arg: str) -> str
 
         match tls.accept(l, deadline_ms: 10_000)
             .err _ => _ = 0
-            .ok s =>
+            .ok conn =>
+                s = conn.stream
                 r @= io.reader(s)
 
                 match read.request(@r, bounds: wire.Bounds(head_bytes: 65_536, field_count: 100, body_bytes: 1_048_576))
@@ -195,8 +196,8 @@ function ask_tls(arg: str) -> str
 
     match tls.connect("localhost", port: port, deadline_ms: 10_000, client: tls.Client(roots: tls.TEST_ROOT, protocols: ["http/1.1"]))
         .err e => return e.code + ": " + e.msg
-        .ok s =>
-            stream @= s
+        .ok made =>
+            stream @= made.stream
 
             heard = match io.write_text(stream, text: halves.after)
                 .err e => e.code + ": " + e.msg

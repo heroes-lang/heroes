@@ -1876,11 +1876,11 @@ function serve_tls(s: Server, l: tls.Listener, handler: (function(Request) -> Re
         match tls.accept(l, deadline_ms: s.deadline_ms)
             .ok accepted =>
                 wait_ms @ 5
-                stream @= accepted
+                stream @= accepted.stream
                 timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline_ms: s.deadline_ms).is_err()
 
                 if timed
-                    _ = serve_stream(s, stream: stream, remote: "", handler: handler)
+                    _ = serve_stream(s, stream: stream, remote: net.format_address(accepted.remote), handler: handler)
 
                 match io.close(@stream)
                     .ok _  => _ = 0
@@ -2027,11 +2027,17 @@ function serve_tls_with<S>(s: Server, l: tls.Listener, state: S, handler: (funct
         match tls.accept(l, deadline_ms: s.deadline_ms)
             .ok accepted =>
                 wait_ms @ 5
-                stream @= accepted
+                stream @= accepted.stream
                 timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline_ms: s.deadline_ms).is_err()
 
                 if timed
-                    _ = serve_stream_with(s, stream: stream, remote: "", state: state, handler: handler)
+                    _ = serve_stream_with(
+                        s,
+                        stream: stream,
+                        remote: net.format_address(accepted.remote),
+                        state: state,
+                        handler: handler
+                    )
 
                 match io.close(@stream)
                     .ok _  => _ = 0
@@ -3730,7 +3736,7 @@ test "serve_stream: a request over TLS from a client of the test authority"
         body: canned.ask_tls,
         arg: f"{l.port}" + canned.SEPARATOR + "TRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
     ).must()
-    stream @= tls.accept(l, deadline_ms: 10_000).must()
+    stream @= tls.accept(l, deadline_ms: 10_000).must().stream
     assert serve_stream(default_server(), stream: stream, remote: "", handler: respond_trace) == 1
     io.close(@stream).must()
     said = threads.wait_text(@t)

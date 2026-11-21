@@ -261,7 +261,7 @@ function serve(arg: str) -> str
                 if e.code == "timeout" || parts[2] == "handshake"
                     break
             .ok taken =>
-                s @= taken
+                s @= taken.stream
 
                 played = if parts[2] == "responder"
                     respond(s)

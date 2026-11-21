@@ -231,10 +231,8 @@ function open(opts: Options) -> Db?
         opts.database
     nonce = scram.new_nonce()?
 
-    made: io.Stream? = match opts.security
-        .plain =>
-            conn = net.connect(opts.host, port: opts.port, deadline_ms: opts.deadline_ms)?
-            ok(conn.stream)
+    made: net.Conn? = match opts.security
+        .plain => net.connect(opts.host, port: opts.port, deadline_ms: opts.deadline_ms)
         .checked c =>
             tls.connect_after(
                 host: opts.host,
@@ -251,7 +249,7 @@ function open(opts: Options) -> Db?
         )
 
     stream = match made
-        .ok s => s
+        .ok c => c.stream
         .err e =>
             # The SSLRequest answered `N`: the server has no TLS to offer.
             if e.code == sql.INVALID && strings.contains(s: e.msg, substr: "heard \"N\")")

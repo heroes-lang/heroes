@@ -42,7 +42,7 @@ function open(target: url.Url, deadline_ms: i64, roots: str) -> Opened?
     port = url.port_of(target)?
 
     if target.scheme == "https"
-        stream = tls.connect(target.host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: ["http/1.1"]))?
+        stream = tls.connect(target.host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: ["http/1.1"]))?.stream
         return ok(Opened(reader: io.reader(stream), link: .secure, head: http.respond_status(200)))
 
     if target.scheme == "http"

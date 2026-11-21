@@ -211,7 +211,7 @@ function connected(secure: bool, host: str, port: i64, deadline_ms: i64, roots: 
     if !secure
         return ok(net.connect(host, port: port, deadline_ms: deadline_ms)?.stream)
     began = time.mark()
-    stream @= tls.connect(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: [http2.ALPN, "http/1.1"]))?
+    stream @= tls.connect(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: [http2.ALPN, "http/1.1"]))?.stream
 
     if deadline_ms <= 0
         return ok(stream)

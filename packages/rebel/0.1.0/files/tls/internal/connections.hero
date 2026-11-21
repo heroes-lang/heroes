@@ -44,6 +44,75 @@ function floor_ms(ms: i64, asked: str) -> i64?
         return ok(hero_tls.HERO_TLS_FOREVER)
     return ok(ms)
 
+# `s`, a TLS stream a call has just made or accepted, as a connection with
+# its two ends' addresses, which the floor reads from the socket under it
+# (Network.framework's connection on macOS). Where an address cannot be
+# read, `s` is closed, and the failure answered.
+#
+# - `s`: the stream, the connection's from this call.
+# - `asked`: what the message of a failure begins with.
+function conn_of(s: io.Stream, asked: str) -> net.Conn?
+    here = end_of(s, remote: false, asked: asked)
+    there = end_of(s, remote: true, asked: asked)
+
+    match here
+        .err e =>
+            closing @= s
+            close_given(@closing)
+            return fail(code: e.code, msg: e.msg)
+        .ok local =>
+            match there
+                .err e =>
+                    closing @= s
+                    close_given(@closing)
+                    return fail(code: e.code, msg: e.msg)
+                .ok remote => return ok(net.Conn(stream: s, local: local, remote: remote))
+
+# Closes `s`, a stream a call made before it failed: the call's own failure
+# is the one answered, so the close's is dropped.
+#
+# - `s`: the stream, closed by this call.
+function close_given(@s: io.Stream)
+    match io.close(@s)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# The address and port of one end of the TLS stream `s`: its own, or its
+# peer's.
+#
+# - `s`: the stream.
+# - `remote`: true for the peer's end, false for its own.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails as the floor fails, and `failed` where it writes no address.
+function end_of(s: io.Stream, remote: bool, asked: str) -> net.Address?
+    written_text: [u8] @= []
+    port: i64 @= 0
+    n: i64 @= 0
+
+    if remote
+        n @ hero_tls.remote(s.handle, @written_text, m: hero_tls.HERO_TLS_ADDRESS_MOST, @port)
+    else
+        n @ hero_tls.local(s.handle, @written_text, m: hero_tls.HERO_TLS_ADDRESS_MOST, @port)
+
+    if n < 0
+        return failure.last(asked: asked)
+
+    match written_text.slice(from: 0, to: n).validated_bytes()
+        .err _ => return failure.of(
+            code: failure.FAILED,
+            asked: asked,
+            why: "the system wrote an address that is not text"
+        )
+        .ok written =>
+            match net.parse_address(written)
+                .err e => return failure.of(
+                    code: failure.FAILED,
+                    asked: asked,
+                    why: "the system wrote no address: " + e.msg
+                )
+                .ok address => return net.with_port(address, port: port)
+
 # The byte count of `b` as C reads it.
 function count_of(b: [u8]) -> u64
     return to_u64(b.len()).must()
