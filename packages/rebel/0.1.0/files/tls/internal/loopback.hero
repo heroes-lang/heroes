@@ -298,13 +298,6 @@ function round_plain(mode: str, first: str) -> str
     net.close_listener(@l).must()
     return said
 
-# A port of the loopback address nothing listens on now.
-function free_port() -> i64
-    l @= net.listen(host: "127.0.0.1", port: 0).must()
-    port = l.address.port
-    net.close_listener(@l).must()
-    return port
-
 # A port of the loopback address that no system gives a socket of its own
 # choosing, for rounds that let a port go and then ask it: a port the system
 # chose, let go, may be given at once to another program's connect or
@@ -347,40 +340,64 @@ function held_elsewhere(port: i64) -> bool
             return false
         .err e => return e.code == net.EXISTS
 
-# Waits until something listens on `port` of the loopback address, by
-# connecting and closing at once, for at most about ten seconds; the server
-# then sees one connection that sends nothing, and accepts again.
-function until_listening(port: i64)
-    tries @= 0
+# A server running on a thread of its own, and the port it listens on.
+record Started
+    # The port the server listens on, the one the system chose for it, which
+    # the server told back.
+    port: i64
+    # The server's thread, whose answer `threads.wait_text` gives.
+    thread: threads.TextThread
 
-    while tries < 500
-        tries @ tries + 1
-        made = net.connect(host: "127.0.0.1", port: port, deadline_ms: 1000)
+# `serve_after` started on a thread of its own for `mode`, `postgres` or
+# `smtp`. The server listens on a port the system chooses and tells it back
+# over a connection to a listener of this thread, so no port is named while
+# nothing holds it, and none is let go for another program to take between
+# a choice and a listen (defect 2633); a server that tells why it listens on
+# none stops the test with its words.
+function start_after(mode: str) -> Started
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+    t = threads.spawn_text(body: serve_after, arg: f"{control.address.port} {mode}").must()
+    told = net.accept(control, deadline_ms: 10000).must()
+    r @= io.reader(told.stream)
+    said = io.read_rest_text(@r).must()
+    io.close(@r.stream).must()
+    net.close_listener(@control).must()
+    return Started(port: port_told(said).must(), thread: t)
 
-        match made
-            .ok c =>
-                s @= c.stream
-                closed_or_given(@s)
-                return
-            .err _ => time.sleep(time.Duration(nanoseconds: 20000000))
+# Tells `text`, the port a server listens on or why it listens on none, to
+# the listener of `start_after` at `control`, and closes.
+function tell(control: i64, text: str)
+    c @= net.connect("127.0.0.1", port: control, deadline_ms: 10000).must()
+    io.write_text(c.stream, text: text).must()
+    io.close(@c.stream).must()
 
-# A server on a thread of its own: `arg` is `"<mode> <port>"`, `postgres` or
-# `smtp`; it listens on that port with the server's exchange before TLS,
+# The port `said` names, or a failure carrying the server's words where it
+# told why it listens on none.
+function port_told(said: str) -> i64?
+    match numbers.parse_int(said)
+        .ok port => return ok(port)
+        .err _   => return fail(code: "failed", msg: "the server listens on no port: " + said)
+
+# A server on a thread of its own: `arg` is `"<control> <mode>"`, the mode
+# `postgres` or `smtp`; it listens on a port the system chooses with the
+# server's exchange before TLS, tells that port to `control` (`tell`),
 # accepts until a connection's exchange and handshake succeed (five tries
 # at most), answers it as `heard_on` does, and closes the listener.
 function serve_after(arg: str) -> str
     parts = strings.split(s: arg, sep: " ")
+    control = numbers.parse_int(parts[0]).must()
 
     if parts.len() != 2
-        return "invalid: not \"<mode> <port>\": " + arg
-    port = numbers.parse_int(parts[1]).default(0)
+        said = "invalid: not \"<control> <mode>\": " + arg
+        tell(control: control, text: said)
+        return said
     steps @= postgres_server("S")
 
-    if parts[0] == "smtp"
+    if parts[1] == "smtp"
         steps @ smtp_server()
     made = connections.listen_after(
         host: "127.0.0.1",
-        port: port,
+        port: 0,
         chain: fixture.LOCALHOST_CHAIN,
         key: fixture.LOCALHOST_KEY,
         protocols: ["http/1.1"],
@@ -388,9 +405,13 @@ function serve_after(arg: str) -> str
     )
 
     match made
-        .err e => return e.code + ": " + e.msg
+        .err e =>
+            said = e.code + ": " + e.msg
+            tell(control: control, text: said)
+            return said
         .ok b =>
             l @= b
+            tell(control: control, text: to_str(l.port))
             heard @= "closed: no client's exchange succeeded"
             connections.set_accept_deadline(l.handle, ms: 15000, asked: "bounding the test's wait").must()
             tries @= 0
