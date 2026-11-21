@@ -837,7 +837,7 @@ test "set_busy_timeout: a write lock another connection holds, waited for 0 ms, 
 
     match set_busy_timeout(@b, time.milliseconds(-1).must())
         .ok _  => assert false
-        .err e => assert e.code == sql.INVALID && e.msg == "a busy timeout of -1 ms is outside 0 to 2147483647"
+        .err e => assert e.code == sql.INVALID && e.msg == "a busy timeout of -1ms is outside zero to 2147483647 ms"
 
     assert set_busy_timeout(@b, time.milliseconds(2147483648).must()).is_err()
     close(@a).must()

@@ -1162,7 +1162,7 @@ test "open: timeouts out of range and a zero byte refused before the manager is 
 
     match open(o)
         .ok _  => assert false
-        .err e => assert e.code == sql.INVALID && e.msg == "a login timeout of -1 seconds is outside 0 to 4294967295"
+        .err e => assert e.code == sql.INVALID && e.msg == "a login timeout of -1ns is outside zero to 4294967295 s"
 
     o.login_timeout @ time.seconds(1).must()
     o.query_timeout @ time.seconds(4294967296).must()
