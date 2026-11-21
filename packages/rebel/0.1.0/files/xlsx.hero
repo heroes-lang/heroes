@@ -36,9 +36,9 @@ use time
 use xlsx/internal/book_read
 use xlsx/internal/book_write
 use xlsx/internal/checks
+use xlsx/internal/converting
 use xlsx/internal/dates
 use xlsx/internal/grow
-use xlsx/internal/model
 use xlsx/internal/names
 use xlsx/internal/numfmt
 use xlsx/internal/samples
@@ -558,182 +558,25 @@ function read(from: io.Stream, options: ReadOptions) -> Workbook?
             msg: f"reading within {options.max_bytes} bytes and {options.max_cells} cells: both bounds are 1 or more"
         )
     book = book_read.read(from, max_bytes: options.max_bytes, max_cells: options.max_cells)?
-    sheets: [Sheet] @= []
+    return converting.workbook_of(book)
 
-    for raw in book.sheets
-        cells: [Cell] @= []
-
-        for c in raw.cells
-            value: Value @= .empty
-
-            if c.kind == model.NUMBER
-                value @ .number(v: c.number)
-            else if c.kind == model.TEXT
-                value @ .text(v: c.text)
-            else if c.kind == model.BOOLEAN
-                value @ .boolean(v: c.number != 0.0)
-            else if c.kind == model.ERROR
-                value @ .error(v: c.text)
-            else if c.kind == model.DATE
-                match dates.date_of(c.number, from_1904: book.from_1904)
-                    .ok d  => value @ .date(v: d)
-                    .err _ => value @ .number(v: c.number)
-            cells @ cells.push(Cell(row: c.row, column: c.column, value: value, formula: c.formula, style: c.style))
-
-        merged: [Area] @= []
-
-        for b in raw.merged
-            merged @ merged.push(
-                Area(first_row: b.first_row, first_column: b.first_column, last_row: b.last_row, last_column: b.last_column)
-            )
-
-        columns: [ColumnFormat] @= []
-
-        for col in raw.columns
-            columns @ columns.push(ColumnFormat(first: col.first, last: col.last, width: col.width, hidden: col.hidden))
-
-        rows: [RowFormat] @= []
-
-        for r in raw.rows
-            rows @ rows.push(RowFormat(row: r.row, height: r.height, hidden: r.hidden))
-
-        links: [Link] @= []
-
-        for l in raw.links
-            area = Area(
-                first_row: l.box.first_row,
-                first_column: l.box.first_column,
-                last_row: l.box.last_row,
-                last_column: l.box.last_column
-            )
-            links @ links.push(
-                Link(area: area, target: l.target, location: l.location, tooltip: l.tooltip, display: l.display)
-            )
-
-        visibility: Visibility = match raw.state
-            "hidden"     => .hidden
-            "veryHidden" => .very_hidden
-            _            => .visible
-
-        sheets @ sheets.push(
-            Sheet(name: raw.name, visibility: visibility, cells: cells, merged: merged, column_formats: columns, row_formats: rows, frozen: Frozen(rows: raw.frozen_rows, columns: raw.frozen_columns), links: links)
-        )
-
-    styles: [Style] @= []
-
-    for s in book.styles
-        underline: Underline = match s.underline
-            "single"           => .single
-            "double"           => .double
-            "singleAccounting" => .single_accounting
-            "doubleAccounting" => .double_accounting
-            _                  => .none
-
-        pattern: Pattern = match s.pattern
-            "solid"           => .solid
-            "gray0625"        => .gray_0625
-            "gray125"         => .gray_125
-            "lightGray"       => .light_gray
-            "mediumGray"      => .medium_gray
-            "darkGray"        => .dark_gray
-            "darkHorizontal"  => .dark_horizontal
-            "darkVertical"    => .dark_vertical
-            "darkDown"        => .dark_down
-            "darkUp"          => .dark_up
-            "darkGrid"        => .dark_grid
-            "darkTrellis"     => .dark_trellis
-            "lightHorizontal" => .light_horizontal
-            "lightVertical"   => .light_vertical
-            "lightDown"       => .light_down
-            "lightUp"         => .light_up
-            "lightGrid"       => .light_grid
-            "lightTrellis"    => .light_trellis
-            _                 => .none
-
-        edges: [Edge] @= []
-
-        for pair in [[s.left_line, s.left_color], [s.right_line, s.right_color], [s.top_line, s.top_color], [s.bottom_line, s.bottom_color]]
-            line: Line = match pair[0]
-                "thin"             => .thin
-                "medium"           => .medium
-                "thick"            => .thick
-                "dashed"           => .dashed
-                "dotted"           => .dotted
-                "double"           => .double
-                "hair"             => .hair
-                "mediumDashed"     => .medium_dashed
-                "dashDot"          => .dash_dot
-                "mediumDashDot"    => .medium_dash_dot
-                "dashDotDot"       => .dash_dot_dot
-                "mediumDashDotDot" => .medium_dash_dot_dot
-                "slantDashDot"     => .slant_dash_dot
-                _                  => .none
-
-            edges @ edges.push(Edge(line: line, color: pair[1]))
-
-        horizontal: Horizontal = match s.horizontal
-            "left"             => .left
-            "center"           => .center
-            "right"            => .right
-            "fill"             => .fill
-            "justify"          => .justify
-            "centerContinuous" => .center_continuous
-            "distributed"      => .distributed
-            _                  => .general
-
-        vertical: Vertical = match s.vertical
-            "center"      => .center
-            "top"         => .top
-            "justify"     => .justify
-            "distributed" => .distributed
-            _             => .bottom
-
-        styles @ styles.push(
-            Style(font: Font(name: s.font_name, size: s.font_size, color: s.font_color, bold: s.bold, italic: s.italic, underline: underline, strike: s.strike), fill: Fill(pattern: pattern, color: s.fill_color, background: s.fill_background), border: Border(left: edges[0], right: edges[1], top: edges[2], bottom: edges[3]), horizontal: horizontal, vertical: vertical, wrap: s.wrap, number_format: s.number_format)
-        )
-
-    defined_names: [DefinedName] @= []
-
-    for n in book.names
-        defined_names @ defined_names.push(
-            DefinedName(name: n.name, refers_to: n.refers_to, sheet: n.sheet, hidden: n.hidden)
-        )
-
-    epoch: Epoch @= .from_1900
-
-    if book.from_1904
-        epoch @ .from_1904
-    p = book.props
-    return ok(
-        Workbook(sheets: sheets, styles: styles, epoch: epoch, names: defined_names, active: book.active, properties: Properties(title: p.title, subject: p.subject, creator: p.creator, keywords: p.keywords, description: p.description, last_modified_by: p.last_modified_by, category: p.category, created: p.created, modified: p.modified))
-    )
-
-# The workbook whose file's bytes are `data`.
+# The workbook whose file's bytes are `data`, read as `read` reads a file.
 #
 # - `data`: the whole file.
 # - `options`: the bounds reading may not pass.
 #
-# Fails as `read` does, and as `fs` fails to write a temporary file.
+# Fails as `read` does. It reads the zip from the bytes it is given, as
+# `archive.decode_zip` reads one, and writes no file.
 #
-# It writes `data` to a temporary file in the system's folder for them, since
-# a zip is read by seeking, and removes it before it answers.
+# See also `encode`, `read`.
 function decode(data: [u8], options: ReadOptions) -> Workbook?
-    temp @= fs.make_temp_file(dir: "", pattern: "rebel-xlsx-*.xlsx")?
-    wrote = io.write(temp.stream, data: data)
-    closed = io.close(@temp.stream)
-    got: Workbook? @= fail(code: INVALID, msg: "the bytes were not read")
-
-    match wrote
-        .err e => got @ fail(code: e.code, msg: e.msg)
-        .ok _ =>
-            match closed
-                .err e => got @ fail(code: e.code, msg: e.msg)
-                .ok _  => got @ load_with(temp.path, options: options)
-
-    removed = fs.remove(temp.path)
-    book = got?
-    removed?
-    return ok(book)
+    if options.max_bytes < 1 || options.max_cells < 1
+        return fail(
+            code: INVALID,
+            msg: f"reading within {options.max_bytes} bytes and {options.max_cells} cells: both bounds are 1 or more"
+        )
+    book = book_read.decode(data, max_bytes: options.max_bytes, max_cells: options.max_cells)?
+    return converting.workbook_of(book)
 
 ## Writing
 
@@ -773,222 +616,17 @@ function save(workbook: Workbook, path: str) -> ()?
 #
 # See also `save`, `read`.
 function write(workbook: Workbook, to: io.Stream) -> ()?
-    from_1904 = match workbook.epoch
-        .from_1900 => false
-        .from_1904 => true
+    return book_write.write(to, book: converting.book_of(workbook)?)
 
-    sheets: [model.Sheet] @= []
-
-    for s in workbook.sheets
-        cells: [model.Cell] @= []
-
-        for c in s.cells
-            cell @= model.Cell(
-                row: c.row,
-                column: c.column,
-                kind: model.EMPTY,
-                number: 0.0,
-                text: "",
-                formula: c.formula,
-                style: c.style
-            )
-
-            if c.formula.len() > 0 && c.formula[0] == '='
-                cell.formula @ c.formula.slice(from: 1, to: c.formula.len())
-
-            match c.value
-                .empty => _ = 0
-                .number n =>
-                    cell.kind @ model.NUMBER
-                    cell.number @ n.v
-                .text t =>
-                    cell.kind @ model.TEXT
-                    cell.text @ t.v
-                .boolean b =>
-                    cell.kind @ model.BOOLEAN
-
-                    if b.v
-                        cell.number @ 1.0
-                .error e =>
-                    cell.kind @ model.ERROR
-                    cell.text @ e.v
-                .date d =>
-                    match dates.serial_of(d.v, from_1904: from_1904)
-                        .ok serial =>
-                            cell.kind @ model.DATE
-                            cell.number @ serial
-                        .err e => return fail(
-                            code: e.code,
-                            msg: f"the cell {names.name_of(row: c.row, column: c.column).default("?")} of the sheet \"{s.name}\": {e.msg}"
-                        )
-
-            cells @ cells.push(cell)
-
-        merged: [names.Box] @= []
-
-        for a in s.merged
-            merged @ merged.push(
-                names.Box(first_row: a.first_row, first_column: a.first_column, last_row: a.last_row, last_column: a.last_column)
-            )
-
-        columns: [model.Column] @= []
-
-        for col in s.column_formats
-            columns @ columns.push(model.Column(first: col.first, last: col.last, width: col.width, hidden: col.hidden))
-
-        rows: [model.Row] @= []
-
-        for r in s.row_formats
-            rows @ rows.push(model.Row(row: r.row, height: r.height, hidden: r.hidden))
-
-        links: [model.Link] @= []
-
-        for l in s.links
-            box = names.Box(
-                first_row: l.area.first_row,
-                first_column: l.area.first_column,
-                last_row: l.area.last_row,
-                last_column: l.area.last_column
-            )
-            links @ links.push(
-                model.Link(box: box, target: l.target, location: l.location, tooltip: l.tooltip, display: l.display)
-            )
-
-        state = match s.visibility
-            .visible     => "visible"
-            .hidden      => "hidden"
-            .very_hidden => "veryHidden"
-
-        sheets @ sheets.push(
-            model.Sheet(name: s.name, state: state, cells: cells, merged: merged, columns: columns, rows: rows, frozen_rows: s.frozen.rows, frozen_columns: s.frozen.columns, links: links)
-        )
-
-    styles: [model.Style] @= []
-
-    for s in workbook.styles
-        checks.color(s.font.color)?
-        checks.color(s.fill.color)?
-        checks.color(s.fill.background)?
-
-        if s.font.size < 1.0 || s.font.size > 409.0 || s.font.name == ""
-            return fail(
-                code: INVALID,
-                msg: f"a font of {s.font.size} points named \"{s.font.name}\": a font is 1 to 409 points and has a name"
-            )
-
-        underline = match s.font.underline
-            .none              => ""
-            .single            => "single"
-            .double            => "double"
-            .single_accounting => "singleAccounting"
-            .double_accounting => "doubleAccounting"
-
-        pattern = match s.fill.pattern
-            .none             => "none"
-            .solid            => "solid"
-            .gray_0625        => "gray0625"
-            .gray_125         => "gray125"
-            .light_gray       => "lightGray"
-            .medium_gray      => "mediumGray"
-            .dark_gray        => "darkGray"
-            .dark_horizontal  => "darkHorizontal"
-            .dark_vertical    => "darkVertical"
-            .dark_down        => "darkDown"
-            .dark_up          => "darkUp"
-            .dark_grid        => "darkGrid"
-            .dark_trellis     => "darkTrellis"
-            .light_horizontal => "lightHorizontal"
-            .light_vertical   => "lightVertical"
-            .light_down       => "lightDown"
-            .light_up         => "lightUp"
-            .light_grid       => "lightGrid"
-            .light_trellis    => "lightTrellis"
-
-        words: [str] @= []
-
-        for edge in [s.border.left, s.border.right, s.border.top, s.border.bottom]
-            checks.color(edge.color)?
-
-            word = match edge.line
-                .none                => ""
-                .thin                => "thin"
-                .medium              => "medium"
-                .thick               => "thick"
-                .dashed              => "dashed"
-                .dotted              => "dotted"
-                .double              => "double"
-                .hair                => "hair"
-                .medium_dashed       => "mediumDashed"
-                .dash_dot            => "dashDot"
-                .medium_dash_dot     => "mediumDashDot"
-                .dash_dot_dot        => "dashDotDot"
-                .medium_dash_dot_dot => "mediumDashDotDot"
-                .slant_dash_dot      => "slantDashDot"
-
-            words @ words.push(word)
-
-        horizontal = match s.horizontal
-            .general           => "general"
-            .left              => "left"
-            .center            => "center"
-            .right             => "right"
-            .fill              => "fill"
-            .justify           => "justify"
-            .center_continuous => "centerContinuous"
-            .distributed       => "distributed"
-
-        vertical = match s.vertical
-            .bottom      => "bottom"
-            .center      => "center"
-            .top         => "top"
-            .justify     => "justify"
-            .distributed => "distributed"
-
-        styles @ styles.push(
-            model.Style(font_name: s.font.name, font_size: s.font.size, font_color: strings.to_upper_ascii(s.font.color), bold: s.font.bold, italic: s.font.italic, underline: underline, strike: s.font.strike, pattern: pattern, fill_color: strings.to_upper_ascii(s.fill.color), fill_background: strings.to_upper_ascii(s.fill.background), left_line: words[0], left_color: strings.to_upper_ascii(s.border.left.color), right_line: words[1], right_color: strings.to_upper_ascii(s.border.right.color), top_line: words[2], top_color: strings.to_upper_ascii(s.border.top.color), bottom_line: words[3], bottom_color: strings.to_upper_ascii(s.border.bottom.color), horizontal: horizontal, vertical: vertical, wrap: s.wrap, number_format: s.number_format)
-        )
-
-    defined: [model.Name] @= []
-
-    for n in workbook.names
-        defined @ defined.push(model.Name(name: n.name, refers_to: n.refers_to, sheet: n.sheet, hidden: n.hidden))
-
-    p = workbook.properties
-    book = model.Book(
-        sheets: sheets,
-        styles: styles,
-        from_1904: from_1904,
-        names: defined,
-        active: workbook.active,
-        props: model.Props(title: p.title, subject: p.subject, creator: p.creator, keywords: p.keywords, description: p.description, last_modified_by: p.last_modified_by, category: p.category, created: p.created, modified: p.modified)
-    )
-    return book_write.write(to, book: book)
-
-# `workbook` as the bytes of an `.xlsx` file.
+# `workbook` as the bytes of an `.xlsx` file, the same bytes `write` writes.
 #
 # - `workbook`: the workbook.
 #
-# Fails as `write` does, and as `fs` fails to write a temporary file.
+# Fails as `write` does but for the stream's failures. It writes no file.
 #
-# It writes the file to a temporary file in the system's folder for them,
-# reads it back and removes it.
+# See also `decode`, `write`.
 function encode(workbook: Workbook) -> [u8]?
-    temp @= fs.make_temp_file(dir: "", pattern: "rebel-xlsx-*.xlsx")?
-    wrote = write(workbook, to: temp.stream)
-    closed = io.close(@temp.stream)
-    got: [u8]? @= fail(code: INVALID, msg: "the workbook was not written")
-
-    match wrote
-        .err e => got @ fail(code: e.code, msg: e.msg)
-        .ok _ =>
-            match closed
-                .err e => got @ fail(code: e.code, msg: e.msg)
-                .ok _  => got @ fs.read_bytes(temp.path)
-
-    removed = fs.remove(temp.path)
-    data = got?
-    removed?
-    return ok(data)
+    return book_write.encode(converting.book_of(workbook)?)
 
 ## Building
 

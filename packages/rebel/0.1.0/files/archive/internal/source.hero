@@ -1,6 +1,7 @@
 # Where a tar archive's bytes come from: a stream, plain or compressed with
-# gzip, every byte counted against the limit the caller set, so that an
-# archive that expands or goes on without end costs at most that many bytes.
+# gzip, or the archive's plain bytes held in memory; every byte counted
+# against the limit the caller set, so that an archive that expands or goes
+# on without end costs at most that many bytes.
 
 use archive/internal/codes
 use compress
@@ -10,11 +11,18 @@ use io
 record Source
     # Whether the stream is gzip, read through `reader`.
     gzip: bool
-    # The stream, owned by the caller.
+    # Whether the bytes are `held` rather than read from `stream`.
+    holding: bool
+    # The stream, owned by the caller; `codes.no_stream()` where the bytes
+    # are held.
     stream: io.Stream
     # The reader over the stream where it is gzip; made but never read
     # otherwise.
     reader: compress.Reader
+    # The archive's plain bytes where they are held, else empty.
+    held: [u8]
+    # How many of `held` have been read.
+    taken: i64
     # How many bytes of the archive have been read, after gzip.
     used: i64
     # The most bytes of archive that may be read.
@@ -25,8 +33,26 @@ record Source
 function start(stream: io.Stream, gzip: bool, limit: i64) -> Source
     return Source(
         gzip: gzip,
+        holding: false,
         stream: stream,
         reader: compress.reader(stream, format: .gzip, limit: limit),
+        held: [],
+        taken: 0,
+        used: 0,
+        limit: limit
+    )
+
+# A source of the archive whose plain bytes are `data`, of at most `limit`
+# bytes.
+function start_held(data: [u8], limit: i64) -> Source
+    none = codes.no_stream()
+    return Source(
+        gzip: false,
+        holding: true,
+        stream: none,
+        reader: compress.reader(none, format: .gzip, limit: limit),
+        held: data,
+        taken: 0,
         used: 0,
         limit: limit
     )
@@ -43,7 +69,14 @@ function read_some(@src: Source, most: i64) -> [u8]?
         ask @ 65536
     got: [u8] @= []
 
-    if src.gzip
+    if src.holding
+        end: i64 @= src.taken + ask
+
+        if end > src.held.len()
+            end @ src.held.len()
+        got @ src.held.slice(from: src.taken, to: end)
+        src.taken @ end
+    else if src.gzip
         got @ compress.read(@src.reader, most: ask)?
     else
         got @ io.read(src.stream, n: ask)?

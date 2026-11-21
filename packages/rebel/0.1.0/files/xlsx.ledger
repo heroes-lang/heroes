@@ -23,7 +23,7 @@ capability xlsx/open  a workbook read from a file, a stream that can seek, or by
   go      excelize.OpenFile, excelize.OpenReader, File.ReadZipReader, excelize.Options, File.Close, File.CharsetTranscoder
   rust    calamine::open_workbook, open_workbook_from_rs, Xlsx::new, Reader::new, trait.Reader, trait.ReaderRef
   python  openpyxl.load_workbook, openpyxl.open, openpyxl.reader, Workbook.close, Workbook.path, Workbook.read_only, Workbook.data_only
-  note    a stream must seek, since a zip is read from its end, as calamine's Read + Seek; bytes in memory go through a temporary file the call removes; formulas and their values are both kept, so openpyxl's data_only and read_only modes have nothing to choose
+  note    a stream must seek, since a zip is read from its end, as calamine's Read + Seek; bytes in memory are read as they are, the zip read from them by `archive.decode_zip`, and `encode` writes the bytes `write` writes, with no file on the way (a temporary file until 2026-11-21); formulas and their values are both kept, so openpyxl's data_only and read_only modes have nothing to choose
 
 capability xlsx/bounded  a hostile file refused within bounds the caller sets: a zip bomb, an XML bomb, too many cells
   heroes  xlsx.ReadOptions, xlsx.default_read_options, xlsx.DEFAULT_MAX_BYTES, xlsx.DEFAULT_MAX_CELLS

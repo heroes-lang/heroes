@@ -56,7 +56,7 @@ function open(from: io.Stream, budget: i64) -> Package?
     head = io.read(from, n: 8)?
     _ = io.seek(from, offset: 0, from: .start)?
 
-    if head.len() == 8 && head[0] == 0xd0 && head[1] == 0xcf && head[2] == 0x11 && head[3] == 0xe0 && head[4] == 0xa1 && head[5] == 0xb1 && head[6] == 0x1a && head[7] == 0xe1
+    if is_compound(head)
         return fail(
             code: UNSUPPORTED,
             msg: "the file is an OLE compound file: a workbook encrypted with a password, or an `.xls`, neither of which this package reads"
@@ -65,6 +65,24 @@ function open(from: io.Stream, budget: i64) -> Package?
     match archive.zip_reader(from)
         .ok zip => return ok(Package(zip: zip, budget: budget))
         .err e  => return fail(code: e.code, msg: f"the file is not a workbook's zip: {e.msg}")
+
+# The package whose file's bytes are `data`, its zip's directory read from
+# them; refuses an OLE compound file as `open` does.
+function open_bytes(data: [u8], budget: i64) -> Package?
+    if is_compound(data)
+        return fail(
+            code: UNSUPPORTED,
+            msg: "the file is an OLE compound file: a workbook encrypted with a password, or an `.xls`, neither of which this package reads"
+        )
+
+    match archive.decode_zip(data)
+        .ok zip => return ok(Package(zip: zip, budget: budget))
+        .err e  => return fail(code: e.code, msg: f"the file is not a workbook's zip: {e.msg}")
+
+# Whether `head`, a file's first bytes or all of them, opens an OLE compound
+# file.
+function is_compound(head: [u8] lent) -> bool
+    return head.len() >= 8 && head[0] == 0xd0 && head[1] == 0xcf && head[2] == 0x11 && head[3] == 0xe0 && head[4] == 0xa1 && head[5] == 0xb1 && head[6] == 0x1a && head[7] == 0xe1
 
 # The entry of `p` whose name is `name`, compared byte for byte and then in
 # any case of ASCII letters, as the package's names are.

@@ -1,14 +1,20 @@
 # Archives of many files in one: tar (ustar, with PAX records and GNU's long
 # names read) plain or gzip, and zip (stored and deflated members, ZIP64 for
 # large ones), read entry by entry, listed, extracted into a folder, written
-# entry by entry or from files on the disk. Written from POSIX.1-2001's
+# entry by entry or from files on the disk; and read from, or written as,
+# bytes held in memory (`decode_tar`, `encode_tar`, `decode_zip`,
+# `encode_zip`), with no file on the way. Written from POSIX.1-2001's
 # `pax` format and PKWARE's APPNOTE.TXT 6.3; what it writes Python's
 # `tarfile` and `zipfile` read, and what they write, it reads.
 #
 # It compresses nothing by itself: DEFLATE and gzip are `compress`'s. It
 # does not name or walk paths on its own: `fs` and `path` do. Encrypted zip
 # members, methods other than stored and deflated, sparse tar members and
-# archives split over several disks are refused as `unsupported`.
+# archives split over several disks are refused as `unsupported`. A zip
+# member compressed by bzip2, LZMA or Zstandard and a tar compressed by
+# bzip2, xz or Zstandard are not read yet, though Rebel holds the three
+# formats (`compress/bzip2`, `compress/xz`, `compress/zstd`): the ledger
+# keeps them pending.
 #
 # **An archive is not trusted.** Extraction refuses, and never writes, an
 # entry whose name would land outside the target folder: an absolute name,
@@ -35,9 +41,11 @@ use archive/internal/tar_read
 use archive/internal/tar_write
 use archive/internal/zip_end
 use archive/internal/zip_member
+use archive/internal/zip_open
 use archive/internal/zip_read
 use archive/internal/zip_write
 use bytes
+use compress
 use fs
 use io
 use path
@@ -589,6 +597,72 @@ function finish_tar(@w: TarWriter) -> ()?
     tar_write.finish(@w.sink)?
     return ok()
 
+# An entry of a tar archive with its data, whole: what `decode_tar` answers
+# and `encode_tar` takes.
+record TarMember
+    # The entry's header.
+    entry: TarEntry
+    # Its data: a file's bytes, empty for anything else.
+    data: [u8]
+
+# The tar archive whose bytes are `data`, compressed as `compression` says:
+# every entry in order, each with its data whole.
+#
+# - `data`: the archive's bytes, every one of them.
+# - `compression`: none, or gzip, every member of it.
+# - `limit`: the most bytes of archive read, headers and padding included,
+#   after gzip; 0 or more.
+#
+# Fails `limit` where the archive passes `limit`, as `compress.decompress`
+# fails for a gzip that is not one, and as `next_tar_entry` and
+# `read_tar_rest` fail.
+#
+# It holds every entry's data at once, which `limit` bounds; `tar_reader`
+# reads one at a time from a stream. See also `encode_tar`.
+function decode_tar(data: [u8], compression: Compression, limit: i64) -> [TarMember]?
+    plain: [u8] @= data
+
+    match compression
+        .none => _ = 0
+        .gzip => plain @ compress.decompress(data, format: .gzip, limit: limit)?
+
+    r @= TarReader(state: tar_read.start(source.start_held(plain, limit: limit)))
+    members: [TarMember] @= []
+
+    while true
+        match next_tar_entry(@r)?
+            .end     => return ok(members)
+            .entry e => members @ members.push(TarMember(entry: e.value, data: read_tar_rest(@r)?))
+
+    return ok(members)
+
+# `members` as the bytes of a tar archive, compressed as `compression` says
+# (gzip at level 6): each entry's header and data, in order, then the
+# archive's end.
+#
+# - `members`: the entries; each file's size is its data's length, and an
+#   entry that is not a file is given no data.
+# - `compression`: none, or gzip.
+#
+# Fails as `write_tar_entry` fails.
+#
+# The same members always give the same bytes. See also `decode_tar` and
+# `tar_writer`.
+function encode_tar(members: [TarMember], compression: Compression) -> [u8]?
+    w @= TarWriter(sink: tar_write.start_held(), owed: 0, size: 0, name: "")
+
+    for m in members
+        write_tar_entry(@w, entry: m.entry, data: m.data)?
+
+    finish_tar(@w)?
+
+    match compression
+        .none => return ok(w.sink.held)
+        .gzip =>
+            o @= compress.defaults(.gzip)
+            o.level @ 6
+            return compress.compress(w.sink.held, o)
+
 ## Zip
 
 # What a zip archive's central directory says of a member.
@@ -646,11 +720,12 @@ function zip_entry(name: str, kind: Kind) -> ZipEntry
     )
 
 # A zip archive open to read: its central directory read, its members'
-# data read on demand. It holds a copy of the stream and never closes it.
+# data read on demand. Made by `zip_reader` over a stream, of which it holds
+# a copy and never closes it, or by `decode_zip` over bytes, which it holds.
 record ZipReader
-    # The archive's stream, which can seek: a file.
-    from: io.Stream
-    # The stream's size in bytes.
+    # Where the archive's bytes are read from: the stream, or the bytes.
+    source: zip_read.Source
+    # The archive's size in bytes.
     size: i64
     # Every member, in the central directory's order.
     entries: [ZipEntry]
@@ -671,39 +746,20 @@ record ZipReader
 #
 # See also `read_zip_entry` and `extract_zip`.
 function zip_reader(from: io.Stream) -> ZipReader?
-    dir = zip_read.read_directory(from)?
-    entries: [ZipEntry] @= []
+    return zip_open.reader_of(.stream(s: from))
 
-    for m in dir.members
-        unix = m.made_by >> 8 == 3
-        type = m.external >> 16 & 0o170000
-        mode: i64 @= m.external >> 16 & 0o7777
-        kind: Kind @= .file
-        name: str @= m.name
-
-        if name.len() > 0 && name[name.len() - 1] == '/'
-            kind @ .directory
-            name @ name.slice(from: 0, to: name.len() - 1)
-        else if unix && type == 0o120000
-            kind @ .symlink
-        else if unix && type == 0o040000
-            kind @ .directory
-
-        if !unix || mode == 0
-            mode @ 0o644
-
-            match kind
-                .directory                               => mode @ 0o755
-                .file | .symlink | .hard_link | .other _ => _ = 0
-        method: Method @= .deflated
-
-        if m.method == zip_read.STORED
-            method @ .stored
-        entries @ entries.push(
-            ZipEntry(name: name, kind: kind, method: method, size: m.size, compressed_size: m.compressed, crc: to_u32(m.crc).must(), modified: m.modified, mode: mode, comment: m.comment, offset: m.offset)
-        )
-
-    return ok(ZipReader(from: from, size: io.size(from)?, entries: entries, comment: dir.comment, members: dir.members))
+# The zip archive whose bytes are `data`, its central directory read, as
+# `zip_reader` reads one from a file; its members' data is read by
+# `read_zip_entry`, from the bytes it holds.
+#
+# - `data`: the archive's bytes, every one of them.
+#
+# Fails `invalid` where no end record is found or the directory is not
+# one, and `unsupported` on an archive split over disks.
+#
+# See also `encode_zip`, `entry_of` and `read_zip_entry`.
+function decode_zip(data: [u8]) -> ZipReader?
+    return zip_open.reader_of(.held(data: data))
 
 # The member of `r` named `name`, the first where several are.
 #
@@ -736,7 +792,7 @@ function entry_of(r: ZipReader, name: str) -> ZipEntry?
 function read_zip_entry(r: ZipReader, entry: ZipEntry, limit: i64) -> [u8]?
     for m in r.members
         if m.offset == entry.offset
-            reading @= zip_member.start_reading(r.from, size: r.size, m: m, limit: limit)?
+            reading @= zip_member.start_reading(r.source, size: r.size, m: m, limit: limit)?
             return zip_member.read_member(@reading)
 
     return fail(code: NOT_FOUND, msg: f"no member \"{entry.name}\" begins at {entry.offset} in the zip archive")
@@ -780,12 +836,12 @@ function extract_zip(from: io.Stream, to: str, limit: i64) -> [str]?
                 dirs @ dirs.push(extract.make_dir(name: e.name, root: to, parts: parts)?)
                 dir_times @ dir_times.push(e.modified)
             .symlink =>
-                reading @= zip_member.start_reading(r.from, size: r.size, m: r.members[i], limit: 4096)?
+                reading @= zip_member.start_reading(r.source, size: r.size, m: r.members[i], limit: 4096)?
                 target = bytes.to_text(zip_member.read_member(@reading)?)?
                 extract.make_symlink(name: e.name, root: to, parts: parts, link: target)?
             .file | .hard_link | .other _ =>
                 target = extract.place(name: e.name, root: to, parts: parts)?
-                reading @= zip_member.start_reading(r.from, size: r.size, m: r.members[i], limit: limit)?
+                reading @= zip_member.start_reading(r.source, size: r.size, m: r.members[i], limit: limit)?
                 f @= extract.open_file(target, mode: e.mode)?
                 copied = zip_member.copy_member(@reading, to: f)
                 closed = io.close(@f)
@@ -950,6 +1006,34 @@ function add_zip_tree(@w: ZipWriter, dir: str, name: str, method: Method) -> ()?
 # See also `zip_writer`.
 function finish_zip(@w: ZipWriter, comment: str) -> ()?
     return zip_end.finish(@w.sink, comment: comment)
+
+# A member of a zip archive with its data, whole: what `encode_zip` takes.
+record ZipMember
+    # The member: its name, kind, method, time, mode and comment.
+    entry: ZipEntry
+    # Its data: a file's bytes, a symbolic link's target, empty for a
+    # folder.
+    data: [u8]
+
+# `members` as the bytes of a zip archive: each member written whole,
+# compressed by its entry's method at level 6, then the central directory
+# with `comment`.
+#
+# - `members`: the members, in order.
+# - `comment`: the archive's comment, "" for none, at most 65,535 bytes.
+#
+# Fails as `write_zip_entry` and `finish_zip` fail.
+#
+# The same members always give the same bytes. See also `decode_zip` and
+# `zip_writer`.
+function encode_zip(members: [ZipMember], comment: str) -> [u8]?
+    w @= ZipWriter(sink: zip_write.start_held(zip64_at: zip_write.ZIP64_AT))
+
+    for m in members
+        write_zip_entry(@w, entry: m.entry, data: m.data)?
+
+    finish_zip(@w, comment: comment)?
+    return ok(w.sink.held)
 
 ## Tests
 
@@ -1228,6 +1312,174 @@ test "write_zip_entry and add_zip_tree: every kind written, read back, extracted
     assert fs.read_link(path.join_all([root, "x", "héros", "l"])).must() == "stored.txt"
     fs.remove_all(root).must()
 
+test "decode_zip and read_zip_entry: Python's archive read from its bytes, as from a file"
+    r = decode_zip(samples.of(samples.ZIP_PY)).must()
+    assert r.comment == "an archive comment"
+    assert r.entries.len() == 5
+    assert r.size == samples.of(samples.ZIP_PY).len()
+    stored = entry_of(r, name: "dir/stored.txt").must()
+    assert read_zip_entry(r, entry: stored, limit: 100).must() == bytes.from_text("stored data\n")
+    deflated = entry_of(r, name: "dir/deflated.txt").must()
+    assert read_zip_entry(r, entry: deflated, limit: 900).must() == bytes.from_text(repeat("deflated ", 100))
+
+    match read_zip_entry(r, entry: deflated, limit: 899)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    big = decode_zip(samples.of(samples.ZIP_64)).must()
+    assert read_zip_entry(big, entry: big.entries[0], limit: 1000).must() == bytes.from_text(repeat("zip64 ", 50))
+
+test "decode_zip: too few bytes, no end record, a directory cut away, and a member's data cut short"
+    for data in [[], bytes.from_text("PK"), bytes.from_text(repeat("no zip here ", 10))]
+        match decode_zip(data)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    whole = samples.of(samples.ZIP_PY)
+
+    match decode_zip(whole.slice(from: 30, to: whole.len()))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    kept @= zip_entry("a.txt", kind: .file)
+    kept.method @ .stored
+    one = encode_zip([ZipMember(entry: kept, data: bytes.from_text(repeat("a", 100)))], comment: "").must()
+    r = decode_zip(one).must()
+    start = 30 + to_i64(one[26]).must() + to_i64(one[27]).must() * 256 + to_i64(one[28]).must() + to_i64(one[29]).must() * 256
+    broken @= one
+    broken[start] @ 0x62
+
+    match read_zip_entry(decode_zip(broken).must(), entry: r.entries[0], limit: 100)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "encode_zip: the bytes a zip_writer writes to a file, read back by decode_zip and by zip_reader"
+    a @= zip_entry("a.txt", kind: .file)
+    a.modified @ time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()
+    stored @= zip_entry("s.txt", kind: .file)
+    stored.method @ .stored
+    stored.modified @ time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()
+    folder @= zip_entry("dir", kind: .directory)
+    folder.modified @ time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()
+    members = [
+        ZipMember(entry: a, data: bytes.from_text(repeat("ab", 500)))
+        ZipMember(entry: stored, data: bytes.from_text("kept"))
+        ZipMember(entry: folder, data: [])
+    ]
+    data = encode_zip(members, comment: "said").must()
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "w.zip"])
+    out @= fs.create(file).must()
+    w @= zip_writer(out)
+
+    for m in members
+        write_zip_entry(@w, entry: m.entry, data: m.data).must()
+
+    finish_zip(@w, comment: "said").must()
+    io.close(@out).must()
+    assert fs.read_bytes(file).must() == data
+    s @= fs.open(file).must()
+    from_file = zip_reader(s).must()
+    assert from_file.entries.len() == 3
+    io.close(@s).must()
+    fs.remove_all(root).must()
+    r = decode_zip(data).must()
+    assert r.comment == "said"
+    assert r.entries[2].name == "dir" && r.entries[2].kind == .directory
+    assert read_zip_entry(r, entry: r.entries[0], limit: 1000).must() == bytes.from_text(repeat("ab", 500))
+    assert read_zip_entry(r, entry: r.entries[1], limit: 4).must() == bytes.from_text("kept")
+    assert encode_zip([], comment: "").must().len() == 22
+
+test "encode_zip: a member refused as write_zip_entry refuses it, and a comment too long"
+    match encode_zip([ZipMember(entry: zip_entry("", kind: .file), data: [])], comment: "")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match encode_zip([ZipMember(entry: zip_entry("d", kind: .directory), data: [1])], comment: "")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match encode_zip([], comment: repeat("c", 65536))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "decode_tar: Python's archives read from their bytes, as list_tar reads them from a stream"
+    for sample in [samples.TAR_PAX, samples.TAR_GNU, samples.TAR_USTAR]
+        p @= io.pipe().must()
+        io.write(p.writer, data: samples.of(sample)).must()
+        io.close(@p.writer).must()
+        listed = list_tar(p.reader, compression: .gzip, limit: 1000000).must()
+        io.close(@p.reader).must()
+        members = decode_tar(samples.of(sample), compression: .gzip, limit: 1000000).must()
+        assert members.len() == listed.len()
+
+        for i in range(from: 0, to: listed.len())
+            assert members[i].entry == listed[i]
+
+            match members[i].entry.kind
+                .file                                         => assert members[i].data.len() == members[i].entry.size
+                .directory | .symlink | .hard_link | .other _ => assert members[i].data.len() == 0
+
+test "decode_tar: the limit, a gzip that is not one, and an archive cut short"
+    match decode_tar(samples.of(samples.TAR_PAX), compression: .gzip, limit: 100)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match decode_tar(bytes.from_text("not gzip at all"), compression: .gzip, limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    data = encode_tar(
+        [TarMember(entry: tar_entry("a.txt", kind: .file), data: bytes.from_text(repeat("a", 600)))],
+        compression: .none
+    ).must()
+
+    match decode_tar(data.slice(from: 0, to: 700), compression: .none, limit: 100000)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match decode_tar(data, compression: .none, limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+test "encode_tar: the bytes a tar_writer writes, plain and gzip, read back by decode_tar"
+    a @= tar_entry("a.txt", kind: .file)
+    a.modified @ time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()
+    long @= tar_entry(repeat("n", 120) + "/été.txt", kind: .file)
+    long.modified @ time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()
+    folder @= tar_entry("dir", kind: .directory)
+    folder.modified @ time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()
+    members = [
+        TarMember(entry: a, data: bytes.from_text("hello"))
+        TarMember(entry: long, data: bytes.from_text(repeat("x", 513)))
+        TarMember(entry: folder, data: [])
+    ]
+    plain = encode_tar(members, compression: .none).must()
+    assert plain.len() % 512 == 0
+    p @= io.pipe().must()
+    w @= tar_writer(p.writer, compression: .none)
+
+    for m in members
+        write_tar_entry(@w, entry: m.entry, data: m.data).must()
+
+    finish_tar(@w).must()
+    io.close(@p.writer).must()
+    assert io.read_all(p.reader).must() == plain
+    io.close(@p.reader).must()
+
+    kinds: [Compression] = [.none, .gzip]
+
+    for c in kinds
+        back = decode_tar(encode_tar(members, compression: c).must(), compression: c, limit: 100000).must()
+        assert back.len() == 3
+        assert back[0].entry.name == "a.txt" && back[0].data == bytes.from_text("hello")
+        assert back[1].entry.name == repeat("n", 120) + "/été.txt" && back[1].data.len() == 513
+        assert back[2].entry.name == "dir" && back[2].entry.kind == .directory && back[2].data.len() == 0
+
+    match encode_tar([TarMember(entry: tar_entry("d", kind: .directory), data: [1])], compression: .none)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
 ## Examples
 
 # Telling a zip archive by its first bytes.
@@ -1504,3 +1756,35 @@ test "finish_zip: an archive with a comment"
     assert zip_reader(s).must().comment == "empty, but said"
     io.close(@s).must()
     fs.remove_all(root).must()
+
+# A tar archive held in memory, read back whole: every entry with its data.
+test "decode_tar: the entries of an archive's bytes"
+    data = encode_tar(
+        [TarMember(entry: tar_entry("notes.txt", kind: .file), data: bytes.from_text("hello"))],
+        compression: .gzip
+    ).must()
+    members = decode_tar(data, compression: .gzip, limit: 100000).must()
+    assert members[0].entry.name == "notes.txt" && members[0].data == bytes.from_text("hello")
+
+# Entries written as the bytes of a `.tar.gz`, with no file on the way.
+test "encode_tar: two entries as a .tar.gz"
+    members = [
+        TarMember(entry: tar_entry("a.txt", kind: .file), data: bytes.from_text("a"))
+        TarMember(entry: tar_entry("b.txt", kind: .file), data: bytes.from_text("b"))
+    ]
+    assert decode_tar(encode_tar(members, compression: .gzip).must(), compression: .gzip, limit: 10000).must().len() == 2
+
+# A zip held in memory: its directory read from the bytes, a member's data
+# read on demand.
+test "decode_zip: a member of an archive's bytes"
+    r = decode_zip(samples.of(samples.ZIP_PY)).must()
+    stored = entry_of(r, name: "dir/stored.txt").must()
+    assert read_zip_entry(r, entry: stored, limit: 100).must() == bytes.from_text("stored data\n")
+
+# Members written as the bytes of a zip, with no file on the way.
+test "encode_zip: a member and a comment"
+    data = encode_zip(
+        [ZipMember(entry: zip_entry("a.txt", kind: .file), data: bytes.from_text("hi"))],
+        comment: "one"
+    ).must()
+    assert decode_zip(data).must().comment == "one"

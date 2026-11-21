@@ -1,4 +1,4 @@
-# A zip archive's members written to a stream (APPNOTE.TXT 6.3): each
+# A zip archive's members written to a stream or held in memory (APPNOTE.TXT 6.3): each
 # member's local header and data, whole when the data is in hand and with a
 # data descriptor after it when it is streamed, ZIP64's extra field where a
 # size passes 32 bits. Names and comments are written in UTF-8, flagged so
@@ -53,8 +53,13 @@ record Written
 
 # A zip archive being written.
 record Sink
-    # The stream, owned by the caller.
+    # Whether the bytes are held in `held` rather than written to `stream`.
+    holding: bool
+    # The stream, owned by the caller; `codes.no_stream()` where the bytes
+    # are held.
     stream: io.Stream
+    # The archive's bytes where they are held, else empty.
+    held: [u8]
     # How many bytes have been written.
     written: i64
     # The members written.
@@ -66,11 +71,26 @@ record Sink
 
 # A sink writing to `stream`.
 function start(stream: io.Stream, zip64_at: i64) -> Sink
-    return Sink(stream: stream, written: 0, members: [], zip64_at: zip64_at, ended: false)
+    return Sink(holding: false, stream: stream, held: [], written: 0, members: [], zip64_at: zip64_at, ended: false)
+
+# A sink that holds the archive's bytes in memory, `held` once finished.
+function start_held(zip64_at: i64) -> Sink
+    return Sink(
+        holding: true,
+        stream: codes.no_stream(),
+        held: [],
+        written: 0,
+        members: [],
+        zip64_at: zip64_at,
+        ended: false
+    )
 
 # Writes `data` and counts it.
 function put(@sink: Sink, data: [u8]) -> ()?
-    io.write(sink.stream, data: data)?
+    if sink.holding
+        add_bytes(out: @sink.held, more: data)
+    else
+        io.write(sink.stream, data: data)?
     sink.written @ sink.written + data.len()
     return ok()
 
