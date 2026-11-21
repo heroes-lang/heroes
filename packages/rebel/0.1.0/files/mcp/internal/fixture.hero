@@ -12,6 +12,7 @@ use jsonrpc
 use mcp
 use net
 use os
+use strings
 
 # The two ends of a connection whose second end has written `results` ahead,
 # each the result of the request of id 1, 2 and so on: the client reads them
@@ -155,22 +156,69 @@ function serve_lines(accepted: i64) -> i64
     io.close(@reader.stream).must()
     return served
 
+# Tells `text`, the port a server listens on, to the control listener at
+# `control` after the word `told` that marks it as the server's (`told`),
+# and closes.
+function tell(control: i64, text: str)
+    c @= net.connect("127.0.0.1", port: control, deadline_ms: 10_000).must()
+    io.write_text(c.stream, text: "told " + text).must()
+    io.close(@c.stream).must()
+
+# What a server tells `control`, the listener its starter holds: the text
+# after `told ` of the first connection that says it within five seconds of
+# its accept, ten connections at most and thirty seconds in all, or why none
+# did. Any other connection is closed and passed over, as one another
+# program makes to a port it did not choose: beside a test of `tls` that
+# steers its connect to the port the system gives next, such a connection
+# reached a starter's listener and held its read to its deadline in 62
+# rounds of 3,000 (defect 2633).
+function told(control: net.Listener) -> str
+    net.set_accept_deadline(control, deadline_ms: 30_000).must()
+    tries @= 0
+
+    while tries < 10
+        tries @ tries + 1
+
+        match net.accept(control, deadline_ms: 5_000)
+            .err e =>
+                if e.code == net.TIMEOUT
+                    return e.code + ": " + e.msg
+            .ok c =>
+                r @= io.reader(c.stream)
+                said = io.read_rest_text(@r)
+
+                match io.close(@r.stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+                match said
+                    .ok text =>
+                        if strings.has_prefix(s: text, prefix: "told ")
+                            return text.slice(from: 5, to: text.len())
+                    .err _ => _ = 0
+
+    return "none of ten connections told a port"
+
 # A thread's body: listens on a port the system chooses, tells it to the
 # control listener at `control`, and serves Streamable HTTP, a request
-# without `Authorization` answered 401, until no connection comes for two
-# seconds. Answers how many requests it served.
+# without `Authorization` answered 401, until it is asked `/stop`, or for a
+# minute at most. Answers how many requests it served, `/stop` not among
+# them. It served for two seconds after its listen before: a client whose
+# first request came later, behind a connection of another program its
+# starter passed over or on a loaded machine, found nothing listening, in
+# 12 rounds of 400 beside two loops of tests that steer their connect to
+# the port the system gives next (2026-11-21).
 #
 # - `control`: the port of the test's control listener.
 function serve_http_many(control: i64) -> i64
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    told @= net.connect("127.0.0.1", port: control, deadline_ms: 10_000).must()
-    io.write_text(told.stream, text: f"{l.address.port}").must()
-    io.close(@told.stream).must()
-    net.set_accept_deadline(l, deadline_ms: 2_000).must()
+    tell(control: control, text: f"{l.address.port}")
+    net.set_accept_deadline(l, deadline_ms: 60_000).must()
     s = test_server()
     served: i64 @= 0
+    stopping: bool @= false
 
-    while true
+    while !stopping
         conn = match net.accept(l, deadline_ms: 10_000)
             .ok got => got
             .err _  => break
@@ -181,6 +229,11 @@ function serve_http_many(control: i64) -> i64
             r = match http.next_request(@reader, limits: http.default_limits())
                 .ok got => got
                 .err _  => break
+
+            if r.url.path == "/stop"
+                stopping @ true
+                http.write_answer(reader.stream, r: r, response: http.respond_status(200)).must()
+                break
 
             response = if http.value_of(r.headers, name: "Authorization").is_err()
                 mcp.unauthorized(

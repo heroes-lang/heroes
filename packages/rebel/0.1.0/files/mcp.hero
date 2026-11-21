@@ -2901,10 +2901,7 @@ test "a client and a server of Heroes over one connection: every request, an eli
 test "a client and a server of Heroes over Streamable HTTP: a 401 read, then every call with a token"
     control @= net.listen(host: "127.0.0.1", port: 0).must()
     worker @= threads.spawn(body: fixture.serve_http_many, arg: control.address.port).must()
-    told = net.accept(control, deadline_ms: 10_000).must()
-    told_reader @= io.reader(told.stream)
-    port = numbers.parse_int(io.read_rest_text(@told_reader).must()).must()
-    io.close(@told_reader.stream).must()
+    port = numbers.parse_int(fixture.told(control)).must()
     net.close_listener(@control).must()
     c @= http_client(
         f"http://127.0.0.1:{port}/mcp",
@@ -2929,6 +2926,7 @@ test "a client and a server of Heroes over Streamable HTTP: a 401 read, then eve
         .ok _  => assert false
         .err e => assert e.code == UNSUPPORTED
 
+    _ = http.get(http.default_client(), target: f"http://127.0.0.1:{port}/stop").must()
     assert threads.wait(@worker) == 5
 
 test "the JSON forms: each type written and read back"
