@@ -1,0 +1,276 @@
+# The commands that read data and write data: `formats`, `convert`,
+# `query`, `stats`, `inspect` and `sql`. Each reads what its flags name
+# (`commands/session`), does one job, and writes its answer to the standard
+# output or to `-o`.
+
+use <rebel>/flags
+use <rebel>/numbers
+use <rebel>/path
+use <rebel>/sql/sqlite
+use <rebel>/strings
+
+use commands/session
+use formats/codec
+use model/formats
+use model/model
+use output/inspect
+use output/layout
+use query/database
+use query/pipeline
+use query/summary
+
+## Codes
+
+# The code of flags that ask for something no command does.
+constant INVALID: str
+    "invalid"
+
+## formats
+
+# Lists the formats, one a line: the name, its extensions, what it holds.
+#
+# - `out`: where the command writes.
+#
+# Fails as `session.say_lines` fails.
+function formats_command(out: session.Out) -> ()?
+    rows: [[model.Value]] @= []
+
+    for f in formats.every_format()
+        what = if formats.is_readable(f)
+            "read, written"
+        else
+            "written"
+        rows @ rows.push(
+            [.text(v: formats.name_of(f)), .text(v: formats.extensions_of(f).join(" ")), .text(v: what), .text(v: formats.about(f))]
+        )
+
+    t = model.Table(name: "formats", columns: ["format", "extensions", "datakit", "holds"], rows: rows)
+    return session.say(out, text: layout.table_text(t, max_width: 60))
+
+## convert
+
+# Reads the input and writes it in another format.
+#
+# - `out`: where the command writes.
+# - `f`: what the parse found for `convert`.
+#
+# The format written is `--to`, else the extension of `-o`. Fails `invalid`
+# where neither names one, and as reading and writing fail.
+function convert(out: session.Out, f: flags.Found) -> ()?
+    input = session.input_of(f)
+    loaded = session.document(input)?
+
+    if !flags.is_given(f, "to") && flags.value_of(f, "output").default("-") == "-"
+        return fail(code: INVALID, msg: "convert needs a format to write: --to FORMAT, or -o with an extension")
+
+    format = session.format_out(f, fallback: .json)?
+
+    if formats.is_tabular(format)
+        t = codec.table_of(loaded)?
+        return session.emit(out, f: f, data: codec.encode_table(t, format: format)?, format: format)
+    return session.emit(out, f: f, data: codec.encode(loaded.value, format: format, name: loaded.name)?, format: format)
+
+## query
+
+# Reads the input as a table, runs the steps its flags ask, and writes the
+# table that comes out, as an aligned table unless `--to` or `-o` says
+# otherwise.
+#
+# - `out`: where the command writes.
+# - `f`: what the parse found for `query`.
+#
+# Fails as reading, `pipeline.run` and writing fail.
+function query(out: session.Out, f: flags.Found) -> ()?
+    t = session.table(session.input_of(f))?
+
+    limit = match flags.int_of(f, "limit")
+        .ok n  => n
+        .err _ => -1
+
+    steps = pipeline.Steps(
+        where: flags.value_of(f, "where").default(""),
+        group: flags.values_of(f, "group"),
+        aggregates: flags.value_of(f, "agg").default(""),
+        select: flags.value_of(f, "select").default(""),
+        sort: flags.values_of(f, "sort"),
+        limit: limit
+    )
+    answer = pipeline.run(t, steps: steps)?
+    return write_table(out, f: f, t: answer)
+
+# Writes `t` in the format `--to` or `-o` names, an aligned table where
+# neither does, with the count of its rows after an aligned table.
+#
+# - `out`: where the command writes.
+# - `f`: what the parse found.
+# - `t`: the table.
+#
+# Fails as writing fails.
+function write_table(out: session.Out, f: flags.Found, t: model.Table lent) -> ()?
+    format = session.format_out(f, fallback: .table)?
+    session.emit(out, f: f, data: codec.encode_table(t, format: format)?, format: format)?
+
+    if format == .table && flags.value_of(f, "output").default("-") == "-"
+        return session.say(out, text: rows_line(t.rows.len()))
+    return ok()
+
+# The line under an aligned table: `(3 rows)`, `(1 row)`.
+#
+# - `count`: the rows.
+function rows_line(count: i64) -> str
+    if count == 1
+        return "(1 row)\n"
+    return f"({count} rows)\n"
+
+## stats
+
+# Writes the statistics of the input's columns (`summary.describe`).
+#
+# - `out`: where the command writes.
+# - `f`: what the parse found for `stats`.
+#
+# Fails `invalid` for a percentile that is no integer, and as reading,
+# `summary.describe` and writing fail.
+function stats(out: session.Out, f: flags.Found) -> ()?
+    t = session.table(session.input_of(f))?
+    percents: [i64] @= []
+
+    for p in split_list(flags.values_of(f, "percentiles"))
+        match numbers.parse_int(p)
+            .ok n  => percents @ percents.push(n)
+            .err _ => return fail(code: INVALID, msg: f"--percentiles: \"{p}\" is not an integer from 1 to 99")
+
+    described = summary.describe(t, columns: split_list(flags.values_of(f, "columns")), percents: percents)?
+    return write_table(out, f: f, t: described)
+
+# The items of a list a flag was given, each value cut again at its commas:
+# a default such as `25,50,75` comes as one value, where the same text given
+# on the command line comes cut by the flag's delimiter.
+#
+# - `values`: the flag's values.
+function split_list(values: [str]) -> [str]
+    out: [str] @= []
+
+    for v in values
+        for part in strings.split(s: v, sep: ",")
+            if part != ""
+                out @ out.push(part)
+
+    return out
+
+## inspect
+
+# Writes what the input file holds (`inspect.lines_of`).
+#
+# - `out`: where the command writes.
+# - `f`: what the parse found for `inspect`.
+#
+# Fails as `inspect.lines_of` fails.
+function inspect_command(out: session.Out, f: flags.Found) -> ()?
+    source = flags.value_of(f, "INPUT").default("-")
+    return session.say_lines(out, lines: inspect.lines_of(source, options: session.read_options_of(f))?)
+
+## sql
+
+# Loads each input as a table and writes the table the SQL statement answers.
+#
+# - `out`: where the command writes.
+# - `f`: what the parse found for `sql`.
+#
+# An input is a path, the table named by its stem, or `name=path`. The
+# database is closed on every way out. Fails `invalid` where two inputs name
+# one table, and as reading, `database.load`, `database.run` and writing fail.
+function sql_command(out: session.Out, f: flags.Found) -> ()?
+    tables: [model.Table] @= []
+    names: {str: bool} @= {}
+
+    for given in flags.values_of(f, "INPUT")
+        named = table_named(given)
+        input = session.Input(source: named.source, options: session.read_options_of(f), query: "")
+        t @= session.table(input)?
+
+        if named.name != ""
+            t.name @ named.name
+
+        if names[database.sql_name(t.name)].default(false)
+            return fail(
+                code: INVALID,
+                msg: f"two inputs make the table {database.sql_name(t.name)}: name one with name=path"
+            )
+        names[database.sql_name(t.name)] @ true
+        tables @ tables.push(t)
+
+    db @= database.open(flags.value_of(f, "db").default(""))?
+    outcome = run_sql(@db, tables: tables, statement: flags.value_of(f, "query")?)
+    closed = sqlite.close(@db)
+    answer = outcome?
+    closed?
+    return write_table(out, f: f, t: answer)
+
+# Loads `tables` into `db` and runs `statement`.
+#
+# - `db`: the database, open.
+# - `tables`: the tables.
+# - `statement`: the SQL.
+#
+# Fails as `database.load` and `database.run` fail.
+function run_sql(@db: sqlite.Db, tables: [model.Table], statement: str) -> model.Table?
+    for t in tables
+        database.load(@db, t: t)?
+
+    return database.run(@db, statement: statement, name: "result")
+
+# An input of `sql` and the table name it gives.
+record Named
+    # The table's name, empty for the file's stem.
+    name: str
+    # The file's path.
+    source: str
+
+# The table name and the path `given` writes: `regions=data/r.csv`, or a
+# path alone.
+#
+# - `given`: the argument.
+function table_named(given: str) -> Named
+    at: i64 @= 0
+
+    while at < given.len()
+        if given[at] == '='
+            name = given.slice(from: 0, to: at)
+
+            if is_plain_name(name)
+                return Named(name: name, source: given.slice(from: at + 1, to: given.len()))
+            return Named(name: "", source: given)
+        at @ at + 1
+
+    return Named(name: "", source: given)
+
+# Whether `name` is a plain name of letters, digits and `_`, not empty: a
+# `=` after one names a table, where a path's own `=` does not.
+#
+# - `name`: the text before the `=`.
+function is_plain_name(name: str) -> bool
+    if name == "" || path.is_abs(name)
+        return false
+
+    at: i64 @= 0
+
+    while at < name.len()
+        b = name[at]
+
+        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_')
+            return false
+        at @ at + 1
+
+    return true
+
+## Tests
+
+test "table_named: a name before =, a path alone, a path holding ="
+    assert table_named("regions=data/r.csv") == Named(name: "regions", source: "data/r.csv")
+    assert table_named("data/r.csv") == Named(name: "", source: "data/r.csv")
+    assert table_named("data/a=b.csv") == Named(name: "", source: "data/a=b.csv")
+
+test "rows_line: one row and many"
+    assert rows_line(1) == "(1 row)\n"
+    assert rows_line(0) == "(0 rows)\n"

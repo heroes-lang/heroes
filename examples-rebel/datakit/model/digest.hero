@@ -1,0 +1,96 @@
+# The digest of a document's content, the same for one content in every
+# format: what `datakit inspect` prints so that a conversion can be checked by
+# reading the file it wrote back.
+#
+# The digest is FNV-1a of 64 bits (`hash.fnv1a_64`) over a canonical JSON
+# text of the document, written here: members in their order, every number
+# in its canonical text (`decimal.canonical`, so `1.50` and `1.5`, `1e3` and
+# `1000` are one number, as they are one value), a moment as its text, so a
+# date written as a date and the same date written as a text agree, and bytes
+# as Base64. FNV is no cryptographic hash: the digest tells a changed
+# conversion from a faithful one, and it is not a seal against anyone.
+
+use <rebel>/bytes
+use <rebel>/hash
+use <rebel>/json
+use <rebel>/numbers
+use <rebel>/strings
+
+use model/decimal
+use model/model
+
+## Digests
+
+# The digest of `v`: sixteen lowercase hexadecimal digits.
+#
+# - `v`: the document.
+function of(v: model.Value) -> str
+    return strings.pad_zeros(numbers.format_u64(hash.fnv1a_64_text(canonical_text(v)), base: 16), width: 16)
+
+# The digest of a text, for a file whose content is text, as a PDF's.
+#
+# - `text`: the text.
+function of_text(text: str) -> str
+    return strings.pad_zeros(numbers.format_u64(hash.fnv1a_64_text(text), base: 16), width: 16)
+
+# `v` as canonical JSON on one line: numbers canonical, moments and bytes as
+# strings.
+#
+# - `v`: the document.
+function canonical_text(v: model.Value) -> str
+    pieces: [str] @= []
+    add(@pieces, v: v)
+    return pieces.join("")
+
+# Adds the canonical pieces of `v` to `pieces`.
+#
+# - `pieces`: the text so far, grown in place.
+# - `v`: the value, nested no deeper than its reader allowed.
+function add(@pieces: [str], v: model.Value)
+    match v
+        .number n => pieces @ pieces.push(decimal.canonical(n.text))
+        .moment m => pieces @ pieces.push(json.quote(m.text))
+        .bytes b  => pieces @ pieces.push(json.quote(bytes.format_base64(b.v)))
+        .list l =>
+            pieces @ pieces.push("[")
+            at: i64 @= 0
+
+            for item in l.items
+                if at > 0
+                    pieces @ pieces.push(",")
+                add(@pieces, v: item)
+                at @ at + 1
+
+            pieces @ pieces.push("]")
+        .object o =>
+            pieces @ pieces.push("{")
+            at: i64 @= 0
+
+            for m in o.members
+                if at > 0
+                    pieces @ pieces.push(",")
+                pieces @ pieces.push(json.quote(m.name))
+                pieces @ pieces.push(":")
+                add(@pieces, v: m.value)
+                at @ at + 1
+
+            pieces @ pieces.push("}")
+        .null_value | .boolean _ | .text _ => pieces @ pieces.push(model.json_text(v))
+
+## Tests
+
+test "of: one content, one digest, whatever the spelling of its numbers and dates"
+    a: model.Value = .object(
+        members: [model.Member(name: "n", value: .number(text: "1.50")), model.Member(name: "d", value: .moment(text: "2026-03-01"))]
+    )
+    b: model.Value = .object(
+        members: [model.Member(name: "n", value: .number(text: "1.5")), model.Member(name: "d", value: .text(v: "2026-03-01"))]
+    )
+    assert of(a) == of(b)
+    assert of(a).len() == 16
+    assert canonical_text(a) == "{\"n\":1.5,\"d\":\"2026-03-01\"}"
+
+test "of: another value, another digest"
+    assert of(.number(text: "1")) != of(.text(v: "1"))
+    assert of(.list(items: [])) != of(.object(members: []))
+    assert of_text("") == "cbf29ce484222325"

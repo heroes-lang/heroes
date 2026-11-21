@@ -1,0 +1,212 @@
+# The formats datakit reads and writes: their names, the extensions that
+# name them, and whether their files are text or bytes.
+#
+# A format is told by `--from` or `--to` where given, else by the file's
+# extension; the standard input and output, `-`, have none and need the flag.
+# `table` is written alone: an aligned text table for a terminal, the default
+# where a command prints rows.
+
+use <rebel>/path
+use <rebel>/strings
+
+## Codes
+
+# The code of a format name or an extension datakit does not know.
+constant NOT_FOUND: str
+    "not_found"
+
+## Formats
+
+# One format of a file.
+variant Format
+    # Comma-separated values, RFC 4180, a header row first.
+    csv
+    # Tab-separated values, a header row first.
+    tsv
+    # One JSON value, RFC 8259.
+    json
+    # One JSON value on each line (JSON Lines, NDJSON).
+    json_lines
+    # A YAML 1.2 document.
+    yaml
+    # A TOML 1.1 document.
+    toml
+    # An INI file of sections and keys.
+    ini
+    # A Java properties file of keys and values.
+    properties
+    # An XML 1.0 document.
+    xml
+    # An Office Open XML spreadsheet, one sheet read or written.
+    xlsx
+    # MessagePack values, one after another.
+    msgpack
+    # CBOR data items, RFC 8949.
+    cbor
+    # BSON documents one after another, as `mongodump` writes a collection.
+    bson
+    # An aligned text table for a terminal; written, never read.
+    table
+
+# Every format, in the order `datakit formats` lists them.
+function every_format() -> [Format]
+    return [
+        .csv
+        .tsv
+        .json
+        .json_lines
+        .yaml
+        .toml
+        .ini
+        .properties
+        .xml
+        .xlsx
+        .msgpack
+        .cbor
+        .bson
+        .table
+    ]
+
+# The name of `f`, as `--from` and `--to` take it.
+#
+# - `f`: the format.
+function name_of(f: Format) -> str
+    return match f
+        .csv        => "csv"
+        .tsv        => "tsv"
+        .json       => "json"
+        .json_lines => "jsonl"
+        .yaml       => "yaml"
+        .toml       => "toml"
+        .ini        => "ini"
+        .properties => "properties"
+        .xml        => "xml"
+        .xlsx       => "xlsx"
+        .msgpack    => "msgpack"
+        .cbor       => "cbor"
+        .bson       => "bson"
+        .table      => "table"
+
+# The extensions that name `f`, with their dots, the one written first.
+#
+# - `f`: the format.
+function extensions_of(f: Format) -> [str]
+    return match f
+        .csv        => [".csv"]
+        .tsv        => [".tsv", ".tab"]
+        .json       => [".json"]
+        .json_lines => [".jsonl", ".ndjson"]
+        .yaml       => [".yaml", ".yml"]
+        .toml       => [".toml"]
+        .ini        => [".ini", ".cfg", ".conf"]
+        .properties => [".properties"]
+        .xml        => [".xml"]
+        .xlsx       => [".xlsx"]
+        .msgpack    => [".msgpack", ".mpk"]
+        .cbor       => [".cbor"]
+        .bson       => [".bson"]
+        .table      => [".txt"]
+
+# What `f` holds, in a few words, for `datakit formats`.
+#
+# - `f`: the format.
+function about(f: Format) -> str
+    return match f
+        .csv        => "comma-separated values, a header row first"
+        .tsv        => "tab-separated values, a header row first"
+        .json       => "one JSON value"
+        .json_lines => "one JSON value on each line"
+        .yaml       => "a YAML document"
+        .toml       => "a TOML document"
+        .ini        => "sections of keys and values"
+        .properties => "Java properties: keys and values"
+        .xml        => "an XML document"
+        .xlsx       => "an Excel workbook, one sheet"
+        .msgpack    => "MessagePack values"
+        .cbor       => "CBOR data items"
+        .bson       => "BSON documents, one after another"
+        .table      => "an aligned text table (written only)"
+
+# Whether a file of `f` holds bytes rather than text.
+#
+# - `f`: the format.
+function is_binary(f: Format) -> bool
+    return match f
+        .xlsx | .msgpack | .cbor | .bson                                                       => true
+        .csv | .tsv | .json | .json_lines | .yaml | .toml | .ini | .properties | .xml | .table => false
+
+# Whether datakit reads `f`.
+#
+# - `f`: the format.
+function is_readable(f: Format) -> bool
+    return match f
+        .table => false
+        .csv | .tsv | .json | .json_lines | .yaml | .toml | .ini | .properties | .xml | .xlsx | .msgpack | .cbor | .bson => true
+
+# Whether `f` holds rows rather than one document, so a document written in
+# it is first read as a table (`tables.table_of`).
+#
+# - `f`: the format.
+function is_tabular(f: Format) -> bool
+    return match f
+        .csv | .tsv | .xlsx | .table                                                               => true
+        .json | .json_lines | .yaml | .toml | .ini | .properties | .xml | .msgpack | .cbor | .bson => false
+
+# The format named `name`, a name `name_of` answers or one of `yml`, `ndjson`,
+# `mpk` and `txt`.
+#
+# - `name`: the name, in any case.
+#
+# Fails `not_found` where no format has that name; the message lists them.
+function parse_name(name: str) -> Format?
+    asked = strings.to_lower_ascii(name)
+
+    for f in every_format()
+        if name_of(f) == asked
+            return ok(f)
+
+        for e in extensions_of(f)
+            if e == "." + asked
+                return ok(f)
+
+    known = every_format().map(name_of).join(", ")
+    return fail(code: NOT_FOUND, msg: f"no format named \"{name}\"; the formats are {known}")
+
+# The format the extension of `file` names.
+#
+# - `file`: the file's path.
+#
+# Fails `not_found` where the name has no extension or one no format has; the
+# message asks for `--from` or `--to`.
+function of_path(file: str) -> Format?
+    match path.ext(file)
+        .ok e =>
+            lowered = strings.to_lower_ascii(e)
+
+            for f in every_format()
+                for known in extensions_of(f)
+                    if known == lowered
+                        return ok(f)
+
+            return fail(
+                code: NOT_FOUND,
+                msg: f"no format has the extension \"{e}\" of {file}: name one with --from or --to"
+            )
+        .err _ => return fail(
+            code: NOT_FOUND,
+            msg: f"{file} has no extension to tell its format: name one with --from or --to"
+        )
+
+## Tests
+
+test "parse_name: names, aliases and any case"
+    assert parse_name("CSV").must() == .csv
+    assert parse_name("yml").must() == .yaml
+    assert parse_name("ndjson").must() == .json_lines
+    assert parse_name("parquet").is_err()
+
+test "of_path: the extension tells the format, and its absence is refused"
+    assert of_path("data/sales.XLSX").must() == .xlsx
+    assert of_path("a/b.tar.cbor").must() == .cbor
+    assert of_path("README").is_err()
+    assert of_path("notes.docx").is_err()

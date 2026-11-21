@@ -1,0 +1,141 @@
+# `datakit inspect`: what a file holds, said in a few lines: its format, the
+# shape of its content (a table's rows, columns and each column's kind, or a
+# document's members), and the digest of that content (`model/digest`), so
+# two files of one content in two formats show one digest. A workbook also
+# lists its sheets with their areas, and a PDF, which datakit writes and does
+# not read as data, its version, its pages, its title, the text of each page
+# as `pdf` reads it back, and the digest of that text.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/pdf
+use <rebel>/strings
+use <rebel>/xlsx
+
+use formats/codec
+use model/digest
+use model/formats
+use model/model
+use query/summary
+
+## Inspecting
+
+# The lines that say what the file at `source` holds.
+#
+# - `source`: a file's path, or `-` for the standard input with `options`
+#   naming its format.
+# - `options`: the format, the typing and the sheet, as a reading takes them.
+#
+# A file whose name ends in `.pdf` is read as a PDF. Fails as `codec.load`
+# fails, and as `pdf.decode` fails for a PDF.
+function lines_of(source: str, options: codec.ReadOptions) -> [str]?
+    if options.format == "" && strings.to_lower_ascii(path.ext(source).default("")) == ".pdf"
+        return pdf_lines(fs.read_bytes(source)?)
+
+    loaded = codec.load(source, options: options)?
+    lines: [str] @= [f"format: {formats.name_of(loaded.format)}"]
+
+    if loaded.format == .xlsx
+        lines @ lines.push(f"sheets: {sheets_of(fs.read_bytes(source)?)?}")
+
+    match loaded.value
+        .list _ => add_table_lines(@lines, loaded: loaded)?
+        .object o =>
+            if formats.is_tabular(loaded.format)
+                add_table_lines(@lines, loaded: loaded)?
+            else
+                names = o.members.map(member_name)
+                lines @ lines.push(f"shape: an object of {o.members.len()} members: {names.join(", ")}")
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ => lines @ lines.push(
+            f"shape: a {model.kind_name(loaded.value)}"
+        )
+
+    lines @ lines.push(f"digest: {digest.of(loaded.value)}")
+    return ok(lines)
+
+# Adds the lines of a table's shape: its rows and columns, then each column
+# with its kind.
+#
+# - `lines`: the lines so far, grown in place.
+# - `loaded`: the document read.
+#
+# Fails as `codec.table_of` fails.
+function add_table_lines(@lines: [str], loaded: codec.Loaded lent) -> ()?
+    t = codec.table_of(loaded)?
+    lines @ lines.push(f"shape: a table of {t.rows.len()} rows and {t.columns.len()} columns")
+    kinds: [str] @= []
+    column: i64 @= 0
+
+    while column < t.columns.len()
+        values: [model.Value] @= []
+
+        for row in t.rows
+            if row[column] != .null_value
+                values @ values.push(row[column])
+
+        kinds @ kinds.push(f"{t.columns[column]} ({summary.kind_of(values)})")
+        column @ column + 1
+
+    lines @ lines.push(f"columns: {kinds.join(", ")}")
+    return ok()
+
+# The name of a member, for a `map`.
+#
+# - `m`: the member.
+function member_name(m: model.Member) -> str
+    return m.name
+
+# The sheets of the workbook `data`, each with the area its cells take:
+# `sales (A1:F9)`.
+#
+# - `data`: the workbook's bytes.
+#
+# Fails as `xlsx.decode` fails.
+function sheets_of(data: [u8]) -> str?
+    book = xlsx.decode(data, xlsx.default_read_options())?
+    out: [str] @= []
+
+    for s in book.sheets
+        area = match xlsx.dimension_of(s)
+            .ok a  => xlsx.format_area(a).default("?")
+            .err _ => "empty"
+
+        out @ out.push(f"{s.name} ({area})")
+
+    return ok(out.join(", "))
+
+# The lines that say what the PDF `data` holds: its version, its pages, its
+# title, each page's text indented under its number, and the text's digest.
+#
+# - `data`: the file's bytes.
+#
+# Fails as `pdf.decode` and `pdf.text_of` fail, `limit` past
+# `pdf.default_limits`.
+function pdf_lines(data: [u8]) -> [str]?
+    file = pdf.decode(data, password: "", limits: pdf.default_limits())?
+    pages = pdf.pages_of(file)
+    lines: [str] @= [f"format: pdf {pdf.version_of(file)}", f"pages: {pages.len()}"]
+
+    match pdf.info_of(file)["Title"]
+        .ok title => lines @ lines.push(f"title: {title}")
+        .err _    => _ = 0
+
+    texts: [str] @= []
+    number: i64 @= 0
+
+    for page in pages
+        number @ number + 1
+        text = pdf.text_of(file, page: page)?
+        texts @ texts.push(text)
+        lines @ lines.push(f"page {number}:")
+
+        for line in strings.lines(text)
+            lines @ lines.push("  " + line)
+
+    lines @ lines.push(f"text digest: {digest.of_text(texts.join("\u{c}"))}")
+    return ok(lines)
+
+## Tests
+
+test "pdf_lines: bytes that are no PDF are refused"
+    assert pdf_lines([37, 80, 68, 70]).is_err()

@@ -1,0 +1,248 @@
+# CBOR (RFC 8949) read into the model and written from it, through `cbor`.
+#
+# CBOR is the one binary format here that holds every number of the model
+# exactly: an integer of any size crosses as itself or as a bignum (tags 2
+# and 3), and a number with a fraction is written as a decimal fraction (tag
+# 4), so `19.99` comes back `19.99` and not the nearest `f64`. A date alone is
+# tag 1004 (RFC 8943), a date and a time with an offset tag 0, and tag 1, an
+# epoch time, is read as a moment in UTC; a local date and time is written as
+# its text, since tag 0 needs an offset. Several items one after another (a
+# CBOR sequence, RFC 8742) are read as a list. Maps keep their order, written
+# as they stand rather than in the bytewise order of deterministic encoding.
+
+use <rebel>/big
+use <rebel>/cbor
+use <rebel>/time
+
+use model/decimal
+use model/infer
+use model/model
+use model/moments
+
+## Tags
+
+# The tag of an RFC 3339 date and time, RFC 8949 section 3.4.1.
+constant DATE_TIME_TAG: u64
+    0
+
+# The tag of a time in seconds since the epoch, RFC 8949 section 3.4.2.
+constant EPOCH_TAG: u64
+    1
+
+# The tag of a full date as RFC 3339 text, RFC 8943 section 3.
+constant DATE_TAG: u64
+    1004
+
+## Reading
+
+# The document of the CBOR bytes `data`.
+#
+# - `data`: the file's bytes; empty for an empty list.
+#
+# Fails as `cbor.decode_next` fails, `invalid` for bytes that are no item,
+# and `does_not_fit` for a decimal fraction whose digits `decimal` will not
+# write out.
+function read(data: [u8]) -> model.Value?
+    options = cbor.DecodeOptions(max_depth: model.MAX_DEPTH, duplicate_keys: false, deterministic: false)
+    values: [model.Value] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        found = cbor.decode_next(data, from: at, options: options)?
+        values @ values.push(of_cbor(found.value)?)
+        at @ found.next
+
+    if values.len() == 1
+        return ok(values[0])
+    return ok(.list(items: values))
+
+# `v` as a value of the model.
+#
+# - `v`: the CBOR item.
+#
+# A tag this program does not read is left off and its content read; a
+# simple value other than the four named ones is its number.
+#
+# Fails as `read` fails.
+function of_cbor(v: cbor.Value) -> model.Value?
+    return match v
+        .unsigned u              => ok(decimal.of_u64(u.v))
+        .negative _              => ok(.number(text: big.format(cbor.integer_of(v)?)))
+        .binary b                => ok(.bytes(v: b.v))
+        .text t                  => ok(.text(v: t.v))
+        .list l                  => ok(.list(items: items_of(l.items)?))
+        .pairs p                 => ok(model.object_of(members_of(p.entries)?))
+        .tagged t                => ok(tagged_of(v, tag: t.tag, content: t.content)?)
+        .float f                 => ok(decimal.of_float(f.v))
+        .boolean b               => ok(.boolean(v: b.v))
+        .null_value | .undefined => ok(.null_value)
+        .simple s                => ok(decimal.of_int(to_i64(s.v).must()))
+
+# The value of a tagged item, by its tag.
+#
+# - `v`: the tagged item.
+# - `tag`: its tag.
+# - `content`: what it holds, one item.
+#
+# Fails as `read` fails.
+function tagged_of(v: cbor.Value, tag: u64, content: [cbor.Value]) -> model.Value?
+    if tag == 2 || tag == 3
+        return ok(.number(text: big.format(cbor.integer_of(v)?)))
+
+    if tag == 4
+        return ok(.number(text: decimal.text_of_bounded(cbor.decimal_of(v)?)?))
+
+    if content.len() != 1
+        return fail(code: cbor.INVALID, msg: f"tag {tag} holds {content.len()} items")
+
+    inner = of_cbor(content[0])?
+
+    if tag == DATE_TIME_TAG || tag == DATE_TAG
+        match inner
+            .text t => if infer.is_moment_text(t.v)
+                return ok(.moment(text: t.v))
+            .null_value | .boolean _ | .number _ | .bytes _ | .moment _ | .list _ | .object _ => _ = 0
+
+    if tag == EPOCH_TAG
+        match content[0]
+            .unsigned _ | .negative _ => return ok(
+                .moment(text: moments.text_of_instant(time.from_unix(whole_seconds: cbor.int_of(content[0])?, extra_nanoseconds: 0)?))
+            )
+            .float f => return ok(
+                .moment(text: moments.text_of_instant(time.add(time.epoch(), time.from_seconds_float(f.v)?)?))
+            )
+            .binary _ | .text _ | .list _ | .pairs _ | .tagged _ | .boolean _ | .null_value | .undefined | .simple _ => _ = 0
+    return ok(inner)
+
+# The values of a list's items.
+#
+# - `items`: the items.
+#
+# Fails as `of_cbor` fails.
+function items_of(items: [cbor.Value]) -> [model.Value]?
+    out: [model.Value] @= []
+
+    for item in items
+        out @ out.push(of_cbor(item)?)
+
+    return ok(out)
+
+# The members of a map's entries, each key as a text.
+#
+# - `entries`: the entries, in the order written.
+#
+# Fails as `of_cbor` fails.
+function members_of(entries: [cbor.Entry]) -> [model.Member]?
+    out: [model.Member] @= []
+
+    for e in entries
+        key = of_cbor(e.key)?
+        out @ out.push(model.Member(name: model.cell_text(key), value: of_cbor(e.value)?))
+
+    return ok(out)
+
+## Writing
+
+# `v` as CBOR bytes, one item, maps in the order of their members.
+#
+# - `v`: the document.
+#
+# Fails as `cbor.encode_with` fails, and `invalid` where a number's or a
+# moment's text is no number or moment.
+function write(v: model.Value) -> [u8]?
+    return cbor.encode_with(to_cbor(v)?, order: .as_written)
+
+# `v` as a CBOR item.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where a number's or a moment's text is not one.
+function to_cbor(v: model.Value) -> cbor.Value?
+    return match v
+        .null_value => ok(.null_value)
+        .boolean b  => ok(.boolean(v: b.v))
+        .number n   => ok(number_to_cbor(n.text)?)
+        .text t     => ok(.text(v: t.v))
+        .bytes b    => ok(.binary(v: b.v))
+        .moment m   => ok(moment_to_cbor(m.text)?)
+        .list l     => ok(.list(items: items_to_cbor(l.items)?))
+        .object o   => ok(.pairs(entries: entries_to_cbor(o.members)?))
+
+# A number as an integer of any size, or as a decimal fraction.
+#
+# - `text`: the number.
+#
+# Fails `invalid` where `text` is no number.
+function number_to_cbor(text: str) -> cbor.Value?
+    d = decimal.parse(text)?
+
+    if decimal.is_integer_text(text)
+        return ok(cbor.from_integer(big.parse(text)?))
+    return ok(cbor.from_decimal(d))
+
+# A moment as tag 1004 for a date alone, tag 0 for a date and a time with an
+# offset, and its text otherwise.
+#
+# - `text`: the moment.
+#
+# Fails as `moments.parse` fails.
+function moment_to_cbor(text: str) -> cbor.Value?
+    p = moments.parse(text)?
+    content: [cbor.Value] = [.text(v: text)]
+
+    if p.has_date && !p.has_time
+        return ok(.tagged(tag: DATE_TAG, content: content))
+
+    if p.has_date && p.has_offset
+        return ok(.tagged(tag: DATE_TIME_TAG, content: content))
+    return ok(.text(v: text))
+
+# A list's items as CBOR items.
+#
+# - `items`: the items.
+#
+# Fails as `to_cbor` fails.
+function items_to_cbor(items: [model.Value]) -> [cbor.Value]?
+    out: [cbor.Value] @= []
+
+    for item in items
+        out @ out.push(to_cbor(item)?)
+
+    return ok(out)
+
+# An object's members as a map's entries, each key a text.
+#
+# - `members`: the members.
+#
+# Fails as `to_cbor` fails.
+function entries_to_cbor(members: [model.Member]) -> [cbor.Entry]?
+    out: [cbor.Entry] @= []
+
+    for m in members
+        out @ out.push(cbor.Entry(key: .text(v: m.name), value: to_cbor(m.value)?))
+
+    return ok(out)
+
+## Tests
+
+test "write and read: numbers exact, bignums, dates and bytes cross as themselves"
+    v: model.Value = .object(
+        members: [model.Member(name: "price", value: .number(text: "19.990")), model.Member(name: "huge", value: .number(text: "-123456789012345678901234567890")), model.Member(name: "day", value: .moment(text: "2026-03-01")), model.Member(name: "at", value: .moment(text: "2026-03-01T09:30:00+01:00")), model.Member(name: "local", value: .moment(text: "2026-03-01T09:30:00")), model.Member(name: "raw", value: .bytes(v: [1, 2]))]
+    )
+    back = read(write(v).must()).must()
+    assert model.json_text(back) == "{\"price\":19.990,\"huge\":-123456789012345678901234567890,\"day\":\"2026-03-01\",\"at\":\"2026-03-01T09:30:00+01:00\",\"local\":\"2026-03-01T09:30:00\",\"raw\":\"AQI=\"}"
+
+test "read: an epoch time, an unknown tag, and a sequence of two items"
+    epoch: cbor.Value = .tagged(tag: 1, content: [cbor.from_int(0)])
+    other: cbor.Value = .tagged(tag: 32, content: [.text(v: "https://example.org")])
+    data: [u8] @= cbor.encode(epoch).must()
+
+    for b in cbor.encode(other).must()
+        data @ data.push(b)
+
+    assert model.json_text(read(data).must()) == "[\"1970-01-01T00:00:00Z\",\"https://example.org\"]"
+
+test "read: a decimal fraction of an exponent too large to write out is refused"
+    huge: cbor.Value = .tagged(tag: 4, content: [.list(items: [cbor.from_int(5000000), cbor.from_int(1)])])
+    assert read(cbor.encode(huge).must()).is_err()
+    assert read([0xff]).is_err()

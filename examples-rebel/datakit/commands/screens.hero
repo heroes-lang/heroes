@@ -1,0 +1,194 @@
+# The commands that show a table to a person: `view`, the full-screen viewer
+# (`output/viewer`), and `report`, a PDF (`output/report`).
+#
+# `view --headless WxH --keys k,k,...` draws the viewer into a buffer of that
+# size and prints each frame as text instead of taking the terminal: the
+# demo's way of showing the viewer, and a way to script it.
+
+use <rebel>/flags
+use <rebel>/io
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/term
+
+use commands/session
+use formats/codec
+use output/report
+use output/viewer
+use query/pipeline
+use query/summary
+
+## Codes
+
+# The code of a `--headless` size or a `--keys` name that is none.
+constant INVALID: str
+    "invalid"
+
+## view
+
+# Shows the input's table in the viewer, on the terminal or headless.
+#
+# - `out`: where the command writes.
+# - `f`: what the parse found for `view`.
+#
+# Fails `invalid` for a size or a key that is none, and as reading and the
+# viewer fail.
+function view(out: session.Out, f: flags.Found) -> ()?
+    t = session.table(session.input_of(f))?
+
+    match flags.value_of(f, "headless")
+        .ok size =>
+            width_height = size_of(size)?
+            keys_pressed: [term.Key] @= []
+
+            for name in flags.values_of(f, "keys")
+                keys_pressed @ keys_pressed.push(key_of(name)?)
+
+            frames = viewer.headless(t, width: width_height[0], height: width_height[1], presses: keys_pressed)
+            number: i64 @= 0
+
+            for frame in frames
+                label = if number == 0
+                    "the first frame"
+                else
+                    f"after {flags.values_of(f, "keys")[number - 1]}"
+                session.say(out, text: f"-- frame {number + 1}, {label} --\n")?
+
+                for line in frame
+                    session.say(out, text: strings.trim_end(line) + "\n")?
+
+                number @ number + 1
+
+            return ok()
+        .err _ => return viewer.run(t)
+
+# The width and the height `text` writes as `WxH`.
+#
+# - `text`: the size, `80x24`.
+#
+# Fails `invalid` where it is not two integers apart by `x`, the width from
+# 20 to 500 and the height from 5 to 200.
+function size_of(text: str) -> [i64]?
+    match strings.split_once(s: text, sep: "x")
+        .ok h =>
+            width = numbers.parse_int(h.before).default(0)
+            height = numbers.parse_int(h.after).default(0)
+
+            if width >= 20 && width <= 500 && height >= 5 && height <= 200
+                return ok([width, height])
+        .err _ => _ = 0
+
+    return fail(code: INVALID, msg: f"--headless: \"{text}\" is no size WxH from 20x5 to 500x200")
+
+# The key `name` names: `up`, `down`, `left`, `right`, `pgup`, `pgdn`,
+# `home`, `end`, `enter`, `tab`, `esc`, `ctrl-c`, or one character typed.
+#
+# - `name`: the key's name.
+#
+# Fails `invalid` for a name that is none of these.
+function key_of(name: str) -> term.Key?
+    if name == "up"
+        return ok(.up)
+
+    if name == "down"
+        return ok(.down)
+
+    if name == "left"
+        return ok(.left)
+
+    if name == "right"
+        return ok(.right)
+
+    if name == "pgup"
+        return ok(.page_up)
+
+    if name == "pgdn"
+        return ok(.page_down)
+
+    if name == "home"
+        return ok(.home)
+
+    if name == "end"
+        return ok(.end)
+
+    if name == "enter"
+        return ok(.enter)
+
+    if name == "tab"
+        return ok(.tab)
+
+    if name == "esc"
+        return ok(.escape)
+
+    if name == "ctrl-c"
+        return ok(.control(letter: "c"))
+
+    if name.chars().len() == 1
+        return ok(.character(text: name))
+    return fail(
+        code: INVALID,
+        msg: f"--keys: no key is named \"{name}\"; the names are up, down, left, right, pgup, pgdn, home, end, enter, tab, esc, ctrl-c, or one character"
+    )
+
+## report
+
+# Writes a PDF report of the input's table: a summary (the groups and
+# aggregates `--group` and `--agg` ask, sorted by the groups, else the
+# statistics of every column) and the table's first rows.
+#
+# - `out`: where the command writes.
+# - `f`: what the parse found for `report`.
+#
+# Fails as reading, `pipeline.run`, `summary.describe` and `report.render`
+# fail, and as writing the file fails.
+function report_command(out: session.Out, f: flags.Found) -> ()?
+    input = session.input_of(f)
+    t = session.table(input)?
+    groups = flags.values_of(f, "group")
+    aggregates = flags.value_of(f, "agg").default("")
+
+    summarised = if groups.len() > 0 || aggregates != ""
+        steps = pipeline.Steps(where: "", group: groups, aggregates: aggregates, select: "", sort: groups, limit: -1)
+        pipeline.run(t, steps: steps)?
+    else
+        summary.describe(t, columns: [], percents: [25, 50, 75])?
+
+    summary_title = if groups.len() > 0
+        f"By {groups.join(", ")}"
+    else
+        "Summary"
+    heading = report.Heading(
+        title: flags.value_of(f, "title").default(f"Report of {t.name}"),
+        source: f"{t.name}: {t.rows.len()} rows, {t.columns.len()} columns",
+        summary_title: summary_title
+    )
+
+    rows_shown = match flags.int_of(f, "rows")
+        .ok n  => n
+        .err _ => 30
+
+    data = report.render(heading, summary: summarised, data: t, max_rows: rows_shown)?
+    target = flags.value_of(f, "output")?
+
+    if target == "-" && io.is_terminal(out.results).default(false)
+        return fail(code: INVALID, msg: "a PDF is binary: write it to a file with -o, or pipe it")
+
+    codec.store(target, data: data)?
+
+    if target == "-"
+        return ok()
+    return session.say(out, text: f"wrote {target}: a PDF of {data.len()} bytes\n")
+
+## Tests
+
+test "size_of: a size, and the ones that are none"
+    assert size_of("72x12").must() == [72, 12]
+    assert size_of("72").is_err()
+    assert size_of("10x10").is_err()
+    assert size_of("72xx").is_err()
+
+test "key_of: names, a character, and a name that is none"
+    assert key_of("pgdn").must() == .page_down
+    assert key_of("s").must() == .character(text: "s")
+    assert key_of("é").must() == .character(text: "é")
+    assert key_of("shift").is_err()

@@ -1,0 +1,210 @@
+# A table laid out as aligned text for a terminal: the `table` format, and
+# the lines the viewer and the reports start from.
+#
+# Widths are counted in columns of a screen by `unicode/segment`, so
+# `Zürich` takes six and `東京` four, and a cell wider than the limit is cut
+# between graphemes with an ellipsis. A number is aligned right, as a column
+# of figures is read, and every other cell left. A control character in a
+# cell is written as its escape (`\n`, `\x1b`), since a cell read from a file
+# is not trusted and an escape sequence printed raw would drive the terminal.
+
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/unicode/segment
+
+use model/model
+
+## Limits
+
+# The widest a column is laid out, in screen columns, where the caller asks
+# for no other bound.
+constant DEFAULT_MAX_WIDTH: i64
+    40
+
+## Layout
+
+# `t` as aligned text: the header, a rule under it, then a line for each row.
+#
+# - `t`: the table.
+# - `max_width`: the widest a column may be, in screen columns, 3 or more.
+#
+# A table of no column is written `(no columns)`. Every line ends with `\n`
+# and none with a space.
+function table_text(t: model.Table lent, max_width: i64) -> str
+    if t.columns.len() == 0
+        return "(no columns)\n"
+
+    widths = widths_of(t, max_width: max_width)
+    right = numeric_columns(t)
+    lines: [str] @= []
+    lines @ lines.push(line_of(t.columns.map(visible), widths: widths, right: none_right(t.columns.len())))
+    rules: [str] @= []
+
+    for w in widths
+        rules @ rules.push(repeat("-", to_u64(w).must()))
+
+    lines @ lines.push(rules.join("  "))
+
+    for row in t.rows
+        lines @ lines.push(line_of(row.map(cell_shown), widths: widths, right: right))
+
+    return lines.join("\n") + "\n"
+
+# What a cell shows: its text with its control characters escaped.
+#
+# - `v`: the cell's value.
+function cell_shown(v: model.Value) -> str
+    return visible(model.cell_text(v))
+
+# The width of each column of `t`: its widest text, the header's included, at
+# most `max_width` and at least 1.
+#
+# - `t`: the table.
+# - `max_width`: the bound.
+function widths_of(t: model.Table lent, max_width: i64) -> [i64]
+    out: [i64] @= []
+    column: i64 @= 0
+
+    while column < t.columns.len()
+        widest: i64 @= segment.width_of(visible(t.columns[column]))
+
+        for row in t.rows
+            w = segment.width_of(cell_shown(row[column]))
+
+            if w > widest
+                widest @ w
+
+        if widest > max_width
+            widest @ max_width
+
+        if widest < 1
+            widest @ 1
+        out @ out.push(widest)
+        column @ column + 1
+
+    return out
+
+# Whether each column of `t` holds numbers alone, nulls aside, and at least
+# one: those are aligned right.
+#
+# - `t`: the table.
+function numeric_columns(t: model.Table lent) -> [bool]
+    out: [bool] @= []
+    column: i64 @= 0
+
+    while column < t.columns.len()
+        numbers_seen: i64 @= 0
+        others: i64 @= 0
+
+        for row in t.rows
+            match row[column]
+                .number _                                                         => numbers_seen @ numbers_seen + 1
+                .null_value                                                       => _ = 0
+                .boolean _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => others @ others + 1
+
+        out @ out.push(numbers_seen > 0 && others == 0)
+        column @ column + 1
+
+    return out
+
+# `count` falses: no column aligned right.
+#
+# - `count`: how many.
+function none_right(count: i64) -> [bool]
+    out: [bool] @= []
+
+    for _ in range(from: 0, to: count)
+        out @ out.push(false)
+
+    return out
+
+# One line of cells, each cut or padded to its column's width, two spaces
+# apart, the line's trailing spaces taken away.
+#
+# - `cells`: the cells' texts, already made visible.
+# - `widths`: each column's width.
+# - `right`: whether each column is aligned right.
+function line_of(cells: [str], widths: [i64], right: [bool]) -> str
+    pieces: [str] @= []
+    at: i64 @= 0
+
+    for c in cells
+        pieces @ pieces.push(fit(c, width: widths[at], right: right[at]))
+        at @ at + 1
+
+    return strings.trim_end(pieces.join("  "))
+
+# `s` cut to `width` screen columns with an ellipsis where it is wider, and
+# padded with spaces to `width` on the side `right` says.
+#
+# - `s`: the text, made visible.
+# - `width`: the column's width, 1 or more.
+# - `right`: whether the padding goes before the text.
+function fit(s: str, width: i64, right: bool) -> str
+    cut = segment.truncate(s: s, width: width, ellipsis: "…")
+    missing = width - segment.width_of(cut)
+
+    if missing <= 0
+        return cut
+
+    padding = repeat(" ", to_u64(missing).must())
+
+    if right
+        return padding + cut
+    return cut + padding
+
+# `s` with every control character written as its escape: `\n`, `\r`, `\t`,
+# and `\xHH` for the others below U+0020 and DEL; a backslash is kept as it is.
+#
+# - `s`: the text.
+function visible(s: str) -> str
+    if !has_control(s)
+        return s
+
+    out: [str] @= []
+
+    for c in s.chars()
+        b = c[0]
+
+        if c.len() > 1 || b >= 32 && b != 127
+            out @ out.push(c)
+        else if c == "\n"
+            out @ out.push("\\n")
+        else if c == "\r"
+            out @ out.push("\\r")
+        else if c == "\t"
+            out @ out.push("\\t")
+        else
+            out @ out.push("\\x" + strings.pad_zeros(numbers.format_int(n: to_i64(b).must(), base: 16), width: 2))
+
+    return out.join("")
+
+# Whether `s` holds a byte below 32 or the byte 127.
+#
+# - `s`: the text.
+function has_control(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] < 32 || s[at] == 127
+            return true
+        at @ at + 1
+
+    return false
+
+## Tests
+
+test "table_text: numbers aligned right, wide characters counted by their columns"
+    rows: [[model.Value]] = [[.text(v: "Zürich"), .number(text: "5")], [.text(v: "東京"), .number(text: "12.5")]]
+    t = model.Table(name: "t", columns: ["city", "units"], rows: rows)
+    assert table_text(t, max_width: 40) == "city    units\n------  -----\nZürich      5\n東京     12.5\n"
+
+test "table_text: a cell past the bound is cut, a control escaped, no column at all"
+    rows: [[model.Value]] = [[.text(v: "abcdefgh")], [.text(v: "a\u{1b}[2J")]]
+    t = model.Table(name: "t", columns: ["x"], rows: rows)
+    assert table_text(t, max_width: 5) == "x\n-----\nabcd…\na\\x1…\n"
+    assert table_text(model.Table(name: "e", columns: [], rows: []), max_width: 5) == "(no columns)\n"
+
+test "visible: escapes the controls and keeps the rest"
+    assert visible("a\tb\nc") == "a\\tb\\nc"
+    assert visible("é") == "é"

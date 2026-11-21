@@ -1,0 +1,101 @@
+# CSV and TSV, read into a table and written from one, through `csv`.
+#
+# The first row is the header: it names the columns, and a name may stand
+# once, since a table whose two columns share a name cannot be read back by
+# name. The other rows' fields are typed by `model/infer`, or kept texts
+# where `--raw` asks. TSV is the same reading with a tab between fields, as
+# Python's `excel-tab` dialect reads it, quotes included. Rows are written
+# with `\n` after each, the line end every Unix tool reads; RFC 4180's CR LF
+# is still read.
+
+use <rebel>/csv
+
+use model/infer
+use model/model
+
+## Codes
+
+# The code of a header that names one column twice.
+constant INVALID: str
+    "invalid"
+
+## Reading
+
+# The table `text` holds.
+#
+# - `text`: the file's text.
+# - `separator`: the field separator, `","` or `"\t"`.
+# - `raw`: whether every field stays a text.
+# - `name`: the table's name.
+#
+# An empty text is a table of no column and no row. Fails as `csv.parse_with`
+# fails, with the row's place in its message, and `invalid` where the header
+# names a column twice.
+function read(text: str, separator: str, raw: bool, name: str) -> model.Table?
+    options = csv.ReadOptions(
+        separator: separator,
+        quote: "\"",
+        comment: "",
+        trim_leading_space: false,
+        lazy_quotes: false,
+        ragged: false,
+        max_field_len: csv.DEFAULT_MAX_FIELD_LEN
+    )
+    rows = csv.parse_with(text, options)?
+
+    if rows.len() == 0
+        return ok(model.Table(name: name, columns: [], rows: []))
+
+    header = rows[0]
+    seen: {str: bool} @= {}
+
+    for c in header
+        if seen[c].default(false)
+            return fail(code: INVALID, msg: f"{name}: the header names the column \"{c}\" twice")
+        seen[c] @ true
+
+    data: [[model.Value]] @= []
+    at: i64 @= 1
+
+    while at < rows.len()
+        data @ data.push(infer.row(rows[at], raw: raw))
+        at @ at + 1
+
+    return ok(model.Table(name: name, columns: header, rows: data))
+
+## Writing
+
+# `t` as CSV text: the header, then each row, every cell as `model.cell_text`
+# writes it, a field quoted only where it must be.
+#
+# - `t`: the table.
+# - `separator`: the field separator, `","` or `"\t"`.
+function write(t: model.Table lent, separator: str) -> str
+    rows: [[str]] @= [t.columns]
+
+    for row in t.rows
+        rows @ rows.push(row.map(model.cell_text))
+
+    options = csv.WriteOptions(separator: separator, quote: "\"", quote_all: false, line_end: "\n")
+    return csv.format_with(rows, options)
+
+## Tests
+
+test "read: a header, typed fields, quotes and a raw reading"
+    t = read(text: "id,name,price\n1,\"Doe, Jane\",19.99\n2,,007\n", separator: ",", raw: false, name: "t").must()
+    assert t.columns == ["id", "name", "price"]
+    assert t.rows[0] == [.number(text: "1"), .text(v: "Doe, Jane"), .number(text: "19.99")]
+    assert t.rows[1] == [.number(text: "2"), .null_value, .text(v: "007")]
+    kept = read(text: "a\n1\n", separator: ",", raw: true, name: "t").must()
+    assert kept.rows[0] == [.text(v: "1")]
+
+test "read: the empty text, a header alone, and a column named twice"
+    assert read(text: "", separator: ",", raw: false, name: "e").must().columns.len() == 0
+    assert read(text: "a,b\n", separator: ",", raw: false, name: "h").must().rows.len() == 0
+    assert read(text: "a,a\n1,2\n", separator: ",", raw: false, name: "d").is_err()
+    assert read(text: "a,b\n1\n", separator: ",", raw: false, name: "r").is_err()
+
+test "write: a tab separator, a quoted field, and a cell of each kind"
+    row: [model.Value] = [.text(v: "a\tb"), .null_value, .boolean(v: true), .moment(text: "2026-03-01")]
+    t = model.Table(name: "t", columns: ["x", "y", "z", "w"], rows: [row])
+    assert write(t, separator: "\t") == "x\ty\tz\tw\n\"a\tb\"\t\ttrue\t2026-03-01\n"

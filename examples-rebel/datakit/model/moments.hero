@@ -1,0 +1,274 @@
+# A moment's RFC 3339 text read into its parts and written back, and crossed
+# to `time`'s instants and calendar dates, for the formats that hold dates:
+# TOML's four kinds of date and time, CBOR's tags 0, 1 and 1004, BSON's
+# date-time, MessagePack's timestamp, XLSX's date cells.
+#
+# A moment with no offset is local: it names a time on the calendar and no
+# instant. Where a format can hold only an instant (BSON, MessagePack, CBOR's
+# tag 1) a local moment is read as UTC, the reading `time.from_date_time`
+# makes, and the writer says so in its comment.
+
+use <rebel>/strings
+use <rebel>/time
+
+use model/infer
+
+## Codes
+
+# The code of a text that is no moment, and of a moment a format cannot hold.
+constant INVALID: str
+    "invalid"
+
+## Parts
+
+# A moment's parts, as its text gives them.
+record Parts
+    # Whether a date is given.
+    has_date: bool
+    # The year, from 0 to 9999; 0 where no date is.
+    year: i64
+    # The month, from 1 to 12; 0 where no date is.
+    month: i64
+    # The day of the month, from 1; 0 where no date is.
+    day: i64
+    # Whether a time of day is given.
+    has_time: bool
+    # The hour, from 0 to 23.
+    hour: i64
+    # The minute, from 0 to 59.
+    minute: i64
+    # The second, from 0 to 60.
+    second: i64
+    # The nanoseconds past the second, from 0 to 999999999.
+    nanosecond: i64
+    # The digits of the fraction the text wrote, 0 to 9, so it is written
+    # back as long as it was read.
+    fraction_digits: i64
+    # Whether an offset from UTC is given; `Z` is an offset of 0.
+    has_offset: bool
+    # The offset in minutes east of UTC.
+    offset_minutes: i64
+
+# The parts of `text`.
+#
+# - `text`: a moment's text, as `infer.is_moment_text` accepts.
+#
+# Fails `invalid` where `text` is no moment.
+function parse(text: str) -> Parts?
+    if !infer.is_moment_text(text)
+        return fail(code: INVALID, msg: f"\"{text}\" is not an RFC 3339 date or time")
+
+    p @= Parts(
+        has_date: false,
+        year: 0,
+        month: 0,
+        day: 0,
+        has_time: false,
+        hour: 0,
+        minute: 0,
+        second: 0,
+        nanosecond: 0,
+        fraction_digits: 0,
+        has_offset: false,
+        offset_minutes: 0
+    )
+    clock: i64 @= 0
+
+    if infer.is_date_at(text, at: 0)
+        p.has_date @ true
+        p.year @ infer.number_at(text, at: 0, count: 4)
+        p.month @ infer.number_at(text, at: 5, count: 2)
+        p.day @ infer.number_at(text, at: 8, count: 2)
+
+        if text.len() == 10
+            return ok(p)
+        clock @ 11
+
+    p.has_time @ true
+    p.hour @ infer.number_at(text, at: clock, count: 2)
+    p.minute @ infer.number_at(text, at: clock + 3, count: 2)
+    p.second @ infer.number_at(text, at: clock + 6, count: 2)
+    after = infer.time_end(text, at: clock + 8)
+
+    if after > clock + 9
+        digits = after - clock - 9
+        kept: i64 @= digits
+
+        if kept > 9
+            kept @ 9
+        p.fraction_digits @ kept
+        nanos: i64 @= infer.number_at(text, at: clock + 9, count: kept)
+        scale: i64 @= kept
+
+        while scale < 9
+            nanos @ nanos * 10
+            scale @ scale + 1
+
+        p.nanosecond @ nanos
+
+    if after < text.len()
+        p.has_offset @ true
+
+        if text[after] == '+' || text[after] == '-'
+            minutes = infer.number_at(text, at: after + 1, count: 2) * 60 + infer.number_at(text, at: after + 4, count: 2)
+
+            if text[after] == '-'
+                p.offset_minutes @ -minutes
+            else
+                p.offset_minutes @ minutes
+    return ok(p)
+
+# The RFC 3339 text of `p`: what it has of a date, a time with its fraction
+# as long as it was read, and its offset, `Z` for 0.
+#
+# - `p`: the parts.
+function format(p: Parts) -> str
+    pieces: [str] @= []
+
+    if p.has_date
+        pieces @ pieces.push(f"{pad(n: p.year, width: 4)}-{pad(n: p.month, width: 2)}-{pad(n: p.day, width: 2)}")
+
+        if p.has_time
+            pieces @ pieces.push("T")
+
+    if p.has_time
+        pieces @ pieces.push(f"{pad(n: p.hour, width: 2)}:{pad(n: p.minute, width: 2)}:{pad(n: p.second, width: 2)}")
+
+        if p.fraction_digits > 0
+            all_nine = pad(n: p.nanosecond, width: 9)
+            pieces @ pieces.push("." + all_nine.slice(from: 0, to: p.fraction_digits))
+
+        if p.has_offset
+            pieces @ pieces.push(offset_text(p.offset_minutes))
+    return pieces.join("")
+
+# The offset `minutes` east of UTC as RFC 3339 writes it: `Z`, `+01:00`,
+# `-05:30`.
+#
+# - `minutes`: the offset, within a day.
+function offset_text(minutes: i64) -> str
+    if minutes == 0
+        return "Z"
+
+    sign: str @= "+"
+    size: i64 @= minutes
+
+    if minutes < 0
+        sign @ "-"
+        size @ -minutes
+    return f"{sign}{pad(n: size / 60, width: 2)}:{pad(n: size % 60, width: 2)}"
+
+# `n` in decimal, zeros before it to `width` digits.
+#
+# - `n`: a number, 0 or more.
+# - `width`: the fewest digits.
+function pad(n: i64, width: i64) -> str
+    return strings.pad_zeros(f"{n}", width: width)
+
+## Calendar and instants
+
+# The calendar date and time `p` names, the time 00:00:00 where it has none
+# and the date 0000-01-01 where it has no date.
+#
+# - `p`: the parts.
+function date_time_of(p: Parts) -> time.DateTime
+    year: i64 @= p.year
+    month: i64 @= p.month
+    day: i64 @= p.day
+
+    if !p.has_date
+        year @ 0
+        month @ 1
+        day @ 1
+    return time.DateTime(
+        year: year,
+        month: month,
+        day: day,
+        hour: p.hour,
+        minute: p.minute,
+        second: p.second,
+        nanosecond: p.nanosecond
+    )
+
+# The parts of a calendar date and time, a date alone where its time is
+# midnight and `date_only_at_midnight`.
+#
+# - `dt`: the date and time.
+# - `date_only_at_midnight`: whether a midnight is written as a date alone.
+function of_date_time(dt: time.DateTime, date_only_at_midnight: bool) -> Parts
+    midnight = dt.hour == 0 && dt.minute == 0 && dt.second == 0 && dt.nanosecond == 0
+    return Parts(
+        has_date: true,
+        year: dt.year,
+        month: dt.month,
+        day: dt.day,
+        has_time: !(midnight && date_only_at_midnight),
+        hour: dt.hour,
+        minute: dt.minute,
+        second: dt.second,
+        nanosecond: dt.nanosecond,
+        fraction_digits: fraction_digits_of(dt.nanosecond),
+        has_offset: false,
+        offset_minutes: 0
+    )
+
+# The fewest digits of a fraction of a second that write `nanos` whole: 0,
+# 3, 6 or 9, as RFC 3339 writers group them.
+#
+# - `nanos`: nanoseconds, from 0 to 999999999.
+function fraction_digits_of(nanos: i64) -> i64
+    if nanos == 0
+        return 0
+
+    if nanos % 1000000 == 0
+        return 3
+
+    if nanos % 1000 == 0
+        return 6
+    return 9
+
+# The instant `p` names: its date and time less its offset, a moment with no
+# offset read as UTC.
+#
+# - `p`: the parts; a time with no date names no instant.
+#
+# Fails `invalid` where `p` has no date, and as `time.from_date_time` fails.
+function instant_of(p: Parts) -> time.Instant?
+    if !p.has_date
+        return fail(code: INVALID, msg: f"the time {format(p)} has no date, so it names no instant")
+
+    local = time.from_date_time(date_time_of(p))?
+    shift = time.minutes(-p.offset_minutes)?
+    return time.add(local, shift)
+
+# The moment text of the instant `t`, in UTC, its fraction as long as it must
+# be.
+#
+# - `t`: the instant.
+function text_of_instant(t: time.Instant) -> str
+    p @= of_date_time(time.to_date_time(t), date_only_at_midnight: false)
+    p.has_offset @ true
+    return format(p)
+
+## Tests
+
+test "parse and format: each shape of moment comes back as it was written"
+    for text in ["2026-03-01", "2026-03-01T09:30:00", "2026-03-01T09:30:00.250Z", "2026-03-01T09:30:00-05:30", "23:59:60.5"]
+        assert format(parse(text).must()) == text
+
+test "parse: a fraction past nine digits is cut, and a text that is no moment refused"
+    p = parse("2026-03-01T00:00:00.1234567891Z").must()
+    assert p.nanosecond == 123456789
+    assert parse("March 1").is_err()
+
+test "instant_of: the offset is taken away, a local moment is UTC, a time alone refused"
+    a = instant_of(parse("2026-03-01T09:30:00+01:00").must()).must()
+    b = instant_of(parse("2026-03-01T08:30:00").must()).must()
+    assert a == b
+    assert text_of_instant(a) == "2026-03-01T08:30:00Z"
+    assert instant_of(parse("09:30:00").must()).is_err()
+
+test "of_date_time: a midnight as a date alone where asked"
+    dt = time.DateTime(year: 2026, month: 3, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert format(of_date_time(dt, date_only_at_midnight: true)) == "2026-03-01"
+    assert format(of_date_time(dt, date_only_at_midnight: false)) == "2026-03-01T00:00:00"

@@ -1,0 +1,366 @@
+# the session works in build/datakit-demo, holding sales.csv, regions.csv, people.json, events.yaml, config.toml, settings.ini, app.properties, catalog.xml
+
+$ datakit formats
+format      extensions       datakit        holds
+----------  ---------------  -------------  ------------------------------------------
+csv         .csv             read, written  comma-separated values, a header row first
+tsv         .tsv .tab        read, written  tab-separated values, a header row first
+json        .json            read, written  one JSON value
+jsonl       .jsonl .ndjson   read, written  one JSON value on each line
+yaml        .yaml .yml       read, written  a YAML document
+toml        .toml            read, written  a TOML document
+ini         .ini .cfg .conf  read, written  sections of keys and values
+properties  .properties      read, written  Java properties: keys and values
+xml         .xml             read, written  an XML document
+xlsx        .xlsx            read, written  an Excel workbook, one sheet
+msgpack     .msgpack .mpk    read, written  MessagePack values
+cbor        .cbor            read, written  CBOR data items
+bson        .bson            read, written  BSON documents, one after another
+table       .txt             written        an aligned text table (written only)
+
+$ datakit inspect sales.csv
+format: csv
+shape: a table of 10 rows and 7 columns
+columns: date (moment), region (text), city (text), product (text), units (number), price (number), amount (number)
+digest: 593898d3109c8048
+
+$ datakit query sales.csv --where 'units >= 5 && region == "north"' --select 'date, city, units, price, units * price as total'
+date        city    units  price   total
+----------  ------  -----  ------  -------
+2026-01-05  Zürich      5   19.99    99.95
+2026-01-12  Kraków      8   19.99   159.92
+2026-02-09  Oslo        6  245.50  1473.00
+(3 rows)
+
+$ datakit query sales.csv --group region --agg 'count() as orders, sum(units) as units, sum(amount) as revenue, mean(amount) as mean' --sort -revenue
+region  orders  units  revenue  mean
+------  ------  -----  -------  --------------------
+north        3     19  1732.87  577.6233333333333333
+west         2      5   559.97               279.985
+east         2      8   250.70                125.35
+south        3     18    87.60                  29.2
+(4 rows)
+
+$ datakit query sales.csv --select 'product, price' --where 'price < 1' --to json
+[
+  {
+    "product": "gadget",
+    "price": 0.10
+  },
+  {
+    "product": "gadget",
+    "price": 0.20
+  },
+  {
+    "product": "gadget",
+    "price": 0.10
+  }
+]
+
+$ datakit stats sales.csv --columns city,units,price,amount --percentiles 10,90
+stat      city    units               price              amount
+--------  ------  ------------------  -----------------  ------------------
+kind      text    number              number             number
+count     10      10                  10                 10
+nulls     0       0                   0                  0
+distinct  10      9                   6                  10
+min       Dublin  1                   0.10               0.20
+max       東京    12                  250.00             1473.00
+sum               50                  827.12             2631.14
+mean              5                   82.712             263.114
+stdev             3.3665016461206925  114.7499326361458  451.70434404228024
+median            4.5                 19.99              92.475
+p10               1.1                 0.1                0.25
+p90               11.6                250                1375.7
+(12 rows)
+
+$ datakit convert sales.csv -o sales.msgpack
+wrote sales.msgpack: 912 bytes of msgpack
+
+$ datakit convert sales.csv -o sales.cbor
+wrote sales.cbor: 906 bytes of cbor
+
+$ datakit convert sales.csv -o sales.bson
+wrote sales.bson: 1383 bytes of bson
+
+$ datakit convert sales.csv -o sales.xlsx
+wrote sales.xlsx: 4254 bytes of xlsx
+
+$ datakit inspect sales.msgpack
+format: msgpack
+shape: a table of 10 rows and 7 columns
+columns: date (text), region (text), city (text), product (text), units (number), price (number), amount (number)
+digest: 593898d3109c8048
+
+$ datakit inspect sales.cbor
+format: cbor
+shape: a table of 10 rows and 7 columns
+columns: date (moment), region (text), city (text), product (text), units (number), price (number), amount (number)
+digest: 593898d3109c8048
+
+$ datakit inspect sales.bson
+format: bson
+shape: a table of 10 rows and 7 columns
+columns: date (text), region (text), city (text), product (text), units (number), price (number), amount (number)
+digest: 593898d3109c8048
+
+$ datakit inspect sales.xlsx
+format: xlsx
+sheets: sales (A1:G11)
+shape: a table of 10 rows and 7 columns
+columns: date (moment), region (text), city (text), product (text), units (number), price (number), amount (number)
+digest: 593898d3109c8048
+
+$ datakit convert sales.cbor --path '$[?@.region == "east"]' --to json
+[
+  {
+    "date": "2026-01-15",
+    "region": "east",
+    "city": "東京",
+    "product": "gizmo",
+    "units": 1,
+    "price": 250.00,
+    "amount": 250.00
+  },
+  {
+    "date": "2026-02-14",
+    "region": "east",
+    "city": "Seoul",
+    "product": "gadget",
+    "units": 7,
+    "price": 0.10,
+    "amount": 0.70
+  }
+]
+
+$ datakit query sales.xlsx --sort -amount --limit 3 --select 'date, city, amount'
+date        city    amount
+----------  ------  ------
+2026-02-09  Oslo      1473
+2026-02-21  Dublin     500
+2026-01-15  東京       250
+(3 rows)
+
+$ datakit convert people.json --path '$.people[?@.age > 30]' --to yaml
+- name: Ada
+  age: 36
+  email: ada@example.org
+  tags:
+    - admin
+    - ops
+  address:
+    city: London
+- name: Linus
+  age: 54
+  email: null
+  tags:
+    - kernel
+  address:
+    city: Portland
+
+$ datakit query people.json --path '$.people[*]' --select 'name, age, address, len(tags) as tags' --to csv
+name,age,address,tags
+Ada,36,"{""city"":""London""}",2
+Grace,29,"{""city"":""Arlington""}",0
+Linus,54,"{""city"":""Portland""}",1
+
+$ datakit convert config.toml --to json
+{
+  "title": "datakit demo",
+  "released": "2026-03-01",
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "pool": 0.75
+  },
+  "servers": [
+    {
+      "name": "alpha",
+      "ip": "10.0.0.1"
+    },
+    {
+      "name": "beta",
+      "ip": "10.0.0.2"
+    }
+  ]
+}
+
+$ datakit convert settings.ini --to toml
+[server]
+host = "example.org"
+port = 8080
+secure = true
+
+[paths]
+data = "/var/lib/demo"
+logs = "/var/log/demo"
+
+$ datakit convert app.properties --to yaml
+app.name: datakit
+app.version: "0.1.0"
+db.url: jdbc:sqlite:demo.db
+greeting: Hello, world ☃
+retries: 3
+
+$ datakit convert catalog.xml --to csv
+@id,title,author,year,price
+b1,Dune,Frank Herbert,1965,9.99
+b2,Emma,Jane Austen,1815,4.50
+b3,Solaris,Stanisław Lem,1961,
+
+$ datakit convert events.yaml --to xml
+<?xml version="1.0" encoding="UTF-8"?>
+<events>
+  <item>
+    <name>deploy</name>
+    <at>2026-03-01T09:30:00Z</at>
+    <ok>true</ok>
+  </item>
+  <item>
+    <name>rollback</name>
+    <at>2026-03-01T10:05:00Z</at>
+    <ok>false</ok>
+  </item>
+</events>
+
+$ datakit convert sales.csv --path '$[0:2]' --to properties
+sales[0].date=2026-01-05
+sales[0].region=north
+sales[0].city=Zürich
+sales[0].product=widget
+sales[0].units=5
+sales[0].price=19.99
+sales[0].amount=99.95
+sales[1].date=2026-01-07
+sales[1].region=south
+sales[1].city=São Paulo
+sales[1].product=gadget
+sales[1].units=2
+sales[1].price=0.10
+sales[1].amount=0.20
+
+$ datakit sql sales.csv regions.csv --db sales.db --query 'SELECT r.manager, COUNT(*) AS orders, SUM(s.units) AS units FROM sales AS s JOIN regions AS r ON r.region = s.region GROUP BY r.manager ORDER BY units DESC'
+manager  orders  units
+-------  ------  -----
+Ingrid        3     19
+Mateo         3     18
+Yuki          2      8
+Aoife         2      5
+(4 rows)
+
+$ datakit view sales.csv --headless 60x9 --keys down,pgdn,right,right,s,s,q
+-- frame 1, the first frame --
+┌ sales: 10 rows, 7 columns ───────────────────────────────┐
+│  date       region city      product units price         ▲
+│> 2026-01-05 north  Zürich    widget  5     19.99         █
+│  2026-01-07 south  São Paulo gadget  2     0.10          █
+│  2026-01-12 north  Kraków    widget  8     19.99         ║
+│  2026-01-15 east   東京      gizmo   1     250.00        ║
+│  2026-01-20 south  Lima      gadget  12    0.20          ▼
+└──────────────────────────────────────────────────────────┘
+ row 1/10  column 1/7 date  s sort  q quit
+-- frame 2, after down --
+┌ sales: 10 rows, 7 columns ───────────────────────────────┐
+│  date       region city      product units price         ▲
+│  2026-01-05 north  Zürich    widget  5     19.99         █
+│> 2026-01-07 south  São Paulo gadget  2     0.10          █
+│  2026-01-12 north  Kraków    widget  8     19.99         ║
+│  2026-01-15 east   東京      gizmo   1     250.00        ║
+│  2026-01-20 south  Lima      gadget  12    0.20          ▼
+└──────────────────────────────────────────────────────────┘
+ row 2/10  column 1/7 date  s sort  q quit
+-- frame 3, after pgdn --
+┌ sales: 10 rows, 7 columns ───────────────────────────────┐
+│  date       region city      product units price         ▲
+│  2026-01-12 north  Kraków    widget  8     19.99         █
+│  2026-01-15 east   東京      gizmo   1     250.00        █
+│  2026-01-20 south  Lima      gadget  12    0.20          ║
+│  2026-02-02 west   Lisboa    widget  3     19.99         ║
+│> 2026-02-09 north  Oslo      gizmo   6     245.50        ▼
+└──────────────────────────────────────────────────────────┘
+ row 7/10  column 1/7 date  s sort  q quit
+-- frame 4, after right --
+┌ sales: 10 rows, 7 columns ───────────────────────────────┐
+│  date       region city      product units price         ▲
+│  2026-01-12 north  Kraków    widget  8     19.99         █
+│  2026-01-15 east   東京      gizmo   1     250.00        █
+│  2026-01-20 south  Lima      gadget  12    0.20          ║
+│  2026-02-02 west   Lisboa    widget  3     19.99         ║
+│> 2026-02-09 north  Oslo      gizmo   6     245.50        ▼
+└──────────────────────────────────────────────────────────┘
+ row 7/10  column 2/7 region  s sort  q quit
+-- frame 5, after right --
+┌ sales: 10 rows, 7 columns ───────────────────────────────┐
+│  date       region city      product units price         ▲
+│  2026-01-12 north  Kraków    widget  8     19.99         █
+│  2026-01-15 east   東京      gizmo   1     250.00        █
+│  2026-01-20 south  Lima      gadget  12    0.20          ║
+│  2026-02-02 west   Lisboa    widget  3     19.99         ║
+│> 2026-02-09 north  Oslo      gizmo   6     245.50        ▼
+└──────────────────────────────────────────────────────────┘
+ row 7/10  column 3/7 city  s sort  q quit
+-- frame 6, after s --
+┌ sales: 10 rows, 7 columns ───────────────────────────────┐
+│  date       region city ^    product units price         ▲
+│> 2026-02-21 west   Dublin    gizmo   2     250.00        █
+│  2026-01-12 north  Kraków    widget  8     19.99         █
+│  2026-01-20 south  Lima      gadget  12    0.20          ║
+│  2026-02-02 west   Lisboa    widget  3     19.99         ║
+│  2026-02-09 north  Oslo      gizmo   6     245.50        ▼
+└──────────────────────────────────────────────────────────┘
+ row 1/10  column 3/7 city  s sort  q quit
+-- frame 7, after s --
+┌ sales: 10 rows, 7 columns ───────────────────────────────┐
+│  date       region city v    product units price         ▲
+│> 2026-01-15 east   東京      gizmo   1     250.00        █
+│  2026-01-05 north  Zürich    widget  5     19.99         █
+│  2026-01-07 south  São Paulo gadget  2     0.10          ║
+│  2026-02-14 east   Seoul     gadget  7     0.10          ║
+│  2026-02-28 south  Quito     widget  4     21.25         ▼
+└──────────────────────────────────────────────────────────┘
+ row 1/10  column 3/7 city  s sort  q quit
+
+$ datakit report sales.csv -o report.pdf --title 'Sales by region' --group region --agg 'count() as orders, sum(amount) as revenue, p50(amount) as median' --rows 10
+wrote report.pdf: a PDF of 2518 bytes
+
+$ datakit inspect report.pdf
+format: pdf 1.7
+pages: 2
+title: Sales by region
+page 1:
+  Sales by region
+  sales: 10 rows, 7 columns
+  By region
+  region orders revenue median
+  east 2 250.70 125.35
+  north 3 1732.87 159.92
+  south 3 87.60 2.4
+  west 2 559.97 279.985
+page 2:
+  The first 10 of 10 rows
+  date region city product units price amount
+  2026-01-05 north Zürich widget 5 19.99 99.95
+  2026-01-07 south São Paulo gadget 2 0.10 0.20
+  2026-01-12 north Kraków widget 8 19.99 159.92
+  2026-01-15 east ?? gizmo 1 250.00 250.00
+  2026-01-20 south Lima gadget 12 0.20 2.40
+  2026-02-02 west Lisboa widget 3 19.99 59.97
+  2026-02-09 north Oslo gizmo 6 245.50 1473.00
+  2026-02-14 east Seoul gadget 7 0.10 0.70
+  2026-02-21 west Dublin gizmo 2 250.00 500.00
+  2026-02-28 south Quito widget 4 21.25 85.00
+text digest: 5a6bce74cfb159bc
+
+$ datakit query sales.csv --where 'units >'
+datakit: --where: 1:8: expected an operand, found the end
+[exit 1]
+
+$ datakit query sales.csv --where 'prise > 10'
+datakit: --where: no column "prise"; the columns are date, region, city, product, units, price, amount
+[exit 1]
+
+$ datakit convert sales.csv --to parquet
+datakit: no format named "parquet"; the formats are csv, tsv, json, jsonl, yaml, toml, ini, properties, xml, xlsx, msgpack, cbor, bson, table
+[exit 1]
+
+# removed build/datakit-demo

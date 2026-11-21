@@ -1,0 +1,194 @@
+# The type of a value a format gives only as text: a CSV field, an INI value,
+# a Java property, an XML element's text.
+#
+# The rules are the narrow ones a conversion can undo, as xsv and Miller read
+# a field: the empty text is null; `true` and `false` (and their capitalised
+# forms, which spreadsheets write) are truth values; a text in JSON's number
+# syntax is a number, so `007`, `+3`, `1.` and `.5` stay texts and a postal
+# code keeps its zeros; an RFC 3339 date, date-time or time of day is a
+# moment, its day checked against the calendar. Everything else is a text.
+# `--raw` turns all of it off and every field stays a text.
+
+use <rebel>/time
+
+use model/decimal
+use model/model
+
+# The value `s` reads as, by the rules above.
+#
+# - `s`: the field's text, as the format gave it; nothing is trimmed.
+function cell(s: str) -> model.Value
+    if s == ""
+        return .null_value
+
+    if s == "true" || s == "TRUE" || s == "True"
+        return .boolean(v: true)
+
+    if s == "false" || s == "FALSE" || s == "False"
+        return .boolean(v: false)
+
+    if decimal.is_number_text(s)
+        return .number(text: s)
+
+    if is_moment_text(s)
+        return .moment(text: s)
+    return .text(v: s)
+
+# The values of `fields`: each read by `cell`, or each a text where `raw`.
+#
+# - `fields`: the texts.
+# - `raw`: whether no field is read as more than a text.
+function row(fields: [str], raw: bool) -> [model.Value]
+    out: [model.Value] @= []
+
+    for f in fields
+        if raw
+            out @ out.push(.text(v: f))
+        else
+            out @ out.push(cell(f))
+
+    return out
+
+# Whether `s` is an RFC 3339 date (`2026-03-01`), a date and a time of day
+# (`2026-03-01T09:30:00`, with a fraction of a second, `Z` or an offset
+# `+01:00` after it), or a time of day alone (`09:30:00`).
+#
+# - `s`: the text.
+#
+# It reads bytes at fixed places, checking each is a digit before reading it,
+# and cuts no slice, so no text makes it abort.
+function is_moment_text(s: str) -> bool
+    if is_time_at(s, at: 0)
+        return time_end(s, at: 8) == s.len()
+
+    if !is_date_at(s, at: 0)
+        return false
+
+    if s.len() == 10
+        return true
+
+    if s.len() < 19 || s[10] != 'T' || !is_time_at(s, at: 11)
+        return false
+    after = time_end(s, at: 19)
+
+    if after == s.len()
+        return true
+
+    if s[after] == 'Z' || s[after] == 'z'
+        return after + 1 == s.len()
+    return is_offset_at(s, at: after) && after + 6 == s.len()
+
+# Whether `s` holds a date `YYYY-MM-DD` of the calendar at `at`.
+#
+# - `s`: the text.
+# - `at`: where the date would begin.
+function is_date_at(s: str, at: i64) -> bool
+    if at + 10 > s.len() || s[at + 4] != '-' || s[at + 7] != '-'
+        return false
+
+    if !digits_at(s, at: at, count: 4) || !digits_at(s, at: at + 5, count: 2) || !digits_at(s, at: at + 8, count: 2)
+        return false
+    year = number_at(s, at: at, count: 4)
+    month = number_at(s, at: at + 5, count: 2)
+    day = number_at(s, at: at + 8, count: 2)
+
+    if month < 1 || month > 12 || day < 1
+        return false
+    return day <= time.days_in_month(year: year, month: month).default(0)
+
+# Whether `s` holds a time of day `HH:MM:SS` at `at`, a leap second allowed.
+#
+# - `s`: the text.
+# - `at`: where the time would begin.
+function is_time_at(s: str, at: i64) -> bool
+    if at + 8 > s.len() || s[at + 2] != ':' || s[at + 5] != ':'
+        return false
+
+    if !digits_at(s, at: at, count: 2) || !digits_at(s, at: at + 3, count: 2) || !digits_at(s, at: at + 6, count: 2)
+        return false
+    return number_at(s, at: at, count: 2) <= 23 && number_at(s, at: at + 3, count: 2) <= 59 && number_at(s, at: at + 6, count: 2) <= 60
+
+# Where a time of day's text ends: past its seconds at `at`, and past a
+# fraction of one digit or more where one follows.
+#
+# - `s`: the text.
+# - `at`: the index just past the seconds.
+function time_end(s: str, at: i64) -> i64
+    if at < s.len() && s[at] == '.'
+        after = decimal.skip_digits(s, from: at + 1)
+
+        if after > at + 1
+            return after
+    return at
+
+# Whether `s` holds an offset `+HH:MM` or `-HH:MM` at `at`.
+#
+# - `s`: the text.
+# - `at`: where the sign would stand.
+function is_offset_at(s: str, at: i64) -> bool
+    if at + 6 > s.len() || s[at] != '+' && s[at] != '-' || s[at + 3] != ':'
+        return false
+
+    if !digits_at(s, at: at + 1, count: 2) || !digits_at(s, at: at + 4, count: 2)
+        return false
+    return number_at(s, at: at + 1, count: 2) <= 23 && number_at(s, at: at + 4, count: 2) <= 59
+
+# Whether the `count` bytes of `s` from `at` are all ASCII digits.
+#
+# - `s`: the text.
+# - `at`: the first byte, inside `s` with the others.
+# - `count`: how many bytes.
+function digits_at(s: str, at: i64, count: i64) -> bool
+    i: i64 @= at
+
+    while i < at + count
+        if i >= s.len() || !decimal.is_digit(s[i])
+            return false
+        i @ i + 1
+
+    return true
+
+# The number the `count` digits of `s` from `at` write.
+#
+# - `s`: the text, holding digits there, as `digits_at` checked.
+# - `at`: the first digit.
+# - `count`: how many digits, at most 18.
+function number_at(s: str, at: i64, count: i64) -> i64
+    n: i64 @= 0
+    i: i64 @= at
+
+    while i < at + count
+        n @ n * 10 + to_i64(s[i] - '0').must()
+        i @ i + 1
+
+    return n
+
+## Tests
+
+test "cell: null, truth values, numbers, moments and texts"
+    assert cell("") == .null_value
+    assert cell("TRUE") == .boolean(v: true)
+    assert cell("false") == .boolean(v: false)
+    assert cell("19.99") == .number(text: "19.99")
+    assert cell("-3") == .number(text: "-3")
+    assert cell("007") == .text(v: "007")
+    assert cell("2026-02-28") == .moment(text: "2026-02-28")
+    assert cell("Zürich") == .text(v: "Zürich")
+
+test "is_moment_text: the calendar's days, times, fractions and offsets"
+    assert is_moment_text("2024-02-29")
+    assert !is_moment_text("2026-02-29")
+    assert !is_moment_text("2026-13-01")
+    assert is_moment_text("2026-03-01T09:30:00")
+    assert is_moment_text("2026-03-01T09:30:00.250Z")
+    assert is_moment_text("2026-03-01T09:30:00+01:00")
+    assert !is_moment_text("2026-03-01T09:30:00+1:00")
+    assert !is_moment_text("2026-03-01T24:00:00")
+    assert is_moment_text("23:59:60")
+    assert !is_moment_text("9:30:00")
+    assert !is_moment_text("2026-03-01 09:30:00")
+    assert !is_moment_text("2026-03-0é")
+
+test "row: raw keeps every field a text"
+    assert row(["1", ""], raw: true) == [.text(v: "1"), .text(v: "")]
+    assert row(["1", ""], raw: false) == [.number(text: "1"), .null_value]

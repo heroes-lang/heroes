@@ -1,0 +1,170 @@
+# INI files read into the model and written from it, through `ini`.
+#
+# A file is an object of its sections, each an object of its keys, in the
+# order written; keys before the first header are the root's own members, as
+# Git's and systemd's files hold none and PHP's and Python's allow. Every
+# value is text in INI, so each is typed by `model/infer` unless `--raw`.
+# Written, an object's scalar members come first in the section of no name
+# and its object members are the sections; a table's rows are sections named
+# by their first column. A value that is a list or an object is written as
+# its JSON.
+
+use <rebel>/ini
+
+use model/infer
+use model/model
+use model/tables
+
+## Codes
+
+# The code of a document INI cannot hold.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Reading
+
+# The options INI is read with: Python's `configparser` defaults, keys kept as
+# written, and keys allowed before the first header.
+function read_options() -> ini.ReadOptions
+    options @= ini.strict_read_options()
+    options.unnamed_section @ true
+    return options
+
+# The document of the INI text `text`.
+#
+# - `text`: the file's text.
+# - `raw`: whether every value stays a text.
+#
+# Fails as `ini.parse_with` fails, `invalid` with the line.
+function read(text: str, raw: bool) -> model.Value?
+    doc = ini.parse_with(text, read_options())?
+    members: [model.Member] @= []
+
+    for section in doc.sections
+        entries: [model.Member] @= []
+
+        for e in section.entries
+            entries @ entries.push(model.Member(name: e.key, value: infer.row([e.value], raw: raw)[0]))
+
+        if section.name == ""
+            for e in entries
+                members @ members.push(e)
+        else
+            members @ members.push(model.Member(name: section.name, value: .object(members: entries)))
+
+    return ok(.object(members: members))
+
+## Writing
+
+# `v` as INI text.
+#
+# - `v`: the document: an object of sections, or a list of objects, each row a
+#   section named by its first column.
+# - `name`: the table's name, for a message.
+#
+# Fails `unsupported` where `v` is no object and no table, or a row's first
+# cell is empty and so names no section, and as `ini.format` fails, `invalid`
+# where a name or a value would not read back.
+function write(v: model.Value, name: str) -> str?
+    match v
+        .object o => return ini.format(document_of(o.members))
+        .list _ =>
+            t = tables.table_of(v, name: name)?
+
+            if t.columns.len() < 2
+                return fail(
+                    code: UNSUPPORTED,
+                    msg: f"{name}: INI needs a column naming each section and one more column"
+                )
+
+            sections: [model.Member] @= []
+
+            for row in t.rows
+                section = model.cell_text(row[0])
+
+                if section == ""
+                    return fail(
+                        code: UNSUPPORTED,
+                        msg: f"{name}: a row's first cell is empty, so it names no INI section"
+                    )
+
+                keys_of_row: [model.Member] @= []
+                at: i64 @= 1
+
+                while at < t.columns.len()
+                    keys_of_row @ keys_of_row.push(model.Member(name: t.columns[at], value: row[at]))
+                    at @ at + 1
+
+                sections @ sections.push(model.Member(name: section, value: .object(members: keys_of_row)))
+
+            return ini.format(document_of(sections))
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ => return fail(
+            code: UNSUPPORTED,
+            msg: f"{name}: a {model.kind_name(v)} is no INI file, which holds sections of keys"
+        )
+
+# The INI document of an object's members: its scalars in the section of no
+# name, first, and each object member a section.
+#
+# - `members`: the members.
+function document_of(members: [model.Member]) -> ini.Document
+    loose: [ini.Entry] @= []
+    sections: [ini.Section] @= []
+
+    for m in members
+        match m.value
+            .object o =>
+                entries: [ini.Entry] @= []
+
+                for inner in o.members
+                    entries @ entries.push(entry_of(inner))
+
+                sections @ sections.push(ini.Section(name: m.name, comments: [], entries: entries))
+            .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ | .list _ => loose @ loose.push(
+                entry_of(m)
+            )
+
+    if loose.len() > 0
+        first: [ini.Section] = [ini.Section(name: "", comments: [], entries: loose)]
+        return ini.Document(sections: first.concat_sections(then: sections), closing: [])
+    return ini.Document(sections: sections, closing: [])
+
+# The INI entry of a member, its value as `model.cell_text` writes it.
+#
+# - `m`: the member.
+function entry_of(m: model.Member) -> ini.Entry
+    return ini.Entry(key: m.name, value: model.cell_text(m.value), bare: false, comments: [])
+
+# `first` followed by `then`.
+#
+# - `first`: the sections that come first.
+# - `then`: the sections after them.
+function concat_sections(first: [ini.Section], then: [ini.Section]) -> [ini.Section]
+    out: [ini.Section] @= first
+
+    for s in then
+        out @ out.push(s)
+
+    return out
+
+## Tests
+
+test "read: loose keys, sections, typed values and a raw reading"
+    v = read("name = demo\n[db]\nport = 5432\nhost = localhost\n", raw: false).must()
+    assert model.json_text(v) == "{\"name\":\"demo\",\"db\":{\"port\":5432,\"host\":\"localhost\"}}"
+    kept = read("[a]\nn = 1\n", raw: true).must()
+    assert model.json_text(kept) == "{\"a\":{\"n\":\"1\"}}"
+
+test "write: loose keys first, then the sections"
+    db: model.Value = .object(members: [model.Member(name: "port", value: .number(text: "5432"))])
+    v: model.Value = .object(
+        members: [model.Member(name: "db", value: db), model.Member(name: "name", value: .text(v: "demo"))]
+    )
+    assert write(v, name: "x").must() == "name = demo\n\n[db]\nport = 5432\n\n"
+
+test "write: a table's rows as sections, and a scalar refused"
+    row: model.Value = .object(
+        members: [model.Member(name: "id", value: .text(v: "a")), model.Member(name: "n", value: .number(text: "1"))]
+    )
+    assert write(.list(items: [row]), name: "t").must() == "[a]\nn = 1\n\n"
+    assert write(.number(text: "1"), name: "t").is_err()
