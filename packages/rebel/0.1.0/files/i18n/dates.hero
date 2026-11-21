@@ -1,28 +1,32 @@
 # Dates and times written as a language writes them: "Tuesday, March 5,
 # 2024" and "5 mars 2024", the names of its months and days, its patterns for
-# full, long, medium and short dates, and times relative to now, "3 days
-# ago", "in 2 hours", "yesterday", from the data of CLDR release
-# `i18n.CLDR_VERSION` for every locale it holds, over the instants and zones
-# of `time`. Only the Gregorian calendar is written.
+# full, long, medium and short dates, times relative to now, "3 days ago",
+# "in 2 hours", "yesterday", in a unit the program names or one chosen for
+# the span, and durations in words, "3 hours, 5 minutes", from the data of
+# CLDR release `i18n.CLDR_VERSION` for every locale it holds, over the
+# instants and zones of `time`. Only the Gregorian calendar is written.
 #
 # What it does NOT do: read the clock, compute a calendar or load a zone
-# (`time`); write a time in a fixed form such as RFC 3339 (`time.format`);
-# name a zone in words, "Central European Time", which CLDR's zone names
-# would need: a zone is written by its offset from GMT in the language's
-# own form, "GMT+1".
+# (`time`); write a time or a duration in a fixed form such as RFC 3339 or
+# "3h5m0s" (`time.format`, `time.format_duration`); name a zone in words,
+# "Central European Time", which CLDR's zone names would need: a zone is
+# written by its offset from GMT in the language's own form, "GMT+1"; write
+# a span of several units relative to now, "7 minutes and 30 seconds ago",
+# for which CLDR has no pattern in any language: a program writes a
+# duration's words inside a sentence of its own, in a language it controls.
 #
 # It fails `invalid` where a pattern or a skeleton is not what the function
 # reads, and `not_found` where a text holds no date the pattern reads.
 #
 # Not written yet, each a `pending` block of its ledger: a time zone named in
 # words, "Central European Time"; calendars other than the Gregorian: Buddhist,
-# Hebrew, Islamic, Japanese, Persian; a range of dates, "March 5–7, 2024"; a
-# duration written in words, "3 hours, 5 minutes".
+# Hebrew, Islamic, Japanese, Persian; a range of dates, "March 5–7, 2024".
 
 use i18n
 use i18n/dates/internal/date_data
 use i18n/dates/internal/date_format
 use i18n/dates/internal/date_parse
+use i18n/dates/internal/durations
 use i18n/dates/internal/icu_cases
 use i18n/dates/internal/relative
 use i18n/dates/internal/skeletons
@@ -98,6 +102,47 @@ variant RelativeStyle
     short
     # As short as the language writes it.
     narrow
+
+# A unit a duration is written in.
+variant DurationUnit
+    # Years.
+    year
+    # Months.
+    month
+    # Weeks.
+    week
+    # Days.
+    day
+    # Hours.
+    hour
+    # Minutes.
+    minute
+    # Seconds.
+    second
+    # Thousandths of a second.
+    millisecond
+    # Millionths of a second.
+    microsecond
+    # Billionths of a second.
+    nanosecond
+
+# How long a duration's words are: "3 hours, 5 minutes", "3 hr, 5 min" or
+# "3h 5m" in English.
+variant DurationStyle
+    # In full words.
+    long
+    # Shortened.
+    short
+    # As short as the language writes it.
+    narrow
+
+# One unit of a duration written in words, and how many of it. Built
+# directly, or made from a `time.Duration` by `duration_parts`.
+record DurationPart
+    # The unit.
+    unit: DurationUnit
+    # How many, negative in a duration that runs backwards.
+    count: i64
 
 # `t` in `zone` written as a date in `locale`'s language: "Tuesday, March 5,
 # 2024" in full English, "05.03.24" short in German.
@@ -545,6 +590,207 @@ function format_relative_named(locale: i18n.Locale, amount: i64, unit: RelativeU
 
     return relative.format(locale, amount: amount, unit: unit_index, width: width, named: true)
 
+# `d` from now written in `locale`'s language in the one unit chosen for it,
+# always with its number: "in 5 minutes", "3 hours ago", "in 0 seconds".
+#
+# - `locale`: the locale.
+# - `d`: the span from now, negative in the past.
+# - `style`: how long the words are.
+#
+# The unit is the largest of which `d` holds one whole, and the number
+# counts whole ones toward zero, as Swift's `RelativeDateTimeFormatter`
+# counts them: under a minute in seconds, under an hour in minutes, under a
+# day in hours, under a week in days, under a month in weeks, under a year
+# in months, and in years beyond, a month being 30.436875 days and a year
+# 365.2425, the Gregorian calendar's averages. So 59 seconds are "59
+# seconds", 119 seconds "1 minute", 23 hours and 59 minutes "23 hours", 28
+# days "4 weeks", 31 days "1 month" and 365 days "11 months"; a span under a
+# second is "in 0 seconds", the future, as ICU writes zero. Swift counts
+# months and years on the calendar from the day it is asked about, and so
+# writes "1 month ago" for the 28 days from February 8 to March 8, which
+# this writes "4 weeks ago". A quarter is never chosen.
+#
+# A span of several units relative to now, "7 minutes and 30 seconds ago",
+# has no pattern in CLDR: a program writes `format_duration`'s words inside
+# a sentence of its own, in a language it controls. See also
+# `format_relative_duration_named`, `format_relative_instant`,
+# `format_relative`.
+function format_relative_duration(locale: i18n.Locale, d: time.Duration, style: RelativeStyle) -> str
+    width = match style
+        .long   => 0
+        .short  => 1
+        .narrow => 2
+
+    c = relative.chosen(d.nanoseconds / relative.SECOND)
+    return relative.format(locale, amount: c.amount, unit: c.unit, width: width, named: false)
+
+# `d` from now written in `locale`'s language in the one unit chosen for it,
+# as the language names it where it has a word: "yesterday", "last week",
+# "now", and "in 5 minutes" where it has none.
+#
+# - `locale`: the locale.
+# - `d`: the span from now, negative in the past.
+# - `style`: how long the words are.
+#
+# The unit and the number are chosen as `format_relative_duration` chooses
+# them, so a day and more but under two days ago is "yesterday", and a span
+# under a second "now". See also `format_relative_instant_named`,
+# `format_relative_named`.
+function format_relative_duration_named(locale: i18n.Locale, d: time.Duration, style: RelativeStyle) -> str
+    width = match style
+        .long   => 0
+        .short  => 1
+        .narrow => 2
+
+    c = relative.chosen(d.nanoseconds / relative.SECOND)
+    return relative.format(locale, amount: c.amount, unit: c.unit, width: width, named: true)
+
+# `t` written in `locale`'s language relative to `now`, in the one unit
+# chosen for the span between them, always with its number: "5 minutes
+# ago", "in 2 hours".
+#
+# - `locale`: the locale.
+# - `t`: the instant written.
+# - `now`: the instant it is written from, which the caller reads: nothing
+#   here reads a clock, so a program and its tests give the same answer.
+# - `style`: how long the words are.
+#
+# The span is counted in whole seconds toward zero for any two instants at
+# all, the farthest apart 584 years, and its unit chosen as
+# `format_relative_duration` chooses it. See also
+# `format_relative_instant_named`.
+function format_relative_instant(locale: i18n.Locale, t: time.Instant, now: time.Instant, style: RelativeStyle) -> str
+    width = match style
+        .long   => 0
+        .short  => 1
+        .narrow => 2
+
+    c = relative.chosen(relative.seconds_between(from: now.unix_nanoseconds, to: t.unix_nanoseconds))
+    return relative.format(locale, amount: c.amount, unit: c.unit, width: width, named: false)
+
+# `t` written in `locale`'s language relative to `now`, in the one unit
+# chosen for the span between them, as the language names it where it has
+# a word: "yesterday", "tomorrow", "now".
+#
+# - `locale`: the locale.
+# - `t`: the instant written.
+# - `now`: the instant it is written from, which the caller reads.
+# - `style`: how long the words are.
+#
+# The span is counted as `format_relative_instant` counts it. See also
+# `format_relative_duration_named`.
+function format_relative_instant_named(locale: i18n.Locale, t: time.Instant, now: time.Instant, style: RelativeStyle) -> str
+    width = match style
+        .long   => 0
+        .short  => 1
+        .narrow => 2
+
+    c = relative.chosen(relative.seconds_between(from: now.unix_nanoseconds, to: t.unix_nanoseconds))
+    return relative.format(locale, amount: c.amount, unit: c.unit, width: width, named: true)
+
+## Durations
+
+# `parts` written in `locale`'s language as one duration, each part in its
+# unit's words and the parts joined as the language joins a list of units:
+# "3 hours, 5 minutes" in English, "3 Stunden, 5 Minuten" in German, "3
+# heures et 5 minutes" in French, from CLDR's unit and list patterns.
+#
+# - `locale`: the locale; its numbering system writes the counts, their
+#   digits grouped as it groups a decimal number's and only from as many
+#   digits as CLDR's minimum grouping digits ask: Spanish writes "1234
+#   horas" and "12.345 horas".
+# - `parts`: the units and their counts, written in the order given, a count
+#   of 0 too; `duration_parts` makes them from a `time.Duration`. No parts
+#   write the empty text.
+# - `style`: how long the words are.
+#
+# Where no count is above zero and one is below it, the minus sign stands
+# once, on the first part, as ECMA-402's `Intl.DurationFormat` writes a
+# negative duration; where the signs are mixed, each part carries its own,
+# as ICU's `MeasureFormat` writes them. A pattern that writes no number, as
+# Arabic's dual "ساعتان" does, writes no sign either, as both do.
+#
+# CLDR has no pattern that writes a duration relative to now, "7 minutes and
+# 30 seconds ago": a program writes these words inside a sentence of its
+# own, in a language it controls, as its second example shows. See also
+# `duration_parts`, `format_relative_duration`.
+function format_duration(locale: i18n.Locale, parts: [DurationPart], style: DurationStyle) -> str
+    width = match style
+        .long   => 0
+        .short  => 1
+        .narrow => 2
+
+    units: [i64] @= []
+    counts: [i64] @= []
+
+    for part in parts
+        unit_index = match part.unit
+            .year        => 0
+            .month       => 1
+            .week        => 2
+            .day         => 3
+            .hour        => 4
+            .minute      => 5
+            .second      => 6
+            .millisecond => 7
+            .microsecond => 8
+            .nanosecond  => 9
+
+        units @ units.push(unit_index)
+        counts @ counts.push(part.count)
+
+    return durations.format(locale, units_of: units, counts: counts, width: width)
+
+# `d` broken into whole units from `largest` down to `smallest`, each unit
+# that holds none left out: 3 hours and 5 minutes is a part of 3 hours and a
+# part of 5 minutes.
+#
+# - `d`: the duration; a negative one gives negative counts.
+# - `largest`: the largest unit counted, a longer span counted in it: 26
+#   hours are 26 hours where it is the hour. Taken as `smallest` where it is
+#   the smaller.
+# - `smallest`: the smallest unit counted; what is left below it is
+#   dropped, toward zero. To round instead, round `d` first with
+#   `time.round_duration`.
+#
+# The parts are the largest unit first. A duration shorter than one
+# `smallest` answers one part of 0 of it, so `format_duration` writes "0
+# seconds" for it and never the empty text. A day is 86,400 seconds and a
+# week seven days, as `time` counts them. See also `format_duration`.
+function duration_parts(d: time.Duration, largest: time.Unit, smallest: time.Unit) -> [DurationPart]
+    order: [time.Unit] = [.week, .day, .hour, .minute, .second, .millisecond, .microsecond, .nanosecond]
+    named: [DurationUnit] = [.week, .day, .hour, .minute, .second, .millisecond, .microsecond, .nanosecond]
+    first @= 0
+    last @= 0
+    at @= 0
+
+    while at < order.len()
+        if order[at] == largest
+            first @ at
+
+        if order[at] == smallest
+            last @ at
+        at @ at + 1
+
+    if first > last
+        first @ last
+    parts: [DurationPart] @= []
+    rest @= d.nanoseconds
+    at @ first
+
+    while at <= last
+        size = time.duration_of(order[at]).nanoseconds
+        count = rest / size
+        rest @ rest % size
+
+        if count != 0
+            parts @ parts.push(DurationPart(unit: named[at], count: count))
+        at @ at + 1
+
+    if parts.len() == 0
+        parts @ parts.push(DurationPart(unit: named[last], count: 0))
+    return parts
+
 ## Tests
 
 # Expected values are what ICU 79.1 (CLDR 49) wrote for the same input,
@@ -588,6 +834,93 @@ test "format_date, format_time and format_date_time: the cases as ICU writes the
                 failures @ failures + 1
 
     assert failures == 0
+
+# Expected parts are counted by hand from `time`'s units; expected texts are
+# what ECMA-402's `Intl.DurationFormat` in Node 26.13.0 (ICU 79.1, CLDR 49)
+# wrote for the same parts, observed 2026-11-21.
+
+test "duration_parts: zero, under the smallest unit, one of each, the largest and smallest durations, and the largest unit below the smallest"
+    assert duration_parts(time.nanoseconds(0), largest: .day, smallest: .second) == [DurationPart(unit: .second, count: 0)]
+    assert duration_parts(time.nanoseconds(999999999), largest: .day, smallest: .second) == [DurationPart(unit: .second, count: 0)]
+    assert duration_parts(time.nanoseconds(-999999999), largest: .day, smallest: .second) == [DurationPart(unit: .second, count: 0)]
+    one_each = time.nanoseconds(694861001001001)
+    assert duration_parts(one_each, largest: .week, smallest: .nanosecond) == [DurationPart(unit: .week, count: 1), DurationPart(unit: .day, count: 1), DurationPart(unit: .hour, count: 1), DurationPart(unit: .minute, count: 1), DurationPart(unit: .second, count: 1), DurationPart(unit: .millisecond, count: 1), DurationPart(unit: .microsecond, count: 1), DurationPart(unit: .nanosecond, count: 1)]
+    assert duration_parts(time.max_duration(), largest: .week, smallest: .second) == [DurationPart(unit: .week, count: 15250), DurationPart(unit: .day, count: 1), DurationPart(unit: .hour, count: 23), DurationPart(unit: .minute, count: 47), DurationPart(unit: .second, count: 16)]
+    assert duration_parts(time.min_duration(), largest: .hour, smallest: .hour) == [DurationPart(unit: .hour, count: -2562047)]
+    assert duration_parts(time.nanoseconds(9000000000000), largest: .second, smallest: .hour) == [DurationPart(unit: .hour, count: 2)]
+    assert duration_parts(time.nanoseconds(93600000000000), largest: .hour, smallest: .minute) == [DurationPart(unit: .hour, count: 26)]
+
+test "duration_parts: a negative duration's parts all negative, and a part that holds none left out"
+    back = time.nanoseconds(-11100000000000)
+    assert duration_parts(back, largest: .day, smallest: .second) == [DurationPart(unit: .hour, count: -3), DurationPart(unit: .minute, count: -5)]
+    assert format_duration(i18n.parse_locale("en").must(), parts: duration_parts(back, largest: .day, smallest: .second), style: .long) == "-3 hours, 5 minutes"
+    assert duration_parts(time.nanoseconds(172800000000005), largest: .day, smallest: .nanosecond) == [DurationPart(unit: .day, count: 2), DurationPart(unit: .nanosecond, count: 5)]
+
+test "format_duration: no parts, every unit in three widths, and a language that joins with a word"
+    english = i18n.parse_locale("en").must()
+    assert format_duration(english, parts: [], style: .long) == ""
+    every = [
+        DurationPart(unit: .year, count: 1)
+        DurationPart(unit: .month, count: 2)
+        DurationPart(unit: .week, count: 3)
+        DurationPart(unit: .day, count: 4)
+        DurationPart(unit: .hour, count: 5)
+        DurationPart(unit: .minute, count: 6)
+        DurationPart(unit: .second, count: 7)
+        DurationPart(unit: .millisecond, count: 8)
+        DurationPart(unit: .microsecond, count: 9)
+        DurationPart(unit: .nanosecond, count: 10)
+    ]
+    assert format_duration(english, parts: every, style: .long) == "1 year, 2 months, 3 weeks, 4 days, 5 hours, 6 minutes, 7 seconds, 8 milliseconds, 9 microseconds, 10 nanoseconds"
+    assert format_duration(english, parts: every, style: .short) == "1 yr, 2 mths, 3 wks, 4 days, 5 hr, 6 min, 7 sec, 8 ms, 9 μs, 10 ns"
+    assert format_duration(english, parts: every, style: .narrow) == "1y 2m 3w 4d 5h 6m 7s 8ms 9μs 10ns"
+    german = i18n.parse_locale("de").must()
+    two = [DurationPart(unit: .hour, count: 3), DurationPart(unit: .minute, count: 5)]
+    assert format_duration(german, parts: two, style: .narrow) == "3h, 5 Min."
+    assert format_duration(i18n.parse_locale("es").must(), parts: two, style: .long) == "3 horas y 5 minutos"
+
+# Expected texts are what ICU 79.1's `RelativeDateTimeFormatter` (CLDR 49)
+# writes for the unit and amount chosen, as `format_relative` is held to it,
+# and the units are those Swift 6.4.2's `RelativeDateTimeFormatter` chose for
+# the same spans, observed 2026-11-21.
+
+test "format_relative_duration: zero, under a second both ways, a minute's edges, and the largest and smallest durations"
+    english = i18n.parse_locale("en").must()
+    assert format_relative_duration(english, d: time.nanoseconds(0), style: .long) == "in 0 seconds"
+    assert format_relative_duration(english, d: time.nanoseconds(-999999999), style: .long) == "in 0 seconds"
+    assert format_relative_duration(english, d: time.nanoseconds(59999999999), style: .long) == "in 59 seconds"
+    assert format_relative_duration(english, d: time.seconds(-60).must(), style: .long) == "1 minute ago"
+    assert format_relative_duration(english, d: time.seconds(-119).must(), style: .short) == "1 min. ago"
+    assert format_relative_duration(english, d: time.max_duration(), style: .long) == "in 292 years"
+    assert format_relative_duration(english, d: time.min_duration(), style: .narrow) == "292y ago"
+
+test "format_relative_duration_named: now, yesterday, the day before yesterday in German, last week, next month and last year"
+    english = i18n.parse_locale("en").must()
+    assert format_relative_duration_named(english, d: time.nanoseconds(-1), style: .long) == "now"
+    assert format_relative_duration_named(english, d: time.hours(-47).must(), style: .long) == "yesterday"
+    assert format_relative_duration_named(i18n.parse_locale("de").must(), d: time.hours(-48).must(), style: .long) == "vorgestern"
+    assert format_relative_duration_named(english, d: time.days(-13).must(), style: .long) == "last week"
+    assert format_relative_duration_named(english, d: time.days(31).must(), style: .long) == "next month"
+    assert format_relative_duration_named(english, d: time.days(-366).must(), style: .long) == "last year"
+    assert format_relative_duration_named(english, d: time.hours(5).must(), style: .long) == "in 5 hours"
+
+test "format_relative_instant: the same instant, a nanosecond apart, across 1970, and the farthest instants both ways"
+    english = i18n.parse_locale("en").must()
+    epoch = time.epoch()
+    assert format_relative_instant(english, t: epoch, now: epoch, style: .long) == "in 0 seconds"
+    assert format_relative_instant(english, t: time.Instant(unix_nanoseconds: -1), now: epoch, style: .long) == "in 0 seconds"
+    before = time.Instant(unix_nanoseconds: -1500000000)
+    after = time.Instant(unix_nanoseconds: 1500000000)
+    assert format_relative_instant(english, t: before, now: after, style: .long) == "3 seconds ago"
+    assert format_relative_instant(english, t: time.max_instant(), now: time.min_instant(), style: .long) == "in 584 years"
+    assert format_relative_instant(english, t: time.min_instant(), now: time.max_instant(), style: .long) == "584 years ago"
+
+test "format_relative_instant_named: tomorrow and yesterday in Italian, now in Japanese"
+    now = time.from_unix(whole_seconds: 1773000000, extra_nanoseconds: 0).must()
+    italian = i18n.parse_locale("it").must()
+    assert format_relative_instant_named(italian, t: time.add(t: now, d: time.hours(30).must()).must(), now: now, style: .long) == "domani"
+    assert format_relative_instant_named(italian, t: time.add(t: now, d: time.hours(-30).must()).must(), now: now, style: .long) == "ieri"
+    assert format_relative_instant_named(i18n.parse_locale("ja").must(), t: now, now: now, style: .long) == "今"
 
 ## Examples
 
@@ -700,3 +1033,44 @@ test "format_relative_named: yesterday and in three days"
     english = i18n.parse_locale("en").must()
     assert format_relative_named(english, amount: -1, unit: .day, style: .long) == "yesterday"
     assert format_relative_named(english, amount: 3, unit: .day, style: .long) == "in 3 days"
+
+# Five minutes ago, and in two hours, the unit chosen for each.
+test "format_relative_duration: minutes ago and hours ahead"
+    english = i18n.parse_locale("en").must()
+    assert format_relative_duration(english, d: time.seconds(-330).must(), style: .long) == "5 minutes ago"
+    assert format_relative_duration(english, d: time.hours(2).must(), style: .long) == "in 2 hours"
+
+# Yesterday, as English names it.
+test "format_relative_duration_named: yesterday"
+    assert format_relative_duration_named(i18n.parse_locale("en").must(), d: time.hours(-30).must(), style: .long) == "yesterday"
+
+# A message's time written from the moment the program read.
+test "format_relative_instant: a message sent seven and a half minutes before now"
+    now = time.from_unix(whole_seconds: 1773000000, extra_nanoseconds: 0).must()
+    sent = time.from_unix(whole_seconds: 1772999550, extra_nanoseconds: 0).must()
+    assert format_relative_instant(i18n.parse_locale("en").must(), t: sent, now: now, style: .long) == "7 minutes ago"
+
+# Tomorrow, as French names it.
+test "format_relative_instant_named: tomorrow in French"
+    now = time.from_unix(whole_seconds: 1773000000, extra_nanoseconds: 0).must()
+    later = time.add(t: now, d: time.hours(25).must()).must()
+    assert format_relative_instant_named(i18n.parse_locale("fr").must(), t: later, now: now, style: .long) == "demain"
+
+# Hours and minutes in English and in German.
+test "format_duration: hours and minutes in English and German"
+    parts = [DurationPart(unit: .hour, count: 3), DurationPart(unit: .minute, count: 5)]
+    assert format_duration(i18n.parse_locale("en").must(), parts: parts, style: .long) == "3 hours, 5 minutes"
+    assert format_duration(i18n.parse_locale("de").must(), parts: parts, style: .short) == "3 Std., 5 Min."
+
+# A span of several units before now, in a sentence of the program's own: CLDR
+# has no pattern for it, so the program writes the words around the duration
+# in the one language it controls.
+test "format_duration: inside a sentence of the program's own"
+    parts = duration_parts(time.seconds(450).must(), largest: .hour, smallest: .second)
+    words = format_duration(i18n.parse_locale("en").must(), parts: parts, style: .long)
+    assert f"sent {words} ago" == "sent 7 minutes, 30 seconds ago"
+
+# Seven and a half minutes broken into minutes and seconds.
+test "duration_parts: minutes and seconds"
+    parts = duration_parts(time.seconds(450).must(), largest: .hour, smallest: .second)
+    assert parts == [DurationPart(unit: .minute, count: 7), DurationPart(unit: .second, count: 30)]

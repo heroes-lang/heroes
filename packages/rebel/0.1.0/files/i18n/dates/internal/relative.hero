@@ -51,6 +51,72 @@ function count_slot(category: i18n.Plural) -> i64
         .many  => 4
         .other => 5
 
+# The nanoseconds in a second.
+constant SECOND: i64
+    1000000000
+
+# The seconds of each unit a time relative to now is written in when the unit
+# is chosen, the largest first: a year of 365.2425 days and a month of a
+# twelfth of it, the Gregorian calendar's averages, then a week, a day, an
+# hour, a minute and a second as `time` counts them. A quarter is never
+# chosen.
+constant UNIT_SECONDS: [i64]
+    [31556952, 2629746, 604800, 86400, 3600, 60, 1]
+
+# The unit numbers of `UNIT_SECONDS`, in its order, as `format` numbers them.
+constant UNIT_NUMBERS: [i64]
+    [0, 2, 3, 4, 5, 6, 7]
+
+# A time relative to now in the unit it is written in.
+record Chosen
+    # How many whole units, negative in the past.
+    amount: i64
+    # The unit, as `format` numbers it.
+    unit: i64
+
+# `seconds` from now, negative in the past, in the largest unit of which it
+# holds at least one whole, counted toward zero: 59 seconds stay seconds, 60
+# are a minute, 119 still one minute; a span under a second is 0 seconds.
+function chosen(seconds: i64) -> Chosen
+    at @= 0
+
+    while at < UNIT_SECONDS.len()
+        size = UNIT_SECONDS[at]
+
+        if seconds >= size || seconds <= -size
+            return Chosen(amount: seconds / size, unit: UNIT_NUMBERS[at])
+        at @ at + 1
+
+    return Chosen(amount: 0, unit: 7)
+
+# The whole seconds from the instant `from` to the instant `to`, each given
+# in nanoseconds since 1970, counted toward zero. Each is split into whole
+# seconds and the nanoseconds past them before the two are subtracted, so
+# no two instants overflow it, as a difference of nanoseconds does for two
+# about 292 years apart.
+function seconds_between(from: i64, to: i64) -> i64
+    from_whole @= from / SECOND
+    from_rest @= from % SECOND
+
+    if from_rest < 0
+        from_whole @ from_whole - 1
+        from_rest @ from_rest + SECOND
+    to_whole @= to / SECOND
+    to_rest @= to % SECOND
+
+    if to_rest < 0
+        to_whole @ to_whole - 1
+        to_rest @ to_rest + SECOND
+    whole = to_whole - from_whole
+    rest = to_rest - from_rest
+
+    if whole > 0 && rest < 0
+        return whole - 1
+
+    if whole < 0 && rest > 0
+        return whole + 1
+    return whole
+
 # `amount` units from now written for `locale`: unit 0 years to 7 seconds,
 # width 0 long to 2 narrow; the locale's word for the amount first where
 # `named` and it has one.
@@ -92,6 +158,37 @@ test "format: days in English, both ways, named and not, and a large amount"
     assert format(english, amount: 0, unit: 7, width: 0, named: true) == "now"
     assert format(english, amount: 12345, unit: 5, width: 0, named: false) == "in 12,345 hours"
     assert format(english, amount: -9223372036854775807 - 1, unit: 7, width: 0, named: false) == "9,223,372,036,854,775,808 seconds ago"
+
+# The units Swift 6.4.2's `RelativeDateTimeFormatter` (Foundation on macOS
+# 27.2) chose for the same spans, observed 2026-11-21: it counts whole units
+# toward zero, as `chosen` does, at every span below four weeks.
+test "chosen: nothing, under a second, each unit's first whole and last, both ways"
+    assert chosen(0) == Chosen(amount: 0, unit: 7)
+    assert chosen(1) == Chosen(amount: 1, unit: 7) && chosen(-1) == Chosen(amount: -1, unit: 7)
+    assert chosen(59) == Chosen(amount: 59, unit: 7)
+    assert chosen(60) == Chosen(amount: 1, unit: 6) && chosen(-119) == Chosen(amount: -1, unit: 6)
+    assert chosen(3599) == Chosen(amount: 59, unit: 6) && chosen(3600) == Chosen(amount: 1, unit: 5)
+    assert chosen(86399) == Chosen(amount: 23, unit: 5) && chosen(-86400) == Chosen(amount: -1, unit: 4)
+    assert chosen(172799) == Chosen(amount: 1, unit: 4) && chosen(604799) == Chosen(amount: 6, unit: 4)
+    assert chosen(604800) == Chosen(amount: 1, unit: 3) && chosen(-1209600) == Chosen(amount: -2, unit: 3)
+    assert chosen(2419200) == Chosen(amount: 4, unit: 3)
+
+    # Where the calendar Swift counts in parts from the averages: it wrote "in 4
+    # weeks" for these 30.44 days from 2026-03-08, "1 month ago" for 28 days
+    # before it, and "in 1 year" for 365 days after it.
+    assert chosen(2629746) == Chosen(amount: 1, unit: 2) && chosen(-2419200) == Chosen(amount: -4, unit: 3)
+    assert chosen(31535999) == Chosen(amount: 11, unit: 2) && chosen(31536000) == Chosen(amount: 11, unit: 2)
+    assert chosen(31556952) == Chosen(amount: 1, unit: 0) && chosen(9000000000) == Chosen(amount: 285, unit: 0)
+
+test "seconds_between: equal, under a second either way, across 1970, and the farthest instants"
+    assert seconds_between(from: 0, to: 0) == 0
+    assert seconds_between(from: 0, to: 999999999) == 0 && seconds_between(from: 999999999, to: 0) == 0
+    assert seconds_between(from: -1, to: 1) == 0 && seconds_between(from: -500000000, to: 600000000) == 1
+    assert seconds_between(from: 1500000000, to: -1500000000) == -3
+    largest = 9223372036854775807
+    least = -9223372036854775807 - 1
+    assert seconds_between(from: least, to: largest) == 18446744073
+    assert seconds_between(from: largest, to: least) == -18446744073
 
 test "format: Russian plurals, German's day after tomorrow, and Arabic digits"
     russian = i18n.parse_locale("ru").must()

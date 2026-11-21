@@ -1,0 +1,332 @@
+# The text of `i18n/dates`' unit table, written from the locales `cldr`
+# read: every text once, the distinct rows of unit and list patterns, and
+# each locale's two rows and grouping, in the form `heroes fmt` leaves as it
+# is, so the table in the tree is compared with it byte for byte.
+
+use <rebel>/strings
+use <rebel>/unicode
+
+use cldr
+
+# Where the table stands, from the repository's root.
+constant TABLE_PATH: str
+    "packages/rebel/0.1.0/files/i18n/dates/internal/unit_tables.hero"
+
+# The digits of a row's numbers in base 64, as `date_data.number_at` reads
+# them: the ten digits, the capital letters, the small letters, `+` and `/`.
+constant ALPHABET: str
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"
+
+# The comment the table opens with, which says what it holds and where it
+# comes from.
+constant HEADER: [str]
+    [
+        "# The unit and list patterns of CLDR release 49 that `i18n/dates` writes a"
+        "# duration with, \"3 hours, 5 minutes\": for every locale CLDR holds, the"
+        "# patterns of ten units of time in three widths and six plural"
+        "# categories, the patterns that join a list of units in three widths, and"
+        "# the sizes of the digit groups of its decimal pattern."
+        "#"
+        "# Every text is held once, in `TEXTS`. A row names each of its texts by"
+        "# three characters of base 64, the ten digits, the capital and the small"
+        "# letters, `+` and `/`, as `date_data.number_at` reads them."
+        "#"
+        "# Generated, never edited by hand: the Heroes program"
+        "# `packages/rebel/generate/i18n_units/` read CLDR 49's JSON,"
+        "# `cldr-49.0.0-json-full.zip` of"
+        "# https://github.com/unicode-org/cldr-json/releases/download/49.0.0/"
+        "# (SHA-256"
+        "# 3b1f5d684d29c541d3acf91fe834b3fe36ae0f34775e3ee50e93558bf14ca174,"
+        "# fetched 2026-11-21), its files `cldr-units-full/main/*/units.json`,"
+        "# `cldr-misc-full/main/*/listPatterns.json`,"
+        "# `cldr-numbers-full/main/*/numbers.json` and"
+        "# `cldr-core/availableLocales.json`, and wrote this module whole; its"
+        "# `check` command says whether this module is still what it writes."
+    ]
+
+# The three characters of `ALPHABET` that write `n`.
+#
+# - `n`: from 0 to 262,143.
+#
+# Fails `invalid` outside that range.
+function code_of(n: i64) -> str?
+    if n < 0 || n >= 262144
+        return fail(code: "invalid", msg: f"{n} is past what three characters of base 64 write")
+    return ok(digit(n / 4096) + digit(n / 64 % 64) + digit(n % 64))
+
+# The character of `ALPHABET` that writes `d`, from 0 to 63.
+function digit(d: i64) -> str
+    return ALPHABET.slice(from: d, to: d + 1)
+
+# Whether a string writes the character `code` by `\u{…}`, as the compiler
+# asks (`selfhost/raw_chars.hero`): a control character but the tab, the line
+# feed and the carriage return, a bidirectional control, U+2028 or U+2029.
+function by_code(code: i64) -> bool
+    if code < 32
+        return code != 9 && code != 10 && code != 13
+
+    if code >= 127 && code < 160
+        return true
+
+    if code == 1564 || code == 8206 || code == 8207 || code == 8232 || code == 8233
+        return true
+    return code >= 8234 && code <= 8238 || code >= 8294 && code <= 8297
+
+# `code` in lowercase hexadecimal with no leading zero.
+function hex_of(code: i64) -> str
+    digits = "0123456789abcdef"
+    out: [str] @= []
+    rest @= code
+
+    while rest > 0
+        out @ out.push(digits.slice(from: rest % 16, to: rest % 16 + 1))
+        rest @ rest / 16
+
+    if out.len() == 0
+        return "0"
+    ordered: [str] @= []
+    at @= out.len() - 1
+
+    while at >= 0
+        ordered @ ordered.push(out[at])
+        at @ at - 1
+
+    return ordered.join("")
+
+# `s` as a string literal the compiler reads back as `s`, every character in
+# its one spelling (`selfhost/code_escape.hero`): `\n`, `\t`, `\r`, `\"` and
+# `\\` by their letters, a character no line shows by `\u{…}`, every other
+# one as itself.
+#
+# Fails `invalid` where `s` holds a NUL, which no literal writes.
+function literal(s: str) -> str?
+    out: [str] @= ["\""]
+
+    for c in s.chars()
+        code = unicode.code_point(c)
+
+        if code == 0
+            return fail(code: "invalid", msg: "a text holds a NUL, which no string literal writes")
+
+        if code == 10
+            out @ out.push("\\n")
+        else if code == 9
+            out @ out.push("\\t")
+        else if code == 13
+            out @ out.push("\\r")
+        else if code == 34
+            out @ out.push("\\\"")
+        else if code == 92
+            out @ out.push("\\\\")
+        else if by_code(code)
+            out @ out.push("\\u{" + hex_of(code) + "}")
+        else
+            out @ out.push(c)
+
+    out @ out.push("\"")
+    return ok(out.join(""))
+
+# A constant of `[str]` named `name`, its comment `comment` and its elements
+# `items`, each a literal already.
+function constant_text(comment: [str], name: str, items: [str]) -> str
+    lines: [str] @= []
+
+    for line in comment
+        lines @ lines.push(line)
+
+    lines @ lines.push("constant " + name + ": [str]")
+    lines @ lines.push("    [")
+
+    for item in items
+        lines @ lines.push("        " + item)
+
+    lines @ lines.push("    ]")
+    return lines.join("\n")
+
+# Each of `items` as a literal.
+#
+# Fails as `literal` fails.
+function literals(items: [str]) -> [str]?
+    out: [str] @= []
+
+    for item in items
+        out @ out.push(literal(item)?)
+
+    return ok(out)
+
+# `texts`, each named by its number in `numbers`, written as one row.
+#
+# Fails `invalid` where a number is past three characters.
+function row_of(texts: [str], numbers: {str: i64} lent) -> str?
+    out: [str] @= []
+
+    for text in texts
+        out @ out.push(code_of(numbers[text].must())?)
+
+    return ok(out.join(""))
+
+# The number of `row` in `rows`, added at the end where it is new.
+function row_number(@rows: [str], @numbers: {str: i64}, row: str) -> i64
+    match numbers[row]
+        .ok found => return found
+        .err _    => _ = 0
+
+    number = rows.len()
+    rows @ rows.push(row)
+    numbers[row] @ number
+    return number
+
+# The whole text of the table for `locales`, which `cldr.read_locales`
+# answers in the order of their tags' bytes.
+#
+# Fails `invalid` where a text holds a NUL, where a grouping size is past one
+# digit, and where a number is past three characters of base 64.
+function module_text(locales: [cldr.Locale]) -> str?
+    seen: {str: i64} @= {}
+    seen[""] @ 0
+
+    for one in locales
+        for text in one.patterns
+            seen[text] @ 0
+
+        for text in one.lists
+            seen[text] @ 0
+
+    texts = sort(keys(seen))
+    numbers: {str: i64} @= {}
+    at @= 0
+
+    while at < texts.len()
+        numbers[texts[at]] @ at
+        at @ at + 1
+
+    unit_rows: [str] @= []
+    unit_numbers: {str: i64} @= {}
+    list_rows: [str] @= []
+    list_numbers: {str: i64} @= {}
+    tags: [str] @= []
+    locale_rows: [str] @= []
+
+    for one in locales
+        if one.grouping.primary > 9 || one.grouping.secondary > 9
+            return fail(code: "invalid", msg: f"{one.tag} groups digits by more than nine")
+        unit_row = row_number(@unit_rows, @unit_numbers, row: row_of(one.patterns, numbers: numbers)?)
+        list_row = row_number(@list_rows, @list_numbers, row: row_of(one.lists, numbers: numbers)?)
+        tags @ tags.push(one.tag)
+        locale_rows @ locale_rows.push(
+            code_of(unit_row)? + code_of(list_row)? + to_str(one.grouping.primary) + to_str(one.grouping.secondary)
+        )
+
+    parts: [str] @= [HEADER.join("\n")]
+    parts @ parts.push(
+        constant_text(comment: ["# Every text a row names, once, in the order of their bytes; text 0 is the", "# empty one, the pattern of a plural category a language does not use."], name: "TEXTS", items: literals(texts)?)
+    )
+    parts @ parts.push(
+        constant_text(comment: ["# The distinct rows of unit patterns, 180 texts each: for each width, long,", "# short and narrow, each unit, from the year to the nanosecond as", "# `i18n/dates`' `DurationUnit` orders them, each plural category, from", "# zero to other, the number of its pattern in `TEXTS`."], name: "UNIT_ROWS", items: literals(unit_rows)?)
+    )
+    parts @ parts.push(
+        constant_text(comment: ["# The distinct rows of list patterns, 12 texts each: for each width, long,", "# short and narrow, the pattern of the first two of a longer list, of two", "# in its middle, of its last two, and of a list of two, the number of each", "# in `TEXTS`."], name: "LIST_ROWS", items: literals(list_rows)?)
+    )
+    parts @ parts.push(
+        constant_text(comment: ["# The locales, `und` the root, in the order of their bytes."], name: "LOCALES", items: literals(tags)?)
+    )
+    parts @ parts.push(
+        constant_text(comment: ["# Each locale's row of `UNIT_ROWS` and row of `LIST_ROWS`, three characters", "# each, then the digits of the group of its decimal pattern nearest the", "# point and of every further group, a digit each, 0 where it groups none;", "# in the order of `LOCALES`."], name: "LOCALE_ROWS", items: literals(locale_rows)?)
+    )
+    return ok(parts.join("\n\n") + "\n")
+
+# The first line, counted from 1, where `present` and `wanted` differ, 0
+# where they are the same text.
+function first_difference(present: str, wanted: str) -> i64
+    if present == wanted
+        return 0
+    have = strings.split(s: present, sep: "\n")
+    want = strings.split(s: wanted, sep: "\n")
+    at @= 0
+
+    while at < have.len() && at < want.len()
+        if have[at] != want[at]
+            return at + 1
+        at @ at + 1
+
+    return at + 1
+
+## Tests
+
+test "code_of: the smallest, the edges of a character, the largest, and past them"
+    assert code_of(0).must() == "000"
+    assert code_of(63).must() == "00/"
+    assert code_of(64).must() == "010"
+    assert code_of(262143).must() == "///"
+    assert code_of(262144).is_err()
+    assert code_of(-1).is_err()
+
+test "literal: plain, the five letter escapes, a control, a bidirectional mark, a no-break space and the zero-width space as themselves, a NUL refused"
+    assert literal("{0} hour").must() == "\"{0} hour\""
+    assert literal("").must() == "\"\""
+    assert literal("a\"b\\c\nd\te\rf").must() == "\"a\\\"b\\\\c\\nd\\te\\rf\""
+    assert literal("\u{1}").must() == "\"\\u{1}\""
+    assert literal("\u{200f}{0}").must() == "\"\\u{200f}{0}\""
+    no_break = unicode.from_code_point(160).must()
+    assert literal("{0}" + no_break + "h").must() == "\"{0}" + no_break + "h\""
+    zero_width = unicode.from_code_point(8203).must()
+    assert literal(zero_width).must() == "\"" + zero_width + "\""
+    assert literal("\u{7f}\u{9f}\u{2028}\u{61c}").must() == "\"\\u{7f}\\u{9f}\\u{2028}\\u{61c}\""
+    assert literal(bytes_nul()).is_err()
+
+# A text holding one NUL, built from bytes as a literal cannot write it.
+function bytes_nul() -> str
+    nul: [u8] = [0]
+    return nul.validated_bytes().default("")
+
+test "hex_of: zero, one digit, and several"
+    assert hex_of(0) == "0" && hex_of(15) == "f" && hex_of(8207) == "200f" && hex_of(1114111) == "10ffff"
+
+test "row_number: a new row added, a known one found"
+    rows: [str] @= []
+    numbers: {str: i64} @= {}
+    assert row_number(@rows, @numbers, row: "000001") == 0
+    assert row_number(@rows, @numbers, row: "000002") == 1
+    assert row_number(@rows, @numbers, row: "000001") == 0
+    assert rows.len() == 2
+
+test "first_difference: the same text, a line changed, and a text longer than the other"
+    assert first_difference(present: "a\nb\n", wanted: "a\nb\n") == 0
+    assert first_difference(present: "a\nb\n", wanted: "a\nc\n") == 2
+    assert first_difference(present: "a\n", wanted: "a\nb\n") == 2
+
+test "module_text: one locale, its texts sorted and named, its rows and its grouping"
+    patterns: [str] @= []
+    at @= 0
+
+    while at < 180
+        if at % 6 == 5
+            patterns @ patterns.push("{0} u")
+        else
+            patterns @ patterns.push("")
+        at @ at + 1
+
+    lists = [
+        "{0}, {1}"
+        "{0}, {1}"
+        "{0} and {1}"
+        "{0} and {1}"
+        "{0}, {1}"
+        "{0}, {1}"
+        "{0}, {1}"
+        "{0}, {1}"
+        "{0} {1}"
+        "{0} {1}"
+        "{0} {1}"
+        "{0} {1}"
+    ]
+    one = cldr.Locale(tag: "und", patterns: patterns, lists: lists, grouping: cldr.Grouping(primary: 3, secondary: 2))
+    text = module_text([one]).must()
+    assert strings.contains(
+        s: text,
+        substr: "constant TEXTS: [str]\n    [\n        \"\"\n        \"{0} and {1}\"\n        \"{0} u\"\n        \"{0} {1}\"\n        \"{0}, {1}\"\n    ]"
+    )
+    assert strings.contains(s: text, substr: "constant LOCALES: [str]\n    [\n        \"und\"\n    ]")
+    assert strings.contains(s: text, substr: "constant LOCALE_ROWS: [str]\n    [\n        \"00000032\"\n    ]")
+    assert strings.contains(s: text, substr: "\"000000000000000002")
+    assert strings.has_suffix(s: text, suffix: "    ]\n")
