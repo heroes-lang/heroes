@@ -1,10 +1,10 @@
 # Dates and times written as a language writes them: "Tuesday, March 5,
 # 2024" and "5 mars 2024", the names of its months and days, its patterns for
 # full, long, medium and short dates, times relative to now, "3 days ago",
-# "in 2 hours", "yesterday", and durations in words, "3 hours, 5 minutes",
-# from the data of CLDR release `i18n.CLDR_VERSION` for every locale it
-# holds, over the instants and zones of `time`. Only the Gregorian calendar
-# is written.
+# "in 2 hours", "yesterday", in a unit the program names or one chosen for
+# the span, and durations in words, "3 hours, 5 minutes", from the data of
+# CLDR release `i18n.CLDR_VERSION` for every locale it holds, over the
+# instants and zones of `time`. Only the Gregorian calendar is written.
 #
 # What it does NOT do: read the clock, compute a calendar or load a zone
 # (`time`); write a time or a duration in a fixed form such as RFC 3339 or
@@ -590,6 +590,104 @@ function format_relative_named(locale: i18n.Locale, amount: i64, unit: RelativeU
 
     return relative.format(locale, amount: amount, unit: unit_index, width: width, named: true)
 
+# `d` from now written in `locale`'s language in the one unit chosen for it,
+# always with its number: "in 5 minutes", "3 hours ago", "in 0 seconds".
+#
+# - `locale`: the locale.
+# - `d`: the span from now, negative in the past.
+# - `style`: how long the words are.
+#
+# The unit is the largest of which `d` holds one whole, and the number
+# counts whole ones toward zero, as Swift's `RelativeDateTimeFormatter`
+# counts them: under a minute in seconds, under an hour in minutes, under a
+# day in hours, under a week in days, under a month in weeks, under a year
+# in months, and in years beyond, a month being 30.436875 days and a year
+# 365.2425, the Gregorian calendar's averages. So 59 seconds are "59
+# seconds", 119 seconds "1 minute", 23 hours and 59 minutes "23 hours", 28
+# days "4 weeks", 31 days "1 month" and 365 days "11 months"; a span under a
+# second is "in 0 seconds", the future, as ICU writes zero. Swift counts
+# months and years on the calendar from the day it is asked about, and so
+# writes "1 month ago" for the 28 days from February 8 to March 8, which
+# this writes "4 weeks ago". A quarter is never chosen.
+#
+# A span of several units relative to now, "7 minutes and 30 seconds ago",
+# has no pattern in CLDR: a program writes `format_duration`'s words inside
+# a sentence of its own, in a language it controls. See also
+# `format_relative_duration_named`, `format_relative_instant`,
+# `format_relative`.
+function format_relative_duration(locale: i18n.Locale, d: time.Duration, style: RelativeStyle) -> str
+    width = match style
+        .long   => 0
+        .short  => 1
+        .narrow => 2
+
+    c = relative.chosen(d.nanoseconds / relative.SECOND)
+    return relative.format(locale, amount: c.amount, unit: c.unit, width: width, named: false)
+
+# `d` from now written in `locale`'s language in the one unit chosen for it,
+# as the language names it where it has a word: "yesterday", "last week",
+# "now", and "in 5 minutes" where it has none.
+#
+# - `locale`: the locale.
+# - `d`: the span from now, negative in the past.
+# - `style`: how long the words are.
+#
+# The unit and the number are chosen as `format_relative_duration` chooses
+# them, so a day and more but under two days ago is "yesterday", and a span
+# under a second "now". See also `format_relative_instant_named`,
+# `format_relative_named`.
+function format_relative_duration_named(locale: i18n.Locale, d: time.Duration, style: RelativeStyle) -> str
+    width = match style
+        .long   => 0
+        .short  => 1
+        .narrow => 2
+
+    c = relative.chosen(d.nanoseconds / relative.SECOND)
+    return relative.format(locale, amount: c.amount, unit: c.unit, width: width, named: true)
+
+# `t` written in `locale`'s language relative to `now`, in the one unit
+# chosen for the span between them, always with its number: "5 minutes
+# ago", "in 2 hours".
+#
+# - `locale`: the locale.
+# - `t`: the instant written.
+# - `now`: the instant it is written from, which the caller reads: nothing
+#   here reads a clock, so a program and its tests give the same answer.
+# - `style`: how long the words are.
+#
+# The span is counted in whole seconds toward zero for any two instants at
+# all, the farthest apart 584 years, and its unit chosen as
+# `format_relative_duration` chooses it. See also
+# `format_relative_instant_named`.
+function format_relative_instant(locale: i18n.Locale, t: time.Instant, now: time.Instant, style: RelativeStyle) -> str
+    width = match style
+        .long   => 0
+        .short  => 1
+        .narrow => 2
+
+    c = relative.chosen(relative.seconds_between(from: now.unix_nanoseconds, to: t.unix_nanoseconds))
+    return relative.format(locale, amount: c.amount, unit: c.unit, width: width, named: false)
+
+# `t` written in `locale`'s language relative to `now`, in the one unit
+# chosen for the span between them, as the language names it where it has
+# a word: "yesterday", "tomorrow", "now".
+#
+# - `locale`: the locale.
+# - `t`: the instant written.
+# - `now`: the instant it is written from, which the caller reads.
+# - `style`: how long the words are.
+#
+# The span is counted as `format_relative_instant` counts it. See also
+# `format_relative_duration_named`.
+function format_relative_instant_named(locale: i18n.Locale, t: time.Instant, now: time.Instant, style: RelativeStyle) -> str
+    width = match style
+        .long   => 0
+        .short  => 1
+        .narrow => 2
+
+    c = relative.chosen(relative.seconds_between(from: now.unix_nanoseconds, to: t.unix_nanoseconds))
+    return relative.format(locale, amount: c.amount, unit: c.unit, width: width, named: true)
+
 ## Durations
 
 # `parts` written in `locale`'s language as one duration, each part in its
@@ -615,7 +713,7 @@ function format_relative_named(locale: i18n.Locale, amount: i64, unit: RelativeU
 # CLDR has no pattern that writes a duration relative to now, "7 minutes and
 # 30 seconds ago": a program writes these words inside a sentence of its
 # own, in a language it controls, as its second example shows. See also
-# `duration_parts`, `format_relative`.
+# `duration_parts`, `format_relative_duration`.
 function format_duration(locale: i18n.Locale, parts: [DurationPart], style: DurationStyle) -> str
     width = match style
         .long   => 0
@@ -781,6 +879,49 @@ test "format_duration: no parts, every unit in three widths, and a language that
     assert format_duration(german, parts: two, style: .narrow) == "3h, 5 Min."
     assert format_duration(i18n.parse_locale("es").must(), parts: two, style: .long) == "3 horas y 5 minutos"
 
+# Expected texts are what ICU 79.1's `RelativeDateTimeFormatter` (CLDR 49)
+# writes for the unit and amount chosen, as `format_relative` is held to it,
+# and the units are those Swift 6.4.2's `RelativeDateTimeFormatter` chose for
+# the same spans, observed 2026-11-21.
+
+test "format_relative_duration: zero, under a second both ways, a minute's edges, and the largest and smallest durations"
+    english = i18n.parse_locale("en").must()
+    assert format_relative_duration(english, d: time.nanoseconds(0), style: .long) == "in 0 seconds"
+    assert format_relative_duration(english, d: time.nanoseconds(-999999999), style: .long) == "in 0 seconds"
+    assert format_relative_duration(english, d: time.nanoseconds(59999999999), style: .long) == "in 59 seconds"
+    assert format_relative_duration(english, d: time.seconds(-60).must(), style: .long) == "1 minute ago"
+    assert format_relative_duration(english, d: time.seconds(-119).must(), style: .short) == "1 min. ago"
+    assert format_relative_duration(english, d: time.max_duration(), style: .long) == "in 292 years"
+    assert format_relative_duration(english, d: time.min_duration(), style: .narrow) == "292y ago"
+
+test "format_relative_duration_named: now, yesterday, the day before yesterday in German, last week, next month and last year"
+    english = i18n.parse_locale("en").must()
+    assert format_relative_duration_named(english, d: time.nanoseconds(-1), style: .long) == "now"
+    assert format_relative_duration_named(english, d: time.hours(-47).must(), style: .long) == "yesterday"
+    assert format_relative_duration_named(i18n.parse_locale("de").must(), d: time.hours(-48).must(), style: .long) == "vorgestern"
+    assert format_relative_duration_named(english, d: time.days(-13).must(), style: .long) == "last week"
+    assert format_relative_duration_named(english, d: time.days(31).must(), style: .long) == "next month"
+    assert format_relative_duration_named(english, d: time.days(-366).must(), style: .long) == "last year"
+    assert format_relative_duration_named(english, d: time.hours(5).must(), style: .long) == "in 5 hours"
+
+test "format_relative_instant: the same instant, a nanosecond apart, across 1970, and the farthest instants both ways"
+    english = i18n.parse_locale("en").must()
+    epoch = time.epoch()
+    assert format_relative_instant(english, t: epoch, now: epoch, style: .long) == "in 0 seconds"
+    assert format_relative_instant(english, t: time.Instant(unix_nanoseconds: -1), now: epoch, style: .long) == "in 0 seconds"
+    before = time.Instant(unix_nanoseconds: -1500000000)
+    after = time.Instant(unix_nanoseconds: 1500000000)
+    assert format_relative_instant(english, t: before, now: after, style: .long) == "3 seconds ago"
+    assert format_relative_instant(english, t: time.max_instant(), now: time.min_instant(), style: .long) == "in 584 years"
+    assert format_relative_instant(english, t: time.min_instant(), now: time.max_instant(), style: .long) == "584 years ago"
+
+test "format_relative_instant_named: tomorrow and yesterday in Italian, now in Japanese"
+    now = time.from_unix(whole_seconds: 1773000000, extra_nanoseconds: 0).must()
+    italian = i18n.parse_locale("it").must()
+    assert format_relative_instant_named(italian, t: time.add(t: now, d: time.hours(30).must()).must(), now: now, style: .long) == "domani"
+    assert format_relative_instant_named(italian, t: time.add(t: now, d: time.hours(-30).must()).must(), now: now, style: .long) == "ieri"
+    assert format_relative_instant_named(i18n.parse_locale("ja").must(), t: now, now: now, style: .long) == "今"
+
 ## Examples
 
 # A date in full, in English and in French.
@@ -892,6 +1033,28 @@ test "format_relative_named: yesterday and in three days"
     english = i18n.parse_locale("en").must()
     assert format_relative_named(english, amount: -1, unit: .day, style: .long) == "yesterday"
     assert format_relative_named(english, amount: 3, unit: .day, style: .long) == "in 3 days"
+
+# Five minutes ago, and in two hours, the unit chosen for each.
+test "format_relative_duration: minutes ago and hours ahead"
+    english = i18n.parse_locale("en").must()
+    assert format_relative_duration(english, d: time.seconds(-330).must(), style: .long) == "5 minutes ago"
+    assert format_relative_duration(english, d: time.hours(2).must(), style: .long) == "in 2 hours"
+
+# Yesterday, as English names it.
+test "format_relative_duration_named: yesterday"
+    assert format_relative_duration_named(i18n.parse_locale("en").must(), d: time.hours(-30).must(), style: .long) == "yesterday"
+
+# A message's time written from the moment the program read.
+test "format_relative_instant: a message sent seven and a half minutes before now"
+    now = time.from_unix(whole_seconds: 1773000000, extra_nanoseconds: 0).must()
+    sent = time.from_unix(whole_seconds: 1772999550, extra_nanoseconds: 0).must()
+    assert format_relative_instant(i18n.parse_locale("en").must(), t: sent, now: now, style: .long) == "7 minutes ago"
+
+# Tomorrow, as French names it.
+test "format_relative_instant_named: tomorrow in French"
+    now = time.from_unix(whole_seconds: 1773000000, extra_nanoseconds: 0).must()
+    later = time.add(t: now, d: time.hours(25).must()).must()
+    assert format_relative_instant_named(i18n.parse_locale("fr").must(), t: later, now: now, style: .long) == "demain"
 
 # Hours and minutes in English and in German.
 test "format_duration: hours and minutes in English and German"

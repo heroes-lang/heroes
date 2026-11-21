@@ -98,6 +98,16 @@ capability date/relative  a time relative to now, "in 3 days", "yesterday"
   icu     RelativeDateTimeFormatter, ureldatefmt_formatNumeric, ureldatefmt_format
   note    every amount the language groups from four digits, as ICU's relative formatter does
 
+capability date/relative-chosen  a time relative to now in a unit chosen for the span, "5 minutes ago", "in 2 hours", "yesterday"
+  heroes  dates.format_relative_duration, dates.format_relative_duration_named, dates.format_relative_instant, dates.format_relative_instant_named
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  icu     -
+  note    ICU's `RelativeDateTimeFormatter` and ECMA-402's `Intl.RelativeTimeFormat` take the unit from the caller; Swift's `RelativeDateTimeFormatter.localizedString(for:relativeTo:)` chooses it, and is the yardstick: the largest unit of which the span holds one whole, whole ones counted toward zero, observed 2026-11-21 with Swift 6.4.2 at 46 spans from 0 to 9e9 seconds, each both ways, numeric and named: 37 alike in all four forms, and every span under four weeks among them; the 9 that differ are at 28 days and beyond, where Swift counts on the calendar from the day asked (2026-03-08), writing "1 month ago" for 28 days back and "in 1 year" for 365 days, and this on the Gregorian averages, a month 30.436875 days and a year 365.2425, so a span has one answer whatever day it ends on and a `time.Duration`, which has no calendar, is counted as two instants are; the common JavaScript rule over `Intl.RelativeTimeFormat` (divide by 60, 60, 24, 7, 4.34524 and 12, then round) rounds where this counts down, and writes "in 60 seconds" for 59.6 seconds, "in 60 minutes" for 3,599 and "in 12 months" for 365 days; Python's `humanize`, not installed here, was not asked; Java and .NET unrun, neither installed here
+
 capability date/zone-names  a time zone named in words, "Central European Time"
   heroes  pending: CLDR's metazone names are about 50 KB a locale; a zone is written by its offset in the language's GMT form, and UTC by its own name
   go      -
