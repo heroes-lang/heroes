@@ -1,0 +1,172 @@
+# The script's fourth act: the portal, the server's registered client, logs
+# the person in by OpenID Connect's authorization code flow with PKCE, and
+# keeps the session going with refresh tokens. What a client must refuse and
+# what the server must refuse are tried as well: a code used twice, a
+# verifier that does not answer the challenge, a refresh token replayed after
+# rotation (which revokes its whole family), and a revoked token.
+
+use <rebel>/http
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/oauth2
+use <rebel>/strings
+use <rebel>/time
+
+use demo/browser
+use demo/relying_party
+use demo/scene
+
+# The code of a step that did not answer as the script needs.
+constant INVALID: str
+    "invalid"
+
+# The portal's registration, as the server's configuration holds it.
+function portal() -> relying_party.Registration
+    return relying_party.Registration(
+        id: "portal",
+        secret: "portal-secret-for-the-demo",
+        redirect_uri: "https://portal.example.org/callback"
+    )
+
+# The authorization code flow, end to end, and its refusals.
+#
+# - `s`: the scene; its browser holds the person's session.
+#
+# Fails where a step the script needs does not answer as it must.
+function code_flow(@s: scene.Scene) -> ()?
+    scene.act("4. OpenID Connect: the authorization code with PKCE")
+    p @= relying_party.discover(s.issuer, r: portal())?
+    m = p.metadata
+    same = m.issuer == s.issuer
+    scene.step(
+        what: "discovery",
+        outcome: f"issuer holds {same}, PKCE {m.code_challenge_methods_supported.join(" ")}, ID tokens {m.id_token_signing_alg_values_supported.join(" ")}, iss on redirects {m.authorization_response_iss_parameter_supported}"
+    )
+    scene.step(
+        what: "JWK set",
+        outcome: f"{p.keys.len()} key, {p.keys[0].key_type} {p.keys[0].curve}, {p.keys[0].algorithm}, its id the key's thumbprint"
+    )
+    now = time.from_unix(whole_seconds: s.now, extra_nanoseconds: 0)?
+    first = authorized(@s, p: @p)?
+    tokens = relying_party.exchange(p, code: first.code, verifier: first.begun.verifier)?
+    scene.step(
+        what: "exchange the code",
+        outcome: f"{tokens.token_type}, refresh token {tokens.refresh_token != ""}, ID token {tokens.id_token != ""}, scopes {tokens.scopes.join(" ")}"
+    )
+    id = relying_party.verify(p, t: tokens, nonce: first.begun.nonce, now: now)?
+    scene.step(what: "verify the ID token", outcome: f"ES256 signature, iss, aud, nonce, exp and at_hash hold")
+    print(
+        f"    sub {claim(id.claims, name: "sub")}, aud {claim(id.claims, name: "aud")}, amr {claims_list(id.claims, name: "amr")}, auth_time {claim(id.claims, name: "auth_time")}"
+    )
+    print(
+        f"    preferred_username {claim(id.claims, name: "preferred_username")}, email {claim(id.claims, name: "email")}, email_verified {claim(id.claims, name: "email_verified")}"
+    )
+
+    info = match oauth2.fetch_userinfo(http.default_client(), endpoint: m.userinfo_endpoint, token: tokens, subject: claim(id.claims, name: "sub"))
+        .ok got => got
+        .err e => return fail(
+            code: e.code,
+            msg: f"{e.msg}; the server said: {challenge_of(endpoint: m.userinfo_endpoint, token: tokens.access_token)}"
+        )
+
+    scene.step(what: "userinfo", outcome: f"{keys(info).join(" ")}")
+    again = relying_party.exchange(p, code: first.code, verifier: first.begun.verifier)
+    scene.step(what: "exchange the same code again", outcome: refusal(again))
+    second = authorized(@s, p: @p)?
+    wrong = relying_party.exchange(p, code: second.code, verifier: first.begun.verifier)
+    scene.step(what: "exchange a new code with another verifier", outcome: refusal(wrong))
+    refreshed = oauth2.refresh(p.config, token: tokens)?
+    scene.step(
+        what: "refresh",
+        outcome: f"a new access token {refreshed.access_token != tokens.access_token}, the refresh token rotated {refreshed.refresh_token != tokens.refresh_token}"
+    )
+    replayed = oauth2.refresh(p.config, token: tokens)
+    scene.step(what: "refresh with the first refresh token again", outcome: refusal(replayed))
+    looked = oauth2.introspect(p.config, token: refreshed.refresh_token, hint: "refresh_token")?
+    scene.step(
+        what: "introspect the newest refresh token",
+        outcome: f"active {looked.active}, its family revoked by the replay"
+    )
+    third = authorized(@s, p: @p)?
+    kept = relying_party.exchange(p, code: third.code, verifier: third.begun.verifier)?
+    live = oauth2.introspect(p.config, token: kept.refresh_token, hint: "refresh_token")?
+    scene.step(
+        what: "a third login, its refresh token introspected",
+        outcome: f"active {live.active}, sub {live.subject == claim(id.claims, name: "sub")}, scopes {live.scopes.join(" ")}"
+    )
+    oauth2.revoke(p.config, token: kept.refresh_token, hint: "refresh_token")?
+    gone = oauth2.introspect(p.config, token: kept.refresh_token, hint: "refresh_token")?
+    scene.step(what: "revoke it (RFC 7009), then introspect", outcome: f"active {gone.active}")
+    access = oauth2.introspect(p.config, token: kept.access_token, hint: "access_token")?
+    scene.step(what: "introspect its access token", outcome: f"active {access.active}, client {access.client_id}")
+    return ok()
+
+# One authorization: its request, and the code its redirect carried.
+record Authorized
+    # The request sent.
+    begun: relying_party.Begun
+    # The code.
+    code: str
+
+# The person's browser sent to the authorization endpoint, and the code the
+# redirect carries back, its `state` and `iss` checked.
+#
+# - `s`: the scene; its browser carries the session.
+# - `p`: the relying party, whose generator draws the request's values.
+function authorized(@s: scene.Scene, @p: relying_party.Party) -> Authorized?
+    begun = relying_party.begin(@p)?
+    sent = browser.get(@s.browser, target: begun.url)?
+
+    if sent.status != 302
+        return fail(code: INVALID, msg: f"the authorization endpoint answered {browser.said(sent)}")
+
+    location = http.value_of(sent.headers, name: "Location")?
+    code = relying_party.code_of(p, b: begun, location: location)?
+    back = strings.split(s: location, sep: "?")[0]
+    scene.step(what: "authorize", outcome: f"302 to {back}, code, state and iss hold")
+    return ok(Authorized(begun: begun, code: code))
+
+# The text of the claim `name`, a number or a truth written as JSON writes
+# it.
+#
+# - `claims`: a token's claims.
+# - `name`: the claim.
+function claim(claims: {str: json.Value}, name: str) -> str
+    match claims[name]
+        .ok v =>
+            match json.text_of(v)
+                .ok t  => return t
+                .err _ => return json.format(v).default("?")
+        .err _ => return "absent"
+
+# The texts of the list claim `name`, joined by spaces.
+#
+# - `claims`: a token's claims.
+# - `name`: the claim.
+function claims_list(claims: {str: json.Value}, name: str) -> str
+    match jose.claim_texts(claims, name: name)
+        .ok list => return list.join(" ")
+        .err _   => return "absent"
+
+# What the server's `WWW-Authenticate` says of `token` at `endpoint`: why
+# it was refused, for a transcript that stops there.
+#
+# - `endpoint`: the protected endpoint.
+# - `token`: the access token sent.
+function challenge_of(endpoint: str, token: str) -> str
+    match http.request(method: http.METHOD_GET, target: endpoint)
+        .ok r =>
+            match http.send(http.default_client(), r: http.with_bearer_auth(r, token: token))
+                .ok answer => return http.value_of(answer.headers, name: "WWW-Authenticate").default(
+                    f"{answer.status}, no challenge"
+                )
+                .err e => return e.msg
+        .err e => return e.msg
+
+# What a refusal says: its code, and the OAuth error the server answered.
+#
+# - `answer`: what a step answered, which should be a failure.
+function refusal<T>(answer: T?) -> str
+    match answer
+        .ok _  => return "accepted, which it must not be"
+        .err e => return f"refused, {e.code}: {e.msg}"

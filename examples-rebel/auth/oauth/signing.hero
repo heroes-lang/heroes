@@ -1,0 +1,155 @@
+# The server's signing key: the ES256 key every ID token and access token
+# is signed with, and the JWK set that publishes its public half for clients
+# to verify them. ES256 rather than EdDSA because every platform's
+# cryptography signs with it, Windows' included (`jose.is_available`).
+#
+# The private key is kept in the vault, as PKCS #8 PEM under the account
+# `vault.SIGNING_KEY`: a served instance reads it from the keyring at start,
+# and makes and stores one the first time, so a restart keeps the key every
+# client has cached. Its `kid` is its RFC 7638 thumbprint, so the same key
+# always has the same id.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/time
+
+use core/vault
+
+# The `typ` of an access token, RFC 9068 § 2.1, which no ID token carries,
+# so neither is ever taken for the other.
+constant ACCESS_TYPE: str
+    "at+jwt"
+
+# The `typ` of an ID token.
+constant ID_TYPE: str
+    "JWT"
+
+# The key the server signs with.
+record Keys
+    # The private key, its `kid` set.
+    current: jose.Key
+    # Whether it was made now rather than read from the vault.
+    made: bool
+
+# The signing key `v` keeps, made and stored there the first time.
+#
+# - `v`: where the key's PEM is kept; a key made here is stored in it.
+#
+# Fails as `vault.read` fails for any reason but an absent key, and as
+# `jose.generate_key` and `vault.store` fail.
+function load(@v: vault.Vault) -> Keys?
+    match vault.read(v, account: vault.SIGNING_KEY)
+        .ok pem =>
+            key = jose.key_from_pem(pem)?
+            return ok(Keys(current: with_id(key)?, made: false))
+        .err e =>
+            if e.code != vault.NOT_FOUND
+                return fail(code: e.code, msg: f"the signing key could not be read: {e.msg}")
+
+    key = jose.generate_key(.p256)?
+    vault.store(@v, account: vault.SIGNING_KEY, secret: jose.format_private_pem(key)?)?
+    return ok(Keys(current: with_id(key)?, made: true))
+
+# `key` with its `kid` set to its thumbprint and its `alg` to ES256.
+#
+# - `key`: the private key.
+function with_id(key: jose.Key) -> jose.Key?
+    named @= key
+    named.id @ bytes.format_base64_url_unpadded(jose.thumbprint(key, algorithm: .sha256)?)
+    named.algorithm @ "ES256"
+    named.usage @ "sig"
+    return ok(named)
+
+# The JWK set of `k`: its public half alone, what `/jwks` serves.
+#
+# - `k`: the keys.
+function key_set(k: Keys) -> str?
+    return jose.format_key_set([jose.public_of(k.current)?])
+
+# The public keys of `k`, as a verifier holds them.
+#
+# - `k`: the keys.
+function trusted(k: Keys) -> [jose.Key]
+    return [jose.public_of(k.current).must()]
+
+# `claims` signed by `k` as a JWT whose header's `typ` is `typ`.
+#
+# - `k`: the keys.
+# - `claims`: the token's claims, in the order they are written.
+# - `typ`: `ACCESS_TYPE` or `ID_TYPE`.
+#
+# Fails as `jose.sign_compact` fails.
+function sign(k: Keys, claims: {str: json.Value}, typ: str) -> str?
+    payload = json.format(.object(members: claims))?
+    return jose.sign_compact(
+        bytes.from_text(payload),
+        key: k.current,
+        algorithm: .es256,
+        header: {"typ": .text(v: typ)}
+    )
+
+# The claims of the access token `token`, verified: signed by `k`, typed
+# `at+jwt`, issued by `issuer` for `issuer` itself as its audience, and not
+# expired at `now`. A token for another audience is refused, as RFC 7519
+# § 4.1.3 asks of a resource that does not find itself in `aud`.
+#
+# - `k`: the keys.
+# - `token`: the token a request carries.
+# - `issuer`: the server's issuer.
+# - `now`: the instant it is judged at.
+#
+# Fails `invalid` as `jose.verify_token` refuses it.
+function verify_access(k: Keys, token: str, issuer: str, now: time.Instant) -> {str: json.Value}?
+    rules @= jose.default_rules([.es256])?
+    rules.issuer @ issuer
+    rules.audience @ issuer
+    rules.token_type @ ACCESS_TYPE
+    rules.required @ ["exp", "iat", "sub"]
+    rules.now @ now
+    return ok(jose.verify_token(token, trusted: trusted(k), rules: rules)?.claims)
+
+# The `at_hash` of `access_token` (OpenID Connect Core § 3.1.3.6): the left
+# half of its SHA-256, in base 64 for URLs, which ties an ID token to the
+# access token issued with it.
+#
+# - `access_token`: the access token, as issued.
+function at_hash(access_token: str) -> str
+    digest = crypto.sha256_text(access_token)
+    return bytes.format_base64_url_unpadded(digest.slice(from: 0, to: 16))
+
+# What a person is told of `k`: its algorithm and whether it was read or made.
+#
+# - `k`: the keys.
+function describe(k: Keys) -> str
+    if k.made
+        return "signing key: ES256 (ECDSA on P-256), made now and kept in the vault, published in the JWK set"
+    return "signing key: ES256 (ECDSA on P-256), read from the vault, published in the JWK set"
+
+test "load: a key made once is read back with the same kid"
+    v: vault.Vault @= .memory(secrets: {})
+    first = load(@v).must()
+    second = load(@v).must()
+    assert first.made && !second.made
+    assert first.current.id == second.current.id && first.current.id.len() == 43
+
+test "sign: an access token verifies, and an ID token is not taken for one"
+    v: vault.Vault @= .memory(secrets: {})
+    k = load(@v).must()
+    now = time.from_unix(whole_seconds: 1_772_357_400, extra_nanoseconds: 0).must()
+    claims = {
+        "iss": .text(v: "https://a")
+        "aud": .text(v: "https://a")
+        "sub": .text(v: "u1")
+        "iat": jose.numeric_date(now)
+        "exp": jose.numeric_date(time.add(now, time.seconds(60).must()).must())
+    }
+    access = sign(k, claims: claims, typ: ACCESS_TYPE).must()
+    assert jose.claim_text(verify_access(k, token: access, issuer: "https://a", now: now).must(), name: "sub").must() == "u1"
+    id_token = sign(k, claims: claims, typ: ID_TYPE).must()
+    assert verify_access(k, token: id_token, issuer: "https://a", now: now).is_err()
+    assert verify_access(k, token: access, issuer: "https://b", now: now).is_err()
+
+test "at_hash: OpenID Connect's example access token"
+    assert at_hash("jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y") == "77QmUPtjPfzWtF2AnpK9RQ"

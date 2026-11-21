@@ -1,0 +1,209 @@
+# The tokens a grant answers: an access token (a JWT of RFC 9068's profile,
+# typed `at+jwt`, its audience the server itself, the one resource its
+# tokens open, the client named by `client_id`), an ID token (OpenID Connect Core
+# § 2) where `openid` was granted, and a refresh token where
+# `offline_access` was. Every claim is written here, in one order, so every
+# token of one kind looks the same.
+#
+# An access token cannot be taken back once issued, so it lives
+# `tokens.access` seconds; a refresh token is opaque, kept by its digest,
+# and revocable (`grants`).
+
+use <rebel>/jose
+use <rebel>/json
+
+use accounts/accounts
+use core/clock
+use core/ids
+use oauth/grants
+use oauth/signing
+use server/answers
+use server/state
+
+# What one grant answers.
+record Issued
+    # The access token.
+    access_token: str
+    # How long it lives, in seconds.
+    expires_in: i64
+    # The refresh token; "" where `offline_access` was not granted.
+    refresh_token: str
+    # The ID token; "" where `openid` was not granted.
+    id_token: str
+    # The scopes granted.
+    scopes: [str]
+
+# What a login proved, carried from the session to every token of its grant.
+record Login
+    # When the person proved who they are, seconds since 1970.
+    auth_time: i64
+    # How, RFC 8176's values.
+    methods: [str]
+
+# The tokens for `u` and the client `client_id`, `scopes` granted.
+#
+# - `st`: the server; its generator draws the token ids and the refresh
+#   token, its grants keep the refresh token.
+# - `client_id`: the client.
+# - `u`: the account.
+# - `scopes`: the scopes granted.
+# - `nonce`: the authorization request's `nonce`, "" for none or for a
+#   refresh, whose ID token carries none.
+# - `login`: what the session proved.
+# - `family`: the refresh token family to go on, "" to begin one.
+#
+# Fails as `signing.sign` fails.
+function issue(@st: state.State, client_id: str, u: accounts.User, scopes: [str], nonce: str, login: Login, family: str) -> Issued?
+    lifetimes = st.settings.lifetimes
+    now = clock.now(st.clock)
+    access_claims: {str: json.Value} = {
+        "iss": .text(v: st.issuer)
+        "sub": .text(v: u.id)
+        "aud": .text(v: st.issuer)
+        "client_id": .text(v: client_id)
+        "scope": .text(v: scopes.join(" "))
+        "iat": jose.numeric_date(now)
+        "exp": jose.numeric_date(clock.after(st.clock, seconds: lifetimes.access))
+        "jti": .text(v: ids.token(@st.rng, count: 16))
+    }
+    access = signing.sign(st.keys, claims: access_claims, typ: signing.ACCESS_TYPE)?
+    id_token: str @= ""
+
+    if has(scopes, scope: "openid")
+        claims: {str: json.Value} @= {
+            "iss": .text(v: st.issuer)
+            "sub": .text(v: u.id)
+            "aud": .text(v: client_id)
+            "iat": jose.numeric_date(now)
+            "exp": jose.numeric_date(clock.after(st.clock, seconds: lifetimes.id))
+            "auth_time": answers.number(login.auth_time)
+            "amr": answers.texts(login.methods)
+            "at_hash": .text(v: signing.at_hash(access))
+        }
+
+        if nonce != ""
+            claims["nonce"] @ .text(v: nonce)
+
+        for key in keys(profile_claims(u, scopes: scopes))
+            claims[key] @ profile_claims(u, scopes: scopes)[key].must()
+
+        id_token @ signing.sign(st.keys, claims: claims, typ: signing.ID_TYPE)?
+
+    refresh: str @= ""
+
+    if has(scopes, scope: "offline_access")
+        refresh @ ids.token(@st.rng, count: 32)
+
+        kept = if family == ""
+            ids.token(@st.rng, count: 16)
+        else
+            family
+        g = grants.Refresh(
+            family: kept,
+            client_id: client_id,
+            user_id: u.id,
+            scopes: scopes,
+            auth_time: login.auth_time,
+            methods: login.methods,
+            expires: clock.unix_now(st.clock) + lifetimes.refresh,
+            used: false
+        )
+        grants.issue_refresh(@st.grants, token: refresh, r: g)
+
+    return ok(
+        Issued(access_token: access, expires_in: lifetimes.access, refresh_token: refresh, id_token: id_token, scopes: scopes)
+    )
+
+# An access token for the service account `name`, `scopes` its own, its
+# audience the server itself.
+#
+# - `st`: the server; its generator draws the token's id.
+# - `name`: the service account.
+# - `scopes`: its scopes.
+#
+# Fails as `signing.sign` fails.
+function issue_service(@st: state.State, name: str, scopes: [str]) -> Issued?
+    claims: {str: json.Value} = {
+        "iss": .text(v: st.issuer)
+        "sub": .text(v: f"service:{name}")
+        "aud": .text(v: st.issuer)
+        "client_id": .text(v: name)
+        "scope": .text(v: scopes.join(" "))
+        "iat": jose.numeric_date(clock.now(st.clock))
+        "exp": jose.numeric_date(clock.after(st.clock, seconds: st.settings.lifetimes.access))
+        "jti": .text(v: ids.token(@st.rng, count: 16))
+    }
+    access = signing.sign(st.keys, claims: claims, typ: signing.ACCESS_TYPE)?
+    return ok(
+        Issued(access_token: access, expires_in: st.settings.lifetimes.access, refresh_token: "", id_token: "", scopes: scopes)
+    )
+
+# The token endpoint's answer for `t` (RFC 6749 § 5.1, OpenID Connect Core
+# § 3.1.3.3), not to be cached.
+#
+# - `t`: what was issued.
+function token_response(t: Issued) -> {str: json.Value}
+    members: {str: json.Value} @= {
+        "access_token": .text(v: t.access_token)
+        "token_type": .text(v: "Bearer")
+        "expires_in": answers.number(t.expires_in)
+        "scope": .text(v: t.scopes.join(" "))
+    }
+
+    if t.refresh_token != ""
+        members["refresh_token"] @ .text(v: t.refresh_token)
+
+    if t.id_token != ""
+        members["id_token"] @ .text(v: t.id_token)
+
+    return members
+
+# The claims about `u` that `scopes` release: `name` and
+# `preferred_username` for `profile`, `email` and `email_verified` for
+# `email` (OpenID Connect Core § 5.4).
+#
+# - `u`: the account.
+# - `scopes`: the scopes granted.
+function profile_claims(u: accounts.User, scopes: [str]) -> {str: json.Value}
+    out: {str: json.Value} @= {}
+
+    if has(scopes, scope: "profile")
+        out["name"] @ .text(v: u.display_name)
+        out["preferred_username"] @ .text(v: u.username)
+
+    if has(scopes, scope: "email")
+        out["email"] @ .text(v: u.email)
+        out["email_verified"] @ .boolean(v: u.email_verified)
+
+    return out
+
+# The UserInfo answer for `u` (OpenID Connect Core § 5.3.2): `sub`, then
+# what `scopes` release.
+#
+# - `u`: the account.
+# - `scopes`: the access token's scopes.
+function userinfo(u: accounts.User, scopes: [str]) -> {str: json.Value}
+    out: {str: json.Value} @= {"sub": .text(v: u.id)}
+    released = profile_claims(u, scopes: scopes)
+
+    for key in keys(released)
+        out[key] @ released[key].must()
+
+    return out
+
+# Whether `scopes` holds `scope`.
+#
+# - `scopes`: the scopes.
+# - `scope`: one scope.
+function has(scopes: [str], scope: str) -> bool
+    for s in scopes
+        if s == scope
+            return true
+
+    return false
+
+test "profile_claims: each scope releases its own claims"
+    u = accounts.new_user(id: "1", username: "ana", email: "a@example.org", created: 0)
+    assert keys(profile_claims(u, scopes: ["openid"])).len() == 0
+    assert keys(profile_claims(u, scopes: ["profile", "email"])) == ["name", "preferred_username", "email", "email_verified"]
+    assert keys(userinfo(u, scopes: ["email"])) == ["sub", "email", "email_verified"]

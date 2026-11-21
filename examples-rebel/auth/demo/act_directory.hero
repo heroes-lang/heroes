@@ -1,0 +1,223 @@
+# The script's last two acts, the machines': the directory-sync service
+# account logs in by SCRAM-SHA-256 over HTTP (RFC 7804) with Rebel's `scram`
+# client, its token runs the import the nightly schedule runs, and people of
+# the directory then log in with their directory password, which the server
+# checks by binding to the directory as them.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/json
+use <rebel>/scram
+use <rebel>/strings
+use <rebel>/url
+
+use demo/browser
+use demo/scene
+
+# The code of a step that did not answer as the script needs.
+constant INVALID: str
+    "invalid"
+
+# The service account's name.
+constant SERVICE: str
+    "directory-sync"
+
+# Its password, which the server's configuration holds only as a verifier.
+constant SERVICE_PASSWORD: str
+    "sync-account-pass"
+
+# The service account's login, and the token it is answered.
+#
+# - `s`: the scene.
+#
+# Fails where a step the script needs does not answer as it must.
+function service_login(s: scene.Scene) -> str?
+    scene.act("5. a service account: SCRAM-SHA-256 over HTTP")
+    refused = scram_login(s, password: "not-the-password", nonce: "fyko+d2lbbFgONRv9qkxdawL", quiet: true)
+
+    match refused
+        .ok _  => scene.step(what: "log in with a wrong password", outcome: "accepted, which it must not be")
+        .err e => scene.step(what: "log in with a wrong password", outcome: f"refused, {e.msg}")
+
+    return scram_login(s, password: SERVICE_PASSWORD, nonce: "rOprNGfwEbeRWgbNEkqO7a3E", quiet: false)
+
+# The two round trips of a SCRAM login as `SERVICE` with `password`, and the
+# access token the second answers.
+#
+# - `s`: the scene.
+# - `password`: the password tried.
+# - `nonce`: the client's nonce; a fixed one, so the transcript is the same on every run.
+# - `quiet`: whether the first round trip goes unprinted.
+#
+# Fails `invalid` where the server refuses the login, and as `scram` fails where its signature does not hold.
+function scram_login(s: scene.Scene, password: str, nonce: str, quiet: bool) -> str?
+    e @= scram.start(.sha256, user: SERVICE, nonce: nonce, least_iterations: 4096)
+    first = sent(s, header: "SCRAM-SHA-256 data=" + encoded(scram.client_first(e)))?
+    asked = parameters(http.value_of(first.headers, name: "WWW-Authenticate")?)?
+    server_first = decoded(asked["data"]?)?
+
+    if !quiet
+        scene.step(
+            what: "first round trip",
+            outcome: f"{first.status} with a sid and the server's first message, {iterations_of(server_first)} iterations"
+        )
+
+    final = scram.client_final(@e, password: password, server_first: server_first)?
+    second = sent(s, header: f"SCRAM-SHA-256 sid={asked["sid"]?}, data={encoded(final)}")?
+
+    if second.status != 200
+        return fail(code: INVALID, msg: browser.said(second))
+
+    info = parameters(http.value_of(second.headers, name: "Authentication-Info")?)?
+    scram.verify(e, server_final: decoded(info["data"]?)?)?
+    scene.step(
+        what: "second round trip",
+        outcome: f"{second.status}, the server's signature verified, scopes {browser.text_of(second, key: "scope")}"
+    )
+    return ok(browser.text_of(second, key: "access_token"))
+
+# The answer to `POST /service/token` carrying `header`.
+#
+# - `s`: the scene.
+# - `header`: the `Authorization` value.
+function sent(s: scene.Scene, header: str) -> http.Response?
+    r @= http.request(method: http.METHOD_POST, target: s.issuer + "/service/token")?
+    r.headers @ r.headers.push(http.Header(name: "Authorization", value: header))
+    return http.send(http.default_client(), r: r)
+
+# The `key=value` parameters after the mechanism of an RFC 7804 field.
+#
+# - `value`: the field's value.
+function parameters(value: str) -> {str: str}?
+    space = strings.index_of(s: value, substr: " ")?
+    out: {str: str} @= {}
+
+    for part in strings.split(s: value.slice(from: space + 1, to: value.len()), sep: ",")
+        p = strings.trim(part)
+        at = strings.index_of(s: p, substr: "=")?
+        out[p.slice(from: 0, to: at)] @ strings.trim_where(p.slice(from: at + 1, to: p.len()), accepts: is_quote)
+
+    return ok(out)
+
+# Whether `c` is a double quote.
+#
+# - `c`: one character.
+function is_quote(c: str) -> bool
+    return c == "\""
+
+# `text`'s UTF-8 in base 64.
+#
+# - `text`: the text.
+function encoded(text: str) -> str
+    return bytes.format_base64(bytes.from_text(text))
+
+# The text the base 64 `data` writes.
+#
+# - `data`: base 64.
+function decoded(data: str) -> str?
+    return bytes.to_text(bytes.parse_base64(data)?)
+
+# The `i=` of a server's first message.
+#
+# - `server_first`: the server's first message.
+function iterations_of(server_first: str) -> str
+    for part in strings.split(s: server_first, sep: ",")
+        if strings.has_prefix(s: part, prefix: "i=")
+            return part.slice(from: 2, to: part.len())
+
+    return "?"
+
+# The import run by the service account's token, the logins of the people it
+# made, and a second run that finds nothing to change.
+#
+# - `s`: the scene.
+# - `token`: the service account's access token.
+#
+# Fails where a step the script needs does not answer as it must.
+function import_act(s: scene.Scene, token: str) -> ()?
+    scene.act("6. the nightly directory import, run now")
+    first = imported(s, token: token)?
+    print_summary(first)
+    carla @= browser.open(s.issuer)
+    good = browser.post_form(@carla, path: "/login", pairs: [url.Pair(key: "username", value: "carla"), url.Pair(key: "password", value: "carla-directory-1")])?
+    scene.step(what: "log in carla with her directory password", outcome: f"{good.status}, amr pwd")
+    bad = browser.post_form(
+        @carla,
+        path: "/login",
+        pairs: [url.Pair(key: "username", value: "carla"), url.Pair(key: "password", value: "carla-directory-2")]
+    )
+    scene.step(what: "log in carla with another password", outcome: scene.outcome_of(bad))
+    second = imported(s, token: token)?
+    print_summary(second)
+    listed = authorized_get(s, path: "/admin/users", token: token)?
+    scene.step(what: "the accounts, listed with the token", outcome: f"{listed.status}")
+
+    for u in json.items_of(json.member(browser.body_of(listed), key: "users")?)?
+        print(
+            f"    {member_text(u, key: "username")}: {member_text(u, key: "source")}, email_verified {member_text(u, key: "email_verified")}, totp {member_text(u, key: "totp")}, passkeys {member_text(u, key: "passkeys")}, disabled {member_text(u, key: "disabled")}"
+        )
+
+    return ok()
+
+# The import's answer.
+#
+# - `s`: the scene.
+# - `token`: the service account's access token.
+function imported(s: scene.Scene, token: str) -> http.Response?
+    r = http.with_bearer_auth(http.request(method: http.METHOD_POST, target: s.issuer + "/admin/import")?, token: token)
+    answer = http.send(http.default_client(), r: r)?
+
+    if answer.status != 200
+        return fail(code: INVALID, msg: f"the import answered {browser.said(answer)}")
+    return ok(answer)
+
+# Prints what an import did.
+#
+# - `r`: the import's answer.
+function print_summary(r: http.Response)
+    v = browser.body_of(r)
+    scene.step(
+        what: "import",
+        outcome: f"{member_text(v, key: "read")} entries read, next run at {member_text(v, key: "next_run")}"
+    )
+
+    for field in ["created", "updated", "unchanged", "disabled", "skipped"]
+        print(f"    {field}: {joined(v, key: field)}")
+
+# The answer to `GET` of `path` with `token`.
+#
+# - `s`: the scene.
+# - `path`: the path under the issuer.
+# - `token`: the access token.
+function authorized_get(s: scene.Scene, path: str, token: str) -> http.Response?
+    r = http.with_bearer_auth(http.request(method: http.METHOD_GET, target: s.issuer + path)?, token: token)
+    return http.send(http.default_client(), r: r)
+
+# The member `key` of `v` as text: a text as it is, any other value as JSON.
+#
+# - `v`: an object.
+# - `key`: the member.
+function member_text(v: json.Value, key: str) -> str
+    match json.member(v, key: key)
+        .ok m =>
+            match json.text_of(m)
+                .ok t  => return t
+                .err _ => return json.format(m).default("?")
+        .err _ => return "absent"
+
+# The texts of the list member `key` of `v`, joined; `none` for an empty one.
+#
+# - `v`: an object.
+# - `key`: the member.
+function joined(v: json.Value, key: str) -> str
+    out: [str] @= []
+
+    match json.member(v, key: key)
+        .ok m =>
+            for item in json.items_of(m).default([])
+                out @ out.push(json.text_of(item).default("?"))
+        .err _ => _ = 0
+
+    if out.len() == 0
+        return "none"
+    return out.join(", ")

@@ -1,0 +1,99 @@
+# How the server judges a passkey's attestation, the authenticator's claim
+# of what made the key. `webauthn` verifies the attestation's signature and
+# the certificate's form (Web Authentication § 8.2.1) but leaves the
+# certificate's chain to the program; this module holds it to the
+# authenticator vendors' roots the configuration trusts, with `x509`, at the
+# server's time.
+#
+# A self attestation and no attestation are taken too: they prove the key is
+# fresh, not who made it, and the account records which it was. A
+# certificate that chains to no trusted root is refused rather than recorded
+# as unverified, so the record never claims more than was checked.
+
+use <rebel>/time
+use <rebel>/webauthn
+use <rebel>/x509
+
+# The code of an attestation refused.
+constant INVALID: str
+    "invalid"
+
+# The roots `text`, PEM holding one certificate or more, as the configured
+# file holds them.
+#
+# - `text`: the PEM text.
+#
+# Fails `invalid` where it holds no certificate, or one does not read.
+function roots_of(text: str) -> [x509.Certificate]?
+    found = x509.parse_certificates(text)?
+
+    if found.len() == 0
+        return fail(code: INVALID, msg: "the trusted roots hold no certificate")
+    return ok(found)
+
+# What the account records of `r`'s attestation: "none", "self", or
+# "certified by" and the trusted root's common name.
+#
+# - `r`: the registration `webauthn.verify_registration` answered.
+# - `roots`: the authenticator vendors' roots trusted.
+# - `at`: the instant the chain is judged at.
+#
+# Fails `invalid` where `r` carries certificates that chain to none of
+# `roots` or do not hold at `at`, and where the format was read but not
+# verified.
+function judge(r: webauthn.Registration, roots: [x509.Certificate], at: time.Instant) -> str?
+    match r.attestation
+        .none          => return ok("none")
+        .self_attested => return ok("self")
+        .unverified => return fail(
+            code: INVALID,
+            msg: f"the attestation format \"{r.format}\" is not verified by this server"
+        )
+        .certified => _ = 0
+
+    if roots.len() == 0
+        return fail(code: INVALID, msg: "the authenticator's certificate cannot be judged: no root is trusted")
+
+    certificates: [x509.Certificate] @= []
+
+    for der in r.certificates
+        certificates @ certificates.push(x509.decode_certificate(der)?)
+
+    pool @= certificates.slice(from: 1, to: certificates.len())
+
+    for root in roots
+        pool @ pool.push(root)
+
+    chain = x509.chain_of(certificates[0], pool: pool)
+    options = x509.Verification(roots: roots, at: at, purpose: "", host: "")
+
+    match x509.verify_chain(chain, options: options)
+        .ok _ => _ = 0
+        .err e => return fail(
+            code: INVALID,
+            msg: f"the authenticator's certificate does not chain to a trusted root: {e.msg}"
+        )
+
+    top = chain[chain.len() - 1]
+    name = x509.text_of(top.issuer, oid: x509.COMMON_NAME).default(x509.format_name(top.issuer))
+    return ok(f"certified by {name}")
+
+test "judge: no attestation and self attestation are recorded as such"
+    at = time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()
+    credential = webauthn.Credential(id: [1], public_key: [], sign_count: 0, transports: [])
+    r @= webauthn.Registration(
+        credential: credential,
+        algorithm: webauthn.ES256,
+        aaguid: [],
+        format: "none",
+        attestation: .none,
+        certificates: [],
+        user_verified: false,
+        backup_eligible: false,
+        backed_up: false
+    )
+    assert judge(r, roots: [], at: at).must() == "none"
+    r.attestation @ .self_attested
+    assert judge(r, roots: [], at: at).must() == "self"
+    r.attestation @ .certified
+    assert judge(r, roots: [], at: at).is_err()

@@ -1,0 +1,155 @@
+# The certificates of the demonstration's authenticator vendor: a root, and
+# the attestation certificate its authenticators sign their registrations
+# with, as Web Authentication § 8.2.1 asks of a "packed" attestation's
+# certificate (version 3, a subject of country, organization, the unit
+# `Authenticator Attestation` and a common name, no certificate authority).
+#
+# `x509` reads certificates and does not write one (its ledger holds the
+# writing as `pending`), so this module writes the two it needs: each
+# TBSCertificate built as a tree of `asn1.Value` and encoded as DER by
+# `asn1`, signed by ECDSA on P-256 over SHA-256 by `crypto/keypairs`. The
+# keys are `jose` keys, values the program holds, opened as a
+# `crypto/keypairs` handle for the one signature and closed at once.
+
+use <rebel>/asn1
+use <rebel>/crypto/keypairs
+use <rebel>/jose
+use <rebel>/pem
+use <rebel>/time
+
+# The OID of ecdsa-with-SHA256 (RFC 5758 § 3.2).
+constant ECDSA_SHA256: str
+    "1.2.840.10045.4.3.2"
+
+# A certificate made, and its key.
+record Made
+    # The certificate's DER.
+    der: [u8]
+    # Its private key.
+    key: jose.Key
+
+# The parts of a subject's or an issuer's name, the least specific first.
+record Name
+    # The country, two letters.
+    country: str
+    # The organization.
+    organization: str
+    # The organizational unit; "" for none.
+    unit: str
+    # The common name.
+    common: str
+
+# The vendor's root: self-signed, a certificate authority that may sign
+# certificates, valid from 2026 to 2036.
+#
+# - `name`: its subject, which is its issuer.
+#
+# Fails as `jose.generate_key` and the signature fail.
+function make_root(name: Name) -> Made?
+    key = jose.generate_key(.p256)?
+    basic = extension(oid: "2.5.29.19", critical: true, value: .sequence(items: [.boolean(v: true)]))?
+    usage = extension(oid: "2.5.29.15", critical: true, value: .bit_string(v: asn1.BitString(bytes: [0x06], bit_len: 7)))?
+    der = signed(serial: 1, issuer: name, subject: name, subject_key: key, issuer_key: key, extensions: [basic, usage])?
+    return ok(Made(der: der, key: key))
+
+# An attestation certificate of `name` signed by `root`: no certificate
+# authority, its key for signatures alone.
+#
+# - `root`: the vendor's root.
+# - `issuer`: the root's name.
+# - `name`: the attestation certificate's subject.
+#
+# Fails as `jose.generate_key` and the signature fail.
+function make_attestation(root: Made, issuer: Name, name: Name) -> Made?
+    key = jose.generate_key(.p256)?
+    basic = extension(oid: "2.5.29.19", critical: true, value: .sequence(items: []))?
+    usage = extension(oid: "2.5.29.15", critical: true, value: .bit_string(v: asn1.BitString(bytes: [0x80], bit_len: 1)))?
+    der = signed(serial: 2, issuer: issuer, subject: name, subject_key: key, issuer_key: root.key, extensions: [basic, usage])?
+    return ok(Made(der: der, key: key))
+
+# The certificate of `subject_key` for `subject`, by `issuer`, signed by
+# `issuer_key`.
+#
+# - `serial`: the serial number.
+# - `issuer`: the issuer's name.
+# - `subject`: the subject's name.
+# - `subject_key`: the key the certificate is of.
+# - `issuer_key`: the key that signs it.
+# - `extensions`: its extensions, each as `extension` writes one.
+function signed(serial: i64, issuer: Name, subject: Name, subject_key: jose.Key, issuer_key: jose.Key, extensions: [asn1.Value]) -> [u8]?
+    algorithm: asn1.Value = .sequence(items: [.oid(v: asn1.Oid(dotted: ECDSA_SHA256))])
+    spki = asn1.decode_der(jose.encode_public_der(subject_key)?)?
+    validity: asn1.Value = .sequence(items: [.utc_time(v: at(2026)), .utc_time(v: at(2036))])
+    tbs: asn1.Value = .sequence(
+        items: [asn1.tagged(.integer(v: 2), number: 0), .integer(v: serial), algorithm, name_of(issuer), validity, name_of(subject), spki, asn1.tagged(.sequence(items: extensions), number: 3)]
+    )
+    tbs_der = asn1.encode_der(tbs)?
+    signature = sign(issuer_key, message: tbs_der)?
+    return asn1.encode_der(
+        .sequence(items: [tbs, algorithm, .bit_string(v: asn1.BitString(bytes: signature, bit_len: signature.len() * 8))])
+    )
+
+# The first moment of the year `year`, in UTC.
+#
+# - `year`: the year.
+function at(year: i64) -> time.DateTime
+    return time.DateTime(year: year, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+
+# `n` as a Name: one attribute a relative name, the country printable.
+#
+# - `n`: the name.
+function name_of(n: Name) -> asn1.Value
+    rdns: [asn1.Value] @= [
+        attribute(oid: "2.5.4.6", value: .text(kind: .printable, v: n.country))
+        attribute(oid: "2.5.4.10", value: .text(kind: .utf8, v: n.organization))
+    ]
+
+    if n.unit != ""
+        rdns @ rdns.push(attribute(oid: "2.5.4.11", value: .text(kind: .utf8, v: n.unit)))
+
+    rdns @ rdns.push(attribute(oid: "2.5.4.3", value: .text(kind: .utf8, v: n.common)))
+    return .sequence(items: rdns)
+
+# One relative name of one attribute.
+#
+# - `oid`: the attribute's type.
+# - `value`: its value.
+function attribute(oid: str, value: asn1.Value) -> asn1.Value
+    return .set(items: [.sequence(items: [.oid(v: asn1.Oid(dotted: oid)), value])])
+
+# One extension: its OID, its criticality where it is critical, its value's
+# DER in an OCTET STRING.
+#
+# - `oid`: its identifier.
+# - `critical`: whether a reader that does not know it must refuse the certificate.
+# - `value`: its value, before DER.
+function extension(oid: str, critical: bool, value: asn1.Value) -> asn1.Value?
+    items: [asn1.Value] @= [.oid(v: asn1.Oid(dotted: oid))]
+
+    if critical
+        items @ items.push(.boolean(v: true))
+
+    items @ items.push(.octet_string(v: asn1.encode_der(value)?))
+    return ok(.sequence(items: items))
+
+# `key`'s ECDSA signature of `message` over SHA-256, in X9.62's DER.
+#
+# - `key`: a private P-256 key.
+# - `message`: the bytes signed.
+#
+# Fails as `crypto/keypairs` fails to read the key or to sign.
+function sign(key: jose.Key, message: [u8]) -> [u8]?
+    handle @= keypairs.decode_private_der(jose.encode_private_der(key)?)?
+    signature = keypairs.sign(handle, scheme: .ecdsa_sha256, message: message)
+    closed = keypairs.close_private(@handle)
+    made = signature?
+    closed?
+    return ok(made)
+
+# The PEM of the certificate `der`.
+#
+# - `der`: a certificate's DER.
+#
+# Fails as `pem.format` fails.
+function to_pem(der: [u8]) -> str?
+    return pem.format(pem.Block(label: "CERTIFICATE", headers: [], data: der))

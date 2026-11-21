@@ -1,0 +1,205 @@
+# A loopback stand-in for the organisation's LDAP directory, which the
+# identity server imports people from every night and binds to when one of
+# them logs in. It answers LDAPv3's simple bind, search and unbind (RFC
+# 4511) in plain text, and checks what a directory checks: a bind's DN must
+# name an entry and its password must be the entry's `userPassword`
+# (invalidCredentials, 49, otherwise), a search needs a bound identity
+# (insufficientAccessRights, 50), and a search answers the entries under its
+# base within its scope that its filter matches, with the attributes asked
+# and never the password. A filter is read by `ldap.decode_filter`, the
+# client's own reader of the bytes it sent.
+#
+# Its entries and the matching of a search are `ldap_directory`'s.
+
+use <rebel>/asn1
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/ldap
+use <rebel>/net
+use <rebel>/strings
+
+use standins/ldap_directory
+use standins/ldap_wire
+
+# How long one connection may last, in milliseconds.
+constant CONNECTION_MS: i64
+    10_000
+
+# What the stand-in did.
+record Served
+    # The binds it accepted.
+    binds: i64
+    # The binds it refused.
+    refused: i64
+    # The searches it answered.
+    searches: i64
+
+# Serves `l` until the program is asked to stop.
+#
+# - `l`: the listener; the caller closes it.
+function serve(l: net.Listener) -> Served
+    done @= Served(binds: 0, refused: 0, searches: 0)
+
+    while true
+        match net.accept(l, deadline_ms: CONNECTION_MS)
+            .ok conn => converse(@done, conn: conn)
+            .err _   => break
+
+    return done
+
+# One connection: messages answered until an unbind or its end.
+#
+# - `done`: the counts, which the conversation adds to.
+# - `conn`: the connection, closed at the end.
+function converse(@done: Served, conn: net.Conn)
+    reader @= io.reader(conn.stream)
+    bound: str @= ""
+
+    while true
+        m = match ldap_wire.read_message(@reader)
+            .ok got => got
+            .err _  => break
+
+        if m.operation == ldap_wire.UNBIND_REQUEST
+            break
+
+        answered = match m.operation
+            0 => bind(@done, @bound, m: m)
+            3 => search(@done, bound: bound, m: m)
+            _ => [
+                ldap_wire.envelope(m.id, op: ldap_wire.result(number: 1, code: 2, message: "the stand-in answers bind and search alone")).default([])
+            ]
+
+        if !write_all(reader.stream, messages: answered)
+            break
+
+    match io.close(@reader.stream)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# Writes `messages`; false where the client is gone.
+#
+# - `out`: the connection's stream.
+# - `messages`: the messages' bytes, in order.
+function write_all(out: io.Stream, messages: [[u8]]) -> bool
+    for m in messages
+        if io.write(out, data: m).is_err()
+            return false
+
+    return true
+
+# The answer to a simple bind.
+#
+# - `done`: the counts of binds taken and refused.
+# - `bound`: the DN the connection is bound as, "" for none, changed by the bind.
+# - `m`: the BindRequest.
+function bind(@done: Served, @bound: str, m: ldap_wire.Message) -> [[u8]]
+    outcome = check_bind(m)
+
+    code = match outcome
+        .ok dn =>
+            bound @ dn
+            done.binds @ done.binds + 1
+            0
+        .err _ =>
+            bound @ ""
+            done.refused @ done.refused + 1
+            49
+
+    message = match outcome
+        .ok _  => ""
+        .err e => e.msg
+
+    return [
+        ldap_wire.envelope(m.id, op: ldap_wire.result(number: ldap_wire.BIND_RESPONSE, code: code, message: message)).default([])
+    ]
+
+# The DN a bind proves, its password the entry's.
+#
+# - `m`: the BindRequest.
+#
+# Fails `invalid` for a bind of any other kind and for credentials no entry holds.
+function check_bind(m: ldap_wire.Message) -> str?
+    parts = ldap_wire.parts_of(m.op)?
+
+    if parts.len() < 3
+        return fail(code: ldap_wire.INVALID, msg: "the bind has no credentials")
+
+    dn = ldap_wire.text_of(parts[1])?
+
+    password = match parts[2]
+        .primitive p => bytes.to_text_lossy(p.content)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .constructed _ => return fail(
+            code: ldap_wire.INVALID,
+            msg: "only a simple bind is offered"
+        )
+
+    for e in ldap_directory.entries()
+        if ldap_directory.same_dn(a: e.dn, b: dn)
+            if password != "" && ldap_directory.values_of(e, name: "userPassword") == [password]
+                return ok(e.dn)
+            return fail(code: ldap_wire.INVALID, msg: "invalid credentials")
+
+    return fail(code: ldap_wire.INVALID, msg: "invalid credentials")
+
+# The answer to a search: its entries, then its end.
+#
+# - `done`: the count of searches answered.
+# - `bound`: the DN the connection is bound as; "" refuses the search.
+# - `m`: the SearchRequest.
+function search(@done: Served, bound: str, m: ldap_wire.Message) -> [[u8]]
+    if bound == ""
+        return [
+            ldap_wire.envelope(m.id, op: ldap_wire.result(number: ldap_wire.SEARCH_DONE, code: 50, message: "bind first")).default([])
+        ]
+
+    done.searches @ done.searches + 1
+
+    match found(m)
+        .ok list =>
+            out: [[u8]] @= []
+
+            for e in list.entries
+                out @ out.push(
+                    ldap_wire.envelope(m.id, op: ldap_wire.entry(e.dn, attributes: e.attributes)).default([])
+                )
+
+            out @ out.push(
+                ldap_wire.envelope(m.id, op: ldap_wire.result(number: ldap_wire.SEARCH_DONE, code: 0, message: "")).default([])
+            )
+            return out
+        .err e => return [
+            ldap_wire.envelope(m.id, op: ldap_wire.result(number: ldap_wire.SEARCH_DONE, code: 2, message: e.msg)).default([])
+        ]
+
+# The entries a search found, each cut to the attributes asked.
+record Found
+    # The entries.
+    entries: [ldap_directory.Entry]
+
+# The entries the search `m` finds.
+#
+# - `m`: the SearchRequest.
+#
+# Fails `invalid` where its parts do not read, and as `ldap.decode_filter` fails.
+function found(m: ldap_wire.Message) -> Found?
+    parts = ldap_wire.parts_of(m.op)?
+
+    if parts.len() < 8
+        return fail(code: ldap_wire.INVALID, msg: "the search has too few parts")
+
+    base = ldap_wire.text_of(parts[0])?
+    scope = asn1.int_of(parts[1])?
+    f = ldap.decode_filter(asn1.encode_der(parts[6])?)?
+    asked: [str] @= []
+
+    for a in asn1.items_of(parts[7])?
+        asked @ asked.push(strings.to_lower(ldap_wire.text_of(a)?))
+
+    out: [ldap_directory.Entry] @= []
+
+    for e in ldap_directory.entries()
+        if ldap_directory.in_scope(dn: e.dn, base: base, scope: scope) && ldap_directory.matches(e, f: f)
+            out @ out.push(ldap_directory.cut(e, asked: asked))
+
+    return ok(Found(entries: out))

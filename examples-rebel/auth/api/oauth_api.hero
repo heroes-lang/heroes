@@ -1,0 +1,387 @@
+# The OAuth 2.0 and OpenID Connect endpoints: the authorization endpoint
+# (the authorization code grant, PKCE's S256 required of every client, RFC
+# 9700 § 2.1.1), the token endpoint (the code exchanged, and a refresh token
+# rotated), UserInfo, revocation (RFC 7009), introspection (RFC 7662), the
+# metadata and the JWK set.
+#
+# An authorization request whose client or redirect URI is not registered is
+# answered here and never redirected, so the endpoint cannot be used to send
+# a browser anywhere (RFC 6749 § 4.1.2.1); every other error goes back to the
+# client's redirect with `state` and `iss`.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/http
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/oauth2
+use <rebel>/strings
+use <rebel>/url
+
+use accounts/accounts
+use accounts/passwords
+use api/accounts_api
+use core/clock
+use core/ids
+use core/settings
+use oauth/discovery
+use oauth/grants
+use oauth/signing
+use oauth/tokens
+use server/answers
+use server/state
+
+# The code of a client that does not authenticate (RFC 6749 § 5.2).
+constant INVALID_CLIENT: str
+    "invalid_client"
+
+# The code of a grant type the token endpoint does not offer.
+constant UNSUPPORTED_GRANT_TYPE: str
+    "unsupported_grant_type"
+
+# `GET /.well-known/openid-configuration` and
+# `GET /.well-known/oauth-authorization-server`: the server's metadata.
+#
+# - `st`: the server.
+function metadata(st: state.State) -> http.Response
+    match http.respond_json(200, value: .object(members: discovery.metadata(st.issuer)))
+        .ok r  => return r
+        .err _ => return http.respond_status(500)
+
+# `GET /jwks`: the JWK set of the signing key's public half.
+#
+# - `st`: the server.
+#
+# Fails as `signing.key_set` fails.
+function jwks(st: state.State) -> http.Response?
+    return ok(http.respond(200, content_type: "application/json", body: bytes.from_text(signing.key_set(st.keys)?)))
+
+# `GET /authorize`: the authorization code grant's first half. With a
+# session, the browser is sent back to the client's redirect URI with a code;
+# without one, to the login form, which returns here.
+#
+# - `st`: the server, which keeps the code.
+# - `r`: the request.
+function authorize(@st: state.State, r: http.Request) -> http.Response
+    q = answers.query(r)
+    client_id = answers.field(q, key: "client_id")
+    redirect_uri = answers.field(q, key: "redirect_uri")
+
+    client = match settings.client_named(st.settings, id: client_id)
+        .ok c  => c
+        .err _ => return http.respond_text(400, text: f"No client \"{client_id}\" is registered here.")
+
+    if !answers.contains(client.redirect_uris, item: redirect_uri)
+        return http.respond_text(400, text: "The redirect URI is not one the client registered.")
+
+    back = Back(uri: redirect_uri, state: answers.field(q, key: "state"), issuer: st.issuer)
+
+    if answers.field(q, key: "response_type") != "code"
+        return refused(back, error: "unsupported_response_type", description: "only the authorization code is offered")
+
+    if answers.field(q, key: "code_challenge") == "" || answers.field(q, key: "code_challenge_method") != "S256"
+        return refused(back, error: "invalid_request", description: "PKCE with the S256 method is required")
+
+    scopes = answers.scopes_of(answers.field(q, key: "scope"))
+    offered = answers.scopes_of(discovery.SCOPES)
+
+    for s in scopes
+        if !answers.contains(client.scopes, item: s) || !answers.contains(offered, item: s)
+            return refused(
+                back,
+                error: "invalid_scope",
+                description: f"the scope \"{s}\" is not granted to this client"
+            )
+
+    signed_in = match accounts_api.current(st, r: r)
+        .ok c => c
+        .err _ =>
+            if answers.field(q, key: "prompt") == "none"
+                return refused(back, error: "login_required", description: "no one is logged in")
+            target = url.escape_query(url.request_target(r.url))
+            return http.respond_redirect(302, location: f"/login?return_to={target}")
+
+    code = ids.token(@st.rng, count: 32)
+    granted = grants.Code(
+        client_id: client.id,
+        redirect_uri: redirect_uri,
+        user_id: signed_in.user.id,
+        scopes: scopes,
+        nonce: answers.field(q, key: "nonce"),
+        challenge: answers.field(q, key: "code_challenge"),
+        auth_time: signed_in.session.auth_time,
+        methods: signed_in.session.methods,
+        expires: state.now(st) + st.settings.lifetimes.code
+    )
+    grants.issue_code(@st.grants, code: code, c: granted)
+    return redirect(back, pairs: [url.Pair(key: "code", value: code)])
+
+# Where an authorization request's answer goes: the client's redirect URI,
+# with the request's `state` and the server's `iss` added to every answer.
+record Back
+    # The redirect URI.
+    uri: str
+    # The request's `state`, "" where it sent none.
+    state: str
+    # The issuer.
+    issuer: str
+
+# The browser sent to `back` with `pairs`, then `state` and `iss`.
+#
+# - `back`: where the answer goes.
+# - `pairs`: the answer's own parameters, a code or an error.
+function redirect(back: Back, pairs: [url.Pair]) -> http.Response
+    every @= pairs
+
+    if back.state != ""
+        every @ every.push(url.Pair(key: "state", value: back.state))
+
+    every @ every.push(url.Pair(key: "iss", value: back.issuer))
+
+    joiner = if !strings.index_of(s: back.uri, substr: "?").is_err()
+        "&"
+    else
+        "?"
+    return http.respond_redirect(302, location: back.uri + joiner + url.format_query(every))
+
+# The browser sent to `back` with the error `error`.
+#
+# - `back`: where the answer goes.
+# - `error`: RFC 6749 § 4.1.2.1's error code.
+# - `description`: what a developer reads.
+function refused(back: Back, error: str, description: str) -> http.Response
+    return redirect(
+        back,
+        pairs: [url.Pair(key: "error", value: error), url.Pair(key: "error_description", value: description)]
+    )
+
+# The client a token, revocation or introspection request authenticates as:
+# by Basic credentials, or by `client_id` and `client_secret` in the form, or,
+# for a public client, by `client_id` alone.
+#
+# - `st`: the server.
+# - `r`: the request, whose `Authorization` may carry the credentials.
+# - `f`: the request's form.
+#
+# Fails `invalid_client` where the client is unknown or its secret wrong.
+function client_of(st: state.State, r: http.Request, f: [url.Pair]) -> settings.Client?
+    id: str @= answers.field(f, key: "client_id")
+    secret: str @= answers.field(f, key: "client_secret")
+
+    match http.basic_auth_of(r)
+        .ok c =>
+            id @ url.unescape_query(c.user).default(c.user)
+            secret @ url.unescape_query(c.password).default(c.password)
+        .err _ => _ = 0
+
+    client = match settings.client_named(st.settings, id: id)
+        .ok c  => c
+        .err _ => return fail(code: INVALID_CLIENT, msg: "the client is unknown")
+
+    if client.secret_sha256 == ""
+        if secret != ""
+            return fail(code: INVALID_CLIENT, msg: "a public client has no secret")
+        return ok(client)
+
+    if !passwords.digest_matches(secret: secret, expected: client.secret_sha256)
+        return fail(code: INVALID_CLIENT, msg: "the client's secret is wrong")
+    return ok(client)
+
+# `POST /token`: an authorization code exchanged with its PKCE verifier, or a
+# refresh token rotated.
+#
+# - `st`: the server, whose grants change.
+# - `r`: the request.
+function token(@st: state.State, r: http.Request) -> http.Response
+    f = answers.form(r)
+
+    client = match client_of(st, r: r, f: f)
+        .ok c  => c
+        .err e => return answers.oauth_error(401, error: "invalid_client", description: e.msg)
+
+    issued: tokens.Issued? = match answers.field(f, key: "grant_type")
+        "authorization_code" => exchange(@st, client: client, f: f)
+        "refresh_token" => rotate(@st, client: client, f: f)
+        _ => fail(code: UNSUPPORTED_GRANT_TYPE, msg: "only authorization_code and refresh_token are offered")
+
+    match issued
+        .ok t  => return answers.json_answer(200, members: tokens.token_response(t))
+        .err e => return answers.oauth_error(400, error: e.code, description: e.msg)
+
+# The tokens an authorization code is exchanged for, its PKCE verifier and
+# its redirect URI checked (RFC 6749 § 4.1.3, RFC 7636 § 4.6).
+#
+# - `st`: the server, which spends the code.
+# - `client`: the authenticated client.
+# - `f`: the request's form.
+#
+# Fails `invalid_grant` for every refusal, the message saying which.
+function exchange(@st: state.State, client: settings.Client, f: [url.Pair]) -> tokens.Issued?
+    c = grants.take_code(@st.grants, code: answers.field(f, key: "code"), now: state.now(st))?
+
+    if c.client_id != client.id
+        return fail(code: grants.INVALID_GRANT, msg: "the code was issued to another client")
+
+    if c.redirect_uri != answers.field(f, key: "redirect_uri")
+        return fail(code: grants.INVALID_GRANT, msg: "the redirect URI is not the authorization request's")
+
+    verifier = answers.field(f, key: "code_verifier")
+
+    if verifier.len() < 43 || verifier.len() > 128
+        return fail(code: grants.INVALID_GRANT, msg: "the code verifier is not 43 to 128 characters")
+
+    if !crypto.equals_constant_time(a: bytes.from_text(oauth2.challenge_of(verifier)), b: bytes.from_text(c.challenge))
+        return fail(code: grants.INVALID_GRANT, msg: "the code verifier does not answer the challenge")
+
+    u = active_user(st, id: c.user_id)?
+    return tokens.issue(
+        @st,
+        client_id: client.id,
+        u: u,
+        scopes: c.scopes,
+        nonce: c.nonce,
+        login: tokens.Login(auth_time: c.auth_time, methods: c.methods),
+        family: ""
+    )
+
+# The tokens a refresh token is rotated for, in its own family.
+#
+# - `st`: the server, which marks the token used.
+# - `client`: the authenticated client.
+# - `f`: the request's form.
+#
+# Fails `invalid_grant` as `grants.use_refresh` refuses the token.
+function rotate(@st: state.State, client: settings.Client, f: [url.Pair]) -> tokens.Issued?
+    g = grants.use_refresh(@st.grants, token: answers.field(f, key: "refresh_token"), client_id: client.id, now: state.now(st))?
+    u = active_user(st, id: g.user_id)?
+    return tokens.issue(
+        @st,
+        client_id: client.id,
+        u: u,
+        scopes: g.scopes,
+        nonce: "",
+        login: tokens.Login(auth_time: g.auth_time, methods: g.methods),
+        family: g.family
+    )
+
+# The account `id`, which must not be disabled.
+#
+# - `st`: the server.
+# - `id`: the account's identifier.
+#
+# Fails `invalid_grant` where it is gone or disabled.
+function active_user(st: state.State, id: str) -> accounts.User?
+    match accounts.by_id(st.directory, id: id)
+        .ok u =>
+            if u.disabled
+                return fail(code: grants.INVALID_GRANT, msg: "the account is disabled")
+            return ok(u)
+        .err _ => return fail(code: grants.INVALID_GRANT, msg: "the account is gone")
+
+# The claims of `r`'s Bearer access token, verified.
+#
+# - `st`: the server.
+# - `r`: the request.
+#
+# Fails `invalid` where the request carries none, or it does not verify.
+function bearer_claims(st: state.State, r: http.Request) -> {str: json.Value}?
+    t = http.bearer_token_of(r)?
+    return signing.verify_access(st.keys, token: t, issuer: st.issuer, now: clock.now(st.clock))
+
+# `GET /userinfo`: what the access token's scopes release about its account.
+#
+# - `st`: the server.
+# - `r`: the request.
+function userinfo(st: state.State, r: http.Request) -> http.Response
+    claims = match bearer_claims(st, r: r)
+        .ok c  => c
+        .err e => return challenge(error: "invalid_token", description: e.msg)
+
+    sub = jose.claim_text(claims, name: "sub").default("")
+
+    match accounts.by_id(st.directory, id: sub)
+        .ok u =>
+            if u.disabled
+                return challenge(error: "invalid_token", description: "the account is disabled")
+            scopes = answers.scopes_of(jose.claim_text(claims, name: "scope").default(""))
+            return answers.json_answer(200, members: tokens.userinfo(u, scopes: scopes))
+        .err _ => return challenge(error: "invalid_token", description: "the token's account is gone")
+
+# The answer RFC 6750 § 3 gives a request whose token is refused: 401 for
+# `invalid_token`, 403 for `insufficient_scope`, the reason in
+# `error_description` so the client's developer reads why.
+#
+# - `error`: `invalid_token` or `insufficient_scope`.
+# - `description`: why; its double quotes written as single ones, so the
+#   field's quoted string holds it.
+function challenge(error: str, description: str) -> http.Response
+    status = if error == "insufficient_scope"
+        403
+    else
+        401
+    r @= http.respond_status(status)
+    said = strings.replace_all(s: description, old: "\"", new: "'")
+    r.headers @ r.headers.push(
+        http.Header(name: "WWW-Authenticate", value: f"Bearer error=\"{error}\", error_description=\"{said}\"")
+    )
+    return r
+
+# `POST /revoke`: the refresh token's family revoked, where the token is one
+# of the client's; 200 either way, as RFC 7009 § 2.2 answers.
+#
+# - `st`: the server, whose grants change.
+# - `r`: the request.
+function revoke(@st: state.State, r: http.Request) -> http.Response
+    f = answers.form(r)
+
+    client = match client_of(st, r: r, f: f)
+        .ok c  => c
+        .err e => return answers.oauth_error(401, error: "invalid_client", description: e.msg)
+
+    match grants.refresh_of(st.grants, token: answers.field(f, key: "token"))
+        .ok g =>
+            if g.client_id == client.id
+                grants.revoke_family(@st.grants, family: g.family)
+        .err _ => _ = 0
+
+    return http.respond_status(200)
+
+# `POST /introspect`: whether a token is active, and what it grants (RFC 7662
+# § 2.2); a confidential client alone may ask.
+#
+# - `st`: the server.
+# - `r`: the request.
+function introspect(st: state.State, r: http.Request) -> http.Response
+    f = answers.form(r)
+
+    client = match client_of(st, r: r, f: f)
+        .ok c  => c
+        .err e => return answers.oauth_error(401, error: "invalid_client", description: e.msg)
+
+    if client.secret_sha256 == ""
+        return answers.oauth_error(401, error: "invalid_client", description: "a public client may not introspect")
+
+    t = answers.field(f, key: "token")
+    inactive: {str: json.Value} = {"active": .boolean(v: false)}
+
+    match grants.refresh_of(st.grants, token: t)
+        .ok g =>
+            if g.client_id != client.id || !grants.is_refresh_active(st.grants, token: t, now: state.now(st))
+                return answers.json_answer(200, members: inactive)
+            return answers.json_answer(
+                200,
+                members: {"active": .boolean(v: true), "token_type": .text(v: "refresh_token"), "client_id": .text(v: g.client_id), "sub": .text(v: g.user_id), "scope": .text(v: g.scopes.join(" ")), "exp": answers.number(g.expires)}
+            )
+        .err _ => _ = 0
+
+    match signing.verify_access(st.keys, token: t, issuer: st.issuer, now: clock.now(st.clock))
+        .ok claims =>
+            members: {str: json.Value} @= {"active": .boolean(v: true), "token_type": .text(v: "access_token")}
+
+            for key in ["client_id", "sub", "scope", "exp", "iat", "iss"]
+                match claims[key]
+                    .ok v  => members[key] @ v
+                    .err _ => _ = 0
+
+            return answers.json_answer(200, members: members)
+        .err _ => return answers.json_answer(200, members: inactive)

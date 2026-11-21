@@ -1,0 +1,105 @@
+auth: an identity server with OAuth 2.0, OpenID Connect, passkeys and TOTP, its own client and
+authenticator, and stand-ins for a mail server and a directory, all on loopback
+the server's clock stands at 2026-03-01T09:30:00Z, and every value it draws comes from a fixed seed
+keyring: skipped: Rebel's keyring reaches the system's one store and offers no in-memory or file backend, so the demo keeps its signing key in memory
+
+== 1. an account, and its address proven by mail
+sign up ana: 201, verification sent
+sign up ana again: 409 username_taken (the user name "ana" is taken)
+sign up bea with a password holding her name: 400 weak_password (a password may not hold the user name)
+the mail folder: one message to ana@example.org, "Confirm your address at Example Accounts", 0 attachments, text and HTML parts true
+open the link: 200, email_verified true
+open the link again: 400 invalid_token (the link is unknown or was used)
+log in ana with a wrong password: 401 invalid_credentials (the user name or the password is wrong)
+log in ana: 200, amr pwd
+
+== 2. a second factor: TOTP
+enrol: 200, the otpauth URI as a QR code of version and level 8-M:
+                                                         
+      █▀▀▀▀▀█  ▄ ▄▀▄▄██ ██▄ ▄▄█▀▀▀█▀▄▄██  ▀█▄▄█ █▀▀▀▀▀█  
+      █ ███ █ ██▀█ ▄▄▄▄▀█  ▄█▄▀▄▄▄███▀▀  ▀ ▄ █▀ █ ███ █  
+      █ ▀▀▀ █ █ ▀█ ▀▄▀▀█▄▀███▀▀▀█▀  ▀▀▀ ▄▀██▄   █ ▀▀▀ █  
+      ▀▀▀▀▀▀▀ █ ▀ █▄█▄█ █▄█▄█ ▀ █▄█▄█ ▀▄▀▄█ ▀ █ ▀▀▀▀▀▀▀  
+      █▄▀▀██▀ ▄▀▀█▀█▄▄▄ ▄▀▀▄█▀▀█▀▄▀█ █ ▄▄▀▀▄ ▄▀ █████    
+      ▄█▀█▀▄▀▄▀▄▀▄▄▀▄▄▄█▄ ▀▄▄▀  ▀██ ▄▀█   ▄ ▀▄▄██▄█▄ █▀  
+        ▄▀▄▀▀▄█ ▄▄▄▀▀▄█  ▀ █▀   ▄ ▄ ▀▀ ▄██▀ █▄▄▄█ ▀  ▄▀  
+      ▀ ▄▀▀▀▀▄▀ ████ █▄██▀ ▄ █▄▀█▀ ▀▄█▀▄▀█▄█ █▀▄▄▄▄█▄█▀  
+      ▀▀██▄ ▀▄▄▀▄   █ █▄ ▀▀▄  ▀ ▀▀ ▀█▄ █ ▄▄ ▄▀▄ ██  ▀█   
+      ▀▄██▄▀▀██▀█ ▀▀ █ ▄▄▀▀▄▀▄▀▀▀▀▄██▄ █▄▄ █▀█ █▄█▄▀ ▄   
+      ██ █ ▀▀████▄▄▀ ██▀▄▀█▄▀▀▀▀ ▀ ▀█▄▀▀ ▄▄▄ █▀  █  ▀▄▀  
+      ▄▀  █▀▀▀██ █▄ █▄█▄▄▀▄ █▀▀▀█▀▀█  █▀▀ █ ▀ █▀▀▀█      
+      ▄ ▀▀█ ▀ █ ▄ █  ▄  █▄▀██ ▀ █ ▄ ▀ ▀█ ▀▀▄▀ █ ▀ █▀█▄▀  
+       ▄ ▀▀▀▀▀▀ ▀▀▄▀▄█▀ ▄▄█▄██▀█▀██▄█▀█▄▄ ▀ █ ▀█▀█▀███▀  
+      ▄▄▄  ▀▀▀██▀▀ ███▀▀▄▄▄█▀▀███   ▄▀ ██ █▀   ▄▀▀▄██▀   
+      ▄ ▀  ▀▀ ▄▄▀ ▄▀▀▄█▀▄▄█  ▀██▄█ █    █▄██ ▀▀▄▀▄██▀██  
+        ▄█  ▀ ██ ███ ██▄▄▀▄ ▀▀▀▄ ▄█▄ ▀█▀█  ▀█▀▄ ▄▀▀▄▀█   
+      ▄█▀   ▀ █  ▀▄▄▀██▀  ▄▀▀▄▄▄▀ █ ████ █ ███ ▄▀▄▄▀  ▄  
+      ▀ ▀ ██▀▄█▄ ▀█▀▄▄▀█ ▀█▄  █▀ ▀█ ▄ ▄   ▄█▀█▀█▄▄▀█▀█▀  
+       █▄▄ ▀▀█▀▀ █▄█ █▀▀▀▀▄▄▀▄█▄▄▄ ▀▄ ▀▀█▄▀██▀  ▀ ▀ ▀    
+      ▀▀▀   ▀ ▄▀█▀ ▀█▀▄ ▀▄▀▄█▀▀▀█ ▀▄ ▄▀▄▀▀▄ ███▀▀▀█▄▀▄   
+      █▀▀▀▀▀█ ▄█▄▄▀█████ ▀ ▀█ ▀ ██▀ █▄▄ ▀▄▀▀▄▄█ ▀ ███▄█  
+      █ ███ █ █  █▄███▀ █▀ ▀█▀▀██▄ ▀ █ ▄▀▀█   █▀▀██▄█ ▀  
+      █ ▀▀▀ █ ▀█ ▀▄██ █▄▀▀ █ ██▄█▀ ▀▄█▀▄▀██ ▀█  ██ ▄▄ █  
+      ▀▀▀▀▀▀▀ ▀▀  ▀▀▀▀▀▀ ▀ ▀▀▀▀  ▀ ▀▀     ▀ ▀▀▀▀     ▀▀  
+                                                         
+confirm with the app's code of 09:30:00: 200
+log out, then log in ana with her password alone: 401 totp_required (the account asks a TOTP code too)
+log in with the code just used: 401 invalid_totp (the code was used already)
+log in with the app's next code, 09:30:30: 200, amr pwd otp
+
+== 3. a passkey, and a login without a password
+registration options: 200, rp localhost, attestation direct
+register the authenticator's credential: 200, attestation certified by Heroes Demo Authenticator Root
+register the same response again: 400 invalid_registration (no registration was begun in this session)
+log in by the passkey: 200, ana, amr hwk user, counter 1
+the same assertion against a new challenge: 401 invalid_assertion (the client data's challenge is not the one sent)
+
+== 4. OpenID Connect: the authorization code with PKCE
+discovery: issuer holds true, PKCE S256, ID tokens ES256, iss on redirects true
+JWK set: 1 key, EC P-256, ES256, its id the key's thumbprint
+authorize: 302 to https://portal.example.org/callback, code, state and iss hold
+exchange the code: Bearer, refresh token true, ID token true, scopes openid profile email offline_access
+verify the ID token: ES256 signature, iss, aud, nonce, exp and at_hash hold
+    sub 019ca8bb-b5c0-794b-b5a6-ef13ec04c318, aud portal, amr hwk user, auth_time 1772357400
+    preferred_username ana, email ana@example.org, email_verified true
+userinfo: sub name preferred_username email email_verified
+exchange the same code again: refused, failed: the server answered 400 invalid_grant: the authorization code is unknown or was used
+authorize: 302 to https://portal.example.org/callback, code, state and iss hold
+exchange a new code with another verifier: refused, failed: the server answered 400 invalid_grant: the code verifier does not answer the challenge
+refresh: a new access token true, the refresh token rotated true
+refresh with the first refresh token again: refused, failed: the server answered 400 invalid_grant: the refresh token was used already: its family is revoked
+introspect the newest refresh token: active false, its family revoked by the replay
+authorize: 302 to https://portal.example.org/callback, code, state and iss hold
+a third login, its refresh token introspected: active true, sub true, scopes openid profile email offline_access
+revoke it (RFC 7009), then introspect: active false
+introspect its access token: active true, client portal
+
+== 5. a service account: SCRAM-SHA-256 over HTTP
+log in with a wrong password: refused, 401 invalid_client (the proof of "directory-sync" does not hold)
+first round trip: 401 with a sid and the server's first message, 4096 iterations
+second round trip: 200, the server's signature verified, scopes directory:import users:read
+
+== 6. the nightly directory import, run now
+import: 4 entries read, next run at 2026-03-02T02:00:00Z
+    created: bruno, carla
+    updated: none
+    unchanged: none
+    disabled: none
+    skipped: dario: no mail, ana: a local account has that name
+log in carla with her directory password: 200, amr pwd
+log in carla with another password: 401 invalid_credentials (the user name or the password is wrong)
+import: 4 entries read, next run at 2026-03-02T02:00:00Z
+    created: none
+    updated: none
+    unchanged: bruno, carla
+    disabled: none
+    skipped: dario: no mail, ana: a local account has that name
+the accounts, listed with the token: 200
+    ana: local, email_verified true, totp true, passkeys 1, disabled false
+    bruno: ldap, email_verified true, totp false, passkeys 0, disabled false
+    carla: ldap, email_verified true, totp false, passkeys 0, disabled false
+
+== what the stand-ins and the server saw
+server: 47 requests answered, 1 message submitted, 3 accounts in its data file
+directory stand-in: 3 binds accepted, 1 refused, 2 searches answered
+mail stand-in: 1 connection, 1 login, 0 refused, 1 message delivered

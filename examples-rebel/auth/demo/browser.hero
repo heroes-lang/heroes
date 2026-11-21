@@ -1,0 +1,115 @@
+# The demonstration's browser: an `http.Session` that keeps the cookies the
+# identity server sets, as a browser's cookie jar does, and follows no
+# redirect, so that the script reads each `Location` itself as a page's
+# script would see where it is sent. Every request names the server's
+# absolute URL.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/json
+use <rebel>/url
+
+# One person's browser.
+record Browser
+    # The session: its cookies, its client.
+    session: http.Session
+    # The server's issuer, which every path is put after.
+    issuer: str
+
+# A browser with no cookie, pointed at `issuer`.
+#
+# - `issuer`: the identity server's issuer URL.
+function open(issuer: str) -> Browser
+    s @= http.default_session()
+    s.client.max_redirects @ 0
+    return Browser(session: s, issuer: issuer)
+
+# The answer to `GET` of `target`, a path of the server or an absolute URL.
+#
+# - `b`: the browser, which keeps the cookies set.
+# - `target`: the path or the URL.
+#
+# Fails as `http.fetch_once` fails.
+function get(@b: Browser, target: str) -> http.Response?
+    return http.fetch_once(@b.session, r: http.request(method: http.METHOD_GET, target: absolute(b, target: target))?)
+
+# The answer to a form `pairs` posted to `path`.
+#
+# - `b`: the browser.
+# - `path`: the path under the issuer.
+# - `pairs`: the form's fields.
+#
+# Fails as `http.fetch_once` fails.
+function post_form(@b: Browser, path: str, pairs: [url.Pair]) -> http.Response?
+    r = http.with_form(http.request(method: http.METHOD_POST, target: absolute(b, target: path))?, pairs: pairs)
+    return http.fetch_once(@b.session, r: r)
+
+# The answer to the JSON text `body` posted to `path`.
+#
+# - `b`: the browser.
+# - `path`: the path under the issuer.
+# - `body`: the JSON text.
+#
+# Fails as `http.fetch_once` fails.
+function post_json(@b: Browser, path: str, body: str) -> http.Response?
+    r = http.with_body(
+        http.request(method: http.METHOD_POST, target: absolute(b, target: path))?,
+        content_type: "application/json",
+        body: bytes.from_text(body)
+    )
+    return http.fetch_once(@b.session, r: r)
+
+# Forgets every cookie, as a person closing a private window.
+#
+# - `b`: the browser.
+function forget_cookies(@b: Browser)
+    b.session.cookies @ []
+
+# The JSON body of `r`, or an empty object where it has none.
+#
+# - `r`: an answer.
+function body_of(r: http.Response) -> json.Value
+    return http.json_of(r).default(.object(members: {}))
+
+# The text member `key` of `r`'s JSON body; "" where it has none.
+#
+# - `r`: an answer.
+# - `key`: the member.
+function text_of(r: http.Response, key: str) -> str
+    match json.member(body_of(r), key: key)
+        .ok v  => return json.text_of(v).default("")
+        .err _ => return ""
+
+# The truth member `key` of `r`'s JSON body as `true` or `false`; `absent`
+# where it has none.
+#
+# - `r`: an answer.
+# - `key`: the member.
+function flag_of(r: http.Response, key: str) -> str
+    match json.member(body_of(r), key: key)
+        .ok v =>
+            match json.bool_of(v)
+                .ok b  => return to_str(b)
+                .err _ => return "absent"
+        .err _ => return "absent"
+
+# `r`'s status and, for an error, its `error` and `error_description`, as
+# one line: `401 invalid_credentials (the user name or the password is
+# wrong)`.
+#
+# - `r`: an answer.
+function said(r: http.Response) -> str
+    error = text_of(r, key: "error")
+
+    if error == ""
+        return to_str(r.status)
+    return f"{r.status} {error} ({text_of(r, key: "error_description")})"
+
+# The URL of `target`: itself where it is absolute, else under the issuer.
+#
+# - `b`: the browser.
+# - `target`: a path beginning with `/`, or an absolute URL.
+function absolute(b: Browser, target: str) -> str
+    if target.len() > 0 && target[0] == '/'
+        return b.issuer + target
+    return target

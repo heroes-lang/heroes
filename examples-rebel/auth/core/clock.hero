@@ -1,0 +1,61 @@
+# The server's one source of the time. A served instance reads the wall
+# clock; the demonstration stops it at one instant, so every token's `iat`
+# and `exp`, every TOTP step and every cron answer is the same on every run.
+# Nothing else in the program asks `time.now` directly.
+
+use <rebel>/time
+
+# Where the time comes from.
+variant Clock
+    # The system's wall clock.
+    wall
+    # One instant, the same at every reading.
+    fixed
+        # The instant every reading answers.
+        at: time.Instant
+
+# The instant `clock` reads now. A wall clock the system cannot read answers
+# the epoch, which every check of a token's `exp` then refuses, the safe side.
+#
+# - `clock`: where the time comes from.
+function now(clock: Clock) -> time.Instant
+    return match clock
+        .wall =>
+            match time.now()
+                .ok t  => t
+                .err _ => time.epoch()
+        .fixed f => f.at
+
+# The whole seconds since 1970 `clock` reads now: what a JWT's `iat` and a
+# TOTP step count in.
+#
+# - `clock`: where the time comes from.
+function unix_now(clock: Clock) -> i64
+    return time.unix_seconds(now(clock))
+
+# The instant `seconds` after what `clock` reads now. A sum past what a
+# `time.Instant` holds answers the reading itself, so a lifetime too long to
+# hold expires at once rather than never.
+#
+# - `clock`: where the time comes from.
+# - `seconds`: how long after now, in seconds.
+function after(clock: Clock, seconds: i64) -> time.Instant
+    start = now(clock)
+
+    match time.seconds(seconds)
+        .ok d =>
+            match time.add(start, d)
+                .ok t  => return t
+                .err _ => return start
+        .err _ => return start
+
+test "now: a fixed clock answers its instant at every reading"
+    at = time.from_unix(whole_seconds: 1_772_357_400, extra_nanoseconds: 0).must()
+    c: Clock = .fixed(at: at)
+    assert now(c) == at && unix_now(c) == 1_772_357_400
+
+test "after: seconds added, and a lifetime past the end held at now"
+    at = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
+    c: Clock = .fixed(at: at)
+    assert time.unix_seconds(after(c, seconds: 300)) == 1_300
+    assert after(c, seconds: 9_000_000_000_000_000_000) == at

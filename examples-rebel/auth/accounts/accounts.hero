@@ -1,0 +1,287 @@
+# The accounts: every person who can log in, with what proves them (a
+# password's hash, a TOTP secret, passkeys) and where they came from (signed
+# up here, or imported from the directory). A `Directory` keeps them by id
+# and indexes them by user name and by e-mail address, both compared as
+# written lower case, so two accounts never share either.
+
+use <rebel>/strings
+
+# The code of a user name or address another account holds.
+constant EXISTS: str
+    "exists"
+
+# The code of an account no id, name or address names.
+constant NOT_FOUND: str
+    "not_found"
+
+# One passkey of an account: what `webauthn.verify_registration` answered,
+# kept to verify every later assertion.
+record Passkey
+    # The credential ID the authenticator chose.
+    id: [u8]
+    # Its public key, as the COSE key the authenticator sent.
+    public_key: [u8]
+    # The last signature counter seen; an assertion must show a larger one
+    # where the authenticator counts.
+    sign_count: i64
+    # How its attestation was judged: "none", "self", or "certified by " and
+    # the root's common name.
+    attestation: str
+
+# One account.
+record User
+    # Its identifier, a UUID of version 7 in its standard form: the `sub` of
+    # its tokens, never reused and never changed.
+    id: str
+    # The name it logs in with, lower case.
+    username: str
+    # Its e-mail address, lower case.
+    email: str
+    # Whether the person proved the address by the link mailed to it.
+    email_verified: bool
+    # The name shown for it: `name` in an ID token.
+    display_name: str
+    # Its password's Argon2id hash as a PHC string; "" for an account that
+    # has none here (one the directory proves, or passkeys alone).
+    password_hash: str
+    # "local" for an account made here, "ldap" for one the import made.
+    source: str
+    # The distinguished name of its directory entry; "" for a local account.
+    ldap_dn: str
+    # Its TOTP key; empty where none is enrolled.
+    totp_key: [u8]
+    # Whether a code proved the enrolment, so that the key now guards login.
+    totp_confirmed: bool
+    # The last TOTP time step taken, so no code is taken twice (RFC 6238
+    # § 5.2); 0 before the first.
+    totp_last_step: i64
+    # Its passkeys.
+    passkeys: [Passkey]
+    # The SHA-256 of the e-mail verification token, in hexadecimal; "" where
+    # none is pending.
+    verify_hash: str
+    # When that token stops being taken, seconds since 1970.
+    verify_expires: i64
+    # When the account was made, seconds since 1970.
+    created: i64
+    # Whether it may log in: an imported account whose entry left the
+    # directory is disabled, never deleted, so its `sub` is never reused.
+    disabled: bool
+
+# Every account, by id, with its two indexes. Made by `empty`; changed only by
+# `add` and `put`, which keep the indexes.
+record Directory
+    # The accounts by id, in the order they were made.
+    users: {str: User}
+    # The id of each user name.
+    by_name: {str: str}
+    # The id of each e-mail address.
+    by_email: {str: str}
+
+# A directory with no account.
+function empty() -> Directory
+    return Directory(users: {}, by_name: {}, by_email: {})
+
+# A new local account with nothing proven yet: no password, no TOTP, no
+# passkey, its address unverified.
+#
+# - `id`: its identifier.
+# - `username`: its user name, kept lower case.
+# - `email`: its address, kept lower case.
+# - `created`: when it is made, seconds since 1970.
+function new_user(id: str, username: str, email: str, created: i64) -> User
+    return User(
+        id: id,
+        username: strings.to_lower(username),
+        email: strings.to_lower(email),
+        email_verified: false,
+        display_name: username,
+        password_hash: "",
+        source: "local",
+        ldap_dn: "",
+        totp_key: [],
+        totp_confirmed: false,
+        totp_last_step: 0,
+        passkeys: [],
+        verify_hash: "",
+        verify_expires: 0,
+        created: created,
+        disabled: false
+    )
+
+# Adds `u` to `d`.
+#
+# - `d`: the directory, which takes the account and its two index entries.
+# - `u`: a new account.
+#
+# Fails `exists` where its id, its user name or its address is held already.
+function add(@d: Directory, u: User) -> ()?
+    if !d.users[u.id].is_err()
+        return fail(code: EXISTS, msg: f"an account has the id {u.id} already")
+
+    if !d.by_name[u.username].is_err()
+        return fail(code: EXISTS, msg: f"the user name \"{u.username}\" is taken")
+
+    if u.email != "" && !d.by_email[u.email].is_err()
+        return fail(code: EXISTS, msg: f"the address \"{u.email}\" belongs to another account")
+
+    users @= d.users
+    names @= d.by_name
+    emails @= d.by_email
+    users[u.id] @ u
+    names[u.username] @ u.id
+
+    if u.email != ""
+        emails[u.email] @ u.id
+    d @ Directory(users: users, by_name: names, by_email: emails)
+    return ok()
+
+# Replaces the account of `u`'s id with `u`, its user name and address
+# unchanged.
+#
+# - `d`: the directory, whose account is replaced.
+# - `u`: the account as it now stands.
+#
+# Fails `not_found` where no account has its id, and `exists` where `u`
+# changes its user name or its address, which this server never does.
+function put(@d: Directory, u: User) -> ()?
+    before = match d.users[u.id]
+        .ok b  => b
+        .err _ => return fail(code: NOT_FOUND, msg: f"no account has the id {u.id}")
+
+    if before.username != u.username || before.email != u.email
+        return fail(code: EXISTS, msg: f"the account {u.id} would change its name or its address")
+    users @= d.users
+    users[u.id] @ u
+    d @ Directory(users: users, by_name: d.by_name, by_email: d.by_email)
+    return ok()
+
+# The account whose id is `id`.
+#
+# - `d`: the directory.
+# - `id`: an account's identifier.
+#
+# Fails `not_found` where none has it.
+function by_id(d: Directory, id: str) -> User?
+    match d.users[id]
+        .ok u  => return ok(u)
+        .err _ => return fail(code: NOT_FOUND, msg: f"no account has the id {id}")
+
+# The account that logs in as `username`, compared lower case.
+#
+# - `d`: the directory.
+# - `username`: a user name as a person typed it.
+#
+# Fails `not_found` where none does.
+function by_name(d: Directory, username: str) -> User?
+    match d.by_name[strings.to_lower(username)]
+        .ok id => return by_id(d, id: id)
+        .err _ => return fail(code: NOT_FOUND, msg: f"no account is named \"{username}\"")
+
+# The account of the address `email`, compared lower case.
+#
+# - `d`: the directory.
+# - `email`: an address.
+#
+# Fails `not_found` where none has it.
+function by_email(d: Directory, email: str) -> User?
+    match d.by_email[strings.to_lower(email)]
+        .ok id => return by_id(d, id: id)
+        .err _ => return fail(code: NOT_FOUND, msg: f"no account has the address \"{email}\"")
+
+# Every account of `d`, in the order they were made.
+#
+# - `d`: the directory.
+function all_users(d: Directory) -> [User]
+    out: [User] @= []
+
+    for id in keys(d.users)
+        out @ out.push(d.users[id].must())
+
+    return out
+
+# The account `credential_id` is a passkey of, and that passkey's place in
+# its list.
+record Holder
+    # The account.
+    user: User
+    # The passkey's index in `user.passkeys`.
+    index: i64
+
+# The account holding the passkey `credential_id`.
+#
+# - `d`: the directory.
+# - `credential_id`: a credential ID an assertion names.
+#
+# Fails `not_found` where no account holds it.
+function holder_of(d: Directory, credential_id: [u8]) -> Holder?
+    for id in keys(d.users)
+        u = d.users[id].must()
+
+        for i in range(from: 0, to: u.passkeys.len())
+            if u.passkeys[i].id == credential_id
+                return ok(Holder(user: u, index: i))
+
+    return fail(code: NOT_FOUND, msg: "no account holds that passkey")
+
+# Whether `name` may be a user name: 3 to 32 characters, lower-case ASCII
+# letters, digits, `.`, `-` and `_`, beginning with a letter, so that it is
+# also a safe value of an LDAP filter and a mail's local part.
+#
+# - `name`: the name asked for, before it is put lower case.
+function is_valid_username(name: str) -> bool
+    lower = strings.to_lower(name)
+
+    if lower.len() < 3 || lower.len() > 32
+        return false
+
+    if lower[0] < 'a' || lower[0] > 'z'
+        return false
+
+    for i in range(from: 0, to: lower.len())
+        c = lower[i]
+        letter = c >= 'a' && c <= 'z'
+        digit = c >= '0' && c <= '9'
+
+        if !letter && !digit && c != '.' && c != '-' && c != '_'
+            return false
+
+    return true
+
+test "add: the name and the address are each one account's"
+    d @= empty()
+    add(@d, u: new_user(id: "1", username: "Ana", email: "Ana@Example.org", created: 0)).must()
+    assert by_name(d, username: "ANA").must().id == "1"
+    assert by_email(d, email: "ana@example.org").must().username == "ana"
+
+    match add(@d, u: new_user(id: "2", username: "ana", email: "b@example.org", created: 0))
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    assert add(@d, u: new_user(id: "2", username: "bea", email: "ANA@example.org", created: 0)).is_err()
+    assert all_users(d).len() == 1
+
+test "put: an account replaced, never renamed"
+    d @= empty()
+    u = new_user(id: "1", username: "ana", email: "a@example.org", created: 0)
+    add(@d, u: u).must()
+    changed @= u
+    changed.email_verified @ true
+    put(@d, u: changed).must()
+    assert by_id(d, id: "1").must().email_verified
+    renamed @= u
+    renamed.username @ "bea"
+    assert put(@d, u: renamed).is_err()
+
+test "holder_of: the account of a credential, and its place"
+    d @= empty()
+    u @= new_user(id: "1", username: "ana", email: "a@example.org", created: 0)
+    u.passkeys @ [Passkey(id: [1, 2], public_key: [], sign_count: 0, attestation: "none")]
+    add(@d, u: u).must()
+    assert holder_of(d, credential_id: [1, 2]).must().user.id == "1"
+    assert holder_of(d, credential_id: [3]).is_err()
+
+test "is_valid_username: letters first, a safe alphabet, 3 to 32"
+    assert is_valid_username("ana.rossi") && is_valid_username("Bea_2")
+    assert !is_valid_username("2ana") && !is_valid_username("an") && !is_valid_username("a*b")
+    assert !is_valid_username("ana)(uid=*")

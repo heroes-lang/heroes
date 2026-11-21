@@ -1,0 +1,179 @@
+# The LDAP stand-in's messages: an LDAPMessage (RFC 4511 § 4.1.1) read off
+# the connection as one BER element, and the server's answers written. Every
+# encoding is `asn1`'s: the stand-in builds each answer as a tree of
+# `asn1.Value` and has `asn1.encode_der` write it, so no byte of BER is
+# written by hand here but the framing read.
+
+use <rebel>/asn1
+use <rebel>/bytes
+use <rebel>/io
+
+# The code of bytes that are no LDAPMessage.
+constant INVALID: str
+    "invalid"
+
+# The most bytes one message may hold: no request of the import or a login
+# comes near it, and a larger one is refused before it is read.
+constant MAX_MESSAGE: i64
+    1_048_576
+
+# The application tags of the operations the stand-in reads and writes.
+constant BIND_REQUEST: i64
+    0
+
+# The BindResponse's tag.
+constant BIND_RESPONSE: i64
+    1
+
+# The UnbindRequest's tag.
+constant UNBIND_REQUEST: i64
+    2
+
+# The SearchRequest's tag.
+constant SEARCH_REQUEST: i64
+    3
+
+# The SearchResultEntry's tag.
+constant SEARCH_ENTRY: i64
+    4
+
+# The SearchResultDone's tag.
+constant SEARCH_DONE: i64
+    5
+
+# A message read: its id, and its operation's tag and value.
+record Message
+    # The messageID.
+    id: i64
+    # The operation's application tag number.
+    operation: i64
+    # The operation as BER read it.
+    op: asn1.Value
+
+# The next message `r` holds, read whole.
+#
+# - `r`: the connection's reader, moved past the message.
+#
+# Fails `invalid` where the bytes are no LDAPMessage or the message is past
+# `MAX_MESSAGE`, and as `io.read_n` fails, `closed` at the connection's end.
+function read_message(@r: io.Reader) -> Message?
+    head = io.read_n(@r, n: 2)?
+
+    if head.len() < 2 || head[0] != 0x30
+        return fail(code: INVALID, msg: "the message is no SEQUENCE")
+
+    first = to_i64(head[1]).must()
+    length_bytes: [u8] @= []
+    length: i64 @= first
+
+    if first > 0x80
+        count = first - 0x80
+
+        if count > 4
+            return fail(code: INVALID, msg: "the message's length takes more than four bytes")
+        length_bytes @ io.read_n(@r, n: count)?
+        length @ 0
+
+        for b in length_bytes
+            length @ length * 256 + to_i64(b).must()
+    else if first == 0x80
+        return fail(code: INVALID, msg: "an indefinite length is not LDAP's")
+
+    if length > MAX_MESSAGE
+        return fail(code: INVALID, msg: f"the message holds {length} bytes, past {MAX_MESSAGE}")
+
+    content = io.read_n(@r, n: length)?
+    whole = bytes.concat([head, length_bytes, content])
+    items = asn1.items_of(asn1.decode_ber(whole)?)?
+
+    if items.len() < 2
+        return fail(code: INVALID, msg: "the message has no operation")
+
+    id = asn1.int_of(items[0])?
+    tag = asn1.tag_of(items[1])
+
+    if tag.kind != .application
+        return fail(code: INVALID, msg: "the operation's tag is not of the application class")
+    return ok(Message(id: id, operation: tag.number, op: items[1]))
+
+# The elements of the operation `op`, a constructed one.
+#
+# - `op`: an operation read.
+#
+# Fails `invalid` where it is primitive.
+function parts_of(op: asn1.Value) -> [asn1.Value]?
+    match op
+        .constructed c => return ok(c.items)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ => return fail(
+            code: INVALID,
+            msg: "the operation is not constructed"
+        )
+
+# The text of an LDAPString or LDAPDN, an OCTET STRING.
+#
+# - `v`: the element.
+function text_of(v: asn1.Value) -> str?
+    return bytes.to_text(asn1.bytes_of(v)?)
+
+# The bytes of the whole message `id` carrying `op`.
+#
+# - `id`: the messageID it answers.
+# - `op`: the operation.
+#
+# Fails as `asn1.encode_der` fails.
+function envelope(id: i64, op: asn1.Value) -> [u8]?
+    return asn1.encode_der(.sequence(items: [.integer(v: id), op]))
+
+# An operation of the application tag `number` holding `items`.
+#
+# - `number`: the operation's tag number.
+# - `items`: its elements.
+function operation(number: i64, items: [asn1.Value]) -> asn1.Value
+    return .constructed(tag: asn1.Tag(kind: .application, number: number, constructed: true), items: items)
+
+# An LDAPResult of `code`, `message` the server's words, as a BindResponse or
+# a SearchResultDone carries it.
+#
+# - `number`: the operation's tag number.
+# - `code`: the resultCode.
+# - `message`: the diagnosticMessage.
+function result(number: i64, code: i64, message: str) -> asn1.Value
+    return operation(
+        number,
+        items: [.enumerated(v: code), .octet_string(v: []), .octet_string(v: bytes.from_text(message))]
+    )
+
+# A SearchResultEntry of `dn` with `attributes`, each a name and its values.
+#
+# - `dn`: the entry's name.
+# - `attributes`: the attributes, each a name and its values, in order.
+function entry(dn: str, attributes: [[str]]) -> asn1.Value
+    list: [asn1.Value] @= []
+
+    for a in attributes
+        values: [asn1.Value] @= []
+
+        for i in range(from: 1, to: a.len())
+            values @ values.push(.octet_string(v: bytes.from_text(a[i])))
+
+        list @ list.push(.sequence(items: [.octet_string(v: bytes.from_text(a[0])), .set(items: values)]))
+
+    return operation(SEARCH_ENTRY, items: [.octet_string(v: bytes.from_text(dn)), .sequence(items: list)])
+
+test "read_message: the bind `ldap` sends, read back"
+    raw = bytes.parse_hex(
+        "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574"
+    ).must()
+    p = io.pipe().must()
+    io.write(p.writer, data: raw).must()
+    writer @= p.writer
+    io.close(@writer).must()
+    r @= io.reader(p.reader)
+    m = read_message(@r).must()
+    assert m.id == 1 && m.operation == BIND_REQUEST
+    parts = parts_of(m.op).must()
+    assert text_of(parts[1]).must() == "cn=admin,dc=example,dc=org"
+    io.close(@r.stream).must()
+
+test "envelope: a BindResponse of success, as a server writes it"
+    assert bytes.format_hex(envelope(1, op: result(number: BIND_RESPONSE, code: 0, message: "")).must()) == "300c02010161070a010004000400"

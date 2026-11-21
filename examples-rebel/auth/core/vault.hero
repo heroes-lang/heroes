@@ -1,0 +1,91 @@
+# Where the server's secrets live: the signing key, the SMTP password and the
+# LDAP bind password. A served instance keeps them in the system's keyring
+# under the configuration's `keyring_service`, one account each, so no
+# secret is ever written to the configuration or the data file. The
+# demonstration holds them in memory instead: `keyring` reaches the one
+# keyring the machine has and writes no store of its own, and a
+# demonstration must not leave a secret in the login keychain of whoever runs
+# it.
+
+use <rebel>/keyring
+
+# The code of a secret no account holds.
+constant NOT_FOUND: str
+    "not_found"
+
+# The keyring account the signing key's PKCS #8 PEM stands under.
+constant SIGNING_KEY: str
+    "signing-key"
+
+# The keyring account the SMTP password stands under.
+constant SMTP_PASSWORD: str
+    "smtp"
+
+# The keyring account the LDAP bind password stands under.
+constant LDAP_PASSWORD: str
+    "ldap"
+
+# Where secrets are kept.
+variant Vault
+    # The system's keyring, under one service.
+    system
+        # The keyring service: the configuration's `keyring_service`.
+        service: str
+    # A map in memory, gone when the program ends.
+    memory
+        # The secrets by account.
+        secrets: {str: str}
+
+# The secret stored under `account` in `v`.
+#
+# - `v`: where secrets are kept.
+# - `account`: the secret's name in it.
+#
+# Fails `not_found` where none stands there, and as `keyring.read_text`
+# fails with its code (`permission`, `unsupported`, `failed`) for the
+# system's keyring.
+function read(v: Vault, account: str) -> str?
+    match v
+        .system s => return keyring.read_text(service: s.service, account: account)
+        .memory m =>
+            match m.secrets[account]
+                .ok secret => return ok(secret)
+                .err _     => return fail(code: NOT_FOUND, msg: f"no secret \"{account}\" is kept")
+
+# Stores `secret` under `account` in `v`, replacing what stood there.
+#
+# - `v`: where secrets are kept; a map in memory takes the secret.
+# - `account`: the secret's name.
+# - `secret`: the secret, as text.
+#
+# Fails as `keyring.store_text` fails, for the system's keyring.
+function store(@v: Vault, account: str, secret: str) -> ()?
+    match v
+        .system s => return keyring.store_text(service: s.service, account: account, secret: secret)
+        .memory m =>
+            kept @= m.secrets
+            kept[account] @ secret
+            v @ .memory(secrets: kept)
+            return ok()
+
+# What a person is told of where `v` keeps the secrets: the keyring's name
+# for the system's, or a sentence saying the keyring is not used.
+#
+# - `v`: where secrets are kept.
+function describe(v: Vault) -> str
+    return match v
+        .system s =>
+            match keyring.system()
+                .ok name => f"keyring: {name}, service \"{s.service}\""
+                .err e   => f"keyring: unavailable ({e.code}), service \"{s.service}\""
+        .memory _ => "keyring: skipped: Rebel's keyring reaches the system's one store and offers no in-memory or file backend, so the demo keeps its signing key in memory"
+
+test "read: a secret kept in memory, and one never stored"
+    v: Vault @= .memory(secrets: {"smtp": "s3cret"})
+    assert read(v, account: "smtp").must() == "s3cret"
+    store(@v, account: SIGNING_KEY, secret: "pem").must()
+    assert read(v, account: SIGNING_KEY).must() == "pem"
+
+    match read(v, account: LDAP_PASSWORD)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND

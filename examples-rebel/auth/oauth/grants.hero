@@ -1,0 +1,296 @@
+# What the server has handed out and must remember: browser sessions,
+# authorization codes and refresh tokens. Each is found by the token that
+# names it, and each token is kept as its SHA-256 alone, so a copy of the
+# server's memory or data file gives an attacker no usable token.
+#
+# A refresh token is single use (RFC 9700 § 4.14.2): each use answers a new
+# one of the same family and marks the old one used. A used token presented
+# again means two parties hold the family, so the whole family is revoked and
+# both must log in again.
+
+use <rebel>/maps
+
+use accounts/passwords
+
+# The code of a grant no token names, or one that expired or was used.
+constant INVALID_GRANT: str
+    "invalid_grant"
+
+# A browser's login: who logged in, when, and how.
+record Session
+    # The account's id.
+    user_id: str
+    # When the person proved who they are, seconds since 1970: an ID token's
+    # `auth_time`.
+    auth_time: i64
+    # How they proved it, RFC 8176's values: `pwd`, `otp`, `hwk`.
+    methods: [str]
+    # When the session ends, seconds since 1970.
+    expires: i64
+    # The challenge of a passkey registration under way; empty where none is.
+    registration_challenge: [u8]
+
+# An authorization code between the redirect and its exchange.
+record Code
+    # The client it was issued to.
+    client_id: str
+    # The redirect URI the authorization request named, which the exchange
+    # must name again (RFC 6749 § 4.1.3).
+    redirect_uri: str
+    # The account that authorized it.
+    user_id: str
+    # The scopes granted.
+    scopes: [str]
+    # The `nonce` of the request, which the ID token carries back.
+    nonce: str
+    # The PKCE S256 challenge the exchange's verifier must answer.
+    challenge: str
+    # The session's `auth_time`.
+    auth_time: i64
+    # The session's methods.
+    methods: [str]
+    # When it stops being taken, seconds since 1970.
+    expires: i64
+
+# A refresh token's grant.
+record Refresh
+    # The family: every token rotated from one login shares it.
+    family: str
+    # The client it was issued to.
+    client_id: str
+    # The account.
+    user_id: str
+    # The scopes granted.
+    scopes: [str]
+    # The login's `auth_time`.
+    auth_time: i64
+    # The login's methods.
+    methods: [str]
+    # When the family ends, seconds since 1970: rotation does not extend it.
+    expires: i64
+    # Whether this token was exchanged already.
+    used: bool
+
+# The grants the server holds, each keyed by its token's digest.
+record Grants
+    # Sessions, by the digest of their cookie's value.
+    sessions: {str: Session}
+    # Codes, by the digest of the code.
+    codes: {str: Code}
+    # Refresh tokens, by the digest of the token.
+    refresh: {str: Refresh}
+    # The families revoked, by family id.
+    revoked: {str: bool}
+
+# No grant at all.
+function none() -> Grants
+    return Grants(sessions: {}, codes: {}, refresh: {}, revoked: {})
+
+## Sessions
+
+# Keeps `s` under the cookie value `token`.
+#
+# - `g`: the grants, which take the session.
+# - `token`: the cookie's value, kept as its digest.
+# - `s`: the session.
+function open_session(@g: Grants, token: str, s: Session)
+    sessions @= g.sessions
+    sessions[passwords.digest_hex(token)] @ s
+    g.sessions @ sessions
+
+# The session the cookie value `token` names, if it has not ended at `now`.
+#
+# - `g`: the grants.
+# - `token`: the cookie's value.
+# - `now`: seconds since 1970.
+#
+# Fails `invalid_grant` where none does, or it ended.
+function session_of(g: Grants, token: str, now: i64) -> Session?
+    match g.sessions[passwords.digest_hex(token)]
+        .ok s =>
+            if s.expires <= now
+                return fail(code: INVALID_GRANT, msg: "the session has ended")
+            return ok(s)
+        .err _ => return fail(code: INVALID_GRANT, msg: "no session has that cookie")
+
+# Replaces the session `token` names with `s`.
+#
+# - `g`: the grants, whose session is replaced.
+# - `token`: the cookie's value.
+# - `s`: the session as it now stands.
+function update_session(@g: Grants, token: str, s: Session)
+    open_session(@g, token: token, s: s)
+
+# Ends the session `token` names; nothing where none does.
+#
+# - `g`: the grants, which lose the session.
+# - `token`: the cookie's value.
+function close_session(@g: Grants, token: str)
+    g.sessions @ maps.remove(g.sessions, key: passwords.digest_hex(token))
+
+## Codes
+
+# Keeps `c` under the code `code`.
+#
+# - `g`: the grants, which take the code.
+# - `code`: the code as the redirect carries it.
+# - `c`: what it grants.
+function issue_code(@g: Grants, code: str, c: Code)
+    codes @= g.codes
+    codes[passwords.digest_hex(code)] @ c
+    g.codes @ codes
+
+# What the code `code` grants, taken once: a second exchange of it finds
+# nothing (RFC 6749 § 4.1.2).
+#
+# - `g`: the grants, which lose the code whether it is answered or not.
+# - `code`: the code an exchange presents.
+# - `now`: seconds since 1970.
+#
+# Fails `invalid_grant` where no code is `code`, or it expired.
+function take_code(@g: Grants, code: str, now: i64) -> Code?
+    key = passwords.digest_hex(code)
+    found = g.codes[key]
+    g.codes @ maps.remove(g.codes, key: key)
+
+    match found
+        .ok c =>
+            if c.expires <= now
+                return fail(code: INVALID_GRANT, msg: "the authorization code has expired")
+            return ok(c)
+        .err _ => return fail(code: INVALID_GRANT, msg: "the authorization code is unknown or was used")
+
+## Refresh tokens
+
+# Keeps `r` under the refresh token `token`.
+#
+# - `g`: the grants, which take the token.
+# - `token`: the refresh token as issued.
+# - `r`: what it grants.
+function issue_refresh(@g: Grants, token: str, r: Refresh)
+    refresh @= g.refresh
+    refresh[passwords.digest_hex(token)] @ r
+    g.refresh @ refresh
+
+# What the refresh token `token` grants, marked used. A token used before
+# revokes its family, and a token of a revoked family is refused.
+#
+# - `g`: the grants: the token is marked used, or its family revoked.
+# - `token`: the refresh token presented.
+# - `client_id`: the client presenting it, which must be the one it was
+#   issued to (RFC 6749 § 6).
+# - `now`: seconds since 1970.
+#
+# Fails `invalid_grant` for every refusal, the message saying which.
+function use_refresh(@g: Grants, token: str, client_id: str, now: i64) -> Refresh?
+    key = passwords.digest_hex(token)
+
+    r = match g.refresh[key]
+        .ok found => found
+        .err _    => return fail(code: INVALID_GRANT, msg: "the refresh token is unknown")
+
+    if r.client_id != client_id
+        return fail(code: INVALID_GRANT, msg: "the refresh token was issued to another client")
+
+    if !g.revoked[r.family].is_err()
+        return fail(code: INVALID_GRANT, msg: "the refresh token's family was revoked")
+
+    if r.used
+        revoke_family(@g, family: r.family)
+        return fail(code: INVALID_GRANT, msg: "the refresh token was used already: its family is revoked")
+
+    if r.expires <= now
+        return fail(code: INVALID_GRANT, msg: "the refresh token has expired")
+    marked @= r
+    marked.used @ true
+    refresh @= g.refresh
+    refresh[key] @ marked
+    g.refresh @ refresh
+    return ok(r)
+
+# Whether the refresh token `token` would be taken at `now`: known, unused,
+# unexpired, its family not revoked. What introspection answers.
+#
+# - `g`: the grants.
+# - `token`: a refresh token.
+# - `now`: seconds since 1970.
+function is_refresh_active(g: Grants, token: str, now: i64) -> bool
+    match g.refresh[passwords.digest_hex(token)]
+        .ok r  => return !r.used && r.expires > now && g.revoked[r.family].is_err()
+        .err _ => return false
+
+# The grant of the refresh token `token`, used or not.
+#
+# - `g`: the grants.
+# - `token`: a refresh token.
+#
+# Fails `invalid_grant` where no token is `token`.
+function refresh_of(g: Grants, token: str) -> Refresh?
+    match g.refresh[passwords.digest_hex(token)]
+        .ok r  => return ok(r)
+        .err _ => return fail(code: INVALID_GRANT, msg: "the refresh token is unknown")
+
+# Revokes the family `family`: every token of it is refused from now on.
+#
+# - `g`: the grants, which keep the family as revoked.
+# - `family`: the family's id.
+function revoke_family(@g: Grants, family: str)
+    revoked @= g.revoked
+    revoked[family] @ true
+    g.revoked @ revoked
+
+test "take_code: taken once, and refused once expired"
+    g @= none()
+    c = Code(
+        client_id: "p",
+        redirect_uri: "r",
+        user_id: "u",
+        scopes: ["openid"],
+        nonce: "n",
+        challenge: "x",
+        auth_time: 0,
+        methods: ["pwd"],
+        expires: 100
+    )
+    issue_code(@g, code: "abc", c: c)
+    assert take_code(@g, code: "abc", now: 50).must().user_id == "u"
+    assert take_code(@g, code: "abc", now: 50).is_err()
+    issue_code(@g, code: "def", c: c)
+    assert take_code(@g, code: "def", now: 100).is_err()
+
+test "use_refresh: rotation, and a reuse revoking the family"
+    g @= none()
+    r = Refresh(
+        family: "f",
+        client_id: "p",
+        user_id: "u",
+        scopes: [],
+        auth_time: 0,
+        methods: [],
+        expires: 1_000,
+        used: false
+    )
+    issue_refresh(@g, token: "one", r: r)
+    assert use_refresh(@g, token: "one", client_id: "other", now: 1).is_err()
+    assert use_refresh(@g, token: "one", client_id: "p", now: 1).must().family == "f"
+    issue_refresh(@g, token: "two", r: r)
+    assert is_refresh_active(g, token: "two", now: 1)
+
+    match use_refresh(@g, token: "one", client_id: "p", now: 2)
+        .ok _  => assert false
+        .err e => assert e.msg == "the refresh token was used already: its family is revoked"
+
+    assert !is_refresh_active(g, token: "two", now: 2)
+    assert use_refresh(@g, token: "two", client_id: "p", now: 2).is_err()
+
+test "session_of: a session found by its cookie until it ends"
+    g @= none()
+    open_session(
+        @g,
+        token: "cookie",
+        s: Session(user_id: "u", auth_time: 0, methods: ["pwd"], expires: 10, registration_challenge: [])
+    )
+    assert session_of(g, token: "cookie", now: 5).must().user_id == "u"
+    assert session_of(g, token: "cookie", now: 10).is_err()
+    close_session(@g, token: "cookie")
+    assert session_of(g, token: "cookie", now: 5).is_err()

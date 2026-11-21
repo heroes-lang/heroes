@@ -1,0 +1,272 @@
+# The demonstration's software authenticator: what a phone's or a laptop's
+# platform authenticator does when a page calls `navigator.credentials`. It
+# reads the options a relying party sends, makes a P-256 credential for a
+# registration and answers it with a "packed" attestation signed by its
+# vendor's attestation key and certificate, and signs an assertion over a
+# login's challenge with a counter that rises each time. Every byte it
+# answers is the real form: the authenticator data (Web Authentication § 6.1),
+# the COSE key (RFC 9052, RFC 9053), the attestation object in CBOR (§ 6.5),
+# the client data JSON a browser adds (§ 5.8.1), and the JSON a page sends
+# its server (`RegistrationResponseJSON`, `AuthenticationResponseJSON`).
+#
+# Its credentials' keys are `jose` keys the program holds; each signature
+# opens one as a `crypto/keypairs` handle and closes it at once.
+
+use <rebel>/bytes
+use <rebel>/cbor
+use <rebel>/crypto
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/random
+
+use core/ids
+use demo/certificates
+
+# The code of options the authenticator cannot answer.
+constant INVALID: str
+    "invalid"
+
+# The flags of a registration's authenticator data: the user present (UP),
+# verified (UV), and an attested credential following (AT).
+constant REGISTRATION_FLAGS: u8
+    0x45
+
+# The flags of an assertion's: the user present and verified.
+constant ASSERTION_FLAGS: u8
+    0x05
+
+# One credential the authenticator holds.
+record Credential
+    # Its ID.
+    id: [u8]
+    # Its private key.
+    key: jose.Key
+    # The relying party it belongs to.
+    rp_id: str
+    # The account's user handle the registration named.
+    user_handle: [u8]
+    # The signature counter, raised before each assertion.
+    counter: i64
+
+# An authenticator: its model's AAGUID, its vendor's attestation key and
+# certificate, and the credentials it made.
+record Authenticator
+    # The model's AAGUID, 16 bytes.
+    aaguid: [u8]
+    # The vendor's attestation key.
+    attestation_key: jose.Key
+    # The vendor's attestation certificate, DER.
+    certificate: [u8]
+    # The credentials, in the order made.
+    credentials: [Credential]
+    # The generator credential IDs are drawn from.
+    rng: random.ChaCha8
+
+# An authenticator of the model `aaguid`, attesting with `attestation`.
+#
+# - `aaguid`: the model's 16 bytes.
+# - `attestation`: the vendor's attestation certificate and key.
+# - `seed`: the label its generator is seeded by.
+function new_authenticator(aaguid: [u8], attestation: certificates.Made, seed: str) -> Authenticator
+    return Authenticator(
+        aaguid: aaguid,
+        attestation_key: attestation.key,
+        certificate: attestation.der,
+        credentials: [],
+        rng: ids.seeded_generator(seed)
+    )
+
+# The `RegistrationResponseJSON` for the registration `options`, made at the
+# page of `origin`.
+#
+# - `a`: the authenticator, which keeps the new credential.
+# - `options`: the `PublicKeyCredentialCreationOptionsJSON` the server sent.
+# - `origin`: the page's origin, which the client data names.
+#
+# Fails `invalid` where the options lack their challenge, relying party or
+# user, and as the key's making and signing fail.
+function create(@a: Authenticator, options: str, origin: str) -> str?
+    o = parsed(options)?
+    challenge = text_member(o, path: ["challenge"])?
+    rp_id = text_member(o, path: ["rp", "id"])?
+    user_handle = decoded(text_member(o, path: ["user", "id"])?)?
+    conveyance = text_member(o, path: ["attestation"]).default("none")
+    key = jose.generate_key(.p256)?
+    id = ids.draw(@a.rng, count: 16)
+    a.credentials @ a.credentials.push(Credential(id: id, key: key, rp_id: rp_id, user_handle: user_handle, counter: 0))
+    client_data = client_data_json(kind: "webauthn.create", challenge: challenge, origin: origin)?
+    attested = bytes.concat(
+        [a.aaguid, [to_u8(id.len() >> 8).must(), to_u8(id.len() & 0xff).must()], id, cbor.encode(cose_key(key)?)?]
+    )
+    auth_data = bytes.concat([crypto.sha256_text(rp_id), [REGISTRATION_FLAGS], counter_bytes(0), attested])
+    statement: cbor.Value @= .pairs(entries: [])
+
+    if conveyance == "none"
+        statement @ .pairs(entries: [])
+    else
+        signature = certificates.sign(a.attestation_key, message: bytes.concat([auth_data, crypto.sha256_text(client_data)]))?
+        statement @ .pairs(
+            entries: [entry("alg", value: cbor.from_int(-7)), entry("sig", value: .binary(v: signature)), entry("x5c", value: .list(items: [.binary(v: a.certificate)]))]
+        )
+
+    format = if conveyance == "none"
+        "none"
+    else
+        "packed"
+    object = cbor.encode(.pairs(entries: [entry("fmt", value: .text(v: format)), entry("attStmt", value: statement), entry("authData", value: .binary(v: auth_data))]))?
+    response: {str: json.Value} = {
+        "clientDataJSON": b64(bytes.from_text(client_data))
+        "attestationObject": b64(object)
+        "transports": .list(items: [.text(v: "internal")])
+    }
+    return credential_json(id, response: response)
+
+# The `AuthenticationResponseJSON` for the login `options`, made at the page
+# of `origin` with the credential the authenticator holds for its relying
+# party.
+#
+# - `a`: the authenticator, whose credential's counter rises.
+# - `options`: the `PublicKeyCredentialRequestOptionsJSON` the server sent.
+# - `origin`: the page's origin.
+#
+# Fails `invalid` where it holds no credential for the relying party, and as
+# the signature fails.
+function get(@a: Authenticator, options: str, origin: str) -> str?
+    o = parsed(options)?
+    challenge = text_member(o, path: ["challenge"])?
+    rp_id = text_member(o, path: ["rpId"])?
+    at: i64 @= -1
+
+    for i in range(from: 0, to: a.credentials.len())
+        if a.credentials[i].rp_id == rp_id
+            at @ i
+
+    if at < 0
+        return fail(code: INVALID, msg: f"no credential for \"{rp_id}\"")
+
+    c @= a.credentials[at]
+    c.counter @ c.counter + 1
+    a.credentials[at] @ c
+    client_data = client_data_json(kind: "webauthn.get", challenge: challenge, origin: origin)?
+    auth_data = bytes.concat([crypto.sha256_text(rp_id), [ASSERTION_FLAGS], counter_bytes(c.counter)])
+    signature = certificates.sign(c.key, message: bytes.concat([auth_data, crypto.sha256_text(client_data)]))?
+    response: {str: json.Value} = {
+        "clientDataJSON": b64(bytes.from_text(client_data))
+        "authenticatorData": b64(auth_data)
+        "signature": b64(signature)
+        "userHandle": b64(c.user_handle)
+    }
+    return credential_json(c.id, response: response)
+
+# The counter of the credential the authenticator last used for `rp_id`; 0
+# where it holds none.
+#
+# - `a`: the authenticator.
+# - `rp_id`: the relying party.
+function counter_of(a: Authenticator, rp_id: str) -> i64
+    for c in a.credentials
+        if c.rp_id == rp_id
+            return c.counter
+
+    return 0
+
+# The client data JSON a browser writes (§ 5.8.1.1): its members in the
+# order the limited verification algorithm reads them.
+#
+# - `kind`: `webauthn.create` or `webauthn.get`.
+# - `challenge`: the challenge, base 64 for URLs as the options carry it.
+# - `origin`: the page's origin.
+function client_data_json(kind: str, challenge: str, origin: str) -> str?
+    return json.format(
+        .object(members: {"type": .text(v: kind), "challenge": .text(v: challenge), "origin": .text(v: origin), "crossOrigin": .boolean(v: false)})
+    )
+
+# The COSE key of `key`'s public half: EC2, ES256, P-256, its coordinates.
+#
+# - `key`: a P-256 key as a JWK.
+#
+# Fails `not_found` where it has no coordinates.
+function cose_key(key: jose.Key) -> cbor.Value?
+    x = key.material["x"]?
+    y = key.material["y"]?
+    return ok(
+        .pairs(entries: [int_entry(1, value: cbor.from_int(2)), int_entry(3, value: cbor.from_int(-7)), int_entry(-1, value: cbor.from_int(1)), int_entry(-2, value: .binary(v: x)), int_entry(-3, value: .binary(v: y))])
+    )
+
+# A CBOR map entry of the text key `key`.
+#
+# - `key`: the key.
+# - `value`: the value.
+function entry(key: str, value: cbor.Value) -> cbor.Entry
+    return cbor.Entry(key: .text(v: key), value: value)
+
+# A CBOR map entry of the integer key `key`.
+#
+# - `key`: the key.
+# - `value`: the value.
+function int_entry(key: i64, value: cbor.Value) -> cbor.Entry
+    return cbor.Entry(key: cbor.from_int(key), value: value)
+
+# The signature counter as authenticator data writes it: four bytes, the
+# highest first.
+#
+# - `n`: the counter, 0 to 2^32 - 1.
+function counter_bytes(n: i64) -> [u8]
+    return [
+        to_u8(n >> 24 & 0xff).must()
+        to_u8(n >> 16 & 0xff).must()
+        to_u8(n >> 8 & 0xff).must()
+        to_u8(n & 0xff).must()
+    ]
+
+# The JSON a page sends for the credential `id` with `response`.
+#
+# - `id`: the credential ID.
+# - `response`: the members of its `response`.
+function credential_json(id: [u8], response: {str: json.Value}) -> str?
+    return json.format(
+        .object(members: {"id": b64(id), "rawId": b64(id), "type": .text(v: "public-key"), "response": .object(members: response), "clientExtensionResults": .object(members: {}), "authenticatorAttachment": .text(v: "platform")})
+    )
+
+# `b` in base 64 for URLs without padding, as a JSON text.
+#
+# - `b`: the bytes.
+function b64(b: [u8]) -> json.Value
+    return .text(v: bytes.format_base64_url_unpadded(b))
+
+# The options `text` holds.
+#
+# - `text`: the options.
+function parsed(text: str) -> json.Value?
+    match json.parse(text)
+        .ok v  => return ok(v)
+        .err e => return fail(code: INVALID, msg: f"the options are not JSON: {e.msg}")
+
+# The text at `path` in `v`.
+#
+# - `v`: the options.
+# - `path`: the members from the top.
+function text_member(v: json.Value, path: [str]) -> str?
+    match json.value_at(v, pointer: json.pointer_of(path))
+        .ok found =>
+            match json.text_of(found)
+                .ok t  => return ok(t)
+                .err _ => return fail(code: INVALID, msg: f"the options' \"{path.join(".")}\" is not a text")
+        .err _ => return fail(code: INVALID, msg: f"the options have no \"{path.join(".")}\"")
+
+# The bytes the base 64 for URLs `text` writes.
+#
+# - `text`: base 64 for URLs.
+function decoded(text: str) -> [u8]?
+    match bytes.parse_base64_url_unpadded(text)
+        .ok b  => return ok(b)
+        .err _ => return fail(code: INVALID, msg: "a byte string of the options is not base 64 for URLs")
+
+test "counter_bytes: four bytes, the highest first"
+    assert counter_bytes(258) == [0, 0, 1, 2]
+
+test "cose_key: EC2, ES256, P-256, and 32 bytes of each coordinate"
+    key = jose.generate_key(.p256).must()
+    v = cose_key(key).must()
+    assert cbor.int_of(cbor.entry_value(v: v, key: cbor.from_int(3)).must()).must() == -7
+    assert cbor.bytes_of(cbor.entry_value(v: v, key: cbor.from_int(-2)).must()).must().len() == 32
