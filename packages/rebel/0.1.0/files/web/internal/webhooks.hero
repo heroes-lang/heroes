@@ -44,10 +44,10 @@ function secret_bytes(secret: str) -> [u8]?
 function secret_of(raw: [u8]) -> str
     return SECRET_PREFIX + bytes.format_base64(raw)
 
-# The signature of `payload`, sent as `id` at `timestamp_s`, keyed by `key`:
-# `v1,` and the standard base 64 of its HMAC-SHA256.
-function signature(key: [u8], id: str, timestamp_s: i64, payload: [u8]) -> str
-    signed = bytes.concat([bytes.from_text(f"{id}.{timestamp_s}."), payload])
+# The signature of `payload`, sent as `id` at `timestamp_seconds`, keyed by
+# `key`: `v1,` and the standard base 64 of its HMAC-SHA256.
+function signature(key: [u8], id: str, timestamp_seconds: i64, payload: [u8]) -> str
+    signed = bytes.concat([bytes.from_text(f"{id}.{timestamp_seconds}."), payload])
     return "v1," + bytes.format_base64(crypto.hmac(.sha256, key: key, data: signed))
 
 # The timestamp a `webhook-timestamp` field writes, in Unix seconds: digits
@@ -118,7 +118,7 @@ test "signature: the Standard Webhooks libraries' test vector, as Python's hmac 
     got = signature(
         key: key,
         id: "msg_p5jXN8AQM9LWM0D4loKWxJek",
-        timestamp_s: 1614265330,
+        timestamp_seconds: 1614265330,
         payload: bytes.from_text("{\"test\": 2432232314}")
     )
     assert got == "v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE="
