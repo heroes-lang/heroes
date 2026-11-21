@@ -1872,7 +1872,8 @@ static hero_net_fd hero_net_try_listen(const struct addrinfo *at, int64_t *code)
  * non-blocking socket, which takes a slot of its own at once, a slot no
  * handle of the program names yet, so its wait is every call's wait and no
  * close can end it; it ends writable or failed, the system's own answer read
- * each time (`hero_net_pending_error`). On Windows the wait looks every
+ * each time (`hero_net_pending_error`), and always after the look at its
+ * writability, never before (below). On Windows the wait looks every
  * slice whatever stands, for the refusal its `WSAPoll` did not report before
  * version 2004. */
 static hero_net_socket *hero_net_try_connect(const struct addrinfo *at, int64_t deadline, int64_t *kind, int64_t *code) {
@@ -1942,6 +1943,18 @@ static hero_net_socket *hero_net_try_connect(const struct addrinfo *at, int64_t 
             *kind = hero_net_kind_of(*code);
             break;
         }
+        /* Writable first, then its pending error, as at the deadline above. A
+         * wake may come with nothing behind it (the poller's, for a slot given
+         * back and issued again), and the error read then is 0 while the
+         * connection is still being made; one that fails before a look at its
+         * writability after that read is writable to `poll` too, POLLHUP on
+         * Darwin, and was taken for one made, its first send told RESET
+         * (measured on Darwin and Linux arm64, M-rebel-library step 87b).
+         * Writable before the error is read means the connection ended, made
+         * or failed, by then, so the error read after it is the one it ended
+         * with. The error is read whatever the wait said, for the refusal
+         * Windows' `WSAPoll` did not report before version 2004. */
+        bool ended = waited == HERO_NET_WAIT_READY && hero_net_writable_now(fd);
         int64_t said = hero_net_pending_error(fd);
 
         if (said != 0) {
@@ -1949,7 +1962,7 @@ static hero_net_socket *hero_net_try_connect(const struct addrinfo *at, int64_t 
             *kind = hero_net_kind_of(said);
             break;
         }
-        if (waited == HERO_NET_WAIT_READY && hero_net_writable_now(fd)) {
+        if (ended) {
             made = true;
             break;
         }

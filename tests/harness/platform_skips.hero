@@ -98,6 +98,9 @@ constant SECOND_EVENT_ON_WINDOWS: str
 constant SECOND_INTERRUPT_ON_WINDOWS: str
     "a second console event after the stop a program asked itself is answered by Windows' own handler after the layer's, which ends the process with `STATUS_CONTROL_C_EXIT` (HandlerRoutine's page, read; the status unrun on the box), where POSIX's second SIGINT ends it by the signal, 128 + 2 = 130, the status this case pins; the first interrupt surviving the asked stop is judged on Windows by `the-platform-layer-stops-every-waiting-call-when-the-program-asks` (panel 248's R4; lane b36-net)"
 
+constant CONNECT_WAKE_ON_WINDOWS: str
+    "the case sends a connect the poller's wake with nothing behind it, and on Windows a connect joins no waiter list: it waits in slices, `hero_net_wait_slice`, one `WSAPoll` over its own socket, so no wake but the system's reaches it and the case's header answers 0 there (read in `runtime/platform/hero_net.c`, unrun on the box); the loop's order it pins is the same lines on every platform, the wait's one line apart (M-rebel-library step 87b)"
+
 constant SIGNAL_SETS_ON_WINDOWS: str
     "POSIX's signal sets, `sigset_t` and the five functions over it, are POSIX's and not C11's, whose `signal.h` holds `signal` and `raise` alone (C11 7.14, read); the Windows target's C library is C's, and its build refuses the case at each of the five, `signal.h` declares no `sigemptyset` (`ffi_unknown_name`, the CI's Windows x86-64 leg, run 43571761187, 2026-11-14), so it is built nowhere there, and its shape is judged on every platform by `fixedbugs-2511-a-function-behind-a-macro-that-assigns-through-its-argument-is-called` (defect 2511, lane b35-ffi; defect 2523)"
 
@@ -134,6 +137,7 @@ function windows() -> [Skip]
         Skip(name: "fixedbugs-2476-a-file-the-linker-cannot-read-for-a-link-is-told-at-the-group-that-links-it", why: LIBRARY_FILE_ON_WINDOWS)
         Skip(name: "the-platform-layer-ends-at-a-second-request-to-end", why: SECOND_EVENT_ON_WINDOWS)
         Skip(name: "the-platform-layer-ends-at-a-second-interrupt-after-the-program-asked-its-stop", why: SECOND_INTERRUPT_ON_WINDOWS)
+        Skip(name: "the-platform-layer-never-takes-a-connect-that-failed-between-its-two-looks-for-one-made", why: CONNECT_WAKE_ON_WINDOWS)
     ]
 
 # The programs every other platform builds and the Windows target's C refuses,
@@ -307,7 +311,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 21
+    assert windows().len() == 22
 
     for one in windows().slice(from: 5, to: 17)
         assert shell.exists("tests/golden/run/" + one.name + ".hero")
@@ -324,6 +328,11 @@ test "every name skipped on Windows is a case or a surface row that exists"
     # The second interrupt after the stop a program asked itself, whose end
     # Windows' own handler answers in a status of its own (panel 248's R4).
     assert shell.exists("tests/golden/run/" + windows()[20].name + ".hero")
+
+    # A connect woken for nothing, a wake no Windows connect can be sent, its
+    # connect waiting in slices and joining no waiter list (M-rebel-library
+    # step 87b).
+    assert shell.exists("tests/golden/run/" + windows()[21].name + ".hero")
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).

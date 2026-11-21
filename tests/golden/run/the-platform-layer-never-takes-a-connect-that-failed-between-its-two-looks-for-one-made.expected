@@ -1,0 +1,2 @@
+a connect whose far end fails while it waits is told failed: 1
+a connect woken for nothing, failing between its two looks, is told failed: 1

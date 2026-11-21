@@ -1,0 +1,25 @@
+# A connect the layer's poller wakes for nothing, whose failure lands between
+# the two looks its loop takes, is told failed and never taken for a
+# connection made (M-rebel-library step 87b). The loop read the pending error
+# first and the writability second; a wake with nothing behind it, the
+# poller's own for a slot given back and issued again, let the first look
+# read no error while the connection was still being made, and a failure
+# landing before the second look made the socket writable to `poll`, so the
+# connect answered a connection its first send told RESET. Measured before
+# the repair on Darwin and on Linux arm64, every run; the loop now looks at
+# the writability first and reads the error after it, as at the deadline.
+# The header beside this file is the layer itself with `getsockopt` wrapped,
+# so it can send the wake and land the failure in the window; the first line
+# is its control, the same far end failing with no wake. Each line prints 1
+# where every step held, else the step that did not (the header says which).
+# Built and not run on Windows, whose connect waits in slices and joins no
+# waiter list (`tests/harness/platform_skips.hero`).
+extern "the-platform-layer-connect-order.h"
+    function connect_failed_while_it_waits() -> i64
+    function connect_failed_between_two_looks_after_a_wake_for_nothing() -> i64
+
+function main()
+    print(f"a connect whose far end fails while it waits is told failed: {connect_failed_while_it_waits()}")
+    print(
+        f"a connect woken for nothing, failing between its two looks, is told failed: {connect_failed_between_two_looks_after_a_wake_for_nothing()}"
+    )
