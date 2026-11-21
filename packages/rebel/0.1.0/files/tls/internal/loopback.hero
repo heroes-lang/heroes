@@ -305,6 +305,19 @@ function free_port() -> i64
     net.close_listener(@l).must()
     return port
 
+# Whether a socket other than the caller's holds `port` of the loopback
+# address: a listen there fails `exists`, as it does on macOS where another
+# program listens on that address or on every address (the four listeners
+# other programs held on a Mac, Tailscale's on every address among them,
+# defect 2623); a listener made instead is closed at once.
+function held_elsewhere(port: i64) -> bool
+    match net.listen(host: "127.0.0.1", port: port)
+        .ok l =>
+            held @= l
+            net.close_listener(@held).must()
+            return false
+        .err e => return e.code == net.EXISTS
+
 # Waits until something listens on `port` of the loopback address, by
 # connecting and closing at once, for at most about ten seconds; the server
 # then sees one connection that sends nothing, and accepts again.
