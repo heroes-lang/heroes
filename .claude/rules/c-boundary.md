@@ -245,6 +245,17 @@ its R4, the same day, both ratified 2026-11-09; the fifteenth by panel 245's R3,
   program's own `pt.h` standing in for the package `pt`'s told as two
   layouts in its place, and a program's own header that changes a package's
   record is still this member (both in `unsupported/`).
+  **Amended 2026-11-21 by defect 2636** (lane lane-include, with no sitting:
+  the stand-in refusal held to the ground defect 2357 ruled, a file of the
+  package's own): a file stands in only for a header the package's folder
+  holds as a file, asked of that folder as clang's search asks it
+  (`package_stand_in.shipping`). A header a package binds and does not ship
+  is the library's to supply, and a folder the build names supplies it:
+  `--include` with `--library` builds as `CPATH` with `LIBRARY_PATH` did, a
+  header without its library is the fifteenth member's, and two units
+  reading two files of its name are this member's, told as two files, both
+  named, never as a header read before it changing the record
+  (`cli/agreed_files.hero`; `unsupported/fixedbugs-2636-*`).
 - **a name a library the program names supplies whose header and library come
   one from a folder the build names and one from none**: added 2026-11-11
   (panel 245's R3, ratified 2026-11-12; defect 2448).
