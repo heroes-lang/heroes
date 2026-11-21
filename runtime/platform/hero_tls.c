@@ -3861,6 +3861,10 @@ typedef struct hero_tls_apple {
     int64_t kind;
     int64_t os;
     char words[HERO_TLS_WORDS_MOST];
+    /* Whether it failed with POSIX's EINVAL, Darwin's answer to a connect
+     * the system gave the very port it connects to
+     * (`hero_tls_connect_with`). */
+    bool invalid;
     int64_t cert_kind;
     int64_t cert_os;
     char cert_words[HERO_TLS_WORDS_MOST];
@@ -4006,6 +4010,7 @@ static void hero_tls_apple_failed(hero_tls_apple *a, nw_error_t error) {
         return;
     }
     if (domain == nw_error_domain_posix) {
+        a->invalid = code == EINVAL;
         switch (code) {
         case ECONNREFUSED:
             a->kind = HERO_TLS_REFUSED;
@@ -4538,9 +4543,9 @@ static int64_t hero_tls_apple_close(void *payload);
 
 static const hero_stream_ops hero_tls_apple_ops = { hero_tls_apple_read, hero_tls_apple_write, hero_tls_apple_close };
 
-/* The connection, once ready, as a stream; NULL said where it is not. */
-static hero_stream *hero_tls_apple_stream(hero_tls_apple *a, int64_t until_ns) {
-    int settled = hero_tls_apple_settle(a, until_ns);
+/* The connection, `settled` as `hero_tls_apple_settle` answered, as a
+ * stream; NULL said where it is not ready. */
+static hero_stream *hero_tls_apple_settled(hero_tls_apple *a, int settled) {
     hero_stream *stream;
 
     if (settled != HERO_TLS_APPLE_READY) {
@@ -4555,6 +4560,11 @@ static hero_stream *hero_tls_apple_stream(hero_tls_apple *a, int64_t until_ns) {
     }
     hero_tls_fine();
     return stream;
+}
+
+/* The connection, once ready, as a stream; NULL said where it is not. */
+static hero_stream *hero_tls_apple_stream(hero_tls_apple *a, int64_t until_ns) {
+    return hero_tls_apple_settled(a, hero_tls_apple_settle(a, until_ns));
 }
 
 /* Whether `host` is an address, IPv4 or IPv6, rather than a name. */
@@ -4588,23 +4598,20 @@ static int64_t hero_tls_until(int64_t ms) {
     return until > 0 ? until : 1;
 }
 
-/* A client's connection by name, the steps of `script` (NULL for none) run
- * by a framer below TLS: `hero_tls_connect` and `hero_tls_connect_after`. */
-static hero_stream *hero_tls_connect_with(const char *host, int64_t port, int64_t ms, const void *roots, uint64_t roots_count, const char *protocols, int64_t checks, hero_tls_script *script) {
-    int64_t until;
+/* The most connections one client's connect makes: each after the first is
+ * made because the one before it failed EINVAL (`hero_tls_connect_with`). */
+#define HERO_TLS_SELF_TRIES 3
+
+/* A client's session for `host` at `port`, checked by the caller, its
+ * connection made and started, the steps of `script` (NULL for none) run by
+ * a framer below TLS; NULL said where none could be made. */
+static hero_tls_apple *hero_tls_apple_dial(const char *host, int64_t port, const void *roots, uint64_t roots_count, const char *protocols, int64_t checks, hero_tls_script *script) {
     nw_protocol_options_t below = NULL;
     hero_tls_apple *a;
     char port_text[8];
     nw_endpoint_t endpoint;
     nw_parameters_t parameters;
 
-    if (!hero_tls_host_given(host) || !hero_tls_port_given(port, false) || !hero_tls_bytes_given(roots, roots_count, "the roots") || !hero_tls_protocols_given(protocols) || !hero_tls_checks_given(checks)) {
-        return NULL;
-    }
-    if (!hero_tls_time_given(ms)) {
-        return NULL;
-    }
-    until = hero_tls_until(ms);
     a = hero_tls_apple_new();
     if (a == NULL) {
         return NULL;
@@ -4675,7 +4682,51 @@ static hero_stream *hero_tls_connect_with(const char *host, int64_t port, int64_
     }
     hero_tls_apple_watch(a);
     nw_connection_start(a->connection);
-    return hero_tls_apple_stream(a, until);
+    return a;
+}
+
+/* A client's connection by name, the steps of `script` (NULL for none) run
+ * by a framer below TLS: `hero_tls_connect` and `hero_tls_connect_after`.
+ * A connection that failed EINVAL is no answer about the port:
+ * Network.framework's TCP takes its port from the BSD sockets' allocator,
+ * which crosses the listeners' (`hero_net_to_itself` in `hero_net.c`), and Darwin
+ * answers EINVAL to a connect given the very port it connects to (12
+ * Network.framework connects steered there of 12, over TCP and over TLS,
+ * macOS 27.2), its path then naming no port of its own to read. So it is
+ * cancelled and a new connection asks again, given another port, up to
+ * `HERO_TLS_SELF_TRIES` in all within the one deadline, the last one's
+ * answer kept: an EINVAL with another cause answers as it did. Until then a
+ * TLS connect to a listener's port just closed was `failed`, "the system
+ * failed (Invalid argument)", in 3 rounds of 80,000, eight programs at once
+ * on a Mac, and one steered onto its own port in 495 of 500 (defect 2623). */
+static hero_stream *hero_tls_connect_with(const char *host, int64_t port, int64_t ms, const void *roots, uint64_t roots_count, const char *protocols, int64_t checks, hero_tls_script *script) {
+    int64_t until;
+
+    if (!hero_tls_host_given(host) || !hero_tls_port_given(port, false) || !hero_tls_bytes_given(roots, roots_count, "the roots") || !hero_tls_protocols_given(protocols) || !hero_tls_checks_given(checks)) {
+        return NULL;
+    }
+    if (!hero_tls_time_given(ms)) {
+        return NULL;
+    }
+    until = hero_tls_until(ms);
+    for (int tries = 1;; tries += 1) {
+        hero_tls_apple *a = hero_tls_apple_dial(host, port, roots, roots_count, protocols, checks, script);
+        int settled;
+        bool invalid;
+
+        if (a == NULL) {
+            return NULL;
+        }
+        settled = hero_tls_apple_settle(a, until);
+        (void)pthread_mutex_lock(&a->lock);
+        invalid = settled == HERO_TLS_APPLE_FAILED && a->invalid;
+        (void)pthread_mutex_unlock(&a->lock);
+        if (!invalid || tries == HERO_TLS_SELF_TRIES) {
+            return hero_tls_apple_settled(a, settled);
+        }
+        nw_connection_cancel(a->connection);
+        hero_tls_apple_drop(a);
+    }
 }
 
 hero_stream *hero_tls_connect(const char *host, int64_t port, int64_t ms, const void *roots, uint64_t roots_count, const char *protocols, int64_t checks) {

@@ -1866,9 +1866,59 @@ static hero_net_fd hero_net_try_listen(const struct addrinfo *at, int64_t *code)
     return fd;
 }
 
-/* A connection to the address, kept in a slot, or NULL with the kind in
- * `kind` and the platform's number in `code`, `HERO_NET_STOPPED` where the
- * stop was asked while it was being made. The connection is asked for on a
+/* The most sockets one connect to one address makes: each try after the
+ * first is made because the system gave the socket before it the very port
+ * it connects to (`hero_net_to_itself`). */
+#define HERO_NET_SELF_TRIES 3
+
+/* The platform's number for a refused connection, which a connection made to
+ * itself is answered with (`hero_net_connect_once`). */
+#if defined(_WIN32)
+#define HERO_NET_REFUSED_CODE WSAECONNREFUSED
+#else
+#define HERO_NET_REFUSED_CODE ECONNREFUSED
+#endif
+
+/* Whether `fd`, connected or refused, stands on the port `at` names, on
+ * `at`'s address or on no address in particular: a connection asked of
+ * itself. The system chooses the port of a socket connected without a bind,
+ * one no socket holds, so where nothing listens on the port asked it may
+ * choose that very one, and on macOS the allocator that does (BSD sockets'
+ * own, in order, `net.inet.tcp.randomize_ports` 0) walks the same range as
+ * Network.framework's listeners' and crosses it (defect 2623). Darwin then
+ * refuses the connect at once, EINVAL, the socket standing on 0.0.0.0 and
+ * the port asked (40 connects steered there of 40, blocking and not, macOS
+ * 27.2); Linux makes it, a socket connected to itself (one bound there by
+ * hand, the Linux arm64 image). Read from the socket, never assumed. */
+static bool hero_net_to_itself(hero_net_fd fd, const struct addrinfo *at) {
+    struct sockaddr_storage where;
+    hero_net_len size = (hero_net_len)sizeof where;
+
+    memset(&where, 0, sizeof where);
+    if (getsockname(fd, (struct sockaddr *)&where, &size) != 0 || where.ss_family != at->ai_family) {
+        return false;
+    }
+    if (at->ai_family == AF_INET) {
+        const struct sockaddr_in *mine = (const struct sockaddr_in *)&where;
+        const struct sockaddr_in *asked = (const struct sockaddr_in *)at->ai_addr;
+
+        return mine->sin_port == asked->sin_port && (mine->sin_addr.s_addr == asked->sin_addr.s_addr || mine->sin_addr.s_addr == htonl(INADDR_ANY));
+    }
+    if (at->ai_family == AF_INET6) {
+        static const unsigned char none[16] = { 0 };
+        const struct sockaddr_in6 *mine = (const struct sockaddr_in6 *)&where;
+        const struct sockaddr_in6 *asked = (const struct sockaddr_in6 *)at->ai_addr;
+
+        return mine->sin6_port == asked->sin6_port && (memcmp(&mine->sin6_addr, &asked->sin6_addr, sizeof none) == 0 || memcmp(&mine->sin6_addr, none, sizeof none) == 0);
+    }
+    return false;
+}
+
+/* One socket's try of `hero_net_try_connect`, `*itself` set where the system
+ * gave the socket the port it connects to (`hero_net_to_itself`): that
+ * failure's own kind and number then, and a connection made to itself given
+ * back, never handed on, `HERO_NET_REFUSED`. A stop and a deadline end the
+ * connect and are never tried again. The connection is asked for on a
  * non-blocking socket, which takes a slot of its own at once, a slot no
  * handle of the program names yet, so its wait is every call's wait and no
  * close can end it; it ends writable or failed, the system's own answer read
@@ -1876,7 +1926,7 @@ static hero_net_fd hero_net_try_listen(const struct addrinfo *at, int64_t *code)
  * writability, never before (below). On Windows the wait looks every
  * slice whatever stands, for the refusal its `WSAPoll` did not report before
  * version 2004. */
-static hero_net_socket *hero_net_try_connect(const struct addrinfo *at, int64_t deadline, int64_t *kind, int64_t *code) {
+static hero_net_socket *hero_net_connect_once(const struct addrinfo *at, int64_t deadline, int64_t *kind, int64_t *code, bool *itself) {
     hero_net_fd fd = hero_net_made(at, code);
 
     if (fd == HERO_NET_NO_FD) {
@@ -1888,6 +1938,7 @@ static hero_net_socket *hero_net_try_connect(const struct addrinfo *at, int64_t 
     if (!at_once) {
         *code = hero_net_os_code();
         if (!hero_net_connecting(*code)) {
+            *itself = hero_net_to_itself(fd, at);
             (void)hero_net_close_fd(fd);
             *kind = hero_net_kind_of(*code);
             return NULL;
@@ -1895,6 +1946,13 @@ static hero_net_socket *hero_net_try_connect(const struct addrinfo *at, int64_t 
     }
     hero_net_socket *handle = hero_net_keep(fd);
 
+    if (handle != NULL && at_once && hero_net_to_itself(fd, at)) {
+        *itself = true;
+        (void)hero_net_close(handle);
+        *kind = HERO_NET_REFUSED;
+        *code = HERO_NET_REFUSED_CODE;
+        return NULL;
+    }
     if (handle == NULL || at_once) {
         *kind = hero_net_kind;
         *code = hero_net_os;
@@ -1967,6 +2025,14 @@ static hero_net_socket *hero_net_try_connect(const struct addrinfo *at, int64_t 
             break;
         }
     }
+    if (*kind != HERO_NET_STOPPED && *kind != HERO_NET_TIMED_OUT && hero_net_to_itself(fd, at)) {
+        *itself = true;
+        if (made) {
+            made = false;
+            *kind = HERO_NET_REFUSED;
+            *code = HERO_NET_REFUSED_CODE;
+        }
+    }
     if (made && deadline != 0) {
         hero_net_enter();
         slot->deadline = 0;
@@ -1976,6 +2042,26 @@ static hero_net_socket *hero_net_try_connect(const struct addrinfo *at, int64_t 
     if (!made) {
         (void)hero_net_close(handle);
         return NULL;
+    }
+    return handle;
+}
+
+/* A connection to the address, kept in a slot, or NULL with the kind in
+ * `kind` and the platform's number in `code`, `HERO_NET_STOPPED` where the
+ * stop was asked while it was being made. A socket the system gave the port
+ * it connects to is no answer about that port: it is closed and another
+ * socket asks again, given another port, up to `HERO_NET_SELF_TRIES`
+ * sockets in all, the last one's answer kept. Until then, on Darwin, a
+ * connect to a TLS listener's port just closed was `failed` ("the system
+ * failed, its error 22") in 7 rounds of 80,000, eight programs at once on a
+ * Mac, and one steered onto its own port in 500 of 500 (defect 2623). */
+static hero_net_socket *hero_net_try_connect(const struct addrinfo *at, int64_t deadline, int64_t *kind, int64_t *code) {
+    hero_net_socket *handle = NULL;
+    bool itself = true;
+
+    for (int tries = 0; itself && tries < HERO_NET_SELF_TRIES; tries += 1) {
+        itself = false;
+        handle = hero_net_connect_once(at, deadline, kind, code, &itself);
     }
     return handle;
 }
