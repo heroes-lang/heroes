@@ -59,6 +59,15 @@ extern "hero_watch.h"
 
 # A new watch of `path`, a folder or a file, with `flags` 0 or
 # `HERO_WATCH_TREE` and room for `most` events; or `nullptr`.
+#
+# - `path`: the folder or the file watched, UTF-8, which must be there (else
+#   `HERO_WATCH_NOT_FOUND`); the empty path is `HERO_WATCH_INVALID`. It aborts
+#   where it holds a zero byte.
+# - `flags`: 0 watches a folder's own entries, or a file; `HERO_WATCH_TREE`
+#   the whole tree below a folder, `HERO_WATCH_NOT_A_DIRECTORY` for a file;
+#   any other value is `HERO_WATCH_INVALID`.
+# - `most`: the events the watch holds before it overflows, 1 to
+#   `HERO_WATCH_MOST`, else `HERO_WATCH_INVALID`.
 function open(path: str, flags: i64, most: i64) -> Watch
     return hero_watch_open(path.cstr(), flags: flags, most: most)
 
@@ -66,24 +75,54 @@ function open(path: str, flags: i64, most: i64) -> Watch
 # 0 where `limit_ns` passed with none (0 asks without waiting, -1 waits with
 # no limit), or -1; `numbers` and `text` are left `numbers_count` and
 # `text_count` long.
+#
+# - `w`: the watch waited on; it stays open. Closed while the call waits, it
+#   answers -1 with `HERO_WATCH_NOT_OPEN`.
+# - `limit_ns`: nanoseconds to wait for an event; 0 asks without waiting, -1
+#   waits with no limit, below -1 is `HERO_WATCH_INVALID`. The stop asked ends
+#   the wait with `HERO_WATCH_STOPPED`.
+# - `numbers`: filled with the event's `HERO_WATCH_EVENT_NUMBERS` numbers: its
+#   kind, 1 for a folder and 0 for anything else, the bytes of its path, the
+#   bytes of its path before (0 but for `HERO_WATCH_RENAMED`); left
+#   `numbers_count` long.
+# - `numbers_count`: the numbers `numbers` holds, 4 or more, else
+#   `HERO_WATCH_INVALID`.
+# - `text`: filled with the event's path, then its path before; left
+#   `text_count` long.
+# - `text_count`: the bytes `text` holds; where the paths do not fit, -1 with
+#   `HERO_WATCH_SHORT`, the numbers written and the event left first, so the
+#   caller asks again with their room.
 function next(w: Watch, limit_ns: i64, @numbers: [i64], numbers_count: u64, @text: [u8], text_count: u64) -> i64
     return hero_watch_next(w, limit_ns: limit_ns, @numbers, numbers_count: numbers_count, @text, text_count: text_count)
 
 # How many events wait in the watch's queue, or -1.
+#
+# - `w`: the watch asked about; it stays open. One not open is
+#   `HERO_WATCH_NOT_OPEN`.
 function count(w: Watch) -> i64
     return hero_watch_count(w)
 
 # The watch's bell as a stream, ready while an event waits, borrowed; or
 # `nullptr`, `HERO_WATCH_UNSUPPORTED` on Windows.
+#
+# - `w`: the watch whose bell is asked for; the bell is the watch's, never
+#   read, written or closed by the caller, and closed with the watch.
 function bell_stream(w: Watch) -> hero_stream.Stream
     return hero_watch_bell_stream(w)
 
 # The watch's bell as a datagram socket, borrowed; or `nullptr`,
 # `HERO_WATCH_UNSUPPORTED` but on Windows.
+#
+# - `w`: the watch whose bell is asked for; the bell is the watch's, never
+#   read, written or closed by the caller, and closed with the watch. A
+#   datagram from a stranger makes it ready while no event waits.
 function bell_socket(w: Watch) -> hero_net.Socket
     return hero_watch_bell_socket(w)
 
 # 0, or -1 where the watch was not open; `w` is given back either way.
+#
+# - `w`: the watch ended and given back, its bell with it; a wait another
+#   thread is in on it answers `HERO_WATCH_NOT_OPEN`.
 function close(@w: Watch) -> i64
     return hero_watch_close(w)
 
@@ -99,11 +138,17 @@ function last_os_error() -> i64
 # -- the floor's own tests ---------------------------------------------------
 
 # A new folder for one test, under the system's folder for temporary files.
+#
+# - `name`: the test's own word, which stands in the folder's name.
 function scratch(name: str) -> str
     return fs.make_temp_dir(dir: "", pattern: "hero-watch-" + name + "-*").must()
 
 # The kinds the watch tells within `ms` milliseconds of waiting for each,
 # until one wait finds none; a failure ends the list with -1 and its kind.
+#
+# - `w`: the watch read; it stays open.
+# - `ms`: milliseconds each wait takes at most; the first that finds no event
+#   ends the list.
 function kinds_told(w: Watch, ms: i64) -> [i64]
     numbers: [i64] @= [0, 0, 0, 0]
     text: [u8] @= []
@@ -127,6 +172,9 @@ function kinds_told(w: Watch, ms: i64) -> [i64]
     return told
 
 # Whether `xs` holds `x`.
+#
+# - `xs`: the numbers looked through.
+# - `x`: the number looked for.
 function holds(xs: [i64], x: i64) -> bool
     for one in xs
         if one == x

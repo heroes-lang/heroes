@@ -2223,9 +2223,9 @@ test "has_room: one stream allowed, then none"
 test "connect: a GET over TLS, ALPN choosing h2"
     if !tls.is_available()
         skip_test(reason: "this platform offers no TLS library to tls")
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve_tls)
+    port = started.port
+    serving @= started.thread
     c @= connect(
         host: "localhost",
         port: port,
@@ -2243,9 +2243,9 @@ test "connect: a GET over TLS, ALPN choosing h2"
 
 # HTTP/2 in plain text by prior knowledge, with a server of this process.
 test "connect_plain: a GET over h2c"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve_plain)
+    port = started.port
+    serving @= started.thread
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -2262,9 +2262,9 @@ test "connect_plain: a GET over h2c"
 
 # A connection of `net` made a client's HTTP/2 connection.
 test "client: over a connection net made"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve_plain)
+    port = started.port
+    serving @= started.thread
     made = net.connect("127.0.0.1", port: port, deadline_ms: 10000).must()
     stream @= made.stream
     c @= client(@stream, options: default_options()).must()
@@ -2314,9 +2314,9 @@ test "close: GOAWAY sent, the stream closed, a second close refused"
 
 # Events as they come: the response's head, then its data.
 test "read_event: a response read event by event"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve_plain)
+    port = started.port
+    serving @= started.thread
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -2336,9 +2336,9 @@ test "read_event: a response read event by event"
 
 # One stream's events while another's are held.
 test "read_event_of: the second request's answer read before the first's"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 2").must()
-    fixture.until_listening(port)
+    started = fixture.start_many(2)
+    port = started.port
+    serving @= started.thread
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -2362,9 +2362,9 @@ test "read_event_of: the second request's answer read before the first's"
 
 # A stream opened with its head alone, its body written after.
 test "start_stream: a POST whose body follows"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve_plain)
+    port = started.port
+    serving @= started.thread
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -2384,9 +2384,9 @@ test "start_stream: a POST whose body follows"
 
 # Trailers written after a body, as gRPC's client ends its stream.
 test "write_headers: trailers end a request"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve_plain)
+    port = started.port
+    serving @= started.thread
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -2412,9 +2412,9 @@ test "write_headers: trailers end a request"
 # A body of 3 MiB written as the windows open, to a server whose bound is
 # 1 MiB: it answers 413 and resets the stream, so the rest is not sent.
 test "write_data: a body past the server's bound, answered 413"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve_plain)
+    port = started.port
+    serving @= started.thread
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -2442,9 +2442,9 @@ test "write_data: a body past the server's bound, answered 413"
 
 # A request cancelled before its answer is read.
 test "write_reset: a request cancelled"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 1").must()
-    fixture.until_listening(port)
+    started = fixture.start_many(1)
+    port = started.port
+    serving @= started.thread
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -2463,9 +2463,9 @@ test "write_reset: a request cancelled"
 
 # A PING answered by a server of this process.
 test "ping: answered before any request"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve_plain)
+    port = started.port
+    serving @= started.thread
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -2483,9 +2483,9 @@ test "ping: answered before any request"
 # Two requests started before either is finished: one connection, two
 # streams.
 test "start: two requests on one connection at once"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 2").must()
-    fixture.until_listening(port)
+    started = fixture.start_many(2)
+    port = started.port
+    serving @= started.thread
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -2507,9 +2507,9 @@ test "start: two requests on one connection at once"
 
 # A response read whole: head, body and trailers.
 test "finish: a response's body and trailers"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve_plain)
+    port = started.port
+    serving @= started.thread
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -2527,9 +2527,9 @@ test "finish: a response's body and trailers"
 
 # One request and its response, the ordinary call of a client.
 test "round_trip: a POST and its answer"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve_plain)
+    port = started.port
+    serving @= started.thread
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,

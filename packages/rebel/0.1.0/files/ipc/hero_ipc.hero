@@ -56,6 +56,8 @@ extern "hero_ipc.h"
     constant HERO_IPC_NAME_MOST: i64
     # The calls the marks below name: a stream's end, which the header
     # declares through `hero_stream.h`, and each handle's own.
+    #
+    # - `s`: the stream ended and given back.
     function hero_stream_close(s: hero_stream.Stream consumes) -> i64
     function hero_ipc_listener_close(l: Listener consumes) -> i64
     function hero_ipc_memory_close(m: Memory consumes) -> i64
@@ -97,6 +99,8 @@ extern "hero_os.h"
     function hero_run_exe_suffix() -> str
     # And the files a test of a connect stands at its path: a folder made, a
     # file, a link or an empty folder removed, a link made, a file renamed.
+    #
+    # - `path`: the folder made, with every folder on the way to it.
     function hero_fs_mkdir_all(path: cstr lent) -> i64
     function hero_fs_remove(path: cstr lent) -> i64
     function hero_fs_symlink(target: cstr lent, name: cstr lent) -> i64
@@ -106,21 +110,52 @@ extern "hero_os.h"
 
 # A listener on `name` in `space`, one of `HERO_IPC_SPACE_*`, a socket file
 # at a path made with the permission `perm`; or `nullptr`.
+#
+# - `name`: a path, an abstract name or a pipe's name, as `space` says; a path
+#   is at most 103 bytes on Darwin and 107 on Linux and Windows. It aborts
+#   where it holds a zero byte.
+# - `space`: `HERO_IPC_SPACE_PATH`, `HERO_IPC_SPACE_ABSTRACT` (Linux alone) or
+#   `HERO_IPC_SPACE_PIPE` (Windows alone); another platform's is
+#   `HERO_IPC_UNSUPPORTED`.
+# - `perm`: for a path, the socket file's nine bits of POSIX, 0 to 0o777, set
+#   before the first connection and taken away by no mask (0o600 lets only its
+#   owner connect); the other spaces and Windows ignore it, and outside the
+#   range is `HERO_IPC_INVALID`. A file already at the path is
+#   `HERO_IPC_EXISTS` and stays.
 function listen(name: str, space: i64, perm: i64) -> Listener
     return hero_ipc_listen(name.cstr(), space: space, perm: perm)
 
 # The next connection on `l` as a stream, waiting at most `within_ms`
 # milliseconds, `HERO_IPC_FOREVER` for no bound; or `nullptr`.
+#
+# - `l`: the listener; it stays open. Closed by another thread while the call
+#   waits, it answers `HERO_IPC_NOT_OPEN` within about 50 ms.
+# - `within_ms`: the milliseconds it may wait; 0 tries once without waiting,
+#   `HERO_IPC_FOREVER` waits with no bound, below -1 is `HERO_IPC_INVALID`.
+#   Past the bound it answers `HERO_IPC_TIMED_OUT`; the stop asked ends it,
+#   `HERO_IPC_STOPPED`.
 function accept(l: Listener, within_ms: i64) -> hero_stream.Stream
     return hero_ipc_accept(l, within_ms: within_ms)
 
 # A connection to the listener on `name` in `space` as a stream, waiting at
 # most `within_ms` while the listener has no room; or `nullptr`.
+#
+# - `name`: the listener's path or name, as `space` says; nothing there is
+#   `HERO_IPC_NOT_FOUND`, a socket file nothing listens on `HERO_IPC_REFUSED`,
+#   a folder `HERO_IPC_IS_A_DIRECTORY`, anything else `HERO_IPC_NOT_A_SOCKET`.
+#   It aborts where it holds a zero byte.
+# - `space`: one of `HERO_IPC_SPACE_*`, as the listener was made.
+# - `within_ms`: the milliseconds it may wait while the listener has no room;
+#   0 tries once without waiting, `HERO_IPC_FOREVER` waits with no bound,
+#   below -1 is `HERO_IPC_INVALID`.
 function connect(name: str, space: i64, within_ms: i64) -> hero_stream.Stream
     return hero_ipc_connect(name.cstr(), space: space, within_ms: within_ms)
 
 # 0, or -1 where the listener was not open; `l` is given back either way, and
 # a path's socket file removed where the listen made it.
+#
+# - `l`: the listener ended and given back; a path's socket file is removed
+#   where it is still the one the listen made.
 function close_listener(@l: Listener) -> i64
     return hero_ipc_listener_close(l)
 
@@ -135,111 +170,232 @@ function set_deadline(s: hero_stream.Stream, ms: i64) -> i64
     return hero_ipc_set_deadline(s, ms: ms)
 
 # 0 once the writing side of the channel `s` is closed, or -1.
+#
+# - `s`: a channel `accept` or `connect` answered, which still reads; it stays
+#   open. A named pipe has no half, `HERO_IPC_UNSUPPORTED`.
 function shutdown_write(s: hero_stream.Stream) -> i64
     return hero_ipc_shutdown_write(s)
 
 # 0 with the peer's process id in `pid` and its user's id in `uid` (-1 on
 # Windows), or -1.
+#
+# - `s`: a channel `accept` or `connect` answered; it stays open.
+# - `pid`: set to the peer's process id, as the system told it at the
+#   connection.
+# - `uid`: set to the id of the peer's user; -1 on Windows, which has none of
+#   that number.
 function peer(s: hero_stream.Stream, @pid: i64, @uid: i64) -> i64
     return hero_ipc_peer(s, pid: @pid, uid: @uid)
 
 ## Shared memory
 
 # New memory named `name` of at least `size` bytes, all zero, or `nullptr`.
+#
+# - `name`: 1 to `HERO_IPC_NAME_MOST` bytes of ASCII letters, digits, `.`, `_`
+#   and `-`, the first no `.`; it aborts where it holds a zero byte.
+# - `size`: the bytes asked, 1 or more, every one zero; 0 is
+#   `HERO_IPC_INVALID`. The size the system holds may be larger, rounded up to
+#   the page on macOS and Windows; on Linux memory the machine has no room for
+#   fails here, `HERO_IPC_LIMIT`.
+# - `perm`: the nine bits of POSIX, 0 to 0o777, less the process's mask;
+#   Windows ignores it. Outside the range is `HERO_IPC_INVALID`.
 function memory_create(name: str, size: i64, perm: i64) -> Memory
     return hero_ipc_memory_create(name.cstr(), size: size, perm: perm)
 
 # The memory named `name`, or `nullptr`.
+#
+# - `name`: 1 to `HERO_IPC_NAME_MOST` bytes of ASCII letters, digits, `.`, `_`
+#   and `-`, the first no `.`; it aborts where it holds a zero byte.
 function memory_open(name: str) -> Memory
     return hero_ipc_memory_open(name.cstr())
 
 # The memory's size in bytes, or -1.
+#
+# - `m`: memory `memory_create` or `memory_open` answered; it stays open.
 function memory_size(m: Memory) -> i64
     return hero_ipc_memory_size(m)
 
 # `count`, once that many bytes from `offset` are copied into the first
 # `count` of `buffer`, or -1; `buffer` is left `count` bytes long.
+#
+# - `m`: memory `memory_create` or `memory_open` answered; it stays open.
+# - `offset`: the byte the copy starts at; the bytes must all stand inside the
+#   memory, else `HERO_IPC_INVALID` before any is read.
+# - `buffer`: filled from its first byte with the bytes copied; left `count`
+#   long.
+# - `count`: how many bytes to copy; 0 answers 0.
 function memory_read(m: Memory, offset: i64, @buffer: [u8], count: u64) -> i64
     return hero_ipc_memory_read(m, offset: offset, @buffer, count: count)
 
 # `count`, once the first `count` bytes of `data` are copied to `offset`, or
 # -1; `data` is left as it was handed, `count` bytes long.
+#
+# - `m`: memory `memory_create` or `memory_open` answered; it stays open.
+# - `offset`: the byte the copy starts at; the bytes must all stand inside the
+#   memory, else `HERO_IPC_INVALID` before any is written.
+# - `data`: the bytes copied, from its first; left as it was handed.
+# - `count`: how many of `data`'s first bytes to copy; 0 answers 0.
 function memory_write(m: Memory, offset: i64, @data: [u8], count: u64) -> i64
     return hero_ipc_memory_write(m, offset: offset, @data, count: count)
 
 # 0 with the word at `offset` in `value`, or -1.
+#
+# - `m`: memory `memory_create` or `memory_open` answered; it stays open.
+# - `offset`: the word's byte, a multiple of 8 inside the memory, else
+#   `HERO_IPC_INVALID`.
+# - `value`: set to the word, read whole by one instruction.
 function memory_load(m: Memory, offset: i64, @value: i64) -> i64
     return hero_ipc_memory_load(m, offset: offset, value: @value)
 
 # 0 once the word at `offset` is `value`, or -1.
+#
+# - `m`: memory `memory_create` or `memory_open` answered; it stays open.
+# - `offset`: the word's byte, a multiple of 8 inside the memory, else
+#   `HERO_IPC_INVALID`.
+# - `value`: the word written, whole, by one instruction every process sees
+#   whole.
 function memory_store(m: Memory, offset: i64, value: i64) -> i64
     return hero_ipc_memory_store(m, offset: offset, value: value)
 
 # 0 with the word at `offset` plus `delta` in `value` and in the memory,
 # wrapping at 64 bits; or -1.
+#
+# - `m`: memory `memory_create` or `memory_open` answered; it stays open.
+# - `offset`: the word's byte, a multiple of 8 inside the memory, else
+#   `HERO_IPC_INVALID`.
+# - `delta`: what is added, wrapping at 64 bits as two's complement.
+# - `value`: set to the sum, which the memory then holds.
 function memory_add(m: Memory, offset: i64, delta: i64, @value: i64) -> i64
     return hero_ipc_memory_add(m, offset: offset, delta: delta, value: @value)
 
 # 0 with the word found at `offset` in `found`, made `desired` where it was
 # `expected`; or -1.
+#
+# - `m`: memory `memory_create` or `memory_open` answered; it stays open.
+# - `offset`: the word's byte, a multiple of 8 inside the memory, else
+#   `HERO_IPC_INVALID`.
+# - `expected`: the word the swap is made against.
+# - `desired`: what the word is made where it was `expected`.
+# - `found`: set to the word found, either way; the swap was made where it is
+#   `expected`.
 function memory_swap(m: Memory, offset: i64, expected: i64, desired: i64, @found: i64) -> i64
     return hero_ipc_memory_swap(m, offset: offset, expected: expected, desired: desired, found: @found)
 
 # 0, or -1 where the memory was not open; `m` is given back either way.
+#
+# - `m`: the memory unmapped and given back; it stays for every other process
+#   that has it, and on POSIX for every later open, until `memory_remove`. A
+#   copy another thread is in runs to its end first.
 function memory_close(@m: Memory) -> i64
     return hero_ipc_memory_close(m)
 
 # 0 once the name `name` is taken from its memory, or -1.
+#
+# - `name`: 1 to `HERO_IPC_NAME_MOST` bytes of ASCII letters, digits, `.`, `_`
+#   and `-`, the first no `.`; it aborts where it holds a zero byte. Who has
+#   the memory mapped keeps it until they close it; on Windows the name goes
+#   with its last handle, and 0 is answered with nothing changed.
 function memory_remove(name: str) -> i64
     return hero_ipc_memory_remove(name.cstr())
 
 ## Semaphores
 
 # A new semaphore named `name` counting `count`, or `nullptr`.
+#
+# - `name`: 1 to `HERO_IPC_NAME_MOST` bytes of ASCII letters, digits, `.`, `_`
+#   and `-`, the first no `.`; it aborts where it holds a zero byte.
+# - `count`: the count it starts at, 0 to 32,767, macOS's most; outside it is
+#   `HERO_IPC_INVALID`.
+# - `perm`: the nine bits of POSIX, 0 to 0o777, less the process's mask;
+#   Windows ignores it. Outside the range is `HERO_IPC_INVALID`.
 function semaphore_create(name: str, count: i64, perm: i64) -> Semaphore
     return hero_ipc_semaphore_create(name.cstr(), count: count, perm: perm)
 
 # The semaphore named `name`, or `nullptr`.
+#
+# - `name`: 1 to `HERO_IPC_NAME_MOST` bytes of ASCII letters, digits, `.`, `_`
+#   and `-`, the first no `.`; it aborts where it holds a zero byte.
 function semaphore_open(name: str) -> Semaphore
     return hero_ipc_semaphore_open(name.cstr())
 
 # 0 once one is taken from the count, waiting at most `within_ms`; or -1.
+#
+# - `s`: a semaphore `semaphore_create` or `semaphore_open` answered; it stays
+#   open.
+# - `within_ms`: the milliseconds it may wait while the count is 0; 0 tries
+#   once without waiting, `HERO_IPC_FOREVER` waits with no bound, below -1 is
+#   `HERO_IPC_INVALID`. On macOS the wait sees a count given back within about
+#   3 ms.
 function semaphore_wait(s: Semaphore, within_ms: i64) -> i64
     return hero_ipc_semaphore_wait(s, within_ms: within_ms)
 
 # 0 once one is added to the count, or -1.
+#
+# - `s`: a semaphore `semaphore_create` or `semaphore_open` answered; it stays
+#   open. Past the platform's most count, where it tells one, it answers
+#   `HERO_IPC_LIMIT`; macOS says nothing past its 32,767.
 function semaphore_post(s: Semaphore) -> i64
     return hero_ipc_semaphore_post(s)
 
 # 0, or -1 where the semaphore was not open; `s` is given back either way.
+#
+# - `s`: the semaphore given back; it stays for every other process that has
+#   it, as memory does.
 function semaphore_close(@s: Semaphore) -> i64
     return hero_ipc_semaphore_close(s)
 
 # 0 once the name `name` is taken from its semaphore, or -1.
+#
+# - `name`: 1 to `HERO_IPC_NAME_MOST` bytes of ASCII letters, digits, `.`, `_`
+#   and `-`, the first no `.`; it aborts where it holds a zero byte.
 function semaphore_remove(name: str) -> i64
     return hero_ipc_semaphore_remove(name.cstr())
 
 ## Locks
 
 # The lock named `name`, made where it is not yet, or `nullptr`.
+#
+# - `name`: 1 to `HERO_IPC_NAME_MOST` bytes of ASCII letters, digits, `.`, `_`
+#   and `-`, the first no `.`; it aborts where it holds a zero byte. On POSIX
+#   the lock is the file `/tmp/heroes-lock-<name>`, refused `HERO_IPC_DENIED`
+#   where that is no regular file or has another name besides.
+# - `perm`: the nine bits of POSIX, 0 to 0o777, less the process's mask;
+#   Windows ignores it. Outside the range is `HERO_IPC_INVALID`.
 function lock_open(name: str, perm: i64) -> Lock
     return hero_ipc_lock_open(name.cstr(), perm: perm)
 
 # 0 once the lock is taken, 1 once it is taken from a holder that ended
 # without releasing it, waiting at most `within_ms`; or -1.
+#
+# - `l`: a lock `lock_open` answered; it stays open. A thread that holds it
+#   already, through this handle or another, is refused `HERO_IPC_INVALID`.
+# - `within_ms`: the milliseconds it may wait while another holds it; 0 tries
+#   once without waiting, `HERO_IPC_FOREVER` waits with no bound, below -1 is
+#   `HERO_IPC_INVALID`.
 function lock_acquire(l: Lock, within_ms: i64) -> i64
     return hero_ipc_lock_acquire(l, within_ms: within_ms)
 
 # 0 once the calling thread's hold is released, or -1.
+#
+# - `l`: a lock `lock_open` answered; it stays open. A thread that does not
+#   hold it is refused `HERO_IPC_NOT_HELD`.
 function lock_release(l: Lock) -> i64
     return hero_ipc_lock_release(l)
 
 # 0, or -1 where the lock was not open; `l` is given back either way,
 # released first where the calling thread holds it.
+#
+# - `l`: the lock given back, released first where the calling thread holds
+#   it.
 function lock_close(@l: Lock) -> i64
     return hero_ipc_lock_close(l)
 
 # 0 once the name `name` is taken from its lock, or -1.
+#
+# - `name`: 1 to `HERO_IPC_NAME_MOST` bytes of ASCII letters, digits, `.`, `_`
+#   and `-`, the first no `.`; it aborts where it holds a zero byte. On POSIX
+#   the lock's file is removed, so a process that opens it later has another
+#   lock: remove a lock only once no process uses it.
 function lock_remove(name: str) -> i64
     return hero_ipc_lock_remove(name.cstr())
 
@@ -262,6 +418,9 @@ function last_os_error() -> i64
 # replaced), a client is accepted, the server's bytes reach the client after
 # the server closed, the peer is this process, and a pipe has no half to
 # close.
+#
+# - `pipe`: a listener of `HERO_IPC_SPACE_PIPE` on `name`, closed here.
+# - `name`: the pipe's name, which the walk listens on a second time.
 function round_trip_on_a_pipe(@pipe: Listener, name: str) -> i64
     step: i64 @= 0
     second @= listen(name, space: HERO_IPC_SPACE_PIPE, perm: 0)
@@ -314,6 +473,9 @@ function round_trip_on_a_pipe(@pipe: Listener, name: str) -> i64
     return step
 
 # A name for a test's object, unique to this process.
+#
+# - `what`: the test's own word, which stands in the name beside this
+#   process's id.
 function test_name(what: str) -> str
     return f"hi-{what}-{hero_os_pid()}"
 

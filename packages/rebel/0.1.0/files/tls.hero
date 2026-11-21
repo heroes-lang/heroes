@@ -802,9 +802,9 @@ test "protocol_of: http/1.1 chosen of the server's two"
 # TLS: the server is of this process, on a thread of its own.
 test "connect_after: Postgres's SSLRequest, then TLS"
     if is_available()
-        port = loopback.free_port()
-        server @= threads.spawn_text(body: loopback.serve_after, arg: "postgres " + to_str(port)).must()
-        loopback.until_listening(port)
+        started = loopback.start_after("postgres")
+        port = started.port
+        server @= started.thread
         request: [u8] = [0, 0, 0, 8, 4, 210, 22, 47]
         s @= connect_after(host: "localhost", port: port, deadline: time.seconds(10).must(), client: Client(roots: fixture.ROOT, protocols: []), steps: [.send(data: request), .expect(answer: [83])]).must().stream
         io.write_text(s, text: "ping").must()

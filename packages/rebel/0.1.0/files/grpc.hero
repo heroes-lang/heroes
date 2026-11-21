@@ -1361,9 +1361,9 @@ test "default_options: messages of 4 MiB, uncompressed"
 test "connect: a unary call over TLS"
     if !tls.is_available()
         skip_test(reason: "this platform offers no TLS library to tls")
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve_tls)
+    port = started.port
+    serving @= started.thread
     ch @= connect(
         host: "localhost",
         port: port,
@@ -1384,9 +1384,9 @@ test "connect: a unary call over TLS"
 
 # A channel in plain text, HTTP/2 by prior knowledge.
 test "connect_plain: a unary call over h2c"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve)
+    port = started.port
+    serving @= started.thread
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -1406,9 +1406,9 @@ test "connect_plain: a unary call over h2c"
 
 # A channel over a connection the program made itself.
 test "new_channel: over http2.connect_plain"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve)
+    port = started.port
+    serving @= started.thread
     conn = http2.connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -1422,9 +1422,9 @@ test "new_channel: over http2.connect_plain"
 
 # A channel closed, and closed again.
 test "close: a second close refused"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve)
+    port = started.port
+    serving @= started.thread
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -1439,9 +1439,9 @@ test "close: a second close refused"
 # A unary call, a call that fails with its status and details, and a call
 # whose server streams.
 test "call: echoed, NOT_FOUND with its details, three messages streamed"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve)
+    port = started.port
+    serving @= started.thread
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -1458,9 +1458,9 @@ test "call: echoed, NOT_FOUND with its details, three messages streamed"
 
 # A call whose client streams: every message echoed.
 test "call_many: three requests echoed"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve)
+    port = started.port
+    serving @= started.thread
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -1480,9 +1480,9 @@ test "call_many: three requests echoed"
 
 # A call driven by hand: messages sent, the side closed, the answers read.
 test "start_call: a call driven message by message"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve)
+    port = started.port
+    serving @= started.thread
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -1500,9 +1500,9 @@ test "start_call: a call driven message by message"
 
 # One message sent on a call.
 test "send: a message past the bound refused"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve)
+    port = started.port
+    serving @= started.thread
     o @= default_options()
     o.max_message_bytes @ 4
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline: time.seconds(10).must(), options: o).must()
@@ -1520,9 +1520,9 @@ test "send: a message past the bound refused"
 
 # The client's side closed: the server answers once it has read every message.
 test "close_send: the server answers after the client's last message"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve)
+    port = started.port
+    serving @= started.thread
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -1537,9 +1537,9 @@ test "close_send: the server answers after the client's last message"
 
 # A call's end read after its messages, and a deadline that passes.
 test "receive: the end with its status, and DEADLINE_EXCEEDED"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve)
+    port = started.port
+    serving @= started.thread
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -1566,9 +1566,9 @@ test "receive: the end with its status, and DEADLINE_EXCEEDED"
 
 # A call cancelled by its client.
 test "cancel: the call ends CANCELLED"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve)
+    port = started.port
+    serving @= started.thread
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
@@ -1605,9 +1605,9 @@ test "path_of: /test.Notes/GetNote"
 
 # A call described by a `.proto`: its request a message of the schema.
 test "call_proto: a Note echoed and decoded"
-    port = fixture.free_port()
-    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
-    fixture.until_listening(port)
+    started = fixture.start(fixture.serve)
+    port = started.port
+    serving @= started.thread
     schema = protobuf.parse_schema_text(
         name: "echo.proto",
         text: "syntax = \"proto3\";\npackage test;\nmessage Note { string text = 1; }\nservice Echo { rpc Echo (Note) returns (Note); }\n"

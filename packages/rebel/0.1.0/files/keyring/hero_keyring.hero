@@ -44,12 +44,25 @@ extern "hero_keyring.h"
 # into `buffer`, `n` long, where it fits; or -1, `HERO_KEYRING_UNSUPPORTED`
 # where the machine has none. It leaves `buffer` `n` bytes long, the name's
 # first.
+#
+# - `buffer`: where the name is written, from its first byte, where it fits;
+#   left `n` long.
+# - `n`: the bytes `buffer` holds; 0 asks the length alone, and a shorter room
+#   than the name gets nothing written and the length all the same.
 function system(@buffer: [u8], n: u64) -> i64
     return hero_keyring_system(@buffer, n: n)
 
 # 0 once the first `n` bytes of `secret` stand under `service` and `account`,
 # replacing what stood there; or -1. Aborts where `service` or `account` holds
 # a zero byte.
+#
+# - `service`: the service's name, UTF-8, 1 to `HERO_KEYRING_NAME_MOST` bytes,
+#   else `HERO_KEYRING_INVALID`; it aborts where it holds a zero byte.
+# - `account`: the account's name, UTF-8, at most `HERO_KEYRING_NAME_MOST`
+#   bytes and possibly empty; it aborts where it holds a zero byte.
+# - `secret`: the bytes stored, any bytes; left as it was handed.
+# - `n`: how many of `secret`'s first bytes to store, at most
+#   `HERO_KEYRING_SECRET_MOST`, else `HERO_KEYRING_INVALID`.
 function store(service: str, account: str, @secret: [u8], n: u64) -> i64
     return hero_keyring_store(service: service.cstr(), account: account.cstr(), @secret, n: n)
 
@@ -57,17 +70,34 @@ function store(service: str, account: str, @secret: [u8], n: u64) -> i64
 # into `buffer`, `n` long, where they fit and nothing written where they do
 # not; or -1, `HERO_KEYRING_NOT_FOUND` where none stands. It leaves `buffer`
 # `n` bytes long. Aborts where a name holds a zero byte.
+#
+# - `service`: the service's name, UTF-8, 1 to `HERO_KEYRING_NAME_MOST` bytes;
+#   it aborts where it holds a zero byte.
+# - `account`: the account's name, possibly empty; it aborts where it holds a
+#   zero byte.
+# - `buffer`: where the secret is written, from its first byte, where it fits;
+#   left `n` long.
+# - `n`: the bytes `buffer` holds; a shorter room than the secret gets nothing
+#   written and the length all the same, so the caller asks again with room.
 function read(service: str, account: str, @buffer: [u8], n: u64) -> i64
     return hero_keyring_read(service: service.cstr(), account: account.cstr(), @buffer, n: n)
 
 # 0 once the secret under `service` and `account` is gone; or -1,
 # `HERO_KEYRING_NOT_FOUND` where none stood. Aborts where a name holds a zero
 # byte.
+#
+# - `service`: the service's name, UTF-8, 1 to `HERO_KEYRING_NAME_MOST` bytes;
+#   it aborts where it holds a zero byte.
+# - `account`: the account's name, possibly empty; it aborts where it holds a
+#   zero byte.
 function remove(service: str, account: str) -> i64
     return hero_keyring_remove(service: service.cstr(), account: account.cstr())
 
 # 0 once no secret stands under `service`, also where none stood; or -1.
 # Aborts where `service` holds a zero byte.
+#
+# - `service`: the service whose every secret is removed, whatever its
+#   account; it aborts where it holds a zero byte.
 function remove_all(service: str) -> i64
     return hero_keyring_remove_all(service.cstr())
 
@@ -75,6 +105,14 @@ function remove_all(service: str) -> i64
 # UTF-8 then a zero byte, written into `buffer`, `n` long, where they fit and
 # nothing written where they do not; 0 where none holds one; or -1. It leaves
 # `buffer` `n` bytes long. Aborts where `service` holds a zero byte.
+#
+# - `service`: the service's name, UTF-8, 1 to `HERO_KEYRING_NAME_MOST` bytes;
+#   it aborts where it holds a zero byte.
+# - `buffer`: where the accounts are written, in the order the store gives
+#   them, where they fit; left `n` long. An account that is no UTF-8 or holds
+#   a zero byte is left out.
+# - `n`: the bytes `buffer` holds; a shorter room than the accounts take gets
+#   nothing written and the bytes all the same.
 function accounts(service: str, @buffer: [u8], n: u64) -> i64
     return hero_keyring_accounts(service.cstr(), @buffer, n: n)
 
@@ -88,12 +126,18 @@ function last_os_error() -> i64
 
 # How many bytes of that failure's words, never a secret, are written into
 # `buffer`, `n` long; or -1 where `n` is 0. It leaves `buffer` `n` bytes long.
+#
+# - `buffer`: where the words are written as UTF-8, cut where a character ends
+#   to fit; left `n` long.
+# - `n`: the bytes `buffer` holds, 1 or more; 0 is `HERO_KEYRING_INVALID`.
 function last_message(@buffer: [u8], n: u64) -> i64
     return hero_keyring_last_message(@buffer, n: n)
 
 # A service no other program and no other run names, for a test that stores
 # secrets: `heroes-keyring-test-`, `what`, and sixteen hexadecimal digits the
 # system drew. Aborts where the system draws no random bytes.
+#
+# - `what`: the test's own word, which stands in the middle of the name.
 function test_service(what: str) -> str
     return f"heroes-keyring-test-{what}-{bytes.format_hex(os.random_bytes(8).must())}"
 
@@ -111,6 +155,9 @@ function refusal() -> i64
     return last_error()
 
 # `n` bytes, each `byte`.
+#
+# - `n`: how many bytes, 0 or more.
+# - `byte`: the value of each.
 function filled(n: i64, byte: u8) -> [u8]
     out: [u8] @= []
 
@@ -120,6 +167,8 @@ function filled(n: i64, byte: u8) -> [u8]
     return out
 
 # `n` bytes of the text "a", as a name.
+#
+# - `n`: how many bytes the name is, 0 or more.
 function long_name(n: i64) -> str
     return repeat("a", to_u64(n).must())
 
@@ -216,6 +265,8 @@ test "store, read, remove: a secret of every byte value, read whole, read short,
         assert read_whole == -1
 
 # The byte `n` holds, for a list of every byte value.
+#
+# - `n`: 0 or more, kept modulo 256.
 function to_u8_wrapped(n: i64) -> u8
     return to_u8(n % 256).must()
 

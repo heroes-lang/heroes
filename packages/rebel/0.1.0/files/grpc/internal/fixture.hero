@@ -1,7 +1,9 @@
 # FOR TESTS: a gRPC server and client of this process, each on a thread of
 # its own over h2c, written on `http2` and this package's private moves: the
 # server echoes, fails, streams or stays silent by the method's name; the
-# client calls one method once and says what came back.
+# client calls one method once and says what came back. A server listens on
+# a port the system chooses and tells it back to the test's thread
+# (`start`).
 
 use bytes
 use grpc/internal/calls
@@ -10,26 +12,80 @@ use http2
 use io
 use net
 use numbers
+use strings
+use threads
 use time
 use tls
 
-# A port no socket listens on now.
-function free_port() -> i64
-    l @= net.listen(host: "127.0.0.1", port: 0).must()
-    port = l.address.port
-    net.close_listener(@l).must()
-    return port
+# A server running on a thread of its own, and the port it listens on.
+record Started
+    # The port the server listens on, the one the system chose for it, which
+    # the server told back.
+    port: i64
+    # The server's thread, whose answer `threads.wait_text` gives.
+    thread: threads.TextThread
 
-# Waits until something listens on `port`; the connection that finds it is
-# closed at once.
-function until_listening(port: i64)
-    for _ in range(from: 0, to: 200)
-        match net.connect("127.0.0.1", port: port, deadline_ms: 1000)
+# `body`, `serve` or `serve_tls`, started on a thread of its own. The server
+# listens on a port the system chooses and tells it back over a connection
+# to a listener of this thread, so no port is named while nothing holds it,
+# and none is let go for another program to take between a choice and a
+# listen (defect 2633).
+function start(body: (function(str) -> str)) -> Started
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+    t = threads.spawn_text(body: body, arg: to_str(control.address.port)).must()
+    said = told(control)
+    net.close_listener(@control).must()
+    return Started(port: port_told(said).must(), thread: t)
+
+# Tells `port`, the one a server listens on, to the listener of `start` at
+# `control` after the word `told` that marks it as the server's (`told`),
+# and closes.
+function tell(control: i64, port: i64)
+    c @= net.connect("127.0.0.1", port: control, deadline_ms: 10000).must()
+    io.write_text(c.stream, text: "told " + to_str(port)).must()
+    io.close(@c.stream).must()
+
+# What a server tells `control`, the listener its starter holds: the text
+# after `told ` of the first connection that says it within five seconds of
+# its accept, ten connections at most and thirty seconds in all, or why none
+# did. Any other connection is closed and passed over, as one another
+# program makes to a port it did not choose: beside a test of `tls` that
+# steers its connect to the port the system gives next, such a connection
+# reached this listener and held its read to its deadline in 62 rounds of
+# 3,000 (defect 2633).
+function told(control: net.Listener) -> str
+    net.set_accept_deadline(control, deadline_ms: 30000).must()
+    tries @= 0
+
+    while tries < 10
+        tries @ tries + 1
+
+        match net.accept(control, deadline_ms: 5000)
+            .err e =>
+                if e.code == net.TIMEOUT
+                    return e.code + ": " + e.msg
             .ok c =>
-                s @= c.stream
-                io.close(@s).must()
-                return
-            .err _ => time.sleep(time.milliseconds(10).must())
+                r @= io.reader(c.stream)
+                said = io.read_rest_text(@r)
+
+                match io.close(@r.stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+                match said
+                    .ok text =>
+                        if strings.has_prefix(s: text, prefix: "told ")
+                            return text.slice(from: 5, to: text.len())
+                    .err _ => _ = 0
+
+    return "none of ten connections told a port"
+
+# The port `said` names, or a failure carrying the server's words where it
+# told why it listens on none.
+function port_told(said: str) -> i64?
+    match numbers.parse_int(said)
+        .ok port => return ok(port)
+        .err _   => return fail(code: "failed", msg: "the server listens on no port: " + said)
 
 # Every request message of `stream`, read until the client's last.
 function requests_of(@c: http2.Conn, stream: i64) -> [[u8]]
@@ -98,11 +154,13 @@ function serve_on(@c: http2.Conn) -> i64
                     .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
             .err _ => return answered
 
-# A thread's body: a gRPC server over h2c on the port `arg` names, answering
+# A thread's body: a gRPC server over h2c on a port the system chooses,
+# told to the listener `start` holds at the port `arg` names, answering
 # every call of the first connection that makes one, and answering how many.
 function serve(arg: str) -> str
-    port = numbers.parse_int(arg).must()
-    l @= net.listen(host: "127.0.0.1", port: port).must()
+    control = numbers.parse_int(arg).must()
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    tell(control: control, port: l.address.port)
     net.set_accept_deadline(l, deadline_ms: 10000).must()
     answered: i64 @= 0
 
@@ -127,14 +185,16 @@ function serve(arg: str) -> str
     return to_str(answered)
 
 # A thread's body: a gRPC server over TLS offering `h2`, with the test
-# certificate of `localhost`, answering as `serve` does.
+# certificate of `localhost`, telling its port and answering as `serve`
+# does.
 function serve_tls(arg: str) -> str
-    port = numbers.parse_int(arg).must()
+    control = numbers.parse_int(arg).must()
     l @= tls.listen(
         host: "127.0.0.1",
-        port: port,
+        port: 0,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2"])
     ).must()
+    tell(control: control, port: l.port)
     tls.set_accept_deadline(l, deadline: time.seconds(10).must()).must()
     answered: i64 @= 0
 

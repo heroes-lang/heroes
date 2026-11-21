@@ -5,14 +5,17 @@
 # whole, its bytes checked against the request the script expects, and the
 # script's canned BER answered. A thread runs a function of one `str` and
 # answers one (spec § 13), so the script crosses by name and the server
-# answers `ok`, or what went wrong.
+# answers `ok`, or what went wrong; it listens on a port the system chooses
+# and tells it back to the test's thread (`start`).
 
 use bytes
 use io
 use ldap/internal/wire
 use net
 use numbers
+use os
 use strings
+use threads
 use time
 use tls
 
@@ -211,66 +214,110 @@ function starttls_steps() -> [tls.Step]
         .send(data: bytes.parse_hex("3024020101781f0a0100040004008a16312e332e362e312e342e312e313436362e3230303337").must())
     ]
 
-# A port of the loopback address nothing listens on now.
-function free_port() -> i64
-    l @= net.listen(host: "127.0.0.1", port: 0).must()
-    port = l.address.port
-    net.close_listener(@l).must()
-    return port
+# A server running on a thread of its own, and the port it listens on.
+record Started
+    # The port the server listens on, the one the system chose for it, which
+    # the server told back.
+    port: i64
+    # The server's thread, whose answer `threads.wait_text` gives.
+    thread: threads.TextThread
 
-# Waits until something listens on `port` of the loopback address, for
-# about ten seconds at most, by trying to listen there itself: `exists` says
-# the server is up, and no connection is spent on asking.
-function until_listening(port: i64)
+# `serve` started on a thread of its own in `mode`, `plain`, `ldaps` or
+# `starttls`, playing the script `name` names. The server listens on a port
+# the system chooses and tells it back over a connection to a listener of
+# this thread, so no port is named while nothing holds it, and none is let
+# go for another program to take between a choice and a listen (defect
+# 2633); a server that tells why it listens on none stops the test with its
+# words.
+function start(mode: str, name: str) -> Started
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+    t = threads.spawn_text(body: serve, arg: f"{mode} {control.address.port} {name}").must()
+    said = told(control)
+    net.close_listener(@control).must()
+    return Started(port: port_told(said).must(), thread: t)
+
+# Tells `text`, the port the server listens on or why it listens on none, to
+# the listener of `start` at `control` after the word `told` that marks it
+# as the server's (`told`), and closes.
+function tell(control: i64, text: str)
+    c @= net.connect("127.0.0.1", port: control, deadline_ms: 10000).must()
+    io.write_text(c.stream, text: "told " + text).must()
+    io.close(@c.stream).must()
+
+# What a server tells `control`, the listener its starter holds: the text
+# after `told ` of the first connection that says it within five seconds of
+# its accept, ten connections at most and thirty seconds in all, or why none
+# did. Any other connection is closed and passed over, as one another
+# program makes to a port it did not choose: beside a test of `tls` that
+# steers its connect to the port the system gives next, such a connection
+# reached this listener and held its read to its deadline in 62 rounds of
+# 3,000 (defect 2633).
+function told(control: net.Listener) -> str
+    net.set_accept_deadline(control, deadline_ms: 30000).must()
     tries @= 0
 
-    while tries < 500
+    while tries < 10
         tries @ tries + 1
+
+        match net.accept(control, deadline_ms: 5000)
+            .err e =>
+                if e.code == net.TIMEOUT
+                    return e.code + ": " + e.msg
+            .ok c =>
+                r @= io.reader(c.stream)
+                said = io.read_rest_text(@r)
+
+                match io.close(@r.stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+                match said
+                    .ok text =>
+                        if strings.has_prefix(s: text, prefix: "told ")
+                            return text.slice(from: 5, to: text.len())
+                    .err _ => _ = 0
+
+    return "none of ten connections told a port"
+
+# The port `said` names, or a failure carrying the server's words where it
+# told why it listens on none.
+function port_told(said: str) -> i64?
+    match numbers.parse_int(said)
+        .ok port => return ok(port)
+        .err _   => return fail(code: "failed", msg: "the server listens on no port: " + said)
+
+# A port of the loopback address nothing listens on, for a test that needs
+# one with no server: drawn by the system's generator from 20000 to 31999,
+# below Linux's 32768 to 60999 and macOS's and Windows' 49152 to 65535, so
+# no system gives it to a socket of its own choosing between this answer
+# and the test's connect, as a port the system chose and let go may be at
+# once (defect 2633); and one a listen there takes, so a port another
+# program holds is passed over, a hundred draws at most. The shape of
+# `tls/internal/loopback.quiet_port` (step 89b).
+function quiet_port() -> i64
+    tries @= 0
+
+    while tries < 100
+        tries @ tries + 1
+        drawn = os.random_bytes(2).must()
+        port = 20000 + (drawn[0].to_i64().must() * 256 + drawn[1].to_i64().must()) % 12000
 
         match net.listen(host: "127.0.0.1", port: port)
-            .ok taken =>
-                l @= taken
-                net.close_listener(@l).must()
-                time.sleep(time.Duration(nanoseconds: 20000000))
-            .err e =>
-                if e.code == net.EXISTS
-                    return
-                time.sleep(time.Duration(nanoseconds: 20000000))
+            .ok l =>
+                held @= l
+                net.close_listener(@held).must()
+                return port
+            .err _ => _ = 0
 
-# A plain listener on `port` of the loopback address, tried again for about
-# two seconds while `until_listening` holds the port for a moment.
-function listening(port: i64) -> net.Listener?
-    tries @= 0
+    assert false
+    return 0
 
-    while true
-        tries @ tries + 1
-
-        match net.listen(host: "127.0.0.1", port: port)
-            .ok l => return ok(l)
-            .err e =>
-                if tries >= 100
-                    return fail(code: e.code, msg: e.msg)
-                time.sleep(time.Duration(nanoseconds: 20000000))
-
-# A TLS listener on `port`, with StartTLS's exchange before TLS where
-# `starttls`, tried again as `listening` tries.
-function listening_tls(port: i64, server: tls.Server, starttls: bool) -> tls.Listener?
-    tries @= 0
-
-    while true
-        tries @ tries + 1
-
-        made = if starttls
-            tls.listen_after(host: "127.0.0.1", port: port, server: server, steps: starttls_steps())
-        else
-            tls.listen(host: "127.0.0.1", port: port, server: server)
-
-        match made
-            .ok l => return ok(l)
-            .err e =>
-                if tries >= 100
-                    return fail(code: e.code, msg: e.msg)
-                time.sleep(time.Duration(nanoseconds: 20000000))
+# A TLS listener on a port the system chooses, with StartTLS's exchange
+# before TLS where `starttls`.
+function listening_tls(server: tls.Server, starttls: bool) -> tls.Listener?
+    if starttls
+        return tls.listen_after(host: "127.0.0.1", port: 0, server: server, steps: starttls_steps())
+    return tls.listen(host: "127.0.0.1", port: 0, server: server)
 
 # Plays `turns` on `stream`, and answers `ok` or what went wrong.
 function play(stream: io.Stream, turns: [Turn]) -> str
@@ -299,26 +346,35 @@ function play(stream: io.Stream, turns: [Turn]) -> str
 
     return "ok"
 
-# The server on a thread of its own: `arg` is `"<mode> <port> <script>"`,
-# the mode `plain`, `ldaps` or `starttls`. It accepts until a connection
+# The server on a thread of its own: `arg` is `"<mode> <control> <script>"`,
+# the mode `plain`, `ldaps` or `starttls`. It listens on a port the system
+# chooses and tells it to `control` (`tell`), accepts until a connection
 # plays the script (StartTLS on macOS spends one connection on asking
 # first), and answers `ok` or what went wrong.
 function serve(arg: str) -> str
     parts = strings.split(s: arg, sep: " ")
+    control = numbers.parse_int(parts[1]).must()
 
     if parts.len() != 3
-        return "invalid: not \"<mode> <port> <script>\": " + arg
-    port = numbers.parse_int(parts[1]).default(0)
+        said = "invalid: not \"<mode> <control> <script>\": " + arg
+        tell(control: control, text: said)
+        return said
     turns = script(parts[2])
 
     if turns.len() == 0
-        return "no script named " + parts[2]
+        said = "no script named " + parts[2]
+        tell(control: control, text: said)
+        return said
 
     if parts[0] == "plain"
-        l @= match listening(port)
+        l @= match net.listen(host: "127.0.0.1", port: 0)
             .ok made => made
-            .err e   => return "listen failed: " + e.code + ": " + e.msg
+            .err e =>
+                said = "listen failed: " + e.code + ": " + e.msg
+                tell(control: control, text: said)
+                return said
 
+        tell(control: control, text: to_str(l.address.port))
         net.set_accept_deadline(l, deadline_ms: 15000).must()
 
         heard = match net.accept(l, deadline_ms: 15000)
@@ -334,10 +390,14 @@ function serve(arg: str) -> str
 
     server = tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
 
-    l @= match listening_tls(port, server: server, starttls: parts[0] == "starttls")
+    l @= match listening_tls(server, starttls: parts[0] == "starttls")
         .ok made => made
-        .err e   => return "listen failed: " + e.code + ": " + e.msg
+        .err e =>
+            said = "listen failed: " + e.code + ": " + e.msg
+            tell(control: control, text: said)
+            return said
 
+    tell(control: control, text: to_str(l.port))
     tls.set_accept_deadline(l, deadline: time.seconds(15).must()).must()
     heard: str @= "closed: no client finished its handshake"
     tries @= 0

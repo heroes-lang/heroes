@@ -6,6 +6,7 @@
 # hold for it as for HTTP/1.1.
 
 use http
+use http/internal/canned
 use http/internal/read
 use http/internal/wire
 use http2
@@ -87,34 +88,23 @@ function exchange(@stream: io.Stream, method: str, scheme: str, authority: str, 
 
 ## For tests
 
-# FOR TESTS: a port no socket listens on now.
-function free_port() -> i64
-    l @= net.listen(host: "127.0.0.1", port: 0).must()
-    port = l.address.port
-    net.close_listener(@l).must()
-    return port
+# FOR TESTS: the port of the listener `canned.started` holds, which begins
+# the text a thread's body of `serve_h2_tls` or `serve_h2_plain` is given.
+function control_of(arg: str) -> i64
+    return numbers.parse_int(strings.split(s: arg, sep: canned.SEPARATOR)[0]).must()
 
-# FOR TESTS: waits until something listens on `port`, about two seconds at
-# most; the connection that finds it is closed at once.
-function until_listening(port: i64)
-    for _ in range(from: 0, to: 200)
-        match net.connect("127.0.0.1", port: port, deadline_ms: 1000)
-            .ok c =>
-                s @= c.stream
-                io.close(@s).must()
-                return
-            .err _ => time.sleep(time.milliseconds(10).must())
-
-# FOR TESTS, a thread's body: a TLS server offering `h2` alone on the port
-# `arg` names, answering "over h2" to every request of the first HTTP/2
+# FOR TESTS, a thread's body started by `canned.started`: a TLS server
+# offering `h2` alone on a port the system chooses, which it tells back
+# (`canned.tell`), answering "over h2" to every request of the first HTTP/2
 # connection that asks one, and answering how many it answered.
 function serve_h2_tls(arg: str) -> str
-    port = numbers.parse_int(arg).must()
+    control = control_of(arg)
     l @= tls.listen(
         host: "127.0.0.1",
-        port: port,
+        port: 0,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [http2.ALPN])
     ).must()
+    canned.tell(control: control, port: l.port)
     tls.set_accept_deadline(l, deadline: time.seconds(10).must()).must()
     answered: i64 @= 0
 
@@ -143,11 +133,13 @@ function serve_h2_tls(arg: str) -> str
     tls.close_listener(@l).must()
     return to_str(answered)
 
-# FOR TESTS, a thread's body: an h2c server on the port `arg` names,
-# answering as `serve_h2_tls` does.
+# FOR TESTS, a thread's body started by `canned.started`: an h2c server on
+# a port the system chooses, which it tells back, answering as
+# `serve_h2_tls` does.
 function serve_h2_plain(arg: str) -> str
-    port = numbers.parse_int(arg).must()
-    l @= net.listen(host: "127.0.0.1", port: port).must()
+    control = control_of(arg)
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    canned.tell(control: control, port: l.address.port)
     net.set_accept_deadline(l, deadline_ms: 10000).must()
     answered: i64 @= 0
 
