@@ -139,7 +139,7 @@ package moves its row in the same change. There is no cycle.
 | 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
 | 5 | `sql/postgres` | PostgreSQL over its own protocol, written in Heroes; the API every driver keeps | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `scram`, `sql`, `strings`, `threads`, `time`, `tls` |  |
-| 5 | `sql/sqlite` | SQLite over its library, the same API name for name; only its users need the library | `sql`, `strings`, `time` | `sqlite3.h` |
+| 5 | `sql/sqlite` | SQLite over its library, the same API name for name; only its users need the library | `os`, `sql`, `strings`, `time` | `sqlite3.h` |
 | 5 | `sql/mysql` | MySQL and MariaDB over their own protocol, written in Heroes; the same API as the other two drivers | `bytes`, `crypto`, `io`, `math`, `net`, `numbers`, `os`, `sql`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `redis` | a Redis client over its protocol (RESP2 and RESP3): commands, pipelines, publish and subscribe | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `sql/build` | queries as values composed by functions, placeholders for PostgreSQL and SQLite, values only as parameters, a row read into a record by its field names; the ORM itself refused, with the reason | `sql`, `strings` |  |

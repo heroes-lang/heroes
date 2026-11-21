@@ -165,9 +165,13 @@ function script_tls(chain: str, accepts: i64, responses: [str]) -> str
 
 # What `serve` does, over TLS: listens on 127.0.0.1 at a port it tells
 # with the test authority's certificate for `localhost` or for
-# `wrong.example`, accepts the script's count of connections, a handshake
-# that fails counted, and answers each request read with the next response.
-# Gives back what it read, as `serve` does.
+# `wrong.example`, accepts the script's count of connections, and answers
+# each request read with the next response, waiting 10 s at most for each.
+# Where the script holds responses its client is to be answered, so a
+# handshake that fails is another program's, made to a port it did not
+# choose (defect 2643), and is passed over, ten at most; where it holds
+# none, the client's own handshake is the one that fails, and it is
+# counted. Gives back what it read, as `serve` does.
 function serve_tls(arg: str) -> str
     parts = strings.split(s: arg, sep: SEPARATOR)
     control = syntax.decimal(s: parts[0], what: "the control port").must()
@@ -184,16 +188,22 @@ function serve_tls(arg: str) -> str
         server: tls.Server(chain: chain, key: key, protocols: ["http/1.1"])
     ).must()
     tell(control: control, port: l.port)
+    tls.set_accept_deadline(l, deadline: time.seconds(10).must()).must()
+    answering = parts.len() > 3 && parts[3] != ""
     seen: [str] @= []
     at: i64 @= 3
     taken: i64 @= 0
+    passed: i64 @= 0
 
-    while taken < accepts
-        taken @ taken + 1
-
+    while taken < accepts && passed < 10
         match tls.accept(l, deadline: time.seconds(10).must())
-            .err _ => _ = 0
+            .err _ =>
+                if answering
+                    passed @ passed + 1
+                else
+                    taken @ taken + 1
             .ok conn =>
+                taken @ taken + 1
                 s = conn.stream
                 r @= io.reader(s)
 

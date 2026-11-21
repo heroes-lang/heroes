@@ -189,9 +189,12 @@ record Two
 #   wait on either ends, as `connect` takes it; one refused is refused
 #   before anything is made.
 #
-# Fails `invalid` where `deadline_ms` is refused, `failed` where another
-# program connected to the listener of the moment first, and as `listen`,
-# `connect` and `accept` fail; nothing it made is left open.
+# The listener of the moment stands on a port of the loopback any program
+# may connect to, so the end it accepts is the one whose peer is this
+# call's own connect (`accept_from`). Fails `invalid` where `deadline_ms` is
+# refused, `failed` where ten connections of other programs came before
+# this call's own, and as `listen`, `connect` and `accept` fail; nothing it
+# made is left open.
 function pair(deadline_ms: i64) -> Two?
     asked = "making a pair of connected ends"
     checked_deadline(deadline_ms, asked: asked)?
@@ -202,7 +205,7 @@ function pair(deadline_ms: i64) -> Two?
             _ = hero_net.close(@l.socket)
             return fail(code: e.code, msg: e.msg)
         .ok one =>
-            taken = accept(l.socket, deadline_ms: deadline_ms, asked: asked)
+            taken = accept_from(l.socket, peer: one.local, deadline_ms: deadline_ms, asked: asked)
             _ = hero_net.close(@l.socket)
             first @= one
 
@@ -210,13 +213,36 @@ function pair(deadline_ms: i64) -> Two?
                 .err e =>
                     ended(@first.stream)
                     return fail(code: e.code, msg: e.msg)
-                .ok two =>
-                    if two.remote != one.local
-                        second @= two
-                        ended(@first.stream)
-                        ended(@second.stream)
-                        return failure.of(code: failure.FAILED, asked: asked, why: "another program connected first")
-                    return ok(Two(first: one, second: two))
+                .ok two => return ok(Two(first: one, second: two))
+
+# The connection `l` holds whose peer stands at `peer`, its every wait
+# ending by `deadline_ms` as `accept` sets it. A connection from any other
+# end, as another program makes to a port of the loopback it did not
+# choose (defect 2643), is closed and passed over, ten at most; the one
+# awaited, once its connect is made, waits in the listener's queue behind
+# those that came before it.
+#
+# - `l`: the listening socket; it stays open.
+# - `peer`: the address and port of the end awaited, where its connect
+#   stands.
+# - `deadline_ms`: as `accept` takes it.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `failed` where ten connections from other ends came first, and as
+# `accept` fails.
+function accept_from(l: hero_net.Socket, peer: parse.Parsed, deadline_ms: i64, asked: str) -> Ends?
+    tries @= 0
+
+    while tries < 10
+        tries @ tries + 1
+        taken = accept(l, deadline_ms: deadline_ms, asked: asked)?
+
+        if taken.remote == peer
+            return ok(taken)
+        other @= taken
+        ended(@other.stream)
+
+    return failure.of(code: failure.FAILED, asked: asked, why: "ten connections of other programs came first")
 
 # Closes `s`, whatever its close answers: what a failure leaves behind is
 # given back and the failure already being told is the one that matters.
@@ -356,13 +382,31 @@ function clamped(port: i64) -> i64
 
 ## Tests
 
+# How an accept on `l` ends where no client of the test connects: its
+# failure's code and message. A connection another program makes to the
+# listener's port in that time is closed and passed over, ten at most, as
+# `accept_from` says; the listener's deadline counts from when it was set.
+function quiet_accept(l: hero_net.Socket) -> str
+    tries @= 0
+
+    while tries < 10
+        tries @ tries + 1
+
+        match accept(l, deadline_ms: hero_net.HERO_NET_FOREVER, asked: "accepting")
+            .ok taken =>
+                other @= taken
+                ended(@other.stream)
+            .err e => return e.code + ": " + e.msg
+
+    return "ten connections of other programs came"
+
 # Every test below runs on loopback in its own process, makes its sockets with
 # port 0, and closes each one it made.
 test "connect and accept: a connection on loopback written and read both ways through io, each end's addresses the other's"
     l @= listen("127.0.0.1", port: 0).must()
     assert l.address.port > 0 && l.address.has_port
     client @= connect(host: "127.0.0.1", port: l.address.port, deadline_ms: 5000).must()
-    server @= accept(l.socket, deadline_ms: 5000, asked: "accepting").must()
+    server @= accept_from(l.socket, peer: client.local, deadline_ms: 5000, asked: "accepting").must()
     assert client.local == server.remote && client.remote == server.local
     assert client.remote.port == l.address.port && client.remote.bytes == [127, 0, 0, 1]
     assert client.stream.name == f"the connection to 127.0.0.1:{l.address.port}"
@@ -382,7 +426,12 @@ test "connect: IPv6 loopback, and a name looked up first"
     l @= listen("::1", port: 0).must()
     assert l.address.bytes.len() == 16
     client @= connect(host: "::1", port: l.address.port, deadline_ms: 5000).must()
-    server @= accept(l.socket, deadline_ms: hero_net.HERO_NET_FOREVER, asked: "accepting").must()
+    server @= accept_from(
+        l.socket,
+        peer: client.local,
+        deadline_ms: hero_net.HERO_NET_FOREVER,
+        asked: "accepting"
+    ).must()
     assert client.remote.bytes == l.address.bytes && server.remote.port == client.local.port
     io.close(@client.stream).must()
     io.close(@server.stream).must()
@@ -393,7 +442,12 @@ test "connect: IPv6 loopback, and a name looked up first"
         .ok c =>
             named @= c
             io.close(@named.stream).must()
-            taken @= accept(v4.socket, deadline_ms: hero_net.HERO_NET_FOREVER, asked: "accepting").must()
+            taken @= accept_from(
+                v4.socket,
+                peer: named.local,
+                deadline_ms: hero_net.HERO_NET_FOREVER,
+                asked: "accepting"
+            ).must()
             io.close(@taken.stream).must()
         .err e => assert e.code == failure.CLOSED
 
@@ -440,7 +494,7 @@ test "accept: the deadline given ends a read of the connection timeout, and a ne
         .ok _  => assert false
         .err e => assert e.code == failure.INVALID
 
-    server @= accept(l.socket, deadline_ms: 200, asked: "accepting").must()
+    server @= accept_from(l.socket, peer: client.local, deadline_ms: 200, asked: "accepting").must()
 
     match io.read(server.stream, n: 8)
         .ok _  => assert false
@@ -453,16 +507,9 @@ test "accept: the deadline given ends a read of the connection timeout, and a ne
 test "set_deadline: an accept with nobody coming ends timeout, 0 ends it at once, FOREVER takes it away, below that and a closed socket refused"
     l @= listen("127.0.0.1", port: 0).must()
     set_deadline(l.socket, ms: 150, asked: "deadline").must()
-
-    match accept(l.socket, deadline_ms: hero_net.HERO_NET_FOREVER, asked: "accepting")
-        .ok _  => assert false
-        .err e => assert e.code == failure.TIMEOUT && e.msg == "accepting: the time allowed ran out"
-
+    assert quiet_accept(l.socket) == failure.TIMEOUT + ": accepting: the time allowed ran out"
     set_deadline(l.socket, ms: 0, asked: "deadline").must()
-
-    match accept(l.socket, deadline_ms: hero_net.HERO_NET_FOREVER, asked: "accepting")
-        .ok _  => assert false
-        .err e => assert e.code == failure.TIMEOUT
+    assert quiet_accept(l.socket) == failure.TIMEOUT + ": accepting: the time allowed ran out"
 
     set_deadline(l.socket, ms: hero_net.HERO_NET_FOREVER, asked: "deadline").must()
     assert set_deadline(l.socket, ms: -2, asked: "deadline").is_err()
@@ -483,7 +530,7 @@ test "close: a second close fails closed and says so"
 test "accept_number and conn_of: a connection given up as a number, taken back once, a second time closed"
     l @= listen("127.0.0.1", port: 0).must()
     client @= connect(host: "127.0.0.1", port: l.address.port, deadline_ms: 5000).must()
-    n = accept_number(l.socket, asked: "accepting").must()
+    n @= accept_number(l.socket, asked: "accepting").must()
     assert n > 0
 
     match conn_of(n: n, deadline_ms: -2)
@@ -491,7 +538,14 @@ test "accept_number and conn_of: a connection given up as a number, taken back o
         .err e => assert e.code == failure.INVALID
 
     back @= conn_of(n: n, deadline_ms: 5000).must()
-    assert back.remote == client.local
+
+    # Another program's connection, taken first, is closed and the next one
+    # taken back, as `accept_from` passes one over.
+    while back.remote != client.local
+        ended(@back.stream)
+        n @ accept_number(l.socket, asked: "accepting").must()
+        back @ conn_of(n: n, deadline_ms: 5000).must()
+
     io.write(back.stream, data: [7]).must()
     assert io.read_exact(client.stream, n: 1).must() == [7]
 

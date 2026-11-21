@@ -87,7 +87,7 @@ constant RETRIES_OF_THEIR_OWN: str
 
 # A test fixture of a package's own tests.
 constant TEST_FIXTURES: str
-    "a fixture of each package's own tests (a canned server, a loopback listener) that no program reaches; one home for test fixtures is the readers' question"
+    "a fixture of each package's own tests (a canned server and the starter that reads its port, a loopback listener, a port where nothing listens) that no program reaches, and that no package below them may hold on its face, which declares only what a program writes (README § A2); one home for test fixtures is the readers' question"
 
 # `big`'s three exact numbers.
 constant THREE_EXACT_NUMBERS: str
@@ -240,6 +240,7 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "crypto/keypairs/internal/failure.last, crypto/seal/internal/failure.last", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "crypto/keypairs/internal/operations.close, crypto/seal/internal/sealing.close", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "csv/internal/scan.line_end_len, toml/internal/scalar.line_end_len", why: NO_PUBLIC_HOME)
+        Kept(check: "bodies", key: "dns/internal/canned.told, http/internal/canned.told, jsonrpc/internal/fixture.told, llm/anthropic/internal/canned.told, llm/openai/internal/canned.told, mcp/internal/fixture.told, oauth2/internal/loopback.told", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "dns/internal/transport.try_ms, ldap/internal/session.net_ms, mail/smtp/internal/wire.net_ms", why: SPANS_TO_DOORS)
         Kept(check: "bodies", key: "graphql/internal/lexer.hex_digit, grpc/internal/texts.value_of_digit, i18n/internal/po_file.hex_value, ldap/internal/dn.hex_value, pdf/internal/parse.hex_value, protobuf/internal/lexer.hex_value, xlsx/internal/text.hex_value", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "grpc/internal/fixture.told, http2/internal/fixture.told, ldap/internal/fake.told, mail/smtp/internal/fake.told, sql/postgres/internal/tls_peer.told, tls/internal/loopback.told", why: TEST_FIXTURES)
@@ -250,6 +251,7 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "json/internal/scan.position, yaml/internal/source.position", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "json/jq/internal/dates.month_names, time/internal/forms.month_names", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "keyring/internal/names.has_zero, os/internal/codes.has_zero, serial/internal/calls.holds_zero, sql/mysql/internal/wire.has_zero, sql/postgres/internal/wire.has_zero, tls/internal/text.has_zero", why: NO_PUBLIC_HOME)
+        Kept(check: "bodies", key: "kafka/internal/live.silent_port, mongodb/internal/fixture.silent_port", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "ldap/internal/fake.quiet_port, tls/internal/loopback.quiet_port", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "ldap/internal/fake.start, mail/smtp/internal/fake.start", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "llm/anthropic/internal/canned.json_answer, llm/openai/internal/canned.json_answer", why: TEST_FIXTURES)
@@ -268,6 +270,7 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "llm/anthropic/internal/transport.headed, llm/openai/internal/transport.headed", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "mail/internal/params.hex_value, mail/internal/transfer.hex_value, mail/internal/words.hex_value, sql/postgres/internal/target.hex_of", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "markdown/internal/html_reading.put_work, web/internal/tree.put", why: NO_PUBLIC_HOME)
+        Kept(check: "bodies", key: "mcp/internal/fixture.silent_port, net/internal/fixture.silent_port", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "mqtt/internal/link.none_ms_of, nats/internal/link.none_ms_of", why: SPANS_TO_DOORS)
         Kept(check: "bodies", key: "mqtt/internal/link.read, nats/internal/link.read", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "mqtt/internal/link.write, nats/internal/link.write", why: NO_PUBLIC_HOME)
@@ -295,12 +298,18 @@ function kept() -> [Kept]
         Kept(check: "one-layer", key: "http2 & sql/postgres", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "json & xml", why: ONE_LAYER)
         Kept(check: "one-layer", key: "json/jq & time", why: ONE_LAYER)
+        Kept(check: "one-layer", key: "jsonrpc & llm/anthropic", why: TEST_FIXTURES)
+        Kept(check: "one-layer", key: "jsonrpc & llm/openai", why: TEST_FIXTURES)
+        Kept(check: "one-layer", key: "jsonrpc & oauth2", why: TEST_FIXTURES)
+        Kept(check: "one-layer", key: "kafka & mongodb", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "ldap & mail/smtp", why: ONE_LAYER)
         Kept(check: "one-layer", key: "ldap & pdf", why: ONE_LAYER)
         Kept(check: "one-layer", key: "ldap & sql/postgres", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "llm/anthropic & llm/openai", why: ONE_LAYER)
+        Kept(check: "one-layer", key: "llm/anthropic & oauth2", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "llm/anthropic & s3", why: SPANS_TO_DOORS)
         Kept(check: "one-layer", key: "llm/anthropic & websocket", why: SPANS_TO_DOORS)
+        Kept(check: "one-layer", key: "llm/openai & oauth2", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "llm/openai & s3", why: SPANS_TO_DOORS)
         Kept(check: "one-layer", key: "llm/openai & websocket", why: SPANS_TO_DOORS)
         Kept(check: "one-layer", key: "mail/smtp & sql/postgres", why: TEST_FIXTURES)

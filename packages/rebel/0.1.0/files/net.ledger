@@ -532,7 +532,7 @@ capability tcp/pair  two connected ends in one process
   go      net.Pipe
   rust    -
   python  socket.socketpair
-  note    Over IPv4 loopback, the accepted end checked to be the one this call connected; Python's `socketpair` is a pair of local sockets on POSIX, Go's `Pipe` a pipe in memory
+  note    Over IPv4 loopback, the accepted end the one this call connected, a connection another program makes to the listener of the moment closed and passed over, ten at most (defect 2643); Python's `socketpair` is a pair of local sockets on POSIX, Go's `Pipe` a pipe in memory
 
 capability tcp/nonblocking  a call that answers at once instead of waiting
   heroes  refused: a call waits, bounded by its deadline and the stop; a program that waits on several at once adds them to a `poll.Set` and is told which are ready (`poll.wait`), so the call it then makes does not wait

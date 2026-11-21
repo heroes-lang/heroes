@@ -1,8 +1,10 @@
 # What the face's tests share and a program never calls: the index of the
 # machine's loopback interface, whether another program holds a port, a
-# port where nothing listens, and the connect defect 2623's test steers to
-# the port the system gives next, each through the face itself, which a
-# private module may use since panel 252's R1.
+# port where nothing listens, the connect defect 2623's test steers to the
+# port the system gives next, and the connection a test's own client made,
+# or how an accept no client of the test reaches ends, with another
+# program's connection passed over (defect 2643), each through the face
+# itself, which a private module may use since panel 252's R1.
 
 use io
 use net
@@ -19,10 +21,12 @@ function loopback_index() -> i64
     return 0
 
 # Whether a socket other than the caller's holds `port` of the loopback
-# address: a listen there fails `exists`, as it does on macOS where another
-# program listens on that address or on every address (the four listeners
-# other programs held on a Mac, Tailscale's on every address among them,
-# defect 2623); a listener made instead is closed at once.
+# address where a listen sees it: a listen there fails `exists` where a
+# program of any user listens on that address, or one of another user on
+# every address, as Tailscale's daemon, run as root, does on a Mac (defect
+# 2623). A listener of the caller's own user on every address leaves the
+# listen made on macOS, so this answers false for its port (macOS 27.2.1,
+# measured 2026-11-21); a listener made is closed at once.
 function held_elsewhere(port: i64) -> bool
     match net.listen("127.0.0.1", port: port)
         .ok l =>
@@ -66,6 +70,80 @@ function silent_port() -> i64
 
     assert false
     return 0
+
+# The connection `l` accepted from the test's own client, whose end stands
+# at `client`, its every read and write ending by `deadline_ms` as
+# `net.accept` sets it. A port of the loopback is any program's to connect
+# to, and a test that steers its connect to the port the system gives next
+# reaches a listener of another test that took it (defect 2643): such a
+# connection is closed and passed over, ten at most. The client's own,
+# once its connect is made, waits in the listener's queue behind those that
+# came before it.
+#
+# Fails `failed` where ten connections of other programs came first, and as
+# `net.accept` fails.
+function accepted_from(l: net.Listener, client: net.Address, deadline_ms: i64) -> net.Conn?
+    tries @= 0
+
+    while tries < 10
+        tries @ tries + 1
+        c = net.accept(l, deadline_ms: deadline_ms)?
+
+        if c.remote == client
+            return ok(c)
+        stranger @= c.stream
+
+        match io.close(@stranger)
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+    return fail(code: net.FAILED, msg: "accepting the test's own client: ten connections of other programs came first")
+
+# The connection the test's own client made, whose end stands at `client`,
+# as `net.accept_number` gives it up and `net.conn_of` takes it back with
+# `deadline_ms`; another program's is taken back, closed and passed over,
+# ten at most, as `accepted_from` says.
+#
+# Fails `failed` where ten connections of other programs came first, and as
+# `net.accept_number` and `net.conn_of` fail.
+function numbered_from(l: net.Listener, client: net.Address, deadline_ms: i64) -> net.Conn?
+    tries @= 0
+
+    while tries < 10
+        tries @ tries + 1
+        c = net.conn_of(n: net.accept_number(l)?, deadline_ms: deadline_ms)?
+
+        if c.remote == client
+            return ok(c)
+        stranger @= c.stream
+
+        match io.close(@stranger)
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+    return fail(code: net.FAILED, msg: "accepting the test's own client: ten connections of other programs came first")
+
+# How an accept on `l` ends where no client of the test connects: the code
+# it fails with, `timeout` where the listener's deadline passed. A
+# connection another program makes to the listener's port in that time is
+# closed and passed over, ten at most, as `accepted_from` says; the
+# deadline counts from when it was set, so passing one over does not move it.
+function quiet_accept(l: net.Listener, deadline_ms: i64) -> str
+    tries @= 0
+
+    while tries < 10
+        tries @ tries + 1
+
+        match net.accept(l, deadline_ms: deadline_ms)
+            .ok c =>
+                stranger @= c.stream
+
+                match io.close(@stranger)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+            .err e => return e.code
+
+    return "ten connections of other programs came"
 
 # One connect to the port the system gives next, where nothing of this test
 # listens, and what it answered, for defect 2623's test: `closed` where it
