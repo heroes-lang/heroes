@@ -48,6 +48,7 @@ use mongodb/internal/commands
 use mongodb/internal/conn
 use mongodb/internal/cursors
 use mongodb/internal/dial
+use mongodb/internal/fixture
 use mongodb/internal/ops
 use mongodb/internal/replies
 use mongodb/internal/session
@@ -1822,7 +1823,7 @@ test "options and parse_url: the defaults, a string of every option this client 
 
 test "connect: a port where nothing listens fails closed, and a port out of range invalid"
     opts @= options("127.0.0.1")
-    opts.hosts @ [Host(name: "127.0.0.1", port: 1)]
+    opts.hosts @ [Host(name: "127.0.0.1", port: fixture.silent_port())]
 
     match connect(opts)
         .ok _  => assert false

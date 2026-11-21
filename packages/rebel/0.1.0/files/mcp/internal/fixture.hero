@@ -3,7 +3,7 @@
 # a server are written ahead, one message a line, so that a client's requests
 # are answered in order with no thread; and the server of the tests, over the
 # face's types, with its answers and the threads that serve it by lines and
-# over Streamable HTTP.
+# over Streamable HTTP; and a port where nothing listens.
 
 use http
 use io
@@ -11,6 +11,7 @@ use json
 use jsonrpc
 use mcp
 use net
+use os
 
 # The two ends of a connection whose second end has written `results` ahead,
 # each the result of the request of id 1, 2 and so on: the client reads them
@@ -203,3 +204,34 @@ function serve_http_many(control: i64) -> i64
 
     net.close_listener(@l).must()
     return served
+
+# A port of the loopback address where nothing listens, for a test of what
+# a connect there answers. Port 1, taken for one before, is none: on macOS a
+# program of any user may listen on it on every address, and a connect to
+# 127.0.0.1 then reaches it (measured 2026-11-21). This one is drawn by the
+# system's generator from 20000 to 31999, below Linux's 32768 to 60999 and
+# macOS's and Windows' 49152 to 65535, so no system gives it to a socket of
+# its own choosing in the moment before the test's connect, and kept where a
+# connect there is refused, so a listener of another program is passed over,
+# a hundred draws at most.
+function silent_port() -> i64
+    tries @= 0
+
+    while tries < 100
+        tries @ tries + 1
+        drawn = os.random_bytes(2).must()
+        port = 20000 + (drawn[0].to_i64().must() * 256 + drawn[1].to_i64().must()) % 12000
+
+        match net.connect("127.0.0.1", port: port, deadline_ms: 10000)
+            .ok c =>
+                s @= c.stream
+
+                match io.close(@s)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+            .err e =>
+                if e.code == net.CLOSED
+                    return port
+
+    assert false
+    return 0

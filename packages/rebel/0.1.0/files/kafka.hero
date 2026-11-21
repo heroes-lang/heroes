@@ -1366,7 +1366,7 @@ test "error_name: the names Kafka gives, none past them"
 test "connect: an option out of range refused before anything is sent, a broker that is no host:port, nothing listening"
     o @= options(["localhost"])
     assert connect(o).is_err()
-    o.brokers @ ["127.0.0.1:1"]
+    o.brokers @ [f"127.0.0.1:{live.silent_port()}"]
     o.connect_timeout @ time.seconds(2).must()
 
     match connect(o)

@@ -620,14 +620,15 @@ test "request_params: the version in `_meta`"
 
 # A request over HTTP to a port nothing listens on.
 test "send_http: nothing listens"
+    port = fixture.silent_port()
     c @= mcp.http_client(
-        "http://127.0.0.1:1/mcp",
+        f"http://127.0.0.1:{port}/mcp",
         transport: http.default_client(),
         info: mcp.implementation(name: "c", version: "1")
     )
     assert send_http(
         @c,
-        link_endpoint: "http://127.0.0.1:1/mcp",
+        link_endpoint: f"http://127.0.0.1:{port}/mcp",
         transport: http.default_client(),
         token: "",
         method: "server/discover",
