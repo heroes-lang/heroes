@@ -1,12 +1,14 @@
 # The network: TCP connections and listeners, UDP datagrams, names looked up,
-# an echo asked by ICMP (`ping`), and addresses as values. An address is a `net.Address`, IPv4 or IPv6 over
-# its bytes, with a port where one belongs, and every function on addresses
-# is pure: it parses, writes, classifies and compares without touching the
-# network. A connection's bytes are read and written through its `io.Stream`
-# with `io`'s functions, and closed with `io.close`; nothing here reads a
-# connection. Every failure is a code of the library's closed list (README
-# § A4), and the face stands on the floors `net/hero_net` and
-# `net/hero_stream_net`, the thin bindings of `hero_net.h` and
+# an echo asked by ICMP (`ping`), and addresses as values. A host is a
+# `net.Host`, IPv4 or IPv6 over its bytes, with no port; an address is a
+# `net.Address`, a host and a port always, as Go's `netip.Addr` and
+# `AddrPort` and Rust's `IpAddr` and `SocketAddr` part them. Every function
+# on hosts and addresses is pure: it parses, writes, classifies and compares
+# without touching the network. A connection's bytes are read and written
+# through its `io.Stream` with `io`'s functions, and closed with `io.close`;
+# nothing here reads a connection. Every failure is a code of the library's
+# closed list (README § A4), and the face stands on the floors `net/hero_net`
+# and `net/hero_stream_net`, the thin bindings of `hero_net.h` and
 # `hero_stream_net.h`.
 #
 # **A deadline is given when a connection is made**: `connect`, `accept` and
@@ -157,7 +159,7 @@ record Conn
 function listen(host: str, port: i64) -> Listener?
     b = sockets.listen(host, port: port)?
     return ok(
-        Listener(socket: b.socket, address: Address(bytes: b.address.bytes, zone: b.address.zone, has_port: b.address.has_port, port: b.address.port))
+        Listener(socket: b.socket, address: Address(host: Host(bytes: b.address.bytes, zone: b.address.zone), port: b.address.port))
     )
 
 # The next connection `l` holds, waiting for one, its every read and write
@@ -175,7 +177,7 @@ function listen(host: str, port: i64) -> Listener?
 function accept(l: Listener, deadline_ms: i64) -> Conn?
     e = sockets.accept(l.socket, deadline_ms: deadline_ms, asked: "accepting a connection on " + format_address(l.address))?
     return ok(
-        Conn(stream: e.stream, local: Address(bytes: e.local.bytes, zone: e.local.zone, has_port: e.local.has_port, port: e.local.port), remote: Address(bytes: e.remote.bytes, zone: e.remote.zone, has_port: e.remote.has_port, port: e.remote.port))
+        Conn(stream: e.stream, local: Address(host: Host(bytes: e.local.bytes, zone: e.local.zone), port: e.local.port), remote: Address(host: Host(bytes: e.remote.bytes, zone: e.remote.zone), port: e.remote.port))
     )
 
 # A connection to `host` at `port`, `host` a name or an address without
@@ -199,7 +201,7 @@ function accept(l: Listener, deadline_ms: i64) -> Conn?
 function connect(host: str, port: i64, deadline_ms: i64) -> Conn?
     e = sockets.connect(host, port: port, deadline_ms: deadline_ms)?
     return ok(
-        Conn(stream: e.stream, local: Address(bytes: e.local.bytes, zone: e.local.zone, has_port: e.local.has_port, port: e.local.port), remote: Address(bytes: e.remote.bytes, zone: e.remote.zone, has_port: e.remote.has_port, port: e.remote.port))
+        Conn(stream: e.stream, local: Address(host: Host(bytes: e.local.bytes, zone: e.local.zone), port: e.local.port), remote: Address(host: Host(bytes: e.remote.bytes, zone: e.remote.zone), port: e.remote.port))
     )
 
 # A connection to `host` at `port`, as `connect` makes it, made within
@@ -222,7 +224,7 @@ function connect(host: str, port: i64, deadline_ms: i64) -> Conn?
 function connect_timeout(host: str, port: i64, timeout_ms: i64, deadline_ms: i64) -> Conn?
     e = control.connected_within(host, port: port, timeout_ms: timeout_ms, deadline_ms: deadline_ms)?
     return ok(
-        Conn(stream: e.stream, local: Address(bytes: e.local.bytes, zone: e.local.zone, has_port: e.local.has_port, port: e.local.port), remote: Address(bytes: e.remote.bytes, zone: e.remote.zone, has_port: e.remote.has_port, port: e.remote.port))
+        Conn(stream: e.stream, local: Address(host: Host(bytes: e.local.bytes, zone: e.local.zone), port: e.local.port), remote: Address(host: Host(bytes: e.remote.bytes, zone: e.remote.zone), port: e.remote.port))
     )
 
 # Makes every later and waiting `accept` on `l` end by `deadline_ms`
@@ -271,7 +273,7 @@ function accept_number(l: Listener) -> i64?
 function conn_of(n: i64, deadline_ms: i64) -> Conn?
     e = sockets.conn_of(n: n, deadline_ms: deadline_ms)?
     return ok(
-        Conn(stream: e.stream, local: Address(bytes: e.local.bytes, zone: e.local.zone, has_port: e.local.has_port, port: e.local.port), remote: Address(bytes: e.remote.bytes, zone: e.remote.zone, has_port: e.remote.has_port, port: e.remote.port))
+        Conn(stream: e.stream, local: Address(host: Host(bytes: e.local.bytes, zone: e.local.zone), port: e.local.port), remote: Address(host: Host(bytes: e.remote.bytes, zone: e.remote.zone), port: e.remote.port))
     )
 
 # The two ends of a new TCP connection within this process, over IPv4
@@ -290,13 +292,13 @@ function pair(deadline_ms: i64) -> Pair?
     two = sockets.pair(deadline_ms)?
     first = Conn(
         stream: two.first.stream,
-        local: Address(bytes: two.first.local.bytes, zone: two.first.local.zone, has_port: true, port: two.first.local.port),
-        remote: Address(bytes: two.first.remote.bytes, zone: two.first.remote.zone, has_port: true, port: two.first.remote.port)
+        local: Address(host: Host(bytes: two.first.local.bytes, zone: two.first.local.zone), port: two.first.local.port),
+        remote: Address(host: Host(bytes: two.first.remote.bytes, zone: two.first.remote.zone), port: two.first.remote.port)
     )
     second = Conn(
         stream: two.second.stream,
-        local: Address(bytes: two.second.local.bytes, zone: two.second.local.zone, has_port: true, port: two.second.local.port),
-        remote: Address(bytes: two.second.remote.bytes, zone: two.second.remote.zone, has_port: true, port: two.second.remote.port)
+        local: Address(host: Host(bytes: two.second.local.bytes, zone: two.second.local.zone), port: two.second.local.port),
+        remote: Address(host: Host(bytes: two.second.remote.bytes, zone: two.second.remote.zone), port: two.second.remote.port)
     )
     return ok(Pair(first: first, second: second))
 
@@ -339,7 +341,7 @@ record Datagram
 function open_udp(host: str, port: i64) -> UdpSocket?
     b = udp.open_udp(host, port: port)?
     return ok(
-        UdpSocket(socket: b.socket, address: Address(bytes: b.address.bytes, zone: b.address.zone, has_port: b.address.has_port, port: b.address.port))
+        UdpSocket(socket: b.socket, address: Address(host: Host(bytes: b.address.bytes, zone: b.address.zone), port: b.address.port))
     )
 
 # Sends `data` as one datagram to `to`, an address with a port, of the socket's
@@ -349,13 +351,11 @@ function open_udp(host: str, port: i64) -> UdpSocket?
 # - `data`: the datagram's bytes, sent whole as one.
 # - `to`: the address and port it goes to, of the socket's kind.
 #
-# Fails `invalid` where `to` has no port or is of the other kind, or where
+# Fails `invalid` where `to` is of the other kind, or where
 # `data` is longer than one datagram can be, `closed` where `s` is closed. A
 # datagram sent is not known to arrive.
 function send_to(s: UdpSocket, data: [u8], to: Address) -> ()?
-    if !to.has_port
-        return fail(code: INVALID, msg: f"sending a datagram to {format_address(to)}: the address has no port")
-    return udp.send_to(s.socket, data: data, to: names.text_of(to.bytes, zone: to.zone), port: to.port)
+    return udp.send_to(s.socket, data: data, to: names.text_of(to.host.bytes, zone: to.host.zone), port: to.port)
 
 # The next datagram `s` receives, whole, and its sender, waiting for one.
 #
@@ -366,7 +366,7 @@ function send_to(s: UdpSocket, data: [u8], to: Address) -> ()?
 function receive(s: UdpSocket) -> Datagram?
     r = udp.receive(s.socket)?
     return ok(
-        Datagram(data: r.data, sender: Address(bytes: r.sender.bytes, zone: r.sender.zone, has_port: r.sender.has_port, port: r.sender.port))
+        Datagram(data: r.data, sender: Address(host: Host(bytes: r.sender.bytes, zone: r.sender.zone), port: r.sender.port))
     )
 
 # Makes every later and waiting `receive` and `send_to` on `s` end by
@@ -540,8 +540,8 @@ function broadcast_on(s: UdpSocket) -> bool?
 # closed, and `failed` where the system refuses (a group joined already, an
 # interface with no multicast route). A datagram the socket sends to the
 # group comes back to it. See also `leave_group`, `interfaces`.
-function join_group(s: UdpSocket, group: Address, interface_index: i64) -> ()?
-    asked = f"joining the group {format_address(without_port(group))} on the UDP socket on {format_address(s.address)}"
+function join_group(s: UdpSocket, group: Host, interface_index: i64) -> ()?
+    asked = f"joining the group {format_host(group)} on the UDP socket on {format_address(s.address)}"
 
     if !is_multicast(group)
         return fail(code: INVALID, msg: asked + ": the address is no multicast group")
@@ -561,8 +561,8 @@ function join_group(s: UdpSocket, group: Address, interface_index: i64) -> ()?
 #
 # Fails as `join_group` does, and `failed` for a group `s` is no member of.
 # See also `join_group`.
-function leave_group(s: UdpSocket, group: Address, interface_index: i64) -> ()?
-    asked = f"leaving the group {format_address(without_port(group))} on the UDP socket on {format_address(s.address)}"
+function leave_group(s: UdpSocket, group: Host, interface_index: i64) -> ()?
+    asked = f"leaving the group {format_host(group)} on the UDP socket on {format_address(s.address)}"
 
     if !is_multicast(group)
         return fail(code: INVALID, msg: asked + ": the address is no multicast group")
@@ -668,8 +668,8 @@ function multicast_hops(s: UdpSocket) -> i64?
 
 ## Names
 
-# The addresses of the host `name`, IPv4 and IPv6 in the order the system's
-# resolver gives them, none twice, without ports.
+# The hosts of the name `name`, IPv4 and IPv6 in the order the system's
+# resolver gives them, none twice.
 #
 # - `name`: a host's name, or an address written as text.
 #
@@ -677,22 +677,22 @@ function multicast_hops(s: UdpSocket) -> i64?
 # resolver knows no address for the name, `invalid` where `name` is "" or holds
 # a zero byte, and `failed` where no name server can be asked. It may wait in
 # the resolver, which no deadline and no stop ends.
-function lookup(name: str) -> [Address]?
+function lookup(name: str) -> [Host]?
     found = names.lookup(name)?
-    out: [Address] @= []
+    out: [Host] @= []
 
     for p in found
-        out @ out.push(Address(bytes: p.bytes, zone: p.zone, has_port: p.has_port, port: p.port))
+        out @ out.push(Host(bytes: p.bytes, zone: p.zone))
 
     return ok(out)
 
-# The name the resolver has for `a`, its port left out.
+# The name the resolver has for `h`.
 #
-# - `a`: the address asked about.
+# - `h`: the host asked about.
 #
 # Fails `not_found` where it has none. It may wait as `lookup` does.
-function name_of(a: Address) -> str?
-    return names.name_of(names.text_of(a.bytes, zone: a.zone))
+function name_of(h: Host) -> str?
+    return names.name_of(names.text_of(h.bytes, zone: h.zone))
 
 ## Hosts and ports
 
@@ -739,24 +739,30 @@ function parse_port(s: str) -> i64?
 
 ## Addresses
 
-# An IPv4 or an IPv6 address, as a value, with a port where one belongs: the
-# two ends of a connection and a datagram's sender carry one, an address
-# parsed by `parse_address` carries none. Two addresses are `==` where every
-# field is, so an IPv4 address and the IPv6 address that maps it differ, as
-# they do in Go and Rust. Every function here aborts on one built by hand with
-# other than four or sixteen bytes; the functions that make one never do.
-record Address
+# An IPv4 or an IPv6 address as a value, with no port: what `lookup`
+# answers, what a network holds, what an address's kind is asked of; Go's
+# `netip.Addr`, Rust's `IpAddr`. Two hosts are `==` where every field is, so
+# an IPv4 address and the IPv6 address that maps it differ, as they do in Go
+# and Rust. Every function here aborts on one built by hand with other than
+# four or sixteen bytes; the functions that make one never do.
+record Host
     # The address's bytes in network order: four for IPv4, sixteen for IPv6.
     bytes: [u8]
     # The zone of an IPv6 address, the text after its `%` (`eth0`, `3`): ""
     # where it has none, and always "" for IPv4.
     zone: str
-    # Whether the address names a port.
-    has_port: bool
-    # The port, 0 to 65535, and 0 where `has_port` is false.
+
+# A host and a port, always both: the two ends of a connection, a
+# listener's place, a datagram's sender and where one is sent; Go's
+# `netip.AddrPort`, Rust's `SocketAddr`. Made by `with_port` or
+# `parse_address_port`, or by the calls that open a socket.
+record Address
+    # The host.
+    host: Host
+    # The port, 0 to 65535.
     port: i64
 
-# The address `s` writes, without a port: IPv4 as four decimal numbers 0 to 255
+# The host `s` writes, without a port: IPv4 as four decimal numbers 0 to 255
 # with dots, `192.0.2.1`, no number with a zero before it; IPv6 as eight groups
 # of one to four hexadecimal digits in either case with colons, one run of
 # groups shortened to `::`, the last two groups written as IPv4 where wanted,
@@ -766,9 +772,10 @@ record Address
 #   port included.
 #
 # Fails `invalid` where `s` is anything else, the message saying at which byte.
-function parse_address(s: str) -> Address?
+# See also `parse_address_port`.
+function parse_host(s: str) -> Host?
     p = parse.address(s)?
-    return ok(Address(bytes: p.bytes, zone: p.zone, has_port: p.has_port, port: p.port))
+    return ok(Host(bytes: p.bytes, zone: p.zone))
 
 # The address and port `s` writes: `192.0.2.1:80`, or an IPv6 address in
 # brackets, `[::1]:80`, `[fe80::1%eth0]:443`.
@@ -778,58 +785,65 @@ function parse_address(s: str) -> Address?
 #
 # The port is digits alone, 0 to 65535. Fails `invalid` where `s` is anything
 # else, an IPv6 address without brackets or an address without a port among
-# them.
+# them. See also `parse_host`.
 function parse_address_port(s: str) -> Address?
     p = parse.address_port(s)?
-    return ok(Address(bytes: p.bytes, zone: p.zone, has_port: p.has_port, port: p.port))
+    return ok(Address(host: Host(bytes: p.bytes, zone: p.zone), port: p.port))
 
-# The text of `a` that reads back to it: IPv4 as `192.0.2.1`, IPv6 in lower case
+# The text of `h` that reads back to it: IPv4 as `192.0.2.1`, IPv6 in lower case
 # with its longest run of two zero groups or more shortened to `::` (the first,
 # where two are as long) as RFC 5952 writes it, an IPv6 address that maps an
-# IPv4 one as `::ffff:192.0.2.1`, the zone after a `%`; and where `a` has a
-# port, `192.0.2.1:80` or `[::1]:80`.
+# IPv4 one as `::ffff:192.0.2.1`, the zone after a `%`.
 #
-# - `a`: any address; its zone and its port are written where it has them.
+# - `h`: any host; its zone is written where it has one.
+#
+# See also `format_address`.
+function format_host(h: Host) -> str
+    return format.address(h.bytes, zone: h.zone, has_port: false, port: 0)
+
+# The text of `a` that reads back to it: its host as `format_host` writes it
+# and its port after a `:`, an IPv6 host in brackets: `192.0.2.1:80`,
+# `[::1]:80`.
+#
+# - `a`: any address.
 function format_address(a: Address) -> str
-    return format.address(a.bytes, zone: a.zone, has_port: a.has_port, port: a.port)
+    return format.address(a.host.bytes, zone: a.host.zone, has_port: true, port: a.port)
 
-# The text of `a` with nothing shortened: IPv6 as eight groups of four
+# The text of `h` with nothing shortened: IPv6 as eight groups of four
 # hexadecimal digits, `2001:0db8:0000:0000:0000:0000:0000:0001`, and IPv4 as
-# `format_address` writes it.
+# `format_host` writes it.
 #
-# - `a`: any address; its zone and its port are written where it has them.
-#
-# The zone and the port are written as `format_address` writes them.
-function format_address_expanded(a: Address) -> str
-    return format.expanded(a.bytes, zone: a.zone, has_port: a.has_port, port: a.port)
+# - `h`: any host; its zone is written as `format_host` writes it.
+function format_host_expanded(h: Host) -> str
+    return format.expanded(h.bytes, zone: h.zone, has_port: false, port: 0)
 
-# The name a reverse lookup of `a` asks for: `1.2.0.192.in-addr.arpa` for
+# The name a reverse lookup of `h` asks for: `1.2.0.192.in-addr.arpa` for
 # `192.0.2.1`, and for IPv6 its thirty-two hexadecimal digits from the last,
 # each followed by a dot, then `ip6.arpa`.
 #
-# - `a`: any address.
+# - `h`: any host.
 #
-# The zone and the port are left out.
-function to_reverse_name(a: Address) -> str
-    return format.reverse_name(a.bytes)
+# The zone is left out.
+function to_reverse_name(h: Host) -> str
+    return format.reverse_name(h.bytes)
 
-# The address of `b`, four bytes for IPv4 or sixteen for IPv6, in network order,
-# with no zone and no port.
+# The host of `b`, four bytes for IPv4 or sixteen for IPv6, in network order,
+# with no zone.
 #
 # - `b`: the address's bytes in network order, four for IPv4 or sixteen for
 #   IPv6.
 #
 # Fails `invalid` where `b` holds another count.
-function from_bytes(b: [u8]) -> Address?
+function from_bytes(b: [u8]) -> Host?
     if b.len() != 4 && b.len() != 16
         return fail(code: INVALID, msg: f"an address of {b.len()} bytes: an address has 4 or 16")
-    return ok(Address(bytes: b, zone: "", has_port: false, port: 0))
+    return ok(Host(bytes: b, zone: ""))
 
-# The IPv4 address whose 32 bits, the first byte the highest, are `n`.
+# The IPv4 host whose 32 bits, the first byte the highest, are `n`.
 #
 # - `n`: the address's 32 bits, its first byte the highest: `0xC0000201` is
 #   `192.0.2.1`.
-function from_integer(n: u32) -> Address
+function from_integer(n: u32) -> Host
     v = to_i64(n).must()
     b = [
         networks.narrow(v >> 24)
@@ -837,133 +851,127 @@ function from_integer(n: u32) -> Address
         networks.narrow(v >> 8 & 0xff)
         networks.narrow(v & 0xff)
     ]
-    return Address(bytes: b, zone: "", has_port: false, port: 0)
+    return Host(bytes: b, zone: "")
 
-# The 32 bits of the IPv4 address `a`, its first byte the highest.
+# The 32 bits of the IPv4 host `h`, its first byte the highest.
 #
-# - `a`: an IPv4 address; its port is not read.
+# - `h`: an IPv4 host.
 #
-# Fails `invalid` where `a` is IPv6.
-function to_integer(a: Address) -> u32?
-    if a.bytes.len() != 4
+# Fails `invalid` where `h` is IPv6.
+function to_integer(h: Host) -> u32?
+    if h.bytes.len() != 4
         return fail(
             code: INVALID,
-            msg: f"the integer of {format_address(a)}: an IPv6 address has 128 bits, more than a u32 holds"
+            msg: f"the integer of {format_host(h)}: an IPv6 address has 128 bits, more than a u32 holds"
         )
-    v = networks.wide(a.bytes[0]) << 24 | networks.wide(a.bytes[1]) << 16 | networks.wide(a.bytes[2]) << 8 | networks.wide(a.bytes[3])
+    v = networks.wide(h.bytes[0]) << 24 | networks.wide(h.bytes[1]) << 16 | networks.wide(h.bytes[2]) << 8 | networks.wide(h.bytes[3])
     return ok(to_u32(v).must())
 
-# `a` with the port `port`.
+# The address of `h` at the port `port`.
 #
-# - `a`: the address, of either kind; a port it has is replaced.
+# - `h`: the host, of either kind.
 # - `port`: the port, 0 to 65535.
 #
-# Fails `invalid` where `port` is outside 0 to 65535.
-function with_port(a: Address, port: i64) -> Address?
-    p = hosts.checked(port, asked: f"giving {format_address(a)} a port")?
-    return ok(Address(bytes: a.bytes, zone: a.zone, has_port: true, port: p))
+# Fails `invalid` where `port` is outside 0 to 65535. An address's own host
+# is its field `host`.
+function with_port(h: Host, port: i64) -> Address?
+    p = hosts.checked(port, asked: f"giving {format_host(h)} a port")?
+    return ok(Address(host: h, port: p))
 
-# `a` with no port.
+# `h` with the zone `zone`, "" taking it away.
 #
-# - `a`: any address; one with no port is answered as it is.
-function without_port(a: Address) -> Address
-    return Address(bytes: a.bytes, zone: a.zone, has_port: false, port: 0)
-
-# `a` with the zone `zone`, "" taking it away.
-#
-# - `a`: an IPv6 address, or an IPv4 one where `zone` is "".
+# - `h`: an IPv6 host, or an IPv4 one where `zone` is "".
 # - `zone`: the zone, an interface's name or number such as `eth0` or `1`; ""
 #   takes it away.
 #
-# Fails `invalid` where `a` is IPv4 and `zone` is not "", or where `zone` holds
+# Fails `invalid` where `h` is IPv4 and `zone` is not "", or where `zone` holds
 # a `%`, a `]`, a `/` or a byte below 0x21.
-function with_zone(a: Address, zone: str) -> Address?
-    asked = f"giving {format_address(a)} the zone \"{zone}\""
+function with_zone(h: Host, zone: str) -> Host?
+    asked = f"giving {format_host(h)} the zone \"{zone}\""
 
-    if zone != "" && a.bytes.len() == 4
+    if zone != "" && h.bytes.len() == 4
         return fail(code: INVALID, msg: asked + ": an IPv4 address has no zone")
 
     if scan.wrong_in_zone(zone) >= 0
         return fail(code: INVALID, msg: asked + ": a zone holds no `%`, `]`, `/`, space or control byte")
-    return ok(Address(bytes: a.bytes, zone: zone, has_port: a.has_port, port: a.port))
+    return ok(Host(bytes: h.bytes, zone: zone))
 
 # `127.0.0.1`, the IPv4 loopback address.
-function loopback_v4() -> Address
-    return Address(bytes: [127, 0, 0, 1], zone: "", has_port: false, port: 0)
+function loopback_v4() -> Host
+    return Host(bytes: [127, 0, 0, 1], zone: "")
 
 # `::1`, the IPv6 loopback address.
-function loopback_v6() -> Address
-    return Address(bytes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], zone: "", has_port: false, port: 0)
+function loopback_v6() -> Host
+    return Host(bytes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], zone: "")
 
 # `0.0.0.0`, the IPv4 address that names none, which a listener on every
 # address of the machine stands on.
-function unspecified_v4() -> Address
-    return Address(bytes: [0, 0, 0, 0], zone: "", has_port: false, port: 0)
+function unspecified_v4() -> Host
+    return Host(bytes: [0, 0, 0, 0], zone: "")
 
 # `::`, the IPv6 address that names none.
-function unspecified_v6() -> Address
-    return Address(bytes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], zone: "", has_port: false, port: 0)
+function unspecified_v6() -> Host
+    return Host(bytes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], zone: "")
 
 # `255.255.255.255`, the IPv4 address of every host of the local network.
-function broadcast_v4() -> Address
-    return Address(bytes: [255, 255, 255, 255], zone: "", has_port: false, port: 0)
+function broadcast_v4() -> Host
+    return Host(bytes: [255, 255, 255, 255], zone: "")
 
-# Whether `a` is IPv4.
+# Whether `h` is IPv4.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_v4(a: Address) -> bool
-    return a.bytes.len() == 4
+# - `h`: any host, IPv4 or IPv6.
+function is_v4(h: Host) -> bool
+    return h.bytes.len() == 4
 
-# Whether `a` is IPv6, one that maps an IPv4 address included.
+# Whether `h` is IPv6, one that maps an IPv4 address included.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_v6(a: Address) -> bool
-    return a.bytes.len() == 16
+# - `h`: any host, IPv4 or IPv6.
+function is_v6(h: Host) -> bool
+    return h.bytes.len() == 16
 
-# How many bits `a` has: 32 for IPv4, 128 for IPv6.
+# How many bits `h` has: 32 for IPv4, 128 for IPv6.
 #
-# - `a`: any address, IPv4 or IPv6.
-function bits_of(a: Address) -> i64
-    return a.bytes.len() * 8
+# - `h`: any host, IPv4 or IPv6.
+function bits_of(h: Host) -> i64
+    return h.bytes.len() * 8
 
-# Whether `a` is an IPv6 address that maps an IPv4 one, `::ffff:a.b.c.d`.
+# Whether `h` is an IPv6 address that maps an IPv4 one, `::ffff:a.b.c.d`.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_v4_mapped(a: Address) -> bool
-    return a.bytes.len() == 16 && format.is_mapped(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_v4_mapped(h: Host) -> bool
+    return h.bytes.len() == 16 && format.is_mapped(h.bytes)
 
-# The IPv4 address an IPv6 address that maps one stands for, its port kept;
-# every other address as it is.
+# The IPv4 host an IPv6 address that maps one stands for; every other host as
+# it is.
 #
-# - `a`: any address, IPv4 or IPv6.
-function unmap(a: Address) -> Address
-    if !is_v4_mapped(a)
-        return a
-    return Address(bytes: a.bytes.slice(from: 12, to: 16), zone: "", has_port: a.has_port, port: a.port)
+# - `h`: any host, IPv4 or IPv6.
+function unmap(h: Host) -> Host
+    if !is_v4_mapped(h)
+        return h
+    return Host(bytes: h.bytes.slice(from: 12, to: 16), zone: "")
 
-# The IPv6 address that maps the IPv4 address `a`, `::ffff:a.b.c.d`, its port
-# kept; an IPv6 address as it is.
+# The IPv6 host that maps the IPv4 host `h`, `::ffff:a.b.c.d`; an IPv6 host as
+# it is.
 #
-# - `a`: any address, IPv4 or IPv6.
-function to_v6_mapped(a: Address) -> Address
-    if a.bytes.len() == 16
-        return a
+# - `h`: any host, IPv4 or IPv6.
+function to_v6_mapped(h: Host) -> Host
+    if h.bytes.len() == 16
+        return h
     b: [u8] @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff]
 
-    for x in a.bytes
+    for x in h.bytes
         b @ b.push(x)
 
-    return Address(bytes: b, zone: "", has_port: a.has_port, port: a.port)
+    return Host(bytes: b, zone: "")
 
 # Where `a` stands against `b`: -1 before it, 0 the same, 1 after it.
 #
-# - `a`: the address placed.
-# - `b`: the address it is placed against.
+# - `a`: the host placed.
+# - `b`: the host it is placed against.
 #
 # IPv4 stands before IPv6, then the bytes are compared from the first, then the
-# zone by its bytes, then an address without a port before one with, then the
-# port.
-function compare(a: Address, b: Address) -> i64
+# zone by its bytes. See also `compare_addresses`.
+function compare(a: Host, b: Host) -> i64
     if a.bytes.len() != b.bytes.len()
         return networks.sign(a.bytes.len() - b.bytes.len())
 
@@ -971,204 +979,207 @@ function compare(a: Address, b: Address) -> i64
         if a.bytes[i] != b.bytes[i]
             return networks.sign(networks.wide(a.bytes[i]) - networks.wide(b.bytes[i]))
 
-    zones = strings.compare(a: a.zone, b: b.zone)
+    return networks.sign(strings.compare(a: a.zone, b: b.zone))
 
-    if zones != 0
-        return networks.sign(zones)
+# Where `a` stands against `b`, host first as `compare` places it, then
+# port: -1 before it, 0 the same, 1 after it.
+#
+# - `a`: the address placed.
+# - `b`: the address it is placed against.
+function compare_addresses(a: Address, b: Address) -> i64
+    hosts_placed = compare(a: a.host, b: b.host)
 
-    if a.has_port != b.has_port
-        if a.has_port
-            return 1
-        return -1
+    if hosts_placed != 0
+        return hosts_placed
     return networks.sign(a.port - b.port)
 
-# The address after `a`, its zone and port kept.
+# The host after `h`, its zone kept.
 #
-# - `a`: the address counted from.
+# - `h`: the host counted from.
 #
-# Fails `does_not_fit` where `a` is the last of its kind, `255.255.255.255` or
+# Fails `does_not_fit` where `h` is the last of its kind, `255.255.255.255` or
 # `ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff`.
-function next(a: Address) -> Address?
-    return step(a, by: 1)
+function next(h: Host) -> Host?
+    return step(h, by: 1)
 
-# The address before `a`, its zone and port kept.
+# The host before `h`, its zone kept.
 #
-# - `a`: the address counted back from.
+# - `h`: the host counted back from.
 #
-# Fails `does_not_fit` where `a` is the first of its kind, `0.0.0.0` or `::`.
-function previous(a: Address) -> Address?
-    return step(a, by: -1)
+# Fails `does_not_fit` where `h` is the first of its kind, `0.0.0.0` or `::`.
+function previous(h: Host) -> Host?
+    return step(h, by: -1)
 
-# The address `by` steps after `a`, before it where `by` is negative, its zone
-# and port kept.
+# The host `by` steps after `h`, before it where `by` is negative, its zone
+# kept.
 #
-# - `a`: the address counted from.
-# - `by`: how many addresses on; negative counts back, and 0 answers `a`.
+# - `h`: the host counted from.
+# - `by`: how many addresses on; negative counts back, and 0 answers `h`.
 #
 # Fails `does_not_fit` where that address would be past the last of its kind or
 # before the first.
-function step(a: Address, by: i64) -> Address?
-    b = networks.step(a.bytes, by: by)
+function step(h: Host, by: i64) -> Host?
+    b = networks.step(h.bytes, by: by)
 
     if b.len() == 0
         return fail(
             code: DOES_NOT_FIT,
-            msg: f"stepping {format_address(a)} by {by}: that is past the last address or before the first"
+            msg: f"stepping {format_host(h)} by {by}: that is past the last address or before the first"
         )
-    return ok(Address(bytes: b, zone: a.zone, has_port: a.has_port, port: a.port))
+    return ok(Host(bytes: b, zone: h.zone))
 
 ## What kind of address
 
-# Whether `a` is a loopback address: `127.0.0.0/8`, or `::1`.
+# Whether `h` is a loopback address: `127.0.0.0/8`, or `::1`.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_loopback(a: Address) -> bool
-    return classes.is_loopback(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_loopback(h: Host) -> bool
+    return classes.is_loopback(h.bytes)
 
-# Whether `a` is a private address, one no router of the Internet carries:
+# Whether `h` is a private address, one no router of the Internet carries:
 # `10.0.0.0/8`, `172.16.0.0/12` and `192.168.0.0/16` (RFC 1918), or a unique
 # local IPv6 address, `fc00::/7` (RFC 4193).
 #
-# - `a`: any address, IPv4 or IPv6.
+# - `h`: any host, IPv4 or IPv6.
 #
 # Go's and Rust's meaning, not Python's, which counts every address of the
 # special registry not global.
-function is_private(a: Address) -> bool
-    return classes.is_private(a.bytes)
+function is_private(h: Host) -> bool
+    return classes.is_private(h.bytes)
 
-# Whether `a` names no address: `0.0.0.0` or `::`.
+# Whether `h` names no address: `0.0.0.0` or `::`.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_unspecified(a: Address) -> bool
-    return classes.is_unspecified(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_unspecified(h: Host) -> bool
+    return classes.is_unspecified(h.bytes)
 
-# Whether `a` is a multicast address: `224.0.0.0/4`, or `ff00::/8`.
+# Whether `h` is a multicast address: `224.0.0.0/4`, or `ff00::/8`.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_multicast(a: Address) -> bool
-    return classes.is_multicast(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_multicast(h: Host) -> bool
+    return classes.is_multicast(h.bytes)
 
-# Whether `a` is a link-local unicast address: `169.254.0.0/16`, or `fe80::/10`.
+# Whether `h` is a link-local unicast address: `169.254.0.0/16`, or `fe80::/10`.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_link_local(a: Address) -> bool
-    return classes.is_link_local(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_link_local(h: Host) -> bool
+    return classes.is_link_local(h.bytes)
 
-# Whether `a` is a link-local multicast address: `224.0.0.0/24`, or IPv6
+# Whether `h` is a link-local multicast address: `224.0.0.0/24`, or IPv6
 # multicast of link scope, `ffx2::/16` whatever its flags `x`, as Go reads it.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_link_local_multicast(a: Address) -> bool
-    return classes.is_link_local_multicast(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_link_local_multicast(h: Host) -> bool
+    return classes.is_link_local_multicast(h.bytes)
 
-# Whether `a` is an interface-local IPv6 multicast address, `ffx1::/16` whatever
+# Whether `h` is an interface-local IPv6 multicast address, `ffx1::/16` whatever
 # its flags `x`, as Go reads it; IPv4 has none.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_interface_local_multicast(a: Address) -> bool
-    return classes.is_interface_local_multicast(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_interface_local_multicast(h: Host) -> bool
+    return classes.is_interface_local_multicast(h.bytes)
 
-# Whether `a` is a global unicast address as Go reads one: not unspecified,
+# Whether `h` is a global unicast address as Go reads one: not unspecified,
 # loopback, link-local, multicast, nor `255.255.255.255`.
 #
-# - `a`: any address, IPv4 or IPv6.
+# - `h`: any host, IPv4 or IPv6.
 #
 # A private address is one.
-function is_global_unicast(a: Address) -> bool
-    return classes.is_global_unicast(a.bytes)
+function is_global_unicast(h: Host) -> bool
+    return classes.is_global_unicast(h.bytes)
 
-# Whether `a` can be reached across the Internet: no block of IANA's
+# Whether `h` can be reached across the Internet: no block of IANA's
 # special-purpose registries for IPv4 and IPv6 that says it is not, as Python's
 # `is_global` reads them.
 #
-# - `a`: any address, IPv4 or IPv6.
+# - `h`: any host, IPv4 or IPv6.
 #
 # An IPv6 address that maps an IPv4 one is read as that one.
-function is_global(a: Address) -> bool
-    return classes.is_global(a.bytes)
+function is_global(h: Host) -> bool
+    return classes.is_global(h.bytes)
 
-# Whether `a` is reserved by IETF for future use: `240.0.0.0/4`,
+# Whether `h` is reserved by IETF for future use: `240.0.0.0/4`,
 # `255.255.255.255` among it, or one of the IPv6 blocks IANA has not assigned,
 # as Python's `is_reserved` reads them.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_reserved(a: Address) -> bool
-    return classes.is_reserved(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_reserved(h: Host) -> bool
+    return classes.is_reserved(h.bytes)
 
-# Whether `a` is kept for documentation: `192.0.2.0/24`, `198.51.100.0/24`,
+# Whether `h` is kept for documentation: `192.0.2.0/24`, `198.51.100.0/24`,
 # `203.0.113.0/24`, `2001:db8::/32` or `3fff::/20`.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_documentation(a: Address) -> bool
-    return classes.is_documentation(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_documentation(h: Host) -> bool
+    return classes.is_documentation(h.bytes)
 
-# Whether `a` is kept for benchmarking networks: `198.18.0.0/15`, or
+# Whether `h` is kept for benchmarking networks: `198.18.0.0/15`, or
 # `2001:2::/48`.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_benchmarking(a: Address) -> bool
-    return classes.is_benchmarking(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_benchmarking(h: Host) -> bool
+    return classes.is_benchmarking(h.bytes)
 
-# Whether `a` is in the space shared by carriers, `100.64.0.0/10` (RFC 6598);
+# Whether `h` is in the space shared by carriers, `100.64.0.0/10` (RFC 6598);
 # IPv6 has none.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_shared(a: Address) -> bool
-    return classes.is_shared(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_shared(h: Host) -> bool
+    return classes.is_shared(h.bytes)
 
-# Whether `a` is `255.255.255.255`.
+# Whether `h` is `255.255.255.255`.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_broadcast(a: Address) -> bool
-    return classes.is_broadcast(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_broadcast(h: Host) -> bool
+    return classes.is_broadcast(h.bytes)
 
-# Whether `a` is a site-local IPv6 address, `fec0::/10`, which RFC 3879 retired;
+# Whether `h` is a site-local IPv6 address, `fec0::/10`, which RFC 3879 retired;
 # IPv4 has none.
 #
-# - `a`: any address, IPv4 or IPv6.
-function is_site_local(a: Address) -> bool
-    return classes.is_site_local(a.bytes)
+# - `h`: any host, IPv4 or IPv6.
+function is_site_local(h: Host) -> bool
+    return classes.is_site_local(h.bytes)
 
 # The IPv4 address a 6to4 IPv6 address carries, `2002::/16` (RFC 3056).
 #
-# - `a`: any address; one outside `2002::/16` fails.
+# - `h`: any host; one outside `2002::/16` fails.
 #
-# Fails `not_found` where `a` is no such address.
-function sixtofour_of(a: Address) -> Address?
-    b = classes.sixtofour(a.bytes)
+# Fails `not_found` where `h` is no such address.
+function sixtofour_of(h: Host) -> Host?
+    b = classes.sixtofour(h.bytes)
 
     if b.len() == 0
         return fail(
             code: NOT_FOUND,
-            msg: f"the IPv4 address in {format_address(a)}: it is no 6to4 address, of 2002::/16"
+            msg: f"the IPv4 address in {format_host(h)}: it is no 6to4 address, of 2002::/16"
         )
-    return ok(Address(bytes: b, zone: "", has_port: false, port: 0))
+    return ok(Host(bytes: b, zone: ""))
 
 # The two IPv4 addresses a Teredo IPv6 address carries, `2001::/32` (RFC 4380):
 # its server, then its client.
 #
-# - `a`: any address; one outside `2001::/32` fails.
+# - `h`: any host; one outside `2001::/32` fails.
 #
-# Fails `not_found` where `a` is no such address.
-function teredo_of(a: Address) -> Teredo?
-    b = classes.teredo(a.bytes)
+# Fails `not_found` where `h` is no such address.
+function teredo_of(h: Host) -> Teredo?
+    b = classes.teredo(h.bytes)
 
     if b.len() == 0
         return fail(
             code: NOT_FOUND,
-            msg: f"the IPv4 addresses in {format_address(a)}: it is no Teredo address, of 2001::/32"
+            msg: f"the IPv4 addresses in {format_host(h)}: it is no Teredo address, of 2001::/32"
         )
-    server = Address(bytes: b.slice(from: 0, to: 4), zone: "", has_port: false, port: 0)
+    server = Host(bytes: b.slice(from: 0, to: 4), zone: "")
     return ok(
-        Teredo(server: server, client: Address(bytes: b.slice(from: 4, to: 8), zone: "", has_port: false, port: 0))
+        Teredo(server: server, client: Host(bytes: b.slice(from: 4, to: 8), zone: ""))
     )
 
 # What `teredo_of` answers.
 record Teredo
-    # The Teredo server's address.
-    server: Address
-    # The client's own address, as the network outside it sees it.
-    client: Address
+    # The Teredo server's host.
+    server: Host
+    # The client's own host, as the network outside it sees it.
+    client: Host
 
 ## Networks
 
@@ -1178,13 +1189,13 @@ record Teredo
 # Python's interfaces and Go's prefixes keep it; `to_masked` clears its other
 # bits.
 record Network
-    # The address the network was written with, with no zone and no port.
-    address: Address
+    # The host the network was written with, with no zone.
+    host: Host
     # How many of the address's first bits name the network: 0 to 32 for
     # IPv4, 0 to 128 for IPv6.
     bits: i64
 
-# The network `s` writes, an address of `parse_address` with no zone, a `/`,
+# The network `s` writes, a host of `parse_host` with no zone, a `/`,
 # then a count of bits in decimal digits, no zero before it: `10.0.0.0/8`,
 # `2001:db8::/32`.
 #
@@ -1203,45 +1214,45 @@ function parse_network(s: str) -> Network?
     if p.zone != ""
         return fail(code: INVALID, msg: asked + ": a network's address has no zone")
     bits = scan.bits_in(s: s, from: slash + 1, to: s.len(), most: p.bytes.len() * 8, asked: asked)?
-    return ok(Network(address: Address(bytes: p.bytes, zone: "", has_port: false, port: 0), bits: bits))
+    return ok(Network(host: Host(bytes: p.bytes, zone: ""), bits: bits))
 
-# The text of `n` that reads back to it: its address as `format_address` writes
+# The text of `n` that reads back to it: its host as `format_host` writes
 # it, a `/`, and its bits.
 #
 # - `n`: any network.
 function format_network(n: Network) -> str
-    return format.address(n.address.bytes, zone: n.address.zone, has_port: false, port: 0) + f"/{n.bits}"
+    return format.address(n.host.bytes, zone: n.host.zone, has_port: false, port: 0) + f"/{n.bits}"
 
-# The network of the first `bits` bits of `a`, its other bits cleared, its zone
-# and port dropped.
+# The network of the first `bits` bits of `h`, its other bits cleared, its zone
+# dropped.
 #
-# - `a`: the address the network is cut from; its zone and port are dropped.
+# - `h`: the host the network is cut from; its zone is dropped.
 # - `bits`: how many first bits are kept, 0 to 32 for IPv4 and to 128 for IPv6.
 #
 # Fails `invalid` where `bits` is below 0 or past the address's bits.
-function network_of(a: Address, bits: i64) -> Network?
-    if bits < 0 || bits > bits_of(a)
-        return fail(code: INVALID, msg: f"the network of {bits} bits of {format_address(a)}: it has {bits_of(a)} bits")
-    b = networks.past(a.bytes, bits: bits, set: false)
-    return ok(Network(address: Address(bytes: b, zone: "", has_port: false, port: 0), bits: bits))
+function network_of(h: Host, bits: i64) -> Network?
+    if bits < 0 || bits > bits_of(h)
+        return fail(code: INVALID, msg: f"the network of {bits} bits of {format_host(h)}: it has {bits_of(h)} bits")
+    b = networks.past(h.bytes, bits: bits, set: false)
+    return ok(Network(host: Host(bytes: b, zone: ""), bits: bits))
 
 # `n` with every bit of its address past its first `bits` cleared:
 # `192.0.2.0/24` for `192.0.2.7/24`.
 #
 # - `n`: any network; one masked already is answered as it is.
 function to_masked(n: Network) -> Network
-    b = networks.past(n.address.bytes, bits: n.bits, set: false)
-    return Network(address: Address(bytes: b, zone: "", has_port: false, port: 0), bits: n.bits)
+    b = networks.past(n.host.bytes, bits: n.bits, set: false)
+    return Network(host: Host(bytes: b, zone: ""), bits: n.bits)
 
-# Whether `a` is an address of `n`: of the same kind, IPv4 or IPv6, and the same
+# Whether `h` is a host of `n`: of the same kind, IPv4 or IPv6, and the same
 # first `n.bits` bits.
 #
 # - `n`: the network.
-# - `a`: the address asked of; one of the other kind is never held.
+# - `h`: the host asked of; one of the other kind is never held.
 #
-# Its zone and port are not read.
-function contains(n: Network, a: Address) -> bool
-    return networks.holds(prefix: n.address.bytes, bits: n.bits, bytes: a.bytes)
+# Its zone is not read.
+function contains(n: Network, h: Host) -> bool
+    return networks.holds(prefix: n.host.bytes, bits: n.bits, bytes: h.bytes)
 
 # Whether every address of `inner` is one of `n`: `n` of the same kind with no
 # more bits, and holding the address of `inner`.
@@ -1251,7 +1262,7 @@ function contains(n: Network, a: Address) -> bool
 #
 # A network holds itself.
 function contains_network(n: Network, inner: Network) -> bool
-    return n.bits <= inner.bits && networks.holds(prefix: n.address.bytes, bits: n.bits, bytes: inner.address.bytes)
+    return n.bits <= inner.bits && networks.holds(prefix: n.host.bytes, bits: n.bits, bytes: inner.host.bytes)
 
 # Whether `a` and `b` share an address: of one kind, and one of them holds the
 # other.
@@ -1260,44 +1271,34 @@ function contains_network(n: Network, inner: Network) -> bool
 # - `b`: the other; the order does not change the answer.
 function overlaps(a: Network, b: Network) -> bool
     if a.bits <= b.bits
-        return networks.holds(prefix: a.address.bytes, bits: a.bits, bytes: b.address.bytes)
-    return networks.holds(prefix: b.address.bytes, bits: b.bits, bytes: a.address.bytes)
+        return networks.holds(prefix: a.host.bytes, bits: a.bits, bytes: b.host.bytes)
+    return networks.holds(prefix: b.host.bytes, bits: b.bits, bytes: a.host.bytes)
 
 # The mask of `n`, its first `bits` bits set and the others clear:
 # `255.255.255.0` for a `/24`.
 #
 # - `n`: any network; its kind and its bits are read, not its address.
-function netmask(n: Network) -> Address
-    return Address(
-        bytes: networks.mask(count: n.address.bytes.len(), bits: n.bits, inverted: false),
-        zone: "",
-        has_port: false,
-        port: 0
-    )
+function netmask(n: Network) -> Host
+    return Host(bytes: networks.mask(count: n.host.bytes.len(), bits: n.bits, inverted: false), zone: "")
 
 # The other bits of `n` set and its first `bits` clear: `0.0.0.255` for a `/24`.
 #
 # - `n`: any network; its kind and its bits are read, not its address.
-function hostmask(n: Network) -> Address
-    return Address(
-        bytes: networks.mask(count: n.address.bytes.len(), bits: n.bits, inverted: true),
-        zone: "",
-        has_port: false,
-        port: 0
-    )
+function hostmask(n: Network) -> Host
+    return Host(bytes: networks.mask(count: n.host.bytes.len(), bits: n.bits, inverted: true), zone: "")
 
 # The first address of `n`, every bit past its first `bits` clear.
 #
 # - `n`: any network.
-function first_of(n: Network) -> Address
-    return Address(bytes: networks.past(n.address.bytes, bits: n.bits, set: false), zone: "", has_port: false, port: 0)
+function first_of(n: Network) -> Host
+    return Host(bytes: networks.past(n.host.bytes, bits: n.bits, set: false), zone: "")
 
 # The last address of `n`, every bit past its first `bits` set: an IPv4
 # network's broadcast address.
 #
 # - `n`: any network.
-function last_of(n: Network) -> Address
-    return Address(bytes: networks.past(n.address.bytes, bits: n.bits, set: true), zone: "", has_port: false, port: 0)
+function last_of(n: Network) -> Host
+    return Host(bytes: networks.past(n.host.bytes, bits: n.bits, set: true), zone: "")
 
 # How many addresses `n` holds.
 #
@@ -1306,12 +1307,12 @@ function last_of(n: Network) -> Address
 # Fails `does_not_fit` where they are more than a `u64` holds, an IPv6 network
 # of 64 bits or fewer.
 function count_of(n: Network) -> u64?
-    if bits_of(n.address) - n.bits >= 64
+    if bits_of(n.host) - n.bits >= 64
         return fail(
             code: DOES_NOT_FIT,
-            msg: f"counting the addresses of {format_network(n)}: they are 2 to the power {bits_of(n.address) - n.bits}, more than a u64 holds"
+            msg: f"counting the addresses of {format_network(n)}: they are 2 to the power {bits_of(n.host) - n.bits}, more than a u64 holds"
         )
-    return ok(networks.size(count: n.address.bytes.len(), bits: n.bits))
+    return ok(networks.size(count: n.host.bytes.len(), bits: n.bits))
 
 # How many first bits the mask `mask` sets: 24 for `255.255.255.0`.
 #
@@ -1319,13 +1320,13 @@ function count_of(n: Network) -> u64?
 #   `ffff:ffff::`.
 #
 # Fails `invalid` where a clear bit stands before a set one.
-function mask_length(mask: Address) -> i64?
+function mask_length(mask: Host) -> i64?
     length = networks.mask_length(mask.bytes)
 
     if length < 0
         return fail(
             code: INVALID,
-            msg: f"reading {format_address(mask)} as a mask: a clear bit stands before a set one"
+            msg: f"reading {format_host(mask)} as a mask: a clear bit stands before a set one"
         )
     return ok(length)
 
@@ -1336,7 +1337,7 @@ function mask_length(mask: Address) -> i64?
 #
 # By their addresses as `compare` orders them, then the fewer bits first.
 function compare_networks(a: Network, b: Network) -> i64
-    by_address = compare(a: a.address, b: b.address)
+    by_address = compare(a: a.host, b: b.host)
 
     if by_address != 0
         return by_address
@@ -1353,11 +1354,11 @@ function compare_networks(a: Network, b: Network) -> i64
 # where the subnets are more than 65,536, 16 bits past `n`'s, which Python
 # would list one at a time.
 function subnets_of(n: Network, bits: i64) -> [Network]?
-    blocks = ranges.subnets(n.address.bytes, bits: n.bits, new_bits: bits, asked: f"cutting {format_network(n)} into networks of {bits} bits")?
+    blocks = ranges.subnets(n.host.bytes, bits: n.bits, new_bits: bits, asked: f"cutting {format_network(n)} into networks of {bits} bits")?
     out: [Network] @= []
 
     for b in blocks
-        out @ out.push(Network(address: Address(bytes: b.bytes, zone: "", has_port: false, port: 0), bits: b.bits))
+        out @ out.push(Network(host: Host(bytes: b.bytes, zone: ""), bits: b.bits))
 
     return ok(out)
 
@@ -1372,12 +1373,12 @@ function subnets_of(n: Network, bits: i64) -> [Network]?
 # Fails `invalid` where `other` is of the other kind or not inside `n`.
 function exclude(n: Network, other: Network) -> [Network]?
     asked = f"taking {format_network(other)} out of {format_network(n)}"
-    outer = ranges.Block(bytes: n.address.bytes, bits: n.bits)
-    blocks = ranges.exclude(outer: outer, inner: ranges.Block(bytes: other.address.bytes, bits: other.bits), asked: asked)?
+    outer = ranges.Block(bytes: n.host.bytes, bits: n.bits)
+    blocks = ranges.exclude(outer: outer, inner: ranges.Block(bytes: other.host.bytes, bits: other.bits), asked: asked)?
     out: [Network] @= []
 
     for b in blocks
-        out @ out.push(Network(address: Address(bytes: b.bytes, zone: "", has_port: false, port: 0), bits: b.bits))
+        out @ out.push(Network(host: Host(bytes: b.bytes, zone: ""), bits: b.bits))
 
     return ok(out)
 
@@ -1393,32 +1394,32 @@ function collapse(list: [Network]) -> [Network]?
     given: [ranges.Block] @= []
 
     for n in list
-        given @ given.push(ranges.Block(bytes: n.address.bytes, bits: n.bits))
+        given @ given.push(ranges.Block(bytes: n.host.bytes, bits: n.bits))
 
     blocks = ranges.collapse(given, asked: f"collapsing {list.len()} networks")?
     out: [Network] @= []
 
     for b in blocks
-        out @ out.push(Network(address: Address(bytes: b.bytes, zone: "", has_port: false, port: 0), bits: b.bits))
+        out @ out.push(Network(host: Host(bytes: b.bytes, zone: ""), bits: b.bits))
 
     return ok(out)
 
 # The fewest networks that hold every address from `first` to `last` and no
 # other, in order, as Python's `summarize_address_range` answers.
 #
-# - `first`: the range's first address; its zone and port are not read.
-# - `last`: the range's last address, of `first`'s kind and not below it;
-#   `first` itself is a range of one address.
+# - `first`: the range's first host; its zone is not read.
+# - `last`: the range's last host, of `first`'s kind and not below it;
+#   `first` itself is a range of one host.
 #
 # Fails `invalid` where the two are of different kinds or `last` is below
 # `first`.
-function summarize(first: Address, last: Address) -> [Network]?
-    asked = f"covering {format_address(first)} to {format_address(last)}"
+function summarize(first: Host, last: Host) -> [Network]?
+    asked = f"covering {format_host(first)} to {format_host(last)}"
     blocks = ranges.summarize(first: first.bytes, last: last.bytes, asked: asked)?
     out: [Network] @= []
 
     for b in blocks
-        out @ out.push(Network(address: Address(bytes: b.bytes, zone: "", has_port: false, port: 0), bits: b.bits))
+        out @ out.push(Network(host: Host(bytes: b.bytes, zone: ""), bits: b.bits))
 
     return ok(out)
 
@@ -1486,7 +1487,7 @@ function interfaces() -> [Interface]?
 
         for a in f.addresses
             held @ held.push(
-                Network(address: Address(bytes: a.address.bytes, zone: a.address.zone, has_port: false, port: 0), bits: a.bits)
+                Network(host: Host(bytes: a.address.bytes, zone: a.address.zone), bits: a.bits)
             )
 
         answer @ answer.push(
@@ -1502,7 +1503,7 @@ function interfaces() -> [Interface]?
 record Echo
     # The address the reply came from, without a port: the host's own, since
     # a router's word that the host cannot be reached fails `failed`.
-    from: Address
+    from: Host
     # The round trip, in nanoseconds, from just before the request left to
     # the reply read, on a clock that never goes back; above 0.
     nanoseconds: i64
@@ -1547,118 +1548,117 @@ record Echo
 function ping(host: str, sequence: i64, size: i64, timeout_ms: i64) -> Echo?
     a = echo.ping(host, sequence: sequence, size: size, timeout_ms: timeout_ms)?
     return ok(
-        Echo(from: Address(bytes: a.from.bytes, zone: a.from.zone, has_port: false, port: 0), nanoseconds: a.nanoseconds, ttl: a.ttl, bytes: a.bytes, sequence: a.sequence)
+        Echo(from: Host(bytes: a.from.bytes, zone: a.from.zone), nanoseconds: a.nanoseconds, ttl: a.ttl, bytes: a.bytes, sequence: a.sequence)
     )
 
 ## Tests
 
-test "parse_address and format_address: text read and written back as Go and Python write it"
+test "parse_host and format_host: text read and written back as Go and Python write it"
     for written in [["1.2.3.4", "1.2.3.4"], ["::", "::"], ["0:0:0:0:0:0:0:1", "::1"], ["ABCD:EF01::", "abcd:ef01::"], ["2001:db8:0:0:1:0:0:1", "2001:db8::1:0:0:1"], ["::ffff:0:0", "::ffff:0.0.0.0"], ["::1.2.3.4", "::102:304"], ["fe80::1%eth0", "fe80::1%eth0"]]
-        assert format_address(parse_address(written[0]).must()) == written[1]
+        assert format_host(parse_host(written[0]).must()) == written[1]
 
-    match parse_address("1.2.3.4:80")
+    match parse_host("1.2.3.4:80")
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
 test "parse_address_port and format_address: a port read and written, IPv6 in brackets"
     a = parse_address_port("[fe80::1%eth0]:443").must()
-    assert a.has_port && a.port == 443 && a.zone == "eth0"
+    assert a.port == 443 && a.host.zone == "eth0"
     assert format_address(a) == "[fe80::1%eth0]:443"
     assert format_address(parse_address_port("1.2.3.4:080").must()) == "1.2.3.4:80"
     assert parse_address_port("::1:80").is_err() && parse_address_port("[1.2.3.4]:80").is_err()
 
-test "format_address_expanded and to_reverse_name: every digit, and the name of a reverse lookup"
-    a = parse_address("2001:db8::1").must()
-    assert format_address_expanded(a) == "2001:0db8:0000:0000:0000:0000:0000:0001"
-    assert format_address_expanded(loopback_v4()) == "127.0.0.1"
-    assert to_reverse_name(parse_address("192.0.2.1").must()) == "1.2.0.192.in-addr.arpa"
-    assert to_reverse_name(parse_address("fe80::1%eth0").must()).len() == 72
+test "format_host_expanded and to_reverse_name: every digit, and the name of a reverse lookup"
+    a = parse_host("2001:db8::1").must()
+    assert format_host_expanded(a) == "2001:0db8:0000:0000:0000:0000:0000:0001"
+    assert format_host_expanded(loopback_v4()) == "127.0.0.1"
+    assert to_reverse_name(parse_host("192.0.2.1").must()) == "1.2.0.192.in-addr.arpa"
+    assert to_reverse_name(parse_host("fe80::1%eth0").must()).len() == 72
 
 test "from_bytes, from_integer, to_integer: Python's int of an address, at 0 and at the largest u32"
-    assert from_bytes([1, 2, 3, 4]).must() == parse_address("1.2.3.4").must()
+    assert from_bytes([1, 2, 3, 4]).must() == parse_host("1.2.3.4").must()
     assert from_bytes([]).is_err() && from_bytes([1, 2, 3]).is_err()
-    assert to_integer(parse_address("1.2.3.4").must()).must() == 16909060
-    assert format_address(from_integer(0)) == "0.0.0.0" && format_address(from_integer(4294967295)) == "255.255.255.255"
+    assert to_integer(parse_host("1.2.3.4").must()).must() == 16909060
+    assert format_host(from_integer(0)) == "0.0.0.0" && format_host(from_integer(4294967295)) == "255.255.255.255"
     assert to_integer(from_integer(4294967295)).must() == 4294967295
 
     match to_integer(loopback_v6())
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-test "with_port, without_port, with_zone: a copy with one thing changed, what is refused said"
+test "with_port and with_zone: a copy with one thing changed, what is refused said"
     a = with_port(loopback_v6(), port: 65535).must()
-    assert format_address(a) == "[::1]:65535" && format_address(without_port(a)) == "::1"
+    assert format_address(a) == "[::1]:65535" && format_host(a.host) == "::1"
     assert with_port(loopback_v4(), port: 65536).is_err() && with_port(loopback_v4(), port: -1).is_err()
-    z = with_zone(parse_address("fe80::1").must(), zone: "lo0").must()
-    assert format_address(z) == "fe80::1%lo0" && with_zone(z, zone: "").must().zone == ""
+    z = with_zone(parse_host("fe80::1").must(), zone: "lo0").must()
+    assert format_host(z) == "fe80::1%lo0" && with_zone(z, zone: "").must().zone == ""
 
     for refused in [with_zone(loopback_v4(), zone: "x"), with_zone(loopback_v6(), zone: "a%b"), with_zone(loopback_v6(), zone: "a b")]
         assert refused.is_err()
 
 test "loopback_v4, loopback_v6, unspecified_v4, unspecified_v6, broadcast_v4: written as Go writes them"
-    assert format_address(loopback_v4()) == "127.0.0.1" && format_address(loopback_v6()) == "::1"
-    assert format_address(unspecified_v4()) == "0.0.0.0" && format_address(unspecified_v6()) == "::"
-    assert format_address(broadcast_v4()) == "255.255.255.255"
+    assert format_host(loopback_v4()) == "127.0.0.1" && format_host(loopback_v6()) == "::1"
+    assert format_host(unspecified_v4()) == "0.0.0.0" && format_host(unspecified_v6()) == "::"
+    assert format_host(broadcast_v4()) == "255.255.255.255"
 
 test "is_v4, is_v6, bits_of, is_v4_mapped, unmap, to_v6_mapped: the two kinds and the address between them"
-    mapped = parse_address("::ffff:1.2.3.4").must()
+    mapped = parse_host("::ffff:1.2.3.4").must()
     assert is_v4(loopback_v4()) && !is_v6(loopback_v4()) && is_v6(mapped) && !is_v4(mapped)
     assert bits_of(loopback_v4()) == 32 && bits_of(mapped) == 128
-    assert is_v4_mapped(mapped) && !is_v4_mapped(parse_address("::1.2.3.4").must()) && !is_v4_mapped(loopback_v4())
-    assert format_address(unmap(mapped)) == "1.2.3.4" && unmap(loopback_v6()) == loopback_v6()
-    assert to_v6_mapped(parse_address("1.2.3.4").must()) == mapped && to_v6_mapped(mapped) == mapped
-    assert unmap(with_port(mapped, port: 80).must()).port == 80
+    assert is_v4_mapped(mapped) && !is_v4_mapped(parse_host("::1.2.3.4").must()) && !is_v4_mapped(loopback_v4())
+    assert format_host(unmap(mapped)) == "1.2.3.4" && unmap(loopback_v6()) == loopback_v6()
+    assert to_v6_mapped(parse_host("1.2.3.4").must()) == mapped && to_v6_mapped(mapped) == mapped
 
-test "compare: IPv4 before IPv6, then bytes, then no zone first, then no port first, then the port"
-    assert compare(a: parse_address("9.255.255.255").must(), b: parse_address("10.0.0.2").must()) == -1
-    assert compare(a: parse_address("10.0.0.10").must(), b: parse_address("10.0.0.2").must()) == 1
-    assert compare(a: parse_address("255.255.255.255").must(), b: unspecified_v6()) == -1
-    assert compare(a: parse_address("fe80::1").must(), b: parse_address("fe80::1%a").must()) == -1
-    assert compare(a: parse_address("fe80::1%b").must(), b: parse_address("fe80::1%a").must()) == 1
-    assert compare(a: parse_address_port("1.2.3.4:80").must(), b: parse_address_port("1.2.3.4:9").must()) == 1
-    assert compare(a: loopback_v4(), b: with_port(loopback_v4(), port: 0).must()) == -1
+test "compare and compare_addresses: IPv4 before IPv6, then bytes, then no zone first, then the port"
+    assert compare(a: parse_host("9.255.255.255").must(), b: parse_host("10.0.0.2").must()) == -1
+    assert compare(a: parse_host("10.0.0.10").must(), b: parse_host("10.0.0.2").must()) == 1
+    assert compare(a: parse_host("255.255.255.255").must(), b: unspecified_v6()) == -1
+    assert compare(a: parse_host("fe80::1").must(), b: parse_host("fe80::1%a").must()) == -1
+    assert compare(a: parse_host("fe80::1%b").must(), b: parse_host("fe80::1%a").must()) == 1
+    assert compare_addresses(a: parse_address_port("1.2.3.4:80").must(), b: parse_address_port("1.2.3.4:9").must()) == 1
+    assert compare_addresses(a: parse_address_port("1.2.3.4:80").must(), b: parse_address_port("1.2.3.5:9").must()) == -1
     assert compare(a: loopback_v6(), b: loopback_v6()) == 0
 
 test "next, previous, step: across a byte, at the ends of both kinds, the zone kept"
-    assert format_address(next(parse_address("1.2.3.255").must()).must()) == "1.2.4.0"
-    assert format_address(next(parse_address("fe80::ffff%x").must()).must()) == "fe80::1:0%x"
-    assert format_address(previous(parse_address("1.2.4.0").must()).must()) == "1.2.3.255"
+    assert format_host(next(parse_host("1.2.3.255").must()).must()) == "1.2.4.0"
+    assert format_host(next(parse_host("fe80::ffff%x").must()).must()) == "fe80::1:0%x"
+    assert format_host(previous(parse_host("1.2.4.0").must()).must()) == "1.2.3.255"
 
-    for refused in [next(broadcast_v4()), previous(unspecified_v4()), previous(unspecified_v6()), next(parse_address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").must()), step(loopback_v4(), by: 9223372036854775807)]
+    for refused in [next(broadcast_v4()), previous(unspecified_v4()), previous(unspecified_v6()), next(parse_host("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").must()), step(loopback_v4(), by: 9223372036854775807)]
         match refused
             .ok _  => assert false
             .err e => assert e.code == DOES_NOT_FIT
 
-    assert format_address(step(unspecified_v4(), by: 4294967295).must()) == "255.255.255.255"
-    assert format_address(step(broadcast_v4(), by: -4294967295).must()) == "0.0.0.0"
+    assert format_host(step(unspecified_v4(), by: 4294967295).must()) == "255.255.255.255"
+    assert format_host(step(broadcast_v4(), by: -4294967295).must()) == "0.0.0.0"
     assert step(loopback_v6(), by: 0).must() == loopback_v6()
 
 test "the classes of an address: each one asked of an address inside it and one outside"
     in_and_out = [
-        [is_loopback(parse_address("127.255.0.1").must()), !is_loopback(parse_address("128.0.0.1").must())]
-        [is_private(parse_address("192.168.0.1").must()), !is_private(parse_address("100.64.0.1").must())]
-        [is_unspecified(unspecified_v6()), !is_unspecified(parse_address("::ffff:0.0.0.0").must())]
-        [is_multicast(parse_address("ff02::1").must()), !is_multicast(parse_address("240.0.0.1").must())]
-        [is_link_local(parse_address("fe80::1%eth0").must()), !is_link_local(parse_address("fec0::1").must())]
-        [is_link_local_multicast(parse_address("ff12::1").must()), !is_link_local_multicast(parse_address("ff05::1").must())]
-        [is_interface_local_multicast(parse_address("ff01::1").must()), !is_interface_local_multicast(parse_address("ff02::1").must())]
-        [is_global_unicast(parse_address("10.0.0.1").must()), !is_global_unicast(broadcast_v4())]
-        [is_global(parse_address("8.8.8.8").must()), !is_global(parse_address("192.0.0.8").must())]
-        [is_reserved(broadcast_v4()), !is_reserved(parse_address("2000::").must())]
-        [is_documentation(parse_address("3fff::1").must()), !is_documentation(parse_address("3fff:1000::").must())]
-        [is_benchmarking(parse_address("198.19.0.1").must()), !is_benchmarking(parse_address("198.20.0.1").must())]
-        [is_shared(parse_address("100.127.0.1").must()), !is_shared(parse_address("100.128.0.1").must())]
-        [is_broadcast(broadcast_v4()), !is_broadcast(parse_address("255.255.255.254").must())]
-        [is_site_local(parse_address("fec0::1").must()), !is_site_local(parse_address("fe80::1").must())]
+        [is_loopback(parse_host("127.255.0.1").must()), !is_loopback(parse_host("128.0.0.1").must())]
+        [is_private(parse_host("192.168.0.1").must()), !is_private(parse_host("100.64.0.1").must())]
+        [is_unspecified(unspecified_v6()), !is_unspecified(parse_host("::ffff:0.0.0.0").must())]
+        [is_multicast(parse_host("ff02::1").must()), !is_multicast(parse_host("240.0.0.1").must())]
+        [is_link_local(parse_host("fe80::1%eth0").must()), !is_link_local(parse_host("fec0::1").must())]
+        [is_link_local_multicast(parse_host("ff12::1").must()), !is_link_local_multicast(parse_host("ff05::1").must())]
+        [is_interface_local_multicast(parse_host("ff01::1").must()), !is_interface_local_multicast(parse_host("ff02::1").must())]
+        [is_global_unicast(parse_host("10.0.0.1").must()), !is_global_unicast(broadcast_v4())]
+        [is_global(parse_host("8.8.8.8").must()), !is_global(parse_host("192.0.0.8").must())]
+        [is_reserved(broadcast_v4()), !is_reserved(parse_host("2000::").must())]
+        [is_documentation(parse_host("3fff::1").must()), !is_documentation(parse_host("3fff:1000::").must())]
+        [is_benchmarking(parse_host("198.19.0.1").must()), !is_benchmarking(parse_host("198.20.0.1").must())]
+        [is_shared(parse_host("100.127.0.1").must()), !is_shared(parse_host("100.128.0.1").must())]
+        [is_broadcast(broadcast_v4()), !is_broadcast(parse_host("255.255.255.254").must())]
+        [is_site_local(parse_host("fec0::1").must()), !is_site_local(parse_host("fe80::1").must())]
     ]
 
     for answers in in_and_out
         assert answers[0] && answers[1]
 
 test "sixtofour_of and teredo_of: the IPv4 addresses Python reads in them, and not_found outside"
-    assert format_address(sixtofour_of(parse_address("2002:c000:204::1").must()).must()) == "192.0.2.4"
-    t = teredo_of(parse_address("2001:0:4136:e378:8000:63bf:3fff:fdd2").must()).must()
-    assert format_address(t.server) == "65.54.227.120" && format_address(t.client) == "192.0.2.45"
+    assert format_host(sixtofour_of(parse_host("2002:c000:204::1").must()).must()) == "192.0.2.4"
+    t = teredo_of(parse_host("2001:0:4136:e378:8000:63bf:3fff:fdd2").must()).must()
+    assert format_host(t.server) == "65.54.227.120" && format_host(t.client) == "192.0.2.45"
 
     match sixtofour_of(loopback_v6())
         .ok _  => assert false
@@ -1679,21 +1679,21 @@ test "parse_network and format_network: the host bits kept as Go keeps them, and
             .err e => assert e.code == INVALID
 
 test "network_of, to_masked, first_of, last_of, netmask, hostmask: Python's network, broadcast and masks"
-    n = network_of(parse_address("192.168.1.77").must(), bits: 24).must()
+    n = network_of(parse_host("192.168.1.77").must(), bits: 24).must()
     assert format_network(n) == "192.168.1.0/24" && to_masked(n) == n
-    assert format_address(first_of(n)) == "192.168.1.0" && format_address(last_of(n)) == "192.168.1.255"
-    assert format_address(netmask(n)) == "255.255.255.0" && format_address(hostmask(n)) == "0.0.0.255"
+    assert format_host(first_of(n)) == "192.168.1.0" && format_host(last_of(n)) == "192.168.1.255"
+    assert format_host(netmask(n)) == "255.255.255.0" && format_host(hostmask(n)) == "0.0.0.255"
     v6 = parse_network("fe80::/10").must()
-    assert format_address(netmask(v6)) == "ffc0::" && format_address(hostmask(v6)) == "3f:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
-    assert format_address(last_of(v6)) == "febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
+    assert format_host(netmask(v6)) == "ffc0::" && format_host(hostmask(v6)) == "3f:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
+    assert format_host(last_of(v6)) == "febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
     assert network_of(loopback_v4(), bits: 33).is_err() && network_of(loopback_v4(), bits: -1).is_err()
-    assert format_network(network_of(with_port(loopback_v6(), port: 9).must(), bits: 128).must()) == "::1/128"
+    assert format_network(network_of(loopback_v6(), bits: 128).must()) == "::1/128"
 
 test "contains, contains_network, overlaps: the zone not read, the other kind never held, as Go answers"
     ten = parse_network("10.0.0.0/8").must()
-    assert contains(ten, parse_address("10.255.255.255").must()) && !contains(ten, parse_address("11.0.0.0").must())
-    assert !contains(ten, parse_address("::ffff:10.0.0.1").must())
-    assert contains(parse_network("fe80::/10").must(), parse_address("fe80::1%eth0").must())
+    assert contains(ten, parse_host("10.255.255.255").must()) && !contains(ten, parse_host("11.0.0.0").must())
+    assert !contains(ten, parse_host("::ffff:10.0.0.1").must())
+    assert contains(parse_network("fe80::/10").must(), parse_host("fe80::1%eth0").must())
     sixteen = parse_network("10.1.0.0/16").must()
     assert contains_network(n: ten, inner: sixteen) && !contains_network(n: sixteen, inner: ten) && contains_network(n: ten, inner: ten)
     assert overlaps(a: ten, b: sixteen) && overlaps(a: sixteen, b: ten)
@@ -1709,9 +1709,9 @@ test "count_of, mask_length, compare_networks: Python's counts and order, a coun
         .ok _  => assert false
         .err e => assert e.code == DOES_NOT_FIT
 
-    assert mask_length(parse_address("255.255.255.0").must()).must() == 24
-    assert mask_length(parse_address("ffff:ffff:ffff:ffff:8000::").must()).must() == 65
-    assert mask_length(parse_address("255.255.0.255").must()).is_err()
+    assert mask_length(parse_host("255.255.255.0").must()).must() == 24
+    assert mask_length(parse_host("ffff:ffff:ffff:ffff:8000::").must()).must() == 65
+    assert mask_length(parse_host("255.255.0.255").must()).is_err()
     assert compare_networks(a: parse_network("10.0.0.0/8").must(), b: parse_network("9.0.0.0/16").must()) == 1
     assert compare_networks(a: parse_network("10.0.0.0/8").must(), b: parse_network("10.0.0.0/16").must()) == -1
     assert compare_networks(a: parse_network("10.0.0.0/8").must(), b: parse_network("10.0.0.0/8").must()) == 0
@@ -1730,15 +1730,15 @@ test "parse_mac and format_mac: the three forms read, pairs and colons written"
 
 test "lookup and name_of: localhost has a loopback address, an unknown name is not_found, and a name for 127.0.0.1 or none"
     for a in lookup("localhost").must()
-        assert is_loopback(a) && !a.has_port
+        assert is_loopback(a)
 
-    assert lookup("192.0.2.7").must() == [parse_address("192.0.2.7").must()]
+    assert lookup("192.0.2.7").must() == [parse_host("192.0.2.7").must()]
 
     match lookup("no-such-host.invalid")
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND
 
-    match name_of(with_port(loopback_v4(), port: 80).must())
+    match name_of(loopback_v4())
         .ok n  => assert n.len() > 0
         .err e => assert e.code == NOT_FOUND
 
@@ -1746,7 +1746,7 @@ test "listen, connect, accept: a connection written and read through its stream 
     l @= listen("127.0.0.1", port: 0).must()
     client @= connect("localhost", port: l.address.port, deadline_ms: 5000).must()
     server @= accept(l, deadline_ms: 5000).must()
-    assert client.remote == l.address || client.remote.bytes.len() == 16
+    assert client.remote == l.address || client.remote.host.bytes.len() == 16
     assert server.remote == client.local && server.local == client.remote
     io.write_line(client.stream, line: "hello").must()
     lines @= io.reader(server.stream)
@@ -1783,7 +1783,7 @@ test "set_accept_deadline, accept_number, conn_of: an accept ending timeout, a c
     io.close(@client.stream).must()
     close_listener(@l).must()
 
-test "open_udp, send_to, receive, set_udp_deadline, close_udp: datagrams both ways on IPv6 loopback, an address without a port refused"
+test "open_udp, send_to, receive, set_udp_deadline, close_udp: datagrams both ways on IPv6 loopback, an address of the other kind refused"
     a @= open_udp("::1", port: 0).must()
     b @= open_udp("::1", port: 0).must()
     set_udp_deadline(a, deadline_ms: 5000).must()
@@ -1794,7 +1794,7 @@ test "open_udp, send_to, receive, set_udp_deadline, close_udp: datagrams both wa
     send_to(b, data: [4], to: got.sender).must()
     assert receive(a).must().data == [4]
 
-    match send_to(a, data: [1], to: without_port(b.address))
+    match send_to(a, data: [1], to: with_port(loopback_v4(), port: b.address.port).must())
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -1828,9 +1828,9 @@ test "subnets_of, exclude, collapse, summarize: Python's answers, and what Pytho
     ).must()
     assert joined.len() == 1 && format_network(joined[0]) == "192.0.2.0/24"
     assert collapse([parse_network("10.0.0.0/8").must(), parse_network("::/0").must()]).is_err()
-    cover = summarize(first: parse_address("192.0.2.0").must(), last: parse_address("192.0.2.130").must()).must()
+    cover = summarize(first: parse_host("192.0.2.0").must(), last: parse_host("192.0.2.130").must()).must()
     assert cover.len() == 3 && format_network(cover[2]) == "192.0.2.130/32"
-    assert summarize(first: parse_address("1.2.3.5").must(), last: parse_address("1.2.3.4").must()).is_err()
+    assert summarize(first: parse_host("1.2.3.5").must(), last: parse_host("1.2.3.4").must()).is_err()
 
 test "pair: what one end writes the other reads, through io"
     both = pair(5000).must()
@@ -1969,7 +1969,7 @@ test "set_broadcast, broadcast_on, join_group and leave_group: broadcast off whe
     set_udp_deadline(s, deadline_ms: 3000).must()
     loopback = fixture.loopback_index()
     assert loopback > 0
-    group = parse_address("239.255.77.78").must()
+    group = parse_host("239.255.77.78").must()
 
     match join_group(s, group: group, interface_index: loopback)
         .ok _ =>
@@ -1984,7 +1984,7 @@ test "set_broadcast, broadcast_on, join_group and leave_group: broadcast off whe
                 .err e => assert e.code != CLOSED
         .err e => assert e.code == FAILED
 
-    match join_group(s, group: parse_address("10.0.0.1").must(), interface_index: 0)
+    match join_group(s, group: parse_host("10.0.0.1").must(), interface_index: 0)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -2032,7 +2032,7 @@ test "interfaces: the loopback interface, up, with 127.0.0.1 in 8 bits, and ever
         assert i.name.len() > 0
 
         for n in i.addresses
-            if n.address == loopback_v4()
+            if n.host == loopback_v4()
                 assert i.loopback && i.up && n.bits == 8 && i.index > 0
                 found @ true
 
@@ -2192,79 +2192,83 @@ test "join_host_port: brackets around an IPv6 address"
 test "parse_port: 8080"
     assert parse_port("8080").must() == 8080
 
-# An address read from text.
-test "parse_address: an IPv4 and an IPv6 address"
-    assert is_v4(parse_address("192.0.2.1").must())
-    assert is_v6(parse_address("2001:db8::1").must())
+# A host read from text.
+test "parse_host: an IPv4 and an IPv6 address"
+    assert is_v4(parse_host("192.0.2.1").must())
+    assert is_v6(parse_host("2001:db8::1").must())
 
 # An address with its port read from text.
 test "parse_address_port: an IPv6 address in brackets and its port"
     a = parse_address_port("[2001:db8::1]:443").must()
-    assert a.port == 443 && format_address(without_port(a)) == "2001:db8::1"
+    assert a.port == 443 && format_host(a.host) == "2001:db8::1"
 
-# An address written back, IPv6 at its shortest.
-test "format_address: the zero groups shortened"
-    assert format_address(parse_address("2001:db8:0:0:0:0:0:1").must()) == "2001:db8::1"
+# A host written back, IPv6 at its shortest.
+test "format_host: the zero groups shortened"
+    assert format_host(parse_host("2001:db8:0:0:0:0:0:1").must()) == "2001:db8::1"
+
+# An address written back, its host in brackets where it is IPv6.
+test "format_address: an IPv6 host and its port"
+    assert format_address(with_port(parse_host("2001:db8::1").must(), port: 443).must()) == "[2001:db8::1]:443"
 
 # An IPv6 address written with nothing shortened.
-test "format_address_expanded: every group of four digits"
-    a = parse_address("2001:db8::1").must()
-    assert format_address_expanded(a) == "2001:0db8:0000:0000:0000:0000:0000:0001"
+test "format_host_expanded: every group of four digits"
+    a = parse_host("2001:db8::1").must()
+    assert format_host_expanded(a) == "2001:0db8:0000:0000:0000:0000:0000:0001"
 
 # The name a reverse lookup asks for.
 test "to_reverse_name: an IPv4 address under in-addr.arpa"
-    assert to_reverse_name(parse_address("192.0.2.1").must()) == "1.2.0.192.in-addr.arpa"
+    assert to_reverse_name(parse_host("192.0.2.1").must()) == "1.2.0.192.in-addr.arpa"
 
 # An address from the bytes a packet carries.
 test "from_bytes: four bytes are an IPv4 address"
-    assert format_address(from_bytes([192, 0, 2, 1]).must()) == "192.0.2.1"
+    assert format_host(from_bytes([192, 0, 2, 1]).must()) == "192.0.2.1"
 
 # An IPv4 address from its 32 bits.
 test "from_integer: the bits of 1.2.3.4"
-    assert format_address(from_integer(16909060)) == "1.2.3.4"
+    assert format_host(from_integer(16909060)) == "1.2.3.4"
 
 # The 32 bits of an IPv4 address, to count or store.
 test "to_integer: 1.2.3.4 as a number"
-    assert to_integer(parse_address("1.2.3.4").must()).must() == 16909060
+    assert to_integer(parse_host("1.2.3.4").must()).must() == 16909060
 
 # An address given a port.
 test "with_port: a server's address and port"
-    a = with_port(parse_address("192.0.2.1").must(), port: 443).must()
+    a = with_port(parse_host("192.0.2.1").must(), port: 443).must()
     assert format_address(a) == "192.0.2.1:443"
 
-# An address without its port.
-test "without_port: the port dropped"
-    a = without_port(parse_address_port("192.0.2.1:80").must())
-    assert format_address(a) == "192.0.2.1" && !a.has_port
+# Two addresses of one host ordered by their ports.
+test "compare_addresses: port 80 before port 443"
+    h = parse_host("192.0.2.1").must()
+    assert compare_addresses(a: with_port(h, port: 80).must(), b: with_port(h, port: 443).must()) == -1
 
 # A link-local address given the interface it belongs to.
 test "with_zone: fe80::1 on eth0"
-    a = with_zone(parse_address("fe80::1").must(), zone: "eth0").must()
-    assert format_address(a) == "fe80::1%eth0"
+    a = with_zone(parse_host("fe80::1").must(), zone: "eth0").must()
+    assert format_host(a) == "fe80::1%eth0"
 
 # The IPv4 loopback address, to listen on the machine alone.
 test "loopback_v4: 127.0.0.1"
-    assert format_address(loopback_v4()) == "127.0.0.1"
+    assert format_host(loopback_v4()) == "127.0.0.1"
 
 # The IPv6 loopback address.
 test "loopback_v6: ::1"
-    assert format_address(loopback_v6()) == "::1"
+    assert format_host(loopback_v6()) == "::1"
 
 # The IPv4 address that names none.
 test "unspecified_v4: 0.0.0.0"
-    assert format_address(unspecified_v4()) == "0.0.0.0"
+    assert format_host(unspecified_v4()) == "0.0.0.0"
 
 # The IPv6 address that names none.
 test "unspecified_v6: ::"
-    assert format_address(unspecified_v6()) == "::"
+    assert format_host(unspecified_v6()) == "::"
 
 # The IPv4 address of every host of the local network.
 test "broadcast_v4: 255.255.255.255"
-    assert format_address(broadcast_v4()) == "255.255.255.255"
+    assert format_host(broadcast_v4()) == "255.255.255.255"
 
 # Whether an address is IPv4.
 test "is_v4: 192.0.2.1 is, ::1 is not"
-    assert is_v4(parse_address("192.0.2.1").must()) && !is_v4(loopback_v6())
+    assert is_v4(parse_host("192.0.2.1").must()) && !is_v4(loopback_v6())
 
 # Whether an address is IPv6.
 test "is_v6: ::1 is, 127.0.0.1 is not"
@@ -2276,40 +2280,40 @@ test "bits_of: 32 for IPv4, 128 for IPv6"
 
 # Whether an IPv6 address stands for an IPv4 one.
 test "is_v4_mapped: ::ffff:192.0.2.1"
-    assert is_v4_mapped(parse_address("::ffff:192.0.2.1").must())
+    assert is_v4_mapped(parse_host("::ffff:192.0.2.1").must())
 
 # The IPv4 address a mapped IPv6 address stands for, as a dual-stack
 # listener sees an IPv4 peer.
 test "unmap: ::ffff:192.0.2.1 is 192.0.2.1"
-    assert format_address(unmap(parse_address("::ffff:192.0.2.1").must())) == "192.0.2.1"
+    assert format_host(unmap(parse_host("::ffff:192.0.2.1").must())) == "192.0.2.1"
 
 # An IPv4 address as the IPv6 address that maps it.
 test "to_v6_mapped: 192.0.2.1 as IPv6"
-    assert format_address(to_v6_mapped(parse_address("192.0.2.1").must())) == "::ffff:192.0.2.1"
+    assert format_host(to_v6_mapped(parse_host("192.0.2.1").must())) == "::ffff:192.0.2.1"
 
-# Two addresses ordered, as a sort compares them.
+# Two hosts ordered, as a sort compares them.
 test "compare: 192.0.2.1 before 192.0.2.2"
-    assert compare(a: parse_address("192.0.2.1").must(), b: parse_address("192.0.2.2").must()) == -1
+    assert compare(a: parse_host("192.0.2.1").must(), b: parse_host("192.0.2.2").must()) == -1
 
 # The address after another, across a byte.
 test "next: after 192.0.2.255"
-    assert format_address(next(parse_address("192.0.2.255").must()).must()) == "192.0.3.0"
+    assert format_host(next(parse_host("192.0.2.255").must()).must()) == "192.0.3.0"
 
 # The address before another, across a byte.
 test "previous: before 192.0.3.0"
-    assert format_address(previous(parse_address("192.0.3.0").must()).must()) == "192.0.2.255"
+    assert format_host(previous(parse_host("192.0.3.0").must()).must()) == "192.0.2.255"
 
 # An address some steps on, as a pool of addresses is walked.
 test "step: ten addresses on"
-    assert format_address(step(parse_address("192.0.2.1").must(), by: 10).must()) == "192.0.2.11"
+    assert format_host(step(parse_host("192.0.2.1").must(), by: 10).must()) == "192.0.2.11"
 
 # Whether an address is the machine itself.
 test "is_loopback: 127.0.0.53 is"
-    assert is_loopback(parse_address("127.0.0.53").must())
+    assert is_loopback(parse_host("127.0.0.53").must())
 
 # Whether an address is one of a private network.
 test "is_private: a home network's address"
-    assert is_private(parse_address("192.168.1.10").must())
+    assert is_private(parse_host("192.168.1.10").must())
 
 # Whether an address names none.
 test "is_unspecified: :: names none"
@@ -2317,43 +2321,43 @@ test "is_unspecified: :: names none"
 
 # Whether an address is a multicast group's.
 test "is_multicast: mDNS's group"
-    assert is_multicast(parse_address("224.0.0.251").must())
+    assert is_multicast(parse_host("224.0.0.251").must())
 
 # Whether an address is link-local.
 test "is_link_local: an address a host gave itself"
-    assert is_link_local(parse_address("169.254.1.1").must())
+    assert is_link_local(parse_host("169.254.1.1").must())
 
 # Whether an address is a link-local multicast group's.
 test "is_link_local_multicast: every host of the link"
-    assert is_link_local_multicast(parse_address("224.0.0.1").must())
+    assert is_link_local_multicast(parse_host("224.0.0.1").must())
 
 # Whether an address is an interface-local IPv6 multicast group's.
 test "is_interface_local_multicast: ff01::1"
-    assert is_interface_local_multicast(parse_address("ff01::1").must())
+    assert is_interface_local_multicast(parse_host("ff01::1").must())
 
 # Whether an address is a unicast one a host may use, as Go reads it.
 test "is_global_unicast: a public address and a private one"
-    assert is_global_unicast(parse_address("8.8.8.8").must()) && is_global_unicast(parse_address("10.0.0.1").must())
+    assert is_global_unicast(parse_host("8.8.8.8").must()) && is_global_unicast(parse_host("10.0.0.1").must())
 
 # Whether an address is reached across the Internet.
 test "is_global: a public address is, a private one is not"
-    assert is_global(parse_address("8.8.8.8").must()) && !is_global(parse_address("10.0.0.1").must())
+    assert is_global(parse_host("8.8.8.8").must()) && !is_global(parse_host("10.0.0.1").must())
 
 # Whether an address is reserved for future use.
 test "is_reserved: 240.0.0.1"
-    assert is_reserved(parse_address("240.0.0.1").must())
+    assert is_reserved(parse_host("240.0.0.1").must())
 
 # Whether an address is one kept for documentation, as examples write.
 test "is_documentation: 2001:db8::1"
-    assert is_documentation(parse_address("2001:db8::1").must())
+    assert is_documentation(parse_host("2001:db8::1").must())
 
 # Whether an address is kept for benchmarking networks.
 test "is_benchmarking: 198.18.0.1"
-    assert is_benchmarking(parse_address("198.18.0.1").must())
+    assert is_benchmarking(parse_host("198.18.0.1").must())
 
 # Whether an address is in the space carriers share.
 test "is_shared: 100.64.0.1"
-    assert is_shared(parse_address("100.64.0.1").must())
+    assert is_shared(parse_host("100.64.0.1").must())
 
 # Whether an address is the IPv4 broadcast address.
 test "is_broadcast: 255.255.255.255"
@@ -2361,21 +2365,21 @@ test "is_broadcast: 255.255.255.255"
 
 # Whether an address is a retired site-local IPv6 one.
 test "is_site_local: fec0::1"
-    assert is_site_local(parse_address("fec0::1").must())
+    assert is_site_local(parse_host("fec0::1").must())
 
 # The IPv4 address a 6to4 address carries.
 test "sixtofour_of: 2002:c000:204::1 carries 192.0.2.4"
-    assert format_address(sixtofour_of(parse_address("2002:c000:204::1").must()).must()) == "192.0.2.4"
+    assert format_host(sixtofour_of(parse_host("2002:c000:204::1").must()).must()) == "192.0.2.4"
 
 # The server and the client a Teredo address carries.
 test "teredo_of: RFC 4380's example"
-    t = teredo_of(parse_address("2001:0:4136:e378:8000:63bf:3fff:fdd2").must()).must()
-    assert format_address(t.server) == "65.54.227.120" && format_address(t.client) == "192.0.2.45"
+    t = teredo_of(parse_host("2001:0:4136:e378:8000:63bf:3fff:fdd2").must()).must()
+    assert format_host(t.server) == "65.54.227.120" && format_host(t.client) == "192.0.2.45"
 
 # A network read from text.
 test "parse_network: 10.0.0.0/8"
     n = parse_network("10.0.0.0/8").must()
-    assert n.bits == 8 && format_address(n.address) == "10.0.0.0"
+    assert n.bits == 8 && format_host(n.host) == "10.0.0.0"
 
 # A network written back.
 test "format_network: 2001:db8::/32"
@@ -2383,7 +2387,7 @@ test "format_network: 2001:db8::/32"
 
 # The network an address stands in, by its first bits.
 test "network_of: the /24 of 192.0.2.77"
-    assert format_network(network_of(parse_address("192.0.2.77").must(), bits: 24).must()) == "192.0.2.0/24"
+    assert format_network(network_of(parse_host("192.0.2.77").must(), bits: 24).must()) == "192.0.2.0/24"
 
 # A network written with an address's bits, cut to its own.
 test "to_masked: 10.1.2.3/8 is 10.0.0.0/8"
@@ -2391,7 +2395,7 @@ test "to_masked: 10.1.2.3/8 is 10.0.0.0/8"
 
 # Whether a network holds an address, as an allow list asks.
 test "contains: 10.1.2.3 is in 10.0.0.0/8"
-    assert contains(parse_network("10.0.0.0/8").must(), a: parse_address("10.1.2.3").must())
+    assert contains(parse_network("10.0.0.0/8").must(), h: parse_host("10.1.2.3").must())
 
 # Whether a network holds another.
 test "contains_network: a /16 inside a /8"
@@ -2403,19 +2407,19 @@ test "overlaps: a /8 and a /16 inside it"
 
 # A network's mask, as an old configuration writes it.
 test "netmask: a /24's mask"
-    assert format_address(netmask(parse_network("192.0.2.0/24").must())) == "255.255.255.0"
+    assert format_host(netmask(parse_network("192.0.2.0/24").must())) == "255.255.255.0"
 
 # The bits of a network's hosts.
 test "hostmask: a /24's host bits"
-    assert format_address(hostmask(parse_network("192.0.2.0/24").must())) == "0.0.0.255"
+    assert format_host(hostmask(parse_network("192.0.2.0/24").must())) == "0.0.0.255"
 
 # A network's first address.
 test "first_of: the first address of a /24"
-    assert format_address(first_of(parse_network("192.0.2.0/24").must())) == "192.0.2.0"
+    assert format_host(first_of(parse_network("192.0.2.0/24").must())) == "192.0.2.0"
 
 # A network's last address, its broadcast address.
 test "last_of: the last address of a /24"
-    assert format_address(last_of(parse_network("192.0.2.0/24").must())) == "192.0.2.255"
+    assert format_host(last_of(parse_network("192.0.2.0/24").must())) == "192.0.2.255"
 
 # How many addresses a network holds.
 test "count_of: a /24 holds 256"
@@ -2423,7 +2427,7 @@ test "count_of: a /24 holds 256"
 
 # The bits a mask sets, as a network's length.
 test "mask_length: 255.255.255.0 is 24"
-    assert mask_length(parse_address("255.255.255.0").must()).must() == 24
+    assert mask_length(parse_host("255.255.255.0").must()).must() == 24
 
 # Two networks ordered, the wider first where they share an address.
 test "compare_networks: a /8 before a /16 of the same address"
@@ -2449,8 +2453,8 @@ test "collapse: two halves become one /24"
 
 # The networks that hold a range of addresses.
 test "summarize: 192.0.2.0 to 192.0.2.255 is one /24"
-    first = parse_address("192.0.2.0").must()
-    last = parse_address("192.0.2.255").must()
+    first = parse_host("192.0.2.0").must()
+    last = parse_host("192.0.2.255").must()
     found = summarize(first: first, last: last).must()
     assert found.len() == 1 && format_network(found[0]) == "192.0.2.0/24"
 
@@ -2564,7 +2568,7 @@ test "join_group: a datagram to a group heard back on the loopback"
         if i.loopback
             loopback @ i.index
 
-    group = parse_address("239.255.0.1").must()
+    group = parse_host("239.255.0.1").must()
 
     match join_group(s, group: group, interface_index: loopback)
         .ok _ =>
@@ -2579,7 +2583,7 @@ test "join_group: a datagram to a group heard back on the loopback"
 # A group left once the socket no longer listens to it.
 test "leave_group: a group left after it was joined"
     s @= open_udp("0.0.0.0", port: 0).must()
-    group = parse_address("239.255.0.2").must()
+    group = parse_host("239.255.0.2").must()
     loopback: i64 @= 0
 
     for i in interfaces().must()
@@ -2649,7 +2653,7 @@ test "interfaces: the loopback interface found"
 # a second; a system that refuses a program an ICMP socket says so.
 test "ping: the loopback answers 64 bytes"
     match ping("127.0.0.1", sequence: 0, size: 56, timeout_ms: 1000)
-        .ok e  => assert e.bytes == 64 && format_address(e.from) == "127.0.0.1"
+        .ok e  => assert e.bytes == 64 && format_host(e.from) == "127.0.0.1"
         .err e => assert e.code == PERMISSION || e.code == UNSUPPORTED
 
 # Defect 2623: a connect whose port the system chooses may be given the very

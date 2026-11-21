@@ -105,7 +105,7 @@ function over_udp(query: [u8], server: net.Address, timeout_ms: i64) -> [u8]?
     # until net's repair of 2026-11-19, and since then binds "0.0.0.0".)
     host: str @= "0.0.0.0"
 
-    if net.is_v6(server)
+    if net.is_v6(server.host)
         host @ "::"
     socket @= net.open_udp(host, port: 0)?
     got = udp_answer(socket, query: query, server: server, timeout_ms: timeout_ms)
@@ -126,13 +126,13 @@ function udp_answer(socket: net.UdpSocket, query: [u8], server: net.Address, tim
     while true
         d = net.receive(socket)?
 
-        if d.sender.bytes == server.bytes && d.sender.port == server.port && answers(query: query, answer: d.data)
+        if d.sender.host.bytes == server.host.bytes && d.sender.port == server.port && answers(query: query, answer: d.data)
             return ok(d.data)
 
 # The answer to `query` from `server` over TCP: the connection made within
 # `timeout_ms`, and the answer read within as much again.
 function over_tcp(query: [u8], server: net.Address, timeout_ms: i64) -> [u8]?
-    c @= net.connect_timeout(net.format_address(net.without_port(server)), port: server.port, timeout_ms: timeout_ms, deadline_ms: timeout_ms)?
+    c @= net.connect_timeout(net.format_host(server.host), port: server.port, timeout_ms: timeout_ms, deadline_ms: timeout_ms)?
     got = framed_answer(c.stream, query: query)
 
     match io.close(@c.stream)

@@ -159,14 +159,14 @@ function uri_within(uri: str, base: str) -> bool
 
 # The address `host` writes as an IP literal, brackets around an IPv6
 # address allowed. Fails `invalid` where it is no address.
-function host_address(host: str) -> net.Address?
+function host_address(host: str) -> net.Host?
     if host.len() > 1 && host[0] == '[' && host[host.len() - 1] == ']'
-        return net.parse_address(host.slice(from: 1, to: host.len() - 1))
-    return net.parse_address(host)
+        return net.parse_host(host.slice(from: 1, to: host.len() - 1))
+    return net.parse_host(host)
 
 # Whether `a` and `b` are one address, an IPv4 address and the IPv6 address
 # that maps it being one, as Go's `IP.Equal` reads them.
-function same_address(a: net.Address, b: net.Address) -> bool
+function same_address(a: net.Host, b: net.Host) -> bool
     return net.unmap(a).bytes == net.unmap(b).bytes
 
 # Whether `name`, a name of `kind`, is within `base`, a constraint of the
@@ -189,10 +189,10 @@ function is_within(kind: i64, name: str, base: str, excluded: bool) -> bool
     if kind == 6
         return uri_within(uri: name, base: base)
 
-    match net.parse_address(name)
+    match net.parse_host(name)
         .ok address =>
             match net.parse_network(base)
-                .ok network => return net.contains(n: network, a: address)
+                .ok network => return net.contains(n: network, h: address)
                 .err _      => return false
         .err _ => return false
 
@@ -266,8 +266,8 @@ test "uri_host and uri_within: a user and a port, an IP literal, and no authorit
     assert !uri_within(uri: "https://a.example.com/", base: "example.com")
 
 test "host_address and same_address: brackets, a mapped IPv4, and a name"
-    assert same_address(a: host_address("[2001:db8::1]").must(), b: net.parse_address("2001:0db8:0:0:0:0:0:1").must())
-    assert same_address(a: host_address("::ffff:192.0.2.1").must(), b: net.parse_address("192.0.2.1").must())
+    assert same_address(a: host_address("[2001:db8::1]").must(), b: net.parse_host("2001:0db8:0:0:0:0:0:1").must())
+    assert same_address(a: host_address("::ffff:192.0.2.1").must(), b: net.parse_host("192.0.2.1").must())
     assert host_address("example.com").is_err()
 
 test "is_within and check_constraint: each kind, an excluded wildcard, and a name of no permitted kind"

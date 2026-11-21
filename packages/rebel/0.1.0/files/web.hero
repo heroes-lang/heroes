@@ -1867,7 +1867,7 @@ function trusted_networks(list: [str]) -> [net.Network]?
         if strings.contains(s: item, substr: "/")
             out @ out.push(net.parse_network(item)?)
         else
-            a = net.unmap(net.parse_address(item)?)
+            a = net.unmap(net.parse_host(item)?)
             out @ out.push(net.network_of(a, bits: net.bits_of(a))?)
 
     return ok(out)

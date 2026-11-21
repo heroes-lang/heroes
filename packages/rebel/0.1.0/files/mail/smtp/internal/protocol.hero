@@ -175,7 +175,7 @@ function is_loopback(host: str) -> bool
     if lowered == "localhost" || strings.has_suffix(s: lowered, suffix: ".localhost")
         return true
 
-    return match net.parse_address(strings.trim_suffix(s: strings.trim_prefix(s: host, prefix: "["), suffix: "]"))
+    return match net.parse_host(strings.trim_suffix(s: strings.trim_prefix(s: host, prefix: "["), suffix: "]"))
         .ok a  => net.is_loopback(a)
         .err _ => false
 

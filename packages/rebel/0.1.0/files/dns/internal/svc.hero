@@ -69,7 +69,7 @@ function port_of(value: [u8]) -> i64?
 
 # The addresses a hint lists, sixteen bytes each where `v6`, four otherwise.
 # Fails `invalid` where it is empty or not a whole count of them.
-function hints_of(value: [u8], v6: bool) -> [net.Address]?
+function hints_of(value: [u8], v6: bool) -> [net.Host]?
     width: i64 @= 4
 
     if v6
@@ -80,7 +80,7 @@ function hints_of(value: [u8], v6: bool) -> [net.Address]?
             code: failure.INVALID,
             msg: f"a hint of {value.len()} bytes, not a whole count of addresses of {width}"
         )
-    out: [net.Address] @= []
+    out: [net.Host] @= []
     at: i64 @= 0
 
     while at < value.len()
@@ -91,7 +91,7 @@ function hints_of(value: [u8], v6: bool) -> [net.Address]?
 
 # The hint listing `addresses`, of one kind. Fails `invalid` where it is
 # empty or mixes the two.
-function hints_value(addresses: [net.Address]) -> [u8]?
+function hints_value(addresses: [net.Host]) -> [u8]?
     if addresses.len() == 0
         return fail(code: failure.INVALID, msg: "a hint lists one address or more")
     v6 = net.is_v6(addresses[0])
@@ -99,7 +99,7 @@ function hints_value(addresses: [net.Address]) -> [u8]?
 
     for a in addresses
         if net.is_v6(a) != v6
-            return fail(code: failure.INVALID, msg: f"a hint mixes IPv4 and IPv6: {net.format_address(a)}")
+            return fail(code: failure.INVALID, msg: f"a hint mixes IPv4 and IPv6: {net.format_host(a)}")
 
         for b in a.bytes
             out @ out.push(b)
@@ -145,7 +145,7 @@ function text_of(key: i64, value: [u8]) -> str
                 parts: [str] @= []
 
                 for h in hints
-                    parts @ parts.push(net.format_address(h))
+                    parts @ parts.push(net.format_host(h))
 
                 return name + "=" + parts.join(",")
             .err _ => _ = 0
@@ -185,11 +185,11 @@ test "ids_of and alpn_value: two identifiers back and forth, empty, and an ident
 
 test "port_of, hints_of and hints_value: the two kinds, a mixed list, and lengths that are no count"
     assert port_of([1, 187]).must() == 443 && port_of([1]).is_err()
-    four = hints_value([net.parse_address("192.0.2.1").must(), net.parse_address("192.0.2.2").must()]).must()
+    four = hints_value([net.parse_host("192.0.2.1").must(), net.parse_host("192.0.2.2").must()]).must()
     assert four == [192, 0, 2, 1, 192, 0, 2, 2]
-    assert net.format_address(hints_of(four, v6: false).must()[1]) == "192.0.2.2"
+    assert net.format_host(hints_of(four, v6: false).must()[1]) == "192.0.2.2"
     assert hints_of(four, v6: true).is_err() && hints_of([], v6: false).is_err()
-    assert hints_value([net.parse_address("::1").must(), net.parse_address("1.2.3.4").must()]).is_err()
+    assert hints_value([net.parse_host("::1").must(), net.parse_host("1.2.3.4").must()]).is_err()
 
 test "text_of: each known key's form, a key with none, and a value not of its key's form"
     assert text_of(key: 1, value: [2, 104, 50, 2, 104, 51]) == "alpn=\"h2,h3\""

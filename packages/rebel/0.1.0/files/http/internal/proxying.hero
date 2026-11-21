@@ -101,7 +101,7 @@ function is_bypassed(bypass: [str], host: str, port: i64) -> bool
 
     if name == "localhost" || strings.has_suffix(s: name, suffix: ".localhost")
         return true
-    address = net.parse_address(name)
+    address = net.parse_host(name)
 
     match address
         .ok a =>
@@ -131,7 +131,7 @@ function is_bypassed(bypass: [str], host: str, port: i64) -> bool
                     .err _ => _ = 0
 
         if wanted_port == 0 || wanted_port == port
-            if is_same_address(entry: named, host: address) || is_same_address(entry: net.parse_address(entry), host: address)
+            if is_same_address(entry: host_of(named), host: address) || is_same_address(entry: net.parse_host(entry), host: address)
                 return true
 
             if strings.contains(s: entry, substr: "/")
@@ -152,14 +152,19 @@ function is_bypassed(bypass: [str], host: str, port: i64) -> bool
     return false
 
 # Whether `entry` and `host`, each an address read or its failure, are one
-# address: the same bytes, whatever their ports and the way each was written.
-function is_same_address(entry: net.Address?, host: net.Address?) -> bool
+# address: the same bytes, whatever the way each was written.
+function is_same_address(entry: net.Host?, host: net.Host?) -> bool
     match entry
         .err _ => return false
         .ok a =>
             match host
                 .err _ => return false
                 .ok b  => return a.bytes == b.bytes
+
+# The host of `a`, an address with a port read, or the failure it holds.
+function host_of(a: net.Address?) -> net.Host?
+    got = a?
+    return ok(got.host)
 
 # The `Proxy-Authorization` field `place` asks for: none where it has no
 # user, else Basic's, RFC 7617.

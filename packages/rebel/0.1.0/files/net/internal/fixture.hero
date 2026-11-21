@@ -10,7 +10,7 @@ use net
 function loopback_index() -> i64
     for i in net.interfaces().must()
         for n in i.addresses
-            if i.loopback && n.address == net.loopback_v4()
+            if i.loopback && n.host == net.loopback_v4()
                 return i.index
 
     return 0

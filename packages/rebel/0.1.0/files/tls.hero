@@ -600,7 +600,7 @@ test "accept: one client, four bytes each way"
         client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port)).must()
         c = accept(l, deadline: time.seconds(10).must()).must()
         assert net.format_address(c.local) == "127.0.0.1:" + to_str(l.port)
-        assert net.is_loopback(c.remote) && c.remote.port != l.port
+        assert net.is_loopback(c.remote.host) && c.remote.port != l.port
         s @= c.stream
         assert io.read_exact(s, n: 4).must() == [112, 105, 110, 103]
         io.write_text(s, text: "pong").must()

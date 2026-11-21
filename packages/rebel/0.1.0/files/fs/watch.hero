@@ -323,7 +323,9 @@ function add_to(set: poll.Set, w: Watch) -> i64?
 
     if socket == nullptr
         return failure.last(asked: asked)
-    loopback = net.Address(bytes: [127, 0, 0, 1], zone: "", has_port: false, port: 0)
+
+    # Its port is not asked: a set reads the socket alone.
+    loopback = net.Address(host: net.loopback_v4(), port: 0)
     return poll.add_udp(set, u: net.UdpSocket(socket: socket, address: loopback), interest: .read)
 
 ## Telling

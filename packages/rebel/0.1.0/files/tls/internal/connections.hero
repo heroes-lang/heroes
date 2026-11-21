@@ -111,7 +111,7 @@ function end_of(s: io.Stream, remote: bool, asked: str) -> net.Address?
             why: "the system wrote an address that is not text"
         )
         .ok written =>
-            match net.parse_address(written)
+            match net.parse_host(written)
                 .err e => return failure.of(
                     code: failure.FAILED,
                     asked: asked,

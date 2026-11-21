@@ -33,12 +33,12 @@ function address_part(s: str) -> str
 
 # Whether `address` is one of `trusted`'s networks.
 function is_trusted(address: str, trusted: [net.Network]) -> bool
-    a = match net.parse_address(address)
+    a = match net.parse_host(address)
         .ok got => net.unmap(got)
         .err _  => return false
 
     for n in trusted
-        if net.contains(n, a: a)
+        if net.contains(n, h: a)
             return true
 
     return false

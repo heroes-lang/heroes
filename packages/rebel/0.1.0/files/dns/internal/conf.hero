@@ -11,9 +11,9 @@ constant MOST_SERVERS: i64
 
 # What the file says, and the defaults where it says nothing.
 record Conf
-    # The servers' addresses, without ports, in the file's order: the
-    # loopback addresses where the file names none.
-    servers: [net.Address]
+    # The servers' addresses, in the file's order: the loopback addresses
+    # where the file names none. The port is the resolver's.
+    servers: [net.Host]
     # The search list, absolute names; none where the file names none.
     search: [str]
     # Whether a `search` or `domain` line was read, even one naming none.
@@ -31,7 +31,7 @@ record Conf
 
 # What `text` says, a `resolv.conf`'s content.
 function read(text: str) -> Conf
-    servers: [net.Address] @= []
+    servers: [net.Host] @= []
     search: [str] @= []
     has_search: bool @= false
     ndots: i64 @= 1
@@ -48,7 +48,7 @@ function read(text: str) -> Conf
         key = words[0]
 
         if key == "nameserver" && words.len() >= 2 && servers.len() < MOST_SERVERS
-            match net.parse_address(words[1])
+            match net.parse_host(words[1])
                 .ok a  => servers @ servers.push(a)
                 .err _ => _ = 0
         else if key == "domain" && words.len() >= 2
@@ -123,7 +123,7 @@ function bounded(digits: str, low: i64, high: i64, otherwise: i64) -> i64
 test "read: the servers, at most three and none that is no address, the search list, and the options"
     text = "# a comment\nnameserver 192.0.2.1\nnameserver bad\nnameserver 2001:db8::1\n; another\nnameserver 192.0.2.3\nnameserver 192.0.2.4\nsearch example.com corp.example. # end\noptions ndots:2 timeout:1 attempts:9 rotate use-vc edns0\n"
     c = read(text)
-    assert c.servers.len() == 3 && net.format_address(c.servers[1]) == "2001:db8::1" && net.format_address(c.servers[2]) == "192.0.2.3"
+    assert c.servers.len() == 3 && net.format_host(c.servers[1]) == "2001:db8::1" && net.format_host(c.servers[2]) == "192.0.2.3"
     assert c.search == ["example.com.", "corp.example."] && c.has_search
     assert c.ndots == 2 && c.timeout_s == 1 && c.attempts == 5 && c.rotate && c.tcp
 

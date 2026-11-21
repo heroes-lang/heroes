@@ -6,4 +6,4 @@
 use <rebel>/net
 
 function main()
-    print(net.format_address(net.loopback_v6()))
+    print(net.format_host(net.loopback_v6()))

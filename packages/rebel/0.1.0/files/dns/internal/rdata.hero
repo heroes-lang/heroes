@@ -22,7 +22,7 @@ function text_of(s: model.Slots) -> str
         if b[0].len() > 0
             parts @ parts.push(present.hex(b[0]))
     else if t == 1 || t == 28
-        parts @ parts.push(net.format_address(net.from_bytes(b[0]).must()))
+        parts @ parts.push(net.format_host(net.from_bytes(b[0]).must()))
     else if t == 2 || t == 5 || t == 12 || t == 39
         parts @ parts.push(s.names[0])
     else if t == 15

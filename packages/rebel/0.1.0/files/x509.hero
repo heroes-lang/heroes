@@ -202,8 +202,8 @@ variant GeneralName
         uri: str
     # `iPAddress` of four or sixteen bytes: an address.
     ip
-        # The address, with no zone and no port.
-        address: net.Address
+        # The address, with no zone.
+        address: net.Host
     # `iPAddress` of eight or thirty-two bytes, as a name constraint holds
     # one: an address and its mask.
     ip_network
@@ -245,7 +245,7 @@ function to_general_name(v: asn1.Value) -> GeneralName?
         address = net.from_bytes(octets.slice(from: 0, to: half))?
         mask = net.from_bytes(octets.slice(from: half, to: octets.len()))?
         bits = shapes.within(r: net.mask_length(mask), what: "an iPAddress's mask")?
-        return ok(.ip_network(network: net.network_of(a: address, bits: bits)?))
+        return ok(.ip_network(network: net.network_of(h: address, bits: bits)?))
 
     if number == 8
         return ok(
@@ -1855,7 +1855,7 @@ function verify_chain(chain: [Certificate], options: Verification) -> ()?
                                 base_text @ u.uri
                             .ip a =>
                                 base_kind @ 7
-                                base_text @ net.format_address(a.address)
+                                base_text @ net.format_host(a.address)
                             .ip_network n =>
                                 base_kind @ 7
                                 base_text @ net.format_network(n.network)
@@ -1885,7 +1885,7 @@ function verify_chain(chain: [Certificate], options: Verification) -> ()?
                                 base_text @ u.uri
                             .ip a =>
                                 base_kind @ 7
-                                base_text @ net.format_address(a.address)
+                                base_text @ net.format_host(a.address)
                             .ip_network n =>
                                 base_kind @ 7
                                 base_text @ net.format_network(n.network)
@@ -1922,7 +1922,7 @@ function verify_chain(chain: [Certificate], options: Verification) -> ()?
                                     name_text @ u.uri
                                 .ip a =>
                                     name_kind @ 7
-                                    name_text @ net.format_address(a.address)
+                                    name_text @ net.format_host(a.address)
                                 .ip_network n =>
                                     name_kind @ 7
                                     name_text @ net.format_network(n.network)
@@ -2001,10 +2001,10 @@ function is_for_host(certificate: Certificate, host: str) -> bool
 # it, an IPv4 address and the IPv6 address that maps it being one.
 #
 # - `certificate`: the certificate.
-# - `address`: the address; its zone and port are not compared.
+# - `address`: the address; its zone is not compared.
 #
 # See also `is_for_host`.
-function is_for_address(certificate: Certificate, address: net.Address) -> bool
+function is_for_address(certificate: Certificate, address: net.Host) -> bool
     for g in certificate.extensions.alt_names.default([])
         match g
             .ip a =>
@@ -2241,7 +2241,7 @@ test "decode_certificate: the extensions of the root and the leaf, an unknown on
     assert ext.alt_names.must().len() == 6
     assert ext.alt_names.must()[0] == .dns(name: "example.com")
     assert ext.alt_names.must()[1] == .dns(name: "*.app.example.com")
-    assert ext.alt_names.must()[2] == .ip(address: net.parse_address("192.0.2.1").must())
+    assert ext.alt_names.must()[2] == .ip(address: net.parse_host("192.0.2.1").must())
     assert ext.alt_names.must()[4] == .email(address: "ops@example.com")
     assert ext.alt_names.must()[5] == .uri(uri: "https://example.com/")
     assert ext.unknown.len() == 1
@@ -2373,9 +2373,9 @@ test "is_for_host: Go's answers on the leaf's names"
 
 test "is_for_address: both families, a mapped IPv4, and an address not named"
     leaf = parse_certificate(samples.leaf()).must()
-    assert is_for_address(certificate: leaf, address: net.parse_address("2001:db8::1").must())
-    assert is_for_address(certificate: leaf, address: net.parse_address("::ffff:192.0.2.1").must())
-    assert !is_for_address(certificate: leaf, address: net.parse_address("192.0.2.2").must())
+    assert is_for_address(certificate: leaf, address: net.parse_host("2001:db8::1").must())
+    assert is_for_address(certificate: leaf, address: net.parse_host("::ffff:192.0.2.1").must())
+    assert !is_for_address(certificate: leaf, address: net.parse_host("192.0.2.2").must())
 
 test "chain_of: the leaf to its root from a pool in another order, a self-issued leaf, and an empty pool"
     root = parse_certificate(samples.root()).must()
@@ -2656,5 +2656,5 @@ test "is_for_host: a wildcard's one label"
 test "is_for_address: an IPv4 address"
     assert is_for_address(
         certificate: parse_certificate(samples.leaf()).must(),
-        address: net.parse_address("192.0.2.1").must()
+        address: net.parse_host("192.0.2.1").must()
     )

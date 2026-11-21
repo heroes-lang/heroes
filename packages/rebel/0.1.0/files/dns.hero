@@ -212,7 +212,7 @@ function parse_resolv_conf(text: str) -> Resolver
 # no search list, `ndots:1`, five seconds a try, two attempts, recursion
 # desired, EDNS(0) at `DEFAULT_UDP_SIZE`.
 #
-# - `servers`: one or more addresses, each as `net.parse_address` reads it,
+# - `servers`: one or more addresses, each as `net.parse_host` reads it,
 #   or with a port as `net.parse_address_port` reads it, `[::1]:5353`;
 #   without one, port 53.
 #
@@ -224,7 +224,7 @@ function resolver(servers: [str]) -> Resolver?
     out: [net.Address] @= []
 
     for s in servers
-        match net.parse_address(s)
+        match net.parse_host(s)
             .ok a => out @ out.push(net.with_port(a, port: PORT).must())
             .err _ =>
                 match net.parse_address_port(s)
@@ -263,10 +263,6 @@ function exchange(r: Resolver, m: Message) -> Message?
             code: INVALID,
             msg: f"a resolver asks one server or more, a time above zero a try, 1 attempt or more: not {r.servers.len()} servers, {time.format_duration(r.timeout)}, {r.attempts} attempts"
         )
-
-    for a in r.servers
-        if !a.has_port
-            return fail(code: INVALID, msg: f"the server {net.format_address(a)} has no port")
 
     asked = encode(m)?
     first: i64 @= 0
@@ -431,22 +427,22 @@ function lookup(r: Resolver, name: str, type_code: i64) -> Answer?
     return fail(code: NOT_FOUND, msg: missing)
 
 # The IPv4 and IPv6 addresses of `name`, asked of `r`'s servers: its A
-# records then its AAAA records, none twice, without ports.
+# records then its AAAA records, none twice.
 #
 # - `r`: the resolver.
 # - `name`: the host's name, as `lookup` reads it.
 #
 # Fails `not_found` where it has neither, and as `lookup` fails. See also
 # `net.lookup`, which asks the system's own resolver.
-function lookup_addresses(r: Resolver, name: str) -> [net.Address]?
-    out: [net.Address] @= []
+function lookup_addresses(r: Resolver, name: str) -> [net.Host]?
+    out: [net.Host] @= []
     missing: str @= ""
 
     for t in [TYPE_A, TYPE_AAAA]
         match lookup(r, name: name, type_code: t)
             .ok answer =>
                 for rec in answer.records
-                    got: [net.Address] @= []
+                    got: [net.Host] @= []
 
                     match rec.data
                         .a x => got @ [x.address]
@@ -613,11 +609,11 @@ function lookup_cname(r: Resolver, name: str) -> str?
 # `in-addr.arpa.` or `ip6.arpa.`, in the server's order.
 #
 # - `r`: the resolver.
-# - `a`: the address; its port and zone are left out.
+# - `a`: the address; its zone is left out.
 #
 # Fails as `lookup` fails. See also `net.name_of`, which asks the system's
 # own resolver, and `parse_reverse_name`.
-function lookup_reverse(r: Resolver, a: net.Address) -> [str]?
+function lookup_reverse(r: Resolver, a: net.Host) -> [str]?
     reverse: str @= net.to_reverse_name(a)
 
     if !strings.has_suffix(s: reverse, suffix: ".")
@@ -659,7 +655,7 @@ function transfer(r: Resolver, zone: str) -> [Record]?
     q.id @ to_i64(fresh[0]).must() << 8 | to_i64(fresh[1]).must()
     asked = encode(q)?
     server = r.servers[0]
-    host = net.format_address(net.without_port(server))
+    host = net.format_host(server.host)
     each_ms = transport.try_ms(r.timeout)
     c @= net.connect_timeout(host, port: server.port, timeout_ms: each_ms, deadline_ms: transport.times_ms(ms: each_ms, count: r.attempts))?
     got = transport.transfer(c.stream, query: asked)
@@ -766,12 +762,12 @@ record Record
 variant Data
     # An IPv4 address (A).
     a
-        # The address, four bytes, no port.
-        address: net.Address
+        # The address, four bytes.
+        address: net.Host
     # An IPv6 address (AAAA).
     aaaa
-        # The address, sixteen bytes, no port.
-        address: net.Address
+        # The address, sixteen bytes.
+        address: net.Host
     # A name server of the zone (NS).
     ns
         # The server's name.
@@ -1325,7 +1321,7 @@ function is_subdomain(name: str, of: str) -> bool
 # Fails `invalid` where `name` is under neither, or holds other than four
 # decimal labels 0 to 255 or 32 labels of one hexadecimal digit. See also
 # `net.to_reverse_name`, `lookup_reverse`.
-function parse_reverse_name(name: str) -> net.Address?
+function parse_reverse_name(name: str) -> net.Host?
     p = names.from_text(name)?
     low = names.lowered(p.labels)
     count = low.len()
@@ -1336,7 +1332,7 @@ function parse_reverse_name(name: str) -> net.Address?
         for k in range(from: 0, to: 4)
             parts @ parts.push(names.label_text(low[3 - k]))
 
-        match net.parse_address(parts.join("."))
+        match net.parse_host(parts.join("."))
             .ok a => return ok(a)
             .err _ => return fail(
                 code: INVALID,
@@ -1440,7 +1436,7 @@ function port_of(value: [u8]) -> i64?
 #
 # Fails `invalid` where the value is empty or not a whole count of
 # addresses. See also `hints_param`.
-function hints_of(value: [u8], v6: bool) -> [net.Address]?
+function hints_of(value: [u8], v6: bool) -> [net.Host]?
     return svc.hints_of(value, v6: v6)
 
 # The `alpn` parameter listing `ids`.
@@ -1468,11 +1464,11 @@ function port_param(port: i64) -> SvcParam?
 
 # The `ipv4hint` or `ipv6hint` parameter listing `addresses`, of one kind.
 #
-# - `addresses`: IPv4 addresses alone, or IPv6 alone; ports are ignored.
+# - `addresses`: IPv4 addresses alone, or IPv6 alone.
 #
 # Fails `invalid` where `addresses` is empty or mixes the two kinds. See
 # also `hints_of`.
-function hints_param(addresses: [net.Address]) -> SvcParam?
+function hints_param(addresses: [net.Host]) -> SvcParam?
     value = svc.hints_value(addresses)?
     key: i64 @= SVC_IPV4_HINT
 
@@ -1876,8 +1872,8 @@ test "encode and decode: a record of every kind, written and read back to the sa
         Edns(udp_size: 4096, version: 0, dnssec_ok: true, options: [EdnsOption(code: EDNS_NSID, data: []), EdnsOption(code: EDNS_COOKIE, data: digest)])
     )
     m.answers @ [
-        Record(name: "example.", class_code: CLASS_IN, ttl: 0, data: .a(address: net.parse_address("192.0.2.1").must()))
-        Record(name: "example.", class_code: CLASS_IN, ttl: 4_294_967_295, data: .aaaa(address: net.parse_address("2001:db8::1").must()))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 0, data: .a(address: net.parse_host("192.0.2.1").must()))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 4_294_967_295, data: .aaaa(address: net.parse_host("2001:db8::1").must()))
         Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .ns(host: "ns.example."))
         Record(name: "www.example.", class_code: CLASS_IN, ttl: 1, data: .cname(target: "example."))
         Record(name: "old.example.", class_code: CLASS_IN, ttl: 1, data: .dname(target: "new.example."))
@@ -1903,7 +1899,7 @@ test "encode and decode: a record of every kind, written and read back to the sa
     ]
     m.authorities @ [Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .ns(host: "ns2.example."))]
     m.additionals @ [
-        Record(name: "ns2.example.", class_code: CLASS_IN, ttl: 1, data: .a(address: net.parse_address("192.0.2.2").must()))
+        Record(name: "ns2.example.", class_code: CLASS_IN, ttl: 1, data: .a(address: net.parse_host("192.0.2.2").must()))
     ]
     data = encode(m).must()
     assert decode(data).must() == m
@@ -1936,7 +1932,7 @@ test "format_record: every kind dig 9.10.6 knows, as it printed the same bytes, 
         format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .rrsig(type_covered: TYPE_A, algorithm: 13, labels: 2, original_ttl: 300, expiration: 1_735_689_600, inception: 1_733_011_200, key_tag: 2371, signer: "example.com.", signature: signature))).must()
         format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .nsec(next: "next.example.com.", types: [1, 15, 46, 47, 257]))).must()
         format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .unknown(type_code: 65280, data: []))).must()
-        format_record(Record(name: "a\\.b.x\\032y.\\(.\\195\\169.example", class_code: CLASS_IN, ttl: 300, data: .a(address: net.parse_address("192.0.2.1").must()))).must()
+        format_record(Record(name: "a\\.b.x\\032y.\\(.\\195\\169.example", class_code: CLASS_IN, ttl: 300, data: .a(address: net.parse_host("192.0.2.1").must()))).must()
         format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .https(priority: 1, target: ".", params: [alpn_param(["h2", "h3"]).must(), port_param(443).must()]))).must()
     ]
     assert seen[0] == "example. 300 IN TXT \"say \\\"hi\\\" \\\\ back\" \"\" \"\\000\\127\\195\\169\\009;\""
@@ -1994,7 +1990,7 @@ test "decode: a compression loop, a pointer forward, two OPT records, an OPT amo
 test "encode: a name past 255 bytes, an address of the wrong kind, a parameter twice, a class-bound kind outside IN, and a message past 65,535 bytes"
     m @= reply_to(new_query("example.", type_code: TYPE_A).must())
     m.answers @ [
-        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .a(address: net.parse_address("::1").must()))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .a(address: net.parse_host("::1").must()))
     ]
     assert encode(m).is_err()
     m.answers @ [
@@ -2025,7 +2021,7 @@ test "exchange: a datagram answered, a truncated answer asked again over TCP, a 
     q = new_query("example.com", type_code: TYPE_A).must()
     full @= reply_to(q)
     full.answers @ [
-        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_address("192.0.2.7").must()))
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_host("192.0.2.7").must()))
     ]
     cut @= reply_to(q)
     cut.truncated @ true
@@ -2075,7 +2071,7 @@ test "lookup: the search list tried in order past a name that names nothing, a n
     second = new_query("host.b.example.", type_code: TYPE_A).must()
     found @= reply_to(second)
     found.answers @ [
-        Record(name: "HOST.b.example.", class_code: CLASS_IN, ttl: 5, data: .a(address: net.parse_address("192.0.2.9").must()))
+        Record(name: "HOST.b.example.", class_code: CLASS_IN, ttl: 5, data: .a(address: net.parse_host("192.0.2.9").must()))
     ]
     empty = reply_to(new_query("bare.example.", type_code: TYPE_A).must())
     refused @= reply_to(new_query("bare.example.", type_code: TYPE_A).must())
@@ -2113,10 +2109,10 @@ test "lookup_mx: the aliases followed and the exchangers ordered, as Go's Lookup
 
 test "parse_reverse_name: both kinds back from net.to_reverse_name, in capitals, and names that are neither"
     for text in ["192.0.2.1", "2001:db8::1", "::", "255.255.255.255"]
-        a = net.parse_address(text).must()
+        a = net.parse_host(text).must()
         assert parse_reverse_name(net.to_reverse_name(a)).must() == a
 
-    assert net.format_address(parse_reverse_name("1.0.0.127.IN-ADDR.ARPA.").must()) == "127.0.0.1"
+    assert net.format_host(parse_reverse_name("1.0.0.127.IN-ADDR.ARPA.").must()) == "127.0.0.1"
     assert parse_reverse_name("1.0.0.in-addr.arpa").is_err() && parse_reverse_name("256.0.0.1.in-addr.arpa").is_err()
     assert parse_reverse_name("example.com").is_err() && parse_reverse_name("g.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa").is_err()
 
@@ -2167,7 +2163,7 @@ test "transfer: a zone in two messages, a refusal, and a transfer that does not 
         name: "www.example.",
         class_code: CLASS_IN,
         ttl: 60,
-        data: .a(address: net.parse_address("192.0.2.1").must())
+        data: .a(address: net.parse_host("192.0.2.1").must())
     )
     first @= reply_to(q)
     first.edns @ fail(code: NOT_FOUND, msg: "the message carries no EDNS(0) OPT record")
@@ -2234,7 +2230,7 @@ test "is_subdomain: a host under its domain"
 
 # The address a PTR question was about.
 test "parse_reverse_name: an IPv4 address back from its reverse name"
-    assert net.format_address(parse_reverse_name("1.2.0.192.in-addr.arpa.").must()) == "192.0.2.1"
+    assert net.format_host(parse_reverse_name("1.2.0.192.in-addr.arpa.").must()) == "192.0.2.1"
 
 # The type a record's data says.
 test "type_of: an MX record's type"
@@ -2290,7 +2286,7 @@ test "port_of: 443 from its two bytes"
 # The addresses a binding hints at.
 test "hints_of: two IPv4 addresses"
     hints = hints_of([192, 0, 2, 1, 192, 0, 2, 2], v6: false).must()
-    assert net.format_address(hints[1]) == "192.0.2.2"
+    assert net.format_host(hints[1]) == "192.0.2.2"
 
 # The parameter listing the protocols offered.
 test "alpn_param: h3 alone"
@@ -2302,7 +2298,7 @@ test "port_param: 8443"
 
 # The parameter hinting at an IPv6 address.
 test "hints_param: one IPv6 address"
-    assert hints_param([net.parse_address("2001:db8::1").must()]).must().key == SVC_IPV6_HINT
+    assert hints_param([net.parse_host("2001:db8::1").must()]).must().key == SVC_IPV6_HINT
 
 # The tag a DS record names a key by.
 test "key_tag_of: a key of RSA/MD5, its tag read from its last bytes"
@@ -2329,7 +2325,7 @@ test "exchange: an address asked of a local server"
     q = new_query("example.com.", type_code: TYPE_A).must()
     a @= reply_to(q)
     a.answers @ [
-        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_address("192.0.2.7").must()))
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_host("192.0.2.7").must()))
     ]
     server @= canned.start([canned.udp(encode(a).must())])
     answer = exchange(resolver([f"127.0.0.1:{server.port}"]).must(), m: q).must()
@@ -2360,7 +2356,7 @@ test "query: an address asked of a local server"
 test "lookup: a host's address under the search list"
     a @= reply_to(new_query("www.example.com.", type_code: TYPE_A).must())
     a.answers @ [
-        Record(name: "www.example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_address("192.0.2.7").must()))
+        Record(name: "www.example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_host("192.0.2.7").must()))
     ]
     server @= canned.start([canned.udp(encode(a).must())])
     r @= resolver([f"127.0.0.1:{server.port}"]).must()
@@ -2372,15 +2368,15 @@ test "lookup: a host's address under the search list"
 test "lookup_addresses: one of each kind"
     four @= reply_to(new_query("example.com.", type_code: TYPE_A).must())
     four.answers @ [
-        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_address("192.0.2.7").must()))
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_host("192.0.2.7").must()))
     ]
     six @= reply_to(new_query("example.com.", type_code: TYPE_AAAA).must())
     six.answers @ [
-        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .aaaa(address: net.parse_address("2001:db8::7").must()))
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .aaaa(address: net.parse_host("2001:db8::7").must()))
     ]
     server @= canned.start([canned.udp(encode(four).must()), canned.udp(encode(six).must())])
     found = lookup_addresses(resolver([f"127.0.0.1:{server.port}"]).must(), name: "example.com.").must()
-    assert found.len() == 2 && net.format_address(found[1]) == "2001:db8::7"
+    assert found.len() == 2 && net.format_host(found[1]) == "2001:db8::7"
     _ = threads.wait_text(@server.thread)
 
 # A domain's mail exchangers, by preference.
@@ -2434,7 +2430,7 @@ test "lookup_cname: an alias followed to its canonical name"
     a @= reply_to(new_query("www.example.com.", type_code: TYPE_A).must())
     a.answers @ [
         Record(name: "www.example.com.", class_code: CLASS_IN, ttl: 60, data: .cname(target: "web.example.com."))
-        Record(name: "web.example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_address("192.0.2.7").must()))
+        Record(name: "web.example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_host("192.0.2.7").must()))
     ]
     server @= canned.start([canned.udp(encode(a).must())])
     assert lookup_cname(resolver([f"127.0.0.1:{server.port}"]).must(), name: "www.example.com.").must() == "web.example.com."
@@ -2447,7 +2443,7 @@ test "lookup_reverse: the name of 192.0.2.7"
         Record(name: "7.2.0.192.in-addr.arpa.", class_code: CLASS_IN, ttl: 60, data: .ptr(target: "host.example.com."))
     ]
     server @= canned.start([canned.udp(encode(a).must())])
-    assert lookup_reverse(resolver([f"127.0.0.1:{server.port}"]).must(), a: net.parse_address("192.0.2.7").must()).must() == ["host.example.com."]
+    assert lookup_reverse(resolver([f"127.0.0.1:{server.port}"]).must(), a: net.parse_host("192.0.2.7").must()).must() == ["host.example.com."]
     _ = threads.wait_text(@server.thread)
 
 # A whole zone, asked of its server.

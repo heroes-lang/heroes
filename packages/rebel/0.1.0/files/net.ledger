@@ -1,12 +1,12 @@
-capability address/value  an IPv4 or IPv6 address as a value, with a port where one belongs
-  heroes  net.Address
+capability address/value  an IPv4 or IPv6 address as a value, and one with a port
+  heroes  net.Host, net.Address
   go      netip.Addr, netip.AddrPort, net.IP, net.IPAddr, net.TCPAddr, net.UDPAddr, net.Addr, netip.Addr.IsValid, netip.AddrPort.IsValid
   rust    IpAddr, IpAddr::V4, IpAddr::V6, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddr::V4, SocketAddr::V6, SocketAddrV4, SocketAddrV6
   python  ipaddress.IPv4Address, ipaddress.IPv6Address
-  note    One record for the four shapes Go and Rust split: the bytes say the kind, `has_port` whether a port belongs. No zero value stands for "no address", so Go's `IsValid` has nothing to ask
+  note    Two records for the four shapes Go and Rust split: `Host` the address alone, its bytes saying the kind, and `Address` a host and a port, always both. No zero value stands for "no address", so Go's `IsValid` has nothing to ask
 
 capability address/parse  an address read from text, without a port
-  heroes  net.parse_address
+  heroes  net.parse_host
   go      netip.ParseAddr, netip.MustParseAddr, netip.Addr.UnmarshalText, net.ParseIP, net.IP.UnmarshalText
   rust    IpAddr::from_str, Ipv4Addr::from_str, Ipv6Addr::from_str, IpAddr::parse_ascii, Ipv4Addr::parse_ascii, Ipv6Addr::parse_ascii, AddrParseError
   python  ipaddress.ip_address, ipaddress.AddressValueError, socket.inet_pton, socket.inet_aton
@@ -20,14 +20,14 @@ capability address/parse-with-port  an address and a port read from text, IPv6 i
   note    Go's: zeros before the port read (`080` is 80), IPv4 in brackets and IPv6 without them refused
 
 capability address/format  an address written as text that reads back to it
-  heroes  net.format_address
+  heroes  net.format_host, net.format_address
   go      netip.Addr.String, netip.Addr.AppendTo, netip.Addr.AppendText, netip.Addr.MarshalText, netip.AddrPort.String, netip.AddrPort.AppendTo, netip.AddrPort.AppendText, netip.AddrPort.MarshalText, net.IP.String, net.IP.AppendText, net.IP.MarshalText, net.IPAddr.String, net.TCPAddr.String, net.UDPAddr.String
   rust    Display of IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6 (to_string)
   python  str(IPv4Address), IPv4Address.compressed, IPv6Address.compressed, socket.inet_ntop, socket.inet_ntoa
   note    RFC 5952 as all three write it: lower case, the first longest run of two zero groups or more as `::`, a mapped address dotted; Go and Python wrote the same text for all 24 addresses both read
 
 capability address/format-expanded  an address written with every digit
-  heroes  net.format_address_expanded
+  heroes  net.format_host_expanded
   go      netip.Addr.StringExpanded
   rust    -
   python  IPv4Address.exploded, IPv6Address.exploded
@@ -54,8 +54,8 @@ capability address/integer  an IPv4 address as the integer of its 32 bits, and b
   python  int(IPv4Address), ipaddress.IPv4Address(int), int(IPv6Address), ipaddress.IPv6Address(int)
   note    IPv6's 128 bits are past every Heroes integer, so `to_integer` fails `invalid` on one; the steps between two IPv4 addresses are the difference of their integers
 
-capability address/port  an address with a port, or without, and its port
-  heroes  net.with_port, net.without_port
+capability address/port  a host with a port, and an address's host and port
+  heroes  net.with_port, net.Address.host, net.Address.port
   go      netip.AddrPortFrom, netip.AddrPort.Addr, netip.AddrPort.Port, net.TCPAddrFromAddrPort, net.UDPAddrFromAddrPort, net.TCPAddr.AddrPort, net.UDPAddr.AddrPort
   rust    SocketAddr::new, SocketAddrV4::new, SocketAddrV6::new, SocketAddr::ip, SocketAddr::port, SocketAddr::set_ip, SocketAddr::set_port, SocketAddrV4::ip, SocketAddrV4::port, SocketAddrV4::set_ip, SocketAddrV4::set_port, SocketAddrV6::ip, SocketAddrV6::port, SocketAddrV6::set_ip, SocketAddrV6::set_port
   python  -
@@ -74,7 +74,7 @@ capability address/well-known  the loopback, unspecified and broadcast addresses
   python  socket.INADDR_ANY, socket.INADDR_LOOPBACK, socket.INADDR_BROADCAST, socket.INADDR_NONE
 
 capability address/multicast-groups  the addresses of well-known multicast groups
-  heroes  refused: a group is `net.parse_address` of its text, `224.0.0.1`, `ff02::1`; the library keeps no list of them
+  heroes  refused: a group is `net.parse_host` of its text, `224.0.0.1`, `ff02::1`; the library keeps no list of them
   go      net.IPv4allsys, net.IPv4allrouter, net.IPv6interfacelocalallnodes, net.IPv6linklocalallnodes, net.IPv6linklocalallrouters, netip.IPv6LinkLocalAllNodes, netip.IPv6LinkLocalAllRouters
   rust    -
   python  socket.INADDR_ALLHOSTS_GROUP, socket.INADDR_MAX_LOCAL_GROUP, socket.INADDR_UNSPEC_GROUP
@@ -98,11 +98,11 @@ capability address/compatible  the IPv4-compatible IPv6 addresses `::a.b.c.d`
   python  -
 
 capability address/order  two addresses ordered
-  heroes  net.compare
+  heroes  net.compare, net.compare_addresses
   go      netip.Addr.Compare, netip.Addr.Less, netip.AddrPort.Compare
   rust    Ord and PartialOrd of IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6 (cmp, partial_cmp, lt, le, gt, ge, max, min, clamp)
   python  ipaddress.get_mixed_type_key, IPv4Address.__lt__
-  note    Go's and Rust's: IPv4 before IPv6, then the bytes, then the zone, then the port; Python refuses to order the two kinds
+  note    Go's and Rust's: IPv4 before IPv6, then the bytes, then the zone, and for two `Address`es then the port; Python refuses to order the two kinds
 
 capability address/equal  two addresses compared
   heroes  built-in ==
@@ -255,10 +255,10 @@ capability network/format  a network written as CIDR text
   go      netip.Prefix.String, netip.Prefix.AppendTo, netip.Prefix.AppendText, netip.Prefix.MarshalText, netip.Prefix.MarshalBinary, netip.Prefix.AppendBinary, net.IPNet.String
   rust    -
   python  IPv4Network.with_prefixlen, IPv6Network.with_prefixlen, IPv4Network.compressed, IPv6Network.compressed, IPv4Network.exploded, IPv6Network.exploded, IPv4Interface.with_prefixlen, IPv6Interface.with_prefixlen, IPv4Interface.compressed, IPv6Interface.compressed, IPv4Interface.exploded, IPv6Interface.exploded
-  note    Python's exploded network is `format_address_expanded` of its address, a `/`, its bits
+  note    Python's exploded network is `format_host_expanded` of its host, a `/`, its bits
 
 capability network/format-mask  a network written with its mask after the slash
-  heroes  refused: `format_address(netmask(n))` and `format_address(hostmask(n))` write the two masks; a second spelling of a network is not offered
+  heroes  refused: `format_host(netmask(n))` and `format_host(hostmask(n))` write the two masks; a second spelling of a network is not offered
   go      -
   rust    -
   python  IPv4Network.with_netmask, IPv6Network.with_netmask, IPv4Network.with_hostmask, IPv6Network.with_hostmask, IPv4Interface.with_netmask, IPv6Interface.with_netmask, IPv4Interface.with_hostmask, IPv6Interface.with_hostmask
