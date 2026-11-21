@@ -3713,16 +3713,28 @@ test "get: https on the loopback, the server's certificate checked against the t
 
 test "get: https refuses a certificate for another host, and one no root of the system's store signed"
     for given in [["wrong", tls.TEST_ROOT], ["localhost", ""]]
-        t @= canned.start_tls(canned.script_tls(chain: given[0], accepts: 1, responses: []))
-        port = t.port
-        c @= default_client()
-        c.roots @ given[1]
-        got = get(c, target: f"https://localhost:{port}/")
-        _ = threads.wait_text(@t.thread)
+        code @= ""
+        tries @= 0
 
-        match got
-            .ok _  => assert false
-            .err e => assert e.code == INVALID
+        # A connection another program makes to the server's port fails its
+        # handshake as the client's own does, so it can take the server's one
+        # accept, and the client then meets a listener closed and fails
+        # otherwise than `invalid`: such an answer is asked again of a new
+        # server, three tries at most.
+        while code != INVALID && tries < 3
+            tries @ tries + 1
+            t @= canned.start_tls(canned.script_tls(chain: given[0], accepts: 1, responses: []))
+            port = t.port
+            c @= default_client()
+            c.roots @ given[1]
+            got = get(c, target: f"https://localhost:{port}/")
+            _ = threads.wait_text(@t.thread)
+
+            match got
+                .ok _  => assert false
+                .err e => code @ e.code
+
+        assert code == INVALID
 
 test "send: an https redirect to http carries no Authorization and no secure cookie"
     p @= canned.start(canned.script(responses: ["HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"]))
@@ -3772,9 +3784,23 @@ test "serve_stream: a request over TLS from a client of the test authority"
         body: canned.ask_tls,
         arg: f"{l.port}" + canned.SEPARATOR + "TRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
     ).must()
-    stream @= tls.accept(l, deadline: time.seconds(10).must()).must().stream
-    assert serve_stream(default_server(), stream: stream, remote: "", handler: respond_trace) == 1
-    io.close(@stream).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(30).must()).must()
+    served @= 0
+
+    # A connection another program makes to the port fails its handshake,
+    # since only a client of the test authority trusts this certificate, or
+    # sends no request where a system lets the refusal come after it
+    # (`tls.accept`); it is passed over, ten at most.
+    for _ in range(from: 0, to: 10)
+        if served == 0
+            match tls.accept(l, deadline: time.seconds(10).must())
+                .err _ => _ = 0
+                .ok accepted =>
+                    stream @= accepted.stream
+                    served @ serve_stream(default_server(), stream: stream, remote: "", handler: respond_trace)
+                    io.close(@stream).must()
+
+    assert served == 1
     said = threads.wait_text(@t)
     assert strings.has_prefix(s: said, prefix: "HTTP/1.1 200 OK\r\n") && strings.has_suffix(s: said, suffix: "\r\n\r\nTRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
     tls.close_listener(@l).must()
@@ -4915,28 +4941,66 @@ test "round_trip_h2: two requests on one connection"
     http2.close(@c).must()
     assert threads.wait_text(@t) == "2"
 
-# An HTTP/2 connection served with a handler of this package.
+# An HTTP/2 connection served with a handler of this package. A connection
+# another program makes to the port sends no request, so it is served none
+# and the next is taken, ten at most.
 test "serve_h2: one request answered 404 by respond_not_found"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
-    accepted = net.accept(l, deadline_ms: 10000).must()
-    stream @= accepted.stream
-    c @= http2.server(@stream, options: http2.default_options()).must()
-    assert serve_h2(default_server(), @c, remote: "", handler: respond_not_found) == 1
+    served @= 0
+
+    for _ in range(from: 0, to: 10)
+        if served == 0
+            accepted = net.accept(l, deadline_ms: 10000).must()
+            stream @= accepted.stream
+
+            match http2.server(@stream, options: http2.default_options())
+                .err _ => io.close(@stream).must()
+                .ok made =>
+                    c @= made
+                    served @ serve_h2(default_server(), @c, remote: "", handler: respond_not_found)
+
+                    match http2.close(@c)
+                        .ok _  => _ = 0
+                        .err _ => assert served == 0
+
+    assert served == 1
     assert strings.has_prefix(s: threads.wait_text(@t), prefix: "404 ")
-    http2.close(@c).must()
     net.close_listener(@l).must()
 
-# An HTTP/2 connection served with the program's own value as state.
+# An HTTP/2 connection served with the program's own value as state. A
+# connection another program makes to the port is passed over, as in
+# `serve_h2`'s example.
 test "serve_h2_with: a redirector over HTTP/2"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
-    accepted = net.accept(l, deadline_ms: 10000).must()
-    stream @= accepted.stream
-    c @= http2.server(@stream, options: http2.default_options()).must()
-    assert serve_h2_with(default_server(), @c, remote: "", state: "https://example.com", handler: respond_moved_to) == 1
+    served @= 0
+
+    for _ in range(from: 0, to: 10)
+        if served == 0
+            accepted = net.accept(l, deadline_ms: 10000).must()
+            stream @= accepted.stream
+
+            match http2.server(@stream, options: http2.default_options())
+                .err _ => io.close(@stream).must()
+                .ok made =>
+                    c @= made
+                    served @ serve_h2_with(
+                        default_server(),
+                        @c,
+                        remote: "",
+                        state: "https://example.com",
+                        handler: respond_moved_to
+                    )
+
+                    match http2.close(@c)
+                        .ok _  => _ = 0
+                        .err _ => assert served == 0
+
+    assert served == 1
     assert strings.has_prefix(s: threads.wait_text(@t), prefix: "30")
-    http2.close(@c).must()
     net.close_listener(@l).must()
 
 # A request of this package as HTTP/2 sends it.
