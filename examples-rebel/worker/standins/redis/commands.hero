@@ -1,0 +1,311 @@
+# The commands of the Redis stand-in that read and write its data, each
+# answering as Redis 7 answers it: the keys, strings and the server's clock
+# here, the hashes and sets in `collections`, the sorted sets in
+# `zcommands`. A command of a connection (`HELLO`, `AUTH`, `CLIENT`) is
+# `connection`'s, `EVAL` is `scripting`'s, and `SELECT`, `QUIT`, `SHUTDOWN`
+# and the stand-in's own `STANDIN.CLOCK` are `server`'s, since they touch
+# more than data.
+#
+# A command runs whole before the next is read, so every command is atomic,
+# as on a server that runs one command at a time.
+
+use <rebel>/numbers
+use <rebel>/redis
+use <rebel>/strings
+
+use standins/redis/collections
+use standins/redis/keyspace
+use standins/redis/resp
+
+# The reply to a command given the wrong count of arguments, in Redis's
+# words: `ERR wrong number of arguments for 'get' command`.
+#
+# - `name`: the command's name, in capitals.
+function arity_error(name: str) -> redis.Reply
+    return resp.error_reply(
+        code: "ERR",
+        message: f"wrong number of arguments for '{strings.to_lower_ascii(name)}' command"
+    )
+
+# The reply to an argument that is no integer, in Redis's words.
+function not_integer() -> redis.Reply
+    return resp.error_reply(code: "ERR", message: "value is not an integer or out of range")
+
+# The reply to a command no rule of the stand-in reads.
+function syntax_error() -> redis.Reply
+    return resp.error_reply(code: "ERR", message: "syntax error")
+
+# Whether `name` is a command `execute` runs.
+#
+# - `name`: the command's name, in capitals.
+function is_data_command(name: str) -> bool
+    match name
+        "PING" | "ECHO" | "TIME" | "GET" | "SET" | "DEL" | "EXISTS" | "INCR" | "INCRBY" | "DECR" | "TYPE" | "KEYS" | "DBSIZE" | "FLUSHALL" | "FLUSHDB" | "PEXPIRE" | "EXPIRE" | "PTTL" | "TTL" | "PERSIST" =>
+            return true
+        _ => return collections.is_collection_command(name)
+
+# Runs the command `words` against `ks` and answers its reply.
+#
+# - `ks`: the data, changed as the command says.
+# - `words`: the command's name, in any case, then its arguments.
+# - `protocol`: the RESP version the reply is read in, 2 or 3; a script's
+#   calls are read in 2, as Redis gives a script RESP2 replies by default.
+#
+# A command `is_data_command` does not know answers
+# `ERR unknown command`, as Redis words it.
+function execute(@ks: keyspace.Keyspace, words: [str], protocol: i64) -> redis.Reply
+    if words.len() == 0
+        return resp.error_reply(code: "ERR", message: "empty command")
+
+    name = strings.to_upper_ascii(words[0])
+    n = words.len()
+
+    match name
+        "PING" =>
+            if n == 1
+                return .simple(v: "PONG")
+
+            if n == 2
+                return resp.text_reply(words[1])
+            return arity_error(name)
+        "ECHO" =>
+            if n != 2
+                return arity_error(name)
+            return resp.text_reply(words[1])
+        "TIME" =>
+            if n != 1
+                return arity_error(name)
+            now = keyspace.now_micros(ks)
+            return .array(items: [resp.text_reply(to_str(now / 1_000_000)), resp.text_reply(to_str(now % 1_000_000))])
+        "GET" =>
+            if n != 2
+                return arity_error(name)
+
+            match keyspace.text_at(@ks, key: words[1])
+                .ok v  => return resp.text_reply(v)
+                .err e => return keyspace.refusal(code: e.code, msg: e.msg)
+        "SET" => return set_command(@ks, words: words)
+        "DEL" =>
+            if n < 2
+                return arity_error(name)
+            count: i64 @= 0
+
+            for key in words.slice(from: 1, to: n)
+                keyspace.expire_if_due(@ks, key: key)
+
+                if keyspace.remove(@ks, key: key)
+                    count @ count + 1
+
+            return .integer(v: count)
+        "EXISTS" =>
+            if n < 2
+                return arity_error(name)
+            count: i64 @= 0
+
+            for key in words.slice(from: 1, to: n)
+                if !keyspace.entry_of(@ks, key: key).is_err()
+                    count @ count + 1
+
+            return .integer(v: count)
+        "INCR" | "DECR" =>
+            if n != 2
+                return arity_error(name)
+
+            step = if name == "INCR"
+                1
+            else
+                -1
+            return increment(@ks, key: words[1], by: step)
+        "INCRBY" =>
+            if n != 3
+                return arity_error(name)
+
+            match numbers.parse_int(words[2])
+                .ok by => return increment(@ks, key: words[1], by: by)
+                .err _ => return not_integer()
+        "TYPE" =>
+            if n != 2
+                return arity_error(name)
+
+            match keyspace.entry_of(@ks, key: words[1])
+                .ok e  => return .simple(v: keyspace.type_name(e))
+                .err _ => return .simple(v: "none")
+        "KEYS" =>
+            if n != 2
+                return arity_error(name)
+            found: [redis.Reply] @= []
+
+            for key in sort(keys(ks.entries))
+                if keyspace.matches(name: key, pattern: words[1]) && !keyspace.entry_of(@ks, key: key).is_err()
+                    found @ found.push(resp.text_reply(key))
+
+            return .array(items: found)
+        "DBSIZE" => return .integer(v: ks.entries.len())
+        "FLUSHALL" | "FLUSHDB" =>
+            ks.entries @ {}
+            ks.expires @ {}
+            return resp.ok_reply()
+        "PEXPIRE" | "EXPIRE" => return expire_command(@ks, words: words)
+        "PTTL" | "TTL" =>
+            if n != 2
+                return arity_error(name)
+            return time_to_live(@ks, key: words[1], in_seconds: name == "TTL")
+        "PERSIST" =>
+            if n != 2
+                return arity_error(name)
+
+            if keyspace.entry_of(@ks, key: words[1]).is_err() || ks.expires[words[1]].is_err()
+                return .integer(v: 0)
+
+            ks.expires @ collections.without_expiry(ks.expires, key: words[1])
+            return .integer(v: 1)
+        _ =>
+            if collections.is_collection_command(name)
+                return collections.execute(@ks, name: name, words: words, protocol: protocol)
+            return resp.error_reply(code: "ERR", message: f"unknown command '{words[0]}'")
+
+# `SET key value [NX|XX] [EX seconds|PX milliseconds] [KEEPTTL] [GET]`.
+#
+# - `ks`: the data.
+# - `words`: the whole command.
+function set_command(@ks: keyspace.Keyspace, words: [str]) -> redis.Reply
+    if words.len() < 3
+        return arity_error("SET")
+
+    key = words[1]
+    only_absent: bool @= false
+    only_present: bool @= false
+    keep_ttl: bool @= false
+    answer_old: bool @= false
+    ttl_ms: i64 @= -1
+    i: i64 @= 3
+
+    while i < words.len()
+        option = strings.to_upper_ascii(words[i])
+
+        match option
+            "NX"      => only_absent @ true
+            "XX"      => only_present @ true
+            "KEEPTTL" => keep_ttl @ true
+            "GET"     => answer_old @ true
+            "EX" | "PX" =>
+                if i + 1 >= words.len()
+                    return syntax_error()
+
+                amount = match numbers.parse_int(words[i + 1])
+                    .ok v  => v
+                    .err _ => return not_integer()
+
+                if amount <= 0
+                    return resp.error_reply(code: "ERR", message: "invalid expire time in 'set' command")
+
+                ttl_ms @ if option == "EX"
+                    amount * 1_000
+                else
+                    amount
+                i @ i + 1
+            _ => return syntax_error()
+
+        i @ i + 1
+
+    if only_absent && only_present
+        return syntax_error()
+
+    old = keyspace.entry_of(@ks, key: key)
+    old_text: redis.Reply @= .null_value
+
+    match old
+        .ok e =>
+            match e
+                .text t => old_text @ resp.text_reply(t.v)
+                .hash _ | .set _ | .zset _ =>
+                    if answer_old
+                        return keyspace.refusal(code: "invalid", msg: keyspace.WRONG_TYPE)
+        .err _ => _ = 0
+
+    if only_absent && !old.is_err() || only_present && old.is_err()
+        if answer_old
+            return old_text
+        return .null_value
+
+    if keep_ttl
+        keyspace.put(@ks, key: key, e: .text(v: words[2]))
+    else
+        keyspace.replace(@ks, key: key, e: .text(v: words[2]))
+
+    if ttl_ms > 0
+        ks.expires[key] @ keyspace.now_micros(ks) + ttl_ms * 1_000
+
+    if answer_old
+        return old_text
+    return resp.ok_reply()
+
+# Adds `by` to the integer the string at `key` holds, 0 where it holds none.
+#
+# - `ks`: the data.
+# - `key`: the key.
+# - `by`: the amount, negative to take away.
+function increment(@ks: keyspace.Keyspace, key: str, by: i64) -> redis.Reply
+    current: i64 @= 0
+
+    match keyspace.text_at(@ks, key: key)
+        .ok v =>
+            match numbers.parse_int(v)
+                .ok number => current @ number
+                .err _     => return not_integer()
+        .err e =>
+            if e.code != "not_found"
+                return keyspace.refusal(code: e.code, msg: e.msg)
+
+    if by > 0 && current > 9_223_372_036_854_775_807 - by || by < 0 && current < -9_223_372_036_854_775_807 - 1 - by
+        return resp.error_reply(code: "ERR", message: "increment or decrement would overflow")
+
+    keyspace.put(@ks, key: key, e: .text(v: to_str(current + by)))
+    return .integer(v: current + by)
+
+# `PEXPIRE key milliseconds` and `EXPIRE key seconds`.
+#
+# - `ks`: the data.
+# - `words`: the whole command.
+function expire_command(@ks: keyspace.Keyspace, words: [str]) -> redis.Reply
+    name = strings.to_upper_ascii(words[0])
+
+    if words.len() != 3
+        return arity_error(name)
+
+    amount = match numbers.parse_int(words[2])
+        .ok v  => v
+        .err _ => return not_integer()
+
+    if keyspace.entry_of(@ks, key: words[1]).is_err()
+        return .integer(v: 0)
+
+    micros = if name == "EXPIRE"
+        amount * 1_000_000
+    else
+        amount * 1_000
+
+    if micros <= 0
+        _ = keyspace.remove(@ks, key: words[1])
+    else
+        ks.expires[words[1]] @ keyspace.now_micros(ks) + micros
+    return .integer(v: 1)
+
+# `PTTL key` and `TTL key`: -2 where the key holds nothing, -1 where it has
+# no time to live.
+#
+# - `ks`: the data.
+# - `key`: the key.
+# - `in_seconds`: whether the answer is in seconds, else milliseconds.
+function time_to_live(@ks: keyspace.Keyspace, key: str, in_seconds: bool) -> redis.Reply
+    if keyspace.entry_of(@ks, key: key).is_err()
+        return .integer(v: -2)
+
+    match ks.expires[key]
+        .err _ => return .integer(v: -1)
+        .ok at =>
+            left = (at - keyspace.now_micros(ks)) / 1_000
+
+            if in_seconds
+                return .integer(v: (left + 500) / 1_000)
+            return .integer(v: left)

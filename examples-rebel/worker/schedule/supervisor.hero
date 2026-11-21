@@ -1,0 +1,247 @@
+# The supervisor of a run: the one thread that enqueues the recurring jobs
+# when their timers fall due, gives back the jobs whose worker's lease ran
+# out, keeps the run's metrics, and folds in the reports of the workers when
+# they stop. Its clock is the store's, so a fleet's supervisors and workers
+# agree on every moment, and the demo moves all of them by moving the
+# store's.
+#
+# `start` opens it; `enqueue`, `tick`, `refresh` and `take_reports` are its work;
+# `finish` exports its telemetry and closes it. The real run's loop and the
+# demo's both drive it, each with its own way of letting time pass.
+
+use <rebel>/jobs
+use <rebel>/jobs/redis_store
+use <rebel>/log
+use <rebel>/metrics
+use <rebel>/redis
+use <rebel>/time
+use <rebel>/tracing
+
+use cli/settings
+use logs/journal
+use pool/events
+use pool/fleet
+use queue/producer
+use queue/store_clock
+use schedule/timers
+use telemetry/registry
+use telemetry/tracer
+
+# The supervisor's state.
+record Supervisor
+    # The run's settings.
+    settings: settings.Settings
+    # Its connection to the store.
+    client: redis.Client
+    # The recurring schedules it enqueues.
+    schedules: [jobs.Periodic]
+    # The next run of each schedule, as a heap.
+    timers: [timers.Timer]
+    # The run's metrics.
+    registry: metrics.Registry
+    # Its spans: the enqueues it makes.
+    tracer: tracing.Tracer
+    # Its log, `supervisor.log`.
+    log_file: journal.Journal
+    # When the run began, on the store's clock.
+    started: time.Instant
+    # When it next gives back the jobs of leases run out, in microseconds.
+    next_rescue_us: i64
+
+# A supervisor of the run `s` describes, its schedules registered with the
+# store and their first timers set, the store's stop key cleared.
+#
+# - `s`: the run's settings.
+# - `schedules`: the recurring jobs.
+#
+# Fails where the store cannot be reached, the log opened or a schedule
+# kept, with their codes.
+function start(s: settings.Settings, schedules: [jobs.Periodic]) -> Supervisor?
+    c @= redis.connect(redis.parse_url(s.redis_url)?)?
+    fleet.clear_stop(@c)?
+    now = store_clock.now(@c)?
+    _ = redis_store.enqueue_due(@c, schedules: schedules)?
+    heap: [timers.Timer] @= []
+
+    for p in schedules
+        timers.add(
+            @heap,
+            t: timers.Timer(at_us: time.unix_microseconds(jobs.next_due(p, after: now)?), schedule: p.name)
+        )
+
+    sup @= Supervisor(
+        settings: s,
+        client: c,
+        schedules: schedules,
+        timers: heap,
+        registry: registry.new_registry()?,
+        tracer: tracer.new_tracer(s, thread: "supervisor")?,
+        log_file: journal.open(dir: s.log_dir, name: "supervisor.log", max_bytes: s.log_max_bytes, keep: s.log_keep)?,
+        started: now,
+        next_rescue_us: time.unix_microseconds(now) + rescue_every_us(s)
+    )
+    note(
+        @sup,
+        level: .info,
+        at: now,
+        msg: "supervisor started",
+        fields: [log.integer(key: "workers", value: s.workers), log.integer(key: "schedules", value: schedules.len())]
+    )
+    return ok(sup)
+
+# How often the jobs of leases run out are given back: half a lease, so a
+# job waits at most one and a half leases after its worker went.
+#
+# - `s`: the run's settings.
+function rescue_every_us(s: settings.Settings) -> i64
+    return time.to_units(s.lease, unit: .microsecond) / 2
+
+# Writes a line to the supervisor's log; a line that cannot be written is
+# dropped rather than stopping the run.
+#
+# - `sup`: the supervisor.
+# - `level`: how much it matters.
+# - `at`: its time on the store's clock.
+# - `msg`: what happened.
+# - `fields`: what it happened to.
+function note(@sup: Supervisor, level: log.Level, at: time.Instant, msg: str, fields: [log.Field])
+    _ = journal.write(@sup.log_file, level: level, at: at, msg: msg, fields: fields).is_err()
+
+# Enqueues `job` as a producer, counting and logging it, and answers its id.
+#
+# - `sup`: the supervisor.
+# - `job`: the job.
+#
+# Fails as `producer.enqueue` fails, a refused job logged first.
+function enqueue(@sup: Supervisor, job: jobs.Job) -> i64?
+    now = store_clock.now(@sup.client)?
+    result = producer.enqueue(@sup.client, @sup.tracer, job: job, at: now)
+
+    match result
+        .ok id =>
+            _ = registry.record_enqueued(@sup.registry, queue: job.queue, kind: job.kind).is_err()
+            note(
+                @sup,
+                level: .info,
+                at: now,
+                msg: "enqueued",
+                fields: [log.integer(key: "job", value: id), log.text(key: "kind", value: job.kind)]
+            )
+        .err e => note(
+            @sup,
+            level: .warn,
+            at: now,
+            msg: "refused",
+            fields: [log.text(key: "kind", value: job.kind), log.text(key: "code", value: e.code)]
+        )
+
+    return result
+
+# Does what fell due by the store's clock: enqueues the recurring jobs whose
+# timers came, sets their next timers, and gives back the jobs of leases run
+# out when it is time to. Answers the ids enqueued.
+#
+# - `sup`: the supervisor.
+#
+# Fails as the store's calls fail.
+function tick(@sup: Supervisor) -> [i64]?
+    now = store_clock.now(@sup.client)?
+    now_us = time.unix_microseconds(now)
+    enqueued: [i64] @= []
+
+    for t in timers.take_due(@sup.timers, now_us: now_us)
+        for p in sup.schedules
+            if p.name == t.schedule
+                ids = redis_store.enqueue_due(@sup.client, schedules: [p])?
+                _ = registry.record_schedule(@sup.registry, name: p.name, runs: ids.len()).is_err()
+
+                for id in ids
+                    enqueued @ enqueued.push(id)
+                    _ = registry.record_enqueued(@sup.registry, queue: p.job.queue, kind: p.job.kind).is_err()
+                    note(
+                        @sup,
+                        level: .info,
+                        at: now,
+                        msg: "schedule ran",
+                        fields: [log.text(key: "schedule", value: p.name), log.integer(key: "job", value: id)]
+                    )
+
+                timers.add(
+                    @sup.timers,
+                    t: timers.Timer(at_us: time.unix_microseconds(jobs.next_due(p, after: now)?), schedule: p.name)
+                )
+
+    if now_us >= sup.next_rescue_us
+        rescued = redis_store.rescue(@sup.client)?
+        sup.next_rescue_us @ now_us + rescue_every_us(sup.settings)
+
+        if rescued > 0
+            _ = registry.record_rescued(@sup.registry, count: rescued).is_err()
+            note(@sup, level: .warn, at: now, msg: "leases ran out", fields: [log.integer(key: "jobs", value: rescued)])
+
+    return ok(enqueued)
+
+# Sets the gauge of jobs standing in each queue and state from the store.
+#
+# - `sup`: the supervisor.
+#
+# Fails as `redis_store.counts` fails.
+function refresh(@sup: Supervisor) -> ()?
+    counts = redis_store.counts(@sup.client)?
+    return registry.record_counts(@sup.registry, queues: sup.settings.queues, counts: counts)
+
+# Folds the workers' reports into the run's metrics and log, each attempt
+# once; a worker's problem is logged. The log counts the fleet's attempts
+# together: how they fell to each worker is the threads' choice, which a
+# line of the log should not depend on.
+#
+# - `sup`: the supervisor.
+# - `reports`: what the workers answered.
+function take_reports(@sup: Supervisor, reports: [events.Report])
+    now = store_clock.now(@sup.client).default(sup.started)
+    attempts: i64 @= 0
+
+    for r in reports
+        for a in r.attempts
+            _ = registry.record_attempt(@sup.registry, a: a).is_err()
+
+        attempts @ attempts + r.attempts.len()
+        note(@sup, level: .info, at: now, msg: "worker stopped", fields: [log.text(key: "worker", value: r.worker)])
+
+        if r.problem != ""
+            note(
+                @sup,
+                level: .error,
+                at: now,
+                msg: "worker problem",
+                fields: [log.text(key: "worker", value: r.worker), log.text(key: "problem", value: r.problem)]
+            )
+
+    note(
+        @sup,
+        level: .info,
+        at: now,
+        msg: "fleet stopped",
+        fields: [log.integer(key: "workers", value: reports.len()), log.integer(key: "attempts", value: attempts)]
+    )
+
+# Exports the run's metrics and the supervisor's spans, and closes its log
+# and its connection. Answers what could not be exported, "" where all was.
+#
+# - `sup`: the supervisor, closed after.
+function finish(@sup: Supervisor) -> str
+    now = store_clock.now(@sup.client).default(sup.started)
+    problems: [str] @= []
+    note(@sup, level: .info, at: now, msg: "supervisor stopped", fields: [])
+
+    match registry.export(sup.registry, s: sup.settings, start: sup.started, at: now)
+        .ok _  => _ = 0
+        .err e => problems @ problems.push(f"metrics not exported: {e.code}")
+
+    match tracer.export(@sup.tracer, s: sup.settings)
+        .ok _  => _ = 0
+        .err e => problems @ problems.push(f"spans not exported: {e.code}")
+
+    _ = journal.close(@sup.log_file).is_err()
+    _ = redis.close(@sup.client).is_err()
+    return problems.join("; ")

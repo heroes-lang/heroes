@@ -1,0 +1,480 @@
+# The expressions of `--where`, `--select` and `--agg`: read into a tree by a
+# parser over the tokens `scanner` cuts, each mistake told with its line and
+# column.
+#
+# The language is small and closed. A column is named bare (`price`) or
+# between backquotes where its name is no identifier (`` `unit price` ``); a
+# text is between double or single quotes; a number is written as Go writes
+# one; `true`, `false` and `null` are themselves. Operators, loosest first:
+# `||` or `or`; `&&` or `and`; `!` or `not`; the comparisons `==` `!=` `<`
+# `<=` `>` `>=`; `+` `-`; `*` `/` `%`; a unary `-`. A call names one of the
+# functions `query/evaluate` knows. `as` after an item of a list names the
+# column it makes.
+
+use <rebel>/scanner
+
+use model/decimal
+use model/model
+
+## Codes
+
+# The code of a text that is no expression; the message gives the place.
+constant INVALID: str
+    "invalid"
+
+## Limits
+
+# The deepest an expression may nest: parentheses, calls, `!` and unary `-`
+# each open one level. The parser follows the nesting with its own
+# recursion, so a bound keeps a command line from running the stack out.
+constant MAX_NESTING: i64
+    64
+
+## Trees
+
+# One expression.
+variant Expr
+    # A value written in the expression.
+    literal
+        # The value.
+        value: model.Value
+    # The value of a column in the row.
+    column
+        # The column's name.
+        name: str
+    # A function called on its arguments.
+    call
+        # The function's name.
+        name: str
+        # The arguments, in order.
+        arguments: [Expr]
+    # An operator on one operand or two.
+    operation
+        # The operator as written canonically: `||`, `&&`, `!`, `==`, `!=`,
+        # `<`, `<=`, `>`, `>=`, `+`, `-`, `*`, `/`, `%`, or `neg` for a
+        # unary minus.
+        op: str
+        # The operands, one or two.
+        operands: [Expr]
+
+# An item of a list of expressions, with the name of the column it makes.
+record Item
+    # The expression.
+    expr: Expr
+    # The name `as` gave, else the column's own name for a column, else the
+    # expression's text as written.
+    name: str
+
+## Reading
+
+# The tree of `text`, one expression.
+#
+# - `text`: the expression as written.
+#
+# Fails `invalid` where `text` is no expression of the language, the message
+# opening with the line and the column of the token where reading stopped.
+function parse(text: str) -> Expr?
+    p @= parser_of(text)?
+    e = parse_or(@p)?
+    expect_end(p)?
+    return ok(e)
+
+# The items of `text`, expressions separated by commas, each with an optional
+# `as name`.
+#
+# - `text`: the list as written; empty for no item.
+#
+# Fails `invalid` as `parse` fails, and where an `as` names no identifier.
+function parse_items(text: str) -> [Item]?
+    p @= parser_of(text)?
+    items: [Item] @= []
+
+    if is_end(p)
+        return ok(items)
+
+    while true
+        start = here(p).start.offset
+        e = parse_or(@p)?
+        stop = here(p).start.offset
+        name @= name_of(e, written: text.slice(from: start, to: stop))
+
+        if is_word(p, word: "as")
+            p.at @ p.at + 1
+            t = here(p)
+
+            match t.kind
+                .identifier => name @ t.text
+                .raw_string => name @ scanner.text_of(t)?
+                .keyword | .integer | .float | .string | .character | .comment | .whitespace | .newline | .operator | .custom _ | .other | .invalid _ | .end => return fail(
+                    code: INVALID,
+                    msg: f"{where(t)}: expected a name after `as`, found {shown(t)}"
+                )
+
+            p.at @ p.at + 1
+        items @ items.push(Item(expr: e, name: name))
+
+        if is_operator(p, op: ",")
+            p.at @ p.at + 1
+        else
+            break
+
+    expect_end(p)?
+    return ok(items)
+
+# The name of the column an item makes when no `as` names it: a column's own
+# name, else what was written, its spaces at the ends taken away.
+#
+# - `e`: the expression.
+# - `written`: its text as written.
+function name_of(e: Expr, written: str) -> str
+    return match e
+        .column c                           => c.name
+        .literal _ | .call _ | .operation _ => trim_spaces(written)
+
+# `s` without the spaces at its ends.
+#
+# - `s`: the text.
+function trim_spaces(s: str) -> str
+    from: i64 @= 0
+    to: i64 @= s.len()
+
+    while from < to && s[from] == ' '
+        from @ from + 1
+
+    while to > from && s[to - 1] == ' '
+        to @ to - 1
+
+    return s.slice(from: from, to: to)
+
+## The parser
+
+# The tokens being read and where the reading stands.
+record Parser
+    # The tokens, the `end` token last.
+    tokens: [scanner.Token]
+    # The index of the next token.
+    at: i64
+    # How many readings of a nested expression are open: parentheses, a
+    # call's arguments, a `!` or a unary `-`.
+    depth: i64
+
+# The rules the expressions are cut by.
+function rules() -> scanner.Rules
+    r @= scanner.go_rules()
+    r.keywords @ ["and", "or", "not", "true", "false", "null", "as"]
+    r.string_quotes @ "\"'"
+    r.char_quotes @ ""
+    r.line_comments @ []
+    r.block_comment_open @ ""
+    r.block_comment_close @ ""
+    r.operators @ ["==", "!=", "<=", ">=", "&&", "||", "<", ">", "!", "+", "-", "*", "/", "%", "(", ")", ","]
+    return r
+
+# A parser at the first token of `text`.
+#
+# - `text`: the text.
+#
+# Fails `invalid` at the first malformed token, as `scanner.scan_checked`
+# fails.
+function parser_of(text: str) -> Parser?
+    return ok(Parser(tokens: scanner.scan_checked(text, rules())?, at: 0, depth: 0))
+
+# The token the parser stands at; the `end` token past the last.
+#
+# - `p`: the parser.
+function here(p: Parser lent) -> scanner.Token
+    if p.at < p.tokens.len()
+        return p.tokens[p.at]
+    return p.tokens[p.tokens.len() - 1]
+
+# Whether the parser stands at the end.
+#
+# - `p`: the parser.
+function is_end(p: Parser lent) -> bool
+    return match here(p).kind
+        .end => true
+        .identifier | .keyword | .integer | .float | .string | .raw_string | .character | .comment | .whitespace | .newline | .operator | .custom _ | .other | .invalid _ => false
+
+# Whether the parser stands at the operator `op`.
+#
+# - `p`: the parser.
+# - `op`: the operator.
+function is_operator(p: Parser lent, op: str) -> bool
+    t = here(p)
+
+    return match t.kind
+        .operator => t.text == op
+        .identifier | .keyword | .integer | .float | .string | .raw_string | .character | .comment | .whitespace | .newline | .custom _ | .other | .invalid _ | .end => false
+
+# Whether the parser stands at the keyword `word`.
+#
+# - `p`: the parser.
+# - `word`: the keyword.
+function is_word(p: Parser lent, word: str) -> bool
+    t = here(p)
+
+    return match t.kind
+        .keyword => t.text == word
+        .identifier | .operator | .integer | .float | .string | .raw_string | .character | .comment | .whitespace | .newline | .custom _ | .other | .invalid _ | .end => false
+
+# Fails unless the parser stands at the end.
+#
+# - `p`: the parser.
+#
+# Fails `invalid` naming the token found.
+function expect_end(p: Parser lent) -> ()?
+    if is_end(p)
+        return ok()
+
+    t = here(p)
+    return fail(code: INVALID, msg: f"{where(t)}: expected the end, found {shown(t)}")
+
+# The place of `t` as `line:column`.
+#
+# - `t`: the token.
+function where(t: scanner.Token) -> str
+    return scanner.format_place(t.start)
+
+# `t` as a message names it.
+#
+# - `t`: the token.
+function shown(t: scanner.Token) -> str
+    return match t.kind
+        .end => "the end"
+        .identifier | .keyword | .integer | .float | .string | .raw_string | .character | .comment | .whitespace | .newline | .operator | .custom _ | .other | .invalid _ => f"`{t.text}`"
+
+# Opens one level of nesting.
+#
+# - `p`: the parser, its depth grown by one.
+#
+# Fails `invalid` where the depth would pass `MAX_NESTING`, naming the token
+# where it would.
+function enter(@p: Parser) -> ()?
+    if p.depth >= MAX_NESTING
+        return fail(code: INVALID, msg: f"{where(here(p))}: the expression nests deeper than {MAX_NESTING} levels")
+    p.depth @ p.depth + 1
+    return ok()
+
+# `||` and `or`, the loosest.
+#
+# - `p`: the parser, moved past what it reads.
+function parse_or(@p: Parser) -> Expr?
+    left @= parse_and(@p)?
+
+    while is_operator(p, op: "||") || is_word(p, word: "or")
+        p.at @ p.at + 1
+        right = parse_and(@p)?
+        left @ .operation(op: "||", operands: [left, right])
+
+    return ok(left)
+
+# `&&` and `and`.
+#
+# - `p`: the parser, moved past what it reads.
+function parse_and(@p: Parser) -> Expr?
+    left @= parse_not(@p)?
+
+    while is_operator(p, op: "&&") || is_word(p, word: "and")
+        p.at @ p.at + 1
+        right = parse_not(@p)?
+        left @ .operation(op: "&&", operands: [left, right])
+
+    return ok(left)
+
+# `!` and `not`, each applying to what follows it.
+#
+# - `p`: the parser, moved past what it reads.
+#
+# Fails `invalid` past `MAX_NESTING` levels.
+function parse_not(@p: Parser) -> Expr?
+    if is_operator(p, op: "!") || is_word(p, word: "not")
+        p.at @ p.at + 1
+        enter(@p)?
+        inner = parse_not(@p)?
+        p.depth @ p.depth - 1
+        return ok(.operation(op: "!", operands: [inner]))
+    return parse_compare(@p)
+
+# A comparison, at most one: `a < b < c` is refused as no expression.
+#
+# - `p`: the parser, moved past what it reads.
+function parse_compare(@p: Parser) -> Expr?
+    left = parse_sum(@p)?
+
+    for op in ["==", "!=", "<=", ">=", "<", ">"]
+        if is_operator(p, op: op)
+            p.at @ p.at + 1
+            right = parse_sum(@p)?
+            return ok(.operation(op: op, operands: [left, right]))
+
+    return ok(left)
+
+# `+` and `-`.
+#
+# - `p`: the parser, moved past what it reads.
+function parse_sum(@p: Parser) -> Expr?
+    left @= parse_product(@p)?
+
+    while is_operator(p, op: "+") || is_operator(p, op: "-")
+        op = here(p).text
+        p.at @ p.at + 1
+        right = parse_product(@p)?
+        left @ .operation(op: op, operands: [left, right])
+
+    return ok(left)
+
+# `*`, `/` and `%`.
+#
+# - `p`: the parser, moved past what it reads.
+function parse_product(@p: Parser) -> Expr?
+    left @= parse_unary(@p)?
+
+    while is_operator(p, op: "*") || is_operator(p, op: "/") || is_operator(p, op: "%")
+        op = here(p).text
+        p.at @ p.at + 1
+        right = parse_unary(@p)?
+        left @ .operation(op: op, operands: [left, right])
+
+    return ok(left)
+
+# A unary minus, or a primary.
+#
+# - `p`: the parser, moved past what it reads.
+function parse_unary(@p: Parser) -> Expr?
+    if is_operator(p, op: "-")
+        p.at @ p.at + 1
+        enter(@p)?
+        inner = parse_unary(@p)?
+        p.depth @ p.depth - 1
+        return ok(.operation(op: "neg", operands: [inner]))
+    return parse_primary(@p)
+
+# A literal, a column, a call or an expression in parentheses.
+#
+# - `p`: the parser, moved past what it reads.
+#
+# Fails `invalid` where the token can open none of them.
+function parse_primary(@p: Parser) -> Expr?
+    t = here(p)
+
+    match t.kind
+        .integer | .float =>
+            p.at @ p.at + 1
+            return ok(.literal(value: number_of(t)?))
+        .string =>
+            p.at @ p.at + 1
+            return ok(.literal(value: .text(v: scanner.text_of(t)?)))
+        .raw_string =>
+            p.at @ p.at + 1
+            return ok(.column(name: scanner.text_of(t)?))
+        .keyword =>
+            p.at @ p.at + 1
+
+            if t.text == "true"
+                return ok(.literal(value: .boolean(v: true)))
+
+            if t.text == "false"
+                return ok(.literal(value: .boolean(v: false)))
+
+            if t.text == "null"
+                return ok(.literal(value: .null_value))
+            return fail(code: INVALID, msg: f"{where(t)}: expected an operand, found {shown(t)}")
+        .identifier =>
+            p.at @ p.at + 1
+
+            if !is_operator(p, op: "(")
+                return ok(.column(name: t.text))
+            p.at @ p.at + 1
+            arguments: [Expr] @= []
+            enter(@p)?
+
+            if !is_operator(p, op: ")")
+                while true
+                    arguments @ arguments.push(parse_or(@p)?)
+
+                    if is_operator(p, op: ",")
+                        p.at @ p.at + 1
+                    else
+                        break
+
+            if !is_operator(p, op: ")")
+                return fail(
+                    code: INVALID,
+                    msg: f"{where(here(p))}: expected `)` to close the call of {t.text}, found {shown(here(p))}"
+                )
+            p.depth @ p.depth - 1
+            p.at @ p.at + 1
+            return ok(.call(name: t.text, arguments: arguments))
+        .operator =>
+            if t.text == "("
+                p.at @ p.at + 1
+                enter(@p)?
+                inner = parse_or(@p)?
+
+                if !is_operator(p, op: ")")
+                    return fail(code: INVALID, msg: f"{where(here(p))}: expected `)`, found {shown(here(p))}")
+                p.depth @ p.depth - 1
+                p.at @ p.at + 1
+                return ok(inner)
+            return fail(code: INVALID, msg: f"{where(t)}: expected an operand, found {shown(t)}")
+        .character | .comment | .whitespace | .newline | .custom _ | .other | .invalid _ | .end => return fail(
+            code: INVALID,
+            msg: f"{where(t)}: expected an operand, found {shown(t)}"
+        )
+
+# The number a number token writes: its own text where that is JSON's syntax,
+# so `19.99` stays exact, else the value Go's forms spell (`0x1f`, `1_000`).
+#
+# - `t`: an integer or float token.
+#
+# Fails `invalid` for an integer past an `i64` written in another base.
+function number_of(t: scanner.Token) -> model.Value?
+    if decimal.is_number_text(t.text)
+        return ok(.number(text: t.text))
+
+    return match t.kind
+        .integer => ok(decimal.of_int(scanner.int_of(t)?))
+        .identifier | .keyword | .float | .string | .raw_string | .character | .comment | .whitespace | .newline | .operator | .custom _ | .other | .invalid _ | .end => ok(
+            decimal.of_plain_float(scanner.float_of(t)?)
+        )
+
+## Tests
+
+test "parse: precedence, words for the logical operators, quotes of both kinds"
+    e = parse("a > 1 and not b == 'x' || c").must()
+    assert e == .operation(op: "||", operands: [.operation(op: "&&", operands: [.operation(op: ">", operands: [.column(name: "a"), .literal(value: .number(text: "1"))]), .operation(op: "!", operands: [.operation(op: "==", operands: [.column(name: "b"), .literal(value: .text(v: "x"))])])]), .column(name: "c")])
+
+test "parse: a column in backquotes, a call, a unary minus and Go's number forms"
+    e = parse("round(`unit price` * -2, 0x2)").must()
+    assert e == .call(name: "round", arguments: [.operation(op: "*", operands: [.column(name: "unit price"), .operation(op: "neg", operands: [.literal(value: .number(text: "2"))])]), .literal(value: .number(text: "2"))])
+
+test "parse: mistakes are told with their place"
+    match parse("units >")
+        .ok _  => assert false
+        .err e => assert e.msg == "1:8: expected an operand, found the end"
+
+    match parse("a < b < c")
+        .ok _  => assert false
+        .err e => assert e.msg == "1:7: expected the end, found `<`"
+
+    assert parse("f(a").is_err()
+    assert parse("'open").is_err()
+    assert parse("").is_err()
+
+test "parse: nesting past the bound is refused, within it read"
+    deep = repeat("(", 64) + "1" + repeat(")", 64)
+    assert parse(deep).must() == .literal(value: .number(text: "1"))
+    assert parse(repeat("(", 65) + "1" + repeat(")", 65)).is_err()
+    assert parse(repeat("!", 100) + "true").is_err()
+
+test "parse_items: names from as, from the column, from the text"
+    items = parse_items("city, units * price as revenue, len(city)").must()
+    assert items.map(item_name) == ["city", "revenue", "len(city)"]
+    assert parse_items("").must().len() == 0
+    assert parse_items("a as 1").is_err()
+
+# The name of an item, for a test's `map`.
+#
+# - `i`: the item.
+function item_name(i: Item) -> str
+    return i.name

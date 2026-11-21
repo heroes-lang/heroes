@@ -1,0 +1,405 @@
+# Rows grouped by the values of some columns, and each group folded into one
+# value by an aggregate: `count`, `sum`, `mean`, `median`, `min`, `max`,
+# `stdev`, `var`, `distinct`, and a percentile `p1` to `p99`.
+#
+# `sum`, `min`, `max`, `mean` and `median` are exact, over `big` decimals, so
+# a column of prices sums to the cent and the mean of `19.99` and `0.20` is
+# `10.095`, not the `10.094999999999999` two floats give; a mean that does not
+# end is cut at `evaluate.DIVISION_SCALE` digits. The variance, the deviation
+# and the percentiles are `stats`', which answers what Python's `statistics`
+# answers for the same floats; a percentile is a cut point of
+# `stats.quantiles` with 100 parts, Python's default `exclusive` method. A
+# null is skipped by every aggregate but `count()`, which counts rows. A
+# statistic that needs more values than a group has (a variance of one value,
+# a percentile of one) is null for that group rather than a failure of the
+# whole command. Groups come in the order their first row stands.
+
+use <rebel>/big
+use <rebel>/lists
+use <rebel>/numbers
+use <rebel>/stats
+use <rebel>/strings
+
+use model/decimal
+use model/model
+use model/tables
+use query/evaluate
+use query/expr
+
+## Codes
+
+# The code of an aggregate list that is not one, and of an aggregate given a
+# value it does not fold.
+constant INVALID: str
+    "invalid"
+
+## Aggregates
+
+# One aggregate of a column.
+record Aggregate
+    # The aggregate: `count`, `sum`, `mean`, `median`, `min`, `max`, `stdev`,
+    # `var`, `distinct`, or `p` and a percent from 1 to 99.
+    kind: str
+    # The column folded; empty for `count()`, which counts rows.
+    column: str
+    # The name of the column it makes: `as` gave it, else what was written.
+    name: str
+
+# The aggregates `text` lists, as `--agg` takes them: `count(), sum(amount)
+# as total, p90(amount)`.
+#
+# - `text`: the list.
+#
+# Fails `invalid` where an item is not a call of a known aggregate on one
+# column, or on none for `count`.
+function parse_list(text: str) -> [Aggregate]?
+    out: [Aggregate] @= []
+
+    for item in expr.parse_items(text)?
+        match item.expr
+            .call c =>
+                known(c.name)?
+
+                if c.arguments.len() == 0 && c.name == "count"
+                    out @ out.push(Aggregate(kind: c.name, column: "", name: item.name))
+                else if c.arguments.len() == 1
+                    match c.arguments[0]
+                        .column col => out @ out.push(Aggregate(kind: c.name, column: col.name, name: item.name))
+                        .literal _ | .call _ | .operation _ => return fail(
+                            code: INVALID,
+                            msg: f"{item.name}: an aggregate takes a column, as in sum(amount)"
+                        )
+                else
+                    return fail(code: INVALID, msg: f"{item.name}: an aggregate takes one column, and count() none")
+            .literal _ | .column _ | .operation _ => return fail(
+                code: INVALID,
+                msg: f"{item.name}: an aggregate is a call, as in sum(amount)"
+            )
+
+    return ok(out)
+
+# Fails unless `name` is an aggregate.
+#
+# - `name`: the function's name.
+#
+# Fails `invalid` listing the aggregates.
+function known(name: str) -> ()?
+    for k in ["count", "sum", "mean", "median", "min", "max", "stdev", "var", "distinct"]
+        if k == name
+            return ok()
+
+    if percent_of(name).is_err()
+        return fail(
+            code: INVALID,
+            msg: f"no aggregate named {name}; the aggregates are count, sum, mean, median, min, max, stdev, var, distinct, and p1 to p99"
+        )
+    return ok()
+
+# The percent a percentile's name gives: `p90` is 90.
+#
+# - `name`: the name.
+#
+# Fails `invalid` where `name` is not `p` and an integer from 1 to 99.
+function percent_of(name: str) -> i64?
+    if !strings.has_prefix(s: name, prefix: "p") || name.len() < 2 || name.len() > 3
+        return fail(code: INVALID, msg: f"{name} is no percentile")
+
+    n = numbers.parse_int(name.slice(from: 1, to: name.len()))?
+
+    if n < 1 || n > 99 || name[1] == '0'
+        return fail(code: INVALID, msg: f"{name} is no percentile from p1 to p99")
+    return ok(n)
+
+## Grouping
+
+# The table of `t`'s groups: a row for each distinct value of the columns
+# `by`, holding those values and each aggregate of the group's rows.
+#
+# - `t`: the table.
+# - `by`: the columns grouped by; none makes one group of every row.
+# - `aggregates`: the aggregates, in the order of their columns.
+#
+# A table of no row grouped by nothing is one row of the aggregates of
+# nothing: `count()` 0, `sum` 0, the others null. Fails `not_found` where a
+# column named is not in `t`, and `invalid` where an aggregate meets a value
+# it does not fold, naming the row.
+function group(t: model.Table lent, by: [str], aggregates: [Aggregate]) -> model.Table?
+    by_index: [i64] @= []
+
+    for b in by
+        by_index @ by_index.push(tables.column_index(t, name: b)?)
+
+    for a in aggregates
+        if a.column != ""
+            _ = tables.column_index(t, name: a.column)?
+
+    order: [str] @= []
+    members: {str: [i64]} @= {}
+    at: i64 @= 0
+
+    for row in t.rows
+        key = key_of(row, columns: by_index)
+
+        match members[key]
+            .ok found =>
+                more @= found
+                more @ more.push(at)
+                members[key] @ more
+            .err _ =>
+                order @ order.push(key)
+                members[key] @ [at]
+
+        at @ at + 1
+
+    if order.len() == 0 && by.len() == 0
+        order @ order.push("")
+        members[""] @ []
+
+    columns: [str] @= by
+
+    for a in aggregates
+        columns @ columns.push(a.name)
+
+    rows: [[model.Value]] @= []
+
+    for key in order
+        indices = members[key].must()
+        row: [model.Value] @= []
+
+        for i in by_index
+            row @ row.push(t.rows[indices[0]][i])
+
+        for a in aggregates
+            row @ row.push(fold_group(t, rows: indices, a: a)?)
+
+        rows @ rows.push(row)
+
+    return ok(model.Table(name: t.name, columns: columns, rows: rows))
+
+# The key of a row's values at `columns`: one text that two rows share
+# exactly where their values there are the same, numbers by value.
+#
+# - `row`: the row.
+# - `columns`: the indices of the columns grouped by.
+function key_of(row: [model.Value] lent, columns: [i64]) -> str
+    parts: [str] @= []
+
+    for i in columns
+        v = row[i]
+
+        text = match v
+            .number n                                                                       => decimal.canonical(n.text)
+            .null_value | .boolean _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => model.json_text(v)
+
+        parts @ parts.push(model.kind_name(v) + ":" + text)
+
+    return parts.join("\u{1f}")
+
+# The value of `a` over the rows `rows` of `t`.
+#
+# - `t`: the table.
+# - `rows`: the rows of the group, by index.
+# - `a`: the aggregate, its column in `t`.
+#
+# Fails `invalid` where a value is not one the aggregate folds.
+function fold_group(t: model.Table lent, rows: [i64], a: Aggregate) -> model.Value?
+    if a.column == ""
+        return ok(decimal.of_int(rows.len()))
+
+    column = tables.column_index(t, name: a.column)?
+    values: [model.Value] @= []
+
+    for r in rows
+        v = t.rows[r][column]
+
+        if v != .null_value
+            values @ values.push(v)
+
+    return apply(a, values: values)
+
+# The value of `a` over `values`, no null among them.
+#
+# - `a`: the aggregate.
+# - `values`: the values of its column in the group.
+#
+# Fails `invalid` where a numeric aggregate meets a value that is no number,
+# or `min` and `max` meet values of two kinds.
+function apply(a: Aggregate, values: [model.Value]) -> model.Value?
+    if a.kind == "count"
+        return ok(decimal.of_int(values.len()))
+
+    if a.kind == "distinct"
+        seen: {str: bool} @= {}
+
+        for v in values
+            seen[key_of([v], columns: [0])] @ true
+
+        return ok(decimal.of_int(keys(seen).len()))
+
+    if a.kind == "min" || a.kind == "max"
+        return extreme(a, values: values)
+
+    texts = number_texts(a, values: values)?
+
+    if a.kind == "sum"
+        return ok(.number(text: decimal.text_of(decimal.sum(texts)?)))
+
+    if a.kind == "mean"
+        return exact_mean(texts)
+
+    if a.kind == "median"
+        return exact_median(texts)
+
+    floats: [f64] @= []
+
+    for text in texts
+        floats @ floats.push(decimal.to_float(text)?)
+
+    answer = if a.kind == "stdev"
+        stats.standard_deviation(floats)
+    else if a.kind == "var"
+        stats.variance(floats)
+    else
+        percentile(floats, percent: percent_of(a.kind)?)
+
+    return match answer
+        .ok x  => ok(decimal.of_plain_float(x))
+        .err e => if e.code == stats.INVALID
+            ok(.null_value)
+        else
+            fail(code: e.code, msg: f"{a.name}: {e.msg}")
+
+# The mean of `texts`, exact: their sum divided by their count, cut at
+# `evaluate.DIVISION_SCALE` digits where the division does not end, and its
+# trailing zeros taken away.
+#
+# - `texts`: the numbers; none answers null.
+#
+# Fails `invalid` where one is no number.
+function exact_mean(texts: [str]) -> model.Value?
+    if texts.len() == 0
+        return ok(.null_value)
+
+    count = big.parse_decimal(f"{texts.len()}")?
+    total = decimal.sum(texts)?
+    mean = big.divide_decimal(n: total, by: count, scale: evaluate.DIVISION_SCALE, rounding: .half_even)
+    return ok(.number(text: decimal.text_of(big.trim_zeros(mean))))
+
+# The median of `texts`, exact: the middle number in order, or the exact mean
+# of the two middle ones.
+#
+# - `texts`: the numbers; none answers null.
+#
+# Fails `invalid` where one is no number.
+function exact_median(texts: [str]) -> model.Value?
+    if texts.len() == 0
+        return ok(.null_value)
+
+    values: [big.Decimal] @= []
+
+    for t in texts
+        values @ values.push(decimal.parse(t)?)
+
+    ordered = lists.sort_by(values, less: is_less_decimal)
+    middle = ordered.len() / 2
+
+    if ordered.len() % 2 == 1
+        return ok(.number(text: decimal.text_of(ordered[middle])))
+    return exact_mean([decimal.text_of(ordered[middle - 1]), decimal.text_of(ordered[middle])])
+
+# Whether `a` is below `b`, the order `exact_median` sorts by.
+#
+# - `a`: a decimal.
+# - `b`: a decimal.
+function is_less_decimal(a: big.Decimal, b: big.Decimal) -> bool
+    return big.compare_decimal(a: a, b: b) < 0
+
+# The cut point at `percent` of `data`, by `stats.quantiles` in 100 parts.
+#
+# - `data`: the values, two or more.
+# - `percent`: from 1 to 99.
+#
+# Fails as `stats.quantiles` fails, `invalid` for fewer than two values.
+function percentile(data: [f64], percent: i64) -> f64?
+    cuts = stats.quantiles(data, parts: 100)?
+    return ok(cuts[percent - 1])
+
+# The numbers' texts of `values`, for a numeric aggregate.
+#
+# - `a`: the aggregate, for a message.
+# - `values`: the values, no null among them.
+#
+# Fails `invalid` at the first value that is no number.
+function number_texts(a: Aggregate, values: [model.Value]) -> [str]?
+    out: [str] @= []
+
+    for v in values
+        match v
+            .number n => out @ out.push(n.text)
+            .null_value | .boolean _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => return fail(
+                code: INVALID,
+                msg: f"{a.name}: {a.kind} folds numbers, and the column {a.column} holds a {model.kind_name(v)}, {model.cell_text(v)}"
+            )
+
+    return ok(out)
+
+# The least or the greatest of `values`, by `evaluate.compare`: numbers by
+# value, texts and moments by their bytes.
+#
+# - `a`: the aggregate, `min` or `max`.
+# - `values`: the values, no null among them; none answers null.
+#
+# Fails `invalid` where two values have no order between them.
+function extreme(a: Aggregate, values: [model.Value]) -> model.Value?
+    if values.len() == 0
+        return ok(.null_value)
+
+    best @= values[0]
+
+    for v in values
+        order = evaluate.compare(left: v, right: best)?
+
+        if a.kind == "min" && order < 0 || a.kind == "max" && order > 0
+            best @ v
+
+    return ok(best)
+
+## Tests
+
+# A table of sales for the tests below.
+function sample() -> model.Table
+    rows: [[model.Value]] = [
+        [.text(v: "north"), .number(text: "19.99")]
+        [.text(v: "south"), .number(text: "0.10")]
+        [.text(v: "north"), .number(text: "0.20")]
+        [.text(v: "north"), .null_value]
+    ]
+    return model.Table(name: "sales", columns: ["region", "amount"], rows: rows)
+
+test "group: groups in the order first seen, exact sums, a statistic of one value null"
+    aggregates = parse_list("count(), count(amount), sum(amount) as total, mean(amount), stdev(amount)").must()
+    g = group(sample(), by: ["region"], aggregates: aggregates).must()
+    assert g.columns == ["region", "count()", "count(amount)", "total", "mean(amount)", "stdev(amount)"]
+    assert g.rows[0] == [.text(v: "north"), .number(text: "3"), .number(text: "2"), .number(text: "20.19"), .number(text: "10.095"), .number(text: "13.993643199681774")]
+    assert g.rows[1] == [.text(v: "south"), .number(text: "1"), .number(text: "1"), .number(text: "0.10"), .number(text: "0.1"), .null_value]
+
+test "group: by nothing over no row is one row of empty aggregates"
+    empty = model.Table(name: "e", columns: ["amount"], rows: [])
+    g = group(empty, by: [], aggregates: parse_list("count(), sum(amount), max(amount)").must()).must()
+    assert g.rows == [[.number(text: "0"), .number(text: "0"), .null_value]]
+
+test "parse_list: percentiles, and the lists that are none"
+    assert parse_list("p90(amount)").must()[0].kind == "p90"
+    assert parse_list("p100(amount)").is_err()
+    assert parse_list("p05(amount)").is_err()
+    assert parse_list("total(amount)").is_err()
+    assert parse_list("sum(amount * 2)").is_err()
+    assert parse_list("amount").is_err()
+
+test "apply: min and max by value, a text in a sum refused"
+    a = Aggregate(kind: "max", column: "x", name: "max(x)")
+    assert apply(a, values: [.number(text: "9"), .number(text: "10")]).must() == .number(text: "10")
+    s = Aggregate(kind: "sum", column: "x", name: "sum(x)")
+    assert apply(s, values: [.number(text: "1"), .text(v: "two")]).is_err()
+    p = Aggregate(kind: "p50", column: "x", name: "p50(x)")
+    assert apply(p, values: [.number(text: "1"), .number(text: "2"), .number(text: "3"), .number(text: "4")]).must() == .number(text: "2.5")

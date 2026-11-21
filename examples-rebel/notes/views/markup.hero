@@ -1,0 +1,100 @@
+# What a note's or a comment's Markdown becomes in a page: HTML written by
+# `markdown`, then cleaned by an allow-list (`html/sanitize`). A note's author
+# may write raw HTML (a `<details>`, a `<kbd>`), which Markdown keeps and the
+# policy judges element by element; a comment's raw HTML is escaped as text
+# before the policy sees it. Either way nothing that runs a script reaches a
+# page, so the HTML answered here is the one text the pages join to their
+# templates unescaped (`templates.Piece`).
+
+use <rebel>/html/sanitize
+use <rebel>/markdown
+use <rebel>/strings
+
+# The most characters of an excerpt: a list's line and a feed's summary.
+constant EXCERPT_MAX: i64
+    160
+
+# The policy a note's HTML is cleaned by: user-generated content as
+# bluemonday's `UGCPolicy` keeps it, with the keys of a keyboard and a part
+# folded away (`kbd`, `details`, `summary`), which `ugc_policy` unwraps and a
+# note about software writes; every link given `rel="nofollow noopener"`, so
+# a link in a note lends the site's standing to nobody and no page it opens
+# reaches back through `window.opener`.
+function note_policy() -> sanitize.Policy
+    p @= sanitize.ugc_policy()
+    sanitize.allow_elements(@p, names: ["kbd", "details", "summary"])
+    sanitize.add_link_rel(@p, tokens: ["nofollow", "noopener"], external_only: false)
+    return p
+
+# The policy a comment's HTML is cleaned by: the note's, without images, so a
+# comment cannot make every reader's browser fetch an address of its choice.
+function comment_policy() -> sanitize.Policy
+    p @= note_policy()
+    sanitize.remove_elements(@p, names: ["img", "picture", "source"], how: .drop)
+    return p
+
+# The HTML of a note's Markdown, cleaned.
+#
+# - `text`: the body in Markdown; raw HTML in it is kept where the policy
+#   allows it.
+function note_html(text: str) -> str
+    options: markdown.Options @= markdown.default_options()
+    options.keep_html @ true
+    return sanitize.clean(note_policy(), text: markdown.to_html_with(text, options: options))
+
+# The HTML of a comment's Markdown, cleaned; raw HTML in it is shown as text.
+#
+# - `text`: the comment in Markdown.
+function comment_html(text: str) -> str
+    return sanitize.clean(comment_policy(), text: markdown.to_html(text))
+
+# The first words of a note's text, its Markdown read and its marks left
+# out, cut at a word before `EXCERPT_MAX` characters with `…` after. Each
+# block's text is read apart and joined by a space, since `markdown.text_of`
+# puts nothing between a heading and the paragraph after it.
+#
+# - `text`: the body in Markdown.
+function excerpt(text: str) -> str
+    doc = markdown.parse(text)
+    blocks: [str] @= []
+
+    for block in markdown.children(doc, node: markdown.ROOT)
+        blocks @ blocks.push(markdown.text_of(doc, node: block))
+
+    plain = strings.words(blocks.join(" ")).join(" ")
+    letters = plain.chars()
+
+    if letters.len() <= EXCERPT_MAX
+        return plain
+
+    kept: [str] @= []
+    count: i64 @= 0
+
+    for word in strings.words(plain)
+        n = word.chars().len() + 1
+
+        if count + n > EXCERPT_MAX - 1
+            break
+
+        kept @ kept.push(word)
+        count @ count + n
+
+    return kept.join(" ") + "…"
+
+test "note_html: Markdown written as HTML, a script dropped, a link given its rel"
+    got = note_html("## Hi\n\n<script>alert(1)</script>\n\n[x](https://example.org) and <kbd>Ctrl</kbd>\n")
+    assert strings.contains(s: got, substr: "<h2>Hi</h2>")
+    assert !strings.contains(s: got, substr: "<script")
+    assert strings.contains(s: got, substr: "rel=\"nofollow noopener\"")
+    assert strings.contains(s: got, substr: "<kbd>Ctrl</kbd>")
+
+test "comment_html: raw HTML shown as text, an image dropped"
+    got = comment_html("<b>bold</b> ![x](https://example.org/x.png)")
+    assert strings.contains(s: got, substr: "&lt;b&gt;bold&lt;/b&gt;")
+    assert !strings.contains(s: got, substr: "<img")
+
+test "excerpt: short text whole, marks left out, long text cut at a word"
+    assert excerpt("# Title\n\nSome *text*.") == "Title Some text."
+    long = repeat("word ", 60)
+    cut = excerpt(long)
+    assert cut.chars().len() <= 160 && strings.has_suffix(s: cut, suffix: "word…")

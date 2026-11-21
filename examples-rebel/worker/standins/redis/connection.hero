@@ -1,0 +1,154 @@
+# A client's connection to the Redis stand-in and the commands that act on
+# it rather than on the data: `HELLO`, which agrees the protocol and may log
+# in, `AUTH`, and `CLIENT SETNAME`, `GETNAME` and `ID`, each answering as
+# Redis 7 does, its refusals in Redis's own words.
+
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/redis
+use <rebel>/strings
+
+use standins/redis/resp
+
+# The version the stand-in reports in `HELLO` and `INFO`: the Redis whose
+# answers it follows.
+constant VERSION: str
+    "7.2.0"
+
+# One client's connection.
+record Session
+    # The connection.
+    conn: net.Conn
+    # The bytes sent and not yet read as a whole command.
+    buffer: [u8]
+    # The RESP version agreed, 2 until `HELLO 3`.
+    protocol: i64
+    # Whether the client has logged in, or needs not.
+    authed: bool
+    # The name `CLIENT SETNAME` or `HELLO ... SETNAME` gave it.
+    name: str
+    # The number `CLIENT ID` answers.
+    id: i64
+
+# The reply to a command given the wrong count of arguments.
+#
+# - `name`: the command's name, in capitals.
+function arity_error(name: str) -> redis.Reply
+    return resp.error_reply(
+        code: "ERR",
+        message: f"wrong number of arguments for '{strings.to_lower_ascii(name)}' command"
+    )
+
+# Whether `user` and `password` log in: the `default` user with the
+# server's password.
+#
+# - `required`: the server's password; "" where it asks none.
+# - `user`: the user named.
+# - `password`: the password given.
+function accepts(required: str, user: str, password: str) -> bool
+    return required != "" && user == "default" && password == required
+
+# `AUTH [user] password`.
+#
+# - `required`: the server's password; "" where it asks none.
+# - `session`: the client, logged in where the password is right.
+# - `words`: the whole command.
+function auth(required: str, @session: Session, words: [str]) -> redis.Reply
+    if words.len() != 2 && words.len() != 3
+        return arity_error("AUTH")
+
+    if required == ""
+        return resp.error_reply(
+            code: "ERR",
+            message: "AUTH <password> called without any password configured for the default user. Are you sure your configuration is correct?"
+        )
+
+    user = if words.len() == 3
+        words[1]
+    else
+        "default"
+
+    if accepts(required: required, user: user, password: words[words.len() - 1])
+        session.authed @ true
+        return resp.ok_reply()
+    return resp.error_reply(code: "WRONGPASS", message: "invalid username-password pair or user is disabled.")
+
+# `HELLO [protover [AUTH user password] [SETNAME name]]`: the protocol
+# agreed, the login and the name, answered with the server's description.
+#
+# - `required`: the server's password; "" where it asks none.
+# - `session`: the client, whose protocol, login and name change.
+# - `words`: the whole command.
+function hello(required: str, @session: Session, words: [str]) -> redis.Reply
+    protocol: i64 @= session.protocol
+
+    if words.len() >= 2
+        match numbers.parse_int(words[1])
+            .ok v =>
+                if v != 2 && v != 3
+                    return resp.error_reply(code: "NOPROTO", message: "unsupported protocol version")
+                protocol @ v
+            .err _ => return resp.error_reply(
+                code: "ERR",
+                message: "Protocol version is not an integer or out of range"
+            )
+
+    i: i64 @= 2
+
+    while i < words.len()
+        option = strings.to_upper_ascii(words[i])
+
+        if option == "AUTH" && i + 2 < words.len()
+            if !accepts(required: required, user: words[i + 1], password: words[i + 2])
+                return resp.error_reply(
+                    code: "WRONGPASS",
+                    message: "invalid username-password pair or user is disabled."
+                )
+            session.authed @ true
+            i @ i + 3
+        else if option == "SETNAME" && i + 1 < words.len()
+            session.name @ words[i + 1]
+            i @ i + 2
+        else
+            return resp.error_reply(code: "ERR", message: f"Syntax error in HELLO option '{words[i]}'")
+
+    if !session.authed
+        return resp.error_reply(
+            code: "NOAUTH",
+            message: "HELLO must be called with the client already authenticated, otherwise the HELLO <proto> AUTH <user> <pass> option can be used to authenticate the client and select the RESP protocol version at the same time"
+        )
+
+    session.protocol @ protocol
+    return .mapping(
+        entries: [entry("server", value: resp.text_reply("redis")), entry("version", value: resp.text_reply(VERSION)), entry("proto", value: .integer(v: protocol)), entry("id", value: .integer(v: session.id)), entry("mode", value: resp.text_reply("standalone")), entry("role", value: resp.text_reply("master")), entry("modules", value: .array(items: []))]
+    )
+
+# One entry of a map reply, its key a text.
+#
+# - `key`: the key.
+# - `value`: its value.
+function entry(key: str, value: redis.Reply) -> redis.Entry
+    return redis.Entry(key: resp.text_reply(key), value: value)
+
+# `CLIENT SETNAME name`, `CLIENT GETNAME` and `CLIENT ID`.
+#
+# - `session`: the client.
+# - `words`: the whole command.
+function client(@session: Session, words: [str]) -> redis.Reply
+    if words.len() < 2
+        return arity_error("CLIENT")
+
+    sub = strings.to_upper_ascii(words[1])
+
+    if sub == "SETNAME" && words.len() == 3
+        session.name @ words[2]
+        return resp.ok_reply()
+
+    if sub == "GETNAME" && words.len() == 2
+        if session.name == ""
+            return .null_value
+        return resp.text_reply(session.name)
+
+    if sub == "ID" && words.len() == 2
+        return .integer(v: session.id)
+    return resp.error_reply(code: "ERR", message: f"unknown subcommand '{words[1]}'")

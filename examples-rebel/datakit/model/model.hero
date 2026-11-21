@@ -1,0 +1,260 @@
+# The one model every format is read into and written from: a document of
+# values, and a table of named columns, which `model/tables` crosses to and
+# from a document.
+#
+# A number is held as the decimal text it was read as, never as a float, so
+# `19.99` stays `19.99` through a conversion and a sum adds what the file
+# says; `model/decimal` reads that text exactly when arithmetic needs it. An
+# object keeps its members in the order the source wrote them, since a
+# conversion that reorders the columns of a table is a conversion that changed
+# the table. A date or a time is a `moment`, kept as its RFC 3339 text, so a
+# format that has dates (TOML, CBOR, BSON, XLSX, MessagePack) can write one
+# back as a date and the others write it as text.
+
+use <rebel>/bytes
+use <rebel>/json
+
+## Codes
+
+# The code of a document that is not the shape a call needs, such as a table
+# asked of an object whose members are of mixed kinds.
+constant INVALID: str
+    "invalid"
+
+# The code of a column or a member that names nothing.
+constant NOT_FOUND: str
+    "not_found"
+
+## Limits
+
+# The deepest nesting a document may have, handed to every reader that takes
+# one. The functions that walk a document in this program recurse along its
+# nesting, so this bound is what keeps a file from outside from running the
+# stack out; it is half the 512 the Rebel readers allow by default.
+constant MAX_DEPTH: i64
+    256
+
+## Values
+
+# One value of a document: what every reader produces and every writer takes.
+variant Value
+    # The absence of a value: JSON's `null`, an empty CSV field, YAML's `~`.
+    null_value
+    # A truth value.
+    boolean
+        # The value.
+        v: bool
+    # A finite number, as exact decimal text.
+    number
+        # Its text, in JSON's number syntax (`-12`, `19.99`, `6.02e23`),
+        # digits as the source wrote them; never `NaN` or an infinity, which
+        # a reader turns into a `text`.
+        text: str
+    # A text.
+    text
+        # The text, UTF-8.
+        v: str
+    # Bytes that are not text: MessagePack's and CBOR's binary, BSON's
+    # binary, written as Base64 where a format holds only text.
+    bytes
+        # The bytes.
+        v: [u8]
+    # A date, a time of day, or both, with or without an offset.
+    moment
+        # Its RFC 3339 text: `2026-03-01`, `2026-03-01T09:30:00`,
+        # `2026-03-01T09:30:00Z`, `2026-03-01T09:30:00+01:00` or `09:30:00`.
+        text: str
+    # Values in order.
+    list
+        # The values.
+        items: [Value]
+    # Named values in the order they were written.
+    object
+        # The members; a name stands once.
+        members: [Member]
+
+# One named value of an object.
+record Member
+    # The member's name.
+    name: str
+    # Its value.
+    value: Value
+
+# A table: named columns and rows of values, one value for each column.
+#
+# Every row holds as many values as `columns` names; `model/tables` and the
+# readers keep that, and a row that breaks it aborts at its first read past
+# its end, since only this program builds a table.
+record Table
+    # The table's name: a file's stem, a sheet's name, the member a table was
+    # found under.
+    name: str
+    # The columns' names, in order, each once.
+    columns: [str]
+    # The rows, each a value for each column; `null_value` where a source
+    # left a cell empty.
+    rows: [[Value]]
+
+# The name of `v`'s kind, as messages and `inspect` write it.
+#
+# - `v`: the value.
+function kind_name(v: Value) -> str
+    return match v
+        .null_value => "null"
+        .boolean _  => "boolean"
+        .number _   => "number"
+        .text _     => "text"
+        .bytes _    => "bytes"
+        .moment _   => "moment"
+        .list _     => "list"
+        .object _   => "object"
+
+# Whether `v` is a scalar: neither a list nor an object.
+#
+# - `v`: the value.
+function is_scalar(v: Value) -> bool
+    return match v
+        .list _ | .object _                                                   => false
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ => true
+
+# Whether `v` is an object.
+#
+# - `v`: the value.
+function is_object(v: Value) -> bool
+    return match v
+        .object _                                                                       => true
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ | .list _ => false
+
+# The member of `v` named `name`.
+#
+# - `v`: an object; any other kind has no member.
+# - `name`: the member's name.
+#
+# Fails `not_found` where `v` is no object or holds no such member.
+function member_of(v: Value, name: str) -> Value?
+    match v
+        .object r =>
+            for m in r.members
+                if m.name == name
+                    return ok(m.value)
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ | .list _ => _ = 0
+
+    return fail(code: NOT_FOUND, msg: f"no member \"{name}\" in a {kind_name(v)}")
+
+# An object of `members`, built so that a later member of a name already there
+# replaces the earlier one's value and keeps its place.
+#
+# - `members`: the members in order.
+function object_of(members: [Member]) -> Value
+    kept: [Member] @= []
+    at: {str: i64} @= {}
+
+    for m in members
+        match at[m.name]
+            .ok i => kept[i] @ m
+            .err _ =>
+                at[m.name] @ kept.len()
+                kept @ kept.push(m)
+
+    return .object(members: kept)
+
+# The members of `v`, none where it is no object.
+#
+# - `v`: the value.
+function members_of(v: Value) -> [Member]
+    return match v
+        .object r                                                                       => r.members
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ | .list _ => []
+
+## Text
+
+# `v` as the text of one cell: what CSV, a terminal table and a PDF table
+# write.
+#
+# - `v`: the value.
+#
+# A null is the empty text, a truth value `true` or `false`, a number its
+# digits, bytes their Base64, a moment its RFC 3339 text, and a list or a
+# object its JSON on one line, so no cell loses what it holds.
+function cell_text(v: Value) -> str
+    return match v
+        .null_value         => ""
+        .boolean b          => if b.v
+            "true"
+        else
+            "false"
+        .number n           => n.text
+        .text t             => t.v
+        .bytes b            => bytes.format_base64(b.v)
+        .moment m           => m.text
+        .list _ | .object _ => json_text(v)
+
+# `v` as JSON on one line, every number's digits as the model holds them.
+#
+# - `v`: the value.
+#
+# A moment is written as a string and bytes as a Base64 string, JSON having
+# neither. It is written here rather than by `json.format` because a
+# `json.Value` holds a number as an `f64`, which would round a number of more
+# than seventeen digits; `json.to_indented` lays this text out keeping every
+# token as written.
+function json_text(v: Value) -> str
+    pieces: [str] @= []
+    add_json(@pieces, v)
+    return pieces.join("")
+
+# Adds the JSON pieces of `v` to `pieces`.
+#
+# - `pieces`: the text built so far, grown in place.
+# - `v`: the value.
+#
+# It follows the value's nesting with its own recursion: a document read by
+# this program is nested no deeper than its reader allowed, which every
+# reader bounds.
+function add_json(@pieces: [str], v: Value)
+    match v
+        .null_value => pieces @ pieces.push("null")
+        .boolean _  => pieces @ pieces.push(cell_text(v))
+        .number n   => pieces @ pieces.push(n.text)
+        .text t     => pieces @ pieces.push(json.quote(t.v))
+        .bytes b    => pieces @ pieces.push(json.quote(bytes.format_base64(b.v)))
+        .moment m   => pieces @ pieces.push(json.quote(m.text))
+        .list l =>
+            pieces @ pieces.push("[")
+            at: i64 @= 0
+
+            for item in l.items
+                if at > 0
+                    pieces @ pieces.push(",")
+                add_json(@pieces, item)
+                at @ at + 1
+
+            pieces @ pieces.push("]")
+        .object r =>
+            pieces @ pieces.push("{")
+            at: i64 @= 0
+
+            for m in r.members
+                if at > 0
+                    pieces @ pieces.push(",")
+                pieces @ pieces.push(json.quote(m.name))
+                pieces @ pieces.push(":")
+                add_json(@pieces, m.value)
+                at @ at + 1
+
+            pieces @ pieces.push("}")
+
+## Tests
+
+test "json_text: digits kept, moments and bytes as strings, text escaped"
+    v: Value = .object(
+        members: [Member(name: "n", value: .number(text: "12345678901234567890.10")), Member(name: "d", value: .moment(text: "2026-03-01")), Member(name: "b", value: .bytes(v: [104, 105])), Member(name: "t", value: .text(v: "a\"b"))]
+    )
+    assert json_text(v) == "{\"n\":12345678901234567890.10,\"d\":\"2026-03-01\",\"b\":\"aGk=\",\"t\":\"a\\\"b\"}"
+
+test "object_of: a later member of one name replaces the earlier in place"
+    r = object_of(
+        [Member(name: "a", value: .number(text: "1")), Member(name: "b", value: .null_value), Member(name: "a", value: .number(text: "2"))]
+    )
+    assert member_of(r, name: "a").must() == .number(text: "2")
+    assert members_of(r).len() == 2

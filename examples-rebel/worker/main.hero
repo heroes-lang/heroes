@@ -1,0 +1,127 @@
+# worker: a background job system on Redis, as Sidekiq and Celery are.
+# Producers enqueue typed jobs (`worker enqueue`); a supervisor and a fleet
+# of worker threads (`worker run`) claim them, run each kind's function,
+# retry the failures with exponential backoff and seeded jitter, keep the
+# jobs that fail for good as dead letters (`worker dead`), enqueue recurring
+# jobs on cron schedules, give back the jobs of workers that died, count and
+# time every attempt in metrics served at `/metrics`, trace each job from its
+# enqueue to its last attempt over OTLP, and write rotating log files.
+#
+# Run for real against a Redis 5 or later:
+#
+#     worker run --redis redis://:password@cache:6379/0 --queue webhooks \
+#         --queue default --workers 8 --otlp http://collector:4318 \
+#         --metrics 127.0.0.1:9464 --schedule 'purge_finished@*/15 * * * *'
+#     worker enqueue deliver_webhook '{"url": "https://example.org/hook", "body": {"n": 1}}' --queue webhooks
+#     worker stats; worker dead; worker retry 42; worker stop
+#
+# `worker standin --port 6380` serves the loopback stand-in of Redis alone,
+# for trying the system where no Redis runs. `worker demo` runs the scripted
+# demo against loopback stand-ins of Redis (RESP and Lua scripting), an
+# OpenTelemetry collector and webhook endpoints, on a clock moved by hand,
+# and prints a fixed account.
+#
+# The packages of Rebel it uses, and what for:
+#
+# - `jobs`, `jobs/redis_store`: the jobs, their states and schedules, kept in
+#   Redis by scripts the server runs whole;
+# - `redis`: the store's connection, its clock and the fleet's stop key, and
+#   the stand-in's replies;
+# - `retries`: the exponential waits between attempts, spread by `random`'s
+#   seeded generator;
+# - `threads`: the fleet of workers and the demo's driver;
+# - `poll`: the stand-ins' loop over every connection, and `/metrics` served
+#   while the supervisor waits;
+# - `metrics`, `tracing`, `otlp`: counters, gauges and histograms; a span per
+#   enqueue and per attempt; both exported to a collector;
+# - `log`, `log/files`: the lines of each thread's log, in files set aside by
+#   size and day;
+# - `containers/heap`: the scheduler's timers;
+# - `time`: the store's instants and durations, cron schedules;
+# - `errors`: context on failures, told in one line;
+# - `uuid`: the run's `service.instance.id`;
+# - `http`, `url`, `json`, `protobuf`, `compress`, `crypto`, `fs`, `path`,
+#   `flags`, `io`, `net`, `os`, `bytes`, `strings`, `numbers`, `lists`,
+#   `maps`, `math`: the kinds' work, the stand-ins, the command line.
+
+use <rebel>/errors
+use <rebel>/io
+
+use cli/command_line
+use demo/run as demo
+use ops/admin
+use standins/host
+
+# Prints `message` on the standard error, where a line that cannot be
+# written is dropped, there being nowhere else to say it.
+#
+# - `message`: the line.
+function complain(message: str)
+    _ = io.write_line(io.stderr(), line: message).is_err()
+
+# The exit code of a command line the program does not read.
+constant USAGE: i64
+    2
+
+# The exit code of `done`: 0 where it did what it was asked, else 1, its
+# failure told on the standard error.
+#
+# - `done`: what the command came to.
+function quietly(done: ()?) -> i64
+    match done
+        .ok _ => return 0
+        .err _ =>
+            complain("worker: " + errors.format_line(done))
+            return 1
+
+# Prints the answer of a one-shot command, or its failure, and answers the
+# exit code: 0 or 1.
+#
+# - `answer`: what the command answered.
+function finish(answer: str?) -> i64
+    match answer
+        .ok line =>
+            print(line)
+            return 0
+        .err _ =>
+            complain("worker: " + errors.format_line(answer))
+            return 1
+
+# Prints `lines`, or the failure that came instead, and answers the exit
+# code.
+#
+# - `lines`: the lines a table answered.
+function finish_lines(lines: [str]?) -> i64
+    match lines
+        .ok found =>
+            for line in found
+                print(line)
+
+            return 0
+        .err _ =>
+            complain("worker: " + errors.format_line(lines))
+            return 1
+
+function main()
+    read = command_line.read_program()
+
+    inv = match read
+        .ok i => i
+        .err _ =>
+            complain(errors.format_line(read))
+            exit(code: USAGE)
+
+    code = match inv.action
+        "help" =>
+            print(inv.help)
+            0
+        "demo"             => quietly(errors.context(demo.run(inv.dir), what: "the demo"))
+        "standin"          => quietly(host.serve_redis_alone(inv.job, password: inv.queue))
+        "run"              => finish(admin.run(inv))
+        "enqueue"          => finish(admin.enqueue(inv))
+        "retry"            => finish(admin.retry(inv))
+        "pause" | "resume" => finish(admin.pause_or_resume(inv))
+        "stop"             => finish(admin.stop(inv))
+        _                  => finish_lines(admin.table(inv))
+
+    exit(code: code)

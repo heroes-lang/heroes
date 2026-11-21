@@ -1,0 +1,394 @@
+# The service's settings, read in layers: the defaults written here, then
+# the TOML file `--config` names, then the environment's `NOTES_` variables,
+# then the command line's options, each over the ones before (`config`). A
+# key no setting reads is refused, so a misspelt key in a file is told at
+# start rather than ignored. The secrets have no default: a server never
+# starts with a key everybody can read in this file.
+
+use <rebel>/bytes
+use <rebel>/config
+use <rebel>/http/suffixes
+use <rebel>/json
+use <rebel>/log
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/toml
+
+use domain/jsonv
+
+## Codes
+
+# The code of a setting that holds a value the service cannot use.
+constant INVALID: str
+    "invalid"
+
+## The settings
+
+# Every setting the service reads, typed and checked.
+record Settings
+    # The address the server listens on, without its port: `127.0.0.1`.
+    host: str
+    # The port it listens on; 0 asks the system for a free one.
+    port: i64
+    # The address readers reach the site at, written into the feed's links.
+    base_url: str
+    # The SQLite database's file.
+    database: str
+    # The folder the files under `/static/` are answered from.
+    static_dir: str
+    # The site's name, in every page's title.
+    title: str
+    # The language pages are written in where a request asks for none we have.
+    locale: str
+    # The IANA time zone dates are shown in: `Europe/Rome`.
+    zone: str
+    # The notes a page of a list shows.
+    page_size: i64
+    # The session cookie's name.
+    cookie_name: str
+    # Whether the cookie is sent over HTTPS alone; false only behind no TLS,
+    # as on loopback.
+    cookie_secure: bool
+    # The cookie's `Domain`, "" for the host alone; never a public suffix.
+    cookie_domain: str
+    # How long a session lasts.
+    session_ttl: time.Duration
+    # The key sessions are signed with, 32 bytes at least.
+    cookie_key: [u8]
+    # The key API tokens are signed with (HS256), 32 bytes at least.
+    token_key: [u8]
+    # How long an API token lasts.
+    token_ttl: time.Duration
+    # The memory one password hash takes, in KiB.
+    password_memory_kib: i64
+    # The passes one password hash makes over its memory.
+    password_passes: i64
+    # The requests a second one client may make, on average.
+    rate: f64
+    # The requests one client may make at once.
+    burst: i64
+    # The sign-ins a second one client may try, on average.
+    login_rate: f64
+    # The sign-ins one client may try at once.
+    login_burst: i64
+    # The most bytes of a request's body.
+    body_bytes: i64
+    # How long a connection may take to send a request.
+    deadline: time.Duration
+    # How often an open WebSocket is pinged.
+    ping_every: time.Duration
+    # The least level a log line is written at.
+    log_level: log.Level
+    # Whether log lines are text or JSON.
+    log_json: bool
+    # The file log lines are appended to; "" for the standard error.
+    log_file: str
+    # The demo's fixed clock: its first moment. Absent when serving.
+    fixed_clock: time.Instant?
+    # How far the fixed clock moves at each reading.
+    clock_step: time.Duration
+
+# Every setting's path: what `check_known` holds a file to.
+function known_paths() -> [str]
+    return [
+        "server.host"
+        "server.port"
+        "server.base_url"
+        "server.body_bytes"
+        "server.deadline"
+        "server.ping_every"
+        "storage.database"
+        "storage.static_dir"
+        "site.title"
+        "site.locale"
+        "site.zone"
+        "site.page_size"
+        "security.cookie_name"
+        "security.cookie_secure"
+        "security.cookie_domain"
+        "security.session_ttl"
+        "security.cookie_key"
+        "security.token_key"
+        "security.token_ttl"
+        "security.password_memory_kib"
+        "security.password_passes"
+        "limits.rate"
+        "limits.burst"
+        "limits.login_rate"
+        "limits.login_burst"
+        "log.level"
+        "log.format"
+        "log.file"
+        "demo.clock"
+        "demo.clock_step"
+    ]
+
+# The defaults, the lowest layer. The password's cost is one of the five
+# equivalent minimum settings for Argon2id in OWASP's Password Storage Cheat
+# Sheet, `m=19456 (19 MiB), t=2, p=1`, read 2026-11-21.
+function defaults() -> config.Layer
+    server: {str: json.Value} = {
+        "host": jsonv.text("127.0.0.1")
+        "port": jsonv.number(8080)
+        "base_url": jsonv.text("http://127.0.0.1:8080")
+        "body_bytes": jsonv.number(1_048_576)
+        "deadline": jsonv.text("30s")
+        "ping_every": jsonv.text("30s")
+    }
+    storage: {str: json.Value} = {
+        "database": jsonv.text("notes.db")
+        "static_dir": jsonv.text("static")
+    }
+    site: {str: json.Value} = {
+        "title": jsonv.text("Notes")
+        "locale": jsonv.text("en")
+        "zone": jsonv.text("UTC")
+        "page_size": jsonv.number(10)
+    }
+    security: {str: json.Value} = {
+        "cookie_name": jsonv.text("notes_session")
+        "cookie_secure": jsonv.flag(true)
+        "cookie_domain": jsonv.text("")
+        "session_ttl": jsonv.text("720h")
+        "token_ttl": jsonv.text("1h")
+        "password_memory_kib": jsonv.number(19_456)
+        "password_passes": jsonv.number(2)
+    }
+    limits: {str: json.Value} = {
+        "rate": .number(v: 20.0)
+        "burst": jsonv.number(40)
+        "login_rate": .number(v: 0.1)
+        "login_burst": jsonv.number(5)
+    }
+    logging: {str: json.Value} = {
+        "level": jsonv.text("info")
+        "format": jsonv.text("json")
+        "file": jsonv.text("")
+    }
+    top: {str: json.Value} = {
+        "server": jsonv.object(server)
+        "storage": jsonv.object(storage)
+        "site": jsonv.object(site)
+        "security": jsonv.object(security)
+        "limits": jsonv.object(limits)
+        "log": jsonv.object(logging)
+        "demo": jsonv.object({"clock_step": jsonv.text("1s")})
+    }
+
+    return config.from_value(name: "defaults", value: jsonv.object(top)).must()
+
+# The settings of `layers` merged over the defaults, every value checked.
+#
+# - `layers`: the file's, the environment's and the command line's, the
+#   lowest first; `defaults` goes under them.
+#
+# Fails `invalid` naming a key no setting reads, a value of the wrong kind
+# with the layer that gave it, a secret missing or shorter than 32 bytes, and
+# a cookie domain that is a public suffix; `not_found` where a secret has no
+# value at all, saying how to make one.
+function settings_of(layers: [config.Layer]) -> Settings?
+    stack: [config.Layer] @= [defaults()]
+
+    for layer in layers
+        stack @ stack.push(layer)
+
+    s = config.merge(stack)
+    config.check_known(s, paths: known_paths())?
+    config.require(s, paths: ["security.cookie_key", "security.token_key"])?
+    level = log.parse_level(config.text_of(s, path: "log.level")?)?
+    format = config.text_of(s, path: "log.format")?
+
+    if format != "json" && format != "text"
+        return fail(code: INVALID, msg: f"log.format \"{format}\" is neither json nor text")
+
+    domain = config.text_of(s, path: "security.cookie_domain")?
+    check_cookie_domain(domain)?
+
+    fixed: time.Instant? = match config.value_of(s, path: "demo.clock")
+        .ok _  => ok(config.instant_of(s, path: "demo.clock")?)
+        .err e => fail(code: e.code, msg: e.msg)
+
+    settings = Settings(
+        host: config.text_of(s, path: "server.host")?,
+        port: config.int_of(s, path: "server.port")?,
+        base_url: strings.trim_suffix(s: config.text_of(s, path: "server.base_url")?, suffix: "/"),
+        database: config.text_of(s, path: "storage.database")?,
+        static_dir: config.text_of(s, path: "storage.static_dir")?,
+        title: config.text_of(s, path: "site.title")?,
+        locale: config.text_of(s, path: "site.locale")?,
+        zone: config.text_of(s, path: "site.zone")?,
+        page_size: positive(config.int_of(s, path: "site.page_size")?, path: "site.page_size")?,
+        cookie_name: config.text_of(s, path: "security.cookie_name")?,
+        cookie_secure: config.bool_of(s, path: "security.cookie_secure")?,
+        cookie_domain: domain,
+        session_ttl: config.duration_of(s, path: "security.session_ttl")?,
+        cookie_key: key_of(hex: config.text_of(s, path: "security.cookie_key")?, path: "security.cookie_key")?,
+        token_key: key_of(hex: config.text_of(s, path: "security.token_key")?, path: "security.token_key")?,
+        token_ttl: config.duration_of(s, path: "security.token_ttl")?,
+        password_memory_kib: positive(config.int_of(s, path: "security.password_memory_kib")?, path: "security.password_memory_kib")?,
+        password_passes: positive(config.int_of(s, path: "security.password_passes")?, path: "security.password_passes")?,
+        rate: config.float_of(s, path: "limits.rate")?,
+        burst: positive(config.int_of(s, path: "limits.burst")?, path: "limits.burst")?,
+        login_rate: config.float_of(s, path: "limits.login_rate")?,
+        login_burst: positive(config.int_of(s, path: "limits.login_burst")?, path: "limits.login_burst")?,
+        body_bytes: positive(config.int_of(s, path: "server.body_bytes")?, path: "server.body_bytes")?,
+        deadline: config.duration_of(s, path: "server.deadline")?,
+        ping_every: config.duration_of(s, path: "server.ping_every")?,
+        log_level: level,
+        log_json: format == "json",
+        log_file: config.text_of(s, path: "log.file")?,
+        fixed_clock: fixed,
+        clock_step: config.duration_of(s, path: "demo.clock_step")?
+    )
+
+    return ok(settings)
+
+# `n` where it is above zero.
+#
+# - `n`: the setting's value.
+# - `path`: the setting, for the message.
+#
+# Fails `invalid` where `n` is 0 or below.
+function positive(n: i64, path: str) -> i64?
+    if n <= 0
+        return fail(code: INVALID, msg: f"{path} is {n}, and must be above 0")
+
+    return ok(n)
+
+# The bytes of a secret written as hexadecimal.
+#
+# - `hex`: the setting's text, 64 hexadecimal digits or more.
+# - `path`: the setting, for the message.
+#
+# Fails `invalid` where `hex` is not hexadecimal or holds fewer than 32
+# bytes, the message saying how to make a key, never the value.
+function key_of(hex: str, path: str) -> [u8]?
+    key = match bytes.parse_hex(hex)
+        .ok k => k
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"{path} is not hexadecimal; `notes init` writes a file with fresh keys"
+        )
+
+    if key.len() < 32
+        return fail(
+            code: INVALID,
+            msg: f"{path} holds {key.len()} bytes, and a key needs 32; `notes init` writes a file with fresh keys"
+        )
+
+    return ok(key)
+
+# Checks the cookie's `Domain`: "" for the host alone, or a domain that is not
+# a public suffix, since a browser refuses a cookie set for `co.uk` and every
+# site under it would read one it took (RFC 6265 § 5.3, step 5).
+#
+# - `domain`: the setting's text.
+#
+# Fails `invalid` where `domain` is a public suffix of the list
+# `http/suffixes` carries.
+function check_cookie_domain(domain: str) -> ()?
+    if domain == ""
+        return ok()
+
+    if suffixes.is_public_suffix(strings.trim_prefix(s: domain, prefix: "."))
+        return fail(
+            code: INVALID,
+            msg: f"security.cookie_domain \"{domain}\" is a public suffix, so no browser keeps a cookie set for it"
+        )
+
+    return ok()
+
+## The sample file
+
+# The file `notes init` writes, every setting at its default and commented,
+# its two secrets filled by `sample_config`.
+function sample_lines() -> [str]
+    return [
+        "# The settings of a notes server. Every key is optional but the two keys"
+        "# under [security]; `notes serve --config <this file>` reads it."
+        ""
+        "[server]"
+        "host = \"127.0.0.1\""
+        "port = 8080"
+        "# The address readers reach the site at: the feed's links use it."
+        "base_url = \"http://127.0.0.1:8080\""
+        "body_bytes = 1048576"
+        "deadline = \"30s\""
+        "ping_every = \"30s\""
+        ""
+        "[storage]"
+        "database = \"notes.db\""
+        "static_dir = \"static\""
+        ""
+        "[site]"
+        "title = \"Notes\""
+        "locale = \"en\""
+        "zone = \"UTC\""
+        "page_size = 10"
+        ""
+        "[security]"
+        "cookie_key = \"\""
+        "token_key = \"\""
+        "# Set to false only where no TLS stands in front of the server."
+        "cookie_secure = true"
+        "session_ttl = \"720h\""
+        "token_ttl = \"1h\""
+        ""
+        "[log]"
+        "level = \"info\""
+        "format = \"json\""
+        ""
+    ]
+
+# The sample settings file, its keys given and some settings changed.
+#
+# - `cookie_key`: the session key, as hexadecimal.
+# - `token_key`: the token key, as hexadecimal.
+# - `changes`: settings to write over the sample's, each a path of keys and
+#   its value, in order.
+#
+# Fails `invalid` where a change's path or value is not one TOML writes.
+function sample_config(cookie_key: str, token_key: str, changes: [Change]) -> str?
+    d @= toml.parse_document(sample_lines().join("\n"))?
+    toml.set_value(@d, path: ["security", "cookie_key"], value: .text(v: cookie_key))?
+    toml.set_value(@d, path: ["security", "token_key"], value: .text(v: token_key))?
+
+    for c in changes
+        toml.set_value(@d, path: c.path, value: c.value)?
+
+    return ok(toml.format_document(d))
+
+# One setting written over the sample's.
+record Change
+    # The keys from the top: `["site", "zone"]`.
+    path: [str]
+    # The value.
+    value: toml.Value
+
+test "check_cookie_domain: none, a site's own domain, and two public suffixes"
+    assert !check_cookie_domain("").is_err()
+    assert !check_cookie_domain("example.org").is_err()
+    assert check_cookie_domain("co.uk").is_err()
+    assert check_cookie_domain(".com").is_err()
+
+test "key_of: 32 bytes taken, 31 and text that is not hexadecimal refused"
+    assert key_of(hex: repeat("ab", 32), path: "k").must().len() == 32
+    assert key_of(hex: repeat("ab", 31), path: "k").is_err()
+    assert key_of(hex: "not hex", path: "k").is_err()
+
+test "settings_of: the sample with its keys reads back, and a misspelt key is refused"
+    text = sample_config(
+        cookie_key: repeat("11", 32),
+        token_key: repeat("22", 32),
+        changes: [Change(path: ["site", "zone"], value: .text(v: "Europe/Rome"))]
+    ).must()
+    layer = config.parse_layer(name: "notes.toml", text: text, format: .toml).must()
+    s = settings_of([layer]).must()
+    assert s.zone == "Europe/Rome" && s.port == 8080 && s.cookie_key.len() == 32 && s.fixed_clock.is_err()
+    bad = config.parse_layer(name: "bad.toml", text: text + "\n[sitee]\ntitle = \"x\"\n", format: .toml).must()
+    assert settings_of([bad]).is_err()
+
+test "settings_of: no keys at all is told, never a server with a key anybody reads"
+    match settings_of([])
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"

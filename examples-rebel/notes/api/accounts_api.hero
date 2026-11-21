@@ -1,0 +1,124 @@
+# The API's operations on accounts: a token traded for a name and a password,
+# the account a token names, a role given, and the server's stop. A token's
+# sign-in is limited by the same bucket per client as the sign-in page's, so
+# the API is no faster way to guess a password.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/openapi
+use <rebel>/time
+use <rebel>/web
+
+use api/api_doc
+use api/api_view
+use app/service
+use app/state
+use auth/tokens
+use auth/visit
+use domain/jsonv
+use domain/model
+use http/pages_account
+use http/replies
+use ops/ops
+
+# The text of the body's member `key`, "" where it is absent.
+#
+# - `values`: the request's values.
+# - `key`: the member.
+function body_text(values: openapi.Values, key: str) -> str
+    return jsonv.text_at(values.body, key: key).default("")
+
+# `POST /api/token`: a token for the account whose name and password the body
+# holds; 401 where they are wrong, 429 past the client's sign-in limit.
+#
+# - `app`: the state.
+# - `v`: the visit; its clock stamps the token.
+# - `r`: the request, whose client the limit is kept for.
+# - `values`: the body's `name` and `password`.
+function create_token(@app: state.App, v: visit.Visit, r: http.Request, values: openapi.Values) -> replies.Reply?
+    match web.limit_rate(@app.login_limiter, r: r, key: pages_account.client_of(r), now: v.now, form: .json)
+        .answer a =>
+            ops.count(@app.registry, name: ops.SIGN_INS, labels: ["limited"])
+            return ok(replies.plain(a.response))
+        .go_on _ => _ = 0
+
+    user = match service.sign_in(@app, name: body_text(values, key: "name"), password: body_text(values, key: "password"))
+        .ok u => u
+        .err e =>
+            ops.count(@app.registry, name: ops.SIGN_INS, labels: ["refused"])
+            return ok(replies.plain(replies.api_error(http.STATUS_UNAUTHORIZED, message: e.msg)))
+
+    ops.count(@app.registry, name: ops.SIGN_INS, labels: ["accepted"])
+    ttl = app.settings.token_ttl
+    token = tokens.issue(app.settings.token_key, name: user.name, role: model.role_name(user.role), now: v.now, ttl: ttl)?
+
+    members: {str: json.Value} = {
+        "token": jsonv.text(token)
+        "token_type": jsonv.text("Bearer")
+        "expires_in": jsonv.number(time.to_units(ttl, unit: .second))
+    }
+
+    out: http.Response @= replies.json_response(http.STATUS_OK, value: jsonv.object(members))
+    out.headers @ http.with_header(out.headers, name: "Cache-Control", value: "no-store")
+    return ok(replies.plain(out))
+
+# Answers the operation `name` for `user`.
+#
+# - `app`: the state.
+# - `user`: the account the token names.
+# - `name`: the operation: `read_me`, `update_user` or `stop_server`.
+# - `values`: the request's values.
+function answer(@app: state.App, user: model.User, name: str, values: openapi.Values) -> replies.Reply?
+    if name == api_doc.READ_ME
+        return ok(replies.plain(replies.json_response(http.STATUS_OK, value: api_view.user_json(user))))
+
+    if name == api_doc.UPDATE_USER
+        return update_user(@app, user: user, values: values)
+
+    if name == api_doc.STOP_SERVER
+        return stop_server(@app, user: user)
+
+    return ok(replies.plain(replies.api_error(http.STATUS_NOT_FOUND, message: f"no operation {name} here")))
+
+# `PATCH /api/users/{name}`: the account given the body's `role`.
+#
+# - `app`: the state.
+# - `user`: the account asking, which must be an admin.
+# - `values`: the path's `name` and the body's `role`, one of the three the
+#   schema allows.
+function update_user(@app: state.App, user: model.User, values: openapi.Values) -> replies.Reply?
+    name = json.text_of(values.path["name"].default(.null_value)).default("")
+    role = model.parse_role(body_text(values, key: "role"))?
+
+    return match service.give_role(@app, admin: user, name: name, role: role)
+        .ok verdict =>
+            match verdict
+                .allowed => ok(
+                    replies.plain(replies.json_response(http.STATUS_OK, value: api_view.user_json(service_user(@app, name: name)?)))
+                )
+                .refused why => ok(replies.plain(replies.api_error(http.STATUS_FORBIDDEN, message: why.reason)))
+        .err e => ok(replies.plain(replies.api_error(http.STATUS_NOT_FOUND, message: e.msg)))
+
+# The account `name`, read back after a change.
+#
+# - `app`: the state.
+# - `name`: the account.
+function service_user(@app: state.App, name: str) -> model.User?
+    return visit.user_named(@app, name: name)
+
+# `POST /api/admin/stop`: 202, and the server stops once the answer is sent,
+# as at SIGTERM: no connection accepted after, the WebSockets told 1001.
+#
+# - `app`: the state; `stopping` is set.
+# - `user`: the account asking, which must be an admin.
+function stop_server(@app: state.App, user: model.User) -> replies.Reply?
+    if user.role != .admin
+        return ok(replies.plain(replies.api_error(http.STATUS_FORBIDDEN, message: "only an admin may stop the server")))
+
+    app.stopping @ true
+    out: http.Response @= replies.json_response(
+        http.STATUS_ACCEPTED,
+        value: jsonv.object({"stopping": jsonv.flag(true)})
+    )
+    out.closing @ true
+    return ok(replies.plain(out))

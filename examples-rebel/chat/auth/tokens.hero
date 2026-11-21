@@ -1,0 +1,119 @@
+# Sign-in by JSON Web Token: `/login` issues a token signed with HS256 by the
+# server's secret, and every WebSocket and every API request carries it as
+# `Authorization: Bearer`. A token names its user in `sub`, this server in
+# `iss`, and lives `lifetime` from `iat` to `exp`; the verifier accepts HS256
+# alone, so a header naming another algorithm, `none` among them, is refused
+# before any key is tried (RFC 8725 § 2.1).
+
+use <rebel>/bytes
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/time
+
+# The code of a token refused, or of a secret too short.
+constant INVALID: str
+    "invalid"
+
+# The `iss` every token of this program carries and is checked for.
+constant ISSUER: str
+    "chat"
+
+# The fewest bytes of a secret: HS256's key is at least its hash's 32 bytes
+# (RFC 7518 § 3.2), which `jose` refuses below.
+constant LEAST_SECRET_BYTES: i64
+    32
+
+# What signs and checks tokens: the key made of the server's secret, and how
+# long a token lives. Made by `issuer`.
+record Issuer
+    # The HMAC key.
+    key: jose.Key
+    # How long a token lives from the moment it is issued.
+    lifetime: time.Duration
+
+# An issuer whose tokens are signed with `secret` and live `lifetime`.
+#
+# - `secret`: the server's secret, at least `LEAST_SECRET_BYTES` bytes.
+# - `lifetime`: how long a token lives, above zero.
+#
+# Fails `invalid` where the secret is too short or the lifetime is not above
+# zero.
+function issuer(secret: [u8], lifetime: time.Duration) -> Issuer?
+    if secret.len() < LEAST_SECRET_BYTES
+        return fail(
+            code: INVALID,
+            msg: f"a secret holds at least {LEAST_SECRET_BYTES} bytes, and this one {secret.len()}"
+        )
+
+    if lifetime.nanoseconds <= 0
+        return fail(code: INVALID, msg: "a token lives some time")
+
+    return ok(Issuer(key: jose.key_from_secret(secret), lifetime: lifetime))
+
+# A token for `user`, issued at `now`, its id `id`.
+#
+# - `signer`: the issuer.
+# - `user`: the user's name, its `sub`.
+# - `now`: when it is issued, its `iat`; it expires `signer.lifetime` after.
+# - `id`: its `jti`, a UUID the server makes.
+#
+# Fails as `jose.sign_token` fails, and `does_not_fit` where the expiry is
+# past what an instant holds.
+function issue(signer: Issuer, user: str, now: time.Instant, id: str) -> str?
+    expires = time.add(now, d: signer.lifetime)?
+    claims: {str: json.Value} = {
+        "iss": .text(v: ISSUER)
+        "sub": .text(v: user)
+        "iat": jose.numeric_date(now)
+        "exp": jose.numeric_date(expires)
+        "jti": .text(v: id)
+    }
+    return jose.sign_token(claims, key: signer.key, algorithm: .hs256)
+
+# The user `token` was issued to, where it is this server's, unexpired at
+# `now`.
+#
+# - `signer`: the issuer.
+# - `token`: the token, as the request carried it.
+# - `now`: the time it is judged at.
+#
+# Fails `invalid` where its signature does not hold, its algorithm is not
+# HS256, its issuer is another, it has no `exp` or no `sub`, or it expired.
+function verify(signer: Issuer, token: str, now: time.Instant) -> str?
+    # Five seconds of leeway, for the clocks of a server's machines that
+    # disagree a little.
+    rules = jose.Rules(
+        algorithms: [.hs256],
+        issuer: ISSUER,
+        audience: "",
+        subject: "",
+        token_type: "",
+        required: ["exp", "sub"],
+        leeway: time.seconds(5)?,
+        now: now
+    )
+
+    read = match jose.verify_token(token, trusted: [signer.key], rules: rules)
+        .ok t  => t
+        .err e => return fail(code: INVALID, msg: f"the token is refused: {e.msg}")
+
+    return match jose.claim_text(read.claims, name: "sub")
+        .ok user => ok(user)
+        .err e   => fail(code: INVALID, msg: f"the token names no user: {e.msg}")
+
+test "verify: a token read back, by another secret, and after it expired"
+    signer = issuer(bytes.from_text(repeat("k", 32)), lifetime: time.hours(1).must()).must()
+    other = issuer(bytes.from_text(repeat("j", 32)), lifetime: time.hours(1).must()).must()
+    now = time.date(year: 2026, month: 11, day: 21).must()
+    token = issue(signer, user: "alice", now: now, id: "t1").must()
+    assert verify(signer, token: token, now: now).must() == "alice"
+    assert verify(other, token: token, now: now).is_err()
+    assert verify(signer, token: token, now: time.add(now, d: time.hours(2).must()).must()).is_err()
+
+test "issuer: a secret too short, and a lifetime of nothing"
+    assert issuer([1, 2, 3], lifetime: time.hours(1).must()).is_err()
+    assert issuer(bytes.from_text(repeat("k", 32)), lifetime: time.seconds(0).must()).is_err()
+
+test "verify: a token that is no token"
+    signer = issuer(bytes.from_text(repeat("k", 40)), lifetime: time.hours(1).must()).must()
+    assert verify(signer, token: "a.b.c", now: time.date(year: 2026, month: 1, day: 1).must()).is_err()

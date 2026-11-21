@@ -1,0 +1,122 @@
+# The demo's client of the agent's own MCP server, started as a child (`agent
+# serve`): each kind of request the revision defines that the server offers,
+# and the refusals a client meets, asked one after another and written as the
+# client reads them back.
+
+use <rebel>/json
+use <rebel>/mcp
+use <rebel>/strings
+
+use support/report
+use tools/executor
+
+# Asks the server of `client` what it is, lists and calls its tools, reads its
+# resources, completes a path and gets its prompt, writing each answer.
+#
+# - `client`: a client of the server; it moves on with each request.
+#
+# Fails where the server does not answer a request it should answer; each
+# refusal the tour asks for on purpose is written, not failed.
+function tour(@client: mcp.Client) -> ()?
+    found = mcp.discover(@client)?
+    c = found.capabilities
+    report.line(f"discover: {found.server.name} {found.server.version}, protocol {found.versions.join(", ")}")
+    report.line(f"  offers tools {c.tools}, resources {c.resources}, prompts {c.prompts}, completions {c.completions}")
+    names: [str] @= []
+
+    for t in mcp.list_tools(@client)?
+        names @ names.push(t.name)
+
+    report.line(f"tools/list: {names.join(", ")}")
+    call(@client, name: "search_documents", arguments: "{\"query\": \"buffer full\", \"limit\": 2}")
+    call(@client, name: "read_file", arguments: "{\"path\": \"install.md\", \"first_line\": 1, \"last_line\": 1}")
+    call(@client, name: "read_file", arguments: "{\"path\": \"../outside.txt\"}")
+    call(@client, name: "query_json", arguments: "{\"path\": 7, \"filter\": \".\"}")
+    call(@client, name: "format_disk", arguments: "{}")
+    resources = mcp.list_resources(@client)?
+
+    if resources.len() > 0
+        report.line(
+            f"resources/list: {resources.len()} documents, the first {resources[0].uri} ({resources[0].mime_type})"
+        )
+    read(@client, uri: "doc:///install.md")
+    read(@client, uri: "doc:///beacon.json")
+    read(@client, uri: "doc:///missing.md")
+    templates: [str] @= []
+
+    for t in mcp.list_templates(@client)?
+        templates @ templates.push(t.uri_template)
+
+    report.line(f"resources/templates/list: {templates.join(", ")}")
+    completed = mcp.complete(@client, kind: "ref/resource", ref: "doc:///{+path}", argument: "path", value: "tr", context: {})?
+    report.line(f"completion/complete path \"tr\": {completed.values.join(", ")} ({completed.total} in all)")
+
+    match mcp.get_prompt(@client, name: "answer_with_sources", arguments: {"question": "How do I install Beacon on Linux?"}, inputs: mcp.no_inputs())?
+        .done d =>
+            report.line(f"prompts/get answer_with_sources: {d.result.description}, {d.result.messages.len()} message")
+            report.line(f"  it ends: {last_line_of(d.result.messages)}")
+        .asks _ => report.warn("prompts/get answer_with_sources: the server asked for input")
+
+    return ok()
+
+# Calls the tool `name` with `arguments`, JSON text, and writes what came back.
+function call(@client: mcp.Client, name: str, arguments: str)
+    shown = f"tools/call {name} {arguments}"
+
+    match mcp.call_tool(@client, name: name, arguments: json.parse(arguments).must(), inputs: mcp.no_inputs())
+        .ok outcome =>
+            told = executor.outcome_of(outcome)
+
+            mark = if told.is_error
+                "a tool error"
+            else
+                "answered"
+
+            report.line(shown)
+            report.lines(report.indented(f"{mark}: {told.text}", spaces: 2))
+        .err e => report.line(shown + f"\n  refused: {e.code}: {e.msg}")
+
+# Reads the resource `uri` and writes its first line, or the refusal.
+function read(@client: mcp.Client, uri: str)
+    match mcp.read_resource(@client, uri: uri, inputs: mcp.no_inputs())
+        .ok outcome =>
+            match outcome
+                .done d =>
+                    first = if d.contents.len() == 0
+                        "(nothing)"
+                    else
+                        first_of(d.contents[0])
+
+                    report.line(f"resources/read {uri}: {first}")
+                .asks _ => report.warn(f"resources/read {uri}: the server asked for input")
+        .err e => report.line(f"resources/read {uri}: refused: {e.code}: {e.msg}")
+
+# The first line of what a resource holds, "(bytes)" for bytes.
+function first_of(c: mcp.Contents) -> str
+    match c
+        .text t => return first_line(t.text)
+        .blob _ => return "(bytes)"
+
+# The first line of `text`, "" for the empty text.
+function first_line(text: str) -> str
+    ls = strings.lines(text)
+
+    if ls.len() == 0
+        return ""
+
+    return ls[0]
+
+# The last line of the text of the last message of a prompt.
+function last_line_of(messages: [mcp.PromptMessage]) -> str
+    if messages.len() == 0
+        return ""
+
+    match messages[messages.len() - 1].content
+        .text t =>
+            ls = strings.lines(t.text)
+
+            if ls.len() == 0
+                return ""
+
+            return ls[ls.len() - 1]
+        .image _ | .audio _ | .resource_link _ | .embedded _ => return ""

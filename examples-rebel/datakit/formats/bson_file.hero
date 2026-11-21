@@ -1,0 +1,257 @@
+# BSON read into the model and written from it, through `bson`: a collection
+# is its documents one after another, as `mongodump` writes a `.bson` file.
+#
+# A file of one document is that object, and of several a list of objects, so
+# a table is written as a document for each row and read back as one. An
+# integer is an `int32` where it fits, else an `int64`; a number with a
+# fraction, and an integer past 64 bits, is a `decimal128`, which keeps its
+# digits exactly up to 34 of them, and past that is written as the nearest
+# `double`. A date and a time is a BSON date-time, to the millisecond and in
+# UTC (a local one read as UTC); a date alone is written as its text, since a
+# BSON date-time is an instant. An ObjectId is read as its hexadecimal text,
+# and the types JavaScript once needed as texts too.
+
+use <rebel>/big
+use <rebel>/bson
+use <rebel>/time
+
+use model/decimal
+use model/model
+use model/moments
+
+## Reading
+
+# The document of the BSON bytes `data`.
+#
+# - `data`: the file's bytes, documents one after another; empty for an
+#   empty list.
+#
+# Fails as `bson.decode_next` fails: `invalid` with the byte where the bytes
+# stop being BSON, `not_text` for a text that is not UTF-8.
+function read(data: [u8]) -> model.Value?
+    options = bson.DecodeOptions(max_depth: model.MAX_DEPTH, lossy_text: false)
+    documents: [model.Value] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        found = bson.decode_next(data, from: at, options: options)?
+        documents @ documents.push(.object(members: members_of(found.doc)?))
+        at @ found.next
+
+    if documents.len() == 1
+        return ok(documents[0])
+    return ok(.list(items: documents))
+
+# The members of a BSON document, in order.
+#
+# - `doc`: the document.
+#
+# Fails as `of_bson` fails.
+function members_of(doc: bson.Document) -> [model.Member]?
+    out: [model.Member] @= []
+
+    for f in doc.fields
+        out @ out.push(model.Member(name: f.name, value: of_bson(f.value)?))
+
+    return ok(model.members_of(model.object_of(out)))
+
+# `v` as a value of the model.
+#
+# - `v`: the BSON value.
+#
+# Fails `does_not_fit` for a date-time outside the instants `time` holds, and
+# as `bson.decimal_of` fails.
+function of_bson(v: bson.Value) -> model.Value?
+    return match v
+        .double d                => ok(decimal.of_float(d.v))
+        .text t                  => ok(.text(v: t.v))
+        .document d              => ok(.object(members: members_of(d.doc)?))
+        .array a                 => ok(.list(items: items_of(a.items)?))
+        .binary b                => ok(.bytes(v: b.data))
+        .undefined | .null_value => ok(.null_value)
+        .object_id o             => ok(.text(v: bson.format_object_id(o.id)))
+        .boolean b               => ok(.boolean(v: b.v))
+        .datetime d              => ok(.moment(text: moments.text_of_instant(time.from_unix_milliseconds(d.ms)?)))
+        .regex r                 => ok(.text(v: f"/{r.pattern}/{r.options}"))
+        .db_pointer p            => ok(.text(v: f"{p.namespace}/{bson.format_object_id(p.id)}"))
+        .javascript j            => ok(.text(v: j.code))
+        .symbol s                => ok(.text(v: s.v))
+        .javascript_with_scope j => ok(.text(v: j.code))
+        .int32 i                 => ok(decimal.of_int(to_i64(i.v).must()))
+        .timestamp t             => ok(timestamp_of(t.v))
+        .int64 i                 => ok(decimal.of_int(i.v))
+        .decimal128 _            => ok(decimal128_of(v)?)
+        .min_key                 => ok(.text(v: "MinKey"))
+        .max_key                 => ok(.text(v: "MaxKey"))
+
+# The values of an array's items.
+#
+# - `items`: the items.
+#
+# Fails as `of_bson` fails.
+function items_of(items: [bson.Value]) -> [model.Value]?
+    out: [model.Value] @= []
+
+    for item in items
+        out @ out.push(of_bson(item)?)
+
+    return ok(out)
+
+# A replication timestamp as an object of its seconds and its increment, the
+# shape Extended JSON gives it.
+#
+# - `t`: the timestamp.
+function timestamp_of(t: bson.Timestamp) -> model.Value
+    seconds = decimal.of_int(to_i64(t.seconds).must())
+    increment = decimal.of_int(to_i64(t.increment).must())
+    return .object(members: [model.Member(name: "t", value: seconds), model.Member(name: "i", value: increment)])
+
+# The number a `decimal128` holds, or its text where it is a NaN or an
+# infinity.
+#
+# - `v`: the `decimal128` value.
+#
+# Fails as `decimal.text_of_bounded` fails, which a `decimal128`, its
+# exponent within 6176 either way, never does.
+function decimal128_of(v: bson.Value) -> model.Value?
+    match bson.decimal_of(v)
+        .ok d => return ok(.number(text: decimal.text_of_bounded(d)?))
+        .err _ =>
+            match v
+                .decimal128 d => return ok(.text(v: bson.format_decimal128(d.v)))
+                .double _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .min_key | .max_key => return ok(
+                    .null_value
+                )
+
+## Writing
+
+# `v` as BSON bytes: an object as one document, a list of objects as a
+# document for each, anything else as one document holding it under `name`.
+#
+# - `v`: the document.
+# - `name`: the field a value that is no object is written under.
+#
+# Fails as `bson.encode` fails, `invalid` for a document past BSON's 16 MiB
+# or a name holding a zero byte, and `invalid` where a number's or a moment's
+# text is not one.
+function write(v: model.Value, name: str) -> [u8]?
+    documents: [bson.Document] @= []
+
+    match v
+        .object o => documents @ documents.push(document_of(o.members)?)
+        .list l =>
+            if l.items.filter(model.is_object).len() == l.items.len()
+                for item in l.items
+                    documents @ documents.push(document_of(model.members_of(item))?)
+            else
+                documents @ documents.push(document_of([model.Member(name: name, value: v)])?)
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ => documents @ documents.push(
+            document_of([model.Member(name: name, value: v)])?
+        )
+
+    out: [u8] @= []
+
+    for d in documents
+        for b in bson.encode(d)?
+            out @ out.push(b)
+
+    return ok(out)
+
+# The BSON document of an object's members.
+#
+# - `members`: the members.
+#
+# Fails as `to_bson` fails.
+function document_of(members: [model.Member]) -> bson.Document?
+    fields: [bson.Field] @= []
+
+    for m in members
+        fields @ fields.push(bson.Field(name: m.name, value: to_bson(m.value)?))
+
+    return ok(bson.Document(fields: fields))
+
+# `v` as a BSON value.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where a number's or a moment's text is not one.
+function to_bson(v: model.Value) -> bson.Value?
+    return match v
+        .null_value => ok(.null_value)
+        .boolean b  => ok(.boolean(v: b.v))
+        .number n   => ok(number_to_bson(n.text)?)
+        .text t     => ok(.text(v: t.v))
+        .bytes b    => ok(.binary(subtype: bson.SUBTYPE_GENERIC, data: b.v))
+        .moment m   => ok(moment_to_bson(m.text)?)
+        .list l     => ok(.array(items: items_to_bson(l.items)?))
+        .object o   => ok(.document(doc: document_of(o.members)?))
+
+# A number as an `int32`, an `int64`, a `decimal128` or a `double`, the first
+# of them that holds it exactly, else the `double` nearest it.
+#
+# - `text`: the number.
+#
+# Fails `invalid` where `text` is no number.
+function number_to_bson(text: str) -> bson.Value?
+    d = decimal.parse(text)?
+
+    if decimal.is_integer_text(text)
+        match decimal.to_int(text)
+            .ok i =>
+                match to_i32(i)
+                    .ok small => return ok(.int32(v: small))
+                    .err _    => return ok(.int64(v: i))
+            .err _ => _ = 0
+
+    match bson.from_decimal(d)
+        .ok exact => return ok(exact)
+        .err _    => return ok(.double(v: big.float_of_decimal(d)))
+
+# A moment as a date-time where it has a date and a time, else as its text.
+#
+# - `text`: the moment.
+#
+# Fails as `moments.parse` fails, and `does_not_fit` for an instant past the
+# milliseconds an `i64` counts.
+function moment_to_bson(text: str) -> bson.Value?
+    p = moments.parse(text)?
+
+    if p.has_date && p.has_time
+        return ok(bson.from_instant(moments.instant_of(p)?))
+    return ok(.text(v: text))
+
+# A list's items as BSON values.
+#
+# - `items`: the items.
+#
+# Fails as `to_bson` fails.
+function items_to_bson(items: [model.Value]) -> [bson.Value]?
+    out: [bson.Value] @= []
+
+    for item in items
+        out @ out.push(to_bson(item)?)
+
+    return ok(out)
+
+## Tests
+
+test "write and read: a table's rows are documents one after another"
+    a: model.Value = .object(
+        members: [model.Member(name: "id", value: .number(text: "1")), model.Member(name: "price", value: .number(text: "19.99"))]
+    )
+    b: model.Value = .object(
+        members: [model.Member(name: "id", value: .number(text: "3000000000")), model.Member(name: "price", value: .null_value)]
+    )
+    back = read(write(.list(items: [a, b]), name: "t").must()).must()
+    assert model.json_text(back) == "[{\"id\":1,\"price\":19.99},{\"id\":3000000000,\"price\":null}]"
+
+test "write and read: dates, a date alone, a scalar under its name"
+    v: model.Value = .object(
+        members: [model.Member(name: "at", value: .moment(text: "2026-03-01T09:30:00.125+01:00")), model.Member(name: "day", value: .moment(text: "2026-03-01"))]
+    )
+    assert model.json_text(read(write(v, name: "t").must()).must()) == "{\"at\":\"2026-03-01T08:30:00.125Z\",\"day\":\"2026-03-01\"}"
+    assert model.json_text(read(write(.number(text: "7"), name: "n").must()).must()) == "{\"n\":7}"
+
+test "read: the empty file, and bytes that are no document"
+    assert model.json_text(read([]).must()) == "[]"
+    assert read([5, 0, 0, 0, 1]).is_err()

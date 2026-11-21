@@ -1,0 +1,45 @@
+# What the demonstration's script carries from one act to the next: the
+# person's browser and authenticator, the server's address, the folder the
+# mail lands in, and the fixed moment the server's clock reads. And the one
+# way the script prints: a heading per act and one line per step, each step's
+# line saying what was asked and what came back, never a token's bytes.
+
+use <rebel>/http
+
+use demo/authenticator
+use demo/browser
+
+# The script's state.
+record Scene
+    # The person's browser.
+    browser: browser.Browser
+    # The person's passkey authenticator.
+    device: authenticator.Authenticator
+    # The server's issuer.
+    issuer: str
+    # The folder the mail stand-in delivers into.
+    mail_folder: str
+    # The server's time, seconds since 1970.
+    now: i64
+
+# Prints the heading of an act.
+#
+# - `title`: the act's name.
+function act(title: str)
+    print("")
+    print(f"== {title}")
+
+# Prints one step: what was done, and what the server answered.
+#
+# - `what`: the step.
+# - `outcome`: its outcome.
+function step(what: str, outcome: str)
+    print(f"{what}: {outcome}")
+
+# The outcome of an answer: its status, and its error where it is one.
+#
+# - `answer`: the server's answer, or the failure to get one.
+function outcome_of(answer: http.Response?) -> str
+    match answer
+        .ok r  => return browser.said(r)
+        .err e => return f"no answer ({e.code}: {e.msg})"

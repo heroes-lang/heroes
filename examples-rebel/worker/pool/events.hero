@@ -1,0 +1,110 @@
+# What a worker thread tells the supervisor when its shift ends: each
+# attempt it ran, how it went and when, by the store's clock. Threads share
+# nothing and a thread answers one text (`threads`), so the report crosses
+# as JSON, written here and read back here.
+
+use <rebel>/json
+
+# One attempt a worker ran.
+record Attempt
+    # The job's id.
+    job: i64
+    # The job's kind.
+    kind: str
+    # The job's queue.
+    queue: str
+    # The attempt's number, from 1.
+    attempt: i64
+    # How it went: `completed`, `retrying` (failed, another attempt to
+    # come), `failed` (its last attempt failed: a dead letter), `discarded`
+    # (failed for good at once), `cancelled`, or `lost` where the store no
+    # longer held the attempt when the worker reported it.
+    outcome: str
+    # What went wrong; "" where it completed.
+    error: str
+    # When it began, in microseconds since 1970 on the store's clock.
+    began_us: i64
+    # How long it waited from when it was due to when it began, in
+    # microseconds.
+    waited_us: i64
+    # How long it ran, in microseconds on the store's clock.
+    ran_us: i64
+    # For `retrying`, when it runs again, in microseconds since 1970; else 0.
+    next_us: i64
+
+# What a worker's shift came to.
+record Report
+    # The worker's name.
+    worker: str
+    # Each attempt it ran, in order.
+    attempts: [Attempt]
+    # Why the shift ended early, "" where it ended as asked.
+    problem: str
+
+# `a` as a JSON object.
+#
+# - `a`: the attempt.
+function attempt_json(a: Attempt) -> json.Value
+    return .object(
+        members: {Attempt::job: .number(v: to_f64(a.job)), Attempt::kind: .text(v: a.kind), Attempt::queue: .text(v: a.queue), Attempt::attempt: .number(v: to_f64(a.attempt)), Attempt::outcome: .text(v: a.outcome), Attempt::error: .text(v: a.error), Attempt::began_us: .number(v: to_f64(a.began_us)), Attempt::waited_us: .number(v: to_f64(a.waited_us)), Attempt::ran_us: .number(v: to_f64(a.ran_us)), Attempt::next_us: .number(v: to_f64(a.next_us))}
+    )
+
+# `r` as JSON text.
+#
+# - `r`: the report.
+function report_text(r: Report) -> str
+    attempts: [json.Value] @= []
+
+    for a in r.attempts
+        attempts @ attempts.push(attempt_json(a))
+
+    value: json.Value = .object(
+        members: {Report::worker: .text(v: r.worker), Report::attempts: .list(items: attempts), Report::problem: .text(v: r.problem)}
+    )
+    return json.format(value).default("{}")
+
+# The member `name` of `v` as a whole number.
+#
+# - `v`: an object.
+# - `name`: the member.
+function int_member(v: json.Value, name: str) -> i64?
+    return json.int_of(json.member(v, key: name)?)
+
+# The member `name` of `v` as text.
+#
+# - `v`: an object.
+# - `name`: the member.
+function text_member(v: json.Value, name: str) -> str?
+    return json.text_of(json.member(v, key: name)?)
+
+# The report `report_text` wrote. Fails `invalid` where `text` is none.
+#
+# - `text`: the thread's answer.
+function report_of(text: str) -> Report?
+    v = json.parse(text)?
+    attempts: [Attempt] @= []
+
+    for a in json.items_of(json.member(v, key: Report::attempts)?)?
+        attempts @ attempts.push(
+            Attempt(job: int_member(a, name: Attempt::job)?, kind: text_member(a, name: Attempt::kind)?, queue: text_member(a, name: Attempt::queue)?, attempt: int_member(a, name: Attempt::attempt)?, outcome: text_member(a, name: Attempt::outcome)?, error: text_member(a, name: Attempt::error)?, began_us: int_member(a, name: Attempt::began_us)?, waited_us: int_member(a, name: Attempt::waited_us)?, ran_us: int_member(a, name: Attempt::ran_us)?, next_us: int_member(a, name: Attempt::next_us)?)
+        )
+
+    return ok(
+        Report(worker: text_member(v, name: Report::worker)?, attempts: attempts, problem: text_member(v, name: Report::problem)?)
+    )
+
+test "report_of: a report reads back as report_text wrote it"
+    a = Attempt(
+        job: 3,
+        kind: "checksum",
+        queue: "default",
+        attempt: 2,
+        outcome: "retrying",
+        error: "busy",
+        began_us: 1_763_715_600_000_000,
+        waited_us: 2_500_000,
+        ran_us: 0,
+        next_us: 1_763_715_630_000_000
+    )
+    r = Report(worker: "worker-1", attempts: [a], problem: "")
+    assert report_of(report_text(r)).must() == r

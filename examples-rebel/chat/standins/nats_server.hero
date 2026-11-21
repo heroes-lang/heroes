@@ -1,0 +1,384 @@
+# A loopback stand-in for a NATS server, so the demo's bridge speaks NATS's
+# text protocol to something on this machine. It runs on a thread of its own
+# and serves every connection on one poll loop: `INFO` sent at the start,
+# `CONNECT` read for its `echo`, `verbose` and `headers`, `PING` answered
+# `PONG`, `SUB` and `UNSUB` kept, and `PUB` and `HPUB` routed as `MSG` and
+# `HMSG` to every subscription whose subject matches, one member of each
+# queue group in turn, never back to a publisher whose `CONNECT` turned echo
+# off. A line past `nats_routes.MOST_LINE_BYTES`, an operation it does not
+# know, a payload not followed by its line end, or anything before `CONNECT`
+# but a `PING` is answered `-ERR` and the connection closed, as the NATS
+# server does. This module reads the lines and answers them; `nats_routes`
+# holds the connections and routes what is published.
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/json
+use <rebel>/nats
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/poll
+use <rebel>/strings
+use <rebel>/time
+
+use protocol/objects
+use standins/nats_routes
+use standins/told
+
+# The `INFO` line a connection is greeted with.
+#
+# - `port`: the port the server listens on.
+# - `client_id`: the number it gives this connection.
+function info_line(port: i64, client_id: i64) -> str
+    v: json.Value = .object(
+        members: {"server_id": objects.text("NCHATSTANDIN"), "server_name": objects.text("chat-standin"), "version": objects.text("2.10.0"), "proto": objects.number(1), "host": objects.text("127.0.0.1"), "port": objects.number(port), "headers": .boolean(v: true), "max_payload": objects.number(nats_routes.MOST_PAYLOAD), "client_id": objects.number(client_id), "client_ip": objects.text("127.0.0.1")}
+    )
+    return f"INFO {json.format(v).must()}\r\n"
+
+# Reads the `CONNECT` options `text`, its JSON, into peer `i`.
+#
+# - `s`: the server.
+# - `i`: the peer's index.
+# - `text`: the JSON after `CONNECT `.
+#
+# Fails `invalid` where it is no JSON object or a flag is no boolean.
+function read_connect(@s: nats_routes.Server, i: i64, text: str) -> ()?
+    v = json.parse(text)?
+    s.peers[i].echo @ flag_of(v, key: "echo", otherwise: true)?
+    s.peers[i].verbose @ flag_of(v, key: "verbose", otherwise: false)?
+    s.peers[i].headers @ flag_of(v, key: "headers", otherwise: false)?
+    s.peers[i].connected @ true
+    return ok()
+
+# The flag `key` of the object `v`, `otherwise` where it is absent.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+# - `otherwise`: the flag where it is absent.
+#
+# Fails `invalid` where it stands and is no boolean.
+function flag_of(v: json.Value, key: str, otherwise: bool) -> bool?
+    return match json.member(v, key: key)
+        .err _ => ok(otherwise)
+        .ok _  => objects.bool_of(v, key: key)
+
+# Acts on the control lines and payloads peer `i` has sent, as many as are
+# whole; leaves a `PUB` whose payload has not all come for the next read.
+#
+# - `s`: the server.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+function on_held(@s: nats_routes.Server, set: poll.Set, i: i64)
+    while s.peers[i].open
+        held = s.peers[i].held
+
+        end = match bytes.index_of(s: held, substr: [13, 10])
+            .ok at => at
+            .err _ =>
+                if held.len() > nats_routes.MOST_LINE_BYTES
+                    nats_routes.refuse(@s, set: set, i: i, why: "Maximum Control Line Exceeded")
+                return
+
+        if end > nats_routes.MOST_LINE_BYTES
+            nats_routes.refuse(@s, set: set, i: i, why: "Maximum Control Line Exceeded")
+            return
+
+        line = match bytes.to_text(held.slice(from: 0, to: end))
+            .ok t => t
+            .err _ =>
+                nats_routes.refuse(@s, set: set, i: i, why: "Unknown Protocol Operation")
+                return
+
+        used = on_line(@s, set: set, i: i, line: line, after: end + 2)
+
+        if used == 0
+            return
+
+        if s.peers[i].open
+            rest = s.peers[i].held
+            s.peers[i].held @ rest.slice(from: used, to: rest.len())
+
+# Acts on the control line `line` of peer `i`, and answers how many bytes of
+# what it holds the operation took, its payload included; 0 where a payload
+# has not all come.
+#
+# - `s`: the server.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `line`: the line, without its end.
+# - `after`: the index of the byte after the line's end in what it holds.
+function on_line(@s: nats_routes.Server, set: poll.Set, i: i64, line: str, after: i64) -> i64
+    parts = strings.words(line)
+
+    if parts.len() == 0
+        return after
+
+    op = strings.to_upper(parts[0])
+
+    if op == "PING"
+        _ = nats_routes.send_text(s.peers[i], text: "PONG\r\n")
+        return after
+
+    if op == "PONG"
+        return after
+
+    if op == "CONNECT"
+        options = strings.trim(line.slice(from: 7, to: line.len()))
+
+        if read_connect(@s, i: i, text: options).is_err()
+            nats_routes.refuse(@s, set: set, i: i, why: "Invalid Protocol")
+            return after
+
+        nats_routes.ok_if_verbose(s.peers[i])
+        return after
+
+    if !s.peers[i].connected
+        nats_routes.refuse(@s, set: set, i: i, why: "Authorization Violation")
+        return after
+
+    return match op
+        "SUB"   => on_sub(@s, set: set, i: i, parts: parts, after: after)
+        "UNSUB" => on_unsub(@s, set: set, i: i, parts: parts, after: after)
+        "PUB"   => on_pub(@s, set: set, i: i, parts: parts, after: after, with_headers: false)
+        "HPUB"  => on_pub(@s, set: set, i: i, parts: parts, after: after, with_headers: true)
+        _       => refused_line(@s, set: set, i: i, after: after)
+
+# Refuses an operation the server does not know, and answers what it took.
+#
+# - `s`: the server.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `after`: the bytes the line took.
+function refused_line(@s: nats_routes.Server, set: poll.Set, i: i64, after: i64) -> i64
+    nats_routes.refuse(@s, set: set, i: i, why: "Unknown Protocol Operation")
+    return after
+
+# `SUB <subject> [queue] <sid>`: keeps the subscription.
+#
+# - `s`: the server.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `parts`: the line's words.
+# - `after`: the bytes the line took.
+function on_sub(@s: nats_routes.Server, set: poll.Set, i: i64, parts: [str], after: i64) -> i64
+    if parts.len() != 3 && parts.len() != 4 || !nats.is_valid_filter(parts[1])
+        nats_routes.refuse(@s, set: set, i: i, why: "Invalid Subject")
+        return after
+
+    queue = if parts.len() == 4
+        parts[2]
+    else
+        ""
+
+    subs @= s.peers[i].subs
+    subs @ subs.push(nats_routes.Sub(subject: parts[1], queue: queue, sid: parts[parts.len() - 1]))
+    s.peers[i].subs @ subs
+    nats_routes.ok_if_verbose(s.peers[i])
+    return after
+
+# `UNSUB <sid> [max]`: drops the subscription. A maximum of messages is read
+# as dropping it at once, since the demo asks none.
+#
+# - `s`: the server.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `parts`: the line's words.
+# - `after`: the bytes the line took.
+function on_unsub(@s: nats_routes.Server, set: poll.Set, i: i64, parts: [str], after: i64) -> i64
+    if parts.len() != 2 && parts.len() != 3
+        nats_routes.refuse(@s, set: set, i: i, why: "Unknown Protocol Operation")
+        return after
+
+    kept: [nats_routes.Sub] @= []
+
+    for sub in s.peers[i].subs
+        if sub.sid != parts[1]
+            kept @ kept.push(sub)
+
+    s.peers[i].subs @ kept
+    nats_routes.ok_if_verbose(s.peers[i])
+    return after
+
+# `PUB <subject> [reply] <bytes>` or `HPUB <subject> [reply] <header bytes>
+# <total bytes>`, then the payload and a line end: routes the message once it
+# has all come, and answers the bytes taken, 0 until then.
+#
+# - `s`: the server.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `parts`: the line's words.
+# - `after`: the bytes the line took.
+# - `with_headers`: whether it is `HPUB`.
+function on_pub(@s: nats_routes.Server, set: poll.Set, i: i64, parts: [str], after: i64, with_headers: bool) -> i64
+    counts = if with_headers
+        2
+    else
+        1
+
+    if parts.len() != 2 + counts && parts.len() != 3 + counts
+        nats_routes.refuse(@s, set: set, i: i, why: "Unknown Protocol Operation")
+        return after
+
+    total = numbers.parse_int(parts[parts.len() - 1]).default(-1)
+
+    header_bytes = if with_headers
+        numbers.parse_int(parts[parts.len() - 2]).default(-1)
+    else
+        0
+
+    if total < 0 || total > nats_routes.MOST_PAYLOAD || header_bytes < 0 || header_bytes > total
+        nats_routes.refuse(@s, set: set, i: i, why: "Maximum Payload Violation")
+        return after
+
+    held = s.peers[i].held
+
+    if held.len() < after + total + 2
+        return 0
+
+    if held[after + total] != 13 || held[after + total + 1] != 10
+        nats_routes.refuse(@s, set: set, i: i, why: "Unknown Protocol Operation")
+        return after
+
+    reply = if parts.len() == 3 + counts
+        parts[2]
+    else
+        ""
+
+    m = nats_routes.Routed(
+        subject: parts[1],
+        reply: reply,
+        header: held.slice(from: after, to: after + header_bytes),
+        payload: held.slice(from: after + header_bytes, to: after + total)
+    )
+    nats_routes.route(@s, from: i, m: m)
+    nats_routes.ok_if_verbose(s.peers[i])
+    return after + total + 2
+
+# The index of the open peer whose key is `key`, -1 where none.
+#
+# - `s`: the server.
+# - `key`: a key of the poll set.
+function peer_of(s: nats_routes.Server lent, key: i64) -> i64
+    i @= 0
+
+    while i < s.peers.len()
+        if s.peers[i].open && s.peers[i].key == key
+            return i
+        i @ i + 1
+
+    return -1
+
+# Accepts the connection `l` holds, greets it with `INFO`, and adds it to the
+# set.
+#
+# - `s`: the server, which gains the peer.
+# - `set`: the poll set.
+# - `l`: the listener.
+function accept(@s: nats_routes.Server, set: poll.Set, l: net.Listener lent)
+    conn @= match net.accept(l, deadline_ms: net.FOREVER)
+        .ok c  => c
+        .err _ => return
+
+    greeted = !io.write_text(conn.stream, text: info_line(port: s.port, client_id: s.peers.len() + 1)).is_err()
+
+    key = match poll.add_stream(set, s: conn.stream, interest: .read)
+        .ok k  => k
+        .err _ => -1
+
+    if !greeted || key < 0
+        # A connection that cannot be greeted or waited on is closed unserved.
+        _ = io.close(@conn.stream).is_err()
+        return
+
+    peers @= s.peers
+    peers @ peers.push(
+        nats_routes.Peer(key: key, stream: conn.stream, held: [], connected: false, echo: true, verbose: false, headers: false, subs: [], open: true)
+    )
+    s.peers @ peers
+
+# Reads what peer `i` sent and acts on it.
+#
+# - `s`: the server.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+function on_readable(@s: nats_routes.Server, set: poll.Set, i: i64)
+    data = match io.read(s.peers[i].stream, n: 65_536)
+        .ok d => d
+        .err _ =>
+            nats_routes.drop_peer(@s, set: set, i: i)
+            return
+
+    if data.len() == 0
+        nats_routes.drop_peer(@s, set: set, i: i)
+        return
+
+    bytes.push_all(to: @s.peers[i].held, from: data)
+    on_held(@s, set: set, i: i)
+
+# Listens on the loopback, tells the starter at `told_port` where, and
+# serves until the program's stop; answers what it carried.
+#
+# - `told_port`: the port of the starter's socket.
+function serve_on(told_port: i64) -> str?
+    l @= match net.listen(host: "127.0.0.1", port: 0)
+        .ok got => got
+        .err e =>
+            told.failed(port: told_port, why: e.msg)?
+            return fail(code: e.code, msg: e.msg)
+
+    set @= match poll.make(256)
+        .ok got => got
+        .err e =>
+            _ = net.close_listener(@l).is_err()
+            _ = told.failed(port: told_port, why: e.msg).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    listening = match poll.add_listener(set, l: l)
+        .ok key => key
+        .err e  => return told.give_up(@set, @l, port: told_port, why: e.msg)
+
+    match told.ready(port: told_port, listening: l.address.port)
+        .ok _  => _ = 0
+        .err e => return told.give_up(@set, @l, port: told_port, why: e.msg)
+
+    s @= nats_routes.Server(peers: [], port: l.address.port, published: 0, delivered: 0, turns: 0)
+
+    while true
+        events = match poll.wait(set, limit: time.hours(1)?)
+            .ok got => got
+            .err _  => break
+
+        for e in events
+            if e.key == listening
+                accept(@s, set: set, l: l)
+            else
+                i = peer_of(s, key: e.key)
+
+                if i >= 0
+                    on_readable(@s, set: set, i: i)
+
+    i @= 0
+
+    while i < s.peers.len()
+        nats_routes.drop_peer(@s, set: set, i: i)
+        i @ i + 1
+
+    poll.close(@set)?
+    net.close_listener(@l)?
+    return ok(f"nats stand-in: {s.peers.len()} connections, {s.published} published, {s.delivered} delivered")
+
+# The body of the stand-in's thread: serves until the program's stop.
+#
+# - `arg`: the port of the starter's socket, in decimal.
+function run(arg: str) -> str
+    told_port = match numbers.parse_int(arg)
+        .ok p  => p
+        .err _ => return f"nats stand-in: \"{arg}\" is no port"
+
+    return match serve_on(told_port)
+        .ok said => said
+        .err e   => f"nats stand-in failed: {e.msg}"
+
+test "info_line: one line, ending its JSON with CRLF"
+    line = info_line(port: 4222, client_id: 3)
+    assert strings.has_prefix(s: line, prefix: "INFO {\"server_id\"") && strings.has_suffix(s: line, suffix: "}\r\n")

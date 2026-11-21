@@ -1,0 +1,74 @@
+notes demo: a fresh database, its migrations applied: users, notes, tags, comments
+the server: 38 routes, listening on loopback
+-- accounts
+GET /healthz: 200 ok
+alice registers by the form: 303 -> /, a session cookie kept
+bob registers by the form: 303 -> /, a session cookie kept
+carol registers with every field wrong: 422
+  email: is not an email address
+  name: must be 3 to 32 letters, digits, '-' or '_'
+  password: must be at least 10 characters
+carol registers as alice: 422, the page says "is taken" 2 times
+a form sent without its CSRF token: 403 CSRF token missing.
+-- tokens
+alice's token: 200 Bearer, ends in 3600 s
+bob's token: 200 Bearer, ends in 3600 s
+GET /api/me: 200 alice, admin
+GET /api/me: 200 bob, reader
+GET /api/me with no token: 401 Bearer realm="notes"
+GET /api/me with a forged token: 401 Bearer realm="notes", error="invalid_token"
+bob's password guessed four times: 401, 401, 429, 429, Retry-After 12 s
+-- writing
+POST /api/notes "Hello, Heroes": 201, slug hello-heroes, tags heroes, intro, Location /api/notes/hello-heroes
+POST /api/notes "Notes on Rebel": 201, slug notes-on-rebel, tags rebel, web, Location /api/notes/notes-on-rebel
+POST /api/notes "Hello, Heroes": 201, slug hello-heroes-2, no tags, Location /api/notes/hello-heroes-2
+POST /api/notes with a title of the wrong kind: 400 application/problem+json, at /title, type
+POST /api/notes with a blank title, no body and a bad tag: 422
+  body: must not be empty
+  tags: "not/ok" must be 1 to 24 letters, digits, '-' or '_'
+  title: must not be empty
+POST /api/notes "Mine": 403 a reader may not write notes
+PATCH /api/users/bob role author: 200, bob is author
+bob writes "A first note" by the form: 303 -> /notes/a-first-note
+bob deletes alice's note: 403 only its author or an admin may remove it
+-- reading
+GET /notes as HTML: 200, A first note | Hello, Heroes; "Page 1 of 2"
+GET /notes?page=2 as JSON: 200, page 2 of 2: notes-on-rebel, hello-heroes
+GET /notes?page=two: 400 page "two" is not a whole number
+GET /notes/hello-heroes in Italian: 200, lang it, "Hello, Heroes", "21 novembre 2026", "0 commenti"
+  its body: <h2> Why, <kbd> 2, <script> 0, links rel nofollow noopener
+GET /notes/hello-heroes as JSON: 200, "Hello, Heroes" by alice, an ETag: true; asked again with it: 304
+GET /notes/hello-heroes as image/png: 406
+GET /tags/rebel: 200, notes-on-rebel
+GET /search?q=heroes: 200, hello-heroes-2, hello-heroes, a-first-note
+GET /api/search?q=templates: 200, notes-on-rebel
+-- live
+alice's WebSocket opens: welcome alice
+bob comments on hello-heroes by the API: 201, by bob, html <p>Welcome, <strong>Heroes</strong>.</p>
+  alice's WebSocket: comment on hello-heroes ("Hello, Heroes") by bob
+bob comments on notes-on-rebel by the form: 303 -> /notes/notes-on-rebel#comments
+  alice's WebSocket: comment on notes-on-rebel ("Notes on Rebel") by bob
+GET /api/notes/hello-heroes/comments: 200, by bob
+-- the site
+GET /feed.atom: 200 application/atom+xml; charset=utf-8, 4 entries, the newest "A first note" at /notes/a-first-note
+GET /openapi.json: 200, OpenAPI 3.1.2, 12 operations: create_comment, create_note, create_token, delete_note, list_comments, list_notes, read_me, read_note, search_notes, stop_server, update_note, update_user
+GET /static/style.css: 200 text/css; charset=utf-8; /static/missing.css: 404
+GET /nowhere: 404; DELETE /feed.atom: 405, Allow GET, HEAD, OPTIONS
+GET /metrics: 200
+  notes_accounts_registered_total 2
+  notes_notes_written_total 4
+  notes_comments_written_total 2
+  notes_notifications_pushed_total 2
+  notes_websockets_open 1
+  notes_sign_ins_total{outcome="accepted"} 2
+  notes_sign_ins_total{outcome="refused"} 2
+  notes_sign_ins_total{outcome="limited"} 2
+  http_requests_total{code="201",method="post"} 4
+-- stopping
+POST /api/admin/stop: 403 only an admin may stop the server
+POST /api/admin/stop: 202 stopping true
+  alice's WebSocket closed by the server: 1001 Going Away, "server stopping"
+the server stopped, asked by the api: 54 requests answered, 1 WebSocket told 1001
+the database holds 2 users, 4 notes, 5 tags, 2 comments, at schema version 4
+the log holds 54 request lines, 0 errors, and account made 2, note written 4, role given 1, server stopped 1
+the demo's folder removed

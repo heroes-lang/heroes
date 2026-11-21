@@ -1,0 +1,120 @@
+# The demonstration's own client of the identity server, the "portal" its
+# configuration registers: an OpenID Connect relying party written with
+# `oauth2` alone, as any application would use the server. It reads the
+# server's metadata from the issuer, sends the person's browser to the
+# authorization endpoint with PKCE's S256 challenge, a `state` and a
+# `nonce`, takes the code from the redirect once its `state` and `iss` hold,
+# exchanges it, and verifies the ID token against the published JWK set.
+#
+# Its `state`, `nonce` and PKCE verifier are drawn from a seeded generator,
+# where `oauth2.new_state` and `oauth2.new_verifier` would draw from the
+# system: the demonstration's transcript must be the same on every run.
+# Nothing it prints is a token: claims, and whether each check held.
+
+use <rebel>/http
+use <rebel>/jose
+use <rebel>/oauth2
+use <rebel>/random
+use <rebel>/time
+use <rebel>/url
+
+use core/ids
+
+# The client's registration, as the identity server's configuration holds
+# it.
+record Registration
+    # The `client_id`.
+    id: str
+    # The client's secret.
+    secret: str
+    # The redirect URI registered.
+    redirect_uri: str
+
+# A relying party ready to send a browser: its configuration, the server's
+# metadata and its published keys.
+record Party
+    # The `oauth2` configuration.
+    config: oauth2.Config
+    # The server's metadata.
+    metadata: oauth2.Metadata
+    # The keys of the server's JWK set.
+    keys: [jose.Key]
+    # The generator `state`, `nonce` and verifiers are drawn from.
+    rng: random.ChaCha8
+
+# One authorization under way: what the redirect must give back.
+record Begun
+    # The URL the browser is sent to.
+    url: str
+    # The `state` sent.
+    state: str
+    # The `nonce` sent.
+    nonce: str
+    # The PKCE verifier kept.
+    verifier: str
+
+# A relying party of `issuer` registered as `r`.
+#
+# - `issuer`: the identity server's issuer.
+# - `r`: the client's registration.
+#
+# Fails as `oauth2.fetch_metadata` and `oauth2.fetch_key_set` fail.
+function discover(issuer: str, r: Registration) -> Party?
+    transport = http.default_client()
+    metadata = oauth2.fetch_metadata(transport, issuer: issuer)?
+    c @= oauth2.config_from(metadata, client_id: r.id)
+    c.client_secret @ r.secret
+    c.authentication @ .basic
+    c.redirect_uri @ r.redirect_uri
+    c.scopes @ ["openid", "profile", "email", "offline_access"]
+    published = oauth2.fetch_key_set(transport, jwks_uri: metadata.jwks_uri)?
+    return ok(Party(config: c, metadata: metadata, keys: published, rng: ids.seeded_generator("relying-party")))
+
+# The authorization request to send the browser with.
+#
+# - `p`: the relying party, whose generator draws the state, the nonce and
+#   the verifier.
+#
+# Fails as `oauth2.authorization_url` fails.
+function begin(@p: Party) -> Begun?
+    state = ids.token(@p.rng, count: 24)
+    nonce = ids.token(@p.rng, count: 24)
+    verifier = ids.token(@p.rng, count: 32)
+    target = oauth2.authorization_url(p.config, state: state, challenge: oauth2.challenge_of(verifier), extra: [url.Pair(key: "nonce", value: nonce)])?
+    return ok(Begun(url: target, state: state, nonce: nonce, verifier: verifier))
+
+# The code the redirect `location` carries, its `state` and `iss` checked.
+#
+# - `p`: the relying party.
+# - `b`: the authorization under way.
+# - `location`: the redirect's `Location`.
+#
+# Fails `invalid` as `oauth2.parse_redirect` refuses it, and `failed` where
+# the server sent an error instead of a code.
+function code_of(p: Party, b: Begun, location: str) -> str?
+    return oauth2.parse_redirect(target: location, state: b.state, issuer: p.metadata.issuer)
+
+# The tokens `code` is exchanged for, with the verifier `verifier`.
+#
+# - `p`: the relying party.
+# - `code`: the authorization code.
+# - `verifier`: the PKCE verifier sent; another refuses the exchange.
+#
+# Fails as `oauth2.exchange_code` fails.
+function exchange(p: Party, code: str, verifier: str) -> oauth2.Token?
+    return oauth2.exchange_code(p.config, code: code, verifier: verifier)
+
+# The ID token of `t`, verified: its signature by the server's published
+# key, its issuer, audience, nonce, times and `at_hash`, judged at `now`.
+#
+# - `p`: the relying party.
+# - `t`: the tokens.
+# - `nonce`: the nonce the authorization request sent.
+# - `now`: the server's time, at which the token's `exp` and `iat` hold.
+#
+# Fails as `oauth2.verify_id_token` fails.
+function verify(p: Party, t: oauth2.Token, nonce: str, now: time.Instant) -> jose.Token?
+    rules @= oauth2.id_token_rules(p.metadata, client_id: p.config.client_id, nonce: nonce)?
+    rules.now @ now
+    rules.access_token @ t.access_token
+    return oauth2.verify_id_token(t.id_token, trusted: p.keys, rules: rules)

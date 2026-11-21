@@ -1,0 +1,107 @@
+# Full-text search over the notes: an inverted index in memory, ranked by
+# BM25 (`search`), built from the database at start and kept current as notes
+# are written, changed and removed. A note is found by its title, its words
+# and its tags; the title is put in twice, so a word in a title weighs more
+# than the same word in a body, as a reader expects.
+
+use <rebel>/search
+use <rebel>/time
+
+use domain/model
+
+## Codes
+
+# The code of a query with no word in it.
+constant INVALID: str
+    "invalid"
+
+# The most notes a search answers.
+constant MOST_HITS: i64
+    20
+
+# An empty index with English's stop words left out.
+function new_finder() -> search.Index
+    options: search.Options @= search.default_options()
+    options.stop_words @ search.english_stop_words()
+    return search.new_index(options).must()
+
+# The text a note is indexed by.
+#
+# - `n`: the note.
+function text_of(n: model.Note) -> str
+    return [n.title, n.title, n.body, n.tags.join(" ")].join("\n")
+
+# Puts `n` in `index`, replacing what it held under the note's number.
+#
+# - `index`: the index.
+# - `n`: the note.
+#
+# Fails as `search.insert` does.
+function put(@index: search.Index, n: model.Note) -> ()?
+    if search.contains(index, id: n.id)
+        search.remove(@index, id: n.id)?
+
+    return search.insert(@index, id: n.id, text: text_of(n))
+
+# Takes the note numbered `id` out of `index`; nothing where it holds none.
+#
+# - `index`: the index.
+# - `id`: the note's number.
+function forget(@index: search.Index, id: i64) -> ()?
+    if search.contains(index, id: id)
+        return search.remove(@index, id: id)
+
+    return ok()
+
+# The numbers of the notes that match `query`, the best first.
+#
+# - `index`: the index.
+# - `query`: the words a person typed; quotes ask for a phrase and a `*` at a
+#   word's end for every word it begins, as `search.search` reads them.
+#
+# Fails `invalid` where `query` holds no word the index reads.
+function find_ids(index: search.Index lent, query: str) -> [i64]?
+    if search.terms(query, stop_words: []).len() == 0
+        return fail(code: INVALID, msg: f"the query \"{query}\" holds no word")
+
+    hits = search.search(index, query: query, limit: MOST_HITS)?
+    ids: [i64] @= []
+
+    for h in hits
+        ids @ ids.push(h.id)
+
+    return ok(ids)
+
+test "find_ids: a word of a title ranks its note first, a removed note is not found"
+    index @= new_finder()
+    a = model.Note(
+        id: 1,
+        author_id: 1,
+        author: "a",
+        slug: "a",
+        title: "Heroes",
+        body: "a language",
+        created_at: time.epoch(),
+        updated_at: time.epoch(),
+        tags: [],
+        comments: 0
+    )
+    b = model.Note(
+        id: 2,
+        author_id: 1,
+        author: "a",
+        slug: "b",
+        title: "Rebel",
+        body: "a library for heroes",
+        created_at: a.created_at,
+        updated_at: a.created_at,
+        tags: ["web"],
+        comments: 0
+    )
+    put(@index, n: a).must()
+    put(@index, n: b).must()
+    assert find_ids(index, query: "heroes").must() == [1, 2]
+    assert find_ids(index, query: "web").must() == [2]
+    forget(@index, id: 1).must()
+    assert find_ids(index, query: "heroes").must() == [2]
+    assert find_ids(index, query: "  ").is_err()

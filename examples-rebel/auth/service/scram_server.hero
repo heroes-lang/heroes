@@ -1,0 +1,237 @@
+# The server's side of SCRAM-SHA-256 (RFC 5802, RFC 7677), which `scram`
+# leaves to the program since Rebel offers only the client's: a service
+# account proves its password without sending it, and the server proves it
+# knew the password too, though it keeps only a verifier from which the
+# password cannot be read back.
+#
+# A verifier is written as PostgreSQL stores one,
+# `SCRAM-SHA-256$<iterations>:<salt>$<StoredKey>:<ServerKey>`, each part in
+# base 64. The exchange is two round trips: the client's first message
+# (`n,,n=user,r=nonce`) is answered with the server's first (`r=`, the
+# client's nonce and the server's, `s=` the salt, `i=` the iterations); the
+# client's final (`c=biws,r=...,p=proof`) is checked and answered with the
+# server's signature (`v=...`).
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/numbers
+use <rebel>/random
+use <rebel>/scram
+use <rebel>/strings
+
+use core/ids
+
+# The code of a message that is not SCRAM's, or of a verifier that does not
+# read.
+constant INVALID: str
+    "invalid"
+
+# The code of a proof that does not hold: the password is wrong.
+constant PERMISSION: str
+    "permission"
+
+# The fewest iterations a verifier may have: RFC 7677 § 4's minimum.
+constant MIN_ITERATIONS: i64
+    4096
+
+# What the server keeps of a password.
+record Verifier
+    # PBKDF2's iterations.
+    iterations: i64
+    # The salt.
+    salt: [u8]
+    # H(ClientKey), which a proof is checked against.
+    stored_key: [u8]
+    # HMAC(SaltedPassword, "Server Key"), which signs the server's answer.
+    server_key: [u8]
+
+# An exchange between the client's first message and its final one.
+record Pending
+    # The user the client named.
+    user: str
+    # The client's first message without its GS2 header.
+    client_first_bare: str
+    # The server's first message.
+    server_first: str
+    # The whole nonce, the client's and the server's.
+    nonce: str
+    # The user's verifier.
+    verifier: Verifier
+
+# The verifier of `password` with `salt` and `iterations`.
+#
+# - `password`: the password, prepared by SASLprep as the client prepares it.
+# - `salt`: the salt, 16 bytes or more.
+# - `iterations`: PBKDF2's iterations, `MIN_ITERATIONS` or more.
+#
+# Fails `invalid` where `iterations` is below `MIN_ITERATIONS`.
+function make_verifier(password: str, salt: [u8], iterations: i64) -> Verifier?
+    if iterations < MIN_ITERATIONS
+        return fail(code: INVALID, msg: f"a verifier needs at least {MIN_ITERATIONS} iterations")
+
+    salted = crypto.pbkdf2(.sha256, password: scram.prepared_password(password), salt: salt, iterations: iterations, length: 32)?
+    client_key = crypto.hmac_text(.sha256, key: salted, s: "Client Key")
+    server_key = crypto.hmac_text(.sha256, key: salted, s: "Server Key")
+    return ok(
+        Verifier(iterations: iterations, salt: salt, stored_key: crypto.sha256(client_key), server_key: server_key)
+    )
+
+# `v` in PostgreSQL's form.
+#
+# - `v`: the verifier.
+function format_verifier(v: Verifier) -> str
+    salt = bytes.format_base64(v.salt)
+    stored = bytes.format_base64(v.stored_key)
+    server = bytes.format_base64(v.server_key)
+    return f"SCRAM-SHA-256${v.iterations}:{salt}${stored}:{server}"
+
+# The verifier `text` writes in PostgreSQL's form.
+#
+# - `text`: the verifier, as the configuration holds it.
+#
+# Fails `invalid` where it is not of that form.
+function parse_verifier(text: str) -> Verifier?
+    parts = strings.split(s: text, sep: "$")
+
+    if parts.len() != 3 || parts[0] != "SCRAM-SHA-256"
+        return fail(code: INVALID, msg: "a verifier begins \"SCRAM-SHA-256$\" and has three parts")
+
+    head = strings.split(s: parts[1], sep: ":")
+    keys_part = strings.split(s: parts[2], sep: ":")
+
+    if head.len() != 2 || keys_part.len() != 2
+        return fail(code: INVALID, msg: "a verifier's parts are <iterations>:<salt> and <StoredKey>:<ServerKey>")
+
+    iterations = match numbers.parse_int(head[0])
+        .ok n  => n
+        .err _ => return fail(code: INVALID, msg: "a verifier's iterations are not a number")
+
+    salt = decoded(text: head[1], what: "salt")?
+    stored = decoded(text: keys_part[0], what: "StoredKey")?
+    server = decoded(text: keys_part[1], what: "ServerKey")?
+
+    if iterations < MIN_ITERATIONS || stored.len() != 32 || server.len() != 32
+        return fail(code: INVALID, msg: "a verifier's iterations or keys are out of SCRAM-SHA-256's bounds")
+    return ok(Verifier(iterations: iterations, salt: salt, stored_key: stored, server_key: server))
+
+# The server's answer to the client's first message `client_first`, made for
+# `verifier`, its nonce drawn from `g`.
+#
+# - `g`: the generator the server's 24 bytes of nonce are drawn from.
+# - `client_first`: the client's first message, its GS2 header included.
+# - `verifier`: the verifier of the user it names, which the caller found.
+#
+# Fails `invalid` where the message is not SCRAM's first or asks for channel
+# binding, which this server does not offer.
+function first(@g: random.ChaCha8, client_first: str, verifier: Verifier) -> Pending?
+    user = user_of(client_first)?
+
+    if !strings.has_prefix(s: client_first, prefix: "n,,")
+        return fail(code: INVALID, msg: "the first message asks for channel binding or an authorization identity")
+
+    bare = client_first.slice(from: 3, to: client_first.len())
+    client_nonce = attribute(message: bare, name: "r")?
+    nonce = client_nonce + bytes.format_base64(ids.draw(@g, count: 24))
+    salt = bytes.format_base64(verifier.salt)
+    server_first = f"r={nonce},s={salt},i={verifier.iterations}"
+    return ok(
+        Pending(user: user, client_first_bare: bare, server_first: server_first, nonce: nonce, verifier: verifier)
+    )
+
+# The user name the client's first message `client_first` names, its `=2C`
+# and `=3D` read back to `,` and `=` (RFC 5802 § 5.1).
+#
+# - `client_first`: the client's first message.
+#
+# Fails `invalid` where it names none.
+function user_of(client_first: str) -> str?
+    parts = strings.split(s: client_first, sep: ",")
+
+    if parts.len() < 4
+        return fail(code: INVALID, msg: "the first message is not \"gs2-header,n=user,r=nonce\"")
+
+    named = attribute(message: parts.slice(from: 2, to: parts.len()).join(","), name: "n")?
+    return ok(strings.replace_all(s: strings.replace_all(s: named, old: "=2C", new: ","), old: "=3D", new: "="))
+
+# The server's final message for the client's final `client_final`: its
+# signature, which proves the server holds the verifier.
+#
+# - `p`: the exchange.
+# - `client_final`: the client's final message.
+#
+# Fails `invalid` where it is not SCRAM's final or names another nonce, and
+# `permission` where its proof does not hold.
+function final(p: Pending, client_final: str) -> str?
+    at = strings.index_of(s: client_final, substr: ",p=")?
+    without_proof = client_final.slice(from: 0, to: at)
+
+    if attribute(message: without_proof, name: "c")? != "biws"
+        return fail(code: INVALID, msg: "the final message's channel binding is not the first's \"n,,\"")
+
+    if attribute(message: without_proof, name: "r")? != p.nonce
+        return fail(code: INVALID, msg: "the final message's nonce is not the exchange's")
+
+    proof = decoded(text: client_final.slice(from: at + 3, to: client_final.len()), what: "proof")?
+
+    if proof.len() != 32
+        return fail(code: INVALID, msg: "the proof is not 32 bytes")
+
+    auth_message = f"{p.client_first_bare},{p.server_first},{without_proof}"
+    signature = crypto.hmac_text(.sha256, key: p.verifier.stored_key, s: auth_message)
+    client_key: [u8] @= []
+
+    for i in range(from: 0, to: 32)
+        client_key @ client_key.push(to_u8(to_i64(proof[i]).must() ^ to_i64(signature[i]).must()).must())
+
+    if !crypto.equals_constant_time(a: crypto.sha256(client_key), b: p.verifier.stored_key)
+        return fail(code: PERMISSION, msg: f"the proof of \"{p.user}\" does not hold")
+
+    server_signature = crypto.hmac_text(.sha256, key: p.verifier.server_key, s: auth_message)
+    return ok("v=" + bytes.format_base64(server_signature))
+
+# The value of the attribute `name` in the SCRAM message `message`: the text
+# after `name=` up to the next comma.
+#
+# - `message`: a SCRAM message.
+# - `name`: the attribute's letter.
+#
+# Fails `invalid` where the message holds none.
+function attribute(message: str, name: str) -> str?
+    for part in strings.split(s: message, sep: ",")
+        if strings.has_prefix(s: part, prefix: name + "=")
+            return ok(part.slice(from: name.len() + 1, to: part.len()))
+
+    return fail(code: INVALID, msg: f"the message has no \"{name}=\"")
+
+# The bytes the base 64 `text` writes, `what` naming it in the message.
+#
+# - `text`: base 64.
+# - `what`: what it is, for the message.
+#
+# Fails `invalid` where it is not base 64.
+function decoded(text: str, what: str) -> [u8]?
+    match bytes.parse_base64(text)
+        .ok b  => return ok(b)
+        .err _ => return fail(code: INVALID, msg: f"the {what} is not base 64")
+
+test "final: Rebel's client logs in against this server, and a wrong password does not"
+    g @= ids.seeded_generator("scram")
+    v = make_verifier(password: "pencil", salt: ids.draw(@g, count: 16), iterations: 4096).must()
+    assert parse_verifier(format_verifier(v)).must() == v
+    e @= scram.start(.sha256, user: "sync", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 4096)
+    p = first(@g, client_first: scram.client_first(e), verifier: v).must()
+    assert p.user == "sync"
+    client_final = scram.client_final(@e, password: "pencil", server_first: p.server_first).must()
+    scram.verify(e, server_final: final(p, client_final: client_final).must()).must()
+    wrong @= scram.start(.sha256, user: "sync", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 4096)
+    q = first(@g, client_first: scram.client_first(wrong), verifier: v).must()
+    bad = scram.client_final(@wrong, password: "pen", server_first: q.server_first).must()
+
+    match final(q, client_final: bad)
+        .ok _  => assert false
+        .err x => assert x.code == PERMISSION
+
+test "parse_verifier: the form, and the bounds"
+    assert parse_verifier("SCRAM-SHA-256$4096:c2FsdA==$AA==:AA==").is_err()
+    assert parse_verifier("SCRAM-SHA-1$4096:c2FsdA==$x:y").is_err()
+    assert parse_verifier("nothing").is_err()

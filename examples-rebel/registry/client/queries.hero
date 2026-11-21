@@ -1,0 +1,206 @@
+# The registry's reads as its own client makes them: a version and the
+# version a range takes, an archive and its signature, a publisher's keys,
+# what changed between two versions, the listing, a search, the suggestions
+# and the index, each read into a typed value. Every call goes through
+# `client.send`, and a refusal comes back as `client.expect` makes it.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/url
+
+use client/client
+use packages/changes
+use signing/signers
+
+## Reads
+
+# What the registry says of one version.
+record VersionInfo
+    # The version.
+    version: str
+    # The archive's digest.
+    digest: str
+    # The id of the key that signed it.
+    key_id: str
+    # Whether it is yanked.
+    yanked: bool
+    # How it is compressed.
+    packing: str
+
+# The version `value` describes, as `answers.release_json` writes one.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where a member is missing or of another kind.
+function version_of(v: json.Value) -> VersionInfo?
+    return ok(
+        VersionInfo(version: json.text_of(json.member(v, key: "version")?)?, digest: json.text_of(json.member(v, key: "digest")?)?, key_id: json.text_of(json.member(v, key: "key_id")?)?, yanked: json.bool_of(json.member(v, key: "yanked")?)?, packing: json.text_of(json.member(v, key: "packing")?)?)
+    )
+
+# The version of `name` that `requirement` takes.
+#
+# - `c`: the client.
+# - `name`: the package's name.
+# - `requirement`: a range, `^1.2`.
+#
+# Fails `not_found` where no version meets it, `invalid` where it is no
+# range.
+function resolve(@c: client.Client, name: str, requirement: str) -> VersionInfo?
+    query = url.format_query([url.Pair(key: "req", value: requirement)])
+    return version_of(
+        client.call_json(@c, method: http.METHOD_GET, target: f"api/v1/packages/{name}/resolve?{query}", wanted: [200])?
+    )
+
+# What the registry says of `name` at `version`.
+#
+# - `c`: the client.
+# - `name`: the package's name.
+# - `version`: the version.
+#
+# Fails `not_found` where there is no such version.
+function version_info(@c: client.Client, name: str, version: str) -> VersionInfo?
+    return version_of(
+        client.call_json(@c, method: http.METHOD_GET, target: f"api/v1/packages/{name}/{version}", wanted: [200])?
+    )
+
+# The archive of `name` at `version`, as uploaded.
+#
+# - `c`: the client.
+# - `name`: the package's name.
+# - `version`: the version.
+#
+# Fails `not_found` where there is no such version.
+function fetch_archive(@c: client.Client, name: str, version: str) -> [u8]?
+    response = client.expect(client.send(@c, r: http.request(method: http.METHOD_GET, target: f"api/v1/packages/{name}/{version}/archive")?)?, wanted: [200])?
+    return ok(response.body)
+
+# The signature block of `name` at `version`.
+#
+# - `c`: the client.
+# - `name`: the package's name.
+# - `version`: the version.
+#
+# Fails `not_found` where there is no such version.
+function fetch_signature(@c: client.Client, name: str, version: str) -> str?
+    response = client.expect(client.send(@c, r: http.request(method: http.METHOD_GET, target: f"api/v1/packages/{name}/{version}/signature")?)?, wanted: [200])?
+    return http.text_of(response)
+
+# Every key of the publisher `name`, read from the bundle the registry
+# serves, each checked against its id.
+#
+# - `c`: the client.
+# - `name`: the publisher's name.
+#
+# Fails `not_found` where no publisher has it, `invalid` where a block's id
+# is not its key's.
+function publisher_keys(@c: client.Client, name: str) -> [signers.PublisherKey]?
+    response = client.expect(client.send(@c, r: http.request(method: http.METHOD_GET, target: f"api/v1/publishers/{name}/keys")?)?, wanted: [200])?
+    return signers.read_bundle(http.text_of(response)?)
+
+# What changed in `name` from `from` to `to`.
+#
+# - `c`: the client.
+# - `name`: the package's name.
+# - `from`: the old version.
+# - `to`: the new version.
+#
+# Fails `not_found` where either version is unknown.
+function changes_of(@c: client.Client, name: str, from: str, to: str) -> changes.Changes?
+    query = url.format_query([url.Pair(key: "from", value: from), url.Pair(key: "to", value: to)])
+    return changes.of_json(
+        client.call_json(@c, method: http.METHOD_GET, target: f"api/v1/packages/{name}/changes?{query}", wanted: [200])?
+    )
+
+# One package a listing or a search answers.
+record Listed
+    # Its name.
+    name: str
+    # Its owner.
+    owner: str
+    # Its newest version, "" where every version is yanked away.
+    newest: str
+    # Its newest version's description.
+    description: str
+    # How many versions it has.
+    versions: i64
+
+# The packages of a listing's or a search's value.
+#
+# - `v`: the value, its member `packages` a list.
+#
+# Fails `invalid` where a member is missing or of another kind.
+function listed_of(v: json.Value) -> [Listed]?
+    found: [Listed] @= []
+
+    for item in json.items_of(json.member(v, key: "packages")?)?
+        found @ found.push(
+            Listed(name: json.text_of(json.member(item, key: "name")?)?, owner: json.text_of(json.member(item, key: "owner")?)?, newest: json.text_of(json.member(item, key: "newest")?).default(""), description: json.text_of(json.member(item, key: "description")?)?, versions: json.items_of(json.member(item, key: "versions")?)?.len())
+        )
+
+    return ok(found)
+
+# Every package of the registry, by name.
+#
+# - `c`: the client.
+#
+# Fails as `call_json` does.
+function packages(@c: client.Client) -> [Listed]?
+    return listed_of(client.call_json(@c, method: http.METHOD_GET, target: "api/v1/packages", wanted: [200])?)
+
+# The packages a search of `query` finds, the best first.
+#
+# - `c`: the client.
+# - `query`: the words, as `search.search` reads them.
+#
+# Fails `invalid` where the query does not read.
+function search(@c: client.Client, query: str) -> [Listed]?
+    q = url.format_query([url.Pair(key: "q", value: query)])
+    return listed_of(client.call_json(@c, method: http.METHOD_GET, target: f"api/v1/search?{q}", wanted: [200])?)
+
+# The names that begin with `prefix`.
+#
+# - `c`: the client.
+# - `prefix`: what was typed.
+#
+# Fails as `call_json` does.
+function suggest(@c: client.Client, prefix: str) -> [str]?
+    q = url.format_query([url.Pair(key: "prefix", value: prefix)])
+    v = client.call_json(@c, method: http.METHOD_GET, target: f"api/v1/suggest?{q}", wanted: [200])?
+    names: [str] @= []
+
+    for item in json.items_of(json.member(v, key: "names")?)?
+        names @ names.push(json.text_of(item)?)
+
+    return ok(names)
+
+# The lines of the package index of `name`, one version's JSON each.
+#
+# - `c`: the client.
+# - `name`: the package's name.
+#
+# Fails `not_found` where no package has it.
+function index_lines(@c: client.Client, name: str) -> [str]?
+    response = client.expect(client.send(@c, r: http.request(method: http.METHOD_GET, target: f"index/{name}")?)?, wanted: [200])?
+    lines: [str] @= []
+
+    for line in client.split_lines(http.text_of(response)?)
+        if line != ""
+            lines @ lines.push(line)
+
+    return ok(lines)
+
+test "version_of: a version's members read, one missing refused"
+    v = json.parse(
+        "{\"version\": \"1.1.0\", \"digest\": \"sha256-ab\", \"key_id\": \"k\", \"yanked\": true, \"packing\": \"gzip\"}"
+    ).must()
+    got = version_of(v).must()
+    assert got.version == "1.1.0" && got.yanked && got.packing == "gzip"
+    assert version_of(json.parse("{\"version\": \"1.1.0\"}").must()).is_err()
+
+test "listed_of: none, and a package whose every version is yanked"
+    assert listed_of(json.parse("{\"packages\": []}").must()).must().len() == 0
+    v = json.parse(
+        "{\"packages\": [{\"name\": \"p\", \"owner\": \"ana\", \"newest\": null, \"description\": \"P.\", \"versions\": [{}, {}]}]}"
+    ).must()
+    got = listed_of(v).must()
+    assert got.len() == 1 && got[0].newest == "" && got[0].versions == 2

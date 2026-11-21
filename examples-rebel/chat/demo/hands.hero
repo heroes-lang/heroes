@@ -1,0 +1,87 @@
+# The demo's hands and eyes: keys pressed in a headless client one at a
+# time, as a terminal sends them, and its screen printed as text. A client
+# of the demo goes through `app.press` exactly as the terminal client does,
+# so what the demo shows is what a person at a terminal would see.
+
+use <rebel>/term
+use <rebel>/time
+use <rebel>/tui
+use <rebel>/unicode
+
+use client/app
+use client/composer
+use client/screen
+
+# The demo's screens: 64 columns by 12 rows.
+constant WIDTH: i64
+    64
+
+# The rows of a demo screen.
+constant HEIGHT: i64
+    12
+
+# A family of four, one grapheme of seven code points: man, woman, girl and
+# boy joined by three zero-width joiners (UTS #51).
+function family() -> str
+    return unicode.from_code_points([0x1f468, 0x200d, 0x1f469, 0x200d, 0x1f467, 0x200d, 0x1f466]).must()
+
+# A woman technologist, one grapheme of three code points: a woman and a
+# laptop joined by a zero-width joiner.
+function technologist() -> str
+    return unicode.from_code_points([0x1f469, 0x200d, 0x1f4bb]).must()
+
+# Presses `key` in the client `a`.
+#
+# - `a`: the client.
+# - `key`: the key.
+# - `now`: the client's time.
+function press(@a: app.App, key: term.Key, now: time.Instant) -> ()?
+    return app.press(@a, key: key, now: now)
+
+# Types `line` in the client `a` one character at a time, then Enter.
+#
+# - `a`: the client.
+# - `line`: the line typed.
+# - `now`: the client's time.
+function type_line(@a: app.App, line: str, now: time.Instant) -> ()?
+    type_text(@a, text: line, now: now)?
+    return press(@a, key: .enter, now: now)
+
+# Types `text` in the client `a` one character at a time: an emoji of
+# several code points arrives as several keys, as a terminal sends it.
+#
+# - `a`: the client.
+# - `text`: the text typed.
+# - `now`: the client's time.
+function type_text(@a: app.App, text: str, now: time.Instant) -> ()?
+    for c in text.chars()
+        press(@a, key: .character(text: c), now: now)?
+
+    return ok()
+
+# Prints the screen of client `a`, the rows between two rules.
+#
+# - `a`: the client.
+# - `who`: whose screen it is.
+# - `now`: the client's time.
+function print_screen(a: app.App lent, who: str, now: time.Instant)
+    frame = screen.draw(
+        a.s.view,
+        draft: a.draft,
+        sp: a.sp,
+        now: now,
+        area: tui.Rect(x: 0, y: 0, width: WIDTH, height: HEIGHT)
+    )
+    print(f"[{who}'s screen]")
+
+    for row in screen.text_of(frame)
+        print(f"  {row}")
+
+# The line of client `a` with a bar where its cursor stands, and where that
+# is: its byte, its grapheme and its column.
+#
+# - `a`: the client.
+function caret_of(a: app.App lent) -> str
+    d = a.draft
+    shown = d.text.slice(from: 0, to: d.cursor) + "|" + d.text.slice(from: d.cursor, to: d.text.len())
+    return f"\"{shown}\" byte {d.cursor}, grapheme {composer.graphemes_before(d)}, column {composer.column_of(d)}"

@@ -1,0 +1,140 @@
+# The sample files the demo writes before its session: a table of sales and
+# one of regions in CSV, people in JSON, events in YAML, a configuration in
+# TOML, settings in INI, an application's properties, and a catalogue in XML.
+#
+# The data is made up for the demo. The sales hold prices whose float sums
+# drift (`0.10` and `0.20`), cities whose names take more than one byte, and
+# one whose characters the PDF's standard fonts lack (`東京`), so the session
+# shows each of those handled.
+
+## Samples
+
+# One file the demo writes.
+record Sample
+    # The file's name, inside the demo's folder.
+    name: str
+    # Its text.
+    text: str
+
+# Every sample, in the order the demo writes them.
+function every_sample() -> [Sample]
+    return [
+        Sample(name: "sales.csv", text: sales_csv())
+        Sample(name: "regions.csv", text: regions_csv())
+        Sample(name: "people.json", text: people_json())
+        Sample(name: "events.yaml", text: events_yaml())
+        Sample(name: "config.toml", text: config_toml())
+        Sample(name: "settings.ini", text: settings_ini())
+        Sample(name: "app.properties", text: app_properties())
+        Sample(name: "catalog.xml", text: catalog_xml())
+    ]
+
+# Ten sales: a date, a region, a city, a product, units, a unit price and the
+# amount, exact to the cent.
+function sales_csv() -> str
+    lines = [
+        "date,region,city,product,units,price,amount"
+        "2026-01-05,north,Zürich,widget,5,19.99,99.95"
+        "2026-01-07,south,São Paulo,gadget,2,0.10,0.20"
+        "2026-01-12,north,Kraków,widget,8,19.99,159.92"
+        "2026-01-15,east,東京,gizmo,1,250.00,250.00"
+        "2026-01-20,south,Lima,gadget,12,0.20,2.40"
+        "2026-02-02,west,Lisboa,widget,3,19.99,59.97"
+        "2026-02-09,north,Oslo,gizmo,6,245.50,1473.00"
+        "2026-02-14,east,Seoul,gadget,7,0.10,0.70"
+        "2026-02-21,west,Dublin,gizmo,2,250.00,500.00"
+        "2026-02-28,south,Quito,widget,4,21.25,85.00"
+    ]
+    return lines.join("\n") + "\n"
+
+# The four regions and who manages each.
+function regions_csv() -> str
+    return "region,manager\nnorth,Ingrid\nsouth,Mateo\neast,Yuki\nwest,Aoife\n"
+
+# People with nested addresses and lists of tags.
+function people_json() -> str
+    lines = [
+        "{"
+        "  \"people\": ["
+        "    {\"name\": \"Ada\", \"age\": 36, \"email\": \"ada@example.org\", \"tags\": [\"admin\", \"ops\"], \"address\": {\"city\": \"London\"}},"
+        "    {\"name\": \"Grace\", \"age\": 29, \"email\": \"grace@example.org\", \"tags\": [], \"address\": {\"city\": \"Arlington\"}},"
+        "    {\"name\": \"Linus\", \"age\": 54, \"email\": null, \"tags\": [\"kernel\"], \"address\": {\"city\": \"Portland\"}}"
+        "  ]"
+        "}"
+    ]
+    return lines.join("\n") + "\n"
+
+# Events with times, as a YAML list.
+function events_yaml() -> str
+    lines = [
+        "- name: deploy"
+        "  at: 2026-03-01T09:30:00Z"
+        "  ok: true"
+        "- name: rollback"
+        "  at: 2026-03-01T10:05:00Z"
+        "  ok: false"
+    ]
+    return lines.join("\n") + "\n"
+
+# A configuration with a table, an array of tables and a date.
+function config_toml() -> str
+    lines = [
+        "title = \"datakit demo\""
+        "released = 2026-03-01"
+        ""
+        "[database]"
+        "host = \"localhost\""
+        "port = 5432"
+        "pool = 0.75"
+        ""
+        "[[servers]]"
+        "name = \"alpha\""
+        "ip = \"10.0.0.1\""
+        ""
+        "[[servers]]"
+        "name = \"beta\""
+        "ip = \"10.0.0.2\""
+    ]
+    return lines.join("\n") + "\n"
+
+# Settings in sections, a comment among them.
+function settings_ini() -> str
+    lines = [
+        "; written by hand"
+        "[server]"
+        "host = example.org"
+        "port = 8080"
+        "secure = true"
+        ""
+        "[paths]"
+        "data = /var/lib/demo"
+        "logs = /var/log/demo"
+    ]
+    return lines.join("\n") + "\n"
+
+# An application's properties: separators of three kinds, a continued line
+# and a `\u` escape.
+function app_properties() -> str
+    lines = [
+        "# application"
+        "app.name = datakit"
+        "app.version: 0.1.0"
+        "db.url jdbc:sqlite:demo.db"
+        "greeting = Hello, \\"
+        "    world \\u2603"
+        "retries = 3"
+    ]
+    return lines.join("\n") + "\n"
+
+# A catalogue of books, each with an attribute and child elements.
+function catalog_xml() -> str
+    lines = [
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<catalog>"
+        "  <!-- three books -->"
+        "  <book id=\"b1\"><title>Dune</title><author>Frank Herbert</author><year>1965</year><price>9.99</price></book>"
+        "  <book id=\"b2\"><title>Emma</title><author>Jane Austen</author><year>1815</year><price>4.50</price></book>"
+        "  <book id=\"b3\"><title>Solaris</title><author>Stanisław Lem</author><year>1961</year><price/></book>"
+        "</catalog>"
+    ]
+    return lines.join("\n") + "\n"

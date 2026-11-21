@@ -1,0 +1,117 @@
+# A package's folder made into the archive the registry takes: every file
+# the folder's `.heroesignore` files leave in (gitignore's patterns), sorted by
+# name, under one folder `<name>-<version>`, in a tar compressed as the
+# publisher chooses.
+#
+# The archive is reproducible: entries in byte order of their names, every
+# time 1970-01-01, every mode 0o644, no owner, so the same sources always
+# give the same bytes and so the same digest, wherever and whenever they are
+# packed. A publisher can rebuild an archive from a tag and compare its digest
+# with the registry's.
+
+use <rebel>/archive
+use <rebel>/compress/xz
+use <rebel>/compress/zstd
+use <rebel>/fs
+use <rebel>/path
+
+use packages/unpack
+
+## Codes
+
+# The code of a folder that holds what a package may not.
+constant INVALID: str
+    "invalid"
+
+## Packing
+
+# The name of the file of patterns a folder may hold, read as gitignore reads
+# `.gitignore`: what it names is left out of the archive.
+constant IGNORE_FILE: str
+    ".heroesignore"
+
+# The paths below `dir` that go into the archive, each with `/` between its
+# parts, in byte order.
+#
+# - `dir`: the package's folder.
+#
+# Fails `invalid` where the folder holds a link, which the registry refuses;
+# and as `fs.walk_ignoring` fails.
+function files_of(dir: str) -> [str]?
+    found: [str] @= []
+
+    for e in fs.walk_ignoring(root: dir, ignores: path.parse_ignore(""), name: IGNORE_FILE)?
+        match e.kind
+            .file =>
+                name = path.to_slash(e.name)
+
+                if path.name(name).default("") != IGNORE_FILE
+                    found @ found.push(name)
+            .directory => _ = 0
+            .link      => return fail(code: INVALID, msg: f"{e.name} is a link, which a package may not hold")
+            .other     => return fail(code: INVALID, msg: f"{e.name} is neither a file nor a folder")
+
+    return ok(sort(found))
+
+# The archive of the folder `dir`, its entries under `folder`, compressed as
+# `packing` says.
+#
+# - `dir`: the package's folder on the disk.
+# - `folder`: the one folder of the archive, `<name>-<version>`.
+# - `packing`: how the tar is compressed.
+#
+# Fails as `files_of`, `fs.read_bytes` and the compressors fail.
+function pack(dir: str, folder: str, packing: unpack.Packing) -> [u8]?
+    members: [archive.TarMember] @= []
+
+    for name in files_of(dir)?
+        data = fs.read_bytes(path.join_all([dir, path.from_slash(name)]))?
+        entry @= archive.tar_entry(folder + "/" + name, kind: .file)
+        entry.size @ data.len()
+        members @ members.push(archive.TarMember(entry: entry, data: data))
+
+    return packed(members, packing: packing)
+
+# `members` as a tar compressed as `packing` says: gzip by `archive` itself,
+# Zstandard with its checksum, xz at its usual level.
+#
+# - `members`: the entries, in the order they are written.
+# - `packing`: how the tar is compressed.
+#
+# Fails as `archive.encode_tar` and the compressors fail.
+function packed(members: [archive.TarMember], packing: unpack.Packing) -> [u8]?
+    if packing == .gzip
+        return archive.encode_tar(members, compression: .gzip)
+    plain = archive.encode_tar(members, compression: .none)?
+
+    if packing == .xz
+        return xz.compress(plain, xz.default_options())
+    options @= zstd.default_options()
+    options.checksum @ true
+    return zstd.compress(plain, options)
+
+test "pack: a folder packed, its ignore file read, the same bytes twice"
+    fs.make_dir_all("build").must()
+    dir = fs.make_temp_dir(dir: "build", pattern: "registry-pack-*").must()
+    fs.make_dir_all(path.join_all([dir, "src"])).must()
+    fs.write_atomic_text(path: path.join_all([dir, "heroes.toml"]), text: "[package]\n").must()
+    fs.write_atomic_text(path: path.join_all([dir, "src", "a.hero"]), text: "x\n").must()
+    fs.write_atomic_text(path: path.join_all([dir, "notes.tmp"]), text: "left out\n").must()
+    fs.write_atomic_text(path: path.join_all([dir, IGNORE_FILE]), text: "*.tmp\n").must()
+    assert files_of(dir).must() == ["heroes.toml", "src/a.hero"]
+    first = pack(dir: dir, folder: "p-1.0.0", packing: .zstd).must()
+    second = pack(dir: dir, folder: "p-1.0.0", packing: .zstd).must()
+    assert first == second
+    opened = unpack.open(first, limits: unpack.Limits(unpacked_bytes: 100_000, files: 10)).must()
+    assert opened.folder == "p-1.0.0" && opened.files.len() == 2 && opened.manifest_text == "[package]\n"
+    fs.remove_all(dir).must()
+
+test "packed: each packing opened back"
+    entry @= archive.tar_entry("p-1.0.0/heroes.toml", kind: .file)
+    entry.size @ 2
+    members = [archive.TarMember(entry: entry, data: [0x61, 0x0a])]
+    packings: [unpack.Packing] = [.zstd, .xz, .gzip]
+
+    for packing in packings
+        data = packed(members, packing: packing).must()
+        assert unpack.packing_of(data).must() == packing

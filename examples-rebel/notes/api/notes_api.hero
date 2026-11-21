@@ -1,0 +1,234 @@
+# The API's operations on notes and comments. A request reaches them read
+# and checked against the API's document (`openapi.read_request`), its
+# account known by its token, so a handler reads `Values` by name and judges
+# only what a schema cannot: who may, and each field's own rules.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/openapi
+
+use api/api_doc
+use api/api_view
+use app/service
+use app/state
+use auth/visit
+use domain/jsonv
+use domain/model
+use domain/paging
+use domain/validate
+use http/replies
+use store/comment_store
+use store/note_store
+
+## Reading the values
+
+# The text of the member `key` of `members`, "" where it is absent.
+#
+# - `members`: a part of `Values`: the path, the query or an object body.
+# - `key`: the name.
+function text_in(members: {str: json.Value}, key: str) -> str
+    return match members[key]
+        .ok v  => json.text_of(v).default("")
+        .err _ => ""
+
+# The members of the body, an object, or none.
+#
+# - `values`: the request's values.
+function body_of(values: openapi.Values) -> {str: json.Value}
+    return json.members_of(values.body).default({})
+
+# The note the path's `slug` names.
+#
+# - `app`: the state.
+# - `values`: the request's values.
+#
+# Fails `not_found` where none has it.
+function note_of(@app: state.App, values: openapi.Values) -> model.Note?
+    return note_store.by_slug(@app.db, slug: text_in(values.path, key: "slug"))
+
+# A 404 saying what was not found.
+#
+# - `msg`: what.
+function missing(msg: str) -> replies.Reply
+    return replies.plain(replies.api_error(http.STATUS_NOT_FOUND, message: msg))
+
+# A 403 saying why.
+#
+# - `reason`: why.
+function forbidden(reason: str) -> replies.Reply
+    return replies.plain(replies.api_error(http.STATUS_FORBIDDEN, message: reason))
+
+## The operations
+
+# Answers the operation `name` for `user`.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `user`: the account the token names.
+# - `name`: the operation, one of this module's.
+# - `values`: the request's values, read and checked.
+#
+# Fails as the database fails; a name this module does not answer is
+# answered 404, since the dispatcher sends only its own.
+function answer(@app: state.App, v: visit.Visit, user: model.User, name: str, values: openapi.Values) -> replies.Reply?
+    if name == api_doc.LIST_NOTES
+        return list_notes(@app, values: values)
+
+    if name == api_doc.CREATE_NOTE
+        return create_note(@app, v: v, user: user, values: values)
+
+    if name == api_doc.READ_NOTE
+        return read_note(@app, values: values)
+
+    if name == api_doc.UPDATE_NOTE
+        return update_note(@app, v: v, user: user, values: values)
+
+    if name == api_doc.DELETE_NOTE
+        return delete_note(@app, user: user, values: values)
+
+    if name == api_doc.LIST_COMMENTS
+        return list_comments(@app, values: values)
+
+    if name == api_doc.CREATE_COMMENT
+        return create_comment(@app, v: v, user: user, values: values)
+
+    if name == api_doc.SEARCH_NOTES
+        return search_notes(@app, values: values)
+    return ok(missing(f"no operation {name} here"))
+
+# `GET /api/notes`: a page of notes, of a tag where `tag` is given.
+#
+# - `app`: the state.
+# - `values`: `page`, a whole number from 1 the schema checked, and `tag`.
+function list_notes(@app: state.App, values: openapi.Values) -> replies.Reply?
+    tag = text_in(values.query, key: "tag")
+
+    requested = match values.query["page"]
+        .ok n  => to_str(json.int_of(n).default(1))
+        .err _ => ""
+
+    total = note_store.count(@app.db, tag: tag)?
+    p = paging.page_of(requested: requested, size: app.settings.page_size, total: total)?
+    notes = note_store.page(@app.db, tag: tag, offset: p.offset, limit: p.size)?
+    return ok(replies.plain(replies.json_response(http.STATUS_OK, value: api_view.page_json(notes, p: p))))
+
+# `POST /api/notes`: 201 with the note and its `Location`.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `user`: the author.
+# - `values`: the body, `title`, `body` and `tags`.
+function create_note(@app: state.App, v: visit.Visit, user: model.User, values: openapi.Values) -> replies.Reply?
+    body = body_of(values)
+    tags = jsonv.texts_at(values.body, key: "tags").default([])
+    draft = note_store.Draft(title: text_in(body, key: "title"), body: text_in(body, key: "body"), tags: tags)
+
+    return match service.write_note(@app, user: user, draft: draft, now: v.now)?
+        .done d    => ok(replies.plain(created(api_view.note_json(d.note), location: f"/api/notes/{d.note.slug}")))
+        .invalid i => ok(replies.plain(replies.unprocessable(i.errors)))
+        .refused f => ok(forbidden(f.reason))
+
+# A 201 holding `value`, its `Location` the new resource's.
+#
+# - `value`: the resource as JSON.
+# - `location`: its path.
+function created(value: json.Value, location: str) -> http.Response
+    out: http.Response @= replies.json_response(http.STATUS_CREATED, value: value)
+    out.headers @ http.with_header(out.headers, name: "Location", value: location)
+    return out
+
+# `GET /api/notes/{slug}`.
+#
+# - `app`: the state.
+# - `values`: the path's `slug`.
+function read_note(@app: state.App, values: openapi.Values) -> replies.Reply?
+    return match note_of(@app, values: values)
+        .ok n  => ok(replies.plain(replies.json_response(http.STATUS_OK, value: api_view.note_json(n))))
+        .err e => ok(missing(e.msg))
+
+# `PATCH /api/notes/{slug}`: the fields given replace the note's.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `user`: the account asking.
+# - `values`: the slug, and the body's `title`, `body` and `tags`, each
+#   optional.
+function update_note(@app: state.App, v: visit.Visit, user: model.User, values: openapi.Values) -> replies.Reply?
+    n = match note_of(@app, values: values)
+        .ok got => got
+        .err e  => return ok(missing(e.msg))
+
+    body = body_of(values)
+    change = note_store.Draft(
+        title: text_in(body, key: "title"),
+        body: text_in(body, key: "body"),
+        tags: jsonv.texts_at(values.body, key: "tags").default([])
+    )
+    keep_tags = body["tags"].is_err()
+
+    return match service.change_note(@app, user: user, note: n, change: change, keep_tags: keep_tags, now: v.now)?
+        .done d    => ok(replies.plain(replies.json_response(http.STATUS_OK, value: api_view.note_json(d.note))))
+        .invalid i => ok(replies.plain(replies.unprocessable(i.errors)))
+        .refused f => ok(forbidden(f.reason))
+
+# `DELETE /api/notes/{slug}`: 204.
+#
+# - `app`: the state.
+# - `user`: the account asking.
+# - `values`: the path's `slug`.
+function delete_note(@app: state.App, user: model.User, values: openapi.Values) -> replies.Reply?
+    n = match note_of(@app, values: values)
+        .ok got => got
+        .err e  => return ok(missing(e.msg))
+
+    return match service.remove_note(@app, user: user, note: n)?
+        .allowed   => ok(replies.plain(http.respond_status(http.STATUS_NO_CONTENT)))
+        .refused f => ok(forbidden(f.reason))
+
+# `GET /api/notes/{slug}/comments`, the oldest first.
+#
+# - `app`: the state.
+# - `values`: the path's `slug`.
+function list_comments(@app: state.App, values: openapi.Values) -> replies.Reply?
+    n = match note_of(@app, values: values)
+        .ok got => got
+        .err e  => return ok(missing(e.msg))
+
+    items: [json.Value] @= []
+
+    for c in comment_store.of_note(@app.db, note_id: n.id)?
+        items @ items.push(api_view.comment_json(c))
+
+    return ok(
+        replies.plain(replies.json_response(http.STATUS_OK, value: jsonv.object({"comments": jsonv.list(items)})))
+    )
+
+# `POST /api/notes/{slug}/comments`: 201 with the comment; the note's author
+# is told over the live channel.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `user`: the commenter.
+# - `values`: the slug and the body's `body`.
+function create_comment(@app: state.App, v: visit.Visit, user: model.User, values: openapi.Values) -> replies.Reply?
+    n = match note_of(@app, values: values)
+        .ok got => got
+        .err e  => return ok(missing(e.msg))
+
+    return match service.write_comment(@app, user: user, note: n, body: text_in(body_of(values), key: "body"), now: v.now)?
+        .done d => ok(
+            replies.plain(created(api_view.comment_json(d.comment), location: f"/api/notes/{n.slug}/comments"))
+        )
+        .invalid i => ok(replies.plain(replies.unprocessable(i.errors)))
+        .refused f => ok(forbidden(f.reason))
+
+# `GET /api/search?q=`: the notes found, the best first.
+#
+# - `app`: the state.
+# - `values`: the query's `q`.
+function search_notes(@app: state.App, values: openapi.Values) -> replies.Reply?
+    return match service.search_notes(@app, query: text_in(values.query, key: "q"))
+        .ok found => ok(
+            replies.plain(replies.json_response(http.STATUS_OK, value: jsonv.object({"notes": api_view.notes_json(found)})))
+        )
+        .err _ => ok(replies.plain(replies.unprocessable([validate.FieldError(field: "q", message: "holds no word")])))

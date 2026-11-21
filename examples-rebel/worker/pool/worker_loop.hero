@@ -1,0 +1,271 @@
+# A worker: one thread's loop of claim, run, report. It holds its own
+# connection to the store, its own tracer and its own log, since threads
+# share nothing, and claims until the fleet is asked to stop: where no job is
+# ready it waits its poll and asks the store again, and where the store holds
+# the stop key it ends, after the attempt in hand, never in the middle of one.
+#
+# Each attempt is a consumer span under the producer span the job's payload
+# names, a line of the worker's log, and an entry of the report the thread
+# answers when it ends, which the supervisor folds into the run's metrics.
+
+use <rebel>/errors
+use <rebel>/http
+use <rebel>/jobs
+use <rebel>/jobs/redis_store
+use <rebel>/json
+use <rebel>/log
+use <rebel>/os
+use <rebel>/otlp
+use <rebel>/redis
+use <rebel>/retries
+use <rebel>/time
+use <rebel>/tracing
+
+use cli/settings
+use logs/journal
+use pool/events
+use queue/backoff
+use queue/kinds
+use queue/store_clock
+use telemetry/tracer
+
+# The key whose presence asks every worker of the store to stop once idle:
+# `worker stop` sets it, and a supervisor clears it as it starts its fleet.
+constant STOP_KEY: str
+    "worker:stop"
+
+# What a worker thread is given: the run's settings and its own name, as
+# JSON text.
+#
+# - `s`: the settings.
+# - `name`: the worker's name, `worker-1`.
+function shift_text(s: settings.Settings, name: str) -> str
+    value: json.Value = .object(members: {"settings": settings.settings_json(s), "name": .text(v: name)})
+    return json.format(value).default("{}")
+
+# The body of a worker thread: its loop run, and its report as JSON text. A
+# shift that cannot begin, its arguments unreadable or its store not
+# reached, reports that and no attempt.
+#
+# - `arg`: what `shift_text` wrote.
+function work(arg: str) -> str
+    result = run(arg)
+
+    match result
+        .ok report => return events.report_text(report)
+        .err _ => return events.report_text(
+            events.Report(worker: "", attempts: [], problem: errors.format_line(result))
+        )
+
+# Whether the store holds the stop key. A store that cannot be asked reads
+# as asking the stop: a worker that cannot reach its store has no job to run.
+#
+# - `c`: the store's client.
+function stop_asked(@c: redis.Client) -> bool
+    match redis.call(@c, ["EXISTS", STOP_KEY])
+        .ok r  => return redis.int_of(r).default(1) != 0
+        .err _ => return true
+
+# The worker's loop over the store the arguments name, until the stop.
+#
+# - `arg`: what `shift_text` wrote.
+#
+# Fails where the arguments cannot be read, the store cannot be reached, or
+# the log cannot be opened.
+function run(arg: str) -> events.Report?
+    v = json.parse(arg)?
+    s = settings.settings_of(json.member(v, key: "settings")?)?
+    name = json.text_of(json.member(v, key: "name")?)?
+    c @= errors.context(redis.connect(redis.parse_url(s.redis_url)?), what: f"{name} connecting to the store")?
+    tr @= tracer.new_tracer(s, thread: name)?
+    log_file @= journal.open(dir: s.log_dir, name: name + ".log", max_bytes: s.log_max_bytes, keep: s.log_keep)?
+    policy = backoff.policy_of(s)?
+    worker @= jobs.new_worker(s.queues)
+    worker.name @ name
+    worker.lease @ s.lease
+    worker.poll @ s.poll
+    worker.backoff @ policy
+    client @= http.default_client()
+    client.deadline @ time.seconds(10)?
+    client.max_redirects @ 0
+    attempts: [events.Attempt] @= []
+    problem: str @= ""
+
+    while !os.is_stop_asked()
+        claimed_result = redis_store.claim(@c, worker: worker)
+
+        match claimed_result
+            .ok claimed =>
+                a = attempt(
+                    @c,
+                    @tr,
+                    @log_file,
+                    worker: worker,
+                    policy: policy,
+                    seed: s.seed,
+                    claimed: claimed,
+                    client: client
+                )
+                attempts @ attempts.push(a)
+            .err e =>
+                if e.code != jobs.NOT_FOUND
+                    problem @ errors.format_line(claimed_result)
+                    break
+
+                if stop_asked(@c)
+                    break
+                time.sleep(worker.poll)
+
+    match tracer.export(@tr, s: s)
+        .ok _ => _ = 0
+        .err e =>
+            if problem == ""
+                problem @ f"spans not exported: {e.code}"
+
+    _ = journal.close(@log_file).is_err()
+    _ = redis.close(@c).is_err()
+    return ok(events.Report(worker: name, attempts: attempts, problem: problem))
+
+# `t` in microseconds since 1970.
+#
+# - `t`: the instant.
+function micros(t: time.Instant) -> i64
+    return time.unix_microseconds(t)
+
+# Runs the attempt `claimed`, tells the store how it went, and answers what
+# the report keeps of it.
+#
+# - `c`: the store's client.
+# - `tr`: the worker's tracer, which keeps the attempt's span.
+# - `log_file`: the worker's log, a line longer.
+# - `worker`: the worker.
+# - `policy`: the waits between attempts.
+# - `seed`: the run's seed, which spreads the waits.
+# - `claimed`: the job, as `claim` answered it.
+# - `client`: how a webhook is posted.
+function attempt(@c: redis.Client, @tr: tracing.Tracer, @log_file: journal.Journal, worker: jobs.Worker, policy: retries.Backoff, seed: i64, claimed: jobs.Info, client: http.Client) -> events.Attempt
+    began = claimed.attempted_at.default(claimed.run_at)
+    waited = micros(began) - micros(claimed.run_at)
+    name = "process " + claimed.kind
+
+    opened = tracer.consumer_span(@tr, name: name, payload: claimed.payload)
+    outcome = kinds.run(@c, claimed: claimed, client: client)
+    ended = store_clock.now_micros(@c).default(micros(began))
+    a @= events.Attempt(
+        job: claimed.id,
+        kind: claimed.kind,
+        queue: claimed.queue,
+        attempt: claimed.attempt,
+        outcome: "completed",
+        error: "",
+        began_us: micros(began),
+        waited_us: maximum(a: waited, b: 0),
+        ran_us: maximum(a: ended - micros(began), b: 0),
+        next_us: 0
+    )
+
+    match outcome
+        .done d =>
+            if redis_store.complete(@c, claimed: claimed, output: d.output).is_err()
+                a.outcome @ "lost"
+        .retry r =>
+            a.error @ r.error
+
+            match told_failed(@c, worker: worker, policy: policy, seed: seed, claimed: claimed, error: r.error)
+                .ok after =>
+                    a.outcome @ match after.state
+                        .available            => "retrying"
+                        .failed               => "failed"
+                        .cancelled            => "cancelled"
+                        .running | .completed => "lost"
+
+                    a.next_us @ if after.state == .available
+                        micros(after.run_at)
+                    else
+                        0
+                .err _ => a.outcome @ "lost"
+        .discard d =>
+            a.error @ d.error
+
+            a.outcome @ if redis_store.discard(@c, claimed: claimed, error: d.error).is_err()
+                "lost"
+            else
+                "discarded"
+
+    match opened
+        .ok first =>
+            span @= first
+            tracing.set_attribute(@span, a: otlp.Attribute(key: "job.id", value: .integer(v: claimed.id)))
+            tracing.set_attribute(@span, a: otlp.Attribute(key: "job.kind", value: .text(v: claimed.kind)))
+            tracing.set_attribute(@span, a: otlp.Attribute(key: "job.attempt", value: .integer(v: claimed.attempt)))
+            tracing.set_attribute(@span, a: otlp.Attribute(key: "job.outcome", value: .text(v: a.outcome)))
+
+            if a.error == ""
+                tracing.set_status(@span, code: .ok, message: "")
+            else
+                tracing.record_error(@span, message: a.error, at: time.from_unix_microseconds(ended).default(began))
+                tracing.set_status(@span, code: .error, message: a.error)
+
+            _ = tracing.end(@tr, span: span).is_err()
+        .err _ => _ = 0
+
+    _ = journal.write(
+        @log_file,
+        level: level_of(a.outcome),
+        at: time.from_unix_microseconds(ended).default(began),
+        msg: "attempt " + a.outcome,
+        fields: fields_of(a)
+    ).is_err()
+    return a
+
+# Tells the store the attempt failed with `error`, its wait drawn for this
+# job and attempt; answers the job as it then stands.
+#
+# - `c`: the store's client.
+# - `worker`: the worker.
+# - `policy`: the waits between attempts.
+# - `seed`: the run's seed.
+# - `claimed`: the job.
+# - `error`: what went wrong.
+#
+# Fails as `redis_store.fail_attempt` fails.
+function told_failed(@c: redis.Client, worker: jobs.Worker, policy: retries.Backoff, seed: i64, claimed: jobs.Info, error: str) -> jobs.Info?
+    wait = backoff.wait_for(policy, seed: seed, job: claimed.id, attempt: claimed.attempt)?
+    return redis_store.fail_attempt(
+        @c,
+        worker: backoff.store_worker(worker, wait: wait)?,
+        claimed: claimed,
+        error: error
+    )
+
+# The larger of `a` and `b`.
+#
+# - `a`: a number.
+# - `b`: another.
+function maximum(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+# How much a line about an attempt that came to `outcome` matters.
+#
+# - `outcome`: the attempt's outcome.
+function level_of(outcome: str) -> log.Level
+    match outcome
+        "completed" => return .info
+        "retrying"  => return .warn
+        _           => return .error
+
+# The fields of a log line about `a`.
+#
+# - `a`: the attempt.
+function fields_of(a: events.Attempt) -> [log.Field]
+    out: [log.Field] @= [
+        log.integer(key: "job", value: a.job)
+        log.text(key: "kind", value: a.kind)
+        log.integer(key: "attempt", value: a.attempt)
+    ]
+
+    if a.error != ""
+        out @ out.push(log.text(key: "error", value: a.error))
+    return out

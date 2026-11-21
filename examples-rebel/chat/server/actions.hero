@@ -1,0 +1,188 @@
+# What the server does with each request of a signed-in connection, and
+# with each message a broker brings: every name and text checked, the
+# history stored before anyone is told, and the notices answered for the
+# routing to deliver. A request refused is answered on its connection alone
+# with a `refused` notice naming the code and the reason, and changes
+# nothing; the connection stays open.
+
+use bridge/mirroring
+use bridge/places
+use core/model
+use core/shortcodes
+use protocol/wire
+use server/hub
+use server/state
+use store/database
+
+# The code of a request about a room the user is not in, or a message that
+# is not theirs.
+constant PERMISSION: str
+    "permission"
+
+# The code of a request naming what is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+# The notice to the connection `key` alone that its request was refused.
+#
+# - `key`: the connection's key.
+# - `code`: the code.
+# - `reason`: why, in words.
+function refusal(key: i64, code: str, reason: str) -> [hub.Delivery]
+    return [hub.Delivery(key: key, notice: .refused(code: code, reason: reason))]
+
+# Fails `permission` where `user` is not in `room`.
+#
+# - `srv`: the server.
+# - `user`: the user.
+# - `room`: the room's name.
+function check_member(srv: state.Server lent, user: str, room: str) -> ()?
+    if !hub.is_member(srv.routing, user: user, room: room)
+        return fail(code: PERMISSION, msg: f"{user} is not in #{room}; /join it first")
+    return ok()
+
+# The text of a message as it is kept: checked, then its shortcodes written
+# as their emoji, then checked again, since an emoji takes more bytes than its
+# name.
+#
+# - `text`: the text sent.
+#
+# Fails `invalid` as `model.check_text` fails.
+function kept_text(text: str) -> str?
+    return model.check_text(shortcodes.expand(model.check_text(text)?))
+
+# Posts a message in `room`: stamped, stored, mirrored to the room's brokers
+# and answered as the notices to the room.
+#
+# - `srv`: the server.
+# - `room`: the room's name, made already.
+# - `author`: who wrote it.
+# - `origin`: where it came from.
+# - `text`: its text, not yet checked.
+#
+# Fails `invalid` where the text is refused, and as the store fails. A
+# broker that refuses the copy leaves the message posted in the room.
+function post(@srv: state.Server, room: str, author: str, origin: model.Origin, text: str) -> [hub.Delivery]?
+    kept = kept_text(text)?
+    at = state.stamp(@srv)?
+    m = model.Message(
+        id: state.new_id(at)?,
+        room: room,
+        author: author,
+        origin: origin,
+        text: kept,
+        at: at,
+        edited: false
+    )
+    database.add_message(@srv.db, m: m)?
+
+    # The room has the message whatever a broker answers; a broker gone is
+    # told by its client's next read, and the message stays in the history.
+    _ = mirroring.mirror_out(@srv.links, m: m).is_err()
+    return ok(hub.posted(srv.routing, m: m))
+
+# Acts on `c`, a request of the connection `key` signed in as `user`, and
+# answers the notices it causes, or its refusal.
+#
+# - `srv`: the server.
+# - `key`: the connection's key.
+# - `user`: the user it is signed in as.
+# - `c`: the request.
+function act(@srv: state.Server, key: i64, user: str, c: wire.Command) -> [hub.Delivery]
+    srv.commands @ srv.commands + 1
+
+    return match attempt(@srv, key: key, user: user, c: c)
+        .ok told => told
+        .err e   => refusal(key, code: e.code, reason: e.msg)
+
+# What `act` does, its refusals as failures.
+#
+# - `srv`: the server.
+# - `key`: the connection's key.
+# - `user`: the user.
+# - `c`: the request.
+function attempt(@srv: state.Server, key: i64, user: str, c: wire.Command) -> [hub.Delivery]?
+    match c
+        .join j =>
+            model.check_room(j.room)?
+            _ = database.join_room(@srv.db, member: user, room: j.room, at: state.now(srv)?)?
+            return ok(hub.enter(@srv.routing, user: user, room: j.room))
+        .leave l =>
+            check_member(srv, user: user, room: l.room)?
+            _ = database.leave_room(@srv.db, member: user, room: l.room)?
+            return ok(hub.leave(@srv.routing, user: user, room: l.room))
+        .say s =>
+            check_member(srv, user: user, room: s.room)?
+            return post(@srv, room: s.room, author: user, origin: .chat, text: s.text)
+        .direct d => return direct(@srv, user: user, to: d.to, text: d.text)
+        .typing t =>
+            check_member(srv, user: user, room: t.room)?
+            return ok(hub.typing(srv.routing, user: user, room: t.room))
+        .history h =>
+            check_member(srv, user: user, room: h.room)?
+            page = database.page_of(@srv.db, room: h.room, before: h.before, limit: model.page_size(h.limit))?
+            return ok([hub.Delivery(key: key, notice: .page(page: page))])
+        .edit e => return edit(@srv, user: user, id: e.id, text: e.text)
+        .sync s => return ok([hub.Delivery(key: key, notice: .synced(ref: s.ref))])
+
+# Sends a direct message from `user` to `to`.
+#
+# - `srv`: the server.
+# - `user`: the sender.
+# - `to`: the recipient's name.
+# - `text`: the text, not yet checked.
+#
+# Fails `not_found` where no account has the name `to`, and `invalid` where
+# the text is refused.
+function direct(@srv: state.Server, user: str, to: str, text: str) -> [hub.Delivery]?
+    if !database.has_user(@srv.db, name: to)?
+        return fail(code: NOT_FOUND, msg: f"no one is named \"{to}\"")
+
+    kept = kept_text(text)?
+    at = state.stamp(@srv)?
+    d = model.Direct(id: state.new_id(at)?, sender: user, recipient: to, text: kept, at: at)
+    database.add_direct(@srv.db, d: d)?
+    return ok(hub.direct(srv.routing, d: d))
+
+# Changes the text of the message `id`, which `user` wrote in this server.
+#
+# - `srv`: the server.
+# - `user`: who asks.
+# - `id`: the message's id.
+# - `text`: its new text, not yet checked.
+#
+# Fails `not_found` where no message has the id, `permission` where `user`
+# did not write it here (a bridged message belongs to its broker), and
+# `invalid` where the text is refused.
+function edit(@srv: state.Server, user: str, id: str, text: str) -> [hub.Delivery]?
+    m @= match database.message_of(@srv.db, id: id)
+        .ok found => found
+        .err _    => return fail(code: NOT_FOUND, msg: f"no message has the id \"{id}\"")
+
+    if m.author != user || m.origin != .chat
+        return fail(code: PERMISSION, msg: "only its author changes a message")
+
+    kept = kept_text(text)?
+    database.edit_message(@srv.db, id: id, text: kept)?
+    m.text @ kept
+    m.edited @ true
+    return ok(hub.edited(srv.routing, m: m))
+
+# Posts a message a broker brought into its room, and answers the notices to
+# the room; one whose text is refused is dropped, with nobody to tell.
+#
+# - `srv`: the server.
+# - `inbound`: the message, as the bridge read it.
+function bring_in(@srv: state.Server, inbound: places.Inbound) -> [hub.Delivery]
+    return match post(@srv, room: inbound.room, author: inbound.author, origin: inbound.origin, text: inbound.text)
+        .ok told => told
+        .err _   => []
+
+test "kept_text: shortcodes written, the ends trimmed, and an empty text refused"
+    assert kept_text("  hi :wave: ").must() == "hi 👋"
+    assert kept_text(" ").is_err()
+    assert kept_text(":wave:").must() == "👋"
+
+test "refusal: one notice, to the asking connection alone"
+    told = refusal(7, code: PERMISSION, reason: "no")
+    assert told == [hub.Delivery(key: 7, notice: .refused(code: PERMISSION, reason: "no"))]

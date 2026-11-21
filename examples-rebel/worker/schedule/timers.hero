@@ -1,0 +1,67 @@
+# The scheduler's timers: the moments something falls due, kept in a heap
+# ordered by time, so the next one is read at once and each in or out costs
+# the logarithm of how many there are. A timer is a recurring schedule's
+# next run, or a moment a job waiting on the store becomes due, which is how
+# the demo knows how far to move its clock.
+
+use <rebel>/containers/heap
+use <rebel>/strings
+
+# A moment something falls due.
+record Timer
+    # When, in microseconds since 1970 on the store's clock.
+    at_us: i64
+    # The schedule that runs then; "" for a job of the store that becomes
+    # due.
+    schedule: str
+
+# Whether `a` falls due before `b`: by time, then by schedule name, so two
+# timers of one moment come out in one order on every run.
+#
+# - `a`: a timer.
+# - `b`: another.
+function earlier(a: Timer, b: Timer) -> bool
+    if a.at_us != b.at_us
+        return a.at_us < b.at_us
+    return strings.compare(a: a.schedule, b: b.schedule) < 0
+
+# Adds `t` to the heap `timers`.
+#
+# - `timers`: the caller's heap.
+# - `t`: the timer.
+function add(@timers: [Timer], t: Timer)
+    heap.add(@timers, value: t, less: earlier)
+
+# Takes out of `timers` every timer due at `now_us` or before, earliest
+# first.
+#
+# - `timers`: the caller's heap, without them after.
+# - `now_us`: the moment, in microseconds.
+function take_due(@timers: [Timer], now_us: i64) -> [Timer]
+    due: [Timer] @= []
+
+    while timers.len() > 0 && timers[0].at_us <= now_us
+        due @ due.push(heap.pop(@timers, less: earlier).must())
+
+    return due
+
+# The moment the next timer after `now_us` falls due, those at or before it
+# dropped. Fails `not_found` where none is left.
+#
+# - `timers`: the caller's heap, without the timers already due.
+# - `now_us`: the moment, in microseconds.
+function next_after(@timers: [Timer], now_us: i64) -> i64?
+    while timers.len() > 0 && timers[0].at_us <= now_us
+        _ = heap.pop(@timers, less: earlier).must()
+
+    return ok(heap.peek(timers)?.at_us)
+
+test "take_due: the timers due come out earliest first, the rest stay"
+    timers: [Timer] @= []
+    add(@timers, t: Timer(at_us: 30, schedule: "c"))
+    add(@timers, t: Timer(at_us: 10, schedule: "b"))
+    add(@timers, t: Timer(at_us: 10, schedule: "a"))
+    add(@timers, t: Timer(at_us: 50, schedule: ""))
+    assert take_due(@timers, now_us: 30) == [Timer(at_us: 10, schedule: "a"), Timer(at_us: 10, schedule: "b"), Timer(at_us: 30, schedule: "c")]
+    assert next_after(@timers, now_us: 30).must() == 50
+    assert next_after(@timers, now_us: 50).is_err()

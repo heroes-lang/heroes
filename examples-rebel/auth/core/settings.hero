@@ -1,0 +1,477 @@
+# The server's configuration: one TOML file read once at start, every key
+# checked, every absent key either refused or given the default this module
+# names. The secrets the configuration needs (the SMTP and LDAP passwords,
+# the signing key) are never in the file: it names the keyring service that
+# holds them (`vault`).
+#
+# A configuration in full, with every default written out:
+#
+#     issuer = "https://auth.example.org"
+#     listen = "127.0.0.1:8080"
+#     data_file = "/var/lib/auth/state.json"
+#     keyring_service = "auth.example.org"
+#
+#     [passwords]                   # Argon2id, RFC 9106 § 4's second choice
+#     memory_kib = 65536
+#     passes = 3
+#     lanes = 4
+#
+#     [tokens]                      # lifetimes, in seconds
+#     access = 300
+#     id = 300
+#     refresh = 2592000
+#     code = 60
+#
+#     [passkeys]
+#     rp_id = "example.org"
+#     rp_name = "Example"
+#     trusted_roots = "/etc/auth/authenticator-roots.pem"
+#
+#     [smtp]                        # the password: keyring account "smtp"
+#     host = "smtp.example.org"
+#     port = 587
+#     security = "starttls"         # or "implicit", or "plain" to loopback
+#     user = "accounts@example.org"
+#     sender = "accounts@example.org"
+#
+#     [ldap]                        # the password: keyring account "ldap"
+#     host = "ldap.example.org"
+#     port = 389
+#     security = "start_tls"        # or "direct", or "plain"
+#     bind_dn = "cn=auth-sync,ou=services,dc=example,dc=org"
+#     base = "ou=people,dc=example,dc=org"
+#     filter = "(objectClass=inetOrgPerson)"
+#     schedule = "0 2 * * *"        # cron, in UTC
+#
+#     [[clients]]
+#     id = "portal"
+#     name = "Example Portal"
+#     secret_sha256 = "<64 hexadecimal digits>"
+#     redirect_uris = ["https://portal.example.org/callback"]
+#     scopes = ["openid", "profile", "email", "offline_access"]
+#
+#     [[service_accounts]]
+#     name = "directory-sync"
+#     verifier = "SCRAM-SHA-256$4096:<salt>$<StoredKey>:<ServerKey>"
+#     scopes = ["directory:import", "users:read"]
+#
+# A service account's `verifier` is the form PostgreSQL stores a SCRAM
+# password in, so the password itself is never written anywhere; `auth
+# verifier` prints one.
+
+use <rebel>/json
+use <rebel>/toml
+
+# The code of a configuration that does not read or holds a value of the
+# wrong kind; the message names the key.
+constant INVALID: str
+    "invalid"
+
+# What hashing one password costs (RFC 9106's Argon2id).
+record PasswordCost
+    # The memory one hash fills, in KiB.
+    memory_kib: i64
+    # How many passes over that memory.
+    passes: i64
+    # How many lanes the memory is cut into.
+    lanes: i64
+
+# How long each kind of grant lives, in seconds.
+record Lifetimes
+    # An access token.
+    access: i64
+    # An ID token.
+    id: i64
+    # A refresh token, from the login that began its family.
+    refresh: i64
+    # An authorization code, between the redirect and its exchange.
+    code: i64
+
+# The WebAuthn relying party this server is.
+record Passkeys
+    # The RP ID: the domain every credential is bound to.
+    rp_id: str
+    # The name an authenticator shows the person.
+    rp_name: str
+    # A PEM file of the authenticator vendors' roots an attestation must chain
+    # to; "" accepts self attestation and no attestation only.
+    trusted_roots: str
+
+# The mail server verification mail is submitted to.
+record Smtp
+    # Its host name or address.
+    host: str
+    # Its port.
+    port: i64
+    # "starttls", "implicit" or "plain"; "plain" is refused by `mail/smtp`
+    # for a login to any host but the loopback one.
+    security: str
+    # The user the server logs in as; "" for no login.
+    user: str
+    # The address verification mail is sent from.
+    sender: str
+
+# The directory the nightly import reads.
+record Ldap
+    # Its host name or address; "" when no directory is configured.
+    host: str
+    # Its port.
+    port: i64
+    # "start_tls", "direct" or "plain".
+    security: str
+    # The distinguished name the import binds as.
+    bind_dn: str
+    # Where the people stand in the directory.
+    base: str
+    # Which entries are people, as RFC 4515 writes a filter.
+    filter: str
+    # When the import runs, a cron line read in UTC.
+    schedule: str
+
+# An OAuth client registered in the configuration.
+record Client
+    # Its `client_id`.
+    id: str
+    # The name shown on its consent.
+    name: str
+    # The SHA-256 of its secret, in hexadecimal; "" for a public client, which
+    # proves itself by PKCE alone.
+    secret_sha256: str
+    # The redirect URIs it may name, compared exactly (RFC 9700 § 4.1.3).
+    redirect_uris: [str]
+    # The scopes it may ask.
+    scopes: [str]
+
+# A machine account that logs in by SCRAM-SHA-256 rather than by a browser.
+record ServiceAccount
+    # Its name, the SCRAM user name.
+    name: str
+    # Its SCRAM verifier, PostgreSQL's form.
+    verifier: str
+    # The scopes its tokens carry.
+    scopes: [str]
+
+# The whole configuration.
+record Settings
+    # The issuer's URL, `iss` in every token; "" makes it `http://` and the
+    # address the server listens on, for a server on loopback.
+    issuer: str
+    # The host the server listens on.
+    listen_host: str
+    # The port it listens on; 0 lets the system choose.
+    listen_port: i64
+    # Where accounts are kept between runs.
+    data_file: str
+    # The keyring service the secrets stand under.
+    keyring_service: str
+    # Password hashing.
+    passwords: PasswordCost
+    # Lifetimes of grants.
+    lifetimes: Lifetimes
+    # The WebAuthn relying party.
+    passkeys: Passkeys
+    # The mail server.
+    smtp: Smtp
+    # The directory.
+    ldap: Ldap
+    # The registered clients.
+    clients: [Client]
+    # The service accounts.
+    service_accounts: [ServiceAccount]
+
+# The cost RFC 9106 § 4 recommends for a machine short of memory, Argon2id's
+# second choice: 64 MiB, 3 passes, 4 lanes.
+function default_cost() -> PasswordCost
+    return PasswordCost(memory_kib: 65_536, passes: 3, lanes: 4)
+
+# Five minutes for access and ID tokens, thirty days for a refresh token's
+# family, a minute for an authorization code, as RFC 9700 § 2.1 and
+# OpenID Connect's examples size them.
+function default_lifetimes() -> Lifetimes
+    return Lifetimes(access: 300, id: 300, refresh: 2_592_000, code: 60)
+
+# The settings `text`, a TOML document, holds.
+#
+# - `text`: the configuration file's text.
+#
+# Fails `invalid` where it is not TOML or a key holds a value of the wrong
+# kind, the message naming the key; a key no default covers and the file
+# leaves out is refused the same way.
+function parse(text: str) -> Settings?
+    doc = match toml.parse(text)
+        .ok v =>
+            match toml.to_json(v)
+                .ok j  => j
+                .err e => return fail(code: INVALID, msg: f"the configuration holds a value JSON cannot: {e.msg}")
+        .err e => return fail(code: INVALID, msg: f"the configuration is not TOML: {e.msg}")
+
+    listen = text_or(doc, path: ["listen"], fallback: "127.0.0.1:8080")?
+    colon = last_colon(listen)
+
+    if colon < 0
+        return fail(code: INVALID, msg: f"\"listen\" is \"{listen}\", not a host and a port")
+
+    port = match to_i64_text(listen.slice(from: colon + 1, to: listen.len()))
+        .ok p  => p
+        .err _ => return fail(code: INVALID, msg: f"\"listen\" is \"{listen}\", whose port is not a number")
+
+    issuer = text_or(doc, path: ["issuer"], fallback: "")?
+    data_file = text_at(doc, path: ["data_file"])?
+    service = text_or(doc, path: ["keyring_service"], fallback: "heroes-auth")?
+    s = Settings(
+        issuer: issuer,
+        listen_host: listen.slice(from: 0, to: colon),
+        listen_port: port,
+        data_file: data_file,
+        keyring_service: service,
+        passwords: cost_of(doc)?,
+        lifetimes: lifetimes_of(doc)?,
+        passkeys: passkeys_of(doc)?,
+        smtp: smtp_of(doc)?,
+        ldap: ldap_of(doc)?,
+        clients: clients_of(doc)?,
+        service_accounts: service_accounts_of(doc)?
+    )
+    return ok(s)
+
+# The client registered as `id` in `s`.
+#
+# - `s`: the settings.
+# - `id`: a `client_id`.
+#
+# Fails `invalid` where no client has that id.
+function client_named(s: Settings, id: str) -> Client?
+    for c in s.clients
+        if c.id == id
+            return ok(c)
+
+    return fail(code: INVALID, msg: f"no client \"{id}\" is registered")
+
+# The service account named `name` in `s`.
+#
+# - `s`: the settings.
+# - `name`: its SCRAM user name.
+#
+# Fails `invalid` where no service account has that name.
+function service_account_named(s: Settings, name: str) -> ServiceAccount?
+    for a in s.service_accounts
+        if a.name == name
+            return ok(a)
+
+    return fail(code: INVALID, msg: f"no service account \"{name}\"")
+
+## Reading the sections
+
+# The `[passwords]` section of `doc`.
+#
+# - `doc`: the configuration, as JSON.
+function cost_of(doc: json.Value) -> PasswordCost?
+    memory = int_or(doc, path: ["passwords", "memory_kib"], fallback: 65_536)?
+    passes = int_or(doc, path: ["passwords", "passes"], fallback: 3)?
+    lanes = int_or(doc, path: ["passwords", "lanes"], fallback: 4)?
+    return ok(PasswordCost(memory_kib: memory, passes: passes, lanes: lanes))
+
+# The `[tokens]` section of `doc`.
+#
+# - `doc`: the configuration, as JSON.
+function lifetimes_of(doc: json.Value) -> Lifetimes?
+    access = int_or(doc, path: ["tokens", "access"], fallback: 300)?
+    id = int_or(doc, path: ["tokens", "id"], fallback: 300)?
+    refresh = int_or(doc, path: ["tokens", "refresh"], fallback: 2_592_000)?
+    code = int_or(doc, path: ["tokens", "code"], fallback: 60)?
+    return ok(Lifetimes(access: access, id: id, refresh: refresh, code: code))
+
+# The `[passkeys]` section of `doc`.
+#
+# - `doc`: the configuration, as JSON.
+function passkeys_of(doc: json.Value) -> Passkeys?
+    rp_id = text_at(doc, path: ["passkeys", "rp_id"])?
+    rp_name = text_or(doc, path: ["passkeys", "rp_name"], fallback: "Accounts")?
+    roots = text_or(doc, path: ["passkeys", "trusted_roots"], fallback: "")?
+    return ok(Passkeys(rp_id: rp_id, rp_name: rp_name, trusted_roots: roots))
+
+# The `[smtp]` section of `doc`.
+#
+# - `doc`: the configuration, as JSON.
+function smtp_of(doc: json.Value) -> Smtp?
+    host = text_at(doc, path: ["smtp", "host"])?
+    port = int_or(doc, path: ["smtp", "port"], fallback: 587)?
+    security = text_or(doc, path: ["smtp", "security"], fallback: "starttls")?
+    user = text_or(doc, path: ["smtp", "user"], fallback: "")?
+    sender = text_at(doc, path: ["smtp", "sender"])?
+    return ok(Smtp(host: host, port: port, security: security, user: user, sender: sender))
+
+# The `[ldap]` section of `doc`; a host of "" where the section is absent.
+#
+# - `doc`: the configuration, as JSON.
+function ldap_of(doc: json.Value) -> Ldap?
+    host = text_or(doc, path: ["ldap", "host"], fallback: "")?
+    port = int_or(doc, path: ["ldap", "port"], fallback: 389)?
+    security = text_or(doc, path: ["ldap", "security"], fallback: "start_tls")?
+    bind_dn = text_or(doc, path: ["ldap", "bind_dn"], fallback: "")?
+    base = text_or(doc, path: ["ldap", "base"], fallback: "")?
+    people = text_or(doc, path: ["ldap", "filter"], fallback: "(objectClass=inetOrgPerson)")?
+    schedule = text_or(doc, path: ["ldap", "schedule"], fallback: "0 2 * * *")?
+    return ok(
+        Ldap(host: host, port: port, security: security, bind_dn: bind_dn, base: base, filter: people, schedule: schedule)
+    )
+
+# The `[[clients]]` of `doc`.
+#
+# - `doc`: the configuration, as JSON.
+function clients_of(doc: json.Value) -> [Client]?
+    out: [Client] @= []
+
+    for i in range(from: 0, to: count_of(doc, key: "clients")?)
+        at = to_str(i)
+        id = text_at(doc, path: ["clients", at, "id"])?
+        name = text_or(doc, path: ["clients", at, "name"], fallback: "")?
+        secret = text_or(doc, path: ["clients", at, "secret_sha256"], fallback: "")?
+        redirects = texts_or_none(doc, path: ["clients", at, "redirect_uris"])?
+        scopes = texts_or_none(doc, path: ["clients", at, "scopes"])?
+        out @ out.push(Client(id: id, name: name, secret_sha256: secret, redirect_uris: redirects, scopes: scopes))
+
+    return ok(out)
+
+# The `[[service_accounts]]` of `doc`.
+#
+# - `doc`: the configuration, as JSON.
+function service_accounts_of(doc: json.Value) -> [ServiceAccount]?
+    out: [ServiceAccount] @= []
+
+    for i in range(from: 0, to: count_of(doc, key: "service_accounts")?)
+        at = to_str(i)
+        name = text_at(doc, path: ["service_accounts", at, "name"])?
+        verifier = text_at(doc, path: ["service_accounts", at, "verifier"])?
+        scopes = texts_or_none(doc, path: ["service_accounts", at, "scopes"])?
+        out @ out.push(ServiceAccount(name: name, verifier: verifier, scopes: scopes))
+
+    return ok(out)
+
+## Reading values
+
+# The value at `path` in `doc`, the TOML document as JSON.
+#
+# - `doc`: the configuration, as JSON.
+# - `path`: the keys from the top, a table's key or an array's index.
+function value_of(doc: json.Value, path: [str]) -> json.Value?
+    return json.value_at(doc, pointer: json.pointer_of(path))
+
+# The text at `path` in `doc`, which must be there.
+#
+# - `doc`: the configuration, as JSON.
+# - `path`: the keys from the top.
+function text_at(doc: json.Value, path: [str]) -> str?
+    match value_of(doc, path: path)
+        .ok v =>
+            match json.text_of(v)
+                .ok t  => return ok(t)
+                .err _ => return fail(code: INVALID, msg: f"\"{path.join(".")}\" is not a text")
+        .err _ => return fail(code: INVALID, msg: f"the configuration has no \"{path.join(".")}\"")
+
+# The text at `path` in `doc`, or `fallback` where the key is absent.
+#
+# - `doc`: the configuration, as JSON.
+# - `path`: the keys from the top.
+# - `fallback`: the default.
+function text_or(doc: json.Value, path: [str], fallback: str) -> str?
+    match value_of(doc, path: path)
+        .ok _  => return text_at(doc, path: path)
+        .err _ => return ok(fallback)
+
+# The integer at `path` in `doc`, or `fallback` where the key is absent.
+#
+# - `doc`: the configuration, as JSON.
+# - `path`: the keys from the top.
+# - `fallback`: the default.
+function int_or(doc: json.Value, path: [str], fallback: i64) -> i64?
+    match value_of(doc, path: path)
+        .ok v =>
+            match json.int_of(v)
+                .ok n  => return ok(n)
+                .err _ => return fail(code: INVALID, msg: f"\"{path.join(".")}\" is not an integer")
+        .err _ => return ok(fallback)
+
+# The texts of the array at `path` in `doc`; [] where the key is absent.
+#
+# - `doc`: the configuration, as JSON.
+# - `path`: the keys from the top.
+function texts_or_none(doc: json.Value, path: [str]) -> [str]?
+    out: [str] @= []
+
+    match value_of(doc, path: path)
+        .ok v =>
+            items = match json.items_of(v)
+                .ok list => list
+                .err _   => return fail(code: INVALID, msg: f"\"{path.join(".")}\" is not an array")
+
+            for item in items
+                match json.text_of(item)
+                    .ok t  => out @ out.push(t)
+                    .err _ => return fail(code: INVALID, msg: f"\"{path.join(".")}\" holds what is not a text")
+        .err _ => _ = 0
+
+    return ok(out)
+
+# How many tables the array of tables `key` holds; 0 where it is absent.
+#
+# - `doc`: the configuration, as JSON.
+# - `key`: the array's key at the top.
+function count_of(doc: json.Value, key: str) -> i64?
+    match value_of(doc, path: [key])
+        .ok v =>
+            match json.items_of(v)
+                .ok list => return ok(list.len())
+                .err _   => return fail(code: INVALID, msg: f"\"{key}\" is not an array of tables")
+        .err _ => return ok(0)
+
+# Where the last `:` of `s` stands, -1 where it holds none: the port's
+# separator, which an IPv6 host's own colons stand before.
+#
+# - `s`: the `listen` value.
+function last_colon(s: str) -> i64
+    at: i64 @= s.len() - 1
+
+    while at >= 0
+        if s[at] == ':'
+            return at
+        at @ at - 1
+
+    return -1
+
+# The decimal number `s` writes, digits alone.
+#
+# - `s`: the port's digits.
+function to_i64_text(s: str) -> i64?
+    if s.len() == 0 || s.len() > 5
+        return fail(code: INVALID, msg: f"\"{s}\" is no port")
+    n: i64 @= 0
+
+    for i in range(from: 0, to: s.len())
+        if s[i] < '0' || s[i] > '9'
+            return fail(code: INVALID, msg: f"\"{s}\" is no port")
+        n @ n * 10 + to_i64(s[i] - '0').must()
+
+    return ok(n)
+
+test "parse: a configuration with its defaults filled"
+    text = "issuer = \"https://auth.example.org\"\nlisten = \"127.0.0.1:9000\"\ndata_file = \"state.json\"\n[passkeys]\nrp_id = \"example.org\"\n[smtp]\nhost = \"mail\"\nsender = \"a@example.org\"\n[[clients]]\nid = \"portal\"\nredirect_uris = [\"https://p/cb\"]\nscopes = [\"openid\"]\n"
+    s = parse(text).must()
+    assert s.listen_host == "127.0.0.1" && s.listen_port == 9000
+    assert s.passwords == default_cost() && s.lifetimes == default_lifetimes()
+    assert s.clients.len() == 1 && s.clients[0].redirect_uris == ["https://p/cb"]
+    assert s.ldap.host == "" && s.service_accounts.len() == 0
+    assert client_named(s, id: "portal").must().scopes == ["openid"]
+    assert client_named(s, id: "other").is_err()
+
+test "parse: a missing key and a key of the wrong kind are named"
+    match parse("listen = \"h:1\"\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "the configuration has no \"data_file\""
+
+    match parse("data_file = 3\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "\"data_file\" is not a text"
+
+    assert parse("listen = \"nocolon\"\ndata_file = \"x\"\n").is_err()
+    assert parse("listen = \"h:99999999\"\ndata_file = \"x\"\n").is_err()

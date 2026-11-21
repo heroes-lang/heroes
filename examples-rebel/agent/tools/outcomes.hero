@@ -1,0 +1,28 @@
+# What a tool answers, whoever runs it: the agent for its model, its MCP
+# server for a client, or a remote server through the agent's MCP client. A
+# failure the model can see and correct (a path outside the folder, a command
+# not allowed, an argument missing) is an outcome too, marked an error,
+# never a failure of the agent: the model reads it and tries otherwise, as
+# MCP's tool execution errors and the APIs' `is_error` results intend.
+
+# What a tool answered.
+record Outcome
+    # What the model reads.
+    text: str
+    # Whether it says what went wrong rather than what was asked.
+    is_error: bool
+
+# A tool's answer of `text`.
+#
+# - `text`: what the model reads.
+function done(text: str) -> Outcome
+    return Outcome(text: text, is_error: false)
+
+# A tool's failure, `text` saying what to correct.
+#
+# - `text`: what went wrong.
+function refused(text: str) -> Outcome
+    return Outcome(text: text, is_error: true)
+
+test "done and refused: a text, and a failure the model reads"
+    assert !done("x").is_error && refused("y").is_error && refused("y").text == "y"

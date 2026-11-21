@@ -1,0 +1,211 @@
+# A publisher's signing keys: Ed25519 (RFC 8032), each named by a key id, the
+# first sixteen hexadecimal digits of the SHA-256 of its SubjectPublicKeyInfo
+# DER. The registry keeps a key as that DER and nothing else, so checking a
+# signature needs no key handle (`keypairs.verify_der`).
+#
+# A key travels as PEM. One key a publisher uploads is a plain `PUBLIC KEY`
+# block; the keys the registry hands out carry RFC 1421 headers, `Key-Id` and
+# `Publisher`, and a client's trust file is a bundle of such blocks. A block
+# whose `Key-Id` is not the id of the key it holds is refused, so a header can
+# never lend a key another key's name.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/crypto/keypairs
+use <rebel>/pem
+
+## Codes
+
+# The code of a text that holds no key this registry reads, or a key that is
+# not Ed25519.
+constant INVALID: str
+    "invalid"
+
+## Keys
+
+# The label of a public key's block, as RFC 7468 names SubjectPublicKeyInfo.
+constant PUBLIC_LABEL: str
+    "PUBLIC KEY"
+
+# The header naming a block's key id.
+constant HEADER_KEY_ID: str
+    "Key-Id"
+
+# The header naming the publisher a key belongs to.
+constant HEADER_PUBLISHER: str
+    "Publisher"
+
+# How many hexadecimal digits a key id holds: 64 bits of the key's digest,
+# enough that two keys of one registry never share one by chance.
+constant ID_DIGITS: i64
+    16
+
+# A publisher's public key as the registry keeps and hands it out.
+record PublisherKey
+    # The key id, `id_of` its DER.
+    id: str
+    # The publisher's name.
+    publisher: str
+    # The key as SubjectPublicKeyInfo DER.
+    der: [u8]
+
+# The key id of the public key whose SubjectPublicKeyInfo is `der`.
+#
+# - `der`: the public key's DER, as `read_public` answers it.
+function id_of(der: [u8]) -> str
+    return bytes.format_hex(crypto.sha256(der)).slice(from: 0, to: ID_DIGITS)
+
+# The DER of the Ed25519 public key a `PUBLIC KEY` block of `text` holds,
+# checked by reading it.
+#
+# - `text`: PEM, as a publisher's tool writes a public key; text around the
+#   block is passed over.
+#
+# Fails `invalid` where `text` holds no `PUBLIC KEY` block, or its key is not
+# Ed25519; and as `keypairs.decode_public_der` fails where the DER is no key.
+function read_public(text: str) -> [u8]?
+    block = pem.parse(text)?
+
+    if block.label != PUBLIC_LABEL
+        return fail(code: INVALID, msg: f"the PEM block is labelled \"{block.label}\", not \"{PUBLIC_LABEL}\"")
+    key @= keypairs.decode_public_der(block.data)?
+    kind = key.kind
+    keypairs.close_public(@key)?
+
+    if kind != .ed25519
+        return fail(
+            code: INVALID,
+            msg: f"the key is {keypairs.format_kind(kind)}, and this registry signs with Ed25519 alone"
+        )
+    return ok(block.data)
+
+# `k` as a `PUBLIC KEY` block carrying its id and its publisher as headers.
+#
+# - `k`: the key.
+#
+# Fails as `pem.format` does, where the publisher's name holds a character a
+# header cannot.
+function format_public(k: PublisherKey) -> str?
+    headers = [pem.Header(name: HEADER_KEY_ID, value: k.id), pem.Header(name: HEADER_PUBLISHER, value: k.publisher)]
+    return pem.format(pem.Block(label: PUBLIC_LABEL, headers: headers, data: k.der))
+
+# Every key of a bundle `format_bundle` wrote, each checked against its id.
+#
+# - `text`: the bundle: `PUBLIC KEY` blocks with their headers, one after
+#   another; a bundle of no block is no key.
+#
+# Fails `invalid` where a block is of another label, lacks a header, or its
+# `Key-Id` is not its key's id; and as `pem.parse_all` fails.
+function read_bundle(text: str) -> [PublisherKey]?
+    found: [PublisherKey] @= []
+
+    for block in pem.parse_all(text)?
+        if block.label != PUBLIC_LABEL
+            return fail(code: INVALID, msg: f"a block of the bundle is labelled \"{block.label}\"")
+        id = pem.header_of(block, name: HEADER_KEY_ID)?
+        publisher = pem.header_of(block, name: HEADER_PUBLISHER)?
+
+        if id != id_of(block.data)
+            return fail(code: INVALID, msg: f"the block named {id} holds the key {id_of(block.data)}")
+        found @ found.push(PublisherKey(id: id, publisher: publisher, der: block.data))
+
+    return ok(found)
+
+# `list` written as one bundle, each key a block with its headers.
+#
+# - `list`: the keys, in the order they are written.
+#
+# Fails as `format_public` does.
+function format_bundle(list: [PublisherKey]) -> str?
+    parts: [str] @= []
+
+    for k in list
+        parts @ parts.push(format_public(k)?)
+
+    return ok(parts.join(""))
+
+# The key of `list` whose id is `id`.
+#
+# - `list`: the keys trusted.
+# - `id`: the key id asked.
+#
+# Fails `invalid` where no key of `list` has that id.
+function trusted_of(list: [PublisherKey], id: str) -> PublisherKey?
+    for k in list
+        if k.id == id
+            return ok(k)
+
+    return fail(code: INVALID, msg: f"no trusted key is named {id}")
+
+# The Ed25519 private key whose 32 secret bytes are `seed`, which the caller
+# closes with `keypairs.close_private`.
+#
+# - `seed`: RFC 8032's secret key, 32 bytes.
+#
+# Fails as `keypairs.decode_private_raw` does: `invalid` for another length,
+# `unsupported` where the platform has no Ed25519.
+function private_from_seed(seed: [u8]) -> keypairs.PrivateKey?
+    return keypairs.decode_private_raw(.ed25519, raw: seed)
+
+# The SubjectPublicKeyInfo DER of `key`'s public half.
+#
+# - `key`: the private key, which stays open.
+#
+# Fails as `keypairs.public_of` and `keypairs.encode_public_der` do.
+function public_der_of(key: keypairs.PrivateKey) -> [u8]?
+    public @= keypairs.public_of(key)?
+    der = keypairs.encode_public_der(public)
+    keypairs.close_public(@public)?
+    return der
+
+# The public half of `key` as a plain `PUBLIC KEY` block, as a publisher
+# uploads it.
+#
+# - `key`: the private key, which stays open.
+#
+# Fails as `public_der_of` and `pem.format` do.
+function public_pem_of(key: keypairs.PrivateKey) -> str?
+    der = public_der_of(key)?
+    return pem.format(pem.Block(label: PUBLIC_LABEL, headers: [], data: der))
+
+# The 32 bytes RFC 8032's first test vector names as its secret key: a key
+# every reader can check by hand, used by the module's tests.
+function rfc8032_seed() -> [u8]
+    return bytes.parse_hex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60").must()
+
+test "public_der_of: RFC 8032's first key, its public half and its id"
+    key @= private_from_seed(rfc8032_seed()).must()
+    der = public_der_of(key).must()
+    keypairs.close_private(@key).must()
+    raw = der.slice(from: der.len() - 32, to: der.len())
+    assert bytes.format_hex(raw) == "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+    assert id_of(der).len() == ID_DIGITS
+
+test "read_public: a block read back, another label and an RSA-sized text refused"
+    key @= private_from_seed(rfc8032_seed()).must()
+    text = public_pem_of(key).must()
+    keypairs.close_private(@key).must()
+    assert read_public(text).must().len() == 44
+    assert read_public("-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n").is_err()
+    assert read_public("no key here").is_err()
+
+test "read_bundle: two keys back, a wrong id refused"
+    key @= private_from_seed(rfc8032_seed()).must()
+    der = public_der_of(key).must()
+    keypairs.close_private(@key).must()
+    k = PublisherKey(id: id_of(der), publisher: "ana", der: der)
+    bundle = format_bundle([k, k]).must()
+    assert read_bundle(bundle).must() == [k, k]
+    forged = format_public(PublisherKey(id: "0000000000000000", publisher: "ana", der: der)).must()
+
+    match read_bundle(forged)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert read_bundle("").must().len() == 0
+
+test "trusted_of: a key found, an unknown id refused"
+    k = PublisherKey(id: "abc", publisher: "ana", der: [1, 2])
+    assert trusted_of([k], id: "abc").must() == k
+    assert trusted_of([k], id: "abd").is_err()
+    assert trusted_of([], id: "abc").is_err()

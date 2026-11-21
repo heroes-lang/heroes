@@ -1,0 +1,96 @@
+# Every value the server draws by chance: user identifiers, authorization
+# codes, refresh tokens, session identifiers, salts, TOTP secrets and
+# WebAuthn challenges. They all come from one ChaCha8 generator the server
+# holds. A served instance seeds it once from the system's generator for
+# keys, which makes its draws as strong as that seed (`random`'s
+# `from_system_chacha8`); the demonstration seeds it with fixed bytes, so it
+# draws the same values on every run.
+
+use <rebel>/bytes
+use <rebel>/random
+use <rebel>/time
+use <rebel>/uuid
+
+# A generator for a served instance, seeded from the system. Fails where
+# the system gives no random bytes, as `random.from_system_chacha8` does.
+function system_generator() -> random.ChaCha8?
+    return random.from_system_chacha8()
+
+# A generator that draws the same values on every run, from `label`: its
+# seed is `seed:` and `label`'s bytes repeated to 32, so two labels give two
+# sequences and the demonstration's sides never draw the same values. It is
+# for the demonstration alone: a seed anyone can read protects nothing.
+#
+# - `label`: a name of the side that draws; any text, the empty one included.
+function seeded_generator(label: str) -> random.ChaCha8
+    seed: [u8] @= []
+    source = bytes.from_text(f"seed:{label}")
+    at: i64 @= 0
+
+    while seed.len() < 32
+        seed @ seed.push(source[at % source.len()])
+        at @ at + 1
+
+    return random.from_seed_chacha8(seed).must()
+
+# `count` bytes drawn from `g`.
+#
+# - `g`: the generator, advanced past them.
+# - `count`: how many bytes, 0 or more.
+function draw(@g: random.ChaCha8, count: i64) -> [u8]
+    return random.next_bytes_chacha8(@g, count: count)
+
+# A token of `count` drawn bytes in base 64 for URLs without padding: an
+# authorization code, a refresh token, a session's identifier.
+#
+# - `g`: the generator, advanced past them.
+# - `count`: how many bytes the token carries; 32 gives 256 bits.
+function token(@g: random.ChaCha8, count: i64) -> str
+    return bytes.format_base64_url_unpadded(draw(@g, count: count))
+
+# A UUID of version 7 for the moment `at`: its milliseconds in the first 48
+# bits and 74 drawn bits after, the version and the variant set as RFC 9562
+# § 5.7 asks. It is written here rather than by `uuid.new_v7_at` because that
+# draws from the system, and the demonstration's users must keep their ids.
+#
+# - `g`: the generator, advanced past the bits drawn.
+# - `at`: the moment the identifier is made at.
+function new_user_id(@g: random.ChaCha8, at: time.Instant) -> uuid.Uuid
+    ms = time.unix_milliseconds(at)
+    drawn = draw(@g, count: 10)
+    data: [u8] @= []
+    shift: i64 @= 40
+
+    while shift >= 0
+        data @ data.push(to_u8(ms >> shift & 0xff).must())
+        shift @ shift - 8
+
+    data @ data.push(to_u8(0x70 | to_i64(drawn[0]).must() & 0x0f).must())
+    data @ data.push(drawn[1])
+    data @ data.push(to_u8(0x80 | to_i64(drawn[2]).must() & 0x3f).must())
+
+    for i in range(from: 3, to: 10)
+        data @ data.push(drawn[i])
+
+    return uuid.from_bytes(data).must()
+
+test "seeded_generator: one label draws the same bytes twice, two labels differ"
+    a @= seeded_generator("server")
+    b @= seeded_generator("server")
+    c @= seeded_generator("client")
+    first = draw(@a, count: 16)
+    assert first == draw(@b, count: 16)
+    assert first != draw(@c, count: 16)
+
+test "token: 32 bytes are 43 characters of base 64 for URLs"
+    g @= seeded_generator("t")
+    t = token(@g, count: 32)
+    assert t.len() == 43 && bytes.parse_base64_url_unpadded(t).must().len() == 32
+
+test "new_user_id: version 7, the RFC's variant, and the moment kept"
+    g @= seeded_generator("ids")
+    at = time.from_unix(whole_seconds: 1_772_357_400, extra_nanoseconds: 0).must()
+    id = new_user_id(@g, at: at)
+    assert uuid.version_of(id) == 7
+    assert uuid.variant_of(id) == .rfc
+    assert uuid.time_of(id).must() == at

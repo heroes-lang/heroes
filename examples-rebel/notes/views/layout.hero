@@ -1,0 +1,178 @@
+# What every page shares: its head and foot around the pieces of its own,
+# the labels in the visit's language, and the CSRF token its forms carry. A
+# page that makes the session's CSRF secret answers the session to write
+# back, so the next form's token unmasks to the secret the cookie holds.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/web
+
+use app/state
+use auth/visit
+use domain/jsonv
+use domain/model
+use domain/permissions
+use http/replies
+use views/locales
+use views/markup
+use views/templates
+
+## The labels
+
+# The labels the templates read under `.t`, in the language `lang`.
+#
+# - `l`: the catalogs.
+# - `lang`: the language.
+function labels(l: locales.Locales, lang: str) -> json.Value
+    english: {str: str} = {
+        "newest": "Newest notes"
+        "search": "Search"
+        "write": "Write a note"
+        "sign_in": "Sign in"
+        "sign_out": "Sign out"
+        "register": "Register"
+        "by": "by"
+        "tags": "Tags"
+        "write_comment": "Write a comment"
+        "send": "Send"
+        "previous": "Previous"
+        "next": "Next"
+        "page": "Page"
+        "of": "of"
+        "empty": "No notes yet."
+        "name": "Name"
+        "email": "Email"
+        "password": "Password"
+        "title": "Title"
+        "text": "Text in Markdown"
+        "delete": "Delete"
+        "accounts": "Accounts"
+        "role": "Role"
+        "results": "Results for"
+    }
+
+    members: {str: json.Value} @= {}
+
+    for key in keys(english)
+        members[key] @ jsonv.text(locales.say(l, tag: lang, id: english[key].must()))
+
+    return jsonv.object(members)
+
+## The CSRF token
+
+# A form's CSRF token and the session that holds its secret.
+record Csrf
+    # The masked token a form writes in its `csrf_token` field.
+    token: str
+    # The session, its secret made where it had none.
+    session: web.Session
+
+# The CSRF token for the visit's forms, its secret made where the session
+# has none.
+#
+# - `v`: the visit.
+#
+# Fails as the system's generator fails.
+function csrf_of(v: visit.Visit) -> Csrf?
+    s @= v.session
+    secret = web.csrf_secret(@s)?
+    return ok(Csrf(token: web.mask_csrf(secret)?, session: s))
+
+# `response`, with the session written back where the visit's changed.
+#
+# - `v`: the visit.
+# - `c`: the CSRF token and its session.
+# - `response`: the page.
+function reply_with(v: visit.Visit, c: Csrf, response: http.Response) -> replies.Reply
+    if c.session == v.session
+        return replies.plain(response)
+
+    return replies.with_session(response, session: c.session)
+
+## The page
+
+# The value the head reads.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `title`: the page's title.
+# - `query`: the search box's text.
+# - `token`: the CSRF token of the sign-out form.
+function head_value(app: state.App lent, v: visit.Visit, title: str, query: str, token: str) -> json.Value
+    may_write = match v.user
+        .ok u  => permissions.is_allowed(permissions.decide(u, action: .write_note))
+        .err _ => false
+
+    is_admin = match v.user
+        .ok u  => u.role == .admin
+        .err _ => false
+
+    members: {str: json.Value} = {
+        "lang": jsonv.text(v.language)
+        "title": jsonv.text(title)
+        "site": jsonv.text(app.settings.title)
+        "query": jsonv.text(query)
+        "user": jsonv.text(visit.user_name(v))
+        "may_write": jsonv.flag(may_write)
+        "is_admin": jsonv.flag(is_admin)
+        "csrf": jsonv.text(token)
+        "t": labels(app.locales, lang: v.language)
+    }
+
+    return jsonv.object(members)
+
+# A whole page: the head, `pieces`, the foot.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `title`: the page's title.
+# - `query`: the search box's text.
+# - `token`: the CSRF token of the sign-out form.
+# - `pieces`: the page's own parts.
+#
+# Fails as a template fails, a mistake of this program's own.
+function whole(app: state.App lent, v: visit.Visit, title: str, query: str, token: str, pieces: [templates.Piece]) -> str?
+    parts: [templates.Piece] @= [
+        .rendered(name: "head", value: head_value(app, v: v, title: title, query: query, token: token))
+    ]
+
+    for p in pieces
+        parts @ parts.push(p)
+
+    parts @ parts.push(.rendered(name: "foot", value: jsonv.object({})))
+    return templates.compose(app.views, pieces: parts)
+
+# A page of one heading and one sentence: a refusal, a page not found.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `status`: the status.
+# - `heading`: the heading.
+# - `text`: the sentence.
+#
+# Fails as `whole` fails, and as `csrf_of`.
+function message(app: state.App lent, v: visit.Visit, status: i64, heading: str, text: str) -> replies.Reply?
+    c = csrf_of(v)?
+    value = jsonv.object({"heading": jsonv.text(heading), "text": jsonv.text(text)})
+    html = whole(app, v: v, title: heading, query: "", token: c.token, pieces: [.rendered(name: "message", value: value)])?
+    return ok(reply_with(v, c: c, response: replies.page(status, html: html)))
+
+# A note as a page's templates read it: its date and its count of comments
+# written in the visit's language, and its first words.
+#
+# - `l`: the catalogs.
+# - `lang`: the visit's language.
+# - `n`: the note.
+function note_value(l: locales.Locales, lang: str, n: model.Note) -> json.Value
+    members: {str: json.Value} = {
+        "slug": jsonv.text(n.slug)
+        "title": jsonv.text(n.title)
+        "author": jsonv.text(n.author)
+        "tags": jsonv.texts(n.tags)
+        "excerpt": jsonv.text(markup.excerpt(n.body))
+        "stamp": jsonv.instant(n.created_at)
+        "date": jsonv.text(locales.date_of(l, tag: lang, t: n.created_at))
+        "count": jsonv.text(locales.comments_count(l, tag: lang, n: n.comments))
+    }
+
+    return jsonv.object(members)

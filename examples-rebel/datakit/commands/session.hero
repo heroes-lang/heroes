@@ -1,0 +1,176 @@
+# What every command shares: the input its flags name, read and narrowed by
+# `--path`, and the output it writes, to the standard output or to `-o`.
+#
+# Everything datakit prints goes through `io`'s standard output stream and
+# nothing through `print`, so text and bytes written to it keep their order.
+# A failure is written to the standard error, except in the demo, which
+# writes it to the standard output so its transcript shows it where it
+# happened.
+
+use <rebel>/bytes
+use <rebel>/flags
+use <rebel>/io
+
+use formats/codec
+use model/formats
+use model/model
+use query/selection
+
+## Output
+
+# Where a command writes. Both streams are the process's own, which nobody
+# closes.
+record Out
+    # The stream results are written to: the standard output.
+    results: io.Stream
+    # The stream failures are written to: the standard error, or the standard
+    # output in the demo.
+    failures: io.Stream
+
+# The output of a command run from the command line.
+function terminal() -> Out
+    return Out(results: io.stdout(), failures: io.stderr())
+
+# The output of the demo, failures and results on one stream in order.
+function transcript() -> Out
+    return Out(results: io.stdout(), failures: io.stdout())
+
+# Writes `text` to the results' stream.
+#
+# - `out`: where the command writes.
+# - `text`: the text, its line ends included.
+#
+# Fails as `io.write_text` fails, `closed` where the reader of a pipe is gone.
+function say(out: Out, text: str) -> ()?
+    return io.write_text(out.results, text)
+
+# Writes each of `lines` with a line feed after it.
+#
+# - `out`: where the command writes.
+# - `lines`: the lines.
+#
+# Fails as `say` fails.
+function say_lines(out: Out, lines: [str]) -> ()?
+    for line in lines
+        say(out, text: line + "\n")?
+
+    return ok()
+
+# Writes a failure's message, `datakit: ` before it.
+#
+# - `out`: where the command writes.
+# - `message`: the message, any number of lines.
+function complain(out: Out, message: str)
+    match io.write_text(out.failures, "datakit: " + message + "\n")
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+## Input
+
+# The input a command's flags name.
+record Input
+    # A path, or `-` for the standard input.
+    source: str
+    # How it is read.
+    options: codec.ReadOptions
+    # The JSONPath query that narrows it, empty for none.
+    query: str
+
+# How a command declaring `--from`, `--raw` and `--sheet` reads its inputs.
+#
+# - `f`: what the parse found for the command.
+function read_options_of(f: flags.Found) -> codec.ReadOptions
+    return codec.ReadOptions(
+        format: flags.value_of(f, "from").default(""),
+        raw: flags.is_on(f, "raw"),
+        sheet: flags.value_of(f, "sheet").default("")
+    )
+
+# The input of a command declaring `INPUT`, `--from`, `--raw`, `--sheet` and
+# `--path`; a command declaring no `--path` builds its `Input` from
+# `read_options_of`, since `flags.value_of` aborts on a name the command does
+# not declare.
+#
+# - `f`: what the parse found for the command.
+function input_of(f: flags.Found) -> Input
+    return Input(
+        source: flags.value_of(f, "INPUT").default("-"),
+        options: read_options_of(f),
+        query: flags.value_of(f, "path").default("")
+    )
+
+# The document `input` names: read, then narrowed to what its query selects,
+# the list of the selected values, which declares no columns of its own.
+#
+# - `input`: the input.
+#
+# Fails as `codec.load` and `selection.select` fail, the query's failure
+# opening with `--path`.
+function document(input: Input) -> codec.Loaded?
+    loaded = codec.load(input.source, options: input.options)?
+
+    if input.query == ""
+        return ok(loaded)
+
+    match selection.select(loaded.value, query: input.query)
+        .ok picked => return ok(codec.Loaded(value: picked, name: loaded.name, format: loaded.format, columns: []))
+        .err e     => return fail(code: e.code, msg: f"--path: {e.msg}")
+
+# The table `input` names, as `document` reads it.
+#
+# - `input`: the input.
+#
+# Fails as `document` fails, and as `codec.table_of` fails for a document
+# that is no table.
+function table(input: Input) -> model.Table?
+    loaded = document(input)?
+    return codec.table_of(loaded)
+
+## Writing a result
+
+# The format a result is written in: `--to` where given, else the extension
+# of `-o` where it names a file, else `fallback`.
+#
+# - `f`: what the parse found, declaring `to` and `output`.
+# - `fallback`: the format of a result printed with no `--to`.
+#
+# Fails as `formats.parse_name` and `formats.of_path` fail.
+function format_out(f: flags.Found, fallback: formats.Format) -> formats.Format?
+    match flags.value_of(f, "to")
+        .ok name => return formats.parse_name(name)
+        .err _ =>
+            target = flags.value_of(f, "output").default("-")
+
+            if target == "-"
+                return ok(fallback)
+            return formats.of_path(target)
+
+# Writes `data` where `-o` says, the standard output by default, and says
+# what was written where it went to a file.
+#
+# - `out`: where the command writes.
+# - `f`: what the parse found, declaring `output`.
+# - `data`: the bytes.
+# - `format`: their format, for the line that says what was written.
+#
+# A binary format is not written to a terminal's standard output. Fails as
+# `codec.store` fails, and `unsupported` for bytes headed to a terminal.
+function emit(out: Out, f: flags.Found, data: [u8], format: formats.Format) -> ()?
+    target = flags.value_of(f, "output").default("-")
+
+    if target == "-"
+        if formats.is_binary(format) && io.is_terminal(out.results).default(false)
+            return fail(
+                code: codec.UNSUPPORTED,
+                msg: f"{formats.name_of(format)} is binary: write it to a file with -o, or pipe it"
+            )
+        return io.write(out.results, data)
+
+    codec.store(target, data: data)?
+    return say(out, text: f"wrote {target}: {data.len()} bytes of {formats.name_of(format)}\n")
+
+# The bytes of `text`.
+#
+# - `text`: the text.
+function text_bytes(text: str) -> [u8]
+    return bytes.from_text(text)

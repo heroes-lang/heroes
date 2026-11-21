@@ -1,0 +1,193 @@
+# The command line of `agent`, declared once (`flags`): its subcommands, their
+# options and positionals, the defaults, and the help each answers to `-h`.
+# Every command reads what it needs from the parse by the names declared
+# here, so a name misspelt in a command aborts in the first test that runs
+# it rather than reading nothing in silence.
+
+use <rebel>/flags
+
+# The version `--version` prints.
+constant VERSION: str
+    "1.0.0"
+
+# The model whose tokens size the passages where the user names none.
+constant DEFAULT_INDEX_MODEL: str
+    "gpt-4o"
+
+# The Claude model asked where the user names none.
+constant DEFAULT_CLAUDE_MODEL: str
+    "claude-opus-5-5"
+
+# The OpenAI model asked where the user names none.
+constant DEFAULT_GPT_MODEL: str
+    "gpt-4o"
+
+# The whole declaration.
+function declaration() -> flags.Command
+    root @= flags.with_version(
+        flags.command(name: "agent", about: "An assistant for a folder of documents: it indexes them, answers questions about them through Claude or an OpenAI-compatible server with tools, and serves the same tools over MCP.\nThe keys are read from ANTHROPIC_API_KEY and OPENAI_API_KEY."),
+        version: VERSION
+    )
+    flags.add_command(c: @root, sub: index_command())
+    flags.add_command(c: @root, sub: search_command())
+    flags.add_command(
+        c: @root,
+        sub: asking_command(name: "ask", about: "Answers one question from the documents, with tools.", takes_question: true)
+    )
+    flags.add_command(
+        c: @root,
+        sub: asking_command(name: "chat", about: "Answers questions typed one a line, with tools, until an empty line or the input's end.", takes_question: false)
+    )
+    flags.add_command(c: @root, sub: serve_command())
+    flags.add_command(c: @root, sub: tokens_command())
+    flags.add_command(c: @root, sub: demo_command())
+    return root
+
+# `agent index FOLDER --store DIR`.
+function index_command() -> flags.Command
+    c @= flags.command(name: "index", about: "Indexes a folder of Markdown and text documents into a store.")
+    flags.add(@c, flags.positional(name: "FOLDER", help: "the folder of documents"))
+    store_option(@c)
+    flags.add(
+        @c,
+        flags.with_default(flags.option(long: "model", short: "m", value_name: "MODEL", help: "the model whose tokens size the passages"), DEFAULT_INDEX_MODEL)
+    )
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "chunk-tokens", short: "", value_name: "N", help: "the most tokens of a passage"), .integer), "200")
+    )
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "overlap", short: "", value_name: "N", help: "the tokens a passage may repeat of the one before"), .integer), "30")
+    )
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "embedder", short: "", value_name: "KIND", help: "what makes the vectors"), .choice(among: ["local", "openai"])), "local")
+    )
+    flags.add(
+        @c,
+        flags.with_default(flags.option(long: "embedding-model", short: "", value_name: "MODEL", help: "the embedding model of --embedder openai"), "text-embedding-3-small")
+    )
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "dimensions", short: "", value_name: "N", help: "the vectors' length"), .integer), "256")
+    )
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "workers", short: "", value_name: "N", help: "the threads that cut the documents, 0 for one per processor"), .integer), "0")
+    )
+    return c
+
+# `agent search QUERY... --store DIR`.
+function search_command() -> flags.Command
+    c @= flags.command(name: "search", about: "Prints the passages nearest to a query.")
+    flags.add(@c, flags.with_arity(flags.positional(name: "QUERY", help: "the words looked for"), .at_least_one))
+    store_option(@c)
+    top_option(@c)
+    return c
+
+# `agent ask QUESTION...` and `agent chat`, which take the same options.
+function asking_command(name: str, about: str, takes_question: bool) -> flags.Command
+    c @= flags.command(name: name, about: about)
+
+    if takes_question
+        flags.add(@c, flags.with_arity(flags.positional(name: "QUESTION", help: "the question"), .at_least_one))
+
+    store_option(@c)
+    top_option(@c)
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "provider", short: "p", value_name: "NAME", help: "the provider asked first"), .choice(among: ["anthropic", "openai"])), "anthropic")
+    )
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "fallback", short: "", value_name: "NAME", help: "the provider asked where the first fails"), .choice(among: ["none", "anthropic", "openai"])), "none")
+    )
+    flags.add(
+        @c,
+        flags.option(long: "model", short: "m", value_name: "MODEL", help: "the model of the provider asked first")
+    )
+    flags.add(
+        @c,
+        flags.option(long: "base-url", short: "", value_name: "URL", help: "the address of an OpenAI-compatible server, Ollama's or vLLM's")
+    )
+    allow_option(@c)
+    flags.add(
+        @c,
+        flags.option(long: "mcp", short: "", value_name: "COMMAND", help: "an MCP server of standard streams whose tools are offered instead of the agent's own")
+    )
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "max-rounds", short: "", value_name: "N", help: "the most requests of one question"), .integer), "8")
+    )
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "budget", short: "", value_name: "N", help: "the most input tokens of a question, 0 for no limit"), .integer), "0")
+    )
+    return c
+
+# `agent serve --store DIR`.
+function serve_command() -> flags.Command
+    c @= flags.command(
+        name: "serve",
+        about: "Serves the tools, the documents and a prompt over MCP on the standard streams."
+    )
+    store_option(@c)
+    allow_option(@c)
+    return c
+
+# `agent tokens FILE...`.
+function tokens_command() -> flags.Command
+    c @= flags.command(name: "tokens", about: "Prints the tokens each file takes for a model.")
+    flags.add(@c, flags.with_arity(flags.positional(name: "FILE", help: "a file of text"), .at_least_one))
+    flags.add(
+        @c,
+        flags.with_default(flags.option(long: "model", short: "m", value_name: "MODEL", help: "the model counted for"), DEFAULT_INDEX_MODEL)
+    )
+    return c
+
+# `agent demo --work DIR`.
+function demo_command() -> flags.Command
+    c @= flags.command(
+        name: "demo",
+        about: "Runs a scripted session against loopback stand-ins of both APIs, in a folder it makes and removes."
+    )
+    flags.add(
+        @c,
+        flags.with_required(flags.option(long: "work", short: "", value_name: "DIR", help: "the folder the demo makes, which must not exist or be a demo's"))
+    )
+    return c
+
+# The `--store` option every command but `tokens` takes.
+function store_option(@c: flags.Command)
+    flags.add(
+        @c,
+        flags.with_default(flags.option(long: "store", short: "s", value_name: "DIR", help: "the store's folder"), ".agent")
+    )
+
+# The `--top` option of the commands that retrieve.
+function top_option(@c: flags.Command)
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "top", short: "k", value_name: "N", help: "how many passages are retrieved"), .integer), "4")
+    )
+
+# The `--allow` option, given once a command.
+function allow_option(@c: flags.Command)
+    flags.add(
+        @c,
+        flags.option(long: "allow", short: "", value_name: "NAME[=PROGRAM]", help: "a command run_command may run; give it once a command")
+    )
+
+test "declaration: a question asked of OpenAI with an allowed command"
+    found = flags.parse(
+        declaration(),
+        ["ask", "--provider", "openai", "--allow", "git", "--allow", "agent=/bin/agent", "Which", "port?"]
+    ).must()
+    sub = flags.subcommand(found).must()
+    assert flags.name_of(sub) == "ask" && flags.value_of(sub, "provider").must() == "openai"
+    assert flags.values_of(sub, "allow") == ["git", "agent=/bin/agent"] && flags.values_of(sub, "QUESTION") == ["Which", "port?"]
+    assert flags.int_of(sub, "top").must() == 4 && flags.value_of(sub, "store").must() == ".agent"
+
+test "declaration: a provider that is not one refused"
+    assert flags.parse(declaration(), ["ask", "--provider", "gemini", "x"]).is_err()

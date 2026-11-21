@@ -1,0 +1,139 @@
+# What a run of the job system is told: where its store is, which queues
+# its workers serve and how many, how claims, idle waits and retries are
+# timed, where telemetry and logs go. Read once from the command line, then
+# handed to each worker thread as JSON text, the one kind of value a thread
+# is given (`threads`).
+
+use <rebel>/json
+use <rebel>/time
+
+# Every setting of a run.
+record Settings
+    # The store's server, as `redis.parse_url` reads it:
+    # `redis://:password@host:port/0`.
+    redis_url: str
+    # The queues the workers claim from; a job is claimed by priority, then
+    # by when it became due, in any of them.
+    queues: [str]
+    # How many worker threads claim at once, 1 or more.
+    workers: i64
+    # How long a claim holds before `rescue` may give the job back.
+    lease: time.Duration
+    # How long a worker that found no job ready waits before it asks again.
+    poll: time.Duration
+    # The wait after a job's first failed attempt.
+    first_wait: time.Duration
+    # The longest wait between two attempts.
+    longest_wait: time.Duration
+    # How far chance spreads a wait either way, from 0 to 1: 0.2 draws from
+    # four fifths to six fifths of it.
+    spread: f64
+    # The seed of the chance that spreads the waits: one seed draws the same
+    # waits for the same job and attempt on every run.
+    seed: i64
+    # The collector's base URL, `http://localhost:4318`; "" sends no span and
+    # no metric.
+    otlp: str
+    # The service's name, its spans' and metrics' `service.name`.
+    service: str
+    # The folder the log files are written in.
+    log_dir: str
+    # The size a log file is set aside at, in bytes.
+    log_max_bytes: i64
+    # How many set-aside log files are kept.
+    log_keep: i64
+    # The address `/metrics` is served on, `127.0.0.1:9464`; "" for none.
+    metrics_listen: str
+    # This run's identifier, OpenTelemetry's `service.instance.id`.
+    instance: str
+
+# The settings a run starts from before the command line changes them.
+function default_settings() -> Settings
+    return Settings(
+        redis_url: "redis://127.0.0.1:6379/0",
+        queues: ["default"],
+        workers: 4,
+        lease: time.minutes(5).must(),
+        poll: time.seconds(1).must(),
+        first_wait: time.seconds(15).must(),
+        longest_wait: time.hours(1).must(),
+        spread: 0.2,
+        seed: 1,
+        otlp: "",
+        service: "worker",
+        log_dir: "logs",
+        log_max_bytes: 10_485_760,
+        log_keep: 5,
+        metrics_listen: "",
+        instance: ""
+    )
+
+# `d` in whole milliseconds, as JSON writes it.
+#
+# - `d`: the duration.
+function milliseconds_of(d: time.Duration) -> json.Value
+    return .number(v: to_f64(time.to_units(d, unit: .millisecond)))
+
+# `s` as a JSON object, every field by its name.
+#
+# - `s`: the settings.
+function settings_json(s: Settings) -> json.Value
+    queues: [json.Value] @= []
+
+    for q in s.queues
+        queues @ queues.push(.text(v: q))
+
+    return .object(
+        members: {Settings::redis_url: .text(v: s.redis_url), Settings::queues: .list(items: queues), Settings::workers: .number(v: to_f64(s.workers)), Settings::lease: milliseconds_of(s.lease), Settings::poll: milliseconds_of(s.poll), Settings::first_wait: milliseconds_of(s.first_wait), Settings::longest_wait: milliseconds_of(s.longest_wait), Settings::spread: .number(v: s.spread), Settings::seed: .number(v: to_f64(s.seed)), Settings::otlp: .text(v: s.otlp), Settings::service: .text(v: s.service), Settings::log_dir: .text(v: s.log_dir), Settings::log_max_bytes: .number(v: to_f64(s.log_max_bytes)), Settings::log_keep: .number(v: to_f64(s.log_keep)), Settings::metrics_listen: .text(v: s.metrics_listen), Settings::instance: .text(v: s.instance)}
+    )
+
+# The member `name` of `v` as text. Fails `invalid` naming the member.
+#
+# - `v`: the object.
+# - `name`: the member's name.
+function text_at(v: json.Value, name: str) -> str?
+    match json.member(v, key: name)
+        .ok m =>
+            match json.text_of(m)
+                .ok t  => return ok(t)
+                .err _ => return fail(code: json.INVALID, msg: f"the setting {name} is no text")
+        .err _ => return fail(code: json.INVALID, msg: f"no setting {name}")
+
+# The member `name` of `v` as a whole number. Fails `invalid` naming it.
+#
+# - `v`: the object.
+# - `name`: the member's name.
+function int_at(v: json.Value, name: str) -> i64?
+    match json.member(v, key: name)
+        .ok m =>
+            match json.int_of(m)
+                .ok n  => return ok(n)
+                .err _ => return fail(code: json.INVALID, msg: f"the setting {name} is no whole number")
+        .err _ => return fail(code: json.INVALID, msg: f"no setting {name}")
+
+# The member `name` of `v`, milliseconds, as a duration.
+#
+# - `v`: the object.
+# - `name`: the member's name.
+function duration_at(v: json.Value, name: str) -> time.Duration?
+    return time.milliseconds(int_at(v, name: name)?)
+
+# The settings `settings_json` wrote. Fails `invalid` where a member is
+# missing or of another kind.
+#
+# - `v`: the JSON object.
+function settings_of(v: json.Value) -> Settings?
+    queues: [str] @= []
+
+    for q in json.items_of(json.member(v, key: Settings::queues)?)?
+        queues @ queues.push(json.text_of(q)?)
+
+    return ok(
+        Settings(redis_url: text_at(v, name: Settings::redis_url)?, queues: queues, workers: int_at(v, name: Settings::workers)?, lease: duration_at(v, name: Settings::lease)?, poll: duration_at(v, name: Settings::poll)?, first_wait: duration_at(v, name: Settings::first_wait)?, longest_wait: duration_at(v, name: Settings::longest_wait)?, spread: json.number_of(json.member(v, key: Settings::spread)?)?, seed: int_at(v, name: Settings::seed)?, otlp: text_at(v, name: Settings::otlp)?, service: text_at(v, name: Settings::service)?, log_dir: text_at(v, name: Settings::log_dir)?, log_max_bytes: int_at(v, name: Settings::log_max_bytes)?, log_keep: int_at(v, name: Settings::log_keep)?, metrics_listen: text_at(v, name: Settings::metrics_listen)?, instance: text_at(v, name: Settings::instance)?)
+    )
+
+test "settings_of: the settings read back as settings_json wrote them"
+    s @= default_settings()
+    s.queues @ ["mail", "default"]
+    s.otlp @ "http://127.0.0.1:4318"
+    assert settings_of(settings_json(s)).must() == s

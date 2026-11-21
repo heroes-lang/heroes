@@ -1,0 +1,394 @@
+# The pages of notes: a page of the newest, a tag's, a search's, one note
+# with its comments, and the forms that write a note and a comment. A list
+# and a note answer HTML or JSON from the same address, by the request's
+# `Accept` (RFC 9110 § 12.5.1), so a script reads what a person sees. A form
+# that fails is shown again with each field's problem beside it, status 422,
+# and one that succeeds sends the browser on with 303.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/url
+
+use api/api_view
+use app/service
+use app/state
+use auth/visit
+use domain/jsonv
+use domain/model
+use domain/paging
+use domain/permissions
+use domain/validate
+use http/replies
+use store/comment_store
+use store/note_store
+use views/feed
+use views/layout
+use views/locales
+use views/markup
+use views/templates
+
+## Reading a request
+
+# The value of the query's key `key`, "" where it has none.
+#
+# - `r`: the request.
+# - `key`: the key.
+function query_value(r: http.Request, key: str) -> str
+    return url.value_of(http.query_of(r).default([]), key: key).default("")
+
+# The value of the form's field `key`, "" where it has none or the body is
+# no form.
+#
+# - `r`: the request.
+# - `key`: the field.
+function form_value(r: http.Request, key: str) -> str
+    return url.value_of(http.form_of(r).default([]), key: key).default("")
+
+## Refusals
+
+# A refusal in the form the request asks for: JSON's `{"error": ...}` or a
+# page of one sentence.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `r`: the request.
+# - `status`: the status.
+# - `text`: why.
+function refusal(app: state.App lent, v: visit.Visit, r: http.Request, status: i64, text: str) -> replies.Reply?
+    if replies.wants_json(r)
+        return ok(replies.plain(replies.api_error(status, message: text)))
+
+    heading = http.status_text(status).default("Refused")
+    return layout.message(app, v: v, status: status, heading: heading, text: text)
+
+# The account signed in, or the answer that sends a visitor to sign in.
+variant Signed
+    # Signed in.
+    user
+        u: model.User
+    # Not signed in; the answer to send.
+    answer
+        reply: replies.Reply
+
+# The visit's account, or 303 to the sign-in page, or 401 for JSON.
+#
+# - `v`: the visit.
+# - `r`: the request.
+function signed(v: visit.Visit, r: http.Request) -> Signed
+    return match v.user
+        .ok u => .user(u: u)
+        .err _ =>
+            if replies.wants_json(r)
+                .answer(reply: replies.plain(replies.api_error(http.STATUS_UNAUTHORIZED, message: "sign in first")))
+            else
+                .answer(reply: replies.plain(replies.see_other("/account/login")))
+
+## Lists
+
+# A page of notes, of the tag `tag` or of every tag, newest first.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `r`: the request; its query's `page` chooses the page.
+# - `tag`: the tag, "" for every note.
+# - `heading`: the page's heading.
+function list(@app: state.App, v: visit.Visit, r: http.Request, tag: str, heading: str) -> replies.Reply?
+    total = note_store.count(@app.db, tag: tag)?
+
+    p = match paging.page_of(requested: query_value(r, key: "page"), size: app.settings.page_size, total: total)
+        .ok got => got
+        .err e  => return refusal(app, v: v, r: r, status: http.STATUS_BAD_REQUEST, text: e.msg)
+
+    notes = note_store.page(@app.db, tag: tag, offset: p.offset, limit: p.size)?
+
+    if replies.wants_json(r)
+        return ok(replies.plain(replies.json_response(http.STATUS_OK, value: api_view.page_json(notes, p: p))))
+
+    c = layout.csrf_of(v)?
+    cards: [json.Value] @= []
+
+    for n in notes
+        cards @ cards.push(layout.note_value(app.locales, lang: v.language, n: n))
+
+    members: {str: json.Value} = {
+        "heading": jsonv.text(heading)
+        "notes": jsonv.list(cards)
+        "empty": jsonv.text(locales.say(app.locales, tag: v.language, id: "No notes yet."))
+        "page": paging.page_json(p)
+        "t": layout.labels(app.locales, lang: v.language)
+    }
+
+    html = layout.whole(app, v: v, title: heading, query: "", token: c.token, pieces: [.rendered(name: "list", value: jsonv.object(members))])?
+    return ok(layout.reply_with(v, c: c, response: replies.page(http.STATUS_OK, html: html)))
+
+# The home page: the newest notes.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `r`: the request.
+function home(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+    return list(@app, v: v, r: r, tag: "", heading: locales.say(app.locales, tag: v.language, id: "Newest notes"))
+
+# The notes a search finds, the best first: `?q=` and its words.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `r`: the request.
+function search(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+    q = query_value(r, key: "q")
+
+    found = match service.search_notes(@app, query: q)
+        .ok got => got
+        .err e =>
+            if replies.wants_json(r)
+                return ok(
+                    replies.plain(replies.unprocessable([validate.FieldError(field: "q", message: "holds no word")]))
+                )
+            return refusal(app, v: v, r: r, status: http.STATUS_UNPROCESSABLE_CONTENT, text: e.msg)
+
+    if replies.wants_json(r)
+        return ok(
+            replies.plain(replies.json_response(http.STATUS_OK, value: jsonv.object({"notes": api_view.notes_json(found)})))
+        )
+
+    c = layout.csrf_of(v)?
+    cards: [json.Value] @= []
+
+    for n in found
+        cards @ cards.push(layout.note_value(app.locales, lang: v.language, n: n))
+
+    members: {str: json.Value} = {
+        "query": jsonv.text(q)
+        "notes": jsonv.list(cards)
+        "empty": jsonv.text(locales.say(app.locales, tag: v.language, id: "No notes yet."))
+        "t": layout.labels(app.locales, lang: v.language)
+    }
+
+    html = layout.whole(app, v: v, title: q, query: q, token: c.token, pieces: [.rendered(name: "results", value: jsonv.object(members))])?
+    return ok(layout.reply_with(v, c: c, response: replies.page(http.STATUS_OK, html: html)))
+
+## One note
+
+# A note's page, or its JSON.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `r`: the request.
+# - `slug`: the note's slug.
+function note(@app: state.App, v: visit.Visit, r: http.Request, slug: str) -> replies.Reply?
+    n = match note_store.by_slug(@app.db, slug: slug)
+        .ok got => got
+        .err e  => return refusal(app, v: v, r: r, status: http.STATUS_NOT_FOUND, text: e.msg)
+
+    if replies.wants_json(r)
+        return ok(replies.plain(replies.json_response(http.STATUS_OK, value: api_view.note_json(n))))
+
+    return note_page(@app, v: v, n: n, draft: "", error: "", status: http.STATUS_OK)
+
+# A note's page with its comments and the form that writes one, holding
+# `draft` and `error` where a comment was refused.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `n`: the note.
+# - `draft`: the comment's text to show again; "" for none.
+# - `error`: the comment's problem; "" for none.
+# - `status`: the status: 200, or 422 for a comment refused.
+function note_page(@app: state.App, v: visit.Visit, n: model.Note, draft: str, error: str, status: i64) -> replies.Reply?
+    comments = comment_store.of_note(@app.db, note_id: n.id)?
+    c = layout.csrf_of(v)?
+
+    may_delete = match v.user
+        .ok u  => permissions.is_allowed(permissions.decide(u, action: .delete_note(owner_id: n.author_id)))
+        .err _ => false
+
+    extra: {str: json.Value} = {
+        "t": layout.labels(app.locales, lang: v.language)
+        "csrf": jsonv.text(c.token)
+        "user": jsonv.text(visit.user_name(v))
+        "may_delete": jsonv.flag(may_delete)
+        "comments": jsonv.text(locales.comments_count(app.locales, tag: v.language, n: comments.len()))
+        "draft": jsonv.text(draft)
+        "error": jsonv.text(error)
+    }
+
+    value = jsonv.with_members(layout.note_value(app.locales, lang: v.language, n: n), extra: extra)
+    pieces: [templates.Piece] @= [
+        .rendered(name: "note_top", value: value)
+        .trusted(html: markup.note_html(n.body))
+        .rendered(name: "note_bottom", value: value)
+    ]
+
+    for cm in comments
+        meta = jsonv.object(
+            {"author": jsonv.text(cm.author), "date": jsonv.text(locales.date_of(app.locales, tag: v.language, t: cm.created_at))}
+        )
+        pieces @ pieces.push(.rendered(name: "comment_top", value: meta))
+        pieces @ pieces.push(.trusted(html: markup.comment_html(cm.body)))
+        pieces @ pieces.push(.rendered(name: "comment_bottom", value: jsonv.object({})))
+
+    pieces @ pieces.push(.rendered(name: "comments_end", value: value))
+    html = layout.whole(app, v: v, title: n.title, query: "", token: c.token, pieces: pieces)?
+    return ok(layout.reply_with(v, c: c, response: replies.page(status, html: html)))
+
+## Writing
+
+# The form that writes a note, for an account that may write one.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `r`: the request.
+function note_new(app: state.App lent, v: visit.Visit, r: http.Request) -> replies.Reply?
+    user = match signed(v, r: r)
+        .user s   => s.u
+        .answer a => return ok(a.reply)
+
+    match permissions.decide(user, action: .write_note)
+        .refused why => return refusal(app, v: v, r: r, status: http.STATUS_FORBIDDEN, text: why.reason)
+        .allowed     => _ = 0
+
+    return note_form(
+        app,
+        v: v,
+        draft: note_store.Draft(title: "", body: "", tags: []),
+        errors: [],
+        status: http.STATUS_OK
+    )
+
+# The note form, holding `draft` and each field's problem.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `draft`: what the form holds.
+# - `errors`: each field's problem.
+# - `status`: 200, or 422 for a draft refused.
+function note_form(app: state.App lent, v: visit.Visit, draft: note_store.Draft, errors: [validate.FieldError], status: i64) -> replies.Reply?
+    c = layout.csrf_of(v)?
+
+    members: {str: json.Value} = {
+        "t": layout.labels(app.locales, lang: v.language)
+        "csrf": jsonv.text(c.token)
+        "title": jsonv.text(draft.title)
+        "tags": jsonv.text(draft.tags.join(", "))
+        "body": jsonv.text(draft.body)
+        "errors": form_errors(errors, fields: ["title", "tags", "body"])
+    }
+
+    title = locales.say(app.locales, tag: v.language, id: "Write a note")
+    html = layout.whole(app, v: v, title: title, query: "", token: c.token, pieces: [.rendered(name: "note_form", value: jsonv.object(members))])?
+    return ok(layout.reply_with(v, c: c, response: replies.page(status, html: html)))
+
+# Each of `fields`' problem, "" for a field with none: what a form's template
+# reads, since a template fails on a member that is not there.
+#
+# - `errors`: the problems.
+# - `fields`: every field the form shows.
+function form_errors(errors: [validate.FieldError], fields: [str]) -> json.Value
+    members: {str: json.Value} @= {}
+
+    for f in fields
+        members[f] @ jsonv.text(validate.message_of(errors, field: f))
+
+    return jsonv.object(members)
+
+# A note written from the form: 303 to it, or the form again.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `r`: the request, a form of `title`, `tags` and `body`.
+function note_create(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+    user = match signed(v, r: r)
+        .user s   => s.u
+        .answer a => return ok(a.reply)
+
+    draft = note_store.Draft(
+        title: form_value(r, key: "title"),
+        body: form_value(r, key: "body"),
+        tags: validate.tags_of(form_value(r, key: "tags"))
+    )
+
+    return match service.write_note(@app, user: user, draft: draft, now: v.now)?
+        .done d    => ok(replies.plain(replies.see_other(f"/notes/{d.note.slug}")))
+        .refused f => refusal(app, v: v, r: r, status: http.STATUS_FORBIDDEN, text: f.reason)
+        .invalid i =>
+            if replies.wants_json(r)
+                ok(replies.plain(replies.unprocessable(i.errors)))
+            else
+                note_form(app, v: v, draft: draft, errors: i.errors, status: http.STATUS_UNPROCESSABLE_CONTENT)
+
+# A note removed from its page: 303 to the home page.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `r`: the request.
+# - `slug`: the note's slug.
+function note_delete(@app: state.App, v: visit.Visit, r: http.Request, slug: str) -> replies.Reply?
+    user = match signed(v, r: r)
+        .user s   => s.u
+        .answer a => return ok(a.reply)
+
+    n = match note_store.by_slug(@app.db, slug: slug)
+        .ok got => got
+        .err e  => return refusal(app, v: v, r: r, status: http.STATUS_NOT_FOUND, text: e.msg)
+
+    return match service.remove_note(@app, user: user, note: n)?
+        .allowed   => ok(replies.plain(replies.see_other("/")))
+        .refused f => refusal(app, v: v, r: r, status: http.STATUS_FORBIDDEN, text: f.reason)
+
+# A comment written from a note's form: 303 back to the note's comments, or
+# the note's page again with the comment's problem.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `r`: the request, a form of `body`.
+# - `slug`: the note's slug.
+function comment_create(@app: state.App, v: visit.Visit, r: http.Request, slug: str) -> replies.Reply?
+    user = match signed(v, r: r)
+        .user s   => s.u
+        .answer a => return ok(a.reply)
+
+    n = match note_store.by_slug(@app.db, slug: slug)
+        .ok got => got
+        .err e  => return refusal(app, v: v, r: r, status: http.STATUS_NOT_FOUND, text: e.msg)
+
+    body = form_value(r, key: "body")
+
+    return match service.write_comment(@app, user: user, note: n, body: body, now: v.now)?
+        .done _    => ok(replies.plain(replies.see_other(f"/notes/{n.slug}#comments")))
+        .refused f => refusal(app, v: v, r: r, status: http.STATUS_FORBIDDEN, text: f.reason)
+        .invalid i =>
+            if replies.wants_json(r)
+                ok(replies.plain(replies.unprocessable(i.errors)))
+            else
+                note_page(
+                    @app,
+                    v: v,
+                    n: n,
+                    draft: body,
+                    error: validate.message_of(i.errors, field: "body"),
+                    status: http.STATUS_UNPROCESSABLE_CONTENT
+                )
+
+## The feed
+
+# The most notes the feed carries.
+constant FEED_SIZE: i64
+    20
+
+# The Atom feed of the newest notes.
+#
+# - `app`: the state.
+# - `v`: the visit; its clock stamps a feed with no note.
+function atom(@app: state.App, v: visit.Visit) -> replies.Reply?
+    notes = note_store.page(@app.db, tag: "", offset: 0, limit: FEED_SIZE)?
+    text = feed.atom_of(feed.Site(title: app.settings.title, base_url: app.settings.base_url), notes: notes, empty_at: v.now)?
+    return ok(replies.plain(http.respond_text(http.STATUS_OK, text: text).with_type(feed.MEDIA_TYPE)))
+
+# `response` typed `content_type`.
+#
+# - `response`: the response.
+# - `content_type`: its media type.
+function with_type(response: http.Response, content_type: str) -> http.Response
+    out: http.Response @= response
+    out.headers @ http.with_header(response.headers, name: "Content-Type", value: content_type)
+    return out

@@ -1,0 +1,208 @@
+# `datakit demo`: a scripted session over sample data, the program's test of
+# itself. It makes a folder (`build/datakit-demo` by default), writes the
+# samples of `demo/samples` into it, works inside it, runs each command
+# of the script as a person would type it, printing the command line and
+# then what the command writes, failures included, and at the end removes
+# the folder and everything the session wrote there.
+#
+# The transcript is the same on every run and every machine: no clock, no
+# random value, no absolute path is printed. A PDF and a workbook it writes
+# are checked by reading them back (`inspect`), and the binary files by the
+# digest of their content, which equals the CSV's they were made from.
+#
+# A folder that is there already is removed only where a demo made it, as
+# the marker file it writes says; any other is refused, so `--dir` cannot be
+# turned into a way to delete a folder somebody keeps.
+
+use <rebel>/fs
+use <rebel>/os
+use <rebel>/path
+
+use commands/session
+use demo/samples
+
+## Codes
+
+# The code of a folder the demo did not make.
+constant EXISTS: str
+    "exists"
+
+## Limits
+
+# The folder a session works in where `--dir` names none.
+constant DEFAULT_DIR: str
+    "build/datakit-demo"
+
+# The file that marks a folder as one a demo made.
+constant MARKER: str
+    ".datakit-demo"
+
+## The script
+
+# The commands of the session, each as its arguments after `datakit`.
+function steps() -> [[str]]
+    return [
+        ["formats"]
+        ["inspect", "sales.csv"]
+        ["query", "sales.csv", "--where", "units >= 5 && region == \"north\"", "--select", "date, city, units, price, units * price as total"]
+        ["query", "sales.csv", "--group", "region", "--agg", "count() as orders, sum(units) as units, sum(amount) as revenue, mean(amount) as mean", "--sort", "-revenue"]
+        ["query", "sales.csv", "--select", "product, price", "--where", "price < 1", "--to", "json"]
+        ["stats", "sales.csv", "--columns", "city,units,price,amount", "--percentiles", "10,90"]
+        ["convert", "sales.csv", "-o", "sales.msgpack"]
+        ["convert", "sales.csv", "-o", "sales.cbor"]
+        ["convert", "sales.csv", "-o", "sales.bson"]
+        ["convert", "sales.csv", "-o", "sales.xlsx"]
+        ["inspect", "sales.msgpack"]
+        ["inspect", "sales.cbor"]
+        ["inspect", "sales.bson"]
+        ["inspect", "sales.xlsx"]
+        ["convert", "sales.cbor", "--path", "$[?@.region == \"east\"]", "--to", "json"]
+        ["query", "sales.xlsx", "--sort", "-amount", "--limit", "3", "--select", "date, city, amount"]
+        ["convert", "people.json", "--path", "$.people[?@.age > 30]", "--to", "yaml"]
+        ["query", "people.json", "--path", "$.people[*]", "--select", "name, age, address, len(tags) as tags", "--to", "csv"]
+        ["convert", "config.toml", "--to", "json"]
+        ["convert", "settings.ini", "--to", "toml"]
+        ["convert", "app.properties", "--to", "yaml"]
+        ["convert", "catalog.xml", "--to", "csv"]
+        ["convert", "events.yaml", "--to", "xml"]
+        ["convert", "sales.csv", "--path", "$[0:2]", "--to", "properties"]
+        ["sql", "sales.csv", "regions.csv", "--db", "sales.db", "--query", "SELECT r.manager, COUNT(*) AS orders, SUM(s.units) AS units FROM sales AS s JOIN regions AS r ON r.region = s.region GROUP BY r.manager ORDER BY units DESC"]
+        ["view", "sales.csv", "--headless", "60x9", "--keys", "down,pgdn,right,right,s,s,q"]
+        ["report", "sales.csv", "-o", "report.pdf", "--title", "Sales by region", "--group", "region", "--agg", "count() as orders, sum(amount) as revenue, p50(amount) as median", "--rows", "10"]
+        ["inspect", "report.pdf"]
+        ["query", "sales.csv", "--where", "units >"]
+        ["query", "sales.csv", "--where", "prise > 10"]
+        ["convert", "sales.csv", "--to", "parquet"]
+    ]
+
+## Running
+
+# Runs the session in `dir`, each command through `execute`, and answers 0,
+# or 1 where the session could not be set up or cleaned away.
+#
+# - `dir`: the folder the session works in; made, and removed at the end.
+# - `execute`: runs one command line and answers its exit code; the demo
+#   hands it the transcript's output, so a failure is printed in place.
+function run(dir: str, execute: (function([str], session.Out) -> i64)) -> i64
+    out = session.transcript()
+
+    match prepare(dir)
+        .ok _ => _ = 0
+        .err e =>
+            session.complain(out, message: f"demo: {e.msg}")
+            return 1
+
+    back = match os.working_dir()
+        .ok d => d
+        .err e =>
+            session.complain(out, message: f"demo: {e.msg}")
+            return 1
+
+    match os.change_dir(dir)
+        .ok _ => _ = 0
+        .err e =>
+            session.complain(out, message: f"demo: {e.msg}")
+            return 1
+
+    names = samples.every_sample().map(sample_name)
+    _ = say(out, text: f"# the session works in {dir}, holding {names.join(", ")}\n\n")
+
+    for arguments in steps()
+        _ = say(out, text: "$ datakit " + arguments.map(quoted).join(" ") + "\n")
+        code = execute(arguments, out)
+
+        if code != 0
+            _ = say(out, text: f"[exit {code}]\n")
+        _ = say(out, text: "\n")
+
+    match os.change_dir(back)
+        .ok _ => _ = 0
+        .err e =>
+            session.complain(out, message: f"demo: {e.msg}")
+            return 1
+
+    match fs.remove_all(dir)
+        .ok _ => _ = say(out, text: f"# removed {dir}\n")
+        .err e =>
+            session.complain(out, message: f"demo: {e.msg}")
+            return 1
+
+    return 0
+
+# Writes `text`, answering whether it was written: the transcript goes on
+# past a write that failed, and the session's commands say their own
+# failures.
+#
+# - `out`: the transcript.
+# - `text`: the text.
+function say(out: session.Out, text: str) -> bool
+    return match session.say(out, text: text)
+        .ok _  => true
+        .err _ => false
+
+# Makes `dir` afresh with its marker and the samples, removing it first where
+# a demo made it.
+#
+# - `dir`: the folder.
+#
+# Fails `exists` where `dir` is there and holds no marker, and as `fs` fails.
+function prepare(dir: str) -> ()?
+    if fs.exists(dir)?
+        if !fs.exists(path.join_all([dir, MARKER]))?
+            return fail(code: EXISTS, msg: f"{dir} is there and no demo made it; name another folder with --dir")
+        fs.remove_all(dir)?
+
+    fs.make_dir_all(dir)?
+    fs.write_bytes(path.join_all([dir, MARKER]), data: session.text_bytes("made by datakit demo\n"))?
+
+    for s in samples.every_sample()
+        fs.write_bytes(path.join_all([dir, s.name]), data: session.text_bytes(s.text))?
+
+    return ok()
+
+# The name of a sample, for a `map`.
+#
+# - `s`: the sample.
+function sample_name(s: samples.Sample) -> str
+    return s.name
+
+# `argument` as a shell reads it back: as it is where it holds only letters,
+# digits and `_ . / = , : + -`, else between single quotes, a single quote
+# inside written `'\''`.
+#
+# - `argument`: the argument.
+function quoted(argument: str) -> str
+    if argument == ""
+        return "''"
+
+    plain: bool @= true
+    at: i64 @= 0
+
+    while at < argument.len()
+        b = argument[at]
+
+        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_' || b == '.' || b == '/' || b == '=' || b == ',' || b == ':' || b == '+' || b == '-')
+            plain @ false
+        at @ at + 1
+
+    if plain
+        return argument
+
+    pieces: [str] @= []
+
+    for c in argument.chars()
+        if c == "'"
+            pieces @ pieces.push("'\\''")
+        else
+            pieces @ pieces.push(c)
+
+    return "'" + pieces.join("") + "'"
+
+## Tests
+
+test "quoted: plain words, spaces, quotes and the empty word"
+    assert quoted("sales.csv") == "sales.csv"
+    assert quoted("units > 5") == "'units > 5'"
+    assert quoted("it's") == "'it'\\''s'"
+    assert quoted("") == "''"
+    assert quoted("-revenue") == "-revenue"

@@ -1,0 +1,107 @@
+# Which function answers a page's route: the router finds a route by name,
+# and this module calls the program's own function for that name with the
+# state lent by `@`. The API's operations are answered by `api/`, the live
+# channel's upgrade by the server's loop.
+
+use <rebel>/http
+use <rebel>/metrics
+use <rebel>/openapi
+use <rebel>/sql/sqlite
+use <rebel>/web
+
+use app/state
+use auth/visit
+use http/pages_account
+use http/pages_notes
+use http/replies
+use http/routes
+use ops/ops
+use realtime/realtime
+
+# Whether the route `name` answers HTML and JSON by the request's `Accept`.
+#
+# - `name`: the route's name.
+function is_negotiated(name: str) -> bool
+    return name == routes.HOME || name == routes.NOTES || name == routes.NOTE || name == routes.TAG || name == routes.SEARCH
+
+# The answer to a page's route.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `found`: the route and its parameters.
+# - `r`: the request.
+#
+# Fails where its handler fails, which the pipeline answers 500.
+function page(@app: state.App, v: visit.Visit, found: web.Found, r: http.Request) -> replies.Reply?
+    name = found.name
+    slug = web.param_of(found, name: "slug").default("")
+
+    if name == routes.HOME || name == routes.NOTES
+        return pages_notes.home(@app, v: v, r: r)
+
+    if name == routes.NOTE
+        return pages_notes.note(@app, v: v, r: r, slug: slug)
+
+    if name == routes.NOTE_NEW
+        return pages_notes.note_new(app, v: v, r: r)
+
+    if name == routes.NOTE_CREATE
+        return pages_notes.note_create(@app, v: v, r: r)
+
+    if name == routes.NOTE_DELETE
+        return pages_notes.note_delete(@app, v: v, r: r, slug: slug)
+
+    if name == routes.COMMENT_CREATE
+        return pages_notes.comment_create(@app, v: v, r: r, slug: slug)
+
+    if name == routes.TAG
+        tag = web.param_of(found, name: "tag").default("")
+        return pages_notes.list(@app, v: v, r: r, tag: tag, heading: f"#{tag}")
+
+    if name == routes.SEARCH
+        return pages_notes.search(@app, v: v, r: r)
+
+    if name == routes.FEED
+        return pages_notes.atom(@app, v: v)
+
+    if name == routes.REGISTER_FORM
+        return pages_account.register_form(app, v: v)
+
+    if name == routes.REGISTER
+        return pages_account.register(@app, v: v, r: r)
+
+    if name == routes.LOGIN_FORM
+        return pages_account.login_form(app, v: v)
+
+    if name == routes.LOGIN
+        return pages_account.login(@app, v: v, r: r)
+
+    if name == routes.LOGOUT
+        return ok(pages_account.logout())
+
+    if name == routes.USERS
+        return pages_account.users(@app, v: v, r: r)
+
+    if name == routes.ROLE
+        return pages_account.role(@app, v: v, r: r, name: web.param_of(found, name: "name").default(""))
+
+    if name == routes.STATIC
+        return ok(
+            replies.plain(web.serve_folder(r, folder: app.folder, rest: web.param_of(found, name: "path").default("")))
+        )
+
+    if name == routes.HEALTH
+        return ok(replies.plain(web.health_response(r, checks: [], detail: false)))
+
+    if name == routes.READY
+        checks = [web.Check(name: "database", outcome: sqlite.ping(app.db))]
+        return ok(replies.plain(web.health_response(r, checks: checks, detail: false)))
+
+    if name == routes.METRICS
+        ops.gauge(@app.registry, name: ops.SOCKETS, value: realtime.count(app.hub))
+        return ok(replies.plain(metrics.respond(app.registry, r: r)))
+
+    if openapi.is_site_route(name)
+        return ok(replies.plain(openapi.respond_site(app.site, name: name)))
+
+    return ok(replies.plain(http.respond_not_found(r)))

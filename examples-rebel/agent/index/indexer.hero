@@ -1,0 +1,177 @@
+# A folder of documents made a store: its documents read, cut into passages
+# sized in a model's tokens, made vectors, and put in an HNSW index.
+#
+# Cutting is the work that costs: every passage is encoded to be measured, so
+# the cost grows with the documents' size. So the documents are dealt to worker
+# threads (`threads.run_all_text`), each making its own encoding, since a
+# thread shares nothing with another; what a worker is handed and answers is
+# `index/workers`'. The passages are numbered in the order of the documents'
+# paths, so the store is the same whatever the number of workers.
+
+use <rebel>/os
+use <rebel>/threads
+use <rebel>/vectors
+
+use index/chunking
+use index/corpus
+use index/embedder
+use index/encodings
+use index/store
+use index/workers as workers_side
+
+# What `build` is asked to make.
+record Plan
+    # The folder of documents.
+    root: str
+    # The model whose tokens size the passages.
+    model: str
+    # The most tokens of a passage, at least 1.
+    size: i64
+    # How many tokens of the passage before one may repeat, below `size`.
+    overlap: i64
+    # How many worker threads cut the documents at most; 0 for one per
+    # processor.
+    workers: i64
+    # What makes the vectors.
+    embedder: embedder.Embedder
+
+# The store `plan` makes of its folder.
+#
+# - `plan`: the folder, the model, the sizes, the workers and the embedder.
+#
+# Fails as `corpus.list_files` and `corpus.read_text` fail on the folder,
+# `invalid` where the sizes are out of their range, `limit` where the system
+# refuses a thread, and as a remote embedder fails.
+function build(plan: Plan) -> store.Store?
+    listed = corpus.list_files(plan.root)?
+    paths: [str] @= []
+    sizes: {str: i64} @= {}
+
+    for l in listed
+        if l.indexed
+            paths @ paths.push(l.path)
+            sizes[l.path] @ l.size
+
+    workers = worker_count(asked: plan.workers, documents: paths.len())
+    jobs: [str] @= []
+
+    local_length = match plan.embedder
+        .local l  => l.dimensions
+        .remote _ => 0
+
+    for share in deal(paths, hands: workers)
+        jobs @ jobs.push(
+            workers_side.job_text(root: plan.root, model: plan.model, size: plan.size, overlap: plan.overlap, local: local_length, paths: share)
+        )
+
+    answers = threads.run_all_text(body: workers_side.cut_share, values: jobs, workers: workers)?
+    cuts: {str: workers_side.Cut} @= {}
+
+    for answer in answers
+        for c in workers_side.cuts_of(answer)?
+            cuts[c.facts.path] @ c
+
+    facts: [store.DocumentFacts] @= []
+    pieces: [chunking.Piece] @= []
+    local: [[f32]] @= []
+
+    for p in paths
+        c = cuts[p]?
+        facts @ facts.push(
+            store.DocumentFacts(path: p, size: sizes[p].default(0), tokens: c.facts.tokens, pieces: c.pieces.len())
+        )
+
+        for piece in c.pieces
+            numbered @= piece
+            numbered.id @ pieces.len()
+            pieces @ pieces.push(numbered)
+
+        for v in c.vectors
+            local @ local.push(v)
+
+    texts: [str] @= []
+
+    for piece in pieces
+        texts @ texts.push(workers_side.embedded_text(piece))
+
+    vectors_made = match plan.embedder
+        .local _  => local
+        .remote _ => embedder.embed_all(plan.embedder, texts: texts)?
+
+    counter = encodings.counter_for(plan.model)
+    dimensions = dimension_of(vectors_made, plan: plan)
+    index @= vectors.new_index(dimension: dimensions, metric: .cosine, options: vectors.default_options())?
+
+    for piece in pieces
+        vectors.insert(@index, id: piece.id, vector: vectors_made[piece.id])?
+
+    manifest = store.Manifest(
+        root: plan.root,
+        embedder: embedder.kind_of(plan.embedder),
+        embedding_model: embedder.model_of(plan.embedder),
+        dimensions: dimensions,
+        model: plan.model,
+        encoding: counter.encoding_name,
+        exact: counter.exact,
+        documents: facts
+    )
+    return ok(store.Store(manifest: manifest, pieces: pieces, index: index))
+
+# The length of the vectors made: the first one's, or what the embedder asks
+# where there is none.
+function dimension_of(made: [[f32]], plan: Plan) -> i64
+    if made.len() > 0
+        return made[0].len()
+
+    match plan.embedder
+        .local l => return l.dimensions
+        .remote r =>
+            if r.dimensions > 0
+                return r.dimensions
+
+            return embedder.DEFAULT_DIMENSIONS
+
+# How many workers cut `documents` documents: what was asked, or one per
+# processor for 0, never more than the documents and never fewer than one.
+function worker_count(asked: i64, documents: i64) -> i64
+    wanted: i64 @= asked
+
+    if wanted <= 0
+        wanted @ os.processor_count().default(1)
+
+    if wanted > documents
+        wanted @ documents
+
+    if wanted < 1
+        wanted @ 1
+
+    return wanted
+
+# `paths` dealt to `hands` shares, as cards are dealt: the first to the first
+# share, the second to the second, so the shares differ in size by one at
+# most.
+#
+# - `paths`: the documents.
+# - `hands`: how many shares, at least 1.
+function deal(paths: [str], hands: i64) -> [[str]]
+    shares: [[str]] @= []
+
+    for _ in range(from: 0, to: hands)
+        shares @ shares.push([])
+
+    for at in range(from: 0, to: paths.len())
+        share @= shares[at % hands]
+        share @ share.push(paths[at])
+        shares[at % hands] @ share
+
+    return shares
+
+test "deal: five documents dealt to two shares, the first the larger"
+    assert deal(["a", "b", "c", "d", "e"], hands: 2) == [["a", "c", "e"], ["b", "d"]]
+    assert deal([], hands: 1) == [[]]
+
+test "worker_count: what was asked, never past the documents, never below one"
+    assert worker_count(asked: 4, documents: 2) == 2
+    assert worker_count(asked: 3, documents: 10) == 3
+    assert worker_count(asked: 2, documents: 0) == 1
+    assert worker_count(asked: 0, documents: 1) == 1

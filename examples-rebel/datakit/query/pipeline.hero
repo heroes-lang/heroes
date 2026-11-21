@@ -1,0 +1,320 @@
+# The steps of `datakit query` over a table, in SQL's order: the rows
+# `--where` keeps, the groups `--group` and `--agg` fold them into, the
+# columns `--select` names or computes, the order `--sort` gives, and the
+# first rows `--limit` keeps.
+#
+# Sorting is stable and total: rows equal on every key keep their order, and
+# values of different kinds in one column are ordered by kind (numbers, then
+# texts and moments, truth values, bytes, lists, objects, and nulls last), so
+# a sort never fails on a column a file filled carelessly.
+
+use <rebel>/big
+use <rebel>/lists
+use <rebel>/strings
+
+use model/decimal
+use model/model
+use model/tables
+use query/aggregate
+use query/evaluate
+use query/expr
+
+## Steps
+
+# What `datakit query` asks of a table.
+record Steps
+    # The expression a row must hold, empty for every row.
+    where: str
+    # The columns grouped by, none for no grouping.
+    group: [str]
+    # The aggregates of each group, as `aggregate.parse_list` reads them;
+    # empty for none.
+    aggregates: str
+    # The items of the answer, as `expr.parse_items` reads them; empty for
+    # every column.
+    select: str
+    # The sort keys, each a column's name, `-` before it for a descending
+    # order.
+    sort: [str]
+    # How many rows to keep at most; below 0 for every row.
+    limit: i64
+
+# `t` taken through every step `steps` asks, in order.
+#
+# - `t`: the table.
+# - `steps`: the steps.
+#
+# Fails as each step fails, with the step's flag opening the message.
+function run(t: model.Table, steps: Steps) -> model.Table?
+    current @= t
+
+    if steps.where != ""
+        current @ with_flag("--where", answer: filter_rows(current, where: steps.where))?
+
+    if steps.group.len() > 0 || steps.aggregates != ""
+        aggregates = with_flag("--agg", answer: aggregate.parse_list(steps.aggregates))?
+        current @ with_flag("--group", answer: aggregate.group(current, by: steps.group, aggregates: aggregates))?
+
+    if steps.select != ""
+        current @ with_flag("--select", answer: project(current, items_text: steps.select))?
+
+    if steps.sort.len() > 0
+        current @ with_flag("--sort", answer: sort_rows(current, by: steps.sort))?
+
+    if steps.limit >= 0
+        current @ take_rows(current, count: steps.limit)
+    return ok(current)
+
+# `answer`, its failure's message opened with the flag that asked for it.
+#
+# - `flag`: the flag, `--where`.
+# - `answer`: the step's answer.
+function with_flag<T>(flag: str, answer: T?) -> T?
+    return match answer
+        .ok v  => ok(v)
+        .err e => fail(code: e.code, msg: f"{flag}: {e.msg}")
+
+# The rows of `t` for which `where` holds.
+#
+# - `t`: the table.
+# - `where`: the expression.
+#
+# Fails `invalid` where `where` is no expression, names an unknown column, or
+# cannot be computed on a row, the message naming the row from 1.
+function filter_rows(t: model.Table lent, where: str) -> model.Table?
+    condition = expr.parse(where)?
+    scope = evaluate.scope_of(t)
+    evaluate.check(condition, scope: scope)?
+    kept: [[model.Value]] @= []
+    number: i64 @= 0
+
+    for row in t.rows
+        number @ number + 1
+
+        match evaluate.holds(condition, row: row, scope: scope)
+            .ok yes => if yes
+                kept @ kept.push(row)
+            .err e  => return fail(code: e.code, msg: f"row {number}: {e.msg}")
+
+    return ok(model.Table(name: t.name, columns: t.columns, rows: kept))
+
+# A table of the items `items_text` computes for each row of `t`.
+#
+# - `t`: the table.
+# - `items_text`: the items, comma-separated, each an expression with an
+#   optional `as name`.
+#
+# Fails `invalid` where an item is no expression or two items make one
+# column name, and as `filter_rows` fails on a row.
+function project(t: model.Table lent, items_text: str) -> model.Table?
+    items = expr.parse_items(items_text)?
+    scope = evaluate.scope_of(t)
+    names: [str] @= []
+    seen: {str: bool} @= {}
+
+    for item in items
+        evaluate.check(item.expr, scope: scope)?
+
+        if seen[item.name].default(false)
+            return fail(code: aggregate.INVALID, msg: f"two items make the column \"{item.name}\": name one with as")
+        seen[item.name] @ true
+        names @ names.push(item.name)
+
+    rows: [[model.Value]] @= []
+    number: i64 @= 0
+
+    for row in t.rows
+        number @ number + 1
+        out: [model.Value] @= []
+
+        for item in items
+            match evaluate.value_of(item.expr, row: row, scope: scope)
+                .ok v  => out @ out.push(v)
+                .err e => return fail(code: e.code, msg: f"row {number}: {e.msg}")
+
+        rows @ rows.push(out)
+
+    return ok(model.Table(name: t.name, columns: names, rows: rows))
+
+# The first `count` rows of `t`.
+#
+# - `t`: the table.
+# - `count`: how many, 0 or more; past the rows, every row.
+function take_rows(t: model.Table, count: i64) -> model.Table
+    return model.Table(name: t.name, columns: t.columns, rows: lists.take(t.rows, n: count))
+
+## Sorting
+
+# A row with the values it is sorted by, so the order asks no column again.
+record Keyed
+    # The row's values at the sort's columns.
+    keys: [model.Value]
+    # Whether each key sorts descending.
+    descending: [bool]
+    # The row.
+    row: [model.Value]
+
+# The rows of `t` in the order `keys` gives.
+#
+# - `t`: the table.
+# - `by`: column names, each with `-` before it for a descending order.
+#
+# Fails `not_found` where a column named is not in `t`.
+function sort_rows(t: model.Table lent, by: [str]) -> model.Table?
+    columns: [i64] @= []
+    descending: [bool] @= []
+
+    for k in by
+        down = strings.has_prefix(s: k, prefix: "-")
+
+        name = if down
+            k.slice(from: 1, to: k.len())
+        else
+            k
+        columns @ columns.push(tables.column_index(t, name: name)?)
+        descending @ descending.push(down)
+
+    keyed: [Keyed] @= []
+
+    for row in t.rows
+        values: [model.Value] @= []
+
+        for c in columns
+            values @ values.push(row[c])
+
+        keyed @ keyed.push(Keyed(keys: values, descending: descending, row: row))
+
+    sorted = lists.sort_by(keyed, less: is_before)
+    rows: [[model.Value]] @= []
+
+    for k in sorted
+        rows @ rows.push(k.row)
+
+    return ok(model.Table(name: t.name, columns: t.columns, rows: rows))
+
+# Whether `a` sorts before `b`: the first key where they differ decides, in
+# its direction; nulls stand last either way.
+#
+# - `a`: a row with its keys.
+# - `b`: another, with keys of the same columns.
+function is_before(a: Keyed, b: Keyed) -> bool
+    at: i64 @= 0
+
+    while at < a.keys.len()
+        left = a.keys[at]
+        right = b.keys[at]
+        order = order_of(left: left, right: right)
+
+        if order != 0
+            if left == .null_value || right == .null_value
+                return order < 0
+
+            if a.descending[at]
+                return order > 0
+            return order < 0
+        at @ at + 1
+
+    return false
+
+# Below 0, 0 or above 0 as `left` orders before, with or after `right`, by
+# kind first and then by value; every two values have an order.
+#
+# - `left`: a value.
+# - `right`: a value.
+function order_of(left: model.Value, right: model.Value) -> i64
+    by_kind = rank_of(left) - rank_of(right)
+
+    if by_kind != 0
+        return by_kind
+
+    return match left
+        .number a   => match right
+            .number b => big.compare_decimal(
+                a: decimal.parse(a.text).default(zero()),
+                b: decimal.parse(b.text).default(zero())
+            )
+            .null_value | .boolean _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => 0
+        .null_value => 0
+        .boolean _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => strings.compare(
+            a: model.cell_text(left),
+            b: model.cell_text(right)
+        )
+
+# The decimal zero, which no number of the model needs: its text is always
+# one `decimal.parse` reads.
+function zero() -> big.Decimal
+    return big.parse_decimal("0").must()
+
+# The rank of a value's kind in a sort: numbers, texts and moments together,
+# truth values, bytes, lists, objects, nulls.
+#
+# - `v`: the value.
+function rank_of(v: model.Value) -> i64
+    return match v
+        .number _           => 0
+        .text _ | .moment _ => 1
+        .boolean _          => 2
+        .bytes _            => 3
+        .list _             => 4
+        .object _           => 5
+        .null_value         => 6
+
+## Tests
+
+# A table of sales for the tests below.
+function sample() -> model.Table
+    rows: [[model.Value]] = [
+        [.text(v: "north"), .number(text: "19.99"), .number(text: "3")]
+        [.text(v: "south"), .number(text: "0.10"), .null_value]
+        [.text(v: "north"), .number(text: "100"), .number(text: "1")]
+        [.text(v: "east"), .number(text: "0.10"), .number(text: "7")]
+    ]
+    return model.Table(name: "sales", columns: ["region", "price", "units"], rows: rows)
+
+# The steps of no step, which tests change one field of.
+function nothing() -> Steps
+    return Steps(where: "", group: [], aggregates: "", select: "", sort: [], limit: -1)
+
+test "run: where, select with a computed column, sort descending, limit"
+    s @= nothing()
+    s.where @ "units != null"
+    s.select @ "region, price * units as revenue"
+    s.sort @ ["-revenue"]
+    s.limit @ 2
+    t = run(sample(), steps: s).must()
+    assert t.columns == ["region", "revenue"]
+    assert t.rows == [[.text(v: "north"), .number(text: "100")], [.text(v: "north"), .number(text: "59.97")]]
+
+test "run: grouped and sorted by the group's key"
+    s @= nothing()
+    s.group @ ["region"]
+    s.aggregates @ "count() as n, sum(price) as total"
+    s.sort @ ["region"]
+    t = run(sample(), steps: s).must()
+    assert t.rows == [[.text(v: "east"), .number(text: "1"), .number(text: "0.10")], [.text(v: "north"), .number(text: "2"), .number(text: "119.99")], [.text(v: "south"), .number(text: "1"), .number(text: "0.10")]]
+
+test "sort_rows: stable, nulls last in either direction, numbers by value"
+    up = sort_rows(sample(), by: ["units"]).must()
+    assert up.rows.map(first_text) == ["north", "north", "east", "south"]
+    down = sort_rows(sample(), by: ["-units"]).must()
+    assert down.rows.map(first_text) == ["east", "north", "north", "south"]
+    by_price = sort_rows(sample(), by: ["price"]).must()
+    assert by_price.rows.map(first_text) == ["south", "east", "north", "north"]
+
+test "run: a mistake names its flag, and a row its number"
+    s @= nothing()
+    s.where @ "region > 1"
+
+    match run(sample(), steps: s)
+        .ok _  => assert false
+        .err e => assert e.msg == "--where: row 1: cannot order a text and a number"
+
+    s.where @ ""
+    s.select @ "price, price"
+    assert run(sample(), steps: s).is_err()
+
+# The text of a row's first cell, for the tests.
+#
+# - `row`: the row.
+function first_text(row: [model.Value]) -> str
+    return model.cell_text(row[0])

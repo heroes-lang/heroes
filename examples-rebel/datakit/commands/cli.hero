@@ -1,0 +1,317 @@
+# datakit's command line: the commands and their flags declared with
+# `flags`, the parse, the help, and each command run with its failure told
+# and turned into the exit code.
+#
+# The exit code is 0 for a command done, 1 for a command that failed on its
+# data or its files, and 2 for arguments the declaration refuses, as grep and
+# jq part them. `demo` is declared here, so the help lists it, and run by the
+# program's root, since it runs the other commands through this module.
+
+use <rebel>/flags
+
+use commands/screens
+use commands/session
+use commands/transform
+
+## The declaration
+
+# datakit's version, as `--version` prints it.
+constant VERSION: str
+    "0.1.0"
+
+# The commands and their flags.
+function declaration() -> flags.Command
+    root @= flags.with_help_on_empty(
+        flags.with_version(flags.command(name: "datakit", about: "Reads tables and documents in fourteen formats into one model, converts, queries, aggregates, shows and reports on them."), version: VERSION)
+    )
+    flags.add_command(
+        c: @root,
+        sub: flags.command(name: "formats", about: "Lists the formats datakit reads and writes.")
+    )
+    flags.add_command(c: @root, sub: convert_command())
+    flags.add_command(c: @root, sub: query_command())
+    flags.add_command(c: @root, sub: stats_command())
+    flags.add_command(c: @root, sub: sql_command())
+    flags.add_command(c: @root, sub: view_command())
+    flags.add_command(c: @root, sub: report_command())
+    flags.add_command(c: @root, sub: inspect_command())
+    demo @= flags.command(name: "demo", about: "Runs a scripted session over sample data it writes, and removes it.")
+    flags.add(
+        @demo,
+        flags.with_default(flags.option(long: "dir", short: "", value_name: "DIR", help: "the folder the session works in"), "build/datakit-demo")
+    )
+    flags.add_command(c: @root, sub: demo)
+    return root
+
+# Adds the flags that read an input: `INPUT`, `--from`, `--raw`, `--sheet`
+# and `--path`.
+#
+# - `c`: the command, grown in place.
+# - `path_flag`: whether `--path` is declared.
+function add_input(@c: flags.Command, path_flag: bool)
+    flags.add(
+        @c,
+        flags.with_default(flags.with_arity(flags.positional(name: "INPUT", help: "the file read, - for the standard input"), .optional), "-")
+    )
+    flags.add(
+        @c,
+        flags.with_section(flags.option(long: "from", short: "f", value_name: "FORMAT", help: "the input's format, where its extension does not say"), "Input")
+    )
+    flags.add(
+        @c,
+        flags.with_section(flags.flag(long: "raw", short: "", help: "keep every field of CSV, INI, properties and XML a text"), "Input")
+    )
+    flags.add(
+        @c,
+        flags.with_section(flags.option(long: "sheet", short: "", value_name: "NAME", help: "the sheet of a workbook, the first by default"), "Input")
+    )
+
+    if path_flag
+        flags.add(
+            @c,
+            flags.with_section(flags.option(long: "path", short: "p", value_name: "QUERY", help: "the JSONPath query whose values are read (RFC 9535)"), "Input")
+        )
+
+# Adds the flags that write a result: `--to` and `--output`.
+#
+# - `c`: the command, grown in place.
+function add_output(@c: flags.Command)
+    flags.add(
+        @c,
+        flags.with_section(flags.option(long: "to", short: "t", value_name: "FORMAT", help: "the format written, else -o's extension"), "Output")
+    )
+    flags.add(
+        @c,
+        flags.with_section(flags.option(long: "output", short: "o", value_name: "FILE", help: "the file written, the standard output by default"), "Output")
+    )
+
+# `convert`'s declaration.
+function convert_command() -> flags.Command
+    c @= flags.command(name: "convert", about: "Reads a file and writes it in another format.")
+    add_input(@c, path_flag: true)
+    add_output(@c)
+    return c
+
+# `query`'s declaration.
+function query_command() -> flags.Command
+    c @= flags.command(name: "query", about: "Filters, groups, aggregates, computes and sorts a table's rows.")
+    add_input(@c, path_flag: true)
+    flags.add(@c, flags.option(long: "where", short: "w", value_name: "EXPR", help: "keep the rows where EXPR is true"))
+    flags.add(
+        @c,
+        flags.with_delimiter(flags.option(long: "group", short: "g", value_name: "COLUMNS", help: "group the rows by these columns"), ",")
+    )
+    flags.add(
+        @c,
+        flags.option(long: "agg", short: "a", value_name: "AGGREGATES", help: "count(), sum(c), mean(c), median(c), min(c), max(c), stdev(c), var(c), distinct(c), p90(c), each with as NAME")
+    )
+    flags.add(
+        @c,
+        flags.option(long: "select", short: "s", value_name: "ITEMS", help: "the columns written, each an expression with as NAME")
+    )
+    flags.add(
+        @c,
+        flags.with_delimiter(flags.option(long: "sort", short: "", value_name: "COLUMNS", help: "sort by these columns, -name for descending"), ",")
+    )
+    flags.add(
+        @c,
+        flags.with_kind(flags.option(long: "limit", short: "n", value_name: "N", help: "keep the first N rows"), .integer)
+    )
+    add_output(@c)
+    return c
+
+# `stats`'s declaration.
+function stats_command() -> flags.Command
+    c @= flags.command(
+        name: "stats",
+        about: "Says what each column holds: kind, counts, least, greatest, exact sum and mean, deviation, percentiles."
+    )
+    add_input(@c, path_flag: true)
+    flags.add(
+        @c,
+        flags.with_delimiter(flags.option(long: "columns", short: "c", value_name: "COLUMNS", help: "the columns described, every one by default"), ",")
+    )
+    flags.add(
+        @c,
+        flags.with_default(flags.with_delimiter(flags.option(long: "percentiles", short: "", value_name: "LIST", help: "the percentiles reported"), ","), "25,50,75")
+    )
+    add_output(@c)
+    return c
+
+# `sql`'s declaration.
+function sql_command() -> flags.Command
+    c @= flags.command(name: "sql", about: "Loads files as tables into SQLite and writes what a statement answers.")
+    flags.add(
+        @c,
+        flags.with_arity(flags.positional(name: "INPUT", help: "a file read as a table named by its stem, or NAME=FILE"), .at_least_one)
+    )
+    flags.add(
+        @c,
+        flags.with_required(flags.option(long: "query", short: "q", value_name: "SQL", help: "the statement run"))
+    )
+    flags.add(
+        @c,
+        flags.option(long: "db", short: "", value_name: "FILE", help: "the database file kept, in memory by default")
+    )
+    flags.add(
+        @c,
+        flags.with_section(flags.option(long: "from", short: "f", value_name: "FORMAT", help: "the inputs' format, where their extensions do not say"), "Input")
+    )
+    flags.add(
+        @c,
+        flags.with_section(flags.flag(long: "raw", short: "", help: "keep every field of CSV, INI, properties and XML a text"), "Input")
+    )
+    flags.add(
+        @c,
+        flags.with_section(flags.option(long: "sheet", short: "", value_name: "NAME", help: "the sheet of a workbook, the first by default"), "Input")
+    )
+    add_output(@c)
+    return c
+
+# `view`'s declaration.
+function view_command() -> flags.Command
+    c @= flags.command(name: "view", about: "Shows a table in a scrollable full-screen view.")
+    add_input(@c, path_flag: true)
+    flags.add(
+        @c,
+        flags.option(long: "headless", short: "", value_name: "WxH", help: "draw frames of this size as text instead of using the terminal")
+    )
+    flags.add(
+        @c,
+        flags.with_delimiter(flags.option(long: "keys", short: "", value_name: "KEYS", help: "the keys pressed in a headless run: up, down, pgdn, s, q, ..."), ",")
+    )
+    return c
+
+# `report`'s declaration.
+function report_command() -> flags.Command
+    c @= flags.command(name: "report", about: "Writes a PDF of a table: a summary and its first rows.")
+    add_input(@c, path_flag: true)
+    flags.add(
+        @c,
+        flags.with_required(flags.option(long: "output", short: "o", value_name: "FILE", help: "the PDF written"))
+    )
+    flags.add(@c, flags.option(long: "title", short: "", value_name: "TEXT", help: "the report's title"))
+    flags.add(
+        @c,
+        flags.with_delimiter(flags.option(long: "group", short: "g", value_name: "COLUMNS", help: "summarise by these columns"), ",")
+    )
+    flags.add(@c, flags.option(long: "agg", short: "a", value_name: "AGGREGATES", help: "the aggregates of each group"))
+    flags.add(
+        @c,
+        flags.with_kind(flags.option(long: "rows", short: "", value_name: "N", help: "the table's rows drawn after the summary, 30 by default"), .integer)
+    )
+    return c
+
+# `inspect`'s declaration.
+function inspect_command() -> flags.Command
+    c @= flags.command(name: "inspect", about: "Says what a file holds: its format, its shape, its content's digest.")
+    add_input(@c, path_flag: false)
+    return c
+
+## Parsing
+
+# What the command line asks: an answer already given, or a command to run.
+variant Parsed
+    # The parse answered by itself: the help, the version, or a refusal.
+    finished
+        # The exit code.
+        code: i64
+    # A command was chosen.
+    chosen
+        # Its name.
+        name: str
+        # What the parse found for it.
+        found: flags.Found
+
+# What `arguments` ask, the help or the version written, or the refusal told.
+#
+# - `arguments`: the arguments after the program's name.
+# - `out`: where the answer is written.
+function parse_command(arguments: [str], out: session.Out) -> Parsed
+    found = match flags.parse(declaration(), arguments)
+        .ok f => f
+        .err e =>
+            session.complain(out, message: e.msg)
+            return .finished(code: 2)
+
+    if flags.is_help(found)
+        return .finished(code: written(out, text: flags.help_text(found) + "\n"))
+
+    if flags.is_version(found)
+        return .finished(code: written(out, text: flags.version_text(found) + "\n"))
+
+    return match flags.subcommand(found)
+        .ok sub => .chosen(name: flags.name_of(sub), found: sub)
+        .err e =>
+            session.complain(out, message: e.msg)
+            .finished(code: 2)
+
+# Writes `text`, answering 0, or 1 where the write fails.
+#
+# - `out`: where it is written.
+# - `text`: the text.
+function written(out: session.Out, text: str) -> i64
+    return match session.say(out, text: text)
+        .ok _  => 0
+        .err _ => 1
+
+## Running
+
+# Runs the command `arguments` ask and answers its exit code; the demo is
+# refused here, the program's root running it.
+#
+# - `arguments`: the arguments after the program's name.
+# - `out`: where the command writes.
+function run(arguments: [str], out: session.Out) -> i64
+    return match parse_command(arguments, out: out)
+        .finished d => d.code
+        .chosen c   => execute(c.name, found: c.found, out: out)
+
+# Runs the command `name` with what its parse found, telling a failure and
+# answering 1 for it.
+#
+# - `name`: the command's name.
+# - `found`: what the parse found for it.
+# - `out`: where it writes.
+function execute(name: str, found: flags.Found, out: session.Out) -> i64
+    outcome: ()? = if name == "formats"
+        transform.formats_command(out)
+    else if name == "convert"
+        transform.convert(out, f: found)
+    else if name == "query"
+        transform.query(out, f: found)
+    else if name == "stats"
+        transform.stats(out, f: found)
+    else if name == "sql"
+        transform.sql_command(out, f: found)
+    else if name == "view"
+        screens.view(out, f: found)
+    else if name == "report"
+        screens.report_command(out, f: found)
+    else if name == "inspect"
+        transform.inspect_command(out, f: found)
+    else
+        fail(code: transform.INVALID, msg: f"{name} runs only as the program's own command")
+
+    match outcome
+        .ok _ => return 0
+        .err e =>
+            session.complain(out, message: e.msg)
+            return 1
+
+## Tests
+
+test "parse_command: a command chosen, the help, and arguments refused"
+    out = session.transcript()
+
+    match parse_command(["query", "a.csv", "--where", "x > 1"], out: out)
+        .chosen c   => assert c.name == "query"
+        .finished _ => assert false
+
+    match parse_command(["query", "a.csv", "--limit", "ten"], out: out)
+        .chosen _   => assert false
+        .finished d => assert d.code == 2
+
+    match parse_command(["convert", "a.csv", "--frmo", "csv"], out: out)
+        .chosen _   => assert false
+        .finished d => assert d.code == 2

@@ -1,0 +1,252 @@
+# A client's connection to a chat server: an account made and a token asked
+# for over the HTTP API, then the WebSocket opened with that token and every
+# notice the server sends read into the client's view. The terminal client
+# and the demo's scripted clients both go through here, so what a person sees
+# and what the demo prints are made by one code path.
+#
+# `sync` is how a client knows the server has caught up with it: the server
+# answers `synced` only after every notice of the requests before it, so a
+# client that syncs after acting has seen everything its action caused.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/json
+use <rebel>/net
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/url
+use <rebel>/websocket
+
+use client/views
+use core/model
+use protocol/notices
+use protocol/objects
+use protocol/wire
+
+# The code of a server's refusal, or of a URL that names no server.
+constant INVALID: str
+    "invalid"
+
+# The code of a sign-in refused.
+constant PERMISSION: str
+    "permission"
+
+# How long a scripted wait for a notice lasts, in milliseconds.
+constant WAIT_MS: i64
+    15_000
+
+# Where a server answers: its API and its WebSocket.
+record Endpoints
+    # The API's base, `http://host:port`.
+    api: str
+    # The WebSocket, `ws://host:port/socket`.
+    socket: str
+
+# The places of the server `text` names: `http://`, `https://`, `ws://` or
+# `wss://`, its host and its port; a path is ignored.
+#
+# - `text`: the URL a person gives.
+#
+# Fails `invalid` where it is no URL of those schemes or names no host.
+function endpoints_of(text: str) -> Endpoints?
+    u = match url.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"\"{text}\" is no URL: {e.msg}")
+
+    if u.host == ""
+        return fail(code: INVALID, msg: f"\"{text}\" names no host")
+
+    host = if strings.contains(s: u.host, substr: ":")
+        f"[{u.host}]"
+    else
+        u.host
+
+    place = if u.port == ""
+        host
+    else
+        f"{host}:{u.port}"
+
+    return match u.scheme
+        "http" | "ws" => ok(Endpoints(api: f"http://{place}", socket: f"ws://{place}/socket"))
+        "https" | "wss" => ok(Endpoints(api: f"https://{place}", socket: f"wss://{place}/socket"))
+        _ => fail(code: INVALID, msg: f"a chat server is reached by http, https, ws or wss, not {u.scheme}")
+
+# The body of a sign-in or a registration: the name and the password.
+#
+# - `user`: the user's name.
+# - `password`: the password.
+function credentials_body(user: str, password: str) -> [u8]
+    v: json.Value = .object(members: {"user": objects.text(user), "password": objects.text(password)})
+    return bytes.from_text(json.format(v).must())
+
+# The message of an API error's body, `{"message": ...}`, or its status
+# where the body says none.
+#
+# - `response`: the response.
+function message_of(response: http.Response) -> str
+    return match http.json_of(response)
+        .ok v  => objects.text_of(v, key: "message").default(f"the server answered {response.status}")
+        .err _ => f"the server answered {response.status}"
+
+# Makes an account for `user`, and answers whether it is new: false where
+# the name was taken already, which a person signing in again expects.
+#
+# - `api`: the API's base.
+# - `user`: the user's name.
+# - `password`: the password.
+#
+# Fails `invalid` where the server refuses the name or the password, and as
+# `http.post` fails.
+function register(api: str, user: str, password: str) -> bool?
+    response = http.post(http.default_client(), target: api + "/register", content_type: "application/json", body: credentials_body(user: user, password: password))?
+
+    if response.status == http.STATUS_CREATED
+        return ok(true)
+
+    if response.status == http.STATUS_CONFLICT
+        return ok(false)
+
+    return fail(code: INVALID, msg: message_of(response))
+
+# A token for `user`, signed in with `password`.
+#
+# - `api`: the API's base.
+# - `user`: the user's name.
+# - `password`: the password.
+#
+# Fails `permission` where the name or the password is wrong, and as
+# `http.post` fails.
+function sign_in(api: str, user: str, password: str) -> str?
+    response = http.post(http.default_client(), target: api + "/login", content_type: "application/json", body: credentials_body(user: user, password: password))?
+
+    if response.status != http.STATUS_OK
+        return fail(code: PERMISSION, msg: message_of(response))
+
+    return objects.text_of(http.json_of(response)?, key: "token")
+
+# A client connected to a server: its WebSocket and what it knows.
+record Session
+    # The connection, the session's to close.
+    socket: websocket.Conn
+    # What the client knows, from every notice read.
+    view: views.View
+    # The number the next `sync` carries.
+    next_ref: i64
+
+# A session opened on `socket_url` with `token`, its welcome read.
+#
+# - `socket_url`: the server's WebSocket.
+# - `token`: the token `sign_in` answered.
+# - `now`: the client's time.
+#
+# The program owes the session a `close`. Fails as `websocket.connect` fails,
+# `invalid` where the server refuses the token, and as `receive` fails.
+function open(socket_url: str, token: str, now: time.Instant) -> Session?
+    c @= websocket.default_client()
+    c.headers @ [http.Header(name: "Authorization", value: "Bearer " + token)]
+
+    socket = match websocket.connect(target: socket_url, client: c)
+        .ok got => got
+        .err e  => return fail(code: e.code, msg: f"the server refused the connection: {e.msg}")
+
+    s @= Session(socket: socket, view: views.new_view(), next_ref: 1)
+
+    match receive(@s, now: now)
+        .ok _ => return ok(s)
+        .err e =>
+            _ = websocket.drop(@s.socket).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Sends the request `c`.
+#
+# - `s`: the session.
+# - `c`: the request.
+#
+# Fails as `websocket.write_text` fails.
+function send(@s: Session, c: wire.Command) -> ()?
+    return websocket.write_text(@s.socket, text: wire.encode(c))
+
+# The next notice of the server, waiting at most `WAIT_MS` for it, applied
+# to the view.
+#
+# - `s`: the session.
+# - `now`: the client's time.
+#
+# Fails `timeout` where none comes in time, `invalid` where the server sends
+# what is no notice, and as `websocket.read_message` fails.
+function receive(@s: Session, now: time.Instant) -> notices.Notice?
+    net.set_deadline(s.socket.stream, deadline_ms: WAIT_MS)?
+
+    text = match websocket.read_message(@s.socket)?
+        .text t   => t.text
+        .binary _ => return fail(code: INVALID, msg: "the server sent bytes where a notice is text")
+
+    n = notices.decode(text)?
+    views.apply(@s.view, n: n, now: now)
+    return ok(n)
+
+# Applies every notice a read completes, for a client that waits with `poll`
+# and reads only when its stream is ready.
+#
+# - `s`: the session.
+# - `now`: the client's time.
+#
+# Fails as `websocket.read_ready` fails; a notice that does not read is
+# skipped.
+function receive_ready(@s: Session, now: time.Instant) -> ()?
+    for m in websocket.read_ready(@s.socket)?
+        match m
+            .text t =>
+                match notices.decode(t.text)
+                    .ok n  => views.apply(@s.view, n: n, now: now)
+                    .err _ => _ = 0
+            .binary _ => _ = 0
+
+    return ok()
+
+# Asks the server to say when it has caught up, and reads every notice until
+# it does.
+#
+# - `s`: the session.
+# - `now`: the client's time.
+#
+# Fails as `send` and `receive` fail.
+function sync(@s: Session, now: time.Instant) -> ()?
+    ref = s.next_ref
+    s.next_ref @ ref + 1
+    send(@s, c: .sync(ref: ref))?
+
+    while s.view.synced != ref
+        _ = receive(@s, now: now)?
+
+    return ok()
+
+# Reads notices until a message is posted in `room`, and answers it.
+#
+# - `s`: the session.
+# - `room`: the room's name.
+# - `now`: the client's time.
+#
+# Fails as `receive` fails, `timeout` among them.
+function until_posted(@s: Session, room: str, now: time.Instant) -> model.Message?
+    while true
+        match receive(@s, now: now)?
+            .posted p =>
+                if p.message.room == room
+                    return ok(p.message)
+            .welcome _ | .presence _ | .joined _ | .left _ | .direct _ | .typing _ | .page _ | .edited _ | .refused _ | .synced _ => _ = 0
+
+# Ends the session by the closing handshake.
+#
+# - `s`: the session, its connection closed whatever this answers.
+#
+# Fails as `websocket.close` fails.
+function close(@s: Session) -> ()?
+    return websocket.close(@s.socket, code: websocket.CLOSE_NORMAL, reason: "bye")
+
+test "endpoints_of: http, wss with a port, an IPv6 host, and a scheme of none"
+    assert endpoints_of("http://127.0.0.1:8080").must() == Endpoints(api: "http://127.0.0.1:8080", socket: "ws://127.0.0.1:8080/socket")
+    assert endpoints_of("wss://chat.example.org/").must() == Endpoints(api: "https://chat.example.org", socket: "wss://chat.example.org/socket")
+    assert endpoints_of("ws://[::1]:9000").must().api == "http://[::1]:9000"
+    assert endpoints_of("ftp://x").is_err()
+    assert endpoints_of("not a url").is_err()

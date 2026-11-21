@@ -1,0 +1,60 @@
+# registry: the site that serves Heroes packages, and its client.
+#
+# A publisher packs a package's folder into a reproducible archive (a tar of
+# one folder `<name>-<version>`, compressed by Zstandard, xz or gzip), signs
+# a statement of its name, version and digest with an Ed25519 key, and
+# uploads both. The server opens the archive as a stranger's, validates its
+# `heroes.toml` against a JSON Schema, checks the signature against the
+# publisher's registered key, keeps the archive under its SHA-256 and the
+# version in SQLite, and indexes it for search. A package manager lists and
+# searches packages, resolves a SemVer range to the highest version not
+# yanked, reads the package index, fetches an archive and verifies its digest
+# and signature against its own trust file, and asks what changed between two
+# versions: the manifest as a JSON Patch, each file as a unified diff.
+# Publishers hold tokens with scopes; publications are rate-limited.
+#
+# Run for real:
+#
+#     registry token --config registry.toml --publisher ana
+#     registry serve --config registry.toml
+#     registry keygen --out ana.pem
+#     registry add-key --registry http://127.0.0.1:8470/ --token $T --key ana.pem
+#     registry pack ./textkit --out textkit.tar.zst
+#     registry publish textkit.tar.zst --registry http://127.0.0.1:8470/ --token $T --key ana.pem
+#     registry resolve textkit '^1.0' --registry http://127.0.0.1:8470/
+#     registry fetch textkit 1.1.0 --trust ana-keys.pem --out textkit.tar.zst --registry ...
+#
+# and `registry demo build/registry-demo` runs the whole of it on loopback in
+# a folder it makes and removes, printing a transcript that is the same on
+# every run (`main.args`, `main.expected`).
+#
+# Rebel's packages and what for:
+#
+# - `web`: the router, the 404 and 405, the Bearer challenge, the publishers'
+#   rate limit, entity tags and the request log; `http`: the server's loop of
+#   requests and the client's session, multipart uploads, retries; `net`: the
+#   listener on loopback; `threads`: the demo's client beside its server;
+#   `os`: the stop, secure randomness, the environment.
+# - `semver`: versions read and ordered, ranges resolved as Cargo reads them.
+# - `archive`: tar read and written; `compress`, `compress/zstd`,
+#   `compress/xz`: the three packings an upload may take.
+# - `hash`: the CRC-32 that ends every token, so a mistyped one is told
+#   without a database; `crypto`: SHA-256 digests and constant-time
+#   comparison; `crypto/keypairs`: Ed25519 signatures; `pem`: keys and
+#   detached signatures as PEM blocks with RFC 1421 headers.
+# - `sql`, `sql/sqlite`, `sql/migrate`: the database and its numbered
+#   migrations; `fs`, `path`: the archives kept by digest, folders walked with
+#   an ignore file, POSIX paths of archive entries checked.
+# - `toml`: the settings and every manifest; `json`, `json/schema`: the API's
+#   bodies and the manifest's schema; `json/patch`: a manifest's changes;
+#   `diff`: a file's changes, and a new name's likeness to another
+#   publisher's (typosquatting); `search`: BM25 over names and descriptions.
+# - `retries`: the client's waits, and a 429's `Retry-After` read; `url`: the
+#   registry's URL and every query; `flags`: this command line; `log`, `io`,
+#   `time`, `bytes`, `strings`, `numbers`: what the rest stands on.
+
+use cli/commands
+
+# Runs the command the arguments name, and ends with its exit code.
+function main()
+    exit(code: commands.run(args()))

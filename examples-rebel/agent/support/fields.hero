@@ -1,0 +1,155 @@
+# The members of a JSON object read as the agent's own values, and objects
+# built from them: the store's files, the tools' arguments and the stand-ins'
+# requests are all JSON, and every reader of one fails `invalid` with the
+# member's name rather than aborting on a value from outside.
+
+use <rebel>/json
+
+# The code of a member that is missing or of another kind.
+constant INVALID: str
+    "invalid"
+
+# The text of the member `key` of `v`.
+#
+# - `v`: an object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is missing or not a text, the message naming it.
+function text_at(v: json.Value, key: str) -> str?
+    match json.member(v, key: key)
+        .ok m =>
+            match json.text_of(m)
+                .ok t  => return ok(t)
+                .err _ => return fail(code: INVALID, msg: f"\"{key}\" is not a text")
+        .err _ => return fail(code: INVALID, msg: f"\"{key}\" is missing")
+
+# The text of the member `key` of `v`, or `fallback` where it is missing.
+#
+# - `v`: an object.
+# - `key`: the member's name.
+# - `fallback`: what a missing member reads as.
+#
+# Fails `invalid` where the member is there and is not a text.
+function text_or(v: json.Value, key: str, fallback: str) -> str?
+    match json.member(v, key: key)
+        .ok m =>
+            match json.text_of(m)
+                .ok t  => return ok(t)
+                .err _ => return fail(code: INVALID, msg: f"\"{key}\" is not a text")
+        .err _ => return ok(fallback)
+
+# The integer of the member `key` of `v`.
+#
+# - `v`: an object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is missing or not an integer.
+function int_at(v: json.Value, key: str) -> i64?
+    match json.member(v, key: key)
+        .ok m =>
+            match json.int_of(m)
+                .ok n  => return ok(n)
+                .err _ => return fail(code: INVALID, msg: f"\"{key}\" is not an integer")
+        .err _ => return fail(code: INVALID, msg: f"\"{key}\" is missing")
+
+# The integer of the member `key` of `v`, or `fallback` where it is missing.
+#
+# - `v`: an object.
+# - `key`: the member's name.
+# - `fallback`: what a missing member reads as.
+#
+# Fails `invalid` where the member is there and is not an integer.
+function int_or(v: json.Value, key: str, fallback: i64) -> i64?
+    match json.member(v, key: key)
+        .ok m =>
+            match json.int_of(m)
+                .ok n  => return ok(n)
+                .err _ => return fail(code: INVALID, msg: f"\"{key}\" is not an integer")
+        .err _ => return ok(fallback)
+
+# The elements of the list that is the member `key` of `v`.
+#
+# - `v`: an object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is missing or not a list.
+function list_at(v: json.Value, key: str) -> [json.Value]?
+    match json.member(v, key: key)
+        .ok m =>
+            match json.items_of(m)
+                .ok items => return ok(items)
+                .err _    => return fail(code: INVALID, msg: f"\"{key}\" is not a list")
+        .err _ => return fail(code: INVALID, msg: f"\"{key}\" is missing")
+
+# The texts of the list that is the member `key` of `v`, an empty list where
+# it is missing.
+#
+# - `v`: an object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is there and is not a list of texts.
+function texts_or_none(v: json.Value, key: str) -> [str]?
+    match json.member(v, key: key)
+        .ok m =>
+            out: [str] @= []
+
+            for item in json.items_of(m)?
+                match json.text_of(item)
+                    .ok t  => out @ out.push(t)
+                    .err _ => return fail(code: INVALID, msg: f"\"{key}\" holds what is not a text")
+
+            return ok(out)
+        .err _ => return ok([])
+
+# The JSON number of `n`, exact up to `json.MAX_EXACT_INT` and refused past it
+# as `json.from_int` refuses it.
+#
+# - `n`: the integer.
+function number(n: i64) -> json.Value
+    match json.from_int(n)
+        .ok v  => return v
+        .err _ => return .number(v: to_f64(n))
+
+# The JSON text of `s`.
+#
+# - `s`: any text.
+function text(s: str) -> json.Value
+    return .text(v: s)
+
+# The JSON list of the texts `each`.
+#
+# - `each`: the texts, in order.
+function texts(each: [str]) -> json.Value
+    items: [json.Value] @= []
+
+    for s in each
+        items @ items.push(.text(v: s))
+
+    return .list(items: items)
+
+# `v` written on one line, or a JSON text that says it could not be where `v`
+# holds a `nan` or an infinity, which no value the agent builds does.
+#
+# - `v`: the value.
+function compact(v: json.Value) -> str
+    return json.format(v).default("null")
+
+test "text_at: a text, a missing member, and a number where a text is read"
+    v = json.parse("{\"a\": \"x\", \"n\": 3}").must()
+    assert text_at(v, key: "a").must() == "x"
+    assert text_at(v, key: "b").is_err() && text_at(v, key: "n").is_err()
+    assert text_or(v, key: "b", fallback: "d").must() == "d"
+
+test "int_at: an integer, a fraction refused, a fallback"
+    v = json.parse("{\"n\": 3, \"f\": 1.5}").must()
+    assert int_at(v, key: "n").must() == 3 && int_at(v, key: "f").is_err()
+    assert int_or(v, key: "m", fallback: 7).must() == 7
+
+test "texts_or_none: a list of texts, a missing list, a list of numbers refused"
+    v = json.parse("{\"a\": [\"x\", \"y\"], \"b\": [1]}").must()
+    assert texts_or_none(v, key: "a").must() == ["x", "y"]
+    assert texts_or_none(v, key: "c").must() == []
+    assert texts_or_none(v, key: "b").is_err()
+
+test "number: an integer written with no fraction"
+    assert compact(number(42)) == "42" && compact(texts(["a"])) == "[\"a\"]"

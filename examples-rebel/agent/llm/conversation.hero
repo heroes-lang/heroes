@@ -1,0 +1,83 @@
+# What asking a model gave: its answer, every tool it called with what the
+# tool answered, the rounds of the tool loop, the tokens the API counted, and
+# what the agent did on the way (a retry, a provider passed over). It is the
+# record both providers' loops fill and every command prints, so an answer
+# reads the same whichever API gave it.
+
+use support/report
+use tools/outcomes
+
+# One call of a tool a model made.
+record ToolUse
+    # The tool's name.
+    name: str
+    # Its arguments as the model wrote them, JSON text.
+    input: str
+    # What the tool answered.
+    outcome: outcomes.Outcome
+
+# A model's answer and how it was reached.
+record Answer
+    # The provider that answered: `anthropic` or `openai`.
+    provider: str
+    # The model that answered.
+    model: str
+    # Its text.
+    text: str
+    # The tools it called, in order.
+    uses: [ToolUse]
+    # The requests the tool loop sent, the first included.
+    rounds: i64
+    # The input tokens the API counted, summed over the rounds.
+    input_tokens: i64
+    # The output tokens the API counted, summed over the rounds.
+    output_tokens: i64
+    # What the agent did on the way: each retry, each provider passed over.
+    notes: [str]
+
+# The lines that tell `a`: its notes, each tool call and the first line of
+# what the tool answered, then the answer, indented under its provider.
+#
+# - `a`: the answer.
+function lines_of(a: Answer) -> [str]
+    out: [str] @= []
+
+    for n in a.notes
+        out @ out.push(f"  note: {n}")
+
+    for u in a.uses
+        mark = if u.outcome.is_error
+            "refused"
+        else
+            "answered"
+
+        out @ out.push(f"  tool {u.name} {u.input}")
+        out @ out.push(f"    {mark}: {first_line(u.outcome.text)}")
+
+    out @ out.push(f"  {a.provider} {a.model}, {a.rounds} round(s), {a.input_tokens} tokens in, {a.output_tokens} out:")
+
+    for l in report.indented(a.text, spaces: 4)
+        out @ out.push(l)
+
+    return out
+
+# The first line of `text`, all of it where it holds one.
+function first_line(text: str) -> str
+    for at in range(from: 0, to: text.len())
+        if text[at] == '\n'
+            return text.slice(from: 0, to: at) + " ..."
+
+    return text
+
+test "lines_of: a note, a refused tool call, then the answer indented"
+    a = Answer(
+        provider: "openai",
+        model: "gpt-test",
+        text: "No.",
+        uses: [ToolUse(name: "run_command", input: "{}", outcome: outcomes.refused("not allowed\nat all"))],
+        rounds: 2,
+        input_tokens: 10,
+        output_tokens: 3,
+        notes: ["retried"]
+    )
+    assert lines_of(a) == ["  note: retried", "  tool run_command {}", "    refused: not allowed ...", "  openai gpt-test, 2 round(s), 10 tokens in, 3 out:", "    No."]

@@ -1,0 +1,194 @@
+# XML documents read into the model and written from it, through `xml`, by
+# the convention xmltodict and most converters keep.
+#
+# An element is an object: its attributes are members named `@` and the
+# attribute's name, its child elements are members named by their tag, and
+# its text, where it also has attributes or children, is the member `#text`.
+# A tag that stands several times among one element's children is a list, in
+# document order; one that stands once is its value alone. An element of text
+# alone is that text, typed by `model/infer` unless `--raw`, and an empty
+# one is null. Comments and processing instructions are left out. The file is
+# an object of one member, the root.
+#
+# Written, the same convention runs backwards; a list that is no member of an
+# object is a run of `item` elements, and a document that is not an object of
+# one member is put under a root named for the table. A name that is no XML
+# name fails `xml.format`, so a column named `unit price` is refused rather
+# than renamed.
+
+use <rebel>/strings
+use <rebel>/xml
+
+use model/infer
+use model/model
+
+## Reading
+
+# The document of the XML text `text`.
+#
+# - `text`: the file's text, UTF-8.
+# - `raw`: whether every text stays a text.
+#
+# Fails as `xml.parse_with` fails: `invalid` with the place, `limit` past the
+# nesting `model.MAX_DEPTH` allows or the bytes `xml` allows, `unsupported`
+# for a document type declaring entities.
+function read(text: str, raw: bool) -> model.Value?
+    options = xml.ParseOptions(max_depth: model.MAX_DEPTH, max_bytes: xml.DEFAULT_MAX_BYTES)
+    doc = xml.parse_with(text, options)?
+    root = doc.root
+    return ok(.object(members: [model.Member(name: xml.format_name(root.name), value: of_element(root, raw: raw))]))
+
+# The value of the element `e`, by the convention above.
+#
+# - `e`: the element.
+# - `raw`: whether every text stays a text.
+function of_element(e: xml.Element, raw: bool) -> model.Value
+    members: [model.Member] @= []
+
+    for a in e.attributes
+        members @ members.push(model.Member(name: "@" + xml.format_name(a.name), value: typed(a.value, raw: raw)))
+
+    order: [str] @= []
+    grouped: {str: [model.Value]} @= {}
+    texts: [str] @= []
+
+    for node in e.children
+        match node
+            .element inner =>
+                tag = xml.format_name(inner.v.name)
+                value = of_element(inner.v, raw: raw)
+
+                match grouped[tag]
+                    .ok found =>
+                        more @= found
+                        more @ more.push(value)
+                        grouped[tag] @ more
+                    .err _ =>
+                        order @ order.push(tag)
+                        grouped[tag] @ [value]
+            .text t                     => texts @ texts.push(t.v)
+            .comment _ | .instruction _ => _ = 0
+
+    text = strings.trim(texts.join(""))
+
+    if members.len() == 0 && order.len() == 0
+        return typed(text, raw: raw)
+
+    for tag in order
+        values = grouped[tag].must()
+
+        if values.len() == 1
+            members @ members.push(model.Member(name: tag, value: values[0]))
+        else
+            members @ members.push(model.Member(name: tag, value: .list(items: values)))
+
+    if text != ""
+        members @ members.push(model.Member(name: "#text", value: typed(text, raw: raw)))
+    return .object(members: members)
+
+# The value of a text, typed unless `raw`.
+#
+# - `s`: the text.
+# - `raw`: whether it stays a text; the empty text is null either way, since
+#   an empty element says nothing more.
+function typed(s: str, raw: bool) -> model.Value
+    if s == ""
+        return .null_value
+    return infer.row([s], raw: raw)[0]
+
+## Writing
+
+# `v` as an XML document, laid out two spaces a level, with its declaration.
+#
+# - `v`: the document.
+# - `name`: the root's name where `v` is not an object of one member.
+#
+# Fails as `xml.format_indented` fails: `invalid` for a name that is no XML
+# name, or a text holding a character XML cannot hold.
+function write(v: model.Value, name: str) -> str?
+    root = match v
+        .object o                                                                       => if o.members.len() == 1
+            element_of(o.members[0].name, v: o.members[0].value)
+        else
+            element_of(name, v: v)
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ | .list _ => element_of(name, v: v)
+
+    declared: xml.Declaration = .present(version: "1.0", encoding: "UTF-8", standalone: "")
+    doc = xml.Document(declaration: declared, before: [], root: root, after: [])
+    return ok(xml.format_indented(doc, 2)? + "\n")
+
+# The element named `tag` that holds `v`.
+#
+# - `tag`: the element's name.
+# - `v`: what it holds.
+function element_of(tag: str, v: model.Value) -> xml.Element
+    attributes: [xml.Attribute] @= []
+    children: [xml.Node] @= []
+
+    match v
+        .object o =>
+            for m in o.members
+                if strings.has_prefix(s: m.name, prefix: "@")
+                    local = m.name.slice(from: 1, to: m.name.len())
+                    attributes @ attributes.push(xml.Attribute(name: name_of(local), value: model.cell_text(m.value)))
+                else if m.name == "#text"
+                    children @ children.push(.text(v: model.cell_text(m.value)))
+                else
+                    add_children(@children, tag: m.name, v: m.value)
+        .list l =>
+            for item in l.items
+                children @ children.push(.element(v: element_of("item", v: item)))
+        .null_value                                             => _ = 0
+        .boolean _ | .number _ | .text _ | .bytes _ | .moment _ => children @ children.push(
+            .text(v: model.cell_text(v))
+        )
+
+    return xml.Element(name: name_of(tag), attributes: attributes, children: children)
+
+# Adds the elements of the member `tag` to `children`: one for each item of
+# a list, else one.
+#
+# - `children`: the children built so far, grown in place.
+# - `tag`: the member's name, the elements' tag.
+# - `v`: the member's value.
+function add_children(@children: [xml.Node], tag: str, v: model.Value)
+    match v
+        .list l =>
+            for item in l.items
+                children @ children.push(.element(v: element_of(tag, v: item)))
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ | .object _ => children @ children.push(
+            .element(v: element_of(tag, v: v))
+        )
+
+# The XML name `text` writes, its prefix apart where it has one.
+#
+# - `text`: `local` or `prefix:local`.
+function name_of(text: str) -> xml.Name
+    match strings.split_once(s: text, sep: ":")
+        .ok h  => return xml.Name(prefix: h.before, local: h.after, space: "")
+        .err _ => return xml.Name(prefix: "", local: text, space: "")
+
+## Tests
+
+test "read: attributes, repeated tags as a list, text alone typed"
+    text = "<catalog lang=\"en\"><book id=\"1\"><title>Dune</title><price>9.99</price></book><book id=\"2\"><title>Emma</title><price/></book></catalog>"
+    v = read(text, raw: false).must()
+    assert model.json_text(v) == "{\"catalog\":{\"@lang\":\"en\",\"book\":[{\"@id\":1,\"title\":\"Dune\",\"price\":9.99},{\"@id\":2,\"title\":\"Emma\",\"price\":null}]}}"
+
+test "read: text beside children is #text, comments are left out"
+    v = read("<p class=\"x\">hello<!-- no --></p>", raw: true).must()
+    assert model.json_text(v) == "{\"p\":{\"@class\":\"x\",\"#text\":\"hello\"}}"
+
+test "write and read: a table's rows come back"
+    row: model.Value = .object(
+        members: [model.Member(name: "@id", value: .number(text: "1")), model.Member(name: "name", value: .text(v: "a & b"))]
+    )
+    doc: model.Value = .object(
+        members: [model.Member(name: "rows", value: .object(members: [model.Member(name: "row", value: .list(items: [row, row]))]))]
+    )
+    text = write(doc, name: "t").must()
+    assert model.json_text(read(text, raw: false).must()) == model.json_text(doc)
+
+test "write: a name that is no XML name is refused"
+    v: model.Value = .object(members: [model.Member(name: "unit price", value: .number(text: "1"))])
+    assert write(v, name: "t").is_err()

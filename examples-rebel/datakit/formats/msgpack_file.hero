@@ -1,0 +1,207 @@
+# MessagePack read into the model and written from it, through `msgpack`.
+#
+# A file holds one value or several written one after another; several are
+# read as a list. Integers cross as themselves, to the full range of a `u64`
+# and an `i64`; a number with a fraction, or an integer past 64 bits, is
+# written as the nearest `f64`, MessagePack having no decimal. The timestamp
+# extension is a moment, and a moment with a date and a time is written as
+# one (a local one read as UTC); a date alone is written as its text, since a
+# timestamp is an instant and a date is not. A map's key that is not a text is
+# read as the text of its value.
+
+use <rebel>/msgpack
+use <rebel>/numbers
+
+use model/decimal
+use model/model
+use model/moments
+
+## Reading
+
+# The document of the MessagePack bytes `data`.
+#
+# - `data`: the file's bytes; empty for an empty list.
+#
+# Fails as `msgpack.decode_next` fails: `invalid` for bytes that are no
+# value, with the byte where they stop, and `not_text` for a text that is not
+# UTF-8.
+function read(data: [u8]) -> model.Value?
+    options = msgpack.DecodeOptions(max_depth: model.MAX_DEPTH, duplicate_keys: false, invalid_text: false)
+    values: [model.Value] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        found = msgpack.decode_next(data, from: at, options: options)?
+        values @ values.push(of_msgpack(found.value)?)
+        at @ found.next
+
+    if values.len() == 1
+        return ok(values[0])
+    return ok(.list(items: values))
+
+# `v` as a value of the model.
+#
+# - `v`: the MessagePack value.
+#
+# Fails as `msgpack.instant_of` fails, for a timestamp of a layout no
+# specification writes.
+function of_msgpack(v: msgpack.Value) -> model.Value?
+    return match v
+        .nil_value   => ok(.null_value)
+        .boolean b   => ok(.boolean(v: b.v))
+        .unsigned u  => ok(decimal.of_u64(u.v))
+        .negative n  => ok(decimal.of_int(n.v))
+        .float f     => ok(decimal.of_float(f.v))
+        .text t      => ok(.text(v: t.v))
+        .binary b    => ok(.bytes(v: b.v))
+        .list l      => ok(.list(items: items_of(l.items)?))
+        .pairs p     => ok(model.object_of(members_of(p.entries)?))
+        .extension e => ok(extension_of(v, kind: e.kind, data: e.data)?)
+
+# The values of a list's items.
+#
+# - `items`: the items.
+#
+# Fails as `of_msgpack` fails.
+function items_of(items: [msgpack.Value]) -> [model.Value]?
+    out: [model.Value] @= []
+
+    for item in items
+        out @ out.push(of_msgpack(item)?)
+
+    return ok(out)
+
+# The members of a map's entries, each key as a text.
+#
+# - `entries`: the entries, in the order written.
+#
+# Fails as `of_msgpack` fails.
+function members_of(entries: [msgpack.Entry]) -> [model.Member]?
+    out: [model.Member] @= []
+
+    for e in entries
+        key = of_msgpack(e.key)?
+        out @ out.push(model.Member(name: model.cell_text(key), value: of_msgpack(e.value)?))
+
+    return ok(out)
+
+# The value of an extension: the moment of a timestamp, or an object of the
+# extension's type and bytes.
+#
+# - `v`: the extension value.
+# - `kind`: its type.
+# - `data`: its bytes.
+#
+# Fails as `msgpack.instant_of` fails.
+function extension_of(v: msgpack.Value, kind: i8, data: [u8]) -> model.Value?
+    if kind == msgpack.TIMESTAMP
+        return ok(.moment(text: moments.text_of_instant(msgpack.instant_of(v)?)))
+
+    kind_value = decimal.of_int(to_i64(kind).must())
+    return ok(
+        .object(members: [model.Member(name: "extension", value: kind_value), model.Member(name: "data", value: .bytes(v: data))])
+    )
+
+## Writing
+
+# `v` as MessagePack bytes, one value, maps in the order of their members.
+#
+# - `v`: the document.
+#
+# Fails as `msgpack.encode_with` fails, and `invalid` where a moment's or a
+# number's text is no moment or number.
+function write(v: model.Value) -> [u8]?
+    return msgpack.encode_with(to_msgpack(v)?, order: .as_written)
+
+# `v` as a MessagePack value.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where a number's text is no number.
+function to_msgpack(v: model.Value) -> msgpack.Value?
+    return match v
+        .null_value => ok(.nil_value)
+        .boolean b  => ok(.boolean(v: b.v))
+        .number n   => ok(number_to_msgpack(n.text)?)
+        .text t     => ok(.text(v: t.v))
+        .bytes b    => ok(.binary(v: b.v))
+        .moment m   => ok(moment_to_msgpack(m.text)?)
+        .list l     => ok(.list(items: items_to_msgpack(l.items)?))
+        .object o   => ok(.pairs(entries: entries_to_msgpack(o.members)?))
+
+# A number as an integer where an `i64` or a `u64` holds it, else as the
+# nearest `f64`.
+#
+# - `text`: the number.
+#
+# Fails `invalid` where `text` is no number.
+function number_to_msgpack(text: str) -> msgpack.Value?
+    if decimal.is_integer_text(text)
+        match decimal.to_int(text)
+            .ok i  => return ok(msgpack.from_int(i))
+            .err _ => _ = 0
+
+        match numbers.parse_u64(text)
+            .ok u  => return ok(.unsigned(v: u))
+            .err _ => _ = 0
+    return ok(.float(v: decimal.to_float(text)?))
+
+# A moment as a timestamp where it has a date and a time, else as its text.
+#
+# - `text`: the moment.
+#
+# Fails as `moments.parse` fails.
+function moment_to_msgpack(text: str) -> msgpack.Value?
+    p = moments.parse(text)?
+
+    if p.has_date && p.has_time
+        return ok(msgpack.from_instant(moments.instant_of(p)?))
+    return ok(.text(v: text))
+
+# A list's items as MessagePack values.
+#
+# - `items`: the items.
+#
+# Fails as `to_msgpack` fails.
+function items_to_msgpack(items: [model.Value]) -> [msgpack.Value]?
+    out: [msgpack.Value] @= []
+
+    for item in items
+        out @ out.push(to_msgpack(item)?)
+
+    return ok(out)
+
+# An object's members as a map's entries, each key a text.
+#
+# - `members`: the members.
+#
+# Fails as `to_msgpack` fails.
+function entries_to_msgpack(members: [model.Member]) -> [msgpack.Entry]?
+    out: [msgpack.Entry] @= []
+
+    for m in members
+        out @ out.push(msgpack.Entry(key: .text(v: m.name), value: to_msgpack(m.value)?))
+
+    return ok(out)
+
+## Tests
+
+test "write and read: every kind of value crosses, integers to the edges of 64 bits"
+    v: model.Value = .object(
+        members: [model.Member(name: "big", value: .number(text: "18446744073709551615")), model.Member(name: "low", value: .number(text: "-9223372036854775808")), model.Member(name: "price", value: .number(text: "19.99")), model.Member(name: "at", value: .moment(text: "2026-03-01T09:30:00Z")), model.Member(name: "day", value: .moment(text: "2026-03-01")), model.Member(name: "raw", value: .bytes(v: [0, 255])), model.Member(name: "none", value: .null_value)]
+    )
+    back = read(write(v).must()).must()
+    assert model.json_text(back) == "{\"big\":18446744073709551615,\"low\":-9223372036854775808,\"price\":19.99,\"at\":\"2026-03-01T09:30:00Z\",\"day\":\"2026-03-01\",\"raw\":\"AP8=\",\"none\":null}"
+
+test "read: values one after another are a list, and broken bytes are refused"
+    one = write(.number(text: "1")).must()
+    two = write(.text(v: "a")).must()
+    both: [u8] @= one
+
+    for b in two
+        both @ both.push(b)
+
+    assert model.json_text(read(both).must()) == "[1,\"a\"]"
+    assert model.json_text(read([]).must()) == "[]"
+    assert read([0xc1]).is_err()
+    assert read([0x92, 0x01]).is_err()

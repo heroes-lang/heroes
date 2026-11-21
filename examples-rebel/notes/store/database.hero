@@ -1,0 +1,138 @@
+# The SQLite database: opened with the settings every connection needs, its
+# migrations applied at start, and the helpers the stores share to run a
+# statement `sql/build` wrote. Foreign keys are off in SQLite unless a
+# connection turns them on, so `open` does, or a deleted note would leave its
+# comments behind.
+
+use <rebel>/sql
+use <rebel>/sql/build
+use <rebel>/sql/migrate
+use <rebel>/sql/sqlite
+use <rebel>/time
+
+use store/schema
+
+## Opening
+
+# The database in the file at `path`, made where it is not there, with
+# foreign keys on and a wait of five seconds for a lock another connection
+# holds.
+#
+# - `path`: the file.
+#
+# Fails as `sqlite.open` and `sqlite.exec` fail.
+function open(path: str) -> sqlite.Db?
+    db @= sqlite.open(path)?
+    sqlite.set_busy_timeout(@db, timeout: time.seconds(5)?)?
+    _ = sqlite.exec(@db, statement: "PRAGMA foreign_keys = ON", params: [])?
+    return ok(db)
+
+# Every migration of `schema` that `db` has not applied, applied in order,
+# each in its own transaction with its version recorded; what it applied.
+#
+# - `db`: the database; it gains the tables and the table of versions.
+#
+# Empty where the database is current. Fails `invalid` where an applied
+# migration's checksum differs from the script here (an edited migration), as
+# `migrate.plan_up` fails, and as the statements fail, the failing step rolled
+# back whole.
+function migrate_up(@db: sqlite.Db) -> [migrate.Step]?
+    opts = migrate.options(.sqlite)
+    _ = run(@db, s: migrate.create_table_statement(opts)?)?
+    applied = migrate.applied_of(query(@db, s: migrate.select_applied_statement(opts)?)?)?
+    steps = migrate.plan_up(schema.migrations(), applied: applied, opts: opts)?
+
+    for step in steps
+        apply(@db, step: step)?
+
+    return ok(steps)
+
+# Applies one step: its script and the line that records it, together.
+#
+# - `db`: the database.
+# - `step`: the step, as `migrate.plan_up` made it.
+#
+# Fails as the statements fail, after rolling the transaction back.
+function apply(@db: sqlite.Db, step: migrate.Step) -> ()?
+    if step.in_transaction
+        sqlite.begin(@db)?
+
+    match run_step(@db, step: step)
+        .ok _ => _ = 0
+        .err e =>
+            also = if sqlite.in_transaction(db) && sqlite.rollback(@db).is_err()
+                "; rolling it back failed too"
+            else
+                ""
+
+            return fail(code: e.code, msg: f"migration {step.version} ({step.name}): {e.msg}{also}")
+
+    if step.in_transaction
+        sqlite.commit(@db)?
+
+    return ok()
+
+# The script of `step` and its version's line, run in order.
+#
+# - `db`: the database.
+# - `step`: the step.
+function run_step(@db: sqlite.Db, step: migrate.Step) -> ()?
+    sqlite.exec_script(@db, script: step.script)?
+    _ = run(@db, s: step.version_statement)?
+    return ok()
+
+# The version the database stands at: the largest applied, 0 for none.
+#
+# - `db`: the database.
+#
+# Fails as the query fails.
+function version_of(@db: sqlite.Db) -> i64?
+    opts = migrate.options(.sqlite)
+    applied = migrate.applied_of(query(@db, s: migrate.select_applied_statement(opts)?)?)?
+    return ok(migrate.current_version(applied).default(0))
+
+## Running what `sql/build` writes
+
+# Runs `s`, a statement that answers no rows, and answers what it changed.
+#
+# - `db`: the database.
+# - `s`: the statement and its parameters.
+#
+# Fails as `sqlite.exec` fails: `exists` for a row a unique key holds.
+function run(@db: sqlite.Db, s: build.Statement) -> sql.Result?
+    return sqlite.exec(@db, statement: s.text, params: s.params)
+
+# The rows `s` answers.
+#
+# - `db`: the database.
+# - `s`: the statement and its parameters.
+#
+# Fails as `sqlite.query` fails.
+function query(@db: sqlite.Db, s: build.Statement) -> sql.Rows?
+    return sqlite.query(@db, statement: s.text, params: s.params)
+
+# The statement `q` writes for SQLite.
+#
+# - `q`: the query.
+#
+# Fails as `build.to_sql` fails, which is a mistake of this program's own:
+# every query here is built from constant names.
+function sql_of(q: build.Query) -> build.Statement?
+    return build.to_sql(q, dialect: .sqlite)
+
+# The number the first column of the first row of `s` holds: a count.
+#
+# - `db`: the database.
+# - `s`: a query of one row and one column.
+#
+# Fails `not_found` where it answers no row, and as the query fails.
+function count(@db: sqlite.Db, s: build.Statement) -> i64?
+    row = sqlite.query_one(@db, statement: s.text, params: s.params)?
+    return sql.integer_at(row, index: 0)
+
+test "migrate_up: a new database gains every migration once, and a second start applies none"
+    db @= sqlite.open_memory().must()
+    assert migrate_up(@db).must().len() == 4
+    assert migrate_up(@db).must().len() == 0
+    assert version_of(@db).must() == 4
+    sqlite.close(@db).must()

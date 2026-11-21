@@ -1,0 +1,112 @@
+# What a handler answers: a response and what becomes of the session, and the
+# usual answers built in one way each, so every page's error looks alike and
+# every API error is the same JSON shape, `{"error": "..."}`, or for fields
+# `{"errors": {"field": "message"}}`.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/json
+use <rebel>/web
+
+use domain/jsonv
+use domain/validate
+
+## Replies
+
+# What becomes of the session's cookie after a request.
+variant SessionChange
+    # Left as the request sent it.
+    kept
+    # Written anew: signed in, a CSRF secret made, signed out of a user.
+    replaced
+        session: web.Session
+    # Forgotten: the browser is told to drop the cookie.
+    ended
+
+# A handler's answer.
+record Reply
+    # The response.
+    response: http.Response
+    # What becomes of the session.
+    session: SessionChange
+
+# `response` with the session left as it was.
+#
+# - `response`: the response.
+function plain(response: http.Response) -> Reply
+    return Reply(response: response, session: .kept)
+
+# `response`, writing `session` into the cookie.
+#
+# - `response`: the response.
+# - `session`: the session to write.
+function with_session(response: http.Response, session: web.Session) -> Reply
+    return Reply(response: response, session: .replaced(session: session))
+
+## Pages
+
+# The media type of a page.
+constant HTML: str
+    "text/html; charset=utf-8"
+
+# A page of `status` holding `html`.
+#
+# - `status`: the status.
+# - `html`: the page.
+function page(status: i64, html: str) -> http.Response
+    return http.respond(status: status, content_type: HTML, body: bytes.from_text(html))
+
+# The answer that sends a browser to `location` after a form, as `GET`
+# (303, RFC 9110 § 15.4.4), so reloading the page sends nothing again.
+#
+# - `location`: the path to go to.
+function see_other(location: str) -> http.Response
+    return http.respond_redirect(http.STATUS_SEE_OTHER, location: location)
+
+## JSON
+
+# A response of `status` holding `value`.
+#
+# - `status`: the status.
+# - `value`: the body.
+function json_response(status: i64, value: json.Value) -> http.Response
+    return http.respond_json(status, value: value).default(http.respond_status(http.STATUS_INTERNAL_SERVER_ERROR))
+
+# An API error: `{"error": message}`.
+#
+# - `status`: the status.
+# - `message`: what went wrong, for a person.
+function api_error(status: i64, message: str) -> http.Response
+    return json_response(status, value: jsonv.object({"error": jsonv.text(message)}))
+
+# The 422 of a body whose fields are wrong, each with its problem.
+#
+# - `errors`: the problems, at least one.
+function unprocessable(errors: [validate.FieldError]) -> http.Response
+    return json_response(
+        http.STATUS_UNPROCESSABLE_CONTENT,
+        value: jsonv.object({"errors": validate.errors_json(errors)})
+    )
+
+# Whether a request prefers JSON to HTML by its `Accept`.
+#
+# - `r`: the request; no `Accept` reads as HTML, a browser's way.
+function wants_json(r: http.Request) -> bool
+    return http.negotiate_type(r, offered: ["text/html", "application/json"]).default("text/html") == "application/json"
+
+test "wants_json: no Accept, a browser's, JSON's, and JSON weighed below HTML"
+    base = http.request(method: "GET", target: "/").must()
+    assert !wants_json(base)
+    browser = base.with_header_value(value: "text/html,application/xhtml+xml,*/*;q=0.8")
+    assert !wants_json(browser)
+    assert wants_json(base.with_header_value(value: "application/json"))
+    assert !wants_json(base.with_header_value(value: "application/json;q=0.5, text/html"))
+
+# `r` with an `Accept` of `value`, for the tests.
+#
+# - `r`: the request.
+# - `value`: the field's value.
+function with_header_value(r: http.Request, value: str) -> http.Request
+    out: http.Request @= r
+    out.headers @ http.with_header(r.headers, name: "Accept", value: value)
+    return out

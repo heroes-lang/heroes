@@ -1,0 +1,108 @@
+# Who is asking, and in what language: what the pipeline reads once per
+# request and hands every handler. A page's visitor is known by the signed
+# session cookie; an API client by its bearer token, judged by its signature
+# and claims and then read again from the database, so an account's role
+# changed takes effect at its next request.
+
+use <rebel>/http
+use <rebel>/time
+use <rebel>/web
+
+use app/state
+use auth/tokens
+use domain/model
+use store/user_store
+use views/locales
+
+## Codes
+
+# The code of a request that names no account, or one that does not verify.
+constant NOT_FOUND: str
+    "not_found"
+
+## The visit
+
+# What a handler knows of the request beyond the request itself.
+record Visit
+    # The business clock's reading for this request.
+    now: time.Instant
+    # The language pages are written in: `en` or `it`.
+    language: str
+    # The session the cookie holds, or a new one.
+    session: web.Session
+    # The account signed in, by the session or the token.
+    user: model.User?
+    # The request's identifier, from `X-Request-Id`.
+    request_id: str
+
+# The session key that names the signed-in account.
+constant USER_KEY: str
+    "user"
+
+# The account the session names, read from the database.
+#
+# - `app`: the state.
+# - `session`: the session.
+#
+# Fails `not_found` where it names none, or one no longer there.
+function user_of_session(@app: state.App, session: web.Session) -> model.User?
+    name = match session.values[USER_KEY]
+        .ok n  => n
+        .err _ => return fail(code: NOT_FOUND, msg: "the session names no account")
+
+    return user_store.by_name(@app.db, name: name)
+
+# The account named `name`.
+#
+# - `app`: the state.
+# - `name`: its name.
+#
+# Fails `not_found` where none has it.
+function user_named(@app: state.App, name: str) -> model.User?
+    return user_store.by_name(@app.db, name: name)
+
+# The account the bearer token of `r` names, its token checked at `now`.
+#
+# - `app`: the state.
+# - `r`: the request.
+# - `now`: the moment the token is judged at.
+#
+# Fails `not_found` where `r` carries no token, and `invalid` where it does
+# not verify, has ended, or names an account no longer there.
+function user_of_token(@app: state.App, r: http.Request, now: time.Instant) -> model.User?
+    token = http.bearer_token_of(r)?
+    claims = tokens.check(app.settings.token_key, token: token, now: now)?
+
+    return match user_store.by_name(@app.db, name: claims.subject)
+        .ok u  => ok(u)
+        .err _ => fail(code: tokens.INVALID, msg: "the token names an account no longer there")
+
+# The session `r`'s cookie holds, else a new one: a cookie changed, signed by
+# no key or ended is never an error a visitor sees, only a fresh session.
+#
+# - `app`: the state.
+# - `r`: the request.
+# - `now`: the moment the cookie's end is judged at.
+function session_of(app: state.App lent, r: http.Request, now: time.Instant) -> web.Session
+    return web.session_of(r, options: app.cookies, now: now).default(web.new_session())
+
+# The language of a request.
+#
+# - `app`: the state.
+# - `r`: the request.
+function language_of(app: state.App lent, r: http.Request) -> str
+    return locales.language_of(app.locales, r: r)
+
+# Whether the visit has an account signed in.
+#
+# - `v`: the visit.
+function signed_in(v: Visit) -> bool
+    return !v.user.is_err()
+
+# The visit's account's name, or "" for none.
+#
+# - `v`: the visit.
+function user_name(v: Visit) -> str
+    return match v.user
+        .ok u  => u.name
+        .err _ => ""

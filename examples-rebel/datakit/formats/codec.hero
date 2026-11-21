@@ -1,0 +1,369 @@
+# Where a document comes from and where it goes: a file or a standard
+# stream read in its format into the model, and the model written in a format
+# to a file or the standard output.
+#
+# Every format of `model/formats` is dispatched here and nowhere else, so a
+# command names a format and never a reader. Bytes come from `fs` and the
+# standard streams from `io`, read whole: datakit holds a document in memory,
+# as jq and Miller's verbs that sort do. A text format must be UTF-8; a byte
+# order mark before it is dropped, as Excel writes one before a CSV.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/path
+use <rebel>/property
+
+use formats/bson_file
+use formats/cbor_file
+use formats/csv_file
+use formats/ini_file
+use formats/json_file
+use formats/msgpack_file
+use formats/properties_file
+use formats/toml_file
+use formats/xlsx_file
+use formats/xml_file
+use model/digest
+use model/formats
+use model/model
+use model/tables
+use output/layout
+
+## Codes
+
+# The code of a format asked where it cannot serve: `table` read, or the
+# standard input with no `--from`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Reading
+
+# How a source is read beyond its bytes.
+record ReadOptions
+    # The format's name from `--from`; empty to tell it by the extension.
+    format: str
+    # Whether every field of a text-only format stays a text.
+    raw: bool
+    # The sheet of a workbook to read; empty for the first.
+    sheet: str
+
+# The options that read every source by its extension, typing its fields and
+# taking a workbook's first sheet.
+function default_read_options() -> ReadOptions
+    return ReadOptions(format: "", raw: false, sheet: "")
+
+# A document read, with what is known of where it came from.
+record Loaded
+    # The document.
+    value: model.Value
+    # The name of its table: the file's stem, a sheet's name, or `stdin`.
+    name: str
+    # The format it was read in.
+    format: formats.Format
+    # The columns a tabular source declared in its header, in order; empty
+    # for a document. They name the columns of a table with no rows, which
+    # the document alone cannot.
+    columns: [str]
+
+# The document at `source`.
+#
+# - `source`: a file's path, or `-` for the standard input.
+# - `options`: the format, the typing and the sheet.
+#
+# Fails `unsupported` for the standard input with no format named or for
+# the `table` format, as `formats.of_path` fails for an unknown extension, as
+# `fs.read_bytes` fails, `not_text` where a text format's bytes are not UTF-8,
+# and as the format's reader fails.
+function load(source: str, options: ReadOptions) -> Loaded?
+    format = format_of(source: source, named: options.format)?
+
+    if !formats.is_readable(format)
+        return fail(code: UNSUPPORTED, msg: f"datakit writes the {formats.name_of(format)} format and does not read it")
+
+    name = if source == "-"
+        "stdin"
+    else
+        path.stem(source).default("data")
+    data = read_source(source)?
+    return decode(data, format: format, options: options, name: name)
+
+# The format of `source`: the one named, else the one its extension names.
+#
+# - `source`: a path, or `-`.
+# - `named`: a format's name, or empty.
+#
+# Fails as `formats.parse_name` and `formats.of_path` fail, and
+# `unsupported` for `-` with no name.
+function format_of(source: str, named: str) -> formats.Format?
+    if named != ""
+        return formats.parse_name(named)
+
+    if source == "-"
+        return fail(code: UNSUPPORTED, msg: "the standard input has no extension: name its format with --from")
+    return formats.of_path(source)
+
+# The bytes of `source`, a file or the standard input read to its end.
+#
+# - `source`: a path, or `-`.
+#
+# Fails as `fs.read_bytes` or `io.read_all` fails.
+function read_source(source: str) -> [u8]?
+    if source == "-"
+        return io.read_all(io.stdin())
+    return fs.read_bytes(source)
+
+# The document `data` holds in `format`.
+#
+# - `data`: the bytes.
+# - `format`: their format, one datakit reads.
+# - `options`: the typing and the sheet.
+# - `name`: the table's name.
+#
+# Fails as the format's reader fails, and `not_text` where a text format's
+# bytes are not UTF-8.
+function decode(data: [u8], format: formats.Format, options: ReadOptions, name: str) -> Loaded?
+    if formats.is_binary(format)
+        return match format
+            .xlsx    => ok(loaded_table(xlsx_file.read(data, sheet: options.sheet)?, format: format))
+            .msgpack => ok(Loaded(value: msgpack_file.read(data)?, name: name, format: format, columns: []))
+            .cbor    => ok(Loaded(value: cbor_file.read(data)?, name: name, format: format, columns: []))
+            .bson    => ok(Loaded(value: bson_file.read(data)?, name: name, format: format, columns: []))
+            .csv | .tsv | .json | .json_lines | .yaml | .toml | .ini | .properties | .xml | .table => fail(
+                code: UNSUPPORTED,
+                msg: "not a binary format"
+            )
+
+    text = text_of(data)?
+
+    return match format
+        .csv => ok(
+            loaded_table(csv_file.read(text: text, separator: ",", raw: options.raw, name: name)?, format: format)
+        )
+        .tsv => ok(
+            loaded_table(csv_file.read(text: text, separator: "\t", raw: options.raw, name: name)?, format: format)
+        )
+        .json => ok(Loaded(value: json_file.read_json(text)?, name: name, format: format, columns: []))
+        .json_lines => ok(Loaded(value: json_file.read_json_lines(text)?, name: name, format: format, columns: []))
+        .yaml => ok(Loaded(value: json_file.read_yaml(text)?, name: name, format: format, columns: []))
+        .toml => ok(Loaded(value: toml_file.read(text)?, name: name, format: format, columns: []))
+        .ini => ok(Loaded(value: ini_file.read(text, raw: options.raw)?, name: name, format: format, columns: []))
+        .properties => ok(
+            Loaded(value: properties_file.read(text, raw: options.raw)?, name: name, format: format, columns: [])
+        )
+        .xml => ok(Loaded(value: xml_file.read(text, raw: options.raw)?, name: name, format: format, columns: []))
+        .xlsx | .msgpack | .cbor | .bson | .table => fail(
+            code: UNSUPPORTED,
+            msg: f"datakit does not read the {formats.name_of(format)} format as text"
+        )
+
+# A table read, as a document and its declared columns.
+#
+# - `t`: the table.
+# - `format`: the format it was read in.
+function loaded_table(t: model.Table, format: formats.Format) -> Loaded
+    return Loaded(value: tables.document_of(t), name: t.name, format: format, columns: t.columns)
+
+# The text of `data`, a byte order mark before it dropped.
+#
+# - `data`: the bytes.
+#
+# Fails `not_text` where they are not UTF-8.
+function text_of(data: [u8]) -> str?
+    if data.len() >= 3 && data[0] == 0xef && data[1] == 0xbb && data[2] == 0xbf
+        return bytes.to_text(data.slice(from: 3, to: data.len()))
+    return bytes.to_text(data)
+
+# The table of a document read.
+#
+# - `l`: the document read.
+#
+# A tabular source's own columns are kept, so a CSV file of a header alone is
+# a table of its columns and no row. Fails as `tables.table_of` fails.
+function table_of(l: Loaded lent) -> model.Table?
+    match l.value
+        .list items =>
+            if items.items.len() == 0 && l.columns.len() > 0
+                return ok(model.Table(name: l.name, columns: l.columns, rows: []))
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ | .object _ => _ = 0
+
+    return tables.table_of(l.value, name: l.name)
+
+## Writing
+
+# `v` as the bytes of a file of `format`.
+#
+# - `v`: the document.
+# - `format`: the format written.
+# - `name`: the name of its table, its root or its sheet where the format
+#   needs one.
+#
+# A tabular format takes the table `tables.table_of` reads in `v`. Fails as
+# `tables.table_of` fails and as the format's writer fails.
+function encode(v: model.Value, format: formats.Format, name: str) -> [u8]?
+    if formats.is_tabular(format)
+        t = tables.table_of(v, name: name)?
+        return encode_table(t, format: format)
+
+    return match format
+        .json                        => ok(bytes.from_text(json_file.write_json(v)?))
+        .json_lines                  => ok(bytes.from_text(json_file.write_json_lines(v)))
+        .yaml                        => ok(bytes.from_text(json_file.write_yaml(v)?))
+        .toml                        => ok(bytes.from_text(toml_file.write(v, name: name)?))
+        .ini                         => ok(bytes.from_text(ini_file.write(v, name: name)?))
+        .properties                  => ok(bytes.from_text(properties_file.write(v, name: name)))
+        .xml                         => ok(bytes.from_text(xml_file.write(v, name: name)?))
+        .msgpack                     => msgpack_file.write(v)
+        .cbor                        => cbor_file.write(v)
+        .bson                        => bson_file.write(v, name: name)
+        .csv | .tsv | .xlsx | .table => fail(code: UNSUPPORTED, msg: "a tabular format is written from its table")
+
+# `t` as the bytes of a file of `format`.
+#
+# - `t`: the table.
+# - `format`: the format written; a document format writes the table's
+#   document.
+#
+# Fails as the format's writer fails.
+function encode_table(t: model.Table lent, format: formats.Format) -> [u8]?
+    return match format
+        .csv   => ok(bytes.from_text(csv_file.write(t, separator: ",")))
+        .tsv   => ok(bytes.from_text(csv_file.write(t, separator: "\t")))
+        .xlsx  => xlsx_file.write(t)
+        .table => ok(bytes.from_text(layout.table_text(t, max_width: layout.DEFAULT_MAX_WIDTH)))
+        .json | .json_lines | .yaml | .toml | .ini | .properties | .xml | .msgpack | .cbor | .bson => encode(
+            tables.document_of(t),
+            format: format,
+            name: t.name
+        )
+
+# Writes `data` to `target`: a file, made or replaced, or the standard output
+# for `-`.
+#
+# - `target`: a path, or `-`.
+# - `data`: the bytes.
+#
+# Fails as `fs.write_bytes` or `io.write` fails.
+function store(target: str, data: [u8]) -> ()?
+    if target == "-"
+        return io.write(io.stdout(), data)
+    return fs.write_bytes(target, data)
+
+## Tests
+
+test "decode: a byte order mark is dropped before a CSV header"
+    data: [u8] = [0xef, 0xbb, 0xbf, 'a', '\n', '1', '\n']
+    l = decode(data, format: .csv, options: default_read_options(), name: "t").must()
+    assert l.columns == ["a"]
+    assert model.json_text(l.value) == "[{\"a\":1}]"
+
+test "table_of: a header alone keeps its columns"
+    l = decode(bytes.from_text("a,b\n"), format: .csv, options: default_read_options(), name: "t").must()
+    assert table_of(l).must().columns == ["a", "b"]
+
+test "format_of: the standard input needs a name, a name beats the extension"
+    assert format_of(source: "-", named: "").is_err()
+    assert format_of(source: "x.csv", named: "json").must() == .json
+    assert format_of(source: "x.csv", named: "").must() == .csv
+
+test "decode: bytes that are not UTF-8 are refused for a text format"
+    assert decode([0xff, 0xfe], format: .json, options: default_read_options(), name: "t").is_err()
+
+## Round trips
+
+# A table drawn for the round-trip property: one to six rows of one to four
+# columns named `c0` and on, every cell a null, a truth value, an integer, a
+# decimal of two places or a text, the first column never null so no row is
+# empty. A text is drawn from letters that spell no word `model/infer`
+# reads as more than a text, and has no space at its ends, which XML's text
+# drops; so every format can give the table back.
+#
+# - `source`: the case drawn from.
+function drawn_table(source: property.Source) -> model.Table?
+    s @= source
+    columns = property.int_between(@s, least: 1, most: 4)?
+    names: [str] @= []
+
+    for c in range(from: 0, to: columns)
+        names @ names.push(f"c{c}")
+
+    rows: [[model.Value]] @= []
+    count @= property.many(least: 1, most: 6)
+
+    while property.more(@s, @count)?
+        row: [model.Value] @= []
+
+        for c in range(from: 0, to: columns)
+            row @ row.push(drawn_cell(@s, nullable: c > 0)?)
+
+        rows @ rows.push(row)
+
+    return ok(model.Table(name: "drawn", columns: names, rows: rows))
+
+# One cell of `drawn_table`.
+#
+# - `s`: the case drawn from.
+# - `nullable`: whether the cell may be null.
+function drawn_cell(@s: property.Source, nullable: bool) -> model.Value?
+    kind = property.one_of(@s, count: 5)?
+
+    if kind == 0 && nullable
+        return ok(.null_value)
+
+    if kind == 1
+        return ok(.boolean(v: property.boolean(@s)?))
+
+    if kind == 2
+        return ok(.number(text: f"{property.int_between(@s, least: -1000000, most: 1000000)?}"))
+
+    if kind == 3
+        whole = property.int_between(@s, least: -99999, most: 99999)?
+        cents = property.int_between(@s, least: 0, most: 99)?
+
+        sign = if whole == 0 && property.boolean(@s)?
+            "-"
+        else
+            ""
+        return ok(.number(text: f"{sign}{whole}.{cents / 10}{cents % 10}"))
+    return ok(.text(v: property.text(@s, alphabet: "abcdxyzéü東", least: 1, most: 8)?))
+
+# The formats the round trip crosses: every format a table is written in and
+# read back from, TOML aside, which leaves a null member out by design.
+function round_trip_formats() -> [formats.Format]
+    return [.csv, .tsv, .json, .json_lines, .yaml, .xml, .xlsx, .msgpack, .cbor, .bson]
+
+# Whether `t`, written in every format of `round_trip_formats` and read back,
+# is the same table each time, compared by the digest of its document.
+#
+# - `t`: the table.
+function crosses_every_format(t: model.Table) -> bool
+    expected = digest.of(tables.document_of(t))
+
+    for f in round_trip_formats()
+        match encode_table(t, format: f)
+            .ok data =>
+                match decode(data, format: f, options: default_read_options(), name: t.name)
+                    .ok back =>
+                        match table_of(back)
+                            .ok again => if digest.of(tables.document_of(again)) != expected
+                                return false
+                            .err _    => return false
+                    .err _ => return false
+            .err _ => return false
+
+    return true
+
+# A drawn table as the report of a failing case shows it.
+#
+# - `t`: the table.
+function shown_table(t: model.Table) -> str
+    return model.json_text(tables.document_of(t))
+
+test "encode_table and decode: every format gives back the table it was given"
+    outcome = property.check(
+        drawn_table,
+        holds: crosses_every_format,
+        show: shown_table,
+        settings: property.with_cases(property.seeded(20261121), cases: 60)
+    )
+    assert outcome.report == property.HELD

@@ -1,0 +1,74 @@
+# The passages of a store nearest to a question: the question made a vector by
+# the embedder that made the store's, and the index walked for its nearest
+# (`vectors.search`). A hit's score is its cosine similarity to the question,
+# from -1 to 1, the larger the nearer.
+
+use <rebel>/numbers
+use <rebel>/vectors
+
+use index/chunking
+use index/embedder
+use index/store
+
+# The candidates the index's walk keeps at least, hnswlib's `ef`: more than a
+# search asks finds more of the true nearest, at a cost the stores of this
+# program never feel.
+constant LEAST_EF: i64
+    64
+
+# One passage found.
+record Hit
+    # Its rank, from 1 for the nearest.
+    rank: i64
+    # The passage.
+    piece: chunking.Piece
+    # Its cosine similarity to the question.
+    score: f64
+
+# The `limit` passages of `s` nearest to `question`, the nearest first.
+#
+# - `s`: the store.
+# - `e`: the embedder that made the store's vectors, which makes the
+#   question's.
+# - `question`: any text.
+# - `limit`: how many, 0 or more; fewer where the store holds fewer.
+#
+# Fails as `e` fails to make the vector, and `invalid` where its length is not
+# the store's.
+function search(s: store.Store lent, e: embedder.Embedder, question: str, limit: i64) -> [Hit]?
+    made = embedder.embed_all(e, texts: [question])?
+
+    ef = if limit * 4 > LEAST_EF
+        limit * 4
+    else
+        LEAST_EF
+
+    found = vectors.search(s.index, query: made[0], limit: limit, ef: ef)?
+    hits: [Hit] @= []
+
+    for n in found
+        hits @ hits.push(Hit(rank: hits.len() + 1, piece: s.pieces[n.id], score: 1.0 - to_f64(n.distance)))
+
+    return ok(hits)
+
+# The embedder a store's manifest names, for a query to be made as its vectors
+# were: the local function at the store's length, or the endpoint `remote`
+# reaches.
+#
+# - `m`: the manifest.
+# - `remote`: the embedder of a store made remotely, built by the caller with
+#   its client; read only where `m` says `openai`.
+function embedder_for(m: store.Manifest, remote: embedder.Embedder) -> embedder.Embedder
+    if m.embedder == "local"
+        return .local(dimensions: m.dimensions)
+
+    return remote
+
+# `score` with three decimals, as a listing shows it.
+#
+# - `score`: a similarity.
+function format_score(score: f64) -> str
+    return numbers.format_float(score, precision: 3)
+
+test "format_score: three decimals"
+    assert format_score(0.5) == "0.500" && format_score(1.0) == "1.000"

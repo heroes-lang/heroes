@@ -1,0 +1,89 @@
+# The database's schema as numbered migrations, each with its way back. A
+# migration once released is never edited: a change is a new migration, and
+# `sql/migrate` refuses a database whose applied script's checksum differs
+# from the one here, so an edited migration is told at start.
+#
+# Moments are columns declared `TIMESTAMP`, which `sql/sqlite` reads back as
+# instants; roles are text held to the three names by a `CHECK`.
+
+use <rebel>/sql/migrate
+
+# Every migration, the oldest first.
+function migrations() -> [migrate.Migration]
+    return [users(), notes(), tags(), comments()]
+
+# The accounts.
+function users() -> migrate.Migration
+    up = [
+        "CREATE TABLE users ("
+        "    id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "    name TEXT NOT NULL UNIQUE,"
+        "    email TEXT NOT NULL UNIQUE,"
+        "    password TEXT NOT NULL,"
+        "    role TEXT NOT NULL CHECK (role IN ('reader', 'author', 'admin')),"
+        "    created_at TIMESTAMP NOT NULL"
+        ");"
+    ]
+
+    return migrate.Migration(version: 1, name: "users", up: up.join("\n"), down: ok("DROP TABLE users;"))
+
+# The notes, newest first by their index on time.
+function notes() -> migrate.Migration
+    up = [
+        "CREATE TABLE notes ("
+        "    id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "    author_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,"
+        "    slug TEXT NOT NULL UNIQUE,"
+        "    title TEXT NOT NULL,"
+        "    body TEXT NOT NULL,"
+        "    created_at TIMESTAMP NOT NULL,"
+        "    updated_at TIMESTAMP NOT NULL"
+        ");"
+        "CREATE INDEX notes_by_time ON notes (created_at, id);"
+    ]
+
+    return migrate.Migration(version: 2, name: "notes", up: up.join("\n"), down: ok("DROP TABLE notes;"))
+
+# The tags and which note carries which.
+function tags() -> migrate.Migration
+    up = [
+        "CREATE TABLE tags ("
+        "    id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "    name TEXT NOT NULL UNIQUE"
+        ");"
+        "CREATE TABLE note_tags ("
+        "    note_id INTEGER NOT NULL REFERENCES notes (id) ON DELETE CASCADE,"
+        "    tag_id INTEGER NOT NULL REFERENCES tags (id) ON DELETE CASCADE,"
+        "    PRIMARY KEY (note_id, tag_id)"
+        ");"
+    ]
+
+    return migrate.Migration(
+        version: 3,
+        name: "tags",
+        up: up.join("\n"),
+        down: ok("DROP TABLE note_tags;\nDROP TABLE tags;")
+    )
+
+# The comments, each with the UUID the API names it by.
+function comments() -> migrate.Migration
+    up = [
+        "CREATE TABLE comments ("
+        "    id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "    uid TEXT NOT NULL UNIQUE,"
+        "    note_id INTEGER NOT NULL REFERENCES notes (id) ON DELETE CASCADE,"
+        "    author_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,"
+        "    body TEXT NOT NULL,"
+        "    created_at TIMESTAMP NOT NULL"
+        ");"
+        "CREATE INDEX comments_by_note ON comments (note_id, created_at);"
+    ]
+
+    return migrate.Migration(version: 4, name: "comments", up: up.join("\n"), down: ok("DROP TABLE comments;"))
+
+test "migrations: numbered from 1 with no gap, each with its way back"
+    all_of = migrations()
+
+    for i in range(from: 0, to: all_of.len())
+        assert all_of[i].version == i + 1
+        assert !all_of[i].down.is_err()

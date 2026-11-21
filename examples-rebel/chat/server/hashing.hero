@@ -1,0 +1,242 @@
+# Passwords hashed off the server's loop. PBKDF2 at the count a password
+# deserves takes seconds: `crypto.pbkdf2` took 11.4 s for 600,000
+# iterations in a program built with `-O2` on an Apple M3, and
+# 51 s at the default `-O0` by the same measure scaled (1.7 s for 20,000),
+# on 2026-11-21. The server serves everyone on one thread, so a sign-in
+# must not hash there: each `/register` and `/login` is parked as a job, its
+# connection held, and its hash made on a thread of its own. A thread
+# carries one text each way and nothing else (spec § 13), and nothing waits
+# on a thread with `poll`, so a thread that is done says its job's number in
+# one datagram to a loopback socket the loop waits on; the loop then joins
+# the thread at once and answers the request. At most `MOST_RUNNING` hashes
+# run together; the rest wait their turn in the order they came.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/io
+use <rebel>/json
+use <rebel>/numbers
+use <rebel>/threads
+
+use auth/passwords
+use protocol/objects
+use standins/told
+
+# How many hashes run at once: past it a job waits, so a burst of sign-ins
+# never starts more threads than the runtime runs (`threads.max_running`).
+constant MOST_RUNNING: i64
+    4
+
+# What a parked request asked.
+variant Purpose
+    # An account to make for `user`.
+    register
+        # The user's name, checked and free when the job was parked.
+        user: str
+    # A sign-in of `user`.
+    login
+        # The user's name.
+        user: str
+        # Whether an account has the name; where none has, the hash is made
+        # against a stand-in all the same, so the answer takes as long and
+        # says nothing of which names exist.
+        known: bool
+
+# What a hash is made of, and what it is held to.
+record Work
+    # What the request asked.
+    purpose: Purpose
+    # The password given.
+    password: str
+    # The salt and the iterations; for a sign-in, the hash it must give too.
+    secret: passwords.Secret
+
+# One parked request.
+record Job
+    # Its number, which its thread tells when it is done.
+    id: i64
+    # What its hash is made of.
+    work: Work
+    # The request's connection, answered and closed when the hash is done.
+    stream: io.Stream
+    # The request.
+    request: http.Request
+    # Its thread while it runs; none while it waits its turn.
+    running: [threads.TextThread]
+
+# The parked requests, in the order they came.
+record Jobs
+    # The jobs.
+    queue: [Job]
+    # The number the next job takes.
+    next_id: i64
+    # The loopback port a thread tells when it is done.
+    port: i64
+
+# A job done: its request and connection, and the hash its thread made.
+record Done
+    # What the hash was made of.
+    work: Work
+    # The request's connection, the caller's to answer and close.
+    stream: io.Stream
+    # The request.
+    request: http.Request
+    # The hash, or why the thread could not make it.
+    hash: [u8]?
+
+# No job, the threads to tell `port` when they are done.
+#
+# - `port`: the loopback port the server's hashing socket listens on.
+function new_jobs(port: i64) -> Jobs
+    return Jobs(queue: [], next_id: 1, port: port)
+
+# How many jobs are running.
+#
+# - `jobs`: the jobs.
+function running_of(jobs: Jobs lent) -> i64
+    count @= 0
+
+    for j in jobs.queue
+        count @ count + j.running.len()
+
+    return count
+
+# Parks a request whose answer needs the hash `work` describes, and starts
+# it where a thread is free.
+#
+# - `jobs`: the jobs, which gain one.
+# - `work`: what the hash is made of.
+# - `stream`: the request's connection, held until the answer.
+# - `request`: the request.
+function park(@jobs: Jobs, work: Work, stream: io.Stream, request: http.Request)
+    queue @= jobs.queue
+    queue @ queue.push(Job(id: jobs.next_id, work: work, stream: stream, request: request, running: []))
+    jobs.queue @ queue
+    jobs.next_id @ jobs.next_id + 1
+    start_waiting(@jobs)
+
+# Starts the jobs waiting their turn, the oldest first, while fewer than
+# `MOST_RUNNING` run. A thread the system refuses leaves its job waiting for
+# the next turn.
+#
+# - `jobs`: the jobs.
+function start_waiting(@jobs: Jobs)
+    i @= 0
+
+    while i < jobs.queue.len() && running_of(jobs) < MOST_RUNNING
+        if jobs.queue[i].running.len() == 0
+            match threads.spawn_text(body: hash_in_thread, arg: arg_of(jobs.queue[i], port: jobs.port))
+                .ok t  => jobs.queue[i].running @ [t]
+                .err _ => return
+        i @ i + 1
+
+# What a job's thread is given: the job's number, the port to tell, and the
+# password with its salt and iterations, as JSON.
+#
+# - `job`: the job.
+# - `port`: the port to tell.
+function arg_of(job: Job lent, port: i64) -> str
+    v: json.Value = .object(
+        members: {"id": objects.number(job.id), "port": objects.number(port), "password": objects.text(job.work.password), "salt": objects.text(bytes.format_hex(job.work.secret.salt)), "iterations": objects.number(job.work.secret.iterations)}
+    )
+    return json.format(v).must()
+
+# The body of a hashing thread: the hash `arg` asks for, as `ok` and its
+# hexadecimal, or `failed` and why; the job's number told to the server's
+# socket before it returns.
+#
+# - `arg`: what `arg_of` wrote.
+function hash_in_thread(arg: str) -> str
+    v = match json.parse(arg)
+        .ok got => got
+        .err e  => return f"failed {e.msg}"
+
+    answer = match hash_of_arg(v)
+        .ok hash => f"ok {bytes.format_hex(hash)}"
+        .err e   => f"failed {e.msg}"
+
+    # The loop joins this thread when it hears the number; a datagram lost
+    # leaves the job until the stop, when every thread is joined.
+    _ = told.say(
+        port: objects.int_of(v, key: "port").default(0),
+        text: to_str(objects.int_of(v, key: "id").default(0))
+    ).is_err()
+    return answer
+
+# The hash the JSON object `v` asks for.
+#
+# - `v`: what `arg_of` wrote, parsed.
+function hash_of_arg(v: json.Value) -> [u8]?
+    salt = bytes.parse_hex(objects.text_of(v, key: "salt")?)?
+    return passwords.hash_of(
+        objects.text_of(v, key: "password")?,
+        salt: salt,
+        iterations: objects.int_of(v, key: "iterations")?
+    )
+
+# The job whose thread told `text`, its thread joined and its job taken off,
+# with the hash it made; the jobs waiting are started.
+#
+# - `jobs`: the jobs.
+# - `text`: the datagram's text, a job's number.
+#
+# Fails `not_found` where it names no running job.
+function finished(@jobs: Jobs, text: str) -> Done?
+    id = numbers.parse_int(text).default(-1)
+    i @= 0
+
+    while i < jobs.queue.len()
+        if jobs.queue[i].id == id && jobs.queue[i].running.len() == 1
+            job @= jobs.queue[i]
+            kept: [Job] @= []
+
+            for j in jobs.queue
+                if j.id != id
+                    kept @ kept.push(j)
+
+            jobs.queue @ kept
+            said = threads.wait_text(@job.running[0])
+            start_waiting(@jobs)
+            return ok(Done(work: job.work, stream: job.stream, request: job.request, hash: hash_of_said(said)))
+
+        i @ i + 1
+
+    return fail(code: "not_found", msg: f"no running job has the number \"{text}\"")
+
+# The hash a thread answered, as `hash_in_thread` writes it.
+#
+# - `said`: `ok` and the hexadecimal, or `failed` and why.
+function hash_of_said(said: str) -> [u8]?
+    if said.len() > 3 && said.slice(from: 0, to: 3) == "ok "
+        return bytes.parse_hex(said.slice(from: 3, to: said.len()))
+
+    return fail(code: "failed", msg: f"the hash was not made: {said}")
+
+# Every job, each running thread joined: what the server holds at its stop,
+# whose connections it closes.
+#
+# - `jobs`: the jobs, emptied.
+function drain(@jobs: Jobs) -> [Job]
+    held @= jobs.queue
+    jobs.queue @ []
+    i @= 0
+
+    while i < held.len()
+        if held[i].running.len() == 1
+            # The hash is thrown away; the wait is for the thread to end.
+            _ = threads.wait_text(@held[i].running[0])
+        i @ i + 1
+
+    return held
+
+test "hash_of_said: a hash, a failure, and a text of neither"
+    assert hash_of_said("ok 0aff").must() == [10, 255]
+    assert hash_of_said("failed no").is_err()
+    assert hash_of_said("ok").is_err()
+
+test "hash_in_thread: the hash `passwords.hash_of` makes, and arguments that are none"
+    v: json.Value = .object(
+        members: {"id": objects.number(1), "port": objects.number(9), "password": objects.text("long enough"), "salt": objects.text("00ff"), "iterations": objects.number(3)}
+    )
+    assert hash_of_arg(v).must() == passwords.hash_of("long enough", salt: [0, 255], iterations: 3).must()
+    assert hash_in_thread("not json").slice(from: 0, to: 7) == "failed "

@@ -1,0 +1,65 @@
+# The demo's work: the jobs a shop's backend hands off in its first minutes,
+# and the recurring upkeep. Webhooks to subscribers who answer at once, after
+# one or two refusals, never, or with "gone"; a duplicate refused by its
+# unique key; a file checked; a report scheduled twenty minutes ahead; and a
+# purge of old completed jobs every quarter of an hour.
+
+use <rebel>/jobs
+use <rebel>/json
+use <rebel>/time
+
+use schedule/recurring
+
+# A webhook delivery of `event` to the endpoint `endpoint` under `hooks`.
+#
+# - `hooks`: the endpoints' base URL.
+# - `endpoint`: the endpoint's path after it, with its query.
+# - `event`: the event's name, `order.paid`.
+# - `order`: the order it is about.
+function webhook(hooks: str, endpoint: str, event: str, order: i64) -> jobs.Job
+    body: json.Value = .object(members: {"event": .text(v: event), "order": .number(v: to_f64(order))})
+    job @= jobs.new_job(
+        "deliver_webhook",
+        payload: .object(members: {"url": .text(v: hooks + "/" + endpoint), "event": .text(v: event), "body": body})
+    )
+    job.queue @ "webhooks"
+    job.max_attempts @ 4
+    job.unique_key @ f"{event}:{order}"
+    return job
+
+# The jobs the demo enqueues, in order: the second the first's duplicate.
+#
+# - `hooks`: the webhook endpoints' base URL.
+# - `upload`: the path of the file the checksum job reads.
+# - `report_at`: when the scheduled report runs.
+function jobs_of(hooks: str, upload: str, report_at: time.Instant) -> [jobs.Job]
+    check @= jobs.new_job("checksum", payload: .object(members: {"path": .text(v: upload)}))
+    check.priority @ jobs.LAST_PRIORITY
+    report @= jobs.new_job("queue_report", payload: .object(members: {}))
+    report.queue @ "maintenance"
+    report.start @ .at(instant: report_at)
+    return [
+        webhook(hooks: hooks, endpoint: "orders", event: "order.paid", order: 1001)
+        webhook(hooks: hooks, endpoint: "orders", event: "order.paid", order: 1001)
+        webhook(hooks: hooks, endpoint: "billing?fails=2", event: "invoice.sent", order: 1002)
+        webhook(hooks: hooks, endpoint: "crm?fails=1", event: "customer.created", order: 1003)
+        webhook(hooks: hooks, endpoint: "down", event: "stock.low", order: 1004)
+        webhook(hooks: hooks, endpoint: "gone", event: "order.refunded", order: 1005)
+        check
+        report
+    ]
+
+# The recurring schedules of the demo: the purge, every quarter of an hour.
+#
+# Fails as `recurring.periodic_of` fails, which a test holds it does not.
+function schedules() -> [jobs.Periodic]?
+    return ok([recurring.periodic_of(spec: "purge_finished@*/15 * * * *", queue: "maintenance")?])
+
+# The text of the file the checksum job reads.
+function upload_text() -> str
+    return "invoice 1002, 3 lines, 41.50 EUR\n"
+
+test "jobs_of: eight jobs, the second the first's duplicate"
+    every = jobs_of(hooks: "http://h", upload: "u.txt", report_at: time.epoch())
+    assert every.len() == 8 && every[0].unique_key == every[1].unique_key
+    assert schedules().must().len() == 1

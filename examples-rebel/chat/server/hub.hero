@@ -1,0 +1,306 @@
+# Who is connected and who hears what: the server's routing, kept apart from
+# its sockets so it can be tested without one. A user may hold several
+# connections at once (a laptop and a phone); presence follows the user, not
+# the connection, so `online` is told at a user's first connection and
+# `offline` at their last. Every function that changes what a room hears
+# answers the deliveries it causes, and the server writes them in the order
+# answered, which is the order every client sees.
+
+use <rebel>/time
+
+use core/model
+use protocol/notices
+
+# One open connection, signed in.
+record Session
+    # The connection's key, as the server's poll set gave it.
+    key: i64
+    # The user it is signed in as.
+    user: str
+
+# The connections and the rooms of the users who hold them. Made by
+# `new_hub`; changed only by this module's functions.
+record Hub
+    # The open connections, in the order they opened.
+    sessions: [Session]
+    # The rooms of each user online, in the order joined.
+    rooms: {str: [str]}
+
+# One notice to write to one connection.
+record Delivery
+    # The connection's key.
+    key: i64
+    # The notice.
+    notice: notices.Notice
+
+# A hub with no connection.
+function new_hub() -> Hub
+    rooms: {str: [str]} = {}
+    return Hub(sessions: [], rooms: rooms)
+
+# The user the connection `key` is signed in as.
+#
+# - `hub`: the hub.
+# - `key`: the connection's key.
+#
+# Fails `not_found` where no open connection has the key.
+function user_of(hub: Hub lent, key: i64) -> str?
+    for s in hub.sessions
+        if s.key == key
+            return ok(s.user)
+
+    return fail(code: "not_found", msg: f"no connection has the key {key}")
+
+# The keys of `user`'s open connections, in the order they opened.
+#
+# - `hub`: the hub.
+# - `user`: the user.
+function keys_of(hub: Hub lent, user: str) -> [i64]
+    found: [i64] @= []
+
+    for s in hub.sessions
+        if s.user == user
+            found @ found.push(s.key)
+
+    return found
+
+# The users online, sorted by their names' bytes, each once.
+#
+# - `hub`: the hub.
+function online_of(hub: Hub lent) -> [str]
+    return sort(keys(hub.rooms))
+
+# The rooms `user` is in, empty where they are offline.
+#
+# - `hub`: the hub.
+# - `user`: the user.
+function rooms_of(hub: Hub lent, user: str) -> [str]
+    return hub.rooms[user].default([])
+
+# Whether `user` is online and in `room`.
+#
+# - `hub`: the hub.
+# - `user`: the user.
+# - `room`: the room's name.
+function is_member(hub: Hub lent, user: str, room: str) -> bool
+    for r in rooms_of(hub, user: user)
+        if r == room
+            return true
+
+    return false
+
+# The keys of every connection of every user online in `room`, but those of
+# `except`, in the order the connections opened.
+#
+# - `hub`: the hub.
+# - `room`: the room's name.
+# - `except`: a user left out, "" for none.
+function room_keys(hub: Hub lent, room: str, except: str) -> [i64]
+    found: [i64] @= []
+
+    for s in hub.sessions
+        if s.user != except && is_member(hub, user: s.user, room: room)
+            found @ found.push(s.key)
+
+    return found
+
+# `notice` to each of `targets`.
+#
+# - `targets`: the connections' keys.
+# - `notice`: the notice.
+function to_each(targets: [i64], notice: notices.Notice) -> [Delivery]
+    found: [Delivery] @= []
+
+    for key in targets
+        found @ found.push(Delivery(key: key, notice: notice))
+
+    return found
+
+# Opens the connection `key` for `user`, in `rooms`, and answers its welcome
+# and, where it is the user's first, their presence to every other connection.
+#
+# - `hub`: the hub, which gains the connection.
+# - `key`: the connection's key.
+# - `user`: the user it signed in as.
+# - `rooms`: the rooms the store says the user is in; read only at their first
+#   connection, since the hub is the truth while they are online.
+function open_session(@hub: Hub, key: i64, user: str, rooms: [str]) -> [Delivery]
+    first = keys_of(hub, user: user).len() == 0
+    others: [i64] @= []
+
+    for s in hub.sessions
+        if s.user != user
+            others @ others.push(s.key)
+
+    sessions @= hub.sessions
+    sessions @ sessions.push(Session(key: key, user: user))
+    hub.sessions @ sessions
+
+    if first
+        hub.rooms[user] @ rooms
+
+    told: [Delivery] @= [
+        Delivery(key: key, notice: .welcome(user: user, rooms: rooms_of(hub, user: user), online: online_of(hub)))
+    ]
+
+    if first
+        for d in to_each(others, notice: .presence(user: user, online: true))
+            told @ told.push(d)
+
+    return told
+
+# Closes the connection `key`, and answers the user's presence going offline
+# to every other connection where it was their last.
+#
+# - `hub`: the hub, which loses the connection.
+# - `key`: the connection's key; one the hub does not hold changes nothing.
+function close_session(@hub: Hub, key: i64) -> [Delivery]
+    user = match user_of(hub, key: key)
+        .ok u  => u
+        .err _ => return []
+
+    kept: [Session] @= []
+
+    for s in hub.sessions
+        if s.key != key
+            kept @ kept.push(s)
+
+    hub.sessions @ kept
+
+    if keys_of(hub, user: user).len() > 0
+        return []
+
+    rooms: {str: [str]} @= {}
+
+    for u in keys(hub.rooms)
+        if u != user
+            rooms[u] @ rooms_of(hub, user: u)
+
+    hub.rooms @ rooms
+    return to_each(hub.sessions.map(key_of), notice: .presence(user: user, online: false))
+
+# The key of `s`.
+#
+# - `s`: the connection.
+function key_of(s: Session) -> i64
+    return s.key
+
+# Puts `user` in `room`, and answers the notice of it to every connection of
+# the room, the user's own among them.
+#
+# - `hub`: the hub.
+# - `user`: a user online.
+# - `room`: the room's name; a room they are in already changes nothing and
+#   tells nothing.
+function enter(@hub: Hub, user: str, room: str) -> [Delivery]
+    if is_member(hub, user: user, room: room)
+        return []
+
+    rooms @= rooms_of(hub, user: user)
+    rooms @ rooms.push(room)
+    hub.rooms[user] @ rooms
+    return to_each(room_keys(hub, room: room, except: ""), notice: .joined(room: room, user: user))
+
+# Takes `user` out of `room`, and answers the notice of it to every
+# connection of the room, the user's own among them.
+#
+# - `hub`: the hub.
+# - `user`: a user online.
+# - `room`: the room's name; a room they are not in tells nothing.
+function leave(@hub: Hub, user: str, room: str) -> [Delivery]
+    if !is_member(hub, user: user, room: room)
+        return []
+
+    told = to_each(room_keys(hub, room: room, except: ""), notice: .left(room: room, user: user))
+    kept: [str] @= []
+
+    for r in rooms_of(hub, user: user)
+        if r != room
+            kept @ kept.push(r)
+
+    hub.rooms[user] @ kept
+    return told
+
+# The notice of `m` to every connection of its room.
+#
+# - `hub`: the hub.
+# - `m`: the message posted.
+function posted(hub: Hub lent, m: model.Message) -> [Delivery]
+    return to_each(room_keys(hub, room: m.room, except: ""), notice: .posted(message: m))
+
+# The notice of `m`'s new text to every connection of its room.
+#
+# - `hub`: the hub.
+# - `m`: the message, its new text in it.
+function edited(hub: Hub lent, m: model.Message) -> [Delivery]
+    return to_each(room_keys(hub, room: m.room, except: ""), notice: .edited(message: m))
+
+# The notice of `d` to every connection of its recipient and of its sender,
+# so each of the sender's screens shows it too.
+#
+# - `hub`: the hub.
+# - `d`: the direct message.
+function direct(hub: Hub lent, d: model.Direct) -> [Delivery]
+    targets @= keys_of(hub, user: d.recipient)
+
+    if d.recipient != d.sender
+        for key in keys_of(hub, user: d.sender)
+            targets @ targets.push(key)
+
+    return to_each(targets, notice: .direct(message: d))
+
+# The notice that `user` is typing in `room`, to every connection of the room
+# but the user's own.
+#
+# - `hub`: the hub.
+# - `user`: who is typing.
+# - `room`: the room's name.
+function typing(hub: Hub lent, user: str, room: str) -> [Delivery]
+    return to_each(room_keys(hub, room: room, except: user), notice: .typing(room: room, user: user))
+
+test "open_session: a welcome, presence at the first connection, and none at the second"
+    h @= new_hub()
+    first = open_session(@h, key: 1, user: "alice", rooms: ["general"])
+    assert first == [Delivery(key: 1, notice: .welcome(user: "alice", rooms: ["general"], online: ["alice"]))]
+    second = open_session(@h, key: 2, user: "bob", rooms: [])
+    assert second.len() == 2 && second[1] == Delivery(key: 1, notice: .presence(user: "bob", online: true))
+    again = open_session(@h, key: 3, user: "bob", rooms: ["ignored"])
+    assert again.len() == 1 && rooms_of(h, user: "bob").len() == 0
+    assert online_of(h) == ["alice", "bob"]
+
+test "close_session: offline at the last connection alone, and a key of none"
+    h @= new_hub()
+    _ = open_session(@h, key: 1, user: "alice", rooms: [])
+    _ = open_session(@h, key: 2, user: "bob", rooms: [])
+    _ = open_session(@h, key: 3, user: "bob", rooms: [])
+    assert close_session(@h, key: 2).len() == 0
+    assert close_session(@h, key: 3) == [Delivery(key: 1, notice: .presence(user: "bob", online: false))]
+    assert close_session(@h, key: 9).len() == 0
+    assert online_of(h) == ["alice"]
+
+test "enter: the room's connections told, a second join silent, and typing kept from its typist"
+    h @= new_hub()
+    _ = open_session(@h, key: 1, user: "alice", rooms: ["general"])
+    _ = open_session(@h, key: 2, user: "bob", rooms: [])
+    assert enter(@h, user: "bob", room: "general").map(key_of_delivery) == [1, 2]
+    assert enter(@h, user: "bob", room: "general").len() == 0
+    assert typing(h, user: "bob", room: "general").map(key_of_delivery) == [1]
+    assert leave(@h, user: "bob", room: "general").map(key_of_delivery) == [1, 2]
+    assert typing(h, user: "alice", room: "general").len() == 0
+
+test "direct: the recipient's connections and the sender's, and a message to oneself once"
+    h @= new_hub()
+    _ = open_session(@h, key: 1, user: "alice", rooms: [])
+    _ = open_session(@h, key: 2, user: "bob", rooms: [])
+    _ = open_session(@h, key: 3, user: "alice", rooms: [])
+    at = time.epoch()
+    d = model.Direct(id: "d", sender: "bob", recipient: "alice", text: "hi", at: at)
+    assert direct(h, d: d).map(key_of_delivery) == [1, 3, 2]
+    note = model.Direct(id: "e", sender: "bob", recipient: "bob", text: "note", at: at)
+    assert direct(h, d: note).map(key_of_delivery) == [2]
+
+# The key of `d`, for a test that compares where notices went.
+#
+# - `d`: the delivery.
+function key_of_delivery(d: Delivery) -> i64
+    return d.key

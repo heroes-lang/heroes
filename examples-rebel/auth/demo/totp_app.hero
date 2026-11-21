@@ -1,0 +1,84 @@
+# The demonstration's authenticator app, the one on the person's phone: it
+# reads the `otpauth://totp/` URI the enrolment shows (Google
+# Authenticator's Key Uri Format), takes its key from the `secret`
+# parameter, which is base 32 without padding (RFC 4648 § 6), and shows the
+# code of a moment. `bytes` reads base 64 and hexadecimal but not base 32, so
+# the decoding is written here.
+
+use <rebel>/crypto
+use <rebel>/url
+
+# The code of a URI the app cannot read.
+constant INVALID: str
+    "invalid"
+
+# The key the `otpauth://` URI `uri` hands over.
+#
+# - `uri`: the URI, as the enrolment showed it.
+#
+# Fails `invalid` where it is no TOTP URI or its secret is not base 32.
+function key_of(uri: str) -> [u8]?
+    u = match url.parse(uri)
+        .ok parsed => parsed
+        .err _     => return fail(code: INVALID, msg: "the URI does not read")
+
+    if u.scheme != "otpauth" || u.host != "totp"
+        return fail(code: INVALID, msg: "the URI is not an otpauth TOTP URI")
+
+    secret = url.value_of(url.parse_query(u.query)?, key: "secret")?
+    return base32(secret)
+
+# The code the app shows at `seconds`.
+#
+# - `key`: the key enrolled.
+# - `seconds`: the moment, seconds since 1970.
+#
+# Fails as `crypto.totp` fails.
+function code_at(key: [u8], seconds: i64) -> str?
+    return crypto.totp(crypto.new_otp(key), seconds: seconds)
+
+# The bytes the base 32 `text` writes, upper or lower case, padding allowed
+# and not needed.
+#
+# - `text`: base 32 of RFC 4648 § 6.
+#
+# Fails `invalid` at a character outside its alphabet.
+function base32(text: str) -> [u8]?
+    out: [u8] @= []
+    buffer: i64 @= 0
+    bits: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        c = to_i64(text[i]).must()
+
+        value = if c >= 'A' && c <= 'Z'
+            c - 'A'
+        else if c >= 'a' && c <= 'z'
+            c - 'a'
+        else if c >= '2' && c <= '7'
+            c - '2' + 26
+        else if c == '='
+            -1
+        else
+            return fail(code: INVALID, msg: "the secret is not base 32")
+
+        if value >= 0
+            buffer @ (buffer << 5 | value) & 0xffff
+            bits @ bits + 5
+
+            if bits >= 8
+                bits @ bits - 8
+                out @ out.push(to_u8(buffer >> bits & 0xff).must())
+
+    return ok(out)
+
+test "base32: RFC 4648's test vectors"
+    assert base32("MZXW6YTBOI======").must() == [0x66, 0x6f, 0x6f, 0x62, 0x61, 0x72]
+    assert base32("mzxw6ytb").must() == [0x66, 0x6f, 0x6f, 0x62, 0x61]
+    assert base32("MY").must() == [0x66]
+    assert base32("M1").is_err()
+
+test "key_of: the key of a URI crypto writes"
+    key: [u8] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    uri = crypto.format_totp_uri(crypto.new_otp(key), account: "ana", issuer: "Example").must()
+    assert key_of(uri).must() == key

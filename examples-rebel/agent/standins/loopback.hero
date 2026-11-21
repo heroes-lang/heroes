@@ -1,0 +1,221 @@
+# A stand-in server on the loopback and a thread of its own, so the demo's
+# client can call it from the main thread: started by `start`, which learns
+# the port the system chose from the server itself over a connection to a
+# listener of the main thread (no port is assumed free), and stopped by
+# `stop`, which sends it the one request it ends on and waits for its report.
+#
+# A stand-in reads one request a connection and answers it with
+# `Connection: close`, which HTTP/1.1 allows a server to do whenever it
+# likes; so a client that keeps a connection open between requests can never
+# hold the stand-in on it. What crosses between the threads is text: the
+# stand-in's settings in, its report out (`threads.spawn_text`).
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/io
+use <rebel>/json
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/threads
+
+use support/fields
+
+# The path of the request a stand-in ends on; no API this program speaks to
+# has a path of this form, so no real request can end one.
+constant STOP_PATH: str
+    "/__standin/stop"
+
+# What parts the control port from the settings in a stand-in's argument.
+constant SEPARATOR: str
+    "\u{1e}"
+
+# How long a stand-in waits for its next connection before it ends on its
+# own, in milliseconds: a demo that stopped half way leaves no thread waiting
+# for ever.
+constant IDLE_MS: i64
+    120_000
+
+# A stand-in running, as the main thread holds it.
+record Started
+    # The port it listens on, on 127.0.0.1.
+    port: i64
+    # Its thread, whose answer is its report.
+    thread: threads.TextThread
+
+# A stand-in's side, as its thread holds it.
+record Opened
+    # The listener on 127.0.0.1.
+    listener: net.Listener
+    # The settings the main thread gave.
+    settings: str
+
+# One request read, and the connection to answer it on.
+record Exchange
+    # The reader of the connection; its stream is closed by `answer`.
+    reader: io.Reader
+    # The request.
+    request: http.Request
+
+# Starts `body` on a thread with `settings`, and answers it once it listens.
+#
+# - `body`: the stand-in's thread, which calls `open` first.
+# - `settings`: what it is given, any text.
+#
+# Fails as `net.listen` fails, `limit` where the thread cannot start, and
+# `timeout` where the stand-in never tells its port; its thread is then
+# waited for, so nothing is owed.
+function start(body: (function(str) -> str), settings: str) -> Started?
+    control @= net.listen(host: "127.0.0.1", port: 0)?
+    t @= threads.spawn_text(body: body, arg: f"{control.address.port}" + SEPARATOR + settings)?
+
+    match told_port(control)
+        .ok port =>
+            net.close_listener(@control)?
+            return ok(Started(port: port, thread: t))
+        .err e =>
+            _ = threads.wait_text(@t)
+            net.close_listener(@control)?
+            return fail(code: e.code, msg: f"the stand-in never told its port: {e.msg}")
+
+# The port a stand-in tells over its first connection to `control`.
+function told_port(control: net.Listener) -> i64?
+    told = net.accept(control, deadline_ms: 30_000)?
+    r @= io.reader(told.stream)
+    text = io.read_rest_text(@r)
+    io.close(@r.stream)?
+    return numbers.parse_int(text?)
+
+# The stand-in's side of `start`: a listener on a port the system chooses,
+# its port told to the main thread, and the settings.
+#
+# - `arg`: what the thread was given.
+#
+# Fails as `net` fails, and `invalid` where `arg` is not what `start` writes.
+function open(arg: str) -> Opened?
+    halves = strings.split_once(s: arg, sep: SEPARATOR)?
+    control = numbers.parse_int(halves.before)?
+    l = net.listen(host: "127.0.0.1", port: 0)?
+    c @= net.connect("127.0.0.1", port: control, deadline_ms: 30_000)?
+    io.write_text(c.stream, text: f"{l.address.port}")?
+    io.close(@c.stream)?
+    return ok(Opened(listener: l, settings: halves.after))
+
+# The next request a stand-in reads, its connection kept to answer it on.
+#
+# - `l`: the stand-in's listener.
+#
+# Fails `timeout` where no client connects for `IDLE_MS`, and as
+# `http.next_request` fails on what the client sent, its refusal already
+# answered on the connection, which is then closed.
+function next(l: net.Listener) -> Exchange?
+    conn = net.accept(l, deadline_ms: IDLE_MS)?
+    r @= io.reader(conn.stream)
+
+    match http.next_request(@r, limits: http.default_limits())
+        .ok q => return ok(Exchange(reader: r, request: q))
+        .err e =>
+            closed(io.close(@r.stream))
+            return fail(code: e.code, msg: e.msg)
+
+# Whether `q` is the request a stand-in ends on.
+#
+# - `q`: the request.
+function is_stop(q: http.Request) -> bool
+    return q.method == "POST" && q.url.path == STOP_PATH
+
+# Answers `ex` with `response`, closing the connection after it.
+#
+# - `ex`: the exchange; its stream is closed.
+# - `response`: the answer.
+function answer(@ex: Exchange, response: http.Response)
+    closing @= response
+    closing.closing @ true
+    closed(http.write_answer(ex.reader.stream, r: ex.request, response: closing))
+    closed(io.close(@ex.reader.stream))
+
+# Drops the outcome of a write or a close on a connection the client may have
+# closed first: the stand-in has nothing to tell it any more.
+function closed(outcome: ()?)
+    match outcome
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# Ends the stand-in `s` and answers its report: the request it ends on sent,
+# then its thread waited for.
+#
+# - `s`: the stand-in; its thread is spent.
+#
+# Fails as `net.connect` fails; the thread is waited for all the same, after
+# it ends on its own once `IDLE_MS` has passed.
+function stop(@s: Started) -> str?
+    sent = send_stop(s.port)
+    report = threads.wait_text(@s.thread)
+    sent?
+    return ok(report)
+
+# The request a stand-in ends on, sent to `port`, its answer read.
+function send_stop(port: i64) -> ()?
+    c = net.connect("127.0.0.1", port: port, deadline_ms: 30_000)?
+    io.write_text(c.stream, text: f"POST {STOP_PATH} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")?
+    r @= io.reader(c.stream)
+    _ = http.read_response(@r, method: "POST", limits: http.default_limits())?
+    io.close(@r.stream)?
+    return ok()
+
+# A response of `status` holding the JSON text `body`, with `extra` fields
+# beside its type, as an API answers.
+#
+# - `status`: the status.
+# - `body`: the body, JSON text.
+# - `extra`: more fields, each a name and a value.
+function json_response(status: i64, body: str, extra: [http.Header]) -> http.Response
+    r @= http.respond(status, content_type: "application/json", body: bytes.from_text(body))
+
+    for f in extra
+        r.headers @ http.with_header(r.headers, name: f.name, value: f.value)
+
+    return r
+
+# What a stand-in tells when it stops.
+record Report
+    # The requests it read.
+    requests: i64
+    # The requests it answered 200.
+    answered: i64
+    # Each refusal, `401 authentication_error`, in order.
+    refusals: [str]
+
+# A stand-in's report as the text its thread answers.
+#
+# - `requests`: the requests read.
+# - `answered`: those answered 200.
+# - `refusals`: each refusal, in order.
+function report_json(requests: i64, answered: i64, refusals: [str]) -> str
+    return fields.compact(
+        .object(members: {"requests": fields.number(requests), "answered": fields.number(answered), "refusals": fields.texts(refusals)})
+    )
+
+# The report a stand-in's thread answered.
+#
+# - `text`: what `report_json` wrote.
+#
+# Fails `invalid` where it is not.
+function report_of(text: str) -> Report?
+    v = json.parse(text)?
+    return ok(
+        Report(requests: fields.int_at(v, key: "requests")?, answered: fields.int_at(v, key: "answered")?, refusals: fields.texts_or_none(v, key: "refusals")?)
+    )
+
+test "is_stop: the stand-in's own path, posted"
+    q @= http.request(method: "POST", target: STOP_PATH).must()
+    assert is_stop(q)
+    q.method @ "GET"
+    assert !is_stop(q)
+
+test "json_response: a status, a type and a field"
+    r = json_response(429, body: "{}", extra: [http.Header(name: "retry-after-ms", value: "250")])
+    assert r.status == 429 && http.value_of(r.headers, name: "Retry-After-Ms").must() == "250"
+
+test "report_of: a report read back"
+    assert report_of(report_json(requests: 3, answered: 2, refusals: ["529 overloaded_error"])).must() == Report(requests: 3, answered: 2, refusals: ["529 overloaded_error"])

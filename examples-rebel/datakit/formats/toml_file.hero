@@ -1,0 +1,214 @@
+# TOML documents read into the model and written from it, through `toml`'s
+# own values, so an integer, a float and the four kinds of date and time
+# cross as themselves.
+#
+# TOML has no null, and its document is a table. A null member is left out
+# when written, which is how a TOML file says a key has no value, and a null
+# inside an array is refused, since leaving it out would move the items after
+# it. A document that is not an object, a table's rows for instance, is
+# written under one key, the table's name: `[[sales]]` for each row.
+
+use <rebel>/numbers
+use <rebel>/time
+use <rebel>/toml
+
+use model/decimal
+use model/model
+use model/moments
+
+## Codes
+
+# The code of a value TOML cannot hold where it stands.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Reading
+
+# The document of the TOML text `text`.
+#
+# - `text`: the file's text.
+#
+# Fails as `toml.parse` fails, `invalid` with the line and column; `toml`
+# bounds the nesting by its own `MAX_DEPTH`, which this program's walk
+# follows.
+function read(text: str) -> model.Value?
+    return ok(of_toml(toml.parse(text)?))
+
+# `v` as a value of the model.
+#
+# - `v`: the TOML value.
+function of_toml(v: toml.Value) -> model.Value
+    return match v
+        .text t    => .text(v: t.v)
+        .integer i => decimal.of_int(i.v)
+        .float f   => decimal.of_float(f.v)
+        .boolean b => .boolean(v: b.v)
+        .date_time d =>
+            p @= moments.of_date_time(d.at, date_only_at_midnight: false)
+            p.has_offset @ true
+            p.offset_minutes @ d.offset_minutes
+            .moment(text: moments.format(p))
+        .local_date_time d => .moment(text: moments.format(moments.of_date_time(d.at, date_only_at_midnight: false)))
+        .local_date d      => .moment(text: moments.format(moments.of_date_time(d.at, date_only_at_midnight: true)))
+        .local_time t      => .moment(text: local_time_text(t.since_midnight))
+        .array a           => .list(items: a.items.map(of_toml))
+        .table t           => .object(members: members_of_toml(t.members))
+
+# The members of a TOML table, in the order its map holds them.
+#
+# - `members`: the table's members.
+function members_of_toml(members: {str: toml.Value}) -> [model.Member]
+    out: [model.Member] @= []
+
+    for k in keys(members)
+        out @ out.push(model.Member(name: k, value: of_toml(members[k].must())))
+
+    return out
+
+# The text of a time of day `since` past midnight.
+#
+# - `since`: the span since midnight, under a day.
+function local_time_text(since: time.Duration) -> str
+    total = since.nanoseconds
+    seconds = total / 1000000000
+    nanos = total % 1000000000
+    p = moments.Parts(
+        has_date: false,
+        year: 0,
+        month: 0,
+        day: 0,
+        has_time: true,
+        hour: seconds / 3600,
+        minute: seconds / 60 % 60,
+        second: seconds % 60,
+        nanosecond: nanos,
+        fraction_digits: moments.fraction_digits_of(nanos),
+        has_offset: false,
+        offset_minutes: 0
+    )
+    return moments.format(p)
+
+## Writing
+
+# `v` as a TOML document.
+#
+# - `v`: the document; an object is the document's root, anything else is
+#   written under the key `name`.
+# - `name`: the key a document that is no object is written under.
+#
+# Fails `unsupported` where a list holds a null, and as `toml.format` fails,
+# `invalid` for a date outside the years 0 to 9999.
+function write(v: model.Value, name: str) -> str?
+    root = match v
+        .object _ => v
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ | .list _ => model.object_of(
+            [model.Member(name: name, value: v)]
+        )
+
+    return toml.format(to_toml(root, place: name)?)
+
+# `v` as a TOML value.
+#
+# - `v`: the value; not a null, which its holder leaves out.
+# - `place`: where `v` stands, for a message: `sales[2].price`.
+#
+# A number written as an integer that an `i64` holds is an integer, any other
+# a float; a moment is the TOML date or time of its parts; bytes are their
+# Base64 text.
+#
+# Fails `unsupported` where `v` is a null, or a list holds one.
+function to_toml(v: model.Value, place: str) -> toml.Value?
+    return match v
+        .null_value => fail(code: UNSUPPORTED, msg: f"{place} is null, which TOML cannot hold in a list")
+        .boolean b  => ok(.boolean(v: b.v))
+        .number n   => ok(number_to_toml(n.text)?)
+        .text t     => ok(.text(v: t.v))
+        .bytes _    => ok(.text(v: model.cell_text(v)))
+        .moment m   => ok(moment_to_toml(m.text)?)
+        .list l     => ok(.array(items: items_to_toml(l.items, place: place)?))
+        .object o   => ok(.table(members: members_to_toml(o.members, place: place)?))
+
+# A number's text as a TOML integer or float.
+#
+# - `text`: the number.
+#
+# Fails as `decimal.to_float` fails.
+function number_to_toml(text: str) -> toml.Value?
+    match decimal.to_int(text)
+        .ok i  => return ok(.integer(v: i))
+        .err _ => return ok(.float(v: numbers.parse_float(text)?))
+
+# A moment's text as the TOML date or time of its parts.
+#
+# - `text`: the moment.
+#
+# Fails as `moments.parse` fails.
+function moment_to_toml(text: str) -> toml.Value?
+    p = moments.parse(text)?
+
+    if !p.has_date
+        since = p.hour * 3600000000000 + p.minute * 60000000000 + p.second * 1000000000 + p.nanosecond
+        return ok(.local_time(since_midnight: time.nanoseconds(since)))
+
+    dt = moments.date_time_of(p)
+
+    if !p.has_time
+        return ok(.local_date(at: dt))
+
+    if !p.has_offset
+        return ok(.local_date_time(at: dt))
+    return ok(.date_time(at: dt, offset_minutes: p.offset_minutes))
+
+# The items of a list as TOML values.
+#
+# - `items`: the items.
+# - `place`: where the list stands.
+#
+# Fails as `to_toml` fails.
+function items_to_toml(items: [model.Value], place: str) -> [toml.Value]?
+    out: [toml.Value] @= []
+    at: i64 @= 0
+
+    for item in items
+        out @ out.push(to_toml(item, place: f"{place}[{at}]")?)
+        at @ at + 1
+
+    return ok(out)
+
+# The members of an object as a TOML table's map, a null member left out.
+#
+# - `members`: the members.
+# - `place`: where the object stands.
+#
+# Fails as `to_toml` fails.
+function members_to_toml(members: [model.Member], place: str) -> {str: toml.Value}?
+    out: {str: toml.Value} @= {}
+
+    for m in members
+        match m.value
+            .null_value => _ = 0
+            .boolean _ | .number _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ =>
+                out[m.name] @ to_toml(m.value, place: f"{place}.{m.name}")?
+
+    return ok(out)
+
+## Tests
+
+test "read: integers, floats and the four kinds of date and time"
+    v = read(
+        "a = 1\nb = 2.0\nc = 1979-05-27T07:32:00-08:00\nd = 1979-05-27T07:32:00.5\ne = 1979-05-27\nf = 07:32:00\n"
+    ).must()
+    assert model.json_text(v) == "{\"a\":1,\"b\":2.0,\"c\":\"1979-05-27T07:32:00-08:00\",\"d\":\"1979-05-27T07:32:00.500\",\"e\":\"1979-05-27\",\"f\":\"07:32:00\"}"
+
+test "write: a null member left out, a list under the table's name, a null in a list refused"
+    row: model.Value = model.object_of(
+        [model.Member(name: "id", value: .number(text: "1")), model.Member(name: "note", value: .null_value)]
+    )
+    assert write(.list(items: [row]), name: "sales").must() == "[[sales]]\nid = 1\n"
+    assert write(.list(items: [.null_value]), name: "x").is_err()
+
+test "write and read: a moment and a float cross back as themselves"
+    doc: model.Value = model.object_of(
+        [model.Member(name: "at", value: .moment(text: "2026-03-01T09:30:00Z")), model.Member(name: "x", value: .number(text: "0.5"))]
+    )
+    assert model.json_text(read(write(doc, name: "d").must()).must()) == model.json_text(doc)

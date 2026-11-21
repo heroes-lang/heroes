@@ -1,0 +1,143 @@
+# `datakit stats`: what each column of a table holds, as pandas' `describe`
+# lays it out, a row for each statistic and a column for each column
+# described.
+#
+# Every column has its kind, its count of values, its nulls, its distinct
+# values, its least and its greatest. A column of numbers alone, nulls aside,
+# also has its exact sum, its exact mean and median, its sample standard
+# deviation, and the percentiles asked; those are left empty for any other
+# column, since a mean of texts is no number. Each statistic is
+# `query/aggregate`'s, so `stats` and `query --agg` agree to the digit.
+
+use model/model
+use model/tables
+use query/aggregate
+
+## Describing
+
+# The table of statistics of `columns` of `t`.
+#
+# - `t`: the table.
+# - `columns`: the columns described, in this order; none for every column.
+# - `percents`: the percentiles reported, each from 1 to 99, in this order.
+#
+# Fails `not_found` where a column named is not in `t`, and `invalid` where a
+# percent is outside 1 to 99.
+function describe(t: model.Table lent, columns: [str], percents: [i64]) -> model.Table?
+    chosen = if columns.len() == 0
+        t.columns
+    else
+        columns
+
+    for c in chosen
+        _ = tables.column_index(t, name: c)?
+
+    for p in percents
+        if p < 1 || p > 99
+            return fail(code: aggregate.INVALID, msg: f"a percentile is from 1 to 99, asked {p}")
+
+    numeric_stats: [str] @= ["sum", "mean", "stdev", "median"]
+
+    for p in percents
+        numeric_stats @ numeric_stats.push(f"p{p}")
+
+    names: [str] @= ["kind", "count", "nulls", "distinct", "min", "max"]
+
+    for s in numeric_stats
+        names @ names.push(s)
+
+    rows: [[model.Value]] @= []
+
+    for stat in names
+        rows @ rows.push([.text(v: stat)])
+
+    for c in chosen
+        column = tables.column_index(t, name: c)?
+        values: [model.Value] @= []
+        nulls: i64 @= 0
+
+        for row in t.rows
+            v = row[column]
+
+            if v == .null_value
+                nulls @ nulls + 1
+            else
+                values @ values.push(v)
+
+        kind = kind_of(values)
+        at: i64 @= 0
+
+        for stat in names
+            cell: model.Value = if stat == "kind"
+                .text(v: kind)
+            else if stat == "nulls"
+                .number(text: f"{nulls}")
+            else if stat == "count" || stat == "distinct" || stat == "min" || stat == "max" || kind == "number"
+                aggregate.apply(aggregate.Aggregate(kind: stat, column: c, name: f"{stat}({c})"), values: values)?
+            else
+                .null_value
+            rows[at] @ rows[at].push(cell)
+            at @ at + 1
+
+    return ok(model.Table(name: t.name, columns: ["stat"].concat_names(then: chosen), rows: rows))
+
+# The kind of a column's values: their one kind, `mixed` where there are
+# several, `empty` where there is none.
+#
+# - `values`: the values, no null among them.
+function kind_of(values: [model.Value]) -> str
+    if values.len() == 0
+        return "empty"
+
+    first = model.kind_name(values[0])
+
+    for v in values
+        if model.kind_name(v) != first
+            return "mixed"
+
+    return first
+
+# `first` followed by `then`.
+#
+# - `first`: the names that come first.
+# - `then`: the names after them.
+function concat_names(first: [str], then: [str]) -> [str]
+    out: [str] @= first
+
+    for n in then
+        out @ out.push(n)
+
+    return out
+
+## Tests
+
+test "describe: a column of numbers and one of texts, percentiles asked"
+    rows: [[model.Value]] = [
+        [.text(v: "north"), .number(text: "1.50")]
+        [.text(v: "south"), .number(text: "2.50")]
+        [.text(v: "north"), .null_value]
+        [.text(v: "east"), .number(text: "5")]
+    ]
+    t = model.Table(name: "t", columns: ["region", "amount"], rows: rows)
+    d = describe(t, columns: [], percents: [50]).must()
+    assert d.columns == ["stat", "region", "amount"]
+    assert d.rows.map(row_name) == ["kind", "count", "nulls", "distinct", "min", "max", "sum", "mean", "stdev", "median", "p50"]
+    assert d.rows[0] == [.text(v: "kind"), .text(v: "text"), .text(v: "number")]
+    assert d.rows[1] == [.text(v: "count"), .number(text: "4"), .number(text: "3")]
+    assert d.rows[2] == [.text(v: "nulls"), .number(text: "0"), .number(text: "1")]
+    assert d.rows[4] == [.text(v: "min"), .text(v: "east"), .number(text: "1.50")]
+    assert d.rows[6] == [.text(v: "sum"), .null_value, .number(text: "9.00")]
+    assert d.rows[7] == [.text(v: "mean"), .null_value, .number(text: "3")]
+    assert d.rows[9] == [.text(v: "median"), .null_value, .number(text: "2.50")]
+
+test "describe: an unknown column and a percentile out of range are refused"
+    t = model.Table(name: "t", columns: ["a"], rows: [])
+    assert describe(t, columns: ["b"], percents: []).is_err()
+    assert describe(t, columns: [], percents: [100]).is_err()
+    assert describe(t, columns: [], percents: []).must().rows[0] == [.text(v: "kind"), .text(v: "empty")]
+
+# The name of a statistic's row, for the tests.
+#
+# - `row`: the row.
+function row_name(row: [model.Value]) -> str
+    return model.cell_text(row[0])

@@ -1,0 +1,83 @@
+# The service's business clock: the moment a note, a comment, a session or a
+# token is stamped with. It is the wall clock when serving, and in the demo a
+# fixed clock that moves one step at each reading, so the same session of
+# requests stamps the same moments on every run. Logs and timings never read
+# it: a duration measured on a fixed clock would be a made-up number.
+
+use <rebel>/time
+
+## Codes
+
+# The code of a fixed clock whose step is not above zero.
+constant INVALID: str
+    "invalid"
+
+## The clock
+
+# Where the time comes from.
+variant Clock
+    # The system's clock, read at each request.
+    wall
+    # A clock that answers `start` at its first reading and `step` later at
+    # each next one.
+    fixed
+        # The first moment it answers.
+        start: time.Instant
+        # How far each reading moves it, above zero.
+        step: time.Duration
+        # How many readings it has answered.
+        readings: i64
+
+# A fixed clock from `start`, moving `step` at each reading.
+#
+# - `start`: its first moment.
+# - `step`: how far it moves at each reading; above zero, so two readings
+#   never tie and an order by time is the order of the requests.
+#
+# Fails `invalid` where `step` is not above zero.
+function fixed_from(start: time.Instant, step: time.Duration) -> Clock?
+    if step.nanoseconds <= 0
+        return fail(code: INVALID, msg: f"a fixed clock's step of {time.format_duration(step)} is not above zero")
+
+    return ok(.fixed(start: start, step: step, readings: 0))
+
+# The time now by `clock`, which a fixed clock moves on.
+#
+# - `clock`: the clock; a fixed one counts the reading.
+#
+# Fails as `time.now` does for the wall clock, and `does_not_fit` where a
+# fixed clock would pass the last instant.
+function now(@clock: Clock) -> time.Instant?
+    match clock
+        .wall => return time.now()
+        .fixed f =>
+            at = time.add(f.start, d: time.scale(f.step, by: f.readings)?)?
+            clock @ .fixed(start: f.start, step: f.step, readings: f.readings + 1)
+            return ok(at)
+
+# Whether `clock` is a fixed one: what the demo's transcript relies on.
+#
+# - `clock`: the clock.
+function is_fixed(clock: Clock) -> bool
+    return match clock
+        .wall    => false
+        .fixed _ => true
+
+test "now: a fixed clock answers its start, then a step later at each reading"
+    start = time.from_unix(whole_seconds: 1_763_715_600, extra_nanoseconds: 0).must()
+    c @= fixed_from(start: start, step: time.seconds(1).must()).must()
+    assert now(@c).must() == start
+    assert time.unix_seconds(now(@c).must()) == 1_763_715_601
+    assert time.unix_seconds(now(@c).must()) == 1_763_715_602
+    assert is_fixed(c)
+
+test "fixed_from: a step of zero and below refused"
+    assert fixed_from(start: time.epoch(), step: time.nanoseconds(0)).is_err()
+    assert fixed_from(start: time.epoch(), step: time.nanoseconds(-1)).is_err()
+
+test "now: the wall clock moves forward"
+    c: Clock @= .wall
+    first = now(@c).must()
+    second = now(@c).must()
+    assert !time.is_before(a: second, b: first)
+    assert !is_fixed(c)

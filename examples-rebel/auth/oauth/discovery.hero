@@ -1,0 +1,69 @@
+# What the server says of itself: its metadata, served at both well-known
+# paths (RFC 8414 § 3, OpenID Connect Discovery § 4), so that a client
+# configured with the issuer alone finds every endpoint, the one signing
+# algorithm and the one PKCE method. `authorization_response_iss_parameter_supported`
+# tells a client to check `iss` on every redirect (RFC 9207), which this
+# server always writes.
+
+use <rebel>/json
+
+use server/answers
+
+# The scopes this server grants.
+constant SCOPES: str
+    "openid profile email offline_access"
+
+# The paths of the server's endpoints, under the issuer.
+record Paths
+    # The authorization endpoint.
+    authorize: str
+    # The token endpoint.
+    token: str
+    # The UserInfo endpoint.
+    userinfo: str
+    # The JWK set.
+    jwks: str
+    # The revocation endpoint (RFC 7009).
+    revoke: str
+    # The introspection endpoint (RFC 7662).
+    introspect: str
+
+# The paths this server serves its endpoints at.
+function paths() -> Paths
+    return Paths(
+        authorize: "/authorize",
+        token: "/token",
+        userinfo: "/userinfo",
+        jwks: "/jwks",
+        revoke: "/revoke",
+        introspect: "/introspect"
+    )
+
+# The metadata of the server whose issuer is `issuer`.
+#
+# - `issuer`: the issuer's URL, with no slash at its end.
+function metadata(issuer: str) -> {str: json.Value}
+    p = paths()
+    return {
+        "issuer": .text(v: issuer)
+        "authorization_endpoint": .text(v: issuer + p.authorize)
+        "token_endpoint": .text(v: issuer + p.token)
+        "userinfo_endpoint": .text(v: issuer + p.userinfo)
+        "jwks_uri": .text(v: issuer + p.jwks)
+        "revocation_endpoint": .text(v: issuer + p.revoke)
+        "introspection_endpoint": .text(v: issuer + p.introspect)
+        "scopes_supported": answers.texts(answers.scopes_of(SCOPES))
+        "response_types_supported": answers.texts(["code"])
+        "grant_types_supported": answers.texts(["authorization_code", "refresh_token"])
+        "subject_types_supported": answers.texts(["public"])
+        "id_token_signing_alg_values_supported": answers.texts(["ES256"])
+        "token_endpoint_auth_methods_supported": answers.texts(["client_secret_basic", "client_secret_post", "none"])
+        "code_challenge_methods_supported": answers.texts(["S256"])
+        "claims_supported": answers.texts(["sub", "iss", "aud", "exp", "iat", "auth_time", "nonce", "amr", "at_hash", "name", "preferred_username", "email", "email_verified"])
+        "authorization_response_iss_parameter_supported": .boolean(v: true)
+    }
+
+test "metadata: every endpoint under the issuer, S256 alone"
+    m = metadata("https://a.example")
+    assert json.text_of(m["token_endpoint"].must()).must() == "https://a.example/token"
+    assert json.items_of(m["code_challenge_methods_supported"].must()).must().len() == 1

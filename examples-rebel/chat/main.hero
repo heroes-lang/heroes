@@ -1,0 +1,190 @@
+# chat: a realtime chat service and its terminal client. People sign in with
+# a password and get a JSON Web Token; they talk in rooms and in direct
+# messages over a WebSocket, see who is online and who is typing, page back
+# through a room's history kept in SQLite, write `:emoji_name:` shortcodes
+# that turn into emoji by their Unicode names, and edit their lines and their
+# last message by grapheme clusters, so a flag or a family is one step. A room
+# may be mirrored to an MQTT topic or a NATS subject, both ways, so devices
+# and services talk in it.
+#
+# Run for real:
+#
+#     chat serve --listen 127.0.0.1:8080 --db chat.db \
+#         --mirror iot=mqtt:chat/rooms/iot --mqtt mqtt://127.0.0.1:1883 \
+#         --mirror ops=nats:chat.rooms.ops --nats nats://127.0.0.1:4222
+#     chat client http://127.0.0.1:8080 --user alice --register --lang en-US
+#
+# The server's token secret is `CHAT_SECRET` (32 bytes or more); without it a
+# random one is made, and tokens end with the server. `chat demo` plays a
+# whole session on this machine, the brokers replaced by stand-ins the
+# program carries, and prints its transcript.
+#
+# The Rebel packages it uses, and for what:
+# - `websocket`: the clients' connections, upgraded by the server and opened
+#   by the client; `web` and `http`: the API's routes, requests and answers,
+#   and the client's sign-in; `net` and `poll`: the listener and one loop
+#   serving every connection; `threads`: the demo's servers.
+# - `jose`: the tokens (HS256); `crypto` and `os`: passwords kept as
+#   PBKDF2-HMAC-SHA256 of a random salt.
+# - `sql` and `sql/sqlite`: accounts, rooms, memberships and the paged
+#   history; `uuid`: messages' version 7 identifiers.
+# - `mqtt` and `nats`: the bridge's clients, and the stand-ins' packets;
+#   `json`: every frame and payload.
+# - `tui` and `term`: the terminal client's screen and keys;
+#   `unicode/segment`: the line editor's grapheme and word boundaries and the
+#   text's width; `unicode/names`: shortcodes resolved by character names.
+# - `i18n` and `i18n/dates`: the client's phrases with their plural forms and
+#   its times written in the reader's language; `time`: the clocks and zones.
+# - `flags`: this command line; `fs` and `path`: the demo's folder; `url`:
+#   the server a client is given; `bytes`, `strings`, `numbers`, `io`,
+#   `math` and `unicode`: the text, the bytes and the streams under it all.
+
+use <rebel>/bytes
+use <rebel>/flags
+use <rebel>/i18n
+use <rebel>/net
+use <rebel>/os
+
+use bridge/places
+use client/terminal
+use demo/script
+use server/serving
+use server/settings
+
+# The declaration of the command line.
+function declaration() -> flags.Command
+    root @= flags.command(name: "chat", about: "A realtime chat service and its terminal client.")
+
+    serving_command @= flags.command(name: "serve", about: "Serve chat over HTTP and WebSocket until Ctrl-C.")
+    flags.add(
+        @serving_command,
+        flags.with_default(flags.option(long: "listen", short: "l", value_name: "HOST:PORT", help: "where to listen"), value: "127.0.0.1:8080")
+    )
+    flags.add(
+        @serving_command,
+        flags.with_default(flags.option(long: "db", short: "d", value_name: "FILE", help: "the SQLite file of the history"), value: "chat.db")
+    )
+    flags.add(
+        @serving_command,
+        flags.option(long: "mirror", short: "m", value_name: "ROOM=mqtt:TOPIC|ROOM=nats:SUBJECT", help: "mirror a room to a broker; may repeat")
+    )
+    flags.add(
+        @serving_command,
+        flags.with_default(flags.option(long: "mqtt", short: "", value_name: "URL", help: "the MQTT server of the mirrors"), value: "mqtt://127.0.0.1:1883")
+    )
+    flags.add(
+        @serving_command,
+        flags.with_default(flags.option(long: "nats", short: "", value_name: "URL", help: "the NATS server of the mirrors"), value: "nats://127.0.0.1:4222")
+    )
+    flags.add(
+        @serving_command,
+        flags.with_kind(flags.with_default(flags.option(long: "token-hours", short: "", value_name: "HOURS", help: "how long a token lives"), value: "24"), kind: .integer)
+    )
+    flags.add_command(c: @root, sub: serving_command)
+
+    client_command @= flags.command(name: "client", about: "Talk on a chat server, in this terminal.")
+    flags.add(@client_command, flags.positional(name: "url", help: "the server, http://host:port"))
+    flags.add(
+        @client_command,
+        flags.with_required(flags.option(long: "user", short: "u", value_name: "NAME", help: "who you are"))
+    )
+    flags.add(@client_command, flags.flag(long: "register", short: "r", help: "make the account first"))
+    flags.add(
+        @client_command,
+        flags.option(long: "lang", short: "", value_name: "TAG", help: "your language, en-US or it-IT; the environment's by default")
+    )
+    flags.add_command(c: @root, sub: client_command)
+
+    flags.add_command(
+        c: @root,
+        sub: flags.command(name: "demo", about: "Play a whole session on this machine and print it.")
+    )
+    return root
+
+# Reads the command line and runs the command it names: `serve`, `client`
+# or `demo`; a mistake in it prints the usage and ends with 2.
+function main()
+    found = match flags.parse_args(declaration())
+        .ok f => f
+        .err e =>
+            print(e.msg)
+            exit(code: 2)
+            return
+
+    if flags.is_help(found)
+        print(flags.help_text(found))
+        return
+
+    chosen = match flags.subcommand(found)
+        .ok f => f
+        .err _ =>
+            print(flags.help_text(found))
+            exit(code: 2)
+            return
+
+    outcome = match flags.name_of(chosen)
+        "serve"  => serve(chosen)
+        "client" => client(chosen)
+        _        => play_demo()
+
+    match outcome
+        .ok _ => _ = 0
+        .err e =>
+            print(f"chat: {e.msg}")
+            exit(code: 1)
+
+# Plays the demo.
+function play_demo() -> ()?
+    script.run()
+    return ok()
+
+# `chat serve`: the settings read from the flags and the environment, then
+# the server run until Ctrl-C, its summary printed.
+#
+# - `f`: what the parse found for `serve`.
+function serve(f: flags.Found) -> ()?
+    place = net.parse_address_port(flags.value_of(f, name: "listen")?)?
+
+    secret = match os.env("CHAT_SECRET")
+        .ok s => bytes.from_text(s)
+        .err _ =>
+            print("chat: CHAT_SECRET is not set: tokens are signed by a random secret and end with the server")
+            os.random_bytes(32)?
+
+    s @= settings.default_settings(
+        host: net.format_host(place.host),
+        port: place.port,
+        database: flags.value_of(f, name: "db")?,
+        secret: secret
+    )
+    s.token_hours @ flags.int_of(f, name: "token-hours")?
+    s.mqtt_url @ flags.value_of(f, name: "mqtt")?
+    s.nats_url @ flags.value_of(f, name: "nats")?
+
+    for m in flags.values_of(f, name: "mirror")
+        mirrors @= s.mirrors
+        mirrors @ mirrors.push(places.parse_mirror(m)?)
+        s.mirrors @ mirrors
+
+    os.catch_stop()?
+    print(f"chat: serving on {net.format_address(place)}; Ctrl-C ends it")
+    print(serving.serve(s)?)
+    return ok()
+
+# `chat client`: the terminal client on the server the URL names.
+#
+# - `f`: what the parse found for `client`.
+function client(f: flags.Found) -> ()?
+    asked_language = flags.value_of(f, name: "lang").default("")
+    from_environment = i18n.environment_languages()
+
+    language = if asked_language != ""
+        asked_language
+    else if from_environment.len() > 0
+        from_environment[0]
+    else
+        "en"
+
+    return terminal.run(
+        terminal.Asked(target: flags.value_of(f, name: "url")?, user: flags.value_of(f, name: "user")?, register: flags.is_on(f, name: "register"), language: language)
+    )

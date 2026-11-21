@@ -1,0 +1,114 @@
+# What the agent writes for a person: lines on the standard output, headings
+# and answers drawn in colour where the output is a terminal that takes it
+# and as plain text everywhere else (`term.write_styled`), so the demo's
+# transcript, written to a pipe, holds no control sequence.
+#
+# Every line goes through the one stream `io.stdout()`: the built-in `print`
+# writes through C's buffered output, and mixing the two would let a pipe
+# receive lines out of their order. A write that fails is dropped: the output
+# is gone, a closed pipe most often, and nothing is left to tell.
+
+use <rebel>/io
+use <rebel>/term
+
+# Writes `text` and a line feed to the standard output.
+#
+# - `text`: the line, without its line feed.
+function line(text: str)
+    written(io.write_line(io.stdout(), line: text))
+
+# Writes every line of `each`, in order.
+#
+# - `each`: the lines, none for nothing.
+function lines(each: [str])
+    for l in each
+        line(l)
+
+# Writes an empty line, then `title` in bold where colour shows.
+#
+# - `title`: the heading's text.
+function heading(title: str)
+    line("")
+    styled(title, style: term.with_attribute(term.plain(), a: .bold))
+
+# Writes `text` in green where colour shows: something that worked.
+#
+# - `text`: the line.
+function good(text: str)
+    styled(text, style: term.with_foreground(term.plain(), color: .green))
+
+# Writes `text` in yellow where colour shows: something refused or retried,
+# which the agent went on from.
+#
+# - `text`: the line.
+function warn(text: str)
+    styled(text, style: term.with_foreground(term.plain(), color: .yellow))
+
+# Writes `text` in cyan where colour shows: what a model answered.
+#
+# - `text`: the answer, one line or several.
+function answer(text: str)
+    styled(text, style: term.with_foreground(term.plain(), color: .cyan))
+
+# Writes `text` to the standard error in red where colour shows there: a
+# failure that ends a command.
+#
+# - `text`: the failure, said for a person.
+function failure(text: str)
+    style = term.with_foreground(term.plain(), color: .red)
+    written(term.write_styled(io.stderr(), text: text + "\n", style: style))
+
+# Writes `t` as a table with a line under its header.
+#
+# - `t`: the rows and the header.
+function table(t: term.Table)
+    written(io.write_text(io.stdout(), text: term.format_table(t)))
+
+# Writes `text` and a line feed in `style`.
+function styled(text: str, style: term.Style)
+    written(term.write_styled(io.stdout(), text: text + "\n", style: style))
+
+# Drops the outcome of a write to a stream that is gone.
+function written(outcome: ()?)
+    match outcome
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# Indents every line of `text` by `spaces` spaces, for an answer or a tool's
+# output written under its heading.
+#
+# - `text`: one line or several, ended by line feeds or not.
+# - `spaces`: how many spaces, 0 or more.
+function indented(text: str, spaces: i64) -> [str]
+    pad = " ".repeat(spaces.to_u64().default(0))
+    out: [str] @= []
+
+    for l in text_lines(text)
+        out @ out.push(pad + l)
+
+    return out
+
+# The lines of `text`, split at line feeds, a last empty line left out.
+function text_lines(text: str) -> [str]
+    parts: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == '\n'
+            parts @ parts.push(text.slice(from: start, to: at))
+            start @ at + 1
+
+        at @ at + 1
+
+    if start < text.len()
+        parts @ parts.push(text.slice(from: start, to: text.len()))
+
+    return parts
+
+test "indented: two lines, a last line feed left out"
+    assert indented("a\nb\n", spaces: 2) == ["  a", "  b"]
+    assert indented("", spaces: 4) == []
+
+test "text_lines: an empty line inside is kept"
+    assert text_lines("a\n\nb") == ["a", "", "b"]

@@ -1,0 +1,418 @@
+# The notes in the database, with their tags and the count of their
+# comments. A note's row, its tags and its links to them are written in one
+# transaction, so no reader ever sees a note without the tags it was given.
+# Lists are newest first, the note's number breaking a tie of moments.
+
+use <rebel>/sql
+use <rebel>/sql/build
+use <rebel>/sql/sqlite
+use <rebel>/time
+
+use domain/model
+use store/database
+
+## Codes
+
+# The code of a note that is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+## Reading
+
+# The select of a note's columns, its author's name as `author` and its
+# comments' count as `comments`; the tags are read apart, by `with_tags`.
+function select_notes() -> build.Select
+    counted @= build.select(from: "comments", columns: [build.count_all()])
+    counted.where @ [build.columns_equal(left: "comments.note_id", right: "notes.id")]
+
+    columns = [
+        build.column("notes.id")
+        build.column("notes.author_id")
+        build.aliased(build.column("users.name"), alias: model.Note::author)
+        build.column("notes.slug")
+        build.column("notes.title")
+        build.column("notes.body")
+        build.column("notes.created_at")
+        build.column("notes.updated_at")
+        build.aliased(build.subquery(counted), alias: model.Note::comments)
+    ]
+
+    q @= build.select(from: "notes", columns: columns)
+    q.joins @ [build.inner_join("users", on: build.columns_equal(left: "users.id", right: "notes.author_id"))]
+    return q
+
+# The condition that a note carries the tag `tag`.
+#
+# - `tag`: the tag, as `validate.tags_from` keeps one.
+function tagged(tag: str) -> build.Condition
+    carriers @= build.select(from: "note_tags", columns: [build.column("note_tags.note_id")])
+    carriers.joins @ [build.inner_join("tags", on: build.columns_equal(left: "tags.id", right: "note_tags.tag_id"))]
+    carriers.where @ [build.equal("tags.name", value: .text(v: tag))]
+    return build.in_query("notes.id", query: carriers)
+
+# The note whose slug is `slug`.
+#
+# - `db`: the database.
+# - `slug`: the slug.
+#
+# Fails `not_found` where no note has it.
+function by_slug(@db: sqlite.Db, slug: str) -> model.Note?
+    q @= select_notes()
+    q.where @ [build.equal("notes.slug", value: .text(v: slug))]
+    found = notes_of(@db, q: q)?
+
+    if found.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no note \"{slug}\"")
+
+    return ok(found[0])
+
+# How many notes there are, of the tag `tag` or of every tag.
+#
+# - `db`: the database.
+# - `tag`: the tag; "" for every note.
+function count(@db: sqlite.Db, tag: str) -> i64?
+    q @= build.select(from: "notes", columns: [build.count_all()])
+
+    if tag != ""
+        q.where @ [tagged(tag)]
+
+    return database.count(@db, s: database.sql_of(.select(query: q))?)
+
+# One page of the notes, newest first.
+#
+# - `db`: the database.
+# - `tag`: the tag the notes carry; "" for every note.
+# - `offset`: how many notes come before the page, from 0.
+# - `limit`: the most notes the page holds, from 1.
+function page(@db: sqlite.Db, tag: str, offset: i64, limit: i64) -> [model.Note]?
+    q @= select_notes()
+
+    if tag != ""
+        q.where @ [tagged(tag)]
+
+    q.order_by @ [build.descending("notes.created_at"), build.descending("notes.id")]
+    q.limit @ ok(limit)
+    q.offset @ ok(offset)
+    return notes_of(@db, q: q)
+
+# The notes numbered `ids`, in the order of `ids`; a number no note has is
+# left out.
+#
+# - `db`: the database.
+# - `ids`: the numbers, as a search ranked them.
+function by_ids(@db: sqlite.Db, ids: [i64]) -> [model.Note]?
+    if ids.len() == 0
+        return ok([])
+
+    values: [sql.Value] @= []
+
+    for id in ids
+        values @ values.push(.integer(v: id))
+
+    q @= select_notes()
+    q.where @ [build.in_values("notes.id", values: values)]
+    found = notes_of(@db, q: q)?
+    by_number: {i64: model.Note} @= {}
+
+    for n in found
+        by_number[n.id] @ n
+
+    out: [model.Note] @= []
+
+    for id in ids
+        match by_number[id]
+            .ok n  => out @ out.push(n)
+            .err _ => _ = 0
+
+    return ok(out)
+
+# Every note, oldest first: what the search index is built from at start.
+#
+# - `db`: the database.
+function every(@db: sqlite.Db) -> [model.Note]?
+    q @= select_notes()
+    q.order_by @ [build.ascending("notes.id")]
+    return notes_of(@db, q: q)
+
+# The slugs that begin with `base`: `base` itself and `base-2` and on.
+#
+# - `db`: the database.
+# - `base`: a slug.
+function slugs_from(@db: sqlite.Db, base: str) -> [str]?
+    q @= build.select(from: "notes", columns: [build.column("slug")])
+    q.where @ [
+        build.any_of([build.equal("slug", value: .text(v: base)), build.like(name: "slug", pattern: build.escape_like(base) + "-%")])
+    ]
+    rows = database.query(@db, s: database.sql_of(.select(query: q))?)?
+    out: [str] @= []
+
+    for row in rows.rows
+        out @ out.push(sql.text_at(row, index: 0)?)
+
+    return ok(out)
+
+# The notes `q` answers, each with its tags.
+#
+# - `db`: the database.
+# - `q`: a select of `select_notes`'s columns.
+function notes_of(@db: sqlite.Db, q: build.Select) -> [model.Note]?
+    rows = database.query(@db, s: database.sql_of(.select(query: q))?)?
+    out: [model.Note] @= []
+
+    for row in rows.rows
+        out @ out.push(note_of(row)?)
+
+    return with_tags(@db, notes: out)
+
+# `notes`, each given the tags the database holds for it, in one query.
+#
+# - `db`: the database.
+# - `notes`: the notes, their `tags` empty.
+function with_tags(@db: sqlite.Db, notes: [model.Note]) -> [model.Note]?
+    if notes.len() == 0
+        return ok(notes)
+
+    ids: [sql.Value] @= []
+
+    for n in notes
+        ids @ ids.push(.integer(v: n.id))
+
+    q @= build.select(from: "note_tags", columns: [build.column("note_tags.note_id"), build.column("tags.name")])
+    q.joins @ [build.inner_join("tags", on: build.columns_equal(left: "tags.id", right: "note_tags.tag_id"))]
+    q.where @ [build.in_values("note_tags.note_id", values: ids)]
+    q.order_by @ [build.ascending("tags.name")]
+    rows = database.query(@db, s: database.sql_of(.select(query: q))?)?
+    by_note: {i64: [str]} @= {}
+
+    for row in rows.rows
+        id = sql.integer_at(row, index: 0)?
+        held = by_note[id].default([])
+        by_note[id] @ held.push(sql.text_at(row, index: 1)?)
+
+    out: [model.Note] @= []
+
+    for n in notes
+        tagged_note: model.Note @= n
+        tagged_note.tags @ by_note[n.id].default([])
+        out @ out.push(tagged_note)
+
+    return ok(out)
+
+# The note `row` holds, its tags empty.
+#
+# - `row`: a row of `select_notes`.
+function note_of(row: sql.Row) -> model.Note?
+    note = model.Note(
+        id: sql.integer_named(row, name: model.Note::id)?,
+        author_id: sql.integer_named(row, name: model.Note::author_id)?,
+        author: sql.text_named(row, name: model.Note::author)?,
+        slug: sql.text_named(row, name: model.Note::slug)?,
+        title: sql.text_named(row, name: model.Note::title)?,
+        body: sql.text_named(row, name: model.Note::body)?,
+        created_at: sql.instant_named(row, name: model.Note::created_at)?,
+        updated_at: sql.instant_named(row, name: model.Note::updated_at)?,
+        tags: [],
+        comments: sql.integer_named(row, name: model.Note::comments)?
+    )
+
+    return ok(note)
+
+## Writing
+
+# What a note is written with: its words and its tags.
+record Draft
+    # The title.
+    title: str
+    # The body in Markdown.
+    body: str
+    # The tags, as `validate.tags_from` keeps them.
+    tags: [str]
+
+# Adds a note with its tags and answers its number.
+#
+# - `db`: the database.
+# - `author_id`: the account that wrote it.
+# - `slug`: its slug, free: `slugs.first_free` chose it.
+# - `draft`: its title, body and tags, checked by `validate.check_note`.
+# - `at`: when it is written.
+#
+# Fails `exists` where the slug is held, and as the statements fail, nothing
+# written then.
+function insert(@db: sqlite.Db, author_id: i64, slug: str, draft: Draft, at: time.Instant) -> i64?
+    sqlite.begin(@db)?
+
+    match insert_parts(@db, author_id: author_id, slug: slug, draft: draft, at: at)
+        .ok id =>
+            sqlite.commit(@db)?
+            return ok(id)
+        .err e => return failed_after_rollback(@db, code: e.code, msg: e.msg)
+
+# The writes of `insert`, inside its transaction.
+#
+# - `db`: the database.
+# - `author_id`: the author.
+# - `slug`: the slug.
+# - `draft`: the words and the tags.
+# - `at`: the moment.
+function insert_parts(@db: sqlite.Db, author_id: i64, slug: str, draft: Draft, at: time.Instant) -> i64?
+    columns = [
+        model.Note::author_id
+        model.Note::slug
+        model.Note::title
+        model.Note::body
+        model.Note::created_at
+        model.Note::updated_at
+    ]
+    row: [sql.Value] = [
+        .integer(v: author_id)
+        .text(v: slug)
+        .text(v: draft.title)
+        .text(v: draft.body)
+        .instant(v: at)
+        .instant(v: at)
+    ]
+    result = database.run(@db, s: database.sql_of(.insert(query: build.insert(into: "notes", columns: columns, rows: [row])))?)?
+    id = result.last_id?
+    link_tags(@db, note_id: id, tags: draft.tags)?
+    return ok(id)
+
+# Gives the note `note_id` the tags `tags`, each made where it is new.
+#
+# - `db`: the database.
+# - `note_id`: the note.
+# - `tags`: the tags.
+function link_tags(@db: sqlite.Db, note_id: i64, tags: [str]) -> ()?
+    for tag in tags
+        add @= build.insert(into: "tags", columns: ["name"], rows: [[.text(v: tag)]])
+        add.conflict @ .do_nothing(target: ["name"])
+        _ = database.run(@db, s: database.sql_of(.insert(query: add))?)?
+        lookup @= build.select(from: "tags", columns: [build.column("id")])
+        lookup.where @ [build.equal("name", value: .text(v: tag))]
+        tag_id = database.count(@db, s: database.sql_of(.select(query: lookup))?)?
+        link = build.insert(
+            into: "note_tags",
+            columns: ["note_id", "tag_id"],
+            rows: [[.integer(v: note_id), .integer(v: tag_id)]]
+        )
+        _ = database.run(@db, s: database.sql_of(.insert(query: link))?)?
+
+    return ok()
+
+# Changes the note `id`'s words and tags, and stamps when.
+#
+# - `db`: the database.
+# - `id`: the note.
+# - `draft`: its new title, body and tags.
+# - `at`: when it changed.
+#
+# Fails `not_found` where no note has that number, nothing written then.
+function update(@db: sqlite.Db, id: i64, draft: Draft, at: time.Instant) -> ()?
+    sqlite.begin(@db)?
+
+    match update_parts(@db, id: id, draft: draft, at: at)
+        .ok _ =>
+            sqlite.commit(@db)?
+            return ok()
+        .err e => return failed_after_rollback(@db, code: e.code, msg: e.msg)
+
+# The writes of `update`, inside its transaction.
+#
+# - `db`: the database.
+# - `id`: the note.
+# - `draft`: the words and the tags.
+# - `at`: the moment.
+function update_parts(@db: sqlite.Db, id: i64, draft: Draft, at: time.Instant) -> ()?
+    set = [
+        build.assign(model.Note::title, value: .text(v: draft.title))
+        build.assign(model.Note::body, value: .text(v: draft.body))
+        build.assign(model.Note::updated_at, value: .instant(v: at))
+    ]
+    u @= build.update("notes", set: set)
+    u.where @ [build.equal(model.Note::id, value: .integer(v: id))]
+    result = database.run(@db, s: database.sql_of(.update(query: u))?)?
+
+    if result.rows_affected == 0
+        return fail(code: NOT_FOUND, msg: f"no note numbered {id}")
+
+    unlink @= build.delete("note_tags")
+    unlink.where @ [build.equal("note_id", value: .integer(v: id))]
+    _ = database.run(@db, s: database.sql_of(.delete(query: unlink))?)?
+    return link_tags(@db, note_id: id, tags: draft.tags)
+
+# Removes the note `id`, its comments and its links to tags with it.
+#
+# - `db`: the database.
+# - `id`: the note.
+#
+# Fails `not_found` where no note has that number.
+function remove(@db: sqlite.Db, id: i64) -> ()?
+    d @= build.delete("notes")
+    d.where @ [build.equal(model.Note::id, value: .integer(v: id))]
+    result = database.run(@db, s: database.sql_of(.delete(query: d))?)?
+
+    if result.rows_affected == 0
+        return fail(code: NOT_FOUND, msg: f"no note numbered {id}")
+
+    return ok()
+
+# The failure `code` and `msg`, after the open transaction is rolled back.
+#
+# - `db`: the database, in a transaction.
+# - `code`: the failure's code.
+# - `msg`: the failure's message.
+function failed_after_rollback<T>(@db: sqlite.Db, code: str, msg: str) -> T?
+    if sqlite.rollback(@db).is_err()
+        return fail(code: code, msg: msg + "; rolling the transaction back failed too")
+
+    return fail(code: code, msg: msg)
+
+test "insert, by_slug and page: tags kept sorted, newest first, a tag's page"
+    db @= database.open(":memory:").must()
+    _ = database.migrate_up(@db).must()
+    t0 = time.from_unix(whole_seconds: 1_763_715_600, extra_nanoseconds: 0).must()
+    t1 = time.add(t0, d: time.seconds(60).must()).must()
+    _ = sqlite.exec(
+        @db,
+        statement: "INSERT INTO users (name, email, password, role, created_at) VALUES ('a', 'a@b.c', 'p', 'author', ?1)",
+        params: [.instant(v: t0)]
+    ).must()
+    first = insert(
+        @db,
+        author_id: 1,
+        slug: "one",
+        draft: Draft(title: "One", body: "x", tags: ["b", "a"]),
+        at: t0
+    ).must()
+    _ = insert(@db, author_id: 1, slug: "two", draft: Draft(title: "Two", body: "y", tags: ["b"]), at: t1).must()
+    one = by_slug(@db, slug: "one").must()
+    assert one.id == first && one.author == "a" && one.tags == ["a", "b"] && one.comments == 0
+    newest = page(@db, tag: "", offset: 0, limit: 10).must()
+    assert newest.len() == 2 && newest[0].slug == "two"
+    assert page(@db, tag: "a", offset: 0, limit: 10).must().len() == 1
+    assert count(@db, tag: "b").must() == 2 && count(@db, tag: "c").must() == 0
+    assert slugs_from(@db, base: "one").must() == ["one"]
+    assert by_ids(@db, ids: [2, 9, 1]).must().len() == 2
+    sqlite.close(@db).must()
+
+test "update and remove: tags replaced, a note that is not there refused"
+    db @= database.open(":memory:").must()
+    _ = database.migrate_up(@db).must()
+    _ = sqlite.exec(
+        @db,
+        statement: "INSERT INTO users (name, email, password, role, created_at) VALUES ('a', 'a@b.c', 'p', 'author', ?1)",
+        params: [.instant(v: time.epoch())]
+    ).must()
+    id = insert(
+        @db,
+        author_id: 1,
+        slug: "one",
+        draft: Draft(title: "One", body: "x", tags: ["a"]),
+        at: time.epoch()
+    ).must()
+    update(@db, id: id, draft: Draft(title: "Uno", body: "z", tags: ["c"]), at: time.epoch()).must()
+    assert by_slug(@db, slug: "one").must().tags == ["c"]
+    assert update(@db, id: 99, draft: Draft(title: "x", body: "x", tags: []), at: time.epoch()).is_err()
+    remove(@db, id: id).must()
+    assert by_slug(@db, slug: "one").is_err()
+    assert remove(@db, id: id).is_err()
+    sqlite.close(@db).must()

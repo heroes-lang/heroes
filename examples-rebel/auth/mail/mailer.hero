@@ -1,0 +1,98 @@
+# The mail the server sends: the link that proves a person reads the address
+# they signed up with. The message is built by `mail` (a text part and an
+# HTML part, the structure every reader expects) and submitted by
+# `mail/smtp` to the configured server, logged in with the password the
+# vault keeps.
+
+use <rebel>/mail
+use <rebel>/mail/smtp
+use <rebel>/time
+
+use core/settings
+
+# The code of a configuration naming no security `mail/smtp` knows.
+constant INVALID: str
+    "invalid"
+
+# What was sent: the recipient and the server's reply, for the record.
+record Sent
+    # The address it went to.
+    to: str
+    # The server's reply to the message, as one line.
+    reply: str
+
+# The verification message to `to`, written for a person named `name`.
+#
+# - `sender`: the address it comes from.
+# - `to`: the address it goes to.
+# - `name`: how the person is greeted.
+# - `link`: the URL that verifies the address.
+# - `site`: the service's name, as the subject and the text name it.
+# - `at`: the moment written in its `Date`.
+# - `message_id`: its `Message-ID`, angle brackets included.
+#
+# Fails as `mail.compose` fails.
+function verification_message(sender: str, to: str, name: str, link: str, site: str, at: time.Instant, message_id: str) -> mail.Message?
+    text = f"Hello {name},\n\nplease confirm that this is your address by opening:\n\n{link}\n\nThe link works for one day. If you did not sign up at {site}, ignore this message.\n"
+    html = f"<p>Hello {name},</p><p>please confirm that this is your address by opening <a href=\"{link}\">this link</a>.</p><p>The link works for one day. If you did not sign up at {site}, ignore this message.</p>"
+    m = mail.compose(text: text, html: html, attachments: [])?
+    dated = mail.with_field(m, name: "Date", value: mail.format_date(mail.date_at(at, zone: time.utc_zone())))
+    addressed = mail.with_field(mail.with_field(dated, name: "From", value: sender), name: "To", value: to)
+    subject = mail.with_field(addressed, name: "Subject", value: f"Confirm your address at {site}")
+    return ok(mail.with_field(subject, name: "Message-ID", value: message_id))
+
+# The security `name` names in the configuration.
+#
+# - `name`: "starttls", "implicit" or "plain".
+#
+# Fails `invalid` for any other.
+function security_of(name: str) -> smtp.Security?
+    return match name
+        "starttls" => ok(.starttls)
+        "implicit" => ok(.implicit)
+        "plain"    => ok(.plain)
+        _          => fail(code: INVALID, msg: f"the SMTP security \"{name}\" is none of starttls, implicit, plain")
+
+# Submits `m` to the server `s` names, logged in as its user with
+# `password`, to `to`.
+#
+# - `s`: the SMTP settings.
+# - `password`: the SMTP user's password; ignored where `s.user` is "".
+# - `to`: the recipient's address.
+# - `m`: the message.
+#
+# Fails as `smtp.send_mail` fails: `closed`, `timeout`, `permission` where
+# the login is refused, and the others it names.
+function submit(s: settings.Smtp, password: str, to: str, m: mail.Message) -> Sent?
+    opts @= smtp.options(s.host, security: security_of(s.security)?)
+    opts.port @ s.port
+    opts.local_name @ "auth.localhost"
+    opts.deadline @ time.seconds(20)?
+
+    auth: smtp.Auth = if s.user == ""
+        .none
+    else
+        .password(user: s.user, password: password)
+    data = mail.encode_message(m, options: mail.standard_options())?
+    sent = smtp.send_mail(opts, auth: auth, from: s.sender, to: [to], message: data)?
+    return ok(Sent(to: to, reply: smtp.format_reply(sent.reply)))
+
+test "verification_message: addressed, dated, and carrying the link in both parts"
+    at = time.from_unix(whole_seconds: 1_772_357_400, extra_nanoseconds: 0).must()
+    m = verification_message(
+        sender: "accounts@example.org",
+        to: "ana@example.org",
+        name: "ana",
+        link: "https://a/verify?t=x",
+        site: "Example",
+        at: at,
+        message_id: "<1@a>"
+    ).must()
+    assert mail.value_of(m, name: "To").must() == "ana@example.org"
+    assert mail.value_of(m, name: "Date").must() == "Sun, 01 Mar 2026 09:30:00 +0000"
+    body = mail.text_of(mail.body_of(m, preferring: ["plain"]).must()).must()
+    assert body.len() > 0 && mail.is_multipart(m)
+
+test "security_of: the three names, and another refused"
+    assert security_of("plain").must() == .plain
+    assert security_of("tls").is_err()

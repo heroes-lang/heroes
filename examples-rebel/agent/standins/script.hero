@@ -1,0 +1,263 @@
+# The model of the stand-ins: a script, not a language model, that answers a
+# conversation the way the demo's questions need, and only from what the
+# request holds, so it checks the agent's prompt as much as it answers it.
+#
+# Where the question holds the words of a rule and the request offers the
+# rule's tool, it calls the tool; once the tool's result comes back, it
+# answers from the result. Otherwise it answers from the passages the agent
+# put before the question: the passage sharing most words with the question,
+# its line sharing most of them and the line after it, cited by the passage's
+# number. Both stand-ins read their own wire format into an `Asked` and write
+# a `Reply` back in it, so the two providers answer the demo alike.
+
+use <rebel>/strings
+
+# The marker the agent's turn puts before the question (`prompting`).
+constant QUESTION_MARKER: str
+    "Question: "
+
+# A passage the agent put before the question.
+record Passage
+    # Its number, which a citation names.
+    number: i64
+    # The line naming it: its place and score.
+    title: str
+    # Its text.
+    text: str
+
+# What the script reads of a request.
+record Asked
+    # The question, after the last `QUESTION_MARKER` of the first user turn.
+    question: str
+    # The passages before it.
+    passages: [Passage]
+    # The names of the tools the request offers.
+    tools: [str]
+    # The tool results the last turn holds, none on a first request.
+    results: [Result]
+
+# A tool's result sent back.
+record Result
+    # The tool that answered, as the call before it named it.
+    tool: str
+    # What it answered.
+    text: str
+    # Whether it was an error.
+    is_error: bool
+
+# What the script answers.
+variant Reply
+    # Text.
+    text
+        # The text.
+        text: str
+    # A call of a tool.
+    call
+        # The tool.
+        tool: str
+        # Its arguments, JSON text.
+        input: str
+
+# A rule of the script: the words that make it call a tool, the call, and the
+# answers after the result.
+record Rule
+    # Every word the question must hold, lower-cased.
+    words: [str]
+    # The tool called.
+    tool: str
+    # Its arguments, JSON text; `{file}` stands for the file the question
+    # names and `{model}` for the model it names after "for".
+    input: str
+    # The answer after a result, `{result}` standing for its text.
+    answer: str
+    # The answer after an error, `{result}` standing for its text.
+    refused: str
+
+# The rules, in the order they are tried.
+function rules() -> [Rule]
+    return [
+        Rule(words: ["port"], tool: "query_json", input: "{\"path\": \"beacon.json\", \"filter\": \".listen.port\"}", answer: "The status endpoint listens on port {result} by default, as `.listen.port` of beacon.json says.", refused: "I could not read the port from beacon.json: {result}")
+        Rule(words: ["tokens", "take"], tool: "run_command", input: "{\"command\": \"agent\", \"arguments\": [\"tokens\", \"--model\", \"{model}\", \"{file}\"]}", answer: "By the agent's own count: {result}.", refused: "The count failed: {result}")
+        Rule(words: ["rm"], tool: "run_command", input: "{\"command\": \"rm\", \"arguments\": [\"-rf\", \"/var/lib/beacon/spool\"]}", answer: "Done: {result}", refused: "I did not remove it: {result}")
+    ]
+
+# What the script answers to `asked`.
+#
+# - `asked`: what the request holds.
+function reply_to(asked: Asked) -> Reply
+    question_words = words_of(asked.question)
+
+    for r in rules()
+        if holds_all(words: question_words, wanted: r.words)
+            if asked.results.len() > 0
+                return .text(text: after_result(r, got: asked.results[0]))
+
+            if offers(asked.tools, tool: r.tool)
+                return .call(tool: r.tool, input: filled(input: r.input, question: asked.question))
+
+    return .text(text: from_passages(asked))
+
+# The answer after the result `got`, by `r`'s templates.
+function after_result(r: Rule, got: Result) -> str
+    template = if got.is_error
+        r.refused
+    else
+        r.answer
+
+    return strings.replace_all(s: template, old: "{result}", new: strings.trim(got.text))
+
+# Whether `tools` holds `tool`.
+function offers(tools: [str], tool: str) -> bool
+    for t in tools
+        if t == tool
+            return true
+
+    return false
+
+# `input` with `{file}` and `{model}` written as `question` names them.
+function filled(input: str, question: str) -> str
+    with_file = strings.replace_all(s: input, old: "{file}", new: file_named(question))
+    return strings.replace_all(s: with_file, old: "{model}", new: model_named(question))
+
+# The first word of `question` naming a file: one with a `.` and letters after
+# it, its last punctuation left out.
+function file_named(question: str) -> str
+    for w in strings.words(question)
+        word = strings.trim_end_any(s: w, set: "?,!;:")
+
+        if strings.contains(s: word, substr: ".") && !strings.has_suffix(s: word, suffix: ".")
+            return word
+
+    return ""
+
+# The word after the last "for " of `question`, its last punctuation left out.
+function model_named(question: str) -> str
+    match strings.split_once_last(s: question, sep: "for ")
+        .ok halves =>
+            ws = strings.words(halves.after)
+
+            if ws.len() > 0
+                return strings.trim_end_any(s: ws[0], set: "?,!;:")
+
+            return ""
+        .err _ => return ""
+
+# The answer from the passages: the passage sharing most words with the
+# question, its best line and the line after, cited; the first passage wins a
+# tie, as it is the nearer.
+function from_passages(asked: Asked) -> str
+    if asked.passages.len() == 0
+        return "The documents hold nothing about this."
+
+    question_words = words_of(asked.question)
+    best: i64 @= 0
+    best_score: i64 @= -1
+
+    for at in range(from: 0, to: asked.passages.len())
+        p = asked.passages[at]
+        score = shared(wanted: question_words, with: words_of(p.title + " " + p.text))
+
+        if score > best_score
+            best @ at
+            best_score @ score
+
+    chosen = asked.passages[best]
+    return best_lines(chosen.text, question_words: question_words) + f" [{chosen.number}]"
+
+# The line of `text` sharing most words with the question, and the line after
+# it where there is one; headings and empty lines are passed over.
+function best_lines(text: str, question_words: [str]) -> str
+    lines: [str] @= []
+
+    for l in strings.lines(text)
+        t = strings.trim(l)
+
+        if t != "" && !strings.has_prefix(s: t, prefix: "#")
+            lines @ lines.push(t)
+
+    if lines.len() == 0
+        return strings.trim(text)
+
+    best: i64 @= 0
+    best_score: i64 @= -1
+
+    for at in range(from: 0, to: lines.len())
+        score = shared(wanted: question_words, with: words_of(lines[at]))
+
+        if score > best_score
+            best @ at
+            best_score @ score
+
+    if best + 1 < lines.len()
+        return lines[best] + " " + lines[best + 1]
+
+    return lines[best]
+
+# How many of `wanted` are among `words`.
+function shared(wanted: [str], with: [str]) -> i64
+    n: i64 @= 0
+
+    for w in wanted
+        if holds_all(words: with, wanted: [w])
+            n @ n + 1
+
+    return n
+
+# Whether `words` holds every one of `wanted`.
+function holds_all(words: [str], wanted: [str]) -> bool
+    for w in wanted
+        found: bool @= false
+
+        for x in words
+            if x == w
+                found @ true
+
+        if !found
+            return false
+
+    return true
+
+# The words of `text`, lower-cased, split at every character that is neither
+# a letter, a digit nor a `.` between digits; a word of fewer than two
+# characters, and the commonest English words, left out.
+function words_of(text: str) -> [str]
+    out: [str] @= []
+
+    for w in strings.split_where(strings.to_lower(text), separates: is_separator)
+        trimmed = strings.trim_any(s: w, set: ".")
+
+        if trimmed.len() >= 2 && !is_common(trimmed)
+            out @ out.push(trimmed)
+
+    return out
+
+# Whether the character `c` separates words.
+function is_separator(c: str) -> bool
+    b = c[0]
+
+    if b >= 128 || b >= '0' && b <= '9' || b >= 'a' && b <= 'z' || b == '.' || b == '-'
+        return false
+
+    return true
+
+# Whether `word` is too common to tell passages apart.
+function is_common(word: str) -> bool
+    for c in ["the", "and", "for", "how", "what", "which", "does", "with", "that", "this", "its", "it", "is", "in", "on", "of", "to", "do", "by", "an", "or", "be", "as", "at"]
+        if word == c
+            return true
+
+    return false
+
+test "reply_to: a rule's tool called where offered, and its result answered"
+    first = Asked(question: "Which port does it listen on?", passages: [], tools: ["query_json"], results: [])
+    assert reply_to(first) == .call(tool: "query_json", input: "{\"path\": \"beacon.json\", \"filter\": \".listen.port\"}")
+    second = Asked(
+        question: "Which port does it listen on?",
+        passages: [],
+        tools: ["query_json"],
+        results: [Result(tool: "query_json", text: "7461\n", is_error: false)]
+    )
+    assert reply_to(second) == .text(text: "The status endpoint listens on port 7461 by default, as `.listen.port` of beacon.json says.")
+
+test "filled: the file and the model the question names"
+    assert filled(input: "{file} {model}", question: "How many tokens does faq.txt take for gpt-4o?") == "faq.txt gpt-4o"

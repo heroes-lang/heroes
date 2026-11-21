@@ -1,0 +1,128 @@
+# The demo's world outside the chat: a sensor that speaks MQTT and a
+# deployment bot that speaks NATS, each a plain client of its broker, never a
+# client of the chat. What they publish reaches a mirrored room only through
+# the chat's bridge, and what they hear of a room came through it too, so the
+# demo shows the bridge from the side a real device or service stands on.
+
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/mqtt
+use <rebel>/nats
+use <rebel>/time
+
+use protocol/objects
+
+# How long the demo waits for a broker to deliver, in seconds.
+constant WAIT_SECONDS: i64
+    10
+
+# A payload a device publishes: its name and its text, as JSON.
+#
+# - `author`: the device's name.
+# - `text`: what it says.
+function payload(author: str, text: str) -> [u8]
+    v: json.Value = .object(members: {"author": objects.text(author), "text": objects.text(text)})
+    return bytes.from_text(json.format(v).must())
+
+# A payload the chat's bridge published, read as `author: text`.
+#
+# - `data`: the payload.
+#
+# Fails `invalid` where it is not the bridge's JSON.
+function heard_of(data: [u8]) -> str?
+    v = json.parse(bytes.to_text(data)?)?
+    return ok(f"{objects.text_of(v, key: "author")?}: {objects.text_of(v, key: "text")?}")
+
+# A sensor connected to the MQTT broker at `port` as `name`, subscribed to
+# `topic` with No Local, so it hears the room and not itself.
+#
+# - `port`: the broker's port on the loopback.
+# - `name`: its client identifier.
+# - `topic`: the topic of the mirrored room.
+#
+# The program owes it a `mqtt.close`.
+function sensor(port: i64, name: str, topic: str) -> mqtt.Client?
+    opts @= mqtt.options("127.0.0.1")
+    opts.port @ port
+    opts.client_id @ name
+    c @= mqtt.connect(opts)?
+    s @= mqtt.subscription(topic, qos: 1)
+    s.no_local @ true
+
+    match mqtt.subscribe_many(@c, subscriptions: [s], properties: [])
+        .ok _ => return ok(c)
+        .err e =>
+            _ = mqtt.close(@c).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Publishes `text` from the sensor on `topic`, at QoS 1.
+#
+# - `c`: the sensor.
+# - `topic`: the topic.
+# - `author`: the name it gives.
+# - `text`: what it says.
+function sensor_says(@c: mqtt.Client, topic: str, author: str, text: str) -> ()?
+    return mqtt.publish(@c, topic: topic, payload: payload(author: author, text: text), qos: 1, retain: false)
+
+# What the sensor hears next, as `author: text`.
+#
+# - `c`: the sensor.
+#
+# Fails `timeout` where nothing comes in `WAIT_SECONDS`.
+function sensor_hears(@c: mqtt.Client) -> str?
+    m = mqtt.next_message(@c, wait: time.seconds(WAIT_SECONDS)?)?
+    return heard_of(m.payload)
+
+# A bot connected to the NATS server at `port` as `name`, echo off, its
+# subscription to `subject` made and flushed, so the server has it before
+# anything is published.
+#
+# - `port`: the server's port on the loopback.
+# - `name`: its connection's name.
+# - `subject`: the subject of the mirrored room.
+#
+# The program owes it a `nats.close`.
+function bot(port: i64, name: str, subject: str) -> nats.Client?
+    opts @= nats.options([f"nats://127.0.0.1:{port}"])
+    opts.name @ name
+    opts.echo @ false
+    c @= nats.connect(opts)?
+
+    match subscribe_flushed(@c, subject: subject)
+        .ok _ => return ok(c)
+        .err e =>
+            _ = nats.close(@c).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Subscribes `c` to `subject` and waits for the server to have read it.
+#
+# - `c`: the client.
+# - `subject`: the subject.
+function subscribe_flushed(@c: nats.Client, subject: str) -> ()?
+    _ = nats.subscribe(@c, subject: subject)?
+    return nats.flush(@c, wait: time.seconds(WAIT_SECONDS)?)
+
+# Publishes `text` from the bot on `subject`, and waits for the server to
+# have read it.
+#
+# - `c`: the bot.
+# - `subject`: the subject.
+# - `author`: the name it gives.
+# - `text`: what it says.
+function bot_says(@c: nats.Client, subject: str, author: str, text: str) -> ()?
+    nats.publish(@c, subject: subject, data: payload(author: author, text: text))?
+    return nats.flush(@c, wait: time.seconds(WAIT_SECONDS)?)
+
+# What the bot hears next, as `author: text`.
+#
+# - `c`: the bot.
+#
+# Fails `timeout` where nothing comes in `WAIT_SECONDS`.
+function bot_hears(@c: nats.Client) -> str?
+    m = nats.next_message(@c, wait: time.seconds(WAIT_SECONDS)?)?
+    return heard_of(m.data)
+
+test "heard_of: the bridge's payload, and bytes that are none"
+    assert heard_of(bytes.from_text("{\"origin\":\"chat\",\"author\":\"alice\",\"text\":\"fan on\"}")).must() == "alice: fan on"
+    assert heard_of(bytes.from_text("fan on")).is_err()
+    assert heard_of(payload(author: "sensor-7", text: "21 C")).must() == "sensor-7: 21 C"

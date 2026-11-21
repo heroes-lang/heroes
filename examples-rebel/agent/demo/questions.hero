@@ -1,0 +1,135 @@
+# The questions of the demo, asked through each provider's stand-in exactly
+# as `agent ask` asks a real API: the passages retrieved, the user's turn
+# written, the router choosing the provider, the tool loop running, the answer
+# told with its notes. Only the clients differ: their address is a
+# stand-in's, their key one only the stand-in takes, and their clock virtual.
+
+use <rebel>/llm/anthropic
+use <rebel>/llm/openai
+use <rebel>/time
+
+use index/encodings
+use llm/claude
+use llm/conversation
+use llm/gpt
+use llm/router
+use retrieval/nearest
+use retrieval/prompting
+use support/report
+use support/timing
+use tools/executor
+use tools/toolbox
+
+# The key the Anthropic stand-in takes; no real key has this form.
+constant ANTHROPIC_KEY: str
+    "demo-anthropic-key"
+
+# The key the OpenAI stand-in takes; no real key has this form.
+constant OPENAI_KEY: str
+    "demo-openai-key"
+
+# The model a stand-in answers 503 for, every time.
+constant UNAVAILABLE_MODEL: str
+    "gpt-unavailable"
+
+# How many passages each question is given.
+constant TOP: i64
+    3
+
+# The questions asked of Claude: one the passages answer, one only a tool
+# answers, one the passages answer again.
+function claude_questions() -> [str]
+    return [
+        "How do I install Beacon on macOS?"
+        "Which port does the status endpoint listen on by default?"
+        "What does the error buffer full mean?"
+    ]
+
+# The questions asked of GPT: one the passages answer, one a command the user
+# allowed answers, one asking for a command the user never allowed.
+function gpt_questions() -> [str]
+    return [
+        "What changed in version 2.1.0?"
+        "How many tokens does faq.txt take for gpt-4o?"
+        "Remove the spool folder with rm -rf."
+    ]
+
+# A client of the Anthropic stand-in on `port`, as `secrets` makes a real one
+# but for its address and key.
+function claude_client(port: i64, key: str) -> anthropic.Client
+    c @= anthropic.default_client(key)
+    c.base_url @ f"http://127.0.0.1:{port}"
+    c.max_retries @ 0
+    c.deadline @ time.seconds(60).must()
+    return c
+
+# A client of the OpenAI stand-in on `port`.
+function gpt_client(port: i64) -> openai.Client
+    c @= openai.local_client(f"http://127.0.0.1:{port}/v1")
+    c.api_key @ OPENAI_KEY
+    c.max_retries @ 0
+    c.deadline @ time.seconds(60).must()
+    return c
+
+# Claude as a provider, through the stand-in on `port`.
+function claude_provider(port: i64) -> router.Provider
+    return .anthropic(
+        settings: claude.Settings(client: claude_client(port, key: ANTHROPIC_KEY), model: "claude-opus-5-5", max_tokens: 1024, max_rounds: 4, budget: 4000)
+    )
+
+# GPT as a provider, through the stand-in on `port`, asking `model`.
+function gpt_provider(port: i64, model: str, counter: encodings.Counter) -> router.Provider
+    return .openai(
+        settings: gpt.Settings(client: gpt_client(port), model: model, max_tokens: 1024, max_rounds: 4, budget: 4000, counter: counter)
+    )
+
+# Asks each of `questions` through `r`, the tools of `exec` offered, and
+# writes each answer.
+#
+# - `r`: the router; its clock and breakers move on.
+# - `exec`: where the tools run.
+# - `box`: the toolbox whose store the passages are retrieved from.
+# - `questions`: the questions, in order.
+# - `first`: the number the first question is written with.
+#
+# Fails where retrieval fails; a question no provider answers is written as
+# such and the next is asked.
+function ask_all(@r: router.Router, @exec: executor.Executor, box: toolbox.Toolbox lent, questions: [str], first: i64) -> ()?
+    for at in range(from: 0, to: questions.len())
+        question = questions[at]
+        report.line("")
+        report.line(f"Q{first + at} {question}")
+        hits = nearest.search(box.store, e: box.embedder, question: question, limit: TOP)?
+        report.line(f"  passages: {places(hits)}")
+
+        match router.ask(@r, exec: @exec, turn: prompting.user_turn(question, hits: hits))
+            .ok a =>
+                report.lines(conversation.lines_of(a))
+            .err e => report.warn(f"  no answer: {e.msg}")
+
+    return ok()
+
+# The places of `hits`, nearest first, joined.
+function places(hits: [nearest.Hit]) -> str
+    out: [str] @= []
+
+    for h in hits
+        out @ out.push(f"[{h.rank}] {toolbox.place(h)}")
+
+    return out.join(", ")
+
+# The breaker states of `r`'s providers, as a line.
+#
+# - `r`: the router.
+function breakers_line(r: router.Router lent) -> str
+    out: [str] @= []
+
+    for at in range(from: 0, to: r.providers.len())
+        out @ out.push(f"{router.name_of(r.providers[at])} {router.breaker_state_of(r, at: at).default("unknown")}")
+
+    return "  breakers: " + out.join(", ")
+
+# A router over `providers` on the demo's virtual `clock`, its breakers
+# opening at the first failed question so a short session shows both states.
+function demo_router(providers: [router.Provider], clock: timing.Clock) -> router.Router
+    return router.new_router(providers, clock: clock, opens_after: 1).must()

@@ -1,0 +1,90 @@
+# Who runs the tools a model calls: the agent itself, with its own toolbox, or
+# an MCP server the agent is a client of, whose tools the model is offered as
+# that server listed them. The tool loops of both providers call a tool
+# through this one door, so a conversation reads the same whether its tools
+# run here or in another process.
+
+use <rebel>/json
+use <rebel>/mcp
+
+use tools/outcomes
+use tools/toolbox
+
+# Where the tools run.
+variant Executor
+    # In this process.
+    local
+        # The tools and what they work on.
+        box: toolbox.Toolbox
+    # In an MCP server this process is a client of.
+    remote
+        # The client.
+        client: mcp.Client
+        # The tools the server listed, as the agent offers them.
+        tools: [toolbox.Spec]
+
+# The executor of the server `client` reaches, its tools listed.
+#
+# - `client`: a client of the server; its `tools` are replaced by the
+#   listing.
+#
+# Fails as `mcp.list_tools` fails.
+function remote_of(@client: mcp.Client) -> Executor?
+    listed = mcp.list_tools(@client)?
+    specs: [toolbox.Spec] @= []
+
+    for t in listed
+        specs @ specs.push(
+            toolbox.Spec(name: t.name, title: t.title, description: t.description, schema: t.input_schema, read_only: t.hints.read_only)
+        )
+
+    return ok(.remote(client: client, tools: specs))
+
+# The tools `e` offers.
+#
+# - `e`: the executor.
+function specs_of(e: Executor lent) -> [toolbox.Spec]
+    match e
+        .local l  => return toolbox.specs(l.box)
+        .remote r => return r.tools
+
+# What the tool `name` answers to `input`, run where `e` runs tools. A
+# failure of the server, of its connection or of its answer is an outcome
+# marked an error, which the model reads, as it reads a tool's own.
+#
+# - `e`: the executor; a remote one's client moves on.
+# - `name`: the tool's name.
+# - `input`: the call's arguments, an object.
+function call(@e: Executor, name: str, input: json.Value) -> outcomes.Outcome
+    match e
+        .local l => return toolbox.run(l.box, name: name, input: input)
+        .remote r =>
+            client @= r.client
+            answered = mcp.call_tool(@client, name: name, arguments: input, inputs: mcp.no_inputs())
+            e @ .remote(client: client, tools: r.tools)
+
+            match answered
+                .ok outcome => return outcome_of(outcome)
+                .err failed => return outcomes.refused(f"the server refused the call: {failed.msg}")
+
+# What a server's answer to a tool call tells the model: the text of its
+# blocks, one a line, and whether the server marked it an error. A request for
+# the user's input is refused, since the agent runs with no user to ask.
+function outcome_of(o: mcp.ToolOutcome) -> outcomes.Outcome
+    match o
+        .done d =>
+            texts: [str] @= []
+
+            for c in d.result.content
+                match c
+                    .text t                                              => texts @ texts.push(t.text)
+                    .image _ | .audio _ | .resource_link _ | .embedded _ => texts @ texts.push(
+                        "[a block of another kind than text]"
+                    )
+
+            return outcomes.Outcome(text: texts.join("\n"), is_error: d.result.is_error)
+        .asks _ => return outcomes.refused("the server asked for the user's input, which this agent cannot give")
+
+test "outcome_of: the text blocks of a result, and an error kept an error"
+    assert outcome_of(.done(result: mcp.text_result("7461"))) == outcomes.done("7461")
+    assert outcome_of(.done(result: mcp.error_result("no such file"))).is_error

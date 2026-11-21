@@ -1,0 +1,254 @@
+# The endpoints of machines rather than people. A service account logs in
+# at `POST /service/token` by SCRAM-SHA-256 carried in HTTP's own
+# authentication fields, as RFC 7804 writes it: the client's first message in
+# `Authorization`, the server's first in a 401's `WWW-Authenticate` with a
+# `sid` naming the exchange, the client's final in a second `Authorization`,
+# and the server's signature in the 200's `Authentication-Info`, beside an
+# access token of the account's scopes. Its token then calls the
+# administration endpoints: the directory import run now
+# (`POST /admin/import`, scope `directory:import`) and the accounts listed
+# (`GET /admin/users`, scope `users:read`).
+#
+# An unknown account is answered as a known one is, its verifier made of a
+# password nobody has, so the first round trip does not tell which names
+# exist (RFC 5802 § 9).
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/maps
+use <rebel>/strings
+use <rebel>/time
+
+use accounts/accounts
+use api/oauth_api
+use core/clock
+use core/ids
+use core/settings
+use core/vault
+use directory/directory_import
+use oauth/tokens
+use server/answers
+use server/state
+use service/scram_server
+
+# The mechanism's name, as HTTP's fields write it.
+constant MECHANISM: str
+    "SCRAM-SHA-256"
+
+# The parameters of a SCRAM field: its `sid` and its `data`, decoded.
+record Fields
+    # The exchange's id; "" in the first message.
+    sid: str
+    # The SCRAM message `data` carries, base 64 undone.
+    data: str
+
+# The parameters of the `Authorization` value `value`.
+#
+# - `value`: the field's value, `SCRAM-SHA-256 sid=..., data=...`.
+#
+# Fails `invalid` where it is not SCRAM-SHA-256's, or its `data` is not base
+# 64 of text.
+function fields_of(value: str) -> Fields?
+    if !strings.has_prefix(s: value, prefix: MECHANISM + " ")
+        return fail(code: scram_server.INVALID, msg: "the authorization is not SCRAM-SHA-256's")
+
+    sid: str @= ""
+    data: str @= ""
+
+    for part in strings.split(s: value.slice(from: MECHANISM.len() + 1, to: value.len()), sep: ",")
+        p = strings.trim(part)
+
+        if strings.has_prefix(s: p, prefix: "sid=")
+            sid @ unquoted(p.slice(from: 4, to: p.len()))
+        else if strings.has_prefix(s: p, prefix: "data=")
+            raw = unquoted(p.slice(from: 5, to: p.len()))
+
+            decoded = match bytes.parse_base64(raw)
+                .ok b  => bytes.to_text(b)
+                .err _ => return fail(code: scram_server.INVALID, msg: "the SCRAM data is not base 64")
+
+            data @ decoded?
+
+    if data == ""
+        return fail(code: scram_server.INVALID, msg: "the authorization carries no SCRAM data")
+    return ok(Fields(sid: sid, data: data))
+
+# `s` without the double quotes around it, where it has them.
+#
+# - `s`: a parameter's value.
+function unquoted(s: str) -> str
+    if s.len() >= 2 && s[0] == '"' && s[s.len() - 1] == '"'
+        return s.slice(from: 1, to: s.len() - 1)
+    return s
+
+# The 401 that asks for SCRAM: with `parameters` where an exchange goes on.
+#
+# - `parameters`: what follows the mechanism's name: a `realm`, or a `sid` and `data`.
+function asking(parameters: str) -> http.Response
+    r @= http.respond_status(401)
+    r.headers @ r.headers.push(http.Header(name: "WWW-Authenticate", value: MECHANISM + " " + parameters))
+    return answers.no_store(r)
+
+# `POST /service/token`: one round trip of SCRAM-SHA-256 over HTTP, the
+# second answering a token.
+#
+# - `st`: the server, which keeps the exchange between the two.
+# - `r`: the request.
+#
+# Fails as `tokens.issue_service` fails.
+function service_token(@st: state.State, r: http.Request) -> http.Response?
+    header = match http.value_of(r.headers, name: "Authorization")
+        .ok v  => v
+        .err _ => return ok(asking(f"realm=\"{st.issuer}\""))
+
+    f = match fields_of(header)
+        .ok got => got
+        .err e  => return ok(answers.oauth_error(400, error: "invalid_request", description: e.msg))
+
+    if f.sid == ""
+        return ok(begin(@st, client_first: f.data))
+
+    pending = match st.exchanges[f.sid]
+        .ok p => p
+        .err _ => return ok(
+            answers.oauth_error(401, error: "invalid_client", description: "no SCRAM exchange has that sid")
+        )
+
+    st.exchanges @ maps.remove(st.exchanges, key: f.sid)
+
+    server_final = match scram_server.final(pending, client_final: f.data)
+        .ok v  => v
+        .err e => return ok(answers.oauth_error(401, error: "invalid_client", description: e.msg))
+
+    account = settings.service_account_named(st.settings, name: pending.user)?
+    issued = tokens.issue_service(@st, name: account.name, scopes: account.scopes)?
+    answer @= answers.json_answer(200, members: tokens.token_response(issued))
+    info = f"sid={f.sid}, data={bytes.format_base64(bytes.from_text(server_final))}"
+    answer.headers @ answer.headers.push(http.Header(name: "Authentication-Info", value: info))
+    return ok(answer)
+
+# The server's first message for the client's `client_first`, kept under a
+# new `sid`.
+#
+# - `st`: the server, which keeps the exchange under its `sid`.
+# - `client_first`: the client's first message.
+function begin(@st: state.State, client_first: str) -> http.Response
+    user = match scram_server.user_of(client_first)
+        .ok u  => u
+        .err e => return answers.oauth_error(400, error: "invalid_request", description: e.msg)
+
+    verifier = match settings.service_account_named(st.settings, name: user)
+        .ok a => scram_server.parse_verifier(a.verifier)
+        .err _ => scram_server.make_verifier(
+            password: ids.token(@st.rng, count: 32),
+            salt: ids.draw(@st.rng, count: 16),
+            iterations: scram_server.MIN_ITERATIONS
+        )
+
+    v = match verifier
+        .ok found => found
+        .err e    => return answers.oauth_error(500, error: "server_error", description: e.msg)
+
+    pending = match scram_server.first(@st.rng, client_first: client_first, verifier: v)
+        .ok p  => p
+        .err e => return answers.oauth_error(400, error: "invalid_request", description: e.msg)
+
+    sid = ids.token(@st.rng, count: 12)
+    kept @= st.exchanges
+    kept[sid] @ pending
+    st.exchanges @ kept
+    return asking(f"sid={sid}, data={bytes.format_base64(bytes.from_text(pending.server_first))}")
+
+# The scopes of `r`'s access token where it holds `scope`.
+#
+# - `st`: the server.
+# - `r`: the request.
+# - `scope`: the scope the endpoint asks.
+#
+# Fails `invalid` where the token does not verify or lacks the scope.
+function scoped(st: state.State, r: http.Request, scope: str) -> [str]?
+    claims = oauth_api.bearer_claims(st, r: r)?
+    scopes = answers.scopes_of(jose.claim_text(claims, name: "scope").default(""))
+
+    if !answers.contains(scopes, item: scope)
+        return fail(code: scram_server.INVALID, msg: f"the token lacks the scope \"{scope}\"")
+    return ok(scopes)
+
+# `POST /admin/import`: the directory import run at once, as the nightly
+# schedule runs it, and what it did.
+#
+# - `st`: the server, whose accounts change.
+# - `r`: the request, its token holding `directory:import`.
+#
+# Fails where the data file cannot be written.
+function import_now(@st: state.State, r: http.Request) -> http.Response?
+    match scoped(st, r: r, scope: "directory:import")
+        .ok _  => _ = 0
+        .err e => return ok(oauth_api.challenge(error: "insufficient_scope", description: e.msg))
+
+    summary = match run_import(@st)
+        .ok s  => s
+        .err e => return ok(answers.oauth_error(502, error: "directory_unavailable", description: f"{e.code}: {e.msg}"))
+
+    next = match directory_import.next_run(st.settings.ldap, at: clock.now(st.clock))
+        .ok t  => time.format(t, layout: .rfc3339_seconds)
+        .err _ => ""
+
+    return ok(answers.json_answer(200, members: summary_json(summary, next: next)))
+
+# Runs the directory import and writes the accounts after it.
+#
+# - `st`: the server, whose accounts change.
+#
+# Fails as `vault.read`, `directory_import.read_people` and `state.save`
+# fail.
+function run_import(@st: state.State) -> directory_import.Summary?
+    password = vault.read(st.vault, account: vault.LDAP_PASSWORD)?
+    people = directory_import.read_people(st.settings.ldap, password: password)?
+    s = directory_import.apply(@st.directory, @st.rng, entries: people, at: clock.now(st.clock))
+    state.save(st)?
+    return ok(s)
+
+# `s` as the import endpoint answers it, `next` the next scheduled run.
+#
+# - `s`: what the import did.
+# - `next`: the next run, RFC 3339's text; "" where no schedule reads.
+function summary_json(s: directory_import.Summary, next: str) -> {str: json.Value}
+    return {
+        "read": answers.number(s.read)
+        "created": answers.texts(s.created)
+        "updated": answers.texts(s.updated)
+        "unchanged": answers.texts(s.unchanged)
+        "disabled": answers.texts(s.disabled)
+        "skipped": answers.texts(s.skipped)
+        "next_run": .text(v: next)
+    }
+
+# `GET /admin/users`: every account, with what proves it and where it came
+# from, never a secret.
+#
+# - `st`: the server.
+# - `r`: the request, its token holding `users:read`.
+function list_users(st: state.State, r: http.Request) -> http.Response
+    match scoped(st, r: r, scope: "users:read")
+        .ok _  => _ = 0
+        .err e => return oauth_api.challenge(error: "insufficient_scope", description: e.msg)
+
+    out: [json.Value] @= []
+
+    for u in accounts.all_users(st.directory)
+        out @ out.push(
+            .object(members: {"username": .text(v: u.username), "source": .text(v: u.source), "email_verified": .boolean(v: u.email_verified), "totp": .boolean(v: u.totp_confirmed), "passkeys": answers.number(u.passkeys.len()), "disabled": .boolean(v: u.disabled)})
+        )
+
+    return answers.json_answer(200, members: {"users": .list(items: out)})
+
+test "fields_of: the first message, and a later one with its sid"
+    first = fields_of("SCRAM-SHA-256 data=biwsbj11c2VyLHI9cmJ0").must()
+    assert first.sid == "" && first.data == "n,,n=user,r=rbt"
+    later = fields_of("SCRAM-SHA-256 sid=\"AAAA\", data=biwsbj11c2VyLHI9cmJ0").must()
+    assert later.sid == "AAAA"
+    assert fields_of("Basic abc").is_err()
+    assert fields_of("SCRAM-SHA-256 sid=x").is_err()

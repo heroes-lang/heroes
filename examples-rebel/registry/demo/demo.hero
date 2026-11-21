@@ -1,0 +1,161 @@
+# The demo: the whole registry run on this machine alone, its output the
+# same on every run. It makes a fresh folder, writes a settings file there,
+# brings a fresh SQLite database up to date and makes two publishers with a
+# token each, as an administrator does with `registry token`; then it listens
+# on loopback at a port the system chooses, starts its own client on a second
+# thread (`session`), and serves until the client asks the stop. It prints the
+# client's transcript and what the server counted, and removes the folder.
+#
+# The server and the client are the ones the real commands run: `serve`
+# serves with the same `loop.serve`, and every client command calls the
+# same `client`. Only the port, the folder and the tokens differ from run to
+# run, and none of them is printed.
+
+use <rebel>/fs
+use <rebel>/net
+use <rebel>/sql/sqlite
+use <rebel>/threads
+use <rebel>/time
+
+use demo/session
+use server/api
+use server/loop
+use server/serving
+use server/settings
+use server/tokens
+use store/database
+
+## The demo
+
+# The settings the demo writes: loopback, a port the system chooses, the
+# request log in the folder, and a limit of sixteen publications an hour per
+# publisher, which the session's last publications reach.
+#
+# - `dir`: the demo's folder.
+function settings_text(dir: str) -> str
+    lines = [
+        "[server]"
+        "host = \"127.0.0.1\""
+        "port = 0"
+        "connection_seconds = 30"
+        ""
+        "[storage]"
+        f"data_dir = \"{dir}/data\""
+        f"log_file = \"{dir}/requests.log\""
+        ""
+        "[limits]"
+        "upload_bytes = 1048576"
+        "unpacked_bytes = 4194304"
+        "files = 200"
+        "publishes_per_hour = 1"
+        "publish_burst = 16"
+    ]
+    return lines.join("\n") + "\n"
+
+# Runs the demo in the folder `dir`, which it makes empty first and removes
+# at its end, printing its transcript.
+#
+# - `dir`: a folder of the demo's own, `build/registry-demo`; whatever is
+#   there is removed.
+#
+# Fails where the folder, the database, the listener or the server fails.
+function run(dir: str) -> ()?
+    if fs.exists(dir)?
+        fs.remove_all(dir)?
+    fs.make_dir_all(dir + "/work")?
+    config = dir + "/registry.toml"
+    fs.write_atomic_text(path: config, text: settings_text(dir))?
+    s = settings.parse(read_file(config)?)?
+    print("registry demo")
+    given_tokens = bootstrap(s)?
+    l @= net.listen(host: s.host, port: s.port)?
+    outcome = serve_session(s, l: l, dir: dir, given_tokens: given_tokens)
+    net.close_listener(@l)?
+    report = outcome?
+    print(report.transcript)
+    print("")
+    print(f"server: {report.answered} requests answered, then stopped as the client asked")
+    fs.remove_all(dir)?
+    print("demo folder removed")
+    return ok()
+
+# What the demo's server and client answered.
+record Report
+    # The client's transcript.
+    transcript: str
+    # How many requests the server answered.
+    answered: i64
+
+# Serves on `l` while the session runs on its own thread, until it asks the
+# stop; then waits for it and closes the server's state.
+#
+# - `s`: the settings.
+# - `l`: the listener, which the caller closes.
+# - `dir`: the demo's folder.
+# - `given_tokens`: the publishers' tokens.
+#
+# Fails where the state does not open, the thread does not start or the
+# server fails; the state is closed on every path that opened it.
+function serve_session(s: settings.Settings, l: net.Listener, dir: str, given_tokens: Tokens) -> Report?
+    base = loop.base_url_of(s, address: l.address)
+    state @= serving.open(s, base_url: base, router: api.router()?)?
+    given = session.Given(base: base, ana_token: given_tokens.ana, bruno_token: given_tokens.bruno, work: dir + "/work")
+
+    arg = match session.format_given(given)
+        .ok text => text
+        .err e =>
+            _ = serving.close(@state).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    client_thread @= match threads.spawn_text(body: session.run, arg: arg)
+        .ok t => t
+        .err e =>
+            _ = serving.close(@state).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    served = loop.serve(@state, l: l)
+    transcript = threads.wait_text(@client_thread)
+    closed = serving.close(@state)
+    served?
+    closed?
+    return ok(Report(transcript: transcript, answered: state.answered))
+
+# The two publishers' tokens.
+record Tokens
+    # Ana's.
+    ana: str
+    # Bruno's.
+    bruno: str
+
+# What an administrator does before the server first serves: the schema
+# brought up to date, and the publishers ana and bruno made, each with a
+# token of every scope.
+#
+# - `s`: the settings.
+#
+# Fails as the database fails.
+function bootstrap(s: settings.Settings) -> Tokens?
+    fs.make_dir_all(s.data_dir)?
+    db @= database.open(settings.database_of(s))?
+    made = bootstrapped(@db)
+    sqlite.close(@db)?
+    return made
+
+# The steps of `bootstrap` over an open connection.
+#
+# - `db`: the connection.
+#
+# Fails as the statements do.
+function bootstrapped(@db: sqlite.Db) -> Tokens?
+    applied = database.migrate_up(@db)?
+    print(f"migrations applied: {applied}")
+    now = time.now()?
+    ana = database.add_publisher(@db, name: "ana", now: now)?
+    bruno = database.add_publisher(@db, name: "bruno", now: now)?
+    scopes = [tokens.SCOPE_PUBLISH, tokens.SCOPE_YANK, tokens.SCOPE_KEYS].join(",")
+    ana_token = tokens.mint()?
+    database.add_token(@db, publisher: ana, label: "laptop", hash: tokens.stored_form(ana_token), scopes: scopes, now: now)?
+    bruno_token = tokens.mint()?
+    database.add_token(@db, publisher: bruno, label: "ci", hash: tokens.stored_form(bruno_token), scopes: scopes, now: now)?
+    print(f"publishers: ana and bruno, each with a token of the scopes {scopes}")
+    return ok(Tokens(ana: ana_token, bruno: bruno_token))

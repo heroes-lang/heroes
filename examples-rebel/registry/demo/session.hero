@@ -1,0 +1,117 @@
+# The demo's client: a scripted session against the registry the demo
+# serves, run on a thread of its own while the main thread serves. Two
+# publishers add their keys and publish (`steps`); every refusal a registry
+# owes is provoked once (`refusals`); then a package manager reads
+# (`readings`).
+#
+# It prints nothing itself: it answers its transcript as text, one line a
+# step, which the main thread prints once the server has stopped, so the
+# output never interleaves with the server's. Nothing it prints holds a time,
+# a port, a path or a token; digests and key ids are fixed by the demo's
+# sources and seeds. Whatever happens, it asks the program's stop at its end,
+# so the server's loop ends.
+
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/os
+use <rebel>/path
+
+use client/client
+use client/queries
+use demo/readings
+use demo/refusals
+use demo/sources
+use demo/steps
+use signing/signers
+
+## The session
+
+# What the main thread hands the session, as JSON text: the registry's URL,
+# the two publishers' tokens and the folder to work in.
+record Given
+    # The registry's URL, ending in `/`.
+    base: str
+    # Ana's token.
+    ana_token: str
+    # Bruno's token.
+    bruno_token: str
+    # The folder the session writes its packages and its trust file in.
+    work: str
+
+# `g` as the text a thread is handed.
+#
+# - `g`: what the session is given.
+#
+# Fails as `json.format` does.
+function format_given(g: Given) -> str?
+    return json.format(
+        .object(members: {"base": .text(v: g.base), "ana_token": .text(v: g.ana_token), "bruno_token": .text(v: g.bruno_token), "work": .text(v: g.work)})
+    )
+
+# What `format_given` wrote, read back.
+#
+# - `text`: the thread's argument.
+#
+# Fails `invalid` where a member is missing.
+function parse_given(text: str) -> Given?
+    v = json.parse(text)?
+    return ok(
+        Given(base: json.text_of(json.member(v, key: "base")?)?, ana_token: json.text_of(json.member(v, key: "ana_token")?)?, bruno_token: json.text_of(json.member(v, key: "bruno_token")?)?, work: json.text_of(json.member(v, key: "work")?)?)
+    )
+
+# The session's body, as a thread runs it: the script run, its failure told
+# as its last line, the program's stop asked, the transcript answered.
+#
+# - `arg`: what `format_given` wrote.
+function run(arg: str) -> str
+    out: [str] @= []
+
+    match parse_given(arg)
+        .ok g =>
+            match script(@out, g: g)
+                .ok _  => _ = 0
+                .err e => out @ out.push(f"the session stopped: {e.code}: {e.msg}")
+        .err e => out @ out.push(f"the session was given nothing it reads: {e.msg}")
+
+    os.ask_stop()
+    return out.join("\n")
+
+# The whole scripted session.
+#
+# - `out`: the transcript.
+# - `g`: what the session is given.
+#
+# Fails where a step that must succeed does not.
+function script(@out: [str], g: Given) -> ()?
+    ana @= client.new_client(base: g.base, token: g.ana_token)?
+    bruno @= client.new_client(base: g.base, token: g.bruno_token)?
+    reader @= client.new_client(base: g.base, token: "")?
+    steps.say(@out, f"health: {client.health(@reader)?}")
+    steps.say(@out, "")
+    steps.say(@out, "## Keys")
+    ana_key = client.add_key(@ana, pem: steps.public_pem_of("ana")?)?
+    steps.say(@out, f"ana adds her signing key: {ana_key}")
+    bruno_key = client.add_key(@bruno, pem: steps.public_pem_of("bruno")?)?
+    steps.say(@out, f"bruno adds his signing key: {bruno_key}")
+    again = client.add_key(@ana, pem: steps.public_pem_of("ana")?)?
+    steps.say(@out, f"ana adds it again: the same id, {again}")
+    trusted = queries.publisher_keys(@reader, name: "ana")?
+    trust_file = path.join_all([g.work, "trust-ana.pem"])
+    fs.write_atomic_text(path: trust_file, text: signers.format_bundle(trusted)?)?
+    steps.say(@out, f"a client keeps ana's keys as its trust file: {steps.key_ids(trusted)}")
+    steps.say(@out, "")
+    steps.say(@out, "## Publishing")
+    steps.publish_folder(@out, c: @ana, work: g.work, who: "ana", key_id: ana_key, name: "slugify", version: "0.4.0", files: sources.slugify(), packing: .xz)?
+    steps.publish_folder(@out, c: @ana, work: g.work, who: "ana", key_id: ana_key, name: "textkit", version: "1.0.0", files: sources.textkit("1.0.0"), packing: .zstd)?
+    steps.publish_folder(@out, c: @ana, work: g.work, who: "ana", key_id: ana_key, name: "textkit", version: "1.1.0", files: sources.textkit("1.1.0"), packing: .gzip)?
+    steps.publish_folder(@out, c: @ana, work: g.work, who: "ana", key_id: ana_key, name: "textkit", version: "1.2.0", files: sources.textkit("1.2.0"), packing: .zstd)?
+    steps.publish_folder(@out, c: @ana, work: g.work, who: "ana", key_id: ana_key, name: "textkit", version: "2.0.0-beta.1", files: sources.textkit("2.0.0-beta.1"), packing: .zstd)?
+    steps.publish_folder(@out, c: @ana, work: g.work, who: "ana", key_id: ana_key, name: "textkit", version: "1.0.0", files: sources.textkit("1.0.0"), packing: .zstd)?
+    steps.publish_folder(@out, c: @bruno, work: g.work, who: "bruno", key_id: bruno_key, name: "yamlite", version: "0.1.0", files: sources.yamlite(), packing: .zstd)?
+    steps.say(@out, "")
+    steps.say(@out, "## Refusals")
+    refusals.provoke(@out, ana: @ana, bruno: @bruno, reader: @reader, base: g.base, ana_token: g.ana_token, work: g.work, ana_key: ana_key, bruno_key: bruno_key)?
+    steps.say(@out, "")
+    steps.say(@out, "## Reading")
+    readings.read_all(@out, ana: @ana, reader: @reader, trust_file: trust_file, bruno_key: bruno_key, work: g.work)?
+    return ok()

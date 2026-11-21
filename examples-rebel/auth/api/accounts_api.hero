@@ -1,0 +1,292 @@
+# The endpoints a person's browser uses for the account itself: signing up
+# (`POST /accounts`), the link mailed to prove the address (`GET /verify`),
+# logging in with a password and, once enrolled, a TOTP code
+# (`POST /login`), and logging out (`POST /logout`). A login opens a
+# session kept in an `HttpOnly` cookie, which the authorization endpoint and
+# the enrolment endpoints read.
+#
+# A wrong user name and a wrong password are answered alike, so a stranger
+# cannot learn which names exist from the login. An account imported from
+# the directory proves its password by binding to the directory as itself.
+
+use <rebel>/http
+use <rebel>/mail
+use <rebel>/uuid
+
+use accounts/accounts
+use accounts/passwords
+use core/clock
+use core/ids
+use core/vault
+use directory/directory_import
+use mail/mailer
+use oauth/grants
+use server/answers
+use server/state
+use totp/totp
+
+# How long a session lasts, in seconds: eight hours, a working day.
+constant SESSION_SECONDS: i64
+    28_800
+
+# How long a verification link works, in seconds: one day.
+constant VERIFY_SECONDS: i64
+    86_400
+
+# The person a request's session cookie names.
+record Current
+    # The cookie's value.
+    token: str
+    # The session.
+    session: grants.Session
+    # The account.
+    user: accounts.User
+
+# The person `r`'s session cookie names.
+#
+# - `st`: the server.
+# - `r`: the request.
+#
+# Fails `invalid_grant` where it names no live session, or its account is
+# disabled.
+function current(st: state.State, r: http.Request) -> Current?
+    token = answers.cookie(r, name: answers.SESSION_COOKIE)
+    s = grants.session_of(st.grants, token: token, now: state.now(st))?
+    u = accounts.by_id(st.directory, id: s.user_id)?
+
+    if u.disabled
+        return fail(code: grants.INVALID_GRANT, msg: "the account is disabled")
+    return ok(Current(token: token, session: s, user: u))
+
+# The answer to a request that needs a session and has none.
+function login_required() -> http.Response
+    return answers.oauth_error(401, error: "login_required", description: "log in first")
+
+# `POST /accounts`: a new account from the form's `username`, `email` and
+# `password`, and its verification mail sent.
+#
+# - `st`: the server, which takes the account.
+# - `r`: the request.
+#
+# Fails where the data file cannot be written.
+function register(@st: state.State, r: http.Request) -> http.Response?
+    f = answers.form(r)
+    username = answers.field(f, key: "username")
+    password = answers.field(f, key: "password")
+
+    if !accounts.is_valid_username(username)
+        return ok(
+            answers.oauth_error(400, error: "invalid_username", description: "a user name is 3 to 32 letters, digits, '.', '-' or '_', a letter first")
+        )
+
+    address = match mail.parse_address(answers.field(f, key: "email"))
+        .ok a  => mail.format_addr_spec(a)
+        .err _ => return ok(answers.oauth_error(400, error: "invalid_email", description: "the address does not read"))
+
+    match passwords.check_choice(password: password, username: username)
+        .ok _  => _ = 0
+        .err e => return ok(answers.oauth_error(400, error: "weak_password", description: e.msg))
+
+    if !accounts.by_name(st.directory, username: username).is_err()
+        return ok(
+            answers.oauth_error(409, error: "username_taken", description: f"the user name \"{username}\" is taken")
+        )
+
+    now = clock.now(st.clock)
+    u @= accounts.new_user(
+        id: uuid.format(ids.new_user_id(@st.rng, at: now)),
+        username: username,
+        email: address,
+        created: state.now(st)
+    )
+    u.password_hash @ passwords.hash(@st.rng, password: password, cost: st.settings.passwords)?
+    link_token = ids.token(@st.rng, count: 32)
+    u.verify_hash @ passwords.digest_hex(link_token)
+    u.verify_expires @ state.now(st) + VERIFY_SECONDS
+
+    match accounts.add(@st.directory, u: u)
+        .ok _  => _ = 0
+        .err e => return ok(answers.oauth_error(409, error: "email_taken", description: e.msg))
+
+    state.save(st)?
+
+    sent = match send_verification(@st, u: u, link_token: link_token)
+        .ok _  => "sent"
+        .err e => f"not sent: {e.code}"
+
+    return ok(
+        answers.json_answer(201, members: {"id": .text(v: u.id), "username": .text(v: u.username), "verification": .text(v: sent)})
+    )
+
+# Mails `u` the link that verifies its address.
+#
+# - `st`: the server; its generator draws the message's id.
+# - `u`: the account.
+# - `link_token`: the token the link carries.
+#
+# Fails as `mailer.submit` fails, and as `vault.read` fails for the SMTP
+# password where the configuration names an SMTP user.
+function send_verification(@st: state.State, u: accounts.User, link_token: str) -> mailer.Sent?
+    smtp = st.settings.smtp
+
+    password = if smtp.user == ""
+        ""
+    else
+        vault.read(st.vault, account: vault.SMTP_PASSWORD)?
+    message_id = f"<{ids.token(@st.rng, count: 16)}@auth.invalid>"
+    link = f"{st.issuer}/verify?token={link_token}"
+    m = mailer.verification_message(sender: smtp.sender, to: u.email, name: u.display_name, link: link, site: st.settings.passkeys.rp_name, at: clock.now(st.clock), message_id: message_id)?
+    sent = mailer.submit(smtp, password: password, to: u.email, m: m)?
+    st.mailed @ st.mailed + 1
+    return ok(sent)
+
+# `GET /verify?token=...`: the address of the account whose pending link
+# carries the token, marked verified.
+#
+# - `st`: the server, whose account is changed.
+# - `r`: the request.
+#
+# Fails where the data file cannot be written.
+function verify(@st: state.State, r: http.Request) -> http.Response?
+    token = answers.field(answers.query(r), key: "token")
+
+    if token == ""
+        return ok(answers.oauth_error(400, error: "invalid_token", description: "the link carries no token"))
+
+    for u in accounts.all_users(st.directory)
+        if u.verify_hash != "" && passwords.digest_matches(secret: token, expected: u.verify_hash)
+            if u.verify_expires <= state.now(st)
+                return ok(answers.oauth_error(400, error: "invalid_token", description: "the link has expired"))
+            verified @= u
+            verified.email_verified @ true
+            verified.verify_hash @ ""
+            verified.verify_expires @ 0
+            accounts.put(@st.directory, u: verified)?
+            state.save(st)?
+            return ok(
+                answers.json_answer(200, members: {"username": .text(v: u.username), "email_verified": .boolean(v: true)})
+            )
+
+    return ok(answers.oauth_error(400, error: "invalid_token", description: "the link is unknown or was used"))
+
+# `POST /login`: a session for the form's `username` and `password`, and its
+# `code` where the account has a confirmed TOTP key. Where the form carries a
+# `return_to` naming the authorization endpoint, the answer sends the browser
+# back there.
+#
+# - `st`: the server, which opens the session.
+# - `r`: the request.
+#
+# Fails where the data file cannot be written.
+function login(@st: state.State, r: http.Request) -> http.Response?
+    f = answers.form(r)
+    refused = answers.oauth_error(
+        401,
+        error: "invalid_credentials",
+        description: "the user name or the password is wrong"
+    )
+
+    u @= match accounts.by_name(st.directory, username: answers.field(f, key: "username"))
+        .ok found => found
+        .err _    => return ok(refused)
+
+    if u.disabled
+        return ok(refused)
+
+    password = answers.field(f, key: "password")
+
+    proven = if u.source == "ldap"
+        !directory_import.bind_as(st.settings.ldap, dn: u.ldap_dn, password: password).is_err()
+    else
+        passwords.matches(password: password, phc: u.password_hash)
+
+    if !proven
+        return ok(refused)
+
+    methods: [str] @= ["pwd"]
+
+    if u.totp_confirmed
+        code = answers.field(f, key: "code")
+
+        if code == ""
+            return ok(answers.oauth_error(401, error: "totp_required", description: "the account asks a TOTP code too"))
+
+        match totp.check(@u, code: code, seconds: state.now(st))
+            .ok _  => _ = 0
+            .err e => return ok(answers.oauth_error(401, error: "invalid_totp", description: e.msg))
+
+        accounts.put(@st.directory, u: u)?
+        state.save(st)?
+        methods @ methods.push("otp")
+
+    return ok(opened(@st, u: u, methods: methods, return_to: answers.field(f, key: "return_to")))
+
+# The answer that opens a session for `u` proven by `methods`.
+#
+# - `st`: the server, which keeps the session.
+# - `u`: the account.
+# - `methods`: how it was proven, RFC 8176's values.
+# - `return_to`: where to send the browser after, "" for nowhere.
+function opened(@st: state.State, u: accounts.User, methods: [str], return_to: str) -> http.Response
+    token = ids.token(@st.rng, count: 32)
+    s = grants.Session(
+        user_id: u.id,
+        auth_time: state.now(st),
+        methods: methods,
+        expires: state.now(st) + SESSION_SECONDS,
+        registration_challenge: []
+    )
+    grants.open_session(@st.grants, token: token, s: s)
+    secure = st.issuer.len() > 8 && st.issuer.slice(from: 0, to: 8) == "https://"
+
+    answer = if return_to.len() > 11 && return_to.slice(from: 0, to: 11) == "/authorize?"
+        http.respond_redirect(303, location: return_to)
+    else
+        answers.json_answer(200, members: {"username": .text(v: u.username), "amr": answers.texts(methods)})
+    return answers.with_cookie(
+        answer,
+        name: answers.SESSION_COOKIE,
+        value: token,
+        seconds: SESSION_SECONDS,
+        secure: secure
+    )
+
+# `POST /logout`: the session ended and its cookie removed.
+#
+# - `st`: the server, which forgets the session.
+# - `r`: the request.
+function logout(@st: state.State, r: http.Request) -> http.Response
+    grants.close_session(@st.grants, token: answers.cookie(r, name: answers.SESSION_COOKIE))
+    answer = answers.json_answer(200, members: {"logged_out": .boolean(v: true)})
+    return answers.with_cookie(answer, name: answers.SESSION_COOKIE, value: "", seconds: 0, secure: false)
+
+# `GET /login`: the form a browser shows, posting to `POST /login` with the
+# authorization request to return to.
+#
+# - `r`: the request.
+function login_page(r: http.Request) -> http.Response
+    back = escape_html(answers.field(answers.query(r), key: "return_to"))
+    page = f"<!doctype html><title>Log in</title><form method=post action=/login><input name=username autocomplete=username><input name=password type=password autocomplete=current-password><input name=code inputmode=numeric autocomplete=one-time-code><input type=hidden name=return_to value=\"{back}\"><button>Log in</button></form>"
+    return http.respond_text(200, text: page)
+
+# `s` with the five characters HTML gives a meaning escaped.
+#
+# - `s`: the text.
+function escape_html(s: str) -> str
+    out: [str] @= []
+
+    for c in s.chars()
+        escaped = match c
+            "&"  => "&amp;"
+            "<"  => "&lt;"
+            ">"  => "&gt;"
+            "\"" => "&quot;"
+            "'"  => "&#39;"
+            _    => c
+
+        out @ out.push(escaped)
+
+    return out.join("")
+
+test "escape_html: the five characters"
+    assert escape_html("<a href=\"x\">'&'</a>") == "&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;"

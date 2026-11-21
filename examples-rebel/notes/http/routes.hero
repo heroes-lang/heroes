@@ -1,0 +1,199 @@
+# Every route of the server, by method and pattern, each with the name the
+# dispatcher answers it by. The pages are written here; the API's routes are
+# added from its OpenAPI document, each named by its operation; the account
+# and admin pages are groups, so the steps that guard them (an admin's role)
+# are asked by the group a route was found in, never by its path's text.
+
+use <rebel>/http
+use <rebel>/openapi
+use <rebel>/web
+
+use api/api_doc
+
+## The pages' route names
+
+# `GET /`: the newest notes.
+constant HOME: str
+    "home"
+
+# `GET /notes`: a page of notes, as HTML or JSON.
+constant NOTES: str
+    "notes"
+
+# `POST /notes`: a note written from the form.
+constant NOTE_CREATE: str
+    "note_create"
+
+# `GET /notes/:slug`: a note, as HTML or JSON.
+constant NOTE: str
+    "note"
+
+# `POST /notes/:slug/comments`: a comment written from the form.
+constant COMMENT_CREATE: str
+    "comment_create"
+
+# `POST /notes/:slug/delete`: a note removed from its page.
+constant NOTE_DELETE: str
+    "note_delete"
+
+# `GET /new`: the form that writes a note.
+constant NOTE_NEW: str
+    "note_new"
+
+# `GET /tags/:tag`: the notes of a tag.
+constant TAG: str
+    "tag"
+
+# `GET /search`: the notes a query finds, as HTML or JSON.
+constant SEARCH: str
+    "search"
+
+# `GET /feed.atom`: the Atom feed.
+constant FEED: str
+    "feed"
+
+# `GET /static/*path`: the site's files.
+constant STATIC: str
+    "static"
+
+# `GET /healthz`: whether the process lives.
+constant HEALTH: str
+    "health"
+
+# `GET /readyz`: whether it can serve: its database answers.
+constant READY: str
+    "ready"
+
+# `GET /metrics`: the counters, for Prometheus.
+constant METRICS: str
+    "metrics"
+
+# `GET /ws`: the live channel, upgraded to a WebSocket.
+constant SOCKET: str
+    "socket"
+
+# `GET /account/register`: the form that makes an account.
+constant REGISTER_FORM: str
+    "register_form"
+
+# `POST /account/register`: an account made from the form.
+constant REGISTER: str
+    "register"
+
+# `GET /account/login`: the form that signs in.
+constant LOGIN_FORM: str
+    "login_form"
+
+# `POST /account/login`: a sign-in from the form.
+constant LOGIN: str
+    "login"
+
+# `POST /account/logout`: the session ended.
+constant LOGOUT: str
+    "logout"
+
+# `GET /admin/users`: the accounts and their roles.
+constant USERS: str
+    "users"
+
+# `POST /admin/users/:name/role`: a role given from the form.
+constant ROLE: str
+    "role"
+
+# The group of the account pages.
+constant ACCOUNT_GROUP: str
+    "account"
+
+# The group of the admin pages.
+constant ADMIN_GROUP: str
+    "admin"
+
+## The router
+
+# The router of every route: the pages, the two groups, the API from `doc`
+# and the document's own pages from `site`.
+#
+# - `doc`: the API's document.
+# - `site`: where its document and pages are served.
+#
+# Fails as `web.add` and `openapi.add_routes` fail, which is a mistake of this
+# program's own: a test builds it.
+function router_of(doc: openapi.Document, site: openapi.Site) -> web.Router?
+    r @= web.new_router()
+    add(@r, method: http.METHOD_GET, pattern: "/", name: HOME)?
+    add(@r, method: http.METHOD_GET, pattern: "/notes", name: NOTES)?
+    add(@r, method: http.METHOD_POST, pattern: "/notes", name: NOTE_CREATE)?
+    add(@r, method: http.METHOD_GET, pattern: "/notes/:slug", name: NOTE)?
+    add(@r, method: http.METHOD_POST, pattern: "/notes/:slug/comments", name: COMMENT_CREATE)?
+    add(@r, method: http.METHOD_POST, pattern: "/notes/:slug/delete", name: NOTE_DELETE)?
+    add(@r, method: http.METHOD_GET, pattern: "/new", name: NOTE_NEW)?
+    add(@r, method: http.METHOD_GET, pattern: "/tags/:tag", name: TAG)?
+    add(@r, method: http.METHOD_GET, pattern: "/search", name: SEARCH)?
+    add(@r, method: http.METHOD_GET, pattern: "/feed.atom", name: FEED)?
+    add(@r, method: http.METHOD_GET, pattern: "/static/*path", name: STATIC)?
+    add(@r, method: http.METHOD_GET, pattern: "/healthz", name: HEALTH)?
+    add(@r, method: http.METHOD_GET, pattern: "/readyz", name: READY)?
+    add(@r, method: http.METHOD_GET, pattern: "/metrics", name: METRICS)?
+    add(@r, method: http.METHOD_GET, pattern: "/ws", name: SOCKET)?
+    account @= web.new_group(r, name: ACCOUNT_GROUP, prefix: "/account")?
+    add(@account, method: http.METHOD_GET, pattern: "/register", name: REGISTER_FORM)?
+    add(@account, method: http.METHOD_POST, pattern: "/register", name: REGISTER)?
+    add(@account, method: http.METHOD_GET, pattern: "/login", name: LOGIN_FORM)?
+    add(@account, method: http.METHOD_POST, pattern: "/login", name: LOGIN)?
+    add(@account, method: http.METHOD_POST, pattern: "/logout", name: LOGOUT)?
+    web.mount(router: @r, group: account)?
+    admin @= web.new_group(r, name: ADMIN_GROUP, prefix: "/admin")?
+    add(@admin, method: http.METHOD_GET, pattern: "/users", name: USERS)?
+    add(@admin, method: http.METHOD_POST, pattern: "/users/:name/role", name: ROLE)?
+    web.mount(router: @r, group: admin)?
+    openapi.add_routes(@r, doc: doc)?
+    openapi.add_site_routes(@r, site: site)?
+    return ok(r)
+
+# `web.add`, with the arguments named.
+#
+# - `r`: the router.
+# - `method`: the method.
+# - `pattern`: the pattern.
+# - `name`: the route's name.
+function add(@r: web.Router, method: str, pattern: str, name: str) -> ()?
+    return web.add(@r, method: method, pattern: pattern, name: name)
+
+# Whether the route `name` is an operation of the API.
+#
+# - `doc`: the API's document.
+# - `name`: a route's name.
+function is_api(doc: openapi.Document, name: str) -> bool
+    return !openapi.endpoint_of(doc, operation_id: name).is_err()
+
+# Whether `found` answers as the API answers: JSON, a bearer token, no
+# cookie read.
+#
+# - `doc`: the API's document.
+# - `found`: the route found.
+function is_api_route(doc: openapi.Document, found: web.Found) -> bool
+    return is_api(doc, name: found.name)
+
+# The rows of `notes routes`: each route's method, pattern and name, in the
+# order they were added.
+#
+# - `r`: the router.
+function table_of(r: web.Router) -> [str]
+    rows: [str] @= []
+
+    for route in r.routes
+        rows @ rows.push(f"{route.method} {route.pattern} {route.name}")
+
+    return rows
+
+test "router_of: the pages, the groups and the API found by their names"
+    doc = api_doc.document()
+    r = router_of(doc, site: openapi.new_site(doc, title: "API").must()).must()
+    get = http.request(method: "GET", target: "/notes/hello").must()
+    found = web.route(r, r: get).must()
+    assert found.name == NOTE && web.param_of(found, name: "slug").must() == "hello"
+    assert web.route(r, r: http.request(method: "POST", target: "/admin/users/bob/role").must()).must().groups == [ADMIN_GROUP]
+    api = web.route(r, r: http.request(method: "GET", target: "/api/notes/hello").must()).must()
+    assert api.name == api_doc.READ_NOTE && is_api_route(doc, found: api)
+    assert !is_api_route(doc, found: found)
+    assert web.route(r, r: http.request(method: "GET", target: "/openapi.json").must()).must().name == openapi.ROUTE_DOCUMENT_JSON

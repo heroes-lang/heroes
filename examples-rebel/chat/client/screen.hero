@@ -1,0 +1,263 @@
+# The client's screen, drawn from what it knows: a header naming the user,
+# the room and how many are online; the room's lines in a box, wrapped to its
+# width by grapheme and by the places UAX #14 lets a line break, a day's line
+# where the day changes on the reader's clocks, and a pointer to older
+# messages at the top; a status line saying who is typing, what is unread
+# elsewhere, or the last thing that happened; and the line being typed with
+# the cursor in it. It draws into a buffer of any size, so the terminal
+# client flushes it to the screen and the demo prints it as text.
+
+use <rebel>/strings
+use <rebel>/term
+use <rebel>/time
+use <rebel>/tui
+use <rebel>/unicode/segment
+
+use client/composer
+use client/speech
+use client/views
+use core/model
+
+# A frame drawn: the buffer and where the cursor stands in it.
+record Frame
+    # The cells.
+    buffer: tui.Buffer
+    # Where the terminal's cursor goes.
+    cursor: tui.Cursor
+
+# The words of entry `e` of the room `room`, its time first where it has
+# one, as `sp`'s reader reads them.
+#
+# - `e`: the line of a room.
+# - `room`: the room's name.
+# - `sp`: how the reader is spoken to.
+function words_of(e: views.Entry, room: str, sp: speech.Speech lent) -> str
+    return match e
+        .posted p =>
+            m = p.message
+
+            author = match m.origin
+                .chat         => m.author
+                .mqtt | .nats => f"{m.author}@{model.origin_name(m.origin)}"
+
+            edited = if m.edited
+                f" ({speech.say(sp, id: "edited", values: [])})"
+            else
+                ""
+            f"{speech.clock_of(sp, t: m.at)} {author}: {m.text}{edited}"
+        .direct d => f"{speech.clock_of(sp, t: d.message.at)} {d.message.sender} → {d.message.recipient}: {d.message.text}"
+        .joined j => f"· {speech.say(sp, id: "%s is in #%s now", values: [j.user, room])}"
+        .left l   => f"· {speech.say(sp, id: "%s left #%s", values: [l.user, room])}"
+
+# The time of entry `e`, where it has one.
+#
+# - `e`: the line.
+#
+# Fails `not_found` for a line of no time, a join or a leaving.
+function time_of(e: views.Entry) -> time.Instant?
+    return match e
+        .posted p           => ok(p.message.at)
+        .direct d           => ok(d.message.at)
+        .joined _ | .left _ => fail(code: "not_found", msg: "a line of no time")
+
+# The text lines of room `i`'s pane, `width` columns wide: a pointer to older
+# messages first where there are, then each entry wrapped, a day's line
+# before the first entry of each day.
+#
+# - `v`: the view.
+# - `i`: the room's index.
+# - `sp`: how the reader is spoken to.
+# - `width`: the pane's columns.
+function pane_lines(v: views.View lent, i: i64, sp: speech.Speech lent, width: i64) -> [str]
+    lines: [str] @= []
+
+    if v.rooms[i].more
+        lines @ lines.push(
+            segment.truncate(s: speech.say(sp, id: "older messages above: /history", values: []), width: width, ellipsis: "…")
+        )
+
+    day @= ""
+    wrapping @= segment.wrap_options(width)
+    wrapping.rest_indent @ "  "
+
+    for e in v.rooms[i].entries
+        match time_of(e)
+            .ok at =>
+                key = speech.day_key(sp, t: at)
+
+                if key != day
+                    day @ key
+                    lines @ lines.push(
+                        segment.truncate(s: f"── {speech.day_of(sp, t: at)} ──", width: width, ellipsis: "…")
+                    )
+            .err _ => _ = 0
+
+        for line in segment.wrap(words_of(e, room: v.rooms[i].name, sp: sp), options: wrapping)
+            lines @ lines.push(line)
+
+    return lines
+
+# The status line: who is typing in the room on screen, else what is unread
+# elsewhere, else the last note.
+#
+# - `v`: the view.
+# - `sp`: how the reader is spoken to.
+# - `now`: the client's time, which says whose typing is still shown.
+function status_of(v: views.View lent, sp: speech.Speech lent, now: time.Instant) -> str
+    i = views.room_index(v, name: v.current)
+
+    if i >= 0
+        typing = views.typing_in(v, i: i, now: now)
+
+        if typing.len() == 1
+            return speech.say(sp, id: "%s is typing…", values: typing)
+
+        if typing.len() > 1
+            return speech.say(sp, id: "%s and %s are typing…", values: [typing[0], typing[1]])
+
+    unread: [str] @= []
+
+    for r in v.rooms
+        if r.unread > 0
+            unread @ unread.push(
+                speech.say_count(sp, one: "%d unread in %s", many: "%d unread in %s", n: r.unread, values: [shown_name(r.name)])
+            )
+
+    if unread.len() > 0
+        return unread.join(" · ")
+
+    for n in v.notes
+        return match n
+            .came c    => speech.say(sp, id: "%s came online", values: [c.user])
+            .went w    => speech.say(sp, id: "%s went offline", values: [w.user])
+            .refused r => speech.say(sp, id: "refused: %s", values: [r.reason])
+            .told t    => t.text
+
+    return ""
+
+# How a room's name is shown: `#general` for a room, `@bob` for a
+# conversation as it is.
+#
+# - `name`: the room's name.
+function shown_name(name: str) -> str
+    if strings.has_prefix(s: name, prefix: "@")
+        return name
+    return "#" + name
+
+# The header: the user, the room on screen and how many are online.
+#
+# - `v`: the view.
+# - `sp`: how the reader is spoken to.
+function header_of(v: views.View lent, sp: speech.Speech lent) -> str
+    room = if v.current == ""
+        "-"
+    else
+        shown_name(v.current)
+    people = speech.say_count(sp, one: "%d person online", many: "%d people online", n: v.online.len(), values: [])
+    return f" {v.user} · {room} · {people}"
+
+# The frame of `v` and the line `draft` in `area`, as `sp`'s reader reads it
+# at `now`.
+#
+# - `v`: the view.
+# - `draft`: the line being typed.
+# - `sp`: how the reader is spoken to.
+# - `now`: the client's time.
+# - `area`: the screen; it holds at least 6 rows to show a line of the pane.
+function draw(v: views.View lent, draft: composer.Composer lent, sp: speech.Speech lent, now: time.Instant, area: tui.Rect) -> Frame
+    frame @= tui.blank(area)
+    parts = tui.split(
+        area,
+        layout: tui.new_layout(.vertical, constraints: [.length(n: 1), .min(n: 3), .length(n: 1), .length(n: 1)])
+    )
+    bold = term.with_attribute(term.plain(), a: .bold)
+    _ = tui.draw_text(
+        @frame,
+        x: parts[0].x,
+        y: parts[0].y,
+        text: header_of(v, sp: sp),
+        style: bold,
+        width: parts[0].width
+    )
+
+    box @= tui.bordered()
+    i = views.room_index(v, name: v.current)
+
+    if i >= 0
+        box @ tui.with_title(box, title: f" {v.current} ")
+
+    tui.draw_block(@frame, area: parts[1], block: box)
+    inner = tui.inner_of(box, area: parts[1])
+
+    if i >= 0 && inner.height > 0
+        lines = pane_lines(v, i: i, sp: sp, width: inner.width)
+        first @= lines.len() - inner.height
+
+        if first < 0
+            first @ 0
+
+        row @= inner.y
+
+        for line in lines.slice(from: first, to: lines.len())
+            _ = tui.draw_text(@frame, x: inner.x, y: row, text: line, style: term.plain(), width: inner.width)
+            row @ row + 1
+
+    dim = term.with_attribute(term.plain(), a: .dim)
+    _ = tui.draw_text(
+        @frame,
+        x: parts[2].x,
+        y: parts[2].y,
+        text: status_of(v, sp: sp, now: now),
+        style: dim,
+        width: parts[2].width
+    )
+
+    prompt = if draft.editing == ""
+        "> "
+    else
+        "edit> "
+    shown = prompt + draft.text
+    _ = tui.draw_text(@frame, x: parts[3].x, y: parts[3].y, text: shown, style: term.plain(), width: parts[3].width)
+    column = parts[3].x + segment.width_of(prompt) + composer.column_of(draft)
+
+    cursor: tui.Cursor = if column < parts[3].x + parts[3].width
+        .at(x: column, y: parts[3].y)
+    else
+        .hidden
+
+    return Frame(buffer: frame, cursor: cursor)
+
+# The rows of a frame as text, the spaces at their ends taken off: what the
+# demo prints.
+#
+# - `f`: the frame.
+function text_of(f: Frame) -> [str]
+    return tui.to_lines(f.buffer).map(strings.trim_end)
+
+test "draw: a header, a message in its box, and the line typed"
+    sp = speech.speech_of("en-US", zone: time.utc_zone()).must()
+    v @= views.new_view()
+    t = time.from_date_time(
+        time.DateTime(year: 2026, month: 11, day: 21, hour: 14, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    views.apply(@v, n: .welcome(user: "alice", rooms: ["general"], online: ["alice"]), now: t)
+    m = model.Message(id: "1", room: "general", author: "alice", origin: .chat, text: "hi", at: t, edited: false)
+    views.apply(@v, n: .posted(message: m), now: t)
+    draft @= composer.new_composer()
+    composer.insert(@draft, piece: "yo")
+    f = draw(v, draft: draft, sp: sp, now: t, area: tui.Rect(x: 0, y: 0, width: 40, height: 7))
+    rows = text_of(f)
+    assert rows[0] == " alice · #general · 1 person online"
+    assert strings.contains(s: rows[3], substr: "alice: hi")
+    assert rows[6] == "> yo" && f.cursor == .at(x: 4, y: 6)
+
+test "status_of: one typist, then what is unread elsewhere"
+    sp = speech.speech_of("en", zone: time.utc_zone()).must()
+    v @= views.new_view()
+    t = time.epoch()
+    views.apply(@v, n: .welcome(user: "alice", rooms: ["general", "iot"], online: ["alice"]), now: t)
+    views.apply(@v, n: .typing(room: "general", user: "bob"), now: t)
+    assert status_of(v, sp: sp, now: t) == "bob is typing…"
+    m = model.Message(id: "1", room: "iot", author: "bob", origin: .chat, text: "x", at: t, edited: false)
+    views.apply(@v, n: .posted(message: m), now: time.add(t, d: time.seconds(10).must()).must())
+    assert status_of(v, sp: sp, now: time.add(t, d: time.seconds(10).must()).must()) == "1 unread in #iot"

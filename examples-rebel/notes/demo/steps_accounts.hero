@@ -1,0 +1,142 @@
+# The demo session's steps about accounts: the health answer, registering by
+# the form (well, wrongly, and as a name already held), a form without its
+# CSRF token, API tokens, the account a token names, and a password guessed
+# until the sign-in limit refuses.
+
+use <rebel>/http
+use <rebel>/strings
+
+use demo/browse
+use domain/jsonv
+
+# The liveness answer.
+#
+# - `s`: the session.
+function read_health(@s: http.Session) -> ()?
+    r = browse.get(@s, target: "/healthz", accept: "text/plain")?
+    print(f"GET /healthz: {r.status} {strings.trim(http.text_of(r)?)}")
+    return ok()
+
+# An account made by its form, as a browser makes it.
+#
+# - `s`: the browser.
+# - `name`: the name.
+# - `email`: the address.
+# - `password`: the password.
+function register(@s: http.Session, name: str, email: str, password: str) -> ()?
+    token = browse.csrf_from(@s, target: "/account/register")?
+    fields = [
+        browse.field(key: "csrf_token", value: token)
+        browse.field(key: "name", value: name)
+        browse.field(key: "email", value: email)
+        browse.field(key: "password", value: password)
+    ]
+    r = browse.post_form(@s, target: "/account/register", pairs: fields, accept: "text/html")?
+
+    cookie = if s.cookies.len() > 0
+        "a session cookie kept"
+    else
+        "no cookie"
+
+    print(f"{name} registers by the form: {r.status} -> {browse.redirect_of(r)}, {cookie}")
+    return ok()
+
+# A registration whose every field is wrong, asked for JSON: each field's
+# problem at once.
+#
+# - `s`: the browser.
+function register_wrong(@s: http.Session) -> ()?
+    token = browse.csrf_from(@s, target: "/account/register")?
+    fields = [
+        browse.field(key: "csrf_token", value: token)
+        browse.field(key: "name", value: "c")
+        browse.field(key: "email", value: "carol at example")
+        browse.field(key: "password", value: "short")
+    ]
+    r = browse.post_form(@s, target: "/account/register", pairs: fields, accept: "application/json")?
+    print(f"carol registers with every field wrong: {r.status}")
+
+    for line in browse.field_errors(r)
+        print(f"  {line}")
+
+    return ok()
+
+# A registration of a name and an address already held, as a page shows it.
+#
+# - `s`: the browser.
+function register_taken(@s: http.Session) -> ()?
+    token = browse.csrf_from(@s, target: "/account/register")?
+    fields = [
+        browse.field(key: "csrf_token", value: token)
+        browse.field(key: "name", value: "alice")
+        browse.field(key: "email", value: "alice@example.org")
+        browse.field(key: "password", value: "another long one")
+    ]
+    r = browse.post_form(@s, target: "/account/register", pairs: fields, accept: "text/html")?
+    page = http.text_of(r)?
+    print(
+        f"carol registers as alice: {r.status}, the page says \"is taken\" {strings.count_of(s: page, substr: "is taken")} times"
+    )
+    return ok()
+
+# A form posted without its CSRF token.
+#
+# - `s`: the browser.
+function no_csrf(@s: http.Session) -> ()?
+    r = browse.post_form(@s, target: "/account/login", pairs: [browse.field(key: "name", value: "alice"), browse.field(key: "password", value: "x")], accept: "text/html")?
+    print(f"a form sent without its CSRF token: {r.status} {strings.trim(http.text_of(r)?)}")
+    return ok()
+
+# A token for `name`, printed by its type and life, never its text.
+#
+# - `s`: the session.
+# - `name`: the account.
+# - `password`: its password.
+function token_for(@s: http.Session, name: str, password: str) -> str?
+    body = jsonv.object({"name": jsonv.text(name), "password": jsonv.text(password)})
+    r = browse.call(@s, method: "POST", target: "/api/token", token: "", body: body)?
+    v = browse.json_body(r)
+    print(
+        f"{name}'s token: {r.status} {browse.shown(v, key: "token_type")}, ends in {browse.shown(v, key: "expires_in")} s"
+    )
+    return jsonv.text_at(v, key: "token")
+
+# The account a token names.
+#
+# - `s`: the session.
+# - `token`: the token.
+function me(@s: http.Session, token: str) -> ()?
+    r = browse.call(@s, method: "GET", target: "/api/me", token: token, body: .null_value)?
+    v = browse.json_body(r)
+    print(f"GET /api/me: {r.status} {browse.shown(v, key: "name")}, {browse.shown(v, key: "role")}")
+    return ok()
+
+# The API with no token and with one forged.
+#
+# - `s`: the session.
+function no_token(@s: http.Session) -> ()?
+    r = browse.call(@s, method: "GET", target: "/api/me", token: "", body: .null_value)?
+    print(f"GET /api/me with no token: {r.status} {http.value_of(r.headers, name: "WWW-Authenticate").default("")}")
+    forged = browse.call(@s, method: "GET", target: "/api/me", token: "eyJhbGciOiJub25lIn0.eyJzdWIiOiJhbGljZSJ9.", body: .null_value)?
+    print(
+        f"GET /api/me with a forged token: {forged.status} {http.value_of(forged.headers, name: "WWW-Authenticate").default("")}"
+    )
+    return ok()
+
+# A password guessed until the sign-in limit refuses.
+#
+# - `s`: the session.
+function guessing(@s: http.Session) -> ()?
+    statuses: [str] @= []
+    wait: str @= ""
+
+    for guess in ["password1", "letmein123", "qwertyuiop", "trustno1!!"]
+        body = jsonv.object({"name": jsonv.text("bob"), "password": jsonv.text(guess)})
+        r = browse.call(@s, method: "POST", target: "/api/token", token: "", body: body)?
+        statuses @ statuses.push(to_str(r.status))
+
+        if r.status == http.STATUS_TOO_MANY_REQUESTS
+            wait @ http.value_of(r.headers, name: "Retry-After").default("?")
+
+    print(f"bob's password guessed four times: {statuses.join(", ")}, Retry-After {wait} s")
+    return ok()

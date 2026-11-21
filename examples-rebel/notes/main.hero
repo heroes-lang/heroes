@@ -1,0 +1,117 @@
+# notes: a multi-user publishing service, a small blog and notes server
+# written on Rebel's `web`. People register, sign in, write notes in
+# Markdown with tags, comment on each other's notes, and search them; the
+# site's pages and a JSON API with bearer tokens serve the same notes, a
+# WebSocket tells an author of a new comment as it is written, and an Atom
+# feed carries the newest notes to a feed reader.
+#
+#     heroes build examples-rebel/notes/main.hero -o notes
+#     ./notes init notes.toml               # a settings file with fresh keys
+#     ./notes serve --config notes.toml     # serves until SIGTERM or Ctrl-C
+#     ./notes migrate --config notes.toml   # applies the schema's migrations
+#     ./notes routes                        # prints every route
+#     ./notes demo                          # the self-contained session below
+#
+# `demo` starts the server on loopback port 0 with a fresh SQLite database
+# under `build/notes-demo/` and a fixed clock, drives it with its own client
+# on a second thread, prints a transcript that is the same on every run,
+# stops the server through its API and removes its folder.
+#
+# Rebel's packages, and what for: `web` routes, groups, sessions in signed
+# cookies, CSRF tokens, rate limits, request ids, recovery, entity tags,
+# security headers, gzip, static files and health answers; `http` reads and
+# writes the messages, negotiates types and languages, and is the demo's
+# client with a cookie jar judged by `http/suffixes`; `template` renders the
+# pages in its HTML mode; `markdown` writes the notes' and comments' HTML and
+# `html/sanitize` cleans it; `html` reads the pages in the demo's client;
+# `json` is every API body; `sql`, `sql/sqlite`, `sql/build` and
+# `sql/migrate` hold the accounts, notes, tags and comments; `search` ranks
+# full-text search by BM25; `crypto` hashes passwords with Argon2id; `jose`
+# signs the API's tokens; `uuid` names comments and tokens; `websocket` is
+# the live channel and `poll` serves it beside the pages on one thread;
+# `openapi` describes the API, adds its routes, checks its requests and
+# serves its document; `xml` writes the Atom feed; `i18n` and `i18n/dates`
+# write the pages in English or Italian with their dates; `log` writes JSON
+# lines, `metrics` serves Prometheus's text; `config`, `toml` and `flags`
+# read the settings in layers; `time`, `net`, `threads`, `os`, `fs`, `io`,
+# `strings`, `bytes`, `numbers` and `url` do the rest.
+
+use <rebel>/flags
+
+use app/commands
+use demo/demo
+
+# The command line: a subcommand and its options.
+function command_line() -> flags.Command
+    root @= flags.command(
+        name: "notes",
+        about: "A multi-user publishing service: notes in Markdown, comments, search, a JSON API, a live channel."
+    )
+    serve @= flags.command(name: "serve", about: "Serve until SIGTERM or Ctrl-C.")
+    flags.add(
+        @serve,
+        a: flags.with_required(flags.option(long: "config", short: "c", value_name: "FILE", help: "the settings file"))
+    )
+    flags.add(@serve, a: flags.option(long: "host", short: "", value_name: "ADDRESS", help: "the address to listen on"))
+    flags.add(
+        @serve,
+        a: flags.with_kind(flags.option(long: "port", short: "p", value_name: "PORT", help: "the port to listen on"), kind: .integer)
+    )
+    flags.add(
+        @serve,
+        a: flags.option(long: "log-level", short: "", value_name: "LEVEL", help: "debug, info, warn or error")
+    )
+    migrate @= flags.command(name: "migrate", about: "Apply the migrations the database lacks.")
+    flags.add(
+        @migrate,
+        a: flags.with_required(flags.option(long: "config", short: "c", value_name: "FILE", help: "the settings file"))
+    )
+    flags.add(@migrate, a: flags.option(long: "host", short: "", value_name: "ADDRESS", help: "unused by this command"))
+    flags.add(
+        @migrate,
+        a: flags.with_kind(flags.option(long: "port", short: "p", value_name: "PORT", help: "unused by this command"), kind: .integer)
+    )
+    flags.add(
+        @migrate,
+        a: flags.option(long: "log-level", short: "", value_name: "LEVEL", help: "unused by this command")
+    )
+    init @= flags.command(name: "init", about: "Write a settings file with fresh keys; never replaces one.")
+    flags.add(@init, a: flags.positional(name: "file", help: "where the settings go"))
+    flags.add_command(c: @root, sub: serve)
+    flags.add_command(c: @root, sub: migrate)
+    flags.add_command(c: @root, sub: init)
+    flags.add_command(c: @root, sub: flags.command(name: "routes", about: "Print every route: method, pattern, name."))
+    flags.add_command(c: @root, sub: flags.command(name: "demo", about: "Run the self-contained demo session."))
+    return root
+
+function main()
+    found = match flags.parse(command_line(), arguments: args())
+        .ok f => f
+        .err e =>
+            print(e.msg)
+            exit(code: 2)
+
+    if flags.is_help(found)
+        print(flags.help_text(found))
+        exit(code: 0)
+
+    sub = match flags.subcommand(found)
+        .ok s => s
+        .err _ =>
+            print(flags.help_text(found))
+            exit(code: 2)
+
+    name = flags.name_of(sub)
+
+    code = if name == "serve"
+        commands.serve(flags.value_of(sub, name: "config").must(), found: sub)
+    else if name == "migrate"
+        commands.migrate(flags.value_of(sub, name: "config").must(), found: sub)
+    else if name == "init"
+        commands.init(flags.value_of(sub, name: "file").must())
+    else if name == "routes"
+        commands.print_routes()
+    else
+        demo.run()
+
+    exit(code: code)

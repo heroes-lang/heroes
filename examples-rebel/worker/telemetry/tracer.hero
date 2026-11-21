@@ -1,0 +1,86 @@
+# The spans of a run: a tracer for each thread that makes them, whose
+# resource says which service, which run and which thread made them, and
+# their export to the collector by OTLP over HTTP. A job's trace begins at
+# the producer that enqueued it, whose context travels in the job's payload,
+# so each attempt a worker runs is a child of that enqueue, wherever and
+# whenever it runs: OpenTelemetry's messaging conventions, a producer span
+# and its consumer spans.
+
+use <rebel>/json
+use <rebel>/otlp
+use <rebel>/tracing
+
+use cli/settings
+
+# The payload's member that carries the producer's span context.
+constant TRACE_MEMBER: str
+    "trace"
+
+# The member of that object holding the W3C `traceparent`.
+constant TRACEPARENT: str
+    "traceparent"
+
+# A tracer for the thread `thread` of the run `s` describes.
+#
+# - `s`: the run's settings: its service and instance.
+# - `thread`: which thread: `supervisor`, `worker-1`, ...
+#
+# Fails as `tracing.new_tracer` fails, where the system gives no random bytes.
+function new_tracer(s: settings.Settings, thread: str) -> tracing.Tracer?
+    t = tracing.new_tracer(s.service)?
+    resource = [
+        otlp.Attribute(key: "service.name", value: .text(v: s.service))
+        otlp.Attribute(key: "service.instance.id", value: .text(v: s.instance))
+        otlp.Attribute(key: "thread.name", value: .text(v: thread))
+    ]
+    scoped = tracing.with_scope(t, scope: otlp.Scope(name: "worker", version: "1.0.0"))
+    return ok(tracing.with_resource(scoped, resource: resource))
+
+# Sends the spans `tracer` ended to the collector the settings name; with
+# none named, drops them.
+#
+# - `tracer`: the tracer, its ended spans sent or dropped.
+# - `s`: the run's settings.
+#
+# Fails as `tracing.export_spans` fails.
+function export(@tracer: tracing.Tracer, s: settings.Settings) -> ()?
+    if s.otlp == ""
+        tracer.ended @ []
+        return ok()
+
+    _ = tracing.export_spans(@tracer, exporter: otlp.exporter_to(s.otlp + "/v1/traces"))?
+    return ok()
+
+# `payload` carrying `context`: an object gains the member `trace`, any other
+# payload is left as it is.
+#
+# - `payload`: the job's payload.
+# - `context`: the producer's span context.
+function with_context(payload: json.Value, context: tracing.SpanContext) -> json.Value
+    match payload
+        .object o =>
+            members @= o.members
+            members[TRACE_MEMBER] @ .object(members: {TRACEPARENT: .text(v: tracing.format_traceparent(context))})
+            return .object(members: members)
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => return payload
+
+# The producer's span context a payload carries. Fails `not_found` where it
+# carries none, and `invalid` where it is no `traceparent`.
+#
+# - `payload`: the job's payload.
+function context_of(payload: json.Value) -> tracing.SpanContext?
+    carried = json.member(json.member(payload, key: TRACE_MEMBER)?, key: TRACEPARENT)?
+    return tracing.parse_traceparent(json.text_of(carried)?)
+
+# A consumer span named `name` for an attempt, the child of the producer span
+# `payload` carries, or a root where it carries none.
+#
+# - `tr`: the tracer.
+# - `name`: the span's name, `process deliver_webhook`.
+# - `payload`: the job's payload.
+#
+# Fails as the tracer's clock fails.
+function consumer_span(@tr: tracing.Tracer, name: str, payload: json.Value) -> tracing.Span?
+    match context_of(payload)
+        .ok parent => return tracing.start_child(@tr, name: name, kind: .consumer, parent: parent)
+        .err _     => return tracing.start(@tr, name: name, kind: .consumer)

@@ -1,0 +1,351 @@
+# The values a Lua script computes with, and the machine that holds them
+# while it runs. A table, a closure and a cell are shared by every value that
+# names them, as Lua's are, so they live in lists of the `Machine` and a value
+# holds the index: `table.insert(out, x)` changes the one table every name of
+# `out` reaches, which a value copied on assignment could not do.
+#
+# Numbers are doubles, as Lua 5.1's; a number becomes text as Lua 5.1's
+# `tostring` writes it, C's `%.14g`, and text becomes a number as `tonumber`
+# reads it.
+
+use <rebel>/maps
+use <rebel>/numbers
+use <rebel>/strings
+
+use standins/lua/lexer
+use standins/lua/syntax
+
+# One value of a script.
+variant Value
+    # `nil`.
+    nil_value
+    # `true` or `false`.
+    boolean
+        # The value.
+        v: bool
+    # A number, a double.
+    number
+        # The value.
+        v: f64
+    # A string.
+    text
+        # The characters.
+        v: str
+    # A table, shared by every value that names it.
+    table
+        # Its index in `Machine.tables`.
+        ref: i64
+    # A function of the script, with the cells it closed over.
+    closure
+        # Its index in `Machine.closures`.
+        ref: i64
+    # A function of the engine: `redis.call`, `string.format`, ...
+    builtin
+        # Its full name, `redis.call`.
+        name: str
+
+# A table: the values of keys 1 to n in a list, Lua's array part, and every
+# other key in a map.
+record Table
+    # The values of keys 1, 2, ... in order; never a nil at its end.
+    array: [Value]
+    # Every other key's value, by the key's form as `key_form` writes it.
+    hash: {str: Value}
+    # Each key of `hash` itself, by the same form, for `pairs`.
+    hash_keys: {str: Value}
+
+# A function of the script and the cells it sees: the names visible where it
+# was written, each the index of its cell.
+record Closure
+    # The function's index in the chunk's `protos`.
+    proto: i64
+    # The names it closed over, each to its cell in `Machine.cells`.
+    scope: {str: i64}
+
+# A script being run: its tree, every cell, table and closure made, and the
+# globals, with the counts that bound a run.
+record Machine
+    # The script's tree.
+    chunk: syntax.Chunk
+    # Every local variable's cell, by index.
+    cells: [Value]
+    # Every table, by index.
+    tables: [Table]
+    # Every closure, by index.
+    closures: [Closure]
+    # The global variables.
+    globals: {str: Value}
+    # The calls open, bounded by `MOST_CALLS`.
+    depth: i64
+    # The statements and calls run so far, bounded by `MOST_STEPS`.
+    steps: i64
+
+# The deepest a script's calls may nest. The engine walks the tree by
+# recursion, each Lua call a handful of the stand-in's own frames, and 200
+# nested calls, Lua 5.1's `LUAI_MAXCCALLS`, ran a test's thread out of stack
+# (2026-11-21); 50 keeps every thread clear of it, and the store's scripts
+# nest four deep at most.
+constant MOST_CALLS: i64
+    50
+
+# The most statements and calls one run may take before the stand-in stops
+# it, as a real server stops a script past `busy-reply-threshold`: a loop
+# without end must not hold the stand-in for ever.
+constant MOST_STEPS: i64
+    10_000_000
+
+# A machine for `chunk`, holding nothing yet.
+#
+# - `chunk`: the script's tree.
+function new_machine(chunk: syntax.Chunk) -> Machine
+    return Machine(chunk: chunk, cells: [], tables: [], closures: [], globals: {}, depth: 0, steps: 0)
+
+# A runtime error at `line`, worded as Lua words one.
+#
+# - `line`: the line of the script, from 1; 0 where none is known.
+# - `what`: what went wrong.
+function runtime_error<T>(line: i64, what: str) -> T?
+    if line <= 0
+        return fail(code: lexer.SCRIPT_ERROR, msg: what)
+    return fail(code: lexer.SCRIPT_ERROR, msg: f"user_script:{line}: {what}")
+
+# Whether `v` counts as true: everything but `nil` and `false`.
+#
+# - `v`: the value.
+function is_truthy(v: Value) -> bool
+    match v
+        .nil_value                                               => return false
+        .boolean b                                               => return b.v
+        .number _ | .text _ | .table _ | .closure _ | .builtin _ => return true
+
+# The name Lua's `type` gives `v`'s type.
+#
+# - `v`: the value.
+function type_name(v: Value) -> str
+    match v
+        .nil_value              => return "nil"
+        .boolean _              => return "boolean"
+        .number _               => return "number"
+        .text _                 => return "string"
+        .table _                => return "table"
+        .closure _ | .builtin _ => return "function"
+
+# `x` as Lua 5.1 writes a number, C's `%.14g`: `3`, `0.5`, `1e+15`.
+#
+# - `x`: the number; `inf`, `-inf` and `nan` are written so.
+function number_text(x: f64) -> str
+    if x != x
+        return "nan"
+
+    if x - x != 0.0
+        return if x > 0.0
+            "inf"
+        else
+            "-inf"
+    return numbers.format_float_general(x, digits: 14)
+
+# The number `s` writes, as Lua's `tonumber` reads text: spaces around it
+# allowed, a decimal or a `0x` hexadecimal. Fails `not_found` where it writes
+# none.
+#
+# - `s`: the text.
+function number_of_text(s: str) -> f64?
+    t = strings.trim(s)
+
+    if t == ""
+        return fail(code: "not_found", msg: "no number")
+
+    if strings.has_prefix(s: t, prefix: "0x") || strings.has_prefix(s: t, prefix: "0X")
+        match numbers.parse_u64_base(t.slice(from: 2, to: t.len()), base: 16)
+            .ok v  => return ok(to_f64(v))
+            .err _ => return fail(code: "not_found", msg: "no number")
+
+    match numbers.parse_float(t)
+        .ok v  => return ok(v)
+        .err _ => return fail(code: "not_found", msg: "no number")
+
+# `v` as a number where Lua's arithmetic takes it: a number, or text that
+# writes one. Fails `not_found` for anything else.
+#
+# - `v`: the value.
+function to_number(v: Value) -> f64?
+    match v
+        .number n                                                    => return ok(n.v)
+        .text t                                                      => return number_of_text(t.v)
+        .nil_value | .boolean _ | .table _ | .closure _ | .builtin _ => return fail(code: "not_found", msg: "no number")
+
+# `v` as text where Lua's `..` takes it: text, or a number written as
+# `number_text` writes it. Fails `not_found` for anything else.
+#
+# - `v`: the value.
+function to_text(v: Value) -> str?
+    match v
+        .text t                                                      => return ok(t.v)
+        .number n                                                    => return ok(number_text(n.v))
+        .nil_value | .boolean _ | .table _ | .closure _ | .builtin _ => return fail(code: "not_found", msg: "no text")
+
+# `v` as Lua's `tostring` writes any value; a table and a function by their
+# index, since a script cannot read an address.
+#
+# - `v`: the value.
+function describe(v: Value) -> str
+    match v
+        .nil_value => return "nil"
+        .boolean b => return if b.v
+            "true"
+        else
+            "false"
+        .number n  => return number_text(n.v)
+        .text t    => return t.v
+        .table t   => return f"table: {t.ref}"
+        .closure c => return f"function: {c.ref}"
+        .builtin b => return f"function: builtin {b.name}"
+
+# `x` as an `i64` where it is a whole number one holds. Fails `not_found`
+# where it has a fraction, is `nan` or an infinity, or is out of range.
+#
+# - `x`: the number.
+function whole_of(x: f64) -> i64?
+    if x != x
+        return fail(code: "not_found", msg: "not a number")
+
+    match to_i64(x)
+        .ok i =>
+            if to_f64(i) == x
+                return ok(i)
+            return fail(code: "not_found", msg: "not whole")
+        .err _ => return fail(code: "not_found", msg: "out of range")
+
+# The form a key takes in a table's map: its type and its value, so that the
+# number 1 and the text "1" are two keys, as in Lua. Fails where `key` is
+# `nil` or `nan`, which no table holds.
+#
+# - `key`: the key.
+function key_form(key: Value) -> str?
+    match key
+        .nil_value => return fail(code: lexer.SCRIPT_ERROR, msg: "table index is nil")
+        .boolean b => return ok(f"b:{b.v}")
+        .number n =>
+            if n.v != n.v
+                return fail(code: lexer.SCRIPT_ERROR, msg: "table index is NaN")
+
+            match whole_of(n.v)
+                .ok i  => return ok(f"n:{i}")
+                .err _ => return ok(f"f:{n.v}")
+        .text t    => return ok(f"s:{t.v}")
+        .table t   => return ok(f"t:{t.ref}")
+        .closure c => return ok(f"c:{c.ref}")
+        .builtin b => return ok(f"B:{b.name}")
+
+# A new empty table in `m`, and its index.
+#
+# - `m`: the machine, which gains the table.
+function new_table(@m: Machine) -> i64
+    m.tables @ m.tables.push(Table(array: [], hash: {}, hash_keys: {}))
+    return m.tables.len() - 1
+
+# A new table holding `items` as its keys 1, 2, ..., and its index.
+#
+# - `m`: the machine, which gains the table.
+# - `items`: the values, none of them `nil`.
+function new_list(@m: Machine, items: [Value]) -> i64
+    m.tables @ m.tables.push(Table(array: items, hash: {}, hash_keys: {}))
+    return m.tables.len() - 1
+
+# The value of `key` in table `t`, `nil` where it holds none.
+#
+# - `t`: the table.
+# - `key`: the key.
+function get(t: Table lent, key: Value) -> Value
+    match key
+        .number n =>
+            match whole_of(n.v)
+                .ok i =>
+                    if i >= 1 && i <= t.array.len()
+                        return t.array[i - 1]
+                .err _ => _ = 0
+        .nil_value | .boolean _ | .text _ | .table _ | .closure _ | .builtin _ => _ = 0
+
+    match key_form(key)
+        .ok form => return t.hash[form].default(.nil_value)
+        .err _   => return .nil_value
+
+# Sets `key` of table `t` to `value`, `nil` taking the key out: a key one
+# past the list grows it, and the keys after it that the map held move into
+# the list, so `#` stays the count of keys 1 to n.
+#
+# - `t`: the table, changed.
+# - `key`: the key, neither `nil` nor `nan`.
+# - `value`: the value.
+#
+# Fails where `key` is `nil` or `nan`, as Lua refuses them.
+function set(@t: Table, key: Value, value: Value) -> ()?
+    form = key_form(key)?
+    n = t.array.len()
+
+    match key
+        .number k =>
+            i = whole_of(k.v).default(0)
+
+            if i != 0
+                if i >= 1 && i <= n
+                    if !is_nil(value)
+                        t.array[i - 1] @ value
+                        return ok()
+
+                    if i == n
+                        t.array @ t.array.slice(from: 0, to: n - 1)
+                        trim_nils(@t)
+                    else
+                        t.array[i - 1] @ value
+                    return ok()
+
+                if i == n + 1 && !is_nil(value)
+                    t.array @ t.array.push(value)
+                    t.hash @ maps.remove(t.hash, key: form)
+                    t.hash_keys @ maps.remove(t.hash_keys, key: form)
+                    migrate(@t)
+                    return ok()
+        .nil_value | .boolean _ | .text _ | .table _ | .closure _ | .builtin _ => _ = 0
+
+    if is_nil(value)
+        t.hash @ maps.remove(t.hash, key: form)
+        t.hash_keys @ maps.remove(t.hash_keys, key: form)
+    else
+        t.hash[form] @ value
+        t.hash_keys[form] @ key
+    return ok()
+
+# Whether `v` is `nil`.
+#
+# - `v`: the value.
+function is_nil(v: Value) -> bool
+    match v
+        .nil_value                                                            => return true
+        .boolean _ | .number _ | .text _ | .table _ | .closure _ | .builtin _ => return false
+
+# Drops the `nil`s at the end of `t`'s list, so its length is a border.
+#
+# - `t`: the table, its list shortened.
+function trim_nils(@t: Table)
+    n: i64 @= t.array.len()
+
+    while n > 0 && is_nil(t.array[n - 1])
+        n @ n - 1
+
+    if n < t.array.len()
+        t.array @ t.array.slice(from: 0, to: n)
+
+# Moves the keys after `t`'s list that its map holds into the list, in turn.
+#
+# - `t`: the table, its list grown and its map shrunk.
+function migrate(@t: Table)
+    while true
+        form = f"n:{t.array.len() + 1}"
+
+        match t.hash[form]
+            .err _ => break
+            .ok v =>
+                t.array @ t.array.push(v)
+                t.hash @ maps.remove(t.hash, key: form)
+                t.hash_keys @ maps.remove(t.hash_keys, key: form)

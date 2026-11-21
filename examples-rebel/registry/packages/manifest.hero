@@ -1,0 +1,240 @@
+# A package's manifest: the `heroes.toml` at the root of its archive, read as
+# TOML, crossed to JSON, validated against `manifest_schema`, and then checked
+# for what a schema cannot say: that the name is a package name, that the
+# version is SemVer 2.0.0, and that every dependency's requirement is a range
+# as Cargo reads it.
+#
+# A manifest looks so:
+#
+#     [package]
+#     name = "textkit"
+#     version = "1.1.0"
+#     description = "Text helpers: wrapping, padding and slugs."
+#     license = "Apache-2.0"
+#     keywords = ["text", "strings"]
+#
+#     [dependencies.unicode_extra]
+#     version = "^0.4"
+#
+# The whole document is kept as JSON beside the fields read from it, so the
+# registry can show what changed in a manifest between two versions
+# (`changes`) without reading TOML twice.
+
+use <rebel>/json
+use <rebel>/json/schema
+use <rebel>/semver
+use <rebel>/toml
+
+use packages/manifest_schema
+use packages/names
+
+## Codes
+
+# The code of a manifest that is not TOML, does not pass the schema, or names
+# a version or a range that does not read.
+constant INVALID: str
+    "invalid"
+
+## Manifests
+
+# The manifest's file name, at the root of a package's folder.
+constant FILE_NAME: str
+    "heroes.toml"
+
+# One dependency of a package, as its manifest names it.
+record Dependency
+    # The package depended on.
+    name: str
+    # The versions it accepts, as Cargo reads a range: `^0.4`, `>=1.2, <2`.
+    requirement: str
+
+# What a manifest says, read and checked.
+record Manifest
+    # The package's name.
+    name: str
+    # The version, as SemVer 2.0.0 writes it.
+    version: str
+    # One sentence saying what the package is for.
+    description: str
+    # An SPDX license expression: `MIT`, `Apache-2.0 OR MIT`.
+    license: str
+    # Who wrote it; none where the manifest names nobody.
+    authors: [str]
+    # At most five words a search finds it by.
+    keywords: [str]
+    # Where its sources live, a URI; "" for none.
+    repository: str
+    # What it uses, in the order the manifest names them.
+    dependencies: [Dependency]
+    # The whole manifest as JSON, as `toml.to_json` crossed it.
+    document: json.Value
+
+# The manifest `text` holds, validated by `compiled` and checked.
+#
+# - `text`: the contents of `heroes.toml`.
+# - `compiled`: the schema, as `manifest_schema.compiled` made it.
+#
+# Fails `invalid` where `text` is not TOML, where the document does not pass
+# the schema (the message holding the best error and how many others there
+# were),
+# where the name is not a package name, the version not SemVer 2.0.0 or a
+# requirement no range.
+function read(text: str, compiled: schema.Schema) -> Manifest?
+    parsed = match toml.parse(text)
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: f"{FILE_NAME} is not TOML: {e.msg}")
+
+    document = match toml.to_json(parsed)
+        .ok d  => d
+        .err e => return fail(code: INVALID, msg: f"{FILE_NAME} holds a value JSON cannot: {e.msg}")
+
+    problems = schema.errors_of(compiled, instance: document)
+
+    if problems.len() > 0
+        best = schema.best_of(problems).must()
+
+        others = if problems.len() == 1
+            ""
+        else
+            f", and {problems.len() - 1} more"
+        return fail(
+            code: INVALID,
+            msg: f"{FILE_NAME} does not pass the manifest schema: {schema.format_error(best)}{others}"
+        )
+    package = json.member(document, key: "package").must()
+
+    name = match names.parse(text_member(package, key: "name"))
+        .ok n  => n
+        .err e => return fail(code: INVALID, msg: f"{FILE_NAME}: {e.msg}")
+
+    version = text_member(package, key: "version")
+
+    match semver.parse(version)
+        .ok _  => _ = 0
+        .err e => return fail(code: INVALID, msg: f"{FILE_NAME}: the version is not SemVer 2.0.0: {e.msg}")
+
+    return ok(
+        Manifest(name: name, version: version, description: text_member(package, key: "description"), license: text_member(package, key: "license"), authors: texts_member(package, key: "authors"), keywords: texts_member(package, key: "keywords"), repository: json.text_of(json.member(package, key: "repository").default(.text(v: ""))).default(""), dependencies: dependencies_of(document)?, document: document)
+    )
+
+# The text of the member `key` of `v`, which the schema has made a string.
+#
+# - `v`: an object the schema passed.
+# - `key`: a member the schema requires, or "" where it is absent.
+function text_member(v: json.Value, key: str) -> str
+    return json.text_of(json.member(v, key: key).default(.text(v: ""))).default("")
+
+# The texts of the list `key` of `v`, which the schema has made a list of
+# strings; none where it is absent.
+#
+# - `v`: an object the schema passed.
+# - `key`: the member's name.
+function texts_member(v: json.Value, key: str) -> [str]
+    found: [str] @= []
+    items: [json.Value] = json.items_of(json.member(v, key: key).default(.list(items: []))).default([])
+
+    for item in items
+        found @ found.push(json.text_of(item).default(""))
+
+    return found
+
+# The dependencies of `document`, each requirement read as a range.
+#
+# - `document`: the manifest as JSON, the schema passed.
+#
+# Fails `invalid` where a dependency's name is not a package name or its
+# requirement is no range Cargo reads.
+function dependencies_of(document: json.Value) -> [Dependency]?
+    found: [Dependency] @= []
+    table: {str: json.Value} = json.members_of(json.member(document, key: "dependencies").default(.object(members: {}))).default(
+        {}
+    )
+
+    for name in keys(table)
+        match names.parse(name)
+            .ok _  => _ = 0
+            .err e => return fail(code: INVALID, msg: f"{FILE_NAME}: a dependency's name: {e.msg}")
+
+        requirement = text_member(table[name].must(), key: "version")
+
+        match semver.parse_range(requirement)
+            .ok _  => _ = 0
+            .err e => return fail(code: INVALID, msg: f"{FILE_NAME}: the requirement of {name} is no range: {e.msg}")
+
+        found @ found.push(Dependency(name: name, requirement: requirement))
+
+    return ok(found)
+
+# `m`'s whole document as the compact JSON the database keeps.
+#
+# - `m`: the manifest.
+#
+# Fails as `json.format` does; a document `toml.to_json` made always writes.
+function json_text(m: Manifest) -> str?
+    return json.format(m.document)
+
+# A manifest's text for `name` at `version`, as a publisher's tool writes
+# one: what the demo and the tests publish.
+#
+# - `name`: the package's name.
+# - `version`: the version.
+# - `description`: the sentence saying what it is for.
+# - `keywords`: the words a search finds it by.
+# - `dependencies`: each a name and its requirement.
+function text_of(name: str, version: str, description: str, keywords: [str], dependencies: [Dependency]) -> str
+    quoted: [str] @= []
+
+    for word in keywords
+        quoted @ quoted.push(json.quote(word))
+
+    lines: [str] @= [
+        "[package]"
+        f"name = {json.quote(name)}"
+        f"version = {json.quote(version)}"
+        f"description = {json.quote(description)}"
+        "license = \"Apache-2.0\""
+        f"keywords = [{quoted.join(", ")}]"
+    ]
+
+    for d in dependencies
+        lines @ lines.push("")
+        lines @ lines.push(f"[dependencies.{d.name}]")
+        lines @ lines.push(f"version = {json.quote(d.requirement)}")
+
+    return lines.join("\n") + "\n"
+
+test "read: a manifest with a dependency, every field read"
+    s = manifest_schema.compiled().must()
+    text = text_of(
+        name: "textkit",
+        version: "1.1.0",
+        description: "Text helpers.",
+        keywords: ["text", "strings"],
+        dependencies: [Dependency(name: "unicode_extra", requirement: "^0.4")]
+    )
+    m = read(text, compiled: s).must()
+    assert m.name == "textkit" && m.version == "1.1.0" && m.license == "Apache-2.0"
+    assert m.keywords == ["text", "strings"] && m.authors.len() == 0 && m.repository == ""
+    assert m.dependencies == [Dependency(name: "unicode_extra", requirement: "^0.4")]
+
+test "read: not TOML, a schema error, a version that is not SemVer and a range that does not read"
+    s = manifest_schema.compiled().must()
+
+    match read("[package", compiled: s)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match read("[package]\nname = \"textkit\"\n", compiled: s)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    bad_version = text_of(name: "textkit", version: "1.0.0.0", description: "T.", keywords: [], dependencies: [])
+    assert read(bad_version, compiled: s).is_err()
+    bad_range = text_of(
+        name: "textkit",
+        version: "1.0.0",
+        description: "T.",
+        keywords: [],
+        dependencies: [Dependency(name: "x", requirement: "1.2 - 2.3")]
+    )
+    assert read(bad_range, compiled: s).is_err()

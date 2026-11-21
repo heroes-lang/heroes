@@ -1,0 +1,86 @@
+# The clock the server stamps messages with and judges tokens by. A server
+# that serves people reads the wall clock; the demo reads a fixed clock, whose
+# stamps start at one instant and move by one step per message, so the times
+# its transcript prints are the same on every run and every machine.
+
+use <rebel>/time
+
+# Where a clock's readings come from.
+variant Source
+    # The machine's wall clock, `time.now`.
+    wall
+    # A clock that starts at `start` and moves by `step` at each stamp.
+    fixed
+        # The first stamp.
+        start: time.Instant
+        # How far each stamp moves the clock, zero or more.
+        step: time.Duration
+
+# A clock: where its readings come from, and how many stamps it has given.
+# Made by `wall` or `fixed`; `stamp` moves it, `now` only reads it.
+record Clock
+    # Where its readings come from.
+    source: Source
+    # The stamps given so far, which a fixed clock counts its readings by.
+    stamps: i64
+
+# The machine's wall clock.
+function wall() -> Clock
+    return Clock(source: .wall, stamps: 0)
+
+# A fixed clock that starts at `start` and moves by `step` at each stamp.
+#
+# - `start`: the first stamp.
+# - `step`: how far each stamp moves it.
+function fixed(start: time.Instant, step: time.Duration) -> Clock
+    return Clock(source: .fixed(start: start, step: step), stamps: 0)
+
+# Whether `clock` is a fixed clock, whose readings name no real moment.
+#
+# - `clock`: the clock asked.
+function is_fixed(clock: Clock) -> bool
+    return match clock.source
+        .wall    => false
+        .fixed _ => true
+
+# What `clock` reads now, moving nothing: the wall clock's time, or a fixed
+# clock's last stamp (its start before the first).
+#
+# - `clock`: the clock read.
+#
+# Fails as `time.now` fails, and `does_not_fit` where a fixed clock has moved
+# past what an instant holds.
+function now(clock: Clock) -> time.Instant?
+    match clock.source
+        .wall => return time.now()
+        .fixed f =>
+            taken = if clock.stamps == 0
+                0
+            else
+                clock.stamps - 1
+            return time.add(f.start, d: time.scale(f.step, by: taken)?)
+
+# The time of a new message: the wall clock's time, or a fixed clock's next
+# stamp, after which it moves one step.
+#
+# - `clock`: the clock, whose count of stamps grows by one.
+#
+# Fails as `now` fails.
+function stamp(@clock: Clock) -> time.Instant?
+    clock.stamps @ clock.stamps + 1
+    return now(clock)
+
+test "now: a fixed clock reads its start until its first stamp, then each stamp"
+    start = time.date(year: 2026, month: 11, day: 21).must()
+    c @= fixed(start: start, step: time.minutes(1).must())
+    assert now(c).must() == start
+    assert stamp(@c).must() == start
+    assert stamp(@c).must() == time.add(start, d: time.minutes(1).must()).must()
+    assert now(c).must() == time.add(start, d: time.minutes(1).must()).must()
+    assert is_fixed(c) && !is_fixed(wall())
+
+test "stamp: a fixed clock of no step gives one instant every time"
+    start = time.date(year: 2000, month: 1, day: 1).must()
+    c @= fixed(start: start, step: time.seconds(0).must())
+    _ = stamp(@c).must()
+    assert stamp(@c).must() == start && c.stamps == 2

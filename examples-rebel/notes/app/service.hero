@@ -1,0 +1,296 @@
+# What the service does, whichever door a request came in by: an account
+# made, a sign-in judged, a note or a comment written, changed or removed.
+# The pages and the API both call these, so a rule (who may, what is valid,
+# what is counted, who is told) is kept once and both doors keep it alike.
+# Each answers what happened as a value the caller turns into its own kind of
+# answer: a page with the form again, or JSON with each field's problem.
+
+use <rebel>/log
+use <rebel>/time
+use <rebel>/uuid
+
+use app/state
+use auth/passwords
+use domain/model
+use domain/permissions
+use domain/slugs
+use domain/validate
+use ops/ops
+use realtime/realtime
+use store/comment_store
+use store/finder
+use store/note_store
+use store/user_store
+
+## Codes
+
+# The code of a sign-in whose name or password is wrong; which of the two is
+# never said, so the answer tells nobody which names exist.
+constant INVALID: str
+    "invalid"
+
+## What happened
+
+# What writing a note came to.
+variant NoteOutcome
+    # Written; the note as stored.
+    done
+        note: model.Note
+    # Not valid; each field's problem.
+    invalid
+        errors: [validate.FieldError]
+    # Not allowed, and why.
+    refused
+        reason: str
+
+# What writing a comment came to.
+variant CommentOutcome
+    # Written; the comment as stored.
+    done
+        comment: model.Comment
+    # Not valid; each field's problem.
+    invalid
+        errors: [validate.FieldError]
+    # Not allowed, and why.
+    refused
+        reason: str
+
+# What making an account came to.
+variant AccountOutcome
+    # Made; the account.
+    done
+        user: model.User
+    # Not valid, or a name or an address taken; each field's problem.
+    invalid
+        errors: [validate.FieldError]
+
+## Accounts
+
+# Makes an account. The first account of a new site is its admin, so a site
+# is never without one; every later one is a reader until an admin says more.
+#
+# - `app`: the state; the database gains the account.
+# - `name`: the name asked for.
+# - `email`: the address.
+# - `password`: the password as typed.
+# - `now`: when.
+#
+# Fails as the database and the hash fail.
+function register(@app: state.App, name: str, email: str, password: str, now: time.Instant) -> AccountOutcome?
+    errors: [validate.FieldError] @= validate.check_registration(name: name, email: email, password: password)
+
+    if validate.message_of(errors, field: "name") == "" && !user_store.by_name(@app.db, name: name).is_err()
+        errors @ errors.push(validate.FieldError(field: "name", message: "is taken"))
+
+    if validate.message_of(errors, field: "email") == "" && !user_store.by_email(@app.db, email: email).is_err()
+        errors @ errors.push(validate.FieldError(field: "email", message: "is taken"))
+
+    if errors.len() > 0
+        return ok(.invalid(errors: errors))
+
+    role: model.Role = if user_store.count(@app.db)? == 0
+        .admin
+    else
+        .reader
+
+    stored = passwords.hash(password, params: app.costs)?
+    id = user_store.insert(@app.db, name: name, email: email, password: stored, role: role, at: now)?
+    ops.count(@app.registry, name: ops.REGISTERED, labels: [])
+    _ = log.info(
+        app.logger,
+        msg: "account made",
+        fields: [log.text(key: "user", value: name), log.text(key: "role", value: model.role_name(role))]
+    ).is_err()
+    return ok(.done(user: user_store.by_id(@app.db, id: id)?))
+
+# The account `name` signs in to with `password`; its hash is made again
+# where the settings now ask other costs.
+#
+# - `app`: the state.
+# - `name`: the name given.
+# - `password`: the password given.
+#
+# Fails `invalid` where no account has that name or the password is not its
+# own, saying neither which.
+function sign_in(@app: state.App, name: str, password: str) -> model.User?
+    user = match user_store.by_name(@app.db, name: name)
+        .ok u  => u
+        .err _ => return fail(code: INVALID, msg: "wrong name or password")
+
+    if !passwords.verify(password: password, stored: user.password)
+        return fail(code: INVALID, msg: "wrong name or password")
+
+    if passwords.needs_rehash(user.password, params: app.costs)
+        _ = log.info(app.logger, msg: "password hash renewed", fields: [log.text(key: "user", value: name)]).is_err()
+
+    return ok(user)
+
+# Gives the account `name` the role `role`, where `admin` may.
+#
+# - `app`: the state.
+# - `admin`: the account asking.
+# - `name`: the account given the role.
+# - `role`: the role.
+#
+# Fails `not_found` where no account has that name. A refusal is a verdict,
+# not a failure.
+function give_role(@app: state.App, admin: model.User, name: str, role: model.Role) -> permissions.Verdict?
+    verdict = permissions.decide(admin, action: .change_role)
+
+    if !permissions.is_allowed(verdict)
+        return ok(verdict)
+
+    user_store.set_role(@app.db, name: name, role: role)?
+    _ = log.info(
+        app.logger,
+        msg: "role given",
+        fields: [log.text(key: "user", value: name), log.text(key: "role", value: model.role_name(role)), log.text(key: "by", value: admin.name)]
+    ).is_err()
+    return ok(.allowed)
+
+## Notes
+
+# Writes a note by `user`.
+#
+# - `app`: the state; the database, the index and the counters change.
+# - `user`: the author.
+# - `draft`: the title, the body and the tags.
+# - `now`: when.
+#
+# Fails as the database fails.
+function write_note(@app: state.App, user: model.User, draft: note_store.Draft, now: time.Instant) -> NoteOutcome?
+    match permissions.decide(user, action: .write_note)
+        .refused r => return ok(.refused(reason: r.reason))
+        .allowed   => _ = 0
+
+    tags = validate.tags_from(draft.tags)
+    errors = validate.check_note(title: draft.title, body: draft.body, tags: tags)
+
+    if errors.len() > 0
+        return ok(.invalid(errors: errors))
+
+    base = slugs.slug_of(draft.title)
+    slug = slugs.first_free(base, taken: note_store.slugs_from(@app.db, base: base)?)
+    clean = note_store.Draft(title: draft.title, body: draft.body, tags: tags)
+    _ = note_store.insert(@app.db, author_id: user.id, slug: slug, draft: clean, at: now)?
+    note = note_store.by_slug(@app.db, slug: slug)?
+    finder.put(@app.index, n: note)?
+    ops.count(@app.registry, name: ops.NOTES_WRITTEN, labels: [])
+    _ = log.info(
+        app.logger,
+        msg: "note written",
+        fields: [log.text(key: "slug", value: slug), log.text(key: "user", value: user.name)]
+    ).is_err()
+    return ok(.done(note: note))
+
+# Changes `note`'s words and tags, where `user` may: the fields `change`
+# leaves "" keep the note's.
+#
+# - `app`: the state.
+# - `user`: the account asking.
+# - `note`: the note as stored.
+# - `change`: the new title, body and tags; a title or a body of "" keeps the
+#   note's.
+# - `keep_tags`: whether the note keeps its tags, `change.tags` read only
+#   where it does not.
+# - `now`: when.
+function change_note(@app: state.App, user: model.User, note: model.Note, change: note_store.Draft, keep_tags: bool, now: time.Instant) -> NoteOutcome?
+    match permissions.decide(user, action: .edit_note(owner_id: note.author_id))
+        .refused r => return ok(.refused(reason: r.reason))
+        .allowed   => _ = 0
+
+    title = if change.title == ""
+        note.title
+    else
+        change.title
+
+    body = if change.body == ""
+        note.body
+    else
+        change.body
+
+    tags = if keep_tags
+        note.tags
+    else
+        validate.tags_from(change.tags)
+
+    errors = validate.check_note(title: title, body: body, tags: tags)
+
+    if errors.len() > 0
+        return ok(.invalid(errors: errors))
+
+    note_store.update(@app.db, id: note.id, draft: note_store.Draft(title: title, body: body, tags: tags), at: now)?
+    changed = note_store.by_slug(@app.db, slug: note.slug)?
+    finder.put(@app.index, n: changed)?
+    return ok(.done(note: changed))
+
+# Removes `note` with its comments, where `user` may.
+#
+# - `app`: the state.
+# - `user`: the account asking.
+# - `note`: the note.
+function remove_note(@app: state.App, user: model.User, note: model.Note) -> permissions.Verdict?
+    verdict = permissions.decide(user, action: .delete_note(owner_id: note.author_id))
+
+    if !permissions.is_allowed(verdict)
+        return ok(verdict)
+
+    note_store.remove(@app.db, id: note.id)?
+    finder.forget(@app.index, id: note.id)?
+    _ = log.info(
+        app.logger,
+        msg: "note removed",
+        fields: [log.text(key: "slug", value: note.slug), log.text(key: "user", value: user.name)]
+    ).is_err()
+    return ok(.allowed)
+
+## Comments
+
+# Writes a comment by `user` on `note`, and tells the note's author over the
+# live channel, unless the author wrote it.
+#
+# - `app`: the state; the database, the counters and the hub change, and the
+#   keys of sockets a push found gone are added to `app.gone`.
+# - `user`: the commenter.
+# - `note`: the note.
+# - `body`: the comment in Markdown.
+# - `now`: when; the comment's UUID of version 7 carries it.
+function write_comment(@app: state.App, user: model.User, note: model.Note, body: str, now: time.Instant) -> CommentOutcome?
+    match permissions.decide(user, action: .comment)
+        .refused r => return ok(.refused(reason: r.reason))
+        .allowed   => _ = 0
+
+    errors = validate.check_comment(body)
+
+    if errors.len() > 0
+        return ok(.invalid(errors: errors))
+
+    uid = uuid.format(uuid.new_v7_at(time.unix_milliseconds(now))?)
+    _ = comment_store.insert(@app.db, uid: uid, note_id: note.id, author_id: user.id, body: body, at: now)?
+    comment = comment_store.by_uid(@app.db, uid: uid)?
+    ops.count(@app.registry, name: ops.COMMENTS_WRITTEN, labels: [])
+
+    if note.author_id != user.id
+        message = realtime.comment_message(slug: note.slug, title: note.title, by: user.name, uid: uid)
+        before = app.hub.pushed
+        gone = realtime.tell(@app.hub, user_id: note.author_id, message: message)
+
+        for key in gone
+            app.gone @ app.gone.push(key)
+
+        for _ in range(from: before, to: app.hub.pushed)
+            ops.count(@app.registry, name: ops.PUSHED, labels: [])
+
+        ops.gauge(@app.registry, name: ops.SOCKETS, value: realtime.count(app.hub))
+
+    return ok(.done(comment: comment))
+
+# The notes that match `query`, the best first.
+#
+# - `app`: the state.
+# - `query`: the words typed.
+#
+# Fails `invalid` where `query` holds no word.
+function search_notes(@app: state.App, query: str) -> [model.Note]?
+    ids = finder.find_ids(app.index, query: query)?
+    return note_store.by_ids(@app.db, ids: ids)

@@ -1,0 +1,180 @@
+# The data file: every account written as one JSON document after each
+# change, and read back at start. It is written whole to a temporary file
+# and renamed over the old one (`fs.write_atomic_text`), so a crash leaves
+# either the old file or the new one, never half of each. Sessions, codes
+# and refresh tokens are not in it: a restart logs every browser out and
+# asks every client to begin again, which is the safe loss.
+#
+# Bytes (a TOTP key, a credential's id and key) are written in base 64 for
+# URLs. A TOTP key at rest is as sensitive as a password; the file is the
+# server's alone, and the configuration's `data_file` should name a path only
+# its user reads.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/json
+
+use accounts/accounts
+
+# The code of a data file that is not what this server writes.
+constant INVALID: str
+    "invalid"
+
+# The version written in every file, refused where another is read.
+constant VERSION: i64
+    1
+
+# Writes every account of `d` to `path`, atomically.
+#
+# - `d`: the accounts.
+# - `path`: the data file.
+#
+# Fails as `fs.write_atomic_text` fails.
+function save(d: accounts.Directory, path: str) -> ()?
+    users: [json.Value] @= []
+
+    for u in accounts.all_users(d)
+        users @ users.push(user_json(u))
+
+    document: json.Value = .object(members: {"version": number(VERSION), "users": .list(items: users)})
+    return fs.write_atomic_text(path: path, text: json.format_indented(document, width: 2)? + "\n")
+
+# The accounts `path` holds; an empty directory where the file does not
+# exist yet, as on a server's first start.
+#
+# - `path`: the data file.
+#
+# Fails `invalid` where the file is not one this server wrote, and as
+# `read_file` fails for any reason but its absence.
+function load(path: str) -> accounts.Directory?
+    if !fs.exists(path)?
+        return ok(accounts.empty())
+
+    v = match json.parse(read_file(path)?)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: f"the data file is not JSON: {e.msg}")
+
+    version = match json.member(v, key: "version")
+        .ok n  => json.int_of(n).default(0)
+        .err _ => 0
+
+    if version != VERSION
+        return fail(code: INVALID, msg: f"the data file is of version {version}, not {VERSION}")
+
+    d @= accounts.empty()
+    list = json.items_of(json.member(v, key: "users")?)?
+
+    for item in list
+        accounts.add(@d, u: user_of(item)?)?
+
+    return ok(d)
+
+## One account
+
+# `u` as the data file writes it.
+#
+# - `u`: the account.
+function user_json(u: accounts.User) -> json.Value
+    keys_list: [json.Value] @= []
+
+    for p in u.passkeys
+        keys_list @ keys_list.push(
+            .object(members: {"id": encoded(p.id), "public_key": encoded(p.public_key), "sign_count": number(p.sign_count), "attestation": .text(v: p.attestation)})
+        )
+
+    return .object(
+        members: {"id": .text(v: u.id), "username": .text(v: u.username), "email": .text(v: u.email), "email_verified": .boolean(v: u.email_verified), "display_name": .text(v: u.display_name), "password_hash": .text(v: u.password_hash), "source": .text(v: u.source), "ldap_dn": .text(v: u.ldap_dn), "totp_key": encoded(u.totp_key), "totp_confirmed": .boolean(v: u.totp_confirmed), "totp_last_step": number(u.totp_last_step), "passkeys": .list(items: keys_list), "verify_hash": .text(v: u.verify_hash), "verify_expires": number(u.verify_expires), "created": number(u.created), "disabled": .boolean(v: u.disabled)}
+    )
+
+# The account `v` writes.
+#
+# - `v`: one account's object.
+#
+# Fails `invalid` where a member is absent or of the wrong kind.
+function user_of(v: json.Value) -> accounts.User?
+    keys_list: [accounts.Passkey] @= []
+
+    for item in json.items_of(json.member(v, key: "passkeys")?)?
+        keys_list @ keys_list.push(
+            accounts.Passkey(id: bytes_at(item, key: "id")?, public_key: bytes_at(item, key: "public_key")?, sign_count: int_at(item, key: "sign_count")?, attestation: text_at(item, key: "attestation")?)
+        )
+
+    u @= accounts.new_user(
+        id: text_at(v, key: "id")?,
+        username: text_at(v, key: "username")?,
+        email: text_at(v, key: "email")?,
+        created: int_at(v, key: "created")?
+    )
+    u.email_verified @ bool_at(v, key: "email_verified")?
+    u.display_name @ text_at(v, key: "display_name")?
+    u.password_hash @ text_at(v, key: "password_hash")?
+    u.source @ text_at(v, key: "source")?
+    u.ldap_dn @ text_at(v, key: "ldap_dn")?
+    u.totp_key @ bytes_at(v, key: "totp_key")?
+    u.totp_confirmed @ bool_at(v, key: "totp_confirmed")?
+    u.totp_last_step @ int_at(v, key: "totp_last_step")?
+    u.passkeys @ keys_list
+    u.verify_hash @ text_at(v, key: "verify_hash")?
+    u.verify_expires @ int_at(v, key: "verify_expires")?
+    u.disabled @ bool_at(v, key: "disabled")?
+    return ok(u)
+
+## Values
+
+# `n` as a JSON number; every number this file holds is far below 2^53.
+#
+# - `n`: the number.
+function number(n: i64) -> json.Value
+    return .number(v: to_f64(n))
+
+# `b` in base 64 for URLs, without padding.
+#
+# - `b`: the bytes.
+function encoded(b: [u8]) -> json.Value
+    return .text(v: bytes.format_base64_url_unpadded(b))
+
+# The text member `key` of `v`.
+#
+# - `v`: an object of the file.
+# - `key`: the member.
+function text_at(v: json.Value, key: str) -> str?
+    match json.text_of(json.member(v, key: key)?)
+        .ok t  => return ok(t)
+        .err _ => return fail(code: INVALID, msg: f"the data file's \"{key}\" is not a text")
+
+# The integer member `key` of `v`.
+#
+# - `v`: an object of the file.
+# - `key`: the member.
+function int_at(v: json.Value, key: str) -> i64?
+    match json.int_of(json.member(v, key: key)?)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: INVALID, msg: f"the data file's \"{key}\" is not an integer")
+
+# The truth member `key` of `v`.
+#
+# - `v`: an object of the file.
+# - `key`: the member.
+function bool_at(v: json.Value, key: str) -> bool?
+    match json.bool_of(json.member(v, key: key)?)
+        .ok b  => return ok(b)
+        .err _ => return fail(code: INVALID, msg: f"the data file's \"{key}\" is not true or false")
+
+# The bytes the base 64 member `key` of `v` writes.
+#
+# - `v`: an object of the file.
+# - `key`: the member.
+function bytes_at(v: json.Value, key: str) -> [u8]?
+    match bytes.parse_base64_url_unpadded(text_at(v, key: key)?)
+        .ok b  => return ok(b)
+        .err _ => return fail(code: INVALID, msg: f"the data file's \"{key}\" is not base 64")
+
+test "user_of: an account read back as it was written"
+    u @= accounts.new_user(id: "0195", username: "ana", email: "ana@example.org", created: 1_772_357_400)
+    u.email_verified @ true
+    u.totp_key @ [1, 2, 3]
+    u.passkeys @ [accounts.Passkey(id: [9], public_key: [8, 7], sign_count: 4, attestation: "none")]
+    assert user_of(user_json(u)).must() == u
+
+test "load: an absent file is an empty directory"
+    assert accounts.all_users(load("build/auth/no-such-file.json").must()).len() == 0

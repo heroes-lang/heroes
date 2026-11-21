@@ -1,0 +1,54 @@
+# The log a thread of the job system keeps: one line for each thing it did,
+# in `log`'s text form, written to a file `log/files` sets aside at a size
+# and keeps a few of. Each line's time is the store's clock at the moment it
+# tells, handed in rather than read, so a worker's lines and the store's
+# stamps agree, and a demo's log is the same on every run.
+
+use <rebel>/io
+use <rebel>/log
+use <rebel>/log/files
+use <rebel>/path
+use <rebel>/time
+
+# A log open to write: its file and the logger that forms its lines.
+record Journal
+    # The file, set aside as its rotation says.
+    file: files.Rotating
+    # The logger whose prefix, form and fields every line takes; its stream
+    # and clock are not read.
+    logger: log.Logger
+
+# The log `name` in the folder `dir`, made where it is not there, set aside
+# past `max_bytes` and on a new day, `keep` old files kept.
+#
+# - `dir`: the folder.
+# - `name`: the file's name, `supervisor.log`.
+# - `max_bytes`: the size a file is set aside at.
+# - `keep`: how many set-aside files are kept.
+#
+# Fails as `files.open` fails.
+function open(dir: str, name: str, max_bytes: i64, keep: i64) -> Journal?
+    rotation = files.Rotation(max_bytes: max_bytes, daily: true, keep: keep, keep_days: 0, compress: false)
+    file = files.open(path.join_all([dir, name]), rotation: rotation)?
+    return ok(Journal(file: file, logger: log.to(io.stderr())))
+
+# Writes one line at `level` and the time `at`.
+#
+# - `j`: the log, its file grown or set aside.
+# - `level`: how much it matters.
+# - `at`: its time, on the store's clock.
+# - `msg`: what happened.
+# - `fields`: what it happened to.
+#
+# Fails as `files.write_line` fails.
+function write(@j: Journal, level: log.Level, at: time.Instant, msg: str, fields: [log.Field]) -> ()?
+    line = log.format_line(j.logger, level: level, at: at, msg: msg, fields: fields)
+    return files.write_line(@j.file, line: line, at: at)
+
+# Closes the log's file.
+#
+# - `j`: the log.
+#
+# Fails as `files.close` fails.
+function close(@j: Journal) -> ()?
+    return files.close(@j.file)

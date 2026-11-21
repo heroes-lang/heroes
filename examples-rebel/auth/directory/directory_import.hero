@@ -1,0 +1,261 @@
+# The nightly import from the organisation's LDAP directory, and the login of
+# the accounts it made. The import binds as the configured service DN,
+# searches the people under the base, and makes or updates one account per
+# entry: its `uid` the user name, its `mail` the address (taken as verified,
+# the directory being the organisation's word for it), its `displayName` or
+# `cn` the name shown. An imported account has no password here: its login
+# binds to the directory as its own entry, so the directory stays the one
+# place a password changes. An account whose entry left the directory is
+# disabled, never deleted, so its `sub` is never reused.
+#
+# An entry is skipped, and the summary says why, where it has no `uid` or no
+# `mail`, its `uid` is no user name this server takes, or a local account
+# holds its name or its address: the directory never takes over an account
+# somebody made here.
+
+use <rebel>/ldap
+use <rebel>/random
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/uuid
+
+use accounts/accounts
+use core/ids
+use core/settings
+
+# The code of a configuration the import cannot run with, and of an entry
+# skipped.
+constant INVALID: str
+    "invalid"
+
+# The code of a password the directory refuses.
+constant PERMISSION: str
+    "permission"
+
+# What one import did, by user name.
+record Summary
+    # The entries the search answered.
+    read: i64
+    # The accounts made.
+    created: [str]
+    # The accounts whose name, entry or state changed.
+    updated: [str]
+    # The accounts found as they were.
+    unchanged: [str]
+    # The accounts disabled, their entries gone.
+    disabled: [str]
+    # The entries skipped, each with why.
+    skipped: [str]
+
+# The connection options `l` names.
+#
+# - `l`: the directory's settings.
+#
+# Fails `invalid` where its security is none of start_tls, direct, plain.
+function options_of(l: settings.Ldap) -> ldap.Options?
+    opts @= ldap.options(l.host)
+    opts.port @ l.port
+
+    match l.security
+        "start_tls" => opts.security @ .start_tls(roots: "")
+        "direct" => opts.security @ .direct(roots: "")
+        "plain" => opts.security @ .plain
+        _ => return fail(code: INVALID, msg: f"the LDAP security \"{l.security}\" is none of start_tls, direct, plain")
+
+    opts.deadline @ time.seconds(30)?
+    return ok(opts)
+
+# The entries of the people `l` names, read as the service DN with
+# `password`.
+#
+# - `l`: the directory's settings.
+# - `password`: the service DN's password.
+#
+# Fails as `ldap.connect`, `ldap.bind` and `ldap.search` fail: `permission`
+# where the bind is refused, `closed` where the directory is not there.
+function read_people(l: settings.Ldap, password: str) -> [ldap.Entry]?
+    if l.host == ""
+        return fail(code: INVALID, msg: "no directory is configured")
+
+    people = ldap.parse_filter(l.filter)?
+    c @= ldap.connect(options_of(l)?)?
+    found = searched(@c, l: l, password: password, people: people)
+    closed = ldap.close(@c)
+    entries = found?
+    closed?
+    return ok(entries)
+
+# The entries `people` finds under `l.base` on `c`, bound as the service DN.
+#
+# - `c`: the connection, bound by the call.
+# - `l`: the directory's settings.
+# - `password`: the service DN's password.
+# - `people`: the filter of the people.
+function searched(@c: ldap.Conn, l: settings.Ldap, password: str, people: ldap.Filter) -> [ldap.Entry]?
+    ldap.bind(@c, dn: l.bind_dn, password: password)?
+    q @= ldap.query(l.base, f: people)
+    q.attributes @ ["uid", "mail", "cn", "displayName"]
+    return ok(ldap.search(@c, q: q)?.entries)
+
+# Makes and updates the accounts of `d` from `entries`, and disables the
+# imported accounts no entry names any more.
+#
+# - `d`: the accounts, changed.
+# - `g`: the generator new accounts' identifiers draw from.
+# - `entries`: the directory's people.
+# - `at`: the moment of the import.
+function apply(@d: accounts.Directory, @g: random.ChaCha8, entries: [ldap.Entry], at: time.Instant) -> Summary
+    s @= Summary(read: entries.len(), created: [], updated: [], unchanged: [], disabled: [], skipped: [])
+    seen: {str: bool} @= {}
+
+    for e in entries
+        match one(@d, @g, e: e, at: at)
+            .ok outcome =>
+                seen[outcome.username] @ true
+
+                match outcome.change
+                    "created" => s.created @ s.created.push(outcome.username)
+                    "updated" => s.updated @ s.updated.push(outcome.username)
+                    _         => s.unchanged @ s.unchanged.push(outcome.username)
+            .err x => s.skipped @ s.skipped.push(x.msg)
+
+    for u in accounts.all_users(d)
+        if u.source == "ldap" && !u.disabled && seen[u.username].is_err()
+            gone @= u
+            gone.disabled @ true
+            accounts.put(@d, u: gone).must()
+            s.disabled @ s.disabled.push(u.username)
+
+    return s
+
+# What the import did with one entry.
+record Outcome
+    # The account's user name.
+    username: str
+    # "created", "updated" or "unchanged".
+    change: str
+
+# The import of the entry `e` into `d`.
+#
+# - `d`: the accounts, which take or change the entry's account.
+# - `g`: the generator a new account's identifier draws from.
+# - `e`: the entry.
+# - `at`: the moment of the import.
+#
+# Fails `invalid` where the entry is skipped, the message saying why.
+function one(@d: accounts.Directory, @g: random.ChaCha8, e: ldap.Entry, at: time.Instant) -> Outcome?
+    uid = match ldap.text_of(e, name: "uid")
+        .ok t  => t
+        .err _ => return fail(code: INVALID, msg: f"{e.dn}: no uid")
+
+    if !accounts.is_valid_username(uid)
+        return fail(code: INVALID, msg: f"{uid}: not a user name this server takes")
+
+    address = match ldap.text_of(e, name: "mail")
+        .ok t  => t
+        .err _ => return fail(code: INVALID, msg: f"{uid}: no mail")
+
+    shown = match ldap.text_of(e, name: "displayName")
+        .ok t  => t
+        .err _ => ldap.text_of(e, name: "cn").default(uid)
+
+    match accounts.by_name(d, username: uid)
+        .ok u =>
+            if u.source != "ldap"
+                return fail(code: INVALID, msg: f"{uid}: a local account has that name")
+
+            if u.email != strings.to_lower(address)
+                return fail(
+                    code: INVALID,
+                    msg: f"{uid}: the directory changed the address, which this server never does by itself"
+                )
+
+            if u.display_name == shown && u.ldap_dn == e.dn && !u.disabled
+                return ok(Outcome(username: u.username, change: "unchanged"))
+            changed @= u
+            changed.display_name @ shown
+            changed.ldap_dn @ e.dn
+            changed.disabled @ false
+            accounts.put(@d, u: changed)?
+            return ok(Outcome(username: u.username, change: "updated"))
+        .err _ => _ = 0
+
+    if !accounts.by_email(d, email: address).is_err()
+        return fail(code: INVALID, msg: f"{uid}: the address belongs to another account")
+
+    id = uuid.format(ids.new_user_id(@g, at: at))
+    u @= accounts.new_user(id: id, username: uid, email: address, created: time.unix_seconds(at))
+    u.source @ "ldap"
+    u.ldap_dn @ e.dn
+    u.display_name @ shown
+    u.email_verified @ true
+    accounts.add(@d, u: u)?
+    return ok(Outcome(username: u.username, change: "created"))
+
+# Whether `password` is the password of the directory entry `dn`: a simple
+# bind as it, on a connection of its own.
+#
+# - `l`: the directory's settings.
+# - `dn`: the entry's distinguished name.
+# - `password`: the password the person typed; an empty one is refused here,
+#   since a directory takes an empty password as an anonymous bind.
+#
+# Fails `permission` where the directory refuses the bind, and as
+# `ldap.connect` fails.
+function bind_as(l: settings.Ldap, dn: str, password: str) -> ()?
+    if password == ""
+        return fail(code: PERMISSION, msg: "an empty password binds no one")
+
+    c @= ldap.connect(options_of(l)?)?
+    bound = ldap.bind(@c, dn: dn, password: password)
+    closed = ldap.close(@c)
+    bound?
+    closed?
+    return ok()
+
+# When the import runs next after `at`, by `l.schedule` read in UTC.
+#
+# - `l`: the directory's settings.
+# - `at`: the moment after which.
+#
+# Fails `invalid` where the schedule is no cron line.
+function next_run(l: settings.Ldap, at: time.Instant) -> time.Instant?
+    schedule = match time.parse_cron(l.schedule)
+        .ok s  => s
+        .err e => return fail(code: INVALID, msg: f"the import's schedule \"{l.schedule}\" is no cron line: {e.msg}")
+
+    return time.next_run(schedule, after: at, zone: time.utc_zone())
+
+test "apply: entries made accounts, a local name kept, a missing entry disabled"
+    d @= accounts.empty()
+    g @= ids.seeded_generator("import")
+    local = accounts.new_user(id: "l1", username: "eva", email: "eva@example.org", created: 0)
+    accounts.add(@d, u: local).must()
+    at = time.from_unix(whole_seconds: 1_772_357_400, extra_nanoseconds: 0).must()
+    bruno = ldap.Entry(
+        dn: "uid=bruno,ou=people,dc=example,dc=org",
+        attributes: [ldap.text_attribute("uid", values: ["bruno"]), ldap.text_attribute("mail", values: ["bruno@example.org"]), ldap.text_attribute("cn", values: ["Bruno Bianchi"])],
+        controls: []
+    )
+    eva = ldap.Entry(
+        dn: "uid=eva,ou=people,dc=example,dc=org",
+        attributes: [ldap.text_attribute("uid", values: ["eva"]), ldap.text_attribute("mail", values: ["eva2@example.org"])],
+        controls: []
+    )
+    nomail = ldap.Entry(
+        dn: "uid=dario,ou=people,dc=example,dc=org",
+        attributes: [ldap.text_attribute("uid", values: ["dario"])],
+        controls: []
+    )
+    s = apply(@d, @g, entries: [bruno, eva, nomail], at: at)
+    assert s.created == ["bruno"] && s.skipped == ["eva: a local account has that name", "dario: no mail"]
+    assert accounts.by_name(d, username: "bruno").must().email_verified
+    again = apply(@d, @g, entries: [bruno], at: at)
+    assert again.unchanged == ["bruno"]
+    gone = apply(@d, @g, entries: [], at: at)
+    assert gone.disabled == ["bruno"] && accounts.by_name(d, username: "bruno").must().disabled
+
+test "next_run: two in the morning, the next day"
+    l = settings.Ldap(host: "", port: 389, security: "plain", bind_dn: "", base: "", filter: "", schedule: "0 2 * * *")
+    at = time.from_unix(whole_seconds: 1_772_357_400, extra_nanoseconds: 0).must()
+    assert time.format(next_run(l, at: at).must(), layout: .rfc3339_seconds) == "2026-03-02T02:00:00Z"

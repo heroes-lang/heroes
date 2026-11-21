@@ -1,0 +1,281 @@
+# Excel workbooks read into a table and written from one, through `xlsx`.
+#
+# One sheet is read, the one `--sheet` names or else the first: its first row
+# is the header and the rest are the rows, every cell keeping the type the
+# workbook gave it (a number, a text, a truth value, a date, an error as its
+# text), so no field is guessed at as a CSV field is. A header cell left empty
+# is named by its column's letters, `C`. Written, a table is one sheet named
+# for it: the header bold on grey and frozen, each column as wide as its
+# widest text up to fifty characters, numbers as numbers, moments as dates. A
+# number is an `f64` in a workbook, so one of more than seventeen digits is
+# written rounded, as Excel itself holds it.
+
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/unicode/segment
+use <rebel>/xlsx
+
+use model/decimal
+use model/model
+use model/moments
+
+## Codes
+
+# The code of a workbook with no sheet, or no sheet of the name asked.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a header that names one column twice.
+constant INVALID: str
+    "invalid"
+
+## Limits
+
+# The widest a column is made, in characters.
+constant MAX_WIDTH: i64
+    50
+
+## Reading
+
+# The table of one sheet of the workbook `data`.
+#
+# - `data`: the file's bytes.
+# - `sheet`: the sheet's name; empty for the first sheet.
+#
+# Fails as `xlsx.decode` fails (`invalid`, and `limit` for a workbook past
+# `xlsx.default_read_options`' bounds), `not_found` where the workbook has no
+# such sheet, and `invalid` where the header names a column twice.
+function read(data: [u8], sheet: str) -> model.Table?
+    book = xlsx.decode(data, xlsx.default_read_options())?
+    names = xlsx.sheet_names(book)
+
+    if names.len() == 0
+        return fail(code: NOT_FOUND, msg: "the workbook holds no sheet")
+
+    chosen = if sheet == ""
+        names[0]
+    else
+        sheet
+
+    page = match xlsx.sheet_of(book, name: chosen)
+        .ok s  => s
+        .err _ => return fail(code: NOT_FOUND, msg: f"no sheet named \"{chosen}\"; the sheets are {names.join(", ")}")
+
+    rows = xlsx.rows_of(page, limit: xlsx.DEFAULT_MAX_CELLS)?
+
+    if rows.len() == 0
+        return ok(model.Table(name: chosen, columns: [], rows: []))
+
+    columns: [str] @= []
+    seen: {str: bool} @= {}
+    at: i64 @= 0
+
+    for v in rows[0]
+        heading = match v
+            .empty                                                => xlsx.format_column_name(at).default(f"{at}")
+            .number _ | .text _ | .boolean _ | .date _ | .error _ => xlsx.format_value(v)
+
+        if seen[heading].default(false)
+            return fail(code: INVALID, msg: f"{chosen}: the header names the column \"{heading}\" twice")
+        seen[heading] @ true
+        columns @ columns.push(heading)
+        at @ at + 1
+
+    data_rows: [[model.Value]] @= []
+    r: i64 @= 1
+
+    while r < rows.len()
+        data_rows @ data_rows.push(rows[r].map(of_cell))
+        r @ r + 1
+
+    return ok(model.Table(name: chosen, columns: columns, rows: data_rows))
+
+# The value of a cell.
+#
+# - `v`: the cell's value; a date at midnight is a date alone, and a time
+#   alone, on the epoch's first day, is a time of day.
+function of_cell(v: xlsx.Value) -> model.Value
+    return match v
+        .empty     => .null_value
+        .number n  => decimal.of_plain_float(n.v)
+        .text t    => .text(v: t.v)
+        .boolean b => .boolean(v: b.v)
+        .date d    => .moment(text: date_text(d.v))
+        .error e   => .text(v: e.v)
+
+# The moment text of a cell's date: a date alone at midnight, a time alone on
+# the epoch's first day, both otherwise.
+#
+# - `dt`: the date and time the cell holds.
+function date_text(dt: time.DateTime) -> str
+    p @= moments.of_date_time(dt, date_only_at_midnight: true)
+
+    if dt.year == 1899 && dt.month == 12 && dt.day == 30 || dt.year == 1904 && dt.month == 1 && dt.day == 1
+        p.has_date @ false
+        p.has_time @ true
+    return moments.format(p)
+
+## Writing
+
+# `t` as the bytes of a workbook of one sheet.
+#
+# - `t`: the table.
+#
+# The same table gives the same bytes: no date of writing is put in the file.
+#
+# Fails as `xlsx.encode` fails: `invalid` for a text past 32767 characters or
+# a sheet past a million rows, `unsupported` for a date before 1900.
+function write(t: model.Table lent) -> [u8]?
+    book @= xlsx.new_workbook()
+    header_style = xlsx.add_style(@book, style: header_style_of())
+    page @= xlsx.new_sheet(sheet_name(t.name))
+    at: i64 @= 0
+
+    for c in t.columns
+        xlsx.set_value(@page, row: 0, column: at, value: .text(v: c))?
+        xlsx.set_style(@page, row: 0, column: at, style: header_style)?
+        at @ at + 1
+
+    r: i64 @= 1
+
+    for row in t.rows
+        values: [xlsx.Value] @= []
+
+        for v in row
+            values @ values.push(to_cell(v)?)
+
+        put_row(@page, row: r, values: values)?
+        r @ r + 1
+
+    width: i64 @= 0
+
+    while width < t.columns.len()
+        xlsx.set_column_width(@page, first: width, last: width, width: to_f64(column_width(t, column: width) + 2))?
+        width @ width + 1
+
+    if t.columns.len() > 0
+        xlsx.freeze(@page, rows: 1, columns: 0)?
+    xlsx.add_sheet(@book, s: page)?
+    return xlsx.encode(book)
+
+# Sets the cells of row `row` of `page` from `values`, column 0 first, an
+# empty value leaving its cell out.
+#
+# - `page`: the sheet, its cells grown in place.
+# - `row`: the row, from 0.
+# - `values`: the values.
+#
+# Fails as `xlsx.set_value` fails.
+function put_row(@page: xlsx.Sheet, row: i64, values: [xlsx.Value]) -> ()?
+    column: i64 @= 0
+
+    for v in values
+        match v
+            .empty => _ = 0
+            .number _ | .text _ | .boolean _ | .date _ | .error _ => xlsx.set_value(@page, row: row, column: column, value: v)?
+
+        column @ column + 1
+
+    return ok()
+
+# The style of the header row: bold on a light grey fill.
+function header_style_of() -> xlsx.Style
+    style @= xlsx.default_style()
+    style.font.bold @ true
+    style.fill @ xlsx.Fill(pattern: .solid, color: "D9D9D9", background: "")
+    return style
+
+# A value as a cell's value: a number as the nearest `f64`, a moment as a date
+# (its offset dropped, a workbook having no zones; a time alone on the epoch's
+# first day), and a list or an object as its JSON text.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where a number's or a moment's text is not one.
+function to_cell(v: model.Value) -> xlsx.Value?
+    return match v
+        .null_value                    => ok(.empty)
+        .boolean b                     => ok(.boolean(v: b.v))
+        .number n                      => ok(.number(v: decimal.to_float(n.text)?))
+        .text t                        => ok(.text(v: t.v))
+        .moment m                      => ok(.date(v: cell_date(m.text)?))
+        .bytes _ | .list _ | .object _ => ok(.text(v: model.cell_text(v)))
+
+# The date and time a cell holds for the moment `text`.
+#
+# - `text`: the moment.
+#
+# Fails as `moments.parse` fails.
+function cell_date(text: str) -> time.DateTime?
+    p = moments.parse(text)?
+
+    if !p.has_date
+        return ok(
+            time.DateTime(year: 1899, month: 12, day: 30, hour: p.hour, minute: p.minute, second: p.second, nanosecond: p.nanosecond)
+        )
+    return ok(moments.date_time_of(p))
+
+# The widest text of column `column` of `t`, its header included, in
+# characters on a screen, at most `MAX_WIDTH`.
+#
+# - `t`: the table.
+# - `column`: the column, from 0.
+function column_width(t: model.Table lent, column: i64) -> i64
+    widest: i64 @= segment.width_of(t.columns[column])
+
+    for row in t.rows
+        w = segment.width_of(model.cell_text(row[column]))
+
+        if w > widest
+            widest @ w
+
+    if widest > MAX_WIDTH
+        return MAX_WIDTH
+    return widest
+
+# A sheet's name for the table `name`: the characters Excel refuses in one
+# (`[ ] : * ? / \`) made `_`, cut to 31 characters, `Sheet1` where nothing is
+# left.
+#
+# - `name`: the table's name.
+function sheet_name(name: str) -> str
+    kept: [str] @= []
+
+    for c in name.chars()
+        if kept.len() < 31
+            if strings.contains(s: "[]:*?/\\", substr: c)
+                kept @ kept.push("_")
+            else
+                kept @ kept.push(c)
+
+    if kept.len() == 0
+        return "Sheet1"
+    return kept.join("")
+
+## Tests
+
+test "write and read: typed cells come back as they went"
+    row: [model.Value] = [
+        .text(v: "Zürich")
+        .number(text: "19.99")
+        .number(text: "3")
+        .boolean(v: false)
+        .moment(text: "2026-03-01")
+        .moment(text: "2026-03-01T09:30:00")
+        .null_value
+    ]
+    t = model.Table(name: "sales", columns: ["city", "price", "units", "paid", "day", "at", "note"], rows: [row])
+    back = read(write(t).must(), sheet: "").must()
+    assert back.name == "sales"
+    assert back.columns == t.columns
+    assert back.rows == [row]
+
+test "read: a sheet asked by name that is not there"
+    t = model.Table(name: "a", columns: ["x"], rows: [])
+    assert read(write(t).must(), sheet: "b").is_err()
+    assert read([1, 2, 3], sheet: "").is_err()
+
+test "sheet_name: refused characters, length and the empty name"
+    assert sheet_name("q1/q2 [draft]") == "q1_q2 _draft_"
+    assert sheet_name("") == "Sheet1"
+    assert sheet_name(repeat("x", 40)).len() == 31

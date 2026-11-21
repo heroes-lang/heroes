@@ -1,0 +1,32 @@
+# The store's clock, read with Redis's `TIME`: the one clock every worker,
+# producer and scheduler of a fleet agrees on, whatever machine each runs on,
+# and the clock `jobs/redis_store` stamps every job with. Against the
+# stand-in it is the demo's clock, moved by hand.
+
+use <rebel>/numbers
+use <rebel>/redis
+use <rebel>/time
+
+# The store's clock now, in microseconds since 1970.
+#
+# - `c`: the client.
+#
+# Fails as `redis.call` fails, and `invalid` where the server's answer is
+# not two whole numbers.
+function now_micros(@c: redis.Client) -> i64?
+    words = redis.texts_of(redis.call(@c, ["TIME"])?)?
+
+    if words.len() != 2
+        return fail(code: redis.INVALID, msg: f"TIME answered {words.len()} words where it writes 2")
+
+    seconds = numbers.parse_int(words[0])?
+    micros = numbers.parse_int(words[1])?
+    return ok(seconds * 1_000_000 + micros)
+
+# The store's clock now, as an instant.
+#
+# - `c`: the client.
+#
+# Fails as `now_micros` fails.
+function now(@c: redis.Client) -> time.Instant?
+    return time.from_unix_microseconds(now_micros(@c)?)

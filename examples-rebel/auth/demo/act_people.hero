@@ -1,0 +1,202 @@
+# The script's first three acts, a person's: signing up and proving the
+# address by the mailed link, enrolling TOTP from the QR code and logging in
+# with a code, and registering a passkey and logging in by it with no
+# password. Each step that should be refused is tried too, and its refusal
+# printed: the server is shown keeping its rules, not only its happy path.
+
+use <rebel>/fs
+use <rebel>/http
+use <rebel>/json
+use <rebel>/mail
+use <rebel>/path
+use <rebel>/strings
+use <rebel>/url
+
+use demo/authenticator
+use demo/browser
+use demo/scene
+use demo/totp_app
+
+# The code of a step that did not answer as the script needs.
+constant INVALID: str
+    "invalid"
+
+# The person's password.
+constant PASSWORD: str
+    "correct horse battery"
+
+# Signing up, the mailed link, and a login by password.
+#
+# - `s`: the scene; its browser keeps the session.
+#
+# Fails where a step the script needs does not answer as it must.
+function sign_up(@s: scene.Scene) -> ()?
+    scene.act("1. an account, and its address proven by mail")
+    fields = [
+        url.Pair(key: "username", value: "ana")
+        url.Pair(key: "email", value: "Ana@Example.org")
+        url.Pair(key: "password", value: PASSWORD)
+    ]
+    made = browser.post_form(@s.browser, path: "/accounts", pairs: fields)?
+    scene.step(
+        what: "sign up ana",
+        outcome: f"{made.status}, verification {browser.text_of(made, key: "verification")}"
+    )
+    again = browser.post_form(@s.browser, path: "/accounts", pairs: fields)
+    scene.step(what: "sign up ana again", outcome: scene.outcome_of(again))
+    weak = [
+        url.Pair(key: "username", value: "bea")
+        url.Pair(key: "email", value: "bea@example.org")
+        url.Pair(key: "password", value: "bea-and-bea")
+    ]
+    scene.step(
+        what: "sign up bea with a password holding her name",
+        outcome: scene.outcome_of(browser.post_form(@s.browser, path: "/accounts", pairs: weak))
+    )
+    link = mailed_link(s)?
+    verified = browser.get(@s.browser, target: link)?
+    scene.step(
+        what: "open the link",
+        outcome: f"{verified.status}, email_verified {browser.flag_of(verified, key: "email_verified")}"
+    )
+    scene.step(what: "open the link again", outcome: scene.outcome_of(browser.get(@s.browser, target: link)))
+    wrong = [url.Pair(key: "username", value: "ana"), url.Pair(key: "password", value: "wrong horse battery")]
+    scene.step(
+        what: "log in ana with a wrong password",
+        outcome: scene.outcome_of(browser.post_form(@s.browser, path: "/login", pairs: wrong))
+    )
+    right = browser.post_form(@s.browser, path: "/login", pairs: login_fields(""))?
+    scene.step(what: "log in ana", outcome: f"{right.status}, amr {amr_of(right)}")
+    return ok()
+
+# The path of the verification link in the one message the mail folder holds,
+# and what the message says, printed.
+#
+# - `s`: the scene.
+#
+# Fails `invalid` where the folder holds other than one message, and as `mail` fails where it holds no link.
+function mailed_link(s: scene.Scene) -> str?
+    names: [str] @= []
+
+    for e in fs.read_dir(s.mail_folder)?
+        names @ names.push(e.name)
+
+    if names.len() != 1
+        return fail(code: INVALID, msg: f"the mail folder holds {names.len()} messages, not one")
+
+    m = mail.decode_message(fs.read_bytes(path.join_all([s.mail_folder, names[0]]))?)
+    subject = mail.decoded_value_of(m, name: "Subject")?
+    to = mail.value_of(m, name: "To")?
+    text = mail.text_of(mail.body_of(m, preferring: ["plain"])?)?
+    at = strings.index_of(s: text, substr: s.issuer + "/verify?token=")?
+    rest = text.slice(from: at + s.issuer.len(), to: text.len())
+    end = strings.index_of(s: rest, substr: "\n").default(rest.len())
+    scene.step(
+        what: "the mail folder",
+        outcome: f"one message to {to}, \"{subject}\", {mail.attachments_of(m).len()} attachments, text and HTML parts {mail.is_multipart(m)}"
+    )
+    return ok(strings.trim(rest.slice(from: 0, to: end)))
+
+# The login form of ana with her password and `code`, "" for none.
+#
+# - `code`: the TOTP code.
+function login_fields(code: str) -> [url.Pair]
+    fields @= [url.Pair(key: "username", value: "ana"), url.Pair(key: "password", value: PASSWORD)]
+
+    if code != ""
+        fields @ fields.push(url.Pair(key: "code", value: code))
+
+    return fields
+
+# The `amr` of a login's answer, joined by spaces.
+#
+# - `r`: the answer to a login.
+function amr_of(r: http.Response) -> str
+    words: [str] @= []
+
+    match json.member(browser.body_of(r), key: "amr")
+        .ok v =>
+            for item in json.items_of(v).default([])
+                words @ words.push(json.text_of(item).default("?"))
+        .err _ => _ = 0
+
+    return words.join(" ")
+
+# TOTP: enrolment shown as a QR code, its confirmation, and logins that need
+# a code, refused without one and with one taken already.
+#
+# - `s`: the scene.
+#
+# Fails where a step the script needs does not answer as it must.
+function totp_act(@s: scene.Scene) -> ()?
+    scene.act("2. a second factor: TOTP")
+    enrolled = browser.post_form(@s.browser, path: "/totp/enrol", pairs: [])?
+    scene.step(
+        what: "enrol",
+        outcome: f"{enrolled.status}, the otpauth URI as a QR code of version and level {browser.text_of(enrolled, key: "symbol")}:"
+    )
+
+    for line in strings.split(s: browser.text_of(enrolled, key: "qr"), sep: "\n")
+        if line != ""
+            print(f"    {line}")
+
+    key = totp_app.key_of(browser.text_of(enrolled, key: "uri"))?
+    first = totp_app.code_at(key, seconds: s.now)?
+    confirmed = browser.post_form(@s.browser, path: "/totp/confirm", pairs: [url.Pair(key: "code", value: first)])
+    scene.step(what: "confirm with the app's code of 09:30:00", outcome: scene.outcome_of(confirmed))
+    _ = browser.post_form(@s.browser, path: "/logout", pairs: [])?
+    scene.step(
+        what: "log out, then log in ana with her password alone",
+        outcome: scene.outcome_of(browser.post_form(@s.browser, path: "/login", pairs: login_fields("")))
+    )
+    scene.step(
+        what: "log in with the code just used",
+        outcome: scene.outcome_of(browser.post_form(@s.browser, path: "/login", pairs: login_fields(first)))
+    )
+    next = totp_app.code_at(key, seconds: s.now + 30)?
+    in_again = browser.post_form(@s.browser, path: "/login", pairs: login_fields(next))?
+    scene.step(what: "log in with the app's next code, 09:30:30", outcome: f"{in_again.status}, amr {amr_of(in_again)}")
+    return ok()
+
+# A passkey: registered from the session, then a login by it alone.
+#
+# - `s`: the scene; its authenticator keeps the credential.
+#
+# Fails where a step the script needs does not answer as it must.
+function passkey_act(@s: scene.Scene) -> ()?
+    scene.act("3. a passkey, and a login without a password")
+    origin = s.issuer
+    options = browser.post_form(@s.browser, path: "/passkeys/register/options", pairs: [])?
+    scene.step(
+        what: "registration options",
+        outcome: f"{options.status}, rp {rp_id_of(options)}, attestation {browser.text_of(options, key: "attestation")}"
+    )
+    made = authenticator.create(@s.device, options: http.text_of(options)?, origin: origin)?
+    registered = browser.post_json(@s.browser, path: "/passkeys/register", body: made)?
+    scene.step(
+        what: "register the authenticator's credential",
+        outcome: f"{registered.status}, attestation {browser.text_of(registered, key: "attestation")}"
+    )
+    replayed = browser.post_json(@s.browser, path: "/passkeys/register", body: made)
+    scene.step(what: "register the same response again", outcome: scene.outcome_of(replayed))
+    _ = browser.post_form(@s.browser, path: "/logout", pairs: [])?
+    browser.forget_cookies(@s.browser)
+    asked = browser.post_form(@s.browser, path: "/passkeys/login/options", pairs: [])?
+    signed = authenticator.get(@s.device, options: http.text_of(asked)?, origin: origin)?
+    logged = browser.post_json(@s.browser, path: "/passkeys/login", body: signed)?
+    scene.step(
+        what: "log in by the passkey",
+        outcome: f"{logged.status}, {browser.text_of(logged, key: "username")}, amr {amr_of(logged)}, counter {authenticator.counter_of(s.device, rp_id: rp_id_of(options))}"
+    )
+    _ = browser.post_form(@s.browser, path: "/passkeys/login/options", pairs: [])?
+    stale = browser.post_json(@s.browser, path: "/passkeys/login", body: signed)
+    scene.step(what: "the same assertion against a new challenge", outcome: scene.outcome_of(stale))
+    return ok()
+
+# The relying party's id the registration options name.
+#
+# - `options`: the registration options' answer.
+function rp_id_of(options: http.Response) -> str
+    match json.value_at(browser.body_of(options), pointer: "/rp/id")
+        .ok v  => return json.text_of(v).default("")
+        .err _ => return ""

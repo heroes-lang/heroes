@@ -1,0 +1,134 @@
+# What the server holds while it serves: its settings, the database's
+# connection, the archives' store, the search catalog, the compiled manifest
+# schema, the router, the publishers' rate limiter and the request log.
+#
+# One `State` lives on the thread that serves, and every handler is handed it
+# by `@`: the language has no closure and no global, so this record is how
+# the router's handlers reach the database (`web`'s opening comment says why
+# the program dispatches).
+
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/json/schema
+use <rebel>/log
+use <rebel>/sql/sqlite
+use <rebel>/web
+
+use packages/manifest_schema
+use search/catalog
+use server/settings
+use store/blobs
+use store/database
+
+## Codes
+
+# The code of settings that hold a value the server cannot start with.
+constant INVALID: str
+    "invalid"
+
+## The state
+
+# Everything a handler reaches.
+record State
+    # The settings the server started with.
+    settings: settings.Settings
+    # The absolute URL clients reach the server at, ending in `/`.
+    base_url: str
+    # The database's connection.
+    db: sqlite.Db
+    # The archives.
+    blobs: blobs.Blobs
+    # The searchable view of the packages.
+    catalog: catalog.Catalog
+    # The manifest schema, compiled once.
+    manifest_schema: schema.Schema
+    # The routes.
+    router: web.Router
+    # One bucket of publications per publisher.
+    publish_limiter: web.Limiter
+    # The request log.
+    logger: log.Logger
+    # Whether the log's stream is a file this state opened and must close.
+    owns_log: bool
+    # How many requests were answered.
+    answered: i64
+
+# The state of a server with settings `s` reached at `base_url`, routing by
+# `router`: the data folder made where it is not there, the database opened
+# and its schema brought up to date, the catalog built, the log opened.
+#
+# - `s`: the settings.
+# - `base_url`: the absolute URL clients reach it at, ending in `/`.
+# - `router`: the routes, as `api.router` makes them.
+#
+# Fails as the folder, the database, the migrations and the log's file fail.
+# The caller closes what it answers with `close`.
+function open(s: settings.Settings, base_url: str, router: web.Router) -> State?
+    fs.make_dir_all(s.data_dir)?
+    db @= database.open(settings.database_of(s))?
+
+    match pieces_of(@db, s: s)
+        .ok p =>
+            return ok(
+                State(settings: s, base_url: base_url, db: db, blobs: blobs.Blobs(root: settings.blobs_of(s)), catalog: p.catalog, manifest_schema: p.manifest_schema, router: router, publish_limiter: p.limiter, logger: p.logged.logger, owns_log: p.logged.owned, answered: 0)
+            )
+        .err e =>
+            _ = sqlite.close(@db).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# What `open` builds over the database, apart, so that a failure closes it.
+record Pieces
+    # The catalog built from the database.
+    catalog: catalog.Catalog
+    # The manifest schema.
+    manifest_schema: schema.Schema
+    # The publishers' limiter.
+    limiter: web.Limiter
+    # The request log.
+    logged: Logged
+
+# The schema brought up to date, the catalog built, the schema compiled, the
+# limiter made and the log opened, over `db`.
+#
+# - `db`: the database's connection.
+# - `s`: the settings.
+#
+# Fails as the migrations, the queries, `web.new_limiter` and the log's file
+# fail.
+function pieces_of(@db: sqlite.Db, s: settings.Settings) -> Pieces?
+    _ = database.migrate_up(@db)?
+    rate = to_f64(s.publishes_per_hour) / 3600.0
+    return ok(
+        Pieces(catalog: catalog.build(@db)?, manifest_schema: manifest_schema.compiled()?, limiter: web.new_limiter(rate: rate, burst: s.publish_burst, most_keys: 10_000)?, logged: logger_of(s)?)
+    )
+
+# A logger and whether its stream is a file it opened.
+record Logged
+    # The logger.
+    logger: log.Logger
+    # Whether `close` must close its stream.
+    owned: bool
+
+# The request log the settings name: appended to the file `log_file`, or the
+# standard error where it names none.
+#
+# - `s`: the settings.
+#
+# Fails as `fs.open_with` does.
+function logger_of(s: settings.Settings) -> Logged?
+    if s.log_file == ""
+        return ok(Logged(logger: log.to(io.stderr()), owned: false))
+    stream = fs.open_with(s.log_file, access: .append, permission: 0o644)?
+    return ok(Logged(logger: log.to(stream), owned: true))
+
+# Closes what `open` opened: the database and the log's file.
+#
+# - `state`: the state; its connection and stream are closed.
+#
+# Fails as `sqlite.close` and `io.close` fail; both are tried.
+function close(@state: State) -> ()?
+    closed_db = sqlite.close(@state.db)
+
+    if state.owns_log
+        io.close(@state.logger.stream)?
+    return closed_db

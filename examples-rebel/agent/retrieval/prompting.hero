@@ -1,0 +1,32 @@
+# What the agent tells a model: the instructions every conversation opens
+# with, and the user's turn, which holds the passages retrieval found before
+# the question, each numbered so the answer can cite it. Both providers
+# receive the same words, the instructions as Claude's `system` and as
+# OpenAI's system message.
+
+use retrieval/nearest
+use tools/toolbox
+
+# The instructions every conversation opens with.
+constant INSTRUCTIONS: str
+    "You answer questions about the documents of one folder. Answer from the passages given before the question when they hold the answer, and cite each passage you use by its number in brackets, as [1]. When they do not, use a tool: search_documents finds more passages, read_file reads a file, query_json reads a value of a JSON file, count_tokens counts tokens, and run_command runs a command the user allowed. Say plainly when neither the passages nor the tools hold the answer."
+
+# The marker the question follows, which a reader of the turn finds it by.
+constant QUESTION_MARKER: str
+    "Question: "
+
+# The user's turn: the passages `hits`, numbered, then `question`.
+#
+# - `question`: what the user asked.
+# - `hits`: the passages retrieval found, the nearest first; none writes
+#   that none was found, so the model knows to use a tool.
+function user_turn(question: str, hits: [nearest.Hit]) -> str
+    passages = if hits.len() == 0
+        "No passage was found."
+    else
+        toolbox.passages_text(hits)
+
+    return "Passages:\n\n" + passages + "\n\n" + QUESTION_MARKER + question
+
+test "user_turn: no passage said so, then the question after its marker"
+    assert user_turn("Why?", hits: []) == "Passages:\n\nNo passage was found.\n\nQuestion: Why?"

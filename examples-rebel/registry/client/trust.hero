@@ -1,0 +1,80 @@
+# A version fetched and believed: the client's side of a signed registry.
+#
+# The registry is not trusted to be honest, only to be a place bytes come
+# from. So a fetch computes the archive's digest itself, compares it with the
+# one the registry lists, reads the detached signature, takes the signing key
+# from the client's own trust bundle (never from the registry at the moment
+# of the fetch), and checks the signature over the statement of the name, the
+# version and the digest it computed. Only then is the archive opened, under
+# limits, as the server opened it.
+
+use <rebel>/fs
+
+use client/client
+use client/queries
+use packages/digest
+use packages/unpack
+use signing/signatures
+use signing/signers
+
+## Codes
+
+# The code of an archive that is not what it should be.
+constant INVALID: str
+    "invalid"
+
+## Verifying
+
+# A version fetched and checked.
+record Verified
+    # The archive's bytes.
+    archive: [u8]
+    # Their digest, computed here.
+    digest: str
+    # The key that signed them.
+    key: signers.PublisherKey
+    # The archive, opened.
+    contents: unpack.Contents
+
+# `name` at `version`, fetched from the registry `c` and checked against the
+# keys of `trusted`.
+#
+# - `c`: the client.
+# - `name`: the package's name.
+# - `version`: the version.
+# - `trusted`: the keys the client trusts, as `signers.read_bundle` read
+#   them.
+#
+# Fails `invalid` where the archive's digest is not the one listed, the
+# signature names a key `trusted` lacks or does not hold, or the archive
+# does not open; and as the fetches fail.
+function fetch_verified(@c: client.Client, name: str, version: str, trusted: [signers.PublisherKey]) -> Verified?
+    info = queries.version_info(@c, name: name, version: version)?
+    data = queries.fetch_archive(@c, name: name, version: version)?
+    computed = digest.of_bytes(data)
+
+    if computed != info.digest
+        return fail(code: INVALID, msg: f"the archive's digest is {computed}, and the registry lists {info.digest}")
+    sig = signatures.parse(queries.fetch_signature(@c, name: name, version: version)?)?
+    key = signers.trusted_of(trusted, id: sig.key_id)?
+    signatures.verify(sig, public_der: key.der, package: name, version: version, digest: computed)?
+    contents = unpack.open(data, limits: unpack.Limits(unpacked_bytes: 52_428_800, files: 2000))?
+    return ok(Verified(archive: data, digest: computed, key: key, contents: contents))
+
+# The keys of the trust bundle in the file `file`.
+#
+# - `file`: the bundle, as `GET /api/v1/publishers/<name>/keys` answers one.
+#
+# Fails as `fs.read_bytes` and `signers.read_bundle` fail.
+function read_trusted(file: str) -> [signers.PublisherKey]?
+    text = read_file(file)?
+    return signers.read_bundle(text)
+
+# Writes the verified archive to `file`, whole or not at all.
+#
+# - `v`: the verified version.
+# - `file`: where to write it.
+#
+# Fails as `fs.write_atomic_bytes` does.
+function save(v: Verified, file: str) -> ()?
+    return fs.write_atomic_bytes(file, data: v.archive)

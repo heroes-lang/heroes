@@ -1,0 +1,391 @@
+# Java properties files, read and written here, since Rebel has no package
+# for them (`config`'s ledger refuses the format by name).
+#
+# Read as `java.util.Properties.load` reads one, from the class's
+# documentation: a logical line is natural lines joined where one ends in an
+# odd number of backslashes, the white space opening the next dropped; a line
+# whose first character past white space is `#` or `!` is a comment; the key
+# ends at the first `=`, `:` or white space not escaped, and the white space
+# and one `=` or `:` after it are skipped; `\t`, `\n`, `\r`, `\f` and
+# `\uXXXX` are escapes, a backslash before any other character is that
+# character, and a lone backslash at the end of a file is dropped. The text is
+# UTF-8, as Java 9 reads a resource bundle, not Latin-1.
+#
+# A file is an object of its keys in the order written, a key given twice
+# keeping its last value, each value typed by `model/infer` unless `--raw`.
+# Written, a document is flattened: an object's members joined by `.` and a
+# list's items by `[i]`, Spring Boot's spelling, so `db.hosts[0]=a`.
+
+use <rebel>/numbers
+use <rebel>/strings
+
+use model/infer
+use model/model
+
+## Codes
+
+# The code of a `\u` escape that is not four hexadecimal digits.
+constant INVALID: str
+    "invalid"
+
+## Reading
+
+# The document of the properties text `text`.
+#
+# - `text`: the file's text, line feeds, CR LF or CR alone.
+# - `raw`: whether every value stays a text.
+#
+# Fails `invalid` where a `\u` escape is malformed, the message naming the
+# line it opens on, from 1.
+function read(text: str, raw: bool) -> model.Value?
+    members: [model.Member] @= []
+    lines = natural_lines(text)
+    at: i64 @= 0
+
+    while at < lines.len()
+        first = at
+        logical: [str] @= [strings.trim_start(lines[at])]
+
+        while ends_continued(lines[at]) && at + 1 < lines.len()
+            at @ at + 1
+            logical @ logical.push(strings.trim_start(lines[at]))
+
+        at @ at + 1
+        line = join_continued(logical)
+
+        if line != "" && !strings.has_prefix(s: line, prefix: "#") && !strings.has_prefix(s: line, prefix: "!")
+            match pair_of(line)
+                .ok m  => members @ members.push(model.Member(name: m.name, value: infer.row([m.value], raw: raw)[0]))
+                .err e => return fail(code: e.code, msg: f"line {first + 1}: {e.msg}")
+
+    return ok(model.object_of(members))
+
+# The record of one key and its value, both unescaped.
+record Pair
+    # The key.
+    name: str
+    # The value, as text.
+    value: str
+
+# The natural lines of `text`, split at `\n`, `\r\n` or `\r`.
+#
+# - `text`: the text.
+function natural_lines(text: str) -> [str]
+    return strings.lines(strings.replace_all(s: text, old: "\r\n", new: "\n").replace_all_cr())
+
+# `s` with each lone carriage return made a line feed.
+#
+# - `s`: the text, its CR LF pairs already made line feeds.
+function replace_all_cr(s: str) -> str
+    return strings.replace_all(s: s, old: "\r", new: "\n")
+
+# Whether `line` ends in an odd number of backslashes, so the next line goes
+# on with it.
+#
+# - `line`: the natural line.
+function ends_continued(line: str) -> bool
+    count: i64 @= 0
+    at: i64 @= line.len() - 1
+
+    while at >= 0 && line[at] == '\\'
+        count @ count + 1
+        at @ at - 1
+
+    return count % 2 == 1
+
+# The logical line of `pieces`: each natural line but the last without the
+# backslash that continued it.
+#
+# - `pieces`: the natural lines, each but the first with its opening white
+#   space dropped.
+function join_continued(pieces: [str]) -> str
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < pieces.len()
+        piece = pieces[at]
+
+        if at + 1 < pieces.len()
+            out @ out.push(piece.slice(from: 0, to: piece.len() - 1))
+        else
+            out @ out.push(piece)
+        at @ at + 1
+
+    return out.join("")
+
+# The key and the value of a logical line that is no comment.
+#
+# - `line`: the line, its opening white space dropped.
+#
+# Fails `invalid` where an escape is malformed.
+function pair_of(line: str) -> Pair?
+    key_end: i64 @= 0
+
+    while key_end < line.len() && !ends_key(line, at: key_end)
+        if line[key_end] == '\\'
+            key_end @ key_end + 1
+        key_end @ key_end + 1
+
+    if key_end > line.len()
+        key_end @ line.len()
+
+    value_at: i64 @= key_end
+
+    while value_at < line.len() && is_blank(line[value_at])
+        value_at @ value_at + 1
+
+    if value_at < line.len() && (line[value_at] == '=' || line[value_at] == ':')
+        value_at @ value_at + 1
+
+        while value_at < line.len() && is_blank(line[value_at])
+            value_at @ value_at + 1
+    key = unescape(line.slice(from: 0, to: key_end))?
+    value = unescape(line.slice(from: value_at, to: line.len()))?
+    return ok(Pair(name: key, value: value))
+
+# Whether the byte of `line` at `at` ends a key: `=`, `:` or white space.
+#
+# - `line`: the line.
+# - `at`: an index inside it.
+function ends_key(line: str, at: i64) -> bool
+    b = line[at]
+    return b == '=' || b == ':' || is_blank(b)
+
+# Whether the byte `b` is a space, a tab or a form feed, the white space of
+# a properties file.
+#
+# - `b`: the byte.
+function is_blank(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == 12
+
+# `s` with its escapes read.
+#
+# - `s`: a key or a value as written.
+#
+# Fails `invalid` where `\u` is not followed by four hexadecimal digits.
+function unescape(s: str) -> str?
+    if !strings.contains(s: s, substr: "\\")
+        return ok(s)
+
+    out: [str] @= []
+    each = s.chars()
+    at: i64 @= 0
+
+    while at < each.len()
+        c = each[at]
+
+        if c != "\\"
+            out @ out.push(c)
+            at @ at + 1
+            continue
+
+        if at + 1 >= each.len()
+            break
+        e = each[at + 1]
+        at @ at + 2
+
+        if e == "t"
+            out @ out.push("\t")
+        else if e == "n"
+            out @ out.push("\n")
+        else if e == "r"
+            out @ out.push("\r")
+        else if e == "f"
+            out @ out.push("\u{c}")
+        else if e == "u"
+            n = hex_unit(each, at: at)?
+            at @ at + 4
+
+            if n >= 0xd800 && n <= 0xdbff && at + 6 <= each.len() && each[at] == "\\" && each[at + 1] == "u"
+                low = hex_unit(each, at: at + 2)?
+
+                if low >= 0xdc00 && low <= 0xdfff
+                    out @ out.push(char_of(0x10000 + (n - 0xd800 << 10) + (low - 0xdc00))?)
+                    at @ at + 6
+                    continue
+            out @ out.push(char_of(n)?)
+        else
+            out @ out.push(e)
+
+    return ok(out.join(""))
+
+# The UTF-16 code unit the four characters of `each` from `at` write in
+# hexadecimal.
+#
+# - `each`: the characters of the text.
+# - `at`: where the four digits begin.
+#
+# Fails `invalid` where fewer than four characters are left or they are not
+# hexadecimal digits.
+function hex_unit(each: [str], at: i64) -> i64?
+    if at + 4 > each.len()
+        return fail(code: INVALID, msg: "a \\u escape needs four hexadecimal digits")
+
+    digits = each.slice(from: at, to: at + 4).join("")
+
+    match numbers.parse_int_base(digits, base: 16)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: INVALID, msg: f"\\u{digits} is not four hexadecimal digits")
+
+# The character of the code point `n`, written as UTF-8.
+#
+# - `n`: the code point, from 0 to 0x10ffff; a pair of `\u` escapes that
+#   spell a surrogate pair is joined into one by the caller first.
+#
+# Fails `invalid` for half of a surrogate pair standing alone, which no
+# character is.
+function char_of(n: i64) -> str?
+    if n >= 0xd800 && n <= 0xdfff
+        return fail(
+            code: INVALID,
+            msg: f"\\u{numbers.format_int(n: n, base: 16)} is half of a surrogate pair with no other half"
+        )
+
+    bytes_of_char: [u8] @= []
+
+    if n < 0x80
+        bytes_of_char @ bytes_of_char.push(to_u8(n).must())
+    else if n < 0x800
+        bytes_of_char @ bytes_of_char.push(to_u8(0xc0 | n >> 6).must())
+        bytes_of_char @ bytes_of_char.push(to_u8(0x80 | n & 0x3f).must())
+    else if n < 0x10000
+        bytes_of_char @ bytes_of_char.push(to_u8(0xe0 | n >> 12).must())
+        bytes_of_char @ bytes_of_char.push(to_u8(0x80 | n >> 6 & 0x3f).must())
+        bytes_of_char @ bytes_of_char.push(to_u8(0x80 | n & 0x3f).must())
+    else
+        bytes_of_char @ bytes_of_char.push(to_u8(0xf0 | n >> 18).must())
+        bytes_of_char @ bytes_of_char.push(to_u8(0x80 | n >> 12 & 0x3f).must())
+        bytes_of_char @ bytes_of_char.push(to_u8(0x80 | n >> 6 & 0x3f).must())
+        bytes_of_char @ bytes_of_char.push(to_u8(0x80 | n & 0x3f).must())
+    return bytes_of_char.validated_bytes()
+
+## Writing
+
+# `v` as a properties file: one `key=value` line for each scalar the document
+# holds, its key the path to it.
+#
+# - `v`: the document.
+# - `name`: the key of a document that is a scalar, and the first part of
+#   every key of one that is a list.
+function write(v: model.Value, name: str) -> str
+    lines: [str] @= []
+
+    match v
+        .object o =>
+            for m in o.members
+                add_lines(@lines, key: m.name, v: m.value)
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ | .list _ => add_lines(
+            @lines,
+            key: name,
+            v: v
+        )
+
+    if lines.len() == 0
+        return ""
+    return lines.join("\n") + "\n"
+
+# Adds the lines of `v` under `key` to `lines`.
+#
+# - `lines`: the lines written so far, grown in place.
+# - `key`: the path to `v`.
+# - `v`: the value; an empty list or object writes `key=` alone.
+function add_lines(@lines: [str], key: str, v: model.Value)
+    match v
+        .object o =>
+            if o.members.len() == 0
+                lines @ lines.push(escape_key(key) + "=")
+
+            for m in o.members
+                add_lines(@lines, key: key + "." + m.name, v: m.value)
+        .list l =>
+            if l.items.len() == 0
+                lines @ lines.push(escape_key(key) + "=")
+            at: i64 @= 0
+
+            for item in l.items
+                add_lines(@lines, key: f"{key}[{at}]", v: item)
+                at @ at + 1
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ => lines @ lines.push(
+            escape_key(key) + "=" + escape_value(model.cell_text(v))
+        )
+
+# `key` escaped so it reads back whole: white space, `=`, `:`, `#`, `!` and
+# the backslash.
+#
+# - `key`: the key.
+function escape_key(key: str) -> str
+    out: [str] @= []
+
+    for c in key.chars()
+        if c == " " || c == "=" || c == ":" || c == "#" || c == "!" || c == "\\"
+            out @ out.push("\\" + c)
+        else
+            out @ out.push(escaped_control(c))
+
+    return out.join("")
+
+# `value` escaped so it reads back whole: a space opening it, the backslash,
+# and the line ends.
+#
+# - `value`: the value.
+function escape_value(value: str) -> str
+    out: [str] @= []
+    at: i64 @= 0
+
+    for c in value.chars()
+        if c == "\\"
+            out @ out.push("\\\\")
+        else if c == " " && at == 0
+            out @ out.push("\\ ")
+        else
+            out @ out.push(escaped_control(c))
+        at @ at + 1
+
+    return out.join("")
+
+# `c` as written in a properties file: a tab, a line end or a form feed as its
+# escape, any other character as itself.
+#
+# - `c`: one character.
+function escaped_control(c: str) -> str
+    if c == "\t"
+        return "\\t"
+
+    if c == "\n"
+        return "\\n"
+
+    if c == "\r"
+        return "\\r"
+
+    if c == "\u{c}"
+        return "\\f"
+    return c
+
+## Tests
+
+test "read: separators, comments, continuations and escapes"
+    text = "# a comment\n! another\nname = datakit\nport:8080\nbare value\ngreeting = Hello, \\\n    world\npath = C:\\\\data\nsnow = \\u2603\nkey\\ with\\ space = 1\n"
+    v = read(text, raw: false).must()
+    assert model.json_text(v) == "{\"name\":\"datakit\",\"port\":8080,\"bare\":\"value\",\"greeting\":\"Hello, world\",\"path\":\"C:\\\\data\",\"snow\":\"☃\",\"key with space\":1}"
+
+test "read: an empty value, a key given twice, a lone backslash at the end"
+    v = read("a=\nb=1\nb=2\nc=x\\", raw: false).must()
+    assert model.json_text(v) == "{\"a\":null,\"b\":2,\"c\":\"x\"}"
+    assert read("a=\\u12", raw: false).is_err()
+    assert read("a=\\ud83d", raw: false).is_err()
+    assert model.json_text(read("a=\\ud83d\\ude00!", raw: false).must()) == "{\"a\":\"😀!\"}"
+
+test "write: paths joined by dots and indices, escapes written"
+    inner: model.Value = .object(
+        members: [model.Member(name: "hosts", value: .list(items: [.text(v: "a"), .text(v: " b")]))]
+    )
+    v: model.Value = .object(
+        members: [model.Member(name: "db", value: inner), model.Member(name: "a key", value: .text(v: "x\ty"))]
+    )
+    assert write(v, name: "p") == "db.hosts[0]=a\ndb.hosts[1]=\\ b\na\\ key=x\\ty\n"
+
+test "write and read: a flat object comes back as itself"
+    v: model.Value = .object(
+        members: [model.Member(name: "k=1", value: .text(v: " lead")), model.Member(name: "n", value: .number(text: "2"))]
+    )
+    assert model.json_text(read(write(v, name: "p"), raw: false).must()) == model.json_text(v)

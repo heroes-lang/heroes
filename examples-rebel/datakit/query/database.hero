@@ -1,0 +1,303 @@
+# `datakit sql`: tables loaded into SQLite and a statement of SQL run over
+# them, through `sql/sqlite`, the rows inserted as values built by
+# `sql/build`.
+#
+# Each table becomes an SQL table of its name, each column declared by what
+# it holds: `INTEGER` for integers and truth values, `REAL` for other numbers,
+# `TEXT` for texts and moments, `BLOB` for bytes, no type for a column of
+# several kinds, which SQLite then stores as each value comes. A value is
+# always a parameter, never text of the statement, so no cell of a file can
+# change what the SQL means. `sql/build` reads a dot in a name as the
+# separator of a qualified name, so a dot in a table's or a column's name is
+# made `_` (`db.host` is the column `db_host`). The database is in memory
+# unless `--db` names a file, which then keeps the tables after the run.
+
+use <rebel>/sql
+use <rebel>/sql/build
+use <rebel>/sql/sqlite
+use <rebel>/strings
+
+use model/decimal
+use model/model
+use model/moments
+
+## Limits
+
+# The most parameters one INSERT carries: SQLite before 3.32 allowed 999,
+# and a statement under that bound runs on every SQLite a machine may have.
+constant MAX_PARAMETERS: i64
+    999
+
+## Opening
+
+# A database: in memory for an empty `file`, else the file, made where it is
+# not.
+#
+# - `file`: the database's path, or empty.
+#
+# Fails as `sqlite.open` fails.
+function open(file: str) -> sqlite.Db?
+    if file == ""
+        return sqlite.open_memory()
+    return sqlite.open(file)
+
+## Loading
+
+# Makes the table `t` in `db` and inserts its rows, in one transaction.
+#
+# - `db`: the database, written.
+# - `t`: the table; its name and its columns' names with `.` made `_`.
+#
+# Fails as `sqlite.exec` fails, `exists` where a table of that name is there,
+# and as `build.to_sql` fails.
+function load(@db: sqlite.Db, t: model.Table lent) -> ()?
+    name = sql_name(t.name)
+    columns = t.columns.map(sql_name)
+    declared: [str] @= []
+    at: i64 @= 0
+
+    for c in columns
+        declared @ declared.push(sql.quote_identifier(c)? + type_of_column(t, column: at))
+        at @ at + 1
+
+    create = f"CREATE TABLE {sql.quote_identifier(name)?} ({declared.join(", ")})"
+    _ = sqlite.exec(@db, statement: create, params: [])?
+
+    if t.rows.len() == 0
+        return ok()
+
+    per_insert = rows_per_insert(columns.len())
+    sqlite.begin(@db)?
+
+    match insert_rows(@db, name: name, columns: columns, t: t, per_insert: per_insert)
+        .ok _ => return sqlite.commit(@db)
+        .err e =>
+            match sqlite.rollback(@db)
+                .ok _       => return fail(code: e.code, msg: e.msg)
+                .err undone => return fail(code: e.code, msg: f"{e.msg}; the rollback failed too: {undone.msg}")
+
+# Inserts the rows of `t`, `per_insert` rows to a statement.
+#
+# - `db`: the database, inside a transaction.
+# - `name`: the SQL table's name.
+# - `columns`: the SQL columns' names.
+# - `t`: the table.
+# - `per_insert`: rows to a statement, 1 or more.
+#
+# Fails as `build.to_sql` and `sqlite.exec` fail.
+function insert_rows(@db: sqlite.Db, name: str, columns: [str], t: model.Table lent, per_insert: i64) -> ()?
+    batch: [[sql.Value]] @= []
+
+    for row in t.rows
+        batch @ batch.push(parameters_of(row))
+
+        if batch.len() == per_insert
+            run_insert(@db, name: name, columns: columns, rows: batch)?
+            batch @ []
+
+    if batch.len() > 0
+        run_insert(@db, name: name, columns: columns, rows: batch)?
+    return ok()
+
+# Runs one INSERT of `rows`.
+#
+# - `db`: the database.
+# - `name`: the table's name.
+# - `columns`: its columns.
+# - `rows`: the rows, one or more.
+#
+# Fails as `build.to_sql` and `sqlite.exec` fail.
+function run_insert(@db: sqlite.Db, name: str, columns: [str], rows: [[sql.Value]]) -> ()?
+    statement = build.to_sql(.insert(query: build.insert(into: name, columns: columns, rows: rows)), dialect: .sqlite)?
+    _ = sqlite.exec(@db, statement: statement.text, params: statement.params)?
+    return ok()
+
+# How many rows of `columns` values one INSERT carries under
+# `MAX_PARAMETERS`, at least one.
+#
+# - `columns`: the values in a row.
+function rows_per_insert(columns: i64) -> i64
+    if columns <= 0
+        return 1
+
+    n = MAX_PARAMETERS / columns
+
+    if n < 1
+        return 1
+    return n
+
+# `name` as an SQL name: each `.` made `_`, since `sql/build` cuts a name at
+# its dots.
+#
+# - `name`: the name.
+function sql_name(name: str) -> str
+    return strings.replace_all(s: name, old: ".", new: "_")
+
+# The type a column is declared with, a space before it, or nothing for a
+# column of several kinds or of nulls alone.
+#
+# - `t`: the table.
+# - `column`: the column, from 0.
+function type_of_column(t: model.Table lent, column: i64) -> str
+    integers: i64 @= 0
+    reals: i64 @= 0
+    texts: i64 @= 0
+    blobs: i64 @= 0
+
+    for row in t.rows
+        match row[column]
+            .null_value => _ = 0
+            .boolean _ => integers @ integers + 1
+            .number n => if decimal.is_integer_text(n.text) && decimal.to_int(n.text).is_err() == false
+                integers @ integers + 1
+            else
+                reals @ reals + 1
+            .text _ | .moment _ | .list _ | .object _ => texts @ texts + 1
+            .bytes _ => blobs @ blobs + 1
+
+    if texts > 0 && integers + reals + blobs == 0
+        return " TEXT"
+
+    if blobs > 0 && integers + reals + texts == 0
+        return " BLOB"
+
+    if reals > 0 && texts + blobs == 0
+        return " REAL"
+
+    if integers > 0 && texts + blobs == 0
+        return " INTEGER"
+    return ""
+
+# The parameters of a row, in order.
+#
+# - `row`: the row's values.
+#
+# A loop and not `row.map(value_of)`: this module also maps the other way,
+# `sql.Value` to `model.Value`, and the two instances of `map` over two types
+# both named `Value` are given one C name in one unit, which clang refuses.
+function parameters_of(row: [model.Value]) -> [sql.Value]
+    out: [sql.Value] @= []
+
+    for v in row
+        out @ out.push(value_of(v))
+
+    return out
+
+# A value as an SQL parameter: an integer an `i64` holds as an integer, any
+# other number as the nearest `f64`, a moment as its RFC 3339 text, a list or
+# an object as its JSON.
+#
+# - `v`: the value.
+function value_of(v: model.Value) -> sql.Value
+    return match v
+        .null_value         => .null_value
+        .boolean b          => .boolean(v: b.v)
+        .number n           => match decimal.to_int(n.text)
+            .ok i  => .integer(v: i)
+            .err _ => .float(v: decimal.to_float(n.text).default(0.0))
+        .text t             => .text(v: t.v)
+        .bytes b            => .blob(v: b.v)
+        .moment m           => .text(v: m.text)
+        .list _ | .object _ => .text(v: model.cell_text(v))
+
+## Querying
+
+# The rows `statement` answers, as a table named `name`.
+#
+# - `db`: the database.
+# - `statement`: one statement of SQL.
+# - `name`: the table's name.
+#
+# A column's name answered twice is made unique by `_2`, `_3` after it. An
+# `INTEGER` comes back an integer, a `REAL` a float written as SQLite writes
+# one (`3.0`), and an instant as its RFC 3339 text in UTC.
+#
+# Fails as `sqlite.query` fails, `invalid` with SQLite's own message.
+function run(@db: sqlite.Db, statement: str, name: str) -> model.Table?
+    rows = sqlite.query(@db, statement: statement, params: [])?
+    columns: [str] @= []
+    seen: {str: i64} @= {}
+
+    for c in rows.columns
+        times = seen[c.name].default(0) + 1
+        seen[c.name] @ times
+
+        if times == 1
+            columns @ columns.push(c.name)
+        else
+            columns @ columns.push(f"{c.name}_{times}")
+
+    out: [[model.Value]] @= []
+
+    for r in rows.rows
+        out @ out.push(values_of(r.values))
+
+    return ok(model.Table(name: name, columns: columns, rows: out))
+
+# The values of a row SQLite answered, in order; a loop for the reason
+# `parameters_of` gives.
+#
+# - `values`: the row's values.
+function values_of(values: [sql.Value]) -> [model.Value]
+    out: [model.Value] @= []
+
+    for v in values
+        out @ out.push(of_sql(v))
+
+    return out
+
+# The value of an SQL value.
+#
+# - `v`: the value SQLite answered.
+function of_sql(v: sql.Value) -> model.Value
+    return match v
+        .null_value => .null_value
+        .boolean b  => .boolean(v: b.v)
+        .integer i  => decimal.of_int(i.v)
+        .float f    => decimal.of_float(f.v)
+        .text t     => .text(v: t.v)
+        .blob b     => .bytes(v: b.v)
+        .instant t  => .moment(text: moments.text_of_instant(t.v))
+
+## Tests
+
+test "load and run: a table's types, a join-free aggregate, exact values in"
+    rows: [[model.Value]] = [
+        [.text(v: "north"), .number(text: "3"), .number(text: "19.99")]
+        [.text(v: "south"), .number(text: "5"), .null_value]
+        [.text(v: "north"), .number(text: "2"), .number(text: "0.01")]
+    ]
+    t = model.Table(name: "sales.q1", columns: ["region", "units", "price"], rows: rows)
+    db @= open("").must()
+    load(@db, t: t).must()
+    answer = run(
+        @db,
+        statement: "SELECT region, SUM(units) AS units, COUNT(price) AS priced FROM sales_q1 GROUP BY region ORDER BY region",
+        name: "q"
+    ).must()
+    assert answer.columns == ["region", "units", "priced"]
+    assert answer.rows == [[.text(v: "north"), .number(text: "5"), .number(text: "2")], [.text(v: "south"), .number(text: "5"), .number(text: "0")]]
+    sqlite.close(@db).must()
+
+test "load: rows past one INSERT's parameters, and a statement that is not SQL"
+    many: [[model.Value]] @= []
+
+    for i in range(from: 0, to: 700)
+        many @ many.push([decimal.of_int(i), .text(v: "x")])
+
+    db @= open("").must()
+    load(@db, t: model.Table(name: "t", columns: ["n", "s"], rows: many)).must()
+    total = run(@db, statement: "SELECT COUNT(*) AS c, SUM(n) AS s FROM t", name: "q").must()
+    assert total.rows == [[.number(text: "700"), .number(text: "244650")]]
+    assert run(@db, statement: "SELEC 1", name: "q").is_err()
+    sqlite.close(@db).must()
+
+test "type_of_column and rows_per_insert"
+    rows: [[model.Value]] = [[.number(text: "1"), .number(text: "1.5"), .text(v: "a"), .null_value]]
+    t = model.Table(name: "t", columns: ["a", "b", "c", "d"], rows: rows)
+    assert type_of_column(t, column: 0) == " INTEGER"
+    assert type_of_column(t, column: 1) == " REAL"
+    assert type_of_column(t, column: 2) == " TEXT"
+    assert type_of_column(t, column: 3) == ""
+    assert rows_per_insert(4) == 249
+    assert rows_per_insert(2000) == 1

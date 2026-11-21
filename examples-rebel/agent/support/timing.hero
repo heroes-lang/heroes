@@ -1,0 +1,73 @@
+# The time the agent reads and waits by: the system's clock for a real run,
+# or a virtual clock for the demo, which starts at a fixed instant and moves
+# only when the program waits on it. A retry's wait and a circuit breaker's
+# open time are then decided exactly as in a real run, and none is slept, so
+# the demo's transcript holds no instant and takes no time a second run would
+# not take again.
+
+use <rebel>/time
+
+# Which clock the agent reads.
+variant Clock
+    # The system's clock: `now` reads it and `wait` sleeps.
+    system
+    # A clock that stands at `at` and moves forward by each wait taken on it,
+    # at once.
+    virtual
+        # The instant it stands at.
+        at: time.Instant
+
+# The virtual clock the demo starts from: 2026-11-21 at midnight UTC, the day
+# this program's demo was written, so that no reader takes it for a reading.
+function demo_clock() -> Clock
+    return .virtual(at: time.date(year: 2026, month: 11, day: 21).must())
+
+# The instant `c` reads.
+#
+# - `c`: the clock.
+#
+# Fails where the system's clock cannot be read, with `time`'s code.
+function now(c: Clock) -> time.Instant?
+    match c
+        .system    => return time.now()
+        .virtual v => return ok(v.at)
+
+# Waits `d` on `c`: sleeps on the system's clock, and moves a virtual clock
+# forward by `d` without sleeping.
+#
+# - `c`: the clock, which a virtual one moves.
+# - `d`: the wait; zero or less waits not at all.
+#
+# Fails `does_not_fit` where a virtual clock would move past the last instant
+# `time` holds.
+function wait(@c: Clock, d: time.Duration) -> ()?
+    if d.nanoseconds <= 0
+        return ok()
+
+    match c
+        .system    => time.sleep(d)
+        .virtual v => c @ .virtual(at: time.add(t: v.at, d: d)?)
+
+    return ok()
+
+# Whether `c` is the demo's virtual clock, which a transcript says so of.
+#
+# - `c`: the clock.
+function is_virtual(c: Clock) -> bool
+    match c
+        .system    => return false
+        .virtual _ => return true
+
+test "wait: a virtual clock moves by the wait and sleeps nothing"
+    c @= demo_clock()
+    start = now(c).must()
+    wait(@c, d: time.seconds(90).must()).must()
+    assert time.between(from: start, to: now(c).must()).must() == time.seconds(90).must()
+    assert is_virtual(c) && !is_virtual(.system)
+
+test "wait: a wait of zero or less leaves a virtual clock where it stands"
+    c @= demo_clock()
+    start = now(c).must()
+    wait(@c, d: time.nanoseconds(0)).must()
+    wait(@c, d: time.nanoseconds(-5)).must()
+    assert now(c).must() == start

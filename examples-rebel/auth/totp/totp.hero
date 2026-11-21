@@ -1,0 +1,121 @@
+# TOTP (RFC 6238) for an account: enrolment, which hands the person a key as
+# an `otpauth://` URI shown as a QR code for their authenticator app, its
+# confirmation by a first code, and the check of a code at login. A key
+# guards login only once a code has confirmed it, so a person who never
+# scanned the code is not locked out by it.
+#
+# The settings are the ones every authenticator app reads: SHA-1, six digits,
+# thirty seconds (`crypto.new_otp`). A code is taken from the step before or
+# after the clock's too, for a phone whose clock runs a little off, and no
+# step is taken twice, as RFC 6238 § 5.2 asks.
+
+use <rebel>/crypto
+use <rebel>/qr
+use <rebel>/random
+
+use accounts/accounts
+use core/ids
+
+# The code of a code that does not hold, or was taken already.
+constant INVALID: str
+    "invalid"
+
+# The bytes of a key: 160 bits, RFC 4226 § 4's recommended length.
+constant KEY_BYTES: i64
+    20
+
+# How many steps before and after the clock's a code may come from.
+constant WINDOW: i64
+    1
+
+# What enrolment hands the person.
+record Enrolment
+    # The `otpauth://totp/` URI.
+    uri: str
+    # The URI as a QR code, in text a terminal or a page shows.
+    picture: str
+    # The QR code's version and level, `4-M`.
+    symbol: str
+
+# `u` with a new TOTP key, not yet confirmed, and what to show its owner.
+#
+# - `g`: the generator the key is drawn from.
+# - `u`: the account, which must have no confirmed key.
+# - `issuer`: the name the app shows above the code, the relying party's.
+#
+# Fails `invalid` where `u` has a confirmed key already: a second enrolment
+# replacing it is a change of credential, asked for by other means.
+function enrol(@g: random.ChaCha8, @u: accounts.User, issuer: str) -> Enrolment?
+    if u.totp_confirmed
+        return fail(code: INVALID, msg: "the account has a TOTP key already")
+
+    u.totp_key @ ids.draw(@g, count: KEY_BYTES)
+    u.totp_last_step @ 0
+    uri = crypto.format_totp_uri(crypto.new_otp(u.totp_key), account: u.username, issuer: issuer)?
+    code = qr.make(uri, level: .medium)?
+    return ok(
+        Enrolment(uri: uri, picture: qr.to_compact_text(code, border: 2, invert: false), symbol: qr.designator_of(code))
+    )
+
+# Checks `code` against `u`'s key at `seconds`, and keeps its step as taken.
+#
+# - `u`: the account; its last step taken moves to the code's.
+# - `code`: the six digits the person typed.
+# - `seconds`: the server's time, seconds since 1970.
+#
+# Fails `invalid` where `u` has no key, the code is none of the window's, or
+# its step was taken already.
+function check(@u: accounts.User, code: str, seconds: i64) -> ()?
+    if u.totp_key.len() == 0
+        return fail(code: INVALID, msg: "the account has no TOTP key")
+
+    step = match crypto.verify_totp(crypto.new_otp(u.totp_key), code: code, seconds: seconds, window: WINDOW)
+        .ok s  => to_i64(s).must()
+        .err _ => return fail(code: INVALID, msg: "the code does not hold")
+
+    if step <= u.totp_last_step
+        return fail(code: INVALID, msg: "the code was used already")
+    u.totp_last_step @ step
+    return ok()
+
+# Confirms `u`'s enrolment by its first `code`.
+#
+# - `u`: the account, whose key now guards its login.
+# - `code`: the six digits the app shows.
+# - `seconds`: the server's time, seconds since 1970.
+#
+# Fails as `check` fails.
+function confirm(@u: accounts.User, code: str, seconds: i64) -> ()?
+    check(@u, code: code, seconds: seconds)?
+    u.totp_confirmed @ true
+    return ok()
+
+test "enrol: a code from the app confirms the key, and is not taken twice"
+    g @= ids.seeded_generator("totp")
+    u @= accounts.new_user(id: "1", username: "ana", email: "a@example.org", created: 0)
+    e = enrol(@g, @u, issuer: "Example").must()
+    assert e.uri.len() > 0 && e.picture.len() > 0
+    now = 1_772_357_400
+    code = crypto.totp(crypto.new_otp(u.totp_key), seconds: now).must()
+    confirm(@u, code: code, seconds: now).must()
+    assert u.totp_confirmed
+
+    match check(@u, code: code, seconds: now)
+        .ok _  => assert false
+        .err x => assert x.msg == "the code was used already"
+
+    later = crypto.totp(crypto.new_otp(u.totp_key), seconds: now + 30).must()
+    check(@u, code: later, seconds: now).must()
+    assert enrol(@g, @u, issuer: "Example").is_err()
+
+test "check: a code of another key, and an account with none"
+    u @= accounts.new_user(id: "1", username: "ana", email: "a@example.org", created: 0)
+    assert check(@u, code: "123456", seconds: 0).is_err()
+    u.totp_key @ [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    real = crypto.totp(crypto.new_otp(u.totp_key), seconds: 59).must()
+
+    wrong = if real == "000000"
+        "111111"
+    else
+        "000000"
+    assert check(@u, code: wrong, seconds: 59).is_err()

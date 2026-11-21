@@ -1,0 +1,169 @@
+# The endpoints that add a second factor to an account and log in by a
+# passkey: TOTP enrolment and its confirmation, passkey registration (both
+# halves need a session), and the two halves of a passwordless login by a
+# passkey, which need none. Each WebAuthn ceremony's challenge is kept by
+# the server between its two halves, in the session for a registration and
+# under a ceremony cookie for a login, and is used once.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/maps
+
+use accounts/accounts
+use accounts/passwords
+use api/accounts_api
+use core/clock
+use core/ids
+use oauth/grants
+use passkeys/passkeys
+use server/answers
+use server/state
+use totp/totp
+
+# How long a passkey login's ceremony lasts, in seconds: the options' own
+# timeout, a minute, and a little more.
+constant CEREMONY_SECONDS: i64
+    120
+
+# `POST /totp/enrol`: a TOTP key for the session's account, and the URI and
+# QR code that hand it to an authenticator app.
+#
+# - `st`: the server, whose account takes the key.
+# - `r`: the request.
+#
+# Fails where the data file cannot be written.
+function totp_enrol(@st: state.State, r: http.Request) -> http.Response?
+    c = match accounts_api.current(st, r: r)
+        .ok found => found
+        .err _    => return ok(accounts_api.login_required())
+
+    u @= c.user
+
+    e = match totp.enrol(@st.rng, @u, issuer: st.settings.passkeys.rp_name)
+        .ok made => made
+        .err x   => return ok(answers.oauth_error(409, error: "totp_enrolled", description: x.msg))
+
+    accounts.put(@st.directory, u: u)?
+    state.save(st)?
+    return ok(
+        answers.json_answer(200, members: {"uri": .text(v: e.uri), "qr": .text(v: e.picture), "symbol": .text(v: e.symbol)})
+    )
+
+# `POST /totp/confirm`: the session's TOTP key confirmed by the form's
+# `code`, so that it guards every later login.
+#
+# - `st`: the server, whose account is changed.
+# - `r`: the request.
+#
+# Fails where the data file cannot be written.
+function totp_confirm(@st: state.State, r: http.Request) -> http.Response?
+    c = match accounts_api.current(st, r: r)
+        .ok found => found
+        .err _    => return ok(accounts_api.login_required())
+
+    u @= c.user
+
+    match totp.confirm(@u, code: answers.field(answers.form(r), key: "code"), seconds: state.now(st))
+        .ok _  => _ = 0
+        .err e => return ok(answers.oauth_error(400, error: "invalid_totp", description: e.msg))
+
+    accounts.put(@st.directory, u: u)?
+    state.save(st)?
+    return ok(answers.json_answer(200, members: {"totp": .text(v: "enabled")}))
+
+# `POST /passkeys/register/options`: the options of a registration for the
+# session's account, its challenge kept in the session.
+#
+# - `st`: the server, whose session keeps the challenge.
+# - `r`: the request.
+#
+# Fails as `passkeys.registration_options` fails.
+function register_options(@st: state.State, r: http.Request) -> http.Response?
+    c = match accounts_api.current(st, r: r)
+        .ok found => found
+        .err _    => return ok(accounts_api.login_required())
+
+    started = passkeys.registration_options(@st.rng, u: c.user, rp: state.relying_party(st))?
+    s @= c.session
+    s.registration_challenge @ started.challenge
+    grants.update_session(@st.grants, token: c.token, s: s)
+    return ok(
+        answers.no_store(http.respond(200, content_type: "application/json", body: bytes.from_text(started.options)))
+    )
+
+# `POST /passkeys/register`: the passkey the body's registration response
+# makes, kept on the session's account.
+#
+# - `st`: the server, whose account takes the passkey.
+# - `r`: the request, its body a `RegistrationResponseJSON`.
+#
+# Fails where the data file cannot be written.
+function register(@st: state.State, r: http.Request) -> http.Response?
+    c = match accounts_api.current(st, r: r)
+        .ok found => found
+        .err _    => return ok(accounts_api.login_required())
+
+    s @= c.session
+    challenge = s.registration_challenge
+    s.registration_challenge @ []
+    grants.update_session(@st.grants, token: c.token, s: s)
+
+    made = match passkeys.finish_registration(response: answers.body_text(r), challenge: challenge, rp: state.relying_party(st), roots: st.roots, at: clock.now(st.clock))
+        .ok p  => p
+        .err e => return ok(answers.oauth_error(400, error: "invalid_registration", description: e.msg))
+
+    if !accounts.holder_of(st.directory, credential_id: made.id).is_err()
+        return ok(answers.oauth_error(409, error: "passkey_taken", description: "that passkey is registered already"))
+    u @= c.user
+    u.passkeys @ u.passkeys.push(made)
+    accounts.put(@st.directory, u: u)?
+    state.save(st)?
+    return ok(
+        answers.json_answer(200, members: {"attestation": .text(v: made.attestation), "passkeys": answers.number(u.passkeys.len())})
+    )
+
+# `POST /passkeys/login/options`: the options of a passwordless login, their
+# challenge kept under a ceremony cookie.
+#
+# - `st`: the server, which keeps the ceremony.
+#
+# Fails as `passkeys.authentication_options` fails.
+function login_options(@st: state.State) -> http.Response?
+    started = passkeys.authentication_options(@st.rng, rp: state.relying_party(st))?
+    ceremony = ids.token(@st.rng, count: 16)
+    kept @= st.ceremonies
+    kept[passwords.digest_hex(ceremony)] @ started.challenge
+    st.ceremonies @ kept
+    answer = answers.no_store(
+        http.respond(200, content_type: "application/json", body: bytes.from_text(started.options))
+    )
+    return ok(
+        answers.with_cookie(answer, name: answers.CEREMONY_COOKIE, value: ceremony, seconds: CEREMONY_SECONDS, secure: false)
+    )
+
+# `POST /passkeys/login`: a session for the account whose passkey signed the
+# body's assertion over the ceremony's challenge. The challenge is spent
+# whatever the answer, so an assertion is taken once.
+#
+# - `st`: the server, which opens the session.
+# - `r`: the request, its body an `AuthenticationResponseJSON`.
+#
+# Fails where the data file cannot be written.
+function login(@st: state.State, r: http.Request) -> http.Response?
+    key = passwords.digest_hex(answers.cookie(r, name: answers.CEREMONY_COOKIE))
+
+    challenge = match st.ceremonies[key]
+        .ok found => found
+        .err _ => return ok(
+            answers.oauth_error(400, error: "invalid_ceremony", description: "no passkey login was begun, or it was used")
+        )
+
+    st.ceremonies @ maps.remove(st.ceremonies, key: key)
+
+    a = match passkeys.finish_authentication(st.directory, response: answers.body_text(r), challenge: challenge, rp: state.relying_party(st))
+        .ok found => found
+        .err e    => return ok(answers.oauth_error(401, error: "invalid_assertion", description: e.msg))
+
+    accounts.put(@st.directory, u: a.user)?
+    state.save(st)?
+    return ok(accounts_api.opened(@st, u: a.user, methods: ["hwk", "user"], return_to: ""))

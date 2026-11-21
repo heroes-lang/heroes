@@ -1,0 +1,143 @@
+# A question asked through OpenAI's Chat Completions (`llm/openai`), which
+# Ollama, vLLM and llama.cpp's server speak too: the prompt's tokens counted on
+# this machine by the model's own encoding, the conversation sent, and while
+# the model calls functions, each call run through the executor and its result
+# sent back as a tool message, until it answers or the rounds run out.
+
+use <rebel>/json
+use <rebel>/llm/openai
+use <rebel>/retries
+use <rebel>/time
+
+use index/encodings
+use llm/attempts
+use llm/conversation
+use retrieval/prompting
+use support/timing
+use tools/executor
+use tools/outcomes
+use tools/toolbox
+
+# How the agent talks to an OpenAI-compatible server.
+record Settings
+    # The client: key, address; its `max_retries` 0, the agent retrying
+    # itself.
+    client: openai.Client
+    # The model, `gpt-4o`, `llama3.2`.
+    model: str
+    # The most tokens of each answer, sent as `max_completion_tokens`; 0
+    # sends none.
+    max_tokens: i64
+    # The most requests of one question's tool loop, at least 1.
+    max_rounds: i64
+    # The most tokens the prompt may take, as counted here; 0 for no limit.
+    budget: i64
+    # What counts the prompt's tokens, made once for the model
+    # (`encodings.counter_for`), since making one reads a whole table.
+    counter: encodings.Counter
+
+# What the model answers to `turn`, the tools of `exec` offered and run.
+#
+# - `s`: the settings.
+# - `exec`: where the tools run; a remote one's client moves on.
+# - `turn`: the user's turn, passages and question (`prompting.user_turn`).
+# - `clock`: the clock retries wait on.
+# - `policy`: how retries wait and when they give up.
+#
+# Fails as the server fails after the retries, `limit` where the prompt is past
+# `s.budget` or the answer was cut, and `permission` where the model refused.
+function ask(s: Settings, @exec: executor.Executor, turn: str, @clock: timing.Clock, policy: retries.Backoff) -> conversation.Answer?
+    notes: [str] @= []
+    counted = encodings.count(s.counter, text: prompting.INSTRUCTIONS) + encodings.count(s.counter, text: turn)
+    notes @ notes.push(f"the prompt is {counted} tokens ({encodings.describe(s.counter)}), counted here")
+
+    if s.budget > 0 && counted > s.budget
+        return fail(code: openai.LIMIT, msg: f"the prompt takes {counted} tokens, past the budget of {s.budget}")
+
+    r @= openai.chat_request(
+        model: s.model,
+        messages: [openai.system_message(prompting.INSTRUCTIONS), openai.user_message(turn)]
+    )
+    r.tools @ functions_of(executor.specs_of(exec))
+
+    if s.max_tokens > 0
+        r @ openai.with_chat_field(r, name: "max_completion_tokens", value: .number(v: to_f64(s.max_tokens)))
+
+    reply @= openai.require_finished(attempts.send_retrying(send: openai.chat, client: s.client, request: r, advise: advise, clock: @clock, policy: policy, notes: @notes)?)?
+    uses: [conversation.ToolUse] @= []
+    rounds: i64 @= 1
+    input_tokens: i64 @= reply.usage.input_tokens
+    output_tokens: i64 @= reply.usage.output_tokens
+
+    while openai.tool_calls_of(reply).len() > 0 && rounds < s.max_rounds
+        results: [json.Value] @= []
+
+        for call in openai.tool_calls_of(reply)
+            outcome = run_call(@exec, call: call)
+            uses @ uses.push(conversation.ToolUse(name: call.name, input: call.arguments, outcome: outcome))
+            results @ results.push(openai.tool_message(tool_call_id: call.id, content: outcome_text(outcome)))
+
+        r @ openai.with_tool_messages(r, reply: reply, results: results)
+        reply @ openai.require_finished(attempts.send_retrying(send: openai.chat, client: s.client, request: r, advise: advise, clock: @clock, policy: policy, notes: @notes)?)?
+        rounds @ rounds + 1
+        input_tokens @ input_tokens + reply.usage.input_tokens
+        output_tokens @ output_tokens + reply.usage.output_tokens
+
+    if openai.tool_calls_of(reply).len() > 0
+        notes @ notes.push(f"the model still called tools after {rounds} rounds, the most allowed")
+
+    return ok(
+        conversation.Answer(provider: "openai", model: reply.model, text: openai.text_of(reply), uses: uses, rounds: rounds, input_tokens: input_tokens, output_tokens: output_tokens, notes: notes)
+    )
+
+# What one call answers: its arguments checked whole first, since a model may
+# write text that is not JSON, and broken ones answered as an error.
+function run_call(@exec: executor.Executor, call: openai.ToolCall) -> outcomes.Outcome
+    match openai.arguments_of(call)
+        .ok input => return executor.call(@exec, name: call.name, input: input)
+        .err e    => return outcomes.refused(f"the arguments of {call.name} are not a JSON object: {e.msg}")
+
+# What a tool message carries: Chat Completions has no field that marks a
+# result an error, so an error says so in its first words.
+#
+# - `o`: what the tool answered.
+function outcome_text(o: outcomes.Outcome) -> str
+    if o.is_error
+        return "Error: " + o.text
+
+    return o.text
+
+# The tools of `specs` as Chat Completions declares functions.
+#
+# - `specs`: the tools offered.
+function functions_of(specs: [toolbox.Spec]) -> [openai.Function]
+    out: [openai.Function] @= []
+
+    for t in specs
+        out @ out.push(openai.Function(name: t.name, description: t.description, parameters: t.schema, strict: false))
+
+    return out
+
+# Whether a failure of the server is worth another attempt, as its answer says
+# (`openai.failure_of`); a failure of the connection is retried, one the agent
+# found itself is not.
+#
+# - `code`: the failure's code.
+# - `msg`: its message.
+function advise(code: str, msg: str) -> attempts.Advice
+    match openai.failure_of(msg)
+        .ok f => return attempts.Advice(
+            retryable: f.retryable,
+            wait: f.wait,
+            summary: f"{f.status} {f.code}",
+            words: f.message
+        )
+        .err _ => return attempts.Advice(
+            retryable: code == openai.CLOSED || code == openai.TIMEOUT,
+            wait: time.nanoseconds(0),
+            summary: code,
+            words: msg
+        )
+
+test "outcome_text: an error says so first"
+    assert outcome_text(outcomes.refused("no")) == "Error: no" && outcome_text(outcomes.done("yes")) == "yes"

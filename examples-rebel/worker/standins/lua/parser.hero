@@ -1,0 +1,387 @@
+# The statements and blocks of a Lua 5.1 script, read into a `syntax.Chunk`
+# by recursive descent over the lexer's tokens, as Lua's own parser reads
+# them; the expressions are `parse_expr`'s. The two modules are a ring:
+# a statement holds expressions, and a function literal, an expression, holds
+# a block. `parse` is the entry; `block` and `function_body` are what
+# `parse_expr` calls back.
+#
+# Nesting is bounded, 100 levels of blocks and expressions together, half
+# of Lua 5.1's `LUAI_MAXCCALLS`, so a script written to nest without end is
+# refused rather than allowed to run the stand-in out of stack when the
+# engine walks it by recursion.
+
+use standins/lua/lexer
+use standins/lua/parse_expr
+use standins/lua/syntax
+
+# The deepest nesting of blocks and expressions a script may hold.
+constant MOST_LEVELS: i64
+    100
+
+# A script being read: its tokens, where the reading stands, how deep it is,
+# and the nodes made so far, each list the arena a `syntax.Chunk` holds.
+record Parser
+    # Every token, the last `eof`.
+    tokens: [lexer.Token]
+    # The index of the next token.
+    at: i64
+    # The blocks and expressions open around the next token.
+    depth: i64
+    # The expressions made.
+    exprs: [syntax.Expr]
+    # The statements made.
+    stmts: [syntax.Stmt]
+    # The blocks made.
+    blocks: [[i64]]
+    # The functions made, the main one first.
+    protos: [syntax.Proto]
+
+# The next token, not taken.
+#
+# - `p`: the parser.
+function peek(p: Parser lent) -> lexer.Token
+    return p.tokens[p.at]
+
+# The next token's kind, not taken.
+#
+# - `p`: the parser.
+function next_kind(p: Parser lent) -> str
+    return p.tokens[p.at].kind
+
+# Takes the next token and answers it; at `eof` it stays.
+#
+# - `p`: the parser, moved past the token.
+function advance(@p: Parser) -> lexer.Token
+    t = p.tokens[p.at]
+
+    if p.at < p.tokens.len() - 1
+        p.at @ p.at + 1
+    return t
+
+# Takes the next token where it is of `kind`, and answers whether it was.
+#
+# - `p`: the parser.
+# - `kind`: the kind wanted.
+function accept(@p: Parser, kind: str) -> bool
+    if next_kind(p) == kind
+        _ = advance(@p)
+        return true
+    return false
+
+# A failure at the next token, worded as Lua's parser words one:
+# `user_script:3: 'end' expected near 'x'`.
+#
+# - `p`: the parser.
+# - `what`: what was wrong.
+function refused<T>(p: Parser lent, what: str) -> T?
+    t = peek(p)
+    return fail(code: lexer.SCRIPT_ERROR, msg: f"user_script:{t.line}: {what} near '{t.text}'")
+
+# Takes the next token, which must be of `kind`. Fails where it is not.
+#
+# - `p`: the parser.
+# - `kind`: the kind wanted.
+function expect(@p: Parser, kind: str) -> lexer.Token?
+    if next_kind(p) != kind
+        return refused(p, what: f"'{kind}' expected")
+    return ok(advance(@p))
+
+# Takes a name. Fails where the next token is none.
+#
+# - `p`: the parser.
+function expect_name(@p: Parser) -> str?
+    if next_kind(p) != "name"
+        return refused(p, what: "<name> expected")
+    return ok(advance(@p).text)
+
+# Opens one more level of nesting. Fails past `MOST_LEVELS`.
+#
+# - `p`: the parser, one level deeper.
+function enter(@p: Parser) -> ()?
+    p.depth @ p.depth + 1
+
+    if p.depth > MOST_LEVELS
+        return refused(p, what: "chunk has too many syntax levels")
+    return ok()
+
+# Closes the level `enter` opened.
+#
+# - `p`: the parser, one level shallower.
+function leave(@p: Parser)
+    p.depth @ p.depth - 1
+
+# Adds `e` to `exprs` and answers its index.
+#
+# - `exprs`: the arena, grown by one.
+# - `e`: the expression.
+function push_expr(@exprs: [syntax.Expr], e: syntax.Expr) -> i64
+    exprs @ exprs.push(e)
+    return exprs.len() - 1
+
+# Adds `s` to `stmts` and answers its index.
+#
+# - `stmts`: the arena, grown by one.
+# - `s`: the statement.
+function push_stmt(@stmts: [syntax.Stmt], s: syntax.Stmt) -> i64
+    stmts @ stmts.push(s)
+    return stmts.len() - 1
+
+# Whether a token of `kind` ends a block: `else`, `elseif`, `end`, `until`
+# or the end of the script.
+#
+# - `kind`: the token's kind.
+function ends_block(kind: str) -> bool
+    return kind == "else" || kind == "elseif" || kind == "end" || kind == "until" || kind == "eof"
+
+# The statements up to the end of a block, and the block's index.
+#
+# - `p`: the parser, moved to the token that ends the block.
+#
+# A `return` must be the block's last statement, as Lua's grammar has it.
+function block(@p: Parser) -> i64?
+    enter(@p)?
+    body: [i64] @= []
+
+    while !ends_block(next_kind(p))
+        if next_kind(p) == "return"
+            body @ body.push(return_statement(@p)?)
+            break
+
+        at = statement(@p)?
+
+        if at >= 0
+            body @ body.push(at)
+
+    leave(@p)
+    p.blocks @ p.blocks.push(body)
+    return ok(p.blocks.len() - 1)
+
+# `return [explist] [;]`.
+#
+# - `p`: the parser, at the `return`.
+function return_statement(@p: Parser) -> i64?
+    _ = advance(@p)
+    values: [i64] @= []
+
+    if !ends_block(next_kind(p)) && next_kind(p) != ";"
+        values @ parse_expr.expression_list(@p)?
+
+    _ = accept(@p, kind: ";")
+    return ok(push_stmt(@p.stmts, .return_values(values: values)))
+
+# One statement and its index; -1 for a lone `;`.
+#
+# - `p`: the parser, at the statement's first token.
+function statement(@p: Parser) -> i64?
+    t = peek(p)
+
+    match t.kind
+        ";" =>
+            _ = advance(@p)
+            return ok(-1)
+        "if" => return if_statement(@p)
+        "while" =>
+            _ = advance(@p)
+            cond = parse_expr.expression(@p)?
+            _ = expect(@p, kind: "do")?
+            body = block(@p)?
+            _ = expect(@p, kind: "end")?
+            return ok(push_stmt(@p.stmts, .while_loop(cond: cond, block: body)))
+        "do" =>
+            _ = advance(@p)
+            body = block(@p)?
+            _ = expect(@p, kind: "end")?
+            return ok(push_stmt(@p.stmts, .do_block(block: body)))
+        "for" => return for_statement(@p)
+        "repeat" =>
+            _ = advance(@p)
+            body = block(@p)?
+            _ = expect(@p, kind: "until")?
+            cond = parse_expr.expression(@p)?
+            return ok(push_stmt(@p.stmts, .repeat_loop(block: body, cond: cond)))
+        "function" =>
+            _ = advance(@p)
+            path: [str] @= [expect_name(@p)?]
+
+            while accept(@p, kind: ".")
+                path @ path.push(expect_name(@p)?)
+
+            proto = function_body(@p)?
+            return ok(push_stmt(@p.stmts, .function_decl(path: path, proto: proto, line: t.line)))
+        "local" => return local_statement(@p)
+        "break" =>
+            _ = advance(@p)
+            return ok(push_stmt(@p.stmts, .break_loop))
+        _ => return expression_statement(@p)
+
+# `if c then b {elseif c then b} [else b] end`.
+#
+# - `p`: the parser, at the `if`.
+function if_statement(@p: Parser) -> i64?
+    _ = advance(@p)
+    conds: [i64] @= [parse_expr.expression(@p)?]
+    _ = expect(@p, kind: "then")?
+    blocks: [i64] @= [block(@p)?]
+    otherwise: i64 @= -1
+
+    while true
+        if accept(@p, kind: "elseif")
+            conds @ conds.push(parse_expr.expression(@p)?)
+            _ = expect(@p, kind: "then")?
+            blocks @ blocks.push(block(@p)?)
+        else if accept(@p, kind: "else")
+            otherwise @ block(@p)?
+            _ = expect(@p, kind: "end")?
+            break
+        else
+            _ = expect(@p, kind: "end")?
+            break
+
+    return ok(push_stmt(@p.stmts, .if_chain(conds: conds, blocks: blocks, otherwise: otherwise)))
+
+# `for v = a, b [, c] do ... end` or `for k, v in explist do ... end`.
+#
+# - `p`: the parser, at the `for`.
+function for_statement(@p: Parser) -> i64?
+    line = advance(@p).line
+    first = expect_name(@p)?
+
+    if accept(@p, kind: "=")
+        start = parse_expr.expression(@p)?
+        _ = expect(@p, kind: ",")?
+        stop = parse_expr.expression(@p)?
+        step: i64 @= -1
+
+        if accept(@p, kind: ",")
+            step @ parse_expr.expression(@p)?
+
+        _ = expect(@p, kind: "do")?
+        body = block(@p)?
+        _ = expect(@p, kind: "end")?
+        return ok(
+            push_stmt(@p.stmts, .numeric_for(variable: first, start: start, stop: stop, step: step, block: body, line: line))
+        )
+
+    names: [str] @= [first]
+
+    while accept(@p, kind: ",")
+        names @ names.push(expect_name(@p)?)
+
+    _ = expect(@p, kind: "in")?
+    values = parse_expr.expression_list(@p)?
+    _ = expect(@p, kind: "do")?
+    body = block(@p)?
+    _ = expect(@p, kind: "end")?
+    return ok(push_stmt(@p.stmts, .generic_for(names: names, values: values, block: body, line: line)))
+
+# `local function f ...` or `local a, b [= explist]`.
+#
+# - `p`: the parser, at the `local`.
+function local_statement(@p: Parser) -> i64?
+    _ = advance(@p)
+
+    if accept(@p, kind: "function")
+        name = expect_name(@p)?
+        proto = function_body(@p)?
+        return ok(push_stmt(@p.stmts, .local_function(name: name, proto: proto)))
+
+    names: [str] @= [expect_name(@p)?]
+
+    while accept(@p, kind: ",")
+        names @ names.push(expect_name(@p)?)
+
+    values: [i64] @= []
+
+    if accept(@p, kind: "=")
+        values @ parse_expr.expression_list(@p)?
+
+    return ok(push_stmt(@p.stmts, .local_assign(names: names, values: values)))
+
+# Whether expression `at` may stand on the left of `=`: a name or an index.
+#
+# - `p`: the parser.
+# - `at`: the expression's index.
+function is_place(p: Parser lent, at: i64) -> bool
+    match p.exprs[at]
+        .name _ | .index _ => return true
+        .nil_value | .boolean _ | .number _ | .text _ | .vararg | .call _ | .method_call _ | .function_literal _ | .binary _ | .unary _ | .table _ =>
+            return false
+
+# Whether expression `at` is a call, the one expression that may stand alone.
+#
+# - `p`: the parser.
+# - `at`: the expression's index.
+function is_call(p: Parser lent, at: i64) -> bool
+    match p.exprs[at]
+        .call _ | .method_call _ => return true
+        .nil_value | .boolean _ | .number _ | .text _ | .vararg | .name _ | .index _ | .function_literal _ | .binary _ | .unary _ | .table _ =>
+            return false
+
+# An assignment, or a call standing alone.
+#
+# - `p`: the parser, at the statement's first token.
+function expression_statement(@p: Parser) -> i64?
+    first = parse_expr.suffixed(@p)?
+
+    if next_kind(p) == "=" || next_kind(p) == ","
+        targets: [i64] @= [first]
+
+        while accept(@p, kind: ",")
+            targets @ targets.push(parse_expr.suffixed(@p)?)
+
+        line = expect(@p, kind: "=")?.line
+
+        for target in targets
+            if !is_place(p, at: target)
+                return refused(p, what: "syntax error")
+
+        values = parse_expr.expression_list(@p)?
+        return ok(push_stmt(@p.stmts, .assign(targets: targets, values: values, line: line)))
+
+    if !is_call(p, at: first)
+        return refused(p, what: "syntax error")
+    return ok(push_stmt(@p.stmts, .call(expr: first)))
+
+# `(params) block end`, a function's parameters and body, and the index of
+# the function made.
+#
+# - `p`: the parser, at the `(`.
+function function_body(@p: Parser) -> i64?
+    _ = expect(@p, kind: "(")?
+    params: [str] @= []
+    takes_vararg: bool @= false
+
+    if next_kind(p) != ")"
+        while true
+            if accept(@p, kind: "...")
+                takes_vararg @ true
+                break
+
+            params @ params.push(expect_name(@p)?)
+
+            if !accept(@p, kind: ",")
+                break
+
+    _ = expect(@p, kind: ")")?
+    body = block(@p)?
+    _ = expect(@p, kind: "end")?
+    p.protos @ p.protos.push(syntax.Proto(params: params, takes_vararg: takes_vararg, block: body))
+    return ok(p.protos.len() - 1)
+
+# The chunk `source` writes: its main function first in `protos`, taking
+# `...` as every chunk does.
+#
+# - `source`: the script's text.
+#
+# Fails `script_error` as `lexer.tokens` fails, and where the tokens are not
+# a Lua 5.1 chunk, the message naming the line and the token.
+function parse(source: str) -> syntax.Chunk?
+    p @= Parser(tokens: lexer.tokens(source)?, at: 0, depth: 0, exprs: [], stmts: [], blocks: [], protos: [])
+    p.protos @ p.protos.push(syntax.Proto(params: [], takes_vararg: true, block: -1))
+    main = block(@p)?
+
+    if next_kind(p) != "eof"
+        return refused(p, what: "'<eof>' expected")
+
+    p.protos[0].block @ main
+    return ok(syntax.Chunk(exprs: p.exprs, stmts: p.stmts, blocks: p.blocks, protos: p.protos))

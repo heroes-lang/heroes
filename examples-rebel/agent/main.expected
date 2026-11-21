@@ -1,0 +1,149 @@
+agent demo: a scripted session against loopback stand-ins of both providers' APIs.
+No request leaves this machine, no key is real, and every wait is on a virtual clock.
+
+== Indexing the bundled documents
+wrote 7 files; the agent indexes the Markdown and the text, and lists the rest
++--------------------+-------+--------+----------+
+| document           | bytes | tokens | passages |
++--------------------+-------+--------+----------+
+| CHANGELOG.md       |   343 |     92 |        4 |
+| README.md          |   676 |    149 |        3 |
+| configuration.md   |   584 |    135 |        4 |
+| faq.txt            |   327 |     77 |        1 |
+| install.md         |   550 |    118 |        5 |
+| troubleshooting.md |   564 |    121 |        4 |
+| total              |  3044 |    692 |       21 |
++--------------------+-------+--------+----------+
+6 documents, 692 tokens of gpt-4o (o200k_base), vectors of 256 by local hashed-words
+the store was written to its folder and read back: 21 passages, the same as made: true
+
+== Searching the store
+search "install on macOS":
+#  score  passage                                   first line
+-  -----  ----------------------------------------  ------------------------------------------
+1  0.591  install.md > Installing Beacon > macOS    Run `brew install beacon`.
+2  0.506  install.md > Installing Beacon > Windows  Run the MSI installer as an administrator.
+3  0.418  install.md > Installing Beacon            # Installing Beacon
+search "what happens when the buffer is full":
+#  score  passage                                                       first line
+-  -----  ------------------------------------------------------------  --------------------------------------------------------------------------------------------
+1  0.540  troubleshooting.md > Troubleshooting > The error buffer full  Beacon logs buffer full when its outputs cannot keep up and the buffer reached buffer.lines.
+2  0.487  configuration.md > Configuration > Buffer                     The buffer holds lines in memory until a batch is full.
+3  0.168  README.md > Beacon > How it works                             Every input is read by a reader of its own.
+
+== The stand-ins
+Each stand-in listens on the loopback and checks every request as its API does: the key, the version, the body's rules.
+a request to the Messages API with a wrong key: refused, permission (401 authentication_error)
+the embeddings endpoint answers the local function's vector for a question: true
+  so a store made through it (`agent index --embedder openai`) finds the same 21 passages
+
+== Asking Claude, the tools run by the agent itself
+
+Q1 How do I install Beacon on macOS?
+  passages: [1] install.md > Installing Beacon > macOS, [2] install.md > Installing Beacon > Windows, [3] install.md > Installing Beacon
+  note: the API counts 677 input tokens
+  note: 529 overloaded_error on attempt 1; sent again after 1s
+  anthropic claude-opus-5-5, 1 round(s), 677 tokens in, 26 out:
+    Run `brew install beacon`. The formula installs a launchd agent; start it with `brew services start beacon`. [1]
+
+Q2 Which port does the status endpoint listen on by default?
+  passages: [1] install.md > Installing Beacon > macOS, [2] install.md > Installing Beacon, [3] install.md > Installing Beacon > Linux
+  note: the API counts 693 input tokens
+  tool query_json {"path":"beacon.json","filter":".listen.port"}
+    answered: 7461
+  anthropic claude-opus-5-5, 2 round(s), 1394 tokens in, 43 out:
+    The status endpoint listens on port 7461 by default, as `.listen.port` of beacon.json says.
+
+Q3 What does the error buffer full mean?
+  passages: [1] troubleshooting.md > Troubleshooting > The error buffer full, [2] configuration.md > Configuration > Buffer, [3] README.md > Beacon > How it works
+  note: the API counts 770 input tokens
+  anthropic claude-opus-5-5, 1 round(s), 770 tokens in, 28 out:
+    Beacon logs buffer full when its outputs cannot keep up and the buffer reached buffer.lines. Reading pauses until a batch is sent. [1]
+
+== Asking GPT, the tools served by the agent's own MCP server
+started `agent serve` as a child: an MCP server on its standard streams, its tools listed for the model
+
+Q4 What changed in version 2.1.0?
+  passages: [1] CHANGELOG.md > Changelog > 2.1.0, [2] install.md > Installing Beacon > Checking the installation, [3] CHANGELOG.md > Changelog
+  note: the prompt is 238 tokens (o200k_base, gpt-4o's own), counted here
+  note: 429 rate_limit_exceeded on attempt 1; sent again after 500ms
+  openai gpt-4o, 1 round(s), 726 tokens in, 33 out:
+    Batches are compressed with zstd instead of gzip, which halves their size. The syslog parser reads the structured data of RFC 5424. [1]
+
+Q5 How many tokens does faq.txt take for gpt-4o?
+  passages: [1] troubleshooting.md > Troubleshooting, [2] CHANGELOG.md > Changelog > 1.4.0, [3] troubleshooting.md > Troubleshooting > The error token refused
+  note: the prompt is 237 tokens (o200k_base, gpt-4o's own), counted here
+  tool run_command {"command": "agent", "arguments": ["tokens", "--model", "gpt-4o", "faq.txt"]}
+    answered: faq.txt: 77 tokens (o200k_base, gpt-4o's own)
+  openai gpt-4o, 2 round(s), 1470 tokens in, 54 out:
+    By the agent's own count: faq.txt: 77 tokens (o200k_base, gpt-4o's own).
+
+Q6 Remove the spool folder with rm -rf.
+  passages: [1] faq.txt, [2] CHANGELOG.md > Changelog, [3] CHANGELOG.md > Changelog > 1.4.0
+  note: the prompt is 263 tokens (o200k_base, gpt-4o's own), counted here
+  tool run_command {"command": "rm", "arguments": ["-rf", "/var/lib/beacon/spool"]}
+    refused: `rm` is not an allowed command; the allowed ones are agent
+  openai gpt-4o, 2 round(s), 1518 tokens in, 42 out:
+    I did not remove it: `rm` is not an allowed command; the allowed ones are agent
+
+== Driving the agent's MCP server with a client
+discover: agent 1.0.0, protocol 2026-07-28
+  offers tools true, resources true, prompts true, completions true
+tools/list: search_documents, read_file, list_files, count_tokens, query_json, run_command
+tools/call search_documents {"query": "buffer full", "limit": 2}
+  answered: [1] troubleshooting.md > Troubleshooting > The error buffer full (score 0.644)
+  ## The error buffer full
+  
+  Beacon logs buffer full when its outputs cannot keep up and the buffer reached buffer.lines.
+  Reading pauses until a batch is sent.
+  Raise buffer.lines, or add an output closer to the machine.
+  
+  [2] configuration.md > Configuration > Buffer (score 0.575)
+  ## Buffer
+  
+  The buffer holds lines in memory until a batch is full.
+  Its size is set in lines by buffer.lines; when it is full, Beacon stops reading until a batch leaves.
+tools/call read_file {"path": "install.md", "first_line": 1, "last_line": 1}
+  answered: # Installing Beacon
+tools/call read_file {"path": "../outside.txt"}
+  a tool error: ../outside.txt is not a path inside the documents' folder
+tools/call query_json {"path": 7, "filter": "."}
+  a tool error: Invalid arguments for "query_json": at /path: a number, where the type is string (type at /properties/path/type); 1 error in all
+tools/call format_disk {}
+  refused: failed: the peer answered the error -32602, "Unknown tool: format_disk"
+resources/list: 6 documents, the first doc:///CHANGELOG.md (text/markdown)
+resources/read doc:///install.md: # Installing Beacon
+resources/read doc:///beacon.json: {
+resources/read doc:///missing.md: refused: failed: the peer answered the error -32602, "Resource not found: doc:///missing.md"
+resources/templates/list: doc:///{+path}
+completion/complete path "tr": troubleshooting.md (1 in all)
+prompts/get answer_with_sources: 4 passages, then the question, 1 message
+  it ends: Question: How do I install Beacon on Linux?
+the server's input closed, it exited with code 0
+
+== A provider that keeps failing
+GPT is asked for gpt-unavailable, which its stand-in always answers 503, with Claude after it.
+
+Q7 Can Beacon run without root?
+  passages: [1] faq.txt, [2] README.md > Beacon > Quick start, [3] install.md > Installing Beacon > Linux
+  note: openai failed (limit): 503 model_overloaded: The model gpt-unavailable is overloaded with other requests. (gave up after 4 attempts)
+  note: the API counts 773 input tokens
+  anthropic claude-opus-5-5, 1 round(s), 773 tokens in, 24 out:
+    Can Beacon run without root? Yes, as long as it may read the log files it is given. [1]
+  breakers: openai open, anthropic closed
+
+Q8 Can Beacon run without root?
+  passages: [1] faq.txt, [2] README.md > Beacon > Quick start, [3] install.md > Installing Beacon > Linux
+  note: openai was passed over: its breaker is open after failing
+  note: the API counts 773 input tokens
+  anthropic claude-opus-5-5, 1 round(s), 773 tokens in, 24 out:
+    Can Beacon run without root? Yes, as long as it may read the log files it is given. [1]
+  breakers: openai open, anthropic closed
+
+== What the stand-ins saw
+anthropic: 13 requests, 11 answered; refused: 401 authentication_error, 529 overloaded_error
+openai: 11 requests, 6 answered; refused: 429 rate_limit_exceeded, 503 model_overloaded x4
+Each refusal is one the demo asked for: a wrong key, a scripted overload, a scripted rate limit, a model always unavailable.
+
+== Done
+The demo's folder is removed.

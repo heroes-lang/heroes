@@ -1,0 +1,440 @@
+# `datakit view`: a table in a scrollable full-screen view, drawn by `tui` in
+# immediate mode, and the keys that move through it.
+#
+# The view is a value the program holds: the table, its cells made visible
+# once, the selected row and column, the first column shown, the sort. Each
+# frame is drawn from it whole into a buffer of the screen's size; `tui`
+# writes only the cells that changed. A bordered block holds the table, its
+# title the table's name and shape, a scrollbar on its right border between
+# its corners; the line under it says where the selection stands. Arrows and
+# `h` `j` `k` `l` move, Page Up and Page Down move a screen, Home and End go
+# to the first and the last row, `s` sorts by the selected column (again: the
+# other way), and `q`, Escape or Ctrl-C leave.
+#
+# The same drawing serves the headless run, `--headless WxH --keys ...`,
+# which draws into a buffer of that size and prints each frame as text: a
+# test and a script of the view need no terminal.
+
+use <rebel>/term
+use <rebel>/tui
+use <rebel>/unicode/segment
+
+use model/model
+use output/layout
+use query/pipeline
+
+## Limits
+
+# The widest a column is drawn, in screen columns.
+constant MAX_COLUMN_WIDTH: i64
+    24
+
+## The view
+
+# What the view shows and where its selection stands.
+record View
+    # The table, in the order the sort last gave.
+    table: model.Table
+    # The cells' texts, made visible by `layout.visible`, row by row.
+    shown: [[str]]
+    # The selected row and column, and the first row shown.
+    selection: tui.Selection
+    # The first column shown, from 0.
+    first_column: i64
+    # The column the rows are sorted by, empty for the file's order.
+    sorted_by: str
+    # Whether that sort is descending.
+    descending: bool
+    # The rows a page holds, as the last frame drew them.
+    page: i64
+    # Whether a key asked to leave.
+    done: bool
+
+# A view of `t`, its first row and first column selected.
+#
+# - `t`: the table.
+function view_of(t: model.Table) -> View
+    s @= tui.selection()
+    tui.select_first(@s, count: t.rows.len())
+
+    if t.columns.len() > 0
+        tui.select_column(@s, index: 0)
+    return View(
+        table: t,
+        shown: shown_of(t),
+        selection: s,
+        first_column: 0,
+        sorted_by: "",
+        descending: false,
+        page: 1,
+        done: false
+    )
+
+# The visible texts of `t`'s cells.
+#
+# - `t`: the table.
+function shown_of(t: model.Table lent) -> [[str]]
+    out: [[str]] @= []
+
+    for row in t.rows
+        out @ out.push(row.map(layout.cell_shown))
+
+    return out
+
+## Keys
+
+# Changes `v` as `key` asks.
+#
+# - `v`: the view, changed in place.
+# - `key`: the key pressed; one the view does not use changes nothing.
+function press(@v: View, key: term.Key)
+    rows = v.table.rows.len()
+    columns = v.table.columns.len()
+
+    match key
+        .down => tui.move_selection(@v.selection, count: rows, by: 1)
+        .up => tui.move_selection(@v.selection, count: rows, by: -1)
+        .page_down => tui.move_selection(@v.selection, count: rows, by: v.page)
+        .page_up => tui.move_selection(@v.selection, count: rows, by: -v.page)
+        .home => tui.select_first(@v.selection, count: rows)
+        .end => tui.select_last(@v.selection, count: rows)
+        .right => tui.move_column(@v.selection, count: columns, by: 1)
+        .left => tui.move_column(@v.selection, count: columns, by: -1)
+        .escape => v.done @ true
+        .control c => if c.letter == "c"
+            v.done @ true
+        .character c => press_character(@v, c: c.text)
+        .enter | .tab | .backspace | .insert | .delete | .function_key _ | .other _ => _ = 0
+
+# Changes `v` as the character `c` asks: `j` `k` `h` `l` move, `g` and `G` go
+# to the first and the last row, `s` sorts, `q` leaves.
+#
+# - `v`: the view, changed in place.
+# - `c`: the character typed.
+function press_character(@v: View, c: str)
+    rows = v.table.rows.len()
+    columns = v.table.columns.len()
+
+    if c == "j"
+        tui.move_selection(@v.selection, count: rows, by: 1)
+    else if c == "k"
+        tui.move_selection(@v.selection, count: rows, by: -1)
+    else if c == "l"
+        tui.move_column(@v.selection, count: columns, by: 1)
+    else if c == "h"
+        tui.move_column(@v.selection, count: columns, by: -1)
+    else if c == "g"
+        tui.select_first(@v.selection, count: rows)
+    else if c == "G"
+        tui.select_last(@v.selection, count: rows)
+    else if c == "s"
+        sort_by_selected(@v)
+    else if c == "q"
+        v.done @ true
+
+# Sorts the rows by the selected column, ascending, or descending where they
+# are sorted by it ascending already; the first row is then selected.
+#
+# - `v`: the view, its table and cells reordered.
+function sort_by_selected(@v: View)
+    match tui.selected_column_of(v.selection)
+        .ok column =>
+            name = v.table.columns[column]
+            descending = v.sorted_by == name && !v.descending
+
+            key = if descending
+                "-" + name
+            else
+                name
+
+            match pipeline.sort_rows(v.table, by: [key])
+                .ok sorted =>
+                    v.table @ sorted
+                    v.shown @ shown_of(sorted)
+                    v.sorted_by @ name
+                    v.descending @ descending
+                    tui.select_first(@v.selection, count: sorted.rows.len())
+                .err _ => _ = 0
+        .err _ => _ = 0
+
+## Drawing
+
+# Draws `v` into `buffer` over all of its area.
+#
+# - `v`: the view; its first row shown and its page are moved to what the
+#   area holds.
+# - `buffer`: the buffer drawn into.
+function draw(@v: View, @buffer: tui.Buffer)
+    area = buffer.area
+    parts = tui.split(area, layout: tui.new_layout(.vertical, constraints: [.fill(weight: 1), .length(n: 1)]))
+    title = f" {v.table.name}: {v.table.rows.len()} rows, {v.table.columns.len()} columns "
+    block = tui.with_title(tui.bordered(), title: title)
+    tui.draw_block(@buffer, area: parts[0], block: block)
+    inner = tui.inner_of(block, area: parts[0])
+    v.page @ max_of(n: inner.height - 1, other: 1)
+    widths = widths_of(v)
+    fitted = columns_shown(@v, widths: widths, room: inner.width - 3)
+    tui.draw_table(@buffer, area: inner, table: table_of_view(v, columns: fitted, widths: widths), state: @v.selection)
+    bar = tui.new_scrollbar(.vertical_right, content_length: v.table.rows.len(), position: tui.offset_of(v.selection))
+    edge = tui.Rect(
+        x: parts[0].x,
+        y: parts[0].y + 1,
+        width: parts[0].width,
+        height: max_of(n: parts[0].height - 2, other: 0)
+    )
+    tui.draw_scrollbar(@buffer, area: edge, scrollbar: bar)
+    _ = tui.draw_text(
+        @buffer,
+        x: parts[1].x,
+        y: parts[1].y,
+        text: status_of(v),
+        style: term.plain(),
+        width: parts[1].width
+    )
+
+# The widest text of each column, its header included, at most
+# `MAX_COLUMN_WIDTH`.
+#
+# - `v`: the view.
+function widths_of(v: View lent) -> [i64]
+    out: [i64] @= []
+    column: i64 @= 0
+
+    while column < v.table.columns.len()
+        widest: i64 @= segment.width_of(layout.visible(v.table.columns[column]))
+
+        for row in v.shown
+            w = segment.width_of(row[column])
+
+            if w > widest
+                widest @ w
+
+        if widest > MAX_COLUMN_WIDTH
+            widest @ MAX_COLUMN_WIDTH
+        out @ out.push(max_of(n: widest, other: 1))
+        column @ column + 1
+
+    return out
+
+# The columns shown, from the first column shown on as many as `room` holds,
+# that first column moved so the selected column is among them.
+#
+# - `v`: the view, its first column shown moved.
+# - `widths`: each column's width.
+# - `room`: the screen columns the table may take.
+function columns_shown(@v: View, widths: [i64], room: i64) -> [i64]
+    count = widths.len()
+
+    if count == 0
+        return []
+
+    selected = tui.selected_column_of(v.selection).default(0)
+
+    if selected < v.first_column
+        v.first_column @ selected
+
+    while !fits(widths, from: v.first_column, to: selected, room: room) && v.first_column < selected
+        v.first_column @ v.first_column + 1
+
+    shown: [i64] @= []
+    used: i64 @= 0
+    column: i64 @= v.first_column
+
+    while column < count && (shown.len() == 0 || used + widths[column] + 1 <= room)
+        shown @ shown.push(column)
+        used @ used + widths[column] + 1
+        column @ column + 1
+
+    return shown
+
+# Whether the columns `from` to `to`, both shown, take no more than `room`.
+#
+# - `widths`: each column's width.
+# - `from`: the first column.
+# - `to`: the last column, `from` or after it.
+# - `room`: the screen columns there are.
+function fits(widths: [i64], from: i64, to: i64, room: i64) -> bool
+    used: i64 @= 0
+    column: i64 @= from
+
+    while column <= to
+        used @ used + widths[column] + 1
+        column @ column + 1
+
+    return used <= room
+
+# The `tui` table of the view's columns `columns`: the header, a row for each
+# row, the selected row marked with `>`.
+#
+# - `v`: the view.
+# - `columns`: the columns shown, by index.
+# - `widths`: each column's width.
+function table_of_view(v: View lent, columns: [i64], widths: [i64]) -> tui.Table
+    rows: [[str]] @= []
+
+    for row in v.shown
+        cells: [str] @= []
+
+        for c in columns
+            cells @ cells.push(row[c])
+
+        rows @ rows.push(cells)
+
+    constraints: [tui.Constraint] @= []
+    heading: [str] @= []
+
+    for c in columns
+        constraints @ constraints.push(.length(n: widths[c]))
+        heading @ heading.push(header_of(v, column: c))
+
+    t @= tui.new_table(rows, widths: constraints)
+    bold = term.with_attribute(term.plain(), a: .bold)
+    header @= tui.new_row(heading)
+    header.style @ bold
+    header.bottom_margin @ 0
+    t.header @ [header]
+    t.highlight_symbol @ "> "
+    t.highlight_spacing @ .always
+    t.column_highlight_style @ term.with_attribute(term.plain(), a: .underline)
+    return t
+
+# The header of column `column`: its name, an arrow after it where the rows
+# are sorted by it.
+#
+# - `v`: the view.
+# - `column`: the column, from 0.
+function header_of(v: View lent, column: i64) -> str
+    name = layout.visible(v.table.columns[column])
+
+    if v.table.columns[column] != v.sorted_by
+        return name
+
+    if v.descending
+        return name + " v"
+    return name + " ^"
+
+# The status line: the selected row and column of how many, the column's name
+# and the keys.
+#
+# - `v`: the view.
+function status_of(v: View lent) -> str
+    rows = v.table.rows.len()
+    columns = v.table.columns.len()
+
+    row_text = match tui.selected_of(v.selection)
+        .ok r  => f"row {r + 1}/{rows}"
+        .err _ => f"row -/{rows}"
+
+    column_text = match tui.selected_column_of(v.selection)
+        .ok c  => f"column {c + 1}/{columns} {layout.visible(v.table.columns[c])}"
+        .err _ => f"column -/{columns}"
+
+    return f" {row_text}  {column_text}  s sort  q quit"
+
+# The larger of `n` and `other`.
+#
+# - `n`: a number.
+# - `other`: another.
+function max_of(n: i64, other: i64) -> i64
+    if n > other
+        return n
+    return other
+
+## Running
+
+# The frames of a headless run: the view drawn in a buffer of `width` by
+# `height` before any key and after each key of `presses`, each frame as its
+# lines of text, the run stopping after a key that leaves.
+#
+# - `t`: the table.
+# - `width`: the buffer's columns, 20 or more.
+# - `height`: the buffer's rows, 5 or more.
+# - `presses`: the keys pressed, in order.
+function headless(t: model.Table, width: i64, height: i64, presses: [term.Key]) -> [[str]]
+    v @= view_of(t)
+    frames: [[str]] @= []
+    area = tui.Rect(x: 0, y: 0, width: width, height: height)
+    first @= tui.blank(area)
+    draw(@v, @first)
+    frames @ frames.push(tui.to_lines(first))
+
+    for key in presses
+        if v.done
+            break
+        press(@v, key: key)
+
+        if !v.done
+            frame @= tui.blank(area)
+            draw(@v, @frame)
+            frames @ frames.push(tui.to_lines(frame))
+
+    return frames
+
+# Runs the view on the terminal until a key leaves it.
+#
+# - `t`: the table.
+#
+# The terminal is put back by `tui.stop` on every way out but an abort. Fails
+# as `tui.start` fails, `unsupported` where the standard output is no
+# terminal, and as reading an event fails.
+function run(t: model.Table) -> ()?
+    screen @= tui.start(tui.default_options())?
+    v @= view_of(t)
+    outcome = loop(@screen, @v)
+    stopped = tui.stop(@screen)
+    outcome?
+    stopped?
+    return ok()
+
+# Draws and reads keys until the view is done.
+#
+# - `screen`: the terminal, in full-screen mode.
+# - `v`: the view.
+#
+# Fails as `tui.flush` and `tui.read_event` fail.
+function loop(@screen: tui.Terminal, @v: View) -> ()?
+    while !v.done
+        frame @= tui.frame_of(screen)
+        draw(@v, @frame)
+        tui.flush(@screen, frame: frame, cursor: .hidden)?
+
+        match tui.read_event(@screen)?
+            .key k                                                          => press(@v, key: k.key)
+            .resized _ | .mouse _ | .pasted _ | .focus_gained | .focus_lost => _ = 0
+
+    return ok()
+
+## Tests
+
+# A table of five rows for the tests below.
+function sample() -> model.Table
+    rows: [[model.Value]] = [
+        [.text(v: "north"), .number(text: "3")]
+        [.text(v: "south"), .number(text: "12")]
+        [.text(v: "east"), .number(text: "7")]
+        [.text(v: "west"), .null_value]
+        [.text(v: "north"), .number(text: "1")]
+    ]
+    return model.Table(name: "sales", columns: ["region", "units"], rows: rows)
+
+test "headless: the first frame, a move down and a quit"
+    frames = headless(sample(), width: 30, height: 6, presses: [.down, .character(text: "q"), .down])
+    assert frames.len() == 2
+    assert frames[0][0] == "┌ sales: 5 rows, 2 columns ──┐"
+    assert frames[1][5] == " row 2/5  column 1/2 region  s"
+
+test "press: a sort by the selected column, then the other way"
+    v @= view_of(sample())
+    press(@v, key: .right)
+    press(@v, key: .character(text: "s"))
+    assert v.sorted_by == "units"
+    assert v.shown.map(first_cell) == ["north", "north", "east", "south", "west"]
+    press(@v, key: .character(text: "s"))
+    assert v.descending
+    assert v.shown.map(first_cell) == ["south", "east", "north", "north", "west"]
+
+# The first cell of a row's texts, for the tests.
+#
+# - `row`: the row.
+function first_cell(row: [str]) -> str
+    return row[0]

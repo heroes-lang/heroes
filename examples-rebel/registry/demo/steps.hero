@@ -1,0 +1,129 @@
+# The demo session's building blocks: a line said to the transcript, the
+# demo's keys turned into PEM and signatures, a package's folder written and
+# packed as a publisher's tool packs it, a publication made and said, and an
+# attempt that should be refused, said with the registry's answer.
+
+use <rebel>/crypto/keypairs
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/strings
+
+use client/client
+use demo/sources
+use packages/digest
+use packages/pack
+use packages/unpack
+use signing/signatures
+use signing/signers
+
+## Steps
+
+# Adds `line` to the transcript, its white space at the end taken off: a
+# diff's context line for an empty line is a single space, and a transcript
+# compared byte for byte must not hang on what an editor strips.
+#
+# - `out`: the transcript.
+# - `line`: the line.
+function say(@out: [str], line: str)
+    out @ out.push(strings.trim_end(line))
+
+# The ids of `list`, joined by commas.
+#
+# - `list`: keys.
+function key_ids(list: [signers.PublisherKey]) -> str
+    ids: [str] @= []
+
+    for k in list
+        ids @ ids.push(k.id)
+
+    return ids.join(", ")
+
+# The `PUBLIC KEY` block of the demo's key of `who`.
+#
+# - `who`: `ana`, `bruno` or `mallory`.
+#
+# Fails as `signers.private_from_seed` and `signers.public_pem_of` do.
+function public_pem_of(who: str) -> str?
+    key @= signers.private_from_seed(sources.seed_of(who))?
+    text = signers.public_pem_of(key)
+    keypairs.close_private(@key)?
+    return text
+
+# The signature block of the demo's key of `who` over `name`, `version` and
+# `archive`'s digest, naming the key `key_id`.
+#
+# - `who`: whose key signs.
+# - `key_id`: the id the block names, which need not be the signing key's.
+# - `name`: the package's name.
+# - `version`: the version.
+# - `archive`: the archive's bytes.
+#
+# Fails as `signatures.sign` does.
+function signed(who: str, key_id: str, name: str, version: str, archive: [u8]) -> str?
+    key @= signers.private_from_seed(sources.seed_of(who))?
+    text = signatures.sign(key, key_id: key_id, package: name, version: version, digest: digest.of_bytes(archive))
+    keypairs.close_private(@key)?
+    return text
+
+# The archive of `files`, written as the folder `<name>-<version>` under
+# `work` and packed as `pack` packs a publisher's folder.
+#
+# - `work`: the folder the session works in.
+# - `name`: the package's name.
+# - `version`: the version.
+# - `files`: the folder's files.
+# - `packing`: how the tar is compressed.
+#
+# Fails as the disk and `pack.pack` fail.
+function packed(work: str, name: str, version: str, files: [sources.Source], packing: unpack.Packing) -> [u8]?
+    folder = f"{name}-{version}"
+    dir = path.join_all([work, folder])
+
+    for f in files
+        file = path.join_all([dir, path.from_slash(f.name)])
+        fs.make_dir_all(path.parent(file))?
+        fs.write_atomic_text(path: file, text: f.text)?
+
+    return pack.pack(dir: dir, folder: folder, packing: packing)
+
+# Packs, signs and publishes a folder, and says what the registry answered.
+#
+# - `out`: the transcript.
+# - `c`: the publisher's client.
+# - `work`: the folder the session works in.
+# - `who`: whose key signs.
+# - `key_id`: the signing key's id.
+# - `name`: the package's name.
+# - `version`: the version.
+# - `files`: the folder's files.
+# - `packing`: how the tar is compressed.
+#
+# Fails where packing, signing or publishing fails.
+function publish_folder(@out: [str], @c: client.Client, work: str, who: str, key_id: str, name: str, version: str, files: [sources.Source], packing: unpack.Packing) -> ()?
+    archive = packed(work: work, name: name, version: version, files: files, packing: packing)?
+    opened = unpack.open(archive, limits: unpack.Limits(unpacked_bytes: 1_000_000, files: 100))?
+    done = client.publish(@c, name: name, version: version, archive: archive, signature: signed(who: who, key_id: key_id, name: name, version: version, archive: archive)?)?
+
+    word = if done.status == 201
+        "published"
+    else
+        "already published, the same bytes"
+    say(
+        @out,
+        f"{who}: {name} {version} as {unpack.extension_of(packing)}, {opened.files.len()} files: {done.status} {word}, {digest.short(done.digest)}"
+    )
+    return ok()
+
+# Sends a publication that must be refused, and says how it was.
+#
+# - `out`: the transcript.
+# - `c`: the client that sends it.
+# - `what`: what the attempt is, as the transcript says it.
+# - `name`: the package's name.
+# - `version`: the version.
+# - `archive`: the archive's bytes.
+# - `signature`: the signature's block.
+function attempt(@out: [str], @c: client.Client, what: str, name: str, version: str, archive: [u8], signature: str)
+    match client.publish(@c, name: name, version: version, archive: archive, signature: signature)
+        .ok done => say(@out, f"{what}: accepted with {done.status}, which the registry should have refused")
+        .err e   => say(@out, f"{what}: refused, {e.msg}")

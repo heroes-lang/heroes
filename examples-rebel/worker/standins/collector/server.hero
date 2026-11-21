@@ -1,0 +1,188 @@
+# An OpenTelemetry collector on loopback for the demo: the stand-in that
+# `tracing.export_spans` and `otlp.export` post to in place of a real
+# collector, speaking OTLP over HTTP with protobuf as a collector's
+# `otlphttp` receiver does. It reads `/v1/traces`, `/v1/metrics` and
+# `/v1/logs`, keeps what it decoded, and answers each request `200` with an
+# empty export response, so an exporter sees its request accepted whole.
+#
+# It checks what a receiver checks: the method, the path, a body of
+# `application/x-protobuf` (gzip undone where the request says so) that
+# decodes as the path's request, else `400`, `404`, `405` or `415`. Each
+# exporter's request comes on a connection of its own, which the stand-in
+# reads whole once it is ready, bounded by a deadline, answers and closes.
+
+use <rebel>/compress
+use <rebel>/http
+use <rebel>/io
+use <rebel>/maps
+use <rebel>/net
+use <rebel>/poll
+use <rebel>/protobuf
+use <rebel>/strings
+
+use standins/collector/received
+use standins/collector/schema
+
+# How long a connection may take to send its request, from its accepting.
+constant CONNECTION_MS: i64
+    10_000
+
+# The largest request body read, after gzip is undone: 16 MiB.
+constant MOST_BODY: i64
+    16_777_216
+
+# The collector: its listener, what it decoded, and its connections.
+record Collector
+    # The listener on 127.0.0.1.
+    listener: net.Listener
+    # The listener's key in the loop's set.
+    listen_key: i64
+    # The schema of the requests it reads.
+    schema: protobuf.Schema
+    # Every span received, in the order received.
+    spans: [received.ReceivedSpan]
+    # Every metric received, in the order received.
+    metrics: [received.ReceivedMetric]
+    # How many requests of each path it accepted.
+    accepted: {str: i64}
+    # How many requests it refused.
+    refused: i64
+    # Each connection not yet answered, by its key in the loop's set.
+    conns: {i64: net.Conn}
+
+# A collector listening on 127.0.0.1 at a port the system chooses, its
+# listener added to `set`.
+#
+# - `set`: the loop's set.
+#
+# Fails as `net.listen`, `poll.add_listener` and the schema fail.
+function start(set: poll.Set) -> Collector?
+    l = net.listen(host: "127.0.0.1", port: 0)?
+    key = poll.add_listener(set, l: l)?
+    return ok(
+        Collector(listener: l, listen_key: key, schema: schema.otlp_schema()?, spans: [], metrics: [], accepted: {}, refused: 0, conns: {})
+    )
+
+# The base URL exporters post to: `http://127.0.0.1:<port>`.
+#
+# - `c`: the collector.
+function base_url(c: Collector lent) -> str
+    return f"http://127.0.0.1:{c.listener.address.port}"
+
+# Whether the event of `key` is one of the collector's.
+#
+# - `c`: the collector.
+# - `key`: the event's key.
+function owns(c: Collector lent, key: i64) -> bool
+    return key == c.listen_key || !c.conns[key].is_err()
+
+# Acts on the event of `key`: accepts a connection, or reads its request
+# whole, answers it and closes it.
+#
+# - `c`: the collector.
+# - `set`: the loop's set.
+# - `key`: the event's key, one `owns` answers true for.
+#
+# Fails only where the listener fails; a connection that fails is closed.
+function serve(@c: Collector, set: poll.Set, key: i64) -> ()?
+    if key == c.listen_key
+        conn = net.accept(c.listener, deadline_ms: CONNECTION_MS)?
+        added = poll.add_conn(set, c: conn, interest: .read)?
+        c.conns[added] @ conn
+        return ok()
+
+    conn @= c.conns[key].must()
+    reader @= io.reader(conn.stream)
+
+    match http.next_request(@reader, limits: http.default_limits())
+        .ok r =>
+            answer @= answer_of(@c, r: r)
+            answer.closing @ true
+            _ = http.write_answer(conn.stream, r: r, response: answer).is_err()
+        .err _ => c.refused @ c.refused + 1
+
+    _ = poll.remove(set, key: key).is_err()
+    _ = io.close(@conn.stream).is_err()
+    c.conns @ maps.remove(c.conns, key: key)
+    return ok()
+
+# The body of `r`, gzip undone where its `Content-Encoding` says gzip.
+# Fails `unsupported` for another encoding, and as `compress.decompress`
+# fails.
+#
+# - `r`: the request.
+function body_of(r: http.Request) -> [u8]?
+    match http.value_of(r.headers, name: "Content-Encoding")
+        .err _ => return ok(r.body)
+        .ok encoding =>
+            lower = strings.to_lower_ascii(strings.trim(encoding))
+
+            if lower == "identity" || lower == ""
+                return ok(r.body)
+
+            if lower == "gzip"
+                return compress.decompress(r.body, format: .gzip, limit: MOST_BODY)
+            return fail(code: "unsupported", msg: f"a body encoded {encoding}")
+
+# The answer to `r`, the request decoded and kept where it is one.
+#
+# - `c`: the collector, which keeps what it decoded.
+# - `r`: the request.
+function answer_of(@c: Collector, r: http.Request) -> http.Response
+    path = r.url.path
+
+    if path != "/v1/traces" && path != "/v1/metrics" && path != "/v1/logs"
+        c.refused @ c.refused + 1
+        return http.respond_text(404, text: f"no receiver at {path}\n")
+
+    if r.method != "POST"
+        c.refused @ c.refused + 1
+        refusal @= http.respond_text(405, text: "only POST is received\n")
+        refusal.headers @ http.with_header(refusal.headers, name: "Allow", value: "POST")
+        return refusal
+
+    kind = strings.to_lower_ascii(http.value_of(r.headers, name: "Content-Type").default(""))
+
+    if !strings.has_prefix(s: kind, prefix: "application/x-protobuf")
+        c.refused @ c.refused + 1
+        return http.respond_text(415, text: "the stand-in reads application/x-protobuf alone, not OTLP's JSON\n")
+
+    body = match body_of(r)
+        .ok b => b
+        .err e =>
+            c.refused @ c.refused + 1
+            return http.respond_text(400, text: e.msg + "\n")
+
+    if path == "/v1/traces"
+        match received.spans_of(c.schema, body: body)
+            .ok spans =>
+                for s in spans
+                    c.spans @ c.spans.push(s)
+            .err e =>
+                c.refused @ c.refused + 1
+                return http.respond_text(400, text: f"no ExportTraceServiceRequest: {e.msg}\n")
+    else if path == "/v1/metrics"
+        match received.metrics_of(c.schema, body: body)
+            .ok metrics =>
+                for m in metrics
+                    c.metrics @ c.metrics.push(m)
+            .err e =>
+                c.refused @ c.refused + 1
+                return http.respond_text(400, text: f"no ExportMetricsServiceRequest: {e.msg}\n")
+
+    c.accepted[path] @ c.accepted[path].default(0) + 1
+    return http.respond(200, content_type: "application/x-protobuf", body: [])
+
+# Closes every connection and the listener.
+#
+# - `c`: the collector.
+# - `set`: the loop's set, which loses them.
+function close(@c: Collector, set: poll.Set)
+    for key in keys(c.conns)
+        conn @= c.conns[key].must()
+        _ = poll.remove(set, key: key).is_err()
+        _ = io.close(@conn.stream).is_err()
+
+    c.conns @ {}
+    _ = poll.remove(set, key: c.listen_key).is_err()
+    _ = net.close_listener(@c.listener).is_err()

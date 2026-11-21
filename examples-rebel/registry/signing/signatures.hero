@@ -1,0 +1,203 @@
+# What a publisher signs, and the detached signature the registry keeps and
+# serves beside each archive.
+#
+# A publisher never signs the archive's bytes alone: it signs a statement
+# naming the package, the version and the archive's digest, so a signature
+# lifted from one package cannot be replayed under another name or version
+# whose archive happens to hold the same bytes. The statement is four lines
+# of text, each ending in a line feed:
+#
+#     heroes-registry-signature-v1
+#     package textkit
+#     version 1.0.0
+#     digest sha256-<64 digits>
+#
+# The signature travels as a PEM block labelled `HEROES SIGNATURE`, whose
+# RFC 1421 headers repeat the key id and the three names, and whose data is
+# the 64 bytes of the Ed25519 signature: a reader sees what was signed
+# without decoding anything, and the registry checks every header against
+# what it computed itself.
+
+use <rebel>/bytes
+use <rebel>/crypto/keypairs
+use <rebel>/pem
+
+## Codes
+
+# The code of a signature block that is not one, or a signature that does not
+# hold.
+constant INVALID: str
+    "invalid"
+
+## Signatures
+
+# The label of a signature's block.
+constant LABEL: str
+    "HEROES SIGNATURE"
+
+# The first line of every statement: the form's name and version.
+constant FORM: str
+    "heroes-registry-signature-v1"
+
+# How many bytes an Ed25519 signature holds.
+constant SIGNATURE_BYTES: i64
+    64
+
+# A detached signature, as its block holds it.
+record Signature
+    # The key id of the key that signed.
+    key_id: str
+    # The package the statement names.
+    package: str
+    # The version the statement names.
+    version: str
+    # The archive's digest the statement names.
+    digest: str
+    # The Ed25519 signature of the statement, 64 bytes.
+    signature: [u8]
+
+# The statement a publisher signs for `package` at `version` whose archive is
+# `digest`.
+#
+# - `package`: the package's name.
+# - `version`: the version, as SemVer writes it.
+# - `digest`: the archive's digest, as `digest.of_bytes` writes it.
+function statement(package: str, version: str, digest: str) -> [u8]
+    return bytes.from_text(f"{FORM}\npackage {package}\nversion {version}\ndigest {digest}\n")
+
+# The signature block of `key` over the statement of `package`, `version` and
+# `digest`.
+#
+# - `key`: the publisher's private key, which stays open.
+# - `key_id`: the id the registry knows its public half by.
+# - `package`: the package's name.
+# - `version`: the version.
+# - `digest`: the archive's digest.
+#
+# Fails as `keypairs.sign` does, `unsupported` where the platform has no
+# Ed25519.
+function sign(key: keypairs.PrivateKey, key_id: str, package: str, version: str, digest: str) -> str?
+    signed = keypairs.sign(key, scheme: .ed25519, message: statement(package: package, version: version, digest: digest))?
+    return pem.format(
+        pem.Block(label: LABEL, headers: headers_of(key_id: key_id, package: package, version: version, digest: digest), data: signed)
+    )
+
+# The headers of a signature's block, in the order they are written.
+#
+# - `key_id`: the signing key's id.
+# - `package`: the package's name.
+# - `version`: the version.
+# - `digest`: the archive's digest.
+function headers_of(key_id: str, package: str, version: str, digest: str) -> [pem.Header]
+    return [
+        pem.Header(name: "Key-Id", value: key_id)
+        pem.Header(name: "Package", value: package)
+        pem.Header(name: "Version", value: version)
+        pem.Header(name: "Digest", value: digest)
+    ]
+
+# The signature a block of `text` holds.
+#
+# - `text`: the block, as `sign` wrote it.
+#
+# Fails `invalid` where the block is of another label, lacks one of its four
+# headers, or holds a signature of another length; and as `pem.parse` fails.
+function parse(text: str) -> Signature?
+    block = pem.parse(text)?
+
+    if block.label != LABEL
+        return fail(code: INVALID, msg: f"the block is labelled \"{block.label}\", not \"{LABEL}\"")
+
+    if block.data.len() != SIGNATURE_BYTES
+        return fail(code: INVALID, msg: f"the signature holds {block.data.len()} bytes, not {SIGNATURE_BYTES}")
+    return ok(
+        Signature(key_id: pem.header_of(block, name: "Key-Id")?, package: pem.header_of(block, name: "Package")?, version: pem.header_of(block, name: "Version")?, digest: pem.header_of(block, name: "Digest")?, signature: block.data)
+    )
+
+# `sig` written back as its block.
+#
+# - `sig`: the signature.
+#
+# Fails as `pem.format` does.
+function format(sig: Signature) -> str?
+    return pem.format(
+        pem.Block(label: LABEL, headers: headers_of(key_id: sig.key_id, package: sig.package, version: sig.version, digest: sig.digest), data: sig.signature)
+    )
+
+# Checks that `sig` is the signature, by the key whose DER is `public_der`, of
+# the statement the caller computed: its own package, version and digest,
+# never the ones the block's headers claim.
+#
+# - `sig`: the signature, as `parse` read it.
+# - `public_der`: the key it names, as the registry keeps it.
+# - `package`: the package the caller is publishing or fetching.
+# - `version`: the version.
+# - `digest`: the digest the caller computed over the archive's bytes.
+#
+# Fails `invalid` where a header names another package, version or digest,
+# or the signature does not hold; and as `keypairs.verify_der` fails.
+function verify(sig: Signature, public_der: [u8], package: str, version: str, digest: str) -> ()?
+    if sig.package != package || sig.version != version
+        return fail(code: INVALID, msg: f"the signature is for {sig.package} {sig.version}, not {package} {version}")
+
+    if sig.digest != digest
+        return fail(code: INVALID, msg: f"the signature names the digest {sig.digest}, and the archive's is {digest}")
+    message = statement(package: package, version: version, digest: digest)
+
+    if !keypairs.verify_der(public_der: public_der, scheme: .ed25519, message: message, signature: sig.signature)?
+        return fail(code: INVALID, msg: f"the signature does not verify against the key {sig.key_id}")
+    return ok()
+
+test "statement: four lines, each ended"
+    s = bytes.to_text(statement(package: "textkit", version: "1.0.0", digest: "sha256-00")).must()
+    assert s == "heroes-registry-signature-v1\npackage textkit\nversion 1.0.0\ndigest sha256-00\n"
+
+test "sign: RFC 8032's first key, a block read back and verified"
+    key @= keypairs.decode_private_raw(
+        .ed25519,
+        raw: bytes.parse_hex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60").must()
+    ).must()
+    text = sign(key, key_id: "k1", package: "textkit", version: "1.0.0", digest: "sha256-ab").must()
+    public @= keypairs.public_of(key).must()
+    der = keypairs.encode_public_der(public).must()
+    keypairs.close_public(@public).must()
+    keypairs.close_private(@key).must()
+    sig = parse(text).must()
+    assert sig.key_id == "k1" && sig.package == "textkit" && sig.signature.len() == 64
+    assert format(sig).must() == text
+    verify(sig, public_der: der, package: "textkit", version: "1.0.0", digest: "sha256-ab").must()
+
+    match verify(sig, public_der: der, package: "textkit", version: "1.0.1", digest: "sha256-ab")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match verify(sig, public_der: der, package: "textkit", version: "1.0.0", digest: "sha256-ac")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "verify: a signature with one bit changed does not hold"
+    key @= keypairs.decode_private_raw(
+        .ed25519,
+        raw: bytes.parse_hex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60").must()
+    ).must()
+    text = sign(key, key_id: "k1", package: "p", version: "1.0.0", digest: "sha256-ab").must()
+    public @= keypairs.public_of(key).must()
+    der = keypairs.encode_public_der(public).must()
+    keypairs.close_public(@public).must()
+    keypairs.close_private(@key).must()
+    sig @= parse(text).must()
+    sig.signature[0] @ to_u8(to_i64(sig.signature[0]).must() ^ 1).must()
+
+    match verify(sig, public_der: der, package: "p", version: "1.0.0", digest: "sha256-ab")
+        .ok _  => assert false
+        .err e => assert e.msg == "the signature does not verify against the key k1"
+
+test "parse: another label and a short signature refused"
+    assert parse("-----BEGIN PUBLIC KEY-----\nAAAA\n-----END PUBLIC KEY-----\n").is_err()
+    short = pem.format(
+        pem.Block(label: LABEL, headers: headers_of(key_id: "k", package: "p", version: "1.0.0", digest: "d"), data: [1, 2, 3])
+    ).must()
+
+    match parse(short)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID

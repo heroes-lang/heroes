@@ -1,0 +1,184 @@
+# The demo client's tools: a browser's session with its cookie jar, a page's
+# CSRF token read from its form, a form posted, an API call with a token, and
+# the one-line accounts of a response the transcript prints. A line never
+# holds a port, a time, a token or a path of the machine, so the transcript
+# is the same on every run.
+
+use <rebel>/html
+use <rebel>/http
+use <rebel>/http/suffixes
+use <rebel>/json
+use <rebel>/strings
+use <rebel>/url
+
+## Sessions
+
+# A browser's session at the server on loopback at `port`: its cookies kept
+# and sent, a cookie's `Domain` judged by the Public Suffix List, the
+# language asked `language`.
+#
+# - `port`: the server's port, as text.
+# - `language`: the `Accept-Language` sent.
+function browser(port: str, language: str) -> http.Session
+    s @= http.default_session()
+    s.base @ f"http://127.0.0.1:{port}"
+    s.is_public_suffix @ suffixes.is_public_suffix
+    s.headers @ [http.Header(name: "Accept-Language", value: language)]
+    return s
+
+## Requests
+
+# The response to `GET target`, asking `accept`, its redirects not followed.
+#
+# - `s`: the session.
+# - `target`: the path and query.
+# - `accept`: the `Accept` sent.
+function get(@s: http.Session, target: str, accept: str) -> http.Response?
+    r @= http.request(method: http.METHOD_GET, target: target)?
+    r.headers @ http.with_header(r.headers, name: "Accept", value: accept)
+    return http.fetch_once(@s, r: r)
+
+# The CSRF token of the form on the page `target`: what a browser holds once
+# it has shown the page.
+#
+# - `s`: the session; the page's cookie is kept.
+# - `target`: the page.
+#
+# Fails `not_found` where the page holds no `csrf_token` field.
+function csrf_from(@s: http.Session, target: str) -> str?
+    page = get(@s, target: target, accept: "text/html")?
+    doc = html.parse(http.text_of(page)?)
+    input = html.select(doc, within: html.ROOT, selector: "input[name=csrf_token]")?
+    return html.attribute(doc, node: input, name: "value")
+
+# The response to the form `pairs` posted to `target`, its redirect not
+# followed.
+#
+# - `s`: the session.
+# - `target`: where the form posts.
+# - `pairs`: the fields, in order.
+# - `accept`: the `Accept` sent.
+function post_form(@s: http.Session, target: str, pairs: [url.Pair], accept: str) -> http.Response?
+    r @= http.with_form(http.request(method: http.METHOD_POST, target: target)?, pairs: pairs)
+    r.headers @ http.with_header(r.headers, name: "Accept", value: accept)
+    return http.fetch_once(@s, r: r)
+
+# `key` and `value` as a form's field.
+#
+# - `key`: the field's name.
+# - `value`: its value.
+function field(key: str, value: str) -> url.Pair
+    return url.Pair(key: key, value: value)
+
+# The response to an API call: `method` on `target`, `token` sent as a bearer
+# token where it is not "", `body` sent as JSON where it is not `null`.
+#
+# - `s`: the session.
+# - `method`: the method.
+# - `target`: the path and query.
+# - `token`: the token, or "".
+# - `body`: the body, or `null` for none.
+function call(@s: http.Session, method: str, target: str, token: str, body: json.Value) -> http.Response?
+    r @= http.request(method: method, target: target)?
+
+    if !json.is_null(body)
+        r @ http.with_json(r, value: body)?
+
+    if token != ""
+        r @ http.with_bearer_auth(r, token: token)
+
+    r.headers @ http.with_header(r.headers, name: "Accept", value: "application/json")
+    return http.fetch_once(@s, r: r)
+
+## What a line says
+
+# The path a redirect sends to, its query and fragment kept: `303 -> /`.
+#
+# - `response`: the response.
+function redirect_of(response: http.Response) -> str
+    to = http.value_of(response.headers, name: "Location").default("")
+
+    return match url.parse(to)
+        .ok u =>
+            if u.host == ""
+                to
+            else
+                url.request_target(u)
+        .err _ => to
+
+# The body of `response` as JSON, `null` where it is no JSON.
+#
+# - `response`: the response.
+function json_body(response: http.Response) -> json.Value
+    return http.json_of(response).default(.null_value)
+
+# The member `key` of `v` as text: a text as it is, any other value as JSON
+# writes it, "" where it is absent.
+#
+# - `v`: an object.
+# - `key`: the member.
+function shown(v: json.Value, key: str) -> str
+    return match json.member(v, key: key)
+        .ok m =>
+            match m
+                .text t                                                    => t.v
+                .null_value | .boolean _ | .number _ | .list _ | .object _ => json.format(m).default("?")
+        .err _ => ""
+
+# The texts of the list `key` of `v`, joined by `, `.
+#
+# - `v`: an object.
+# - `key`: the member, a list of texts.
+function listed(v: json.Value, key: str) -> str
+    items = json.items_of(json.member(v, key: key).default(.null_value)).default([])
+    out: [str] @= []
+
+    for item in items
+        out @ out.push(json.text_of(item).default(json.format(item).default("?")))
+
+    return out.join(", ")
+
+# The member `key` of each object of the list `list_key` of `v`, joined.
+#
+# - `v`: an object.
+# - `list_key`: the member holding a list of objects.
+# - `key`: the member read of each.
+function each_of(v: json.Value, list_key: str, key: str) -> str
+    items = json.items_of(json.member(v, key: list_key).default(.null_value)).default([])
+    out: [str] @= []
+
+    for item in items
+        out @ out.push(shown(item, key: key))
+
+    return out.join(", ")
+
+# Each field's problem of a 422's `errors`, one line each, sorted by the
+# field's name: `name: is taken`.
+#
+# - `response`: the response.
+function field_errors(response: http.Response) -> [str]
+    members = json.members_of(json.member(json_body(response), key: "errors").default(.null_value)).default({})
+    out: [str] @= []
+
+    for k in sort(keys(members))
+        message = json.text_of(members[k].must()).default("?")
+        out @ out.push(f"{k}: {message}")
+
+    return out
+
+# Whether `text` holds `part`.
+#
+# - `text`: the text.
+# - `part`: what is looked for.
+function holds(text: str, part: str) -> bool
+    return strings.contains(s: text, substr: part)
+
+test "redirect_of: an absolute location told as its path, a path as it is"
+    r = http.respond_redirect(303, location: "http://127.0.0.1:5000/notes/a?x=1")
+    assert redirect_of(r) == "/notes/a?x=1"
+    assert redirect_of(http.respond_redirect(303, location: "/")) == "/"
+
+test "field_errors: sorted by field, each with its problem"
+    v = json.parse("{\"errors\": {\"password\": \"short\", \"email\": \"bad\"}}").must()
+    r = http.respond_json(422, value: v).must()
+    assert field_errors(r) == ["email: bad", "password: short"]

@@ -1,0 +1,279 @@
+# The demo: a whole session of the agent, self-contained and the same at every
+# run, which `agent demo --work DIR` prints and `agent.expected` holds byte
+# for byte.
+#
+# It writes the bundled documents into a folder of its own, indexes them,
+# searches the store, starts a loopback stand-in of each provider's API on a
+# thread, asks three questions through each, drives the agent's own MCP
+# server as a child with a client, shows a provider's circuit breaker opening,
+# and prints what the stand-ins saw; then it removes its folder. No request
+# leaves the machine and no key is a real one. Every wait is on a virtual
+# clock, and no path, port, time or count of processors is printed.
+#
+# Every thread and child it starts is waited for whatever fails on the way,
+# so a failure ends the demo with its message and never with a thread owed.
+
+use <rebel>/fs
+use <rebel>/llm/anthropic
+use <rebel>/llm/openai
+use <rebel>/os
+use <rebel>/path
+use <rebel>/process
+use <rebel>/time
+
+use app/views
+use demo/bundle
+use demo/mcp_tour
+use demo/questions
+use index/embedder
+use index/encodings
+use index/indexer
+use index/store
+use mcp/spawned
+use retrieval/nearest
+use standins/claude_api
+use standins/loopback
+use standins/openai_api
+use support/report
+use support/timing
+use tools/executor
+use tools/toolbox
+
+# The file that marks a folder the demo made, the one kind it removes.
+constant MARKER: str
+    ".agent-demo"
+
+# The code of a folder the demo refuses to use.
+constant EXISTS: str
+    "exists"
+
+# The vectors' length of the demo's store.
+constant DIMENSIONS: i64
+    256
+
+# The demo, in the folder `work`: made, used, and removed.
+#
+# - `work`: a folder that is not there, or that an earlier demo made.
+#
+# Fails `exists` where `work` holds something no demo made, before anything
+# is written; and as a step of the session fails, the folder then kept for
+# reading.
+function run(work: str) -> ()?
+    prepare(work)?
+    report.line("agent demo: a scripted session against loopback stand-ins of both providers' APIs.")
+    report.line("No request leaves this machine, no key is real, and every wait is on a virtual clock.")
+    docs = path.join_all([work, "docs"])
+    store_dir = path.join_all([work, "store"])
+    box = indexed(docs: docs, store_dir: store_dir)?
+    searched(box)
+    claude_side @= loopback.start(body: claude_api.serve, settings: claude_api.settings(key: questions.ANTHROPIC_KEY, faults: [claude_api.OVERLOADED]))?
+
+    match loopback.start(body: openai_api.serve, settings: openai_api.settings(key: questions.OPENAI_KEY, faults: [openai_api.RATE_LIMITED], unavailable: [questions.UNAVAILABLE_MODEL]))
+        .ok started =>
+            gpt_side @= started
+            asked = with_stand_ins(box, store_dir: store_dir, claude_port: claude_side.port, gpt_port: gpt_side.port)
+            claude_report = loopback.stop(@claude_side)
+            gpt_report = loopback.stop(@gpt_side)
+            asked?
+            seen(claude_text: claude_report?, gpt_text: gpt_report?)?
+        .err e =>
+            match loopback.stop(@claude_side)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+    fs.remove_all(work)?
+    report.heading("== Done")
+    report.line("The demo's folder is removed.")
+    return ok()
+
+# Makes `work` with its marker, after removing an earlier demo's folder.
+function prepare(work: str) -> ()?
+    if fs.exists(work)?
+        if !fs.exists(path.join_all([work, MARKER]))?
+            return fail(code: EXISTS, msg: "the folder given to --work holds something no demo made; give a new one")
+
+        fs.remove_all(work)?
+
+    fs.make_dir_all(work)?
+    fs.write_atomic_text(path: path.join_all([work, MARKER]), text: "made by agent demo\n")?
+    return ok()
+
+# The bundle written into `docs`, indexed into `store_dir`, the store read back
+# and checked, and the toolbox over it.
+function indexed(docs: str, store_dir: str) -> toolbox.Toolbox?
+    report.heading("== Indexing the bundled documents")
+
+    for f in bundle.files()
+        target = path.join_all([docs, path.from_slash(f.path)])
+        fs.make_dir_all(path.parent(target))?
+        fs.write_atomic_text(path: target, text: f.text)?
+
+    report.line(f"wrote {bundle.files().len()} files; the agent indexes the Markdown and the text, and lists the rest")
+    plan = indexer.Plan(
+        root: docs,
+        model: "gpt-4o",
+        size: 120,
+        overlap: 20,
+        workers: 2,
+        embedder: .local(dimensions: DIMENSIONS)
+    )
+    made = indexer.build(plan)?
+    store.save(made, dir: store_dir)?
+    loaded = store.load(store_dir)?
+    report.table(views.documents_table(loaded.manifest))
+    report.line(views.store_line(loaded.manifest))
+    same = loaded.pieces == made.pieces && loaded.manifest == made.manifest
+    report.line(
+        f"the store was written to its folder and read back: {loaded.pieces.len()} passages, the same as made: {same}"
+    )
+    exe = os.executable_path()?
+    return ok(
+        toolbox.Toolbox(root: docs, store: loaded, embedder: .local(dimensions: DIMENSIONS), allowed: {"agent": exe}, model: "gpt-4o", command_limit: time.seconds(60).must())
+    )
+
+# Two searches of the store, written as `agent search` writes them.
+function searched(box: toolbox.Toolbox lent)
+    report.heading("== Searching the store")
+
+    for query in ["install on macOS", "what happens when the buffer is full"]
+        report.line(f"search \"{query}\":")
+
+        match nearest.search(box.store, e: box.embedder, question: query, limit: 3)
+            .ok hits => report.table(views.hits_table(hits))
+            .err e   => report.warn(f"  the search failed: {e.msg}")
+
+# The steps that need the stand-ins: the clients checked, the questions asked
+# of each provider, the MCP server driven, the breaker shown.
+function with_stand_ins(box: toolbox.Toolbox, store_dir: str, claude_port: i64, gpt_port: i64) -> ()?
+    clock @= timing.demo_clock()
+    checked(box, claude_port: claude_port, gpt_port: gpt_port)?
+    report.heading("== Asking Claude, the tools run by the agent itself")
+    claude_router @= questions.demo_router([questions.claude_provider(claude_port)], clock: clock)
+    local: executor.Executor @= .local(box: box)
+    questions.ask_all(@claude_router, exec: @local, box: box, questions: questions.claude_questions(), first: 1)?
+    clock @ claude_router.clock
+    report.heading("== Asking GPT, the tools served by the agent's own MCP server")
+    link @= spawned.start(box.allowed["agent"]?, arguments: ["serve", "--store", store_dir, "--allow", "agent=" + box.allowed["agent"]?])?
+    report.line(
+        "started `agent serve` as a child: an MCP server on its standard streams, its tools listed for the model"
+    )
+    counter = encodings.counter_for("gpt-4o")
+    driven = through_server(@link, box: box, clock: @clock, gpt_port: gpt_port, counter: counter)
+    status = spawned.stop(@link)
+    driven?
+    report.line(f"the server's input closed, it {process.format_status(status?)}")
+    report.heading("== A provider that keeps failing")
+    report.line(
+        f"GPT is asked for {questions.UNAVAILABLE_MODEL}, which its stand-in always answers 503, with Claude after it."
+    )
+    failing @= questions.demo_router(
+        [questions.gpt_provider(gpt_port, model: questions.UNAVAILABLE_MODEL, counter: counter), questions.claude_provider(claude_port)],
+        clock: clock
+    )
+    questions.ask_all(@failing, exec: @local, box: box, questions: ["Can Beacon run without root?"], first: 7)?
+    report.line(questions.breakers_line(failing))
+    questions.ask_all(@failing, exec: @local, box: box, questions: ["Can Beacon run without root?"], first: 8)?
+    report.line(questions.breakers_line(failing))
+    return ok()
+
+# The GPT questions, their tools run by the server of `link`, then the tour
+# of that server.
+function through_server(@link: spawned.Link, box: toolbox.Toolbox lent, @clock: timing.Clock, gpt_port: i64, counter: encodings.Counter) -> ()?
+    client @= link.client
+    remote @= executor.remote_of(@client)?
+    gpt_router @= questions.demo_router(
+        [questions.gpt_provider(gpt_port, model: "gpt-4o", counter: counter)],
+        clock: clock
+    )
+    questions.ask_all(@gpt_router, exec: @remote, box: box, questions: questions.gpt_questions(), first: 4)?
+    clock @ gpt_router.clock
+
+    match remote
+        .remote r => client @ r.client
+        .local _  => _ = 0
+
+    report.heading("== Driving the agent's MCP server with a client")
+    mcp_tour.tour(@client)?
+    link.client @ client
+    return ok()
+
+# The stand-ins checked before any question: a wrong key refused as the API
+# refuses it, and the embeddings endpoint answering the local function's
+# vectors.
+function checked(box: toolbox.Toolbox lent, claude_port: i64, gpt_port: i64) -> ()?
+    report.heading("== The stand-ins")
+    report.line(
+        "Each stand-in listens on the loopback and checks every request as its API does: the key, the version, the body's rules."
+    )
+    wrong = questions.claude_client(claude_port, key: "not-the-key")
+
+    match anthropic.create(wrong, r: anthropic.new_request(model: "claude-opus-5-5", max_tokens: 16, turns: [anthropic.user("Hello")]))
+        .ok _ => report.warn("a request with a wrong key was answered, which the API never does")
+        .err e =>
+            told = match anthropic.failure_of(e.msg)
+                .ok f  => f"{f.status} {f.kind}"
+                .err _ => e.msg
+
+            report.line(f"a request to the Messages API with a wrong key: refused, {e.code} ({told})")
+
+    question = questions.claude_questions()[0]
+    asked @= openai.embedding_request(model: "text-embedding-3-small", inputs: [question])
+    asked.dimensions @ DIMENSIONS
+    vectors = openai.embed(questions.gpt_client(gpt_port), r: asked)?
+    same = vectors.vectors.len() == 1 && vectors.vectors[0] == embedder.embed_local(question, dimensions: DIMENSIONS)
+    report.line(f"the embeddings endpoint answers the local function's vector for a question: {same}")
+    report.line(
+        f"  so a store made through it (`agent index --embedder openai`) finds the same {box.store.pieces.len()} passages"
+    )
+    return ok()
+
+# What each stand-in saw.
+function seen(claude_text: str, gpt_text: str) -> ()?
+    report.heading("== What the stand-ins saw")
+    claude_seen = loopback.report_of(claude_text)?
+    gpt_seen = loopback.report_of(gpt_text)?
+    report.line(
+        f"anthropic: {claude_seen.requests} requests, {claude_seen.answered} answered; refused: {refused(claude_seen.refusals)}"
+    )
+    report.line(
+        f"openai: {gpt_seen.requests} requests, {gpt_seen.answered} answered; refused: {refused(gpt_seen.refusals)}"
+    )
+    report.line(
+        "Each refusal is one the demo asked for: a wrong key, a scripted overload, a scripted rate limit, a model always unavailable."
+    )
+    return ok()
+
+# The refusals of a stand-in, counted by kind in their order.
+function refused(refusals: [str]) -> str
+    if refusals.len() == 0
+        return "none"
+
+    kinds: [str] @= []
+    counts: {str: i64} @= {}
+
+    for r in refusals
+        if !counts[r].is_err()
+            counts[r] @ counts[r].default(0) + 1
+        else
+            kinds @ kinds.push(r)
+            counts[r] @ 1
+
+    out: [str] @= []
+
+    for k in kinds
+        n = counts[k].default(0)
+
+        told = if n == 1
+            k
+        else
+            f"{k} x{n}"
+
+        out @ out.push(told)
+
+    return out.join(", ")
+
+test "refused: counted by kind, in their first order"
+    assert refused(["529 overloaded_error", "401 authentication_error", "529 overloaded_error"]) == "529 overloaded_error x2, 401 authentication_error"
+    assert refused([]) == "none"

@@ -1,0 +1,192 @@
+# The NATS stand-in's state and routing: its connections with what their
+# `CONNECT` and `SUB`s said, and the delivery of a message as `MSG` or `HMSG`
+# to every subscription whose subject matches, one member of each queue group
+# in turn. `nats_server` reads the protocol's lines and answers them; this
+# module is what it answers them with.
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/nats
+use <rebel>/poll
+
+# The longest control line read, the NATS server's own `max_control_line`
+# default of 4,096 bytes.
+constant MOST_LINE_BYTES: i64
+    4096
+
+# The most bytes of one message's payload, which `INFO` says as
+# `max_payload`: the NATS server's default of 1 MiB.
+constant MOST_PAYLOAD: i64
+    1_048_576
+
+# One subscription of a connection.
+record Sub
+    # The subject, `*` and a last `>` allowed.
+    subject: str
+    # The queue group, "" for none.
+    queue: str
+    # The client's own name for it, as its `SUB` wrote it.
+    sid: str
+
+# One connection to the server, and what its `CONNECT` and `SUB`s said.
+record Peer
+    # The connection's key in the poll set.
+    key: i64
+    # The connection's stream, the server's to close.
+    stream: io.Stream
+    # Bytes read and not yet acted on.
+    held: [u8]
+    # Whether its `CONNECT` has been read.
+    connected: bool
+    # Whether it receives what it publishes itself.
+    echo: bool
+    # Whether every operation is answered `+OK`.
+    verbose: bool
+    # Whether it reads `HMSG`.
+    headers: bool
+    # Its subscriptions.
+    subs: [Sub]
+    # Whether it is still connected.
+    open: bool
+
+# The server's connections and what it has carried.
+record Server
+    # Every connection made, in the order accepted; a closed one stays with
+    # `open` false.
+    peers: [Peer]
+    # The port it listens on, which `INFO` says.
+    port: i64
+    # `PUB` and `HPUB` read.
+    published: i64
+    # `MSG` and `HMSG` written.
+    delivered: i64
+    # How many queue groups have chosen a member, which picks the next.
+    turns: i64
+
+# One message as it is routed: its subject, reply subject, headers' bytes
+# (empty for none) and payload.
+record Routed
+    # The subject.
+    subject: str
+    # The reply subject, "" for none.
+    reply: str
+    # The header block's bytes, `NATS/1.0` and its fields, empty for none.
+    header: [u8]
+    # The payload.
+    payload: [u8]
+
+# Writes `text` to peer `i`, and answers whether it was written.
+#
+# - `peer`: the connection.
+# - `text`: the protocol's text.
+function send_text(peer: Peer lent, text: str) -> bool
+    return !io.write_text(peer.stream, text: text).is_err()
+
+# Answers `-ERR` with `why`, then closes the connection of peer `i`.
+#
+# - `s`: the server.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `why`: the error's words, as the NATS server writes them.
+function refuse(@s: Server, set: poll.Set, i: i64, why: str)
+    _ = send_text(s.peers[i], text: f"-ERR '{why}'\r\n")
+    drop_peer(@s, set: set, i: i)
+
+# Closes the connection of peer `i` and takes it out of the poll set.
+#
+# - `s`: the server.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+function drop_peer(@s: Server, set: poll.Set, i: i64)
+    if !s.peers[i].open
+        return
+
+    # A connection ends here whatever its socket answers: a failure to take it
+    # out or to close it leaves nothing the server could do better.
+    _ = poll.remove(set, key: s.peers[i].key).is_err()
+    _ = io.close(@s.peers[i].stream).is_err()
+    s.peers[i].open @ false
+
+# The `MSG` or `HMSG` that carries `m` to the subscription `sid` of a peer
+# that does or does not read headers.
+#
+# - `m`: the message.
+# - `sid`: the subscription's name.
+# - `headers`: whether the subscriber reads `HMSG`; a header block is left
+#   out for one that does not, as the NATS server leaves it.
+function delivery_of(m: Routed lent, sid: str, headers: bool) -> [u8]
+    reply = if m.reply == ""
+        ""
+    else
+        f" {m.reply}"
+
+    out @= if headers && m.header.len() > 0
+        bytes.from_text(f"HMSG {m.subject} {sid}{reply} {m.header.len()} {m.header.len() + m.payload.len()}\r\n")
+    else
+        bytes.from_text(f"MSG {m.subject} {sid}{reply} {m.payload.len()}\r\n")
+
+    if headers
+        bytes.push_all(to: @out, from: m.header)
+
+    bytes.push_all(to: @out, from: m.payload)
+    bytes.push_all(to: @out, from: [13, 10])
+    return out
+
+# Routes `m`, published by peer `from`, to every matching subscription: each
+# plain one, and one member of each queue group in turn.
+#
+# - `s`: the server.
+# - `from`: the publisher's index.
+# - `m`: the message.
+function route(@s: Server, from: i64, m: Routed)
+    s.published @ s.published + 1
+    groups: {str: [i64]} @= {}
+    group_sids: {str: [str]} @= {}
+    j @= 0
+
+    while j < s.peers.len()
+        if s.peers[j].open && s.peers[j].connected && (j != from || s.peers[j].echo)
+            for sub in s.peers[j].subs
+                if nats.matches(pattern: sub.subject, subject: m.subject)
+                    if sub.queue == ""
+                        deliver(@s, j: j, m: m, sid: sub.sid)
+                    else
+                        members @= groups[sub.queue].default([])
+                        members @ members.push(j)
+                        groups[sub.queue] @ members
+                        sids @= group_sids[sub.queue].default([])
+                        sids @ sids.push(sub.sid)
+                        group_sids[sub.queue] @ sids
+        j @ j + 1
+
+    for queue in keys(groups)
+        members = groups[queue].must()
+        chosen = s.turns % members.len()
+        s.turns @ s.turns + 1
+        deliver(@s, j: members[chosen], m: m, sid: group_sids[queue].must()[chosen])
+
+# Writes `m` to peer `j` for its subscription `sid`.
+#
+# - `s`: the server.
+# - `j`: the subscriber's index.
+# - `m`: the message.
+# - `sid`: the subscription's name.
+function deliver(@s: Server, j: i64, m: Routed lent, sid: str)
+    data = delivery_of(m, sid: sid, headers: s.peers[j].headers)
+
+    if !io.write(s.peers[j].stream, data: data).is_err()
+        s.delivered @ s.delivered + 1
+
+# Writes `+OK` to a peer that asked for it with `verbose`.
+#
+# - `peer`: the connection.
+function ok_if_verbose(peer: Peer lent)
+    if peer.verbose
+        _ = send_text(peer, text: "+OK\r\n")
+
+test "delivery_of: a MSG with a reply, an HMSG, and headers left out for a peer that reads none"
+    m = Routed(subject: "chat.rooms.ops", reply: "_INBOX.1", header: [], payload: bytes.from_text("hi"))
+    assert bytes.to_text(delivery_of(m, sid: "7", headers: true)).must() == "MSG chat.rooms.ops 7 _INBOX.1 2\r\nhi\r\n"
+    h = Routed(subject: "a", reply: "", header: bytes.from_text("NATS/1.0\r\n\r\n"), payload: bytes.from_text("x"))
+    assert bytes.to_text(delivery_of(h, sid: "1", headers: true)).must() == "HMSG a 1 12 13\r\nNATS/1.0\r\n\r\nx\r\n"
+    assert bytes.to_text(delivery_of(h, sid: "1", headers: false)).must() == "MSG a 1 1\r\nx\r\n"

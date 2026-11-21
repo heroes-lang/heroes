@@ -1,0 +1,201 @@
+# `datakit report`: a PDF of a table, through `pdf`: a title, a line saying
+# what was read, a summary table (the groups and aggregates asked, or the
+# statistics of every column), and then the table's first rows.
+#
+# The page is A4 with margins of 50 points. Columns are as wide as their
+# widest text in Helvetica at 10 points, scaled down together where they
+# would pass the page, and a cell's text is wrapped inside its column by
+# `pdf.draw_table`, which carries a long table on to new pages with its header
+# drawn again. The standard fonts hold Latin-1 and a few more characters
+# (WinAnsiEncoding); a character they lack is drawn as `?` rather than
+# failing the report. No date is written into the file, so one table gives one
+# file, byte for byte.
+
+use <rebel>/pdf
+
+use model/model
+
+## Limits
+
+# The page's margin on every side, in points.
+constant MARGIN: f64
+    50.0
+
+# The size of a table's text, in points.
+constant TEXT_SIZE: f64
+    10.0
+
+# A cell's padding on each side, in points, as `pdf.table` pads one.
+constant PADDING: f64
+    4.0
+
+## The report
+
+# What a report says beside its tables.
+record Heading
+    # The title, on the first line.
+    title: str
+    # What was read, on the line under it: `sales.csv: 12 rows, 7 columns`.
+    source: str
+    # The title over the summary table.
+    summary_title: str
+
+# The bytes of a PDF of `heading`, the table `summary` and the first
+# `max_rows` rows of `data`.
+#
+# - `heading`: the title and the lines under it.
+# - `summary`: the summary table, on the first page.
+# - `data`: the table whose rows follow, from the second page.
+# - `max_rows`: the most rows of `data` drawn, 0 or more.
+#
+# Fails as `pdf.draw_table` fails, `invalid` where a table has so many
+# columns that one is narrower than its padding, and as `pdf.encode` fails.
+function render(heading: Heading, summary: model.Table lent, data: model.Table lent, max_rows: i64) -> [u8]?
+    doc @= pdf.document()
+    pdf.set_info(@doc, key: "Title", value: heading.title)
+    pdf.set_info(@doc, key: "Creator", value: "datakit")
+    page = pdf.size_of(.a4)
+    pdf.add_page(@doc, size: page)
+    top = page.height - MARGIN
+    pdf.set_font(@doc, font: .helvetica_bold, size: 18.0)
+    pdf.draw_text(@doc, x: MARGIN, y: top - 18.0, text: printable(heading.title, font: .helvetica_bold), align: .left)?
+    pdf.set_font(@doc, font: .helvetica, size: TEXT_SIZE)
+    pdf.draw_text(@doc, x: MARGIN, y: top - 36.0, text: printable(heading.source, font: .helvetica), align: .left)?
+    pdf.set_font(@doc, font: .helvetica_bold, size: 12.0)
+    pdf.draw_text(@doc, x: MARGIN, y: top - 64.0, text: printable(heading.summary_title, font: .helvetica_bold), align: .left)?
+    room = page.width - 2.0 * MARGIN
+    _ = pdf.draw_table(@doc, x: MARGIN, top: top - 74.0, bottom: MARGIN, t: table_of(summary, rows: summary.rows.len(), room: room))?
+
+    if data.rows.len() > 0 && max_rows > 0
+        shown = if data.rows.len() < max_rows
+            data.rows.len()
+        else
+            max_rows
+        pdf.add_page(@doc, size: page)
+        pdf.set_font(@doc, font: .helvetica_bold, size: 12.0)
+        rows_title = f"The first {shown} of {data.rows.len()} rows"
+        pdf.draw_text(@doc, x: MARGIN, y: top - 12.0, text: printable(rows_title, font: .helvetica_bold), align: .left)?
+        _ = pdf.draw_table(@doc, x: MARGIN, top: top - 22.0, bottom: MARGIN, t: table_of(data, rows: shown, room: room))?
+    return pdf.encode(doc)
+
+# The `pdf` table of the header and the first `rows` rows of `t`, its columns
+# as wide as their text and together no wider than `room`.
+#
+# - `t`: the table.
+# - `rows`: how many rows, from 0 to `t`'s rows.
+# - `room`: the width the table may take, in points.
+function table_of(t: model.Table lent, rows: i64, room: f64) -> pdf.Table
+    texts: [[str]] @= [t.columns.map(printable_header)]
+    at: i64 @= 0
+
+    while at < rows
+        texts @ texts.push(t.rows[at].map(printable_cell))
+        at @ at + 1
+
+    widths: [f64] @= []
+    column: i64 @= 0
+
+    while column < t.columns.len()
+        widest: f64 @= text_width(texts[0][column], font: .helvetica_bold)
+
+        for r in texts
+            w = text_width(r[column], font: .helvetica)
+
+            if w > widest
+                widest @ w
+
+        widths @ widths.push(widest + 2.0 * PADDING + 1.0)
+        column @ column + 1
+
+    total = widths.fold(0.0, sum_of)
+
+    if total > room
+        scaled: [f64] @= []
+
+        for w in widths
+            scaled @ scaled.push(w * room / total)
+
+        widths @ scaled
+    return pdf.table(widths, rows: texts)
+
+# The sum of two widths, for `fold`.
+#
+# - `acc`: the sum so far.
+# - `item`: the next width.
+function sum_of(acc: f64, item: f64) -> f64
+    return acc + item
+
+# The width of `text` in `font` at `TEXT_SIZE` points, 0 where the font
+# cannot measure it.
+#
+# - `text`: the text, every character one the font has.
+# - `font`: the font.
+function text_width(text: str, font: pdf.Font) -> f64
+    return pdf.width_of(text, font: font, size: TEXT_SIZE).default(0.0)
+
+# A cell's text as drawn: `model.cell_text`'s, each character Helvetica lacks
+# made `?`, and each line break a space.
+#
+# - `v`: the cell's value.
+function printable_cell(v: model.Value) -> str
+    return printable(model.cell_text(v), font: .helvetica)
+
+# A header's text as drawn, in Helvetica Bold.
+#
+# - `name`: the column's name.
+function printable_header(name: str) -> str
+    return printable(name, font: .helvetica_bold)
+
+# `text` with each character `font` has no glyph for made `?`, and each
+# control character a space.
+#
+# - `text`: the text.
+# - `font`: the font it is drawn in.
+function printable(text: str, font: pdf.Font) -> str
+    if pdf.has_glyphs(font, text: text) && !has_control(text)
+        return text
+
+    out: [str] @= []
+
+    for c in text.chars()
+        if c[0] < 32 || c[0] == 127
+            out @ out.push(" ")
+        else if pdf.has_glyphs(font, text: c)
+            out @ out.push(c)
+        else
+            out @ out.push("?")
+
+    return out.join("")
+
+# Whether `s` holds a control character.
+#
+# - `s`: the text.
+function has_control(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] < 32 || s[at] == 127
+            return true
+        at @ at + 1
+
+    return false
+
+## Tests
+
+test "render and read back: the title, the summary and the rows are the file's text"
+    rows: [[model.Value]] = [[.text(v: "Zürich"), .number(text: "19.99")], [.text(v: "東京"), .number(text: "5")]]
+    data = model.Table(name: "sales", columns: ["city", "amount"], rows: rows)
+    summary = model.Table(name: "s", columns: ["stat", "amount"], rows: [[.text(v: "sum"), .number(text: "24.99")]])
+    heading = Heading(title: "Sales", source: "sales.csv: 2 rows, 2 columns", summary_title: "Summary")
+    bytes_of_pdf = render(heading, summary: summary, data: data, max_rows: 10).must()
+    assert bytes_of_pdf == render(heading, summary: summary, data: data, max_rows: 10).must()
+    file = pdf.decode(bytes_of_pdf, password: "", limits: pdf.default_limits()).must()
+    pages = pdf.pages_of(file)
+    assert pages.len() == 2
+    assert pdf.text_of(file, page: pages[0]).must() == "Sales\nsales.csv: 2 rows, 2 columns\nSummary\nstat amount\nsum 24.99"
+    assert pdf.text_of(file, page: pages[1]).must() == "The first 2 of 2 rows\ncity amount\nZürich 19.99\n?? 5"
+    assert pdf.info_of(file)["Title"].must() == "Sales"
+
+test "printable: characters the font lacks and controls"
+    assert printable("a\tb", font: .helvetica) == "a b"
+    assert printable("€ ✓", font: .helvetica) == "€ ?"

@@ -1,0 +1,107 @@
+# `--path`: the parts of a document a JSONPath query (RFC 9535) selects,
+# through `json/path`.
+#
+# The query runs over the document as a `json.Value`, whose numbers are
+# `f64`, so a filter compares numbers as floats; but what is answered is not
+# that copy. Each node `json/path` selects comes with its JSON pointer, and
+# the pointer is followed in the model itself, so a selected price is the
+# exact decimal the file held and a selected date is still a moment. The
+# answer is the list of the selected values in the order the query gives
+# them, a list even of one, so `$.orders[*]` is a table's rows and
+# `$.config` a table of one row.
+
+use <rebel>/json
+use <rebel>/json/path as json_path
+use <rebel>/numbers
+
+use formats/json_file
+use model/model
+
+## Codes
+
+# The code of a pointer that names nothing in the model, which no pointer
+# `json/path` answers does.
+constant NOT_FOUND: str
+    "not_found"
+
+## Selecting
+
+# The values `query` selects in `doc`, as a list.
+#
+# - `doc`: the document.
+# - `query`: the JSONPath query, `$` first.
+#
+# Fails `invalid` where `query` is no JSONPath query, the message saying
+# where, and where a number of `doc` is past what an `f64` holds.
+function select(doc: model.Value, query: str) -> model.Value?
+    q = json_path.parse(query)?
+    nodes = json_path.select_nodes(q, doc: json_file.to_json(doc)?)
+    found: [model.Value] @= []
+
+    for n in nodes
+        found @ found.push(follow(doc, pointer: n.pointer)?)
+
+    return ok(.list(items: found))
+
+# The value of `doc` that `pointer` names.
+#
+# - `doc`: the document.
+# - `pointer`: an RFC 6901 pointer; empty names `doc` itself.
+#
+# Fails `not_found` where a token names no member or no item, and `invalid`
+# where `pointer` is not one.
+function follow(doc: model.Value, pointer: str) -> model.Value?
+    at @= doc
+
+    for token in json.pointer_tokens(pointer)?
+        at @ step(at, token: token)?
+
+    return ok(at)
+
+# The member of an object or the item of a list that one pointer token
+# names.
+#
+# - `v`: the value.
+# - `token`: the token, a member's name or an item's index from 0.
+#
+# Fails `not_found` where it names nothing.
+function step(v: model.Value, token: str) -> model.Value?
+    match v
+        .object o =>
+            for m in o.members
+                if m.name == token
+                    return ok(m.value)
+        .list l =>
+            match numbers.parse_int(token)
+                .ok i  => if i >= 0 && i < l.items.len()
+                    return ok(l.items[i])
+                .err _ => _ = 0
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ => _ = 0
+
+    return fail(code: NOT_FOUND, msg: f"the pointer's token \"{token}\" names nothing in a {model.kind_name(v)}")
+
+## Tests
+
+# A document of orders for the tests below.
+function sample() -> model.Value
+    a: model.Value = .object(
+        members: [model.Member(name: "id", value: .number(text: "1")), model.Member(name: "total", value: .number(text: "12345678901234567890.50"))]
+    )
+    b: model.Value = .object(
+        members: [model.Member(name: "id", value: .number(text: "2")), model.Member(name: "total", value: .number(text: "5.25"))]
+    )
+    return .object(members: [model.Member(name: "orders", value: .list(items: [a, b]))])
+
+test "select: a filter compares as floats and answers the exact values"
+    found = select(sample(), query: "$.orders[?@.total > 100].total").must()
+    assert model.json_text(found) == "[12345678901234567890.50]"
+
+test "select: every item, nothing selected, and a query that is none"
+    assert model.json_text(select(sample(), query: "$.orders[*].id").must()) == "[1,2]"
+    assert model.json_text(select(sample(), query: "$.missing").must()) == "[]"
+    assert select(sample(), query: "orders").is_err()
+
+test "follow: a pointer through a member and an index, and one past the end"
+    assert follow(sample(), pointer: "/orders/1/total").must() == .number(text: "5.25")
+    assert follow(sample(), pointer: "/orders/2").is_err()
+    assert follow(sample(), pointer: "").must() == sample()

@@ -1,0 +1,269 @@
+# The commands of the Redis stand-in on sorted sets, each answering as Redis
+# 7 does: `ZADD`, `ZREM`, `ZCARD`, `ZSCORE`, `ZRANGE`, `ZREVRANGE` and
+# `ZRANGEBYSCORE`, a score written as text to a RESP2 connection and as a
+# double to a RESP3 one. `collections.execute` hands them here by name.
+
+use <rebel>/numbers
+use <rebel>/redis
+use <rebel>/strings
+
+use standins/redis/keyspace
+use standins/redis/resp
+use standins/redis/sorted
+
+# The reply to a command given the wrong count of arguments.
+#
+# - `name`: the command's name, in capitals.
+function arity_of(name: str) -> redis.Reply
+    return resp.error_reply(
+        code: "ERR",
+        message: f"wrong number of arguments for '{strings.to_lower_ascii(name)}' command"
+    )
+
+# A score as Redis writes one: a whole number without a point, the
+# infinities as `inf` and `-inf`, any other in its shortest digits.
+#
+# - `x`: the score.
+function score_text(x: f64) -> str
+    if x - x != 0.0
+        return if x > 0.0
+            "inf"
+        else
+            "-inf"
+
+    match to_i64(x)
+        .ok whole =>
+            if to_f64(whole) == x && whole < 9_007_199_254_740_992 && whole > -9_007_199_254_740_992
+                return to_str(whole)
+        .err _ => _ = 0
+
+    return numbers.format_float_shortest(x)
+
+# The members `members` with their scores where `with_scores` asks: after
+# each member its score as text in RESP2, or each a pair of the member and
+# its score as a double in RESP3, as Redis 7 answers `ZRANGE ... WITHSCORES`.
+#
+# - `z`: the set they are of.
+# - `members`: the members, in order.
+# - `with_scores`: whether the scores are given.
+# - `protocol`: the RESP version.
+function members_reply(z: sorted.ZSet lent, members: [str], with_scores: bool, protocol: i64) -> redis.Reply
+    out: [redis.Reply] @= []
+
+    for member in members
+        score = z.scores[member].must()
+
+        if !with_scores
+            out @ out.push(resp.text_reply(member))
+        else if protocol == 3
+            out @ out.push(.array(items: [resp.text_reply(member), .double(v: score)]))
+        else
+            out @ out.push(resp.text_reply(member))
+            out @ out.push(resp.text_reply(score_text(score)))
+
+    return .array(items: out)
+
+# The sorted set commands.
+#
+# - `ks`: the data.
+# - `name`: the command, in capitals.
+# - `key`: its key.
+# - `words`: the whole command.
+# - `protocol`: the RESP version the reply is read in.
+function zset_command(@ks: keyspace.Keyspace, name: str, key: str, words: [str], protocol: i64) -> redis.Reply
+    n = words.len()
+
+    z @= match keyspace.zset_at(@ks, key: key)
+        .ok found => found
+        .err e    => return keyspace.refusal(code: e.code, msg: e.msg)
+
+    match name
+        "ZADD" => return zadd(@ks, key: key, z: z, words: words)
+        "ZREM" =>
+            if n < 3
+                return arity_of(name)
+            removed: i64 @= 0
+
+            for member in words.slice(from: 2, to: n)
+                if sorted.remove(@z, member: member)
+                    removed @ removed + 1
+
+            keyspace.store_zset(@ks, key: key, z: z)
+            return .integer(v: removed)
+        "ZCARD" =>
+            if n != 2
+                return arity_of(name)
+            return .integer(v: z.order.len())
+        "ZSCORE" =>
+            if n != 3
+                return arity_of(name)
+
+            match z.scores[words[2]]
+                .ok score =>
+                    if protocol == 3
+                        return .double(v: score)
+                    return resp.text_reply(score_text(score))
+                .err _ => return .null_value
+        "ZRANGE" | "ZREVRANGE" =>
+            if n != 4 && !(n == 5 && strings.to_upper_ascii(words[4]) == "WITHSCORES")
+                if n == 5
+                    return resp.error_reply(code: "ERR", message: "syntax error")
+                return arity_of(name)
+
+            start = numbers.parse_int(words[2])
+            stop = numbers.parse_int(words[3])
+
+            if start.is_err() || stop.is_err()
+                return resp.error_reply(code: "ERR", message: "value is not an integer or out of range")
+
+            members = if name == "ZRANGE"
+                sorted.by_rank(z, start: start.must(), stop: stop.must())
+            else
+                reversed_range(z, start: start.must(), stop: stop.must())
+            return members_reply(z, members: members, with_scores: n == 5, protocol: protocol)
+        _ => return by_score_command(z, words: words, protocol: protocol)
+
+# `ZREVRANGE`'s members: ranks counted from the highest score.
+#
+# - `z`: the set.
+# - `start`: the first rank from the top.
+# - `stop`: the last rank from the top.
+function reversed_range(z: sorted.ZSet lent, start: i64, stop: i64) -> [str]
+    count = z.order.len()
+    out: [str] @= []
+    from: i64 @= start
+    to: i64 @= stop
+
+    if from < 0
+        from @ count + from
+
+    if to < 0
+        to @ count + to
+
+    if from < 0
+        from @ 0
+
+    if to >= count
+        to @ count - 1
+
+    i: i64 @= from
+
+    while i <= to
+        out @ out.push(z.order[count - 1 - i])
+        i @ i + 1
+
+    return out
+
+# `ZADD key [NX|XX] [CH] score member [score member ...]`.
+#
+# - `ks`: the data.
+# - `key`: the key.
+# - `z`: the set the key holds now.
+# - `words`: the whole command.
+function zadd(@ks: keyspace.Keyspace, key: str, z: sorted.ZSet, words: [str]) -> redis.Reply
+    set @= z
+    only_absent: bool @= false
+    only_present: bool @= false
+    count_changed: bool @= false
+    i: i64 @= 2
+
+    while i < words.len()
+        option = strings.to_upper_ascii(words[i])
+
+        if option == "NX"
+            only_absent @ true
+        else if option == "XX"
+            only_present @ true
+        else if option == "CH"
+            count_changed @ true
+        else
+            break
+        i @ i + 1
+
+    if i >= words.len() || (words.len() - i) % 2 != 0
+        return resp.error_reply(code: "ERR", message: "syntax error")
+
+    if only_absent && only_present
+        return resp.error_reply(code: "ERR", message: "XX and NX options at the same time are not compatible")
+
+    added: i64 @= 0
+    changed: i64 @= 0
+
+    while i < words.len()
+        score = match sorted.parse_score(words[i])
+            .ok v  => v
+            .err _ => return resp.error_reply(code: "ERR", message: "value is not a valid float")
+
+        member = words[i + 1]
+        held = set.scores[member]
+        i @ i + 2
+
+        if only_absent && !held.is_err() || only_present && held.is_err()
+            continue
+
+        if held.is_err()
+            added @ added + 1
+            changed @ changed + 1
+        else if held.must() != score
+            changed @ changed + 1
+
+        _ = sorted.add(@set, member: member, score: score)
+
+    keyspace.store_zset(@ks, key: key, z: set)
+
+    if count_changed
+        return .integer(v: changed)
+    return .integer(v: added)
+
+# `ZRANGEBYSCORE key min max [WITHSCORES] [LIMIT offset count]`.
+#
+# - `z`: the set the key holds.
+# - `words`: the whole command.
+# - `protocol`: the RESP version the reply is read in.
+function by_score_command(z: sorted.ZSet lent, words: [str], protocol: i64) -> redis.Reply
+    if words.len() < 4
+        return arity_of("ZRANGEBYSCORE")
+
+    min = match sorted.parse_bound(words[2])
+        .ok b  => b
+        .err e => return resp.error_reply(code: "ERR", message: e.msg)
+
+    max = match sorted.parse_bound(words[3])
+        .ok b  => b
+        .err e => return resp.error_reply(code: "ERR", message: e.msg)
+
+    with_scores: bool @= false
+    offset: i64 @= 0
+    count: i64 @= -1
+    i: i64 @= 4
+
+    while i < words.len()
+        option = strings.to_upper_ascii(words[i])
+
+        if option == "WITHSCORES"
+            with_scores @ true
+            i @ i + 1
+        else if option == "LIMIT" && i + 2 < words.len()
+            from = numbers.parse_int(words[i + 1])
+            most = numbers.parse_int(words[i + 2])
+
+            if from.is_err() || most.is_err()
+                return resp.error_reply(code: "ERR", message: "value is not an integer or out of range")
+
+            offset @ from.must()
+            count @ most.must()
+            i @ i + 3
+        else
+            return resp.error_reply(code: "ERR", message: "syntax error")
+
+    if offset < 0
+        return .array(items: [])
+
+    members = sorted.by_score(z, min: min, max: max, offset: offset, count: count)
+    return members_reply(z, members: members, with_scores: with_scores, protocol: protocol)
+
+test "score_text: whole numbers bare, fractions shortest, the infinities by name"
+    assert score_text(42.0) == "42"
+    assert score_text(0.5) == "0.5"
+    assert score_text(-3.0) == "-3"
+    assert score_text(1.0 / 0.0) == "inf"

@@ -1,0 +1,154 @@
+# The chat client as a program state: its session, the line being typed and
+# how its reader is spoken to, changed by one key or one paste at a time.
+# The terminal client feeds it the keys a person presses; the demo feeds it
+# scripted keys, so a demo client types, edits and sends exactly as a person
+# would, through the same code. A typing notice goes to the room on screen
+# at the first key of a message and again every `TYPING_EVERY_SECONDS` while
+# its text changes; never for a command, an edit or a direct conversation.
+
+use <rebel>/term
+use <rebel>/time
+
+use client/composer
+use client/input
+use client/session
+use client/speech
+use client/views
+
+# How often a typing notice is sent again while a person keeps typing.
+constant TYPING_EVERY_SECONDS: i64
+    3
+
+# A client: its connection, its line and its reader.
+record App
+    # The connection and what it knows.
+    s: session.Session
+    # The line being typed.
+    draft: composer.Composer
+    # How the reader is spoken to.
+    sp: speech.Speech
+    # When the last typing notice was sent, by the client's clock; the epoch
+    # before the first.
+    typed_at: time.Instant
+    # How many messages a page of history asks for: as many as the pane
+    # shows.
+    page_rows: i64
+    # Whether the person asked to end the client.
+    done: bool
+
+# A client of the session `s`, its reader spoken to as `sp`.
+#
+# - `s`: the open session, which the client owns.
+# - `sp`: how the reader is spoken to.
+# - `page_rows`: how many messages a page of history asks for, 1 or more.
+function new_app(s: session.Session, sp: speech.Speech, page_rows: i64) -> App
+    return App(s: s, draft: composer.new_composer(), sp: sp, typed_at: time.epoch(), page_rows: page_rows, done: false)
+
+# Tells the room on screen that its reader is typing, where the line holds a
+# new message (not a command, not an edit) and the last notice was long
+# enough ago.
+#
+# - `a`: the client.
+# - `now`: the client's time.
+#
+# Fails as `session.send` fails.
+function maybe_typing(@a: App, now: time.Instant) -> ()?
+    room = a.s.view.current
+
+    if a.draft.text == "" || a.draft.text[0] == '/' || a.draft.editing != "" || room == "" || room[0] == '@'
+        return ok()
+
+    if time.unix_seconds(now) - time.unix_seconds(a.typed_at) < TYPING_EVERY_SECONDS
+        return ok()
+
+    a.typed_at @ now
+    return session.send(@a.s, c: .typing(room: room))
+
+# Does what the line `action` asks: a request sent, and after `/join` the
+# room's newest page asked for.
+#
+# - `a`: the client.
+# - `action`: what the line asked.
+#
+# Fails as `session.send` fails.
+function act(@a: App, action: input.Action) -> ()?
+    match action
+        .request r =>
+            session.send(@a.s, c: r.command)?
+
+            # A room entered shows its newest page at once.
+            match r.command
+                .join j => return session.send(@a.s, c: .history(room: j.room, before: "", limit: a.page_rows))
+                .leave _ | .say _ | .direct _ | .typing _ | .history _ | .edit _ | .sync _ => _ = 0
+        .show s =>
+            if views.room_index(a.s.view, name: s.room) < 0
+                views.tell(@a.s.view, text: f"you are not in {s.room}")
+            else
+                views.switch_to(@a.s.view, name: s.room)
+        .older =>
+            room = a.s.view.current
+
+            if room == "" || room[0] == '@'
+                views.tell(@a.s.view, text: "older messages are paged in rooms")
+            else
+                return session.send(
+                    @a.s,
+                    c: .history(room: room, before: views.oldest_of(a.s.view), limit: a.page_rows)
+                )
+        .help      => views.tell(@a.s.view, text: input.help_lines()[0])
+        .quit      => a.done @ true
+        .unknown u => views.tell(@a.s.view, text: u.reason)
+
+    return ok()
+
+# Does `key` to the client: an edit of its line, a line sent, a message
+# recalled to edit, or a page of history asked.
+#
+# - `a`: the client.
+# - `key`: the key pressed.
+# - `now`: the client's time.
+#
+# Ctrl-C ends the client; Page Up asks for older messages. Fails as
+# `session.send` fails.
+function press(@a: App, key: term.Key, now: time.Instant) -> ()?
+    if key == .control(letter: "c")
+        a.done @ true
+        return ok()
+
+    if key == .page_up
+        return act(@a, action: .older)
+
+    before = a.draft.text
+
+    match composer.press(@a.draft, key: key)
+        .changed =>
+            # A move of the cursor is no typing.
+            if a.draft.text != before
+                return maybe_typing(@a, now: now)
+            return ok()
+        .unchanged | .cancelled => return ok()
+        .recall =>
+            match views.last_own(a.s.view)
+                .ok m  => composer.start_edit(@a.draft, id: m.id, text: m.text)
+                .err e => views.tell(@a.s.view, text: e.msg)
+
+            return ok()
+        .submitted s =>
+            # A new line may tell the room again at once.
+            a.typed_at @ time.epoch()
+
+            if s.editing != ""
+                return session.send(@a.s, c: .edit(id: s.editing, text: s.text))
+
+            return act(@a, action: input.action_of(line: s.text, current: a.s.view.current))
+
+# Puts a pasted text in the line, as typed.
+#
+# - `a`: the client.
+# - `text`: the text pasted.
+# - `now`: the client's time.
+#
+# Fails as `session.send` fails.
+function paste(@a: App, text: str, now: time.Instant) -> ()?
+    composer.insert(@a.draft, piece: text)
+    return maybe_typing(@a, now: now)

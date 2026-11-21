@@ -1,0 +1,241 @@
+# A document read as a table and a table as a document: the rules every
+# tabular format (CSV, TSV, XLSX, a terminal's table) and every command that
+# works on rows (`query`, `stats`, `sql`, `view`, `report`) go through.
+#
+# A table's columns are named once each and every row holds a value for
+# each; a document that is no table is refused with the place that makes it
+# none, so `--path` can be suggested rather than a table guessed.
+
+use model/model
+
+## Tables
+
+# Where `name` stands among `t`'s columns.
+#
+# - `t`: the table.
+# - `name`: the column's name, compared byte for byte.
+#
+# Fails `not_found` where no column has that name; the message lists the
+# columns there are.
+function column_index(t: model.Table lent, name: str) -> i64?
+    at: i64 @= 0
+
+    while at < t.columns.len()
+        if t.columns[at] == name
+            return ok(at)
+        at @ at + 1
+
+    there = t.columns.join(", ")
+    return fail(code: model.NOT_FOUND, msg: f"no column \"{name}\" in {t.name}; its columns are {there}")
+
+# `t` as a document: a list holding one object for each row, its members the
+# columns in order, an empty cell as a `null_value` member.
+#
+# - `t`: the table.
+function document_of(t: model.Table) -> model.Value
+    items: [model.Value] @= []
+
+    for row in t.rows
+        members: [model.Member] @= []
+        at: i64 @= 0
+
+        while at < t.columns.len()
+            members @ members.push(model.Member(name: t.columns[at], value: row[at]))
+            at @ at + 1
+
+        items @ items.push(.object(members: members))
+
+    return .list(items: items)
+
+# `v` read as a table named `name`, by the shape it has.
+#
+# - `v`: the document.
+# - `name`: the table's name where `v` itself gives none.
+#
+# A list of objects is a row for each object, its columns every member name
+# in the order first seen, a member an object lacks being `null_value`; a list
+# of scalars is one column, `value`. An object of one member that holds a list
+# or an object is the table of that member, named by it, so
+# `{"orders": [...]}` and XML's `<catalog><book/>...</catalog>` are tables. A
+# object of objects, INI's sections or TOML's tables, is a row for each
+# member, its first column `name`. Any other object is one row, and a scalar
+# one row of one column, `value`.
+#
+# Fails `invalid` where a list mixes objects with other values, or an object
+# mixes objects with other values; the message says which item or member.
+function table_of(v: model.Value, name: str) -> model.Table?
+    match v
+        .list l => return table_of_list(l.items, name: name)
+        .object r =>
+            if r.members.len() == 1
+                inner = r.members[0]
+
+                match inner.value
+                    .list _ | .object _ => return table_of(inner.value, name: inner.name)
+                    .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ => _ = 0
+            return table_of_object(r.members, name: name)
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ =>
+            return ok(model.Table(name: name, columns: ["value"], rows: [[v]]))
+
+# The table of a list's items: one row each.
+#
+# - `items`: the list's items.
+# - `name`: the table's name.
+#
+# Fails `invalid` where objects stand beside other values.
+function table_of_list(items: [model.Value], name: str) -> model.Table?
+    objects = items.filter(model.is_object).len()
+
+    if objects == 0
+        rows: [[model.Value]] @= []
+
+        for item in items
+            rows @ rows.push([item])
+
+        return ok(model.Table(name: name, columns: ["value"], rows: rows))
+
+    if objects != items.len()
+        at = index_of_other(items)
+        return fail(
+            code: model.INVALID,
+            msg: f"{name}: item {at} is a {model.kind_name(items[at])} among objects, so the list is no table"
+        )
+
+    columns: [str] @= []
+    seen: {str: bool} @= {}
+
+    for item in items
+        for m in model.members_of(item)
+            if !seen[m.name].default(false)
+                seen[m.name] @ true
+                columns @ columns.push(m.name)
+
+    rows: [[model.Value]] @= []
+
+    for item in items
+        rows @ rows.push(row_of(item, columns: columns))
+
+    return ok(model.Table(name: name, columns: columns, rows: rows))
+
+# The table of an object's members: one row of them all, or one row for each
+# member where every member is an object.
+#
+# - `members`: the object's members.
+# - `name`: the table's name.
+#
+# Fails `invalid` where objects stand beside other values.
+function table_of_object(members: [model.Member], name: str) -> model.Table?
+    inner: i64 @= 0
+
+    for m in members
+        if model.is_object(m.value)
+            inner @ inner + 1
+
+    if inner == 0
+        columns: [str] @= []
+        row: [model.Value] @= []
+
+        for m in members
+            columns @ columns.push(m.name)
+            row @ row.push(m.value)
+
+        return ok(model.Table(name: name, columns: columns, rows: [row]))
+
+    if inner != members.len()
+        for m in members
+            if !model.is_object(m.value)
+                return fail(
+                    code: model.INVALID,
+                    msg: f"{name}: member \"{m.name}\" is a {model.kind_name(m.value)} among objects, so the object is no table"
+                )
+
+    items: [model.Value] @= []
+
+    for m in members
+        named = model.Member(name: "name", value: .text(v: m.name))
+        items @ items.push(.object(members: concat_members(first: [named], then: model.members_of(m.value))))
+
+    return table_of_list(items, name: name)
+
+# `first` followed by `then`, as one list of members.
+#
+# - `first`: the members that come first.
+# - `then`: the members after them.
+function concat_members(first: [model.Member], then: [model.Member]) -> [model.Member]
+    out: [model.Member] @= first
+
+    for m in then
+        out @ out.push(m)
+
+    return out
+
+# The values of object `v` for each of `columns`, `null_value` where it has
+# no such member.
+#
+# - `v`: an object.
+# - `columns`: the columns in order.
+function row_of(v: model.Value, columns: [str]) -> [model.Value]
+    by_name: {str: model.Value} @= {}
+
+    for m in model.members_of(v)
+        by_name[m.name] @ m.value
+
+    row: [model.Value] @= []
+
+    for c in columns
+        row @ row.push(by_name[c].default(.null_value))
+
+    return row
+
+# The index of the first item of `items` that is no object, 0 where every
+# one is.
+#
+# - `items`: the items.
+function index_of_other(items: [model.Value]) -> i64
+    at: i64 @= 0
+
+    while at < items.len()
+        if !model.is_object(items[at])
+            return at
+        at @ at + 1
+
+    return 0
+
+## Tests
+
+test "table_of: a list of objects takes every member name in order"
+    a: model.Value = .object(members: [model.Member(name: "x", value: .number(text: "1"))])
+    b: model.Value = .object(
+        members: [model.Member(name: "y", value: .text(v: "b")), model.Member(name: "x", value: .number(text: "2"))]
+    )
+    t = table_of(.list(items: [a, b]), name: "t").must()
+    assert t.columns == ["x", "y"]
+    assert t.rows[0][1] == .null_value
+    assert t.rows[1][0] == .number(text: "2")
+
+test "table_of: an empty list, a scalar, and a list of scalars"
+    empty = table_of(.list(items: []), name: "e").must()
+    assert empty.columns == ["value"]
+    assert empty.rows.len() == 0
+    one = table_of(.number(text: "7"), name: "s").must()
+    assert one.rows == [[.number(text: "7")]]
+    many = table_of(.list(items: [.boolean(v: true), .null_value]), name: "l").must()
+    assert many.rows.len() == 2
+
+test "table_of: an object of one list member is that member's table"
+    rows: model.Value = .list(items: [.object(members: [model.Member(name: "id", value: .number(text: "1"))])])
+    t = table_of(.object(members: [model.Member(name: "orders", value: rows)]), name: "file").must()
+    assert t.name == "orders"
+    assert t.columns == ["id"]
+
+test "table_of: an object of objects is a row for each, named"
+    a: model.Value = .object(members: [model.Member(name: "host", value: .text(v: "db"))])
+    b: model.Value = .object(members: [model.Member(name: "port", value: .number(text: "5432"))])
+    doc: model.Value = .object(members: [model.Member(name: "main", value: a), model.Member(name: "replica", value: b)])
+    t = table_of(doc, name: "settings").must()
+    assert t.columns == ["name", "host", "port"]
+    assert t.rows[1] == [.text(v: "replica"), .null_value, .number(text: "5432")]
+
+test "table_of: objects mixed with scalars are refused"
+    mixed: model.Value = .list(items: [.object(members: []), .number(text: "1")])
+    assert table_of(mixed, name: "m").is_err()

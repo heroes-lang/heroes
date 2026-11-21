@@ -1,0 +1,373 @@
+# An expression of `query/expr` computed over one row of a table.
+#
+# Arithmetic is exact: numbers are `big` decimals, so `price * units` of
+# `19.99` and `3` is `59.97`, and a division that does not end is cut at
+# `DIVISION_SCALE` digits, rounding half to even. A null is absorbed: an
+# operator or a function with a null operand answers null, a comparison with a
+# null answers false (but `== null` and `!= null` ask whether it is one), and
+# a row is kept by `--where` only where its expression is `true`. A moment is
+# compared with a text or a moment by its text, so `date >= "2026-02-01"`
+# reads as a reader expects for dates written alike. Values of other kinds are
+# never converted: ordering a number against a text is refused with the row's
+# number, rather than answered by a rule nobody would guess.
+#
+# An expression is checked against the table's columns before any row is
+# read (`check`), so a misspelt column fails once, naming the columns there
+# are, and not on every row.
+
+use <rebel>/big
+use <rebel>/strings
+
+use model/decimal
+use model/model
+use query/expr
+use query/functions
+
+## Codes
+
+# The code of an expression that names an unknown column or function, calls
+# one with the wrong arguments, or computes what no value is.
+constant INVALID: str
+    "invalid"
+
+## Limits
+
+# The digits kept after the point by a division that does not end.
+constant DIVISION_SCALE: i64
+    16
+
+## Scopes
+
+# What an expression's column names stand for: each column's index in the
+# row.
+record Scope
+    # The columns by name.
+    columns: {str: i64}
+    # The columns in order, for a message.
+    names: [str]
+
+# The scope of `t`'s columns.
+#
+# - `t`: the table.
+function scope_of(t: model.Table lent) -> Scope
+    columns: {str: i64} @= {}
+    at: i64 @= 0
+
+    for c in t.columns
+        columns[c] @ at
+        at @ at + 1
+
+    return Scope(columns: columns, names: t.columns)
+
+# Fails unless every column `e` names is in `scope` and every function it
+# calls is known and given as many arguments as it takes.
+#
+# - `e`: the expression.
+# - `scope`: the columns.
+#
+# Fails `invalid`, naming the columns there are or the functions there are.
+function check(e: expr.Expr, scope: Scope lent) -> ()?
+    match e
+        .literal _ => return ok()
+        .column c =>
+            match scope.columns[c.name]
+                .ok _ => return ok()
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"no column \"{c.name}\"; the columns are {scope.names.join(", ")}"
+                )
+        .call c =>
+            wanted = functions.arity_of(c.name)?
+
+            if wanted != c.arguments.len()
+                return fail(code: INVALID, msg: f"{c.name} takes {wanted} arguments, given {c.arguments.len()}")
+
+            for a in c.arguments
+                check(a, scope: scope)?
+
+            return ok()
+        .operation o =>
+            for a in o.operands
+                check(a, scope: scope)?
+
+            return ok()
+
+## Evaluation
+
+# Whether `e` holds for `row`: its value is `true`.
+#
+# - `e`: the expression, checked against `scope`.
+# - `row`: the row.
+# - `scope`: the row's columns.
+#
+# Fails as `value_of` fails.
+function holds(e: expr.Expr, row: [model.Value] lent, scope: Scope lent) -> bool?
+    return match value_of(e, row: row, scope: scope)?
+        .boolean b                                                                     => ok(b.v)
+        .null_value | .number _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => ok(false)
+
+# The value of `e` for `row`.
+#
+# - `e`: the expression, checked against `scope`.
+# - `row`: the row.
+# - `scope`: the row's columns.
+#
+# It follows the expression's nesting, which `expr.MAX_NESTING` bounds.
+# Fails `invalid` for an operator given values it does not take, and for a
+# division by zero.
+function value_of(e: expr.Expr, row: [model.Value] lent, scope: Scope lent) -> model.Value?
+    return match e
+        .literal l   => ok(l.value)
+        .column c    => ok(row[scope.columns[c.name]?])
+        .call c      => functions.call(c.name, arguments: values_of(c.arguments, row: row, scope: scope)?)
+        .operation o => operate(o.op, operands: o.operands, row: row, scope: scope)
+
+# The values of `es` for `row`, in order.
+#
+# - `es`: the expressions.
+# - `row`: the row.
+# - `scope`: the row's columns.
+#
+# Fails as `value_of` fails.
+function values_of(es: [expr.Expr], row: [model.Value] lent, scope: Scope lent) -> [model.Value]?
+    out: [model.Value] @= []
+
+    for e in es
+        out @ out.push(value_of(e, row: row, scope: scope)?)
+
+    return ok(out)
+
+# The value of an operator over its operands; `&&` and `||` read their right
+# operand only where the left does not decide.
+#
+# - `op`: the operator.
+# - `operands`: its operands' expressions.
+# - `row`: the row.
+# - `scope`: the row's columns.
+#
+# Fails `invalid` where an operand is not of a kind the operator takes.
+function operate(op: str, operands: [expr.Expr], row: [model.Value] lent, scope: Scope lent) -> model.Value?
+    left = value_of(operands[0], row: row, scope: scope)?
+
+    if op == "!"
+        return match left
+            .boolean b  => ok(.boolean(v: !b.v))
+            .null_value => ok(.null_value)
+            .number _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => fail(
+                code: INVALID,
+                msg: f"! takes a truth value, given a {model.kind_name(left)}"
+            )
+
+    if op == "neg"
+        return match left
+            .number n => ok(
+                .number(text: decimal.text_of(big.multiply_decimal(a: decimal.parse(n.text)?, b: big.parse_decimal("-1")?)))
+            )
+            .null_value => ok(.null_value)
+            .boolean _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => fail(
+                code: INVALID,
+                msg: f"- takes a number, given a {model.kind_name(left)}"
+            )
+
+    if op == "&&" || op == "||"
+        decided = truth_of(left, op: op)?
+
+        if op == "&&" && !decided || op == "||" && decided
+            return ok(.boolean(v: decided))
+        right = value_of(operands[1], row: row, scope: scope)?
+        return ok(.boolean(v: truth_of(right, op: op)?))
+
+    right = value_of(operands[1], row: row, scope: scope)?
+
+    if op == "==" || op == "!="
+        same = is_same(left: left, right: right)
+        return ok(.boolean(v: same == (op == "==")))
+
+    if op == "<" || op == "<=" || op == ">" || op == ">="
+        if left == .null_value || right == .null_value
+            return ok(.boolean(v: false))
+        order = compare(left: left, right: right)?
+        answer = op == "<" && order < 0 || op == "<=" && order <= 0 || op == ">" && order > 0 || op == ">=" && order >= 0
+        return ok(.boolean(v: answer))
+    return arithmetic(op, left: left, right: right)
+
+# The truth of an operand of `&&` or `||`: a truth value, a null read as
+# false.
+#
+# - `v`: the operand's value.
+# - `op`: the operator, for a message.
+#
+# Fails `invalid` for any other kind.
+function truth_of(v: model.Value, op: str) -> bool?
+    return match v
+        .boolean b  => ok(b.v)
+        .null_value => ok(false)
+        .number _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => fail(
+            code: INVALID,
+            msg: f"{op} takes truth values, given a {model.kind_name(v)}"
+        )
+
+# Whether `left` and `right` are the same value: numbers by their value
+# (`1.50` is `1.5`), a moment and a text by their text, other values of one
+# kind by what they hold, values of two kinds never.
+#
+# - `left`: a value.
+# - `right`: a value.
+function is_same(left: model.Value, right: model.Value) -> bool
+    match left
+        .number a =>
+            match right
+                .number b => return decimal.canonical(a.text) == decimal.canonical(b.text)
+                .null_value | .boolean _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => return false
+        .moment _ | .text _ =>
+            if is_textual(right)
+                return model.cell_text(left) == model.cell_text(right)
+            return false
+        .null_value | .boolean _ | .bytes _ | .list _ | .object _ => return left == right
+
+# Whether `v` is a text or a moment, the two kinds compared by their text.
+#
+# - `v`: the value.
+function is_textual(v: model.Value) -> bool
+    return match v
+        .text _ | .moment _                                                   => true
+        .null_value | .boolean _ | .number _ | .bytes _ | .list _ | .object _ => false
+
+# Below 0, 0 or above 0 as `left` orders before, with or after `right`:
+# numbers by value, texts and moments by their bytes, `false` before `true`.
+#
+# - `left`: a value, not null.
+# - `right`: a value, not null.
+#
+# Fails `invalid` for values of two kinds, or of a kind with no order.
+function compare(left: model.Value, right: model.Value) -> i64?
+    match left
+        .number a =>
+            match right
+                .number b => return ok(big.compare_decimal(a: decimal.parse(a.text)?, b: decimal.parse(b.text)?))
+                .null_value | .boolean _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => _ = 0
+        .text _ | .moment _ =>
+            if is_textual(right)
+                return ok(strings.compare(a: model.cell_text(left), b: model.cell_text(right)))
+        .boolean a =>
+            match right
+                .boolean b => return ok(rank_of(a.v) - rank_of(b.v))
+                .null_value | .number _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => _ = 0
+        .null_value | .bytes _ | .list _ | .object _ => _ = 0
+
+    return fail(code: INVALID, msg: f"cannot order a {model.kind_name(left)} and a {model.kind_name(right)}")
+
+# 0 for `false` and 1 for `true`, the order of truth values.
+#
+# - `b`: the truth value.
+function rank_of(b: bool) -> i64
+    if b
+        return 1
+    return 0
+
+# The value of `+`, `-`, `*`, `/` or `%` over two values: exact over numbers,
+# and `+` joins two texts.
+#
+# - `op`: the operator.
+# - `left`: the left value.
+# - `right`: the right value.
+#
+# Fails `invalid` for values the operator does not take, and for a division
+# by zero.
+function arithmetic(op: str, left: model.Value, right: model.Value) -> model.Value?
+    if left == .null_value || right == .null_value
+        return ok(.null_value)
+
+    if op == "+" && is_textual(left) && is_textual(right)
+        return ok(.text(v: model.cell_text(left) + model.cell_text(right)))
+
+    match left
+        .number a =>
+            match right
+                .number b => return ok(
+                    .number(text: decimal.text_of(exact(op, a: decimal.parse(a.text)?, b: decimal.parse(b.text)?)?))
+                )
+                .null_value | .boolean _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => _ = 0
+        .null_value | .boolean _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => _ = 0
+
+    return fail(
+        code: INVALID,
+        msg: f"{op} takes two numbers, given a {model.kind_name(left)} and a {model.kind_name(right)}"
+    )
+
+# The exact value of `a op b`.
+#
+# - `op`: `+`, `-`, `*`, `/` or `%`.
+# - `a`: the left number.
+# - `b`: the right number.
+#
+# A division keeps `DIVISION_SCALE` digits, rounding half to even, and its
+# trailing zeros are taken away; `%` keeps the sign of `a`, as `/` truncates.
+# Fails `invalid` for a division by zero.
+function exact(op: str, a: big.Decimal, b: big.Decimal) -> big.Decimal?
+    if op == "+"
+        return ok(big.add_decimal(a: a, b: b))
+
+    if op == "-"
+        return ok(big.subtract_decimal(a: a, b: b))
+
+    if op == "*"
+        return ok(big.multiply_decimal(a: a, b: b))
+
+    if big.sign(b.unscaled) == 0
+        return fail(code: INVALID, msg: f"{op} by zero")
+
+    if op == "/"
+        return ok(big.trim_zeros(big.divide_decimal(n: a, by: b, scale: DIVISION_SCALE, rounding: .half_even)))
+    return ok(big.divide_decimal_whole(n: a, by: b, rounding: .toward_zero).remainder)
+
+## Tests
+
+# A table of two rows for the tests below.
+function sample() -> model.Table
+    rows: [[model.Value]] = [
+        [.text(v: "north"), .number(text: "19.99"), .number(text: "3"), .moment(text: "2026-02-03"), .null_value]
+        [.text(v: "south"), .number(text: "0.10"), .number(text: "0"), .moment(text: "2026-01-20"), .text(v: "x")]
+    ]
+    return model.Table(name: "t", columns: ["region", "price", "units", "day", "note"], rows: rows)
+
+# The value of `text` over row `row` of `sample`, for the tests.
+#
+# - `text`: the expression.
+# - `row`: the row, 0 or 1.
+function sample_value(text: str, row: i64) -> model.Value?
+    t = sample()
+    s = scope_of(t)
+    e = expr.parse(text)?
+    check(e, scope: s)?
+    return value_of(e, row: t.rows[row], scope: s)
+
+test "value_of: exact arithmetic, a division cut, and a division by zero"
+    assert sample_value("price * units", row: 0).must() == .number(text: "59.97")
+    assert sample_value("price + 0.20", row: 1).must() == .number(text: "0.30")
+    assert sample_value("10 / 4", row: 0).must() == .number(text: "2.5")
+    assert sample_value("1 / 3", row: 0).must() == .number(text: "0.3333333333333333")
+    assert sample_value("price / units", row: 1).is_err()
+    assert sample_value("-7 % 3", row: 0).must() == .number(text: "-1")
+
+test "value_of: comparisons of numbers, dates against texts, and nulls"
+    assert sample_value("price > 5 && region == 'north'", row: 0).must() == .boolean(v: true)
+    assert sample_value("day >= '2026-02-01'", row: 1).must() == .boolean(v: false)
+    assert sample_value("note == null", row: 0).must() == .boolean(v: true)
+    assert sample_value("note > 'a'", row: 0).must() == .boolean(v: false)
+    assert sample_value("price == 19.990", row: 0).must() == .boolean(v: true)
+    assert sample_value("region < 1", row: 0).is_err()
+
+test "value_of: functions, and nulls passing through them"
+    assert sample_value("upper(region) + '!'", row: 1).must() == .text(v: "SOUTH!")
+    assert sample_value("round(price, 1)", row: 0).must() == .number(text: "20.0")
+    assert sample_value("month(day)", row: 1).must() == .number(text: "1")
+    assert sample_value("len(note)", row: 0).must() == .null_value
+    assert sample_value("len(region)", row: 1).must() == .number(text: "5")
+    assert sample_value("coalesce(note, 'none')", row: 0).must() == .text(v: "none")
+    assert sample_value("contains(region, 'ort')", row: 0).must() == .boolean(v: true)
+
+test "check: a misspelt column and a wrong call are refused before any row"
+    assert sample_value("prise > 1", row: 0).is_err()
+    assert sample_value("round(price)", row: 0).is_err()
+    assert sample_value("median(price)", row: 0).is_err()

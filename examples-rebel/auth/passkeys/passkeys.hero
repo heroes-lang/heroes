@@ -1,0 +1,162 @@
+# Passkeys: the server as a WebAuthn relying party. Registration hands the
+# browser options with a fresh challenge and keeps the challenge in the
+# person's session; the credential it answers is verified by `webauthn`,
+# its attestation judged against the trusted roots, and kept on the account.
+# Authentication needs no session: the options carry a challenge kept under a
+# ceremony of its own, and the assertion names its credential, which names
+# the account (a discoverable credential, so no user name is typed).
+#
+# The user handle a credential carries is the account's UUID as 16 bytes,
+# never its name or address, as Web Authentication § 14.6.1 asks.
+
+use <rebel>/random
+use <rebel>/time
+use <rebel>/uuid
+use <rebel>/webauthn
+use <rebel>/x509
+
+use accounts/accounts
+use core/ids
+use passkeys/attestation
+
+# The code of a ceremony refused.
+constant INVALID: str
+    "invalid"
+
+# The options a ceremony begins with, and the challenge they carry.
+record Started
+    # The challenge, which the server keeps until the answer comes.
+    challenge: [u8]
+    # The options as the JSON a page hands `navigator.credentials`.
+    options: str
+
+# What a verified assertion answers.
+record Asserted
+    # The account, its passkey's counter moved to the assertion's.
+    user: accounts.User
+    # The signature counter the authenticator showed.
+    sign_count: i64
+
+# The 16 bytes of the account `u`'s identifier: its user handle.
+#
+# - `u`: the account.
+function user_handle(u: accounts.User) -> [u8]
+    return uuid.to_bytes(uuid.parse(u.id).must())
+
+# The options of a registration for `u` at `rp`, a challenge drawn from `g`,
+# asking for the authenticator's attestation and excluding the passkeys `u`
+# holds already.
+#
+# - `g`: the generator the challenge is drawn from.
+# - `u`: the account.
+# - `rp`: the relying party.
+#
+# Fails as `webauthn.format_registration_options` fails.
+function registration_options(@g: random.ChaCha8, u: accounts.User, rp: webauthn.RelyingParty) -> Started?
+    challenge = ids.draw(@g, count: 32)
+    options @= webauthn.registration_options(challenge)
+    options.attestation @ .direct
+    excluded: [webauthn.Descriptor] @= []
+
+    for p in u.passkeys
+        excluded @ excluded.push(webauthn.Descriptor(id: p.id, transports: []))
+
+    options.exclude @ excluded
+    user = webauthn.User(id: user_handle(u), name: u.username, display_name: u.display_name)
+    text = webauthn.format_registration_options(rp, user: user, options: options)?
+    return ok(Started(challenge: challenge, options: text))
+
+# The passkey the registration `response` makes, verified against
+# `challenge` and its attestation judged.
+#
+# - `response`: the browser's `RegistrationResponseJSON`.
+# - `challenge`: the challenge the session kept.
+# - `rp`: the relying party.
+# - `roots`: the authenticator vendors' roots trusted.
+# - `at`: the server's time.
+#
+# Fails `invalid` as `webauthn.verify_registration` refuses the response and
+# `attestation.judge` refuses its attestation.
+function finish_registration(response: str, challenge: [u8], rp: webauthn.RelyingParty, roots: [x509.Certificate], at: time.Instant) -> accounts.Passkey?
+    if challenge.len() == 0
+        return fail(code: INVALID, msg: "no registration was begun in this session")
+
+    r = webauthn.verify_registration(response, expected: webauthn.expect(rp, challenge: challenge))?
+    judged = attestation.judge(r, roots: roots, at: at)?
+    return ok(
+        accounts.Passkey(id: r.credential.id, public_key: r.credential.public_key, sign_count: r.credential.sign_count, attestation: judged)
+    )
+
+# The options of a passwordless login at `rp`, a challenge drawn from `g`,
+# any discoverable credential allowed.
+#
+# - `g`: the generator the challenge is drawn from.
+# - `rp`: the relying party.
+#
+# Fails as `webauthn.format_authentication_options` fails.
+function authentication_options(@g: random.ChaCha8, rp: webauthn.RelyingParty) -> Started?
+    challenge = ids.draw(@g, count: 32)
+    options = webauthn.authentication_options(challenge)
+    return ok(Started(challenge: challenge, options: webauthn.format_authentication_options(rp.id, options: options)?))
+
+# The account the assertion `response` logs in, verified against
+# `challenge` by the passkey it names.
+#
+# - `d`: the accounts.
+# - `response`: the browser's `AuthenticationResponseJSON`.
+# - `challenge`: the challenge the ceremony kept.
+# - `rp`: the relying party.
+#
+# Fails `invalid` where it names no passkey of any account, its user handle
+# is another account's, the account is disabled, or `webauthn` refuses it,
+# its signature or its counter.
+function finish_authentication(d: accounts.Directory, response: str, challenge: [u8], rp: webauthn.RelyingParty) -> Asserted?
+    id = webauthn.credential_id_of(response)?
+
+    holder = match accounts.holder_of(d, credential_id: id)
+        .ok h  => h
+        .err _ => return fail(code: INVALID, msg: "the assertion names a passkey no account holds")
+
+    if holder.user.disabled
+        return fail(code: INVALID, msg: "the account is disabled")
+
+    handle = webauthn.user_handle_of(response)?
+
+    if handle.len() > 0 && handle != user_handle(holder.user)
+        return fail(code: INVALID, msg: "the assertion's user handle is another account's")
+
+    kept = holder.user.passkeys[holder.index]
+    credential = webauthn.Credential(
+        id: kept.id,
+        public_key: kept.public_key,
+        sign_count: kept.sign_count,
+        transports: []
+    )
+    a = webauthn.verify_authentication(response, expected: webauthn.expect(rp, challenge: challenge), credential: credential)?
+    u @= holder.user
+    moved @= kept
+    moved.sign_count @ a.sign_count
+    u.passkeys[holder.index] @ moved
+    return ok(Asserted(user: u, sign_count: a.sign_count))
+
+test "user_handle: the account's UUID as its 16 bytes"
+    u = accounts.new_user(
+        id: "01954d2c-9a00-7000-8000-000000000001",
+        username: "ana",
+        email: "a@example.org",
+        created: 0
+    )
+    assert user_handle(u).len() == 16 && user_handle(u)[15] == 1
+
+test "registration_options: a challenge of 32 bytes, kept and sent"
+    g @= ids.seeded_generator("passkeys")
+    u = accounts.new_user(
+        id: "01954d2c-9a00-7000-8000-000000000001",
+        username: "ana",
+        email: "a@example.org",
+        created: 0
+    )
+    rp = webauthn.RelyingParty(id: "localhost", name: "Example", origins: ["http://localhost"])
+    s = registration_options(@g, u: u, rp: rp).must()
+    assert s.challenge.len() == 32 && s.options.len() > 0
+    assert finish_registration(response: "{}", challenge: [], rp: rp, roots: [], at: time.epoch()).is_err()

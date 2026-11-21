@@ -1,0 +1,116 @@
+# The API's writes, each made by a publisher whose token `api` has checked:
+# a version published, a version yanked and its yank taken back, a signing
+# key added.
+#
+# A publication is `PUT /api/v1/packages/<name>/<version>` with a
+# `multipart/form-data` body of two parts, `archive` (the archive's bytes)
+# and `signature` (the signature's PEM block). It is a PUT because it is
+# idempotent: the same bytes sent again are answered 200 with the version as
+# it stands, so a client may retry an upload whose answer it never read.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/json
+use <rebel>/time
+
+use server/answers
+use server/publish
+use server/serving
+use signing/signers
+use store/database
+use store/releases
+
+## Codes
+
+# The code of a request whose body lacks what the route reads.
+constant INVALID: str
+    "invalid"
+
+# The code of a version yanked by a publisher who does not own it.
+constant PERMISSION: str
+    "permission"
+
+## Writes
+
+# Publishes the archive and the signature `r` carries as `name` at `version`:
+# 201 with the version where it is new, 200 where the same bytes were
+# published already.
+#
+# - `state`: the server's state, which the publication changes.
+# - `r`: the request, its body a form of the parts `archive` and
+#   `signature`.
+# - `grant`: what its token grants.
+# - `name`: the package's name, from the URL.
+# - `version`: the version, from the URL.
+# - `now`: the moment it is published.
+#
+# Fails `invalid` where the body is no such form, and as `publish.publish`
+# fails.
+function publish_version(@state: serving.State, r: http.Request, grant: database.Grant, name: str, version: str, now: time.Instant) -> http.Response?
+    limits @= http.default_part_limits()
+    limits.part_bytes @ state.settings.upload_bytes
+    limits.body_bytes @ state.settings.upload_bytes + 65_536
+
+    parts = match http.parts_of(r, limits: limits)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"the body is no form of an archive and a signature: {e.msg}")
+
+    archive = match http.part_of(parts, name: "archive")
+        .ok p  => p.data
+        .err _ => return fail(code: INVALID, msg: "the form has no part named \"archive\"")
+
+    signature = match http.part_of(parts, name: "signature")
+        .ok p  => bytes.to_text(p.data)?
+        .err _ => return fail(code: INVALID, msg: "the form has no part named \"signature\"")
+
+    upload = publish.Upload(package: name, version: version, archive: archive, signature: signature)
+    done = publish.publish(@state, grant: grant, upload: upload, now: now)?
+
+    status = if done.created
+        http.STATUS_CREATED
+    else
+        http.STATUS_OK
+    return ok(answers.with_json(status, v: answers.release_json(done.release, base_url: state.base_url)))
+
+# Yanks `name` at `version`, or takes its yank back, for its owner.
+#
+# - `state`: the server's state.
+# - `grant`: what the request's token grants.
+# - `name`: the package's name.
+# - `version`: the version.
+# - `yanked`: true to yank, false to take the yank back.
+#
+# Fails `not_found` where there is no such version, `permission` where the
+# package is another publisher's.
+function set_yanked(@state: serving.State, grant: database.Grant, name: str, version: str, yanked: bool) -> http.Response?
+    p = releases.package_named(@state.db, name: name)?
+
+    if p.publisher != grant.publisher.name
+        return fail(code: PERMISSION, msg: f"{name} belongs to another publisher")
+    r = releases.release_of(@state.db, name: name, version: version)?
+    releases.set_yanked(@state.db, r: r, yanked: yanked)?
+    changed = releases.release_of(@state.db, name: name, version: version)?
+    return ok(answers.with_json(http.STATUS_OK, v: answers.release_json(changed, base_url: state.base_url)))
+
+# Adds the Ed25519 key of the `PUBLIC KEY` block `r`'s body holds to the
+# grant's publisher: 201 with its id, or 200 where it was added already.
+#
+# - `state`: the server's state.
+# - `r`: the request, its body the block.
+# - `grant`: what its token grants.
+# - `now`: the moment it is added.
+#
+# Fails `invalid` where the body is no Ed25519 public key, `exists` where the
+# key is another publisher's.
+function add_key(@state: serving.State, r: http.Request, grant: database.Grant, now: time.Instant) -> http.Response?
+    text = bytes.to_text(r.body)?
+    der = signers.read_public(text)?
+    is_new = database.key_of(@state.db, id: signers.id_of(der)).is_err()
+    id = database.add_key(@state.db, publisher: grant.publisher, der: der, now: now)?
+
+    status = if is_new
+        http.STATUS_CREATED
+    else
+        http.STATUS_OK
+    body: json.Value = .object(members: {"key_id": .text(v: id), "publisher": .text(v: grant.publisher.name)})
+    return ok(answers.with_json(status, v: body))

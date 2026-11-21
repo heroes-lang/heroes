@@ -1,0 +1,176 @@
+# The site's newest notes as an Atom feed (RFC 4287), so a feed reader
+# follows the site. Every address in it is absolute, made from the site's
+# `base_url`, since a reader fetches the feed from elsewhere; an entry's
+# content is the note's cleaned HTML, carried as escaped text (`type="html"`,
+# RFC 4287 § 3.1.1.2), never as markup inside the feed.
+
+use <rebel>/time
+use <rebel>/xml
+
+use domain/model
+use views/markup
+
+# Atom's namespace, RFC 4287 § 2.
+constant ATOM: str
+    "http://www.w3.org/2005/Atom"
+
+# The media type a feed is answered with, RFC 4287 § 7.
+constant MEDIA_TYPE: str
+    "application/atom+xml; charset=utf-8"
+
+# The site a feed is about.
+record Site
+    # The site's name, the feed's title.
+    title: str
+    # The address readers reach it at, with no `/` at its end.
+    base_url: str
+
+# The feed of `notes`, the newest first, updated at the newest one's last
+# change, or at `empty_at` where there is none.
+#
+# - `site`: the site's name and address.
+# - `notes`: the notes, newest first.
+# - `empty_at`: the `updated` of a feed with no entry.
+#
+# Fails `invalid` where a title holds a character XML cannot hold, a control
+# character a person cannot type, as `xml.format` fails.
+function atom_of(site: Site, notes: [model.Note], empty_at: time.Instant) -> str?
+    updated = if notes.len() == 0
+        empty_at
+    else
+        newest_change(notes)
+
+    children: [xml.Node] @= [
+        node(text_element(name: "title", text: site.title))
+        node(text_element(name: "id", text: site.base_url + "/"))
+        node(link(href: site.base_url + "/feed.atom", rel: "self"))
+        node(link(href: site.base_url + "/", rel: "alternate"))
+        node(text_element(name: "updated", text: stamp(updated)))
+    ]
+
+    for n in notes
+        children @ children.push(node(entry_of(site, note: n)))
+
+    root: xml.Element @= xml.with_namespace(xml.element_in(space: ATOM, name: "feed"), prefix: "", space: ATOM)
+    root.children @ children
+    return xml.format_indented(xml.document(root), width: 2)
+
+# The latest change among `notes`.
+#
+# - `notes`: at least one note.
+function newest_change(notes: [model.Note]) -> time.Instant
+    latest: time.Instant @= notes[0].updated_at
+
+    for n in notes
+        if time.is_after(a: n.updated_at, b: latest)
+            latest @ n.updated_at
+
+    return latest
+
+# The entry of `note`.
+#
+# - `site`: the site's address.
+# - `note`: the note.
+function entry_of(site: Site, note: model.Note) -> xml.Element
+    address = f"{site.base_url}/notes/{note.slug}"
+    author: xml.Element @= in_atom("author")
+    author.children @ [node(text_element(name: "name", text: note.author))]
+
+    children: [xml.Node] @= [
+        node(text_element(name: "title", text: note.title))
+        node(text_element(name: "id", text: address))
+        node(link(href: address, rel: "alternate"))
+        node(text_element(name: "published", text: stamp(note.created_at)))
+        node(text_element(name: "updated", text: stamp(note.updated_at)))
+        node(author)
+    ]
+
+    for tag in note.tags
+        children @ children.push(node(xml.with_attribute(in_atom("category"), name: "term", value: tag)))
+
+    children @ children.push(node(text_element(name: "summary", text: markup.excerpt(note.body))))
+    content = xml.with_attribute(
+        text_element(name: "content", text: markup.note_html(note.body)),
+        name: "type",
+        value: "html"
+    )
+    children @ children.push(node(content))
+    e: xml.Element @= in_atom("entry")
+    e.children @ children
+    return e
+
+# An element of Atom's namespace.
+#
+# - `name`: its local name.
+function in_atom(name: str) -> xml.Element
+    return xml.element_in(space: ATOM, name: name)
+
+# An element of Atom's namespace holding `text`.
+#
+# - `name`: its local name.
+# - `text`: the characters it holds.
+function text_element(name: str, text: str) -> xml.Element
+    return xml.with_text(in_atom(name), text: text)
+
+# A `link` to `href` of the relation `rel`.
+#
+# - `href`: the absolute address.
+# - `rel`: `self` or `alternate`.
+function link(href: str, rel: str) -> xml.Element
+    return xml.with_attribute(xml.with_attribute(in_atom("link"), name: "href", value: href), name: "rel", value: rel)
+
+# `e` as a node.
+#
+# - `e`: the element.
+function node(e: xml.Element) -> xml.Node
+    return .element(v: e)
+
+# `t` as Atom writes a date, RFC 3339 in UTC.
+#
+# - `t`: the moment.
+function stamp(t: time.Instant) -> str
+    return time.format(t, layout: .rfc3339)
+
+test "atom_of: an empty feed, its updated the moment given"
+    at = time.from_unix(whole_seconds: 1_795_251_600, extra_nanoseconds: 0).must()
+    text = atom_of(Site(title: "Notes", base_url: "http://h"), notes: [], empty_at: at).must()
+    doc = xml.parse(text).must()
+    assert xml.text_of(xml.child(doc.root, name: "updated").must()) == "2026-11-21T09:00:00Z"
+    assert xml.children_named(doc.root, name: "entry").len() == 0
+
+test "atom_of: two notes, their addresses absolute, a title's markup escaped, the content carried as text"
+    at = time.from_unix(whole_seconds: 1_795_251_600, extra_nanoseconds: 0).must()
+    later = time.add(at, d: time.minutes(5).must()).must()
+    first = model.Note(
+        id: 1,
+        author_id: 1,
+        author: "alice",
+        slug: "a",
+        title: "A <b>",
+        body: "**x**",
+        created_at: at,
+        updated_at: at,
+        tags: ["t"],
+        comments: 0
+    )
+    second = model.Note(
+        id: 2,
+        author_id: 1,
+        author: "alice",
+        slug: "b",
+        title: "B",
+        body: "y",
+        created_at: later,
+        updated_at: later,
+        tags: [],
+        comments: 0
+    )
+    doc = xml.parse(
+        atom_of(Site(title: "Notes", base_url: "http://h"), notes: [second, first], empty_at: at).must()
+    ).must()
+    entries = xml.children_named(doc.root, name: "entry")
+    assert entries.len() == 2
+    assert xml.text_of(xml.child(entries[1], name: "title").must()) == "A <b>"
+    assert xml.text_of(xml.child(entries[1], name: "id").must()) == "http://h/notes/a"
+    assert xml.text_of(xml.child(entries[1], name: "content").must()) == "<p><strong>x</strong></p>\n"
+    assert xml.text_of(xml.child(doc.root, name: "updated").must()) == "2026-11-21T09:05:00Z"

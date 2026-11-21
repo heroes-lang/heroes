@@ -1,0 +1,174 @@
+# The kinds of job this program runs, and what each does with its payload.
+# A worker claims a job, runs the function of its kind here, and tells the
+# store how it went: done with an output, failed in a way a later attempt
+# may mend, or failed for good.
+#
+# - `deliver_webhook` posts a JSON body to an endpoint, as a service tells
+#   its subscribers an event happened: a 2xx is done, a 408, a 429 or a 5xx
+#   or a broken connection is tried again, any other answer is final.
+# - `checksum` answers the SHA-256 of a file, as an upload pipeline checks
+#   what it received; a file not there is final.
+# - `purge_finished` removes the completed jobs older than its payload says,
+#   the store's own upkeep, run on a schedule.
+# - `queue_report` answers how many jobs stand in each queue and state.
+#
+# Each delivery carries `Idempotency-Key: job-<id>`, so an endpoint that
+# received an attempt whose answer was lost can tell the next one is the
+# same event.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/http
+use <rebel>/jobs
+use <rebel>/jobs/redis_store
+use <rebel>/json
+use <rebel>/redis
+use <rebel>/time
+
+# What an attempt came to.
+variant Outcome
+    # It did the work.
+    done
+        # What it answers, kept with the job.
+        output: json.Value
+    # It failed in a way a later attempt may mend: a server down, a limit.
+    retry
+        # What went wrong.
+        error: str
+    # It failed in a way no later attempt mends: a payload it cannot read,
+    # a request refused for what it is.
+    discard
+        # What went wrong.
+        error: str
+
+# The kinds `run` knows, each a job a producer may enqueue.
+constant KINDS: [str]
+    ["deliver_webhook", "checksum", "purge_finished", "queue_report"]
+
+# The member `key` of the payload `payload` as text. Fails `invalid` naming
+# it where it is not there or is no text.
+#
+# - `payload`: the job's payload.
+# - `key`: the member.
+function text_member(payload: json.Value, key: str) -> str?
+    match json.member(payload, key: key)
+        .ok v =>
+            match json.text_of(v)
+                .ok t  => return ok(t)
+                .err _ => return fail(code: jobs.INVALID, msg: f"the payload's {key} is no text")
+        .err _ => return fail(code: jobs.INVALID, msg: f"the payload names no {key}")
+
+# Runs the attempt `claimed` and says how it went.
+#
+# - `c`: the store's client, which the upkeep kinds read and write.
+# - `claimed`: the job, as the store's `claim` answered it.
+# - `client`: how a webhook is posted.
+function run(@c: redis.Client, claimed: jobs.Info, client: http.Client) -> Outcome
+    match claimed.kind
+        "deliver_webhook" => return deliver(claimed, client: client)
+        "checksum"        => return checksum(claimed.payload)
+        "purge_finished"  => return purge(@c, payload: claimed.payload)
+        "queue_report"    => return report(@c)
+        _                 => return .discard(error: f"no handler for the kind {claimed.kind}")
+
+# Posts the payload's `body` to its `url` as JSON.
+#
+# - `claimed`: the job; its id and attempt go with the request.
+# - `client`: how it is posted.
+function deliver(claimed: jobs.Info, client: http.Client) -> Outcome
+    target = match text_member(claimed.payload, key: "url")
+        .ok u  => u
+        .err e => return .discard(error: e.msg)
+
+    body: json.Value = match json.member(claimed.payload, key: "body")
+        .ok b  => b
+        .err _ => .null_value
+
+    event = text_member(claimed.payload, key: "event").default("event")
+
+    text = match json.format(body)
+        .ok t  => t
+        .err e => return .discard(error: f"the body cannot be written as JSON: {e.msg}")
+
+    request @= match http.request(method: "POST", target: target)
+        .ok r  => r
+        .err e => return .discard(error: f"no URL to post to: {e.msg}")
+
+    request @ http.with_body(request, content_type: "application/json", body: bytes.from_text(text))
+    request.headers @ http.with_header(request.headers, name: "Idempotency-Key", value: f"job-{claimed.id}")
+    request.headers @ http.with_header(request.headers, name: "X-Webhook-Event", value: event)
+    request.headers @ http.with_header(request.headers, name: "X-Delivery-Attempt", value: to_str(claimed.attempt))
+
+    match http.send(client, r: request)
+        .err e => return .retry(error: f"the endpoint could not be reached: {e.code}")
+        .ok response =>
+            status = response.status
+
+            if status >= 200 && status < 300
+                return .done(output: .object(members: {"status": .number(v: to_f64(status))}))
+
+            if status == 408 || status == 429 || status >= 500
+                return .retry(error: f"the endpoint answered {status}")
+            return .discard(error: f"the endpoint refused the delivery with {status}")
+
+# The SHA-256 of the file the payload's `path` names.
+#
+# - `payload`: the job's payload.
+function checksum(payload: json.Value) -> Outcome
+    path = match text_member(payload, key: "path")
+        .ok p  => p
+        .err e => return .discard(error: e.msg)
+
+    match fs.read_bytes(path)
+        .ok data =>
+            digest = bytes.format_hex(crypto.sha256(data))
+            return .done(
+                output: .object(members: {"sha256": .text(v: digest), "bytes": .number(v: to_f64(data.len()))})
+            )
+        .err e =>
+            if e.code == fs.FILE_NOT_FOUND
+                return .discard(error: f"no file at {path}")
+            return .retry(error: f"the file could not be read: {e.code}")
+
+# Removes the completed jobs that finished longer ago than the payload's
+# `older_than`, a duration as `time.parse_duration` reads it.
+#
+# - `c`: the store's client.
+# - `payload`: the job's payload.
+function purge(@c: redis.Client, payload: json.Value) -> Outcome
+    text = text_member(payload, key: "older_than").default("24h")
+
+    older_than = match time.parse_duration(text)
+        .ok d  => d
+        .err _ => return .discard(error: f"older_than is no duration: {text}")
+
+    match redis_store.purge(@c, state: .completed, older_than: older_than)
+        .ok n  => return .done(output: .object(members: {"purged": .number(v: to_f64(n))}))
+        .err e => return .retry(error: f"the store did not purge: {e.code}")
+
+# How many jobs stand in each queue and state, as an object of objects.
+#
+# - `c`: the store's client.
+function report(@c: redis.Client) -> Outcome
+    counts = match redis_store.counts(@c)
+        .ok found => found
+        .err e    => return .retry(error: f"the store did not count: {e.code}")
+
+    by_queue: {str: json.Value} @= {}
+
+    for count in counts
+        states: {str: json.Value} @= match by_queue[count.queue]
+            .ok v  => json.members_of(v).default({})
+            .err _ => {}
+
+        states[jobs.state_name(count.state)] @ .number(v: to_f64(count.jobs))
+        by_queue[count.queue] @ .object(members: states)
+
+    return .done(output: .object(members: by_queue))
+
+test "checksum: a file not there is final, its path named"
+    assert checksum(.object(members: {"path": .text(v: "/no/such/file/for/worker")})) == .discard(error: "no file at /no/such/file/for/worker")
+
+test "checksum: a payload with no path is final"
+    assert checksum(.null_value) == .discard(error: "the payload names no path")

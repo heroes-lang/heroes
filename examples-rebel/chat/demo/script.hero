@@ -1,0 +1,238 @@
+# The demo, `chat demo`: a whole chat session on this machine, printed as a
+# transcript that is the same on every run. It starts the MQTT and NATS
+# stand-ins and a chat server on threads of their own, the server's history
+# in a SQLite file of a folder made under `build/` and removed at the end,
+# its clock fixed, its rooms `iot` and `ops` mirrored to the two brokers.
+# Two headless clients, alice (American English, New York's clocks) and bob
+# (Italian, Rome's clocks), sign in over HTTP and talk over WebSocket by
+# pressing keys, as a person would; their screens are drawn by the same code
+# as the terminal client's and printed as text. A sensor on MQTT and a bot on
+# NATS speak in the mirrored rooms from outside. Nothing printed is a port,
+# a path, a random value or a time of the machine's clock.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/net
+use <rebel>/os
+use <rebel>/path
+use <rebel>/threads
+use <rebel>/time
+
+use bridge/places
+use client/app
+use client/screen
+use client/session
+use client/speech
+use demo/hands
+use demo/scenes
+use server/serving
+use server/settings
+use standins/mqtt_broker
+use standins/nats_server
+use standins/told
+
+# The PBKDF2 iterations of the demo's accounts, which are thrown away with
+# its folder: low, so the run is short; a real server keeps
+# `passwords.DEFAULT_ITERATIONS`.
+constant ITERATIONS: i64
+    1000
+
+# The token secret of the demo's server, which lives only as long as the
+# demo; a real server reads its own from `CHAT_SECRET` or a file.
+function demo_secret() -> [u8]
+    return bytes.from_text("a secret for the demo's tokens only, never a server's")
+
+# The threads the demo started and where they listen.
+record World
+    # The threads, in the order started: MQTT, NATS, then the chat server.
+    started: [threads.TextThread]
+    # The MQTT stand-in's port.
+    mqtt_port: i64
+    # The NATS stand-in's port.
+    nats_port: i64
+    # The chat server's port.
+    chat_port: i64
+
+# Starts the thread of `body` with `arg` and waits for it to tell its port.
+#
+# - `w`: the world, which gains the thread.
+# - `ear`: the socket the thread tells its port to.
+# - `body`: the thread's function.
+# - `arg`: what it is given.
+#
+# Fails as `threads.spawn_text` fails and as `told.heard` fails.
+function start_thread(@w: World, ear: net.UdpSocket lent, body: (function(str) -> str), arg: str) -> i64?
+    t = threads.spawn_text(body: body, arg: arg)?
+    started @= w.started
+    started @ started.push(t)
+    w.started @ started
+    return told.heard(ear)
+
+# The settings of the demo's server.
+#
+# - `folder`: the demo's folder, which holds the database.
+# - `w`: the world, the brokers started.
+# - `told_port`: the port the server tells where it listens.
+function demo_settings(folder: str, w: World lent, told_port: i64) -> settings.Settings
+    s @= settings.default_settings(
+        host: "127.0.0.1",
+        port: 0,
+        database: path.join_all([folder, "chat.db"]),
+        secret: demo_secret()
+    )
+    s.iterations @ ITERATIONS
+    s.fixed_clock @ true
+    s.told_port @ told_port
+    s.mqtt_url @ f"mqtt://127.0.0.1:{w.mqtt_port}"
+    s.nats_url @ f"nats://127.0.0.1:{w.nats_port}"
+    s.mirrors @ [
+        places.Mirror(room: "iot", broker: .mqtt(topic: scenes.TOPIC))
+        places.Mirror(room: "ops", broker: .nats(subject: scenes.SUBJECT))
+    ]
+    return s
+
+# Runs the demo and prints its transcript; ends the program with 1 where a
+# step fails, after stopping what it started.
+function run()
+    folder = match make_folder()
+        .ok f => f
+        .err e =>
+            print(f"demo failed: {e.msg}")
+            exit(code: 1)
+            return
+
+    ear @= match told.open_ear()
+        .ok got => got
+        .err e =>
+            print(f"demo failed: {e.msg}")
+            exit(code: 1)
+            return
+
+    w @= World(started: [], mqtt_port: 0, nats_port: 0, chat_port: 0)
+    outcome = play(@w, ear: ear, folder: folder)
+
+    match outcome
+        .ok _  => _ = 0
+        .err e => print(f"demo failed: {e.msg}")
+
+    print("")
+    print("== the stop ==")
+
+    # The program's stop ends every wait of every thread: each server leaves
+    # its loop, closes what it holds and answers what it carried.
+    os.ask_stop()
+    i @= w.started.len() - 1
+
+    while i >= 0
+        print(threads.wait_text(@w.started[i]))
+        i @ i - 1
+
+    _ = net.close_udp(@ear).is_err()
+    removed = !fs.remove_all(folder).is_err()
+    print(f"the demo's database folder removed: {removed}")
+
+    if outcome.is_err()
+        exit(code: 1)
+
+# A new folder under `build/` for the demo's database.
+#
+# Fails as `fs.make_dir_all` and `fs.make_temp_dir` fail.
+function make_folder() -> str?
+    fs.make_dir_all("build")?
+    return fs.make_temp_dir(dir: "build", pattern: "chat-demo-*")
+
+# The demo's session, from the start of the servers to the clients' leaving.
+#
+# - `w`: the world, which gains every thread started.
+# - `ear`: the socket the threads tell their ports to.
+# - `folder`: the demo's folder.
+function play(@w: World, ear: net.UdpSocket lent, folder: str) -> ()?
+    print("== the servers ==")
+    w.mqtt_port @ start_thread(@w, ear: ear, body: mqtt_broker.run, arg: to_str(ear.address.port))?
+    print("the MQTT stand-in listens on the loopback")
+    w.nats_port @ start_thread(@w, ear: ear, body: nats_server.run, arg: to_str(ear.address.port))?
+    print("the NATS stand-in listens on the loopback")
+    s = demo_settings(folder, w: w, told_port: ear.address.port)
+    w.chat_port @ start_thread(@w, ear: ear, body: serving.run, arg: settings.encode(s))?
+    print(f"the chat server listens, #iot mirrored to MQTT {scenes.TOPIC}, #ops to NATS {scenes.SUBJECT}")
+    return converse(w)
+
+# The clients' part of the session.
+#
+# - `w`: the world, every server started.
+function converse(w: World lent) -> ()?
+    now = serving.demo_start()
+    ends = session.endpoints_of(f"http://127.0.0.1:{w.chat_port}")?
+
+    print("")
+    print("== accounts ==")
+    print(
+        f"alice registers: {registered(session.register(api: ends.api, user: "alice", password: "correct horse battery")?)}"
+    )
+    print(f"bob registers: {registered(session.register(api: ends.api, user: "bob", password: "staple paper clip")?)}")
+    print(
+        f"alice registers again: {registered(session.register(api: ends.api, user: "alice", password: "another one")?)}"
+    )
+
+    match session.sign_in(api: ends.api, user: "alice", password: "wrong horse")
+        .ok _  => print("alice signs in with a wrong password: let in")
+        .err e => print(f"alice signs in with a wrong password: refused, \"{e.msg}\"")
+
+    alice_token = session.sign_in(api: ends.api, user: "alice", password: "correct horse battery")?
+    bob_token = session.sign_in(api: ends.api, user: "bob", password: "staple paper clip")?
+    print("alice and bob sign in and get their tokens")
+
+    alice_sp = speech.speech_of("en-US", zone: time.load_zone("America/New_York")?)?
+    bob_sp = speech.speech_of("it-IT", zone: time.load_zone("Europe/Rome")?)?
+    alice @= app.new_app(
+        session.open(socket_url: ends.socket, token: alice_token, now: now)?,
+        sp: alice_sp,
+        page_rows: 3
+    )
+    print("")
+    print("== alice opens #general ==")
+    hands.type_line(@alice, line: "/join general", now: now)?
+    session.sync(@alice.s, now: now)?
+
+    for line in ["good morning :sun:", "standup in ten minutes", "the build is green :white_heavy_check_mark:", "coffee first :coffee:"]
+        hands.type_line(@alice, line: line, now: now)?
+
+    session.sync(@alice.s, now: now)?
+    hands.print_screen(alice, who: "alice", now: now)
+
+    print("")
+    print("== bob signs in, joins, and pages back ==")
+    bob @= app.new_app(session.open(socket_url: ends.socket, token: bob_token, now: now)?, sp: bob_sp, page_rows: 3)
+    session.sync(@alice.s, now: now)?
+    print(f"alice's status line: {screen.status_of(alice.s.view, sp: alice.sp, now: now)}")
+    hands.type_line(@bob, line: "/join general", now: now)?
+    session.sync(@bob.s, now: now)?
+    hands.print_screen(bob, who: "bob", now: now)
+    hands.type_line(@bob, line: "/history", now: now)?
+    session.sync(@bob.s, now: now)?
+    print("bob asks for the page before:")
+    hands.print_screen(bob, who: "bob", now: now)
+
+    scenes.edit_across_graphemes(alice: @alice, bob: @bob, now: now)?
+    scenes.directs(alice: @alice, bob: @bob, now: now)?
+    scenes.bridged(@alice, mqtt_port: w.mqtt_port, nats_port: w.nats_port, now: now)?
+    scenes.api_calls(api: ends.api, token: alice_token)?
+
+    print("")
+    print("== bob leaves ==")
+    hands.type_line(@alice, line: "/go @bob", now: now)?
+    hands.press(@bob, key: .control(letter: "c"), now: now)?
+    print(f"bob pressed Ctrl-C: done {bob.done}")
+    session.close(@bob.s)?
+    session.sync(@alice.s, now: now)?
+    hands.print_screen(alice, who: "alice", now: now)
+    session.close(@alice.s)?
+    return ok()
+
+# How a registration answered: a new account, or the name taken already.
+#
+# - `made`: whether the account is new.
+function registered(made: bool) -> str
+    if made
+        return "a new account"
+    return "the name is taken"

@@ -1,0 +1,116 @@
+# What the Anthropic stand-in reads of a Messages API body, as the API
+# reference writes one: the content blocks of a message (a text content read
+# as one text block), the question and passages of the agent's first turn, the
+# tools offered, and the `tool_result` blocks of the last turn with the names
+# of the `tool_use` calls they answer. Also the input tokens the stand-in
+# counts for a body, which `count_tokens` answers and a message's usage
+# repeats.
+
+use <rebel>/json
+
+use index/encodings
+use standins/script
+use standins/turns
+use support/fields
+
+# A text block.
+function text_block(text: str) -> json.Value
+    return .object(members: {"type": .text(v: "text"), "text": .text(v: text)})
+
+# What the script reads of a Messages body: the question and passages of the
+# first user turn, the tools offered, and the tool results of the last turn
+# with the names of the calls they answer.
+function asked_of(body: json.Value) -> script.Asked
+    messages = fields.list_at(body, key: "messages").default([])
+    asked @= script.Asked(question: "", passages: [], tools: [], results: [])
+
+    if messages.len() > 0
+        asked @ turns.read_turn(texts_of(messages[0]).join("\n"))
+
+    for t in fields.list_at(body, key: "tools").default([])
+        asked.tools @ asked.tools.push(fields.text_or(t, key: "name", fallback: "").default(""))
+
+    if messages.len() >= 2
+        last = messages[messages.len() - 1]
+        before = messages[messages.len() - 2]
+
+        for block in blocks_of(last)
+            if fields.text_or(block, key: "type", fallback: "").default("") == "tool_result"
+                use_id = fields.text_or(block, key: "tool_use_id", fallback: "").default("")
+
+                failed = match json.member(block, key: "is_error")
+                    .ok v  => v == .boolean(v: true)
+                    .err _ => false
+
+                asked.results @ asked.results.push(
+                    script.Result(tool: tool_named(before, use_id: use_id), text: result_text(block), is_error: failed)
+                )
+
+    return asked
+
+# The content blocks of a message, a text content read as one text block.
+function blocks_of(message: json.Value) -> [json.Value]
+    match json.member(message, key: "content")
+        .ok c =>
+            match c
+                .text t                                          => return [text_block(t.v)]
+                .list l                                          => return l.items
+                .null_value | .boolean _ | .number _ | .object _ => return []
+        .err _ => return []
+
+# The texts of a message's text blocks.
+function texts_of(message: json.Value) -> [str]
+    out: [str] @= []
+
+    for block in blocks_of(message)
+        if fields.text_or(block, key: "type", fallback: "").default("") == "text"
+            out @ out.push(fields.text_or(block, key: "text", fallback: "").default(""))
+
+    return out
+
+# The text a `tool_result` block carries: its content, a text or text blocks.
+function result_text(block: json.Value) -> str
+    match json.member(block, key: "content")
+        .ok c =>
+            match c
+                .text t => return t.v
+                .list l =>
+                    out: [str] @= []
+
+                    for item in l.items
+                        out @ out.push(fields.text_or(item, key: "text", fallback: "").default(""))
+
+                    return out.join("\n")
+                .null_value | .boolean _ | .number _ | .object _ => return ""
+        .err _ => return ""
+
+# The name of the `tool_use` block of `message` whose id is `use_id`.
+function tool_named(message: json.Value, use_id: str) -> str
+    for block in blocks_of(message)
+        if fields.text_or(block, key: "id", fallback: "").default("") == use_id
+            return fields.text_or(block, key: "name", fallback: "").default("")
+
+    return ""
+
+# The input tokens of a body as the stand-in counts them: its system prompt,
+# every text of its messages, and its tools' declarations.
+function input_tokens(counter: encodings.Counter lent, body: json.Value) -> i64
+    total: i64 @= encodings.count(counter, text: fields.text_or(body, key: "system", fallback: "").default(""))
+
+    for m in fields.list_at(body, key: "messages").default([])
+        for block in blocks_of(m)
+            total @ total + encodings.count(counter, text: fields.text_or(block, key: "text", fallback: "").default("")) + encodings.count(counter, text: result_text(block))
+
+    match json.member(body, key: "tools")
+        .ok tools => total @ total + encodings.count(counter, text: fields.compact(tools))
+        .err _    => _ = 0
+
+    return total
+
+test "asked_of: the question of the first turn and a tool result named by its call"
+    body = json.parse(
+        "{\"messages\": [{\"role\": \"user\", \"content\": [{\"type\": \"text\", \"text\": \"Passages:\\n\\nNo passage was found.\\n\\nQuestion: Which port?\"}]}, {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"t1\", \"name\": \"query_json\", \"input\": {}}]}, {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"t1\", \"content\": \"7461\"}]}], \"tools\": [{\"name\": \"query_json\"}]}"
+    ).must()
+    asked = asked_of(body)
+    assert asked.question == "Which port?" && asked.tools == ["query_json"]
+    assert asked.results == [script.Result(tool: "query_json", text: "7461", is_error: false)]

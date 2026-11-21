@@ -1,0 +1,82 @@
+# The tools that compute over the documents: `count_tokens`, a file's or a
+# text's tokens for a model, and `query_json`, a jq filter run over a JSON file
+# of the folder (`json/jq`), which is how the agent answers from a
+# configuration it does not index. A filter is the model's text: it runs
+# bounded in steps and outputs (`jq.default_options`), so no filter can hang
+# the agent.
+
+use <rebel>/json
+use <rebel>/json/jq
+
+use index/corpus
+use index/encodings
+use support/fields
+use tools/outcomes
+
+# The most outputs of a filter written back, so one call cannot fill the
+# model's window.
+constant MOST_OUTPUTS: i64
+    50
+
+# The tokens of the file `path` or of the text `text` that `input` names, for
+# its `model` or `default_model`.
+#
+# - `root`: the documents' folder.
+# - `input`: the call's arguments.
+# - `default_model`: the model counted for where `input` names none.
+function count_tokens(root: str, input: json.Value, default_model: str) -> outcomes.Outcome
+    match counted(root: root, input: input, default_model: default_model)
+        .ok text => return outcomes.done(text)
+        .err e   => return outcomes.refused(e.msg)
+
+# What `count_tokens` answers, or why not.
+function counted(root: str, input: json.Value, default_model: str) -> str?
+    model = fields.text_or(input, key: "model", fallback: default_model)?
+    relative = fields.text_or(input, key: "path", fallback: "")?
+    given = fields.text_or(input, key: "text", fallback: "")?
+
+    if relative == "" && given == ""
+        return fail(code: fields.INVALID, msg: "count_tokens needs a path or a text")
+
+    counter = encodings.counter_for(model)
+
+    if relative != ""
+        text = corpus.read_text(root: root, relative: relative)?
+        return ok(f"{relative}: {encodings.count(counter, text: text)} tokens ({encodings.describe(counter)})")
+
+    return ok(f"{encodings.count(counter, text: given)} tokens ({encodings.describe(counter)})")
+
+# The outputs of the jq filter `filter` that `input` gives, run over the JSON
+# file `path` it names, one value a line.
+#
+# - `root`: the documents' folder.
+# - `input`: the call's arguments.
+function query_json(root: str, input: json.Value) -> outcomes.Outcome
+    match queried(root: root, input: input)
+        .ok text => return outcomes.done(text)
+        .err e   => return outcomes.refused(e.msg)
+
+# What `query_json` answers, or why not.
+function queried(root: str, input: json.Value) -> str?
+    relative = fields.text_at(input, key: "path")?
+    written = fields.text_at(input, key: "filter")?
+    program = jq.parse(written)?
+    document = json.parse(corpus.read_text(root: root, relative: relative)?)?
+    outcome = jq.run_with(program, input: document, options: jq.default_options())
+
+    match outcome.ending
+        .finished  => _ = 0
+        .raised r  => return fail(code: fields.INVALID, msg: f"the filter raised an error: {r.message}")
+        .limited l => return fail(code: fields.INVALID, msg: f"the filter reached a bound: {l.message}")
+        .halted h  => return fail(code: fields.INVALID, msg: f"the filter halted with code {h.code}")
+
+    if outcome.outputs.len() == 0
+        return ok("(no output)")
+
+    out: [str] @= []
+
+    for v in outcome.outputs
+        if out.len() < MOST_OUTPUTS
+            out @ out.push(jq.format_value(v))
+
+    return ok(out.join("\n"))

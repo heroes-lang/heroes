@@ -1,0 +1,38 @@
+# The site's own files under `/static/`: its style sheet, written into the
+# static folder where it is missing, so a new site has one and a site that
+# changed its own keeps it. `web.serve_folder` answers them with their type,
+# their last change and ranges, and refuses any path out of the folder.
+
+use <rebel>/fs
+
+# The style sheet's lines: a column of text that reads on a phone and a
+# screen alike, the system's own fonts.
+function style_lines() -> [str]
+    return [
+        "body { max-width: 42rem; margin: 0 auto; padding: 0 1rem; font: 16px/1.5 system-ui, sans-serif; color: #222; }"
+        "header { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; padding: 1rem 0; border-bottom: 1px solid #ddd; }"
+        "header .site { font-weight: bold; text-decoration: none; color: inherit; }"
+        "nav form { display: inline; }"
+        ".card { border-bottom: 1px solid #eee; padding: 0.5rem 0; }"
+        ".meta, .tags { color: #666; font-size: 0.9rem; }"
+        ".error { color: #b00; }"
+        "pre, code { background: #f6f6f6; }"
+        "textarea { width: 100%; }"
+        "footer { margin: 2rem 0; color: #666; }"
+        ""
+    ]
+
+# Writes `style.css` into `dir`, made where it is missing, unless a file of
+# that name is there.
+#
+# - `dir`: the static folder.
+#
+# Fails as `fs.make_dir_all` and `write_file` fail.
+function write_static(dir: str) -> ()?
+    fs.make_dir_all(dir)?
+    path = dir + "/style.css"
+
+    if fs.exists(path).default(false)
+        return ok()
+
+    return write_file(path: path, text: style_lines().join("\n"))

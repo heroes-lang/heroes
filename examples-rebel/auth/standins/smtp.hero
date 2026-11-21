@@ -1,0 +1,280 @@
+# A loopback stand-in for the mail server the demonstration's identity
+# server submits to. It speaks SMTP (RFC 5321) far enough for a submission
+# and checks what a real submission server checks: EHLO before anything, a
+# login by AUTH PLAIN (RFC 4616) with the one account it knows before MAIL,
+# MAIL before RCPT, RCPT before DATA, the message's dots unstuffed. Each
+# message accepted is delivered as one file of a mail folder, named by its
+# number, where the demonstration's person reads it as a mail client would.
+#
+# It serves one connection at a time until the program is asked to stop.
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/net
+use <rebel>/path
+use <rebel>/strings
+
+# The name the stand-in greets with.
+constant HOST: str
+    "mail.example.test"
+
+# How long one connection may last, in milliseconds.
+constant CONNECTION_MS: i64
+    10_000
+
+# The one account a client may log in as.
+record Account
+    # Its user name.
+    user: str
+    # Its password.
+    password: str
+
+# What the stand-in did, for the demonstration's last lines.
+record Served
+    # The connections taken.
+    connections: i64
+    # The logins it accepted.
+    logins: i64
+    # The logins it refused.
+    refused: i64
+    # The messages delivered.
+    delivered: i64
+
+# One session's state between commands.
+record Session
+    # Whether the client said EHLO or HELO.
+    greeted: bool
+    # Whether the client logged in.
+    authed: bool
+    # The envelope's sender; "" before MAIL.
+    sender: str
+    # The envelope's recipients.
+    recipients: [str]
+
+# Serves `l` until the program is asked to stop, delivering into `folder`.
+#
+# - `l`: the listener; the caller closes it.
+# - `folder`: the mail folder, which exists.
+# - `account`: the account a client must log in as.
+function serve(l: net.Listener, folder: str, account: Account) -> Served
+    done @= Served(connections: 0, logins: 0, refused: 0, delivered: 0)
+
+    while true
+        match net.accept(l, deadline_ms: CONNECTION_MS)
+            .ok conn =>
+                done.connections @ done.connections + 1
+                converse(@done, conn: conn, folder: folder, account: account)
+            .err _ => break
+
+    return done
+
+# One connection's whole conversation, then the connection closed.
+#
+# - `done`: the counts, which the conversation adds to.
+# - `conn`: the connection, closed at the end.
+# - `folder`: the mail folder.
+# - `account`: the one account a login names.
+function converse(@done: Served, conn: net.Conn, folder: str, account: Account)
+    reader @= io.reader(conn.stream)
+    s @= Session(greeted: false, authed: false, sender: "", recipients: [])
+    talking: bool @= reply(reader.stream, line: f"220 {HOST} ESMTP stand-in ready")
+
+    while talking
+        line = match io.read_line(@reader)
+            .ok got => got
+            .err _  => break
+
+        if line == "" && io.at_end(@reader).default(true)
+            break
+        talking @ command(@done, @reader, @s, line: line, folder: folder, account: account)
+
+    match io.close(@reader.stream)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# Answers one command line; false where the conversation ends.
+#
+# - `done`: the counts.
+# - `reader`: the connection's reader, moved past what the command reads.
+# - `s`: the session, which the command moves on.
+# - `line`: the command's line, its CRLF taken off.
+# - `folder`: the mail folder.
+# - `account`: the one account a login names.
+function command(@done: Served, @reader: io.Reader, @s: Session, line: str, folder: str, account: Account) -> bool
+    words = strings.split(s: line, sep: " ")
+    verb = strings.to_upper(words[0])
+    out = reader.stream
+
+    if verb == "EHLO"
+        s.greeted @ true
+        return reply(out, line: f"250-{HOST}\r\n250-AUTH PLAIN\r\n250-SIZE 1048576\r\n250 8BITMIME")
+
+    if verb == "HELO"
+        s.greeted @ true
+        return reply(out, line: f"250 {HOST}")
+
+    if verb == "QUIT"
+        _ = reply(out, line: "221 2.0.0 Bye")
+        return false
+
+    if verb == "NOOP"
+        return reply(out, line: "250 2.0.0 OK")
+
+    if verb == "RSET"
+        s.sender @ ""
+        s.recipients @ []
+        return reply(out, line: "250 2.0.0 OK")
+
+    if !s.greeted
+        return reply(out, line: "503 5.5.1 Say EHLO first")
+
+    if verb == "AUTH"
+        return login(@done, @reader, @s, words: words, account: account)
+
+    if verb == "MAIL"
+        if !s.authed
+            return reply(out, line: "530 5.7.0 Authentication required")
+        s.sender @ address_of(line)
+        s.recipients @ []
+        return reply(out, line: "250 2.1.0 OK")
+
+    if verb == "RCPT"
+        if s.sender == ""
+            return reply(out, line: "503 5.5.1 MAIL first")
+        s.recipients @ s.recipients.push(address_of(line))
+        return reply(out, line: "250 2.1.5 OK")
+
+    if verb == "DATA"
+        if s.recipients.len() == 0
+            return reply(out, line: "503 5.5.1 RCPT first")
+
+        if !reply(out, line: "354 End data with <CR><LF>.<CR><LF>")
+            return false
+
+        message = match read_data(@reader)
+            .ok m  => m
+            .err _ => return false
+
+        done.delivered @ done.delivered + 1
+        file = path.join_all([folder, f"{done.delivered}.eml"])
+
+        match write_file(path: file, text: message)
+            .ok _  => _ = 0
+            .err _ => return reply(out, line: "451 4.3.0 The mail folder refused the message")
+
+        s.sender @ ""
+        s.recipients @ []
+        return reply(out, line: f"250 2.0.0 OK queued as {done.delivered}")
+
+    return reply(out, line: "502 5.5.2 Command not recognized")
+
+# AUTH PLAIN, its credentials on the command's line or on the next one.
+#
+# - `done`: the counts of logins taken and refused.
+# - `reader`: the connection's reader, which the credentials' line may come on.
+# - `s`: the session, authenticated where the credentials hold.
+# - `words`: the command's words, `AUTH` first.
+# - `account`: the one account a login names.
+function login(@done: Served, @reader: io.Reader, @s: Session, words: [str], account: Account) -> bool
+    out = reader.stream
+
+    if words.len() < 2 || strings.to_upper(words[1]) != "PLAIN"
+        return reply(out, line: "504 5.5.4 Only PLAIN is offered")
+
+    encoded: str @= ""
+
+    if words.len() > 2
+        encoded @ words[2]
+    else
+        if !reply(out, line: "334 ")
+            return false
+        encoded @ io.read_line(@reader).default("")
+
+    if credentials_hold(encoded, account: account)
+        s.authed @ true
+        done.logins @ done.logins + 1
+        return reply(out, line: "235 2.7.0 Authentication succeeded")
+
+    done.refused @ done.refused + 1
+    return reply(out, line: "535 5.7.8 Authentication credentials invalid")
+
+# Whether `encoded`, AUTH PLAIN's base 64 of `authzid NUL user NUL password`,
+# names `account`.
+#
+# - `encoded`: the base 64 the client sent.
+# - `account`: the one account a login names.
+function credentials_hold(encoded: str, account: Account) -> bool
+    decoded = match bytes.parse_base64(encoded)
+        .ok b  => b
+        .err _ => return false
+
+    parts: [str] @= []
+    piece: [u8] @= []
+
+    for b in decoded
+        if b == 0
+            parts @ parts.push(bytes.to_text_lossy(piece))
+            piece @ []
+        else
+            piece @ piece.push(b)
+
+    parts @ parts.push(bytes.to_text_lossy(piece))
+    return parts.len() == 3 && parts[1] == account.user && parts[2] == account.password
+
+# The message's lines up to the line holding `.` alone, a leading dot of a
+# line taken off (RFC 5321 § 4.5.2), joined by CRLF.
+#
+# - `reader`: the connection's reader, moved past the line holding `.`.
+#
+# Fails as `io.read_line` fails, where the connection ends first.
+function read_data(@reader: io.Reader) -> str?
+    lines: [str] @= []
+
+    while true
+        line = io.read_line(@reader)?
+
+        if line == "." || line == "" && io.at_end(@reader).default(true)
+            break
+
+        if strings.has_prefix(s: line, prefix: ".")
+            lines @ lines.push(line.slice(from: 1, to: line.len()))
+        else
+            lines @ lines.push(line)
+
+    return ok(lines.join("\r\n") + "\r\n")
+
+# The address in the angle brackets of a MAIL or RCPT line.
+#
+# - `line`: the command's line; "" where it holds no address in brackets.
+function address_of(line: str) -> str
+    open = strings.index_of(s: line, substr: "<")
+    close = strings.index_of(s: line, substr: ">")
+
+    match open
+        .ok a =>
+            match close
+                .ok b =>
+                    if b > a
+                        return line.slice(from: a + 1, to: b)
+                    return ""
+                .err _ => return ""
+        .err _ => return ""
+
+# Writes `line` and its CRLF; false where the client is gone.
+#
+# - `out`: the connection's stream.
+# - `line`: the reply, one line or several joined by CRLF, without the last CRLF.
+function reply(out: io.Stream, line: str) -> bool
+    return !io.write_text(out, text: line + "\r\n").is_err()
+
+test "credentials_hold: PLAIN's three parts"
+    account = Account(user: "accounts", password: "pw")
+    good = bytes.concat([[0], bytes.from_text("accounts"), [0], bytes.from_text("pw")])
+    assert credentials_hold(bytes.format_base64(good), account: account)
+    bad = bytes.concat([[0], bytes.from_text("accounts"), [0], bytes.from_text("px")])
+    assert !credentials_hold(bytes.format_base64(bad), account: account)
+    assert !credentials_hold("not base 64", account: account)
+
+test "address_of: the address in angle brackets"
+    assert address_of("MAIL FROM:<a@example.org> SIZE=10") == "a@example.org"
+    assert address_of("RCPT TO:<>") == "" && address_of("RCPT TO:x") == ""

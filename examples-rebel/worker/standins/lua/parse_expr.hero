@@ -1,0 +1,218 @@
+# The expressions of a Lua 5.1 script, read by precedence climbing over the
+# priorities Lua 5.1's parser gives its operators. Half of a ring with
+# `parser`: a function literal's body is a block, which `parser.block` reads.
+#
+# Priorities, lowest first: `or`; `and`; the comparisons; `..` (right to
+# left); `+ -`; `* / %`; the unary operators; `^` (right to left, above a
+# unary on its left, so `-x^2` is `-(x^2)`).
+
+use standins/lua/parser
+
+# The priority every unary operator binds its operand with.
+constant UNARY_PRIORITY: i64
+    8
+
+# How tightly a binary operator binds on each side.
+record Priority
+    # The priority on its left: an operator binds only where this is above
+    # the limit the expression is read under.
+    left: i64
+    # The priority its right operand is read under.
+    right: i64
+
+# The priorities of the binary operator `kind`. Fails `not_found` where
+# `kind` is none.
+#
+# - `kind`: a token's kind.
+function priority_of(kind: str) -> Priority?
+    match kind
+        "or"                                  => return ok(Priority(left: 1, right: 1))
+        "and"                                 => return ok(Priority(left: 2, right: 2))
+        "<" | ">" | "<=" | ">=" | "~=" | "==" => return ok(Priority(left: 3, right: 3))
+        ".."                                  => return ok(Priority(left: 5, right: 4))
+        "+" | "-"                             => return ok(Priority(left: 6, right: 6))
+        "*" | "/" | "%"                       => return ok(Priority(left: 7, right: 7))
+        "^"                                   => return ok(Priority(left: 10, right: 9))
+        _                                     => return fail(code: "not_found", msg: f"'{kind}' is no binary operator")
+
+# An expression.
+#
+# - `p`: the parser, moved past it.
+function expression(@p: parser.Parser) -> i64?
+    return below(@p, limit: 0)
+
+# Expressions between commas, at least one.
+#
+# - `p`: the parser, moved past the last.
+function expression_list(@p: parser.Parser) -> [i64]?
+    out: [i64] @= [expression(@p)?]
+
+    while parser.accept(@p, kind: ",")
+        out @ out.push(expression(@p)?)
+
+    return ok(out)
+
+# An expression whose operators all bind tighter than `limit`.
+#
+# - `p`: the parser.
+# - `limit`: the priority an operator's left side must pass to bind here.
+function below(@p: parser.Parser, limit: i64) -> i64?
+    parser.enter(@p)?
+    t = parser.peek(p)
+    left: i64 @= -1
+
+    if t.kind == "not" || t.kind == "-" || t.kind == "#"
+        _ = parser.advance(@p)
+        operand = below(@p, limit: UNARY_PRIORITY)?
+        left @ parser.push_expr(@p.exprs, .unary(op: t.kind, operand: operand, line: t.line))
+    else
+        left @ simple(@p)?
+
+    while true
+        op = parser.peek(p)
+
+        match priority_of(op.kind)
+            .err _ => break
+            .ok priority =>
+                if priority.left <= limit
+                    break
+
+                _ = parser.advance(@p)
+                right = below(@p, limit: priority.right)?
+                left @ parser.push_expr(@p.exprs, .binary(op: op.kind, left: left, right: right, line: op.line))
+
+    parser.leave(@p)
+    return ok(left)
+
+# A literal, a table, a function literal, `...`, or a suffixed expression.
+#
+# - `p`: the parser.
+function simple(@p: parser.Parser) -> i64?
+    t = parser.peek(p)
+
+    match t.kind
+        "number" =>
+            _ = parser.advance(@p)
+            return ok(parser.push_expr(@p.exprs, .number(v: t.number)))
+        "string" =>
+            _ = parser.advance(@p)
+            return ok(parser.push_expr(@p.exprs, .text(v: t.text)))
+        "nil" =>
+            _ = parser.advance(@p)
+            return ok(parser.push_expr(@p.exprs, .nil_value))
+        "true" =>
+            _ = parser.advance(@p)
+            return ok(parser.push_expr(@p.exprs, .boolean(v: true)))
+        "false" =>
+            _ = parser.advance(@p)
+            return ok(parser.push_expr(@p.exprs, .boolean(v: false)))
+        "..." =>
+            _ = parser.advance(@p)
+            return ok(parser.push_expr(@p.exprs, .vararg))
+        "{" => return table_constructor(@p)
+        "function" =>
+            _ = parser.advance(@p)
+            proto = parser.function_body(@p)?
+            return ok(parser.push_expr(@p.exprs, .function_literal(proto: proto)))
+        _ => return suffixed(@p)
+
+# A name or a parenthesised expression.
+#
+# - `p`: the parser.
+function primary(@p: parser.Parser) -> i64?
+    t = parser.peek(p)
+
+    if t.kind == "name"
+        _ = parser.advance(@p)
+        return ok(parser.push_expr(@p.exprs, .name(id: t.text)))
+
+    if t.kind == "("
+        _ = parser.advance(@p)
+        inner = expression(@p)?
+        _ = parser.expect(@p, kind: ")")?
+        return ok(inner)
+    return parser.refused(p, what: "unexpected symbol")
+
+# A primary expression and every `.name`, `[key]`, `:method(args)` and call
+# after it.
+#
+# - `p`: the parser.
+function suffixed(@p: parser.Parser) -> i64?
+    at: i64 @= primary(@p)?
+
+    while true
+        t = parser.peek(p)
+
+        match t.kind
+            "." =>
+                _ = parser.advance(@p)
+                key = parser.expect_name(@p)?
+                k = parser.push_expr(@p.exprs, .text(v: key))
+                at @ parser.push_expr(@p.exprs, .index(target: at, key: k))
+            "[" =>
+                _ = parser.advance(@p)
+                k = expression(@p)?
+                _ = parser.expect(@p, kind: "]")?
+                at @ parser.push_expr(@p.exprs, .index(target: at, key: k))
+            ":" =>
+                _ = parser.advance(@p)
+                method = parser.expect_name(@p)?
+                arguments = call_args(@p)?
+                at @ parser.push_expr(@p.exprs, .method_call(target: at, method: method, args: arguments, line: t.line))
+            "(" | "{" | "string" =>
+                arguments = call_args(@p)?
+                at @ parser.push_expr(@p.exprs, .call(callee: at, args: arguments, line: t.line))
+            _ => return ok(at)
+
+# A call's arguments: `(explist)`, a table constructor, or one string.
+#
+# - `p`: the parser, at the `(`, the `{` or the string.
+function call_args(@p: parser.Parser) -> [i64]?
+    t = parser.peek(p)
+
+    if t.kind == "string"
+        _ = parser.advance(@p)
+        return ok([parser.push_expr(@p.exprs, .text(v: t.text))])
+
+    if t.kind == "{"
+        return ok([table_constructor(@p)?])
+
+    _ = parser.expect(@p, kind: "(")?
+
+    if parser.accept(@p, kind: ")")
+        return ok([])
+
+    arguments = expression_list(@p)?
+    _ = parser.expect(@p, kind: ")")?
+    return ok(arguments)
+
+# `{ field {sep field} [sep] }`, a field being `expr`, `name = expr` or
+# `[expr] = expr`, and `sep` a `,` or a `;`.
+#
+# - `p`: the parser, at the `{`.
+function table_constructor(@p: parser.Parser) -> i64?
+    _ = parser.expect(@p, kind: "{")?
+    items: [i64] @= []
+    field_keys: [i64] @= []
+    values: [i64] @= []
+
+    while parser.next_kind(p) != "}"
+        if parser.next_kind(p) == "["
+            _ = parser.advance(@p)
+            field_keys @ field_keys.push(expression(@p)?)
+            _ = parser.expect(@p, kind: "]")?
+            _ = parser.expect(@p, kind: "=")?
+            values @ values.push(expression(@p)?)
+        else if parser.next_kind(p) == "name" && p.tokens[p.at + 1].kind == "="
+            key = parser.advance(@p).text
+            _ = parser.advance(@p)
+            field_keys @ field_keys.push(parser.push_expr(@p.exprs, .text(v: key)))
+            values @ values.push(expression(@p)?)
+        else
+            items @ items.push(expression(@p)?)
+
+        if !parser.accept(@p, kind: ",") && !parser.accept(@p, kind: ";")
+            break
+
+    _ = parser.expect(@p, kind: "}")?
+    return ok(parser.push_expr(@p.exprs, .table(items: items, keys: field_keys, values: values)))

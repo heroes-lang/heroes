@@ -1,0 +1,292 @@
+# The commands a person runs: `index`, `search`, `ask`, `chat`, `serve` and
+# `tokens`, each reading its options from the parse `cli` declared and doing
+# its one job with the modules beneath. `demo` is `demo/session`'s.
+#
+# A real run reads its keys from the environment (`secrets`), waits on the
+# system's clock, and reaches the providers' real addresses or the one
+# `--base-url` names; nothing here knows of the demo's stand-ins.
+
+use <rebel>/bytes
+use <rebel>/flags
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/strings
+use <rebel>/term
+use <rebel>/time
+
+use app/cli
+use app/secrets
+use app/views
+use index/embedder
+use index/encodings
+use index/indexer
+use index/store
+use llm/claude
+use llm/conversation
+use llm/gpt
+use llm/router
+use mcp/server
+use mcp/spawned
+use retrieval/nearest
+use retrieval/prompting
+use support/report
+use tools/executor
+use tools/running
+use tools/toolbox
+
+# The code of a command line no command reads.
+constant INVALID: str
+    "invalid"
+
+# The most tokens of each answer a provider is asked for.
+constant ANSWER_TOKENS: i64
+    2048
+
+# How long a command `run_command` runs may take.
+constant COMMAND_SECONDS: i64
+    30
+
+# Where a question's tools run, and the server's child where they run in one.
+record Tools
+    # The executor.
+    exec: executor.Executor
+    # The MCP server started for `--mcp`; it fails `not_found` where the tools
+    # are the agent's own.
+    link: spawned.Link?
+
+# Runs the command `sub` names.
+#
+# - `sub`: what the parse found for the subcommand.
+#
+# Fails as the command fails.
+function run(sub: flags.Found) -> ()?
+    name = flags.name_of(sub)
+
+    if name == "index"
+        return index(sub)
+
+    if name == "search"
+        return search(sub)
+
+    if name == "ask"
+        return ask(sub)
+
+    if name == "chat"
+        return chat(sub)
+
+    if name == "serve"
+        return serve(sub)
+
+    if name == "tokens"
+        return tokens(sub)
+
+    return fail(code: INVALID, msg: f"no command is named {name}")
+
+# `agent index`: the folder made a store.
+function index(sub: flags.Found) -> ()?
+    dimensions = flags.int_of(sub, "dimensions")?
+
+    made_by: embedder.Embedder = if flags.value_of(sub, "embedder")? == "openai"
+        .remote(
+            client: secrets.openai_client("")?,
+            model: flags.value_of(sub, "embedding-model")?,
+            dimensions: dimensions
+        )
+    else
+        .local(dimensions: dimensions)
+
+    plan = indexer.Plan(
+        root: flags.value_of(sub, "FOLDER")?,
+        model: flags.value_of(sub, "model")?,
+        size: flags.int_of(sub, "chunk-tokens")?,
+        overlap: flags.int_of(sub, "overlap")?,
+        workers: flags.int_of(sub, "workers")?,
+        embedder: made_by
+    )
+    made = indexer.build(plan)?
+    dir = flags.value_of(sub, "store")?
+    store.save(made, dir: dir)?
+    report.table(views.documents_table(made.manifest))
+    report.good(f"indexed {views.store_line(made.manifest)}")
+    return ok()
+
+# `agent search`: the passages nearest to the query.
+function search(sub: flags.Found) -> ()?
+    box = toolbox_at(dir: flags.value_of(sub, "store")?, allowed: {}, model: cli.DEFAULT_INDEX_MODEL)?
+    query = flags.values_of(sub, "QUERY").join(" ")
+    hits = nearest.search(box.store, e: box.embedder, question: query, limit: flags.int_of(sub, "top")?)?
+    report.table(views.hits_table(hits))
+    return ok()
+
+# `agent ask`: one question answered.
+function ask(sub: flags.Found) -> ()?
+    box = toolbox_at(dir: flags.value_of(sub, "store")?, allowed: running.allowed_of(flags.values_of(sub, "allow"))?, model: cli.DEFAULT_INDEX_MODEL)?
+    r @= router.new_router(providers_of(sub)?, clock: .system, opens_after: router.OPENS_AFTER)?
+    tools @= tools_of(sub, box: box)?
+    question = flags.values_of(sub, "QUESTION").join(" ")
+    answered = answer(@r, tools: @tools, box: box, question: question, top: flags.int_of(sub, "top")?)
+    stopped(tools)
+    report.lines(conversation.lines_of(answered?))
+    return ok()
+
+# `agent chat`: questions read a line at a time, each answered, until an empty
+# line or the input's end; the router's breakers last the whole chat.
+function chat(sub: flags.Found) -> ()?
+    box = toolbox_at(dir: flags.value_of(sub, "store")?, allowed: running.allowed_of(flags.values_of(sub, "allow"))?, model: cli.DEFAULT_INDEX_MODEL)?
+    r @= router.new_router(providers_of(sub)?, clock: .system, opens_after: router.OPENS_AFTER)?
+    tools @= tools_of(sub, box: box)?
+    top = flags.int_of(sub, "top")?
+    editor @= term.line_editor("? ")
+
+    while true
+        match term.read_line(@editor, input: io.stdin())
+            .ok line =>
+                question = strings.trim(line)
+
+                if question == ""
+                    break
+
+                match answer(@r, tools: @tools, box: box, question: question, top: top)
+                    .ok a  => report.lines(conversation.lines_of(a))
+                    .err e => report.failure(e.msg)
+            .err _ => break
+
+    stopped(tools)
+    return ok()
+
+# What the router's providers answer to `question`, the passages nearest it
+# put before it.
+function answer(@r: router.Router, @tools: Tools, box: toolbox.Toolbox lent, question: str, top: i64) -> conversation.Answer?
+    hits = nearest.search(box.store, e: box.embedder, question: question, limit: top)?
+    exec @= tools.exec
+    answered = router.ask(@r, exec: @exec, turn: prompting.user_turn(question, hits: hits))
+    tools.exec @ exec
+    return answered
+
+# `agent serve`: the tools served over MCP until the input ends.
+function serve(sub: flags.Found) -> ()?
+    box = toolbox_at(dir: flags.value_of(sub, "store")?, allowed: running.allowed_of(flags.values_of(sub, "allow"))?, model: cli.DEFAULT_INDEX_MODEL)?
+    return server.serve_stdio(box)
+
+# `agent tokens`: each file's tokens for the model.
+function tokens(sub: flags.Found) -> ()?
+    counter = encodings.counter_for(flags.value_of(sub, "model")?)
+
+    for file in flags.values_of(sub, "FILE")
+        text = bytes.to_text(fs.read_bytes(file)?)?
+        report.line(f"{file}: {encodings.count(counter, text: text)} tokens ({encodings.describe(counter)})")
+
+    return ok()
+
+# The toolbox of the store in `dir`, its queries embedded as its vectors were.
+#
+# - `dir`: the store's folder.
+# - `allowed`: the commands `run_command` may run.
+# - `model`: the model `count_tokens` counts for by default.
+#
+# Fails as `store.load` fails, and as `secrets` fails for a store whose
+# vectors OpenAI made.
+function toolbox_at(dir: str, allowed: {str: str}, model: str) -> toolbox.Toolbox?
+    loaded = store.load(dir)?
+    m = loaded.manifest
+
+    made_by: embedder.Embedder = if m.embedder == "local"
+        .local(dimensions: m.dimensions)
+    else
+        .remote(client: secrets.openai_client("")?, model: m.embedding_model, dimensions: m.dimensions)
+
+    return ok(
+        toolbox.Toolbox(root: m.root, store: loaded, embedder: made_by, allowed: allowed, model: model, command_limit: time.seconds(COMMAND_SECONDS).must())
+    )
+
+# The providers `--provider` and `--fallback` name, in that order, `--model`
+# and `--base-url` going to the first.
+function providers_of(sub: flags.Found) -> [router.Provider]?
+    first = flags.value_of(sub, "provider")?
+    out: [router.Provider] @= [provider(sub, name: first, chosen: true)?]
+    second = flags.value_of(sub, "fallback")?
+
+    if second != "none" && second != first
+        out @ out.push(provider(sub, name: second, chosen: false)?)
+
+    return ok(out)
+
+# The provider `name`, with the model and the address the command line gives
+# where it is the one `chosen` first.
+function provider(sub: flags.Found, name: str, chosen: bool) -> router.Provider?
+    rounds = flags.int_of(sub, "max-rounds")?
+    budget = flags.int_of(sub, "budget")?
+
+    asked_model = if chosen
+        flags.value_of(sub, "model").default("")
+    else
+        ""
+
+    if name == "anthropic"
+        model = if asked_model == ""
+            cli.DEFAULT_CLAUDE_MODEL
+        else
+            asked_model
+
+        settings = claude.Settings(
+            client: secrets.anthropic_client()?,
+            model: model,
+            max_tokens: ANSWER_TOKENS,
+            max_rounds: rounds,
+            budget: budget
+        )
+        return ok(.anthropic(settings: settings))
+
+    base = if chosen
+        flags.value_of(sub, "base-url").default("")
+    else
+        ""
+
+    model = if asked_model == ""
+        cli.DEFAULT_GPT_MODEL
+    else
+        asked_model
+
+    settings = gpt.Settings(
+        client: secrets.openai_client(base)?,
+        model: model,
+        max_tokens: ANSWER_TOKENS,
+        max_rounds: rounds,
+        budget: budget,
+        counter: encodings.counter_for(model)
+    )
+    return ok(.openai(settings: settings))
+
+# Where the tools run: the agent's own toolbox, or the server `--mcp` names,
+# started as a child and listed.
+function tools_of(sub: flags.Found, box: toolbox.Toolbox) -> Tools?
+    match flags.value_of(sub, "mcp")
+        .ok command =>
+            words = strings.split_shell(command)?
+
+            if words.len() == 0
+                return fail(code: INVALID, msg: "--mcp names no command")
+
+            link @= spawned.start(words[0], arguments: words.slice(from: 1, to: words.len()))?
+
+            match executor.remote_of(@link.client)
+                .ok remote => return ok(Tools(exec: remote, link: ok(link)))
+                .err e =>
+                    waited(@link)
+                    return fail(code: e.code, msg: f"the MCP server of --mcp did not list its tools: {e.msg}")
+        .err _ => return ok(Tools(exec: .local(box: box), link: fail(code: "not_found", msg: "the agent's own tools")))
+
+# Stops the server `tools` started, where it started one.
+function stopped(tools: Tools)
+    match tools.link
+        .ok l =>
+            link @= l
+            waited(@link)
+        .err _ => _ = 0
+
+# Stops the server of `link` and waits for it; a server that cannot be waited
+# for is told on the standard error, the answer having been given already.
+function waited(@link: spawned.Link)
+    match spawned.stop(@link)
+        .ok _  => _ = 0
+        .err e => report.failure(f"the MCP server could not be waited for: {e.msg}")

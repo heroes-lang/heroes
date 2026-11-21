@@ -1,0 +1,171 @@
+# The functions an expression of `query/expr` may call, by name: what each
+# takes and what it answers over the values of a row.
+#
+# `len`, `lower`, `upper`, `trim`, `contains`, `starts_with`, `ends_with`,
+# `text` and `number` read texts; `year`, `month` and `day` read a moment;
+# `abs` and `round` read numbers, exactly, through `big`; `is_null` and
+# `coalesce` read nulls. Every other function answers null for a null first
+# argument, as every operator of `query/evaluate` does.
+
+use <rebel>/big
+use <rebel>/strings
+
+use model/decimal
+use model/model
+use model/moments
+
+## Codes
+
+# The code of a call of a function that is none, or of an argument of a
+# kind the function does not take.
+constant INVALID: str
+    "invalid"
+
+## Arity
+
+# How many arguments the function `name` takes.
+#
+# - `name`: the function's name.
+#
+# Fails `invalid` where no function has that name; the message lists them.
+function arity_of(name: str) -> i64?
+    if name == "len" || name == "lower" || name == "upper" || name == "trim" || name == "is_null" || name == "abs" || name == "year" || name == "month" || name == "day" || name == "text" || name == "number"
+        return ok(1)
+
+    if name == "contains" || name == "starts_with" || name == "ends_with" || name == "coalesce" || name == "round"
+        return ok(2)
+    return fail(
+        code: INVALID,
+        msg: f"no function named {name}; the functions are abs, coalesce, contains, day, ends_with, is_null, len, lower, month, number, round, starts_with, text, trim, upper, year"
+    )
+
+## Calls
+
+# The value of the function `name` over its arguments' values.
+#
+# - `name`: the function, one `arity_of` knows.
+# - `arguments`: the values, as many as it takes.
+#
+# Fails `invalid` where an argument is not of a kind the function takes.
+function call(name: str, arguments: [model.Value]) -> model.Value?
+    first = arguments[0]
+
+    if name == "is_null"
+        return ok(.boolean(v: first == .null_value))
+
+    if name == "coalesce"
+        if first == .null_value
+            return ok(arguments[1])
+        return ok(first)
+
+    if first == .null_value
+        return ok(.null_value)
+
+    if name == "text"
+        return ok(.text(v: model.cell_text(first)))
+
+    if name == "len"
+        return ok(decimal.of_int(length_of(first)))
+
+    if name == "lower"
+        return ok(.text(v: strings.to_lower(model.cell_text(first))))
+
+    if name == "upper"
+        return ok(.text(v: strings.to_upper(model.cell_text(first))))
+
+    if name == "trim"
+        return ok(.text(v: strings.trim(model.cell_text(first))))
+
+    if name == "contains" || name == "starts_with" || name == "ends_with"
+        return ok(text_test(name: name, s: model.cell_text(first), part: model.cell_text(arguments[1])))
+
+    if name == "number"
+        text = strings.trim(model.cell_text(first))
+
+        if decimal.is_number_text(text)
+            return ok(.number(text: text))
+        return ok(.null_value)
+
+    if name == "year" || name == "month" || name == "day"
+        return date_part(name, v: first)
+    return numeric(name, arguments: arguments)
+
+# What `len` counts of `v`: a list's items, an object's members, and the
+# characters of any other value's text.
+#
+# - `v`: the value, not null.
+function length_of(v: model.Value) -> i64
+    return match v
+        .list l                                                               => l.items.len()
+        .object o                                                             => o.members.len()
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ => model.cell_text(v).chars().len()
+
+# `contains`, `starts_with` or `ends_with` over two texts.
+#
+# - `name`: the function.
+# - `s`: the text searched.
+# - `part`: the text looked for.
+function text_test(name: str, s: str, part: str) -> model.Value
+    if name == "contains"
+        return .boolean(v: strings.contains(s: s, substr: part))
+
+    if name == "starts_with"
+        return .boolean(v: strings.has_prefix(s: s, prefix: part))
+    return .boolean(v: strings.has_suffix(s: s, suffix: part))
+
+# The year, the month or the day of a moment, or of a text that is one.
+#
+# - `name`: `year`, `month` or `day`.
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is no moment with a date.
+function date_part(name: str, v: model.Value) -> model.Value?
+    p = moments.parse(model.cell_text(v))?
+
+    if !p.has_date
+        return fail(code: INVALID, msg: f"{name} takes a date, given the time {model.cell_text(v)}")
+
+    if name == "year"
+        return ok(decimal.of_int(p.year))
+
+    if name == "month"
+        return ok(decimal.of_int(p.month))
+    return ok(decimal.of_int(p.day))
+
+# `abs` or `round` over numbers.
+#
+# - `name`: `abs` or `round`.
+# - `arguments`: the values: a number, and for `round` the digits to keep
+#   after the point, an integer from 0 to 100.
+#
+# `round` rounds half to even, as Python's `round` and a banker do. Fails
+# `invalid` where an argument is not a number or the digits are out of
+# their range.
+function numeric(name: str, arguments: [model.Value]) -> model.Value?
+    d = number_argument(name, v: arguments[0])?
+
+    if name == "abs"
+        if big.sign(d.unscaled) < 0
+            return ok(.number(text: decimal.text_of(big.multiply_decimal(a: d, b: big.parse_decimal("-1")?))))
+        return ok(arguments[0])
+
+    digits_value = number_argument(name, v: arguments[1])?
+    digits = decimal.to_int(decimal.text_of(digits_value))?
+
+    if digits < 0 || digits > 100
+        return fail(code: INVALID, msg: f"round keeps 0 to 100 digits, asked {digits}")
+    return ok(.number(text: decimal.text_of(big.with_scale(d, scale: digits, rounding: .half_even))))
+
+# The decimal of a function's argument.
+#
+# - `name`: the function, for a message.
+# - `v`: the argument's value.
+#
+# Fails `invalid` where `v` is no number.
+function number_argument(name: str, v: model.Value) -> big.Decimal?
+    return match v
+        .number n => decimal.parse(n.text)
+        .null_value | .boolean _ | .text _ | .bytes _ | .moment _ | .list _ | .object _ => fail(
+            code: INVALID,
+            msg: f"{name} takes a number, given a {model.kind_name(v)}"
+        )

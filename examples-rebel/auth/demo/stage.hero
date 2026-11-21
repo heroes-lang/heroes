@@ -1,0 +1,292 @@
+# The demonstration's stage: everything it needs, made and started in one
+# process, all on loopback with ports the system chooses, and taken down at
+# the end. A Heroes thread is handed one text and answers one (spec § 13),
+# and a listener is served by the thread that made it, so the parts start in
+# a chain, each passing the ports it knows to the next:
+#
+#     main thread:  the mail stand-in      (its port to the next)
+#     thread 1:     the directory stand-in (both ports to the next)
+#     thread 2:     the identity server    (its issuer to the next)
+#     thread 3:     the script             (it asks the stop when done)
+#
+# The script alone prints while the chain runs; once it asks the program's
+# stop every listener's accept ends, each thread answers what it saw, and the
+# main thread prints those answers last and removes the demonstration's
+# folder. The identity server reads its configuration from a TOML file the
+# stage writes, as a served instance reads its own.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/jose
+use <rebel>/net
+use <rebel>/os
+use <rebel>/path
+use <rebel>/pem
+use <rebel>/strings
+use <rebel>/threads
+use <rebel>/time
+use <rebel>/toml
+
+use accounts/accounts
+use accounts/passwords
+use accounts/storage
+use core/clock
+use core/ids
+use core/settings
+use core/vault
+use demo/act_directory
+use demo/act_oauth
+use demo/act_people
+use demo/authenticator
+use demo/browser
+use demo/certificates
+use demo/scene
+use server/serve
+use server/state
+use service/scram_server
+use standins/ldap
+use standins/ldap_directory
+use standins/smtp
+
+# The moment the server's clock stands at: 2026-03-01T09:30:00Z.
+constant FIXED_CLOCK: i64
+    1_772_357_400
+
+# The line the script's thread answers where it stopped before its end, so
+# that the demonstration ends with a failure the main thread can tell.
+constant SCRIPT_STOPPED: str
+    "script: stopped before its end\n"
+
+# The SMTP account the identity server submits mail as.
+constant SMTP_USER: str
+    "accounts@example.org"
+
+# Its password, which the demonstration's vault holds.
+constant SMTP_PASSWORD: str
+    "smtp-submission-pass"
+
+# The authenticator model's AAGUID, in hexadecimal: the ASCII of "Heroes Demo
+# Auth".
+constant AAGUID: str
+    "4865726f65732044656d6f2041757468"
+
+# Runs the demonstration in `folder`, made fresh and removed at the end.
+#
+# - `folder`: a folder under `build/` the demonstration may own.
+#
+# Fails where the folder, the vendor's certificates or the mail listener
+# cannot be made.
+function run(folder: str) -> ()?
+    if fs.exists(folder)?
+        fs.remove_all(folder)?
+
+    fs.make_dir_all(path.join_all([folder, "mail"]))?
+    vendor(folder)?
+    at = time.from_unix(whole_seconds: FIXED_CLOCK, extra_nanoseconds: 0)?
+    print("auth: an identity server with OAuth 2.0, OpenID Connect, passkeys and TOTP, its own client and")
+    print("authenticator, and stand-ins for a mail server and a directory, all on loopback")
+    print(
+        f"the server's clock stands at {time.format(at, layout: .rfc3339_seconds)}, and every value it draws comes from a fixed seed"
+    )
+    v: vault.Vault = .memory(secrets: {})
+    print(vault.describe(v))
+    l @= net.listen("127.0.0.1", port: 0)?
+    chain @= threads.spawn_text(directory_side, arg: f"{folder}\n{l.address.port}")?
+    mailed = smtp.serve(
+        l,
+        folder: path.join_all([folder, "mail"]),
+        account: smtp.Account(user: SMTP_USER, password: SMTP_PASSWORD)
+    )
+    net.close_listener(@l)?
+    said = threads.wait_text(@chain)
+    scene.act("what the stand-ins and the server saw")
+
+    for line in strings.split(s: said, sep: "\n")
+        if line != ""
+            print(line)
+
+    print(
+        f"mail stand-in: {mailed.connections} connection, {mailed.logins} login, {mailed.refused} refused, {mailed.delivered} message delivered"
+    )
+    fs.remove_all(folder)?
+
+    if strings.contains(s: said, substr: SCRIPT_STOPPED)
+        return fail(code: "failed", msg: "the demonstration's script stopped before its end")
+    return ok()
+
+# The authenticator vendor's root and attestation certificate, and the
+# attestation key, written into `folder` as PEM: the root for the server to
+# trust, the rest for the authenticator.
+#
+# - `folder`: the demonstration's folder.
+function vendor(folder: str) -> ()?
+    root_name = certificates.Name(
+        country: "IT",
+        organization: "Heroes Demo Devices",
+        unit: "",
+        common: "Heroes Demo Authenticator Root"
+    )
+    root = certificates.make_root(root_name)?
+    leaf_name = certificates.Name(
+        country: "IT",
+        organization: "Heroes Demo Devices",
+        unit: "Authenticator Attestation",
+        common: "Heroes Demo Authenticator"
+    )
+    leaf = certificates.make_attestation(root, issuer: root_name, name: leaf_name)?
+    write_file(path: path.join_all([folder, "vendor-root.pem"]), text: certificates.to_pem(root.der)?)?
+    write_file(path: path.join_all([folder, "attestation.pem"]), text: certificates.to_pem(leaf.der)?)?
+    write_file(path: path.join_all([folder, "attestation-key.pem"]), text: jose.format_private_pem(leaf.key)?)?
+    return ok()
+
+# Thread 1: the directory stand-in, and the rest of the chain after it.
+#
+# - `arg`: the folder and the mail stand-in's port, one a line.
+function directory_side(arg: str) -> str
+    l @= match net.listen("127.0.0.1", port: 0)
+        .ok made => made
+        .err e =>
+            os.ask_stop()
+            return f"the directory stand-in could not listen: {e.msg}"
+
+    match threads.spawn_text(server_side, arg: f"{arg}\n{l.address.port}")
+        .ok started =>
+            rest @= started
+            directory_done = ldap.serve(l)
+            _ = net.close_listener(@l).is_err()
+            said = threads.wait_text(@rest)
+            return f"{said}\ndirectory stand-in: {directory_done.binds} binds accepted, {directory_done.refused} refused, {directory_done.searches} searches answered"
+        .err e =>
+            os.ask_stop()
+            _ = net.close_listener(@l).is_err()
+            return f"the server's thread did not start: {e.msg}"
+
+# Thread 2: the identity server, its configuration written and read, and the
+# script's thread after it.
+#
+# - `arg`: the folder and the two stand-ins' ports, one a line.
+function server_side(arg: str) -> str
+    match served(arg)
+        .ok said => return said
+        .err e =>
+            os.ask_stop()
+            return f"the server stopped: {e.code}: {e.msg}"
+
+# The server's whole life, and what it says of it at the end.
+#
+# - `arg`: the folder and the two stand-ins' ports, one a line.
+function served(arg: str) -> str?
+    parts = strings.split(s: arg, sep: "\n")
+    folder = parts[0]
+    file = path.join_all([folder, "auth.toml"])
+    write_file(path: file, text: config_text(folder: folder, smtp_port: parts[1], ldap_port: parts[2])?)?
+    s = settings.parse(read_file(file)?)?
+    l @= net.listen(s.listen_host, port: s.listen_port)?
+    issuer = f"http://127.0.0.1:{l.address.port}"
+    secrets: vault.Vault = .memory(
+        secrets: {vault.SMTP_PASSWORD: SMTP_PASSWORD, vault.LDAP_PASSWORD: ldap_directory.SERVICE_PASSWORD}
+    )
+    fixed: clock.Clock = .fixed(at: time.from_unix(whole_seconds: FIXED_CLOCK, extra_nanoseconds: 0)?)
+    st @= state.open(s, issuer: issuer, c: fixed, g: ids.seeded_generator("server"), v: secrets)?
+    driver @= threads.spawn_text(script_side, arg: f"{folder}\n{issuer}")?
+    looped = serve.serve(@st, l: l, mode: serve.Mode(scheduled: false, logged: false))
+    _ = net.close_listener(@l).is_err()
+    ran = threads.wait_text(@driver)
+    looped?
+    kept = storage.load(s.data_file)?
+    return ok(
+        f"{ran}server: {st.answered} requests answered, {st.mailed} message submitted, {accounts.all_users(kept).len()} accounts in its data file"
+    )
+
+# Thread 3: the script, then the program's stop.
+#
+# - `arg`: the folder and the server's issuer, one a line.
+function script_side(arg: str) -> str
+    ran = match script(arg)
+        .ok _ => ""
+        .err e =>
+            print(f"the script stopped: {e.code}: {e.msg}")
+            SCRIPT_STOPPED
+
+    os.ask_stop()
+    return ran
+
+# The six acts, in order.
+#
+# - `arg`: the folder and the server's issuer, one a line.
+function script(arg: str) -> ()?
+    parts = strings.split(s: arg, sep: "\n")
+    folder = parts[0]
+    key = jose.key_from_pem(read_file(path.join_all([folder, "attestation-key.pem"]))?)?
+    certificate = pem.parse(read_file(path.join_all([folder, "attestation.pem"]))?)?.data
+    device = authenticator.new_authenticator(
+        bytes.parse_hex(AAGUID).must(),
+        attestation: certificates.Made(der: certificate, key: key),
+        seed: "authenticator"
+    )
+    s @= scene.Scene(
+        browser: browser.open(parts[1]),
+        device: device,
+        issuer: parts[1],
+        mail_folder: path.join_all([folder, "mail"]),
+        now: FIXED_CLOCK
+    )
+    act_people.sign_up(@s)?
+    act_people.totp_act(@s)?
+    act_people.passkey_act(@s)?
+    act_oauth.code_flow(@s)?
+    token = act_directory.service_login(s)?
+    act_directory.import_act(s, token: token)?
+    return ok()
+
+# The configuration of the demonstration's server, as TOML: the form
+# `core/settings` reads, its secrets left to the vault.
+#
+# - `folder`: the demonstration's folder.
+# - `smtp_port`: the mail stand-in's port.
+# - `ldap_port`: the directory stand-in's port.
+function config_text(folder: str, smtp_port: str, ldap_port: str) -> str?
+    g @= ids.seeded_generator("configuration")
+    verifier = scram_server.make_verifier(password: act_directory.SERVICE_PASSWORD, salt: ids.draw(@g, count: 16), iterations: scram_server.MIN_ITERATIONS)?
+    portal = act_oauth.portal()
+    cost: toml.Value = .table(
+        members: {"memory_kib": .integer(v: 256), "passes": .integer(v: 1), "lanes": .integer(v: 1)}
+    )
+    roots = path.join_all([folder, "vendor-root.pem"])
+    relying: toml.Value = .table(
+        members: {"rp_id": .text(v: "localhost"), "rp_name": .text(v: "Example Accounts"), "trusted_roots": .text(v: roots)}
+    )
+    smtp_part: toml.Value = .table(
+        members: {"host": .text(v: "127.0.0.1"), "port": .integer(v: port(smtp_port)), "security": .text(v: "plain"), "user": .text(v: SMTP_USER), "sender": .text(v: SMTP_USER)}
+    )
+    ldap_part: toml.Value = .table(
+        members: {"host": .text(v: "127.0.0.1"), "port": .integer(v: port(ldap_port)), "security": .text(v: "plain"), "bind_dn": .text(v: ldap_directory.SERVICE_DN), "base": .text(v: ldap_directory.PEOPLE), "filter": .text(v: "(objectClass=inetOrgPerson)"), "schedule": .text(v: "0 2 * * *")}
+    )
+    scopes = texts(["openid", "profile", "email", "offline_access"])
+    client: toml.Value = .table(
+        members: {"id": .text(v: portal.id), "name": .text(v: "Example Portal"), "secret_sha256": .text(v: passwords.digest_hex(portal.secret)), "redirect_uris": texts([portal.redirect_uri]), "scopes": scopes}
+    )
+    service: toml.Value = .table(
+        members: {"name": .text(v: act_directory.SERVICE), "verifier": .text(v: scram_server.format_verifier(verifier)), "scopes": texts(["directory:import", "users:read"])}
+    )
+    doc: toml.Value = .table(
+        members: {"listen": .text(v: "127.0.0.1:0"), "data_file": .text(v: path.join_all([folder, "state.json"])), "keyring_service": .text(v: "heroes-auth-demo"), "passwords": cost, "passkeys": relying, "smtp": smtp_part, "ldap": ldap_part, "clients": .array(items: [client]), "service_accounts": .array(items: [service])}
+    )
+    return toml.format(doc)
+
+# `items` as a TOML array of texts.
+#
+# - `items`: the texts.
+function texts(items: [str]) -> toml.Value
+    out: [toml.Value] @= []
+
+    for s in items
+        out @ out.push(.text(v: s))
+
+    return .array(items: out)
+
+# The port `text` writes, 0 where it is no port.
+#
+# - `text`: the digits.
+function port(text: str) -> i64
+    return net.parse_port(text).default(0)

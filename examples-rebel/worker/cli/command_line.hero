@@ -1,0 +1,342 @@
+# The command line of `worker`: its subcommands, their options, and the
+# settings and arguments they give. Every option of a run may also come from
+# the environment, as a deployment sets it: `WORKER_REDIS_URL` for
+# `--redis`, OpenTelemetry's own `OTEL_EXPORTER_OTLP_ENDPOINT` for `--otlp`.
+#
+#     worker run --redis redis://:pw@cache:6379/0 --queue webhooks --queue default \
+#         --workers 8 --otlp http://collector:4318 --metrics 127.0.0.1:9464 \
+#         --schedule 'purge_finished@*/15 * * * *'
+#     worker enqueue deliver_webhook '{"url": "https://example.org/hook", "body": {}}'
+#     worker stats | dead | retry 42 | pause webhooks | resume webhooks | stop
+#     worker standin --port 6380 --password secret
+#     worker demo --dir build/worker/demo
+
+use <rebel>/flags
+use <rebel>/time
+use <rebel>/uuid
+
+use cli/settings
+
+# The code of a command line this program does not read.
+constant INVALID: str
+    "invalid"
+
+# What the command line asked for.
+record Invocation
+    # The subcommand: `run`, `enqueue`, `stats`, `dead`, `retry`, `pause`,
+    # `resume`, `stop`, `standin`, `demo`, or `help`.
+    action: str
+    # The help or the usage to print, for `help`.
+    help: str
+    # The run's settings.
+    settings: settings.Settings
+    # The recurring schedules, each `<kind>@<cron>`.
+    schedules: [str]
+    # For `enqueue`: the job's kind.
+    kind: str
+    # For `enqueue`: its payload, JSON text.
+    payload: str
+    # For `enqueue`: its priority, 1 to 9.
+    priority: i64
+    # For `enqueue`: its attempts in all.
+    attempts: i64
+    # For `enqueue`: its unique key, "" for none.
+    unique_key: str
+    # For `enqueue`: how long after now it may first run; zero for at once.
+    delay: time.Duration
+    # For `retry`: the job's id; for `standin`: its port.
+    job: i64
+    # For `pause` and `resume`: the queue; for `standin`: its password.
+    queue: str
+    # For `demo`: the folder it works in, made and removed by it.
+    dir: str
+
+# The options every subcommand that reaches the store takes.
+#
+# - `c`: the subcommand, which gains them.
+function add_store_options(@c: flags.Command)
+    flags.add(
+        @c,
+        a: flags.with_env(flags.with_default(flags.option(long: "redis", short: "r", value_name: "URL", help: "the store, redis://[:password@]host:port/db"), value: "redis://127.0.0.1:6379/0"), name: "WORKER_REDIS_URL")
+    )
+    flags.add(
+        @c,
+        a: flags.option(long: "queue", short: "q", value_name: "NAME", help: "a queue to serve or to enqueue in; may repeat")
+    )
+
+# The options of `run`.
+#
+# - `c`: the subcommand, which gains them.
+function add_run_options(@c: flags.Command)
+    flags.add(
+        @c,
+        a: flags.with_default(flags.with_kind(flags.option(long: "workers", short: "w", value_name: "N", help: "worker threads"), kind: .integer), value: "4")
+    )
+    flags.add(
+        @c,
+        a: flags.with_default(flags.option(long: "lease", short: "", value_name: "DURATION", help: "how long a claim holds"), value: "5m")
+    )
+    flags.add(
+        @c,
+        a: flags.with_default(flags.option(long: "poll", short: "", value_name: "DURATION", help: "an idle worker's wait"), value: "1s")
+    )
+    flags.add(
+        @c,
+        a: flags.with_default(flags.option(long: "first-wait", short: "", value_name: "DURATION", help: "the wait after a first failure"), value: "15s")
+    )
+    flags.add(
+        @c,
+        a: flags.with_default(flags.option(long: "longest-wait", short: "", value_name: "DURATION", help: "the longest wait between attempts"), value: "1h")
+    )
+    flags.add(
+        @c,
+        a: flags.with_default(flags.with_kind(flags.option(long: "seed", short: "", value_name: "N", help: "the seed of the waits' jitter"), kind: .integer), value: "1")
+    )
+    flags.add(
+        @c,
+        a: flags.with_env(flags.with_default(flags.option(long: "otlp", short: "", value_name: "URL", help: "the OpenTelemetry collector; none sends nothing"), value: ""), name: "OTEL_EXPORTER_OTLP_ENDPOINT")
+    )
+    flags.add(
+        @c,
+        a: flags.with_default(flags.option(long: "log-dir", short: "", value_name: "DIR", help: "where the log files go"), value: "logs")
+    )
+    flags.add(
+        @c,
+        a: flags.with_default(flags.option(long: "metrics", short: "", value_name: "HOST:PORT", help: "serve /metrics there"), value: "")
+    )
+    flags.add(
+        @c,
+        a: flags.option(long: "schedule", short: "", value_name: "KIND@CRON", help: "a recurring job; may repeat")
+    )
+
+# The whole declaration.
+function declaration() -> flags.Command
+    root @= flags.command(
+        name: "worker",
+        about: "A background job system on Redis: producers enqueue jobs, a fleet of workers runs them, retrying with backoff, keeping the dead letters, running schedules."
+    )
+    run @= flags.command(name: "run", about: "Run a supervisor and its workers until Ctrl-C or `worker stop`.")
+    add_store_options(@run)
+    add_run_options(@run)
+    flags.add_command(c: @root, sub: run)
+    enqueue @= flags.command(name: "enqueue", about: "Enqueue one job.")
+    add_store_options(@enqueue)
+    flags.add(
+        @enqueue,
+        a: flags.positional(name: "kind", help: "deliver_webhook, checksum, purge_finished or queue_report")
+    )
+    flags.add(
+        @enqueue,
+        a: flags.with_default(flags.with_arity(flags.positional(name: "payload", help: "the payload, JSON"), arity: .optional), value: "{}")
+    )
+    flags.add(
+        @enqueue,
+        a: flags.with_default(flags.with_kind(flags.option(long: "priority", short: "p", value_name: "1-9", help: "1 first, 9 last"), kind: .integer), value: "5")
+    )
+    flags.add(
+        @enqueue,
+        a: flags.with_default(flags.with_kind(flags.option(long: "attempts", short: "a", value_name: "N", help: "attempts in all"), kind: .integer), value: "25")
+    )
+    flags.add(
+        @enqueue,
+        a: flags.with_default(flags.option(long: "unique", short: "u", value_name: "KEY", help: "refuse a second job holding this key"), value: "")
+    )
+    flags.add(
+        @enqueue,
+        a: flags.with_default(flags.option(long: "in", short: "", value_name: "DURATION", help: "run no sooner than this from now"), value: "0s")
+    )
+    flags.add_command(c: @root, sub: enqueue)
+
+    for name in ["stats", "dead", "stop"]
+        sub @= flags.command(name: name, about: about_of(name))
+        add_store_options(@sub)
+        flags.add_command(c: @root, sub: sub)
+
+    retry @= flags.command(name: "retry", about: "Run a failed job again now.")
+    add_store_options(@retry)
+    flags.add(@retry, a: flags.with_kind(flags.positional(name: "id", help: "the job's id"), kind: .integer))
+    flags.add_command(c: @root, sub: retry)
+
+    for name in ["pause", "resume"]
+        sub @= flags.command(name: name, about: about_of(name))
+        add_store_options(@sub)
+        flags.add(@sub, a: flags.positional(name: "name", help: "the queue"))
+        flags.add_command(c: @root, sub: sub)
+
+    alone @= flags.command(
+        name: "standin",
+        about: "Serve a stand-in of Redis on 127.0.0.1, for trying the system where no Redis runs."
+    )
+    flags.add(
+        @alone,
+        a: flags.with_default(flags.with_kind(flags.option(long: "port", short: "", value_name: "PORT", help: "the port"), kind: .integer), value: "6379")
+    )
+    flags.add(
+        @alone,
+        a: flags.with_default(flags.option(long: "password", short: "", value_name: "TEXT", help: "the password clients must give"), value: "")
+    )
+    flags.add_command(c: @root, sub: alone)
+    demo @= flags.command(
+        name: "demo",
+        about: "Run the scripted demo against loopback stand-ins of Redis, a collector and webhook endpoints."
+    )
+    flags.add(
+        @demo,
+        a: flags.with_default(flags.option(long: "dir", short: "", value_name: "DIR", help: "the demo's folder, made and removed"), value: "build/worker/demo")
+    )
+    flags.add_command(c: @root, sub: demo)
+    return root
+
+# What the help says of the subcommand `name`.
+#
+# - `name`: a subcommand of no argument of its own.
+function about_of(name: str) -> str
+    match name
+        "stats" => return "Show how many jobs stand in each queue and state."
+        "dead"  => return "List the jobs that failed for good."
+        "stop"  => return "Ask every worker of the store to stop once idle."
+        "pause" => return "Pause a queue: no worker claims from it."
+        _       => return "Resume a paused queue."
+
+# The duration the option `name` of `f` writes. Fails `invalid` naming it.
+#
+# - `f`: what the parse found.
+# - `name`: the option.
+function duration_of(f: flags.Found, name: str) -> time.Duration?
+    text = flags.value_of(f, name: name)?
+
+    match time.parse_duration(text)
+        .ok d  => return ok(d)
+        .err _ => return fail(code: INVALID, msg: f"--{name} takes a duration, as 30s or 5m, not {text}")
+
+# The settings the options of `f` give, the rest at their defaults.
+#
+# - `f`: what the parse found for a subcommand that reaches the store.
+# - `with_run`: whether `f` declares `run`'s options.
+function settings_of(f: flags.Found, with_run: bool) -> settings.Settings?
+    s @= settings.default_settings()
+    s.redis_url @ flags.value_of(f, name: "redis")?
+    queues = flags.values_of(f, name: "queue")
+
+    if queues.len() > 0
+        s.queues @ queues
+
+    s.instance @ match uuid.new_v7()
+        .ok id => uuid.format(id)
+        .err _ => "unknown"
+
+    if with_run
+        s.workers @ flags.int_of(f, name: "workers")?
+        s.lease @ duration_of(f, name: "lease")?
+        s.poll @ duration_of(f, name: "poll")?
+        s.first_wait @ duration_of(f, name: "first-wait")?
+        s.longest_wait @ duration_of(f, name: "longest-wait")?
+        s.seed @ flags.int_of(f, name: "seed")?
+        s.otlp @ flags.value_of(f, name: "otlp")?
+        s.log_dir @ flags.value_of(f, name: "log-dir")?
+        s.metrics_listen @ flags.value_of(f, name: "metrics")?
+
+        if s.workers < 1 || s.workers > 64
+            return fail(code: INVALID, msg: f"--workers takes 1 to 64, not {s.workers}")
+
+        if s.seed < 0
+            return fail(code: INVALID, msg: "--seed takes a number of 0 or more")
+    return ok(s)
+
+# An invocation of `action` with nothing else asked.
+#
+# - `action`: the subcommand.
+# - `s`: the settings.
+function plain(action: str, s: settings.Settings) -> Invocation
+    return Invocation(
+        action: action,
+        help: "",
+        settings: s,
+        schedules: [],
+        kind: "",
+        payload: "{}",
+        priority: 5,
+        attempts: 25,
+        unique_key: "",
+        delay: time.nanoseconds(0),
+        job: 0,
+        queue: "",
+        dir: ""
+    )
+
+# What `arguments` ask for.
+#
+# - `arguments`: the program's arguments, its name left out.
+#
+# Fails `invalid` where they are not what the declaration reads, the message
+# ending with the usage, and where a value is out of its bounds.
+function read(arguments: [str]) -> Invocation?
+    return invocation_of(flags.parse(declaration(), arguments: arguments)?)
+
+# What the program's own arguments ask for. Unlike `args()`, it never aborts
+# on an argument that is not UTF-8: it fails `not_text`, naming its place.
+function read_program() -> Invocation?
+    return invocation_of(flags.parse_args(declaration())?)
+
+# What the parse `found` asks for.
+#
+# - `found`: what `flags.parse` found.
+#
+# Fails `invalid` where a value is out of its bounds.
+function invocation_of(found: flags.Found) -> Invocation?
+    if flags.is_help(found)
+        out @= plain("help", s: settings.default_settings())
+        out.help @ flags.help_text(found)
+        return ok(out)
+
+    f = match flags.subcommand(found)
+        .ok sub => sub
+        .err _ =>
+            out @= plain("help", s: settings.default_settings())
+            out.help @ flags.help_of(declaration())
+            return ok(out)
+
+    action = flags.name_of(f)
+
+    if action == "standin"
+        out @= plain("standin", s: settings.default_settings())
+        out.job @ flags.int_of(f, name: "port")?
+        out.queue @ flags.value_of(f, name: "password")?
+        return ok(out)
+
+    if action == "demo"
+        out @= plain("demo", s: settings.default_settings())
+        out.dir @ flags.value_of(f, name: "dir")?
+        return ok(out)
+
+    out @= plain(action, s: settings_of(f, with_run: action == "run")?)
+
+    match action
+        "run" => out.schedules @ flags.values_of(f, name: "schedule")
+        "enqueue" =>
+            out.kind @ flags.value_of(f, name: "kind")?
+            out.payload @ flags.value_of(f, name: "payload")?
+            out.priority @ flags.int_of(f, name: "priority")?
+            out.attempts @ flags.int_of(f, name: "attempts")?
+            out.unique_key @ flags.value_of(f, name: "unique")?
+            out.delay @ duration_of(f, name: "in")?
+        "retry"            => out.job @ flags.int_of(f, name: "id")?
+        "pause" | "resume" => out.queue @ flags.value_of(f, name: "name")?
+        _                  => _ = 0
+
+    return ok(out)
+
+test "read: a run's options, a job to enqueue, a queue to pause"
+    run = read(
+        ["run", "--queue", "webhooks", "--queue", "default", "--workers", "8", "--poll", "250ms", "--schedule", "purge_finished@*/15 * * * *"]
+    ).must()
+    assert run.action == "run" && run.settings.workers == 8 && run.settings.queues == ["webhooks", "default"]
+    assert run.settings.poll == time.milliseconds(250).must() && run.schedules == ["purge_finished@*/15 * * * *"]
+    job = read(["enqueue", "checksum", "{\"path\": \"a.bin\"}", "--priority", "1", "--in", "10m"]).must()
+    assert job.kind == "checksum" && job.priority == 1 && job.delay == time.minutes(10).must()
+    assert read(["pause", "webhooks"]).must().queue == "webhooks"
+
+test "read: a duration that is none, a count of workers out of bounds, an unknown subcommand"
+    assert read(["run", "--poll", "soon"]).is_err()
+    assert read(["run", "--workers", "0"]).is_err()
+    assert read(["fly"]).is_err()

@@ -1,0 +1,231 @@
+# The registry's HTTP API: every route, who may call it, and the dispatch from
+# a route's name to its handler, with the server's state lent by `@`.
+#
+#     GET    /health
+#     GET    /api/v1/packages
+#     GET    /api/v1/packages/:name
+#     GET    /api/v1/packages/:name/resolve?req=<range>
+#     GET    /api/v1/packages/:name/changes?from=<version>&to=<version>
+#     GET    /api/v1/packages/:name/:version
+#     PUT    /api/v1/packages/:name/:version            (publish)
+#     GET    /api/v1/packages/:name/:version/archive
+#     GET    /api/v1/packages/:name/:version/signature
+#     PUT    /api/v1/packages/:name/:version/yank       (yank)
+#     DELETE /api/v1/packages/:name/:version/yank       (yank)
+#     GET    /api/v1/search?q=<words>&limit=<n>
+#     GET    /api/v1/suggest?prefix=<text>
+#     PUT    /api/v1/keys                               (keys)
+#     GET    /api/v1/keys/:id
+#     GET    /api/v1/publishers/:name/keys
+#     GET    /index/:name
+#     GET    /blobs/:digest
+#
+# A route marked with a scope needs `Authorization: Bearer` with a token that
+# carries it (`tokens`): a token missing or unknown is answered 401 with
+# RFC 6750's challenge, a token without the scope 403. Publications are
+# limited per publisher (`limits.publishes_per_hour` and `publish_burst`),
+# past which a publisher is answered 429 with `Retry-After`.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/time
+use <rebel>/web
+
+use server/answers
+use server/reads
+use server/serving
+use server/tokens
+use server/writes
+use store/database
+
+## Routes
+
+# The realm a Bearer challenge names.
+constant REALM: str
+    "registry"
+
+# Every route of the API, by name.
+#
+# Fails as `web.add` does; the patterns here are all valid and apart, so a
+# failure is a broken route table.
+function router() -> web.Router?
+    rt @= web.new_router()
+    get = http.METHOD_GET
+    put = http.METHOD_PUT
+    web.add(@rt, method: get, pattern: "/health", name: "health")?
+    web.add(@rt, method: get, pattern: "/api/v1/packages", name: "packages")?
+    web.add(@rt, method: get, pattern: "/api/v1/packages/:name", name: "package")?
+    web.add(@rt, method: get, pattern: "/api/v1/packages/:name/resolve", name: "resolve")?
+    web.add(@rt, method: get, pattern: "/api/v1/packages/:name/changes", name: "changes")?
+    web.add(@rt, method: get, pattern: "/api/v1/packages/:name/:version", name: "version")?
+    web.add(@rt, method: put, pattern: "/api/v1/packages/:name/:version", name: "publish")?
+    web.add(@rt, method: get, pattern: "/api/v1/packages/:name/:version/archive", name: "archive")?
+    web.add(@rt, method: get, pattern: "/api/v1/packages/:name/:version/signature", name: "signature")?
+    web.add(@rt, method: put, pattern: "/api/v1/packages/:name/:version/yank", name: "yank")?
+    web.add(@rt, method: http.METHOD_DELETE, pattern: "/api/v1/packages/:name/:version/yank", name: "unyank")?
+    web.add(@rt, method: get, pattern: "/api/v1/search", name: "search")?
+    web.add(@rt, method: get, pattern: "/api/v1/suggest", name: "suggest")?
+    web.add(@rt, method: put, pattern: "/api/v1/keys", name: "add_key")?
+    web.add(@rt, method: get, pattern: "/api/v1/keys/:id", name: "key")?
+    web.add(@rt, method: get, pattern: "/api/v1/publishers/:name/keys", name: "publisher_keys")?
+    web.add(@rt, method: get, pattern: "/index/:name", name: "index")?
+    web.add(@rt, method: get, pattern: "/blobs/:digest", name: "blob")?
+    rt.errors @ .json
+    return ok(rt)
+
+## Answering
+
+# The answer to `r`: routed, checked for its token where the route changes
+# something, handed to its handler with the state, logged and counted.
+#
+# - `state`: the server's state; the handlers change it, and its count of
+#   answers grows by one.
+# - `r`: the request, as the server read it.
+function handle(@state: serving.State, r: http.Request) -> http.Response
+    now = time.now().default(time.epoch())
+
+    response = match web.route(state.router, r: r)
+        .ok found => dispatch(@state, r: r, found: found, now: now)
+        .err _    => web.not_routed(state.router, r: r)
+
+    state.answered @ state.answered + 1
+    _ = web.log_request(state.logger, r: r, response: response, started: now).is_err()
+    return response
+
+# The answer of the handler `found` names.
+#
+# - `state`: the server's state.
+# - `r`: the request.
+# - `found`: the route that takes it, and its parameters.
+# - `now`: the moment the request is answered.
+function dispatch(@state: serving.State, r: http.Request, found: web.Found, now: time.Instant) -> http.Response
+    name = web.param_of(found, name: "name").default("")
+    version = web.param_of(found, name: "version").default("")
+
+    answered: http.Response? = match found.name
+        "health"         => ok(reads.health(state))
+        "packages"       => reads.list_packages(@state)
+        "package"        => reads.show_package(@state, name: name)
+        "resolve"        => reads.resolve_range(@state, r: r, name: name)
+        "changes"        => reads.show_changes(@state, r: r, name: name)
+        "version"        => reads.show_version(@state, name: name, version: version)
+        "archive"        => reads.serve_archive(@state, r: r, name: name, version: version)
+        "signature"      => reads.show_signature(@state, name: name, version: version)
+        "search"         => reads.search_packages(@state, r: r)
+        "suggest"        => reads.suggest(state, r: r)
+        "key"            => reads.show_key(@state, id: web.param_of(found, name: "id").default(""))
+        "publisher_keys" => reads.publisher_keys(@state, name: name)
+        "index"          => reads.show_index(@state, name: name)
+        "blob"           => reads.serve_blob(@state, r: r, d: web.param_of(found, name: "digest").default(""))
+        _                => guarded(@state, r: r, found: found, name: name, version: version, now: now)
+
+    return match answered
+        .ok response => response
+        .err e       => answers.failure(code: e.code, message: e.msg)
+
+# The answer of a route that changes the registry: its token checked for the
+# route's scope, a publication's rate limited, then its handler.
+#
+# - `state`: the server's state.
+# - `r`: the request.
+# - `found`: the route.
+# - `name`: the route's package name, "" where it has none.
+# - `version`: the route's version, "" where it has none.
+# - `now`: the moment the request is answered.
+#
+# Fails as the handler does.
+function guarded(@state: serving.State, r: http.Request, found: web.Found, name: str, version: str, now: time.Instant) -> http.Response?
+    scope = match found.name
+        "publish"         => tokens.SCOPE_PUBLISH
+        "yank" | "unyank" => tokens.SCOPE_YANK
+        _                 => tokens.SCOPE_KEYS
+
+    grant = match authorized(@state, r: r, scope: scope)
+        .granted g   => g.grant
+        .refused why => return ok(why.response)
+
+    if found.name == "publish"
+        match web.limit_rate(@state.publish_limiter, r: r, key: grant.publisher.name, now: now, form: .json)
+            .answer a => return ok(a.response)
+            .go_on _  => _ = 0
+
+        return writes.publish_version(@state, r: r, grant: grant, name: name, version: version, now: now)
+
+    if found.name == "yank"
+        return writes.set_yanked(@state, grant: grant, name: name, version: version, yanked: true)
+
+    if found.name == "unyank"
+        return writes.set_yanked(@state, grant: grant, name: name, version: version, yanked: false)
+    return writes.add_key(@state, r: r, grant: grant, now: now)
+
+## Tokens
+
+# Whether a request's token grants what a route needs.
+variant Authorized
+    # It does.
+    granted
+        # What it grants.
+        grant: database.Grant
+    # It does not, and this is the answer.
+    refused
+        # 401 with RFC 6750's challenge, or 403.
+        response: http.Response
+
+# Whether `r`'s Bearer token grants `scope`: a token missing, ill-formed,
+# unknown or revoked is refused 401, one without the scope 403.
+#
+# - `state`: the server's state.
+# - `r`: the request.
+# - `scope`: the scope the route needs.
+function authorized(@state: serving.State, r: http.Request, scope: str) -> Authorized
+    token = match http.bearer_token_of(r)
+        .ok t => t
+        .err _ => return .refused(
+            response: challenge(error: "", message: "this route needs a token: Authorization: Bearer <token>")
+        )
+
+    match tokens.parse(token)
+        .ok _  => _ = 0
+        .err e => return .refused(response: challenge(error: "invalid_token", message: e.msg))
+
+    grant = match database.grant_of(@state.db, hash: tokens.stored_form(token))
+        .ok g => g
+        .err _ => return .refused(
+            response: challenge(error: "invalid_token", message: "the token is unknown or revoked")
+        )
+
+    if !tokens.allows(scopes: grant.scopes, wanted: scope)
+        return .refused(
+            response: challenge(error: "insufficient_scope", message: f"the token does not carry the scope \"{scope}\"")
+        )
+    return .granted(grant: grant)
+
+# A Bearer challenge, RFC 6750, whose body is the API's JSON message.
+#
+# - `error`: RFC 6750's error code, "" where no token came.
+# - `message`: what a person reads.
+function challenge(error: str, message: str) -> http.Response
+    asked = web.challenge_bearer(realm: REALM, error: error)
+    response @= answers.failure(code: "failed", message: message)
+    response.status @ asked.status
+    response.headers @ http.with_header(
+        response.headers,
+        name: "WWW-Authenticate",
+        value: http.value_of(asked.headers, name: "WWW-Authenticate").default("Bearer")
+    )
+    return response
+
+test "router: every route found by its pattern"
+    rt = router().must()
+    r = http.request(method: http.METHOD_GET, target: "/api/v1/packages/textkit/1.0.0/archive").must()
+    found = web.route(rt, r: r).must()
+    assert found.name == "archive" && web.param_of(found, name: "version").must() == "1.0.0"
+    resolve_request = http.request(method: http.METHOD_GET, target: "/api/v1/packages/textkit/resolve?req=%5E1").must()
+    assert web.route(rt, r: resolve_request).must().name == "resolve"
+    put_request = http.request(method: http.METHOD_PUT, target: "/api/v1/packages/textkit/1.0.0").must()
+    assert web.route(rt, r: put_request).must().name == "publish"
+
+test "challenge: 401 with its field and the API's JSON message"
+    c = challenge(error: "invalid_token", message: "no such token")
+    assert c.status == 401 && bytes.to_text(c.body).must() == "{\"message\":\"no such token\"}"
+    assert http.has_header(c.headers, name: "WWW-Authenticate")

@@ -1,0 +1,124 @@
+# The tool `run_command`: a program the user allowed, run with the arguments a
+# model gives, in the documents' folder, and what it wrote read back. No shell
+# reads the command (`process.command`, never `process.shell`), so an argument
+# holding `;` or `$(...)` reaches the program as one word and runs nothing
+# else; a command the user did not allow is refused before anything starts.
+#
+# The user allows a command as `--allow name` (the program of that name in the
+# folders of PATH) or `--allow name=program` (that file), and the model calls
+# it by its name alone.
+
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/process
+use <rebel>/strings
+use <rebel>/time
+
+use support/fields
+use tools/outcomes
+
+# The most bytes of a command's output written back, so one call cannot fill
+# the model's window.
+constant MOST_OUTPUT_BYTES: i64
+    8_000
+
+# The code of an `--allow` that is not `name` or `name=program`.
+constant INVALID: str
+    "invalid"
+
+# The commands allowed, read from the values of `--allow`: each name to the
+# program it runs.
+#
+# - `given`: each value, `name` or `name=program`.
+#
+# Fails `invalid` where a name is empty, or holds a space or a separator.
+function allowed_of(given: [str]) -> {str: str}?
+    out: {str: str} @= {}
+
+    for g in given
+        name: str @= g
+        program: str @= g
+
+        match strings.split_once(s: g, sep: "=")
+            .ok halves =>
+                name @ halves.before
+                program @ halves.after
+            .err _ => _ = 0
+
+        if name == "" || program == "" || strings.contains_any(s: name, set: " /\\")
+            return fail(code: INVALID, msg: f"--allow {g}: write a name, or a name, = and a program")
+
+        out[name] @ program
+
+    return ok(out)
+
+# What the command `input` names wrote, run with its arguments in `root`.
+#
+# - `root`: the documents' folder, the command's working folder.
+# - `allowed`: the commands allowed, by name.
+# - `input`: the call's arguments: `command`, and `arguments` where given.
+# - `limit`: how long the command may run; past it, it is ended.
+function run_command(root: str, allowed: {str: str}, input: json.Value, limit: time.Duration) -> outcomes.Outcome
+    match ran(root: root, allowed: allowed, input: input, limit: limit)
+        .ok outcome => return outcome
+        .err e      => return outcomes.refused(e.msg)
+
+# What `run_command` answers, or why it refused.
+function ran(root: str, allowed: {str: str}, input: json.Value, limit: time.Duration) -> outcomes.Outcome?
+    name = fields.text_at(input, key: "command")?
+    arguments = fields.texts_or_none(input, key: "arguments")?
+
+    match allowed[name]
+        .ok program =>
+            asked = process.with_time_limit(
+                process.with_error_to_output(process.with_output(process.with_input(process.with_dir(process.command(program, arguments: arguments), dir: root), from: .nothing), to: .pipe)),
+                limit: limit
+            )
+            finished = process.run(asked)?
+            written = shortened(strings.trim_end(bytes.to_text_lossy(finished.output)))
+            words: [str] @= [name]
+
+            for a in arguments
+                words @ words.push(a)
+
+            shown = words.join(" ")
+
+            if process.is_success(finished.status)
+                return ok(outcomes.done(written))
+
+            return ok(outcomes.refused(f"`{shown}` {process.format_status(finished.status)}: {written}"))
+        .err _ =>
+            names = sort(keys(allowed))
+
+            listed = if names.len() == 0
+                "none is allowed"
+            else
+                "the allowed ones are " + names.join(", ")
+
+            return ok(outcomes.refused(f"`{name}` is not an allowed command; {listed}"))
+
+# `text` cut to `MOST_OUTPUT_BYTES` at a character's edge, saying so where cut.
+function shortened(text: str) -> str
+    if text.len() <= MOST_OUTPUT_BYTES
+        return text
+
+    edge = strings.floor_boundary(text, at: MOST_OUTPUT_BYTES)
+    return text.slice(from: 0, to: edge) + f"\n[{text.len() - edge} more bytes not shown]"
+
+test "allowed_of: a name alone, a name and its program, and an empty name refused"
+    got = allowed_of(["git", "agent=/opt/agent/bin/agent"]).must()
+    assert got["git"].must() == "git" && got["agent"].must() == "/opt/agent/bin/agent"
+    assert allowed_of(["=x"]).is_err() && allowed_of(["a b"]).is_err()
+
+test "run_command: a command not allowed is refused before anything runs"
+    outcome = run_command(
+        root: ".",
+        allowed: {"agent": "agent"},
+        input: json.parse("{\"command\": \"rm\", \"arguments\": [\"-rf\", \"spool\"]}").must(),
+        limit: time.seconds(5).must()
+    )
+    assert outcome.is_error && outcome.text == "`rm` is not an allowed command; the allowed ones are agent"
+
+test "shortened: a short text kept, a long one cut and said so"
+    assert shortened("abc") == "abc"
+    assert strings.has_suffix(s: shortened("x".repeat(9_000)), suffix: "[1000 more bytes not shown]")

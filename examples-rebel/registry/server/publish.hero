@@ -1,0 +1,365 @@
+# A version published: the server's side of `PUT
+# /api/v1/packages/<name>/<version>`, every check a registry owes before an
+# archive becomes something other programs build with.
+#
+# In order, each refusal before anything is written: the name and the
+# version read; the same version with the same bytes answered as already
+# published, and with other bytes refused, since a version is never replaced;
+# a package of another publisher refused, and a new name too close to one;
+# the archive opened under the limits, its folder `<name>-<version>`; its
+# manifest valid and naming the same package and version, each of its
+# dependencies a package here that some version meets; the signature's key
+# the publisher's own, and the signature holding over the statement of the
+# name, the version and the digest this server computed. Then the archive is
+# kept under its digest, the package and the version are added in one
+# transaction, and the catalog learns the version's description.
+
+use <rebel>/archive
+use <rebel>/bytes
+use <rebel>/crypto/keypairs
+use <rebel>/fs
+use <rebel>/semver
+use <rebel>/sql/sqlite
+use <rebel>/time
+use <rebel>/web
+
+use packages/digest
+use packages/manifest
+use packages/names
+use packages/pack
+use packages/resolve
+use packages/unpack
+use search/catalog
+use server/serving
+use server/settings
+use signing/signatures
+use signing/signers
+use store/blobs
+use store/database
+use store/releases
+
+## Codes
+
+# The code of an upload that is refused for what it holds.
+constant INVALID: str
+    "invalid"
+
+# The code of a version published already with other bytes, and of a name
+# too close to another publisher's.
+constant EXISTS: str
+    "exists"
+
+# The code of a package or a key of another publisher.
+constant PERMISSION: str
+    "permission"
+
+## Publishing
+
+# What a publisher uploads.
+record Upload
+    # The package's name, from the URL.
+    package: str
+    # The version, from the URL.
+    version: str
+    # The archive's bytes.
+    archive: [u8]
+    # The signature's PEM block.
+    signature: str
+
+# What a publication answers.
+record Published
+    # The version, as kept.
+    release: releases.Release
+    # Whether this request added it; false where the same bytes were
+    # published already, so a retried upload is answered as a success.
+    created: bool
+
+# Publishes `upload` for the publisher `grant` acts for.
+#
+# - `state`: the server's state; its database, its archives and its catalog
+#   change.
+# - `grant`: what the request's token grants.
+# - `upload`: the archive, its signature, the name and the version.
+# - `now`: the moment it is published.
+#
+# Fails `invalid` for a name, a version, an archive, a manifest or a
+# signature refused; `exists` for a version published with other bytes or a
+# name too close to another publisher's; `permission` for a package or a key
+# of another publisher; `limit` for an archive past the limits; and as the
+# database and the disk fail.
+function publish(@state: serving.State, grant: database.Grant, upload: Upload, now: time.Instant) -> Published?
+    name = names.parse(upload.package)?
+    check_version(upload.version)?
+    d = digest.of_bytes(upload.archive)
+
+    match releases.release_of(@state.db, name: name, version: upload.version)
+        .ok existing =>
+            if existing.digest == d
+                return ok(Published(release: existing, created: false))
+            return fail(
+                code: EXISTS,
+                msg: f"{name} {upload.version} is published already with another archive, and a version is never replaced"
+            )
+        .err e =>
+            if e.code != releases.NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+
+    owner = owner_of(@state.db, name: name, grant: grant)?
+    contents = unpack.open(upload.archive, limits: unpack.Limits(unpacked_bytes: state.settings.unpacked_bytes, files: state.settings.files))?
+    expected_folder = f"{name}-{upload.version}"
+
+    if contents.folder != expected_folder
+        return fail(code: INVALID, msg: f"the archive's folder is \"{contents.folder}\", not \"{expected_folder}\"")
+    m = manifest.read(contents.manifest_text, compiled: state.manifest_schema)?
+
+    if m.name != name || m.version != upload.version
+        return fail(
+            code: INVALID,
+            msg: f"the manifest is of {m.name} {m.version}, and the upload of {name} {upload.version}"
+        )
+    check_dependencies(@state.db, m: m)?
+    sig = signatures.parse(upload.signature)?
+
+    key = match database.key_of(@state.db, id: sig.key_id)
+        .ok k => k
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"the signature names the key {sig.key_id}, which no publisher has added"
+        )
+
+    if key.publisher != grant.publisher.name
+        return fail(code: PERMISSION, msg: f"the key {sig.key_id} belongs to another publisher")
+    signatures.verify(sig, public_der: key.der, package: name, version: upload.version, digest: d)?
+    _ = blobs.put(state.blobs, data: upload.archive)?
+    r = releases.Release(
+        id: 0,
+        package: name,
+        version: upload.version,
+        digest: d,
+        size: upload.archive.len(),
+        packing: packing_name(contents.packing),
+        key_id: sig.key_id,
+        signature: upload.signature,
+        manifest: manifest.json_text(m)?,
+        description: m.description,
+        keywords: m.keywords,
+        published_at: now,
+        yanked: false,
+        downloads: 0
+    )
+    added = write_rows(@state.db, owner: owner, grant: grant, r: r, now: now)?
+    catalog.put(@state.catalog, id: added.package_id, name: name, description: m.description, keywords: m.keywords)?
+    return ok(Published(release: added.release, created: true))
+
+# Checks that every dependency of `m` is a package of this registry with a
+# version, not yanked, that its requirement admits: a version that could
+# never be built is refused when it is published, not when somebody first
+# tries to use it.
+#
+# - `db`: the connection.
+# - `m`: the manifest.
+#
+# Fails `invalid`, naming the first dependency that is missing or that no
+# version meets.
+function check_dependencies(@db: sqlite.Db, m: manifest.Manifest) -> ()?
+    for d in m.dependencies
+        match releases.package_named(@db, name: d.name)
+            .ok _ => _ = 0
+            .err e =>
+                if e.code == releases.NOT_FOUND
+                    return fail(code: INVALID, msg: f"the dependency {d.name} is no package of this registry")
+                return fail(code: e.code, msg: e.msg)
+
+        match resolve.resolve(releases.releases_of(@db, name: d.name)?, requirement: d.requirement)
+            .ok _  => _ = 0
+            .err e => return fail(code: INVALID, msg: f"the dependency {d.name}: {e.msg}")
+
+    return ok()
+
+# Checks that `version` is SemVer 2.0.0 written as SemVer writes it, so one
+# version has one text in every URL.
+#
+# - `version`: the version from the URL.
+#
+# Fails `invalid` where it is not.
+function check_version(version: str) -> ()?
+    v = match semver.parse(version)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"\"{version}\" is not a version: {e.msg}")
+
+    if semver.format(v) != version
+        return fail(code: INVALID, msg: f"\"{version}\" is written as {semver.format(v)}")
+    return ok()
+
+# Who owns `name` before this publication: the package where it exists, and
+# then it must be the grant's publisher's; else none, the name checked clear
+# of every other publisher's.
+#
+# - `db`: the connection.
+# - `name`: the package's name.
+# - `grant`: what the request's token grants.
+#
+# Fails `permission` where the package is another publisher's, `exists` where
+# a new name is too close to another publisher's.
+function owner_of(@db: sqlite.Db, name: str, grant: database.Grant) -> Owner?
+    match releases.package_named(@db, name: name)
+        .ok p =>
+            if p.publisher != grant.publisher.name
+                return fail(code: PERMISSION, msg: f"{name} belongs to another publisher")
+            return ok(.existing(package: p))
+        .err e =>
+            if e.code != releases.NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+
+    names.check_clear(name, others: releases.names_not_of(@db, publisher: grant.publisher)?)?
+    return ok(.new_package)
+
+# Whether a publication adds a version to a package or a package with it.
+variant Owner
+    # The package exists, and the publisher owns it.
+    existing
+        # The package.
+        package: releases.Package
+    # The package is new.
+    new_package
+
+# What `write_rows` added.
+record Added
+    # The package's row id.
+    package_id: i64
+    # The version, with its id.
+    release: releases.Release
+
+# Adds the package where it is new, and the version, in one transaction.
+#
+# - `db`: the connection.
+# - `owner`: whether the package exists.
+# - `grant`: what the request's token grants.
+# - `r`: the version.
+# - `now`: the moment it is published.
+#
+# Fails as the statements do, the transaction rolled back.
+function write_rows(@db: sqlite.Db, owner: Owner, grant: database.Grant, r: releases.Release, now: time.Instant) -> Added?
+    sqlite.begin(@db)?
+
+    match added_rows(@db, owner: owner, grant: grant, r: r, now: now)
+        .ok a =>
+            sqlite.commit(@db)?
+            return ok(a)
+        .err e =>
+            _ = sqlite.rollback(@db).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# The rows of a publication, inside the caller's transaction.
+#
+# - `db`: the connection.
+# - `owner`: whether the package exists.
+# - `grant`: what the request's token grants.
+# - `r`: the version.
+# - `now`: the moment it is published.
+#
+# Fails as the statements do.
+function added_rows(@db: sqlite.Db, owner: Owner, grant: database.Grant, r: releases.Release, now: time.Instant) -> Added?
+    p = match owner
+        .existing e  => e.package
+        .new_package => releases.add_package(@db, name: r.package, publisher: grant.publisher, now: now)?
+
+    added = releases.add_release(@db, package: p, r: r)?
+    return ok(Added(package_id: p.id, release: added))
+
+# The word a packing is kept as.
+#
+# - `packing`: the packing.
+function packing_name(packing: unpack.Packing) -> str
+    return match packing
+        .zstd => "zstd"
+        .xz   => "xz"
+        .gzip => "gzip"
+
+## Tests
+
+# The archive of the package `demo_pkg` at `version`, its one source file
+# holding `text`, as `pack` writes one.
+#
+# - `version`: the version, in the folder's name and the manifest.
+# - `text`: the source file's text.
+function test_archive(version: str, text: str) -> [u8]
+    folder = f"demo_pkg-{version}"
+    manifest_text = manifest.text_of(
+        name: "demo_pkg",
+        version: version,
+        description: "A package of the tests.",
+        keywords: [],
+        dependencies: []
+    )
+    toml_entry @= archive.tar_entry(folder + "/heroes.toml", kind: .file)
+    toml_data = bytes.from_text(manifest_text)
+    toml_entry.size @ toml_data.len()
+    source_entry @= archive.tar_entry(folder + "/src/a.hero", kind: .file)
+    source_data = bytes.from_text(text)
+    source_entry.size @ source_data.len()
+    members = [
+        archive.TarMember(entry: toml_entry, data: toml_data)
+        archive.TarMember(entry: source_entry, data: source_data)
+    ]
+    return pack.packed(members, packing: .zstd).must()
+
+test "publish: a version added, the same bytes answered as published, other bytes refused"
+    fs.make_dir_all("build").must()
+    dir = fs.make_temp_dir(dir: "build", pattern: "registry-publish-*").must()
+    s = settings.parse(f"[storage]\ndata_dir = \"{dir}\"\nlog_file = \"{dir}/requests.log\"\n").must()
+    state @= serving.open(s, base_url: "http://127.0.0.1:8470/", router: web.new_router()).must()
+    now = time.epoch()
+    ana = database.add_publisher(@state.db, name: "ana", now: now).must()
+    key @= keypairs.decode_private_raw(.ed25519, raw: signers.rfc8032_seed()).must()
+    key_id = database.add_key(@state.db, publisher: ana, der: signers.public_der_of(key).must(), now: now).must()
+    grant = database.Grant(token_id: 1, publisher: ana, scopes: "publish")
+    first = test_archive(version: "1.0.0", text: "x\n")
+    signed = signatures.sign(
+        key,
+        key_id: key_id,
+        package: "demo_pkg",
+        version: "1.0.0",
+        digest: digest.of_bytes(first)
+    ).must()
+    done = publish(
+        @state,
+        grant: grant,
+        upload: Upload(package: "demo_pkg", version: "1.0.0", archive: first, signature: signed),
+        now: now
+    ).must()
+    assert done.created && done.release.digest == digest.of_bytes(first) && done.release.packing == "zstd"
+    again = publish(
+        @state,
+        grant: grant,
+        upload: Upload(package: "demo_pkg", version: "1.0.0", archive: first, signature: signed),
+        now: now
+    ).must()
+    assert !again.created && again.release.id == done.release.id
+    other = test_archive(version: "1.0.0", text: "y\n")
+    other_signed = signatures.sign(
+        key,
+        key_id: key_id,
+        package: "demo_pkg",
+        version: "1.0.0",
+        digest: digest.of_bytes(other)
+    ).must()
+
+    match publish(@state, grant: grant, upload: Upload(package: "demo_pkg", version: "1.0.0", archive: other, signature: other_signed), now: now)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    match publish(@state, grant: grant, upload: Upload(package: "demo_pkg", version: "1.0.01", archive: other, signature: other_signed), now: now)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    keypairs.close_private(@key).must()
+    serving.close(@state).must()
+    fs.remove_all(dir).must()
+
+test "check_version: SemVer written as SemVer writes it, and nothing else"
+    check_version("1.0.0").must()
+    check_version("2.0.0-beta.1").must()
+    assert check_version("1.0").is_err()
+    assert check_version("v1.0.0").is_err()
+    assert check_version("").is_err()

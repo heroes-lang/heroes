@@ -1,0 +1,318 @@
+# The server's side of RESP, the Redis serialization protocol: a command cut
+# from the bytes a client sent, as an array of bulk strings or an inline line,
+# and a reply written in RESP2 or RESP3 as the connection agreed with
+# `HELLO`. A reply is `redis.Reply`, the type Rebel's client reads, so the
+# stand-in answers in the very values its clients decode.
+#
+# The rules are those of Redis's "Redis serialization protocol specification"
+# page: a request is `*<n>\r\n` then `n` times `$<len>\r\n<bytes>\r\n`; in
+# RESP2 a map is an array of keys and values, a set an array, a null a null
+# bulk string `$-1`, a double a bulk string and a boolean an integer.
+
+use <rebel>/bytes
+use <rebel>/numbers
+use <rebel>/redis
+
+# The longest bulk string a request may hold, 512 MB, as Redis's
+# `proto-max-bulk-len` defaults to.
+constant MOST_BULK: i64
+    536_870_912
+
+# The most arguments a request may hold: Redis refuses an array of more than
+# 1024 * 1024 elements for an unauthenticated client and the stand-in for
+# every one.
+constant MOST_WORDS: i64
+    1_048_576
+
+# What cutting the next request out of a buffer found.
+variant Framed
+    # A whole request, and where the bytes after it begin.
+    whole
+        # The command's name and arguments, as sent.
+        words: [[u8]]
+        # The index of the first byte after the request.
+        next: i64
+    # The buffer ends inside a request: read more before trying again.
+    partial
+    # The bytes are no request; the connection is answered and closed.
+    broken
+        # What is wrong, as Redis's protocol error says it.
+        reason: str
+
+# Where a line ending in `\r\n` that begins at `from` of `data` ends: the
+# index of its `\r`. Fails `not_found` where the buffer holds no whole line.
+#
+# - `data`: the buffer.
+# - `from`: where the line begins.
+function line_end(data: [u8], from: i64) -> i64?
+    i: i64 @= from
+
+    while i + 1 < data.len()
+        if data[i] == '\r' && data[i + 1] == '\n'
+            return ok(i)
+        i @ i + 1
+
+    return fail(code: "not_found", msg: "no whole line")
+
+# The number written in decimal digits from `from` to `to` of `data`, a `-`
+# allowed first. Fails `invalid` where it is no such number.
+#
+# - `data`: the buffer.
+# - `from`: the first byte.
+# - `to`: the byte after the last.
+function count_at(data: [u8], from: i64, to: i64) -> i64?
+    text = bytes.to_text(data.slice(from: from, to: to))?
+    return numbers.parse_int(text)
+
+# The next request in `data` from `from`: an array of bulk strings, or an
+# inline command, a line of words between spaces, as `redis-cli` and a
+# person at `telnet` send.
+#
+# - `data`: the bytes the client sent and the server has not yet read.
+# - `from`: where the next request begins.
+function frame(data: [u8], from: i64) -> Framed
+    if from >= data.len()
+        return .partial
+
+    if data[from] != '*'
+        return inline(data, from: from)
+
+    head = match line_end(data, from: from + 1)
+        .ok i  => i
+        .err _ => return .partial
+
+    n = match count_at(data, from: from + 1, to: head)
+        .ok v  => v
+        .err _ => return .broken(reason: "invalid multibulk length")
+
+    if n < 0 || n > MOST_WORDS
+        return .broken(reason: "invalid multibulk length")
+
+    words: [[u8]] @= []
+    at: i64 @= head + 2
+
+    for _ in range(from: 0, to: n)
+        if at >= data.len()
+            return .partial
+
+        if data[at] != '$'
+            return .broken(reason: f"expected '$', got '{bytes.format_escaped([data[at]])}'")
+
+        size_end = match line_end(data, from: at + 1)
+            .ok i  => i
+            .err _ => return .partial
+
+        size = match count_at(data, from: at + 1, to: size_end)
+            .ok v  => v
+            .err _ => return .broken(reason: "invalid bulk length")
+
+        if size < 0 || size > MOST_BULK
+            return .broken(reason: "invalid bulk length")
+
+        start = size_end + 2
+
+        if start + size + 2 > data.len()
+            return .partial
+
+        words @ words.push(data.slice(from: start, to: start + size))
+        at @ start + size + 2
+
+    return .whole(words: words, next: at)
+
+# An inline command: the words of one line, between spaces.
+#
+# - `data`: the buffer.
+# - `from`: where the line begins.
+function inline(data: [u8], from: i64) -> Framed
+    i: i64 @= from
+
+    while i < data.len() && data[i] != '\n'
+        i @ i + 1
+
+    if i >= data.len()
+        if data.len() - from > 65_536
+            return .broken(reason: "too big inline request")
+        return .partial
+
+    words: [[u8]] @= []
+    word: [u8] @= []
+
+    for b in data.slice(from: from, to: i)
+        if b == ' ' || b == '\t' || b == '\r'
+            if word.len() > 0
+                words @ words.push(word)
+                word @ []
+        else
+            word @ word.push(b)
+
+    if word.len() > 0
+        words @ words.push(word)
+    return .whole(words: words, next: i + 1)
+
+# Adds `text` and a `\r\n` to `out`.
+#
+# - `out`: the bytes being written, grown.
+# - `text`: an ASCII line.
+function put_line(@out: [u8], text: str)
+    for b in bytes.from_text(text)
+        out @ out.push(b)
+
+    out @ out.push('\r')
+    out @ out.push('\n')
+
+# Adds `data` as a bulk string to `out`.
+#
+# - `out`: the bytes being written, grown.
+# - `data`: the string's bytes.
+function put_bulk(@out: [u8], data: [u8])
+    put_line(@out, text: f"${data.len()}")
+
+    for b in data
+        out @ out.push(b)
+
+    out @ out.push('\r')
+    out @ out.push('\n')
+
+# `r` written for a connection speaking RESP `protocol`.
+#
+# - `r`: the reply.
+# - `protocol`: 2 or 3, as `HELLO` agreed; 2 until it does.
+#
+# It walks nested replies with a stack of its own, so a deep reply never
+# deepens the stand-in's.
+function encode(r: redis.Reply, protocol: i64) -> [u8]
+    out: [u8] @= []
+    pending: [redis.Reply] @= [r]
+
+    while pending.len() > 0
+        next = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+        children: [redis.Reply] @= []
+
+        match next
+            .simple s => put_line(@out, text: "+" + s.v)
+            .error e =>
+                head = if e.code == ""
+                    e.message
+                else
+                    e.code + " " + e.message
+                put_line(@out, text: "-" + head)
+            .integer n => put_line(@out, text: f":{n.v}")
+            .bulk b    => put_bulk(out: @out, data: b.v)
+            .null_value =>
+                if protocol == 3
+                    put_line(@out, text: "_")
+                else
+                    put_line(@out, text: "$-1")
+            .array a =>
+                put_line(@out, text: f"*{a.items.len()}")
+                children @ a.items
+            .mapping m =>
+                if protocol == 3
+                    put_line(@out, text: f"%{m.entries.len()}")
+                else
+                    put_line(@out, text: f"*{m.entries.len() * 2}")
+
+                for e in m.entries
+                    children @ children.push(e.key)
+                    children @ children.push(e.value)
+            .set s =>
+                if protocol == 3
+                    put_line(@out, text: f"~{s.items.len()}")
+                else
+                    put_line(@out, text: f"*{s.items.len()}")
+                children @ s.items
+            .double d =>
+                if protocol == 3
+                    put_line(@out, text: f",{d.v}")
+                else
+                    put_bulk(out: @out, data: bytes.from_text(f"{d.v}"))
+            .boolean b =>
+                truth = if b.v
+                    1
+                else
+                    0
+
+                if protocol == 3
+                    put_line(@out, text: if_true(b.v, yes: "#t", no: "#f"))
+                else
+                    put_line(@out, text: f":{truth}")
+            .big_number n =>
+                if protocol == 3
+                    put_line(@out, text: "(" + n.v)
+                else
+                    put_bulk(out: @out, data: bytes.from_text(n.v))
+            .verbatim v =>
+                if protocol == 3
+                    body = bytes.from_text(v.format + ":" + v.v)
+                    put_line(@out, text: f"={body.len()}")
+
+                    for b in body
+                        out @ out.push(b)
+
+                    out @ out.push('\r')
+                    out @ out.push('\n')
+                else
+                    put_bulk(out: @out, data: bytes.from_text(v.v))
+            .pushed p =>
+                put_line(@out, text: f">{p.items.len()}")
+                children @ p.items
+
+        i: i64 @= children.len() - 1
+
+        while i >= 0
+            pending @ pending.push(children[i])
+            i @ i - 1
+
+    return out
+
+# `yes` where `cond` holds, else `no`.
+#
+# - `cond`: the condition.
+# - `yes`: the text where it holds.
+# - `no`: the text where it does not.
+function if_true(cond: bool, yes: str, no: str) -> str
+    if cond
+        return yes
+    return no
+
+# A reply of the text `s`, as a bulk string.
+#
+# - `s`: the text.
+function text_reply(s: str) -> redis.Reply
+    return .bulk(v: bytes.from_text(s))
+
+# An error reply: `-ERR <message>` where `code` is `ERR`.
+#
+# - `code`: the word in capitals, `ERR`, `WRONGTYPE`, `NOAUTH`.
+# - `message`: the words after it.
+function error_reply(code: str, message: str) -> redis.Reply
+    return .error(code: code, message: message)
+
+# The `+OK` most writes answer.
+function ok_reply() -> redis.Reply
+    return .simple(v: "OK")
+
+test "frame: a whole command, one cut short, an inline line, bytes that are no RESP"
+    data = bytes.from_text("*2\r\n$3\r\nGET\r\n$1\r\nk\r\n*1\r\n$4\r\nPI")
+
+    match frame(data, from: 0)
+        .whole w =>
+            assert w.words == [bytes.from_text("GET"), bytes.from_text("k")]
+            assert frame(data, from: w.next) == .partial
+        .partial | .broken _ => assert false
+
+    match frame(bytes.from_text("PING  hello\r\n"), from: 0)
+        .whole w             => assert w.words == [bytes.from_text("PING"), bytes.from_text("hello")]
+        .partial | .broken _ => assert false
+
+    match frame(bytes.from_text("*x\r\n"), from: 0)
+        .broken b           => assert b.reason == "invalid multibulk length"
+        .whole _ | .partial => assert false
+
+test "encode: a map as RESP3 writes it and as RESP2 flattens it, a null in each"
+    m: redis.Reply = .mapping(entries: [redis.Entry(key: text_reply("a"), value: .integer(v: 1))])
+    assert encode(m, protocol: 3) == bytes.from_text("%1\r\n$1\r\na\r\n:1\r\n")
+    assert encode(m, protocol: 2) == bytes.from_text("*2\r\n$1\r\na\r\n:1\r\n")
+    assert encode(.null_value, protocol: 3) == bytes.from_text("_\r\n")
+    assert encode(.null_value, protocol: 2) == bytes.from_text("$-1\r\n")

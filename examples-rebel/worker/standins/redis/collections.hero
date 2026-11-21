@@ -1,0 +1,227 @@
+# The commands of the Redis stand-in on hashes and sets, each answering as
+# Redis 7 does: a hash as a map and a set as a set, which a RESP2 connection
+# reads as arrays, and a collection left empty taken out of the keyspace.
+# `commands.execute` hands them here by name, and the sorted sets' on to
+# `zcommands`.
+
+use <rebel>/maps
+use <rebel>/numbers
+use <rebel>/redis
+use <rebel>/strings
+
+use standins/redis/keyspace
+use standins/redis/resp
+use standins/redis/zcommands
+
+# Whether `name` is a command of this module.
+#
+# - `name`: the command's name, in capitals.
+function is_collection_command(name: str) -> bool
+    match name
+        "HSET" | "HGET" | "HMGET" | "HGETALL" | "HDEL" | "HLEN" | "HEXISTS" | "HINCRBY" | "SADD" | "SREM" | "SISMEMBER" | "SMEMBERS" | "SCARD" | "ZADD" | "ZREM" | "ZCARD" | "ZSCORE" | "ZRANGE" | "ZREVRANGE" | "ZRANGEBYSCORE" =>
+            return true
+        _ => return false
+
+# `expires` without `key`.
+#
+# - `expires`: the times to live.
+# - `key`: the key whose time is dropped.
+function without_expiry(expires: {str: i64}, key: str) -> {str: i64}
+    return maps.remove(expires, key: key)
+
+# The reply to a key of another type, or to another failure of a getter.
+#
+# - `code`: the failure's code.
+# - `msg`: its message.
+function wrong(code: str, msg: str) -> redis.Reply
+    return keyspace.refusal(code: code, msg: msg)
+
+# Runs the collection command `words`, whose name in capitals is `name`.
+#
+# - `ks`: the data.
+# - `name`: the command's name, in capitals.
+# - `words`: the whole command.
+# - `protocol`: the RESP version the reply is read in.
+function execute(@ks: keyspace.Keyspace, name: str, words: [str], protocol: i64) -> redis.Reply
+    n = words.len()
+
+    if n < 2
+        return arity_of(name)
+
+    key = words[1]
+
+    if strings.has_prefix(s: name, prefix: "H")
+        return hash_command(@ks, name: name, key: key, words: words)
+
+    if strings.has_prefix(s: name, prefix: "S")
+        return set_command(@ks, name: name, key: key, words: words)
+    return zcommands.zset_command(@ks, name: name, key: key, words: words, protocol: protocol)
+
+# The reply to a command given the wrong count of arguments.
+#
+# - `name`: the command's name, in capitals.
+function arity_of(name: str) -> redis.Reply
+    return resp.error_reply(
+        code: "ERR",
+        message: f"wrong number of arguments for '{strings.to_lower_ascii(name)}' command"
+    )
+
+# The hash commands.
+#
+# - `ks`: the data.
+# - `name`: the command, in capitals.
+# - `key`: its key.
+# - `words`: the whole command.
+function hash_command(@ks: keyspace.Keyspace, name: str, key: str, words: [str]) -> redis.Reply
+    n = words.len()
+
+    fields @= match keyspace.hash_at(@ks, key: key)
+        .ok f  => f
+        .err e => return wrong(code: e.code, msg: e.msg)
+
+    match name
+        "HSET" =>
+            if n < 4 || n % 2 != 0
+                return arity_of(name)
+            added: i64 @= 0
+            i: i64 @= 2
+
+            while i < n
+                if fields[words[i]].is_err()
+                    added @ added + 1
+                fields[words[i]] @ words[i + 1]
+                i @ i + 2
+
+            keyspace.store_hash(@ks, key: key, fields: fields)
+            return .integer(v: added)
+        "HGET" =>
+            if n != 3
+                return arity_of(name)
+
+            match fields[words[2]]
+                .ok v  => return resp.text_reply(v)
+                .err _ => return .null_value
+        "HMGET" =>
+            if n < 3
+                return arity_of(name)
+            found: [redis.Reply] @= []
+
+            for field in words.slice(from: 2, to: n)
+                match fields[field]
+                    .ok v  => found @ found.push(resp.text_reply(v))
+                    .err _ => found @ found.push(.null_value)
+
+            return .array(items: found)
+        "HGETALL" =>
+            if n != 2
+                return arity_of(name)
+            entries: [redis.Entry] @= []
+
+            for field in keys(fields)
+                entries @ entries.push(
+                    redis.Entry(key: resp.text_reply(field), value: resp.text_reply(fields[field].must()))
+                )
+
+            return .mapping(entries: entries)
+        "HDEL" =>
+            if n < 3
+                return arity_of(name)
+            removed: i64 @= 0
+
+            for field in words.slice(from: 2, to: n)
+                if !fields[field].is_err()
+                    removed @ removed + 1
+                    fields @ maps.remove(fields, key: field)
+
+            keyspace.store_hash(@ks, key: key, fields: fields)
+            return .integer(v: removed)
+        "HLEN" =>
+            if n != 2
+                return arity_of(name)
+            return .integer(v: fields.len())
+        "HEXISTS" =>
+            if n != 3
+                return arity_of(name)
+
+            if fields[words[2]].is_err()
+                return .integer(v: 0)
+            return .integer(v: 1)
+        _ =>
+            if n != 4
+                return arity_of(name)
+
+            by = match numbers.parse_int(words[3])
+                .ok v  => v
+                .err _ => return resp.error_reply(code: "ERR", message: "value is not an integer or out of range")
+
+            current = match numbers.parse_int(fields[words[2]].default("0"))
+                .ok v  => v
+                .err _ => return resp.error_reply(code: "ERR", message: "hash value is not an integer")
+
+            if by > 0 && current > 9_223_372_036_854_775_807 - by || by < 0 && current < -9_223_372_036_854_775_807 - 1 - by
+                return resp.error_reply(code: "ERR", message: "increment or decrement would overflow")
+
+            fields[words[2]] @ to_str(current + by)
+            keyspace.store_hash(@ks, key: key, fields: fields)
+            return .integer(v: current + by)
+
+# The set commands. `SMEMBERS` answers the members in the order of their
+# bytes: Redis promises no order, and one order on every run keeps a demo's
+# transcript the same.
+#
+# - `ks`: the data.
+# - `name`: the command, in capitals.
+# - `key`: its key.
+# - `words`: the whole command.
+function set_command(@ks: keyspace.Keyspace, name: str, key: str, words: [str]) -> redis.Reply
+    n = words.len()
+
+    members @= match keyspace.set_at(@ks, key: key)
+        .ok m  => m
+        .err e => return wrong(code: e.code, msg: e.msg)
+
+    match name
+        "SADD" =>
+            if n < 3
+                return arity_of(name)
+            added: i64 @= 0
+
+            for member in words.slice(from: 2, to: n)
+                if members[member].is_err()
+                    added @ added + 1
+                    members[member] @ true
+
+            keyspace.store_set(@ks, key: key, members: members)
+            return .integer(v: added)
+        "SREM" =>
+            if n < 3
+                return arity_of(name)
+            removed: i64 @= 0
+
+            for member in words.slice(from: 2, to: n)
+                if !members[member].is_err()
+                    removed @ removed + 1
+                    members @ maps.remove(members, key: member)
+
+            keyspace.store_set(@ks, key: key, members: members)
+            return .integer(v: removed)
+        "SISMEMBER" =>
+            if n != 3
+                return arity_of(name)
+
+            if members[words[2]].is_err()
+                return .integer(v: 0)
+            return .integer(v: 1)
+        "SMEMBERS" =>
+            if n != 2
+                return arity_of(name)
+            found: [redis.Reply] @= []
+
+            for member in sort(keys(members))
+                found @ found.push(resp.text_reply(member))
+
+            return .set(items: found)
+        _ =>
+            if n != 2
+                return arity_of(name)
+            return .integer(v: members.len())

@@ -1,0 +1,59 @@
+# The job system run for real: a supervisor and its fleet of workers on a
+# store, until Ctrl-C or `worker stop`. The workers claim on their own
+# threads; the supervisor ticks once a poll, enqueuing what its schedules
+# say, giving back the jobs of leases run out, refreshing its gauges, and
+# serving `/metrics` while it waits. When the stop comes it asks the fleet
+# to stop, waits for every worker's report and exports the run's telemetry.
+#
+# Ctrl-C stops at once: every wait then fails `stopped`, so an attempt in
+# hand is left to its lease and the next run's rescue. `worker stop` drains:
+# each worker ends its attempt first.
+
+use <rebel>/errors
+use <rebel>/jobs
+use <rebel>/os
+use <rebel>/time
+
+use cli/settings
+use ops/dashboard
+use pool/fleet
+use pool/worker_loop
+use schedule/supervisor
+
+# Runs the system until it is asked to stop, and answers what went wrong on
+# the way out, "" where nothing did.
+#
+# - `s`: the run's settings.
+# - `schedules`: the recurring jobs.
+#
+# Fails where the supervisor cannot start, the fleet cannot start, or
+# `/metrics` cannot be served where it is asked.
+function run(s: settings.Settings, schedules: [jobs.Periodic]) -> str?
+    os.catch_stop()?
+    sup @= errors.context(supervisor.start(s, schedules: schedules), what: "starting the supervisor")?
+    server: [dashboard.MetricsServer] @= []
+
+    if s.metrics_listen != ""
+        server @ server.push(
+            errors.context(dashboard.open_metrics(s.metrics_listen), what: f"serving /metrics at {s.metrics_listen}")?
+        )
+
+    workers @= errors.context(fleet.start(@sup.client, s: s), what: "starting the workers")?
+
+    while !os.is_stop_asked() && !worker_loop.stop_asked(@sup.client)
+        _ = supervisor.tick(@sup).is_err()
+        _ = supervisor.refresh(@sup).is_err()
+
+        if server.len() > 0
+            _ = dashboard.serve_for(server[0], registry: sup.registry, wait: s.poll).is_err()
+        else
+            time.sleep(s.poll)
+
+    _ = fleet.ask_stop(@sup.client).is_err()
+    supervisor.take_reports(@sup, reports: fleet.wait_all(@workers))
+
+    for i in range(from: 0, to: server.len())
+        m @= server[i]
+        dashboard.close_metrics(@m)
+
+    return ok(supervisor.finish(@sup))

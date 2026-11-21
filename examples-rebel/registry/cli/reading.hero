@@ -1,0 +1,77 @@
+# The package manager's commands: `resolve` says which version a range takes,
+# `fetch` downloads a version and checks it against a trust file, `search`
+# finds packages, and `changes` says what changed between two versions.
+
+use <rebel>/flags
+
+use client/client
+use client/queries
+use client/trust
+use packages/changes
+
+## The package manager's commands
+
+# A client with no token, of the registry `--registry` names.
+#
+# - `sub`: the subcommand's arguments.
+#
+# Fails `invalid` where the URL is no registry's.
+function reader_of(sub: flags.Found) -> client.Client?
+    return client.new_client(base: flags.value_of(sub, "registry")?, token: "")
+
+# Prints which version `RANGE` takes of `NAME`.
+#
+# - `sub`: the subcommand's arguments.
+#
+# Fails as the registry does.
+function resolve(sub: flags.Found) -> ()?
+    c @= reader_of(sub)?
+    v = queries.resolve(@c, name: flags.value_of(sub, "NAME")?, requirement: flags.value_of(sub, "RANGE")?)?
+    print(f"{v.version} {v.digest}")
+    return ok()
+
+# Fetches `NAME` at `VERSION`, checks it against `--trust`, and writes it to
+# `--out`.
+#
+# - `sub`: the subcommand's arguments.
+#
+# Fails where the archive is not what the registry lists or its signature
+# does not hold against the trust file.
+function fetch(sub: flags.Found) -> ()?
+    c @= reader_of(sub)?
+    name = flags.value_of(sub, "NAME")?
+    version = flags.value_of(sub, "VERSION")?
+    v = trust.fetch_verified(@c, name: name, version: version, trusted: trust.read_trusted(flags.value_of(sub, "trust")?)?)?
+    trust.save(v, file: flags.value_of(sub, "out")?)?
+    print(f"{name} {version}: {v.digest}, signed by {v.key.publisher}'s key {v.key.id}")
+    return ok()
+
+# Prints the packages `WORDS` finds, the best first.
+#
+# - `sub`: the subcommand's arguments.
+#
+# Fails as the registry does.
+function search(sub: flags.Found) -> ()?
+    c @= reader_of(sub)?
+
+    for p in queries.search(@c, query: flags.value_of(sub, "WORDS")?)?
+        print(f"{p.name} {p.newest}: {p.description}")
+
+    return ok()
+
+# Prints what changed in `NAME` from `FROM` to `TO`.
+#
+# - `sub`: the subcommand's arguments.
+#
+# Fails as the registry does.
+function show_changes(sub: flags.Found) -> ()?
+    c @= reader_of(sub)?
+    found = queries.changes_of(@c, name: flags.value_of(sub, "NAME")?, from: flags.value_of(sub, "FROM")?, to: flags.value_of(sub, "TO")?)?
+
+    for op in found.manifest
+        print("manifest: " + changes.describe(op))
+
+    for f in found.files
+        print(f.unified)
+
+    return ok()

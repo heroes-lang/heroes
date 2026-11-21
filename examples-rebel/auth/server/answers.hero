@@ -1,0 +1,147 @@
+# How the server writes its answers and reads its requests' forms and
+# cookies. Every answer carrying a token or a secret is marked
+# `Cache-Control: no-store` (RFC 6749 § 5.1), every error of an OAuth
+# endpoint is the JSON RFC 6749 § 5.2 writes, and every cookie the server
+# sets is `HttpOnly` and `SameSite=Lax`, `Secure` where the issuer is
+# `https://`.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/strings
+use <rebel>/url
+
+# The cookie that carries a browser's session.
+constant SESSION_COOKIE: str
+    "auth_session"
+
+# The cookie that carries a passkey login's ceremony.
+constant CEREMONY_COOKIE: str
+    "auth_ceremony"
+
+# `members` as a JSON answer of `status`, not to be cached.
+#
+# - `status`: the HTTP status.
+# - `members`: the object's members, in the order written.
+function json_answer(status: i64, members: {str: json.Value}) -> http.Response
+    match http.respond_json(status, value: .object(members: members))
+        .ok r  => return no_store(r)
+        .err _ => return http.respond_text(500, text: "the answer could not be written as JSON")
+
+# The error RFC 6749 § 5.2 writes: `error` and its description.
+#
+# - `status`: the HTTP status, 400 or 401 for the token endpoint.
+# - `error`: the OAuth error code: `invalid_request`, `invalid_grant` and
+#   the others.
+# - `description`: what a developer reads.
+function oauth_error(status: i64, error: str, description: str) -> http.Response
+    return json_answer(status, members: {"error": .text(v: error), "error_description": .text(v: description)})
+
+# `r` marked so that no cache keeps it.
+#
+# - `r`: the answer.
+function no_store(r: http.Response) -> http.Response
+    marked @= r
+    marked.headers @ http.with_header(r.headers, name: "Cache-Control", value: "no-store")
+    return marked
+
+# `r` setting the cookie `name` to `value` for every path of the server, kept
+# for `seconds` seconds, 0 removing it.
+#
+# - `r`: the answer.
+# - `name`: the cookie's name.
+# - `value`: its value; "" with `seconds` 0 to remove it.
+# - `seconds`: how long the browser keeps it.
+# - `secure`: whether it is sent over `https://` alone.
+function with_cookie(r: http.Response, name: str, value: str, seconds: i64, secure: bool) -> http.Response
+    flags = if secure
+        "; Secure"
+    else
+        ""
+    marked @= r
+    line = f"{name}={value}; Path=/; Max-Age={seconds}; HttpOnly; SameSite=Lax{flags}"
+    marked.headers @ r.headers.push(http.Header(name: "Set-Cookie", value: line))
+    return marked
+
+# The value of the cookie `name` that `r` sends; "" where it sends none.
+#
+# - `r`: the request.
+# - `name`: the cookie's name.
+function cookie(r: http.Request, name: str) -> str
+    return http.cookie_of(r, name: name).default("")
+
+# The fields of `r`'s form body; none where its body is no form.
+#
+# - `r`: the request.
+function form(r: http.Request) -> [url.Pair]
+    return http.form_of(r).default([])
+
+# The fields of `r`'s query; none where it has no query.
+#
+# - `r`: the request.
+function query(r: http.Request) -> [url.Pair]
+    return http.query_of(r).default([])
+
+# The value of `key` among `pairs`; "" where it is absent.
+#
+# - `pairs`: a form's or a query's fields.
+# - `key`: the field's name.
+function field(pairs: [url.Pair], key: str) -> str
+    return url.value_of(pairs, key: key).default("")
+
+# The text body of `r`; "" where it is not UTF-8.
+#
+# - `r`: the request.
+function body_text(r: http.Request) -> str
+    return http.text_of(http.Response(status: 200, reason: "", headers: r.headers, body: r.body, closing: false)).default(
+        ""
+    )
+
+# The texts `items` as a JSON list.
+#
+# - `items`: the texts, in their order.
+function texts(items: [str]) -> json.Value
+    out: [json.Value] @= []
+
+    for s in items
+        out @ out.push(.text(v: s))
+
+    return .list(items: out)
+
+# `n` as a JSON number; every count and time this server writes is far below
+# 2^53.
+#
+# - `n`: the number.
+function number(n: i64) -> json.Value
+    return .number(v: to_f64(n))
+
+# The scopes a space-separated `scope` parameter names, in its order, each
+# once.
+#
+# - `scope`: the parameter's value.
+function scopes_of(scope: str) -> [str]
+    out: [str] @= []
+
+    for s in strings.split(s: scope, sep: " ")
+        if s != "" && !contains(out, item: s)
+            out @ out.push(s)
+
+    return out
+
+# Whether `items` holds `item`.
+#
+# - `items`: the texts.
+# - `item`: the text looked for.
+function contains(items: [str], item: str) -> bool
+    for s in items
+        if s == item
+            return true
+
+    return false
+
+test "scopes_of: split on spaces, each once"
+    assert scopes_of("openid  email openid") == ["openid", "email"]
+    assert scopes_of("") == []
+
+test "with_cookie: HttpOnly and SameSite always, Secure on request"
+    r = with_cookie(http.respond_status(204), name: "a", value: "b", seconds: 60, secure: true)
+    assert http.value_of(r.headers, name: "Set-Cookie").must() == "a=b; Path=/; Max-Age=60; HttpOnly; SameSite=Lax; Secure"

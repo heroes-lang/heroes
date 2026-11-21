@@ -1,0 +1,301 @@
+# The statements of a running Lua script, and `run`, which runs a whole
+# script with its `KEYS` and `ARGV` as Redis's `EVAL` does. Half of a ring
+# with `eval`, which evaluates every expression a statement holds and calls
+# back here for a closure's body.
+#
+# A block runs in a copy of the scope around it, so a `local` it declares is
+# gone at its end; a loop's body is a new block each time round, so a
+# closure made in it keeps that round's variables, as Lua 5.1's do.
+
+use standins/lua/eval
+use standins/lua/library
+use standins/lua/values
+use standins/redis/keyspace
+
+# How a block ended.
+variant Flow
+    # It ran to its end.
+    normal
+    # A `break` ended it; the loop around it ends.
+    breaking
+    # A `return` ended it; the function around it answers these.
+    returning
+        # The values returned.
+        results: [values.Value]
+
+# Runs the statements of `block` in `scope` itself, so a `local` among them
+# stays in `scope` after: what a function's body and `repeat ... until` need.
+#
+# - `m`: the machine.
+# - `ks`: the data.
+# - `scope`: the names in sight, which gain the block's locals.
+# - `block`: the block's index.
+# - `varargs`: the running function's `...`.
+function run_block_in(@m: values.Machine, @ks: keyspace.Keyspace, @scope: {str: i64}, block: i64, varargs: [values.Value]) -> Flow?
+    for at in m.chunk.blocks[block]
+        flow = statement(@m, @ks, scope: @scope, at: at, varargs: varargs)?
+
+        match flow
+            .normal                  => _ = 0
+            .breaking | .returning _ => return ok(flow)
+
+    return ok(.normal)
+
+# Runs `block` in a copy of `scope`, its locals gone at its end.
+#
+# - `m`: the machine.
+# - `ks`: the data.
+# - `scope`: the names in sight.
+# - `block`: the block's index.
+# - `varargs`: the running function's `...`.
+function run_block(@m: values.Machine, @ks: keyspace.Keyspace, scope: {str: i64}, block: i64, varargs: [values.Value]) -> Flow?
+    inner @= scope
+    return run_block_in(@m, @ks, scope: @inner, block: block, varargs: varargs)
+
+# The value at `at` of `xs`, `nil` past its end.
+#
+# - `xs`: the values.
+# - `at`: the index, from 0.
+function nth(xs: [values.Value], at: i64) -> values.Value
+    if at < xs.len()
+        return xs[at]
+    return .nil_value
+
+# Assigns `v` to the place expression `target` names: a local's cell, or a
+# table's field. Fails for a global, which Redis's scripts may not create.
+#
+# - `m`: the machine.
+# - `ks`: the data.
+# - `scope`: the names in sight.
+# - `target`: the place's expression.
+# - `v`: the value.
+# - `line`: the line of the `=`.
+# - `varargs`: the running function's `...`.
+function assign(@m: values.Machine, @ks: keyspace.Keyspace, scope: {str: i64} lent, target: i64, v: values.Value, line: i64, varargs: [values.Value]) -> ()?
+    match m.chunk.exprs[target]
+        .name n =>
+            match scope[n.id]
+                .ok cell =>
+                    m.cells[cell] @ v
+                    return ok()
+                .err _ => return values.runtime_error(
+                    line,
+                    what: f"Script attempted to create global variable '{n.id}'"
+                )
+        .index ix =>
+            t = eval.eval(@m, @ks, scope: scope, at: ix.target, varargs: varargs)?
+            key = eval.eval(@m, @ks, scope: scope, at: ix.key, varargs: varargs)?
+
+            match t
+                .table tt => return values.set(@m.tables[tt.ref], key: key, value: v)
+                .nil_value | .boolean _ | .number _ | .text _ | .closure _ | .builtin _ =>
+                    return values.runtime_error(line, what: f"attempt to index a {values.type_name(t)} value")
+        .nil_value | .boolean _ | .number _ | .text _ | .vararg | .call _ | .method_call _ | .function_literal _ | .binary _ | .unary _ | .table _ =>
+            return values.runtime_error(line, what: "cannot assign to this expression")
+
+# What a loop does after its body ended with `flow`: go on, stop, or hand the
+# `return` on.
+variant After
+    # Run the body again.
+    again
+    # Leave the loop, the statement after it next.
+    leave
+    # Leave the function with this flow.
+    hand_on
+        # The `return`'s flow.
+        flow: Flow
+
+# What a loop does after its body ended with `flow`.
+#
+# - `flow`: how the body ended.
+function after(flow: Flow) -> After
+    match flow
+        .normal      => return .again
+        .breaking    => return .leave
+        .returning _ => return .hand_on(flow: flow)
+
+# Runs the statement `at`.
+#
+# - `m`: the machine.
+# - `ks`: the data.
+# - `scope`: the names in sight, which gain a `local`'s names.
+# - `at`: the statement's index.
+# - `varargs`: the running function's `...`.
+function statement(@m: values.Machine, @ks: keyspace.Keyspace, @scope: {str: i64}, at: i64, varargs: [values.Value]) -> Flow?
+    eval.tick(@m, line: 0)?
+
+    match m.chunk.stmts[at]
+        .local_assign la =>
+            given = eval.eval_list(@m, @ks, scope: scope, exprs: la.values, varargs: varargs)?
+
+            for i in range(from: 0, to: la.names.len())
+                scope[la.names[i]] @ eval.new_cell(@m, v: nth(given, at: i))
+
+            return ok(.normal)
+        .assign a =>
+            given = eval.eval_list(@m, @ks, scope: scope, exprs: a.values, varargs: varargs)?
+
+            for i in range(from: 0, to: a.targets.len())
+                assign(@m, @ks, scope: scope, target: a.targets[i], v: nth(given, at: i), line: a.line, varargs: varargs)?
+
+            return ok(.normal)
+        .call c =>
+            _ = eval.eval_multi(@m, @ks, scope: scope, at: c.expr, varargs: varargs)?
+            return ok(.normal)
+        .do_block d => return run_block(@m, @ks, scope: scope, block: d.block, varargs: varargs)
+        .while_loop w =>
+            while values.is_truthy(eval.eval(@m, @ks, scope: scope, at: w.cond, varargs: varargs)?)
+                match after(run_block(@m, @ks, scope: scope, block: w.block, varargs: varargs)?)
+                    .again     => _ = 0
+                    .leave     => break
+                    .hand_on h => return ok(h.flow)
+
+            return ok(.normal)
+        .repeat_loop r =>
+            while true
+                inner @= scope
+
+                match after(run_block_in(@m, @ks, scope: @inner, block: r.block, varargs: varargs)?)
+                    .again     => _ = 0
+                    .leave     => break
+                    .hand_on h => return ok(h.flow)
+
+                if values.is_truthy(eval.eval(@m, @ks, scope: inner, at: r.cond, varargs: varargs)?)
+                    break
+
+            return ok(.normal)
+        .if_chain ic =>
+            for i in range(from: 0, to: ic.conds.len())
+                if values.is_truthy(eval.eval(@m, @ks, scope: scope, at: ic.conds[i], varargs: varargs)?)
+                    return run_block(@m, @ks, scope: scope, block: ic.blocks[i], varargs: varargs)
+
+            if ic.otherwise >= 0
+                return run_block(@m, @ks, scope: scope, block: ic.otherwise, varargs: varargs)
+            return ok(.normal)
+        .numeric_for nf =>
+            start = for_number(@m, @ks, scope: scope, at: nf.start, what: "initial value", line: nf.line, varargs: varargs)?
+            stop = for_number(@m, @ks, scope: scope, at: nf.stop, what: "limit", line: nf.line, varargs: varargs)?
+
+            step = if nf.step >= 0
+                for_number(@m, @ks, scope: scope, at: nf.step, what: "step", line: nf.line, varargs: varargs)?
+            else
+                1.0
+            current: f64 @= start
+
+            while step > 0.0 && current <= stop || step <= 0.0 && current >= stop
+                inner @= scope
+                inner[nf.variable] @ eval.new_cell(@m, v: .number(v: current))
+
+                match after(run_block_in(@m, @ks, scope: @inner, block: nf.block, varargs: varargs)?)
+                    .again     => _ = 0
+                    .leave     => break
+                    .hand_on h => return ok(h.flow)
+
+                current @ current + step
+
+            return ok(.normal)
+        .generic_for gf =>
+            given = eval.eval_list(@m, @ks, scope: scope, exprs: gf.values, varargs: varargs)?
+            step = nth(given, at: 0)
+            state = nth(given, at: 1)
+            control: values.Value @= nth(given, at: 2)
+
+            while true
+                results = eval.call_value(@m, @ks, f: step, arguments: [state, control], line: gf.line)?
+                first = nth(results, at: 0)
+
+                if values.is_nil(first)
+                    break
+
+                control @ first
+                inner @= scope
+
+                for i in range(from: 0, to: gf.names.len())
+                    inner[gf.names[i]] @ eval.new_cell(@m, v: nth(results, at: i))
+
+                match after(run_block_in(@m, @ks, scope: @inner, block: gf.block, varargs: varargs)?)
+                    .again     => _ = 0
+                    .leave     => break
+                    .hand_on h => return ok(h.flow)
+
+            return ok(.normal)
+        .local_function lf =>
+            cell = eval.new_cell(@m, v: .nil_value)
+            scope[lf.name] @ cell
+            m.closures @ m.closures.push(values.Closure(proto: lf.proto, scope: scope))
+            m.cells[cell] @ .closure(ref: m.closures.len() - 1)
+            return ok(.normal)
+        .function_decl fd =>
+            m.closures @ m.closures.push(values.Closure(proto: fd.proto, scope: scope))
+            f: values.Value = .closure(ref: m.closures.len() - 1)
+
+            if fd.path.len() == 1
+                match scope[fd.path[0]]
+                    .ok cell =>
+                        m.cells[cell] @ f
+                        return ok(.normal)
+                    .err _ => return values.runtime_error(
+                        fd.line,
+                        what: f"Script attempted to create global variable '{fd.path[0]}'"
+                    )
+
+            holder: values.Value @= eval.read_name(m, scope: scope, id: fd.path[0])?
+
+            for i in range(from: 1, to: fd.path.len() - 1)
+                holder @ eval.index_value(m, target: holder, key: .text(v: fd.path[i]), line: fd.line)?
+
+            match holder
+                .table t => values.set(@m.tables[t.ref], key: .text(v: fd.path[fd.path.len() - 1]), value: f)?
+                .nil_value | .boolean _ | .number _ | .text _ | .closure _ | .builtin _ =>
+                    return values.runtime_error(fd.line, what: f"attempt to index a {values.type_name(holder)} value")
+
+            return ok(.normal)
+        .return_values rv => return ok(
+            .returning(results: eval.eval_list(@m, @ks, scope: scope, exprs: rv.values, varargs: varargs)?)
+        )
+        .break_loop => return ok(.breaking)
+
+# The value of `at` as a number, for a numeric `for`. Fails as Lua's message
+# for the part `what` names.
+#
+# - `m`: the machine.
+# - `ks`: the data.
+# - `scope`: the names in sight.
+# - `at`: the expression's index.
+# - `what`: `initial value`, `limit` or `step`.
+# - `line`: the line of the `for`.
+# - `varargs`: the running function's `...`.
+function for_number(@m: values.Machine, @ks: keyspace.Keyspace, scope: {str: i64} lent, at: i64, what: str, line: i64, varargs: [values.Value]) -> f64?
+    v = eval.eval(@m, @ks, scope: scope, at: at, varargs: varargs)?
+
+    match values.to_number(v)
+        .ok x  => return ok(x)
+        .err _ => return values.runtime_error(line, what: f"'for' {what} must be a number")
+
+# Runs the script `chunk` against `ks` as `EVAL` does, `KEYS` and `ARGV` its
+# globals beside the engine's functions, and answers what it returns, its
+# tables in `m`.
+#
+# - `m`: the machine, made for `chunk` by `values.new_machine`.
+# - `ks`: the data.
+# - `key_names`: the keys the call names, `KEYS[1]` first.
+# - `argv`: the arguments after them, `ARGV[1]` first.
+#
+# Fails `script_error` with Lua's message where the script fails, and
+# `redis_error` with the command's error where a `redis.call` fails.
+function run(@m: values.Machine, @ks: keyspace.Keyspace, key_names: [str], argv: [str]) -> [values.Value]?
+    library.install(@m)
+    texts: [values.Value] @= []
+
+    for k in key_names
+        texts @ texts.push(.text(v: k))
+
+    m.globals["KEYS"] @ .table(ref: values.new_list(@m, items: texts))
+    words: [values.Value] @= []
+
+    for a in argv
+        words @ words.push(.text(v: a))
+
+    m.globals["ARGV"] @ .table(ref: values.new_list(@m, items: words))
+    m.closures @ m.closures.push(values.Closure(proto: 0, scope: {}))
+    return eval.call_value(@m, @ks, f: .closure(ref: m.closures.len() - 1), arguments: [], line: 0)

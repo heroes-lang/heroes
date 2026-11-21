@@ -1,0 +1,77 @@
+# A note's name in its address, `/notes/hello-heroes`: made from its title
+# once, when it is written, and never changed after, so a link to it keeps
+# working when the title is edited.
+
+use <rebel>/strings
+
+# The most bytes of a slug: an address stays readable, and a cut never falls
+# inside a word, since the cut is made at a hyphen.
+constant SLUG_MAX: i64
+    60
+
+# What a title with no letter or digit becomes: `!!!` has no slug of its own.
+constant FALLBACK: str
+    "note"
+
+# The slug of `title`: lower case ASCII letters and digits joined by `-`, as
+# `strings.to_slug` makes it, cut at the last hyphen before `SLUG_MAX`.
+#
+# - `title`: the note's title, any text.
+#
+# `note` where the title holds no letter or digit `to_slug` keeps.
+function slug_of(title: str) -> str
+    slug = strings.to_slug(title)
+
+    if slug == ""
+        return FALLBACK
+
+    if slug.len() <= SLUG_MAX
+        return slug
+
+    cut = strings.index_of_last(s: slug.slice(from: 0, to: SLUG_MAX), substr: "-").default(SLUG_MAX)
+    return slug.slice(from: 0, to: cut)
+
+# `base` where no note holds it yet, else `base-2`, `base-3` and on: the
+# first that `taken` does not hold.
+#
+# - `base`: the slug of the title.
+# - `taken`: the slugs already held that begin with `base`, in any order.
+function first_free(base: str, taken: [str]) -> str
+    held: {str: bool} @= {}
+
+    for s in taken
+        held[s] @ true
+
+    if held[base].is_err()
+        return base
+
+    n: i64 @= 2
+
+    while held[f"{base}-{n}"].is_ok_value()
+        n @ n + 1
+
+    return f"{base}-{n}"
+
+# Whether a map's answer holds a value: the opposite of `is_err`, named for
+# the loop above.
+#
+# - `answer`: what a map's index answered.
+function is_ok_value(answer: bool?) -> bool
+    return !answer.is_err()
+
+test "slug_of: words and punctuation, case, characters above ASCII, nothing usable"
+    assert slug_of("Hello, Heroes!") == "hello-heroes"
+    assert slug_of("  Notes on   Rebel  ") == "notes-on-rebel"
+    assert slug_of("!!!") == "note"
+    assert slug_of("") == "note"
+
+test "slug_of: a long title cut at a hyphen, never inside a word"
+    title = "one two three four five six seven eight nine ten eleven twelve thirteen"
+    slug = slug_of(title)
+    assert slug.len() <= 60
+    assert slug == "one-two-three-four-five-six-seven-eight-nine-ten-eleven"
+
+test "first_free: free, taken once, taken with a gap"
+    assert first_free(base: "hello", taken: []) == "hello"
+    assert first_free(base: "hello", taken: ["hello"]) == "hello-2"
+    assert first_free(base: "hello", taken: ["hello-2", "hello", "hello-4"]) == "hello-3"

@@ -1,0 +1,108 @@
+# Short makers and readers of `json.Value`, the one value a template renders
+# and the API answers. The language has no reflection, so every record the
+# pages show is turned into an object by hand; these keep that code to one
+# line a field.
+
+use <rebel>/json
+use <rebel>/time
+
+# The text `s` as a value.
+#
+# - `s`: the text.
+function text(s: str) -> json.Value
+    return .text(v: s)
+
+# The whole number `n` as a value. JSON's numbers are floats, so a number past
+# 2^53 would lose its last digits; every count this service shows is far below.
+#
+# - `n`: the number.
+function number(n: i64) -> json.Value
+    return .number(v: to_f64(n))
+
+# `b` as a value.
+#
+# - `b`: the truth value.
+function flag(b: bool) -> json.Value
+    return .boolean(v: b)
+
+# The texts `items` as a list value, in their order.
+#
+# - `items`: the texts.
+function texts(items: [str]) -> json.Value
+    out: [json.Value] @= []
+
+    for s in items
+        out @ out.push(.text(v: s))
+
+    return .list(items: out)
+
+# `items` as a list value.
+#
+# - `items`: the values, in their order.
+function list(items: [json.Value]) -> json.Value
+    return .list(items: items)
+
+# `members` as an object value; the members keep the order they were put in.
+#
+# - `members`: the members by key.
+function object(members: {str: json.Value}) -> json.Value
+    return .object(members: members)
+
+# The object `v` with `extra`'s members added after its own, an extra member
+# replacing one of the same key in its place.
+#
+# - `v`: an object; any other value is read as the empty object.
+# - `extra`: the members to add.
+function with_members(v: json.Value, extra: {str: json.Value}) -> json.Value
+    members: {str: json.Value} @= json.members_of(v).default({})
+
+    for key in keys(extra)
+        members[key] @ extra[key].must()
+
+    return .object(members: members)
+
+# `t` as RFC 3339 text in UTC, as the API and the feed write a moment.
+#
+# - `t`: the moment.
+function instant(t: time.Instant) -> json.Value
+    return .text(v: time.format(t, layout: .rfc3339))
+
+# The text the member `key` of `v` holds.
+#
+# - `v`: an object.
+# - `key`: the member's key.
+#
+# Fails `not_found` where `v` has no such member, `invalid` where it is not
+# a text, as `json.member` and `json.text_of` fail.
+function text_at(v: json.Value, key: str) -> str?
+    return json.text_of(json.member(v, key: key)?)
+
+# The texts of the list the member `key` of `v` holds; none where `v` has no
+# such member.
+#
+# - `v`: an object.
+# - `key`: the member's key.
+#
+# Fails `invalid` where the member is not a list of texts.
+function texts_at(v: json.Value, key: str) -> [str]?
+    items = match json.member(v, key: key)
+        .ok got => json.items_of(got)?
+        .err _  => return ok([])
+
+    out: [str] @= []
+
+    for item in items
+        out @ out.push(json.text_of(item)?)
+
+    return ok(out)
+
+test "text_at and texts_at: a member, a missing member, and a list of texts"
+    v = object({"title": text("Hi"), "tags": texts(["a", "b"])})
+    assert text_at(v, key: "title").must() == "Hi"
+    assert text_at(v, key: "body").is_err()
+    assert texts_at(v, key: "tags").must() == ["a", "b"]
+    assert texts_at(v, key: "none").must() == []
+    assert texts_at(v, key: "title").is_err()
+
+test "number: a count written as JSON writes a whole number"
+    assert json.format(number(42)).must() == "42"

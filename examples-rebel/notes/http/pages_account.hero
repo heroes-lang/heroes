@@ -1,0 +1,278 @@
+# The account pages: registering, signing in and out, and the admin's page of
+# accounts. A sign-in is limited per client by its own token bucket, slower
+# than the site's, so a password cannot be guessed at the speed pages load;
+# a refused one says neither which of name and password was wrong. Signing
+# in or out begins a new session, its CSRF secret new with it, so a session
+# fixed by another before the sign-in carries nothing over.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/net
+use <rebel>/web
+
+use app/service
+use app/state
+use auth/visit
+use domain/jsonv
+use domain/model
+use domain/validate
+use http/pages_notes
+use http/replies
+use ops/ops
+use store/user_store
+use views/layout
+use views/locales
+
+## Forms
+
+# One field of an account's form.
+record Field
+    # Its name, as the form sends it.
+    name: str
+    # Its label's English text.
+    label: str
+    # The input's type: `text`, `email` or `password`.
+    kind: str
+    # What it holds; a password's is always "".
+    value: str
+
+# The form of `heading`, posting to `action`, holding `fields`, each with its
+# problem from `errors`.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `heading`: the English heading, also the button's text.
+# - `action`: where it posts.
+# - `fields`: the fields, in order.
+# - `errors`: each field's problem.
+# - `error`: the form's own problem, "" for none.
+# - `status`: 200, 401 or 422.
+function account_form(app: state.App lent, v: visit.Visit, heading: str, action: str, fields: [Field], errors: [validate.FieldError], error: str, status: i64) -> replies.Reply?
+    c = layout.csrf_of(v)?
+    shown: [json.Value] @= []
+
+    for f in fields
+        members: {str: json.Value} = {
+            "name": jsonv.text(f.name)
+            "label": jsonv.text(locales.say(app.locales, tag: v.language, id: f.label))
+            "kind": jsonv.text(f.kind)
+            "value": jsonv.text(f.value)
+            "error": jsonv.text(validate.message_of(errors, field: f.name))
+        }
+
+        shown @ shown.push(jsonv.object(members))
+
+    title = locales.say(app.locales, tag: v.language, id: heading)
+
+    value: {str: json.Value} = {
+        "heading": jsonv.text(title)
+        "action": jsonv.text(action)
+        "csrf": jsonv.text(c.token)
+        "fields": jsonv.list(shown)
+        "error": jsonv.text(error)
+        "button": jsonv.text(title)
+    }
+
+    html = layout.whole(app, v: v, title: title, query: "", token: c.token, pieces: [.rendered(name: "account_form", value: jsonv.object(value))])?
+    return ok(layout.reply_with(v, c: c, response: replies.page(status, html: html)))
+
+# The registration form's fields, holding what was sent.
+#
+# - `name`: the name sent.
+# - `email`: the address sent.
+function registration_fields(name: str, email: str) -> [Field]
+    return [
+        Field(name: "name", label: "Name", kind: "text", value: name)
+        Field(name: "email", label: "Email", kind: "email", value: email)
+        Field(name: "password", label: "Password", kind: "password", value: "")
+    ]
+
+# The sign-in form's fields, holding the name sent.
+#
+# - `name`: the name sent.
+function login_fields(name: str) -> [Field]
+    return [
+        Field(name: "name", label: "Name", kind: "text", value: name)
+        Field(name: "password", label: "Password", kind: "password", value: "")
+    ]
+
+## Sessions
+
+# A new session for the account `name`, with a CSRF secret of its own.
+#
+# - `name`: the account signed in.
+#
+# Fails as the system's generator fails.
+function session_for(name: str) -> web.Session?
+    s @= web.new_session()
+    s.values[visit.USER_KEY] @ name
+    _ = web.csrf_secret(@s)?
+    return ok(s)
+
+## Registering
+
+# The registration form.
+#
+# - `app`: the state.
+# - `v`: the visit.
+function register_form(app: state.App lent, v: visit.Visit) -> replies.Reply?
+    return account_form(
+        app,
+        v: v,
+        heading: "Register",
+        action: "/account/register",
+        fields: registration_fields(name: "", email: ""),
+        errors: [],
+        error: "",
+        status: http.STATUS_OK
+    )
+
+# An account made from the form, signed in at once: 303 to the home page; or
+# the form again with each field's problem, or JSON's 422 where the request
+# asks JSON.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `r`: the request, a form of `name`, `email` and `password`.
+function register(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+    name = pages_notes.form_value(r, key: "name")
+    email = pages_notes.form_value(r, key: "email")
+
+    return match service.register(@app, name: name, email: email, password: pages_notes.form_value(r, key: "password"), now: v.now)?
+        .done d => ok(replies.with_session(replies.see_other("/"), session: session_for(d.user.name)?))
+        .invalid i =>
+            if replies.wants_json(r)
+                ok(replies.plain(replies.unprocessable(i.errors)))
+            else
+                account_form(
+                    app,
+                    v: v,
+                    heading: "Register",
+                    action: "/account/register",
+                    fields: registration_fields(name: name, email: email),
+                    errors: i.errors,
+                    error: "",
+                    status: http.STATUS_UNPROCESSABLE_CONTENT
+                )
+
+## Signing in and out
+
+# The sign-in form.
+#
+# - `app`: the state.
+# - `v`: the visit.
+function login_form(app: state.App lent, v: visit.Visit) -> replies.Reply?
+    return account_form(
+        app,
+        v: v,
+        heading: "Sign in",
+        action: "/account/login",
+        fields: login_fields(""),
+        errors: [],
+        error: "",
+        status: http.STATUS_OK
+    )
+
+# A sign-in from the form: 303 to the home page with a new session; 401 and
+# the form again for a wrong name or password; 429 past the client's sign-in
+# limit, before any password is hashed.
+#
+# - `app`: the state; the sign-in limiter's bucket of the client changes.
+# - `v`: the visit.
+# - `r`: the request, a form of `name` and `password`.
+function login(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+    match web.limit_rate(@app.login_limiter, r: r, key: client_of(r), now: v.now, form: .json)
+        .answer a =>
+            ops.count(@app.registry, name: ops.SIGN_INS, labels: ["limited"])
+            return ok(replies.plain(a.response))
+        .go_on _ => _ = 0
+
+    name = pages_notes.form_value(r, key: "name")
+
+    match service.sign_in(@app, name: name, password: pages_notes.form_value(r, key: "password"))
+        .ok user =>
+            ops.count(@app.registry, name: ops.SIGN_INS, labels: ["accepted"])
+            return ok(replies.with_session(replies.see_other("/"), session: session_for(user.name)?))
+        .err e =>
+            ops.count(@app.registry, name: ops.SIGN_INS, labels: ["refused"])
+
+            if replies.wants_json(r)
+                return ok(replies.plain(replies.api_error(http.STATUS_UNAUTHORIZED, message: e.msg)))
+
+            return account_form(
+                app,
+                v: v,
+                heading: "Sign in",
+                action: "/account/login",
+                fields: login_fields(name),
+                errors: [],
+                error: e.msg,
+                status: http.STATUS_UNAUTHORIZED
+            )
+
+# The session ended: 303 to the home page, the cookie forgotten.
+function logout() -> replies.Reply
+    return replies.Reply(response: replies.see_other("/"), session: .ended)
+
+# The key a client's rate limit is kept under: its address without the port,
+# `r.remote` as a whole where it holds no port.
+#
+# - `r`: the request; `remote` is the peer's `host:port`.
+function client_of(r: http.Request) -> str
+    return match net.split_host_port(r.remote)
+        .ok hp => hp.host
+        .err _ => r.remote
+
+## The admin's page
+
+# The accounts and their roles, for an admin.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `r`: the request.
+function users(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+    every = user_store.every(@app.db)?
+    c = layout.csrf_of(v)?
+    rows: [json.Value] @= []
+
+    for u in every
+        rows @ rows.push(jsonv.object({"name": jsonv.text(u.name), "role": jsonv.text(model.role_name(u.role))}))
+
+    if replies.wants_json(r)
+        return ok(
+            replies.plain(replies.json_response(http.STATUS_OK, value: jsonv.object({"users": jsonv.list(rows)})))
+        )
+
+    value: {str: json.Value} = {
+        "t": layout.labels(app.locales, lang: v.language)
+        "csrf": jsonv.text(c.token)
+        "users": jsonv.list(rows)
+        "roles": jsonv.texts(["reader", "author", "admin"])
+    }
+
+    title = locales.say(app.locales, tag: v.language, id: "Accounts")
+    html = layout.whole(app, v: v, title: title, query: "", token: c.token, pieces: [.rendered(name: "users", value: jsonv.object(value))])?
+    return ok(layout.reply_with(v, c: c, response: replies.page(http.STATUS_OK, html: html)))
+
+# A role given from the admin's page: 303 back to it.
+#
+# - `app`: the state.
+# - `v`: the visit; its account is an admin, which the admin group's step
+#   checked.
+# - `r`: the request, a form of `role`.
+# - `name`: the account given the role.
+function role(@app: state.App, v: visit.Visit, r: http.Request, name: str) -> replies.Reply?
+    admin = match pages_notes.signed(v, r: r)
+        .user s   => s.u
+        .answer a => return ok(a.reply)
+
+    given = match model.parse_role(pages_notes.form_value(r, key: "role"))
+        .ok got => got
+        .err e  => return pages_notes.refusal(app, v: v, r: r, status: http.STATUS_UNPROCESSABLE_CONTENT, text: e.msg)
+
+    match service.give_role(@app, admin: admin, name: name, role: given)
+        .ok verdict =>
+            return match verdict
+                .allowed     => ok(replies.plain(replies.see_other("/admin/users")))
+                .refused why => pages_notes.refusal(app, v: v, r: r, status: http.STATUS_FORBIDDEN, text: why.reason)
+        .err e => return pages_notes.refusal(app, v: v, r: r, status: http.STATUS_NOT_FOUND, text: e.msg)

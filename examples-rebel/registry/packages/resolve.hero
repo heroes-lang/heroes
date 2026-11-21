@@ -1,0 +1,207 @@
+# Which published version a requirement takes: the highest version a range
+# admits, as Cargo reads a range (`semver`), among the versions not yanked.
+#
+# A yanked version is never chosen anew, but it stays fetchable by its exact
+# version and digest, so a lock file that names it keeps building. A
+# pre-release is admitted only where the range names a pre-release of the
+# same three numbers, Cargo's rule, so `^1.0` never takes `2.0.0-beta.1` and
+# `>=2.0.0-beta` does.
+
+use <rebel>/semver
+use <rebel>/time
+
+use store/releases
+
+## Codes
+
+# The code of a requirement that is not a range.
+constant INVALID: str
+    "invalid"
+
+# The code of a requirement no published version meets.
+constant NOT_FOUND: str
+    "not_found"
+
+## Resolving
+
+# The version of `list` that `requirement` takes: the highest it admits of
+# those not yanked.
+#
+# - `list`: every version of one package, in any order.
+# - `requirement`: a range as Cargo reads it: `^1.2`, `~1.4.3`, `>=1, <2`.
+#
+# Fails `invalid` where `requirement` is no range, and `not_found` where no
+# version not yanked is admitted, the message naming those that are
+# published.
+function resolve(list: [releases.Release], requirement: str) -> releases.Release?
+    wanted = match semver.parse_range(requirement)
+        .ok r  => r
+        .err e => return fail(code: INVALID, msg: f"\"{requirement}\" is no range: {e.msg}")
+
+    standing: [releases.Release] @= []
+    versions: [semver.Version] @= []
+
+    for r in list
+        if !r.yanked
+            match semver.parse(r.version)
+                .ok v =>
+                    standing @ standing.push(r)
+                    versions @ versions.push(v)
+                .err _ => _ = 0
+
+    match semver.highest_admitted(wanted, versions: versions)
+        .ok best =>
+            for i in range(from: 0, to: versions.len())
+                if semver.compare(a: versions[i], b: best) == 0
+                    return ok(standing[i])
+        .err _ => _ = 0
+
+    return fail(code: NOT_FOUND, msg: f"no version meets \"{requirement}\" (published: {published_of(list)})")
+
+# The versions of `list` as one line for a person: each version, `(yanked)`
+# after one that is, in SemVer's order; `none` for an empty list.
+#
+# - `list`: the versions of one package.
+function published_of(list: [releases.Release]) -> str
+    if list.len() == 0
+        return "none"
+    words: [str] @= []
+
+    for r in by_precedence(list)
+        if r.yanked
+            words @ words.push(r.version + " (yanked)")
+        else
+            words @ words.push(r.version)
+
+    return words.join(", ")
+
+# `list` in SemVer's order, the lowest first; a version that does not read
+# goes last, as published.
+#
+# - `list`: the versions of one package.
+function by_precedence(list: [releases.Release]) -> [releases.Release]
+    sorted: [releases.Release] @= []
+
+    for r in list
+        at: i64 @= sorted.len()
+
+        while at > 0 && is_below(a: r.version, b: sorted[at - 1].version)
+            at @ at - 1
+
+        before = sorted.slice(from: 0, to: at)
+        after = sorted.slice(from: at, to: sorted.len())
+        sorted @ before
+        sorted @ sorted.push(r)
+
+        for rest in after
+            sorted @ sorted.push(rest)
+
+    return sorted
+
+# Whether the version `a` comes before `b` by SemVer's precedence; a text that
+# is not a version comes after every one that is.
+#
+# - `a`: a version's text.
+# - `b`: another.
+function is_below(a: str, b: str) -> bool
+    match semver.parse(a)
+        .ok va =>
+            return match semver.parse(b)
+                .ok vb => semver.is_before(a: va, b: vb)
+                .err _ => true
+        .err _ => return false
+
+# The version a listing shows as a package's newest: the highest release not
+# yanked; else the highest pre-release not yanked; else, where every one is
+# yanked, the highest of all.
+#
+# - `list`: every version of one package; not empty.
+#
+# Fails `not_found` where `list` is empty.
+function newest(list: [releases.Release]) -> releases.Release?
+    if list.len() == 0
+        return fail(code: NOT_FOUND, msg: "the package has no version")
+    ordered = by_precedence(list)
+    at: i64 @= ordered.len() - 1
+
+    while at >= 0
+        if !ordered[at].yanked && !is_prerelease(ordered[at].version)
+            return ok(ordered[at])
+        at @ at - 1
+
+    at @ ordered.len() - 1
+
+    while at >= 0
+        if !ordered[at].yanked
+            return ok(ordered[at])
+        at @ at - 1
+
+    return ok(ordered[ordered.len() - 1])
+
+# Whether the version `text` is a pre-release; a text that is no version is
+# taken as one, so it is never shown as a package's newest release.
+#
+# - `text`: a version's text.
+function is_prerelease(text: str) -> bool
+    return match semver.parse(text)
+        .ok v  => semver.is_prerelease(v)
+        .err _ => true
+
+# A release of `version` for the tests, yanked or not.
+#
+# - `version`: its version.
+# - `yanked`: whether it is yanked.
+function sample(version: str, yanked: bool) -> releases.Release
+    return releases.Release(
+        id: 0,
+        package: "p",
+        version: version,
+        digest: "",
+        size: 0,
+        packing: "zstd",
+        key_id: "",
+        signature: "",
+        manifest: "{}",
+        description: "",
+        keywords: [],
+        published_at: time.epoch(),
+        yanked: yanked,
+        downloads: 0
+    )
+
+test "resolve: the highest admitted, a yanked one passed over, a pre-release only where named"
+    list = [
+        sample(version: "1.0.0", yanked: false)
+        sample(version: "1.2.0", yanked: true)
+        sample(version: "1.1.0", yanked: false)
+        sample(version: "2.0.0-beta.1", yanked: false)
+    ]
+    assert resolve(list, requirement: "^1.0").must().version == "1.1.0"
+    assert resolve(list, requirement: "~1.0").must().version == "1.0.0"
+    assert resolve(list, requirement: ">=2.0.0-beta").must().version == "2.0.0-beta.1"
+    assert resolve(list, requirement: "=1.2.0").is_err()
+
+test "resolve: no version meets it, and a range that does not read"
+    list = [sample(version: "1.0.0", yanked: false), sample(version: "1.2.0", yanked: true)]
+
+    match resolve(list, requirement: "^3")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no version meets \"^3\" (published: 1.0.0, 1.2.0 (yanked))"
+
+    match resolve(list, requirement: "1.2 - 2.3")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert resolve([], requirement: "*").is_err()
+
+test "newest: a release over a pre-release, and the highest yanked where all are"
+    assert newest([sample(version: "1.1.0", yanked: false), sample(version: "2.0.0-rc.1", yanked: false)]).must().version == "1.1.0"
+    assert newest([sample(version: "2.0.0-rc.1", yanked: false)]).must().version == "2.0.0-rc.1"
+    assert newest([sample(version: "1.0.0", yanked: true), sample(version: "0.9.0", yanked: true)]).must().version == "1.0.0"
+    assert newest([]).is_err()
+
+test "by_precedence: SemVer's order, not the order of the text"
+    ordered = by_precedence(
+        [sample(version: "1.10.0", yanked: false), sample(version: "1.9.0", yanked: false), sample(version: "1.9.0-rc.1", yanked: false)]
+    )
+    assert ordered[0].version == "1.9.0-rc.1" && ordered[1].version == "1.9.0" && ordered[2].version == "1.10.0"

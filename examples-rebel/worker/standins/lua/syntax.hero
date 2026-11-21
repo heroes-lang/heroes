@@ -1,0 +1,197 @@
+# The tree of a parsed Lua script, kept as an arena: every expression,
+# statement, block and function of a script is one element of a list of the
+# `Chunk`, and a node names its children by their index there. A variant cannot
+# hold itself by value (spec § 3), and an index is what lets the interpreter
+# walk the tree with no copy of a subtree at each step.
+
+# One expression. Each index names an element of `Chunk.exprs`, and `proto`
+# an element of `Chunk.protos`.
+variant Expr
+    # `nil`.
+    nil_value
+    # `true` or `false`.
+    boolean
+        # The value.
+        v: bool
+    # A number literal.
+    number
+        # Its value.
+        v: f64
+    # A string literal, its escapes read.
+    text
+        # The characters.
+        v: str
+    # `...`, the extra arguments of a function that takes them.
+    vararg
+    # A name: a local, an upvalue or a global.
+    name
+        # The name as written.
+        id: str
+    # `target[key]`, or `target.key` with the key a text.
+    index
+        # The table's expression.
+        target: i64
+        # The key's expression.
+        key: i64
+    # `callee(args)`.
+    call
+        # The function's expression.
+        callee: i64
+        # The arguments' expressions, in order.
+        args: [i64]
+        # The line of the call, for an error raised inside it.
+        line: i64
+    # `target:method(args)`, the target passed first.
+    method_call
+        # The object's expression.
+        target: i64
+        # The method's name.
+        method: str
+        # The arguments after the object, in order.
+        args: [i64]
+        # The line of the call.
+        line: i64
+    # `function (params) body end`.
+    function_literal
+        # The function's index in `Chunk.protos`.
+        proto: i64
+    # `left op right`.
+    binary
+        # The operator as written: `+`, `..`, `==`, `and`, ...
+        op: str
+        # The left operand.
+        left: i64
+        # The right operand.
+        right: i64
+        # The operator's line.
+        line: i64
+    # `op operand`.
+    unary
+        # `-`, `not` or `#`.
+        op: str
+        # The operand.
+        operand: i64
+        # The operator's line.
+        line: i64
+    # A table constructor, `{a, b, k = v, [e] = v}`.
+    table
+        # The positional fields' expressions, keyed 1, 2, ... in order.
+        items: [i64]
+        # The keyed fields' keys, each a name's text or a bracketed expression.
+        keys: [i64]
+        # The keyed fields' values, in the order of `keys`.
+        values: [i64]
+
+# One statement. Each index names an element of the `Chunk`'s lists, and a
+# `block` an element of `Chunk.blocks`.
+variant Stmt
+    # `local a, b = x, y`.
+    local_assign
+        # The names declared.
+        names: [str]
+        # The values' expressions; fewer than the names leaves the rest nil.
+        values: [i64]
+    # `t[k], x = v, w`.
+    assign
+        # The places assigned, each a `name` or an `index` expression.
+        targets: [i64]
+        # The values' expressions.
+        values: [i64]
+        # The line of the `=`.
+        line: i64
+    # A call standing as a statement.
+    call
+        # The call's expression.
+        expr: i64
+    # `do block end`.
+    do_block
+        # The block.
+        block: i64
+    # `while cond do block end`.
+    while_loop
+        # The condition.
+        cond: i64
+        # The body.
+        block: i64
+    # `repeat block until cond`.
+    repeat_loop
+        # The body.
+        block: i64
+        # The condition, which sees the body's locals.
+        cond: i64
+    # `if c1 then b1 elseif c2 then b2 else b3 end`.
+    if_chain
+        # The conditions, in order.
+        conds: [i64]
+        # The block of each condition.
+        blocks: [i64]
+        # The `else` block, or -1 where there is none.
+        otherwise: i64
+    # `for v = start, stop, step do block end`.
+    numeric_for
+        # The loop's variable.
+        variable: str
+        # The first value.
+        start: i64
+        # The last value.
+        stop: i64
+        # The step, or -1 for 1.
+        step: i64
+        # The body.
+        block: i64
+        # The line of the `for`.
+        line: i64
+    # `for k, v in explist do block end`.
+    generic_for
+        # The loop's variables.
+        names: [str]
+        # The expressions giving the iterator, its state and its first key.
+        values: [i64]
+        # The body.
+        block: i64
+        # The line of the `for`.
+        line: i64
+    # `local function f(...) ... end`.
+    local_function
+        # The function's name, declared before its body so it may call itself.
+        name: str
+        # The function's index in `Chunk.protos`.
+        proto: i64
+    # `function a.b.c(...) ... end`.
+    function_decl
+        # The name, then each field name after a `.`.
+        path: [str]
+        # The function's index in `Chunk.protos`.
+        proto: i64
+        # The line of the `function`.
+        line: i64
+    # `return explist`.
+    return_values
+        # The values' expressions.
+        values: [i64]
+    # `break`.
+    break_loop
+
+# A function as written: its parameters and its body.
+record Proto
+    # The parameters' names, in order.
+    params: [str]
+    # Whether it takes `...` after them.
+    takes_vararg: bool
+    # The body's index in `Chunk.blocks`.
+    block: i64
+
+# A parsed script: its nodes, and the block that is its main function.
+record Chunk
+    # Every expression.
+    exprs: [Expr]
+    # Every statement.
+    stmts: [Stmt]
+    # Every block, each the indexes of its statements in order.
+    blocks: [[i64]]
+    # Every function, the main one first.
+    protos: [Proto]
+
+# A chunk holding nothing yet.
+function empty_chunk() -> Chunk
+    return Chunk(exprs: [], stmts: [], blocks: [], protos: [])

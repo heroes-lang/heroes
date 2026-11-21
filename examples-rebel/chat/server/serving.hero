@@ -1,0 +1,535 @@
+# The chat server: one thread, one poll loop, every connection on it. The
+# listener's connections are read as HTTP requests and routed: the API's
+# routes are answered and their connections closed; a sign-in is parked
+# while its password is hashed on a thread of its own (`hashing`), whose
+# datagram the loop hears; and `/socket` is upgraded to a WebSocket that
+# stays in the loop, read as its frames come. The bridge's MQTT and NATS
+# clients are in the loop too, so a device's message reaches the room as
+# soon as its broker sends it, and a timer links the bridge again where a
+# broker went away. The loop ends at the program's stop (Ctrl-C, SIGTERM, or
+# `os.ask_stop` in the demo), and then every connection, the bridge and the
+# database are closed.
+#
+# An HTTP request is read whole before the loop goes on, within
+# `REQUEST_MS`, which bounds what a client that connects and says nothing
+# costs the others; a WebSocket is read only when `poll` says it is ready.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/io
+use <rebel>/mqtt
+use <rebel>/nats
+use <rebel>/net
+use <rebel>/poll
+use <rebel>/sql/sqlite
+use <rebel>/time
+use <rebel>/web
+use <rebel>/websocket
+
+use auth/tokens
+use bridge/mirroring
+use core/clocks
+use protocol/wire
+use server/actions
+use server/api
+use server/hashing
+use server/hub
+use server/settings
+use server/state
+use standins/told
+use store/database
+
+# How often the bridge is linked again where a broker went away, in
+# seconds.
+constant RELINK_SECONDS: i64
+    10
+
+# How long a new connection has to send its whole HTTP request, in
+# milliseconds.
+constant REQUEST_MS: i64
+    5000
+
+# The name the bridge's clients give the brokers.
+constant BRIDGE_NAME: str
+    "chat-bridge"
+
+# The poll keys of the bridge's streams, and the streams they were added
+# for: a client made again reads a new stream, which `watch` adds in place
+# of the old, and a client closed is taken out.
+record Watch
+    # The MQTT client's key, -1 for none.
+    mqtt_key: i64
+    # The stream the MQTT key was added for.
+    mqtt_streams: [io.Stream]
+    # The NATS client's key, -1 for none.
+    nats_key: i64
+    # The stream the NATS key was added for.
+    nats_streams: [io.Stream]
+
+# The first stamp of the demo's fixed clock: 2026-11-21 at 14:00 UTC, each
+# message a minute after the one before.
+function demo_start() -> time.Instant
+    return time.from_date_time(
+        time.DateTime(year: 2026, month: 11, day: 21, hour: 14, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+
+# The state of a server started with `s`: its database opened and brought up
+# to date, its mirrored rooms made, its bridge connected.
+#
+# - `s`: the settings, checked.
+#
+# Fails as `database.open`, `tokens.issuer` and `mirroring.connect` fail; what was
+# opened before a failure is closed.
+function start(s: settings.Settings) -> state.Server?
+    db @= database.open(s.database)?
+
+    match open_rest(@db, s: s)
+        .ok srv => return ok(srv)
+        .err e =>
+            # The failure told is the one that stopped the start.
+            _ = sqlite.close(@db).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# What `start` makes once its database is open.
+#
+# - `db`: the open database, which the server answered owns.
+# - `s`: the settings.
+function open_rest(@db: sqlite.Db, s: settings.Settings) -> state.Server?
+    clock = if s.fixed_clock
+        clocks.fixed(start: demo_start(), step: time.minutes(1)?)
+    else
+        clocks.wall()
+
+    signer = tokens.issuer(s.secret, lifetime: settings.token_lifetime(s)?)?
+    at = clocks.now(clock)?
+
+    for m in s.mirrors
+        database.ensure_room(@db, room: m.room, at: at)?
+
+    links @= mirroring.connect(s.mirrors, mqtt_url: s.mqtt_url, nats_url: s.nats_url, name: BRIDGE_NAME)?
+
+    hasher = match net.open_udp(host: "127.0.0.1", port: 0)
+        .ok u => u
+        .err e =>
+            mirroring.close(@links)
+            return fail(code: e.code, msg: e.msg)
+
+    return ok(
+        state.Server(settings: s, db: db, clock: clock, signer: signer, router: api.new_router(), routing: hub.new_hub(), conns: [], links: links, jobs: hashing.new_jobs(hasher.address.port), hasher: hasher, requests: 0, commands: 0)
+    )
+
+# Writes `response` as the answer to `r` and closes the connection: the API
+# answers one request per connection, `Connection: close` telling the client.
+#
+# - `stream`: the connection's stream, closed here.
+# - `r`: the request.
+# - `response`: the answer.
+function answer_and_close(@stream: io.Stream, r: http.Request, response: http.Response)
+    closing @= response
+    closing.closing @ true
+
+    # A client gone before its answer is written loses only its own answer.
+    _ = http.write_answer(stream, r: r, response: closing).is_err()
+    _ = io.close(@stream).is_err()
+
+# Accepts the connection `l` holds and answers its request: the API's, or the
+# WebSocket's upgrade.
+#
+# - `srv`: the server.
+# - `set`: the poll set.
+# - `l`: the listener.
+function on_accept(@srv: state.Server, set: poll.Set, l: net.Listener lent)
+    tcp @= match net.accept(l, deadline_ms: REQUEST_MS)
+        .ok c  => c
+        .err _ => return
+
+    reader @= io.reader(tcp.stream)
+
+    r = match http.next_request(@reader, limits: http.default_limits())
+        .ok got => got
+        .err _ =>
+            # `next_request` has answered what a status answers; the
+            # connection ends either way.
+            _ = io.close(@tcp.stream).is_err()
+            return
+
+    match web.route(srv.router, r: r)
+        .err _ => answer_and_close(@tcp.stream, r: r, response: web.not_routed(srv.router, r: r))
+        .ok found =>
+            if found.name == api.SOCKET_ROUTE
+                open_socket(@srv, set: set, @reader, r: r)
+            else if found.name == api.REGISTER_ROUTE
+                begin_sign_in(@srv, stream: tcp.stream, r: r, begun: api.begin_register(@srv, r: r))
+            else if found.name == api.LOGIN_ROUTE
+                begin_sign_in(@srv, stream: tcp.stream, r: r, begun: api.begin_login(@srv, r: r))
+            else
+                answer_and_close(@tcp.stream, r: r, response: api.answer(@srv, found: found, r: r))
+
+# Answers a sign-in at once where it needs no hash, else parks it until its
+# hash is made off the loop.
+#
+# - `srv`: the server.
+# - `stream`: the request's connection, the server's to answer and close.
+# - `r`: the request.
+# - `begun`: what the request came to before its hash.
+function begin_sign_in(@srv: state.Server, stream: io.Stream, r: http.Request, begun: api.Begun)
+    srv.requests @ srv.requests + 1
+    held @= stream
+
+    match begun
+        .answered a => answer_and_close(@held, r: r, response: a.response)
+        .hashing h =>
+            # The request's deadline was for reading it; its answer comes
+            # when the hash does, which may be seconds away.
+            _ = net.set_deadline(held, deadline_ms: net.FOREVER).is_err()
+            hashing.park(@srv.jobs, work: h.work, stream: held, request: r)
+
+# Answers the sign-in whose hash a thread has just made, as its datagram
+# says.
+#
+# - `srv`: the server.
+function on_hashed(@srv: state.Server)
+    said = match net.receive(srv.hasher)
+        .ok d  => d
+        .err _ => return
+
+    text = match bytes.to_text(said.data)
+        .ok t  => t
+        .err _ => return
+
+    done @= match hashing.finished(@srv.jobs, text: text)
+        .ok d  => d
+        .err _ => return
+
+    answer_and_close(@done.stream, r: done.request, response: api.finish(@srv, done: done))
+
+# Upgrades the request `r` to a WebSocket of the user its token names, adds
+# it to the loop, and tells the routing.
+#
+# - `srv`: the server.
+# - `set`: the poll set.
+# - `reader`: the request's reader, whose stream the connection takes.
+# - `r`: the request.
+function open_socket(@srv: state.Server, set: poll.Set, @reader: io.Reader, r: http.Request)
+    user = match api.user_of(srv, r: r)
+        .ok u => u
+        .err e =>
+            answer_and_close(@reader.stream, r: r, response: api.error_of(http.STATUS_UNAUTHORIZED, message: e.msg))
+            return
+
+    socket @= match websocket.upgrade(@reader, r: r, server: websocket.default_server())
+        .ok c => c
+        .err _ =>
+            # `upgrade` has answered the refusal; the stream is still ours.
+            _ = io.close(@reader.stream).is_err()
+            return
+
+    srv.requests @ srv.requests + 1
+
+    # The request's deadline ends with the request: the connection lives as
+    # long as its user stays.
+    _ = net.set_deadline(socket.stream, deadline_ms: net.FOREVER).is_err()
+
+    key = match poll.add_stream(set, s: socket.stream, interest: .read)
+        .ok k => k
+        .err _ =>
+            _ = websocket.drop(@socket).is_err()
+            return
+
+    rooms = database.rooms_of(@srv.db, member: user).default([])
+    conns @= srv.conns
+    conns @ conns.push(state.Conn(key: key, socket: socket, user: user, broken: false))
+    srv.conns @ conns
+    state.deliver(@srv, told: hub.open_session(@srv.routing, key: key, user: user, rooms: rooms))
+
+# Reads what the connection `i` holds and acts on every whole request.
+#
+# - `srv`: the server.
+# - `i`: the connection's index.
+function on_socket(@srv: state.Server, i: i64)
+    key = srv.conns[i].key
+    user = srv.conns[i].user
+
+    got = match websocket.read_ready(@srv.conns[i].socket)
+        .ok messages => messages
+        .err _ =>
+            srv.conns[i].broken @ true
+            return
+
+    for m in got
+        answered = match m
+            .text t =>
+                match wire.decode(t.text)
+                    .ok c  => actions.act(@srv, key: key, user: user, c: c)
+                    .err e => actions.refusal(key, code: e.code, reason: e.msg)
+            .binary _ => actions.refusal(key, code: wire.INVALID, reason: "a request is a text message")
+
+        state.deliver(@srv, told: answered)
+
+    if !websocket.is_open(srv.conns[i].socket)
+        srv.conns[i].broken @ true
+
+# Closes every connection marked broken, tells the routing, and goes on until
+# none is left: telling one connection's going may break another.
+#
+# - `srv`: the server.
+# - `set`: the poll set.
+function sweep(@srv: state.Server, set: poll.Set)
+    i @= 0
+
+    while i < srv.conns.len()
+        if !srv.conns[i].broken
+            i @ i + 1
+            continue
+
+        gone @= srv.conns[i]
+        kept: [state.Conn] @= []
+
+        for c in srv.conns
+            if c.key != gone.key
+                kept @ kept.push(c)
+
+        srv.conns @ kept
+
+        # The connection is over whatever these answer: it was closed by its
+        # peer, failed a write, or is dropped here.
+        _ = poll.remove(set, key: gone.key).is_err()
+        _ = websocket.drop(@gone.socket).is_err()
+        state.deliver(@srv, told: hub.close_session(@srv.routing, key: gone.key))
+        i @ 0
+
+# Takes the messages the bridge's MQTT client has, and posts each in its
+# room.
+#
+# - `srv`: the server.
+function take_mqtt(@srv: state.Server)
+    match mirroring.take_mqtt(@srv.links)
+        .ok got =>
+            for inbound in got
+                state.deliver(@srv, told: actions.bring_in(@srv, inbound: inbound))
+        # A broker gone is reconnected by its client; the room goes on.
+        .err _ => _ = 0
+
+# Takes the messages the bridge's NATS client has, and posts each in its
+# room.
+#
+# - `srv`: the server.
+function take_nats(@srv: state.Server)
+    match mirroring.take_nats(@srv.links)
+        .ok got =>
+            for inbound in got
+                state.deliver(@srv, told: actions.bring_in(@srv, inbound: inbound))
+        .err _ => _ = 0
+
+# Adds each bridge client's stream to the set where it is not there yet, in
+# place of the one a client made again replaced; takes out the stream of a
+# client closed, whose hang-up would otherwise be told at every wait.
+#
+# - `srv`: the server.
+# - `set`: the poll set.
+# - `w`: the bridge's keys.
+function watch(srv: state.Server lent, set: poll.Set, @w: Watch)
+    mqtt_live: [io.Stream] @= []
+
+    if srv.links.mqtt_clients.len() == 1 && !mqtt.is_closed(srv.links.mqtt_clients[0])
+        mqtt_live @ [mqtt.stream_of(srv.links.mqtt_clients[0]).must()]
+
+    if mqtt_live != w.mqtt_streams
+        if w.mqtt_key >= 0
+            _ = poll.remove(set, key: w.mqtt_key).is_err()
+        w.mqtt_key @ -1
+
+        if mqtt_live.len() == 1
+            w.mqtt_key @ poll.add_stream(set, s: mqtt_live[0], interest: .read).default(-1)
+
+        w.mqtt_streams @ mqtt_live
+
+    nats_live: [io.Stream] @= []
+
+    if srv.links.nats_clients.len() == 1 && !nats.is_closed(srv.links.nats_clients[0])
+        nats_live @ [nats.stream_of(srv.links.nats_clients[0]).must()]
+
+    if nats_live != w.nats_streams
+        if w.nats_key >= 0
+            _ = poll.remove(set, key: w.nats_key).is_err()
+        w.nats_key @ -1
+
+        if nats_live.len() == 1
+            w.nats_key @ poll.add_stream(set, s: nats_live[0], interest: .read).default(-1)
+
+        w.nats_streams @ nats_live
+
+# Serves until the program's stop.
+#
+# - `srv`: the server.
+# - `set`: the poll set, the listener in it.
+# - `l`: the listener.
+# - `listening`: the listener's key.
+# - `hashed`: the key of the socket the hashing threads tell.
+function run_loop(@srv: state.Server, set: poll.Set, l: net.Listener lent, listening: i64, hashed: i64)
+    w @= Watch(mqtt_key: -1, mqtt_streams: [], nats_key: -1, nats_streams: [])
+    watch(srv, set: set, @w)
+    every = time.seconds(RELINK_SECONDS).must()
+    relinking = poll.add_timer(set, first: every, every: every).default(-1)
+
+    while true
+        # What a client read while a publish waited is in no stream to wait
+        # on: it is taken before the wait.
+        if mirroring.held_mqtt(srv.links) > 0
+            take_mqtt(@srv)
+
+        if mirroring.held_nats(srv.links) > 0
+            take_nats(@srv)
+
+        events = match poll.wait(set, limit: time.hours(1).must())
+            .ok got => got
+            .err _  => return
+
+        for e in events
+            if e.key == listening
+                on_accept(@srv, set: set, l: l)
+            else if e.key == relinking
+                _ = mirroring.relink(@srv.links)
+            else if e.key == hashed
+                on_hashed(@srv)
+            else if e.key == w.mqtt_key
+                take_mqtt(@srv)
+            else if e.key == w.nats_key
+                take_nats(@srv)
+            else
+                i = state.conn_of(srv, key: e.key)
+
+                if i >= 0
+                    on_socket(@srv, i: i)
+
+            sweep(@srv, set: set)
+
+        watch(srv, set: set, @w)
+
+# Closes every connection, the sign-ins waiting, the bridge and the
+# database, at the stop.
+#
+# - `srv`: the server.
+function shut(@srv: state.Server)
+    i @= 0
+
+    while i < srv.conns.len()
+        # At the stop no closing handshake is waited for.
+        _ = websocket.drop(@srv.conns[i].socket).is_err()
+        i @ i + 1
+
+    srv.conns @ []
+
+    # A sign-in waiting for its hash is not answered: its thread is joined
+    # and its connection closed.
+    for job in hashing.drain(@srv.jobs)
+        held @= job.stream
+        _ = io.close(@held).is_err()
+
+    _ = net.close_udp(@srv.hasher).is_err()
+    mirroring.close(@srv.links)
+    _ = sqlite.close(@srv.db).is_err()
+
+# What a server carried, in one line.
+#
+# - `srv`: the server, its database still open.
+function summary_of(@srv: state.Server) -> str
+    counts = match database.counts_of(@srv.db)
+        .ok c  => c
+        .err _ => database.Counts(users: -1, rooms: -1, messages: -1, directs: -1)
+
+    return f"chat server: {srv.requests} requests, {srv.commands} commands; {counts.users} users, {counts.rooms} rooms, {counts.messages} messages, {counts.directs} direct; bridge {srv.links.sent} out, {srv.links.received} in"
+
+# Serves with `s` until the program's stop, and answers what it carried.
+#
+# - `s`: the settings.
+#
+# Fails as `net.listen` and `start` fail; a starter waiting on `s.told_port`
+# is told the failure.
+function serve(s: settings.Settings) -> str?
+    match serve_ready(s)
+        .ok said => return ok(said)
+        .err e =>
+            if s.told_port > 0
+                _ = told.failed(port: s.told_port, why: e.msg).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# What `serve` does, a failure before it is ready answered. Whatever the
+# loop answers, the connections, the bridge, the database and the listener
+# are closed before it returns.
+#
+# - `s`: the settings.
+function serve_ready(s: settings.Settings) -> str?
+    settings.check(s)?
+    l @= net.listen(host: s.host, port: s.port)?
+
+    srv @= match start(s)
+        .ok got => got
+        .err e =>
+            _ = net.close_listener(@l).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    ended = serve_started(@srv, s: s, l: l)
+    said = summary_of(@srv)
+    shut(@srv)
+    closed = net.close_listener(@l)
+    ended?
+    closed?
+    return ok(said)
+
+# Waits on the listener, the bridge and the hashing socket in a poll set, tells the starter
+# where the server listens, and serves until the program's stop.
+#
+# - `srv`: the server, started.
+# - `s`: the settings, which name the starter's socket.
+# - `l`: the listener.
+#
+# Fails as `poll.make`, `poll.add_listener` and `told.ready` fail; the set
+# is closed whatever it answers.
+function serve_started(@srv: state.Server, s: settings.Settings, l: net.Listener lent) -> ()?
+    set @= poll.make(4096)?
+
+    hashed = match poll.add_udp(set, u: srv.hasher, interest: .read)
+        .ok key => key
+        .err e =>
+            _ = poll.close(@set).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    listening = match tell_ready(set, s: s, l: l)
+        .ok key => key
+        .err e =>
+            _ = poll.close(@set).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    run_loop(@srv, set: set, l: l, listening: listening, hashed: hashed)
+    return poll.close(@set)
+
+# Adds the listener to `set` and tells the starter, where there is one, the
+# port it listens on; answers the listener's key.
+#
+# - `set`: the poll set.
+# - `s`: the settings.
+# - `l`: the listener.
+function tell_ready(set: poll.Set, s: settings.Settings, l: net.Listener lent) -> i64?
+    listening = poll.add_listener(set, l: l)?
+
+    if s.told_port > 0
+        told.ready(port: s.told_port, listening: l.address.port)?
+
+    return ok(listening)
+
+# The body of a server's thread: serves with the settings `arg` writes until
+# the program's stop, and answers what it carried.
+#
+# - `arg`: the settings, as `settings.encode` writes them.
+function run(arg: str) -> str
+    s = match settings.decode(arg)
+        .ok got => got
+        .err e  => return f"chat server: the settings are refused: {e.msg}"
+
+    return match serve(s)
+        .ok said => said
+        .err e   => f"chat server failed: {e.msg}"
+
+test "demo_start: 14:00 UTC on 2026-11-21"
+    assert time.format(demo_start(), layout: .rfc3339) == "2026-11-21T14:00:00Z"

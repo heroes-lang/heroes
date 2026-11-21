@@ -1,0 +1,223 @@
+# The directory the LDAP stand-in serves: its fixed entries, and how a
+# search's scope and filter select among them and cut each to the attributes
+# asked. Equality and substrings compare with case ignored, as
+# `caseIgnoreMatch` compares every attribute these entries hold; a filter is
+# the `ldap.Filter` the client's own `ldap.decode_filter` reads.
+#
+# The entries: a service account, four people under
+# `ou=people,dc=example,dc=org` (one without an address, one whose name an
+# account of the identity server holds already), and a printer, which is no
+# person.
+
+use <rebel>/bytes
+use <rebel>/ldap
+use <rebel>/strings
+
+# The service account the identity server's import binds as.
+constant SERVICE_DN: str
+    "cn=auth-sync,ou=services,dc=example,dc=org"
+
+# Its password.
+constant SERVICE_PASSWORD: str
+    "sync-directory-secret"
+
+# Where the people stand.
+constant PEOPLE: str
+    "ou=people,dc=example,dc=org"
+
+# One entry: its name and its attributes, each a name then its values.
+record Entry
+    # The distinguished name.
+    dn: str
+    # The attributes: each list the attribute's name, then its values.
+    attributes: [[str]]
+
+# The directory's entries.
+function entries() -> [Entry]
+    return [
+        Entry(dn: SERVICE_DN, attributes: [["objectClass", "applicationProcess"], ["cn", "auth-sync"], ["userPassword", SERVICE_PASSWORD]])
+        person(uid: "bruno", name: "Bruno Bianchi", mail: "bruno@example.org", password: "bruno-directory-1")
+        person(uid: "carla", name: "Carla Conti", mail: "carla@example.org", password: "carla-directory-1")
+        person(uid: "dario", name: "Dario Esposito", mail: "", password: "dario-directory-1")
+        person(uid: "ana", name: "Ana Directory", mail: "ana.d@example.org", password: "ana-directory-1")
+        Entry(dn: "cn=printer-1,ou=devices,dc=example,dc=org", attributes: [["objectClass", "device"], ["cn", "printer-1"]])
+    ]
+
+# A person's entry; `mail` "" for one without an address.
+#
+# - `uid`: the user id, the entry's RDN.
+# - `name`: the common name.
+# - `mail`: the address; "" for none.
+# - `password`: the `userPassword` a bind as the entry must give.
+function person(uid: str, name: str, mail: str, password: str) -> Entry
+    attributes @= [
+        ["objectClass", "inetOrgPerson"]
+        ["uid", uid]
+        ["cn", name]
+        ["sn", name]
+        ["userPassword", password]
+    ]
+
+    if mail != ""
+        attributes @ attributes.push(["mail", mail])
+
+    return Entry(dn: f"uid={uid},{PEOPLE}", attributes: attributes)
+
+# Whether `dn` is within `scope` of `base`: 0 the base itself, 1 the entries
+# right below it, 2 the base and everything below it.
+#
+# - `dn`: an entry's name.
+# - `base`: the search's base.
+# - `scope`: the search's scope, as RFC 4511 numbers it.
+function in_scope(dn: str, base: str, scope: i64) -> bool
+    d = strings.to_lower(dn)
+    b = strings.to_lower(base)
+
+    if scope == 0
+        return d == b
+
+    if !strings.has_suffix(s: d, suffix: "," + b)
+        return scope == 2 && d == b
+
+    if scope == 1
+        return !strings.contains(s: d.slice(from: 0, to: d.len() - b.len() - 1), substr: ",")
+    return true
+
+# `e` with only the attributes `asked` names, every one where it names none
+# or `*`, and never its password.
+#
+# - `e`: the entry found.
+# - `asked`: the attributes the search names, lower case.
+function cut(e: Entry, asked: [str]) -> Entry
+    out: [[str]] @= []
+    every = asked.len() == 0 || holds(asked, item: "*")
+
+    for a in e.attributes
+        name = strings.to_lower(a[0])
+
+        if name != "userpassword" && (every || holds(asked, item: name))
+            out @ out.push(a)
+
+    return Entry(dn: e.dn, attributes: out)
+
+# Whether `items` holds `item`.
+#
+# - `items`: the texts.
+# - `item`: the text looked for.
+function holds(items: [str], item: str) -> bool
+    for s in items
+        if s == item
+            return true
+
+    return false
+
+# The values of the attribute `name` of `e`, its name compared with case
+# ignored; none where it has no such attribute.
+#
+# - `e`: the entry.
+# - `name`: the attribute's name.
+function values_of(e: Entry, name: str) -> [str]
+    for a in e.attributes
+        if strings.equals_ignoring_case_ascii(a: a[0], b: name)
+            return a.slice(from: 1, to: a.len())
+
+    return []
+
+# Whether `a` and `b` name one entry, compared as `ldap.is_same_dn_ignoring_case`
+# compares names; two that do not read are compared as they are written.
+#
+# - `a`: one name.
+# - `b`: the other.
+function same_dn(a: str, b: str) -> bool
+    match ldap.parse_dn(a)
+        .ok x =>
+            match ldap.parse_dn(b)
+                .ok y  => return ldap.is_same_dn_ignoring_case(a: x, b: y)
+                .err _ => return false
+        .err _ => return a == b
+
+# Whether the filter `f` matches `e`: equality and substrings compared with
+# case ignored, as `caseIgnoreMatch` compares every attribute this directory
+# holds; an ordering, approximate or extensible match matches nothing here.
+#
+# - `e`: the entry.
+# - `f`: the filter, nested at most `ldap.MAX_FILTER_DEPTH` deep, so the recursion is bounded.
+function matches(e: Entry, f: ldap.Filter) -> bool
+    match f
+        .and_of x =>
+            for item in x.items
+                if !matches(e, f: item)
+                    return false
+
+            return true
+        .or_of x =>
+            for item in x.items
+                if matches(e, f: item)
+                    return true
+
+            return false
+        .not_of x => return x.items.len() == 1 && !matches(e, f: x.items[0])
+        .equal x =>
+            wanted = bytes.to_text_lossy(x.value)
+
+            for v in values_of(e, name: x.attribute)
+                if strings.equals_ignoring_case(a: v, b: wanted)
+                    return true
+
+            return false
+        .present x => return values_of(e, name: x.attribute).len() > 0
+        .substrings x =>
+            for v in values_of(e, name: x.attribute)
+                if fits(v: strings.to_lower(v), initial: lowered(x.initial), middle: x.middle, final: lowered(x.final))
+                    return true
+
+            return false
+        .greater_or_equal _ | .less_or_equal _ | .approx _ | .extensible _ => return false
+
+# `b`'s text, lower case.
+#
+# - `b`: bytes of a filter's value.
+function lowered(b: [u8]) -> str
+    return strings.to_lower(bytes.to_text_lossy(b))
+
+# Whether `v` begins with `initial`, holds each of `middle` in order after
+# it, and ends with `final`.
+#
+# - `v`: the value, lower case.
+# - `initial`: what it must begin with, lower case; "" for anything.
+# - `middle`: what it must hold between, in order.
+# - `final`: what it must end with, lower case; "" for anything.
+function fits(v: str, initial: str, middle: [[u8]], final: str) -> bool
+    if !strings.has_prefix(s: v, prefix: initial) || !strings.has_suffix(s: v, suffix: final)
+        return false
+
+    rest: str @= v.slice(from: initial.len(), to: v.len() - final.len())
+
+    for m in middle
+        part = lowered(m)
+
+        match strings.index_of(s: rest, substr: part)
+            .ok at => rest @ rest.slice(from: at + part.len(), to: rest.len())
+            .err _ => return false
+
+    return true
+
+test "matches: the import's filter, a presence, and an absent address"
+    bruno = person(uid: "bruno", name: "Bruno Bianchi", mail: "bruno@example.org", password: "x")
+    printer = entries()[5]
+    people = ldap.parse_filter("(objectClass=inetOrgPerson)").must()
+    assert matches(bruno, f: people) && !matches(printer, f: people)
+    assert matches(bruno, f: ldap.parse_filter("(&(mail=*)(cn=bruno*))").must())
+    dario = person(uid: "dario", name: "Dario Esposito", mail: "", password: "x")
+    assert !matches(dario, f: ldap.parse_filter("(mail=*)").must())
+
+test "in_scope: the base, one level, the subtree"
+    assert in_scope(dn: "uid=a,ou=people,dc=x", base: "ou=people,dc=x", scope: 1)
+    assert !in_scope(dn: "uid=a,ou=people,dc=x", base: "dc=x", scope: 1)
+    assert in_scope(dn: "uid=a,ou=people,dc=x", base: "dc=x", scope: 2)
+    assert in_scope(dn: "dc=x", base: "dc=x", scope: 0) && !in_scope(dn: "uid=a,dc=x", base: "dc=x", scope: 0)
+
+test "cut: the attributes asked, never the password"
+    e = cut(person(uid: "bruno", name: "B", mail: "b@x", password: "x"), asked: ["uid", "mail"])
+    assert e.attributes == [["uid", "bruno"], ["mail", "b@x"]]
+    assert values_of(cut(entries()[0], asked: []), name: "userPassword").len() == 0

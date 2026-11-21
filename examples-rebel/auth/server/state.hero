@@ -1,0 +1,121 @@
+# Everything one running server holds: its configuration, its clock and
+# generator, its secrets, its accounts and the grants it handed out. The
+# language has no mutable global, so the serving loop owns one `State` and
+# lends it with `@` to the handler of each request; nothing else holds it,
+# which is also why the server answers one request at a time.
+
+use <rebel>/random
+use <rebel>/strings
+use <rebel>/webauthn
+use <rebel>/x509
+
+use accounts/accounts
+use accounts/storage
+use core/clock
+use core/settings
+use core/vault
+use oauth/grants
+use oauth/signing
+use passkeys/attestation
+use service/scram_server
+
+# A running server.
+record State
+    # The configuration.
+    settings: settings.Settings
+    # The issuer, `iss` in every token.
+    issuer: str
+    # Where the time comes from.
+    clock: clock.Clock
+    # The generator every drawn value comes from.
+    rng: random.ChaCha8
+    # Where the secrets are kept.
+    vault: vault.Vault
+    # The accounts.
+    directory: accounts.Directory
+    # The signing key.
+    keys: signing.Keys
+    # Sessions, codes and refresh tokens.
+    grants: grants.Grants
+    # The challenges of passkey logins under way, by the digest of their
+    # ceremony's cookie.
+    ceremonies: {str: [u8]}
+    # SCRAM exchanges under way, by their `sid`.
+    exchanges: {str: scram_server.Pending}
+    # The authenticator vendors' roots trusted.
+    roots: [x509.Certificate]
+    # How many requests were answered.
+    answered: i64
+    # How many messages were submitted to the mail server.
+    mailed: i64
+    # Whether every change is written to the data file; false only while a
+    # test holds a state of its own.
+    persistent: bool
+
+# A server of `s`, its accounts read from the data file, its signing key and
+# its secrets from `v`, its roots from the configured file.
+#
+# - `s`: the configuration.
+# - `issuer`: the issuer, resolved where the configuration leaves it empty.
+# - `c`: the clock.
+# - `g`: the generator.
+# - `v`: the vault; a signing key made here is stored in it.
+#
+# Fails as `storage.load`, `signing.load` and `attestation.roots_of` fail.
+function open(s: settings.Settings, issuer: str, c: clock.Clock, g: random.ChaCha8, v: vault.Vault) -> State?
+    kept @= v
+    signing_keys = signing.load(@kept)?
+    roots: [x509.Certificate] @= []
+
+    if s.passkeys.trusted_roots != ""
+        roots @ attestation.roots_of(read_file(s.passkeys.trusted_roots)?)?
+
+    return ok(
+        State(settings: s, issuer: issuer, clock: c, rng: g, vault: kept, directory: storage.load(s.data_file)?, keys: signing_keys, grants: grants.none(), ceremonies: {}, exchanges: {}, roots: roots, answered: 0, mailed: 0, persistent: true)
+    )
+
+# The server's time, seconds since 1970.
+#
+# - `st`: the server.
+function now(st: State) -> i64
+    return clock.unix_now(st.clock)
+
+# Writes the accounts to the data file.
+#
+# - `st`: the server.
+#
+# Fails as `storage.save` fails.
+function save(st: State) -> ()?
+    if !st.persistent
+        return ok()
+    return storage.save(st.directory, path: st.settings.data_file)
+
+# The issuer's origin, its scheme, host and port: what a browser writes as
+# the origin of the server's pages, and so what a passkey's client data names.
+#
+# - `issuer`: the issuer's URL.
+function origin_of(issuer: str) -> str
+    at = strings.index_of(s: issuer, substr: "://")
+
+    match at
+        .ok scheme_end =>
+            rest = issuer.slice(from: scheme_end + 3, to: issuer.len())
+
+            match strings.index_of(s: rest, substr: "/")
+                .ok slash => return issuer.slice(from: 0, to: scheme_end + 3 + slash)
+                .err _    => return issuer
+        .err _ => return issuer
+
+# The WebAuthn relying party the server is.
+#
+# - `st`: the server.
+function relying_party(st: State) -> webauthn.RelyingParty
+    return webauthn.RelyingParty(
+        id: st.settings.passkeys.rp_id,
+        name: st.settings.passkeys.rp_name,
+        origins: [origin_of(st.issuer)]
+    )
+
+test "origin_of: the scheme, host and port, a path dropped"
+    assert origin_of("https://auth.example.org/realm") == "https://auth.example.org"
+    assert origin_of("http://127.0.0.1:8080") == "http://127.0.0.1:8080"

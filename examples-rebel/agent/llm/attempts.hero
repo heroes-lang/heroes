@@ -1,0 +1,109 @@
+# One request to a model's API, sent again while it fails in a way worth
+# trying again: the waits grow exponentially (`retries.next_wait`), a wait the
+# API advised (`retry-after`, read back by `failure_of`) is never cut short,
+# and the loop gives up after the policy's attempts. The waits are taken on the
+# agent's clock, so the demo's virtual clock decides them exactly as a real
+# run would and sleeps none.
+#
+# The clients of `llm/anthropic` and `llm/openai` can retry on their own; the
+# agent sets their `max_retries` to 0 and retries here instead, so that each
+# retry is told in the answer's notes and decided by one policy for both
+# providers.
+
+use <rebel>/retries
+use <rebel>/time
+
+use support/timing
+
+# What a failure says about trying again.
+record Advice
+    # Whether the same request sent again may succeed: a rate limit, an
+    # overloaded or failing server, a connection that broke.
+    retryable: bool
+    # The wait the server advised, zero for none.
+    wait: time.Duration
+    # The failure in a few words, `529 overloaded_error`.
+    summary: str
+    # What the API said, its own words without the status, request id and
+    # advised wait the failure's message opens with; the message whole where
+    # the API said nothing.
+    words: str
+
+# The policy the agent retries by: waits from half a second, doubling up to
+# eight seconds, at most four attempts in all, spread by full jitter on the
+# system's clock (`retries.with_jitter`).
+function default_policy() -> retries.Backoff
+    first = time.milliseconds(500).must()
+    longest = time.seconds(8).must()
+    policy = retries.with_attempts(
+        retries.backoff(first: first, multiplier: 2.0, longest: longest).must(),
+        attempts: 4
+    ).must()
+    return retries.with_jitter(policy, jitter: .full).must()
+
+# What `send` answers to `request` through `client`, sent again as `policy`
+# allows while `advise` calls its failure retryable; each retry told in
+# `notes`.
+#
+# - `send`: the API's call, `anthropic.create`.
+# - `client`: its client.
+# - `request`: its request.
+# - `advise`: reads a failure's code and message; a failure it calls not
+#   retryable is answered at once.
+# - `clock`: the clock the waits are taken on.
+# - `policy`: how the waits grow and when the loop gives up.
+# - `notes`: the caller's notes, which gain a line for each retry.
+#
+# Fails as `send` last failed. Where the policy gave up, the message is the
+# failure's summary and the API's own words, and how many attempts were made:
+# the request id and the advised wait are left out, since they differ at
+# every attempt and the spread of a wait is drawn by chance.
+function send_retrying<C, Q, A>(send: (function(C, Q) -> A?), client: C, request: Q, advise: (function(code: str, msg: str) -> Advice), @clock: timing.Clock, policy: retries.Backoff, @notes: [str]) -> A?
+    retry: retries.Retry @= retries.new_retry(policy)
+    started = timing.now(clock)?
+
+    while true
+        match send(client, request)
+            .ok answer => return ok(answer)
+            .err e =>
+                advice = advise(code: e.code, msg: e.msg)
+
+                if !advice.retryable
+                    return fail(code: e.code, msg: e.msg)
+
+                spent = time.between(from: started, to: timing.now(clock)?)?
+
+                match retries.next_wait(@retry, spent: spent, fraction: fraction_of(clock))
+                    .ok drawn =>
+                        wait = longer(a: drawn, b: advice.wait)
+                        notes @ notes.push(
+                            f"{advice.summary} on attempt {retry.failures}; sent again after {time.format_duration(wait)}"
+                        )
+                        timing.wait(@clock, d: wait)?
+                    .err _ => return fail(
+                        code: e.code,
+                        msg: f"{advice.summary}: {advice.words} (gave up after {retry.failures} attempts)"
+                    )
+
+# The chance a wait is spread by: drawn on the system's clock, and the whole
+# exponential wait on the demo's virtual clock, so its transcript is the same
+# at every run.
+function fraction_of(c: timing.Clock) -> f64
+    if timing.is_virtual(c)
+        return 1.0
+
+    return retries.random_fraction().default(1.0)
+
+# The longer of two waits.
+function longer(a: time.Duration, b: time.Duration) -> time.Duration
+    if time.is_longer(a: a, b: b)
+        return a
+
+    return b
+
+test "default_policy: four attempts from half a second"
+    p = default_policy()
+    assert p.attempts == 4 && p.first == time.milliseconds(500).must()
+
+test "longer: the advised wait wins when it is longer"
+    assert longer(a: time.seconds(1).must(), b: time.seconds(2).must()) == time.seconds(2).must()

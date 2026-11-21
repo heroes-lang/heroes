@@ -1,0 +1,181 @@
+# The counters, gauges and histograms of a run, kept in one registry the
+# supervisor holds: jobs enqueued, attempts by how they went, dead letters,
+# schedules run, leases rescued, the jobs standing in each queue and state,
+# and how long attempts waited and ran. A worker's attempts reach it in the
+# worker's report; the supervisor folds them in, serves the registry at
+# `/metrics` in Prometheus's text format and posts it to the collector by
+# OTLP.
+
+use <rebel>/jobs
+use <rebel>/metrics
+use <rebel>/otlp
+use <rebel>/time
+
+use cli/settings
+use pool/events
+
+# The families' names.
+constant ENQUEUED: str
+    "worker_jobs_enqueued_total"
+
+# Attempts run, by kind and outcome.
+constant ATTEMPTS: str
+    "worker_attempts_total"
+
+# Jobs failed for good, by kind: the dead letters.
+constant DEAD: str
+    "worker_dead_letters_total"
+
+# Runs of the recurring schedules, by schedule.
+constant SCHEDULED: str
+    "worker_schedule_runs_total"
+
+# Leases that ran out and gave their job back.
+constant RESCUED: str
+    "worker_rescued_total"
+
+# The jobs standing in each queue and state.
+constant STANDING: str
+    "worker_queue_jobs"
+
+# How long an attempt waited from when it was due to when a worker began it.
+constant WAITED: str
+    "worker_job_wait_seconds"
+
+# How long an attempt ran, on the store's clock.
+constant RAN: str
+    "worker_job_run_seconds"
+
+# The states a gauge of `STANDING` is kept for, every one of them, so a state
+# a queue empties reads 0 rather than its last count.
+constant STATES: [str]
+    ["available", "running", "completed", "failed", "cancelled"]
+
+# A registry with every family of a run described and nothing recorded.
+#
+# Fails as `metrics.register` fails, which it does not for these names.
+function new_registry() -> metrics.Registry?
+    r @= metrics.new_registry()
+    waits = [0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0, 300.0]
+    runs = [0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 30.0]
+    metrics.register(@r, d: metrics.counter(name: ENQUEUED, help: "Jobs enqueued, by queue and kind.", labels: ["queue", "kind"]))?
+    metrics.register(@r, d: metrics.counter(name: ATTEMPTS, help: "Attempts run, by kind and outcome.", labels: ["kind", "outcome"]))?
+    metrics.register(@r, d: metrics.counter(name: DEAD, help: "Jobs failed for good: the dead letters.", labels: ["kind"]))?
+    metrics.register(@r, d: metrics.counter(name: SCHEDULED, help: "Runs of the recurring schedules enqueued.", labels: ["schedule"]))?
+    metrics.register(@r, d: metrics.counter(name: RESCUED, help: "Leases that ran out and gave their job back.", labels: []))?
+    metrics.register(@r, d: metrics.gauge(name: STANDING, help: "Jobs standing in each queue and state.", labels: ["queue", "state"]))?
+    metrics.register(@r, d: metrics.histogram(name: WAITED, help: "Seconds from a job being due to an attempt beginning.", labels: ["queue"], buckets: waits))?
+    metrics.register(@r, d: metrics.histogram(name: RAN, help: "Seconds an attempt ran, on the store's clock.", labels: ["kind"], buckets: runs))?
+    return ok(r)
+
+# Counts a job enqueued.
+#
+# - `r`: the registry.
+# - `queue`: its queue.
+# - `kind`: its kind.
+function record_enqueued(@r: metrics.Registry, queue: str, kind: str) -> ()?
+    return metrics.inc(@r, name: ENQUEUED, labels: [queue, kind])
+
+# Folds one attempt of a worker's report in.
+#
+# - `r`: the registry.
+# - `a`: the attempt.
+function record_attempt(@r: metrics.Registry, a: events.Attempt) -> ()?
+    metrics.inc(@r, name: ATTEMPTS, labels: [a.kind, a.outcome])?
+
+    if a.outcome == "failed" || a.outcome == "discarded"
+        metrics.inc(@r, name: DEAD, labels: [a.kind])?
+
+    metrics.observe(@r, name: WAITED, labels: [a.queue], value: to_f64(a.waited_us) / 1_000_000.0)?
+    return metrics.observe(@r, name: RAN, labels: [a.kind], value: to_f64(a.ran_us) / 1_000_000.0)
+
+# Counts the runs of schedule `name` enqueued.
+#
+# - `r`: the registry.
+# - `name`: the schedule.
+# - `runs`: how many.
+function record_schedule(@r: metrics.Registry, name: str, runs: i64) -> ()?
+    return metrics.add(@r, name: SCHEDULED, labels: [name], amount: to_f64(runs))
+
+# Counts leases rescued.
+#
+# - `r`: the registry.
+# - `count`: how many.
+function record_rescued(@r: metrics.Registry, count: i64) -> ()?
+    return metrics.add(@r, name: RESCUED, labels: [], amount: to_f64(count))
+
+# Sets the gauge of jobs standing to `counts`: every state of every queue of
+# `queues`, 0 where the store counts none.
+#
+# - `r`: the registry.
+# - `queues`: the queues kept.
+# - `counts`: what the store's `counts` answered.
+function record_counts(@r: metrics.Registry, queues: [str], counts: [jobs.Count]) -> ()?
+    for q in queues
+        for state in STATES
+            n: i64 @= 0
+
+            for count in counts
+                if count.queue == q && jobs.state_name(count.state) == state
+                    n @ count.jobs
+
+            metrics.set(@r, name: STANDING, labels: [q, state], value: to_f64(n))?
+
+    return ok()
+
+# The registry in Prometheus's text format 0.0.4.
+#
+# - `r`: the registry.
+function prometheus_text(r: metrics.Registry lent) -> str
+    return metrics.format_text(metrics.gather(r))
+
+# Posts the registry to the collector the settings name, as OTLP's metrics
+# request; with none named, posts nothing.
+#
+# - `r`: the registry.
+# - `s`: the run's settings.
+# - `start`: when the run began, every point's start.
+# - `at`: when the values were read.
+#
+# Fails as `otlp.export` fails.
+function export(r: metrics.Registry lent, s: settings.Settings, start: time.Instant, at: time.Instant) -> ()?
+    if s.otlp == ""
+        return ok()
+
+    resource = [
+        otlp.Attribute(key: "service.name", value: .text(v: s.service))
+        otlp.Attribute(key: "service.instance.id", value: .text(v: s.instance))
+    ]
+    body = metrics.encode_otlp(
+        r,
+        resource: resource,
+        scope: otlp.Scope(name: "worker", version: "1.0.0"),
+        start: start,
+        at: at
+    )
+    _ = otlp.export(otlp.exporter_to(s.otlp + "/v1/metrics"), body: body)?
+    return ok()
+
+test "record_counts: every state of every queue set, 0 where the store counts none"
+    r @= new_registry().must()
+    record_counts(@r, queues: ["mail"], counts: [jobs.Count(queue: "mail", state: .failed, jobs: 2)]).must()
+    assert metrics.value_of(r, name: STANDING, labels: ["mail", "failed"]).must() == 2.0
+    assert metrics.value_of(r, name: STANDING, labels: ["mail", "available"]).must() == 0.0
+
+test "record_attempt: a dead letter counted beside its attempt"
+    r @= new_registry().must()
+    a = events.Attempt(
+        job: 1,
+        kind: "checksum",
+        queue: "default",
+        attempt: 1,
+        outcome: "discarded",
+        error: "no file",
+        began_us: 0,
+        waited_us: 1_500_000,
+        ran_us: 0,
+        next_us: 0
+    )
+    record_attempt(@r, a: a).must()
+    assert metrics.value_of(r, name: DEAD, labels: ["checksum"]).must() == 1.0
+    assert metrics.count_of(r, name: WAITED, labels: ["default"]).must() == 1

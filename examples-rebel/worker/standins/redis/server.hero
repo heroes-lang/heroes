@@ -1,0 +1,282 @@
+# A Redis server on loopback for the demo: the stand-in that `jobs` and
+# `redis` talk to in place of a real Redis 7, over RESP2 or RESP3, its
+# connections served one command at a time on the thread that owns it, which
+# waits on all of them at once through a `poll.Set` it shares with the
+# program's other loopback services.
+#
+# It checks what a real server checks where a client depends on it: the
+# password (`AUTH`, `HELLO ... AUTH`, `NOAUTH` before it), the protocol
+# version, the arity and types of commands, and a script's every call. Its
+# one command of its own, `STANDIN.CLOCK <microseconds>`, sets the clock its
+# `TIME` and its times to live read, which a real server refuses as unknown.
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/maps
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/poll
+use <rebel>/redis
+use <rebel>/strings
+
+use standins/redis/commands
+use standins/redis/connection
+use standins/redis/keyspace
+use standins/redis/resp
+use standins/redis/scripting
+
+# The stand-in: its listener, its data, its scripts and its clients.
+record Standin
+    # The listener on 127.0.0.1.
+    listener: net.Listener
+    # The listener's key in the loop's set.
+    listen_key: i64
+    # The password every client must give; "" for none.
+    password: str
+    # The data.
+    ks: keyspace.Keyspace
+    # The scripts seen.
+    scripts: scripting.Scripts
+    # Each client, by its key in the loop's set.
+    sessions: {i64: connection.Session}
+    # The next client's id.
+    next_id: i64
+    # Whether a client asked `SHUTDOWN`: the loop ends.
+    stopped: bool
+
+# What one command did to its connection.
+variant Outcome
+    # Answer, and go on reading.
+    answer
+        # The reply.
+        reply: redis.Reply
+    # Answer, then close the connection: `QUIT`, or a protocol error.
+    answer_and_close
+        # The reply.
+        reply: redis.Reply
+    # Close this connection, unanswered as Redis leaves it, and stop the
+    # server: `SHUTDOWN`.
+    shut_down
+
+# A stand-in listening on 127.0.0.1 at `port`, its listener added to `set`.
+#
+# - `set`: the loop's set.
+# - `port`: the port, 0 for one the system chooses.
+# - `password`: the password clients must give; "" for none.
+# - `clock`: the clock `TIME` reads.
+#
+# Fails as `net.listen` and `poll.add_listener` fail: `exists` where
+# something listens at `port` already.
+function start(set: poll.Set, port: i64, password: str, clock: keyspace.Clock) -> Standin?
+    l = net.listen(host: "127.0.0.1", port: port)?
+    key = poll.add_listener(set, l: l)?
+    return ok(
+        Standin(listener: l, listen_key: key, password: password, ks: keyspace.new_keyspace(clock), scripts: scripting.no_scripts(), sessions: {}, next_id: 1, stopped: false)
+    )
+
+# The port the stand-in listens on.
+#
+# - `s`: the stand-in.
+function port_of(s: Standin lent) -> i64
+    return s.listener.address.port
+
+# Whether the event of `key` is one of the stand-in's.
+#
+# - `s`: the stand-in.
+# - `key`: the event's key.
+function owns(s: Standin lent, key: i64) -> bool
+    return key == s.listen_key || !s.sessions[key].is_err()
+
+# Acts on the event of `key`: accepts a client, or reads what one sent and
+# answers every whole command in it.
+#
+# - `s`: the stand-in.
+# - `set`: the loop's set, which gains or loses a client.
+# - `key`: the event's key, one `owns` answers true for.
+#
+# A client that sends bytes that are no RESP, or whose connection fails, is
+# closed; the stand-in goes on. Fails only where the listener fails.
+function serve(@s: Standin, set: poll.Set, key: i64) -> ()?
+    if key == s.listen_key
+        c = net.accept(s.listener, deadline_ms: net.FOREVER)?
+        added = poll.add_conn(set, c: c, interest: .read)?
+        s.sessions[added] @ connection.Session(
+            conn: c,
+            buffer: [],
+            protocol: 2,
+            authed: s.password == "",
+            name: "",
+            id: s.next_id
+        )
+        s.next_id @ s.next_id + 1
+        return ok()
+
+    session @= s.sessions[key].must()
+
+    data: [u8] = match io.read(session.conn.stream, n: 65_536)
+        .ok d  => d
+        .err _ => []
+
+    if data.len() == 0
+        drop(@s, set: set, key: key)
+        return ok()
+
+    for b in data
+        session.buffer @ session.buffer.push(b)
+
+    out: [u8] @= []
+    at: i64 @= 0
+    closing: bool @= false
+
+    while !closing && !s.stopped
+        match resp.frame(session.buffer, from: at)
+            .partial => break
+            .broken b =>
+                put(
+                    @out,
+                    reply: resp.error_reply(code: "ERR", message: f"Protocol error: {b.reason}"),
+                    protocol: session.protocol
+                )
+                closing @ true
+            .whole w =>
+                at @ w.next
+
+                match command(@s, @session, raw: w.words)
+                    .answer a => put(@out, reply: a.reply, protocol: session.protocol)
+                    .answer_and_close a =>
+                        put(@out, reply: a.reply, protocol: session.protocol)
+                        closing @ true
+                    .shut_down =>
+                        s.stopped @ true
+                        closing @ true
+
+    session.buffer @ session.buffer.slice(from: at, to: session.buffer.len())
+
+    if out.len() > 0 && io.write(session.conn.stream, data: out).is_err()
+        closing @ true
+
+    s.sessions[key] @ session
+
+    if closing
+        drop(@s, set: set, key: key)
+    return ok()
+
+# Adds the bytes of `reply` to `out`.
+#
+# - `out`: the bytes to write, grown.
+# - `reply`: the reply.
+# - `protocol`: the connection's RESP version.
+function put(@out: [u8], reply: redis.Reply, protocol: i64)
+    for b in resp.encode(reply, protocol: protocol)
+        out @ out.push(b)
+
+# Closes the client of `key` and forgets it.
+#
+# - `s`: the stand-in.
+# - `set`: the loop's set, which loses the client.
+# - `key`: the client's key.
+function drop(@s: Standin, set: poll.Set, key: i64)
+    match s.sessions[key]
+        .err _ => _ = 0
+        .ok session =>
+            gone @= session
+            _ = poll.remove(set, key: key).is_err()
+            _ = io.close(@gone.conn.stream).is_err()
+            s.sessions @ maps.remove(s.sessions, key: key)
+
+# Closes every client and the listener.
+#
+# - `s`: the stand-in, emptied.
+# - `set`: the loop's set, which loses them.
+function close(@s: Standin, set: poll.Set)
+    for key in keys(s.sessions)
+        drop(@s, set: set, key: key)
+
+    _ = poll.remove(set, key: s.listen_key).is_err()
+    _ = net.close_listener(@s.listener).is_err()
+
+# The words of a command as text. Fails `not_text` naming the argument that
+# is not UTF-8, which the stand-in cannot hold.
+#
+# - `raw`: the command as sent.
+function words_of(raw: [[u8]]) -> [str]?
+    out: [str] @= []
+
+    for i in range(from: 0, to: raw.len())
+        match bytes.to_text(raw[i])
+            .ok t => out @ out.push(t)
+            .err _ => return fail(
+                code: "not_text",
+                msg: f"argument {i} is not UTF-8, and the stand-in holds text alone"
+            )
+
+    return ok(out)
+
+# Runs one command of `session`'s client and says what follows.
+#
+# - `s`: the stand-in.
+# - `session`: the client's connection state, which `HELLO`, `AUTH` and
+#   `CLIENT SETNAME` change.
+# - `raw`: the command as sent.
+function command(@s: Standin, @session: connection.Session, raw: [[u8]]) -> Outcome
+    if raw.len() == 0
+        return .answer(reply: .null_value)
+
+    words = match words_of(raw)
+        .ok w  => w
+        .err e => return .answer(reply: resp.error_reply(code: "ERR", message: e.msg))
+
+    name = strings.to_upper_ascii(words[0])
+
+    if !session.authed && name != "AUTH" && name != "HELLO" && name != "QUIT"
+        return .answer(reply: resp.error_reply(code: "NOAUTH", message: "Authentication required."))
+
+    match name
+        "HELLO"    => return .answer(reply: connection.hello(s.password, @session, words: words))
+        "AUTH"     => return .answer(reply: connection.auth(s.password, @session, words: words))
+        "QUIT"     => return .answer_and_close(reply: resp.ok_reply())
+        "SHUTDOWN" => return .shut_down
+        "SELECT" =>
+            if words.len() != 2
+                return .answer(reply: commands.arity_error(name))
+
+            if words[1] == "0"
+                return .answer(reply: resp.ok_reply())
+            return .answer(reply: resp.error_reply(code: "ERR", message: "DB index is out of range"))
+        "CLIENT"        => return .answer(reply: connection.client(@session, words: words))
+        "INFO"          => return .answer(reply: info(s))
+        "STANDIN.CLOCK" => return .answer(reply: set_clock(@s, words: words))
+        _ =>
+            if scripting.is_script_command(name)
+                return .answer(reply: scripting.execute(@s.ks, @s.scripts, words: words))
+            return .answer(reply: commands.execute(@s.ks, words: words, protocol: session.protocol))
+
+# `INFO`: the server's, the clients' and the keyspace's sections, as text.
+#
+# - `s`: the stand-in.
+function info(s: Standin lent) -> redis.Reply
+    lines = [
+        "# Server"
+        f"redis_version:{connection.VERSION}"
+        "redis_mode:standalone"
+        f"tcp_port:{port_of(s)}"
+        "# Clients"
+        f"connected_clients:{s.sessions.len()}"
+        "# Keyspace"
+        f"db0:keys={s.ks.entries.len()},expires={s.ks.expires.len()}"
+    ]
+    return resp.text_reply(lines.join("\r\n") + "\r\n")
+
+# `STANDIN.CLOCK [microseconds]`: sets the stand-in's clock, fixed from then
+# on, and answers its reading.
+#
+# - `s`: the stand-in, whose clock moves.
+# - `words`: the whole command.
+function set_clock(@s: Standin, words: [str]) -> redis.Reply
+    if words.len() == 2
+        match numbers.parse_int(words[1])
+            .ok micros => s.ks.clock @ .fixed(micros: micros)
+            .err _     => return commands.not_integer()
+    else if words.len() != 1
+        return commands.arity_error("STANDIN.CLOCK")
+    return .integer(v: keyspace.now_micros(s.ks))

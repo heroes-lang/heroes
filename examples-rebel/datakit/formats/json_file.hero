@@ -1,0 +1,225 @@
+# JSON, JSON Lines and YAML, read through `json.Value` and written from the
+# model.
+#
+# Reading goes through `json` and `yaml`, whose values hold a number as an
+# `f64`: a whole number up to 2^53 is read exactly, and one past it is refused
+# (`ParseOptions.exact_integers`) rather than changed in silence, which is
+# what a tool that converts data owes the integers it carries. JSON is
+# written from the model's own text (`model.json_text`), so every digit a
+# number had survives, and `json.to_indented` lays it out. YAML is written by
+# `yaml.format` from a `json.Value`, its numbers as `f64`.
+
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/strings
+use <rebel>/yaml
+
+use model/decimal
+use model/model
+
+## Reading
+
+# The options every JSON text is read with: RFC 8259 strictly, nesting
+# bounded by `model.MAX_DEPTH`, and an integer an `f64` would change refused.
+function read_options() -> json.ParseOptions
+    return json.ParseOptions(
+        max_depth: model.MAX_DEPTH,
+        duplicate_keys: false,
+        control_characters: false,
+        lone_surrogates: false,
+        non_finite: false,
+        exact_integers: true
+    )
+
+# The document of the JSON text `text`.
+#
+# - `text`: one JSON value, white space around it allowed.
+#
+# Fails as `json.parse_with` fails: `invalid` with the place, and
+# `does_not_fit` for an integer past 2^53 - 1 or a number past an `f64`.
+function read_json(text: str) -> model.Value?
+    return ok(of_json(json.parse_with(text, read_options())?))
+
+# The document of the JSON Lines text `text`: a list of the value of each
+# line that is not blank.
+#
+# - `text`: the lines, each one JSON value.
+#
+# Fails as `read_json` fails, the message opening with the line's number,
+# from 1.
+function read_json_lines(text: str) -> model.Value?
+    items: [model.Value] @= []
+    number: i64 @= 0
+
+    for line in strings.lines(text)
+        number @ number + 1
+
+        if strings.trim(line) != ""
+            match json.parse_with(line, read_options())
+                .ok v  => items @ items.push(of_json(v))
+                .err e => return fail(code: e.code, msg: f"line {number}: {e.msg}")
+
+    return ok(.list(items: items))
+
+# The document of the YAML text `text`: its one document, or a list of its
+# documents where it holds several.
+#
+# - `text`: a YAML stream.
+#
+# Fails as `yaml.parse_all_with` fails: `invalid` with the line and column,
+# `limit` for aliases that expand past the reader's bound.
+function read_yaml(text: str) -> model.Value?
+    options = yaml.ParseOptions(
+        max_depth: model.MAX_DEPTH,
+        max_expanded: yaml.DEFAULT_MAX_EXPANDED,
+        duplicate_keys: false
+    )
+    documents = yaml.parse_all_with(text, options)?
+
+    if documents.len() == 1
+        return ok(of_json(documents[0]))
+
+    items: [model.Value] @= []
+
+    for d in documents
+        items @ items.push(of_json(d))
+
+    return ok(.list(items: items))
+
+# `v` as a value of the model: a whole number up to 2^53 as an integer, an
+# object's members in the order they were written.
+#
+# - `v`: the value, nested no deeper than `model.MAX_DEPTH`, which its
+#   reader held.
+function of_json(v: json.Value) -> model.Value
+    return match v
+        .null_value => .null_value
+        .boolean b  => .boolean(v: b.v)
+        .number n   => decimal.of_plain_float(n.v)
+        .text t     => .text(v: t.v)
+        .list l     => .list(items: l.items.map(of_json))
+        .object o   => .object(members: members_of_json(o.members))
+
+# The members of a JSON object, in the order its map holds them.
+#
+# - `members`: the object's members.
+function members_of_json(members: {str: json.Value}) -> [model.Member]
+    out: [model.Member] @= []
+
+    for k in keys(members)
+        out @ out.push(model.Member(name: k, value: of_json(members[k].must())))
+
+    return out
+
+## Writing
+
+# `v` as a JSON text laid out over lines, two spaces a level, every number's
+# digits as the model holds them.
+#
+# - `v`: the document.
+#
+# Fails as `json.to_indented` fails, which it does not on a text
+# `model.json_text` wrote.
+function write_json(v: model.Value) -> str?
+    return ok(json.to_indented(model.json_text(v), 2)? + "\n")
+
+# `v` as JSON Lines: each item of a list on its own line, or `v` alone on one
+# line where it is no list.
+#
+# - `v`: the document.
+function write_json_lines(v: model.Value) -> str
+    lines: [str] @= []
+
+    match v
+        .list l =>
+            for item in l.items
+                lines @ lines.push(model.json_text(item))
+        .null_value | .boolean _ | .number _ | .text _ | .bytes _ | .moment _ | .object _ => lines @ lines.push(
+            model.json_text(v)
+        )
+
+    if lines.len() == 0
+        return ""
+    return lines.join("\n") + "\n"
+
+# `v` as a YAML document.
+#
+# - `v`: the document.
+#
+# A number is written as the nearest `f64`, as `yaml.format` holds one; a
+# moment and bytes are written as texts, the bytes in Base64. Fails as
+# `yaml.format` fails, which it does not on a document of this model.
+function write_yaml(v: model.Value) -> str?
+    return yaml.format(to_json(v)?)
+
+# `v` as a `json.Value`, for the packages that read one: `yaml`, `json/path`.
+#
+# - `v`: the document.
+#
+# Fails `invalid` where a number's text is not one, which no value a reader
+# of this program made holds.
+function to_json(v: model.Value) -> json.Value?
+    return match v
+        .null_value => ok(.null_value)
+        .boolean b  => ok(.boolean(v: b.v))
+        .number n   => ok(.number(v: decimal.to_float(n.text)?))
+        .text t     => ok(.text(v: t.v))
+        .bytes b    => ok(.text(v: bytes.format_base64(b.v)))
+        .moment m   => ok(.text(v: m.text))
+        .list l     => ok(.list(items: items_to_json(l.items)?))
+        .object o   => ok(.object(members: members_to_json(o.members)?))
+
+# The items of a list as `json.Value`s.
+#
+# - `items`: the items.
+#
+# Fails as `to_json` fails.
+function items_to_json(items: [model.Value]) -> [json.Value]?
+    out: [json.Value] @= []
+
+    for item in items
+        out @ out.push(to_json(item)?)
+
+    return ok(out)
+
+# The members of an object as a JSON object's map, in their order.
+#
+# - `members`: the members.
+#
+# Fails as `to_json` fails.
+function members_to_json(members: [model.Member]) -> {str: json.Value}?
+    out: {str: json.Value} @= {}
+
+    for m in members
+        out[m.name] @ to_json(m.value)?
+
+    return ok(out)
+
+## Tests
+
+test "read_json: members in order, integers kept integers, a large one refused"
+    v = read_json("{\"b\": 1, \"a\": [2.5, true, null]}").must()
+    assert model.json_text(v) == "{\"b\":1,\"a\":[2.5,true,null]}"
+    assert read_json("9007199254740993").is_err()
+    assert read_json("[1,").is_err()
+
+test "read_json_lines: blank lines skipped, a bad line named by its number"
+    v = read_json_lines("{\"a\":1}\n\n{\"a\":2}\n").must()
+    assert model.json_text(v) == "[{\"a\":1},{\"a\":2}]"
+
+    match read_json_lines("1\n{")
+        .ok _  => assert false
+        .err e => assert strings.has_prefix(s: e.msg, prefix: "line 2:")
+
+test "write_json: digits kept and laid out"
+    v: model.Value = .object(members: [model.Member(name: "n", value: .number(text: "1.50"))])
+    assert write_json(v).must() == "{\n  \"n\": 1.50\n}\n"
+
+test "read_yaml and write_yaml: a document crosses both ways"
+    v = read_yaml("name: datakit\nsizes: [1, 2.5]\n").must()
+    assert model.json_text(v) == "{\"name\":\"datakit\",\"sizes\":[1,2.5]}"
+    assert write_yaml(v).must() == "name: datakit\nsizes:\n  - 1\n  - 2.5\n"
+
+test "write_json_lines: a list a line each, the empty list nothing"
+    assert write_json_lines(.list(items: [.number(text: "1"), .text(v: "a")])) == "1\n\"a\"\n"
+    assert write_json_lines(.list(items: [])) == ""

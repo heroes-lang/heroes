@@ -1,0 +1,137 @@
+# The demo's account of its run, as text a person reads and a test compares:
+# each job with its attempts, when each began and how it went, and the
+# output the store kept; then the log files written. Every time is the store's
+# clock, which the demo moves by hand, so the account is the same on every
+# run whatever order the worker threads took the jobs in.
+
+use <rebel>/fs
+use <rebel>/jobs/redis_store
+use <rebel>/json
+use <rebel>/path
+use <rebel>/redis
+use <rebel>/strings
+use <rebel>/time
+
+use pool/events
+
+# `us` as the time of day it stands for, `09:00:10`.
+#
+# - `us`: microseconds since 1970.
+function clock_of(us: i64) -> str
+    return time.format(time.from_unix_microseconds(us).default(time.epoch()), layout: .time_only)
+
+# `us` as the time of day to the millisecond, `09:00:10.912`.
+#
+# - `us`: microseconds since 1970.
+function precise_clock_of(us: i64) -> str
+    text = time.format(time.from_unix_microseconds(us).default(time.epoch()), layout: .rfc3339_milliseconds)
+    return text.slice(from: 11, to: 23)
+
+# Every attempt of `reports`, by job, each job's in the order of its
+# attempts, the jobs in the order of their ids.
+#
+# - `reports`: the workers' reports.
+function by_job(reports: [events.Report]) -> {i64: [events.Attempt]}
+    found: {i64: [events.Attempt]} @= {}
+
+    for r in reports
+        for a in r.attempts
+            list @= found[a.job].default([])
+            list @ list.push(a)
+            found[a.job] @ list
+
+    ordered: {i64: [events.Attempt]} @= {}
+
+    for id in sort(keys(found))
+        attempts = found[id].must()
+        sorted_list: [events.Attempt] @= []
+
+        for n in range(from: 1, to: attempts.len() + 1)
+            for a in attempts
+                if a.attempt == n
+                    sorted_list @ sorted_list.push(a)
+
+        ordered[id] @ sorted_list
+
+    return ordered
+
+# The line of one attempt.
+#
+# - `a`: the attempt.
+function attempt_line(a: events.Attempt) -> str
+    line: str @= f"  attempt {a.attempt} at {clock_of(a.began_us)}: {a.outcome}"
+
+    if a.error != ""
+        line @ line + f" ({a.error})"
+
+    if a.outcome == "retrying"
+        line @ line + f", again at {precise_clock_of(a.next_us)}"
+    return line
+
+# Each job the workers ran, its attempts and the output the store kept.
+#
+# - `c`: the store's client, asked for each job's output.
+# - `reports`: the workers' reports.
+function job_lines(@c: redis.Client, reports: [events.Report]) -> [str]
+    out: [str] @= []
+    grouped = by_job(reports)
+
+    for id in keys(grouped)
+        attempts = grouped[id].must()
+        last = attempts[attempts.len() - 1]
+
+        plural = if attempts.len() == 1
+            ""
+        else
+            "s"
+        out @ out.push(f"job {id} {last.kind} in {last.queue}: {last.outcome} after {attempts.len()} attempt{plural}")
+
+        for a in attempts
+            out @ out.push(attempt_line(a))
+
+        if last.outcome == "completed"
+            match redis_store.get(@c, id: id)
+                .ok info => out @ out.push("  output " + json.format(info.output).default("?"))
+                .err _   => out @ out.push("  output not kept")
+
+    return out
+
+# How many lines `text` holds.
+#
+# - `text`: a file's text.
+function count_lines(text: str) -> i64
+    return strings.count_of(s: text, substr: "\n")
+
+# The log files of `dir`: the supervisor's, each by its name and its lines,
+# and the workers' lines all together, since which worker ran which attempt
+# is the threads' choice.
+#
+# - `dir`: the folder of the logs.
+#
+# Fails as `fs.read_dir` fails.
+function log_lines(dir: str) -> [str]?
+    names: [str] @= []
+
+    for e in fs.read_dir(dir)?
+        names @ names.push(e.name)
+
+    out: [str] @= []
+    worker_lines: i64 @= 0
+    worker_files: i64 @= 0
+
+    for name in sort(names)
+        lines = count_lines(read_file(path.join_all([dir, name])).default(""))
+
+        if strings.has_prefix(s: name, prefix: "supervisor")
+            out @ out.push(f"  {name}: {lines} lines")
+        else
+            worker_lines @ worker_lines + lines
+            worker_files @ worker_files + 1
+
+    out @ out.push(f"  the workers' logs: {worker_lines} lines")
+    return ok(out)
+
+test "precise_clock_of: the time of day to the millisecond"
+    at = time.unix_microseconds(time.parse("2026-11-21T09:00:10.912Z", layout: .rfc3339).must())
+    assert precise_clock_of(at) == "09:00:10.912"
+    assert clock_of(at) == "09:00:10"
