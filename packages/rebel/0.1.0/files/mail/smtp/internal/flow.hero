@@ -55,9 +55,14 @@ function open(host: str, port: i64, security: i64, roots: str, local_name: str, 
         )
     client = tls.Client(roots: roots, protocols: [])
 
+    plain_ms = if deadline_ms == 0
+        net.FOREVER
+    else
+        deadline_ms
+
     s @= if security == PLAIN
         wire.over_plain(
-            net.connect(host: host, port: port, deadline_ms: deadline_ms)?,
+            net.connect(host: host, port: port, deadline_ms: plain_ms)?,
             deadline_ms: deadline_ms,
             local_name: local_name
         )

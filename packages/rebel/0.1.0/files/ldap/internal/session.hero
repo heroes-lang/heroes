@@ -104,7 +104,11 @@ function made(stream: io.Stream, link: Link, host: str, port: i64, deadline_ms: 
 #
 # Fails as `net.connect_timeout` fails.
 function connect_plain(host: str, port: i64, deadline_ms: i64, max_message: i64) -> Session?
-    conn = net.connect_timeout(host, port: port, timeout_ms: deadline_ms, deadline_ms: 0)?
+    connect_ms = if deadline_ms == 0
+        net.FOREVER
+    else
+        deadline_ms
+    conn = net.connect_timeout(host, port: port, timeout_ms: connect_ms, deadline_ms: net.FOREVER)?
     return ok(
         made(conn.stream, link: .plain, host: host, port: port, deadline_ms: deadline_ms, max_message: max_message)
     )

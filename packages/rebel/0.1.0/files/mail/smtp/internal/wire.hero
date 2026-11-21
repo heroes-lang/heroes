@@ -304,7 +304,7 @@ test "read_reply: two codes in one reply, a line that is no reply, the end in a 
     close(@s).must()
 
 test "set_deadline: a reply that never comes ends by its deadline, then a closed session refuses"
-    two = net.pair(deadline_ms: 0).must()
+    two = net.pair(deadline_ms: net.FOREVER).must()
     s @= over_plain(two.first, deadline_ms: 200, local_name: "x")
     server @= two.second.stream
     set_deadline(s, ms: 200).must()

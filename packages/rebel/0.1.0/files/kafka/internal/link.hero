@@ -31,7 +31,7 @@ variant Link
 # - `port`: the port.
 # - `ms`: milliseconds, 1 or more.
 function open_plain(host: str, port: i64, ms: i64) -> Link?
-    c = net.connect_timeout(host, port: port, timeout_ms: ms, deadline_ms: 0)?
+    c = net.connect_timeout(host, port: port, timeout_ms: ms, deadline_ms: net.FOREVER)?
     _ = net.set_no_delay(c, on: true).is_err()
     return ok(.connected(stream: c.stream, secured: false))
 

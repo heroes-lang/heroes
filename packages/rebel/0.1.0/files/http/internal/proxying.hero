@@ -200,7 +200,12 @@ function exchange(proxy: str, scheme: str, host: str, port: str, deadline_ms: i6
     if port != ""
         number @ syntax.decimal(s: port, what: "reading the URL's port")?
     began = time.mark()
-    stream = net.connect(place.host, port: place.port, deadline_ms: deadline_ms)?.stream
+
+    plain_ms = if deadline_ms == 0
+        net.FOREVER
+    else
+        deadline_ms
+    stream = net.connect(place.host, port: place.port, deadline_ms: plain_ms)?.stream
     asked: [wire.Field] @= fields
 
     for f in credentials_of(place)

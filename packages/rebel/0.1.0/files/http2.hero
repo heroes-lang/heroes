@@ -1283,7 +1283,11 @@ function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Op
 # The connection is the caller's to close. Fails as `net.connect` fails. See
 # also `connect`.
 function connect_plain(host: str, port: i64, deadline_ms: i64, options: Options) -> Conn?
-    c = net.connect(host, port: port, deadline_ms: deadline_ms)?
+    plain_ms = if deadline_ms == 0
+        net.FOREVER
+    else
+        deadline_ms
+    c = net.connect(host, port: port, deadline_ms: plain_ms)?
     stream @= c.stream
 
     match client(@stream, options: options)

@@ -236,7 +236,12 @@ function open(opts: Options) -> Db?
             code: sql.INVALID,
             msg: f"connecting to {opts.host}: the user, the database or the application name holds a zero byte"
         )
-    conn = net.connect(opts.host, port: opts.port, deadline_ms: opts.deadline_ms)?
+
+    plain_ms = if opts.deadline_ms == 0
+        net.FOREVER
+    else
+        opts.deadline_ms
+    conn = net.connect(opts.host, port: opts.port, deadline_ms: plain_ms)?
     s @= session.over(out: conn.stream, input: conn.stream, target: f"{opts.host}:{opts.port}/{opts.database}")
 
     who = match opts.security

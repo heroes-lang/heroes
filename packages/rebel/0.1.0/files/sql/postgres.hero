@@ -231,8 +231,13 @@ function open(opts: Options) -> Db?
         opts.database
     nonce = scram.new_nonce()?
 
+    plain_ms = if opts.deadline_ms == 0
+        net.FOREVER
+    else
+        opts.deadline_ms
+
     made: net.Conn? = match opts.security
-        .plain => net.connect(opts.host, port: opts.port, deadline_ms: opts.deadline_ms)
+        .plain => net.connect(opts.host, port: opts.port, deadline_ms: plain_ms)
         .checked c =>
             tls.connect_after(
                 host: opts.host,

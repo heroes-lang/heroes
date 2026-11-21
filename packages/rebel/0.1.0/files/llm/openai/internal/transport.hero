@@ -216,7 +216,7 @@ function attempt_open(s: Settings, r: http.Request) -> Opened?
         return headed(@o, r: r, s: s)
 
     if u.scheme == "http"
-        conn = net.connect(u.host, port: port, deadline_ms: 0)?
+        conn = net.connect(u.host, port: port, deadline_ms: net.FOREVER)?
         o @= Opened(reader: io.reader(conn.stream), head: http.respond_status(200))
         return headed(@o, r: r, s: s)
     return fail(code: "unsupported", msg: f"the scheme \"{u.scheme}\" is neither http nor https")

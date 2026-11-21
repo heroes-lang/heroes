@@ -38,7 +38,8 @@ record Bound
 #   refused.
 # - `port`: 0 to 65535.
 # - `deadline_ms`: milliseconds from when it is made by which every wait on
-#   it ends; 0 for none, below 0 refused.
+#   it ends; 0 a deadline already passed, `hero_net.HERO_NET_FOREVER` for
+#   none, below that refused.
 #
 # Fails `invalid` on any of the three refused, and as the floor fails where
 # the connection is not made.
@@ -93,10 +94,11 @@ function listen(host: str, port: i64) -> Bound?
 #
 # - `l`: the listening socket.
 # - `deadline_ms`: milliseconds from when it is accepted by which every wait
-#   on it ends; 0 for none, below 0 refused before anything is accepted.
+#   on it ends, as `connect` takes it; one refused is refused before
+#   anything is accepted.
 # - `asked`: what the message of a failure begins with.
 #
-# Fails `invalid` where `deadline_ms` is below 0, and as the floor fails.
+# Fails `invalid` where `deadline_ms` is refused, and as the floor fails.
 function accept(l: hero_net.Socket, deadline_ms: i64, asked: str) -> Ends?
     checked_deadline(deadline_ms, asked: asked)?
     s @= hero_net.accept(l)
@@ -126,10 +128,11 @@ function accept_number(l: hero_net.Socket, asked: str) -> i64?
 # The connection the number `n` names, taken back once.
 #
 # - `n`: a number `accept_number` answered.
-# - `deadline_ms`: milliseconds from now by which every wait on it ends; 0
-#   for none, below 0 refused before the number is taken back.
+# - `deadline_ms`: milliseconds from now by which every wait on it ends, as
+#   `connect` takes it; one refused is refused before the number is taken
+#   back.
 #
-# Fails `invalid` where `deadline_ms` is below 0, and `closed` where `n`
+# Fails `invalid` where `deadline_ms` is refused, and `closed` where `n`
 # names no connection.
 function conn_of(n: i64, deadline_ms: i64) -> Ends?
     asked = f"taking back the connection {n}"
@@ -143,14 +146,15 @@ function conn_of(n: i64, deadline_ms: i64) -> Ends?
 # Makes every wait on `s` end by `ms` milliseconds from now.
 #
 # - `s`: the socket, `nullptr` once closed.
-# - `ms`: milliseconds from now; 0 takes the deadline away, below 0 refused.
+# - `ms`: milliseconds from now; 0 a deadline already passed,
+#   `hero_net.HERO_NET_FOREVER` taking the deadline away, below that refused.
 # - `asked`: what the message of a failure begins with.
 #
-# Fails `invalid` where `ms` is below 0, `closed` where `s` is closed.
+# Fails `invalid` where `ms` is refused, `closed` where `s` is closed.
 function set_deadline(s: hero_net.Socket, ms: i64, asked: str) -> ()?
     checked_deadline(ms, asked: asked)?
 
-    if hero_net.set_deadline(s, ms: floor_ms(ms)) != 0
+    if hero_net.set_deadline(s, ms: ms) != 0
         return failure.last(asked: asked)
     return ok()
 
@@ -181,9 +185,10 @@ record Two
 # The two ends of a new TCP connection on IPv4 loopback.
 #
 # - `deadline_ms`: milliseconds from when the two are made by which every
-#   wait on either ends; 0 for none, below 0 refused before anything is made.
+#   wait on either ends, as `connect` takes it; one refused is refused
+#   before anything is made.
 #
-# Fails `invalid` where `deadline_ms` is below 0, `failed` where another
+# Fails `invalid` where `deadline_ms` is refused, `failed` where another
 # program connected to the listener of the moment first, and as `listen`,
 # `connect` and `accept` fail; nothing it made is left open.
 function pair(deadline_ms: i64) -> Two?
@@ -226,7 +231,7 @@ function ended(@s: io.Stream)
 #
 # - `s`: a connected socket, which this call hands to the stream or closes.
 # - `deadline_ms`: milliseconds from now by which every wait on it ends, 0
-#   for none.
+#   a deadline already passed, `hero_net.HERO_NET_FOREVER` for none.
 # - `name`: how the stream's messages name it before the peer's address,
 #   `the connection to`.
 # - `asked`: what the message of a failure begins with.
@@ -234,7 +239,7 @@ function ended(@s: io.Stream)
 # Fails as the floor fails where an address cannot be read or no stream is
 # made.
 function stream_of(@s: hero_net.Socket, deadline_ms: i64, name: str, asked: str) -> Ends?
-    if deadline_ms > 0 && hero_net.set_deadline(s, ms: deadline_ms) != 0
+    if deadline_ms != hero_net.HERO_NET_FOREVER && hero_net.set_deadline(s, ms: deadline_ms) != 0
         failed: Ends? = failure.last(asked: asked)
         _ = hero_net.close(@s)
         return failed
@@ -325,27 +330,19 @@ function address_in(text: [u8], port: i64, asked: str) -> parse.Parsed?
                 )
                 .ok p => return ok(parse.Parsed(bytes: p.bytes, zone: p.zone, has_port: true, port: port))
 
-# `()` where `ms` is a deadline: 0 or more.
+# `()` where `ms` is a time the floor takes: 0 or more, or
+# `hero_net.HERO_NET_FOREVER` for none, the face's `FOREVER` (since
+# 2026-11-21, M-rebel-library step 88b: until then the face's 0 was no limit
+# and turned into the floor's `HERO_NET_FOREVER` here).
 #
 # - `ms`: the milliseconds handed.
 # - `asked`: what the message of a failure begins with.
 #
-# Fails `invalid` where `ms` is below 0.
+# Fails `invalid` where `ms` is below 0 and not `HERO_NET_FOREVER`.
 function checked_deadline(ms: i64, asked: str) -> ()?
-    if ms < 0
-        return failure.of(code: failure.INVALID, asked: asked, why: f"the deadline {ms} ms is below 0")
+    if ms < 0 && ms != hero_net.HERO_NET_FOREVER
+        return failure.of(code: failure.INVALID, asked: asked, why: f"the deadline {ms} ms is below 0 and not FOREVER")
     return ok()
-
-# The floor's time for `ms`, a time the face takes and `checked_deadline`
-# passed: the face's 0, no limit, is the floor's `HERO_NET_FOREVER`, since
-# the floor's 0 is a time already passed (2026-11-20, M-rebel-library step
-# 83a), and a time above 0 is itself.
-#
-# - `ms`: 0 or more.
-function floor_ms(ms: i64) -> i64
-    if ms == 0
-        return hero_net.HERO_NET_FOREVER
-    return ms
 
 # `port` where it is a port, else 0, so a message can be written before the
 # port is refused.
@@ -384,7 +381,7 @@ test "connect: IPv6 loopback, and a name looked up first"
     l @= listen("::1", port: 0).must()
     assert l.address.bytes.len() == 16
     client @= connect(host: "::1", port: l.address.port, deadline_ms: 5000).must()
-    server @= accept(l.socket, deadline_ms: 0, asked: "accepting").must()
+    server @= accept(l.socket, deadline_ms: hero_net.HERO_NET_FOREVER, asked: "accepting").must()
     assert client.remote.bytes == l.address.bytes && server.remote.port == client.local.port
     io.close(@client.stream).must()
     io.close(@server.stream).must()
@@ -395,7 +392,7 @@ test "connect: IPv6 loopback, and a name looked up first"
         .ok c =>
             named @= c
             io.close(@named.stream).must()
-            taken @= accept(v4.socket, deadline_ms: 0, asked: "accepting").must()
+            taken @= accept(v4.socket, deadline_ms: hero_net.HERO_NET_FOREVER, asked: "accepting").must()
             io.close(@taken.stream).must()
         .err e => assert e.code == failure.CLOSED
 
@@ -412,7 +409,7 @@ test "connect: nothing listening is closed, and an empty host, a zero byte, a po
 
     nul: [u8] = [49, 0]
 
-    for refused in [connect(host: "", port: 80, deadline_ms: 0), connect(host: nul.validated_bytes().must(), port: 80, deadline_ms: 0), connect(host: "127.0.0.1", port: 65536, deadline_ms: 0), connect(host: "127.0.0.1", port: -1, deadline_ms: 0), connect(host: "127.0.0.1", port: 80, deadline_ms: -1)]
+    for refused in [connect(host: "", port: 80, deadline_ms: 0), connect(host: nul.validated_bytes().must(), port: 80, deadline_ms: 0), connect(host: "127.0.0.1", port: 65536, deadline_ms: 0), connect(host: "127.0.0.1", port: -1, deadline_ms: 0), connect(host: "127.0.0.1", port: 80, deadline_ms: -2)]
         match refused
             .ok _  => assert false
             .err e => assert e.code == failure.INVALID
@@ -438,7 +435,7 @@ test "listen: port 0 chosen by the system, a port taken already exists, and what
 
 test "accept: the deadline given ends a read of the connection timeout, and a negative one accepts nothing"
     l @= listen("127.0.0.1", port: 0).must()
-    client @= connect(host: "127.0.0.1", port: l.address.port, deadline_ms: 0).must()
+    client @= connect(host: "127.0.0.1", port: l.address.port, deadline_ms: hero_net.HERO_NET_FOREVER).must()
 
     match accept(l.socket, deadline_ms: -5, asked: "accepting")
         .ok _  => assert false
@@ -454,16 +451,22 @@ test "accept: the deadline given ends a read of the connection timeout, and a ne
     io.close(@client.stream).must()
     close(@l.socket, asked: "closing").must()
 
-test "set_deadline: an accept with nobody coming ends timeout, 0 takes it away, below 0 and a closed socket refused"
+test "set_deadline: an accept with nobody coming ends timeout, 0 ends it at once, FOREVER takes it away, below that and a closed socket refused"
     l @= listen("127.0.0.1", port: 0).must()
     set_deadline(l.socket, ms: 150, asked: "deadline").must()
 
-    match accept(l.socket, deadline_ms: 0, asked: "accepting")
+    match accept(l.socket, deadline_ms: hero_net.HERO_NET_FOREVER, asked: "accepting")
         .ok _  => assert false
         .err e => assert e.code == failure.TIMEOUT && e.msg == "accepting: the time allowed ran out"
 
     set_deadline(l.socket, ms: 0, asked: "deadline").must()
-    assert set_deadline(l.socket, ms: -1, asked: "deadline").is_err()
+
+    match accept(l.socket, deadline_ms: hero_net.HERO_NET_FOREVER, asked: "accepting")
+        .ok _  => assert false
+        .err e => assert e.code == failure.TIMEOUT
+
+    set_deadline(l.socket, ms: hero_net.HERO_NET_FOREVER, asked: "deadline").must()
+    assert set_deadline(l.socket, ms: -2, asked: "deadline").is_err()
     close(@l.socket, asked: "closing").must()
 
     match set_deadline(l.socket, ms: 10, asked: "deadline")
@@ -484,7 +487,7 @@ test "accept_number and conn_of: a connection given up as a number, taken back o
     n = accept_number(l.socket, asked: "accepting").must()
     assert n > 0
 
-    match conn_of(n: n, deadline_ms: -1)
+    match conn_of(n: n, deadline_ms: -2)
         .ok _  => assert false
         .err e => assert e.code == failure.INVALID
 
@@ -521,7 +524,8 @@ test "address_in: the text before the first zero byte, its port kept, and what i
         .err e => assert e.code == failure.FAILED
 
 test "checked_deadline, clamped: each edge"
-    assert checked_deadline(-1, asked: "x").is_err() && !checked_deadline(0, asked: "x").is_err()
+    assert checked_deadline(-2, asked: "x").is_err() && !checked_deadline(-1, asked: "x").is_err() && !checked_deadline(0, asked: "x").is_err()
+    assert hero_net.HERO_NET_FOREVER == -1
     assert clamped(-1) == 0 && clamped(65536) == 0 && clamped(65535) == 65535 && clamped(0) == 0
 
 test "end_of and bound: a listener has its own end and no peer, and stream_of on a listener closes it and fails"
@@ -547,7 +551,7 @@ test "pair: two ends of one connection, each written and read, closed one by one
     assert io.read_all(two.stream).must() == []
     io.close(@two.stream).must()
 
-    match pair(-1)
+    match pair(-2)
         .ok _  => assert false
         .err e => assert e.code == failure.INVALID
 

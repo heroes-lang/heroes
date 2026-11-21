@@ -394,8 +394,9 @@ function set_deadline(s: io.Stream, ms: i64, asked: str) -> ()?
     if hero_tls.last_error() != hero_tls.HERO_TLS_NOT_OPEN
         return failure.last(asked: asked)
 
-    # No TLS stream: a connection's own stream takes its deadline from `net`.
-    return net.set_deadline(s, deadline_ms: ms)
+    # No TLS stream: a connection's own stream takes its deadline from `net`,
+    # whose `FOREVER` is the floor's (`hero_tls.h` holds them equal).
+    return net.set_deadline(s, deadline_ms: limit)
 
 # Makes every later and waiting accept on `l` end by `ms` milliseconds from
 # now.

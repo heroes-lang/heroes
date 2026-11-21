@@ -13,11 +13,14 @@
 # `conn_of` take `deadline_ms`, and every read and write of the connection's
 # stream that waits ends by that many milliseconds from the call, failing
 # `timeout`. It is a time, not a span: a peer that sends one byte before each
-# limit still meets it. 0 sets none. A listener's and a datagram socket's
-# deadline is set, and set again, by `set_accept_deadline` and
-# `set_udp_deadline`; a connection's is moved after it is made by
-# `set_deadline`, and `connect_timeout` bounds the time a connection takes to
-# be made.
+# limit still meets it. **0 waits not at all**: it is a deadline already
+# passed, so a call that would wait fails `timeout` at once and one that need
+# not wait is spared; `FOREVER` sets none, and below that is `invalid`. A
+# listener's and a datagram socket's deadline is set, and set again, by
+# `set_accept_deadline` and `set_udp_deadline`; a connection's is moved after
+# it is made by `set_deadline`, and `connect_timeout` bounds the time a
+# connection takes to be made, with the same two values. The packages above
+# `time`'s layer take a `time.Duration` instead (README § A3).
 #
 # **The stop** is `os`'s: after `os.catch_stop`, Ctrl-C and SIGTERM, or
 # `os.ask_stop` from any thread, make every call here or on a connection's
@@ -108,6 +111,14 @@ constant FAILED: str
 constant UNSUPPORTED: str
     failure.UNSUPPORTED
 
+## Deadlines
+
+# What every `deadline_ms` and `timeout_ms` here takes for no limit: a wait
+# that ends only when what it waits for comes, the stop is asked or the
+# other end closes. `ping` alone has none, since a host may never answer.
+constant FOREVER: i64
+    -1
+
 ## TCP
 
 # A socket listening for TCP connections. `close_listener` ends it; one
@@ -150,15 +161,17 @@ function listen(host: str, port: i64) -> Listener?
     )
 
 # The next connection `l` holds, waiting for one, its every read and write
-# ending by `deadline_ms` milliseconds from when it is accepted, 0 for none.
+# ending by `deadline_ms` milliseconds from when it is accepted, `FOREVER` for
+# none.
 #
 # - `l`: the listener; it stays open for the next connection.
 # - `deadline_ms`: milliseconds from the moment the connection is accepted by
-#   which every read and write of it ends; 0 for none.
+#   which every read and write of it ends; 0 ends at once every one that
+#   would wait, `FOREVER` sets none.
 #
 # Fails `timeout` where the listener's own deadline passes first
 # (`set_accept_deadline`), `stopped` where the stop is asked, `closed` where `l`
-# is closed, `invalid` where `deadline_ms` is below 0.
+# is closed, `invalid` where `deadline_ms` is below 0 and not `FOREVER`.
 function accept(l: Listener, deadline_ms: i64) -> Conn?
     e = sockets.accept(l.socket, deadline_ms: deadline_ms, asked: "accepting a connection on " + format_address(l.address))?
     return ok(
@@ -167,17 +180,19 @@ function accept(l: Listener, deadline_ms: i64) -> Conn?
 
 # A connection to `host` at `port`, `host` a name or an address without
 # brackets, its every read and write ending by `deadline_ms` milliseconds from
-# when it is made, 0 for none.
+# when it is made, `FOREVER` for none.
 #
 # - `host`: a name or an address without brackets.
 # - `port`: 0 to 65535.
 # - `deadline_ms`: milliseconds from the moment the connection is made by which
-#   every read and write of it ends; 0 for none.
+#   every read and write of it ends; 0 ends at once every one that would
+#   wait, `FOREVER` sets none.
 #
 # Fails `closed` where nothing listens there, `not_found` where the name has no
 # address, `timeout` where the system gives the connection up, `failed` where no
 # route reaches the host, `invalid` where `host` is "" or `port` or
-# `deadline_ms` is out of range. The name is looked up first, and each of its
+# `deadline_ms` is out of range, a deadline below 0 that is not `FOREVER`
+# among them. The name is looked up first, and each of its
 # addresses is tried in the resolver's order until one connects, a failure being
 # the first address's; the connection itself takes as long as the system allows,
 # and the deadline begins once it is made.
@@ -194,10 +209,11 @@ function connect(host: str, port: i64, deadline_ms: i64) -> Conn?
 # - `port`: 0 to 65535.
 # - `timeout_ms`: milliseconds by which the connection must be made, every
 #   address of the name tried in the resolver's order within that one time;
-#   0 for no limit, below 0 fails `invalid`. The name's lookup before it is
+#   0 answers only a connection the system makes at once, `FOREVER` is no
+#   limit, below 0 otherwise fails `invalid`. The name's lookup before it is
 #   the system resolver's and is not bounded.
 # - `deadline_ms`: milliseconds from when it is made by which every read and
-#   write of it ends, as `connect` takes it; 0 for none.
+#   write of it ends, as `connect` takes it; `FOREVER` for none.
 #
 # Fails `timeout` where the time passes with no connection made, `not_found`
 # where the name has no address, `closed` where nothing listens there,
@@ -210,13 +226,14 @@ function connect_timeout(host: str, port: i64, timeout_ms: i64, deadline_ms: i64
     )
 
 # Makes every later and waiting `accept` on `l` end by `deadline_ms`
-# milliseconds from now, failing `timeout`; 0 takes the deadline away.
+# milliseconds from now, failing `timeout`; `FOREVER` takes the deadline away.
 #
 # - `l`: the listener.
-# - `deadline_ms`: milliseconds from now; 0 takes the deadline away.
+# - `deadline_ms`: milliseconds from now; 0 ends at once an accept with no
+#   connection waiting, `FOREVER` takes the deadline away.
 #
-# Fails `invalid` where `deadline_ms` is below 0, `closed` where `l` is
-# closed.
+# Fails `invalid` where `deadline_ms` is below 0 and not `FOREVER`, `closed`
+# where `l` is closed.
 function set_accept_deadline(l: Listener, deadline_ms: i64) -> ()?
     return sockets.set_deadline(
         l.socket,
@@ -247,9 +264,10 @@ function accept_number(l: Listener) -> i64?
 # its deadline as `accept` sets one.
 #
 # - `n`: the number `accept_number` answered; it is taken back once.
-# - `deadline_ms`: milliseconds, as `accept` takes them; 0 for none.
+# - `deadline_ms`: milliseconds, as `accept` takes them; `FOREVER` for none.
 #
-# Fails `closed` where `n` was taken back already or names no connection.
+# Fails `closed` where `n` was taken back already or names no connection,
+# `invalid` where `deadline_ms` is below 0 and not `FOREVER`.
 function conn_of(n: i64, deadline_ms: i64) -> Conn?
     e = sockets.conn_of(n: n, deadline_ms: deadline_ms)?
     return ok(
@@ -261,9 +279,11 @@ function conn_of(n: i64, deadline_ms: i64) -> Conn?
 # Go's `Pipe` answer.
 #
 # - `deadline_ms`: milliseconds from when the two are made by which every
-#   read and write of either ends, failing `timeout`; 0 for none.
+#   read and write of either ends, failing `timeout`; 0 ends at once every
+#   one that would wait, `FOREVER` sets none.
 #
-# Fails `invalid` where `deadline_ms` is below 0, `failed` where another
+# Fails `invalid` where `deadline_ms` is below 0 and not `FOREVER`, `failed`
+# where another
 # program connected to the listener of the moment first, and as `listen`,
 # `connect` and `accept` fail. Each end is closed with `io.close`.
 function pair(deadline_ms: i64) -> Pair?
@@ -350,14 +370,15 @@ function receive(s: UdpSocket) -> Datagram?
     )
 
 # Makes every later and waiting `receive` and `send_to` on `s` end by
-# `deadline_ms` milliseconds from now, failing `timeout`; 0 takes the
+# `deadline_ms` milliseconds from now, failing `timeout`; `FOREVER` takes the
 # deadline away.
 #
 # - `s`: the socket.
-# - `deadline_ms`: milliseconds from now; 0 takes the deadline away.
+# - `deadline_ms`: milliseconds from now; 0 ends at once a receive with no
+#   datagram waiting, `FOREVER` takes the deadline away.
 #
-# Fails `invalid` where `deadline_ms` is below 0, `closed` where `s` is
-# closed.
+# Fails `invalid` where `deadline_ms` is below 0 and not `FOREVER`, `closed`
+# where `s` is closed.
 function set_udp_deadline(s: UdpSocket, deadline_ms: i64) -> ()?
     return sockets.set_deadline(
         s.socket,
@@ -382,8 +403,9 @@ function close_udp(@s: UdpSocket) -> ()?
 #
 # - `s`: the stream of a `Conn`, as `tls.set_deadline` and
 #   `ipc.set_deadline` take theirs.
-# - `deadline_ms`: milliseconds from now; 0 takes the deadline away, below 0
-#   fails `invalid`.
+# - `deadline_ms`: milliseconds from now; 0 ends at once every read and write
+#   that would wait and spares one that need not, `FOREVER` takes the
+#   deadline away, below 0 otherwise fails `invalid`.
 #
 # Fails `closed` where `s` is closed, and as the system refuses where it is
 # no socket's stream. See also `connect`, `accept`.
@@ -1747,7 +1769,7 @@ test "set_accept_deadline, accept_number, conn_of: an accept ending timeout, a c
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
-    set_accept_deadline(l, deadline_ms: 0).must()
+    set_accept_deadline(l, deadline_ms: FOREVER).must()
     client @= connect("::1", port: l.address.port, deadline_ms: 5000).must()
     n = accept_number(l).must()
     taken @= conn_of(n: n, deadline_ms: 200).must()
@@ -1820,6 +1842,38 @@ test "pair: what one end writes the other reads, through io"
     io.close(@first.stream).must()
     io.close(@second.stream).must()
 
+# THE TIME 0 (2026-11-21, M-rebel-library step 88b): a deadline already
+# passed. A read that finds a byte there is spared; the next, which would
+# wait, fails `timeout` at once; an accept with nobody coming likewise, and
+# `FOREVER` takes both deadlines away.
+test "FOREVER and the time 0: a byte there is read, a read and an accept that would wait end at once, FOREVER is the floor's"
+    assert FOREVER == hero_net.HERO_NET_FOREVER
+    both = pair(FOREVER).must()
+    first @= both.first
+    second @= both.second
+    io.write(second.stream, data: [7, 8]).must()
+    assert io.read_exact(first.stream, n: 1).must() == [7]
+    set_deadline(first.stream, deadline_ms: 0).must()
+    assert io.read_exact(first.stream, n: 1).must() == [8]
+
+    match io.read(first.stream, n: 1)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    set_deadline(first.stream, deadline_ms: FOREVER).must()
+    io.write(second.stream, data: [9]).must()
+    assert io.read_exact(first.stream, n: 1).must() == [9]
+    io.close(@first.stream).must()
+    io.close(@second.stream).must()
+    l @= listen("127.0.0.1", port: 0).must()
+    set_accept_deadline(l, deadline_ms: 0).must()
+
+    match accept(l, deadline_ms: FOREVER)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    close_listener(@l).must()
+
 test "connect: a name nobody has fails not_found, and nothing is left open"
     match connect("no-such-host.invalid", port: 80, deadline_ms: 0)
         .ok _  => assert false
@@ -1833,7 +1887,11 @@ test "connect_timeout: a listener reached within its time, a time below 0, an ad
     io.close(@c.stream).must()
     io.close(@other.stream).must()
 
-    match connect_timeout("127.0.0.1", port: l.address.port, timeout_ms: -1, deadline_ms: 0)
+    match connect_timeout("127.0.0.1", port: l.address.port, timeout_ms: -2, deadline_ms: FOREVER)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match connect_timeout("127.0.0.1", port: l.address.port, timeout_ms: 5000, deadline_ms: -2)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -1841,16 +1899,16 @@ test "connect_timeout: a listener reached within its time, a time below 0, an ad
 
     # TEST-NET-1 (RFC 5737) is routed nowhere: the time passes, or the
     # system says at once that no route reaches it.
-    match connect_timeout("192.0.2.1", port: 9, timeout_ms: 300, deadline_ms: 0)
+    match connect_timeout("192.0.2.1", port: 9, timeout_ms: 300, deadline_ms: FOREVER)
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT || e.code == FAILED
 
-    match connect_timeout("no-such-host.invalid", port: 80, timeout_ms: 1000, deadline_ms: 0)
+    match connect_timeout("no-such-host.invalid", port: 80, timeout_ms: 1000, deadline_ms: FOREVER)
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND || e.code == INVALID
 
 test "set_deadline, close_read and close_write: a deadline moved on a quiet connection, each side closed, and a closed connection"
-    both = pair(0).must()
+    both = pair(FOREVER).must()
     first @= both.first
     second @= both.second
     set_deadline(first.stream, deadline_ms: 150).must()
@@ -1859,7 +1917,7 @@ test "set_deadline, close_read and close_write: a deadline moved on a quiet conn
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
-    set_deadline(first.stream, deadline_ms: 0).must()
+    set_deadline(first.stream, deadline_ms: FOREVER).must()
     close_write(second).must()
     assert io.read(first.stream, n: 8).must().len() == 0
     io.write_text(first.stream, text: "x").must()
@@ -1867,7 +1925,7 @@ test "set_deadline, close_read and close_write: a deadline moved on a quiet conn
     close_read(first).must()
     assert io.read(first.stream, n: 8).must().len() == 0
 
-    match set_deadline(first.stream, deadline_ms: -1)
+    match set_deadline(first.stream, deadline_ms: -2)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -2407,13 +2465,13 @@ test "format_mac: six bytes as pairs with colons"
 # A connection that gives up where the server does not answer in time.
 test "connect_timeout: a local server reached within two seconds"
     l @= listen("127.0.0.1", port: 0).must()
-    c @= connect_timeout("127.0.0.1", port: l.address.port, timeout_ms: 2000, deadline_ms: 0).must()
+    c @= connect_timeout("127.0.0.1", port: l.address.port, timeout_ms: 2000, deadline_ms: FOREVER).must()
     io.close(@c.stream).must()
     close_listener(@l).must()
 
 # A connection that waits a short time for an answer, then no more.
 test "set_deadline: a read that ends after 100 ms"
-    both = pair(0).must()
+    both = pair(FOREVER).must()
     first @= both.first
     second @= both.second
     set_deadline(first.stream, deadline_ms: 100).must()

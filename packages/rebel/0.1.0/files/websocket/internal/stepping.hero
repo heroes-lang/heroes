@@ -305,12 +305,12 @@ test "step: more before a whole frame, nothing for a ping, data for a text, and 
     io.close(@two.first.stream).must()
 
 test "drain: what is left read to the end, or to the deadline"
-    two @= net.pair(deadline_ms: 0).must()
+    two @= net.pair(deadline_ms: net.FOREVER).must()
     io.write(two.first.stream, data: [1, 2, 3]).must()
     io.close(@two.first.stream).must()
     drain(two.second.stream, ms: 1_000)
     io.close(@two.second.stream).must()
-    open @= net.pair(deadline_ms: 0).must()
+    open @= net.pair(deadline_ms: net.FOREVER).must()
     drain(open.second.stream, ms: 20)
     io.close(@open.first.stream).must()
     io.close(@open.second.stream).must()

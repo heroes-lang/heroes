@@ -1818,8 +1818,13 @@ function default_server() -> Server
 function serve(s: Server, l: net.Listener, handler: (function(Request) -> Response)) -> ()?
     wait_ms: i64 @= 5
 
+    accept_ms = if s.deadline_ms == 0
+        net.FOREVER
+    else
+        s.deadline_ms
+
     while true
-        match net.accept(l, deadline_ms: s.deadline_ms)
+        match net.accept(l, deadline_ms: accept_ms)
             .ok accepted =>
                 wait_ms @ 5
                 conn @= accepted
@@ -1982,8 +1987,13 @@ function serve_stream(s: Server, stream: io.Stream, remote: str, handler: (funct
 function serve_with<S>(s: Server, l: net.Listener, state: S, handler: (function(S, Request) -> Response)) -> ()?
     wait_ms: i64 @= 5
 
+    accept_ms = if s.deadline_ms == 0
+        net.FOREVER
+    else
+        s.deadline_ms
+
     while true
-        match net.accept(l, deadline_ms: s.deadline_ms)
+        match net.accept(l, deadline_ms: accept_ms)
             .ok accepted =>
                 wait_ms @ 5
                 conn @= accepted
@@ -2983,11 +2993,16 @@ function serve_until_stopped<S>(s: Server, l: net.Listener, state: S, handler: (
     out @= Served(connections: 0, answered: 0, cut: 0)
     wait_ms: i64 @= 5
 
+    accept_ms = if s.deadline_ms == 0
+        net.FOREVER
+    else
+        s.deadline_ms
+
     while true
         if os.is_stop_asked()
             return ok(out)
 
-        match net.accept(l, deadline_ms: s.deadline_ms)
+        match net.accept(l, deadline_ms: accept_ms)
             .ok accepted =>
                 wait_ms @ 5
                 conn @= accepted

@@ -18,7 +18,8 @@ use net/internal/sockets
 #   refused.
 # - `port`: 0 to 65535.
 # - `timeout_ms`: milliseconds by which the connection must be made, every
-#   address of the name tried within them; 0 for no limit, below 0 refused.
+#   address of the name tried within them; 0 a time already passed,
+#   `hero_net.HERO_NET_FOREVER` for no limit, below that refused.
 # - `deadline_ms`: as `sockets.connect` takes it.
 #
 # Fails `timeout` where the time passes first, `not_found` where the name has
@@ -29,9 +30,13 @@ function connected_within(host: str, port: i64, timeout_ms: i64, deadline_ms: i6
     _ = hosts.checked(port, asked: asked)?
     sockets.checked_deadline(deadline_ms, asked: asked)?
 
-    if timeout_ms < 0
-        return failure.of(code: failure.INVALID, asked: asked, why: f"the time {timeout_ms} ms is below 0")
-    s @= hero_net.connect_within(address: host, port: port, ms: sockets.floor_ms(timeout_ms))
+    if timeout_ms < 0 && timeout_ms != hero_net.HERO_NET_FOREVER
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"the time {timeout_ms} ms is below 0 and not FOREVER"
+        )
+    s @= hero_net.connect_within(address: host, port: port, ms: timeout_ms)
 
     if s == nullptr
         return failure.last(asked: asked)
@@ -47,16 +52,17 @@ function open_stream(s: io.Stream, asked: str) -> ()?
     return ok()
 
 # Moves the deadline of the connection under `s` to `ms` milliseconds from
-# now, 0 taking it away.
+# now, 0 a deadline already passed, `hero_net.HERO_NET_FOREVER` taking it
+# away.
 #
 # - `s`: the connection's stream.
-# - `ms`: 0 or more; below 0 refused.
+# - `ms`: 0 or more, or `hero_net.HERO_NET_FOREVER`; below that refused.
 # - `asked`: what the message of a failure begins with.
 function deadline_moved(s: io.Stream, ms: i64, asked: str) -> ()?
     sockets.checked_deadline(ms, asked: asked)?
     open_stream(s, asked: asked)?
 
-    if hero_stream_net.set_deadline(s.handle, ms: sockets.floor_ms(ms)) != 0
+    if hero_stream_net.set_deadline(s.handle, ms: ms) != 0
         return io.last_failure(asked: asked)
     return ok()
 

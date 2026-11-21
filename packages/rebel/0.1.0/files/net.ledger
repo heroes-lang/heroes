@@ -497,7 +497,7 @@ capability tcp/deadline  a time by which every wait on a connection or a listene
   go      net.Conn.SetDeadline, net.TCPConn.SetDeadline, net.TCPListener.SetDeadline
   rust    -
   python  socket.socket.settimeout, socket.socket.gettimeout, socket.setdefaulttimeout, socket.getdefaulttimeout, socket.timeout, socket.socket.timeout
-  note    A connection's deadline is given when it is made, `deadline_ms`, every call naming one: the floor's deadline is the socket's and moves no more once the socket is a stream (`hero_stream_net.h`). A listener's is set and set again. Past it, `timeout`
+  note    A connection's deadline is given when it is made, `deadline_ms`, every call naming one, and moved after it by `net.set_deadline` through the stream (`hero_stream_net.h`). 0 is a deadline already passed, as Go's deadline in the past: a call that would wait fails `timeout` at once and one that need not is spared; `net.FOREVER` sets none, as Go's zero `time.Time` (since 2026-11-21, M-rebel-library step 88b: until then 0 set none). A listener's is set and set again. Past it, `timeout`
 
 capability tcp/deadline-moved  a connection's deadline set again, or one for reads and another for writes
   heroes  net.set_deadline

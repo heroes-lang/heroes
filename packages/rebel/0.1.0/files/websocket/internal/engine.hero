@@ -319,7 +319,7 @@ test "send and fill: a frame over a pair of sockets, masked by the client, then 
         .err e => assert e.code == CLOSED && server.ended
 
 test "deadline: a socket's, a time below zero, a closed stream's, and a pipe's"
-    two @= net.pair(deadline_ms: 0).must()
+    two @= net.pair(deadline_ms: net.FOREVER).must()
     deadline(two.first.stream, ms: 20).must()
 
     match io.read(two.first.stream, n: 1)

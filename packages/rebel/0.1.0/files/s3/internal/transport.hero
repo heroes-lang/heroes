@@ -35,7 +35,11 @@ function open(target: url.Url, deadline_ms: i64, roots: str) -> Opened?
         return ok(Opened(reader: io.reader(stream), head: http.respond_status(200)))
 
     if target.scheme == "http"
-        conn = net.connect(target.host, port: port, deadline_ms: deadline_ms)?
+        plain_ms = if deadline_ms == 0
+            net.FOREVER
+        else
+            deadline_ms
+        conn = net.connect(target.host, port: port, deadline_ms: plain_ms)?
         return ok(Opened(reader: io.reader(conn.stream), head: http.respond_status(200)))
     return fail(code: "unsupported", msg: f"the scheme \"{target.scheme}\" is neither http nor https")
 

@@ -41,7 +41,7 @@ function closed_failure<T>(target: str) -> T?
 # - `port`: the port.
 # - `ms`: milliseconds, 1 or more.
 function open_plain(host: str, port: i64, ms: i64) -> Link?
-    c = net.connect_timeout(host, port: port, timeout_ms: ms, deadline_ms: 0)?
+    c = net.connect_timeout(host, port: port, timeout_ms: ms, deadline_ms: net.FOREVER)?
     return ok(.connected(stream: c.stream, secured: false))
 
 # A TLS connection to `host` at `port`, TLS from its first byte.
