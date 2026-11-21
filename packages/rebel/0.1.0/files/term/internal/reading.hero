@@ -5,6 +5,7 @@
 
 use io
 use os
+use os/hero_disk
 use term/hero_term
 use term/internal/editing
 use term/internal/failure
@@ -123,8 +124,12 @@ test "reading piped_line: lines added to the history but an empty one"
     assert h == ["z", "a", "b"]
     io.close(@p.reader).must()
 
+# The history's file is named for this process and removed at the end, so
+# two copies of the tests at once never write one file: named for the test
+# alone, it failed 1 run of 600, two loops of each of `term`'s tests that
+# write a file at once (2026-11-21), a file the other copy had just written.
 test "reading save and load: an empty history, lines both ways, a line break refused, the most kept, a missing file"
-    path = "build/rebel-term-history-test.txt"
+    path = f"build/rebel-term-history-test-{os.pid()}.txt"
     save([], path: path).must()
     none @= ["kept"]
     load(@none, path: path, most: 10).must()
@@ -149,3 +154,5 @@ test "reading save and load: an empty history, lines both ways, a line break ref
     match load(@w, path: path + ".none", most: 10)
         .ok _  => assert false
         .err e => assert e.code == "file_not_found"
+
+    assert hero_disk.remove(path) == 0

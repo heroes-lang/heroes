@@ -65,6 +65,8 @@
 # statement `close_statement` ended; and `failed` for every other, a table
 # locked by its own connection and a disk's input or output among them.
 
+use os
+use os/hero_disk
 use sql
 use sql/sqlite/hero_sqlite3
 use sql/sqlite/internal/codes
@@ -546,8 +548,13 @@ function version() -> str
 
 ## Tests
 
+# Each test that writes a file under `build/` names it for this process and
+# removes it at its end, so two copies of the tests at once never write one
+# file: named for the test alone, this test and "query and query_one:" failed
+# 2 runs of 1,600, two loops of each test at once (2026-11-21), a table the
+# other copy made already there.
 test "open, close and open_read_only: a file under build/ keeps its rows, and a read-only connection refuses a write"
-    path = "build/rebel-sql-sqlite-test.db"
+    path = f"build/rebel-sql-sqlite-test-{os.pid()}.db"
     db @= open(path).must()
     exec_script(@db, "DROP TABLE IF EXISTS kept; CREATE TABLE kept(id INTEGER PRIMARY KEY, name TEXT)").must()
     _ = exec(@db, "INSERT INTO kept(name) VALUES (?1)", [.text(v: "Ziggy")]).must()
@@ -561,6 +568,7 @@ test "open, close and open_read_only: a file under build/ keeps its rows, and a 
         .err e => assert e.code == sql.PERMISSION && e.msg == "[8] attempt to write a readonly database"
 
     close(@again).must()
+    assert hero_disk.remove(path) == 0
 
 test "open and open_read_only: a folder not there, a file not there, a zero byte, and a file that is not a database"
     match open("build/rebel-no-such-folder/x.db")
@@ -680,7 +688,8 @@ test "exec: rows_affected and last_id for an insert of three, an update of two, 
     close(@db).must()
 
 test "query and query_one: columns and their declared types, rows in order, no row, and every case there and back through a file"
-    db @= open("build/rebel-sql-sqlite-values.db").must()
+    path = f"build/rebel-sql-sqlite-values-{os.pid()}.db"
+    db @= open(path).must()
     exec_script(
         @db,
         "DROP TABLE IF EXISTS v; CREATE TABLE v(id INTEGER PRIMARY KEY, b BOOLEAN, n INTEGER, x REAL, s TEXT, data BLOB, at TIMESTAMP)"
@@ -716,6 +725,7 @@ test "query and query_one: columns and their declared types, rows in order, no r
     empty = query(@db, "SELECT id FROM v WHERE id > 9", []).must()
     assert empty.rows.len() == 0 && empty.columns.len() == 1
     close(@db).must()
+    assert hero_disk.remove(path) == 0
 
 test "the kept statements: one text compiled once, 64 kept at most, and exec_script giving them back"
     db @= open_memory().must()
@@ -821,7 +831,7 @@ test "prepare: run many times, its columns and parameters, a failure, and anothe
     close(@other).must()
 
 test "set_busy_timeout: a write lock another connection holds, waited for 0 ms, fails timeout; a count out of range"
-    path = "build/rebel-sql-sqlite-lock.db"
+    path = f"build/rebel-sql-sqlite-lock-{os.pid()}.db"
     a @= open(path).must()
     b @= open(path).must()
     exec_script(@a, "CREATE TABLE IF NOT EXISTS t(x)").must()
@@ -842,11 +852,13 @@ test "set_busy_timeout: a write lock another connection holds, waited for 0 ms, 
     assert set_busy_timeout(@b, time.milliseconds(2147483648).must()).is_err()
     close(@a).must()
     close(@b).must()
+    assert hero_disk.remove(path) == 0
 
 test "backup: a database in memory saved to a file and read back into memory, and into itself refused"
     source @= open_memory().must()
     exec_script(@source, "CREATE TABLE t(x); INSERT INTO t VALUES (42)").must()
-    saved @= open("build/rebel-sql-sqlite-backup.db").must()
+    path = f"build/rebel-sql-sqlite-backup-{os.pid()}.db"
+    saved @= open(path).must()
     backup(db: source, into: saved).must()
     back @= open_memory().must()
     backup(db: saved, into: back).must()
@@ -860,6 +872,7 @@ test "backup: a database in memory saved to a file and read back into memory, an
     close(@saved).must()
     assert backup(db: saved, into: back).is_err()
     close(@back).must()
+    assert hero_disk.remove(path) == 0
 
 test "is_complete and version: whole statements, open quotes and trigger bodies, nothing, and the library's version"
     assert is_complete("SELECT 1;")
