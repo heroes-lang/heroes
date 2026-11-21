@@ -101,6 +101,36 @@ function undecodable() -> [Signed]
         Signed(name: "RFC 8032 5.1.3, R the identity's own encoding", scheme: "ed25519", public_der: "302a300506032b6570032100d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a", message: "313233343030", signature: "01000000000000000000000000000000000000000000000000000000000000007d3b77432f1158b980111092058b1ce8d9c6165f46627e617d4300bdf2946e0d", holds: true)
     ]
 
+# Ed25519 signatures whose R or key has a part of small order, a point
+# whose order divides the cofactor 8. RFC 8032 § 5.1.7 lets a verifier
+# check [S]B = R + [k]A or that equation multiplied by 8; the two answer
+# otherwise exactly where such a part does not cancel, since the
+# multiplication by 8 erases it. Every platform that has Ed25519 answers
+# the equation without the cofactor, [S]B = R + [k]A, which OpenSSL
+# checks: Monocypher 4.0.3's own check is the cofactored one and held all
+# five (defect 2642).
+#
+# Built 2026-11-21 by RFC 8032's arithmetic, and answered as here by
+# OpenSSL 3.5.7, 3.5.9 and 4.1.0, Go 1.27.4's `ed25519.Verify`, Python's
+# `cryptography` 50.0.2 and CryptoKit on macOS 27.2. The first is
+# defect 2642's own: TEST 1's key, Wycheproof's message `123400`, R = [r]B
+# plus the point of order 2 and S = r + k a mod L for TEST 1's secret
+# scalar a, so [S]B - [k]A is R less that point. The next two are under
+# the key whose 32 bytes are zero, a point of order 4, R the identity and
+# S = 0: the equation holds where k is a multiple of 4, as it is for the
+# message `04` and not for `00`. The last two are under TEST 1's key plus
+# a point T of order 8, with the empty message and R = [r]B + [j]T,
+# S = r + k a mod L: the equation holds where [j]T + [k]T is the identity,
+# so for j = 5 and not for j = 0.
+function small_order() -> [Signed]
+    return [
+        Signed(name: "defect 2642, R with the point of order 2 added", scheme: "ed25519", public_der: "302a300506032b6570032100d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a", message: "313233343030", signature: "afab3bbe6d8060f11a1ec1cb0f4fbfb3afbc9ae570b4810f785e3bdd9d57a2f5043799102a27cb0913b566953061030d9483ccfc6f987dd84d405317e4f03f02", holds: false)
+        Signed(name: "the key of order 4, k not a multiple of 4", scheme: "ed25519", public_der: "302a300506032b65700321000000000000000000000000000000000000000000000000000000000000000000", message: "00", signature: "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", holds: false)
+        Signed(name: "the key of order 4, k a multiple of 4", scheme: "ed25519", public_der: "302a300506032b65700321000000000000000000000000000000000000000000000000000000000000000000", message: "04", signature: "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", holds: true)
+        Signed(name: "a key with a part of order 8, R's part not cancelling it", scheme: "ed25519", public_der: "302a300506032b65700321009158312a9a8d6e3b34c891d6d61444f8b8211c5117ebad15bdb0bd68b07e0245", message: "", signature: "58852f397f5153f7c24f51003f16afdf69fe4d63303df8d8cbbc759ed597a82bf3fe58bf9ea7e87449643737a6df4592128a2b4b7af96640be23b5e3b43f7609", holds: false)
+        Signed(name: "a key with a part of order 8, R's part cancelling it", scheme: "ed25519", public_der: "302a300506032b65700321009158312a9a8d6e3b34c891d6d61444f8b8211c5117ebad15bdb0bd68b07e0245", message: "", signature: "1eb383d671c154a30d4cf6cd4f73dd0c7622ad3e606450b5e1102fec0bc25c9007fbaa0d2114a99c5413670a52428ca5301e1e9e3cec6f5f8e3c7f3c9e332101", holds: true)
+    ]
+
 # "" where the RFC 8032 test `t` is answered as it says, else what went
 # otherwise; "" too where the platform has no Ed25519.
 function ed25519_answered(t: Rfc8032) -> str
@@ -164,6 +194,10 @@ test "signed: Wycheproof's signatures hold or do not as they say, on every platf
 
 test "undecodable: an R or a key RFC 8032 5.1.3 does not decode, and an S not below the order, hold on no platform that has Ed25519, and the same S under R's own encoding holds"
     for c in undecodable()
+        assert signed_answered(c) == ""
+
+test "small_order: a signature with a part of small order holds by the equation without the cofactor, [S]B = R + [k]A, on every platform that has Ed25519"
+    for c in small_order()
         assert signed_answered(c) == ""
 
 test "rfc7748: Alice's and Bob's keys agree on RFC 7748 6.1's secret, and an all-zero public key is refused, where the platform has X25519"

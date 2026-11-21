@@ -31,8 +31,12 @@
 # measured). An Ed25519 signature's R is an encoding RFC 8032 § 5.1.3
 # decodes and its S is below the group's order, and a key of another
 # encoding is read and holds no signature (Monocypher took such an R, and
-# OpenSSL and Monocypher such a key: defect 2641). RSA-PSS's salt is as long
-# as its hash, on both sides.
+# OpenSSL and Monocypher such a key: defect 2641). It holds by RFC 8032
+# § 5.1.7's equation without the cofactor, [S]B = R + [k]A, as OpenSSL
+# checks it, so one whose R or key has a part of small order holds only
+# where that part cancels (Monocypher's own check multiplies the equation by
+# the cofactor 8 and held more: defect 2642). RSA-PSS's salt is as long as
+# its hash, on both sides.
 #
 # Keys are written as PKCS #8 and SubjectPublicKeyInfo, DER or PEM, the same
 # bytes on every platform, as Go and Python write them, and Ed25519's,
