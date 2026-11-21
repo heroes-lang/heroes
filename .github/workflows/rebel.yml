@@ -373,17 +373,22 @@ jobs:
       # box, 2026-11-19, `sql_sqlite`, `sql_build` and `sql_migrate` were
       # refused `ffi_missing_header` for `sqlite3.h`, the box carrying no
       # SQLite either. It comes from the image's vcpkg, as SDL3 does in
-      # `ci.yml`, and only its header, import library and DLL are copied into
+      # `ci.yml`, and only its headers, import library and DLL are copied into
       # folders of their own, handed to every driver by the compiler's own
       # `--include` and `--library`: a folder holding nothing else holds no
       # file that could stand in for a header the runtime reads, which the
-      # compiler refuses (panel 237's R2). The DLL reaches the programs through
+      # compiler refuses (panel 237's R2). The headers are every one the
+      # port lists under `include/` in vcpkg's own list of its files, since
+      # the port patches `sqlite3.h` to include `sqlite3-vcpkg-config.h`:
+      # with `sqlite3.h` alone clang stopped, that file not found (sqlite3
+      # 3.54.1, run 44912132270 of the branch `rebel-ci-probe`, 2026-11-21).
+      # The DLL reaches the programs through
       # PATH. SQLite's ODBC driver has no package on this image (vcpkg holds
       # none, and Chocolatey answered 404 for `sqliteodbc`, 2026-11-20), so
       # `sql/odbc`'s SQLite tests skip here with their reason; its other tests
       # run against the system's `odbc32.dll`, as on the box (943 passed,
-      # 2026-11-18). The port's file names are unrun here: a name it does not
-      # install stops this step by name.
+      # 2026-11-18). A name the port does not install stops this step by
+      # name.
       - name: Install SQLite with vcpkg, Windows
         if: runner.os == 'Windows'
         shell: bash
@@ -393,7 +398,16 @@ jobs:
           "$VCPKG_INSTALLATION_ROOT/vcpkg.exe" install sqlite3:x64-windows-release --disable-metrics
           dir="$RUNNER_TEMP/sqlite3"
           mkdir -p "$dir/include" "$dir/lib" "$dir/bin"
-          cp "$root/include/sqlite3.h" "$dir/include/"
+          set -- "$VCPKG_INSTALLATION_ROOT"/installed/vcpkg/info/sqlite3_*_x64-windows-release.list
+          if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+            echo "::error::vcpkg lists no one sqlite3 port for x64-windows-release: $*"
+            exit 1
+          fi
+          headers=$(grep -E '^x64-windows-release/include/[^/]+\.h$' "$1")
+          printf '%s\n' "$headers" | grep -qx 'x64-windows-release/include/sqlite3.h' \
+            || { echo "::error::the sqlite3 port's list, $1, names no include/sqlite3.h"; exit 1; }
+          for header in $headers; do cp "$VCPKG_INSTALLATION_ROOT/installed/$header" "$dir/include/"; done
+          ls "$dir/include"
           cp "$root/lib/sqlite3.lib" "$dir/lib/"
           cp "$root/bin/sqlite3.dll" "$dir/bin/"
           cygpath -w "$dir/bin" >> "$GITHUB_PATH"
