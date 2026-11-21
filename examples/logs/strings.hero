@@ -1,4 +1,4 @@
-# The text work this program does, written for it: the lines of a log, an entry cut at a space, a word without the white space at its ends, and whether a message holds a word.
+# The text work this program does, written for it: the lines of a log, an entry cut at a space, a word without the white space at its ends, whether a message holds a word, and whether a stamp may be cut at a byte.
 #
 # The language offers `len`, `slice`, `chars` and `join` and imposes no
 # standard library (design.md §1.11), and a program of `examples/` takes no
@@ -36,6 +36,19 @@ function holds_at(s: str, part: str, at: i64) -> bool
         i @ i + 1
 
     return true
+
+# Whether `slice` may cut `s` at byte `at` without splitting a character: at
+# either end, or where the byte there begins a character rather than
+# continuing one, as a byte `0b10xxxxxx` does. A cut inside one aborts
+# (spec § 10), so a caller whose offset is not a match of an ASCII separator
+# asks this first. No offset outside `0` to `s.len()` is a cut at all.
+function is_boundary(s: str, at: i64) -> bool
+    if at < 0 || at > s.len()
+        return false
+
+    if at == 0 || at == s.len()
+        return true
+    return s[at] < 0x80 || s[at] > 0xbf
 
 # A text cut in two at a separator, the separator in neither half.
 record Halves
@@ -136,6 +149,13 @@ test "contains finds a part anywhere, the empty one everywhere"
     assert contains(s: "abc", substr: "c") && contains(s: "abc", substr: "abc")
     assert !contains(s: "abc", substr: "abcd") && !contains(s: "abc", substr: "ac")
     assert contains(s: "", substr: "") && !contains(s: "", substr: "a")
+
+test "is_boundary is true at either end and where a character begins, false inside one"
+    assert is_boundary(s: "", at: 0) && is_boundary(s: "ab", at: 1) && is_boundary(s: "ab", at: 2)
+    assert is_boundary(s: "€", at: 0) && is_boundary(s: "€", at: 3)
+    assert !is_boundary(s: "€", at: 1) && !is_boundary(s: "€", at: 2)
+    assert is_boundary(s: "é1", at: 2) && !is_boundary(s: "1é", at: 2)
+    assert !is_boundary(s: "ab", at: -1) && !is_boundary(s: "ab", at: 3)
 
 test "split_once cuts at the first separator, and fails where there is none"
     halves = split_once(s: "key = value = more", sep: "=").must()

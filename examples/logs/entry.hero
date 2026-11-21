@@ -88,12 +88,16 @@ function read(text: str) -> Reading
 
     return Reading(entries: entries, skipped: skipped)
 
-# The hour a stamp names — `2026-08-13T22:04:11` is `22`. The two characters
-# after the `T`, which is why `read_line` insists there is one.
+# The hour a stamp names: `2026-08-13T22:04:11` is `22`. The two bytes
+# after the `T`, which is why `read_line` insists there is one, and `??`
+# where they are not there: fewer than two follow it, or the second is not
+# the end of a character, as in `T€`, whose `€` is three bytes. The stamp is
+# the log's text, and a cut inside a character would end the whole summary
+# (spec § 10) for one line it promises to read.
 function hour_of(entry: Entry) -> str
     match strings.split_once(s: entry.stamp, sep: "T")
         .ok halves =>
-            if halves.after.len() < 2
+            if halves.after.len() < 2 || !strings.is_boundary(s: halves.after, at: 2)
                 return "??"
             return halves.after.slice(from: 0, to: 2)
         .err _ => return "??"
@@ -119,6 +123,15 @@ test "a file keeps what it could read and counts what it could not"
 test "the hour is the two characters after the T"
     assert hour_of(read_line("2026-08-13T22:04:11 INFO a: x").must()) == "22"
     assert hour_of(read_line("2026-08-13T07:04:11 INFO a: x").must()) == "07"
+
+test "an hour a cut would split is `??`, and its line is still read"
+    for stamp in ["2026-08-13T€", "2026-08-13T2€", "2026-08-13T€€", "T€", "2026-08-13T", "2026-08-13T2"]
+        assert hour_of(read_line(stamp + " INFO a: x").must()) == "??"
+
+    assert hour_of(read_line("2026-08-13T21€ INFO a: x").must()) == "21"
+    r = read("2026-08-13T21:58:02 INFO cli: one\n2026-08-13T€ INFO a: x\n")
+    assert r.entries.len() == 2 && r.skipped == []
+    assert hour_of(r.entries[0]) == "21" && hour_of(r.entries[1]) == "??"
 
 function code_of(text: str) -> str
     return match read_line(text)

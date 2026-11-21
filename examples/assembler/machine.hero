@@ -8,6 +8,12 @@
 # not a defect in the machine — but a corpus that hangs is a corpus nobody runs,
 # and a test suite has no operator to press ^C. So the machine stops and says
 # `out_of_fuel`, which is a result the caller can assert.
+#
+# **A sum or a difference past an `i64` fails, it does not abort.** The program
+# the machine runs is the user's input, and `+` and `-` abort where the answer
+# leaves the type (spec § 7), so `add` and `sub` go through `sum` and
+# `difference`, which ask before they compute and answer `does_not_fit`, the
+# code the language's own conversions fail with (spec § 11).
 
 use assemble
 use program
@@ -25,6 +31,16 @@ constant ERR_OUT_OF_FUEL: str
 
 constant ERR_RAN_OFF_THE_END: str
     "ran_off_the_end"
+
+constant ERR_DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The largest and the smallest `i64`, the bounds a register holds.
+constant MAX: i64
+    9223372036854775807
+
+constant MIN: i64
+    -9223372036854775808
 
 record Machine
     registers: [i64]
@@ -51,16 +67,18 @@ function run(code: [i64], fuel: i64) -> [str]?
     return fail(code: ERR_OUT_OF_FUEL, msg: "the program ran for " + fuel.to_str() + " steps without halting")
 
 # One instruction. The program counter moves here and nowhere else, so a jump is
-# the arm that does *not* fall through to the advance.
+# the arm that does *not* fall through to the advance. It fails `bad_opcode` on
+# a word that is no instruction, and `does_not_fit` where an `add` or a `sub`
+# would leave an `i64`.
 function step(@m: Machine, opcode: i64, a: i64, b: i64) -> i64?
     if opcode == program.OP_LOAD
         m.registers[a] @ b
     else if opcode == program.OP_COPY
         m.registers[a] @ m.registers[b]
     else if opcode == program.OP_ADD
-        m.registers[a] @ m.registers[a] + m.registers[b]
+        m.registers[a] @ sum(left: m.registers[a], right: m.registers[b])?
     else if opcode == program.OP_SUB
-        m.registers[a] @ m.registers[a] - m.registers[b]
+        m.registers[a] @ difference(left: m.registers[a], right: m.registers[b])?
     else if opcode == program.OP_PRINT
         m.output @ m.output.push(m.registers[a].to_str())
     else if opcode == program.OP_JMP
@@ -74,6 +92,35 @@ function step(@m: Machine, opcode: i64, a: i64, b: i64) -> i64?
         return fail(code: ERR_BAD_OPCODE, msg: "the code holds " + opcode.to_str() + ", which is not an instruction")
     m.pc @ m.pc + program.WORDS
     return ok(opcode)
+
+# `left + right`, or `does_not_fit` where the sum leaves an `i64`. The bound is
+# moved rather than the sum taken, `left > MAX - right` in place of `left +
+# right > MAX`, because taking the sum is the overflow; `MAX - right` stays
+# inside the type, `right` being positive where it is asked, and `MIN - right`
+# likewise where `right` is negative.
+function sum(left: i64, right: i64) -> i64?
+    if right > 0 && left > MAX - right
+        return outside(left: left, op: "+", right: right)
+
+    if right < 0 && left < MIN - right
+        return outside(left: left, op: "+", right: right)
+    return ok(left + right)
+
+# `left - right`, or `does_not_fit` where the difference leaves an `i64`,
+# asked as `sum` asks, the bound moved: `MAX + right` where `right` is
+# negative, `MIN + right` where it is positive, neither leaving the type.
+function difference(left: i64, right: i64) -> i64?
+    if right < 0 && left > MAX + right
+        return outside(left: left, op: "-", right: right)
+
+    if right > 0 && left < MIN + right
+        return outside(left: left, op: "-", right: right)
+    return ok(left - right)
+
+# The failure `sum` and `difference` answer, naming the operation the
+# program asked for and its two operands.
+function outside(left: i64, op: str, right: i64) -> i64?
+    return fail(code: ERR_DOES_NOT_FIT, msg: f"{left} {op} {right} is outside i64")
 
 # Assemble and run, which is what the program does — and what every test below
 # asks, so the encoding and the decoding are checked against each other rather
@@ -101,6 +148,42 @@ test "falling off the end is not the same as halting"
 test "the fuel is spent per instruction, so a short program needs little"
     assert execute("halt\n", 1).must() == []
     assert code_of("load r0, 1\nhalt\n", 1) == ERR_OUT_OF_FUEL
+
+test "an add or a sub past an i64 fails does_not_fit, at either bound"
+    max = "load r0, 9223372036854775807\n"
+    min = "load r0, -9223372036854775808\n"
+    assert code_of(max + "add r0, r0\nhalt\n", 100) == ERR_DOES_NOT_FIT
+    assert code_of(max + "load r1, 1\nadd r0, r1\nhalt\n", 100) == ERR_DOES_NOT_FIT
+    assert code_of(max + "load r1, -1\nsub r0, r1\nhalt\n", 100) == ERR_DOES_NOT_FIT
+    assert code_of(min + "add r0, r0\nhalt\n", 100) == ERR_DOES_NOT_FIT
+    assert code_of(min + "load r1, -1\nadd r0, r1\nhalt\n", 100) == ERR_DOES_NOT_FIT
+    assert code_of(min + "load r1, 1\nsub r0, r1\nhalt\n", 100) == ERR_DOES_NOT_FIT
+    assert code_of("load r1, -9223372036854775808\nsub r0, r1\nhalt\n", 100) == ERR_DOES_NOT_FIT
+
+test "an add or a sub that lands on a bound still fits"
+    assert execute("load r0, 9223372036854775806\nload r1, 1\nadd r0, r1\nprint r0\nhalt\n", 100).must() == ["9223372036854775807"]
+    assert execute("load r0, -1\nload r1, -9223372036854775808\nsub r0, r1\nprint r0\nhalt\n", 100).must() == ["9223372036854775807"]
+    assert execute("load r0, -9223372036854775807\nload r1, 1\nsub r0, r1\nprint r0\nhalt\n", 100).must() == ["-9223372036854775808"]
+    assert execute("load r0, 9223372036854775807\nload r1, -9223372036854775808\nadd r0, r1\nprint r0\nhalt\n", 100).must() == ["-1"]
+
+test "sum and difference at the corners of an i64"
+    assert sum(left: MAX, right: 0).must() == MAX && sum(left: MIN, right: 0).must() == MIN
+    assert sum(left: MAX, right: MIN).must() == -1 && sum(left: MIN, right: MAX).must() == -1
+    assert sum(left: MAX, right: 1).is_err() && sum(left: 1, right: MAX).is_err()
+    assert sum(left: MIN, right: -1).is_err() && sum(left: -1, right: MIN).is_err()
+    assert difference(left: MAX, right: MAX).must() == 0 && difference(left: MIN, right: MIN).must() == 0
+    assert difference(left: -1, right: MIN).must() == MAX && difference(left: 0, right: MAX).must() == MIN + 1
+    assert difference(left: 0, right: MIN).is_err() && difference(left: MAX, right: -1).is_err()
+    assert difference(left: MIN, right: 1).is_err() && difference(left: -2, right: MAX).is_err()
+
+test "the failure names the operation the program asked for"
+    match execute("load r0, 9223372036854775807\nadd r0, r0\nhalt\n", 100)
+        .ok _  => assert false
+        .err e => assert e.msg == "9223372036854775807 + 9223372036854775807 is outside i64"
+
+    match execute("load r0, -9223372036854775808\nload r1, 1\nsub r0, r1\nhalt\n", 100)
+        .ok _  => assert false
+        .err e => assert e.msg == "-9223372036854775808 - 1 is outside i64"
 
 function code_of(text: str, fuel: i64) -> str
     return match execute(text, fuel)
