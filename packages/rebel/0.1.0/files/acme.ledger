@@ -177,7 +177,7 @@ capability acme/revoke  a certificate revoked, by the account or by the certific
   note    by the account's key; revocation signed by the certificate's own key needs that key as a JWK, which the program may sign with `jose` itself: not offered here
 
 capability acme/renewal-info  when to renew a certificate, asked of the CA (ACME Renewal Information, RFC 9773)
-  heroes  acme.renewal_info, acme.renewal_id, acme.RenewalInfo
+  heroes  acme.fetch_renewal_info, acme.renewal_id, acme.RenewalInfo
   go      acme.Client.FetchRenewalInfo, acme.RenewalInfo
   rust    -
   python  acme.client.ClientV2.renewal_time

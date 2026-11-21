@@ -489,7 +489,7 @@ function parse_response(text: str) -> Response?
 # Fails `unsupported` where a value holds `nan` or an infinity, which the
 # program's own answers alone can hold. See also `parse_response`.
 function format_response(response: Response) -> str?
-    return json.format(response_value(response))
+    return json.format(response_json(response))
 
 # The request the JSON value `v` writes, as `parse_request` reads a body: what
 # a transport reads that carries requests inside its own messages.
@@ -499,7 +499,7 @@ function format_response(response: Response) -> str?
 #   `null`; `query` may be left out where `extensions` is given, as a
 #   persisted query sends it.
 #
-# Fails `invalid` where it is no such object. See also `request_value`.
+# Fails `invalid` where it is no such object. See also `request_json`.
 function request_of(v: json.Value) -> Request?
     members = match v
         .object o => o.members
@@ -539,7 +539,7 @@ function request_of(v: json.Value) -> Request?
 # - `r`: the request.
 #
 # See also `request_of`.
-function request_value(r: Request) -> json.Value
+function request_json(r: Request) -> json.Value
     members: {str: json.Value} @= {}
     members["query"] @ .text(v: r.query)
 
@@ -558,7 +558,7 @@ function request_value(r: Request) -> json.Value
 # - `v`: an object holding `data`, `errors` or both, and `extensions` at will.
 #
 # Fails `invalid` where it is no such object, or an error in it has no
-# `message`. See also `response_value`.
+# `message`. See also `response_json`.
 function response_of(v: json.Value) -> Response?
     match v
         .object _ => _ = 0
@@ -582,14 +582,14 @@ function response_of(v: json.Value) -> Response?
 # - `response`: the response.
 #
 # See also `response_of`.
-function response_value(response: Response) -> json.Value
+function response_json(response: Response) -> json.Value
     members: {str: json.Value} @= {}
 
     if response.errors.len() > 0
         errors: [json.Value] @= []
 
         for e in response.errors
-            errors @ errors.push(error_value(e))
+            errors @ errors.push(error_json(e))
 
         members["errors"] @ .list(items: errors)
 
@@ -605,7 +605,7 @@ function response_value(response: Response) -> json.Value
 # - `v`: an object holding `message`, a string, and `locations`, `path` and
 #   `extensions` at will.
 #
-# Fails `invalid` where it holds no `message`. See also `error_value`.
+# Fails `invalid` where it holds no `message`. See also `error_json`.
 function error_of(v: json.Value) -> Error?
     message = match wire.member_of(v, key: "message")
         .text s => s.v
@@ -628,7 +628,7 @@ function error_of(v: json.Value) -> Error?
 # - `e`: the error.
 #
 # See also `error_of`.
-function error_value(e: Error) -> json.Value
+function error_json(e: Error) -> json.Value
     members: {str: json.Value} @= {}
     members["message"] @ .text(v: e.message)
 
@@ -1265,18 +1265,18 @@ function format_message(m: Message) -> str?
         .subscribe x =>
             members["id"] @ .text(v: x.id)
             members["type"] @ .text(v: "subscribe")
-            members["payload"] @ request_value(x.request)
+            members["payload"] @ request_json(x.request)
         .next x =>
             members["id"] @ .text(v: x.id)
             members["type"] @ .text(v: "next")
-            members["payload"] @ response_value(x.response)
+            members["payload"] @ response_json(x.response)
         .error x =>
             members["id"] @ .text(v: x.id)
             members["type"] @ .text(v: "error")
             errors: [json.Value] @= []
 
             for e in x.errors
-                errors @ errors.push(error_value(e))
+                errors @ errors.push(error_json(e))
 
             members["payload"] @ .list(items: errors)
         .complete x =>
@@ -1646,8 +1646,8 @@ test "request_of: a value with an operation's name"
     assert r.operation_name == "Q"
 
 # A request as the JSON value a transport carries.
-test "request_value: the members given"
-    assert request_value(fixture.spec_request("{ a }")) == json.parse("{\"query\": \"{ a }\"}").must()
+test "request_json: the members given"
+    assert request_json(fixture.spec_request("{ a }")) == json.parse("{\"query\": \"{ a }\"}").must()
 
 # A response read from a JSON value.
 test "response_of: data alone"
@@ -1656,14 +1656,14 @@ test "response_of: data alone"
     assert r.data == json.parse("{\"a\": 1}").must()
 
 # A response as a JSON value.
-test "response_value: a request refused, with no data"
+test "response_json: a request refused, with no data"
     r = Response(
         data: .null_value,
         has_data: false,
         errors: [Error(message: "no", locations: [], path: [], extensions: .null_value)],
         extensions: .null_value
     )
-    assert response_value(r) == json.parse("{\"errors\": [{\"message\": \"no\"}]}").must()
+    assert response_json(r) == json.parse("{\"errors\": [{\"message\": \"no\"}]}").must()
 
 # An error read from a JSON value, its extensions kept.
 test "error_of: a message and extensions"
@@ -1672,9 +1672,9 @@ test "error_of: a message and extensions"
     assert e.extensions == json.parse("{\"code\": \"X\"}").must()
 
 # An error as a JSON value.
-test "error_value: a message and its place"
+test "error_json: a message and its place"
     e = Error(message: "no", locations: [Location(line: 2, column: 5)], path: [], extensions: .null_value)
-    assert error_value(e) == json.parse("{\"message\": \"no\", \"locations\": [{\"line\": 2, \"column\": 5}]}").must()
+    assert error_json(e) == json.parse("{\"message\": \"no\", \"locations\": [{\"line\": 2, \"column\": 5}]}").must()
 
 # The specification's first example, `{ user(id: 4) { name } }`, its one
 # field handed out and answered by the program.

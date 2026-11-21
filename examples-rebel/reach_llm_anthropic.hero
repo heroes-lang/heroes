@@ -7,4 +7,4 @@ use <rebel>/llm/anthropic
 
 function main()
     r = anthropic.new_request(model: "claude-opus-5-5", max_tokens: 64, turns: [anthropic.user("Hello")])
-    print(json.format(anthropic.to_json(r).must()).must())
+    print(json.format(anthropic.request_json(r).must()).must())

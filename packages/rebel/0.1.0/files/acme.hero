@@ -54,7 +54,7 @@ constant TIMEOUT: str
     "timeout"
 
 # The code of what the server's directory does not offer:
-# `new_authorization` without `newAuthz`, `renewal_info` without
+# `new_authorization` without `newAuthz`, `fetch_renewal_info` without
 # `renewalInfo`.
 constant UNSUPPORTED: str
     "unsupported"
@@ -817,7 +817,7 @@ record RenewalInfo
 # - `certificate`: the certificate's DER, as `Chain.pem` holds it first.
 #
 # Fails `invalid` where it is no certificate `x509` reads or has no
-# authority key identifier. See also `renewal_info`.
+# authority key identifier. See also `fetch_renewal_info`.
 function renewal_id(certificate: [u8]) -> str?
     cert = x509.decode_certificate(certificate)?
 
@@ -837,7 +837,7 @@ function renewal_id(certificate: [u8]) -> str?
 #
 # Fails `unsupported` where the directory names no `renewalInfo`; as
 # `renewal_id` does. See also `download`.
-function renewal_info(client: Client, certificate: [u8]) -> RenewalInfo?
+function fetch_renewal_info(client: Client, certificate: [u8]) -> RenewalInfo?
     base = client.directory.renewal_info
 
     if base.len() == 0
@@ -1300,7 +1300,7 @@ test "renewal_id: a certificate of Pebble"
     assert renewal_id([0x30, 0x00]).is_err()
 
 # When the CA suggests renewing a certificate it issued.
-test "renewal_info: a window"
+test "fetch_renewal_info: a window"
     match sample.directory_url()
         .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
@@ -1324,5 +1324,5 @@ test "renewal_info: a window"
             done = wait_order(@client, url: order.url, timeout_ms: 30000).must()
             chain = download(@client, url: done.certificate).must()
             leaf = pem.parse(chain.pem).must().data
-            window = renewal_info(client: client, certificate: leaf).must()
+            window = fetch_renewal_info(client: client, certificate: leaf).must()
             assert window.start.len() > 0 && window.end.len() > 0

@@ -76,7 +76,7 @@ capability messages/create  a message made from a conversation, its answer read 
   python  messages.create
 
 capability messages/request  the request: the model, the ceiling of tokens, the system prompt, and every other parameter by name
-  heroes  llm/anthropic.Request, llm/anthropic.new_request, llm/anthropic.with_field, llm/anthropic.with_effort, llm/anthropic.to_json
+  heroes  llm/anthropic.Request, llm/anthropic.new_request, llm/anthropic.with_field, llm/anthropic.with_effort, llm/anthropic.request_json
   go      MessageNewParams, OutputConfigParam, ThinkingConfigParamUnion, ToolChoiceUnionParam, MetadataParam, option.WithJSONSet, option.WithJSONDel
   rust    -
   python  messages.create's parameters, types.MessageCreateParams
@@ -102,7 +102,7 @@ capability messages/cache-control  the end of a prefix the API caches, for five 
   python  types.CacheControlEphemeralParam
 
 capability messages/answer  the answer read: id, model, content, stop, usage
-  heroes  llm/anthropic.Message, llm/anthropic.Usage, llm/anthropic.to_message, llm/anthropic.parse_message
+  heroes  llm/anthropic.Message, llm/anthropic.Usage, llm/anthropic.message_of, llm/anthropic.parse_message
   go      Message, Usage, Message.UnmarshalJSON, Message.RawJSON
   rust    -
   python  types.Message, types.Usage
@@ -168,7 +168,7 @@ capability streaming/events  a message read as its events come, every kind of ev
   note    An event this package does not name is `other`, as the versioning page asks; an `error` event is a failure with the status its type stands for
 
 capability streaming/accumulate  the message a stream makes, whole or as far as it has come
-  heroes  llm/anthropic.final_message, llm/anthropic.message_of
+  heroes  llm/anthropic.final_message, llm/anthropic.message_so_far
   go      Message.Accumulate
   rust    -
   python  MessageStream.get_final_message, MessageStream.current_message_snapshot, MessageStream.until_done
@@ -199,7 +199,7 @@ capability models/list  a page of the models the API serves
   python  models.list
 
 capability models/retrieve  one model by its id, its context window and its ceiling
-  heroes  llm/anthropic.model_of, llm/anthropic.ModelInfo, llm/anthropic.to_model_info
+  heroes  llm/anthropic.fetch_model, llm/anthropic.ModelInfo, llm/anthropic.model_info_of
   go      ModelService.Get, ModelInfo
   rust    -
   python  models.retrieve, types.ModelInfo
@@ -211,13 +211,13 @@ capability pages/auto  every page of a list walked for the program
   python  SyncPage iteration, Anthropic.get_api_list
 
 capability batches/create  requests sent as one batch, each named
-  heroes  llm/anthropic.create_batch, llm/anthropic.BatchRequest, llm/anthropic.Batch, llm/anthropic.RequestCounts, llm/anthropic.to_batch
+  heroes  llm/anthropic.create_batch, llm/anthropic.BatchRequest, llm/anthropic.Batch, llm/anthropic.RequestCounts, llm/anthropic.batch_of
   go      MessageBatchService.New, MessageBatch, MessageBatchRequestCounts
   rust    -
   python  messages.batches.create, types.MessageBatch
 
 capability batches/retrieve  a batch polled until it ends
-  heroes  llm/anthropic.batch_of, llm/anthropic.BATCH_IN_PROGRESS, llm/anthropic.BATCH_CANCELING, llm/anthropic.BATCH_ENDED
+  heroes  llm/anthropic.fetch_batch, llm/anthropic.BATCH_IN_PROGRESS, llm/anthropic.BATCH_CANCELING, llm/anthropic.BATCH_ENDED
   go      MessageBatchService.Get
   rust    -
   python  messages.batches.retrieve
@@ -241,7 +241,7 @@ capability batches/delete  an ended batch deleted
   python  messages.batches.delete
 
 capability batches/results  a batch's results read a line at a time, each found by its name
-  heroes  llm/anthropic.batch_results, llm/anthropic.parse_batch_results, llm/anthropic.to_batch_result, llm/anthropic.BatchResult, llm/anthropic.Outcome
+  heroes  llm/anthropic.batch_results, llm/anthropic.parse_batch_results, llm/anthropic.batch_result_of, llm/anthropic.BatchResult, llm/anthropic.Outcome
   go      MessageBatchService.ResultsStreaming, MessageBatchIndividualResponse, jsonl.Stream
   rust    -
   python  messages.batches.results, types.MessageBatchIndividualResponse

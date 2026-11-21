@@ -362,7 +362,7 @@ function cached(block: json.Value, ttl: str) -> json.Value
 #
 # A name the request types itself (`model`, `max_tokens`, `messages`,
 # `stream`, and `system` or `tools` where the record sets them) is refused
-# by `to_json`. See also `with_effort`.
+# by `request_json`. See also `with_effort`.
 function with_field(r: Request, name: str, value: json.Value) -> Request
     out @= r
     out.fields[name] @ value
@@ -405,7 +405,7 @@ function with_turn(r: Request, turn: Turn) -> Request
 # Fails `invalid` where `max_tokens` is below 1, a turn's role is neither
 # `user` nor `assistant`, or a field names what the record types; fails
 # `does_not_fit` where `max_tokens` is past `json.MAX_EXACT_INT`.
-function to_json(r: Request) -> json.Value?
+function request_json(r: Request) -> json.Value?
     if r.max_tokens < 1
         return fail(code: INVALID, msg: f"max_tokens is {r.max_tokens}, where the API asks at least 1")
     names: [str] @= ["model", "max_tokens", "messages"]
@@ -560,7 +560,7 @@ record ToolCall
 #
 # Fails `invalid` where `v` is no message or its `content` is no list. See
 # also `parse_message`.
-function to_message(v: json.Value) -> Message?
+function message_of(v: json.Value) -> Message?
     kind = fields.text_at(v, key: "type")
 
     if kind != "message"
@@ -582,9 +582,9 @@ function to_message(v: json.Value) -> Message?
 # - `text`: a message as the API writes one.
 #
 # Fails `invalid` where `text` is not JSON or no message. See also
-# `to_message`.
+# `message_of`.
 function parse_message(text: str) -> Message?
-    return to_message(json.parse(text)?)
+    return message_of(json.parse(text)?)
 
 # The content blocks of `m` as a variant, in order.
 #
@@ -823,12 +823,12 @@ function send_raw(c: Client, method: str, path: str, body: json.Value) -> http.R
 # - `r`: the request.
 #
 # Check `stop_reason` before reading its content (`require_complete`). Fails
-# as `to_json` fails on `r`, as `send_raw` fails, and `invalid` where the
+# as `request_json` fails on `r`, as `send_raw` fails, and `invalid` where the
 # answer is no message. A long answer is safer streamed (`stream`): an
 # attempt waits at most `c.deadline_ms`. See also `stream`.
 function create(c: Client, r: Request) -> Message?
-    answer = send_raw(c, method: http.METHOD_POST, path: "/v1/messages", body: to_json(r)?)?
-    return to_message(http.json_of(answer)?)
+    answer = send_raw(c, method: http.METHOD_POST, path: "/v1/messages", body: request_json(r)?)?
+    return message_of(http.json_of(answer)?)
 
 # The input tokens `r` would cost, as the API counts them before it is sent:
 # its turns, its system prompt and its tools.
@@ -840,7 +840,7 @@ function create(c: Client, r: Request) -> Message?
 # Fails as `create` fails. See also `create`.
 function count_input_tokens(c: Client, r: Request) -> i64?
     body = fields.only(
-        to_json(r)?,
+        request_json(r)?,
         names: ["model", "messages", "system", "tools", "thinking", "tool_choice", "output_config", "cache_control", "speed"]
     )
     answer = send_raw(c, method: http.METHOD_POST, path: "/v1/messages/count_tokens", body: body)?
@@ -935,7 +935,7 @@ variant Event
 # API calls transient sent again as `c.max_retries` says; `invalid` where
 # the answer is no event stream. See also `next_event`, `final_message`.
 function stream(c: Client, r: Request) -> Stream?
-    body = fields.with_member(v: to_json(r)?, key: "stream", value: .boolean(v: true))
+    body = fields.with_member(v: request_json(r)?, key: "stream", value: .boolean(v: true))
     s = transport.settings(
         base_url: c.base_url,
         api_key: c.api_key,
@@ -972,7 +972,7 @@ function next_event(@s: Stream) -> Event?
     index = fields.int_at(d, key: "index")
 
     if step.name == "message_start"
-        return ok(.message_start(message: to_message(fields.value_at_key(d, key: "message"))?))
+        return ok(.message_start(message: message_of(fields.value_at_key(d, key: "message"))?))
 
     if step.name == "content_block_start"
         return ok(.block_start(index: index, block: fields.value_at_key(d, key: "content_block")))
@@ -1019,8 +1019,8 @@ function next_event(@s: Stream) -> Event?
 # - `s`: the stream.
 #
 # Fails `invalid` before `message_start`. See also `final_message`.
-function message_of(s: Stream) -> Message?
-    m @= to_message(streaming.message_json(s.state))?
+function message_so_far(s: Stream) -> Message?
+    m @= message_of(streaming.message_json(s.state))?
 
     for id in keys(s.state.inputs)
         m.inputs[id] @ s.state.inputs[id].must()
@@ -1033,12 +1033,12 @@ function message_of(s: Stream) -> Message?
 # - `s`: the stream, read to its `message_stop`.
 #
 # Fails as `next_event` fails, before the message is whole. See also
-# `message_of`.
+# `message_so_far`.
 function final_message(@s: Stream) -> Message?
     while !s.state.ended
         _ = next_event(@s)?
 
-    return message_of(s)
+    return message_so_far(s)
 
 # What the input of the tool call streaming now holds so far, read as
 # `json.parse_partial` reads a text still arriving.
@@ -1104,8 +1104,8 @@ function first_page() -> Cursor
 #
 # - `v`: an object of the Models API.
 #
-# Fails `invalid` where it holds no `id`. See also `model_of`.
-function to_model_info(v: json.Value) -> ModelInfo?
+# Fails `invalid` where it holds no `id`. See also `fetch_model`.
+function model_info_of(v: json.Value) -> ModelInfo?
     id = fields.text_at(v, key: "id")
 
     if id == ""
@@ -1120,13 +1120,13 @@ function to_model_info(v: json.Value) -> ModelInfo?
 # - `cursor`: where the page begins; `first_page()` for the first.
 #
 # Fails as `send_raw` fails, and `invalid` where the answer is not a page.
-# See also `model_of`.
+# See also `fetch_model`.
 function list_models(c: Client, cursor: Cursor) -> ModelPage?
     answer = http.json_of(send_raw(c, method: http.METHOD_GET, path: "/v1/models" + transport.query(after_id: cursor.after_id, before_id: cursor.before_id, limit: cursor.limit), body: .null_value)?)?
     models: [ModelInfo] @= []
 
     for v in json.items_of(json.member(answer, key: "data")?)?
-        models @ models.push(to_model_info(v)?)
+        models @ models.push(model_info_of(v)?)
 
     return ok(
         ModelPage(models: models, has_more: fields.bool_at(answer, key: "has_more"), first_id: fields.text_at(answer, key: "first_id"), last_id: fields.text_at(answer, key: "last_id"))
@@ -1139,9 +1139,9 @@ function list_models(c: Client, cursor: Cursor) -> ModelPage?
 #
 # Fails `not_found` where the API knows none, and as `send_raw` fails. See
 # also `list_models`.
-function model_of(c: Client, id: str) -> ModelInfo?
+function fetch_model(c: Client, id: str) -> ModelInfo?
     answer = send_raw(c, method: http.METHOD_GET, path: "/v1/models/" + url.escape_segment(id), body: .null_value)?
-    return to_model_info(http.json_of(answer)?)
+    return model_info_of(http.json_of(answer)?)
 
 ## Batches
 
@@ -1224,8 +1224,8 @@ record BatchResult
 #
 # - `v`: an object whose `type` is `message_batch`.
 #
-# Fails `invalid` where it is not one. See also `batch_of`.
-function to_batch(v: json.Value) -> Batch?
+# Fails `invalid` where it is not one. See also `fetch_batch`.
+function batch_of(v: json.Value) -> Batch?
     if fields.text_at(v, key: "type") != "message_batch"
         return fail(
             code: INVALID,
@@ -1242,8 +1242,8 @@ function to_batch(v: json.Value) -> Batch?
 # - `requests`: 1 or more, each `custom_id` unique and of the API's form.
 #
 # Fails `invalid` where `requests` is empty, a `custom_id` is not of the
-# form or repeats, or a request fails `to_json`; and as `send_raw` fails.
-# See also `batch_of`, `batch_results`.
+# form or repeats, or a request fails `request_json`; and as `send_raw` fails.
+# See also `fetch_batch`, `batch_results`.
 function create_batch(c: Client, requests: [BatchRequest]) -> Batch?
     if requests.len() == 0
         return fail(code: INVALID, msg: "a batch of no request")
@@ -1258,11 +1258,11 @@ function create_batch(c: Client, requests: [BatchRequest]) -> Batch?
             return fail(code: INVALID, msg: f"the custom_id \"{q.custom_id}\" stands twice")
         seen[q.custom_id] @ true
         items @ items.push(
-            fields.object(names: ["custom_id", "params"], values: [fields.text(q.custom_id), to_json(q.request)?])
+            fields.object(names: ["custom_id", "params"], values: [fields.text(q.custom_id), request_json(q.request)?])
         )
 
     body = fields.object(names: ["requests"], values: [.list(items: items)])
-    return to_batch(http.json_of(send_raw(c, method: http.METHOD_POST, path: "/v1/messages/batches", body: body)?)?)
+    return batch_of(http.json_of(send_raw(c, method: http.METHOD_POST, path: "/v1/messages/batches", body: body)?)?)
 
 # The batch `id` as it stands now: what a program polls until it has ended.
 #
@@ -1271,9 +1271,9 @@ function create_batch(c: Client, requests: [BatchRequest]) -> Batch?
 #
 # Fails `not_found` where the API knows none, and as `send_raw` fails. See
 # also `batch_results`.
-function batch_of(c: Client, id: str) -> Batch?
+function fetch_batch(c: Client, id: str) -> Batch?
     answer = send_raw(c, method: http.METHOD_GET, path: "/v1/messages/batches/" + url.escape_segment(id), body: .null_value)?
-    return to_batch(http.json_of(answer)?)
+    return batch_of(http.json_of(answer)?)
 
 # A page of the workspace's batches.
 #
@@ -1281,13 +1281,13 @@ function batch_of(c: Client, id: str) -> Batch?
 # - `cursor`: where the page begins; `first_page()` for the first.
 #
 # Fails as `send_raw` fails, and `invalid` where the answer is not a page.
-# See also `batch_of`.
+# See also `fetch_batch`.
 function list_batches(c: Client, cursor: Cursor) -> BatchPage?
     answer = http.json_of(send_raw(c, method: http.METHOD_GET, path: "/v1/messages/batches" + transport.query(after_id: cursor.after_id, before_id: cursor.before_id, limit: cursor.limit), body: .null_value)?)?
     batches: [Batch] @= []
 
     for v in json.items_of(json.member(answer, key: "data")?)?
-        batches @ batches.push(to_batch(v)?)
+        batches @ batches.push(batch_of(v)?)
 
     return ok(
         BatchPage(batches: batches, has_more: fields.bool_at(answer, key: "has_more"), first_id: fields.text_at(answer, key: "first_id"), last_id: fields.text_at(answer, key: "last_id"))
@@ -1299,17 +1299,17 @@ function list_batches(c: Client, cursor: Cursor) -> BatchPage?
 # - `c`: the client.
 # - `id`: the batch's id.
 #
-# The batch answered is `canceling` until it ends. Fails as `batch_of` fails.
+# The batch answered is `canceling` until it ends. Fails as `fetch_batch` fails.
 function cancel_batch(c: Client, id: str) -> Batch?
     path = "/v1/messages/batches/" + url.escape_segment(id) + "/cancel"
-    return to_batch(http.json_of(send_raw(c, method: http.METHOD_POST, path: path, body: .null_value)?)?)
+    return batch_of(http.json_of(send_raw(c, method: http.METHOD_POST, path: path, body: .null_value)?)?)
 
 # Deletes the ended batch `id` and its results.
 #
 # - `c`: the client.
 # - `id`: the batch's id; one still processing is refused, `invalid`.
 #
-# Fails as `batch_of` fails.
+# Fails as `fetch_batch` fails.
 function delete_batch(c: Client, id: str) -> ()?
     _ = send_raw(c, method: http.METHOD_DELETE, path: "/v1/messages/batches/" + url.escape_segment(id), body: .null_value)?
     return ok()
@@ -1320,14 +1320,14 @@ function delete_batch(c: Client, id: str) -> ()?
 #
 # Fails `invalid` where it is not one, or its result's type is none of the
 # four. See also `parse_batch_results`.
-function to_batch_result(line: json.Value) -> BatchResult?
+function batch_result_of(line: json.Value) -> BatchResult?
     custom_id = fields.text_at(line, key: "custom_id")
     result = fields.value_at_key(line, key: "result")
     kind = fields.text_at(result, key: "type")
 
     if kind == "succeeded"
         return ok(
-            BatchResult(custom_id: custom_id, outcome: .succeeded(message: to_message(fields.value_at_key(result, key: "message"))?))
+            BatchResult(custom_id: custom_id, outcome: .succeeded(message: message_of(fields.value_at_key(result, key: "message"))?))
         )
 
     if kind == "errored"
@@ -1374,7 +1374,7 @@ function parse_batch_results(text: str) -> [BatchResult]?
         if strings.trim(line) != ""
             match json.parse(line)
                 .err e => return fail(code: INVALID, msg: f"line {number} of the results: {e.msg}")
-                .ok v  => out @ out.push(to_batch_result(v)?)
+                .ok v  => out @ out.push(batch_result_of(v)?)
 
     return ok(out)
 
@@ -1422,7 +1422,7 @@ function batch_results(c: Client, id: str) -> [BatchResult]?
                             lines.close(@reading)
                             return fail(code: INVALID, msg: f"line {number} of the results: {e.msg}")
                         .ok v =>
-                            match to_batch_result(v)
+                            match batch_result_of(v)
                                 .ok r => out @ out.push(r)
                                 .err e =>
                                     lines.close(@reading)
@@ -1430,34 +1430,34 @@ function batch_results(c: Client, id: str) -> [BatchResult]?
 
 ## Tests
 
-test "to_json: max_tokens of 0, a role unknown, a field the record types, stream, and the order of the rest"
+test "request_json: max_tokens of 0, a role unknown, a field the record types, stream, and the order of the rest"
     r = new_request(model: "m", max_tokens: 0, turns: [user("x")])
 
-    match to_json(r)
+    match request_json(r)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
     odd = new_request(model: "m", max_tokens: 1, turns: [Turn(role: "system", content: [])])
 
-    match to_json(odd)
+    match request_json(odd)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
     clash = with_field(new_request(model: "m", max_tokens: 1, turns: []), name: "model", value: fields.text("x"))
 
-    match to_json(clash)
+    match request_json(clash)
         .ok _  => assert false
         .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "\"model\"")
 
     streamed = with_field(new_request(model: "m", max_tokens: 1, turns: []), name: "stream", value: .boolean(v: true))
 
-    match to_json(streamed)
+    match request_json(streamed)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
     big = new_request(model: "m", max_tokens: 9_007_199_254_740_992, turns: [])
 
-    match to_json(big)
+    match request_json(big)
         .ok _  => assert false
         .err e => assert e.code == "does_not_fit"
 
@@ -1470,12 +1470,12 @@ test "with_effort: an output_config's format kept, the effort replaced"
     v = with_effort(q, effort: "low").fields["output_config"].must()
     assert json.format(v).must() == "{\"format\":{\"type\":\"json_schema\"},\"effort\":\"low\"}"
 
-test "to_message: no message, content that is no list, a tool_use's input kept as text, null usage counts as 0"
-    match to_message(json.parse("{\"type\":\"error\"}").must())
+test "message_of: no message, content that is no list, a tool_use's input kept as text, null usage counts as 0"
+    match message_of(json.parse("{\"type\":\"error\"}").must())
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-    match to_message(json.parse("{\"type\":\"message\",\"content\":3}").must())
+    match message_of(json.parse("{\"type\":\"message\",\"content\":3}").must())
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -1740,18 +1740,18 @@ test "create_batch: no request, a custom_id of a dot, one twice"
         .ok _  => assert false
         .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "twice")
 
-test "parse_batch_results: no line, a line that is not JSON, and to_batch on another object"
+test "parse_batch_results: no line, a line that is not JSON, and batch_of on another object"
     assert parse_batch_results("").must().len() == 0
 
     match parse_batch_results("{\"custom_id\":\"a\",\"result\":{\"type\":\"expired\"}}\n{")
         .ok _  => assert false
         .err e => assert e.code == INVALID && strings.has_prefix(s: e.msg, prefix: "line 2 of the results")
 
-    match to_batch(json.parse("{\"type\":\"model\"}").must())
+    match batch_of(json.parse("{\"type\":\"model\"}").must())
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-    match to_model_info(json.parse("{}").must())
+    match model_info_of(json.parse("{}").must())
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -1829,7 +1829,7 @@ test "with_field: thinking"
         name: "thinking",
         value: json.parse("{\"type\":\"adaptive\"}").must()
     )
-    assert json.format(to_json(r).must()).must() == "{\"model\":\"m\",\"max_tokens\":1,\"messages\":[],\"thinking\":{\"type\":\"adaptive\"}}"
+    assert json.format(request_json(r).must()).must() == "{\"model\":\"m\",\"max_tokens\":1,\"messages\":[],\"thinking\":{\"type\":\"adaptive\"}}"
 
 # The effort of an answer.
 test "with_effort: high"
@@ -1842,7 +1842,7 @@ test "with_turn: a second user turn"
     assert r.turns.len() == 3 && r.turns[2].role == "user"
 
 # The body a request sends: the typed fields, then the others in order.
-test "to_json: a system prompt, a tool and two fields"
+test "request_json: a system prompt, a tool and two fields"
     q @= with_field(
         new_request(model: "claude-opus-5-5", max_tokens: 8, turns: [user("Hi")]),
         name: "thinking",
@@ -1854,21 +1854,21 @@ test "to_json: a system prompt, a tool and two fields"
     ]
     q @ with_effort(q, effort: "low")
     expected = "{\"model\":\"claude-opus-5-5\",\"max_tokens\":8,\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"Hi\"}]}],\"system\":\"Be brief.\",\"tools\":[{\"name\":\"t\",\"input_schema\":{\"type\":\"object\"},\"eager_input_streaming\":true}],\"thinking\":{\"type\":\"adaptive\"},\"output_config\":{\"effort\":\"low\"}}"
-    assert json.format(to_json(q).must()).must() == expected
+    assert json.format(request_json(q).must()).must() == expected
 
 # A server tool beside a tool of the program's.
-test "to_json: web search beside a tool of the program's"
+test "request_json: web search beside a tool of the program's"
     q @= new_request(model: "m", max_tokens: 8, turns: [])
     q.tools @ [
         Tool(name: "t", description: "d", input_schema: json.parse("{\"type\":\"object\"}").must(), strict: false, eager_input_streaming: false)
     ]
     q.server_tools @ [json.parse("{\"type\":\"web_search_20260209\",\"name\":\"web_search\",\"max_uses\":3}").must()]
     expected = "{\"model\":\"m\",\"max_tokens\":8,\"messages\":[],\"tools\":[{\"name\":\"t\",\"description\":\"d\",\"input_schema\":{\"type\":\"object\"}},{\"type\":\"web_search_20260209\",\"name\":\"web_search\",\"max_uses\":3}]}"
-    assert json.format(to_json(q).must()).must() == expected
+    assert json.format(request_json(q).must()).must() == expected
 
 # An answer read from its JSON.
-test "to_message: the answer of the reference's example"
-    m = to_message(
+test "message_of: the answer of the reference's example"
+    m = message_of(
         json.parse(canned.message(content: "[{\"type\":\"text\",\"text\":\"Hi!\"}]", stop_reason: "end_turn")).must()
     ).must()
     assert m.id == "msg_01" && m.usage.output_tokens == 15 && text_of(m) == "Hi!"
@@ -2089,7 +2089,7 @@ test "next_event: the message_start of a stream"
     _ = canned.requests_of(@t)
 
 # What has arrived of a message, while it arrives.
-test "message_of: the thinking block ended, the text block begun"
+test "message_so_far: the thinking block ended, the text block begun"
     t @= canned.start([canned.stream_answer(content_type: "text/event-stream", body: canned.every_event())])
     c @= default_client("k")
     c.base_url @ canned.base(t.port)
@@ -2100,7 +2100,7 @@ test "message_of: the thinking block ended, the text block begun"
         _ = next_event(@s).must()
         step @ step + 1
 
-    m = message_of(s).must()
+    m = message_so_far(s).must()
     assert blocks_of(m) == [.thinking(thinking: "Weather first.", signature: "EqQB"), .text(text: "Let's check ")]
     close_stream(@s)
     _ = canned.requests_of(@t)
@@ -2162,8 +2162,8 @@ test "first_page: 20 from the start"
     assert first_page() == Cursor(after_id: "", before_id: "", limit: 20)
 
 # A model read from its JSON.
-test "to_model_info: a model of the Models API"
-    m = to_model_info(json.parse(canned.model_json("claude-opus-5-5")).must()).must()
+test "model_info_of: a model of the Models API"
+    m = model_info_of(json.parse(canned.model_json("claude-opus-5-5")).must()).must()
     assert m.id == "claude-opus-5-5" && m.max_input_tokens == 1_000_000 && m.max_tokens == 128_000
 
 # A page of the models.
@@ -2178,17 +2178,17 @@ test "list_models: two models after a cursor"
     assert strings.has_prefix(s: seen[0], prefix: "GET /v1/models?after_id=claude-x&limit=2\n")
 
 # One model by its id.
-test "model_of: claude-opus-5-5"
+test "fetch_model: claude-opus-5-5"
     t @= canned.start([canned.json_answer(status: 200, body: canned.model_json("claude-opus-5-5"), fields: [])])
     c @= default_client("k")
     c.base_url @ canned.base(t.port)
-    m = model_of(c, id: "claude-opus-5-5").must()
+    m = fetch_model(c, id: "claude-opus-5-5").must()
     seen = canned.requests_of(@t)
     assert m.display_name == "Claude" && strings.has_prefix(s: seen[0], prefix: "GET /v1/models/claude-opus-5-5\n")
 
 # A batch read from its JSON.
-test "to_batch: a batch's counts"
-    b = to_batch(json.parse(canned.batch_json(id: "msgbatch_1", status: "ended")).must()).must()
+test "batch_of: a batch's counts"
+    b = batch_of(json.parse(canned.batch_json(id: "msgbatch_1", status: "ended")).must()).must()
     assert b.processing_status == BATCH_ENDED && b.request_counts.succeeded == 2 && b.ended_at == ""
 
 # Two requests sent as one batch.
@@ -2211,13 +2211,13 @@ test "create_batch: two requests"
     )
 
 # A batch polled.
-test "batch_of: a batch by its id"
+test "fetch_batch: a batch by its id"
     t @= canned.start(
         [canned.json_answer(status: 200, body: canned.batch_json(id: "msgbatch_1", status: "ended"), fields: [])]
     )
     c @= default_client("k")
     c.base_url @ canned.base(t.port)
-    b = batch_of(c, id: "msgbatch_1").must()
+    b = fetch_batch(c, id: "msgbatch_1").must()
     seen = canned.requests_of(@t)
     assert b.processing_status == BATCH_ENDED && strings.has_prefix(s: seen[0], prefix: "GET /v1/messages/batches/msgbatch_1\n")
 
@@ -2254,8 +2254,8 @@ test "delete_batch: an ended batch"
     assert strings.has_prefix(s: seen[0], prefix: "DELETE /v1/messages/batches/msgbatch_1\n")
 
 # A line of a batch's results.
-test "to_batch_result: a request cancelled"
-    r = to_batch_result(json.parse("{\"custom_id\":\"c\",\"result\":{\"type\":\"canceled\"}}").must()).must()
+test "batch_result_of: a request cancelled"
+    r = batch_result_of(json.parse("{\"custom_id\":\"c\",\"result\":{\"type\":\"canceled\"}}").must()).must()
     assert r == BatchResult(custom_id: "c", outcome: .canceled)
 
 # The results of a batch, from their text.

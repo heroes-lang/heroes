@@ -666,7 +666,7 @@ function sub(s: Settings, path: str) -> Settings?
 # Every setting of `s` as one object.
 #
 # - `s`: the settings.
-function to_value(s: Settings) -> json.Value
+function settings_json(s: Settings) -> json.Value
     return held.spot(s.held, "").must().value
 
 # The path of every setting of `s` that holds no other: each value that is not
@@ -769,7 +769,7 @@ function format_settings(s: Settings, format: Format) -> str?
         .yaml => "yaml"
         .ini  => "ini"
 
-    return formats.write_value(to_value(s), word: word)
+    return formats.write_value(settings_json(s), word: word)
 
 ## .env files
 
@@ -1112,7 +1112,7 @@ test "merge: each layer over those before, keys merged, a list replaced, a null 
     ).must()
     env = from_env(name: "environment", env: {"APP_DEBUG": "true"}, options: env_options("APP_")).must()
     s = merge([defaults, file, env])
-    assert json.format(to_value(s)).must() == "{\"server\":{\"host\":\"localhost\",\"port\":9090},\"tags\":[\"b\",\"c\"],\"debug\":\"true\"}"
+    assert json.format(settings_json(s)).must() == "{\"server\":{\"host\":\"localhost\",\"port\":9090},\"tags\":[\"b\",\"c\"],\"debug\":\"true\"}"
     assert source_of(s, "server.host").must().layer == "defaults"
     assert source_of(s, "server.port").must().layer == "app.yaml"
     assert source_of(s, "tags.1").must().layer == "app.yaml"
@@ -1122,7 +1122,7 @@ test "merge: each layer over those before, keys merged, a list replaced, a null 
 
 test "merge: no layer, and a getter's message when no layer gives a path"
     none = merge([])
-    assert to_value(none) == .object(members: {}) && paths_of(none) == []
+    assert settings_json(none) == .object(members: {}) && paths_of(none) == []
     assert source_of(none, "").must() == Source(layer: "", origin: "", file: "")
 
     match value_of(none, "a")
@@ -1265,7 +1265,7 @@ test "read_layer: a JSON file"
 # A file a user may or may not have written.
 test "read_layer_if_present: a file that is not there"
     local = read_layer_if_present("build/rebel-config-local-zz.toml").must()
-    assert to_value(merge([local])) == .object(members: {})
+    assert settings_json(merge([local])) == .object(members: {})
 
 # The settings file of a program, whatever format it was written in.
 test "find_file: the first folder that holds one"
@@ -1405,11 +1405,11 @@ test "sub: the database's settings"
     assert text_of(sub(s, "db").must(), "host").must() == "h"
 
 # Every setting as one value.
-test "to_value: the merged settings"
+test "settings_json: the merged settings"
     s = merge(
         [from_value("a", json.parse("{\"x\": 1}").must()).must(), from_value("b", json.parse("{\"y\": 2}").must()).must()]
     )
-    assert json.format(to_value(s)).must() == "{\"x\":1,\"y\":2}"
+    assert json.format(settings_json(s)).must() == "{\"x\":1,\"y\":2}"
 
 # The path of every setting.
 test "paths_of: nested settings"

@@ -18,14 +18,14 @@ capability patch/operations  the six operations of a JSON Patch held as values a
   note    a variant of six cases, so a `match` answers all six; the RFC's `test` is the case `test_value`, `test` being a word the language keeps for itself
 
 capability patch/parse  a patch read from its JSON text or from a value already read
-  heroes  json/patch.parse, json/patch.from_value
+  heroes  json/patch.parse, json/patch.operations_of
   go      DecodePatch, ErrBadJSONPatch
   rust    serde_json::from_value::<Patch>
   python  JsonPatch.from_string, JsonPatch(list), JsonPatch.json_loader, InvalidJsonPatch
   note    a member an operation does not read is not read, as RFC 6902 § 4 asks; a missing `value` is an error and a `value` of `null` is a value. A text with a key twice in one object fails as `json.parse` fails, so RFC 6902 A.13's patch with two `op` members is refused before it is read, which the RFC asks
 
 capability patch/format  a patch written as JSON
-  heroes  json/patch.to_value, json/patch.format
+  heroes  json/patch.operations_json, json/patch.format
   go      json.Marshal of a Patch
   rust    serde_json::to_value of a Patch
   python  JsonPatch.to_string, JsonPatch.json_dumper

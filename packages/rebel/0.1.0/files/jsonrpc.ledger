@@ -37,7 +37,7 @@ capability message/parse  a text read as one message or a batch, each element th
   note    A member the specification does not name is passed over, as Go's decoders pass it over; Python refuses it, and the specification lists the members without refusing others. Parameters that are a string are refused, as Python refuses them and the specification asks; the Go SDK keeps them
 
 capability message/format  a message and a batch written as text, members in the specification's order
-  heroes  jsonrpc.format, jsonrpc.format_batch, jsonrpc.to_value
+  heroes  jsonrpc.format, jsonrpc.format_batch, jsonrpc.message_json
   go      go-sdk jsonrpc.EncodeMessage, jsonrpc2.Request.MarshalJSON, jsonrpc2.Response.MarshalJSON
   rust    -
   python  jsonrpcserver.response.to_dict, to_serializable, to_serializable_one, serialize_success, serialize_error, to_success_dict, to_error_dict, jsonrpcserver.main.default_serializer, serialize, serialize_one, dispatch_to_serializable
@@ -162,7 +162,7 @@ capability rpc/version-1  JSON-RPC 1.0
   python  -
 
 capability rpc/extra-members  members outside the specification written on a request (sourcegraph's `meta`, any extra field)
-  heroes  refused: no peer reads them as JSON-RPC; a program that needs them writes the value with `to_value` and adds the member itself
+  heroes  refused: no peer reads them as JSON-RPC; a program that needs them writes the value with `message_json` and adds the member itself
   go      jsonrpc2.ExtraField, jsonrpc2.Meta, jsonrpc2.Request.Meta, jsonrpc2.Request.ExtraFields, jsonrpc2.RequestField
   rust    -
   python  -

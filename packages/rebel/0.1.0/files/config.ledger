@@ -245,7 +245,7 @@ capability config/sub  the settings under one path, read as a whole
   note    a message of the answer names the whole path, `db.host`, where viper's `Sub` forgets where it stood
 
 capability config/all  every setting, as one value and as its paths
-  heroes  config.to_value, config.paths_of
+  heroes  config.settings_json, config.paths_of
   go      AllSettings, AllKeys
   rust    config::Config::collect, collect_to, figment::Figment::data
   python  dynaconf Settings.to_dict, as_dict, as_json, store, BaseSettings.model_dump

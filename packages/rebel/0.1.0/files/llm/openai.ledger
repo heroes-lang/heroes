@@ -75,7 +75,7 @@ capability chat/create  a chat completion made from a conversation, read whole
   python  chat.completions.create
 
 capability chat/request  the request: the model, the messages, the tools, every other parameter by name
-  heroes  llm/openai.ChatRequest, llm/openai.chat_request, llm/openai.with_chat_field, llm/openai.with_message, llm/openai.chat_to_json
+  heroes  llm/openai.ChatRequest, llm/openai.chat_request, llm/openai.with_chat_field, llm/openai.with_message, llm/openai.chat_request_json
   go      ChatCompletionNewParams, option.WithJSONSet, option.WithJSONDel
   rust    -
   python  chat.completions.create's parameters, types.chat.CompletionCreateParams
@@ -89,7 +89,7 @@ capability chat/messages  the messages of a conversation: system, developer, use
   note    An audio or a file part is the JSON the reference writes, a `json.Value` in `user_parts`
 
 capability chat/answer  the completion read: choices, their message, text, refusal and calls, the usage
-  heroes  llm/openai.Completion, llm/openai.Choice, llm/openai.Usage, llm/openai.to_completion, llm/openai.parse_completion, llm/openai.text_of
+  heroes  llm/openai.Completion, llm/openai.Choice, llm/openai.Usage, llm/openai.completion_of, llm/openai.parse_completion, llm/openai.text_of
   go      ChatCompletion, ChatCompletionChoice, ChatCompletionMessage, CompletionUsage
   rust    -
   python  types.chat.ChatCompletion, ChatCompletionMessage, types.CompletionUsage
@@ -109,7 +109,7 @@ capability chat/tools  functions offered, their calls handed out, their argument
   note    The arguments are text the model wrote and may not be JSON, as the reference warns; `arguments_of` fails `invalid` on anything but one whole object. A schema is JSON the program writes, there being no reflection
 
 capability chat/stream  a chat completion read as its chunks come, and the completion they make
-  heroes  llm/openai.chat_stream, llm/openai.next_chunk, llm/openai.ChatStream, llm/openai.Chunk, llm/openai.ChunkChoice, llm/openai.ToolCallDelta, llm/openai.completion_of, llm/openai.final_completion, llm/openai.close_chat_stream
+  heroes  llm/openai.chat_stream, llm/openai.next_chunk, llm/openai.ChatStream, llm/openai.Chunk, llm/openai.ChunkChoice, llm/openai.ToolCallDelta, llm/openai.completion_so_far, llm/openai.final_completion, llm/openai.close_chat_stream
   go      ChatCompletionService.NewStreaming, ChatCompletionChunk, ChatCompletionAccumulator, ChatCompletionAccumulator.AddChunk, JustFinishedContent, JustFinishedRefusal, JustFinishedToolCall
   rust    -
   python  chat.completions.stream, chat.completions.create(stream=True), ChatCompletionStream, ChatCompletionStream.get_final_completion, ChatCompletionStream.current_completion_snapshot, ChatCompletionStream.until_done, ChatCompletionStream.close
@@ -123,13 +123,13 @@ capability chat/stored  completions the API stored, listed, read, updated, delet
   note    `send_raw` reaches them; no record of their pages was written in this round
 
 capability responses/create  a response made from input items, read whole
-  heroes  llm/openai.create_response, llm/openai.ResponseRequest, llm/openai.response_request, llm/openai.with_response_field, llm/openai.response_to_json, llm/openai.input_message
+  heroes  llm/openai.create_response, llm/openai.ResponseRequest, llm/openai.response_request, llm/openai.with_response_field, llm/openai.response_request_json, llm/openai.input_message
   go      responses.ResponseService.New, responses.ResponseNewParams
   rust    -
   python  responses.create
 
 capability responses/answer  the response read: status, output items, text, usage, error
-  heroes  llm/openai.Response, llm/openai.to_response, llm/openai.parse_response, llm/openai.output_text_of, llm/openai.STATUS_COMPLETED, llm/openai.STATUS_INCOMPLETE, llm/openai.STATUS_FAILED, llm/openai.STATUS_IN_PROGRESS, llm/openai.STATUS_QUEUED, llm/openai.STATUS_CANCELLED, llm/openai.require_complete
+  heroes  llm/openai.Response, llm/openai.response_of, llm/openai.parse_response, llm/openai.output_text_of, llm/openai.STATUS_COMPLETED, llm/openai.STATUS_INCOMPLETE, llm/openai.STATUS_FAILED, llm/openai.STATUS_IN_PROGRESS, llm/openai.STATUS_QUEUED, llm/openai.STATUS_CANCELLED, llm/openai.require_complete
   go      responses.Response, responses.Response.OutputText, responses.ResponseOutputItemUnion, responses.ResponseUsage
   rust    -
   python  types.responses.Response, Response.output_text
@@ -142,14 +142,14 @@ capability responses/tools  function calls handed out and their outputs sent bac
   note    Chained on the server by `ResponseRequest.previous_response_id` with only the outputs as input, or kept by the program with `with_function_outputs`, as the function-calling guide shows both
 
 capability responses/stream  a response read as its events come
-  heroes  llm/openai.response_stream, llm/openai.next_response_event, llm/openai.ResponseStream, llm/openai.ResponseEvent, llm/openai.response_of, llm/openai.final_response, llm/openai.close_response_stream
+  heroes  llm/openai.response_stream, llm/openai.next_response_event, llm/openai.ResponseStream, llm/openai.ResponseEvent, llm/openai.response_so_far, llm/openai.final_response, llm/openai.close_response_stream
   go      responses.ResponseService.NewStreaming, responses.ResponseStreamEventUnion
   rust    -
   python  responses.stream, responses.create(stream=True), ResponseStream, ResponseStream.get_final_response, ResponseStream.until_done, ResponseStream.close
   note    The events the program acts on are named; reasoning summaries, server tools' progress and every event added since are `other` with their data
 
 capability responses/stored  a response the server keeps: read again, cancelled, deleted
-  heroes  llm/openai.retrieve_response, llm/openai.cancel_response, llm/openai.delete_response
+  heroes  llm/openai.fetch_response, llm/openai.cancel_response, llm/openai.delete_response
   go      responses.ResponseService.Get, responses.ResponseService.Cancel, responses.ResponseService.Delete
   rust    -
   python  responses.retrieve, responses.cancel, responses.delete
@@ -181,7 +181,7 @@ capability embeddings  texts as vectors, of the model's length or the one asked
   note    The vectors are `f32`, as `vectors` compares them, and put in the inputs' order by their `index`; `float` is asked, which Ollama speaks too
 
 capability models  the models a server serves, and one by its id
-  heroes  llm/openai.list_models, llm/openai.model_of, llm/openai.Model
+  heroes  llm/openai.list_models, llm/openai.fetch_model, llm/openai.Model
   go      ModelService.List, ModelService.ListAutoPaging, ModelService.Get
   rust    -
   python  models.list, models.retrieve, types.Model

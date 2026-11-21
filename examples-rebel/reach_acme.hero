@@ -152,7 +152,7 @@ function ceremony(directory: str)
                 .ok path => write_file(path: path, text: chain.pem).must()
                 .err _   => _ = 0
 
-            window = acme.renewal_info(client: client, certificate: leaf).must()
+            window = acme.fetch_renewal_info(client: client, certificate: leaf).must()
             assert window.start.len() > 0
             acme.revoke(@client, certificate: leaf, reason: 4).must()
             acme.change_key(@client, key: jose.generate_key(.p384).must()).must()

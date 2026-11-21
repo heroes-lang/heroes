@@ -390,7 +390,7 @@ function parse(text: str, limits: Limits) -> Received?
 # `result` or `error`, the error's `code`, `message`, then `data` where it is
 # not `.null_value`. See also `format_batch`.
 function format(m: Message) -> str?
-    return json.format(to_value(m))
+    return json.format(message_json(m))
 
 # `messages` as one JSON array on one line: a batch.
 #
@@ -404,7 +404,7 @@ function format_batch(messages: [Message]) -> str?
     items: [json.Value] @= []
 
     for m in messages
-        items @ items.push(to_value(m))
+        items @ items.push(message_json(m))
 
     return json.format(.list(items: items))
 
@@ -413,7 +413,7 @@ function format_batch(messages: [Message]) -> str?
 # - `v`: one value, as `json.parse` answers it.
 #
 # Fails `invalid` where it is no message, as an element of
-# `Received.messages` fails. See also `to_value`.
+# `Received.messages` fails. See also `message_json`.
 function message_of(v: json.Value) -> Message?
     shape = wire.read(v)?
 
@@ -443,7 +443,7 @@ function message_of(v: json.Value) -> Message?
 #   response's writes `null`.
 #
 # See also `message_of`.
-function to_value(m: Message) -> json.Value
+function message_json(m: Message) -> json.Value
     id: Id = match m
         .request r      => r.id
         .notification _ => .absent
@@ -1101,7 +1101,7 @@ test "parse: one message, a batch, the empty array, and a text that is no JSON"
         .ok _  => assert false
         .err e => assert e.code == LIMIT
 
-test "format, format_batch, to_value, message_of: each message written and read back"
+test "format, format_batch, message_json, message_of: each message written and read back"
     messages: [Message] = [
         .request(id: .number(v: 1.5), method: "m", params: json.parse("{\"a\": [1]}").must())
         .request(id: .null_id, method: "", params: .null_value)
@@ -1367,8 +1367,8 @@ test "message_of: a value read as a message"
     assert message_of(json.parse("{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"id\":3}").must()).must() == .request(id: .number(v: 3.0), method: "ping", params: .null_value)
 
 # A message as a JSON value, to change or embed.
-test "to_value: a message as a JSON value"
-    assert json.value_at(to_value(answer_result(.number(v: 1.0), value: .text(v: "x"))), pointer: "/result").must() == .text(v: "x")
+test "message_json: a message as a JSON value"
+    assert json.value_at(message_json(answer_result(.number(v: 1.0), value: .text(v: "x"))), pointer: "/result").must() == .text(v: "x")
 
 # One message read from a pipe, as the Language Server Protocol frames it.
 test "read_text: a message framed by its length"

@@ -255,7 +255,7 @@ capability http/ide  a page of GraphiQL or another explorer that sends queries t
   note    a page of GraphiQL served from a CDN; not written in this round
 
 capability response/json  a request and a response written as JSON and read back
-  heroes  graphql.parse_request, graphql.format_request, graphql.parse_response, graphql.format_response, graphql.request_of, graphql.request_value, graphql.response_of, graphql.response_value, graphql.error_of, graphql.error_value
+  heroes  graphql.parse_request, graphql.format_request, graphql.parse_response, graphql.format_response, graphql.request_of, graphql.request_json, graphql.response_of, graphql.response_json, graphql.error_of, graphql.error_json
   go      gqlgen graphql.Response, ErrorResponse, client.Response
   rust    async-graphql Request, Response, juniper http::GraphQLRequest, GraphQLResponse
   python  graphql.ExecutionResult.formatted, graphql.GraphQLError.formatted
