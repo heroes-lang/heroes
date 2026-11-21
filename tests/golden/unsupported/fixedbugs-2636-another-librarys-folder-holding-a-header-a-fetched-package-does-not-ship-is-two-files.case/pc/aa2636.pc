@@ -1,0 +1,8 @@
+# A second library of the case's own, named to sort before `fq2636`, whose
+# folder holds a file of the name the package `fq` binds (defect 2636).
+prefix=${pcfiledir}/..
+Name: aa2636
+Description: a library whose folder holds a file named like another library's header
+Version: 1.0
+Cflags: -I${prefix}/aainc
+Libs:

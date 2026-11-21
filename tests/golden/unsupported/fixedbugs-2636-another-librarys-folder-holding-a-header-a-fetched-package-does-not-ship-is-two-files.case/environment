@@ -1,0 +1,3 @@
+# The case's own two libraries, found by pkg-config alone.
+PKG_CONFIG_PATH=tests/golden/unsupported/fixedbugs-2636-another-librarys-folder-holding-a-header-a-fetched-package-does-not-ship-is-two-files.case/pc
+PKG_CONFIG_LIBDIR=tests/golden/unsupported/fixedbugs-2636-another-librarys-folder-holding-a-header-a-fetched-package-does-not-ship-is-two-files.case/pc
