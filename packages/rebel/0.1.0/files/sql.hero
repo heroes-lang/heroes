@@ -53,6 +53,9 @@
 # violates unique constraint "users_pkey"`. `database_code_of` reads the code
 # back. Reads of a row fail `not_found` on a column the row does not hold and
 # `invalid` on a value of another kind.
+#
+# Not written yet, each a `pending` block of its ledger: a column's length,
+# precision and scale, whether it may be NULL, the type a program reads it as.
 
 use sql/internal/columns
 use sql/internal/naming
@@ -434,7 +437,7 @@ function quote_identifier(name: str) -> str?
 function quote_qualified(parts: [str]) -> str?
     return naming.qualified(parts)
 
-## Failures
+## Codes
 
 # The code of a value read as a kind it is not, and of a statement, a name
 # or a parameter the database refuses as written: a syntax error, a value of
@@ -493,6 +496,8 @@ constant UNSUPPORTED: str
 # the database's own code and words.
 constant FAILED: str
     "failed"
+
+## Telling a failure
 
 # The message of a failure a database reported: its own code in brackets,
 # then its own words, `[23505] duplicate key value violates unique

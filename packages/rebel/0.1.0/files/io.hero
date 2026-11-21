@@ -31,6 +31,10 @@
 # It sets no deadline: the time a socket's stream may wait is set by `net` or
 # `tls`, and a call here answers `timeout` once it runs out. Opening a file is
 # `fs.open`'s, a child's ends `process`'s, a connection `net`'s.
+#
+# Not written yet, each a `pending` block of its ledger: which ways a stream was
+# opened, to read, to write; a read or a write at a position that leaves the
+# stream's own where it was.
 
 use bytes
 use io/hero_stream
@@ -82,6 +86,24 @@ constant STOPPED: str
 # carries the system's own number.
 constant FAILED: str
     failure.FAILED
+
+# A path names nothing: what `last_failure` answers after a floor's `open`.
+constant FILE_NOT_FOUND: str
+    failure.FILE_NOT_FOUND
+
+# The file is there already: what `last_failure` answers after a floor's
+# `open` that must create it.
+constant EXISTS: str
+    failure.EXISTS
+
+# A path names a folder: what `last_failure` answers after a floor's `open`.
+constant IS_A_DIRECTORY: str
+    failure.IS_A_DIRECTORY
+
+# A name on a path's way is a file: what `last_failure` answers after a
+# floor's `open`.
+constant NOT_A_DIRECTORY: str
+    failure.NOT_A_DIRECTORY
 
 ## The stream
 
@@ -580,24 +602,6 @@ function buffered(r: Reader) -> [u8]
     return r.held.bytes.slice(from: r.held.at, to: r.held.bytes.len())
 
 ## For the packages that open a stream
-
-# A path names nothing: what `last_failure` answers after a floor's `open`.
-constant FILE_NOT_FOUND: str
-    failure.FILE_NOT_FOUND
-
-# The file is there already: what `last_failure` answers after a floor's
-# `open` that must create it.
-constant EXISTS: str
-    failure.EXISTS
-
-# A path names a folder: what `last_failure` answers after a floor's `open`.
-constant IS_A_DIRECTORY: str
-    failure.IS_A_DIRECTORY
-
-# A name on a path's way is a file: what `last_failure` answers after a
-# floor's `open`.
-constant NOT_A_DIRECTORY: str
-    failure.NOT_A_DIRECTORY
 
 # The stream over `handle`, a handle of the floor `io/hero_stream` that the
 # caller owns, called `name` in messages: how `fs`, `process` and `net` hand

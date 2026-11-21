@@ -14,6 +14,12 @@
 # It fails with `invalid` where a text or bytes are not a UUID or a time
 # falls outside version 7's, and `new_v4` and `new_v7` with the codes of
 # `random.secure_below` and `time.now`.
+#
+# Not written yet, each a `pending` block of its ledger: UUIDs of version 7 that
+# sort in the order made within one millisecond; a UUID's bytes in Microsoft's
+# mixed order; the fields of RFC 4122's version 1 layout; UUIDs of versions 3
+# and 5, made from a namespace and a name; a UUID of version 8, its bits the
+# caller's.
 
 use random
 use time

@@ -37,6 +37,13 @@
 # `closed`, `timeout`, `stopped`, `limit` (a packet past a bound, a quota),
 # `unsupported` (what the server, the version or the platform does not
 # offer) and `failed`.
+#
+# Not written yet, each a `pending` block of its ledger: MQTT 5's exchange of
+# authentication past the CONNECT (AUTH); a certificate of the client's own
+# (mutual TLS); the WebSocket's opening headers; a connection through an HTTP or
+# SOCKS proxy; several publishes in flight at once, up to the server's Receive
+# Maximum; a message published by a topic alias alone; the server found by a DNS
+# SRV record.
 
 use bytes
 use io

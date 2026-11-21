@@ -417,7 +417,7 @@ function call(@channel: Channel, path: str, request: [u8], metadata: [Entry], ti
         .ok _ => _ = 0
         .err e =>
             if e.code == LIMIT || e.code == INVALID
-                cancel(@channel, @c).must()
+                cancel(@channel, @c)
                 return fail(code: e.code, msg: e.msg)
 
     match close_send(@channel, c: c)
@@ -449,7 +449,7 @@ function call_many(@channel: Channel, path: str, requests: [[u8]], metadata: [En
             .ok _ => _ = 0
             .err e =>
                 if e.code == LIMIT || e.code == INVALID
-                    cancel(@channel, @c).must()
+                    cancel(@channel, @c)
                     return fail(code: e.code, msg: e.msg)
 
     match close_send(@channel, c: c)
@@ -526,7 +526,7 @@ function send(@channel: Channel, @c: Call, message: [u8]) -> ()?
     left = clock.left_of(c.deadline_at)
 
     if left == 0
-        cancel(@channel, @c)?
+        cancel(@channel, @c)
         c.status @ Status(
             code: STATUS_DEADLINE_EXCEEDED,
             message: "the deadline passed before the message was sent",
@@ -556,8 +556,10 @@ function close_send(@channel: Channel, c: Call) -> ()?
 # - `c`: the call; once it has ended every later call answers the same end.
 #
 # A deadline passed answers the end `STATUS_DEADLINE_EXCEEDED` and cancels the
-# call. It never fails: a deadline passed, a reset and a connection lost end
-# the call, its `Status` saying why (the module's comment). See also `send`.
+# call; a reset and a connection lost end the call too, its `Status` saying why
+# (the module's comment). Fails `closed` where the stream under the connection
+# is closed and `unsupported` where it takes no deadline, as `tls.set_deadline`
+# answers when the call's deadline is set on it. See also `send`.
 function receive(@channel: Channel, @c: Call) -> Incoming?
     while true
         if c.pending.len() > 0
@@ -568,7 +570,7 @@ function receive(@channel: Channel, @c: Call) -> Incoming?
         left = clock.left_of(c.deadline_at)
 
         if left == 0
-            cancel(@channel, @c)?
+            cancel(@channel, @c)
             c.status @ Status(code: STATUS_DEADLINE_EXCEEDED, message: "the deadline passed", details: [])
         else
             clock.wait_until(channel.conn.stream, deadline_at: c.deadline_at)?
@@ -578,7 +580,7 @@ function receive(@channel: Channel, @c: Call) -> Incoming?
             match got
                 .err e =>
                     if e.code == "timeout" && c.deadline_at != 0
-                        cancel(@channel, @c)?
+                        cancel(@channel, @c)
                         c.status @ Status(code: STATUS_DEADLINE_EXCEEDED, message: "the deadline passed", details: [])
                     else
                         c.ended @ true
@@ -611,7 +613,7 @@ function receive(@channel: Channel, @c: Call) -> Incoming?
                             )
 
                             if taken.code != ""
-                                cancel(@channel, @c)?
+                                cancel(@channel, @c)
 
                                 code = if taken.code == LIMIT
                                     STATUS_RESOURCE_EXHAUSTED
@@ -660,9 +662,9 @@ function receive(@channel: Channel, @c: Call) -> Incoming?
 # It never fails: where the connection refuses the reset, the call ends all
 # the same, and a call already ended is left as it is. See also
 # `start_call`.
-function cancel(@channel: Channel, @c: Call) -> ()?
+function cancel(@channel: Channel, @c: Call)
     if c.ended
-        return ok()
+        return
 
     match http2.write_reset(@channel.conn, stream: c.stream, error: http2.CANCEL)
         .ok _  => _ = 0
@@ -671,7 +673,6 @@ function cancel(@channel: Channel, @c: Call) -> ()?
     calls.drain(@channel.conn, stream: c.stream)
     c.ended @ true
     c.status @ Status(code: STATUS_CANCELLED, message: "cancelled by the client", details: [])
-    return ok()
 
 ## Calls described by a `.proto`
 
@@ -1576,7 +1577,7 @@ test "cancel: the call ends CANCELLED"
         options: default_options()
     ).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout: time.max_duration()).must()
-    cancel(@ch, @c).must()
+    cancel(@ch, @c)
 
     match receive(@ch, @c).must()
         .message _ => assert false

@@ -36,6 +36,14 @@
 #
 # It fails with `invalid`, `unsupported`, `timeout`, `closed`, `stopped`,
 # `not_text` and `failed` (README § A4).
+#
+# Not written yet, each a `pending` block of its ledger: where the cursor
+# stands, read back from the terminal; the screen's lines scrolled; the window's
+# title set; Ctrl, Alt and Shift told beside any key; the history searched as
+# letters are typed, Readline's Ctrl-R; a line read with text already in it;
+# output written above a line being edited, the line drawn again below it; the
+# bar drawn by a template of the program's; several bars drawn together; keys
+# typed ahead thrown away.
 
 use io
 use os

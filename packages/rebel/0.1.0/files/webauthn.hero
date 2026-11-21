@@ -20,6 +20,12 @@
 # verify, the message saying which check; `unsupported`, where a key's
 # algorithm is one the system's cryptography lacks; and the codes of
 # `crypto/keypairs` and `os`, handed on.
+#
+# Not written yet, each a `pending` block of its ledger: the format "apple" of
+# Apple's anonymous attestation; the format "tpm" of a Trusted Platform Module;
+# the formats "android-key" and "android-safetynet"; the FIDO AppID extension: a
+# credential registered for U2F, its RP ID hash the AppID's; the authenticator's
+# extension outputs, and the client's results.
 
 use bytes
 use cbor
@@ -37,7 +43,7 @@ use webauthn/internal/options as writer
 use webauthn/internal/recorded
 use webauthn/internal/response as reply
 
-## The codes
+## Codes
 
 # The code of a response that is not well formed or does not verify: every
 # `verify_*` and `decode_*` function answers it, the message naming the
@@ -51,8 +57,8 @@ constant INVALID: str
 constant UNSUPPORTED: str
     codes.UNSUPPORTED
 
-# The code an `AuthenticatorData`'s `extensions` answers where its flags say
-# no extension outputs follow.
+# The code an `AuthenticatorData`'s `credential` and `extensions` answer
+# where its flags say no attested credential, or no extension outputs, follow.
 constant NOT_FOUND: str
     codes.NOT_FOUND
 
@@ -579,6 +585,18 @@ function decode_client_data(data: [u8]) -> ClientData?
         ClientData(kind: c.kind, challenge: c.challenge, origin: c.origin, cross_origin: c.cross_origin, top_origin: c.top_origin)
     )
 
+# The credential an authenticator data carries at registration, where its
+# flag AT is set: the three parts that follow the counter, all of them or
+# none. Made by `decode_authenticator_data` alone.
+record AttestedCredential
+    # The authenticator's model, 16 bytes.
+    aaguid: [u8]
+    # The credential ID, 1 byte or more.
+    credential_id: [u8]
+    # The credential's COSE key, its bytes as written, which
+    # `decode_public_key` reads.
+    public_key: [u8]
+
 # The authenticator data: the RP ID's hash, the flags, the counter, and at
 # registration the new credential.
 record AuthenticatorData
@@ -592,18 +610,11 @@ record AuthenticatorData
     backup_eligible: bool
     # BS: it is backed up.
     backed_up: bool
-    # AT: a credential follows.
-    attested: bool
     # The signature counter, 0 to 2^32 - 1.
     sign_count: i64
-    # The authenticator's model, 16 bytes; empty where no credential
-    # follows.
-    aaguid: [u8]
-    # The credential ID; empty where none follows.
-    credential_id: [u8]
-    # The credential's COSE key, its bytes as written; empty where none
-    # follows.
-    public_key: [u8]
+    # The attested credential; it fails `not_found` where the flag AT says
+    # none follows, as at every authentication.
+    credential: AttestedCredential?
     # The extension outputs, one CBOR map's bytes; it fails `not_found` where
     # the flag ED says none follow.
     extensions: [u8]?
@@ -617,8 +628,15 @@ record AuthenticatorData
 # `decode_attestation_object`.
 function decode_authenticator_data(data: [u8]) -> AuthenticatorData?
     a = authdata.read(data)?
+    credential: AttestedCredential? @= fail(
+        code: NOT_FOUND,
+        msg: "the authenticator data's flags say no attested credential follows"
+    )
+
+    if a.attested
+        credential @ ok(AttestedCredential(aaguid: a.aaguid, credential_id: a.credential_id, public_key: a.public_key))
     return ok(
-        AuthenticatorData(rp_id_hash: a.rp_id_hash, user_present: a.user_present, user_verified: a.user_verified, backup_eligible: a.backup_eligible, backed_up: a.backed_up, attested: a.attested, sign_count: a.sign_count, aaguid: a.aaguid, credential_id: a.credential_id, public_key: a.public_key, extensions: authdata.extensions_of(a))
+        AuthenticatorData(rp_id_hash: a.rp_id_hash, user_present: a.user_present, user_verified: a.user_verified, backup_eligible: a.backup_eligible, backed_up: a.backed_up, sign_count: a.sign_count, credential: credential, extensions: authdata.extensions_of(a))
     )
 
 # An attestation object: what an authenticator answers a registration.
@@ -655,7 +673,7 @@ record PublicKey
 
 # The public key the COSE key `cose` holds.
 #
-# - `cose`: the COSE key's CBOR bytes, as `AuthenticatorData.public_key` or
+# - `cose`: the COSE key's CBOR bytes, as `AttestedCredential.public_key` or
 #   `Credential.public_key`.
 #
 # Fails `invalid` where it is not a COSE key of an algorithm this package
@@ -783,8 +801,32 @@ test "decode_authenticator_data: user present and verified, counter 7"
     a = decode_authenticator_data(
         [0xbf, 0xab, 0xc3, 0x74, 0x32, 0x95, 0x8b, 0x06, 0x33, 0x60, 0xd3, 0xad, 0x64, 0x61, 0xc9, 0xc4, 0x73, 0x5a, 0xe7, 0xf8, 0xed, 0xd4, 0x65, 0x92, 0xa5, 0xe0, 0xf0, 0x14, 0x52, 0xb2, 0xe4, 0xb5, 0x05, 0x00, 0x00, 0x00, 0x07]
     ).must()
-    assert a.user_present && a.user_verified && !a.attested && a.sign_count == 7
+    assert a.user_present && a.user_verified && a.credential.is_err() && a.sign_count == 7
     assert a.rp_id_hash == crypto.sha256_text("example.org")
+
+test "decode_authenticator_data: a registration's credential, its three parts together, and none without AT"
+    data: [u8] @= crypto.sha256_text("example.org")
+
+    for b in [0x41, 0x00, 0x00, 0x00, 0x01]
+        data @ data.push(to_u8(b).must())
+
+    for _ in range(from: 0, to: 16)
+        data @ data.push(0x11)
+
+    for b in [0x00, 0x01, 0x2a, 0xa0]
+        data @ data.push(to_u8(b).must())
+
+    a = decode_authenticator_data(data).must()
+    c = a.credential.must()
+    assert a.user_present && !a.user_verified && a.sign_count == 1 && a.extensions.is_err()
+    assert c.aaguid.len() == 16 && c.aaguid[0] == 0x11 && c.credential_id == [0x2a] && c.public_key == [0xa0]
+    data @ data.slice(from: 0, to: 37)
+    data[32] @ 0x01
+    bare = decode_authenticator_data(data).must()
+
+    match bare.credential
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
 
 # An attestation object of the format "none".
 test "decode_attestation_object: none, an empty statement, 37 bytes of authenticator data"

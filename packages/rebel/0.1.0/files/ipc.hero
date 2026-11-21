@@ -38,6 +38,10 @@
 # the other processes that have them, and on POSIX for every later `open_`,
 # until a `remove_` takes their name away. On Windows the system takes a name
 # away with the last process that has it open.
+#
+# Not written yet, each a `pending` block of its ledger: a wait on channels for
+# the first with bytes to read; a stream handed to another process over a
+# channel; local datagram and sequenced-packet sockets.
 
 use io
 use ipc/hero_ipc

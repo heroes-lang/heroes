@@ -24,6 +24,9 @@
 #
 # It fails with `invalid`, `file_not_found`, `permission`, `not_a_directory`,
 # `limit`, `closed`, `stopped`, `unsupported` and `failed` (README § A4).
+#
+# Not written yet, each a `pending` block of its ledger: a tree's state kept and
+# compared later; a tree watched by reading it again at an interval.
 
 use fs
 use fs/watch/hero_watch

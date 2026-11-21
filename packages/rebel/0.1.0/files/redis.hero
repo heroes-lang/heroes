@@ -70,6 +70,16 @@
 # `CROSSSLOT`; and `failed` for every other, `LOADING` and `BUSY` among them.
 # A connection lost, or bytes that are no RESP, end the client: every later
 # call fails `closed`.
+#
+# Not written yet, each a `pending` block of its ledger: a client's own
+# certificate presented to the server; RESP3's attributes kept beside the reply
+# they describe; every key, field or member walked by SCAN, HSCAN, SSCAN or
+# ZSCAN, its cursor followed; a script sent once and run by its SHA-1
+# thereafter, sent again where the server forgot it; sharded channels of a
+# cluster: SSUBSCRIBE and SPUBLISH; a cluster's slots followed: MOVED and ASK
+# obeyed, each key's node found; the master found through Sentinel, and followed
+# when it fails over; keys cached on the client and dropped when the server says
+# they changed (RESP3's tracking); a connection over a Unix socket.
 
 use bytes
 use net

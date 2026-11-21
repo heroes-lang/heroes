@@ -87,7 +87,7 @@ capability webauthn/client-data  the client data read: its type, challenge, orig
   note    the challenge compared in constant time
 
 capability webauthn/authenticator-data  the authenticator data read: the RP ID's hash, the flags, the counter, the attested credential, the extensions
-  heroes  webauthn.decode_authenticator_data, webauthn.AuthenticatorData
+  heroes  webauthn.decode_authenticator_data, webauthn.AuthenticatorData, webauthn.AttestedCredential
   go      protocol.AuthenticatorData, protocol.AuthenticatorData.Unmarshal, protocol.AttestedCredentialData
   rust    -
   python  webauthn.helpers.parse_authenticator_data, webauthn.helpers.structs.AuthenticatorData, webauthn.helpers.structs.AttestedCredentialData

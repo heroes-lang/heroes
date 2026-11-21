@@ -28,6 +28,10 @@
 #
 # It fails with `invalid`, `not_found`, `permission`, `limit`, `unsupported`,
 # `not_text` and `failed` (README § A4).
+#
+# Not written yet, each a `pending` block of its ledger: data encrypted so that
+# only this user (or this machine) can decrypt it, kept by the program wherever
+# it likes.
 
 use bytes
 use keyring/hero_keyring

@@ -15,6 +15,14 @@
 #
 # It fails with `invalid`, `not_found`, `does_not_fit` and `not_text`, and
 # hands on the failure of the function a program gives `parse_schema`.
+#
+# Not written yet, each a `pending` block of its ledger: the well-known files
+# api.proto, type.proto and source_context.proto carried; a custom option's
+# value read as its extension's type; a `FileDescriptorSet` that protoc wrote
+# read into a schema; a schema written as `FileDescriptorProto`s, as gRPC's
+# reflection serves them; unset message and oneof fields written as `null`; a
+# message written in the text format; a message read from the text format; the
+# fields a mask names copied from one message into another.
 
 use bytes
 use json
@@ -123,7 +131,7 @@ record Message
     # in order, written back after the others by `encode`.
     unknown: [u8]
 
-## Codes and limits
+## Codes
 
 # The code of bytes, a `.proto` text or JSON that is not what the function
 # reads, and of a value not of its field's kind.
@@ -142,6 +150,8 @@ constant DOES_NOT_FIT: str
 # them to be.
 constant NOT_TEXT: str
     "not_text"
+
+## Limits and the type URL
 
 # The deepest nesting `decode` and `from_json` read: a message inside a message
 # is 2 deep. C++ and Python's runtimes stop at the same depth.

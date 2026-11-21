@@ -29,6 +29,9 @@
 # aborts where the program broke a precondition it could have checked: a slot
 # past the size, a position outside the text, a value list that is not the
 # trie's own, a map's write given a set's shape or the other way.
+#
+# Not written yet, each a `pending` block of its ledger: keys of bytes that are
+# not text.
 
 use containers/internal/codes
 use containers/internal/storage
@@ -36,7 +39,7 @@ use containers/trie/internal/edit
 use containers/trie/internal/layout
 use containers/trie/internal/walk
 
-## The codes
+## Codes
 
 # The code of a search that found nothing, which every function of this
 # package whose `Fails` names `not_found` answers.

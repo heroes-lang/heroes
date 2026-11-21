@@ -25,7 +25,7 @@ use csv/internal/stream
 use csv/internal/write
 use io
 
-## Codes and limits
+## Codes
 
 # The code of a text that is not CSV as the options read it, of a header that
 # names a column twice, and of a record that does not fit its header.
@@ -35,6 +35,8 @@ constant INVALID: str
 # The code of a stream's bytes that are not UTF-8, as `io` reads them.
 constant NOT_TEXT: str
     "not_text"
+
+## Limits
 
 # The most bytes a field may hold unless the options say otherwise:
 # 131,072, Python's own limit. A stream whose quoted field is never closed is

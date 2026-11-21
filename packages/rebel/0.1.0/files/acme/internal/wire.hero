@@ -189,7 +189,7 @@ function signed(session: Session, url: str, payload: [u8], with_jwk: bool) -> st
     protected: {str: json.Value} @= {"nonce": .text(v: session.nonce), "url": .text(v: url)}
 
     if with_jwk
-        protected["jwk"] @ jose.to_json(jose.public_of(session.key)?)
+        protected["jwk"] @ jose.key_json(jose.public_of(session.key)?)
     else
         if session.kid.len() == 0
             return fail(
@@ -294,16 +294,16 @@ function thumbprint(session: Session) -> str?
 # The JWS of a key change (RFC 8555 § 7.3.5): the inner JWS, signed by
 # `key` with `algorithm`, of the account's URL and its old public key.
 function key_change(session: Session, url: str, key: jose.Key, algorithm: jose.Algorithm) -> [u8]?
-    old = jose.to_json(jose.public_of(session.key)?)
+    old = jose.key_json(jose.public_of(session.key)?)
     payload = json_bytes(.object(members: {"account": .text(v: session.kid), "oldKey": old}))?
-    protected: {str: json.Value} = {"jwk": jose.to_json(jose.public_of(key)?), "url": .text(v: url)}
+    protected: {str: json.Value} = {"jwk": jose.key_json(jose.public_of(key)?), "url": .text(v: url)}
     inner = jose.sign_flattened(payload: payload, signer: jose.Signer(key: key, algorithm: algorithm, protected: protected, unprotected: {}))?
     return ok(bytes.from_text(inner))
 
 # The external account binding (RFC 8555 § 7.3.4): the account's public key
 # signed by HMAC with the CA's `hmac_key`, under its `key_id`, for `url`.
 function binding(session: Session, url: str, key_id: str, hmac_key: [u8]) -> json.Value?
-    payload = json_bytes(jose.to_json(jose.public_of(session.key)?))?
+    payload = json_bytes(jose.key_json(jose.public_of(session.key)?))?
     protected: {str: json.Value} = {"kid": .text(v: key_id), "url": .text(v: url)}
     text = jose.sign_flattened(payload: payload, signer: jose.Signer(key: jose.key_from_secret(hmac_key), algorithm: .hs256, protected: protected, unprotected: {}))?
     return json.parse(text)

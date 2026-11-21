@@ -30,6 +30,18 @@ use path/internal/roots
 use path/internal/scan
 use path/internal/wildcard
 
+## Codes
+
+# The code a function fails with where a path holds nothing of what was asked:
+# no name, no extension, no volume.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# The code a function fails with where its input is not what it reads; the
+# message says what was wrong.
+constant INVALID: str
+    codes.INVALID
+
 ## The rules
 
 # Which rules a path is read by.
@@ -43,16 +55,6 @@ variant Rules
     # case: which of those Windows takes as one is its file system's to say,
     # and not the text's.
     windows
-
-# The code a function fails with where a path holds nothing of what was asked:
-# no name, no extension, no volume.
-constant NOT_FOUND: str
-    codes.NOT_FOUND
-
-# The code a function fails with where its input is not what it reads; the
-# message says what was wrong.
-constant INVALID: str
-    codes.INVALID
 
 # The rules of the system the program runs on: `windows` on Windows, `posix` on
 # every other. Every short form reads by them.

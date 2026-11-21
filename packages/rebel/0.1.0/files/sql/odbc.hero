@@ -73,6 +73,12 @@
 # drivers report most failures as HY000, a general error: SQLite's does, so
 # with it a unique key broken is `failed`, its words saying which. A call on
 # a connection `close` ended fails `closed`.
+#
+# Not written yet, each a `pending` block of its ledger: one cell's bytes or
+# text read a piece at a time; any item of `SQLGetInfo`, by its number; the
+# warnings a driver sends with a statement that succeeded; a procedure's output
+# and return values read back through its parameters; the database a connection
+# works in, changed.
 
 use sql
 use sql/odbc/hero_odbc

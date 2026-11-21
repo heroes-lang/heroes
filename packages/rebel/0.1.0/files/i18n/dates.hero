@@ -13,6 +13,11 @@
 #
 # It fails `invalid` where a pattern or a skeleton is not what the function
 # reads, and `not_found` where a text holds no date the pattern reads.
+#
+# Not written yet, each a `pending` block of its ledger: a time zone named in
+# words, "Central European Time"; calendars other than the Gregorian: Buddhist,
+# Hebrew, Islamic, Japanese, Persian; a range of dates, "March 5–7, 2024"; a
+# duration written in words, "3 hours, 5 minutes".
 
 use i18n
 use i18n/dates/internal/date_data

@@ -41,6 +41,10 @@
 # past `MAX_SEALS`), `unsupported` (a Linux machine with no
 # `libcrypto.so.3`) and `failed` (the system failed, its words in the
 # message).
+#
+# Not written yet, each a `pending` block of its ledger: nonces counted by the
+# key, for protocols whose peer computes them (TLS, QUIC records); AES-GCM-SIV,
+# AES-SIV, AES-OCB3, AES-CCM and XChaCha20-Poly1305.
 
 use bytes
 use crypto/hero_crypto

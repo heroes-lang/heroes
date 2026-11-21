@@ -12,6 +12,9 @@
 # reads past its end.
 #
 # It fails with `invalid`, `limit` and `unsupported`.
+#
+# Not written yet, each a `pending` block of its ledger: PFM, the float maps;
+# the images after the first in one file.
 
 use bytes
 use image

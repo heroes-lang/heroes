@@ -32,6 +32,19 @@
 # bound), `unsupported` (a version, a mechanism or a compression the broker
 # or this client does not speak) and `failed`, the broker's error named in
 # the message.
+#
+# Not written yet, each a `pending` block of its ledger: SASL GSSAPI (Kerberos),
+# OAUTHBEARER, AWS's MSK IAM; the configuration of topics and brokers read and
+# changed; access control lists made, described and deleted; quotas, SCRAM
+# credentials, partition reassignments, leader elections, log directories,
+# features, the KRaft quorum; batches compressed by Snappy, LZ4 or Zstandard; an
+# idempotent producer: retries the broker deduplicates by the producer's
+# identity and each batch's sequence; writes and offsets committed or aborted
+# together across partitions; a group's offsets for some partitions deleted; the
+# round robin, sticky, cooperative sticky and rack aware assignors, and the
+# broker-side assignment of KIP-848; a consumer of every topic a regular
+# expression matches; share groups (KIP-932): records acknowledged one by one,
+# as a queue; counters of what a client wrote and read, and its latencies.
 
 use bytes
 use kafka/internal/admin

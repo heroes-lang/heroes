@@ -23,6 +23,15 @@
 # DSR/DTR flow are Windows'; Linux takes the speeds `termios` names, 50 to
 # 4,000,000; a pseudo-terminal is POSIX's. What a platform has no word for
 # fails `unsupported`.
+#
+# Not written yet, each a `pending` block of its ledger: a port's USB vendor,
+# product, serial number, description and location; the ports whose description
+# matches a pattern; told when CTS, DSR, CD or RI change, or a break arrives;
+# framing, overrun and parity errors counted, a byte with a parity error
+# replaced or dropped; RS-485 half duplex: RTS driven around each write; the
+# other side told to stop and go by hand, this side's output held; the driver
+# asked to hand bytes over at once; a read or a write another thread waits in
+# ended; a port reached over the network, RFC 2217.
 
 use io
 use serial/hero_serial

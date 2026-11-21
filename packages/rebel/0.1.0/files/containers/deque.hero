@@ -22,11 +22,14 @@
 # package left the deque's own, which a list of another deque mostly is: one
 # just as long is not told apart, since the shape holds none of the items, so
 # a program keeps each deque's shape beside its own list.
+#
+# Not written yet, each a `pending` block of its ledger: a list of links: an
+# item put or taken at a handle held, or moved to either end, in constant time.
 
 use containers/deque/internal/ring
 use containers/internal/codes
 
-## The codes
+## Codes
 
 # The code of a search that found nothing, which every function of this
 # package whose `Fails` names `not_found` answers.

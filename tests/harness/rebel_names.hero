@@ -17,7 +17,7 @@
 #   value       `to_x` answers a value, never `()`
 #   abbreviated a parameter named by an abbreviation of `ABBREVIATIONS`, none
 #               of the ones README § A3 lets stand (`dir`, `env`, `ext`, `abs`, `len`,
-#               `max`, `min`)
+#               `max`, `min`; `opts`, `msg`, `img`, `re`, `arg`, `ttl`, `ssid`)
 #
 # A name of README § A3's grammar and of a grammar suffix too is the suffix's shape:
 # `format_of` is `x_of`, the format of a thing, and answers no text. The
@@ -38,22 +38,21 @@ use strings
 # shapes of the same habit, none found that day. Left out on purpose: `db` and
 # `doc`, words of their own in a programmer's English; `dn` and `sid`, the names
 # LDAP and NATS give the thing (a distinguished name, a subscription's id);
-# `params`, the word JSON-RPC and SQL use.
+# `params`, the word JSON-RPC and SQL use. **Five left the list on
+# 2026-11-21**, `opts`, `msg`, `img`, `re` and `arg`, which README § A3 lets
+# stand since the coherence review's D06 (each its area's word, or the whole
+# word taken: a face's maker `options`, `fail`'s label `msg`, `use image`),
+# with `ttl` and `ssid`, which were never on it.
 constant ABBREVIATIONS: [[str]]
     [
-        ["opts", "options"]
         ["opt", "option"]
-        ["img", "image"]
         ["ch", "channel"]
-        ["re", "regex"]
         ["enc", "encoding"]
-        ["msg", "message"]
         ["wb", "workbook"]
         ["cert", "certificate"]
         ["src", "source"]
         ["dst", "destination"]
         ["conn", "connection"]
-        ["arg", "argument"]
         ["cfg", "config"]
         ["ctx", "context"]
         ["buf", "buffer"]
@@ -254,7 +253,7 @@ test "a function or a parameter not in snake_case is told, and a type and a cons
     assert snake_shaped("index_of_last") && !snake_shaped("trailing_") && !snake_shaped("_x")
 
 test "each rule of the grammar fires on its witness and leaves the shape beside it"
-    text = "# M.\n\n# Q.\nfunction is_odd(n: i64) -> i64\n    return n\n\n# A.\nfunction is_even(n: i64) -> bool\n    return true\n\n# C.\nfunction contains(s: str) -> i64\n    return 0\n\n# I.\nfunction index_of(s: str) -> i64\n    return 0\n\n# F.\nfunction format_der(k: i64) -> [u8]?\n    return ok([])\n\n# G.\nfunction format_of(data: [u8]) -> i64?\n    return ok(0)\n\n# W.\nfunction with_cors(r: i64, s: str) -> str\n    return s\n\n# X.\nfunction with_name(s: str, name: str) -> str?\n    return ok(name)\n\n# T.\nfunction to_disk(s: str)\n    _ = s\n\n# O.\nfunction open(opts: i64) -> i64\n    return opts\n"
+    text = "# M.\n\n# Q.\nfunction is_odd(n: i64) -> i64\n    return n\n\n# A.\nfunction is_even(n: i64) -> bool\n    return true\n\n# C.\nfunction contains(s: str) -> i64\n    return 0\n\n# I.\nfunction index_of(s: str) -> i64\n    return 0\n\n# F.\nfunction format_der(k: i64) -> [u8]?\n    return ok([])\n\n# G.\nfunction format_of(data: [u8]) -> i64?\n    return ok(0)\n\n# W.\nfunction with_cors(r: i64, s: str) -> str\n    return s\n\n# X.\nfunction with_name(s: str, name: str) -> str?\n    return ok(name)\n\n# T.\nfunction to_disk(s: str)\n    _ = s\n\n# O.\nfunction open(cfg: i64, opts: i64) -> i64\n    return cfg + opts\n"
     found = graded(path: "m", text: text)
     rules: [str] @= []
 
@@ -263,12 +262,14 @@ test "each rule of the grammar fires on its witness and leaves the shape beside 
 
     assert rules == ["question", "one-meaning", "one-meaning", "text", "copy", "value", "abbreviated"]
     assert told(found[0]) == "m.hero:4: question: `function is_odd(n: i64) -> i64`: a question answers `bool`, and this answers `i64`"
-    assert found[6].said == "the parameter `opts` shortens `options`, in 1 functions, at lines 40"
-    assert key(found[6]) == "m abbreviated opts"
+    assert found[6].said == "the parameter `cfg` shortens `config`, in 1 functions, at lines 40"
+    assert key(found[6]) == "m abbreviated cfg"
+    assert found.len() == 7
 
 test "a name of a grammar word and a grammar suffix is the suffix's shape"
     assert !grammar_shaped(name: "format_of", word: "format")
     assert !grammar_shaped(name: "format_with", word: "format")
     assert grammar_shaped(name: "format_date", word: "format")
     assert !grammar_shaped(name: "formatted", word: "format")
-    assert expanded("img") == "image" && expanded("db") == ""
+    assert expanded("cfg") == "config" && expanded("db") == ""
+    assert expanded("opts") == "" && expanded("msg") == "" && expanded("img") == "" && expanded("re") == "" && expanded("arg") == ""

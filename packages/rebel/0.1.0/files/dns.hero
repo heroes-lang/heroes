@@ -28,6 +28,15 @@
 # The codes it fails with: `invalid`, `not_found`, `not_text`, `failed`,
 # `unsupported`, and, from the connection, `closed`, `timeout`, `stopped` and
 # `limit`.
+#
+# Not written yet, each a `pending` block of its ledger: an option read by its
+# kind: client subnet, cookie, extended error, NSID, padding; a name of Unicode
+# letters asked as its ASCII form (IDNA); the rarer kinds read by their fields:
+# NSEC3, NSEC3PARAM, CDS, CDNSKEY, URI, LOC, CERT, OPENPGPKEY, ZONEMD and the
+# obsolete ones; a record read from a zone file's text; a whole message written
+# as dig or dnspython writes it; the system's resolvers on Windows, which no
+# file holds; a dynamic update (RFC 2136) and its signature (TSIG); an answer's
+# signatures checked up to a trust anchor.
 
 use bytes
 use dns/internal/canned

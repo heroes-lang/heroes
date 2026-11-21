@@ -30,6 +30,9 @@
 #
 # It fails with `invalid`, `limit`, `not_found` and `unsupported`, and with
 # the codes of `io`, `fs` and `compress` where they fail.
+#
+# Not written yet, each a `pending` block of its ledger: methods other than
+# stored and deflated, and encryption; tar compressed by bzip2, xz or Zstandard.
 
 use archive/internal/codes
 use archive/internal/extract

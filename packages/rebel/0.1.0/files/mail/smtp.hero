@@ -23,6 +23,10 @@
 # 552), `closed` (421), `unsupported` (502, 504, and an extension the message
 # needs and the server lacks), and `failed` for any other; the message then
 # opens with the reply, its code first, and `last_reply_of` answers it whole.
+#
+# Not written yet, each a `pending` block of its ledger: a certificate of the
+# client presented to the server; LMTP (RFC 2033): LHLO and a reply per
+# recipient after DATA.
 
 use bytes
 use mail

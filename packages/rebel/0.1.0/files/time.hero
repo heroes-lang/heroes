@@ -34,6 +34,10 @@
 # `does_not_fit` where a result leaves the range above, `not_found`,
 # `permission` and `unsupported` where a zone cannot be read, and `failed`
 # where the system's clock cannot.
+#
+# Not written yet, each a `pending` block of its ledger: how fine a clock's
+# readings are; the processor time the process or the thread has used; a
+# duration times or over a float.
 
 use time/hero_time
 use time/internal/arith
@@ -49,7 +53,7 @@ use time/internal/zone_files
 use time/internal/zone_local
 use time/internal/zone_table
 
-## Failure
+## Codes
 
 # The code of a value or a text that is not what the function reads; the
 # message says which field or which byte, counted from 0.

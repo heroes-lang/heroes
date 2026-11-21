@@ -32,7 +32,7 @@ use containers/heap/internal/priority
 use containers/internal/codes
 use containers/internal/samples
 
-## The codes
+## Codes
 
 # The code of an empty heap asked for an element, which `pop` and `peek`
 # answer.

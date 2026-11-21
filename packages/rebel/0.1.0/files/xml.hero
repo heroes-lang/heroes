@@ -17,6 +17,9 @@
 # are not UTF-8; `unsupported` on a declaration naming another encoding;
 # `limit` on a text past the depth or the size its reading allows; `not_found`
 # on a name an element does not hold.
+#
+# Not written yet, each a `pending` block of its ledger: the one text Canonical
+# XML gives a document.
 
 use numbers
 use strings
@@ -146,7 +149,7 @@ record Document
     # The comments and instructions after the root, in order.
     after: [Misc]
 
-## Codes and limits
+## Codes
 
 # The code of a text that is not well-formed XML, of a tree that would not
 # read back as itself, and of a path that is not one: `parse`, `format`,
@@ -173,6 +176,8 @@ constant LIMIT: str
 constant NOT_FOUND: str
     "not_found"
 
+## Limits
+
 # The deepest nesting `parse` reads: the root is 1 deep, an element inside it
 # 2. `==` on two trees follows their nesting, so on trees nested deep enough
 # it runs out of stack and aborts; two trees 512 deep compare in a build with
@@ -186,6 +191,8 @@ constant DEFAULT_MAX_DEPTH: i64
 # read only where the program raises it.
 constant DEFAULT_MAX_BYTES: i64
     67108864
+
+## Namespaces
 
 # The namespace the prefix `xml` stands for, in every document, declared or
 # not.

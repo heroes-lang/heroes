@@ -164,7 +164,7 @@ record Timestamp
     # The ordinal of the operation within its second.
     increment: u32
 
-## Codes and limits
+## Codes
 
 # The code of bytes that are not one well-formed BSON document, of Extended
 # JSON that is not, of a value of another kind than the one asked for, and of
@@ -189,10 +189,14 @@ constant NOT_FOUND: str
 constant UNSUPPORTED: str
     "unsupported"
 
+## Limits
+
 # The deepest nesting `decode` reads: an empty document is 1 deep, one
 # holding an empty document 2, an array and a scope each a level.
 constant DEFAULT_MAX_DEPTH: i64
     512
+
+## Binary subtypes
 
 # Generic binary data, subtype 0.
 constant SUBTYPE_GENERIC: u8

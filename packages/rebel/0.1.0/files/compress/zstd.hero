@@ -22,6 +22,12 @@
 # without end, or read past the input.
 #
 # It fails with `invalid` and `limit`.
+#
+# Not written yet, each a `pending` block of its ledger: the compressor's own
+# parameters: window, hash and chain sizes, strategy, long matching, threads; a
+# dictionary trained from samples, or finished from content; bytes compressed
+# piece by piece, flushed by block or by frame; frames decompressed piece by
+# piece, or through a stream.
 
 use bytes
 use compress/internal/codes

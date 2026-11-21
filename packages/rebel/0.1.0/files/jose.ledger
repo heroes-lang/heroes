@@ -138,13 +138,13 @@ capability jwk/value  a key as a value: its type, curve, id, use, operations, al
   python  PyJWK, PyJWK.key_id, PyJWK.key_type, PyJWK.public_key_use, authlib.jose.Key, RSAKey.kid, RSAKey.kty, RSAKey.tokens, RSAKey.keys, RSAKey.ALLOWED_PARAMS, joserfc.jwk.KeyBase, joserfc.jwk.KeyParameters, joserfc.jwk.DictKey
 
 capability jwk/read  a key read from its JSON
-  heroes  jose.to_key, jose.parse_key
+  heroes  jose.key_of, jose.parse_key
   go      -
   rust    jsonwebtoken::DecodingKey::from_jwk, serde's reading of `Jwk`
   python  PyJWK.from_dict, PyJWK.from_json, JsonWebKey.import_key, RSAKey.import_key, RSAKey.import_dict_key, RSAKey.load_dict_key, RSAKey.check_required_fields, RSAKey.REQUIRED_JSON_FIELDS, joserfc.jwk.import_key, joserfc.jwk.guess_key, joserfc.jwk.JWKRegistry, joserfc.jwk.InvalidKeyTypeError
 
 capability jwk/write  a key written as its JSON
-  heroes  jose.to_json, jose.format_key
+  heroes  jose.key_json, jose.format_key
   go      -
   rust    serde's writing of `Jwk`
   python  RSAKey.as_dict, RSAKey.as_json, authlib.jose.KeySet.as_dict, KeySet.as_json

@@ -32,6 +32,9 @@
 # standard allows, the message saying where; `does_not_fit` where a number
 # passes 18446744073709551615; `not_found` where no version of a list is
 # admitted, and where a range admits none.
+#
+# Not written yet, each a `pending` block of its ledger: whether a version lies
+# above or below everything a range admits.
 
 use semver/internal/admit
 use semver/internal/model

@@ -19,6 +19,9 @@
 # holds makes a call abort, loop without end, or read past the input.
 #
 # It fails with `invalid`, `limit` and `unsupported`.
+#
+# Not written yet, each a `pending` block of its ledger: bytes compressed piece
+# by piece; a stream decompressed piece by piece, or through a stream.
 
 use compress/bzip2/internal/decoder
 use compress/bzip2/internal/encoder

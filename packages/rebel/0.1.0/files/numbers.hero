@@ -33,7 +33,7 @@ use numbers/internal/sizes
 use numbers/internal/whole
 use numbers/internal/write
 
-## Failure
+## Codes
 
 # The code of a text that does not spell what the function reads; the message
 # says which byte, counted from 0.

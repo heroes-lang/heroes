@@ -14,6 +14,10 @@
 #
 # It fails `invalid` where tailoring rules do not parse, the message saying
 # where.
+#
+# Not written yet, each a `pending` block of its ledger: scripts reordered, a
+# language's own script first; a text searched for by collation, accents or case
+# ignored.
 
 use i18n
 use i18n/collate/internal/collate_tables

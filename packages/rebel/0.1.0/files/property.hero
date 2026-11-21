@@ -29,6 +29,10 @@
 # to a file. It fails with `limit` where a case draws past its bound,
 # `invalid` where a case is rejected, and `not_found` where `smallest` finds
 # no case accepted.
+#
+# Not written yet, each a `pending` block of its ledger: a share of cases a
+# label must reach, held by a statistical test; a text that matches a pattern;
+# cases steered toward a larger score the property reports.
 
 use math
 use property/internal/choices as drawing

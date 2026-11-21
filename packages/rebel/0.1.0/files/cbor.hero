@@ -114,7 +114,7 @@ record Entry
     # The value under it.
     value: Value
 
-## Codes and limits
+## Codes
 
 # The code of bytes that are not one well-formed and valid CBOR item, of a
 # value `encode` cannot write, and of a value that is not of the kind asked
@@ -143,6 +143,8 @@ constant NOT_FOUND: str
 # or an infinity.
 constant UNSUPPORTED: str
     "unsupported"
+
+## Limits
 
 # The deepest nesting `decode` reads: `1` is 0 deep, `[]` is 1, `[[]]` and
 # `1(1)` are 2, a tag counting as a level.

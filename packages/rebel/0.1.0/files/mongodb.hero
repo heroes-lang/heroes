@@ -42,6 +42,15 @@
 # run here; and `failed` for every other, a primary that stepped down and a
 # write conflict among them. A connection lost, or bytes that are no OP_MSG,
 # end the client: every later call fails `closed`.
+#
+# Not written yet, each a `pending` block of its ledger: a client certificate
+# offered, and X.509's login; logins by Kerberos, AWS and OIDC; writes to
+# several collections in one command, MongoDB 8's bulkWrite; a change stream
+# resumed by itself after a lost connection; reads that see a session's earlier
+# writes, by afterClusterTime; messages compressed by snappy, zlib or zstd;
+# files stored in chunks: uploaded, downloaded, found, renamed, deleted;
+# commands, connections and servers reported to a monitor the program gives;
+# servers reached through a load balancer.
 
 use bson
 use mongodb/internal/commands
@@ -488,9 +497,11 @@ record ServerInfo
     has_sessions: bool
     # The highest wire version it speaks: 21 for MongoDB 7.0, 25 for 8.0.
     max_wire_version: i64
-    # The most bytes of a document, of a message, and writes in one batch.
+    # The most bytes of one document it takes.
     max_document_size: i64
+    # The most bytes of one message it takes.
     max_message_size: i64
+    # The most writes it takes in one batch.
     max_write_batch_size: i64
     # Its whole `hello` reply.
     hello: bson.Document

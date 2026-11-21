@@ -86,7 +86,7 @@ variant Value
         # The members; `keys` gives them in order.
         members: {str: Value}
 
-## Codes and limits
+## Codes
 
 # The code of a text that is not TOML 1.1.0, of a value that is not of the
 # kind asked for, and of a value no TOML writes.
@@ -110,6 +110,8 @@ constant EXISTS: str
 # `to_json` fails with, and JSON's `null`, which `from_json` fails with.
 constant UNSUPPORTED: str
     "unsupported"
+
+## Limits
 
 # The deepest a value may stand below the document: the keys of its path and
 # the arrays and inline tables around it counted together. `parse` and

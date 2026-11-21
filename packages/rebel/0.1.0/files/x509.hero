@@ -27,6 +27,14 @@
 # system's store of roots (`tls` checks a connection by it), or read a
 # private key (`crypto/keypairs`). It fails with `invalid`, `not_found`, `not_text`,
 # `does_not_fit` and `unsupported`.
+#
+# Not written yet, each a `pending` block of its ledger: RFC 4514's text read
+# into a name; the extensions of other documents decoded: CT's SCT list and
+# poison, TLS feature, OCSP no-check, Microsoft's template, admissions, subject
+# directory attributes, private key usage period; RFC 5280 § 6.1's processing of
+# certificate policies over a chain; the system's own store of trusted roots
+# read; a certificate made and signed; a certificate request made and signed; a
+# revocation list made and signed.
 
 use asn1
 use big

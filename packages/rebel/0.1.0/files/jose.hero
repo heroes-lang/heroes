@@ -38,6 +38,13 @@
 # absent), `does_not_fit` (a time past what `time.Instant` holds),
 # `unsupported` (an algorithm this platform or Rebel lacks), and, from
 # `crypto/keypairs` and `crypto/seal`, `limit` and `failed`.
+#
+# Not written yet, each a `pending` block of its ledger: ES512 over P-521;
+# ES256K (RFC 8812); EdDSA over Ed448; the general and flattened JSON
+# serializations, several recipients; `RSA-OAEP`, OAEP over SHA-1; `A128KW`,
+# `A192KW`, `A256KW`, `ECDH-ES+A128KW` and the others, and `PBES2-*` (RFC 3394
+# key wrap); `A128CBC-HS256`, `A192CBC-HS384`, `A256CBC-HS512` and `A192GCM`;
+# `zip: DEF`, the plaintext compressed before it is sealed.
 
 use bytes
 use crypto
@@ -277,7 +284,7 @@ function parse_content_algorithm(name: str) -> ContentAlgorithm?
 ## Keys
 
 # A JSON Web Key (RFC 7517): a key as its JSON holds it, its members read and
-# their base 64 undone. Made by `to_key`, `parse_key` and the `key_from_`
+# their base 64 undone. Made by `key_of`, `parse_key` and the `key_from_`
 # functions, or built directly, where the functions that use it check it.
 record Key
     # `kty`: `RSA`, `EC`, `OKP` or `oct`.
@@ -315,8 +322,8 @@ record Key
 # requires, holds a member of the wrong JSON kind or base 64 that is not
 # base64url without padding, or an `EC` point of the wrong length for its
 # curve; `unsupported` for a `kty` other than the four, and for RSA's `oth`.
-# See also `to_json`, `parse_key`.
-function to_key(v: json.Value) -> Key?
+# See also `key_json`, `parse_key`.
+function key_of(v: json.Value) -> Key?
     j = jwk.read(v)?
     return ok(
         Key(key_type: j.key_type, curve: j.curve, id: j.id, usage: j.usage, operations: j.operations, algorithm: j.algorithm, material: j.material, chain: j.chain, extra: j.extra)
@@ -328,26 +335,26 @@ function to_key(v: json.Value) -> Key?
 #
 # - `key`: the key, written as it is, private members included.
 #
-# See also `to_key`, `format_key`, `public_of`.
-function to_json(key: Key) -> json.Value
+# See also `key_of`, `format_key`, `public_of`.
+function key_json(key: Key) -> json.Value
     return jwk.write(key)
 
 # The key the JSON text `text` writes.
 #
 # - `text`: one JWK, read as `json.parse` reads.
 #
-# Fails as `json.parse` and `to_key` do. See also `format_key`.
+# Fails as `json.parse` and `key_of` do. See also `format_key`.
 function parse_key(text: str) -> Key?
-    return to_key(json.parse(text)?)
+    return key_of(json.parse(text)?)
 
-# `key` as JSON text on one line, as `to_json` orders it.
+# `key` as JSON text on one line, as `key_json` orders it.
 #
 # - `key`: the key, private members included.
 #
 # Fails `invalid` where `extra` holds a `nan` or an infinity. See also
 # `parse_key`.
 function format_key(key: Key) -> str?
-    return json.format(to_json(key))
+    return json.format(key_json(key))
 
 # The keys of a JWK set's JSON text, `{"keys": [...]}`, in their order.
 #
@@ -374,7 +381,7 @@ function parse_key_set(text: str) -> [Key]?
     out: [Key] @= []
 
     for item in items
-        match to_key(item)
+        match key_of(item)
             .ok k  => out @ out.push(k)
             .err _ => _ = 0
 
@@ -382,11 +389,11 @@ function parse_key_set(text: str) -> [Key]?
 
 # `key_set` as a JWK set's JSON text on one line.
 #
-# - `key_set`: the keys, in their order, written as `to_json` writes each.
+# - `key_set`: the keys, in their order, written as `key_json` writes each.
 #
 # Fails as `format_key` does. See also `parse_key_set`.
 function format_key_set(key_set: [Key]) -> str?
-    members: {str: json.Value} = {"keys": .list(items: key_set.map(to_json))}
+    members: {str: json.Value} = {"keys": .list(items: key_set.map(key_json))}
     return json.format(.object(members: members))
 
 # The first key of `key_set` whose `kid` is `id`.
@@ -432,7 +439,7 @@ function key_from_secret(secret: [u8]) -> Key
 # P-384 or P-521, Ed25519 or X25519; `unsupported` for another algorithm or
 # curve. See also `encode_public_der`, `key_from_pem`.
 function decode_public_der(der: [u8]) -> Key?
-    return to_key(jwk.write(forms.read_public(der)?))
+    return key_of(jwk.write(forms.read_public(der)?))
 
 # The private key a PKCS #8 holds (RFC 5208), unencrypted, as a JWK with its
 # public members.
@@ -445,7 +452,7 @@ function decode_public_der(der: [u8]) -> Key?
 # `der` is no PKCS #8 of RSA, EC, Ed25519 or X25519. See also
 # `encode_private_der`.
 function decode_private_der(der: [u8]) -> Key?
-    return to_key(jwk.write(forms.read_private(der)?))
+    return key_of(jwk.write(forms.read_private(der)?))
 
 # The key of the first `PUBLIC KEY` or `PRIVATE KEY` block of PEM in `text`.
 #
@@ -476,7 +483,7 @@ function key_from_pem(text: str) -> Key?
 # other than P-256, P-384, P-521, Ed25519 and X25519. See also
 # `decode_public_der`.
 function encode_public_der(key: Key) -> [u8]?
-    return forms.public_der(jwk.read(to_json(key))?)
+    return forms.public_der(jwk.read(key_json(key))?)
 
 # `key` as PKCS #8 DER, unencrypted: the secret, handed to the caller.
 #
@@ -487,7 +494,7 @@ function encode_public_der(key: Key) -> [u8]?
 # missing a member; `unsupported` as `encode_public_der` does. See also
 # `decode_private_der`.
 function encode_private_der(key: Key) -> [u8]?
-    return forms.private_der(jwk.read(to_json(key))?)
+    return forms.private_der(jwk.read(key_json(key))?)
 
 # `key`'s public half as PEM's `PUBLIC KEY`, lines of 64 characters each
 # ending in `\n`.
@@ -526,7 +533,7 @@ function generate_key(kind: keypairs.Kind) -> Key?
 # Fails `invalid` for `oct`, whose one member is the secret. See also
 # `is_private`.
 function public_of(key: Key) -> Key?
-    return to_key(jwk.write(jwk.public_of(jwk.read(to_json(key))?)?))
+    return key_of(jwk.write(jwk.public_of(jwk.read(key_json(key))?)?))
 
 # Whether `key` holds a secret: a `d` member, or any `oct` key.
 #
@@ -546,7 +553,7 @@ function is_private(key: Key) -> bool
 #
 # Fails `invalid` where a required member is missing. See also `public_of`.
 function thumbprint(key: Key, algorithm: crypto.Algorithm) -> [u8]?
-    return jwk.thumbprint(jwk.read(to_json(key))?, algorithm: algorithm)
+    return jwk.thumbprint(jwk.read(key_json(key))?, algorithm: algorithm)
 
 ## Signatures
 
@@ -592,7 +599,7 @@ record Signer
 # `header` holding `alg`, or a `b64` payload holding a dot; `unsupported`.
 # See also `verify_compact`, `sign_token`.
 function sign_compact(payload: [u8], key: Key, algorithm: Algorithm, header: {str: json.Value}) -> str?
-    return compact.sign(payload, key: to_json(key), name: format_algorithm(algorithm), header: header)
+    return compact.sign(payload, key: key_json(key), name: format_algorithm(algorithm), header: header)
 
 # The JWS `token`, compact, verified by one of `trusted` with one of
 # `algorithms`.
@@ -610,7 +617,7 @@ function sign_compact(payload: [u8], key: Key, algorithm: Algorithm, header: {st
 # signature does not hold; `not_found` where no key has the header's `kid`;
 # `unsupported`. See also `sign_compact`, `verify_token`, `header_of`.
 function verify_compact(token: str, trusted: [Key], algorithms: [Algorithm]) -> Message?
-    got = compact.verify(token, given: [], detached: false, trusted: trusted.map(to_json), accepted: algorithms.map(format_algorithm))?
+    got = compact.verify(token, given: [], detached: false, trusted: trusted.map(key_json), accepted: algorithms.map(format_algorithm))?
     return ok(Message(protected: got.protected, unprotected: got.unprotected, payload: got.payload))
 
 # The JWS `token`, compact with its payload carried apart (RFC 7515
@@ -626,7 +633,7 @@ function verify_compact(token: str, trusted: [Key], algorithms: [Algorithm]) -> 
 # Fails as `verify_compact` does, and `invalid` where the token carries a
 # payload that is not `payload`. See also `verify_compact`.
 function verify_detached(token: str, payload: [u8], trusted: [Key], algorithms: [Algorithm]) -> Message?
-    got = compact.verify(token, given: payload, detached: true, trusted: trusted.map(to_json), accepted: algorithms.map(format_algorithm))?
+    got = compact.verify(token, given: payload, detached: true, trusted: trusted.map(key_json), accepted: algorithms.map(format_algorithm))?
     return ok(Message(protected: got.protected, unprotected: got.unprotected, payload: got.payload))
 
 # The protected header of the compact JWS or JWE `token`, read and NOT
@@ -655,7 +662,7 @@ function sign_json(payload: [u8], signers: [Signer]) -> str?
 
     for s in signers
         signing @ signing.push(
-            general.Signing(key: to_json(s.key), algorithm: format_algorithm(s.algorithm), protected: s.protected, unprotected: s.unprotected)
+            general.Signing(key: key_json(s.key), algorithm: format_algorithm(s.algorithm), protected: s.protected, unprotected: s.unprotected)
         )
 
     return general.sign(payload, signers: signing, flattened: false)
@@ -669,7 +676,7 @@ function sign_json(payload: [u8], signers: [Signer]) -> str?
 # Fails as `sign_json` does. See also `sign_json`, `verify_json`.
 function sign_flattened(payload: [u8], signer: Signer) -> str?
     one = general.Signing(
-        key: to_json(signer.key),
+        key: key_json(signer.key),
         algorithm: format_algorithm(signer.algorithm),
         protected: signer.protected,
         unprotected: signer.unprotected
@@ -689,7 +696,7 @@ function sign_flattened(payload: [u8], signer: Signer) -> str?
 # where `text` is not of the form or no signature holds; `not_found` where
 # every signature names a `kid` no key has. See also `sign_json`.
 function verify_json(text: str, trusted: [Key], algorithms: [Algorithm]) -> Message?
-    got = general.verify(text, trusted: trusted.map(to_json), accepted: algorithms.map(format_algorithm))?
+    got = general.verify(text, trusted: trusted.map(key_json), accepted: algorithms.map(format_algorithm))?
     return ok(Message(protected: got.protected, unprotected: got.unprotected, payload: got.payload))
 
 ## Tokens
@@ -886,7 +893,7 @@ record Decrypted
 function encrypt_compact(plaintext: [u8], key: Key, algorithm: KeyAlgorithm, encryption: ContentAlgorithm, header: {str: json.Value}) -> str?
     return sealing.encrypt(
         plaintext,
-        key: to_json(key),
+        key: key_json(key),
         alg: format_key_algorithm(algorithm),
         enc: format_content_algorithm(encryption),
         header: header
@@ -905,7 +912,7 @@ function encrypt_compact(plaintext: [u8], key: Key, algorithm: KeyAlgorithm, enc
 # of the plaintext is told; `not_found` where no key has the header's `kid`;
 # `unsupported` as `encrypt_compact` fails. See also `encrypt_compact`.
 function decrypt_compact(token: str, trusted: [Key], algorithms: [KeyAlgorithm], encryptions: [ContentAlgorithm]) -> Decrypted?
-    got = sealing.decrypt(token, trusted: trusted.map(to_json), accepted_algorithms: algorithms.map(format_key_algorithm), accepted_encryptions: encryptions.map(format_content_algorithm))?
+    got = sealing.decrypt(token, trusted: trusted.map(key_json), accepted_algorithms: algorithms.map(format_key_algorithm), accepted_encryptions: encryptions.map(format_content_algorithm))?
     return ok(Decrypted(protected: got.protected, plaintext: got.plaintext))
 
 ## Tests
@@ -1073,14 +1080,14 @@ test "parse_content_algorithm: A128GCM read, A128CBC-HS256 lacking"
         .err e => assert e.code == UNSUPPORTED
 
 # A JWK read from a JSON value.
-test "to_key: an HMAC key of RFC 7520 § 3.5"
-    key = to_key(json.parse(vectors.hmac_key()).must()).must()
+test "key_of: an HMAC key of RFC 7520 § 3.5"
+    key = key_of(json.parse(vectors.hmac_key()).must()).must()
     assert key.key_type == "oct" && key.id == "018c0ae5-4d9b-471b-bfd6-eef314bc7037" && key.algorithm == "HS256"
 
 # A JWK written as a JSON value, read back the same.
-test "to_json: a key read back the same"
+test "key_json: a key read back the same"
     key = parse_key(vectors.rsa_public()).must()
-    assert to_key(to_json(key)).must() == key
+    assert key_of(key_json(key)).must() == key
 
 # A JWK read from its text.
 test "parse_key: RFC 7520 § 3.3's RSA public key"

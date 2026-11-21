@@ -18,6 +18,9 @@
 # Fails as `io.write` fails the stream: `closed`, `permission`, `failed`, and
 # as the logger's clock fails, `failed` for `time.now`; `invalid` where a
 # level's name is not one.
+#
+# Not written yet, each a `pending` block of its ledger: a logger that writes
+# nothing.
 
 use io
 use log/internal/fixture
@@ -27,7 +30,7 @@ use log/internal/text_form
 use strings
 use time
 
-## Codes and keys
+## Codes
 
 # The code of a text that names no level, from `parse_level`.
 constant INVALID: str
@@ -48,6 +51,8 @@ constant PERMISSION: str
 # four functions named after a level.
 constant FAILED: str
     "failed"
+
+## Keys
 
 # The key of a line's time in the JSON form, `time`.
 constant TIME_KEY: str

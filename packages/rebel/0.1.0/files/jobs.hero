@@ -40,6 +40,14 @@
 # id names no job, or an attempt is no longer running; and `stopped` where
 # a job's cancellation was asked while it ran. A store fails also with its
 # driver's codes (`sql`'s, `redis`'s), handed on.
+#
+# Not written yet, each a `pending` block of its ledger: a worker woken at once
+# when a job comes, rather than at its next poll; no more than so many attempts
+# of a kind in a time, across workers; jobs that wait for others: chains,
+# groups, chords, dependencies, a job inserted not yet runnable; a long job that
+# keeps its place between attempts and resumes from it; a job dropped where no
+# worker started it by a time; the jobs processed and failed counted over time,
+# the latencies measured; the worker processes alive, each with what it runs.
 
 use jobs/internal/limits
 use jobs/internal/stored

@@ -30,6 +30,10 @@
 #
 # Fails `invalid` where a filter is not jq or where a run raises an error
 # nothing catches, and `limit` where a run reaches one of its bounds.
+#
+# Not written yet, each a `pending` block of its ledger: numbers past an `f64`:
+# big integers and a literal's own digits; a function of the program's own
+# called from a filter; the Bessel functions jq names: j0, j1, y0, y1, jn, yn.
 
 use json
 use json/jq/internal/compile
@@ -43,7 +47,7 @@ use json/jq/internal/text as texts
 use json/jq/internal/values
 use json/jq/internal/write
 
-## Codes and bounds
+## Codes
 
 # The code of a filter that is not jq, and of a run that raised an error
 # nothing caught: `parse`, `run` and `run_text` fail with it.
@@ -57,6 +61,8 @@ constant LIMIT: str
 # The code of `first` where the filter outputs nothing.
 constant NOT_FOUND: str
     "not_found"
+
+## Bounds
 
 # The steps a run takes at most unless its `Options` say otherwise: one step
 # is one move of the machine, and a builtin that copies or walks a value

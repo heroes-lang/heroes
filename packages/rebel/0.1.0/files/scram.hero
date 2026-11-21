@@ -14,6 +14,9 @@
 # It fails with `invalid`, a server's message that is not SCRAM's or asks
 # what this client refuses, and `permission`, a server that refuses the login
 # or does not know the password.
+#
+# Not written yet, each a `pending` block of its ledger: SCRAM-SHA-256-PLUS: the
+# login bound to its TLS connection.
 
 use bytes
 use crypto
@@ -22,7 +25,7 @@ use scram/internal/messages
 use scram/internal/preparation
 use strings
 
-## Codes and bounds
+## Codes
 
 # The code of a server's message that is not SCRAM's, a nonce that does not
 # extend the client's, a salt that is not base 64, an iteration count outside
@@ -35,6 +38,8 @@ constant INVALID: str
 # one the password makes, so it does not know the password (`verify`).
 constant PERMISSION: str
     "permission"
+
+## Bounds
 
 # The largest iteration count `client_final` accepts from a server, so that a
 # server cannot make the client spend without end: PBKDF2 of ten million

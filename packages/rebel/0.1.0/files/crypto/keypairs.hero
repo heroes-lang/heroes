@@ -44,6 +44,15 @@
 # (a key closed), `limit` (no memory or key left), `unsupported` (a kind
 # this platform lacks) and `failed` (the system failed, its words in the
 # message).
+#
+# Not written yet, each a `pending` block of its ledger: Ed25519ph and
+# Ed25519ctx, a context or a prehashed message; an ECDSA signature as its two
+# numbers side by side, r || s (JWS's form); an RSA signature over SHA-1, for
+# certificates and protocols of before 2017; a digest computed elsewhere signed
+# or checked; a P-256 or P-384 private key read from its scalar alone; OpenSSL's
+# older forms: PKCS #1's RSAPrivateKey and RSAPublicKey, SEC 1's ECPrivateKey; a
+# private key encrypted under a password; P-521, secp256k1, the Brainpool
+# curves, Ed448, X448, DSA and finite-field Diffie-Hellman.
 
 use bytes
 use crypto/hero_crypto

@@ -38,6 +38,13 @@
 # `not_found` (a request no one answers, a subscription unknown), `permission`
 # (a login or a subject refused), `closed`, `timeout`, `stopped`, `limit` (a
 # message past the server's maximum), `unsupported` and `failed`.
+#
+# Not written yet, each a `pending` block of its ledger: the pool replaced while
+# connected; a certificate of the client's own (mutual TLS); the WebSocket's
+# opening headers and its compression; JetStream: streams, consumers,
+# acknowledgements, publishing with an answer; JetStream's key-value store;
+# JetStream's object store; the services API: endpoints answering requests,
+# their stats and their discovery.
 
 use bytes
 use io

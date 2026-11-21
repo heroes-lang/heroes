@@ -49,18 +49,23 @@ variant Value
     null_value
     # `true` or `false`.
     boolean
+        # The value.
         v: bool
     # A number, never `nan` or an infinity in a value `parse` answers.
     number
+        # The value, finite.
         v: f64
     # A string, with its escapes read: the characters themselves.
     text
+        # The characters.
         v: str
     # An array: its elements in order.
     list
+        # The elements, in order.
         items: [Value]
     # An object: its members by key, in the order they were written.
     object
+        # The members by key, in the order they were written.
         members: {str: Value}
 
 # Whether `a` and `b` are the same JSON value: numbers by value, texts by
@@ -136,7 +141,7 @@ function equals(a: Value, b: Value) -> bool
 
     return true
 
-## Codes and limits
+## Codes
 
 # The code of a text that is not JSON, of a value that is not of the kind
 # asked for, and of a pointer that is not one.
@@ -157,6 +162,8 @@ constant NOT_FOUND: str
 # `f64` reaches, an integer past `MAX_EXACT_INT` where an exact one was asked.
 constant DOES_NOT_FIT: str
     "does_not_fit"
+
+## Limits
 
 # The deepest nesting `parse` reads: `1` is 0 deep, `[]` is 1, `[[]]` is 2.
 # Measured on arm64 macOS on 2026-11-15, `==` on two objects nested 5,800 deep

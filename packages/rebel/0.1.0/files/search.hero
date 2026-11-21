@@ -18,6 +18,15 @@
 # query or a setting cannot be read or bytes are not an index; `not_found`,
 # where an id is not in an index; and `exists`, where an id is already
 # there.
+#
+# Not written yet, each a `pending` block of its ledger: accents and letters
+# beyond ASCII folded to ASCII; text cut by white space, by a regular
+# expression, into n-grams, or kept whole; texts holding a word within a few
+# edits of the one asked; texts holding a word a regular expression matches; a
+# part of a query weighted, scored as a constant, or the best part alone; texts
+# like a given one; a document of several fields, each searched with its own
+# weight; the part of a text a query matched, its words marked; how a score was
+# reached.
 
 use search/internal/analyze
 use search/internal/codes
