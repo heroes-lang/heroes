@@ -1,16 +1,15 @@
 # Six hundred dates, times, skeletons and relative times written by ICU 79.1
 # (CLDR 49), the reference this package is held to: each line one of the
-# commands of the oracle kept in the round's scratch folder
-# (`.claude/worktrees/rebel-scratch/i18n/oracle/`) and what ICU answered,
-# separated by tabs. `date` is a locale, a date style, a time style (either
-# `none`), milliseconds since 1970 and a zone; `skeleton` a locale and a
-# skeleton, answered by its pattern; `relative` a locale, an amount, a unit,
-# a width and whether the number is always written; `dpattern` a locale, a
-# pattern, milliseconds and a zone. Drawn at random (seed 13) on 2026-11-19
-# from 10,914 cases over every locale both CLDR 49 and ICU carry, ICU asked
-# for the Gregorian calendar, and only from the cases this package answers
-# as ICU does: the 29 it answers otherwise are named in the ledger. Only a
-# test build reads the cases.
+# commands of a one-off oracle program, which is not in the tree
+# (defect 2639), and what ICU answered, separated by tabs. `date` is a locale,
+# a date style, a time style (either `none`), milliseconds since 1970 and a
+# zone; `skeleton` a locale and a skeleton, answered by its pattern;
+# `relative` a locale, an amount, a unit, a width and whether the number is
+# always written; `dpattern` a locale, a pattern, milliseconds and a zone.
+# Drawn at random (seed 13) on 2026-11-19 from 10,914 cases over every locale
+# both CLDR 49 and ICU carry, ICU asked for the Gregorian calendar, and only
+# from the cases this package answers as ICU does: the 29 it answers otherwise
+# are named in the ledger. Only a test build reads the cases.
 
 use i18n
 use i18n/dates/internal/date_data

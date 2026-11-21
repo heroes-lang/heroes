@@ -1,6 +1,6 @@
 # The loopback tests' certificates and keys, made with OpenSSL 4.1 on
-# 2026-11-16 (`rebel-scratch/tls/certs`, its commands in that session's
-# record) and kept here as text, so that no test needs a tool or a network.
+# 2026-11-16 in a scratch folder that is not kept, and kept here as text, so
+# that no test needs a tool or a network.
 # They are test data and nothing else: every key below is public.
 
 # The test authority's certificate, EC on P-256, `CN=Heroes Test Root`,

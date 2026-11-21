@@ -205,7 +205,7 @@ notes did not read them from a clock.
     a Heroes program through an `extern` group with `link` and `--library`,
     plain and under `--sanitize`: the Ed25519 public key of RFC 8032's first
     vector equal, a ChaCha20-Poly1305 seal opened back to the same bytes, a
-    bit changed refused (rebel-scratch/swiftprobe/). So CryptoKit is
+    bit changed refused, by a probe that is not kept. So CryptoKit is
     reachable; what it would cost is the toolchain's: the platform layer
     compiles C alone today, and a member written in Swift needs `swiftc` on
     every Mac that builds a program using it, a change of the compiler's

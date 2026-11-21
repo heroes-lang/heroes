@@ -2,9 +2,9 @@
 # gpt-oss models read: its ordinary tokens and its pattern are
 # `o200k_base`'s, held equal by the program that wrote this module, and
 # its 1091 special tokens are these. Nothing below this header is edited
-# by hand: the one-off program `gen_tables.py`, kept outside the tree in the
-# round's scratch folder (`.claude/worktrees/rebel-scratch/tokenizer/gen/`),
-# read them from tiktoken 0.14.0 on 2026-11-18 and wrote this module whole.
+# by hand: the one-off program `gen_tables.py`, which is not in the tree
+# (defect 2639), read them from tiktoken 0.14.0 on 2026-11-18 and wrote this
+# module whole.
 #
 # Taken from OpenAI's tiktoken, whose licence travels with it here, as its
 # LICENSE states it:

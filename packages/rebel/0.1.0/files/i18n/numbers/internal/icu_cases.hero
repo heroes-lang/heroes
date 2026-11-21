@@ -2,14 +2,13 @@
 # package's writer is held to: each line a locale, a style, a number, a
 # currency and what ICU wrote, separated by tabs. Drawn at random
 # (seed 11) from 6,570 cases, ten for each of CLDR 49's 657 locales, run
-# through ICU on 2026-11-19 by a one-off program kept in the round's scratch
-# folder (`.claude/worktrees/rebel-scratch/i18n/oracle/`), its styles
-# `unum_open` with CLDR's minimum grouping for decimals, percentages and
-# scientific numbers and `NumberFormatter` for money and compact numbers.
-# The 140 cases of locales ICU does not carry, which it writes as the root
-# writes them, are left out, and so are en-GE and en-HU, whose euros ICU
-# writes before the number where CLDR's data writes them after it. Only a
-# test build reads the cases.
+# through ICU on 2026-11-19 by a one-off program, which is not in the tree
+# (defect 2639), its styles `unum_open` with CLDR's minimum grouping for
+# decimals, percentages and scientific numbers and `NumberFormatter` for money
+# and compact numbers. The 140 cases of locales ICU does not carry, which it
+# writes as the root writes them, are left out, and so are en-GE and en-HU,
+# whose euros ICU writes before the number where CLDR's data writes them after
+# it. Only a test build reads the cases.
 
 use i18n
 use i18n/numbers/internal/formatting

@@ -14,9 +14,9 @@
  * with another signature than the header's is `conflicting types` where it
  * is compiled.
  *
- * WHAT EACH SYSTEM OFFERS, MEASURED 2026-11-17 by a C probe of each public,
- * non-deprecated API (`rebel-scratch/crypto-system/probe/`), the macOS one
- * compiled with `-Werror=deprecated-declarations`, the Linux one with
+ * WHAT EACH SYSTEM OFFERS, MEASURED 2026-11-17 by a C probe, not kept, of
+ * each public, non-deprecated API, the macOS one compiled with
+ * `-Werror=deprecated-declarations`, the Linux one with
  * `OPENSSL_NO_DEPRECATED`, every capability exercised and checked back:
  *
  *   capability                  macOS 27.2           Linux (OpenSSL 3.5.7)   Windows (CNG)
@@ -59,13 +59,14 @@
  *       below) on every platform, the same bytes everywhere; PEM's base64
  *       is the face's.
  *
- * WHAT THE ARMS ANSWERED, 2026-11-17, through `rebel-scratch/crypto-system/
- * probe/member_probe.c` over Wycheproof's files (3,173 applicable cases) and
- * NIST CAVP's AES-GCM (1,500): Linux arm64 0 failed of all, under ASan and
- * UBSan; macOS 0 failed of every case of a kind it offers, under ASan and
- * UBSan, and `leaks --atExit` 0 leaks; Windows unrun. The Security framework
- * held ECDSA signatures in BER and an RSA signature past its modulus, so the
- * common part reads a signature's one form before any arm sees it
+ * WHAT THE ARMS ANSWERED, 2026-11-17, through a C probe of this member, not
+ * kept, over Wycheproof's files (3,173 applicable cases) and NIST CAVP's
+ * AES-GCM (1,500): Linux arm64 0 failed of all, under ASan and UBSan; macOS
+ * 0 failed of every case of a kind it offers, under ASan and UBSan, and
+ * `leaks --atExit` 0 leaks; Windows unrun that day, and run on 2026-11-18
+ * (THE WINDOWS ARM, below). The Security framework held ECDSA signatures in
+ * BER and an RSA signature past its modulus, so the common part reads a
+ * signature's one form before any arm sees it
  * (`hero_crypto_signature_formed`).
  *
  * THREE ARMS, ONE SHAPE. The common part (the last failure, the table of
@@ -3050,9 +3051,22 @@ static void hero_crypto_arm_free(hero_crypto_held *held) {
 #endif
 
 /* ===========================================================================
- * THE WINDOWS ARM: CNG's BCrypt. UNRUN: the box was off on 2026-11-17; this
- * arm is written from the Win32 reference and compiled against MinGW-w64's
- * headers on the Mac (`rebel-scratch/windows/crypto.md` lists what is owed).
+ * THE WINDOWS ARM: CNG's BCrypt, written from the Win32 reference and first
+ * compiled against MinGW-w64's headers on the Mac, the box being off on
+ * 2026-11-17. Run on the box on 2026-11-18 at 1e0a4f82b (Windows 10.0.26100,
+ * clang 23.1.1 for the MSVC target): it compiles with no word under C11 and
+ * GNU11 `-Wpedantic -Werror`, the SDK's `BCRYPT_CHACHA20_POLY1305_ALGORITHM`
+ * and the `#ifndef` below agreeing; CNG opens CHACHA20_POLY1305; the C probe
+ * of this member held every Wycheproof and CAVP case of a kind it offers, 0
+ * failed, plain and under ASan, with Linux arm64's counts but one (RSA PKCS
+ * #1 v1.5's one acceptable case held, which Linux refused, either way
+ * acceptable); `reach_hero_crypto`, `reach_crypto_seal` and
+ * `reach_crypto_keypairs` passed, plain and under `--sanitize`. CNG refused
+ * RFC 7748's Alice as a `BCRYPT_ECCPRIVATE_BLOB` on curve25519 in both byte
+ * orders of the scalar (`STATUS_INVALID_PARAMETER`), so X25519 answers
+ * `unsupported` here until the blob CNG takes is measured. Owed on the box:
+ * that blob, RSA 4096's generation time, and a key written here read back on
+ * macOS and Linux.
  *
  * A pair's key is its material (THE FORMS), from which each call makes the
  * blob CNG imports for the algorithm it runs (`BCRYPT_ECCPRIVATE_BLOB` for
