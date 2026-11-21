@@ -101,13 +101,35 @@ function told(control: net.Listener) -> str
 
     return "none of ten connections told a port"
 
-# Binds UDP and TCP on one port of 127.0.0.1, tells it to the control port
-# `arg` names first, and plays each step of the script after it, each within
-# 10 s. Gives back a line for each query read.
+# A UDP socket and a TCP listener on one port of 127.0.0.1.
+record Bound
+    # The UDP socket, on a port the system chose for it.
+    socket: net.UdpSocket
+    # The TCP listener on the socket's port.
+    listener: net.Listener
+
+# A UDP socket on a port the system chooses and a TCP listener on the same
+# port. The system chooses it for UDP alone, so another program may hold
+# it over TCP, and the listen there then fails `exists` (defect 2643): the
+# socket is closed and another port asked, `tries` times at most.
+function bound(tries: i64) -> Bound
+    socket @= net.open_udp("127.0.0.1", port: 0).must()
+
+    match net.listen("127.0.0.1", port: socket.address.port)
+        .ok l => return Bound(socket: socket, listener: l)
+        .err e =>
+            net.close_udp(@socket).must()
+            assert e.code == net.EXISTS && tries > 1
+            return bound(tries - 1)
+
+# Binds UDP and TCP on one port of 127.0.0.1 (`bound`), tells it to the
+# control port `arg` names first, and plays each step of the script after
+# it, each within 10 s. Gives back a line for each query read.
 function serve(arg: str) -> str
     parts = strings.split(s: arg, sep: SEPARATOR)
-    socket @= net.open_udp("127.0.0.1", port: 0).must()
-    listener @= net.listen("127.0.0.1", port: socket.address.port).must()
+    both = bound(10)
+    socket @= both.socket
+    listener @= both.listener
     tell(control: net.parse_port(parts[0]).must(), text: f"{socket.address.port}")
     net.set_udp_deadline(socket, deadline_ms: 10_000).must()
     net.set_accept_deadline(listener, deadline_ms: 10_000).must()
