@@ -11,7 +11,6 @@ use json
 use jsonrpc
 use mcp
 use net
-use os
 use strings
 
 # The two ends of a connection whose second end has written `results` ahead,
@@ -259,21 +258,26 @@ function serve_http_many(control: i64) -> i64
     return served
 
 # A port of the loopback address where nothing listens, for a test of what
-# a connect there answers. Port 1, taken for one before, is none: on macOS a
-# program of any user may listen on it on every address, and a connect to
-# 127.0.0.1 then reaches it (measured 2026-11-21). This one is drawn by the
-# system's generator from 20000 to 31999, below Linux's 32768 to 60999 and
-# macOS's and Windows' 49152 to 65535, so no system gives it to a socket of
-# its own choosing in the moment before the test's connect, and kept where a
-# connect there is refused, so a listener of another program is passed over,
-# a hundred draws at most.
+# a connect there answers. A port a listener chose and let go is any
+# program's at once, a connect's or a listener's, before the test's connect
+# reaches it; this one lies from 20000 to 31999, below Linux's 32768 to 60999
+# and macOS's and Windows' 49152 to 65535, so no system gives it to a socket
+# of its own choosing, and is kept where a connect there is refused, so a
+# listener of another program is passed over, on that address or on every
+# address, which a listen on 127.0.0.1 does not see on macOS when the
+# program is the same user's (measured 2026-11-21); a hundred draws at most.
+# Each draw is the port the system gives a listener of this test, which no
+# two sockets hold at once, carried one to one onto those 12,000 ports
+# (7919, a prime, shares no factor with 12,000), so two copies of the tests
+# at once draw two ports, and the draw needs no package but `net`.
 function silent_port() -> i64
     tries @= 0
 
     while tries < 100
         tries @ tries + 1
-        drawn = os.random_bytes(2).must()
-        port = 20000 + (drawn[0].to_i64().must() * 256 + drawn[1].to_i64().must()) % 12000
+        probe @= net.listen("127.0.0.1", port: 0).must()
+        port = 20000 + probe.address.port * 7919 % 12000
+        net.close_listener(@probe).must()
 
         match net.connect("127.0.0.1", port: port, deadline_ms: 10000)
             .ok c =>

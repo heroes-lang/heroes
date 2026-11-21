@@ -14,7 +14,6 @@ use io
 use jose
 use json
 use net
-use numbers
 use strings
 use threads
 use time
@@ -69,7 +68,7 @@ function start() -> Started
     t = threads.spawn_text(body: serve, arg: f"{control.address.port}").must()
     said = told(control)
     net.close_listener(@control).must()
-    return Started(port: numbers.parse_int(said).must(), thread: t)
+    return Started(port: net.parse_port(said).must(), thread: t)
 
 # Tells `text`, the port a server listens on, to the control listener at
 # `control` after the word `told` that marks it as the server's (`told`),
