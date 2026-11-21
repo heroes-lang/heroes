@@ -2119,7 +2119,7 @@ test "options and connect: arguments refused before any connection is made"
 
 test "connect: nothing listening fails closed"
     opts @= options("127.0.0.1")
-    opts.port @ fake.free_port()
+    opts.port @ fake.quiet_port()
     opts.security @ .plain
 
     match connect(opts)
@@ -2127,9 +2127,9 @@ test "connect: nothing listening fails closed"
         .err e => assert e.code == "closed"
 
 test "bind: a wrong password fails permission, and result_of tells invalidCredentials and the server's words"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind-refused").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "bind-refused")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2145,9 +2145,9 @@ test "bind: a wrong password fails permission, and result_of tells invalidCreden
     assert threads.wait_text(@server) == "ok"
 
 test "bind: an empty password and an unauthenticated bind without a name are refused before anything is sent"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} anonymous").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "anonymous")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2172,9 +2172,9 @@ test "bind: an empty password and an unauthenticated bind without a name are ref
     assert threads.wait_text(@server) == "ok"
 
 test "bind_sasl: a step the server answers with a challenge, saslBindInProgress"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} sasl-steps").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "sasl-steps")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2186,9 +2186,9 @@ test "bind_sasl: a step the server answers with a challenge, saslBindInProgress"
     assert threads.wait_text(@server) == "ok"
 
 test "search: the server's own size limit fails limit, and no such base fails not_found with the name it matched"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} search-size").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "search-size")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2203,9 +2203,9 @@ test "search: the server's own size limit fails limit, and no such base fails no
 
     close(@c).must()
     assert threads.wait_text(@server) == "ok"
-    port_2 = fake.free_port()
-    server_2 @= threads.spawn_text(body: fake.serve, arg: f"plain {port_2} search-nosuch").must()
-    fake.until_listening(port_2)
+    started_2 = fake.start(mode: "plain", name: "search-nosuch")
+    port_2 = started_2.port
+    server_2 @= started_2.thread
     opts.port @ port_2
     c_2 @= connect(opts).must()
     bind(@c_2, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
@@ -2218,9 +2218,9 @@ test "search: the server's own size limit fails limit, and no such base fails no
     assert threads.wait_text(@server_2) == "ok"
 
 test "search: a size limit, a time limit and types only the query asks, answered with sizeLimitExceeded as a value"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} search-limits").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "search-limits")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2239,9 +2239,9 @@ test "search: a size limit, a time limit and types only the query asks, answered
     assert threads.wait_text(@server) == "ok"
 
 test "lookup: a base with no entry answered fails not_found"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} lookup-none").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "lookup-none")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2256,9 +2256,9 @@ test "lookup: a base with no entry answered fails not_found"
     assert threads.wait_text(@server) == "ok"
 
 test "add: an entry that exists fails exists; an entry with no attribute or an attribute with no value is refused"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} add-exists").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "add-exists")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2282,9 +2282,9 @@ test "add: an entry that exists fails exists; an entry with no attribute or an a
 
 test "delete: no such entry fails not_found, entries below fail not_empty, a referral fails not_found with its URL a value"
     for name in ["delete-nosuch", "delete-nonleaf", "delete-referral"]
-        port = fake.free_port()
-        server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} {name}").must()
-        fake.until_listening(port)
+        started = fake.start(mode: "plain", name: name)
+        port = started.port
+        server @= started.thread
         opts @= options("127.0.0.1")
         opts.port @ port
         opts.security @ .plain
@@ -2308,9 +2308,9 @@ test "delete: no such entry fails not_found, entries below fail not_empty, a ref
 
 test "a notice of disconnection, bytes that are no LDAP, a message past its bound and a deadline each end the connection"
     for name in ["notice", "garbage", "huge", "silent"]
-        port = fake.free_port()
-        server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} {name}").must()
-        fake.until_listening(port)
+        started = fake.start(mode: "plain", name: name)
+        port = started.port
+        server @= started.thread
         opts @= options("127.0.0.1")
         opts.port @ port
         opts.security @ .plain
@@ -2339,9 +2339,9 @@ test "a notice of disconnection, bytes that are no LDAP, a message past its boun
         assert threads.wait_text(@server) == "ok"
 
 test "abandon_search: a search given up, its late answer read past, and no operation while a search runs"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} abandon").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "abandon")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2369,9 +2369,9 @@ test "abandon_search: a search given up, its late answer read past, and no opera
     assert threads.wait_text(@server) == "ok"
 
 test "connect over TLS from the first byte, the server's certificate checked against tls's test authority"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"ldaps {port} bind").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "ldaps", name: "bind")
+    port = started.port
+    server @= started.thread
     opts @= options("localhost")
     opts.port @ port
     opts.security @ .direct(roots: tls.TEST_ROOT)
@@ -2383,9 +2383,9 @@ test "connect over TLS from the first byte, the server's certificate checked aga
     assert threads.wait_text(@server) == "ok"
 
 test "connect with StartTLS: the request, its answer, then TLS, then a bind numbered after it"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"starttls {port} starttls").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "starttls", name: "starttls")
+    port = started.port
+    server @= started.thread
     opts @= options("localhost")
     opts.port @ port
     opts.security @ .start_tls(roots: tls.TEST_ROOT)
@@ -2397,9 +2397,9 @@ test "connect with StartTLS: the request, its answer, then TLS, then a bind numb
     assert threads.wait_text(@server) == "ok"
 
 test "connect with StartTLS: a server that knows no StartTLS fails unsupported"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} starttls-refused").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "starttls-refused")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .start_tls(roots: tls.TEST_ROOT)
@@ -2413,9 +2413,9 @@ test "connect with StartTLS: a server that knows no StartTLS fails unsupported"
 test "start_tls: on macOS a connection already open fails unsupported, before anything is sent"
     if os.system() != .darwin
         skip_test(reason: "the case is macOS's alone, whose TLS begins only over a connection tls makes")
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "bind")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2705,9 +2705,9 @@ test "result_name: noSuchObject"
 
 # The whole result after a refused bind: its code and the server's words.
 test "result_of: after a wrong password"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind-refused").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "bind-refused")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2722,9 +2722,9 @@ test "result_of: after a wrong password"
 
 # The ManageDsaIT control sent with a delete.
 test "set_controls: ManageDsaIT with a delete"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} delete-managed").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "delete-managed")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2783,9 +2783,9 @@ test "options: the defaults"
 
 # A connection in plain text to a server on this machine, bound and closed.
 test "connect: in plain text"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "bind")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2797,9 +2797,9 @@ test "connect: in plain text"
 
 # A connection closed, its session ended with an UnbindRequest.
 test "close: after a bind"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "bind")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2811,9 +2811,9 @@ test "close: after a bind"
 
 # A connection is open until closed.
 test "is_closed: open, then closed"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "bind")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2826,9 +2826,9 @@ test "is_closed: open, then closed"
 
 # A connection over TLS from the first byte.
 test "is_secured: ldaps"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"ldaps {port} bind").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "ldaps", name: "bind")
+    port = started.port
+    server @= started.thread
     opts @= options("localhost")
     opts.port @ port
     opts.security @ .direct(roots: tls.TEST_ROOT)
@@ -2842,7 +2842,6 @@ test "is_secured: ldaps"
 # TLS over a connection it holds; macOS answers `unsupported`, and there
 # `connect` with `.start_tls` is the way.
 test "start_tls: on an open connection"
-    port = fake.free_port()
     darwin = os.system() == .darwin
 
     mode = if darwin
@@ -2855,8 +2854,9 @@ test "start_tls: on an open connection"
     else
         "starttls"
 
-    server @= threads.spawn_text(body: fake.serve, arg: f"{mode} {port} {script}").must()
-    fake.until_listening(port)
+    started = fake.start(mode: mode, name: script)
+    port = started.port
+    server @= started.thread
     opts @= options("localhost")
     opts.port @ port
     opts.security @ .plain
@@ -2876,9 +2876,9 @@ test "start_tls: on an open connection"
 
 # Each later operation bounded to five seconds.
 test "set_deadline: five seconds"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "bind")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2890,9 +2890,9 @@ test "set_deadline: five seconds"
 
 # A simple bind as the directory's administrator.
 test "bind: a name and a password"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "bind")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2903,9 +2903,9 @@ test "bind: a name and a password"
 
 # Back to anonymous.
 test "bind_anonymous: anonymous"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} anonymous").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "anonymous")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2916,9 +2916,9 @@ test "bind_anonymous: anonymous"
 
 # A name and no password, which OpenLDAP refuses by default.
 test "bind_unauthenticated: refused by default"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} unauthenticated").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "unauthenticated")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2933,9 +2933,9 @@ test "bind_unauthenticated: refused by default"
 
 # The first step of a SASL mechanism.
 test "bind_sasl: a challenge"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} sasl-steps").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "sasl-steps")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2946,9 +2946,9 @@ test "bind_sasl: a challenge"
 
 # The identity the connection proves.
 test "bind_external: no identity asked"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} external").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "external")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2959,9 +2959,9 @@ test "bind_external: no identity asked"
 
 # A user and a password with SASL PLAIN.
 test "bind_plain: a user"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} plain").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "plain")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2972,9 +2972,9 @@ test "bind_plain: a user"
 
 # The identity bound.
 test "who_am_i: the administrator"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} whoami").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "whoami")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -2991,9 +2991,9 @@ test "query: a subtree"
 
 # The people named Ana, with their names and mail.
 test "search: entries and a reference"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} search").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "search")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3010,9 +3010,9 @@ test "search: entries and a reference"
 
 # One entry by its name.
 test "lookup: by name"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} lookup").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "lookup")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3024,9 +3024,9 @@ test "lookup: by name"
 
 # The naming contexts a server holds.
 test "root_dse: its naming contexts"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} rootdse").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "rootdse")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3038,9 +3038,9 @@ test "root_dse: its naming contexts"
 
 # A search read one message at a time.
 test "start_search: one at a time"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} search").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "search")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3064,9 +3064,9 @@ test "start_search: one at a time"
 
 # The first message of a search: an entry.
 test "next_item: an entry"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} search").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "search")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3093,9 +3093,9 @@ test "next_item: an entry"
 
 # A search given up after its first entry.
 test "abandon_search: after one entry"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} abandon-only").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "abandon-only")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3111,9 +3111,9 @@ test "abandon_search: after one entry"
 
 # The first page of two entries, and the cookie for the next.
 test "search_page: the first page"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} paged-one").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "paged-one")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3131,9 +3131,9 @@ test "search_page: the first page"
 
 # Every entry, asked for two at a time.
 test "search_paged: two pages"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} paged").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "paged")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3174,9 +3174,9 @@ test "has_attribute: mail but no phone"
 
 # A person added.
 test "add: a person"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} add").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "add")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3192,9 +3192,9 @@ test "add: a person"
 
 # A mail replaced, two descriptions added, a phone removed, a number incremented.
 test "modify: four changes"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} modify").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "modify")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3212,9 +3212,9 @@ test "modify: four changes"
 
 # An entry that does not exist.
 test "delete: absent"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} delete-nosuch").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "delete-nosuch")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3230,9 +3230,9 @@ test "delete: absent"
 
 # An entry renamed and moved below another.
 test "rename: renamed and moved"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} rename").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "rename")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3250,9 +3250,9 @@ test "rename: renamed and moved"
 
 # Whether an entry's surname is Rossi, and then not.
 test "compare: true then false"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} compare").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "compare")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3265,9 +3265,9 @@ test "compare: true then false"
 
 # A password changed, and the one the server made.
 test "change_password: changed"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} passwd").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "passwd")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
@@ -3279,9 +3279,9 @@ test "change_password: changed"
 
 # Who am I? run by its identifier.
 test "extended: Who am I?"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} whoami").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "whoami")
+    port = started.port
+    server @= started.thread
     opts @= options("127.0.0.1")
     opts.port @ port
     opts.security @ .plain
