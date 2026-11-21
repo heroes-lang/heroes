@@ -14,9 +14,9 @@
  * with another signature than the header's is `conflicting types` where it
  * is compiled.
  *
- * WHAT EACH SYSTEM OFFERS, MEASURED 2026-11-17 by a C probe of each public,
- * non-deprecated API (`rebel-scratch/crypto-system/probe/`), the macOS one
- * compiled with `-Werror=deprecated-declarations`, the Linux one with
+ * WHAT EACH SYSTEM OFFERS, MEASURED 2026-11-17 by a C probe, not kept, of
+ * each public, non-deprecated API, the macOS one compiled with
+ * `-Werror=deprecated-declarations`, the Linux one with
  * `OPENSSL_NO_DEPRECATED`, every capability exercised and checked back:
  *
  *   capability                  macOS 27.2           Linux (OpenSSL 3.5.7)   Windows (CNG)
@@ -59,14 +59,17 @@
  *       below) on every platform, the same bytes everywhere; PEM's base64
  *       is the face's.
  *
- * WHAT THE ARMS ANSWERED, 2026-11-17, through `rebel-scratch/crypto-system/
- * probe/member_probe.c` over Wycheproof's files (3,173 applicable cases) and
- * NIST CAVP's AES-GCM (1,500): Linux arm64 0 failed of all, under ASan and
- * UBSan; macOS 0 failed of every case of a kind it offers, under ASan and
- * UBSan, and `leaks --atExit` 0 leaks; Windows unrun. The Security framework
- * held ECDSA signatures in BER and an RSA signature past its modulus, so the
- * common part reads a signature's one form before any arm sees it
- * (`hero_crypto_signature_formed`).
+ * WHAT THE ARMS ANSWERED, 2026-11-17, through a C probe of this member, not
+ * kept, over Wycheproof's files (3,173 applicable cases) and NIST CAVP's
+ * AES-GCM (1,500): Linux arm64 0 failed of all, under ASan and UBSan; macOS
+ * 0 failed of every case of a kind it offers, under ASan and UBSan, and
+ * `leaks --atExit` 0 leaks; Windows unrun that day, and run on 2026-11-18
+ * (THE WINDOWS ARM, below). The Security framework held ECDSA signatures in
+ * BER and an RSA signature past its modulus, Monocypher an Ed25519 R whose
+ * encoding RFC 8032 § 5.1.3 does not decode, and Monocypher and OpenSSL
+ * alike an Ed25519 key of such an encoding, so the common part reads a
+ * signature's one form, and the key's, before any arm sees them
+ * (`hero_crypto_signature_formed`, defect 2641).
  *
  * THREE ARMS, ONE SHAPE. The common part (the last failure, the table of
  * keys, THE FORMS, the checks of every argument) is written once; each arm
@@ -943,6 +946,10 @@ typedef struct hero_crypto_held {
     /* An RSA key's modulus, as many bytes as a signature has, which every
      * check of a signature holds the signature below. */
     hero_crypto_blob modulus;
+    /* An Ed25519 public key read whose 32 bytes RFC 8032 § 5.1.3 does not
+     * decode (`hero_crypto_ed25519_canonical`): no signature holds under
+     * it, on every platform. */
+    bool undecodable;
 #if defined(__APPLE__)
     /* The pair's half `SecKeyCreate*` made: RSA, P-256 and P-384. */
     SecKeyRef key;
@@ -1248,10 +1255,68 @@ static bool hero_crypto_keep_modulus(hero_crypto_held *held, const hero_crypto_m
     return good;
 }
 
+/* Whether `e`, 32 bytes, is an encoding of an Ed25519 point that RFC 8032
+ * § 5.1.3 decodes: y, the bytes with bit 255 cleared read little-endian,
+ * below p = 2^255 - 19, and bit 255, the sign of x, clear where x is 0,
+ * which is where y is 1 or p - 1. Whether the point is on the curve is
+ * the library's to answer, and both refuse one that is not. Neither
+ * refuses the rest by itself: Monocypher 4.0.3 reduces y modulo p and
+ * takes either sign of a zero x, for A and for R
+ * (`crypto_eddsa_check_equation`), and OpenSSL 3.5 does the same for A,
+ * so OpenSSL 3.5.7 and 3.5.9 held signatures under four such keys of five
+ * built (measured 2026-11-21); only its byte comparison of R refuses such
+ * an R. So the common part refuses both encodings before any arm is asked
+ * (defect 2641). */
+static bool hero_crypto_ed25519_canonical(const unsigned char e[32]) {
+    bool y_is_one = e[0] == 0x01 && (e[31] & 0x7f) == 0x00;
+    bool y_is_p_less_one = e[0] == 0xec && (e[31] & 0x7f) == 0x7f;
+    bool middle_ones = true;
+    size_t i;
+
+    for (i = 1; i <= 30; i++) {
+        y_is_one = y_is_one && e[i] == 0x00;
+        middle_ones = middle_ones && e[i] == 0xff;
+    }
+    y_is_p_less_one = y_is_p_less_one && middle_ones;
+    /* p is ed ff .. ff 7f little-endian, so y is at least p exactly where
+     * bytes 1 to 30 are ff, byte 31 holds 7f below its sign bit, and byte
+     * 0 is ed or above. */
+    if (middle_ones && (e[31] & 0x7f) == 0x7f && e[0] >= 0xed) {
+        return false;
+    }
+    return (e[31] & 0x80) == 0 || !(y_is_one || y_is_p_less_one);
+}
+
+/* The order of Ed25519's group, L = 2^252 +
+ * 27742317777372353535851937790883648493 (RFC 8032 § 5.1), little-endian. */
+static const unsigned char hero_crypto_ed25519_order[32] = {
+    0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+};
+
+/* Whether `s`, 32 bytes little-endian, is below L: RFC 8032 § 5.1.7's
+ * first check. Monocypher and OpenSSL make it too; made here, the form a
+ * signature holds in is the common part's on every platform, as ECDSA's
+ * and RSA's are. */
+static bool hero_crypto_ed25519_below_order(const unsigned char s[32]) {
+    size_t i = 32;
+
+    while (i > 0) {
+        i--;
+        if (s[i] != hero_crypto_ed25519_order[i]) {
+            return s[i] < hero_crypto_ed25519_order[i];
+        }
+    }
+    return false;
+}
+
 /* Whether a signature's bytes are of the one form `held` checks: X9.62's
  * DER for ECDSA, exactly the modulus's bytes and below it for RSA (the
  * Security framework reduces one past it, Wycheproof's
- * `SignatureMalleability` case, measured 2026-11-17). */
+ * `SignatureMalleability` case, measured 2026-11-17); for Ed25519 64 bytes
+ * whose R is an encoding RFC 8032 § 5.1.3 decodes and whose S is below the
+ * group's order, under a key whose own 32 bytes it decodes (Monocypher held
+ * an R that is not, Wycheproof's `InvalidEncoding` tcId 151, defect 2641). */
 static bool hero_crypto_signature_formed(const hero_crypto_held *held, const unsigned char *signature, size_t count) {
     if (held->kind == HERO_CRYPTO_P256 || held->kind == HERO_CRYPTO_P384) {
         unsigned char rs[2 * HERO_CRYPTO_WIDTH_MOST];
@@ -1261,7 +1326,7 @@ static bool hero_crypto_signature_formed(const hero_crypto_held *held, const uns
     if (held->kind == HERO_CRYPTO_RSA) {
         return count == held->modulus.count && memcmp(signature, held->modulus.bytes, count) < 0;
     }
-    return count == 64;
+    return count == 64 && !held->undecodable && hero_crypto_ed25519_canonical(signature) && hero_crypto_ed25519_below_order(signature + 32);
 }
 
 /* The bytes of an RSA key's modulus. */
@@ -1421,6 +1486,10 @@ static hero_crypto_key *hero_crypto_read(const void *der, uint64_t count, bool i
     }
     held->bits = m.bits;
     held->is_public = !is_private;
+    /* Read, not refused, as a key whose bytes are no point on the curve
+     * is: no signature holds under it. A private key's public half is
+     * computed from its seed, and is canonical. */
+    held->undecodable = m.kind == HERO_CRYPTO_ED25519 && !is_private && !hero_crypto_ed25519_canonical(m.point);
     if (!hero_crypto_arm_load(held, &m, (const unsigned char *)der, (size_t)count) || !hero_crypto_keep_modulus(held, &m)) {
         hero_crypto_material_free(&m);
         hero_crypto_held_free(held);
@@ -2360,8 +2429,10 @@ static int hero_crypto_arm_verify(const hero_crypto_held *held, int64_t scheme, 
     int answer;
 
     if (scheme == HERO_CRYPTO_SIGN_ED25519) {
-        /* 64 bytes, the common part's check of the form; Monocypher refuses
-         * an S not below the group's order, RFC 8032 § 5.1.7's first check. */
+        /* The common part has checked the form: 64 bytes, R and the key
+         * encodings RFC 8032 § 5.1.3 decodes and S below the group's order
+         * (`hero_crypto_signature_formed`), since Monocypher reduces y
+         * modulo p and takes either sign of a zero x in both. */
         (void)signature_count;
         return crypto_ed25519_check(signature, held->curve_public, message, count) == 0 ? 1 : 0;
     }
@@ -3050,9 +3121,22 @@ static void hero_crypto_arm_free(hero_crypto_held *held) {
 #endif
 
 /* ===========================================================================
- * THE WINDOWS ARM: CNG's BCrypt. UNRUN: the box was off on 2026-11-17; this
- * arm is written from the Win32 reference and compiled against MinGW-w64's
- * headers on the Mac (`rebel-scratch/windows/crypto.md` lists what is owed).
+ * THE WINDOWS ARM: CNG's BCrypt, written from the Win32 reference and first
+ * compiled against MinGW-w64's headers on the Mac, the box being off on
+ * 2026-11-17. Run on the box on 2026-11-18 at 1e0a4f82b (Windows 10.0.26100,
+ * clang 23.1.1 for the MSVC target): it compiles with no word under C11 and
+ * GNU11 `-Wpedantic -Werror`, the SDK's `BCRYPT_CHACHA20_POLY1305_ALGORITHM`
+ * and the `#ifndef` below agreeing; CNG opens CHACHA20_POLY1305; the C probe
+ * of this member held every Wycheproof and CAVP case of a kind it offers, 0
+ * failed, plain and under ASan, with Linux arm64's counts but one (RSA PKCS
+ * #1 v1.5's one acceptable case held, which Linux refused, either way
+ * acceptable); `reach_hero_crypto`, `reach_crypto_seal` and
+ * `reach_crypto_keypairs` passed, plain and under `--sanitize`. CNG refused
+ * RFC 7748's Alice as a `BCRYPT_ECCPRIVATE_BLOB` on curve25519 in both byte
+ * orders of the scalar (`STATUS_INVALID_PARAMETER`), so X25519 answers
+ * `unsupported` here until the blob CNG takes is measured. Owed on the box:
+ * that blob, RSA 4096's generation time, and a key written here read back on
+ * macOS and Linux.
  *
  * A pair's key is its material (THE FORMS), from which each call makes the
  * blob CNG imports for the algorithm it runs (`BCRYPT_ECCPRIVATE_BLOB` for

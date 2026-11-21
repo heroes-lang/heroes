@@ -205,7 +205,7 @@ notes did not read them from a clock.
     a Heroes program through an `extern` group with `link` and `--library`,
     plain and under `--sanitize`: the Ed25519 public key of RFC 8032's first
     vector equal, a ChaCha20-Poly1305 seal opened back to the same bytes, a
-    bit changed refused (rebel-scratch/swiftprobe/). So CryptoKit is
+    bit changed refused, by a probe that is not kept. So CryptoKit is
     reachable; what it would cost is the toolchain's: the platform layer
     compiles C alone today, and a member written in Swift needs `swiftc` on
     every Mac that builds a program using it, a change of the compiler's
@@ -542,6 +542,26 @@ not copied), Darwin green; 44913457527 red on Windows alone (`shadowed_header`: 
 four legs; 44920689713 green on the four, every probe's test run again under `--sanitize` on both
 Linux legs.
 
+## The author's answers of 2026-11-21, evening: Rebel's examples are applications, and what lanes leave is swept
+
+Given while the landing's last lanes ran, each meant as:
+
+- *the examples of `examples/` use no library, Rebel least of all*: measured that evening, no
+  `use <...>` line, no catalogue and no word of Rebel or `core` stands in them, the sixteen
+  programs that used `core` carrying their own helpers since step 55;
+- *Rebel's examples are not a small program per package but very complex applications, as we
+  said for the web framework, that use many parts of Rebel together*; then *at least about
+  twenty, and between them they must touch every Rebel package*: twenty applications, the first
+  `notes`, a publishing service on `web`, whose lists of faces to use name all 149
+  between them (counted against the ledgers that evening), and the sixteen twins the plan of 2026-11-15 already named (`examples-rebel/README.md` § A10);
+- *the apps should be little projects, with folders inside them and their own toml of
+  dependencies*: each a folder made by `heroes new` and `heroes add`, § A10;
+- *the generators must write comments correctly*: a comment says what a reader needs and where a
+  value comes from, never the story of the work; the compiler's own comments rewritten the same
+  way after this milestone (task 2640);
+- *put these cleanups as a rule: every so often the system must clean the worktrees and the
+  agents*: `.claude/hooks/sweep.py`, `.claude/rules/records.md` § Working in lanes.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds
@@ -562,9 +582,12 @@ Linux legs.
   one extended: `hero_stream`, `hero_disk`, `hero_sys`, `hero_proc`,
   `hero_stream_net`, and additions to `hero_time` and `hero_net`. No door of
   `hero_os.h` changes its contract.
-- **Rebel's examples are one folder, `examples-rebel/`, with one catalogue**:
-  one copy of Rebel for the whole group, where the nineteen programs that used
-  `core` held one each.
+- **Rebel's examples are projects under `examples-rebel/`** (turned by the author on
+  2026-11-21; the coordinator had decided one folder with one catalogue): the
+  drivers read one catalogue at the folder's root, and each twin and each
+  application is a folder with its own `heroes.toml`, whose `path` entry reads
+  Rebel where it stands, so no project holds a copy of it
+  (`examples-rebel/README.md` § A10).
 - **Rebel is written from behaviour, never from another library's source**, and
   copies no test table; its expected values are observed from the three
   libraries on this machine. The three files of `core` that say they follow

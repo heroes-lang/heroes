@@ -258,11 +258,11 @@ test "shutdown, set_option and option_of through a stream: the writing side clos
     assert hero_net.close(@accepted) == 0
     assert hero_net.close(@listener) == 0
 
-# The coordinator's reproducer of 2026-11-16 12:47 (`rebel-scratch/http/
-# probe/least.hero`): until the tag, the stream of the first client and the
-# socket of a later connection could be one value, which the runtime's set of
-# ended handles remembered from the transfer of the later socket into its
-# stream, and the first stream's read aborted the program, exit 134.
+# The coordinator's reproducer of 2026-11-16 12:47, a program that is not
+# kept: until the tag, the stream of the first client and the socket of a
+# later connection could be one value, which the runtime's set of ended
+# handles remembered from the transfer of the later socket into its stream,
+# and the first stream's read aborted the program, exit 134.
 test "two connections accepted, made streams and closed, then the first client's stream reads its end and closes: no handle of one table is another's"
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     first_socket @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))

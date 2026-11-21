@@ -47,7 +47,7 @@ Refusals, not trade-offs; no measurement and no deadline outranks them.
   pushes of a session the author leaves unattended, asked once as they leave,
   for that session alone** (author, 2026-10-14). A push to the box, `win`, is never
   asked (author, 2026-11-09).
-- **Destructive operations are asked for.**
+- **Destructive operations are asked for**; the sweep's, once (author, 2026-11-21).
 - **`UPDATE_GOLDEN=1` does not exist**, and in `tests/golden/check/` and
   `tests/golden/ir/` it is forbidden outright.
 - **Nothing goes into the assistant's own memory** but local notes, which may
@@ -331,7 +331,8 @@ CL-060.
   it exits** (CL-025), so work beside a gate goes in the scratchpad or a
   detached worktree: free while one DECIDES, never while one is TIMED (CL-071).
   **A lane lives under `.claude/worktrees/`, never beside the project**
-  (author instruction 2026-09-28; `.claude/rules/records.md` § Working in lanes).
+  (author instruction 2026-09-28; `.claude/rules/records.md` § Working in lanes),
+  its leftovers swept by `.claude/hooks/sweep.py` (author, 2026-11-21).
 - **A milestone is tagged only over a clean list** (author instruction
   2026-09-08, amended 2026-10-02): zero open `blocking` or `systemic` defect
   issues (`.claude/rules/verification.md` § Bounded discovery), and no

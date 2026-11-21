@@ -1,17 +1,17 @@
 # The check README § A7 promises (the coherence review's D11, adopted
 # 2026-11-19): what `heroes doc` prints of every face and every floor of
 # Rebel, as a program reaches each through a catalogue, read for the rules of
-# § A7 a machine can ask of the printed reference. Every rule reads the
+# README § A7 a machine can ask of the printed reference. Every rule reads the
 # reference and never the source, so it judges what a reader is shown:
 #
 #   refused   `heroes doc` refused the module, a face or a floor: a parameter
 #             line naming no parameter, out of order or twice, a parameter no
 #             line names (`doc_*`), or a module that does not check
 #   comment   a declaration of a face, a field or a case with no comment
-#   example   a function of a face with no example (a floor owes none, § A7)
+#   example   a function of a face with no example (a floor owes none, README § A7)
 #   fails     a function of a face that answers `T?` and whose comment holds
 #             no `Fails`
-#   code      a word a `Fails` list names that is no code of § A4
+#   code      a word a `Fails` list names that is no code of README § A4
 #             (`package_codes.CLOSED`)
 #   see-also  a name a `See also` list names that names nothing
 #

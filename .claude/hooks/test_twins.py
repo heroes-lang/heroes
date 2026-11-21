@@ -15,7 +15,9 @@ that is not there), `git stash`, a force push. Run from the repository's root:
     python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks
 """
 
+import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -225,6 +227,111 @@ class Corpus(unittest.TestCase):
         for command in ("git add -A", "gh issue close 1", "cat .env", "ls"):
             with self.subTest(command=command):
                 twins.held(command, tree)
+
+
+class SweepTwins(unittest.TestCase):
+    """The Heroes sweep beside the Python one (`sweep.hero`, `sweep.py`): run
+    as processes on one repository holding every shape the sweep judges
+    (`test_hooks.sweep_scenario`), their reports are held identical byte for
+    byte, a dry run's on one repository, a real sweep's on two built alike,
+    which must also leave the same worktrees, branches and folders. A wait
+    loop is judged on its age, which a test cannot make three hours, so the
+    loops' reading is held by each twin's own tests, `SweepLoops` and
+    `sweep_loops.hero`'s, over the same shapes."""
+
+    def setUp(self):
+        self.binary = twins.sweeper()
+        if self.binary is None:
+            self.skipTest("nothing twinned: " + twins.why_not_sweeper())
+        import test_hooks
+
+        self.hooks = test_hooks
+
+    def both(self, cwd_python, cwd_heroes, words, given=None):
+        python = subprocess.run([sys.executable, "-I", twins.PYTHON_SWEEP] + words, cwd=cwd_python, input=given,
+                                capture_output=True, text=True, timeout=600)
+        heroes = subprocess.run([self.binary] + words, cwd=cwd_heroes, input=given,
+                                capture_output=True, text=True, timeout=600)
+        return (python.returncode, python.stdout, python.stderr), (heroes.returncode, heroes.stdout, heroes.stderr)
+
+    def state(self, root, folder):
+        listed = self.hooks.git(root, "worktree", "list", "--porcelain").stdout
+        trees = sorted(line[len("worktree " + folder) + 1:] for line in listed.split("\n")
+                       if line.startswith("worktree " + folder + "/"))
+        folders = sorted(name for name in os.listdir(folder) if not name.startswith("."))
+        return trees, sorted(self.hooks.branch_names(root)), folders
+
+    def test_a_dry_run_is_held_identical_on_every_shape(self):
+        root, _folder = self.hooks.sweep_scenario("hooks-twins-sweep-")
+        python, heroes = self.both(root, root, ["--dry-run"])
+        self.assertEqual(python, heroes)
+        self.assertEqual(python[0], 0)
+        for said in ("would remove worktree lane-done", "would remove folder old-scratch", "would delete branch merged-one",
+                     "worktree lane-dirty: uncommitted work", "worktree lane-ahead: 1 commit",
+                     "folder p999-scratch: a tracked file names it", "branch unmerged-one: no checkout's HEAD",
+                     "worktree record lane-gone", "worktree lane-locked: it is locked",
+                     "folder clone-scratch: it holds a git repository", "branch just-made, fresh-scratch, lane-new"):
+            self.assertIn(said, python[1])
+
+    def test_a_sweep_leaves_the_same_tree_and_says_the_same(self):
+        root_a, folder_a = self.hooks.sweep_scenario("hooks-twins-sweep-a-")
+        root_b, folder_b = self.hooks.sweep_scenario("hooks-twins-sweep-b-")
+        python, heroes = self.both(root_a, root_b, ["--sweep"])
+        self.assertEqual(python[0], heroes[0])
+        self.assertEqual(python[1].replace(root_a, "<root>"), heroes[1].replace(root_b, "<root>"))
+        self.assertEqual(python[2], heroes[2])
+        self.assertIn("removed worktree lane-done", python[1])
+        self.assertEqual(self.state(root_a, folder_a), self.state(root_b, folder_b))
+        trees, names, folders = self.state(root_b, folder_b)
+        self.assertNotIn("lane-done", trees)
+        self.assertNotIn("merged-one", names)
+        self.assertNotIn("old-scratch", folders)
+        self.assertIn("lane-dirty", trees)
+        self.assertIn("unmerged-one", names)
+        self.assertIn("p999-scratch", folders)
+
+    def test_the_hook_answers_identically_and_a_prompt_within_the_hour_says_nothing(self):
+        root_a, _folder_a = self.hooks.sweep_scenario("hooks-twins-hook-a-")
+        root_b, _folder_b = self.hooks.sweep_scenario("hooks-twins-hook-b-")
+        start_a = json.dumps({"hook_event_name": "SessionStart", "cwd": root_a, "session_id": "s"})
+        start_b = json.dumps({"hook_event_name": "SessionStart", "cwd": root_b, "session_id": "s"})
+        python = subprocess.run([sys.executable, "-I", twins.PYTHON_SWEEP], input=start_a, capture_output=True,
+                                text=True, timeout=600)
+        heroes = subprocess.run([self.binary], input=start_b, capture_output=True, text=True, timeout=600)
+        self.assertEqual((python.returncode, python.stderr), (heroes.returncode, heroes.stderr))
+        self.assertEqual(python.stdout.replace(root_a, "<root>"), heroes.stdout.replace(root_b, "<root>"))
+        self.assertIn("removed worktree lane-done", json.loads(heroes.stdout)["hookSpecificOutput"]["additionalContext"])
+        for root in (root_a, root_b):
+            prompt = json.dumps({"hook_event_name": "UserPromptSubmit", "cwd": root, "prompt": "x"})
+            python, heroes = self.both(root, root, [], given=prompt)
+            self.assertEqual(python, heroes)
+            self.assertEqual(python, (0, "", ""))
+
+    def test_nothing_to_judge_a_held_lock_and_a_wrong_word_are_said_identically(self):
+        elsewhere = os.path.realpath(tempfile.mkdtemp(prefix="hooks-twins-sweep-none-"))
+        python, heroes = self.both(elsewhere, elsewhere, ["--dry-run"])
+        self.assertEqual(python, heroes)
+        self.assertIn("nothing was judged", python[1])
+        root, folder = self.hooks.sweep_repository("hooks-twins-sweep-lock-")
+        os.mkdir(os.path.join(folder, ".sweep-lock"))
+        python, heroes = self.both(root, root, ["--dry-run"])
+        self.assertEqual(python, heroes)
+        self.assertIn("another sweep holds", python[1])
+        python, heroes = self.both(root, root, ["--bogus"])
+        self.assertEqual(python, heroes)
+        self.assertEqual(python[0], 2)
+        for event in ("not json", "[1]", json.dumps({"hook_event_name": "Stop", "cwd": root})):
+            python, heroes = self.both(root, root, [], given=event)
+            self.assertEqual(python, heroes)
+            self.assertEqual(python, (0, "", ""))
+
+    def test_a_difference_is_seen(self):
+        """The instrument is not blind: two repositories that differ give
+        reports that differ."""
+        root, _folder = self.hooks.sweep_scenario("hooks-twins-sweep-blind-")
+        plain, _plain_folder = self.hooks.sweep_repository("hooks-twins-sweep-plain-")
+        python, heroes = self.both(root, plain, ["--dry-run"])
+        self.assertNotEqual(python[1].replace(root, "<root>"), heroes[1].replace(plain, "<root>"))
 
 
 if __name__ == "__main__":

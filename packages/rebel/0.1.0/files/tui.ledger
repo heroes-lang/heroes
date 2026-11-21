@@ -9,7 +9,7 @@
 # functions and 539 methods), read by `go doc -all`; Python's `textual` 8.2.8
 # (its `widgets`, `containers`, `events`, `geometry` and `App`, read by
 # `dir()`). The expected values of the tests are what `ratatui` 0.30.2
-# answered for the same input, run 2026-11-18 (`rebel-scratch/tui/rs`); a
+# answered for the same input, run 2026-11-18 by a program that is not kept; a
 # block's `note` says where this package decided otherwise, and why.
 # `tview`'s methods are named by the widget they belong to; its setters and
 # getters of a colour or a style stand in the block of the style they set.
@@ -233,7 +233,7 @@ capability tui/events  the next key, click, paste, size or focus, waiting or wit
   go      bubbletea.Msg, bubbletea.KeyMsg, bubbletea.Key, bubbletea.KeyType, bubbletea.Key.String, bubbletea.Tick, bubbletea.Every, tview.Application.SetInputCapture, tview.Application.GetInputCapture, tview.Box.InputHandler, tview.Box.SetInputCapture, tview.Application.QueueEvent
   rust    the `crossterm` events `ratatui` re-exports: event::read, event::poll, Event, KeyEvent
   python  textual.events.Key, textual.events.Timer, textual.App.set_interval, textual.App.set_timer, textual.App.BINDINGS, textual.App.bind
-  note    a key is `term.Key`, read by `term`; a key with a modifier `term` names nothing for comes as `term.Key.other` with its bytes. A program that ticks reads within a time and draws again at `timeout`; on Darwin the time is not kept until the runtime's defect above is repaired (`term.read_key_within(200)` in a pseudo-terminal answered only when a key came), and Escape alone waits for the next key for the same reason (repaired 2026-11-19 in `term`, and `read_event_within(200)` measured 2026-11-20 in a pseudo-terminal on this Mac: `timeout` after 209 to 217 ms, five runs). Driven in a pseudo-terminal on this Mac (2026-11-18, `rebel-scratch/tui/drive.py` over the driver, the screen read back by `pyte`): keys, a click, the wheel, a filter typed, a paste, a resize, the raw mode and every report put back after
+  note    a key is `term.Key`, read by `term`; a key with a modifier `term` names nothing for comes as `term.Key.other` with its bytes. A program that ticks reads within a time and draws again at `timeout`; on Darwin the time is not kept until the runtime's defect above is repaired (`term.read_key_within(200)` in a pseudo-terminal answered only when a key came), and Escape alone waits for the next key for the same reason (repaired 2026-11-19 in `term`, and `read_event_within(200)` measured 2026-11-20 in a pseudo-terminal on this Mac: `timeout` after 209 to 217 ms, five runs). Driven in a pseudo-terminal on this Mac (2026-11-18, a Python program that is not kept driving the driver, the screen read back by `pyte`): keys, a click, the wheel, a filter typed, a paste, a resize, the raw mode and every report put back after
 
 capability tui/mouse  clicks, releases, drags, moves and the wheel
   heroes  tui.Event.mouse, tui.MouseAction, tui.MouseButton, tui.Options.mouse, tui.Options.mouse_motion

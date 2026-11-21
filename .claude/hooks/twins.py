@@ -86,6 +86,38 @@ def why_not():
     return _BUILT["why"]
 
 
+# The Heroes sweep (`sweep.hero`), the twin of `sweep.py`, built once per run
+# as the guard is; `test_twins.py`'s `SweepTwins` runs both on the same
+# repositories and holds their reports and what they leave identical.
+PYTHON_SWEEP = os.path.join(HOOKS, "sweep.py")
+HEROES_SWEEP_SOURCE = os.path.join(".claude", "hooks", "sweep.hero")
+_SWEEPER = {"path": None, "why": None, "done": False}
+
+
+def sweeper():
+    """The Heroes sweep's binary, built once, or None with `why_not_sweeper()`
+    set."""
+    with _LOCK:
+        if _SWEEPER["done"]:
+            return _SWEEPER["path"]
+        _SWEEPER["done"] = True
+        heroes = compiler()
+        if heroes is None:
+            _SWEEPER["why"] = "the tree has no compiler built (" + os.path.join(ROOT, "heroes") + ")"
+            return None
+        out = os.path.join(tempfile.mkdtemp(prefix="hooks-twins-"), "sweep")
+        done = subprocess.run([heroes, "build", HEROES_SWEEP_SOURCE, "-o", out], cwd=ROOT,
+                              capture_output=True, text=True, timeout=600)
+        if done.returncode != 0 or not os.path.isfile(out):
+            raise AssertionError("the Heroes sweep does not build:\n" + done.stdout + done.stderr)
+        _SWEEPER["path"] = out
+        return out
+
+
+def why_not_sweeper():
+    return _SWEEPER["why"]
+
+
 def event(command, cwd):
     """The event the settings hand the guard for `command` run in `cwd`."""
     payload = {"tool_input": {"command": command}}

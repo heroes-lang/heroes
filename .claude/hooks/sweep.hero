@@ -1,0 +1,1098 @@
+# The sweep, written in Heroes beside the Python one (`sweep.py`): what
+# finished lanes leave under `.claude/worktrees/` removed, every condition
+# of `sweep.py`'s docstring asked of the same programs in the same order, and
+# the same report printed. The author's instruction of 2026-11-21 is the
+# rule's (`.claude/rules/records.md` § Working in lanes, the sweep); the
+# author's answer `4a` of 2026-11-12 (feature 2082) is why a twin stands
+# beside each hook: `test_twins.py` runs both on the same repositories and
+# holds their reports identical, byte for byte. Until the author switches
+# `.claude/settings.json` to the Heroes hooks, nothing runs this program but
+# its tests.
+#
+# Contract, the Python hook's: with no argument the event arrives as JSON on
+# stdin, a session's start sweeps and a prompt sweeps at most once an hour,
+# and the report is printed as the event's `additionalContext`; by hand,
+# `--dry-run` prints what a sweep would do and does nothing, `--sweep` does
+# it. Every exit is 0 but a word it does not know, 2.
+
+use json
+use pypath
+use pystr
+use stderr
+use sweep_ask
+use sweep_loops
+use system
+use trees
+
+extern "hero_os.h"
+    constant HERO_FS_LINK: i64
+    function hero_write_out(text: str)
+    function hero_fs_kind(path: cstr lent) -> i64
+
+# The rule a report cites.
+constant RULE: str
+    ".claude/rules/records.md § Working in lanes, the sweep"
+
+# The folder swept, under the main checkout.
+constant FOLDER: str
+    ".claude/worktrees"
+
+# The stamp a prompt's sweep reads its hour from.
+constant STAMP: str
+    ".sweep-stamp"
+
+# The folder a sweep holds while it runs, and writes its programs' streams in.
+constant LOCK: str
+    ".sweep-lock"
+
+# The branch never deleted.
+constant TRUNK: str
+    "main"
+
+# The remote branch a lane's commits may stand on.
+constant ORIGIN_MAIN: str
+    "refs/remotes/origin/main"
+
+# Minutes a worktree, a folder or a branch must have been quiet.
+constant QUIET: i64
+    360
+
+# Minutes between two sweeps a prompt asks for.
+constant HOURLY: i64
+    60
+
+# Minutes after which a lock is a sweep that died.
+constant STALE_LOCK: i64
+    30
+
+# Seconds a wait loop must have run.
+constant LOOP_AGE: i64
+    10800
+
+# What `sweep` answers where another sweep holds the lock.
+constant HELD: str
+    "held"
+
+function main()
+    given = args()
+
+    if given == ["--dry-run"] || given == ["--sweep"]
+        here = system.getwd().default(".")
+        hero_write_out(by_hand(start: here, dry: given[0] == "--dry-run"))
+        return
+
+    if given.len() > 0
+        stderr.write("usage: sweep [--dry-run | --sweep]; with no argument it is the hook, its event on stdin\n")
+        exit(code: 2)
+
+    event = match read_file("/dev/stdin")
+        .ok text => text
+        .err _   => return
+
+    hero_write_out(as_hook(event))
+
+## The repository
+
+# The main checkout of the repository whose tree `start` stands in,
+# resolved, where it is a tree of this project; "" elsewhere. Read from the
+# files git keeps, as `sweep.py`'s `repository_root` reads them.
+function repository_root(start: str) -> str
+    tree = trees.tree_of(start)
+
+    if tree.len() == 0
+        return ""
+    dot = pypath.join_two(a: tree, b: ".git")
+
+    common = if trees.is_dir(dot)
+        dot
+    else
+        common_of(tree: tree, dot: dot)
+
+    if common.len() == 0
+        return ""
+    normal = pypath.normpath(common)
+
+    if pypath.basename(normal) != ".git" || !trees.is_dir(normal)
+        return ""
+
+    root = match system.resolved(pypath.dirname(normal))
+        .ok r  => r
+        .err _ => return ""
+
+    if trees.tree_of(root) != root
+        return ""
+    return root
+
+# The `.git` folder a worktree's `.git` file leads to, through its
+# `gitdir:` line and that folder's `commondir`; "" where either is missing.
+function common_of(tree: str, dot: str) -> str
+    text = match read_file(dot)
+        .ok t  => t
+        .err _ => return ""
+
+    if !pystr.opens(s: text, prefix: "gitdir: ")
+        return ""
+    named = sweep_ask.unended(text.slice(from: 8, to: text.len()))
+
+    gitdir = if pypath.isabs(named)
+        named
+    else
+        pypath.join_two(a: tree, b: named)
+
+    back = match read_file(pypath.join_two(a: gitdir, b: "commondir"))
+        .ok t  => sweep_ask.unended(t)
+        .err _ => return ""
+
+    if pypath.isabs(back)
+        return back
+    return pypath.join_two(a: gitdir, b: back)
+
+# A worktree as `git worktree list --porcelain` records it.
+record Worktree
+    path: str
+    head: str
+    branch: str
+    locked: bool
+    prunable: bool
+
+# Every worktree git records, the main checkout first.
+function worktrees(root: str, place: str) -> [Worktree]?
+    asked = sweep_ask.git(where: root, rest: ["worktree", "list", "--porcelain"], place: place)
+
+    if !sweep_ask.answered(asked)
+        return fail(code: "unasked", msg: "git worktree list could not be asked")
+    out: [Worktree] @= []
+    current: Worktree @= Worktree(path: "", head: "", branch: "", locked: false, prunable: false)
+    open: bool @= false
+
+    for field in pystr.split_at(asked.out, '\n')
+        if field == ""
+            if open
+                out @ out.push(current)
+                open @ false
+        else if pystr.opens(s: field, prefix: "worktree ")
+            if open
+                out @ out.push(current)
+            current @ Worktree(
+                path: field.slice(from: 9, to: field.len()),
+                head: "",
+                branch: "",
+                locked: false,
+                prunable: false
+            )
+            open @ true
+        else if !open
+            _ = 0
+        else if pystr.opens(s: field, prefix: "HEAD ")
+            current.head @ field.slice(from: 5, to: field.len())
+        else if pystr.opens(s: field, prefix: "branch refs/heads/")
+            current.branch @ field.slice(from: 18, to: field.len())
+        else if field == "locked" || pystr.opens(s: field, prefix: "locked ")
+            current.locked @ true
+        else if field == "prunable" || pystr.opens(s: field, prefix: "prunable ")
+            current.prunable @ true
+
+    if open
+        out @ out.push(current)
+    return ok(out)
+
+# `path` resolved where something stands there, as written where nothing
+# does.
+function resolved(path: str) -> str
+    if trees.lexists(path)
+        return system.resolved(path).default(path)
+    return path
+
+# The commit `origin/main` names here, "" where there is none.
+function origin_main(root: str, place: str) -> str
+    asked = sweep_ask.git(where: root, rest: ["for-each-ref", "--format=%(objectname)", ORIGIN_MAIN], place: place)
+
+    if sweep_ask.answered(asked)
+        return sweep_ask.unended(asked.out)
+    return ""
+
+# The folders directly in `folder`, links left out, by name, sorted, a name
+# opening with `.` left out.
+function entries(folder: str, place: str) -> [str]?
+    asked = sweep_ask.ask(words: ["find", folder, "-mindepth", "1", "-maxdepth", "1", "-type", "d"], place: place)
+
+    if !sweep_ask.answered(asked)
+        return fail(code: "unasked", msg: "find could not list the folder")
+    out: [str] @= []
+
+    for line in sweep_ask.lines(asked.out)
+        name = if pystr.opens(s: line, prefix: folder + "/")
+            line.slice(from: folder.len() + 1, to: line.len())
+        else
+            ""
+
+        if name.len() > 0 && !pystr.opens(s: name, prefix: ".") && !pystr.holds(s: name, piece: "/")
+            out @ out.push(name)
+
+    return ok(sort(out))
+
+## The processes
+
+# What `ps` and `lsof` answered at one moment.
+record Snapshot
+    table: [sweep_loops.Process]
+    folders: {i64: str}
+    complete: bool
+
+# The process table and every process's working folder, asked once.
+function snapshot(place: str) -> Snapshot
+    table: [sweep_loops.Process] @= []
+    folders: {i64: str} @= {}
+    listed = sweep_ask.ask(words: ["ps", "-axww", "-o", "pid=,ppid=,etime=,command="], place: place)
+
+    if sweep_ask.answered(listed)
+        for line in sweep_ask.lines(listed.out)
+            match sweep_loops.ps_line(line)
+                .ok p  => table @ table.push(p)
+                .err _ => _ = 0
+
+    cwds = sweep_ask.ask(words: ["lsof", "-a", "-d", "cwd", "-F", "pn"], place: place)
+    read_cwds = cwds.started && (cwds.code == 0 || cwds.code == 1) && cwds.out != ""
+
+    if read_cwds
+        pid: i64 @= -1
+
+        for line in sweep_ask.lines(cwds.out)
+            if pystr.opens(s: line, prefix: "p")
+                pid @ sweep_ask.number(line.slice(from: 1, to: line.len()))
+            else if pystr.opens(s: line, prefix: "n") && pid >= 0
+                folders[pid] @ line.slice(from: 1, to: line.len())
+
+    return Snapshot(table: table, folders: folders, complete: sweep_ask.answered(listed) && read_cwds)
+
+# Whether a process works inside `path` or names it.
+function in_use(shot: Snapshot, path: str, name: str) -> bool
+    for pid in keys(shot.folders)
+        if sweep_loops.under(path: shot.folders[pid].default(""), folder: path)
+            return true
+
+    for one in shot.table
+        if sweep_loops.names(command: one.command, name: name)
+            return true
+
+    return false
+
+# The program a command line runs: its first word.
+function program_of(command: str) -> str
+    return pystr.split_at(command, ' ')[0]
+
+# A wait loop, and why it is kept, "" where it is to be stopped.
+record Waiting
+    process: sweep_loops.Process
+    loop: sweep_loops.Loop
+    cwd: str
+    why: str
+
+# The wait loops over `LOOP_AGE` under Claude Code working in `root`.
+function waiting(shot: Snapshot, root: str, home: str, place: str) -> [Waiting]
+    by_pid: {i64: sweep_loops.Process} @= {}
+
+    for one in shot.table
+        by_pid[one.pid] @ one
+
+    out: [Waiting] @= []
+
+    for one in shot.table
+        if one.age < LOOP_AGE
+            continue
+
+        parent = match by_pid[one.ppid]
+            .ok p  => p
+            .err _ => continue
+
+        if !sweep_loops.names_claude(parent.command)
+            continue
+        cwd = shot.folders[one.pid].default("")
+
+        if !sweep_loops.under(path: cwd, folder: root)
+            continue
+
+        script = match sweep_loops.shell_script(one.command)
+            .ok s  => s
+            .err _ => continue
+
+        loop = match sweep_loops.wait_loop(script)
+            .ok l  => l
+            .err _ => continue
+
+        why: str @= ""
+
+        for child in shot.table
+            if child.ppid == one.pid && pypath.basename(program_of(child.command)) != "sleep"
+                why @ "it runs `" + program_of(child.command) + "` now"
+                break
+
+        if why == ""
+            why @ sweep_loops.watch(loop: loop, cwd: cwd, home: home, place: place)
+        out @ out.push(Waiting(process: one, loop: loop, cwd: cwd, why: why))
+
+    return out
+
+## The report
+
+# What a sweep did and kept, and why.
+record Report
+    folder: str
+    dry: bool
+    removed: [str]
+    kept: [str]
+    busy: [str]
+    worktrees: i64
+    folders: i64
+    branches: i64
+    loops: i64
+    kilobytes: i64
+
+# A thing removed, or one a dry run would remove, counted by its kind.
+function did(@r: Report, kind: str, line: str, size: i64)
+    if kind == "worktree"
+        r.worktrees @ r.worktrees + 1
+    else if kind == "folder"
+        r.folders @ r.folders + 1
+    else if kind == "branch"
+        r.branches @ r.branches + 1
+    else
+        r.loops @ r.loops + 1
+    r.kilobytes @ r.kilobytes + size
+    r.removed @ r.removed.push(line)
+
+# `n` and the word for one or for more.
+function many(n: i64, one: str, more: str) -> str
+    if n == 1
+        return n.to_str() + " " + one
+    return n.to_str() + " " + more
+
+# The report as the session reads it.
+function report_text(r: Report) -> str
+    head = if r.dry
+        "sweep, dry run, of " + r.folder + ": would remove " + many(n: r.worktrees, one: "worktree", more: "worktrees") + " and " + many(n: r.folders, one: "folder", more: "folders") + ", delete " + many(n: r.branches, one: "branch", more: "branches") + ", stop " + many(n: r.loops, one: "wait loop", more: "wait loops") + ", free "
+    else
+        "sweep of " + r.folder + ": removed " + many(n: r.worktrees, one: "worktree", more: "worktrees") + " and " + many(n: r.folders, one: "folder", more: "folders") + ", deleted " + many(n: r.branches, one: "branch", more: "branches") + ", stopped " + many(n: r.loops, one: "wait loop", more: "wait loops") + ", freed "
+    out: [str] @= [head + (r.kilobytes / 1024).to_str() + " MB (" + RULE + ")."]
+
+    for line in r.removed
+        out @ out.push("- " + line)
+
+    for line in r.kept
+        out @ out.push("- " + line)
+
+    if r.busy.len() > 0
+        out @ out.push(
+            "- in use (a process inside it or naming it, a change within 6 hours, or its lane standing), kept: " + join(r.busy, ", ")
+        )
+    return join(out, "\n") + "\n"
+
+## Judging
+
+# Why a worktree or a folder stays: `busy` where it is in use, `why` where
+# it holds something; neither where it may go.
+record Judged
+    busy: bool
+    why: str
+
+# The judgement of the worktree `wt`, its path resolved.
+function judge_worktree(shot: Snapshot, wt: Worktree, name: str, origin: str, place: str) -> Judged
+    if in_use(shot: shot, path: wt.path, name: name)
+        return Judged(busy: true, why: "")
+    fresh = sweep_ask.changed_within(path: wt.path, minutes: QUIET, skip_build: true, shallow: false, place: place)
+
+    if fresh < 0
+        return Judged(busy: false, why: "`find` could not read all of it")
+
+    if fresh > 0
+        return Judged(busy: true, why: "")
+
+    if wt.locked
+        return Judged(busy: false, why: "it is locked (`git worktree unlock` first)")
+    status = sweep_ask.git(where: wt.path, rest: ["status", "--porcelain"], place: place)
+
+    if !sweep_ask.answered(status)
+        return Judged(busy: false, why: "`git status` failed: " + sweep_ask.first_line(status.err))
+    dirty = sweep_ask.lines(status.out)
+
+    if dirty.len() > 0
+        shown: [str] @= []
+
+        for line in dirty.slice(from: 0, to: min(a: 3, b: dirty.len()))
+            shown @ shown.push(line.slice(from: 3, to: line.len()))
+
+        more = if dirty.len() > 3
+            ", ..."
+        else
+            ""
+
+        paths = if dirty.len() == 1
+            " path ("
+        else
+            " paths ("
+        return Judged(
+            busy: false,
+            why: "uncommitted work in " + dirty.len().to_str() + paths + join(shown, ", ") + more + ")"
+        )
+    words: [str] @= ["rev-list", "--count", wt.head, "--not"]
+
+    if wt.branch.len() > 0
+        words @ words.push("--exclude=" + wt.branch)
+    words @ words.push("--branches")
+
+    if origin.len() > 0
+        words @ words.push(origin)
+    counted = sweep_ask.git(where: wt.path, rest: words, place: place)
+
+    own = if sweep_ask.answered(counted)
+        sweep_ask.number(sweep_ask.unended(counted.out))
+    else
+        -1
+
+    if own < 0
+        return Judged(busy: false, why: "`git rev-list` failed: " + sweep_ask.first_line(counted.err))
+
+    if own > 0
+        return Judged(
+            busy: false,
+            why: many(n: own, one: "commit", more: "commits") + " on no other local branch nor origin/main"
+        )
+    return Judged(busy: false, why: "")
+
+# The smaller of two counts.
+function min(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# Whether `list` holds `word`.
+function member(list: [str], word: str) -> bool
+    for each in list
+        if each == word
+            return true
+
+    return false
+
+# The judgement of a folder that is no worktree.
+function judge_folder(shot: Snapshot, folder: str, name: str, standing: [str], place: str) -> Judged
+    lane = if pystr.closes(s: name, suffix: "-scratch")
+        name.slice(from: 0, to: name.len() - 8)
+    else
+        name
+
+    if member(list: standing, word: lane)
+        return Judged(busy: true, why: "")
+
+    if in_use(shot: shot, path: folder, name: name)
+        return Judged(busy: true, why: "")
+    fresh = sweep_ask.changed_within(path: folder, minutes: QUIET, skip_build: false, shallow: false, place: place)
+
+    if fresh < 0
+        return Judged(busy: false, why: "`find` could not read all of it")
+
+    if fresh > 0
+        return Judged(busy: true, why: "")
+    asked = sweep_ask.ask(words: ["find", folder, "-name", ".git", "-print", "-quit"], place: place)
+
+    if !sweep_ask.answered(asked)
+        return Judged(busy: false, why: "`find` could not read all of it")
+
+    if asked.out != ""
+        first = sweep_ask.lines(asked.out)[0]
+        return Judged(
+            busy: false,
+            why: "it holds a git repository of its own (" + first.slice(from: folder.len() + 1, to: first.len()) + ")"
+        )
+    return Judged(busy: false, why: "")
+
+# For each name, the tracked files that name it, over every local branch's
+# head, `origin/main` and the main checkout's tracked files; a failure where
+# `git grep` could not be asked.
+function citations(root: str, candidates: [str], origin: str, place: str) -> {str: [str]}?
+    found: {str: [str]} @= {}
+
+    if candidates.len() == 0
+        return ok(found)
+    heads = sweep_ask.git(where: root, rest: ["for-each-ref", "--format=%(objectname)", "refs/heads"], place: place)
+
+    if !sweep_ask.answered(heads)
+        return fail(code: "unasked", msg: "git for-each-ref could not be asked")
+    every: [str] @= sweep_ask.lines(heads.out)
+
+    if origin.len() > 0
+        every @ every.push(origin)
+    revisions: [str] @= []
+
+    for one in sort(every)
+        if revisions.len() == 0 || revisions[revisions.len() - 1] != one
+            revisions @ revisions.push(one)
+
+    patterns: [str] @= []
+
+    for name in candidates
+        patterns @ patterns.push("-e")
+        patterns @ patterns.push(name)
+        found[name] @ []
+
+    for pass in [revisions, []]
+        words: [str] @= ["grep", "-I", "-o", "-F"]
+
+        for word in patterns
+            words @ words.push(word)
+
+        for word in pass
+            words @ words.push(word)
+
+        asked = sweep_ask.git(where: root, rest: words, place: place)
+
+        if !asked.started || asked.code != 0 && asked.code != 1
+            return fail(code: "unasked", msg: "git grep could not be asked")
+
+        for line in sweep_ask.lines(asked.out)
+            for name in candidates
+                if pystr.closes(s: line, suffix: ":" + name)
+                    start = if pass.len() > 0
+                        pystr.index_from(s: line, piece: ":", from: 0) + 1
+                    else
+                        0
+                    held = found[name].default([])
+                    found[name] @ held.push(line.slice(from: start, to: line.len() - name.len() - 1))
+
+    return ok(found)
+
+# A checkout, and the local branches its HEAD holds.
+record Holding
+    path: str
+    names: [str]
+
+# For each checkout, the local branches its HEAD holds.
+function holdings(root: str, checkouts: [Worktree], place: str) -> [Holding]
+    out: [Holding] @= []
+
+    for wt in checkouts
+        asked = sweep_ask.git(
+            where: root,
+            rest: ["for-each-ref", "--merged", wt.head, "--format=%(refname)", "refs/heads"],
+            place: place
+        )
+        held: [str] @= []
+
+        if sweep_ask.answered(asked)
+            for ref in sweep_ask.lines(asked.out)
+                held @ held.push(ref.slice(from: 11, to: ref.len()))
+
+        out @ out.push(Holding(path: wt.path, names: held))
+
+    return out
+
+# The local branches whose reflog moved within `QUIET` minutes.
+function recent_branches(root: str, place: str) -> [str]
+    logs = pypath.join_two(a: root, b: ".git/logs/refs/heads")
+    asked = sweep_ask.ask(words: ["find", logs, "-type", "f", "-mmin", "-" + QUIET.to_str()], place: place)
+    out: [str] @= []
+
+    for line in sweep_ask.lines(asked.out)
+        if pystr.opens(s: line, prefix: logs + "/")
+            out @ out.push(line.slice(from: logs.len() + 1, to: line.len()))
+
+    return out
+
+# Whether `path` or what it resolves to was removed by this sweep.
+function gone(removed: [str], path: str) -> bool
+    return member(list: removed, word: path) || member(list: removed, word: resolved(path))
+
+# The local branches no worktree holds: each deleted by `git branch -d` in a
+# checkout whose HEAD holds it, or kept with why.
+function branches(root: str, records: [Worktree], removed: [str], @r: Report, place: str)
+    listed = sweep_ask.git(
+        where: root,
+        rest: ["for-each-ref", "--format=%(refname)%09%(objectname)%09%(upstream)", "refs/heads"],
+        place: place
+    )
+
+    if !sweep_ask.answered(listed)
+        r.kept @ r.kept.push("every branch: `git for-each-ref` could not be asked")
+        return
+    held: [str] @= []
+    checkouts: [Worktree] @= []
+
+    for wt in records
+        if wt.branch.len() > 0 && !gone(removed: removed, path: wt.path)
+            held @ held.push(wt.branch)
+
+        if !wt.prunable && wt.head.len() > 0 && !gone(removed: removed, path: wt.path)
+            checkouts @ checkouts.push(wt)
+
+    recent: [str] @= []
+    recent_read: bool @= false
+    merged: [Holding] @= []
+    merged_read: bool @= false
+
+    for line in sweep_ask.lines(listed.out)
+        fields = pystr.split_at(line, '\t')
+
+        if fields.len() != 3 || !pystr.opens(s: fields[0], prefix: "refs/heads/")
+            continue
+        name = fields[0].slice(from: 11, to: fields[0].len())
+        sha = fields[1]
+        upstream = fields[2]
+
+        if name == TRUNK || member(list: held, word: name)
+            continue
+
+        if !recent_read
+            recent @ recent_branches(root: root, place: place)
+            recent_read @ true
+
+        if member(list: recent, word: name)
+            r.busy @ r.busy.push("branch " + name)
+            continue
+        host: str @= ""
+        why: str @= ""
+
+        if upstream.len() > 0
+            asked = sweep_ask.git(where: root, rest: ["merge-base", "--is-ancestor", sha, upstream], place: place)
+
+            if asked.started && asked.code == 0
+                host @ root
+            else if asked.started && asked.code == 1
+                why @ "not merged into its upstream " + upstream
+
+        if host == "" && why == ""
+            if !merged_read
+                merged @ holdings(root: root, checkouts: checkouts, place: place)
+                merged_read @ true
+
+            for one in merged
+                if member(list: one.names, word: name)
+                    host @ resolved(one.path)
+                    break
+
+            if host == ""
+                why @ "no checkout's HEAD holds it, so `git branch -d` would refuse"
+
+        if why != ""
+            r.kept @ r.kept.push("branch " + name + ": " + why)
+            continue
+
+        if r.dry
+            did(@r, kind: "branch", line: "would delete branch " + name, size: 0)
+            continue
+        asked = sweep_ask.git(where: host, rest: ["branch", "-d", name], place: place)
+
+        if sweep_ask.answered(asked)
+            did(@r, kind: "branch", line: "deleted branch " + name, size: 0)
+        else
+            r.kept @ r.kept.push("branch " + name + ": `git branch -d` refused: " + sweep_ask.first_line(asked.err))
+
+## The sweep
+
+# Whether this sweep now holds `lock`: made by `mkdir`, which refuses a
+# folder that stands, after one older than `STALE_LOCK` minutes, a sweep
+# that died, is removed.
+function take(lock: str) -> bool
+    if sweep_ask.answered(sweep_ask.ask(words: ["mkdir", lock], place: ""))
+        return true
+    _ = sweep_ask.ask(
+        words: ["find", lock, "-maxdepth", "0", "-mmin", "+" + STALE_LOCK.to_str(), "-exec", "rm", "-rf", "{}", ";"],
+        place: ""
+    )
+    return sweep_ask.answered(sweep_ask.ask(words: ["mkdir", lock], place: ""))
+
+# Sweeps the repository `start` stands in: the report's text; "" where
+# nothing here may be judged, or where `stamp` is "hourly" and the stamp is
+# under an hour old; `HELD` where another sweep holds the lock. `stamp`
+# "write" or "hourly" writes the stamp before the sweep.
+function sweep(start: str, dry: bool, stamp: str) -> str
+    root = repository_root(start)
+
+    if root.len() == 0
+        return ""
+    folder = pypath.join_two(a: root, b: FOLDER)
+
+    if !trees.is_dir(folder) || hero_fs_kind(path: folder.cstr()) == HERO_FS_LINK
+        return ""
+    lock = pypath.join_two(a: folder, b: LOCK)
+
+    if !take(lock)
+        return HELD
+    text = held_sweep(root: root, folder: folder, lock: lock, dry: dry, stamp: stamp)
+    _ = sweep_ask.ask(words: ["rm", "-rf", lock], place: "")
+    return text
+
+# The sweep once its lock is held, the lock its programs' place.
+function held_sweep(root: str, folder: str, lock: str, dry: bool, stamp: str) -> str
+    stamped = pypath.join_two(a: folder, b: STAMP)
+
+    if stamp == "hourly" && sweep_ask.changed_within(path: stamped, minutes: HOURLY, skip_build: false, shallow: true, place: lock) > 0
+        return ""
+
+    if stamp != "none" && write_file(path: stamped, text: "sweep\n").is_err()
+        return ""
+    return swept(root: root, folder: folder, dry: dry, place: lock)
+
+# A worktree going, and its name.
+record Going
+    wt: Worktree
+    name: str
+
+# The sweep itself, as `sweep.py`'s `swept`.
+function swept(root: str, folder: str, dry: bool, place: str) -> str
+    r: Report @= Report(
+        folder: folder,
+        dry: dry,
+        removed: [],
+        kept: [],
+        busy: [],
+        worktrees: 0,
+        folders: 0,
+        branches: 0,
+        loops: 0,
+        kilobytes: 0
+    )
+    home = system.env("HOME").default("")
+    listed = worktrees(root: root, place: place)
+    shot: Snapshot @= snapshot(place)
+
+    records = match listed
+        .ok w => w
+        .err _ =>
+            r.kept @ r.kept.push("everything: `git worktree list` could not be asked")
+            return report_text(r)
+
+    if !shot.complete
+        r.kept @ r.kept.push("every worktree and folder: `ps` or `lsof` could not be asked, so no process is known")
+    origin = origin_main(root: root, place: place)
+    here: {str: Worktree} @= {}
+
+    for wt in records.slice(from: min(a: 1, b: records.len()), to: records.len())
+        if pypath.dirname(resolved(wt.path)) == folder
+            here[pypath.basename(resolved(wt.path))] @ wt
+
+    standing = sort(keys(here))
+    going: [Going] @= []
+
+    for name in standing
+        listed_wt = here[name].must()
+
+        if listed_wt.prunable
+            r.kept @ r.kept.push("worktree record " + name + ": its folder is gone (`git worktree prune` drops it)")
+            continue
+
+        if !shot.complete
+            continue
+        wt = Worktree(
+            path: resolved(listed_wt.path),
+            head: listed_wt.head,
+            branch: listed_wt.branch,
+            locked: listed_wt.locked,
+            prunable: listed_wt.prunable
+        )
+        judged = judge_worktree(shot: shot, wt: wt, name: name, origin: origin, place: place)
+
+        if judged.busy
+            r.busy @ r.busy.push(name)
+        else if judged.why != ""
+            r.kept @ r.kept.push("worktree " + name + ": " + judged.why)
+        else
+            going @ going.push(Going(wt: wt, name: name))
+
+    no_names: [str] = []
+
+    names = match entries(folder: folder, place: place)
+        .ok n => n
+        .err _ =>
+            r.kept @ r.kept.push("every folder: `find` could not list " + folder)
+            no_names
+
+    candidates: [str] @= []
+
+    for name in names
+        if member(list: standing, word: name) || !shot.complete
+            continue
+        judged = judge_folder(
+            shot: shot,
+            folder: pypath.join_two(a: folder, b: name),
+            name: name,
+            standing: standing,
+            place: place
+        )
+
+        if judged.busy
+            r.busy @ r.busy.push(name)
+        else if judged.why != ""
+            r.kept @ r.kept.push("folder " + name + ": " + judged.why)
+        else
+            candidates @ candidates.push(name)
+
+    cited = citations(root: root, candidates: candidates, origin: origin, place: place)
+    clearing: [str] @= []
+
+    for name in candidates
+        match cited
+            .ok c =>
+                said = c[name].default([])
+
+                if said.len() > 0
+                    r.kept @ r.kept.push("folder " + name + ": a tracked file names it (" + sort(said)[0] + ")")
+                else
+                    clearing @ clearing.push(name)
+            .err _ => r.kept @ r.kept.push(
+                "folder " + name + ": `git grep` could not be asked whether a tracked file names it"
+            )
+
+    no_loops: [Waiting] = []
+
+    loops = if shot.complete
+        waiting(shot: shot, root: root, home: home, place: place)
+    else
+        no_loops
+    stopping: [Waiting] @= []
+
+    for one in loops
+        if one.why != ""
+            r.kept @ r.kept.push(
+                "wait loop " + one.process.pid.to_str() + ", " + sweep_loops.hours(one.process.age) + " old, in " + one.cwd + ": " + one.why + ": " + one.loop.text
+            )
+        else
+            stopping @ stopping.push(one)
+
+    sizes: {str: i64} @= {}
+
+    for one in going
+        sizes[one.name] @ sweep_ask.kilobytes(path: one.wt.path, place: place)
+
+    for name in clearing
+        sizes[name] @ sweep_ask.kilobytes(path: pypath.join_two(a: folder, b: name), place: place)
+
+    if !dry && (going.len() > 0 || clearing.len() > 0 || stopping.len() > 0)
+        fresh = snapshot(place)
+
+        if !fresh.complete
+            r.kept @ r.kept.push("everything judged: `ps` or `lsof` could not be asked again before acting")
+            going @ []
+            clearing @ []
+            stopping @ []
+        else
+            still: [Going] @= []
+
+            for one in going
+                if in_use(shot: fresh, path: one.wt.path, name: one.name)
+                    r.busy @ r.busy.push(one.name)
+                else
+                    still @ still.push(one)
+
+            going @ still
+            left: [str] @= []
+
+            for name in clearing
+                if in_use(shot: fresh, path: pypath.join_two(a: folder, b: name), name: name)
+                    r.busy @ r.busy.push(name)
+                else
+                    left @ left.push(name)
+
+            clearing @ left
+            alive: [Waiting] @= []
+
+            for one in stopping
+                if standing_still(table: fresh.table, process: one.process)
+                    alive @ alive.push(one)
+
+            stopping @ alive
+            shot @ fresh
+
+    removed: [str] @= []
+
+    for one in going
+        size = sizes[one.name].default(0)
+        line = "worktree " + one.name + ", " + (size / 1024).to_str() + " MB"
+
+        if dry
+            did(@r, kind: "worktree", line: "would remove " + line, size: size)
+            removed @ removed.push(one.wt.path)
+            continue
+        asked = sweep_ask.git(where: root, rest: ["worktree", "remove", one.wt.path], place: place)
+
+        if sweep_ask.answered(asked)
+            did(@r, kind: "worktree", line: "removed " + line, size: size)
+            removed @ removed.push(one.wt.path)
+        else
+            r.kept @ r.kept.push(
+                "worktree " + one.name + ": `git worktree remove` refused: " + sweep_ask.first_line(asked.err)
+            )
+
+    for name in clearing
+        path = pypath.join_two(a: folder, b: name)
+        size = sizes[name].default(0)
+        line = "folder " + name + ", " + (size / 1024).to_str() + " MB"
+
+        if dry
+            did(@r, kind: "folder", line: "would remove " + line, size: size)
+            continue
+        asked = sweep_ask.ask(words: ["rm", "-rf", path], place: place)
+
+        if sweep_ask.answered(asked) && !trees.lexists(path)
+            did(@r, kind: "folder", line: "removed " + line, size: size)
+        else
+            r.kept @ r.kept.push("folder " + name + ": `rm -rf` failed: " + sweep_ask.first_line(asked.err))
+
+    branches(root: root, records: records, removed: removed, @r, place: place)
+
+    for one in stopping
+        line = "wait loop " + one.process.pid.to_str() + ", " + sweep_loops.hours(one.process.age) + " old, in " + one.cwd + ": " + one.loop.text
+
+        if dry
+            did(@r, kind: "loop", line: "would stop " + line, size: 0)
+            continue
+        stop(one.process.pid)
+
+        for child in shot.table
+            if child.ppid == one.process.pid && pypath.basename(program_of(child.command)) == "sleep"
+                stop(child.pid)
+
+        did(@r, kind: "loop", line: "stopped " + line, size: 0)
+
+    kept_busy: [str] @= []
+
+    for name in sort(r.busy)
+        if kept_busy.len() == 0 || kept_busy[kept_busy.len() - 1] != name
+            kept_busy @ kept_busy.push(name)
+
+    r.busy @ kept_busy
+    return report_text(r)
+
+# Whether the process stands in `table` as it stood when it was judged: the
+# same pid, parent and command, so a pid used again is never stopped.
+function standing_still(table: [sweep_loops.Process], process: sweep_loops.Process) -> bool
+    for one in table
+        if one == process || one.pid == process.pid && one.ppid == process.ppid && one.command == process.command
+            return true
+
+    return false
+
+# `SIGTERM` to `pid`, by `kill`.
+function stop(pid: i64)
+    _ = sweep_ask.ask(words: ["kill", "-TERM", pid.to_str()], place: "")
+
+## The hook
+
+# `text` as a JSON string's inside, as Python's `json.dumps` writes it:
+# every character past ASCII as `\u` and four lowercase hexadecimal digits, a
+# pair of them past the first plane.
+function json_text(text: str) -> str
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        c = pystr.code_at(text, at)
+        width = pystr.width_at(text, at)
+
+        if c == 0x22
+            out @ out.push("\\\"")
+        else if c == 0x5c
+            out @ out.push("\\\\")
+        else if c == 0x0a
+            out @ out.push("\\n")
+        else if c == 0x0d
+            out @ out.push("\\r")
+        else if c == 0x09
+            out @ out.push("\\t")
+        else if c == 0x08
+            out @ out.push("\\b")
+        else if c == 0x0c
+            out @ out.push("\\f")
+        else if c < 0x20 || c > 0x7e && c != 0x7f
+            if c > 0xffff
+                high = 0xd800 + (c - 0x10000 >> 10)
+                low = 0xdc00 + (c - 0x10000 & 0x3ff)
+                out @ out.push("\\u" + hex4(high) + "\\u" + hex4(low))
+            else
+                out @ out.push("\\u" + hex4(c))
+        else
+            out @ out.push(text.slice(from: at, to: at + width))
+        at @ at + width
+
+    return join(out, "")
+
+# `n` as four lowercase hexadecimal digits.
+function hex4(n: i64) -> str
+    digits = "0123456789abcdef"
+    out: str @= ""
+
+    for shift in [12, 8, 4, 0]
+        k = n >> shift & 0xf
+        out @ out + digits.slice(from: k, to: k + 1)
+
+    return out
+
+# The hook's answer for `event_name`, the report its context.
+function hook_answer(event_name: str, text: str) -> str
+    return "{\"hookSpecificOutput\": {\"hookEventName\": \"" + json_text(event_name) + "\", \"additionalContext\": \"" + json_text(text) + "\"}}"
+
+# The hook's stdout for the event `raw`, "" where it says nothing.
+function as_hook(raw: str) -> str
+    payload = match json.parse(raw)
+        .ok v  => v
+        .err _ => return ""
+
+    event_name = match json.field(payload, "hook_event_name")
+        .ok v =>
+            match v
+                .string s                                                => s.value
+                .nothing | .boolean _ | .number _ | .array _ | .object _ => ""
+        .err _ => ""
+
+    if event_name != "SessionStart" && event_name != "UserPromptSubmit"
+        return ""
+
+    named = match json.field(payload, "cwd")
+        .ok v =>
+            match v
+                .string s                                                => s.value
+                .nothing | .boolean _ | .number _ | .array _ | .object _ => ""
+        .err _ => ""
+
+    project = system.env("CLAUDE_PROJECT_DIR").default("")
+
+    start = if named.len() > 0
+        named
+    else if project.len() > 0
+        project
+    else
+        system.getwd().default(".")
+
+    stamp = if event_name == "UserPromptSubmit"
+        "hourly"
+    else
+        "write"
+    text = sweep(start: start, dry: false, stamp: stamp)
+
+    if text == "" || text == HELD
+        return ""
+    return hook_answer(event_name: event_name, text: text) + "\n"
+
+# What `--dry-run` and `--sweep` print.
+function by_hand(start: str, dry: bool) -> str
+    text = sweep(start: start, dry: dry, stamp: "none")
+
+    if text == ""
+        return "sweep: " + start + " is in no checkout of this project with a " + FOLDER + " folder, so nothing was judged.\n"
+
+    if text == HELD
+        return "sweep: another sweep holds " + LOCK + ", so this one did nothing.\n"
+    return text
+
+## Tests
+
+test "sweep: the hook's answer is the JSON Python writes"
+    assert json_text("a\"b\\c\nd\te§\u{1}") == "a\\\"b\\\\c\\nd\\te\\u00a7\\u0001"
+    assert json_text("😀") == "\\ud83d\\ude00" && hex4(0xabc) == "0abc"
+    assert hook_answer(event_name: "SessionStart", text: "x\n") == "{\"hookSpecificOutput\": {\"hookEventName\": \"SessionStart\", \"additionalContext\": \"x\\n\"}}"
+    assert as_hook("not json") == "" && as_hook("{\"hook_event_name\": \"Stop\"}") == "" && as_hook("[1]") == ""
+    assert many(n: 1, one: "branch", more: "branches") == "1 branch" && many(n: 0, one: "branch", more: "branches") == "0 branches"
+
+test "sweep: the repository a folder stands in, and none outside every tree"
+    here = system.getwd().must()
+    root = repository_root(here)
+    assert root.len() > 0 && trees.is_dir(root + "/.git") && repository_root("/") == ""
+    assert sweep(start: "/", dry: true, stamp: "none") == "" && by_hand(start: "/", dry: true) == "sweep: / is in no checkout of this project with a .claude/worktrees folder, so nothing was judged.\n"

@@ -1,11 +1,10 @@
 # Texts of many scripts and shapes, and the tokens tiktoken 0.14.0 makes of
 # each with `encode_ordinary` in `o200k_base` and in `cl100k_base`, the
 # expected values of `tokenizer/tables`' tests. Nothing here is edited by
-# hand: a one-off program, `gen_texts.py`, kept outside the tree in the
-# round's scratch folder (`.claude/worktrees/rebel-scratch/tokenizer/gen/`),
-# wrote the 64 fragments it holds, then 140 seeded mixtures of them with
-# white space between, asked tiktoken, and wrote this module whole on
-# 2026-11-18. Scripts: Latin, Cyrillic, Greek, Armenian, Georgian, Hebrew,
+# hand: a one-off program, `gen_texts.py`, which is not in the tree
+# (defect 2639), wrote the 64 fragments it holds, then 140 seeded mixtures of
+# them with white space between, asked tiktoken, and wrote this module whole
+# on 2026-11-18. Scripts: Latin, Cyrillic, Greek, Armenian, Georgian, Hebrew,
 # Arabic, Devanagari, Tamil, Thai, Ethiopic, Tibetan, Myanmar, Han, Kana,
 # Hangul; emoji with modifiers and joiners, marks, digits of four scripts,
 # every kind of white space, code, runs of one character.

@@ -1,13 +1,12 @@
 # The table of the encoding `o200k_base`, made data: its 199998 ordinary tokens, the
 # pattern that cuts a text into pieces before they are merged, and its
 # special tokens, as tiktoken 0.14.0 reads them. Nothing below this header is
-# edited by hand: a one-off program, `gen_tables.py`, kept outside the tree in the
-# round's scratch folder (`.claude/worktrees/rebel-scratch/tokenizer/gen/`),
-# read the file OpenAI serves, fetched by tiktoken on 2026-11-18 from
+# edited by hand: a one-off program, `gen_tables.py`, which is not in the tree
+# (defect 2639), read the file OpenAI serves, fetched by tiktoken on
+# 2026-11-18 from
 # https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken,
-# checked its SHA-256 against the one tiktoken expects, 446a9538cb6c348e,
-# held every line of it to the rank tiktoken loaded, and wrote this module
-# whole.
+# checked its SHA-256 against the one tiktoken expects, 446a9538cb6c348e, held
+# every line of it to the rank tiktoken loaded, and wrote this module whole.
 #
 # Taken from OpenAI's tiktoken, whose licence travels with it here, as its
 # LICENSE states it:

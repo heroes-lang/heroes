@@ -2,8 +2,7 @@
 # start of it, as tiktoken 0.14.0 answers `encoding_name_for_model`: a
 # whole name first, then the first start, in this order, that the name
 # begins with. Nothing here is edited by hand: the one-off program
-# `gen_tables.py`, kept outside the tree in the round's scratch folder
-# (`.claude/worktrees/rebel-scratch/tokenizer/gen/`), read tiktoken's two
+# `gen_tables.py`, which is not in the tree (defect 2639), read tiktoken's two
 # tables on 2026-11-18 and wrote this module whole.
 
 # The whole names.

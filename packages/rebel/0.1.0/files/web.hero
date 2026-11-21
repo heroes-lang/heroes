@@ -1794,9 +1794,9 @@ function minimal_security_headers() -> SecurityHeaders
 # whatever the connection, as helmet writes it; Django writes it only on a
 # request it knows came over HTTPS. Aborts where `max_age` is below zero.
 function format_hsts(max_age: time.Duration, subdomains: bool, preload: bool) -> str
-    max_age_s = webhooks.whole_seconds(max_age)
-    assert max_age_s >= 0
-    out: [str] @= [f"max-age={max_age_s}"]
+    max_age_seconds = webhooks.whole_seconds(max_age)
+    assert max_age_seconds >= 0
+    out: [str] @= [f"max-age={max_age_seconds}"]
 
     if subdomains
         out @ out.push("includeSubDomains")
@@ -2132,7 +2132,7 @@ function new_webhook_secret() -> str?
 # byte. See also `sign_webhook`, `verify_webhook`.
 function webhook_signature(secret: str, id: str, sent: time.Instant, payload: [u8]) -> str?
     key = webhooks.secret_bytes(secret)?
-    return ok(webhooks.signature(key: key, id: id, timestamp_s: time.unix_seconds(sent), payload: payload))
+    return ok(webhooks.signature(key: key, id: id, timestamp_seconds: time.unix_seconds(sent), payload: payload))
 
 # The three header fields a webhook is sent with, by the Standard Webhooks
 # specification: `webhook-id`, `webhook-timestamp` and `webhook-signature`.
@@ -2174,9 +2174,9 @@ function sign_webhook(secret: str, id: str, sent: time.Instant, payload: [u8]) -
 #
 # See also `sign_webhook`.
 function verify_webhook(headers: [http.Header], payload: [u8], secrets: [str], now: time.Instant, tolerance: time.Duration) -> str?
-    tolerance_s = webhooks.whole_seconds(tolerance)
+    tolerance_seconds = webhooks.whole_seconds(tolerance)
 
-    if tolerance_s < 0
+    if tolerance_seconds < 0
         return fail(code: INVALID, msg: f"a tolerance of {time.format_duration(tolerance)}, below zero")
 
     id = match http.value_of(headers, name: "webhook-id")
@@ -2194,11 +2194,17 @@ function verify_webhook(headers: [http.Header], payload: [u8], secrets: [str], n
     sent = webhooks.timestamp_of(field)?
     seconds = time.unix_seconds(now)
 
-    if sent < seconds - tolerance_s
-        return fail(code: INVALID, msg: f"the webhook was sent at {sent}, more than {tolerance_s} s before {seconds}")
+    if sent < seconds - tolerance_seconds
+        return fail(
+            code: INVALID,
+            msg: f"the webhook was sent at {sent}, more than {tolerance_seconds} s before {seconds}"
+        )
 
-    if sent > seconds + tolerance_s
-        return fail(code: INVALID, msg: f"the webhook was sent at {sent}, more than {tolerance_s} s after {seconds}")
+    if sent > seconds + tolerance_seconds
+        return fail(
+            code: INVALID,
+            msg: f"the webhook was sent at {sent}, more than {tolerance_seconds} s after {seconds}"
+        )
 
     if !webhooks.has_v1(signatures)
         return fail(code: INVALID, msg: "the webhook-signature field holds no v1 signature")
@@ -2206,7 +2212,7 @@ function verify_webhook(headers: [http.Header], payload: [u8], secrets: [str], n
 
     for secret in secrets
         key = webhooks.secret_bytes(secret)?
-        expected @ expected.push(webhooks.signature(key: key, id: id, timestamp_s: sent, payload: payload))
+        expected @ expected.push(webhooks.signature(key: key, id: id, timestamp_seconds: sent, payload: payload))
 
     if !webhooks.holds_signature(signatures, expected: expected)
         return fail(code: INVALID, msg: f"no signature of the webhook {id} matches one of the {secrets.len()} secrets")

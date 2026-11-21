@@ -4,14 +4,13 @@
 # proportions that language writes them.
 #
 # The table is data, measured and not typed: a one-off Heroes program,
-# `gen_alphabets.hero`, kept outside the tree in the round's scratch folder
-# (`.claude/worktrees/rebel-scratch/unicode_encodings/gen/`), read on 2026-11-17
-# the values of the localized `.strings` files of macOS 27's applications, one
-# corpus a language, 0.3 to 3.6 million letters each, counted each letter
-# with `unicode.is_letter` made lower case by `unicode.simple_lower`, kept
-# each that makes at least 1 in 10,000 of the language's letters, ASCII's
-# among them, and wrote this module whole. Nothing here is edited by hand.
-# What it kept:
+# `gen_alphabets.hero`, which is not in the tree (defect 2639), read on
+# 2026-11-17 the values of the localized `.strings` files of macOS 27's
+# applications, one corpus a language, 0.3 to 3.6 million letters each,
+# counted each letter with `unicode.is_letter` made lower case by
+# `unicode.simple_lower`, kept each that makes at least 1 in 10,000 of the
+# language's letters, ASCII's among them, and wrote this module whole. Nothing
+# here is edited by hand. What it kept:
 #
 # - ar: 63 letters of 2494666
 # - ca: 36 letters of 1348874

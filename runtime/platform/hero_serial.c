@@ -39,9 +39,13 @@
  * `COMMTIMEOUTS`, `GetCommModemStatus`, `EscapeCommFunction`,
  * `SetCommBreak`, `PurgeComm`, `ClearCommError`, and the registry's
  * `SERIALCOMM` key for the list, advapi32's, which this file names to the
- * linker itself. Run on the box on 2026-11-18: the listing and the refusals
- * held, plain and under ASan; every case of a port pair stays unrun there, no
- * pair being installed (`rebel-scratch/windows/serial.md`).
+ * linker itself. Run on the box on 2026-11-18 at 1e0a4f82b: it compiles with
+ * no word under C11 and GNU11 `-Wpedantic -Werror`; a C probe's listing
+ * (empty, as .NET's `GetPortNames` is, the box having no port) and its four
+ * refusals (an empty path, `COM250`, `\\.\NUL`, a pseudo-terminal) held,
+ * plain and under ASan; `reach_hero_serial`'s 27 tests and `reach_serial`'s
+ * 345 passed, plain and under `--sanitize`. Every case of a port pair stays
+ * unrun there, com0com not being installed, and so does a real port.
  */
 
 #include "hero_serial.h"
@@ -64,8 +68,8 @@
  * `hero_keyring.c` and `hero_sys.c` name it, so a program that takes this
  * member links it and no other does. MSVC's word; a MinGW target links it by
  * `-l`. Without it a C program linking this file alone was refused by
- * lld-link on the box, the four names undefined (2026-11-18,
- * `rebel-scratch/windows/serial.md`). */
+ * lld-link on the box, the four names undefined (2026-11-18, a C probe of
+ * this member, not kept). */
 #pragma comment(lib, "advapi32.lib")
 #endif
 #else
