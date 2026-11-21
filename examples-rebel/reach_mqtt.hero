@@ -4,6 +4,7 @@
 # itself at QoS 1 and reads it back; where none answers it says why.
 
 use <rebel>/mqtt
+use <rebel>/time
 
 function main()
     match mqtt.parse_url("mqtt://localhost:1883")
@@ -15,6 +16,6 @@ function main()
                     c @= first
                     _ = mqtt.subscribe(@c, topic_filter: "reach/mqtt", qos: 1).default(-1)
                     _ = mqtt.publish(@c, topic: "reach/mqtt", payload: [104, 105], qos: 1, retain: false).is_err()
-                    got = mqtt.next_message(@c, wait_ms: 2000)
+                    got = mqtt.next_message(@c, wait: time.seconds(2).must())
                     print(got.is_err())
                     print(mqtt.close(@c).is_err())

@@ -236,15 +236,15 @@ function exchange(scheme: str, host: str, port: str, deadline_ms: i64, roots: st
 
     return answer
 
-# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
-# being `time.max_duration()` (until this package's own step of D07; `tls`
-# takes a `time.Duration` since M-rebel-library step 88c).
+# The time `ms` milliseconds stand for as `tls` takes it: 0, no limit in
+# this package's private modules, is `time.max_duration()`, and a count past
+# what a `time.Duration` holds is `time.max_duration()` too.
 #
 # - `ms`: milliseconds, 0 for no limit.
 function tls_deadline(ms: i64) -> time.Duration?
     if ms == 0
         return ok(time.max_duration())
-    return time.milliseconds(ms)
+    return ok(time.milliseconds(ms).default(time.max_duration()))
 
 # A connection to `host` at `port`: TLS where `secure`, the certificate
 # checked against `roots` ("" the system's store) and HTTP/2 then HTTP/1.1

@@ -16,7 +16,7 @@
 # `Options.manual_acks` asks the program to.
 #
 # **Every wait has a deadline and every read is bounded**: a call that waits
-# takes `Options.wait_ms` or its own, a packet is read up to
+# takes `Options.wait` or its own, a packet is read up to
 # `Options.most_packet_bytes` (told to an MQTT 5 server as its Maximum
 # Packet Size), and the messages of QoS 0 held unread up to
 # `Options.most_held`, past which they are dropped and counted; a message of
@@ -331,17 +331,17 @@ variant Transport
         path: str
 
 # How the client tries again after a connection is lost: the first wait,
-# then twice the one before up to `most_wait_ms`, with a random part.
+# then twice the one before up to `most_wait`, with a random part.
 record Reconnect
     # The most attempts after a loss; 0 for none, so a lost connection
     # closes the client.
     attempts: i64
-    # Milliseconds waited before the second attempt, 1 or more.
-    wait_ms: i64
-    # The longest wait, `wait_ms` or more.
-    most_wait_ms: i64
-    # The most milliseconds added to each wait at random, 0 or more.
-    jitter_ms: i64
+    # How long is waited before the second attempt, 1 ms or more.
+    wait: time.Duration
+    # The longest wait, `wait` or more.
+    most_wait: time.Duration
+    # The most added to each wait at random, zero or more.
+    jitter: time.Duration
 
 # Where the server is and how to talk to it. `options` makes one; a program
 # changes the fields it needs with `@`, or `parse_url` reads one.
@@ -363,9 +363,10 @@ record Options
     # Whether the session begins anew rather than going on with the one the
     # server kept (3.1.1's clean session).
     clean_start: bool
-    # The seconds after which a silent connection is pinged, and dropped by
-    # the server at one and a half; 0 for none.
-    keep_alive_s: i64
+    # How long after which a silent connection is pinged, and dropped by the
+    # server at one and a half, sent in whole seconds, a part of one counting
+    # as a whole one; zero for none, as MQTT's 0.
+    keep_alive: time.Duration
     # The user's name, "" for none.
     username: str
     # The password, any bytes, [] for none; 3.1.1 sends one only with a
@@ -377,11 +378,11 @@ record Options
     # maximum, the topic aliases taken, an authentication method. [] in
     # 3.1.1.
     properties: [Property]
-    # Milliseconds a connection may take, its `CONNACK` included, 1 or more.
-    connect_ms: i64
-    # Milliseconds a write, and the acknowledgement a publish, a
-    # subscription or a ping waits for, may take, 1 or more.
-    wait_ms: i64
+    # How long a connection may take, its `CONNACK` included, 1 ms or more.
+    connect_timeout: time.Duration
+    # How long a write, and the acknowledgement a publish, a subscription or
+    # a ping waits for, may take, 1 ms or more.
+    wait: time.Duration
     # The largest packet read, 16 or more; past it the connection is lost.
     most_packet_bytes: i64
     # Whether a received message of QoS 1 or 2 waits for the program's `ack`
@@ -545,7 +546,12 @@ variant Packet
 # The reconnection this client makes by default: 60 attempts, 250 ms first,
 # doubling to 8 s, with 100 ms at random.
 function default_reconnect() -> Reconnect
-    return Reconnect(attempts: 60, wait_ms: 250, most_wait_ms: 8000, jitter_ms: 100)
+    return Reconnect(
+        attempts: 60,
+        wait: time.milliseconds(250).must(),
+        most_wait: time.seconds(8).must(),
+        jitter: time.milliseconds(100).must()
+    )
 
 # The options of a connection to `host` at `DEFAULT_PORT` over TCP: MQTT 5,
 # an identifier the server assigns, a clean start, a keep-alive of 60
@@ -565,13 +571,13 @@ function options(host: str) -> Options
         version: 5,
         client_id: "",
         clean_start: true,
-        keep_alive_s: 60,
+        keep_alive: time.minutes(1).must(),
         username: "",
         password: [],
         will: .none,
         properties: [],
-        connect_ms: 10000,
-        wait_ms: 10000,
+        connect_timeout: time.seconds(10).must(),
+        wait: time.seconds(10).must(),
         most_packet_bytes: 16777216,
         manual_acks: false,
         most_held: 65536,
@@ -701,17 +707,17 @@ function connect(opts: Options) -> Client?
         version: opts.version,
         client_id: opts.client_id,
         clean_start: opts.clean_start,
-        keep_alive_s: opts.keep_alive_s,
+        keep_alive_s: link.seconds_of(opts.keep_alive),
         username: opts.username,
         password: opts.password,
         will: will,
         properties: list,
-        connect_ms: opts.connect_ms,
-        wait_ms: opts.wait_ms,
+        connect_ms: link.ms_of(opts.connect_timeout),
+        wait_ms: link.ms_of(opts.wait),
         most_packet_bytes: opts.most_packet_bytes,
         manual_acks: opts.manual_acks,
         most_held: opts.most_held,
-        reconnect: model.Reconnect(attempts: r.attempts, wait_ms: r.wait_ms, most_wait_ms: r.most_wait_ms, jitter_ms: r.jitter_ms)
+        reconnect: model.Reconnect(attempts: r.attempts, wait_ms: link.ms_of(r.wait), most_wait_ms: link.ms_of(r.most_wait), jitter_ms: link.ms_of(r.jitter))
     )
     return ok(Client(session: session.open(inner)?))
 
@@ -872,7 +878,7 @@ function message(topic: str, payload: [u8]) -> Message
 # Fails `invalid` where `topic` or `qos` is refused; `unsupported` where the
 # server takes no such QoS or keeps no retained message; `permission` where
 # it refuses the topic (MQTT 5's 135); `timeout` where the acknowledgement
-# does not come within `Options.wait_ms`; `closed`. See also
+# does not come within `Options.wait`; `closed`. See also
 # `publish_message`.
 function publish(@c: Client, topic: str, payload: [u8], qos: i64, retain: bool) -> ()?
     m @= message(topic, payload: payload)
@@ -1021,15 +1027,15 @@ function unsubscribe_many(@c: Client, filters: [str], properties: [Property]) ->
 # The next message of any subscription, a held one first, waiting for one.
 #
 # - `c`: the client.
-# - `wait_ms`: milliseconds to wait, 0 to ask without waiting.
+# - `wait`: how long to wait, zero to ask without waiting.
 #
 # A message of QoS 1 or 2 has been acknowledged by the time it is answered,
 # unless `Options.manual_acks` leaves that to `ack`. Fails `timeout` where
 # none comes in time, the client left as it was; `closed` once the client is
-# closed and holds nothing; `invalid` where `wait_ms` is below 0. See also
+# closed and holds nothing; `invalid` where `wait` is below zero. See also
 # `read_ready`, `ack`.
-function next_message(@c: Client, wait_ms: i64) -> Message?
-    m = waiting.next(@c.session, wait_ms: wait_ms)?
+function next_message(@c: Client, wait: time.Duration) -> Message?
+    m = waiting.next(@c.session, wait_ms: link.ms_of(wait))?
     out_list: [Property] @= []
 
     for prop in m.properties
@@ -1107,12 +1113,12 @@ function ack(@c: Client, m: Message) -> ()?
 # Sends a `PINGREQ` and waits for its `PINGRESP`.
 #
 # - `c`: the client.
-# - `wait_ms`: milliseconds to wait, 1 or more.
+# - `wait`: how long to wait, 1 ms or more.
 #
-# Fails `timeout`, `closed`, `invalid` where `wait_ms` is below 1. See also
+# Fails `timeout`, `closed`, `invalid` where `wait` is below 1 ms. See also
 # `Options`.
-function ping(@c: Client, wait_ms: i64) -> ()?
-    return waiting.ping(@c.session, wait_ms: wait_ms)
+function ping(@c: Client, wait: time.Duration) -> ()?
+    return waiting.ping(@c.session, wait_ms: link.ms_of(wait))
 
 ## Topics
 
@@ -1747,8 +1753,8 @@ function decode(data: [u8], version: i64) -> Packet?
 test "options: the defaults, every one"
     o = options("h")
     assert o.host == "h" && o.port == 1883 && o.transport == .tcp && o.roots == "" && o.version == 5 && o.client_id == ""
-    assert o.clean_start && o.keep_alive_s == 60 && o.username == "" && o.password == [] && o.will == .none && o.properties == []
-    assert o.connect_ms == 10000 && o.wait_ms == 10000 && o.most_packet_bytes == 16777216 && !o.manual_acks && o.most_held == 65536
+    assert o.clean_start && o.keep_alive == time.minutes(1).must() && o.username == "" && o.password == [] && o.will == .none && o.properties == []
+    assert o.connect_timeout == time.seconds(10).must() && o.wait == time.seconds(10).must() && o.most_packet_bytes == 16777216 && !o.manual_acks && o.most_held == 65536
     assert o.reconnect == default_reconnect()
 
 test "parse_url: each scheme and its port, a login, a WebSocket's path, an IPv6 host, and what is refused"
@@ -1872,7 +1878,7 @@ test "connect live, against the server REBEL_MQTT_URL names, in MQTT 5 and 3.1.1
                 got: [i64] @= []
 
                 for _ in range(from: 0, to: 3)
-                    m = next_message(@c, wait_ms: 5000).must()
+                    m = next_message(@c, wait: time.seconds(5).must()).must()
                     got @ got.push(m.qos * 10 + to_i64(m.payload[0]).must())
 
                 assert got == [0, 11, 22]
@@ -1882,7 +1888,7 @@ test "connect live, against the server REBEL_MQTT_URL names, in MQTT 5 and 3.1.1
                     big @ big.push(to_u8(at % 253).must())
 
                 publish(@c, topic: f"live{version}/big", payload: big, qos: 1, retain: false).must()
-                assert next_message(@c, wait_ms: 10000).must().payload == big
+                assert next_message(@c, wait: time.seconds(10).must()).must().payload == big
 
                 for n in range(from: 0, to: 1000)
                     publish(
@@ -1894,17 +1900,17 @@ test "connect live, against the server REBEL_MQTT_URL names, in MQTT 5 and 3.1.1
                     ).must()
 
                 for n in range(from: 0, to: 1000)
-                    assert next_message(@c, wait_ms: 5000).must().payload == [to_u8(n % 256).must()]
+                    assert next_message(@c, wait: time.seconds(5).must()).must().payload == [to_u8(n % 256).must()]
 
                 publish(@c, topic: f"retained{version}/a", payload: [7], qos: 1, retain: true).must()
                 assert subscribe(@c, topic_filter: f"retained{version}/+", qos: 1).must() == 1
-                kept = next_message(@c, wait_ms: 5000).must()
+                kept = next_message(@c, wait: time.seconds(5).must()).must()
                 assert kept.retain && kept.payload == [7] && kept.topic == f"retained{version}/a"
                 publish(@c, topic: f"retained{version}/a", payload: [], qos: 1, retain: true).must()
-                _ = next_message(@c, wait_ms: 5000).must()
+                _ = next_message(@c, wait: time.seconds(5).must()).must()
                 unsubscribe(@c, topic_filter: f"retained{version}/+").must()
                 assert unsubscribe_many(@c, filters: [f"live{version}/#", "never/subscribed"], properties: []).must().len() == 2
-                ping(@c, wait_ms: 5000).must()
+                ping(@c, wait: time.seconds(5).must()).must()
                 w @= parse_url(text).must()
                 w.version @ version
                 w.client_id @ f"rebel-will-{version}"
@@ -1912,11 +1918,11 @@ test "connect live, against the server REBEL_MQTT_URL names, in MQTT 5 and 3.1.1
                 dying @= connect(w).must()
                 _ = subscribe(@c, topic_filter: f"will{version}/+", qos: 0).must()
                 drop(@dying).must()
-                assert next_message(@c, wait_ms: 5000).must().payload == [9]
+                assert next_message(@c, wait: time.seconds(5).must()).must().payload == [9]
                 reconnect(@c).must()
                 assert stats_of(c).reconnects == 1
                 publish(@c, topic: f"will{version}/after", payload: [3], qos: 1, retain: false).must()
-                assert next_message(@c, wait_ms: 5000).must().payload == [3]
+                assert next_message(@c, wait: time.seconds(5).must()).must().payload == [3]
                 close(@c).must()
                 assert is_closed(c) && publish(@c, topic: "a", payload: [], qos: 0, retain: false).is_err()
 
@@ -1952,7 +1958,7 @@ test "connect live, against the server REBEL_MQTT_URL names, in MQTT 5 and 3.1.1
             ]
             publish(@p, topic: "local/x", payload: [1], qos: 0, retain: false).must()
             publish_message(@p, m: out).must()
-            back = next_message(@p, wait_ms: 5000).must()
+            back = next_message(@p, wait: time.seconds(5).must()).must()
             assert back.topic == "props/x" && text_of(back.properties, id: CONTENT_TYPE).must() == "text/plain"
             assert data_of(back.properties, id: CORRELATION_DATA).must() == [4, 2] && pairs_of(back.properties) == [Pair(name: "k", value: "città")]
             assert number_of(back.properties, id: SUBSCRIPTION_IDENTIFIER).must() == 7
@@ -1968,15 +1974,15 @@ test "connect live, against the server REBEL_MQTT_URL names, in MQTT 5 and 3.1.1
             h @= connect(manual).must()
             _ = subscribe(@h, topic_filter: "manual/#", qos: 2).must()
             publish(@q, topic: "manual/a", payload: [5], qos: 2, retain: false).must()
-            got = next_message(@h, wait_ms: 5000).must()
+            got = next_message(@h, wait: time.seconds(5).must()).must()
             assert got.qos == 2 && got.payload == [5]
             ack(@h, m: got).must()
             assert ack(@h, m: got).is_err()
-            ping(@h, wait_ms: 5000).must()
+            ping(@h, wait: time.seconds(5).must()).must()
             shared_a @= connect(parse_url(text).must()).must()
             _ = subscribe(@shared_a, topic_filter: "$share/g/shared/#", qos: 1).must()
             publish(@q, topic: "shared/1", payload: [6], qos: 1, retain: false).must()
-            assert next_message(@shared_a, wait_ms: 5000).must().payload == [6]
+            assert next_message(@shared_a, wait: time.seconds(5).must()).must().payload == [6]
             close(@shared_a).must()
             close(@h).must()
             disconnect(@q, reason: 0, properties: [Property(id: SESSION_EXPIRY_INTERVAL, value: .number(v: 0))]).must()
@@ -2037,7 +2043,7 @@ test "connect live, a login in MQTT 5 and 3.1.1 and a wrong password refused, ag
                 o @= parse_url(text).must()
                 o.version @ version
                 c @= connect(o).must()
-                ping(@c, wait_ms: 5000).must()
+                ping(@c, wait: time.seconds(5).must()).must()
                 close(@c).must()
                 o.password @ [119, 114, 111, 110, 103]
 
@@ -2054,7 +2060,7 @@ test "connect live over TLS, against the server REBEL_MQTT_TLS_URL names, its ce
             c @= connect(o).must()
             _ = subscribe(@c, topic_filter: "tls/x", qos: 1).must()
             publish(@c, topic: "tls/x", payload: [8], qos: 1, retain: false).must()
-            assert next_message(@c, wait_ms: 5000).must().payload == [8]
+            assert next_message(@c, wait: time.seconds(5).must()).must().payload == [8]
             close(@c).must()
 
 test "connect live over a WebSocket in MQTT 5 and 3.1.1, a message of 200,000 bytes, against the server REBEL_MQTT_WS_URL names"
@@ -2072,7 +2078,7 @@ test "connect live over a WebSocket in MQTT 5 and 3.1.1, a message of 200,000 by
                     data @ data.push(to_u8(at % 256).must())
 
                 publish(@c, topic: "ws/x", payload: data, qos: 2, retain: false).must()
-                assert next_message(@c, wait_ms: 5000).must().payload == data
+                assert next_message(@c, wait: time.seconds(5).must()).must().payload == data
                 close(@c).must()
 
 ## Examples
@@ -2080,14 +2086,14 @@ test "connect live over a WebSocket in MQTT 5 and 3.1.1, a message of 200,000 by
 # The reconnection's defaults.
 test "default_reconnect: what a client tries after a loss"
     r = default_reconnect()
-    assert r.attempts == 60 && r.wait_ms == 250 && r.most_wait_ms == 8000
+    assert r.attempts == 60 && r.wait == time.milliseconds(250).must() && r.most_wait == time.seconds(8).must()
 
 # The options of a local server in MQTT 3.1.1, with a keep-alive of 30
 # seconds.
 test "options: a local server, 3.1.1"
     o @= options("localhost")
     o.version @ 4
-    o.keep_alive_s @ 30
+    o.keep_alive @ time.seconds(30).must()
     assert o.port == 1883 && o.version == 4
 
 # The options a URL names.
@@ -2278,7 +2284,7 @@ test "next_message: one's own message"
             c @= first
             _ = subscribe(@c, topic_filter: "ex/next", qos: 1).must()
             publish(@c, topic: "ex/next", payload: [42], qos: 1, retain: false).must()
-            assert next_message(@c, wait_ms: 2000).must().payload == [42]
+            assert next_message(@c, wait: time.seconds(2).must()).must().payload == [42]
             close(@c).must()
 
 # What a client holds once its stream is readable.
@@ -2289,7 +2295,7 @@ test "read_ready: the messages that came"
             c @= first
             _ = subscribe(@c, topic_filter: "ex/ready", qos: 1).must()
             publish(@c, topic: "ex/ready", payload: [1], qos: 1, retain: false).must()
-            ping(@c, wait_ms: 2000).must()
+            ping(@c, wait: time.seconds(2).must()).must()
             assert read_ready(@c).must().len() == 1
             close(@c).must()
 
@@ -2304,7 +2310,7 @@ test "ack: by hand"
             c @= first
             _ = subscribe(@c, topic_filter: "ex/ack", qos: 1).must()
             publish(@c, topic: "ex/ack", payload: [1], qos: 1, retain: false).must()
-            ack(@c, m: next_message(@c, wait_ms: 2000).must()).must()
+            ack(@c, m: next_message(@c, wait: time.seconds(2).must()).must()).must()
             close(@c).must()
 
 # A round trip to the server.
@@ -2313,7 +2319,7 @@ test "ping: a PINGRESP"
         .err e => skip_test(reason: f"no MQTT server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            ping(@c, wait_ms: 2000).must()
+            ping(@c, wait: time.seconds(2).must()).must()
             close(@c).must()
 
 # A topic checked.

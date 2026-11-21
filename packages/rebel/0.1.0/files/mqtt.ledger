@@ -48,7 +48,7 @@ capability mqtt/session  a clean start or a session the server keeps, and whethe
   python  Client(clean_session), connect (clean_start), CleanStartOption
 
 capability mqtt/keep-alive  the keep-alive told, a PINGREQ sent when due, a PINGRESP awaited
-  heroes  mqtt.Options (keep_alive_s), mqtt.ping
+  heroes  mqtt.Options (keep_alive), mqtt.ping
   go      ClientOptions.SetKeepAlive, ClientOptions.SetPingTimeout
   rust    MqttOptions::keep_alive, MqttOptions::set_keep_alive
   python  connect (keepalive), Client.keepalive
@@ -209,7 +209,7 @@ capability mqtt/reconnect  a lost connection made again with a backoff, the subs
   note    the reconnection runs inside the call that found the loss; a connection retried before the first succeeds (Go's SetConnectRetry) is the program's own loop around `connect`
 
 capability mqtt/connect-timeout  the time a connection, a write and an acknowledgement may take
-  heroes  mqtt.Options (connect_ms, wait_ms)
+  heroes  mqtt.Options (connect_timeout, wait)
   go      ClientOptions.SetConnectTimeout, ClientOptions.SetWriteTimeout
   rust    MqttOptions::connection_timeout, MqttOptions::set_connection_timeout, NetworkOptions, MqttOptions::network_options, MqttOptions::set_network_options
   python  Client.connect_timeout

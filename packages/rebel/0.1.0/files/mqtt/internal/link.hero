@@ -36,15 +36,55 @@ variant Link
 function closed_failure<T>(target: str) -> T?
     return fail(code: model.CLOSED, msg: f"the connection to {target} is closed")
 
-# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
-# being `time.max_duration()` (until this package's own step of D07; `tls`
-# takes a `time.Duration` since M-rebel-library step 88c).
+# The time `ms` milliseconds stand for as `tls` takes it: 0, no limit in
+# this package's private modules, is `time.max_duration()`, and a count past
+# what a `time.Duration` holds is `time.max_duration()` too.
 #
 # - `ms`: milliseconds, 0 for no limit.
 function tls_deadline(ms: i64) -> time.Duration?
     if ms == 0
         return ok(time.max_duration())
-    return time.milliseconds(ms)
+    return ok(time.milliseconds(ms).default(time.max_duration()))
+
+# The whole milliseconds of `d`, a part of one counting as a whole one, as
+# the session counts its waits; below zero, -1, which the session refuses.
+#
+# - `d`: a time the face was handed.
+function ms_of(d: time.Duration) -> i64
+    if d.nanoseconds < 0
+        return -1
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+    return whole
+
+# The milliseconds of `d` where the session reads 0 as none:
+# `time.max_duration()` is 0; any other is rounded up to a whole
+# millisecond and is 1 at least; below zero, -1.
+#
+# - `d`: a time the face was handed.
+function none_ms_of(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return 0
+    ms = ms_of(d)
+
+    if ms == 0
+        return 1
+    return ms
+
+# The whole seconds of `d`, a part of one counting as a whole one, as a
+# keep-alive is sent; below zero, -1.
+#
+# - `d`: a time the face was handed.
+function seconds_of(d: time.Duration) -> i64
+    if d.nanoseconds < 0
+        return -1
+    whole = d.nanoseconds / 1_000_000_000
+
+    if d.nanoseconds % 1_000_000_000 != 0
+        return whole + 1
+    return whole
 
 # A TCP connection to `host` at `port`, made within `ms`.
 #

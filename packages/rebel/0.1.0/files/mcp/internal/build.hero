@@ -5,6 +5,7 @@
 
 use json
 use jsonrpc
+use time
 
 # The code of a member not of its kind.
 constant INVALID: str
@@ -121,6 +122,19 @@ function object_at(v: json.Value, key: str) -> {str: json.Value}?
                 .boolean _ | .number _ | .text _ | .list _ =>
                     return fail(code: INVALID, msg: f"\"{key}\" is {json.kind_of(got)}, and an object was expected")
         .err _ => return ok({})
+
+# The whole milliseconds of `d`, a part of one counting as a whole one, as
+# `ttlMs` writes it; below zero, 0.
+#
+# - `d`: a server's `ttl`.
+function whole_ms(d: time.Duration) -> i64
+    if d.nanoseconds <= 0
+        return 0
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+    return whole
 
 # `members` made a complete result: `resultType`, then where `cacheable` the
 # freshness `ttl_ms` and the scope, then `_meta` naming the server where

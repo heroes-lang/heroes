@@ -27,7 +27,7 @@ capability nats/connect  a connection made to the first server of a list that an
   note    the URL list is Go's and Python's comma-separated text; a server's URL that holds a user or a token logs in, as all three read it
 
 capability nats/connect-timeout  the time a connection to one server may take
-  heroes  nats.Options (connect_ms)
+  heroes  nats.Options (connect_timeout)
   go      Timeout, Dialer, SetCustomDialer
   rust    ConnectOptions::connection_timeout, ConnectOptions::local_address
   python  connect_timeout
@@ -213,7 +213,7 @@ capability nats/reconnect  a lost connection made again with a backoff, the subs
   go      MaxReconnects, ReconnectWait, ReconnectJitter, CustomReconnectDelay, NoReconnect, ReconnectBufSize, Conn.ForceReconnect, Conn.IsReconnecting, ReconnectOnFlusherError, DefaultMaxReconnect, DefaultReconnectWait
   rust    ConnectOptions::max_reconnects, ConnectOptions::reconnect_delay_callback, Client::force_reconnect, client::ReconnectError
   python  allow_reconnect, reconnect_time_wait, max_reconnect_attempts, force_reconnect, is_reconnecting
-  note    the backoff doubles from `wait_ms` to `most_wait_ms` with a random part, as Rust's does, where Go waits the same each time; the reconnection runs inside the call that found the loss, so nothing is buffered meanwhile, and the write that failed is sent once more
+  note    the backoff doubles from `wait` to `most_wait` with a random part, as Rust's does, where Go waits the same each time; the reconnection runs inside the call that found the loss, so nothing is buffered meanwhile, and the write that failed is sent once more
 
 capability nats/retry-first-connect  a connection answered before any server is reached, made in the background
   heroes  refused: a client that answers before it is connected needs a loop running beside the program; the program calls `connect` again
@@ -222,7 +222,7 @@ capability nats/retry-first-connect  a connection answered before any server is 
   python  -
 
 capability nats/ping  the client's own PINGs, a connection taken as lost after so many go unanswered
-  heroes  nats.Options (ping_interval_ms, pings_outstanding)
+  heroes  nats.Options (ping_interval, pings_outstanding)
   go      PingInterval, MaxPingsOutstanding
   rust    ConnectOptions::ping_interval
   python  ping_interval, max_outstanding_pings

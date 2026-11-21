@@ -665,9 +665,10 @@ record Server
     extensions: {str: json.Value}
     # The most items of a list one page holds; 0 for every item on one page.
     page_size: i64
-    # How long, in milliseconds, a client may hold a list or a resource read
-    # as fresh: 0 or more.
-    ttl_ms: i64
+    # How long a client may hold a list or a resource read as fresh, zero
+    # or more, sent in whole milliseconds, a part of one counting as a whole
+    # one.
+    ttl: time.Duration
     # Whether what it lists and reads depends on who asks, so that a cache
     # shared between users must not keep it: `cacheScope` `private`.
     private: bool
@@ -815,7 +816,7 @@ function new_server(info: Implementation) -> Server
         completions: false,
         extensions: {},
         page_size: 0,
-        ttl_ms: 0,
+        ttl: time.nanoseconds(0),
         private: false,
         origins: []
     )
@@ -1054,7 +1055,7 @@ function answer_resource(s: Server, read: ResourceRead, contents: [Contents]) ->
     ttl = if retried
         0
     else
-        s.ttl_ms
+        build.whole_ms(s.ttl)
     return jsonrpc.answer_result(
         read.id,
         value: build.result(members, server: implementation_json(s.info), cacheable: true, ttl_ms: ttl, private: s.private)

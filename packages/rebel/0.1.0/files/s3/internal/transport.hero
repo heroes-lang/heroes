@@ -43,15 +43,15 @@ function open(target: url.Url, deadline_ms: i64, roots: str) -> Opened?
         return ok(Opened(reader: io.reader(conn.stream), head: http.respond_status(200)))
     return fail(code: "unsupported", msg: f"the scheme \"{target.scheme}\" is neither http nor https")
 
-# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
-# being `time.max_duration()` (until this package's own step of D07; `tls`
-# takes a `time.Duration` since M-rebel-library step 88c).
+# The time `ms` milliseconds stand for as `tls` takes it: 0, no limit in
+# this package's private modules, is `time.max_duration()`, and a count past
+# what a `time.Duration` holds is `time.max_duration()` too.
 #
 # - `ms`: milliseconds, 0 for no limit.
 function tls_deadline(ms: i64) -> time.Duration?
     if ms == 0
         return ok(time.max_duration())
-    return time.milliseconds(ms)
+    return ok(time.milliseconds(ms).default(time.max_duration()))
 
 # The milliseconds of a client's `deadline` as the transport counts them:
 # `time.max_duration()` is 0, none; any other is rounded up to a whole

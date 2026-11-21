@@ -136,19 +136,19 @@ variant Auth
         seed: str
 
 # How the client tries again after a connection is lost: the first wait, then
-# twice the one before up to `most_wait_ms`, with a random part added.
+# twice the one before up to `most_wait`, with a random part added.
 record Reconnect
     # The most attempts after a loss, each server of the pool counting one;
     # 0 for none, so a lost connection closes the client.
     attempts: i64
-    # Milliseconds waited before the second attempt, 1 or more; the first is
-    # at once.
-    wait_ms: i64
-    # The longest wait, `wait_ms` or more.
-    most_wait_ms: i64
-    # The most milliseconds added to each wait at random, 0 or more, so
-    # many clients do not come back at once.
-    jitter_ms: i64
+    # How long is waited before the second attempt, 1 ms or more; the first
+    # is at once.
+    wait: time.Duration
+    # The longest wait, `wait` or more.
+    most_wait: time.Duration
+    # The most added to each wait at random, zero or more, so many clients
+    # do not come back at once.
+    jitter: time.Duration
 
 # Where the servers are and how to talk to them. `options` makes one; a
 # program changes the fields it needs with `@`, or `parse_url` reads one.
@@ -174,15 +174,17 @@ record Options
     # Whether the client receives the messages it publishes itself on the
     # subjects it subscribes to; true by default, as the server's.
     echo: bool
-    # Milliseconds a connection to one server may take, its handshake and
-    # login included, 1 or more.
-    connect_ms: i64
-    # Milliseconds a write may wait for the server to take its bytes; 0 for
-    # no limit.
-    write_ms: i64
-    # Milliseconds after which a wait of the client sends a `PING` of its
-    # own; 0 for none.
-    ping_interval_ms: i64
+    # How long a connection to one server may take, its handshake and
+    # login included, 1 ms or more.
+    connect_timeout: time.Duration
+    # How long a write may wait for the server to take its bytes:
+    # `time.max_duration()` for no limit; zero and a part of a millisecond
+    # are 1 ms.
+    write_timeout: time.Duration
+    # How long after which a wait of the client sends a `PING` of its own:
+    # `time.max_duration()` for none; zero and a part of a millisecond are
+    # 1 ms.
+    ping_interval: time.Duration
     # The `PING`s left unanswered after which the connection is taken as
     # lost, 1 or more.
     pings_outstanding: i64
@@ -304,7 +306,12 @@ record Client
 # The reconnection NATS's own clients make by default, nearly: 60
 # attempts, 250 ms first, doubling to 4 s, with 100 ms at random.
 function default_reconnect() -> Reconnect
-    return Reconnect(attempts: 60, wait_ms: 250, most_wait_ms: 4000, jitter_ms: 100)
+    return Reconnect(
+        attempts: 60,
+        wait: time.milliseconds(250).must(),
+        most_wait: time.seconds(4).must(),
+        jitter: time.milliseconds(100).must()
+    )
 
 # The options of a connection to `servers`, with no login, no TLS asked but
 # where a server asks for it, the system's own authorities, no name, echo on,
@@ -324,9 +331,9 @@ function options(urls: [str]) -> Options
         tls_first: false,
         name: "",
         echo: true,
-        connect_ms: 5000,
-        write_ms: 10000,
-        ping_interval_ms: 120000,
+        connect_timeout: time.seconds(5).must(),
+        write_timeout: time.seconds(10).must(),
+        ping_interval: time.minutes(2).must(),
         pings_outstanding: 2,
         reconnect: default_reconnect(),
         inbox_prefix: "_INBOX",
@@ -376,7 +383,7 @@ function parse_url(text: str) -> Options?
 # - `opts`: the servers and how to talk to them.
 #
 # The program owes the client a `close`. Each server is tried once, in the
-# pool's order, each within `opts.connect_ms`.
+# pool's order, each within `opts.connect_timeout`.
 #
 # Fails `permission` where the server refuses the login or asks for one and
 # none was given; `invalid` where an option is out of range or the server
@@ -401,11 +408,11 @@ function connect(opts: Options) -> Client?
         tls_first: opts.tls_first,
         name: opts.name,
         echo: opts.echo,
-        connect_ms: opts.connect_ms,
-        write_ms: opts.write_ms,
-        ping_interval_ms: opts.ping_interval_ms,
+        connect_ms: link.ms_of(opts.connect_timeout),
+        write_ms: link.none_ms_of(opts.write_timeout),
+        ping_interval_ms: link.none_ms_of(opts.ping_interval),
         pings_outstanding: opts.pings_outstanding,
-        reconnect: model.Reconnect(attempts: r.attempts, wait_ms: r.wait_ms, most_wait_ms: r.most_wait_ms, jitter_ms: r.jitter_ms),
+        reconnect: model.Reconnect(attempts: r.attempts, wait_ms: link.ms_of(r.wait), most_wait_ms: link.ms_of(r.most_wait), jitter_ms: link.ms_of(r.jitter)),
         inbox_prefix: opts.inbox_prefix,
         pending_messages: opts.pending_messages,
         pending_bytes: opts.pending_bytes,
@@ -428,12 +435,12 @@ function close(@c: Client) -> ()?
 # read by `next_message`, which fails `closed` after the last.
 #
 # - `c`: the client, closed.
-# - `wait_ms`: milliseconds the server may take to answer, 1 or more.
+# - `wait`: how long the server may take to answer, 1 ms or more.
 #
 # Fails `timeout` where the server does not answer in time, the client closed
 # either way; `closed` where it was closed. See also `close`.
-function drain(@c: Client, wait_ms: i64) -> ()?
-    return waiting.drain(@c.session, wait_ms: wait_ms)
+function drain(@c: Client, wait: time.Duration) -> ()?
+    return waiting.drain(@c.session, wait_ms: link.ms_of(wait))
 
 # Whether the client is closed: by `close` or `drain`, or by a lost
 # connection no reconnection made again.
@@ -612,22 +619,22 @@ function publish_message(@c: Client, m: Message) -> ()?
 # and its `PONG`; the messages that arrive meanwhile are held.
 #
 # - `c`: the client.
-# - `wait_ms`: milliseconds to wait, 1 or more.
+# - `wait`: how long to wait, 1 ms or more.
 #
-# Fails `timeout`, `closed`, `invalid` where `wait_ms` is below 1. See also
+# Fails `timeout`, `closed`, `invalid` where `wait` is below 1 ms. See also
 # `rtt`.
-function flush(@c: Client, wait_ms: i64) -> ()?
-    return waiting.flush(@c.session, wait_ms: wait_ms)
+function flush(@c: Client, wait: time.Duration) -> ()?
+    return waiting.flush(@c.session, wait_ms: link.ms_of(wait))
 
 # The time a `PING` takes to be answered.
 #
 # - `c`: the client.
-# - `wait_ms`: milliseconds to wait, 1 or more.
+# - `wait`: how long to wait, 1 ms or more.
 #
 # Fails as `flush` does. See also `flush`.
-function rtt(@c: Client, wait_ms: i64) -> time.Duration?
+function rtt(@c: Client, wait: time.Duration) -> time.Duration?
     start = time.mark()?
-    waiting.flush(@c.session, wait_ms: wait_ms)?
+    waiting.flush(@c.session, wait_ms: link.ms_of(wait))?
     return time.elapsed(start)
 
 ## Subscribing
@@ -692,14 +699,14 @@ function subscriptions_of(c: Client) -> [i64]
 # The next message of any subscription, a held one first, waiting for one.
 #
 # - `c`: the client.
-# - `wait_ms`: milliseconds to wait, 0 to ask without waiting.
+# - `wait`: how long to wait, zero to ask without waiting.
 #
 # A `PING` of the server is answered while it waits. Fails `timeout` where
 # no message comes in time, the client left as it was; `closed` once the
-# client is closed and holds nothing; `invalid` where `wait_ms` is below 0.
+# client is closed and holds nothing; `invalid` where `wait` is below zero.
 # See also `next_message_of`, `read_ready`.
-function next_message(@c: Client, wait_ms: i64) -> Message?
-    m = waiting.next(@c.session, sid: 0, wait_ms: wait_ms)?
+function next_message(@c: Client, wait: time.Duration) -> Message?
+    m = waiting.next(@c.session, sid: 0, wait_ms: link.ms_of(wait))?
     headers: [Header] @= []
 
     for h in m.headers
@@ -714,14 +721,14 @@ function next_message(@c: Client, wait_ms: i64) -> Message?
 #
 # - `c`: the client.
 # - `sid`: the subscription's number.
-# - `wait_ms`: milliseconds to wait, 0 to ask without waiting.
+# - `wait`: how long to wait, zero to ask without waiting.
 #
 # Fails `not_found` where the client holds no such subscription and no
 # message of it, and as `next_message` fails. See also `next_message`.
-function next_message_of(@c: Client, sid: i64, wait_ms: i64) -> Message?
+function next_message_of(@c: Client, sid: i64, wait: time.Duration) -> Message?
     if sid == 0
         return fail(code: NOT_FOUND, msg: "the client holds no subscription 0")
-    m = waiting.next(@c.session, sid: sid, wait_ms: wait_ms)?
+    m = waiting.next(@c.session, sid: sid, wait_ms: link.ms_of(wait))?
     headers: [Header] @= []
 
     for h in m.headers
@@ -800,29 +807,29 @@ function new_inbox(c: Client) -> str?
 # - `c`: the client.
 # - `subject`: a subject with no wildcard.
 # - `data`: the request's data.
-# - `wait_ms`: milliseconds to wait for the reply, 1 or more.
+# - `wait`: how long to wait for the reply, 1 ms or more.
 #
 # Fails `not_found` where the server says no one listens on `subject`,
 # `timeout` where no reply comes in time, and as `publish` fails. See also
 # `request_message`, `respond`.
-function request(@c: Client, subject: str, data: [u8], wait_ms: i64) -> Message?
-    return request_message(@c, m: message(subject, data: data), wait_ms: wait_ms)
+function request(@c: Client, subject: str, data: [u8], wait: time.Duration) -> Message?
+    return request_message(@c, m: message(subject, data: data), wait: wait)
 
 # Publishes `m`, headers included, and answers the first reply; its `reply`
 # is replaced by an inbox of the client.
 #
 # - `c`: the client.
 # - `m`: the request.
-# - `wait_ms`: milliseconds to wait for the reply, 1 or more.
+# - `wait`: how long to wait for the reply, 1 ms or more.
 #
 # Fails as `request` and `publish_message` fail. See also `request`.
-function request_message(@c: Client, m: Message, wait_ms: i64) -> Message?
+function request_message(@c: Client, m: Message, wait: time.Duration) -> Message?
     headers: [model.Header] @= []
 
     for h in m.headers
         headers @ headers.push(model.Header(name: h.name, value: h.value))
 
-    got = waiting.request(@c.session, m: model.Message(subject: m.subject, reply: "", headers: headers, data: m.data, sid: 0, status: 0, description: ""), wait_ms: wait_ms)?
+    got = waiting.request(@c.session, m: model.Message(subject: m.subject, reply: "", headers: headers, data: m.data, sid: 0, status: 0, description: ""), wait_ms: link.ms_of(wait))?
     back: [Header] @= []
 
     for h in got.headers
@@ -976,7 +983,7 @@ function new_user_seed() -> str?
 test "options: the defaults, every one"
     o = options(["nats://h"])
     assert o.servers == ["nats://h"] && o.auth == .none && o.roots == "" && !o.tls && !o.tls_first && o.echo
-    assert o.connect_ms == 5000 && o.write_ms == 10000 && o.ping_interval_ms == 120000 && o.pings_outstanding == 2
+    assert o.connect_timeout == time.seconds(5).must() && o.write_timeout == time.seconds(10).must() && o.ping_interval == time.minutes(2).must() && o.pings_outstanding == 2
     assert o.reconnect == default_reconnect() && o.inbox_prefix == "_INBOX" && o.pending_messages == 65536
     assert o.pending_bytes == 67108864 && o.discovered && !o.randomize
 
@@ -1027,9 +1034,9 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
                 @c,
                 m: with_header(message("live.h", data: [0, 255, 13, 10]), name: "K", value: "v1")
             ).must()
-            one = next_message_of(@c, sid: sid, wait_ms: 5000).must()
+            one = next_message_of(@c, sid: sid, wait: time.seconds(5).must()).must()
             assert one.subject == "live.a" && one.data == bytes.from_text("città") && one.sid == sid
-            two = next_message(@c, wait_ms: 5000).must()
+            two = next_message(@c, wait: time.seconds(5).must()).must()
             assert two.data == [0, 255, 13, 10] && header_of(two, name: "K").must() == "v1"
             big: [u8] @= []
 
@@ -1037,7 +1044,7 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
                 big @ big.push(to_u8(at % 251).must())
 
             publish(@c, subject: "live.big", data: big).must()
-            assert next_message(@c, wait_ms: 10000).must().data == big
+            assert next_message(@c, wait: time.seconds(10).must()).must().data == big
             past: [u8] @= big
 
             for _ in range(from: 0, to: i.max_payload)
@@ -1050,16 +1057,16 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
             for n in range(from: 0, to: 10000)
                 publish(@c, subject: "live.many", data: bytes.from_text(to_str(n))).must()
 
-            flush(@c, wait_ms: 10000).must()
+            flush(@c, wait: time.seconds(10).must()).must()
             assert pending_of(c, sid: sid).must() == 10000 && delivered_of(c, sid: sid).must() == 10003
             count: i64 @= 0
 
             while count < 10000
-                m = next_message(@c, wait_ms: 5000).must()
+                m = next_message(@c, wait: time.seconds(5).must()).must()
                 assert m.data == bytes.from_text(to_str(count))
                 count @ count + 1
 
-            match next_message(@c, wait_ms: 50)
+            match next_message(@c, wait: time.milliseconds(50).must())
                 .ok _  => assert false
                 .err e => assert e.code == "timeout"
 
@@ -1067,27 +1074,32 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
             q2 @= connect(parse_url(url).must()).must()
             s1 = queue_subscribe(@q1, subject: "work.x", queue: "workers").must()
             s2 = queue_subscribe(@q2, subject: "work.x", queue: "workers").must()
-            flush(@q1, wait_ms: 5000).must()
-            flush(@q2, wait_ms: 5000).must()
+            flush(@q1, wait: time.seconds(5).must()).must()
+            flush(@q2, wait: time.seconds(5).must()).must()
 
             for _ in range(from: 0, to: 100)
                 publish(@c, subject: "work.x", data: [1]).must()
 
-            flush(@c, wait_ms: 5000).must()
-            flush(@q1, wait_ms: 5000).must()
-            flush(@q2, wait_ms: 5000).must()
+            flush(@c, wait: time.seconds(5).must()).must()
+            flush(@q1, wait: time.seconds(5).must()).must()
+            flush(@q2, wait: time.seconds(5).must()).must()
             assert pending_of(q1, sid: s1).must() + pending_of(q2, sid: s2).must() == 100
             close(@q1).must()
             close(@q2).must()
 
-            match request(@c, subject: "nobody.listens", data: [], wait_ms: 5000)
+            match request(@c, subject: "nobody.listens", data: [], wait: time.seconds(5).must())
                 .ok _  => assert false
                 .err e => assert e.code == "not_found"
 
             ready = subscribe(@c, "svc.ready").must()
             t @= threads.spawn_text(body: live.responder, arg: url).must()
-            _ = next_message_of(@c, sid: ready, wait_ms: 10000).must()
-            answer = request(@c, subject: "svc.echo", data: bytes.from_text("ping"), wait_ms: 10000).must()
+            _ = next_message_of(@c, sid: ready, wait: time.seconds(10).must()).must()
+            answer = request(
+                @c,
+                subject: "svc.echo",
+                data: bytes.from_text("ping"),
+                wait: time.seconds(10).must()
+            ).must()
             assert answer.data == bytes.from_text("ping!") && header_of(answer, name: "Seen").must() == "yes"
             assert threads.wait_text(@t) == "answered"
             box = new_inbox(c).must()
@@ -1098,20 +1110,20 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
             for _ in range(from: 0, to: 5)
                 publish(@c, subject: "once.x", data: [7]).must()
 
-            flush(@c, wait_ms: 5000).must()
-            assert next_message_of(@c, sid: once, wait_ms: 1000).must().data == [7]
-            assert next_message_of(@c, sid: once, wait_ms: 1000).must().data == [7]
-            assert next_message_of(@c, sid: once, wait_ms: 100).is_err()
+            flush(@c, wait: time.seconds(5).must()).must()
+            assert next_message_of(@c, sid: once, wait: time.seconds(1).must()).must().data == [7]
+            assert next_message_of(@c, sid: once, wait: time.seconds(1).must()).must().data == [7]
+            assert next_message_of(@c, sid: once, wait: time.milliseconds(100).must()).is_err()
             unsubscribe(@c, sid: ready).must()
-            assert rtt(@c, wait_ms: 5000).must().nanoseconds > 0
+            assert rtt(@c, wait: time.seconds(5).must()).must().nanoseconds > 0
             reconnect(@c).must()
             assert stats_of(c).reconnects == 1 && subscriptions_of(c) == [sid]
             publish(@c, subject: "live.after", data: [9]).must()
-            assert next_message(@c, wait_ms: 5000).must().data == [9]
+            assert next_message(@c, wait: time.seconds(5).must()).must().data == [9]
             publish(@c, subject: "live.last", data: [8]).must()
-            drain(@c, wait_ms: 5000).must()
-            assert is_closed(c) && next_message(@c, wait_ms: 0).must().data == [8]
-            assert next_message(@c, wait_ms: 0).is_err() && take_errors(@c) == []
+            drain(@c, wait: time.seconds(5).must()).must()
+            assert is_closed(c) && next_message(@c, wait: time.nanoseconds(0)).must().data == [8]
+            assert next_message(@c, wait: time.nanoseconds(0)).is_err() && take_errors(@c) == []
             print(f"connect live: {i.version}, 1 MB, 10000 messages, 100 in a queue group, a request, a reconnection")
 
 test "connect live, many clients on one thread: two clients' streams waited on by poll, each read when ready"
@@ -1122,8 +1134,8 @@ test "connect live, many clients on one thread: two clients' streams waited on b
             b @= connect(parse_url(url).must()).must()
             sa = subscribe(@a, "poll.a").must()
             sb = subscribe(@b, "poll.b").must()
-            flush(@a, wait_ms: 5000).must()
-            flush(@b, wait_ms: 5000).must()
+            flush(@a, wait: time.seconds(5).must()).must()
+            flush(@b, wait: time.seconds(5).must()).must()
             set @= poll.make(4).must()
 
             match poll.add_stream(set, s: stream_of(a).must(), interest: .read)
@@ -1132,8 +1144,8 @@ test "connect live, many clients on one thread: two clients' streams waited on b
                     kb = poll.add_stream(set, s: stream_of(b).must(), interest: .read).must()
                     publish(@a, subject: "poll.b", data: [2]).must()
                     publish(@b, subject: "poll.a", data: [1]).must()
-                    flush(@a, wait_ms: 5000).must()
-                    flush(@b, wait_ms: 5000).must()
+                    flush(@a, wait: time.seconds(5).must()).must()
+                    flush(@b, wait: time.seconds(5).must()).must()
                     got: [i64] @= []
                     tries: i64 @= 0
 
@@ -1168,7 +1180,7 @@ test "connect live, a login by the token REBEL_NATS_TOKEN_URL names, and a wrong
         .err _ => skip_test(reason: "REBEL_NATS_TOKEN_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
-            flush(@c, wait_ms: 5000).must()
+            flush(@c, wait: time.seconds(5).must()).must()
             close(@c).must()
             wrong @= parse_url(url).must()
             wrong.auth @ .token(token: "wrong")
@@ -1183,7 +1195,7 @@ test "connect live, a login by the user and password REBEL_NATS_USER_URL names, 
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             publish(@c, subject: "forbidden.x", data: [1]).must()
-            flush(@c, wait_ms: 5000).must()
+            flush(@c, wait: time.seconds(5).must()).must()
             errors = take_errors(@c)
             assert errors.len() == 1 && strings.has_prefix(s: errors[0], prefix: "Permissions Violation for Publish")
             close(@c).must()
@@ -1204,7 +1216,7 @@ test "connect live, a login by the NKey REBEL_NATS_NKEY_URL and REBEL_NATS_NKEY_
             match connect(o)
                 .ok first =>
                     c @= first
-                    flush(@c, wait_ms: 5000).must()
+                    flush(@c, wait: time.seconds(5).must()).must()
                     close(@c).must()
                 .err e => assert e.code == "unsupported"
 
@@ -1222,7 +1234,7 @@ test "connect live over TLS after INFO, against the server REBEL_NATS_TLS_URL na
             c @= connect(o).must()
             sid = subscribe(@c, "tls.x").must()
             publish(@c, subject: "tls.x", data: [5]).must()
-            assert next_message_of(@c, sid: sid, wait_ms: 5000).must().data == [5]
+            assert next_message_of(@c, sid: sid, wait: time.seconds(5).must()).must().data == [5]
             close(@c).must()
             o.roots @ ""
 
@@ -1238,7 +1250,7 @@ test "connect live over TLS from the first byte, against the server REBEL_NATS_T
             o.roots @ tls.TEST_ROOT
             o.tls_first @ true
             c @= connect(o).must()
-            flush(@c, wait_ms: 5000).must()
+            flush(@c, wait: time.seconds(5).must()).must()
             close(@c).must()
 
 test "connect live over a WebSocket, a message of 200,000 bytes, against the server REBEL_NATS_WS_URL names"
@@ -1253,7 +1265,7 @@ test "connect live over a WebSocket, a message of 200,000 bytes, against the ser
                 data @ data.push(to_u8(at % 256).must())
 
             publish(@c, subject: "ws.x", data: data).must()
-            assert next_message_of(@c, sid: sid, wait_ms: 5000).must().data == data
+            assert next_message_of(@c, sid: sid, wait: time.seconds(5).must()).must().data == data
             close(@c).must()
 
 ## Examples
@@ -1267,7 +1279,7 @@ test "options: a local server, more attempts"
 # The reconnection's defaults.
 test "default_reconnect: what a client tries after a loss"
     r = default_reconnect()
-    assert r.attempts == 60 && r.wait_ms == 250 && r.most_wait_ms == 4000
+    assert r.attempts == 60 && r.wait == time.milliseconds(250).must() && r.most_wait == time.seconds(4).must()
 
 # The options a cluster's URLs name, with a user's login.
 test "parse_url: two servers and a login"
@@ -1300,8 +1312,8 @@ test "drain: subscriptions ended, messages kept"
             c @= first
             _ = subscribe(@c, "ex.drain").must()
             publish(@c, subject: "ex.drain", data: [1]).must()
-            drain(@c, wait_ms: 2000).must()
-            assert next_message(@c, wait_ms: 0).must().data == [1]
+            drain(@c, wait: time.seconds(2).must()).must()
+            assert next_message(@c, wait: time.nanoseconds(0)).must().data == [1]
 
 # Whether a client is closed.
 test "is_closed: before and after close"
@@ -1429,7 +1441,7 @@ test "flush: a round trip"
         .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            flush(@c, wait_ms: 2000).must()
+            flush(@c, wait: time.seconds(2).must()).must()
             close(@c).must()
 
 # The time of a round trip.
@@ -1438,7 +1450,7 @@ test "rtt: under two seconds"
         .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            assert rtt(@c, wait_ms: 2000).must().nanoseconds < 2000000000
+            assert rtt(@c, wait: time.seconds(2).must()).must().nanoseconds < 2000000000
             close(@c).must()
 
 # A subscription with a wildcard.
@@ -1500,7 +1512,7 @@ test "next_message: a message published to itself"
             c @= first
             _ = subscribe(@c, "ex.next").must()
             publish(@c, subject: "ex.next", data: [42]).must()
-            assert next_message(@c, wait_ms: 2000).must().data == [42]
+            assert next_message(@c, wait: time.seconds(2).must()).must().data == [42]
             close(@c).must()
 
 # The next message of one subscription.
@@ -1511,7 +1523,7 @@ test "next_message_of: one subscription's"
             c @= first
             sid = subscribe(@c, "ex.one").must()
             publish(@c, subject: "ex.one", data: [1]).must()
-            assert next_message_of(@c, sid: sid, wait_ms: 2000).must().subject == "ex.one"
+            assert next_message_of(@c, sid: sid, wait: time.seconds(2).must()).must().subject == "ex.one"
             close(@c).must()
 
 # What a client holds once its stream is readable.
@@ -1522,7 +1534,7 @@ test "read_ready: the messages that came"
             c @= first
             _ = subscribe(@c, "ex.ready").must()
             publish(@c, subject: "ex.ready", data: [1]).must()
-            flush(@c, wait_ms: 2000).must()
+            flush(@c, wait: time.seconds(2).must()).must()
             assert read_ready(@c).must().len() == 1
             close(@c).must()
 
@@ -1534,7 +1546,7 @@ test "pending_of: one held"
             c @= first
             sid = subscribe(@c, "ex.pending").must()
             publish(@c, subject: "ex.pending", data: [1]).must()
-            flush(@c, wait_ms: 2000).must()
+            flush(@c, wait: time.seconds(2).must()).must()
             assert pending_of(c, sid: sid).must() == 1
             close(@c).must()
 
@@ -1556,7 +1568,7 @@ test "delivered_of: one"
             c @= first
             sid = subscribe(@c, "ex.delivered").must()
             publish(@c, subject: "ex.delivered", data: [1]).must()
-            flush(@c, wait_ms: 2000).must()
+            flush(@c, wait: time.seconds(2).must()).must()
             assert delivered_of(c, sid: sid).must() == 1
             close(@c).must()
 
@@ -1576,7 +1588,7 @@ test "request: no responders"
         .ok first =>
             c @= first
 
-            match request(@c, subject: "ex.nobody", data: [], wait_ms: 2000)
+            match request(@c, subject: "ex.nobody", data: [], wait: time.seconds(2).must())
                 .ok _  => assert false
                 .err e => assert e.code == "not_found"
 
@@ -1589,7 +1601,7 @@ test "request_message: a header sent"
         .ok first =>
             c @= first
             m = with_header(message("ex.nobody", data: []), name: "Id", value: "7")
-            assert request_message(@c, m: m, wait_ms: 2000).is_err()
+            assert request_message(@c, m: m, wait: time.seconds(2).must()).is_err()
             close(@c).must()
 
 # A reply to a request, here one the client asks of itself.
@@ -1603,9 +1615,9 @@ test "respond: to a message's reply subject"
             m @= message("ex.ask", data: [1])
             m.reply @ "ex.answer"
             publish_message(@c, m: m).must()
-            asked = next_message(@c, wait_ms: 2000).must()
+            asked = next_message(@c, wait: time.seconds(2).must()).must()
             respond(@c, m: asked, data: [2]).must()
-            assert next_message_of(@c, sid: answers, wait_ms: 2000).must().data == [2]
+            assert next_message_of(@c, sid: answers, wait: time.seconds(2).must()).must().data == [2]
             close(@c).must()
 
 # A header read.

@@ -97,15 +97,15 @@ function open(host: str, port: i64, secure: bool, roots: str, timeout_ms: i64) -
 function scripted(out: io.Stream, input: io.Stream) -> Conn
     return Conn(out: out, input: input, link: .scripted, target: "scripted:0", ended: false, most: wire.DEFAULT_MOST)
 
-# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
-# being `time.max_duration()` (until this package's own step of D07; `tls`
-# takes a `time.Duration` since M-rebel-library step 88c).
+# The time `ms` milliseconds stand for as `tls` takes it: 0, no limit in
+# this package's private modules, is `time.max_duration()`, and a count past
+# what a `time.Duration` holds is `time.max_duration()` too.
 #
 # - `ms`: milliseconds, 0 for no limit.
 function tls_deadline(ms: i64) -> time.Duration?
     if ms == 0
         return ok(time.max_duration())
-    return time.milliseconds(ms)
+    return ok(time.milliseconds(ms).default(time.max_duration()))
 
 # Makes every read and write of `c` end by `ms` milliseconds from now; 0
 # takes the deadline away. Fails as `net.set_deadline` and `tls.set_deadline`
