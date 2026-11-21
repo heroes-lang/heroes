@@ -543,6 +543,42 @@ Python 3.15.
 costs, what it aborts on, what it refuses, and the shapes that work. Each line
 is something this project measured or the specification states.
 
+## A10. Rebel's own programs: drivers, twins and applications
+
+`examples-rebel/` holds three kinds of program, told apart by where they stand:
+
+- **The drivers**, `examples-rebel/reach_<package>.hero` (§ A2), one for each face, whose
+  `heroes test` runs that face's tests; they read the one catalogue at the folder's root,
+  `examples-rebel/heroes.toml`.
+- **The twins**, `examples-rebel/<name>/`, one for each program of the compiler's own
+  `examples/<name>/` that once used a library: the same program written with Rebel, the
+  hand-written helpers replaced by Rebel's packages and the program's own logic kept. A twin
+  carries no expected output of its own: built, and run with the original's arguments and
+  input, it prints `examples/<name>/main.expected` byte for byte.
+- **The applications**, `examples-rebel/<app>/`: programs somebody would use, each doing one
+  job through many packages, between them using every face of Rebel (the author, 2026-11-21).
+
+**A twin and an application are each a project, made as a user makes one** (the author,
+2026-11-21, meant as: *the apps should be little projects, with folders inside them and their
+own toml of dependencies*): `heroes new examples-rebel/<app>` writes its `main.hero`;
+`heroes add -C examples-rebel/<app> --path ../../packages/rebel/0.1.0/files --as rebel` writes
+its catalogue, `heroes.toml`, beside it, and one `heroes add -C examples-rebel/<app>
+rebel/<face>` for every face it uses makes the catalogue's `packages` line name exactly what the
+program uses, a `use` of a face not listed being refused. A `path` entry reads Rebel where it
+stands, so no project holds a copy of it. Inside an application, `main.hero` is thin, its entry
+and its command line; its modules stand in subfolders by concern (`http/`, `store/`, `views/`,
+`auth/`, the loopback stand-ins of outside services in `standins/`, the demo's driver in
+`demo/`), a `use` naming a module by its path from the project's root. A twin follows its
+original's shape, flat where the original is flat.
+
+**An application's test is its demo**: run with `main.args`, and `main.stdin` where there is one,
+it performs a scripted, self-contained session and prints `main.expected` byte for byte. Nothing
+reaches outside the machine: a service the application speaks to over the wire (a database
+server, a broker, a mail server, an LLM's API) is a loopback stand-in the application carries,
+speaking the real protocol far enough for the demo, never a paid call; no clock, random value,
+port, path or timing is printed. The same binary with other arguments does the real job, and
+its header comment says how.
+
 ## B1. What costs
 
 - **`+` on `str` copies both sides**, so a concatenation in a loop is
