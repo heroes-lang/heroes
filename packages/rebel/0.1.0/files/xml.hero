@@ -154,7 +154,7 @@ record Document
 constant INVALID: str
     "invalid"
 
-# The code of bytes that are not UTF-8: `parse_bytes` fails with it.
+# The code of bytes that are not UTF-8: `decode` fails with it.
 constant NOT_TEXT: str
     "not_text"
 
@@ -225,7 +225,7 @@ function default_options() -> ParseOptions
 # attribute list, or names a parameter entity, is `invalid`: no DTD is read,
 # and nothing it names is fetched.
 #
-# See also `parse_with`, `parse_bytes`.
+# See also `parse_with`, `decode`.
 function parse(text: str) -> Document?
     return parse_with(text, default_options())
 
@@ -318,7 +318,7 @@ function parse_with(text: str, options: ParseOptions) -> Document?
 # Fails `not_text` where `bytes` are not UTF-8, and the message says the line
 # and column of the first byte that is not; otherwise fails as `parse_with`
 # does.
-function parse_bytes(bytes: [u8], options: ParseOptions) -> Document?
+function decode(bytes: [u8], options: ParseOptions) -> Document?
     if bytes.len() > options.max_bytes
         return fail(
             code: LIMIT,
@@ -1148,23 +1148,23 @@ test "parse_with: a hundred thousand deep when asked, read and written on the pa
     assert descendants(doc.root).len() == 99999
     assert text_of(doc.root) == ""
 
-test "parse_bytes: UTF-8 with a byte order mark, and a byte that is not UTF-8 with its line and column"
+test "decode: UTF-8 with a byte order mark, and a byte that is not UTF-8 with its line and column"
     good: [u8] = [0xef, 0xbb, 0xbf, '<', 'a', '>', 0xc3, 0xa9, '<', '/', 'a', '>']
-    assert text_of(parse_bytes(good, default_options()).must().root) == "é"
+    assert text_of(decode(good, default_options()).must().root) == "é"
     bad: [u8] = ['<', 'a', '>', '\n', 0xff, '<', '/', 'a', '>']
 
-    match parse_bytes(bad, default_options())
+    match decode(bad, default_options())
         .ok _  => assert false
         .err e => assert e.code == "not_text" && e.msg == "line 2, column 1: expected UTF-8, found the byte 0xFF"
 
     cut: [u8] = ['<', 'a', '>', 0xe2, 0x82]
-    assert parse_bytes(cut, default_options()).is_err()
+    assert decode(cut, default_options()).is_err()
     nothing: [u8] = []
-    assert parse_bytes(nothing, default_options()).is_err()
+    assert decode(nothing, default_options()).is_err()
     small: ParseOptions @= default_options()
     small.max_bytes @ 3
 
-    match parse_bytes(good, small)
+    match decode(good, small)
         .ok _  => assert false
         .err e => assert e.code == "limit"
 
@@ -1425,9 +1425,9 @@ test "parse_with: a limit of the caller's"
     assert !parse_with(repeat("<a>", 600) + repeat("</a>", 600), options).is_err()
 
 # Bytes read from outside, checked as UTF-8 first.
-test "parse_bytes: bytes from outside"
+test "decode: bytes from outside"
     bytes: [u8] = ['<', 'a', '/', '>']
-    assert parse_bytes(bytes, default_options()).must().root == element("a")
+    assert decode(bytes, default_options()).must().root == element("a")
 
 # A text asked whether it is XML.
 test "is_well_formed: one document, and two roots"

@@ -19,7 +19,7 @@
 # read or failed with a code.
 
 capability xlsx/open  a workbook read from a file, a stream that can seek, or bytes in memory
-  heroes  xlsx.load, xlsx.load_with, xlsx.read, xlsx.read_bytes
+  heroes  xlsx.load, xlsx.load_with, xlsx.read, xlsx.decode
   go      excelize.OpenFile, excelize.OpenReader, File.ReadZipReader, excelize.Options, File.Close, File.CharsetTranscoder
   rust    calamine::open_workbook, open_workbook_from_rs, Xlsx::new, Reader::new, trait.Reader, trait.ReaderRef
   python  openpyxl.load_workbook, openpyxl.open, openpyxl.reader, Workbook.close, Workbook.path, Workbook.read_only, Workbook.data_only
@@ -96,7 +96,7 @@ capability xlsx/cell-names  a cell's name, `B3`, turned into its row and column 
   note    rows and columns count from 0, as calamine and rust_xlsxwriter, so a row is an index into `rows_of`; excelize and openpyxl count from 1; a sheet's name in a reference is quoted by the program
 
 capability xlsx/write  a workbook written to a file, a stream or bytes in memory
-  heroes  xlsx.save, xlsx.write, xlsx.to_bytes
+  heroes  xlsx.save, xlsx.write, xlsx.encode
   go      excelize.NewFile, File.Save, File.SaveAs, File.Write, File.WriteTo, File.WriteToBuffer, File.SetZipWriter, excelize.ZipWriter
   rust    Workbook::new, Workbook.save, save_to_buffer, save_to_writer, set_zip_compression_level, use_zip_large_file
   python  openpyxl.Workbook, Workbook.save, openpyxl.writer, Workbook.template, Workbook.mime_type, Worksheet.mime_type

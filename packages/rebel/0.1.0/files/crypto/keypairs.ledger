@@ -88,13 +88,13 @@ capability keypairs/close  a key's end, its secret overwritten
   python  -
   note    the secret lives in C (a `SecKeyRef`, an `EVP_PKEY`, a block of the layer's overwritten before it is given back) from the call that makes it to the close; a key nobody closes is told when `main` returns
 capability keypairs/pkcs8  a private key read from and written as PKCS #8 DER
-  heroes  keypairs.parse_private_der, keypairs.format_private_der
+  heroes  keypairs.decode_private_der, keypairs.encode_private_der
   go      x509.ParsePKCS8PrivateKey, x509.MarshalPKCS8PrivateKey
   rust    ring::signature::Ed25519KeyPair::from_pkcs8, ring::signature::Ed25519KeyPair::from_pkcs8_maybe_unchecked, ring::signature::EcdsaKeyPair::from_pkcs8, ring::signature::RsaKeyPair::from_pkcs8, ring::pkcs8::Document
   python  serialization.load_der_private_key, Ed25519PrivateKey.private_bytes, EllipticCurvePrivateKey.private_bytes, RSAPrivateKey.private_bytes, serialization.PrivateFormat, serialization.Encoding, serialization.NoEncryption
   note    the same bytes on every platform and the same as Go's and Python's (a P-256 key's, measured 2026-11-17: version 0, the EC key's public point, its curve not repeated); the member reads and writes the form itself, `SecKeyCreateWithData` refusing PKCS #8 (measured) and CNG's blobs being its own. An EC key without its public point is read on Linux alone, macOS and Windows computing none (`unsupported` there)
 capability keypairs/spki  a public key read from and written as SubjectPublicKeyInfo DER
-  heroes  keypairs.parse_public_der, keypairs.format_public_der
+  heroes  keypairs.decode_public_der, keypairs.encode_public_der
   go      x509.ParsePKIXPublicKey, x509.MarshalPKIXPublicKey
   rust    -
   python  serialization.load_der_public_key, serialization.PublicFormat, Ed25519PublicKey.public_bytes, EllipticCurvePublicKey.public_bytes, RSAPublicKey.public_bytes
@@ -111,7 +111,7 @@ capability keypairs/pem  keys read from and written as PEM's `PRIVATE KEY` and `
   python  serialization.load_pem_private_key, serialization.load_pem_public_key
   note    a minimal reader of those two labels in a private module, `crypto/keypairs/internal/armour`, to be replaced by the package `pem` (queue 35); an encrypted key and OpenSSL's older labels are refused saying which. Go's PEM is `encoding/pem`, `pem`'s census
 capability keypairs/raw  a key read from and written as its own bytes: Ed25519's and X25519's 32, an EC point, an EC scalar
-  heroes  keypairs.parse_private_raw, keypairs.parse_public_raw, keypairs.format_private_raw, keypairs.format_public_raw
+  heroes  keypairs.decode_private_raw, keypairs.decode_public_raw, keypairs.encode_private_raw, keypairs.encode_public_raw
   go      ed25519.NewKeyFromSeed, ed25519.PrivateKey.Seed, ed25519.PublicKey, ed25519.PrivateKey, ed25519.PublicKeySize, ed25519.PrivateKeySize, ed25519.SeedSize, ecdh.Curve.NewPrivateKey, ecdh.Curve.NewPublicKey, ecdh.PrivateKey.Bytes, ecdh.PublicKey.Bytes, ecdsa.ParseUncompressedPublicKey, ecdsa.PrivateKey.Bytes, ecdsa.PublicKey.Bytes
   rust    ring::signature::Ed25519KeyPair::from_seed_unchecked, ring::signature::Ed25519KeyPair::from_seed_and_public_key, ring::signature::UnparsedPublicKey::new, ring::signature::ED25519_PUBLIC_KEY_LEN, ring::agreement::UnparsedPublicKey
   python  Ed25519PrivateKey.from_private_bytes, Ed25519PrivateKey.private_bytes_raw, Ed25519PublicKey.from_public_bytes, Ed25519PublicKey.public_bytes_raw, X25519PrivateKey.from_private_bytes, X25519PrivateKey.private_bytes_raw, X25519PublicKey.from_public_bytes, X25519PublicKey.public_bytes_raw, EllipticCurvePublicKey.from_encoded_point
@@ -152,7 +152,7 @@ capability keypairs/facts  a key's kind and size
   python  EllipticCurvePrivateKey.curve, EllipticCurvePublicKey.curve, EllipticCurvePrivateKey.key_size, EllipticCurvePublicKey.key_size, RSAPrivateKey.key_size, RSAPublicKey.key_size
   note    a key's `kind` field, an RSA kind holding its bits
 capability keypairs/equal  two public keys compared
-  heroes  keypairs.format_public_der, built-in ==
+  heroes  keypairs.encode_public_der, built-in ==
   go      ed25519.PrivateKey.Equal, ed25519.PublicKey.Equal, ecdsa.PrivateKey.Equal, ecdsa.PublicKey.Equal, rsa.PrivateKey.Equal, rsa.PublicKey.Equal, ecdh.PrivateKey.Equal, ecdh.PublicKey.Equal
   rust    -
   python  -

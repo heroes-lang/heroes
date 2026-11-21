@@ -235,7 +235,7 @@ capability pool  connections kept and reused across messages
   python  -
 
 capability transports/other  a message written to a file, handed to `sendmail`, or kept in memory for tests
-  heroes  refused: not SMTP; `fs` writes a file, `process` runs `sendmail` with the message on its input, and a test reads `mail.format_message`'s bytes
+  heroes  refused: not SMTP; `fs` writes a file, `process` runs `sendmail` with the message on its input, and a test reads `mail.encode_message`'s bytes
   go      -
   rust    lettre::FileTransport, lettre::SendmailTransport, lettre::AsyncFileTransport, lettre::AsyncSendmailTransport, lettre::transport::file::FileTransport, lettre::transport::file::AsyncFileTransport, lettre::transport::file::Error, lettre::transport::sendmail::SendmailTransport, lettre::transport::sendmail::AsyncSendmailTransport, lettre::transport::sendmail::Error, lettre::transport::stub::StubTransport, lettre::transport::stub::AsyncStubTransport, lettre::transport::stub::Error
   python  -

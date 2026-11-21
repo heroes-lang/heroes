@@ -12,10 +12,10 @@ function main()
         .ok _  => _ = 0
         .err e => print(e.code, ": ", e.msg)
 
-    match pdf.to_bytes(doc)
+    match pdf.encode(doc)
         .err e => print(e.code, ": ", e.msg)
         .ok data =>
-            match pdf.parse(data, password: "", limits: pdf.default_limits())
+            match pdf.decode(data, password: "", limits: pdf.default_limits())
                 .err e => print(e.code, ": ", e.msg)
                 .ok f =>
                     pages = pdf.pages_of(f)

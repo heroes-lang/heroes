@@ -176,14 +176,14 @@ function write_public(prefix: i64, raw: [u8]) -> str
 # - `seed`: the seed.
 function private_of(seed: str) -> keypairs.PrivateKey?
     s = read_seed(seed)?
-    return keypairs.parse_private_raw(kind: .ed25519, raw: s.raw)
+    return keypairs.decode_private_raw(kind: .ed25519, raw: s.raw)
 
 # The public key of a seed, as text.
 #
 # - `seed`: the seed.
 function public_of(seed: str) -> str?
     s = read_seed(seed)?
-    key @= keypairs.parse_private_raw(kind: .ed25519, raw: s.raw)?
+    key @= keypairs.decode_private_raw(kind: .ed25519, raw: s.raw)?
 
     raw = match keypairs.public_of(key)
         .err e =>
@@ -191,7 +191,7 @@ function public_of(seed: str) -> str?
             return fail(code: e.code, msg: e.msg)
         .ok got =>
             pk @= got
-            answer = keypairs.format_public_raw(pk)
+            answer = keypairs.encode_public_raw(pk)
             _ = keypairs.close_public(@pk).is_err()
             answer
 
@@ -218,7 +218,7 @@ function verify(public_key: str, data: [u8], signature: [u8]) -> bool?
 
     if !is_signing_prefix(to_i64(body[0]).must())
         return fail(code: model.INVALID, msg: f"\"{public_key}\" is no public key of a kind that signs")
-    key @= keypairs.parse_public_raw(kind: .ed25519, raw: body.slice(from: 1, to: 33))?
+    key @= keypairs.decode_public_raw(kind: .ed25519, raw: body.slice(from: 1, to: 33))?
     held = keypairs.verify(key, scheme: .ed25519, message: data, signature: signature)
     _ = keypairs.close_public(@key).is_err()
     return held
@@ -226,7 +226,7 @@ function verify(public_key: str, data: [u8], signature: [u8]) -> bool?
 # A new user's seed.
 function generate_user() -> str?
     key @= keypairs.generate(.ed25519)?
-    raw = keypairs.format_private_raw(key)
+    raw = keypairs.encode_private_raw(key)
     _ = keypairs.close_private(@key).is_err()
     return ok(write_seed(prefix: USER, raw: raw?))
 

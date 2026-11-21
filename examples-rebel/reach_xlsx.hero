@@ -11,10 +11,10 @@ function main()
     book @= xlsx.new_workbook()
     xlsx.add_sheet(@book, sheet).must()
 
-    match xlsx.to_bytes(book)
+    match xlsx.encode(book)
         .err e => print(e.msg)
         .ok data =>
-            match xlsx.read_bytes(data, options: xlsx.default_read_options())
+            match xlsx.decode(data, options: xlsx.default_read_options())
                 .err e => print(e.msg)
                 .ok again =>
                     for row in xlsx.rows_of(again.sheets[0], limit: 100).must()

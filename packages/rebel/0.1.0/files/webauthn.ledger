@@ -80,27 +80,27 @@ capability webauthn/origins  one origin or several, a cross-origin frame and its
 ## What a response holds
 
 capability webauthn/client-data  the client data read: its type, challenge, origin, cross-origin and top origin
-  heroes  webauthn.parse_client_data, webauthn.ClientData
+  heroes  webauthn.decode_client_data, webauthn.ClientData
   go      protocol.CollectedClientData, protocol.CollectedClientData.Verify
   rust    -
   python  webauthn.helpers.parse_client_data_json, webauthn.helpers.structs.CollectedClientData
   note    the challenge compared in constant time
 
 capability webauthn/authenticator-data  the authenticator data read: the RP ID's hash, the flags, the counter, the attested credential, the extensions
-  heroes  webauthn.parse_authenticator_data, webauthn.AuthenticatorData
+  heroes  webauthn.decode_authenticator_data, webauthn.AuthenticatorData
   go      protocol.AuthenticatorData, protocol.AuthenticatorData.Unmarshal, protocol.AttestedCredentialData
   rust    -
   python  webauthn.helpers.parse_authenticator_data, webauthn.helpers.structs.AuthenticatorData, webauthn.helpers.structs.AttestedCredentialData
   note    the COSE key and the extensions found by `cbor.decode_next`, so a key followed by extensions is cut where CBOR ends; any byte after them refused
 
 capability webauthn/attestation-object  the attestation object read: its format, its statement, its authenticator data
-  heroes  webauthn.parse_attestation_object, webauthn.AttestationObject
+  heroes  webauthn.decode_attestation_object, webauthn.AttestationObject
   go      protocol.AttestationObject, protocol.AttestationObject.Verify
   rust    -
   python  webauthn.helpers.parse_attestation_object, webauthn.helpers.structs.AttestationObject
 
 capability webauthn/cose-key  a COSE key read: its algorithm, its kind, its key as SubjectPublicKeyInfo
-  heroes  webauthn.parse_public_key, webauthn.PublicKey, webauthn.ES256, webauthn.ES384, webauthn.ES512, webauthn.EDDSA, webauthn.PS256, webauthn.PS384, webauthn.PS512, webauthn.RS256, webauthn.RS384, webauthn.RS512
+  heroes  webauthn.decode_public_key, webauthn.PublicKey, webauthn.ES256, webauthn.ES384, webauthn.ES512, webauthn.EDDSA, webauthn.PS256, webauthn.PS384, webauthn.PS512, webauthn.RS256, webauthn.RS384, webauthn.RS512
   go      webauthncose.ParsePublicKey, webauthncose.EC2PublicKeyData, webauthncose.RSAPublicKeyData, webauthncose.OKPPublicKeyData, webauthncose.COSEAlgorithmIdentifier
   rust    -
   python  webauthn.helpers.decode_credential_public_key, webauthn.helpers.cose.COSEAlgorithmIdentifier, webauthn.helpers.cose.COSEKTY, webauthn.helpers.cose.COSECRV

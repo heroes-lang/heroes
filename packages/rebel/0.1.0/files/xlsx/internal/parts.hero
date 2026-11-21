@@ -105,7 +105,7 @@ function part_bytes(@p: Package, name: str) -> [u8]?
 function part_xml(@p: Package, name: str) -> xml.Element?
     data = part_bytes(@p, name: name)?
 
-    match xml.parse_bytes(data, xml.ParseOptions(max_depth: xml.DEFAULT_MAX_DEPTH, max_bytes: data.len() + 1))
+    match xml.decode(data, xml.ParseOptions(max_depth: xml.DEFAULT_MAX_DEPTH, max_bytes: data.len() + 1))
         .ok doc => return ok(doc.root)
         .err e  => return fail(code: e.code, msg: f"the part \"{name}\": {e.msg}")
 

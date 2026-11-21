@@ -31,7 +31,7 @@ capability xml/parse  a text read into a document, by XML 1.0 and Namespaces in 
   note    XML 1.0 (fifth edition) and Namespaces in XML 1.0, well-formedness checked whole: names, a start tag matched by its end tag, one root, an attribute once, `]]>` outside CDATA, `--` in a comment, an instruction's target `xml` in any case, a character XML cannot hold, a prefix not declared. Go's token reader passes two roots, an undeclared prefix and an attribute twice; ElementTree refuses all of them, and so does this. A line end is read as XML 1.0 section 2.11 says, an attribute's value normalised as section 3.3.3 says, as ElementTree does; Go keeps a value's tabs and line ends. A CDATA section is read as text, and text side by side as one text
 
 capability xml/parse-bytes  bytes read into a document, which may not be UTF-8
-  heroes  xml.parse_bytes
+  heroes  xml.decode
   go      -
   rust    -
   python  fromstring (of bytes), minidom.parseString (of bytes)

@@ -117,7 +117,7 @@ capability request/multipart  a body of parts with files, written
   note    RFC 7578; names escaped as the HTML standard writes them (`%22`, `%0D`, `%0A`), as requests' urllib3 writes them; the boundary is the first `----rebel-N` no part holds, never random
 
 capability request/multipart-read  a multipart body read by a server
-  heroes  http.parts_of, http.parse_multipart, http.part_of, http.FormPart, http.PartLimits, http.default_part_limits
+  heroes  http.parts_of, http.decode_multipart, http.part_of, http.FormPart, http.PartLimits, http.default_part_limits
   go      net/http.Request.ParseMultipartForm, net/http.Request.MultipartReader, net/http.Request.FormFile, net/http.Request.MultipartForm, mime/multipart.NewReader, mime/multipart.Reader.NextPart, NextRawPart, ReadForm, mime/multipart.Form, FileHeader, Part.FormName, Part.FileName, mime/multipart.ErrMessageTooLarge
   rust    -
   python  -

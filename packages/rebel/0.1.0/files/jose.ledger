@@ -182,11 +182,11 @@ capability jwk/secret  a symmetric key made of a secret's bytes
   python  OctKey.import_key, joserfc.jwk.OctKey
 
 capability jwk/der  a key read from and written as SubjectPublicKeyInfo and PKCS #8
-  heroes  jose.key_from_public_der, jose.key_from_private_der, jose.key_from_pem, jose.format_public_der, jose.format_private_der, jose.format_public_pem, jose.format_private_pem
+  heroes  jose.decode_public_der, jose.decode_private_der, jose.key_from_pem, jose.encode_public_der, jose.encode_private_der, jose.format_public_pem, jose.format_private_pem
   go      jwt.ParseRSAPublicKeyFromPEM, jwt.ParseRSAPrivateKeyFromPEM, jwt.ParseECPublicKeyFromPEM, jwt.ParseECPrivateKeyFromPEM, jwt.ParseEdPublicKeyFromPEM, jwt.ParseEdPrivateKeyFromPEM, jwt.ErrKeyMustBePEMEncoded, jwt.ErrNotRSAPrivateKey, jwt.ErrNotRSAPublicKey, jwt.ErrNotECPublicKey, jwt.ErrNotECPrivateKey, jwt.ErrNotEdPrivateKey, jwt.ErrNotEdPublicKey
   rust    EncodingKey::from_rsa_der, EncodingKey::from_ec_der, EncodingKey::from_ed_der, DecodingKey::from_rsa_der, DecodingKey::from_ec_der, DecodingKey::from_ed_der, EncodingKey::from_rsa_pem, DecodingKey::from_rsa_pem
   python  RSAKey.as_der, RSAKey.as_pem, RSAKey.as_bytes, RSAKey.load_private_key, RSAKey.load_public_key, RSAKey.load_raw_key, RSAKey.validate_raw_key, RSAKey.dumps_private_key, joserfc.jwk.import_from_pem_key
-  note    A certificate's key is `x509`'s to read: `x509.parse_certificate(text)` answers its `public_key.der`, which `key_from_public_der` reads
+  note    A certificate's key is `x509`'s to read: `x509.parse_certificate(text)` answers its `public_key.der`, which `decode_public_der` reads
 
 capability jwk/pem-encrypted  a private key read from an encrypted PEM
   heroes  refused: `crypto/keypairs` reads no encrypted PKCS #8, so there is nothing to decrypt it with

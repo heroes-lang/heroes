@@ -18,8 +18,8 @@
 #
 # **A key is a handle, and its secret stays in C.** A private key made by
 # `generate` or read never stands in the program's memory but where the
-# program asks for its bytes (`format_private_der`, `format_private_pem`,
-# `format_private_raw`); a cell the language lends C a secret through is
+# program asks for its bytes (`encode_private_der`, `format_private_pem`,
+# `encode_private_raw`); a cell the language lends C a secret through is
 # overwritten before the call answers, and `close_private` overwrites C's copy. A
 # private key and a public key are two types, so a public key never signs
 # and a private key's public half is taken by `public_of`.
@@ -282,8 +282,8 @@ function verify(key: PublicKey, scheme: Scheme, message: [u8], signature: [u8]) 
 # - `message`: the bytes signed, a certificate's `tbsCertificate`.
 # - `signature`: the signature's bytes.
 #
-# Fails as `parse_public_der` does for `public_der`, and as `verify` does.
-# See also `verify`, `parse_public_der`.
+# Fails as `decode_public_der` does for `public_der`, and as `verify` does.
+# See also `verify`, `decode_public_der`.
 function verify_der(public_der: [u8], scheme: Scheme, message: [u8], signature: [u8]) -> bool?
     read = forms.read_public(public_der)?
     handle @= read.handle
@@ -344,8 +344,8 @@ function decrypt(key: PrivateKey, data: [u8]) -> [u8]?
 # an encrypted one, a kind other than the five here, RSA outside 1024 to
 # 8192 bits; `unsupported` for a kind this platform lacks, and on macOS and
 # Windows an EC key that does not hold its public point. See also
-# `format_private_der`, `parse_private_pem`.
-function parse_private_der(der: [u8]) -> PrivateKey?
+# `encode_private_der`, `parse_private_pem`.
+function decode_private_der(der: [u8]) -> PrivateKey?
     read = forms.read_private(der)?
 
     kind: Kind = match read.facts.name
@@ -361,9 +361,9 @@ function parse_private_der(der: [u8]) -> PrivateKey?
 #
 # - `der`: the DER; an EC point in it must be uncompressed.
 #
-# The key is the caller's to close. Fails as `parse_private_der` does. See
-# also `format_public_der`, `verify_der`.
-function parse_public_der(der: [u8]) -> PublicKey?
+# The key is the caller's to close. Fails as `decode_private_der` does. See
+# also `encode_public_der`, `verify_der`.
+function decode_public_der(der: [u8]) -> PublicKey?
     read = forms.read_public(der)?
 
     kind: Kind = match read.facts.name
@@ -381,16 +381,16 @@ function parse_public_der(der: [u8]) -> PublicKey?
 #
 # The same bytes on every platform, as Go's `MarshalPKCS8PrivateKey` and
 # Python's `PrivateFormat.PKCS8` write them. Fails `closed`. See also
-# `parse_private_der`.
-function format_private_der(key: PrivateKey) -> [u8]?
+# `decode_private_der`.
+function encode_private_der(key: PrivateKey) -> [u8]?
     return forms.write_private(key.handle)
 
 # `key` as SubjectPublicKeyInfo DER.
 #
 # - `key`: the public key, which stays open.
 #
-# Fails `closed`. See also `parse_public_der`.
-function format_public_der(key: PublicKey) -> [u8]?
+# Fails `closed`. See also `decode_public_der`.
+function encode_public_der(key: PublicKey) -> [u8]?
     return forms.write_public(key.handle)
 
 # A private key read from the first `PRIVATE KEY` block of PEM in `text`.
@@ -399,10 +399,10 @@ function format_public_der(key: PublicKey) -> [u8]?
 #
 # Fails `invalid` where `text` holds no such block, an `ENCRYPTED PRIVATE
 # KEY`, or OpenSSL's older `RSA PRIVATE KEY` or `EC PRIVATE KEY`, each said;
-# and as `parse_private_der` does. See also `format_private_pem`.
+# and as `decode_private_der` does. See also `format_private_pem`.
 function parse_private_pem(text: str) -> PrivateKey?
     der @= forms.private_der_of_pem(text)?
-    key = parse_private_der(der)
+    key = decode_private_der(der)
     operations.wiped(@der)
     return key
 
@@ -411,10 +411,10 @@ function parse_private_pem(text: str) -> PrivateKey?
 # - `text`: PEM, other text before and after the block passed over.
 #
 # Fails `invalid` where `text` holds no such block; and as
-# `parse_public_der` does. See also `format_public_pem`.
+# `decode_public_der` does. See also `format_public_pem`.
 function parse_public_pem(text: str) -> PublicKey?
     der = forms.public_der_of_pem(text)?
-    return parse_public_der(der)
+    return decode_public_der(der)
 
 # `key` as PEM's `PRIVATE KEY`, lines of 64 characters each ending in `\n`.
 #
@@ -440,11 +440,11 @@ function format_public_pem(key: PublicKey) -> str?
 #
 # Fails `invalid` for another kind (a P-256 or P-384 scalar alone is read by
 # no platform here: read it from PKCS #8) or another length;
-# `unsupported`. See also `format_private_raw`.
-function parse_private_raw(kind: Kind, raw: [u8]) -> PrivateKey?
+# `unsupported`. See also `encode_private_raw`.
+function decode_private_raw(kind: Kind, raw: [u8]) -> PrivateKey?
     der: [u8] @= []
     forms.private_der_of_raw(der: @der, name: format_kind(kind), raw: raw)?
-    key = parse_private_der(der)
+    key = decode_private_der(der)
     operations.wiped(@der)
     return key
 
@@ -455,18 +455,18 @@ function parse_private_raw(kind: Kind, raw: [u8]) -> PrivateKey?
 # - `raw`: the bytes.
 #
 # Fails `invalid` for RSA, another length or a compressed point, and a point
-# not on the curve. See also `format_public_raw`.
-function parse_public_raw(kind: Kind, raw: [u8]) -> PublicKey?
+# not on the curve. See also `encode_public_raw`.
+function decode_public_raw(kind: Kind, raw: [u8]) -> PublicKey?
     der = forms.public_der_of_raw(name: format_kind(kind), raw: raw)?
-    return parse_public_der(der)
+    return decode_public_der(der)
 
 # `key`'s raw bytes: an Ed25519 or X25519 key's 32, a P-256 or P-384
 # scalar, 32 or 48 bytes: the secret, handed to the caller.
 #
 # - `key`: the private key, which stays open.
 #
-# Fails `invalid` for RSA, `closed`. See also `parse_private_raw`.
-function format_private_raw(key: PrivateKey) -> [u8]?
+# Fails `invalid` for RSA, `closed`. See also `decode_private_raw`.
+function encode_private_raw(key: PrivateKey) -> [u8]?
     der @= forms.write_private(key.handle)?
     raw = forms.raw_of_private_der(name: format_kind(key.kind), der: der)
     operations.wiped(@der)
@@ -477,16 +477,16 @@ function format_private_raw(key: PrivateKey) -> [u8]?
 #
 # - `key`: the public key, which stays open.
 #
-# Fails `invalid` for RSA, `closed`. See also `parse_public_raw`.
-function format_public_raw(key: PublicKey) -> [u8]?
+# Fails `invalid` for RSA, `closed`. See also `decode_public_raw`.
+function encode_public_raw(key: PublicKey) -> [u8]?
     der = forms.write_public(key.handle)?
     return forms.raw_of_public_der(name: format_kind(key.kind), der: der)
 
 ## Tests
 
-test "parse_private_raw and sign: RFC 8032's TEST 1 to 3 where the platform has Ed25519, and Ed25519 unsupported where it has not"
+test "decode_private_raw and sign: RFC 8032's TEST 1 to 3 where the platform has Ed25519, and Ed25519 unsupported where it has not"
     for t in known.rfc8032()
-        match parse_private_raw(.ed25519, raw: bytes.parse_hex(t.secret).must())
+        match decode_private_raw(.ed25519, raw: bytes.parse_hex(t.secret).must())
             .err e =>
                 assert e.code == UNSUPPORTED
                 assert !is_available(.ed25519)
@@ -495,7 +495,7 @@ test "parse_private_raw and sign: RFC 8032's TEST 1 to 3 where the platform has 
                 signature = sign(key: key, scheme: .ed25519, message: bytes.parse_hex(t.message).must()).must()
                 assert bytes.format_hex(signature) == t.signature
                 public @= public_of(key).must()
-                assert bytes.format_hex(format_public_raw(public).must()) == t.public
+                assert bytes.format_hex(encode_public_raw(public).must()) == t.public
                 assert verify(
                     key: public,
                     scheme: .ed25519,
@@ -510,7 +510,7 @@ test "verify_der: a changed signature does not hold, bytes of no key are invalid
         skip_test(reason: "this platform's own cryptography has no P-256")
     key @= generate(.p256).must()
     public @= public_of(key).must()
-    der = format_public_der(public).must()
+    der = encode_public_der(public).must()
     signature: [u8] @= sign(key: key, scheme: .ecdsa_sha384, message: [1, 2, 3]).must()
     assert verify_der(public_der: der, scheme: .ecdsa_sha384, message: [1, 2, 3], signature: signature).must()
     signature[10] @ known.changed(signature[10])
@@ -572,8 +572,8 @@ test "format_kind, format_scheme and parse_scheme: every scheme both ways, an RS
         .ok _  => assert false
         .err e => assert e.msg == "no scheme is named \"ES256\""
 
-test "parse_public_raw and format_public_raw: a P-256 point read and written back, a compressed point and RSA invalid"
-    match parse_public_raw(.rsa(bits: 2048), raw: [1])
+test "decode_public_raw and encode_public_raw: a P-256 point read and written back, a compressed point and RSA invalid"
+    match decode_public_raw(.rsa(bits: 2048), raw: [1])
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -581,13 +581,13 @@ test "parse_public_raw and format_public_raw: a P-256 point read and written bac
         skip_test(reason: "this platform's own cryptography has no P-256")
     key @= generate(.p256).must()
     public @= public_of(key).must()
-    point = format_public_raw(public).must()
+    point = encode_public_raw(public).must()
     assert point.len() == 65
     assert point[0] == 4
-    again @= parse_public_raw(.p256, raw: point).must()
-    assert format_public_der(again).must() == format_public_der(public).must()
+    again @= decode_public_raw(.p256, raw: point).must()
+    assert encode_public_der(again).must() == encode_public_der(public).must()
 
-    match parse_public_raw(.p256, raw: bytes.concat([[3], point.slice(from: 1, to: 33)]))
+    match decode_public_raw(.p256, raw: bytes.concat([[3], point.slice(from: 1, to: 33)]))
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -669,7 +669,7 @@ test "verify: an RSA-PSS signature that holds and one of another message that do
 test "verify_der: a signature checked against a key's DER"
     key @= generate(.p256).must()
     public @= public_of(key).must()
-    der = format_public_der(public).must()
+    der = encode_public_der(public).must()
     signature = sign(key: key, scheme: .ecdsa_sha256, message: [9]).must()
     assert verify_der(public_der: der, scheme: .ecdsa_sha256, message: [9], signature: signature).must()
     close_public(@public).must()
@@ -709,36 +709,36 @@ test "decrypt: what encrypt wrote, read back"
     close_private(@key).must()
 
 # A private key read from PKCS #8, the form Go and Python write.
-test "parse_private_der: a P-256 key Python wrote"
+test "decode_private_der: a P-256 key Python wrote"
     der = bytes.parse_hex(
         "308187020100301306072a8648ce3d020106082a8648ce3d030107046d306b02010104200000000000000000000000000000000000000000000000001234567890abcdefa144034200049fad84aeae08bbef7f010014d82cef6a09de2b0cf871b5ce0c4f1d13a59a593407cb45769f1070e2c2470fe5b1bfe63133c0b0cdc64ea4bf3791a8ec2a07fd4f"
     ).must()
-    key @= parse_private_der(der).must()
+    key @= decode_private_der(der).must()
     assert key.kind == .p256
-    assert format_private_der(key).must() == der
+    assert encode_private_der(key).must() == der
     close_private(@key).must()
 
 # A public key read from SubjectPublicKeyInfo.
-test "parse_public_der: a key's own DER read back"
+test "decode_public_der: a key's own DER read back"
     key @= generate(.p384).must()
     public @= public_of(key).must()
-    again @= parse_public_der(format_public_der(public).must()).must()
+    again @= decode_public_der(encode_public_der(public).must()).must()
     assert again.kind == .p384
     close_public(@again).must()
     close_public(@public).must()
     close_private(@key).must()
 
 # A private key written as PKCS #8, the secret handed to the program.
-test "format_private_der: a P-256 key's PKCS #8 of 138 bytes"
+test "encode_private_der: a P-256 key's PKCS #8 of 138 bytes"
     key @= generate(.p256).must()
-    assert format_private_der(key).must().len() == 138
+    assert encode_private_der(key).must().len() == 138
     close_private(@key).must()
 
 # A public key written as SubjectPublicKeyInfo.
-test "format_public_der: a P-256 key's 91 bytes"
+test "encode_public_der: a P-256 key's 91 bytes"
     key @= generate(.p256).must()
     public @= public_of(key).must()
-    assert format_public_der(public).must().len() == 91
+    assert encode_public_der(public).must().len() == 91
     close_public(@public).must()
     close_private(@key).must()
 
@@ -746,7 +746,7 @@ test "format_public_der: a P-256 key's 91 bytes"
 test "parse_private_pem: a key's PEM read back"
     key @= generate(.p256).must()
     again @= parse_private_pem(format_private_pem(key).must()).must()
-    assert format_private_der(again).must() == format_private_der(key).must()
+    assert encode_private_der(again).must() == encode_private_der(key).must()
     close_private(@again).must()
     close_private(@key).must()
 
@@ -775,37 +775,37 @@ test "format_public_pem: its first line"
     close_private(@key).must()
 
 # An X25519 private key read from its 32 bytes, RFC 7748's Alice.
-test "parse_private_raw: RFC 7748's Alice"
+test "decode_private_raw: RFC 7748's Alice"
     if !is_available(.x25519)
         return
-    key @= parse_private_raw(
+    key @= decode_private_raw(
         .x25519,
         raw: bytes.parse_hex("77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a").must()
     ).must()
     public @= public_of(key).must()
-    assert bytes.format_hex(format_public_raw(public).must()) == "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a"
+    assert bytes.format_hex(encode_public_raw(public).must()) == "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a"
     close_public(@public).must()
     close_private(@key).must()
 
 # An Ed25519 public key read from its 32 bytes, RFC 8032's TEST 1.
-test "parse_public_raw: RFC 8032's TEST 1 key checks its signature"
+test "decode_public_raw: RFC 8032's TEST 1 key checks its signature"
     if !is_available(.ed25519)
         return
     t = known.rfc8032()[0]
-    public @= parse_public_raw(.ed25519, raw: bytes.parse_hex(t.public).must()).must()
+    public @= decode_public_raw(.ed25519, raw: bytes.parse_hex(t.public).must()).must()
     assert verify(key: public, scheme: .ed25519, message: [], signature: bytes.parse_hex(t.signature).must()).must()
     close_public(@public).must()
 
 # A P-256 private key's scalar, 32 bytes, the secret handed to the program.
-test "format_private_raw: a P-256 scalar"
+test "encode_private_raw: a P-256 scalar"
     key @= generate(.p256).must()
-    assert format_private_raw(key).must().len() == 32
+    assert encode_private_raw(key).must().len() == 32
     close_private(@key).must()
 
 # A P-256 public key's point, uncompressed.
-test "format_public_raw: a P-256 point of 65 bytes"
+test "encode_public_raw: a P-256 point of 65 bytes"
     key @= generate(.p256).must()
     public @= public_of(key).must()
-    assert format_public_raw(public).must().len() == 65
+    assert encode_public_raw(public).must().len() == 65
     close_public(@public).must()
     close_private(@key).must()

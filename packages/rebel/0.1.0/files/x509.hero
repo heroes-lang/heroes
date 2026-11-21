@@ -352,7 +352,7 @@ function decode_public_key(der: [u8]) -> PublicKey?
 #
 # Fails `unsupported` for a kind `crypto/keypairs` lacks (P-521, Ed448, DSA),
 # `invalid` for a key that is not its algorithm's form. See also
-# `keypairs.parse_public_der`.
+# `keypairs.decode_public_der`.
 function kind_of(key: PublicKey) -> keypairs.Kind?
     facts = known.key_facts(dotted: key.algorithm.oid.dotted, has_parameters: key.algorithm.has_parameters, parameters: key.algorithm.parameters, key: key.key)?
 

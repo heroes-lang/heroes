@@ -2462,7 +2462,7 @@ function serve_h2_with<S>(s: Server, @c: http2.Conn, remote: str, state: S, hand
 ## Multipart bodies read
 
 # One part of a `multipart/form-data` body as a server reads it, RFC 7578: a
-# form's field, or a file. Made by `parts_of` and `parse_multipart`; a
+# form's field, or a file. Made by `parts_of` and `decode_multipart`; a
 # client writes a part as a `Part`.
 record FormPart
     # The form field's name, from `Content-Disposition`, its `%22`, `%0D` and
@@ -2512,7 +2512,7 @@ function default_part_limits() -> PartLimits
 # - `limits`: what the body may hold.
 #
 # Fails `not_found` where `r` holds no such form, by its `Content-Type`; and
-# as `parse_multipart` does. See also `with_multipart`, `part_of`.
+# as `decode_multipart` does. See also `with_multipart`, `part_of`.
 function parts_of(r: Request, limits: PartLimits) -> [FormPart]?
     content_type = value_of(r.headers, name: "Content-Type").default("")
     kind = charset.media_type(content_type)
@@ -2522,7 +2522,7 @@ function parts_of(r: Request, limits: PartLimits) -> [FormPart]?
             code: NOT_FOUND,
             msg: f"reading a multipart form: the request's body is typed {syntax.shown(kind)}, not as one"
         )
-    return parse_multipart(r.body, content_type: content_type, limits: limits)
+    return decode_multipart(r.body, content_type: content_type, limits: limits)
 
 # The parts of `body`, a multipart body, RFC 2046 § 5.1, in their order.
 #
@@ -2538,7 +2538,7 @@ function parts_of(r: Request, limits: PartLimits) -> [FormPart]?
 # `Content-Disposition: form-data` naming a field, as werkzeug refuses it;
 # `limit` past `limits`; `not_text` where a part's head is not UTF-8. See
 # also `parts_of`.
-function parse_multipart(body: [u8], content_type: str, limits: PartLimits) -> [FormPart]?
+function decode_multipart(body: [u8], content_type: str, limits: PartLimits) -> [FormPart]?
     typed = params.read(content_type)?
 
     if !strings.has_prefix(s: strings.to_lower_ascii(typed.first), prefix: "multipart/")
@@ -4648,9 +4648,9 @@ test "parts_of: a field and a file of a form"
     assert parts[1].filename == "a.txt" && parts[1].content_type == "text/plain" && bytes.to_text(parts[1].data).must() == "hello"
 
 # A multipart body read by its type's boundary.
-test "parse_multipart: one field, the boundary quoted"
+test "decode_multipart: one field, the boundary quoted"
     body = bytes.from_text("--a b\r\nContent-Disposition: form-data; name=\"q\"\r\n\r\nx\r\n--a b--\r\n")
-    parts = parse_multipart(
+    parts = decode_multipart(
         body,
         content_type: "multipart/form-data; boundary=\"a b\"",
         limits: default_part_limits()

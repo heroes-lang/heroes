@@ -517,7 +517,7 @@ function default_read_options() -> ReadOptions
 #
 # Fails as `read` does, and as `fs.open` fails.
 #
-# See also `load_with`, `read`, `read_bytes`.
+# See also `load_with`, `read`, `decode`.
 function load(path: str) -> Workbook?
     return load_with(path, options: default_read_options())
 
@@ -550,7 +550,7 @@ function load_with(path: str, options: ReadOptions) -> Workbook?
 # is `.date` where its style's number format shows a date (`is_date_format`),
 # read by the workbook's epoch.
 #
-# See also `load`, `read_bytes`, `write`.
+# See also `load`, `decode`, `write`.
 function read(from: io.Stream, options: ReadOptions) -> Workbook?
     if options.max_bytes < 1 || options.max_cells < 1
         return fail(
@@ -717,7 +717,7 @@ function read(from: io.Stream, options: ReadOptions) -> Workbook?
 #
 # It writes `data` to a temporary file in the system's folder for them, since
 # a zip is read by seeking, and removes it before it answers.
-function read_bytes(data: [u8], options: ReadOptions) -> Workbook?
+function decode(data: [u8], options: ReadOptions) -> Workbook?
     temp @= fs.make_temp_file(dir: "", pattern: "rebel-xlsx-*.xlsx")?
     wrote = io.write(temp.stream, data: data)
     closed = io.close(@temp.stream)
@@ -744,7 +744,7 @@ function read_bytes(data: [u8], options: ReadOptions) -> Workbook?
 #
 # Fails as `write` does, and as `fs.create` fails.
 #
-# See also `write`, `to_bytes`.
+# See also `write`, `encode`.
 function save(workbook: Workbook, path: str) -> ()?
     to @= fs.create(path)?
     wrote = write(workbook, to: to)
@@ -972,7 +972,7 @@ function write(workbook: Workbook, to: io.Stream) -> ()?
 #
 # It writes the file to a temporary file in the system's folder for them,
 # reads it back and removes it.
-function to_bytes(workbook: Workbook) -> [u8]?
+function encode(workbook: Workbook) -> [u8]?
     temp @= fs.make_temp_file(dir: "", pattern: "rebel-xlsx-*.xlsx")?
     wrote = write(workbook, to: temp.stream)
     closed = io.close(@temp.stream)
@@ -1723,8 +1723,8 @@ function format_value(v: Value) -> str
 
 ## Tests
 
-test "read_bytes: openpyxl's workbook, every value and type, the styles, the merged area, the width, the height, the pane, the name and the properties"
-    wb = read_bytes(samples.of(samples.PY_BOOK), options: default_read_options()).must()
+test "decode: openpyxl's workbook, every value and type, the styles, the merged area, the width, the height, the pane, the name and the properties"
+    wb = decode(samples.of(samples.PY_BOOK), options: default_read_options()).must()
     assert sheet_names(wb) == ["Data", "Hidden"]
     assert wb.sheets[1].visibility == .hidden && wb.active == 0 && wb.epoch == .from_1900
     assert wb.names == [DefinedName(name: "rate", refers_to: "Data!$B$2", sheet: "", hidden: false)]
@@ -1761,15 +1761,15 @@ test "read_bytes: openpyxl's workbook, every value and type, the styles, the mer
     assert s.frozen == Frozen(rows: 1, columns: 1)
     assert dimension_of(s).must() == Area(first_row: 0, first_column: 0, last_row: 4, last_column: 3)
 
-test "read_bytes: openpyxl's workbook of the 1904 epoch, its date and its number"
-    wb = read_bytes(samples.of(samples.PY_1904), options: default_read_options()).must()
+test "decode: openpyxl's workbook of the 1904 epoch, its date and its number"
+    wb = decode(samples.of(samples.PY_1904), options: default_read_options()).must()
     assert wb.epoch == .from_1904
     s = wb.sheets[0]
     assert value_at(s, row: 0, column: 0) == .date(v: time.DateTime(year: 2026, month: 11, day: 18, hour: 0, minute: 0, second: 0, nanosecond: 0))
     assert value_at(s, row: 1, column: 0) == .number(v: 1.0)
 
-test "read_bytes: excelize's shared strings, a rich text, a formula with no value, the built-in date format and a name local to a sheet"
-    wb = read_bytes(samples.of(samples.GO_BOOK), options: default_read_options()).must()
+test "decode: excelize's shared strings, a rich text, a formula with no value, the built-in date format and a name local to a sheet"
+    wb = decode(samples.of(samples.GO_BOOK), options: default_read_options()).must()
     s = wb.sheets[0]
     assert value_at(s, row: 0, column: 0) == .text(v: "shared") && value_at(s, row: 1, column: 0) == .text(v: "shared")
     assert value_at(s, row: 2, column: 0) == .text(v: "Heroes")
@@ -1781,7 +1781,7 @@ test "read_bytes: excelize's shared strings, a rich text, a formula with no valu
     assert value_at(sheet_of(wb, name: "Second").must(), row: 4, column: 2) == .text(v: "far")
     assert wb.properties.title == "Go" && wb.properties.creator == "excelize"
 
-test "to_bytes and read_bytes: a workbook built with every feature reads back as it was built"
+test "encode and decode: a workbook built with every feature reads back as it was built"
     wb @= new_workbook()
     style @= default_style()
     style.font.bold @ true
@@ -1828,7 +1828,7 @@ test "to_bytes and read_bytes: a workbook built with every feature reads back as
     ).must()
     wb.properties.title @ "Low & Lodger"
     wb.properties.created @ "2026-11-18T09:30:00Z"
-    again = read_bytes(to_bytes(wb).must(), options: default_read_options()).must()
+    again = decode(encode(wb).must(), options: default_read_options()).must()
     assert again.sheets.len() == 2 && again.names == wb.names && again.properties == wb.properties
     back = again.sheets[0]
     assert back.name == "Données" && back.merged == s.merged && back.column_formats == s.column_formats && back.row_formats == s.row_formats && back.frozen == s.frozen
@@ -1843,9 +1843,9 @@ test "to_bytes and read_bytes: a workbook built with every feature reads back as
 
     assert again.styles[back.cells[0].style] == style
     assert again.styles[cell_at(back, row: 1, column: 0).must().style].number_format == "yyyy-mm-dd hh:mm:ss"
-    assert to_bytes(wb).must() == to_bytes(wb).must()
+    assert encode(wb).must() == encode(wb).must()
 
-test "read_bytes: a zip bomb, too many cells, an entity declared, not a zip, an OLE file, a zip of no workbook, a binary workbook and bounds below 1"
+test "decode: a zip bomb, too many cells, an entity declared, not a zip, an OLE file, a zip of no workbook, a binary workbook and bounds below 1"
     big @= new_workbook()
     s @= new_sheet("S")
     set_value(@s, row: 0, column: 0, value: .text(v: repeat("a", 30000))).must()
@@ -1853,25 +1853,25 @@ test "read_bytes: a zip bomb, too many cells, an entity declared, not a zip, an 
     set_value(@s, row: 2, column: 0, value: .text(v: repeat("c", 30000))).must()
     set_value(@s, row: 3, column: 0, value: .number(v: 1.0)).must()
     add_sheet(@big, s).must()
-    data = to_bytes(big).must()
+    data = encode(big).must()
 
-    match read_bytes(data, options: ReadOptions(max_bytes: 50000, max_cells: 100))
+    match decode(data, options: ReadOptions(max_bytes: 50000, max_cells: 100))
         .ok _  => assert false
         .err e => assert e.code == "limit"
 
-    match read_bytes(data, options: ReadOptions(max_bytes: 10000000, max_cells: 1))
+    match decode(data, options: ReadOptions(max_bytes: 10000000, max_cells: 1))
         .ok _  => assert false
         .err e => assert e.code == "limit"
 
-    assert !read_bytes(data, options: ReadOptions(max_bytes: 10000000, max_cells: 4)).is_err()
+    assert !decode(data, options: ReadOptions(max_bytes: 10000000, max_cells: 4)).is_err()
     rels = "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/></Relationships>"
     bomb = samples.zip_of(
         names: ["_rels/.rels", "xl/workbook.xml"],
         bodies: [rels, "<!DOCTYPE w [<!ENTITY a \"aaaaaaaaaa\"><!ENTITY b \"&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;\">]><workbook>&b;</workbook>"]
     )
-    assert read_bytes(bomb, options: default_read_options()).is_err()
+    assert decode(bomb, options: default_read_options()).is_err()
 
-    match read_bytes(bytes.from_text("not a zip at all"), options: default_read_options())
+    match decode(bytes.from_text("not a zip at all"), options: default_read_options())
         .ok _  => assert false
         .err e => assert e.code == "invalid"
 
@@ -1880,11 +1880,11 @@ test "read_bytes: a zip bomb, too many cells, an entity declared, not a zip, an 
     for _ in range(from: 0, to: 64)
         ole @ ole.push(0)
 
-    match read_bytes(ole, options: default_read_options())
+    match decode(ole, options: default_read_options())
         .ok _  => assert false
         .err e => assert e.code == "unsupported"
 
-    match read_bytes(samples.zip_of(names: ["a.txt"], bodies: ["a"]), options: default_read_options())
+    match decode(samples.zip_of(names: ["a.txt"], bodies: ["a"]), options: default_read_options())
         .ok _  => assert false
         .err e => assert e.code == "invalid"
 
@@ -1893,21 +1893,21 @@ test "read_bytes: a zip bomb, too many cells, an entity declared, not a zip, an 
         bodies: [strings.replace_all(s: rels, old: "workbook.xml", new: "workbook.bin")]
     )
 
-    match read_bytes(binary, options: default_read_options())
+    match decode(binary, options: default_read_options())
         .ok _  => assert false
         .err e => assert e.code == "unsupported"
 
-    assert read_bytes(data, options: ReadOptions(max_bytes: 0, max_cells: 1)).is_err()
+    assert decode(data, options: ReadOptions(max_bytes: 0, max_cells: 1)).is_err()
 
-test "to_bytes: no sheet, a NaN, a date before the epoch, a colour that is none, a text too long, two cells at one place and a hidden sheet shown first"
-    assert to_bytes(new_workbook()).is_err()
+test "encode: no sheet, a NaN, a date before the epoch, a colour that is none, a text too long, two cells at one place and a hidden sheet shown first"
+    assert encode(new_workbook()).is_err()
     wb @= new_workbook()
     s = new_sheet("S")
     add_sheet(@wb, s).must()
     nan @= wb
     nan.sheets[0].cells @ [Cell(row: 0, column: 0, value: .number(v: 0.0 / 0.0), formula: "", style: 0)]
 
-    match to_bytes(nan)
+    match encode(nan)
         .ok _  => assert false
         .err e => assert e.code == "unsupported"
 
@@ -1916,23 +1916,23 @@ test "to_bytes: no sheet, a NaN, a date before the epoch, a colour that is none,
         Cell(row: 0, column: 0, value: .date(v: time.DateTime(year: 1899, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)), formula: "", style: 0)
     ]
 
-    match to_bytes(early)
+    match encode(early)
         .ok _  => assert false
         .err e => assert e.code == "unsupported"
 
     colour @= wb
     colour.styles[0].font.color @ "red"
-    assert to_bytes(colour).is_err()
+    assert encode(colour).is_err()
     long @= wb
     long.sheets[0].cells @ [Cell(row: 0, column: 0, value: .text(v: repeat("a", 32768)), formula: "", style: 0)]
-    assert to_bytes(long).is_err()
+    assert encode(long).is_err()
     twice @= wb
     one = Cell(row: 0, column: 0, value: .number(v: 1.0), formula: "", style: 0)
     twice.sheets[0].cells @ [one, one]
-    assert to_bytes(twice).is_err()
+    assert encode(twice).is_err()
     hidden @= wb
     hidden.sheets[0].visibility @ .hidden
-    assert to_bytes(hidden).is_err()
+    assert encode(hidden).is_err()
 
 test "set_value, set_formula and set_style: before the last, replacing, the far corner, outside the sheet and what no cell holds"
     s @= new_sheet("S")
@@ -2053,13 +2053,13 @@ test "save and load: a workbook on the disk, and a path that is not there"
 
     fs.remove_all(dir).must()
 
-test "read_bytes and to_bytes: openpyxl's links, read, written and read back, and links refused"
-    wb = read_bytes(samples.of(samples.PY_LINKS), options: default_read_options()).must()
+test "decode and encode: openpyxl's links, read, written and read back, and links refused"
+    wb = decode(samples.of(samples.PY_LINKS), options: default_read_options()).must()
     s = sheet_of(wb, name: "Links").must()
     one = Area(first_row: 0, first_column: 0, last_row: 0, last_column: 0)
     two = Area(first_row: 1, first_column: 1, last_row: 1, last_column: 1)
     assert s.links == [Link(area: one, target: "https://example.com/a?b=1&c=2", location: "", tooltip: "a tip", display: ""), Link(area: two, target: "", location: "Other!A1", tooltip: "", display: "go")]
-    again = read_bytes(to_bytes(wb).must(), options: default_read_options()).must()
+    again = decode(encode(wb).must(), options: default_read_options()).must()
     assert sheet_of(again, name: "Links").must().links == s.links
     t @= new_sheet("T")
     assert add_link(@t, link: Link(area: one, target: "", location: "", tooltip: "", display: "")).is_err()
@@ -2113,8 +2113,8 @@ test "read: a workbook from a stream"
     fs.remove(temp.path).must()
 
 # A workbook read from bytes in memory.
-test "read_bytes: openpyxl's workbook from its bytes"
-    wb = read_bytes(samples.of(samples.PY_1904), options: default_read_options()).must()
+test "decode: openpyxl's workbook from its bytes"
+    wb = decode(samples.of(samples.PY_1904), options: default_read_options()).must()
     assert wb.epoch == .from_1904
 
 # A workbook written to a file.
@@ -2139,10 +2139,10 @@ test "write: a workbook to a stream"
     fs.remove(temp.path).must()
 
 # A workbook as bytes, to send or to keep.
-test "to_bytes: a zip's first bytes"
+test "encode: a zip's first bytes"
     wb @= new_workbook()
     add_sheet(@wb, new_sheet("S")).must()
-    data = to_bytes(wb).must()
+    data = encode(wb).must()
     assert data[0] == 'P' && data[1] == 'K'
 
 # A new workbook holds the default style alone.
@@ -2254,7 +2254,7 @@ test "sheet_of: a sheet by its name"
 
 # The names of a workbook's sheets.
 test "sheet_names: in the order of their tabs"
-    wb = read_bytes(samples.of(samples.GO_BOOK), options: default_read_options()).must()
+    wb = decode(samples.of(samples.GO_BOOK), options: default_read_options()).must()
     assert sheet_names(wb) == ["Sheet1", "Second"]
 
 # A cell found by its place.

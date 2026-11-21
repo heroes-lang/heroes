@@ -425,7 +425,7 @@ function rcpt_to(@c: Client, to: str, params: [str]) -> ()?
 # doubled where a line begins with one, then the line holding `.`.
 #
 # - `c`: the client.
-# - `message`: the message's bytes, as `mail.format_message` writes them.
+# - `message`: the message's bytes, as `mail.encode_message` writes them.
 #
 # The reply of 250 is answered: its text holds the server's identifier of
 # the message. Fails with the code a refusal means. See also `dot_stuff`,
@@ -563,7 +563,7 @@ function send(@c: Client, from: str, to: [str], message: [u8]) -> Sent?
 # It is written with `mail.standard_options`, or with `mail.utf8_options`
 # where its header needs UTF-8 and the server offers SMTPUTF8. Fails
 # `invalid` where `m` names no sender or no recipient, and as
-# `mail.format_message` and `send` fail. See also `send`.
+# `mail.encode_message` and `send` fail. See also `send`.
 function send_message(@c: Client, m: mail.Message) -> Sent?
     senders = mail.addresses_of(m, name: "Sender")?
     authors = mail.addresses_of(m, name: "From")?
@@ -588,12 +588,12 @@ function send_message(@c: Client, m: mail.Message) -> Sent?
     shown = mail.without_field(m, name: "Bcc")
     written: [u8] @= []
 
-    match mail.format_message(shown, mail.standard_options())
+    match mail.encode_message(shown, mail.standard_options())
         .ok d => written @ d
         .err e =>
             if e.code != mail.UNSUPPORTED || !has_extension(c, keyword: "SMTPUTF8")
                 return fail(code: e.code, msg: e.msg)
-            written @ mail.format_message(shown, mail.utf8_options())?
+            written @ mail.encode_message(shown, mail.utf8_options())?
 
     return send(@c, from: from, to: to, message: written)
 
