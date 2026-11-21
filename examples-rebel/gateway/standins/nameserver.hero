@@ -1,0 +1,244 @@
+# The DNS stand-in's server: one zone (`standins/zone`) served on 127.0.0.1
+# over UDP and over TCP on the same port, as RFC 7766 asks of every DNS
+# server, both sockets waited on at once by one `poll` set. A UDP answer
+# longer than the asker can take is sent truncated, its sections empty, so
+# the asker asks again over TCP, as `dns.exchange` does. It runs on a thread
+# of its own, told its supervisor's control port, and serves until the
+# program is asked to stop.
+
+use <rebel>/bytes
+use <rebel>/dns
+use <rebel>/io
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/poll
+
+use demo/notify
+use standins/zone
+
+## Names
+
+# The zone the stand-in serves.
+constant ORIGIN: str
+    "shop.internal"
+
+# The service name it notifies its supervisor with.
+constant SERVICE: str
+    "dns"
+
+## Bounds
+
+# How long one TCP exchange may take, in milliseconds.
+constant TCP_MS: i64
+    5000
+
+# The size a UDP answer is held to where the query offers no EDNS (RFC 1035
+# § 4.2.1).
+constant PLAIN_UDP_BYTES: i64
+    512
+
+## Serving
+
+# What the stand-in served.
+record Counts
+    # Queries answered.
+    queries: i64
+    # Updates applied or refused.
+    updates: i64
+
+# The stand-in's thread: listens on a port the system chooses, tells the
+# supervisor at the control port `arg` holds, and serves until stopped.
+# Answers what it served, as a line, or why it could not serve.
+#
+# - `arg`: the supervisor's control port, in decimal.
+function run(arg: str) -> str
+    match numbers.parse_int(arg)
+        .err e => return "dns: no control port: " + e.msg
+        .ok control =>
+            match served(control)
+                .ok c  => return f"dns: queries answered {c.queries}, updates answered {c.updates}"
+                .err e => return "dns: " + e.msg
+
+# The zone served on a TCP listener and a UDP socket of one port until the
+# program is asked to stop.
+#
+# - `control`: the supervisor's control port.
+#
+# Fails as `net.listen`, `net.open_udp`, `notify.ready` and `poll.make`
+# fail.
+function served(control: i64) -> Counts?
+    listener @= net.listen(host: "127.0.0.1", port: 0)?
+
+    match net.open_udp(host: "127.0.0.1", port: listener.address.port)
+        .err e =>
+            _ = net.close_listener(@listener).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok opened =>
+            socket @= opened
+            counts = looped(control, listener: listener, socket: socket)
+            _ = net.close_udp(@socket).is_err()
+            _ = net.close_listener(@listener).is_err()
+            return counts
+
+# The loop of `served`, once both sockets are open.
+#
+# - `control`: the supervisor's control port.
+# - `listener`: the TCP listener.
+# - `socket`: the UDP socket, on the listener's port.
+#
+# Fails as `notify.ready` and `poll.make` fail; a stop ends the loop and
+# answers the counts.
+function looped(control: i64, listener: net.Listener, socket: net.UdpSocket) -> Counts?
+    set @= poll.make(2)?
+    counts @= Counts(queries: 0, updates: 0)
+    z @= zone.new(ORIGIN)?
+
+    match registered(set, listener: listener, socket: socket)
+        .err e =>
+            _ = poll.close(@set).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok added =>
+            match notify.ready(control_port: control, service: SERVICE, port: listener.address.port)
+                .err e =>
+                    _ = poll.close(@set).is_err()
+                    return fail(code: e.code, msg: e.msg)
+                .ok _ => _ = 0
+
+            while true
+                match poll.wait_forever(set)
+                    .err _ => break
+                    .ok events =>
+                        for event in events
+                            if event.key == added.udp && event.readable
+                                datagram(@z, @counts, socket: socket)
+                            else if event.key == added.tcp && event.readable
+                                stream(@z, @counts, listener: listener)
+
+    _ = poll.close(@set).is_err()
+    return ok(counts)
+
+# The keys the two sockets were added under.
+record Keys
+    # The UDP socket's.
+    udp: i64
+    # The TCP listener's.
+    tcp: i64
+
+# The two sockets added to `set`, each waited on to read.
+#
+# - `set`: the set.
+# - `listener`: the TCP listener.
+# - `socket`: the UDP socket.
+#
+# Fails as `poll.add_udp` and `poll.add_listener` fail.
+function registered(set: poll.Set, listener: net.Listener, socket: net.UdpSocket) -> Keys?
+    return ok(Keys(udp: poll.add_udp(set, u: socket, interest: .read)?, tcp: poll.add_listener(set, l: listener)?))
+
+# One datagram received and answered, truncated where the answer is longer
+# than the asker takes; a datagram that is no message is dropped, as a
+# server drops one.
+#
+# - `z`: the zone.
+# - `counts`: the counts.
+# - `socket`: the UDP socket.
+function datagram(@z: zone.Zone, @counts: Counts, socket: net.UdpSocket)
+    match net.receive(socket)
+        .err _ => return
+        .ok d =>
+            match dns.decode(d.data)
+                .err _ => return
+                .ok m =>
+                    reply = answered(@z, @counts, m: m)
+
+                    match dns.encode(reply)
+                        .err _ => return
+                        .ok data =>
+                            out @= data
+
+                            if data.len() > largest_udp(m)
+                                out @ dns.encode(truncated(reply)).default([])
+                            _ = net.send_to(socket, data: out, to: d.sender).is_err()
+
+# One TCP connection's queries, each framed by its two-byte length (RFC 1035
+# § 4.2.2), answered until the asker closes it or the time runs out.
+#
+# - `z`: the zone.
+# - `counts`: the counts.
+# - `listener`: the TCP listener, holding a connection.
+function stream(@z: zone.Zone, @counts: Counts, listener: net.Listener)
+    match net.accept(listener, deadline_ms: TCP_MS)
+        .err _ => return
+        .ok made =>
+            conn @= made
+
+            while true
+                match io.read_exact(conn.stream, n: 2)
+                    .err _ => break
+                    .ok head =>
+                        size = to_i64(bytes.decode_u16_be(head, at: 0).default(0)).default(0)
+
+                        match io.read_exact(conn.stream, n: size)
+                            .err _ => break
+                            .ok body =>
+                                match dns.decode(body)
+                                    .err _ => break
+                                    .ok m =>
+                                        match dns.encode(answered(@z, @counts, m: m))
+                                            .err _ => break
+                                            .ok data =>
+                                                framed = bytes.concat(
+                                                    [bytes.encode_u16_be(to_u16(data.len()).default(0)), data]
+                                                )
+
+                                                if io.write(conn.stream, data: framed).is_err()
+                                                    break
+
+            _ = io.close(@conn.stream).is_err()
+
+# The zone's answer to `m`, counted.
+#
+# - `z`: the zone.
+# - `counts`: the counts.
+# - `m`: the message.
+function answered(@z: zone.Zone, @counts: Counts, m: dns.Message) -> dns.Message
+    if m.opcode == dns.OPCODE_UPDATE
+        counts.updates @ counts.updates + 1
+    else
+        counts.queries @ counts.queries + 1
+    return zone.answer(@z, m: m)
+
+# The most bytes a UDP answer to `m` may hold: what its EDNS offers, else
+# 512.
+#
+# - `m`: the query.
+function largest_udp(m: dns.Message) -> i64
+    match m.edns
+        .ok e =>
+            if e.udp_size > PLAIN_UDP_BYTES
+                return e.udp_size
+            return PLAIN_UDP_BYTES
+        .err _ => return PLAIN_UDP_BYTES
+
+# `reply` truncated: its flag set and its sections emptied, its question
+# kept, so the asker asks again over TCP.
+#
+# - `reply`: the whole answer.
+function truncated(reply: dns.Message) -> dns.Message
+    out @= reply
+    out.truncated @ true
+    out.answers @ []
+    out.authorities @ []
+    out.additionals @ []
+    return out
+
+test "truncated: the flag set, the sections emptied, the question kept"
+    q = dns.new_query("a.shop.internal", type_code: dns.TYPE_A).must()
+    t = truncated(dns.reply_to(q))
+    assert t.truncated && t.answers.len() == 0 && t.questions.len() == 1
+
+test "largest_udp: EDNS's size, never below 512, and 512 without EDNS"
+    q = dns.new_query("a.shop.internal", type_code: dns.TYPE_A).must()
+    assert largest_udp(q) == dns.DEFAULT_UDP_SIZE
+    plain @= q
+    plain.edns @ fail(code: dns.NOT_FOUND, msg: "none")
+    assert largest_udp(plain) == PLAIN_UDP_BYTES

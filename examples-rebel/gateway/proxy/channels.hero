@@ -1,0 +1,181 @@
+# A gRPC channel to one instance of a gRPC upstream, and the unary calls
+# the gateway makes itself with JSON in and JSON out: the request message
+# read from JSON and the answer written as JSON through the upstream's own
+# `.proto` (`protobuf`'s proto3 JSON mapping), so a route can transcode a
+# plain `GET` into a gRPC call (as Envoy's gRPC-JSON transcoder does) and a
+# GraphQL field can be answered by a gRPC method.
+#
+# A channel is opened on the instances in the client's order, an instance
+# whose connection is refused skipped for the next as `forwarding` does; once a
+# connection is made the call is not tried again, since gRPC methods are not
+# known to be idempotent.
+
+use <rebel>/grpc
+use <rebel>/json
+use <rebel>/protobuf
+use <rebel>/time
+
+use config/settings
+use core/state
+use core/telemetry
+use discovery/instances
+
+## Codes
+
+# The code of a call the gateway could not make: no instance reached, or a
+# method the upstream's `.proto` does not declare.
+constant FAILED: str
+    "failed"
+
+# The code of a method the upstream's `.proto` does not declare.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a request or an answer that does not fit its message type.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# How long a channel's reads and writes may wait, in milliseconds.
+constant CHANNEL_MS: i64
+    10_000
+
+## Channels
+
+# A channel open on one instance, and which.
+record Opened
+    # The channel, the caller's to close.
+    channel: grpc.Channel
+    # The instance's SRV target.
+    instance: str
+    # The connections tried, the one that was made included.
+    attempts: i64
+
+# A channel to an instance of `upstream`, tried in `client`'s order, an
+# instance whose breaker is open passed over and one that refuses skipped,
+# at most `attempts` connections in all.
+#
+# - `gw`: the state; its directory, breakers and metrics change.
+# - `upstream`: the upstream, a gRPC one.
+# - `client`: the client's name.
+# - `attempts`: the most connections tried, from 1.
+#
+# Fails `failed` where no instance is known or none connected, the message
+# saying the last refusal.
+function open(@gw: state.Gateway, upstream: settings.Upstream, client: str, attempts: i64) -> Opened?
+    now = state.now(@gw)?
+    endpoints = instances.endpoints_of(@gw.directory, service: upstream.service, now: now)?
+    tried @= 0
+    last @= f"no instance of {upstream.name} could be tried"
+
+    for e in instances.plan(endpoints, client: client)
+        if tried >= attempts
+            break
+
+        if !instances.allows(@gw.directory, e: e, now: state.now(@gw)?)
+            telemetry.attempted(@gw.registry, upstream: upstream.name, outcome: "skipped")
+            continue
+        tried @ tried + 1
+
+        match grpc.connect_plain(host: e.address, port: e.port, deadline: time.milliseconds(CHANNEL_MS)?, options: grpc.default_options())
+            .ok channel =>
+                instances.succeeded(@gw.directory, e: e, now: state.now(@gw)?)
+                telemetry.attempted(@gw.registry, upstream: upstream.name, outcome: "ok")
+                return ok(Opened(channel: channel, instance: e.target, attempts: tried))
+            .err failure =>
+                instances.failed(@gw.directory, e: e, now: state.now(@gw)?)
+                telemetry.attempted(@gw.registry, upstream: upstream.name, outcome: "refused")
+                last @ f"{e.target} refused the connection: {failure.msg}"
+
+    return fail(code: FAILED, msg: last)
+
+## Calls with JSON
+
+# What a unary call answered: its status, and its message as JSON where it
+# answered one.
+record JsonReply
+    # The call's status.
+    status: grpc.Status
+    # The answer, as JSON with the `.proto`'s own field names and every field
+    # written; `null` where the status is not OK.
+    value: json.Value
+    # The instance that answered.
+    instance: str
+
+# The method `path` of `upstream` called once with the request `request`
+# writes, and its answer as JSON.
+#
+# - `gw`: the state.
+# - `upstream`: the upstream, a gRPC one with a `.proto`.
+# - `path`: the method's path, `/package.Service/Method`.
+# - `request`: the request message, as the proto3 JSON mapping writes it.
+# - `client`: the client's name, which orders the instances.
+#
+# A status other than OK is answered, not failed. Fails `not_found` where the
+# `.proto` declares no such method, `invalid` where `request` does not fit
+# its type or the answer does not decode, and as `open` fails.
+function call_json(@gw: state.Gateway, upstream: settings.Upstream, path: str, request: json.Value, client: str) -> JsonReply?
+    schema = schema_of(gw, upstream: upstream)?
+    method = grpc.proto_method_of(schema, path: path)?
+    message = protobuf.from_json(schema, type_name: method.input_type, v: request)?
+    data = protobuf.encode(schema, m: message)?
+    opened = open(@gw, upstream: upstream, client: client, attempts: 2)?
+    channel @= opened.channel
+    reply = grpc.call(@channel, path: path, request: data, metadata: [], timeout: time.milliseconds(CHANNEL_MS)?)
+    _ = grpc.close(@channel).is_err()
+    answered = reply?
+
+    if answered.status.code != grpc.STATUS_OK || answered.messages.len() == 0
+        return ok(JsonReply(status: answered.status, value: .null_value, instance: opened.instance))
+    out = protobuf.decode(schema, type_name: method.output_type, data: answered.messages[0])?
+    options = protobuf.JsonOptions(use_proto_names: true, use_enum_numbers: false, emit_defaults: true)
+    return ok(
+        JsonReply(status: answered.status, value: protobuf.to_json_with(schema, m: out, options: options)?, instance: opened.instance)
+    )
+
+# The `.proto` schema of `upstream`, read at start.
+#
+# - `gw`: the state.
+# - `upstream`: the upstream.
+#
+# Fails `not_found` where the routing file gave it no `.proto`.
+function schema_of(gw: state.Gateway lent, upstream: settings.Upstream) -> protobuf.Schema?
+    match gw.protos[upstream.name]
+        .ok schema => return ok(schema)
+        .err _ => return fail(
+            code: NOT_FOUND,
+            msg: f"the upstream \"{upstream.name}\" has no .proto in the routing file"
+        )
+
+## Statuses
+
+# The HTTP status a client of a transcoded route is answered for a gRPC
+# status, as Google's API design guide maps them.
+#
+# - `code`: the gRPC status code.
+function http_status_of(code: i64) -> i64
+    return match code
+        0  => 200
+        1  => 499
+        3  => 400
+        4  => 504
+        5  => 404
+        6  => 409
+        7  => 403
+        8  => 429
+        9  => 400
+        10 => 409
+        11 => 400
+        12 => 501
+        14 => 503
+        16 => 401
+        _  => 500
+
+test "http_status_of: the codes a client meets most"
+    assert http_status_of(grpc.STATUS_OK) == 200
+    assert http_status_of(grpc.STATUS_NOT_FOUND) == 404
+    assert http_status_of(grpc.STATUS_INVALID_ARGUMENT) == 400
+    assert http_status_of(grpc.STATUS_UNAVAILABLE) == 503
+    assert http_status_of(grpc.STATUS_INTERNAL) == 500
+    assert http_status_of(grpc.STATUS_DATA_LOSS) == 500

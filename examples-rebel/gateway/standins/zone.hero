@@ -1,0 +1,274 @@
+# The DNS stand-in's zone and its answers: one zone (`shop.internal.` in
+# the demo) held in memory, queries answered with its records as an
+# authoritative server answers them (RFC 1034 § 4.3.2: the records of the
+# name and type asked, `NXDOMAIN` for a name it does not hold, the targets'
+# addresses beside an SRV answer as RFC 2782 suggests), and dynamic updates
+# applied as RFC 2136 writes them, so services register their instances the
+# way an orchestrator registers them with a real DNS server.
+#
+# It checks what a real server would where the demo depends on it: one
+# question a query, the zone of an update its own and of type SOA, every
+# name an update touches inside the zone; it answers `FORMERR`, `NOTAUTH`
+# and `NOTZONE` otherwise. An update's prerequisites are not read: one that
+# holds any is answered `NOTIMP`.
+
+use <rebel>/dns
+use <rebel>/net
+
+## The zone
+
+# The records of one zone. Made empty by `new`, changed only by `answer`'s
+# updates.
+record Zone
+    # The zone's name, canonical: absolute and in lower case.
+    origin: str
+    # Its records, in the order they were added, names canonical.
+    records: [dns.Record]
+
+# An empty zone named `origin`.
+#
+# - `origin`: the zone's name, `shop.internal`.
+#
+# Fails as `dns.canonical_name` fails.
+function new(origin: str) -> Zone?
+    return ok(Zone(origin: dns.canonical_name(origin)?, records: []))
+
+## Answering
+
+# The answer to `m`: a query answered from the zone, an update applied to it.
+#
+# - `zone`: the zone; an update changes it.
+# - `m`: the message received.
+function answer(@zone: Zone, m: dns.Message) -> dns.Message
+    if m.response
+        return refused(m, rcode: dns.RCODE_FORMAT_ERROR)
+
+    if m.opcode == dns.OPCODE_UPDATE
+        return updated(@zone, m: m)
+
+    if m.opcode != dns.OPCODE_QUERY
+        return refused(m, rcode: dns.RCODE_NOT_IMPLEMENTED)
+    return queried(zone, m: m)
+
+# The answer to the query `m`.
+#
+# - `zone`: the zone.
+# - `m`: the query.
+function queried(zone: Zone lent, m: dns.Message) -> dns.Message
+    if m.questions.len() != 1
+        return refused(m, rcode: dns.RCODE_FORMAT_ERROR)
+    q = m.questions[0]
+
+    match dns.canonical_name(q.name)
+        .err _ => return refused(m, rcode: dns.RCODE_FORMAT_ERROR)
+        .ok name =>
+            if !dns.is_subdomain(name: name, of: zone.origin) || q.class_code != dns.CLASS_IN
+                return refused(m, rcode: dns.RCODE_REFUSED)
+            reply @= dns.reply_to(m)
+            reply.authoritative @ true
+            reply.recursion_available @ false
+            held @= false
+
+            for r in zone.records
+                if r.name == name
+                    held @ true
+
+                    if dns.type_of(r) == q.type_code || q.type_code == dns.TYPE_ANY
+                        reply.answers @ reply.answers.push(r)
+
+            if !held
+                reply.rcode @ dns.RCODE_NAME_ERROR
+            reply.additionals @ addresses_for(zone, answers: reply.answers)
+            return reply
+
+# The A and AAAA records of the targets of the SRV records among `answers`.
+#
+# - `zone`: the zone.
+# - `answers`: the records answered.
+function addresses_for(zone: Zone lent, answers: [dns.Record]) -> [dns.Record]
+    out: [dns.Record] @= []
+
+    for a in answers
+        match a.data
+            .srv s =>
+                target = dns.canonical_name(s.target).default(s.target)
+
+                for r in zone.records
+                    if r.name == target && (dns.type_of(r) == dns.TYPE_A || dns.type_of(r) == dns.TYPE_AAAA)
+                        out @ out.push(r)
+            .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .txt _ | .soa _  => _ = 0
+            .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ => _ = 0
+            .nsec _ | .tlsa _ | .sshfp _ | .unknown _                                        => _ = 0
+
+    return out
+
+## Updating
+
+# The update `m` applied (RFC 2136 § 3): its zone checked, then each record
+# of its update section added (class IN), its RRset deleted (class ANY), or
+# itself deleted (class NONE).
+#
+# - `zone`: the zone, changed only where the whole update is accepted.
+# - `m`: the update.
+function updated(@zone: Zone, m: dns.Message) -> dns.Message
+    if m.questions.len() != 1 || m.questions[0].type_code != dns.TYPE_SOA
+        return refused(m, rcode: dns.RCODE_FORMAT_ERROR)
+
+    if dns.canonical_name(m.questions[0].name).default("") != zone.origin
+        return refused(m, rcode: dns.RCODE_NOT_AUTHORITATIVE)
+
+    if m.answers.len() > 0
+        return refused(m, rcode: dns.RCODE_NOT_IMPLEMENTED)
+    changed @= zone.records
+
+    for r in m.authorities
+        match dns.canonical_name(r.name)
+            .err _ => return refused(m, rcode: dns.RCODE_FORMAT_ERROR)
+            .ok name =>
+                if !dns.is_subdomain(name: name, of: zone.origin)
+                    return refused(m, rcode: dns.RCODE_NOT_IN_ZONE)
+                owned = dns.Record(name: name, class_code: dns.CLASS_IN, ttl: r.ttl, data: r.data)
+
+                if r.class_code == dns.CLASS_IN
+                    if !holds(changed, entry: owned)
+                        changed @ changed.push(owned)
+                else if r.class_code == dns.CLASS_ANY
+                    changed @ without_rrset(changed, name: name, type_code: dns.type_of(r))
+                else if r.class_code == dns.CLASS_NONE
+                    changed @ without_record(changed, entry: owned)
+                else
+                    return refused(m, rcode: dns.RCODE_FORMAT_ERROR)
+
+    zone.records @ changed
+    reply @= dns.reply_to(m)
+    reply.authoritative @ true
+    return reply
+
+# Whether `records` holds `entry`, its time to live aside.
+#
+# - `records`: the zone's records.
+# - `entry`: the record sought.
+function holds(records: [dns.Record], entry: dns.Record) -> bool
+    for r in records
+        if same(a: r, b: entry)
+            return true
+
+    return false
+
+# `records` without `entry`, its time to live aside.
+#
+# - `records`: the zone's records.
+# - `entry`: the record taken out.
+function without_record(records: [dns.Record], entry: dns.Record) -> [dns.Record]
+    out: [dns.Record] @= []
+
+    for r in records
+        if !same(a: r, b: entry)
+            out @ out.push(r)
+
+    return out
+
+# `records` without the RRset of `name` and `type_code`, every type's where
+# `type_code` is `TYPE_ANY`.
+#
+# - `records`: the zone's records.
+# - `name`: the RRset's name, canonical.
+# - `type_code`: its type.
+function without_rrset(records: [dns.Record], name: str, type_code: i64) -> [dns.Record]
+    out: [dns.Record] @= []
+
+    for r in records
+        if r.name != name || type_code != dns.TYPE_ANY && dns.type_of(r) != type_code
+            out @ out.push(r)
+
+    return out
+
+# Whether two records are one, their times to live aside.
+#
+# - `a`: a record.
+# - `b`: another.
+function same(a: dns.Record, b: dns.Record) -> bool
+    return a.name == b.name && a.class_code == b.class_code && a.data == b.data
+
+# The reply to `m` refusing it with `rcode`, its sections empty.
+#
+# - `m`: the message.
+# - `rcode`: the response code.
+function refused(m: dns.Message, rcode: i64) -> dns.Message
+    reply @= dns.reply_to(m)
+    reply.rcode @ rcode
+    return reply
+
+## Building updates
+
+# An update of the zone `origin` adding `records`, as an orchestrator sends
+# one to register a service's instances.
+#
+# - `origin`: the zone's name.
+# - `records`: the records added, class IN.
+function update_adding(origin: str, records: [dns.Record]) -> dns.Message
+    return dns.Message(
+        id: 0,
+        response: false,
+        opcode: dns.OPCODE_UPDATE,
+        authoritative: false,
+        truncated: false,
+        recursion_desired: false,
+        recursion_available: false,
+        authenticated_data: false,
+        checking_disabled: false,
+        rcode: dns.RCODE_NO_ERROR,
+        questions: [dns.Question(name: origin, type_code: dns.TYPE_SOA, class_code: dns.CLASS_IN)],
+        answers: [],
+        authorities: records,
+        additionals: [],
+        edns: fail(code: dns.NOT_FOUND, msg: "an update carries no EDNS")
+    )
+
+## Tests
+
+# The demo's records for one SRV instance: its SRV record and its target's
+# A record.
+#
+# - `target`: the target's name.
+# - `port`: its port.
+function instance(target: str, port: i64) -> [dns.Record]
+    return [
+        dns.Record(name: "_http._tcp.catalog.shop.internal.", class_code: dns.CLASS_IN, ttl: 30, data: .srv(priority: 10, weight: 5, port: port, target: target))
+        dns.Record(name: target, class_code: dns.CLASS_IN, ttl: 30, data: .a(address: net.loopback_v4()))
+    ]
+
+test "answer: an update adds, a query finds the SRV and its target's address"
+    z @= new("shop.internal").must()
+    reply = answer(
+        @z,
+        m: update_adding(origin: "shop.internal.", records: instance(target: "catalog-1.shop.internal.", port: 8080))
+    )
+    assert reply.rcode == dns.RCODE_NO_ERROR
+    found = answer(@z, m: dns.new_query("_http._tcp.catalog.shop.internal", type_code: dns.TYPE_SRV).must())
+    assert found.rcode == dns.RCODE_NO_ERROR && found.answers.len() == 1 && found.additionals.len() == 1
+    missing = answer(@z, m: dns.new_query("nothing.shop.internal", type_code: dns.TYPE_A).must())
+    assert missing.rcode == dns.RCODE_NAME_ERROR
+
+test "answer: an update of another zone, a name outside the zone, a query outside it"
+    z @= new("shop.internal").must()
+    assert answer(@z, m: update_adding(origin: "other.test.", records: [])).rcode == dns.RCODE_NOT_AUTHORITATIVE
+    outside = instance(target: "x.other.test.", port: 1)
+    assert answer(@z, m: update_adding(origin: "shop.internal.", records: [outside[1]])).rcode == dns.RCODE_NOT_IN_ZONE
+    assert z.records.len() == 0
+    assert answer(@z, m: dns.new_query("example.org", type_code: dns.TYPE_A).must()).rcode == dns.RCODE_REFUSED
+
+test "answer: a record added twice is held once, and an RRset deleted goes"
+    z @= new("shop.internal").must()
+    records = instance(target: "catalog-1.shop.internal.", port: 8080)
+    _ = answer(@z, m: update_adding(origin: "shop.internal.", records: records))
+    _ = answer(@z, m: update_adding(origin: "shop.internal.", records: records))
+    assert z.records.len() == 2
+    gone = dns.Record(
+        name: "catalog-1.shop.internal.",
+        class_code: dns.CLASS_ANY,
+        ttl: 0,
+        data: .unknown(type_code: dns.TYPE_A, data: [])
+    )
+    _ = answer(@z, m: update_adding(origin: "shop.internal.", records: [gone]))
+    assert z.records.len() == 1

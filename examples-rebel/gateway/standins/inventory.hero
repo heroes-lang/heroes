@@ -1,0 +1,280 @@
+# The inventory service, the demo's gRPC upstream: `shop.inventory.v1`'s
+# `Inventory` served over HTTP/2 in plain text (h2c), its messages read and
+# written through its own `.proto` at run time (`protobuf`): `GetStock`, a
+# unary call answering one item's stock, and `WatchMovements`, a call whose
+# server streams every movement of an item's stock, oldest first, then
+# ends. It runs on a thread of its own, told its supervisor's control port,
+# and serves one connection after another until the program is asked to
+# stop.
+
+use <rebel>/grpc
+use <rebel>/io
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/protobuf
+
+use demo/notify
+
+## Codes
+
+# The code of an item the inventory does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a request that names no item.
+constant INVALID: str
+    "invalid"
+
+## The service
+
+# The `.proto` the service is described by: the same text the routing file
+# gives the gateway for this upstream.
+constant PROTO: str
+    "syntax = \"proto3\";\n" + "package shop.inventory.v1;\n" + "service Inventory {\n" + "  rpc GetStock(StockRequest) returns (Stock);\n" + "  rpc WatchMovements(StockRequest) returns (stream Movement);\n" + "}\n" + "message StockRequest { string sku = 1; }\n" + "message Stock { string sku = 1; int32 count = 2; string warehouse = 3; }\n" + "message Movement { string sku = 1; int32 change = 2; string reason = 3; int32 balance = 4; }\n"
+
+# The service's full name.
+constant SERVICE: str
+    "shop.inventory.v1.Inventory"
+
+# The name it notifies its supervisor with.
+constant NAME: str
+    "inventory"
+
+# One change of an item's stock.
+record Movement
+    # By how many it changed, negative for a sale.
+    change: i64
+    # Why.
+    reason: str
+
+# An item's stock, as the service holds it.
+record Item
+    # The item's code.
+    sku: str
+    # The warehouse holding it.
+    warehouse: str
+    # Its movements, oldest first; its count is their sum.
+    movements: [Movement]
+
+# The items the demo's inventory holds.
+function items() -> [Item]
+    return [
+        Item(sku: "A-100", warehouse: "north", movements: [Movement(change: 20, reason: "received"), Movement(change: -5, reason: "sold"), Movement(change: -3, reason: "sold")])
+        Item(sku: "B-200", warehouse: "south", movements: [Movement(change: 40, reason: "received"), Movement(change: -1, reason: "sold")])
+    ]
+
+# The stock of `sku`, the sum of its movements.
+#
+# - `sku`: the item's code.
+#
+# Fails `not_found` where no item has it.
+function item_of(sku: str) -> Item?
+    for item in items()
+        if item.sku == sku
+            return ok(item)
+
+    return fail(code: NOT_FOUND, msg: f"no item {sku}")
+
+# The count of `item`: the sum of its movements.
+#
+# - `item`: the item.
+function count_of(item: Item) -> i64
+    total @= 0
+
+    for m in item.movements
+        total @ total + m.change
+
+    return total
+
+## Serving
+
+# The service's thread: listens on a port the system chooses, tells the
+# supervisor at the control port `arg` holds, and serves until stopped.
+# Answers how many calls it answered, as a line.
+#
+# - `arg`: the supervisor's control port, in decimal.
+function run(arg: str) -> str
+    match numbers.parse_int(arg)
+        .err e => return "inventory: no control port: " + e.msg
+        .ok control =>
+            match served(control)
+                .ok calls => return f"inventory: calls answered {calls}"
+                .err e    => return "inventory: " + e.msg
+
+# Every connection accepted served until the program is asked to stop.
+#
+# - `control`: the supervisor's control port.
+#
+# Fails as `protobuf.parse_schema_text`, `net.listen` and `notify.ready`
+# fail.
+function served(control: i64) -> i64?
+    schema = protobuf.parse_schema_text(name: "inventory.proto", text: PROTO)?
+    service = protobuf.service_named(schema, name: SERVICE)?
+    methods = grpc.methods_of(service)
+    listener @= net.listen(host: "127.0.0.1", port: 0)?
+
+    match notify.ready(control_port: control, service: NAME, port: listener.address.port)
+        .err e =>
+            _ = net.close_listener(@listener).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => _ = 0
+
+    calls @= 0
+
+    while true
+        match net.accept(listener, deadline_ms: net.FOREVER)
+            .err _ => break
+            .ok made =>
+                conn @= made
+
+                match grpc.server(@conn.stream, options: grpc.default_options())
+                    .err _ => _ = io.close(@conn.stream).is_err()
+                    .ok s =>
+                        server @= s
+                        calls @ calls + answered(@server, schema: schema, methods: methods)
+                        _ = grpc.close_server(@server).is_err()
+
+    _ = net.close_listener(@listener).is_err()
+    return ok(calls)
+
+# Every call of one connection answered, until the client closes it.
+#
+# - `server`: the connection's server.
+# - `schema`: the service's schema.
+# - `methods`: its methods, `GetStock` then `WatchMovements`.
+function answered(@server: grpc.Server, schema: protobuf.Schema, methods: [grpc.Method]) -> i64
+    count @= 0
+
+    while true
+        match grpc.next_call(@server, methods: methods)
+            .err _ => break
+            .ok c =>
+                call @= c
+                ended = called(@server, @call, schema: schema, streams: methods[call.method].server_streaming)
+                _ = grpc.finish(@server, @call, status: ended, trailers: []).is_err()
+                count @ count + 1
+
+    return count
+
+# One call answered: its request read, then one `Stock` or every `Movement`.
+#
+# - `server`: the server.
+# - `call`: the call.
+# - `schema`: the service's schema.
+# - `streams`: whether the method streams its answers (`WatchMovements`).
+function called(@server: grpc.Server, @call: grpc.ServerCall, schema: protobuf.Schema, streams: bool) -> grpc.Status
+    match grpc.read_request(@server, @call)
+        .err e => return status(grpc.STATUS_INTERNAL, message: e.msg)
+        .ok incoming =>
+            match incoming
+                .end _ => return status(grpc.STATUS_INVALID_ARGUMENT, message: "the call sent no request")
+                .message m =>
+                    match sku_of(schema, data: m.data)
+                        .err e => return status(grpc.STATUS_INVALID_ARGUMENT, message: e.msg)
+                        .ok sku =>
+                            match item_of(sku)
+                                .err e => return status(grpc.STATUS_NOT_FOUND, message: e.msg)
+                                .ok item =>
+                                    if streams
+                                        return movements_sent(@server, @call, schema: schema, item: item)
+                                    return stock_sent(@server, @call, schema: schema, item: item)
+
+# The `sku` of a `StockRequest`.
+#
+# - `schema`: the service's schema.
+# - `data`: the request's bytes.
+#
+# Fails `invalid` where the bytes are no `StockRequest` or name no item.
+function sku_of(schema: protobuf.Schema, data: [u8]) -> str?
+    request = protobuf.decode(schema, type_name: "shop.inventory.v1.StockRequest", data: data)?
+    sku = protobuf.text_of(protobuf.get(schema, m: request, field: "sku")?)?
+
+    if sku == ""
+        return fail(code: INVALID, msg: "a StockRequest names its sku")
+    return ok(sku)
+
+# The `Stock` of `item` written.
+#
+# - `server`: the server.
+# - `call`: the call.
+# - `schema`: the service's schema.
+# - `item`: the item.
+function stock_sent(@server: grpc.Server, @call: grpc.ServerCall, schema: protobuf.Schema, item: Item) -> grpc.Status
+    match stock_message(schema, item: item)
+        .err e => return status(grpc.STATUS_INTERNAL, message: e.msg)
+        .ok data =>
+            if grpc.write_response(@server, @call, message: data).is_err()
+                return status(grpc.STATUS_UNAVAILABLE, message: "the client went away")
+            return status(grpc.STATUS_OK, message: "")
+
+# Every `Movement` of `item` written, oldest first, each with the balance
+# after it.
+#
+# - `server`: the server.
+# - `call`: the call.
+# - `schema`: the service's schema.
+# - `item`: the item.
+function movements_sent(@server: grpc.Server, @call: grpc.ServerCall, schema: protobuf.Schema, item: Item) -> grpc.Status
+    balance @= 0
+
+    for m in item.movements
+        balance @ balance + m.change
+
+        match movement_message(schema, sku: item.sku, m: m, balance: balance)
+            .err e => return status(grpc.STATUS_INTERNAL, message: e.msg)
+            .ok data =>
+                if grpc.write_response(@server, @call, message: data).is_err()
+                    return status(grpc.STATUS_UNAVAILABLE, message: "the client went away")
+
+    return status(grpc.STATUS_OK, message: "")
+
+# The bytes of `item`'s `Stock`.
+#
+# - `schema`: the service's schema.
+# - `item`: the item.
+#
+# Fails as `protobuf.set` and `protobuf.encode` fail.
+function stock_message(schema: protobuf.Schema, item: Item) -> [u8]?
+    m @= protobuf.new_message(schema, type_name: "shop.inventory.v1.Stock")?
+    protobuf.set(schema, @m, field: "sku", value: .text(v: item.sku))?
+    protobuf.set_int(schema, @m, field: "count", n: count_of(item))?
+    protobuf.set(schema, @m, field: "warehouse", value: .text(v: item.warehouse))?
+    return protobuf.encode(schema, m: m)
+
+# The bytes of one `Movement`.
+#
+# - `schema`: the service's schema.
+# - `sku`: the item's code.
+# - `m`: the movement.
+# - `balance`: the count after it.
+#
+# Fails as `protobuf.set` and `protobuf.encode` fail.
+function movement_message(schema: protobuf.Schema, sku: str, m: Movement, balance: i64) -> [u8]?
+    out @= protobuf.new_message(schema, type_name: "shop.inventory.v1.Movement")?
+    protobuf.set(schema, @out, field: "sku", value: .text(v: sku))?
+    protobuf.set_int(schema, @out, field: "change", n: m.change)?
+    protobuf.set(schema, @out, field: "reason", value: .text(v: m.reason))?
+    protobuf.set_int(schema, @out, field: "balance", n: balance)?
+    return protobuf.encode(schema, m: out)
+
+# A status of `code` saying `message`.
+#
+# - `code`: the gRPC status code.
+# - `message`: why, "" for none.
+function status(code: i64, message: str) -> grpc.Status
+    return grpc.Status(code: code, message: message, details: [])
+
+test "count_of: the sum of an item's movements"
+    assert count_of(item_of("A-100").must()) == 12
+    assert count_of(item_of("B-200").must()) == 39
+    assert item_of("Z-999").is_err()
+
+test "stock_message: the .proto reads, and a Stock written reads back"
+    schema = protobuf.parse_schema_text(name: "inventory.proto", text: PROTO).must()
+    data = stock_message(schema, item: item_of("A-100").must()).must()
+    back = protobuf.decode(schema, type_name: "shop.inventory.v1.Stock", data: data).must()
+    assert protobuf.int_of(protobuf.get(schema, m: back, field: "count").must()).must() == 12
+
+test "sku_of: an empty request names no item"
+    schema = protobuf.parse_schema_text(name: "inventory.proto", text: PROTO).must()
+    assert sku_of(schema, data: []).is_err()

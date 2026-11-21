@@ -1,0 +1,86 @@
+== the gateway's certificate, made with x509's pieces and checked by x509
+subject CN=gateway.shop.test,O=Shop Demo, issued by CN=Gateway Demo Root,O=Shop Demo
+for localhost, 127.0.0.1; its chain verified for a TLS server at 127.0.0.1
+== services, started on loopback and told ready
+dns: ready
+catalog: ready
+inventory: ready
+reviews: ready
+== upstreams registered in DNS by RFC 2136 updates
+_http._tcp.catalog.shop.internal: catalog-0 (priority 10, a port where nothing listens), catalog-1 (priority 20)
+_grpc._tcp.inventory.shop.internal: inventory-1
+_http._tcp.reviews.shop.internal: reviews-a and reviews-b (weights 50 and 50)
+== over TLS, HTTP/1.1
+ALPN chose http/1.1
+GET api.shop.test/catalog/items -> 200, x-gateway-route catalog, x-cache miss, x-gateway-upstream catalog-1.shop.internal, x-gateway-attempts 2, x-ratelimit-remaining 19, 3 items
+  the upstream saw: for=127.0.0.1;proto=https;host="api.shop.test"
+GET api.shop.test/catalog/items -> 200, x-gateway-route catalog, x-cache hit, age 0, x-ratelimit-remaining 18, 3 items
+GET api.shop.test/catalog/items/A-100 -> 200, x-gateway-route catalog, x-cache miss, x-gateway-upstream catalog-1.shop.internal, x-gateway-attempts 1, x-ratelimit-remaining 17, Desk lamp
+GET api.shop.test/catalog/items/A-100 (If-None-Match) -> 304, x-gateway-route catalog, x-cache hit, age 0, x-ratelimit-remaining 16
+GET api.shop.test/stock/A-100 -> 200, x-gateway-route stock, x-gateway-upstream inventory-1.shop.internal, {"sku":"A-100","count":12,"warehouse":"north"}
+GET api.shop.test/nowhere -> 404, no route takes api.shop.test/nowhere
+== over TLS, HTTP/2
+ALPN chose h2
+GET api.shop.test/catalog/items/B-200 -> 200, x-gateway-route catalog, x-cache miss, x-gateway-upstream catalog-1.shop.internal, x-gateway-attempts 1, x-ratelimit-remaining 15, Notebook
+POST api.shop.test/orders -> 201, x-gateway-route orders, x-gateway-upstream catalog-1.shop.internal, x-gateway-attempts 1, x-ratelimit-remaining 1, order-1
+POST api.shop.test/orders -> 201, x-gateway-route orders, x-gateway-upstream catalog-1.shop.internal, x-gateway-attempts 1, x-ratelimit-remaining 0, order-2
+POST api.shop.test/orders -> 429, x-ratelimit-remaining 0, retry-after 60, the client is past the rate limit of orders: 2 requests, one more every 60000 ms
+gRPC /shop.inventory.v1.Inventory/GetStock -> OK, from inventory-1.shop.internal: {"sku":"A-100","count":12,"warehouse":"north"}
+gRPC /shop.inventory.v1.Inventory/WatchMovements (a stream from the server)
+  message 1: {"sku":"A-100","change":20,"reason":"received","balance":20}
+  message 2: {"sku":"A-100","change":-5,"reason":"sold","balance":15}
+  message 3: {"sku":"A-100","change":-3,"reason":"sold","balance":12}
+  end: OK after 3 messages
+gRPC /shop.inventory.v1.Inventory/DeleteStock -> UNIMPLEMENTED: inventory serves no method /shop.inventory.v1.Inventory/DeleteStock: shop.inventory.v1.Inventory has no method DeleteStock
+GraphQL { stock(sku: "A-100") { count warehouse } reviews(sku: "A-100") { author stars } }
+  -> 200: {"data":{"stock":{"count":12,"warehouse":"north"},"reviews":[{"author":"ada","stars":5},{"author":"grace","stars":4}]}}
+GraphQL { stock(sku: "A-100") { count price } }
+  -> 200: {"errors":[{"message":"Cannot query field \"price\" on type \"Stock\".","locations":[{"line":1,"column":31}]}]}
+GET admin.shop.test/metrics -> 200, x-gateway-route metrics
+  gateway_cache_entries 3
+  gateway_cache_lookups_total{result="hit",route="catalog"} 1
+  gateway_cache_lookups_total{result="miss",route="catalog"} 3
+  gateway_cache_lookups_total{result="not_modified",route="catalog"} 1
+  gateway_connections_total{protocol="h2"} 1
+  gateway_connections_total{protocol="http/1.1"} 1
+  gateway_graphql_operations_total{result="executed"} 1
+  gateway_graphql_operations_total{result="invalid"} 1
+  gateway_grpc_calls_total{method="/shop.inventory.v1.Inventory/DeleteStock",status="UNIMPLEMENTED"} 1
+  gateway_grpc_calls_total{method="/shop.inventory.v1.Inventory/GetStock",status="OK"} 1
+  gateway_grpc_calls_total{method="/shop.inventory.v1.Inventory/WatchMovements",status="OK"} 1
+  gateway_grpc_messages_total{method="/shop.inventory.v1.Inventory/DeleteStock"} 0
+  gateway_grpc_messages_total{method="/shop.inventory.v1.Inventory/GetStock"} 1
+  gateway_grpc_messages_total{method="/shop.inventory.v1.Inventory/WatchMovements"} 3
+  gateway_rate_limited_total{route="orders"} 1
+  gateway_requests_total{code="200",route="catalog"} 4
+  gateway_requests_total{code="200",route="graphql"} 2
+  gateway_requests_total{code="200",route="inventory"} 3
+  gateway_requests_total{code="200",route="stock"} 1
+  gateway_requests_total{code="201",route="orders"} 2
+  gateway_requests_total{code="304",route="catalog"} 1
+  gateway_requests_total{code="404",route="-"} 1
+  gateway_requests_total{code="429",route="orders"} 1
+  gateway_response_bytes_sum{route="-"} 60
+  gateway_response_bytes_count{route="-"} 1
+  gateway_response_bytes_sum{route="catalog"} 448
+  gateway_response_bytes_count{route="catalog"} 5
+  gateway_response_bytes_sum{route="graphql"} 230
+  gateway_response_bytes_count{route="graphql"} 2
+  gateway_response_bytes_sum{route="inventory"} 109
+  gateway_response_bytes_count{route="inventory"} 3
+  gateway_response_bytes_sum{route="orders"} 201
+  gateway_response_bytes_count{route="orders"} 3
+  gateway_response_bytes_sum{route="stock"} 46
+  gateway_response_bytes_count{route="stock"} 1
+  gateway_retries_total{route="catalog"} 1
+  gateway_upstream_attempts_total{outcome="ok",upstream="catalog"} 5
+  gateway_upstream_attempts_total{outcome="ok",upstream="inventory"} 4
+  gateway_upstream_attempts_total{outcome="ok",upstream="reviews"} 1
+  gateway_upstream_attempts_total{outcome="refused",upstream="catalog"} 1
+  gateway_upstream_attempts_total{outcome="skipped",upstream="catalog"} 4
+== what each service served
+gateway: connections 2, requests 16, handshakes failed 0
+dns: queries answered 3, updates answered 3
+catalog: requests answered 5, orders taken 2
+inventory: calls answered 4
+reviews: requests answered 1

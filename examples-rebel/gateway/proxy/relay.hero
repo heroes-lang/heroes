@@ -1,0 +1,320 @@
+# A gRPC call relayed: a client's call, read whole from its HTTP/2 stream,
+# checked against the upstream's `.proto`, sent on a channel to one of the
+# upstream's instances, and each answer written back to the client as it
+# arrives, so a server-streaming method streams through the gateway rather
+# than reaching the client in one piece at its end. The call's status
+# crosses in the trailers, as gRPC over HTTP/2 writes it; a call the
+# gateway refuses itself is answered "trailers only", a status and no
+# message.
+#
+# The client's request messages are relayed as they are framed; a
+# compressed one is refused, since the channel compresses as it chooses and
+# a message is never decompressed here.
+
+use <rebel>/bytes
+use <rebel>/grpc
+use <rebel>/http2
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/time
+
+use core/state
+use proxy/channels
+use route/routes
+
+## Bounds
+
+# The largest message relayed, in bytes: gRPC's own default for a message
+# received.
+constant MOST_MESSAGE_BYTES: i64
+    4_194_304
+
+# The longest a relayed call may take, where the client sends no
+# `grpc-timeout` of its own.
+constant CALL_SECONDS: i64
+    30
+
+## Relaying
+
+# What a relayed call came to, for the metrics.
+record Relayed
+    # The call's gRPC status code.
+    code: i64
+    # The messages relayed to the client.
+    messages: i64
+    # Their bytes, framed.
+    bytes: i64
+    # The instance that answered, "" where none did.
+    instance: str
+
+# Relays the gRPC call `r` that `routed` took, from the client on `conn` to
+# an instance of the route's upstream and back.
+#
+# - `gw`: the state; its directory and breakers change.
+# - `conn`: the client's connection; the call's answer is written on its
+#   stream `r.stream`.
+# - `r`: the call, read whole: its path names the method, its body holds the
+#   framed messages.
+# - `routed`: the route that took it, of kind `grpc`.
+# - `client`: the client's name, which orders the instances.
+#
+# Never fails: a call the gateway cannot relay is answered with a status. A
+# failure to write to the client ends the relay with the status `UNAVAILABLE`.
+function relay(@gw: state.Gateway, @conn: http2.Conn, r: http2.Request, routed: routes.Routed, client: str) -> Relayed
+    match checked(gw, r: r, routed: routed)
+        .err refusal => return refuse(
+            @conn,
+            stream: r.stream,
+            code: numbers.parse_int(refusal.code).default(grpc.STATUS_INTERNAL),
+            message: refusal.msg
+        )
+        .ok messages =>
+            upstream = state.upstream_named(gw, name: routed.route.upstream).must()
+
+            match channels.open(@gw, upstream: upstream, client: client, attempts: routed.route.retry.attempts)
+                .err e => return refuse(@conn, stream: r.stream, code: grpc.STATUS_UNAVAILABLE, message: e.msg)
+                .ok opened =>
+                    channel @= opened.channel
+                    done = streamed(@channel, @conn, r: r, messages: messages, instance: opened.instance)
+                    _ = grpc.close(@channel).is_err()
+                    return done
+
+# The messages of `r`, once its method is found in the upstream's `.proto`
+# and its body read as uncompressed frames.
+#
+# - `gw`: the state.
+# - `r`: the call.
+# - `routed`: the route that took it.
+#
+# Fails with the gRPC status to answer, its code in decimal as the
+# failure's code: `UNIMPLEMENTED` for a method the `.proto` does not declare
+# or a compressed message, `INTERNAL` for a body that is not frames.
+function checked(gw: state.Gateway lent, r: http2.Request, routed: routes.Routed) -> [[u8]]?
+    upstream = state.upstream_named(gw, name: routed.route.upstream).must()
+
+    match gw.protos[upstream.name]
+        .err _ => _ = 0
+        .ok schema =>
+            match grpc.proto_method_of(schema, path: r.path)
+                .ok _ => _ = 0
+                .err e => return fail(
+                    code: f"{grpc.STATUS_UNIMPLEMENTED}",
+                    msg: f"{upstream.name} serves no method {r.path}: {e.msg}"
+                )
+
+    match grpc.decode_frames(r.body, most: MOST_MESSAGE_BYTES)
+        .err e => return fail(code: f"{grpc.STATUS_INTERNAL}", msg: f"the call's body is not gRPC frames: {e.msg}")
+        .ok frames =>
+            if frames.rest.len() > 0
+                return fail(
+                    code: f"{grpc.STATUS_INTERNAL}",
+                    msg: f"the call's body ends inside a message, {frames.rest.len()} bytes of it"
+                )
+            out: [[u8]] @= []
+
+            for framed in frames.messages
+                if framed.compressed
+                    return fail(
+                        code: f"{grpc.STATUS_UNIMPLEMENTED}",
+                        msg: "a compressed request message is not relayed"
+                    )
+                out @ out.push(framed.data)
+
+            return ok(out)
+
+# The call sent on `channel` and every answer written to the client as it
+# arrives, then the status in the trailers.
+#
+# - `channel`: the channel to the instance.
+# - `conn`: the client's connection.
+# - `r`: the client's call.
+# - `messages`: its messages.
+# - `instance`: the instance's SRV target, written in the answer's head.
+function streamed(@channel: grpc.Channel, @conn: http2.Conn, r: http2.Request, messages: [[u8]], instance: str) -> Relayed
+    timeout = timeout_of(r)
+
+    match grpc.start_call(@channel, path: r.path, metadata: metadata_of(r), timeout: timeout)
+        .err e => return refuse(@conn, stream: r.stream, code: grpc.STATUS_UNAVAILABLE, message: e.msg)
+        .ok started =>
+            call @= started
+
+            for m in messages
+                match grpc.send(@channel, @call, message: m)
+                    .ok _  => _ = 0
+                    .err e => return refuse(@conn, stream: r.stream, code: grpc.STATUS_UNAVAILABLE, message: e.msg)
+
+            _ = grpc.close_send(@channel, c: call).is_err()
+            return answered(@channel, @call, @conn, stream: r.stream, instance: instance)
+
+# The answers of `call`, each written to the client as it arrives.
+#
+# - `channel`: the channel.
+# - `call`: the call, its requests sent.
+# - `conn`: the client's connection.
+# - `stream`: the client's stream.
+# - `instance`: the instance's SRV target.
+function answered(@channel: grpc.Channel, @call: grpc.Call, @conn: http2.Conn, stream: i64, instance: str) -> Relayed
+    count @= 0
+    sent_bytes @= 0
+    head_sent @= false
+
+    while true
+        match grpc.receive(@channel, @call)
+            .err e =>
+                return ended(
+                    @conn,
+                    stream: stream,
+                    head_sent: head_sent,
+                    status: grpc.Status(code: grpc.STATUS_UNAVAILABLE, message: e.msg, details: []),
+                    done: Relayed(code: grpc.STATUS_UNAVAILABLE, messages: count, bytes: sent_bytes, instance: instance)
+                )
+            .ok incoming =>
+                match incoming
+                    .message m =>
+                        if !head_sent
+                            match http2.write_headers(@conn, stream: stream, headers: head(instance), end_stream: false)
+                                .ok _ => head_sent @ true
+                                .err _ => return Relayed(
+                                    code: grpc.STATUS_UNAVAILABLE,
+                                    messages: count,
+                                    bytes: sent_bytes,
+                                    instance: instance
+                                )
+                        framed = grpc.encode_frame(m.data, compressed: false)
+
+                        match http2.write_data(@conn, stream: stream, data: framed, end_stream: false)
+                            .ok _ => _ = 0
+                            .err _ => return Relayed(
+                                code: grpc.STATUS_UNAVAILABLE,
+                                messages: count,
+                                bytes: sent_bytes,
+                                instance: instance
+                            )
+
+                        count @ count + 1
+                        sent_bytes @ sent_bytes + framed.len()
+                    .end finish =>
+                        return ended(
+                            @conn,
+                            stream: stream,
+                            head_sent: head_sent,
+                            status: finish.status,
+                            done: Relayed(code: finish.status.code, messages: count, bytes: sent_bytes, instance: instance)
+                        )
+
+    return Relayed(code: grpc.STATUS_UNKNOWN, messages: count, bytes: sent_bytes, instance: instance)
+
+# The call's end written: its status in the trailers, or a whole
+# "trailers only" answer where no message went before.
+#
+# - `conn`: the client's connection.
+# - `stream`: the client's stream.
+# - `head_sent`: whether the answer's head is written already.
+# - `status`: the call's status.
+# - `done`: what the relay came to, answered as it is.
+function ended(@conn: http2.Conn, stream: i64, head_sent: bool, status: grpc.Status, done: Relayed) -> Relayed
+    if !head_sent
+        _ = refuse(@conn, stream: stream, code: status.code, message: status.message)
+        return done
+    _ = http2.write_headers(@conn, stream: stream, headers: trailers(status), end_stream: true).is_err()
+    return done
+
+# A call answered with a status and no message: its head and its trailers
+# in one header list (gRPC's "trailers only").
+#
+# - `conn`: the client's connection.
+# - `stream`: the client's stream.
+# - `code`: the status code.
+# - `message`: why, as text.
+function refuse(@conn: http2.Conn, stream: i64, code: i64, message: str) -> Relayed
+    fields: [http2.Field] @= head("")
+
+    for f in trailers(grpc.Status(code: code, message: message, details: []))
+        fields @ fields.push(f)
+
+    _ = http2.write_headers(@conn, stream: stream, headers: fields, end_stream: true).is_err()
+    return Relayed(code: code, messages: 0, bytes: 0, instance: "")
+
+# The head of a gRPC answer, naming the instance where one answers.
+#
+# - `instance`: the instance's SRV target, "" for none.
+function head(instance: str) -> [http2.Field]
+    fields: [http2.Field] @= [
+        http2.Field(name: ":status", value: "200", sensitive: false)
+        http2.Field(name: "content-type", value: "application/grpc", sensitive: false)
+    ]
+
+    if instance != ""
+        fields @ fields.push(http2.Field(name: "x-gateway-upstream", value: instance, sensitive: false))
+    return fields
+
+# The trailers of a call's end.
+#
+# - `status`: the call's status.
+function trailers(status: grpc.Status) -> [http2.Field]
+    fields: [http2.Field] @= [http2.Field(name: "grpc-status", value: f"{status.code}", sensitive: false)]
+
+    if status.message != ""
+        fields @ fields.push(
+            http2.Field(name: "grpc-message", value: grpc.format_status_message(status.message), sensitive: false)
+        )
+    return fields
+
+# The metadata a call carries on: every field of the client's but the ones
+# gRPC and HTTP/2 own (`content-type`, `te`, `user-agent`, `grpc-*`) and the
+# hop-by-hop ones; a `-bin` field's value read from its base 64.
+#
+# - `r`: the client's call.
+function metadata_of(r: http2.Request) -> [grpc.Entry]
+    out: [grpc.Entry] @= []
+
+    for f in r.headers
+        name = strings.to_lower_ascii(f.name)
+        owned = name == "content-type" || name == "te" || name == "user-agent" || name == "connection" || strings.has_prefix(s: name, prefix: "grpc-") || strings.has_prefix(s: name, prefix: ":")
+
+        if !owned
+            if grpc.is_binary_key(name)
+                match bytes.parse_base64(f.value)
+                    .ok data => out @ out.push(grpc.Entry(key: name, value: data))
+                    .err _   => _ = 0
+            else
+                out @ out.push(grpc.Entry(key: name, value: bytes.from_text(f.value)))
+
+    return out
+
+# How long the call may take: the client's `grpc-timeout`, else
+# `CALL_SECONDS`.
+#
+# - `r`: the client's call.
+function timeout_of(r: http2.Request) -> time.Duration
+    fallback = time.seconds(CALL_SECONDS).default(time.max_duration())
+
+    for f in r.headers
+        if strings.to_lower_ascii(f.name) == "grpc-timeout"
+            return grpc.parse_timeout(f.value).default(fallback)
+
+    return fallback
+
+test "trailers: the status, and its message only where it has one"
+    plain = trailers(grpc.Status(code: 0, message: "", details: []))
+    assert plain.len() == 1 && plain[0].value == "0"
+    told = trailers(grpc.Status(code: 12, message: "no such method", details: []))
+    assert told.len() == 2 && told[1].name == "grpc-message"
+
+test "metadata_of: the client's own fields carried, gRPC's and HTTP/2's kept back"
+    r = http2.Request(
+        method: "POST",
+        scheme: "https",
+        authority: "api.test",
+        path: "/a.B/C",
+        protocol: "",
+        headers: [http2.Field(name: "content-type", value: "application/grpc", sensitive: false), http2.Field(name: "te", value: "trailers", sensitive: false), http2.Field(name: "grpc-timeout", value: "5S", sensitive: false), http2.Field(name: "x-request-id", value: "7", sensitive: false), http2.Field(name: "trace-bin", value: "AQI=", sensitive: false)],
+        body: [],
+        trailers: [],
+        stream: 1
+    )
+    m = metadata_of(r)
+    assert m.len() == 2
+    assert m[0].key == "x-request-id" && m[0].value == [55]
+    assert m[1].key == "trace-bin" && m[1].value == [1, 2]
+    assert time.to_units(timeout_of(r), unit: .second) == 5

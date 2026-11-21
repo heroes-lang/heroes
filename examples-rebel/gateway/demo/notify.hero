@@ -1,0 +1,104 @@
+# Readiness notification between the demo's supervisor and the services it
+# starts, in the shape of systemd's `sd_notify` (`READY=1`, then the facts):
+# a service, once it listens, connects to the supervisor's control port and
+# writes `READY=1`, its name and its port, one `KEY=value` a line, then
+# closes. A thread is handed one value and gives one back only when it ends
+# (spec § 13), so a service started on a thread of its own tells its port
+# this way, and the supervisor starts nothing that needs it before the line
+# has come.
+
+use <rebel>/io
+use <rebel>/net
+use <rebel>/strings
+
+## Codes
+
+# The code of a notification that is not one.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# How long a notification may take to write or to come, in milliseconds.
+constant NOTIFY_MS: i64
+    10_000
+
+## Notifying
+
+# What a service said once it was ready.
+record Ready
+    # The service's name.
+    service: str
+    # The port it listens on.
+    port: i64
+
+# Tells the supervisor at `control_port` that `service` listens on `port`.
+#
+# - `control_port`: the supervisor's control port on 127.0.0.1.
+# - `service`: the service's name, one word.
+# - `port`: the port it listens on.
+#
+# Fails as `net.connect` and `io.write_text` fail.
+function ready(control_port: i64, service: str, port: i64) -> ()?
+    made = net.connect(host: "127.0.0.1", port: control_port, deadline_ms: NOTIFY_MS)?
+    conn @= made
+    written = io.write_text(conn.stream, text: format_ready(Ready(service: service, port: port)))
+    _ = io.close(@conn.stream).is_err()
+    return written
+
+# The next service's notification on `control`.
+#
+# - `control`: the supervisor's control listener.
+#
+# Fails `invalid` where what came is no notification, and as `net.accept`
+# and `io.read_all_text` fail.
+function await_ready(control: net.Listener) -> Ready?
+    made = net.accept(control, deadline_ms: NOTIFY_MS)?
+    conn @= made
+    text = io.read_all_text(conn.stream)
+    _ = io.close(@conn.stream).is_err()
+    return parse_ready(text?)
+
+# A notification as it is written.
+#
+# - `r`: what is said.
+function format_ready(r: Ready) -> str
+    return f"READY=1\nSERVICE={r.service}\nPORT={r.port}\n"
+
+# The notification `text` writes.
+#
+# - `text`: `KEY=value` lines.
+#
+# Fails `invalid` where `READY=1`, `SERVICE` or a `PORT` of 1 to 65535 is
+# missing.
+function parse_ready(text: str) -> Ready?
+    values: {str: str} @= {}
+
+    for line in strings.lines(text)
+        match strings.split_once(s: line, sep: "=")
+            .ok h  => values[h.before] @ h.after
+            .err _ => _ = 0
+
+    if values["READY"].default("") != "1"
+        return fail(code: INVALID, msg: f"a notification says READY=1, and this one {strings.trim(text)}")
+    service = values["SERVICE"].default("")
+
+    if service == ""
+        return fail(code: INVALID, msg: "a notification names its SERVICE")
+
+    match net.parse_port(values["PORT"].default(""))
+        .err e => return fail(code: INVALID, msg: f"{service}'s notification holds no PORT: {e.msg}")
+        .ok port =>
+            if port == 0
+                return fail(code: INVALID, msg: f"{service}'s notification says PORT=0")
+            return ok(Ready(service: service, port: port))
+
+test "parse_ready: what format_ready writes reads back"
+    r = parse_ready(format_ready(Ready(service: "dns", port: 5353))).must()
+    assert r.service == "dns" && r.port == 5353
+
+test "parse_ready: no READY, no SERVICE, and a port of zero are refused"
+    assert parse_ready("SERVICE=dns\nPORT=1\n").is_err()
+    assert parse_ready("READY=1\nPORT=1\n").is_err()
+    assert parse_ready("READY=1\nSERVICE=dns\nPORT=0\n").is_err()
+    assert parse_ready("").is_err()

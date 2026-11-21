@@ -1,0 +1,306 @@
+# Forwarding a request to an HTTP upstream: its instances found by SRV and
+# ordered for the client, each one's breaker asked, the request sent on a
+# connection of its own, and a failed try tried again on the next instance
+# after an exponential wait spread by chance (`retries`), as the route's
+# `retry` allows.
+#
+# What is tried again is decided by what the upstream may have done. A
+# connection refused or never made carried nothing, so any method is tried
+# again; a request that went out and got no answer, or a 502, 503 or 504,
+# may have changed something, so only an idempotent method (RFC 9110
+# § 9.2.2) is tried again, and anything else is answered as it stands.
+
+use <rebel>/http
+use <rebel>/io
+use <rebel>/math
+use <rebel>/net
+use <rebel>/retries
+use <rebel>/time
+
+use config/settings
+use core/clock
+use core/state
+use core/telemetry
+use discovery/instances
+use proxy/replies
+
+## Codes
+
+# The code of a forward no instance answered.
+constant NOT_FOUND: str
+    "not_found"
+
+## Bounds
+
+# How long one exchange with an instance may take once connected, in
+# milliseconds: an upstream that stops answering holds the gateway no
+# longer than this.
+constant EXCHANGE_MS: i64
+    10_000
+
+## Forwarding
+
+# What a forward came to.
+record Forwarded
+    # The answer the client is sent: the upstream's, or the gateway's own
+    # refusal.
+    response: http.Response
+    # The instance that answered, its SRV target; "" where none did.
+    instance: str
+    # The tries made, the first included.
+    attempts: i64
+
+# How one try ended.
+variant Try
+    # The instance answered.
+    answered
+        # Its answer.
+        response: http.Response
+    # No connection was made: nothing reached the instance.
+    unreached
+        # Why, in the system's words.
+        reason: str
+    # The request went out and no answer came back.
+    broken
+        # Why.
+        reason: str
+
+# The upstream's answer to `r`, forwarded to `target` on the instances of
+# `upstream`, tried again as `route.retry` allows.
+#
+# - `gw`: the state; its directory, breakers, clock and metrics change.
+# - `upstream`: the upstream, an HTTP one.
+# - `route`: the route that took the request, its name and retry policy.
+# - `r`: the request as forwarded: its fields already end to end.
+# - `target`: the path and query sent upstream.
+# - `client`: the client's name, which orders the instances.
+#
+# Never fails: a forward that found no instance or no answer is the
+# gateway's own 502 or 503.
+function forward(@gw: state.Gateway, upstream: settings.Upstream, route: settings.Route, r: http.Request, target: str, client: str) -> Forwarded
+    match state.now(@gw)
+        .err e => return refused(
+            status: 503,
+            route: route,
+            message: f"the gateway's clock failed: {e.msg}",
+            attempts: 0
+        )
+        .ok start =>
+            match instances.endpoints_of(@gw.directory, service: upstream.service, now: start)
+                .err e => return refused(
+                    status: 503,
+                    route: route,
+                    message: f"no instance of {upstream.name} is known: {e.msg}",
+                    attempts: 0
+                )
+                .ok endpoints => return tried(
+                    @gw,
+                    upstream: upstream,
+                    route: route,
+                    r: r,
+                    target: target,
+                    order: instances.plan(endpoints, client: client),
+                    start: start
+                )
+
+# The tries of `r` on the instances of `order`, in turn, each instance at
+# most once. Where the last instance tried answered 502, 503 or 504 with no
+# other left to try, its answer is the client's.
+#
+# - `gw`: the state.
+# - `upstream`: the upstream.
+# - `route`: the route.
+# - `r`: the request.
+# - `target`: the path and query sent upstream.
+# - `order`: the instances, in the order to try them.
+# - `start`: when the first try began, by the gateway's clock.
+function tried(@gw: state.Gateway, upstream: settings.Upstream, route: settings.Route, r: http.Request, target: str, order: [instances.Endpoint], start: time.Instant) -> Forwarded
+    attempts @= 0
+    retry @= new_retry(route.retry)
+    last @= "no instance could be tried"
+    held: Forwarded? @= fail(code: NOT_FOUND, msg: "no instance answered")
+
+    for e in order
+        if attempts >= route.retry.attempts
+            break
+        now = state.now(@gw).default(start)
+
+        if !instances.allows(@gw.directory, e: e, now: now)
+            telemetry.attempted(@gw.registry, upstream: upstream.name, outcome: "skipped")
+            continue
+
+        if attempts > 0
+            match waited(@gw, retry: @retry, start: start)
+                .err stop => return refused(
+                    status: 502,
+                    route: route,
+                    message: f"{last}; no retry is left: {stop.msg}",
+                    attempts: attempts
+                )
+                .ok _ => telemetry.retried(@gw.registry, route: route.name)
+        attempts @ attempts + 1
+
+        match exchange(e, r: r, target: target, connect_ms: upstream.connect_ms)
+            .unreached u =>
+                failed(@gw, upstream: upstream, e: e, outcome: "refused")
+                last @ f"{e.target} refused the connection: {u.reason}"
+            .broken b =>
+                failed(@gw, upstream: upstream, e: e, outcome: "failed")
+                last @ f"{e.target} broke off: {b.reason}"
+
+                if !is_idempotent(r.method)
+                    return refused(status: 502, route: route, message: last, attempts: attempts)
+            .answered a =>
+                if is_unavailable(a.response.status) && is_idempotent(r.method) && attempts < route.retry.attempts
+                    failed(@gw, upstream: upstream, e: e, outcome: "failed")
+                    last @ f"{e.target} answered {a.response.status}"
+                    held @ ok(Forwarded(response: a.response, instance: e.target, attempts: attempts))
+                else
+                    instances.succeeded(@gw.directory, e: e, now: state.now(@gw).default(start))
+                    telemetry.attempted(@gw.registry, upstream: upstream.name, outcome: "ok")
+                    return Forwarded(response: a.response, instance: e.target, attempts: attempts)
+
+    return match held
+        .ok unavailable => Forwarded(response: unavailable.response, instance: unavailable.instance, attempts: attempts)
+        .err _          => refused(status: 502, route: route, message: last, attempts: attempts)
+
+# Records that `e` failed: its breaker told, and the try counted.
+#
+# - `gw`: the state.
+# - `upstream`: the upstream.
+# - `e`: the instance.
+# - `outcome`: `refused` or `failed`.
+function failed(@gw: state.Gateway, upstream: settings.Upstream, e: instances.Endpoint, outcome: str)
+    now = state.now(@gw).default(time.epoch())
+    instances.failed(@gw.directory, e: e, now: now)
+    telemetry.attempted(@gw.registry, upstream: upstream.name, outcome: outcome)
+
+# Sleeps the wait before the next try, as `retry`'s policy says.
+#
+# - `gw`: the state, whose clock and chance are read.
+# - `retry`: the loop's place; one more failure is counted in it.
+# - `start`: when the first try began.
+#
+# Fails `limit` where the policy allows no more tries, and as
+# `retries.next_wait` fails.
+function waited(@gw: state.Gateway, @retry: retries.Retry, start: time.Instant) -> ()?
+    now = state.now(@gw)?
+    spent = time.between(from: start, to: now)?
+    wait = retries.next_wait(@retry, spent: spent, fraction: clock.next_fraction(gw.chance)?)?
+    time.sleep(wait)
+    return ok()
+
+# The retry loop of a route's policy: waits from `first_ms` doubling up to
+# `longest_ms`, spread by full jitter, `attempts` tries in all.
+#
+# - `policy`: the route's retry settings, each from 1 as `loader.parse`
+#   checks them; a `longest_ms` below `first_ms` is read as `first_ms`.
+function new_retry(policy: settings.Retry) -> retries.Retry
+    first = time.nanoseconds(policy.first_ms * 1_000_000)
+    longest = time.nanoseconds(math.max_i64(a: policy.first_ms, b: policy.longest_ms) * 1_000_000)
+    plain = retries.Backoff(
+        first: first,
+        multiplier: 2.0,
+        longest: longest,
+        jitter: .none,
+        attempts: 0,
+        total: time.max_duration()
+    )
+    base = retries.backoff(first: first, multiplier: 2.0, longest: longest).default(plain)
+    spread = retries.with_jitter(base, jitter: .full).default(base)
+    return retries.new_retry(retries.with_attempts(spread, attempts: policy.attempts).default(spread))
+
+## One try
+
+# One try of `r` on the instance `e`: a connection of its own, the request
+# written closing it, the answer read whole.
+#
+# - `e`: the instance.
+# - `r`: the request.
+# - `target`: the path and query sent.
+# - `connect_ms`: how long the connection may take.
+function exchange(e: instances.Endpoint, r: http.Request, target: str, connect_ms: i64) -> Try
+    match net.connect_timeout(host: e.address, port: e.port, timeout_ms: connect_ms, deadline_ms: EXCHANGE_MS)
+        .err failure => return .unreached(reason: failure.msg)
+        .ok made =>
+            conn: net.Conn @= made
+            answer = sent(conn, r: r, target: target)
+            _ = io.close(@conn.stream).is_err()
+
+            return match answer
+                .ok response => .answered(response: response)
+                .err failure => .broken(reason: failure.msg)
+
+# `r` written on `conn` to `target` and its answer read.
+#
+# - `conn`: the connection; its owner closes it.
+# - `r`: the request.
+# - `target`: the path and query sent.
+#
+# Fails as `http.request` and `http.round_trip` fail.
+function sent(conn: net.Conn, r: http.Request, target: str) -> http.Response?
+    out: http.Request @= http.request(method: r.method, target: target)?
+    out.headers @ r.headers
+    out.body @ r.body
+    out.closing @ true
+    reader: io.Reader @= io.reader(conn.stream)
+    return http.round_trip(@reader, r: out, limits: http.default_limits())
+
+## Rules
+
+# Whether `method` is idempotent (RFC 9110 § 9.2.2): sending it twice does
+# what sending it once does.
+#
+# - `method`: the request's method, as written.
+function is_idempotent(method: str) -> bool
+    for m in ["GET", "HEAD", "OPTIONS", "TRACE", "PUT", "DELETE"]
+        if m == method
+            return true
+
+    return false
+
+# Whether `status` says the instance could not answer now (502, 503, 504),
+# so another instance might.
+#
+# - `status`: the upstream's status.
+function is_unavailable(status: i64) -> bool
+    return status == 502 || status == 503 || status == 504
+
+# The gateway's own refusal as a forward's outcome.
+#
+# - `status`: 502 or 503.
+# - `route`: the route.
+# - `message`: why.
+# - `attempts`: the tries made.
+function refused(status: i64, route: settings.Route, message: str, attempts: i64) -> Forwarded
+    return Forwarded(
+        response: replies.problem(status, route: route.name, message: message),
+        instance: "",
+        attempts: attempts
+    )
+
+test "is_idempotent: GET, PUT and DELETE are, POST and PATCH are not"
+    assert is_idempotent("GET") && is_idempotent("PUT") && is_idempotent("DELETE")
+    assert !is_idempotent("POST") && !is_idempotent("PATCH")
+    assert !is_idempotent("get")
+
+test "is_unavailable: 502 to 504 alone"
+    assert is_unavailable(502) && is_unavailable(503) && is_unavailable(504)
+    assert !is_unavailable(500) && !is_unavailable(501) && !is_unavailable(505)
+
+test "exchange: a port nothing listens on is unreached"
+    listener: net.Listener @= net.listen(host: "127.0.0.1", port: 0).must()
+    port = listener.address.port
+    net.close_listener(@listener).must()
+    e = instances.Endpoint(target: "dead", address: "127.0.0.1", port: port, priority: 1, weight: 1)
+    r = http.request(method: "GET", target: "/x").must()
+
+    match exchange(e, r: r, target: "/x", connect_ms: 1000)
+        .unreached _ => assert true
+        .broken _    => assert false
+        .answered _  => assert false
+
+test "new_retry: the first wait is the policy's first, spread by the fraction"
+    retry @= new_retry(settings.Retry(attempts: 3, first_ms: 100, longest_ms: 1000))
+    wait = retries.next_wait(@retry, spent: time.nanoseconds(0), fraction: 0.5).must()
+    assert time.to_units(wait, unit: .millisecond) == 50

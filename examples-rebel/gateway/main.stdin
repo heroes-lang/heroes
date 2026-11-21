@@ -1,0 +1,124 @@
+# The gateway's routing file for the demo: what `gateway demo` reads on its
+# standard input, and the shape of one for `gateway serve`. The demo listens
+# on a port the system chooses and asks its own DNS stand-in, so it sets
+# [listener]'s port to 0 and [discovery]'s servers to the stand-in's address.
+
+[listener]
+host = "127.0.0.1"
+port = 8443
+certificate = "gateway.pem"
+key = "gateway.key"
+
+[discovery]
+servers = ["127.0.0.1:53"]
+
+[cache]
+entries = 128
+longest_seconds = 300
+
+[clients]
+key = "x-api-key"
+
+[[upstreams]]
+name = "catalog"
+service = "_http._tcp.catalog.shop.internal"
+protocol = "http"
+connect_ms = 500
+
+[[upstreams]]
+name = "inventory"
+service = "_grpc._tcp.inventory.shop.internal"
+protocol = "grpc"
+proto = """
+syntax = "proto3";
+package shop.inventory.v1;
+service Inventory {
+  rpc GetStock(StockRequest) returns (Stock);
+  rpc WatchMovements(StockRequest) returns (stream Movement);
+}
+message StockRequest { string sku = 1; }
+message Stock { string sku = 1; int32 count = 2; string warehouse = 3; }
+message Movement { string sku = 1; int32 change = 2; string reason = 3; int32 balance = 4; }
+"""
+
+[[upstreams]]
+name = "reviews"
+service = "_http._tcp.reviews.shop.internal"
+protocol = "http"
+
+[[routes]]
+name = "catalog"
+host = "api.shop.test"
+prefix = "/catalog/"
+upstream = "catalog"
+rewrite = "/v1/"
+cache = true
+retry = { attempts = 3, first_ms = 20, longest_ms = 200 }
+rate = { burst = 20, every_ms = 100 }
+
+[[routes]]
+name = "orders"
+host = "api.shop.test"
+prefix = "/orders"
+upstream = "catalog"
+rewrite = "/v1/orders"
+retry = { attempts = 2, first_ms = 20, longest_ms = 200 }
+rate = { burst = 2, every_ms = 60000 }
+
+[[routes]]
+name = "stock"
+host = "api.shop.test"
+prefix = "/stock/"
+kind = "transcode"
+upstream = "inventory"
+method = "/shop.inventory.v1.Inventory/GetStock"
+field = "sku"
+
+[[routes]]
+name = "inventory"
+host = "api.shop.test"
+prefix = "/shop.inventory.v1.Inventory/"
+kind = "grpc"
+upstream = "inventory"
+retry = { attempts = 2 }
+
+[[routes]]
+name = "graphql"
+host = "api.shop.test"
+prefix = "/graphql"
+kind = "graphql"
+retry = { attempts = 2, first_ms = 20, longest_ms = 200 }
+
+[[routes]]
+name = "metrics"
+host = "admin.shop.test"
+prefix = "/metrics"
+kind = "metrics"
+
+[graphql]
+schema = """
+type Query {
+  stock(sku: String!): Stock
+  reviews(sku: String!): [Review!]!
+}
+type Stock {
+  sku: String!
+  count: Int!
+  warehouse: String!
+}
+type Review {
+  author: String!
+  stars: Int!
+  text: String!
+}
+"""
+
+[[graphql.fields]]
+field = "stock"
+upstream = "inventory"
+method = "/shop.inventory.v1.Inventory/GetStock"
+
+[[graphql.fields]]
+field = "reviews"
+upstream = "reviews"
+path = "/graphql"

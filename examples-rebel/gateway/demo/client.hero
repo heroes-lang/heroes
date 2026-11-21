@@ -1,0 +1,299 @@
+# The demo's client: one scripted session against the gateway over TLS,
+# trusting only the demo's own authority. First a connection on which ALPN
+# chooses HTTP/1.1: routed calls, a retry, a cache hit and a 304, a
+# transcoded gRPC call, a request no route takes. Then a connection on which
+# ALPN chooses HTTP/2, shared by plain requests and a gRPC channel: a rate
+# limit reached, a gRPC call and a gRPC stream relayed, a method refused,
+# GraphQL answered from two upstreams and refused when invalid, and the
+# gateway's own metrics. Each call is written as one or two stable lines,
+# none holding a port, a time or a key, and the session's transcript is what
+# the thread answers; then it asks the program to stop, which ends the
+# gateway's and the stand-ins' loops.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/http2
+use <rebel>/io
+use <rebel>/json
+use <rebel>/net
+use <rebel>/os
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/tls
+
+use demo/rpc
+
+## The session
+
+# The host the client asks for on the API's routes.
+constant API_HOST: str
+    "api.shop.test"
+
+# The host of the gateway's own routes.
+constant ADMIN_HOST: str
+    "admin.shop.test"
+
+# The key the client sends in `x-api-key`, which names it for the rate
+# limits.
+constant API_KEY: str
+    "demo-client"
+
+# How long a connection and each exchange on it may take.
+constant CALL_SECONDS: i64
+    10
+
+# The client's thread: the session against the gateway whose port and
+# trusted authority `arg` holds, then the program's stop asked. Answers the
+# session's transcript.
+#
+# - `arg`: the gateway's port in decimal, a line end, then the PEM of the
+#   authority to trust.
+function run(arg: str) -> str
+    lines: [str] @= []
+
+    match strings.split_once(s: arg, sep: "\n")
+        .err _ => lines @ lines.push("client: no port and authority given")
+        .ok h =>
+            match net.parse_port(h.before)
+                .err e => lines @ lines.push("client: " + e.msg)
+                .ok port =>
+                    over_h1(@lines, port: port, roots: h.after)
+                    over_h2(@lines, port: port, roots: h.after)
+
+    os.ask_stop()
+    return lines.join("\n")
+
+## HTTP/1.1
+
+# The calls made on a connection where ALPN chose HTTP/1.1.
+#
+# - `lines`: the transcript, which gains the calls' lines.
+# - `port`: the gateway's port.
+# - `roots`: the authority trusted.
+function over_h1(@lines: [str], port: i64, roots: str)
+    lines @ lines.push("== over TLS, HTTP/1.1")
+
+    match tls.connect(host: "127.0.0.1", port: port, deadline: seconds(), client: tls.Client(roots: roots, protocols: ["http/1.1"]))
+        .err e => lines @ lines.push("connect: " + e.msg)
+        .ok made =>
+            conn @= made
+            lines @ lines.push("ALPN chose " + tls.protocol_of(conn.stream).default("nothing"))
+            reader @= io.reader(conn.stream)
+            first = asked_h1(@reader, method: "GET", host: API_HOST, target: "/catalog/items", extra: [])
+            lines @ lines.push(
+                said(method: "GET", host: API_HOST, target: "/catalog/items", answer: first, detail: items_of)
+            )
+            lines @ lines.push("  the upstream saw: " + header_or(first, name: "X-Seen-Forwarded"))
+            lines @ lines.push(
+                said(method: "GET", host: API_HOST, target: "/catalog/items", answer: asked_h1(@reader, method: "GET", host: API_HOST, target: "/catalog/items", extra: []), detail: items_of)
+            )
+            lamp = asked_h1(@reader, method: "GET", host: API_HOST, target: "/catalog/items/A-100", extra: [])
+            lines @ lines.push(
+                said(method: "GET", host: API_HOST, target: "/catalog/items/A-100", answer: lamp, detail: name_of)
+            )
+            tag = header_or(lamp, name: "ETag")
+            again = asked_h1(
+                @reader,
+                method: "GET",
+                host: API_HOST,
+                target: "/catalog/items/A-100",
+                extra: [http.Header(name: "If-None-Match", value: tag)]
+            )
+            lines @ lines.push(
+                said(method: "GET", host: API_HOST, target: "/catalog/items/A-100 (If-None-Match)", answer: again, detail: nothing)
+            )
+            lines @ lines.push(
+                said(method: "GET", host: API_HOST, target: "/stock/A-100", answer: asked_h1(@reader, method: "GET", host: API_HOST, target: "/stock/A-100", extra: []), detail: body_text)
+            )
+            lines @ lines.push(
+                said(method: "GET", host: API_HOST, target: "/nowhere", answer: asked_h1(@reader, method: "GET", host: API_HOST, target: "/nowhere", extra: []), detail: error_of)
+            )
+            _ = io.close(@conn.stream).is_err()
+
+# The answer to one request on an HTTP/1.1 connection, sent with the
+# client's key.
+#
+# - `reader`: the connection's reader.
+# - `method`: the method.
+# - `host`: the host asked for.
+# - `target`: the path and query.
+# - `extra`: more fields to send.
+#
+# Fails as `http.round_trip` fails.
+function asked_h1(@reader: io.Reader, method: str, host: str, target: str, extra: [http.Header]) -> http.Response?
+    r @= http.request(method: method, target: target)?
+    r.headers @ headers_for(host: host, extra: extra)
+    return http.round_trip(@reader, r: r, limits: http.default_limits())
+
+# The fields every request of the session sends: its host and the client's
+# key, then `extra`.
+#
+# - `host`: the host asked for.
+# - `extra`: more fields.
+function headers_for(host: str, extra: [http.Header]) -> [http.Header]
+    out @= [http.Header(name: "Host", value: host), http.Header(name: "x-api-key", value: API_KEY)]
+
+    for h in extra
+        out @ out.push(h)
+
+    return out
+
+## HTTP/2
+
+# The calls made on a connection where ALPN chose HTTP/2: plain requests and
+# gRPC calls on one connection.
+#
+# - `lines`: the transcript.
+# - `port`: the gateway's port.
+# - `roots`: the authority trusted.
+function over_h2(@lines: [str], port: i64, roots: str)
+    lines @ lines.push("== over TLS, HTTP/2")
+
+    match http2.connect(host: "127.0.0.1", port: port, deadline: seconds(), roots: roots, options: http2.default_options())
+        .err e => lines @ lines.push("connect: " + e.msg)
+        .ok made =>
+            lines @ lines.push("ALPN chose h2")
+            channel @= rpc.channel_over(made, authority: API_HOST)
+            lines @ lines.push(
+                said(method: "GET", host: API_HOST, target: "/catalog/items/B-200", answer: asked_h2(@channel.conn, method: "GET", host: API_HOST, target: "/catalog/items/B-200", body: ""), detail: name_of)
+            )
+
+            for _ in range(from: 0, to: 3)
+                order = asked_h2(
+                    @channel.conn,
+                    method: "POST",
+                    host: API_HOST,
+                    target: "/orders",
+                    body: "{\"sku\": \"A-100\", \"quantity\": 1}"
+                )
+                lines @ lines.push(
+                    said(method: "POST", host: API_HOST, target: "/orders", answer: order, detail: order_of)
+                )
+
+            rpc.calls(@lines, @channel)
+            metrics = asked_h2(@channel.conn, method: "GET", host: ADMIN_HOST, target: "/metrics", body: "")
+            lines @ lines.push(
+                said(method: "GET", host: ADMIN_HOST, target: "/metrics", answer: metrics, detail: nothing)
+            )
+
+            for line in samples_of(metrics)
+                lines @ lines.push("  " + line)
+
+            rpc.closed(@channel)
+
+# The answer to one request on an HTTP/2 connection.
+#
+# - `conn`: the connection.
+# - `method`: the method.
+# - `host`: the host asked for, sent as `:authority`.
+# - `target`: the path and query.
+# - `body`: a JSON body, "" for none.
+#
+# Fails as `http.round_trip_h2` fails.
+function asked_h2(@conn: http2.Conn, method: str, host: str, target: str, body: str) -> http.Response?
+    r @= http.request(method: method, target: "https://" + host + target)?
+    r.headers @ headers_for(host: host, extra: [])
+
+    if body != ""
+        r @ http.with_body(r, content_type: "application/json", body: bytes.from_text(body))
+    return http.round_trip_h2(@conn, r: r, limits: http.default_limits())
+
+## Lines
+
+# One call's line: what was asked, the status, and what the gateway said of
+# it in its fields (the route, the cache, the instance and the tries, the
+# tokens left, a `Retry-After`), then what `detail` reads of the answer.
+#
+# - `method`: the method.
+# - `host`: the host asked for.
+# - `target`: the path, as the line shows it.
+# - `answer`: the answer, or why none came.
+# - `detail`: what of the answer's body the line shows.
+function said(method: str, host: str, target: str, answer: http.Response?, detail: (function(http.Response) -> str)) -> str
+    match answer
+        .err e => return f"{method} {host}{target} -> failed: {e.msg}"
+        .ok a =>
+            parts @= [f"{a.status}"]
+
+            for name in ["X-Gateway-Route", "X-Cache", "Age", "X-Gateway-Upstream", "X-Gateway-Attempts", "X-RateLimit-Remaining", "Retry-After"]
+                match http.value_of(a.headers, name: name)
+                    .ok v  => parts @ parts.push(strings.to_lower_ascii(name) + " " + v)
+                    .err _ => _ = 0
+
+            shown = detail(a)
+
+            if shown != ""
+                parts @ parts.push(shown)
+            return f"{method} {host}{target} -> " + parts.join(", ")
+
+# A field of `answer`, "none" where it has none or no answer came.
+#
+# - `answer`: the answer.
+# - `name`: the field's name.
+function header_or(answer: http.Response?, name: str) -> str
+    return match answer
+        .err _ => "none"
+        .ok a  => http.value_of(a.headers, name: name).default("none")
+
+# How many items a catalog list holds.
+#
+# - `a`: the answer.
+function items_of(a: http.Response) -> str
+    v = http.json_of(a).default(.null_value)
+    count = json.items_of(json.member(v, key: "items").default(.null_value)).default([]).len()
+    return f"{count} items"
+
+# The name an item answer holds.
+#
+# - `a`: the answer.
+function name_of(a: http.Response) -> str
+    return json.text_of(json.member(http.json_of(a).default(.null_value), key: "name").default(.null_value)).default("")
+
+# The order number an order answer holds, or its error.
+#
+# - `a`: the answer.
+function order_of(a: http.Response) -> str
+    v = http.json_of(a).default(.null_value)
+
+    return match json.member(v, key: "order")
+        .ok o  => json.text_of(o).default("")
+        .err _ => error_of(a)
+
+# The error a refusal's JSON body names.
+#
+# - `a`: the answer.
+function error_of(a: http.Response) -> str
+    return json.text_of(json.member(http.json_of(a).default(.null_value), key: "error").default(.null_value)).default(
+        ""
+    )
+
+# The body, as text.
+#
+# - `a`: the answer.
+function body_text(a: http.Response) -> str
+    return strings.trim(http.text_of(a).default(""))
+
+# Nothing of the answer's body, for a call whose status and fields say all.
+function nothing(_: http.Response) -> str
+    return ""
+
+# The metric lines of the gateway's own families, comments and histogram
+# buckets left out: what a reader of the transcript checks against the
+# calls above.
+#
+# - `answer`: the metrics answer.
+function samples_of(answer: http.Response?) -> [str]
+    out: [str] @= []
+
+    match answer
+        .err _ => return out
+        .ok a =>
+            for line in strings.lines(http.text_of(a).default(""))
+                if strings.has_prefix(s: line, prefix: "gateway_") && !strings.contains(s: line, substr: "_bucket{")
+                    out @ out.push(line)
+
+    return out
+
+# How long a connection and each exchange may take.
+function seconds() -> time.Duration
+    return time.seconds(CALL_SECONDS).default(time.max_duration())

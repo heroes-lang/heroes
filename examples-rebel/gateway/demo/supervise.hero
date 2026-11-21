@@ -1,0 +1,276 @@
+# The demo, run by `gateway demo` with the routing file on its standard
+# input: everything a gateway stands among, started on loopback in one
+# process and stopped at the end. The supervisor makes the gateway's
+# certificate, starts the DNS stand-in and the three upstreams on threads of
+# their own (each tells its port by `notify`), registers the upstreams'
+# instances in DNS (one of the catalog's instances a port where nothing
+# listens, so the gateway meets a refused connection and retries), then
+# serves the gateway on this thread with a fixed clock and a fixed chance
+# while the client's thread runs its session. The transcript is the
+# client's lines, then what each service served, every one free of ports,
+# times and keys.
+
+use <rebel>/dns
+use <rebel>/io
+use <rebel>/net
+use <rebel>/os
+use <rebel>/threads
+use <rebel>/time
+use <rebel>/tls
+
+use config/loader
+use config/settings
+use core/clock
+use core/state
+use demo/client
+use demo/notify
+use demo/register
+use listen/accept
+use listen/certs
+use standins/catalog
+use standins/inventory
+use standins/nameserver
+use standins/reviews
+
+## The demo
+
+# The zone the services are registered in.
+constant ZONE: str
+    "shop.internal"
+
+# The fixed clock's first moment: 2026-01-01T00:00:00Z, in seconds since the
+# epoch. Nothing printed holds it; the cache's ages and the buckets' refills
+# are measured from it.
+constant START_SECONDS: i64
+    1_767_225_600
+
+# Runs the demo and answers the program's exit code: 0 where every part ran.
+function run() -> i64
+    match os.catch_stop()
+        .err e =>
+            print("demo: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    match io.read_all_text(io.stdin())
+        .err e =>
+            print("demo: the routing file could not be read from the standard input: " + e.msg)
+            return 1
+        .ok text =>
+            match loader.parse(text)
+                .err e =>
+                    print("demo: the routing file: " + e.msg)
+                    return 1
+                .ok s => return with_settings(s)
+
+# The demo once the routing file is read: the certificate made, the services
+# started, and the gateway served.
+#
+# - `s`: the routing file.
+function with_settings(s: settings.Settings) -> i64
+    subject = certs.Subject(
+        common_name: "gateway.shop.test",
+        organization: "Shop Demo",
+        names: ["localhost"],
+        addresses: [net.loopback_v4()]
+    )
+
+    match certs.make_identity(subject, host: "127.0.0.1", now: time.now().default(time.epoch()), days: 30)
+        .err e =>
+            print("demo: the certificate: " + e.msg)
+            return 1
+        .ok made =>
+            print("== the gateway's certificate, made with x509's pieces and checked by x509")
+            print(f"subject {made.checked.subject}, issued by {made.checked.issuer}")
+            print("for " + made.checked.names.join(", ") + "; its chain verified for a TLS server at 127.0.0.1")
+
+            match net.listen(host: "127.0.0.1", port: 0)
+                .err e =>
+                    print("demo: the control port: " + e.msg)
+                    return 1
+                .ok opened =>
+                    control @= opened
+                    code = with_control(s, identity: made.identity, control: control)
+                    _ = net.close_listener(@control).is_err()
+                    return code
+
+# A service started on its thread, and the port it said it listens on.
+record Started
+    # The thread, owed its wait.
+    thread: threads.TextThread
+    # The port its notification said, 0 where none came.
+    port: i64
+
+# The services started, registered, and the gateway served while the client
+# runs; every thread started is waited for, whatever failed.
+#
+# - `s`: the routing file.
+# - `identity`: the gateway's certificate.
+# - `control`: the supervisor's control listener.
+function with_control(s: settings.Settings, identity: certs.Identity, control: net.Listener) -> i64
+    print("== services, started on loopback and told ready")
+    started: [Started] @= []
+    failed @= false
+
+    for service in ["dns", "catalog", "inventory", "reviews"]
+        match started_service(service, control: control)
+            .err e =>
+                print(f"demo: {service}: {e.msg}")
+                failed @ true
+                break
+            .ok one =>
+                started @ started.push(one)
+
+                if one.port == 0
+                    print(f"demo: {service} never said it was ready")
+                    failed @ true
+                    break
+                print(f"{service}: ready")
+
+    code @= 1
+
+    if !failed
+        code @ served(s, identity: identity, started: started)
+    os.ask_stop()
+
+    for one in started
+        thread @= one.thread
+        print(threads.wait_text(@thread))
+
+    return code
+
+# One service started on a thread of its own, and its notification awaited:
+# the port it said, or 0 where none came or another service spoke, the
+# thread owed its wait either way.
+#
+# - `service`: `dns`, `catalog`, `inventory` or `reviews`.
+# - `control`: the supervisor's control listener.
+#
+# Fails where the thread cannot start.
+function started_service(service: str, control: net.Listener) -> Started?
+    body = match service
+        "dns"       => nameserver.run
+        "catalog"   => catalog.run
+        "inventory" => inventory.run
+        _           => reviews.run
+
+    thread = threads.spawn_text(body: body, arg: f"{control.address.port}")?
+
+    match notify.await_ready(control)
+        .err _ => return ok(Started(thread: thread, port: 0))
+        .ok r =>
+            if r.service != service
+                return ok(Started(thread: thread, port: 0))
+            return ok(Started(thread: thread, port: r.port))
+
+# The upstreams registered in DNS, then the gateway served until the client
+# asks the stop.
+#
+# - `s`: the routing file.
+# - `identity`: the gateway's certificate.
+# - `started`: the services, `dns` first.
+function served(s: settings.Settings, identity: certs.Identity, started: [Started]) -> i64
+    dns_address = f"127.0.0.1:{started[0].port}"
+    print("== upstreams registered in DNS by RFC 2136 updates")
+
+    match registered(dns_address, catalog_port: started[1].port, inventory_port: started[2].port, reviews_port: started[3].port)
+        .err e =>
+            print("demo: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    local = settings.Settings(
+        listener: settings.Listener(host: "127.0.0.1", port: 0, certificate: "", key: ""),
+        discovery: settings.Discovery(servers: [dns_address]),
+        cache: s.cache,
+        client_header: s.client_header,
+        upstreams: s.upstreams,
+        routes: s.routes,
+        graphql: s.graphql
+    )
+    start = time.from_unix(whole_seconds: START_SECONDS, extra_nanoseconds: 0).default(time.epoch())
+    ticks = clock.fixed_from(start: start, step: time.milliseconds(1).default(time.nanoseconds(1_000_000))).default(
+        .wall
+    )
+    spread = clock.fixed_chance(0.5).default(.drawn)
+
+    match state.new(local, ticks: ticks, spread: spread)
+        .err e =>
+            print("demo: " + e.msg)
+            return 1
+        .ok made =>
+            gw @= made
+            return gateway_served(@gw, identity: identity)
+
+# The gateway's listener opened, the client started against it, and the
+# gateway served on this thread until the client asks the stop.
+#
+# - `gw`: the gateway's state.
+# - `identity`: the gateway's certificate.
+function gateway_served(@gw: state.Gateway, identity: certs.Identity) -> i64
+    match accept.listening(host: "127.0.0.1", port: 0, chain: identity.chain, key: identity.key)
+        .err e =>
+            print("demo: the gateway's listener: " + e.msg)
+            return 1
+        .ok opened =>
+            listener @= opened
+
+            match threads.spawn_text(body: client.run, arg: f"{listener.port}\n{identity.roots}")
+                .err e =>
+                    _ = tls.close_listener(@listener).is_err()
+                    print("demo: the client: " + e.msg)
+                    return 1
+                .ok spawned =>
+                    session @= spawned
+                    done = accept.serve(@gw, listener: listener)
+                    _ = tls.close_listener(@listener).is_err()
+                    print(threads.wait_text(@session))
+                    print("== what each service served")
+                    print(
+                        f"gateway: connections {done.connections}, requests {done.requests}, handshakes failed {done.failed}"
+                    )
+                    return 0
+
+# The three upstreams' instances registered with the DNS stand-in at
+# `dns_address`: the catalog's first instance a port nothing listens on, at a
+# lower priority than its live one; the reviews' two names one instance.
+#
+# - `dns_address`: the stand-in's address and port.
+# - `catalog_port`: the catalog's port.
+# - `inventory_port`: the inventory's port.
+# - `reviews_port`: the reviews' port.
+#
+# Fails as `register.register` and `dns.resolver` fail.
+function registered(dns_address: str, catalog_port: i64, inventory_port: i64, reviews_port: i64) -> ()?
+    resolver = dns.resolver([dns_address])?
+    dead = closed_port()?
+    catalog_instances = [
+        register.Instance(target: "catalog-0.shop.internal", port: dead, priority: 10, weight: 100)
+        register.Instance(target: "catalog-1.shop.internal", port: catalog_port, priority: 20, weight: 100)
+    ]
+    register.register(resolver, origin: ZONE, service: "_http._tcp.catalog.shop.internal", instances: catalog_instances)?
+    print(
+        "_http._tcp.catalog.shop.internal: catalog-0 (priority 10, a port where nothing listens), catalog-1 (priority 20)"
+    )
+    inventory_instances = [
+        register.Instance(target: "inventory-1.shop.internal", port: inventory_port, priority: 10, weight: 100)
+    ]
+    register.register(resolver, origin: ZONE, service: "_grpc._tcp.inventory.shop.internal", instances: inventory_instances)?
+    print("_grpc._tcp.inventory.shop.internal: inventory-1")
+    reviews_instances = [
+        register.Instance(target: "reviews-a.shop.internal", port: reviews_port, priority: 10, weight: 50)
+        register.Instance(target: "reviews-b.shop.internal", port: reviews_port, priority: 10, weight: 50)
+    ]
+    register.register(resolver, origin: ZONE, service: "_http._tcp.reviews.shop.internal", instances: reviews_instances)?
+    print("_http._tcp.reviews.shop.internal: reviews-a and reviews-b (weights 50 and 50)")
+    return ok()
+
+# A port on 127.0.0.1 where nothing listens: one the system gave a listener,
+# which is then closed.
+#
+# Fails as `net.listen` and `net.close_listener` fail.
+function closed_port() -> i64?
+    listener @= net.listen(host: "127.0.0.1", port: 0)?
+    port = listener.address.port
+    net.close_listener(@listener)?
+    return ok(port)

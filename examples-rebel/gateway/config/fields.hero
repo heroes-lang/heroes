@@ -1,0 +1,233 @@
+# Typed reads of a TOML table's members, each failure a message that names
+# the key as the routing file writes it (`routes[2].rate.burst`), so a person
+# who wrote the file finds the line to fix. `toml` reads the document into a
+# tree and fills no record (the language has no reflection); this module is
+# the gateway's own reader of that tree.
+
+use <rebel>/toml
+
+## Codes
+
+# The code of a member of the wrong type or out of its range.
+constant INVALID: str
+    "invalid"
+
+## Members
+
+# The members of `v`, a table.
+#
+# - `v`: the value read.
+# - `place`: where `v` stands in the file, for the message.
+#
+# Fails `invalid` where `v` is no table.
+function table_of(v: toml.Value, place: str) -> {str: toml.Value}?
+    return match v
+        .table t => ok(t.members)
+        .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ => fail(
+            code: INVALID,
+            msg: f"{place} is a table, and the file writes {kind_of(v)}"
+        )
+
+# The text under `key` in `members`, or `fallback` where the file writes none.
+#
+# - `members`: the table's members.
+# - `key`: the member's key.
+# - `place`: where the table stands, for the message.
+# - `fallback`: the value of an absent member.
+#
+# Fails `invalid` where the member is not a string.
+function text_or(members: {str: toml.Value}, key: str, place: str, fallback: str) -> str?
+    match members[key]
+        .err _ => return ok(fallback)
+        .ok v =>
+            return match v
+                .text t => ok(t.v)
+                .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ => fail(
+                    code: INVALID,
+                    msg: f"{place}.{key} is a string, and the file writes {kind_of(v)}"
+                )
+
+# The text under `key` in `members`, which the file must write.
+#
+# - `members`: the table's members.
+# - `key`: the member's key.
+# - `place`: where the table stands, for the message.
+#
+# Fails `invalid` where the member is absent, empty or not a string.
+function text_of(members: {str: toml.Value}, key: str, place: str) -> str?
+    found = text_or(members, key: key, place: place, fallback: "")?
+
+    if found == ""
+        return fail(code: INVALID, msg: f"{place}.{key} is missing, and a routing file must write it")
+    return ok(found)
+
+# The integer under `key` in `members`, from `least` to `most`, or `fallback`
+# where the file writes none.
+#
+# - `members`: the table's members.
+# - `key`: the member's key.
+# - `place`: where the table stands, for the message.
+# - `fallback`: the value of an absent member, which is not range-checked.
+# - `least`: the smallest value the file may write.
+# - `most`: the largest value the file may write.
+#
+# Fails `invalid` where the member is not an integer or is outside the range.
+function int_or(members: {str: toml.Value}, key: str, place: str, fallback: i64, least: i64, most: i64) -> i64?
+    match members[key]
+        .err _ => return ok(fallback)
+        .ok v =>
+            match v
+                .integer n =>
+                    if n.v < least || n.v > most
+                        return fail(
+                            code: INVALID,
+                            msg: f"{place}.{key} is {least} to {most}, and the file writes {n.v}"
+                        )
+                    return ok(n.v)
+                .text _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ => return fail(
+                    code: INVALID,
+                    msg: f"{place}.{key} is an integer, and the file writes {kind_of(v)}"
+                )
+
+# The boolean under `key` in `members`, or `fallback` where the file writes
+# none.
+#
+# - `members`: the table's members.
+# - `key`: the member's key.
+# - `place`: where the table stands, for the message.
+# - `fallback`: the value of an absent member.
+#
+# Fails `invalid` where the member is not a boolean.
+function bool_or(members: {str: toml.Value}, key: str, place: str, fallback: bool) -> bool?
+    match members[key]
+        .err _ => return ok(fallback)
+        .ok v =>
+            return match v
+                .boolean b => ok(b.v)
+                .text _ | .integer _ | .float _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ => fail(
+                    code: INVALID,
+                    msg: f"{place}.{key} is true or false, and the file writes {kind_of(v)}"
+                )
+
+# The strings of the array under `key` in `members`, none where the file
+# writes none.
+#
+# - `members`: the table's members.
+# - `key`: the member's key.
+# - `place`: where the table stands, for the message.
+#
+# Fails `invalid` where the member is not an array of strings.
+function texts_of(members: {str: toml.Value}, key: str, place: str) -> [str]?
+    out: [str] @= []
+
+    match members[key]
+        .err _ => return ok(out)
+        .ok v =>
+            match v
+                .array a =>
+                    for item in a.items
+                        out @ out.push(item_text(item, place: f"{place}.{key}")?)
+                .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ => return fail(
+                    code: INVALID,
+                    msg: f"{place}.{key} is an array of strings, and the file writes {kind_of(v)}"
+                )
+
+    return ok(out)
+
+# The text of `item`, one element of an array of strings.
+#
+# - `item`: the element.
+# - `place`: where the array stands, for the message.
+#
+# Fails `invalid` where `item` is not a string.
+function item_text(item: toml.Value, place: str) -> str?
+    return match item
+        .text t => ok(t.v)
+        .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ => fail(
+            code: INVALID,
+            msg: f"{place} holds strings, and the file writes {kind_of(item)} in it"
+        )
+
+# The tables of the array of tables under `key` in `members` (`[[routes]]`),
+# none where the file writes none.
+#
+# - `members`: the document's or a table's members.
+# - `key`: the array's key.
+#
+# Fails `invalid` where the member is not an array of tables.
+function tables_of(members: {str: toml.Value}, key: str) -> [{str: toml.Value}]?
+    out: [{str: toml.Value}] @= []
+
+    match members[key]
+        .err _ => return ok(out)
+        .ok v =>
+            match v
+                .array a =>
+                    for i in range(from: 0, to: a.items.len())
+                        out @ out.push(table_of(a.items[i], place: f"{key}[{i}]")?)
+                .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ => return fail(
+                    code: INVALID,
+                    msg: f"{key} is an array of tables ([[{key}]]), and the file writes {kind_of(v)}"
+                )
+
+    return ok(out)
+
+# The table under `key` in `members`, an empty one where the file writes none.
+#
+# - `members`: the enclosing table's members.
+# - `key`: the member's key.
+# - `place`: where the enclosing table stands, "" for the document.
+#
+# Fails `invalid` where the member is not a table.
+function section_of(members: {str: toml.Value}, key: str, place: str) -> {str: toml.Value}?
+    full = if place == ""
+        key
+    else
+        f"{place}.{key}"
+
+    return match members[key]
+        .err _ => ok({})
+        .ok v  => table_of(v, place: full)
+
+# What a TOML value is, in the words of TOML's own specification.
+#
+# - `v`: the value.
+function kind_of(v: toml.Value) -> str
+    return match v
+        .text _            => "a string"
+        .integer _         => "an integer"
+        .float _           => "a float"
+        .boolean _         => "a boolean"
+        .date_time _       => "an offset date-time"
+        .local_date_time _ => "a local date-time"
+        .local_date _      => "a local date"
+        .local_time _      => "a local time"
+        .array _           => "an array"
+        .table _           => "a table"
+
+test "int_or: absent, in range, out of range and of another type"
+    members = table_of(toml.parse("a = 5\nb = 70000\nc = \"x\"").must(), place: "t").must()
+    assert int_or(members, key: "z", place: "t", fallback: 9, least: 1, most: 10).must() == 9
+    assert int_or(members, key: "a", place: "t", fallback: 9, least: 1, most: 10).must() == 5
+    assert int_or(members, key: "b", place: "t", fallback: 9, least: 1, most: 65535).is_err()
+
+    match int_or(members, key: "c", place: "t", fallback: 9, least: 1, most: 10)
+        .ok _  => assert false
+        .err e => assert e.msg == "t.c is an integer, and the file writes a string"
+
+test "text_of: a member the file must write is refused when absent or empty"
+    members = table_of(toml.parse("a = \"\"\nb = \"x\"").must(), place: "t").must()
+    assert text_of(members, key: "a", place: "t").is_err()
+    assert text_of(members, key: "missing", place: "t").is_err()
+    assert text_of(members, key: "b", place: "t").must() == "x"
+
+test "tables_of: an array of tables, none, and a key that is no array"
+    doc = table_of(toml.parse("[[r]]\na = 1\n[[r]]\na = 2\n[s]\nb = 1").must(), place: "").must()
+    assert tables_of(doc, key: "r").must().len() == 2
+    assert tables_of(doc, key: "none").must().len() == 0
+    assert tables_of(doc, key: "s").is_err()
+
+test "texts_of: strings kept in order, a number among them refused"
+    doc = table_of(toml.parse("a = [\"x\", \"y\"]\nb = [\"x\", 1]").must(), place: "").must()
+    assert texts_of(doc, key: "a", place: "t").must() == ["x", "y"]
+    assert texts_of(doc, key: "b", place: "t").is_err()

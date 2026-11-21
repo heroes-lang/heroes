@@ -1,0 +1,90 @@
+# Registering the demo's services in DNS, as an orchestrator registers a
+# service's instances: for each instance an SRV record under the service's
+# name and an A record for its target, sent to the DNS stand-in as one
+# dynamic update (RFC 2136) per service. The gateway then finds the
+# services only by asking DNS, as it would find them in production.
+
+use <rebel>/dns
+use <rebel>/net
+
+use standins/zone
+
+## Codes
+
+# The code of an update the DNS server refused.
+constant FAILED: str
+    "failed"
+
+## Instances
+
+# One instance of a service, as its SRV record names it.
+record Instance
+    # Its target's name, `catalog-1.shop.internal`.
+    target: str
+    # Its port.
+    port: i64
+    # Its SRV priority: the lowest is tried first.
+    priority: i64
+    # Its SRV weight among the instances of one priority.
+    weight: i64
+
+# The records registering `instances` under `service`: an SRV record each,
+# and each target's A record on the IPv4 loopback address.
+#
+# - `service`: the SRV name, `_http._tcp.catalog.shop.internal`.
+# - `instances`: the instances.
+# - `ttl`: the records' time to live, in seconds.
+function records_of(service: str, instances: [Instance], ttl: i64) -> [dns.Record]
+    out: [dns.Record] @= []
+
+    for i in instances
+        out @ out.push(
+            dns.Record(name: absolute(service), class_code: dns.CLASS_IN, ttl: ttl, data: .srv(priority: i.priority, weight: i.weight, port: i.port, target: absolute(i.target)))
+        )
+        out @ out.push(
+            dns.Record(name: absolute(i.target), class_code: dns.CLASS_IN, ttl: ttl, data: .a(address: net.loopback_v4()))
+        )
+
+    return out
+
+# `name` with its last dot.
+#
+# - `name`: a domain name.
+function absolute(name: str) -> str
+    if name.len() > 0 && name[name.len() - 1] == '.'
+        return name
+    return name + "."
+
+## Sending
+
+# `instances` registered under `service` in the zone `origin` of the DNS
+# server `resolver` asks.
+#
+# - `resolver`: the resolver asking the DNS server.
+# - `origin`: the zone's name.
+# - `service`: the SRV name.
+# - `instances`: the instances.
+#
+# Fails `failed` where the server answers another code than success, and
+# as `dns.exchange` fails.
+function register(resolver: dns.Resolver, origin: str, service: str, instances: [Instance]) -> ()?
+    update = zone.update_adding(origin: absolute(origin), records: records_of(service, instances: instances, ttl: 30))
+    reply = dns.exchange(resolver, m: update)?
+
+    if reply.rcode != dns.RCODE_NO_ERROR
+        return fail(code: FAILED, msg: f"the DNS server refused the update of {service}: {dns.rcode_name(reply.rcode)}")
+    return ok()
+
+test "records_of: an SRV and an A record for each instance, names absolute"
+    records = records_of(
+        "_http._tcp.a.test",
+        instances: [Instance(target: "a-1.a.test", port: 80, priority: 10, weight: 5)],
+        ttl: 30
+    )
+    assert records.len() == 2
+    assert records[0].name == "_http._tcp.a.test."
+    assert dns.type_of(records[0]) == dns.TYPE_SRV && dns.type_of(records[1]) == dns.TYPE_A
+
+test "absolute: a dot added once"
+    assert absolute("a.test") == "a.test."
+    assert absolute("a.test.") == "a.test."
