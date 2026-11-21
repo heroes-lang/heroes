@@ -127,7 +127,7 @@ function flate(data: [u8], limit: i64) -> [u8]?
 
         input @ []
 
-        if compress.is_done(d)
+        if compress.is_decompressor_ended(d)
             break
 
     if got.len() == 0 && data.len() > 0

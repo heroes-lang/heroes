@@ -94,7 +94,7 @@ function next_chunk(@r: Reading) -> [u8]?
             if r.m.method == zip_read.DEFLATED
                 out @ compress.decompress_part(@r.d, data: [], most: r.m.size + 1)?
 
-                if out.len() == 0 && !compress.is_done(r.d)
+                if out.len() == 0 && !compress.is_decompressor_ended(r.d)
                     return codes.invalid_at(
                         at: r.at,
                         why: f"the deflated data of \"{r.m.name}\" ends before its stream does"

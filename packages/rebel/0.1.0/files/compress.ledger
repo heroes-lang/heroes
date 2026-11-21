@@ -74,18 +74,18 @@ capability compress/dictionary  a preset dictionary written with and read with
   note    raw and zlib only, as in both; gzip refuses one. A zlib stream that needs one names its Adler-32, and a missing or different dictionary fails `invalid`; a dictionary given to a zlib stream that names none is not used, as Go does
 
 capability compress/in-memory  a stream compressed piece by piece without a stream to write to
-  heroes  compress.Compressor, compress.compressor, compress.compress_part, compress.compress_end, compress.is_ended
+  heroes  compress.Compressor, compress.compressor, compress.compress_part, compress.compress_end, compress.is_compressor_ended
   go      -
   rust    -
   python  zlib.compressobj, Compress.compress, Compress.flush, zlib.Z_NO_FLUSH, zlib.Z_FINISH
-  note    Go writes into a buffer through its writer; Heroes has no stream held in memory, so this is the engine the `Writer` uses, and a program may hold it alone. Fed after its end it aborts, which `is_ended` asks first
+  note    Go writes into a buffer through its writer; Heroes has no stream held in memory, so this is the engine the `Writer` uses, and a program may hold it alone. Fed after its end it aborts, which `is_compressor_ended` asks first
 
 capability compress/in-memory-read  a stream decompressed piece by piece, at most so many bytes a call
-  heroes  compress.Decompressor, compress.decompressor, compress.decompress_part, compress.is_done
+  heroes  compress.Decompressor, compress.decompressor, compress.decompress_part, compress.is_decompressor_ended
   go      -
   rust    -
   python  zlib.decompressobj, Decompress.decompress, Decompress.decompress(max_length=), Decompress.flush, Decompress.unconsumed_tail, Decompress.eof
-  note    the input not yet read is held inside, so there is no unconsumed tail to hand back; `is_done` is Python's `eof`, true only once every byte is handed out
+  note    the input not yet read is held inside, so there is no unconsumed tail to hand back; `is_decompressor_ended` is Python's `eof`, true only once every byte is handed out
 
 capability compress/flush  what was written made readable before the end
   heroes  compress.compress_flush, compress.flush, compress.Flush

@@ -125,7 +125,7 @@ function inflated(@d: Deflating, data: [u8] lent, first: bool, last: bool, most:
         feed @ []
 
         if piece.len() == 0
-            if !compress.is_done(d.readers[0])
+            if !compress.is_decompressor_ended(d.readers[0])
                 break
             rest = compress.unused(d.readers[0])
             d.readers @ [renewed(d)]

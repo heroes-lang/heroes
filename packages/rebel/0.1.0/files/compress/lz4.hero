@@ -43,8 +43,8 @@ use io
 # offset of 0, a checksum or size that does not match, a block or frame cut
 # short, bytes after the last frame), the message naming the byte; and of
 # options and arguments out of their range. Every function fails with it but
-# `defaults`, `compress_part`, `compress_flush`, `is_ended`, `decompressor`,
-# `is_done`, `unused` and `reader`.
+# `defaults`, `compress_part`, `compress_flush`, `is_compressor_ended`, `decompressor`,
+# `is_decompressor_ended`, `unused` and `reader`.
 constant INVALID: str
     codes.INVALID
 
@@ -527,7 +527,7 @@ function with_size(c: Compressor, size: u64) -> Compressor?
 # - `data`: the next bytes to compress; none answer the header alone the
 #   first time, and nothing after.
 #
-# Aborts where `c` has ended, which `is_ended` asks.
+# Aborts where `c` has ended, which `is_compressor_ended` asks.
 #
 # See also `compress_flush` and `compress_end`.
 function compress_part(@c: Compressor, data: [u8]) -> [u8]
@@ -559,7 +559,7 @@ function compress_flush(@c: Compressor) -> [u8]
 # number of bytes; `c` is not ended then, and may be fed the rest. Aborts
 # where `c` has ended already.
 #
-# See also `compress_part` and `is_ended`.
+# See also `compress_part` and `is_compressor_ended`.
 function compress_end(@c: Compressor) -> [u8]?
     assert !c.state.ended
     out: [u8] @= []
@@ -571,7 +571,7 @@ function compress_end(@c: Compressor) -> [u8]?
 # - `c`: the compressor asked.
 #
 # See also `compress_end`.
-function is_ended(c: Compressor) -> bool
+function is_compressor_ended(c: Compressor) -> bool
     return c.state.ended
 
 # A decompressor fed piece by piece, holding the input not yet read, the 64
@@ -615,14 +615,14 @@ function with_dictionary(d: Decompressor, dictionary: [u8]) -> Decompressor?
 # - `data`: the next compressed bytes; none to take more of what is held.
 # - `most`: the most bytes answered, 0 or more.
 #
-# The frame is whole once `is_done` says so; an input that ends before is
+# The frame is whole once `is_decompressor_ended` says so; an input that ends before is
 # cut short, which `decompress` and `read` tell and this cannot.
 #
 # Fails `invalid` where the input is not LZ4 or `most` is below 0, and
 # `limit` where the frame would pass the decompressor's limit; after a
 # failure every call fails the same way.
 #
-# See also `is_done`, `unused` and `read`.
+# See also `is_decompressor_ended`, `unused` and `read`.
 function decompress_part(@d: Decompressor, data: [u8], most: i64) -> [u8]?
     if most < 0
         return fail(code: INVALID, msg: f"at most {most} bytes, where a count is 0 or more")
@@ -631,7 +631,7 @@ function decompress_part(@d: Decompressor, data: [u8], most: i64) -> [u8]?
     out = unframer.take(@d.state, most: most)
 
     # Everything held was handed out: one more step reads the frame's end
-    # where it comes next, so that `is_done` can say so. A failure found
+    # where it comes next, so that `is_decompressor_ended` can say so. A failure found
     # there is kept and answered by the next call, not instead of `out`.
     if unframer.pending_count(d.state) == 0
         match frames.run(@d.state, want: 1)
@@ -646,7 +646,7 @@ function decompress_part(@d: Decompressor, data: [u8], most: i64) -> [u8]?
 # - `d`: the decompressor asked.
 #
 # See also `decompress_part`.
-function is_done(d: Decompressor) -> bool
+function is_decompressor_ended(d: Decompressor) -> bool
     return unframer.is_done(d.state)
 
 # The bytes fed to `d` after the end of its frame: the rest of the input,
@@ -695,7 +695,7 @@ function writer(to: io.Stream, options: Options) -> Writer?
 #
 # See also `flush` and `finish`.
 function write(@w: Writer, data: [u8]) -> ()?
-    if is_ended(w.compressor)
+    if is_compressor_ended(w.compressor)
         return fail(code: CLOSED, msg: "writing to a compressing writer after its finish")
     out = compress_part(@w.compressor, data: data)
 
@@ -712,7 +712,7 @@ function write(@w: Writer, data: [u8]) -> ()?
 #
 # See also `write`.
 function flush(@w: Writer) -> ()?
-    if is_ended(w.compressor)
+    if is_compressor_ended(w.compressor)
         return fail(code: CLOSED, msg: "flushing a compressing writer after its finish")
     out = compress_flush(@w.compressor)
 
@@ -731,7 +731,7 @@ function flush(@w: Writer) -> ()?
 #
 # See also `writer` and `write`.
 function finish(@w: Writer) -> ()?
-    if is_ended(w.compressor)
+    if is_compressor_ended(w.compressor)
         return fail(code: CLOSED, msg: "finishing a compressing writer a second time")
     io.write(w.to, data: compress_end(@w.compressor)?)?
     return ok()
@@ -1026,17 +1026,17 @@ test "decompress_part: a frame fed a byte at a time, then what follows it"
         for x in decompress_part(@d, data: [b], most: 1000).must()
             out @ out.push(x)
 
-    while !is_done(d)
+    while !is_decompressor_ended(d)
         for x in decompress_part(@d, data: [], most: 1000).must()
             out @ out.push(x)
 
     assert out == samples.noise(70000)
-    assert is_done(d) && unused(d) == [0x21]
+    assert is_decompressor_ended(d) && unused(d) == [0x21]
     legacy @= decompressor(1000)
     assert decompress_part(@legacy, data: samples.of(samples.SHORT_LEGACY), most: 1000).must() == text
-    assert !is_done(legacy)
+    assert !is_decompressor_ended(legacy)
     _ = decompress_part(@legacy, data: samples.of(samples.SHORT_TOOL), most: 1000).must()
-    assert is_done(legacy) && unused(legacy) == samples.of(samples.SHORT_TOOL)
+    assert is_decompressor_ended(legacy) && unused(legacy) == samples.of(samples.SHORT_TOOL)
 
 test "decompress_part: a failure kept, and a count below 0"
     d @= decompressor(100)
@@ -1084,7 +1084,7 @@ test "with_size: a size not fed, fed then; a size after bytes; content_size refu
     c @= with_size(compressor(defaults()).must(), size: 5).must()
     first = compress_part(@c, data: [1, 2, 3])
     assert compress_end(@c).is_err()
-    assert !is_ended(c)
+    assert !is_compressor_ended(c)
     rest = compress_part(@c, data: [4, 5])
     last = compress_end(@c).must()
     whole = samples.followed(data: samples.followed(data: first, more: rest), more: last)
@@ -1316,11 +1316,11 @@ test "compress_end: a frame of nothing"
     assert decompress(compress_end(@c).must(), limit: 0).must().len() == 0
 
 # A compressor before and after its end.
-test "is_ended: before and after the end"
+test "is_compressor_ended: before and after the end"
     c @= compressor(defaults()).must()
-    assert !is_ended(c)
+    assert !is_compressor_ended(c)
     _ = compress_end(@c).must()
-    assert is_ended(c)
+    assert is_compressor_ended(c)
 
 # A decompressor of one frame, at most a kilobyte.
 test "decompressor: one frame, at most a kilobyte"
@@ -1343,11 +1343,11 @@ test "decompress_part: a frame fed in two pieces"
     assert bytes.concat([first, second]) == bytes.from_text("starman")
 
 # A decompressor before and after its frame's end.
-test "is_done: before and after the frame's end"
+test "is_decompressor_ended: before and after the frame's end"
     d @= decompressor(100)
-    assert !is_done(d)
+    assert !is_decompressor_ended(d)
     _ = decompress_part(@d, data: compress([1], defaults()).must(), most: 100).must()
-    assert is_done(d)
+    assert is_decompressor_ended(d)
 
 # What came after the frame.
 test "unused: what came after the frame"
