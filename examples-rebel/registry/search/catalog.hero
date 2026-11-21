@@ -1,0 +1,142 @@
+# What a search of the registry reads: an inverted index in memory, ranked by
+# BM25 (`search`), of each package's name, description and keywords as its
+# newest version states them, and the sorted names a box that suggests as one
+# types reads.
+#
+# The index is built from the database when the server starts and changed in
+# place at each publication, so a search never touches the database. A
+# package's name is indexed twice, as written and with its underscores as
+# spaces, so `text kit` finds `text_kit`.
+
+use <rebel>/search
+use <rebel>/sql/sqlite
+use <rebel>/strings
+
+use store/releases
+
+## The catalog
+
+# The searchable view of the registry.
+record Catalog
+    # The index, a package's row id naming its text.
+    index: search.Index
+    # Each package's name by its row id.
+    names: {i64: str}
+
+# One package a search found.
+record Hit
+    # The package's name.
+    name: str
+    # Its BM25 score: higher is a better match.
+    score: f64
+
+# A catalog holding nothing.
+#
+# Fails as `search.new_index` does; its default options are valid, so a
+# failure is a broken Rebel.
+function empty() -> Catalog?
+    return ok(Catalog(index: search.new_index(search.default_options())?, names: {}))
+
+# The text the index holds for a package.
+#
+# - `name`: the package's name.
+# - `description`: its newest version's description.
+# - `keywords`: its newest version's keywords.
+function text_of(name: str, description: str, keywords: [str]) -> str
+    spaced = strings.replace_all(s: name, old: "_", new: " ")
+    return [name, spaced, description, keywords.join(" ")].join("\n")
+
+# Puts the package `id` into the catalog, or replaces what it held of it.
+#
+# - `c`: the catalog.
+# - `id`: the package's row id.
+# - `name`: its name.
+# - `description`: its newest version's description.
+# - `keywords`: its newest version's keywords.
+#
+# Fails as `search.insert` does.
+function put(@c: Catalog, id: i64, name: str, description: str, keywords: [str]) -> ()?
+    if search.contains(c.index, id: id)
+        search.remove(@c.index, id: id)?
+    search.insert(@c.index, id: id, text: text_of(name: name, description: description, keywords: keywords))?
+    c.names[id] @ name
+    return ok()
+
+# The catalog of every package the database holds, each by its newest
+# version.
+#
+# - `db`: the connection.
+#
+# Fails as the queries do.
+function build(@db: sqlite.Db) -> Catalog?
+    c @= empty()?
+
+    for p in releases.packages(@db)?
+        list = releases.releases_of(@db, name: p.name)?
+
+        if list.len() > 0
+            newest = list[list.len() - 1]
+            put(@c, id: p.id, name: p.name, description: newest.description, keywords: newest.keywords)?
+
+    return ok(c)
+
+# The packages matching `query`, the best first, at most `limit`.
+#
+# - `c`: the catalog.
+# - `query`: words, `+word`, `-word`, `"a phrase"` and `prefix*`, as
+#   `search.search` reads them.
+# - `limit`: the most packages answered, 0 or more.
+#
+# Fails `invalid` where the query does not read, as `search.search` fails.
+function lookup(c: Catalog, query: str, limit: i64) -> [Hit]?
+    found: [Hit] @= []
+
+    for h in search.search(c.index, query: query, limit: limit)?
+        found @ found.push(Hit(name: c.names[h.id].default(""), score: h.score))
+
+    return ok(found)
+
+# The names that begin with `prefix`, in byte order, at most `limit`.
+#
+# - `c`: the catalog.
+# - `prefix`: what was typed so far; the empty text begins every name.
+# - `limit`: the most names answered, 0 or more.
+function suggest(c: Catalog, prefix: str, limit: i64) -> [str]
+    every: [str] @= []
+
+    for id in keys(c.names)
+        name = c.names[id].default("")
+
+        if strings.has_prefix(s: name, prefix: prefix)
+            every @ every.push(name)
+
+    sorted = sort(every)
+
+    if sorted.len() <= limit
+        return sorted
+    return sorted.slice(from: 0, to: limit)
+
+test "lookup: a word of a description, a keyword and a name with its underscores as spaces"
+    c @= empty().must()
+    put(@c, id: 1, name: "textkit", description: "Wrapping and padding of text.", keywords: ["text"]).must()
+    put(@c, id: 2, name: "json_tools", description: "Reading JSON.", keywords: ["json", "parse"]).must()
+    assert lookup(c, query: "wrapping", limit: 10).must()[0].name == "textkit"
+    assert lookup(c, query: "parse", limit: 10).must()[0].name == "json_tools"
+    assert lookup(c, query: "json tools", limit: 10).must()[0].name == "json_tools"
+    assert lookup(c, query: "nothing", limit: 10).must().len() == 0
+
+test "put: a package put again is replaced, never found twice"
+    c @= empty().must()
+    put(@c, id: 1, name: "textkit", description: "Old words.", keywords: []).must()
+    put(@c, id: 1, name: "textkit", description: "New words.", keywords: []).must()
+    assert lookup(c, query: "old", limit: 10).must().len() == 0
+    assert lookup(c, query: "words", limit: 10).must().len() == 1
+
+test "suggest: names by prefix in byte order, bounded, and none"
+    c @= empty().must()
+    put(@c, id: 1, name: "textkit", description: "", keywords: []).must()
+    put(@c, id: 2, name: "textile", description: "", keywords: []).must()
+    put(@c, id: 3, name: "yaml", description: "", keywords: []).must()
+    assert suggest(c, prefix: "tex", limit: 10) == ["textile", "textkit"]
+    assert suggest(c, prefix: "tex", limit: 1) == ["textile"]
+    assert suggest(c, prefix: "z", limit: 10).len() == 0

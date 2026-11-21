@@ -1,0 +1,289 @@
+# The API's reads: the packages listed, one package, one version, a range
+# resolved, an archive and its signature served, what changed between two
+# versions, a search, the suggestions as one types, a publisher's keys, and
+# the index a package manager reads.
+#
+# An archive is served as it was uploaded, never recompressed, typed by its
+# packing, tagged by its digest and marked immutable, since the bytes under a
+# version never change: a client or a cache that holds them asks again with
+# `If-None-Match` and is answered 304. Yanked versions are served all the
+# same; only `resolve` passes over them.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/json
+use <rebel>/numbers
+use <rebel>/sql/sqlite
+use <rebel>/url
+use <rebel>/web
+
+use packages/changes
+use packages/resolve
+use packages/unpack
+use search/catalog
+use server/answers
+use server/serving
+use signing/signers
+use store/blobs
+use store/database
+use store/releases
+
+## Codes
+
+# The code of a query that lacks what the route reads.
+constant INVALID: str
+    "invalid"
+
+## Reads
+
+# The most packages a search answers, whatever it asks.
+constant MOST_HITS: i64
+    50
+
+# Whether the server can read its database: what a load balancer asks.
+#
+# - `state`: the server's state.
+function health(state: serving.State lent) -> http.Response
+    return match sqlite.ping(state.db)
+        .ok _  => answers.with_json(http.STATUS_OK, v: .object(members: {"status": .text(v: "ok")}))
+        .err e => answers.failure(code: "failed", message: f"the database does not answer: {e.msg}")
+
+# Every package, by name, each with its newest version.
+#
+# - `state`: the server's state.
+#
+# Fails as the queries do.
+function list_packages(@state: serving.State) -> http.Response?
+    items: [json.Value] @= []
+
+    for p in releases.packages(@state.db)?
+        items @ items.push(answers.package_json(p, list: releases.releases_of(@state.db, name: p.name)?))
+
+    return ok(answers.with_json(http.STATUS_OK, v: .object(members: {"packages": .list(items: items)})))
+
+# One package and every version of it.
+#
+# - `state`: the server's state.
+# - `name`: the package's name.
+#
+# Fails `not_found` where no package has it.
+function show_package(@state: serving.State, name: str) -> http.Response?
+    p = releases.package_named(@state.db, name: name)?
+    return ok(
+        answers.with_json(http.STATUS_OK, v: answers.package_json(p, list: releases.releases_of(@state.db, name: name)?))
+    )
+
+# One version: its digest, its key, its manifest and its URLs.
+#
+# - `state`: the server's state.
+# - `name`: the package's name.
+# - `version`: the version.
+#
+# Fails `not_found` where the package has no such version.
+function show_version(@state: serving.State, name: str, version: str) -> http.Response?
+    r = releases.release_of(@state.db, name: name, version: version)?
+    return ok(answers.with_json(http.STATUS_OK, v: answers.release_json(r, base_url: state.base_url)))
+
+# The version a requirement takes, `?req=^1.2`: the highest it admits that is
+# not yanked.
+#
+# - `state`: the server's state.
+# - `r`: the request.
+# - `name`: the package's name.
+#
+# Fails `invalid` where the query has no `req` or it is no range, `not_found`
+# where the package is unknown or no version meets the range.
+function resolve_range(@state: serving.State, r: http.Request, name: str) -> http.Response?
+    requirement = query_value(r, key: "req")?
+    _ = releases.package_named(@state.db, name: name)?
+    chosen = resolve.resolve(releases.releases_of(@state.db, name: name)?, requirement: requirement)?
+    return ok(answers.with_json(http.STATUS_OK, v: answers.release_json(chosen, base_url: state.base_url)))
+
+# The value of `key` in `r`'s query.
+#
+# - `r`: the request.
+# - `key`: the key.
+#
+# Fails `invalid` where the query does not read or lacks the key.
+function query_value(r: http.Request, key: str) -> str?
+    pairs = http.query_of(r)?
+
+    return match url.value_of(pairs, key: key)
+        .ok v  => ok(v)
+        .err _ => fail(code: INVALID, msg: f"the query has no \"{key}\"")
+
+# The archive of a version, as it was uploaded, counted as one download.
+#
+# - `state`: the server's state.
+# - `r`: the request; its `If-None-Match` is read.
+# - `name`: the package's name.
+# - `version`: the version.
+#
+# Fails `not_found` where there is no such version, `invalid` where the bytes
+# kept no longer match their digest.
+function serve_archive(@state: serving.State, r: http.Request, name: str, version: str) -> http.Response?
+    release = releases.release_of(@state.db, name: name, version: version)?
+    data = blobs.get(state.blobs, d: release.digest)?
+    releases.count_download(@state.db, r: release)?
+    return ok(archive_response(r, release: release, data: data))
+
+# The archive whose digest is `d`, whichever version it is: what a mirror
+# fetches by the digest a lock file holds.
+#
+# - `state`: the server's state.
+# - `r`: the request.
+# - `d`: the digest.
+#
+# Fails `not_found` where no version's archive has it.
+function serve_blob(@state: serving.State, r: http.Request, d: str) -> http.Response?
+    release = releases.release_by_digest(@state.db, digest: d)?
+    data = blobs.get(state.blobs, d: d)?
+    releases.count_download(@state.db, r: release)?
+    return ok(archive_response(r, release: release, data: data))
+
+# The response carrying an archive: typed by its packing, named for saving,
+# tagged by its digest, cached for good.
+#
+# - `r`: the request.
+# - `release`: the version.
+# - `data`: the archive's bytes.
+function archive_response(r: http.Request, release: releases.Release, data: [u8]) -> http.Response
+    packing = unpack.parse_packing(release.packing).default(.zstd)
+    response @= http.respond(http.STATUS_OK, content_type: unpack.media_type_of(packing), body: data)
+    response.headers @ http.with_header(response.headers, name: "ETag", value: f"\"{release.digest}\"")
+    response.headers @ http.with_header(
+        response.headers,
+        name: "Cache-Control",
+        value: "public, max-age=31536000, immutable"
+    )
+    response.headers @ http.with_header(response.headers, name: "Heroes-Digest", value: release.digest)
+    named = web.with_disposition(
+        response,
+        filename: f"{release.package}-{release.version}{unpack.extension_of(packing)}",
+        download: true
+    )
+    return web.with_etag(r, response: named)
+
+# The signature block of a version, as its publisher sent it.
+#
+# - `state`: the server's state.
+# - `name`: the package's name.
+# - `version`: the version.
+#
+# Fails `not_found` where there is no such version.
+function show_signature(@state: serving.State, name: str, version: str) -> http.Response?
+    release = releases.release_of(@state.db, name: name, version: version)?
+    return ok(
+        http.respond(http.STATUS_OK, content_type: "application/x-pem-file", body: bytes.from_text(release.signature))
+    )
+
+# What changed between two versions, `?from=1.0.0&to=1.1.0`: the manifest's
+# patch and each file's diff.
+#
+# - `state`: the server's state.
+# - `r`: the request.
+# - `name`: the package's name.
+#
+# Fails `invalid` where the query lacks a version, `not_found` where either
+# version is unknown.
+function show_changes(@state: serving.State, r: http.Request, name: str) -> http.Response?
+    from = query_value(r, key: "from")?
+    to = query_value(r, key: "to")?
+    old = releases.release_of(@state.db, name: name, version: from)?
+    new = releases.release_of(@state.db, name: name, version: to)?
+    limits = unpack.Limits(unpacked_bytes: state.settings.unpacked_bytes, files: state.settings.files)
+    old_contents = unpack.open(blobs.get(state.blobs, d: old.digest)?, limits: limits)?
+    new_contents = unpack.open(blobs.get(state.blobs, d: new.digest)?, limits: limits)?
+    found = changes.compare(
+        from: from,
+        to: to,
+        old: old_contents,
+        new: new_contents,
+        old_manifest: json.parse(old.manifest)?,
+        new_manifest: json.parse(new.manifest)?
+    )
+    return ok(answers.with_json(http.STATUS_OK, v: changes.to_json(found)))
+
+# The packages a search finds, `?q=text wrap&limit=10`, the best first.
+#
+# - `state`: the server's state.
+# - `r`: the request.
+#
+# Fails `invalid` where the query lacks `q`, `q` does not read as a search or
+# `limit` is no number.
+function search_packages(@state: serving.State, r: http.Request) -> http.Response?
+    query = query_value(r, key: "q")?
+
+    limit = match query_value(r, key: "limit")
+        .ok text => numbers.parse_int(text)?
+        .err _   => 10
+
+    bounded = if limit > MOST_HITS || limit < 0
+        MOST_HITS
+    else
+        limit
+    hits: [json.Value] @= []
+
+    for h in catalog.lookup(state.catalog, query: query, limit: bounded)?
+        p = releases.package_named(@state.db, name: h.name)?
+        hits @ hits.push(answers.package_json(p, list: releases.releases_of(@state.db, name: h.name)?))
+
+    return ok(
+        answers.with_json(http.STATUS_OK, v: .object(members: {"query": .text(v: query), "packages": .list(items: hits)}))
+    )
+
+# The names that begin with what was typed, `?prefix=tex`.
+#
+# - `state`: the server's state.
+# - `r`: the request.
+#
+# Fails `invalid` where the query lacks `prefix`.
+function suggest(state: serving.State lent, r: http.Request) -> http.Response?
+    prefix = query_value(r, key: "prefix")?
+    names: [json.Value] @= []
+
+    for name in catalog.suggest(state.catalog, prefix: prefix, limit: 10)
+        names @ names.push(.text(v: name))
+
+    return ok(answers.with_json(http.STATUS_OK, v: .object(members: {"names": .list(items: names)})))
+
+# The key whose id is `id`, a `PUBLIC KEY` block with its id and its
+# publisher as headers.
+#
+# - `state`: the server's state.
+# - `id`: the key id.
+#
+# Fails `not_found` where no key has it.
+function show_key(@state: serving.State, id: str) -> http.Response?
+    k = database.key_of(@state.db, id: id)?
+    return ok(
+        http.respond(http.STATUS_OK, content_type: "application/x-pem-file", body: bytes.from_text(signers.format_public(k)?))
+    )
+
+# Every key of the publisher `name`, as one bundle of blocks: what a client
+# keeps as its trust file.
+#
+# - `state`: the server's state.
+# - `name`: the publisher's name.
+#
+# Fails `not_found` where no publisher has it.
+function publisher_keys(@state: serving.State, name: str) -> http.Response?
+    _ = database.publisher_named(@state.db, name: name)?
+    bundle = signers.format_bundle(database.keys_of(@state.db, publisher: name)?)?
+    return ok(http.respond(http.STATUS_OK, content_type: "application/x-pem-file", body: bytes.from_text(bundle)))
+
+# The package index of `name`: one line of JSON per version, in the order
+# they were published, as a package manager reads an index.
+#
+# - `state`: the server's state.
+# - `name`: the package's name.
+#
+# Fails `not_found` where no package has it.
+function show_index(@state: serving.State, name: str) -> http.Response?
+    _ = releases.package_named(@state.db, name: name)?
+    lines: [str] @= []
+
+    for r in releases.releases_of(@state.db, name: name)?
+        lines @ lines.push(answers.index_line(r)? + "\n")
+
+    return ok(http.respond(http.STATUS_OK, content_type: "application/x-ndjson", body: bytes.from_text(lines.join(""))))

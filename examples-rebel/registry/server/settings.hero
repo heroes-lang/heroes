@@ -1,0 +1,243 @@
+# The server's settings, read from the TOML file `serve --config` names. Every
+# key has a default but the data folder, a key no setting reads is refused,
+# and every value is checked before the server starts, so a misspelt key or
+# a size of the wrong kind is told at start rather than found in production.
+#
+#     [server]
+#     host = "127.0.0.1"
+#     port = 8470
+#     public_url = "https://packages.example.org/"
+#     connection_seconds = 30
+#
+#     [storage]
+#     data_dir = "/var/lib/registry"
+#     log_file = "/var/log/registry.log"
+#
+#     [limits]
+#     upload_bytes = 10485760
+#     unpacked_bytes = 52428800
+#     files = 2000
+#     publishes_per_hour = 30
+#     publish_burst = 10
+#
+# The database is `registry.db` and the archives are `blobs/`, both in the
+# data folder. An empty `public_url` means the address the server listens
+# on, which is what a server on loopback, the demo's, wants.
+
+use <rebel>/time
+use <rebel>/toml
+use <rebel>/url
+
+## Codes
+
+# The code of a settings file that holds an unknown key or a value the
+# server cannot use.
+constant INVALID: str
+    "invalid"
+
+## Settings
+
+# Every setting the server reads, typed and checked.
+record Settings
+    # The address the server listens on: `127.0.0.1`, `::1`, or "" for every
+    # address of the machine.
+    host: str
+    # The port; 0 asks the system for a free one.
+    port: i64
+    # The absolute `http://` or `https://` URL clients reach the server at,
+    # ending in `/`; "" for the address it listens on.
+    public_url: str
+    # How long one connection may last, every request it carries included.
+    connection: time.Duration
+    # The folder of the database and the archives.
+    data_dir: str
+    # The file the request log is appended to; "" for the standard error.
+    log_file: str
+    # The most bytes an upload's body may hold.
+    upload_bytes: i64
+    # The most bytes an archive may expand to.
+    unpacked_bytes: i64
+    # The most entries an archive may hold.
+    files: i64
+    # How many publications a publisher may make in an hour, on average.
+    publishes_per_hour: i64
+    # How many publications a publisher may make at once.
+    publish_burst: i64
+
+# The keys each table may hold, in the order the module's comment writes
+# them.
+function known() -> {str: [str]}
+    return {
+        "server": ["host", "port", "public_url", "connection_seconds"]
+        "storage": ["data_dir", "log_file"]
+        "limits": ["upload_bytes", "unpacked_bytes", "files", "publishes_per_hour", "publish_burst"]
+    }
+
+# The settings `text`, a TOML document, holds, each absent key at its
+# default.
+#
+# - `text`: the settings file's text.
+#
+# Fails `invalid` where it is not TOML, holds a table or a key no setting
+# reads or a value of another kind, lacks `storage.data_dir`, or holds a
+# value outside what the server can use, the message naming the key.
+function parse(text: str) -> Settings?
+    doc = match toml.parse(text)
+        .ok d  => d
+        .err e => return fail(code: INVALID, msg: f"the settings are not TOML: {e.msg}")
+
+    check_keys(doc)?
+    s = Settings(
+        host: text_at(doc, table: "server", key: "host", fallback: "127.0.0.1")?,
+        port: integer_at(doc, table: "server", key: "port", fallback: 8470)?,
+        public_url: text_at(doc, table: "server", key: "public_url", fallback: "")?,
+        connection: time.seconds(integer_at(doc, table: "server", key: "connection_seconds", fallback: 30)?)?,
+        data_dir: text_at(doc, table: "storage", key: "data_dir", fallback: "")?,
+        log_file: text_at(doc, table: "storage", key: "log_file", fallback: "")?,
+        upload_bytes: integer_at(doc, table: "limits", key: "upload_bytes", fallback: 10_485_760)?,
+        unpacked_bytes: integer_at(doc, table: "limits", key: "unpacked_bytes", fallback: 52_428_800)?,
+        files: integer_at(doc, table: "limits", key: "files", fallback: 2000)?,
+        publishes_per_hour: integer_at(doc, table: "limits", key: "publishes_per_hour", fallback: 30)?,
+        publish_burst: integer_at(doc, table: "limits", key: "publish_burst", fallback: 10)?
+    )
+    check_values(s)?
+    return ok(s)
+
+# Checks that `doc` holds no table and no key `known` does not name.
+#
+# - `doc`: the settings document.
+#
+# Fails `invalid`, naming the first unknown table or key.
+function check_keys(doc: toml.Value) -> ()?
+    tables = known()
+
+    for name in keys(members_of(doc, what: "the settings")?)
+        allowed = match tables[name]
+            .ok list => list
+            .err _   => return fail(code: INVALID, msg: f"the settings hold a table [{name}] no setting reads")
+
+        inner = members_of(toml.value_at(doc, path: [name])?, what: f"the settings' {name}")?
+
+        for key in keys(inner)
+            if !holds(allowed, wanted: key)
+                return fail(code: INVALID, msg: f"the settings hold a key {name}.{key} no setting reads")
+
+    return ok()
+
+# The members of the table `v`.
+#
+# - `v`: a value of the settings.
+# - `what`: how a message names it.
+#
+# Fails `invalid` where `v` is not a table.
+function members_of(v: toml.Value, what: str) -> {str: toml.Value}?
+    return match v
+        .table t => ok(t.members)
+        .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ =>
+            fail(code: INVALID, msg: f"{what} is not a table")
+
+# Whether `list` holds `wanted`.
+#
+# - `list`: the texts.
+# - `wanted`: the text looked for.
+function holds(list: [str], wanted: str) -> bool
+    for item in list
+        if item == wanted
+            return true
+
+    return false
+
+# Checks the values of `s` against what the server can use.
+#
+# - `s`: the settings read.
+#
+# Fails `invalid`, naming the first value refused.
+function check_values(s: Settings) -> ()?
+    if s.data_dir == ""
+        return fail(code: INVALID, msg: "the settings name no storage.data_dir")
+
+    if s.port < 0 || s.port > 65535
+        return fail(code: INVALID, msg: f"server.port is {s.port}, outside 0 to 65535")
+
+    if s.public_url != ""
+        u = match url.parse(s.public_url)
+            .ok got => got
+            .err e  => return fail(code: INVALID, msg: f"server.public_url does not read as a URL: {e.msg}")
+
+        if u.scheme != "http" && u.scheme != "https" || u.host == "" || !url.is_abs(u)
+            return fail(code: INVALID, msg: f"server.public_url \"{s.public_url}\" is no absolute http or https URL")
+
+        if u.path == "" || u.path[u.path.len() - 1] != '/' || u.query != "" || u.fragment != ""
+            return fail(code: INVALID, msg: f"server.public_url \"{s.public_url}\" does not end in / or holds a query")
+
+    if s.upload_bytes < 1 || s.unpacked_bytes < s.upload_bytes || s.files < 1
+        return fail(
+            code: INVALID,
+            msg: "limits.upload_bytes, unpacked_bytes and files are above 0, and an archive may expand to no less than its upload"
+        )
+
+    if s.publishes_per_hour < 1 || s.publish_burst < 1
+        return fail(code: INVALID, msg: "limits.publishes_per_hour and publish_burst are above 0")
+    return ok()
+
+# The text at `table`.`key` of `doc`, or `fallback` where it is absent.
+#
+# - `doc`: the settings document.
+# - `table`: the table's name.
+# - `key`: the key's name.
+# - `fallback`: the default.
+#
+# Fails `invalid` where the value is not a string.
+function text_at(doc: toml.Value, table: str, key: str, fallback: str) -> str?
+    return match toml.value_at(doc, path: [table, key])
+        .ok v =>
+            match v
+                .text t => ok(t.v)
+                .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    fail(code: INVALID, msg: f"{table}.{key} is not a string")
+        .err _ => ok(fallback)
+
+# The integer at `table`.`key` of `doc`, or `fallback` where it is absent.
+#
+# - `doc`: the settings document.
+# - `table`: the table's name.
+# - `key`: the key's name.
+# - `fallback`: the default.
+#
+# Fails `invalid` where the value is not an integer.
+function integer_at(doc: toml.Value, table: str, key: str, fallback: i64) -> i64?
+    return match toml.value_at(doc, path: [table, key])
+        .ok v =>
+            match v
+                .integer n => ok(n.v)
+                .text _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    fail(code: INVALID, msg: f"{table}.{key} is not an integer")
+        .err _ => ok(fallback)
+
+# The database's file, in the data folder.
+#
+# - `s`: the settings.
+function database_of(s: Settings) -> str
+    return s.data_dir + "/registry.db"
+
+# The archives' folder, in the data folder.
+#
+# - `s`: the settings.
+function blobs_of(s: Settings) -> str
+    return s.data_dir + "/blobs"
+
+test "parse: the data folder alone, every other key at its default"
+    s = parse("[storage]\ndata_dir = \"/srv/registry\"\n").must()
+    assert s.host == "127.0.0.1" && s.port == 8470 && s.public_url == "" && s.publish_burst == 10
+    assert s.connection == time.seconds(30).must() && database_of(s) == "/srv/registry/registry.db"
+
+test "parse: an unknown key, an unknown table, a value of another kind and no data folder refused"
+    for text in ["[storage]\ndata_dir = \"d\"\ncolour = 1\n", "[cache]\nsize = 1\n[storage]\ndata_dir = \"d\"\n", "[server]\nport = \"80\"\n[storage]\ndata_dir = \"d\"\n", "[server]\nport = 80\n"]
+        match parse(text)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "parse: a public URL that is no absolute URL, or does not end in /, refused"
+    assert parse("[server]\npublic_url = \"packages.example.org\"\n[storage]\ndata_dir = \"d\"\n").is_err()
+    assert parse("[server]\npublic_url = \"https://packages.example.org\"\n[storage]\ndata_dir = \"d\"\n").is_err()
+    assert parse("[server]\npublic_url = \"https://packages.example.org/\"\n[storage]\ndata_dir = \"d\"\n").must().public_url == "https://packages.example.org/"

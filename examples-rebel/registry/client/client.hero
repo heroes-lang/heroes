@@ -1,0 +1,260 @@
+# The registry's own client: the session every call goes through, and the
+# calls that change the registry (a key added, a version published or
+# yanked), each answering a typed value or the server's refusal as a failure
+# of the library's codes, its message the server's own. The reads are
+# `queries`'.
+#
+# Transient failures are retried by `http`'s client with `retries`'
+# exponential waits spread by chance: a 502, 503 or 504, or a connection that
+# failed, for the methods RFC 9110 calls idempotent, a publication's PUT
+# among them, since publishing the same bytes twice is answered as one
+# publication. A 429 is this client's own: the wait its `Retry-After` asks is
+# read by `retries.parse_retry_after`, waited and the request sent once more
+# where it is within the client's patience, and told at once where it is not,
+# rather than holding a person's terminal for an hour.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/json
+use <rebel>/retries
+use <rebel>/time
+use <rebel>/url
+
+use packages/unpack
+
+## Codes
+
+# The code of an answer the client cannot read.
+constant INVALID: str
+    "invalid"
+
+# The code of a request refused for being past a limit: 413 and 429.
+constant LIMIT: str
+    "limit"
+
+## The client
+
+# The text every request of this client names itself by.
+constant USER_AGENT: str
+    "heroes-registry-client/0.1.0"
+
+# A client of one registry.
+record Client
+    # The session: the registry's URL as its base, the fields every request
+    # carries, the retries.
+    session: http.Session
+    # The publisher's token, "" for a client that only reads.
+    token: str
+    # The longest wait a 429's `Retry-After` may ask that this client waits.
+    patience: time.Duration
+
+# A client of the registry at `base`, acting with `token`.
+#
+# - `base`: the registry's absolute `http://` or `https://` URL, ending in
+#   `/`.
+# - `token`: the publisher's token; "" for a client that only reads.
+#
+# Fails `invalid` where `base` is no such URL.
+function new_client(base: str, token: str) -> Client?
+    u = url.parse(base)?
+
+    if !url.is_abs(u) || u.scheme != "http" && u.scheme != "https" || !has_final_slash(base)
+        return fail(code: INVALID, msg: f"\"{base}\" is no absolute http or https URL ending in /")
+    s @= http.default_session()
+    s.base @ base
+    s.headers @ [
+        http.Header(name: "User-Agent", value: USER_AGENT)
+        http.Header(name: "Accept", value: "application/json")
+    ]
+    s.client.deadline @ time.seconds(60)?
+    waits = retries.with_jitter(retries.backoff(first: time.milliseconds(200)?, multiplier: 2.0, longest: time.seconds(5)?)?, jitter: .full)?
+    s.client.retries @ http.Retries(count: 3, statuses: [502, 503, 504], backoff: waits)
+    return ok(Client(session: s, token: token, patience: time.seconds(30)?))
+
+# Whether `text` ends in `/`.
+#
+# - `text`: a URL.
+function has_final_slash(text: str) -> bool
+    return text.len() > 0 && text[text.len() - 1] == '/'
+
+# The response to `r`, sent through the session with the token where the
+# client has one; a 429 waited for once where its `Retry-After` is within the
+# client's patience.
+#
+# - `c`: the client; its session's cookies change.
+# - `r`: the request, its target relative to the registry's URL.
+#
+# Fails as `http.fetch` does.
+function send(@c: Client, r: http.Request) -> http.Response?
+    asked = if c.token == ""
+        r
+    else
+        http.with_bearer_auth(r, token: c.token)
+    first = http.fetch(@c.session, r: asked)?
+
+    if first.status != http.STATUS_TOO_MANY_REQUESTS
+        return ok(first)
+    wait = wait_asked(first)?
+
+    if time.is_longer(a: wait, b: c.patience)
+        return ok(first)
+    time.sleep(wait)
+    return http.fetch(@c.session, r: asked)
+
+# The wait a 429's `Retry-After` asks, read against now, at most a day.
+#
+# - `response`: the 429.
+#
+# Fails `invalid` where the field is missing or does not read.
+function wait_asked(response: http.Response) -> time.Duration?
+    value = http.value_of(response.headers, name: "Retry-After")?
+    return retries.parse_retry_after(value, received: time.now()?, longest: time.days(1)?)
+
+# `response` where its status is one of `wanted`; else a failure whose code
+# its status chooses and whose message is the server's.
+#
+# - `response`: the response.
+# - `wanted`: the statuses that mean the call did what it asked.
+#
+# Fails `not_found` for 404, `exists` for 409, `permission` for 401 and 403,
+# `limit` for 413 and 429, `invalid` for 400 and 422, `failed` for the rest.
+function expect(response: http.Response, wanted: [i64]) -> http.Response?
+    for status in wanted
+        if response.status == status
+            return ok(response)
+
+    message = match http.json_of(response)
+        .ok v  => json.text_of(json.member(v, key: "message").default(.text(v: ""))).default("")
+        .err _ => ""
+
+    code = match response.status
+        404       => "not_found"
+        409       => "exists"
+        401 | 403 => "permission"
+        413 | 429 => LIMIT
+        400 | 422 => INVALID
+        _         => "failed"
+
+    return fail(code: code, msg: f"{response.status}: {message}")
+
+# The JSON body of a response whose status is one of `wanted`.
+#
+# - `c`: the client.
+# - `method`: the request's method.
+# - `target`: its target, relative to the registry's URL.
+# - `wanted`: the statuses that mean success.
+#
+# Fails as `send` and `expect` do, `invalid` where the body is no JSON.
+function call_json(@c: Client, method: str, target: str, wanted: [i64]) -> json.Value?
+    response = expect(send(@c, r: http.request(method: method, target: target)?)?, wanted: wanted)?
+    return http.json_of(response)
+
+# Whether the registry answers.
+#
+# - `c`: the client.
+#
+# Fails as `call_json` does.
+function health(@c: Client) -> str?
+    v = call_json(@c, method: http.METHOD_GET, target: "health", wanted: [200])?
+    return json.text_of(json.member(v, key: "status")?)
+
+# Adds the public key `pem` to the token's publisher, and answers its id.
+#
+# - `c`: the client, with a token of the scope `keys`.
+# - `pem`: the key's `PUBLIC KEY` block.
+#
+# Fails as `send` and `expect` do.
+function add_key(@c: Client, pem: str) -> str?
+    r = http.with_body(
+        http.request(method: http.METHOD_PUT, target: "api/v1/keys")?,
+        content_type: "application/x-pem-file",
+        body: bytes.from_text(pem)
+    )
+    v = http.json_of(expect(send(@c, r: r)?, wanted: [200, 201])?)?
+    return json.text_of(json.member(v, key: "key_id")?)
+
+# What a publication answered.
+record Publication
+    # 201 where it was new, 200 where the same bytes were published already.
+    status: i64
+    # The archive's digest, as the registry computed it.
+    digest: str
+
+# Publishes `archive`, signed by `signature`, as `name` at `version`.
+#
+# - `c`: the client, with a token of the scope `publish`.
+# - `name`: the package's name.
+# - `version`: the version.
+# - `archive`: the archive's bytes.
+# - `signature`: the signature's PEM block.
+#
+# Fails as `send` and `expect` do.
+function publish(@c: Client, name: str, version: str, archive: [u8], signature: str) -> Publication?
+    packing = unpack.packing_of(archive).default(.zstd)
+    parts = [
+        http.Part(name: "archive", filename: f"{name}-{version}{unpack.extension_of(packing)}", content_type: unpack.media_type_of(packing), data: archive)
+        http.Part(name: "signature", filename: "", content_type: "application/x-pem-file", data: bytes.from_text(signature))
+    ]
+    r = http.with_multipart(
+        http.request(method: http.METHOD_PUT, target: f"api/v1/packages/{name}/{version}")?,
+        parts: parts
+    )
+    response = expect(send(@c, r: r)?, wanted: [200, 201])?
+    v = http.json_of(response)?
+    return ok(Publication(status: response.status, digest: json.text_of(json.member(v, key: "digest")?)?))
+
+# Yanks `name` at `version`, or takes the yank back.
+#
+# - `c`: the client, with a token of the scope `yank`.
+# - `name`: the package's name.
+# - `version`: the version.
+# - `yanked`: true to yank, false to take it back.
+#
+# Fails as `send` and `expect` do.
+function yank(@c: Client, name: str, version: str, yanked: bool) -> ()?
+    method = if yanked
+        http.METHOD_PUT
+    else
+        http.METHOD_DELETE
+    _ = call_json(@c, method: method, target: f"api/v1/packages/{name}/{version}/yank", wanted: [200])?
+    return ok()
+
+## Lines
+
+# The lines of `text`, split at each line feed.
+#
+# - `text`: the text.
+function split_lines(text: str) -> [str]
+    found: [str] @= []
+    start: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == '\n'
+            found @ found.push(text.slice(from: start, to: i))
+            start @ i + 1
+
+    found @ found.push(text.slice(from: start, to: text.len()))
+    return found
+
+test "new_client: a base kept, one with no final slash and one that is no URL refused"
+    assert new_client(base: "http://127.0.0.1:8470/", token: "").must().session.base == "http://127.0.0.1:8470/"
+    assert new_client(base: "http://127.0.0.1:8470", token: "").is_err()
+    assert new_client(base: "ftp://host/", token: "").is_err()
+
+test "expect: a wanted status kept, and each refusal's code with the server's message"
+    ok_response = http.respond_text(200, text: "x")
+    assert expect(ok_response, wanted: [200]).must().status == 200
+    refused = http.respond_json(422, value: .object(members: {"message": .text(v: "bad manifest")})).must()
+
+    match expect(refused, wanted: [200])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "422: bad manifest"
+
+    match expect(http.respond_status(429), wanted: [200])
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+test "split_lines: none, one, and a final line feed"
+    assert split_lines("") == [""]
+    assert split_lines("a") == ["a"]
+    assert split_lines("a\nb\n") == ["a", "b", ""]

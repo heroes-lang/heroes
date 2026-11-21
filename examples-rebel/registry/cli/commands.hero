@@ -1,0 +1,185 @@
+# The command line: the server's commands (`serve`, `token`, `demo`) and the
+# publisher's and the package manager's (`keygen`, `pack`, `add-key`,
+# `publish`, `resolve`, `fetch`, `search`, `changes`, `yank`), each a
+# subcommand `flags` reads. A client command reads the registry's URL from
+# `--registry` or `REGISTRY_URL`, and a publisher's token from `--token` or
+# `REGISTRY_TOKEN`, so a token need never stand in a shell's history.
+#
+# A command that fails prints its failure on one line and ends the program
+# with 1; arguments that do not read print the usage and end it with 2.
+
+use <rebel>/flags
+use <rebel>/io
+use <rebel>/os
+
+use cli/admin
+use cli/publishing
+use cli/reading
+use demo/demo
+
+## Exit codes
+
+# The program did what it was asked.
+constant EXIT_OK: i64
+    0
+
+# A command failed.
+constant EXIT_FAILED: i64
+    1
+
+# The arguments did not read.
+constant EXIT_USAGE: i64
+    2
+
+## The commands
+
+# The declaration of every command and its arguments.
+function command() -> flags.Command
+    root @= flags.command(name: "registry", about: "The site that serves Heroes packages, and its client.")
+    flags.add_command(
+        c: @root,
+        sub: with_options(name: "serve", about: "Serves the registry the settings file describes, until Ctrl-C.", options: [config_option()])
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_positionals(name: "demo", about: "Runs a scripted session against a registry of its own, in a folder it makes and removes.", names: ["DIR"], options: [])
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_options(name: "token", about: "Makes a publisher's token, the publisher too where it is new, and prints it once.", options: [config_option(), flags.with_required(flags.option(long: "publisher", short: "p", value_name: "NAME", help: "the publisher")), flags.with_default(flags.option(long: "label", short: "l", value_name: "LABEL", help: "what its owner calls it"), value: "cli"), flags.with_default(flags.option(long: "scopes", short: "s", value_name: "LIST", help: "publish, yank and keys, joined by commas"), value: "publish,yank,keys")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_options(name: "keygen", about: "Makes an Ed25519 key pair: the private key to a new file, the public key printed.", options: [out_option()])
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_positionals(name: "pack", about: "Packs a package's folder into its archive, reproducibly.", names: ["DIR"], options: [out_option(), flags.with_default(flags.option(long: "packing", short: "", value_name: "KIND", help: "zstd, xz or gzip"), value: "zstd")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_options(name: "add-key", about: "Adds the public half of a private key to the token's publisher.", options: [registry_option(), token_option(), key_option()])
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_positionals(name: "publish", about: "Signs an archive and publishes it.", names: ["ARCHIVE"], options: [registry_option(), token_option(), key_option()])
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_positionals(name: "resolve", about: "Says which version a range takes.", names: ["NAME", "RANGE"], options: [registry_option()])
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_positionals(name: "fetch", about: "Fetches a version and checks its digest and its signature against a trust file.", names: ["NAME", "VERSION"], options: [registry_option(), flags.with_required(flags.option(long: "trust", short: "", value_name: "FILE", help: "the publisher's keys, as the registry serves them")), out_option()])
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_positionals(name: "search", about: "Searches the packages.", names: ["WORDS"], options: [registry_option()])
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_positionals(name: "changes", about: "Says what changed between two versions.", names: ["NAME", "FROM", "TO"], options: [registry_option()])
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_positionals(name: "yank", about: "Yanks a version, or with --undo takes the yank back.", names: ["NAME", "VERSION"], options: [registry_option(), token_option(), flags.flag(long: "undo", short: "", help: "take the yank back")])
+    )
+    return root
+
+# A subcommand named `name` with `options`.
+#
+# - `name`: its name.
+# - `about`: what it does.
+# - `options`: its options.
+function with_options(name: str, about: str, options: [flags.Argument]) -> flags.Command
+    c @= flags.command(name: name, about: about)
+
+    for a in options
+        flags.add(@c, a: a)
+
+    return c
+
+# A subcommand named `name` with `options` and the positionals `names`, each
+# taking exactly one argument, so none may be left out.
+#
+# - `name`: its name.
+# - `about`: what it does.
+# - `names`: its positionals, in order.
+# - `options`: its options.
+function with_positionals(name: str, about: str, names: [str], options: [flags.Argument]) -> flags.Command
+    c @= with_options(name: name, about: about, options: options)
+
+    for n in names
+        flags.add(@c, a: flags.positional(name: n, help: ""))
+
+    return c
+
+# `--config FILE`, required.
+function config_option() -> flags.Argument
+    return flags.with_required(flags.option(long: "config", short: "c", value_name: "FILE", help: "the settings file"))
+
+# `--out FILE`, required.
+function out_option() -> flags.Argument
+    return flags.with_required(flags.option(long: "out", short: "o", value_name: "FILE", help: "the file to write"))
+
+# `--registry URL`, or `REGISTRY_URL`.
+function registry_option() -> flags.Argument
+    return flags.with_required(
+        flags.with_env(flags.option(long: "registry", short: "r", value_name: "URL", help: "the registry's URL, ending in /"), name: "REGISTRY_URL")
+    )
+
+# `--token TOKEN`, or `REGISTRY_TOKEN`.
+function token_option() -> flags.Argument
+    return flags.with_required(
+        flags.with_env(flags.option(long: "token", short: "t", value_name: "TOKEN", help: "the publisher's token"), name: "REGISTRY_TOKEN")
+    )
+
+# `--key FILE`, the private key's PEM.
+function key_option() -> flags.Argument
+    return flags.with_required(flags.option(long: "key", short: "k", value_name: "FILE", help: "the private key, PEM"))
+
+# Runs the command `arguments` name, and answers the program's exit code.
+#
+# - `arguments`: the program's arguments, after its name.
+function run(arguments: [str]) -> i64
+    found = match flags.parse_with_env(command(), arguments: arguments, env: os.env_all().default({}))
+        .ok f => f
+        .err e =>
+            _ = io.write_line(io.stderr(), line: e.msg).is_err()
+            return EXIT_USAGE
+
+    if flags.is_help(found)
+        print(flags.help_text(found))
+        return EXIT_OK
+
+    sub = match flags.subcommand(found)
+        .ok s => s
+        .err _ =>
+            print(flags.help_text(found))
+            return EXIT_USAGE
+
+    match dispatch(sub)
+        .ok _ => return EXIT_OK
+        .err e =>
+            _ = io.write_line(io.stderr(), line: f"registry {flags.name_of(sub)}: {e.code}: {e.msg}").is_err()
+            return EXIT_FAILED
+
+# Runs the subcommand `sub` names.
+#
+# - `sub`: what the parse found for the subcommand.
+#
+# Fails as the command does.
+function dispatch(sub: flags.Found) -> ()?
+    return match flags.name_of(sub)
+        "serve"   => admin.serve(flags.value_of(sub, "config")?)
+        "demo"    => demo.run(flags.value_of(sub, "DIR")?)
+        "token"   => admin.make_token(sub)
+        "keygen"  => publishing.keygen(flags.value_of(sub, "out")?)
+        "pack"    => publishing.pack_folder(sub)
+        "add-key" => publishing.add_key(sub)
+        "publish" => publishing.publish(sub)
+        "resolve" => reading.resolve(sub)
+        "fetch"   => reading.fetch(sub)
+        "search"  => reading.search(sub)
+        "changes" => reading.show_changes(sub)
+        _         => publishing.yank(sub)

@@ -1,0 +1,86 @@
+# The server's loop: connections accepted one at a time on the thread that
+# holds the state, each request read, answered by `api.handle` and written
+# back, until the client closes, the connection's time runs out, or the stop
+# is asked.
+#
+# One connection at a time is how `http.serve` serves too: the state, a
+# SQLite connection and an index in memory, lives on one thread, and the
+# language lets no handler carry it to another. A connection's whole life is
+# bounded by `server.connection_seconds`, so one slow client keeps the others
+# waiting that long at most. The stop (`os.catch_stop`, or `os.ask_stop` from
+# another thread) makes the waiting accept fail `stopped`, and the loop ends
+# with nothing half written.
+
+use <rebel>/http
+use <rebel>/io
+use <rebel>/net
+use <rebel>/time
+
+use server/api
+use server/serving
+use server/settings
+
+## Serving
+
+# What a request may hold: `http`'s usual limits, its body as large as an
+# upload and a form's boundaries around it.
+#
+# - `s`: the settings.
+function limits_of(s: settings.Settings) -> http.Limits
+    limits @= http.default_limits()
+    limits.body_bytes @ s.upload_bytes + 65_536
+    return limits
+
+# Serves every connection `l` accepts until the stop is asked.
+#
+# - `state`: the server's state, lent to every handler.
+# - `l`: the listener; its owner closes it.
+#
+# Answers once the stop is asked. Fails as `net.accept` does for any other
+# reason, a listener closed among them.
+function serve(@state: serving.State, l: net.Listener) -> ()?
+    deadline = time.to_units(state.settings.connection, unit: .millisecond)
+
+    while true
+        conn = match net.accept(l, deadline_ms: deadline)
+            .ok c => c
+            .err e =>
+                if e.code == net.STOPPED
+                    return ok()
+                return fail(code: e.code, msg: e.msg)
+
+        serve_connection(@state, conn: conn)
+
+# Serves the requests of one connection until it closes, and closes it.
+#
+# - `state`: the server's state.
+# - `conn`: the connection, closed by this call.
+function serve_connection(@state: serving.State, conn: net.Conn)
+    reader @= io.reader(conn.stream)
+    limits = limits_of(state.settings)
+
+    while true
+        r = match http.next_request(@reader, limits: limits)
+            .ok got => got
+            .err _  => break
+
+        response = api.handle(@state, r: r)
+
+        match http.write_answer(reader.stream, r: r, response: response)
+            .ok _  => _ = 0
+            .err _ => break
+
+        if r.closing || response.closing
+            break
+
+    _ = io.close(@reader.stream).is_err()
+
+# The absolute URL clients reach a server listening at `address` at, where
+# the settings name none: `http://127.0.0.1:8470/`.
+#
+# - `s`: the settings.
+# - `address`: the address the listener stands on.
+function base_url_of(s: settings.Settings, address: net.Address) -> str
+    if s.public_url != ""
+        return s.public_url
+    return "http://" + net.format_address(address) + "/"

@@ -1,0 +1,84 @@
+# The registry's database schema, as numbered migrations `sql/migrate` plans
+# and `database.migrate_up` runs, each in its own transaction. They are values in
+# the program rather than files beside it, so the one binary carries the
+# schema it was built for and `serve` brings any older database up to it.
+#
+# A migration that has run is never edited: `sql/migrate` keeps the SHA-256 of
+# each up script it ran and refuses a database whose history no longer
+# matches. A change to the schema is a new migration at the end.
+
+use <rebel>/sql/migrate
+
+# Every migration, the oldest first.
+function every() -> [migrate.Migration]
+    return [
+        migrate.Migration(version: 1, name: "create_tables", up: tables_up(), down: ok(tables_down()))
+        migrate.Migration(version: 2, name: "index_digests", up: "CREATE INDEX versions_by_digest ON versions (digest);", down: ok("DROP INDEX versions_by_digest;"))
+        migrate.Migration(version: 3, name: "count_downloads", up: "ALTER TABLE versions ADD COLUMN downloads INTEGER NOT NULL DEFAULT 0;", down: ok("ALTER TABLE versions DROP COLUMN downloads;"))
+    ]
+
+# The first migration: publishers, their tokens and keys, packages and their
+# versions. A token is kept as its SHA-256 alone; a key as its DER; a
+# version's archive lives in the blob store under its digest, and the row
+# keeps the digest, the signature block and the manifest as JSON.
+function tables_up() -> str
+    lines = [
+        "CREATE TABLE publishers ("
+        "    id INTEGER PRIMARY KEY,"
+        "    name TEXT NOT NULL UNIQUE,"
+        "    created_at TIMESTAMP NOT NULL"
+        ");"
+        "CREATE TABLE tokens ("
+        "    id INTEGER PRIMARY KEY,"
+        "    publisher_id INTEGER NOT NULL REFERENCES publishers (id),"
+        "    label TEXT NOT NULL,"
+        "    hash TEXT NOT NULL UNIQUE,"
+        "    scopes TEXT NOT NULL,"
+        "    created_at TIMESTAMP NOT NULL,"
+        "    revoked BOOLEAN NOT NULL DEFAULT 0"
+        ");"
+        "CREATE TABLE signing_keys ("
+        "    id TEXT PRIMARY KEY,"
+        "    publisher_id INTEGER NOT NULL REFERENCES publishers (id),"
+        "    der BLOB NOT NULL,"
+        "    added_at TIMESTAMP NOT NULL"
+        ");"
+        "CREATE TABLE packages ("
+        "    id INTEGER PRIMARY KEY,"
+        "    name TEXT NOT NULL UNIQUE,"
+        "    publisher_id INTEGER NOT NULL REFERENCES publishers (id),"
+        "    created_at TIMESTAMP NOT NULL"
+        ");"
+        "CREATE TABLE versions ("
+        "    id INTEGER PRIMARY KEY,"
+        "    package_id INTEGER NOT NULL REFERENCES packages (id),"
+        "    version TEXT NOT NULL,"
+        "    digest TEXT NOT NULL,"
+        "    size INTEGER NOT NULL,"
+        "    packing TEXT NOT NULL,"
+        "    key_id TEXT NOT NULL REFERENCES signing_keys (id),"
+        "    signature TEXT NOT NULL,"
+        "    manifest TEXT NOT NULL,"
+        "    description TEXT NOT NULL,"
+        "    keywords TEXT NOT NULL,"
+        "    published_at TIMESTAMP NOT NULL,"
+        "    yanked BOOLEAN NOT NULL DEFAULT 0,"
+        "    UNIQUE (package_id, version)"
+        ");"
+    ]
+    return lines.join("\n")
+
+# The first migration's step back: every table, the dependent ones first.
+function tables_down() -> str
+    return "DROP TABLE versions;\nDROP TABLE packages;\nDROP TABLE signing_keys;\nDROP TABLE tokens;\nDROP TABLE publishers;"
+
+test "every: three migrations, numbered from 1 with no gap, each with a step back"
+    ms = every()
+    assert ms.len() == 3
+
+    for i in range(from: 0, to: ms.len())
+        assert ms[i].version == i + 1 && !ms[i].down.is_err()
+
+test "every: planned from nothing, the oldest first"
+    steps = migrate.plan_up(every(), applied: [], opts: migrate.options(.sqlite)).must()
+    assert steps.len() == 3 && steps[0].name == "create_tables" && steps[2].name == "count_downloads"

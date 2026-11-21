@@ -1,0 +1,88 @@
+# The JSON Schema (2020-12) every package's manifest is validated against,
+# after `heroes.toml` is read as TOML and crossed to a `json.Value`.
+#
+# The schema is the registry's published contract for a manifest: what a
+# publisher's tool can check before uploading, and what this server checks
+# again before anything is stored. It says the shape, the patterns and the
+# sizes; what a pattern cannot say, that the version is SemVer 2.0.0 and that
+# each requirement is a range Cargo reads, `manifest` checks with `semver`
+# after the schema has passed. `format` is asserted, so a repository that is
+# no URI is refused rather than kept as an annotation.
+
+use <rebel>/json
+use <rebel>/json/schema
+
+# The schema's text, one JSON document.
+function text() -> str
+    lines = [
+        "{"
+        "  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\","
+        "  \"title\": \"A Heroes package's manifest, heroes.toml\","
+        "  \"type\": \"object\","
+        "  \"required\": [\"package\"],"
+        "  \"additionalProperties\": false,"
+        "  \"properties\": {"
+        "    \"package\": {"
+        "      \"type\": \"object\","
+        "      \"required\": [\"name\", \"version\", \"description\", \"license\"],"
+        "      \"additionalProperties\": false,"
+        "      \"properties\": {"
+        "        \"name\": {\"type\": \"string\", \"pattern\": \"^[a-z][a-z0-9_]{0,63}$\"},"
+        "        \"version\": {\"type\": \"string\", \"minLength\": 5, \"maxLength\": 128},"
+        "        \"description\": {\"type\": \"string\", \"minLength\": 1, \"maxLength\": 280},"
+        "        \"license\": {\"type\": \"string\", \"pattern\": \"^[A-Za-z0-9.+-]+( (AND|OR|WITH) [A-Za-z0-9.+-]+)*$\"},"
+        "        \"authors\": {\"type\": \"array\", \"maxItems\": 20, \"items\": {\"type\": \"string\", \"minLength\": 1, \"maxLength\": 200}},"
+        "        \"keywords\": {\"type\": \"array\", \"maxItems\": 5, \"uniqueItems\": true, \"items\": {\"type\": \"string\", \"pattern\": \"^[a-z][a-z0-9-]{0,19}$\"}},"
+        "        \"repository\": {\"type\": \"string\", \"format\": \"uri\", \"maxLength\": 500}"
+        "      }"
+        "    },"
+        "    \"dependencies\": {"
+        "      \"type\": \"object\","
+        "      \"maxProperties\": 100,"
+        "      \"propertyNames\": {\"pattern\": \"^[a-z][a-z0-9_]{0,63}$\"},"
+        "      \"additionalProperties\": {"
+        "        \"type\": \"object\","
+        "        \"required\": [\"version\"],"
+        "        \"additionalProperties\": false,"
+        "        \"properties\": {\"version\": {\"type\": \"string\", \"minLength\": 1, \"maxLength\": 200}}"
+        "      }"
+        "    }"
+        "  }"
+        "}"
+    ]
+    return lines.join("\n")
+
+# The schema compiled, `format` asserted.
+#
+# Fails as `schema.compile_with` does; the schema above compiles, so a
+# failure here is a broken Rebel, never a publisher's input.
+function compiled() -> schema.Schema?
+    options @= schema.default_options()
+    options.formats @ true
+    return schema.compile_with(json.parse(text())?, options: options)
+
+test "compiled: the schema compiles, a manifest passes and one with an extra key does not"
+    s = compiled().must()
+    good = json.parse(
+        "{\"package\": {\"name\": \"textkit\", \"version\": \"1.0.0\", \"description\": \"Text.\", \"license\": \"MIT\"}}"
+    ).must()
+    assert schema.is_valid(s, instance: good)
+    extra = json.parse(
+        "{\"package\": {\"name\": \"textkit\", \"version\": \"1.0.0\", \"description\": \"Text.\", \"license\": \"MIT\", \"color\": 1}}"
+    ).must()
+    assert !schema.is_valid(s, instance: extra)
+
+test "compiled: a repository that is no URI, six keywords and a capital in a name refused"
+    s = compiled().must()
+    no_uri = json.parse(
+        "{\"package\": {\"name\": \"t\", \"version\": \"1.0.0\", \"description\": \"T.\", \"license\": \"MIT\", \"repository\": \"not a uri\"}}"
+    ).must()
+    assert !schema.is_valid(s, instance: no_uri)
+    many = json.parse(
+        "{\"package\": {\"name\": \"t\", \"version\": \"1.0.0\", \"description\": \"T.\", \"license\": \"MIT\", \"keywords\": [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]}}"
+    ).must()
+    assert !schema.is_valid(s, instance: many)
+    capital = json.parse(
+        "{\"package\": {\"name\": \"Text\", \"version\": \"1.0.0\", \"description\": \"T.\", \"license\": \"MIT\"}}"
+    ).must()
+    assert !schema.is_valid(s, instance: capital)

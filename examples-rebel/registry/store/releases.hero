@@ -1,0 +1,290 @@
+# Packages and their versions in the database: who owns a name, and for each
+# version its digest, its signature, its manifest and whether it is yanked.
+#
+# A version once published is never changed and never removed: its archive
+# stays fetchable under its digest for every lock file that names it.
+# Yanking only keeps it out of new resolutions, and can be taken back.
+
+use <rebel>/sql
+use <rebel>/sql/sqlite
+use <rebel>/strings
+use <rebel>/time
+
+use store/database
+
+## Codes
+
+# The code of a package or a version the database does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+## Packages
+
+# A package: a name and the publisher who owns it.
+record Package
+    # The row's id.
+    id: i64
+    # The name.
+    name: str
+    # The owner's name.
+    publisher: str
+
+# The package named `name`.
+#
+# - `db`: the connection.
+# - `name`: the package's name.
+#
+# Fails `not_found` where none has it.
+function package_named(@db: sqlite.Db, name: str) -> Package?
+    row = match sqlite.query_one(@db, statement: "SELECT k.id AS id, k.name AS name, p.name AS publisher FROM packages k JOIN publishers p ON p.id = k.publisher_id WHERE k.name = ?1", params: [.text(v: name)])
+        .ok r => r
+        .err e =>
+            if e.code == sql.NOT_FOUND
+                return fail(code: NOT_FOUND, msg: f"no package is named \"{name}\"")
+            return fail(code: e.code, msg: e.msg)
+
+    return package_of_row(row)
+
+# The package a row of `package_named`'s query holds.
+#
+# - `row`: the row, holding `id`, `name` and `publisher`.
+#
+# Fails as `sql.integer_named` and `sql.text_named` do.
+function package_of_row(row: sql.Row) -> Package?
+    return ok(
+        Package(id: sql.integer_named(row, name: "id")?, name: sql.text_named(row, name: "name")?, publisher: sql.text_named(row, name: "publisher")?)
+    )
+
+# Adds the package `name`, owned by `publisher`, and answers it.
+#
+# - `db`: the connection.
+# - `name`: the name, checked by the caller.
+# - `publisher`: its owner.
+# - `now`: when it was first published.
+#
+# Fails `exists` where a package has that name.
+function add_package(@db: sqlite.Db, name: str, publisher: database.Publisher, now: time.Instant) -> Package?
+    result = sqlite.exec(@db, statement: "INSERT INTO packages (name, publisher_id, created_at) VALUES (?1, ?2, ?3)", params: [.text(v: name), .integer(v: publisher.id), .instant(v: now)])?
+    return ok(Package(id: result.last_id?, name: name, publisher: publisher.name))
+
+# Every package, by name.
+#
+# - `db`: the connection.
+#
+# Fails as the query does.
+function packages(@db: sqlite.Db) -> [Package]?
+    rows = sqlite.query(@db, statement: "SELECT k.id AS id, k.name AS name, p.name AS publisher FROM packages k JOIN publishers p ON p.id = k.publisher_id ORDER BY k.name", params: [])?
+    found: [Package] @= []
+
+    for row in rows.rows
+        found @ found.push(package_of_row(row)?)
+
+    return ok(found)
+
+# The names of every package another publisher than `publisher` owns: the
+# names a new one must stand clear of (`names.check_clear`).
+#
+# - `db`: the connection.
+# - `publisher`: the publisher asking.
+#
+# Fails as the query does.
+function names_not_of(@db: sqlite.Db, publisher: database.Publisher) -> [str]?
+    rows = sqlite.query(@db, statement: "SELECT name FROM packages WHERE publisher_id <> ?1 ORDER BY name", params: [.integer(v: publisher.id)])?
+    found: [str] @= []
+
+    for row in rows.rows
+        found @ found.push(sql.text_named(row, name: "name")?)
+
+    return ok(found)
+
+## Versions
+
+# One published version of a package.
+record Release
+    # The row's id; 0 for one not yet added.
+    id: i64
+    # The package's name.
+    package: str
+    # The version, as SemVer 2.0.0 writes it.
+    version: str
+    # The archive's digest, `sha256-` and 64 digits.
+    digest: str
+    # The archive's size in bytes.
+    size: i64
+    # How it is compressed: `zstd`, `xz` or `gzip`.
+    packing: str
+    # The id of the key that signed it.
+    key_id: str
+    # The signature's PEM block, as the publisher sent it.
+    signature: str
+    # The manifest, as compact JSON.
+    manifest: str
+    # The manifest's description.
+    description: str
+    # The manifest's keywords.
+    keywords: [str]
+    # When it was published.
+    published_at: time.Instant
+    # Whether it is yanked: kept, fetched by digest, never resolved anew.
+    yanked: bool
+    # How many times its archive was fetched.
+    downloads: i64
+
+# The columns every query of versions reads, by the names `release_of_row`
+# reads them.
+constant COLUMNS: str
+    "v.id AS id, k.name AS package, v.version AS version, v.digest AS digest, v.size AS size, v.packing AS packing, v.key_id AS key_id, v.signature AS signature, v.manifest AS manifest, v.description AS description, v.keywords AS keywords, v.published_at AS published_at, v.yanked AS yanked, v.downloads AS downloads"
+
+# The release a row of `COLUMNS` holds.
+#
+# - `row`: the row.
+#
+# Fails as the reads of a row do.
+function release_of_row(row: sql.Row) -> Release?
+    words = sql.text_named(row, name: "keywords")?
+
+    keywords: [str] = if words == ""
+        []
+    else
+        strings.split(s: words, sep: ",")
+    return ok(
+        Release(id: sql.integer_named(row, name: "id")?, package: sql.text_named(row, name: "package")?, version: sql.text_named(row, name: "version")?, digest: sql.text_named(row, name: "digest")?, size: sql.integer_named(row, name: "size")?, packing: sql.text_named(row, name: "packing")?, key_id: sql.text_named(row, name: "key_id")?, signature: sql.text_named(row, name: "signature")?, manifest: sql.text_named(row, name: "manifest")?, description: sql.text_named(row, name: "description")?, keywords: keywords, published_at: sql.instant_named(row, name: "published_at")?, yanked: sql.boolean_named(row, name: "yanked")?, downloads: sql.integer_named(row, name: "downloads")?)
+    )
+
+# Adds `r` as a version of `package`, and answers it with its id.
+#
+# - `db`: the connection.
+# - `package`: the package.
+# - `r`: the version; its `id`, `yanked` and `downloads` are not read.
+#
+# Fails `exists` where the package has that version already.
+function add_release(@db: sqlite.Db, package: Package, r: Release) -> Release?
+    result = sqlite.exec(@db, statement: "INSERT INTO versions (package_id, version, digest, size, packing, key_id, signature, manifest, description, keywords, published_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)", params: [.integer(v: package.id), .text(v: r.version), .text(v: r.digest), .integer(v: r.size), .text(v: r.packing), .text(v: r.key_id), .text(v: r.signature), .text(v: r.manifest), .text(v: r.description), .text(v: r.keywords.join(",")), .instant(v: r.published_at)])?
+    added @= r
+    added.id @ result.last_id?
+    added.package @ package.name
+    added.yanked @ false
+    added.downloads @ 0
+    return ok(added)
+
+# Every version of the package `name`, in the order they were published.
+#
+# - `db`: the connection.
+# - `name`: the package's name.
+#
+# Fails as the query does; a package with no version answers none.
+function releases_of(@db: sqlite.Db, name: str) -> [Release]?
+    rows = sqlite.query(@db, statement: f"SELECT {COLUMNS} FROM versions v JOIN packages k ON k.id = v.package_id WHERE k.name = ?1 ORDER BY v.id", params: [.text(v: name)])?
+    found: [Release] @= []
+
+    for row in rows.rows
+        found @ found.push(release_of_row(row)?)
+
+    return ok(found)
+
+# The version `version` of the package `name`.
+#
+# - `db`: the connection.
+# - `name`: the package's name.
+# - `version`: the version, as published.
+#
+# Fails `not_found` where the package has no such version.
+function release_of(@db: sqlite.Db, name: str, version: str) -> Release?
+    row = match sqlite.query_one(@db, statement: f"SELECT {COLUMNS} FROM versions v JOIN packages k ON k.id = v.package_id WHERE k.name = ?1 AND v.version = ?2", params: [.text(v: name), .text(v: version)])
+        .ok found => found
+        .err e =>
+            if e.code == sql.NOT_FOUND
+                return fail(code: NOT_FOUND, msg: f"{name} has no version {version}")
+            return fail(code: e.code, msg: e.msg)
+
+    return release_of_row(row)
+
+# The version whose archive has the digest `digest`.
+#
+# - `db`: the connection.
+# - `digest`: the digest.
+#
+# Fails `not_found` where no version's archive has it.
+function release_by_digest(@db: sqlite.Db, digest: str) -> Release?
+    row = match sqlite.query_one(@db, statement: f"SELECT {COLUMNS} FROM versions v JOIN packages k ON k.id = v.package_id WHERE v.digest = ?1 ORDER BY v.id LIMIT 1", params: [.text(v: digest)])
+        .ok found => found
+        .err e =>
+            if e.code == sql.NOT_FOUND
+                return fail(code: NOT_FOUND, msg: f"no archive has the digest {digest}")
+            return fail(code: e.code, msg: e.msg)
+
+    return release_of_row(row)
+
+# Yanks the version `r`, or takes its yank back.
+#
+# - `db`: the connection.
+# - `r`: the version.
+# - `yanked`: true to yank it, false to take the yank back.
+#
+# Fails as the statement does.
+function set_yanked(@db: sqlite.Db, r: Release, yanked: bool) -> ()?
+    _ = sqlite.exec(@db, statement: "UPDATE versions SET yanked = ?1 WHERE id = ?2", params: [.boolean(v: yanked), .integer(v: r.id)])?
+    return ok()
+
+# Counts one fetch of the archive of `r`.
+#
+# - `db`: the connection.
+# - `r`: the version fetched.
+#
+# Fails as the statement does.
+function count_download(@db: sqlite.Db, r: Release) -> ()?
+    _ = sqlite.exec(@db, statement: "UPDATE versions SET downloads = downloads + 1 WHERE id = ?1", params: [.integer(v: r.id)])?
+    return ok()
+
+test "add_release: a version added, found by name, by version and by digest, yanked"
+    db @= sqlite.open_memory().must()
+    database.prepared(@db).must()
+    _ = database.migrate_up(@db).must()
+    now = time.from_unix(whole_seconds: 1_763_715_600, extra_nanoseconds: 0).must()
+    ana = database.add_publisher(@db, name: "ana", now: now).must()
+    key = database.add_key(@db, publisher: ana, der: [1, 2, 3], now: now).must()
+    p = add_package(@db, name: "textkit", publisher: ana, now: now).must()
+    assert package_named(@db, name: "textkit").must() == p
+    r = Release(
+        id: 0,
+        package: "",
+        version: "1.0.0",
+        digest: "sha256-aa",
+        size: 10,
+        packing: "zstd",
+        key_id: key,
+        signature: "sig",
+        manifest: "{}",
+        description: "Text.",
+        keywords: ["text", "wrap"],
+        published_at: now,
+        yanked: true,
+        downloads: 5
+    )
+    added = add_release(@db, package: p, r: r).must()
+    assert added.package == "textkit" && !added.yanked && added.downloads == 0
+    assert releases_of(@db, name: "textkit").must() == [added]
+    assert release_of(@db, name: "textkit", version: "1.0.0").must() == added
+    assert release_by_digest(@db, digest: "sha256-aa").must() == added
+    assert add_release(@db, package: p, r: r).is_err()
+    set_yanked(@db, r: added, yanked: true).must()
+    count_download(@db, r: added).must()
+    again = release_of(@db, name: "textkit", version: "1.0.0").must()
+    assert again.yanked && again.downloads == 1 && again.keywords == ["text", "wrap"]
+    sqlite.close(@db).must()
+
+test "package_named: an unknown name and an unknown version are not_found"
+    db @= sqlite.open_memory().must()
+    database.prepared(@db).must()
+    _ = database.migrate_up(@db).must()
+
+    match package_named(@db, name: "nothing")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match release_of(@db, name: "nothing", version: "1.0.0")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert packages(@db).must().len() == 0
+    sqlite.close(@db).must()

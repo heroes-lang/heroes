@@ -1,0 +1,99 @@
+# The archives on the disk, each a file named by its own digest: the bytes a
+# publisher uploaded, kept exactly, under `<root>/sha256/<first two
+# digits>/<the 64 digits>`. The two digits spread the files over 256
+# folders, so no folder grows past what a file system lists quickly.
+#
+# A file is written whole or not at all (`fs.write_atomic_bytes`), so a crash
+# leaves no half archive under a digest; and every read checks the bytes
+# against the digest they are filed under, so a disk's silent damage is told
+# as a failure rather than served.
+
+use <rebel>/fs
+use <rebel>/path
+
+use packages/digest
+
+## Codes
+
+# The code of an archive whose bytes no longer match the digest they are
+# filed under.
+constant INVALID: str
+    "invalid"
+
+# The code of a digest no archive is filed under.
+constant NOT_FOUND: str
+    "not_found"
+
+## The store
+
+# Where the archives are kept.
+record Blobs
+    # The folder holding the `sha256` folder.
+    root: str
+
+# The file `d` is kept in.
+#
+# - `b`: the store.
+# - `d`: a digest, as `digest.parse` accepts it.
+function file_of(b: Blobs, d: str) -> str
+    hex = d.slice(from: digest.PREFIX.len(), to: d.len())
+    return path.join_all([b.root, "sha256", hex.slice(from: 0, to: 2), hex])
+
+# Keeps `data` under its digest, and answers the digest. Bytes already kept
+# are not written again.
+#
+# - `b`: the store.
+# - `data`: the archive's bytes.
+#
+# Fails as `fs.make_dir_all` and `fs.write_atomic_bytes` do.
+function put(b: Blobs, data: [u8]) -> str?
+    d = digest.of_bytes(data)
+    file = file_of(b, d: d)
+
+    if fs.exists(file)?
+        return ok(d)
+    fs.make_dir_all(path.parent(file))?
+    fs.write_atomic_bytes(file, data: data)?
+    return ok(d)
+
+# The bytes kept under `d`, checked against it.
+#
+# - `b`: the store.
+# - `d`: the digest.
+#
+# Fails `not_found` where nothing is kept under it, `invalid` where the bytes
+# kept no longer have that digest, and as `fs.read_bytes` does.
+function get(b: Blobs, d: str) -> [u8]?
+    _ = digest.parse(d)?
+
+    data = match fs.read_bytes(file_of(b, d: d))
+        .ok got => got
+        .err e =>
+            if e.code == fs.FILE_NOT_FOUND
+                return fail(code: NOT_FOUND, msg: f"no archive is kept under {d}")
+            return fail(code: e.code, msg: e.msg)
+
+    if !digest.matches(data, expected: d)
+        return fail(code: INVALID, msg: f"the archive kept under {d} has another digest: the disk has damaged it")
+    return ok(data)
+
+test "put and get: bytes kept once under their digest, read back, damage told"
+    fs.make_dir_all("build").must()
+    root = fs.make_temp_dir(dir: "build", pattern: "registry-blobs-*").must()
+    b = Blobs(root: root)
+    data: [u8] = [1, 2, 3, 4]
+    d = put(b, data: data).must()
+    assert d == digest.of_bytes(data) && put(b, data: data).must() == d
+    assert get(b, d: d).must() == data
+    fs.write_bytes(file_of(b, d: d), data: [1, 2, 3, 5]).must()
+
+    match get(b, d: d)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match get(b, d: digest.of_bytes([9]))
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert get(b, d: "sha256-zz").is_err()
+    fs.remove_all(root).must()

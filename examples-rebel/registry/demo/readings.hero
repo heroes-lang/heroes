@@ -1,0 +1,139 @@
+# What a package manager reads, as the demo's session reads it after the
+# publications: the listing, ranges resolved before and after a yank, the
+# index, a fetch verified against a trust file and one refused for want of a
+# trusted key, what changed between two versions, a search and the names
+# suggested as one types.
+
+use <rebel>/path
+
+use client/client
+use client/queries
+use client/trust
+use demo/steps
+use packages/changes
+use packages/digest
+use signing/signers
+
+## Readings
+
+# A package manager's reads, after the publications.
+#
+# - `out`: the transcript.
+# - `ana`: ana's client, who yanks.
+# - `reader`: a client with no token.
+# - `trust_file`: the trust file of ana's keys.
+# - `bruno_key`: bruno's key id.
+# - `work`: the folder the session works in.
+#
+# Fails where a read that must succeed does not.
+function read_all(@out: [str], @ana: client.Client, @reader: client.Client, trust_file: str, bruno_key: str, work: str) -> ()?
+    for p in queries.packages(@reader)?
+        versions = count_of(p.versions, noun: "version")
+        steps.say(@out, f"listed: {p.name} {p.newest} by {p.owner}, {versions}: {p.description}")
+
+    steps.say(@out, "")
+
+    for requirement in ["^1.0", "~1.1", ">=2.0.0-beta", "^0.9"]
+        resolve_line(@out, c: @reader, name: "textkit", requirement: requirement)
+
+    client.yank(@ana, name: "textkit", version: "1.2.0", yanked: true)?
+    steps.say(@out, "ana yanks textkit 1.2.0")
+    resolve_line(@out, c: @reader, name: "textkit", requirement: "^1.0")
+    steps.say(@out, "the index a package manager reads:")
+
+    for line in queries.index_lines(@reader, name: "textkit")?
+        steps.say(@out, "    " + line)
+
+    steps.say(@out, "")
+    trusted = trust.read_trusted(trust_file)?
+    verified = trust.fetch_verified(@reader, name: "textkit", version: "1.1.0", trusted: trusted)?
+    trust.save(verified, file: path.join_all([work, "textkit-1.1.0.tar.gz"]))?
+    steps.say(
+        @out,
+        f"fetched textkit 1.1.0: {digest.short(verified.digest)} matches, signed by {verified.key.publisher}'s key {verified.key.id}, {verified.contents.files.len()} files"
+    )
+    yanked = trust.fetch_verified(@reader, name: "textkit", version: "1.2.0", trusted: trusted)?
+    steps.say(
+        @out,
+        f"fetched textkit 1.2.0, yanked yet fetchable by its version: {digest.short(yanked.digest)} matches"
+    )
+    others = [signers.PublisherKey(id: bruno_key, publisher: "bruno", der: [])]
+
+    match trust.fetch_verified(@reader, name: "textkit", version: "1.1.0", trusted: others)
+        .ok _ => steps.say(
+            @out,
+            "fetched textkit 1.1.0 trusting bruno alone: accepted, which the client should have refused"
+        )
+        .err e => steps.say(@out, f"fetched textkit 1.1.0 trusting bruno alone: refused, {e.msg}")
+
+    steps.say(@out, "")
+    show_changes(@out, c: @reader, name: "textkit", from: "1.0.0", to: "1.1.0")?
+    steps.say(@out, "")
+
+    for query in ["wrap", "slug*", "+text -yaml", "yaml config"]
+        hits: [str] @= []
+
+        for h in queries.search(@reader, query: query)?
+            hits @ hits.push(h.name)
+
+        steps.say(@out, f"search \"{query}\": {names_or_none(hits)}")
+
+    for prefix in ["te", "s", "q"]
+        steps.say(@out, f"suggest \"{prefix}\": {names_or_none(queries.suggest(@reader, prefix: prefix)?)}")
+
+    return ok()
+
+# `n` and `noun`, the noun in the plural where `n` is not 1: `1 version`,
+# `4 versions`.
+#
+# - `n`: how many.
+# - `noun`: the noun in the singular.
+function count_of(n: i64, noun: str) -> str
+    if n == 1
+        return f"1 {noun}"
+    return f"{n} {noun}s"
+
+# `names` joined by commas, or `none`.
+#
+# - `names`: the names.
+function names_or_none(names: [str]) -> str
+    if names.len() == 0
+        return "none"
+    return names.join(", ")
+
+# Says which version a requirement takes, or why none.
+#
+# - `out`: the transcript.
+# - `c`: the client.
+# - `name`: the package's name.
+# - `requirement`: the range.
+function resolve_line(@out: [str], @c: client.Client, name: str, requirement: str)
+    match queries.resolve(@c, name: name, requirement: requirement)
+        .ok v  => steps.say(@out, f"resolve {name} {requirement}: {v.version}, {digest.short(v.digest)}")
+        .err e => steps.say(@out, f"resolve {name} {requirement}: refused, {e.msg}")
+
+# Says what changed in `name` from `from` to `to`: the manifest's patch, then
+# each file and its diff.
+#
+# - `out`: the transcript.
+# - `c`: the client.
+# - `name`: the package's name.
+# - `from`: the old version.
+# - `to`: the new version.
+#
+# Fails as `queries.changes_of` does.
+function show_changes(@out: [str], @c: client.Client, name: str, from: str, to: str) -> ()?
+    found = queries.changes_of(@c, name: name, from: from, to: to)?
+    steps.say(@out, f"what changed in {name} from {from} to {to}:")
+
+    for op in found.manifest
+        steps.say(@out, "    manifest: " + changes.describe(op))
+
+    for f in found.files
+        steps.say(@out, f"    {changes.kind_name(f.kind)}: {f.name}")
+
+        for line in client.split_lines(f.unified)
+            if line != ""
+                steps.say(@out, "        " + line)
+
+    return ok()

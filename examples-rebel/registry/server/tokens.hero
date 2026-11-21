@@ -1,0 +1,166 @@
+# A publisher's API token: what `Authorization: Bearer` carries on every
+# request that changes the registry. A token is `hrt_`, forty hexadecimal
+# digits of the system's secure randomness (160 bits), and eight more that
+# are the CRC-32 of everything before them, as GitHub's tokens end in a
+# checksum: a client, a log scanner or this server tells a mistyped or
+# truncated token from a real one without a database, and the server refuses
+# it before any lookup.
+#
+# The server never keeps a token: it keeps the SHA-256 of it (`stored_form`),
+# so a copy of the database grants nothing. A token is shown once, when it is
+# made.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/hash
+use <rebel>/numbers
+use <rebel>/os
+use <rebel>/strings
+
+## Codes
+
+# The code of a text that is not a well-formed token.
+constant INVALID: str
+    "invalid"
+
+## Tokens
+
+# What every token begins with: the registry's tokens told from any other
+# secret a scanner finds.
+constant PREFIX: str
+    "hrt_"
+
+# How many random bytes a token carries.
+constant RANDOM_BYTES: i64
+    20
+
+# How many hexadecimal digits the checksum takes: a CRC-32's four bytes.
+constant CHECKSUM_DIGITS: i64
+    8
+
+# The scopes a token may carry, each a kind of change it allows.
+constant SCOPE_PUBLISH: str
+    "publish"
+
+# Yanking a version and taking the yank back.
+constant SCOPE_YANK: str
+    "yank"
+
+# Adding a signing key to the publisher.
+constant SCOPE_KEYS: str
+    "keys"
+
+# The length of every well-formed token, in bytes.
+function token_length() -> i64
+    return PREFIX.len() + 2 * RANDOM_BYTES + CHECKSUM_DIGITS
+
+# The checksum a token's body ends with: the CRC-32 of the body, in eight
+# lowercase hexadecimal digits.
+#
+# - `body`: the token before its checksum, `hrt_` and the random digits.
+function checksum_of(body: str) -> str
+    crc = to_u64(hash.crc32_text(body)).must()
+    return strings.pad_start(s: numbers.format_u64(crc, base: 16), width: CHECKSUM_DIGITS, pad: "0")
+
+# A new token, made of the system's secure randomness.
+#
+# Fails where the system has no secure randomness to give, with `os`'s code.
+function mint() -> str?
+    random = os.random_bytes(RANDOM_BYTES)?
+    body = PREFIX + bytes.format_hex(random)
+    return ok(body + checksum_of(body))
+
+# Whether `token` is shaped as `mint` makes one and its checksum holds. It
+# reads the text alone: a well-formed token may still be unknown or revoked.
+#
+# - `token`: the text a client sent.
+function is_well_formed(token: str) -> bool
+    if token.len() != token_length() || !strings.has_prefix(s: token, prefix: PREFIX)
+        return false
+    at: i64 @= PREFIX.len()
+
+    while at < token.len()
+        c = token[at]
+
+        if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f')
+            return false
+        at @ at + 1
+
+    body_end = token.len() - CHECKSUM_DIGITS
+    return checksum_of(token.slice(from: 0, to: body_end)) == token.slice(from: body_end, to: token.len())
+
+# What the database keeps of `token`: its SHA-256 in hexadecimal.
+#
+# - `token`: the token, as `mint` made it.
+function stored_form(token: str) -> str
+    return bytes.format_hex(crypto.sha256_text(token))
+
+# `token` checked to be well-formed and answered as it is.
+#
+# - `token`: the text a client sent.
+#
+# Fails `invalid` where it is not shaped as `mint` makes one, or its checksum
+# does not hold: a token mistyped, cut short, or of another service.
+function parse(token: str) -> str?
+    if !strings.has_prefix(s: token, prefix: PREFIX)
+        return fail(code: INVALID, msg: f"a registry token begins with \"{PREFIX}\"")
+
+    if !is_well_formed(token)
+        return fail(code: INVALID, msg: "the token's checksum does not hold: it is mistyped or cut short")
+    return ok(token)
+
+# Whether `scopes`, as the database keeps them, allows `wanted`.
+#
+# - `scopes`: the scopes a token carries, joined by commas.
+# - `wanted`: the scope a request needs.
+function allows(scopes: str, wanted: str) -> bool
+    for scope in strings.split(s: scopes, sep: ",")
+        if strings.trim(scope) == wanted
+            return true
+
+    return false
+
+test "mint: well-formed, of the right length, and never twice the same"
+    a = mint().must()
+    b = mint().must()
+    assert a.len() == token_length() && is_well_formed(a) && is_well_formed(b) && a != b
+
+test "is_well_formed: a digit changed, a token cut short, another prefix and capitals refused"
+    good = mint().must()
+    last = good.slice(from: good.len() - 1, to: good.len())
+
+    changed_digit = if last == "0"
+        "1"
+    else
+        "0"
+    changed = good.slice(from: 0, to: good.len() - 1) + changed_digit
+    assert !is_well_formed(changed)
+    assert !is_well_formed(good.slice(from: 0, to: good.len() - 1))
+    assert !is_well_formed("ghp_" + good.slice(from: 4, to: good.len()))
+    assert !is_well_formed(strings.to_upper(good))
+    assert !is_well_formed("")
+
+test "checksum_of: eight digits, leading zeros kept"
+    assert checksum_of("") == "00000000"
+    assert checksum_of("hrt_") == checksum_of("hrt_") && checksum_of("hrt_").len() == 8
+
+test "parse: a token kept, a foreign one and a broken one told apart"
+    good = mint().must()
+    assert parse(good).must() == good
+
+    match parse("ghp_abc")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "begins with")
+
+    match parse(good.slice(from: 0, to: good.len() - 2) + "zz")
+        .ok _  => assert false
+        .err e => assert strings.contains(s: e.msg, substr: "checksum")
+
+test "stored_form: 64 digits, the same for the same token"
+    t = mint().must()
+    assert stored_form(t).len() == 64 && stored_form(t) == stored_form(t) && stored_form(t) != t
+
+test "allows: a scope among several, none, and a scope's prefix"
+    assert allows(scopes: "publish,yank", wanted: SCOPE_YANK)
+    assert !allows(scopes: "", wanted: SCOPE_PUBLISH)
+    assert !allows(scopes: "publisher", wanted: SCOPE_PUBLISH)

@@ -1,0 +1,96 @@
+# The packages the demo publishes, as the files of their folders: `textkit`
+# in four versions, `slugify` that one of them depends on, and `yamlite` of a
+# second publisher. Their sources are short Heroes modules; the registry
+# reads only their manifests and keeps their bytes.
+#
+# Also the demo's three signing keys, each the SHA-256 of a sentence naming
+# it: fixed, so the key ids the transcript prints are the same on every run,
+# and readable, so nobody mistakes them for a secret.
+
+use <rebel>/crypto
+
+use packages/manifest
+
+## Sources
+
+# One file of a package's folder.
+record Source
+    # Its path below the folder, `/` between its parts.
+    name: str
+    # Its text.
+    text: str
+
+# The folder of `textkit` at `version`: `1.0.0`, `1.1.0`, `1.2.0` or
+# `2.0.0-beta.1`. Each version changes something a reviewer should see:
+# 1.1.0 adds padding and a keyword, 1.2.0 a dependency on `slugify`, 2.0.0
+# renames a function.
+#
+# - `version`: one of the four.
+function textkit(version: str) -> [Source]
+    keywords: [str] = if version == "1.0.0"
+        ["text", "wrap"]
+    else
+        ["text", "wrap", "padding"]
+
+    dependencies: [manifest.Dependency] = if version == "1.0.0" || version == "1.1.0"
+        []
+    else
+        [manifest.Dependency(name: "slugify", requirement: "^0.4")]
+    files: [Source] @= [
+        Source(name: "heroes.toml", text: manifest.text_of(name: "textkit", version: version, description: "Text helpers: wrapping lines to a width, padding and slugs.", keywords: keywords, dependencies: dependencies))
+        Source(name: "README.md", text: "# textkit\n\nText helpers for Heroes programs.\n")
+        Source(name: ".heroesignore", text: "*.tmp\n")
+        Source(name: "notes.tmp", text: "a scratch note the ignore file leaves out\n")
+        Source(name: "src/wrap.hero", text: wrap_source(version))
+    ]
+
+    if version != "1.0.0"
+        files @ files.push(
+            Source(name: "src/pad.hero", text: "# Pads a text on the left to a width.\nfunction pad_left(s: str, width: i64) -> str\n    if s.len() >= width\n        return s\n    return repeat(\" \", to_u64(width - s.len()).must()) + s\n")
+        )
+    return files
+
+# `src/wrap.hero` as `version` writes it.
+#
+# - `version`: the version.
+function wrap_source(version: str) -> str
+    name = if version == "2.0.0-beta.1"
+        "wrap_words"
+    else
+        "wrap"
+
+    split = if version == "1.0.0"
+        "    words = strings.split(s: s, sep: \" \")\n"
+    else
+        "    words = strings.words(s)\n"
+    return f"use <rebel>/strings\n\n# Wraps `s` to lines of at most `width` characters.\nfunction {name}(s: str, width: i64) -> [str]\n{split}    return filled(words, width: width)\n"
+
+# The folder of `slugify` 0.4.0.
+function slugify() -> [Source]
+    return [
+        Source(name: "heroes.toml", text: manifest.text_of(name: "slugify", version: "0.4.0", description: "Slugs for URLs: lower case, ASCII, hyphens.", keywords: ["slug", "url"], dependencies: []))
+        Source(name: "src/slug.hero", text: "# The slug of a title.\nfunction slug(title: str) -> str\n    return title.to_lower()\n")
+    ]
+
+# The folder of `yamlite` 0.1.0, of the second publisher.
+function yamlite() -> [Source]
+    return [
+        Source(name: "heroes.toml", text: manifest.text_of(name: "yamlite", version: "0.1.0", description: "A small reader of YAML's flow style.", keywords: ["yaml", "config"], dependencies: []))
+        Source(name: "src/read.hero", text: "# Reads a document.\nfunction read(text: str) -> str\n    return text\n")
+    ]
+
+# A package whose name stands one letter from `textkit`, as a squatter
+# uploads one.
+function textklt() -> [Source]
+    return [
+        Source(name: "heroes.toml", text: manifest.text_of(name: "textklt", version: "1.0.0", description: "Text helpers.", keywords: ["text"], dependencies: []))
+    ]
+
+## Keys
+
+# The 32 secret bytes of the demo's key named `who`: the SHA-256 of a
+# sentence naming it.
+#
+# - `who`: `ana`, `bruno` or `mallory`.
+function seed_of(who: str) -> [u8]
+    return crypto.sha256_text(f"the registry demo's signing key of {who}")

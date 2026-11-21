@@ -1,0 +1,140 @@
+# The names a package may take, and the names a new package may not take
+# because they stand too close to a package another publisher owns.
+#
+# A name is a Heroes identifier a program writes in `use <name>/...`: a
+# lowercase ASCII letter, then lowercase letters, digits and underscores, at
+# most 64 characters. Names the toolchain or the library keep for themselves
+# are refused.
+#
+# **Typosquatting.** A name one keystroke from a popular package is the
+# cheapest attack on a registry: a user who mistypes `textkit` as `textklt`
+# installs whatever the squatter uploaded. So a FIRST publication of a name is
+# refused where the name, its underscores taken out, equals another
+# publisher's name taken out the same way, or where `diff.close_matches`
+# finds another publisher's name whose likeness to it, by characters as
+# Python's `difflib` measures it, is `SIMILAR_CUTOFF` or more. A publisher's
+# own names never block each other: `textkit` and `textkit_extra` may share
+# an owner.
+
+use <rebel>/diff
+use <rebel>/strings
+
+## Codes
+
+# The code of a name that is no package name, or is kept.
+constant INVALID: str
+    "invalid"
+
+# The code of a name too close to another publisher's package.
+constant EXISTS: str
+    "exists"
+
+## Names
+
+# The most characters a name holds.
+constant MOST_CHARACTERS: i64
+    64
+
+# The least likeness, from 0 to 1, at which a new name is refused as too
+# close to another publisher's: 0.85 refuses one changed letter in a name of
+# seven or more (`textkit` against `textklt` is 12 of 14, 0.857) and lets
+# two names of four letters that share three stand (6 of 8, 0.75).
+constant SIMILAR_CUTOFF: f64
+    0.85
+
+# The names nobody may publish under: the toolchain's and the library's own.
+function reserved() -> [str]
+    return ["heroes", "rebel", "std", "core", "builtin", "test", "internal", "main"]
+
+# `name` checked to be a package name, and answered as it is.
+#
+# - `name`: the name a manifest or a URL gives.
+#
+# Fails `invalid` where it is empty, longer than `MOST_CHARACTERS`, begins
+# with anything but a lowercase letter, holds anything but lowercase letters,
+# digits and underscores, ends with an underscore, or is reserved.
+function parse(name: str) -> str?
+    if name.len() == 0
+        return fail(code: INVALID, msg: "a package name is not empty")
+
+    if name.len() > MOST_CHARACTERS
+        return fail(code: INVALID, msg: f"the name \"{name}\" is longer than {MOST_CHARACTERS} characters")
+
+    if !(name[0] >= 'a' && name[0] <= 'z')
+        return fail(code: INVALID, msg: f"the name \"{name}\" does not begin with a lowercase letter")
+    at: i64 @= 1
+
+    while at < name.len()
+        c = name[at]
+
+        if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_')
+            return fail(
+                code: INVALID,
+                msg: f"the name \"{name}\" holds a character other than a-z, 0-9 and _ at byte {at}"
+            )
+        at @ at + 1
+
+    if name[name.len() - 1] == '_'
+        return fail(code: INVALID, msg: f"the name \"{name}\" ends with an underscore")
+
+    for kept in reserved()
+        if name == kept
+            return fail(code: INVALID, msg: f"the name \"{name}\" is kept by the toolchain")
+
+    return ok(name)
+
+# `name` with its underscores taken out: two names that differ only there
+# read the same to a person.
+#
+# - `name`: a package name.
+function folded(name: str) -> str
+    return strings.replace_all(s: name, old: "_", new: "")
+
+# Checks that `name`, published for the first time, stands clear of every
+# name of `others`, the packages other publishers own.
+#
+# - `name`: the new name, already `parse`d.
+# - `others`: the names of every package another publisher owns; empty for
+#   a registry with no other publisher.
+#
+# Fails `exists` where a name of `others` folds to the same text, or is
+# likeness `SIMILAR_CUTOFF` or more to it, the message naming the closest.
+function check_clear(name: str, others: [str]) -> ()?
+    for other in others
+        if folded(other) == folded(name)
+            return fail(code: EXISTS, msg: f"\"{name}\" reads as \"{other}\", a package of another publisher")
+
+    close = diff.close_matches(word: name, possibilities: others, n: 1, cutoff: SIMILAR_CUTOFF)
+
+    if close.len() > 0
+        return fail(code: EXISTS, msg: f"\"{name}\" is too close to \"{close[0]}\", a package of another publisher")
+    return ok()
+
+test "parse: names kept, and every refusal"
+    assert parse("textkit").must() == "textkit"
+    assert parse("a").must() == "a"
+    assert parse("json_rpc2").must() == "json_rpc2"
+    assert parse("").is_err()
+    assert parse("Textkit").is_err()
+    assert parse("2fast").is_err()
+    assert parse("text-kit").is_err()
+    assert parse("textkit_").is_err()
+    assert parse("rebel").is_err()
+    assert parse(repeat("a", 64)).must().len() == 64
+    assert parse(repeat("a", 65)).is_err()
+
+test "parse: a character of more than one byte refused, never cut"
+    match parse("café")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "at byte 3")
+
+test "check_clear: one letter changed, underscores only, a short name and no others"
+    assert check_clear(name: "textklt", others: ["textkit"]).is_err()
+    assert check_clear(name: "text_kit", others: ["textkit"]).is_err()
+    check_clear(name: "jsonx", others: ["textkit", "yaml"]).must()
+    check_clear(name: "yamz", others: ["yaml"]).must()
+    check_clear(name: "textkit", others: []).must()
+
+    match check_clear(name: "textklt", others: ["yaml", "textkit"])
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS && strings.contains(s: e.msg, substr: "\"textkit\"")

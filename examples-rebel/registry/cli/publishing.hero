@@ -1,0 +1,118 @@
+# The publisher's commands: `keygen` makes a key pair, `pack` packs a
+# package's folder reproducibly, `add-key` registers a public key, `publish`
+# signs an archive and uploads it, and `yank` keeps a version out of new
+# resolutions or takes that back.
+
+use <rebel>/crypto/keypairs
+use <rebel>/flags
+use <rebel>/fs
+use <rebel>/path
+
+use client/client
+use packages/digest
+use packages/manifest
+use packages/manifest_schema
+use packages/pack
+use packages/unpack
+use signing/signatures
+use signing/signers
+
+## The publisher's commands
+
+# Makes an Ed25519 key pair: the private key written to `out`, which must not
+# be there yet, the public key and its id printed.
+#
+# - `out`: the private key's file.
+#
+# Fails `exists` where `out` is there, `unsupported` where the platform has
+# no Ed25519.
+function keygen(out: str) -> ()?
+    key @= keypairs.generate(.ed25519)?
+    private_pem = keypairs.format_private_pem(key)
+    public_pem = signers.public_pem_of(key)
+    keypairs.close_private(@key)?
+    fs.write_new_text(path: out, text: private_pem?)?
+    public_text = public_pem?
+    print(public_text)
+    print(f"key id: {signers.id_of(signers.read_public(public_text)?)}")
+    return ok()
+
+# Packs the folder `DIR` into `--out`, named by its manifest, and prints its
+# digest.
+#
+# - `sub`: the subcommand's arguments.
+#
+# Fails where the folder holds no valid manifest, and as `pack.pack` fails.
+function pack_folder(sub: flags.Found) -> ()?
+    dir = flags.value_of(sub, "DIR")?
+    m = manifest.read(read_file(path.join_all([dir, manifest.FILE_NAME]))?, compiled: manifest_schema.compiled()?)?
+    packing = unpack.parse_packing(flags.value_of(sub, "packing")?)?
+    data = pack.pack(dir: dir, folder: f"{m.name}-{m.version}", packing: packing)?
+    out = flags.value_of(sub, "out")?
+    fs.write_atomic_bytes(out, data: data)?
+    print(f"{m.name} {m.version}: {pack.files_of(dir)?.len()} files, {data.len()} bytes, {digest.of_bytes(data)}")
+    return ok()
+
+# The private key in the PEM file `file`, which the caller closes.
+#
+# - `file`: the file.
+#
+# Fails as `keypairs.parse_private_pem` does.
+function private_key_of(file: str) -> keypairs.PrivateKey?
+    return keypairs.parse_private_pem(read_file(file)?)
+
+# Adds the public half of `--key` to the token's publisher.
+#
+# - `sub`: the subcommand's arguments.
+#
+# Fails as the key's file and the registry fail.
+function add_key(sub: flags.Found) -> ()?
+    key @= private_key_of(flags.value_of(sub, "key")?)?
+    pem = signers.public_pem_of(key)
+    keypairs.close_private(@key)?
+    c @= client.new_client(base: flags.value_of(sub, "registry")?, token: flags.value_of(sub, "token")?)?
+    print(f"key id: {client.add_key(@c, pem: pem?)?}")
+    return ok()
+
+# Signs the archive `ARCHIVE` with `--key` and publishes it under the name
+# and version its manifest gives.
+#
+# - `sub`: the subcommand's arguments.
+#
+# Fails where the archive does not open or holds no valid manifest, and as
+# the registry refuses it.
+function publish(sub: flags.Found) -> ()?
+    data = fs.read_bytes(flags.value_of(sub, "ARCHIVE")?)?
+    contents = unpack.open(data, limits: unpack.Limits(unpacked_bytes: 52_428_800, files: 2000))?
+    m = manifest.read(contents.manifest_text, compiled: manifest_schema.compiled()?)?
+    key @= private_key_of(flags.value_of(sub, "key")?)?
+    signature = signed_with(key, name: m.name, version: m.version, data: data)
+    keypairs.close_private(@key)?
+    c @= client.new_client(base: flags.value_of(sub, "registry")?, token: flags.value_of(sub, "token")?)?
+    done = client.publish(@c, name: m.name, version: m.version, archive: data, signature: signature?)?
+    print(f"{m.name} {m.version}: {done.status}, {done.digest}")
+    return ok()
+
+# The signature block of `key` over `name`, `version` and the digest of
+# `data`, naming the key by its own id.
+#
+# - `key`: the private key, which stays open.
+# - `name`: the package's name.
+# - `version`: the version.
+# - `data`: the archive's bytes.
+#
+# Fails as `signatures.sign` does.
+function signed_with(key: keypairs.PrivateKey, name: str, version: str, data: [u8]) -> str?
+    id = signers.id_of(signers.public_der_of(key)?)
+    return signatures.sign(key, key_id: id, package: name, version: version, digest: digest.of_bytes(data))
+
+# Yanks `NAME` at `VERSION`, or takes the yank back with `--undo`.
+#
+# - `sub`: the subcommand's arguments.
+#
+# Fails as the registry does.
+function yank(sub: flags.Found) -> ()?
+    c @= client.new_client(base: flags.value_of(sub, "registry")?, token: flags.value_of(sub, "token")?)?
+    undo = flags.is_on(sub, "undo")
+    client.yank(@c, name: flags.value_of(sub, "NAME")?, version: flags.value_of(sub, "VERSION")?, yanked: !undo)?
+    return ok()

@@ -1,0 +1,101 @@
+# The digest a registry names an archive by: the SHA-256 of the archive's
+# bytes exactly as its publisher uploaded them, written `sha256-` and 64
+# lowercase hexadecimal digits. The registry stores, serves and signs those
+# bytes and never recompresses them, so the digest a client computes over a
+# download is the one the publisher signed.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/strings
+
+## Codes
+
+# The code of a text that is not a digest this registry writes.
+constant INVALID: str
+    "invalid"
+
+## Digests
+
+# What every digest begins with: the algorithm's name and a hyphen.
+constant PREFIX: str
+    "sha256-"
+
+# How many hexadecimal digits follow the prefix: SHA-256's 32 bytes.
+constant HEX_DIGITS: i64
+    64
+
+# The digest of `data`: `sha256-` and the 64 lowercase hexadecimal digits of
+# its SHA-256.
+#
+# - `data`: the archive's bytes, every one of them.
+function of_bytes(data: [u8]) -> str
+    return PREFIX + bytes.format_hex(crypto.sha256(data))
+
+# `text` checked to be a digest as `of_bytes` writes it, and answered as it
+# is.
+#
+# - `text`: the digest as a client or a database wrote it.
+#
+# Fails `invalid` where the prefix is not `sha256-`, or what follows is not
+# 64 lowercase hexadecimal digits.
+function parse(text: str) -> str?
+    if !strings.has_prefix(s: text, prefix: PREFIX)
+        return fail(code: INVALID, msg: f"the digest \"{text}\" does not begin with \"{PREFIX}\"")
+
+    if text.len() != PREFIX.len() + HEX_DIGITS
+        return fail(
+            code: INVALID,
+            msg: f"the digest \"{text}\" does not hold {HEX_DIGITS} hexadecimal digits after its prefix"
+        )
+    at: i64 @= PREFIX.len()
+
+    while at < text.len()
+        c = text[at]
+
+        if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f')
+            return fail(
+                code: INVALID,
+                msg: f"the digest \"{text}\" holds a character that is no lowercase hexadecimal digit at byte {at}"
+            )
+        at @ at + 1
+
+    return ok(text)
+
+# Whether `data` is what `expected` names: its digest computed and compared
+# in constant time, so a client learns nothing from how long a refusal took.
+#
+# - `data`: the bytes received.
+# - `expected`: the digest they should have, as `of_bytes` writes it.
+function matches(data: [u8], expected: str) -> bool
+    return crypto.equals_constant_time(a: bytes.from_text(of_bytes(data)), b: bytes.from_text(expected))
+
+# The first twelve hexadecimal digits of `digest`, after its prefix: what a
+# line written for a person shows.
+#
+# - `digest`: a digest as `of_bytes` writes it; a shorter text is answered
+#   whole.
+function short(digest: str) -> str
+    if digest.len() < PREFIX.len() + 12
+        return digest
+    return digest.slice(from: 0, to: PREFIX.len() + 12)
+
+test "of_bytes: the empty archive and three bytes"
+    assert of_bytes([]) == "sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    assert of_bytes(bytes.from_text("abc")) == "sha256-ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+
+test "parse: a digest kept, a wrong prefix, a short one and capitals refused"
+    good = of_bytes(bytes.from_text("abc"))
+    assert parse(good).must() == good
+    assert parse("sha512-ba78").is_err()
+    assert parse("sha256-ba78").is_err()
+    assert parse("sha256-BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD").is_err()
+    assert parse("").is_err()
+
+test "matches: the right bytes, and one byte changed"
+    d = of_bytes(bytes.from_text("package"))
+    assert matches(bytes.from_text("package"), expected: d)
+    assert !matches(bytes.from_text("packagf"), expected: d)
+
+test "short: twelve digits after the prefix, a short text whole"
+    assert short(of_bytes([])) == "sha256-e3b0c44298fc"
+    assert short("sha256-ab") == "sha256-ab"

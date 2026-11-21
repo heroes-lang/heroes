@@ -1,0 +1,345 @@
+# An uploaded archive opened, as an archive from a stranger is: every size
+# bounded, every name checked, nothing written to a disk.
+#
+# A package's archive is a tar whose every entry stands under one folder
+# named `<name>-<version>`, compressed one of three ways, told by its first
+# bytes: Zstandard (`.tar.zst`, the form `pack` writes by default), xz
+# (`.tar.xz`) or gzip (`.tar.gz`). `archive` reads tar plain or gzip, and
+# holds Zstandard and xz tars pending in its ledger, so the registry takes
+# those two off with `compress/zstd` and `compress/xz` itself and hands the
+# plain tar on.
+#
+# What is refused, each `invalid` with the entry named: a link of either kind,
+# a device or a pipe; a name that is not local by POSIX's rules (absolute, or
+# climbing out with `..`), holds a backslash, or stands outside the archive's
+# one folder; two entries of one name; more than `Limits.files` entries; and
+# an archive with no `heroes.toml` at its folder's root. Past
+# `Limits.unpacked_bytes` the expansion stops with `limit`, so a small upload
+# that expands without measure costs at most that.
+
+use <rebel>/archive
+use <rebel>/bytes
+use <rebel>/compress
+use <rebel>/compress/xz
+use <rebel>/compress/zstd
+use <rebel>/path
+use <rebel>/strings
+
+use packages/manifest
+
+## Codes
+
+# The code of an archive refused for its form or its names.
+constant INVALID: str
+    "invalid"
+
+# The code of an archive past one of its limits.
+constant LIMIT: str
+    "limit"
+
+## Packings
+
+# How an archive's tar is compressed.
+variant Packing
+    # Zstandard, RFC 8878: `.tar.zst`.
+    zstd
+    # xz: `.tar.xz`.
+    xz
+    # gzip, RFC 1952: `.tar.gz`.
+    gzip
+
+# The packing `data` begins as: Zstandard's magic number `28 b5 2f fd`, xz's
+# `fd 37 7a 58 5a 00`, or gzip's header as `compress.format_of` tells it.
+#
+# - `data`: the archive's bytes, at least their first six.
+#
+# Fails `invalid` where they begin as none of the three.
+function packing_of(data: [u8]) -> Packing?
+    if starts_with(data: data, magic: [0x28, 0xb5, 0x2f, 0xfd])
+        return ok(.zstd)
+
+    if starts_with(data: data, magic: [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00])
+        return ok(.xz)
+
+    match compress.format_of(data)
+        .ok f =>
+            if f == .gzip
+                return ok(.gzip)
+        .err _ => _ = 0
+
+    return fail(code: INVALID, msg: "the archive is neither Zstandard, xz nor gzip")
+
+# Whether `data` begins with the bytes of `magic`.
+#
+# - `data`: the bytes asked about.
+# - `magic`: the bytes it should begin with.
+function starts_with(data: [u8], magic: [u8]) -> bool
+    if data.len() < magic.len()
+        return false
+
+    for i in range(from: 0, to: magic.len())
+        if data[i] != magic[i]
+            return false
+
+    return true
+
+# The name of a packing's file ending: `.tar.zst`, `.tar.xz` or `.tar.gz`.
+#
+# - `packing`: the packing.
+function extension_of(packing: Packing) -> str
+    return match packing
+        .zstd => ".tar.zst"
+        .xz   => ".tar.xz"
+        .gzip => ".tar.gz"
+
+# The media type an archive of `packing` is served with.
+#
+# - `packing`: the packing.
+function media_type_of(packing: Packing) -> str
+    return match packing
+        .zstd => "application/zstd"
+        .xz   => "application/x-xz"
+        .gzip => "application/gzip"
+
+# The packing a word names, as a command line or a setting writes it.
+#
+# - `word`: `zstd`, `xz` or `gzip`.
+#
+# Fails `invalid` for any other word.
+function parse_packing(word: str) -> Packing?
+    return match word
+        "zstd" => ok(.zstd)
+        "xz"   => ok(.xz)
+        "gzip" => ok(.gzip)
+        _      => fail(code: INVALID, msg: f"\"{word}\" is no packing: zstd, xz or gzip")
+
+## Opening
+
+# How much an archive may hold before it is refused.
+record Limits
+    # The most bytes the tar may expand to, headers and padding included.
+    unpacked_bytes: i64
+    # The most entries, folders included.
+    files: i64
+
+# One file of a package, its name below the package's folder.
+record File
+    # Its path below the folder, parts joined by `/`: `src/wrap.hero`.
+    name: str
+    # Its bytes.
+    data: [u8]
+
+# What an archive holds, opened and checked.
+record Contents
+    # How it was compressed.
+    packing: Packing
+    # The one folder every entry stands under: `textkit-1.1.0`.
+    folder: str
+    # Its files, in the archive's order; folders are not listed.
+    files: [File]
+    # The text of `heroes.toml`.
+    manifest_text: str
+
+# The contents of the archive `data`, opened under `limits`.
+#
+# - `data`: the archive's bytes, as uploaded.
+# - `limits`: the most it may expand to and hold.
+#
+# Fails `invalid` for a packing none of the three, a tar that does not read,
+# and every refusal of the module's comment; `limit` past `limits`.
+function open(data: [u8], limits: Limits) -> Contents?
+    packing = packing_of(data)?
+    members = members_of(data, packing: packing, limits: limits)?
+
+    if members.len() > limits.files
+        return fail(
+            code: LIMIT,
+            msg: f"the archive holds {members.len()} entries, more than the {limits.files} allowed"
+        )
+    folder: str @= ""
+    files: [File] @= []
+    seen: {str: bool} @= {}
+
+    for m in members
+        name = m.entry.name
+        check_name(name)?
+
+        if seen[name].default(false)
+            return fail(code: INVALID, msg: f"the archive holds \"{name}\" twice")
+        seen[name] @ true
+        top = path.parts_by(name, rules: .posix)[0]
+
+        if folder == ""
+            folder @ top
+        else if top != folder
+            return fail(code: INVALID, msg: f"the entry \"{name}\" stands outside the folder \"{folder}\"")
+
+        match m.entry.kind
+            .file =>
+                if name == folder
+                    return fail(
+                        code: INVALID,
+                        msg: f"the entry \"{name}\" is a file where the package's folder should be"
+                    )
+                files @ files.push(File(name: name.slice(from: folder.len() + 1, to: name.len()), data: m.data))
+            .directory => _ = 0
+            .symlink => return fail(
+                code: INVALID,
+                msg: f"the entry \"{name}\" is a symbolic link, which a package may not hold"
+            )
+            .hard_link => return fail(
+                code: INVALID,
+                msg: f"the entry \"{name}\" is a hard link, which a package may not hold"
+            )
+            .other o => return fail(code: INVALID, msg: f"the entry \"{name}\" is a device or a pipe (type {o.flag})")
+
+    return ok(Contents(packing: packing, folder: folder, files: files, manifest_text: manifest_text_of(files)?))
+
+# The tar members of `data`, its packing taken off within `limits`.
+#
+# - `data`: the archive's bytes.
+# - `packing`: how they are compressed.
+# - `limits`: the most bytes the tar may expand to.
+#
+# Fails `limit` past `limits.unpacked_bytes`, `invalid` where the bytes do not
+# decompress or the tar does not read.
+function members_of(data: [u8], packing: Packing, limits: Limits) -> [archive.TarMember]?
+    return match packing
+        .gzip => archive.decode_tar(data, compression: .gzip, limit: limits.unpacked_bytes)
+        .zstd => archive.decode_tar(
+            zstd.decompress(data, limit: limits.unpacked_bytes)?,
+            compression: .none,
+            limit: limits.unpacked_bytes
+        )
+        .xz => archive.decode_tar(
+            xz.decompress(data, limit: limits.unpacked_bytes)?,
+            compression: .none,
+            limit: limits.unpacked_bytes
+        )
+
+# Checks that `name` is one a package may hold: local by POSIX's rules, with
+# no backslash and no empty or `.` part.
+#
+# - `name`: an entry's name as the tar holds it.
+#
+# Fails `invalid`, naming the entry and why.
+function check_name(name: str) -> ()?
+    if !path.is_local_by(name, rules: .posix)
+        return fail(code: INVALID, msg: f"the entry \"{name}\" climbs out of the package's folder or is absolute")
+
+    if strings.contains(s: name, substr: "\\")
+        return fail(code: INVALID, msg: f"the entry \"{name}\" holds a backslash")
+
+    if path.clean_by(name, rules: .posix) != name
+        return fail(
+            code: INVALID,
+            msg: f"the entry \"{name}\" is not written as its clean path, {path.clean_by(name, rules: .posix)}"
+        )
+    return ok()
+
+# The text of the manifest among `files`.
+#
+# - `files`: the package's files, their names below its folder.
+#
+# Fails `invalid` where none is `heroes.toml`, or it is not UTF-8.
+function manifest_text_of(files: [File]) -> str?
+    for f in files
+        if f.name == manifest.FILE_NAME
+            return match bytes_text(f.data)
+                .ok t  => ok(t)
+                .err _ => fail(code: INVALID, msg: f"{manifest.FILE_NAME} is not UTF-8")
+
+    return fail(code: INVALID, msg: f"the archive holds no {manifest.FILE_NAME} at its folder's root")
+
+# `data` as text.
+#
+# - `data`: bytes that should be UTF-8.
+#
+# Fails `not_text` where they are not.
+function bytes_text(data: [u8]) -> str?
+    return bytes.to_text(data)
+
+## Tests
+
+# A tar of `entries`, each a name and its text, compressed as `packing` says.
+#
+# - `entries`: the members, in order.
+# - `packing`: how to compress the tar.
+function tar_of(entries: [archive.TarMember], packing: Packing) -> [u8]
+    plain = archive.encode_tar(entries, compression: .none).must()
+
+    return match packing
+        .gzip => archive.encode_tar(entries, compression: .gzip).must()
+        .zstd => zstd.compress(plain, zstd.default_options()).must()
+        .xz   => xz.compress(plain, xz.default_options()).must()
+
+# A file member named `name` holding `text`.
+#
+# - `name`: its name in the tar.
+# - `text`: its contents.
+function member(name: str, text: str) -> archive.TarMember
+    entry @= archive.tar_entry(name, kind: .file)
+    data = bytes.from_text(text)
+    entry.size @ data.len()
+    return archive.TarMember(entry: entry, data: data)
+
+# The usual limits of the tests.
+function test_limits() -> Limits
+    return Limits(unpacked_bytes: 1_000_000, files: 100)
+
+test "open: the three packings, every file below its folder"
+    packings: [Packing] = [.zstd, .xz, .gzip]
+
+    for packing in packings
+        data = tar_of(
+            [member(name: "p-1.0.0/heroes.toml", text: "[package]\n"), member(name: "p-1.0.0/src/a.hero", text: "x")],
+            packing: packing
+        )
+        c = open(data, limits: test_limits()).must()
+        assert c.packing == packing && c.folder == "p-1.0.0" && c.manifest_text == "[package]\n"
+        assert c.files.len() == 2 && c.files[1].name == "src/a.hero"
+
+test "open: a name climbing out, an absolute one, a second folder and a twin refused"
+    for bad in ["p-1.0.0/../evil", "/etc/passwd", "q-1.0.0/x"]
+        data = tar_of([member(name: "p-1.0.0/heroes.toml", text: ""), member(name: bad, text: "x")], packing: .gzip)
+
+        match open(data, limits: test_limits())
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    twin = tar_of(
+        [member(name: "p-1.0.0/heroes.toml", text: ""), member(name: "p-1.0.0/heroes.toml", text: "")],
+        packing: .gzip
+    )
+    assert open(twin, limits: test_limits()).is_err()
+
+test "open: a link refused, no manifest refused, and past the limits"
+    link @= archive.tar_entry("p-1.0.0/l", kind: .symlink)
+    link.link @ "/etc/passwd"
+    with_link = tar_of(
+        [member(name: "p-1.0.0/heroes.toml", text: ""), archive.TarMember(entry: link, data: [])],
+        packing: .zstd
+    )
+
+    match open(with_link, limits: test_limits())
+        .ok _  => assert false
+        .err e => assert strings.contains(s: e.msg, substr: "symbolic link")
+
+    no_manifest = tar_of([member(name: "p-1.0.0/README", text: "")], packing: .xz)
+    assert open(no_manifest, limits: test_limits()).is_err()
+    big = tar_of([member(name: "p-1.0.0/heroes.toml", text: repeat("x", 5000))], packing: .zstd)
+
+    match open(big, limits: Limits(unpacked_bytes: 2000, files: 100))
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    many = tar_of([member(name: "p-1.0.0/heroes.toml", text: ""), member(name: "p-1.0.0/b", text: "")], packing: .gzip)
+
+    match open(many, limits: Limits(unpacked_bytes: 100_000, files: 1))
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+test "packing_of: bytes of none of the three refused"
+    assert packing_of([]).is_err()
+    assert packing_of([0x50, 0x4b, 0x03, 0x04, 0, 0]).is_err()
+    assert parse_packing("bzip2").is_err() && parse_packing("xz").must() == .xz

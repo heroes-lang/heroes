@@ -1,0 +1,101 @@
+registry demo
+migrations applied: 3
+publishers: ana and bruno, each with a token of the scopes publish,yank,keys
+health: ok
+
+## Keys
+ana adds her signing key: c2b486c2dc36316c
+bruno adds his signing key: cfd758ef0c6a683a
+ana adds it again: the same id, c2b486c2dc36316c
+a client keeps ana's keys as its trust file: c2b486c2dc36316c
+
+## Publishing
+ana: slugify 0.4.0 as .tar.xz, 2 files: 201 published, sha256-6fd5e8855eca
+ana: textkit 1.0.0 as .tar.zst, 3 files: 201 published, sha256-b8b0f264b484
+ana: textkit 1.1.0 as .tar.gz, 4 files: 201 published, sha256-9e9ada813432
+ana: textkit 1.2.0 as .tar.zst, 4 files: 201 published, sha256-f6b2bb71e84a
+ana: textkit 2.0.0-beta.1 as .tar.zst, 4 files: 201 published, sha256-4195e16a02b0
+ana: textkit 1.0.0 as .tar.zst, 3 files: 200 already published, the same bytes, sha256-b8b0f264b484
+bruno: yamlite 0.1.0 as .tar.zst, 2 files: 201 published, sha256-a50fe49ec288
+
+## Refusals
+a publication with no token: refused, 401: this route needs a token: Authorization: Bearer <token>
+a token with its last digit mistyped: refused, 401: the token's checksum does not hold: it is mistyped or cut short
+bruno publishes textklt: refused, 409: "textklt" is too close to "textkit", a package of another publisher
+bruno publishes textkit 9.0.0: refused, 403: textkit belongs to another publisher
+textkit 1.0.0 again, packed as .tar.gz: refused, 409: textkit 1.0.0 is published already with another archive, and a version is never replaced
+textkit 1.3.0 signed by mallory's key, naming ana's: refused, 422: the signature does not verify against the key c2b486c2dc36316c
+textkit 1.3.0 signed by mallory's own key: refused, 422: the signature names the key 904b89e9607c2b95, which no publisher has added
+textkit 1.3.0 signed for 1.3.1: refused, 422: the signature is for textkit 1.3.1, not textkit 1.3.0
+an archive with an entry climbing out: refused, 422: the entry "textkit-1.3.0/../../.profile" climbs out of the package's folder or is absolute
+a manifest with six keywords: refused, 422: heroes.toml does not pass the manifest schema: at /package/keywords: 6 elements, more than the 5 allowed (maxItems at /properties/package/properties/keywords/maxItems)
+a manifest of 1.3.1 in the folder of 1.3.0: refused, 422: the manifest is of textkit 1.3.1, and the upload of textkit 1.3.0
+a dependency no package of the registry is: refused, 422: the dependency unicode_extra is no package of this registry
+ana sends textkit 1.0.0 again and again: 2 more accepted, then refused 429, the wait asked longer than this client's patience
+
+## Reading
+listed: slugify 0.4.0 by ana, 1 version: Slugs for URLs: lower case, ASCII, hyphens.
+listed: textkit 1.2.0 by ana, 4 versions: Text helpers: wrapping lines to a width, padding and slugs.
+listed: yamlite 0.1.0 by bruno, 1 version: A small reader of YAML's flow style.
+
+resolve textkit ^1.0: 1.2.0, sha256-f6b2bb71e84a
+resolve textkit ~1.1: 1.1.0, sha256-9e9ada813432
+resolve textkit >=2.0.0-beta: 2.0.0-beta.1, sha256-4195e16a02b0
+resolve textkit ^0.9: refused, 404: no version meets "^0.9" (published: 1.0.0, 1.1.0, 1.2.0, 2.0.0-beta.1)
+ana yanks textkit 1.2.0
+resolve textkit ^1.0: 1.1.0, sha256-9e9ada813432
+the index a package manager reads:
+    {"name":"textkit","vers":"1.0.0","cksum":"sha256-b8b0f264b484037a433e24f08174978f003306727dbb8a9341b831c179ad83d1","yanked":false,"deps":[]}
+    {"name":"textkit","vers":"1.1.0","cksum":"sha256-9e9ada813432318f4decc25f87e5a037284756b8a612ceecc674d5e09748e69d","yanked":false,"deps":[]}
+    {"name":"textkit","vers":"1.2.0","cksum":"sha256-f6b2bb71e84a4f6803ca879d749ae2b124f4bcbb8fb1371a9b364969c85cbe9a","yanked":true,"deps":[{"name":"slugify","req":"^0.4"}]}
+    {"name":"textkit","vers":"2.0.0-beta.1","cksum":"sha256-4195e16a02b0f74c5eb5c12146a4c80942e91cb69243c6cdc2b33340b55cab66","yanked":false,"deps":[{"name":"slugify","req":"^0.4"}]}
+
+fetched textkit 1.1.0: sha256-9e9ada813432 matches, signed by ana's key c2b486c2dc36316c, 4 files
+fetched textkit 1.2.0, yanked yet fetchable by its version: sha256-f6b2bb71e84a matches
+fetched textkit 1.1.0 trusting bruno alone: refused, no trusted key is named c2b486c2dc36316c
+
+what changed in textkit from 1.0.0 to 1.1.0:
+    manifest: replace /package/version "1.1.0"
+    manifest: add /package/keywords/2 "padding"
+    changed: heroes.toml
+        --- a/heroes.toml
+        +++ b/heroes.toml
+        @@ -1,6 +1,6 @@
+         [package]
+         name = "textkit"
+        -version = "1.0.0"
+        +version = "1.1.0"
+         description = "Text helpers: wrapping lines to a width, padding and slugs."
+         license = "Apache-2.0"
+        -keywords = ["text", "wrap"]
+        +keywords = ["text", "wrap", "padding"]
+    added: src/pad.hero
+        --- a/src/pad.hero
+        +++ b/src/pad.hero
+        @@ -0,0 +1,5 @@
+        +# Pads a text on the left to a width.
+        +function pad_left(s: str, width: i64) -> str
+        +    if s.len() >= width
+        +        return s
+        +    return repeat(" ", to_u64(width - s.len()).must()) + s
+    changed: src/wrap.hero
+        --- a/src/wrap.hero
+        +++ b/src/wrap.hero
+        @@ -2,5 +2,5 @@
+
+         # Wraps `s` to lines of at most `width` characters.
+         function wrap(s: str, width: i64) -> [str]
+        -    words = strings.split(s: s, sep: " ")
+        +    words = strings.words(s)
+             return filled(words, width: width)
+
+search "wrap": textkit
+search "slug*": slugify, textkit
+search "+text -yaml": textkit
+search "yaml config": yamlite
+suggest "te": textkit
+suggest "s": slugify
+suggest "q": none
+
+server: 52 requests answered, then stopped as the client asked
+demo folder removed

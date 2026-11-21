@@ -1,0 +1,282 @@
+# The registry's database, SQLite in one file: the connection opened as a
+# server needs it, the schema brought up to date by `migrations`, and the
+# publishers, their tokens and their signing keys. Packages and their
+# versions are `releases`'.
+#
+# Every statement takes its values as parameters, never inside its text. The
+# connection turns foreign keys on, since SQLite leaves them off by default,
+# and writes in WAL mode so a reader is not blocked by the writer.
+
+use <rebel>/sql
+use <rebel>/sql/migrate
+use <rebel>/sql/sqlite
+use <rebel>/time
+
+use signing/signers
+use store/migrations
+
+## Codes
+
+# The code of a publisher, a token or a key the database does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a name or a key the database holds already.
+constant EXISTS: str
+    "exists"
+
+## The connection
+
+# The connection to the database in the file `file`, made where it is not
+# there, foreign keys on and writes in WAL mode. The caller closes it with
+# `sqlite.close`.
+#
+# - `file`: the database's file; its folder must be there.
+#
+# Fails as `sqlite.open` and its first statements do.
+function open(file: str) -> sqlite.Db?
+    db @= sqlite.open(file)?
+
+    match prepared(@db)
+        .ok _ => return ok(db)
+        .err e =>
+            _ = sqlite.close(@db).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Turns on what every connection of the registry needs.
+#
+# - `db`: the connection.
+#
+# Fails as `sqlite.exec` does.
+function prepared(@db: sqlite.Db) -> ()?
+    _ = sqlite.query(@db, statement: "PRAGMA journal_mode = WAL", params: [])?
+    _ = sqlite.exec(@db, statement: "PRAGMA foreign_keys = ON", params: [])?
+    return ok()
+
+# Brings the schema up to date, each migration waiting run in its own
+# transaction, and answers how many ran.
+#
+# - `db`: the connection.
+#
+# Fails as `sql/migrate` plans fail, a migration changed after it ran among
+# them, and as the statements do; a migration that fails is rolled back and
+# the ones after it are not run.
+function migrate_up(@db: sqlite.Db) -> i64?
+    opts = migrate.options(.sqlite)
+    create = migrate.create_table_statement(opts)?
+    _ = sqlite.exec(@db, statement: create.text, params: create.params)?
+    select = migrate.select_applied_statement(opts)?
+    applied = migrate.applied_of(sqlite.query(@db, statement: select.text, params: select.params)?)?
+    steps = migrate.plan_up(migrations.every(), applied: applied, opts: opts)?
+
+    for step in steps
+        run_step(@db, step: step)?
+
+    return ok(steps.len())
+
+# Runs one step of a plan, inside a transaction where it asks one.
+#
+# - `db`: the connection.
+# - `step`: the step.
+#
+# Fails as its script or its version's statement fails, the transaction
+# rolled back.
+function run_step(@db: sqlite.Db, step: migrate.Step) -> ()?
+    if step.in_transaction
+        sqlite.begin(@db)?
+
+    match step_body(@db, step: step)
+        .ok _ =>
+            if step.in_transaction
+                sqlite.commit(@db)?
+            return ok()
+        .err e =>
+            if step.in_transaction
+                _ = sqlite.rollback(@db).is_err()
+            return fail(code: e.code, msg: f"migration {step.version} ({step.name}): {e.msg}")
+
+# A step's script, then the statement that records its version.
+#
+# - `db`: the connection.
+# - `step`: the step.
+#
+# Fails as either does.
+function step_body(@db: sqlite.Db, step: migrate.Step) -> ()?
+    sqlite.exec_script(@db, script: step.script)?
+    _ = sqlite.exec(@db, statement: step.version_statement.text, params: step.version_statement.params)?
+    return ok()
+
+## Publishers
+
+# A publisher: who owns packages and signs their versions.
+record Publisher
+    # The row's id.
+    id: i64
+    # The name, unique.
+    name: str
+
+# Adds the publisher `name` and answers it.
+#
+# - `db`: the connection.
+# - `name`: the name, a package name's shape, which the caller checked.
+# - `now`: when it was added.
+#
+# Fails `exists` where a publisher has that name.
+function add_publisher(@db: sqlite.Db, name: str, now: time.Instant) -> Publisher?
+    result = sqlite.exec(@db, statement: "INSERT INTO publishers (name, created_at) VALUES (?1, ?2)", params: [.text(v: name), .instant(v: now)])?
+    return ok(Publisher(id: result.last_id?, name: name))
+
+# The publisher named `name`.
+#
+# - `db`: the connection.
+# - `name`: the name.
+#
+# Fails `not_found` where none has it.
+function publisher_named(@db: sqlite.Db, name: str) -> Publisher?
+    row = sqlite.query_one(@db, statement: "SELECT id, name FROM publishers WHERE name = ?1", params: [.text(v: name)])?
+    return ok(Publisher(id: sql.integer_named(row, name: "id")?, name: sql.text_named(row, name: "name")?))
+
+## Tokens
+
+# What a token grants: the publisher it acts for and its scopes.
+record Grant
+    # The token's row id.
+    token_id: i64
+    # The publisher it acts for.
+    publisher: Publisher
+    # Its scopes, joined by commas: `publish,yank`.
+    scopes: str
+
+# Keeps a token, by its stored form, for `publisher` with `scopes`.
+#
+# - `db`: the connection.
+# - `publisher`: who it acts for.
+# - `label`: a name its owner reads it by: `laptop`, `ci`.
+# - `hash`: `tokens.stored_form` of the token, never the token itself.
+# - `scopes`: the scopes it carries, joined by commas.
+# - `now`: when it was made.
+#
+# Fails `exists` where the same stored form is kept already.
+function add_token(@db: sqlite.Db, publisher: Publisher, label: str, hash: str, scopes: str, now: time.Instant) -> ()?
+    _ = sqlite.exec(@db, statement: "INSERT INTO tokens (publisher_id, label, hash, scopes, created_at) VALUES (?1, ?2, ?3, ?4, ?5)", params: [.integer(v: publisher.id), .text(v: label), .text(v: hash), .text(v: scopes), .instant(v: now)])?
+    return ok()
+
+# What the token whose stored form is `hash` grants, where it is not revoked.
+#
+# - `db`: the connection.
+# - `hash`: `tokens.stored_form` of the token a request carries.
+#
+# Fails `not_found` where no token has that form, or it is revoked.
+function grant_of(@db: sqlite.Db, hash: str) -> Grant?
+    row = sqlite.query_one(@db, statement: "SELECT t.id AS token_id, t.scopes AS scopes, p.id AS publisher_id, p.name AS publisher FROM tokens t JOIN publishers p ON p.id = t.publisher_id WHERE t.hash = ?1 AND t.revoked = 0", params: [.text(v: hash)])?
+    return ok(
+        Grant(token_id: sql.integer_named(row, name: "token_id")?, publisher: Publisher(id: sql.integer_named(row, name: "publisher_id")?, name: sql.text_named(row, name: "publisher")?), scopes: sql.text_named(row, name: "scopes")?)
+    )
+
+# Revokes the token whose stored form is `hash`, so no later request it
+# carries is granted anything.
+#
+# - `db`: the connection.
+# - `hash`: the token's stored form.
+#
+# Fails `not_found` where no token has that form.
+function revoke_token(@db: sqlite.Db, hash: str) -> ()?
+    result = sqlite.exec(@db, statement: "UPDATE tokens SET revoked = 1 WHERE hash = ?1", params: [.text(v: hash)])?
+
+    if result.rows_affected == 0
+        return fail(code: NOT_FOUND, msg: "no token has that form")
+    return ok()
+
+## Signing keys
+
+# Keeps `der` as a signing key of `publisher`, and answers its id. A key
+# already kept for the same publisher is answered as it is.
+#
+# - `db`: the connection.
+# - `publisher`: whose key it is.
+# - `der`: the public key's DER, as `signers.read_public` answered it.
+# - `now`: when it was added.
+#
+# Fails `exists` where the key is kept for another publisher.
+function add_key(@db: sqlite.Db, publisher: Publisher, der: [u8], now: time.Instant) -> str?
+    id = signers.id_of(der)
+
+    match key_of(@db, id: id)
+        .ok k =>
+            if k.publisher != publisher.name
+                return fail(code: EXISTS, msg: f"the key {id} belongs to another publisher")
+            return ok(id)
+        .err _ => _ = 0
+
+    _ = sqlite.exec(@db, statement: "INSERT INTO signing_keys (id, publisher_id, der, added_at) VALUES (?1, ?2, ?3, ?4)", params: [.text(v: id), .integer(v: publisher.id), .blob(v: der), .instant(v: now)])?
+    return ok(id)
+
+# The signing key whose id is `id`, with its publisher's name.
+#
+# - `db`: the connection.
+# - `id`: the key id.
+#
+# Fails `not_found` where no key has it.
+function key_of(@db: sqlite.Db, id: str) -> signers.PublisherKey?
+    row = sqlite.query_one(@db, statement: "SELECT k.id AS id, k.der AS der, p.name AS publisher FROM signing_keys k JOIN publishers p ON p.id = k.publisher_id WHERE k.id = ?1", params: [.text(v: id)])?
+    return ok(
+        signers.PublisherKey(id: sql.text_named(row, name: "id")?, publisher: sql.text_named(row, name: "publisher")?, der: sql.blob_named(row, name: "der")?)
+    )
+
+# Every signing key of `publisher`, the oldest first.
+#
+# - `db`: the connection.
+# - `publisher`: the publisher's name.
+#
+# Fails as the query does; a publisher with no key answers none.
+function keys_of(@db: sqlite.Db, publisher: str) -> [signers.PublisherKey]?
+    rows = sqlite.query(@db, statement: "SELECT k.id AS id, k.der AS der, p.name AS publisher FROM signing_keys k JOIN publishers p ON p.id = k.publisher_id WHERE p.name = ?1 ORDER BY k.added_at, k.id", params: [.text(v: publisher)])?
+    found: [signers.PublisherKey] @= []
+
+    for row in rows.rows
+        found @ found.push(
+            signers.PublisherKey(id: sql.text_named(row, name: "id")?, publisher: sql.text_named(row, name: "publisher")?, der: sql.blob_named(row, name: "der")?)
+        )
+
+    return ok(found)
+
+test "migrate_up: three migrations from nothing, then none"
+    db @= sqlite.open_memory().must()
+    prepared(@db).must()
+    assert migrate_up(@db).must() == 3
+    assert migrate_up(@db).must() == 0
+    sqlite.close(@db).must()
+
+test "add_publisher and add_token: a grant found by its form, then revoked"
+    db @= sqlite.open_memory().must()
+    prepared(@db).must()
+    _ = migrate_up(@db).must()
+    now = time.from_unix(whole_seconds: 1_763_715_600, extra_nanoseconds: 0).must()
+    ana = add_publisher(@db, name: "ana", now: now).must()
+    assert add_publisher(@db, name: "ana", now: now).is_err()
+    add_token(@db, publisher: ana, label: "laptop", hash: "h1", scopes: "publish,yank", now: now).must()
+    g = grant_of(@db, hash: "h1").must()
+    assert g.publisher == ana && g.scopes == "publish,yank"
+    assert grant_of(@db, hash: "h2").is_err()
+    revoke_token(@db, hash: "h1").must()
+    assert grant_of(@db, hash: "h1").is_err()
+    sqlite.close(@db).must()
+
+test "add_key: a key kept once, found by id and by publisher, refused for another"
+    db @= sqlite.open_memory().must()
+    prepared(@db).must()
+    _ = migrate_up(@db).must()
+    now = time.epoch()
+    ana = add_publisher(@db, name: "ana", now: now).must()
+    bruno = add_publisher(@db, name: "bruno", now: now).must()
+    der: [u8] = [1, 2, 3]
+    id = add_key(@db, publisher: ana, der: der, now: now).must()
+    assert add_key(@db, publisher: ana, der: der, now: now).must() == id
+    assert key_of(@db, id: id).must().publisher == "ana"
+    assert keys_of(@db, publisher: "ana").must().len() == 1 && keys_of(@db, publisher: "bruno").must().len() == 0
+
+    match add_key(@db, publisher: bruno, der: der, now: now)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    sqlite.close(@db).must()

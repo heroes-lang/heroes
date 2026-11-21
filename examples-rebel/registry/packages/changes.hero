@@ -1,0 +1,222 @@
+# What changed between two versions of a package: the manifest as a JSON
+# Patch (RFC 6902) that turns the old one into the new, and each file added,
+# removed or changed, a text file's change as a unified diff.
+#
+# A reviewer reads this before taking an update: a dependency added, a
+# license changed, a file that should not be there. Files are matched by
+# their path below the package's folder, so the folders' names, which hold the
+# versions, never show as a change. A file that is not UTF-8 is told as
+# changed, never diffed.
+
+use <rebel>/bytes
+use <rebel>/diff
+use <rebel>/json
+use <rebel>/json/patch
+
+use packages/unpack
+
+## Changes
+
+# How one file differs.
+variant Kind
+    # In the new version alone.
+    added
+    # In the old version alone.
+    removed
+    # In both, with other bytes.
+    changed
+
+# One file's change.
+record FileChange
+    # Its path below the package's folder.
+    name: str
+    # How it differs.
+    kind: Kind
+    # The unified diff of a text file, its headers `a/<name>` and `b/<name>`;
+    # "" for a file that is not UTF-8.
+    unified: str
+
+# Everything that changed from one version to another.
+record Changes
+    # The version compared from.
+    from: str
+    # The version compared to.
+    to: str
+    # The patch that turns the old manifest into the new.
+    manifest: [patch.Operation]
+    # Each file that differs, in byte order of its path.
+    files: [FileChange]
+
+# The changes from `old` to `new`.
+#
+# - `from`: the old version's text.
+# - `to`: the new version's text.
+# - `old`: the old archive, opened.
+# - `new`: the new archive, opened.
+# - `old_manifest`: the old manifest as JSON.
+# - `new_manifest`: the new manifest as JSON.
+function compare(from: str, to: str, old: unpack.Contents, new: unpack.Contents, old_manifest: json.Value, new_manifest: json.Value) -> Changes
+    olds: {str: [u8]} @= {}
+    news: {str: [u8]} @= {}
+    every: {str: bool} @= {}
+
+    for f in old.files
+        olds[f.name] @ f.data
+        every[f.name] @ true
+
+    for f in new.files
+        news[f.name] @ f.data
+        every[f.name] @ true
+
+    files: [FileChange] @= []
+
+    for name in sort(keys(every))
+        before: [u8] = olds[name].default([])
+        after: [u8] = news[name].default([])
+        had = !olds[name].is_err()
+        has = !news[name].is_err()
+
+        if had && !has
+            files @ files.push(
+                FileChange(name: name, kind: .removed, unified: unified_of(name: name, old: before, new: []))
+            )
+        else if has && !had
+            files @ files.push(
+                FileChange(name: name, kind: .added, unified: unified_of(name: name, old: [], new: after))
+            )
+        else if before != after
+            files @ files.push(
+                FileChange(name: name, kind: .changed, unified: unified_of(name: name, old: before, new: after))
+            )
+
+    return Changes(from: from, to: to, manifest: patch.diff(from: old_manifest, to: new_manifest), files: files)
+
+# The unified diff of the file `name` from `old` to `new`, or "" where either
+# is not UTF-8.
+#
+# - `name`: the file's path below the package's folder.
+# - `old`: its old bytes, none where it is added.
+# - `new`: its new bytes, none where it is removed.
+function unified_of(name: str, old: [u8], new: [u8]) -> str
+    old_text = match bytes.to_text(old)
+        .ok t  => t
+        .err _ => return ""
+
+    new_text = match bytes.to_text(new)
+        .ok t  => t
+        .err _ => return ""
+
+    return diff.format_unified(
+        old: diff.lines_of(old_text),
+        new: diff.lines_of(new_text),
+        options: diff.default_options(old_name: "a/" + name, new_name: "b/" + name)
+    )
+
+# The word a kind of change is written as: `added`, `removed`, `changed`.
+#
+# - `kind`: the kind.
+function kind_name(kind: Kind) -> str
+    return match kind
+        .added   => "added"
+        .removed => "removed"
+        .changed => "changed"
+
+# One operation of a patch as one line for a person: `replace
+# /package/version "1.1.0"`, `remove /dependencies/x`.
+#
+# - `op`: the operation.
+function describe(op: patch.Operation) -> str
+    return match op
+        .add a        => f"add {a.path} {compact(a.value)}"
+        .remove r     => f"remove {r.path}"
+        .replace r    => f"replace {r.path} {compact(r.value)}"
+        .move m       => f"move {m.from} to {m.path}"
+        .copy c       => f"copy {c.from} to {c.path}"
+        .test_value t => f"test {t.path} {compact(t.value)}"
+
+# `v` as compact JSON; a value JSON cannot write is written `?`.
+#
+# - `v`: the value.
+function compact(v: json.Value) -> str
+    return json.format(v).default("?")
+
+# `c` as the JSON the API answers.
+#
+# - `c`: the changes.
+function to_json(c: Changes) -> json.Value
+    files: [json.Value] @= []
+
+    for f in c.files
+        files @ files.push(
+            .object(members: {"name": .text(v: f.name), "kind": .text(v: kind_name(f.kind)), "diff": .text(v: f.unified)})
+        )
+
+    return .object(
+        members: {"from": .text(v: c.from), "to": .text(v: c.to), "manifest": patch.operations_json(c.manifest), "files": .list(items: files)}
+    )
+
+# The changes a client reads back from `to_json`'s value.
+#
+# - `v`: the value the API answered.
+#
+# Fails `invalid` where a member is missing or of another kind, and as
+# `patch.operations_of` fails.
+function of_json(v: json.Value) -> Changes?
+    files: [FileChange] @= []
+
+    for item in json.items_of(json.member(v, key: "files")?)?
+        word = json.text_of(json.member(item, key: "kind")?)?
+
+        kind: Kind = match word
+            "added"   => .added
+            "removed" => .removed
+            _         => .changed
+
+        files @ files.push(
+            FileChange(name: json.text_of(json.member(item, key: "name")?)?, kind: kind, unified: json.text_of(json.member(item, key: "diff")?)?)
+        )
+
+    return ok(
+        Changes(from: json.text_of(json.member(v, key: "from")?)?, to: json.text_of(json.member(v, key: "to")?)?, manifest: patch.operations_of(json.member(v, key: "manifest")?)?, files: files)
+    )
+
+# The contents of a package of `files` for the tests, each a name and its
+# text.
+#
+# - `files`: the files.
+function contents_of(files: [unpack.File]) -> unpack.Contents
+    return unpack.Contents(packing: .zstd, folder: "p", files: files, manifest_text: "")
+
+test "compare: a file added, one removed, one changed and one the same"
+    old = contents_of(
+        [unpack.File(name: "a.hero", data: bytes.from_text("one\ntwo\n")), unpack.File(name: "gone.hero", data: bytes.from_text("x\n")), unpack.File(name: "same", data: [1])]
+    )
+    new = contents_of(
+        [unpack.File(name: "a.hero", data: bytes.from_text("one\nthree\n")), unpack.File(name: "new.hero", data: bytes.from_text("y\n")), unpack.File(name: "same", data: [1])]
+    )
+    m1 = json.parse("{\"package\": {\"version\": \"1.0.0\"}}").must()
+    m2 = json.parse("{\"package\": {\"version\": \"1.1.0\"}}").must()
+    c = compare(from: "1.0.0", to: "1.1.0", old: old, new: new, old_manifest: m1, new_manifest: m2)
+    assert c.files.len() == 3
+    assert c.files[0].name == "a.hero" && c.files[0].kind == .changed
+    assert c.files[0].unified == "--- a/a.hero\n+++ b/a.hero\n@@ -1,2 +1,2 @@\n one\n-two\n+three\n"
+    assert c.files[1].name == "gone.hero" && c.files[1].kind == .removed
+    assert c.files[2].name == "new.hero" && c.files[2].kind == .added
+    assert c.manifest.len() == 1 && describe(c.manifest[0]) == "replace /package/version \"1.1.0\""
+
+test "compare: bytes that are not UTF-8 told as changed with no diff"
+    old = contents_of([unpack.File(name: "logo.png", data: [0xff, 0x00])])
+    new = contents_of([unpack.File(name: "logo.png", data: [0xff, 0x01])])
+    m = json.parse("{}").must()
+    c = compare(from: "1", to: "2", old: old, new: new, old_manifest: m, new_manifest: m)
+    assert c.files.len() == 1 && c.files[0].unified == "" && c.manifest.len() == 0
+
+test "to_json and of_json: the changes read back as they were"
+    old = contents_of([unpack.File(name: "a", data: bytes.from_text("x\n"))])
+    new = contents_of(
+        [unpack.File(name: "a", data: bytes.from_text("y\n")), unpack.File(name: "b", data: bytes.from_text("z\n"))]
+    )
+    m1 = json.parse("{\"keywords\": [\"a\"]}").must()
+    m2 = json.parse("{\"keywords\": [\"a\", \"b\"]}").must()
+    c = compare(from: "1.0.0", to: "1.1.0", old: old, new: new, old_manifest: m1, new_manifest: m2)
+    assert of_json(to_json(c)).must() == c

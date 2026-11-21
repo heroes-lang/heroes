@@ -1,0 +1,124 @@
+# How the API answers: a failure's code turned into its HTTP status, and the
+# JSON a package, a version and a line of the index are written as.
+#
+# Every error is `{"message": "..."}` (`web.error_response`), its status
+# chosen by the library's closed vocabulary of codes, so a client reads one
+# shape for every refusal and a person reads the message. A moment is written
+# as RFC 3339 in UTC.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/time
+use <rebel>/web
+
+use packages/resolve
+use store/releases
+
+## Statuses
+
+# The status a failure of `code` is answered with: 422 for what a request
+# holds that the registry refuses, 404, 409, 403, 413, and 500 for the
+# server's own failures; a token refused is `web.challenge_bearer`'s 401.
+#
+# - `code`: a code of the library's vocabulary.
+function status_of(code: str) -> i64
+    return match code
+        "invalid"      => http.STATUS_UNPROCESSABLE_CONTENT
+        "not_text"     => http.STATUS_UNPROCESSABLE_CONTENT
+        "does_not_fit" => http.STATUS_UNPROCESSABLE_CONTENT
+        "not_found"    => http.STATUS_NOT_FOUND
+        "exists"       => http.STATUS_CONFLICT
+        "permission"   => http.STATUS_FORBIDDEN
+        "limit"        => http.STATUS_CONTENT_TOO_LARGE
+        "unsupported"  => http.STATUS_UNSUPPORTED_MEDIA_TYPE
+        _              => http.STATUS_INTERNAL_SERVER_ERROR
+
+# The response to a failure of `code` saying `message`.
+#
+# - `code`: the failure's code.
+# - `message`: what a person reads.
+function failure(code: str, message: str) -> http.Response
+    return web.error_response(.json, status: status_of(code), message: message)
+
+# The response of `status` whose body is `v`, or a 500 where `v` holds what
+# JSON cannot write.
+#
+# - `status`: the status.
+# - `v`: the body.
+function with_json(status: i64, v: json.Value) -> http.Response
+    return match http.respond_json(status, value: v)
+        .ok response => response
+        .err e       => failure(code: "failed", message: f"the answer could not be written as JSON: {e.msg}")
+
+## Bodies
+
+# A version as the API writes it: its digest, its signature's key, whether it
+# is yanked, its manifest, and where its archive and signature are fetched.
+#
+# - `r`: the version.
+# - `base_url`: the server's absolute URL, ending in `/`.
+function release_json(r: releases.Release, base_url: str) -> json.Value
+    words: [json.Value] @= []
+
+    for word in r.keywords
+        words @ words.push(.text(v: word))
+
+    here = f"{base_url}api/v1/packages/{r.package}/{r.version}"
+    return .object(
+        members: {"name": .text(v: r.package), "version": .text(v: r.version), "digest": .text(v: r.digest), "size": .number(v: to_f64(r.size)), "packing": .text(v: r.packing), "key_id": .text(v: r.key_id), "yanked": .boolean(v: r.yanked), "published_at": .text(v: time.format(r.published_at, layout: .rfc3339)), "downloads": .number(v: to_f64(r.downloads)), "description": .text(v: r.description), "keywords": .list(items: words), "manifest": json.parse(r.manifest).default(.null_value), "archive_url": .text(v: here + "/archive"), "signature_url": .text(v: here + "/signature")}
+    )
+
+# A package as the API writes it: its owner, its newest version, and every
+# version in SemVer's order with its digest and whether it is yanked.
+#
+# - `p`: the package.
+# - `list`: its versions.
+function package_json(p: releases.Package, list: [releases.Release]) -> json.Value
+    versions: [json.Value] @= []
+
+    for r in resolve.by_precedence(list)
+        versions @ versions.push(
+            .object(members: {"version": .text(v: r.version), "digest": .text(v: r.digest), "yanked": .boolean(v: r.yanked)})
+        )
+
+    newest: json.Value = match resolve.newest(list)
+        .ok r  => .text(v: r.version)
+        .err _ => .null_value
+
+    newest_description = match resolve.newest(list)
+        .ok r  => r.description
+        .err _ => ""
+
+    return .object(
+        members: {"name": .text(v: p.name), "owner": .text(v: p.publisher), "newest": newest, "description": .text(v: newest_description), "versions": .list(items: versions)}
+    )
+
+# One line of the package index a package manager reads, a version's JSON on
+# one line: its name, version, digest, whether it is yanked, and its
+# dependencies with their requirements as its manifest names them.
+#
+# - `r`: the version.
+#
+# Fails as `json.format` does.
+function index_line(r: releases.Release) -> str?
+    document = json.parse(r.manifest).default(.object(members: {}))
+    table = json.members_of(json.member(document, key: "dependencies").default(.object(members: {}))).default({})
+    deps: [json.Value] @= []
+
+    for name in keys(table)
+        requirement = json.text_of(json.member(table[name].must(), key: "version").default(.text(v: ""))).default("")
+        deps @ deps.push(.object(members: {"name": .text(v: name), "req": .text(v: requirement)}))
+
+    line: json.Value = .object(
+        members: {"name": .text(v: r.package), "vers": .text(v: r.version), "cksum": .text(v: r.digest), "yanked": .boolean(v: r.yanked), "deps": .list(items: deps)}
+    )
+    return json.format(line)
+
+test "status_of: each code of the vocabulary, and an unknown one as the server's failure"
+    assert status_of("invalid") == 422 && status_of("not_found") == 404 && status_of("exists") == 409
+    assert status_of("permission") == 403 && status_of("limit") == 413 && status_of("failed") == 500
+    assert status_of("anything") == 500
+
+test "failure: a message as JSON with its status"
+    r = failure(code: "exists", message: "taken")
+    assert r.status == 409 && http.text_of(r).must() == "{\"message\":\"taken\"}"
