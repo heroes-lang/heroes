@@ -4,11 +4,12 @@
 # 2026-11-17 into the scratch folder and run there whole through the member's
 # C probe: 2,724 cases of signatures, agreement and OAEP on Linux arm64, 0
 # failed, and on macOS the kinds its system then offered, Ed25519 and X25519
-# not among them. Since step 69a (2026-11-20) macOS signs by Ed25519 and agrees
-# by X25519 through Monocypher, and of those two kinds only the cases held here
-# have run there: RFC 8032's TEST 1 to 3, Wycheproof's ed25519 case 10 and RFC
-# 7748's exchange. The few here are the package's own tests on every platform,
-# a kind the platform lacks passed over.
+# not among them. Since 2026-11-20 macOS signs by Ed25519 and agrees by X25519
+# through Monocypher; Wycheproof's `ed25519_test.json` has run there whole, its
+# 210 cases answered as on Linux arm64 (2026-11-21, defect 2641). The few here
+# are the package's own tests on every platform, a kind the platform lacks
+# passed over; the files themselves are not kept, since Rebel copies no test
+# table (`examples-rebel/README.md` § A5).
 
 use bytes
 use crypto/keypairs/internal/forms
@@ -71,6 +72,35 @@ function signed() -> [Signed]
         Signed(name: "Wycheproof ed25519 tcId 10", scheme: "ed25519", public_der: "302a300506032b65700321007d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", message: "3f", signature: "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", holds: false)
     ]
 
+# Ed25519 signatures whose R or key RFC 8032 § 5.1.3 does not decode (y not
+# below p, or x 0 with its sign bit set), or whose S is not below the
+# group's order (§ 5.1.7): none holds on any platform (defect 2641).
+# Monocypher 4.0.3 decodes y modulo p and takes either sign of a zero x, so
+# it held every R here, and OpenSSL 3.5 held both keys.
+#
+# Wycheproof's tcId 151 and 63 are its `ed25519_test.json`'s own bytes
+# (C2SP's `testvectors_v1` at commit 65ca494727a52944c204441c860b039e6786b99b,
+# read 2026-11-21). The others were built that day by RFC 8032's arithmetic.
+# The three Rs: under § 7.1 TEST 1's key and Wycheproof's message `123400`,
+# S = h * a mod L for TEST 1's secret scalar a, so [S]B - [h]A is the
+# identity and a lenient decoder holds R. The S = L case: the key and R the
+# identity, where [L]B is the identity. The two keys: the identity, R the
+# identity and S = 0, which holds under any key that decodes to the
+# identity. The last holds everywhere: TEST 1's S built the same way under
+# the identity's own encoding, so a refusal above is the encoding's alone.
+function undecodable() -> [Signed]
+    return [
+        Signed(name: "Wycheproof ed25519 tcId 151, R's y 1 with x's sign set", scheme: "ed25519", public_der: "302a300506032b6570032100d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a", message: "313233343030", signature: "0100000000000000000000000000000000000000000000000000000000000080c803ee1f2342aa96ff698a393d1ab5e66f3eda101d6d120b394c3fd32c117d0a", holds: false)
+        Signed(name: "RFC 8032 5.1.3, R's y p - 1 with x's sign set", scheme: "ed25519", public_der: "302a300506032b6570032100d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a", message: "313233343030", signature: "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff694284708142911cfdc4674753482a7b3055a18586fcd19e8c60807e6220540c", holds: false)
+        Signed(name: "RFC 8032 5.1.3, R's y p", scheme: "ed25519", public_der: "302a300506032b6570032100d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a", message: "313233343030", signature: "edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f83a7741d1bf10acb612b0cef4ff8c2ca27c35c2f67e9246b493f4a9371bd9305", holds: false)
+        Signed(name: "RFC 8032 5.1.3, R's y p + 1", scheme: "ed25519", public_der: "302a300506032b6570032100d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a", message: "313233343030", signature: "eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feb547b6685604aac110d57db1c9e1953e2537ade2a007317a5055b4810ab9302", holds: false)
+        Signed(name: "RFC 8032 5.1.3, the key's y 1 with x's sign set", scheme: "ed25519", public_der: "302a300506032b65700321000100000000000000000000000000000000000000000000000000000000000080", message: "313233343030", signature: "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", holds: false)
+        Signed(name: "RFC 8032 5.1.3, the key's y p + 1", scheme: "ed25519", public_der: "302a300506032b6570032100eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f", message: "313233343030", signature: "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", holds: false)
+        Signed(name: "RFC 8032 5.1.7, S = L", scheme: "ed25519", public_der: "302a300506032b65700321000100000000000000000000000000000000000000000000000000000000000000", message: "313233343030", signature: "0100000000000000000000000000000000000000000000000000000000000000edd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010", holds: false)
+        Signed(name: "Wycheproof ed25519 tcId 63, S + L", scheme: "ed25519", public_der: "302a300506032b65700321007d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", message: "54657374", signature: "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab067654bce3832c2d76f8f6f5dafc08d9339d4eef676573336a5c51eb6f946b31d", holds: false)
+        Signed(name: "RFC 8032 5.1.3, R the identity's own encoding", scheme: "ed25519", public_der: "302a300506032b6570032100d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a", message: "313233343030", signature: "01000000000000000000000000000000000000000000000000000000000000007d3b77432f1158b980111092058b1ce8d9c6165f46627e617d4300bdf2946e0d", holds: true)
+    ]
+
 # "" where the RFC 8032 test `t` is answered as it says, else what went
 # otherwise; "" too where the platform has no Ed25519.
 function ed25519_answered(t: Rfc8032) -> str
@@ -130,6 +160,10 @@ test "rfc8032: TEST 1, 2 and 3 signed by their secret keys give their signatures
 
 test "signed: Wycheproof's signatures hold or do not as they say, on every platform that has their kind"
     for c in signed()
+        assert signed_answered(c) == ""
+
+test "undecodable: an R or a key RFC 8032 5.1.3 does not decode, and an S not below the order, hold on no platform that has Ed25519, and the same S under R's own encoding holds"
+    for c in undecodable()
         assert signed_answered(c) == ""
 
 test "rfc7748: Alice's and Bob's keys agree on RFC 7748 6.1's secret, and an all-zero public key is refused, where the platform has X25519"
