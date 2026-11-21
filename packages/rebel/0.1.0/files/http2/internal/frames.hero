@@ -227,15 +227,19 @@ function decode(head: Head, payload: [u8] lent, max_size: i64) -> Decoded
         if b.why != ""
             return refused(error: PROTOCOL_ERROR, stream_only: false, why: b.why)
 
-        p = if prioritized
-            priority_at(payload, at: b.from - 5)
+        p: http2.Priority? = if prioritized
+            ok(priority_at(payload, at: b.from - 5))
         else
-            http2.Priority(exclusive: false, depends_on: 0, weight: 16)
+            fail(code: http2.NOT_FOUND, msg: "the frame carries no priority")
 
-        if prioritized && p.depends_on == s
-            return refused(error: PROTOCOL_ERROR, stream_only: true, why: f"stream {s} depends on itself")
+        match p
+            .ok given =>
+                if given.depends_on == s
+                    return refused(error: PROTOCOL_ERROR, stream_only: true, why: f"stream {s} depends on itself")
+            .err _ => _ = 0
+
         return read(
-            .headers(stream: s, block: payload.slice(from: b.from, to: b.to), end_stream: head.flags & 0x1 != 0, end_headers: head.flags & 0x4 != 0, padding: b.padding, has_priority: prioritized, priority: p)
+            .headers(stream: s, block: payload.slice(from: b.from, to: b.to), end_stream: head.flags & 0x1 != 0, end_headers: head.flags & 0x4 != 0, padding: b.padding, priority: p)
         )
 
     if head.kind == 2
@@ -386,7 +390,7 @@ function decoded_hex(hex: str) -> Decoded
 
 test "decode_whole: each type read back as Go's Framer wrote it"
     p = http2.Priority(exclusive: true, depends_on: 3, weight: 256)
-    assert decoded_hex("000009012d000000050280000003ff820000").frame == .headers(stream: 5, block: [0x82], end_stream: true, end_headers: true, padding: 2, has_priority: true, priority: p)
+    assert decoded_hex("000009012d000000050280000003ff820000").frame == .headers(stream: 5, block: [0x82], end_stream: true, end_headers: true, padding: 2, priority: ok(p))
     list = [
         http2.Setting(id: 2, value: 0)
         http2.Setting(id: 4, value: 1048576)

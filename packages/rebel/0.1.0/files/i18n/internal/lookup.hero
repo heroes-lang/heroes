@@ -18,6 +18,6 @@ function message_of(catalog: i18n.Catalog, has_context: bool, context: str, id: 
 
     if catalog.index.len() == 0
         for m in catalog.messages
-            if !m.obsolete && m.has_context == has_context && m.id == id && (!has_context || m.context == context)
+            if !m.obsolete && m.context.is_err() != has_context && m.id == id && (!has_context || m.context.default("") == context)
                 return ok(m)
     return fail(code: i18n.NOT_FOUND, msg: f"no message \"{id}\" in the catalog")

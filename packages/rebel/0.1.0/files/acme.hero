@@ -821,12 +821,17 @@ record RenewalInfo
 function renewal_id(certificate: [u8]) -> str?
     cert = x509.decode_certificate(certificate)?
 
-    if !cert.extensions.has_authority_key_id || !cert.extensions.authority_key_id.has_key_id
-        return fail(
+    written: [u8]? = match cert.extensions.authority_key_id
+        .ok a  => a.key_id
+        .err e => fail(code: e.code, msg: e.msg)
+
+    key_id = match written
+        .ok identifier => bytes.format_base64_url_unpadded(identifier)
+        .err _ => return fail(
             code: INVALID,
             msg: "the certificate has no authority key identifier, which a renewal identifier is made of"
         )
-    key_id = bytes.format_base64_url_unpadded(cert.extensions.authority_key_id.key_id)
+
     serial = bytes.format_base64_url_unpadded(big.to_bytes_signed(n: cert.serial, order: .big_endian))
     return ok(f"{key_id}.{serial}")
 

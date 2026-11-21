@@ -98,6 +98,13 @@ function read(data: [u8]) -> Parsed?
 
 ## Tests
 
+# The extension outputs of `a`, `not_found` where its flag ED says none
+# follow.
+function extensions_of(a: Parsed) -> [u8]?
+    if a.has_extensions
+        return ok(a.extensions)
+    return fail(code: codes.NOT_FOUND, msg: "the authenticator data's flags say no extension outputs follow")
+
 test "read: the shortest, the flags, the counter, and what follows"
     bare: [u8] @= []
 

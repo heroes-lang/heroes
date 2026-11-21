@@ -39,7 +39,7 @@ use webauthn/internal/response as reply
 ## The codes
 
 # The code of a response that is not well formed or does not verify: every
-# `verify_*` and `parse_*` function answers it, the message naming the
+# `verify_*` and `decode_*` function answers it, the message naming the
 # check.
 constant INVALID: str
     codes.INVALID
@@ -49,6 +49,11 @@ constant INVALID: str
 # `verify_signature` and the `verify_*` functions answer it.
 constant UNSUPPORTED: str
     codes.UNSUPPORTED
+
+# The code an `AuthenticatorData`'s `extensions` answers where its flags say
+# no extension outputs follow.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
 
 ## Algorithms
 
@@ -584,8 +589,6 @@ record AuthenticatorData
     backed_up: bool
     # AT: a credential follows.
     attested: bool
-    # ED: extension outputs follow.
-    has_extensions: bool
     # The signature counter, 0 to 2^32 - 1.
     sign_count: i64
     # The authenticator's model, 16 bytes; empty where no credential
@@ -596,8 +599,9 @@ record AuthenticatorData
     # The credential's COSE key, its bytes as written; empty where none
     # follows.
     public_key: [u8]
-    # The extension outputs, one CBOR map's bytes; empty where none.
-    extensions: [u8]
+    # The extension outputs, one CBOR map's bytes; it fails `not_found` where
+    # the flag ED says none follow.
+    extensions: [u8]?
 
 # The authenticator data `data` holds.
 #
@@ -609,7 +613,7 @@ record AuthenticatorData
 function decode_authenticator_data(data: [u8]) -> AuthenticatorData?
     a = authdata.read(data)?
     return ok(
-        AuthenticatorData(rp_id_hash: a.rp_id_hash, user_present: a.user_present, user_verified: a.user_verified, backup_eligible: a.backup_eligible, backed_up: a.backed_up, attested: a.attested, has_extensions: a.has_extensions, sign_count: a.sign_count, aaguid: a.aaguid, credential_id: a.credential_id, public_key: a.public_key, extensions: a.extensions)
+        AuthenticatorData(rp_id_hash: a.rp_id_hash, user_present: a.user_present, user_verified: a.user_verified, backup_eligible: a.backup_eligible, backed_up: a.backed_up, attested: a.attested, sign_count: a.sign_count, aaguid: a.aaguid, credential_id: a.credential_id, public_key: a.public_key, extensions: authdata.extensions_of(a))
     )
 
 # An attestation object: what an authenticator answers a registration.

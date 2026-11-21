@@ -74,8 +74,12 @@ function encode(f: http2.Frame) -> [u8]?
             if h.padding < 0 || h.padding > 255
                 why @ f"a HEADERS frame's padding {h.padding} is outside 0 to 255"
 
-            if h.has_priority && priority_refusal(h.priority) != ""
-                why @ priority_refusal(h.priority)
+            match h.priority
+                .ok p =>
+                    if priority_refusal(p) != ""
+                        why @ priority_refusal(p)
+                .err _ => _ = 0
+
             flags: i64 @= 0
 
             if h.end_stream
@@ -88,9 +92,13 @@ function encode(f: http2.Frame) -> [u8]?
                 flags @ flags | 0x8
                 payload @ payload.push(to_u8(h.padding & 0xff).must())
 
-            if h.has_priority && why == ""
-                flags @ flags | 0x20
-                push_priority(@payload, p: h.priority)
+            match h.priority
+                .ok p =>
+                    if why == ""
+                        flags @ flags | 0x20
+                        push_priority(@payload, p: p)
+                .err _ => _ = 0
+
             bytes.push_all(to: @payload, from: h.block)
             push_padding(@payload, padding: h.padding)
 
@@ -224,7 +232,7 @@ test "encode: DATA plain and padded, as Go's Framer writes them"
 test "encode: HEADERS with priority and padding, PRIORITY, PUSH_PROMISE, CONTINUATION"
     p = http2.Priority(exclusive: true, depends_on: 3, weight: 256)
     h = encode(
-        .headers(stream: 5, block: [0x82], end_stream: true, end_headers: true, padding: 2, has_priority: true, priority: p)
+        .headers(stream: 5, block: [0x82], end_stream: true, end_headers: true, padding: 2, priority: ok(p))
     ).must()
     assert bytes.format_hex(h) == "000009012d000000050280000003ff820000"
     q = http2.Priority(exclusive: false, depends_on: 1, weight: 16)

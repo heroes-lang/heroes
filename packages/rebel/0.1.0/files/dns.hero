@@ -305,14 +305,14 @@ function query(r: Resolver, name: str, type_code: i64) -> Message?
     m.recursion_desired @ r.recursion
 
     if r.udp_size == 0
-        m.has_edns @ false
+        m.edns @ fail(code: NOT_FOUND, msg: "the message carries no EDNS(0) OPT record")
     else
         wire.in_range(value: r.udp_size, low: 512, high: 65535, field: "the resolver's datagram size")?
-        m.edns @ Edns(udp_size: r.udp_size, version: 0, dnssec_ok: r.dnssec_ok, options: [])
+        m.edns @ ok(Edns(udp_size: r.udp_size, version: 0, dnssec_ok: r.dnssec_ok, options: []))
     answer = exchange(r, m: m)?
 
-    if answer.rcode == RCODE_FORMAT_ERROR && m.has_edns && !answer.has_edns
-        m.has_edns @ false
+    if answer.rcode == RCODE_FORMAT_ERROR && !m.edns.is_err() && answer.edns.is_err()
+        m.edns @ fail(code: NOT_FOUND, msg: "the message carries no EDNS(0) OPT record")
         return exchange(r, m: m)
     return ok(answer)
 
@@ -646,7 +646,7 @@ function transfer(r: Resolver, zone: str) -> [Record]?
         )
     q @= new_query(zone, type_code: TYPE_AXFR)?
     q.recursion_desired @ false
-    q.has_edns @ false
+    q.edns @ fail(code: NOT_FOUND, msg: "the message carries no EDNS(0) OPT record")
     fresh = os.random_bytes(2)?
     q.id @ to_i64(fresh[0]).must() << 8 | to_i64(fresh[1]).must()
     asked = encode(q)?
@@ -693,7 +693,7 @@ record Message
     authenticated_data: bool
     # Whether the server is asked not to check them (CD, RFC 4035).
     checking_disabled: bool
-    # The response code: 0 to 15, or to 4095 with `has_edns`, whose record
+    # The response code: 0 to 15, or to 4095 where `edns` is there, whose record
     # carries its upper eight bits; `RCODE_NO_ERROR` and the other `RCODE_`
     # constants.
     rcode: i64
@@ -707,10 +707,9 @@ record Message
     # The additional section, without the OPT pseudo-record, which is
     # `edns`.
     additionals: [Record]
-    # Whether the message carries EDNS(0)'s OPT record.
-    has_edns: bool
-    # What that record holds; ignored where `has_edns` is false.
-    edns: Edns
+    # What EDNS(0)'s OPT record holds; it fails `not_found` where the
+    # message carries none.
+    edns: Edns?
 
 # A question: a name, a type, a class.
 record Question
@@ -958,7 +957,7 @@ function new_query(name: str, type_code: i64) -> Message?
     p = names.from_text(name)?
     wire.in_range(value: type_code, low: 0, high: 65535, field: f"the type asked of \"{name}\"")?
     return ok(
-        Message(id: 0, response: false, opcode: OPCODE_QUERY, authoritative: false, truncated: false, recursion_desired: true, recursion_available: false, authenticated_data: false, checking_disabled: false, rcode: RCODE_NO_ERROR, questions: [Question(name: names.to_text(p.labels), type_code: type_code, class_code: CLASS_IN)], answers: [], authorities: [], additionals: [], has_edns: true, edns: Edns(udp_size: DEFAULT_UDP_SIZE, version: 0, dnssec_ok: false, options: []))
+        Message(id: 0, response: false, opcode: OPCODE_QUERY, authoritative: false, truncated: false, recursion_desired: true, recursion_available: false, authenticated_data: false, checking_disabled: false, rcode: RCODE_NO_ERROR, questions: [Question(name: names.to_text(p.labels), type_code: type_code, class_code: CLASS_IN)], answers: [], authorities: [], additionals: [], edns: ok(Edns(udp_size: DEFAULT_UDP_SIZE, version: 0, dnssec_ok: false, options: [])))
     )
 
 # A response begun for `asked`: its ID, operation, questions and wish for
@@ -969,6 +968,10 @@ function new_query(name: str, type_code: i64) -> Message?
 #
 # See also `new_query`.
 function reply_to(asked: Message) -> Message
+    edns: Edns? = match asked.edns
+        .ok e  => ok(Edns(udp_size: DEFAULT_UDP_SIZE, version: 0, dnssec_ok: e.dnssec_ok, options: []))
+        .err e => fail(code: e.code, msg: e.msg)
+
     return Message(
         id: asked.id,
         response: true,
@@ -984,8 +987,7 @@ function reply_to(asked: Message) -> Message
         answers: [],
         authorities: [],
         additionals: [],
-        has_edns: asked.has_edns,
-        edns: Edns(udp_size: DEFAULT_UDP_SIZE, version: 0, dnssec_ok: asked.edns.dnssec_ok, options: [])
+        edns: edns
     )
 
 # The message `data` holds, its names decompressed.
@@ -1109,8 +1111,14 @@ function decode(data: [u8]) -> Message?
         options @ options.push(EdnsOption(code: o.code, data: o.data))
 
     flags = f.flags
+
+    edns: Edns? = if f.has_edns
+        ok(Edns(udp_size: f.udp_size, version: f.version, dnssec_ok: f.dnssec_ok, options: options))
+    else
+        fail(code: NOT_FOUND, msg: "the message carries no EDNS(0) OPT record")
+
     return ok(
-        Message(id: f.id, response: flags & 0x8000 != 0, opcode: flags >> 11 & 15, authoritative: flags & 0x0400 != 0, truncated: flags & 0x0200 != 0, recursion_desired: flags & 0x0100 != 0, recursion_available: flags & 0x0080 != 0, authenticated_data: flags & 0x0020 != 0, checking_disabled: flags & 0x0010 != 0, rcode: f.rcode, questions: questions, answers: answers, authorities: authorities, additionals: additionals, has_edns: f.has_edns, edns: Edns(udp_size: f.udp_size, version: f.version, dnssec_ok: f.dnssec_ok, options: options))
+        Message(id: f.id, response: flags & 0x8000 != 0, opcode: flags >> 11 & 15, authoritative: flags & 0x0400 != 0, truncated: flags & 0x0200 != 0, recursion_desired: flags & 0x0100 != 0, recursion_available: flags & 0x0080 != 0, authenticated_data: flags & 0x0020 != 0, checking_disabled: flags & 0x0010 != 0, rcode: f.rcode, questions: questions, answers: answers, authorities: authorities, additionals: additionals, edns: edns)
     )
 
 # The bytes of `m`, its names compressed where RFC 3597 § 4 allows it.
@@ -1245,11 +1253,13 @@ function encode(m: Message) -> [u8]?
 
     options: [model.Option] @= []
 
-    for o in m.edns.options
+    edns = m.edns.default(Edns(udp_size: 0, version: 0, dnssec_ok: false, options: []))
+
+    for o in edns.options
         options @ options.push(model.Option(code: o.code, data: o.data))
 
     return codec_write.encode(
-        model.Frame(id: m.id, flags: flags, rcode: m.rcode, questions: questions, items: items, has_edns: m.has_edns, udp_size: m.edns.udp_size, version: m.edns.version, dnssec_ok: m.edns.dnssec_ok, options: options)
+        model.Frame(id: m.id, flags: flags, rcode: m.rcode, questions: questions, items: items, has_edns: !m.edns.is_err(), udp_size: edns.udp_size, version: edns.version, dnssec_ok: edns.dnssec_ok, options: options)
     )
 
 ## Names
@@ -1853,11 +1863,8 @@ test "encode and decode: a record of every kind, written and read back to the sa
     m @= reply_to(new_query("example.", type_code: TYPE_A).must())
     m.authoritative @ true
     m.recursion_available @ true
-    m.edns @ Edns(
-        udp_size: 4096,
-        version: 0,
-        dnssec_ok: true,
-        options: [EdnsOption(code: EDNS_NSID, data: []), EdnsOption(code: EDNS_COOKIE, data: digest)]
+    m.edns @ ok(
+        Edns(udp_size: 4096, version: 0, dnssec_ok: true, options: [EdnsOption(code: EDNS_NSID, data: []), EdnsOption(code: EDNS_COOKIE, data: digest)])
     )
     m.answers @ [
         Record(name: "example.", class_code: CLASS_IN, ttl: 0, data: .a(address: net.parse_address("192.0.2.1").must()))
@@ -1948,7 +1955,7 @@ test "decode: the query dig 9.10.6 sent, its AD bit and its EDNS of 4,096 bytes"
     ).must()
     assert m.id == 0x467a && !m.response && m.recursion_desired && m.authenticated_data && !m.checking_disabled
     assert m.questions == [Question(name: "example.", type_code: TYPE_A, class_code: CLASS_IN)]
-    assert m.has_edns && m.edns.udp_size == 4096 && !m.edns.dnssec_ok && m.edns.options.len() == 0 && m.additionals.len() == 0
+    assert m.edns.must().udp_size == 4096 && !m.edns.must().dnssec_ok && m.edns.must().options.len() == 0 && m.additionals.len() == 0
 
 test "decode: a compression loop, a pointer forward, two OPT records, an OPT among the answers, and an extended code"
     head: [u8] = [0, 1, 0x81, 0x80, 0, 0, 0, 1, 0, 0, 0, 0]
@@ -1973,7 +1980,7 @@ test "decode: a compression loop, a pointer forward, two OPT records, an OPT amo
     extended: [u8] @= [0, 1, 0x81, 0x87, 0, 0, 0, 0, 0, 0, 0, 1]
     bytes.push_all(to: @extended, from: [0, 0, 41, 1, 0, 1, 0, 0x80, 0, 0, 0])
     m = decode(extended).must()
-    assert m.rcode == RCODE_BAD_COOKIE && m.edns.udp_size == 512 && m.edns.dnssec_ok
+    assert m.rcode == RCODE_BAD_COOKIE && m.edns.must().udp_size == 512 && m.edns.must().dnssec_ok
 
 test "encode: a name past 255 bytes, an address of the wrong kind, a parameter twice, a class-bound kind outside IN, and a message past 65,535 bytes"
     m @= reply_to(new_query("example.", type_code: TYPE_A).must())
@@ -2154,10 +2161,10 @@ test "transfer: a zone in two messages, a refusal, and a transfer that does not 
         data: .a(address: net.parse_address("192.0.2.1").must())
     )
     first @= reply_to(q)
-    first.has_edns @ false
+    first.edns @ fail(code: NOT_FOUND, msg: "the message carries no EDNS(0) OPT record")
     first.answers @ [soa, host]
     last @= reply_to(q)
-    last.has_edns @ false
+    last.edns @ fail(code: NOT_FOUND, msg: "the message carries no EDNS(0) OPT record")
     last.questions @ []
     last.answers @ [Record(name: "example.", class_code: CLASS_IN, ttl: 60, data: .ns(host: "ns.example.")), soa]
     refused @= reply_to(q)
@@ -2187,7 +2194,7 @@ test "transfer: a zone in two messages, a refusal, and a transfer that does not 
 # A query for the mail exchangers of a domain, as `exchange` sends it.
 test "new_query: a question for MX, recursion desired"
     q = new_query("example.com", type_code: TYPE_MX).must()
-    assert q.questions[0].name == "example.com." && q.recursion_desired && q.has_edns
+    assert q.questions[0].name == "example.com." && q.recursion_desired && !q.edns.is_err()
 
 # A server's answer begun from the query it answers.
 test "reply_to: the question copied, the answer to fill"

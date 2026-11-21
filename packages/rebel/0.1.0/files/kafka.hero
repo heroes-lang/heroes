@@ -141,16 +141,13 @@ record Message
     # or the producer's clock at the moment it is sent; where it was read,
     # the batch's time where the topic keeps the broker's.
     timestamp_ms: i64
-    # The key, any bytes; the partition is chosen by it.
-    key: [u8]
-    # Whether the key is null rather than the bytes in `key`, which are then
-    # empty.
-    null_key: bool
-    # The value, any bytes.
-    value: [u8]
-    # Whether the value is null, a tombstone that a compacted topic keeps in
-    # place of the key's last value; `value` is then empty.
-    null_value: bool
+    # The key, any bytes, the partition chosen by it; it fails `not_found`
+    # where the key is null, as `message` makes it until `with_key`.
+    key: [u8]?
+    # The value, any bytes; it fails `not_found` where the value is null, a
+    # tombstone a compacted topic keeps in place of the key's last value
+    # (`tombstone`).
+    value: [u8]?
     # The headers, in order.
     headers: [Header]
 
@@ -720,12 +717,23 @@ function message(value: [u8]) -> Message
         partition: -1,
         offset: -1,
         timestamp_ms: -1,
-        key: [],
-        null_key: true,
-        value: value,
-        null_value: false,
+        key: fail(code: NOT_FOUND, msg: "the message has a null key"),
+        value: ok(value),
         headers: []
     )
+
+# A tombstone: a message with the key `key` and a null value, which a
+# compacted topic keeps in place of the key's last value until it removes
+# both.
+#
+# - `key`: the key whose value it removes, any bytes.
+#
+# See also `message`, `with_key`.
+function tombstone(key: [u8]) -> Message
+    out @= message([])
+    out.key @ ok(key)
+    out.value @ fail(code: NOT_FOUND, msg: "the message is a tombstone: its value is null")
+    return out
 
 # `m` with the key `key`, so the partition is chosen by it.
 #
@@ -735,8 +743,7 @@ function message(value: [u8]) -> Message
 # See also `partition_of`.
 function with_key(m: Message, key: [u8]) -> Message
     out @= m
-    out.key @ key
-    out.null_key @ false
+    out.key @ ok(key)
     return out
 
 # `m` with the header `key` and `value` added after the others.
@@ -789,7 +796,7 @@ function produce(@c: Client, topic: str, partition: i64, messages: [Message]) ->
             headers @ headers.push(model.Header(key: h.key, value: h.value))
 
         inner @ inner.push(
-            model.Message(topic: topic, partition: partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+            model.Message(topic: topic, partition: partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
         )
 
     p = producing.produce(@c.session, topic: topic, partition: partition, messages: inner)?
@@ -819,7 +826,7 @@ function send(@c: Client, messages: [Message]) -> [Message]?
             headers @ headers.push(model.Header(key: h.key, value: h.value))
 
         inner @ inner.push(
-            model.Message(topic: m.topic, partition: m.partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+            model.Message(topic: m.topic, partition: m.partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
         )
 
     sent = producing.send(@c.session, messages: inner)?
@@ -858,7 +865,7 @@ function fetch(@c: Client, topic: str, partition: i64, offset: i64, wait_ms: i64
             headers @ headers.push(Header(key: h.key, value: h.value))
 
         out @ out.push(
-            Message(topic: m.topic, partition: m.partition, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+            Message(topic: m.topic, partition: m.partition, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
         )
 
     return ok(
@@ -1106,7 +1113,7 @@ function poll(@k: Consumer, wait_ms: i64) -> [Message]?
             headers @ headers.push(Header(key: h.key, value: h.value))
 
         out @ out.push(
-            Message(topic: m.topic, partition: m.partition, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+            Message(topic: m.topic, partition: m.partition, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
         )
 
     return ok(out)
@@ -1264,7 +1271,7 @@ function encode_batch(messages: [Message], compression: Compression) -> [u8]?
             headers @ headers.push(model.Header(key: h.key, value: h.value))
 
         inner @ inner.push(
-            model.Message(topic: m.topic, partition: m.partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+            model.Message(topic: m.topic, partition: m.partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
         )
 
     how: model.Compression = match compression
@@ -1293,7 +1300,7 @@ function decode_batches(data: [u8]) -> [Message]?
             headers @ headers.push(Header(key: h.key, value: h.value))
 
         out @ out.push(
-            Message(topic: "", partition: -1, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+            Message(topic: "", partition: -1, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
         )
 
     return ok(out)
@@ -1314,20 +1321,20 @@ test "options, group_options, message, with_key, with_header: the defaults and a
     g = group_options("g", topics: ["t"])
     assert g.session_ms == 45000 && g.heartbeat_ms == 3000 && g.start == .earliest && g.auto_commit_ms == 5000
     m = message([1]).with_key([]).with_header(key: "h", value: [2])
-    assert !m.null_key && m.key == [] && m.headers == [Header(key: "h", value: [2])] && m.partition == -1 && m.timestamp_ms == -1
+    assert m.key.must() == [] && m.headers == [Header(key: "h", value: [2])] && m.partition == -1 && m.timestamp_ms == -1
 
 test "encode_batch, decode_batches: messages written and read back, gzip, an empty list refused"
     m1 @= message([1, 2]).with_key([9])
     m1.timestamp_ms @ 1700000000000
     m2 @= message([])
-    m2.null_value @ true
+    m2.value @ fail(code: NOT_FOUND, msg: "a tombstone")
     m2.timestamp_ms @ 1700000000009
     hows: [Compression] = [.none, .gzip]
 
     for how in hows
         data = encode_batch([m1, m2], compression: how).must()
         back = decode_batches(data).must()
-        assert back.len() == 2 && back[0].key == [9] && back[0].offset == 0 && back[1].null_value && back[1].timestamp_ms == 1700000000009
+        assert back.len() == 2 && back[0].key.must() == [9] && back[0].offset == 0 && back[1].value.is_err() && back[1].timestamp_ms == 1700000000009
 
     assert encode_batch([], compression: .none).is_err()
     assert decode_batches([1, 2, 3]).must() == []
@@ -1383,19 +1390,18 @@ test "connect live, against the brokers REBEL_KAFKA_BROKERS names: topics made a
             counts: [i64] @= [0, 0, 0]
 
             for s in sent
-                assert s.partition == partition_of(s.key, partitions: 3) && s.offset == counts[s.partition]
+                assert s.partition == partition_of(s.key.must(), partitions: 3) && s.offset == counts[s.partition]
                 counts[s.partition] @ counts[s.partition] + 1
 
             assert counts[0] + counts[1] + counts[2] == 300
             plain @= message([7]).with_header(key: "h", value: [1, 2]).with_header(key: "e", value: [])
             plain.timestamp_ms @ 1700000000000
-            tomb @= message([]).with_key([3])
-            tomb.null_value @ true
+            tomb = tombstone([3])
             produced = produce(@c, topic: topic, partition: 0, messages: [plain, tomb]).must()
             assert produced.base_offset == counts[0]
             got = fetch(@c, topic: topic, partition: 0, offset: produced.base_offset, wait_ms: 1000).must()
             assert got.messages.len() == 2 && got.messages[0].headers == plain.headers && got.messages[0].timestamp_ms == 1700000000000
-            assert got.messages[1].null_value && got.messages[1].key == [3] && got.next_offset == produced.base_offset + 2 && got.high_watermark == produced.base_offset + 2
+            assert got.messages[1].value.is_err() && got.messages[1].key.must() == [3] && got.next_offset == produced.base_offset + 2 && got.high_watermark == produced.base_offset + 2
             assert list_offset(@c, topic: topic, partition: 0, at: EARLIEST).must() == 0
             assert list_offset(@c, topic: topic, partition: 0, at: LATEST).must() == counts[0] + 2
             assert list_offset(@c, topic: topic, partition: 0, at: 1700000000000).must() == 0
@@ -1425,7 +1431,7 @@ test "connect live, against the brokers REBEL_KAFKA_BROKERS names: topics made a
             many @ many.push(message(big))
             put = produce(@z, topic: other, partition: 0, messages: many).must()
             back = fetch(@z, topic: other, partition: 0, offset: put.base_offset, wait_ms: 1000).must()
-            assert back.messages.len() == 51 && back.messages[50].value == big && back.messages[3].value == bytes.from_text("zipped 3")
+            assert back.messages.len() == 51 && back.messages[50].value.must() == big && back.messages[3].value.must() == bytes.from_text("zipped 3")
             close(@z).must()
             assert delete_records(@c, topic: topic, partition: 0, before: 5).must() == 5
             assert list_offset(@c, topic: topic, partition: 0, at: EARLIEST).must() == 5
@@ -1597,7 +1603,7 @@ test "connect live over TLS, against the brokers REBEL_KAFKA_TLS_BROKERS names, 
             topic = f"rebel-tls-{os.pid()}"
             create_topics(@c, topics: [new_topic(topic, partitions: 1)]).must()
             p = produce(@c, topic: topic, partition: 0, messages: [message([42])]).must()
-            assert fetch(@c, topic: topic, partition: 0, offset: p.base_offset, wait_ms: 1000).must().messages[0].value == [42]
+            assert fetch(@c, topic: topic, partition: 0, offset: p.base_offset, wait_ms: 1000).must().messages[0].value.must() == [42]
             delete_topics(@c, names: [topic]).must()
             close(@c).must()
             untrusted @= options([text])
@@ -1732,12 +1738,17 @@ test "delete_records: before the second offset"
 # A message of text.
 test "message: a value"
     m = message(bytes.from_text("hello"))
-    assert m.null_key && !m.null_value && m.partition == -1
+    assert m.key.is_err() && m.value.must() == bytes.from_text("hello") && m.partition == -1
 
 # A message keyed by a user's identifier.
 test "with_key: a user's identifier"
     m = with_key(message([1]), key: bytes.from_text("user-42"))
-    assert !m.null_key && m.key == bytes.from_text("user-42")
+    assert m.key.must() == bytes.from_text("user-42")
+
+# A tombstone that removes a user's last value from a compacted topic.
+test "tombstone: a user's value removed"
+    m = tombstone(bytes.from_text("user-42"))
+    assert m.key.must() == bytes.from_text("user-42") && m.value.is_err()
 
 # A message with a header.
 test "with_header: a trace's identifier"
@@ -1783,7 +1794,7 @@ test "fetch: from the offset 0"
             name = f"rebel-example-{os.pid()}-h"
             create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
             _ = produce(@c, topic: name, partition: 0, messages: [message([1])]).must()
-            assert fetch(@c, topic: name, partition: 0, offset: 0, wait_ms: 500).must().messages[0].value == [1]
+            assert fetch(@c, topic: name, partition: 0, offset: 0, wait_ms: 500).must().messages[0].value.must() == [1]
             delete_topics(@c, names: [name]).must()
             close(@c).must()
 
@@ -2026,7 +2037,7 @@ test "assign_range: two members, three partitions"
 
 # A batch of one message.
 test "encode_batch: one message, read back"
-    assert decode_batches(encode_batch([message([1])], compression: .none).must()).must()[0].value == [1]
+    assert decode_batches(encode_batch([message([1])], compression: .none).must()).must()[0].value.must() == [1]
 
 # The messages of a batch.
 test "decode_batches: one batch"

@@ -292,12 +292,12 @@ function emit_block(@s: State, stream: i64, block: [u8], end_stream: bool)
     if block.len() <= most
         emit(
             @s,
-            f: .headers(stream: stream, block: block, end_stream: end_stream, end_headers: true, padding: 0, has_priority: false, priority: http2.Priority(exclusive: false, depends_on: 0, weight: 16))
+            f: .headers(stream: stream, block: block, end_stream: end_stream, end_headers: true, padding: 0, priority: fail(code: http2.NOT_FOUND, msg: "the frame carries no priority"))
         )
         return
     emit(
         @s,
-        f: .headers(stream: stream, block: block.slice(from: 0, to: most), end_stream: end_stream, end_headers: false, padding: 0, has_priority: false, priority: http2.Priority(exclusive: false, depends_on: 0, weight: 16))
+        f: .headers(stream: stream, block: block.slice(from: 0, to: most), end_stream: end_stream, end_headers: false, padding: 0, priority: fail(code: http2.NOT_FOUND, msg: "the frame carries no priority"))
     )
     at: i64 @= most
 

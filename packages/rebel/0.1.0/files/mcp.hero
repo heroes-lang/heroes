@@ -206,10 +206,9 @@ function no_capabilities() -> ClientCapabilities
 record Annotations
     # Who it is for: `user`, `assistant`; empty for no hint.
     audience: [str]
-    # How much it matters, 0.0 to 1.0, read only where `has_priority`.
-    priority: f64
-    # Whether `priority` is given.
-    has_priority: bool
+    # How much it matters, 0.0 to 1.0; it fails `not_found` where no
+    # priority is given.
+    priority: f64?
     # When it last changed, ISO 8601, "" for no hint.
     last_modified: str
 
@@ -269,7 +268,7 @@ variant Contents
 
 # Hints of none.
 function no_annotations() -> Annotations
-    return Annotations(audience: [], priority: 0.0, has_priority: false, last_modified: "")
+    return Annotations(audience: [], priority: fail(code: NOT_FOUND, msg: "no priority is given"), last_modified: "")
 
 # A block of `text`, with no hint.
 #
@@ -386,10 +385,8 @@ record Resource
     description: str
     # Its media type, "" for none.
     mime_type: str
-    # Its size in bytes, read only where `has_size`.
-    size: i64
-    # Whether `size` is given.
-    has_size: bool
+    # Its size in bytes; it fails `not_found` where no size is given.
+    size: i64?
     # Its hints.
     annotations: Annotations
     # Its icons.
@@ -428,8 +425,7 @@ function new_resource(uri: str, name: str) -> Resource
         title: "",
         description: "",
         mime_type: "",
-        size: 0,
-        has_size: false,
+        size: fail(code: NOT_FOUND, msg: "no size is given"),
         annotations: no_annotations(),
         icons: [],
         meta: {}
@@ -2190,8 +2186,10 @@ function annotations_json(a: Annotations) -> json.Value
     members: {str: json.Value} @= {}
     build.put_texts(@members, key: "audience", values: a.audience)
 
-    if a.has_priority
-        members["priority"] @ .number(v: a.priority)
+    match a.priority
+        .ok priority => members["priority"] @ .number(v: priority)
+        .err _       => _ = 0
+
     build.put_text(@members, key: "lastModified", value: a.last_modified)
     return .object(members: members)
 
@@ -2207,10 +2205,8 @@ function annotations_of(v: json.Value) -> Annotations?
     out.last_modified @ build.text_at(v, key: "lastModified")?
 
     match build.members_of(v)["priority"]
-        .ok got =>
-            out.priority @ json.number_of(got)?
-            out.has_priority @ true
-        .err _ => _ = 0
+        .ok got => out.priority @ ok(json.number_of(got)?)
+        .err _  => _ = 0
 
     return ok(out)
 
@@ -2446,8 +2442,9 @@ function resource_json(r: Resource) -> json.Value
     build.put_text(@members, key: "mimeType", value: r.mime_type)
     dispatch.put_annotations(@members, a: r.annotations)
 
-    if r.has_size
-        members["size"] @ .number(v: to_f64(r.size))
+    match r.size
+        .ok size => members["size"] @ .number(v: to_f64(size))
+        .err _   => _ = 0
 
     if r.icons.len() > 0
         members["icons"] @ icons_json(r.icons)
@@ -2473,10 +2470,8 @@ function resource_of(v: json.Value) -> Resource?
     out.meta @ build.object_at(v, key: "_meta")?
 
     match written["size"]
-        .ok size =>
-            out.size @ json.int_of(size)?
-            out.has_size @ true
-        .err _ => _ = 0
+        .ok size => out.size @ ok(json.int_of(size)?)
+        .err _   => _ = 0
 
     return ok(out)
 
@@ -2941,12 +2936,10 @@ test "the JSON forms: each type written and read back"
     tool.icons @ [Icon(src: "https://x/i.png", mime_type: "image/png", sizes: ["48x48"], theme: "dark")]
     assert tool_of(tool_json(tool)).must() == tool
     resource @= new_resource(uri: "file:///a", name: "a")
-    resource.size @ 7
-    resource.has_size @ true
+    resource.size @ ok(7)
     resource.annotations @ Annotations(
         audience: ["user"],
-        priority: 0.5,
-        has_priority: true,
+        priority: ok(0.5),
         last_modified: "2025-01-12T15:00:58Z"
     )
     assert resource_of(resource_json(resource)).must() == resource
@@ -3151,12 +3144,12 @@ test "server_capabilities_of: tools"
 
 # Hints written.
 test "annotations_json: for the user, important"
-    a = Annotations(audience: ["user"], priority: 0.9, has_priority: true, last_modified: "")
+    a = Annotations(audience: ["user"], priority: ok(0.9), last_modified: "")
     assert json.format(annotations_json(a)).must() == "{\"audience\":[\"user\"],\"priority\":0.9}"
 
 # Hints read.
 test "annotations_of: a priority"
-    assert annotations_of(json.parse("{\"priority\": 0.7}").must()).must().priority == 0.7
+    assert annotations_of(json.parse("{\"priority\": 0.7}").must()).must().priority.must() == 0.7
 
 # An image block written.
 test "content_json: an image"
@@ -3198,7 +3191,7 @@ test "resource_json: a file"
 
 # A resource read.
 test "resource_of: a file read"
-    assert resource_of(json.parse("{\"uri\": \"file:///a\", \"name\": \"a\", \"size\": 3}").must()).must().size == 3
+    assert resource_of(json.parse("{\"uri\": \"file:///a\", \"name\": \"a\", \"size\": 3}").must()).must().size.must() == 3
 
 # A template written.
 test "template_json: a template"

@@ -197,6 +197,26 @@ function subscription_of(m: model.Model lent, query: str, operation_name: str, g
         return refused([coerced.error])
     return Subscription(errors: [], field_name: name, arguments: coerced.values)
 
+# The `data` member of a response object `v`, `not_found` where it holds
+# none: execution never began.
+function data_of(v: json.Value) -> json.Value?
+    if has_member(v, key: "data")
+        return ok(member_of(v, key: "data"))
+    return not_begun()
+
+# A response's data where execution never began: `not_found`.
+function not_begun() -> json.Value?
+    return fail(code: "not_found", msg: "execution never began: the response holds no data")
+
+# `data` where execution began, `has_data`, else `not_begun`.
+#
+# - `data`: the result built.
+# - `has_data`: whether execution began.
+function began(data: json.Value, has_data: bool) -> json.Value?
+    if has_data
+        return ok(data)
+    return not_begun()
+
 test "joined, media_of and parameter_json: errors one a line, a type's parameters dropped, JSON parameters"
     assert joined([tree.err_of("a"), tree.Err(message: "b", locations: [tree.Loc(line: 2, column: 3)], path: [])]) == "a\nb (2:3)"
     assert media_of(" Application/JSON ; charset=utf-8") == "application/json"

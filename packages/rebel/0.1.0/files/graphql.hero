@@ -66,7 +66,8 @@ constant INVALID: str
 constant LIMIT: str
     "limit"
 
-# The code of an operation name a document does not hold.
+# The code of an operation name a document does not hold, and of a
+# response's `data` where execution never began.
 constant NOT_FOUND: str
     "not_found"
 
@@ -240,7 +241,7 @@ function introspection_of(schema: Schema) -> json.Value
 
     while true
         match next_step(@e)
-            .done d => return d.response.data
+            .done d => return d.response.data.default(.null_value)
             .resolve step =>
                 answers: [json.Value?] @= []
 
@@ -421,11 +422,9 @@ record Request
 # What a server answers: the specification's response.
 record Response
     # The result, an object, or `.null_value` where a non-null root field
-    # failed; read only where `has_data` holds.
-    data: json.Value
-    # Whether execution began, so that the response holds `data`: false for
-    # a request refused before it ran.
-    has_data: bool
+    # failed; it fails `not_found` where execution never began, a request
+    # refused before it ran.
+    data: json.Value?
     # The errors, in the order they were found.
     errors: [Error]
     # The members the server adds, an object, or `.null_value` for none.
@@ -573,7 +572,7 @@ function response_of(v: json.Value) -> Response?
         errors @ errors.push(error_of(e)?)
 
     return ok(
-        Response(data: wire.member_of(v, key: "data"), has_data: wire.has_member(v, key: "data"), errors: errors, extensions: wire.member_of(v, key: "extensions"))
+        Response(data: wire.data_of(v), errors: errors, extensions: wire.member_of(v, key: "extensions"))
     )
 
 # `response` as a JSON value, its members in graphql-js's order: `errors`
@@ -593,8 +592,9 @@ function response_json(response: Response) -> json.Value
 
         members["errors"] @ .list(items: errors)
 
-    if response.has_data
-        members["data"] @ response.data
+    match response.data
+        .ok data => members["data"] @ data
+        .err _   => _ = 0
 
     if response.extensions != .null_value
         members["extensions"] @ response.extensions
@@ -792,7 +792,7 @@ function next_step(@e: Execution) -> Step
         else
             e.state.data
         return .done(
-            response: Response(data: data, has_data: e.state.has_data, errors: errors, extensions: .null_value)
+            response: Response(data: wire.began(data, has_data: e.state.has_data), errors: errors, extensions: .null_value)
         )
     fields: [Field] @= []
 
@@ -938,7 +938,7 @@ function subscribe(schema: Schema, r: Request, limits: Limits) -> Subscribed
 
         errors @ errors.push(Error(message: err.message, locations: places, path: err.path, extensions: .null_value))
 
-    return .refused(response: Response(data: .null_value, has_data: false, errors: errors, extensions: .null_value))
+    return .refused(response: Response(data: wire.not_begun(), errors: errors, extensions: .null_value))
 
 # An execution of the subscription `r` asks for over one event of its
 # stream, the specification's `ExecuteSubscriptionEvent`: the root field is
@@ -1035,7 +1035,7 @@ function respond_http(r: http.Request, response: Response) -> http.Response
         .ok got => got
         .err e  => return http.respond_text(status: http.STATUS_INTERNAL_SERVER_ERROR, text: e.msg)
 
-    status = if media == wire.GRAPHQL_RESPONSE_JSON && !response.has_data
+    status = if media == wire.GRAPHQL_RESPONSE_JSON && response.data.is_err()
         http.STATUS_BAD_REQUEST
     else
         http.STATUS_OK
@@ -1059,7 +1059,7 @@ function refusal_http(r: http.Request, code: str, msg: str) -> http.Response
     if code == LIMIT
         return http.respond_text(status: http.STATUS_CONTENT_TOO_LARGE, text: msg)
     body = format_response(
-        Response(data: .null_value, has_data: false, errors: [Error(message: msg, locations: [], path: [], extensions: .null_value)], extensions: .null_value)
+        Response(data: wire.not_begun(), errors: [Error(message: msg, locations: [], path: [], extensions: .null_value)], extensions: .null_value)
     ).must()
     media = wire.media_accepted(r).default(wire.APPLICATION_JSON)
     return http.respond(
@@ -1352,7 +1352,7 @@ test "next_step: a mutation's root fields one at a time"
 test "answer: a failure nulls the field and is reported with its path"
     r = fixture.spec_request("{ hero { name friends { name } } }")
     e @= start(fixture.spec_schema(), r: r, root: .null_value, limits: default_limits())
-    response @= Response(data: .null_value, has_data: false, errors: [], extensions: .null_value)
+    response @= Response(data: wire.not_begun(), errors: [], extensions: .null_value)
     done @= false
 
     while !done
@@ -1384,7 +1384,7 @@ test "execute: an interface's value naming no type, and arguments refused at run
         resolver: fixture.spec_resolver
     )
     assert got.errors[0].message == "Abstract type \"Character\" must resolve to an Object type at runtime for field \"Query.hero\". Either the \"Character\" type should provide a \"resolveType\" function or each possible type should provide an \"isTypeOf\" function."
-    assert got.data == json.parse("{\"hero\": null}").must()
+    assert got.data.must() == json.parse("{\"hero\": null}").must()
 
 test "validate: the limits of fields, aliases and levels, counted with fragments spread"
     schema = fixture.spec_schema()
@@ -1449,8 +1449,7 @@ test "read_http: GET's parameters, POST's body, and what each refuses"
 test "respond_http: each media type's status, and 406 where neither is accepted"
     r = http.request(method: "POST", target: "http://localhost/graphql").must()
     refused = Response(
-        data: .null_value,
-        has_data: false,
+        data: wire.not_begun(),
         errors: [Error(message: "no", locations: [], path: [], extensions: .null_value)],
         extensions: .null_value
     )
@@ -1460,7 +1459,7 @@ test "respond_http: each media type's status, and 406 where neither is accepted"
     modern @= r
     modern.headers @ http.with_header(r.headers, name: "Accept", value: "application/graphql-response+json")
     assert respond_http(modern, response: refused).status == 400
-    ran = Response(data: .null_value, has_data: true, errors: refused.errors, extensions: .null_value)
+    ran = Response(data: ok(.null_value), errors: refused.errors, extensions: .null_value)
     assert respond_http(modern, response: ran).status == 200
     odd @= r
     odd.headers @ http.with_header(r.headers, name: "Accept", value: "text/html")
@@ -1490,7 +1489,7 @@ test "parse_message and format_message: every message of the protocol, read back
         .ping(payload: .null_value)
         .pong(payload: .null_value)
         .subscribe(id: "1", request: fixture.spec_request("subscription { reviewAdded { stars } }"))
-        .next(id: "1", response: Response(data: json.parse("{\"a\": 1}").must(), has_data: true, errors: [], extensions: .null_value))
+        .next(id: "1", response: Response(data: ok(json.parse("{\"a\": 1}").must()), errors: [], extensions: .null_value))
         .error(id: "1", errors: [Error(message: "no", locations: [Location(line: 1, column: 2)], path: [], extensions: .null_value)])
         .complete(id: "1")
     ]
@@ -1625,7 +1624,7 @@ test "parse_response: data and an error with its place"
     r = parse_response(
         "{\"errors\": [{\"message\": \"no\", \"locations\": [{\"line\": 1, \"column\": 3}], \"path\": [\"a\", 0]}], \"data\": {\"a\": null}}"
     ).must()
-    assert r.has_data
+    assert !r.data.is_err()
     assert r.errors[0].locations == [Location(line: 1, column: 3)]
     assert r.errors[0].path == [.text(v: "a"), .number(v: 0.0)]
     assert failures.has_code(parse_response("{}"), code: INVALID)
@@ -1633,8 +1632,7 @@ test "parse_response: data and an error with its place"
 # A response written as JSON, its errors first.
 test "format_response: errors, then data"
     r = Response(
-        data: json.parse("{\"a\": 1}").must(),
-        has_data: true,
+        data: ok(json.parse("{\"a\": 1}").must()),
         errors: [Error(message: "late", locations: [], path: [.text(v: "b")], extensions: .null_value)],
         extensions: .null_value
     )
@@ -1653,13 +1651,12 @@ test "request_json: the members given"
 test "response_of: data alone"
     r = response_of(json.parse("{\"data\": {\"a\": 1}}").must()).must()
     assert r.errors.len() == 0
-    assert r.data == json.parse("{\"a\": 1}").must()
+    assert r.data.must() == json.parse("{\"a\": 1}").must()
 
 # A response as a JSON value.
 test "response_json: a request refused, with no data"
     r = Response(
-        data: .null_value,
-        has_data: false,
+        data: wire.not_begun(),
         errors: [Error(message: "no", locations: [], path: [], extensions: .null_value)],
         extensions: .null_value
     )
@@ -1823,7 +1820,7 @@ test "respond_http: application/json, the type of a client that names none"
     r = http.request(method: "POST", target: "http://localhost/graphql").must()
     response = respond_http(
         r,
-        response: Response(data: json.parse("{\"a\": 1}").must(), has_data: true, errors: [], extensions: .null_value)
+        response: Response(data: ok(json.parse("{\"a\": 1}").must()), errors: [], extensions: .null_value)
     )
     assert response.status == 200
     assert bytes.to_text(response.body).must() == "{\"data\":{\"a\":1}}"
@@ -1869,6 +1866,6 @@ test "parse_message: a subscription started"
 test "format_message: a result sent"
     m: Message = .next(
         id: "7",
-        response: Response(data: json.parse("{\"a\": 1}").must(), has_data: true, errors: [], extensions: .null_value)
+        response: Response(data: ok(json.parse("{\"a\": 1}").must()), errors: [], extensions: .null_value)
     )
     assert format_message(m).must() == "{\"id\":\"7\",\"type\":\"next\",\"payload\":{\"data\":{\"a\":1}}}"

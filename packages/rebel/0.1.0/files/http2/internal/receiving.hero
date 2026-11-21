@@ -449,7 +449,7 @@ test "receive: a CONTINUATION flood ends the connection with ENHANCE_YOUR_CALM"
     block = encoding.encode(@p.client.encoder, fields: get_of("/"))
     engine.emit(
         @p.client,
-        f: .headers(stream: 1, block: block, end_stream: true, end_headers: false, padding: 0, has_priority: false, priority: http2.Priority(exclusive: false, depends_on: 0, weight: 16))
+        f: .headers(stream: 1, block: block, end_stream: true, end_headers: false, padding: 0, priority: fail(code: http2.NOT_FOUND, msg: "the frame carries no priority"))
     )
 
     for _ in range(from: 0, to: 70)

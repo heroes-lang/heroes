@@ -74,7 +74,7 @@ capability message/opcode  the operation codes
   python  dns.opcode.Opcode, dns.opcode.QUERY, dns.opcode.NOTIFY, dns.opcode.UPDATE
 
 capability message/edns  EDNS(0): the size of a datagram, the DNSSEC bit, the extended code and the options
-  heroes  dns.Edns, dns.EdnsOption, dns.Message.has_edns
+  heroes  dns.Edns, dns.EdnsOption, dns.Message.edns
   go      dnsmessage.OPTResource, dnsmessage.Option, dnsmessage.Option.GoString, dnsmessage.ResourceHeader.SetEDNS, dnsmessage.ResourceHeader.DNSSECAllowed, dnsmessage.ResourceHeader.ExtendedRCode, dnsmessage.Builder.OPTResource, dnsmessage.Parser.OPTResource, dnsmessage.TypeOPT
   rust    hickory_proto::op::Edns, Edns::max_payload, Edns::dnssec_ok, Edns::options, EdnsOption
   python  Message.use_edns, Message.edns, Message.payload, Message.ednsflags, Message.options, dns.edns.Option, dns.edns.GenericOption

@@ -141,10 +141,9 @@ variant Frame
         end_headers: bool
         # How many bytes of zero pad the frame, 0 to 255.
         padding: i64
-        # Whether the frame carries a priority (the flag PRIORITY).
-        has_priority: bool
-        # The priority, where `has_priority`; ignored otherwise.
-        priority: Priority
+        # The priority the frame carries (the flag PRIORITY); it fails
+        # `not_found` where it carries none.
+        priority: Priority?
     # PRIORITY: a stream's priority, read and ignored.
     priority
         # The stream, 1 or more.
@@ -235,8 +234,7 @@ function encode_frame(f: Frame) -> [u8]?
             end_stream: h.end_stream,
             end_headers: h.end_headers,
             padding: h.padding,
-            has_priority: h.has_priority,
-            priority: Priority(exclusive: h.priority.exclusive, depends_on: h.priority.depends_on, weight: h.priority.weight)
+            priority: h.priority
         )
         .priority p => .priority(
             stream: p.stream,
@@ -300,8 +298,7 @@ function decode_frame(data: [u8], max_size: i64) -> Frame?
             end_stream: h.end_stream,
             end_headers: h.end_headers,
             padding: h.padding,
-            has_priority: h.has_priority,
-            priority: Priority(exclusive: h.priority.exclusive, depends_on: h.priority.depends_on, weight: h.priority.weight)
+            priority: h.priority
         )
         .priority p => .priority(
             stream: p.stream,

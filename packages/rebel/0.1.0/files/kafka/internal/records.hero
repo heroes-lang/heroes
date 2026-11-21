@@ -68,17 +68,18 @@ function put_record(@out: [u8], m: model.Message lent, offset_delta: i64, delta_
     wire.put_varlong(out: @body, v: delta_ms)
     wire.put_varlong(out: @body, v: offset_delta)
 
-    if m.null_key
-        wire.put_varlong(out: @body, v: -1)
-    else
-        wire.put_varlong(out: @body, v: m.key.len())
-        bytes.push_all(to: @body, from: m.key)
+    match m.key
+        .err _ => wire.put_varlong(out: @body, v: -1)
+        .ok key =>
+            wire.put_varlong(out: @body, v: key.len())
+            bytes.push_all(to: @body, from: key)
 
-    if m.null_value
-        wire.put_varlong(out: @body, v: -1)
-    else
-        wire.put_varlong(out: @body, v: m.value.len())
-        bytes.push_all(to: @body, from: m.value)
+    match m.value
+        .err _ => wire.put_varlong(out: @body, v: -1)
+        .ok value =>
+            wire.put_varlong(out: @body, v: value.len())
+            bytes.push_all(to: @body, from: value)
+
     wire.put_varlong(out: @body, v: m.headers.len())
 
     for h in m.headers
@@ -215,7 +216,7 @@ function take_records(@r: wire.Reader, count: i64, base_offset: i64, base_ms: i6
             base_ms + delta_ms
 
         out @ out.push(
-            model.Message(topic: "", partition: -1, offset: base_offset + delta, timestamp_ms: time, key: key, null_key: key_len < 0, value: value, null_value: value_len < 0, headers: headers)
+            model.Message(topic: "", partition: -1, offset: base_offset + delta, timestamp_ms: time, key: present(key, length: key_len, what: "key"), value: present(value, length: value_len, what: "value"), headers: headers)
         )
 
     return ok(out)
@@ -305,8 +306,10 @@ function decode(data: [u8], limit: i64) -> [Batch]?
         control = attributes & 32 != 0
         commits: bool @= false
 
-        if control && messages.len() > 0 && messages[0].key.len() >= 4
-            commits @ messages[0].key[3] == 1
+        if control && messages.len() > 0
+            match messages[0].key
+                .ok key => commits @ key.len() >= 4 && key[3] == 1
+                .err _  => _ = 0
         out @ out.push(
             Batch(base_offset: base_offset, last_offset: base_offset + last_delta, producer_id: producer_id, transactional: attributes & 16 != 0, control: control, commits: commits, messages: messages)
         )
@@ -359,16 +362,25 @@ function readable(batches: [Batch], aborted_producers: [i64], aborted_firsts: [i
 
     return out
 
+# `data` where `length`, the length a record wrote before it, is 0 or more;
+# a null `what` where it is below 0.
+#
+# - `data`: the bytes read.
+# - `length`: the length written, -1 for null.
+# - `what`: "key" or "value", for the message of a null one.
+function present(data: [u8], length: i64, what: str) -> [u8]?
+    if length < 0
+        return fail(code: model.NOT_FOUND, msg: f"the message's {what} is null")
+    return ok(data)
+
 test "encode: two messages, a null key, a null value, headers, as kafka-python's DefaultRecordBatchBuilder writes them"
     first = model.Message(
         topic: "",
         partition: -1,
         offset: -1,
         timestamp_ms: 1700000000000,
-        key: [],
-        null_key: true,
-        value: [104, 105],
-        null_value: false,
+        key: fail(code: model.NOT_FOUND, msg: "null"),
+        value: ok([104, 105]),
         headers: []
     )
     second = model.Message(
@@ -376,17 +388,15 @@ test "encode: two messages, a null key, a null value, headers, as kafka-python's
         partition: -1,
         offset: -1,
         timestamp_ms: 1700000000005,
-        key: [107],
-        null_key: false,
-        value: [],
-        null_value: true,
+        key: ok([107]),
+        value: fail(code: model.NOT_FOUND, msg: "null"),
         headers: [model.Header(key: "h", value: [118]), model.Header(key: "e", value: [])]
     )
     data = encode([first, second], compression: .none, now_ms: 0).must()
     assert data == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73, 0, 0, 0, 0, 2, 41, 148, 134, 68, 0, 0, 0, 0, 0, 1, 0, 0, 1, 139, 207, 229, 104, 0, 0, 0, 1, 139, 207, 229, 104, 5, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 2, 16, 0, 0, 0, 1, 4, 104, 105, 0, 28, 0, 10, 2, 2, 107, 1, 4, 2, 104, 2, 118, 2, 101, 0]
     back = decode(data, limit: 1000).must()
     assert back.len() == 1 && back[0].messages.len() == 2 && back[0].last_offset == 1
-    assert back[0].messages[0].null_key && back[0].messages[0].value == [104, 105] && back[0].messages[1].null_value
+    assert back[0].messages[0].key.is_err() && back[0].messages[0].value.must() == [104, 105] && back[0].messages[1].value.is_err()
     assert back[0].messages[1].offset == 1 && back[0].messages[1].timestamp_ms == 1700000000005
     assert back[0].messages[1].headers == [model.Header(key: "h", value: [118]), model.Header(key: "e", value: [])]
     assert encode([], compression: .none, now_ms: 0).is_err()
@@ -585,7 +595,7 @@ test "decode: kafka-python's batch with a null header value, its gzip batch, a C
         0
     ]
     unzipped = decode(gzipped, limit: 1000).must()
-    assert unzipped[0].messages.len() == 3 && unzipped[0].messages[2].value == bytes.from_text(repeat("x", 50)) && unzipped[0].messages[2].timestamp_ms == 1700000000002
+    assert unzipped[0].messages.len() == 3 && unzipped[0].messages[2].value.must() == bytes.from_text(repeat("x", 50)) && unzipped[0].messages[2].timestamp_ms == 1700000000002
     broken @= python
     broken[30] @ 0
     assert decode(broken, limit: 1000).is_err()
@@ -604,7 +614,7 @@ test "encode, decode: gzip both ways, and a decompression past its limit refused
 
     for i in range(from: 0, to: 100)
         many @ many.push(
-            model.Message(topic: "", partition: -1, offset: -1, timestamp_ms: 1000 + i, key: [], null_key: true, value: [1, 2, 3, 4, 5, 6, 7, 8], null_value: false, headers: [])
+            model.Message(topic: "", partition: -1, offset: -1, timestamp_ms: 1000 + i, key: fail(code: model.NOT_FOUND, msg: "null"), value: ok([1, 2, 3, 4, 5, 6, 7, 8]), headers: [])
         )
 
     data = encode(many, compression: .gzip, now_ms: 0).must()

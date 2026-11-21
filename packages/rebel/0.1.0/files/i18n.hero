@@ -583,18 +583,14 @@ record PluralForms
 # One message of a catalog, a `.po` entry: the text a program writes, with
 # its context and plural, and its translations.
 record Message
-    # Whether the message has a context, `msgctxt`; the empty context is a
-    # context, and differs from none.
-    has_context: bool
-    # The context, the empty text where `has_context` is false.
-    context: str
+    # The context, `msgctxt`; it fails `not_found` where the message has
+    # none, which differs from the empty context.
+    context: str?
     # The text the program writes, `msgid`; the empty text for the header.
     id: str
-    # Whether the message has a plural, `msgid_plural`.
-    has_plural: bool
-    # The plural the program writes, the empty text where `has_plural` is
-    # false.
-    plural_id: str
+    # The plural the program writes, `msgid_plural`; it fails `not_found`
+    # where the message has none.
+    plural_id: str?
     # The translations: one for a message with no plural, `count` forms of
     # the catalog's plural forms for one with; an empty text is untranslated.
     translations: [str]
@@ -644,9 +640,9 @@ function new_catalog(messages: [Message]) -> Catalog?
     kept: [Message] @= []
 
     for m in messages
-        key = po_file.key_of(has_context: m.has_context, context: m.context, id: m.id)
+        key = po_file.key_of(has_context: !m.context.is_err(), context: m.context.default(""), id: m.id)
 
-        if !m.obsolete && !m.has_context && m.id == "" && m.translations.len() > 0
+        if !m.obsolete && m.context.is_err() && m.id == "" && m.translations.len() > 0
             match po_file.header_value(header: m.translations[0], name: "Plural-Forms")
                 .ok value =>
                     read = plural_expr.parse_forms(value)?
@@ -673,7 +669,7 @@ function new_catalog(messages: [Message]) -> Catalog?
 # Fails `invalid` where a header's `Plural-Forms` field does not parse, and
 # `catalog` is then unchanged. See also `new_catalog`.
 function add_message(@catalog: Catalog, message: Message) -> ()?
-    if !message.obsolete && !message.has_context && message.id == "" && message.translations.len() > 0
+    if !message.obsolete && message.context.is_err() && message.id == "" && message.translations.len() > 0
         match po_file.header_value(header: message.translations[0], name: "Plural-Forms")
             .ok value =>
                 read = plural_expr.parse_forms(value)?
@@ -683,7 +679,7 @@ function add_message(@catalog: Catalog, message: Message) -> ()?
                     program: read.program
                 )
             .err _ => _ = 0
-    key = po_file.key_of(has_context: message.has_context, context: message.context, id: message.id)
+    key = po_file.key_of(has_context: !message.context.is_err(), context: message.context.default(""), id: message.id)
     messages @= catalog.messages
     catalog.messages @ []
 
@@ -708,11 +704,9 @@ function add_message(@catalog: Catalog, message: Message) -> ()?
 # Every other field is empty. See also `add_message`.
 function new_message(id: str, translation: str) -> Message
     return Message(
-        has_context: false,
-        context: "",
+        context: fail(code: NOT_FOUND, msg: "the message has no context"),
         id: id,
-        has_plural: false,
-        plural_id: "",
+        plural_id: fail(code: NOT_FOUND, msg: "the message has no plural"),
         translations: [translation],
         comments: [],
         extracted_comments: [],
@@ -736,7 +730,7 @@ function parse_po(text: str) -> Catalog?
 
     for e in po_file.parse(text)?
         messages @ messages.push(
-            Message(has_context: e.has_context, context: e.context, id: e.id, has_plural: e.has_plural, plural_id: e.plural_id, translations: e.translations, comments: e.comments, extracted_comments: e.extracted_comments, references: e.references, flags: e.flags, previous: e.previous, obsolete: e.obsolete)
+            Message(context: po_file.context_of(e), id: e.id, plural_id: po_file.plural_of(e), translations: e.translations, comments: e.comments, extracted_comments: e.extracted_comments, references: e.references, flags: e.flags, previous: e.previous, obsolete: e.obsolete)
         )
 
     return new_catalog(messages)
@@ -754,7 +748,7 @@ function format_po(catalog: Catalog) -> str
 
     for m in catalog.messages
         entries @ entries.push(
-            po_file.Entry(has_context: m.has_context, context: m.context, id: m.id, has_plural: m.has_plural, plural_id: m.plural_id, translations: m.translations, comments: m.comments, extracted_comments: m.extracted_comments, references: m.references, flags: m.flags, previous: m.previous, obsolete: m.obsolete)
+            po_file.Entry(has_context: !m.context.is_err(), context: m.context.default(""), id: m.id, has_plural: !m.plural_id.is_err(), plural_id: m.plural_id.default(""), translations: m.translations, comments: m.comments, extracted_comments: m.extracted_comments, references: m.references, flags: m.flags, previous: m.previous, obsolete: m.obsolete)
         )
 
     return po_file.format(entries)
@@ -773,7 +767,7 @@ function decode_mo(data: [u8]) -> Catalog?
 
     for e in mo_file.decode(data)?
         messages @ messages.push(
-            Message(has_context: e.has_context, context: e.context, id: e.id, has_plural: e.has_plural, plural_id: e.plural_id, translations: e.translations, comments: e.comments, extracted_comments: e.extracted_comments, references: e.references, flags: e.flags, previous: e.previous, obsolete: e.obsolete)
+            Message(context: po_file.context_of(e), id: e.id, plural_id: po_file.plural_of(e), translations: e.translations, comments: e.comments, extracted_comments: e.extracted_comments, references: e.references, flags: e.flags, previous: e.previous, obsolete: e.obsolete)
         )
 
     return new_catalog(messages)
@@ -792,7 +786,7 @@ function encode_mo(catalog: Catalog) -> [u8]
 
     for m in catalog.messages
         entries @ entries.push(
-            po_file.Entry(has_context: m.has_context, context: m.context, id: m.id, has_plural: m.has_plural, plural_id: m.plural_id, translations: m.translations, comments: m.comments, extracted_comments: m.extracted_comments, references: m.references, flags: m.flags, previous: m.previous, obsolete: m.obsolete)
+            po_file.Entry(has_context: !m.context.is_err(), context: m.context.default(""), id: m.id, has_plural: !m.plural_id.is_err(), plural_id: m.plural_id.default(""), translations: m.translations, comments: m.comments, extracted_comments: m.extracted_comments, references: m.references, flags: m.flags, previous: m.previous, obsolete: m.obsolete)
         )
 
     return mo_file.encode(entries)
@@ -1087,7 +1081,7 @@ test "add_message: a translation added"
 # A message made from its text and translation.
 test "new_message: a message with no context"
     message = new_message(id: "Save", translation: "Speichern")
-    assert !message.has_context && message.translations == ["Speichern"]
+    assert message.context.is_err() && message.translations == ["Speichern"]
 
 # A `.po` file with a header and a plural message.
 test "parse_po: a header and a plural"
@@ -1113,11 +1107,9 @@ test "encode_mo: the magic number"
 # A message looked up with its context.
 test "find_message_in: a message in a context"
     message = Message(
-        has_context: true,
-        context: "menu",
+        context: ok("menu"),
         id: "File",
-        has_plural: false,
-        plural_id: "",
+        plural_id: fail(code: NOT_FOUND, msg: "no plural"),
         translations: ["Datei"],
         comments: [],
         extracted_comments: [],
@@ -1132,11 +1124,9 @@ test "find_message_in: a message in a context"
 # A message looked up by its id alone.
 test "find_message: a message with no context"
     message = Message(
-        has_context: false,
-        context: "",
+        context: fail(code: NOT_FOUND, msg: "no context"),
         id: "File",
-        has_plural: false,
-        plural_id: "",
+        plural_id: fail(code: NOT_FOUND, msg: "no plural"),
         translations: ["Datei"],
         comments: [],
         extracted_comments: [],
@@ -1157,11 +1147,9 @@ test "translate: a translation and a text with none"
 # The same text translated two ways in two contexts.
 test "translate_in: a word in a context"
     message = Message(
-        has_context: true,
-        context: "month",
+        context: ok("month"),
         id: "May",
-        has_plural: false,
-        plural_id: "",
+        plural_id: fail(code: NOT_FOUND, msg: "no plural"),
         translations: ["Maggio"],
         comments: [],
         extracted_comments: [],
@@ -1181,11 +1169,9 @@ test "translate_plural: the program's own forms"
 # A plural in a context.
 test "translate_plural_in: a plural in a context"
     message = Message(
-        has_context: true,
-        context: "disk",
+        context: ok("disk"),
         id: "file",
-        has_plural: true,
-        plural_id: "files",
+        plural_id: ok("files"),
         translations: ["Datei", "Dateien"],
         comments: [],
         extracted_comments: [],

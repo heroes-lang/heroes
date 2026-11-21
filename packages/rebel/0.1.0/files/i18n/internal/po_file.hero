@@ -45,6 +45,18 @@ function empty_entry() -> Entry
         obsolete: false
     )
 
+# The context of `e`, `not_found` where it has none.
+function context_of(e: Entry) -> str?
+    if e.has_context
+        return ok(e.context)
+    return fail(code: "not_found", msg: "the message has no context")
+
+# The plural of `e`, `not_found` where it has none.
+function plural_of(e: Entry) -> str?
+    if e.has_plural
+        return ok(e.plural_id)
+    return fail(code: "not_found", msg: "the message has no plural")
+
 # The key a catalog finds an entry by: its context, the byte 4 and its id,
 # or its id alone where it has no context, as a `.mo` file writes it.
 function key_of(has_context: bool, context: str, id: str) -> str

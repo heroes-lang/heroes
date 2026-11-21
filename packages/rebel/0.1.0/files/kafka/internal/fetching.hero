@@ -280,7 +280,7 @@ test "isolation_of: both"
 
 test "take_fetch: a partition's batch read from the offset asked, an error kept, the offset to fetch next"
     batch = records.encode(
-        [model.Message(topic: "", partition: -1, offset: -1, timestamp_ms: 5, key: [], null_key: true, value: [1], null_value: false, headers: []), model.Message(topic: "", partition: -1, offset: -1, timestamp_ms: 6, key: [], null_key: true, value: [2], null_value: false, headers: [])],
+        [model.Message(topic: "", partition: -1, offset: -1, timestamp_ms: 5, key: fail(code: model.NOT_FOUND, msg: "null"), value: ok([1]), headers: []), model.Message(topic: "", partition: -1, offset: -1, timestamp_ms: 6, key: fail(code: model.NOT_FOUND, msg: "null"), value: ok([2]), headers: [])],
         compression: .none,
         now_ms: 0
     ).must()
@@ -310,5 +310,5 @@ test "take_fetch: a partition's batch read from the offset asked, an error kept,
         limit: 1000,
         committed_only: false
     ).must()
-    assert got.len() == 2 && got[0].messages.len() == 1 && got[0].messages[0].value == [2] && got[0].messages[0].topic == "t"
+    assert got.len() == 2 && got[0].messages.len() == 1 && got[0].messages[0].value.must() == [2] && got[0].messages[0].topic == "t"
     assert got[0].next_offset == 2 && got[1].error == 6 && got[1].next_offset == 0
