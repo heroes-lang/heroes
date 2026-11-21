@@ -291,8 +291,11 @@ function port_told(said: str) -> i64?
 # below Linux's 32768 to 60999 and macOS's and Windows' 49152 to 65535, so
 # no system gives it to a socket of its own choosing between this answer
 # and the test's connect, as a port the system chose and let go may be at
-# once (defect 2633); and one a listen there takes, so a port another
-# program holds is passed over, a hundred draws at most. The shape of
+# once (defect 2633); and one a listen there takes, so a port where a listen
+# sees another program's listener is passed over, a hundred draws at most:
+# one of any user on that address, or of another user on every address,
+# since a listener of this same user on every address leaves a listen on
+# macOS made (macOS 27.2.1, measured 2026-11-21). The shape of
 # `tls/internal/loopback.quiet_port` (step 89b).
 function quiet_port() -> i64
     tries @= 0

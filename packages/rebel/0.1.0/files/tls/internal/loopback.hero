@@ -316,8 +316,10 @@ function round_plain(mode: str, first: str) -> str
 # the system's generator from 20000 to 31999, below Linux's 32768 to 60999
 # and macOS's and Windows' 49152 to 65535, so two runs at once seldom draw
 # the same; and one a listener can stand on (`held_elsewhere`), so a port
-# another program holds, or a range a system keeps for itself, is passed
-# over, a hundred draws at most.
+# where a listen sees another program's listener, or a range a system keeps
+# for itself, is passed over, a hundred draws at most. A listener of this
+# same user on every address is one a listen on macOS does not see, so such
+# a port may still be drawn.
 function quiet_port() -> i64
     tries @= 0
 
@@ -337,10 +339,12 @@ function quiet_port() -> i64
     return 0
 
 # Whether a socket other than the caller's holds `port` of the loopback
-# address: a listen there fails `exists`, as it does on macOS where another
-# program listens on that address or on every address (the four listeners
-# other programs held on a Mac, Tailscale's on every address among them,
-# defect 2623); a listener made instead is closed at once.
+# address where a listen sees it: a listen there fails `exists` where a
+# program of any user listens on that address, or one of another user on
+# every address, as Tailscale's daemon, run as root, does on a Mac (defect
+# 2623). A listener of the caller's own user on every address leaves the
+# listen made on macOS, so this answers false for its port (macOS 27.2.1,
+# measured 2026-11-21); a listener made is closed at once.
 function held_elsewhere(port: i64) -> bool
     match net.listen(host: "127.0.0.1", port: port)
         .ok l =>
