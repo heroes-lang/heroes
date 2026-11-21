@@ -9,12 +9,12 @@
 # by `seed/README.md`'s line, then stage 2, this commit's source, which judges):
 #
 #   - **the `rebel` suite of the net** (`tests/harness/suite_rebel.hero`), the
-#     coherence review's instruments over `packages/rebel` and its rules page;
-#   - **`heroes doc` over every face** of Rebel, the part of
-#     `examples-rebel/README.md` § A7 the verb holds today: a comment whose
-#     parameter lines do not name each parameter once, in order, is refused.
-#     The step prints how many faces it read and refused, and is red while
-#     one is refused; the counts it first read are step 65a's commit body;
+#     coherence review's instruments over `packages/rebel` and its rules page,
+#     its `docs` check among them: `heroes doc` over every face and every
+#     floor of Rebel, each reference read for `examples-rebel/README.md` § A7's
+#     rules, and red where the verb refuses one (`tests/harness/rebel_docs.hero`).
+#     A step of this file's own ran `heroes doc` over every face from step 65a
+#     to step 94a, which removed it as the check's repetition;
 #   - **Rebel's example program**, `examples-rebel/jq.hero`, built and run on
 #     one filter of its own usage lines;
 #   - **every package's own tests**, through the drivers
@@ -140,81 +140,24 @@ jobs:
           ./heroes${{ matrix.leg.exe }} --version
 
       # The harness built by stage 1 and judging stage 2, as `ci.yml`'s net is
-      # (panel 231's R2). The suite reads files and runs no compiler.
+      # (panel 231's R2). The suite reads files, and runs the compiler it
+      # judges for one thing, its `docs` check (`tests/harness/rebel_docs.hero`,
+      # since step 86g): `heroes doc <rebel>/<module>` over every face and
+      # every floor of Rebel's newest version, through a catalogue of its own
+      # whose one `path` entry places that version whole, each reference read
+      # for README § A7's rules. A module the verb refuses is a finding, and no
+      # `docs` finding is kept in `tests/harness/rebel_kept.hero`, so a refusal
+      # turns this step red, as do fewer modules documented than the suite's
+      # least (`LEAST_REFERENCES`, 175 on 2026-11-21: 152 faces and 23
+      # floors). That is every face the step
+      # `heroes doc over every face` ran from step 65a, read through
+      # `examples-rebel/heroes.toml`'s one `path`, the same version folder, and
+      # each face by the same rule (a part `internal` after the first is
+      # private, a last part beginning `hero_` a floor), with the floors added:
+      # step 94a removed that step as the check's repetition.
       - name: The rebel suite
         shell: bash
         run: ./heroes-from-seed${{ matrix.leg.exe }} run tests/harness/main.hero -- ./heroes${{ matrix.leg.exe }} rebel
-
-      # Every face of Rebel as a program reaches it, `heroes doc <entry>/<module>`
-      # through a catalogue, and through one of the step's own: the entry and
-      # the folder of `examples-rebel/heroes.toml`, written as one `path` entry
-      # with no `packages` line, so the whole version is placed. The examples'
-      # own line lists what their programs use (panel 253's R6, step 66b), and
-      # a face no program names, `tokenizer/tables/o200k_harmony` (reached
-      # through `tokenizer/tables`), is no name of it: through that catalogue
-      # the verb refuses such a face, `package_not_listed`, which is the line
-      # doing its work and no fault of the face's documentation. The faces are
-      # the suite's own (`tests/harness/rebel_tree.hero`, `is_face`): every
-      # `.hero` file of the folder the `path` names, but a private module (a
-      # part `internal` after the first) and a floor (a last part beginning
-      # `hero_`). `find` and `sort` by their path: Windows' System32 holds
-      # programs of those names that do something else.
-      - name: heroes doc over every face
-        if: ${{ !cancelled() && steps.stage2.outcome == 'success' }}
-        shell: bash
-        run: |
-          set -u
-          mkdir -p build
-          err="$PWD/build/doc-err.txt"
-          catalogue=examples-rebel/heroes.toml
-          entry=$(sed -n 's/^\[dependencies\.\([a-z0-9_]*\)\]$/\1/p' "$catalogue")
-          root=$(sed -n 's/^path = "\(.*\)"$/\1/p' "$catalogue")
-          if [ "$(printf '%s\n' "$entry" | wc -l | tr -d ' ')" != 1 ] || [ -z "$entry" ] || [ "$(printf '%s\n' "$root" | wc -l | tr -d ' ')" != 1 ] || [ -z "$root" ]; then
-            echo "::error::$catalogue does not read as one entry with one \`path\`; read it, and teach this step its shape"
-            exit 1
-          fi
-          # The step's catalogue, one folder deeper than `examples-rebel/`,
-          # so a relative `path` takes one `../` more; an absolute one stands.
-          case "$root" in
-            /*) whole="$root" ;;
-            *) whole="../$root" ;;
-          esac
-          mkdir -p build/rebel-doc
-          printf '[dependencies.%s]\npath = "%s"\n' "$entry" "$whole" > build/rebel-doc/heroes.toml
-          cd build/rebel-doc
-          if [ ! -d "$whole" ]; then
-            echo "::error::the catalogue's path, $root, names no folder from examples-rebel/"
-            exit 1
-          fi
-          root="$whole"
-          faces=0
-          refused=0
-          told=0
-          for file in $(cd "$root" && /usr/bin/find . -name '*.hero' | sed 's:^\./::' | LC_ALL=C /usr/bin/sort); do
-            module=${file%.hero}
-            case "$module" in */internal | */internal/*) continue ;; esac
-            case "${module##*/}" in hero_*) continue ;; esac
-            faces=$(( faces + 1 ))
-            code=0
-            ../../heroes${{ matrix.leg.exe }} doc "<$entry>/$module" > /dev/null 2> "$err" || code=$?
-            if [ "$code" -ne 0 ]; then
-              refused=$(( refused + 1 ))
-              n=$(grep -c '^error' "$err" || true)
-              told=$(( told + n ))
-              echo "::group::<$entry>/$module: exit $code, $n diagnostics"
-              head -n 40 "$err"
-              echo "::endgroup::"
-            fi
-          done
-          echo "$faces faces of <$entry>, $refused refused, $told diagnostics"
-          if [ "$faces" -eq 0 ]; then
-            echo "::error::no face was read under $root, so this step judged nothing"
-            exit 1
-          fi
-          if [ "$refused" -ne 0 ]; then
-            echo "::error::heroes doc refused $refused of $faces faces of <$entry>, $told diagnostics (examples-rebel/README.md § A7)"
-            exit 1
-          fi
 
       # One of the example's own usage lines, its output compared byte for
       # byte: the runtime writes stdout in binary mode on Windows
