@@ -49,7 +49,7 @@ capability errors/codes  the specification's error codes and the range left to s
   python  jsonrpcserver.codes, jsonrpcserver.response.ERROR_PARSE_ERROR, ERROR_INVALID_REQUEST, ERROR_METHOD_NOT_FOUND, ERROR_SERVER_ERROR, jsonrpcserver.result.ERROR_INTERNAL_ERROR, ERROR_INVALID_PARAMS
 
 capability errors/answers  the answers a server writes: a result, an error of its own, a parse error, an invalid request, a method not found, invalid parameters, an internal error that tells the client nothing of the server
-  heroes  jsonrpc.result_of, jsonrpc.error_of, jsonrpc.answer_of, jsonrpc.refusal_of, jsonrpc.parse_error_of, jsonrpc.invalid_request_of
+  heroes  jsonrpc.answer_result, jsonrpc.answer_error, jsonrpc.answer_outcome, jsonrpc.answer_refusal, jsonrpc.answer_parse_error, jsonrpc.answer_invalid_request
   go      jsonrpc2.Conn.Reply, jsonrpc2.Conn.ReplyWithError, jsonrpc2.Conn.SendResponse, jsonrpc2.Error, jsonrpc2.Error.SetError, jsonrpc2.Error.Error, go-sdk jsonrpc.Error
   rust    -
   python  jsonrpcserver.Success, jsonrpcserver.Error, jsonrpcserver.InvalidParams, jsonrpcserver.Result, jsonrpcserver.result.SuccessResult, ErrorResult, InvalidParamsResult, InternalErrorResult, MethodNotFoundResult, jsonrpcserver.response.ParseErrorResponse, InvalidRequestResponse, MethodNotFoundResponse, ServerErrorResponse, jsonrpcserver.JsonRpcError, jsonrpcserver.exceptions

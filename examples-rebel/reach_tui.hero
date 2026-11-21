@@ -90,7 +90,7 @@ function first_state() -> State
         chosen: chosen,
         reading: false,
         scroll: 0,
-        filter: tui.input_of(""),
+        filter: tui.new_input(""),
         filtering: false,
         done: false,
         list_area: tui.Rect(x: 0, y: 0, width: 0, height: 0)
@@ -98,8 +98,8 @@ function first_state() -> State
 
 # Draws the whole browser into `frame` and answers where the cursor stands.
 function draw(@frame: tui.Buffer, @state: State) -> tui.Cursor
-    rows = tui.split(frame.area, layout: tui.layout_of(.vertical, constraints: [.min(n: 0), .length(n: 1)]))
-    panes = tui.split(rows[0], layout: tui.layout_of(.horizontal, constraints: [.length(n: 18), .fill(weight: 1)]))
+    rows = tui.split(frame.area, layout: tui.new_layout(.vertical, constraints: [.min(n: 0), .length(n: 1)]))
+    panes = tui.split(rows[0], layout: tui.new_layout(.horizontal, constraints: [.length(n: 18), .fill(weight: 1)]))
     visible = shown_of(state.topics, typed: state.filter.text)
     names: [str] @= []
 
@@ -114,7 +114,7 @@ function draw(@frame: tui.Buffer, @state: State) -> tui.Cursor
         right_box.border_style @ focus
     else
         left_box.border_style @ focus
-    topic_list @= tui.list_of(names)
+    topic_list @= tui.new_list(names)
     topic_list.highlight_symbol @ "> "
     tui.draw_block(@frame, area: panes[0], block: left_box)
     state.list_area @ tui.inner_of(left_box, area: panes[0])
@@ -130,10 +130,10 @@ function draw(@frame: tui.Buffer, @state: State) -> tui.Cursor
         .err _ =>
             _ = 0
 
-    right_box.titles @ [tui.Title(line: tui.line_of(title), position: .top)]
+    right_box.titles @ [tui.Title(line: tui.new_line(title), position: .top)]
     tui.draw_block(@frame, area: panes[1], block: right_box)
     inside = tui.inner_of(right_box, area: panes[1])
-    text @= tui.paragraph_of(body)
+    text @= tui.new_paragraph(body)
     text.wrap @ true
     total = tui.height_of(text, width: inside.width - 1)
 
@@ -149,7 +149,7 @@ function draw(@frame: tui.Buffer, @state: State) -> tui.Cursor
     tui.draw_paragraph(@frame, area: reading_area, paragraph: text)
 
     if total > inside.height
-        bar @= tui.scrollbar_of(.vertical_right, content_length: total, position: state.scroll)
+        bar @= tui.new_scrollbar(.vertical_right, content_length: total, position: state.scroll)
         bar.viewport_length @ inside.height
         tui.draw_scrollbar(@frame, area: inside, scrollbar: bar)
 

@@ -278,7 +278,7 @@ function default_options() -> Options
 ## A client
 
 # A channel to one server: an HTTP/2 connection whose calls go to one
-# authority. Made by `connect`, `connect_plain` or `channel_of`; `close` closes it.
+# authority. Made by `connect`, `connect_plain` or `new_channel`; `close` closes it.
 record Channel
     # The connection, owned by the channel.
     conn: http2.Conn
@@ -383,7 +383,7 @@ function connect_plain(host: str, port: i64, deadline_ms: i64, options: Options)
 # - `options`: how its calls run.
 #
 # See also `connect`.
-function channel_of(conn: http2.Conn, authority: str, scheme: str, options: Options) -> Channel
+function new_channel(conn: http2.Conn, authority: str, scheme: str, options: Options) -> Channel
     return Channel(conn: conn, authority: authority, scheme: scheme, options: options)
 
 # Closes the channel: GOAWAY, then its connection closed.
@@ -787,7 +787,7 @@ variant Health
     service_unknown
 
 # A server's end of one HTTP/2 connection: the calls on it found and
-# answered. Made by `server_of`; its owner closes it with `close_server`.
+# answered. Made by `server`; its owner closes it with `close_server`.
 record Server
     # The connection, owned by the server.
     conn: http2.Conn
@@ -837,16 +837,16 @@ record ServerCall
 #   place is emptied.
 # - `options`: how its calls run.
 #
-# Fails as `http2.server_of` does. See also `next_call`.
-function server_of(@stream: io.Stream, options: Options) -> Server?
-    conn = http2.server_of(@stream, options: options.http2)?
+# Fails as `http2.server` does. See also `next_call`.
+function server(@stream: io.Stream, options: Options) -> Server?
+    conn = http2.server(@stream, options: options.http2)?
     return ok(Server(conn: conn, options: options, health: {}, reflection: [], watchers: {}))
 
 # Closes a server's connection: GOAWAY, then the stream closed.
 #
 # - `s`: the server; closed by this call.
 #
-# Fails as `http2.close` does. See also `server_of`.
+# Fails as `http2.close` does. See also `server`.
 function close_server(@s: Server) -> ()?
     return http2.close(@s.conn)
 
@@ -1350,7 +1350,7 @@ test "connect: a unary call over TLS"
     if !tls.is_available()
         skip_test(reason: "this platform offers no TLS library to tls")
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect(
         host: "localhost",
@@ -1362,12 +1362,12 @@ test "connect: a unary call over TLS"
     r = call(@ch, path: "/test.Echo/Echo", request: bytes.from_text("hi"), metadata: [], timeout_ms: 5000).must()
     assert r.status.code == STATUS_OK && r.messages == [bytes.from_text("hi")]
     close(@ch).must()
-    assert threads.wait_text(@server) == "1"
+    assert threads.wait_text(@serving) == "1"
 
 # A channel in plain text, HTTP/2 by prior knowledge.
 test "connect_plain: a unary call over h2c"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     r = call(
@@ -1379,35 +1379,35 @@ test "connect_plain: a unary call over h2c"
     ).must()
     assert r.status.code == STATUS_OK && r.messages == [bytes.from_text("plain")]
     close(@ch).must()
-    assert threads.wait_text(@server) == "1"
+    assert threads.wait_text(@serving) == "1"
 
 # A channel over a connection the program made itself.
-test "channel_of: over http2.connect_plain"
+test "new_channel: over http2.connect_plain"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     conn = http2.connect_plain(host: "127.0.0.1", port: port, deadline_ms: 0, options: http2.default_options()).must()
-    ch @= channel_of(conn, authority: "localhost", scheme: "http", options: default_options())
+    ch @= new_channel(conn, authority: "localhost", scheme: "http", options: default_options())
     assert call(@ch, path: "/test.Echo/Echo", request: [1], metadata: [], timeout_ms: 0).must().messages == [[1]]
     close(@ch).must()
-    assert threads.wait_text(@server) == "1"
+    assert threads.wait_text(@serving) == "1"
 
 # A channel closed, and closed again.
 test "close: a second close refused"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     _ = call(@ch, path: "/test.Echo/Echo", request: [], metadata: [], timeout_ms: 0).must()
     close(@ch).must()
     assert close(@ch).is_err()
-    _ = threads.wait_text(@server)
+    _ = threads.wait_text(@serving)
 
 # A unary call, a call that fails with its status and details, and a call
 # whose server streams.
 test "call: echoed, NOT_FOUND with its details, three messages streamed"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     assert call(@ch, path: "/test.Echo/Echo", request: [9], metadata: [], timeout_ms: 0).must().messages == [[9]]
@@ -1416,23 +1416,23 @@ test "call: echoed, NOT_FOUND with its details, three messages streamed"
     many = call(@ch, path: "/test.Echo/Many", request: [], metadata: [], timeout_ms: 0).must()
     assert many.messages.len() == 3 && many.status.code == STATUS_OK
     close(@ch).must()
-    assert threads.wait_text(@server) == "3"
+    assert threads.wait_text(@serving) == "3"
 
 # A call whose client streams: every message echoed.
 test "call_many: three requests echoed"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     r = call_many(@ch, path: "/test.Echo/Echo", requests: [[1], [2], [3]], metadata: [], timeout_ms: 0).must()
     assert r.messages == [[1], [2], [3]]
     close(@ch).must()
-    _ = threads.wait_text(@server)
+    _ = threads.wait_text(@serving)
 
 # A call driven by hand: messages sent, the side closed, the answers read.
 test "start_call: a call driven message by message"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
@@ -1442,12 +1442,12 @@ test "start_call: a call driven message by message"
     assert receive(@ch, @c).must() == .message(data: [4])
     assert receive(@ch, @c).must() == .message(data: [5])
     close(@ch).must()
-    _ = threads.wait_text(@server)
+    _ = threads.wait_text(@serving)
 
 # One message sent on a call.
 test "send: a message past the bound refused"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     o @= default_options()
     o.max_message_bytes @ 4
@@ -1462,24 +1462,24 @@ test "send: a message past the bound refused"
     close_send(@ch, c: c).must()
     assert receive(@ch, @c).must() == .message(data: [1])
     close(@ch).must()
-    _ = threads.wait_text(@server)
+    _ = threads.wait_text(@serving)
 
 # The client's side closed: the server answers once it has read every message.
 test "close_send: the server answers after the client's last message"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Many", metadata: [], timeout_ms: 0).must()
     close_send(@ch, c: c).must()
     assert receive(@ch, @c).must() == .message(data: bytes.from_text("one"))
     close(@ch).must()
-    _ = threads.wait_text(@server)
+    _ = threads.wait_text(@serving)
 
 # A call's end read after its messages, and a deadline that passes.
 test "receive: the end with its status, and DEADLINE_EXCEEDED"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
@@ -1492,12 +1492,12 @@ test "receive: the end with its status, and DEADLINE_EXCEEDED"
     slow = call(@ch, path: "/test.Echo/Silent", request: [], metadata: [], timeout_ms: 300).must()
     assert slow.status.code == STATUS_DEADLINE_EXCEEDED
     close(@ch).must()
-    _ = threads.wait_text(@server)
+    _ = threads.wait_text(@serving)
 
 # A call cancelled by its client.
 test "cancel: the call ends CANCELLED"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
@@ -1508,7 +1508,7 @@ test "cancel: the call ends CANCELLED"
         .end e     => assert e.status.code == STATUS_CANCELLED
 
     close(@ch).must()
-    _ = threads.wait_text(@server)
+    _ = threads.wait_text(@serving)
 
 # A method found by its path in a schema read from a `.proto`.
 test "proto_method_of: GetNote of test.Notes"
@@ -1531,7 +1531,7 @@ test "path_of: /test.Notes/GetNote"
 # A call described by a `.proto`: its request a message of the schema.
 test "call_proto: a Note echoed and decoded"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
     schema = protobuf.parse_schema_text(
         name: "echo.proto",
@@ -1543,7 +1543,7 @@ test "call_proto: a Note echoed and decoded"
     r = call_proto(@ch, schema: schema, path: "/test.Echo/Echo", request: note, metadata: [], timeout_ms: 0).must()
     assert protobuf.text_of(protobuf.get(schema, m: r.messages[0], field: "text").must()).must() == "proto"
     close(@ch).must()
-    _ = threads.wait_text(@server)
+    _ = threads.wait_text(@serving)
 
 # A service's methods, with their streams.
 test "methods_of: a unary method and one whose server streams"
@@ -1555,12 +1555,12 @@ test "methods_of: a unary method and one whose server streams"
     assert got == [Method(path: "/test.Notes/GetNote", client_streaming: false, server_streaming: false), Method(path: "/test.Notes/Watch", client_streaming: false, server_streaming: true)]
 
 # A server's connection over what `net` accepted; the client calls once.
-test "server_of: one call found, read and answered"
+test "server: one call found, read and answered"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Upper hello").must()
+    calling @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Upper hello").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
     c @= next_call(
         @s,
         methods: [Method(path: "/test.Echo/Upper", client_streaming: false, server_streaming: false)]
@@ -1573,19 +1573,19 @@ test "server_of: one call found, read and answered"
             finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).must()
         .end _ => assert false
 
-    assert threads.wait_text(@client) == "0 1 HELLO"
+    assert threads.wait_text(@calling) == "0 1 HELLO"
     close_server(@s).must()
     net.close_listener(@l).must()
 
 # A server closed after its calls.
 test "close_server: closed once, refused twice"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Unknown x").must()
+    calling @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Unknown x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
     assert next_call(@s, methods: []).is_err()
-    assert threads.wait_text(@client) == "12 0 "
+    assert threads.wait_text(@calling) == "12 0 "
     close_server(@s).must()
     assert close_server(@s).is_err()
     net.close_listener(@l).must()
@@ -1594,26 +1594,26 @@ test "close_server: closed once, refused twice"
 # the server itself.
 test "next_call: an unknown method answered UNIMPLEMENTED, then the connection's end"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /other.Svc/Do x").must()
+    calling @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /other.Svc/Do x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
 
     match next_call(@s, methods: [Method(path: "/test.Echo/Echo", client_streaming: false, server_streaming: false)])
         .ok _  => assert false
         .err e => assert e.code == CLOSED
 
-    assert threads.wait_text(@client) == "12 0 "
+    assert threads.wait_text(@calling) == "12 0 "
     close_server(@s).must()
     net.close_listener(@l).must()
 
 # Requests read until the client's last.
 test "read_request: one request, then the end"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Count abc").must()
+    calling @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Count abc").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
     c @= next_call(
         @s,
         methods: [Method(path: "/test.Echo/Count", client_streaming: true, server_streaming: false)]
@@ -1627,17 +1627,17 @@ test "read_request: one request, then the end"
 
     write_response(@s, @c, message: bytes.from_text(to_str(count))).must()
     finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).must()
-    assert threads.wait_text(@client) == "0 1 1"
+    assert threads.wait_text(@calling) == "0 1 1"
     close_server(@s).must()
     net.close_listener(@l).must()
 
 # The call's first metadata sent before its response.
 test "write_headers: metadata before the response"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
+    calling @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
     c @= next_call(
         @s,
         methods: [Method(path: "/test.Echo/Echo", client_streaming: false, server_streaming: false)]
@@ -1650,17 +1650,17 @@ test "write_headers: metadata before the response"
     assert write_headers(@s, @c, metadata: []).is_err()
     write_response(@s, @c, message: bytes.from_text("y")).must()
     finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).must()
-    assert threads.wait_text(@client) == "0 1 y"
+    assert threads.wait_text(@calling) == "0 1 y"
     close_server(@s).must()
     net.close_listener(@l).must()
 
 # Responses streamed by a server.
 test "write_response: three responses, then OK"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Three x").must()
+    calling @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Three x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
     c @= next_call(
         @s,
         methods: [Method(path: "/test.Echo/Three", client_streaming: false, server_streaming: true)]
@@ -1670,51 +1670,51 @@ test "write_response: three responses, then OK"
         write_response(@s, @c, message: bytes.from_text(word)).must()
 
     finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).must()
-    assert threads.wait_text(@client) == "0 3 a"
+    assert threads.wait_text(@calling) == "0 3 a"
     close_server(@s).must()
     net.close_listener(@l).must()
 
 # A call ended with an error and no response: gRPC's trailers-only answer.
 test "finish: PERMISSION_DENIED with no response"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
+    calling @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
     c @= next_call(
         @s,
         methods: [Method(path: "/test.Echo/Echo", client_streaming: false, server_streaming: false)]
     ).must()
     finish(@s, @c, status: Status(code: STATUS_PERMISSION_DENIED, message: "no", details: []), trailers: []).must()
     assert finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).is_err()
-    assert threads.wait_text(@client) == "7 0 "
+    assert threads.wait_text(@calling) == "7 0 "
     close_server(@s).must()
     net.close_listener(@l).must()
 
 # A call with no deadline.
 test "left_ms: -1 where the client sent no grpc-timeout"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
+    calling @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
     c @= next_call(
         @s,
         methods: [Method(path: "/test.Echo/Echo", client_streaming: false, server_streaming: false)]
     ).must()
     assert left_ms(c) == -1
     finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).must()
-    _ = threads.wait_text(@client)
+    _ = threads.wait_text(@calling)
     close_server(@s).must()
     net.close_listener(@l).must()
 
 # A health watch told of a change.
 test "set_health: a watcher told the server is serving"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ").must()
+    calling @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
     c @= next_call(
         @s,
         methods: [Method(path: "/grpc.health.v1.Health/Watch", client_streaming: false, server_streaming: true)]
@@ -1722,50 +1722,50 @@ test "set_health: a watcher told the server is serving"
     watch_health(@s, @c).must()
     set_health(@s, service: "", status: .serving)
     close_server(@s).must()
-    assert bytes.has_prefix(s: bytes.from_text(threads.wait_text(@client)), prefix: bytes.from_text("999 2"))
+    assert bytes.has_prefix(s: bytes.from_text(threads.wait_text(@calling)), prefix: bytes.from_text("999 2"))
     net.close_listener(@l).must()
 
 # A health check answered by the server itself.
 test "answer_health: the server as a whole serving"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Check ").must()
+    calling @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Check ").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
     s.health[""] @ .serving
     assert next_call(@s, methods: []).is_err()
-    assert bytes.has_prefix(s: bytes.from_text(threads.wait_text(@client)), prefix: bytes.from_text("0 1"))
+    assert bytes.has_prefix(s: bytes.from_text(threads.wait_text(@calling)), prefix: bytes.from_text("0 1"))
     close_server(@s).must()
     net.close_listener(@l).must()
 
 # A health watch answered with the status now.
 test "watch_health: service_unknown for a service with no health kept"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ").must()
+    calling @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
     c @= next_call(
         @s,
         methods: [Method(path: "/grpc.health.v1.Health/Watch", client_streaming: false, server_streaming: true)]
     ).must()
     watch_health(@s, @c).must()
     close_server(@s).must()
-    assert bytes.has_prefix(s: bytes.from_text(threads.wait_text(@client)), prefix: bytes.from_text("999 1"))
+    assert bytes.has_prefix(s: bytes.from_text(threads.wait_text(@calling)), prefix: bytes.from_text("999 1"))
     net.close_listener(@l).must()
 
 # Server reflection's list of services.
 test "answer_reflection: the list of services"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(
+    calling @= threads.spawn_text(
         body: fixture.call,
         arg: f"{l.address.port} /grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo :\u{1}*"
     ).must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    s @= server_of(@stream, options: default_options()).must()
+    s @= server(@stream, options: default_options()).must()
     s.reflection @ ["test.Echo"]
     assert next_call(@s, methods: []).is_err()
-    assert bytes.contains(s: bytes.from_text(threads.wait_text(@client)), substr: bytes.from_text("test.Echo"))
+    assert bytes.contains(s: bytes.from_text(threads.wait_text(@calling)), substr: bytes.from_text("test.Echo"))
     close_server(@s).must()
     net.close_listener(@l).must()

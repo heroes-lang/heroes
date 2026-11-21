@@ -37,7 +37,7 @@ use compress/zstd/internal/sections
 # checksum that does not match, a frame cut short, bytes after its end, a
 # frame made with another dictionary), the message naming the byte; and of
 # options out of their range. Every function fails with it but
-# `raw_dictionary`, `id_of` and `content_of`.
+# `new_raw_dictionary`, `id_of` and `content_of`.
 constant INVALID: str
     codes.INVALID
 
@@ -233,8 +233,8 @@ function skippable_frame(data: [u8], magic: i64) -> [u8]?
 
 # A dictionary: bytes a compressor and a decompressor both hold, which the
 # data is likely to repeat, and, for one `zstd --train` made, the tables
-# and offsets its frames start with. Made by `dictionary` or
-# `raw_dictionary`.
+# and offsets its frames start with. Made by `new_dictionary` or
+# `new_raw_dictionary`.
 record Dictionary
     # Its id, content, tables and offsets.
     state: frame.Dict
@@ -248,8 +248,8 @@ record Dictionary
 # Fails `invalid` where `data` holds fewer than 8 bytes, or begins as a
 # formatted dictionary and is not one.
 #
-# See also `raw_dictionary`, `decompress_with` and `compress_with`.
-function dictionary(data: [u8]) -> Dictionary?
+# See also `new_raw_dictionary`, `decompress_with` and `compress_with`.
+function new_dictionary(data: [u8]) -> Dictionary?
     return ok(Dictionary(state: dict.read(data)?))
 
 # `content` as the content of a dictionary of no id and no table, even
@@ -258,8 +258,8 @@ function dictionary(data: [u8]) -> Dictionary?
 #
 # - `content`: the bytes repeats may reach back into; any number.
 #
-# See also `dictionary`.
-function raw_dictionary(content: [u8]) -> Dictionary
+# See also `new_dictionary`.
+function new_raw_dictionary(content: [u8]) -> Dictionary
     return Dictionary(state: dict.raw(content))
 
 # The id of `d`, 0 for a raw one.
@@ -274,38 +274,40 @@ function id_of(d: Dictionary) -> u32
 #
 # - `d`: the dictionary asked.
 #
-# See also `dictionary`.
+# See also `new_dictionary`.
 function content_of(d: Dictionary) -> [u8]
     return d.state.content
 
-# The bytes `data` decompresses to, its frames read with `d`.
+# The bytes `data` decompresses to, its frames read with `dictionary`.
 #
 # - `data`: the compressed bytes, every frame of them.
-# - `d`: the dictionary the frames were made with; a frame that names
+# - `dictionary`: the dictionary the frames were made with; a frame that names
 #   another id fails.
 # - `limit`: the most bytes the answer may hold, 0 or more.
 #
 # Fails as `decompress` does, and `invalid` where a frame names a
-# dictionary other than `d`.
+# dictionary other than `dictionary`.
 #
 # See also `compress_with`.
-function decompress_with(data: [u8], d: Dictionary, limit: i64) -> [u8]?
-    return frame.every_frame(data, limit: limit, dict: d.state)
+function decompress_with(data: [u8], dictionary: Dictionary, limit: i64) -> [u8]?
+    return frame.every_frame(data, limit: limit, dict: dictionary.state)
 
-# `data` compressed into one frame that reaches back into `d`'s content and
+# `data` compressed into one frame that reaches back into `dictionary`'s content and
 # names its id.
 #
 # - `data`: the bytes to compress.
-# - `d`: the dictionary; a reader needs the same one.
+# - `dictionary`: the dictionary; a reader needs the same one.
 # - `options`: as `compress` takes them.
 #
 # Fails `invalid` where `options.level` is outside 1 to 22.
 #
 # See also `decompress_with`.
-function compress_with(data: [u8], d: Dictionary, options: Options) -> [u8]?
+function compress_with(data: [u8], dictionary: Dictionary, options: Options) -> [u8]?
     encoder.check_level(options.level)?
     plan = encoder.Plan(level: options.level, checksum: options.checksum, content_size: options.content_size)
-    return ok(encoder.frame_of(input: data, prefix: d.state.content, dictionary_id: d.state.id, plan: plan))
+    return ok(
+        encoder.frame_of(input: data, prefix: dictionary.state.content, dictionary_id: dictionary.state.id, plan: plan)
+    )
 
 ## Examples
 
@@ -364,31 +366,31 @@ test "skippable_frame: bytes a reader skips"
     assert decompress(skipped, limit: 10).must() == [1]
 
 # Any bytes taken as a dictionary of no id.
-test "dictionary: bytes that are no formatted dictionary"
-    d = dictionary([0x73, 0x70, 0x61, 0x63, 0x65, 0x20, 0x6f, 0x64, 0x64, 0x69, 0x74, 0x79]).must()
+test "new_dictionary: bytes that are no formatted dictionary"
+    d = new_dictionary([0x73, 0x70, 0x61, 0x63, 0x65, 0x20, 0x6f, 0x64, 0x64, 0x69, 0x74, 0x79]).must()
     assert id_of(d) == 0
 
 # A dictionary's content, whatever it begins with.
-test "raw_dictionary: content of no id"
-    d = raw_dictionary([0x37, 0xa4, 0x30, 0xec, 1, 2, 3, 4])
+test "new_raw_dictionary: content of no id"
+    d = new_raw_dictionary([0x37, 0xa4, 0x30, 0xec, 1, 2, 3, 4])
     assert content_of(d).len() == 8
 
 # A raw dictionary's id.
 test "id_of: a raw dictionary has none"
-    assert id_of(raw_dictionary([1, 2, 3])) == 0
+    assert id_of(new_raw_dictionary([1, 2, 3])) == 0
 
 # A dictionary's content read back.
 test "content_of: the bytes given"
-    assert content_of(raw_dictionary([1, 2, 3])) == [1, 2, 3]
+    assert content_of(new_raw_dictionary([1, 2, 3])) == [1, 2, 3]
 
 # A frame made with a dictionary and read with it.
 test "decompress_with: the dictionary the frame was made with"
-    d = raw_dictionary([0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x20, 0x68, 0x65, 0x72, 0x6f, 0x65, 0x73])
-    packed = compress_with([0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x21], d: d, options: defaults()).must()
-    assert decompress_with(packed, d: d, limit: 100).must() == [0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x21]
+    d = new_raw_dictionary([0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x20, 0x68, 0x65, 0x72, 0x6f, 0x65, 0x73])
+    packed = compress_with([0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x21], dictionary: d, options: defaults()).must()
+    assert decompress_with(packed, dictionary: d, limit: 100).must() == [0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x21]
 
 # Data compressed against a dictionary's content.
 test "compress_with: a line that repeats the dictionary"
-    d = raw_dictionary([0x6d, 0x61, 0x6a, 0x6f, 0x72, 0x20, 0x74, 0x6f, 0x6d, 0x20, 0x6d, 0x61, 0x6a, 0x6f, 0x72])
+    d = new_raw_dictionary([0x6d, 0x61, 0x6a, 0x6f, 0x72, 0x20, 0x74, 0x6f, 0x6d, 0x20, 0x6d, 0x61, 0x6a, 0x6f, 0x72])
     line: [u8] = [0x6d, 0x61, 0x6a, 0x6f, 0x72, 0x20, 0x74, 0x6f, 0x6d]
-    assert decompress_with(compress_with(line, d: d, options: defaults()).must(), d: d, limit: 100).must() == line
+    assert decompress_with(compress_with(line, dictionary: d, options: defaults()).must(), dictionary: d, limit: 100).must() == line

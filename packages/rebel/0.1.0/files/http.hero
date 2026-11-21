@@ -1938,7 +1938,7 @@ function serve_stream(s: Server, stream: io.Stream, remote: str, handler: (funct
     if tls.protocol_of(stream).default("") == http2.ALPN
         inner @= stream
 
-        match http2.server_of(@inner, options: h2bridge.options_for(wire.Bounds(head_bytes: s.limits.head_bytes, field_count: s.limits.field_count, body_bytes: s.limits.body_bytes)))
+        match http2.server(@inner, options: h2bridge.options_for(wire.Bounds(head_bytes: s.limits.head_bytes, field_count: s.limits.field_count, body_bytes: s.limits.body_bytes)))
             .ok made =>
                 conn @= made
                 return serve_h2(s, @conn, remote: remote, handler: handler)
@@ -2064,7 +2064,7 @@ function serve_stream_with<S>(s: Server, stream: io.Stream, remote: str, state: 
     if tls.protocol_of(stream).default("") == http2.ALPN
         inner @= stream
 
-        match http2.server_of(@inner, options: h2bridge.options_for(wire.Bounds(head_bytes: s.limits.head_bytes, field_count: s.limits.field_count, body_bytes: s.limits.body_bytes)))
+        match http2.server(@inner, options: h2bridge.options_for(wire.Bounds(head_bytes: s.limits.head_bytes, field_count: s.limits.field_count, body_bytes: s.limits.body_bytes)))
             .ok made =>
                 conn @= made
                 return serve_h2_with(s, @conn, remote: remote, state: state, handler: handler)
@@ -2406,7 +2406,7 @@ function round_trip_h2(@c: http2.Conn, r: Request, limits: Limits) -> Response?
 #
 # - `s`: how it serves; its `limits` are the connection's own, given when it
 #   was made, and `s.deadline_ms` is not read.
-# - `c`: the connection, made by `http2.server_of`; its owner closes it.
+# - `c`: the connection, made by `http2.server`; its owner closes it.
 # - `remote`: what each request's `remote` holds, "" where unknown.
 # - `handler`: called once for each request, read whole, on this thread.
 #
@@ -2434,7 +2434,7 @@ function serve_h2(s: Server, @c: http2.Conn, remote: str, handler: (function(Req
 # `serve_h2` with `state` handed to `handler` beside each request.
 #
 # - `s`: how it serves, as `serve_h2` reads it.
-# - `c`: the connection, made by `http2.server_of`; its owner closes it.
+# - `c`: the connection, made by `http2.server`; its owner closes it.
 # - `remote`: what each request's `remote` holds.
 # - `state`: the program's value, handed to each call as it is.
 # - `handler`: called once for each request with `state`.
@@ -4874,7 +4874,7 @@ test "serve_h2: one request answered 404 by respond_not_found"
     t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    c @= http2.server_of(@stream, options: http2.default_options()).must()
+    c @= http2.server(@stream, options: http2.default_options()).must()
     assert serve_h2(default_server(), @c, remote: "", handler: respond_not_found) == 1
     assert strings.has_prefix(s: threads.wait_text(@t), prefix: "404 ")
     http2.close(@c).must()
@@ -4886,7 +4886,7 @@ test "serve_h2_with: a redirector over HTTP/2"
     t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    c @= http2.server_of(@stream, options: http2.default_options()).must()
+    c @= http2.server(@stream, options: http2.default_options()).must()
     assert serve_h2_with(default_server(), @c, remote: "", state: "https://example.com", handler: respond_moved_to) == 1
     assert strings.has_prefix(s: threads.wait_text(@t), prefix: "30")
     http2.close(@c).must()

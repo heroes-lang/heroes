@@ -209,7 +209,7 @@ capability client/h2c  a client's connection in plain text by prior knowledge
   note    run against Go's h2c server as client/tls was
 
 capability client/over-stream  a client's connection over a stream the program holds
-  heroes  http2.client_of
+  heroes  http2.client
   go      net/http2.ClientConn, net/http2.Transport.NewClientConn
   rust    h2::client::Builder::handshake, h2::client::handshake, h2::server::Builder::handshake, h2::server::Handshake
   python  -
@@ -222,7 +222,7 @@ capability client/request  a request sent and its response read whole, several a
   note    an informational answer is skipped by finish and told by read_event; a body past Limits.body_bytes resets the stream and fails limit; a pool of connections is the caller's, http's Session among them
 
 capability server/over-stream  a server's connection over a stream accepted, TLS with h2 chosen or plain
-  heroes  http2.server_of
+  heroes  http2.server
   go      net/http2.BaseConfig, net/http2.Context, net/http2.SawClientPreface, net/http2.ServeConnOpts, net/http2.Server.ServeConn, net/http2.UpgradeRequest
   rust    h2::server::Connection, h2::server::Connection::accept, h2::server::handshake
   python  -

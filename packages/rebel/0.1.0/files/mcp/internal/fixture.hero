@@ -19,7 +19,7 @@ function peer(results: [str]) -> net.Pair
     two = net.pair(deadline_ms: 10_000).must()
 
     for at in range(from: 0, to: results.len())
-        answer = jsonrpc.result_of(.number(v: to_f64(at + 1)), value: json.parse(results[at]).must())
+        answer = jsonrpc.answer_result(.number(v: to_f64(at + 1)), value: json.parse(results[at]).must())
         jsonrpc.write_message(two.second.stream, m: answer, framing: .lines).must()
 
     return two
@@ -144,7 +144,7 @@ function serve_lines(accepted: i64) -> i64
         match request
             .listen l => jsonrpc.write_message(
                 reader.stream,
-                m: mcp.changed_of(s, listen: l.listen, list: "tools").must(),
+                m: mcp.changed_notification(s, listen: l.listen, list: "tools").must(),
                 framing: .lines
             ).must()
             .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ => _ = 0

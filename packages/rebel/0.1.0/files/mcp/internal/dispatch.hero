@@ -48,7 +48,7 @@ function handle_method(s: mcp.Server, id: jsonrpc.Id, method: str, params: json.
         members["capabilities"] @ mcp.server_capabilities_json(capabilities)
         build.put_text(@members, key: "instructions", value: s.instructions)
         return .answered(
-            answer: jsonrpc.result_of(id, value: build.result(members, server: info, cacheable: true, ttl_ms: s.ttl_ms, private: s.private))
+            answer: jsonrpc.answer_result(id, value: build.result(members, server: info, cacheable: true, ttl_ms: s.ttl_ms, private: s.private))
         )
 
     if method == "tools/list" && capabilities.tools
@@ -80,7 +80,7 @@ function handle_method(s: mcp.Server, id: jsonrpc.Id, method: str, params: json.
         members[list_key] @ .list(items: page.items)
         build.put_text(@members, key: "nextCursor", value: page.next)
         return .answered(
-            answer: jsonrpc.result_of(id, value: build.result(members, server: info, cacheable: true, ttl_ms: s.ttl_ms, private: s.private))
+            answer: jsonrpc.answer_result(id, value: build.result(members, server: info, cacheable: true, ttl_ms: s.ttl_ms, private: s.private))
         )
 
     inputs = match mcp.inputs_of(params)
@@ -138,7 +138,7 @@ function tool_call_of(s: mcp.Server, id: jsonrpc.Id, params: json.Value, meta: m
     compiled = match schemas.compile(tool.input_schema)
         .ok got => got
         .err e => return .answered(
-            answer: jsonrpc.error_of(id, code: jsonrpc.INTERNAL_ERROR, message: f"the input schema of \"{name}\" does not compile: {e.msg}")
+            answer: jsonrpc.answer_error(id, code: jsonrpc.INTERNAL_ERROR, message: f"the input schema of \"{name}\" does not compile: {e.msg}")
         )
 
     match schemas.validate(compiled, instance: arguments)

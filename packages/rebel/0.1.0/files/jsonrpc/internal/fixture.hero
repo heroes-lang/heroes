@@ -128,13 +128,13 @@ function spec_over_http(r: http.Request) -> http.Response
 
     for item in received.messages
         match item
-            .err e => answers @ answers.push(jsonrpc.invalid_request_of(e.msg))
+            .err e => answers @ answers.push(jsonrpc.answer_invalid_request(e.msg))
             .ok m =>
                 match m
                     .request q =>
                         answer = match jsonrpc.method_of(spec_methods(), method: q.method, params: q.params)
-                            .ok found => jsonrpc.answer_of(q.id, outcome: spec_handler(found))
-                            .err e    => jsonrpc.refusal_of(q.id, code: e.code, msg: e.msg)
+                            .ok found => jsonrpc.answer_outcome(q.id, outcome: spec_handler(found))
+                            .err e    => jsonrpc.answer_refusal(q.id, code: e.code, msg: e.msg)
 
                         answers @ answers.push(answer)
                     .notification _ | .response _ => _ = 0

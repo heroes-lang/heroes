@@ -51,7 +51,7 @@ function options_for(bounds: wire.Bounds) -> http2.Options
 # ALPN chose `h2`, closed after it. Fails as `http2.round_trip` fails, and
 # `limit` where the response holds more fields than `bounds` allow.
 function exchange(@stream: io.Stream, method: str, scheme: str, authority: str, target: str, fields: [wire.Field], content: [u8], bounds: wire.Bounds) -> read.Message?
-    c @= http2.client_of(@stream, options: options_for(bounds))?
+    c @= http2.client(@stream, options: options_for(bounds))?
     request = http2.Request(
         method: method,
         scheme: scheme,
@@ -125,7 +125,7 @@ function serve_h2_tls(arg: str) -> str
                     stream @= accepted
                     tls.set_deadline(stream, deadline_ms: 10000).must()
 
-                    match http2.server_of(@stream, options: http2.default_options())
+                    match http2.server(@stream, options: http2.default_options())
                         .ok made =>
                             c @= made
                             answered @ http.serve_h2_with(
@@ -157,7 +157,7 @@ function serve_h2_plain(arg: str) -> str
                 .ok accepted =>
                     stream @= accepted.stream
 
-                    match http2.server_of(@stream, options: http2.default_options())
+                    match http2.server(@stream, options: http2.default_options())
                         .ok made =>
                             c @= made
                             answered @ http.serve_h2_with(

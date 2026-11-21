@@ -63,7 +63,7 @@ capability tui/rect-centered  a rectangle in the middle of another
   note    one function for both directions: a constraint of `.percentage(n: 100)` keeps a direction whole
 
 capability tui/layout-split  an area cut into parts side by side or one under another
-  heroes  tui.layout_of, tui.split, tui.Layout, tui.Direction
+  heroes  tui.new_layout, tui.split, tui.Layout, tui.Direction
   go      tview.Flex, tview.NewFlex, tview.Flex.AddItem, tview.Flex.SetDirection, tview.Flex.ResizeItem, tview.Flex.RemoveItem, tview.Flex.Clear, tview.Flex.GetItem, tview.Flex.GetItemCount, tview.Flex.SetFullScreen, tview.Grid, tview.NewGrid, tview.Grid.SetRows, tview.Grid.SetColumns, tview.Grid.AddItem, tview.Grid.SetSize, tview.Grid.SetMinSize, tview.Grid.SetOffset, tview.Grid.GetOffset, tview.Grid.RemoveItem, tview.Grid.Clear
   rust    ratatui::layout::Layout, Layout::new, Layout::default, Layout::horizontal, Layout::vertical, Layout::direction, Layout::constraints, Layout::split, Layout::areas, Layout::try_areas, Layout::init_cache, Rect::layout, Rect::layout_vec, Rect::try_layout, ratatui::layout::Direction
   python  textual.containers.Horizontal, textual.containers.Vertical, textual.containers.HorizontalGroup, textual.containers.VerticalGroup, textual.containers.Grid, textual.containers.ItemGrid, textual.containers.Container, textual.layout
@@ -103,7 +103,7 @@ capability tui/layout-spacers  the gaps between a layout's parts
   python  -
 
 capability tui/text-styled  text in spans of styles, lines of spans
-  heroes  tui.Span, tui.Line, tui.line_of, tui.styled_line, tui.lines_of
+  heroes  tui.Span, tui.Line, tui.new_line, tui.styled_line, tui.new_lines
   go      tview's colour tags ([red]text[-]), tview.Escape, tview.Unescape, tview.TranslateANSI, tview.ANSIWriter, tview.TextView.SetDynamicColors
   rust    ratatui::text::Span, ratatui::text::Line, ratatui::text::Text, ratatui::text::StyledGrapheme, ratatui::text::ToSpan, ratatui::text::ToLine, ratatui::text::ToText, ratatui::style::Styled, Span::raw, Span::styled, Span::content, Line::raw, Line::styled, Line::spans, Line::push_span, Line::iter, Line::styled_graphemes, Text::raw, Text::styled, Text::lines, Text::push_line, Text::push_span, Text::height
   python  textual.content.Content, rich.text.Text
@@ -143,7 +143,7 @@ capability tui/style-underline-color  the colour of an underline apart from the 
   python  -
 
 capability tui/buffer  a buffer of cells a frame is drawn in
-  heroes  tui.Buffer, tui.Cell, tui.blank, tui.cell_at, tui.to_lines, tui.buffer_of
+  heroes  tui.Buffer, tui.Cell, tui.blank, tui.cell_at, tui.to_lines, tui.new_buffer
   go      tcell's Screen under tview.Application.SetScreen, tview.Box.Draw
   rust    ratatui::buffer::Buffer, ratatui::buffer::Cell, Buffer::empty, Buffer::filled, Buffer::with_lines, Buffer::area, Buffer::content, Buffer::cell, Buffer::cell_mut, Buffer::get, Buffer::get_mut, Buffer::index_of, Buffer::pos_of, Buffer::resize, Buffer::reset, Cell::new, Cell::symbol, Cell::set_symbol, Cell::set_char, Cell::style, Cell::set_style, Cell::set_fg, Cell::set_bg, Cell::reset, Cell::set_skip, Cell::set_diff_option, Cell::merge_symbol, ratatui::backend::TestBackend
   python  textual.strip.Strip, rich.segment.Segment, textual.App.export_screenshot, textual.App.save_screenshot, textual.App.run_test
@@ -274,18 +274,18 @@ capability tui/block-shadow  a shadow or a dimmed area under a block
   python  textual's CSS opacity and tint
 
 capability tui/paragraph  text drawn, wrapped between words or cut, and scrolled
-  heroes  tui.Paragraph, tui.paragraph_of, tui.draw_paragraph, tui.height_of
+  heroes  tui.Paragraph, tui.new_paragraph, tui.draw_paragraph, tui.height_of
   go      tview.TextView, tview.NewTextView, tview.TextView.SetText, tview.TextView.GetText, tview.TextView.SetWrap, tview.TextView.SetWordWrap, tview.TextView.ScrollTo, tview.TextView.ScrollToBeginning, tview.TextView.ScrollToEnd, tview.TextView.GetScrollOffset, tview.TextView.SetScrollable, tview.TextView.SetMaxLines, tview.TextView.GetOriginalLineCount, tview.TextView.GetWrappedLineCount, tview.TextView.Write, tview.TextView.BatchWriter, tview.TextView.Clear, tview.TextViewWriter, tview.WordWrap
   rust    ratatui::widgets::Paragraph, Paragraph::new, Paragraph::wrap, ratatui::widgets::Wrap, Paragraph::scroll, Paragraph::style, Paragraph::line_count, Paragraph::line_width
   python  textual.widgets.Static, textual.widgets.Label, textual.widgets.Log, textual.widgets.RichLog, textual.containers.VerticalScroll
   note    `ratatui`'s answers held where words are a space apart. Its wrapper answers otherwise where spaces run: it began a line with an empty row for spaces wider than the area under `trim`, and broke `cd` across two rows though it fit on one (`ab    cd` in 3 cells, `trim` false); this package takes the spaces at a break away and breaks no word that fits a row. `ratatui` did not scroll across a centred or right-aligned line, nor across a wide character at the cut; this package scrolls every line, the uncovered half of a wide character a blank cell. A paragraph's widest line is `width_of` over its lines
 
 capability tui/list  items one under another with one selected, kept in view
-  heroes  tui.List, tui.ListItem, tui.list_of, tui.draw_list, tui.HighlightSpacing, tui.ListDirection
+  heroes  tui.List, tui.ListItem, tui.new_list, tui.draw_list, tui.HighlightSpacing, tui.ListDirection
   go      tview.List, tview.NewList, tview.List.AddItem, tview.List.InsertItem, tview.List.RemoveItem, tview.List.Clear, tview.List.GetItemCount, tview.List.GetItemText, tview.List.SetItemText, tview.List.FindItems, tview.List.SetCurrentItem, tview.List.GetCurrentItem, tview.List.SetOffset, tview.List.GetOffset, tview.List.ShowSecondaryText, tview.List.SetHighlightFullLine, tview.List.SetSelectedFocusOnly, tview.List.SetWrapAround
   rust    ratatui::widgets::List, ratatui::widgets::ListItem, List::new, List::items, List::highlight_style, List::highlight_symbol, List::highlight_spacing, List::repeat_highlight_symbol, List::direction, List::scroll_padding, List::style, List::len, List::is_empty, ratatui::widgets::ListDirection, ratatui::widgets::HighlightSpacing
   python  textual.widgets.ListView, textual.widgets.ListItem, textual.widgets.OptionList
-  note    `ratatui`'s answers on the selection kept in view, the padding, the room for the symbol, the items from the bottom, and only the items that fit whole drawn (the first shown cut where it is taller than the area); `list_of` highlights reversed where `ratatui`'s default highlights nothing. `tview`'s secondary text is a second line of an item, and its wrap-around a `move_selection` the program wraps
+  note    `ratatui`'s answers on the selection kept in view, the padding, the room for the symbol, the items from the bottom, and only the items that fit whole drawn (the first shown cut where it is taller than the area); `new_list` highlights reversed where `ratatui`'s default highlights nothing. `tview`'s secondary text is a second line of an item, and its wrap-around a `move_selection` the program wraps
 
 capability tui/selection  the selected row and column, moved, and the first row shown
   heroes  tui.Selection, tui.selection, tui.select, tui.unselect, tui.selected_of, tui.select_first, tui.select_last, tui.move_selection, tui.select_column, tui.unselect_column, tui.selected_column_of, tui.move_column, tui.offset_of
@@ -295,41 +295,41 @@ capability tui/selection  the selected row and column, moved, and the first row 
   note    one selection for lists and tables; a move takes the count of rows, so it stops at the last at once, where `ratatui`'s `select_last` holds the largest number until a draw clamps it; with nothing selected, a move up selects the last as `ratatui` does
 
 capability tui/table  rows of cells in columns under a header, one row, column or cell selected
-  heroes  tui.Table, tui.Row, tui.TableCell, tui.table_of, tui.row_of, tui.draw_table
+  heroes  tui.Table, tui.Row, tui.TableCell, tui.new_table, tui.new_row, tui.draw_table
   go      tview.Table, tview.NewTable, tview.TableCell, tview.NewTableCell, tview.Table.SetCell, tview.Table.SetCellSimple, tview.Table.GetCell, tview.Table.RemoveRow, tview.Table.RemoveColumn, tview.Table.InsertRow, tview.Table.InsertColumn, tview.Table.GetRowCount, tview.Table.GetColumnCount, tview.Table.SetFixed, tview.Table.SetBorders, tview.Table.SetSeparator, tview.Table.SetEvaluateAllRows, tview.Table.CellAt, tview.Table.SetContent, tview.TableContent, tview.TableContentReadOnly, tview.TableCell.SetExpansion, tview.TableCell.SetMaxWidth, tview.TableCell.SetAlign, tview.TableCell.SetReference, tview.TableCell.GetReference, tview.TableCell.SetTransparency, tview.TableCell.SetClickedFunc
   rust    ratatui::widgets::Table, ratatui::widgets::Row, ratatui::widgets::Cell, Table::new, Table::rows, Table::header, Table::footer, Table::widths, Table::column_spacing, Table::flex, Table::style, Table::row_highlight_style, Table::column_highlight_style, Table::cell_highlight_style, Table::highlight_style, Table::highlight_symbol, Table::highlight_spacing, Row::new, Row::height, Row::top_margin, Row::bottom_margin, Row::style, Cell::new, Cell::style
   python  textual.widgets.DataTable
-  note    `ratatui`'s answers on the widths, the header, its margin, the footer, the selected row, column and cell, and the rows kept in view; `row_of` makes a row as tall as its tallest cell, where `ratatui`'s rows are one row tall until told
+  note    `ratatui`'s answers on the widths, the header, its margin, the footer, the selected row, column and cell, and the rows kept in view; `new_row` makes a row as tall as its tallest cell, where `ratatui`'s rows are one row tall until told
 
 capability tui/tabs  a row of titles with one selected
-  heroes  tui.Tabs, tui.tabs_of, tui.draw_tabs
+  heroes  tui.Tabs, tui.new_tabs, tui.draw_tabs
   go      tview.Pages, tview.NewPages, tview.Pages.AddPage, tview.Pages.AddAndSwitchToPage, tview.Pages.SwitchToPage, tview.Pages.RemovePage, tview.Pages.HasPage, tview.Pages.ShowPage, tview.Pages.HidePage, tview.Pages.SendToFront, tview.Pages.SendToBack, tview.Pages.GetFrontPage, tview.Pages.GetPage, tview.Pages.GetPageCount, tview.Pages.GetPageNames, tview.Pages.SetChangedFunc
   rust    ratatui::widgets::Tabs, Tabs::new, Tabs::titles, Tabs::select, Tabs::style, Tabs::highlight_style, Tabs::divider, Tabs::padding, Tabs::padding_left, Tabs::padding_right, Tabs::width
   python  textual.widgets.Tabs, textual.widgets.Tab, textual.widgets.TabbedContent, textual.widgets.TabPane, textual.widgets.ContentSwitcher
   note    pages are the program's own: it draws the page of the selected tab
 
 capability tui/gauge  a bar filled to a ratio, a label in its middle
-  heroes  tui.Gauge, tui.gauge_of, tui.draw_gauge
+  heroes  tui.Gauge, tui.new_gauge, tui.draw_gauge
   go      -
   rust    ratatui::widgets::Gauge, Gauge::ratio, Gauge::percent, Gauge::label, Gauge::style, Gauge::gauge_style, Gauge::use_unicode
   python  textual.widgets.ProgressBar
   note    `ratatui`'s answers on the bar, the eighths and the label's swapped colours; where the bar runs under the cell after the label, `ratatui` left that cell blank (0.7 in 10 cells, a full gauge, 0.96 with no label), and this package fills it. A percentage is a ratio of a hundredth
 
 capability tui/line-gauge  a label and a line filled to a ratio, on one row
-  heroes  tui.LineGauge, tui.line_gauge_of, tui.draw_line_gauge
+  heroes  tui.LineGauge, tui.new_line_gauge, tui.draw_line_gauge
   go      -
   rust    ratatui::widgets::LineGauge, LineGauge::ratio, LineGauge::label, LineGauge::filled_style, LineGauge::unfilled_style, LineGauge::filled_symbol, LineGauge::unfilled_symbol, LineGauge::line_set, LineGauge::style
   python  textual.widgets.ProgressBar
 
 capability tui/sparkline  values drawn as small bars in eighths of a cell
-  heroes  tui.Sparkline, tui.sparkline_of, tui.draw_sparkline, tui.SparklineDirection
+  heroes  tui.Sparkline, tui.new_sparkline, tui.draw_sparkline, tui.SparklineDirection
   go      -
   rust    ratatui::widgets::Sparkline, ratatui::widgets::SparklineBar, Sparkline::data, Sparkline::max, Sparkline::style, Sparkline::direction, Sparkline::bar_set, ratatui::widgets::RenderDirection, ratatui::symbols::bar::Set
   python  textual.widgets.Sparkline
   note    a value missing from the data (`SparklineBar` with none, its absent symbol and style) is not drawn apart: the program writes a 0, or draws two sparklines
 
 capability tui/scrollbar  a track and a thumb telling how much of a content is shown
-  heroes  tui.Scrollbar, tui.scrollbar_of, tui.draw_scrollbar, tui.ScrollbarOrientation
+  heroes  tui.Scrollbar, tui.new_scrollbar, tui.draw_scrollbar, tui.ScrollbarOrientation
   go      -
   rust    ratatui::widgets::Scrollbar, ratatui::widgets::ScrollbarState, ratatui::widgets::ScrollbarOrientation, ratatui::widgets::ScrollDirection, ratatui::symbols::scrollbar::Set, Scrollbar::new, Scrollbar::orientation, Scrollbar::thumb_symbol, Scrollbar::track_symbol, Scrollbar::begin_symbol, Scrollbar::end_symbol, Scrollbar::thumb_style, Scrollbar::track_style, Scrollbar::begin_style, Scrollbar::end_style, Scrollbar::symbols, Scrollbar::style, ScrollbarState::new, ScrollbarState::position, ScrollbarState::content_length, ScrollbarState::viewport_content_length, ScrollbarState::next, ScrollbarState::prev, ScrollbarState::first, ScrollbarState::last, ScrollbarState::scroll, ScrollbarState::get_position
   python  textual.scrollbar.ScrollBar, textual's CSS scrollbar-size
@@ -360,7 +360,7 @@ capability tui/calendar  a month drawn, days styled by the program
   python  -
 
 capability tui/input  one line of text typed, its cursor moved, drawn scrolled
-  heroes  tui.Input, tui.input_of, tui.press_input, tui.draw_input
+  heroes  tui.Input, tui.new_input, tui.press_input, tui.draw_input
   go      tview.InputField, tview.NewInputField, tview.InputField.SetText, tview.InputField.GetText, tview.InputField.SetLabel, tview.InputField.SetPlaceholder, tview.InputField.SetMaskCharacter, tview.InputField.SetFieldWidth, tview.InputField.SetAcceptanceFunc, tview.InputField.SetDoneFunc, tview.InputField.SetFinishedFunc, tview.InputField.Autocomplete, tview.InputField.SetAutocompleteFunc, tview.InputField.SetAutocompletedFunc
   rust    -
   python  textual.widgets.Input, textual.widgets.MaskedInput

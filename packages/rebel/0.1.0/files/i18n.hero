@@ -614,7 +614,7 @@ record Message
     obsolete: bool
 
 # The translations of a program's messages into one language, as a `.po`
-# or `.mo` file holds them. `parse_po`, `decode_mo` and `catalog_of` make
+# or `.mo` file holds them. `parse_po`, `decode_mo` and `new_catalog` make
 # one, and `add_message` changes one; a catalog built directly is looked up
 # by a scan of its messages.
 record Catalog
@@ -637,7 +637,7 @@ record Catalog
 #
 # Fails `invalid` where the header's `Plural-Forms` field does not parse.
 # See also `add_message`, `parse_po`.
-function catalog_of(messages: [Message]) -> Catalog?
+function new_catalog(messages: [Message]) -> Catalog?
     germanic = plural_expr.germanic()
     forms @= PluralForms(count: germanic.count, expression: germanic.expression, program: germanic.program)
     index: {str: i64} @= {}
@@ -671,7 +671,7 @@ function catalog_of(messages: [Message]) -> Catalog?
 #   plural forms again.
 #
 # Fails `invalid` where a header's `Plural-Forms` field does not parse, and
-# `catalog` is then unchanged. See also `catalog_of`.
+# `catalog` is then unchanged. See also `new_catalog`.
 function add_message(@catalog: Catalog, message: Message) -> ()?
     if !message.obsolete && !message.has_context && message.id == "" && message.translations.len() > 0
         match po_file.header_value(header: message.translations[0], name: "Plural-Forms")
@@ -706,7 +706,7 @@ function add_message(@catalog: Catalog, message: Message) -> ()?
 # - `translation`: its translation.
 #
 # Every other field is empty. See also `add_message`.
-function message_of(id: str, translation: str) -> Message
+function new_message(id: str, translation: str) -> Message
     return Message(
         has_context: false,
         context: "",
@@ -739,7 +739,7 @@ function parse_po(text: str) -> Catalog?
             Message(has_context: e.has_context, context: e.context, id: e.id, has_plural: e.has_plural, plural_id: e.plural_id, translations: e.translations, comments: e.comments, extracted_comments: e.extracted_comments, references: e.references, flags: e.flags, previous: e.previous, obsolete: e.obsolete)
         )
 
-    return catalog_of(messages)
+    return new_catalog(messages)
 
 # `catalog` written as a `.po` file, every message in its order with its
 # comments and flags, each string on one line with its escapes.
@@ -776,7 +776,7 @@ function decode_mo(data: [u8]) -> Catalog?
             Message(has_context: e.has_context, context: e.context, id: e.id, has_plural: e.has_plural, plural_id: e.plural_id, translations: e.translations, comments: e.comments, extracted_comments: e.extracted_comments, references: e.references, flags: e.flags, previous: e.previous, obsolete: e.obsolete)
         )
 
-    return catalog_of(messages)
+    return new_catalog(messages)
 
 # `catalog` written as a gettext `.mo` file, little-endian, as GNU
 # `msgfmt` writes one: its messages sorted by their keys' bytes, with its
@@ -1072,19 +1072,21 @@ test "parse_plural_name: many"
     assert parse_plural_name("many").must() == .many
 
 # A catalog built from messages, and a message looked up.
-test "catalog_of: two messages"
-    catalog = catalog_of([message_of(id: "Yes", translation: "Ja"), message_of(id: "No", translation: "Nein")]).must()
+test "new_catalog: two messages"
+    catalog = new_catalog(
+        [new_message(id: "Yes", translation: "Ja"), new_message(id: "No", translation: "Nein")]
+    ).must()
     assert translate(catalog, id: "No") == "Nein"
 
 # A message added to a catalog.
 test "add_message: a translation added"
-    catalog @= catalog_of([]).must()
-    add_message(@catalog, message: message_of(id: "Open", translation: "Öffnen")).must()
+    catalog @= new_catalog([]).must()
+    add_message(@catalog, message: new_message(id: "Open", translation: "Öffnen")).must()
     assert translate(catalog, id: "Open") == "Öffnen"
 
 # A message made from its text and translation.
-test "message_of: a message with no context"
-    message = message_of(id: "Save", translation: "Speichern")
+test "new_message: a message with no context"
+    message = new_message(id: "Save", translation: "Speichern")
     assert !message.has_context && message.translations == ["Speichern"]
 
 # A `.po` file with a header and a plural message.
@@ -1095,17 +1097,17 @@ test "parse_po: a header and a plural"
 
 # A catalog written as a `.po` file.
 test "format_po: one message"
-    catalog = catalog_of([message_of(id: "Yes", translation: "Ja")]).must()
+    catalog = new_catalog([new_message(id: "Yes", translation: "Ja")]).must()
     assert format_po(catalog) == "msgid \"Yes\"\nmsgstr \"Ja\"\n"
 
 # A `.mo` file written and read back.
 test "decode_mo: a file encode_mo wrote"
-    catalog = catalog_of([message_of(id: "Yes", translation: "Ja")]).must()
+    catalog = new_catalog([new_message(id: "Yes", translation: "Ja")]).must()
     assert translate(decode_mo(encode_mo(catalog)).must(), id: "Yes") == "Ja"
 
 # The bytes of a `.mo` file open with its magic number, little-endian.
 test "encode_mo: the magic number"
-    data = encode_mo(catalog_of([]).must())
+    data = encode_mo(new_catalog([]).must())
     assert data.slice(from: 0, to: 4) == [0xde, 0x12, 0x04, 0x95]
 
 # A message looked up with its context.
@@ -1124,7 +1126,7 @@ test "find_message_in: a message in a context"
         previous: [],
         obsolete: false
     )
-    catalog = catalog_of([message]).must()
+    catalog = new_catalog([message]).must()
     assert find_message_in(catalog, context: "menu", id: "File").must().translations == ["Datei"]
 
 # A message looked up by its id alone.
@@ -1143,13 +1145,13 @@ test "find_message: a message with no context"
         previous: [],
         obsolete: false
     )
-    catalog = catalog_of([message]).must()
+    catalog = new_catalog([message]).must()
     assert find_message(catalog, id: "File").must().translations == ["Datei"]
     assert find_message_in(catalog, context: "", id: "File").is_err()
 
 # A message with no translation is its own text.
 test "translate: a translation and a text with none"
-    catalog = catalog_of([message_of(id: "Yes", translation: "Sì")]).must()
+    catalog = new_catalog([new_message(id: "Yes", translation: "Sì")]).must()
     assert translate(catalog, id: "Yes") == "Sì" && translate(catalog, id: "No") == "No"
 
 # The same text translated two ways in two contexts.
@@ -1168,12 +1170,12 @@ test "translate_in: a word in a context"
         previous: [],
         obsolete: false
     )
-    catalog = catalog_of([message]).must()
+    catalog = new_catalog([message]).must()
     assert translate_in(catalog, context: "month", id: "May") == "Maggio" && translate(catalog, id: "May") == "May"
 
 # A count with no catalog takes the program's own singular or plural.
 test "translate_plural: the program's own forms"
-    catalog = catalog_of([]).must()
+    catalog = new_catalog([]).must()
     assert translate_plural(catalog, id: "a file", plural_id: "files", n: 1) == "a file"
 
 # A plural in a context.
@@ -1192,7 +1194,7 @@ test "translate_plural_in: a plural in a context"
         previous: [],
         obsolete: false
     )
-    catalog = catalog_of([message]).must()
+    catalog = new_catalog([message]).must()
     assert translate_plural_in(catalog, context: "disk", id: "file", plural_id: "files", n: 3) == "Dateien"
 
 # A field of a catalog's header.

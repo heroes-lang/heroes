@@ -173,7 +173,7 @@ capability decode/valid-prefix  how many bytes at the start read without an erro
   note    the index where the first wrong sequence begins, encoding_rs's index on every case of the differential but one shape: where ISO-2022-JP holds two escape sequences in a row, encoding_rs names the first and this the second, where the bytes stop reading (11 of 1,500 random ISO-2022-JP cases)
 
 capability decode/stream  bytes read as text a piece at a time, a character cut between two pieces kept whole
-  heroes  unicode/encodings.decoder, unicode/encodings.decoder_without_bom, unicode/encodings.decode_chunk, unicode/encodings.decode_chunk_strict
+  heroes  unicode/encodings.new_decoder, unicode/encodings.new_decoder_without_bom, unicode/encodings.decode_chunk, unicode/encodings.decode_chunk_strict
   go      encoding.Decoder.Reader, transform.Transformer
   rust    Encoding::new_decoder, Encoding::new_decoder_with_bom_removal, Encoding::new_decoder_without_bom_handling, Decoder::decode_to_string, Decoder::decode_to_string_without_replacement, Decoder::decode_to_str, Decoder::decode_to_str_without_replacement, Decoder::decode_to_utf8, Decoder::decode_to_utf8_without_replacement, Decoder::encoding, DecoderResult, CoderResult
   python  codecs.getincrementaldecoder, codecs.IncrementalDecoder, codecs.BufferedIncrementalDecoder, codecs.iterdecode
@@ -202,7 +202,7 @@ capability encode/html  text written as bytes in an encoding, a character it has
   note    the standard's "html" mode, which encoding_rs's `encode` uses; equal to it on every case of the differential
 
 capability encode/stream  text written as bytes a piece at a time, the state of a stateful encoding kept between pieces
-  heroes  unicode/encodings.encoder, unicode/encodings.encode_chunk, unicode/encodings.encode_chunk_html
+  heroes  unicode/encodings.new_encoder, unicode/encodings.encode_chunk, unicode/encodings.encode_chunk_html
   go      encoding.Encoder.Writer
   rust    Encoding::new_encoder, Encoder::encoding, Encoder::has_pending_state
   python  codecs.getincrementalencoder, codecs.IncrementalEncoder, codecs.BufferedIncrementalEncoder, codecs.iterencode
