@@ -82,7 +82,7 @@ typedef struct hero_tls_listener hero_tls_listener;
  * a stream also has keep `hero_stream.h`'s numbers. */
 #define HERO_TLS_OK 0
 /* An argument the layer refuses: no host, a port outside 0 to 65535, a
- * negative time, a count with no bytes behind it, PEM that holds no
+ * time below -1 (`HERO_TLS_FOREVER`), a count with no bytes behind it, PEM that holds no
  * certificate or no key, a key of a kind no platform here takes, or a key
  * that is not the certificate's. */
 #define HERO_TLS_INVALID 1
@@ -168,6 +168,17 @@ typedef struct hero_tls_listener hero_tls_listener;
  * passes it. */
 #define HERO_TLS_CHECK_NOTHING_FOR_TESTS 2
 
+/* What a door taking a time in milliseconds takes for NO LIMIT: the
+ * handshake of `hero_tls_connect`, `hero_tls_connect_after` and
+ * `hero_tls_accept` given all the time it takes, the deadline of
+ * `hero_tls_set_deadline` and `hero_tls_set_accept_deadline` taken away. 0
+ * is then a time already passed, so a call that would wait answers at once,
+ * and a time below -1 is `HERO_TLS_INVALID`: `hero_net.h`'s
+ * `HERO_NET_FOREVER`, the same number. Since 2026-11-20 (M-rebel-library,
+ * step 83a): until then 0 was no limit and -1 was refused, so no time said
+ * "do not wait". */
+#define HERO_TLS_FOREVER (-1)
+
 /* The longest name of an application protocol, which ALPN allows, and so
  * the buffer `hero_tls_protocol` needs at most, with its zero byte. */
 #define HERO_TLS_PROTOCOL_MOST UINT64_C(256)
@@ -177,7 +188,9 @@ typedef struct hero_tls_listener hero_tls_listener;
 int64_t hero_tls_available(void);
 
 /* A TLS connection to `host` at `port`, made and its handshake ended within
- * `ms` milliseconds, 0 for no limit. `host` is a name or an address: the
+ * `ms` milliseconds, `HERO_TLS_FOREVER` for no limit; 0 waits not at all,
+ * and a handshake always waits for the peer, so it answers
+ * `HERO_TLS_TIMED_OUT` at once. `host` is a name or an address: the
  * name is looked up, sent to the peer (SNI, not for an address) and checked
  * against the peer's certificate. `roots`, `roots_count` bytes of PEM, are
  * the only authorities trusted where `roots_count` is not 0; with 0 the
@@ -202,7 +215,8 @@ hero_tls_listener *hero_tls_listen(const char *address, int64_t port, const void
 
 /* `hero_tls_connect`, with the exchange of `steps`, `steps_count` bytes in
  * the form above, run on the connection before TLS begins; `ms` bounds the
- * connection, the exchange and the handshake together. Fails as
+ * connection, the exchange and the handshake together, as
+ * `hero_tls_connect`'s does, `HERO_TLS_FOREVER` none. Fails as
  * `hero_tls_connect` does, `HERO_TLS_INVALID` where the steps are not in
  * that form or past a bound, and `HERO_TLS_PREAMBLE` where a step is not
  * met; `HERO_TLS_CLOSED_PEER` where the peer closes during the exchange. */
@@ -219,8 +233,11 @@ int64_t hero_tls_port(hero_tls_listener *l);
 
 /* The next connection the listener holds, waiting for one, as a stream once
  * its handshake has ended, which must end within `ms` milliseconds of the
- * connection, 0 for no limit. A connection whose handshake fails is closed
- * and its failure answered: the caller accepts again. A close of the
+ * connection, `HERO_TLS_FOREVER` for no limit; with 0 the connection taken
+ * fails its handshake `HERO_TLS_TIMED_OUT` at once, as any whose time
+ * passes. The wait for a connection is `hero_tls_set_accept_deadline`'s. A
+ * connection whose handshake fails is closed and its failure answered: the
+ * caller accepts again. A close of the
  * listener on another thread ends the wait, `HERO_TLS_NOT_OPEN`. */
 hero_stream *hero_tls_accept(hero_tls_listener *l, int64_t ms);
 
@@ -262,12 +279,14 @@ int64_t hero_tls_protocol(hero_stream *s, void *buffer, uint64_t count);
 /* A deadline on `s`, a TLS stream of this layer, as `hero_net_set_deadline`
  * sets one on a socket: from this call every read or write of `s` that
  * waits ends by `ms` milliseconds from now, answering -1 with
- * `HERO_STREAM_TIMED_OUT`, a read already waiting included; 0 takes it
- * away. A read the deadline ended loses nothing: the next read goes on where
+ * `HERO_STREAM_TIMED_OUT`, a read already waiting included; 0 is a deadline
+ * already passed, so every read or write that would wait ends at once, and
+ * `HERO_TLS_FOREVER` takes it away. A read the deadline ended loses nothing:
+ * the next read goes on where
  * it stopped. A write it ended may have sent part of a record, and every
  * later write then fails `HERO_STREAM_OTHER`: the stream is good for nothing
  * but reading what is left and closing, as Go rules of its own TLS. Answers
- * 0, or -1: `HERO_TLS_INVALID` where `ms` is below 0, `HERO_TLS_NOT_OPEN`
+ * 0, or -1: `HERO_TLS_INVALID` where `ms` is below -1, `HERO_TLS_NOT_OPEN`
  * where `s` is no open TLS stream, `HERO_TLS_UNSUPPORTED` where it runs over
  * a stream the program handed that is no socket. On macOS a wait looks at
  * the deadline every 50 ms, so a read already waiting takes a new one
@@ -276,10 +295,39 @@ int64_t hero_tls_set_deadline(hero_stream *s, int64_t ms);
 
 /* A deadline on the listener's wait for a client: every `hero_tls_accept`
  * waiting on `l`, and every later one, ends by `ms` milliseconds from now,
- * NULL with `HERO_TLS_TIMED_OUT`; 0 takes it away. The handshake's own time
- * stays `hero_tls_accept`'s. Answers 0, or -1: `HERO_TLS_INVALID` where `ms`
- * is below 0, `HERO_TLS_NOT_OPEN` where `l` is no open listener. */
+ * NULL with `HERO_TLS_TIMED_OUT`; 0 is a deadline already passed, so an
+ * accept with no connection waiting ends at once, and `HERO_TLS_FOREVER`
+ * takes it away. The handshake's own time stays `hero_tls_accept`'s. Answers
+ * 0, or -1: `HERO_TLS_INVALID` where `ms` is below -1, `HERO_TLS_NOT_OPEN`
+ * where `l` is no open listener. */
 int64_t hero_tls_set_accept_deadline(hero_tls_listener *l, int64_t ms);
+
+/* -- A TLS STREAM'S TWO ADDRESSES (M-rebel-library, step 83b, 2026-11-20) --
+ *
+ * The address the stream's own end stands on, `hero_tls_local`, and the
+ * peer's, `hero_tls_remote`, told as `hero_net.h`'s `hero_net_local` and
+ * `hero_net_remote` tell a socket's: the text into `address`, a number
+ * (`127.0.0.1`, `::1`, with the scope the system writes after a `%` where
+ * the address has one) ended by a zero byte the answer does not count, the
+ * port into `*port`, and the answer the text's bytes; or -1, nothing
+ * written. `address_count` is at least `HERO_TLS_ADDRESS_MOST`, the same
+ * number as `HERO_NET_ADDRESS_MOST`, else `HERO_TLS_INVALID` before anything
+ * else, as for a NULL `address` or `port`; `HERO_TLS_NOT_OPEN` where `s` is
+ * no open TLS stream. Neither waits, so neither is ended by the stop.
+ *
+ * On Windows and Linux they are asked of the socket under the stream at the
+ * call: the one `hero_tls_connect` or `hero_tls_accept` made, or the one
+ * under a `hero_stream_net.h` stream handed to `hero_tls_client` or
+ * `hero_tls_server`, whose failure is answered as this layer's kind; a
+ * stream handed there that stands on no socket (a pipe, a file, another
+ * member's stream) fails `HERO_TLS_UNSUPPORTED`. On macOS they are the
+ * addresses of the path Network.framework's connection took, read once when
+ * its handshake ended, and an end it told no address for fails
+ * `HERO_TLS_OTHER`. */
+#define HERO_TLS_ADDRESS_MOST UINT64_C(64)
+
+int64_t hero_tls_local(hero_stream *s, void *address, uint64_t address_count, int64_t *port);
+int64_t hero_tls_remote(hero_stream *s, void *address, uint64_t address_count, int64_t *port);
 
 /* The kind of the last call's failure on this thread, `HERO_TLS_OK` after a
  * call that did not fail, and the platform's own number for it (0 where the

@@ -31,7 +31,7 @@ function connected_within(host: str, port: i64, timeout_ms: i64, deadline_ms: i6
 
     if timeout_ms < 0
         return failure.of(code: failure.INVALID, asked: asked, why: f"the time {timeout_ms} ms is below 0")
-    s @= hero_net.connect_within(address: host, port: port, ms: timeout_ms)
+    s @= hero_net.connect_within(address: host, port: port, ms: sockets.floor_ms(timeout_ms))
 
     if s == nullptr
         return failure.last(asked: asked)
@@ -56,7 +56,7 @@ function deadline_moved(s: io.Stream, ms: i64, asked: str) -> ()?
     sockets.checked_deadline(ms, asked: asked)?
     open_stream(s, asked: asked)?
 
-    if hero_stream_net.set_deadline(s.handle, ms: ms) != 0
+    if hero_stream_net.set_deadline(s.handle, ms: sockets.floor_ms(ms)) != 0
         return io.last_failure(asked: asked)
     return ok()
 

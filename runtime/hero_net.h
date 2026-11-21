@@ -207,6 +207,16 @@ int64_t hero_net_stop_asked(void);
  * no signal it can raise reaches the console's handler. */
 void hero_net_ask_stop(void);
 
+/* What a door taking a time in milliseconds takes for NO LIMIT:
+ * `hero_net_set_deadline`, `hero_net_connect_within`, and
+ * `hero_stream_net.h`'s `hero_stream_net_set_deadline`. 0 is then a time
+ * already passed, so a call that would wait answers at once, and a time
+ * below -1 is `HERO_NET_INVALID`: the shape of `hero_serial.h`'s timeouts
+ * (`HERO_SERIAL_FOREVER`) and of `hero_ipc.h`'s `within_ms`
+ * (`HERO_IPC_FOREVER`). Since 2026-11-20 (M-rebel-library, step 83a): until
+ * then 0 was no limit and -1 was refused, so no time said "do not wait". */
+#define HERO_NET_FOREVER (-1)
+
 /* THE DEADLINE (panel 248's R5, Go's `SetDeadline` set from now): from this
  * call, every call on `s` that waits, an `accept`, a `recv` or a `send`,
  * waits until `ms` milliseconds from now at the latest, then answers -1 or
@@ -214,11 +224,14 @@ void hero_net_ask_stop(void);
  * calls already waiting, which take it at once, and to every later one, so
  * a peer that sends one byte before each limit still meets it. A call that
  * need not wait is not ended by it: bytes already there are received and
- * room already free is used, a deadline passed or not. 0 takes the deadline
- * away; a negative `ms` is `HERO_NET_INVALID`. It is kept with the socket,
- * so it stays when the socket crosses to another thread as its number. The
- * time is read on the clock `hero_time.h` names, which never goes back.
- * Answers 0, or -1 with `HERO_NET_NOT_OPEN` where `s` names no open socket. */
+ * room already free is used, a deadline passed or not. 0 IS A DEADLINE
+ * ALREADY PASSED: from this call every call on `s` that would wait answers
+ * `HERO_NET_TIMED_OUT` at once, those already waiting among them.
+ * `HERO_NET_FOREVER` takes the deadline away; a `ms` below -1 is
+ * `HERO_NET_INVALID`. It is kept with the socket, so it stays when the
+ * socket crosses to another thread as its number. The time is read on the
+ * clock `hero_time.h` names, which never goes back. Answers 0, or -1 with
+ * `HERO_NET_NOT_OPEN` where `s` names no open socket. */
 int64_t hero_net_set_deadline(hero_net_socket *s, int64_t ms);
 
 /* The kind of the last call's failure on this thread, `HERO_NET_OK` after a
@@ -332,9 +345,13 @@ int64_t hero_net_remote(hero_net_socket *s, void *address, uint64_t address_coun
 /* A connection to `address` (a number or a name) at `port`, as
  * `hero_net_connect` makes it, made within `ms` milliseconds or given up:
  * NULL with `HERO_NET_TIMED_OUT` once that time passes with no connection
- * made, every address the name has tried in turn within the one time. 0 is
- * no limit, `hero_net_connect` itself; a negative `ms` is `HERO_NET_INVALID`.
- * The time bounds the connection being made, waited through the layer's own
+ * made, every address the name has tried in turn within the one time.
+ * `HERO_NET_FOREVER` is no limit, `hero_net_connect` itself. 0 waits not at
+ * all: the connection the system made by the time it is asked is answered,
+ * and else `HERO_NET_TIMED_OUT` at once, no other address tried; whether a
+ * system makes one so soon, even on its own loopback, is its own. A `ms`
+ * below -1 is `HERO_NET_INVALID` (since 2026-11-20, `HERO_NET_FOREVER`'s
+ * comment). The time bounds the connection being made, waited through the layer's own
  * thread as every wait; the name's lookup before it is the system resolver's
  * call, which no deadline ends (THE NAMES, above), so a program that must
  * bound that too hands a number. The connection made keeps no deadline: its

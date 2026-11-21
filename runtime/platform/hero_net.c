@@ -1925,6 +1925,15 @@ static hero_net_socket *hero_net_try_connect(const struct addrinfo *at, int64_t 
             break;
         }
         if (waited == HERO_NET_WAIT_TIMED_OUT) {
+            /* A connection the system has made by the time is made, the
+             * time passed or not, as a call that need not wait is spared a
+             * deadline: what a time of 0 asks (`hero_net_connect_within`).
+             * Writable first, then its pending error, so a connection that
+             * failed between the two looks is never taken for one made. */
+            if (hero_net_writable_now(fd) && hero_net_pending_error(fd) == 0) {
+                made = true;
+                break;
+            }
             *kind = HERO_NET_TIMED_OUT;
             *code = 0;
             break;
@@ -2350,29 +2359,50 @@ hero_net_socket *hero_net_of(int64_t number) {
 
 /* -- the deadline (panel 248's R5) ------------------------------------- */
 
+/* The time on `hero_net_now`'s clock `ms` milliseconds from now, into
+ * `*at`, for a door that takes a time (`HERO_NET_FOREVER`'s comment): 0, a
+ * slot's "none", where `ms` is `HERO_NET_FOREVER`; now itself where `ms` is
+ * 0, a time already passed, and 1 where now reads 0, so it is never read as
+ * none; `INT64_MAX` past what the clock counts, a time no wait reaches.
+ * false, with `HERO_NET_INVALID` for a `ms` below -1 or `HERO_NET_OTHER` for
+ * a clock that cannot be read, said. */
+static bool hero_net_deadline_at(int64_t ms, int64_t *at) {
+    int64_t now = 0;
+    int64_t span = 0;
+
+    *at = 0;
+    if (ms == HERO_NET_FOREVER) {
+        return true;
+    }
+    if (ms < 0) {
+        hero_net_fail(HERO_NET_INVALID, 0);
+        return false;
+    }
+    now = hero_net_now();
+    if (now < 0) {
+        hero_net_fail(HERO_NET_OTHER, 0);
+        return false;
+    }
+    if (__builtin_mul_overflow(ms, INT64_C(1000000), &span) || __builtin_add_overflow(now, span, at)) {
+        *at = INT64_MAX;
+    }
+    if (*at == 0) {
+        *at = 1;
+    }
+    return true;
+}
+
 /* THE DEADLINE, Go's meaning: an absolute time kept in the socket's slot,
  * set from now by milliseconds, applying to every wait on the socket from
  * now, those already waiting included, which are woken to read it again; 0
- * takes it away. A call that need not wait is not ended by it, as by the
- * stop. A time past what the clock can count is no deadline it reaches. */
+ * a time already passed, `HERO_NET_FOREVER` taking it away. A call that need
+ * not wait is not ended by it, as by the stop. A time past what the clock
+ * can count is no deadline it reaches. */
 int64_t hero_net_set_deadline(hero_net_socket *s, int64_t ms) {
     int64_t at = 0;
 
-    if (ms < 0) {
-        hero_net_fail(HERO_NET_INVALID, 0);
+    if (!hero_net_deadline_at(ms, &at)) {
         return -1;
-    }
-    if (ms > 0) {
-        int64_t now = hero_net_now();
-        int64_t span = 0;
-
-        if (now < 0) {
-            hero_net_fail(HERO_NET_OTHER, 0);
-            return -1;
-        }
-        if (__builtin_mul_overflow(ms, INT64_C(1000000), &span) || __builtin_add_overflow(now, span, &at)) {
-            at = INT64_MAX;
-        }
     }
     hero_net_enter();
     hero_net_slot *slot = hero_net_find(s);
@@ -3094,23 +3124,10 @@ int64_t hero_net_remote(hero_net_socket *s, void *address, uint64_t address_coun
 hero_net_socket *hero_net_connect_within(const char *address, int64_t port, int64_t ms) {
     int64_t at = 0;
 
-    if (ms < 0) {
-        hero_net_fail(HERO_NET_INVALID, 0);
+    /* The time as `hero_net_set_deadline` reads it: 0 for
+     * `HERO_NET_FOREVER`, no limit; one already passed for 0. */
+    if (!hero_net_deadline_at(ms, &at)) {
         return NULL;
-    }
-    if (ms > 0) {
-        int64_t now = hero_net_now();
-        int64_t span = 0;
-
-        if (now < 0) {
-            hero_net_fail(HERO_NET_OTHER, 0);
-            return NULL;
-        }
-        /* A time past what the clock counts is no time it reaches, as in
-         * `hero_net_set_deadline`. */
-        if (__builtin_mul_overflow(ms, INT64_C(1000000), &span) || __builtin_add_overflow(now, span, &at)) {
-            at = INT64_MAX;
-        }
     }
     return hero_net_open(address, port, false, at);
 }

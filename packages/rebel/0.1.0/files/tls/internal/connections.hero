@@ -28,6 +28,22 @@ function place(host: str, port: i64) -> str
         return "every address port " + to_str(port)
     return host + " port " + to_str(port)
 
+# The floor's time for `ms`, a time the face takes: the face's 0, no limit,
+# is the floor's `HERO_TLS_FOREVER`, since the floor's 0 is a time already
+# passed (2026-11-20, M-rebel-library step 83a), and a time above 0 is
+# itself. Below 0 fails `invalid` here, before the floor is asked, whose -1
+# is no limit.
+#
+# - `ms`: the face's milliseconds.
+# - `asked`: what the message of a failure begins with.
+function floor_ms(ms: i64, asked: str) -> i64?
+    if ms < 0
+        return failure.of(code: failure.INVALID, asked: asked, why: f"the time {ms} ms is below 0")
+
+    if ms == 0
+        return ok(hero_tls.HERO_TLS_FOREVER)
+    return ok(ms)
+
 # The byte count of `b` as C reads it.
 function count_of(b: [u8]) -> u64
     return to_u64(b.len()).must()
@@ -40,11 +56,12 @@ function connect(host: str, port: i64, deadline_ms: i64, roots: str, protocols: 
     asked = "connecting over TLS to " + place(host: host, port: port)
     text.no_zero(s: host, what: "the host", asked: asked)?
     offered = text.protocols_text(protocols, asked: asked)?
+    limit = floor_ms(deadline_ms, asked: asked)?
     pem: [u8] @= bytes.from_text(roots)
     handle = hero_tls.connect(
         host: host,
         port: port,
-        ms: deadline_ms,
+        ms: limit,
         @pem,
         roots_count: count_of(pem),
         protocols: offered,
@@ -88,7 +105,8 @@ function listen(host: str, port: i64, chain: str, key: str, protocols: [str]) ->
 function accept(l: hero_tls.Listener, deadline_ms: i64, asked: str) -> io.Stream?
     if l == nullptr
         return failure.of(code: failure.CLOSED, asked: asked, why: "the listener is closed")
-    handle = hero_tls.accept(l, ms: deadline_ms)
+    limit = floor_ms(deadline_ms, asked: asked)?
+    handle = hero_tls.accept(l, ms: limit)
 
     if handle == nullptr
         return failure.last(asked: asked)
@@ -244,11 +262,12 @@ function connect_after(host: str, port: i64, deadline_ms: i64, roots: str, proto
     text.no_zero(s: host, what: "the host", asked: asked)?
     offered = text.protocols_text(protocols, asked: asked)?
     encoded @= steps_bytes(steps, asked: asked)?
+    limit = floor_ms(deadline_ms, asked: asked)?
     pem: [u8] @= bytes.from_text(roots)
     handle = hero_tls.connect_after(
         host: host,
         port: port,
-        ms: deadline_ms,
+        ms: limit,
         roots: @pem,
         roots_count: count_of(pem),
         protocols: offered,
@@ -298,8 +317,9 @@ function listen_after(host: str, port: i64, chain: str, key: str, protocols: [st
 function set_deadline(s: io.Stream, ms: i64, asked: str) -> ()?
     if s.handle == nullptr
         return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
+    limit = floor_ms(ms, asked: asked)?
 
-    if hero_tls.set_deadline(s.handle, ms: ms) == 0
+    if hero_tls.set_deadline(s.handle, ms: limit) == 0
         return ok()
 
     if hero_tls.last_error() != hero_tls.HERO_TLS_NOT_OPEN
@@ -313,8 +333,9 @@ function set_deadline(s: io.Stream, ms: i64, asked: str) -> ()?
 function set_accept_deadline(l: hero_tls.Listener, ms: i64, asked: str) -> ()?
     if l == nullptr
         return failure.of(code: failure.CLOSED, asked: asked, why: "the listener is closed")
+    limit = floor_ms(ms, asked: asked)?
 
-    if hero_tls.set_accept_deadline(l, ms: ms) != 0
+    if hero_tls.set_accept_deadline(l, ms: limit) != 0
         return failure.last(asked: asked)
     return ok()
 
@@ -387,7 +408,7 @@ test "connect: no host, port 0, port 65536 and a time below 0 fail invalid; root
         .ok _ => assert false
         .err e =>
             assert e.code == failure.INVALID
-            assert e.msg == "connecting over TLS to localhost port 443: the layer refuses an argument (the time given is below 0)"
+            assert e.msg == "connecting over TLS to localhost port 443: the time -1 ms is below 0"
 
     if hero_tls.available() == 1
         junk = connect(
