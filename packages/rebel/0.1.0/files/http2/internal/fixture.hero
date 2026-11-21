@@ -1,7 +1,9 @@
 # FOR TESTS: an HTTP/2 server and client of this process, each on a thread
 # of its own, over the loopback address, plain (h2c) or TLS with the test
 # certificates of `tls`. A thread takes and answers one text (spec § 13), so
-# each takes its port and what to ask, and answers what it saw.
+# each takes its port and what to ask, and answers what it saw; a server
+# listens on a port the system chooses and tells it back to the test's
+# thread (`start`).
 
 use bytes
 use http2
@@ -11,26 +13,55 @@ use http2/internal/wire
 use io
 use net
 use numbers
-use time
+use threads
 use tls
 
-# A port no socket listens on now, which the system gave and took back.
-function free_port() -> i64
-    l @= net.listen(host: "127.0.0.1", port: 0).must()
-    port = l.address.port
-    net.close_listener(@l).must()
-    return port
+# A server running on a thread of its own, and the port it listens on.
+record Started
+    # The port the server listens on, the one the system chose for it, which
+    # the server told back.
+    port: i64
+    # The server's thread, whose answer `threads.wait_text` gives.
+    thread: threads.TextThread
 
-# Waits until something listens on `port`, trying for about two seconds; the
-# connection that finds it is closed at once.
-function until_listening(port: i64)
-    for _ in range(from: 0, to: 200)
-        match net.connect("127.0.0.1", port: port, deadline_ms: 1000)
-            .ok c =>
-                s @= c.stream
-                io.close(@s).must()
-                return
-            .err _ => time.sleep(time.milliseconds(10).must())
+# `body`, `serve_plain` or `serve_tls`, started on a thread of its own. The
+# server listens on a port the system chooses and tells it back over a
+# connection to a listener of this thread, so no port is named while
+# nothing holds it, and none is let go for another program to take between
+# a choice and a listen (defect 2633).
+function start(body: (function(str) -> str)) -> Started
+    return started(body: body, text: "")
+
+# `serve_many` started as `start` starts a server, answering `count`
+# requests.
+function start_many(count: i64) -> Started
+    return started(body: serve_many, text: to_str(count))
+
+# `body` started on a thread with the port of a listener of this thread,
+# then a space and `text` where it is not empty, and the port it tells back
+# read.
+function started(body: (function(str) -> str), text: str) -> Started
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+
+    given = if text == ""
+        to_str(control.address.port)
+    else
+        f"{control.address.port} {text}"
+
+    t = threads.spawn_text(body: body, arg: given).must()
+    told = net.accept(control, deadline_ms: 10000).must()
+    r @= io.reader(told.stream)
+    port = numbers.parse_int(io.read_rest_text(@r).must()).must()
+    io.close(@r.stream).must()
+    net.close_listener(@control).must()
+    return Started(port: port, thread: t)
+
+# Tells `port`, the one a server listens on, to the listener of `start` at
+# `control`, and closes.
+function tell(control: i64, port: i64)
+    c @= net.connect("127.0.0.1", port: control, deadline_ms: 10000).must()
+    io.write_text(c.stream, text: to_str(port)).must()
+    io.close(@c.stream).must()
 
 # A field.
 function field(name: str, value: str) -> http2.Field
@@ -57,11 +88,13 @@ function answer_one(stream: io.Stream) -> str
                 .err e => return "answer: " + e.msg
         .err _ => return ""
 
-# A thread's body: an h2c server on the port `arg` names, which answers the
-# first request that comes and its method, path and body's length.
+# A thread's body: an h2c server on a port the system chooses, told to the
+# listener `start` holds at the port `arg` names, which answers the first
+# request that comes and its method, path and body's length.
 function serve_plain(arg: str) -> str
-    port = numbers.parse_int(arg).must()
-    l @= net.listen(host: "127.0.0.1", port: port).must()
+    control = numbers.parse_int(arg).must()
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    tell(control: control, port: l.address.port)
     net.set_accept_deadline(l, deadline_ms: 10000).must()
 
     for _ in range(from: 0, to: 20)
@@ -84,15 +117,17 @@ function serve_plain(arg: str) -> str
     net.close_listener(@l).must()
     return "no request"
 
-# A thread's body: a TLS server offering `h2` on the port `arg` names, with
-# the certificate of `localhost`, answering as `serve_plain` does.
+# A thread's body: a TLS server offering `h2`, with the certificate of
+# `localhost`, telling its port as `serve_plain` does and answering as it
+# does.
 function serve_tls(arg: str) -> str
-    port = numbers.parse_int(arg).must()
+    control = numbers.parse_int(arg).must()
     l @= tls.listen(
         host: "127.0.0.1",
-        port: port,
+        port: 0,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2"])
     ).must()
+    tell(control: control, port: l.port)
     tls.set_accept_deadline(l, deadline_ms: 10000).must()
 
     for _ in range(from: 0, to: 20)
@@ -169,14 +204,16 @@ function index_of_space_last(s: str) -> i64
 
     return at
 
-# A thread's body: an h2c server on the port `arg`'s first word names,
+# A thread's body: an h2c server on a port the system chooses, told to the
+# listener `start_many` holds at the port `arg`'s first word names,
 # answering as many requests on one connection as its second word says, each
 # with "hello " and its path, and answering how many it answered.
 function serve_many(arg: str) -> str
     cut = index_of_space_last(arg)
-    port = numbers.parse_int(arg.slice(from: 0, to: cut)).must()
+    control = numbers.parse_int(arg.slice(from: 0, to: cut)).must()
     count = numbers.parse_int(arg.slice(from: cut + 1, to: arg.len())).must()
-    l @= net.listen(host: "127.0.0.1", port: port).must()
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    tell(control: control, port: l.address.port)
     net.set_accept_deadline(l, deadline_ms: 10000).must()
     answered: i64 @= 0
 
