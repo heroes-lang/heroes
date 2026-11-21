@@ -110,7 +110,7 @@ function level_number(level: Level) -> i64
 # - `name`: `debug`, `info`, `warn` or `error` in any mix of ASCII cases, or
 #   `warning`, Python's name for `warn`; nothing else, no space around it.
 #
-# Fails `invalid` where `text` names no level. See also `level_name`.
+# Fails `invalid` where `name` names no level. See also `level_name`.
 function parse_level(name: str) -> Level?
     return match strings.to_lower_ascii(name)
         "debug"   => ok(.debug)

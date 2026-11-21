@@ -630,13 +630,18 @@ function rename(from: str, to: str) -> ()?
 # Moves `from` to `to`: renamed where both stand on one volume, and across
 # volumes copied, with the times of each file, then removed.
 #
-# - `from`: the path moved, a file, a link or a folder with what it holds.
+# - `from`: the path moved: a file or a folder with what it holds, on one
+#   volume or across two; a link or a special file on one volume alone, since
+#   across two it is `unsupported`.
 # - `to`: where it goes, on this volume or another.
 #
 # It takes the place of what is at `to` as `rename` does. Fails as `rename`
 # fails, with its code, but not for two volumes, which it crosses: there a link
-# or a special file is `unsupported`, and a copy that fails answers its own
-# code and leaves `from` whole.
+# or a special file is `unsupported`, and the links a folder holds are
+# followed, each copied as what it names, as `copy_tree` copies them, so one
+# that names nothing fails `file_not_found` and one that leads back into a
+# folder it is in `invalid`; a copy that fails answers its own code and leaves
+# `from` whole.
 function move(from: str, to: str) -> ()?
     return copying.moved(from: from, to: to)
 

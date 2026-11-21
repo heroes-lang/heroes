@@ -225,7 +225,7 @@ function options(host: str) -> Options
 #   its path is the database's number, 0 where none is written. Its query
 #   may name `protocol` (2 or 3) and `client_name`.
 #
-# Fails `invalid` where `url` is not such a URL, or names another key, a
+# Fails `invalid` where `text` is not such a URL, or names another key, a
 # port outside 1 to 65535, a database that is no number of 0 or more, or a
 # protocol other than 2 or 3, the message saying which part; `unsupported`
 # for `unix://`, which `net` does not reach. See also `options`.

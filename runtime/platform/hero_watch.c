@@ -33,8 +33,8 @@
  * take this one: the order is that file's lock, then this one, never the
  * other way.
  *
- * MACOS: FSEVENTS, MEASURED AGAINST KQUEUE (2026-11-18, the probes in
- * `rebel-scratch/fs-watch/probe/`, on APFS). `kqueue`'s `EVFILT_VNODE` told a
+ * MACOS: FSEVENTS, MEASURED AGAINST KQUEUE (2026-11-18, on APFS, by probes
+ * that are not kept). `kqueue`'s `EVFILT_VNODE` told a
  * write of one file at once and exactly (`WRITE EXTEND`, `ATTRIB`), but it
  * follows the file it opened and not its name: a file replaced by a rename
  * over it, as an editor saves, was told `DELETE` and its replacement's write

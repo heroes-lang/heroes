@@ -3,12 +3,11 @@
 # `japanese.hero` reads for EUC-JP, ISO-2022-JP and Shift_JIS.
 #
 # The table is data, made and not typed: a one-off Heroes program,
-# `gen_tables.hero`, kept outside the tree in the round's scratch folder
-# (`.claude/worktrees/rebel-scratch/unicode_encodings/gen/`), read the WHATWG
-# Encoding Standard's resources, fetched from encoding.spec.whatwg.org on 2026-11-17,
-# as the standard says to read them, packed them, held every packed value
-# to the value it read, and wrote this module whole. Nothing here is edited
-# by hand. What it read:
+# `gen_tables.hero`, which is not in the tree (defect 2639), read the WHATWG
+# Encoding Standard's resources, fetched from encoding.spec.whatwg.org on
+# 2026-11-17, as the standard says to read them, packed them, held every
+# packed value to the value it read, and wrote this module whole. Nothing here
+# is edited by hand. What it read:
 #
 # - `index-jis0208.txt`, Identifier cbaa91f3deb7d0841faf5c33041fc15a285da0e87e64ab802c4bf04b7c4da861, Date 2024-09-18
 # - `index-iso-2022-jp-katakana.txt`, Identifier 6ffc12c11f6eab1ccb3dada740d9b0db096ef0b0783c3bd5ec951dcb4a44b95e, Date 2024-09-18
