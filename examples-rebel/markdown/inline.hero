@@ -1,0 +1,91 @@
+# The inlines of one block, as the text a reader would be left with: the
+# markup gone, the words kept.
+#
+# Emphasis, strong emphasis and code spans keep their text and lose their
+# markers; a link becomes `label (url)`, its target kept rather than dropped,
+# because plain text is where a reader can no longer click it; an image the
+# same after a `!`; and a line ending inside a paragraph becomes one space.
+#
+# The inlines are walked in document order, `markdown.descendants`, never by
+# recursion: emphasis nests as deep as its text, and a text is input.
+
+use <rebel>/markdown
+
+# The plain text of the inlines under `block`.
+#
+# - `doc`: the document.
+# - `block`: a node holding inlines: a paragraph or a heading.
+function plain(doc: markdown.Document, block: i64) -> str
+    pieces: [str] @= []
+
+    # The links and images open around the node being read, innermost last:
+    # the last node of each one's subtree, and its target, written once that
+    # node is read.
+    open_lasts: [i64] @= []
+    targets: [str] @= []
+
+    for at in markdown.descendants(doc, block)
+        match markdown.node_of(doc, at)
+            .text t                   => pieces @ pieces.push(t.text)
+            .code c                   => pieces @ pieces.push(c.text)
+            .html_inline h            => pieces @ pieces.push(h.text)
+            .soft_break | .line_break => pieces @ pieces.push(" ")
+            .link l =>
+                open_lasts @ open_lasts.push(last_under(doc, at))
+                targets @ targets.push(l.destination)
+            .image i =>
+                pieces @ pieces.push("!")
+                open_lasts @ open_lasts.push(last_under(doc, at))
+                targets @ targets.push(i.destination)
+            .emphasis | .strong | .strikethrough | .document | .block_quote | .list _ | .item _ | .paragraph | .heading _ | .thematic_break | .code_block _ | .html_block _ | .table _ | .table_row _ | .table_cell _ => _ = 0
+
+        while open_lasts.len() > 0 && open_lasts[open_lasts.len() - 1] == at
+            pieces @ pieces.push(" (" + targets[targets.len() - 1] + ")")
+            open_lasts @ open_lasts.slice(from: 0, to: open_lasts.len() - 1)
+            targets @ targets.slice(from: 0, to: targets.len() - 1)
+
+    return join(pieces, "")
+
+# The last node of the subtree under `node` in document order: `node` itself
+# where it has no children, so a link with no text closes where it opens.
+#
+# - `doc`: the document.
+# - `node`: a node's number.
+function last_under(doc: markdown.Document, node: i64) -> i64
+    under = markdown.descendants(doc, node)
+
+    if under.len() == 0
+        return node
+    return under[under.len() - 1]
+
+# The plain text of the first block of `text`, the shape the tests below ask.
+#
+# - `text`: one paragraph or heading of Markdown.
+function first_plain(text: str) -> str
+    doc = markdown.parse_with(text, markdown.commonmark_options())
+    return plain(doc, markdown.children(doc, markdown.ROOT)[0])
+
+test "emphasis loses its markers and keeps its words"
+    assert first_plain("a **bold** word") == "a bold word"
+    assert first_plain("a *thin* word") == "a thin word"
+    assert first_plain("call `to_str` on it") == "call to_str on it"
+
+test "an underscore inside a word is a character, as CommonMark reads it"
+    assert first_plain("read `hero_runtime_check_leaks` and to_str twice") == "read hero_runtime_check_leaks and to_str twice"
+
+test "a link keeps its target, and an image its source after a `!`"
+    assert first_plain("see [the spec](spec/heroes-spec.md) first") == "see the spec (spec/heroes-spec.md) first"
+    assert first_plain("[**bold label**](x)") == "bold label (x)"
+    assert first_plain("[](x) and ![a *cat*](cat.png)") == " (x) and !a cat (cat.png)"
+
+test "a bracket that opens nothing is a bracket"
+    assert first_plain("an [unclosed label") == "an [unclosed label"
+    assert first_plain("a [label] with no target") == "a [label] with no target"
+    assert first_plain("a [label](unclosed") == "a [label](unclosed"
+
+test "a line ending inside a paragraph is one space"
+    assert first_plain("one\n  two\nthree") == "one two three"
+
+test "emphasis nested deeper than a stack would hold is read without recursion"
+    deep = repeat("*", 3000) + "a" + repeat("*", 3000)
+    assert first_plain(deep) == "a"

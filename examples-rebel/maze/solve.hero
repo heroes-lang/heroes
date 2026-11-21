@@ -1,0 +1,127 @@
+# Breadth-first search, and the shortest path it found.
+#
+# Breadth-first rather than depth-first because the question is *how short*,
+# and a queue answers it while a stack does not. The queue is an array with a
+# **head index** rather than something that removes from the front: removing
+# element 0 copies the whole array under value semantics, so a queue that
+# shrinks is quadratic in the number of squares and one that only grows is not.
+#
+# `came` does two jobs, and doing both with one map is what keeps the loop
+# honest: it is the visited set (a key exists) and the way back (its value). A
+# separate `visited` could disagree with it, and the disagreement would be a
+# solver that walks in circles.
+#
+# Of two ways of one length, the one drawn is the one whose squares the search
+# reached first, trying each square's steps up, down, left, right. Rebel's
+# `graphs.shortest_path` settles a tie by the order the graph first names its
+# nodes, so on some mazes it draws the other way; the search stays here so the
+# drawing is the same as `examples/maze/`'s on every maze.
+
+use <rebel>/lists
+use <rebel>/sets
+
+use grid
+
+## Error codes
+
+# A maze whose goal no way reaches.
+constant ERR_NO_PATH: str
+    "no_path"
+
+# The shortest way from the start of `g` to its goal, the start first.
+#
+# - `g`: the maze.
+#
+# Fails `no_path` where no way leads to the goal, and as `grid.locate` fails
+# where a mark is missing or repeated.
+function solve(g: grid.Grid) -> [i64]?
+    start = grid.locate(g, grid.START)?
+    goal = grid.locate(g, grid.GOAL)?
+    came: {i64: i64} @= {}
+    came[start] @ start
+    queue: [i64] @= [start]
+    head: i64 @= 0
+
+    while head < queue.len()
+        here = queue[head]
+        head @ head + 1
+
+        if here == goal
+            return ok(walk_back(came, start: start, goal: goal))
+
+        for next in grid.neighbours(g, here)
+            if came[next].is_err()
+                came[next] @ here
+                queue @ queue.push(next)
+
+    return fail(code: ERR_NO_PATH, msg: "no way from the start to the goal")
+
+# The path, start first. It is built backwards from the goal and turned round
+# once, because following `came` is the only direction that map can be read in.
+#
+# - `came`: each square reached, under the square it was reached from; the
+#   start under itself.
+# - `start`: where the way begins.
+# - `goal`: where it ends, a key of `came`.
+function walk_back(came: {i64: i64}, start: i64, goal: i64) -> [i64]
+    backwards: [i64] @= [goal]
+    at: i64 @= goal
+
+    while at != start
+        at @ came[at].must()
+        backwards @ backwards.push(at)
+
+    return lists.reverse(backwards)
+
+# How many steps the path takes: one fewer than the squares it visits.
+#
+# - `path`: the squares of a way, at least one.
+function steps(path: [i64]) -> i64
+    return path.len() - 1
+
+# Whether every step of a path is a legal move: adjacent, open, and inside. The
+# solver is believed by nothing; this is what the tests ask.
+#
+# - `g`: the maze.
+# - `path`: the squares of a way, in order; an empty one is no way.
+function is_walkable(g: grid.Grid, path: [i64]) -> bool
+    if path.len() == 0
+        return false
+
+    for i in range(from: 1, to: path.len())
+        if !sets.contains(sets.from_list(grid.neighbours(g, path[i - 1])), element: path[i])
+            return false
+
+    return true
+
+test "the shortest way through an open room is the straight one"
+    g = grid.read("S..\n...\n..E\n").must()
+    path = solve(g).must()
+    assert steps(path) == 4
+    assert is_walkable(g, path)
+    assert path[0] == 0
+    assert path[path.len() - 1] == 8
+
+test "a wall makes the way round it longer"
+    g = grid.read("S.#\n.#.\n..E\n").must()
+    path = solve(g).must()
+    assert steps(path) == 4
+    assert is_walkable(g, path)
+
+test "a maze with no way through says so instead of guessing"
+    walled = grid.read("S#E\n###\n...\n").must()
+    boxed = grid.read("S.#\n..#\n##E\n").must()
+
+    for g in [walled, boxed]
+        match solve(g)
+            .ok _  => assert false
+            .err e => assert e.code == ERR_NO_PATH
+
+test "the start and the goal may be the same square's neighbours"
+    g = grid.read("SE\n..\n").must()
+    assert steps(solve(g).must()) == 1
+
+test "a way that jumps a square is not walkable"
+    g = grid.read("S..\n...\n..E\n").must()
+    assert !is_walkable(g, [0, 2])
+    assert !is_walkable(g, [])

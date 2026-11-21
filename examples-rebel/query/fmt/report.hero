@@ -1,0 +1,150 @@
+# The answer, rendered: columns that line up, and numbers that do not lie
+# about how many rows they stand for.
+#
+# The rendering is here rather than in `run/engine.hero` so that every
+# decision about *what* the answer is stays in a module with no `print` in it,
+# and the engine's tests never read text to know whether a query was right.
+#
+# A column's width counts characters, as `strings.pad_end` counts them; every
+# value this table prints is ASCII, a team from a written list and a name
+# made of `p` and digits, so a character is a byte here.
+
+use <rebel>/numbers
+use <rebel>/strings
+
+use data/row
+use query/plan
+
+# The heading over the groups, its columns as `group_line` writes them.
+constant GROUP_HEADING: str
+    "team    state     rows   total    best  mean"
+
+# A line of cells padded to their column's width, joined by two spaces. The
+# last cell is written without padding, because a line that ends in blanks is
+# a line a diff argues about.
+#
+# - `cells`: the line's texts.
+# - `widths`: each column's width, as many as `cells`.
+function padded(cells: [str], widths: [i64]) -> str
+    out: [str] @= []
+
+    for at in range(from: 0, to: cells.len())
+        if at == cells.len() - 1
+            out @ out.push(cells[at])
+        else
+            out @ out.push(strings.pad_end(s: cells[at], width: widths[at], pad: " "))
+
+    return join(out, "  ")
+
+# The width each column needs: the widest of its heading and its values.
+#
+# - `columns`: the columns.
+# - `rows`: the rows shown.
+function widths_for(columns: [plan.Column], rows: [row.Row]) -> [i64]
+    out: [i64] @= []
+
+    for c in columns
+        widest: i64 @= plan.heading(c).len()
+
+        for r in rows
+            here = plan.text_at(c, r).len()
+
+            if here > widest
+                widest @ here
+
+        out @ out.push(widest)
+
+    return out
+
+# The rows as a table: a heading line, then one line per row.
+#
+# - `columns`: the columns shown, in order.
+# - `rows`: the rows.
+function table(columns: [plan.Column], rows: [row.Row]) -> str
+    widths = widths_for(columns, rows)
+    lines: [str] @= [padded(columns.map(plan.heading), widths)]
+
+    for r in rows
+        cells: [str] @= []
+
+        for c in columns
+            cells @ cells.push(plan.text_at(c, r))
+
+        lines @ lines.push(padded(cells, widths))
+
+    return join(lines, "\n")
+
+# Joined rows as a table: the row's own columns, then its region.
+#
+# - `columns`: the row's columns shown, in order.
+# - `rows`: the joined rows.
+function joined_table(columns: [plan.Column], rows: [plan.Joined]) -> str
+    plain: [row.Row] @= []
+
+    for j in rows
+        plain @ plain.push(j.r)
+
+    with_region = widths_for(columns, plain).push(6)
+    lines: [str] @= [padded(columns.map(plan.heading).push("region"), with_region)]
+
+    for j in rows
+        cells: [str] @= []
+
+        for c in columns
+            cells @ cells.push(plan.text_at(c, j.r))
+
+        lines @ lines.push(padded(cells.push(j.region), with_region))
+
+    return join(lines, "\n")
+
+# A group's line: the key, then its four numbers. The mean is printed through
+# the `T?` that computes it, so an empty group would print `-` rather than a
+# number nobody should trust; it cannot happen, because a group exists only
+# where a row put it.
+#
+# - `g`: the group.
+# - `s`: what it holds.
+function group_line(g: plan.Group, s: plan.Summary) -> str
+    shown = match plan.mean_of(s)
+        .ok mean => numbers.format_float(mean, precision: 2)
+        .err _   => "-"
+
+    cells = [g.team, active_text(g.active), s.rows.to_str(), s.total.to_str(), s.best.to_str(), shown]
+    return padded(cells, [6, 8, 5, 7, 4, 0])
+
+# `active` or `idle`, as the report names whether a group plays.
+#
+# - `active`: whether it plays.
+function active_text(active: bool) -> str
+    if active
+        return "active"
+    return "idle"
+
+test "a line has no trailing blanks, however wide its last column"
+    widths: [i64] = [4, 4]
+    line = padded(["a", "b"], widths)
+    assert line == "a     b"
+    assert !strings.has_suffix(s: line, suffix: " ")
+
+test "a cell is padded to its column and never cut"
+    assert padded(["abcdef", "x"], [3, 1]) == "abcdef  x"
+
+test "a column is as wide as the widest of its heading and its values"
+    rows: [row.Row] = [
+        row.Row(id: 1, team: "argo", name: "p1", active: true, score: 1000, rate: 1.0)
+        row.Row(id: 22, team: "b", name: "p22", active: false, score: 2, rate: 2.0)
+    ]
+    columns: [plan.Column] = [.id, .score]
+    assert widths_for(columns, rows) == [2, 5]
+
+test "the table's first line is its headings and it has one line per row"
+    columns: [plan.Column] = [.id, .team, .score]
+    lines = strings.lines(table(columns, row.generated(3)))
+    assert lines.len() == 4
+    assert strings.has_prefix(s: lines[0], prefix: "id")
+
+test "a group's mean is written to two places"
+    s = plan.with_row(plan.nothing_yet(), row.Row(id: 1, team: "argo", name: "p1", active: true, score: 1, rate: 2.0))
+    line = group_line(plan.Group(team: "argo", active: false), s)
+    assert strings.has_suffix(s: line, suffix: "2.00")
+    assert strings.contains(s: line, substr: "idle")

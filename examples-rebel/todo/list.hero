@@ -1,0 +1,204 @@
+# The list, and the file it lives in.
+#
+#     [ ] buy milk
+#     [x] write the maze solver
+#
+# A format a person can edit in any editor, which is the only reason to store a
+# list as text at all, so it is read strictly enough to catch a typo and
+# loosely enough to survive one: the marker must be `[ ]` or `[x]`, and
+# everything after it is the task, spaces and brackets included.
+#
+# **Nothing here writes anything.** Reading, rendering and changing are all
+# pure, a `[Task]` in and a `[Task]` out, and the one call to `write_file` is
+# the program's `save`. That split is what lets every test below run without
+# touching the disk.
+
+use <rebel>/strings
+
+## Error codes
+
+# A line that is not `[ ] text` or `[x] text`.
+constant ERR_BAD_LINE: str
+    "bad_line"
+
+# A marker that is neither a space nor an `x`.
+constant ERR_BAD_MARKER: str
+    "bad_marker"
+
+# A task added with no text.
+constant ERR_EMPTY_TASK: str
+    "empty_task"
+
+# A task number the list does not reach.
+constant ERR_NO_SUCH_TASK: str
+    "no_such_task"
+
+# One task of the list.
+record Task
+    # Whether it is done: `[x]` in the file.
+    done: bool
+    # What is to be done, its white space at either end trimmed.
+    text: str
+
+## Reading and writing
+
+# The tasks `text` holds, one a line, blank lines passed over.
+#
+# - `text`: the file's text.
+#
+# Fails `bad_line` where a line is not a marker, a space and a text, and
+# `bad_marker` where the marker is neither `[ ]` nor `[x]`, each message
+# opening with the line's number.
+function read(text: str) -> [Task]?
+    out: [Task] @= []
+    number: i64 @= 0
+
+    for line in strings.lines(text)
+        number @ number + 1
+        head = strings.trim(line)
+
+        if head == ""
+            continue
+
+        if head.len() < 4 || head[0] != '[' || head[2] != ']' || head[3] != ' '
+            return fail(code: ERR_BAD_LINE, msg: "line " + number.to_str() + ": a task is `[ ] text` or `[x] text`")
+        marker = head[1]
+
+        if marker != ' ' && marker != 'x'
+            return fail(code: ERR_BAD_MARKER, msg: "line " + number.to_str() + ": the marker is a space or an `x`")
+        out @ out.push(Task(done: marker == 'x', text: strings.trim(head.slice(from: 4, to: head.len()))))
+
+    return ok(out)
+
+# `tasks` written as the file holds them, each line ended; "" for none.
+#
+# - `tasks`: the list.
+function render(tasks: [Task]) -> str
+    if tasks.len() == 0
+        return ""
+    lines: [str] @= []
+
+    for task in tasks
+        lines @ lines.push(marker_of(task) + " " + task.text)
+
+    return join(lines, "\n") + "\n"
+
+# `[x]` for a task done, `[ ]` for one to do.
+#
+# - `task`: the task.
+function marker_of(task: Task) -> str
+    if task.done
+        return "[x]"
+    return "[ ]"
+
+## Changing
+
+# `tasks` with a task to do added at the end.
+#
+# - `tasks`: the list.
+# - `text`: what is to be done; its white space at either end is trimmed.
+#
+# Fails `empty_task` where `text` is white space alone.
+function add(tasks: [Task], text: str) -> [Task]?
+    if strings.trim(text) == ""
+        return fail(code: ERR_EMPTY_TASK, msg: "a task needs some text")
+    return ok(tasks.push(Task(done: false, text: strings.trim(text))))
+
+# `tasks` with task `n` done. `n` counts from 1, because the list a person
+# reads is numbered from 1 and the number they type is the one they read;
+# converting once, here, is cheaper than remembering which end of the program
+# is which.
+#
+# - `tasks`: the list.
+# - `n`: the task's number as `numbered` shows it.
+#
+# Fails `no_such_task` where `n` is below 1 or past the list's end.
+function complete(tasks: [Task], n: i64) -> [Task]?
+    if n < 1 || n > tasks.len()
+        return fail(
+            code: ERR_NO_SUCH_TASK,
+            msg: "there is no task " + n.to_str() + " — the list has " + tasks.len().to_str()
+        )
+    out: [Task] @= []
+
+    for i in range(from: 0, to: tasks.len())
+        if i == n - 1
+            out @ out.push(Task(done: true, text: tasks[i].text))
+        else
+            out @ out.push(tasks[i])
+
+    return ok(out)
+
+# How many tasks are still to do.
+#
+# - `tasks`: the list.
+function left_to_do(tasks: [Task]) -> i64
+    open: i64 @= 0
+
+    for task in tasks
+        if !task.done
+            open @ open + 1
+
+    return open
+
+# `1. [ ] buy milk`, the view a person reads and types a number back at.
+#
+# - `tasks`: the list.
+function numbered(tasks: [Task]) -> [str]
+    out: [str] @= []
+
+    for i in range(from: 0, to: tasks.len())
+        out @ out.push((i + 1).to_str() + ". " + marker_of(tasks[i]) + " " + tasks[i].text)
+
+    return out
+
+test "a file round-trips through reading and rendering"
+    text = "[ ] one\n[x] two\n"
+    assert render(read(text).must()) == text
+    assert read("").must() == []
+    assert render([]) == ""
+
+test "blank lines are skipped and spacing is forgiven"
+    tasks = read("\n  [ ]   one   \n\n[x] two\n").must()
+    assert tasks.len() == 2
+    assert tasks[0].text == "one"
+    assert tasks[0].done == false
+    assert tasks[1].done == true
+
+test "a line that is not a task is refused by name"
+    assert code_of("one\n") == ERR_BAD_LINE
+    assert code_of("[ ]one\n") == ERR_BAD_LINE
+    assert code_of("[?] one\n") == ERR_BAD_MARKER
+
+test "adding appends, and an empty task is not a task"
+    tasks = read("[ ] one\n").must()
+    grown = add(tasks, "  two  ").must()
+    assert grown.len() == 2
+    assert grown[1].text == "two"
+    assert grown[1].done == false
+    assert add(tasks, "   ").is_err()
+    assert tasks.len() == 1
+
+test "completing counts from one, and leaves every other task alone"
+    tasks = read("[ ] one\n[ ] two\n[ ] three\n").must()
+    after = complete(tasks, 2).must()
+    assert after[0].done == false
+    assert after[1].done == true
+    assert after[2].done == false
+    assert left_to_do(after) == 2
+    assert complete(tasks, 0).is_err()
+    assert complete(tasks, 4).is_err()
+    assert tasks[1].done == false
+
+test "the numbered view is what a person types a number back at"
+    tasks = read("[ ] one\n[x] two\n").must()
+    assert numbered(tasks) == ["1. [ ] one", "2. [x] two"]
+
+# The code `read` fails with on `text`, or `no_error`: the shape the refusal
+# test above asks.
+#
+# - `text`: a file's text.
+function code_of(text: str) -> str
+    return match read(text)
+        .ok _  => "no_error"
+        .err e => e.code

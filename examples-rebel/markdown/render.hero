@@ -1,0 +1,219 @@
+# Blocks out, plain text in: the half that decides what the document *looks*
+# like once nothing is markup any more.
+#
+# Every block renders to a list of lines and the lines are joined once, at the
+# end, because `+` on `str` copies both sides (spec § 10) and building a page
+# by concatenation is quadratic in its length.
+#
+# The blocks are the tree `markdown.parse_with` reads, CommonMark's, and each
+# is written as a typewriter would: a heading underlined, an item after `*` or
+# its number, a quoted paragraph after `|`, code indented by four spaces, a
+# rule as sixty dashes. Lists and quotes nest in CommonMark; a block inside
+# another is written under it, four spaces further in.
+
+use <rebel>/markdown
+use <rebel>/strings
+
+use inline
+
+# The line under a heading: `=` for the top level and `-` under every other,
+# as long as the heading's bytes, which is its width for ASCII.
+#
+# - `level`: the heading's level, 1 to 6.
+# - `text`: the heading's plain text.
+function underline(level: i64, text: str) -> str
+    if level <= 1
+        return repeat("=", text.len().to_u64().must())
+    return repeat("-", text.len().to_u64().must())
+
+# `lines`, each after `prefix`.
+#
+# - `lines`: the lines.
+# - `prefix`: what each one gains at its start.
+function indent(lines: [str], prefix: str) -> [str]
+    out: [str] @= []
+
+    for line in lines
+        out @ out.push(prefix + line)
+
+    return out
+
+# One block, as the lines it becomes.
+#
+# - `doc`: the document.
+# - `node`: a block's node.
+function lines_of(doc: markdown.Document, node: i64) -> [str]
+    return match markdown.node_of(doc, node)
+        .heading h =>
+            text = inline.plain(doc, node)
+            [text, underline(h.level, text)]
+        .paragraph      => [inline.plain(doc, node)]
+        .list l         => items_of(doc, node: node, ordered: l.ordered, start: l.start)
+        .block_quote    => quoted(doc, node)
+        .code_block c   => indent(strings.lines(c.text), "    ")
+        .thematic_break => [repeat("-", 60)]
+        .html_block h   => [join(strings.lines(h.text), " ")]
+        .document | .item _ | .table _ | .table_row _ | .table_cell _ | .text _ | .soft_break | .line_break | .code _ | .emphasis | .strong | .strikethrough | .link _ | .image _ | .html_inline _ => inside(
+            doc,
+            node
+        )
+
+# The lines of every block under `node`, one after another.
+#
+# - `doc`: the document.
+# - `node`: a node holding blocks.
+function inside(doc: markdown.Document, node: i64) -> [str]
+    out: [str] @= []
+
+    for child in markdown.children(doc, node)
+        for line in lines_of(doc, child)
+            out @ out.push(line)
+
+    return out
+
+# A list's items, each on its line after `*` or its number: an item's
+# paragraphs are joined into its one line, and any other block in it is
+# written under it, four spaces further in.
+#
+# - `doc`: the document.
+# - `node`: the list's node.
+# - `ordered`: whether its items are numbered.
+# - `start`: the first item's number, for a numbered list.
+function items_of(doc: markdown.Document, node: i64, ordered: bool, start: i64) -> [str]
+    out: [str] @= []
+    number: i64 @= start
+
+    for item in markdown.children(doc, node)
+        texts: [str] @= []
+        under: [str] @= []
+
+        for child in markdown.children(doc, item)
+            match markdown.node_of(doc, child)
+                .paragraph => texts @ texts.push(inline.plain(doc, child))
+                .document | .block_quote | .list _ | .item _ | .heading _ | .thematic_break | .code_block _ | .html_block _ | .table _ | .table_row _ | .table_cell _ | .text _ | .soft_break | .line_break | .code _ | .emphasis | .strong | .strikethrough | .link _ | .image _ | .html_inline _ =>
+                    for line in lines_of(doc, child)
+                        under @ under.push(line)
+
+        marker: str @= "*"
+
+        if ordered
+            marker @ number.to_str() + "."
+        out @ out.push("  " + marker + " " + join(texts, " "))
+
+        for line in indent(under, "    ")
+            out @ out.push(line)
+
+        number @ number + 1
+
+    return out
+
+# A block quote's blocks, each line after `  | `.
+#
+# - `doc`: the document.
+# - `node`: the quote's node.
+function quoted(doc: markdown.Document, node: i64) -> [str]
+    return indent(inside(doc, node), "  | ")
+
+# Which run of neighbours a block belongs to, as a small number. Zero is "on
+# its own", and it is the answer for every block that is not a list or a quote.
+#
+# - `doc`: the document.
+# - `node`: a block's node.
+function run_kind(doc: markdown.Document, node: i64) -> i64
+    return match markdown.node_of(doc, node)
+        .list l =>
+            if l.ordered
+                2
+            else
+                1
+        .block_quote => 3
+        .document | .item _ | .paragraph | .heading _ | .thematic_break | .code_block _ | .html_block _ | .table _ | .table_row _ | .table_cell _ | .text _ | .soft_break | .line_break | .code _ | .emphasis | .strong | .strikethrough | .link _ | .image _ | .html_inline _ => 0
+
+# Whether two neighbours belong to one run, and so take no blank line between
+# them: two lists of one kind, or two quotes, read as one thing on the page.
+#
+# - `doc`: the document.
+# - `before`: the first block's node.
+# - `after`: the block after it.
+function runs_on(doc: markdown.Document, before: i64, after: i64) -> bool
+    kind = run_kind(doc, before)
+    return kind != 0 && kind == run_kind(doc, after)
+
+# The whole document. Blocks are separated by one blank line unless they are
+# one run, and the text ends in exactly one newline, the same promise `print`
+# makes; "" for a document of no block.
+#
+# - `doc`: the document.
+function render(doc: markdown.Document) -> str
+    out: [str] @= []
+    blocks = markdown.children(doc, markdown.ROOT)
+
+    for i in range(from: 0, to: blocks.len())
+        if i > 0 && !runs_on(doc, before: blocks[i - 1], after: blocks[i])
+            out @ out.push("")
+
+        for line in lines_of(doc, blocks[i])
+            out @ out.push(line)
+
+    if out.len() == 0
+        return ""
+    return join(out, "\n") + "\n"
+
+# The deepest lists and quotes nest before their markers are read as text.
+# `lines_of` follows the nesting with recursion, three calls a level, so the
+# depth is bounded far below what a stack holds; a plain-text page nested
+# deeper than this has stopped being readable anyway.
+constant MOST_NESTING: i64
+    64
+
+# How this program reads Markdown: CommonMark alone, no GFM extension, nested
+# no deeper than `MOST_NESTING`.
+function options() -> markdown.Options
+    o: markdown.Options @= markdown.commonmark_options()
+    o.max_depth @ MOST_NESTING
+    return o
+
+# `source` read as CommonMark and written as plain text, which is what the
+# program does.
+#
+# - `source`: the Markdown.
+function to_text(source: str) -> str
+    return render(markdown.parse_with(source, options()))
+
+test "a heading is underlined to its own width"
+    assert to_text("# Hi\n") == "Hi\n==\n"
+    assert to_text("## Hi\n") == "Hi\n--\n"
+
+test "the list markers are rewritten rather than removed"
+    assert to_text("- one\n") == "  * one\n"
+    assert to_text("3. three\n") == "  3. three\n"
+    assert to_text("> said\n") == "  | said\n"
+
+test "code keeps its own layout, indented"
+    assert to_text("```\n  x = 1\n```\n") == "      x = 1\n"
+
+test "blocks are separated by one blank line"
+    assert to_text("# T\n\nbody\n") == "T\n=\n\nbody\n"
+
+test "a list is one run, and two kinds of list are two"
+    assert to_text("- a\n- b\n") == "  * a\n  * b\n"
+    assert to_text("1. a\n2. b\n") == "  1. a\n  2. b\n"
+    assert to_text("- a\n\n1. b\n") == "  * a\n\n  1. b\n"
+    assert to_text("> a\n\n> b\n") == "  | a\n  | b\n"
+
+test "a list's items are numbered from its first, as CommonMark numbers them"
+    assert to_text("7. a\n1. b\n") == "  7. a\n  8. b\n"
+
+test "a block inside an item is written under it, further in"
+    assert to_text("- a\n\n  - b\n") == "  * a\n      * b\n"
+
+test "a quote's lines are one paragraph, as CommonMark reads them"
+    assert to_text("> a\n> b\n") == "  | a b\n"
+
+test "quotes nested past the bound are read as text, never followed"
+    deep = repeat("> ", 500) + "x\n"
+    assert to_text(deep).len() > 0
+
+test "an empty document renders to nothing at all"
+    assert to_text("") == ""
+    assert to_text("\n\n\n") == ""

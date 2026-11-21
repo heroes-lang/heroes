@@ -1,0 +1,218 @@
+# The instruction set, and one line of assembly.
+#
+# A register machine with four registers and eight instructions, the smallest
+# set that can compute something worth printing:
+#
+#     load  rD, n        rD = n
+#     copy  rD, rS       rD = rS
+#     add   rD, rS       rD = rD + rS
+#     sub   rD, rS       rD = rD - rS
+#     print rD           write rD
+#     jmpz  rS, label    go to label when rS is zero
+#     jmp   label        go there
+#     halt               stop
+#
+# **Every instruction is three words**: the opcode and two operands, whether it
+# uses them or not. Fixed width because the assembler resolves a label to an
+# *instruction index*, and an index is only arithmetic when instructions are
+# all the same size.
+#
+# A line is `[label:] [mnemonic [operand, operand]] [; comment]`, and any part
+# may be missing.
+
+use <rebel>/numbers
+use <rebel>/strings
+
+## Error codes
+
+# An immediate operand that is no integer.
+constant ERR_BAD_NUMBER: str
+    "bad_number"
+
+# An operand that is not `r0` to `r3`.
+constant ERR_BAD_REGISTER: str
+    "bad_register"
+
+# `load rD, n`.
+constant OP_LOAD: i64
+    0
+
+# `copy rD, rS`.
+constant OP_COPY: i64
+    1
+
+# `add rD, rS`.
+constant OP_ADD: i64
+    2
+
+# `sub rD, rS`.
+constant OP_SUB: i64
+    3
+
+# `print rD`.
+constant OP_PRINT: i64
+    4
+
+# `jmpz rS, label`.
+constant OP_JMPZ: i64
+    5
+
+# `jmp label`.
+constant OP_JMP: i64
+    6
+
+# `halt`.
+constant OP_HALT: i64
+    7
+
+# The words of every instruction.
+constant WORDS: i64
+    3
+
+# How many registers the machine has.
+constant REGISTERS: i64
+    4
+
+# One source line, taken apart.
+record Line
+    # The label it defines, "" for none.
+    label: str
+    # Its instruction's name, "" for a line with none.
+    mnemonic: str
+    # The operands, their white space trimmed.
+    operands: [str]
+    # Its number in the file, from 1.
+    number: i64
+
+## Lines
+
+# One source line, taken apart. Nothing here is refused: an unknown mnemonic
+# is the assembler's business, and a reader who mistypes one wants to be told
+# which line it was on, which is why `number` travels with it.
+#
+# - `text`: the line.
+# - `number`: its number in the file, from 1.
+function read_line(text: str, number: i64) -> Line
+    body: str @= text
+
+    match strings.split_once(s: body, sep: ";")
+        .ok comment => body @ comment.before
+        .err _      => _ = 0
+
+    body @ strings.trim(body)
+    label: str @= ""
+
+    match strings.split_once(s: body, sep: ":")
+        .ok labelled =>
+            label @ strings.trim(labelled.before)
+            body @ strings.trim(labelled.after)
+        .err _ => _ = 0
+
+    if body == ""
+        return Line(label: label, mnemonic: "", operands: [], number: number)
+
+    return match strings.split_once(s: body, sep: " ")
+        .ok words => Line(label: label, mnemonic: words.before, operands: operands_of(words.after), number: number)
+        .err _    => Line(label: label, mnemonic: body, operands: [], number: number)
+
+# The operands after a mnemonic: split at the commas, each trimmed, the empty
+# ones dropped, so `add r0, r1` and `add r0,r1` are the same instruction.
+#
+# - `text`: what follows the mnemonic.
+function operands_of(text: str) -> [str]
+    out: [str] @= []
+
+    for piece in strings.split(s: text, sep: ",")
+        trimmed = strings.trim(piece)
+
+        if trimmed != ""
+            out @ out.push(trimmed)
+
+    return out
+
+# Every line of a file, blank ones included, so each keeps its number.
+#
+# - `text`: the file's text.
+function read(text: str) -> [Line]
+    out: [Line] @= []
+    number: i64 @= 0
+
+    for line in strings.lines(text)
+        number @ number + 1
+        out @ out.push(read_line(line, number))
+
+    return out
+
+## Operands
+
+# `r0` to `r3`, and nothing else. The message names the range, because a
+# reader who wrote `r9` needs to know what would have fitted.
+#
+# - `word`: the operand.
+# - `number`: its line's number, for the message.
+#
+# Fails `bad_register` where it names no register.
+function register_of(word: str, number: i64) -> i64?
+    refused: i64? = fail(
+        code: ERR_BAD_REGISTER,
+        msg: "line " + number.to_str() + ": `" + word + "` is not a register — r0 to r3"
+    )
+
+    if word.len() != 2 || word[0] != 'r'
+        return refused
+
+    # Two bytes opening with `r` end in one ASCII character, so the slice cuts
+    # no character, and a byte below `0` is refused rather than subtracted.
+    n = numbers.parse_int(word.slice(from: 1, to: 2)).default(-1)
+
+    if n < 0 || n >= REGISTERS
+        return refused
+    return ok(n)
+
+# The integer an immediate operand writes.
+#
+# - `word`: the operand.
+# - `number`: its line's number, for the message.
+#
+# Fails `bad_number` where it is no integer or one past an `i64`.
+function number_of(word: str, number: i64) -> i64?
+    match numbers.parse_int(word)
+        .ok n  => return ok(n)
+        .err e => return fail(code: ERR_BAD_NUMBER, msg: "line " + number.to_str() + ": " + e.msg)
+
+test "a line comes apart into its four pieces"
+    plain = read_line("  add r0, r1   ; sum", 7)
+    assert plain.label == ""
+    assert plain.mnemonic == "add"
+    assert plain.operands == ["r0", "r1"]
+    assert plain.number == 7
+
+test "a label may stand alone or open a line"
+    alone = read_line("loop:", 1)
+    assert alone.label == "loop"
+    assert alone.mnemonic == ""
+    both = read_line("loop: jmp loop", 2)
+    assert both.label == "loop"
+    assert both.mnemonic == "jmp"
+    assert both.operands == ["loop"]
+
+test "a comment and blank space leave nothing behind"
+    empty = read_line("   ; nothing at all", 3)
+    assert empty.label == ""
+    assert empty.mnemonic == ""
+    assert empty.operands == []
+
+test "spaces around a comma are noise"
+    assert read_line("add r0,r1", 1).operands == ["r0", "r1"]
+    assert read_line("add  r0 ,  r1 ", 1).operands == ["r0", "r1"]
+
+test "a register is r0 to r3, and a number may be negative"
+    assert register_of("r2", 1).must() == 2
+
+    for word in ["r4", "rx", "r", "r!", "r-", "r10"]
+        assert register_of(word, 1).is_err()
+
+    assert number_of("42", 1).must() == 42
+    assert number_of("-7", 1).must() == -7
+    assert number_of("x", 1).is_err()
+    assert number_of("-", 1).is_err()

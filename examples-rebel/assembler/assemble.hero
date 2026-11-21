@@ -1,0 +1,204 @@
+# Two passes: where the labels are, then what the words say.
+#
+# Two passes rather than one because a `jmp` may name a label further down, and
+# nothing else in this assembler needs the second pass at all. The first pass
+# counts instructions without encoding any of them, which is only possible
+# because every instruction is the same width (`program.WORDS`).
+#
+# A duplicate label is refused. It is the mistake whose one-pass behaviour is
+# "the last one wins", and a jump that silently goes to the wrong copy of
+# `loop` is the failure this whole project is about.
+
+use program
+
+## Error codes
+
+# An instruction given more or fewer operands than it takes.
+constant ERR_BAD_OPERAND_COUNT: str
+    "bad_operand_count"
+
+# A label defined twice.
+constant ERR_DUPLICATE_LABEL: str
+    "duplicate_label"
+
+# A mnemonic that names no instruction.
+constant ERR_UNKNOWN_INSTRUCTION: str
+    "unknown_instruction"
+
+# A jump to a label no line defines.
+constant ERR_UNKNOWN_LABEL: str
+    "unknown_label"
+
+# A program assembled.
+record Assembled
+    # The words, `program.WORDS` to an instruction.
+    code: [i64]
+    # Each label under the index of the instruction it stands at.
+    labels: {str: i64}
+
+## Pass one
+
+# Each label under the index of the instruction it stands at.
+#
+# - `lines`: the program's lines.
+#
+# Fails `duplicate_label` where a label is defined twice.
+function label_table(lines: [program.Line]) -> {str: i64}?
+    labels: {str: i64} @= {}
+    at: i64 @= 0
+
+    for line in lines
+        if line.label != ""
+            if !labels[line.label].is_err()
+                return fail(
+                    code: ERR_DUPLICATE_LABEL,
+                    msg: "line " + line.number.to_str() + ": `" + line.label + "` is defined twice"
+                )
+            labels[line.label] @ at
+
+        if line.mnemonic != ""
+            at @ at + 1
+
+    return ok(labels)
+
+## Pass two
+
+# The program `lines` write, as words.
+#
+# - `lines`: the program's lines.
+#
+# Fails at the first line that is wrong, its code one of this module's or
+# `program`'s and its message naming the line.
+function assemble(lines: [program.Line]) -> Assembled?
+    labels = label_table(lines)?
+    code: [i64] @= []
+
+    for line in lines
+        if line.mnemonic == ""
+            continue
+
+        for word in encode(line, labels)?
+            code @ code.push(word)
+
+    return ok(Assembled(code: code, labels: labels))
+
+# One instruction, as its three words. Every arm checks its own operand count
+# first, so `add r0` is refused for the reason it is wrong rather than by an
+# index that aborts.
+#
+# - `line`: a line holding an instruction.
+# - `labels`: the label table.
+function encode(line: program.Line, labels: {str: i64}) -> [i64]?
+    m = line.mnemonic
+
+    if m == "load"
+        _ = expect(line, 2)?
+        return ok(
+            [program.OP_LOAD, program.register_of(line.operands[0], line.number)?, program.number_of(line.operands[1], line.number)?]
+        )
+
+    if m == "copy" || m == "add" || m == "sub"
+        _ = expect(line, 2)?
+        return ok(
+            [opcode_of(m), program.register_of(line.operands[0], line.number)?, program.register_of(line.operands[1], line.number)?]
+        )
+
+    if m == "print"
+        _ = expect(line, 1)?
+        return ok([program.OP_PRINT, program.register_of(line.operands[0], line.number)?, 0])
+
+    if m == "jmpz"
+        _ = expect(line, 2)?
+        return ok(
+            [program.OP_JMPZ, program.register_of(line.operands[0], line.number)?, target_of(line.operands[1], labels, line.number)?]
+        )
+
+    if m == "jmp"
+        _ = expect(line, 1)?
+        return ok([program.OP_JMP, target_of(line.operands[0], labels, line.number)?, 0])
+
+    if m == "halt"
+        _ = expect(line, 0)?
+        return ok([program.OP_HALT, 0, 0])
+    return fail(
+        code: ERR_UNKNOWN_INSTRUCTION,
+        msg: "line " + line.number.to_str() + ": there is no `" + m + "` instruction"
+    )
+
+# The opcode of a two-register instruction.
+#
+# - `m`: `copy`, `add` or `sub`.
+function opcode_of(m: str) -> i64
+    if m == "copy"
+        return program.OP_COPY
+
+    if m == "add"
+        return program.OP_ADD
+    return program.OP_SUB
+
+# `wanted`, where `line` has that many operands.
+#
+# - `line`: a line holding an instruction.
+# - `wanted`: how many operands its instruction takes.
+#
+# Fails `bad_operand_count` where it has another number.
+function expect(line: program.Line, wanted: i64) -> i64?
+    if line.operands.len() != wanted
+        return fail(
+            code: ERR_BAD_OPERAND_COUNT,
+            msg: "line " + line.number.to_str() + ": `" + line.mnemonic + "` takes " + wanted.to_str() + ", not " + line.operands.len().to_str()
+        )
+    return ok(wanted)
+
+# A label becomes the instruction index it stands at, times the width, because
+# the machine counts in words.
+#
+# - `name`: the label.
+# - `labels`: the label table.
+# - `number`: the jump's line, for the message.
+#
+# Fails `unknown_label` where no line defines it.
+function target_of(name: str, labels: {str: i64}, number: i64) -> i64?
+    match labels[name]
+        .ok at => return ok(at * program.WORDS)
+        .err _ => return fail(
+            code: ERR_UNKNOWN_LABEL,
+            msg: "line " + number.to_str() + ": there is no label `" + name + "`"
+        )
+
+test "labels are instruction indices, and blank lines do not count"
+    lines = program.read("start:\n\n  load r0, 1   ; one\nagain:\n  print r0\n  jmp again\n")
+    labels = label_table(lines).must()
+    assert labels["start"].must() == 0
+    assert labels["again"].must() == 1
+
+test "an instruction is three words, whether it needs them or not"
+    out = assemble(program.read("load r0, 7\nhalt\n")).must()
+    assert out.code == [program.OP_LOAD, 0, 7, program.OP_HALT, 0, 0]
+
+test "a jump resolves to a word offset"
+    out = assemble(program.read("here:\n  jmp here\n")).must()
+    assert out.code == [program.OP_JMP, 0, 0]
+    forward = assemble(program.read("jmp end\nhalt\nend:\n  halt\n")).must()
+    assert forward.code[1] == 2 * program.WORDS
+
+test "every way to get it wrong has its own code and its own line"
+    assert code_of("add r0\n") == ERR_BAD_OPERAND_COUNT
+    assert code_of("frob r0, r1\n") == ERR_UNKNOWN_INSTRUCTION
+    assert code_of("add r0, r9\n") == program.ERR_BAD_REGISTER
+    assert code_of("load r0, x\n") == program.ERR_BAD_NUMBER
+    assert code_of("jmp nowhere\n") == ERR_UNKNOWN_LABEL
+    assert code_of("a:\nhalt\na:\nhalt\n") == ERR_DUPLICATE_LABEL
+
+test "the message names the line the reader has to open"
+    match assemble(program.read("halt\nhalt\nfrob\n"))
+        .ok _  => assert false
+        .err e => assert e.msg == "line 3: there is no `frob` instruction"
+
+# The code `assemble` fails with on `text`, or `no_error`.
+#
+# - `text`: a program's text.
+function code_of(text: str) -> str
+    return match assemble(program.read(text))
+        .ok _  => "no_error"
+        .err e => e.code

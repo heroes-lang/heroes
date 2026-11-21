@@ -1,0 +1,262 @@
+# The engine: filter, join, order, group, aggregate, over the whole table at
+# the size the table actually is.
+#
+# Every value behaves as an independent copy (spec § 3), and five thousand
+# records filtered, sorted and grouped several times per query are where that
+# costs something; the engine works on whole arrays and lets the language's
+# copies be measured rather than avoided.
+#
+# THE SORT IS `lists.sort_by`, STABLE, ONE ORDER PER FUNCTION. The built-in
+# `sort` orders numbers, texts and booleans and cannot be told which field of
+# a record to look at, and the language has no closures, so an order cannot
+# carry the `plan.Order` it was asked for into the function `sort_by` calls:
+# each order is a function of its own, and `ordered` picks one.
+
+use <rebel>/lists
+use <rebel>/strings
+
+use data/row
+use query/plan
+
+# The rows a filter keeps, in the order they arrived.
+#
+# - `rows`: the table.
+# - `keep`: the filter.
+function filtered(rows: [row.Row], keep: plan.Where) -> [row.Row]
+    out: [row.Row] @= []
+
+    for r in rows
+        if plan.kept(keep, r)
+            out @ out.push(r)
+
+    return out
+
+# The team table as a map, built once per join rather than searched per row.
+#
+# - `teams`: the team table.
+function regions_of(teams: [row.Team]) -> {str: str}
+    m: {str: str} @= {}
+
+    for t in teams
+        m[t.team] @ t.region
+
+    return m
+
+# The join. A row whose team is not in the table is **dropped and counted by
+# its absence**, not given an empty region: a report with a blank column is a
+# report somebody reads as data.
+#
+# - `rows`: the table.
+# - `teams`: the team table.
+function joined_with(rows: [row.Row], teams: [row.Team]) -> [plan.Joined]
+    lookup = regions_of(teams)
+    out: [plan.Joined] @= []
+
+    for r in rows
+        match lookup[r.team]
+            .ok region => out @ out.push(plan.Joined(r: r, region: region))
+            .err _     => continue
+
+    return out
+
+## The orders, one function each. Each is total: the id breaks every tie, so
+## the same rows in any order come out as one array.
+
+# Whether `a`'s id is below `b`'s, the order every other one falls back on.
+#
+# - `a`: one row.
+# - `b`: another.
+function id_first(a: row.Row, b: row.Row) -> bool
+    return a.id < b.id
+
+# Whether `a` scores higher than `b`, or the same with a lower id.
+#
+# - `a`: one row.
+# - `b`: another.
+function score_first(a: row.Row, b: row.Row) -> bool
+    if a.score != b.score
+        return a.score > b.score
+    return a.id < b.id
+
+# Whether `a`'s name orders before `b`'s by bytes, or is the same with a lower
+# id. `<` takes numbers alone (spec § 7), so two texts are ordered by
+# `strings.compare`.
+#
+# - `a`: one row.
+# - `b`: another.
+function name_first(a: row.Row, b: row.Row) -> bool
+    if a.name != b.name
+        return strings.compare(a: a.name, b: b.name) < 0
+    return a.id < b.id
+
+# Whether `a` plays and `b` does not, or both are alike with `a`'s id lower.
+#
+# - `a`: one row.
+# - `b`: another.
+function active_first(a: row.Row, b: row.Row) -> bool
+    if a.active != b.active
+        return a.active
+    return a.id < b.id
+
+# The rows in the order `o` asks for.
+#
+# - `rows`: the rows.
+# - `o`: the order.
+function ordered(rows: [row.Row], o: plan.Order) -> [row.Row]
+    return match o
+        .unordered | .by_id  => lists.sort_by(rows, less: id_first)
+        .by_score_high_first => lists.sort_by(rows, less: score_first)
+        .by_name             => lists.sort_by(rows, less: name_first)
+        .by_active           => lists.sort_by(rows, less: active_first)
+
+# The first `n`, or all of them. A limit of zero or less means no limit, so a
+# query that does not care carries no special case.
+#
+# - `rows`: the rows.
+# - `n`: the most rows kept; zero or less for all.
+function limited(rows: [row.Row], n: i64) -> [row.Row]
+    if n <= 0
+        return rows
+    return lists.take(rows, n: n)
+
+# One aggregate over the rows. Every one of them is an `i64` but the mean,
+# which is why the mean is `plan.mean_of`'s and `mean_rate` answers the count.
+#
+# - `rows`: the rows.
+# - `what`: the aggregate.
+function aggregate(rows: [row.Row], what: plan.Aggregate) -> i64
+    s: plan.Summary @= plan.nothing_yet()
+
+    for r in rows
+        s @ plan.with_row(s, r)
+
+    return match what
+        .how_many    => s.rows
+        .total_score => s.total
+        .best_score  => s.best
+        .mean_rate   => s.rows
+
+# The rows grouped by team and by whether they play: **a map keyed by a
+# record**.
+#
+# - `rows`: the rows.
+function grouped(rows: [row.Row]) -> {plan.Group: plan.Summary}
+    out: {plan.Group: plan.Summary} @= {}
+
+    for r in rows
+        key = plan.Group(team: r.team, active: r.active)
+        out[key] @ plan.with_row(out[key].default(plan.nothing_yet()), r)
+
+    return out
+
+# Whether group `a` comes before group `b`: by team, by bytes, then the idle
+# before the active.
+#
+# - `a`: one group.
+# - `b`: another.
+function group_first(a: plan.Group, b: plan.Group) -> bool
+    if a.team != b.team
+        return strings.compare(a: a.team, b: b.team) < 0
+    return !a.active && b.active
+
+# A group's keys in a fixed order: team first, then the idle before the
+# active. `keys(m)` gives them in the order they were first written (spec
+# § 10), the order the rows happened to arrive in, so a report that walked
+# the map as it came would print another table for the same rows given in
+# another order.
+#
+# - `m`: the groups.
+function group_order(m: {plan.Group: plan.Summary}) -> [plan.Group]
+    return lists.sort_by(keys(m), less: group_first)
+
+test "a filter keeps what it says and nothing else"
+    rows = row.generated(200)
+    argo = filtered(rows, .team_is(team: "argo"))
+    assert argo.len() > 0
+    assert argo.len() < rows.len()
+
+    for r in argo
+        assert r.team == "argo"
+
+test "the sort is total, stable and the same twice"
+    rows = row.generated(400)
+    by_score = ordered(rows, .by_score_high_first)
+    assert by_score.len() == rows.len()
+
+    for at in range(from: 1, to: by_score.len())
+        earlier = by_score[at - 1]
+        later = by_score[at]
+        assert earlier.score > later.score || earlier.score == later.score && earlier.id < later.id
+
+    assert ordered(rows, .by_score_high_first) == by_score
+
+test "sorting on a bool puts the idle rows last and keeps ids inside a tie"
+    seen_idle: bool @= false
+
+    for r in ordered(row.generated(200), .by_active)
+        if !r.active
+            seen_idle @ true
+        else
+            assert !seen_idle
+
+test "the sort is a permutation: every row goes in and every row comes out"
+    rows = row.generated(300)
+    out = ordered(rows, .by_name)
+    assert out.len() == rows.len()
+    ids: [i64] @= []
+
+    for r in out
+        ids @ ids.push(r.id)
+
+    assert sort(ids) == range(from: 1, to: 301)
+
+test "the join attaches a region to every row whose team is in the table"
+    rows = row.generated(100)
+    with_region = joined_with(rows, row.teams())
+    assert with_region.len() == rows.len()
+
+    for j in with_region
+        assert j.region.len() > 0
+
+test "a row whose team is not in the table is dropped rather than blanked"
+    stranger = row.Row(id: 1, team: "nowhere", name: "p1", active: true, score: 1, rate: 1.0)
+    only_one: [row.Row] = [stranger]
+    assert joined_with(only_one, row.teams()).len() == 0
+
+test "the groups partition the table: every row lands in exactly one"
+    rows = row.generated(500)
+    m = grouped(rows)
+    total: i64 @= 0
+
+    for k in group_order(m)
+        total @ total + m[k].must().rows
+
+    assert total == rows.len()
+
+test "the groups come in team order, the idle before the active"
+    order = group_order(grouped(row.generated(500)))
+    assert order[0] == plan.Group(team: "argo", active: false)
+    assert order[1] == plan.Group(team: "argo", active: true)
+    assert order[order.len() - 1] == plan.Group(team: "halo", active: true)
+
+test "the aggregates agree with a second count taken another way"
+    rows = filtered(row.generated(400), .team_is(team: "borea"))
+    total: i64 @= 0
+    best: i64 @= -1
+
+    for r in rows
+        total @ total + r.score
+
+        if r.score > best
+            best @ r.score
+
+    assert aggregate(rows, .how_many) == rows.len()
+    assert aggregate(rows, .total_score) == total
+    assert aggregate(rows, .best_score) == best
+
+test "a limit takes the first rows, and no limit takes them all"
+    rows = row.generated(50)
+    assert limited(rows, 10).len() == 10
+    assert limited(rows, 0).len() == 50
+    assert limited(rows, 500).len() == 50
+    assert limited(rows, 10)[0] == rows[0]

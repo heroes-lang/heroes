@@ -1,0 +1,181 @@
+# Statements, blocks and a whole program: the layer above
+# `syn/expr.hero`.
+#
+# This module owns the line-oriented shape of the little language: every
+# statement begins with a keyword or is an expression, every statement ends at
+# the end of its line, and every block ends at `end`.
+#
+# A parameter list named twice is told by `sets.from_list`, which keeps each
+# name once: a list longer than its set repeats a name. Heroes has no closures
+# (spec § 9), so a predicate handed to the built-in `all` is a top-level
+# function, `is_a_name`.
+
+use <rebel>/sets
+
+use lex/scan
+use lex/token
+use syn/cursor
+use syn/expr
+use syn/tree
+
+constant ERR_PARSE: str
+    "parse"
+
+# A whole program: scanned, then read statement by statement until the tokens
+# run out.
+function program(source: str) -> tree.Tree?
+    tokens = scan.scanned(source)?
+    c: cursor.Cursor @= cursor.over(tokens)
+    t: tree.Tree @= tree.empty()
+    top: [i64] @= []
+    cursor.skipped_lines(@c)
+
+    while !cursor.done(c)
+        top @ top.push(statement(@c, @t)?)
+        cursor.skipped_lines(@c)
+
+    t.top @ top
+    return ok(t)
+
+# One statement. The keyword decides, and a line that begins with none of them
+# is an expression, which is how a bare call like `greet("world")` stands as a
+# statement.
+function statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    if cursor.accepted(@c, want: .kw_let)
+        return let_statement(@c, @t)
+
+    if cursor.accepted(@c, want: .kw_print)
+        value = expr.parsed(@c, @t)?
+        line_end(@c)?
+        return ok(tree.added_stmt(@t, .say(value: value)))
+
+    if cursor.accepted(@c, want: .kw_if)
+        return if_statement(@c, @t)
+
+    if cursor.accepted(@c, want: .kw_while)
+        return while_statement(@c, @t)
+
+    if cursor.accepted(@c, want: .kw_fn)
+        return fn_statement(@c, @t)
+
+    if cursor.accepted(@c, want: .kw_return)
+        value = expr.parsed(@c, @t)?
+        line_end(@c)?
+        return ok(tree.added_stmt(@t, .give(value: value)))
+
+    if cursor.accepted(@c, want: .kw_exit)
+        code = expr.parsed(@c, @t)?
+        line_end(@c)?
+        return ok(tree.added_stmt(@t, .stop(code: code)))
+
+    if cursor.here(c) == .kw_end || cursor.here(c) == .kw_else
+        return fail(
+            code: ERR_PARSE,
+            msg: "`" + token.shown(cursor.here(c)) + "` closes a block that was never opened"
+        )
+    value = expr.parsed(@c, @t)?
+    line_end(@c)?
+    return ok(tree.added_stmt(@t, .evaluate(value: value)))
+
+function let_statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    name = cursor.name_here(@c)?
+    cursor.expected(@c, want: .equals)?
+    value = expr.parsed(@c, @t)?
+    line_end(@c)?
+    return ok(tree.added_stmt(@t, .bind(name: name, value: value)))
+
+function if_statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    condition = expr.parsed(@c, @t)?
+    line_end(@c)?
+    then = block(@c, @t)?
+    otherwise: [i64] @= []
+
+    if cursor.accepted(@c, want: .kw_else)
+        line_end(@c)?
+        otherwise @ block(@c, @t)?
+    cursor.expected(@c, want: .kw_end)?
+    line_end(@c)?
+    return ok(tree.added_stmt(@t, .when(condition: condition, then: then, otherwise: otherwise)))
+
+function while_statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    condition = expr.parsed(@c, @t)?
+    line_end(@c)?
+    body = block(@c, @t)?
+    cursor.expected(@c, want: .kw_end)?
+    line_end(@c)?
+    return ok(tree.added_stmt(@t, .while_loop(condition: condition, body: body)))
+
+function fn_statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    name = cursor.name_here(@c)?
+    cursor.expected(@c, want: .lparen)?
+    params = parameters(@c)?
+    line_end(@c)?
+    body = block(@c, @t)?
+    cursor.expected(@c, want: .kw_end)?
+    line_end(@c)?
+    return ok(tree.added_stmt(@t, .define(name: name, params: params, body: body)))
+
+# A parameter list, refusing a repeated name, and quoting the whole list when
+# it does.
+function parameters(@c: cursor.Cursor) -> [str]?
+    names: [str] @= []
+
+    if cursor.accepted(@c, want: .rparen)
+        return ok(names)
+    names @ names.push(cursor.name_here(@c)?)
+
+    while cursor.accepted(@c, want: .comma)
+        names @ names.push(cursor.name_here(@c)?)
+
+    cursor.expected(@c, want: .rparen)?
+
+    if sets.from_list(names).len() != names.len()
+        return fail(
+            code: ERR_PARSE,
+            msg: "a parameter is named twice in `(" + join(names, ", ") + ")`"
+        )
+
+    if !names.all(is_a_name)
+        return fail(code: ERR_PARSE, msg: "a parameter may not be the empty name")
+
+    return ok(names)
+
+# Statements until the block's end, `end` or `else`, neither of which this
+# function consumes: the caller does, because only the caller knows which of
+# the two it is willing to see.
+function block(@c: cursor.Cursor, @t: tree.Tree) -> [i64]?
+    made: [i64] @= []
+    cursor.skipped_lines(@c)
+
+    while !closes_a_block(cursor.here(c))
+        made @ made.push(statement(@c, @t)?)
+        cursor.skipped_lines(@c)
+
+    if cursor.done(c)
+        return fail(code: ERR_PARSE, msg: "the file ends inside a block that no `end` closes")
+
+    return ok(made)
+
+function closes_a_block(t: token.Token) -> bool
+    return t == .kw_end || t == .kw_else || t == .finish
+
+# A statement ends at the end of its line, or at the end of the file. Anything
+# else left on the line is a mistake worth naming, because the commonest one is
+# a second statement written after the first.
+function line_end(@c: cursor.Cursor) -> ()?
+    if cursor.here(c) == .finish
+        return ok()
+
+    if cursor.accepted(@c, want: .newline)
+        return ok()
+
+    return fail(
+        code: ERR_PARSE,
+        msg: "a statement ends at the end of its line, and `" + token.shown(cursor.here(c)) + "` follows this one"
+    )
+
+# Whether `word` can be a parameter's name: any but the empty one.
+#
+# - `word`: a parameter's name.
+function is_a_name(word: str) -> bool
+    return word.len() > 0
