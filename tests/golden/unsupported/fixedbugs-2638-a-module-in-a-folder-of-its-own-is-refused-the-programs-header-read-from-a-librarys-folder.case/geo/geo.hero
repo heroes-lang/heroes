@@ -1,0 +1,11 @@
+# The module of defect 2638's case two folders up: its groups name the
+# library `lib2638` and the program's own `own2638.h`, which a group names
+# from the program's folder wherever its module lives.
+extern "lib2638.h" pkgconfig "lib2638"
+    constant LIB_V: i64
+
+extern "own2638.h"  #~ shadowed_header
+    constant OWN_SCALE: i64
+
+function scaled() -> i64
+    return OWN_SCALE + LIB_V

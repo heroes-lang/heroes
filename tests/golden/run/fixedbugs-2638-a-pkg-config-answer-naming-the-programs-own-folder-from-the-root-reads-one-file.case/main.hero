@@ -1,0 +1,15 @@
+# fixedbugs, defect 2638, lane lane-pkgshadow, 2026-11-21.
+#
+# A shape beside the issue's: `lib2638`'s `.pc` names the program's own
+# folder, by its path from the root of the file system, so the folder its
+# answer names and the program's are two spellings of one folder, and its
+# `own2638.h` one file. Nothing is read in its place, and the build runs.
+extern "lib2638.h" pkgconfig "lib2638"
+    constant LIB_V: i64
+
+extern "own2638.h"
+    constant OWN_SCALE: i64
+
+function main()
+    print(LIB_V)
+    print(OWN_SCALE)

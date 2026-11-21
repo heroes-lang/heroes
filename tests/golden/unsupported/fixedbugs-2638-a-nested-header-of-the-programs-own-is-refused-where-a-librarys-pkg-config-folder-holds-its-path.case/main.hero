@@ -1,0 +1,15 @@
+# fixedbugs, defect 2638, lane lane-pkgshadow, 2026-11-21.
+#
+# A shape beside the issue's: the program's own header named by its path,
+# `sub/own2638.h`, and the library `lib2638`'s folder holding a file at that
+# path. Until the repair the library's file was read and the build printed
+# `7` for the program's `100` at exit 0; refused, as the plain name is.
+extern "lib2638.h" pkgconfig "lib2638"
+    constant LIB_V: i64
+
+extern "sub/own2638.h"  #~ shadowed_header
+    constant OWN_SCALE: i64
+
+function main()
+    print(LIB_V)
+    print(OWN_SCALE)

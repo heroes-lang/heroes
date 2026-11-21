@@ -1,0 +1,8 @@
+# A library of the case's own, its folder named from this file's (defect
+# 2636), as Homebrew's keg-only libraries name their own.
+prefix=${pcfiledir}/..
+Name: fq2636
+Description: a library whose header a fetched package binds and does not ship
+Version: 1.0
+Cflags: -I${prefix}/pcinc
+Libs:

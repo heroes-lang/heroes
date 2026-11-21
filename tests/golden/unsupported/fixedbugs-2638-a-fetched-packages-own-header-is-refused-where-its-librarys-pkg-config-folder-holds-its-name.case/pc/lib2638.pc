@@ -1,0 +1,8 @@
+# A library of the case's own, its folder named from this file's, as
+# Homebrew's keg-only libraries name their own (defect 2638).
+prefix=${pcfiledir}/..
+Name: lib2638
+Description: a library whose folder holds a file named like a header of the program's own
+Version: 1.0
+Cflags: -I${prefix}/libinc
+Libs:

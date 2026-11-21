@@ -1,0 +1,18 @@
+# fixedbugs, defect 2638, lane lane-pkgshadow, 2026-11-21.
+#
+# A program's own `own2638.h`, beside `main.hero`, and a library of its own,
+# `lib2638`, whose folder holds another file of that name. A unit searches
+# the folders its libraries' `pkg-config` answers name before the program's
+# own folder, so until the repair the library's file was read for the
+# program's group and the build printed its `7` for the program's `100` at
+# exit 0, the issue's shape (b2). Refused before any unit compiles, at the
+# group's header, both files, the folder and the library named.
+extern "lib2638.h" pkgconfig "lib2638"
+    constant LIB_V: i64
+
+extern "own2638.h"  #~ shadowed_header
+    constant OWN_SCALE: i64
+
+function main()
+    print(LIB_V)
+    print(OWN_SCALE)

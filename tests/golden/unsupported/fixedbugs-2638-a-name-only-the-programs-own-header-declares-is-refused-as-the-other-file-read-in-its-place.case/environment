@@ -1,0 +1,3 @@
+# The case's own library, found by pkg-config alone.
+PKG_CONFIG_PATH=tests/golden/unsupported/fixedbugs-2638-a-name-only-the-programs-own-header-declares-is-refused-as-the-other-file-read-in-its-place.case/pc
+PKG_CONFIG_LIBDIR=tests/golden/unsupported/fixedbugs-2638-a-name-only-the-programs-own-header-declares-is-refused-as-the-other-file-read-in-its-place.case/pc

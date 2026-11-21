@@ -1,0 +1,108 @@
+# What the refusal of a module's own header read from a library's folder says
+# (design.md §4.17: everything needed to fix the mistake without opening
+# another file; §4.19; defect 2638). No `Fix`: the repair is a file renamed or
+# moved, which no edit of the program's text writes. Told at the group's
+# header, the line that reads the file. Moved out of `cli/shadowed_own.hero`,
+# which decides the refusal, so the rule and its words each stay under §11's
+# 300 lines, as `cli/shadowed_words.hero` holds panel 237's.
+
+use cli/package_reads
+use cli/shadowed_words
+use cli/strings
+use diag
+use emit/clang_place
+use token
+
+# One header read in place of the module's own file of its name: the header,
+# the file the unit reads, as its words name it, and its folder, read
+# lexically; the library whose answer named that folder; the module's own
+# file, the own folder a group names it from (`home`), and whose it is (the
+# program's, a `path` entry's or a fetched package's;
+# `shadowed_words.Origin`).
+record Read
+    header: str
+    read: str
+    folder: str
+    library: str
+    own: str
+    home: str
+    owner: shadowed_words.Origin
+
+# The refusal, at the group's header: the library's file read, the module's
+# own, the folder and the library named, under panel 237's code; the note
+# what the author can change (`remedy`).
+function refusal(found: Read, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: shadowed_words.CODE,
+        message: "`" + clang_place.slashed(package_reads.lexical(found.read)) + "` is read for `" + found.header + "`, which this group names, in place of " + whose(found.owner) + " `" + clang_place.slashed(found.own) + "`: a folder `pkg-config`'s answer for the library `" + found.library + "` names is searched before " + whose_folder(found.owner) + ", so the library's file is read and " + whose_file(found.owner) + " is not",
+        span: span
+    )
+    d.notes @ d.notes.push(remedy(found))
+    return d
+
+function whose(owner: shadowed_words.Origin) -> str
+    if owner.kind == shadowed_words.FETCHED
+        return "the package `" + owner.name + "`'s own"
+
+    if owner.kind == shadowed_words.PATH
+        return "the `path` entry `" + owner.name + "`'s own"
+    return "the program's own"
+
+function whose_folder(owner: shadowed_words.Origin) -> str
+    if owner.kind == shadowed_words.FETCHED
+        return "the package's own folder"
+
+    if owner.kind == shadowed_words.PATH
+        return "the entry's own folder"
+    return "the program's own folder"
+
+function whose_file(owner: shadowed_words.Origin) -> str
+    if owner.kind == shadowed_words.FETCHED
+        return "the package's"
+
+    if owner.kind == shadowed_words.PATH
+        return "the entry's"
+    return "the program's"
+
+# **What the author can change**: the library's file is the library's, which
+# no edit of the program renames or moves (panel 243's R2), so the note
+# names the module's own file, renamed with the group's header, or moved
+# into a folder of its own and named by its path from the folder a group
+# names it from, which the library's folder does not hold; or renamed or
+# moved where the group means the library's header, so no group names it. A
+# fetched package's file is no file of the program's (defect 2458).
+function remedy(found: Read) -> str
+    lead = "`" + clang_place.slashed(found.folder) + "` is the library `" + found.library + "`'s, named by `pkg-config`'s answer for it, and every unit reading `" + found.header + "` searches it before " + whose_folder(found.owner)
+    own = clang_place.slashed(found.own)
+    home = clang_place.slashed(found.home)
+
+    if found.owner.kind == shadowed_words.FETCHED
+        return lead + "; " + shadowed_words.fetched_remedy(folder: home, package: found.owner.name, reaches: "every unit reading `" + found.header + "` reads the library's file in its place")
+    return lead + ": where this group means `" + own + "`, rename it, and this group's header with it, to a name that folder does not hold, or move it into a folder of its own and name it by its path from `" + home + "`; where it means the library's `" + found.header + "`, rename or move `" + own + "`, which then no group names"
+
+## Tests
+
+# **Both files, the library and who owns the file are named, and the note
+# says what each meaning of the group asks** (defect 2638): the program's
+# file renamed or moved under its folder where the group means it, moved out
+# where the group means the library's; a fetched package's file is never
+# the program's to rename (defect 2458).
+test "the refusal names both files, the library and whose the file is, and what each meaning asks (defect 2638)"
+    program = refusal(
+        Read(header: "fq2636.h", read: "aainc/fq2636.h", folder: "aainc", library: "aa2636", own: "./fq2636.h", home: ".", owner: shadowed_words.Origin(kind: shadowed_words.PROGRAM, name: "")),
+        span: token.Span(start: 0, end: 0)
+    )
+    assert program.code == shadowed_words.CODE
+    assert program.message == "`aainc/fq2636.h` is read for `fq2636.h`, which this group names, in place of the program's own `./fq2636.h`: a folder `pkg-config`'s answer for the library `aa2636` names is searched before the program's own folder, so the library's file is read and the program's is not"
+    assert program.notes == ["`aainc` is the library `aa2636`'s, named by `pkg-config`'s answer for it, and every unit reading `fq2636.h` searches it before the program's own folder: where this group means `./fq2636.h`, rename it, and this group's header with it, to a name that folder does not hold, or move it into a folder of its own and name it by its path from `.`; where it means the library's `fq2636.h`, rename or move `./fq2636.h`, which then no group names"]
+    fetched = refusal(
+        Read(header: "pk.h", read: "lib/pk.h", folder: "lib", library: "lb", own: "heroes.packages/pk@1.0.0-ab/pk.h", home: "heroes.packages/pk@1.0.0-ab", owner: shadowed_words.Origin(kind: shadowed_words.FETCHED, name: "pk")),
+        span: token.Span(start: 0, end: 0)
+    )
+    assert fetched.message == "`lib/pk.h` is read for `pk.h`, which this group names, in place of the package `pk`'s own `heroes.packages/pk@1.0.0-ab/pk.h`: a folder `pkg-config`'s answer for the library `lb` names is searched before the package's own folder, so the library's file is read and the package's is not"
+    assert fetched.notes.len() == 1 && strings.holds(text: fetched.notes[0], needle: "searches it before the package's own folder; `heroes.packages/pk@1.0.0-ab` is the package `pk`'s, fetched and held to its fingerprint")
+    path = refusal(
+        Read(header: "pk.h", read: "lib/pk.h", folder: "lib", library: "lb", own: "pk/pk.h", home: "pk", owner: shadowed_words.Origin(kind: shadowed_words.PATH, name: "pk")),
+        span: token.Span(start: 0, end: 0)
+    )
+    assert strings.holds(text: path.message, needle: "in place of the `path` entry `pk`'s own `pk/pk.h`")

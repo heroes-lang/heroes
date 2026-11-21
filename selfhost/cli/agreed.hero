@@ -33,6 +33,7 @@ use cli/package_stand_in
 use cli/package_units
 use cli/probing
 use cli/settled
+use cli/shadowed_own
 use cli/toolchain
 use cli/units
 use diag
@@ -71,6 +72,13 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, art: compil
     # package `pt`'s was told `ffi_record_two_layouts` in its place (the
     # round's gate, `unsupported/fixedbugs-2357-...-a-fetched-packages-header`).
     package_stand_in.stopped(t, probed.probings, s: s, decls: art.decls, site: site)?
+
+    # **And a header a module's own group names, read from a library's folder
+    # in place of the module's own file of its name** (defect 2638,
+    # `cli/shadowed_own.hero`): a unit searches its `pkg-config` answers'
+    # folders before the program's own, so the record or the value its group
+    # binds would be the library's file's, before any unit compiles.
+    shadowed_own.stopped(t, probed.probings, s: s, decls: art.decls, site: site)?
     foreign: [[i64]] @= []
     crossing: bool @= false
 

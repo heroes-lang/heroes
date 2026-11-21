@@ -1,0 +1,3 @@
+# The case's own library, found by pkg-config alone.
+PKG_CONFIG_PATH=tests/golden/unsupported/fixedbugs-2638-a-group-naming-the-library-is-refused-where-the-programs-folder-holds-another-file-of-its-header.case/pc
+PKG_CONFIG_LIBDIR=tests/golden/unsupported/fixedbugs-2638-a-group-naming-the-library-is-refused-where-the-programs-folder-holds-another-file-of-its-header.case/pc

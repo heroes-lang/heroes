@@ -1,0 +1,15 @@
+# fixedbugs, defect 2638, lane lane-pkgshadow, 2026-11-21.
+#
+# A shape beside the issue's: the library `lib2638`'s folder holds a folder,
+# not a file, named like the program's own `own2638.h`. clang's search
+# passes a folder of the name over and reads the program's file, so nothing
+# is read in its place and the build runs, printing the program's `100`.
+extern "lib2638.h" pkgconfig "lib2638"
+    constant LIB_V: i64
+
+extern "own2638.h"
+    constant OWN_SCALE: i64
+
+function main()
+    print(LIB_V)
+    print(OWN_SCALE)

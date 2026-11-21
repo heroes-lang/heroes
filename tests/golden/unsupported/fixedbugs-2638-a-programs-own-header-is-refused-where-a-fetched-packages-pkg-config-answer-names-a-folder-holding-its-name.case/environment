@@ -1,0 +1,3 @@
+# The case's own library, found by pkg-config alone.
+PKG_CONFIG_PATH=tests/golden/unsupported/fixedbugs-2638-a-programs-own-header-is-refused-where-a-fetched-packages-pkg-config-answer-names-a-folder-holding-its-name.case/pc
+PKG_CONFIG_LIBDIR=tests/golden/unsupported/fixedbugs-2638-a-programs-own-header-is-refused-where-a-fetched-packages-pkg-config-answer-names-a-folder-holding-its-name.case/pc

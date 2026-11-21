@@ -1,0 +1,8 @@
+# A library whose folder is the program's own, named from the root of the
+# file system where `PKG_CONFIG_PATH` is (defect 2638).
+prefix=${pcfiledir}/..
+Name: lib2638
+Description: a library answer naming the program's own folder
+Version: 1.0
+Cflags: -I${prefix}
+Libs:

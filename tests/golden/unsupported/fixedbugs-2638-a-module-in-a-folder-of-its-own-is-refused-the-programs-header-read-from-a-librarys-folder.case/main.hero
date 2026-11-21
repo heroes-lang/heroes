@@ -1,0 +1,11 @@
+# fixedbugs, defect 2638, lane lane-pkgshadow, 2026-11-21.
+#
+# A shape beside the issue's: the groups are a module's in a folder of its
+# own, `geo/geo.hero`, and its unit searches the library's folder before the
+# program's, so until the repair it read the library's `own2638.h` and the
+# build printed `8` for the program's `101` at exit 0. Refused at the
+# module's group, as the program's own module is.
+use geo/geo
+
+function main()
+    print(geo.scaled())

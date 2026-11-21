@@ -1,0 +1,12 @@
+# fixedbugs, defect 2638, lane lane-pkgshadow, 2026-11-21.
+#
+# A shape beside the issue's: a fetched package's own header, shipped beside
+# its module, and its library's folder holding another file of that name.
+# The package's unit searches its `pkg-config` answers' folders before its
+# own root, so until the repair it read the library's file and the build
+# printed `8` for the package's `101` at exit 0. Refused at the package's
+# group, its note telling what a consumer of a fetched package can do.
+use <pk>/pk
+
+function main()
+    print(pk.scaled())

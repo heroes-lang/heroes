@@ -1,0 +1,4 @@
+# The case's own .pc, named from the root of the file system, so its
+# answer names the program's folder by another spelling than the program's.
+PKG_CONFIG_PATH=<root>/tests/golden/run/fixedbugs-2638-a-pkg-config-answer-naming-the-programs-own-folder-from-the-root-reads-one-file.case/pc
+PKG_CONFIG_LIBDIR=<root>/tests/golden/run/fixedbugs-2638-a-pkg-config-answer-naming-the-programs-own-folder-from-the-root-reads-one-file.case/pc

@@ -1,0 +1,17 @@
+# fixedbugs, defect 2638, lane lane-pkgshadow, 2026-11-21.
+#
+# A shape beside the issue's: the group names the library `lib2638` for
+# `own2638.h` itself, and the program's own folder holds another file of
+# that name. Which the group means is not in the program's text: until the
+# repair the library's was read, `7`, at exit 0, while a C file beside it
+# including `"own2638.h"` reads the program's, `100`. Refused, its note
+# saying what each meaning asks.
+extern "lib2638.h" pkgconfig "lib2638"
+    constant LIB_V: i64
+
+extern "own2638.h" pkgconfig "lib2638"  #~ shadowed_header
+    constant OWN_SCALE: i64
+
+function main()
+    print(LIB_V)
+    print(OWN_SCALE)
