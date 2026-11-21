@@ -462,3 +462,10 @@ before running: a Rebel driver 8,538,649,768 instructions retired, a golden case
 
 Report closed 17:01 CET 2026-11-19 (`date`). Nothing written outside my folder and this report, nothing
 committed, no paid run, no credential read.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/252-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

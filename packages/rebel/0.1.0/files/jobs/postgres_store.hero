@@ -27,6 +27,9 @@
 # makes them). A text the program gives that holds a zero byte, which
 # PostgreSQL cannot keep, is refused by the database `invalid`, except an
 # attempt's error, kept with each zero byte written as U+FFFD.
+#
+# Not written yet, each a `pending` block of its ledger: many jobs kept with one
+# `COPY`, faster than an insert each; the same store over MySQL or SQLite.
 
 use jobs
 use jobs/internal/limits

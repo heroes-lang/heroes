@@ -64,6 +64,13 @@
 # system's files hold; `closed` for a call on a connection `close` ended or a
 # statement `close_statement` ended; and `failed` for every other, a table
 # locked by its own connection and a disk's input or output among them.
+#
+# Not written yet, each a `pending` block of its ledger: the words SQLite keeps
+# for itself; one cell's bytes read and written a piece at a time; a whole
+# database as bytes, and a database made of bytes; a database written out as the
+# SQL that would make it again; a connection's limits on a statement's length,
+# columns, depth and parameters; a connection's options: foreign keys, triggers,
+# views, defensive mode and the rest.
 
 use os
 use os/hero_disk

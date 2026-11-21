@@ -95,7 +95,7 @@ record Entry
     # The value under it.
     value: Value
 
-## Codes and limits
+## Codes
 
 # The code of bytes that are not one well-formed object, of a value `encode`
 # cannot write, and of a value that is not of the kind asked for.
@@ -119,6 +119,8 @@ constant NOT_FOUND: str
 # binary, an extension, a key that is not a string, a `nan` or an infinity.
 constant UNSUPPORTED: str
     "unsupported"
+
+## Limits and the timestamp
 
 # The deepest nesting `decode` reads: `1` is 0 deep, `[]` is 1, `[[]]` is 2.
 constant DEFAULT_MAX_DEPTH: i64

@@ -27,7 +27,7 @@ use containers/indexed/internal/table
 use containers/internal/codes
 use containers/internal/samples
 
-## The codes
+## Codes
 
 # The code of a search that found nothing, which every function of this
 # package whose `Fails` names `not_found` answers.

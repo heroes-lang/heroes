@@ -36,6 +36,9 @@
 # `closed`, `timeout`, `stopped`, `limit` (a frame, a body or the values held
 # past a bound), `unsupported` (what the server or the platform does not
 # offer) and `failed`, the server's reply code and text in the message.
+#
+# Not written yet, each a `pending` block of its ledger: the connection's own
+# address and the server's.
 
 use amqp/internal/channels
 use amqp/internal/encoding

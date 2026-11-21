@@ -30,6 +30,9 @@
 # (`hero_stream.h`), a file opened; and `os/hero_os` (`hero_os.h`), a path
 # resolved. What is not here yet is in the ledger, `fs.ledger`, as
 # `pending`.
+#
+# Not written yet, each a `pending` block of its ledger: operations held inside
+# one folder, links unable to leave it.
 
 use fs/internal/atomic
 use fs/internal/changes
@@ -630,8 +633,10 @@ function rename(from: str, to: str) -> ()?
 # - `from`: the path moved, a file, a link or a folder with what it holds.
 # - `to`: where it goes, on this volume or another.
 #
-# It takes the place of what is at `to` as `rename` does, and fails as it does
-# but for the volumes; a copy across volumes that fails leaves `from` whole.
+# It takes the place of what is at `to` as `rename` does. Fails as `rename`
+# fails, with its code, but not for two volumes, which it crosses: there a link
+# or a special file is `unsupported`, and a copy that fails answers its own
+# code and leaves `from` whole.
 function move(from: str, to: str) -> ()?
     return copying.moved(from: from, to: to)
 

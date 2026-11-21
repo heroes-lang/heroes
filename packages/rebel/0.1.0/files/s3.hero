@@ -45,6 +45,14 @@
 # retries, an answer past `Client.limits`), `unsupported` (501), `failed`
 # (412, 304, and every other refusal), and from the connection `closed`,
 # `timeout` and `stopped`.
+#
+# Not written yet, each a `pending` block of its ledger: a request signed by
+# SigV4a for a multi-region access point; Amazon's FIPS endpoints; requests sent
+# through a proxy; an object read by ranges on several connections at once; an
+# object's ACL, retention, legal hold and its bucket's lock configuration; an
+# archived object restored, an object's attributes asked, its encryption
+# changed; an object queried with SQL on the server; analytics, inventory,
+# metrics and Intelligent-Tiering configurations, each named by an id.
 
 use bytes
 use crypto

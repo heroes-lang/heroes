@@ -661,3 +661,10 @@ on an input holding their separator, a measured basis for a reading nobody regis
 Finished 2026-11-19 at 13:40 CET (`date` read 13:39:56), begun at 13:09. Nothing of mine runs (`pgrep -fl 251-critic`
 empty, no container); every file I wrote is under `.claude/worktrees/rebel-scratch/251-critic/work2/`
 but this report.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/251-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

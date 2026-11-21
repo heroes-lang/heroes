@@ -1,0 +1,445 @@
+# The check README § A7 promises (the coherence review's D11, adopted
+# 2026-11-19): what `heroes doc` prints of every face and every floor of
+# Rebel, as a program reaches each through a catalogue, read for the rules of
+# § A7 a machine can ask of the printed reference. Every rule reads the
+# reference and never the source, so it judges what a reader is shown:
+#
+#   refused   `heroes doc` refused the module, a face or a floor: a parameter
+#             line naming no parameter, out of order or twice, a parameter no
+#             line names (`doc_*`), or a module that does not check
+#   comment   a declaration of a face, a field or a case with no comment
+#   example   a function of a face with no example (a floor owes none, § A7)
+#   fails     a function of a face that answers `T?` and whose comment holds
+#             no `Fails`
+#   code      a word a `Fails` list names that is no code of § A4
+#             (`package_codes.CLOSED`)
+#   see-also  a name a `See also` list names that names nothing
+#
+# A LIST is the names in backticks right after `Fails ` or `See also `, joined
+# by `,`, `and` or `or`; the first other word ends it, so `Fails as
+# `json.parse` does` lists nothing and `See also `x`; `y` writes` lists `x`.
+# A name a list names EXISTS where it is a declaration of the face, a field or
+# a case of one (`Type.field`), a face's path, or a declaration of the face
+# its qualifier names: the qualifier a face's path (`unicode/normalize.to_nfc`)
+# or the last part a `use` binds (`normalize.to_nfc`), a path first.
+
+use package_codes
+use rebel_tree
+use shell
+use strings
+
+# The folder under the scratch directory whose catalogue places the whole of
+# Rebel, as Rebel's own pipeline writes one (`.github/workflows/rebel.yml`).
+constant FOLDER: str
+    "rebel-doc"
+
+# The entry the catalogue names Rebel by.
+constant ENTRY: str
+    "rebel"
+
+# What `heroes doc` printed of one module: its path under the source's root,
+# whether it is a face (else a floor), how it exited, its reference and what
+# it told on stderr.
+record Printed
+    module: str
+    face: bool
+    exit: i64
+    reference: str
+    told: str
+
+# One declaration of a reference: its kind (`function`, `record`, `variant`,
+# `constant`), its name, its signature's lines as printed with their four
+# spaces taken off, its comment's prose joined by spaces, and how many example
+# headings follow it.
+record Section
+    kind: str
+    name: str
+    block: [str]
+    prose: str
+    examples: i64
+
+# One finding: the module, the rule, the name it is about, and what it says.
+record Said
+    module: str
+    rule: str
+    name: str
+    said: str
+
+# What the review keeps a finding under: the module, the rule and the name.
+function key(s: Said) -> str
+    return s.module + " " + s.rule + " " + s.name
+
+function told(s: Said) -> str
+    return s.module + ": " + s.rule + ": " + s.said
+
+# `heroes doc` run by `compiler` over every face and floor of `modules`, each
+# `<rebel>/<module>` in a folder whose catalogue's one entry places `root`.
+function printed(scratch: str, compiler: str, root: str, modules: [rebel_tree.Module]) -> [Printed]?
+    folder = scratch + "/" + FOLDER
+    shell.mkdir_all(folder)?
+    write_file(path: folder + "/heroes.toml", text: "[dependencies." + ENTRY + "]\npath = \"" + climbed(folder: folder, root: root) + "\"\n")?
+    out: [Printed] @= []
+
+    for m in modules
+        if rebel_tree.is_private(m.path)
+            continue
+        ran = shell.run_in(scratch: scratch, program: compiler, words: [compiler, "doc", "<" + ENTRY + ">/" + m.path], given: [], folder: folder)?
+        out @ out.push(
+            Printed(module: m.path, face: rebel_tree.is_face(m.path), exit: ran.code, reference: ran.out, told: ran.err)
+        )
+
+    return ok(out)
+
+# `root`, a path from this process's folder, as `folder`, another such path,
+# reaches it: one `../` for each of `folder`'s parts, joined by `/` alone. A
+# catalogue's `path` is a TOML string, where a backslash is an escape, so an
+# absolute path on Windows would be read as another; the harness's scratch is
+# relative (`main.hero`'s `SCRATCH`), and an absolute `folder` is answered
+# whole as `shell.whole_path` gives it.
+function climbed(folder: str, root: str) -> str
+    if strings.has_prefix(s: folder, prefix: "/")
+        return shell.whole_path(root)
+    up: [str] @= []
+
+    for part in strings.split_on(text: folder, byte: '/')
+        if part.len() > 0 && part != "."
+            up @ up.push("..")
+
+    up @ up.push(root)
+    return up.join("/")
+
+# The declarations of a reference, in its order.
+function sections_of(reference: str) -> [Section]
+    out: [Section] @= []
+    rows = strings.lines(reference)
+    at: i64 @= 0
+
+    while at < rows.len()
+        head = heading(rows[at])
+
+        if head.len() == 0
+            at @ at + 1
+            continue
+        at @ at + 1
+
+        while at < rows.len() && rows[at] == ""
+            at @ at + 1
+
+        block: [str] @= []
+
+        while at < rows.len() && strings.has_prefix(s: rows[at], prefix: "    ")
+            block @ block.push(rows[at].slice(from: 4, to: rows[at].len()))
+            at @ at + 1
+
+        prose: [str] @= []
+
+        while at < rows.len() && !strings.has_prefix(s: rows[at], prefix: "    ") && !strings.has_prefix(s: rows[at], prefix: "#")
+            if rows[at] != ""
+                prose @ prose.push(strings.trimmed(rows[at]))
+            at @ at + 1
+
+        examples: i64 @= 0
+
+        while at < rows.len() && heading(rows[at]).len() == 0
+            if strings.has_prefix(s: rows[at], prefix: "### Example")
+                examples @ examples + 1
+            at @ at + 1
+
+        out @ out.push(Section(kind: head[0], name: head[1], block: block, prose: prose.join(" "), examples: examples))
+
+    return out
+
+# The kind and the name a line `## <kind> <name>` heads, or nothing.
+function heading(row: str) -> [str]
+    nothing: [str] = []
+
+    for kind in ["function", "record", "variant", "constant"]
+        if strings.has_prefix(s: row, prefix: "## " + kind + " ")
+            return [kind, row.slice(from: kind.len() + 4, to: row.len())]
+
+    return nothing
+
+# Whether the signature a block opens answers `T?`: what follows the
+# parameter list's closing `)`, after ` -> `, ends with `?`.
+function fallible(block: [str]) -> bool
+    signature = block_signature(block)
+    depth: i64 @= 0
+    opened: bool @= false
+
+    for at in range(from: 0, to: signature.len())
+        if signature[at] == '('
+            depth @ depth + 1
+            opened @ true
+        else if signature[at] == ')'
+            depth @ depth - 1
+
+            if opened && depth == 0
+                rest = signature.slice(from: at + 1, to: signature.len())
+                return strings.has_prefix(s: rest, prefix: " -> ") && strings.has_suffix(s: strings.trimmed(rest), suffix: "?")
+
+    return false
+
+# The signature's lines up to the first that is no part of it, joined.
+function block_signature(block: [str]) -> str
+    parts: [str] @= []
+
+    for row in block
+        if parts.len() > 0 && (strings.has_prefix(s: row, prefix: "    #") || row == "")
+            break
+        parts @ parts.push(strings.trimmed(row))
+
+    return parts.join(" ")
+
+# Each list `prose` holds right after `words` (`Fails `, `See also `): the
+# names in backticks joined by `,`, `and` or `or`, the first other word ending
+# it.
+function lists_after(prose: str, words: str) -> [[str]]
+    out: [[str]] @= []
+    pieces = strings.split_text(text: prose, separator: words)
+
+    for at in range(from: 1, to: pieces.len())
+        out @ out.push(names_opening(pieces[at]))
+
+    return out
+
+function names_opening(text: str) -> [str]
+    names: [str] @= []
+    rest: str @= text
+
+    while strings.has_prefix(s: rest, prefix: "`")
+        close = strings.index_of(text: rest.slice(from: 1, to: rest.len()), needle: "`")
+
+        if close.is_err()
+            break
+        names @ names.push(rest.slice(from: 1, to: close.must() + 1))
+        rest @ rest.slice(from: close.must() + 2, to: rest.len())
+        joined: bool @= false
+
+        for joiner in [", and ", ", or ", ", ", " and ", " or "]
+            if !joined && strings.has_prefix(s: rest, prefix: joiner + "`")
+                rest @ rest.slice(from: joiner.len(), to: rest.len())
+                joined @ true
+
+        if !joined
+            break
+
+    return names
+
+# The names each module's reference declares: its sections, and each field
+# or case of a record or a variant as `Type.member`.
+function declared(references: [Printed]) -> {str: {str: bool}}
+    out: {str: {str: bool}} @= {}
+
+    for p in references
+        names: {str: bool} @= {}
+
+        for s in sections_of(p.reference)
+            names[s.name] @ true
+
+            if s.kind == "record" || s.kind == "variant"
+                for member in members(s.block)
+                    names[s.name + "." + member] @ true
+
+        out[p.module] @ names
+
+    return out
+
+# The fields or cases a record's or a variant's block declares, its first line
+# and its comments left out; a field of a case is named after it,
+# `boolean.v`.
+function members(block: [str]) -> [str]
+    out: [str] @= []
+    held: str @= ""
+
+    for at in range(from: 1, to: block.len())
+        row = strings.trimmed(block[at])
+
+        if row.len() == 0 || row[0] == '#'
+            continue
+        name = member_name(row)
+
+        if strings.has_prefix(s: block[at], prefix: "        ")
+            out @ out.push(held + "." + name)
+        else
+            held @ name
+            out @ out.push(name)
+
+    return out
+
+function member_name(row: str) -> str
+    for at in range(from: 0, to: row.len())
+        if row[at] == ':' || row[at] == '(' || row[at] == ' '
+            return row.slice(from: 0, to: at)
+
+    return row
+
+# Whether `name`, as a list of `module`'s reference names it, names something.
+function exists(names: {str: {str: bool}}, module: str, name: str) -> bool
+    bare = strings.without_suffix(text: name, suffix: "()")
+
+    if !names[module].must()[bare].is_err() || !names[bare].is_err()
+        return true
+    parts = strings.split_on(text: bare, byte: '.')
+
+    for count in range(from: 1, to: parts.len())
+        head = parts.slice(from: 0, to: count).join(".")
+        rest = parts.slice(from: count, to: parts.len()).join(".")
+
+        for other in qualified(names: names, qualifier: head)
+            if !names[other].must()[rest].is_err()
+                return true
+
+    return false
+
+# The modules a qualifier names: the module of that path, else every module
+# whose last part it is.
+function qualified(names: {str: {str: bool}}, qualifier: str) -> [str]
+    if !names[qualifier].is_err()
+        return [qualifier]
+    out: [str] @= []
+
+    for module in names.keys()
+        if strings.base_name(path: module) == qualifier
+            out @ out.push(module)
+
+    return out
+
+# Every finding of the check over what `heroes doc` printed.
+function findings(references: [Printed]) -> [Said]
+    names = declared(references)
+    out: [Said] @= []
+
+    for p in references
+        if p.exit != 0
+            out @ out.push(
+                Said(module: p.module, rule: "refused", name: "", said: "`heroes doc <" + ENTRY + ">/" + p.module + "` exits " + p.exit.to_str() + ": " + first_line(p.told))
+            )
+            continue
+
+        if p.face
+            for s in sections_of(p.reference)
+                for one in judged(names: names, module: p.module, s: s)
+                    out @ out.push(one)
+
+    return out
+
+# What one declaration of a face breaks.
+function judged(names: {str: {str: bool}}, module: str, s: Section) -> [Said]
+    out: [Said] @= []
+
+    if s.prose.len() == 0
+        out @ out.push(
+            Said(module: module, rule: "comment", name: s.name, said: "the " + s.kind + " `" + s.name + "` has no comment")
+        )
+
+    if s.kind == "record" || s.kind == "variant"
+        for member in bare_members(s.block)
+            out @ out.push(
+                Said(module: module, rule: "comment", name: s.name + "." + member, said: "the " + s.kind + " `" + s.name + "`'s `" + member + "` has no comment above it")
+            )
+
+    if s.kind != "function"
+        return out
+
+    if s.examples == 0
+        out @ out.push(
+            Said(module: module, rule: "example", name: s.name, said: "the function `" + s.name + "` has no example")
+        )
+
+    if fallible(s.block) && strings.index_of(text: s.prose, needle: "Fails").is_err()
+        out @ out.push(
+            Said(module: module, rule: "fails", name: s.name, said: "the function `" + s.name + "` answers `T?` and its comment says not when it fails")
+        )
+
+    for listed in lists_after(prose: s.prose, words: "Fails ")
+        for word in listed
+            if snake_word(word) && !package_codes.closed(word)
+                out @ out.push(
+                    Said(module: module, rule: "code", name: s.name + " " + word, said: "`" + s.name + "` names `" + word + "` in a `Fails` list, and no code of README § A4 is so named")
+                )
+
+    for listed in lists_after(prose: s.prose, words: "See also ")
+        for name in listed
+            if !exists(names: names, module: module, name: name)
+                out @ out.push(
+                    Said(module: module, rule: "see-also", name: s.name + " " + name, said: "`" + s.name + "`'s `See also` names `" + name + "`, which names nothing here or in a face its qualifier names")
+                )
+
+    return out
+
+# The fields or cases of a block with no comment line directly above them,
+# named as `members` names them.
+function bare_members(block: [str]) -> [str]
+    out: [str] @= []
+    named = members(block)
+    seen: i64 @= 0
+
+    for at in range(from: 1, to: block.len())
+        row = strings.trimmed(block[at])
+
+        if row.len() == 0 || row[0] == '#'
+            continue
+
+        if !strings.has_prefix(s: strings.trimmed(block[at - 1]), prefix: "#")
+            out @ out.push(named[seen])
+        seen @ seen + 1
+
+    return out
+
+# Whether `word` is one lower-case word of letters and `_`, the shape a code
+# has: a list's other names (`json.parse`, `Value`) are functions and types.
+function snake_word(word: str) -> bool
+    if word.len() == 0
+        return false
+
+    for at in range(from: 0, to: word.len())
+        if !(word[at] >= 'a' && word[at] <= 'z') && word[at] != '_'
+            return false
+
+    return true
+
+function first_line(text: str) -> str
+    rows = strings.lines(text)
+
+    if rows.len() == 0
+        return "it said nothing"
+    return rows[0]
+
+## Tests
+
+# A reference as `heroes doc` prints one, for the planted witnesses below.
+function planted() -> str
+    return "# p\n\nA package.\n\n## constant INVALID\n\n    constant INVALID: str\n        \"invalid\"\n\nThe code.\n\n## record Pair\n\n    record Pair\n        # The left.\n        left: i64\n        right: i64\n\nTwo numbers.\n\n## variant Shape\n\n    variant Shape\n        # A dot.\n        dot\n        # A line.\n        line\n            length: f64\n\nA shape.\n\n## function good\n\n    function good(s: str) -> i64?\n\nThe count.\n\n- `s`: a text.\n\nFails `invalid` where `s` is empty. See also `other.thing`, `Pair.left` and `bad`; `nowhere` writes.\n\n    p.good(s)\n\n### Example\n\n    # One.\n    test \"good: one\"\n        assert good(\"a\").must() == 1\n\n## function bad\n\n    function bad(s: str) -> ()?\n\nNothing.\n\n- `s`: a text.\n\nSee also `Pair.middle`, `gone`. Fails `to_sql` `invalid` later.\n\n    p.bad(s)\n\n## function quiet\n\n    function quiet(f: (function(str) -> bool?), s: str) -> str?\n\n    p.quiet(f, s)\n\n### Example\n\n    # Two.\n    test \"quiet: two\"\n        assert quiet(f: g, s: \"\").must() == \"\"\n"
+
+# Each rule fires on its planted witness and leaves the shape beside it: a
+# record field with no comment, a function with no example, a `T?` with no
+# `Fails`, a word of a `Fails` list that is no code, `See also` names that
+# name nothing; a refused module; a floor owes no example.
+test "each rule of the docs check fires on its witness, and the shape beside it passes"
+    other = "# other\n\n## function thing\n\n    function thing() -> i64\n\nA thing.\n\n    other.thing()\n\n### Example\n\n    # It.\n    test \"thing: it\"\n        assert thing() == 1\n"
+    given = [
+        Printed(module: "deep/p", face: true, exit: 0, reference: planted(), told: "")
+        Printed(module: "x/other", face: true, exit: 0, reference: other, told: "")
+        Printed(module: "x/hero_c", face: false, exit: 0, reference: "# c\n\n## function c_door\n\n    function c_door() -> i64\n\n    hero_c.c_door()\n", told: "")
+        Printed(module: "x/broken", face: true, exit: 1, reference: "", told: "error[doc_missing_parameter]: no line\nmore\n")
+    ]
+    found: [str] @= []
+
+    for one in findings(given)
+        found @ found.push(key(one))
+
+    assert found == ["deep/p comment Pair.right", "deep/p comment Shape.line.length", "deep/p example bad", "deep/p code bad to_sql", "deep/p see-also bad Pair.middle", "deep/p see-also bad gone", "deep/p comment quiet", "deep/p fails quiet", "x/broken refused "]
+    assert told(findings(given)[7]) == "deep/p: fails: the function `quiet` answers `T?` and its comment says not when it fails"
+    assert told(findings(given)[8]) == "x/broken: refused: `heroes doc <rebel>/x/broken` exits 1: error[doc_missing_parameter]: no line"
+
+test "a catalogue's path climbs from its folder to the source by `../`, forward slashes alone"
+    assert climbed(folder: "build/harness-12/rebel-doc", root: "packages/rebel/0.1.0/files") == "../../../packages/rebel/0.1.0/files"
+    assert climbed(folder: "./x//y", root: "r") == "../../r"
+
+test "a list ends at its first other word, and a signature's answer is read past a function type"
+    assert lists_after(prose: "Fails `a`, `b` or `c` where. Fails as `d` does.", words: "Fails ") == [["a", "b", "c"], []]
+    assert lists_after(prose: "See also `x`, and `y`; `z` writes", words: "See also ") == [["x", "y"]]
+    assert fallible(["function f(g: (function(str) -> bool?)) -> i64"]) == false
+    assert fallible(["function f(g: (function(str) -> bool)) -> [u8]?"])
+    assert fallible(["function f(a: i64,", "    b: i64) -> ()?"])
+    assert !snake_word("json.parse") && snake_word("not_found") && !snake_word("Value")

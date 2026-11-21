@@ -24,6 +24,11 @@
 # needs UTF-8 where the options forbid it; `not_found` where a field, a part or
 # a parameter asked for is not there; `does_not_fit` for a date outside an
 # `Instant`; `failed` where the system gives no random bytes.
+#
+# Not written yet, each a `pending` block of its ledger: the content type a part
+# of a `multipart/digest` has when it names none; a `Received` field read into
+# its parts: from, by, with, id, for, date; a subject reduced to its thread's
+# base (RFC 5256); a message signed by DKIM (RFC 6376).
 
 use bytes
 use io
@@ -45,7 +50,7 @@ use path
 use strings
 use time
 
-## Codes and limits
+## Codes
 
 # A text, a field or a value that is not what the function reads, the message
 # saying where: every `parse_` function, and the writers for a name or a value
@@ -75,6 +80,8 @@ constant DOES_NOT_FIT: str
 # The system gave no random bytes for a new identifier: `make_message_id`.
 constant FAILED: str
     "failed"
+
+## Limits
 
 # How deep multiparts are read as a tree: 64 levels. A multipart deeper
 # than this is kept as one part, its body unread, and `defects` says so.

@@ -35,7 +35,7 @@ use json/path/internal/reader
 use json/path/internal/run
 use json/path/internal/samples
 
-## Codes and bounds
+## Codes
 
 # The code of a query that is not one, of a location that is not a
 # normalized path, and of a `select_one` that finds several values: `parse`,
@@ -46,6 +46,8 @@ constant INVALID: str
 # The code of a `select_one` that finds nothing.
 constant NOT_FOUND: str
     "not_found"
+
+## Bounds
 
 # The deepest a query nests filters inside filters, queries inside a
 # function's arguments, and parentheses, counted together; `parse` refuses a

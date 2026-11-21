@@ -35,6 +35,11 @@
 # `permission` (a server asks for authorization: `Client.denied` holds its
 # answer), `unsupported` (something this package does not do), and as
 # `jsonrpc`, `http` and `io` fail: `closed`, `limit`, `timeout`, `stopped`.
+#
+# Not written yet, each a `pending` block of its ledger: a client's subscription
+# over Streamable HTTP: a POST whose event stream stays open; the handshake of
+# 2025-11-25 and before, spoken beside this revision by a dual-era server or
+# client; the tasks extension, `io.modelcontextprotocol/tasks`.
 
 use bytes
 use containers/deque

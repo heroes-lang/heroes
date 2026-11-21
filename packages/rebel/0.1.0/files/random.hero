@@ -23,6 +23,9 @@
 # It fails with `invalid` where a list, weights or a seed cannot be drawn
 # from, and the functions that read the system's generator with the codes of
 # `os.random_bytes`.
+#
+# Not written yet, each a `pending` block of its ledger: numbers drawn by a
+# distribution other than the uniform one.
 
 use os
 use random/internal/chacha

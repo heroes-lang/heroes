@@ -328,3 +328,11 @@ historian start from). Finding 4 is the coordinator's answer on the bound, with 
 
 Finished 2026-11-19 at 15:14 CET (`date`), begun at 14:54; no seat report stood in `252-reports/`, and the
 blind area held no `run.json`, no `run.log` and no `s/preflight/` when I last listed it.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/252-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out. `coord/blindtest/`, the coordinator's preflight of a blind session, is in no archive and
+is gone.

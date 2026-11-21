@@ -572,3 +572,10 @@ kept in a per-thread chain the C frame cannot break, which is a cost on every ca
 - **No paid run, no GitHub write, no commit, no sub-agent**; containers `fp-253-0`, `fp-253-1` and
   `fp-253-2` stopped and removed (`docker ps -a --filter name=fp-253`: none), no process of mine left
   (`pgrep -fl 253-ffi-pragmatist`: none). Finished 17:28 CET (`date`).
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/253-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

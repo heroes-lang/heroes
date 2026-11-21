@@ -37,6 +37,14 @@
 # `limit` (a text past `Limits`), `not_found` (no operation of that name),
 # `unsupported` (an HTTP method or a media type refused), `failed` (an answer
 # over HTTP whose status is not a success).
+#
+# Not written yet, each a `pending` block of its ledger: a document's text with
+# every ignored character a parser may lose left out; the changes from one
+# schema to another that break or endanger a client; a schema with its types,
+# fields and values in the order of their names; a schema coordinate
+# (`Type.field(arg:)`) read and resolved; a subscription's results sent as
+# server-sent events; a page of GraphiQL or another explorer that sends queries
+# to the server.
 
 use bytes
 use errors as failures

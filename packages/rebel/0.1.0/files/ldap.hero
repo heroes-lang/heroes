@@ -42,6 +42,17 @@
 # ledger says so of each. It fails with `invalid`, `not_text`, `not_found`,
 # `exists`, `not_empty`, `permission`, `closed`, `timeout`, `stopped`,
 # `limit`, `unsupported` and `failed`.
+#
+# Not written yet, each a `pending` block of its ledger: the server's schema
+# read into object classes and attribute types; the password policy's warnings
+# and errors read (draft-behera-ldap-password-policy); content synchronisation
+# and persistent search (RFC 4533, draft-ietf-ldapext-psearch, Active
+# Directory's DirSync and notification); Active Directory's and eDirectory's own
+# controls: shown deleted, security descriptor flags, link TTL, extended DN,
+# domain scope, VLV, ASQ, quota, cross-domain move, verify name, lazy commit,
+# permissive modify; a password hashed as directories store it: {SHA}, {SSHA},
+# {SHA256} and the others; a postal address's lines read and written as the
+# directory escapes them (RFC 4517 § 3.3.28).
 
 use asn1
 use bytes

@@ -148,3 +148,10 @@ residue, in words the author can read beside route K (249's R4, `docs/panel/249-
 it needs a spec sentence, a new or widened diagnostic, new refusal words or a change a binding's author
 must learn, in those words; the Windows row named owed; every premise of these briefs you found false;
 and a veto, if you cast one, with its program.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/251-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

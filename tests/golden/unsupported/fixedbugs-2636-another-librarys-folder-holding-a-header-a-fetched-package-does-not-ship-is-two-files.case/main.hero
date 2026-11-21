@@ -1,0 +1,20 @@
+# fixedbugs, defect 2636, lane lane-include, 2026-11-21.
+#
+# A program holding by value the record of a fetched package's `pkgconfig`
+# group, whose header, `fq2636.h`, the package does not ship, and binding a
+# library of its own, `aa2636`, whose folder holds a file of that name with
+# another layout. This program's unit searches every folder its groups'
+# answers name, `aa2636`'s first, and reads that file; the package's unit
+# searches its own answer's folder alone and reads the library's. No file of
+# the package's is stood in for, so it is not `shadowed_header`, as it was
+# until the repair: two units read two files of one name for one record, and
+# the member that compares every record a unit spells of another module tells
+# it, naming the two files, never `aa2636.h` as what changes the record.
+use <fq>/fq
+
+extern "aa2636.h" pkgconfig "aa2636"
+    constant AA_V: i64
+
+function main()
+    p: fq.Pair = fq.make(a: 3, b: 4)  #~ ffi_record_two_layouts
+    print(fq.scaled(p) + AA_V)

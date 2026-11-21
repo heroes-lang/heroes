@@ -348,3 +348,10 @@ file), and `git log -S'exponent' 181555e9a -- spec/heroes-spec.md` printing `d06
 No budget veto: the largest arm, 11,581 real, and every arm together, 11,842 (11,902 with the FFI floor),
 stand under 16,384. Report closed 16:21 CET (`date`); nothing in it was pasted into the tree, nothing
 committed, no paid run but the thirteen refreshes.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/252-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

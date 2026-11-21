@@ -474,3 +474,10 @@ Finished 2026-11-19 at 18:08 CET (`date`), begun at 17:34. One stage 2 built
 `pgrep` of my folders empty after; no file written outside `.claude/worktrees/rebel-scratch/252-critic/` but
 this report; no paid run, no credential printed, no GitHub write, no sub-agent, no commit; the transcripts
 under `home/` not read.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/252-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

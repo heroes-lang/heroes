@@ -17,6 +17,10 @@
 # below 0 or not below the size, and `unsupported` where a Markdown heading
 # stands where only `markdown`'s positions could place it, which it does not
 # give.
+#
+# Not written yet, each a `pending` block of its ledger: separators given as
+# regular expressions; only some levels of headings cutting a document; an HTML
+# page cut at its headings and sections; a JSON value cut into smaller values.
 
 use chunks/internal/cuts
 use chunks/internal/headings

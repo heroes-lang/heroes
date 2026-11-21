@@ -26,6 +26,10 @@
 # arguments are not what the declaration reads, `not_found` where a value
 # asked for was not given and has no default, and `not_text` where an argument
 # of the program is not UTF-8.
+#
+# Not written yet, each a `pending` block of its ledger: completions for Elvish
+# and PowerShell, and values hinted as directories, hosts, users, commands or
+# addresses; a manual page in roff made from the declaration.
 
 use flags/internal/answer
 use flags/internal/complete

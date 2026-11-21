@@ -10,6 +10,11 @@
 # built-ins `len`, `push` and `slice` measure, grow and cut it, and a stream is
 # the package `io`'s. Every result is a new list, and none reaches into the
 # list it was made from.
+#
+# Not written yet, each a `pending` block of its ledger: bytes with each byte
+# looked up in a table of 256, some removed; bytes as base 32 and back, in its
+# two alphabets; bytes as base 85 and back, in its three forms; bytes as a line
+# of uuencode and back; bytes as quoted-printable and back.
 
 use bytes/internal/ascii
 use bytes/internal/automaton

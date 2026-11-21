@@ -71,6 +71,14 @@
 # every other, a deadlock (40P01) and a serialization failure (40001) among
 # them. A failure the database calls `FATAL` ends the connection: every
 # later call fails `closed`.
+#
+# Not written yet, each a `pending` block of its ledger: a connection's options
+# read from libpq's `key=value` text; SCRAM-SHA-256-PLUS, the login bound to the
+# TLS connection; a connection through a Unix socket's folder; several hosts
+# tried in turn; rows read a few at a time, a large answer never held whole; the
+# several answers of one request; a running statement cancelled from another
+# thread; notifications of LISTEN and NOTIFY; rows copied in bulk with COPY; an
+# array value of a column or a parameter.
 
 use io
 use net

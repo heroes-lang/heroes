@@ -25,6 +25,7 @@
 # repair is a module moved or a header named elsewhere, never an edit of one
 # line.
 
+use cli/agreed_files
 use cli/agreed_layout
 use cli/clang_told
 use cli/package_units
@@ -59,8 +60,16 @@ function in_module(a: agreed_layout.Asking, tried: agreed_layout.Tried, module: 
     )
     own = agreed_layout.own_headers(a, component: module)
     apart: [str] @= []
+    memo: {str: str} @= {}
 
     for decl in records
+        # Two files of the header's name are told as two files, never as a
+        # header read before it changing one (defect 2636).
+        files = agreed_files.two_files(a, reader: reader, module: module, decl: decl, @memo)
+
+        if files.len() > 0
+            d.notes @ d.notes.push(files)
+            continue
         causes = cause_of(a, tried: tried, decl: decl)
         owns: [str] @= []
 

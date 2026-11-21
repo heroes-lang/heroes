@@ -1,0 +1,191 @@
+# Two rules of README § A7 over a face's source and its ledger (the coherence
+# review's D10, adopted 2026-11-19), which `heroes doc` cannot be asked since
+# it prints neither a face's `##` headings nor its ledger:
+#
+#   codes     a code constant of a face that does not stand under the heading
+#             `## Codes`: a `str` constant named as a code of README § A4 in
+#             capitals (`package_codes.CLOSED`), its value that code, written
+#             as the literal or as another module's constant (`codes.NOT_FOUND`)
+#   pending   a face whose module comment's last paragraph is not the sentence
+#             its ledger's `pending` blocks make, ``Not written yet, each a
+#             `pending` block of its ledger: <what>; <what>.``, each `<what>` a
+#             block's words after its id, in the ledger's order; or a face
+#             whose ledger holds none and whose comment holds the sentence
+#
+# The sentence is compared whole, its lines joined by one space, so a block
+# done, added or reworded in the ledger moves the face's comment in the same
+# change, which is what makes the comment a claim that can fail (README § A8).
+
+use package_codes
+use rebel_ledgers
+use strings
+
+# The words the sentence of what is pending opens with.
+constant OPENING: str
+    "Not written yet, each a `pending` block of its ledger: "
+
+# One finding: the face, the rule, the name it is about, and what it says.
+record Headed
+    face: str
+    line: i64
+    rule: str
+    name: str
+    said: str
+
+# What the review keeps a finding under.
+function key(h: Headed) -> str
+    return h.face + " " + h.rule + " " + h.name
+
+function told(h: Headed) -> str
+    return h.face + ".hero:" + h.line.to_str() + ": " + h.rule + ": " + h.said
+
+# The code constants of a face's `text` that stand under no `## Codes`.
+function misplaced(face: str, text: str) -> [Headed]
+    out: [Headed] @= []
+    rows = strings.lines(text)
+    heading: str @= "no heading"
+
+    for at in range(from: 0, to: rows.len())
+        if strings.has_prefix(s: rows[at], prefix: "## ")
+            heading @ rows[at].slice(from: 3, to: rows[at].len())
+            continue
+        name = code_constant(rows: rows, at: at)
+
+        if name.len() > 0 && heading != "Codes"
+            out @ out.push(
+                Headed(face: face, line: at + 1, rule: "codes", name: name, said: "`" + name + "`, a code of README § A4, stands under `## " + heading + "`, and every code of a face stands under `## Codes` (README § A7)")
+            )
+
+    return out
+
+# The name of the code constant declared at `rows[at]`, or "" where none is:
+# a `str` constant named as a code of README § A4 in capitals, its value that
+# code, as the literal or as another module's constant of the same name
+# (`codes.NOT_FOUND`). A word of a protocol that reads like a code,
+# `STATUS_FAILED = "failed"`, is no code.
+function code_constant(rows: [str], at: i64) -> str
+    row = rows[at]
+
+    if !strings.has_prefix(s: row, prefix: "constant ") || !strings.has_suffix(s: row, suffix: ": str") || at + 1 >= rows.len()
+        return ""
+    name = row.slice(from: 9, to: row.len() - 5)
+    code = code_named(name)
+
+    if code.len() == 0
+        return ""
+    value = strings.trimmed(rows[at + 1])
+
+    if value == "\"" + code + "\"" || strings.has_suffix(s: value, suffix: "." + name)
+        return name
+    return ""
+
+# The code of README § A4 `name` writes in capitals, `not_found` for
+# `NOT_FOUND`, or "" where it writes none.
+function code_named(name: str) -> str
+    for code in package_codes.CLOSED
+        if code.len() == name.len()
+            same: bool @= true
+
+            for at in range(from: 0, to: name.len())
+                mine = to_i64(name[at]).must()
+                theirs = to_i64(code[at]).must()
+
+                if mine != theirs && mine + 32 != theirs
+                    same @ false
+
+            if same
+                return code
+
+    return ""
+
+# The sentence a ledger's `pending` blocks make, or "" where it holds none.
+function pending_sentence(blocks: [rebel_ledgers.Block]) -> str
+    whats: [str] @= []
+
+    for b in blocks
+        if strings.has_prefix(s: b.heroes, prefix: "pending")
+            whats @ whats.push(b.what)
+
+    if whats.len() == 0
+        return ""
+    return OPENING + whats.join("; ") + "."
+
+# The last paragraph of the comment `text` opens with, its lines joined by one
+# space, and the line it begins on.
+record Paragraph
+    text: str
+    line: i64
+
+function closing_paragraph(text: str) -> Paragraph
+    rows = strings.lines(text)
+    words: [str] @= []
+    begins: i64 @= 0
+
+    for at in range(from: 0, to: rows.len())
+        if !strings.has_prefix(s: rows[at], prefix: "#")
+            break
+        rest = strings.trimmed(rows[at].slice(from: 1, to: rows[at].len()))
+
+        if rest.len() == 0
+            words @ []
+            begins @ 0
+            continue
+
+        if begins == 0
+            begins @ at + 1
+        words @ words.push(rest)
+
+    return Paragraph(text: words.join(" "), line: begins)
+
+# Whether a face's comment, `text` its source, says what its ledger's blocks
+# leave pending, in the sentence they make; a finding where it does not.
+function unsaid(face: str, text: str, blocks: [rebel_ledgers.Block]) -> [Headed]
+    owed = pending_sentence(blocks)
+    last = closing_paragraph(text)
+    out: [Headed] @= []
+
+    if owed.len() > 0 && last.text != owed
+        out @ out.push(
+            Headed(face: face, line: last.line, rule: "pending", name: "", said: "its ledger holds `pending` blocks, so the module comment's last paragraph reads, as one sentence (README § A7): " + owed)
+        )
+
+    if owed.len() == 0 && strings.has_prefix(s: last.text, prefix: OPENING)
+        out @ out.push(
+            Headed(face: face, line: last.line, rule: "pending", name: "", said: "its ledger holds no `pending` block, and the module comment still says what is not written yet: take the paragraph out")
+        )
+
+    return out
+
+## Tests
+
+# The planted witnesses: a code under another heading, a code by another
+# module's constant under no heading, a limit and a code under `## Codes`
+# that pass.
+test "a code constant outside `## Codes` is told, by its literal or its name"
+    text = "# F.\n\nconstant NOT_FOUND: str\n    codes.NOT_FOUND\n\n## Codes\n\nconstant INVALID: str\n    \"invalid\"\n\nconstant LABEL: str\n    \"TransientError\"\n\n## Codes and limits\n\nconstant LIMIT: str\n    \"limit\"\n\nconstant MOST: i64\n    10\n\n## The API\n\nconstant STATUS_FAILED: str\n    \"failed\"\n"
+    found = misplaced(face: "f", text: text)
+    assert found.len() == 2
+    assert key(found[0]) == "f codes NOT_FOUND" && found[0].line == 3
+    assert code_named("NOT_A_DIRECTORY") == "not_a_directory" && code_named("STATUS_FAILED") == ""
+    assert told(found[1]) == "f.hero:16: codes: `LIMIT`, a code of README § A4, stands under `## Codes and limits`, and every code of a face stands under `## Codes` (README § A7)"
+
+# The planted witnesses: the sentence missing, the sentence stale, the
+# sentence where nothing is pending; and the sentence as the ledger makes it,
+# across two lines, passes.
+test "the module comment's last paragraph is the sentence the ledger's pending blocks make"
+    blocks = rebel_ledgers.blocks_of(
+        package: "f",
+        text: "capability f/one  the first thing\n  heroes  f.one\n\ncapability f/two  a second thing, done later\n  heroes  pending: a reason\n\ncapability f/three  the third\n  heroes  pending\n"
+    )
+    owed = "Not written yet, each a `pending` block of its ledger: a second thing, done later; the third."
+    assert pending_sentence(blocks) == owed
+    good = "# F does things.\n#\n# Not written yet, each a `pending` block of its ledger: a second thing,\n# done later; the third.\n\nuse x\n"
+    assert unsaid(face: "f", text: good, blocks: blocks).len() == 0
+    assert closing_paragraph(good).line == 3
+    silent = unsaid(face: "f", text: "# F does things.\n\nuse x\n", blocks: blocks)
+    assert silent.len() == 1 && key(silent[0]) == "f pending "
+    stale = "# F.\n#\n# Not written yet, each a `pending` block of its ledger: the third.\n"
+    assert unsaid(face: "f", text: stale, blocks: blocks).len() == 1
+    done = rebel_ledgers.blocks_of(package: "f", text: "capability f/one  the first thing\n  heroes  f.one\n")
+    assert unsaid(face: "f", text: stale, blocks: done)[0].said == "its ledger holds no `pending` block, and the module comment still says what is not written yet: take the paragraph out"
+    assert unsaid(face: "f", text: "# F.\n", blocks: done).len() == 0

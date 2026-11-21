@@ -45,7 +45,7 @@ use containers/ordered/internal/steps
 use containers/ordered/internal/tree
 use containers/ordered/internal/walk
 
-## The codes
+## Codes
 
 # The code of a search that found nothing, which every function of this
 # package whose `Fails` names `not_found` answers.

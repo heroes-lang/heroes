@@ -1,10 +1,14 @@
 # The known answers `crypto/keypairs` is held to: RFC 8032 § 7.1's first three
 # Ed25519 tests, RFC 7748 § 6.1's X25519 exchange, and cases of Wycheproof's
-# files (the C2SP repository's `testvectors_v1`), fetched 2026-11-17 into the
-# scratch folder and run there whole through the member's C probe (2,724
-# cases of signatures, agreement and OAEP on Linux arm64, every applicable
-# one on macOS, 0 failed). The few here are the package's own tests on every
-# platform, a kind the platform lacks passed over.
+# files (the C2SP repository's `testvectors_v1`). Those files were fetched on
+# 2026-11-17 into the scratch folder and run there whole through the member's
+# C probe: 2,724 cases of signatures, agreement and OAEP on Linux arm64, 0
+# failed, and on macOS the kinds its system then offered, Ed25519 and X25519
+# not among them. Since step 69a (2026-11-20) macOS signs by Ed25519 and agrees
+# by X25519 through Monocypher, and of those two kinds only the cases held here
+# have run there: RFC 8032's TEST 1 to 3, Wycheproof's ed25519 case 10 and RFC
+# 7748's exchange. The few here are the package's own tests on every platform,
+# a kind the platform lacks passed over.
 
 use bytes
 use crypto/keypairs/internal/forms

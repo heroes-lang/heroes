@@ -29,6 +29,14 @@
 # made here from a value, `append_child`, `insert_before` and `insert_after`
 # answering its number, where `html`'s functions of the same names move a
 # node that stands already.
+#
+# Not written yet, each a `pending` block of its ledger: a function asked for
+# the destination of a reference no definition names; a text read as inlines
+# alone, no blocks; every line ending written as a hard break; straight quotes,
+# `--` and `...` written as typographic ones; footnote references and
+# definitions; an `id` for each heading, from its text; definition lists; a
+# metadata block before the document; math between dollars; where each node
+# stands in the text, by line and column.
 
 use html
 use markdown/internal/examples

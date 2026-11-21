@@ -20,6 +20,9 @@
 #
 # It fails with `invalid`, `closed`, `not_found`, `limit`, `unsupported`,
 # `stopped` and `failed` (README § A4).
+#
+# Not written yet, each a `pending` block of its ledger: a wait woken by another
+# thread of the program, for a reason of its own.
 
 use io
 use net

@@ -22,6 +22,13 @@
 # It aborts where a caller breaks a precondition the doc comment names: a
 # negative context, a range outside its list, `close_matches` asked for no
 # match or a cutoff outside 0 to 1.
+#
+# Not written yet, each a `pending` block of its ledger: a time after which a
+# comparison stops and answers a script that is not the shortest; the words or
+# characters that changed inside changed lines; a script made easier to read by
+# moving and merging its edits; a unified difference read back and applied to a
+# text, exactly or near its place; elements a program marks as junk, which start
+# no match.
 
 use diff/internal/myers
 use diff/internal/output

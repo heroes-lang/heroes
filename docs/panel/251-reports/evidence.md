@@ -176,3 +176,10 @@ The `sed` is needed. Each diff's `---` line names the frozen commit where `diffs
 files new in `251-critic/work2/c53/5c5e6f811/packages` at that shorter path instead. What the
 rebuild cannot give back is what the archive left out: the binaries (the 10 the tree diffs name
 among them), the files of 2 MiB or more, and the folders left out by name.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/251-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

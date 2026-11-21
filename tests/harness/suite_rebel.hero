@@ -23,6 +23,12 @@
 #              (`rebel_bodies.hero`)
 #   one-layer  two packages of one layer that hold a body or a binding of C
 #              in common (`rebel_bodies.hero`)
+#   uses       a row of README § A1 whose column "may use" is not what its
+#              package's `use` lines name (`rebel_layers.hero`)
+#   docs       what `heroes doc` prints of every face and floor, read for
+#              README § A7's rules (`rebel_docs.hero`, the review's D11)
+#   headings   a code outside `## Codes`, and a module comment that does not
+#              say what its ledger leaves pending (`rebel_headings.hero`, D10)
 #
 # **A finding is repaired or kept, never ignored.** The review that built these
 # repaired what was local and sure, and kept the rest in `rebel_kept.hero`, each
@@ -33,13 +39,16 @@
 # every finding, kept or not, by instrument, and the review's record, what each
 # found and what moved, is
 # `docs/measurements/062-the-coherence-review-of-rebel-282-findings-of-ten-checks-22-repaired-in-four-kinds-261-kept-for-the-readers.md`.
-# Reads files and runs no compiler.
+# Reads files, and runs the compiler it judges for one thing: `heroes doc` over
+# every face and floor, for the `docs` check (since 2026-11-21).
 
 use floors
 use package_face
 use rebel_bodies
 use rebel_codes
+use rebel_docs
 use rebel_faces
+use rebel_headings
 use rebel_kept
 use rebel_layers
 use rebel_ledgers
@@ -52,19 +61,27 @@ use report
 # day**, step 56d deleting the three copies of the JSON equality it made one
 # function of `json`'s face: a floor follows a deletion made on purpose in the
 # commit that makes it, which says so, and never a walk that lost the tree.
+# **1,508 on 2026-11-21**, raised by step 86g over the D wave's four packages
+# and their private modules (steps 82a to 82e).
 constant LEAST_MODULES: i64
-    1492
+    1508
 
 # The floor of the ledgers read: **144 on 2026-11-19**, one per row of README § A1;
-# **145 the same day**, step 56e giving `tokenizer/tables` its own.
+# **145 the same day**, step 56e giving `tokenizer/tables` its own; **149 on
+# 2026-11-21**, the ledgers of `math/complex`, `scram`, `retries` and `otlp`.
 constant LEAST_LEDGERS: i64
-    145
+    149
 
 # The floor of README § A1's rows: **144 on 2026-11-19**, the page's *a hundred and
 # forty-four packages*; **145 the same day**, step 56e's row of
-# `tokenizer/tables`.
+# `tokenizer/tables`; **149 on 2026-11-21**, the D wave's four rows.
 constant LEAST_ROWS: i64
-    145
+    149
+
+# The floor of the references `heroes doc` printed for the `docs` check:
+# **175 on 2026-11-21**, 152 faces and 23 floors.
+constant LEAST_REFERENCES: i64
+    175
 
 # One finding of one instrument: the check, what the review keeps it under, and
 # what it says, its file and line first.
@@ -73,14 +90,18 @@ record Finding
     key: str
     said: str
 
-# What the tree holds, read once for every instrument.
+# What the tree holds, read once for every instrument: the source's root, its
+# modules and ledgers, README § A1's rows and their column "may use", and what
+# `heroes doc` printed of every face and floor.
 record Read
     root: str
     modules: [rebel_tree.Module]
     ledgers: [rebel_tree.Ledger]
     rows: [rebel_tree.Row]
+    named: {str: [str]}
+    references: [rebel_docs.Printed]
 
-function read_tree(scratch: str) -> Read?
+function read_tree(scratch: str, compiler: str) -> Read?
     root = rebel_tree.source_root(scratch)?
     modules = rebel_tree.modules(scratch: scratch, root: root)?
     ledgers = rebel_tree.ledgers(scratch: scratch, root: root)?
@@ -91,7 +112,10 @@ function read_tree(scratch: str) -> Read?
             code: "unreadable",
             msg: "cannot read " + rebel_tree.RULES + ", whose README § A1 is the table of packages"
         )
-    return ok(Read(root: root, modules: modules, ledgers: ledgers, rows: rebel_tree.rows_of(rules.must())))
+    references = rebel_docs.printed(scratch: scratch, compiler: compiler, root: root, modules: modules)?
+    return ok(
+        Read(root: root, modules: modules, ledgers: ledgers, rows: rebel_tree.rows_of(rules.must()), named: rebel_tree.named_uses(rules.must()), references: references)
+    )
 
 # Every finding of every instrument over the tree read, in the order of the
 # checks above.
@@ -171,6 +195,38 @@ function findings(tree: Read) -> [Finding]
     for p in rebel_bodies.one_layer(shared_bodies: held, bound: bound, layers: by)
         out @ out.push(Finding(check: "one-layer", key: rebel_bodies.pair_key(p), said: rebel_bodies.pair_told(p)))
 
+    for one in rebel_layers.undeclared(rows: tree.rows, named: tree.named, modules: tree.modules)
+        out @ out.push(Finding(check: "uses", key: one.key, said: rebel_layers.told(one)))
+
+    for one in rebel_docs.findings(tree.references)
+        out @ out.push(Finding(check: "docs", key: rebel_docs.key(one), said: rebel_docs.told(one)))
+
+    for one in headed(tree)
+        out @ out.push(Finding(check: "headings", key: rebel_headings.key(one), said: rebel_headings.told(one)))
+
+    return out
+
+# The `headings` check's findings: every face's codes, and its comment against
+# its ledger's `pending` blocks.
+function headed(tree: Read) -> [rebel_headings.Headed]
+    out: [rebel_headings.Headed] @= []
+    ledgers: {str: str} @= {}
+
+    for one in tree.ledgers
+        ledgers[one.package] @ one.text
+
+    for m in tree.modules
+        if !rebel_tree.is_face(m.path)
+            continue
+
+        for one in rebel_headings.misplaced(face: m.path, text: m.text)
+            out @ out.push(one)
+
+        blocks = rebel_ledgers.blocks_of(package: m.path, text: ledgers[m.path].default(""))
+
+        for one in rebel_headings.unsaid(face: m.path, text: m.text, blocks: blocks)
+            out @ out.push(one)
+
     return out
 
 # A module's package for the instruments that compare packages: its row's,
@@ -203,11 +259,14 @@ constant CHECKS: [str]
         "unlisted"
         "bodies"
         "one-layer"
+        "uses"
+        "docs"
+        "headings"
     ]
 
-function run_all(scratch: str) -> report.Report?
+function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @= report.empty()
-    tree = read_tree(scratch)?
+    tree = read_tree(scratch: scratch, compiler: compiler)?
     floors.check(
         @r,
         label: "rebel",
@@ -222,6 +281,13 @@ function run_all(scratch: str) -> report.Report?
         found: tree.rows.len(),
         floor: LEAST_ROWS,
         what: "rows of README § A1 in " + rebel_tree.RULES
+    )
+    floors.check(
+        @r,
+        label: "rebel",
+        found: tree.references.len(),
+        floor: LEAST_REFERENCES,
+        what: "faces and floors `heroes doc` printed"
     )
     judged(@r, found: findings(tree), keeping: rebel_kept.kept())
     return ok(r)

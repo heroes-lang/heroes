@@ -713,3 +713,13 @@ and its repair, in the critic's order:
 Written by the coordinator's brief-writer, its first clock reading 09:08 (`uptime`) and its last 09:31
 CET on 2026-11-19 (`date`); repaired after the critic's first reading until 10:05 (`date`). No seat had
 started.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/251-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out. `p251-scratch/ev249/` is read from
+`docs/panel/249-reports/evidence.tar.xz`, whose 3,232 members are the 3,232 files named above. The routes under
+`p251-scratch/briefs/inputs/routes/` stand in the 251 archive under `251-briefwriter/routes/`. `p251-scratch/briefs/linux/probe4-*.log`, named here as carried, is in no archive and is gone. `p252-scratch` is in no archive and is gone; what a seat copied from it into its own folder
+stands in that sitting's archive with the folder.

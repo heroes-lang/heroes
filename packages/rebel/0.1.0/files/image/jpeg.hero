@@ -18,6 +18,11 @@
 #
 # It fails with `invalid`, `limit` and `unsupported`, whose constants are
 # `image`'s, and `orientation_of` fails `not_found`, this package's own.
+#
+# Not written yet, each a `pending` block of its ledger: every EXIF tag read;
+# progressive, optimized, restart intervals, custom tables, metadata written;
+# CMYK and YCCK files read; arithmetic, lossless, hierarchical and 12-bit files;
+# a file decoded at a fraction of its size, faster.
 
 use bytes
 use image

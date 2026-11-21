@@ -513,3 +513,10 @@ containers `cr-253-1` and `cr-253-2` gone (`docker ps --filter name=cr-253`: non
 **Then the rest**: the grading checks (8), the `CLAUDE_CODE_TMPDIR` answer found in the area (9), the name's
 count with two frozen files (11), `time -l`'s parent-only count (14), the premises judged (18), and nine
 smaller things (19).
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/253-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

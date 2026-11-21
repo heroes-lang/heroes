@@ -10,6 +10,10 @@
 # so).
 #
 # Nothing here fails: a tag CLDR knows nothing of answers itself.
+#
+# Not written yet, each a `pending` block of its ledger: the best of a program's
+# languages for a reader, by CLDR's language matching; whether each subtag is a
+# valid code.
 
 use i18n
 use i18n/locales/internal/subtags

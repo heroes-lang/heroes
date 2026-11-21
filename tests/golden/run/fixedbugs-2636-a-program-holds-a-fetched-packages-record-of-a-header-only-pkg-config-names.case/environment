@@ -1,0 +1,3 @@
+# The case's own library, found by pkg-config alone.
+PKG_CONFIG_PATH=tests/golden/run/fixedbugs-2636-a-program-holds-a-fetched-packages-record-of-a-header-only-pkg-config-names.case/pc
+PKG_CONFIG_LIBDIR=tests/golden/run/fixedbugs-2636-a-program-holds-a-fetched-packages-record-of-a-header-only-pkg-config-names.case/pc

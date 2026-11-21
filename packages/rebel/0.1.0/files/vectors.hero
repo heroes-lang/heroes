@@ -17,6 +17,9 @@
 # infinity where they are ordered, or a setting is out of its range;
 # `not_found`, where an id is not in an index; and `exists`, where an id is
 # already there.
+#
+# Not written yet, each a `pending` block of its ledger: a vector held as its
+# components that are not zero.
 
 use math
 use vectors/internal/arith

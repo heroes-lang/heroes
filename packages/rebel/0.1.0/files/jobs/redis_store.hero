@@ -22,6 +22,9 @@
 # It fails with `jobs`'s codes, and with `redis`'s, handed on from the
 # client, where the server refuses or the connection is lost: `closed`,
 # `timeout`, `permission` where the server asks for a password.
+#
+# Not written yet, each a `pending` block of its ledger: a worker woken by a
+# blocking pop or a message when a job comes.
 
 use jobs
 use jobs/internal/limits

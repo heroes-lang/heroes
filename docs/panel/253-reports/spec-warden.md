@@ -194,3 +194,10 @@ and the example's entry `[dependencies.kit]`, `version = "0.1.0"`, `packages = [
 7. **Not the brief's, the tree's**: `spec-shape.md`'s *"A name the compiler offers appears once in the `Built-ins:` sentence"* is not held literally today (`read_file`, `exit`, `end_lease` stand outside it); and the frozen `ROADMAP.md` has no M-rebel-library row though decision 4 says *"A new row, at once"*.
 
 Written by the spec-warden, 15:50 to 16:05 CET 2026-11-19 (`date`). Seven refreshes spent, every one logged; no other paid call; nothing read under the blind area.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/253-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

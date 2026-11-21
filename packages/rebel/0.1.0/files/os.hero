@@ -10,6 +10,12 @@
 # thread's read is undefined, so no function here sets, removes or clears a
 # variable, and a child is given another environment through `process`. Every
 # answer the system can refuse is a `T?`, and a code says why.
+#
+# Not written yet, each a `pending` block of its ledger: the groups a named user
+# belongs to; the user or the groups the process runs as changed; a limit or a
+# setting of the system asked by its name; the time of each processor apart; the
+# prefix and suffix of a shared library's file; the process's scheduling
+# priority, read or changed; the mask of permissions a new file is made without.
 
 use os/hero_disk
 use os/hero_os
@@ -22,7 +28,7 @@ use os/internal/filled
 use os/internal/opening
 use os/internal/variables
 
-## The codes
+## Codes
 
 # A variable that is not set, or a name the machine does not give.
 constant NOT_FOUND: str

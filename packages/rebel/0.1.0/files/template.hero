@@ -72,7 +72,7 @@ use template/internal/program
 use template/internal/run
 use template/internal/values
 
-## Codes and limits
+## Codes
 
 # The code of a text that is not a template, of a template whose HTML is not
 # what its actions need, and of a value of a kind its place does not take:
@@ -84,6 +84,8 @@ constant INVALID: str
 # is not: `render`, `render_named`, `paths_of`.
 constant NOT_FOUND: str
     "not_found"
+
+## Limits and the refused value
 
 # The deepest `include` runs one inside another; past it `render` fails
 # `invalid`, so that a template that includes itself without end stops.

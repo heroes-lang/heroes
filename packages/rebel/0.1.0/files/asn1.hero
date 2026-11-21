@@ -32,6 +32,11 @@
 # It does not read or write a schema in ASN.1's notation, write BER or CER,
 # or read PEM (`pem`) or a certificate (`x509`). It fails with `invalid`,
 # `not_text` and `does_not_fit`.
+#
+# Not written yet, each a `pending` block of its ledger: X.680's types of 2008
+# read into values: TIME, DATE, TIME-OF-DAY, DATE-TIME, DURATION, OID-IRI,
+# RELATIVE-OID-IRI; a value written as text for a person, as OpenSSL's
+# `asn1parse` prints it.
 
 use asn1/internal/header
 use asn1/internal/reals

@@ -16,6 +16,9 @@
 # never reads past its end.
 #
 # It fails with `invalid`, `limit` and `unsupported`.
+#
+# Not written yet, each a `pending` block of its ledger: a GIF's comment
+# extension read and written.
 
 use bytes
 use image

@@ -89,6 +89,17 @@
 # 22, 23 and 42, a syntax error among them, and `failed` for every other, a
 # deadlock (1213) among them. A `closed` failure ends the connection: every
 # later call fails `closed`.
+#
+# Not written yet, each a `pending` block of its ledger: a connection's options
+# written back as a URL; the password encrypted to the server's RSA key where
+# the connection has no TLS; MariaDB's own plugins, client_ed25519 and parsec;
+# TLS to MySQL on macOS; a client's own certificate presented to the server;
+# rows read one at a time as the server sends them, never all held; every result
+# of a statement that answers several, as `CALL` does; a parameter's bytes sent
+# in pieces before the statement runs; the rows a statement matched counted,
+# rather than those it changed; a column's table named beside its name; the
+# connection's bytes compressed; a connection over a Unix socket or a Windows
+# named pipe.
 
 use bytes
 use net

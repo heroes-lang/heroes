@@ -1,0 +1,10 @@
+error[ffi_record_two_layouts]: `Pair` is 24 bytes, at a multiple of 8, where module `main` reads `fq2636.h` after `aa2636.h`, and 16 bytes, at a multiple of 8, where module `<fq>/fq` reads it
+  at tests/golden/unsupported/fixedbugs-2636-another-librarys-folder-holding-a-header-a-fetched-package-does-not-ship-is-two-files.case/main.hero:19:8
+     |
+  19 |     p: fq.Pair = fq.make(a: 3, b: 4)  #~ ffi_record_two_layouts
+     |        ^^^^^^^
+  note: `Pair.a` is at byte 8 where module `main` reads it, and at byte 0 where module `<fq>/fq` does
+  note: `Pair.b` is at byte 0 where module `main` reads it, and at byte 8 where module `<fq>/fq` does
+  note: `Pair` is bound at `tests/golden/unsupported/fixedbugs-2636-another-librarys-folder-holding-a-header-a-fetched-package-does-not-ship-is-two-files.case/heroes.packages/fq@1.0.0-c30a906987ca8310/fq.hero:5:12` and read as module `<fq>/fq` reads `fq2636.h`: a change to its fields changes neither reading, so the binding is not what to change
+  note: a group's `record` is its header's struct as its own module reads it (spec § 13), and a value of `Pair` passes between module `main` and module `<fq>/fq`, so both must read it alike; no order of the headers module `main` reads, nor module `<fq>/fq`'s earlier headers before `fq2636.h`, makes them alike
+  note: module `main` reads `fq2636.h` as `tests/golden/unsupported/fixedbugs-2636-another-librarys-folder-holding-a-header-a-fetched-package-does-not-ship-is-two-files.case/aainc/fq2636.h`, and module `<fq>/fq` reads it as `tests/golden/unsupported/fixedbugs-2636-another-librarys-folder-holding-a-header-a-fetched-package-does-not-ship-is-two-files.case/pcinc/fq2636.h`: two files of one name, not one file read two ways, so what changes the record is the first file, which a folder module `main` searches holds before the second's: rename or move it, or name no such folder for this build

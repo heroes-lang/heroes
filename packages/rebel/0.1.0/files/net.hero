@@ -37,6 +37,9 @@
 # once and be told which is ready (`poll`); a local socket named by a path, or
 # a channel between processes of one machine (`ipc`); HTTP (`http`, over
 # `net` and `tls`).
+#
+# Not written yet, each a `pending` block of its ledger: the usable addresses of
+# a network.
 
 use io
 use net/hero_net

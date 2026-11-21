@@ -411,3 +411,10 @@ and 416 characters, the spec's 492 lines and 29407 bytes, `sources 23c7d2a626b29
 - **Q3**: object, provisional: B +260 real (11644), M +292 (11676), both under the ceiling; unpaid until
   W4 and W7; three text defects first (`spawn_sized` cannot fail, B's `close`, M's UFCS). Veto if W4
   fails for both spellings.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/251-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

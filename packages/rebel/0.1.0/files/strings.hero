@@ -19,6 +19,11 @@
 # and measured or padded in the columns a terminal draws, is
 # `unicode/segment`'s; text put in a normal form, and cased by the rules of
 # one language (Turkish, Azeri, Lithuanian), is `unicode/normalize`'s.
+#
+# Not written yet, each a `pending` block of its ledger: a text in the upper,
+# lower or title case of one language; a slug's letters decomposed first, so
+# that an accent written in its letter's own character is taken away as a mark;
+# a text with what cannot be shown written as escapes.
 
 use strings/internal/automaton
 use strings/internal/bounds

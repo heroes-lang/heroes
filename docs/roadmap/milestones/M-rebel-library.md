@@ -489,6 +489,59 @@ questions take the recommended answer*), **for the author to turn**:
 - **D19**: `regex` stays at its layer (moved to 2, `scanner` and `tokenizer`, which use it, would
   climb with every package above them, for two `pending` classes).
 
+## The author's answer of 2026-11-20, about 20:4x: the review's follow-ups before Rebel 0.1.0
+
+Given in conversation, meant as: *before*. The follow-ups of the nineteen decisions above, the
+renames and reshapes D01 to D09, the documentation's rules D10 to D12 and the packages and layer
+moves D13 to D18, land in this milestone **before Rebel 0.1.0 is published**, not in a release
+after it. They went in three waves, the coordinator's plan of that evening: the splits (steps 82a
+to 82e), the runtime's doors (83a, 83b) and defect 2627 (84a, 84b) together; the renames and the
+spans (85a to 85k, then 88a to 88j), the floors' parameter lines of D12 beside the spans (86a to
+86f); the rules last and alone (86g on). The
+questions the plan put were settled by the batch's rule (`.claude/rules/verification.md` § The
+batch: *a batch's own questions take the recommended answer*), for the author to turn: D18 by the
+route that changes no header (the stop's door bound by a floor of `os`); D07's `0` made in C, the
+doors taking `-1` as no limit so that `0` waits not at all; the new packages named `retries`,
+`scram`, `otlp` and `math/complex`; `mail`'s header pair named `decode_fields` and `encode_fields`;
+and the 25 leftover `plain | secured` links collapsed once `tls.connect` answered a `net.Conn`.
+
+## The author's answer of 2026-11-21, about 11:10: a host and an address are two types (A)
+
+Given in conversation, meant as *A*, to the question D08's last field left: `net.Address` held a
+port beside a flag, `has_port`, and the renames' lane counted `port` read 132 times in 33 files,
+most of them a connection's or a listener's, which always has one, so making it `i64?` would have
+put a `.must()` on every one. Answer *A* **splits the record in two**: `net.Host`, an IPv4 or IPv6
+address with no port, and `net.Address`, a host and a port, always, as Go's `netip.Addr` and
+`netip.AddrPort` and Rust's `IpAddr` and `SocketAddr` part them. Every pure function on addresses
+takes and gives a `Host`; a connection's two ends, a listener's, a datagram's sender and
+`send_to`'s destination are `Address`es; `has_port` and `without_port` are gone. Built at step 88i
+(`836b4c9b3`), with `dns`, `x509`, `http`, `web`, `tls`, `mail/smtp` and `fs/watch` following;
+`examples-rebel/README.md` § A3 names the two types and § A1's table of shared types holds both.
+
+## The author's idea of 2026-11-21, about 15:00: a temporary pipeline that tries every install now
+
+Given in conversation, meant as: *a temporary pipeline that tests every install with a few lines of
+Rebel, so that what would fail fails now*. **The idea is the author's** (`.claude/rules/records.md`
+§ And the record says whose idea it was): the coordinator had listed the first run of Rebel's own
+pipeline, `.github/workflows/rebel.yml`, as the landing's first uncertainty and meant to meet it
+after the push to `main`, since every workflow here runs on a push to `main`, a tag, a pull
+request or a schedule, and `rebel-round`'s pushes had started none. The author allowed the pushes
+of that probe's branch for the lane that holds it.
+
+So a branch of its own, `rebel-ci-probe`, carries a workflow of its own, on that branch alone,
+`.github/workflows/rebel-probe.yml` (written 2026-11-21), which runs on a push to that branch, on `rebel.yml`'s
+four legs: its installs, its SQLite check and its two-stage build word for word as `rebel.yml`'s,
+then one test of each package that reaches an installed library or a new member of C (`sql/sqlite`,
+`tls`, `crypto/seal`, `crypto/keypairs`, `keyring`, `sql/odbc`), each driver also built and run,
+and `heroes doc` over two faces. A repair it finds goes into `rebel.yml` as it is; the branch is
+never merged and is deleted from GitHub once its legs are green. Its runs, read with `gh run list
+--branch rebel-ci-probe` on 2026-11-21 at 17:2x: 44912132270 red on both Linux legs (their
+`/usr/bin/timeout` is not GNU's) and on Windows (vcpkg's `sqlite3.h` includes a header the step had
+not copied), Darwin green; 44913457527 red on Windows alone (`shadowed_header`: the folder
+`--include` named held a `sqlite3.h` standing in for the package's own); 44918720387 green on the
+four legs; 44920689713 green on the four, every probe's test run again under `--sanitize` on both
+Linux legs.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds

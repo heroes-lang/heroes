@@ -571,9 +571,10 @@ function main()
     # Rebel's coherence, measured (M-rebel-library's item 31): the review's
     # instruments over the newest version of `packages/rebel` and the rules
     # page, every finding repaired or kept with its reason in
-    # `rebel_kept.hero`. Reads files and runs no compiler.
+    # `rebel_kept.hero`. Reads files, and runs the compiler for `heroes doc`
+    # over every face and floor (README § A7's check, since 2026-11-21).
     if only == "" || only == "rebel"
-        got = suite_rebel.run_all(scratch)
+        got = suite_rebel.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the rebel suite could not run" + why(got))

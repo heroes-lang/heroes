@@ -24,6 +24,11 @@
 # without end, or read past the input.
 #
 # It fails with `invalid` and `limit`.
+#
+# Not written yet, each a `pending` block of its ledger: the kind of data (text,
+# a font) and an expected size given to the compressor; a dictionary of the
+# caller's own beside the static one; bytes compressed piece by piece, flushed;
+# a stream decompressed piece by piece, or through a stream.
 
 use compress/brotli/internal/decoder
 use compress/brotli/internal/encoder

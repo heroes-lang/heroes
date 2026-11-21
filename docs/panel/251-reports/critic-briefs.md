@@ -319,3 +319,10 @@ free call); 2, 7 and 8 (Q3 priced without its renames, its aliasing value and th
 thread); 1 (a forked-child `sigaction` path no Q1 seat is asked to reach).
 
 Finished 2026-11-19 at 09:51 CET (`date`), begun at 09:34; no seat had started.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/251-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

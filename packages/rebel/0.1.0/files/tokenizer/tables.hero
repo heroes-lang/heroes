@@ -18,6 +18,9 @@
 #
 # A function here fails `not_found` where a name names no encoding carried
 # or a model none known.
+#
+# Not written yet, each a `pending` block of its ledger: tiktoken's older
+# encodings, of GPT-3 and GPT-2.
 
 use tokenizer
 use tokenizer/tables/cl100k_base as cl100k_table

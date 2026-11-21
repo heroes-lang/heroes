@@ -27,6 +27,12 @@
 # the format), `not_found` (no `traceparent` in a request, no member of that
 # key), `failed` (a collector that refused), and, from the network and the
 # clock, the codes of `http.send` and `time.now`.
+#
+# Not written yet, each a `pending` block of its ledger: W3C baggage: key and
+# value pairs carried with a request; a parent-based sampler with its own choice
+# for each kind of parent; a span recorded and not exported; OTLP over gRPC, and
+# OTLP/HTTP's JSON; a resource read from the host, the process and the
+# container.
 
 use bytes
 use http

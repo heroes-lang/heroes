@@ -134,6 +134,77 @@ function rows_of(text: str) -> [Row]
 
     return out
 
+# The packages README § A1's column "may use" names for each row of `text`, the
+# rules page, by the package the row names: the names in backticks of the
+# row's fourth cell, in their order.
+function named_uses(text: str) -> {str: [str]}
+    out: {str: [str]} @= {}
+    inside: bool @= false
+
+    for row in strings.lines(text)
+        if strings.has_prefix(s: row, prefix: "## ")
+            inside @ strings.has_prefix(s: row, prefix: "## A1.")
+            continue
+
+        if !inside || !strings.has_prefix(s: row, prefix: "| ")
+            continue
+        cells = strings.split_on(text: row, byte: '|')
+
+        if cells.len() < 6 || strings.to_number(strings.trimmed(cells[1])).is_err()
+            continue
+        named = strings.trimmed(cells[2])
+
+        if named.len() < 3 || named[0] != '`'
+            continue
+        out[named.slice(from: 1, to: named.len() - 1)] @ quoted(cells[4])
+
+    return out
+
+# The texts in backticks of `cell`, in their order.
+function quoted(cell: str) -> [str]
+    out: [str] @= []
+    pieces = strings.split_on(text: cell, byte: '`')
+
+    for at in range(from: 0, to: pieces.len())
+        if at % 2 == 1 && at + 1 < pieces.len()
+            out @ out.push(pieces[at])
+
+    return out
+
+# The folder whose shared private modules hold the module at `path`
+# (README § A2): `<folder>` where the path is `<folder>/internal/...`, no row
+# is `<folder>` and some row stands under it, `<folder>/<x>`; "" where the path
+# is no such module.
+function shared_folder(rows: [Row], path: str) -> str
+    parts = strings.split_on(text: path, byte: '/')
+
+    for at in range(from: 1, to: parts.len())
+        if parts[at] == "internal"
+            folder = parts.slice(from: 0, to: at).join("/")
+
+            for row in rows
+                if row.package == folder
+                    return ""
+
+            for row in rows
+                if strings.has_prefix(s: row.package, prefix: folder + "/")
+                    return folder
+
+            return ""
+
+    return ""
+
+# The lowest layer of the rows under `folder`, `<folder>/<x>`, where its
+# shared modules stand (README § A2); -1 where no row stands under it.
+function lowest_layer(rows: [Row], folder: str) -> i64
+    least: i64 @= -1
+
+    for row in rows
+        if strings.has_prefix(s: row.package, prefix: folder + "/") && (least < 0 || row.layer < least)
+            least @ row.layer
+
+    return least
+
 # The rows by the package each names.
 function by_package(rows: [Row]) -> {str: Row}
     out: {str: Row} @= {}
@@ -198,6 +269,18 @@ test "the rows of README § A1 are its table's lines, each with its layer and it
     assert rows.len() == 2
     assert rows[0].package == "unicode" && rows[0].layer == 0 && rows[0].line == 7
     assert rows[1].package == "compress/zstd" && rows[1].layer == 2 && rows[1].line == 8
+
+test "the column may use is read by row, and a folder's shared module is found with its lowest layer"
+    text = "## A1. The packages\n\n| layer | package | what | may use | C |\n|---|---|---|---|---|\n| 0 | `containers/deque` | a queue |  |  |\n| 1 | `containers/odd` | odd | `math`, `unicode` | `c.h` |\n| 2 | `json` | JSON | `numbers` |  |\n\n## A2. Files\n"
+    named = named_uses(text)
+    assert named["containers/deque"].must() == [] && named["containers/odd"].must() == ["math", "unicode"]
+    assert named["json"].must() == ["numbers"] && named["c.h"].is_err()
+    rows = rows_of(text)
+    assert shared_folder(rows: rows, path: "containers/internal/codes") == "containers"
+    assert shared_folder(rows: rows, path: "containers/deque/internal/ring") == ""
+    assert shared_folder(rows: rows, path: "json/internal/scan") == ""
+    assert shared_folder(rows: rows, path: "lone/internal/x") == ""
+    assert lowest_layer(rows: rows, folder: "containers") == 0 && lowest_layer(rows: rows, folder: "none") == -1
 
 test "a module's package is the longest row before it, and none where no row is"
     rows = by_package([Row(package: "compress", layer: 3, line: 1), Row(package: "compress/zstd", layer: 2, line: 2)])

@@ -22,11 +22,16 @@
 # It does not sleep, which is `time`'s, nor count processors, which is
 # `os.processor_count`. It fails with `limit`, where the system refuses to
 # start a thread.
+#
+# Not written yet, each a `pending` block of its ledger: whether a thread has
+# ended, asked without waiting for it, or a wait bounded in time.
 
 use threads/hero_os
 use threads/internal/lives
 use threads/internal/pool
 use threads/internal/samples
+
+## Codes
 
 # The code of a thread the system refused to start: `spawn`, `spawn_sized`,
 # `spawn_text`, `run_all` and `run_all_text` fail with it.

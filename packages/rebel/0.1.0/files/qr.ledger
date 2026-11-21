@@ -104,7 +104,7 @@ capability qr/structured-append  one text spread over up to sixteen codes read a
   python  segno.make_sequence
   note    one version for every part, as segno; the parity is the XOR of every byte of the text's UTF-8; each part read back by Core Image with its header, index and parity
 
-capability qr/micro  Micro QR codes, M1 to M4
+capability qr/micro  Micro QR codes, in their four sizes
   heroes  pending
   go      -
   rust    -

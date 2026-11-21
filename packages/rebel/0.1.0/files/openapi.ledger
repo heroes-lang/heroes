@@ -153,7 +153,7 @@ capability document/extensions  `x-` fields on every object that takes them, kep
   note    A Reference object takes no `x-` field, as 3.1's schema says
 
 capability write/json  a document written as JSON: each object's fields in the specification's order, indented or not
-  heroes  openapi.to_json, openapi.format_json, openapi.info_json, openapi.server_json, openapi.tag_json, openapi.external_docs_json, openapi.path_item_json, openapi.operation_json, openapi.parameter_json, openapi.request_body_json, openapi.media_type_json, openapi.encoding_json, openapi.response_json, openapi.header_json, openapi.example_json, openapi.link_json, openapi.callback_json, openapi.components_json, openapi.security_scheme_json, openapi.security_requirement_json
+  heroes  openapi.document_json, openapi.format_json, openapi.info_json, openapi.server_json, openapi.tag_json, openapi.external_docs_json, openapi.path_item_json, openapi.operation_json, openapi.parameter_json, openapi.request_body_json, openapi.media_type_json, openapi.encoding_json, openapi.response_json, openapi.header_json, openapi.example_json, openapi.link_json, openapi.callback_json, openapi.components_json, openapi.security_scheme_json, openapi.security_requirement_json
   go      openapi3.T.MarshalJSON and every type's MarshalJSON, MarshalYAML
   rust    utoipa OpenApi::to_json, to_pretty_json, aide OpenApi (serde)
   python  FastAPI.openapi(), fastapi.openapi.utils.get_openapi
@@ -167,7 +167,7 @@ capability write/yaml  a document written as YAML
   note    Through `yaml`, block style; a status is written as a quoted key, `"200":`
 
 capability read/text  a document read from JSON or YAML text, every object's form checked and its pointer told
-  heroes  openapi.parse, openapi.from_json, openapi.info_of, openapi.server_of, openapi.tag_of, openapi.external_docs_of, openapi.path_item_of, openapi.operation_of, openapi.parameter_of, openapi.request_body_of, openapi.media_type_of, openapi.encoding_of, openapi.response_of, openapi.header_of, openapi.example_of, openapi.link_of, openapi.callback_of, openapi.components_of, openapi.security_scheme_of, openapi.security_requirement_of
+  heroes  openapi.parse, openapi.document_of, openapi.info_of, openapi.server_of, openapi.tag_of, openapi.external_docs_of, openapi.path_item_of, openapi.operation_of, openapi.parameter_of, openapi.request_body_of, openapi.media_type_of, openapi.encoding_of, openapi.response_of, openapi.header_of, openapi.example_of, openapi.link_of, openapi.callback_of, openapi.components_of, openapi.security_scheme_of, openapi.security_requirement_of
   go      openapi3.Loader.LoadFromData, openapi3.T.UnmarshalJSON and every type's UnmarshalJSON, UnmarshalYAML, openapi3.Loader.IsExternalRefsAllowed, openapi3.Loader.Context, openapi3.Loader.ReadFromURIFunc
   rust    utoipa OpenApi::from_json (serde), aide OpenApi (serde)
   python  openapi_core.OpenAPI.from_dict, openapi_spec_validator.shortcuts

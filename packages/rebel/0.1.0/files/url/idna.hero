@@ -14,6 +14,10 @@
 # It fails with `invalid`, a host UTS #46 refuses, the message naming the
 # label, its number and the rule, with the rule's code in UTS #46's test
 # file (`V1`, `B1`, `P4`).
+#
+# Not written yet, each a `pending` block of its ledger: IDNA 2008's own
+# validity for a name being registered: RFC 5892's derived property (PVALID,
+# CONTEXTO, DISALLOWED) and its CONTEXTO rules.
 
 use unicode
 use url/idna/internal/conformance_cases

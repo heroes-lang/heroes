@@ -202,3 +202,10 @@ The `sed` is 251's: each diff's `---` line names the frozen commit where `diffs.
 `253-pack/work/frozen/`, and the `sed` makes it the copy's own path, as the rebuild test ran it
 (Apple's `patch` 2.0-12u11). What the rebuild cannot give back is what the archive left out: the
 blind areas' `home/`, the binaries, the files of 2 MiB or more, and the folders left out by name.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/253-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

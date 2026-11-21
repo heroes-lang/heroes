@@ -39,6 +39,10 @@
 # `unsupported`. A failure the server answered carries its status, type,
 # code, request id and advised wait in its message, which `failure_of`
 # reads back.
+#
+# Not written yet, each a `pending` block of its ledger: completions the API
+# stored, listed, read, updated, deleted; a response's input items listed, a
+# conversation compacted, a stored response streamed again.
 
 use http
 use json
