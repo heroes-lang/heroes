@@ -1,11 +1,10 @@
 # UTS #46's validity criteria for one label (§ 4.1, Unicode 17.0.0), RFC
-# 5892's ContextJ rules and RFC 5893's bidi rule, and UAX #15's quick check
-# for NFC, which stands in for the normalization that waits for
-# `unicode/normalize`: a text it answers yes is in NFC already, a label it
-# answers no is not, and where it answers maybe the caller says so rather
-# than guess. Written from UTS #46's and the RFCs' text.
+# 5892's ContextJ rules and RFC 5893's bidi rule. A label's first criterion,
+# that it is in NFC, is `unicode/normalize`'s answer. Written from UTS #46's
+# and the RFCs' text.
 
 use unicode
+use unicode/normalize
 use url/idna/internal/lookup
 use url/idna/internal/written
 
@@ -29,39 +28,6 @@ record Checks
     # IgnoreInvalidPunycode: a label whose Punycode does not decode is kept
     # as written, with no fault.
     ignore_invalid_punycode: bool
-
-# What `verdict` finds of one label: a fault, "" where none, and whether the
-# label's normalization to NFC could not be settled.
-record Verdict
-    # The fault, said in words, "" where the label meets every criterion.
-    fault: str
-    # Whether the quick check answered maybe.
-    undecided: bool
-
-## The quick check
-
-# UAX #15's quick check of `points` for NFC: `lookup.QUICK_YES` where they are
-# in NFC, `lookup.QUICK_NO` where they are not, `lookup.QUICK_MAYBE` where the
-# check cannot tell.
-function quick_check(points: [i64] lent) -> i64
-    last: i64 @= 0
-    answer: i64 @= lookup.QUICK_YES
-
-    for p in points
-        combining = lookup.combining_of(p)
-
-        if combining != 0 && last > combining
-            return lookup.QUICK_NO
-        quick = lookup.quick_of(p)
-
-        if quick == lookup.QUICK_NO
-            return lookup.QUICK_NO
-
-        if quick == lookup.QUICK_MAYBE
-            answer @ lookup.QUICK_MAYBE
-        last @ combining
-
-    return answer
 
 ## The validity criteria
 
@@ -121,36 +87,35 @@ function joiner_fault(label: [i64] lent, at: i64) -> str
         return ""
     return "holds U+200C, a zero width non-joiner, neither after a virama nor between letters that join (C1)"
 
-# What UTS #46's validity criteria (§ 4.1) find of `label`, not empty: in
-# NFC, its hyphens, no "xn--" where hyphens go unchecked, no ".", no mark
-# first, every status allowed, and the joiners' context.
-function verdict(label: [i64] lent, checks: Checks lent, transitional: bool) -> Verdict
-    quick = quick_check(label)
-
-    if quick == lookup.QUICK_NO
-        return Verdict(fault: "is not in NFC (V1)", undecided: false)
+# What UTS #46's validity criteria (§ 4.1) find of `label`, not empty, the
+# fault said in words, "" where it meets every one: in NFC, its hyphens, no
+# "xn--" where hyphens go unchecked, no ".", no mark first, every status
+# allowed, and the joiners' context.
+function verdict(label: [i64] lent, checks: Checks lent, transitional: bool) -> str
+    if !normalize.is_nfc(written.text_of(label))
+        return "is not in NFC (V1)"
 
     if checks.hyphens
         if label.len() >= 4 && label[2] == '-' && label[3] == '-'
-            return Verdict(fault: "holds \"--\" at its third and fourth characters (V2)", undecided: false)
+            return "holds \"--\" at its third and fourth characters (V2)"
 
         if label[0] == '-' || label[label.len() - 1] == '-'
-            return Verdict(fault: "begins or ends with \"-\" (V3)", undecided: false)
+            return "begins or ends with \"-\" (V3)"
     else if is_ace(label)
-        return Verdict(fault: "begins with \"xn--\" (V4)", undecided: false)
+        return "begins with \"xn--\" (V4)"
 
     for p in label
         if p == '.'
-            return Verdict(fault: "holds \".\" (V5)", undecided: false)
+            return "holds \".\" (V5)"
 
     if unicode.is_mark(unicode.from_code_point(label[0]).must())
-        return Verdict(fault: f"begins with {written.code_name(label[0])}, a combining mark (V6)", undecided: false)
+        return f"begins with {written.code_name(label[0])}, a combining mark (V6)"
 
     for p in label
         fault = status_fault(p, checks: checks, transitional: transitional)
 
         if fault != ""
-            return Verdict(fault: fault, undecided: false)
+            return fault
 
     if checks.joiners
         at: i64 @= 0
@@ -160,10 +125,10 @@ function verdict(label: [i64] lent, checks: Checks lent, transitional: bool) -> 
                 fault = joiner_fault(label, at: at)
 
                 if fault != ""
-                    return Verdict(fault: fault, undecided: false)
+                    return fault
             at @ at + 1
 
-    return Verdict(fault: "", undecided: quick == lookup.QUICK_MAYBE)
+    return ""
 
 ## The bidi rule
 
@@ -279,31 +244,27 @@ function lax() -> Checks
         ignore_invalid_punycode: false
     )
 
-test "quick_check: nothing, ASCII, a mark after a letter, marks out of their order, and a character NFC never holds"
-    assert quick_check([]) == lookup.QUICK_YES
-    assert quick_check([0x61, 0x62]) == lookup.QUICK_YES
-    assert quick_check([0x61, 0x300]) == lookup.QUICK_MAYBE
-    assert quick_check([0x61, 0x301, 0x316]) == lookup.QUICK_NO
-    assert quick_check([0x958]) == lookup.QUICK_NO
-
-test "verdict: hyphens checked and not, a mark first, a status refused, the STD3 rule, and both joiners"
-    assert verdict([0x61, 0x62, 0x2d, 0x2d, 0x63], checks: strict(), transitional: false).fault != ""
-    assert verdict([0x61, 0x62, 0x2d, 0x2d, 0x63], checks: lax(), transitional: false).fault == ""
-    assert verdict([0x2d, 0x61], checks: strict(), transitional: false).fault != ""
-    assert verdict([0x78, 0x6e, 0x2d, 0x2d, 0x61], checks: lax(), transitional: false).fault == "begins with \"xn--\" (V4)"
-    assert verdict([0x300, 0x61], checks: lax(), transitional: false).fault == "begins with U+0300, a combining mark (V6)"
-    assert verdict([0x41], checks: lax(), transitional: false).fault == "holds U+0041, whose status is mapped (V7)"
-    assert verdict([0xdf], checks: lax(), transitional: false).fault == ""
-    assert verdict([0xdf], checks: lax(), transitional: true).fault != ""
-    assert verdict([0x5f], checks: strict(), transitional: false).fault == "holds U+005F, which UseSTD3ASCIIRules refuses (U1)"
-    assert verdict([0x5f], checks: lax(), transitional: false).fault == ""
-    assert verdict([0x61, 0x200d], checks: strict(), transitional: false).fault != ""
-    assert verdict([0x915, 0x94d, 0x200d], checks: strict(), transitional: false).fault == ""
-    assert verdict([0x628, 0x200c, 0x627], checks: strict(), transitional: false).fault == ""
-    assert verdict([0x628, 0x300, 0x200c, 0x300, 0x627], checks: strict(), transitional: false).fault == ""
-    assert verdict([0x627, 0x200c, 0x628], checks: strict(), transitional: false).fault != ""
-    assert verdict([0x627, 0x200c, 0x628], checks: lax(), transitional: false).fault == ""
-    assert verdict([0x61, 0x300], checks: strict(), transitional: false).undecided
+test "verdict: hyphens checked and not, a mark first, a status refused, the STD3 rule, both joiners, and NFC"
+    assert verdict([0x61, 0x62, 0x2d, 0x2d, 0x63], checks: strict(), transitional: false) != ""
+    assert verdict([0x61, 0x62, 0x2d, 0x2d, 0x63], checks: lax(), transitional: false) == ""
+    assert verdict([0x2d, 0x61], checks: strict(), transitional: false) != ""
+    assert verdict([0x78, 0x6e, 0x2d, 0x2d, 0x61], checks: lax(), transitional: false) == "begins with \"xn--\" (V4)"
+    assert verdict([0x300, 0x61], checks: lax(), transitional: false) == "begins with U+0300, a combining mark (V6)"
+    assert verdict([0x41], checks: lax(), transitional: false) == "holds U+0041, whose status is mapped (V7)"
+    assert verdict([0xdf], checks: lax(), transitional: false) == ""
+    assert verdict([0xdf], checks: lax(), transitional: true) != ""
+    assert verdict([0x5f], checks: strict(), transitional: false) == "holds U+005F, which UseSTD3ASCIIRules refuses (U1)"
+    assert verdict([0x5f], checks: lax(), transitional: false) == ""
+    assert verdict([0x61, 0x200d], checks: strict(), transitional: false) != ""
+    assert verdict([0x915, 0x94d, 0x200d], checks: strict(), transitional: false) == ""
+    assert verdict([0x628, 0x200c, 0x627], checks: strict(), transitional: false) == ""
+    assert verdict([0x628, 0x300, 0x200c, 0x300, 0x627], checks: strict(), transitional: false) == ""
+    assert verdict([0x627, 0x200c, 0x628], checks: strict(), transitional: false) != ""
+    assert verdict([0x627, 0x200c, 0x628], checks: lax(), transitional: false) == ""
+    assert verdict([0xe0], checks: strict(), transitional: false) == ""
+    assert verdict([0x61, 0x300], checks: strict(), transitional: false) == "is not in NFC (V1)"
+    assert verdict([0x61, 0x301, 0x316], checks: strict(), transitional: false) == "is not in NFC (V1)"
+    assert verdict([0x958], checks: strict(), transitional: false) == "is not in NFC (V1)"
 
 test "bidi_fault: empty, left to right, right to left, a digit first, and both kinds of digits"
     assert bidi_fault([]) == ""

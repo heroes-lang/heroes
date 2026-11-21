@@ -1,28 +1,16 @@
-# What this package sends over HTTP: an OTLP request posted with its
-# retries, and the exporter's settings read from OpenTelemetry's environment
-# variables.
+# What `otlp` sends over HTTP: an OTLP request posted with its retries, and
+# an exporter's settings read from OpenTelemetry's environment variables.
 
 use compress
 use http
 use lists
-use numbers
 use os
+use otlp
+use otlp/internal/wire
+use retries
 use strings
 use time
-use tracing/internal/otlp
 use url
-
-# The code of a setting no request can carry.
-constant INVALID: str
-    "invalid"
-
-# The code of a collector that refused.
-constant FAILED: str
-    "failed"
-
-# The code `os.env` fails with for a variable that is not set.
-constant NOT_FOUND: str
-    "not_found"
 
 # The value of the environment variable `name`, trimmed, "" where it is not
 # set, as OpenTelemetry reads an unset variable and an empty one alike.
@@ -30,7 +18,7 @@ function env_text(name: str) -> str?
     match os.env(name)
         .ok v => return ok(strings.trim(v))
         .err e =>
-            if e.code == NOT_FOUND
+            if e.code == os.NOT_FOUND
                 return ok("")
             return fail(code: e.code, msg: e.msg)
 
@@ -55,9 +43,9 @@ function env_headers(text: str) -> [http.Header]?
                 key = strings.trim(h.before)
 
                 if key == ""
-                    return fail(code: INVALID, msg: f"the OTLP header \"{pair}\" has no key")
+                    return fail(code: otlp.INVALID, msg: f"the OTLP header \"{pair}\" has no key")
                 out @ out.push(http.Header(name: key, value: url.unescape(strings.trim(h.after))?))
-            .err _ => return fail(code: INVALID, msg: f"the OTLP header \"{pair}\" holds no =")
+            .err _ => return fail(code: otlp.INVALID, msg: f"the OTLP header \"{pair}\" holds no =")
 
     return ok(out)
 
@@ -65,33 +53,11 @@ function env_headers(text: str) -> [http.Header]?
 function same_status(left: i64, right: i64) -> bool
     return left == right
 
-# The smaller of `a` and `b`.
-function min_i64(a: i64, b: i64) -> i64
-    if a < b
-        return a
-    return b
-
-# How many milliseconds to wait before sending again: the `Retry-After` of
-# `response` in whole seconds where it names one, else `wait`, at most `most`.
-function retry_delay(response: http.Response, wait: i64, most: i64) -> i64
-    asked = match http.value_of(response.headers, name: "Retry-After")
-        .ok v =>
-            match numbers.parse_int(strings.trim(v))
-                .ok seconds =>
-                    if seconds >= 0 && seconds < 1_000_000
-                        seconds * 1_000
-                    else
-                        wait
-                .err _ => wait
-        .err _ => wait
-
-    return min_i64(a: asked, b: most)
-
 # Posts an OTLP request's `body` to `target` as `application/x-protobuf`,
-# sending again after a status of `retries.statuses`, and answers what the
+# sending again after a status of `policy.statuses`, and answers what the
 # collector says it refused. Fails `failed` for a status other than 2xx after
 # every retry.
-function post(client: http.Client, target: str, headers: [http.Header], gzip: bool, retries: http.Retries, body: [u8]) -> otlp.Partial?
+function post(client: http.Client, target: str, headers: [http.Header], gzip: bool, policy: http.Retries, body: [u8]) -> wire.Partial?
     r @= http.request(method: http.METHOD_POST, target: target)?
 
     for h in headers
@@ -107,23 +73,29 @@ function post(client: http.Client, target: str, headers: [http.Header], gzip: bo
     else
         r @ http.with_body(r, content_type: "application/x-protobuf", body: body)
     attempt @= 0
-    wait @= retries.backoff_ms
+    last @= time.Duration(nanoseconds: 0)
 
     while true
         response = http.send(client, r: r)?
 
         if response.status >= 200 && response.status < 300
-            return otlp.partial_of(response.body)
-        again = attempt < retries.count && lists.contains(retries.statuses, value: response.status, same: same_status)
+            return wire.partial_of(response.body)
+        again = attempt < policy.count && lists.contains(policy.statuses, value: response.status, same: same_status)
 
         if !again
             return fail(
-                code: FAILED,
-                msg: f"the collector at {target} answered {response.status}: {otlp.status_message(response.body)}"
+                code: otlp.FAILED,
+                msg: f"the collector at {target} answered {response.status}: {wire.status_message(response.body)}"
             )
-        time.sleep(time.nanoseconds(retry_delay(response, wait: wait, most: retries.max_backoff_ms) * 1_000_000))
         attempt @ attempt + 1
-        wait @ min_i64(a: wait * 2, b: retries.max_backoff_ms)
+        wait = retries.drawn_wait(policy.backoff, failures: attempt, previous: last)?
+        last @ wait
+
+        asked = match http.value_of(response.headers, name: "Retry-After")
+            .ok v  => retries.parse_retry_after(v, received: time.now()?, longest: policy.backoff.longest).default(wait)
+            .err _ => wait
+
+        time.sleep(asked)
 
 test "env_headers: pairs between commas, trimmed and percent-decoded, none, and a pair with no ="
     assert env_headers("").must().len() == 0
@@ -139,23 +111,3 @@ test "env_headers: pairs between commas, trimmed and percent-decoded, none, and 
 test "first_set: the specific setting over the general one"
     assert first_set(specific: "a", general: "b") == "a"
     assert first_set(specific: "", general: "b") == "b"
-
-test "retry_delay: Retry-After in seconds, none, a date, and the most"
-    asked = http.Response(
-        status: 429,
-        reason: "",
-        headers: [http.Header(name: "Retry-After", value: "2")],
-        body: [],
-        closing: false
-    )
-    assert retry_delay(asked, wait: 100, most: 30_000) == 2_000
-    assert retry_delay(asked, wait: 100, most: 1_500) == 1_500
-    assert retry_delay(http.respond_status(503), wait: 100, most: 30_000) == 100
-    dated = http.Response(
-        status: 503,
-        reason: "",
-        headers: [http.Header(name: "Retry-After", value: "Wed, 21 Oct 2015 07:28:00 GMT")],
-        body: [],
-        closing: false
-    )
-    assert retry_delay(dated, wait: 400, most: 30_000) == 400

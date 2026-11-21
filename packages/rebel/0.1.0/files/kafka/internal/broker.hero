@@ -6,13 +6,13 @@
 # a late answer is never read as the next one's.
 
 use bytes
-use crypto
 use io
 use kafka/internal/link
 use kafka/internal/model
 use kafka/internal/sasl
 use kafka/internal/wire
 use net
+use scram
 use url
 
 # The key of `ApiVersions`.
@@ -282,8 +282,8 @@ function login(@c: Conn, o: model.Options) -> ()?
         .plain p =>
             _ = authenticate(@c, o: o, data: sasl.plain(username: p.username, password: p.password))?
             return ok()
-        .scram_sha256 s => return scram(@c, o: o, algorithm: .sha256, username: s.username, password: s.password)
-        .scram_sha512 s => return scram(@c, o: o, algorithm: .sha512, username: s.username, password: s.password)
+        .scram_sha256 s => return scram_login(@c, o: o, hash: .sha256, username: s.username, password: s.password)
+        .scram_sha512 s => return scram_login(@c, o: o, hash: .sha512, username: s.username, password: s.password)
 
 # One `SaslAuthenticate`, answering the server's bytes.
 #
@@ -302,18 +302,36 @@ function authenticate(@c: Conn, o: model.Options, data: [u8]) -> [u8]?
         return fail(code: model.PERMISSION, msg: f"{c.target} refused the login: {said}")
     return ok(answer)
 
-# A SCRAM login.
+# A SCRAM login, its three messages carried by `SaslAuthenticate`; the
+# password prepared by `scram` as the other SCRAM logins of Rebel prepare it,
+# and the server's signature checked, so a server that does not know the
+# password cannot pass for one that does.
 #
 # - `c`: the connection.
 # - `o`: the options.
-# - `algorithm`: SHA-256 or SHA-512.
+# - `hash`: SHA-256 or SHA-512.
 # - `username`: the user's name.
 # - `password`: the password.
-function scram(@c: Conn, o: model.Options, algorithm: crypto.Algorithm, username: str, password: str) -> ()?
-    s @= sasl.begin(algorithm, username: username, password: password, nonce: sasl.fresh_nonce()?)
-    server_first = authenticate(@c, o: o, data: sasl.first(s))?
-    server_final = authenticate(@c, o: o, data: sasl.respond(s: @s, answer: server_first)?)?
-    return sasl.verify(s, answer: server_final)
+#
+# Fails `invalid` where a message of the server is not UTF-8 or as
+# `scram.client_final` fails; `permission` where the server refuses the login
+# or as `scram.verify` fails.
+function scram_login(@c: Conn, o: model.Options, hash: scram.Hash, username: str, password: str) -> ()?
+    exchange @= scram.start(hash, user: username, nonce: scram.new_nonce()?, least_iterations: 1)
+    server_first = text_of(authenticate(@c, o: o, data: bytes.from_text(scram.client_first(exchange)))?)?
+    final = scram.client_final(@exchange, password: password, server_first: server_first)?
+    server_final = text_of(authenticate(@c, o: o, data: bytes.from_text(final))?)?
+    return scram.verify(exchange, server_final: server_final)
+
+# The text of a SCRAM message of the server.
+#
+# - `answer`: the server's bytes.
+#
+# Fails `invalid` where they are not UTF-8.
+function text_of(answer: [u8]) -> str?
+    return match bytes.to_text(answer)
+        .ok text => ok(text)
+        .err _   => fail(code: model.INVALID, msg: "the server's SCRAM message is not UTF-8")
 
 # Closes the connection.
 #

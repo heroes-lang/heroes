@@ -5,9 +5,9 @@
 # extremes and at 28 random points; the answers are `ORACLE`'s, written as
 # `misses` reads them, four floats a case.
 
-use math/internal/complex_arithmetic
-use math/internal/complex_inverse
-use math/internal/limits
+use math
+use math/complex/internal/complex_arithmetic
+use math/complex/internal/complex_inverse
 
 # Where the cases' answers come from: the face's tests name it, which is how a
 # program's tests reach this module.
@@ -18,8 +18,8 @@ constant ORACLE: str
 
 # Python 3.15.2's `cmath.asin` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "asin (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, -0.7853981633974483, -inf]
         [-inf, -1.5, -1.5707963267948966, -inf]
@@ -117,8 +117,8 @@ test "asin (generated): the branch cuts' two sides, the extremes and 28 random p
 
 # Python 3.15.2's `cmath.acos` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "acos (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, 2.356194490192345, inf]
         [-inf, -1.5, 3.141592653589793, inf]
@@ -216,8 +216,8 @@ test "acos (generated): the branch cuts' two sides, the extremes and 28 random p
 
 # Python 3.15.2's `cmath.atan` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "atan (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, -1.5707963267948966, -0.0]
         [-inf, -1.5, -1.5707963267948966, -0.0]
@@ -317,8 +317,8 @@ test "atan (generated): the branch cuts' two sides, the extremes and 28 random p
 
 # Python 3.15.2's `cmath.asinh` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "asinh (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, -inf, -0.7853981633974483]
         [-inf, -1.5, -inf, -0.0]
@@ -416,8 +416,8 @@ test "asinh (generated): the branch cuts' two sides, the extremes and 28 random 
 
 # Python 3.15.2's `cmath.acosh` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "acosh (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, inf, -2.356194490192345]
         [-inf, -1.5, inf, -3.141592653589793]
@@ -515,8 +515,8 @@ test "acosh (generated): the branch cuts' two sides, the extremes and 28 random 
 
 # Python 3.15.2's `cmath.atanh` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "atanh (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, -0.0, -1.5707963267948966]
         [-inf, -1.5, -0.0, -1.5707963267948966]

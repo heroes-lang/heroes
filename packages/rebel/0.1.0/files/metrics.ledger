@@ -313,18 +313,18 @@ capability statsd/unix-socket  DogStatsD over a Unix socket
   python  DogStatsd.socket_path
 
 capability otlp/encode  a registry's values as an OTLP metrics request
-  heroes  metrics.encode_otlp, metrics.Attribute, metrics.AttributeValue, metrics.Scope
+  heroes  metrics.encode_otlp, otlp.Attribute, otlp.AttributeValue, otlp.Scope
   go      otlpmetrichttp.Exporter.Export, sdk/metric.Exporter, metricdata types through ManualReader.Collect, sdk/metric.ManualReader, NewManualReader, Producer, WithProducer
   rust    opentelemetry_sdk::metrics::data::ResourceMetrics, ScopeMetrics, Metric, MetricData, Sum, SumDataPoint, Gauge, GaugeDataPoint, Histogram, HistogramDataPoint, AggregatedMetrics, exporter::PushMetricExporter
   python  sdk.metrics.export.MetricsData, ResourceMetrics, ScopeMetrics, Metric, Sum, Gauge, Histogram, NumberDataPoint, HistogramDataPoint, metric_exporter.encode_metrics, InMemoryMetricReader
   note    Held byte for byte to `opentelemetry-proto` 1.45's serialization of the same message: a counter a monotonic cumulative `Sum`, a gauge, an info and a state set a `Gauge`, a histogram a cumulative `Histogram` with each bucket's own count, a summary a `Summary`
 
 capability otlp/export  a request posted to a collector over HTTP, with its retries and the environment's settings
-  heroes  metrics.export_otlp, metrics.otlp_to, metrics.otlp_from_env, metrics.Otlp, metrics.Exported, metrics.OTLP_URL
+  heroes  otlp.export, otlp.exporter_to, otlp.exporter_from_env, otlp.Exporter, otlp.Exported, otlp.METRICS_URL
   go      otlpmetrichttp.New, Exporter, Exporter.ForceFlush, Exporter.Shutdown, WithEndpoint, WithEndpointURL, WithURLPath, WithHeaders, WithCompression, Compression, WithRetry, RetryConfig, WithTimeout, WithInsecure, WithTLSClientConfig, WithProxy, HTTPTransportProxyFunc, WithHTTPClient, WithMaxRequestSize, WithMaxResponseSize, Version
   rust    opentelemetry_otlp::MetricExporter, MetricExporterBuilder, WithExportConfig, WithHttpConfig, HttpExporterBuilderSet, Compression, Protocol, RetryPolicy, ExporterBuildError, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_METRICS_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS, OTEL_EXPORTER_OTLP_METRICS_HEADERS, OTEL_EXPORTER_OTLP_COMPRESSION, OTEL_EXPORTER_OTLP_METRICS_COMPRESSION, OTEL_EXPORTER_OTLP_TIMEOUT, OTEL_EXPORTER_OTLP_METRICS_TIMEOUT, OTEL_EXPORTER_OTLP_TIMEOUT_DEFAULT, OTEL_EXPORTER_OTLP_PROTOCOL, OTEL_EXPORTER_OTLP_METRICS_PROTOCOL, OTEL_EXPORTER_OTLP_PROTOCOL_HTTP_PROTOBUF, OTEL_EXPORTER_OTLP_INSECURE, OTEL_EXPORTER_OTLP_METRICS_INSECURE
   python  OTLPMetricExporter, DEFAULT_ENDPOINT, DEFAULT_METRICS_EXPORT_PATH, DEFAULT_TIMEOUT, DEFAULT_COMPRESSION, Compression, OTEL_EXPORTER_OTLP_METRICS_ENDPOINT, OTEL_EXPORTER_OTLP_METRICS_HEADERS, OTEL_EXPORTER_OTLP_METRICS_COMPRESSION, OTEL_EXPORTER_OTLP_METRICS_TIMEOUT, OTEL_EXPORTER_OTLP_METRICS_CERTIFICATE, OTEL_EXPORTER_OTLP_METRICS_CLIENT_CERTIFICATE, OTEL_EXPORTER_OTLP_METRICS_CLIENT_KEY, MetricExportResult, RequestPayloadTooLargeError
-  note    Sent again after 429, 502, 503 and 504, honouring `Retry-After`, as OTLP's specification asks; a partial success is answered as `Exported`, which Go and Python write to their log. Certificates are `http.Client`'s `roots`
+  note    Sent again after 429, 502, 503 and 504, honouring `Retry-After`, as OTLP's specification asks; a partial success is answered as `otlp.Exported`, which Go and Python write to their log. Certificates are `http.Client`'s `roots`. The exporter is the package `otlp`'s since 2026-11-20 (the coherence review's D13), one for metrics, spans and log records, where `metrics` and `tracing` each declared their own
 
 capability otlp/temporality  delta temporality, the counts since the last export
   heroes  pending
@@ -334,7 +334,7 @@ capability otlp/temporality  delta temporality, the counts since the last export
   note    A registry holds totals: cumulative, which every collector takes
 
 capability otlp/periodic  an export on a timer of its own
-  heroes  refused: a reader on a timer runs on another thread, which shares no registry with the program; the program calls `export_otlp` when it chooses, as `PeriodicReader` would
+  heroes  refused: a reader on a timer runs on another thread, which shares no registry with the program; the program calls `otlp.export` when it chooses, as `PeriodicReader` would
   go      sdk/metric.PeriodicReader, NewPeriodicReader, WithInterval, WithTimeout, WithMaxExportBatchSize, PeriodicReader.ForceFlush, PeriodicReader.Shutdown
   rust    opentelemetry_sdk::metrics::PeriodicReader, PeriodicReaderBuilder, OTEL_METRIC_EXPORT_INTERVAL, OTEL_METRIC_EXPORT_INTERVAL_DEFAULT
   python  sdk.metrics.export.PeriodicExportingMetricReader, MetricReader

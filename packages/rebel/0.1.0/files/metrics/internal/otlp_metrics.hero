@@ -6,21 +6,25 @@
 
 use math
 use metrics/internal/ckms
-use metrics/internal/otlp
 use metrics/internal/store
+use otlp
 use protobuf
+
+# `AggregationTemporality`'s cumulative, the one a registry's values have.
+constant CUMULATIVE: u64
+    2
 
 # The request's bytes.
 #
 # - `s`: the store.
 # - `resource`: the resource's attributes, each a `KeyValue`'s bytes.
-# - `scope_name`, `scope_version`: the instrumentation scope.
+# - `scope`: the instrumentation scope.
 # - `begin`: every cumulative point's start, in nanoseconds since 1970.
 # - `now`: every point's time.
-function encode(s: store.Store lent, resource: [[u8]], scope_name: str, scope_version: str, begin: u64, now: u64) -> [u8]
+function encode(s: store.Store lent, resource: [[u8]], scope: otlp.Scope, begin: u64, now: u64) -> [u8]
     members = store.members_of(s)
     scoped: [u8] @= []
-    otlp.put_bytes(to: @scoped, number: 1, b: otlp.scope(name: scope_name, version: scope_version))
+    otlp.put_bytes(to: @scoped, number: 1, b: otlp.scope_bytes(scope))
 
     for name in sort(keys(s.places))
         place = s.places[name].must()
@@ -38,11 +42,11 @@ function encode(s: store.Store lent, resource: [[u8]], scope_name: str, scope_ve
 
             match f.kind
                 .counter =>
-                    otlp.put_varint(@points, number: 2, v: otlp.CUMULATIVE)
+                    otlp.put_varint(@points, number: 2, v: CUMULATIVE)
                     otlp.put_varint(@points, number: 3, v: 1)
                     otlp.put_bytes(to: @metric, number: 7, b: points)
                 .histogram =>
-                    otlp.put_varint(@points, number: 2, v: otlp.CUMULATIVE)
+                    otlp.put_varint(@points, number: 2, v: CUMULATIVE)
                     otlp.put_bytes(to: @metric, number: 9, b: points)
                 .summary                               => otlp.put_bytes(to: @metric, number: 11, b: points)
                 .gauge | .unknown | .info | .state_set => otlp.put_bytes(to: @metric, number: 5, b: points)
@@ -50,7 +54,7 @@ function encode(s: store.Store lent, resource: [[u8]], scope_name: str, scope_ve
             otlp.put_bytes(to: @scoped, number: 2, b: metric)
 
     resourced: [u8] @= []
-    otlp.put_bytes(to: @resourced, number: 1, b: otlp.resource(resource))
+    otlp.put_bytes(to: @resourced, number: 1, b: otlp.resource_bytes(resource))
     otlp.put_bytes(to: @resourced, number: 2, b: scoped)
     out: [u8] @= []
     otlp.put_bytes(to: @out, number: 1, b: resourced)
@@ -134,13 +138,21 @@ function number_point(pairs: [store.Pair], extra: str, extra_value: str, begin: 
 # `KeyValue`s of field `number`, each value a string.
 function put_attributes(@to: [u8], number: i64, pairs: [store.Pair], extra: str, extra_value: str)
     for p in pairs
-        otlp.put_bytes(to: @to, number: number, b: otlp.key_value(key: p.name, value: otlp.any_text(p.value)))
+        otlp.put_bytes(
+            to: @to,
+            number: number,
+            b: otlp.attribute_bytes(otlp.Attribute(key: p.name, value: .text(v: p.value)), length: 0)
+        )
 
     if extra != ""
-        otlp.put_bytes(to: @to, number: number, b: otlp.key_value(key: extra, value: otlp.any_text(extra_value)))
+        otlp.put_bytes(
+            to: @to,
+            number: number,
+            b: otlp.attribute_bytes(otlp.Attribute(key: extra, value: .text(v: extra_value)), length: 0)
+        )
 
 test "encode: an empty store holds its resource and scope alone"
     s = store.new_store()
 
     # ExportMetricsServiceRequest(resource_metrics=[ResourceMetrics(resource=Resource(), scope_metrics=[ScopeMetrics(scope=InstrumentationScope())])])
-    assert encode(s, resource: [], scope_name: "", scope_version: "", begin: 0, now: 0) == [10, 6, 10, 0, 18, 2, 10, 0]
+    assert encode(s, resource: [], scope: otlp.Scope(name: "", version: ""), begin: 0, now: 0) == [10, 6, 10, 0, 18, 2, 10, 0]

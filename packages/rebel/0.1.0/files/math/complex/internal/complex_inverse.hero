@@ -1,0 +1,259 @@
+# The inverse hyperbolic and circular functions of complex numbers, their
+# branch cuts where C11's Annex G and Python's `cmath` put them, a zero's sign
+# choosing the side of a cut. `asinh`, `acosh` and `acos` follow Kahan's
+# formulas (Branch Cuts for Complex Elementary Functions, 1987), products of
+# two square roots that keep their digits near the branch points; `atanh`
+# takes `log1p` of a quotient of sums of squares. Each takes a large argument
+# through the logarithm, where the products would overflow. `asin(z) = -i
+# asinh(iz)` and `atan(z) = -i atanh(iz)`, as Annex G defines them.
+
+use math
+use math/complex
+use math/complex/internal/complex_exponential
+
+# The square root of a quarter of the largest float: below it, the squares of
+# `atanh`'s formula do not overflow.
+constant SQRT_LARGE: f64
+    6703903964971298000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0
+
+# The square root of the smallest normal float: below it, the square of a part
+# underflows.
+constant SQRT_MIN: f64
+    0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000014916681462400413
+
+# The logarithm of twice the size of `re + im i`, for a size past
+# `complex_exponential.LARGE`, where every inverse function grows as it does.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function ln_twice_size(re: f64, im: f64) -> f64
+    return 2.0 * math.LN_2 + math.ln(math.hypot(x: re * 0.5, y: im * 0.5))
+
+# Whether either part of `re + im i` is past `complex_exponential.LARGE` in
+# size.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function is_large(re: f64, im: f64) -> bool
+    return math.abs(re) > complex_exponential.LARGE || math.abs(im) > complex_exponential.LARGE
+
+# Whether `x` is a number whose sign bit is set: a nan carries no sign here,
+# so it never turns the sign of an answer.
+#
+# - `x`: any float.
+function is_negative(x: f64) -> bool
+    return math.has_minus_sign(x) && !math.is_nan(x)
+
+# `p` with each part's sign turned where asked.
+#
+# - `p`: the answer on the half or the quadrant computed.
+# - `turn_re`: whether the real part's sign turns.
+# - `turn_im`: whether the imaginary part's sign turns.
+function turned(p: complex.Complex, turn_re: bool, turn_im: bool) -> complex.Complex
+    re @= p.re
+    im @= p.im
+
+    if turn_re
+        re @ -re
+
+    if turn_im
+        im @ -im
+    return complex.Complex(re: re, im: im)
+
+# `asinh` on the first quadrant, `x` and `y` of a clear sign bit: with `s1 =
+# sqrt(1 - iz)` and `s2 = sqrt(1 + iz)`, the real part is `asinh(Im(conj(s1) *
+# s2))` and the imaginary part `atan2(y, Re(s1 * s2))`.
+#
+# - `x`: the real part's size.
+# - `y`: the imaginary part's size.
+function asinh_first(x: f64, y: f64) -> complex.Complex
+    if math.is_finite(x) && math.is_finite(y)
+        if is_large(re: x, im: y)
+            return complex.Complex(re: ln_twice_size(re: x, im: y), im: math.atan2(y: y, x: x))
+        s1 = complex_exponential.sqrt(re: 1.0 + y, im: -x)
+        s2 = complex_exponential.sqrt(re: 1.0 - y, im: x)
+        re = math.asinh(s1.re * s2.im - s1.im * s2.re)
+        return complex.Complex(re: re, im: math.atan2(y: y, x: s1.re * s2.re - s1.im * s2.im))
+
+    if math.is_inf(y)
+        if math.is_finite(x)
+            return complex.Complex(re: math.INF, im: math.PI * 0.5)
+
+        if math.is_inf(x)
+            return complex.Complex(re: math.INF, im: math.PI * 0.25)
+        return complex.Complex(re: math.INF, im: math.NAN)
+
+    if math.is_inf(x)
+        if math.is_nan(y)
+            return complex.Complex(re: math.INF, im: y)
+        return complex.Complex(re: math.INF, im: 0.0)
+
+    if math.is_nan(x) && y == 0.0
+        return complex.Complex(re: x, im: y)
+    return complex.Complex(re: math.NAN, im: math.NAN)
+
+# The inverse hyperbolic sine of `re + im i`, its cuts on the imaginary axis
+# beyond `i` and `-i`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function asinh(re: f64, im: f64) -> complex.Complex
+    p = asinh_first(x: math.abs(re), y: math.abs(im))
+    return turned(p: p, turn_re: is_negative(re), turn_im: is_negative(im))
+
+# `acosh` on the upper half plane, `y` of a clear sign bit: with `s1 = sqrt(z -
+# 1)` and `s2 = sqrt(z + 1)`, the real part is `asinh(Re(conj(s1) * s2))` and
+# the imaginary part `2 atan2(Im(s1), Re(s2))`.
+#
+# - `x`: the real part, of either sign.
+# - `y`: the imaginary part's size.
+function acosh_upper(x: f64, y: f64) -> complex.Complex
+    if math.is_finite(x) && math.is_finite(y)
+        if is_large(re: x, im: y)
+            return complex.Complex(re: ln_twice_size(re: x, im: y), im: math.atan2(y: y, x: x))
+        s1 = complex_exponential.sqrt(re: x - 1.0, im: y)
+        s2 = complex_exponential.sqrt(re: x + 1.0, im: y)
+        re = math.asinh(s1.re * s2.re + s1.im * s2.im)
+        return complex.Complex(re: re, im: 2.0 * math.atan2(y: s1.im, x: s2.re))
+
+    if math.is_inf(y)
+        if math.is_nan(x)
+            return complex.Complex(re: math.INF, im: x)
+        return complex.Complex(re: math.INF, im: math.atan2(y: y, x: x))
+
+    if math.is_inf(x)
+        if math.is_nan(y)
+            return complex.Complex(re: math.INF, im: y)
+        return complex.Complex(re: math.INF, im: math.atan2(y: 0.0, x: x))
+
+    if x == 0.0 && math.is_nan(y)
+        return complex.Complex(re: y, im: math.PI * 0.5)
+    return complex.Complex(re: math.NAN, im: math.NAN)
+
+# The inverse hyperbolic cosine of `re + im i`, its real part never negative,
+# its cut on the real axis below 1.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function acosh(re: f64, im: f64) -> complex.Complex
+    p = acosh_upper(x: re, y: math.abs(im))
+    return turned(p: p, turn_re: false, turn_im: is_negative(im))
+
+# `acos` on the upper half plane, `y` of a clear sign bit: with `s1 = sqrt(1 -
+# z)` and `s2 = sqrt(1 + z)`, the real part is `2 atan2(Re(s1), Re(s2))` and
+# the imaginary part `asinh(Im(conj(s2) * s1))`.
+#
+# - `x`: the real part, of either sign.
+# - `y`: the imaginary part's size.
+function acos_upper(x: f64, y: f64) -> complex.Complex
+    if math.is_finite(x) && math.is_finite(y)
+        if is_large(re: x, im: y)
+            return complex.Complex(re: math.atan2(y: y, x: x), im: -ln_twice_size(re: x, im: y))
+        s1 = complex_exponential.sqrt(re: 1.0 - x, im: -y)
+        s2 = complex_exponential.sqrt(re: 1.0 + x, im: y)
+        re = 2.0 * math.atan2(y: s1.re, x: s2.re)
+        return complex.Complex(re: re, im: math.asinh(s2.re * s1.im - s2.im * s1.re))
+
+    if math.is_inf(y)
+        if math.is_nan(x)
+            return complex.Complex(re: x, im: -math.INF)
+        return complex.Complex(re: math.atan2(y: y, x: x), im: -math.INF)
+
+    if math.is_inf(x)
+        if math.is_nan(y)
+            return complex.Complex(re: y, im: math.INF)
+        return complex.Complex(re: math.atan2(y: 0.0, x: x), im: -math.INF)
+
+    if x == 0.0 && math.is_nan(y)
+        return complex.Complex(re: math.PI * 0.5, im: y)
+    return complex.Complex(re: math.NAN, im: math.NAN)
+
+# The inverse cosine of `re + im i`, its real part from 0 to pi, its cuts on
+# the real axis beyond -1 and 1.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function acos(re: f64, im: f64) -> complex.Complex
+    p = acos_upper(x: re, y: math.abs(im))
+    return turned(p: p, turn_re: false, turn_im: is_negative(im))
+
+# `atanh` on the first quadrant, `x` and `y` of a clear sign bit: the real
+# part `log1p(4x / ((1 - x)^2 + y^2)) / 4`, the imaginary part `atan2(2y, (1 -
+# x)(1 + x) - y^2) / 2`; past `SQRT_LARGE` the real part is `x / |z|^2` and the
+# imaginary part pi/2, and at `x == 1` with `y` too small to square, `ln(2 /
+# y) / 2`.
+#
+# - `x`: the real part's size.
+# - `y`: the imaginary part's size.
+function atanh_first(x: f64, y: f64) -> complex.Complex
+    if math.is_finite(x) && math.is_finite(y)
+        if x > SQRT_LARGE || y > SQRT_LARGE
+            h = math.hypot(x: x * 0.5, y: y * 0.5)
+            return complex.Complex(re: x / h / h * 0.25, im: math.PI * 0.5)
+        im = math.atan2(y: 2.0 * y, x: (1.0 - x) * (1.0 + x) - y * y) * 0.5
+
+        if x == 1.0 && y < SQRT_MIN
+            return complex.Complex(re: (math.LN_2 - math.ln(y)) * 0.5, im: im)
+        d = (1.0 - x) * (1.0 - x) + y * y
+        return complex.Complex(re: math.ln_1_plus(4.0 * x / d) * 0.25, im: im)
+
+    if math.is_inf(x)
+        if math.is_nan(y)
+            return complex.Complex(re: 0.0, im: y)
+        return complex.Complex(re: 0.0, im: math.PI * 0.5)
+
+    if math.is_inf(y)
+        return complex.Complex(re: 0.0, im: math.PI * 0.5)
+
+    if x == 0.0 && math.is_nan(y)
+        return complex.Complex(re: x, im: y)
+    return complex.Complex(re: math.NAN, im: math.NAN)
+
+# The inverse hyperbolic tangent of `re + im i`, its cuts on the real axis
+# beyond -1 and 1; `atanh(1)` is the infinity, Annex G's value, where Python
+# raises.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function atanh(re: f64, im: f64) -> complex.Complex
+    p = atanh_first(x: math.abs(re), y: math.abs(im))
+    return turned(p: p, turn_re: is_negative(re), turn_im: is_negative(im))
+
+# The inverse sine of `re + im i`: `-i asinh(iz)`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function asin(re: f64, im: f64) -> complex.Complex
+    p = asinh(re: -im, im: re)
+    return complex.Complex(re: p.im, im: -p.re)
+
+# The inverse tangent of `re + im i`: `-i atanh(iz)`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function atan(re: f64, im: f64) -> complex.Complex
+    p = atanh(re: -im, im: re)
+    return complex.Complex(re: p.im, im: -p.re)
+
+## Tests
+
+test "asinh, acosh and atanh: the zeros, the branch points, a cut's two sides, the largest"
+    assert asinh(re: 0.0, im: 0.0) == complex.Complex(re: 0.0, im: 0.0)
+    assert acosh(re: 0.0, im: 0.0) == complex.Complex(re: 0.0, im: math.PI * 0.5)
+    assert acosh(re: 1.0, im: 0.0) == complex.Complex(re: 0.0, im: 0.0)
+    assert atanh(re: 1.0, im: 0.0) == complex.Complex(re: math.INF, im: 0.0)
+    assert atanh(re: -1.0, im: -0.0) == complex.Complex(re: -math.INF, im: -0.0)
+    assert atanh(re: 2.0, im: 0.0).im == math.PI * 0.5
+    assert atanh(re: 2.0, im: -0.0).im == -math.PI * 0.5
+    assert math.is_finite(asinh(re: math.MAX_F64, im: math.MAX_F64).re)
+    assert math.is_finite(
+        atanh(re: 1.0, im: 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001).re
+    )
+
+test "asin, acos and atan: the cut's two sides, the branch points, a nan part"
+    assert acos(re: 2.0, im: 0.0).re == 0.0 && acos(re: 2.0, im: 0.0).im < 0.0
+    assert acos(re: 2.0, im: -0.0).im > 0.0
+    assert acos(re: 0.0, im: 0.0) == complex.Complex(re: math.PI * 0.5, im: -0.0)
+    assert asin(re: 1.0, im: 0.0) == complex.Complex(re: math.PI * 0.5, im: 0.0)
+    assert atan(re: 0.0, im: 1.0) == complex.Complex(re: 0.0, im: math.INF)
+    assert math.is_nan(acosh(re: 0.0, im: math.NAN).re) && acosh(re: 0.0, im: math.NAN).im == math.PI * 0.5

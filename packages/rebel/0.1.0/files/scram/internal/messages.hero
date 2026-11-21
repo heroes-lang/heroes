@@ -1,0 +1,131 @@
+# The pieces of SCRAM's messages (RFC 5802 section 7) the face's exchange
+# reads and writes: a message's attributes by their letter, an iteration count
+# held to its bounds, a user's name escaped, and the digests of the hash the
+# exchange was started with.
+
+use crypto
+use scram
+use strings
+
+# The attributes of a SCRAM message, `a=value` separated by commas, by their
+# letter.
+#
+# - `message`: the server's message.
+#
+# Fails `invalid` where a part is not a letter, `=` and a value, or a letter
+# is named twice; the message never quotes a value, which may be a nonce.
+function attributes(message: str) -> {str: str}?
+    found: {str: str} @= {}
+
+    for part in strings.split(s: message, sep: ",")
+        if part.len() < 2 || part[1] != '=' || !(part[0] >= 'a' && part[0] <= 'z' || part[0] >= 'A' && part[0] <= 'Z')
+            return fail(code: scram.INVALID, msg: "the server's SCRAM message holds a part that is no attribute")
+        key = part.slice(from: 0, to: 1)
+
+        if !found[key].is_err()
+            return fail(code: scram.INVALID, msg: f"the server's SCRAM message names the attribute {key} twice")
+        found[key] @ part.slice(from: 2, to: part.len())
+
+    return ok(found)
+
+# The attribute `key` of `found`.
+#
+# - `found`: a message's attributes, as `attributes` answers them.
+# - `key`: one letter.
+#
+# Fails `invalid` where the message holds none.
+function attribute(found: {str: str}, key: str) -> str?
+    return match found[key]
+        .ok value => ok(value)
+        .err _    => fail(code: scram.INVALID, msg: f"the server's SCRAM message holds no \"{key}\"")
+
+# The count of iterations `s` writes, held to `least` and `scram.MOST_ITERATIONS`.
+#
+# - `s`: decimal digits.
+# - `least`: the smallest count the caller accepts, 1 or more.
+#
+# Fails `invalid` where `s` is not a number or the number is outside `least`
+# to `scram.MOST_ITERATIONS`.
+function iterations_of(s: str, least: i64) -> i64?
+    n: i64 @= 0
+
+    if s.len() == 0 || s.len() > 10
+        return fail(code: scram.INVALID, msg: f"the server's SCRAM iteration count \"{s}\" is no number")
+
+    for i in range(from: 0, to: s.len())
+        if s[i] < '0' || s[i] > '9'
+            return fail(code: scram.INVALID, msg: f"the server's SCRAM iteration count \"{s}\" is no number")
+        n @ n * 10 + to_i64(s[i] - '0').must()
+
+    if n < least || n > scram.MOST_ITERATIONS
+        return fail(
+            code: scram.INVALID,
+            msg: f"the server asks {n} iterations of SCRAM, outside the {least} to {scram.MOST_ITERATIONS} this client accepts"
+        )
+    return ok(n)
+
+# `user` with `=` written `=3D` and `,` written `=2C`, as SCRAM names a user.
+#
+# - `user`: the name.
+function escaped(user: str) -> str
+    return strings.replace_all(s: strings.replace_all(s: user, old: "=", new: "=3D"), old: ",", new: "=2C")
+
+# The algorithm of `crypto` that `hash` names.
+#
+# - `hash`: the exchange's hash.
+function algorithm_of(hash: scram.Hash) -> crypto.Algorithm
+    return match hash
+        .sha1   => .sha1
+        .sha256 => .sha256
+        .sha512 => .sha512
+
+# The digest of `data` by `hash`: SCRAM's `H`.
+#
+# - `hash`: the exchange's hash.
+# - `data`: the bytes.
+function digest_of(hash: scram.Hash, data: [u8]) -> [u8]
+    return match hash
+        .sha1   => crypto.sha1(data)
+        .sha256 => crypto.sha256(data)
+        .sha512 => crypto.sha512(data)
+
+# `a` and `b`, of one length, combined by exclusive or.
+#
+# - `a`: one list.
+# - `b`: the other, as long as `a`.
+function xor(a: [u8], b: [u8]) -> [u8]
+    out: [u8] @= []
+
+    for k in range(from: 0, to: a.len())
+        out @ out.push(to_u8(to_i64(a[k]).must() ^ to_i64(b[k]).must()).must())
+
+    return out
+
+## Tests
+
+test "attributes: three, a part with no equals sign, a key twice, a key that is no letter, and a value holding an equals sign"
+    found = attributes("r=abc,s=QQ==,i=4096").must()
+    assert found["r"].must() == "abc" && found["s"].must() == "QQ==" && found["i"].must() == "4096"
+    assert attributes("garbage").is_err()
+    assert attributes("r=a,r=b").is_err()
+    assert attributes("1=a").is_err()
+    assert attribute(found: found, key: "m").is_err()
+
+test "iterations_of: the bounds, no digits, a sign, and more digits than a count holds"
+    assert iterations_of("4096", least: 4096).must() == 4096
+    assert iterations_of("4095", least: 4096).is_err()
+    assert iterations_of("1", least: 1).must() == 1
+    assert iterations_of("0", least: 1).is_err()
+    assert iterations_of("10000000", least: 1).must() == 10000000
+    assert iterations_of("10000001", least: 1).is_err()
+    assert iterations_of("", least: 1).is_err()
+    assert iterations_of("-1", least: 1).is_err()
+    assert iterations_of("99999999999", least: 1).is_err()
+
+test "escaped: an equals sign and a comma, and a name with neither"
+    assert escaped("a=b,c") == "a=3Db=2Cc" && escaped("plain") == "plain"
+
+test "digest_of: each hash's length"
+    assert digest_of(.sha1, data: []).len() == 20
+    assert digest_of(.sha256, data: []).len() == 32
+    assert digest_of(.sha512, data: []).len() == 64

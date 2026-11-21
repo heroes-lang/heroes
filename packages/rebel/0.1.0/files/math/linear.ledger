@@ -145,7 +145,7 @@ capability vector/polar  a point of the plane or of space by its distance and an
   rust    -
   python  -
   odin    euclidean_from_polar, polar_from_euclidean
-  note    the plane's is `math.to_polar` of a `math.Complex`; space's spherical coordinates were not written in time
+  note    the plane's is `math/complex.to_polar` of a `math/complex.Complex`; space's spherical coordinates were not written in time
 
 capability vector/curves  a direction turned along a sphere, and the curves of Catmull and Rom and of Hermite
   heroes  pending

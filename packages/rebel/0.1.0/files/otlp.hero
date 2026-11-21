@@ -1,0 +1,493 @@
+# OpenTelemetry's protocol, OTLP 1.x over HTTP with protobuf: the attributes,
+# the resource and the instrumentation scope every signal's request carries;
+# an exporter, which posts a request to a collector and sends it again as
+# OTLP's specification asks; and the pieces a signal's request is written
+# with, on `protobuf`'s wire, so the bytes are those Python's
+# `opentelemetry-proto` writes for the same message.
+#
+# It does not make a signal's request: `metrics.encode_otlp` makes the
+# metrics', `tracing.encode_spans` and `tracing.encode_logs` the spans' and
+# the log records', each with this package's pieces. Nor does it speak gRPC,
+# OTLP's other transport, or OTLP's JSON.
+#
+# It fails with `invalid`, an environment variable that is not the format or a
+# collector's answer that is no protobuf message; `failed`, a collector that
+# answers a status other than 2xx after every retry; and with the codes of
+# `http.send`, `os.env` and `retries.drawn_wait`.
+
+use http
+use numbers
+use otlp/internal/posting
+use otlp/internal/wire
+use retries
+use strings
+use time
+
+## Codes
+
+# The code of an environment variable that is not the format, and of a
+# collector's answer that is no protobuf message: `resource_from_env`,
+# `exporter_from_env`, `export`.
+constant INVALID: str
+    "invalid"
+
+# The code of a collector that answered a status other than 2xx after every
+# retry: `export`.
+constant FAILED: str
+    "failed"
+
+## Attributes, the resource and the scope
+
+# What an attribute holds, as OTLP's `AnyValue` does.
+variant AttributeValue
+    # A text.
+    text
+        # The text.
+        v: str
+    # `true` or `false`.
+    boolean
+        # The value.
+        v: bool
+    # A whole number.
+    integer
+        # The number.
+        v: i64
+    # A float.
+    number
+        # The number.
+        v: f64
+    # A list of texts, `process.command_args`.
+    texts
+        # The texts, in order.
+        v: [str]
+
+# An attribute: a key and its value, `service.name` and `checkout`, of a
+# resource, a span, an event, a link or a log record.
+record Attribute
+    # The key, by OpenTelemetry's semantic conventions where one names it.
+    key: str
+    # The value.
+    value: AttributeValue
+
+# The instrumentation scope a request names: the library or program that
+# recorded what it carries.
+record Scope
+    # Its name, `myapp`; "" writes none.
+    name: str
+    # Its version, `1.2.0`; "" writes none.
+    version: str
+
+# A resource as OpenTelemetry's environment variables describe it:
+# `service.name` from `OTEL_SERVICE_NAME`, else from
+# `OTEL_RESOURCE_ATTRIBUTES`, else `service`; then every other `key=value`
+# pair of `OTEL_RESOURCE_ATTRIBUTES`, between commas, trimmed and
+# percent-decoded, each a text, as Python's SDK reads them.
+#
+# - `service`: the service's name where neither variable names one.
+#
+# Fails `invalid` where a pair of `OTEL_RESOURCE_ATTRIBUTES` has no `=`, an
+# empty key or a bad escape, as Go's SDK refuses it (Python passes it over),
+# and as `os.env` fails with a code other than `not_found`.
+function resource_from_env(service: str) -> [Attribute]?
+    named @= ""
+    others: [Attribute] @= []
+
+    for h in posting.env_headers(posting.env_text("OTEL_RESOURCE_ATTRIBUTES")?)?
+        if h.name == "service.name"
+            named @ h.value
+        else
+            others @ others.push(Attribute(key: h.name, value: .text(v: h.value)))
+
+    name = posting.first_set(
+        specific: posting.env_text("OTEL_SERVICE_NAME")?,
+        general: posting.first_set(specific: named, general: service)
+    )
+    out: [Attribute] @= [Attribute(key: "service.name", value: .text(v: name))]
+
+    for a in others
+        out @ out.push(a)
+
+    return ok(out)
+
+## Exporters
+
+# Which of OTLP's signals an exporter sends, and so the path it posts to.
+variant Signal
+    # Metrics, to `/v1/metrics`.
+    metrics
+    # Spans, to `/v1/traces`.
+    traces
+    # Log records, to `/v1/logs`.
+    logs
+
+# The URL OTLP's metrics are posted to where nothing else says: the collector
+# on this machine.
+constant METRICS_URL: str
+    "http://localhost:4318/v1/metrics"
+
+# The URL OTLP's spans are posted to where nothing else says.
+constant TRACES_URL: str
+    "http://localhost:4318/v1/traces"
+
+# The URL OTLP's log records are posted to where nothing else says.
+constant LOGS_URL: str
+    "http://localhost:4318/v1/logs"
+
+# Where and how OTLP requests are sent over HTTP. Made by `exporter_to` or
+# `exporter_from_env`, its fields changed by the program; it holds no handle,
+# each request making its own connection.
+record Exporter
+    # How each request is sent; its own retries are not used, the method being
+    # `POST`.
+    client: http.Client
+    # The whole URL requests are posted to, `METRICS_URL` or a collector's.
+    url: str
+    # Fields every request carries, an `Authorization` among them.
+    headers: [http.Header]
+    # Whether the body is sent compressed by gzip.
+    gzip: bool
+    # When a request is sent again: after a status of `statuses`, waiting as
+    # `backoff` says, or the `Retry-After` the collector asks, at most its
+    # `longest`, `count` times at most.
+    retries: http.Retries
+
+# An exporter posting to `target`, uncompressed, with no field of its own,
+# sending again 3 times after a status of 429, 502, 503 or 504, from 1 second
+# doubled up to 30, as OTLP's specification asks.
+#
+# - `target`: the whole URL, `METRICS_URL`, `TRACES_URL`, `LOGS_URL` or a
+#   collector's.
+#
+# See also `exporter_from_env`, `export`.
+function exporter_to(target: str) -> Exporter
+    return Exporter(
+        client: http.default_client(),
+        url: target,
+        headers: [],
+        gzip: false,
+        retries: http.Retries(count: 3, statuses: [429, 502, 503, 504], backoff: retries.backoff(first: time.seconds(1).must(), multiplier: 2.0, longest: time.seconds(30).must()).must())
+    )
+
+# An exporter of `signal` as OpenTelemetry's environment variables describe
+# it: `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` (or `_TRACES_`, `_LOGS_`) taken
+# whole, or `OTEL_EXPORTER_OTLP_ENDPOINT` with `/v1/metrics`, `/v1/traces` or
+# `/v1/logs` after it, or the signal's URL on this machine; the fields of
+# `OTEL_EXPORTER_OTLP_HEADERS` and its kin of the signal, `key=value` pairs
+# between commas, each percent-decoded; gzip where `_COMPRESSION` or its kin
+# says `gzip`; and the milliseconds of `_TIMEOUT` or its kin as the client's
+# deadline.
+#
+# - `signal`: which signal.
+#
+# Fails `invalid` where a header pair has no `=`, the compression is neither
+# `gzip` nor `none`, or the timeout is no whole number of milliseconds; and as
+# `os.env` fails with a code other than `not_found`. See also `exporter_to`.
+function exporter_from_env(signal: Signal) -> Exporter?
+    word = match signal
+        .metrics => "METRICS"
+        .traces  => "TRACES"
+        .logs    => "LOGS"
+
+    path = match signal
+        .metrics => "/v1/metrics"
+        .traces  => "/v1/traces"
+        .logs    => "/v1/logs"
+
+    out @= exporter_to("http://localhost:4318" + path)
+    specific = posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_ENDPOINT")?
+    general = posting.env_text("OTEL_EXPORTER_OTLP_ENDPOINT")?
+
+    if specific != ""
+        out.url @ specific
+    else if general != ""
+        out.url @ strings.trim_suffix(s: general, suffix: "/") + path
+    out.headers @ posting.env_headers(posting.first_set(specific: posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_HEADERS")?, general: posting.env_text("OTEL_EXPORTER_OTLP_HEADERS")?))?
+    compression = posting.first_set(
+        specific: posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_COMPRESSION")?,
+        general: posting.env_text("OTEL_EXPORTER_OTLP_COMPRESSION")?
+    )
+
+    match compression
+        "gzip" => out.gzip @ true
+        "none" | "" => out.gzip @ false
+        _ => return fail(code: INVALID, msg: f"the OTLP compression \"{compression}\" is neither gzip nor none")
+
+    timeout = posting.first_set(
+        specific: posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_TIMEOUT")?,
+        general: posting.env_text("OTEL_EXPORTER_OTLP_TIMEOUT")?
+    )
+
+    if timeout != ""
+        match numbers.parse_int(timeout)
+            .ok ms => out.client.deadline_ms @ ms
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the OTLP timeout \"{timeout}\" is no whole number of milliseconds"
+            )
+    return ok(out)
+
+# The outcome of an export a collector accepted: how much of it it refused
+# none the less, and why.
+record Exported
+    # How many points, spans or records were refused; 0 for none.
+    rejected: i64
+    # The collector's words; "" where it refused nothing.
+    message: str
+
+# Posts `body`, an OTLP request, to `exporter`'s URL as
+# `application/x-protobuf`, and sends it again as `exporter.retries` says.
+#
+# - `exporter`: where and how.
+# - `body`: the request's bytes, as `metrics.encode_otlp`,
+#   `tracing.encode_spans` or `tracing.encode_logs` writes them.
+#
+# Fails `failed` where the collector answers a status other than 2xx after
+# every retry, the message holding its status and words; `invalid` where its
+# answer is no protobuf message; and as `http.send` and `retries.drawn_wait`
+# fail. See also `exporter_to`.
+function export(exporter: Exporter, body: [u8]) -> Exported?
+    partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, policy: exporter.retries, body: body)?
+    return ok(Exported(rejected: partial.rejected, message: partial.message))
+
+## Writing a request
+
+# `value` as OTLP's `AnyValue`, the bytes a log record's body is written as,
+# and an attribute's value.
+#
+# - `value`: the value.
+# - `length`: the characters a text keeps, the rest cut off, as
+#   OpenTelemetry's attribute length limit cuts it; 0 for no limit.
+#
+# See also `attribute_bytes`.
+function value_bytes(value: AttributeValue, length: i64) -> [u8]
+    return match value
+        .text t    => wire.any_text(wire.cut_text(t.v, length: length))
+        .boolean b => wire.any_boolean(b.v)
+        .integer n => wire.any_integer(n.v)
+        .number x  => wire.any_number(x.v)
+        .texts ts =>
+            items: [[u8]] @= []
+
+            for s in ts.v
+                items @ items.push(wire.any_text(wire.cut_text(s, length: length)))
+
+            wire.any_array(items)
+
+# `a` as OTLP's `KeyValue`, its value an `AnyValue`, the bytes a signal's
+# request writes for an attribute of its resource, a span, an event, a link,
+# a log record or a point.
+#
+# - `a`: the attribute.
+# - `length`: the characters a text keeps, as `value_bytes` reads it; 0 for
+#   no limit.
+#
+# See also `resource_bytes`.
+function attribute_bytes(a: Attribute, length: i64) -> [u8]
+    return wire.key_value(key: a.key, value: value_bytes(a.value, length: length))
+
+# A `Resource` holding the `KeyValue`s `attributes`, each its field 1.
+#
+# - `attributes`: the attributes, each as `attribute_bytes` writes it; none
+#   writes an empty resource.
+function resource_bytes(attributes: [[u8]]) -> [u8]
+    return wire.resource(attributes)
+
+# An `InstrumentationScope`: its name, field 1, and its version, field 2,
+# each left out where empty.
+#
+# - `scope`: the scope.
+function scope_bytes(scope: Scope) -> [u8]
+    return wire.scope(name: scope.name, version: scope.version)
+
+# `t`'s nanoseconds since 1970 as OTLP's `fixed64` times hold them: 0 for an
+# instant before 1970, which OTLP cannot carry.
+#
+# - `t`: the instant.
+function unix_nanoseconds(t: time.Instant) -> u64
+    return wire.unix_nanoseconds(t.unix_nanoseconds)
+
+# Writes the string `s` as the field `number` of the message `to` holds, left
+# out where it is empty, as a proto3 `string` is.
+#
+# - `to`: the message's bytes so far; the field is added at their end.
+# - `number`: the field's number, from the `.proto` file.
+# - `s`: the text.
+function put_text(@to: [u8], number: i64, s: str)
+    wire.put_text(@to, number: number, s: s)
+
+# Writes `b` as the field `number` of the message `to` holds, written even
+# where empty: a string's bytes, a `bytes` field or a message.
+#
+# - `to`: the message's bytes so far; the field is added at their end.
+# - `number`: the field's number.
+# - `b`: the bytes.
+function put_bytes(@to: [u8], number: i64, b: [u8])
+    wire.put_bytes(to: @to, number: number, b: b)
+
+# Writes `b` as the field `number` of the message `to` holds, left out where
+# it is empty, as a proto3 `bytes` field is.
+#
+# - `to`: the message's bytes so far; the field is added at their end.
+# - `number`: the field's number.
+# - `b`: the bytes.
+function put_bytes_unless_empty(@to: [u8], number: i64, b: [u8])
+    wire.put_bytes_unless_empty(to: @to, number: number, b: b)
+
+# Writes `v` as the varint field `number` of the message `to` holds, left out
+# where it is 0.
+#
+# - `to`: the message's bytes so far; the field is added at their end.
+# - `number`: the field's number.
+# - `v`: the value, an enum's number among them.
+function put_varint(@to: [u8], number: i64, v: u64)
+    wire.put_varint(@to, number: number, v: v)
+
+# Writes `v` as the `fixed32` field `number` of the message `to` holds, left
+# out where it is 0.
+#
+# - `to`: the message's bytes so far; the field is added at their end.
+# - `number`: the field's number.
+# - `v`: the value, a span's flags among them.
+function put_fixed32(@to: [u8], number: i64, v: u32)
+    wire.put_fixed32(@to, number: number, v: v)
+
+# Writes `v` as the `fixed64` field `number` of the message `to` holds, left
+# out where it is 0.
+#
+# - `to`: the message's bytes so far; the field is added at their end.
+# - `number`: the field's number.
+# - `v`: the value, a time from `unix_nanoseconds` among them.
+function put_fixed64(@to: [u8], number: i64, v: u64)
+    wire.put_fixed64(@to, number: number, v: v)
+
+# Writes `x` as the `double` field `number` of the message `to` holds,
+# always: a oneof's member and an `optional` field are written at zero too.
+#
+# - `to`: the message's bytes so far; the field is added at their end.
+# - `number`: the field's number.
+# - `x`: any float.
+function put_double(@to: [u8], number: i64, x: f64)
+    wire.put_double(@to, number: number, x: x)
+
+# Writes `x` as the `double` field `number` of the message `to` holds, left
+# out where it is 0, as a plain proto3 field is.
+#
+# - `to`: the message's bytes so far; the field is added at their end.
+# - `number`: the field's number.
+# - `x`: any float; minus zero is written.
+function put_double_unless_zero(@to: [u8], number: i64, x: f64)
+    wire.put_double_unless_zero(@to, number: number, x: x)
+
+## Tests
+
+test "export: a collector that is not there fails with the connection's code, for each signal's URL"
+    for target in ["http://127.0.0.1:9/v1/metrics", "http://127.0.0.1:9/v1/traces", "http://127.0.0.1:9/v1/logs"]
+        exporter @= exporter_to(target)
+        exporter.client.deadline_ms @ 2_000
+        assert export(exporter, body: []).is_err()
+
+test "exporter_from_env: each signal's path where the environment names none"
+    assert exporter_from_env(.metrics).must().url != ""
+    assert exporter_from_env(.traces).must().url != ""
+    assert exporter_from_env(.logs).must().url != ""
+
+test "attribute_bytes: the bytes Python's opentelemetry-proto writes for each kind of value, and a text cut"
+    # KeyValue(key="a", value=AnyValue(string_value="b")).SerializeToString()
+    assert attribute_bytes(Attribute(key: "a", value: .text(v: "b")), length: 0) == [10, 1, 97, 18, 3, 10, 1, 98]
+
+    # KeyValue(key="a", value=AnyValue(bool_value=True))
+    assert attribute_bytes(Attribute(key: "a", value: .boolean(v: true)), length: 0) == [10, 1, 97, 18, 2, 16, 1]
+
+    # KeyValue(key="a", value=AnyValue(array_value=ArrayValue(values=[AnyValue(string_value="x")])))
+    assert attribute_bytes(Attribute(key: "a", value: .texts(v: ["x"])), length: 0) == [10, 1, 97, 18, 7, 42, 5, 10, 3, 10, 1, 120]
+    assert attribute_bytes(Attribute(key: "a", value: .text(v: "bcd")), length: 1) == attribute_bytes(Attribute(key: "a", value: .text(v: "b")), length: 0)
+
+## Examples
+
+# An exporter to the collector on this machine.
+test "exporter_to: the local collector"
+    assert exporter_to(METRICS_URL).url == "http://localhost:4318/v1/metrics"
+
+# An exporter of log records as the environment says, here nothing.
+test "exporter_from_env: logs"
+    assert exporter_from_env(.logs).must().url != ""
+
+# A resource named by the program where the environment names none.
+test "resource_from_env: a service's name"
+    assert resource_from_env("checkout").must()[0].key == "service.name"
+
+# An export to a collector that is not running here fails, telling why.
+test "export: no collector here"
+    exporter @= exporter_to("http://127.0.0.1:9/v1/metrics")
+    exporter.client.deadline_ms @ 2_000
+    assert export(exporter, body: []).is_err()
+
+# A log record's body.
+test "value_bytes: a text"
+    assert value_bytes(.text(v: "b"), length: 0) == [10, 1, 98]
+
+# An attribute as a request writes it.
+test "attribute_bytes: a text"
+    assert attribute_bytes(Attribute(key: "a", value: .text(v: "b")), length: 0) == [10, 1, 97, 18, 3, 10, 1, 98]
+
+# A resource of one attribute.
+test "resource_bytes: one attribute"
+    one = attribute_bytes(Attribute(key: "a", value: .text(v: "b")), length: 0)
+    assert resource_bytes([one]) == [10, 8, 10, 1, 97, 18, 3, 10, 1, 98]
+
+# A scope named and versioned.
+test "scope_bytes: a name and a version"
+    assert scope_bytes(Scope(name: "m", version: "1")) == [10, 1, 109, 18, 1, 49]
+
+# The start of 1970 is no time OTLP writes: zero.
+test "unix_nanoseconds: the epoch"
+    assert unix_nanoseconds(time.epoch()) == 0
+
+# A text field, and an empty one left out.
+test "put_text: a name"
+    out: [u8] @= []
+    put_text(@out, number: 1, s: "m")
+    put_text(@out, number: 2, s: "")
+    assert out == [10, 1, 109]
+
+# An empty message written all the same.
+test "put_bytes: an empty message"
+    out: [u8] @= []
+    put_bytes(to: @out, number: 1, b: [])
+    assert out == [10, 0]
+
+# An empty parent span id left out.
+test "put_bytes_unless_empty: no parent"
+    out: [u8] @= []
+    put_bytes_unless_empty(to: @out, number: 4, b: [])
+    assert out == []
+
+# A span's kind, server.
+test "put_varint: a kind"
+    out: [u8] @= []
+    put_varint(@out, number: 6, v: 2)
+    assert out == [48, 2]
+
+# A span's flags, sampled and its parent remote.
+test "put_fixed32: the flags"
+    out: [u8] @= []
+    put_fixed32(@out, number: 16, v: 257)
+    assert out == [133, 1, 1, 1, 0, 0]
+
+# A time of one nanosecond past 1970.
+test "put_fixed64: a time"
+    out: [u8] @= []
+    put_fixed64(@out, number: 2, v: 1)
+    assert out == [17, 1, 0, 0, 0, 0, 0, 0, 0]
+
+# A point's value, written though it is zero.
+test "put_double: zero written"
+    out: [u8] @= []
+    put_double(@out, number: 4, x: 0.0)
+    assert out == [33, 0, 0, 0, 0, 0, 0, 0, 0]
+
+# A sum of zero left out.
+test "put_double_unless_zero: zero left out"
+    out: [u8] @= []
+    put_double_unless_zero(@out, number: 5, x: 0.0)
+    assert out == []

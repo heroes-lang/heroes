@@ -75,9 +75,9 @@
 use io
 use net
 use os
+use scram
 use sql
 use sql/postgres/internal/answers
-use sql/postgres/internal/auth
 use sql/postgres/internal/backend
 use sql/postgres/internal/login
 use sql/postgres/internal/requests
@@ -216,7 +216,7 @@ function parse_url(url: str) -> Options?
 # Kerberos or a SASL mechanism other than SCRAM-SHA-256, or speaks no protocol
 # 3.0; `invalid` where `opts.port` is out of range or `opts.user` is empty;
 # `closed` where the server ends the connection; `limit` where it has no
-# connection left; and as `os.random_bytes` fails where the system gives no
+# connection left; and as `scram.new_nonce` fails where the system gives no
 # random bytes for the login's nonce. See also `close`, `options`.
 function open(opts: Options) -> Db?
     if opts.port < 1 || opts.port > 65535
@@ -229,7 +229,7 @@ function open(opts: Options) -> Db?
         opts.user
     else
         opts.database
-    random = os.random_bytes(18)?
+    nonce = scram.new_nonce()?
 
     made: io.Stream? = match opts.security
         .plain =>
@@ -278,7 +278,7 @@ function open(opts: Options) -> Db?
 
     s @= session.over(out: stream, input: stream, target: f"{opts.host}:{opts.port}/{database}")
 
-    match login.login(@s, user: opts.user, database: opts.database, application_name: opts.application_name, password: opts.password, nonce: auth.nonce_of(random))
+    match login.login(@s, user: opts.user, database: opts.database, application_name: opts.application_name, password: opts.password, nonce: nonce)
         .ok _ => return ok(Db(session: s))
         .err e =>
             _ = session.close(@s).is_err()

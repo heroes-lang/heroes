@@ -75,8 +75,8 @@ function checks_of(transitional: bool, dns_length: bool) -> criteria.Checks
     )
 
 # Adds to `found` a line naming `entry` and `operation` where `answer` is not
-# the `outcome` the case writes, one letter: `o` the text `expected`, `e` a failure
-# `invalid`, `n` a failure `unsupported`.
+# the `outcome` the case writes, one letter: `o` the text `expected`, `e` a
+# failure `invalid`.
 function add_mismatch(@found: [str], entry: str, operation: str, answer: str?, expected: str, outcome: str)
     match answer
         .ok text =>
@@ -85,10 +85,8 @@ function add_mismatch(@found: [str], entry: str, operation: str, answer: str?, e
         .err e =>
             if outcome == "o"
                 found @ found.push(f"{entry}: {operation} failed {e.code}: {e.msg}")
-            else if outcome == "e" && e.code != process.INVALID
+            else if e.code != process.INVALID
                 found @ found.push(f"{entry}: {operation} failed {e.code} where the case expects invalid")
-            else if outcome == "n" && e.code != process.UNSUPPORTED
-                found @ found.push(f"{entry}: {operation} failed {e.code} where the case expects unsupported")
 
 # The cases of `cases` whose answers are not the outcomes they write, one line
 # each naming the case and the operation; empty where every one agrees.
@@ -146,4 +144,4 @@ test "text_of and columns_of: ASCII, an escape, an escape of five digits, nothin
 test "failures: a case that agrees, one that does not, and each outcome"
     assert failures(["fass.de;;;;ooo", "fa^df^.de;;xn--fa-hia.de;fass.de;ooo", "a.bc--de.f;;;;eee"]) == []
     assert failures(["fass.de;;;;eoo"]).len() == 1
-    assert failures(["a^301^;;;;nnn"]) == []
+    assert failures(["a^301^;^e1^;xn--1ca;;ooo"]) == []

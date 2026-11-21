@@ -12,6 +12,7 @@ use http/internal/write
 use http2
 use io
 use net
+use retries
 use time
 use tls
 
@@ -90,20 +91,6 @@ function at_most(n: i64, most: i64) -> i64
         return most
     return n
 
-# The milliseconds waited before the retry numbered `attempt` from 1: `base`
-# doubled `attempt - 1` times, at most `most`, never overflowing.
-function backoff_ms(attempt: i64, base: i64, most: i64) -> i64
-    wait: i64 @= at_most(n: base, most: most)
-    step: i64 @= 1
-
-    while step < attempt && wait < most
-        if wait > most / 2
-            return most
-        wait @ wait * 2
-        step @ step + 1
-
-    return at_most(n: wait, most: most)
-
 # Whether `statuses` holds `status`.
 function has_status(statuses: [i64], status: i64) -> bool
     for s in statuses
@@ -111,27 +98,6 @@ function has_status(statuses: [i64], status: i64) -> bool
             return true
 
     return false
-
-# The milliseconds a `Retry-After` value asks, RFC 9110 § 10.2.3: seconds, or
-# an HTTP date counted from `now`, 0 for one passed. Fails `not_found` where
-# `value` is neither.
-function retry_after_ms(value: str, now: time.Instant) -> i64?
-    match syntax.decimal(s: value, what: "reading `Retry-After`")
-        .ok seconds =>
-            if seconds > 9_223_372_036_854_775 / 1_000
-                return ok(9_223_372_036_854_775)
-            return ok(seconds * 1_000)
-        .err _ => _ = 0
-
-    match parse_date(value)
-        .ok at =>
-            if !time.is_after(a: at, b: now)
-                return ok(0)
-            return ok(time.to_units(time.between(from: now, to: at).default(time.max_duration()), unit: .millisecond))
-        .err _ => return fail(
-            code: NOT_FOUND,
-            msg: f"`Retry-After` {syntax.shown(value)} is neither seconds nor a date"
-        )
 
 # The instant `s` writes as an HTTP date: IMF-fixdate, RFC 850's or C's
 # asctime form. Fails `invalid` where it is none, `does_not_fit` where it is
@@ -421,19 +387,18 @@ test "is_idempotent, same_origin, host_field: the six methods, a port of 80 writ
     assert host_field(scheme: "http", host: "::1", port: "8080") == "[::1]:8080" && host_field(scheme: "http", host: "h", port: "80") == "h"
     assert host_field(scheme: "https", host: "h", port: "443") == "h" && host_field(scheme: "https", host: "h", port: "80") == "h:80" && host_field(scheme: "http", host: "h", port: "") == "h"
 
-test "backoff_ms: doubled from the base, held at the most, never overflowing"
-    assert backoff_ms(attempt: 1, base: 100, most: 10_000) == 100
-    assert backoff_ms(attempt: 4, base: 100, most: 10_000) == 800
-    assert backoff_ms(attempt: 9, base: 100, most: 10_000) == 10_000
-    assert backoff_ms(attempt: 9_223_372_036_854_775_807, base: 4_611_686_018_427_387_904, most: 9_223_372_036_854_775_807) == 9_223_372_036_854_775_807
-    assert backoff_ms(attempt: 3, base: 0, most: 50) == 0
-
-test "retry_after_ms: seconds, a date to come, a date passed, and neither"
+# `retries.parse_retry_after` answers what this module's own reader answered
+# until 2026-11-20, when the coherence review's D14 made `retries`' reader
+# the one `fetch_once` reads: the same values, here as durations.
+test "parse_retry_after: seconds, a date to come, a date passed, and neither, as this module's reader answered them"
     now = time.from_unix(whole_seconds: 1_445_412_480, extra_nanoseconds: 0).must()
-    assert retry_after_ms("120", now: now).must() == 120_000
-    assert retry_after_ms("Wed, 21 Oct 2015 07:28:10 GMT", now: now).must() == 10_000
-    assert retry_after_ms("Wed, 21 Oct 2015 07:27:00 GMT", now: now).must() == 0
-    assert retry_after_ms("soon", now: now).is_err() && retry_after_ms("", now: now).is_err() && retry_after_ms("-1", now: now).is_err()
+    most = time.max_duration()
+    assert retries.parse_retry_after("120", received: now, longest: most).must() == time.seconds(120).must()
+    assert retries.parse_retry_after("Wed, 21 Oct 2015 07:28:10 GMT", received: now, longest: most).must() == time.seconds(10).must()
+    assert retries.parse_retry_after("Wed, 21 Oct 2015 07:27:00 GMT", received: now, longest: most).must() == time.Duration(nanoseconds: 0)
+    assert retries.parse_retry_after("soon", received: now, longest: most).is_err()
+    assert retries.parse_retry_after("", received: now, longest: most).is_err()
+    assert retries.parse_retry_after("-1", received: now, longest: most).is_err()
 
 test "parse_date: the three forms RFC 9110 names, one instant"
     want = time.from_unix(whole_seconds: 784_111_777, extra_nanoseconds: 0).must()

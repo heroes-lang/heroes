@@ -45,6 +45,7 @@ use jobs/internal/limits
 use jobs/internal/stored
 use json
 use os
+use retries
 use time
 
 ## Codes
@@ -375,7 +376,7 @@ record Worker
     # The waits between a job's failed attempts; `default_backoff()` by
     # default. Its own limits on attempts and time are not read: a job's
     # `max_attempts` decides when it fails for good.
-    backoff: time.Backoff
+    backoff: retries.Backoff
     # How long the worker loop sleeps where no job is ready, zero or more;
     # a second by default. Neither store wakes a worker when a job comes.
     poll: time.Duration
@@ -435,13 +436,13 @@ function check_worker(worker: Worker) -> ()?
 # weeks, as Sidekiq's do.
 #
 # See also `retry_wait`, `Worker`.
-function default_backoff() -> time.Backoff
-    policy = time.backoff(
+function default_backoff() -> retries.Backoff
+    policy = retries.backoff(
         first: time.Duration(nanoseconds: 15 * limits.SECOND_NANOSECONDS),
         multiplier: 2.0,
         longest: time.Duration(nanoseconds: 86_400 * limits.SECOND_NANOSECONDS)
     ).must()
-    return time.with_jitter(policy, .spread(factor: 0.2)).must()
+    return retries.with_jitter(policy, .spread(factor: 0.2)).must()
 
 # The wait before a job runs again after its attempt number `attempt`
 # failed, by `policy`, its jitter drawn from the system's random bytes.
@@ -450,18 +451,13 @@ function default_backoff() -> time.Backoff
 # - `attempt`: the attempt that failed, from 1.
 #
 # Fails `invalid` where `attempt` is below 1 or `policy` is one
-# `time.backoff` refuses, and as `os.random_bytes` fails where the system
-# gives none. See also `default_backoff`, `time.wait_after`.
-function retry_wait(policy: time.Backoff, attempt: i64) -> time.Duration?
+# `retries.backoff` refuses, and as `retries.drawn_wait` fails where the
+# system gives no random bytes. See also `default_backoff`,
+# `retries.drawn_wait`.
+function retry_wait(policy: retries.Backoff, attempt: i64) -> time.Duration?
     if attempt < 1
         return fail(code: INVALID, msg: f"the attempt {attempt} is below 1")
-    drawn = os.random_bytes(7)?
-    return time.wait_after(
-        policy,
-        failures: attempt,
-        previous: time.Duration(nanoseconds: 0),
-        fraction: limits.fraction_of(drawn)
-    )
+    return retries.drawn_wait(policy, failures: attempt, previous: time.Duration(nanoseconds: 0))
 
 ## Periodic jobs
 
@@ -586,7 +582,7 @@ test "retry_wait: the first wait within a fifth of 15 s, the tenth capped near a
         assert late.nanoseconds >= 69_120 * 1_000_000_000
 
     assert retry_wait(policy, attempt: 0).is_err()
-    plain = time.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
+    plain = retries.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
     assert retry_wait(plain, attempt: 3).must() == time.seconds(18).must()
 
 test "new_periodic and next_due: a nightly schedule, a zone's clocks, and the refusals"
@@ -707,7 +703,7 @@ test "default_backoff: 15 s first, at most a day"
 
 # The wait after a job's third attempt failed, without jitter.
 test "retry_wait: 2 s tripled twice"
-    policy = time.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
+    policy = retries.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
     assert retry_wait(policy, attempt: 3).must() == time.seconds(18).must()
 
 # A report enqueued every night at three.

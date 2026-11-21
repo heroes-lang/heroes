@@ -1,5 +1,5 @@
 # What the two tables say of one code point: its status in UTS #46's mapping
-# table and what the Map step makes of it, and the four properties the checks
+# table and what the Map step makes of it, and the three properties the checks
 # read. Each answer is one binary search of a table's runs; a code point is
 # a number from 0 to U+10FFFF, as every caller hands it.
 
@@ -76,16 +76,6 @@ constant JOINS_RIGHT: i64
 constant JOINS_THROUGH: i64
     4
 
-# The answers of the NFC quick check.
-constant QUICK_YES: i64
-    0
-
-constant QUICK_MAYBE: i64
-    1
-
-constant QUICK_NO: i64
-    2
-
 # The canonical combining class of a virama.
 constant VIRAMA: i64
     9
@@ -144,18 +134,14 @@ function add_mapped(@points: [i64], n: i64, transitional: bool)
 
 # The run of the properties table that holds `n`.
 function properties_of(n: i64) -> i64
-    return run_at(property_table.RUNS, n << 21 | 0x1fffff)
+    return run_at(property_table.RUNS, n << 18 | 0x3ffff)
 
 # The bidirectional class of `n`: `L` to `NSM`, or `OTHER`.
 function bidi_of(n: i64) -> i64
-    return properties_of(n) >> 14 & 15
+    return properties_of(n) >> 11 & 15
 
 # The joining type of `n`: `JOINS_NOT` to `JOINS_THROUGH`.
 function joining_of(n: i64) -> i64
-    return properties_of(n) >> 11 & 7
-
-# The NFC quick check of `n`: `QUICK_YES`, `QUICK_MAYBE` or `QUICK_NO`.
-function quick_of(n: i64) -> i64
     return properties_of(n) >> 8 & 7
 
 # The canonical combining class of `n`, 0 to 254.
@@ -200,7 +186,7 @@ test "add_mapped: a capital, the deviations both ways, U+1E9E both ways, an igno
     assert mapped_alone(n: 0xfdfa, transitional: false) == [0x635, 0x644, 0x649, 0x20, 0x627, 0x644, 0x644, 0x647, 0x20, 0x639, 0x644, 0x64a, 0x647, 0x20, 0x648, 0x633, 0x644, 0x645]
     assert mapped_alone(n: 0x10ffff, transitional: false) == [0x10ffff]
 
-test "bidi_of, joining_of, quick_of and combining_of: as Unicode 17.0.0's files say, at both ends"
+test "bidi_of, joining_of and combining_of: as Unicode 17.0.0's files say, at both ends"
     assert bidi_of(0x61) == L
     assert bidi_of(0x5d0) == R
     assert bidi_of(0x627) == AL
@@ -216,9 +202,6 @@ test "bidi_of, joining_of, quick_of and combining_of: as Unicode 17.0.0's files 
     assert joining_of(0x300) == JOINS_THROUGH
     assert joining_of(0x200d) == JOINS_NOT
     assert joining_of(0x61) == JOINS_NOT
-    assert quick_of(0x61) == QUICK_YES
-    assert quick_of(0x300) == QUICK_MAYBE
-    assert quick_of(0x958) == QUICK_NO
     assert combining_of(0x94d) == VIRAMA
     assert combining_of(0x300) == 230
     assert combining_of(0x61) == 0

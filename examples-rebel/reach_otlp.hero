@@ -1,0 +1,12 @@
+# Reaches Rebel's `otlp`, so that `heroes test` on this file runs the tests of
+# the package and of its private modules (spec § 12). It prints the URL an
+# exporter of spans posts to on this machine, and the bytes of one attribute
+# as an OTLP request writes them, the same on every run.
+
+use <rebel>/bytes
+use <rebel>/otlp
+
+function main()
+    print(otlp.exporter_to(otlp.TRACES_URL).url)
+    attribute = otlp.Attribute(key: "service.name", value: .text(v: "checkout"))
+    print(bytes.format_hex(otlp.attribute_bytes(attribute, length: 0)))

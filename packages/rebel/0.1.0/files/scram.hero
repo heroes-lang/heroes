@@ -1,0 +1,357 @@
+# The client's side of SCRAM (RFC 5802, RFC 7677), the login that proves a
+# password to a server without sending it, by SHA-1, SHA-256 or SHA-512; and
+# SASLprep (RFC 4013), the preparation of a password SCRAM asks.
+# `sql/postgres`, `mongodb` and `kafka` log in through it, so a password above
+# ASCII is prepared one way for all three: by SASLprep where SASLprep accepts
+# it, as its own UTF-8 bytes where SASLprep refuses it, PostgreSQL's
+# documented rule (`prepared_password`).
+#
+# It does not carry the messages, which each protocol wraps its own way, nor
+# open a connection (`net`, `tls`). No channel binding is offered: the first
+# message's header is `n,,`, and SCRAM-SHA-256-PLUS waits for `tls` to give a
+# connection's channel binding.
+#
+# It fails with `invalid`, a server's message that is not SCRAM's or asks
+# what this client refuses, and `permission`, a server that refuses the login
+# or does not know the password.
+
+use bytes
+use crypto
+use os
+use scram/internal/messages
+use scram/internal/preparation
+use strings
+
+## Codes and bounds
+
+# The code of a server's message that is not SCRAM's, a nonce that does not
+# extend the client's, a salt that is not base 64, an iteration count outside
+# the bounds (`client_final`, `verify`), and a password SASLprep refuses
+# (`saslprep`).
+constant INVALID: str
+    "invalid"
+
+# The code of a server that refuses the login, or whose signature is not the
+# one the password makes, so it does not know the password (`verify`).
+constant PERMISSION: str
+    "permission"
+
+# The largest iteration count `client_final` accepts from a server, so that a
+# server cannot make the client spend without end: PBKDF2 of ten million
+# iterations of SHA-512 takes seconds.
+constant MOST_ITERATIONS: i64
+    10000000
+
+## The exchange
+
+# The hash an exchange is made of: SCRAM-SHA-1, SCRAM-SHA-256 or
+# SCRAM-SHA-512.
+variant Hash
+    # SHA-1 (RFC 5802), which MongoDB's older users hold.
+    sha1
+    # SHA-256 (RFC 7677).
+    sha256
+    # SHA-512, which Kafka speaks.
+    sha512
+
+# A SCRAM exchange in progress, the client's side: what it said first, and
+# what it computed once the server answered. Made by `start`, advanced by
+# `client_final`, checked by `verify`; it holds no handle.
+record Exchange
+    # The hash every step takes.
+    hash: Hash
+    # The client's nonce.
+    nonce: str
+    # The client's first message without its header: `n=user,r=nonce`.
+    first_bare: str
+    # The smallest iteration count the client accepts from the server.
+    least_iterations: i64
+    # The salted password, empty until `client_final`.
+    salted: [u8]
+    # The message both sides sign, empty until `client_final`.
+    auth_message: str
+
+# A fresh nonce: 24 bytes of the system's generator for keys, in base 64, 32
+# printable characters with no comma.
+#
+# Fails where `os.random_bytes` fails, with its code. See also `start`.
+function new_nonce() -> str?
+    return ok(bytes.format_base64(os.random_bytes(24)?))
+
+# An exchange of `hash` opened by `user` with `nonce`.
+#
+# - `hash`: the hash the server and the client agreed.
+# - `user`: the user's name, written in the first message with `=` as `=3D`
+#   and `,` as `=2C`; PostgreSQL reads the user of its startup message
+#   instead, and its client sends "".
+# - `nonce`: printable characters other than `,`, fresh for each login
+#   (`new_nonce`).
+# - `least_iterations`: the smallest iteration count the server may ask, 1 or
+#   more: MongoDB's drivers ask 4096, RFC 7677's least.
+#
+# See also `client_first`, `client_final`.
+function start(hash: Hash, user: str, nonce: str, least_iterations: i64) -> Exchange
+    return Exchange(
+        hash: hash,
+        nonce: nonce,
+        first_bare: "n=" + messages.escaped(user) + ",r=" + nonce,
+        least_iterations: least_iterations,
+        salted: [],
+        auth_message: ""
+    )
+
+# The client's first message: the header `n,,`, no channel binding, then the
+# bare message.
+#
+# - `e`: the exchange, from `start`.
+function client_first(e: Exchange) -> str
+    return "n,," + e.first_bare
+
+# The client's final message, its proof made from `password` and the server's
+# first message.
+#
+# - `e`: the exchange, after `client_first`; its salted password and the
+#   message both sides sign are set, for `verify`.
+# - `password`: the password, prepared by `prepared_password`, so a password
+#   SASLprep changes proves what the prepared one does: "pen" U+00AD "cil"
+#   proves "pencil".
+# - `server_first`: the server's first message, `r=...,s=...,i=...`.
+#
+# Fails `invalid` where `server_first` is not a SCRAM message, names an
+# extension (`m=`), holds no nonce, salt or count, its nonce does not extend
+# the client's, its salt is not base 64, or its count is outside
+# `e.least_iterations` to `MOST_ITERATIONS`. It costs PBKDF2 at the server's
+# count. See also `verify`.
+function client_final(@e: Exchange, password: str, server_first: str) -> str?
+    found = messages.attributes(server_first)?
+
+    if !found["m"].is_err()
+        return fail(code: INVALID, msg: "the server asks for a SCRAM extension this client does not know")
+    nonce = messages.attribute(found: found, key: "r")?
+
+    if !strings.has_prefix(s: nonce, prefix: e.nonce) || nonce.len() == e.nonce.len()
+        return fail(code: INVALID, msg: "the server's SCRAM nonce does not extend the client's")
+
+    salt = match bytes.parse_base64(messages.attribute(found: found, key: "s")?)
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: "the server's SCRAM salt is not base 64")
+
+    iterations = messages.iterations_of(messages.attribute(found: found, key: "i")?, least: e.least_iterations)?
+    algorithm = messages.algorithm_of(e.hash)
+    salted = crypto.pbkdf2(algorithm, password: prepared_password(password), salt: salt, iterations: iterations, length: crypto.digest_size(algorithm))?
+    client_key = crypto.hmac_text(algorithm, key: salted, s: "Client Key")
+    stored_key = messages.digest_of(e.hash, data: client_key)
+    without_proof = "c=biws,r=" + nonce
+    auth_message = e.first_bare + "," + server_first + "," + without_proof
+    signature = crypto.hmac_text(algorithm, key: stored_key, s: auth_message)
+    e.salted @ salted
+    e.auth_message @ auth_message
+    return ok(without_proof + ",p=" + bytes.format_base64(messages.xor(a: client_key, b: signature)))
+
+# Checks the server's final message, which proves that the server knew the
+# password too.
+#
+# - `e`: the exchange, after `client_final`.
+# - `server_final`: `v=` and the server's signature, or `e=` and the reason
+#   the server refuses.
+#
+# Fails `permission` where the server refuses (`e=`) or its signature is not
+# the one the password makes, compared in constant time; `invalid` where the
+# message is not SCRAM's or its signature is not base 64.
+function verify(e: Exchange, server_final: str) -> ()?
+    found = messages.attributes(server_final)?
+
+    match found["e"]
+        .ok why => return fail(code: PERMISSION, msg: f"the server refused the SCRAM login: {why}")
+        .err _  => _ = 0
+
+    sent = match bytes.parse_base64(messages.attribute(found: found, key: "v")?)
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: "the server's SCRAM signature is not base 64")
+
+    algorithm = messages.algorithm_of(e.hash)
+    server_key = crypto.hmac_text(algorithm, key: e.salted, s: "Server Key")
+    expected = crypto.hmac_text(algorithm, key: server_key, s: e.auth_message)
+
+    if sent.len() == 0 || !crypto.equals_constant_time(a: sent, b: expected)
+        return fail(
+            code: PERMISSION,
+            msg: "the server's SCRAM signature is not the one the password makes: it does not know the password, or something stands between"
+        )
+    return ok()
+
+## SASLprep
+
+# `s` prepared by SASLprep (RFC 4013), as a stored string: RFC 3454's table
+# B.1 left out (the soft hyphen, the joiners), C.1.2's spaces written as
+# U+0020, the result in NFKC, then refused where it holds a prohibited code
+# point or one unassigned in Unicode 3.2, or breaks the bidirectional rule.
+#
+# - `s`: the text; empty, it is answered empty.
+#
+# Fails `invalid`, the message naming the rule and the code point, never `s`,
+# which is a password. See also `prepared_password`.
+function saslprep(s: str) -> str?
+    return preparation.prepared(s)
+
+# The bytes SCRAM salts for `password`: its SASLprep where SASLprep accepts
+# it, its own UTF-8 where SASLprep refuses it, as PostgreSQL stores a
+# password (its documentation, *SASL Authentication*), and so as MongoDB does
+# for every password its users can hold.
+#
+# - `password`: the password; ASCII without a control character is answered
+#   as it is.
+#
+# See also `saslprep`.
+function prepared_password(password: str) -> [u8]
+    return match preparation.prepared(password)
+        .ok text => bytes.from_text(text)
+        .err _   => bytes.from_text(password)
+
+## Tests
+
+test "client_final and verify: RFC 5802's exchange of SCRAM-SHA-1, as Python's hashlib computes it"
+    e @= start(.sha1, user: "user", nonce: "fyko+d2lbbFgONRv9qkxdawL", least_iterations: 4096)
+    assert client_first(e) == "n,,n=user,r=fyko+d2lbbFgONRv9qkxdawL"
+    final = client_final(
+        @e,
+        password: "pencil",
+        server_first: "r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,s=QSXCR+Q6sek8bf92,i=4096"
+    ).must()
+    assert final == "c=biws,r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,p=v0X8v3Bz2T0CJGbJQyF0X+HI4Ts="
+    verify(e, server_final: "v=rmF9pqV8S7suAoZWja4dJRkFsKQ=").must()
+
+test "client_final and verify: RFC 7677's exchange carried by SHA-512, as Python's hashlib computes it"
+    e @= start(.sha512, user: "user", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 1)
+    final = client_final(
+        @e,
+        password: "pencil",
+        server_first: "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096"
+    ).must()
+    assert final == "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=gMGXRcevScNtxZ6/8lQYpGtnsNAc3mGcmNomv+xnoOMw+3R2xNJdMNnzMlTN8PPC6wdp6dybEmDYXYTxwnYPJQ=="
+    verify(
+        e,
+        server_final: "v=ZQnYEgWQMFmmsM8aQMF0nDDCy/AgCzkwk8CmMZYcMg0vSVlKDanekLtifDSeVGT4+5ZxXnJq199RVG2rR7N7Zw=="
+    ).must()
+
+# The one way of the three logins: `sql/postgres` starts with the user "" and
+# accepts any count, `mongodb` with the user's name and 4096 at least, `kafka`
+# with the user's name and any count; for each, a password SASLprep changes
+# proves exactly what the prepared one does, RFC 7677's own proof where the
+# user is "user", and PostgreSQL's (the user "") as Python computes it.
+test "client_final: the three logins prove a password SASLprep changes as RFC 7677's prepared one"
+    hyphened = "pen" + bytes.to_text([0xc2, 0xad]).must() + "cil"
+    wide = bytes.to_text(
+        [0xef, 0xbd, 0x90, 0xef, 0xbd, 0x85, 0xef, 0xbd, 0x8e, 0xef, 0xbd, 0x83, 0xef, 0xbd, 0x89, 0xef, 0xbd, 0x8c]
+    ).must()
+    assert saslprep(hyphened).must() == "pencil" && saslprep(wide).must() == "pencil"
+    starts = [
+        start(.sha256, user: "", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 1)
+        start(.sha256, user: "user", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 4096)
+        start(.sha256, user: "user", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 1)
+    ]
+    proofs = [
+        "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=qvT2SWdEH5Q06albL+hjSYuUhCG7VndFyzIb7CK4n9k="
+        "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
+        "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
+    ]
+    signatures = [
+        "v=3HO6Qt1M4MKJrmlKaoOqLAI0/0TV0HZe7J9H3MBtSOg="
+        "v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4="
+        "v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4="
+    ]
+
+    for k in range(from: 0, to: 3)
+        for password in ["pencil", hyphened, wide]
+            e @= starts[k]
+            assert client_final(@e, password: password, server_first: "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096").must() == proofs[k]
+            verify(e, server_final: signatures[k]).must()
+
+test "client_final: a nonce not the client's, one not extended, no salt, a salt not base 64, counts refused, and an extension"
+    for bad in ["r=other,s=QQ==,i=4096", "r=abc,s=QQ==,i=4096", "r=abcd,i=4096", "r=abcd,s=!!,i=4096", "r=abcd,s=QQ==,i=4095", "r=abcd,s=QQ==,i=x", "r=abcd,s=QQ==,i=", "r=abcd,s=QQ==,i=10000001", "r=abcd,s=QQ==", "m=ext,r=abcd,s=QQ==,i=4096", "garbage"]
+        e @= start(.sha256, user: "", nonce: "abc", least_iterations: 4096)
+
+        match client_final(@e, password: "p", server_first: bad)
+            .ok _  => assert false
+            .err f => assert f.code == INVALID
+
+test "verify: a signature of another password, a server's refusal, an empty signature, and one not base 64"
+    e @= start(.sha256, user: "user", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 1)
+    _ = client_final(
+        @e,
+        password: "not pencil",
+        server_first: "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096"
+    ).must()
+
+    match verify(e, server_final: "v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=")
+        .ok _  => assert false
+        .err f => assert f.code == PERMISSION
+
+    match verify(e, server_final: "e=invalid-proof")
+        .ok _  => assert false
+        .err f => assert f.code == PERMISSION && f.msg == "the server refused the SCRAM login: invalid-proof"
+
+    match verify(e, server_final: "v=")
+        .ok _  => assert false
+        .err f => assert f.code == PERMISSION
+
+    match verify(e, server_final: "v=!!")
+        .ok _  => assert false
+        .err f => assert f.code == INVALID
+
+test "prepared_password: SASLprep's answer, and a password SASLprep refuses kept as its bytes"
+    assert prepared_password("pencil") == bytes.from_text("pencil")
+    assert prepared_password("a" + bytes.to_text([7]).must()) == [0x61, 7]
+
+## Examples
+
+# A nonce for one login.
+test "new_nonce: 32 characters and no comma"
+    n = new_nonce().must()
+    assert n.len() == 32 && !strings.contains(s: n, substr: ",")
+
+# An exchange opened as RFC 7677's client opens it.
+test "start: RFC 7677's client"
+    e = start(.sha256, user: "user", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 4096)
+    assert e.first_bare == "n=user,r=rOprNGfwEbeRWgbNEkqO"
+
+# The first message a client sends.
+test "client_first: RFC 7677's"
+    assert client_first(start(.sha256, user: "user", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 4096)) == "n,,n=user,r=rOprNGfwEbeRWgbNEkqO"
+
+# The proof RFC 7677 prints for the password "pencil".
+test "client_final: RFC 7677's proof"
+    e @= start(.sha256, user: "user", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 4096)
+    final = client_final(
+        @e,
+        password: "pencil",
+        server_first: "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096"
+    ).must()
+    assert final == "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
+
+# The server's signature RFC 7677 prints, which proves it knew "pencil".
+test "verify: RFC 7677's signature"
+    e @= start(.sha256, user: "user", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 4096)
+    _ = client_final(
+        @e,
+        password: "pencil",
+        server_first: "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096"
+    ).must()
+    assert !verify(e, server_final: "v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=").is_err()
+
+# RFC 4013's seven examples (section 3): a soft hyphen mapped to nothing, a
+# name unchanged, its case kept, two characters NFKC writes otherwise, a
+# prohibited character, and the bidirectional rule.
+test "saslprep: RFC 4013's examples"
+    assert saslprep("I" + bytes.to_text([0xc2, 0xad]).must() + "X").must() == "IX"
+    assert saslprep("user").must() == "user"
+    assert saslprep("USER").must() == "USER"
+    assert saslprep(bytes.to_text([0xc2, 0xaa]).must()).must() == "a"
+    assert saslprep(bytes.to_text([0xe2, 0x85, 0xa8]).must()).must() == "IX"
+    assert saslprep(bytes.to_text([7]).must()).is_err()
+    assert saslprep(bytes.to_text([0xd8, 0xa7, 0x31]).must()).is_err()
+
+# A password SASLprep changes, and one it refuses.
+test "prepared_password: a soft hyphen left out, a control character kept"
+    assert prepared_password("pen" + bytes.to_text([0xc2, 0xad]).must() + "cil") == bytes.from_text("pencil")
+    assert prepared_password(bytes.to_text([7]).must()) == [7]

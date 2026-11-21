@@ -1,0 +1,330 @@
+# The exponential, the logarithms, the square root and the powers of complex
+# numbers, as C11's Annex G and Python's `cmath` answer them: an edge of the
+# plane (an infinity, a nan, a signed zero) answers Annex G's value, and a
+# finite number is computed so that no step overflows or underflows before the
+# answer does.
+
+use math
+use math/complex
+use math/complex/internal/complex_arithmetic
+use math/complex/internal/complex_power
+
+# The natural logarithm of a quarter of the largest float: past it, e raised
+# to `x` is computed in two steps so that it does not overflow before the
+# factor beside it is applied.
+constant LOG_LARGE: f64
+    708.3964185322641
+
+# A quarter of the largest float: past it, a size is halved before it is
+# measured.
+constant LARGE: f64
+    44942328371557893000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0
+
+# Below this size, 2 to the -500th, a number is lifted by 2 to the 600th before
+# its size is measured, so that its square does not underflow.
+constant TINY: f64
+    0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003054936363499605
+
+# 2 to the 63rd: a whole real exponent below it in size is multiplied out by
+# `complex_power.whole_power`, any other taken through the polar form. Python's
+# `**` multiplies out only to 100; past it, its polar form was further from the
+# true power and answered otherwise on each platform (the ledger's
+# `complex/sqrt-and-pow` block).
+constant WHOLE_BELOW: f64
+    9223372036854775808.0
+
+# E raised to `x`, times `factor`, where `x` is past `LOG_LARGE`: `x` is taken
+# down by 700 at a time, exactly, and e raised to 700 multiplied back after
+# the factor, so a small factor keeps the answer finite where it is.
+#
+# - `x`: the exponent, past `LOG_LARGE`.
+# - `factor`: what the power is multiplied by, not zero.
+function exp_times(x: f64, factor: f64) -> f64
+    big = math.exp(700.0)
+
+    if x - 700.0 <= LOG_LARGE
+        return math.exp(x - 700.0) * factor * big
+    return math.exp(x - 1400.0) * factor * big * big
+
+# E raised to `re + im i`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part, an angle in radians.
+function exp(re: f64, im: f64) -> complex.Complex
+    if !math.is_finite(re) || !math.is_finite(im)
+        return exp_edge(re: re, im: im)
+
+    if im == 0.0
+        return complex.Complex(re: math.exp(re), im: im)
+    c = math.cos(im)
+    s = math.sin(im)
+
+    if re <= LOG_LARGE
+        size = math.exp(re)
+        return complex.Complex(re: size * c, im: size * s)
+    return complex.Complex(re: exp_times(x: re, factor: c), im: exp_times(x: re, factor: s))
+
+# `exp` where a part is an infinity or a nan, by Annex G's table.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function exp_edge(re: f64, im: f64) -> complex.Complex
+    if math.is_nan(re)
+        if im == 0.0
+            return complex.Complex(re: re, im: im)
+        return complex.Complex(re: math.NAN, im: math.NAN)
+
+    if re == math.INF
+        if im == 0.0
+            return complex.Complex(re: re, im: im)
+
+        if math.is_finite(im)
+            return complex.Complex(re: re * math.cos(im), im: re * math.sin(im))
+        return complex.Complex(re: re, im: math.NAN)
+
+    if re == -math.INF
+        if math.is_finite(im)
+            return complex.Complex(re: 0.0 * math.cos(im), im: 0.0 * math.sin(im))
+        return complex.Complex(re: 0.0, im: 0.0)
+    return complex.Complex(re: math.NAN, im: math.NAN)
+
+# `a + b` as a sum and the error its rounding made, exactly: `a + b == sum +
+# error`. Knuth's two-sum.
+record Sum
+    # The rounded sum.
+    sum: f64
+    # What rounding left out.
+    error: f64
+
+# Knuth's two-sum of `a` and `b`.
+#
+# - `a`: one term.
+# - `b`: the other.
+function two_sum(a: f64, b: f64) -> Sum
+    s = a + b
+    b_part = s - a
+    return Sum(sum: s, error: a - (s - b_part) + (b - b_part))
+
+# `big * big + small * small - 1` to nearly the last bit, each square split
+# exactly by a fused multiply-add and the sum carried with its errors, for
+# the logarithm of a size near 1.
+#
+# - `big`: the larger part, in size.
+# - `small`: the smaller part, in size.
+function squares_less_one(big: f64, small: f64) -> f64
+    a2 = big * big
+    a2_error = math.multiply_add(x: big, times: big, plus: -a2)
+    b2 = small * small
+    b2_error = math.multiply_add(x: small, times: small, plus: -b2)
+    first = two_sum(a: a2, b: -1.0)
+    second = two_sum(a: first.sum, b: b2)
+    return second.sum + (first.error + second.error + a2_error + b2_error)
+
+# The natural logarithm of the size of `re + im i`, both finite: halved first
+# past `LARGE`, lifted first below `TINY`, and near 1 taken as half `log1p` of
+# the squares less one, so a size a hair from 1 keeps its digits.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function ln_size(re: f64, im: f64) -> f64
+    ax = math.abs(re)
+    ay = math.abs(im)
+    big = math.max(a: ax, b: ay)
+    small = math.min(a: ax, b: ay)
+
+    if big == 0.0
+        return -math.INF
+
+    if big > LARGE
+        return math.ln(math.hypot(x: ax * 0.5, y: ay * 0.5)) + math.LN_2
+
+    if big < TINY
+        lifted = math.hypot(x: math.scale(x: ax, exponent: 600), y: math.scale(x: ay, exponent: 600))
+        return math.ln(lifted) - 600.0 * math.LN_2
+    h = math.hypot(x: ax, y: ay)
+
+    if h < 0.5 || h > 2.0
+        return math.ln(h)
+    return math.ln_1_plus(squares_less_one(big: big, small: small)) * 0.5
+
+# The natural logarithm of `re + im i`, the principal one: its imaginary part
+# is the angle, from -pi to pi, so the cut is the negative real axis and the
+# sign of a zero imaginary part chooses its side. The log of a zero is minus
+# the infinity, Annex G's value, where Python raises.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function ln(re: f64, im: f64) -> complex.Complex
+    if math.is_inf(re) || math.is_inf(im)
+        return complex.Complex(re: math.INF, im: math.atan2(y: im, x: re))
+
+    if math.is_nan(re) || math.is_nan(im)
+        return complex.Complex(re: math.NAN, im: math.NAN)
+    return complex.Complex(re: ln_size(re: re, im: im), im: math.atan2(y: im, x: re))
+
+# The logarithm in base 10 of `re + im i`: `ln` with both parts divided by the
+# natural logarithm of 10.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function log10(re: f64, im: f64) -> complex.Complex
+    p = ln(re: re, im: im)
+    return complex.Complex(re: p.re / math.LN_10, im: p.im / math.LN_10)
+
+# The principal square root of `re + im i`: its real part is never negative,
+# and its imaginary part has the sign of `im`, so the cut is the negative real
+# axis and a zero's sign chooses its side.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function sqrt(re: f64, im: f64) -> complex.Complex
+    if !math.is_finite(re) || !math.is_finite(im)
+        return sqrt_edge(re: re, im: im)
+
+    if re == 0.0 && im == 0.0
+        return complex.Complex(re: 0.0, im: im)
+    ax = math.abs(re)
+    ay = math.abs(im)
+    root @= 0.0
+
+    if ax > LARGE || ay > LARGE
+        root @ 2.0 * math.sqrt((ax * 0.25 + math.hypot(x: ax * 0.25, y: ay * 0.25)) * 0.5)
+    else if ax < TINY && ay < TINY
+        x = math.scale(x: ax, exponent: 600)
+        y = math.scale(x: ay, exponent: 600)
+        root @ math.scale(x: math.sqrt((x + math.hypot(x: x, y: y)) * 0.5), exponent: -300)
+    else
+        root @ math.sqrt((ax + math.hypot(x: ax, y: ay)) * 0.5)
+    other = ay / root * 0.5
+
+    if re >= 0.0
+        return complex.Complex(re: root, im: math.with_sign(x: other, of: im))
+    return complex.Complex(re: other, im: math.with_sign(x: root, of: im))
+
+# `sqrt` where a part is an infinity or a nan, by Annex G's table.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function sqrt_edge(re: f64, im: f64) -> complex.Complex
+    if math.is_inf(im)
+        return complex.Complex(re: math.INF, im: im)
+
+    if re == math.INF
+        if math.is_nan(im)
+            return complex.Complex(re: re, im: im)
+        return complex.Complex(re: re, im: math.with_sign(x: 0.0, of: im))
+
+    if re == -math.INF
+        if math.is_nan(im)
+            return complex.Complex(re: math.NAN, im: math.INF)
+        return complex.Complex(re: 0.0, im: math.with_sign(x: math.INF, of: im))
+    return complex.Complex(re: math.NAN, im: math.NAN)
+
+# `base` raised to `exponent`, the principal power `exp(exponent * ln(base))`:
+# a zero exponent answers 1, a zero base 0 where the exponent's real part is
+# positive, an infinity beside a nan where it is negative, and a nan where it
+# is zero; a whole real exponent below 2 to the 63rd in size is multiplied out
+# by `complex_power.whole_power`, so `(1 + 1i)^2` is exactly `2i` and the
+# answer is the same on every platform; any other is taken through the polar
+# form, whose last digits are the C library's.
+#
+# - `base`: the base.
+# - `exponent`: the exponent.
+function pow(base: complex.Complex, exponent: complex.Complex) -> complex.Complex
+    if exponent.re == 0.0 && exponent.im == 0.0
+        return complex.Complex(re: 1.0, im: 0.0)
+
+    if math.is_nan(exponent.re) || math.is_nan(exponent.im)
+        return complex.Complex(re: math.NAN, im: math.NAN)
+
+    if base.re == 0.0 && base.im == 0.0
+        if exponent.re > 0.0
+            return complex.Complex(re: 0.0, im: 0.0)
+
+        if exponent.re < 0.0
+            return complex.Complex(re: math.INF, im: math.NAN)
+        return complex.Complex(re: math.NAN, im: math.NAN)
+
+    if exponent.im == 0.0 && math.abs(exponent.re) < WHOLE_BELOW && exponent.re == math.trunc(exponent.re)
+        return complex_power.whole_power(base: base, n: to_i64(exponent.re).must())
+    size = math.hypot(x: base.re, y: base.im)
+    angle = math.atan2(y: base.im, x: base.re)
+    length @= math.pow(base: size, exponent: exponent.re)
+    phase @= angle * exponent.re
+
+    if exponent.im != 0.0
+        length @ length / math.exp(angle * exponent.im)
+        phase @ phase + exponent.im * math.ln(size)
+    return complex.Complex(re: length * math.cos(phase), im: length * math.sin(phase))
+
+## Tests
+
+test "exp: zero, a half turn, a real part past the overflow kept finite beside a tiny angle"
+    assert exp(re: 0.0, im: 0.0) == complex.Complex(re: 1.0, im: 0.0)
+    assert math.has_minus_sign(exp(re: 1.0, im: -0.0).im)
+    assert complex_arithmetic.agrees(
+        got: exp(re: 0.0, im: math.PI),
+        want_re: -1.0,
+        want_im: 0.00000000000000012246467991473532,
+        ulps: 1.0
+    )
+    big = exp(re: 720.0, im: 0.000000000000000000000000000000000000000000000000001)
+    assert big.re == math.INF && math.is_finite(big.im)
+
+test "ln and log10: the two sides of the cut, zero, a size a hair above 1, the largest"
+    assert ln(re: -1.0, im: 0.0) == complex.Complex(re: 0.0, im: math.PI)
+    assert ln(re: -1.0, im: -0.0) == complex.Complex(re: 0.0, im: -math.PI)
+    assert ln(re: 0.0, im: 0.0) == complex.Complex(re: -math.INF, im: 0.0)
+    assert ln(re: 0.6, im: 0.8).re == 0.000000000000000022204460492503132
+    assert complex_arithmetic.agrees(
+        got: ln(re: math.MAX_F64, im: math.MAX_F64),
+        want_re: 710.1292864836639,
+        want_im: math.PI * 0.25,
+        ulps: 2.0
+    )
+    assert log10(re: 100.0, im: 0.0) == complex.Complex(re: 2.0, im: 0.0)
+
+test "sqrt: the cut's two sides, the zeros, the largest and the smallest, an infinite part"
+    assert sqrt(re: -4.0, im: 0.0) == complex.Complex(re: 0.0, im: 2.0)
+    assert sqrt(re: -4.0, im: -0.0) == complex.Complex(re: 0.0, im: -2.0)
+    assert math.has_minus_sign(sqrt(re: -0.0, im: -0.0).im) && !math.has_minus_sign(sqrt(re: -0.0, im: -0.0).re)
+    assert math.is_finite(sqrt(re: math.MAX_F64, im: math.MAX_F64).re)
+    assert sqrt(re: math.SMALLEST_F64, im: 0.0).re > 0.0
+    assert sqrt(re: math.NAN, im: -math.INF) == complex.Complex(re: math.INF, im: -math.INF)
+
+test "pow: a zero exponent beside a nan, a zero base, a nan exponent, a whole power exactly, a root on the cut"
+    nan = math.NAN
+    zero = complex.Complex(re: 0.0, im: 0.0)
+    one_one = complex.Complex(re: 1.0, im: 1.0)
+    assert pow(base: complex.Complex(re: nan, im: nan), exponent: zero) == complex.Complex(re: 1.0, im: 0.0)
+    assert pow(base: zero, exponent: complex.Complex(re: 2.0, im: 1.0)) == zero
+    assert complex_arithmetic.agrees(
+        got: pow(base: zero, exponent: complex.Complex(re: -1.0, im: 0.0)),
+        want_re: math.INF,
+        want_im: nan,
+        ulps: 0.0
+    )
+    assert complex_arithmetic.agrees(
+        got: pow(base: zero, exponent: complex.Complex(re: nan, im: 0.0)),
+        want_re: nan,
+        want_im: nan,
+        ulps: 0.0
+    )
+    assert complex_arithmetic.agrees(
+        got: pow(base: one_one, exponent: complex.Complex(re: nan, im: 0.0)),
+        want_re: nan,
+        want_im: nan,
+        ulps: 0.0
+    )
+    assert pow(base: one_one, exponent: complex.Complex(re: 2.0, im: 0.0)) == complex.Complex(re: 0.0, im: 2.0)
+    assert pow(base: one_one, exponent: complex.Complex(re: -2.0, im: 0.0)) == complex.Complex(re: 0.0, im: -0.5)
+
+# Multiplied out past 100: Python's `**` and this function until 2026-11-18
+# took `(1 + 1i)^101` through the polar form and answered
+# `-1125899906842634.5 - 1125899906842629.5i`, and `i` to an exponent of 53
+# bits lost the angle's every digit.
+test "pow: (1 + 1i) to 101 exactly, i to the largest odd whole float and to its negative"
+    i = complex.Complex(re: 0.0, im: 1.0)
+    assert pow(base: complex.Complex(re: 1.0, im: 1.0), exponent: complex.Complex(re: 101.0, im: 0.0)) == complex.Complex(re: -1125899906842624.0, im: -1125899906842624.0)
+    assert pow(base: i, exponent: complex.Complex(re: 9007199254740991.0, im: 0.0)) == complex.Complex(re: 0.0, im: -1.0)
+    assert pow(base: i, exponent: complex.Complex(re: -9007199254740991.0, im: 0.0)) == i

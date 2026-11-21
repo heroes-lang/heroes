@@ -5,11 +5,10 @@
 # extremes and at 28 random points; the answers are `ORACLE`'s, written as
 # `misses` reads them, four floats a case.
 
-use math/internal/complex_arithmetic
-use math/internal/complex_exponential
-use math/internal/floats
-use math/internal/limits
-use math/internal/parts
+use math
+use math/complex
+use math/complex/internal/complex_arithmetic
+use math/complex/internal/complex_exponential
 
 # Where the cases' answers come from: the face's tests name it, which is how a
 # program's tests reach this module.
@@ -26,10 +25,10 @@ constant ORACLE: str
 # - `want_re`: the real part wanted.
 # - `want_im`: the imaginary part wanted.
 # - `ulps`: how many units of the last place of the size each part may stray.
-function near_in_size(got: complex_arithmetic.Pair, want_re: f64, want_im: f64, ulps: f64) -> bool
-    if !floats.is_finite(want_re) || !floats.is_finite(want_im)
+function near_in_size(got: complex.Complex, want_re: f64, want_im: f64, ulps: f64) -> bool
+    if !math.is_finite(want_re) || !math.is_finite(want_im)
         return complex_arithmetic.agrees(got: got, want_re: want_re, want_im: want_im, ulps: ulps)
-    reach = ulps * parts.ulp(complex_arithmetic.size(re: want_re, im: want_im))
+    reach = ulps * math.ulp(complex_arithmetic.size(re: want_re, im: want_im))
     return part_near(got: got.re, want: want_re, reach: reach) && part_near(got: got.im, want: want_im, reach: reach)
 
 # One part of `near_in_size`.
@@ -40,15 +39,15 @@ function near_in_size(got: complex_arithmetic.Pair, want_re: f64, want_im: f64, 
 #   sign.
 function part_near(got: f64, want: f64, reach: f64) -> bool
     if got == 0.0 && want == 0.0
-        return floats.has_minus_sign(got) == floats.has_minus_sign(want)
-    return floats.abs(got - want) <= reach
+        return math.has_minus_sign(got) == math.has_minus_sign(want)
+    return math.abs(got - want) <= reach
 
 ## Tests
 
 # Python 3.15.2's `cmath.exp` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "exp (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, 0.0, 0.0]
         [-inf, -1.5, 0.0, -0.0]
@@ -104,7 +103,7 @@ test "exp (generated): every pairing of minus the infinity, -1.5, the two zeros,
 
 # Python 3.15.2's `cmath.exp` on this machine, 2026-11-17, at points beside its cuts and its extremes and at 28 points drawn with the seed 20261117.
 test "exp (generated): the branch cuts' two sides, the extremes and 28 random points"
-    inf = limits.INF
+    inf = math.INF
     cases: [[f64]] = [
         [0.0, 3.141592653589793, -1.0, 0.00000000000000012246467991473532]
         [709.0, 1.0, 44404245020420770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0, 69155514202272270000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0]
@@ -146,8 +145,8 @@ test "exp (generated): the branch cuts' two sides, the extremes and 28 random po
 
 # Python 3.15.2's `cmath.log` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "ln (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, inf, -2.356194490192345]
         [-inf, -1.5, inf, -3.141592653589793]
@@ -245,8 +244,8 @@ test "ln (generated): the branch cuts' two sides, the extremes and 28 random poi
 
 # Python 3.15.2's `cmath.log10` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "log10 (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, inf, -1.023282265381381]
         [-inf, -1.5, inf, -1.3643763538418412]
@@ -340,8 +339,8 @@ test "log10 (generated): the branch cuts' two sides, the extremes and 28 random 
 
 # Python 3.15.2's `cmath.sqrt` on this machine, 2026-11-17, at the 49 pairings of seven parts; where Python raises, this machine's C `<complex.h>` as C11's Annex G reads it.
 test "sqrt (generated): every pairing of minus the infinity, -1.5, the two zeros, 1.5, the infinity and a nan"
-    inf = limits.INF
-    nan = limits.NAN
+    inf = math.INF
+    nan = math.NAN
     cases: [[f64]] = [
         [-inf, -inf, inf, -inf]
         [-inf, -1.5, 0.0, -inf]
@@ -437,7 +436,7 @@ test "sqrt (generated): the branch cuts' two sides, the extremes and 28 random p
 
 # 16 bases, four exponents each drawn with the seed 202611172 from whole ones up to 100 and past it, fractional, imaginary and complex ones, then the exact powers and the cut, as on 2026-11-17. The answers are the true powers, asked of mpmath 1.4.1 at 600 bits and rounded once on 2026-11-18, the sign of a zero part the limit's from the side the base's zero part names (`(-8 - 0i)^-2` is `1/64 - 0i`); the edges, a nan base and a zero one, keep Annex G's values. Each part is held to within the seventh float's units in the last place of the answer's size: `4 |n|` for a whole exponent `n`, multiplied out, each squaring doubling the error so far; 4 for any other, through the C library's functions, which was 3 at most on this Mac and in the Linux arm64 container. Python's answers, which this test held until 2026-11-18, were 24 to 77 such units from the true power at 101, and glibc's and Apple's differed by 107.
 test "pow (generated): whole exponents to 100 and past it, roots on the cut, imaginary and complex exponents"
-    nan = limits.NAN
+    nan = math.NAN
     cases: [[f64]] = [
         [-0.1531806032723272, -0.0, 3.0, 0.0, -0.0035942752033483226, -0.0, 12.0]
         [-0.1531806032723272, -0.0, 0.3333333333333333, 0.0, 0.26752924434829145, -0.4633742437217496, 4.0]
@@ -517,8 +516,8 @@ test "pow (generated): whole exponents to 100 and past it, roots on the cut, ima
 
     for c in cases
         got = complex_exponential.pow(
-            base: complex_arithmetic.Pair(re: c[0], im: c[1]),
-            exponent: complex_arithmetic.Pair(re: c[2], im: c[3])
+            base: complex.Complex(re: c[0], im: c[1]),
+            exponent: complex.Complex(re: c[2], im: c[3])
         )
 
         if !near_in_size(got: got, want_re: c[4], want_im: c[5], ulps: c[6])

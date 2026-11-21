@@ -5,7 +5,7 @@
 # It does not do linear algebra of any size (a matrix of n columns, a solver
 # of systems, a decomposition), which no package of Rebel offers yet; a vector
 # of any length, an embedding's, compared and searched, is `vectors`'; complex
-# numbers are `math.Complex`, and the functions of one float are `math`'s,
+# numbers are `math/complex`'s, and the functions of one float are `math`'s,
 # `math.clamp`, `math.to_radians` and `math.lerp` among them.
 #
 # Said once for every function: a vector is a column, and a matrix acts on it

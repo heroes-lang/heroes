@@ -2,8 +2,8 @@
 # registry the program holds as a value; written in Prometheus's text format
 # 0.0.4 and in OpenMetrics 1.0 as Prometheus's own Go client writes them,
 # served to a scraper by `respond`, pushed to a Pushgateway, sent as StatsD
-# and DogStatsD lines over UDP, and exported to an OpenTelemetry collector as
-# OTLP over HTTP.
+# and DogStatsD lines over UDP, and written as OTLP's request for an
+# OpenTelemetry collector, which `otlp.export` posts.
 #
 # **There is no default registry.** The language has no globals, so a
 # registry is a value the program makes with `new_registry`, describes its
@@ -20,7 +20,7 @@
 # has other default buckets; both are read alike by every Prometheus server.
 #
 # **What it does not do.** Spans, their context and log records are
-# `tracing`'s; the HTTP server is `http`'s, and a program serves `respond`
+# `tracing`'s, and OTLP's exporter `otlp`'s; the HTTP server is `http`'s, and a program serves `respond`
 # from its own loop or its router (`web`), since a handler cannot reach a
 # registry the program goes on changing. A summary's quantiles cover every
 # observation since the series began: there is no window of age, the
@@ -31,8 +31,8 @@
 # The codes it fails with: `invalid` (a name, a label, a value or a text no
 # format allows, a call that does not fit the family's kind), `exists` (a
 # family whose name, or one of its samples' names, is taken), `not_found` (no
-# family or no series of that name), `failed` (a Pushgateway or a collector
-# that refused), and, from the network, the codes of `http.send` and of
+# family or no series of that name), `failed` (a Pushgateway that
+# refused), and, from the network, the codes of `http.send` and of
 # `net.send_to`.
 
 use bytes
@@ -41,7 +41,6 @@ use math
 use metrics/internal/fixture
 use metrics/internal/gathered
 use metrics/internal/names
-use metrics/internal/otlp
 use metrics/internal/otlp_metrics
 use metrics/internal/posting
 use metrics/internal/recording
@@ -50,7 +49,7 @@ use metrics/internal/store
 use metrics/internal/text_read
 use metrics/internal/text_write
 use net
-use numbers
+use otlp
 use random
 use strings
 use time
@@ -74,7 +73,7 @@ constant NOT_FOUND: str
     "not_found"
 
 # The code of a Pushgateway or a collector that answered with a status other
-# than success: `push_to_gateway`, `push_add_to_gateway`, `delete_from_gateway`, `export_otlp`.
+# than success: `push_to_gateway`, `push_add_to_gateway`, `delete_from_gateway`.
 constant FAILED: str
     "failed"
 
@@ -1630,128 +1629,6 @@ function send_service_check(client: Statsd, c: ServiceCheck) -> ()?
 
 ## OpenTelemetry's OTLP
 
-# What an attribute of a resource holds, as OTLP's `AnyValue` does.
-variant AttributeValue
-    # A text.
-    text
-        # The text.
-        v: str
-    # `true` or `false`.
-    boolean
-        # The value.
-        v: bool
-    # A whole number.
-    integer
-        # The number.
-        v: i64
-    # A float.
-    number
-        # The number.
-        v: f64
-    # A list of texts, `process.command_args`.
-    texts
-        # The texts, in order.
-        v: [str]
-
-# An attribute: a key and its value, `service.name` and `checkout`.
-record Attribute
-    # The key, by OpenTelemetry's semantic conventions where one names it.
-    key: str
-    # The value.
-    value: AttributeValue
-
-# The instrumentation scope a request names: the library or program that
-# recorded.
-record Scope
-    # Its name, `myapp`; "" writes none.
-    name: str
-    # Its version, `1.2.0`; "" writes none.
-    version: str
-
-# Where and how OTLP requests are sent over HTTP. Made by `otlp_to` or
-# `otlp_from_env`, its fields changed by the program.
-record Otlp
-    # How each request is sent; its own retries are not used, the method
-    # being `POST`.
-    client: http.Client
-    # The whole URL requests are posted to, `http://localhost:4318/v1/metrics`.
-    url: str
-    # Fields every request carries, an `Authorization` among them.
-    headers: [http.Header]
-    # Whether the body is sent compressed by gzip.
-    gzip: bool
-    # When a request is sent again: after a status of `statuses`, waiting
-    # `backoff_ms` doubled each time, or the `Retry-After` the collector asks,
-    # at most `max_backoff_ms`, `count` times at most.
-    retries: http.Retries
-
-# The URL OTLP's metrics are posted to where nothing else says: the
-# collector on this machine.
-constant OTLP_URL: str
-    "http://localhost:4318/v1/metrics"
-
-# An exporter posting to `target`, uncompressed, with no field of its own, sending
-# again 3 times after a status of 429, 502, 503 or 504, from 1 second doubled
-# up to 30, as OTLP's specification asks.
-#
-# - `target`: the whole URL, `OTLP_URL` or `https://collector.example/v1/metrics`.
-#
-# See also `otlp_from_env`, `export_otlp`.
-function otlp_to(target: str) -> Otlp
-    return Otlp(
-        client: http.default_client(),
-        url: target,
-        headers: [],
-        gzip: false,
-        retries: http.Retries(count: 3, statuses: [429, 502, 503, 504], backoff_ms: 1_000, max_backoff_ms: 30_000)
-    )
-
-# An exporter as OpenTelemetry's environment variables describe it:
-# `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`, taken as the whole URL, or
-# `OTEL_EXPORTER_OTLP_ENDPOINT` with `/v1/metrics` after it, or `OTLP_URL`;
-# the fields of `OTEL_EXPORTER_OTLP_HEADERS` and its `_METRICS_` kin,
-# `key=value` pairs between commas, each percent-decoded; gzip where
-# `OTEL_EXPORTER_OTLP_COMPRESSION` or its kin says `gzip`; and the
-# milliseconds of `OTEL_EXPORTER_OTLP_TIMEOUT` or its kin as the client's
-# deadline.
-#
-# Fails `invalid` where a header pair has no `=`, the compression is neither
-# `gzip` nor `none`, or the timeout is no whole number; and as `os.env` fails
-# with a code other than `not_found`.
-function otlp_from_env() -> Otlp?
-    out @= otlp_to(OTLP_URL)
-    specific = posting.env_text("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")?
-    general = posting.env_text("OTEL_EXPORTER_OTLP_ENDPOINT")?
-
-    if specific != ""
-        out.url @ specific
-    else if general != ""
-        out.url @ strings.trim_suffix(s: general, suffix: "/") + "/v1/metrics"
-    out.headers @ posting.env_headers(posting.first_set(specific: posting.env_text("OTEL_EXPORTER_OTLP_METRICS_HEADERS")?, general: posting.env_text("OTEL_EXPORTER_OTLP_HEADERS")?))?
-    compression = posting.first_set(
-        specific: posting.env_text("OTEL_EXPORTER_OTLP_METRICS_COMPRESSION")?,
-        general: posting.env_text("OTEL_EXPORTER_OTLP_COMPRESSION")?
-    )
-
-    match compression
-        "gzip" => out.gzip @ true
-        "none" | "" => out.gzip @ false
-        _ => return fail(code: INVALID, msg: f"the OTLP compression \"{compression}\" is neither gzip nor none")
-
-    timeout = posting.first_set(
-        specific: posting.env_text("OTEL_EXPORTER_OTLP_METRICS_TIMEOUT")?,
-        general: posting.env_text("OTEL_EXPORTER_OTLP_TIMEOUT")?
-    )
-
-    if timeout != ""
-        match numbers.parse_int(timeout)
-            .ok ms => out.client.deadline_ms @ ms
-            .err _ => return fail(
-                code: INVALID,
-                msg: f"the OTLP timeout \"{timeout}\" is no whole number of milliseconds"
-            )
-    return ok(out)
-
 # The request `registry`'s values make for an OTLP collector: an
 # `ExportMetricsServiceRequest`, its bytes as protobuf writes them.
 #
@@ -1766,56 +1643,20 @@ function otlp_from_env() -> Otlp?
 # a family of no kind a `Gauge`, a histogram a cumulative `Histogram` with its
 # bounds and each bucket's own count, a summary a `Summary`; each series' labels
 # are its points' attributes, their values texts. A family with no series is
-# left out. See also `export_otlp`.
-function encode_otlp(registry: Registry lent, resource: [Attribute], scope: Scope, start: time.Instant, at: time.Instant) -> [u8]
+# left out. See also `otlp.export`, which posts it.
+function encode_otlp(registry: Registry lent, resource: [otlp.Attribute], scope: otlp.Scope, start: time.Instant, at: time.Instant) -> [u8]
     attributes: [[u8]] @= []
 
     for a in resource
-        value = match a.value
-            .text t    => otlp.any_text(t.v)
-            .boolean b => otlp.any_boolean(b.v)
-            .integer n => otlp.any_integer(n.v)
-            .number x  => otlp.any_number(x.v)
-            .texts ts =>
-                items: [[u8]] @= []
-
-                for t in ts.v
-                    items @ items.push(otlp.any_text(t))
-
-                otlp.any_array(items)
-
-        attributes @ attributes.push(otlp.key_value(key: a.key, value: value))
+        attributes @ attributes.push(otlp.attribute_bytes(a, length: 0))
 
     return otlp_metrics.encode(
         registry.store,
         resource: attributes,
-        scope_name: scope.name,
-        scope_version: scope.version,
-        begin: otlp.unix_nanoseconds(start.unix_nanoseconds),
-        now: otlp.unix_nanoseconds(at.unix_nanoseconds)
+        scope: scope,
+        begin: otlp.unix_nanoseconds(start),
+        now: otlp.unix_nanoseconds(at)
     )
-
-# The outcome of an export a collector accepted: how much of it it refused
-# none the less, and why.
-record Exported
-    # How many points, spans or records were refused; 0 for none.
-    rejected: i64
-    # The collector's words; "" where it refused nothing.
-    message: str
-
-# Posts `body`, an OTLP request `encode_otlp` made, to `exporter`'s URL, as
-# `application/x-protobuf`.
-#
-# - `exporter`: where and how.
-# - `body`: the request's bytes.
-#
-# Fails `failed` where the collector answers a status other than 2xx after
-# every retry, the message holding its status and words; `invalid` where its
-# answer is no protobuf message; and as `http.send` fails. See also
-# `otlp_to`.
-function export_otlp(exporter: Otlp, body: [u8]) -> Exported?
-    partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, retries: exporter.retries, body: body)?
-    return ok(Exported(rejected: partial.rejected, message: partial.message))
 
 ## Tests
 
@@ -2219,25 +2060,20 @@ test "encode_otlp: the bytes opentelemetry-proto 1.45 writes for every kind, the
     register(@r, d: state_set(name: "st", help: "St.", labels: [], states: ["a", "b"])).must()
     register(@r, d: gauge(name: "unused", help: "U.", labels: ["k"])).must()
     resource = [
-        Attribute(key: "service.name", value: .text(v: "svc"))
-        Attribute(key: "n", value: .integer(v: 7))
-        Attribute(key: "flag", value: .boolean(v: true))
-        Attribute(key: "pi", value: .number(v: 3.5))
-        Attribute(key: "args", value: .texts(v: ["a", "b"]))
+        otlp.Attribute(key: "service.name", value: .text(v: "svc"))
+        otlp.Attribute(key: "n", value: .integer(v: 7))
+        otlp.Attribute(key: "flag", value: .boolean(v: true))
+        otlp.Attribute(key: "pi", value: .number(v: 3.5))
+        otlp.Attribute(key: "args", value: .texts(v: ["a", "b"]))
     ]
     body = encode_otlp(
         r,
         resource: resource,
-        scope: Scope(name: "m", version: "1"),
+        scope: otlp.Scope(name: "m", version: "1"),
         start: time.from_unix(whole_seconds: 1, extra_nanoseconds: 0).must(),
         at: time.from_unix(whole_seconds: 2, extra_nanoseconds: 0).must()
     )
     assert bytes.format_hex(body) == "0add030a530a150a0c736572766963652e6e616d6512050a037376630a070a016e120218070a0a0a04666c6167120210010a0f0a0270691209210000000000000c400a140a0461726773120c2a0a0a030a01610a030a01621285030a060a016d12013112300a0a6275696c645f696e666f1202422e2a1e0a1c19009435770000000021000000000000f03f3a080a017612030a0131123a0a07635f746f74616c1202432e3a2b0a251100ca9a3b000000001900943577000000002100000000000000403a080a016112030a017810021801121d0a01671202472e2a140a1219009435770000000021000000000000f83f125e0a09685f7365636f6e64731202482e1a077365636f6e64734a440a401100ca9a3b00000000190094357700000000210200000000000000290000000000000c403210010000000000000001000000000000003a08000000000000f03f100212430a01731202532e5a3a0a381100ca9a3b00000000190094357700000000210100000000000000290000000000001040321209000000000000e03f11000000000000104012490a027374120353742e2a3e0a1d19009435770000000021000000000000f03f3a090a02737412030a01610a1d1900943577000000002100000000000000003a090a02737412030a0162"
-
-test "export_otlp: a collector that is not there fails with the connection's code"
-    exporter @= otlp_to("http://127.0.0.1:9/v1/metrics")
-    exporter.client.deadline_ms @ 2_000
-    assert export_otlp(exporter, body: []).is_err()
 
 ## Examples
 
@@ -2653,30 +2489,15 @@ test "send_service_check: a database that is down"
     close_statsd(@client).must()
     net.close_udp(@server).must()
 
-# An exporter to the collector on this machine.
-test "otlp_to: the local collector"
-    assert otlp_to(OTLP_URL).url == "http://localhost:4318/v1/metrics"
-
-# An exporter as the environment describes it, here none.
-test "otlp_from_env: what the environment says"
-    exporter = otlp_from_env().must()
-    assert exporter.url != ""
-
 # A registry's values as an OTLP request.
 test "encode_otlp: a counter"
     r @= new_registry()
     register(@r, d: counter(name: "jobs_total", help: "", labels: [])).must()
     body = encode_otlp(
         r,
-        resource: [Attribute(key: "service.name", value: .text(v: "worker"))],
-        scope: Scope(name: "worker", version: "1.0"),
+        resource: [otlp.Attribute(key: "service.name", value: .text(v: "worker"))],
+        scope: otlp.Scope(name: "worker", version: "1.0"),
         start: time.epoch(),
         at: time.epoch()
     )
     assert body.len() > 0
-
-# An export to a collector that is not running here fails, telling why.
-test "export_otlp: no collector here"
-    exporter @= otlp_to("http://127.0.0.1:9/v1/metrics")
-    exporter.client.deadline_ms @ 2_000
-    assert export_otlp(exporter, body: []).is_err()

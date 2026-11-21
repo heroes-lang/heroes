@@ -1,0 +1,54 @@
+# The ledger of `otlp`, made on 2026-11-20 by the coherence review's D13 from
+# what `metrics` and `tracing` each declared: the attributes, the resource and
+# the scope of every signal's request, the exporter and the environment's
+# settings, and the pieces a request is written with. What each signal's
+# request holds stays in `metrics.ledger` and `tracing.ledger`, beside the
+# Go, Rust and Python entries of their areas, which name this package's
+# functions where they are its. The bytes the tests hold are those Python's
+# `opentelemetry-proto` 1.45 wrote when the two packages were written, and the
+# new ones (an attribute of each kind, a resource, each field written or left
+# out) were computed on 2026-11-20 by an encoder of protobuf's wire format
+# written from the format's rules, Python's protobuf not being on this
+# machine.
+
+capability request/attributes  an attribute of a resource, a span, an event, a link, a log record or a point, and its value
+  heroes  otlp.Attribute, otlp.AttributeValue
+  go      -
+  rust    -
+  python  -
+  note    OTLP's `KeyValue` and the five kinds of `AnyValue` the two signals write (a text, a bool, a whole number, a float, a list of texts); a map and bytes are not offered, no attribute of Rebel holding one. Until 2026-11-20 `metrics` and `tracing` each declared the same two types
+
+capability request/scope  the instrumentation scope a request names
+  heroes  otlp.Scope
+  go      -
+  rust    -
+  python  -
+  note    a name and a version, each left out where empty
+
+capability request/resource-environment  a resource read from `OTEL_SERVICE_NAME` and `OTEL_RESOURCE_ATTRIBUTES`
+  heroes  otlp.resource_from_env
+  go      -
+  rust    -
+  python  -
+  note    `tracing.resource_from_env` until 2026-11-20, which `metrics` had no twin of; the reference libraries' entries stand in `tracing.ledger`'s `resource/environment`
+
+capability exporter/settings  where and how a request is sent: a URL, fields, gzip, a deadline and retries, from the program or from OpenTelemetry's environment variables
+  heroes  otlp.Exporter, otlp.exporter_to, otlp.exporter_from_env, otlp.Signal, otlp.METRICS_URL, otlp.TRACES_URL, otlp.LOGS_URL
+  go      -
+  rust    -
+  python  -
+  note    one exporter for the three signals, where `metrics` and `tracing` each declared their own until 2026-11-20 and `tracing`'s alone read a signal; the variables are OTLP's specification's, a signal's own over the general one. The reference libraries' entries stand in `metrics.ledger`'s `otlp/export` and `tracing.ledger`'s `export/otlp-http` and `logs/export`
+
+capability exporter/post  a request posted to a collector, sent again after 429, 502, 503 and 504 honouring `Retry-After`, and its partial refusal read
+  heroes  otlp.export, otlp.Exported
+  go      -
+  rust    -
+  python  -
+  note    the waits are `retries.drawn_wait`'s over the exporter's `http.Retries`, a `Retry-After` read in seconds or as an HTTP date by `retries.parse_retry_after`
+
+capability request/wire  the pieces a signal's request is written with: `AnyValue`, `KeyValue`, `Resource`, `InstrumentationScope`, an instant's nanoseconds, and proto3's fields written or left out at their defaults
+  heroes  otlp.value_bytes, otlp.attribute_bytes, otlp.resource_bytes, otlp.scope_bytes, otlp.unix_nanoseconds, otlp.put_text, otlp.put_bytes, otlp.put_bytes_unless_empty, otlp.put_varint, otlp.put_fixed32, otlp.put_fixed64, otlp.put_double, otlp.put_double_unless_zero
+  go      -
+  rust    -
+  python  -
+  note    public so that `metrics` and `tracing`, above this package, write their requests with one wire; written over `protobuf`'s `push_tag` and its kin, so the bytes are those `opentelemetry-proto` writes

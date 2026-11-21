@@ -280,8 +280,8 @@ function prepared(name: str, value: str, utf8: bool) -> str?
 # - `field`: the field's name, for a failure's message.
 #
 # Fails `unsupported` where its local part is above ASCII, which only a server
-# that took SMTPUTF8 accepts, and where `url/idna` cannot yet write the domain;
-# `invalid` where the domain is no name IDNA writes, the message saying why.
+# that took SMTPUTF8 accepts; `invalid` where the domain is no name IDNA
+# writes, the message saying why.
 function ascii_mailbox(m: address.Mailbox, field: str) -> address.Mailbox?
     if address.is_ascii(m)
         return ok(m)
@@ -295,11 +295,6 @@ function ascii_mailbox(m: address.Mailbox, field: str) -> address.Mailbox?
     match idna.to_ascii(m.domain, options: idna.strict_options())
         .ok domain => return ok(address.Mailbox(name: m.name, local: m.local, domain: domain))
         .err e =>
-            if e.code == idna.UNSUPPORTED
-                return fail(
-                    code: UNSUPPORTED,
-                    msg: f"the domain of \"{address.spec_of(m)}\" in the field \"{field}\" has no A-labels yet: {e.msg}"
-                )
             return fail(
                 code: INVALID,
                 msg: f"the domain of \"{address.spec_of(m)}\" in the field \"{field}\" is no name IDNA writes in ASCII: {e.msg}"

@@ -3,7 +3,11 @@
 # kept in ten slots, and the trials let through while half-open. The time is
 # always the caller's, in nanoseconds; nothing here reads a clock.
 
-use time/internal/arith
+use math
+
+# Nanoseconds in a second.
+constant SECOND: i64
+    1_000_000_000
 
 # Calls go through, and failures are counted.
 constant CLOSED: i64
@@ -84,7 +88,7 @@ function fresh(rules: Rules) -> Machine
 # When an open breaker lets a trial through: `opened_at` plus `open_for`, or
 # the last instant where the sum passes it.
 function open_until(machine: Machine lent) -> i64
-    return arith.add(a: machine.opened_at, b: machine.rules.open_for).default(arith.MAX)
+    return math.add_i64(a: machine.opened_at, b: machine.rules.open_for).default(math.MAX_I64)
 
 # The state `machine` is in at `now`: an open breaker whose open time has
 # passed is half-open, though nothing has asked yet.
@@ -117,11 +121,11 @@ function count(@machine: Machine, now: i64, is_failure: bool)
 
     if width < 1
         width @ 1
-    slot: i64 @= arith.floor_div(a: now, b: width)
+    slot: i64 @= math.div_floor_i64(x: now, by: width).must()
 
-    if slot < machine.newest && machine.used[arith.floor_mod(a: machine.newest, b: SLOTS)]
+    if slot < machine.newest && machine.used[math.rem_floor_i64(x: machine.newest, by: SLOTS)]
         slot @ machine.newest
-    place = arith.floor_mod(a: slot, b: SLOTS)
+    place = math.rem_floor_i64(x: slot, by: SLOTS)
 
     if !machine.used[place] || machine.slots[place] != slot
         machine.used[place] @ true
@@ -143,7 +147,7 @@ function share_trips(machine: Machine lent) -> bool
 
     if rules.ratio != rules.ratio || rules.ratio <= 0.0
         return false
-    oldest = arith.subtract(a: machine.newest, b: SLOTS - 1).default(arith.MIN)
+    oldest = math.subtract_i64(a: machine.newest, b: SLOTS - 1).default(math.MIN_I64)
     calls: i64 @= 0
     failures: i64 @= 0
 
@@ -206,7 +210,7 @@ function plain_rules() -> Rules
         ratio: 0.0,
         window: 0,
         least_calls: 0,
-        open_for: 10 * arith.SECOND,
+        open_for: 10 * SECOND,
         trials: 1,
         successes: 1
     )
@@ -228,23 +232,23 @@ test "allow: open refuses until its time, then one trial, then refuses while it 
     rules = plain_rules()
     m: Machine @= fresh(rules)
     trip(@m, now: 0)
-    assert !allow(@m, now: 10 * arith.SECOND - 1)
-    assert state_at(machine: m, now: 10 * arith.SECOND) == HALF_OPEN
+    assert !allow(@m, now: 10 * SECOND - 1)
+    assert state_at(machine: m, now: 10 * SECOND) == HALF_OPEN
     assert m.state == OPEN
-    assert allow(@m, now: 10 * arith.SECOND)
+    assert allow(@m, now: 10 * SECOND)
     assert m.state == HALF_OPEN
-    assert !allow(@m, now: 10 * arith.SECOND + 1)
+    assert !allow(@m, now: 10 * SECOND + 1)
 
 test "succeeded and failed while half-open: a success closes, a failure opens again from its time"
     rules = plain_rules()
     m: Machine @= fresh(rules)
     trip(@m, now: 0)
-    assert allow(@m, now: 20 * arith.SECOND)
-    failed(@m, now: 21 * arith.SECOND)
-    assert m.state == OPEN && m.opened_at == 21 * arith.SECOND
-    assert !allow(@m, now: 30 * arith.SECOND)
-    assert allow(@m, now: 31 * arith.SECOND)
-    succeeded(@m, now: 31 * arith.SECOND)
+    assert allow(@m, now: 20 * SECOND)
+    failed(@m, now: 21 * SECOND)
+    assert m.state == OPEN && m.opened_at == 21 * SECOND
+    assert !allow(@m, now: 30 * SECOND)
+    assert allow(@m, now: 31 * SECOND)
+    succeeded(@m, now: 31 * SECOND)
     assert m.state == CLOSED && m.in_a_row == 0
 
 test "succeeded and failed while open: nothing changes"
@@ -281,38 +285,38 @@ test "open_until: an open time past the last instant waits to the last instant"
         ratio: 0.0,
         window: 0,
         least_calls: 0,
-        open_for: arith.MAX,
+        open_for: math.MAX_I64,
         trials: 1,
         successes: 1
     )
     m: Machine @= fresh(rules)
     trip(@m, now: 5)
-    assert open_until(m) == arith.MAX
-    assert !allow(@m, now: arith.MAX - 1)
+    assert open_until(m) == math.MAX_I64
+    assert !allow(@m, now: math.MAX_I64 - 1)
 
 test "failed: a share of half over a window of 10 seconds with 4 calls at least, and old slots forgotten"
     rules = Rules(
         failures: 0,
         ratio: 0.5,
-        window: 10 * arith.SECOND,
+        window: 10 * SECOND,
         least_calls: 4,
-        open_for: arith.SECOND,
+        open_for: SECOND,
         trials: 1,
         successes: 1
     )
     m: Machine @= fresh(rules)
     failed(@m, now: 0)
-    failed(@m, now: arith.SECOND)
-    failed(@m, now: 2 * arith.SECOND)
+    failed(@m, now: SECOND)
+    failed(@m, now: 2 * SECOND)
     assert m.state == CLOSED
-    succeeded(@m, now: 30 * arith.SECOND)
-    succeeded(@m, now: 31 * arith.SECOND)
-    succeeded(@m, now: 32 * arith.SECOND)
-    failed(@m, now: 33 * arith.SECOND)
+    succeeded(@m, now: 30 * SECOND)
+    succeeded(@m, now: 31 * SECOND)
+    succeeded(@m, now: 32 * SECOND)
+    failed(@m, now: 33 * SECOND)
     assert m.state == CLOSED
-    failed(@m, now: 34 * arith.SECOND)
-    failed(@m, now: 35 * arith.SECOND)
-    assert m.state == OPEN && m.opened_at == 35 * arith.SECOND
+    failed(@m, now: 34 * SECOND)
+    failed(@m, now: 35 * SECOND)
+    assert m.state == OPEN && m.opened_at == 35 * SECOND
 
 test "count and share_trips: a time going back counts in the newest slot, a window under ten nanoseconds, slots past the window left out, and a ratio that is NaN or infinite"
     rules = Rules(
@@ -337,7 +341,7 @@ test "count and share_trips: a time going back counts in the newest slot, a wind
     succeeded(@m, now: 100)
     failed(@m, now: 50)
     assert m.newest == 100 && m.state == CLOSED
-    failed(@m, now: arith.MIN)
+    failed(@m, now: math.MIN_I64)
     assert m.state == CLOSED
     failed(@m, now: 200)
     assert m.state == CLOSED

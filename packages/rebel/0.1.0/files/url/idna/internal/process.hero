@@ -2,16 +2,12 @@
 # point mapped by its status, the text broken into labels at ".", a label
 # written in Punycode decoded, and each label held to the validity criteria
 # (§ 4.1), RFC 5892's ContextJ rules and RFC 5893's bidi rule; then ToASCII
-# (§ 4.2) and ToUnicode (§ 4.3) over it. Written from UTS #46's text.
-#
-# The normalization to NFC of § 4's second step, and the label's own NFC
-# criterion, wait for `unicode/normalize`. The quick check of UAX #15 settles
-# most texts without it: a text it answers yes is in NFC already, so the step
-# changes nothing; a decoded label it answers no is not in NFC, a fault. Where
-# it cannot settle the question the answer is `unsupported`, never a host
-# that may be another.
+# (§ 4.2) and ToUnicode (§ 4.3) over it. Written from UTS #46's text. The
+# normalization to NFC of § 4's second step, and a label's own NFC criterion,
+# are `unicode/normalize`'s.
 
 use unicode
+use unicode/normalize
 use url/idna/internal/criteria
 use url/idna/internal/lookup
 use url/idna/internal/punycode
@@ -20,9 +16,6 @@ use url/idna/internal/written
 constant INVALID: str
     "invalid"
 
-constant UNSUPPORTED: str
-    "unsupported"
-
 # The longest label and the longest name ToASCII's length check allows, in
 # bytes (RFC 1034 § 3.5).
 constant MAX_LABEL_BYTES: i64
@@ -30,15 +23,6 @@ constant MAX_LABEL_BYTES: i64
 
 constant MAX_NAME_BYTES: i64
     253
-
-# The labels after processing, each label's code points, and why the answer
-# waits for a normalization to NFC, "" where it does not.
-record Converted
-    # The labels in order, each its code points: decoded where it was written
-    # in Punycode, as written where it kept its Punycode.
-    labels: [[i64]]
-    # Why a label's normalization cannot be settled, "" where every one is.
-    undecided: str
 
 ## Processing
 
@@ -72,13 +56,14 @@ function ascii_of(points: [i64] lent, from: i64) -> str
 
     return bytes.validated_bytes().must()
 
-# UTS #46's processing of `host` (§ 4) under `checks`: mapped, cut into
-# labels, each label written in Punycode decoded, and every label held to the
-# criteria; then RFC 5893's rule where the domain is a Bidi domain name.
-# Fails `invalid` at the first fault, the message naming the label and the
-# rule with its code in UTS #46's test file; `unsupported` where the mapped
-# text may need normalizing to NFC.
-function converted(host: str, checks: criteria.Checks) -> Converted?
+# UTS #46's processing of `host` (§ 4) under `checks`: mapped, normalized to
+# NFC, cut into labels, each label written in Punycode decoded, and every
+# label held to the criteria; then RFC 5893's rule where the domain is a Bidi
+# domain name. The labels in order, each its code points: decoded where it was
+# written in Punycode, as written where it kept its Punycode. Fails `invalid`
+# at the first fault, the message naming the label and the rule with its code
+# in UTS #46's test file.
+function converted(host: str, checks: criteria.Checks) -> [[i64]]?
     mapped: [i64] @= []
     at: i64 @= 0
 
@@ -86,17 +71,12 @@ function converted(host: str, checks: criteria.Checks) -> Converted?
         lookup.add_mapped(@mapped, n: unicode.code_point_at(host, at), transitional: checks.transitional)
         at @ at + unicode.len_at(host, at)
 
-    if criteria.quick_check(mapped) != lookup.QUICK_YES
-        return fail(
-            code: UNSUPPORTED,
-            msg: f"{written.shown(unicode.code_points(host))} maps to {written.shown(mapped)}, which may need normalizing to NFC, and that waits for unicode/normalize"
-        )
+    normalized = unicode.code_points(normalize.to_nfc(written.text_of(mapped)))
     labels: [[i64]] @= []
     checked: [i64] @= []
-    undecided: str @= ""
     number: i64 @= 0
 
-    for label in labels_of(mapped)
+    for label in labels_of(normalized)
         number @ number + 1
 
         if criteria.is_ace(label)
@@ -120,16 +100,13 @@ function converted(host: str, checks: criteria.Checks) -> Converted?
                             code: INVALID,
                             msg: label_fault(host: host, number: number, label: label, fault: "is Punycode that writes nothing above ASCII (P4)")
                         )
-                    v = criteria.verdict(decoded, checks: checks, transitional: false)
+                    fault = criteria.verdict(decoded, checks: checks, transitional: false)
 
-                    if v.fault != ""
+                    if fault != ""
                         return fail(
                             code: INVALID,
-                            msg: label_fault(host: host, number: number, label: decoded, fault: f"written {written.shown(label)} {v.fault}")
+                            msg: label_fault(host: host, number: number, label: decoded, fault: f"written {written.shown(label)} {fault}")
                         )
-
-                    if v.undecided && undecided == ""
-                        undecided @ f"label {number} {written.shown(decoded)} may not be in NFC, which waits for unicode/normalize to tell"
                     checked @ checked.push(labels.len())
                     labels @ labels.push(decoded)
                 .err e =>
@@ -141,12 +118,12 @@ function converted(host: str, checks: criteria.Checks) -> Converted?
                     labels @ labels.push(label)
         else
             if label.len() > 0
-                v = criteria.verdict(label, checks: checks, transitional: checks.transitional)
+                fault = criteria.verdict(label, checks: checks, transitional: checks.transitional)
 
-                if v.fault != ""
+                if fault != ""
                     return fail(
                         code: INVALID,
-                        msg: label_fault(host: host, number: number, label: label, fault: v.fault)
+                        msg: label_fault(host: host, number: number, label: label, fault: fault)
                     )
             checked @ checked.push(labels.len())
             labels @ labels.push(label)
@@ -161,23 +138,19 @@ function converted(host: str, checks: criteria.Checks) -> Converted?
                     msg: label_fault(host: host, number: index + 1, label: labels[index], fault: fault)
                 )
 
-    return ok(Converted(labels: labels, undecided: undecided))
+    return ok(labels)
 
 # The labels' texts joined by ".".
 function joined(texts: [str]) -> str
     return texts.join(".")
 
 # UTS #46's ToUnicode (§ 4.3) of `host`: the processed labels, joined by ".".
-# Fails as `converted` does, and `unsupported` where a decoded label may not be
-# in NFC.
+# Fails as `converted` does.
 function to_unicode(host: str, checks: criteria.Checks) -> str?
-    c = converted(host, checks: checks)?
-
-    if c.undecided != ""
-        return fail(code: UNSUPPORTED, msg: c.undecided)
+    labels = converted(host, checks: checks)?
     texts: [str] @= []
 
-    for label in c.labels
+    for label in labels
         texts @ texts.push(written.text_of(label))
 
     return ok(joined(texts))
@@ -185,13 +158,12 @@ function to_unicode(host: str, checks: criteria.Checks) -> str?
 # UTS #46's ToASCII (§ 4.2) of `host`: the processed labels, each one holding
 # a character above ASCII written "xn--" and its Punycode, joined by ".";
 # under `checks.dns_length`, the name 1 to 253 bytes and each label 1 to 63.
-# Fails as `converted` does, `invalid` for a length, and `unsupported` where a
-# decoded label may not be in NFC.
+# Fails as `converted` does, and `invalid` for a length.
 function to_ascii(host: str, checks: criteria.Checks) -> str?
-    c = converted(host, checks: checks)?
+    labels = converted(host, checks: checks)?
     texts: [str] @= []
 
-    for label in c.labels
+    for label in labels
         ascii: bool @= true
 
         for p in label
@@ -221,9 +193,6 @@ function to_ascii(host: str, checks: criteria.Checks) -> str?
                     code: INVALID,
                     msg: f"label {number} of {written.shown(unicode.code_points(host))} is {text.len()} bytes as ASCII, outside 1 to {MAX_LABEL_BYTES} (A4_2)"
                 )
-
-    if c.undecided != ""
-        return fail(code: UNSUPPORTED, msg: c.undecided)
     return ok(name)
 
 ## Tests
@@ -278,7 +247,7 @@ test "converted: a fault's message names the label, its number and the rule"
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-test "converted: a Punycode label that does not decode, ignored on request; one above ASCII; and a text that waits for NFC"
+test "converted: a Punycode label that does not decode, ignored on request; one above ASCII; a mapped text normalized to NFC; and a decoded label not in NFC"
     ignore = criteria.Checks(
         hyphens: true,
         bidi: true,
@@ -292,13 +261,13 @@ test "converted: a Punycode label that does not decode, ignored on request; one 
     assert to_unicode("xn---a.com", checks: ignore).must() == "xn---a.com"
     assert to_unicode("xn--é.com", checks: criteria.strict()).is_err()
 
-    match to_ascii("á.com", checks: criteria.strict())
-        .ok _  => assert false
-        .err e => assert e.code == UNSUPPORTED
+    apart = unicode.from_code_points([0x61, 0x301]).must() + ".com"
+    assert to_ascii(apart, checks: criteria.strict()).must() == "xn--1ca.com"
+    assert to_unicode(apart, checks: criteria.strict()).must() == unicode.from_code_points([0xe1]).must() + ".com"
 
     match to_unicode("xn--a-xbb.com", checks: criteria.strict())
         .ok _  => assert false
-        .err e => assert e.code == UNSUPPORTED
+        .err e => assert e.code == INVALID && e.msg == "label 1 " + written.shown([0x61, 0x301]) + " of \"xn--a-xbb.com\" written \"xn--a-xbb\" is not in NFC (V1)"
 
 test "to_unicode: a name of 100,000 labels is read in one pass, and its last label's fault named"
     many = repeat("a.", 100000) + "b"

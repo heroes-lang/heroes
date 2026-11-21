@@ -566,27 +566,6 @@ capability zone/cache  zones kept between loads
   rust    -
   python  zoneinfo.ZoneInfo.no_cache, zoneinfo.ZoneInfo.clear_cache
 
-capability retry/backoff  the waits of a retry loop: exponential from a first wait, capped, spread by chance
-  heroes  time.backoff, time.Backoff, time.Jitter, time.with_jitter, time.wait_after
-  go      -
-  rust    -
-  python  -
-  note    no standard library of the three has one. The yardsticks are PyPI's tenacity (its exponential waits, a multiplier and a cap, and random ones), Go's cenkalti/backoff (`ExponentialBackOff`: an initial interval, a multiplier, a largest interval, a randomization factor) and Polly; none is on this machine (tenacity absent from Python 3.15's site, cenkalti/backoff's module cache holding no source to build, 2026-11-17), so no answer of theirs was observed. The wait after the n-th failure is `first` times `multiplier` to the n-1 (tenacity's), capped at `longest`; the jitters are AWS's Architecture Blog's, "Exponential Backoff And Jitter": full, equal and decorrelated, the last between `first` and the previous wait times the policy's multiplier where AWS writes 3; `spread` is cenkalti's randomization factor, capped at `longest` where cenkalti lets a randomized wait pass its largest interval. The program draws the fraction, `random.next_f64`, so `time` carries no generator; the growth is in floats, exact below 2^53 nanoseconds, checked against Python's float arithmetic
-
-capability retry/limits  a retry loop that gives up after a count of attempts or a total time
-  heroes  time.Retry, time.new_retry, time.next_wait, time.with_attempts, time.with_total, time.LIMIT, time.TIMEOUT
-  go      -
-  rust    -
-  python  -
-  note    tenacity's stop after a count of attempts or a delay and cenkalti's `MaxElapsedTime` are the yardsticks; the total is judged as cenkalti documents it, the time spent plus the next wait against it, and the end of the attempts fails `limit`, the end of the time `timeout`. The program loops, sleeps and calls; tenacity's decorator and cenkalti's `Retry` call a closure, which Heroes has not
-
-capability retry/retry-after  the wait an HTTP `Retry-After` value asks for
-  heroes  time.parse_retry_after
-  go      -
-  rust    -
-  python  -
-  note    RFC 9110 10.2.3: whole seconds, or a date in the three forms a recipient must read (IMF-fixdate, RFC 850's, `asctime`'s), read by `time`'s own readers; a date past asks 0, and the caller's longest wait caps every answer, a count of seconds too large for any number included
-
 capability schedule/cron-read  a cron expression read: five fields or six, names, lists, ranges, steps, `L`, `W`, `#` and the descriptors
   heroes  time.parse_cron, time.Cron
   go      -
@@ -600,13 +579,6 @@ capability schedule/cron-next  the next times a cron schedule runs, on a time zo
   rust    -
   python  -
   note    every instant whose local time on the zone's clocks the schedule allows, as robfig/cron answers: a time a change of offset skipped never runs, one it repeated runs at both its instants; `@every` runs that long after the whole second, as robfig. 1,400 random expressions, from instants between 2024 and 2028 over eight zones (UTC, Rome, London, New York, Sao Paulo, Tehran, Chatham and Lord Howe), answered five runs each as robfig did but one: robfig skips 2026-04-05 19:13:27 in Lord Howe, a local time that exists once after its half-hour change (Python's `zoneinfo` agrees), and this search does not. The search ends at the last instant an `Instant` holds, in 2262, a schedule that never runs failing `not_found` there, where robfig gives up five years on
-
-capability resilience/circuit-breaker  a circuit breaker: closed, open and half-open, opened by failures in a row or by a share of failures, the time the caller's
-  heroes  time.Breaker, time.BreakerPolicy, time.BreakerState, time.breaker_policy, time.with_trials, time.with_failure_ratio, time.new_breaker, time.allow_call, time.record_success, time.record_failure, time.breaker_state
-  go      -
-  rust    -
-  python  -
-  note    no standard library of the three has one. The yardsticks are Go's sony/gobreaker (its half-open requests as `trials`, closing after that many successes where `successes` may ask fewer, its timeout as `open_for`, its default trip on consecutive failures as `failures`, its counts cleared at every change of state) and Polly's breaker (failure ratio, sampling duration, minimum throughput and break duration as `with_failure_ratio` and `open_for`, its window cut into ten slots); neither is on this machine (2026-11-17), so no answer of theirs was observed, and the rules are the ones written on these functions, judged by their tests. gobreaker's generations are not kept: a result recorded while open is set aside, and a program records each call it was allowed. Its state-change callback and its test of success are the program's own code around the calls
 
 dropped zone-errors  a failure is a code and a message, `not_found` for a name nothing holds, and no type of its own
   go      -

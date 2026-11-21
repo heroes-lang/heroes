@@ -1,16 +1,14 @@
 # The waits of a retry loop as arithmetic on nanoseconds: the exponential wait
 # after a count of failures, capped, and the ways a random fraction spreads it.
-# No clock is read and nothing is drawn here: the caller gives the fraction.
+# No clock is read here, and only `fraction_of` reads drawn bytes: the caller
+# gives the fraction.
 # The growth is computed in floats, which hold every wait exactly up to 2^53
 # nanoseconds (about 104 days), and never overflows, since a float too large is
 # `inf` and every answer is capped before it becomes an integer again.
 
-use time/internal/arith
-use time/internal/duration_text
-
-# The code of a policy outside its bounds.
-constant INVALID: str
-    "invalid"
+use math
+use retries
+use time
 
 # No jitter: the exponential wait itself.
 constant NONE: i64
@@ -96,6 +94,21 @@ function jittered(kind: i64, wait: i64, previous: i64, first: i64, multiplier: f
 function is_fraction(x: f64) -> bool
     return x == x && x >= 0.0 && x <= 1.0
 
+# A number from 0 up to 1, 1 left out, of the first seven of `drawn`: their
+# 53 high bits over 2^53, so every value an `f64` spaces evenly there can
+# come. Fewer than seven bytes count as zeros after them.
+function fraction_of(drawn: [u8]) -> f64
+    n: i64 @= 0
+
+    for i in range(from: 0, to: 7)
+        b: i64 @= 0
+
+        if i < drawn.len()
+            b @ to_i64(drawn[i]).must()
+        n @ n << 8 | b
+
+    return to_f64(n >> 3) / 9007199254740992.0
+
 # Nothing, where a policy's numbers are within their bounds: `first` above
 # zero, `multiplier` finite and at least 1, `longest` at least `first`,
 # `attempts` at least 0, `total` at least zero and a spread's `factor` from 0
@@ -103,25 +116,31 @@ function is_fraction(x: f64) -> bool
 # nanoseconds written as `time` writes them.
 function check(first: i64, multiplier: f64, longest: i64, attempts: i64, total: i64, factor: f64) -> ()?
     if first <= 0
-        return fail(code: INVALID, msg: f"the first wait, {duration_text.format(first)}, is not above zero")
+        return fail(
+            code: retries.INVALID,
+            msg: f"the first wait, {time.format_duration(time.Duration(nanoseconds: first))}, is not above zero"
+        )
 
     if !(multiplier - multiplier == 0.0) || multiplier < 1.0
-        return fail(code: INVALID, msg: f"the multiplier {multiplier} is not a finite number from 1 up")
+        return fail(code: retries.INVALID, msg: f"the multiplier {multiplier} is not a finite number from 1 up")
 
     if longest < first
         return fail(
-            code: INVALID,
-            msg: f"the longest wait, {duration_text.format(longest)}, is shorter than the first, {duration_text.format(first)}"
+            code: retries.INVALID,
+            msg: f"the longest wait, {time.format_duration(time.Duration(nanoseconds: longest))}, is shorter than the first, {time.format_duration(time.Duration(nanoseconds: first))}"
         )
 
     if attempts < 0
-        return fail(code: INVALID, msg: f"the attempts allowed, {attempts}, are below 0")
+        return fail(code: retries.INVALID, msg: f"the attempts allowed, {attempts}, are below 0")
 
     if total < 0
-        return fail(code: INVALID, msg: f"the total time allowed, {duration_text.format(total)}, is below zero")
+        return fail(
+            code: retries.INVALID,
+            msg: f"the total time allowed, {time.format_duration(time.Duration(nanoseconds: total))}, is below zero"
+        )
 
     if !is_fraction(factor)
-        return fail(code: INVALID, msg: f"the spread's factor {factor} is outside 0 to 1")
+        return fail(code: retries.INVALID, msg: f"the spread's factor {factor} is outside 0 to 1")
     return ok()
 
 # The tests below were checked against Python 3.15's float arithmetic on
@@ -132,26 +151,26 @@ test "power: zero, one, a large exponent, and a multiplier of 1"
     assert power(multiplier: 2.0, n: 1) == 2.0
     assert power(multiplier: 2.0, n: 10) == 1024.0
     assert power(multiplier: 1.5, n: 3) == 3.375
-    assert power(multiplier: 1.0, n: arith.MAX) == 1.0
-    assert power(multiplier: 2.0, n: arith.MAX) == 1.0 / 0.0
+    assert power(multiplier: 1.0, n: math.MAX_I64) == 1.0
+    assert power(multiplier: 2.0, n: math.MAX_I64) == 1.0 / 0.0
 
 test "capped: below zero, a NaN, inside, at the cap, past it, and infinity"
     assert capped(value: -1.0, longest: 10) == 0
     assert capped(value: 0.0 / 0.0, longest: 10) == 0
     assert capped(value: 3.9, longest: 10) == 3
     assert capped(value: 10.0, longest: 10) == 10
-    assert capped(value: power(multiplier: 10.0, n: 300), longest: arith.MAX) == arith.MAX
+    assert capped(value: power(multiplier: 10.0, n: 300), longest: math.MAX_I64) == math.MAX_I64
     assert capped(value: 1.0 / 0.0, longest: 7) == 7
-    assert capped(value: to_f64(9_200_000_000_000_000_000), longest: arith.MAX) == 9_200_000_000_000_000_000
+    assert capped(value: to_f64(9_200_000_000_000_000_000), longest: math.MAX_I64) == 9_200_000_000_000_000_000
 
 test "exponential: the first failure, growth by 2 and by 1.5, the cap, and a failure count past any float"
     assert exponential(first: 100_000_000, multiplier: 2.0, longest: 10_000_000_000, failures: 1) == 100_000_000
     assert exponential(first: 100_000_000, multiplier: 2.0, longest: 10_000_000_000, failures: 4) == 800_000_000
     assert exponential(first: 500_000_000, multiplier: 1.5, longest: 60_000_000_000, failures: 3) == 1_125_000_000
     assert exponential(first: 100_000_000, multiplier: 2.0, longest: 1_000_000_000, failures: 5) == 1_000_000_000
-    assert exponential(first: 100_000_000, multiplier: 2.0, longest: 1_000_000_000, failures: arith.MAX) == 1_000_000_000
+    assert exponential(first: 100_000_000, multiplier: 2.0, longest: 1_000_000_000, failures: math.MAX_I64) == 1_000_000_000
     assert exponential(first: 7, multiplier: 1.0, longest: 100, failures: 1_000_000) == 7
-    assert exponential(first: 1, multiplier: 10.0, longest: arith.MAX, failures: 30) == arith.MAX
+    assert exponential(first: 1, multiplier: 10.0, longest: math.MAX_I64, failures: 30) == math.MAX_I64
 
 test "jittered: none, full, equal, decorrelated and spread at fractions 0, a half and 1"
     wait = 800_000_000
@@ -204,4 +223,4 @@ test "check: a policy within bounds, then each bound broken, its message naming 
     for at in range(from: 0, to: results.len())
         match results[at]
             .ok _  => assert false
-            .err e => assert e.code == INVALID && e.msg == messages[at]
+            .err e => assert e.code == retries.INVALID && e.msg == messages[at]

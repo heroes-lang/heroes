@@ -14,13 +14,12 @@
 # answered otherwise on each platform (measured 2026-11-18, the ledger's
 # `complex/sqrt-and-pow` block).
 
-use math/internal/complex_arithmetic
-use math/internal/floats
-use math/internal/limits
-use math/internal/parts
+use math
+use math/complex
+use math/complex/internal/complex_arithmetic
 
 # How far the power of two a `Scaled` stands for is followed: past it every
-# finite part has gone to an infinity or a zero, and `parts.scale` holds the
+# finite part has gone to an infinity or a zero, and `math.scale` holds the
 # count at 4,000 itself.
 constant POWER_HELD: i64
     1000000
@@ -29,7 +28,7 @@ constant POWER_HELD: i64
 # times 2 raised to `power`; made by `scaled`.
 record Scaled
     # The pair, its larger part from 1 up to 2 in size.
-    value: complex_arithmetic.Pair
+    value: complex.Complex
     # The power of two the pair is multiplied by, from `-POWER_HELD` to
     # `POWER_HELD`.
     power: i64
@@ -51,10 +50,10 @@ function held(power: i64) -> i64
 #
 # - `z`: a number whose parts are finite and not both zero.
 # - `power`: the power of two `z` stands beside, within `POWER_HELD`.
-function scaled(z: complex_arithmetic.Pair, power: i64) -> Scaled
+function scaled(z: complex.Complex, power: i64) -> Scaled
     shift = complex_arithmetic.exponent_of_larger(z)
     return Scaled(
-        value: complex_arithmetic.Pair(re: parts.scale(x: z.re, exponent: -shift), im: parts.scale(x: z.im, exponent: -shift)),
+        value: complex.Complex(re: math.scale(x: z.re, exponent: -shift), im: math.scale(x: z.im, exponent: -shift)),
         power: held(power + shift)
     )
 
@@ -76,7 +75,7 @@ function times(a: Scaled, b: Scaled) -> Scaled
 function inverse(z: Scaled) -> Scaled
     size_squared = complex_arithmetic.dot2(p: z.value.re, q: z.value.re, r: z.value.im, s: z.value.im)
     return scaled(
-        z: complex_arithmetic.Pair(re: z.value.re / size_squared, im: -z.value.im / size_squared),
+        z: complex.Complex(re: z.value.re / size_squared, im: -z.value.im / size_squared),
         power: held(-z.power)
     )
 
@@ -89,11 +88,11 @@ function inverse(z: Scaled) -> Scaled
 # - `base`: the base, not zero.
 # - `n`: the exponent, of any size an `i64` holds but its smallest; zero
 #   answers 1.
-function whole_power(base: complex_arithmetic.Pair, n: i64) -> complex_arithmetic.Pair
+function whole_power(base: complex.Complex, n: i64) -> complex.Complex
     if n == 0
-        return complex_arithmetic.Pair(re: 1.0, im: 0.0)
+        return complex.Complex(re: 1.0, im: 0.0)
 
-    if !floats.is_finite(base.re) || !floats.is_finite(base.im)
+    if !math.is_finite(base.re) || !math.is_finite(base.im)
         return power_as_given(base: base, n: n)
     left @= n
 
@@ -117,9 +116,9 @@ function whole_power(base: complex_arithmetic.Pair, n: i64) -> complex_arithmeti
 
     if n < 0
         result @ inverse(result)
-    return complex_arithmetic.Pair(
-        re: parts.scale(x: result.value.re, exponent: result.power),
-        im: parts.scale(x: result.value.im, exponent: result.power)
+    return complex.Complex(
+        re: math.scale(x: result.value.re, exponent: result.power),
+        im: math.scale(x: result.value.im, exponent: result.power)
     )
 
 # `base` raised to the whole power `n` by squaring the numbers as given, where
@@ -128,8 +127,8 @@ function whole_power(base: complex_arithmetic.Pair, n: i64) -> complex_arithmeti
 #
 # - `base`: the base, a part of it an infinity or a nan.
 # - `n`: the exponent, not zero, of any size an `i64` holds but its smallest.
-function power_as_given(base: complex_arithmetic.Pair, n: i64) -> complex_arithmetic.Pair
-    one = complex_arithmetic.Pair(re: 1.0, im: 0.0)
+function power_as_given(base: complex.Complex, n: i64) -> complex.Complex
+    one = complex.Complex(re: 1.0, im: 0.0)
     left @= n
 
     if n < 0
@@ -152,34 +151,34 @@ function power_as_given(base: complex_arithmetic.Pair, n: i64) -> complex_arithm
 ## Tests
 
 test "whole_power: zero, one, a square exactly, a negative power, the sign of a zero part, an infinite base"
-    one_one = complex_arithmetic.Pair(re: 1.0, im: 1.0)
-    assert whole_power(base: one_one, n: 0) == complex_arithmetic.Pair(re: 1.0, im: 0.0)
+    one_one = complex.Complex(re: 1.0, im: 1.0)
+    assert whole_power(base: one_one, n: 0) == complex.Complex(re: 1.0, im: 0.0)
     assert whole_power(base: one_one, n: 1) == one_one
-    assert whole_power(base: one_one, n: 2) == complex_arithmetic.Pair(re: 0.0, im: 2.0)
-    assert whole_power(base: one_one, n: -2) == complex_arithmetic.Pair(re: 0.0, im: -0.5)
-    assert whole_power(base: one_one, n: 100) == complex_arithmetic.Pair(re: -1125899906842624.0, im: 0.0)
-    minus_eight_below = whole_power(base: complex_arithmetic.Pair(re: -8.0, im: -0.0), n: 3)
-    assert minus_eight_below.re == -512.0 && floats.has_minus_sign(minus_eight_below.im)
-    inverse_square = whole_power(base: complex_arithmetic.Pair(re: -8.0, im: -0.0), n: -2)
-    assert inverse_square.re == 0.015625 && floats.has_minus_sign(inverse_square.im)
-    positive_below = whole_power(base: complex_arithmetic.Pair(re: 3.0, im: -0.0), n: 101)
-    assert floats.has_minus_sign(positive_below.im)
-    assert whole_power(base: complex_arithmetic.Pair(re: limits.INF, im: 0.0), n: 2).re == limits.INF
+    assert whole_power(base: one_one, n: 2) == complex.Complex(re: 0.0, im: 2.0)
+    assert whole_power(base: one_one, n: -2) == complex.Complex(re: 0.0, im: -0.5)
+    assert whole_power(base: one_one, n: 100) == complex.Complex(re: -1125899906842624.0, im: 0.0)
+    minus_eight_below = whole_power(base: complex.Complex(re: -8.0, im: -0.0), n: 3)
+    assert minus_eight_below.re == -512.0 && math.has_minus_sign(minus_eight_below.im)
+    inverse_square = whole_power(base: complex.Complex(re: -8.0, im: -0.0), n: -2)
+    assert inverse_square.re == 0.015625 && math.has_minus_sign(inverse_square.im)
+    positive_below = whole_power(base: complex.Complex(re: 3.0, im: -0.0), n: 101)
+    assert math.has_minus_sign(positive_below.im)
+    assert whole_power(base: complex.Complex(re: math.INF, im: 0.0), n: 2).re == math.INF
 
 # The power of 2 and of i at the ends: an exponent of 62 bits multiplies out
 # to the exact answer, where the polar form's angle times the exponent has
 # lost every digit; a size past the largest float goes to the infinity with
 # its parts' signs, and below the smallest to zero, no step overflowing first.
 test "whole_power: i to an exponent of 62 bits, a size past either end, a product that would overflow on the way"
-    i = complex_arithmetic.Pair(re: 0.0, im: 1.0)
+    i = complex.Complex(re: 0.0, im: 1.0)
     assert whole_power(base: i, n: 4611686018427387905) == i
     assert whole_power(base: i, n: -4611686018427387903) == i
-    big = whole_power(base: complex_arithmetic.Pair(re: 1.5, im: 0.5), n: 4000)
-    assert big.re == limits.INF || big.re == -limits.INF
-    small = whole_power(base: complex_arithmetic.Pair(re: 0.5, im: 0.25), n: 4000)
+    big = whole_power(base: complex.Complex(re: 1.5, im: 0.5), n: 4000)
+    assert big.re == math.INF || big.re == -math.INF
+    small = whole_power(base: complex.Complex(re: 0.5, im: 0.25), n: 4000)
     assert small.re == 0.0 && small.im == 0.0
     huge = 100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0
-    halfway = whole_power(base: complex_arithmetic.Pair(re: huge, im: huge), n: 2)
-    assert halfway.re == 0.0 && halfway.im == limits.INF
-    back = whole_power(base: complex_arithmetic.Pair(re: huge, im: huge), n: -1)
+    halfway = whole_power(base: complex.Complex(re: huge, im: huge), n: 2)
+    assert halfway.re == 0.0 && halfway.im == math.INF
+    back = whole_power(base: complex.Complex(re: huge, im: huge), n: -1)
     assert back.re > 0.0 && back.im < 0.0

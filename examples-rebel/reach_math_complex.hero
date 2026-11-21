@@ -1,0 +1,11 @@
+# Reaches Rebel's `math/complex`, so that `heroes test` on this file runs the
+# package's own tests, the generated cases of every complex function among
+# them (spec § 12). It squares `1 + i` and prints the answer's two parts,
+# exactly "0 2".
+
+use <rebel>/math/complex
+
+function main()
+    one_plus_i = complex.Complex(re: 1.0, im: 1.0)
+    z = complex.multiply(a: one_plus_i, b: one_plus_i)
+    print(z.re, " ", z.im)
