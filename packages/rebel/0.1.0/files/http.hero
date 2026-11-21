@@ -1155,7 +1155,7 @@ record Retries
     # 10 s in `default_client`; its jitter is drawn from the system's
     # generator where it spreads the waits, and its `longest` holds a
     # `Retry-After` the server asks too. Its own limits on attempts and time
-    # are not read: `count` and the client's `deadline_ms` are.
+    # are not read: `count` and the client's `deadline` are.
     backoff: retries.Backoff
 
 # How a client sends: made by `default_client`, its fields changed by the
@@ -1164,13 +1164,14 @@ record Client
     # The most redirects followed for one request, 0 or more; at 0 a redirect
     # is answered as it came.
     max_redirects: i64
-    # The milliseconds one request may take, its redirects and retries
-    # included, counted from its first connection; 0 for none. Over
-    # `http://` it bounds every read and write, a name's lookup and the making
-    # of the connection taking what the system allows; over `https://` it
-    # bounds the connection and its handshake, and what is left of it then
-    # bounds every read and write (`tls.set_deadline`).
-    deadline_ms: i64
+    # How long one request may take, its redirects and retries included,
+    # counted from its first connection, a part of a millisecond counting as
+    # a whole one and zero ending every wait at once; `time.max_duration()`
+    # for none. Over `http://` it bounds every read and write, a name's
+    # lookup and the making of the connection taking what the system allows;
+    # over `https://` it bounds the connection and its handshake, and what is
+    # left of it then bounds every read and write (`tls.set_deadline`).
+    deadline: time.Duration
     # What a response may hold.
     limits: Limits
     # The PEM of the only authorities an `https://` server's certificate may
@@ -1200,7 +1201,7 @@ record Client
 function default_client() -> Client
     return Client(
         max_redirects: 10,
-        deadline_ms: 30_000,
+        deadline: time.seconds(30).must(),
         limits: default_limits(),
         roots: "",
         retries: Retries(count: 0, statuses: [429, 500, 502, 503, 504], backoff: retries.backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must()),
@@ -1251,15 +1252,21 @@ function fetch(@s: Session, r: Request) -> Response?
         if !has_header(out.headers, name: h.name)
             out.headers @ out.headers.push(h)
 
+    if s.client.deadline.nanoseconds < 0
+        return fail(
+            code: INVALID,
+            msg: f"sending a request: a deadline of {time.format_duration(s.client.deadline)}, below zero"
+        )
     start = time.mark()?
-    whole = s.client.deadline_ms
+    given = s.client.deadline
+    whole = policy.ms_of(given)
     hops: i64 @= 0
 
     while true
         if whole > 0
-            s.client.deadline_ms @ policy.left_ms(deadline_ms: whole, start: start)?
+            s.client.deadline @ time.milliseconds(policy.left_ms(deadline_ms: whole, start: start)?)?
         outcome = fetch_once(@s, r: out)
-        s.client.deadline_ms @ whole
+        s.client.deadline @ given
         answer = outcome?
 
         if !policy.follows(answer.status) || s.client.max_redirects == 0 || !has_header(answer.headers, name: "Location")
@@ -1330,7 +1337,7 @@ function fetch_once(@s: Session, r: Request) -> Response?
 
         if !has_header(out.headers, name: "Accept-Encoding")
             fields @ fields.push(wire.Field(name: "Accept-Encoding", value: "gzip, deflate"))
-        left = policy.left_ms(deadline_ms: c.deadline_ms, start: start)?
+        left = policy.left_ms(deadline_ms: policy.ms_of(c.deadline), start: start)?
         via = proxy_for(c.proxy, target: out.url).default("")
 
         outcome = if via != ""
@@ -1396,7 +1403,7 @@ function fetch_once(@s: Session, r: Request) -> Response?
                     .ok after => wait @ after
                     .err _    => _ = 0
 
-                if !policy.may_wait(deadline_ms: c.deadline_ms, start: start, wait_ms: time.to_units(wait, unit: .millisecond))?
+                if !policy.may_wait(deadline_ms: policy.ms_of(c.deadline), start: start, wait_ms: time.to_units(wait, unit: .millisecond))?
                     return decode_body(answer, limit: c.limits.body_bytes)
             .err e =>
                 transient = e.code == CLOSED || e.code == TIMEOUT || e.code == FAILED
@@ -1406,7 +1413,7 @@ function fetch_once(@s: Session, r: Request) -> Response?
                 wait @ retries.drawn_wait(c.retries.backoff, failures: tries + 1, previous: last_wait)?
                 last_wait @ wait
 
-                if !policy.may_wait(deadline_ms: c.deadline_ms, start: start, wait_ms: time.to_units(wait, unit: .millisecond))?
+                if !policy.may_wait(deadline_ms: policy.ms_of(c.deadline), start: start, wait_ms: time.to_units(wait, unit: .millisecond))?
                     return fail(code: e.code, msg: e.msg)
 
         if wait.nanoseconds > 0
@@ -1433,7 +1440,7 @@ function fetch_once(@s: Session, r: Request) -> Response?
 # Fails `unsupported` for a scheme other than `http` and `https`; `invalid`
 # for a certificate refused, the message saying why, a target that is not
 # absolute or a response that is not HTTP/1.1; `limit` past
-# `c.max_redirects` or `c.limits`; `timeout` past `c.deadline_ms`; and as
+# `c.max_redirects` or `c.limits`; `timeout` past `c.deadline`; and as
 # `net.connect` and `tls.connect` fail. See also `fetch`, `get`,
 # `round_trip`.
 function send(c: Client, r: Request) -> Response?
@@ -1704,9 +1711,9 @@ record EventReader
     # The last event id the stream set, as its last empty line found it:
     # what a reconnection sends as `Last-Event-ID`, "" where it set none.
     last_id: str
-    # The milliseconds to wait before reconnecting: 3,000, as Chrome waits,
-    # until the stream's `retry` field says another.
-    retry_ms: i64
+    # How long to wait before reconnecting: three seconds, as Chrome waits,
+    # until the stream's `retry` field says another, in milliseconds.
+    retry: time.Duration
     # The body, the line begun and the event being read. Only this package
     # reads it.
     state: streaming.Events
@@ -1732,7 +1739,9 @@ function event_reader(response: Response, limits: Limits) -> EventReader?
     streaming.is_event_stream(status_code: response.status, fields: fields)?
     b = streaming.body_of(status_code: response.status, fields: fields, method: METHOD_GET, most_fields: limits.field_count)?
     state = streaming.begin_events(b, most_bytes: limits.body_bytes)
-    return ok(EventReader(last_id: "", retry_ms: state.scan.retry_ms, state: state))
+    return ok(
+        EventReader(last_id: "", retry: time.milliseconds(state.scan.retry_ms).default(time.max_duration()), state: state)
+    )
 
 # The next event of the stream `events` reads, waiting for it: its lines read
 # by the WHATWG HTML standard's algorithm, a line ended by a carriage return
@@ -1742,18 +1751,18 @@ function event_reader(response: Response, limits: Limits) -> EventReader?
 # U+FFFD.
 #
 # - `reader`: the reader of the connection, advanced as the stream is read.
-# - `events`: the stream's reader; its `last_id` and `retry_ms` are written
+# - `events`: the stream's reader; its `last_id` and `retry` are written
 #   at every call, a failure's included.
 #
 # Fails `closed` where the body ends before another event, an event left
 # unfinished dropped as the standard drops it, at which a client waits
-# `retry_ms` and asks again with `Last-Event-ID`; `limit` where an event's
+# `retry` and asks again with `Last-Event-ID`; `limit` where an event's
 # lines pass the limit `event_reader` was told; and as `read_piece` fails.
 # See also `events_of`.
 function read_event(@reader: io.Reader, @events: EventReader) -> Event?
     outcome = streaming.next_event(@reader, @events.state)
     events.last_id @ events.state.scan.last_id
-    events.retry_ms @ events.state.scan.retry_ms
+    events.retry @ time.milliseconds(events.state.scan.retry_ms).default(time.max_duration())
     got = outcome?
     return ok(Event(name: got.kind, data: got.data, id: got.id))
 
@@ -1787,16 +1796,17 @@ function events_of(response: Response) -> [Event]?
 record Server
     # What a request may hold; past it the client is answered 431 or 413.
     limits: Limits
-    # The milliseconds each connection may last from its accepting, every
-    # request it carries included, 0 for none; a connection past it is
-    # closed. Over TLS its handshake may take as long again before it. One
+    # How long each connection may last from its accepting, every request it
+    # carries included, a part of a millisecond counting as a whole one:
+    # zero ends every wait at once, `time.max_duration()` sets none; a
+    # connection past it is closed. Over TLS its handshake may take as long again before it. One
     # connection is served at a time, so this is the longest one client can
     # keep the others waiting.
-    deadline_ms: i64
+    deadline: time.Duration
 
 # The usual server: `default_limits()` and connections of 30 seconds at most.
 function default_server() -> Server
-    return Server(limits: default_limits(), deadline_ms: 30_000)
+    return Server(limits: default_limits(), deadline: time.seconds(30).must())
 
 # Serves every connection `l` accepts with `handler`, one connection at a
 # time, until the program asks to stop.
@@ -1818,10 +1828,7 @@ function default_server() -> Server
 function serve(s: Server, l: net.Listener, handler: (function(Request) -> Response)) -> ()?
     wait_ms: i64 @= 5
 
-    accept_ms = if s.deadline_ms == 0
-        net.FOREVER
-    else
-        s.deadline_ms
+    accept_ms = policy.net_ms(s.deadline)
 
     while true
         match net.accept(l, deadline_ms: accept_ms)
@@ -1845,22 +1852,22 @@ function serve(s: Server, l: net.Listener, handler: (function(Request) -> Respon
 # Serves every TLS connection `l` accepts with `handler`, one connection at
 # a time, until the program asks to stop: `serve` over `tls`.
 #
-# - `s`: how it serves; `s.deadline_ms` is the milliseconds a client's
-#   handshake may take once it has connected, and then the milliseconds its
-#   connection may last (`tls.set_deadline`), 0 for no limit.
+# - `s`: how it serves; `s.deadline` is how long a client's handshake may
+#   take once it has connected, and then how long its connection may last
+#   (`tls.set_deadline`), `time.max_duration()` for no limit.
 # - `l`: the TLS listener, made by `tls.listen` with HTTP/1.1 among its
 #   protocols, and `h2` where HTTP/2 is answered too (`serve_stream` says
 #   how); its owner closes it.
 # - `handler`: called once for each request, as `serve` calls it.
 #
 # It serves ONE CONNECTION AT A TIME, as `serve` does, so a client that
-# connects and goes silent holds the others for `s.deadline_ms` twice at
+# connects and goes silent holds the others for `s.deadline` twice at
 # most, its handshake's and its connection's. A handshake that fails or times
 # out ends that client alone. It answers once the stop is asked. Fails
 # `timeout` where the listener's own deadline passes
 # (`tls.set_accept_deadline`), told from a handshake's by the wait being
-# shorter than `s.deadline_ms`; `closed` where `l` is closed, `invalid` for a
-# deadline below 0, and as `tls.accept` fails for any reason that is not one
+# shorter than `s.deadline`; `closed` where `l` is closed, `invalid` for a
+# deadline below zero, and as `tls.accept` fails for any reason that is not one
 # client's; where the system has nothing left it waits and tries again, as
 # `serve` does. Each request's `remote` is "", since `tls` does not tell the
 # client's address.
@@ -1878,11 +1885,11 @@ function serve_tls(s: Server, l: tls.Listener, handler: (function(Request) -> Re
     while true
         began = time.mark()
 
-        match tls.accept(l, deadline: policy.tls_deadline(s.deadline_ms)?)
+        match tls.accept(l, deadline: s.deadline)
             .ok accepted =>
                 wait_ms @ 5
                 stream @= accepted.stream
-                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline: policy.tls_deadline(s.deadline_ms)?).is_err()
+                timed = s.deadline == time.max_duration() || !tls.set_deadline(stream, deadline: s.deadline).is_err()
 
                 if timed
                     _ = serve_stream(s, stream: stream, remote: net.format_address(accepted.remote), handler: handler)
@@ -1894,7 +1901,7 @@ function serve_tls(s: Server, l: tls.Listener, handler: (function(Request) -> Re
                 if e.code == STOPPED
                     return ok()
 
-                if e.code == TIMEOUT && policy.is_listener_timeout(began, handshake_ms: s.deadline_ms)
+                if e.code == TIMEOUT && policy.is_listener_timeout(began, handshake_ms: policy.ms_of(s.deadline))
                     return fail(code: e.code, msg: e.msg)
                 one_client = e.code == CLOSED && l.handle != nullptr || e.code == TIMEOUT || e.code == FAILED
 
@@ -1907,7 +1914,7 @@ function serve_tls(s: Server, l: tls.Listener, handler: (function(Request) -> Re
 # Serves the requests of the connection `c` with `handler`, one after
 # another, and answers how many were answered.
 #
-# - `s`: how it serves; `s.deadline_ms` is not read, the connection's own
+# - `s`: how it serves; `s.deadline` is not read, the connection's own
 #   deadline being the one `net` gave it.
 # - `c`: the connection; its owner closes it.
 # - `handler`: called once for each request, as `serve` calls it.
@@ -1928,7 +1935,7 @@ function serve_conn(s: Server, c: net.Conn, handler: (function(Request) -> Respo
 # answered: the same work over any stream, a TLS one `tls.accept` answered
 # among them.
 #
-# - `s`: how it serves; `s.deadline_ms` is not read, the stream's own
+# - `s`: how it serves; `s.deadline` is not read, the stream's own
 #   deadline, where it has one, being the one that holds.
 # - `stream`: the stream read and written; its owner closes it.
 # - `remote`: what each request's `remote` holds: the client's address, or
@@ -1987,10 +1994,7 @@ function serve_stream(s: Server, stream: io.Stream, remote: str, handler: (funct
 function serve_with<S>(s: Server, l: net.Listener, state: S, handler: (function(S, Request) -> Response)) -> ()?
     wait_ms: i64 @= 5
 
-    accept_ms = if s.deadline_ms == 0
-        net.FOREVER
-    else
-        s.deadline_ms
+    accept_ms = policy.net_ms(s.deadline)
 
     while true
         match net.accept(l, deadline_ms: accept_ms)
@@ -2020,7 +2024,7 @@ function serve_with<S>(s: Server, l: net.Listener, state: S, handler: (function(
 # `serve_tls` with `state` handed to `handler` beside each request, as
 # `serve_with` hands it.
 #
-# - `s`: how it serves, `deadline_ms` a handshake's as `serve_tls` reads it.
+# - `s`: how it serves, `deadline` a handshake's as `serve_tls` reads it.
 # - `l`: the TLS listener; its owner closes it.
 # - `state`: the value handed to every call, as `serve_with` hands it.
 # - `handler`: called once for each request, with `state` and the request.
@@ -2034,11 +2038,11 @@ function serve_tls_with<S>(s: Server, l: tls.Listener, state: S, handler: (funct
     while true
         began = time.mark()
 
-        match tls.accept(l, deadline: policy.tls_deadline(s.deadline_ms)?)
+        match tls.accept(l, deadline: s.deadline)
             .ok accepted =>
                 wait_ms @ 5
                 stream @= accepted.stream
-                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline: policy.tls_deadline(s.deadline_ms)?).is_err()
+                timed = s.deadline == time.max_duration() || !tls.set_deadline(stream, deadline: s.deadline).is_err()
 
                 if timed
                     _ = serve_stream_with(
@@ -2056,7 +2060,7 @@ function serve_tls_with<S>(s: Server, l: tls.Listener, state: S, handler: (funct
                 if e.code == STOPPED
                     return ok()
 
-                if e.code == TIMEOUT && policy.is_listener_timeout(began, handshake_ms: s.deadline_ms)
+                if e.code == TIMEOUT && policy.is_listener_timeout(began, handshake_ms: policy.ms_of(s.deadline))
                     return fail(code: e.code, msg: e.msg)
                 one_client = e.code == CLOSED && l.handle != nullptr || e.code == TIMEOUT || e.code == FAILED
 
@@ -2421,7 +2425,7 @@ function round_trip_h2(@c: http2.Conn, r: Request, limits: Limits) -> Response?
 # were answered: what `serve_stream` does over a TLS stream that chose `h2`.
 #
 # - `s`: how it serves; its `limits` are the connection's own, given when it
-#   was made, and `s.deadline_ms` is not read.
+#   was made, and `s.deadline` is not read.
 # - `c`: the connection, made by `http2.server`; its owner closes it.
 # - `remote`: what each request's `remote` holds, "" where unknown.
 # - `handler`: called once for each request, read whole, on this thread.
@@ -2429,7 +2433,7 @@ function round_trip_h2(@c: http2.Conn, r: Request, limits: Limits) -> Response?
 # A request whose path is no target is answered 400. See also
 # `serve_h2_with`, `serve_stream`.
 function serve_h2(s: Server, @c: http2.Conn, remote: str, handler: (function(Request) -> Response)) -> i64
-    _ = s.deadline_ms
+    _ = s.deadline
     answered: i64 @= 0
 
     while true
@@ -2457,7 +2461,7 @@ function serve_h2(s: Server, @c: http2.Conn, remote: str, handler: (function(Req
 #
 # See also `serve_h2`, `serve_stream_with`.
 function serve_h2_with<S>(s: Server, @c: http2.Conn, remote: str, state: S, handler: (function(S, Request) -> Response)) -> i64
-    _ = s.deadline_ms
+    _ = s.deadline
     answered: i64 @= 0
 
     while true
@@ -2970,15 +2974,16 @@ record Served
 # the program asks to stop, and then ends gracefully, as Go's
 # `Server.Shutdown` ends: no connection accepted after the stop, a connection
 # idle at it closed, and a request whose bytes have come answered with
-# `Connection: close` within `grace_ms`.
+# `Connection: close` within `grace`.
 #
 # - `s`: how it serves, as `serve` reads it.
 # - `l`: the listener; its owner closes it.
 # - `state`: the value handed to every call of `handler`, as `serve_with`
 #   hands it.
 # - `handler`: called once for each request, with `state` and the request.
-# - `grace_ms`: the milliseconds after the stop during which a request may
-#   still begin to be answered, 0 or more; one waiting past it is cut.
+# - `grace`: how long after the stop a request may still begin to be
+#   answered, zero or more, a part of a millisecond counting as a whole
+#   one; one waiting past it is cut.
 #
 # The counts of what it served. The stop is `os`'s (`os.catch_stop`,
 # `os.ask_stop`): from it every call that would wait answers `stopped`, so
@@ -2986,17 +2991,24 @@ record Served
 # counted cut, as is a response the system could not take without waiting;
 # a handler cannot be stopped midway, so one running at the stop runs to its
 # end, within the grace or past it. Fails as `serve` does, `invalid` where
-# `grace_ms` is below 0. See also `serve_stream_until_stopped`.
-function serve_until_stopped<S>(s: Server, l: net.Listener, state: S, handler: (function(S, Request) -> Response), grace_ms: i64) -> Served?
-    if grace_ms < 0
-        return fail(code: INVALID, msg: f"serving until the stop: a grace of {grace_ms} ms is below 0")
+# `grace` or `s.deadline` is below zero. See also
+# `serve_stream_until_stopped`.
+function serve_until_stopped<S>(s: Server, l: net.Listener, state: S, handler: (function(S, Request) -> Response), grace: time.Duration) -> Served?
+    if grace.nanoseconds < 0
+        return fail(
+            code: INVALID,
+            msg: f"serving until the stop: a grace of {time.format_duration(grace)} is below zero"
+        )
+
+    if s.deadline.nanoseconds < 0
+        return fail(
+            code: INVALID,
+            msg: f"serving until the stop: a deadline of {time.format_duration(s.deadline)} is below zero"
+        )
     out @= Served(connections: 0, answered: 0, cut: 0)
     wait_ms: i64 @= 5
 
-    accept_ms = if s.deadline_ms == 0
-        net.FOREVER
-    else
-        s.deadline_ms
+    accept_ms = policy.net_ms(s.deadline)
 
     while true
         if os.is_stop_asked()
@@ -3012,7 +3024,7 @@ function serve_until_stopped<S>(s: Server, l: net.Listener, state: S, handler: (
                     remote: net.format_address(conn.remote),
                     state: state,
                     handler: handler,
-                    grace_ms: grace_ms
+                    grace: grace
                 )
                 out @ Served(
                     connections: out.connections + 1,
@@ -3037,18 +3049,19 @@ function serve_until_stopped<S>(s: Server, l: net.Listener, state: S, handler: (
 # `serve_until_stopped` does: what a program serving connections on its own
 # threads calls on each, then joins them.
 #
-# - `s`: how it serves; `s.deadline_ms` is not read, the stream's own
+# - `s`: how it serves; `s.deadline` is not read, the stream's own
 #   deadline being the one that holds.
 # - `stream`: the stream read and written; its owner closes it.
 # - `remote`: what each request's `remote` holds, "" where it is not known.
 # - `state`: the value handed to every call of `handler`.
 # - `handler`: called once for each request, with `state` and the request.
-# - `grace_ms`: as `serve_until_stopped` reads it; aborts below 0.
+# - `grace`: as `serve_until_stopped` reads it; aborts below zero.
 #
 # The counts, `connections` 1. Each request is begun only once its first byte
 # has come, so a connection idle at the stop ends with nothing cut.
-function serve_stream_until_stopped<S>(s: Server, stream: io.Stream, remote: str, state: S, handler: (function(S, Request) -> Response), grace_ms: i64) -> Served
-    assert grace_ms >= 0
+function serve_stream_until_stopped<S>(s: Server, stream: io.Stream, remote: str, state: S, handler: (function(S, Request) -> Response), grace: time.Duration) -> Served
+    assert grace.nanoseconds >= 0
+    grace_ms = policy.ms_of(grace)
     reader @= io.reader(stream)
     answered: i64 @= 0
     cut: i64 @= 0
@@ -3458,7 +3471,7 @@ test "send: an ftp URL is unsupported, a target with no scheme invalid, no netwo
 test "get: a server that never answers ends at the client's time limit"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     c @= default_client()
-    c.deadline_ms @ 200
+    c.deadline @ time.milliseconds(200).must()
 
     match get(c, target: f"http://127.0.0.1:{l.address.port}/slow")
         .ok _  => assert false
@@ -3638,7 +3651,7 @@ test "send: an https:// request through a proxy that refuses the tunnel, CONNECT
 test "send: a tunnel opened, then TLS over it, which macOS's TLS does not begin"
     t @= canned.start(canned.script(responses: ["HTTP/1.1 200 Connection established\r\n\r\n"]))
     c @= default_client()
-    c.deadline_ms @ 10_000
+    c.deadline @ time.seconds(10).must()
     c.proxy @ Proxy(http: "", https: f"http://127.0.0.1:{t.port}", bypass: [])
 
     match get(c, target: "https://example.test/")
@@ -3760,7 +3773,7 @@ test "serve_stream: a request over TLS from a client of the test authority"
 
 test "get: https://example.com where the network answers, skipped where it does not"
     c @= default_client()
-    c.deadline_ms @ 10_000
+    c.deadline @ time.seconds(10).must()
 
     match get(c, target: "https://example.com/")
         .ok got => assert got.status == 200 && strings.contains(s: text_of(got).default(""), substr: "Example Domain")
@@ -3882,7 +3895,7 @@ test "serve_tls: a client silent after its handshake dropped at the deadline, th
     t @= threads.spawn_text(body: canned.ask_tls, arg: f"{l.port}" + canned.SEPARATOR).must()
     tls.set_accept_deadline(l, deadline: time.seconds(3).must()).must()
     s @= default_server()
-    s.deadline_ms @ 300
+    s.deadline @ time.milliseconds(300).must()
     began = time.mark().must()
 
     match serve_tls(s, l: l, handler: respond_trace)
@@ -4194,7 +4207,7 @@ test "write_response: a text answer on the wire"
 # The usual client.
 test "default_client: ten redirects, thirty seconds, no retry"
     c = default_client()
-    assert c.max_redirects == 10 && c.deadline_ms == 30_000 && c.retries.count == 0
+    assert c.max_redirects == 10 && c.deadline == time.seconds(30).must() && c.retries.count == 0
     assert c.user_agent == "heroes-rebel-http/0.1.0" && c.user_agent == USER_AGENT
 
 test "send: the client's User-Agent sent once where the request holds none, the request's own in its place, none where the client's is empty"
@@ -4317,7 +4330,7 @@ test "round_trip: a GET on a held connection"
 
 # The usual server.
 test "default_server: thirty seconds a connection"
-    assert default_server().deadline_ms == 30_000 && default_server().limits == default_limits()
+    assert default_server().deadline == time.seconds(30).must() && default_server().limits == default_limits()
 
 # A server answering one connection, then ending as its listener's deadline
 # passes.
@@ -4617,7 +4630,7 @@ test "event_reader: a stream's events as they come"
     events @= event_reader(started, limits: default_limits()).must()
     first = read_event(@reader, @events).must()
     assert first.name == "tick" && first.data == "one" && first.id == "1"
-    assert events.last_id == "1" && events.retry_ms == 1000
+    assert events.last_id == "1" && events.retry == time.seconds(1).must()
     io.close(@reader.stream).must()
     io.close(@two.first.stream).must()
 
@@ -4768,7 +4781,7 @@ test "serve_until_stopped: one connection answered, then the listener's deadline
     io.write_text(conn.stream, text: "TRACE /t HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n").must()
     net.set_accept_deadline(l, deadline_ms: 300).must()
 
-    match serve_until_stopped(default_server(), l: l, state: "https://example.org", handler: respond_moved_to, grace_ms: 1_000)
+    match serve_until_stopped(default_server(), l: l, state: "https://example.org", handler: respond_moved_to, grace: time.seconds(1).must())
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -4790,7 +4803,7 @@ test "serve_stream_until_stopped: two requests answered, none cut"
         remote: "",
         state: "https://example.org",
         handler: respond_moved_to,
-        grace_ms: 0
+        grace: time.nanoseconds(0)
     )
     assert got == Served(connections: 1, answered: 2, cut: 0)
     io.close(@two.first.stream).must()

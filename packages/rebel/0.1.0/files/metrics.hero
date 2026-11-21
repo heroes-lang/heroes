@@ -2361,19 +2361,19 @@ test "observe_request: a GET answered 200"
 # A push to a Pushgateway that is not running here fails, telling why.
 test "push_to_gateway: no Pushgateway here"
     c @= http.default_client()
-    c.deadline_ms @ 2_000
+    c.deadline @ time.seconds(2).must()
     assert push_to_gateway(c, gateway: "http://127.0.0.1:9", job: "batch", grouping: [], families: []).is_err()
 
 # The same with `POST`.
 test "push_add_to_gateway: no Pushgateway here"
     c @= http.default_client()
-    c.deadline_ms @ 2_000
+    c.deadline @ time.seconds(2).must()
     assert push_add_to_gateway(c, gateway: "http://127.0.0.1:9", job: "batch", grouping: [], families: []).is_err()
 
 # The same with `DELETE`.
 test "delete_from_gateway: no Pushgateway here"
     c @= http.default_client()
-    c.deadline_ms @ 2_000
+    c.deadline @ time.seconds(2).must()
     assert delete_from_gateway(c, gateway: "http://127.0.0.1:9", job: "batch", grouping: []).is_err()
 
 # Where a group lives.

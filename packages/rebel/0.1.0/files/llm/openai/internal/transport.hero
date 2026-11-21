@@ -151,7 +151,7 @@ function send(s: Settings, method: str, path: str, body: str) -> http.Response?
     r = request_of(s, method: method, path: path, body: body)?
     c @= http.default_client()
     c.max_redirects @ 0
-    c.deadline_ms @ s.deadline_ms
+    c.deadline @ tls_deadline(s.deadline_ms)?
     c.limits @ s.limits
     c.roots @ s.roots
     c.retries.count @ 0

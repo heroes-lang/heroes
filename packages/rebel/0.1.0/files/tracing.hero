@@ -1398,7 +1398,7 @@ test "export_spans and export_logs: a collector that is not there, the spans kep
     span = start(@t, name: "x", kind: .internal).must()
     end(@t, span: span).must()
     exporter @= otlp.exporter_to("http://127.0.0.1:9/v1/traces")
-    exporter.client.deadline_ms @ 2_000
+    exporter.client.deadline @ time.seconds(2).must()
     assert export_spans(@t, exporter: exporter).is_err()
     assert t.ended.len() == 1
     empty @= with_clock(new_tracer("svc").must(), clock: fixture.clock)
@@ -1608,7 +1608,7 @@ test "export_spans: no collector here"
     span = start(@t, name: "x", kind: .internal).must()
     end(@t, span: span).must()
     exporter @= otlp.exporter_to("http://127.0.0.1:9/v1/traces")
-    exporter.client.deadline_ms @ 2_000
+    exporter.client.deadline @ time.seconds(2).must()
     assert export_spans(@t, exporter: exporter).is_err()
     assert t.ended.len() == 1
 
@@ -1643,7 +1643,7 @@ test "encode_logs: one record"
 # An export to a collector that is not running here fails.
 test "export_logs: no collector here"
     exporter @= otlp.exporter_to("http://127.0.0.1:9/v1/logs")
-    exporter.client.deadline_ms @ 2_000
+    exporter.client.deadline @ time.seconds(2).must()
     r = log_record(
         parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must(),
         level: .error,

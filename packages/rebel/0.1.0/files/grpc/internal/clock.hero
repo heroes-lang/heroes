@@ -12,11 +12,10 @@ function now_ms() -> i64
         .ok m  => return m.nanoseconds / 1000000
         .err _ => return 0
 
-# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
-# being `time.max_duration()` (until this package's own step of D07; `tls`
-# takes a `time.Duration` since M-rebel-library step 88c).
+# The time `ms` milliseconds stand for as `tls` takes it, 0, this clock's
+# no end, being `time.max_duration()`.
 #
-# - `ms`: milliseconds, 0 for no limit.
+# - `ms`: milliseconds, 0 for no end.
 function tls_deadline(ms: i64) -> time.Duration?
     if ms == 0
         return ok(time.max_duration())

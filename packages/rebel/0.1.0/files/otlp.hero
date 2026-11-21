@@ -219,7 +219,14 @@ function exporter_from_env(signal: Signal) -> Exporter?
 
     if timeout != ""
         match numbers.parse_int(timeout)
-            .ok ms => out.client.deadline_ms @ ms
+            .ok ms =>
+                if ms < 0
+                    return fail(code: INVALID, msg: f"the OTLP timeout \"{timeout}\" is below zero")
+
+                out.client.deadline @ if ms == 0
+                    time.max_duration()
+                else
+                    time.milliseconds(ms).default(time.max_duration())
             .err _ => return fail(
                 code: INVALID,
                 msg: f"the OTLP timeout \"{timeout}\" is no whole number of milliseconds"
@@ -383,7 +390,7 @@ function put_double_unless_zero(@to: [u8], number: i64, x: f64)
 test "export: a collector that is not there fails with the connection's code, for each signal's URL"
     for target in ["http://127.0.0.1:9/v1/metrics", "http://127.0.0.1:9/v1/traces", "http://127.0.0.1:9/v1/logs"]
         exporter @= exporter_to(target)
-        exporter.client.deadline_ms @ 2_000
+        exporter.client.deadline @ time.seconds(2).must()
         assert export(exporter, body: []).is_err()
 
 test "exporter_from_env: each signal's path where the environment names none"
@@ -419,7 +426,7 @@ test "resource_from_env: a service's name"
 # An export to a collector that is not running here fails, telling why.
 test "export: no collector here"
     exporter @= exporter_to("http://127.0.0.1:9/v1/metrics")
-    exporter.client.deadline_ms @ 2_000
+    exporter.client.deadline @ time.seconds(2).must()
     assert export(exporter, body: []).is_err()
 
 # A log record's body.

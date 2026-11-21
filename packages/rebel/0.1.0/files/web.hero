@@ -1115,7 +1115,7 @@ function write_event(s: io.Stream, event: http.Event) -> ()?
 # - `ms`: the milliseconds, 0 or more.
 #
 # Fails `invalid` where `ms` is below 0, and as `io.write` fails. See also
-# `http.EventReader`, whose `retry_ms` reads it.
+# `http.EventReader`, whose `retry` reads it.
 function write_retry(s: io.Stream, ms: i64) -> ()?
     if ms < 0
         return fail(code: INVALID, msg: f"a retry of {ms} ms, where a client reads 0 or more")
@@ -2008,7 +2008,7 @@ function exchange(r: http.Request, router: Router, handler: (function(Router, ht
 # The counts of what it served and what the stop cut. Fails as
 # `http.serve_until_stopped` does. See also `serve`.
 function serve_until_stopped(server: http.Server, l: net.Listener, router: Router, handler: (function(Router, http.Request) -> http.Response), grace_ms: i64) -> http.Served?
-    return http.serve_until_stopped(server, l: l, state: router, handler: handler, grace_ms: grace_ms)
+    return http.serve_until_stopped(server, l: l, state: router, handler: handler, grace: time.milliseconds(grace_ms)?)
 
 ## Health and readiness
 
@@ -3581,7 +3581,7 @@ test "write_retry: ten seconds"
     reader @= io.reader(p.reader)
     started = http.read_response_head(@reader, method: http.METHOD_GET, limits: http.default_limits()).must()
     events @= http.event_reader(started, limits: http.default_limits()).must()
-    assert http.read_event(@reader, @events).is_err() && events.retry_ms == 10_000
+    assert http.read_event(@reader, @events).is_err() && events.retry == time.seconds(10).must()
     io.close(@reader.stream).must()
 
 # A comment a reader skips, written where no event is said for long.

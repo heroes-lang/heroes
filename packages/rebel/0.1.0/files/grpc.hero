@@ -346,15 +346,15 @@ variant Incoming
 #
 # - `host`: a name or an address; the certificate must name it.
 # - `port`: 1 to 65535.
-# - `deadline_ms`: the milliseconds the connection and its handshake may
-#   take, 0 for no limit.
+# - `deadline`: how long the connection and its handshake may take, as
+#   `http2.connect` takes it: `time.max_duration()` for no limit.
 # - `roots`: the PEM of the only authorities trusted, "" for the system's
 #   own store.
 # - `options`: how its calls run.
 #
 # Fails as `http2.connect` fails. See also `connect_plain`.
-function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Options) -> Channel?
-    conn = http2.connect(host: host, port: port, deadline: clock.tls_deadline(deadline_ms)?, roots: roots, options: options.http2)?
+function connect(host: str, port: i64, deadline: time.Duration, roots: str, options: Options) -> Channel?
+    conn = http2.connect(host: host, port: port, deadline: deadline, roots: roots, options: options.http2)?
 
     authority = if port == 443
         host
@@ -366,13 +366,14 @@ function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Op
 #
 # - `host`: a name or an address without brackets.
 # - `port`: 1 to 65535.
-# - `deadline_ms`: the milliseconds the connection and its preface may
-#   take, 0 for no limit.
+# - `deadline`: how long from the connection's making every read and write
+#   may wait, as `http2.connect_plain` takes it: `time.max_duration()` for
+#   no limit.
 # - `options`: how its calls run.
 #
 # Fails as `http2.connect_plain` fails. See also `connect`.
-function connect_plain(host: str, port: i64, deadline_ms: i64, options: Options) -> Channel?
-    conn = http2.connect_plain(host: host, port: port, deadline: clock.tls_deadline(deadline_ms)?, options: options.http2)?
+function connect_plain(host: str, port: i64, deadline: time.Duration, options: Options) -> Channel?
+    conn = http2.connect_plain(host: host, port: port, deadline: deadline, options: options.http2)?
     return ok(Channel(conn: conn, authority: f"{host}:{port}", scheme: "http", options: options))
 
 # A channel over an HTTP/2 connection the program made.
@@ -401,15 +402,16 @@ function close(@channel: Channel) -> ()?
 # - `path`: the method's path, `/shop.Shop/GetOrder`.
 # - `request`: the request's bytes.
 # - `metadata`: the entries sent with the call.
-# - `timeout_ms`: the milliseconds the call may take, sent as
-#   `grpc-timeout`; 0 for no deadline.
+# - `timeout`: how long the call may take, sent as `grpc-timeout`, a part of
+#   a millisecond counting as a whole one on this side's clock; zero is a
+#   deadline already passed, `time.max_duration()` none.
 #
 # A deadline passed answers `STATUS_DEADLINE_EXCEEDED` and cancels the call; a
 # connection lost answers `STATUS_UNAVAILABLE`. Fails `invalid` where `path` or
-# an entry is refused, `closed` where the channel has ended. See also
-# `call_many`, `start_call`.
-function call(@channel: Channel, path: str, request: [u8], metadata: [Entry], timeout_ms: i64) -> Reply?
-    c @= start_call(@channel, path: path, metadata: metadata, timeout_ms: timeout_ms)?
+# an entry is refused or `timeout` is below zero, `closed` where the channel
+# has ended. See also `call_many`, `start_call`.
+function call(@channel: Channel, path: str, request: [u8], metadata: [Entry], timeout: time.Duration) -> Reply?
+    c @= start_call(@channel, path: path, metadata: metadata, timeout: timeout)?
 
     match send(@channel, @c, message: request)
         .ok _ => _ = 0
@@ -436,11 +438,11 @@ function call(@channel: Channel, path: str, request: [u8], metadata: [Entry], ti
 # - `path`: the method's path.
 # - `requests`: the requests' bytes, in order; none sends none.
 # - `metadata`: the entries sent with the call.
-# - `timeout_ms`: as `call` takes it.
+# - `timeout`: as `call` takes it.
 #
 # Fails as `call` does. See also `call`.
-function call_many(@channel: Channel, path: str, requests: [[u8]], metadata: [Entry], timeout_ms: i64) -> Reply?
-    c @= start_call(@channel, path: path, metadata: metadata, timeout_ms: timeout_ms)?
+function call_many(@channel: Channel, path: str, requests: [[u8]], metadata: [Entry], timeout: time.Duration) -> Reply?
+    c @= start_call(@channel, path: path, metadata: metadata, timeout: timeout)?
 
     for request in requests
         match send(@channel, @c, message: request)
@@ -467,10 +469,12 @@ function call_many(@channel: Channel, path: str, requests: [[u8]], metadata: [En
 # - `channel`: the channel.
 # - `path`: the method's path.
 # - `metadata`: the entries sent with the call.
-# - `timeout_ms`: as `call` takes it.
+# - `timeout`: as `call` takes it.
 #
 # Fails as `call` does. See also `send`, `receive`, `close_send`.
-function start_call(@channel: Channel, path: str, metadata: [Entry], timeout_ms: i64) -> Call?
+function start_call(@channel: Channel, path: str, metadata: [Entry], timeout: time.Duration) -> Call?
+    if timeout.nanoseconds < 0
+        return fail(code: INVALID, msg: f"calling {path}: a timeout of {time.format_duration(timeout)}, below zero")
     names: [str] @= []
     values: [[u8]] @= []
 
@@ -478,13 +482,21 @@ function start_call(@channel: Channel, path: str, metadata: [Entry], timeout_ms:
         names @ names.push(e.key)
         values @ values.push(e.value)
 
-    timeout = if timeout_ms > 0
-        texts.format_timeout(timeout_ms * 1000000)
+    bounded = timeout != time.max_duration()
+
+    sent = if bounded
+        texts.format_timeout(timeout.nanoseconds)
     else
         ""
-    head = calls.call_head(scheme: channel.scheme, authority: channel.authority, path: path, user_agent: channel.options.user_agent, gzip: channel.options.compress, timeout: timeout, names: names, values: values)?
+    head = calls.call_head(scheme: channel.scheme, authority: channel.authority, path: path, user_agent: channel.options.user_agent, gzip: channel.options.compress, timeout: sent, names: names, values: values)?
+    whole = timeout.nanoseconds / 1000000
 
-    deadline_at = if timeout_ms > 0
+    timeout_ms = if timeout.nanoseconds % 1000000 != 0
+        whole + 1
+    else
+        whole
+
+    deadline_at = if bounded
         clock.now_ms() + timeout_ms
     else
         0
@@ -717,12 +729,12 @@ record ProtoReply
 # - `path`: the method's path.
 # - `request`: the request, of the method's input type.
 # - `metadata`: the entries sent with the call.
-# - `timeout_ms`: as `call` takes it.
+# - `timeout`: as `call` takes it.
 #
 # Fails as `proto_method_of`, `protobuf.encode` and `call` do, `invalid` where
 # `request` is of another type or a response does not decode. See also
 # `call`.
-function call_proto(@channel: Channel, schema: protobuf.Schema, path: str, request: protobuf.Message, metadata: [Entry], timeout_ms: i64) -> ProtoReply?
+function call_proto(@channel: Channel, schema: protobuf.Schema, path: str, request: protobuf.Message, metadata: [Entry], timeout: time.Duration) -> ProtoReply?
     m = proto_method_of(schema, path: path)?
 
     wanted = if m.input_type.len() > 0 && m.input_type[0] == '.'
@@ -735,7 +747,7 @@ function call_proto(@channel: Channel, schema: protobuf.Schema, path: str, reque
             code: INVALID,
             msg: f"calling {path}: the request is a {request.type_name}, and the method takes a {wanted}"
         )
-    reply = call(@channel, path: path, request: protobuf.encode(schema, m: request)?, metadata: metadata, timeout_ms: timeout_ms)?
+    reply = call(@channel, path: path, request: protobuf.encode(schema, m: request)?, metadata: metadata, timeout: timeout)?
     out: [protobuf.Message] @= []
 
     for data in reply.messages
@@ -1355,11 +1367,17 @@ test "connect: a unary call over TLS"
     ch @= connect(
         host: "localhost",
         port: port,
-        deadline_ms: 10000,
+        deadline: time.seconds(10).must(),
         roots: tls.TEST_ROOT,
         options: default_options()
     ).must()
-    r = call(@ch, path: "/test.Echo/Echo", request: bytes.from_text("hi"), metadata: [], timeout_ms: 5000).must()
+    r = call(
+        @ch,
+        path: "/test.Echo/Echo",
+        request: bytes.from_text("hi"),
+        metadata: [],
+        timeout: time.seconds(5).must()
+    ).must()
     assert r.status.code == STATUS_OK && r.messages == [bytes.from_text("hi")]
     close(@ch).must()
     assert threads.wait_text(@serving) == "1"
@@ -1369,13 +1387,18 @@ test "connect_plain: a unary call over h2c"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
-    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    ch @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
     r = call(
         @ch,
         path: "/test.Echo/Echo",
         request: bytes.from_text("plain"),
         metadata: [Entry(key: "x-user", value: bytes.from_text("ana"))],
-        timeout_ms: 0
+        timeout: time.max_duration()
     ).must()
     assert r.status.code == STATUS_OK && r.messages == [bytes.from_text("plain")]
     close(@ch).must()
@@ -1393,7 +1416,7 @@ test "new_channel: over http2.connect_plain"
         options: http2.default_options()
     ).must()
     ch @= new_channel(conn, authority: "localhost", scheme: "http", options: default_options())
-    assert call(@ch, path: "/test.Echo/Echo", request: [1], metadata: [], timeout_ms: 0).must().messages == [[1]]
+    assert call(@ch, path: "/test.Echo/Echo", request: [1], metadata: [], timeout: time.max_duration()).must().messages == [[1]]
     close(@ch).must()
     assert threads.wait_text(@serving) == "1"
 
@@ -1402,8 +1425,13 @@ test "close: a second close refused"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
-    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
-    _ = call(@ch, path: "/test.Echo/Echo", request: [], metadata: [], timeout_ms: 0).must()
+    ch @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
+    _ = call(@ch, path: "/test.Echo/Echo", request: [], metadata: [], timeout: time.max_duration()).must()
     close(@ch).must()
     assert close(@ch).is_err()
     _ = threads.wait_text(@serving)
@@ -1414,11 +1442,16 @@ test "call: echoed, NOT_FOUND with its details, three messages streamed"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
-    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
-    assert call(@ch, path: "/test.Echo/Echo", request: [9], metadata: [], timeout_ms: 0).must().messages == [[9]]
-    failed = call(@ch, path: "/test.Echo/Fail", request: [], metadata: [], timeout_ms: 0).must()
+    ch @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
+    assert call(@ch, path: "/test.Echo/Echo", request: [9], metadata: [], timeout: time.max_duration()).must().messages == [[9]]
+    failed = call(@ch, path: "/test.Echo/Fail", request: [], metadata: [], timeout: time.max_duration()).must()
     assert failed.status == Status(code: STATUS_NOT_FOUND, message: "no such thing", details: [1, 2])
-    many = call(@ch, path: "/test.Echo/Many", request: [], metadata: [], timeout_ms: 0).must()
+    many = call(@ch, path: "/test.Echo/Many", request: [], metadata: [], timeout: time.max_duration()).must()
     assert many.messages.len() == 3 && many.status.code == STATUS_OK
     close(@ch).must()
     assert threads.wait_text(@serving) == "3"
@@ -1428,8 +1461,19 @@ test "call_many: three requests echoed"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
-    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
-    r = call_many(@ch, path: "/test.Echo/Echo", requests: [[1], [2], [3]], metadata: [], timeout_ms: 0).must()
+    ch @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
+    r = call_many(
+        @ch,
+        path: "/test.Echo/Echo",
+        requests: [[1], [2], [3]],
+        metadata: [],
+        timeout: time.max_duration()
+    ).must()
     assert r.messages == [[1], [2], [3]]
     close(@ch).must()
     _ = threads.wait_text(@serving)
@@ -1439,8 +1483,13 @@ test "start_call: a call driven message by message"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
-    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
-    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
+    ch @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
+    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout: time.max_duration()).must()
     send(@ch, @c, message: [4]).must()
     send(@ch, @c, message: [5]).must()
     close_send(@ch, c: c).must()
@@ -1456,8 +1505,8 @@ test "send: a message past the bound refused"
     fixture.until_listening(port)
     o @= default_options()
     o.max_message_bytes @ 4
-    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: o).must()
-    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline: time.seconds(10).must(), options: o).must()
+    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout: time.max_duration()).must()
 
     match send(@ch, @c, message: [1, 2, 3, 4, 5])
         .ok _  => assert false
@@ -1474,8 +1523,13 @@ test "close_send: the server answers after the client's last message"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
-    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
-    c @= start_call(@ch, path: "/test.Echo/Many", metadata: [], timeout_ms: 0).must()
+    ch @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
+    c @= start_call(@ch, path: "/test.Echo/Many", metadata: [], timeout: time.max_duration()).must()
     close_send(@ch, c: c).must()
     assert receive(@ch, @c).must() == .message(data: bytes.from_text("one"))
     close(@ch).must()
@@ -1486,15 +1540,26 @@ test "receive: the end with its status, and DEADLINE_EXCEEDED"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
-    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
-    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
+    ch @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
+    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout: time.max_duration()).must()
     close_send(@ch, c: c).must()
 
     match receive(@ch, @c).must()
         .message _ => assert false
         .end e     => assert e.status.code == STATUS_OK
 
-    slow = call(@ch, path: "/test.Echo/Silent", request: [], metadata: [], timeout_ms: 300).must()
+    slow = call(
+        @ch,
+        path: "/test.Echo/Silent",
+        request: [],
+        metadata: [],
+        timeout: time.milliseconds(300).must()
+    ).must()
     assert slow.status.code == STATUS_DEADLINE_EXCEEDED
     close(@ch).must()
     _ = threads.wait_text(@serving)
@@ -1504,8 +1569,13 @@ test "cancel: the call ends CANCELLED"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
-    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
-    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
+    ch @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
+    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout: time.max_duration()).must()
     cancel(@ch, @c).must()
 
     match receive(@ch, @c).must()
@@ -1544,8 +1614,20 @@ test "call_proto: a Note echoed and decoded"
     ).must()
     note @= protobuf.new_message(schema, type_name: "test.Note").must()
     protobuf.set(schema, @note, field: "text", value: .text(v: "proto")).must()
-    ch @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
-    r = call_proto(@ch, schema: schema, path: "/test.Echo/Echo", request: note, metadata: [], timeout_ms: 0).must()
+    ch @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
+    r = call_proto(
+        @ch,
+        schema: schema,
+        path: "/test.Echo/Echo",
+        request: note,
+        metadata: [],
+        timeout: time.max_duration()
+    ).must()
     assert protobuf.text_of(protobuf.get(schema, m: r.messages[0], field: "text").must()).must() == "proto"
     close(@ch).must()
     _ = threads.wait_text(@serving)

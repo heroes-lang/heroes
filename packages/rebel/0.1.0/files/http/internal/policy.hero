@@ -122,6 +122,41 @@ function parse_date(s: str) -> time.Instant?
             msg: f"reading an HTTP date: {syntax.shown(s)} is neither IMF-fixdate, RFC 850's form nor asctime's"
         )
 
+# The milliseconds of `d`, a time the face was handed, as this package's
+# private modules count a request's or a connection's time:
+# `time.max_duration()` is 0, none; any other is rounded up to a whole
+# millisecond and is 1 at least, so zero ends every wait within one.
+#
+# - `d`: zero or more, which the face checked.
+function ms_of(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return 0
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+
+    if whole == 0
+        return 1
+    return whole
+
+# The milliseconds of `d` as `net` takes them: `time.max_duration()` is
+# `net.FOREVER`, any other rounded up to a whole millisecond; below zero is
+# -2, which `net` refuses `invalid`.
+#
+# - `d`: a server's deadline.
+function net_ms(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return net.FOREVER
+
+    if d.nanoseconds < 0
+        return -2
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+    return whole
+
 # The milliseconds left of `deadline_ms` since `start`, 0 where there is no
 # deadline. Fails `timeout` where none is left, `failed` where the clock
 # cannot be read.
