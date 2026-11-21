@@ -132,16 +132,20 @@ function read(text: str) -> [Line]
 ## Operands
 
 # `r0` … `r3`, and nothing else. The message names the range, because a reader
-# who wrote `r9` needs to know what would have fitted (§4.17).
+# who wrote `r9` needs to know what would have fitted (§4.17). The byte after
+# the `r` is compared with the digits before it is made a number, because
+# `word[1] - '0'` is a `u8` subtraction, which aborts below `0` (spec § 7),
+# and the word is the program's input: `r!` is refused as `r9` is, rather
+# than ending the assembler.
 function register_of(word: str, number: i64) -> i64?
-    if word.len() != 2 || word[0] != 'r'
+    if word.len() != 2 || word[0] != 'r' || word[1] < '0' || word[1] > '9'
         return fail(
             code: ERR_BAD_REGISTER,
             msg: "line " + number.to_str() + ": `" + word + "` is not a register — r0 to r3"
         )
     n = to_i64(word[1] - '0').must()
 
-    if n < 0 || n >= REGISTERS
+    if n >= REGISTERS
         return fail(
             code: ERR_BAD_REGISTER,
             msg: "line " + number.to_str() + ": `" + word + "` is not a register — r0 to r3"
@@ -188,3 +192,16 @@ test "a register is r0 to r3, and a number may be negative"
     assert number_of("-7", 1).must() == 0 - 7
     assert number_of("x", 1).is_err()
     assert number_of("-", 1).is_err()
+
+test "every byte after the `r` is asked before it is a number, so `r!` is refused"
+    for code in range(from: 0, to: 128)
+        byte = to_u8(code).must()
+        word: [u8] = ['r', byte]
+        named = byte >= '0' && byte <= '3'
+        assert register_of(word.validated_bytes().must(), 1).is_err() == !named
+
+    match register_of("r!", 4)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == ERR_BAD_REGISTER
+            assert e.msg == "line 4: `r!` is not a register — r0 to r3"
