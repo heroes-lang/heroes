@@ -14,6 +14,16 @@
 #             table and has its own `<path>.ledger` (README § A8); a module that holds
 #             an `extern` group is a floor and is named `hero_<x>` (README § A2); and
 #             every row names a face and a ledger
+#   uses      **a row whose column "may use" is not what its package uses**: the
+#             packages a row names there are the packages its modules' `use`
+#             lines name, its private modules and floors included (README § A1),
+#             each told by what the row lacks and what it names in vain
+#
+# **A folder's shared modules** (README § A2, the coherence review's D10(c)):
+# a module `<folder>/internal/...` where no row is `<folder>` and rows stand
+# under it is each of those subpackages' own, so it is no module without a
+# row; it stands at the lowest layer of the folder's rows, and its own `use`
+# lines are judged at that layer.
 #
 # The coordinator's shell reading of the same question, `tools/layers.sh` in
 # the landing's scratch folder, read the faces' `use` lines alone; this reads
@@ -44,14 +54,24 @@ function broken(rows: [rebel_tree.Row], modules: [rebel_tree.Module]) -> [Placed
     out: [Placed] @= []
     places: {str: [str]} @= {}
     order: [str] @= []
+    levels: {str: i64} @= {}
 
     for m in modules
-        own = rebel_tree.package_of(rows: by, path: m.path)
+        own: str @= rebel_tree.package_of(rows: by, path: m.path)
 
-        if own.len() == 0
-            out @ out.push(
-                Placed(path: m.path, line: 0, key: "no row holds " + m.path, said: "no row of README § A1 holds this module, so its layer cannot be asked")
-            )
+        if own.len() > 0
+            levels[own] @ by[own].must().layer
+        else
+            folder = rebel_tree.shared_folder(rows: rows, path: m.path)
+
+            if folder.len() == 0
+                out @ out.push(
+                    Placed(path: m.path, line: 0, key: "no row holds " + m.path, said: "no row of README § A1 holds this module, so its layer cannot be asked")
+                )
+                continue
+            own @ folder
+            levels[own] @ rebel_tree.lowest_layer(rows: rows, folder: folder)
+        layer = levels[own].must()
         line: i64 @= 0
 
         for row in strings.lines(m.text)
@@ -62,7 +82,7 @@ function broken(rows: [rebel_tree.Row], modules: [rebel_tree.Module]) -> [Placed
             used = used_path(row)
             theirs = rebel_tree.package_of(rows: by, path: used)
 
-            if own.len() == 0 || theirs.len() == 0 || theirs == own || by[theirs].must().layer < by[own].must().layer
+            if theirs.len() == 0 || theirs == own || by[theirs].must().layer < layer
                 continue
             pair = own + " uses " + theirs
 
@@ -72,7 +92,7 @@ function broken(rows: [rebel_tree.Row], modules: [rebel_tree.Module]) -> [Placed
 
     for pair in order
         halves = strings.split_text(text: pair, separator: " uses ")
-        mine = by[halves[0]].must().layer
+        mine = levels[halves[0]].must()
         other = by[halves[1]].must().layer
         held = places[pair].must()
         out @ out.push(
@@ -141,6 +161,65 @@ function unlisted(rows: [rebel_tree.Row], modules: [rebel_tree.Module], ledgers:
 
     return out
 
+# The rows whose column "may use" is not the packages their modules use:
+# `named` is the column by row (`rebel_tree.named_uses`), and a module's
+# packages are its `use` lines', its own package and the modules no row holds
+# left out.
+function undeclared(rows: [rebel_tree.Row], named: {str: [str]}, modules: [rebel_tree.Module]) -> [Placed]
+    by = rebel_tree.by_package(rows)
+    used: {str: {str: bool}} @= {}
+
+    for m in modules
+        own = rebel_tree.package_of(rows: by, path: m.path)
+
+        if own.len() == 0
+            continue
+
+        for row in strings.lines(m.text)
+            if !strings.has_prefix(s: row, prefix: "use ") || strings.has_prefix(s: row, prefix: "use <")
+                continue
+            theirs = rebel_tree.package_of(rows: by, path: used_path(row))
+
+            if theirs.len() > 0 && theirs != own
+                seen: {str: bool} @= used[own].default({})
+                seen[theirs] @ true
+                used[own] @ seen
+
+    out: [Placed] @= []
+
+    for row in rows
+        listed = named[row.package].default([])
+        theirs: {str: bool} = used[row.package].default({})
+        lacks: [str] @= []
+        idle: [str] @= []
+
+        for one in theirs.keys().sort()
+            if !listing(names: listed, name: one)
+                lacks @ lacks.push("`" + one + "`")
+
+        for one in listed
+            if theirs[one].is_err()
+                idle @ idle.push("`" + one + "`")
+
+        if lacks.len() + idle.len() > 0
+            out @ out.push(
+                Placed(path: rebel_tree.RULES, line: row.line, key: "may use " + row.package, said: "the row `" + row.package + "` names in its column \"may use\" " + told_list(idle) + " that no module of it uses, and not " + told_list(lacks) + " that its modules use")
+            )
+
+    return out
+
+function listing(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+function told_list(names: [str]) -> str
+    if names.len() == 0
+        return "nothing"
+    return names.join(", ")
+
 ## Tests
 
 function rows_fixture() -> [rebel_tree.Row]
@@ -154,6 +233,36 @@ function rows_fixture() -> [rebel_tree.Row]
 # The planted witnesses: a subpackage's private module using its parent's
 # private module, a layer above it, fires; a face using a package below and its
 # own private module does not; a module no row holds is told once.
+# The planted witnesses: a row naming a package nothing uses and missing one
+# a floor uses is told once with both; a row whose column is exact is not.
+test "a row whose column may use is not what its modules use is found"
+    modules = [
+        rebel_tree.Module(path: "compress", text: "# C.\n\nuse bytes\nuse compress/internal/codes\n")
+        rebel_tree.Module(path: "compress/hero_z", text: "# Z.\n\nuse io\n")
+        rebel_tree.Module(path: "io", text: "# I.\n\nuse bytes\n")
+    ]
+    named: {str: [str]} = {"bytes": [], "compress": ["bytes", "hash"], "compress/zstd": [], "io": ["bytes"]}
+    found = undeclared(rows: rows_fixture(), named: named, modules: modules)
+    assert found.len() == 1 && found[0].key == "may use compress"
+    assert told(found[0]) == "examples-rebel/README.md: the row `compress` names in its column \"may use\" `hash` that no module of it uses, and not `io` that its modules use"
+
+# A folder's shared module (README § A2) has the lowest layer of the rows
+# under the folder: using a package below it passes, one at its layer is told.
+test "a folder's shared module stands at the lowest layer of the folder's rows"
+    rows = [
+        rebel_tree.Row(package: "bytes", layer: 1, line: 1)
+        rebel_tree.Row(package: "box/a", layer: 2, line: 2)
+        rebel_tree.Row(package: "box/b", layer: 3, line: 3)
+    ]
+    modules = [
+        rebel_tree.Module(path: "box/internal/shared", text: "# S.\n\nuse bytes\n")
+        rebel_tree.Module(path: "box/internal/high", text: "# H.\n\nuse box/b\n")
+        rebel_tree.Module(path: "box/a", text: "# A.\n\nuse box/internal/shared\n")
+    ]
+    found = broken(rows: rows, modules: modules)
+    assert found.len() == 1
+    assert told(found[0]) == "box: `box`, layer 2, uses `box/b`, layer 3, in 1 `use` lines: box/internal/high.hero:3 `box/b`"
+
 test "a `use` of a package of a layer not below its own is found, a private module's too"
     modules = [
         rebel_tree.Module(path: "compress/zstd/internal/frame", text: "# F.\n\nuse bytes\nuse compress/internal/codes\nuse compress/zstd/internal/bits\n")

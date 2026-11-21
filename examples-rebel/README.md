@@ -23,7 +23,9 @@ code is written. Everyone who writes a line of Rebel reads both first.
 ## A1. The packages
 
 A hundred and forty-nine packages, in layers. **A package may use any package of a layer below
-its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
+its own**; the column "may use" names the packages its modules use, private modules and floors
+included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
+package moves its row in the same change. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
 |---|---|---|---|---|
@@ -52,7 +54,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 1 | `unicode/segment` | the boundaries of graphemes, words and sentences (UAX #29), the width of a text on a screen (UAX #11) | `unicode` |  |
 | 1 | `unicode/names` | the name of a character and the character of a name, scripts, blocks | `unicode` |  |
 | 1 | `strings` | text searched, cut, trimmed, replaced, padded, cased | `unicode` |  |
-| 1 | `bytes` | the same for `[u8]`, and bytes as hexadecimal and base 64 | `unicode` |  |
+| 1 | `bytes` | the same for `[u8]`, and bytes as hexadecimal and base 64 | `math`, `unicode` |  |
 | 1 | `regex` | a regular expression matched in linear time | `unicode` |  |
 | 1 | `random` | a seeded generator, ranges, shuffling, choosing, sampling; secure values from `os` | `math`, `os` |  |
 | 1 | `stats` | mean, median, mode, variance, deviation, quantiles, correlation | `lists`, `math` |  |
@@ -72,12 +74,12 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `diff` | the differences of two lists or texts, as values and as unified output, and their similarity | `lists`, `strings`, `unicode` |  |
 | 2 | `pem` | PEM blocks read and written, their labels and headers | `bytes`, `strings` |  |
 | 2 | `unicode/encodings` | the WHATWG Encoding standard's legacy encodings read and written: Windows-1252, ISO-8859, Shift_JIS, EUC-JP, GB18030, Big5, EUC-KR; its tables apart | `bytes`, `unicode` |  |
-| 2 | `keyring` | secrets kept in the system's own keyring | `bytes` | `hero_keyring.h` |
+| 2 | `keyring` | secrets kept in the system's own keyring | `bytes`, `os` | `hero_keyring.h` |
 | 2 | `scanner` | a configurable lexer: identifiers, numbers, strings, comments, each token with its place | `numbers`, `regex`, `strings`, `unicode` |  |
 | 2 | `property` | property-based testing: generated cases, a seed that reproduces, the failing case shrunk | `math`, `random`, `unicode` |  |
-| 2 | `vectors` | vectors of f32 compared (dot, cosine, distance) and the nearest found, exactly or by an HNSW index | `math`, `numbers`, `random` |  |
+| 2 | `vectors` | vectors of f32 compared (dot, cosine, distance) and the nearest found, exactly or by an HNSW index | `math`, `random` |  |
 | 2 | `tokenizer` | byte-pair encoding as tiktoken does it: encode, decode, count; its tables in subpackages, one per encoding, so a program carries only the one it uses | `bytes`, `regex`, `unicode` |  |
-| 2 | `search` | an inverted index in memory, ranked by BM25, with phrase and prefix queries | `math`, `numbers`, `strings`, `unicode` |  |
+| 2 | `search` | an inverted index in memory, ranked by BM25, with phrase and prefix queries | `math`, `strings`, `unicode` |  |
 | 2 | `http/suffixes` | the Public Suffix List, so cookies for a public suffix are refused and a site's registrable domain is known; its data apart | `strings` |  |
 | 2 | `image/jpeg` | JPEG read (baseline and progressive, every sampling, restart intervals, EXIF orientation) and baseline JPEG written at a quality | `bytes`, `image`, `math` |  |
 | 2 | `image/gif` | GIF read and written: every frame of an animation, laid one over another as a viewer shows it | `bytes`, `image` |  |
@@ -86,13 +88,13 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode`, `unicode/normalize` |  |
 | 2 | `i18n` | locales, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` |  |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
-| 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings` | `hero_net.h`, `hero_stream_net.h` |
+| 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings`, `threads` | `hero_net.h`, `hero_stream_net.h` |
 | 3 | `yaml` | a YAML document parsed into values and written back | `json`, `numbers`, `strings`, `unicode` |  |
-| 3 | `cbor` | CBOR (RFC 8949) read into a value of its own, which keeps bytes and tags, and crossed to and from a `json.Value` | `big`, `bytes`, `json`, `lists` |  |
-| 3 | `term` | colours and styles that fall back to plain text, the cursor, the screen, a key and a secret read without echo, a progress bar | `bytes`, `io`, `os`, `unicode` | `hero_term.h` |
+| 3 | `cbor` | CBOR (RFC 8949) read into a value of its own, which keeps bytes and tags, and crossed to and from a `json.Value` | `big`, `bytes`, `json`, `lists`, `math` |  |
+| 3 | `term` | colours and styles that fall back to plain text, the cursor, the screen, a key and a secret read without echo, a progress bar | `bytes`, `io`, `os`, `strings`, `unicode`, `unicode/segment` | `hero_term.h` |
 | 3 | `csv` | comma-separated values read and written by RFC 4180 | `io`, `strings` |  |
 | 3 | `compress` | DEFLATE, gzip and zlib, written and read | `bytes`, `hash`, `io` |  |
-| 3 | `template` | text and HTML made from a template and values, escaped by context | `json`, `strings`, `unicode` |  |
+| 3 | `template` | text and HTML made from a template and values, escaped by context | `html`, `json`, `strings`, `unicode` |  |
 | 3 | `markdown` | CommonMark and GFM's tables read into a tree and written as HTML | `html`, `numbers`, `strings`, `unicode` |  |
 | 3 | `html/sanitize` | HTML from outside cleaned by an allow-list policy | `html`, `regex`, `strings`, `unicode`, `url` |  |
 | 3 | `json/schema` | JSON Schema 2020-12 (and draft 7) validation, every error with its place | `bytes`, `json`, `numbers`, `regex`, `strings`, `unicode`, `url` |  |
@@ -100,37 +102,37 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `json/path` | JSONPath queries (RFC 9535) | `json`, `numbers`, `regex`, `strings`, `unicode` |  |
 | 3 | `json/jq` | the jq language run over a `json.Value`, so over YAML, TOML, CBOR and MessagePack read into one | `bytes`, `json`, `math`, `numbers`, `regex`, `strings`, `unicode` |  |
 | 3 | `serial` | serial ports listed, opened, set and read and written as a stream | `io` | `hero_serial.h` |
-| 3 | `i18n/numbers` | numbers written and read as a language writes them: separators, percentages, money with its currency, compact forms | `i18n`, `strings`, `unicode` |  |
-| 3 | `i18n/collate` | texts ordered as a language orders them, by the Unicode Collation Algorithm over CLDR's root and tailorings | `i18n`, `strings`, `unicode`, `unicode/normalize` |  |
+| 3 | `i18n/numbers` | numbers written and read as a language writes them: separators, percentages, money with its currency, compact forms | `bytes`, `i18n`, `strings`, `unicode` |  |
+| 3 | `i18n/collate` | texts ordered as a language orders them, by the Unicode Collation Algorithm over CLDR's root and tailorings | `bytes`, `i18n`, `strings`, `unicode`, `unicode/normalize` |  |
 | 3 | `i18n/locales` | what CLDR knows of a language tag: its likely script and region, and the tags old names are replaced by | `i18n`, `strings` |  |
 | 3 | `crypto/seal` | authenticated encryption by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
 | 3 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
 | 3 | `scram` | the client's side of SCRAM (RFC 5802, RFC 7677) by SHA-1, SHA-256 and SHA-512, and SASLprep (RFC 4013), so every login of Rebel prepares a password one way; RFC 3454's tables apart | `bytes`, `crypto`, `os`, `strings`, `unicode`, `unicode/normalize` |  |
 | 3 | `tokenizer/tables` | the encodings of OpenAI's models carried as data, by name, and which encoding a model reads; each table a module of its own, `tokenizer/tables/o200k_base`, `cl100k_base` and `o200k_harmony`, so a program carries the one it names | `tokenizer` |  |
 | 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
-| 4 | `msgpack` | MessagePack read into a value of its own, which keeps bytes and extensions, and crossed to and from a `json.Value` | `bytes`, `json`, `lists`, `time` |  |
-| 4 | `poll` | waiting on many streams, sockets and timers at once, and being told which are ready | `io`, `net`, `time` | `hero_poll.h` |
+| 4 | `msgpack` | MessagePack read into a value of its own, which keeps bytes and extensions, and crossed to and from a `json.Value` | `bytes`, `json`, `lists`, `math`, `time` |  |
+| 4 | `poll` | waiting on many streams, sockets and timers at once, and being told which are ready | `io`, `net`, `os`, `threads`, `time` | `hero_poll.h` |
 | 4 | `tls` | TLS client and server as an `io.Stream`, certificates checked by the system's own store: SChannel on Windows, Apple's Security framework on macOS, OpenSSL on Linux | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `threads`, `time` | `hero_tls.h` |
 | 4 | `log` | lines with a time and a level, to a stream | `io`, `json`, `strings`, `time` |  |
 | 4 | `uuid` | identifiers of versions 4 and 7, parsed and written | `bytes`, `random`, `time` |  |
 | 4 | `toml` | TOML documents read and written, and converted to and from `json` | `json`, `numbers`, `strings`, `time`, `unicode` |  |
 | 4 | `sql` | what does not depend on the database: values, parameters, rows, results, codes | `bytes`, `time` |  |
 | 4 | `protobuf` | Protocol Buffers: the wire format, `.proto` files read at run time, dynamic messages bound to records, the JSON mapping, the well-known types | `bytes`, `json`, `maps`, `math`, `numbers`, `strings`, `time` |  |
-| 4 | `mail` | messages (RFC 5322) and MIME read and written: addresses, encoded words, parts and attachments | `bytes`, `hash`, `io`, `numbers`, `os`, `strings`, `time` |  |
+| 4 | `mail` | messages (RFC 5322) and MIME read and written: addresses, encoded words, parts and attachments | `bytes`, `hash`, `io`, `numbers`, `os`, `path`, `strings`, `time`, `unicode/encodings`, `url/idna` |  |
 | 4 | `asn1` | ASN.1 values read and written in DER and BER, every universal type, tagged and constructed | `big`, `bytes`, `lists`, `math`, `numbers`, `time`, `unicode` |  |
 | 4 | `i18n/dates` | dates and times written as a language writes them: month and day names, its patterns, relative times | `i18n`, `numbers`, `strings`, `time`, `unicode` |  |
-| 4 | `dns` | a DNS client: every record kind asked and answered over UDP and TCP | `bytes`, `io`, `net`, `os`, `strings`, `threads` |  |
+| 4 | `dns` | a DNS client: every record kind asked and answered over UDP and TCP | `bytes`, `io`, `net`, `os`, `strings`, `threads`, `time` |  |
 | 4 | `bench` | a function measured: warm-up, rounds, median and spread, two versions compared | `math`, `numbers`, `os`, `stats`, `time` |  |
 | 4 | `chunks` | text cut into pieces for retrieval, by characters, sentences, markdown headings or tokens, with overlap | `markdown`, `tokenizer`, `unicode`, `unicode/segment` |  |
 | 4 | `bson` | BSON read and written exactly, every type, and Extended JSON | `big`, `bytes`, `json`, `math`, `numbers`, `os`, `time` |  |
-| 4 | `tui` | full-screen terminal programs in immediate mode: widgets, layout by constraints, only the changed cells written | `io`, `os`, `term`, `unicode`, `unicode/segment` |  |
-| 4 | `webauthn` | a WebAuthn relying party: registration and authentication ceremonies, attestation and assertion verified | `bytes`, `cbor`, `crypto`, `crypto/keypairs`, `json`, `os` |  |
+| 4 | `tui` | full-screen terminal programs in immediate mode: widgets, layout by constraints, only the changed cells written | `io`, `math`, `os`, `term`, `time`, `unicode`, `unicode/segment` |  |
+| 4 | `webauthn` | a WebAuthn relying party: registration and authentication ceremonies, attestation and assertion verified | `bytes`, `cbor`, `crypto`, `crypto/keypairs`, `json`, `os`, `time` |  |
 | 4 | `image/png` | PNG read and written: every colour type and bit depth, interlacing read, the filter and the compression chosen, chunks kept or dropped | `bytes`, `compress`, `hash`, `image` |  |
 | 4 | `retries` | the waits of a retry loop, exponential and spread by chance, when it gives up, the wait a `Retry-After` asks; circuit breakers; the time always the caller's | `math`, `os`, `strings`, `time` |  |
 | 4 | `compress/zstd` | Zstandard (RFC 8878) read, and written at a basic level | `bytes`, `compress`, `hash` |  |
 | 4 | `compress/brotli` | Brotli (RFC 7932) read, and written at a basic level | `bytes`, `compress` |  |
 | 4 | `compress/bzip2` | bzip2 read and written | `bytes`, `compress` |  |
-| 4 | `process` | another program run, fed, read and waited for | `io`, `os`, `path`, `strings`, `time`, `unicode` | `hero_proc.h` |
+| 4 | `process` | another program run, fed, read and waited for | `bytes`, `io`, `os`, `path`, `strings`, `time`, `unicode` | `hero_proc.h` |
 | 4 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `compress`, `hash`, `io` |  |
 | 4 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `bytes`, `compress`, `crypto`, `hash` |  |
 | 5 | `jobs` | background jobs and their workers, retried and scheduled, over a store in a subpackage: the values both stores share | `json`, `numbers`, `os`, `retries`, `time` |  |
@@ -138,47 +140,47 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
 | 5 | `sql/postgres` | PostgreSQL over its own protocol, written in Heroes; the API every driver keeps | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `scram`, `sql`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `sql/sqlite` | SQLite over its library, the same API name for name; only its users need the library | `sql`, `strings`, `time` | `sqlite3.h` |
-| 5 | `sql/mysql` | MySQL and MariaDB over their own protocol, written in Heroes; the same API as the other two drivers | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `sql`, `strings`, `time`, `tls`, `url` |  |
+| 5 | `sql/mysql` | MySQL and MariaDB over their own protocol, written in Heroes; the same API as the other two drivers | `bytes`, `crypto`, `io`, `math`, `net`, `numbers`, `os`, `sql`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `redis` | a Redis client over its protocol (RESP2 and RESP3): commands, pipelines, publish and subscribe | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `sql/build` | queries as values composed by functions, placeholders for PostgreSQL and SQLite, values only as parameters, a row read into a record by its field names; the ORM itself refused, with the reason | `sql`, `strings` |  |
-| 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `bytes`, `io`, `net`, `numbers`, `threads`, `time`, `tls` |  |
+| 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `bytes`, `io`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `bytes`, `crypto`, `io`, `mail`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `x509` | certificates, requests and revocation lists read, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto/keypairs`, `net`, `pem`, `strings`, `time` |  |
 | 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `net`, `path`, `poll`, `time` | `hero_watch.h` |
 | 5 | `sql/odbc` | any database the system's ODBC manager reaches, through the one `sql` API | `bytes`, `os`, `sql`, `time` | `hero_odbc.h` |
 | 5 | `ldap` | an LDAP client: bind, search, change, over TLS | `asn1`, `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `config` | settings read in layers (files, the environment, flags, `.env` files) with a precedence, read by path | `flags`, `ini`, `json`, `numbers`, `os`, `path`, `strings`, `time`, `toml`, `yaml` |  |
-| 5 | `amqp` | an AMQP 0-9-1 client (RabbitMQ): channels, exchanges, queues, publish and consume, acknowledgements | `bytes`, `io`, `net`, `numbers`, `os`, `poll`, `strings`, `time`, `tls`, `url` |  |
-| 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `bytes`, `compress`, `crypto`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `threads`, `time`, `tls`, `url` |  |
-| 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `bytes`, `crypto`, `dns`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `tls`, `url`, `uuid` |  |
+| 5 | `amqp` | an AMQP 0-9-1 client (RabbitMQ): channels, exchanges, queues, publish and consume, acknowledgements | `bytes`, `io`, `math`, `net`, `numbers`, `os`, `poll`, `strings`, `time`, `tls`, `url` |  |
+| 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `bytes`, `compress`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `bytes`, `crypto`, `dns`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `time`, `tls`, `url`, `uuid` |  |
 | 5 | `log/files` | logs written to files that rotate by size or by day, the old ones kept, counted and compressed | `compress`, `fs`, `io`, `log`, `path`, `strings`, `time` |  |
 | 5 | `pdf` | PDF documents written (text, standard fonts, images, simple tables) and their text read | `bytes`, `compress`, `crypto`, `image`, `image/png`, `math`, `time`, `unicode` |  |
-| 5 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads` | `hero_ipc.h` |
+| 5 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads`, `time` | `hero_ipc.h` |
 | 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
-| 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `bytes`, `compress`, `http2`, `io`, `net`, `numbers`, `protobuf`, `threads`, `time`, `tls` |  |
+| 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `bytes`, `compress`, `http2`, `io`, `net`, `numbers`, `protobuf`, `strings`, `threads`, `time`, `tls` |  |
 | 6 | `xlsx` | spreadsheets of Office Open XML read and written: sheets, cells, types, styles | `archive`, `bytes`, `fs`, `io`, `lists`, `math`, `numbers`, `strings`, `time`, `unicode`, `xml` |  |
 | 6 | `jobs/postgres_store` | jobs kept in PostgreSQL: claimed with FOR UPDATE SKIP LOCKED, enqueued in the program's own transaction | `jobs`, `json`, `os`, `sql`, `sql/postgres`, `strings`, `time` |  |
 | 6 | `jobs/redis_store` | jobs kept in Redis: every change a Lua script the server runs whole | `bytes`, `jobs`, `json`, `numbers`, `os`, `redis`, `strings`, `time` |  |
-| 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `http`, `io`, `json`, `log`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
+| 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `html`, `http`, `io`, `json`, `log`, `mail`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 7 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
-| 7 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `threads`, `time`, `url` |  |
+| 7 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `strings`, `threads`, `time`, `url` |  |
 | 7 | `s3` | the S3 API with Signature Version 4: objects, buckets, multipart uploads, presigned URLs | `bytes`, `crypto`, `hash`, `http`, `ini`, `io`, `json`, `lists`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url`, `xml` |  |
 | 7 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `net`, `numbers`, `strings`, `threads` |  |
 | 7 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded; the certificate request made elsewhere until `x509` writes one | `big`, `bytes`, `crypto`, `http`, `jose`, `json`, `os`, `pem`, `time`, `x509` |  |
 | 7 | `llm/anthropic` | Claude's Messages API: messages, streaming, tools driven by the program, token counting, batches | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 7 | `llm/openai` | Chat Completions and Responses, which Ollama and vLLM also speak: streaming, tools, embeddings | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
-| 7 | `graphql` | GraphQL documents and schemas parsed, validated and executed, the program resolving each field | `bytes`, `http`, `json`, `numbers`, `strings`, `unicode` |  |
+| 7 | `graphql` | GraphQL documents and schemas parsed, validated and executed, the program resolving each field | `bytes`, `errors`, `http`, `json`, `numbers`, `strings`, `unicode` |  |
 | 7 | `otlp` | OpenTelemetry's protocol over HTTP with protobuf: the attributes, the resource and the scope of every signal's request, an exporter with its retries and the environment's settings, and the wire a request is written with | `bytes`, `compress`, `http`, `lists`, `math`, `numbers`, `os`, `protobuf`, `retries`, `strings`, `time`, `url` |  |
-| 8 | `metrics` | counters, gauges and histograms, written in Prometheus's text format and served | `bytes`, `compress`, `http`, `lists`, `math`, `net`, `numbers`, `os`, `otlp`, `protobuf`, `random`, `strings`, `time`, `url` |  |
-| 8 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `bytes`, `compress`, `http`, `lists`, `log`, `numbers`, `os`, `otlp`, `protobuf`, `random`, `strings`, `time`, `url` |  |
+| 8 | `metrics` | counters, gauges and histograms, written in Prometheus's text format and served | `bytes`, `http`, `lists`, `math`, `net`, `numbers`, `otlp`, `protobuf`, `random`, `strings`, `time` |  |
+| 8 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `bytes`, `http`, `log`, `otlp`, `random`, `time` |  |
 | 8 | `nats` | a NATS client: publish, subscribe, request and reply, over TLS | `bytes`, `crypto/keypairs`, `io`, `json`, `maps`, `net`, `os`, `poll`, `random`, `strings`, `threads`, `time`, `tls`, `url`, `websocket` |  |
 | 8 | `mqtt` | an MQTT 3.1.1 and 5 client, every quality of service | `bytes`, `io`, `maps`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `time`, `tls`, `url`, `websocket` |  |
 | 8 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `json/schema`, `jsonrpc`, `net`, `numbers`, `oauth2`, `strings`, `threads`, `time`, `url`, `web` |  |
 | 8 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `bytes`, `http`, `json`, `json/schema`, `numbers`, `strings`, `url`, `web`, `yaml` |  |
 
-**The types other packages name**, each owned by one package and named
-qualified everywhere else, never redefined:
+**The types other packages name** are each owned by one package and named
+qualified everywhere else, never redefined; among them:
 
 | owner | types |
 |---|---|
@@ -186,7 +188,7 @@ qualified everywhere else, never redefined:
 | `time` | `time.Instant`, `time.Duration` |
 | `fs` | `fs.Info`, `fs.Entry`, `fs.Kind` |
 | `process` | `process.Command`, `process.Child`, `process.Status` |
-| `net` | `net.Conn`, `net.Listener`, `net.Address` |
+| `net` | `net.Conn`, `net.Listener`, `net.Host` (an address with no port), `net.Address` (a host and a port) |
 | `url` | `url.Url` |
 | `json` | `json.Value` |
 | `regex` | `regex.Regex`, `regex.Match` |
@@ -200,6 +202,13 @@ qualified everywhere else, never redefined:
   package may `use` one (the compiler refuses it). A file stays short and about
   one thing, around three hundred lines, and opens with a comment saying its
   role.
+- **What a folder of subpackages shares**, `<folder>/internal/<topic>.hero`,
+  where the folder holds subpackages and no face of its own:
+  `containers/internal/` holds the codes, the storage and the samples the
+  eight `containers/` subpackages share. The compiler lets every module under
+  the folder use one and no module outside it. It is each subpackage's own,
+  so it stands at the lowest layer of the folder's rows in § A1 and uses only
+  packages below that layer; `containers/internal/` uses none.
 - **A floor**, `<package>/hero_<x>.hero`, where the package stands on C: the
   thin binding of one header, one Heroes function per C function. No policy
   in it; the face turns C's answers into `T?`.
@@ -229,18 +238,47 @@ Inside Rebel a `use` starts at the library's own root: `use strings`,
 | shape | means | examples |
 |---|---|---|
 | `is_x`, `has_x` | a question, answers `bool` | `is_abs`, `has_prefix` |
-| `x_of` | where or which, of something | `index_of`, `count_of` |
+| `x_of` | where or which, of something: a question, never a maker | `index_of`, `count_of` |
 | `x_where` | the same, by a function that accepts | `index_where`, `trim_where` |
 | `x_by` | ordered or keyed by a function | `sort_by`, `max_by` |
-| `x_all`, `x_n`, `x_last` | every one, at most n, from the end | `replace_all`, `split_n`, `index_of_last` |
+| `x_all` | every occurrence, or each of a list | `replace_all`, `push_all` |
+| `x_n`, `x_last` | at most n, from the end | `split_n`, `index_of_last` |
 | `to_x` | the same value in another form | `to_upper`, `to_slash` |
+| `from_x` | a value made from another form, the inverse of `to_x` | `big.from_int`, `time.from_unix` |
 | `with_x` | a copy with one thing changed | `with_ext`, `with_name` |
-| `parse_x`, `format_x` | text to a value, a value to text | `parse_int`, `format_float` |
+| `x_with` | the same call with what the plain one chooses given: options, or a value handed to the handler | `bson.decode_with` |
+| `x_name` | the text a registry gives a number or a variant's case, which `parse_x` reads back | `log.level_name`, `dns.type_name` |
+| `x_named` | the x this name names | `html.element_named`, `mcp.tool_named` |
+| `parse_x`, `format_x` | text to a value, a value to text: text alone | `parse_int`, `format_float` |
+| `decode_x`, `encode_x` | bytes to a value, a value to bytes | `mail.decode_message`, `archive.encode_tar` |
 | `read_x`, `write_x` | through a stream or a path | `read_line`, `write_all` |
+| `x_json`, `x_of(v: json.Value)` | a record written as a `json.Value`, and read back from one | `graphql.request_json`, `llm/anthropic.message_of` |
+| `fetch_x` | one thing asked of a server | `llm/anthropic.fetch_model`, `oauth2.fetch_userinfo` |
+| `default_<record>()` | the values a record of options or limits starts from | `html.default_options`, `http.default_limits` |
+| `<what>_<record>()` | a named preset of such a record | `cbor.strict_decode_options`, `template.html_options` |
 
+- **A value is made by the bare noun of its type** (`amqp.queue`,
+  `compress.reader`), **or by `new_x`** where the face's parameters take the
+  noun or the value is drawn fresh (`containers/deque.new`, `uuid.new_v4`); a
+  maker is named for what it makes where one type has several
+  (`jsonrpc.answer_result`, `answer_error`). `x_of` never makes a value but
+  the one a `json.Value` holds, the row above.
 - **One name, one meaning, in every package.** `index_of` answers a byte index
   as `i64?` wherever it appears; `contains` answers `bool`; `len` is the
-  built-in's and no function is named so.
+  built-in's and no function is named so. **An address is `net.Host` or
+  `net.Address`**, never one type that may hold a port: a host is an IPv4 or
+  IPv6 address with no port, an address a host and a port, always, as Go's
+  `netip.Addr` and `AddrPort` and Rust's `IpAddr` and `SocketAddr` part them
+  (the author's answer *A* of 2026-11-21).
+- **A span a caller gives is a `time.Duration`** in every package that may use
+  `time`, layer 4 and above, never a bare number whose unit only its name
+  says: that is the one unit mistake the compiler cannot refuse. `net`,
+  `serial` and `term` stand beside `time` at layer 3, so their spans are
+  milliseconds in an `i64` named `_ms`. A number a protocol writes in a unit
+  of its own keeps it, named for it, `_seconds` or `_ms`, never `_s`
+  (`web.write_retry`'s `ms`, the `retry` field of a stream of events). **A
+  moment a server sends is a `time.Instant`**, never a number of seconds or a
+  text.
 - **No package, module, function, parameter or binding takes a built-in's
   name** (`find`, `join`, `repeat`, `sort`, `map`, `filter`, `keys`, `len`,
   `print`, `range`, `push`, `slice`, `chars`, `fold`, `any`, `all`):
@@ -252,15 +290,37 @@ Inside Rebel a `use` starts at the library's own root: `use strings`,
   call names every argument that shares its type with another, so the names
   are part of the surface: `strings.replace_all(s: line, old: "a", new: "b")`.
 - **No abbreviation a reader must decode**, but the ones every programmer
-  reads: `dir`, `env`, `ext`, `abs`, `len`, `max`, `min`.
+  reads: `dir`, `env`, `ext`, `abs`, `len`, `max`, `min`; the ones a
+  parameter takes where the whole word is taken or is not its area's: `opts`
+  (a face whose maker is `options`), `msg` (the label of `fail(code:, msg:)`),
+  `img` (a face that writes `use image`), `re` (`regex`'s), `arg` (a
+  thread's), `ttl`, `ssid`; and `_ms`, a unit's suffix. `sub`, `mul` and `neg`
+  are not on the list: `subtract`, `multiply` and `negate`, as `big` and
+  `vectors` write them.
 
 ## A4. Failure
 
 - **A function that can fail on what it is given answers `T?`, and nothing else
   says so**: no `-1`, no empty value meaning absent, no `bool` beside a value.
+  A function that cannot fail answers its value alone.
+- **A field that may hold nothing is `T?` too**, failing `not_found` where it
+  is absent, never a `bool` beside the value it guards: the compiler refuses
+  a read of a `T?` that skips its check, and nothing refuses a read of
+  `path_len` that skips `has_path_len`. Fields that are there together or not
+  at all are one record, the field that holds it `T?`
+  (`webauthn.AuthenticatorData.credential`). A `has_x` that guards no absent
+  value, but says what a source wrote, stays (`protobuf.Field.has_default`).
 - **Input from outside the program never aborts.** A package aborts only where
   its caller broke a precondition the caller could have checked, as the
   language does on an index past the end, and the doc comment says when.
+  **A position the program holds is such a precondition**: an index or a place
+  in a structure it built aborts outside the structure, and `get` is the one
+  reader that answers `T?` for a position (`containers/indexed.key_at`,
+  `containers/deque.remove_at`; `containers/deque.get`).
+- **A wait is bounded by a span, and a span of `0` waits not at all**: the
+  call answers what is ready, or `timeout` at once. No bound at all is named:
+  `time.max_duration()` as a `time.Duration`, `net.FOREVER` and
+  `serial.FOREVER` in milliseconds, never a `0` or a `-1` the caller must know.
 - **A closed vocabulary of codes for the whole library.** A code means one
   thing in every package. The language's own keep their meanings; Rebel adds
   only the ones below, each a constant of the package that fails with it
@@ -327,7 +387,14 @@ and `heroes doc` reads all of it.
 
 **A module** (a face) opens with a comment whose first sentence says what the
 package is for, then what it does NOT do and which package does, then the codes
-it fails with. `##` headings divide the face into topics.
+it fails with. Where its ledger holds a `pending` block (§ A8), the comment's
+last paragraph names every such capability in one sentence, each by the words
+of its block's `capability` line, in the ledger's order: ``Not written yet,
+each a `pending` block of its ledger: <what>; <what>.`` So a reader learns what
+is missing before looking for it, and the sentence moves with the ledger.
+`##` headings divide the face into topics, and **its codes stand under one
+heading, `## Codes`**, every code constant of the face (§ A4) under it and none
+under another, so a reader finds them in one place in every package.
 
 **A function**, in this order:
 
@@ -372,6 +439,13 @@ shows; its title opens with the function's name and a colon, which is how
 one example.** It shows the ordinary call first; edges stay in the ordinary
 tests. A test with no comment above it is an ordinary test and is not shown.
 
+**A floor** (§ A2) owes the parameter lines above for every function it
+documents, each saying what the C function reads there, its unit and what `-1`
+or `0` means where the door gives either one. The bindings of its `extern`
+groups are documented by the header they name and owe no comment each, and
+**no example is owed of a binding of one C function**, which the face's
+function over it shows.
+
 **Nothing else**: no `since`, no `deprecated` (before 1.0 nothing is kept for
 an older program), no HTML, no code inside a comment.
 
@@ -379,11 +453,26 @@ an older program), no HTML, no code inside a comment.
 bytes every time: each declaration's signature, its comment, the call derived
 from its signature with its labels, and its examples. The site's reference
 pages are made from that output, in English in both editions. The short card a
-model reads is the signature, the call and the first sentence alone. The
-check of the net holds every rule above that a machine can: a comment above
-every public declaration, field and case; every parameter named by its own
-name, in order, once; `Fails` on every fallible function, naming codes of
-§ A4 only or the words of a failure handed on; every `See also` name existing; an example for every function.
+model reads is the signature, the call and the first sentence alone.
+
+**What holds it**, every rule above that a machine can ask:
+
+- `heroes doc` itself refuses, on a face and on a floor, a parameter line that
+  names no parameter, names one out of order or twice, and a parameter no line
+  names (`doc_unknown_parameter`, `doc_parameter_order`,
+  `doc_missing_parameter`).
+- The `rebel` suite's `docs` check runs `heroes doc` over every face and every
+  floor, as a program reaches each through a catalogue, and reads what it
+  prints: a face or a floor it refuses; and of a face, a declaration, a field
+  or a case with no comment; a function with no example; a function that
+  answers `T?` whose comment holds no `Fails`; a word a `Fails` list names that
+  is no code of § A4; and a name a `See also` list names that names nothing, in
+  the face, or in the face its qualifier names by its path or by the last part
+  a `use` binds. A list is the names in backticks right after `Fails` or
+  `See also`, joined by `,`, `and` or `or`; the first other word ends it, so
+  ``Fails as `json.parse` does`` hands a failure on and lists nothing.
+- Its `headings` check holds `## Codes` and the module comment's sentence of
+  what is `pending`, against the face's constants and its ledger.
 
 ```
 # Where `substr` first begins in `s`, as a byte index.
