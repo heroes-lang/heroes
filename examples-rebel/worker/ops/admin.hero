@@ -1,0 +1,121 @@
+# What each subcommand of `worker` does with its invocation: `run` the system
+# until it is stopped, and the one-shot commands, each a connection to the
+# store, one change or one table, and the lines saying what came of it: a
+# job enqueued, a failed job run again, a queue paused or resumed, the fleet
+# asked to stop, the jobs standing, the dead letters.
+
+use <rebel>/jobs
+use <rebel>/jobs/redis_store
+use <rebel>/json
+use <rebel>/redis
+
+use cli/command_line
+use cli/settings
+use ops/dashboard
+use pool/fleet
+use queue/producer
+use queue/store_clock
+use schedule/recurring
+use schedule/service
+use telemetry/tracer
+
+# A connection to the store the settings name.
+#
+# - `s`: the settings.
+#
+# Fails as `redis.parse_url` and `redis.connect` fail.
+function connect(s: settings.Settings) -> redis.Client?
+    return redis.connect(redis.parse_url(s.redis_url)?)
+
+# Enqueues the job the invocation describes and answers what to print.
+#
+# - `inv`: the invocation of `enqueue`.
+#
+# Fails `invalid` where the payload is no JSON, and as the store fails:
+# `exists` where its unique key is held.
+function enqueue(inv: command_line.Invocation) -> str?
+    payload = json.parse(inv.payload)?
+    job @= jobs.new_job(inv.kind, payload: payload)
+    job.queue @ inv.settings.queues[0]
+    job.priority @ inv.priority
+    job.max_attempts @ inv.attempts
+    job.unique_key @ inv.unique_key
+
+    if inv.delay.nanoseconds > 0
+        job.start @ .after(wait: inv.delay)
+
+    c @= connect(inv.settings)?
+    tr @= tracer.new_tracer(inv.settings, thread: "enqueue")?
+    id = producer.enqueue(@c, @tr, job: job, at: store_clock.now(@c)?)?
+    _ = redis.close(@c).is_err()
+    return ok(f"enqueued job {id} {inv.kind} in {job.queue}")
+
+# Runs the failed job `inv.job` again and answers what to print.
+#
+# - `inv`: the invocation of `retry`.
+#
+# Fails as `redis_store.retry` fails: `not_found`, `invalid` where it runs.
+function retry(inv: command_line.Invocation) -> str?
+    c @= connect(inv.settings)?
+    info = redis_store.retry(@c, id: inv.job)?
+    _ = redis.close(@c).is_err()
+    return ok(
+        f"job {info.id} {info.kind} is {jobs.state_name(info.state)} again, {info.max_attempts - info.attempt} attempts left"
+    )
+
+# Pauses or resumes `inv.queue`, as `inv.action` says, and answers what to
+# print.
+#
+# - `inv`: the invocation of `pause` or `resume`.
+#
+# Fails as the store fails.
+function pause_or_resume(inv: command_line.Invocation) -> str?
+    c @= connect(inv.settings)?
+
+    if inv.action == "pause"
+        redis_store.pause(@c, queue: inv.queue)?
+    else
+        redis_store.resume(@c, queue: inv.queue)?
+
+    _ = redis.close(@c).is_err()
+    return ok(f"queue {inv.queue} {inv.action}d")
+
+# Asks every worker of the store to stop once idle, and answers what to
+# print.
+#
+# - `inv`: the invocation of `stop`.
+#
+# Fails as the store fails.
+function stop(inv: command_line.Invocation) -> str?
+    c @= connect(inv.settings)?
+    fleet.ask_stop(@c)?
+    _ = redis.close(@c).is_err()
+    return ok("every worker of the store will stop once idle")
+
+# The run `inv` asks for, its schedules read first.
+#
+# - `inv`: the invocation of `run`.
+function run(inv: command_line.Invocation) -> str?
+    schedules: [jobs.Periodic] @= []
+
+    for spec in inv.schedules
+        schedules @ schedules.push(recurring.periodic_of(spec: spec, queue: inv.settings.queues[0])?)
+
+    problem = service.run(inv.settings, schedules: schedules)?
+
+    if problem == ""
+        return ok("stopped")
+    return ok("stopped; " + problem)
+
+# The table `inv.action` asks for: `stats` or `dead`.
+#
+# - `inv`: the invocation.
+function table(inv: command_line.Invocation) -> [str]?
+    c @= connect(inv.settings)?
+
+    lines = if inv.action == "stats"
+        dashboard.stats_lines(@c)
+    else
+        dashboard.dead_lines(@c, queues: inv.settings.queues)
+    _ = redis.close(@c).is_err()
+    return lines

@@ -1,0 +1,76 @@
+# The worker threads of a run, started together and waited for together:
+# each a `worker_loop` with its own connection to the store, each answering
+# its report when the fleet is asked to stop. A fleet stops on the store's
+# stop key, so a fleet on many machines stops on one word, `worker stop`.
+
+use <rebel>/redis
+use <rebel>/threads
+
+use cli/settings
+use pool/events
+use pool/worker_loop
+
+# The threads of a run, each owed a wait.
+record Fleet
+    # The worker threads, `worker-1` first.
+    threads: [threads.TextThread]
+
+# Starts `s.workers` worker threads, named `worker-1` and on.
+#
+# - `c`: the store's client, through which a fleet that cannot start whole
+#   asks the threads it started to stop.
+# - `s`: the run's settings.
+#
+# Fails `limit` where the system refuses a thread: the threads started
+# before it are asked to stop and waited for first, so none is left running.
+function start(@c: redis.Client, s: settings.Settings) -> Fleet?
+    fleet @= Fleet(threads: [])
+
+    for i in range(from: 1, to: s.workers + 1)
+        match threads.spawn_text(worker_loop.work, arg: worker_loop.shift_text(s, name: f"worker-{i}"))
+            .ok t => fleet.threads @ fleet.threads.push(t)
+            .err e =>
+                _ = ask_stop(@c).is_err()
+                _ = wait_all(@fleet)
+                return fail(code: e.code, msg: e.msg)
+
+    return ok(fleet)
+
+# Clears the stop key, so a fleet started next does not stop at once.
+#
+# - `c`: the store's client.
+#
+# Fails as `redis.call` fails.
+function clear_stop(@c: redis.Client) -> ()?
+    _ = redis.call(@c, ["DEL", worker_loop.STOP_KEY])?
+    return ok()
+
+# Asks every worker of the store to stop once it holds no attempt.
+#
+# - `c`: the store's client.
+#
+# Fails as `redis.call` fails.
+function ask_stop(@c: redis.Client) -> ()?
+    _ = redis.call(@c, ["SET", worker_loop.STOP_KEY, "stop"])?
+    return ok()
+
+# Waits for every thread of `fleet` and answers their reports, in the order
+# the threads were started; a report that cannot be read says so as its
+# problem.
+#
+# - `fleet`: the fleet, every thread spent.
+function wait_all(@fleet: Fleet) -> [events.Report]
+    reports: [events.Report] @= []
+
+    for i in range(from: 0, to: fleet.threads.len())
+        t @= fleet.threads[i]
+        text = threads.wait_text(@t)
+
+        match events.report_of(text)
+            .ok r  => reports @ reports.push(r)
+            .err e => reports @ reports.push(
+                events.Report(worker: f"worker-{i + 1}", attempts: [], problem: f"its report could not be read: {e.msg}")
+            )
+
+    fleet.threads @ []
+    return reports

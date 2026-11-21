@@ -1,0 +1,138 @@
+# What a person asks of a running job system: how many jobs stand in each
+# queue and state, which queues are paused, which jobs failed for good (the
+# dead letters, each with its attempts and its last error), and the run's
+# metrics, served at `/metrics` for Prometheus to scrape. The tables are
+# lines of text, written to the terminal by `worker stats` and `worker
+# dead`, and by the demo at its end.
+
+use <rebel>/http
+use <rebel>/io
+use <rebel>/jobs
+use <rebel>/jobs/redis_store
+use <rebel>/metrics
+use <rebel>/net
+use <rebel>/poll
+use <rebel>/redis
+use <rebel>/strings
+use <rebel>/time
+
+# The most dead letters one table lists.
+constant MOST_LISTED: i64
+    100
+
+# `text` padded with spaces to `width` characters, or as it is where longer.
+#
+# - `text`: the cell.
+# - `width`: the column's width.
+function cell(text: str, width: i64) -> str
+    return strings.pad_end(s: text, width: width, pad: " ")
+
+# How many jobs stand in each queue and state, a line each, and the queues
+# paused.
+#
+# - `c`: the store's client.
+#
+# Fails as `redis_store.counts` and `redis_store.paused_queues` fail.
+function stats_lines(@c: redis.Client) -> [str]?
+    counts = redis_store.counts(@c)?
+    paused = redis_store.paused_queues(@c)?
+    out: [str] @= [cell("queue", width: 12) + cell("state", width: 11) + "jobs"]
+
+    for count in counts
+        out @ out.push(
+            cell(count.queue, width: 12) + cell(jobs.state_name(count.state), width: 11) + to_str(count.jobs)
+        )
+
+    if counts.len() == 0
+        out @ out.push("(no job in any queue)")
+
+    if paused.len() > 0
+        out @ out.push("paused: " + paused.join(", "))
+    return ok(out)
+
+# The jobs of `queues` that failed for good, newest first, each with its
+# attempts and its last error.
+#
+# - `c`: the store's client.
+# - `queues`: the queues to look in.
+#
+# Fails as `redis_store.list` fails.
+function dead_lines(@c: redis.Client, queues: [str]) -> [str]?
+    out: [str] @= []
+
+    for q in queues
+        for info in redis_store.list(@c, queue: q, state: .failed, offset: 0, limit: MOST_LISTED)?
+            when = match info.finished_at
+                .ok t  => time.format(t, layout: .rfc3339_seconds)
+                .err _ => "-"
+
+            last = if info.errors.len() > 0
+                info.errors[info.errors.len() - 1].error
+            else
+                "(no error kept)"
+            out @ out.push(
+                f"job {info.id} {info.kind} in {q}: {info.attempt} of {info.max_attempts} attempts, failed {when}: {last}"
+            )
+
+    if out.len() == 0
+        out @ out.push("(no dead letter)")
+    return ok(out)
+
+# A listener serving `/metrics`, waited on with a timeout between the
+# supervisor's ticks.
+record MetricsServer
+    # The listener.
+    listener: net.Listener
+    # The set it is waited on in.
+    set: poll.Set
+    # Its key there.
+    key: i64
+
+# A server of `/metrics` at `address`, `host:port`.
+#
+# - `address`: where to listen.
+#
+# Fails as `net.split_host_port`, `net.listen` and `poll.make` fail.
+function open_metrics(address: str) -> MetricsServer?
+    hp = net.split_host_port(address)?
+    l = net.listen(host: hp.host, port: hp.port)?
+    s = poll.make(4)?
+    key = poll.add_listener(s, l: l)?
+    return ok(MetricsServer(listener: l, set: s, key: key))
+
+# Waits up to `wait` for scrapers and answers each with `registry`.
+#
+# - `m`: the server.
+# - `registry`: the metrics, as they stand.
+# - `wait`: the longest wait.
+#
+# Fails `stopped` where the program was asked to stop, as `poll.wait` fails.
+function serve_for(m: MetricsServer lent, registry: metrics.Registry lent, wait: time.Duration) -> ()?
+    for e in poll.wait(m.set, limit: wait)?
+        if e.key == m.key
+            match net.accept(m.listener, deadline_ms: 5_000)
+                .err _ => _ = 0
+                .ok accepted =>
+                    conn @= accepted
+                    reader @= io.reader(conn.stream)
+
+                    match http.next_request(@reader, limits: http.default_limits())
+                        .ok r =>
+                            answer @= if r.url.path == "/metrics"
+                                metrics.respond(registry, r: r)
+                            else
+                                http.respond_not_found(r)
+                            answer.closing @ true
+                            _ = http.write_answer(conn.stream, r: r, response: answer).is_err()
+                        .err _ => _ = 0
+
+                    _ = io.close(@conn.stream).is_err()
+
+    return ok()
+
+# Closes the server.
+#
+# - `m`: the server, closed after.
+function close_metrics(@m: MetricsServer)
+    _ = poll.close(@m.set).is_err()
+    _ = net.close_listener(@m.listener).is_err()

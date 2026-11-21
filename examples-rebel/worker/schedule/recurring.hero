@@ -1,0 +1,54 @@
+# The recurring jobs a run enqueues on a cron schedule, given on the command
+# line as `<kind>@<cron>`: `purge_finished@*/15 * * * *` removes the old
+# completed jobs every quarter of an hour. Only the kinds whose payload needs
+# nothing a schedule cannot know may recur; each runs with its kind's usual
+# payload. The store keeps each schedule's next run, so a run enqueued by one
+# supervisor of a fleet is not enqueued again by another.
+
+use <rebel>/jobs
+use <rebel>/json
+use <rebel>/strings
+
+# The code of a schedule this program does not read.
+constant INVALID: str
+    "invalid"
+
+# The payload a recurring job of `kind` runs with. Fails `invalid` where the
+# kind may not recur.
+#
+# - `kind`: the job's kind.
+function payload_of(kind: str) -> json.Value?
+    match kind
+        "purge_finished" => return ok(.object(members: {"older_than": .text(v: "24h")}))
+        "queue_report"   => return ok(.object(members: {}))
+        _ => return fail(
+            code: INVALID,
+            msg: f"the kind {kind} cannot recur: only purge_finished and queue_report run with nothing a schedule cannot know"
+        )
+
+# The schedule `spec` writes, `<kind>@<cron>`, its job in `queue`.
+#
+# - `spec`: the text given.
+# - `queue`: the queue its jobs go to.
+#
+# Fails `invalid` where `spec` has no `@`, names a kind that may not recur,
+# or as `jobs.new_periodic` fails where the cron text is no schedule.
+function periodic_of(spec: str, queue: str) -> jobs.Periodic?
+    halves = match strings.split_once(s: spec, sep: "@")
+        .ok h => h
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"a schedule is <kind>@<cron>, as purge_finished@*/15 * * * *, not {spec}"
+        )
+
+    kind = strings.trim(halves.before)
+    job @= jobs.new_job(kind, payload: payload_of(kind)?)
+    job.queue @ queue
+    job.unique_key @ "recurring:" + kind
+    return jobs.new_periodic(name: kind, cron: strings.trim(halves.after), job: job)
+
+test "periodic_of: a kind that may recur, and one that may not"
+    p = periodic_of(spec: "purge_finished@*/15 * * * *", queue: "default").must()
+    assert p.name == "purge_finished" && p.job.unique_key == "recurring:purge_finished"
+    assert periodic_of(spec: "deliver_webhook@* * * * *", queue: "default").is_err()
+    assert periodic_of(spec: "no cron here", queue: "default").is_err()

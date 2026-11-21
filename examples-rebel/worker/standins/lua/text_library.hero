@@ -1,0 +1,335 @@
+# The functions of Lua 5.1's `string` library a Redis script reaches, and
+# `cjson.encode`, written from what Lua 5.1 and lua-cjson answer:
+# `string.format` with C's conversions `d i s q c x X f e g %`, its flags
+# `- 0 + space`, a width and a precision; `string.sub` with negative indexes
+# counted from the end; and JSON written as lua-cjson writes it, `/` escaped
+# as `\/` and a number with fourteen significant digits.
+
+use <rebel>/bytes
+use <rebel>/numbers
+use <rebel>/strings
+
+use standins/lua/lexer
+use standins/lua/values
+
+# One conversion of a format: its flags, width, precision and letter.
+record Spec
+    # Whether `-` asks the text to the left of its width.
+    left: bool
+    # Whether `0` asks zeros rather than spaces before a number.
+    zeros: bool
+    # Whether `+` asks a sign before a positive number.
+    plus: bool
+    # Whether a space asks a space before a positive number.
+    space: bool
+    # The least width, 0 for none.
+    width: i64
+    # The precision, -1 where none is written.
+    precision: i64
+    # The conversion's letter.
+    letter: u8
+
+# `body` padded to `spec`'s width: spaces before it, or after it for `-`, or
+# zeros after its sign for `0` on a number.
+#
+# - `body`: the converted value.
+# - `spec`: the conversion.
+# - `numeric`: whether the value is a number, the only kind `0` pads.
+function padded(body: str, spec: Spec, numeric: bool) -> str
+    if body.len() >= spec.width
+        return body
+
+    fill = spec.width - body.len()
+
+    if spec.left
+        return body + repeat(" ", to_u64(fill).must())
+
+    if spec.zeros && numeric
+        if body.len() > 0 && (body[0] == '-' || body[0] == '+' || body[0] == ' ')
+            return body.slice(from: 0, to: 1) + repeat("0", to_u64(fill).must()) + body.slice(from: 1, to: body.len())
+        return repeat("0", to_u64(fill).must()) + body
+    return repeat(" ", to_u64(fill).must()) + body
+
+# `digits`, a number written without a sign before it where positive, with
+# the `+` or the space `spec` asks.
+#
+# - `digits`: the number as text.
+# - `spec`: the conversion.
+function signed(digits: str, spec: Spec) -> str
+    if digits.len() > 0 && digits[0] == '-'
+        return digits
+
+    if spec.plus
+        return "+" + digits
+
+    if spec.space
+        return " " + digits
+    return digits
+
+# The text one conversion writes of `v`.
+#
+# - `spec`: the conversion.
+# - `v`: the argument.
+# - `line`: the line of the call, for an error.
+#
+# Fails where the argument is not of the kind the letter takes, as Lua's
+# `bad argument to 'format'`.
+function convert(spec: Spec, v: values.Value, line: i64) -> str?
+    letter = spec.letter
+
+    if letter == 's'
+        text = match v
+            .text t   => t.v
+            .number n => values.number_text(n.v)
+            .nil_value | .boolean _ | .table _ | .closure _ | .builtin _ =>
+                return values.runtime_error(
+                    line,
+                    what: f"bad argument to 'format' (string expected, got {values.type_name(v)})"
+                )
+
+        cut = if spec.precision >= 0 && spec.precision < text.len()
+            sub(text, from: 1, to: spec.precision)
+        else
+            text
+        return ok(padded(cut, spec: spec, numeric: false))
+
+    if letter == 'q'
+        return ok(quoted(values.to_text(v).default("")))
+
+    x = match values.to_number(v)
+        .ok n => n
+        .err _ => return values.runtime_error(
+            line,
+            what: f"bad argument to 'format' (number expected, got {values.type_name(v)})"
+        )
+
+    if letter == 'c'
+        code = to_u8(to_i64(x).default(63)).default(63)
+        return ok(bytes.to_text([code]).default("?"))
+
+    if letter == 'd' || letter == 'i'
+        whole = to_i64(x).default(0)
+        return ok(padded(signed(to_str(whole), spec: spec), spec: spec, numeric: true))
+
+    if letter == 'x' || letter == 'X'
+        whole = to_i64(x).default(0)
+        hex = numbers.format_int(n: whole, base: 16)
+
+        cased = if letter == 'X'
+            strings.to_upper_ascii(hex)
+        else
+            hex
+        return ok(padded(cased, spec: spec, numeric: true))
+
+    precision = if spec.precision >= 0
+        spec.precision
+    else
+        6
+
+    if x != x || x - x != 0.0
+        return ok(padded(signed(values.number_text(x), spec: spec), spec: spec, numeric: false))
+
+    body = match letter
+        'f' => numbers.format_float(x, precision: precision)
+        'e' => numbers.format_float_exp(x, precision: precision)
+        'E' => strings.to_upper_ascii(numbers.format_float_exp(x, precision: precision))
+        'g' =>
+            digits = if precision == 0
+                1
+            else
+                precision
+            numbers.format_float_general(x, digits: digits)
+        _ => return values.runtime_error(line, what: "invalid option in call to 'format'")
+
+    return ok(padded(signed(body, spec: spec), spec: spec, numeric: true))
+
+# `s` between double quotes as `%q` writes it, a quote, a backslash and a
+# line feed escaped.
+#
+# - `s`: the text.
+function quoted(s: str) -> str
+    parts: [str] @= ["\""]
+
+    for c in s.chars()
+        if c == "\""
+            parts @ parts.push("\\\"")
+        else if c == "\\"
+            parts @ parts.push("\\\\")
+        else if c == "\n"
+            parts @ parts.push("\\\n")
+        else
+            parts @ parts.push(c)
+
+    parts @ parts.push("\"")
+    return parts.join("")
+
+# `string.format(form, ...)`: `form` with each conversion replaced by the
+# next argument written as it asks.
+#
+# - `form`: the format.
+# - `arguments`: the arguments after it.
+# - `line`: the line of the call, for an error.
+#
+# Fails where a conversion is malformed, an argument is missing or is not of
+# the kind its conversion takes.
+function format(form: str, arguments: [values.Value], line: i64) -> str?
+    out: [str] @= []
+    plain: i64 @= 0
+    i: i64 @= 0
+    next_argument: i64 @= 0
+
+    while i < form.len()
+        if form[i] != '%'
+            i @ i + 1
+            continue
+
+        out @ out.push(form.slice(from: plain, to: i))
+        i @ i + 1
+
+        if i < form.len() && form[i] == '%'
+            out @ out.push("%")
+            i @ i + 1
+            plain @ i
+            continue
+
+        spec @= Spec(left: false, zeros: false, plus: false, space: false, width: 0, precision: -1, letter: 0)
+
+        while i < form.len() && (form[i] == '-' || form[i] == '0' || form[i] == '+' || form[i] == ' ' || form[i] == '#')
+            if form[i] == '-'
+                spec.left @ true
+            else if form[i] == '0'
+                spec.zeros @ true
+            else if form[i] == '+'
+                spec.plus @ true
+            else if form[i] == ' '
+                spec.space @ true
+            i @ i + 1
+
+        while i < form.len() && lexer.is_digit(form[i])
+            spec.width @ spec.width * 10 + to_i64(form[i] - '0').must()
+            i @ i + 1
+
+        if i < form.len() && form[i] == '.'
+            i @ i + 1
+            spec.precision @ 0
+
+            while i < form.len() && lexer.is_digit(form[i])
+                spec.precision @ spec.precision * 10 + to_i64(form[i] - '0').must()
+                i @ i + 1
+
+        if i >= form.len() || spec.width > 99 || spec.precision > 99
+            return values.runtime_error(line, what: "invalid format (width or precision too long, or no conversion)")
+
+        spec.letter @ form[i]
+        i @ i + 1
+        plain @ i
+
+        if next_argument >= arguments.len()
+            return values.runtime_error(line, what: f"bad argument #{next_argument + 2} to 'format' (no value)")
+
+        out @ out.push(convert(spec, v: arguments[next_argument], line: line)?)
+        next_argument @ next_argument + 1
+
+    out @ out.push(form.slice(from: plain, to: form.len()))
+    return ok(out.join(""))
+
+# `string.sub(s, i, j)`: the bytes of `s` from `i` to `j`, both kept,
+# counted from 1, a negative index counted from the end, -1 the last.
+#
+# - `s`: the text.
+# - `from`: the first index.
+# - `to`: the last index.
+#
+# Lua's strings are bytes, the stand-in's are text: where the cut would
+# split a character it is moved to the character's start, so no character is
+# cut in two.
+function sub(s: str, from: i64, to: i64) -> str
+    n = s.len()
+    start: i64 @= from
+    stop: i64 @= to
+
+    if start < 0
+        start @ n + start + 1
+
+    if stop < 0
+        stop @ n + stop + 1
+
+    if start < 1
+        start @ 1
+
+    if stop > n
+        stop @ n
+
+    if start > stop
+        return ""
+
+    first: i64 @= start - 1
+    last: i64 @= stop
+
+    while first > 0 && is_continuation(s[first])
+        first @ first - 1
+
+    while last < n && is_continuation(s[last])
+        last @ last - 1
+
+    if first >= last
+        return ""
+    return s.slice(from: first, to: last)
+
+# Whether `b` continues a character of UTF-8 rather than beginning one.
+#
+# - `b`: one byte of a text.
+function is_continuation(b: u8) -> bool
+    return b >= 0x80 && b < 0xc0
+
+# `s` as a JSON string as lua-cjson writes it: `"`, `\`, `/` and every
+# control character escaped, the rest as it is.
+#
+# - `s`: the text.
+function json_string(s: str) -> str
+    parts: [str] @= ["\""]
+
+    for c in s.chars()
+        b = c[0]
+
+        if c == "\""
+            parts @ parts.push("\\\"")
+        else if c == "\\"
+            parts @ parts.push("\\\\")
+        else if c == "/"
+            parts @ parts.push("\\/")
+        else if c == "\n"
+            parts @ parts.push("\\n")
+        else if c == "\r"
+            parts @ parts.push("\\r")
+        else if c == "\t"
+            parts @ parts.push("\\t")
+        else if b == 8
+            parts @ parts.push("\\b")
+        else if b == 12
+            parts @ parts.push("\\f")
+        else if b < 32 || b == 127
+            parts @ parts.push("\\u00" + strings.pad_zeros(numbers.format_int(n: to_i64(b).must(), base: 16), width: 2))
+        else
+            parts @ parts.push(c)
+
+    parts @ parts.push("\"")
+    return parts.join("")
+
+test "format: the conversions the store's scripts use"
+    assert format("%.0f", arguments: [.number(v: 1234.0)], line: 1).must() == "1234"
+    assert format("%015.0f", arguments: [.number(v: 42.0)], line: 1).must() == "000000000000042"
+    assert format("%s=%d", arguments: [.text(v: "n"), .number(v: 7.9)], line: 1).must() == "n=7"
+    assert format("%5s|%-4d|", arguments: [.text(v: "ab"), .number(v: 3.0)], line: 1).must() == "   ab|3   |"
+    assert format("%d", arguments: [], line: 1).is_err()
+
+test "sub: negative indexes from the end, as the store's error list cuts its last bracket"
+    assert sub("[1,2]", from: 1, to: -2) == "[1,2"
+    assert sub("hello", from: 2, to: 3) == "el"
+    assert sub("hello", from: 4, to: 99) == "lo"
+    assert sub("hello", from: 4, to: 2) == ""
+
+test "json_string: quotes, backslashes, slashes and control characters escaped as lua-cjson does"
+    assert json_string("a\"b") == "\"a\\\"b\""
+    assert json_string("x/y") == "\"x\\/y\""
+    assert json_string("t\tn\n") == "\"t\\tn\\n\""

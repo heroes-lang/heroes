@@ -1,0 +1,226 @@
+# A sorted set as Redis keeps one: members with a score each, read in the
+# order of their scores and, between equal scores, of their bytes. The members
+# are kept in that order in a list beside a map of their scores, so a range
+# by rank or by score is a slice, and an insertion finds its place by a
+# binary search and copies the list once.
+
+use <rebel>/lists
+use <rebel>/maps
+use <rebel>/numbers
+use <rebel>/strings
+
+# A sorted set: each member's score, and the members in order.
+record ZSet
+    # Each member's score.
+    scores: {str: f64}
+    # The members, by score then by bytes; every key of `scores` once.
+    order: [str]
+
+# One end of a range of scores, as `ZRANGEBYSCORE` reads it: a number, `-inf`
+# or `+inf`, with `(` before it to leave the end out.
+record Bound
+    # The score; an infinity for `-inf` and `+inf`.
+    score: f64
+    # Whether a member of exactly this score is left out.
+    exclusive: bool
+
+# An empty sorted set.
+function new_zset() -> ZSet
+    return ZSet(scores: {}, order: [])
+
+# The score `text` writes, as Redis reads a score: a decimal number, `inf`,
+# `+inf` or `-inf` in any case. Fails `invalid` where it writes none, or
+# writes `nan`.
+#
+# - `text`: the argument.
+function parse_score(text: str) -> f64?
+    lower = strings.to_lower_ascii(text)
+
+    if lower == "inf" || lower == "+inf"
+        return ok(1.0 / 0.0)
+
+    if lower == "-inf"
+        return ok(-1.0 / 0.0)
+
+    match numbers.parse_float(text)
+        .ok v =>
+            if v != v
+                return fail(code: "invalid", msg: "value is not a valid float")
+            return ok(v)
+        .err _ => return fail(code: "invalid", msg: "value is not a valid float")
+
+# The bound `text` writes, a `(` before it leaving its score out.
+#
+# - `text`: the argument.
+#
+# Fails `invalid` as `parse_score` fails, with Redis's words for a range.
+function parse_bound(text: str) -> Bound?
+    if text.len() > 0 && text[0] == '('
+        match parse_score(text.slice(from: 1, to: text.len()))
+            .ok v  => return ok(Bound(score: v, exclusive: true))
+            .err _ => return fail(code: "invalid", msg: "min or max is not a float")
+
+    match parse_score(text)
+        .ok v  => return ok(Bound(score: v, exclusive: false))
+        .err _ => return fail(code: "invalid", msg: "min or max is not a float")
+
+# Whether the member `a` of score `a_score` stands before `b` of `b_score`:
+# by score, then by bytes.
+#
+# - `a_score`: the first member's score.
+# - `a`: the first member.
+# - `b_score`: the second member's score.
+# - `b`: the second member.
+function stands_before(a_score: f64, a: str, b_score: f64, b: str) -> bool
+    if a_score != b_score
+        return a_score < b_score
+    return strings.compare(a: a, b: b) < 0
+
+# The index in `z.order` where a member of `score` named `member` belongs:
+# the first member that does not stand before it.
+#
+# - `z`: the set.
+# - `score`: the score.
+# - `member`: the member.
+function place_of(z: ZSet lent, score: f64, member: str) -> i64
+    low: i64 @= 0
+    high: i64 @= z.order.len()
+
+    while low < high
+        middle = (low + high) / 2
+        other = z.order[middle]
+
+        if stands_before(a_score: z.scores[other].must(), a: other, b_score: score, b: member)
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low
+
+# Takes `member` out of `z`, and answers whether it was there.
+#
+# - `z`: the set, which loses the member.
+# - `member`: the member.
+function remove(@z: ZSet, member: str) -> bool
+    match z.scores[member]
+        .err _ => return false
+        .ok score =>
+            at = place_of(z, score: score, member: member)
+            z.order @ lists.remove_at(z.order, at: at)
+            z.scores @ maps.remove(z.scores, key: member)
+            return true
+
+# Puts `member` in `z` with `score`, moving it where it was there, and
+# answers whether it is new.
+#
+# - `z`: the set, which gains or moves the member.
+# - `member`: the member.
+# - `score`: its score, not `nan`.
+function add(@z: ZSet, member: str, score: f64) -> bool
+    was = remove(@z, member: member)
+    at = place_of(z, score: score, member: member)
+    z.order @ lists.insert(z.order, at: at, value: member)
+    z.scores[member] @ score
+    return !was
+
+# The members of ranks `start` to `stop`, both kept, as `ZRANGE` reads
+# them: a negative rank counts from the end, -1 the last.
+#
+# - `z`: the set.
+# - `start`: the first rank.
+# - `stop`: the last rank.
+function by_rank(z: ZSet lent, start: i64, stop: i64) -> [str]
+    n = z.order.len()
+    from: i64 @= start
+    to: i64 @= stop
+
+    if from < 0
+        from @ n + from
+
+    if to < 0
+        to @ n + to
+
+    if from < 0
+        from @ 0
+
+    if to >= n
+        to @ n - 1
+
+    if from > to || from >= n
+        return []
+    return z.order.slice(from: from, to: to + 1)
+
+# Whether `score` is within `min` and `max`.
+#
+# - `score`: the score.
+# - `min`: the low end.
+# - `max`: the high end.
+function within(score: f64, min: Bound, max: Bound) -> bool
+    above = if min.exclusive
+        score > min.score
+    else
+        score >= min.score
+
+    below = if max.exclusive
+        score < max.score
+    else
+        score <= max.score
+    return above && below
+
+# The members whose scores are within `min` and `max`, in order, `offset`
+# passed over and at most `count` given, as `ZRANGEBYSCORE ... LIMIT` reads
+# them.
+#
+# - `z`: the set.
+# - `min`: the low end.
+# - `max`: the high end.
+# - `offset`: how many to pass over, 0 or more.
+# - `count`: how many at most; below 0 for all.
+function by_score(z: ZSet lent, min: Bound, max: Bound, offset: i64, count: i64) -> [str]
+    out: [str] @= []
+    passed: i64 @= 0
+
+    for member in z.order
+        if count >= 0 && out.len() >= count
+            break
+
+        score = z.scores[member].must()
+
+        if within(score, min: min, max: max)
+            if passed < offset
+                passed @ passed + 1
+            else
+                out @ out.push(member)
+        else if score > max.score
+            break
+
+    return out
+
+test "add: members kept by score, then by bytes"
+    z @= new_zset()
+    _ = add(@z, member: "b", score: 2.0)
+    _ = add(@z, member: "a", score: 2.0)
+    _ = add(@z, member: "c", score: 1.0)
+    assert z.order == ["c", "a", "b"]
+    assert !add(@z, member: "c", score: 3.0)
+    assert z.order == ["a", "b", "c"]
+
+test "by_rank: negative ranks count from the end, past the end is cut"
+    z @= new_zset()
+    _ = add(@z, member: "a", score: 1.0)
+    _ = add(@z, member: "b", score: 2.0)
+    _ = add(@z, member: "c", score: 3.0)
+    assert by_rank(z, start: 0, stop: 0) == ["a"]
+    assert by_rank(z, start: -2, stop: -1) == ["b", "c"]
+    assert by_rank(z, start: 1, stop: 99) == ["b", "c"]
+    assert by_rank(z, start: 3, stop: 4) == []
+
+test "by_score: an exclusive end, a limit and the infinities"
+    z @= new_zset()
+    _ = add(@z, member: "a", score: 1.0)
+    _ = add(@z, member: "b", score: 2.0)
+    _ = add(@z, member: "c", score: 3.0)
+    everything = by_score(z, min: parse_bound("-inf").must(), max: parse_bound("+inf").must(), offset: 0, count: -1)
+    assert everything == ["a", "b", "c"]
+    assert by_score(z, min: parse_bound("-inf").must(), max: parse_bound("(3").must(), offset: 1, count: 5) == ["b"]
+    assert parse_bound("x").is_err()

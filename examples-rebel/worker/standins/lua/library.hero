@@ -1,0 +1,335 @@
+# The functions a Redis script finds already defined: `redis.call` and its
+# kin, which run a command on the stand-in's data; Lua 5.1's base functions a
+# script uses (`tonumber`, `tostring`, `type`, `ipairs`, `pairs`, `next`,
+# `unpack`, `select`, `error`, `assert`); and the parts of `string`, `math`,
+# `table` and `cjson` Redis loads. A script calls one by its value,
+# `.builtin(name)`, and `call` runs it.
+#
+# The functions over tables and `cjson` are `table_library`'s.
+#
+# A function that calls back into the script, `pcall`, `table.sort` with an
+# order or `string.gsub` with a function, is not here; a script calling one
+# fails with Lua's message for a global that does not exist.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/math
+use <rebel>/redis
+use <rebel>/strings
+
+use standins/lua/bridge
+use standins/lua/table_library
+use standins/lua/text_library
+use standins/lua/values
+use standins/redis/commands
+use standins/redis/keyspace
+
+# The code of an error a command answered inside a script, which the script
+# hands back with the command's own word.
+constant REDIS_ERROR: str
+    "redis_error"
+
+# The functions of each library table, by the table's name.
+function library_names() -> {str: [str]}
+    return {
+        "redis": ["call", "pcall", "error_reply", "status_reply", "log", "sha1hex"]
+        "string": ["format", "sub", "len", "upper", "lower", "rep"]
+        "math": ["floor", "ceil", "max", "min", "abs"]
+        "table": ["insert", "remove", "concat", "getn"]
+        "cjson": ["encode"]
+    }
+
+# The base functions, defined as globals by their own names.
+constant BASE_NAMES: [str]
+    ["tonumber", "tostring", "type", "ipairs", "pairs", "next", "unpack", "select", "error", "assert"]
+
+# The commands a script may not run, as Redis refuses them inside one.
+constant FORBIDDEN: [str]
+    [
+        "EVAL"
+        "EVALSHA"
+        "SCRIPT"
+        "MULTI"
+        "EXEC"
+        "WATCH"
+        "SUBSCRIBE"
+        "PSUBSCRIBE"
+        "HELLO"
+        "AUTH"
+        "SELECT"
+        "SHUTDOWN"
+        "STANDIN.CLOCK"
+    ]
+
+# Defines every library table and base function as a global of `m`.
+#
+# - `m`: the machine, whose globals gain them.
+function install(@m: values.Machine)
+    for name in BASE_NAMES
+        m.globals[name] @ .builtin(name: name)
+
+    tables = library_names()
+
+    for library in keys(tables)
+        t = values.new_table(@m)
+
+        for function_name in tables[library].must()
+            values.set(
+                @m.tables[t],
+                key: .text(v: function_name),
+                value: .builtin(name: library + "." + function_name)
+            ).must()
+
+        m.globals[library] @ .table(ref: t)
+
+    math_table = match m.globals["math"].must()
+        .table t                                                                => t.ref
+        .nil_value | .boolean _ | .number _ | .text _ | .closure _ | .builtin _ => -1
+
+    if math_table >= 0
+        values.set(@m.tables[math_table], key: .text(v: "huge"), value: .number(v: math.INF)).must()
+
+# The argument at `at`, `nil` where there are fewer.
+#
+# - `arguments`: the arguments.
+# - `at`: the index, from 0.
+function argument(arguments: [values.Value], at: i64) -> values.Value
+    if at < arguments.len()
+        return arguments[at]
+    return .nil_value
+
+# The argument at `at` as a number. Fails as Lua's `bad argument` where it
+# is none.
+#
+# - `arguments`: the arguments.
+# - `at`: the index, from 0.
+# - `function_name`: the function's name, for the message.
+# - `line`: the line of the call.
+function number_argument(arguments: [values.Value], at: i64, function_name: str, line: i64) -> f64?
+    v = argument(arguments, at: at)
+
+    match values.to_number(v)
+        .ok x => return ok(x)
+        .err _ => return values.runtime_error(
+            line,
+            what: f"bad argument #{at + 1} to '{function_name}' (number expected, got {values.type_name(v)})"
+        )
+
+# The argument at `at` as text. Fails as Lua's `bad argument` where it is
+# neither text nor a number.
+#
+# - `arguments`: the arguments.
+# - `at`: the index, from 0.
+# - `function_name`: the function's name, for the message.
+# - `line`: the line of the call.
+function text_argument(arguments: [values.Value], at: i64, function_name: str, line: i64) -> str?
+    v = argument(arguments, at: at)
+
+    match values.to_text(v)
+        .ok s => return ok(s)
+        .err _ => return values.runtime_error(
+            line,
+            what: f"bad argument #{at + 1} to '{function_name}' (string expected, got {values.type_name(v)})"
+        )
+
+# The argument at `at` as a table's index. Fails where it is no table.
+#
+# - `arguments`: the arguments.
+# - `at`: the index, from 0.
+# - `function_name`: the function's name, for the message.
+# - `line`: the line of the call.
+function table_argument(arguments: [values.Value], at: i64, function_name: str, line: i64) -> i64?
+    v = argument(arguments, at: at)
+
+    match v
+        .table t => return ok(t.ref)
+        .nil_value | .boolean _ | .number _ | .text _ | .closure _ | .builtin _ =>
+            return values.runtime_error(
+                line,
+                what: f"bad argument #{at + 1} to '{function_name}' (table expected, got {values.type_name(v)})"
+            )
+
+# The words of `redis.call(...)`: each argument text, a number written as
+# Lua writes it. Fails as Redis's message for any other argument.
+#
+# - `arguments`: the call's arguments.
+# - `line`: the line of the call.
+function command_words(arguments: [values.Value], line: i64) -> [str]?
+    if arguments.len() == 0
+        return values.runtime_error(line, what: "Please specify at least one argument for this redis lib call")
+
+    words: [str] @= []
+
+    for a in arguments
+        match a
+            .text t   => words @ words.push(t.v)
+            .number n => words @ words.push(values.number_text(n.v))
+            .nil_value | .boolean _ | .table _ | .closure _ | .builtin _ =>
+                return values.runtime_error(line, what: "Lua redis lib command arguments must be strings or integers")
+
+    return ok(words)
+
+# Runs the command `arguments` name for a script: the reply, or a failure
+# `redis_error` holding the error the command answered, for `redis.call`.
+#
+# - `ks`: the data.
+# - `arguments`: the command and its arguments.
+# - `line`: the line of the call.
+function run_command(@ks: keyspace.Keyspace, arguments: [values.Value], line: i64) -> redis.Reply?
+    words = command_words(arguments, line: line)?
+    name = strings.to_upper_ascii(words[0])
+
+    for forbidden in FORBIDDEN
+        if name == forbidden
+            return values.runtime_error(line, what: "This Redis command is not allowed from script")
+
+    if !commands.is_data_command(name)
+        return values.runtime_error(line, what: "Unknown Redis command called from script")
+
+    reply = commands.execute(@ks, words: words, protocol: 2)
+
+    match reply
+        .error e =>
+            text = if e.code == ""
+                e.message
+            else
+                e.code + " " + e.message
+            return fail(code: REDIS_ERROR, msg: text)
+        .simple _ | .integer _ | .bulk _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ =>
+            return ok(reply)
+
+# Calls the engine's function `name` with `arguments` and answers what it
+# returns.
+#
+# - `m`: the machine, which may gain tables.
+# - `ks`: the data, which `redis.call` reads and writes.
+# - `name`: the function's full name.
+# - `arguments`: the arguments.
+# - `line`: the line of the call.
+#
+# Fails as the function fails: a command's error from `redis.call`, a bad
+# argument, or `error(...)`.
+function call(@m: values.Machine, @ks: keyspace.Keyspace, name: str, arguments: [values.Value], line: i64) -> [values.Value]?
+    match name
+        "redis.call" =>
+            reply = run_command(@ks, arguments: arguments, line: line)?
+            return ok([bridge.value_of(@m, r: reply)])
+        "redis.pcall" =>
+            match run_command(@ks, arguments: arguments, line: line)
+                .ok reply => return ok([bridge.value_of(@m, r: reply)])
+                .err e    => return ok([bridge.value_of(@m, r: bridge.error_of(e.msg))])
+        "redis.error_reply" =>
+            text = text_argument(arguments, at: 0, function_name: "error_reply", line: line)?
+            return ok([bridge.value_of(@m, r: bridge.error_of(text))])
+        "redis.status_reply" =>
+            text = text_argument(arguments, at: 0, function_name: "status_reply", line: line)?
+            return ok([bridge.value_of(@m, r: .simple(v: text))])
+        "redis.log" => return ok([])
+        "redis.sha1hex" =>
+            text = text_argument(arguments, at: 0, function_name: "sha1hex", line: line)?
+            return ok([.text(v: bytes.format_hex(crypto.sha1_text(text)))])
+        "tonumber" =>
+            match values.to_number(argument(arguments, at: 0))
+                .ok x  => return ok([.number(v: x)])
+                .err _ => return ok([.nil_value])
+        "tostring" => return ok([.text(v: values.describe(argument(arguments, at: 0)))])
+        "type"     => return ok([.text(v: values.type_name(argument(arguments, at: 0)))])
+        "ipairs" =>
+            t = table_argument(arguments, at: 0, function_name: "ipairs", line: line)?
+            return ok([.builtin(name: "ipairs.step"), .table(ref: t), .number(v: 0.0)])
+        "ipairs.step" =>
+            t = table_argument(arguments, at: 0, function_name: "ipairs", line: line)?
+            i = number_argument(arguments, at: 1, function_name: "ipairs", line: line)? + 1.0
+            v = values.get(m.tables[t], key: .number(v: i))
+
+            if values.is_nil(v)
+                return ok([.nil_value])
+            return ok([.number(v: i), v])
+        "pairs" =>
+            t = table_argument(arguments, at: 0, function_name: "pairs", line: line)?
+            return ok([.builtin(name: "next"), .table(ref: t), .nil_value])
+        "next" =>
+            t = table_argument(arguments, at: 0, function_name: "next", line: line)?
+            return ok(table_library.next_of(m.tables[t], key: argument(arguments, at: 1)))
+        "unpack" =>
+            t = table_argument(arguments, at: 0, function_name: "unpack", line: line)?
+            return ok(m.tables[t].array)
+        "select" => return table_library.select_of(arguments, line: line)
+        "error" =>
+            message = values.describe(argument(arguments, at: 0))
+            return values.runtime_error(line, what: message)
+        "assert" =>
+            if values.is_truthy(argument(arguments, at: 0))
+                return ok(arguments)
+
+            message = match argument(arguments, at: 1)
+                .text t                                                                  => t.v
+                .nil_value | .boolean _ | .number _ | .table _ | .closure _ | .builtin _ => "assertion failed!"
+
+            return values.runtime_error(line, what: message)
+        _ => return library_call(@m, name: name, arguments: arguments, line: line)
+
+# The functions of `string`, `math`, `table` and `cjson`.
+#
+# - `m`: the machine.
+# - `name`: the function's full name.
+# - `arguments`: the arguments.
+# - `line`: the line of the call.
+function library_call(@m: values.Machine, name: str, arguments: [values.Value], line: i64) -> [values.Value]?
+    match name
+        "string.format" =>
+            form = text_argument(arguments, at: 0, function_name: "format", line: line)?
+            rest = arguments.slice(from: 1, to: arguments.len())
+            return ok([.text(v: text_library.format(form, arguments: rest, line: line)?)])
+        "string.sub" =>
+            s = text_argument(arguments, at: 0, function_name: "sub", line: line)?
+            from = number_argument(arguments, at: 1, function_name: "sub", line: line)?
+
+            to = match argument(arguments, at: 2)
+                .nil_value => -1.0
+                .boolean _ | .number _ | .text _ | .table _ | .closure _ | .builtin _ =>
+                    number_argument(arguments, at: 2, function_name: "sub", line: line)?
+
+            return ok([.text(v: text_library.sub(s, from: to_i64(from).default(1), to: to_i64(to).default(-1)))])
+        "string.len" =>
+            s = text_argument(arguments, at: 0, function_name: "len", line: line)?
+            return ok([.number(v: to_f64(s.len()))])
+        "string.upper" =>
+            s = text_argument(arguments, at: 0, function_name: "upper", line: line)?
+            return ok([.text(v: strings.to_upper_ascii(s))])
+        "string.lower" =>
+            s = text_argument(arguments, at: 0, function_name: "lower", line: line)?
+            return ok([.text(v: strings.to_lower_ascii(s))])
+        "string.rep" =>
+            s = text_argument(arguments, at: 0, function_name: "rep", line: line)?
+            times = to_i64(number_argument(arguments, at: 1, function_name: "rep", line: line)?).default(0)
+
+            if times <= 0
+                return ok([.text(v: "")])
+
+            if s.len() * times > 536_870_912
+                return values.runtime_error(line, what: "resulting string too large")
+            return ok([.text(v: repeat(s, to_u64(times).must()))])
+        "math.floor" => return ok(
+            [.number(v: math.floor(number_argument(arguments, at: 0, function_name: "floor", line: line)?))]
+        )
+        "math.ceil" => return ok(
+            [.number(v: math.ceil(number_argument(arguments, at: 0, function_name: "ceil", line: line)?))]
+        )
+        "math.abs" =>
+            x = number_argument(arguments, at: 0, function_name: "abs", line: line)?
+
+            if x < 0.0
+                return ok([.number(v: -x)])
+            return ok([.number(v: x)])
+        "math.max" | "math.min" =>
+            best: f64 @= number_argument(arguments, at: 0, function_name: "max", line: line)?
+
+            for i in range(from: 1, to: arguments.len())
+                x = number_argument(arguments, at: i, function_name: "max", line: line)?
+
+                if name == "math.max" && x > best || name == "math.min" && x < best
+                    best @ x
+
+            return ok([.number(v: best)])
+        _ => return table_library.table_call(@m, name: name, arguments: arguments, line: line)

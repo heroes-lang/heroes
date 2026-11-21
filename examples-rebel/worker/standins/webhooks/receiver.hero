@@ -1,0 +1,199 @@
+# Webhook endpoints on loopback for the demo: the subscribers a
+# `deliver_webhook` job posts to, each answering as the endpoint its path
+# names would, so a job's retries meet real refusals over real HTTP:
+#
+# - `/hooks/<name>?fails=N` answers 503 to the first `N` deliveries of each
+#   `Idempotency-Key`, then 200: a subscriber that was briefly down;
+# - `/hooks/down` answers 503 every time: one that never comes back;
+# - `/hooks/gone` answers 410: one that unsubscribed, which no retry mends;
+# - any other `/hooks/<name>` answers 200 at once.
+#
+# It checks what an endpoint checks: a `POST`, a JSON body, an
+# `Idempotency-Key`, else 405, 415, 400. Each delivery is kept, so the demo
+# can tell what every endpoint was sent and answered.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/io
+use <rebel>/json
+use <rebel>/maps
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/poll
+use <rebel>/strings
+use <rebel>/url
+
+# One delivery received and what it was answered.
+record Delivery
+    # The endpoint's name, the path after `/hooks/`.
+    endpoint: str
+    # The delivery's `Idempotency-Key`.
+    key: str
+    # Its `X-Delivery-Attempt`, "" where it sent none.
+    attempt: str
+    # The status answered.
+    status: i64
+
+# The endpoints: their listener, the deliveries they answered, and their
+# connections.
+record Receiver
+    # The listener on 127.0.0.1.
+    listener: net.Listener
+    # The listener's key in the loop's set.
+    listen_key: i64
+    # How many deliveries of each key each endpoint received, by
+    # `<endpoint> <key>`.
+    seen: {str: i64}
+    # Every delivery, in the order received.
+    deliveries: [Delivery]
+    # Each connection not yet answered, by its key in the loop's set.
+    conns: {i64: net.Conn}
+
+# Endpoints listening on 127.0.0.1 at a port the system chooses.
+#
+# - `set`: the loop's set, which gains the listener.
+#
+# Fails as `net.listen` and `poll.add_listener` fail.
+function start(set: poll.Set) -> Receiver?
+    l = net.listen(host: "127.0.0.1", port: 0)?
+    key = poll.add_listener(set, l: l)?
+    return ok(Receiver(listener: l, listen_key: key, seen: {}, deliveries: [], conns: {}))
+
+# The base URL of the endpoints, `http://127.0.0.1:<port>/hooks`.
+#
+# - `r`: the receiver.
+function base_url(r: Receiver lent) -> str
+    return f"http://127.0.0.1:{r.listener.address.port}/hooks"
+
+# Whether the event of `key` is one of the receiver's.
+#
+# - `r`: the receiver.
+# - `key`: the event's key.
+function owns(r: Receiver lent, key: i64) -> bool
+    return key == r.listen_key || !r.conns[key].is_err()
+
+# Acts on the event of `key`: accepts a connection, or reads its request,
+# answers it and closes it.
+#
+# - `r`: the receiver.
+# - `set`: the loop's set.
+# - `key`: the event's key, one `owns` answers true for.
+#
+# Fails only where the listener fails.
+function serve(@r: Receiver, set: poll.Set, key: i64) -> ()?
+    if key == r.listen_key
+        conn = net.accept(r.listener, deadline_ms: 10_000)?
+        added = poll.add_conn(set, c: conn, interest: .read)?
+        r.conns[added] @ conn
+        return ok()
+
+    conn @= r.conns[key].must()
+    reader @= io.reader(conn.stream)
+
+    match http.next_request(@reader, limits: http.default_limits())
+        .ok request =>
+            answer @= http.respond_status(answer_status(@r, request: request))
+            answer.closing @ true
+            _ = http.write_answer(conn.stream, r: request, response: answer).is_err()
+        .err _ => _ = 0
+
+    _ = poll.remove(set, key: key).is_err()
+    _ = io.close(@conn.stream).is_err()
+    r.conns @ maps.remove(r.conns, key: key)
+    return ok()
+
+# The count of failures `fails=N` of the query `query` asks, 0 where none.
+#
+# - `query`: the request's query, without its `?`.
+function fails_of(query: str) -> i64
+    match url.parse_query(query)
+        .ok pairs =>
+            for p in pairs
+                if p.key == "fails"
+                    return numbers.parse_int(p.value).default(0)
+        .err _ => _ = 0
+
+    return 0
+
+# The status the endpoint answers `request` with, the delivery kept.
+#
+# - `r`: the receiver, which keeps the delivery.
+# - `request`: the request.
+function answer_status(@r: Receiver, request: http.Request) -> i64
+    path = request.url.path
+
+    if !strings.has_prefix(s: path, prefix: "/hooks/")
+        return 404
+
+    if request.method != "POST"
+        return 405
+
+    kind = strings.to_lower_ascii(http.value_of(request.headers, name: "Content-Type").default(""))
+
+    if !strings.has_prefix(s: kind, prefix: "application/json")
+        return 415
+
+    key = http.value_of(request.headers, name: "Idempotency-Key").default("")
+    text = bytes.to_text(request.body).default("")
+
+    if key == "" || json.parse(text).is_err()
+        return 400
+
+    endpoint = path.slice(from: 7, to: path.len())
+    seen_key = endpoint + " " + key
+    count = r.seen[seen_key].default(0) + 1
+    r.seen[seen_key] @ count
+
+    status = match endpoint
+        "down" => 503
+        "gone" => 410
+        _ =>
+            if count <= fails_of(request.url.query)
+                503
+            else
+                200
+
+    r.deliveries @ r.deliveries.push(
+        Delivery(endpoint: endpoint, key: key, attempt: http.value_of(request.headers, name: "X-Delivery-Attempt").default(""), status: status)
+    )
+    return status
+
+# Closes every connection and the listener.
+#
+# - `r`: the receiver.
+# - `set`: the loop's set, which loses them.
+function close(@r: Receiver, set: poll.Set)
+    for key in keys(r.conns)
+        conn @= r.conns[key].must()
+        _ = poll.remove(set, key: key).is_err()
+        _ = io.close(@conn.stream).is_err()
+
+    r.conns @ {}
+    _ = poll.remove(set, key: r.listen_key).is_err()
+    _ = net.close_listener(@r.listener).is_err()
+
+# The deliveries told a line for each key, its answers in the order sent,
+# the keys in the order of their endpoints and then of themselves, so the
+# lines read the same whatever order concurrent workers sent them in.
+#
+# - `r`: the receiver.
+function summary(r: Receiver lent) -> [str]
+    by_key: {str: [str]} @= {}
+
+    for d in r.deliveries
+        line_key = d.endpoint + " " + d.key
+        answers @= by_key[line_key].default([])
+        answers @ answers.push(to_str(d.status))
+        by_key[line_key] @ answers
+
+    out: [str] @= []
+
+    for line_key in sort(keys(by_key))
+        out @ out.push(f"  {line_key}: " + by_key[line_key].must().join(", "))
+
+    return out
+
+test "fails_of: the count a query asks, none where it asks none"
+    assert fails_of("fails=2") == 2
+    assert fails_of("a=1&fails=3") == 3
+    assert fails_of("") == 0

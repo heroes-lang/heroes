@@ -1,0 +1,42 @@
+# Jobs put in the store by the program that has work to hand off: each
+# enqueue a producer span of its own trace, whose context the job carries in
+# its payload's `trace` member, so the attempts that run it later, on any
+# worker, are told under it. A unique key held by a job not yet finished
+# refuses the second job, which the span records as an error.
+
+use <rebel>/jobs
+use <rebel>/jobs/redis_store
+use <rebel>/otlp
+use <rebel>/redis
+use <rebel>/time
+use <rebel>/tracing
+
+use telemetry/tracer
+
+# Enqueues `job` and answers its id, under a span `enqueue <kind>` of kind
+# producer whose attributes say its kind, its queue and, once given, its id.
+#
+# - `c`: the store's client.
+# - `tr`: the tracer, which keeps the span ended.
+# - `job`: the job; an object payload gains the span's context.
+# - `at`: when, on the store's clock, for the error event of a refusal.
+#
+# Fails as `redis_store.enqueue` fails: `exists` where the job's unique key
+# is held, `invalid` where the job is out of its bounds.
+function enqueue(@c: redis.Client, @tr: tracing.Tracer, job: jobs.Job, at: time.Instant) -> i64?
+    span @= tracing.start(@tr, name: "enqueue " + job.kind, kind: .producer)?
+    tracing.set_attribute(@span, a: otlp.Attribute(key: "job.kind", value: .text(v: job.kind)))
+    tracing.set_attribute(@span, a: otlp.Attribute(key: "job.queue", value: .text(v: job.queue)))
+    traced @= job
+    traced.payload @ tracer.with_context(job.payload, context: span.context)
+
+    match redis_store.enqueue(@c, job: traced)
+        .ok id =>
+            tracing.set_attribute(@span, a: otlp.Attribute(key: "job.id", value: .integer(v: id)))
+            _ = tracing.end(@tr, span: span).is_err()
+            return ok(id)
+        .err e =>
+            tracing.record_error(@span, message: e.msg, at: at)
+            tracing.set_status(@span, code: .error, message: e.code)
+            _ = tracing.end(@tr, span: span).is_err()
+            return fail(code: e.code, msg: e.msg)

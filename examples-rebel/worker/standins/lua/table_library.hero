@@ -1,0 +1,202 @@
+# The functions of Lua 5.1's `table` library a Redis script reaches, the
+# base functions `next` and `select`, and `cjson.encode` of a whole value:
+# what `library.call` hands on for a table. `table.insert` and
+# `table.remove` move the elements after the place, as Lua's do, so the list
+# keeps its keys 1 to n.
+
+use standins/lua/library
+use standins/lua/text_library
+use standins/lua/values
+
+# The functions of `table` and `cjson`.
+#
+# - `m`: the machine, whose tables `table.insert` and `table.remove` change.
+# - `name`: the function's full name.
+# - `arguments`: the arguments.
+# - `line`: the line of the call.
+function table_call(@m: values.Machine, name: str, arguments: [values.Value], line: i64) -> [values.Value]?
+    match name
+        "table.insert" =>
+            t = library.table_argument(arguments, at: 0, function_name: "insert", line: line)?
+            n = m.tables[t].array.len()
+
+            if arguments.len() == 2
+                values.set(@m.tables[t], key: .number(v: to_f64(n + 1)), value: arguments[1])?
+                return ok([])
+
+            if arguments.len() != 3
+                return values.runtime_error(line, what: "wrong number of arguments to 'insert'")
+
+            at = to_i64(library.number_argument(arguments, at: 1, function_name: "insert", line: line)?).default(0)
+
+            if at < 1 || at > n + 1
+                return values.runtime_error(line, what: "bad argument #2 to 'insert' (position out of bounds)")
+
+            i: i64 @= n
+
+            while i >= at
+                moved = m.tables[t].array[i - 1]
+                values.set(@m.tables[t], key: .number(v: to_f64(i + 1)), value: moved)?
+                i @ i - 1
+
+            values.set(@m.tables[t], key: .number(v: to_f64(at)), value: arguments[2])?
+            return ok([])
+        "table.remove" =>
+            t = library.table_argument(arguments, at: 0, function_name: "remove", line: line)?
+            n = m.tables[t].array.len()
+
+            if n == 0
+                return ok([.nil_value])
+
+            at = if arguments.len() >= 2
+                to_i64(library.number_argument(arguments, at: 1, function_name: "remove", line: line)?).default(n)
+            else
+                n
+
+            if at < 1 || at > n
+                return ok([.nil_value])
+
+            taken = m.tables[t].array[at - 1]
+
+            for i in range(from: at, to: n)
+                moved = m.tables[t].array[i]
+                values.set(@m.tables[t], key: .number(v: to_f64(i)), value: moved)?
+
+            values.set(@m.tables[t], key: .number(v: to_f64(n)), value: .nil_value)?
+            return ok([taken])
+        "table.concat" =>
+            t = library.table_argument(arguments, at: 0, function_name: "concat", line: line)?
+
+            sep = match library.argument(arguments, at: 1)
+                .nil_value => ""
+                .boolean _ | .number _ | .text _ | .table _ | .closure _ | .builtin _ =>
+                    library.text_argument(arguments, at: 1, function_name: "concat", line: line)?
+
+            parts: [str] @= []
+
+            for v in m.tables[t].array
+                match values.to_text(v)
+                    .ok s  => parts @ parts.push(s)
+                    .err _ => return values.runtime_error(line, what: "invalid value (at index) in table for 'concat'")
+
+            return ok([.text(v: parts.join(sep))])
+        "table.getn" =>
+            t = library.table_argument(arguments, at: 0, function_name: "getn", line: line)?
+            return ok([.number(v: to_f64(m.tables[t].array.len()))])
+        "cjson.encode" => return ok(
+            [.text(v: encode_json(m, v: library.argument(arguments, at: 0), depth: 0, line: line)?)]
+        )
+        _ => return values.runtime_error(line, what: f"attempt to call a nil value (function '{name}')")
+
+# `v` written as JSON, as lua-cjson writes it: a table whose keys are 1 to n
+# an array, any other an object of its text and number keys.
+#
+# - `m`: the machine its tables live in.
+# - `v`: the value.
+# - `depth`: the tables around it, bounded as lua-cjson bounds them.
+# - `line`: the line of the call.
+function encode_json(m: values.Machine lent, v: values.Value, depth: i64, line: i64) -> str?
+    if depth > 1000
+        return values.runtime_error(line, what: "Cannot serialise, excessive nesting (1001)")
+
+    match v
+        .nil_value => return ok("null")
+        .boolean b =>
+            if b.v
+                return ok("true")
+            return ok("false")
+        .number n => return ok(values.number_text(n.v))
+        .text t   => return ok(text_library.json_string(t.v))
+        .closure _ | .builtin _ => return values.runtime_error(
+            line,
+            what: "Cannot serialise function: type not supported"
+        )
+        .table t =>
+            table = m.tables[t.ref]
+            parts: [str] @= []
+
+            if table.hash.len() == 0 && table.array.len() > 0
+                for item in table.array
+                    parts @ parts.push(encode_json(m, v: item, depth: depth + 1, line: line)?)
+
+                return ok("[" + parts.join(",") + "]")
+
+            for i in range(from: 0, to: table.array.len())
+                parts @ parts.push(f"\"{i + 1}\":" + encode_json(m, v: table.array[i], depth: depth + 1, line: line)?)
+
+            for form in keys(table.hash)
+                key = values.describe(table.hash_keys[form].must())
+                parts @ parts.push(
+                    text_library.json_string(key) + ":" + encode_json(m, v: table.hash[form].must(), depth: depth + 1, line: line)?
+                )
+
+            return ok("{" + parts.join(",") + "}")
+
+# What `next(t, key)` answers: the key after `key` and its value, the list's
+# keys first and then the map's in the order they were set; `nil` after the
+# last.
+#
+# - `t`: the table.
+# - `key`: the key before, `nil` for the first.
+function next_of(t: values.Table lent, key: values.Value) -> [values.Value]
+    forms = keys(t.hash)
+    after_list: i64 @= 0
+
+    match key
+        .nil_value =>
+            if t.array.len() > 0
+                return [.number(v: 1.0), t.array[0]]
+
+            if forms.len() > 0
+                return [t.hash_keys[forms[0]].must(), t.hash[forms[0]].must()]
+            return [.nil_value]
+        .number n =>
+            i = values.whole_of(n.v).default(0)
+
+            if i >= 1 && i < t.array.len()
+                return [.number(v: to_f64(i + 1)), t.array[i]]
+
+            if i == t.array.len()
+                after_list @ 1
+        .boolean _ | .text _ | .table _ | .closure _ | .builtin _ => _ = 0
+
+    if after_list == 1
+        if forms.len() > 0
+            return [t.hash_keys[forms[0]].must(), t.hash[forms[0]].must()]
+        return [.nil_value]
+
+    form = values.key_form(key).default("")
+
+    for i in range(from: 0, to: forms.len())
+        if forms[i] == form
+            if i + 1 < forms.len()
+                return [t.hash_keys[forms[i + 1]].must(), t.hash[forms[i + 1]].must()]
+            return [.nil_value]
+
+    return [.nil_value]
+
+# `select(n, ...)`: the arguments from the `n`th, or their count for `#`.
+#
+# - `arguments`: `n` then the rest.
+# - `line`: the line of the call.
+function select_of(arguments: [values.Value], line: i64) -> [values.Value]?
+    first = if arguments.len() > 0
+        1
+    else
+        0
+    rest = arguments.slice(from: first, to: arguments.len())
+
+    match library.argument(arguments, at: 0)
+        .text t =>
+            if t.v == "#"
+                return ok([.number(v: to_f64(rest.len()))])
+        .nil_value | .boolean _ | .number _ | .table _ | .closure _ | .builtin _ => _ = 0
+
+    n = to_i64(library.number_argument(arguments, at: 0, function_name: "select", line: line)?).default(0)
+
+    if n < 1
+        return values.runtime_error(line, what: "bad argument #1 to 'select' (index out of range)")
+
+    if n > rest.len()
+        return ok([])
+    return ok(rest.slice(from: n - 1, to: rest.len()))

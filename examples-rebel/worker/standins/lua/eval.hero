@@ -1,0 +1,394 @@
+# The expressions and calls of a running Lua script: each expression of the
+# tree evaluated against the machine and the names in scope, Lua 5.1's
+# operators with its coercions, and a call of a closure or of an engine
+# function. Half of a ring with `exec`: a closure's body is a block, which
+# `exec.run_block_in` runs, and a statement's expressions are evaluated here.
+#
+# A scope maps each name in sight to its cell in `Machine.cells`, so two
+# closures of one scope share a variable, as Lua's upvalues do.
+
+use <rebel>/math
+use <rebel>/strings
+
+use standins/lua/exec
+use standins/lua/library
+use standins/lua/values
+use standins/redis/keyspace
+
+# Counts one step of `m`. Fails past `values.MOST_STEPS`, as a server stops a
+# script that runs too long.
+#
+# - `m`: the machine.
+# - `line`: the line being run, for the message.
+function tick(@m: values.Machine, line: i64) -> ()?
+    m.steps @ m.steps + 1
+
+    if m.steps > values.MOST_STEPS
+        return values.runtime_error(
+            line,
+            what: f"the script ran past {values.MOST_STEPS} steps and was stopped, as a server stops a script that runs too long"
+        )
+    return ok()
+
+# A new cell holding `v`, and its index.
+#
+# - `m`: the machine, which gains the cell.
+# - `v`: the value.
+function new_cell(@m: values.Machine, v: values.Value) -> i64
+    m.cells @ m.cells.push(v)
+    return m.cells.len() - 1
+
+# The value of the name `id`: the local or upvalue in `scope`, else the
+# global. Fails where neither holds it, as Redis refuses a global it does not
+# know.
+#
+# - `m`: the machine.
+# - `scope`: the names in sight.
+# - `id`: the name.
+function read_name(m: values.Machine lent, scope: {str: i64} lent, id: str) -> values.Value?
+    match scope[id]
+        .ok cell => return ok(m.cells[cell])
+        .err _ =>
+            match m.globals[id]
+                .ok v => return ok(v)
+                .err _ => return values.runtime_error(
+                    0,
+                    what: f"Script attempted to access nonexistent global variable '{id}'"
+                )
+
+# The value of `key` in `target`: a table's field, or a function of `string`
+# for a string, as Lua's string metatable gives `s:upper()`.
+#
+# - `m`: the machine.
+# - `target`: the value indexed.
+# - `key`: the key.
+# - `line`: the line, for an error.
+function index_value(m: values.Machine lent, target: values.Value, key: values.Value, line: i64) -> values.Value?
+    match target
+        .table t => return ok(values.get(m.tables[t.ref], key: key))
+        .text _ =>
+            match key
+                .text k => return ok(.builtin(name: "string." + k.v))
+                .nil_value | .boolean _ | .number _ | .table _ | .closure _ | .builtin _ => return ok(.nil_value)
+        .nil_value | .boolean _ | .number _ | .closure _ | .builtin _ =>
+            return values.runtime_error(line, what: f"attempt to index a {values.type_name(target)} value")
+
+# The value of expression `at`; a call or `...` gives its first value.
+#
+# - `m`: the machine.
+# - `ks`: the data, for `redis.call`.
+# - `scope`: the names in sight.
+# - `at`: the expression's index.
+# - `varargs`: the running function's `...`.
+function eval(@m: values.Machine, @ks: keyspace.Keyspace, scope: {str: i64} lent, at: i64, varargs: [values.Value] lent) -> values.Value?
+    match m.chunk.exprs[at]
+        .nil_value => return ok(.nil_value)
+        .boolean b => return ok(.boolean(v: b.v))
+        .number n  => return ok(.number(v: n.v))
+        .text t    => return ok(.text(v: t.v))
+        .vararg =>
+            if varargs.len() > 0
+                return ok(varargs[0])
+            return ok(.nil_value)
+        .name n => return read_name(m, scope: scope, id: n.id)
+        .index ix =>
+            target = eval(@m, @ks, scope: scope, at: ix.target, varargs: varargs)?
+            key = eval(@m, @ks, scope: scope, at: ix.key, varargs: varargs)?
+            return index_value(m, target: target, key: key, line: 0)
+        .call _ | .method_call _ =>
+            results = eval_multi(@m, @ks, scope: scope, at: at, varargs: varargs)?
+
+            if results.len() > 0
+                return ok(results[0])
+            return ok(.nil_value)
+        .function_literal f =>
+            m.closures @ m.closures.push(values.Closure(proto: f.proto, scope: scope))
+            return ok(.closure(ref: m.closures.len() - 1))
+        .binary b => return binary(
+            @m,
+            @ks,
+            scope: scope,
+            op: b.op,
+            left: b.left,
+            right: b.right,
+            line: b.line,
+            varargs: varargs
+        )
+        .unary u =>
+            v = eval(@m, @ks, scope: scope, at: u.operand, varargs: varargs)?
+            return unary(m, op: u.op, v: v, line: u.line)
+        .table t => return construct(
+            @m,
+            @ks,
+            scope: scope,
+            items: t.items,
+            field_keys: t.keys,
+            field_values: t.values,
+            varargs: varargs
+        )
+
+# Every value of expression `at`: all a call returns, all of `...`, or the
+# one value of any other expression.
+#
+# - `m`: the machine.
+# - `ks`: the data.
+# - `scope`: the names in sight.
+# - `at`: the expression's index.
+# - `varargs`: the running function's `...`.
+function eval_multi(@m: values.Machine, @ks: keyspace.Keyspace, scope: {str: i64} lent, at: i64, varargs: [values.Value] lent) -> [values.Value]?
+    match m.chunk.exprs[at]
+        .call c =>
+            callee = eval(@m, @ks, scope: scope, at: c.callee, varargs: varargs)?
+            arguments = eval_list(@m, @ks, scope: scope, exprs: c.args, varargs: varargs)?
+            return call_value(@m, @ks, f: callee, arguments: arguments, line: c.line)
+        .method_call mc =>
+            object = eval(@m, @ks, scope: scope, at: mc.target, varargs: varargs)?
+            f = index_value(m, target: object, key: .text(v: mc.method), line: mc.line)?
+            arguments: [values.Value] @= [object]
+
+            for v in eval_list(@m, @ks, scope: scope, exprs: mc.args, varargs: varargs)?
+                arguments @ arguments.push(v)
+
+            return call_value(@m, @ks, f: f, arguments: arguments, line: mc.line)
+        .vararg => return ok(varargs)
+        .nil_value | .boolean _ | .number _ | .text _ | .name _ | .index _ | .function_literal _ | .binary _ | .unary _ | .table _ =>
+            return ok([eval(@m, @ks, scope: scope, at: at, varargs: varargs)?])
+
+# The values of `exprs` in order, the last one's every value where it is a
+# call or `...`, as Lua expands the last expression of a list.
+#
+# - `m`: the machine.
+# - `ks`: the data.
+# - `scope`: the names in sight.
+# - `exprs`: the expressions' indexes.
+# - `varargs`: the running function's `...`.
+function eval_list(@m: values.Machine, @ks: keyspace.Keyspace, scope: {str: i64} lent, exprs: [i64], varargs: [values.Value] lent) -> [values.Value]?
+    out: [values.Value] @= []
+
+    for i in range(from: 0, to: exprs.len())
+        if i == exprs.len() - 1
+            for v in eval_multi(@m, @ks, scope: scope, at: exprs[i], varargs: varargs)?
+                out @ out.push(v)
+        else
+            out @ out.push(eval(@m, @ks, scope: scope, at: exprs[i], varargs: varargs)?)
+
+    return ok(out)
+
+# A table made by a constructor: its positional fields keyed 1, 2, ..., the
+# last expanded where it is a call or `...`, then its keyed fields.
+#
+# - `m`: the machine, which gains the table.
+# - `ks`: the data.
+# - `scope`: the names in sight.
+# - `items`: the positional fields' expressions.
+# - `field_keys`: the keyed fields' keys.
+# - `field_values`: the keyed fields' values.
+# - `varargs`: the running function's `...`.
+function construct(@m: values.Machine, @ks: keyspace.Keyspace, scope: {str: i64} lent, items: [i64], field_keys: [i64], field_values: [i64], varargs: [values.Value] lent) -> values.Value?
+    positional = eval_list(@m, @ks, scope: scope, exprs: items, varargs: varargs)?
+    t = values.new_table(@m)
+
+    for i in range(from: 0, to: positional.len())
+        values.set(@m.tables[t], key: .number(v: to_f64(i + 1)), value: positional[i])?
+
+    for i in range(from: 0, to: field_keys.len())
+        key = eval(@m, @ks, scope: scope, at: field_keys[i], varargs: varargs)?
+        value = eval(@m, @ks, scope: scope, at: field_values[i], varargs: varargs)?
+        values.set(@m.tables[t], key: key, value: value)?
+
+    return ok(.table(ref: t))
+
+# Whether `a` is less than `b`, or less than or equal where `or_equal`:
+# numbers by value, strings by their bytes. Fails for any other pair, as Lua
+# refuses to compare them.
+#
+# - `a`: the left value.
+# - `b`: the right value.
+# - `or_equal`: whether equality also answers true.
+# - `line`: the line, for an error.
+function less(a: values.Value, b: values.Value, or_equal: bool, line: i64) -> bool?
+    match a
+        .number x =>
+            match b
+                .number y =>
+                    if or_equal
+                        return ok(x.v <= y.v)
+                    return ok(x.v < y.v)
+                .nil_value | .boolean _ | .text _ | .table _ | .closure _ | .builtin _ => _ = 0
+        .text x =>
+            match b
+                .text y =>
+                    order = strings.compare(a: x.v, b: y.v)
+
+                    if or_equal
+                        return ok(order <= 0)
+                    return ok(order < 0)
+                .nil_value | .boolean _ | .number _ | .table _ | .closure _ | .builtin _ => _ = 0
+        .nil_value | .boolean _ | .table _ | .closure _ | .builtin _ => _ = 0
+
+    left = values.type_name(a)
+    right = values.type_name(b)
+
+    if left == right
+        return values.runtime_error(line, what: f"attempt to compare two {left} values")
+    return values.runtime_error(line, what: f"attempt to compare {left} with {right}")
+
+# The value of `left op right`, `and` and `or` evaluating their right side
+# only where it decides.
+#
+# - `m`: the machine.
+# - `ks`: the data.
+# - `scope`: the names in sight.
+# - `op`: the operator.
+# - `left`: the left expression's index.
+# - `right`: the right expression's index.
+# - `line`: the operator's line.
+# - `varargs`: the running function's `...`.
+function binary(@m: values.Machine, @ks: keyspace.Keyspace, scope: {str: i64} lent, op: str, left: i64, right: i64, line: i64, varargs: [values.Value] lent) -> values.Value?
+    a = eval(@m, @ks, scope: scope, at: left, varargs: varargs)?
+
+    if op == "and"
+        if !values.is_truthy(a)
+            return ok(a)
+        return eval(@m, @ks, scope: scope, at: right, varargs: varargs)
+
+    if op == "or"
+        if values.is_truthy(a)
+            return ok(a)
+        return eval(@m, @ks, scope: scope, at: right, varargs: varargs)
+
+    b = eval(@m, @ks, scope: scope, at: right, varargs: varargs)?
+
+    match op
+        "==" => return ok(.boolean(v: a == b))
+        "~=" => return ok(.boolean(v: a != b))
+        "<"  => return ok(.boolean(v: less(a: a, b: b, or_equal: false, line: line)?))
+        "<=" => return ok(.boolean(v: less(a: a, b: b, or_equal: true, line: line)?))
+        ">"  => return ok(.boolean(v: less(a: b, b: a, or_equal: false, line: line)?))
+        ">=" => return ok(.boolean(v: less(a: b, b: a, or_equal: true, line: line)?))
+        ".." =>
+            x = match values.to_text(a)
+                .ok s => s
+                .err _ => return values.runtime_error(
+                    line,
+                    what: f"attempt to concatenate a {values.type_name(a)} value"
+                )
+
+            y = match values.to_text(b)
+                .ok s => s
+                .err _ => return values.runtime_error(
+                    line,
+                    what: f"attempt to concatenate a {values.type_name(b)} value"
+                )
+
+            return ok(.text(v: x + y))
+        _ => return arithmetic(op, a: a, b: b, line: line)
+
+# The value of the arithmetic `a op b`, text that writes a number read as
+# one, as Lua 5.1 coerces it.
+#
+# - `op`: `+`, `-`, `*`, `/`, `%` or `^`.
+# - `a`: the left value.
+# - `b`: the right value.
+# - `line`: the operator's line.
+function arithmetic(op: str, a: values.Value, b: values.Value, line: i64) -> values.Value?
+    x = match values.to_number(a)
+        .ok n => n
+        .err _ => return values.runtime_error(
+            line,
+            what: f"attempt to perform arithmetic on a {values.type_name(a)} value"
+        )
+
+    y = match values.to_number(b)
+        .ok n => n
+        .err _ => return values.runtime_error(
+            line,
+            what: f"attempt to perform arithmetic on a {values.type_name(b)} value"
+        )
+
+    match op
+        "+" => return ok(.number(v: x + y))
+        "-" => return ok(.number(v: x - y))
+        "*" => return ok(.number(v: x * y))
+        "/" => return ok(.number(v: x / y))
+        "%" => return ok(.number(v: x - math.floor(x / y) * y))
+        "^" => return ok(.number(v: math.pow(base: x, exponent: y)))
+        _   => return values.runtime_error(line, what: f"unknown operator '{op}'")
+
+# The value of `op v` for a unary operator.
+#
+# - `m`: the machine, for a table's length.
+# - `op`: `not`, `-` or `#`.
+# - `v`: the operand's value.
+# - `line`: the operator's line.
+function unary(m: values.Machine lent, op: str, v: values.Value, line: i64) -> values.Value?
+    if op == "not"
+        return ok(.boolean(v: !values.is_truthy(v)))
+
+    if op == "-"
+        match values.to_number(v)
+            .ok n => return ok(.number(v: -n))
+            .err _ => return values.runtime_error(
+                line,
+                what: f"attempt to perform arithmetic on a {values.type_name(v)} value"
+            )
+
+    match v
+        .text t  => return ok(.number(v: to_f64(t.v.len())))
+        .table t => return ok(.number(v: to_f64(m.tables[t.ref].array.len())))
+        .nil_value | .boolean _ | .number _ | .closure _ | .builtin _ =>
+            return values.runtime_error(line, what: f"attempt to get length of a {values.type_name(v)} value")
+
+# Calls `f` with `arguments` and answers every value it returns.
+#
+# - `m`: the machine.
+# - `ks`: the data.
+# - `f`: the function's value.
+# - `arguments`: the arguments.
+# - `line`: the line of the call.
+#
+# Fails where `f` is no function, where the calls nest past
+# `values.MOST_CALLS`, and as the function fails.
+function call_value(@m: values.Machine, @ks: keyspace.Keyspace, f: values.Value, arguments: [values.Value], line: i64) -> [values.Value]?
+    tick(@m, line: line)?
+
+    match f
+        .builtin b => return library.call(@m, @ks, name: b.name, arguments: arguments, line: line)
+        .closure c => return call_closure(@m, @ks, ref: c.ref, arguments: arguments, line: line)
+        .nil_value | .boolean _ | .number _ | .text _ | .table _ =>
+            return values.runtime_error(line, what: f"attempt to call a {values.type_name(f)} value")
+
+# Runs the closure `ref` with `arguments`: each parameter a new cell, the
+# arguments past them its `...` where it takes one.
+#
+# - `m`: the machine.
+# - `ks`: the data.
+# - `ref`: the closure's index.
+# - `arguments`: the arguments.
+# - `line`: the line of the call.
+function call_closure(@m: values.Machine, @ks: keyspace.Keyspace, ref: i64, arguments: [values.Value], line: i64) -> [values.Value]?
+    if m.depth >= values.MOST_CALLS
+        return values.runtime_error(line, what: "stack overflow")
+
+    closure = m.closures[ref]
+    proto = m.chunk.protos[closure.proto]
+    scope @= closure.scope
+
+    for i in range(from: 0, to: proto.params.len())
+        given: values.Value = if i < arguments.len()
+            arguments[i]
+        else
+            .nil_value
+        scope[proto.params[i]] @ new_cell(@m, v: given)
+
+    extra: [values.Value] = if proto.takes_vararg && arguments.len() > proto.params.len()
+        arguments.slice(from: proto.params.len(), to: arguments.len())
+    else
+        []
+    m.depth @ m.depth + 1
+    flow = exec.run_block_in(@m, @ks, scope: @scope, block: proto.block, varargs: extra)
+    m.depth @ m.depth - 1
+
+    match flow?
+        .returning r        => return ok(r.results)
+        .normal | .breaking => return ok([])

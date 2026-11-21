@@ -1,0 +1,147 @@
+# The two conversions between a Redis reply and a Lua value, as Redis's
+# scripting page, "Conversion between Lua and Redis data types", sets them
+# for RESP2, the protocol a script's calls speak unless the script asks for
+# another:
+#
+# - Redis to Lua: an integer is a number, a bulk string a string, an array a
+#   table, a status `{ok = text}`, an error `{err = text}`, and a null bulk
+#   string or array is `false`, not `nil`, so a table of replies has no hole;
+# - Lua to Redis: a number is an integer, its fraction cut toward zero; a
+#   string a bulk string; `true` the integer 1; `false` and `nil` a null; a
+#   table holding `ok` or `err` a status or an error, any other table an
+#   array of its keys 1, 2, ... up to the first `nil`.
+#
+# A RESP3 reply a command answers is read as RESP2 gives it to a script: a
+# map as its keys and values in turn, a set as an array, a double as text.
+
+use <rebel>/bytes
+use <rebel>/redis
+
+use standins/lua/values
+
+# The deepest table a script may answer with, tables inside tables: a table
+# that holds itself would be followed for ever.
+constant MOST_NESTING: i64
+    64
+
+# The Lua value of the reply `r`, its tables made in `m`. A key that is text
+# is one every table takes, so setting `ok` or `err` cannot fail.
+#
+# - `m`: the machine, which gains a table for each array.
+# - `r`: the reply a command answered.
+function value_of(@m: values.Machine, r: redis.Reply) -> values.Value
+    match r
+        .integer n  => return .number(v: to_f64(n.v))
+        .bulk b     => return .text(v: bytes.to_text_lossy(b.v))
+        .null_value => return .boolean(v: false)
+        .simple s =>
+            t = values.new_table(@m)
+            values.set(@m.tables[t], key: .text(v: "ok"), value: .text(v: s.v)).must()
+            return .table(ref: t)
+        .error e =>
+            text = if e.code == ""
+                e.message
+            else
+                e.code + " " + e.message
+            t = values.new_table(@m)
+            values.set(@m.tables[t], key: .text(v: "err"), value: .text(v: text)).must()
+            return .table(ref: t)
+        .array a  => return list_of(@m, items: a.items)
+        .set s    => return list_of(@m, items: s.items)
+        .pushed p => return list_of(@m, items: p.items)
+        .mapping mp =>
+            flat: [redis.Reply] @= []
+
+            for e in mp.entries
+                flat @ flat.push(e.key)
+                flat @ flat.push(e.value)
+
+            return list_of(@m, items: flat)
+        .double d => return .text(v: values.number_text(d.v))
+        .boolean b =>
+            if b.v
+                return .number(v: 1.0)
+            return .boolean(v: false)
+        .big_number n => return .text(v: n.v)
+        .verbatim v   => return .text(v: v.v)
+
+# A table of the Lua values of `items`, keyed 1, 2, ... in order.
+#
+# - `m`: the machine, which gains the tables.
+# - `items`: the replies.
+function list_of(@m: values.Machine, items: [redis.Reply]) -> values.Value
+    converted: [values.Value] @= []
+
+    for item in items
+        converted @ converted.push(value_of(@m, r: item))
+
+    return .table(ref: values.new_list(@m, items: converted))
+
+# The reply of the error text `text`: its first word the code where it is in
+# capitals, as Redis reads a script's `{err = ...}`.
+#
+# - `text`: the error's text.
+function error_of(text: str) -> redis.Reply
+    space: i64 @= 0
+
+    while space < text.len() && text[space] != ' '
+        space @ space + 1
+
+    word = text.slice(from: 0, to: space)
+    is_code: bool @= word.len() > 0
+
+    for i in range(from: 0, to: word.len())
+        if !(word[i] >= 'A' && word[i] <= 'Z' || word[i] == '_')
+            is_code @ false
+
+    if is_code && space < text.len()
+        return .error(code: word, message: text.slice(from: space + 1, to: text.len()))
+
+    if is_code
+        return .error(code: word, message: "")
+    return .error(code: "ERR", message: text)
+
+# The reply a script's answer `v` makes.
+#
+# - `m`: the machine its tables live in.
+# - `v`: what the script returned.
+function reply_of(m: values.Machine lent, v: values.Value) -> redis.Reply
+    return reply_at(m, v: v, depth: 0)
+
+# `reply_of` for a value `depth` tables deep.
+#
+# - `m`: the machine.
+# - `v`: the value.
+# - `depth`: the tables around it.
+function reply_at(m: values.Machine lent, v: values.Value, depth: i64) -> redis.Reply
+    match v
+        .nil_value => return .null_value
+        .boolean b =>
+            if b.v
+                return .integer(v: 1)
+            return .null_value
+        .number n               => return .integer(v: to_i64(n.v).default(0))
+        .text t                 => return .bulk(v: bytes.from_text(t.v))
+        .closure _ | .builtin _ => return .null_value
+        .table t =>
+            if depth >= MOST_NESTING
+                return .error(code: "ERR", message: "reached lua stack limit")
+
+            table = m.tables[t.ref]
+
+            match values.get(table, key: .text(v: "err"))
+                .text e                                                                  => return error_of(e.v)
+                .nil_value | .boolean _ | .number _ | .table _ | .closure _ | .builtin _ => _ = 0
+
+            match values.get(table, key: .text(v: "ok"))
+                .text s                                                                  => return .simple(v: s.v)
+                .nil_value | .boolean _ | .number _ | .table _ | .closure _ | .builtin _ => _ = 0
+
+            items: [redis.Reply] @= []
+
+            for item in table.array
+                if values.is_nil(item)
+                    break
+                items @ items.push(reply_at(m, v: item, depth: depth + 1))
+
+            return .array(items: items)

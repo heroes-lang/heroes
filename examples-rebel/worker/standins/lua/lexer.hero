@@ -1,0 +1,405 @@
+# The tokens of a Lua 5.1 script, as Redis's scripting engine reads the text
+# `EVAL` sends: names, the twenty-one keywords, numbers in decimal and
+# hexadecimal, strings between quotes or long brackets with Lua's escapes, and
+# the punctuation of the language. Comments, `--` to the end of a line and
+# `--[[ ... ]]`, are dropped.
+#
+# The stand-in keeps text as the language's `str`, so a string escape that
+# writes a byte which is not UTF-8 is refused here rather than carried; the
+# store's scripts write none.
+
+use <rebel>/bytes
+use <rebel>/numbers
+
+# The code of a script the stand-in cannot read or run.
+constant SCRIPT_ERROR: str
+    "script_error"
+
+# One token: its kind, its text and, for a number, its value.
+record Token
+    # `name`, `number`, `string`, `eof`, or the keyword or symbol itself.
+    kind: str
+    # The name, the string's characters, or the symbol as written.
+    text: str
+    # The number's value; 0 for every other kind.
+    number: f64
+    # The line the token begins on, from 1.
+    line: i64
+
+# The words Lua 5.1 keeps for itself, each a token of its own kind.
+constant KEYWORDS: [str]
+    [
+        "and"
+        "break"
+        "do"
+        "else"
+        "elseif"
+        "end"
+        "false"
+        "for"
+        "function"
+        "if"
+        "in"
+        "local"
+        "nil"
+        "not"
+        "or"
+        "repeat"
+        "return"
+        "then"
+        "true"
+        "until"
+        "while"
+    ]
+
+# The symbols of three, two and one character, the longest tried first.
+constant SYMBOLS: [str]
+    [
+        "..."
+        ".."
+        "=="
+        "~="
+        "<="
+        ">="
+        "+"
+        "-"
+        "*"
+        "/"
+        "%"
+        "^"
+        "#"
+        "<"
+        ">"
+        "="
+        "("
+        ")"
+        "{"
+        "}"
+        "["
+        "]"
+        ";"
+        ":"
+        ","
+        "."
+    ]
+
+# Whether `c` may begin a name: a letter or `_`.
+#
+# - `c`: one byte of the script.
+function is_name_start(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_'
+
+# Whether `c` is a decimal digit.
+#
+# - `c`: one byte of the script.
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+# Whether `c` is a hexadecimal digit of either case.
+#
+# - `c`: one byte of the script.
+function is_hex_digit(c: u8) -> bool
+    return is_digit(c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
+
+# A failure of the script's text at `line`, worded as Redis words a script's
+# compile error.
+#
+# - `line`: the line, from 1.
+# - `what`: what was wrong there.
+function refused<T>(line: i64, what: str) -> T?
+    return fail(code: SCRIPT_ERROR, msg: f"user_script:{line}: {what}")
+
+# Where a long bracket opening at `at` ends its opening: the index after the
+# second `[`, with the count of `=` between, or `not_found` where `at` opens
+# none.
+record LongOpen
+    # The index of the first byte of the bracket's content.
+    content: i64
+    # How many `=` stand between the two brackets.
+    level: i64
+
+# The long bracket `[[` or `[==[` opening at `at` of `s`. Fails `not_found`
+# where none opens there.
+#
+# - `s`: the script.
+# - `at`: the index of a `[`.
+function long_open(s: str, at: i64) -> LongOpen?
+    i: i64 @= at + 1
+
+    while i < s.len() && s[i] == '='
+        i @ i + 1
+
+    if i < s.len() && s[i] == '['
+        return ok(LongOpen(content: i + 1, level: i - at - 1))
+    return fail(code: "not_found", msg: "no long bracket")
+
+# Where the long bracket of `level` that closes from `from` of `s` ends: the
+# index of its first `]`. Fails `not_found` where the script ends first.
+#
+# - `s`: the script.
+# - `from`: where the content begins.
+# - `level`: the count of `=` the opening held.
+function long_close(s: str, from: i64, level: i64) -> i64?
+    i: i64 @= from
+
+    while i < s.len()
+        if s[i] == ']'
+            j: i64 @= i + 1
+
+            while j < s.len() && s[j] == '='
+                j @ j + 1
+
+            if j < s.len() && s[j] == ']' && j - i - 1 == level
+                return ok(i)
+        i @ i + 1
+
+    return fail(code: "not_found", msg: "no closing bracket")
+
+# How many line feeds `s` holds from `from` to `to`, `to` left out.
+#
+# - `s`: the script.
+# - `from`: the first index counted.
+# - `to`: the index after the last.
+function lines_in(s: str, from: i64, to: i64) -> i64
+    count: i64 @= 0
+
+    for i in range(from: from, to: to)
+        if s[i] == '\n'
+            count @ count + 1
+
+    return count
+
+# What a quoted string's reading answers: its characters and the index after
+# its closing quote.
+record Quoted
+    # The characters, every escape read.
+    text: str
+    # The index after the closing quote.
+    next: i64
+
+# The string quoted by the byte at `at` of `s`, its escapes read as Lua 5.1
+# reads them: `\n`, `\t`, `\r`, `\a`, `\b`, `\f`, `\v`, `\\`, `\"`, `\'`, a
+# backslash before a line feed, and `\ddd`, a byte in up to three decimal
+# digits. Fails where the string does not close on its line, an escape is
+# none of these, or a byte it writes is not UTF-8.
+#
+# - `s`: the script.
+# - `at`: the index of the opening quote.
+# - `line`: the line it opens on, for the message.
+function quoted(s: str, at: i64, line: i64) -> Quoted?
+    quote = s[at]
+    out: [u8] @= []
+    i: i64 @= at + 1
+
+    while true
+        if i >= s.len() || s[i] == '\n'
+            return refused(line, what: "unfinished string")
+
+        c = s[i]
+
+        if c == quote
+            return ok(Quoted(text: bytes.to_text(out)?, next: i + 1))
+
+        if c != '\\'
+            out @ out.push(c)
+            i @ i + 1
+            continue
+
+        if i + 1 >= s.len()
+            return refused(line, what: "unfinished string")
+        e = s[i + 1]
+        i @ i + 2
+
+        if is_digit(e)
+            value: i64 @= to_i64(e - '0').must()
+            digits: i64 @= 1
+
+            while digits < 3 && i < s.len() && is_digit(s[i])
+                value @ value * 10 + to_i64(s[i] - '0').must()
+                digits @ digits + 1
+                i @ i + 1
+
+            if value > 255
+                return refused(line, what: "escape sequence too large")
+            out @ out.push(to_u8(value).must())
+            continue
+
+        escaped: u8 = match e
+            'n'  => '\n'
+            't'  => '\t'
+            'r'  => '\r'
+            'a'  => 7
+            'b'  => 8
+            'f'  => 12
+            'v'  => 11
+            '\\' => '\\'
+            '"'  => '"'
+            '\'' => '\''
+            '\n' => '\n'
+            _    => return refused(line, what: f"invalid escape sequence at byte {i - 1}")
+
+        out @ out.push(escaped)
+
+# The number whose text begins at `at` of `s`, and where it ends: decimal
+# with an optional fraction and exponent, or hexadecimal after `0x`.
+#
+# - `s`: the script.
+# - `at`: the index of its first digit, or of a `.` before one.
+# - `line`: its line, for the message.
+function number_at(s: str, at: i64, line: i64) -> Token?
+    i: i64 @= at
+
+    if s[at] == '0' && at + 1 < s.len() && (s[at + 1] == 'x' || s[at + 1] == 'X')
+        i @ at + 2
+
+        while i < s.len() && is_hex_digit(s[i])
+            i @ i + 1
+
+        digits = s.slice(from: at + 2, to: i)
+
+        match numbers.parse_u64_base(digits, base: 16)
+            .ok v  => return ok(Token(kind: "number", text: s.slice(from: at, to: i), number: to_f64(v), line: line))
+            .err _ => return refused(line, what: f"malformed number near '{s.slice(from: at, to: i)}'")
+
+    while i < s.len() && (is_digit(s[i]) || s[i] == '.')
+        i @ i + 1
+
+    if i < s.len() && (s[i] == 'e' || s[i] == 'E')
+        i @ i + 1
+
+        if i < s.len() && (s[i] == '+' || s[i] == '-')
+            i @ i + 1
+
+        while i < s.len() && is_digit(s[i])
+            i @ i + 1
+
+    text = s.slice(from: at, to: i)
+
+    if i < s.len() && is_name_start(s[i])
+        return refused(line, what: f"malformed number near '{text}'")
+
+    match numbers.parse_float(text)
+        .ok v  => return ok(Token(kind: "number", text: text, number: v, line: line))
+        .err _ => return refused(line, what: f"malformed number near '{text}'")
+
+# Whether `word` is one of `KEYWORDS`.
+#
+# - `word`: a name as the script writes it.
+function is_keyword(word: str) -> bool
+    for k in KEYWORDS
+        if k == word
+            return true
+
+    return false
+
+# Whether the bytes of `s` from `at` are those of `symbol`. It compares bytes,
+# so it never cuts a character of the script in two.
+#
+# - `s`: the script.
+# - `at`: where to look.
+# - `symbol`: the symbol, ASCII.
+function stands_at(s: str, at: i64, symbol: str) -> bool
+    if at + symbol.len() > s.len()
+        return false
+
+    for i in range(from: 0, to: symbol.len())
+        if s[at + i] != symbol[i]
+            return false
+
+    return true
+
+# The symbol of `SYMBOLS` that begins at `at` of `s`, the longest first.
+# Fails `not_found` where none does.
+#
+# - `s`: the script.
+# - `at`: where to look.
+function symbol_at(s: str, at: i64) -> str?
+    for symbol in SYMBOLS
+        if stands_at(s: s, at: at, symbol: symbol)
+            return ok(symbol)
+
+    return fail(code: "not_found", msg: "no symbol")
+
+# Every token of `source`, the last of kind `eof`.
+#
+# - `source`: the script's text.
+#
+# Fails `script_error` where a string or a long bracket does not close, a
+# number is malformed, an escape is unknown, or a byte begins no token, the
+# message naming the line as Redis's compiler does.
+function tokens(source: str) -> [Token]?
+    out: [Token] @= []
+    at: i64 @= 0
+    line: i64 @= 1
+    n = source.len()
+
+    while at < n
+        c = source[at]
+
+        if c == '\n'
+            line @ line + 1
+            at @ at + 1
+        else if c == ' ' || c == '\t' || c == '\r'
+            at @ at + 1
+        else if c == '-' && at + 1 < n && source[at + 1] == '-'
+            at @ at + 2
+
+            match long_open(source, at: at)
+                .ok opened =>
+                    close = match long_close(source, from: opened.content, level: opened.level)
+                        .ok i  => i
+                        .err _ => return refused(line, what: "unfinished long comment")
+
+                    line @ line + lines_in(source, from: at, to: close)
+                    at @ close + opened.level + 2
+                .err _ =>
+                    while at < n && source[at] != '\n'
+                        at @ at + 1
+        else if is_name_start(c)
+            start = at
+
+            while at < n && (is_name_start(source[at]) || is_digit(source[at]))
+                at @ at + 1
+
+            word = source.slice(from: start, to: at)
+
+            kind = if is_keyword(word)
+                word
+            else
+                "name"
+            out @ out.push(Token(kind: kind, text: word, number: 0.0, line: line))
+        else if is_digit(c) || c == '.' && at + 1 < n && is_digit(source[at + 1])
+            t = number_at(source, at: at, line: line)?
+            out @ out.push(t)
+            at @ at + t.text.len()
+        else if c == '"' || c == '\''
+            q = quoted(source, at: at, line: line)?
+            out @ out.push(Token(kind: "string", text: q.text, number: 0.0, line: line))
+            at @ q.next
+        else if c == '['
+            match long_open(source, at: at)
+                .ok opened =>
+                    close = match long_close(source, from: opened.content, level: opened.level)
+                        .ok i  => i
+                        .err _ => return refused(line, what: "unfinished long string")
+
+                    first = if opened.content < n && source[opened.content] == '\n'
+                        opened.content + 1
+                    else
+                        opened.content
+                    text = source.slice(from: first, to: close)
+                    out @ out.push(Token(kind: "string", text: text, number: 0.0, line: line))
+                    line @ line + lines_in(source, from: at, to: close)
+                    at @ close + opened.level + 2
+                .err _ =>
+                    out @ out.push(Token(kind: "[", text: "[", number: 0.0, line: line))
+                    at @ at + 1
+        else
+            match symbol_at(source, at: at)
+                .ok symbol =>
+                    out @ out.push(Token(kind: symbol, text: symbol, number: 0.0, line: line))
+                    at @ at + symbol.len()
+                .err _ => return refused(line, what: f"unexpected symbol, byte {source[at]}")
+
+    out @ out.push(Token(kind: "eof", text: "<eof>", number: 0.0, line: line))
+    return ok(out)

@@ -1,0 +1,302 @@
+# The data the Redis stand-in holds: one database of keys, each a string, a
+# hash, a set or a sorted set, with the keys' times to live, and the clock
+# those times and `TIME` are read on. A key past its time is taken out the
+# first time it is touched, as Redis's lazy expiry does.
+#
+# The clock is the stand-in's own: the wall clock, or one fixed and moved by
+# hand with the stand-in's `STANDIN.CLOCK` command, so a demo whose jobs wait
+# minutes runs in no time and answers the same on every run.
+#
+# Values are the language's `str`, so the stand-in holds text: a client that
+# sends bytes which are not UTF-8 is answered an error rather than stored, a
+# limit a real server does not have and the store's scripts never reach.
+
+use <rebel>/maps
+use <rebel>/redis
+use <rebel>/time
+
+use standins/redis/resp
+use standins/redis/sorted
+
+# The words Redis answers a command on a key of another type with.
+constant WRONG_TYPE: str
+    "Operation against a key holding the wrong kind of value"
+
+# What one key holds.
+variant Entry
+    # A string.
+    text
+        # Its characters.
+        v: str
+    # A hash: fields and their values.
+    hash
+        # The fields, in the order they were first set.
+        fields: {str: str}
+    # A set of members.
+    set
+        # The members, each `true`.
+        members: {str: bool}
+    # A sorted set.
+    zset
+        # The members and their scores.
+        z: sorted.ZSet
+
+# The clock a stand-in reads.
+variant Clock
+    # The system's wall clock.
+    wall
+    # A clock that stands still until it is moved.
+    fixed
+        # Its reading, in microseconds since 1970.
+        micros: i64
+
+# The stand-in's data and its clock.
+record Keyspace
+    # Every key living or not yet found expired, by name.
+    entries: {str: Entry}
+    # The keys with a time to live: the microsecond, on the stand-in's clock,
+    # at which each expires.
+    expires: {str: i64}
+    # The clock `TIME` and the times to live are read on.
+    clock: Clock
+
+# An empty keyspace on `clock`.
+#
+# - `clock`: the clock it reads.
+function new_keyspace(clock: Clock) -> Keyspace
+    return Keyspace(entries: {}, expires: {}, clock: clock)
+
+# The stand-in's clock now, in microseconds since 1970. The wall clock read
+# where it cannot be is read as 0, the start of 1970, which no time to live
+# in a test reaches.
+#
+# - `ks`: the keyspace.
+function now_micros(ks: Keyspace lent) -> i64
+    match ks.clock
+        .fixed f => return f.micros
+        .wall =>
+            match time.now()
+                .ok t  => return time.unix_microseconds(t)
+                .err _ => return 0
+
+# Takes `key` out of `ks`, with its time to live, and answers whether it was
+# there.
+#
+# - `ks`: the keyspace, which loses the key.
+# - `key`: the key.
+function remove(@ks: Keyspace, key: str) -> bool
+    was = ks.entries[key].is_err() == false
+    ks.entries @ maps.remove(ks.entries, key: key)
+    ks.expires @ maps.remove(ks.expires, key: key)
+    return was
+
+# Takes `key` out where its time to live has passed.
+#
+# - `ks`: the keyspace, which may lose the key.
+# - `key`: the key.
+function expire_if_due(@ks: Keyspace, key: str)
+    match ks.expires[key]
+        .err _ => _ = 0
+        .ok at =>
+            if at <= now_micros(ks)
+                _ = remove(@ks, key: key)
+
+# What `key` holds, its time to live read first. Fails `not_found` where it
+# holds nothing.
+#
+# - `ks`: the keyspace, which loses the key where it has expired.
+# - `key`: the key.
+function entry_of(@ks: Keyspace, key: str) -> Entry?
+    expire_if_due(@ks, key: key)
+
+    match ks.entries[key]
+        .ok e  => return ok(e)
+        .err _ => return fail(code: "not_found", msg: f"no key {key}")
+
+# Puts `e` at `key`, keeping its time to live.
+#
+# - `ks`: the keyspace.
+# - `key`: the key.
+# - `e`: what it holds now.
+function put(@ks: Keyspace, key: str, e: Entry)
+    ks.entries[key] @ e
+
+# Puts `e` at `key` and drops any time to live it had, as `SET` does.
+#
+# - `ks`: the keyspace.
+# - `key`: the key.
+# - `e`: what it holds now.
+function replace(@ks: Keyspace, key: str, e: Entry)
+    ks.entries[key] @ e
+    ks.expires @ maps.remove(ks.expires, key: key)
+
+# The name `TYPE` answers for `e`.
+#
+# - `e`: what a key holds.
+function type_name(e: Entry) -> str
+    match e
+        .text _ => return "string"
+        .hash _ => return "hash"
+        .set _  => return "set"
+        .zset _ => return "zset"
+
+# The hash at `key`: its fields, none where the key holds nothing. Fails
+# `invalid` where the key holds another type, the message `WRONG_TYPE`.
+#
+# - `ks`: the keyspace.
+# - `key`: the key.
+function hash_at(@ks: Keyspace, key: str) -> {str: str}?
+    match entry_of(@ks, key: key)
+        .err _ => return ok({})
+        .ok e =>
+            match e
+                .hash h                    => return ok(h.fields)
+                .text _ | .set _ | .zset _ => return fail(code: "invalid", msg: WRONG_TYPE)
+
+# The set at `key`, as `hash_at` answers a hash.
+#
+# - `ks`: the keyspace.
+# - `key`: the key.
+function set_at(@ks: Keyspace, key: str) -> {str: bool}?
+    match entry_of(@ks, key: key)
+        .err _ => return ok({})
+        .ok e =>
+            match e
+                .set s                      => return ok(s.members)
+                .text _ | .hash _ | .zset _ => return fail(code: "invalid", msg: WRONG_TYPE)
+
+# The sorted set at `key`, as `hash_at` answers a hash.
+#
+# - `ks`: the keyspace.
+# - `key`: the key.
+function zset_at(@ks: Keyspace, key: str) -> sorted.ZSet?
+    match entry_of(@ks, key: key)
+        .err _ => return ok(sorted.new_zset())
+        .ok e =>
+            match e
+                .zset z                    => return ok(z.z)
+                .text _ | .hash _ | .set _ => return fail(code: "invalid", msg: WRONG_TYPE)
+
+# The string at `key`. Fails `not_found` where the key holds nothing, and
+# `invalid` where it holds another type.
+#
+# - `ks`: the keyspace.
+# - `key`: the key.
+function text_at(@ks: Keyspace, key: str) -> str?
+    e = entry_of(@ks, key: key)?
+
+    match e
+        .text t                    => return ok(t.v)
+        .hash _ | .set _ | .zset _ => return fail(code: "invalid", msg: WRONG_TYPE)
+
+# Puts the hash `fields` at `key`, or takes the key out where it is empty, as
+# Redis drops an empty collection.
+#
+# - `ks`: the keyspace.
+# - `key`: the key.
+# - `fields`: the hash.
+function store_hash(@ks: Keyspace, key: str, fields: {str: str})
+    if fields.len() == 0
+        _ = remove(@ks, key: key)
+    else
+        put(@ks, key: key, e: .hash(fields: fields))
+
+# Puts the set `members` at `key`, or takes the key out where it is empty.
+#
+# - `ks`: the keyspace.
+# - `key`: the key.
+# - `members`: the set.
+function store_set(@ks: Keyspace, key: str, members: {str: bool})
+    if members.len() == 0
+        _ = remove(@ks, key: key)
+    else
+        put(@ks, key: key, e: .set(members: members))
+
+# Puts the sorted set `z` at `key`, or takes the key out where it is empty.
+#
+# - `ks`: the keyspace.
+# - `key`: the key.
+# - `z`: the sorted set.
+function store_zset(@ks: Keyspace, key: str, z: sorted.ZSet)
+    if z.order.len() == 0
+        _ = remove(@ks, key: key)
+    else
+        put(@ks, key: key, e: .zset(z: z))
+
+# The reply for a failure of the getters above: `WRONGTYPE` for a key of
+# another type, else `ERR` with the failure's words.
+#
+# - `code`: the failure's code.
+# - `msg`: its message.
+function refusal(code: str, msg: str) -> redis.Reply
+    if msg == WRONG_TYPE
+        return resp.error_reply(code: "WRONGTYPE", message: msg)
+
+    if code == "not_found"
+        return .null_value
+    return resp.error_reply(code: "ERR", message: msg)
+
+# Whether `name` matches the glob `pattern`, as `KEYS` reads one: `*` any
+# run, `?` one byte, `\` the next byte as itself. Bytes are compared, so a
+# pattern never cuts a character.
+#
+# - `name`: the key.
+# - `pattern`: the glob.
+function matches(name: str, pattern: str) -> bool
+    n: i64 @= 0
+    p: i64 @= 0
+    star: i64 @= -1
+    resume: i64 @= 0
+
+    while n < name.len()
+        if p < pattern.len() && pattern[p] == '*'
+            star @ p
+            resume @ n
+            p @ p + 1
+            continue
+
+        if p < pattern.len()
+            escaped = pattern[p] == '\\' && p + 1 < pattern.len()
+
+            want = if escaped
+                pattern[p + 1]
+            else
+                pattern[p]
+
+            width = if escaped
+                2
+            else
+                1
+
+            if !escaped && want == '?' || want == name[n]
+                p @ p + width
+                n @ n + 1
+                continue
+
+        if star < 0
+            return false
+
+        p @ star + 1
+        resume @ resume + 1
+        n @ resume
+
+    while p < pattern.len() && pattern[p] == '*'
+        p @ p + 1
+
+    return p == pattern.len()
+
+test "matches: a prefix and a star, a question mark, an escape"
+    assert matches(name: "rebel_jobs:job:1", pattern: "rebel_jobs:*")
+    assert !matches(name: "other:1", pattern: "rebel_jobs:*")
+    assert matches(name: "ab", pattern: "a?")
+    assert matches(name: "a*", pattern: "a\\*")
+    assert !matches(name: "ab", pattern: "a\\*")
+    assert matches(name: "", pattern: "*")
+
+test "entry_of: a key past its time is gone"
+    ks @= new_keyspace(.fixed(micros: 1_000))
+    replace(@ks, key: "k", e: .text(v: "v"))
+    ks.expires["k"] @ 2_000
+    assert text_at(@ks, key: "k").must() == "v"
+    ks.clock @ .fixed(micros: 2_000)
+    assert text_at(@ks, key: "k").is_err()

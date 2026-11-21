@@ -1,0 +1,256 @@
+== the store's clock starts at 2026-11-21T09:00:00Z
+
+== enqueued
+job 1 deliver_webhook in webhooks
+refused deliver_webhook in webhooks: exists, the unique key "order.paid:1001" is held by job 1
+job 2 deliver_webhook in webhooks
+job 3 deliver_webhook in webhooks
+job 4 deliver_webhook in webhooks
+job 5 deliver_webhook in webhooks
+job 6 checksum in default
+job 7 queue_report in maintenance
+
+== the clock
+09:15:00 the schedule enqueued job 8
+09:30:00 the schedule enqueued job 9
+09:45:00 the schedule enqueued job 10
+09:45:00 the fleet stopped
+
+== jobs
+job 1 deliver_webhook in webhooks: completed after 1 attempt
+  attempt 1 at 09:00:00: completed
+  output {"status":200}
+job 2 deliver_webhook in webhooks: completed after 3 attempts
+  attempt 1 at 09:00:00: retrying (the endpoint answered 503), again at 09:00:09.809
+  attempt 2 at 09:00:10: retrying (the endpoint answered 503), again at 09:00:27.724
+  attempt 3 at 09:00:30: completed
+  output {"status":200}
+job 3 deliver_webhook in webhooks: completed after 2 attempts
+  attempt 1 at 09:00:00: retrying (the endpoint answered 503), again at 09:00:08.744
+  attempt 2 at 09:00:10: completed
+  output {"status":200}
+job 4 deliver_webhook in webhooks: failed after 4 attempts
+  attempt 1 at 09:00:00: retrying (the endpoint answered 503), again at 09:00:08.154
+  attempt 2 at 09:00:10: retrying (the endpoint answered 503), again at 09:00:27.494
+  attempt 3 at 09:00:30: retrying (the endpoint answered 503), again at 09:01:05.029
+  attempt 4 at 09:01:10: failed (the endpoint answered 503)
+job 5 deliver_webhook in webhooks: discarded after 1 attempt
+  attempt 1 at 09:00:00: discarded (the endpoint refused the delivery with 410)
+job 6 checksum in default: completed after 1 attempt
+  attempt 1 at 09:00:00: completed
+  output {"sha256":"3cb616f6a54f849ae053cd3b6b0a1402062cbab6a709228028fd720523353e8f","bytes":33}
+job 7 queue_report in maintenance: completed after 1 attempt
+  attempt 1 at 09:20:00: completed
+  output {"default":{"completed":1},"maintenance":{"completed":1,"running":1},"webhooks":{"completed":3,"failed":2}}
+job 8 purge_finished in maintenance: completed after 1 attempt
+  attempt 1 at 09:15:00: completed
+  output {"purged":0}
+job 9 purge_finished in maintenance: completed after 1 attempt
+  attempt 1 at 09:30:00: completed
+  output {"purged":0}
+job 10 purge_finished in maintenance: completed after 1 attempt
+  attempt 1 at 09:45:00: completed
+  output {"purged":0}
+
+== dead letters
+job 4 deliver_webhook in webhooks: 4 of 4 attempts, failed 2026-11-21T09:01:10Z: the endpoint answered 503
+job 5 deliver_webhook in webhooks: 1 of 4 attempts, failed 2026-11-21T09:00:00Z: the endpoint refused the delivery with 410
+
+== queues
+queue       state      jobs
+default     completed  1
+maintenance completed  4
+webhooks    completed  3
+webhooks    failed     2
+
+== metrics, as /metrics serves them
+# HELP worker_attempts_total Attempts run, by kind and outcome.
+# TYPE worker_attempts_total counter
+worker_attempts_total{kind="checksum",outcome="completed"} 1
+worker_attempts_total{kind="deliver_webhook",outcome="completed"} 3
+worker_attempts_total{kind="deliver_webhook",outcome="discarded"} 1
+worker_attempts_total{kind="deliver_webhook",outcome="failed"} 1
+worker_attempts_total{kind="deliver_webhook",outcome="retrying"} 6
+worker_attempts_total{kind="purge_finished",outcome="completed"} 3
+worker_attempts_total{kind="queue_report",outcome="completed"} 1
+# HELP worker_dead_letters_total Jobs failed for good: the dead letters.
+# TYPE worker_dead_letters_total counter
+worker_dead_letters_total{kind="deliver_webhook"} 2
+# HELP worker_job_run_seconds Seconds an attempt ran, on the store's clock.
+# TYPE worker_job_run_seconds histogram
+worker_job_run_seconds_bucket{kind="checksum",le="0.005"} 1
+worker_job_run_seconds_bucket{kind="checksum",le="0.01"} 1
+worker_job_run_seconds_bucket{kind="checksum",le="0.05"} 1
+worker_job_run_seconds_bucket{kind="checksum",le="0.1"} 1
+worker_job_run_seconds_bucket{kind="checksum",le="0.5"} 1
+worker_job_run_seconds_bucket{kind="checksum",le="1"} 1
+worker_job_run_seconds_bucket{kind="checksum",le="5"} 1
+worker_job_run_seconds_bucket{kind="checksum",le="30"} 1
+worker_job_run_seconds_bucket{kind="checksum",le="+Inf"} 1
+worker_job_run_seconds_sum{kind="checksum"} 0
+worker_job_run_seconds_count{kind="checksum"} 1
+worker_job_run_seconds_bucket{kind="deliver_webhook",le="0.005"} 11
+worker_job_run_seconds_bucket{kind="deliver_webhook",le="0.01"} 11
+worker_job_run_seconds_bucket{kind="deliver_webhook",le="0.05"} 11
+worker_job_run_seconds_bucket{kind="deliver_webhook",le="0.1"} 11
+worker_job_run_seconds_bucket{kind="deliver_webhook",le="0.5"} 11
+worker_job_run_seconds_bucket{kind="deliver_webhook",le="1"} 11
+worker_job_run_seconds_bucket{kind="deliver_webhook",le="5"} 11
+worker_job_run_seconds_bucket{kind="deliver_webhook",le="30"} 11
+worker_job_run_seconds_bucket{kind="deliver_webhook",le="+Inf"} 11
+worker_job_run_seconds_sum{kind="deliver_webhook"} 0
+worker_job_run_seconds_count{kind="deliver_webhook"} 11
+worker_job_run_seconds_bucket{kind="purge_finished",le="0.005"} 3
+worker_job_run_seconds_bucket{kind="purge_finished",le="0.01"} 3
+worker_job_run_seconds_bucket{kind="purge_finished",le="0.05"} 3
+worker_job_run_seconds_bucket{kind="purge_finished",le="0.1"} 3
+worker_job_run_seconds_bucket{kind="purge_finished",le="0.5"} 3
+worker_job_run_seconds_bucket{kind="purge_finished",le="1"} 3
+worker_job_run_seconds_bucket{kind="purge_finished",le="5"} 3
+worker_job_run_seconds_bucket{kind="purge_finished",le="30"} 3
+worker_job_run_seconds_bucket{kind="purge_finished",le="+Inf"} 3
+worker_job_run_seconds_sum{kind="purge_finished"} 0
+worker_job_run_seconds_count{kind="purge_finished"} 3
+worker_job_run_seconds_bucket{kind="queue_report",le="0.005"} 1
+worker_job_run_seconds_bucket{kind="queue_report",le="0.01"} 1
+worker_job_run_seconds_bucket{kind="queue_report",le="0.05"} 1
+worker_job_run_seconds_bucket{kind="queue_report",le="0.1"} 1
+worker_job_run_seconds_bucket{kind="queue_report",le="0.5"} 1
+worker_job_run_seconds_bucket{kind="queue_report",le="1"} 1
+worker_job_run_seconds_bucket{kind="queue_report",le="5"} 1
+worker_job_run_seconds_bucket{kind="queue_report",le="30"} 1
+worker_job_run_seconds_bucket{kind="queue_report",le="+Inf"} 1
+worker_job_run_seconds_sum{kind="queue_report"} 0
+worker_job_run_seconds_count{kind="queue_report"} 1
+# HELP worker_job_wait_seconds Seconds from a job being due to an attempt beginning.
+# TYPE worker_job_wait_seconds histogram
+worker_job_wait_seconds_bucket{queue="default",le="0.5"} 1
+worker_job_wait_seconds_bucket{queue="default",le="1"} 1
+worker_job_wait_seconds_bucket{queue="default",le="2.5"} 1
+worker_job_wait_seconds_bucket{queue="default",le="5"} 1
+worker_job_wait_seconds_bucket{queue="default",le="10"} 1
+worker_job_wait_seconds_bucket{queue="default",le="30"} 1
+worker_job_wait_seconds_bucket{queue="default",le="60"} 1
+worker_job_wait_seconds_bucket{queue="default",le="300"} 1
+worker_job_wait_seconds_bucket{queue="default",le="+Inf"} 1
+worker_job_wait_seconds_sum{queue="default"} 0
+worker_job_wait_seconds_count{queue="default"} 1
+worker_job_wait_seconds_bucket{queue="maintenance",le="0.5"} 4
+worker_job_wait_seconds_bucket{queue="maintenance",le="1"} 4
+worker_job_wait_seconds_bucket{queue="maintenance",le="2.5"} 4
+worker_job_wait_seconds_bucket{queue="maintenance",le="5"} 4
+worker_job_wait_seconds_bucket{queue="maintenance",le="10"} 4
+worker_job_wait_seconds_bucket{queue="maintenance",le="30"} 4
+worker_job_wait_seconds_bucket{queue="maintenance",le="60"} 4
+worker_job_wait_seconds_bucket{queue="maintenance",le="300"} 4
+worker_job_wait_seconds_bucket{queue="maintenance",le="+Inf"} 4
+worker_job_wait_seconds_sum{queue="maintenance"} 0
+worker_job_wait_seconds_count{queue="maintenance"} 4
+worker_job_wait_seconds_bucket{queue="webhooks",le="0.5"} 6
+worker_job_wait_seconds_bucket{queue="webhooks",le="1"} 6
+worker_job_wait_seconds_bucket{queue="webhooks",le="2.5"} 9
+worker_job_wait_seconds_bucket{queue="webhooks",le="5"} 11
+worker_job_wait_seconds_bucket{queue="webhooks",le="10"} 11
+worker_job_wait_seconds_bucket{queue="webhooks",le="30"} 11
+worker_job_wait_seconds_bucket{queue="webhooks",le="60"} 11
+worker_job_wait_seconds_bucket{queue="webhooks",le="300"} 11
+worker_job_wait_seconds_bucket{queue="webhooks",le="+Inf"} 11
+worker_job_wait_seconds_sum{queue="webhooks"} 13.042678
+worker_job_wait_seconds_count{queue="webhooks"} 11
+# HELP worker_jobs_enqueued_total Jobs enqueued, by queue and kind.
+# TYPE worker_jobs_enqueued_total counter
+worker_jobs_enqueued_total{kind="checksum",queue="default"} 1
+worker_jobs_enqueued_total{kind="deliver_webhook",queue="webhooks"} 5
+worker_jobs_enqueued_total{kind="purge_finished",queue="maintenance"} 3
+worker_jobs_enqueued_total{kind="queue_report",queue="maintenance"} 1
+# HELP worker_queue_jobs Jobs standing in each queue and state.
+# TYPE worker_queue_jobs gauge
+worker_queue_jobs{queue="default",state="available"} 0
+worker_queue_jobs{queue="default",state="cancelled"} 0
+worker_queue_jobs{queue="default",state="completed"} 1
+worker_queue_jobs{queue="default",state="failed"} 0
+worker_queue_jobs{queue="default",state="running"} 0
+worker_queue_jobs{queue="maintenance",state="available"} 0
+worker_queue_jobs{queue="maintenance",state="cancelled"} 0
+worker_queue_jobs{queue="maintenance",state="completed"} 4
+worker_queue_jobs{queue="maintenance",state="failed"} 0
+worker_queue_jobs{queue="maintenance",state="running"} 0
+worker_queue_jobs{queue="webhooks",state="available"} 0
+worker_queue_jobs{queue="webhooks",state="cancelled"} 0
+worker_queue_jobs{queue="webhooks",state="completed"} 3
+worker_queue_jobs{queue="webhooks",state="failed"} 2
+worker_queue_jobs{queue="webhooks",state="running"} 0
+# HELP worker_rescued_total Leases that ran out and gave their job back.
+# TYPE worker_rescued_total counter
+worker_rescued_total 0
+# HELP worker_schedule_runs_total Runs of the recurring schedules enqueued.
+# TYPE worker_schedule_runs_total counter
+worker_schedule_runs_total{schedule="purge_finished"} 3
+
+== logs
+  supervisor-2026-11-21T09-45-00.000.log: 15 lines
+  supervisor.log: 2 lines
+  the workers' logs: 16 lines
+
+== spans the collector received
+trace from worker:
+  enqueue deliver_webhook [producer] job.kind=deliver_webhook job.queue=webhooks status=error "exists"
+    event exception: exception.message=the unique key "order.paid:1001" is held by job 1
+trace from worker:
+  enqueue deliver_webhook [producer] job.kind=deliver_webhook job.queue=webhooks job.id=1
+    process deliver_webhook [consumer] job.id=1 job.kind=deliver_webhook job.attempt=1 job.outcome=completed status=ok
+trace from worker:
+  enqueue deliver_webhook [producer] job.kind=deliver_webhook job.queue=webhooks job.id=2
+    process deliver_webhook [consumer] job.id=2 job.kind=deliver_webhook job.attempt=1 job.outcome=retrying status=error "the endpoint answered 503"
+      event exception: exception.message=the endpoint answered 503
+    process deliver_webhook [consumer] job.id=2 job.kind=deliver_webhook job.attempt=2 job.outcome=retrying status=error "the endpoint answered 503"
+      event exception: exception.message=the endpoint answered 503
+    process deliver_webhook [consumer] job.id=2 job.kind=deliver_webhook job.attempt=3 job.outcome=completed status=ok
+trace from worker:
+  enqueue deliver_webhook [producer] job.kind=deliver_webhook job.queue=webhooks job.id=3
+    process deliver_webhook [consumer] job.id=3 job.kind=deliver_webhook job.attempt=1 job.outcome=retrying status=error "the endpoint answered 503"
+      event exception: exception.message=the endpoint answered 503
+    process deliver_webhook [consumer] job.id=3 job.kind=deliver_webhook job.attempt=2 job.outcome=completed status=ok
+trace from worker:
+  enqueue deliver_webhook [producer] job.kind=deliver_webhook job.queue=webhooks job.id=4
+    process deliver_webhook [consumer] job.id=4 job.kind=deliver_webhook job.attempt=1 job.outcome=retrying status=error "the endpoint answered 503"
+      event exception: exception.message=the endpoint answered 503
+    process deliver_webhook [consumer] job.id=4 job.kind=deliver_webhook job.attempt=2 job.outcome=retrying status=error "the endpoint answered 503"
+      event exception: exception.message=the endpoint answered 503
+    process deliver_webhook [consumer] job.id=4 job.kind=deliver_webhook job.attempt=3 job.outcome=retrying status=error "the endpoint answered 503"
+      event exception: exception.message=the endpoint answered 503
+    process deliver_webhook [consumer] job.id=4 job.kind=deliver_webhook job.attempt=4 job.outcome=failed status=error "the endpoint answered 503"
+      event exception: exception.message=the endpoint answered 503
+trace from worker:
+  enqueue deliver_webhook [producer] job.kind=deliver_webhook job.queue=webhooks job.id=5
+    process deliver_webhook [consumer] job.id=5 job.kind=deliver_webhook job.attempt=1 job.outcome=discarded status=error "the endpoint refused the delivery with 410"
+      event exception: exception.message=the endpoint refused the delivery with 410
+trace from worker:
+  enqueue checksum [producer] job.kind=checksum job.queue=default job.id=6
+    process checksum [consumer] job.id=6 job.kind=checksum job.attempt=1 job.outcome=completed status=ok
+trace from worker:
+  enqueue queue_report [producer] job.kind=queue_report job.queue=maintenance job.id=7
+    process queue_report [consumer] job.id=7 job.kind=queue_report job.attempt=1 job.outcome=completed status=ok
+trace from worker:
+  process purge_finished [consumer] job.id=8 job.kind=purge_finished job.attempt=1 job.outcome=completed status=ok
+trace from worker:
+  process purge_finished [consumer] job.id=9 job.kind=purge_finished job.attempt=1 job.outcome=completed status=ok
+trace from worker:
+  process purge_finished [consumer] job.id=10 job.kind=purge_finished job.attempt=1 job.outcome=completed status=ok
+
+== metrics the collector received
+  worker_attempts_total (sum): 7 points
+  worker_dead_letters_total (sum): 1 points
+  worker_job_run_seconds (histogram): 4 points
+  worker_job_wait_seconds (histogram): 3 points
+  worker_jobs_enqueued_total (sum): 4 points
+  worker_queue_jobs (gauge): 15 points
+  worker_rescued_total (sum): 1 points
+  worker_schedule_runs_total (sum): 1 points
+
+== webhook deliveries, by endpoint and key
+  billing job-2: 503, 503, 200
+  crm job-3: 503, 200
+  down job-4: 503, 503, 503, 503
+  gone job-5: 410
+  orders job-1: 200

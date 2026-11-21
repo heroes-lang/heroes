@@ -1,0 +1,270 @@
+# The demo: the job system run against its loopback stand-ins, scripted and
+# on a clock moved by hand, printing an account that is the same on every
+# run. The program's own thread serves the stand-ins of Redis, the collector
+# and the webhook endpoints (`standins/host`); a second thread drives the
+# run as a deployment would: a supervisor that enqueues and schedules, a
+# fleet of three worker threads, and at the end the dashboard, the metrics,
+# the logs, then `SHUTDOWN` to the stand-in, which ends the first thread's
+# loop. The first then tells what the collector and the endpoints received.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/path
+use <rebel>/redis
+use <rebel>/threads
+use <rebel>/time
+
+use cli/settings
+use demo/account
+use demo/clockwork
+use demo/script
+use ops/dashboard
+use pool/fleet
+use queue/store_clock
+use schedule/supervisor
+use schedule/timers
+use standins/collector/server as collector
+use standins/collector/tree
+use standins/host
+use standins/webhooks/receiver
+use telemetry/registry
+
+# The password the Redis stand-in asks of its clients.
+constant PASSWORD: str
+    "demo-secret"
+
+# The moment the demo's clock starts at.
+constant START: str
+    "2026-11-21T09:00:00Z"
+
+# How long the demo's clock runs, in minutes from `START`.
+constant HORIZON_MINUTES: i64
+    50
+
+# The longest the driver waits, in real time, for the workers to settle at
+# one moment before it gives the run up.
+constant SETTLE_MS: i64
+    60_000
+
+# The settings of the demo's run.
+#
+# - `redis_url`: the stand-in's URL.
+# - `otlp`: the collector's base URL.
+# - `dir`: the demo's folder.
+function demo_settings(redis_url: str, otlp: str, dir: str) -> settings.Settings
+    s @= settings.default_settings()
+    s.redis_url @ redis_url
+    s.queues @ ["webhooks", "default", "maintenance"]
+    s.workers @ 3
+    s.poll @ time.milliseconds(10).must()
+    s.first_wait @ time.seconds(10).must()
+    s.longest_wait @ time.minutes(2).must()
+    s.seed @ 42
+    s.otlp @ otlp
+    s.log_dir @ path.join_all([dir, "logs"])
+    s.log_max_bytes @ 1_024
+    s.log_keep @ 0
+    s.instance @ "demo"
+    return s
+
+# Prints `lines`, each a line.
+#
+# - `lines`: the lines.
+function say(lines: [str])
+    for line in lines
+        print(line)
+
+# The body of the driver's thread: the whole run, then `SHUTDOWN` to the
+# stand-in whatever came of it. Answers what went wrong, "" where nothing
+# did.
+#
+# - `arg`: JSON naming the stand-in's URL, the collector's, the endpoints'
+#   and the demo's folder.
+function drive(arg: str) -> str
+    problem = match run_script(arg)
+        .ok p  => p
+        .err e => f"{e.code}: {e.msg}"
+
+    match json.parse(arg)
+        .ok v =>
+            match redis.parse_url(json.text_of(json.member(v, key: "redis").default(.null_value)).default(""))
+                .ok opts =>
+                    match redis.connect(opts)
+                        .ok first =>
+                            c @= first
+                            _ = redis.call(@c, ["SHUTDOWN", "NOSAVE"]).is_err()
+                            _ = redis.close(@c).is_err()
+                        .err _ => _ = 0
+                .err _ => _ = 0
+        .err _ => _ = 0
+
+    return problem
+
+# The scripted run. Answers what could not be exported, "" where all was.
+#
+# - `arg`: what `drive` was given.
+#
+# Fails where the stand-in cannot be reached or a step of the store fails.
+function run_script(arg: str) -> str?
+    v = json.parse(arg)?
+    dir = json.text_of(json.member(v, key: "dir")?)?
+    hooks = json.text_of(json.member(v, key: "hooks")?)?
+    s = demo_settings(
+        redis_url: json.text_of(json.member(v, key: "redis")?)?,
+        otlp: json.text_of(json.member(v, key: "otlp")?)?,
+        dir: dir
+    )
+    start = time.parse(START, layout: .rfc3339)?
+    origin = time.unix_microseconds(start)
+    horizon = origin + HORIZON_MINUTES * 60_000_000
+    sup @= supervisor.start(s, schedules: script.schedules()?)?
+    say(["== the store's clock starts at " + START, "", "== enqueued"])
+
+    for job in script.jobs_of(hooks: hooks, upload: path.join_all([dir, "upload.txt"]), report_at: time.add(start, d: time.minutes(20)?)?)
+        match supervisor.enqueue(@sup, job: job)
+            .ok id => print(f"job {id} {job.kind} in {job.queue}")
+            .err e => print(f"refused {job.kind} in {job.queue}: {e.code}, {e.msg}")
+
+    workers @= fleet.start(@sup.client, s: s)?
+    print("")
+    print("== the clock")
+
+    ran = run_clock(@sup, s: s, origin: origin, horizon: horizon)
+    _ = fleet.ask_stop(@sup.client).is_err()
+    reports = fleet.wait_all(@workers)
+    ran?
+    supervisor.take_reports(@sup, reports: reports)
+    supervisor.refresh(@sup)?
+    end_us = store_clock.now_micros(@sup.client)?
+    print(f"{account.clock_of(end_us)} the fleet stopped")
+
+    for r in reports
+        if r.problem != ""
+            print(f"{r.worker}: {r.problem}")
+
+    say(["", "== jobs"])
+    say(account.job_lines(@sup.client, reports: reports))
+    say(["", "== dead letters"])
+    say(dashboard.dead_lines(@sup.client, queues: s.queues)?)
+    say(["", "== queues"])
+    say(dashboard.stats_lines(@sup.client)?)
+    say(["", "== metrics, as /metrics serves them"])
+    print(registry.prometheus_text(sup.registry))
+    exported = supervisor.finish(@sup)
+    say(["== logs"])
+    say(account.log_lines(s.log_dir)?)
+    return ok(exported)
+
+# Lets the demo's time pass: at each moment the fleet settles, the
+# schedules due are enqueued, and the clock moves to the next moment
+# something falls due, until nothing does before `horizon`.
+#
+# - `sup`: the supervisor.
+# - `s`: the run's settings.
+# - `origin`: the clock's start, in microseconds, which the ticks count from.
+# - `horizon`: the last moment the clock moves to, in microseconds.
+#
+# Fails `timeout` where the workers do not settle, and as the store fails.
+function run_clock(@sup: supervisor.Supervisor, s: settings.Settings, origin: i64, horizon: i64) -> ()?
+    while true
+        now = settle(@sup.client, queues: s.queues)?
+        enqueued = supervisor.tick(@sup)?
+
+        for id in enqueued
+            print(f"{account.clock_of(now)} the schedule enqueued job {id}")
+
+        if enqueued.len() > 0
+            continue
+
+        due = match clockwork.quiet(@sup.client, queues: s.queues, now_us: now)?
+            .idle i => i.next_us
+            .busy   => continue
+
+        next = earliest_after(now: now, a: due, b: timers.next_after(@sup.timers, now_us: now).default(-1))
+
+        if next < 0 || next > horizon
+            break
+
+        clockwork.move_to(@sup.client, at_us: clockwork.on_tick(at_us: next, origin_us: origin))?
+
+    return ok()
+
+# The earlier of `a` and `b` among those after `now`, -1 where neither is.
+#
+# - `now`: the moment, in microseconds.
+# - `a`: a moment, or -1 for none.
+# - `b`: another, or -1 for none.
+function earliest_after(now: i64, a: i64, b: i64) -> i64
+    if a > now && (b <= now || a <= b)
+        return a
+
+    if b > now
+        return b
+    return -1
+
+# Waits, in real time, until the fleet is idle at the store's clock, and
+# answers that moment. Fails `timeout` past `SETTLE_MS`.
+#
+# - `c`: the store's client.
+# - `queues`: the queues served.
+function settle(@c: redis.Client, queues: [str]) -> i64?
+    began = time.mark()?
+
+    while true
+        now = store_clock.now_micros(@c)?
+
+        match clockwork.quiet(@c, queues: queues, now_us: now)?
+            .idle _ => return ok(now)
+            .busy   => _ = 0
+
+        if time.to_units(time.elapsed(began)?, unit: .millisecond) > SETTLE_MS
+            return fail(code: "timeout", msg: f"the workers did not settle within {SETTLE_MS} ms")
+        time.sleep(time.milliseconds(2)?)
+
+# Runs the demo in the folder `dir`, made and removed: the stand-ins on this
+# thread, the run on another, then what the stand-ins received.
+#
+# - `dir`: the demo's folder, relative or not; it must not hold anything
+#   worth keeping, since it is removed.
+#
+# Fails where the folder or the stand-ins cannot be made, as their calls
+# fail.
+function run(dir: str) -> ()?
+    _ = fs.remove_all(dir).is_err()
+    fs.make_dir_all(path.join_all([dir, "logs"]))?
+    fs.write_bytes(path.join_all([dir, "upload.txt"]), data: bytes.from_text(script.upload_text()))?
+    start_us = time.unix_microseconds(time.parse(START, layout: .rfc3339)?)
+    h @= host.start(password: PASSWORD, start_us: start_us)?
+    redis_url = f"redis://:{PASSWORD}@127.0.0.1:{h.redis.listener.address.port}/0"
+    arg: json.Value = .object(
+        members: {"redis": .text(v: redis_url), "otlp": .text(v: collector.base_url(h.collector)), "hooks": .text(v: receiver.base_url(h.hooks)), "dir": .text(v: dir)}
+    )
+    t @= threads.spawn_text(drive, arg: json.format(arg)?)?
+    served = host.serve_until_shutdown(@h, most: time.minutes(5)?)
+    problem = threads.wait_text(@t)
+
+    if problem != ""
+        print("the run's problem: " + problem)
+
+    match served
+        .ok _  => _ = 0
+        .err e => print(f"the stand-ins stopped: {e.code}")
+
+    say(["", "== spans the collector received"])
+    say(tree.trees(h.collector.spans))
+    say(["", "== metrics the collector received"])
+
+    for m in h.collector.metrics
+        print(f"  {m.name} ({m.kind}): {m.points} points")
+
+    say(["", "== webhook deliveries, by endpoint and key"])
+    say(receiver.summary(h.hooks))
+    host.close(@h)
+    _ = fs.remove_all(dir).is_err()
+    return ok()
+
+test "earliest_after: the earlier of two moments to come, one passed or none left out"
+    assert earliest_after(now: 10, a: 30, b: 20) == 20
+    assert earliest_after(now: 10, a: 30, b: -1) == 30
+    assert earliest_after(now: 10, a: 5, b: 10) == -1

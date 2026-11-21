@@ -1,0 +1,233 @@
+# Redis's scripting commands on the stand-in: `EVAL` runs a Lua script with
+# the engine of `worker/lua`, whole and alone, against the stand-in's data;
+# `SCRIPT LOAD` keeps a script by its SHA-1 and `EVALSHA` runs it by that
+# name. A script read once is kept parsed, by its text, so the store's dozen
+# scripts are each read once however often they run.
+#
+# As on a real server, a script that fails half way keeps what it wrote
+# before failing: Redis promises a script runs alone, not that it rolls back.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/numbers
+use <rebel>/redis
+use <rebel>/strings
+
+use standins/lua/bridge
+use standins/lua/exec
+use standins/lua/library
+use standins/lua/parser
+use standins/lua/syntax
+use standins/lua/values
+use standins/redis/keyspace
+use standins/redis/resp
+
+# The scripts a stand-in has seen: each text by its SHA-1, and each text's
+# tree.
+record Scripts
+    # Each script's text, by its SHA-1 in lowercase hexadecimal.
+    by_sha: {str: str}
+    # Each script's tree, by its text.
+    parsed: {str: syntax.Chunk}
+
+# No script seen yet.
+function no_scripts() -> Scripts
+    return Scripts(by_sha: {}, parsed: {})
+
+# The SHA-1 of `text`, in lowercase hexadecimal, as Redis names a script.
+#
+# - `text`: the script.
+function sha_of(text: str) -> str
+    return bytes.format_hex(crypto.sha1_text(text))
+
+# Whether `name` is a command of this module.
+#
+# - `name`: the command, in capitals.
+function is_script_command(name: str) -> bool
+    return name == "EVAL" || name == "EVALSHA" || name == "SCRIPT"
+
+# The tree of `text`, read once and kept. Fails as `parser.parse` fails.
+#
+# - `scripts`: the scripts seen, which gain this one.
+# - `text`: the script.
+function chunk_of(@scripts: Scripts, text: str) -> syntax.Chunk?
+    match scripts.parsed[text]
+        .ok chunk => return ok(chunk)
+        .err _ =>
+            chunk = parser.parse(text)?
+            scripts.parsed[text] @ chunk
+            scripts.by_sha[sha_of(text)] @ text
+            return ok(chunk)
+
+# Runs the script `text` with its keys and arguments and answers its reply.
+#
+# - `ks`: the data.
+# - `scripts`: the scripts seen.
+# - `text`: the script.
+# - `rest`: the words after the script or its SHA-1: the count of keys,
+#   the keys, the arguments.
+function run_script(@ks: keyspace.Keyspace, @scripts: Scripts, text: str, rest: [str]) -> redis.Reply
+    count = match numbers.parse_int(rest[0])
+        .ok n  => n
+        .err _ => return resp.error_reply(code: "ERR", message: "value is not an integer or out of range")
+
+    if count < 0
+        return resp.error_reply(code: "ERR", message: "Number of keys can't be negative")
+
+    if count > rest.len() - 1
+        return resp.error_reply(code: "ERR", message: "Number of keys can't be greater than number of args")
+
+    chunk = match chunk_of(@scripts, text: text)
+        .ok c  => c
+        .err e => return resp.error_reply(code: "ERR", message: f"Error compiling script: {e.msg}")
+
+    m @= values.new_machine(chunk)
+    key_names = rest.slice(from: 1, to: 1 + count)
+    argv = rest.slice(from: 1 + count, to: rest.len())
+
+    match exec.run(@m, @ks, key_names: key_names, argv: argv)
+        .ok results =>
+            if results.len() == 0
+                return .null_value
+            return bridge.reply_of(m, v: results[0])
+        .err e =>
+            suffix = f" script: {sha_of(text)}"
+
+            if e.code == library.REDIS_ERROR
+                match bridge.error_of(e.msg)
+                    .error inner => return .error(code: inner.code, message: inner.message + suffix)
+                    .simple _ | .integer _ | .bulk _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ =>
+                        return resp.error_reply(code: "ERR", message: e.msg + suffix)
+            return resp.error_reply(code: "ERR", message: e.msg + suffix)
+
+# Runs `EVAL`, `EVALSHA` or `SCRIPT` and answers its reply.
+#
+# - `ks`: the data.
+# - `scripts`: the scripts seen.
+# - `words`: the whole command.
+function execute(@ks: keyspace.Keyspace, @scripts: Scripts, words: [str]) -> redis.Reply
+    name = strings.to_upper_ascii(words[0])
+
+    if name == "SCRIPT"
+        return script_command(@scripts, words: words)
+
+    if words.len() < 3
+        return resp.error_reply(
+            code: "ERR",
+            message: f"wrong number of arguments for '{strings.to_lower_ascii(name)}' command"
+        )
+
+    if name == "EVAL"
+        return run_script(@ks, @scripts, text: words[1], rest: words.slice(from: 2, to: words.len()))
+
+    match scripts.by_sha[strings.to_lower_ascii(words[1])]
+        .ok text => return run_script(@ks, @scripts, text: text, rest: words.slice(from: 2, to: words.len()))
+        .err _   => return resp.error_reply(code: "NOSCRIPT", message: "No matching script. Please use EVAL.")
+
+# `SCRIPT LOAD text`, `SCRIPT EXISTS sha ...` and `SCRIPT FLUSH`.
+#
+# - `scripts`: the scripts seen.
+# - `words`: the whole command.
+function script_command(@scripts: Scripts, words: [str]) -> redis.Reply
+    if words.len() < 2
+        return resp.error_reply(code: "ERR", message: "wrong number of arguments for 'script' command")
+
+    sub = strings.to_upper_ascii(words[1])
+
+    if sub == "LOAD" && words.len() == 3
+        match chunk_of(@scripts, text: words[2])
+            .ok _  => return resp.text_reply(sha_of(words[2]))
+            .err e => return resp.error_reply(code: "ERR", message: f"Error compiling script: {e.msg}")
+
+    if sub == "EXISTS" && words.len() >= 3
+        found: [redis.Reply] @= []
+
+        for sha in words.slice(from: 2, to: words.len())
+            if scripts.by_sha[strings.to_lower_ascii(sha)].is_err()
+                found @ found.push(.integer(v: 0))
+            else
+                found @ found.push(.integer(v: 1))
+
+        return .array(items: found)
+
+    if sub == "FLUSH"
+        scripts.by_sha @ {}
+        scripts.parsed @ {}
+        return resp.ok_reply()
+    return resp.error_reply(code: "ERR", message: f"unknown subcommand '{words[1]}'")
+
+# The words of `script`'s run, for a test: `EVAL`, the script, no key, then
+# `argv`.
+#
+# - `script`: the Lua text.
+# - `argv`: its arguments.
+function eval_words(script: str, argv: [str]) -> [str]
+    words: [str] @= ["EVAL", script, "0"]
+
+    for a in argv
+        words @ words.push(a)
+
+    return words
+
+test "execute: arithmetic, strings and tables, answered as Redis converts them"
+    ks @= keyspace.new_keyspace(.fixed(micros: 0))
+    s @= no_scripts()
+    assert execute(@ks, @s, words: eval_words("return 1 + 2 * 3", argv: [])) == .integer(v: 7)
+    assert execute(@ks, @s, words: eval_words("return ARGV[1] .. '-' .. #ARGV", argv: ["a", "b"])) == resp.text_reply("a-2")
+    answer = execute(
+        @ks,
+        @s,
+        words: eval_words("local t = {} table.insert(t, 'x') table.insert(t, 2) return t", argv: [])
+    )
+    assert answer == .array(items: [resp.text_reply("x"), .integer(v: 2)])
+    assert execute(@ks, @s, words: eval_words("return nil", argv: [])) == .null_value
+    assert execute(@ks, @s, words: eval_words("return {ok = 'fine'}", argv: [])) == .simple(v: "fine")
+
+test "execute: redis.call reaches the data, a missing value is false"
+    ks @= keyspace.new_keyspace(.fixed(micros: 0))
+    s @= no_scripts()
+    _ = execute(
+        @ks,
+        @s,
+        words: eval_words("redis.call('SET', 'k', ARGV[1]) return redis.call('GET', 'k')", argv: ["v"])
+    )
+    assert execute(@ks, @s, words: eval_words("return redis.call('GET', 'k')", argv: [])) == resp.text_reply("v")
+    assert execute(@ks, @s, words: eval_words("if redis.call('GET', 'nothing') == false then return 'absent' end return 'there'", argv: [])) == resp.text_reply("absent")
+
+test "execute: closures share their variables, loops and string.format"
+    ks @= keyspace.new_keyspace(.fixed(micros: 0))
+    s @= no_scripts()
+    script = "local n = 0 local function bump(by) n = n + by end for i = 1, 4 do bump(i) end return string.format('%03d', n)"
+    assert execute(@ks, @s, words: eval_words(script, argv: [])) == resp.text_reply("010")
+    loop = "local out = {} for _, v in ipairs({'a', 'b'}) do table.insert(out, v .. v) end return out"
+    assert execute(@ks, @s, words: eval_words(loop, argv: [])) == .array(items: [resp.text_reply("aa"), resp.text_reply("bb")])
+
+test "execute: an error in a command and a script that does not parse"
+    ks @= keyspace.new_keyspace(.fixed(micros: 0))
+    s @= no_scripts()
+    _ = execute(@ks, @s, words: eval_words("return redis.call('SET', 'k', 'v')", argv: []))
+
+    match execute(@ks, @s, words: eval_words("return redis.call('HGET', 'k', 'f')", argv: []))
+        .error e => assert e.code == "WRONGTYPE"
+        .simple _ | .integer _ | .bulk _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ =>
+            assert false
+
+    match execute(@ks, @s, words: eval_words("return (", argv: []))
+        .error e => assert e.code == "ERR"
+        .simple _ | .integer _ | .bulk _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ =>
+            assert false
+
+test "execute: a loop without end is stopped, a recursion without end too"
+    ks @= keyspace.new_keyspace(.fixed(micros: 0))
+    s @= no_scripts()
+
+    match execute(@ks, @s, words: eval_words("local function f() return 1 + f() end return f()", argv: []))
+        .error e => assert strings.contains(s: e.message, substr: "stack overflow")
+        .simple _ | .integer _ | .bulk _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ =>
+            assert false
+
+test "execute: calls nested forty-five deep run, within the engine's bound"
+    ks @= keyspace.new_keyspace(.fixed(micros: 0))
+    s @= no_scripts()
+    script = "local function f(n) if n == 0 then return 0 end return 1 + f(n - 1) end return f(45)"
+    assert execute(@ks, @s, words: eval_words(script, argv: [])) == .integer(v: 45)

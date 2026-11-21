@@ -1,0 +1,86 @@
+# How the demo lets time pass: the store's clock stands still while the
+# workers run what is due, and is moved by hand once they are all idle, to
+# the next moment something falls due: a job's retry, a scheduled job, a
+# recurring schedule's run. Each move lands on a tick of a real fleet's
+# idle poll, as a worker asking every few seconds would first see the job,
+# so the attempts' waits in the metrics are what a real fleet's would be.
+#
+# "All idle" is asked of the store, and in this order: no job ready, then no
+# job running. Only a ready job can be claimed, and none becomes ready while
+# the clock stands, so once the first answer is no, a running job seen by the
+# second was claimed before it, and the move waits for it.
+
+use <rebel>/jobs/redis_store
+use <rebel>/redis
+use <rebel>/time
+
+# The tick a move lands on: the idle poll of the fleet the demo stands for,
+# five seconds, in microseconds.
+constant TICK_US: i64
+    5_000_000
+
+# What the store says of the fleet's work at a moment.
+variant Quiet
+    # A job is ready or running: the workers are at it.
+    busy
+    # Nothing is ready or running.
+    idle
+        # When the next job waiting becomes due, in microseconds; -1 for none.
+        next_us: i64
+
+# Whether the fleet serving `queues` is idle at `now_us`, and when its next
+# waiting job becomes due.
+#
+# - `c`: the store's client.
+# - `queues`: the queues served.
+# - `now_us`: the store's clock, in microseconds.
+#
+# Fails as `redis_store.list` and `redis_store.counts` fail.
+function quiet(@c: redis.Client, queues: [str], now_us: i64) -> Quiet?
+    next: i64 @= -1
+
+    for q in queues
+        first = redis_store.list(@c, queue: q, state: .available, offset: 0, limit: 1)?
+
+        if first.len() > 0
+            due = time.unix_microseconds(first[0].run_at)
+
+            if due <= now_us
+                return ok(.busy)
+
+            if next < 0 || due < next
+                next @ due
+
+    for count in redis_store.counts(@c)?
+        if count.state == .running
+            return ok(.busy)
+
+    return ok(.idle(next_us: next))
+
+# `at_us` moved up to the first tick from `origin_us` at or after it.
+#
+# - `at_us`: a moment, in microseconds.
+# - `origin_us`: the moment the ticks are counted from.
+function on_tick(at_us: i64, origin_us: i64) -> i64
+    since = at_us - origin_us
+
+    if since <= 0
+        return origin_us
+
+    ticks = (since + TICK_US - 1) / TICK_US
+    return origin_us + ticks * TICK_US
+
+# Moves the stand-in's clock to `at_us`.
+#
+# - `c`: the store's client, the stand-in's.
+# - `at_us`: the moment, in microseconds since 1970.
+#
+# Fails as `redis.call` fails; a real Redis refuses the command as unknown.
+function move_to(@c: redis.Client, at_us: i64) -> ()?
+    _ = redis.call(@c, ["STANDIN.CLOCK", to_str(at_us)])?
+    return ok()
+
+test "on_tick: a moment moved up to the next five seconds, one on a tick kept"
+    assert on_tick(at_us: 12_300_000, origin_us: 0) == 15_000_000
+    assert on_tick(at_us: 15_000_000, origin_us: 0) == 15_000_000
+    assert on_tick(at_us: -1, origin_us: 0) == 0

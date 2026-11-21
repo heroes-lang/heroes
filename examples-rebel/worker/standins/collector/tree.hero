@@ -1,0 +1,171 @@
+# The spans a collector received, told as trees: one per trace, each span
+# under its parent, with its kind, attributes, status and events. Ids are
+# random and times are the wall clock's, so neither is told: a trace is
+# known by its spans, and the trees are put in an order their own text gives,
+# so the account reads the same whatever order the spans came in.
+
+use <rebel>/numbers
+use <rebel>/strings
+
+use standins/collector/received
+
+# The deepest a tree is told: spans nest no deeper in any trace a program
+# makes, and a parent that names a span of its own subtree stops here.
+constant MOST_DEPTH: i64
+    32
+
+# The line of `span`, after its indentation: name, kind, attributes, status.
+#
+# - `span`: the span.
+function line_of(span: received.ReceivedSpan) -> str
+    parts: [str] @= [span.name, f"[{span.kind}]"]
+
+    for a in span.attributes
+        parts @ parts.push(a.key + "=" + a.value)
+
+    if span.status == "error"
+        parts @ parts.push(f"status=error \"{span.status_message}\"")
+    else if span.status == "ok"
+        parts @ parts.push("status=ok")
+    return parts.join(" ")
+
+# The key a span sorts by among its siblings: its `job.id` and
+# `job.attempt` as numbers first where it has them, then its line.
+#
+# - `span`: the span.
+function sort_key(span: received.ReceivedSpan) -> str
+    id = numbers.parse_int(received.attribute(span.attributes, key: "job.id")).default(0)
+    attempt = numbers.parse_int(received.attribute(span.attributes, key: "job.attempt")).default(0)
+    return strings.pad_zeros(to_str(id), width: 12) + strings.pad_zeros(to_str(attempt), width: 6) + line_of(span)
+
+# The indexes of `spans` in the order `sort_key` gives.
+#
+# - `spans`: every span.
+# - `at`: the indexes to order.
+function ordered(spans: [received.ReceivedSpan], at: [i64]) -> [i64]
+    tagged: [str] @= []
+    by_tag: {str: [i64]} @= {}
+
+    for i in at
+        tag = sort_key(spans[i])
+
+        if by_tag[tag].is_err()
+            tagged @ tagged.push(tag)
+            by_tag[tag] @ []
+
+        same @= by_tag[tag].must()
+        same @ same.push(i)
+        by_tag[tag] @ same
+
+    out: [i64] @= []
+
+    for tag in sort(tagged)
+        for i in by_tag[tag].must()
+            out @ out.push(i)
+
+    return out
+
+# Adds the lines of span `at` and of its children, `depth` levels in, to
+# `out`.
+#
+# - `out`: the lines, grown.
+# - `spans`: every span.
+# - `children`: each span's children, by its trace and id.
+# - `at`: the span's index.
+# - `depth`: its level, 0 for a root.
+function tell(@out: [str], spans: [received.ReceivedSpan], children: {str: [i64]}, at: i64, depth: i64)
+    span = spans[at]
+    indent = repeat("  ", to_u64(depth + 1).must())
+    out @ out.push(indent + line_of(span))
+
+    for e in span.events
+        pairs: [str] @= []
+
+        for a in e.attributes
+            pairs @ pairs.push(a.key + "=" + a.value)
+
+        out @ out.push(indent + "  event " + e.name + ": " + pairs.join(" "))
+
+    if depth >= MOST_DEPTH
+        return
+
+    for child in ordered(spans, at: children[span.trace_id + "/" + span.span_id].default([]))
+        tell(@out, spans: spans, children: children, at: child, depth: depth + 1)
+
+# Every trace of `spans` told as a tree, a line each span and event; a span
+# whose parent was not received is told as a root, marked so.
+#
+# - `spans`: the spans received, in any order.
+function trees(spans: [received.ReceivedSpan]) -> [str]
+    present: {str: bool} @= {}
+
+    for s in spans
+        present[s.trace_id + "/" + s.span_id] @ true
+
+    children: {str: [i64]} @= {}
+    roots: [i64] @= []
+
+    for i in range(from: 0, to: spans.len())
+        s = spans[i]
+        parent = s.trace_id + "/" + s.parent_id
+
+        if s.parent_id == "" || present[parent].is_err()
+            roots @ roots.push(i)
+        else
+            under @= children[parent].default([])
+            under @ under.push(i)
+            children[parent] @ under
+
+    out: [str] @= []
+
+    for root in ordered(spans, at: roots)
+        s = spans[root]
+
+        orphan = if s.parent_id != ""
+            ", its parent not received"
+        else
+            ""
+        out @ out.push(f"trace from {s.service}{orphan}:")
+        tell(@out, spans: spans, children: children, at: root, depth: 0)
+
+    return out
+
+test "trees: children under their parent, ordered by job and attempt, ids not told"
+    root = received.ReceivedSpan(
+        service: "w",
+        trace_id: "aa",
+        span_id: "01",
+        parent_id: "",
+        name: "enqueue x",
+        kind: "producer",
+        attributes: [received.Attribute(key: "job.id", value: "7")],
+        events: [],
+        status: "unset",
+        status_message: ""
+    )
+    second = received.ReceivedSpan(
+        service: "w",
+        trace_id: "aa",
+        span_id: "03",
+        parent_id: "01",
+        name: "process x",
+        kind: "consumer",
+        attributes: [received.Attribute(key: "job.attempt", value: "2")],
+        events: [],
+        status: "ok",
+        status_message: ""
+    )
+    first = received.ReceivedSpan(
+        service: "w",
+        trace_id: "aa",
+        span_id: "02",
+        parent_id: "01",
+        name: "process x",
+        kind: "consumer",
+        attributes: [received.Attribute(key: "job.attempt", value: "1")],
+        events: [received.ReceivedEvent(name: "exception", attributes: [received.Attribute(key: "exception.message", value: "boom")])],
+        status: "error",
+        status_message: "boom"
+    )
+    told = trees([second, root, first])
+    assert told == ["trace from w:", "  enqueue x [producer] job.id=7", "    process x [consumer] job.attempt=1 status=error \"boom\"", "      event exception: exception.message=boom", "    process x [consumer] job.attempt=2 status=ok"]

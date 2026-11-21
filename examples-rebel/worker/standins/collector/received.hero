@@ -1,0 +1,262 @@
+# What the collector stand-in keeps of each request it receives: every span
+# of an `ExportTraceServiceRequest`, with the service that sent it, its ids
+# in hexadecimal, its parent, kind, attributes, events and status; and every
+# metric of an `ExportMetricsServiceRequest`, with its kind, its points and
+# what they add up to. Each is read from the message `protobuf.decode`
+# answers by the field names of `schema`.
+
+use <rebel>/bytes
+use <rebel>/numbers
+use <rebel>/protobuf
+
+# One attribute as the collector shows it: its key and its value as text.
+record Attribute
+    # The key.
+    key: str
+    # The value: a text as it is, a number in decimal, a list in brackets.
+    value: str
+
+# An event of a span: its name and attributes.
+record ReceivedEvent
+    # The event's name, `exception` for an error.
+    name: str
+    # Its attributes, in the order sent.
+    attributes: [Attribute]
+
+# A span as received.
+record ReceivedSpan
+    # The `service.name` of the resource it came under, "" where none.
+    service: str
+    # The trace's 16 bytes, in hexadecimal.
+    trace_id: str
+    # The span's 8 bytes, in hexadecimal.
+    span_id: str
+    # The parent's 8 bytes in hexadecimal, "" for a root.
+    parent_id: str
+    # Its name.
+    name: str
+    # Its kind: `internal`, `server`, `client`, `producer`, `consumer` or
+    # `unspecified`.
+    kind: str
+    # Its attributes, in the order sent.
+    attributes: [Attribute]
+    # Its events, in order.
+    events: [ReceivedEvent]
+    # Its status: `unset`, `ok` or `error`.
+    status: str
+    # The status's message, "" where none.
+    status_message: str
+
+# A metric as received: one family of one request.
+record ReceivedMetric
+    # The `service.name` of the resource it came under.
+    service: str
+    # Its name.
+    name: str
+    # Its kind: `gauge`, `sum`, `histogram`, `summary`, or `none`.
+    kind: str
+    # How many points it carried.
+    points: i64
+    # What its points add up to: the values of a gauge or a sum, the counts
+    # of a histogram or a summary.
+    total: f64
+
+# The messages of the repeated field `name` of `m`.
+#
+# - `schema`: the schema.
+# - `m`: the message.
+# - `name`: the field's name.
+function messages_of(schema: protobuf.Schema, m: protobuf.Message, name: str) -> [protobuf.Message]?
+    out: [protobuf.Message] @= []
+
+    for item in protobuf.items_of(protobuf.get(schema, m: m, field: name)?)?
+        out @ out.push(protobuf.message_of(item)?)
+
+    return ok(out)
+
+# The message of the field `name` of `m`, its empty message where unset.
+#
+# - `schema`: the schema.
+# - `m`: the message.
+# - `name`: the field's name.
+function message_field(schema: protobuf.Schema, m: protobuf.Message, name: str) -> protobuf.Message?
+    return protobuf.message_of(protobuf.get(schema, m: m, field: name)?)
+
+# The text of an `AnyValue`: its one value written as text, "" where it holds
+# none.
+#
+# - `schema`: the schema.
+# - `v`: the `AnyValue`.
+function any_text(schema: protobuf.Schema, v: protobuf.Message) -> str?
+    which = match protobuf.which_oneof(schema, m: v, oneof: "value")
+        .ok w  => w
+        .err _ => return ok("")
+
+    field = protobuf.get(schema, m: v, field: which)?
+
+    match which
+        "string_value" => return protobuf.text_of(field)
+        "bool_value" =>
+            if protobuf.bool_of(field)?
+                return ok("true")
+            return ok("false")
+        "int_value"    => return ok(to_str(protobuf.int_of(field)?))
+        "double_value" => return ok(numbers.format_float_shortest(protobuf.float_of(field)?))
+        "bytes_value"  => return ok(bytes.format_hex(protobuf.bytes_of(field)?))
+        "array_value" =>
+            parts: [str] @= []
+
+            for item in messages_of(schema, m: protobuf.message_of(field)?, name: "values")?
+                parts @ parts.push(any_text(schema, v: item)?)
+
+            return ok("[" + parts.join(", ") + "]")
+        _ =>
+            parts: [str] @= []
+
+            for kv in attributes_of(schema, list: messages_of(schema, m: protobuf.message_of(field)?, name: "values")?)?
+                parts @ parts.push(kv.key + "=" + kv.value)
+
+            return ok("{" + parts.join(", ") + "}")
+
+# The attributes `list` holds, each a `KeyValue`.
+#
+# - `schema`: the schema.
+# - `list`: the `KeyValue` messages.
+function attributes_of(schema: protobuf.Schema, list: [protobuf.Message]) -> [Attribute]?
+    out: [Attribute] @= []
+
+    for kv in list
+        key = protobuf.text_of(protobuf.get(schema, m: kv, field: "key")?)?
+        value = any_text(schema, v: message_field(schema, m: kv, name: "value")?)?
+        out @ out.push(Attribute(key: key, value: value))
+
+    return ok(out)
+
+# The value of the attribute `key` in `list`, "" where it is not there.
+#
+# - `list`: the attributes.
+# - `key`: the key.
+function attribute(list: [Attribute], key: str) -> str
+    for a in list
+        if a.key == key
+            return a.value
+
+    return ""
+
+# The `service.name` of the `Resource` field of `m`.
+#
+# - `schema`: the schema.
+# - `m`: a `ResourceSpans` or a `ResourceMetrics`.
+function service_of(schema: protobuf.Schema, m: protobuf.Message) -> str?
+    resource = message_field(schema, m: m, name: "resource")?
+    return ok(
+        attribute(attributes_of(schema, list: messages_of(schema, m: resource, name: "attributes")?)?, key: "service.name")
+    )
+
+# The name of the span kind numbered `n`.
+#
+# - `n`: the `SpanKind`'s number.
+function kind_name(n: i64) -> str
+    match n
+        1 => return "internal"
+        2 => return "server"
+        3 => return "client"
+        4 => return "producer"
+        5 => return "consumer"
+        _ => return "unspecified"
+
+# The span `m` of a request, under the service `service`.
+#
+# - `schema`: the schema.
+# - `m`: the `Span`.
+# - `service`: its resource's `service.name`.
+function span_of(schema: protobuf.Schema, m: protobuf.Message, service: str) -> ReceivedSpan?
+    events: [ReceivedEvent] @= []
+
+    for e in messages_of(schema, m: m, name: "events")?
+        name = protobuf.text_of(protobuf.get(schema, m: e, field: "name")?)?
+        events @ events.push(
+            ReceivedEvent(name: name, attributes: attributes_of(schema, list: messages_of(schema, m: e, name: "attributes")?)?)
+        )
+
+    status = message_field(schema, m: m, name: "status")?
+    code = protobuf.int_of(protobuf.get(schema, m: status, field: "code")?)?
+
+    status_name = match code
+        1 => "ok"
+        2 => "error"
+        _ => "unset"
+
+    return ok(
+        ReceivedSpan(service: service, trace_id: bytes.format_hex(protobuf.bytes_of(protobuf.get(schema, m: m, field: "trace_id")?)?), span_id: bytes.format_hex(protobuf.bytes_of(protobuf.get(schema, m: m, field: "span_id")?)?), parent_id: bytes.format_hex(protobuf.bytes_of(protobuf.get(schema, m: m, field: "parent_span_id")?)?), name: protobuf.text_of(protobuf.get(schema, m: m, field: "name")?)?, kind: kind_name(protobuf.int_of(protobuf.get(schema, m: m, field: "kind")?)?), attributes: attributes_of(schema, list: messages_of(schema, m: m, name: "attributes")?)?, events: events, status: status_name, status_message: protobuf.text_of(protobuf.get(schema, m: status, field: "message")?)?)
+    )
+
+# Every span of the `ExportTraceServiceRequest` `body`.
+#
+# - `schema`: the schema.
+# - `body`: the request's bytes.
+#
+# Fails `invalid` where the bytes are no such request, as
+# `protobuf.decode` fails.
+function spans_of(schema: protobuf.Schema, body: [u8]) -> [ReceivedSpan]?
+    request = protobuf.decode(schema, type_name: "otlp.ExportTraceServiceRequest", data: body)?
+    out: [ReceivedSpan] @= []
+
+    for rs in messages_of(schema, m: request, name: "resource_spans")?
+        service = service_of(schema, m: rs)?
+
+        for ss in messages_of(schema, m: rs, name: "scope_spans")?
+            for span in messages_of(schema, m: ss, name: "spans")?
+                out @ out.push(span_of(schema, m: span, service: service)?)
+
+    return ok(out)
+
+# The value of a `NumberDataPoint`, its double or its integer.
+#
+# - `schema`: the schema.
+# - `point`: the point.
+function point_value(schema: protobuf.Schema, point: protobuf.Message) -> f64?
+    match protobuf.which_oneof(schema, m: point, oneof: "value")
+        .ok which =>
+            v = protobuf.get(schema, m: point, field: which)?
+
+            if which == "as_int"
+                return ok(to_f64(protobuf.int_of(v)?))
+            return protobuf.float_of(v)
+        .err _ => return ok(0.0)
+
+# Every metric of the `ExportMetricsServiceRequest` `body`.
+#
+# - `schema`: the schema.
+# - `body`: the request's bytes.
+#
+# Fails `invalid` where the bytes are no such request.
+function metrics_of(schema: protobuf.Schema, body: [u8]) -> [ReceivedMetric]?
+    request = protobuf.decode(schema, type_name: "otlp.ExportMetricsServiceRequest", data: body)?
+    out: [ReceivedMetric] @= []
+
+    for rm in messages_of(schema, m: request, name: "resource_metrics")?
+        service = service_of(schema, m: rm)?
+
+        for sm in messages_of(schema, m: rm, name: "scope_metrics")?
+            for metric in messages_of(schema, m: sm, name: "metrics")?
+                name = protobuf.text_of(protobuf.get(schema, m: metric, field: "name")?)?
+                kind = protobuf.which_oneof(schema, m: metric, oneof: "data").default("none")
+                points: [protobuf.Message] @= []
+
+                if kind != "none"
+                    points @ messages_of(schema, m: message_field(schema, m: metric, name: kind)?, name: "data_points")?
+
+                total: f64 @= 0.0
+
+                for p in points
+                    if kind == "histogram" || kind == "summary"
+                        total @ total + to_f64(protobuf.int_of(protobuf.get(schema, m: p, field: "count")?)?)
+                    else
+                        total @ total + point_value(schema, point: p)?
+
+                out @ out.push(
+                    ReceivedMetric(service: service, name: name, kind: kind, points: points.len(), total: total)
+                )
+
+    return ok(out)
