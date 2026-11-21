@@ -2268,6 +2268,62 @@ test "a name a linked library needs and nothing defines is told at its group or 
     assert !shell.exists(path + ".out")
     assert !shell.remove_tree(scratch).is_err()
 
+# The files of defect 2636's case: a library's header in `inc/`, the
+# library's source in `lib/`, and a `path` package binding the header and
+# linking the library without shipping either, beside a program holding the
+# package's record by value.
+function include2636_files() -> [Written]
+    return [
+        Written(name: "inc/inc2636.h", text: "#include <stdint.h>\ntypedef struct inc_pair { int64_t a; int64_t b; } inc_pair;\nint64_t inc_sum(int64_t a, int64_t b);\n")
+        Written(name: "bind/bind.hero", text: "extern \"inc2636.h\" link \"inc2636\"\n    record Pair tag inc_pair\n        a: i64\n        b: i64\n    function inc_sum(a: i64, b: i64) -> i64\n\nfunction make(a: i64, b: i64) -> Pair\n    return Pair(a: a, b: b)\n\nfunction sum(p: Pair) -> i64\n    return inc_sum(a: p.a, b: p.b)\n")
+        Written(name: "heroes.toml", text: "[dependencies.bind]\npath = \"bind\"\n")
+        Written(name: "main.hero", text: "use <bind>/bind\n\nfunction main()\n    p: bind.Pair = bind.make(a: 3, b: 4)\n    print(bind.sum(p))\n")
+    ]
+
+# DEFECT 2636, asked of the compiler itself: a `path` package binds a
+# library's header it does not ship, `inc2636.h`, and links that library,
+# `libinc2636.a`, built here from one C file, the header and the library each
+# in a folder of its own, as a release installed apart from the system's is
+# (Homebrew's keg-only SQLite, vcpkg's on Windows). A program holding the
+# package's record by value, built with `--include` naming the header's
+# folder and `--library` the library's, builds and prints what the library
+# answers, as the same two folders named by `CPATH` and `LIBRARY_PATH` do:
+# both halves come from folders the build names, one release. Until the
+# repair the flags were refused `shadowed_header`, the header told as
+# standing in for the package's own, a file the package never had, and the
+# variables built (measured on this Mac with Rebel's `sql/sqlite` and
+# Homebrew's SQLite 3.54.1, 2026-11-21). The archive is made by the
+# machine's own `ar`; a machine that runs no script, Windows, is not asked.
+test "a header a package binds and does not ship, and its library, each of a folder the flags name, build as the variables do (defect 2636)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/include2636"
+
+    for sub in ["/inc", "/lib", "/bind"]
+        assert !shell.mkdir_all(dir + sub).is_err()
+
+    assert !c_library(scratch: scratch, dir: dir + "/lib", library: "inc2636", sources: [Written(name: "inc2636.c", text: "#include <stdint.h>\nint64_t inc_sum(int64_t a, int64_t b) { return a + b + 100; }\n")], shared: false).is_err()
+    assert !wrote(dir: dir, files: include2636_files()).is_err()
+    flags = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", dir + "/main.hero", "--include", dir + "/inc", "--library", dir + "/lib", "-o", dir + "/flags.out"]
+    ).must()
+    assert !strings.contains(s: flags.err, substr: "error")
+    assert flags.code == 0
+    assert ran_out(scratch: scratch, binary: dir + "/flags.out") == "107\n"
+    variables = shell.run_given(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", dir + "/main.hero", "-o", dir + "/variables.out"],
+        given: [shell.Variable(name: "CPATH", value: dir + "/inc"), shell.Variable(name: "LIBRARY_PATH", value: dir + "/lib")]
+    ).must()
+    assert variables.code == 0
+    assert ran_out(scratch: scratch, binary: dir + "/variables.out") == "107\n"
+    assert !shell.remove_tree(scratch).is_err()
+
 # DEFECT 2372, asked of the compiler itself: a group binding `top_value`
 # from a header whose `static inline` body calls `base_helper`, the group
 # linking a `libtop2372.a` that defines nothing the program calls, is told at

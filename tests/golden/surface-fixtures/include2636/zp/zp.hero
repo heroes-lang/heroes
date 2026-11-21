@@ -1,0 +1,11 @@
+# The package `zp`, a folder of the author's own that the program's
+# catalogue names by `path`: a group of a header it does not ship,
+# `zver2636.h`, linking the platform's library `z` (defect 2636).
+extern "zver2636.h" link "z"
+    record Mark tag zver_mark
+        major: i64
+        minor: i64
+    function zlibVersion() -> cstr
+
+function mark() -> Mark
+    return Mark(major: 1, minor: validated(c: zlibVersion()).default("").len())

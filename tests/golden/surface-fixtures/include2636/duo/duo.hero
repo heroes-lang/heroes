@@ -1,0 +1,19 @@
+# The package `duo`, a folder of the author's own that the program's
+# catalogue names by `path`: one group of the header it ships beside this
+# file, `duo2636.h`, and one of a header it does not ship, `rec2636.h`, the
+# library's to supply (defect 2636).
+extern "duo2636.h"
+    record Tally tag duo_tally
+        n: i64
+    constant DUO_STEP: i64
+
+extern "rec2636.h"
+    record Pair tag rec_pair
+        a: i64
+        b: i64
+
+function tally(n: i64) -> Tally
+    return Tally(n: n * DUO_STEP)
+
+function pair(a: i64, b: i64) -> Pair
+    return Pair(a: a, b: b)

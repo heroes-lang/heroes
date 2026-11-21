@@ -1,0 +1,17 @@
+# Defect 2636, lane lane-include, 2026-11-21: the `path` package `duo` ships
+# `duo2636.h` and binds `rec2636.h` it does not ship, and this program holds
+# a record of each by value. With `--include` naming `inc/`, which holds only
+# the library's `rec2636.h`, the package's own file is read from its folder
+# and the library's from `inc/`, and the build runs. With `--include` naming
+# `both/`, which holds a file of each name, its `duo2636.h` stands in front of
+# the package's own and is refused `shadowed_header` (defect 2357), while its
+# `rec2636.h` stands in front of nothing of the package's and is not told.
+# No mark: each verdict is a flag's, and built plainly no folder holds
+# `rec2636.h`.
+use <duo>/duo
+
+function main()
+    t: duo.Tally = duo.tally(n: 21)
+    p: duo.Pair = duo.pair(a: 1, b: 2)
+    print(t.n)
+    print(p.a + p.b)

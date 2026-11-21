@@ -1,0 +1,15 @@
+# Defect 2636, lane lane-include, 2026-11-21: a surface fixture rather than a
+# `run` case, since every build of a `path` entry says so on stderr.
+#
+# A program holding by value the record of a `path` package's group whose
+# header, `rec2636.h`, the package does not ship. With `--include` naming
+# `inc/`, the folder that holds the library's header, both units read that
+# one file, and the build runs; until the repair the file was refused
+# `shadowed_header` as standing in for the package's own, which it never had.
+# No mark: built plainly, no folder holds the header, and that refusal is
+# `ffi_missing_header`'s.
+use <rec>/rec
+
+function main()
+    p: rec.Pair = rec.make(a: 3, b: 4)
+    print(rec.scaled(p))
