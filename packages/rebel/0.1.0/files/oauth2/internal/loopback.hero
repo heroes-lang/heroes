@@ -241,7 +241,7 @@ function answer(@state: State, r: http.Request) -> http.Response
         return refused
 
     if path == "/jwks"
-        members: {str: json.Value} = {"keys": .list(items: [jose.to_json(jose.public_of(state.key).must())])}
+        members: {str: json.Value} = {"keys": .list(items: [jose.key_json(jose.public_of(state.key).must())])}
         return answer_json(200, members: members)
 
     if path == "/token"

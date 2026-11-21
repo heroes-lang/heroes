@@ -71,7 +71,7 @@ use yaml
 ## Codes
 
 # The code of a document, a request or a response not of its form:
-# `from_json`, `parse`, `check`, `read_request` and `check_response` fail
+# `document_of`, `parse`, `check`, `read_request` and `check_response` fail
 # with it.
 constant INVALID: str
     "invalid"
@@ -88,7 +88,7 @@ constant EXISTS: str
     "exists"
 
 # The code of an OpenAPI version other than 3.1 and of a reference to another
-# document: `from_json`, `parse` and `new_validator` fail with it.
+# document: `document_of`, `parse` and `new_validator` fail with it.
 constant UNSUPPORTED: str
     "unsupported"
 
@@ -232,7 +232,7 @@ record Tag
 # - `title`: the API's title.
 # - `version`: the API's own version, such as `1.0.0`.
 #
-# See also `add_operation`, `to_json`.
+# See also `add_operation`, `document_json`.
 function new_document(title: str, version: str) -> Document
     return Document(
         openapi: OPENAPI_VERSION,
@@ -1731,8 +1731,8 @@ function requirement(scheme: str, scopes: [str]) -> SecurityRequirement
 #
 # - `doc`: the document.
 #
-# See also `format_json`, `from_json`.
-function to_json(doc: Document) -> json.Value
+# See also `format_json`, `document_of`.
+function document_json(doc: Document) -> json.Value
     m: {str: json.Value} @= {}
     m["openapi"] @ .text(v: doc.openapi)
     m["info"] @ info_json(doc.info)
@@ -1784,7 +1784,7 @@ function to_json(doc: Document) -> json.Value
 # and not an `x-` field, the message naming it by its JSON pointer. It
 # checks the form of every object and nothing more: `check` asks what holds
 # between them.
-function from_json(v: json.Value) -> Document?
+function document_of(v: json.Value) -> Document?
     version = objects.text_at(v, key: "openapi")
 
     if version == ""
@@ -1839,7 +1839,7 @@ function from_json(v: json.Value) -> Document?
 #
 # Fails `unsupported` where a value of it is a `nan` or an infinity.
 function format_json(doc: Document) -> str?
-    return json.format_indented(to_json(doc), width: 2)
+    return json.format_indented(document_json(doc), width: 2)
 
 # `doc` as a YAML document, in block style.
 #
@@ -1847,14 +1847,14 @@ function format_json(doc: Document) -> str?
 #
 # Fails as `yaml.format` does.
 function format_yaml(doc: Document) -> str?
-    return yaml.format(to_json(doc))
+    return yaml.format(document_json(doc))
 
 # The document `text` writes, as JSON or as YAML.
 #
 # - `text`: the text; one whose first character past white space is `{` is
 #   read as JSON, any other as YAML.
 #
-# Fails as `json.parse`, `yaml.parse` and `from_json` do. A YAML document
+# Fails as `json.parse`, `yaml.parse` and `document_of` do. A YAML document
 # writes a status as a key in quotes, `"200":`, as OpenAPI asks: `yaml` reads
 # a key that is a number as no text, and refuses it.
 function parse(text: str) -> Document?
@@ -1869,7 +1869,7 @@ function parse(text: str) -> Document?
         v @ json.parse(text)?
     else
         v @ yaml.parse(text)?
-    return from_json(v)
+    return document_of(v)
 
 ## A document checked
 
@@ -1900,7 +1900,7 @@ record Problem
 function errors_of(doc: Document) -> [Problem]
     out: [Problem] @= []
 
-    for p in checks.problems(to_json(doc))
+    for p in checks.problems(document_json(doc))
         out @ out.push(Problem(pointer: p.pointer, message: p.message))
 
     return out
@@ -2232,7 +2232,7 @@ record Values
 # schema. Its cost is that of compiling each schema once, with the components
 # it names.
 function new_validator(doc: Document) -> Validator?
-    return ok(Validator(document: doc, code: compiled.compile(to_json(doc))?))
+    return ok(Validator(document: doc, code: compiled.compile(document_json(doc))?))
 
 # Every issue of `r` against the operation of `v`'s document that takes it.
 #
@@ -2551,7 +2551,7 @@ function info_json(info: Info) -> json.Value
 #
 # - `v`: an Info object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function info_of(v: json.Value) -> Info?
     shape.check(v, kind: shape.INFO)?
     c = objects.value_at(v, key: "contact")
@@ -2586,7 +2586,7 @@ function server_json(server: Server) -> json.Value
 #
 # - `v`: a Server object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function server_of(v: json.Value) -> Server?
     shape.check(v, kind: shape.SERVER)?
     variables: {str: ServerVariable} @= {}
@@ -2622,7 +2622,7 @@ function tag_json(tag: Tag) -> json.Value
 #
 # - `v`: a Tag object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function tag_of(v: json.Value) -> Tag?
     shape.check(v, kind: shape.TAG)?
     docs: ExternalDocs @= new_external_docs(url: "", description: "")
@@ -2647,7 +2647,7 @@ function external_docs_json(docs: ExternalDocs) -> json.Value
 #
 # - `v`: an External Documentation object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function external_docs_of(v: json.Value) -> ExternalDocs?
     shape.check(v, kind: shape.EXTERNAL_DOCS)?
     return ok(
@@ -2691,7 +2691,7 @@ function path_item_json(item: PathItem) -> json.Value
 #
 # - `v`: a Path Item object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function path_item_of(v: json.Value) -> PathItem?
     shape.check(v, kind: shape.PATH_ITEM)?
     operations: {str: Operation} @= {}
@@ -2770,7 +2770,7 @@ function operation_json(operation: Operation) -> json.Value
 #
 # - `v`: an Operation object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function operation_of(v: json.Value) -> Operation?
     shape.check(v, kind: shape.OPERATION)?
     docs: ExternalDocs @= new_external_docs(url: "", description: "")
@@ -2852,7 +2852,7 @@ function parameter_json(p: Parameter) -> json.Value
 #
 # - `v`: a Parameter object or a Reference object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function parameter_of(v: json.Value) -> Parameter?
     shape.check(v, kind: shape.PARAMETER)?
 
@@ -2915,7 +2915,7 @@ function request_body_json(body: RequestBody) -> json.Value
 #
 # - `v`: a Request Body object or a Reference object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function request_body_of(v: json.Value) -> RequestBody?
     shape.check(v, kind: shape.REQUEST_BODY)?
 
@@ -2960,7 +2960,7 @@ function media_type_json(media: MediaType) -> json.Value
 #
 # - `v`: a Media Type object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function media_type_of(v: json.Value) -> MediaType?
     shape.check(v, kind: shape.MEDIA_TYPE)?
     examples: {str: Example} @= {}
@@ -3003,7 +3003,7 @@ function encoding_json(encoding: Encoding) -> json.Value
 #
 # - `v`: an Encoding object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function encoding_of(v: json.Value) -> Encoding?
     shape.check(v, kind: shape.ENCODING)?
     headers: {str: Header} @= {}
@@ -3050,7 +3050,7 @@ function response_json(response: Response) -> json.Value
 #
 # - `v`: a Response object or a Reference object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function response_of(v: json.Value) -> Response?
     shape.check(v, kind: shape.RESPONSE)?
 
@@ -3113,7 +3113,7 @@ function header_json(header: Header) -> json.Value
 #
 # - `v`: a Header object or a Reference object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function header_of(v: json.Value) -> Header?
     shape.check(v, kind: shape.HEADER)?
 
@@ -3160,7 +3160,7 @@ function example_json(example: Example) -> json.Value
 #
 # - `v`: an Example object or a Reference object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function example_of(v: json.Value) -> Example?
     shape.check(v, kind: shape.EXAMPLE)?
     return ok(
@@ -3189,7 +3189,7 @@ function link_json(link: Link) -> json.Value
 #
 # - `v`: a Link object or a Reference object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function link_of(v: json.Value) -> Link?
     shape.check(v, kind: shape.LINK)?
 
@@ -3224,7 +3224,7 @@ function callback_json(callback: Callback) -> json.Value
 #
 # - `v`: a Callback object or a Reference object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function callback_of(v: json.Value) -> Callback?
     shape.check(v, kind: shape.CALLBACK)?
 
@@ -3306,7 +3306,7 @@ function components_json(components: Components) -> json.Value
 #
 # - `v`: a Components object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function components_of(v: json.Value) -> Components?
     shape.check(v, kind: shape.COMPONENTS)?
     out @= new_components()
@@ -3401,7 +3401,7 @@ function security_scheme_json(scheme: SecurityScheme) -> json.Value
 #
 # - `v`: a Security Scheme object or a Reference object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function security_scheme_of(v: json.Value) -> SecurityScheme?
     shape.check(v, kind: shape.SECURITY_SCHEME)?
 
@@ -3447,7 +3447,7 @@ function security_requirement_json(alternative: SecurityRequirement) -> json.Val
 #
 # - `v`: a Security Requirement object.
 #
-# Fails `invalid` as `from_json` does.
+# Fails `invalid` as `document_of` does.
 function security_requirement_of(v: json.Value) -> SecurityRequirement?
     shape.check(v, kind: shape.REQUIREMENT)?
     schemes: {str: [str]} @= {}
@@ -3465,20 +3465,20 @@ function security_requirement_of(v: json.Value) -> SecurityRequirement?
 
 ## Tests
 
-test "new_document and to_json: the smallest document, and the order of its fields"
+test "new_document and document_json: the smallest document, and the order of its fields"
     doc @= new_document(title: "T", version: "1")
-    assert json.format(to_json(doc)).must() == "{\"openapi\":\"3.1.2\",\"info\":{\"title\":\"T\",\"version\":\"1\"},\"paths\":{}}"
+    assert json.format(document_json(doc)).must() == "{\"openapi\":\"3.1.2\",\"info\":{\"title\":\"T\",\"version\":\"1\"},\"paths\":{}}"
     doc.external_docs @ new_external_docs(url: "https://e.org", description: "")
     doc.extensions["x-logo"] @ .text(v: "l.png")
     doc.json_schema_dialect @ DIALECT_URI
-    assert json.format(to_json(doc)).must() == "{\"openapi\":\"3.1.2\",\"info\":{\"title\":\"T\",\"version\":\"1\"},\"jsonSchemaDialect\":\"https://spec.openapis.org/oas/3.1/dialect/base\",\"paths\":{},\"externalDocs\":{\"url\":\"https://e.org\"},\"x-logo\":\"l.png\"}"
+    assert json.format(document_json(doc)).must() == "{\"openapi\":\"3.1.2\",\"info\":{\"title\":\"T\",\"version\":\"1\"},\"jsonSchemaDialect\":\"https://spec.openapis.org/oas/3.1/dialect/base\",\"paths\":{},\"externalDocs\":{\"url\":\"https://e.org\"},\"x-logo\":\"l.png\"}"
     assert errors_of(doc).len() == 0
 
-test "parse and to_json: every object of the full document read and written back, nothing lost"
+test "parse and document_json: every object of the full document read and written back, nothing lost"
     text = fixture.full_yaml()
     doc = parse(text).must()
-    assert to_json(doc) == yaml.parse(text).must()
-    assert from_json(to_json(doc)).must() == doc
+    assert document_json(doc) == yaml.parse(text).must()
+    assert document_of(document_json(doc)).must() == doc
     assert parse(format_yaml(doc).must()).must() == doc
     assert parse(format_json(doc).must()).must() == doc
     assert errors_of(doc).len() == 0
@@ -3486,35 +3486,35 @@ test "parse and to_json: every object of the full document read and written back
 test "parse: the store of pets, in YAML and in JSON"
     text = fixture.pets_yaml()
     doc = parse(text).must()
-    assert from_json(to_json(doc)).must() == doc
-    assert !objects.has(json.value_at(to_json(doc), pointer: "/paths/~1pets/get/parameters/4").must(), key: "explode")
+    assert document_of(document_json(doc)).must() == doc
+    assert !objects.has(json.value_at(document_json(doc), pointer: "/paths/~1pets/get/parameters/4").must(), key: "explode")
     assert doc.paths["/pets"].must().operations["get"].must().parameters.len() == 9
-    assert parse("  \n" + json.format(to_json(doc)).must()).must() == doc
+    assert parse("  \n" + json.format(document_json(doc)).must()).must() == doc
     assert parse("").is_err()
     assert parse("{").is_err()
 
-test "from_json: a version not of 3.1, a field unknown, a location unknown, and no object"
-    match from_json(json.parse("{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"t\", \"version\": \"1\"}, \"paths\": {}}").must())
+test "document_of: a version not of 3.1, a field unknown, a location unknown, and no object"
+    match document_of(json.parse("{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"t\", \"version\": \"1\"}, \"paths\": {}}").must())
         .ok _  => assert false
         .err e => assert e.code == UNSUPPORTED
 
-    match from_json(json.parse("{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"t\", \"version\": \"1\", \"extra\": 1}, \"paths\": {}}").must())
+    match document_of(json.parse("{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"t\", \"version\": \"1\", \"extra\": 1}, \"paths\": {}}").must())
         .ok _ => assert false
         .err e =>
             assert e.code == INVALID
             assert e.msg == "at /info/extra: `extra` is not a field of an Info object, nor an `x-` field"
 
-    assert from_json(
+    assert document_of(
         json.parse("{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"t\", \"version\": \"1\"}, \"paths\": {\"/a\": {\"get\": {\"parameters\": [{\"name\": \"a\", \"in\": \"body\"}]}}}}").must()
     ).is_err()
 
-    match from_json(.null_value)
+    match document_of(.null_value)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-    assert from_json(json.parse("{}").must()).is_err()
+    assert document_of(json.parse("{}").must()).is_err()
 
-test "from_json: callbacks nested deeper than the most read are refused"
+test "document_of: callbacks nested deeper than the most read are refused"
     inner: json.Value @= json.parse("{\"responses\": {\"200\": {\"description\": \"x\"}}}").must()
 
     for _ in range(from: 0, to: 12)
@@ -4419,13 +4419,13 @@ test "requirement: read and write"
     assert json.format(security_requirement_json(requirement(scheme: "oauth", scopes: ["read", "write"]))).must() == "{\"oauth\":[\"read\",\"write\"]}"
 
 # A document as JSON.
-test "to_json: the smallest document"
-    assert json.format(to_json(new_document(title: "Pets", version: "1.0.0"))).must() == "{\"openapi\":\"3.1.2\",\"info\":{\"title\":\"Pets\",\"version\":\"1.0.0\"},\"paths\":{}}"
+test "document_json: the smallest document"
+    assert json.format(document_json(new_document(title: "Pets", version: "1.0.0"))).must() == "{\"openapi\":\"3.1.2\",\"info\":{\"title\":\"Pets\",\"version\":\"1.0.0\"},\"paths\":{}}"
 
 # A document read from JSON.
-test "from_json: back again"
+test "document_of: back again"
     doc = new_document(title: "Pets", version: "1.0.0")
-    assert from_json(to_json(doc)).must() == doc
+    assert document_of(document_json(doc)).must() == doc
 
 # A document as JSON text.
 test "format_json: two spaces"
