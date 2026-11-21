@@ -344,7 +344,9 @@ jobs:
       # read from Homebrew's API 2026-11-20), which its formula registers with
       # no driver manager, so this step registers it as `SQLite3`; and GNU's
       # `timeout`, as `gtimeout`, which bounds each driver (macOS has none of
-      # its own; Linux and Git bash on Windows carry it as `/usr/bin/timeout`).
+      # its own; Git bash on Windows carries GNU's as `/usr/bin/timeout`, and
+      # `ubuntu-26.04` uutils' there, the drivers' step says what is asked of
+      # each).
       # The untap and the auto-update
       # are `ci.yml`'s, for its reasons.
       - name: Install what Rebel opens, Darwin
@@ -485,11 +487,22 @@ jobs:
               || { echo "::error::the Secret Service keeps no secret in this session, so keyring's tests would answer \`unsupported\` on a leg meant to run them"; exit 1; }
             echo "the Secret Service keeps a secret in this session"
           fi
-          # GNU's `timeout` by its path, since Windows' System32 holds a
-          # `timeout.exe` that waits instead, and asked that it is GNU's.
+          # `timeout` by its path, since Windows' System32 holds a
+          # `timeout.exe` that waits instead: GNU's on Darwin (`gtimeout`) and
+          # on Windows (Git's), uutils' on `ubuntu-26.04`, whose
+          # `/usr/bin/timeout` links `rust-coreutils` 0.10.0 (read on both
+          # Linux runners, 2026-11-21, the branch `rebel-ci-probe`'s run
+          # 44913457527). It is asked what every run below reads of it, not
+          # whose it is: a command past its time ends 124, and one that
+          # ignores TERM is killed by `-k` and ends 137. All four legs
+          # answered both in that run.
           case "$RUNNER_OS" in macOS) bound=gtimeout ;; *) bound=/usr/bin/timeout ;; esac
-          "$bound" --version 2> /dev/null | head -n 1 | grep -q 'GNU coreutils' \
-            || { echo "::error::$bound is not GNU's timeout on this runner, and every driver runs under it"; exit 1; }
+          "$bound" 1 sleep 30; past=$?
+          "$bound" -k 1 1 bash -c 'trap "" TERM; sleep 30'; killed=$?
+          if [ "$past" -ne 124 ] || [ "$killed" -ne 137 ]; then
+            echo "::error::$bound ($("$bound" --version 2> /dev/null | head -n 1)) ended a command past its time with $past and one that ignores TERM with $killed, where every driver's run reads 124 and 137"
+            exit 1
+          fi
           logs=build/rebel-logs
           mkdir -p "$logs"
           {
