@@ -719,6 +719,24 @@ function test_listener() -> Listener
         protocols: ""
     )
 
+# A plain listener on 127.0.0.1 at a port `test_drawn_port` draws, a
+# hundred draws at most, or `nullptr`. The tests of `HERO_TLS_FOREVER` take
+# the first connection it accepts for their client's (`test_hold_and_close`)
+# and wait for that client for ever; on port 0 a connect another program
+# steered to the port the system gives next reached it first in 4 runs of
+# 34, and the client, never accepted, waited for ever (2026-11-21).
+function test_plain_listener() -> hero_net.Socket
+    tries @= 0
+
+    while tries < 100
+        tries @ tries + 1
+        made = hero_net.listen(address: "127.0.0.1", port: test_drawn_port())
+
+        if made != nullptr
+            return made
+
+    return nullptr
+
 # A connection to the test listener at `port` checking nothing, within 15
 # seconds, or `nullptr`.
 #
@@ -909,7 +927,8 @@ function test_ends_client(port: str) -> str
 # and fails for that, not its time; with 0 the call fails timed out at once.
 test "connect: HERO_TLS_FOREVER waits for the server's handshake until it closes, and 0 waits not at all, timed out at once"
     if available() == 1
-        plain @= hero_net.listen(address: "127.0.0.1", port: 0)
+        plain @= test_plain_listener()
+        assert plain != nullptr
         port = hero_net.port_of(plain)
         why: i64 @= 0
         far = threads_floor.start(test_patient_client, arg: port, bytes: 0, why: @why)
@@ -937,7 +956,8 @@ test "connect: HERO_TLS_FOREVER waits for the server's handshake until it closes
 # timed out at once.
 test "connect_after: HERO_TLS_FOREVER waits for a step's answer until the server closes, and 0 waits not at all, timed out at once"
     if available() == 1
-        plain @= hero_net.listen(address: "127.0.0.1", port: 0)
+        plain @= test_plain_listener()
+        assert plain != nullptr
         port = hero_net.port_of(plain)
         why: i64 @= 0
         far = threads_floor.start(test_patient_steps, arg: port, bytes: 0, why: @why)

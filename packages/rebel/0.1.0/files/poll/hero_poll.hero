@@ -260,21 +260,46 @@ test "wait: a limit below -1 and room for no event are refused, and an empty set
     assert wait(set, limit_ns: 20000000, @events, n: 6) == 0
     assert close(@set) == 0
 
+# Whether `set`, holding `listener` for READ, is told nothing at once, once
+# every connection another program left waiting on the listener is accepted,
+# closed and passed over, ten at most: the test's own client is accepted
+# before it asks, so any connection waiting then is not the test's. Beside
+# two loops of tests that steer their connect to the port the system gives
+# next, one reached the listener in 3 runs of 3,210 (2026-11-21).
+#
+# - `set`: the set holding `listener` for READ.
+# - `listener`: the test's listener; it stays open.
+function test_quiet(set: Set, listener: hero_net.Socket) -> bool
+    events: [i64] @= [0, 0, 0, 0, 0, 0]
+    tries @= 0
+
+    while tries < 10
+        tries @ tries + 1
+
+        if wait(set, limit_ns: 0, @events, n: 6) == 0
+            return true
+        stranger @= hero_net.accept(listener)
+
+        if stranger != nullptr
+            assert hero_net.close(@stranger) == 0
+
+    return false
+
 test "a listener is told READ once a connection waits, and not before; the event is its key, the bit and 0"
     set @= make(8)
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     key = add_socket(set, s: listener, interest: HERO_POLL_READ)
     events: [i64] @= [0, 0, 0, 0, 0, 0]
-    assert wait(set, limit_ns: 0, @events, n: 6) == 0
+    assert test_quiet(set, listener: listener)
     client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
     assert client != nullptr
     assert wait(set, limit_ns: 5000000000, @events, n: 6) == 1
     assert events[0] == key
     assert events[1] == HERO_POLL_READ
     assert events[2] == 0
-    accepted @= hero_net.accept(listener)
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
     assert accepted != nullptr
-    assert wait(set, limit_ns: 0, @events, n: 6) == 0
+    assert test_quiet(set, listener: listener)
     assert close(@set) == 0
     assert hero_net.close(@accepted) == 0
     assert hero_net.close(@client) == 0
@@ -284,7 +309,7 @@ test "a connection is told WRITE at once, READ once bytes come, READ again while
     set @= make(8)
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
-    accepted @= hero_net.accept(listener)
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
     writes = add_socket(set, s: client, interest: HERO_POLL_WRITE)
     reads = add_socket(set, s: accepted, interest: HERO_POLL_READ)
     events: [i64] @= [0, 0, 0, 0, 0, 0]
@@ -314,7 +339,7 @@ test "change: READ to WRITE moves what the entry is told, and a timer's interest
     set @= make(4)
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
-    accepted @= hero_net.accept(listener)
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
     key = add_socket(set, s: client, interest: HERO_POLL_READ)
     events: [i64] @= [0, 0, 0]
     assert wait(set, limit_ns: 0, @events, n: 3) == 0
@@ -337,8 +362,8 @@ test "more ready than the numbers hold: the rest are told at the next wait, each
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     one @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
     two @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
-    a @= hero_net.accept(listener)
-    b @= hero_net.accept(listener)
+    a @= hero_net.test_accept_from(listener, port: hero_net.port_of(one))
+    b @= hero_net.test_accept_from(listener, port: hero_net.port_of(two))
     first = add_socket(set, s: one, interest: HERO_POLL_READ | HERO_POLL_WRITE)
     second = add_socket(set, s: two, interest: HERO_POLL_WRITE)
     events: [i64] @= [0, 0, 0, 0, 0, 0, 0]
@@ -473,7 +498,7 @@ test "a connection's stream is waited on as its socket, and a stream closed in t
     set @= make(4)
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
-    accepted @= hero_net.accept(listener)
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
     stream @= hero_stream_net.of(@accepted)
     assert stream != nullptr
     key = add_stream(set, s: stream, interest: HERO_POLL_READ)
@@ -510,10 +535,16 @@ function stop_later(ms: i64) -> i64
     hero_net.ask_stop()
     return 0
 
+# The wait is on a connection the test made, which no other program can
+# reach: on a listener, one another program's connect reached it in 4 runs
+# of 3,210 beside two loops of tests that steer their connect to the port
+# the system gives next (2026-11-21), and ended the wait READ.
 test "the stop asked by another thread ends a wait with no limit at once"
     set @= make(2)
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
-    _ = add_socket(set, s: listener, interest: HERO_POLL_READ)
+    client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
+    _ = add_socket(set, s: accepted, interest: HERO_POLL_READ)
     why: i64 @= 0
     thread = threads_floor.start(stop_later, arg: 50, bytes: 0, why: @why)
     assert thread >= 0
@@ -522,4 +553,6 @@ test "the stop asked by another thread ends a wait with no limit at once"
     assert last_error() == HERO_POLL_STOPPED
     assert threads_floor.finish(thread) == 0
     assert close(@set) == 0
+    assert hero_net.close(@accepted) == 0
+    assert hero_net.close(@client) == 0
     assert hero_net.close(@listener) == 0

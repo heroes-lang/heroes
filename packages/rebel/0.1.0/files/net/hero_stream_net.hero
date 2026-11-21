@@ -115,7 +115,7 @@ extern "hero_proc.h"
 test "a connection made a stream is written through it, read back on the other end, and closed once by the stream"
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
-    accepted @= hero_net.accept(listener)
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
     assert accepted != nullptr
     assert hero_net.set_deadline(client, ms: 5000) == 0
     assert hero_net.set_deadline(accepted, ms: 5000) == 0
@@ -170,7 +170,7 @@ test "a listener, a datagram socket and nullptr make no stream, and what was ref
 test "a deadline set on the socket ends a read of the stream, told as a deadline by both"
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
-    accepted @= hero_net.accept(listener)
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
     assert hero_net.set_deadline(client, ms: 200) == 0
     stream @= of(@client)
     into: [u8] @= []
@@ -186,7 +186,7 @@ test "a deadline set on the socket ends a read of the stream, told as a deadline
 test "set_deadline: a stream's deadline moved, a read ending at it, then taken away by HERO_NET_FOREVER, and what is no stream over a socket"
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
-    accepted @= hero_net.accept(listener)
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
     stream @= of(@client)
     assert stream != nullptr
     assert set_deadline(stream, ms: 150) == 0
@@ -220,7 +220,7 @@ test "set_deadline: a stream's deadline moved, a read ending at it, then taken a
 test "set_deadline: 0 ends a read of the stream at once, before a byte sent 400 ms later, and HERO_NET_FOREVER waits for that byte"
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
-    accepted @= hero_net.accept(listener)
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
     stream @= of(@accepted)
     assert stream != nullptr
     assert set_deadline(stream, ms: 0) == 0
@@ -242,7 +242,7 @@ test "set_deadline: 0 ends a read of the stream at once, before a byte sent 400 
 test "shutdown, set_option and option_of through a stream: the writing side closed is the peer's end, no delay set and read back"
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
-    accepted @= hero_net.accept(listener)
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
     assert hero_net.set_deadline(accepted, ms: 5000) == 0
     stream @= of(@client)
     assert set_option(stream, option: hero_net.HERO_NET_OPTION_NO_DELAY, value: 1) == 0
@@ -266,15 +266,17 @@ test "shutdown, set_option and option_of through a stream: the writing side clos
 test "two connections accepted, made streams and closed, then the first client's stream reads its end and closes: no handle of one table is another's"
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
     first_socket @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
+    first_port = hero_net.port_of(first_socket)
     first @= of(@first_socket)
     assert first != nullptr
-    one_socket @= hero_net.accept(listener)
+    one_socket @= hero_net.test_accept_from(listener, port: first_port)
     one @= of(@one_socket)
     assert hero_stream.close(@one) == 0
     second_socket @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
+    second_port = hero_net.port_of(second_socket)
     second @= of(@second_socket)
     assert second != nullptr
-    two_socket @= hero_net.accept(listener)
+    two_socket @= hero_net.test_accept_from(listener, port: second_port)
     two @= of(@two_socket)
     assert hero_stream.close(@two) == 0
     into: [u8] @= []
