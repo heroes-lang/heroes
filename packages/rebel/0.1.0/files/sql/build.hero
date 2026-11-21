@@ -157,7 +157,7 @@ function call(name: str, arguments: [Expr]) -> Expr
 # - `name`: the aggregate's name, as `call` takes it.
 # - `arguments`: the arguments, at least one.
 #
-# Fails `to_sql` `invalid` where `arguments` is empty, or the name as `call`
+# `to_sql` fails `invalid` where `arguments` is empty, or the name as `call`
 # says. See also `call`.
 function call_distinct(name: str, arguments: [Expr]) -> Expr
     parts: [clauses.Part] @= []
@@ -324,7 +324,7 @@ record When
 # - `otherwise`: the value where no condition holds; `parameter(.null_value)`
 #   for `NULL`.
 #
-# Fails `to_sql` `invalid` where `whens` is empty. See also `When`.
+# `to_sql` fails `invalid` where `whens` is empty. See also `When`.
 function choose(whens: [When], otherwise: Expr) -> Expr
     conditions: [clauses.Clause] @= []
     results: [clauses.Part] @= []
@@ -838,7 +838,7 @@ record Select
 #   itself for another name, a subquery or none.
 # - `columns`: the columns answered, at least one.
 #
-# Fails `to_sql` `invalid` where `columns` is empty. See also `Select`,
+# `to_sql` fails `invalid` where `columns` is empty. See also `Select`,
 # `to_sql`.
 function select(from: str, columns: [Expr]) -> Select
     return Select(
@@ -923,7 +923,7 @@ record Insert
 # - `columns`: the columns, at least one.
 # - `rows`: the rows, at least one, each one value per column.
 #
-# Fails `to_sql` `invalid` where `rows` is empty or a row's length is not
+# `to_sql` fails `invalid` where `rows` is empty or a row's length is not
 # `columns`'s, the message saying which row, counted from 0. See also
 # `insert_select`, `Insert`.
 function insert(into: str, columns: [str], rows: [[sql.Value]]) -> Insert

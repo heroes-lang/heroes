@@ -497,9 +497,11 @@ record ServerInfo
     has_sessions: bool
     # The highest wire version it speaks: 21 for MongoDB 7.0, 25 for 8.0.
     max_wire_version: i64
-    # The most bytes of a document, of a message, and writes in one batch.
+    # The most bytes of one document it takes.
     max_document_size: i64
+    # The most bytes of one message it takes.
     max_message_size: i64
+    # The most writes it takes in one batch.
     max_write_batch_size: i64
     # Its whole `hello` reply.
     hello: bson.Document

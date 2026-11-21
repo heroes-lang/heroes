@@ -3900,6 +3900,10 @@ test "health_response: a readiness probe with a database down"
     answer = health_response(r, checks: checks, detail: false)
     assert answer.status == http.STATUS_SERVICE_UNAVAILABLE
 
+# How far a webhook's timestamp may stand from the clock by default.
+test "default_webhook_tolerance: five minutes either way"
+    assert default_webhook_tolerance() == time.minutes(5).must()
+
 # A new secret, as a sender gives one to each receiver.
 test "new_webhook_secret: a secret to share with a receiver"
     secret = new_webhook_secret().must()

@@ -49,18 +49,23 @@ variant Value
     null_value
     # `true` or `false`.
     boolean
+        # The value.
         v: bool
     # A number, never `nan` or an infinity in a value `parse` answers.
     number
+        # The value, finite.
         v: f64
     # A string, with its escapes read: the characters themselves.
     text
+        # The characters.
         v: str
     # An array: its elements in order.
     list
+        # The elements, in order.
         items: [Value]
     # An object: its members by key, in the order they were written.
     object
+        # The members by key, in the order they were written.
         members: {str: Value}
 
 # Whether `a` and `b` are the same JSON value: numbers by value, texts by
