@@ -65,6 +65,8 @@ extern "hero_serial.h"
     constant HERO_SERIAL_BAUD_MOST: i64
     # The call the marks below name: a stream's end, which the header declares
     # through `hero_stream.h`.
+    #
+    # - `s`: the stream ended and given back.
     function hero_stream_close(s: hero_stream.Stream consumes) -> i64
     function hero_serial_ports(@buffer: [u8] counted_by count lent, count: u64) -> i64
     function hero_serial_open(path: cstr lent) -> hero_stream.Stream acquires hero_stream_close
@@ -89,11 +91,21 @@ extern "hero_serial.h"
 # How many bytes the list of this machine's ports takes, each name followed by
 # a zero byte, or -1. `buffer` is filled as far as `count` reaches and left
 # `count` long; an answer above `count` asks again with a buffer that large.
+#
+# - `buffer`: filled with the list, in no order, as far as `count` reaches;
+#   left `count` long.
+# - `count`: the bytes `buffer` holds; an answer above it says the list was
+#   cut, and the caller asks again with that many.
 function ports(@buffer: [u8], count: u64) -> i64
     return hero_serial_ports(@buffer, count: count)
 
 # The port at `path` opened as a stream, passing bytes as they are, or
 # `nullptr`. It aborts where `path` holds a zero byte.
+#
+# - `path`: the port, UTF-8: `/dev/ttyUSB0`, or on Windows `COM3` or the whole
+#   `\\.\` form; the empty path is `HERO_SERIAL_INVALID`, one that names no
+#   terminal device `HERO_SERIAL_NOT_A_PORT`, one open already elsewhere
+#   `HERO_SERIAL_BUSY`. It aborts where it holds a zero byte.
 function open(path: str) -> hero_stream.Stream
     return hero_serial_open(path.cstr())
 
@@ -102,41 +114,94 @@ function open(path: str) -> hero_stream.Stream
 # 0 once the port `s` holds the speed, size, parity, stops and flow given,
 # all at once, or -1; a value the port did not keep is
 # `HERO_SERIAL_UNSUPPORTED` and the port is put back as it was.
+#
+# - `s`: the port, a stream `open` made; it stays open. A pseudo-terminal's
+#   controlling side is `HERO_SERIAL_NOT_A_PORT`.
+# - `baud`: the speed in bits a second, 1 to `HERO_SERIAL_BAUD_MOST`; Linux
+#   takes the speeds `termios` names, 50 to 4,000,000, others
+#   `HERO_SERIAL_UNSUPPORTED`.
+# - `data_bits`: the size of a character, 5 to 8.
+# - `parity`: one of `HERO_SERIAL_PARITY_*`; mark and space are
+#   `HERO_SERIAL_UNSUPPORTED` on Darwin.
+# - `stop_bits`: one of `HERO_SERIAL_STOP_*`; one and a half is Windows'
+#   alone.
+# - `flow`: `HERO_SERIAL_FLOW_*` bits or-ed, 0 for none; DSR/DTR is Windows'
+#   alone.
 function configure(s: hero_stream.Stream, baud: i64, data_bits: i64, parity: i64, stop_bits: i64, flow: i64) -> i64
     return hero_serial_configure(s, baud: baud, data_bits: data_bits, parity: parity, stop_bits: stop_bits, flow: flow)
 
 # The setting `which`, one of `HERO_SERIAL_SETTING_*`, as the system holds it
 # now, in `configure`'s numbers; or -1.
+#
+# - `s`: the port; it stays open.
+# - `which`: one of `HERO_SERIAL_SETTING_*`.
 function setting(s: hero_stream.Stream, which: i64) -> i64
     return hero_serial_setting(s, which: which)
 
 # 0 once the stream's read, write and gap timeouts are the milliseconds
 # given, or -1; a read or a write timeout of `HERO_SERIAL_FOREVER` never ends
 # a wait, and a gap of 0 is none.
+#
+# - `s`: the port, or a pseudo-terminal's controlling side; it stays open. A
+#   read or a write already waiting keeps the timeouts it began with.
+# - `read_ms`: milliseconds a read waits for its first byte; 0 not at all,
+#   `HERO_SERIAL_FOREVER` with no end, below that `HERO_SERIAL_INVALID`.
+# - `write_ms`: milliseconds a write waits for the port to take a byte; 0 not
+#   at all, `HERO_SERIAL_FOREVER` with no end, below that
+#   `HERO_SERIAL_INVALID`.
+# - `gap_ms`: milliseconds a read that has bytes waits for the next before it
+#   answers, 0 or more; 0 is no wait.
 function set_timeouts(s: hero_stream.Stream, read_ms: i64, write_ms: i64, gap_ms: i64) -> i64
     return hero_serial_set_timeouts(s, read_ms: read_ms, write_ms: write_ms, gap_ms: gap_ms)
 
 # 0 with the stream's three timeouts in `read_ms`, `write_ms` and `gap_ms`, or
 # -1 with nothing written.
+#
+# - `s`: the port; it stays open.
+# - `read_ms`: set to the read timeout in milliseconds, `HERO_SERIAL_FOREVER`
+#   for none; left as it was on -1.
+# - `write_ms`: set to the write timeout in milliseconds,
+#   `HERO_SERIAL_FOREVER` for none; left as it was on -1.
+# - `gap_ms`: set to the gap in milliseconds, 0 for none; left as it was on
+#   -1.
 function timeouts(s: hero_stream.Stream, @read_ms: i64, @write_ms: i64, @gap_ms: i64) -> i64
     return hero_serial_timeouts(s, read_ms: @read_ms, write_ms: @write_ms, gap_ms: @gap_ms)
 
 ## Lines
 
 # The modem lines that are on, as `HERO_SERIAL_LINE_*` bits, or -1.
+#
+# - `s`: the port; it stays open. A port with no lines, a pseudo-terminal
+#   among them, is `HERO_SERIAL_UNSUPPORTED`.
 function lines(s: hero_stream.Stream) -> i64
     return hero_serial_lines(s)
 
 # 0 once the line `line`, DTR or RTS, is raised (`on` 1) or dropped (`on`
 # 0), or -1.
+#
+# - `s`: the port; it stays open.
+# - `line`: `HERO_SERIAL_LINE_DTR` or `HERO_SERIAL_LINE_RTS`; another is
+#   `HERO_SERIAL_INVALID`. A line the flow control drives may be refused, or
+#   taken back at its next turn.
+# - `on`: 1 raises the line, 0 drops it; another value is
+#   `HERO_SERIAL_INVALID`.
 function set_line(s: hero_stream.Stream, line: i64, on: i64) -> i64
     return hero_serial_set_line(s, line: line, on: on)
 
 # 0 once the line was held in break for `ms` milliseconds and let go, or -1.
+#
+# - `s`: the port; it stays open.
+# - `ms`: milliseconds the line is held in break, 0 or more; negative is
+#   `HERO_SERIAL_INVALID`. The stop asked meanwhile lets it go and answers
+#   `HERO_SERIAL_STOPPED`.
 function send_break(s: hero_stream.Stream, ms: i64) -> i64
     return hero_serial_send_break(s, ms: ms)
 
 # 0 once the line is held in break (`on` 1) or let go (`on` 0), or -1.
+#
+# - `s`: the port; it stays open.
+# - `on`: 1 holds the line in break, 0 lets it go; another value is
+#   `HERO_SERIAL_INVALID`.
 function set_break(s: hero_stream.Stream, on: i64) -> i64
     return hero_serial_set_break(s, on: on)
 
@@ -144,16 +209,28 @@ function set_break(s: hero_stream.Stream, on: i64) -> i64
 
 # 0 once what the port holds of `which`, `HERO_SERIAL_INPUT`,
 # `HERO_SERIAL_OUTPUT` or both added, is thrown away, or -1.
+#
+# - `s`: the port, or a pseudo-terminal's controlling side; it stays open.
+# - `which`: `HERO_SERIAL_INPUT` (received, not read), `HERO_SERIAL_OUTPUT`
+#   (written, not sent), or the two added; another is `HERO_SERIAL_INVALID`.
 function discard(s: hero_stream.Stream, which: i64) -> i64
     return hero_serial_discard(s, which: which)
 
 # 0 once every byte written has been sent, waiting at most the write timeout,
 # or -1.
+#
+# - `s`: the port, or a pseudo-terminal's controlling side, whose bytes are
+#   sent once its other side reads them; it stays open. Past the write timeout
+#   it answers `HERO_SERIAL_TIMED_OUT`.
 function drain(s: hero_stream.Stream) -> i64
     return hero_serial_drain(s)
 
 # How many bytes the port holds of `which`, `HERO_SERIAL_INPUT` or
 # `HERO_SERIAL_OUTPUT`, or -1.
+#
+# - `s`: the port, or a pseudo-terminal's controlling side; it stays open.
+# - `which`: `HERO_SERIAL_INPUT` or `HERO_SERIAL_OUTPUT`; another is
+#   `HERO_SERIAL_INVALID`.
 function waiting(s: hero_stream.Stream, which: i64) -> i64
     return hero_serial_waiting(s, which: which)
 
@@ -167,6 +244,13 @@ function pseudo() -> hero_stream.Stream
 # How many bytes the path of the port side of the pseudo-terminal whose
 # controlling side is `s` takes, or -1. `buffer` is filled as far as `count`
 # reaches, no zero after, and left `count` long.
+#
+# - `s`: a controlling side `pseudo` made; another stream of this member is
+#   `HERO_SERIAL_INVALID`. It stays open.
+# - `buffer`: filled with the path as far as `count` reaches; left `count`
+#   long.
+# - `count`: the bytes `buffer` holds; an answer above it says the path was
+#   cut.
 function pseudo_path(s: hero_stream.Stream, @buffer: [u8], count: u64) -> i64
     return hero_serial_pseudo_path(s, @buffer, count: count)
 
@@ -185,6 +269,9 @@ function last_os_error() -> i64
 ## Tests
 
 # The port side's path of the controlling side `c`, as text.
+#
+# - `c`: a controlling side `pseudo` made, whose port side's path is at most
+#   256 bytes; it stays open.
 function test_path_of(c: hero_stream.Stream) -> str
     room: [u8] @= []
     n = pseudo_path(c, @room, count: 256)

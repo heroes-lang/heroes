@@ -57,45 +57,106 @@ extern "hero_poll.h"
 # A new set holding at most `most` entries, or `nullptr`: 1 to
 # `HERO_POLL_MOST`, else `HERO_POLL_INVALID`; `HERO_POLL_LIMIT` where the
 # process has no room for so many.
+#
+# - `most`: the most entries the set holds, 1 to `HERO_POLL_MOST`; the process
+#   holds 65,536 entries among all its sets and 1,024 sets.
 function make(most: i64) -> Set
     return hero_poll_make(most)
 
 # The key of a new entry waiting on the socket `s` for `interest`, or -1.
+#
+# - `set`: the set added to; it stays open. One not open is
+#   `HERO_POLL_NOT_OPEN`.
+# - `s`: a connection, a listener or a datagram socket; it stays the
+#   program's, which closes it with `hero_net.close`. One socket may stand in
+#   a set twice, each entry its own.
+# - `interest`: `HERO_POLL_READ`, `HERO_POLL_WRITE`, or both or-ed; any other
+#   value is `HERO_POLL_INVALID`.
 function add_socket(set: Set, s: hero_net.Socket, interest: i64) -> i64
     return hero_poll_add_socket(set, s: s, interest: interest)
 
 # The key of a new entry waiting on the stream `s` for `interest`, or -1.
+#
+# - `set`: the set added to; it stays open. One not open is
+#   `HERO_POLL_NOT_OPEN`.
+# - `s`: the stream waited on, which stays the program's: a stream over a
+#   connection is waited on as its socket, a regular file is ready at every
+#   wait, a pipe or a terminal on Darwin and Linux as its descriptor; what the
+#   system cannot wait on is `HERO_POLL_UNSUPPORTED`, a pipe or a console on
+#   Windows among them.
+# - `interest`: `HERO_POLL_READ`, `HERO_POLL_WRITE`, or both or-ed; any other
+#   value is `HERO_POLL_INVALID`.
 function add_stream(set: Set, s: hero_stream.Stream, interest: i64) -> i64
     return hero_poll_add_stream(set, s: s, interest: interest)
 
 # The key of a new timer due `first_ns` nanoseconds from now, then every
 # `every_ns`, 0 for once; or -1.
+#
+# - `set`: the set added to; it stays open.
+# - `first_ns`: nanoseconds from now to the first time it is due, 0 or more;
+#   below 0 is `HERO_POLL_INVALID`.
+# - `every_ns`: nanoseconds between later times, 0 for once; below 0 is
+#   `HERO_POLL_INVALID`. Times that fell due while nobody waited are told
+#   once, with their count.
 function add_timer(set: Set, first_ns: i64, every_ns: i64) -> i64
     return hero_poll_add_timer(set, first_ns: first_ns, every_ns: every_ns)
 
 # 0 once the timer `key` is set again from now, or -1.
+#
+# - `set`: the set holding the timer; it stays open.
+# - `key`: the timer's key, as `add_timer` answered it; one of no entry is
+#   `HERO_POLL_NOT_FOUND`, one of an entry that is no timer
+#   `HERO_POLL_INVALID`.
+# - `first_ns`: nanoseconds from now to its next time, 0 or more.
+# - `every_ns`: nanoseconds between later times, 0 for once.
 function set_timer(set: Set, key: i64, first_ns: i64, every_ns: i64) -> i64
     return hero_poll_set_timer(set, key: key, first_ns: first_ns, every_ns: every_ns)
 
 # 0 once the entry `key` waits for `interest`, or -1.
+#
+# - `set`: the set holding the entry; it stays open.
+# - `key`: the entry's key; one of no entry is `HERO_POLL_NOT_FOUND`, a
+#   timer's `HERO_POLL_INVALID`.
+# - `interest`: `HERO_POLL_READ`, `HERO_POLL_WRITE`, or both or-ed, from now.
 function change(set: Set, key: i64, interest: i64) -> i64
     return hero_poll_change(set, key: key, interest: interest)
 
 # 0 once the entry `key` is out of the set, or -1.
+#
+# - `set`: the set holding the entry; it stays open.
+# - `key`: the entry's key; its stream or socket is let go, never closed. One
+#   of no entry is `HERO_POLL_NOT_FOUND`.
 function remove(set: Set, key: i64) -> i64
     return hero_poll_remove(set, key: key)
 
 # How many entries the set holds, or -1.
+#
+# - `set`: the set asked about; it stays open.
 function count(set: Set) -> i64
     return hero_poll_count(set)
 
 # How many events the wait wrote into the first `n` numbers of `events`,
 # three numbers each, 0 where `limit_ns` passed with none; or -1. It leaves
 # `events` `n` numbers long.
+#
+# - `set`: the set waited on; it stays open. A set another thread waits on is
+#   `HERO_POLL_INVALID`.
+# - `limit_ns`: nanoseconds to wait; 0 asks without waiting, -1 waits with no
+#   limit, below -1 is `HERO_POLL_INVALID`. The stop asked ends it with
+#   `HERO_POLL_STOPPED`.
+# - `events`: filled with `HERO_POLL_EVENT_NUMBERS` numbers per event, its
+#   key, its bits, and for a timer how many times it fell due, 0 for any other
+#   entry; the timers first, then the files, then the system's order. Left `n`
+#   long.
+# - `n`: the numbers `events` holds, 3 or more, else `HERO_POLL_INVALID`; the
+#   events that do not fit are told at the next wait.
 function wait(set: Set, limit_ns: i64, @events: [i64], n: u64) -> i64
     return hero_poll_wait(set, limit_ns: limit_ns, @events, n: n)
 
 # 0, or -1 where the set was not open; `set` is given back either way.
+#
+# - `set`: the set ended and given back; every stream and socket in it is let
+#   go and none closed.
 function close(@set: Set) -> i64
     return hero_poll_close(set)
 
@@ -442,6 +503,8 @@ test "the stop asked before a wait ends it stopped, even with an entry ready"
 
 # The thread the stop test starts: it sleeps `ms` milliseconds, then asks the
 # stop, which ends the wait the test's own thread is in.
+#
+# - `ms`: milliseconds the thread sleeps before it asks the stop.
 function stop_later(ms: i64) -> i64
     _ = hero_time.sleep_ns(ms * 1000000)
     hero_net.ask_stop()

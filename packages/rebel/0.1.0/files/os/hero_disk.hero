@@ -132,16 +132,32 @@ extern "hero_os.h"
 # the kind, the size in bytes, the permission bits, the times of the last
 # write and the last read in nanoseconds since 1970 UTC, and the count of
 # names. `numbers` is left `n` long.
+#
+# - `path`: what is asked about, the link itself where it is one; the empty
+#   path names nothing.
+# - `numbers`: filled with the first `n` facts, each at its
+#   `HERO_DISK_FACT_...` place; left `n` long.
+# - `n`: how many facts to fill, `HERO_DISK_FACTS` for all of them; fewer
+#   fills the first ones alone, more leaves the rest as they were.
 function facts(path: str, @numbers: [i64], n: u64) -> i64
     return hero_disk_facts(path.cstr(), @numbers, n: n)
 
 # The same of what `path` names once every link is followed, or -1. A link
 # whose target is not there is `HERO_DISK_NOT_FOUND`.
+#
+# - `path`: what is asked about, every link on the way and at its end
+#   followed.
+# - `numbers`: filled as `facts` fills it; left `n` long.
+# - `n`: how many facts to fill, `HERO_DISK_FACTS` for all of them.
 function facts_through(path: str, @numbers: [i64], n: u64) -> i64
     return hero_disk_facts_through(path.cstr(), @numbers, n: n)
 
 # 1 where the two paths name one file, every link followed, 0 where they name
 # two, or -1 where either cannot be asked.
+#
+# - `first`: one path, its links followed.
+# - `second`: the other path, its links followed. One file is one device and
+#   inode, on Windows one volume serial number and file index.
 function same(first: str, second: str) -> i64
     return hero_disk_same(first: first.cstr(), second: second.cstr())
 
@@ -149,12 +165,20 @@ function same(first: str, second: str) -> i64
 # 0o7777, or -1: `HERO_DISK_EXISTS` where anything is there already,
 # `HERO_DISK_NOT_FOUND` where its parent is not. The process's mask takes its
 # bits away, and Windows, which has none, only checks the number.
+#
+# - `path`: where the folder is made; its parent must be there already.
+# - `permission`: the bits, 0 to 0o7777, less what the process's mask takes
+#   away; another number is `HERO_DISK_INVALID`. Windows checks it and does
+#   not use it: the folder takes its parent's access.
 function make_folder(path: str, permission: i64) -> i64
     return hero_disk_make_folder(path.cstr(), permission: permission)
 
 # 0 once the file, the link or the EMPTY directory at `path` is removed, or
 # -1: `HERO_DISK_NOT_FOUND` where nothing is there, `HERO_DISK_NOT_EMPTY` for
 # a directory that holds something. A link is removed, never what it names.
+#
+# - `path`: the file, the link or the empty folder to remove. A file marked
+#   read-only is removed on POSIX and is `HERO_DISK_DENIED` on Windows.
 function remove(path: str) -> i64
     return hero_disk_remove(path.cstr())
 
@@ -163,6 +187,12 @@ function remove(path: str) -> i64
 # a directory takes the place of nothing (`HERO_DISK_EXISTS`), the same on
 # every platform; `HERO_DISK_NOT_FOUND` where `from` names nothing, and
 # `HERO_DISK_CROSS_DEVICE` between two volumes, nothing moved.
+#
+# - `from`: what is renamed, the link itself where it is one; nothing there is
+#   `HERO_DISK_NOT_FOUND`.
+# - `to`: its new name, in a folder that is there (else
+#   `HERO_DISK_NOT_FOUND`); `from` itself, another case of its letters among
+#   them, is a rename and no failure.
 function rename(from: str, to: str) -> i64
     return hero_disk_rename(from: from.cstr(), to: to.cstr())
 
@@ -173,12 +203,22 @@ function rename(from: str, to: str) -> i64
 # `HERO_DISK_KIND_FILE` to `HERO_DISK_KIND_UNKNOWN`, the name's bytes, and a
 # zero byte. The entries are in no order, `.` and `..` never among them, and
 # `buffer` is left `n` long.
+#
+# - `path`: the folder listed; nothing there is `HERO_DISK_NOT_FOUND`.
+# - `buffer`: filled with the listing; left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read.
 function scan(path: str, @buffer: [u8], n: u64) -> i64
     return hero_disk_scan(path.cstr(), @buffer, n: n)
 
 # How many bytes the target of the symbolic link `path` is, as the link holds
 # it, or -1: `HERO_DISK_INVALID` where `path` names something that is no
 # link. It fills `buffer` with them, no zero after, and leaves it `n` long.
+#
+# - `path`: the symbolic link read, never followed; on Windows a junction too.
+# - `buffer`: filled with the target's bytes; left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read.
 function link_target(path: str, @buffer: [u8], n: u64) -> i64
     return hero_disk_link_target(path.cstr(), @buffer, n: n)
 
@@ -188,17 +228,31 @@ function link_target(path: str, @buffer: [u8], n: u64) -> i64
 # every nanosecond on APFS and on a Linux container's own volume, rounded
 # down to 100 ns on Windows, the whole second on Docker Desktop's share of a
 # folder of a Mac.
+#
+# - `path`: what is changed, links followed.
+# - `written`: the time of the last write, in nanoseconds since 1970-01-01
+#   UTC, negative before it; Windows refuses one at or before 1601-01-01 with
+#   `HERO_DISK_INVALID`.
+# - `read`: the time of the last read, in the same unit and with the same
+#   edge.
 function set_times(path: str, written: i64, read: i64) -> i64
     return hero_disk_set_times(path.cstr(), written: written, read: read)
 
 # 0 once the file `path` names, links followed, is `length` bytes long, or
 # -1: `HERO_DISK_INVALID` for a negative length, `HERO_DISK_IS_A_DIRECTORY`
 # for a directory. Shorter, it loses its end; longer, its new bytes are zero.
+#
+# - `path`: the file made longer or shorter, links followed.
+# - `length`: its new length in bytes, 0 or more; below 0 is
+#   `HERO_DISK_INVALID`.
 function set_length(path: str, length: i64) -> i64
     return hero_disk_set_length(path.cstr(), length: length)
 
 # 0 once `path` is the working folder, which every relative path is read in
 # from then on, or -1. The folder is the process's, one for all its threads.
+#
+# - `path`: the folder that becomes the process's working folder; a path that
+#   is no folder is `HERO_DISK_NOT_A_DIRECTORY`.
 function enter(path: str) -> i64
     return hero_disk_enter(path.cstr())
 
@@ -206,22 +260,39 @@ function enter(path: str) -> i64
 # -1. It fills `buffer` with them, no zero after and no separator at the end
 # unless the folder is a root, and leaves it `n` long. The folder is named,
 # never made.
+#
+# - `buffer`: filled with the folder's name; left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read.
 function temp_folder(@buffer: [u8], n: u64) -> i64
     return hero_disk_temp_folder(@buffer, n: n)
 
 # 0 once `free_bytes` holds the bytes this user may still write on the volume
 # `path` stands on and `total_bytes` the volume's size, or -1 with neither
 # written.
+#
+# - `path`: anything on the volume asked about.
+# - `free_bytes`: set to the bytes this user may still write there; left as it
+#   was on -1.
+# - `total_bytes`: set to the volume's size in bytes; left as it was on -1.
 function space(path: str, @free_bytes: i64, @total_bytes: i64) -> i64
     return hero_disk_space(path.cstr(), free_bytes: @free_bytes, total_bytes: @total_bytes)
 
 # 0 once what `path` names, links followed, belongs to the user and the group
 # of those numbers, -1 leaving either as it is, or -1. Windows has no such
 # numbers and always fails `HERO_DISK_UNSUPPORTED`.
+#
+# - `path`: what is changed, links followed.
+# - `user`: the number of the new owner; -1 leaves the owner as it is.
+# - `group`: the number of the new group; -1 leaves the group as it is.
 function set_owner(path: str, user: i64, group: i64) -> i64
     return hero_disk_set_owner(path.cstr(), user: user, group: group)
 
 # The same of the link itself where `path` names one, or -1.
+#
+# - `path`: what is changed, the link itself where it is one.
+# - `user`: the number of the new owner; -1 leaves the owner as it is.
+# - `group`: the number of the new group; -1 leaves the group as it is.
 function set_link_owner(path: str, user: i64, group: i64) -> i64
     return hero_disk_set_link_owner(path.cstr(), user: user, group: group)
 
@@ -239,18 +310,34 @@ function last_os_error() -> i64
 # for a file, a folder or a link, or -1. `through` is 0 for the link itself
 # where `path` is one and 1 for what it names, links followed. Windows tells
 # a pipe and a character device alone.
+#
+# - `path`: what is asked about.
+# - `through`: 0 asks of the link itself where `path` is one, 1 of what it
+#   names, links followed; any other number is `HERO_DISK_INVALID`.
 function other_kind(path: str, through: i64) -> i64
     return hero_disk_other_kind(path.cstr(), through: through)
 
 # 0 once `ns` holds the time what `path` names was made, in nanoseconds
 # since 1970 UTC, or -1 with it left as it was: `HERO_DISK_UNSUPPORTED` where
 # the system or the volume keeps no such time. `through` as in `other_kind`.
+#
+# - `path`: what is asked about.
+# - `through`: 0 asks of the link itself where `path` is one, 1 of what it
+#   names, links followed; any other number is `HERO_DISK_INVALID`.
+# - `ns`: set to the time it was made, in nanoseconds since 1970-01-01 UTC;
+#   left as it was on -1.
 function made(path: str, through: i64, @ns: i64) -> i64
     return hero_disk_made(path.cstr(), through: through, made: @ns)
 
 # 0 once `user` and `group` hold the numbers of the user and the group that
 # own what `path` names, or -1 with both left as they were. Windows has no
 # such numbers and always fails `HERO_DISK_UNSUPPORTED`.
+#
+# - `path`: what is asked about.
+# - `through`: 0 asks of the link itself where `path` is one, 1 of what it
+#   names, links followed; any other number is `HERO_DISK_INVALID`.
+# - `user`: set to the number of the user that owns it; left as it was on -1.
+# - `group`: set to the number of its group; left as it was on -1.
 function owner(path: str, through: i64, @user: i64, @group: i64) -> i64
     return hero_disk_owner(path.cstr(), through: through, user: @user, group: @group)
 
@@ -258,6 +345,11 @@ function owner(path: str, through: i64, @user: i64, @group: i64) -> i64
 # or -1: `HERO_DISK_EXISTS` where anything is at `name`,
 # `HERO_DISK_IS_A_DIRECTORY` for a folder, `HERO_DISK_CROSS_DEVICE` across
 # two volumes. A link `existing` names gets the second name itself.
+#
+# - `existing`: the file given a second name; nothing there is
+#   `HERO_DISK_NOT_FOUND`.
+# - `name`: the second name, in a folder that is there (else
+#   `HERO_DISK_NOT_FOUND`).
 function link(existing: str, name: str) -> i64
     return hero_disk_link(existing: existing.cstr(), name: name.cstr())
 
@@ -265,22 +357,40 @@ function link(existing: str, name: str) -> i64
 # or -1: `HERO_DISK_EXISTS` where anything is at `name`, `HERO_DISK_INVALID`
 # for an empty target, and on Windows `HERO_DISK_DENIED` for a user who may
 # make no link.
+#
+# - `target`: the text the link holds, 1 to `HERO_DISK_PATH_MOST` bytes, read
+#   from the folder of `name` unless it is absolute; on Windows every `/` of
+#   it is written `\`.
+# - `name`: where the link is made.
 function symlink(target: str, name: str) -> i64
     return hero_disk_symlink(target: target.cstr(), name: name.cstr())
 
 # 0 once what `path` names, links followed, has the permission bits
 # `permission`, 0 to 0o7777, no mask taking any away, or -1. Windows keeps
 # read-only alone, set where no bit of 0o222 is.
+#
+# - `path`: what is changed, links followed.
+# - `permission`: the bits, 0 to 0o7777; another number is
+#   `HERO_DISK_INVALID`.
 function set_permission(path: str, permission: i64) -> i64
     return hero_disk_set_permission(path.cstr(), permission: permission)
 
 # The same of the link itself where `path` names one, or -1. Linux keeps no
 # bits of a link's own: `HERO_DISK_UNSUPPORTED` for a link there.
+#
+# - `path`: what is changed, the link itself where it is one.
+# - `permission`: the bits, 0 to 0o7777; another number is
+#   `HERO_DISK_INVALID`.
 function set_link_permission(path: str, permission: i64) -> i64
     return hero_disk_set_link_permission(path.cstr(), permission: permission)
 
 # 0 once the times of the last write and the last read of the link itself,
 # where `path` names one, else of what it names, are those given, or -1.
+#
+# - `path`: what is changed, the link itself where it is one.
+# - `written`: the time of the last write, in nanoseconds since 1970-01-01
+#   UTC, as `set_times` takes it.
+# - `read`: the time of the last read, in the same unit.
 function set_link_times(path: str, written: i64, read: i64) -> i64
     return hero_disk_set_link_times(path.cstr(), written: written, read: read)
 
@@ -289,12 +399,20 @@ function set_link_times(path: str, written: i64, read: i64) -> i64
 # `HERO_DISK_IS_A_DIRECTORY` where either names a folder. On Windows the move is written through to the
 # disk before it answers; on POSIX the folder's entry is the disk's once
 # `sync_folder` has put it there.
+#
+# - `from`: the file put in place, anything that is no folder (a link is moved
+#   itself); nothing there is `HERO_DISK_NOT_FOUND`.
+# - `to`: the place it takes, a file, a link or nothing, in a folder that is
+#   there; `from` itself answers 0 with nothing moved. On Windows a file
+#   marked read-only there is `HERO_DISK_DENIED`.
 function replace(from: str, to: str) -> i64
     return hero_disk_replace(from: from.cstr(), to: to.cstr())
 
 # 0 once the entries of the folder `path` are on the storage itself, or -1:
 # `HERO_DISK_NOT_A_DIRECTORY` for something else, and on Windows
 # `HERO_DISK_UNSUPPORTED` always.
+#
+# - `path`: the folder whose entries are written through to the storage.
 function sync_folder(path: str) -> i64
     return hero_disk_sync_folder(path.cstr())
 
@@ -302,10 +420,18 @@ function sync_folder(path: str) -> i64
 # `HERO_DISK_MAP_...`, or `nullptr`: `HERO_DISK_IS_A_DIRECTORY` for a folder,
 # `HERO_DISK_INVALID` for what is no file or a `how` that is none. An empty
 # file is a map of size 0. The handle is closed by `map_close`.
+#
+# - `path`: the file mapped, links followed; nothing there is
+#   `HERO_DISK_NOT_FOUND`.
+# - `how`: `HERO_DISK_MAP_READ` to read, `HERO_DISK_MAP_READ_WRITE` to write
+#   the file itself, `HERO_DISK_MAP_COPY` to write this map's memory alone;
+#   any other number is `HERO_DISK_INVALID`.
 function map_open(path: str, how: i64) -> Mapping
     return hero_disk_map_open(path.cstr(), how: how)
 
 # The size of the map `m` in bytes, the file's when it was opened, or -1.
+#
+# - `m`: the map; one not open is `HERO_DISK_NOT_OPEN`. It stays open.
 function map_size(m: Mapping) -> i64
     return hero_disk_map_size(m)
 
@@ -313,23 +439,45 @@ function map_size(m: Mapping) -> i64
 # `buffer`, or -1 with nothing copied: `HERO_DISK_INVALID` for a range past
 # the map, `HERO_DISK_SHRUNK` where another program cut the file shorter.
 # `buffer` is left `n` long.
+#
+# - `m`: the map read; one not open is `HERO_DISK_NOT_OPEN`. It stays open.
+# - `offset`: the byte of the map the copy starts at, 0 or more; negative is
+#   `HERO_DISK_INVALID`.
+# - `buffer`: filled from its first byte with the bytes copied; left `n` long.
+# - `n`: how many bytes to copy; the range must end within the map's size,
+#   else `HERO_DISK_INVALID`.
 function map_read(m: Mapping, offset: i64, @buffer: [u8], n: u64) -> i64
     return hero_disk_map_read(m, offset: offset, buffer: @buffer, n: n)
 
 # `n` once the first `n` bytes of `data` are copied into the map `m` from
 # `offset`, or -1 with nothing copied, as `map_read`, and `HERO_DISK_INVALID`
 # for a map opened to read. `data` is left `n` long.
+#
+# - `m`: the map written, opened `HERO_DISK_MAP_READ_WRITE` or
+#   `HERO_DISK_MAP_COPY`; one not open is `HERO_DISK_NOT_OPEN`. It stays open.
+# - `offset`: the byte of the map the copy starts at, 0 or more; negative is
+#   `HERO_DISK_INVALID`.
+# - `data`: the bytes copied, from its first; left `n` long.
+# - `n`: how many bytes to copy; the range must end within the map's size,
+#   which a write never grows.
 function map_write(m: Mapping, offset: i64, @data: [u8], n: u64) -> i64
     return hero_disk_map_write(m, offset: offset, data: @data, n: n)
 
 # 0 once what was written into the map `m`, opened to read and write, is on
 # the storage itself, or -1; a map of the other two kinds has nothing to put
 # there and answers 0.
+#
+# - `m`: the map whose writes are put on the storage, the map's pages and then
+#   the file; one not open is `HERO_DISK_NOT_OPEN`. It stays open.
 function map_flush(m: Mapping) -> i64
     return hero_disk_map_flush(m)
 
 # 0 once the map `m` is unmapped and its file closed, or -1 where the system
 # failed; `m` is given back either way.
+#
+# - `m`: the map ended, its file closed; one not open is `HERO_DISK_NOT_OPEN`.
+#   A read, a write or a flush another thread is still in runs to its end
+#   first.
 function map_close(@m: Mapping) -> i64
     return hero_disk_map_close(m)
 
@@ -337,6 +485,11 @@ function map_close(@m: Mapping) -> i64
 
 # The folder a test works in, under the build area of the folder the tests
 # run from, made new: what an earlier run left of `holds` is removed first.
+#
+# - `name`: the test's own word, which names the folder
+#   `build/rebel-disk-<name>`.
+# - `holds`: the names, inside the folder, an earlier run may have left,
+#   removed first in this order.
 function test_folder(name: str, holds: [str]) -> str
     dir = "build/rebel-disk-" + name
     test_clear(dir, holds: holds)
@@ -346,6 +499,11 @@ function test_folder(name: str, holds: [str]) -> str
 # The folder a test works in inside the system's temporary folder, named for
 # this process and made new: what an earlier run left of `holds` is removed
 # first.
+#
+# - `name`: the test's own word, which names the folder with this process's
+#   id.
+# - `holds`: the names, inside the folder, an earlier run may have left,
+#   removed first in this order.
 function test_temp_folder(name: str, holds: [str]) -> str
     room: [u8] @= []
     need = temp_folder(@room, n: 0)
@@ -357,6 +515,10 @@ function test_temp_folder(name: str, holds: [str]) -> str
 
 # Removes what a test made: each of `holds` inside `dir`, in that order, then
 # `dir` itself. One not there is passed over.
+#
+# - `dir`: the folder removed last, once empty.
+# - `holds`: the names inside `dir` removed first, in this order; one not
+#   there is passed over.
 function test_clear(dir: str, holds: [str])
     for item in holds
         _ = remove(dir + "/" + item)
@@ -365,6 +527,13 @@ function test_clear(dir: str, holds: [str])
 
 # Whether the listing in the first `used` bytes of `buffer` holds an entry
 # called `name` of the kind `kind`.
+#
+# - `buffer`: a listing as `scan` fills it.
+# - `used`: how many of `buffer`'s first bytes the listing takes, as `scan`
+#   answered.
+# - `kind`: the entry's kind, `HERO_DISK_KIND_FILE` to
+#   `HERO_DISK_KIND_UNKNOWN`.
+# - `name`: the entry's name, compared byte by byte.
 function test_lists(buffer: [u8], used: i64, kind: i64, name: str) -> bool
     wanted = kind.to_u8().must()
     at: i64 @= 0
@@ -390,10 +559,16 @@ function test_lists(buffer: [u8], used: i64, kind: i64, name: str) -> bool
 
 # Whether a symbolic link called `name` was made, holding `target` as its
 # text. False where this user may make none, which Windows may answer.
+#
+# - `target`: the text the link holds, which is not looked for.
+# - `name`: where the link is made.
 function test_link(target: str, name: str) -> bool
     return hero_fs_symlink(target: target.cstr(), name: name.cstr()) == HERO_OS_OK
 
 # The one fact at `place` of what `path` names, the link itself, or -1.
+#
+# - `path`: what is asked about, the link itself where it is one.
+# - `place`: one of the `HERO_DISK_FACT_...` places.
 function test_fact(path: str, place: i64) -> i64
     numbers: [i64] @= []
 
@@ -779,6 +954,8 @@ function test_windows() -> bool
 
 # The bits `set_permission` leaves on a file asked for `bits`: all of them on
 # POSIX, and on Windows read-only alone, 0o444 or 0o666.
+#
+# - `bits`: the permission bits asked of `set_permission`, 0 to 0o7777.
 function test_bits(bits: i64) -> i64
     if !test_windows()
         return bits

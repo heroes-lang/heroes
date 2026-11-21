@@ -27,6 +27,10 @@ extern "hero_stream_net.h"
     function hero_stream_close(s: hero_stream.Stream consumes) -> i64
     function hero_stream_net_of(s: hero_net.Socket transfers hero_net_close) -> hero_stream.Stream acquires hero_stream_close
     # Round 3 (2026-11-16): the socket under a stream reached through it.
+    #
+    # - `s`: a stream `hero_stream_net_of` made; it stays open.
+    # - `ms`: milliseconds from now; 0 a deadline already passed,
+    #   `HERO_NET_FOREVER` none, below -1 refused.
     function hero_stream_net_set_deadline(s: hero_stream.Stream, ms: i64) -> i64
     function hero_stream_net_shutdown(s: hero_stream.Stream, how: i64) -> i64
     function hero_stream_net_set_option(s: hero_stream.Stream, option: i64, value: i64) -> i64
@@ -37,6 +41,10 @@ extern "hero_stream_net.h"
 # the socket is given back by the stream's close and never by its own. Where
 # no stream is made, `s` names a listener, a datagram socket or no open
 # socket, it stays the caller's, and `hero_stream.last_error` names why.
+#
+# - `s`: the connection made a stream: from this call the stream's close gives
+#   it back, never its own. A listener, a datagram socket or no open socket
+#   makes no stream and stays the caller's.
 function of(@s: hero_net.Socket) -> hero_stream.Stream
     return hero_stream_net_of(s)
 
@@ -58,15 +66,32 @@ function set_deadline(s: hero_stream.Stream, ms: i64) -> i64
 # 0 once one direction of the connection under `s` is closed, `how` one of
 # `hero_net.HERO_NET_SHUT_...`, or -1, as `hero_net.shutdown` answers, the
 # kind the stream's.
+#
+# - `s`: a stream `of` made; it stays open, and its close still gives the
+#   socket back.
+# - `how`: `hero_net.HERO_NET_SHUT_READ`, after which a read answers 0;
+#   `hero_net.HERO_NET_SHUT_WRITE`, after which the peer's read answers 0 once
+#   it has read what was sent; or `hero_net.HERO_NET_SHUT_BOTH`. Any other
+#   value is `HERO_STREAM_INVALID`.
 function shutdown(s: hero_stream.Stream, how: i64) -> i64
     return hero_stream_net_shutdown(s, how: how)
 
 # 0 once the option `option` of the socket under `s` is `value`, as
 # `hero_net.set_option` answers, or -1.
+#
+# - `s`: a stream `of` made; it stays open.
+# - `option`: `hero_net.HERO_NET_OPTION_NO_DELAY` or
+#   `hero_net.HERO_NET_OPTION_KEEP_ALIVE`, a connection's; another is
+#   `HERO_STREAM_INVALID`.
+# - `value`: 1 on, 0 off; any other value is `HERO_STREAM_INVALID`.
 function set_option(s: hero_stream.Stream, option: i64, value: i64) -> i64
     return hero_stream_net_set_option(s, option: option, value: value)
 
 # 1 or 0, the option `option` of the socket under `s`, or -1.
+#
+# - `s`: a stream `of` made; it stays open.
+# - `option`: `hero_net.HERO_NET_OPTION_NO_DELAY` or
+#   `hero_net.HERO_NET_OPTION_KEEP_ALIVE`; another is `HERO_STREAM_INVALID`.
 function option_of(s: hero_stream.Stream, option: i64) -> i64
     return hero_stream_net_option(s, option: option)
 

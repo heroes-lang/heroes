@@ -16,15 +16,26 @@ extern "hero_disk.h"
     function hero_disk_lock(s: hero_stream.Stream, how: i64, wait: i64) -> i64
     function hero_disk_unlock(s: hero_stream.Stream) -> i64
 
-# 0 once the stream `s` holds a lock on its whole file, `how` one of
-# `HERO_DISK_LOCK_SHARED` and `HERO_DISK_LOCK_EXCLUSIVE`, or -1:
-# `HERO_DISK_BUSY` where `wait` is 0 and another holds a lock that excludes
-# it, `HERO_DISK_NOT_OPEN` where `s` is no open stream. `wait` 1 waits as long
-# as it takes. Advisory on POSIX, enforced on Windows (`hero_disk.h`).
+# 0 once the stream `s` holds a lock on its whole file, or -1. Advisory on
+# POSIX, enforced on Windows (`hero_disk.h`).
+#
+# - `s`: the stream the lock is held through, until `unlock` or its close;
+#   it stays open. No open stream is `HERO_DISK_NOT_OPEN`, one on no
+#   descriptor `HERO_DISK_UNSUPPORTED`. A second lock on it replaces the
+#   first, let go before the second is asked.
+# - `how`: `HERO_DISK_LOCK_SHARED`, which other shared locks stand beside, or
+#   `HERO_DISK_LOCK_EXCLUSIVE`, which nothing stands beside; any other value
+#   is `HERO_DISK_INVALID`.
+# - `wait`: 1 waits until the lock is given, with no deadline and no stop
+#   reaching it; 0 answers at once, `HERO_DISK_BUSY` where another holds a
+#   lock that excludes it; any other value is `HERO_DISK_INVALID`.
 function lock(s: hero_stream.Stream, how: i64, wait: i64) -> i64
     return hero_disk_lock(s, how: how, wait: wait)
 
 # 0 once the stream `s` holds no lock, also where it held none, or -1.
+#
+# - `s`: the stream whose lock is let go; it stays open. No open stream is
+#   `HERO_DISK_NOT_OPEN`.
 function unlock(s: hero_stream.Stream) -> i64
     return hero_disk_unlock(s)
 

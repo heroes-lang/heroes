@@ -68,6 +68,8 @@ extern "hero_crypto.h"
     constant HERO_CRYPTO_RSA_BITS_LEAST: i64
     constant HERO_CRYPTO_RSA_BITS_MOST: i64
     # The call that ends a key's life, which every mark below names.
+    #
+    # - `k`: the key ended, its secret overwritten with zeros.
     function hero_crypto_close(k: Key consumes) -> i64
     function hero_crypto_offers(what: i64) -> i64
     function hero_crypto_generate(kind: i64, bits: i64) -> Key acquires hero_crypto_close
@@ -94,63 +96,133 @@ extern "hero_crypto.h"
 
 # 1 where this machine computes `what`, a kind or a scheme, 0 where it does
 # not, -1 for a number that names neither.
+#
+# - `what`: one of the `HERO_CRYPTO_` kinds or schemes; a number that names
+#   neither answers -1 with `HERO_CRYPTO_INVALID`.
 function offers(what: i64) -> i64
     return hero_crypto_offers(what)
 
 # A new key of `kind`, drawn by the system, or `nullptr`: `bits` is an RSA
 # key's size, 2048, 3072 or 4096, and 0 for every other kind; a pair answers
 # its private half.
+#
+# - `kind`: one of the eight `HERO_CRYPTO_` kinds, `HERO_CRYPTO_AES_128_GCM`
+#   to `HERO_CRYPTO_RSA`; one this machine does not compute is
+#   `HERO_CRYPTO_UNSUPPORTED`.
+# - `bits`: an RSA key's size, 2048, 3072 or 4096, and 0 for every other kind;
+#   any other value is `HERO_CRYPTO_INVALID`.
 function generate(kind: i64, bits: i64) -> Key
     return hero_crypto_generate(kind: kind, bits: bits)
 
 # A secret key of `kind` from the first `count` bytes of `secret`, which C
 # copies, or `nullptr`.
+#
+# - `kind`: one of the three kinds that seal, `HERO_CRYPTO_AES_128_GCM`,
+#   `HERO_CRYPTO_AES_256_GCM` or `HERO_CRYPTO_CHACHA20_POLY1305`.
+# - `secret`: the key's bytes, copied into the key and never kept; left as it
+#   was handed.
+# - `count`: how many of `secret`'s first bytes the key is, 16 for AES-128-GCM
+#   and 32 for the other two, else `HERO_CRYPTO_INVALID`.
 function from_secret(kind: i64, @secret: [u8], count: u64) -> Key
     return hero_crypto_from_secret(kind, @secret, count: count)
 
 # A private key from the first `count` bytes of `der`, PKCS #8, or
 # `nullptr`.
+#
+# - `der`: PKCS #8 DER (RFC 5208, or RFC 5958's version 2), unencrypted, of
+#   an Ed25519, X25519, P-256, P-384 or RSA key of 1024 to 8192 bits; an EC
+#   key must hold its public point on macOS and Windows,
+#   `HERO_CRYPTO_UNSUPPORTED` there otherwise. Left as it was handed.
+# - `count`: how many of `der`'s first bytes to read.
 function read_private(@der: [u8], count: u64) -> Key
     return hero_crypto_read_private(@der, count: count)
 
 # A public key from the first `count` bytes of `der`, SubjectPublicKeyInfo,
 # or `nullptr`.
+#
+# - `der`: SubjectPublicKeyInfo DER of a key of the same kinds, an EC point
+#   uncompressed; left as it was handed.
+# - `count`: how many of `der`'s first bytes to read.
 function read_public(@der: [u8], count: u64) -> Key
     return hero_crypto_read_public(@der, count: count)
 
 # The public half of `k` as a new key the caller closes, or `nullptr`.
+#
+# - `k`: the key whose public half is answered; it stays open. A public key
+#   answers a new handle on itself, a secret key `HERO_CRYPTO_INVALID`.
 function public_of(k: Key) -> Key
     return hero_crypto_public_of(k)
 
 # `k`'s kind, or -1.
+#
+# - `k`: the key asked about; it stays open. One not open is
+#   `HERO_CRYPTO_NOT_OPEN`.
 function kind_of(k: Key) -> i64
     return hero_crypto_kind(k)
 
 # `k`'s size in bits, or -1.
+#
+# - `k`: the key asked about: 128 or 256 for a secret key, the curve's or the
+#   modulus's size for a pair. It stays open.
 function bits_of(k: Key) -> i64
     return hero_crypto_bits(k)
 
 # 1 where `k` is a public key, 0 where it is not, -1 where it is none.
+#
+# - `k`: the key asked about; it stays open. One not open answers -1,
+#   `HERO_CRYPTO_NOT_OPEN`.
 function is_public(k: Key) -> i64
     return hero_crypto_is_public(k)
 
 # The length of `k`'s PKCS #8, written into `buffer`'s first `count` bytes
 # where it fits, or -1.
+#
+# - `k`: a private key, whose bytes are the same on every platform; a public
+#   or a secret key is `HERO_CRYPTO_INVALID`. It stays open.
+# - `buffer`: where the DER is written, from its first byte, where it fits;
+#   left `count` long.
+# - `count`: the bytes `buffer` holds; 0 only measures, and an answer above it
+#   says nothing in `buffer` is to be read.
 function write_private(k: Key, @buffer: [u8], count: u64) -> i64
     return hero_crypto_write_private(k, @buffer, count: count)
 
 # The length of `k`'s SubjectPublicKeyInfo, written into `buffer`'s first
 # `count` bytes where it fits, or -1.
+#
+# - `k`: a public key or a private one, whose public half is written; a secret
+#   key is `HERO_CRYPTO_INVALID`. It stays open.
+# - `buffer`: where the DER is written, from its first byte, where it fits;
+#   left `count` long.
+# - `count`: the bytes `buffer` holds; 0 only measures, and an answer above it
+#   says nothing in `buffer` is to be read.
 function write_public(k: Key, @buffer: [u8], count: u64) -> i64
     return hero_crypto_write_public(k, @buffer, count: count)
 
 # 0, or -1 where `k` was not open; `k` is given back either way, its secret
 # overwritten.
+#
+# - `k`: the key ended and given back, its secret overwritten with zeros; a
+#   call using it on another thread finishes first.
 function close(@k: Key) -> i64
     return hero_crypto_close(k)
 
 # The length of the sealed text, a drawn nonce, the ciphertext and the tag,
 # written into `buffer`'s first `count` bytes where it fits, or -1.
+#
+# - `k`: a secret key that seals; another is `HERO_CRYPTO_INVALID`, and one
+#   that sealed `HERO_CRYPTO_SEALS_MOST` texts `HERO_CRYPTO_LIMIT`. It stays
+#   open.
+# - `text`: the bytes sealed; left as it was handed.
+# - `text_count`: how many of `text`'s first bytes to seal, at most
+#   `HERO_CRYPTO_TEXT_MOST`.
+# - `associated`: bytes authenticated and not encrypted, which the open must
+#   be handed again; left as it was handed.
+# - `associated_count`: how many of `associated`'s first bytes, 0 for none.
+# - `buffer`: where the nonce, the ciphertext and the tag are written,
+#   `text_count` + `HERO_CRYPTO_NONCE_BYTES` + `HERO_CRYPTO_TAG_BYTES` bytes;
+#   left `count` long.
+# - `count`: the bytes `buffer` holds; a short one seals nothing and draws no
+#   nonce, 0 only measures.
 function seal(k: Key, @text: [u8], text_count: u64, @associated: [u8], associated_count: u64, @buffer: [u8], count: u64) -> i64
     return hero_crypto_seal(
         k,
@@ -164,6 +236,23 @@ function seal(k: Key, @text: [u8], text_count: u64, @associated: [u8], associate
 
 # `seal` with the first `nonce_count` bytes of `nonce`, FOR KNOWN-ANSWER
 # TESTS ONLY: a nonce used twice under one key gives both texts away.
+#
+# - `k`: a secret key that seals; the seal counts toward its bound as `seal`'s
+#   does. It stays open.
+# - `nonce`: the nonce, never one used before under `k`; left as it was
+#   handed.
+# - `nonce_count`: how many of `nonce`'s first bytes,
+#   `HERO_CRYPTO_NONCE_BYTES`.
+# - `text`: the bytes sealed; left as it was handed.
+# - `text_count`: how many of `text`'s first bytes to seal, at most
+#   `HERO_CRYPTO_TEXT_MOST`.
+# - `associated`: bytes authenticated and not encrypted; left as it was
+#   handed.
+# - `associated_count`: how many of `associated`'s first bytes, 0 for none.
+# - `buffer`: where the nonce, the ciphertext and the tag are written; left
+#   `count` long.
+# - `count`: the bytes `buffer` holds; a short one seals nothing, 0 only
+#   measures.
 function seal_nonce_for_tests(k: Key, @nonce: [u8], nonce_count: u64, @text: [u8], text_count: u64, @associated: [u8], associated_count: u64, @buffer: [u8], count: u64) -> i64
     return hero_crypto_seal_nonce_for_tests(
         k,
@@ -180,6 +269,19 @@ function seal_nonce_for_tests(k: Key, @nonce: [u8], nonce_count: u64, @text: [u8
 # The length of the text the first `sealed_count` bytes of `sealed` hold,
 # opened into `buffer`'s first `count` bytes where it fits, or -1:
 # `HERO_CRYPTO_FORGED` where the tag does not hold.
+#
+# - `k`: the secret key the bytes were sealed under; it stays open.
+# - `sealed`: the bytes `seal` wrote; left as it was handed.
+# - `sealed_count`: how many of `sealed`'s first bytes, at least
+#   `HERO_CRYPTO_NONCE_BYTES` + `HERO_CRYPTO_TAG_BYTES`, else
+#   `HERO_CRYPTO_INVALID`.
+# - `associated`: the bytes the seal was handed beside the text; others give
+#   `HERO_CRYPTO_FORGED`. Left as it was handed.
+# - `associated_count`: how many of `associated`'s first bytes, 0 for none.
+# - `buffer`: where the text is written, `sealed_count` less the nonce and the
+#   tag; on `HERO_CRYPTO_FORGED` it holds zeros, never a byte of an unchecked
+#   text. Left `count` long.
+# - `count`: the bytes `buffer` holds; 0 only measures.
 function open(k: Key, @sealed: [u8], sealed_count: u64, @associated: [u8], associated_count: u64, @buffer: [u8], count: u64) -> i64
     return hero_crypto_open(
         k,
@@ -194,6 +296,16 @@ function open(k: Key, @sealed: [u8], sealed_count: u64, @associated: [u8], assoc
 # The length of `k`'s signature of the first `count` bytes of `message` by
 # `scheme`, written into `buffer` where it fits, or -1; a `buffer_count` of
 # 0 measures the most it can be.
+#
+# - `k`: a private key of the scheme's kind; it stays open.
+# - `scheme`: one of the `HERO_CRYPTO_SIGN_` schemes; Ed25519 is
+#   deterministic, ECDSA and RSA-PSS draw.
+# - `message`: the bytes signed; left as it was handed.
+# - `count`: how many of `message`'s first bytes, at most
+#   `HERO_CRYPTO_TEXT_MOST`.
+# - `buffer`: where the signature is written; left `buffer_count` long.
+# - `buffer_count`: the bytes `buffer` holds; 0 measures the most the
+#   signature can be.
 function sign(k: Key, scheme: i64, @message: [u8], count: u64, @buffer: [u8], buffer_count: u64) -> i64
     return hero_crypto_sign(
         k,
@@ -206,6 +318,16 @@ function sign(k: Key, scheme: i64, @message: [u8], count: u64, @buffer: [u8], bu
 
 # 1 where the first `signature_count` bytes of `signature` are `k`'s
 # signature of `message` by `scheme`, 0 where not, -1 for a failure.
+#
+# - `k`: a public key, or a private one whose public half checks; it stays
+#   open.
+# - `scheme`: one of the `HERO_CRYPTO_SIGN_` schemes, of `k`'s kind; another
+#   answers -1.
+# - `message`: the bytes signed; left as it was handed.
+# - `count`: how many of `message`'s first bytes.
+# - `signature`: the signature checked, DER for ECDSA; bytes of no signature's
+#   form answer 0. Left as it was handed.
+# - `signature_count`: how many of `signature`'s first bytes.
 function verify(k: Key, scheme: i64, @message: [u8], count: u64, @signature: [u8], signature_count: u64) -> i64
     return hero_crypto_verify(
         k,
@@ -218,11 +340,28 @@ function verify(k: Key, scheme: i64, @message: [u8], count: u64, @signature: [u8
 
 # The length of the secret `mine` agrees with `theirs`, written into
 # `buffer` where it fits, or -1.
+#
+# - `mine`: a private X25519, P-256 or P-384 key; it stays open.
+# - `theirs`: a key of the same kind, public or private; another kind is
+#   `HERO_CRYPTO_INVALID`. It stays open.
+# - `buffer`: where the shared secret is written, 32 bytes for X25519 and
+#   P-256 and 48 for P-384, a secret to derive keys from and never one itself;
+#   left `count` long.
+# - `count`: the bytes `buffer` holds; 0 only measures.
 function agree(mine: Key, theirs: Key, @buffer: [u8], count: u64) -> i64
     return hero_crypto_agree(mine: mine, theirs: theirs, buffer: @buffer, count: count)
 
 # The length of the first `count` bytes of `text` encrypted to `k` by
 # `scheme`, written into `buffer` where it fits, or -1.
+#
+# - `k`: an RSA key, public or private; it stays open.
+# - `scheme`: `HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256`.
+# - `text`: the bytes encrypted; left as it was handed.
+# - `count`: how many of `text`'s first bytes, at most the modulus's bytes
+#   less 66.
+# - `buffer`: where the encrypted bytes are written, as many as the modulus's;
+#   left `buffer_count` long.
+# - `buffer_count`: the bytes `buffer` holds; 0 only measures.
 function encrypt(k: Key, scheme: i64, @text: [u8], count: u64, @buffer: [u8], buffer_count: u64) -> i64
     return hero_crypto_encrypt(
         k,
@@ -236,6 +375,15 @@ function encrypt(k: Key, scheme: i64, @text: [u8], count: u64, @buffer: [u8], bu
 # The length of the first `count` bytes of `data` decrypted by `k`, written
 # into `buffer` where it fits, or -1: `HERO_CRYPTO_FORGED` for data that do
 # not decrypt.
+#
+# - `k`: a private RSA key; it stays open.
+# - `scheme`: `HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256`, as the data were
+#   encrypted.
+# - `data`: the encrypted bytes; left as it was handed.
+# - `count`: how many of `data`'s first bytes.
+# - `buffer`: where the text is written; left `buffer_count` long.
+# - `buffer_count`: the bytes `buffer` holds; 0 measures the most a text can
+#   be.
 function decrypt(k: Key, scheme: i64, @data: [u8], count: u64, @buffer: [u8], buffer_count: u64) -> i64
     return hero_crypto_decrypt(
         k,
@@ -259,6 +407,10 @@ function last_os_error() -> i64
 # The length of the last failure's words, written into `buffer`'s first
 # bytes with a zero after them and cut where a character ends, or -1 where
 # `count` is 0.
+#
+# - `buffer`: where the words are written, a zero byte after them, cut where a
+#   character ends; left `count` long.
+# - `count`: the bytes `buffer` holds, 1 or more; 0 is `HERO_CRYPTO_INVALID`.
 function last_message(@buffer: [u8], count: u64) -> i64
     return hero_crypto_last_message(@buffer, count: count)
 

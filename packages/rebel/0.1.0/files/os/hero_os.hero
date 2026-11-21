@@ -36,19 +36,33 @@ extern "hero_os.h"
     function hero_fs_link(existing: cstr lent, name: cstr lent) -> i64
     function hero_fs_symlink(target: cstr lent, name: cstr lent) -> i64
     # For the test of the four alone: what it made, removed.
+    #
+    # - `path`: the file, the link or the empty folder removed; nothing there
+    #   is `HERO_OS_OK` too.
     function hero_fs_remove(path: cstr lent) -> i64
 
 # The value of the environment variable `name`, `status` set to
 # `HERO_OS_NOT_FOUND` and "" answered where it is unset, and to
 # `HERO_OS_NOT_TEXT` where the value is not UTF-8, the answer then opening
-# with `marks` bytes. It aborts where `name` holds a zero byte.
+# with `marks` bytes.
+#
+# - `name`: the variable's name; it aborts where it holds a zero byte.
+# - `status`: set to `HERO_OS_OK`, `HERO_OS_NOT_FOUND` or `HERO_OS_NOT_TEXT`.
+# - `marks`: set to how many bytes the answer opens with that are marks, two
+#   for each U+FFFD of the value after them; 0 for every status but
+#   `HERO_OS_NOT_TEXT`.
 function env_shown(name: str, @status: i64, @marks: i64) -> str
     return hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
 
 # The absolute place `path` names, every link on the way followed and the
 # parts not there yet as written, `status` set to `HERO_OS_FAILED` and ""
-# answered where it cannot be resolved, `fs_why` then saying why. It aborts
-# where `path` holds a zero byte.
+# answered where it cannot be resolved, `fs_why` then saying why.
+#
+# - `path`: the path to resolve, relative to the working folder or absolute;
+#   the empty path fails. It aborts where it holds a zero byte.
+# - `status`: set to `HERO_OS_OK`, `HERO_OS_FAILED` or `HERO_OS_NOT_TEXT`.
+# - `marks`: set to how many bytes the answer opens with that are marks; 0
+#   for every status but `HERO_OS_NOT_TEXT`.
 function resolved_shown(path: str, @status: i64, @marks: i64) -> str
     return hero_fs_resolved_shown(path: path.cstr(), status: @status, marks: @marks)
 
@@ -60,6 +74,10 @@ function fs_why() -> i64
 
 # The path of the running executable, links followed, `status` set to
 # `HERO_OS_NOT_FOUND` and "" answered where the machine gives none.
+#
+# - `status`: set to `HERO_OS_OK`, `HERO_OS_NOT_FOUND` or `HERO_OS_NOT_TEXT`.
+# - `marks`: set to how many bytes the answer opens with that are marks; 0
+#   for every status but `HERO_OS_NOT_TEXT`.
 function exe_path_shown(@status: i64, @marks: i64) -> str
     return hero_exe_path_shown(status: @status, marks: @marks)
 
@@ -74,8 +92,10 @@ function os_pid() -> i64
 
 # The permission bits of what `path` names, links followed, 0 to 0o7777, or
 # -1 where nothing is there, `fs_why` then saying why. Windows keeps
-# read-only alone: 0o444 or 0o666 there. It aborts where `path` holds a zero
-# byte.
+# read-only alone: 0o444 or 0o666 there.
+#
+# - `path`: what to ask about, ASCII alone on Windows, whose arm reads its
+#   bytes in the machine's code page; it aborts where it holds a zero byte.
 function fs_mode(path: str) -> i64
     return hero_fs_mode(path.cstr())
 
@@ -83,17 +103,33 @@ function fs_mode(path: str) -> i64
 # of which the low twelve are read, or `HERO_OS_FAILED`, `fs_why` then
 # saying why. Windows sets read-only where `mode` grants nobody writing and
 # clears it where it grants somebody.
+#
+# - `path`: what to change, ASCII alone on Windows; it aborts where it holds
+#   a zero byte.
+# - `mode`: the permission bits, of which the low twelve (0o7777) are read;
+#   on Windows only whether any of 0o222 is set.
 function fs_set_mode(path: str, mode: i64) -> i64
     return hero_fs_set_mode(path.cstr(), mode: mode)
 
 # `HERO_OS_OK` once `name` is a second name of the file `existing` names, a
 # hard link, or `HERO_OS_FAILED`, `fs_why` then saying why.
+#
+# - `existing`: the file the new name is given to; it must exist. It aborts
+#   where it holds a zero byte.
+# - `name`: the new name, which must not exist; it aborts where it holds a
+#   zero byte.
 function fs_link(existing: str, name: str) -> i64
     return hero_fs_link(existing: existing.cstr(), name: name.cstr())
 
 # `HERO_OS_OK` once `name` is a symbolic link holding `target`, or
 # `HERO_OS_FAILED`, `fs_why` then saying why: on Windows for a user who may
 # make no link.
+#
+# - `target`: the text the link holds, a path that need not exist, relative
+#   to the link's own folder or absolute. It aborts where it holds a zero
+#   byte.
+# - `name`: where the link is made, which must not exist; it aborts where it
+#   holds a zero byte.
 function fs_symlink(target: str, name: str) -> i64
     return hero_fs_symlink(target: target.cstr(), name: name.cstr())
 
