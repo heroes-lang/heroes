@@ -3,57 +3,71 @@
 # `tls`, and speaks just enough of the protocol after it to show that the
 # whole way, the request, the handshake and a message of the protocol read
 # through TLS, works. A thread runs a function of one `str` (spec § 13), so
-# its port is chosen by the test before it and the test waits until the
-# port answers (`until_listening`), which costs the server one connection
-# that sends nothing.
+# the server listens on a port the system chooses and tells it back over a
+# connection to a listener of the test's thread (`start`).
 
 use io
 use net
 use numbers
 use sql/postgres/internal/script
 use strings
-use time
+use threads
 use tls
 
-# A port of the loopback address nothing listens on now.
-function free_port() -> i64
-    l @= net.listen(host: "127.0.0.1", port: 0).must()
-    port = l.address.port
-    net.close_listener(@l).must()
-    return port
+# A server running on a thread of its own, and the port it listens on.
+record Started
+    # The port the server listens on, the one the system chose for it, which
+    # the server told back.
+    port: i64
+    # The server's thread, whose answer `threads.wait_text` gives.
+    thread: threads.TextThread
 
-# Waits until something listens on `port` of the loopback address, by
-# connecting and closing at once, for at most about ten seconds.
-function until_listening(port: i64)
-    tries @= 0
+# `serve` started on a thread of its own for `mode`, as `serve` reads it.
+# The server listens on a port the system chooses and tells it back over a
+# connection to a listener of this thread, so no port is named while nothing
+# holds it, and none is let go for another program to take between a choice
+# and a listen (defect 2633); a server that tells why it listens on none
+# stops the test with its words.
+function start(mode: str) -> Started
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+    t = threads.spawn_text(body: serve, arg: f"{control.address.port} {mode}").must()
+    told = net.accept(control, deadline_ms: 10000).must()
+    r @= io.reader(told.stream)
+    said = io.read_rest_text(@r).must()
+    io.close(@r.stream).must()
+    net.close_listener(@control).must()
+    return Started(port: port_told(said).must(), thread: t)
 
-    while tries < 500
-        tries @ tries + 1
-        made = net.connect(host: "127.0.0.1", port: port, deadline_ms: 1000)
+# Tells `text`, the port the server listens on or why it listens on none, to
+# the listener of `start` at `control`, and closes.
+function tell(control: i64, text: str)
+    c @= net.connect("127.0.0.1", port: control, deadline_ms: 10000).must()
+    io.write_text(c.stream, text: text).must()
+    io.close(@c.stream).must()
 
-        match made
-            .ok c =>
-                s @= c.stream
-                closing = io.close(@s)
+# The port `said` names, or a failure carrying the server's words where it
+# told why it listens on none.
+function port_told(said: str) -> i64?
+    match numbers.parse_int(said)
+        .ok port => return ok(port)
+        .err _   => return fail(code: "failed", msg: "the server listens on no port: " + said)
 
-                match closing
-                    .ok _  => return
-                    .err _ => return
-            .err _ => time.sleep(time.Duration(nanoseconds: 20000000))
-
-# The server: `arg` is `"<mode> <port>"`. `n` answers `N` to the request
+# The server: `arg` is `"<control> <mode>"`. `n` answers `N` to the request
 # for TLS; `wrong` answers `S` and presents a certificate for
 # `wrong.example`; `fatal` answers `S`, presents one for `localhost`, reads
 # the startup message through TLS and answers it a FATAL error, 28P01. It
-# accepts twice at most, the test's probe and the client, and answers what
-# it did, or its failure's code and message.
+# listens on a port the system chooses, tells it to `control` (`tell`),
+# accepts once, the client, and answers what it did, or its failure's code
+# and message.
 function serve(arg: str) -> str
     parts = strings.split(s: arg, sep: " ")
+    control = numbers.parse_int(parts[0]).must()
 
     if parts.len() != 2
-        return "invalid: not \"<mode> <port>\": " + arg
-    mode = parts[0]
-    port = numbers.parse_int(parts[1]).default(0)
+        said = "invalid: not \"<control> <mode>\": " + arg
+        tell(control: control, text: said)
+        return said
+    mode = parts[1]
     reply: [u8] @= [83]
     chain @= tls.TEST_LOCALHOST_CHAIN
     key @= tls.TEST_LOCALHOST_KEY
@@ -66,15 +80,19 @@ function serve(arg: str) -> str
     steps: [tls.Step] = [.expect(answer: [0, 0, 0, 8, 4, 210, 22, 47]), .send(data: reply)]
     made = tls.listen_after(
         host: "127.0.0.1",
-        port: port,
+        port: 0,
         server: tls.Server(chain: chain, key: key, protocols: []),
         steps: steps
     )
 
     match made
-        .err e => return e.code + ": " + e.msg
+        .err e =>
+            said = e.code + ": " + e.msg
+            tell(control: control, text: said)
+            return said
         .ok l =>
             listener @= l
+            tell(control: control, text: to_str(listener.port))
             did @= "no client went through TLS"
             bounded = tls.set_accept_deadline(listener, deadline_ms: 15000)
 
@@ -82,24 +100,18 @@ function serve(arg: str) -> str
                 .ok _  => _ = 0
                 .err e => did @ e.code + ": " + e.msg
 
-            tries @= 0
+            taken = tls.accept(listener, deadline_ms: 10000)
 
-            while tries < 2
-                tries @ tries + 1
-                taken = tls.accept(listener, deadline_ms: 10000)
+            match taken
+                .err _ => _ = 0
+                .ok s =>
+                    stream @= s.stream
+                    did @ answered(stream)
+                    closing = io.close(@stream)
 
-                match taken
-                    .err _ => _ = 0
-                    .ok s =>
-                        stream @= s.stream
-                        did @ answered(stream)
-                        closing = io.close(@stream)
-
-                        match closing
-                            .ok _  => _ = 0
-                            .err _ => _ = 0
-
-                        break
+                    match closing
+                        .ok _  => _ = 0
+                        .err _ => _ = 0
 
             closed = tls.close_listener(@listener)
 
