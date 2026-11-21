@@ -127,6 +127,7 @@ function known() -> [Found]
 constant DATA: [str]
     [
         "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero 8203"
+        "packages/rebel/0.1.0/files/i18n/dates/internal/unit_tables.hero 8203"
         "packages/rebel/0.1.0/files/i18n/numbers/internal/number_tables.hero 8203"
         "packages/rebel/0.1.0/files/tokenizer/tables/internal/cases.hero 8203"
     ]

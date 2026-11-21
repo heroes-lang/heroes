@@ -1,0 +1,244 @@
+# CLDR 49's JSON read from the release's zip, pinned by its URL and SHA-256:
+# for every locale of CLDR's full set, the patterns of ten units of time in
+# three widths and six plural categories, the patterns that join a list of
+# units in three widths, and the sizes of the digit groups of its decimal
+# pattern. Nothing is taken from a zip whose digest is not the pinned one.
+
+use <rebel>/archive
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/strings
+
+# The release the table is made from: CLDR 49's JSON, every package in its
+# full coverage, as the Unicode Consortium publishes it.
+constant SOURCE_URL: str
+    "https://github.com/unicode-org/cldr-json/releases/download/49.0.0/cldr-49.0.0-json-full.zip"
+
+# The SHA-256 of the bytes `SOURCE_URL` served when it was fetched on
+# 2026-11-21, in lowercase hexadecimal; the zip `date_tables` was made from
+# has the same.
+constant SOURCE_SHA256: str
+    "3b1f5d684d29c541d3acf91fe834b3fe36ae0f34775e3ee50e93558bf14ca174"
+
+# The most bytes one member of the zip may hold once inflated: the largest
+# file read, a locale's `units.json`, holds about 300 KB.
+constant MEMBER_LIMIT: i64
+    16777216
+
+# The units of time a row holds, in its order: CLDR's `duration-<unit>`
+# entries, the ten ECMA-402's `Intl.DurationFormat` writes.
+constant UNITS: [str]
+    ["year", "month", "week", "day", "hour", "minute", "second", "millisecond", "microsecond", "nanosecond"]
+
+# The widths, in a row's order: CLDR's `long`, `short` and `narrow` units,
+# and the list types of the same width.
+constant WIDTHS: [str]
+    ["long", "short", "narrow"]
+
+# The plural categories, in a row's order, `i18n.Plural`'s.
+constant CATEGORIES: [str]
+    ["zero", "one", "two", "few", "many", "other"]
+
+# The list types of units, one for each width of `WIDTHS`.
+constant LIST_TYPES: [str]
+    ["listPattern-type-unit", "listPattern-type-unit-short", "listPattern-type-unit-narrow"]
+
+# The patterns of a list type, in a row's order: the first two of a longer
+# list, two in its middle, its last two, and a list of exactly two.
+constant LIST_PARTS: [str]
+    ["start", "middle", "end", "2"]
+
+# The digits in each group of a decimal pattern's integer part.
+record Grouping
+    # The digits of the group nearest the decimal point; 0 where the pattern
+    # groups none.
+    primary: i64
+    # The digits of every group further from it, the primary's again where
+    # the pattern names one size only; 0 where it groups none.
+    secondary: i64
+
+# What one locale writes a duration with, as CLDR 49 gives it.
+record Locale
+    # The locale's tag, as CLDR's folders name it: `en`, `sr-Latn`, `und`.
+    tag: str
+    # The unit patterns, 180 of them: for each width of `WIDTHS`, each unit of
+    # `UNITS`, each category of `CATEGORIES`, its pattern, "" for a category
+    # the language does not use.
+    patterns: [str]
+    # The list patterns, 12 of them: for each width of `WIDTHS`, each part of
+    # `LIST_PARTS`.
+    lists: [str]
+    # The groups of its decimal pattern, in its default numbering system.
+    grouping: Grouping
+
+# The zip at `path`, read whole and held to `SOURCE_SHA256`.
+#
+# - `path`: the zip as fetched from `SOURCE_URL`.
+#
+# Fails where it cannot be read, as `held_to_pin` and as
+# `archive.decode_zip` fail.
+function read_zip(path: str) -> archive.ZipReader?
+    data = fs.read_bytes(path)?
+    held_to_pin(data)?
+    return archive.decode_zip(data)
+
+# Nothing where `data`'s SHA-256 is `SOURCE_SHA256`.
+#
+# - `data`: the bytes of the zip.
+#
+# Fails `invalid` where the digest is another, the message naming both.
+function held_to_pin(data: [u8]) -> ()?
+    digest = bytes.format_hex(crypto.sha256(data))
+
+    if digest != SOURCE_SHA256
+        return fail(
+            code: "invalid",
+            msg: f"the zip has SHA-256 {digest}, and the zip of {SOURCE_URL} this table is pinned to has {SOURCE_SHA256}"
+        )
+    return ok()
+
+# Every member of `zip`, by its name.
+function members_by_name(zip: archive.ZipReader lent) -> {str: archive.ZipEntry}
+    members: {str: archive.ZipEntry} @= {}
+
+    for entry in zip.entries
+        members[entry.name] @ entry
+
+    return members
+
+# The member `name` of `zip`, read as JSON.
+#
+# Fails `not_found` where the zip holds no such member, and as reading it,
+# its text and its JSON fail.
+function member_json(zip: archive.ZipReader lent, members: {str: archive.ZipEntry} lent, name: str) -> json.Value?
+    entry = match members[name]
+        .ok found => found
+        .err _    => return fail(code: "not_found", msg: f"the zip holds no {name}")
+
+    data = archive.read_zip_entry(zip, entry: entry, limit: MEMBER_LIMIT)?
+    return json.parse(bytes.to_text(data)?)
+
+# The value at the keys `path` of `v`, each an object's member.
+#
+# Fails `not_found`, naming the key, where one is absent.
+function at_keys(v: json.Value, path: [str]) -> json.Value?
+    here @= v
+
+    for key in path
+        here @ json.member(here, key: key)?
+
+    return ok(here)
+
+# The text at `key` of the object `v`, "" where it has no such key.
+#
+# Fails `invalid` where the member is there and is not a text.
+function text_or_empty(v: json.Value, key: str) -> str?
+    return match json.member(v, key: key)
+        .ok found => json.text_of(found)
+        .err _    => ok("")
+
+# The grouping of `pattern`, a CLDR decimal pattern: `#,##0.###` groups by
+# three, `#,##,##0.###` by three and then two, `#,#0.###` by two, `0.###`
+# not at all. Only the positive pattern, before any `;`, is read.
+function grouping_of(pattern: str) -> Grouping
+    positive = strings.split(s: pattern, sep: ";")[0]
+    whole = strings.split(s: positive, sep: ".")[0]
+    groups = strings.split(s: whole, sep: ",")
+
+    if groups.len() < 2
+        return Grouping(primary: 0, secondary: 0)
+    primary = groups[groups.len() - 1].len()
+
+    if groups.len() < 3
+        return Grouping(primary: primary, secondary: primary)
+    return Grouping(primary: primary, secondary: groups[groups.len() - 2].len())
+
+# The patterns of `tag` in the zip, read from its `units.json`,
+# `listPatterns.json` and `numbers.json`.
+#
+# Fails `not_found` where a file, a unit, a width, a list type or one of its
+# parts is absent, or a unit gives no `other` pattern; `invalid` where a list
+# pattern does not hold both `{0}` and `{1}`; and as reading the files fails.
+function read_locale(zip: archive.ZipReader lent, members: {str: archive.ZipEntry} lent, tag: str) -> Locale?
+    units = at_keys(member_json(zip, members, name: f"cldr-units-full/main/{tag}/units.json")?, path: ["main", tag, "units"])?
+    patterns: [str] @= []
+
+    for width in WIDTHS
+        for unit in UNITS
+            entry = at_keys(units, path: [width, "duration-" + unit])?
+
+            for category in CATEGORIES
+                patterns @ patterns.push(text_or_empty(entry, key: "unitPattern-count-" + category)?)
+
+            if patterns[patterns.len() - 1] == ""
+                return fail(code: "not_found", msg: f"{tag} gives no `other` pattern for {width} {unit}")
+
+    listed = at_keys(member_json(zip, members, name: f"cldr-misc-full/main/{tag}/listPatterns.json")?, path: ["main", tag, "listPatterns"])?
+    lists: [str] @= []
+
+    for kind in LIST_TYPES
+        for part in LIST_PARTS
+            text = json.text_of(at_keys(listed, path: [kind, part])?)?
+
+            if !strings.contains(s: text, substr: "{0}") || !strings.contains(s: text, substr: "{1}")
+                return fail(
+                    code: "invalid",
+                    msg: f"{tag}'s {kind} {part} is \"{text}\", which does not place both elements"
+                )
+            lists @ lists.push(text)
+
+    numbers = at_keys(member_json(zip, members, name: f"cldr-numbers-full/main/{tag}/numbers.json")?, path: ["main", tag, "numbers"])?
+    system = json.text_of(json.member(numbers, key: "defaultNumberingSystem")?)?
+    decimal = json.text_of(at_keys(numbers, path: ["decimalFormats-numberSystem-" + system, "standard"])?)?
+    return ok(Locale(tag: tag, patterns: patterns, lists: lists, grouping: grouping_of(decimal)))
+
+# Every locale of CLDR's full set in the zip at `path`, in the order of their
+# tags' bytes.
+#
+# - `path`: the zip as fetched from `SOURCE_URL`.
+#
+# Fails as `read_zip` and `read_locale` fail, and `not_found` where the zip
+# holds no list of its locales.
+function read_locales(path: str) -> [Locale]?
+    zip = read_zip(path)?
+    members = members_by_name(zip)
+    available = at_keys(member_json(zip, members, name: "cldr-core/availableLocales.json")?, path: ["availableLocales", "full"])?
+    tags: [str] @= []
+
+    for item in json.items_of(available)?
+        tags @ tags.push(json.text_of(item)?)
+
+    out: [Locale] @= []
+
+    for tag in sort(tags)
+        out @ out.push(read_locale(zip, members, tag: tag)?)
+
+    return ok(out)
+
+## Tests
+
+test "grouping_of: by threes, the Indian way, by twos, none, and a negative pattern"
+    assert grouping_of("#,##0.###") == Grouping(primary: 3, secondary: 3)
+    assert grouping_of("#,##,##0.###") == Grouping(primary: 3, secondary: 2)
+    assert grouping_of("#,#0.###") == Grouping(primary: 2, secondary: 2)
+    assert grouping_of("0.###") == Grouping(primary: 0, secondary: 0)
+    assert grouping_of("#,##0.###;(#,##0.###)") == Grouping(primary: 3, secondary: 3)
+    assert grouping_of("") == Grouping(primary: 0, secondary: 0)
+
+test "at_keys and text_or_empty: a path found, a key absent, a category the language lacks"
+    v = json.parse("{\"a\": {\"b\": {\"unitPattern-count-one\": \"{0} hour\"}}}").must()
+    entry = at_keys(v, path: ["a", "b"]).must()
+    assert text_or_empty(entry, key: "unitPattern-count-one").must() == "{0} hour"
+    assert text_or_empty(entry, key: "unitPattern-count-few").must() == ""
+    assert at_keys(v, path: ["a", "c"]).is_err()
+    assert at_keys(v, path: []).must() == v
+
+test "held_to_pin: bytes that are not the pinned zip, and none at all"
+    message = match held_to_pin(bytes.from_text("not the zip"))
+        .ok _  => ""
+        .err e => e.msg
+
+    assert strings.contains(s: message, substr: SOURCE_SHA256)
+    assert held_to_pin([]).is_err()

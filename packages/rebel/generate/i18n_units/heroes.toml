@@ -1,0 +1,3 @@
+[dependencies.rebel]
+path = "../../0.1.0/files"
+packages = ["archive", "bytes", "crypto", "fs", "json", "strings", "unicode"]
