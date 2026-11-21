@@ -143,3 +143,10 @@ has no `__debug` section, a debug map of two `N_OSO` entries and no `.dSYM`.
 Your definition's structure per question; the C (or Swift, or Heroes) you wrote, whether clang and
 `swiftc` accepted it, and what it printed, each with its command; the route you would adopt, built and
 run; your prediction about a named binding; every premise of these briefs you found false, first.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/253-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

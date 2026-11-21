@@ -128,3 +128,10 @@ Your definition's structure per question; the measured deltas, real where refres
 not, each with its command; the sentence you would adopt word for word with its home, or none; the
 predictions you register, under `## Registered predictions`, and the counted rule that scores each; and
 every premise of these briefs you found false.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/252-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

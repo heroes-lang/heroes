@@ -1006,3 +1006,10 @@ defect 2591 (`>>` lowered as a test of the sign, `improvement`), tasks 2592 (the
 inside its signal handler on Linux) and 2593 (the Linux layer's hand-typed function-pointer slots), and
 decision 2594, open, R3's question to the author whether decision 24 admits a vendored C cryptography
 library.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/253-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

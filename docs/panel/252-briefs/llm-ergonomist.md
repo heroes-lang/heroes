@@ -294,3 +294,11 @@ sessions were run, with every `context` answer quoted and each session's grade b
 
 Written by the coordinator's brief-writer, 14:52 CET on 2026-11-19; repaired after the critics' readings
 until the time at the foot of `00-shared.md` (`date`); `run.sh` not run.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/252-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out. `coord/blindtest/`, the coordinator's preflight of a blind session, is in no archive and
+is gone.

@@ -652,3 +652,10 @@ Settled where the brief said unrun: the amd64 image's clang (22.1.8) keeps no fr
 - **Not cut, and not done**: the golden forms `doc` and `doc_refused`, the `run` and `check` goldens for
   `skip_test`, and the falsifier's four `check` cases as golden files are priced, not written; they are
   the landing's, and every case they hold was run above as a command with its output in `ce/`.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/253-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

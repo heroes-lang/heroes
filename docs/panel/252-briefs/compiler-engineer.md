@@ -179,3 +179,10 @@ at `-P 2`; **the frozen compiler's census is shared by every route, so run it on
 Your definition's structure per question; each route built or priced with its files and lines; the
 census counts with the command that made them; the route you would adopt per question, built and run on
 the cases named here; and every premise of these briefs you found false.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/252-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

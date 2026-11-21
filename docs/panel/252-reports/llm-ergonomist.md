@@ -4341,3 +4341,10 @@ I would also object if another trial showed models under B routinely writing `r.
 
 Beyond the files in this directory, only my system setup reached my context: the agent framework identity, the working directory path and the date. No CLAUDE.md, rules, memory or other documents reached it. Of this directory I read `brief.md`, `changes.diff`, `task.md` and `spec-A.md`. I did not read `spec-B.md` itself; I built it as `spec-A.md` plus `changes.diff`, which the brief says is the only difference.
 ~~~~~
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/252-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

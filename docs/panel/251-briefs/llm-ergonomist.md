@@ -184,3 +184,10 @@ cell of its task reached, and a difference it names stays a count of sessions.
 `run.log`, each `run.json`'s cost, model and `subtype`, and every `report.md` (or `result.md`) are copied
 into `.claude/worktrees/rebel-round/docs/panel/251-reports/llm-ergonomist.md` under a header saying how
 the sessions were run, with every `context` answer quoted and each session's grade by the rows above.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/251-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.

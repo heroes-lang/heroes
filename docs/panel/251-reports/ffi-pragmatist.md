@@ -473,3 +473,10 @@ of a handler, D-rebind's `dlsym` installer and cache installers (249's rows, not
 file outside my folder and this report; Go and zig ran with `HOME`, their caches and `TMPDIR` inside `F/`;
 six containers `fp-251-1` to `fp-251-6`, each gone after (`docker ps` read empty); no paid run, no
 `heroes test`, no commit.
+
+**Added 2026-11-21.** The folders under `.claude/worktrees/` this file names were never part of
+the repository, git ignoring that directory, and were removed that day by the author's
+instruction, meant as: *delete every worktree that is not active; where one is cited, find a
+solution*. What a seat or the coordinator kept under `rebel-scratch/` for this sitting is read
+from `docs/panel/251-reports/evidence.tar.xz`, its paths relative to `rebel-scratch/`; `evidence.md`
+beside it says what was kept and what was left out.
