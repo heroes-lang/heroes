@@ -1,0 +1,86 @@
+# Which file each of two units reads for a group record's header, where the
+# record is told read two ways (design.md §4.17, §4.19; panel 239's R5;
+# defect 2636).
+#
+# **Two files of one name are not one file read two ways.** Since defect
+# 2636 a header a package binds and does not ship is the library's to
+# supply, and a unit reaching that package's record searches the folders the
+# build names before the package's own (`cli/package_units.hero`), so it can
+# read another file of the header's name than the package's own unit does: a
+# file of a folder another library's `pkg-config` answer names, or one
+# `--include` names, where a fetched package's unit searches neither.
+# `ffi_record_two_layouts` tells the two readings apart, and what makes them
+# differ is then that file, never a header read before it, which
+# `agreed_told.cause_of` would name. Asked of clang on the refusal's path
+# alone, so no build that refuses nothing pays for it: one `-M` of a unit
+# opening with the header, under each unit's own probe words.
+
+use cli/agreed_layout
+use cli/compiling
+use cli/deps
+use cli/opening
+use cli/package_reads
+use cli/strings
+use emit/clang_place
+
+# The note where `reader`, module `module`'s unit, reads another file of the
+# header of record `decl` than the record's own module does, both named;
+# "" where the two read one file, or where either cannot be listed.
+function two_files(a: agreed_layout.Asking, reader: str, module: str, decl: i64, @memo: {str: str}) -> str
+    header = agreed_layout.header_of(a, decl: decl)
+    owner = agreed_layout.owner_of(a, decl: decl)
+    here = read_for(a, module: module, header: header, @memo)
+    theirs = read_for(a, module: owner, header: header, @memo)
+
+    if here.len() == 0 || theirs.len() == 0 || here == theirs
+        return ""
+    return reader + " reads `" + header + "` as `" + clang_place.slashed(here) + "`, and module `" + agreed_layout.module_name(a, component: owner) + "` reads it as `" + clang_place.slashed(theirs) + "`: two files of one name, not one file read two ways, so what changes the record is the first file, which a folder " + reader + " searches holds before the second's: rename or move it, or name no such folder for this build"
+
+# The file `module`'s unit reads for `header`, read lexically: the first row
+# of `clang -M` over a unit opening with that header alone, under the unit's
+# own probe words, whose path is the header's name or ends in it; "" where
+# the build plans no unit for the module or clang lists nothing.
+function read_for(a: agreed_layout.Asking, module: str, header: str, @memo: {str: str}) -> str
+    plan = agreed_layout.plan_of(a, module: module)
+
+    if plan.is_err()
+        return ""
+    listing = compiling.reads(
+        a.t.build,
+        words: agreed_layout.plan_words(a, plan: plan.must()),
+        headers: [header],
+        @memo
+    )
+
+    if listing.is_err()
+        return ""
+    return named_row(listing: listing.must(), header: header)
+
+# The first row of a listing, `<digest> <path>` after the digest of them all,
+# whose path read lexically is `header`'s or ends in `/` and it; "" for none.
+function named_row(listing: str, header: str) -> str
+    wanted = package_reads.lexical(header)
+    first: bool @= true
+
+    for row in deps.lines(listing)
+        if first
+            first @ false
+            continue
+        path = opening.path_of(row)
+
+        if !path.is_err()
+            lexical = package_reads.lexical(path.must())
+
+            if lexical == wanted || strings.ends_with(text: lexical, suffix: "/" + wanted)
+                return lexical
+
+    return ""
+
+## Tests
+
+test "the file a listing names for a header is its first row of that name, the digest line and other files passed over"
+    listing = "0123456789abcdef\n0123456789abcdef /sdk/SDKSettings.json\n0123456789abcdef aainc/fq2636.h\n0123456789abcdef /usr/include/stdint.h\n0123456789abcdef pcinc/fq2636.h\n"
+    assert named_row(listing: listing, header: "fq2636.h") == "aainc/fq2636.h"
+    assert named_row(listing: listing, header: "stdint.h") == "/usr/include/stdint.h"
+    assert named_row(listing: listing, header: "q2636.h") == ""
+    assert named_row(listing: "0123456789abcdef\n", header: "fq2636.h") == ""

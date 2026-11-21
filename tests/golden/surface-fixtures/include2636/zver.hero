@@ -1,0 +1,14 @@
+# Defect 2636, lane lane-include, 2026-11-21: the `path` package `zp` binds
+# `zver2636.h`, which it does not ship, linking the platform's library `z`,
+# and this program holds its record by value. With `--include` naming
+# `zinc/` and no `--library`, the header is a folder's the build names and
+# the library the platform's: refused `ffi_unpaired_release`, as the same
+# folder named by `CPATH` is, where until the repair the flag was refused
+# `shadowed_header` as standing in for a file the package never had. No
+# mark: the refusal is the flag's, and built plainly no folder holds the
+# header.
+use <zp>/zp
+
+function main()
+    m: zp.Mark = zp.mark()
+    print(m.major + m.minor > 1)

@@ -1,0 +1,13 @@
+# The packages of defect 2636's fixture, folders of the author's own:
+# `rec`, which binds a header it does not ship; `duo`, which ships one header
+# and binds one it does not ship; and `zp`, which binds a header it does not
+# ship from the platform's library `z`.
+
+[dependencies.rec]
+path = "rec"
+
+[dependencies.duo]
+path = "duo"
+
+[dependencies.zp]
+path = "zp"

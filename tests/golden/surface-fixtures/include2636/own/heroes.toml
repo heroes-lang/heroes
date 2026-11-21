@@ -1,0 +1,4 @@
+# The package `rec` of defect 2636's fixture, the folder beside this one.
+
+[dependencies.rec]
+path = "../rec"

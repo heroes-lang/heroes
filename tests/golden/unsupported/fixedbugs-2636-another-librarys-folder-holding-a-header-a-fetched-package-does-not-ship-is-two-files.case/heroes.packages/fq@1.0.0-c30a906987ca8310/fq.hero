@@ -1,0 +1,14 @@
+# The package `fq` of the case two folders up, as `heroes fetch` places it: a
+# group record of a library's header that its `pkgconfig` group names and the
+# package does not ship (defect 2636).
+extern "fq2636.h" pkgconfig "fq2636"
+    record Pair tag fq_pair
+        a: i64
+        b: i64
+    constant FQ_SCALE: i64
+
+function make(a: i64, b: i64) -> Pair
+    return Pair(a: a, b: b)
+
+function scaled(p: Pair) -> i64
+    return (p.a + p.b) * FQ_SCALE

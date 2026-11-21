@@ -1,0 +1,15 @@
+# fixedbugs, defect 2636, lane lane-include, 2026-11-21.
+#
+# A program holding by value the record of a fetched package's `pkgconfig`
+# group, whose header the package does not ship: the library's, in the
+# folder its `.pc` names, the route defect 2351's note gives a fetched
+# package for a library's header. The package's unit and this program's
+# each read that one file, so no file of the package's is stood in for and
+# the build runs; until the repair the folder `pkg-config` names was refused
+# `shadowed_header` as standing in for the package's own `fq2636.h`, which
+# the package never had.
+use <fq>/fq
+
+function main()
+    p: fq.Pair = fq.make(a: 3, b: 4)
+    print(fq.scaled(p))

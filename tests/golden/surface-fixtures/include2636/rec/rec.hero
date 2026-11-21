@@ -1,0 +1,14 @@
+# The package `rec`, a folder of the author's own that the program's
+# catalogue names by `path`: a group record of a header the package does not
+# ship, `rec2636.h`, which is the library's to supply (defect 2636).
+extern "rec2636.h"
+    record Pair tag rec_pair
+        a: i64
+        b: i64
+    constant REC_SCALE: i64
+
+function make(a: i64, b: i64) -> Pair
+    return Pair(a: a, b: b)
+
+function scaled(p: Pair) -> i64
+    return (p.a + p.b) * REC_SCALE

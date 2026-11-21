@@ -1,0 +1,12 @@
+# Defect 2636, lane lane-include, 2026-11-21: a header of the program's own,
+# `rec2636.h` beside this file, named like the one the `path` package `rec`
+# binds and does not ship. The package's units keep the program's words, its
+# own folder among them, so they and this program's unit read that one file:
+# no file of the package's is stood in for, no record is laid out two ways,
+# and the build runs with the program's `REC_SCALE`. Until the repair it was
+# refused `shadowed_header` as standing in for the package's own `rec2636.h`.
+use <rec>/rec
+
+function main()
+    p: rec.Pair = rec.make(a: 3, b: 4)
+    print(rec.scaled(p))
