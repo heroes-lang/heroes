@@ -1,0 +1,266 @@
+# A duration written in words as a locale writes it, "3 hours, 5 minutes":
+# each unit's count in its unit pattern and plural category, in the
+# locale's digits and digit groups, and the units joined by the locale's
+# list pattern of units, all of CLDR 49 as `unit_tables` holds it.
+#
+# A unit is a number from 0 for the year to 9 for the nanosecond, as the
+# face's `DurationUnit` orders them; a width 0 long, 1 short, 2 narrow.
+
+use i18n
+use i18n/dates/internal/date_data
+use i18n/dates/internal/relative
+use i18n/dates/internal/unit_tables
+use i18n/internal/locale_syntax
+use strings
+
+# The slot of a list row's pattern for the first two of a longer list.
+constant START: i64
+    0
+
+# The slot of a list row's pattern for two in the middle of a longer list.
+constant MIDDLE: i64
+    1
+
+# The slot of a list row's pattern for the last two of a longer list.
+constant END: i64
+    2
+
+# The slot of a list row's pattern for a list of exactly two.
+constant TWO: i64
+    3
+
+# What a locale writes a duration with, read from `unit_tables`.
+record Units
+    # The locale's row of `unit_tables.UNIT_ROWS`.
+    patterns: str
+    # The locale's row of `unit_tables.LIST_ROWS`.
+    lists: str
+    # The digits of the group nearest the point, 0 where none is grouped.
+    primary: i64
+    # The digits of every further group.
+    secondary: i64
+
+# The position in `unit_tables.LOCALES` of the locale CLDR's data is found
+# under for `locale`, along `i18n.fallback_chain`, whose last is the root.
+function locale_index(locale: i18n.Locale) -> i64
+    for step in i18n.fallback_chain(locale)
+        at = locale_syntax.search(unit_tables.LOCALES, key: i18n.format_locale(step))
+
+        if at >= 0
+            return at
+
+    return locale_syntax.search(unit_tables.LOCALES, key: "und")
+
+# What `locale` writes a duration with.
+function load(locale: i18n.Locale) -> Units
+    entry = unit_tables.LOCALE_ROWS[locale_index(locale)]
+    return Units(
+        patterns: unit_tables.UNIT_ROWS[date_data.number_at(entry, at: 0)],
+        lists: unit_tables.LIST_ROWS[date_data.number_at(entry, at: 3)],
+        primary: to_i64(entry[6] - '0').must(),
+        secondary: to_i64(entry[7] - '0').must()
+    )
+
+# The text a row names in slot `slot`.
+function text_at(codes: str, slot: i64) -> str
+    return unit_tables.TEXTS[date_data.number_at(codes, at: 3 * slot)]
+
+# The pattern of `unit` in `width` for `category`, the pattern of `other`
+# where the language gives that category none.
+function unit_pattern(units: Units lent, width: i64, unit: i64, category: i18n.Plural) -> str
+    base = (width * 10 + unit) * 6
+    found = text_at(units.patterns, slot: base + relative.count_slot(category))
+
+    if found == ""
+        return text_at(units.patterns, slot: base + 5)
+    return found
+
+# `pattern` with its `{0}` replaced by `first` and its `{1}` by `second`, in
+# one pass, so a brace an element holds is never read as a placeholder.
+function placed(pattern: str, first: str, second: str) -> str
+    out: [str] @= []
+    from @= 0
+    at @= 0
+
+    while at + 2 < pattern.len()
+        if pattern[at] == '{' && pattern[at + 2] == '}' && (pattern[at + 1] == '0' || pattern[at + 1] == '1')
+            out @ out.push(pattern.slice(from: from, to: at))
+
+            if pattern[at + 1] == '0'
+                out @ out.push(first)
+            else
+                out @ out.push(second)
+            at @ at + 3
+            from @ at
+        else
+            at @ at + 1
+
+    out @ out.push(pattern.slice(from: from, to: pattern.len()))
+    return out.join("")
+
+# `elements` joined by `units`' list patterns of `width`, as UTS #35's lists
+# join them: one alone, two by the pattern of two, more by the start pattern
+# around the first, the middle pattern around each next, and the end pattern
+# around the last two.
+function joined(units: Units lent, width: i64, elements: [str] lent) -> str
+    n = elements.len()
+
+    if n == 0
+        return ""
+
+    if n == 1
+        return elements[0]
+
+    if n == 2
+        return placed(pattern: text_at(units.lists, slot: width * 4 + TWO), first: elements[0], second: elements[1])
+    out @= placed(pattern: text_at(units.lists, slot: width * 4 + END), first: elements[n - 2], second: elements[n - 1])
+    at @= n - 3
+
+    while at >= 1
+        out @ placed(pattern: text_at(units.lists, slot: width * 4 + MIDDLE), first: elements[at], second: out)
+        at @ at - 1
+
+    return placed(pattern: text_at(units.lists, slot: width * 4 + START), first: elements[0], second: out)
+
+# `digits`, decimal digits with no sign, grouped as `units` groups them from
+# the point, where they are at least as many as the first group and `data`'s
+# minimum grouping digits together, and written in `data`'s digits and group
+# separator.
+function written(data: date_data.Data lent, units: Units lent, digits: str) -> str
+    if units.primary == 0 || digits.len() < units.primary + data.min_grouping
+        return relative.localized(data, digits: digits)
+    pieces: [str] @= []
+    end @= digits.len()
+    size @= units.primary
+
+    while end > size
+        pieces @ pieces.push(digits.slice(from: end - size, to: end))
+        end @ end - size
+        size @ units.secondary
+
+    pieces @ pieces.push(digits.slice(from: 0, to: end))
+    ordered: [str] @= []
+    at @= pieces.len() - 1
+
+    while at >= 0
+        ordered @ ordered.push(relative.localized(data, digits: pieces[at]))
+        at @ at - 1
+
+    return ordered.join(data.group)
+
+# The units `units_of` with their counts `counts`, in that order, written for
+# `locale` in `width`.
+#
+# Where no count is above zero and one is below it, the duration is one
+# negative span and its minus sign stands once, on the first part; where the
+# signs are mixed, each part carries its own.
+function format(locale: i18n.Locale, units_of: [i64], counts: [i64], width: i64) -> str
+    data = date_data.load(locale)
+    units = load(locale)
+    rules = i18n.plural_rules(locale, kind: .cardinal)
+    above: bool @= false
+    below: bool @= false
+
+    for count in counts
+        if count > 0
+            above @ true
+
+        if count < 0
+            below @ true
+
+    once = below && !above
+    elements: [str] @= []
+    at @= 0
+
+    while at < counts.len()
+        text = to_str(counts[at])
+        negative = counts[at] < 0
+        magnitude @= text
+
+        if negative
+            magnitude @ text.slice(from: 1, to: text.len())
+        category = i18n.select_plural(rules, number: magnitude).default(.other)
+        number @= written(data, units: units, digits: magnitude)
+
+        if once && at == 0 || negative && !once
+            number @ data.minus + number
+        elements @ elements.push(
+            strings.replace_all(s: unit_pattern(units, width: width, unit: units_of[at], category: category), old: "{0}", new: number)
+        )
+        at @ at + 1
+
+    return joined(units, width: width, elements: elements)
+
+## Tests
+
+# Expected texts are what ECMA-402's `Intl.DurationFormat` in Node 26.13.0
+# (ICU 79.1, CLDR 49) and ICU 79.1's `MeasureFormat::formatMeasures` wrote
+# for the same counts, observed 2026-11-21; where the two part, which one is
+# followed is said above the case.
+
+test "format: English in three widths, one part, three parts, and a list of four"
+    english = i18n.parse_locale("en").must()
+    assert format(english, units_of: [4, 5], counts: [3, 5], width: 0) == "3 hours, 5 minutes"
+    assert format(english, units_of: [4, 5], counts: [3, 5], width: 1) == "3 hr, 5 min"
+    assert format(english, units_of: [4, 5], counts: [3, 5], width: 2) == "3h 5m"
+    assert format(english, units_of: [4], counts: [1], width: 0) == "1 hour"
+    assert format(english, units_of: [4, 5, 6], counts: [1, 1, 1], width: 0) == "1 hour, 1 minute, 1 second"
+    assert format(english, units_of: [0, 1, 2, 3], counts: [1, 2, 3, 4], width: 2) == "1y 2m 3w 4d"
+
+test "format: no part, a zero written as given, and the largest and smallest counts"
+    english = i18n.parse_locale("en").must()
+    assert format(english, units_of: [], counts: [], width: 0) == ""
+
+    # ICU writes a zero it is given; ECMA-402 writes none and answers "".
+    assert format(english, units_of: [6], counts: [0], width: 0) == "0 seconds"
+    assert format(english, units_of: [4], counts: [9223372036854775807], width: 0) == "9,223,372,036,854,775,807 hours"
+    assert format(english, units_of: [9], counts: [-9223372036854775807 - 1], width: 0) == "-9,223,372,036,854,775,808 nanoseconds"
+
+test "format: a negative span signed once, a leading zero signed with it, and mixed signs each their own"
+    english = i18n.parse_locale("en").must()
+
+    # ECMA-402's, where ICU signs every part.
+    assert format(english, units_of: [4, 5], counts: [-3, -5], width: 0) == "-3 hours, 5 minutes"
+    assert format(english, units_of: [4, 5], counts: [0, -5], width: 0) == "-0 hours, 5 minutes"
+
+    # ICU's, where ECMA-402 refuses the duration.
+    assert format(english, units_of: [4, 5], counts: [-3, 5], width: 0) == "-3 hours, 5 minutes"
+    assert format(english, units_of: [4, 5], counts: [3, -5], width: 0) == "3 hours, -5 minutes"
+
+test "format: plurals and duals, a pattern with no number, and the lists of other languages"
+    assert format(i18n.parse_locale("ar").must(), units_of: [4], counts: [2], width: 0) == "ساعتان"
+    assert format(i18n.parse_locale("he").must(), units_of: [4, 5], counts: [1, 2], width: 0) == "1 שעה, שתי דקות"
+    assert format(i18n.parse_locale("ru").must(), units_of: [4, 5], counts: [21, 5], width: 0) == "21 час 5 минут"
+
+    # French writes a no-break space, U+00A0, between 3 and "heures", and a
+    # narrow one, U+202F, before "h".
+    assert format(i18n.parse_locale("fr").must(), units_of: [4, 5], counts: [3, 5], width: 0) == "3 heures et 5 minutes"
+    assert format(i18n.parse_locale("fr").must(), units_of: [4, 5], counts: [3, 5], width: 1) == "3 h et 5 min"
+    assert format(i18n.parse_locale("ja").must(), units_of: [4, 5], counts: [3, 5], width: 2) == "3h5m"
+    assert format(i18n.parse_locale("zh").must(), units_of: [4, 5], counts: [3, 5], width: 0) == "3小时5分钟"
+    assert format(i18n.parse_locale("it").must(), units_of: [5, 6], counts: [7, 30], width: 0) == "7 minuti e 30 secondi"
+
+test "format: digits grouped by threes, the Indian way, by twos, not below the minimum, and in other scripts"
+    assert format(i18n.parse_locale("hi").must(), units_of: [4], counts: [1234567], width: 0) == "12,34,567 घंटे"
+
+    # Toki Pona groups by twos with a no-break space, U+00A0.
+    assert format(i18n.parse_locale("tok").must(), units_of: [4], counts: [1234567], width: 0) == "1 23 45 67 h"
+
+    # ECMA-402's, CLDR's minimum grouping digits; ICU's `MeasureFormat` writes "1.234".
+    assert format(i18n.parse_locale("es").must(), units_of: [4], counts: [1234], width: 0) == "1234 horas"
+    assert format(i18n.parse_locale("es").must(), units_of: [4], counts: [12345], width: 0) == "12.345 horas"
+    assert format(i18n.parse_locale("ar-EG").must(), units_of: [4], counts: [3], width: 0) == "٣ ساعات"
+    assert format(i18n.parse_locale("fa").must(), units_of: [4], counts: [-3], width: 0) == "\u{200e}−۳ ساعت"
+    assert format(i18n.parse_locale("sv").must(), units_of: [4], counts: [-3], width: 0) == "−3 timmar"
+
+test "placed: both placeholders, a brace an element holds, and a pattern with neither"
+    assert placed(pattern: "{0}, {1}", first: "a", second: "b") == "a, b"
+    assert placed(pattern: "{1} {0}", first: "{1}", second: "x") == "x {1}"
+    assert placed(pattern: "plain", first: "a", second: "b") == "plain"
+    assert placed(pattern: "", first: "a", second: "b") == ""
+
+test "load: a locale found itself, through its parent, and the root"
+    assert unit_tables.LOCALES[locale_index(i18n.parse_locale("de").must())] == "de"
+    assert unit_tables.LOCALES[locale_index(i18n.parse_locale("de-DE").must())] == "de"
+    assert unit_tables.LOCALES[locale_index(i18n.parse_locale("xx").must())] == "und"
+    assert load(i18n.parse_locale("hi").must()).secondary == 2
