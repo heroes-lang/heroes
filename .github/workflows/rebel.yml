@@ -376,10 +376,12 @@ jobs:
       # refused `ffi_missing_header` for `sqlite3.h`, the box carrying no
       # SQLite either. It comes from the image's vcpkg, as SDL3 does in
       # `ci.yml`, and only its headers, import library and DLL are copied into
-      # folders of their own, handed to every driver by the compiler's own
-      # `--include` and `--library`: a folder holding nothing else holds no
-      # file that could stand in for a header the runtime reads, which the
-      # compiler refuses (panel 237's R2). The headers are every one the
+      # folders of their own: a folder holding nothing else holds no file
+      # that could stand in for a header the runtime reads, which the
+      # compiler refuses (panel 237's R2). The import library is handed to
+      # every driver by the compiler's own `--library`, and the headers by
+      # `CPATH` in the drivers' step, which says why not `--include`. The
+      # headers are every one the
       # port lists under `include/` in vcpkg's own list of its files, since
       # the port patches `sqlite3.h` to include `sqlite3-vcpkg-config.h`:
       # with `sqlite3.h` alone clang stopped, that file not found (sqlite3
@@ -503,6 +505,16 @@ jobs:
             echo "::error::$bound ($("$bound" --version 2> /dev/null | head -n 1)) ended a command past its time with $past and one that ignores TERM with $killed, where every driver's run reads 124 and 137"
             exit 1
           fi
+          # SQLite's headers reach clang on Windows through `CPATH`, and its
+          # import library through `--library`. Not `--include`: a header a
+          # package's group names (`sql/sqlite`'s `extern "sqlite3.h"`),
+          # found in a folder `--include` names before the package's own, is
+          # refused `shadowed_header` (`selfhost/cli/package_stand_in.hero`,
+          # `stood_in`; run 44913457527 of the branch `rebel-ci-probe`,
+          # 2026-11-21), and that rule does not count a folder of the
+          # environment. The header and the library both come from folders
+          # the build is handed, as `ffi_unpaired_release` asks.
+          if [ "$RUNNER_OS" = "Windows" ]; then export CPATH="$SQLITE_INCLUDE"; fi
           logs=build/rebel-logs
           mkdir -p "$logs"
           {
@@ -517,7 +529,7 @@ jobs:
             base=$(printf '%s' "$name" | tr -d _)
             for run in $RUNS; do
               set -- "examples-rebel/$name.hero"
-              if [ "$RUNNER_OS" = "Windows" ]; then set -- "$@" --include "$SQLITE_INCLUDE" --library "$SQLITE_LIB"; fi
+              if [ "$RUNNER_OS" = "Windows" ]; then set -- "$@" --library "$SQLITE_LIB"; fi
               if [ "$run" = "sanitize" ]; then set -- "$@" --sanitize; fi
               log="$logs/$name.$run.log"
               echo "::group::$name, $run"
