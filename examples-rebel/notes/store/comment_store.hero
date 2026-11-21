@@ -1,0 +1,155 @@
+# The comments in the database. A comment is named in the API by a UUID of
+# version 7, not by its row's number, so a client cannot count the comments
+# by trying numbers, and the UUID still sorts by the time it was made.
+
+use <rebel>/sql
+use <rebel>/sql/build
+use <rebel>/sql/sqlite
+use <rebel>/time
+
+use domain/model
+use store/database
+
+## Codes
+
+# The code of a comment that is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+## Writing
+
+# Adds a comment and answers its number.
+#
+# - `db`: the database.
+# - `uid`: its UUID, as `uuid.format` writes it.
+# - `note_id`: the note it is about.
+# - `author_id`: the account that wrote it.
+# - `body`: its text, checked by `validate.check_comment`.
+# - `at`: when it was written.
+#
+# Fails as the statement fails.
+function insert(@db: sqlite.Db, uid: str, note_id: i64, author_id: i64, body: str, at: time.Instant) -> i64?
+    columns = [
+        model.Comment::uid
+        model.Comment::note_id
+        model.Comment::author_id
+        model.Comment::body
+        model.Comment::created_at
+    ]
+    row: [sql.Value] = [.text(v: uid), .integer(v: note_id), .integer(v: author_id), .text(v: body), .instant(v: at)]
+    result = database.run(@db, s: database.sql_of(.insert(query: build.insert(into: "comments", columns: columns, rows: [row])))?)?
+    return result.last_id
+
+# Removes the comment `id`.
+#
+# - `db`: the database.
+# - `id`: the comment's number.
+#
+# Fails `not_found` where no comment has it.
+function remove(@db: sqlite.Db, id: i64) -> ()?
+    d @= build.delete("comments")
+    d.where @ [build.equal(model.Comment::id, value: .integer(v: id))]
+    result = database.run(@db, s: database.sql_of(.delete(query: d))?)?
+
+    if result.rows_affected == 0
+        return fail(code: NOT_FOUND, msg: f"no comment numbered {id}")
+
+    return ok()
+
+## Reading
+
+# The select of a comment's columns and its author's name as `author`.
+function select_comments() -> build.Select
+    columns = [
+        build.column("comments.id")
+        build.column("comments.uid")
+        build.column("comments.note_id")
+        build.column("comments.author_id")
+        build.aliased(build.column("users.name"), alias: model.Comment::author)
+        build.column("comments.body")
+        build.column("comments.created_at")
+    ]
+
+    q @= build.select(from: "comments", columns: columns)
+    q.joins @ [build.inner_join("users", on: build.columns_equal(left: "users.id", right: "comments.author_id"))]
+    return q
+
+# The comments on the note `note_id`, the oldest first.
+#
+# - `db`: the database.
+# - `note_id`: the note.
+function of_note(@db: sqlite.Db, note_id: i64) -> [model.Comment]?
+    q @= select_comments()
+    q.where @ [build.equal("comments.note_id", value: .integer(v: note_id))]
+    q.order_by @ [build.ascending("comments.created_at"), build.ascending("comments.id")]
+    rows = database.query(@db, s: database.sql_of(.select(query: q))?)?
+    out: [model.Comment] @= []
+
+    for row in rows.rows
+        out @ out.push(comment_of(row)?)
+
+    return ok(out)
+
+# The comment whose UUID is `uid`.
+#
+# - `db`: the database.
+# - `uid`: the UUID, as the API names it.
+#
+# Fails `not_found` where none has it.
+function by_uid(@db: sqlite.Db, uid: str) -> model.Comment?
+    q @= select_comments()
+    q.where @ [build.equal("comments.uid", value: .text(v: uid))]
+    rows = database.query(@db, s: database.sql_of(.select(query: q))?)?
+
+    if rows.rows.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no comment \"{uid}\"")
+
+    return comment_of(rows.rows[0])
+
+# How many comments there are.
+#
+# - `db`: the database.
+function count(@db: sqlite.Db) -> i64?
+    return database.count(
+        @db,
+        s: database.sql_of(.select(query: build.select(from: "comments", columns: [build.count_all()])))?
+    )
+
+# The comment `row` holds.
+#
+# - `row`: a row of `select_comments`.
+function comment_of(row: sql.Row) -> model.Comment?
+    comment = model.Comment(
+        id: sql.integer_named(row, name: model.Comment::id)?,
+        uid: sql.text_named(row, name: model.Comment::uid)?,
+        note_id: sql.integer_named(row, name: model.Comment::note_id)?,
+        author_id: sql.integer_named(row, name: model.Comment::author_id)?,
+        author: sql.text_named(row, name: model.Comment::author)?,
+        body: sql.text_named(row, name: model.Comment::body)?,
+        created_at: sql.instant_named(row, name: model.Comment::created_at)?
+    )
+
+    return ok(comment)
+
+test "insert and of_note: two comments in the order written, one read by its UUID, one removed"
+    db @= database.open(":memory:").must()
+    _ = database.migrate_up(@db).must()
+    _ = sqlite.exec(
+        @db,
+        statement: "INSERT INTO users (name, email, password, role, created_at) VALUES ('a', 'a@b.c', 'p', 'reader', ?1)",
+        params: [.instant(v: time.epoch())]
+    ).must()
+    _ = sqlite.exec(
+        @db,
+        statement: "INSERT INTO notes (author_id, slug, title, body, created_at, updated_at) VALUES (1, 's', 't', 'b', ?1, ?1)",
+        params: [.instant(v: time.epoch())]
+    ).must()
+    first = insert(@db, uid: "u1", note_id: 1, author_id: 1, body: "first", at: time.epoch()).must()
+    _ = insert(@db, uid: "u2", note_id: 1, author_id: 1, body: "second", at: time.epoch()).must()
+    got = of_note(@db, note_id: 1).must()
+    assert got.len() == 2 && got[0].body == "first" && got[1].author == "a"
+    assert by_uid(@db, uid: "u2").must().body == "second"
+    assert by_uid(@db, uid: "u9").is_err()
+    remove(@db, id: first).must()
+    assert count(@db).must() == 1
+    sqlite.close(@db).must()

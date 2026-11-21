@@ -1,0 +1,128 @@
+# Pages of a list: which rows a page shows and which pages stand beside it.
+# A page number comes from a query string, so every text is answered: a
+# number past the last page shows the last, and text that is no number is
+# refused rather than read as page 1, so a mistyped link is told.
+
+use <rebel>/json
+use <rebel>/numbers
+
+use domain/jsonv
+
+## Codes
+
+# The code of a page that is not a whole number from 1.
+constant INVALID: str
+    "invalid"
+
+## Pages
+
+# One page of a list of `total` rows, `size` a page.
+record Page
+    # The page shown, from 1.
+    number: i64
+    # The most rows a page shows, from 1.
+    size: i64
+    # How many rows the whole list holds.
+    total: i64
+    # How many pages the list fills, at least 1, so an empty list has a page.
+    pages: i64
+    # How many rows come before this page's first: what the query skips.
+    offset: i64
+
+# The page `requested` asks for, of a list of `total` rows, `size` a page.
+#
+# - `requested`: the query's text: "" for the first page, else a whole
+#   number from 1, its digits alone.
+# - `size`: the rows a page shows, from 1.
+# - `total`: the rows of the list, from 0.
+#
+# A number past the last page is the last page. Fails `invalid` where
+# `requested` is not "" nor a whole number from 1. Aborts where `size` is
+# below 1 or `total` below 0, the caller's own numbers.
+function page_of(requested: str, size: i64, total: i64) -> Page?
+    assert size >= 1 && total >= 0
+
+    pages = if total == 0
+        1
+    else
+        (total + size - 1) / size
+
+    asked = if requested == ""
+        1
+    else
+        match numbers.parse_int(requested)
+            .ok n  => n
+            .err _ => return fail(code: INVALID, msg: f"page \"{requested}\" is not a whole number")
+
+    if asked < 1
+        return fail(code: INVALID, msg: f"page {asked} is below 1")
+
+    number = if asked > pages
+        pages
+    else
+        asked
+
+    return ok(Page(number: number, size: size, total: total, pages: pages, offset: (number - 1) * size))
+
+# Whether a page comes before `p`.
+#
+# - `p`: the page.
+function has_previous(p: Page) -> bool
+    return p.number > 1
+
+# Whether a page comes after `p`.
+#
+# - `p`: the page.
+function has_next(p: Page) -> bool
+    return p.number < p.pages
+
+# `p` as the object the pages and the API show: `number`, `pages`, `total`,
+# and `previous` and `next`, the neighbours' numbers, 0 where there is none.
+#
+# - `p`: the page.
+function page_json(p: Page) -> json.Value
+    previous = if has_previous(p)
+        p.number - 1
+    else
+        0
+
+    next = if has_next(p)
+        p.number + 1
+    else
+        0
+
+    members: {str: json.Value} = {
+        "number": jsonv.number(p.number)
+        "pages": jsonv.number(p.pages)
+        "total": jsonv.number(p.total)
+        "previous": jsonv.number(previous)
+        "next": jsonv.number(next)
+    }
+
+    return jsonv.object(members)
+
+test "page_of: an empty list has one page, the first"
+    p = page_of(requested: "", size: 10, total: 0).must()
+    assert p.number == 1 && p.pages == 1 && p.offset == 0
+    assert !has_previous(p) && !has_next(p)
+
+test "page_of: one row, a full page, a page and one row"
+    assert page_of(requested: "", size: 2, total: 1).must().pages == 1
+    assert page_of(requested: "", size: 2, total: 2).must().pages == 1
+    assert page_of(requested: "", size: 2, total: 3).must().pages == 2
+
+test "page_of: a page in the middle, its offset and both neighbours"
+    p = page_of(requested: "2", size: 2, total: 5).must()
+    assert p.number == 2 && p.pages == 3 && p.offset == 2
+    assert has_previous(p) && has_next(p)
+
+test "page_of: past the last page shows the last; zero, a sign and text refused"
+    assert page_of(requested: "99", size: 2, total: 5).must().number == 3
+    assert page_of(requested: "0", size: 2, total: 5).is_err()
+    assert page_of(requested: "-1", size: 2, total: 5).is_err()
+    assert page_of(requested: "two", size: 2, total: 5).is_err()
+    assert page_of(requested: "99999999999999999999", size: 2, total: 5).is_err()
+
+test "page_json: the first of three pages"
+    v = page_json(page_of(requested: "1", size: 2, total: 5).must())
+    assert json.format(v).must() == "{\"number\":1,\"pages\":3,\"total\":5,\"previous\":0,\"next\":2}"

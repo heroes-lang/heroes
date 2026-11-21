@@ -1,0 +1,354 @@
+# The JSON API described as an OpenAPI 3.1 document, built as data
+# (`openapi`), and the one source of three things: the API's routes, added to
+# the router from the document's paths and named by their operations; the
+# check of every request's parameters and body against its schemas, before a
+# handler reads it; and the document itself, served at `/openapi.json` with a
+# page to try it at `/docs`. A route, its check and its documentation
+# therefore cannot disagree.
+#
+# The schemas say each field's kind; a field's own rules (a title not empty,
+# at most 120 characters) are `validate`'s, which answers every field's
+# problem at once with 422, where the schema's check answers 400 at the first
+# value of the wrong kind.
+
+use <rebel>/json
+use <rebel>/openapi
+
+use domain/jsonv
+
+## Operations
+
+# The name of the operation that makes a token.
+constant CREATE_TOKEN: str
+    "create_token"
+
+# The name of the operation that answers the signed-in account.
+constant READ_ME: str
+    "read_me"
+
+# The name of the operation that lists notes.
+constant LIST_NOTES: str
+    "list_notes"
+
+# The name of the operation that writes a note.
+constant CREATE_NOTE: str
+    "create_note"
+
+# The name of the operation that reads a note.
+constant READ_NOTE: str
+    "read_note"
+
+# The name of the operation that changes a note.
+constant UPDATE_NOTE: str
+    "update_note"
+
+# The name of the operation that removes a note.
+constant DELETE_NOTE: str
+    "delete_note"
+
+# The name of the operation that lists a note's comments.
+constant LIST_COMMENTS: str
+    "list_comments"
+
+# The name of the operation that writes a comment.
+constant CREATE_COMMENT: str
+    "create_comment"
+
+# The name of the operation that searches the notes.
+constant SEARCH_NOTES: str
+    "search_notes"
+
+# The name of the operation that gives an account a role.
+constant UPDATE_USER: str
+    "update_user"
+
+# The name of the operation that stops the server.
+constant STOP_SERVER: str
+    "stop_server"
+
+# The name of the security scheme every operation but `create_token` needs.
+constant BEARER: str
+    "bearer"
+
+## The document
+
+# The API's document.
+function document() -> openapi.Document
+    doc @= openapi.new_document(title: "Notes API", version: "1.0.0")
+    doc.info.description @ "Notes, comments and accounts of a notes server. Every operation but create_token needs a token from it, sent as `Authorization: Bearer <token>`."
+    doc.components.schemas @ schemas()
+    doc.components.security_schemes @ {"bearer": openapi.bearer_scheme("JWT")}
+    doc.security @ [openapi.requirement(BEARER, scopes: [])]
+    doc.tags @ [
+        openapi.new_tag(name: "notes", description: "Notes and their comments.")
+        openapi.new_tag(name: "accounts", description: "Tokens and roles.")
+    ]
+    add(@doc, path: "/api/token", method: "POST", op: create_token())
+    add(@doc, path: "/api/me", method: "GET", op: read_me())
+    add(@doc, path: "/api/notes", method: "GET", op: list_notes())
+    add(@doc, path: "/api/notes", method: "POST", op: create_note())
+    add(@doc, path: "/api/notes/{slug}", method: "GET", op: read_note())
+    add(@doc, path: "/api/notes/{slug}", method: "PATCH", op: update_note())
+    add(@doc, path: "/api/notes/{slug}", method: "DELETE", op: delete_note())
+    add(@doc, path: "/api/notes/{slug}/comments", method: "GET", op: list_comments())
+    add(@doc, path: "/api/notes/{slug}/comments", method: "POST", op: create_comment())
+    add(@doc, path: "/api/search", method: "GET", op: search_notes())
+    add(@doc, path: "/api/users/{name}", method: "PATCH", op: update_user())
+    add(@doc, path: "/api/admin/stop", method: "POST", op: stop_server())
+    return doc
+
+# Adds `op`; every path and name here is this program's own, so a refusal is
+# a mistake in this file and aborts.
+#
+# - `doc`: the document.
+# - `path`: the path's template.
+# - `method`: the method.
+# - `op`: the operation.
+function add(@doc: openapi.Document, path: str, method: str, op: openapi.Operation)
+    openapi.add_operation(@doc, path: path, method: method, operation: op).must()
+
+## Schemas
+
+# The schemas the operations name.
+function schemas() -> {str: json.Value}
+    string = openapi.string_schema()
+    integer = openapi.integer_schema()
+    stamp = openapi.with_format(openapi.string_schema(), format: "date-time")
+    tags = openapi.array_schema(openapi.string_schema())
+
+    note: {str: json.Value} = {
+        "slug": string
+        "title": string
+        "author": string
+        "tags": tags
+        "body": string
+        "html": string
+        "comments": integer
+        "created_at": stamp
+        "updated_at": stamp
+    }
+
+    note_input: {str: json.Value} = {
+        "title": string
+        "body": string
+        "tags": tags
+    }
+
+    comment: {str: json.Value} = {
+        "id": openapi.with_format(openapi.string_schema(), format: "uuid")
+        "author": string
+        "body": string
+        "html": string
+        "created_at": stamp
+    }
+
+    user: {str: json.Value} = {
+        "name": string
+        "role": role_schema()
+        "created_at": stamp
+    }
+
+    page: {str: json.Value} = {
+        "number": integer
+        "pages": integer
+        "total": integer
+        "previous": integer
+        "next": integer
+    }
+
+    token: {str: json.Value} = {
+        "token": string
+        "token_type": string
+        "expires_in": integer
+    }
+
+    return {
+        "Note": openapi.object_schema(note, required: ["slug", "title", "author", "tags", "body", "html", "comments", "created_at", "updated_at"])
+        "NoteInput": openapi.object_schema(note_input, required: ["title", "body"])
+        "NoteChange": openapi.object_schema(note_input, required: [])
+        "Comment": openapi.object_schema(comment, required: ["id", "author", "body", "html", "created_at"])
+        "CommentInput": openapi.object_schema({"body": string}, required: ["body"])
+        "User": openapi.object_schema(user, required: ["name", "role", "created_at"])
+        "RoleInput": openapi.object_schema({"role": role_schema()}, required: ["role"])
+        "Page": openapi.object_schema(page, required: ["number", "pages", "total", "previous", "next"])
+        "Credentials": openapi.object_schema({"name": string, "password": string}, required: ["name", "password"])
+        "Token": openapi.object_schema(token, required: ["token", "token_type", "expires_in"])
+        "FieldErrors": openapi.object_schema({"errors": openapi.with_keyword(schema: openapi.object_schema({}, required: []), keyword: "additionalProperties", value: string)}, required: ["errors"])
+    }
+
+# The schema of a role's name.
+function role_schema() -> json.Value
+    return openapi.enum_schema([jsonv.text("reader"), jsonv.text("author"), jsonv.text("admin")])
+
+# A response whose body is the schema named `name`.
+#
+# - `description`: what it means.
+# - `name`: the schema's name in the components.
+function answers(description: str, name: str) -> openapi.Response
+    return openapi.json_response(description, schema: openapi.schema_ref(name))
+
+# The responses every operation that writes may also give.
+#
+# - `responses`: the operation's own.
+function with_refusals(responses: {str: openapi.Response}) -> {str: openapi.Response}
+    out: {str: openapi.Response} @= responses
+    out["401"] @ openapi.new_response("No token, or one that does not verify.")
+    out["403"] @ openapi.new_response("The account may not do this.")
+    return out
+
+# The path parameter `slug`.
+function slug_parameter() -> openapi.Parameter
+    return openapi.new_parameter("slug", location: .path, schema: openapi.string_schema())
+
+## The operations
+
+# `POST /api/token`.
+function create_token() -> openapi.Operation
+    op @= openapi.new_operation(operation_id: CREATE_TOKEN, summary: "Trade a name and a password for a token.")
+    op.tags @ ["accounts"]
+    op.own_security @ true
+    op.security @ []
+    op.request_body @ openapi.json_body(openapi.schema_ref("Credentials"), required: true)
+    op.responses @ {
+        "200": answers(description: "A token, and how long it lasts in seconds.", name: "Token")
+        "401": openapi.new_response("The name or the password is wrong.")
+        "429": openapi.new_response("Too many sign-ins; `Retry-After` says when to try again.")
+    }
+    return op
+
+# `GET /api/me`.
+function read_me() -> openapi.Operation
+    op @= openapi.new_operation(operation_id: READ_ME, summary: "The account the token names.")
+    op.tags @ ["accounts"]
+    op.responses @ with_refusals({"200": answers(description: "The account.", name: "User")})
+    return op
+
+# `GET /api/notes`.
+function list_notes() -> openapi.Operation
+    op @= openapi.new_operation(operation_id: LIST_NOTES, summary: "A page of the notes, newest first.")
+    op.tags @ ["notes"]
+    op.parameters @ [
+        openapi.new_parameter("page", location: .query, schema: openapi.with_keyword(schema: openapi.integer_schema(), keyword: "minimum", value: jsonv.number(1)))
+        openapi.new_parameter("tag", location: .query, schema: openapi.string_schema())
+    ]
+    page_of = openapi.object_schema(
+        {"notes": openapi.array_schema(openapi.schema_ref("Note")), "page": openapi.schema_ref("Page")},
+        required: ["notes", "page"]
+    )
+    op.responses @ with_refusals({"200": openapi.json_response("The page.", schema: page_of)})
+    return op
+
+# `POST /api/notes`.
+function create_note() -> openapi.Operation
+    op @= openapi.new_operation(operation_id: CREATE_NOTE, summary: "Write a note.")
+    op.tags @ ["notes"]
+    op.request_body @ openapi.json_body(openapi.schema_ref("NoteInput"), required: true)
+    op.responses @ with_refusals(
+        {"201": answers(description: "The note written.", name: "Note"), "422": answers(description: "Each field's problem.", name: "FieldErrors")}
+    )
+    return op
+
+# `GET /api/notes/{slug}`.
+function read_note() -> openapi.Operation
+    op @= openapi.new_operation(operation_id: READ_NOTE, summary: "A note.")
+    op.tags @ ["notes"]
+    op.parameters @ [slug_parameter()]
+    op.responses @ with_refusals(
+        {"200": answers(description: "The note.", name: "Note"), "304": openapi.new_response("The client's copy, by its `If-None-Match`, is current."), "404": openapi.new_response("No note has that slug.")}
+    )
+    return op
+
+# `PATCH /api/notes/{slug}`.
+function update_note() -> openapi.Operation
+    op @= openapi.new_operation(
+        operation_id: UPDATE_NOTE,
+        summary: "Change a note: the fields given replace the note's."
+    )
+    op.tags @ ["notes"]
+    op.parameters @ [slug_parameter()]
+    op.request_body @ openapi.json_body(openapi.schema_ref("NoteChange"), required: true)
+    op.responses @ with_refusals(
+        {"200": answers(description: "The note changed.", name: "Note"), "404": openapi.new_response("No note has that slug."), "422": answers(description: "Each field's problem.", name: "FieldErrors")}
+    )
+    return op
+
+# `DELETE /api/notes/{slug}`.
+function delete_note() -> openapi.Operation
+    op @= openapi.new_operation(operation_id: DELETE_NOTE, summary: "Remove a note and its comments.")
+    op.tags @ ["notes"]
+    op.parameters @ [slug_parameter()]
+    op.responses @ with_refusals(
+        {"204": openapi.new_response("Removed."), "404": openapi.new_response("No note has that slug.")}
+    )
+    return op
+
+# `GET /api/notes/{slug}/comments`.
+function list_comments() -> openapi.Operation
+    op @= openapi.new_operation(operation_id: LIST_COMMENTS, summary: "A note's comments, the oldest first.")
+    op.tags @ ["notes"]
+    op.parameters @ [slug_parameter()]
+    listed = openapi.object_schema(
+        {"comments": openapi.array_schema(openapi.schema_ref("Comment"))},
+        required: ["comments"]
+    )
+    op.responses @ with_refusals(
+        {"200": openapi.json_response("The comments.", schema: listed), "404": openapi.new_response("No note has that slug.")}
+    )
+    return op
+
+# `POST /api/notes/{slug}/comments`.
+function create_comment() -> openapi.Operation
+    op @= openapi.new_operation(
+        operation_id: CREATE_COMMENT,
+        summary: "Comment on a note; its author is told over the WebSocket."
+    )
+    op.tags @ ["notes"]
+    op.parameters @ [slug_parameter()]
+    op.request_body @ openapi.json_body(openapi.schema_ref("CommentInput"), required: true)
+    op.responses @ with_refusals(
+        {"201": answers(description: "The comment written.", name: "Comment"), "404": openapi.new_response("No note has that slug."), "422": answers(description: "Each field's problem.", name: "FieldErrors")}
+    )
+    return op
+
+# `GET /api/search`.
+function search_notes() -> openapi.Operation
+    op @= openapi.new_operation(
+        operation_id: SEARCH_NOTES,
+        summary: "The notes that match the words of `q`, the best first."
+    )
+    op.tags @ ["notes"]
+    q: openapi.Parameter @= openapi.new_parameter("q", location: .query, schema: openapi.string_schema())
+    q.required @ true
+    op.parameters @ [q]
+    found = openapi.object_schema({"notes": openapi.array_schema(openapi.schema_ref("Note"))}, required: ["notes"])
+    op.responses @ with_refusals(
+        {"200": openapi.json_response("The notes found.", schema: found), "422": answers(description: "The query holds no word.", name: "FieldErrors")}
+    )
+    return op
+
+# `PATCH /api/users/{name}`.
+function update_user() -> openapi.Operation
+    op @= openapi.new_operation(operation_id: UPDATE_USER, summary: "Give an account a role; an admin's alone.")
+    op.tags @ ["accounts"]
+    op.parameters @ [openapi.new_parameter("name", location: .path, schema: openapi.string_schema())]
+    op.request_body @ openapi.json_body(openapi.schema_ref("RoleInput"), required: true)
+    op.responses @ with_refusals(
+        {"200": answers(description: "The account with its role.", name: "User"), "404": openapi.new_response("No account has that name.")}
+    )
+    return op
+
+# `POST /api/admin/stop`.
+function stop_server() -> openapi.Operation
+    op @= openapi.new_operation(
+        operation_id: STOP_SERVER,
+        summary: "Stop the server gracefully, as a SIGTERM does; an admin's alone."
+    )
+    op.tags @ ["accounts"]
+    op.responses @ with_refusals({"202": openapi.new_response("The server stops once this answer is sent.")})
+    return op
+
+test "document: OpenAPI finds no problem in it, and every operation has a route"
+    doc = document()
+    assert openapi.errors_of(doc).len() == 0
+    assert openapi.operations_of(doc).len() == 12
+    assert !openapi.new_validator(doc).is_err()

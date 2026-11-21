@@ -1,0 +1,105 @@
+# The demo session's steps about the site around the notes: the Atom feed, the
+# API's OpenAPI document, the static files, a path and a method no route
+# takes, and the counters `/metrics` serves.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/metrics
+use <rebel>/url
+use <rebel>/xml
+
+use demo/browse
+
+# The Atom feed, read as a feed reader reads it.
+#
+# - `s`: the session.
+function read_feed(@s: http.Session) -> ()?
+    r = browse.get(@s, target: "/feed.atom", accept: "application/atom+xml")?
+    doc = xml.parse(http.text_of(r)?)?
+    entries = xml.children_named(doc.root, name: "entry")
+    newest = xml.text_of(xml.child(entries[0], name: "title")?)
+    link = xml.attribute(xml.child(entries[0], name: "link")?, name: "href")?
+    print(
+        f"GET /feed.atom: {r.status} {http.value_of(r.headers, name: "Content-Type").default("")}, {entries.len()} entries, the newest \"{newest}\" at {path_of(link)}"
+    )
+    return ok()
+
+# The API's document, by its operations.
+#
+# - `s`: the session.
+function read_document(@s: http.Session) -> ()?
+    r = browse.get(@s, target: "/openapi.json", accept: "application/json")?
+    v = browse.json_body(r)
+    paths = json.members_of(json.member(v, key: "paths").default(.null_value)).default({})
+    ids: [str] @= []
+
+    for path in keys(paths)
+        operations = json.members_of(paths[path].must()).default({})
+
+        for method in keys(operations)
+            ids @ ids.push(browse.shown(operations[method].must(), key: "operationId"))
+
+    print(
+        f"GET /openapi.json: {r.status}, OpenAPI {browse.shown(v, key: "openapi")}, {ids.len()} operations: {sort(ids).join(", ")}"
+    )
+    return ok()
+
+# A file of the site, and one that is not there.
+#
+# - `s`: the session.
+function statics(@s: http.Session) -> ()?
+    r = browse.get(@s, target: "/static/style.css", accept: "text/css")?
+    missing = browse.get(@s, target: "/static/missing.css", accept: "text/css")?
+    print(
+        f"GET /static/style.css: {r.status} {http.value_of(r.headers, name: "Content-Type").default("")}; /static/missing.css: {missing.status}"
+    )
+    return ok()
+
+# A path no route takes, and a method its route does not.
+#
+# - `s`: the session.
+function routing(@s: http.Session) -> ()?
+    r = browse.get(@s, target: "/nowhere", accept: "text/html")?
+    put = http.request(method: "DELETE", target: "/feed.atom")?
+    wrong = http.fetch_once(@s, r: put)?
+    print(
+        f"GET /nowhere: {r.status}; DELETE /feed.atom: {wrong.status}, Allow {http.value_of(wrong.headers, name: "Allow").default("")}"
+    )
+    return ok()
+
+# The counters, as Prometheus scrapes them.
+#
+# - `s`: the session.
+function counters(@s: http.Session) -> ()?
+    r = browse.get(@s, target: "/metrics", accept: "text/plain")?
+    families = metrics.parse_text(http.text_of(r)?)?
+    print(f"GET /metrics: {r.status}")
+
+    for name in ["notes_accounts_registered_total", "notes_notes_written_total", "notes_comments_written_total", "notes_notifications_pushed_total", "notes_websockets_open"]
+        print(f"  {name} {number(metrics.sample_value(families, name: name, labels: []).default(-1.0))}")
+
+    for outcome in ["accepted", "refused", "limited"]
+        value = metrics.sample_value(families, name: "notes_sign_ins_total", labels: [metrics.Label(name: "outcome", value: outcome)]).default(
+            0.0
+        )
+        print(f"  notes_sign_ins_total{{outcome=\"{outcome}\"}} {number(value)}")
+
+    created = metrics.sample_value(families, name: "http_requests_total", labels: [metrics.Label(name: "code", value: "201"), metrics.Label(name: "method", value: "post")]).default(
+        0.0
+    )
+    print(f"  http_requests_total{{code=\"201\",method=\"post\"}} {number(created)}")
+    return ok()
+
+# The path of an absolute address: what a request to it names.
+#
+# - `address`: `https://host/path`.
+function path_of(address: str) -> str
+    return match url.parse(address)
+        .ok u  => url.request_target(u)
+        .err _ => address
+
+# `x`, a whole count, as an integer's text.
+#
+# - `x`: the count.
+function number(x: f64) -> str
+    return to_str(to_i64(x).default(-1))

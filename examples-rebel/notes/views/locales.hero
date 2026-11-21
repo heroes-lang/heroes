@@ -1,0 +1,226 @@
+# The languages the pages are written in: English, the language the program's
+# own texts are written in, and Italian from a gettext catalog. A request's
+# `Accept-Language` chooses (RFC 9110 § 12.5.4), and dates are written as the
+# chosen language writes them (CLDR, by `i18n/dates`) in the site's time zone.
+# The API answers in no language: its texts are machine-read fields.
+
+use <rebel>/http
+use <rebel>/i18n
+use <rebel>/i18n/dates
+use <rebel>/time
+
+# The languages offered, the site's own first.
+function offered() -> [str]
+    return ["en", "it"]
+
+# The Italian catalog, as a `.po` file holds it: every text a page writes, in
+# the order the pages use them.
+function italian_po() -> str
+    lines = [
+        "msgid \"\""
+        "msgstr \"\""
+        "\"Content-Type: text/plain; charset=UTF-8\\n\""
+        "\"Language: it\\n\""
+        "\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\""
+        ""
+        "msgid \"Newest notes\""
+        "msgstr \"Note recenti\""
+        ""
+        "msgid \"Search\""
+        "msgstr \"Cerca\""
+        ""
+        "msgid \"Write a note\""
+        "msgstr \"Scrivi una nota\""
+        ""
+        "msgid \"Sign in\""
+        "msgstr \"Accedi\""
+        ""
+        "msgid \"Sign out\""
+        "msgstr \"Esci\""
+        ""
+        "msgid \"Register\""
+        "msgstr \"Registrati\""
+        ""
+        "msgid \"by\""
+        "msgstr \"di\""
+        ""
+        "msgid \"Tags\""
+        "msgstr \"Etichette\""
+        ""
+        "msgid \"Comments\""
+        "msgstr \"Commenti\""
+        ""
+        "msgid \"Write a comment\""
+        "msgstr \"Scrivi un commento\""
+        ""
+        "msgid \"Send\""
+        "msgstr \"Invia\""
+        ""
+        "msgid \"Previous\""
+        "msgstr \"Precedente\""
+        ""
+        "msgid \"Next\""
+        "msgstr \"Successiva\""
+        ""
+        "msgid \"No notes yet.\""
+        "msgstr \"Ancora nessuna nota.\""
+        ""
+        "msgid \"Name\""
+        "msgstr \"Nome\""
+        ""
+        "msgid \"Email\""
+        "msgstr \"Email\""
+        ""
+        "msgid \"Password\""
+        "msgstr \"Password\""
+        ""
+        "msgid \"Title\""
+        "msgstr \"Titolo\""
+        ""
+        "msgid \"Text in Markdown\""
+        "msgstr \"Testo in Markdown\""
+        ""
+        "msgid \"Delete\""
+        "msgstr \"Elimina\""
+        ""
+        "msgid \"Accounts\""
+        "msgstr \"Account\""
+        ""
+        "msgid \"Role\""
+        "msgstr \"Ruolo\""
+        ""
+        "msgid \"Results for\""
+        "msgstr \"Risultati per\""
+        ""
+        "msgid \"Page\""
+        "msgstr \"Pagina\""
+        ""
+        "msgid \"of\""
+        "msgstr \"di\""
+        ""
+        "msgid \"%d comment\""
+        "msgid_plural \"%d comments\""
+        "msgstr[0] \"%d commento\""
+        "msgstr[1] \"%d commenti\""
+        ""
+    ]
+
+    return lines.join("\n")
+
+# The catalogs and the zone the pages are written with.
+record Locales
+    # Each offered language's catalog, by its tag; English's is empty.
+    catalogs: {str: i18n.Catalog}
+    # The time zone dates are shown in.
+    zone: time.Zone
+    # The language of a request that asks for none offered.
+    fallback: str
+
+# The catalogs, and the zone named `zone`.
+#
+# - `fallback`: the site's own language, one of `offered`.
+# - `zone`: an IANA zone's name, `Europe/Rome`, or `UTC`.
+#
+# Fails `not_found` where no zone has that name, and `invalid` where
+# `fallback` is not offered; as `i18n.parse_po` fails on a catalog, which is
+# this program's own text.
+function load(fallback: str, zone: str) -> Locales?
+    if fallback != "en" && fallback != "it"
+        return fail(code: "invalid", msg: f"site.locale \"{fallback}\" is not one of en, it")
+
+    catalogs: {str: i18n.Catalog} = {
+        "en": i18n.new_catalog([])?
+        "it": i18n.parse_po(italian_po())?
+    }
+
+    z = if zone == "UTC"
+        time.utc_zone()
+    else
+        time.load_zone(zone)?
+
+    return ok(Locales(catalogs: catalogs, zone: z, fallback: fallback))
+
+# The language `r` asks for among those offered, else the site's own.
+#
+# - `l`: the catalogs.
+# - `r`: the request; its `Accept-Language` fields are read.
+function language_of(l: Locales, r: http.Request) -> str
+    return http.negotiate_language(r, offered: offered()).default(l.fallback)
+
+# `id` in the language `tag`.
+#
+# - `l`: the catalogs.
+# - `tag`: an offered language.
+# - `id`: the English text.
+function say(l: Locales, tag: str, id: str) -> str
+    return match l.catalogs[tag]
+        .ok c  => i18n.translate(c, id: id)
+        .err _ => id
+
+# How many comments `n` is, in the language `tag`: `1 comment`, `3 commenti`.
+#
+# - `l`: the catalogs.
+# - `tag`: an offered language.
+# - `n`: the count, from 0.
+function comments_count(l: Locales, tag: str, n: i64) -> str
+    form = match l.catalogs[tag]
+        .ok c  => i18n.translate_plural(c, id: "%d comment", plural_id: "%d comments", n: n)
+        .err _ => "%d comments"
+
+    return replace_count(form, n: n)
+
+# `form` with its `%d` written as `n`.
+#
+# - `form`: a text holding `%d` once.
+# - `n`: the number.
+function replace_count(form: str, n: i64) -> str
+    return match index_of_count(form)
+        .ok at => form.slice(from: 0, to: at) + to_str(n) + form.slice(from: at + 2, to: form.len())
+        .err _ => form
+
+# Where `%d` first stands in `form`.
+#
+# - `form`: the text.
+#
+# Fails `not_found` where it holds none.
+function index_of_count(form: str) -> i64?
+    at: i64 @= 0
+
+    while at + 1 < form.len()
+        if form[at] == '%' && form[at + 1] == 'd'
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: "not_found", msg: "no %d in the form")
+
+# `t` as a date in the language `tag`, in the site's zone: `21 November 2026`,
+# `21 novembre 2026`.
+#
+# - `l`: the catalogs and the zone.
+# - `tag`: an offered language.
+# - `t`: the moment.
+function date_of(l: Locales, tag: str, t: time.Instant) -> str
+    locale = i18n.parse_locale(tag).default(i18n.parse_locale("en").must())
+    return dates.format_date(locale, t: t, zone: l.zone, style: .long)
+
+test "comments_count: English and Italian, one and many"
+    l = load(fallback: "en", zone: "UTC").must()
+    assert comments_count(l, tag: "en", n: 1) == "1 comment"
+    assert comments_count(l, tag: "en", n: 0) == "0 comments"
+    assert comments_count(l, tag: "it", n: 1) == "1 commento"
+    assert comments_count(l, tag: "it", n: 3) == "3 commenti"
+
+test "say: a text in Italian, one the catalog lacks kept in English"
+    l = load(fallback: "en", zone: "UTC").must()
+    assert say(l, tag: "it", id: "Newest notes") == "Note recenti"
+    assert say(l, tag: "it", id: "Unknown text") == "Unknown text"
+    assert say(l, tag: "en", id: "Newest notes") == "Newest notes"
+
+test "date_of: one moment as English and Italian write it, in Rome's zone past midnight"
+    l = load(fallback: "en", zone: "Europe/Rome").must()
+    t = time.from_unix(whole_seconds: 1_795_303_800, extra_nanoseconds: 0).must()
+    assert date_of(l, tag: "en", t: t) == "November 22, 2026"
+    assert date_of(l, tag: "it", t: t) == "22 novembre 2026"
+
+test "load: a language not offered refused"
+    assert load(fallback: "fr", zone: "UTC").is_err()

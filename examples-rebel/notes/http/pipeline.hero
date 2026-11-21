@@ -1,0 +1,286 @@
+# One request, from the bytes read to the response written: the steps
+# before the handler, in their order, then the handler, then the steps
+# after it. A step that needs the server's state (the rate limit's buckets,
+# the session's key, the API's token key) is called here by name with that
+# state, since a step `web.before` calls is a function of the request alone
+# and the language has no closure to hand it the state with.
+#
+# Before: a request id kept or made; `X-HTTP-Method-Override` read; the
+# client's rate limit; the route; who is asking (the session or the bearer
+# token); the CSRF token of a page's form; the admin group's guard; the
+# media types a route can answer. After: the session's cookie written back,
+# a 500 for a handler's failure, the request id copied, an entity tag and its
+# 304, the security headers, gzip, the counters and the log line.
+
+use <rebel>/http
+use <rebel>/metrics
+use <rebel>/openapi
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/web
+
+use api/accounts_api
+use api/api_doc
+use api/notes_api
+use app/state
+use auth/visit
+use domain/clock
+use domain/model
+use http/dispatch
+use http/pages_account
+use http/replies
+use http/routes
+use ops/ops
+
+## What the loop does next
+
+# What the server's loop does with a request once it is handled.
+variant Outcome
+    # Write this response.
+    respond
+        response: http.Response
+    # Turn the connection into the WebSocket of the account `user_id`.
+    upgrade
+        # The account's number.
+        user_id: i64
+        # The account's name.
+        user: str
+
+# The realm a bearer challenge names, RFC 6750 § 3.
+constant REALM: str
+    "notes"
+
+# The fewest bytes of a body worth gzip.
+constant GZIP_MIN: i64
+    1024
+
+## The request
+
+# Handles `r`: every step before, the handler, every step after.
+#
+# - `app`: the state; the clock, the limits, the database, the counters and
+#   the log change.
+# - `r`: the request as `http.next_request` read it.
+#
+# Never fails: a handler's failure is a 500, written to the log.
+function handle(@app: state.App, r: http.Request) -> Outcome
+    mark = time.mark().default(time.Mark(nanoseconds: 0))
+    started = time.now().default(time.epoch())
+    request = web.with_request_id(r).default(r)
+    now = clock.now(@app.clock).default(started)
+
+    outcome: Outcome = match answer(@app, r: request, now: now)
+        .ok got => got
+        .err e => .respond(
+            response: web.recover(app.logger, r: request, answer: fail(code: e.code, msg: e.msg), form: .text)
+        )
+
+    return match outcome
+        .upgrade u =>
+            note_done(
+                @app,
+                r: request,
+                response: http.respond_status(http.STATUS_SWITCHING_PROTOCOLS),
+                mark: mark,
+                started: started
+            )
+            .upgrade(user_id: u.user_id, user: u.user)
+        .respond rs =>
+            finished = finish(request, response: rs.response)
+            note_done(@app, r: request, response: finished, mark: mark, started: started)
+            .respond(response: finished)
+
+# The steps after the handler that change the response. The API's pages
+# (`/docs`, `/redoc`) load their scripts from a CDN, which helmet's policy of
+# `self` would block, so they carry the three fields that cost no page
+# anything.
+#
+# - `r`: the request.
+# - `response`: the handler's response.
+function finish(r: http.Request, response: http.Response) -> http.Response
+    tagged = web.after(r, response: response, steps: [web.copy_request_id, web.with_etag])
+
+    headers = if strings.has_prefix(s: r.url.path, prefix: "/docs") || strings.has_prefix(s: r.url.path, prefix: "/redoc")
+        web.minimal_security_headers()
+    else
+        web.default_security_headers()
+
+    return web.gzip(r, response: web.with_security_headers(tagged, headers: headers), min_bytes: GZIP_MIN)
+
+# The counters and the log line of a request answered.
+#
+# - `app`: the state.
+# - `r`: the request.
+# - `response`: what was answered.
+# - `mark`: the monotonic clock's mark when it began.
+# - `started`: the wall clock's time when it began, as the log's clock reads.
+function note_done(@app: state.App, r: http.Request, response: http.Response, mark: time.Mark, started: time.Instant)
+    elapsed = time.elapsed(mark).default(time.nanoseconds(0))
+    _ = metrics.observe_request(@app.registry, r: r, response: response, elapsed: elapsed).is_err()
+    _ = web.log_request(app.logger, r: r, response: response, started: started).is_err()
+    app.answered @ app.answered + 1
+
+## Before the handler
+
+# The outcome of `r`: the steps before, then the route's handler.
+#
+# - `app`: the state.
+# - `r`: the request, its id given.
+# - `now`: the business clock's reading.
+function answer(@app: state.App, r: http.Request, now: time.Instant) -> Outcome?
+    request = match web.before(r, steps: [web.override_method])
+        .go_on g  => g.request
+        .answer a => return ok(.respond(response: a.response))
+
+    match web.limit_rate(@app.limiter, r: request, key: pages_account.client_of(request), now: now, form: .json)
+        .answer a =>
+            ops.count(@app.registry, name: ops.LIMITED, labels: [])
+            return ok(.respond(response: a.response))
+        .go_on _ => _ = 0
+
+    found = match web.route(app.router, r: request)
+        .ok f  => f
+        .err _ => return ok(.respond(response: web.not_routed(app.router, r: request)))
+
+    if routes.is_api_route(app.api, found: found)
+        return api(@app, r: request, found: found, now: now)
+
+    return page(@app, r: request, found: found, now: now)
+
+# The answer of an API route: the token checked, then the request against
+# the document, then the operation.
+#
+# - `app`: the state.
+# - `r`: the request.
+# - `found`: the route, named by its operation.
+# - `now`: the business clock's reading.
+function api(@app: state.App, r: http.Request, found: web.Found, now: time.Instant) -> Outcome?
+    v = visit.Visit(
+        now: now,
+        language: "en",
+        session: web.new_session(),
+        user: fail(code: visit.NOT_FOUND, msg: "no token read"),
+        request_id: http.value_of(r.headers, name: "X-Request-Id").default("")
+    )
+
+    if found.name == api_doc.CREATE_TOKEN
+        values = match openapi.read_request(app.validator, r: r)
+            .ok got => got
+            .err _ => return ok(
+                .respond(response: openapi.problem_response(openapi.request_errors_of(app.validator, r: r)))
+            )
+
+        return ok(.respond(response: accounts_api.create_token(@app, v: v, r: r, values: values)?.response))
+
+    user = match visit.user_of_token(@app, r: r, now: now)
+        .ok u => u
+        .err e =>
+            error = if e.code == visit.NOT_FOUND
+                ""
+            else
+                "invalid_token"
+
+            return ok(.respond(response: web.challenge_bearer(realm: REALM, error: error)))
+
+    values = match openapi.read_request(app.validator, r: r)
+        .ok got => got
+        .err _ => return ok(
+            .respond(response: openapi.problem_response(openapi.request_errors_of(app.validator, r: r)))
+        )
+
+    signed: visit.Visit @= v
+    signed.user @ ok(user)
+
+    reply = if found.name == api_doc.READ_ME || found.name == api_doc.UPDATE_USER || found.name == api_doc.STOP_SERVER
+        accounts_api.answer(@app, user: user, name: found.name, values: values)?
+    else
+        notes_api.answer(@app, v: signed, user: user, name: found.name, values: values)?
+
+    return ok(.respond(response: reply.response))
+
+# The answer of a page's route: the session, the CSRF token of a form, the
+# admin group's guard, the media types offered, then the handler.
+#
+# - `app`: the state.
+# - `r`: the request.
+# - `found`: the route.
+# - `now`: the business clock's reading.
+function page(@app: state.App, r: http.Request, found: web.Found, now: time.Instant) -> Outcome?
+    session = visit.session_of(app, r: r, now: now)
+    user = visit.user_of_session(@app, session: session)
+
+    v = visit.Visit(
+        now: now,
+        language: visit.language_of(app, r: r),
+        session: session,
+        user: user,
+        request_id: http.value_of(r.headers, name: "X-Request-Id").default("")
+    )
+
+    if found.name == routes.SOCKET
+        return socket(@app, r: r, v: v, now: now)
+
+    if is_unsafe(r.method)
+        secret = session.values[web.CSRF_KEY].default("")
+
+        match web.check_csrf(r, secret: secret)
+            .answer a => return ok(.respond(response: a.response))
+            .go_on _  => _ = 0
+
+    if web.is_in_group(found, name: routes.ADMIN_GROUP)
+        is_admin = match user
+            .ok u  => u.role == .admin
+            .err _ => false
+
+        if !is_admin
+            return ok(
+                .respond(response: replies.api_error(http.STATUS_FORBIDDEN, message: "only an admin may administer"))
+            )
+
+    if dispatch.is_negotiated(found.name)
+        match web.require_acceptable(r, offered: ["text/html", "application/json"])
+            .answer a => return ok(.respond(response: a.response))
+            .go_on _  => _ = 0
+
+    reply = dispatch.page(@app, v: v, found: found, r: r)?
+    return ok(.respond(response: with_session(app, reply: reply, now: now)))
+
+# Whether `method` changes something, so a form's CSRF token is asked.
+#
+# - `method`: the request's method.
+function is_unsafe(method: str) -> bool
+    return method != http.METHOD_GET && method != http.METHOD_HEAD && method != http.METHOD_OPTIONS && method != http.METHOD_TRACE
+
+# The response with the session written into its cookie, or forgotten.
+#
+# - `app`: the state.
+# - `reply`: the handler's answer.
+# - `now`: when the cookie's life counts from.
+function with_session(app: state.App lent, reply: replies.Reply, now: time.Instant) -> http.Response
+    return match reply.session
+        .kept  => reply.response
+        .ended => web.without_cookie(reply.response, options: app.cookies)
+        .replaced s => web.with_session(reply.response, session: s.session, options: app.cookies, now: now).default(
+            reply.response
+        )
+
+# The live channel's route: the account by its bearer token, as a script
+# sends it, else by the session's cookie, as a page's script sends it.
+#
+# - `app`: the state.
+# - `r`: the request.
+# - `v`: the visit, its session read.
+# - `now`: the business clock's reading.
+function socket(@app: state.App, r: http.Request, v: visit.Visit, now: time.Instant) -> Outcome?
+    user: model.User = match visit.user_of_token(@app, r: r, now: now)
+        .ok u => u
+        .err _ =>
+            match v.user
+                .ok u  => u
+                .err _ => return ok(.respond(response: web.challenge_bearer(realm: REALM, error: "")))
+
+    return ok(.upgrade(user_id: user.id, user: user.name))
+
+test "is_unsafe: the four safe methods and three that change"
+    assert !is_unsafe("GET") && !is_unsafe("HEAD") && !is_unsafe("OPTIONS") && !is_unsafe("TRACE")
+    assert is_unsafe("POST") && is_unsafe("PATCH") && is_unsafe("DELETE")

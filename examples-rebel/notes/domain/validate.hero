@@ -1,0 +1,277 @@
+# What a form or a JSON body must hold before anything is stored, judged
+# field by field: every field's problem is told at once, so a person fixes
+# the whole form in one pass instead of meeting one error after another.
+# Uniqueness (a name already taken) needs the database and is the store's
+# to tell; it is added to the same list by the handler.
+
+use <rebel>/json
+use <rebel>/strings
+
+use domain/jsonv
+
+## Limits
+
+# The fewest characters of an account's name.
+constant NAME_MIN: i64
+    3
+
+# The most characters of an account's name.
+constant NAME_MAX: i64
+    32
+
+# The fewest characters of a password: NIST SP 800-63B § 3.1.1.2 asks at
+# least 8, and 10 leaves room for a passphrase.
+constant PASSWORD_MIN: i64
+    10
+
+# The most bytes of a password: Argon2 takes any length, and a bound keeps a
+# request from making the server hash megabytes.
+constant PASSWORD_MAX: i64
+    256
+
+# The most characters of a note's title.
+constant TITLE_MAX: i64
+    120
+
+# The most bytes of a note's body in Markdown.
+constant BODY_MAX: i64
+    65536
+
+# The most tags on one note.
+constant TAGS_MAX: i64
+    8
+
+# The most characters of one tag.
+constant TAG_MAX: i64
+    24
+
+# The most bytes of a comment.
+constant COMMENT_MAX: i64
+    4000
+
+## Errors
+
+# One field's problem: which field, and what is wrong with it, in words a
+# person can act on.
+record FieldError
+    # The field's name, as the form and the JSON body write it.
+    field: str
+    # What is wrong, starting in lower case: `must not be empty`.
+    message: str
+
+# The errors as one JSON object, a field's messages joined by `; `, the
+# fields in the order they were found: what a 422 answers.
+#
+# - `errors`: the errors.
+function errors_json(errors: [FieldError]) -> json.Value
+    members: {str: json.Value} @= {}
+
+    for e in errors
+        members[e.field] @ match members[e.field]
+            .ok was => jsonv.text(json.text_of(was).default("") + "; " + e.message)
+            .err _  => jsonv.text(e.message)
+
+    return jsonv.object(members)
+
+# The errors of `field` alone, its messages joined by `; `, or "" where it has
+# none: what a form writes under that field.
+#
+# - `errors`: the errors.
+# - `field`: the field.
+function message_of(errors: [FieldError], field: str) -> str
+    found: [str] @= []
+
+    for e in errors
+        if e.field == field
+            found @ found.push(e.message)
+
+    return found.join("; ")
+
+## Characters
+
+# Whether `c`, one character, may stand in an account's name: an ASCII letter
+# or digit, `-` or `_`. A name stands in addresses and mentions, so it is kept
+# to characters no reader confuses.
+#
+# - `c`: one character.
+function is_name_character(c: str) -> bool
+    b = c[0]
+    return c.len() == 1 && (b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '-' || b == '_')
+
+# How many characters `s` holds.
+#
+# - `s`: the text.
+function characters(s: str) -> i64
+    return s.chars().len()
+
+## Forms
+
+# The problems of an account's registration.
+#
+# - `name`: the name asked for.
+# - `email`: the address.
+# - `password`: the password, as typed.
+#
+# Empty where all three are good. The address is judged by its shape alone,
+# one `@` with text on both sides and a dot in the domain, as WHATWG's
+# `input type=email` judges it in spirit; whether it reaches anyone only a
+# mail sent to it can tell.
+function check_registration(name: str, email: str, password: str) -> [FieldError]
+    errors: [FieldError] @= []
+    n = characters(name)
+
+    if n < NAME_MIN || n > NAME_MAX || !name.chars().all(is_name_character)
+        errors @ errors.push(
+            FieldError(field: "name", message: f"must be {NAME_MIN} to {NAME_MAX} letters, digits, '-' or '_'")
+        )
+
+    if !is_email(email)
+        errors @ errors.push(FieldError(field: "email", message: "is not an email address"))
+
+    if characters(password) < PASSWORD_MIN
+        errors @ errors.push(FieldError(field: "password", message: f"must be at least {PASSWORD_MIN} characters"))
+    else if password.len() > PASSWORD_MAX
+        errors @ errors.push(FieldError(field: "password", message: f"must be at most {PASSWORD_MAX} bytes"))
+
+    return errors
+
+# Whether `s` has the shape of an email address: one `@`, a local part, and a
+# domain of at least two labels with no space anywhere.
+#
+# - `s`: the text.
+function is_email(s: str) -> bool
+    if s.len() > 254 || strings.contains_any(s: s, set: " \t\r\n<>")
+        return false
+
+    halves = match strings.split_once(s: s, sep: "@")
+        .ok h  => h
+        .err _ => return false
+
+    if halves.before == "" || strings.contains(s: halves.after, substr: "@")
+        return false
+
+    labels = strings.split(s: halves.after, sep: ".")
+    return labels.len() >= 2 && labels.all(is_label)
+
+# Whether `s` is a domain's label: not empty.
+#
+# - `s`: the label.
+function is_label(s: str) -> bool
+    return s != ""
+
+# The problems of a note's title, body and tags.
+#
+# - `title`: the title.
+# - `body`: the body in Markdown.
+# - `tags`: the tags as `tags_of` read them.
+function check_note(title: str, body: str, tags: [str]) -> [FieldError]
+    errors: [FieldError] @= []
+
+    if strings.trim(title) == ""
+        errors @ errors.push(FieldError(field: "title", message: "must not be empty"))
+    else if characters(title) > TITLE_MAX
+        errors @ errors.push(FieldError(field: "title", message: f"must be at most {TITLE_MAX} characters"))
+    else if strings.contains_any(s: title, set: "\r\n")
+        errors @ errors.push(FieldError(field: "title", message: "must be one line"))
+
+    if strings.trim(body) == ""
+        errors @ errors.push(FieldError(field: "body", message: "must not be empty"))
+    else if body.len() > BODY_MAX
+        errors @ errors.push(FieldError(field: "body", message: f"must be at most {BODY_MAX} bytes"))
+
+    if tags.len() > TAGS_MAX
+        errors @ errors.push(FieldError(field: "tags", message: f"must be at most {TAGS_MAX}"))
+
+    for tag in tags
+        if characters(tag) > TAG_MAX || !tag.chars().all(is_name_character)
+            errors @ errors.push(
+                FieldError(field: "tags", message: f"\"{tag}\" must be 1 to {TAG_MAX} letters, digits, '-' or '_'")
+            )
+
+    return errors
+
+# The problems of a comment.
+#
+# - `body`: the comment in Markdown.
+function check_comment(body: str) -> [FieldError]
+    if strings.trim(body) == ""
+        return [FieldError(field: "body", message: "must not be empty")]
+
+    if body.len() > COMMENT_MAX
+        return [FieldError(field: "body", message: f"must be at most {COMMENT_MAX} bytes")]
+
+    return []
+
+# The tags a form's field writes, `heroes, Web  rebel`: split at commas and
+# spaces, lower case, each once, sorted by their bytes.
+#
+# - `field`: the field's text.
+function tags_of(field: str) -> [str]
+    return tags_from(strings.split_any(s: field, set: ", \t"))
+
+# `given` lower case, each once and none empty, sorted by their bytes: the
+# one form a note's tags are kept in.
+#
+# - `given`: the tags as written.
+function tags_from(given: [str]) -> [str]
+    seen: {str: bool} @= {}
+
+    for raw in given
+        tag = strings.to_lower(strings.trim(raw))
+
+        if tag != ""
+            seen[tag] @ true
+
+    return sort(keys(seen))
+
+test "check_registration: good, then each field wrong, and all three at once"
+    assert check_registration(name: "alice", email: "alice@example.org", password: "correct horse").len() == 0
+    assert message_of(check_registration(name: "al", email: "alice@example.org", password: "correct horse"), field: "name") != ""
+    assert message_of(check_registration(name: "a b c", email: "alice@example.org", password: "correct horse"), field: "name") != ""
+    assert message_of(check_registration(name: "alice", email: "alice", password: "correct horse"), field: "email") == "is not an email address"
+    assert message_of(check_registration(name: "alice", email: "alice@example.org", password: "short"), field: "password") == "must be at least 10 characters"
+    assert check_registration(name: "", email: "", password: "").len() == 3
+
+test "check_registration: a name of 32 characters taken, of 33 refused, and a character above ASCII refused"
+    assert check_registration(name: repeat("a", 32), email: "a@b.c", password: "0123456789").len() == 0
+    assert check_registration(name: repeat("a", 33), email: "a@b.c", password: "0123456789").len() == 1
+    assert check_registration(name: "città", email: "a@b.c", password: "0123456789").len() == 1
+
+test "check_registration: a password counted in characters, not bytes"
+    assert check_registration(name: "alice", email: "a@b.c", password: "èèèèèèèèèè").len() == 0
+    assert check_registration(name: "alice", email: "a@b.c", password: "èèèèèèèèè").len() == 1
+
+test "is_email: an address, no at, two ats, an empty side, a one-label domain, a space"
+    assert is_email("a@example.org")
+    assert !is_email("example.org")
+    assert !is_email("a@b@example.org")
+    assert !is_email("@example.org")
+    assert !is_email("a@")
+    assert !is_email("a@localhost")
+    assert !is_email("a b@example.org")
+    assert !is_email("a@example..org")
+
+test "check_note: good, an empty title and body, a title of two lines, too many tags, a bad tag"
+    assert check_note(title: "Hello", body: "Text", tags: ["a"]).len() == 0
+    assert check_note(title: " ", body: "", tags: []).len() == 2
+    assert message_of(check_note(title: "a\nb", body: "x", tags: []), field: "title") == "must be one line"
+    assert message_of(check_note(title: "a", body: "x", tags: ["a", "b", "c", "d", "e", "f", "g", "h", "i"]), field: "tags") == "must be at most 8"
+    assert message_of(check_note(title: "a", body: "x", tags: ["no/slash"]), field: "tags") != ""
+
+test "check_comment: good, empty, blank and one byte too long"
+    assert check_comment("Nice.").len() == 0
+    assert check_comment("").len() == 1
+    assert check_comment(" \n").len() == 1
+    assert check_comment(repeat("x", 4001)).len() == 1
+    assert check_comment(repeat("x", 4000)).len() == 0
+
+test "tags_of: commas and spaces, case, a repeat and empties"
+    assert tags_of("Web, heroes  web,,rebel") == ["heroes", "rebel", "web"]
+    assert tags_of("") == []
+    assert tags_of(" , ") == []
+
+test "errors_json: two messages of one field joined, in the order found"
+    v = errors_json(
+        [FieldError(field: "name", message: "is taken"), FieldError(field: "email", message: "is not an email address"), FieldError(field: "name", message: "is short")]
+    )
+    assert json.format(v).must() == "{\"name\":\"is taken; is short\",\"email\":\"is not an email address\"}"

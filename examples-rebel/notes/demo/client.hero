@@ -1,0 +1,132 @@
+# The demo's client: a scripted session against the server on loopback, run
+# on a thread of its own while the server's loop runs on the main one. It
+# plays three people (alice, the site's first account and so its admin; bob,
+# a reader made an author; carol, whose form is wrong) through browsers and
+# the API, and prints one or a few lines a step: statuses and the fields that
+# matter, never a port, a time, a token or a path. Its last step asks the
+# server to stop, and reads the WebSocket's close.
+
+use <rebel>/http
+use <rebel>/os
+use <rebel>/websocket
+
+use demo/browse
+use demo/steps_accounts
+use demo/steps_live
+use demo/steps_reading
+use demo/steps_site
+use demo/steps_writing
+
+## The session
+
+# The demo's session against the server at `port`; its answer is `ok`, or
+# `failed` after a line saying where. A thread's body, so it takes and gives
+# one text.
+#
+# - `port`: the server's port, as text.
+function run(port: str) -> str
+    return match session(port)
+        .ok _ => "ok"
+        .err e =>
+            print(f"client: failed: {e.code}: {e.msg}")
+            os.ask_stop()
+            "failed"
+
+# Every step, in order. A step that fails ends the session, and `run` then
+# asks the process's stop, the signal's own path, so the server's loop ends
+# rather than waiting for a client that is gone.
+#
+# - `port`: the server's port, as text.
+function session(port: str) -> ()?
+    alice @= browse.browser(port: port, language: "en")
+    bob @= browse.browser(port: port, language: "en")
+    carol @= browse.browser(port: port, language: "en")
+    script @= browse.browser(port: port, language: "en")
+    italian @= browse.browser(port: port, language: "it-IT,it;q=0.9,en;q=0.5")
+
+    print("-- accounts")
+    steps_accounts.read_health(@script)?
+    steps_accounts.register(@alice, name: "alice", email: "alice@example.org", password: "correct horse battery")?
+    steps_accounts.register(@bob, name: "bob", email: "bob@example.org", password: "tr0ub4dor&3 staple")?
+    steps_accounts.register_wrong(@carol)?
+    steps_accounts.register_taken(@carol)?
+    steps_accounts.no_csrf(@carol)?
+
+    print("-- tokens")
+    alice_token = steps_accounts.token_for(@script, name: "alice", password: "correct horse battery")?
+    bob_token = steps_accounts.token_for(@script, name: "bob", password: "tr0ub4dor&3 staple")?
+    steps_accounts.me(@script, token: alice_token)?
+    steps_accounts.me(@script, token: bob_token)?
+    steps_accounts.no_token(@script)?
+    steps_accounts.guessing(@script)?
+
+    print("-- writing")
+    steps_writing.write_api(@script, token: alice_token, title: "Hello, Heroes", body: hello_body(), tags: ["heroes", "Intro"])?
+    steps_writing.write_api(@script, token: alice_token, title: "Notes on Rebel", body: "Rebel's `web` routes, *renders* and answers.\n\nIt holds templates, sessions and CSRF tokens.", tags: ["rebel", "web"])?
+    steps_writing.write_api(@script, token: alice_token, title: "Hello, Heroes", body: "A second note of the same title.", tags: [])?
+    steps_writing.write_wrong_kind(@script, token: alice_token)?
+    steps_writing.write_empty(@script, token: alice_token)?
+    steps_writing.write_api(@script, token: bob_token, title: "Mine", body: "A reader's note.", tags: [])?
+    steps_writing.give_role(@script, token: alice_token, name: "bob", role: "author")?
+    steps_writing.write_form(@bob, title: "A first note", body: "Written in a **form**, with a [link](https://example.org).", tags: "first, Heroes")?
+    steps_writing.delete_other(@script, token: bob_token)?
+
+    print("-- reading")
+    steps_reading.list_html(@script)?
+    steps_reading.list_json(@script, page: "2")?
+    steps_reading.list_bad_page(@script)?
+    steps_reading.note_italian(@italian)?
+    steps_reading.note_cached(@script)?
+    steps_reading.not_acceptable(@script)?
+    steps_reading.tag_page(@script, name: "rebel")?
+    steps_reading.search_page(@script, words: "heroes")?
+    steps_reading.search_api(@script, token: bob_token, words: "templates")?
+
+    print("-- live")
+    ws @= websocket.connect(f"ws://127.0.0.1:{port}/ws", client: socket_client(alice_token))?
+    welcome = websocket.read_json(@ws)?
+    print(f"alice's WebSocket opens: {browse.shown(welcome, key: "type")} {browse.shown(welcome, key: "user")}")
+    steps_live.comment_api(@script, token: bob_token, slug: "hello-heroes", body: "Welcome, **Heroes**.")?
+    steps_live.told(@ws)?
+    steps_live.comment_form(@bob, slug: "notes-on-rebel", body: "Which steps does `web` hold?")?
+    steps_live.told(@ws)?
+    steps_live.read_comments(@script, token: alice_token, slug: "hello-heroes")?
+
+    print("-- the site")
+    steps_site.read_feed(@script)?
+    steps_site.read_document(@script)?
+    steps_site.statics(@script)?
+    steps_site.routing(@script)?
+    steps_site.counters(@script)?
+
+    print("-- stopping")
+    steps_live.stop(@script, token: bob_token)?
+    steps_live.stop(@script, token: alice_token)?
+    steps_live.closed(@ws)
+    return ok()
+
+# The body of the demo's first note: Markdown with a heading, a list, code,
+# a link, raw HTML a policy keeps and a script it drops.
+function hello_body() -> str
+    lines = [
+        "Heroes is a language for the age of agents."
+        ""
+        "## Why"
+        ""
+        "- every plausible mistake is a compile error"
+        "- the compiler is written in Heroes"
+        ""
+        "Run it: `heroes run main.hero`. Read [the spec](https://example.org/spec)."
+        ""
+        "<kbd>Ctrl</kbd>-<kbd>C</kbd> stops a server; <script>alert('no')</script>"
+    ]
+
+    return lines.join("\n")
+
+# What a script's WebSocket offers: the usual client, its token sent.
+#
+# - `token`: the bearer token.
+function socket_client(token: str) -> websocket.Client
+    c @= websocket.default_client()
+    c.headers @ [http.Header(name: "Authorization", value: f"Bearer {token}")]
+    return c

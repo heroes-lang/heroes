@@ -1,0 +1,154 @@
+# What an operator reads of a running server: the counters `/metrics` serves
+# in Prometheus's text format, the structured log lines, one a request, and
+# the health and readiness answers a supervisor asks. The log's times and a
+# request's duration are the wall clock's and the monotonic clock's, never
+# the business clock's, so they stay true in the demo too.
+
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/log
+use <rebel>/metrics
+
+use config/settings
+
+## Codes
+
+# The code of a family name this program declares twice: a mistake of its own.
+constant EXISTS: str
+    "exists"
+
+## Metrics
+
+# The version `notes_build_info` names.
+constant VERSION: str
+    "0.1.0"
+
+# Accounts made since the start.
+constant REGISTERED: str
+    "notes_accounts_registered_total"
+
+# Notes written since the start.
+constant NOTES_WRITTEN: str
+    "notes_notes_written_total"
+
+# Comments written since the start.
+constant COMMENTS_WRITTEN: str
+    "notes_comments_written_total"
+
+# Sign-ins tried, by `outcome`: `accepted`, `refused` or `limited`.
+constant SIGN_INS: str
+    "notes_sign_ins_total"
+
+# Requests refused 429 by the rate limit.
+constant LIMITED: str
+    "notes_requests_limited_total"
+
+# The WebSockets open now.
+constant SOCKETS: str
+    "notes_websockets_open"
+
+# Messages pushed down the WebSockets since the start.
+constant PUSHED: str
+    "notes_notifications_pushed_total"
+
+# The build's facts, by `version`.
+constant BUILD: str
+    "notes_build_info"
+
+# A registry holding every family this program records, with the HTTP pair
+# `metrics.register_http` adds.
+function new_registry() -> metrics.Registry
+    r @= metrics.new_registry()
+    metrics.register_http(@r).must()
+    metrics.register(
+        @r,
+        d: metrics.counter(name: REGISTERED, help: "Accounts made since the start.", labels: [])
+    ).must()
+    metrics.register(
+        @r,
+        d: metrics.counter(name: NOTES_WRITTEN, help: "Notes written since the start.", labels: [])
+    ).must()
+    metrics.register(
+        @r,
+        d: metrics.counter(name: COMMENTS_WRITTEN, help: "Comments written since the start.", labels: [])
+    ).must()
+    metrics.register(
+        @r,
+        d: metrics.counter(name: SIGN_INS, help: "Sign-ins tried, by outcome.", labels: ["outcome"])
+    ).must()
+    metrics.register(
+        @r,
+        d: metrics.counter(name: LIMITED, help: "Requests refused by the rate limit.", labels: [])
+    ).must()
+    metrics.register(@r, d: metrics.gauge(name: SOCKETS, help: "WebSockets open now.", labels: [])).must()
+    metrics.register(
+        @r,
+        d: metrics.counter(name: PUSHED, help: "Notifications pushed down the WebSockets.", labels: [])
+    ).must()
+    metrics.register(
+        @r,
+        d: metrics.info(name: BUILD, help: "The build of the notes server.", labels: ["version"])
+    ).must()
+    metrics.set_info(@r, name: BUILD, labels: [VERSION]).must()
+    return r
+
+# Adds 1 to the counter `name`, labelled by `labels`. The families are this
+# program's own, so a name or labels that do not match is a mistake here: it
+# aborts, as a precondition broken.
+#
+# - `registry`: the registry.
+# - `name`: one of this module's family names.
+# - `labels`: the label values, in the family's order.
+function count(@registry: metrics.Registry, name: str, labels: [str])
+    metrics.inc(@registry, name: name, labels: labels).must()
+
+# Sets the gauge `name` to `value`.
+#
+# - `registry`: the registry.
+# - `name`: one of this module's gauges.
+# - `value`: the value.
+function gauge(@registry: metrics.Registry, name: str, value: i64)
+    metrics.set(@registry, name: name, labels: [], value: to_f64(value)).must()
+
+## Logs
+
+# The logger `s` asks for: JSON or text lines at `s.log_level` and above, to
+# the file `s.log_file` appended to, or to the standard error.
+#
+# - `s`: the settings.
+#
+# Fails as `fs.open_with` fails on the file.
+function logger_of(s: settings.Settings) -> log.Logger?
+    stream = if s.log_file == ""
+        io.stderr()
+    else
+        fs.open_with(s.log_file, access: .append, permission: 0o640)?
+
+    form: log.Form = if s.log_json
+        .json
+    else
+        .text
+
+    return ok(log.with_form(log.with_level(log.to(stream), level: s.log_level), form: form))
+
+# Closes the log's file, where the log writes to one; the standard error is
+# the process's, which a program never closes.
+#
+# - `logger`: the logger, unusable after where it wrote to a file.
+# - `s`: the settings it was made from.
+function close_log(@logger: log.Logger, s: settings.Settings) -> ()?
+    if s.log_file == ""
+        return ok()
+
+    return io.close(@logger.stream)
+
+test "new_registry: every family registered once, the build's facts set"
+    r = new_registry()
+    assert metrics.value_of(r, name: BUILD, labels: [VERSION]).must() == 1.0
+    assert metrics.value_of(r, name: SOCKETS, labels: []).default(0.0) == 0.0
+
+test "count: a counter by its labels"
+    r @= new_registry()
+    count(@r, name: SIGN_INS, labels: ["refused"])
+    count(@r, name: SIGN_INS, labels: ["refused"])
+    assert metrics.value_of(r, name: SIGN_INS, labels: ["refused"]).must() == 2.0

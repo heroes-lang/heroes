@@ -1,0 +1,214 @@
+# The accounts in the database. Every column is named by a field of
+# `model.User` (`User::name` is the text "name", spec § 9), so a column the
+# record does not hold is a compile error here rather than a failed query.
+
+use <rebel>/sql
+use <rebel>/sql/build
+use <rebel>/sql/sqlite
+use <rebel>/time
+
+use domain/model
+use store/database
+
+## Codes
+
+# The code of an account that is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a name or an address another account holds, as `sql` names it.
+constant EXISTS: str
+    "exists"
+
+## Writing
+
+# Adds an account and answers its number.
+#
+# - `db`: the database.
+# - `name`: its name, checked by `validate.check_registration`.
+# - `email`: its address.
+# - `password`: the PHC string of its password's hash.
+# - `role`: its role.
+# - `at`: when it is made.
+#
+# Fails `exists` where the name or the address is held, the message saying
+# which, `name is taken`, and as the statement fails.
+function insert(@db: sqlite.Db, name: str, email: str, password: str, role: model.Role, at: time.Instant) -> i64?
+    columns = [model.User::name, model.User::email, model.User::password, model.User::role, model.User::created_at]
+    row: [sql.Value] = [
+        .text(v: name)
+        .text(v: email)
+        .text(v: password)
+        .text(v: model.role_name(role))
+        .instant(v: at)
+    ]
+    s = database.sql_of(.insert(query: build.insert(into: "users", columns: columns, rows: [row])))?
+
+    result = match database.run(@db, s: s)
+        .ok r => r
+        .err e =>
+            if e.code == EXISTS
+                return fail(code: EXISTS, msg: f"{taken_of(e.msg)} is taken")
+            return fail(code: e.code, msg: e.msg)
+
+    return result.last_id
+
+# Which unique column a failure of `exists` names: `name` or `email`.
+#
+# - `msg`: SQLite's message, `[2067] UNIQUE constraint failed: users.email`.
+function taken_of(msg: str) -> str
+    if msg.len() >= 5 && msg.slice(from: msg.len() - 5, to: msg.len()) == "email"
+        return "email"
+    return "name"
+
+# Gives the account `name` the role `role`.
+#
+# - `db`: the database.
+# - `name`: the account.
+# - `role`: its new role.
+#
+# Fails `not_found` where no account has that name.
+function set_role(@db: sqlite.Db, name: str, role: model.Role) -> ()?
+    u @= build.update("users", set: [build.assign(model.User::role, value: .text(v: model.role_name(role)))])
+    u.where @ [build.equal(model.User::name, value: .text(v: name))]
+    result = database.run(@db, s: database.sql_of(.update(query: u))?)?
+
+    if result.rows_affected == 0
+        return fail(code: NOT_FOUND, msg: f"no account named \"{name}\"")
+
+    return ok()
+
+## Reading
+
+# The select of every column of `users`.
+function select_users() -> build.Select
+    names = [
+        model.User::id
+        model.User::name
+        model.User::email
+        model.User::password
+        model.User::role
+        model.User::created_at
+    ]
+    return build.select(from: "users", columns: build.columns_named(names))
+
+# The account whose column `column` holds `value`.
+#
+# - `db`: the database.
+# - `column`: `name` or `id`.
+# - `value`: the value.
+#
+# Fails `not_found` where no account matches.
+function one_where(@db: sqlite.Db, column: str, value: sql.Value) -> model.User?
+    q @= select_users()
+    q.where @ [build.equal(column, value: value)]
+    rows = database.query(@db, s: database.sql_of(.select(query: q))?)?
+
+    if rows.rows.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no account whose {column} is {sql.kind_of(value)} {shown(value)}")
+
+    return user_of(rows.rows[0])
+
+# The text a message shows for `v`.
+#
+# - `v`: a value.
+function shown(v: sql.Value) -> str
+    return match v
+        .text t                                                    => f"\"{t.v}\""
+        .integer n                                                 => to_str(n.v)
+        .null_value | .boolean _ | .float _ | .blob _ | .instant _ => "given"
+
+# The account named `name`.
+#
+# - `db`: the database.
+# - `name`: its name.
+#
+# Fails `not_found` where none has that name.
+function by_name(@db: sqlite.Db, name: str) -> model.User?
+    return one_where(@db, column: model.User::name, value: .text(v: name))
+
+# The account whose address is `email`.
+#
+# - `db`: the database.
+# - `email`: the address.
+#
+# Fails `not_found` where none has it.
+function by_email(@db: sqlite.Db, email: str) -> model.User?
+    return one_where(@db, column: model.User::email, value: .text(v: email))
+
+# The account numbered `id`.
+#
+# - `db`: the database.
+# - `id`: its number.
+#
+# Fails `not_found` where none has that number.
+function by_id(@db: sqlite.Db, id: i64) -> model.User?
+    return one_where(@db, column: model.User::id, value: .integer(v: id))
+
+# Every account, in the order they were made.
+#
+# - `db`: the database.
+function every(@db: sqlite.Db) -> [model.User]?
+    q @= select_users()
+    q.order_by @ [build.ascending(model.User::id)]
+    rows = database.query(@db, s: database.sql_of(.select(query: q))?)?
+    out: [model.User] @= []
+
+    for row in rows.rows
+        out @ out.push(user_of(row)?)
+
+    return ok(out)
+
+# How many accounts there are.
+#
+# - `db`: the database.
+function count(@db: sqlite.Db) -> i64?
+    return database.count(
+        @db,
+        s: database.sql_of(.select(query: build.select(from: "users", columns: [build.count_all()])))?
+    )
+
+# The account `row` holds, as `select_users` reads it.
+#
+# - `row`: the row.
+#
+# Fails `invalid` where a column is not of its kind, or the role is no role.
+function user_of(row: sql.Row) -> model.User?
+    user = model.User(
+        id: sql.integer_named(row, name: model.User::id)?,
+        name: sql.text_named(row, name: model.User::name)?,
+        email: sql.text_named(row, name: model.User::email)?,
+        password: sql.text_named(row, name: model.User::password)?,
+        role: model.parse_role(sql.text_named(row, name: model.User::role)?)?,
+        created_at: sql.instant_named(row, name: model.User::created_at)?
+    )
+
+    return ok(user)
+
+test "insert and by_name: an account read back, a name taken twice refused naming the column"
+    db @= database.open(":memory:").must()
+    _ = database.migrate_up(@db).must()
+    at = time.from_unix(whole_seconds: 1_763_715_600, extra_nanoseconds: 0).must()
+    id = insert(@db, name: "alice", email: "a@example.org", password: "$argon2id$x", role: .admin, at: at).must()
+    u = by_name(@db, name: "alice").must()
+    assert u.id == id && u.role == .admin && u.created_at == at
+
+    match insert(@db, name: "alice", email: "b@example.org", password: "p", role: .reader, at: at)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS && e.msg == "name is taken"
+
+    match insert(@db, name: "bob", email: "a@example.org", password: "p", role: .reader, at: at)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS && e.msg == "email is taken"
+
+    assert count(@db).must() == 1
+    sqlite.close(@db).must()
+
+test "set_role: a role given, and an account that is not there"
+    db @= database.open(":memory:").must()
+    _ = database.migrate_up(@db).must()
+    _ = insert(@db, name: "bob", email: "b@example.org", password: "p", role: .reader, at: time.epoch()).must()
+    set_role(@db, name: "bob", role: .author).must()
+    assert by_name(@db, name: "bob").must().role == .author
+    assert set_role(@db, name: "nobody", role: .author).is_err()
+    sqlite.close(@db).must()

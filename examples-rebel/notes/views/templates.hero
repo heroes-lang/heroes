@@ -1,0 +1,255 @@
+# The pages' HTML: a set of templates read in `template`'s HTML mode, which
+# escapes every value by the place it lands in, and the way a page is made
+# of them. `template` writes no value unescaped (its ledger's `html/trusted`
+# refuses it: a value is data, never markup), so a page that shows a note's
+# HTML, which `markup` made and cleaned, is a list of `Piece`s: templates
+# rendered, and that HTML joined between them as it is. A template therefore
+# ends where a note's or a comment's HTML begins, and the next one opens
+# where it ends.
+
+use <rebel>/json
+use <rebel>/template
+
+## Codes
+
+# The code of a page made of a template the set does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+## Pieces
+
+# One part of a page.
+variant Piece
+    # The template `name` rendered with `value`.
+    rendered
+        # The template's name in `templates`.
+        name: str
+        # The value it reads.
+        value: json.Value
+    # HTML joined as it is: only what `markup` answers, which an allow-list
+    # cleaned.
+    trusted
+        # The HTML.
+        html: str
+
+# The page `pieces` make, in their order.
+#
+# - `t`: the templates, as `templates` read them.
+# - `pieces`: the parts.
+#
+# Fails as `template.render_named` fails: `not_found` for a template the set
+# lacks or a value a template reads and the piece does not hold.
+function compose(t: template.Template, pieces: [Piece]) -> str?
+    parts: [str] @= []
+
+    for p in pieces
+        match p
+            .rendered r => parts @ parts.push(template.render_named(t, name: r.name, value: r.value)?)
+            .trusted h  => parts @ parts.push(h.html)
+
+    return ok(parts.join(""))
+
+# The templates, every one read in the HTML mode.
+#
+# Fails `invalid` where a template does not parse, which is this program's
+# own text: a test reads them all.
+function templates() -> template.Template?
+    texts: {str: str} = {
+        "head": head()
+        "foot": foot()
+        "card": card()
+        "list": list_page()
+        "note_top": note_top()
+        "note_bottom": note_bottom()
+        "comment_top": "<li class=\"comment\"><p class=\"meta\">{{ .author }}, {{ .date }}</p><div class=\"text\">"
+        "comment_bottom": "</div></li>"
+        "comments_end": comments_end()
+        "account_form": account_form()
+        "note_form": note_form()
+        "results": results()
+        "users": users()
+        "message": "<h1>{{ .heading }}</h1>\n<p>{{ .text }}</p>\n"
+    }
+
+    return template.parse_all(texts, options: template.html_options())
+
+# The page's opening, down to the start of `main`.
+function head() -> str
+    lines = [
+        "<!doctype html>"
+        "<html lang=\"{{ .lang }}\">"
+        "<head>"
+        "<meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        "<title>{{ .title }} | {{ .site }}</title>"
+        "<link rel=\"stylesheet\" href=\"/static/style.css\">"
+        "<link rel=\"alternate\" type=\"application/atom+xml\" title=\"{{ .site }}\" href=\"/feed.atom\">"
+        "</head>"
+        "<body>"
+        "<header>"
+        "<a class=\"site\" href=\"/\">{{ .site }}</a>"
+        "<form class=\"search\" action=\"/search\" method=\"get\"><input name=\"q\" value=\"{{ .query }}\" aria-label=\"{{ .t.search }}\"></form>"
+        "<nav>"
+        "{{ if .user }}"
+        "{{ if .may_write }}<a href=\"/new\">{{ .t.write }}</a>{{ end }}"
+        "{{ if .is_admin }}<a href=\"/admin/users\">{{ .t.accounts }}</a>{{ end }}"
+        "<form action=\"/account/logout\" method=\"post\"><input type=\"hidden\" name=\"csrf_token\" value=\"{{ .csrf }}\"><button>{{ .t.sign_out }} {{ .user }}</button></form>"
+        "{{ else }}"
+        "<a href=\"/account/login\">{{ .t.sign_in }}</a> <a href=\"/account/register\">{{ .t.register }}</a>"
+        "{{ end }}"
+        "</nav>"
+        "</header>"
+        "<main>"
+        ""
+    ]
+
+    return lines.join("\n")
+
+# The page's end, from the end of `main`.
+function foot() -> str
+    return "</main>\n<footer><a href=\"/feed.atom\">Atom</a> · <a href=\"/docs\">API</a></footer>\n</body>\n</html>\n"
+
+# One note in a list: its title, author, date, tags and first words.
+function card() -> str
+    lines = [
+        "<article class=\"card\">"
+        "<h2><a href=\"/notes/{{ .slug }}\">{{ .title }}</a></h2>"
+        "<p class=\"meta\">{{ .author }}, {{ .date }} · {{ .count }}</p>"
+        "{{ if .tags }}<p class=\"tags\">{{ for $tag in .tags }}<a href=\"/tags/{{ $tag }}\">{{ $tag }}</a> {{ end }}</p>{{ end }}"
+        "<p>{{ .excerpt }}</p>"
+        "</article>"
+        ""
+    ]
+
+    return lines.join("\n")
+
+# A list of notes with its pager: the home page, a tag's page.
+function list_page() -> str
+    lines = [
+        "<h1>{{ .heading }}</h1>"
+        "{{ for $n in .notes }}{{ include \"card\" $n }}{{ else }}<p>{{ .empty }}</p>{{ end }}"
+        "<nav class=\"pager\">"
+        "{{ if .page.previous }}<a rel=\"prev\" href=\"?page={{ .page.previous }}\">{{ .t.previous }}</a>{{ end }}"
+        "<span>{{ .t.page }} {{ .page.number }} {{ .t.of }} {{ .page.pages }}</span>"
+        "{{ if .page.next }}<a rel=\"next\" href=\"?page={{ .page.next }}\">{{ .t.next }}</a>{{ end }}"
+        "</nav>"
+        ""
+    ]
+
+    return lines.join("\n")
+
+# A note's page, down to where its HTML begins.
+function note_top() -> str
+    lines = [
+        "<article class=\"note\">"
+        "<h1>{{ .title }}</h1>"
+        "<p class=\"meta\">{{ .t.by }} {{ .author }}, <time datetime=\"{{ .stamp }}\">{{ .date }}</time></p>"
+        "{{ if .tags }}<p class=\"tags\">{{ for $tag in .tags }}<a href=\"/tags/{{ $tag }}\">{{ $tag }}</a> {{ end }}</p>{{ end }}"
+        "<div class=\"body\">"
+    ]
+
+    return lines.join("\n")
+
+# A note's page, from where its HTML ends to where its comments begin.
+function note_bottom() -> str
+    lines = [
+        "</div>"
+        "{{ if .may_delete }}<form action=\"/notes/{{ .slug }}/delete\" method=\"post\"><input type=\"hidden\" name=\"csrf_token\" value=\"{{ .csrf }}\"><button>{{ .t.delete }}</button></form>{{ end }}"
+        "</article>"
+        "<section class=\"comments\">"
+        "<h2>{{ .comments }}</h2>"
+        "<ol>"
+    ]
+
+    return lines.join("\n")
+
+# A note's page after its comments: the form that writes one.
+function comments_end() -> str
+    lines = [
+        "</ol>"
+        "{{ if .user }}"
+        "<form action=\"/notes/{{ .slug }}/comments\" method=\"post\">"
+        "<input type=\"hidden\" name=\"csrf_token\" value=\"{{ .csrf }}\">"
+        "<label>{{ .t.write_comment }}<textarea name=\"body\">{{ .draft }}</textarea></label>"
+        "{{ if .error }}<p class=\"error\">{{ .error }}</p>{{ end }}"
+        "<button>{{ .t.send }}</button>"
+        "</form>"
+        "{{ end }}"
+        "</section>"
+        ""
+    ]
+
+    return lines.join("\n")
+
+# A form of an account: registering or signing in. Each field says its
+# problem beside it, and a password is never written back.
+function account_form() -> str
+    lines = [
+        "<h1>{{ .heading }}</h1>"
+        "<form action=\"{{ .action }}\" method=\"post\">"
+        "<input type=\"hidden\" name=\"csrf_token\" value=\"{{ .csrf }}\">"
+        "{{ for $f in .fields }}"
+        "<p><label>{{ $f.label }} <input name=\"{{ $f.name }}\" type=\"{{ $f.kind }}\" value=\"{{ $f.value }}\"></label>"
+        "{{ if $f.error }}<span class=\"error\">{{ $f.error }}</span>{{ end }}</p>"
+        "{{ end }}"
+        "{{ if .error }}<p class=\"error\">{{ .error }}</p>{{ end }}"
+        "<button>{{ .button }}</button>"
+        "</form>"
+        ""
+    ]
+
+    return lines.join("\n")
+
+# The form that writes a note.
+function note_form() -> str
+    lines = [
+        "<h1>{{ .t.write }}</h1>"
+        "<form action=\"/notes\" method=\"post\">"
+        "<input type=\"hidden\" name=\"csrf_token\" value=\"{{ .csrf }}\">"
+        "<p><label>{{ .t.title }} <input name=\"title\" value=\"{{ .title }}\"></label>{{ if .errors.title }}<span class=\"error\">{{ .errors.title }}</span>{{ end }}</p>"
+        "<p><label>{{ .t.tags }} <input name=\"tags\" value=\"{{ .tags }}\"></label>{{ if .errors.tags }}<span class=\"error\">{{ .errors.tags }}</span>{{ end }}</p>"
+        "<p><label>{{ .t.text }}<textarea name=\"body\" rows=\"16\">{{ .body }}</textarea></label>{{ if .errors.body }}<span class=\"error\">{{ .errors.body }}</span>{{ end }}</p>"
+        "<button>{{ .t.send }}</button>"
+        "</form>"
+        ""
+    ]
+
+    return lines.join("\n")
+
+# A search's results.
+function results() -> str
+    lines = [
+        "<h1>{{ .t.results }} “{{ .query }}”</h1>"
+        "{{ for $n in .notes }}{{ include \"card\" $n }}{{ else }}<p>{{ .empty }}</p>{{ end }}"
+        ""
+    ]
+
+    return lines.join("\n")
+
+# The accounts, each with its role and a button for each role it may be
+# given. A `<select>` marking the role held would need `selected` written
+# only for one option, which `template`'s HTML mode refuses.
+function users() -> str
+    lines = [
+        "<h1>{{ .t.accounts }}</h1>"
+        "<table>"
+        "<tr><th>{{ .t.name }}</th><th>{{ .t.role }}</th><th></th></tr>"
+        "{{ for $u in .users }}"
+        "<tr><td>{{ $u.name }}</td><td>{{ $u.role }}</td><td><form action=\"/admin/users/{{ $u.name }}/role\" method=\"post\">"
+        "<input type=\"hidden\" name=\"csrf_token\" value=\"{{ .csrf }}\">"
+        "{{ for $r in .roles }}<button name=\"role\" value=\"{{ $r }}\">{{ $r }}</button> {{ end }}"
+        "</form></td></tr>"
+        "{{ end }}"
+        "</table>"
+        ""
+    ]
+
+    return lines.join("\n")
+
+test "templates: every template reads in the HTML mode"
+    assert !templates().is_err()
+
+test "compose: a template, HTML joined as it is, and a value escaped"
+    t = template.parse_all({"a": "<p>{{ . }}</p>"}, options: template.html_options()).must()
+    pieces: [Piece] = [.rendered(name: "a", value: .text(v: "<b>")), .trusted(html: "<em>kept</em>")]
+    assert compose(t, pieces: pieces).must() == "<p>&lt;b&gt;</p><em>kept</em>"

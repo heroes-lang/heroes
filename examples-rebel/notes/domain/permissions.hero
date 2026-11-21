@@ -1,0 +1,135 @@
+# Who may do what, as one function every handler asks before it changes
+# anything: the rules live here and nowhere else, so a page and the API can
+# never disagree about them. The answer says why a refusal is one, in words
+# the 403 sends.
+
+use domain/model
+
+# Something an account asks to do.
+variant Action
+    # Read a note or a list of notes.
+    read
+    # Write a new note.
+    write_note
+    # Change the note written by the account `owner_id`.
+    edit_note
+        owner_id: i64
+    # Remove the note written by the account `owner_id`.
+    delete_note
+        owner_id: i64
+    # Write a comment.
+    comment
+    # Remove the comment written by the account `owner_id`.
+    delete_comment
+        owner_id: i64
+    # Give an account another role.
+    change_role
+    # See the accounts and the service's pages for admins.
+    administer
+
+# What `decide` answers: allowed, or refused and why.
+variant Verdict
+    # The account may.
+    allowed
+    # The account may not; `reason` says why, for the 403.
+    refused
+        reason: str
+
+# Whether `user` may do `action`; a visitor not signed in is asked by
+# `decide_signed_out`.
+#
+# - `user`: the account asking.
+# - `action`: what it asks to do.
+function decide(user: model.User, action: Action) -> Verdict
+    return match action
+        .read    => .allowed
+        .comment => .allowed
+        .write_note =>
+            if user.role == .reader
+                .refused(reason: "a reader may not write notes")
+            else
+                .allowed
+        .edit_note e      => owner_or_admin(user, owner_id: e.owner_id, what: "change")
+        .delete_note d    => owner_or_admin(user, owner_id: d.owner_id, what: "remove")
+        .delete_comment c => owner_or_admin(user, owner_id: c.owner_id, what: "remove")
+        .change_role      => admin_only(user, what: "give roles")
+        .administer       => admin_only(user, what: "administer")
+
+# What a visitor who is not signed in may do: read, and nothing else.
+#
+# - `action`: what the visitor asks to do.
+function decide_signed_out(action: Action) -> Verdict
+    return match action
+        .read                                               => .allowed
+        .write_note | .comment | .change_role | .administer => .refused(reason: "sign in first")
+        .edit_note _ | .delete_note _ | .delete_comment _   => .refused(reason: "sign in first")
+
+# Allowed for the owner, an author or above, and for an admin.
+#
+# - `user`: the account asking.
+# - `owner_id`: the account that wrote what is asked about.
+# - `what`: the verb the refusal names.
+function owner_or_admin(user: model.User, owner_id: i64, what: str) -> Verdict
+    if user.role == .admin
+        return .allowed
+
+    if user.id == owner_id && user.role != .reader
+        return .allowed
+
+    if user.id == owner_id
+        return .refused(reason: f"a reader may not {what} notes")
+
+    return .refused(reason: f"only its author or an admin may {what} it")
+
+# Allowed for an admin alone.
+#
+# - `user`: the account asking.
+# - `what`: the verb the refusal names.
+function admin_only(user: model.User, what: str) -> Verdict
+    if user.role == .admin
+        return .allowed
+
+    return .refused(reason: f"only an admin may {what}")
+
+# Whether `verdict` allows.
+#
+# - `verdict`: the verdict.
+function is_allowed(verdict: Verdict) -> bool
+    return match verdict
+        .allowed   => true
+        .refused _ => false
+
+# The account a test asks with.
+#
+# - `id`: its number.
+# - `role`: its role.
+function user_with(id: i64, role: model.Role) -> model.User
+    u: model.User @= model.sample_user(name: f"user{id}", role: role)
+    u.id @ id
+    return u
+
+test "decide: a reader reads and comments, and writes no note"
+    reader = user_with(id: 1, role: .reader)
+    assert is_allowed(decide(reader, action: .read))
+    assert is_allowed(decide(reader, action: .comment))
+    assert decide(reader, action: .write_note) == .refused(reason: "a reader may not write notes")
+
+test "decide: an author changes its own note and not another's"
+    author = user_with(id: 2, role: .author)
+    assert is_allowed(decide(author, action: .write_note))
+    assert is_allowed(decide(author, action: .edit_note(owner_id: 2)))
+    assert decide(author, action: .delete_note(owner_id: 3)) == .refused(reason: "only its author or an admin may remove it")
+
+test "decide: an admin changes any note and gives roles; an author gives none"
+    admin = user_with(id: 1, role: .admin)
+    assert is_allowed(decide(admin, action: .delete_note(owner_id: 9)))
+    assert is_allowed(decide(admin, action: .change_role))
+    assert decide(user_with(id: 2, role: .author), action: .change_role) == .refused(reason: "only an admin may give roles")
+
+test "decide: a reader demoted keeps no right over the notes it wrote"
+    assert decide(user_with(id: 4, role: .reader), action: .edit_note(owner_id: 4)) == .refused(reason: "a reader may not change notes")
+
+test "decide_signed_out: reading alone"
+    assert is_allowed(decide_signed_out(.read))
+    assert !is_allowed(decide_signed_out(.comment))
+    assert !is_allowed(decide_signed_out(.delete_note(owner_id: 1)))

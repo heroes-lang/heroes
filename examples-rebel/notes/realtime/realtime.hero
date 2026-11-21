@@ -1,0 +1,222 @@
+# The live channel: every open WebSocket of a signed-in account, keyed by
+# the server's `poll` entry, and the messages pushed to them. When a note gets
+# a comment, its author's sockets are told at once. A socket that fails a
+# write is answered as gone and let go, so one broken client never stops a
+# push to the others; and at the stop every socket is told 1001, Going Away
+# (RFC 6455 § 7.4.1), so a client knows to connect again later.
+
+use <rebel>/json
+use <rebel>/net
+use <rebel>/websocket
+
+use domain/jsonv
+
+## The hub
+
+# One open socket and whose it is.
+record Socket
+    # The connection.
+    conn: websocket.Conn
+    # The account's number.
+    user_id: i64
+    # The account's name.
+    user: str
+
+# Every open socket, by the `poll` key its stream is waited on with.
+record Hub
+    # The sockets by key.
+    sockets: {i64: Socket}
+    # How many messages were pushed since the start.
+    pushed: i64
+
+# A hub with no socket.
+function new_hub() -> Hub
+    return Hub(sockets: {}, pushed: 0)
+
+# Adds `conn`, opened for the account `user`, and greets it with a
+# `welcome` message naming the account, so the client knows whose socket the
+# server took it for.
+#
+# - `hub`: the hub.
+# - `key`: the `poll` key of the socket's stream.
+# - `conn`: the connection, just upgraded.
+# - `user_id`: the account's number.
+# - `user`: the account's name.
+#
+# Fails as `websocket.write_json` fails; the socket is not added then.
+function admit(@hub: Hub, key: i64, conn: websocket.Conn, user_id: i64, user: str) -> ()?
+    c @= conn
+    welcome: {str: json.Value} = {"type": jsonv.text("welcome"), "user": jsonv.text(user)}
+    websocket.write_json(@c, value: jsonv.object(welcome))?
+    hub.sockets[key] @ Socket(conn: c, user_id: user_id, user: user)
+    return ok()
+
+# How many sockets are open.
+#
+# - `hub`: the hub.
+function count(hub: Hub) -> i64
+    return keys(hub.sockets).len()
+
+# Whether `key` is a socket's.
+#
+# - `hub`: the hub.
+# - `key`: a `poll` key.
+function holds(hub: Hub, key: i64) -> bool
+    return !hub.sockets[key].is_err()
+
+# What reading a socket found.
+variant Read
+    # The socket stays open.
+    open
+    # The socket closed, by its handshake or by a failure: the caller takes
+    # its key out of the poll set; the hub has let it go.
+    closed
+        # The close code the peer sent, or 1006 where it sent none.
+        code: i64
+
+# Reads what the socket `key` has: a ping answered, a close answered and the
+# socket let go. A client's own messages carry nothing this service reads, so
+# they are read and dropped, which keeps the socket's buffer from growing.
+#
+# - `hub`: the hub.
+# - `key`: the socket's `poll` key, which `poll` told readable.
+function on_readable(@hub: Hub, key: i64) -> Read
+    s = match hub.sockets[key]
+        .ok got => got
+        .err _  => return .closed(code: websocket.CLOSE_ABNORMAL)
+
+    c @= s.conn
+
+    match websocket.read_ready(@c)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    if websocket.is_open(c)
+        hub.sockets[key] @ Socket(conn: c, user_id: s.user_id, user: s.user)
+        return .open
+
+    code = match websocket.closing_of(c)
+        .ok closing => closing.code
+        .err _      => websocket.CLOSE_ABNORMAL
+
+    _ = websocket.drop(@c).is_err()
+    hub.sockets @ without(hub.sockets, key: key)
+    return .closed(code: code)
+
+# `sockets` without `key`.
+#
+# - `sockets`: the sockets.
+# - `key`: the key left out.
+function without(sockets: {i64: Socket}, key: i64) -> {i64: Socket}
+    out: {i64: Socket} @= {}
+
+    for k in keys(sockets)
+        if k != key
+            out[k] @ sockets[k].must()
+
+    return out
+
+# Pushes `message` to every socket of the account `user_id`, and answers the
+# keys of those that failed, which the hub has let go and the caller takes
+# out of its poll set.
+#
+# - `hub`: the hub.
+# - `user_id`: the account told.
+# - `message`: the message, a JSON object with a `type`.
+function tell(@hub: Hub, user_id: i64, message: json.Value) -> [i64]
+    frame = websocket.prepare(.text(text: json.format(message).default("{}")))
+    gone: [i64] @= []
+
+    for key in keys(hub.sockets)
+        s = hub.sockets[key].must()
+
+        if s.user_id == user_id
+            c @= s.conn
+
+            match websocket.write_prepared(@c, p: frame)
+                .ok _ =>
+                    hub.sockets[key] @ Socket(conn: c, user_id: s.user_id, user: s.user)
+                    hub.pushed @ hub.pushed + 1
+                .err _ =>
+                    _ = websocket.drop(@c).is_err()
+                    gone @ gone.push(key)
+
+    for key in gone
+        hub.sockets @ without(hub.sockets, key: key)
+
+    return gone
+
+# Pings every socket, so a client gone without a word is found by the write
+# failing, and a proxy between keeps the connection; answers the keys let go.
+#
+# - `hub`: the hub.
+function ping_all(@hub: Hub) -> [i64]
+    gone: [i64] @= []
+
+    for key in keys(hub.sockets)
+        s = hub.sockets[key].must()
+        c @= s.conn
+
+        match websocket.write_ping(@c, data: [])
+            .ok _ => hub.sockets[key] @ Socket(conn: c, user_id: s.user_id, user: s.user)
+            .err _ =>
+                _ = websocket.drop(@c).is_err()
+                gone @ gone.push(key)
+
+    for key in gone
+        hub.sockets @ without(hub.sockets, key: key)
+
+    return gone
+
+# Tells every socket the server is going away and lets each go; answers how
+# many were told. The close is written and not awaited: at the stop every
+# wait answers `stopped`, so no closing handshake can be finished.
+#
+# - `hub`: the hub, empty after.
+function going_away(@hub: Hub) -> i64
+    told: i64 @= 0
+
+    for key in keys(hub.sockets)
+        c @= hub.sockets[key].must().conn
+
+        if websocket.write_close(@c, code: websocket.CLOSE_GOING_AWAY, reason: "server stopping").is_err()
+            _ = 0
+        else
+            told @ told + 1
+
+        _ = websocket.drop(@c).is_err()
+
+    hub.sockets @ {}
+    return told
+
+# The message that tells a note's author of a new comment.
+#
+# - `slug`: the note's slug.
+# - `title`: the note's title.
+# - `by`: the commenter's name.
+# - `uid`: the comment's UUID.
+function comment_message(slug: str, title: str, by: str, uid: str) -> json.Value
+    members: {str: json.Value} = {
+        "type": jsonv.text("comment")
+        "note": jsonv.text(slug)
+        "title": jsonv.text(title)
+        "by": jsonv.text(by)
+        "comment": jsonv.text(uid)
+    }
+
+    return jsonv.object(members)
+
+test "admit, tell and going_away: a welcome, a comment pushed, and 1001 at the stop"
+    two @= net.pair(deadline_ms: 5_000).must()
+    server_end = websocket.conn_of(@two.second.stream, role: .server, settings: websocket.default_settings())
+    client @= websocket.conn_of(@two.first.stream, role: .client, settings: websocket.default_settings())
+    hub @= new_hub()
+    admit(@hub, key: 1, conn: server_end, user_id: 7, user: "alice").must()
+    assert jsonv.text_at(websocket.read_json(@client).must(), key: "user").must() == "alice"
+    assert tell(@hub, user_id: 7, message: comment_message(slug: "a", title: "A", by: "bob", uid: "u")).len() == 0
+    assert tell(@hub, user_id: 8, message: comment_message(slug: "a", title: "A", by: "bob", uid: "u")).len() == 0
+    assert jsonv.text_at(websocket.read_json(@client).must(), key: "by").must() == "bob" && hub.pushed == 1
+    assert going_away(@hub) == 1 && count(hub) == 0
+    assert websocket.read_message(@client).is_err()
+    assert websocket.closing_of(client).must().code == websocket.CLOSE_GOING_AWAY
+    _ = websocket.drop(@client).is_err()

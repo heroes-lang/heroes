@@ -1,0 +1,126 @@
+# The values the publishing service is about: an account and its role, a
+# note with its tags, and a comment. Every other module reads and writes
+# these records; the store modules map them to rows by their field names
+# (`User::name`, spec § 9), so a column and a field cannot drift apart.
+
+use <rebel>/strings
+use <rebel>/time
+
+## Codes
+
+# The code of a text that names no role, from `parse_role`.
+constant INVALID: str
+    "invalid"
+
+## Roles
+
+# What an account may do. A reader reads and comments; an author also writes
+# notes and changes or removes their own; an admin may change or remove any
+# note or comment and give an account another role.
+variant Role
+    # Reads notes and writes comments.
+    reader
+    # Also writes notes, and changes or removes the notes it wrote.
+    author
+    # Also changes or removes every note and comment, and gives roles.
+    admin
+
+# The name a role is stored and sent under: `reader`, `author` or `admin`.
+#
+# - `role`: the role.
+function role_name(role: Role) -> str
+    return match role
+        .reader => "reader"
+        .author => "author"
+        .admin  => "admin"
+
+# The role `name` names, in any case.
+#
+# - `name`: `reader`, `author` or `admin`.
+#
+# Fails `invalid` for any other text.
+function parse_role(name: str) -> Role?
+    return match strings.to_lower_ascii(name)
+        "reader" => ok(.reader)
+        "author" => ok(.author)
+        "admin"  => ok(.admin)
+        _        => fail(code: INVALID, msg: f"\"{name}\" is no role: reader, author or admin")
+
+## Records
+
+# An account. Made by `user_store.insert` and read back by its queries; the
+# password is never kept, only its Argon2id hash in the PHC form.
+record User
+    # The row's number, from 1.
+    id: i64
+    # The name the account signs in with and is shown under, unique.
+    name: str
+    # Where the account is written to, unique.
+    email: str
+    # The PHC string of the password's Argon2id hash.
+    password: str
+    # What the account may do.
+    role: Role
+    # When the account was made.
+    created_at: time.Instant
+
+# A note as the pages and the API show it: its own columns, its author's
+# name and its tags, which live in other tables.
+record Note
+    # The row's number, from 1.
+    id: i64
+    # The account that wrote it.
+    author_id: i64
+    # The author's name, joined from `users`.
+    author: str
+    # The note's name in its address, unique: `hello-heroes`.
+    slug: str
+    # The title, one line.
+    title: str
+    # The body, in Markdown as its author wrote it.
+    body: str
+    # When it was written.
+    created_at: time.Instant
+    # When it was last changed; `created_at` where never.
+    updated_at: time.Instant
+    # Its tags, sorted by their bytes, each lower case.
+    tags: [str]
+    # How many comments it has.
+    comments: i64
+
+# A comment on a note.
+record Comment
+    # The row's number, from 1.
+    id: i64
+    # The comment's identifier in the API, a UUID of version 7.
+    uid: str
+    # The note it is about.
+    note_id: i64
+    # The account that wrote it.
+    author_id: i64
+    # The author's name, joined from `users`.
+    author: str
+    # The text, in Markdown.
+    body: str
+    # When it was written.
+    created_at: time.Instant
+
+# A user with nothing in it: what a test or a form starts from.
+#
+# - `name`: the account's name.
+# - `role`: its role.
+function sample_user(name: str, role: Role) -> User
+    return User(id: 0, name: name, email: "", password: "", role: role, created_at: time.epoch())
+
+test "parse_role: every role, any case, and a text that names none"
+    assert parse_role("reader").must() == .reader
+    assert parse_role("Author").must() == .author
+    assert parse_role("ADMIN").must() == .admin
+    assert parse_role("").is_err()
+    assert parse_role("root").is_err()
+
+test "role_name: reads back through parse_role"
+    roles: [Role] = [.reader, .author, .admin]
+
+    for role in roles
+        assert parse_role(role_name(role)).must() == role

@@ -1,0 +1,220 @@
+# The API's bearer tokens: JWTs (RFC 7519) signed with HMAC-SHA256 under the
+# server's own key, naming the account in `sub` and its role in `role`, with
+# an issuer, an audience and an end. A token is checked by its signature and
+# its claims alone; the account is then read again from the database, so a
+# role changed or an account removed takes effect before the token ends.
+
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/time
+use <rebel>/uuid
+
+use domain/jsonv
+
+## Codes
+
+# The code of a token that does not verify, has ended, or was not issued here.
+constant INVALID: str
+    "invalid"
+
+## The claims
+
+# Who issues the tokens: the `iss` every token carries and every check asks.
+constant ISSUER: str
+    "notes"
+
+# Whom the tokens are for: the `aud` every token carries and every check asks.
+constant AUDIENCE: str
+    "notes-api"
+
+# What a verified token says.
+record Claims
+    # The account's name, from `sub`.
+    subject: str
+    # The role it had when the token was made, from `role`; the database's
+    # answer wins over it.
+    role: str
+    # When the token ends, from `exp`.
+    expires: time.Instant
+
+# A token for the account `name`, valid from `now` for `ttl`.
+#
+# - `key`: the server's signing key, 32 bytes or more.
+# - `name`: the account.
+# - `role`: its role's name.
+# - `now`: when the token is made.
+# - `ttl`: how long it lasts.
+#
+# Fails as `uuid.new_v4` and `jose.sign_token` fail, and `does_not_fit`
+# where the end would pass the last instant.
+function issue(key: [u8], name: str, role: str, now: time.Instant, ttl: time.Duration) -> str?
+    ends = time.add(now, d: ttl)?
+    id = uuid.new_v4()?
+
+    claims: {str: json.Value} = {
+        "iss": jsonv.text(ISSUER)
+        "aud": jsonv.text(AUDIENCE)
+        "sub": jsonv.text(name)
+        "role": jsonv.text(role)
+        "iat": jose.numeric_date(now)
+        "exp": jose.numeric_date(ends)
+        "jti": jsonv.text(uuid.format(id))
+    }
+
+    return jose.sign_token(claims, key: jose.key_from_secret(key), algorithm: .hs256)
+
+# What `token` says, where it was signed with `key`, by this issuer for this
+# audience, and has not ended at `now`.
+#
+# - `key`: the server's signing key.
+# - `token`: the compact JWT, as a client's `Authorization: Bearer` sends it.
+# - `now`: the moment it is judged at.
+#
+# HS256 alone is accepted, so a token naming `none` or another algorithm is
+# refused before its signature is read. Fails `invalid` naming what failed:
+# the signature, the issuer, the audience, the end, or a missing claim.
+function check(key: [u8], token: str, now: time.Instant) -> Claims?
+    rules = jose.Rules(
+        algorithms: [.hs256],
+        issuer: ISSUER,
+        audience: AUDIENCE,
+        subject: "",
+        token_type: "",
+        required: ["sub", "exp", "role"],
+        leeway: time.nanoseconds(0),
+        now: now
+    )
+
+    read = match jose.verify_token(token, trusted: [jose.key_from_secret(key)], rules: rules)
+        .ok t  => t
+        .err e => return fail(code: INVALID, msg: e.msg)
+
+    claims = Claims(
+        subject: jose.claim_text(read.claims, name: "sub")?,
+        role: jose.claim_text(read.claims, name: "role")?,
+        expires: jose.claim_time(read.claims, name: "exp")?
+    )
+
+    return ok(claims)
+
+test "issue and check: a token read back, the role and the end kept"
+    key: [u8] = [
+        1
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+        10
+        11
+        12
+        13
+        14
+        15
+        16
+        17
+        18
+        19
+        20
+        21
+        22
+        23
+        24
+        25
+        26
+        27
+        28
+        29
+        30
+        31
+        32
+    ]
+    now = time.from_unix(whole_seconds: 1_763_715_600, extra_nanoseconds: 0).must()
+    token = issue(key, name: "alice", role: "admin", now: now, ttl: time.hours(1).must()).must()
+    c = check(key, token: token, now: now).must()
+    assert c.subject == "alice" && c.role == "admin" && time.unix_seconds(c.expires) == 1_763_719_200
+
+test "check: ended, another key, and a token changed by one character"
+    key: [u8] = [
+        1
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+        10
+        11
+        12
+        13
+        14
+        15
+        16
+        17
+        18
+        19
+        20
+        21
+        22
+        23
+        24
+        25
+        26
+        27
+        28
+        29
+        30
+        31
+        32
+    ]
+    other: [u8] = [
+        9
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+        10
+        11
+        12
+        13
+        14
+        15
+        16
+        17
+        18
+        19
+        20
+        21
+        22
+        23
+        24
+        25
+        26
+        27
+        28
+        29
+        30
+        31
+        32
+    ]
+    now = time.from_unix(whole_seconds: 1_763_715_600, extra_nanoseconds: 0).must()
+    token = issue(key, name: "alice", role: "admin", now: now, ttl: time.hours(1).must()).must()
+    assert check(key, token: token, now: time.add(now, d: time.hours(2).must()).must()).is_err()
+    assert check(other, token: token, now: now).is_err()
+    last = token.slice(from: token.len() - 1, to: token.len())
+
+    other_last = if last == "A"
+        "B"
+    else
+        "A"
+
+    assert check(key, token: token.slice(from: 0, to: token.len() - 1) + other_last, now: now).is_err()

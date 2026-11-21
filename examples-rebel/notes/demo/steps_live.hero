@@ -1,0 +1,88 @@
+# The demo session's steps about the live channel: comments by the API and by
+# the form, what the author's WebSocket is told of each, a note's comments,
+# and at the end the server asked to stop and the WebSocket's close.
+
+use <rebel>/http
+use <rebel>/strings
+use <rebel>/websocket
+
+use demo/browse
+use domain/jsonv
+
+# A comment by the API.
+#
+# - `s`: the session.
+# - `token`: the commenter's token.
+# - `slug`: the note.
+# - `body`: the comment.
+function comment_api(@s: http.Session, token: str, slug: str, body: str) -> ()?
+    r = browse.call(@s, method: "POST", target: f"/api/notes/{slug}/comments", token: token, body: jsonv.object({"body": jsonv.text(body)}))?
+    v = browse.json_body(r)
+    print(
+        f"bob comments on {slug} by the API: {r.status}, by {browse.shown(v, key: "author")}, html {strings.trim(browse.shown(v, key: "html"))}"
+    )
+    return ok()
+
+# A comment by the form.
+#
+# - `s`: the browser, signed in.
+# - `slug`: the note.
+# - `body`: the comment.
+function comment_form(@s: http.Session, slug: str, body: str) -> ()?
+    token = browse.csrf_from(@s, target: f"/notes/{slug}")?
+    r = browse.post_form(@s, target: f"/notes/{slug}/comments", pairs: [browse.field(key: "csrf_token", value: token), browse.field(key: "body", value: body)], accept: "text/html")?
+    print(f"bob comments on {slug} by the form: {r.status} -> {browse.redirect_of(r)}")
+    return ok()
+
+# What the WebSocket was told.
+#
+# - `ws`: alice's WebSocket.
+function told(@ws: websocket.Conn) -> ()?
+    v = websocket.read_json(@ws)?
+    print(
+        f"  alice's WebSocket: {browse.shown(v, key: "type")} on {browse.shown(v, key: "note")} (\"{browse.shown(v, key: "title")}\") by {browse.shown(v, key: "by")}"
+    )
+    return ok()
+
+# A note's comments by the API.
+#
+# - `s`: the session.
+# - `token`: a token.
+# - `slug`: the note.
+function read_comments(@s: http.Session, token: str, slug: str) -> ()?
+    r = browse.call(@s, method: "GET", target: f"/api/notes/{slug}/comments", token: token, body: .null_value)?
+    print(
+        f"GET /api/notes/{slug}/comments: {r.status}, by {browse.each_of(browse.json_body(r), list_key: "comments", key: "author")}"
+    )
+    return ok()
+
+# The server asked to stop by the API.
+#
+# - `s`: the session.
+# - `token`: a token.
+function stop(@s: http.Session, token: str) -> ()?
+    r = browse.call(@s, method: "POST", target: "/api/admin/stop", token: token, body: .null_value)?
+    v = browse.json_body(r)
+
+    said = if browse.shown(v, key: "error") == ""
+        f"stopping {browse.shown(v, key: "stopping")}"
+    else
+        browse.shown(v, key: "error")
+
+    print(f"POST /api/admin/stop: {r.status} {said}")
+    return ok()
+
+# What the WebSocket reads once the server has stopped: its close.
+#
+# - `ws`: alice's WebSocket; dropped after.
+function closed(@ws: websocket.Conn)
+    match websocket.read_message(@ws)
+        .ok _ => print("  alice's WebSocket: a message where its close was awaited")
+        .err _ =>
+            match websocket.closing_of(ws)
+                .ok c => print(
+                    f"  alice's WebSocket closed by the server: {c.code} {websocket.close_name(c.code).default("?")}, \"{c.reason}\""
+                )
+                .err _ => print("  alice's WebSocket: still open")
+
+    _ = websocket.drop(@ws).is_err()

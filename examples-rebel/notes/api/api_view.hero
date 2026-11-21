@@ -1,0 +1,73 @@
+# The JSON the API answers for a note, a comment and an account, the one
+# shape each has wherever it is answered: by the API, and by a page asked for
+# JSON (`Accept: application/json`). Moments are RFC 3339 in UTC; a note's and
+# a comment's `html` is their Markdown written and cleaned by `markup`.
+
+use <rebel>/json
+
+use domain/jsonv
+use domain/model
+use domain/paging
+use views/markup
+
+# `n` as the API answers it.
+#
+# - `n`: the note.
+function note_json(n: model.Note) -> json.Value
+    members: {str: json.Value} = {
+        "slug": jsonv.text(n.slug)
+        "title": jsonv.text(n.title)
+        "author": jsonv.text(n.author)
+        "tags": jsonv.texts(n.tags)
+        "body": jsonv.text(n.body)
+        "html": jsonv.text(markup.note_html(n.body))
+        "comments": jsonv.number(n.comments)
+        "created_at": jsonv.instant(n.created_at)
+        "updated_at": jsonv.instant(n.updated_at)
+    }
+
+    return jsonv.object(members)
+
+# `notes` as a list of `note_json`.
+#
+# - `notes`: the notes, in their order.
+function notes_json(notes: [model.Note]) -> json.Value
+    items: [json.Value] @= []
+
+    for n in notes
+        items @ items.push(note_json(n))
+
+    return jsonv.list(items)
+
+# A page of notes: `{"notes": [...], "page": {...}}`.
+#
+# - `notes`: the page's notes.
+# - `p`: the page.
+function page_json(notes: [model.Note], p: paging.Page) -> json.Value
+    return jsonv.object({"notes": notes_json(notes), "page": paging.page_json(p)})
+
+# `c` as the API answers it; its `id` is its UUID.
+#
+# - `c`: the comment.
+function comment_json(c: model.Comment) -> json.Value
+    members: {str: json.Value} = {
+        "id": jsonv.text(c.uid)
+        "author": jsonv.text(c.author)
+        "body": jsonv.text(c.body)
+        "html": jsonv.text(markup.comment_html(c.body))
+        "created_at": jsonv.instant(c.created_at)
+    }
+
+    return jsonv.object(members)
+
+# `u` as the API answers it: never its address, never its hash.
+#
+# - `u`: the account.
+function user_json(u: model.User) -> json.Value
+    members: {str: json.Value} = {
+        "name": jsonv.text(u.name)
+        "role": jsonv.text(model.role_name(u.role))
+        "created_at": jsonv.instant(u.created_at)
+    }
+
+    return jsonv.object(members)

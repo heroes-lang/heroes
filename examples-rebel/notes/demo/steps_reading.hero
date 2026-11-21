@@ -1,0 +1,129 @@
+# The demo session's steps that read: a page of notes as HTML and as JSON, a
+# page number that is none, a note in Italian, its entity tag and 304, a
+# media type nothing offered matches, a tag's notes and two searches. A page
+# is read with `html`'s selectors, as a scraper reads it.
+
+use <rebel>/html
+use <rebel>/http
+use <rebel>/json
+use <rebel>/strings
+
+use demo/browse
+
+# The home page as a browser reads it: its cards and its pager.
+#
+# - `s`: the session.
+function list_html(@s: http.Session) -> ()?
+    r = browse.get(@s, target: "/notes", accept: "text/html")?
+    doc = html.parse(http.text_of(r)?)
+    cards = html.select_all(doc, within: html.ROOT, selector: "article.card h2")?
+    titles: [str] @= []
+
+    for card in cards
+        titles @ titles.push(html.text_of(doc, node: card))
+
+    pager = text_at(doc, selector: "nav.pager span")
+    print(f"GET /notes as HTML: {r.status}, {titles.join(" | ")}; \"{pager}\"")
+    return ok()
+
+# A page of the list as JSON.
+#
+# - `s`: the session.
+# - `page`: the page's number.
+function list_json(@s: http.Session, page: str) -> ()?
+    r = browse.get(@s, target: f"/notes?page={page}", accept: "application/json")?
+    v = browse.json_body(r)
+    p = json.member(v, key: "page").default(.null_value)
+    print(
+        f"GET /notes?page={page} as JSON: {r.status}, page {browse.shown(p, key: "number")} of {browse.shown(p, key: "pages")}: {browse.each_of(v, list_key: "notes", key: "slug")}"
+    )
+    return ok()
+
+# A page number that is no number.
+#
+# - `s`: the session.
+function list_bad_page(@s: http.Session) -> ()?
+    r = browse.get(@s, target: "/notes?page=two", accept: "application/json")?
+    print(f"GET /notes?page=two: {r.status} {browse.shown(browse.json_body(r), key: "error")}")
+    return ok()
+
+# A note's page in Italian: its date and its count of comments in the
+# language asked, its Markdown written, its script dropped.
+#
+# - `s`: a browser asking Italian.
+function note_italian(@s: http.Session) -> ()?
+    r = browse.get(@s, target: "/notes/hello-heroes", accept: "text/html")?
+    page = http.text_of(r)?
+    doc = html.parse(page)
+    lang = html.attribute(doc, node: html.select(doc, within: html.ROOT, selector: "html")?, name: "lang").default("?")
+    print(
+        f"GET /notes/hello-heroes in Italian: {r.status}, lang {lang}, \"{text_at(doc, selector: "h1")}\", \"{text_at(doc, selector: "time")}\", \"{text_at(doc, selector: "section.comments h2")}\""
+    )
+    body = html.select(doc, within: html.ROOT, selector: "div.body")?
+    print(
+        f"  its body: <h2> {text_at(doc, selector: "div.body h2")}, <kbd> {html.select_all(doc, within: body, selector: "kbd")?.len()}, <script> {html.select_all(doc, within: body, selector: "script")?.len()}, links rel {html.attribute(doc, node: html.select(doc, within: body, selector: "a")?, name: "rel").default("none")}"
+    )
+    return ok()
+
+# The text of the first element `selector` matches in `doc`, "?" for none.
+#
+# - `doc`: the page.
+# - `selector`: a CSS selector.
+function text_at(doc: html.Document, selector: str) -> str
+    return match html.select(doc, within: html.ROOT, selector: selector)
+        .ok node => strings.trim(html.text_of(doc, node: node))
+        .err _   => "?"
+
+# A note as JSON, then asked again with its entity tag: 304.
+#
+# - `s`: the session.
+function note_cached(@s: http.Session) -> ()?
+    r = browse.get(@s, target: "/notes/hello-heroes", accept: "application/json")?
+    tag = http.value_of(r.headers, name: "ETag").default("")
+    again @= http.request(method: "GET", target: "/notes/hello-heroes")?
+    again.headers @ http.with_header(again.headers, name: "Accept", value: "application/json")
+    again.headers @ http.with_header(again.headers, name: "If-None-Match", value: tag)
+    second = http.fetch_once(@s, r: again)?
+    v = browse.json_body(r)
+    print(
+        f"GET /notes/hello-heroes as JSON: {r.status}, \"{browse.shown(v, key: "title")}\" by {browse.shown(v, key: "author")}, an ETag: {tag != ""}; asked again with it: {second.status}"
+    )
+    return ok()
+
+# A note asked as an image: nothing offered matches.
+#
+# - `s`: the session.
+function not_acceptable(@s: http.Session) -> ()?
+    r = browse.get(@s, target: "/notes/hello-heroes", accept: "image/png")?
+    print(f"GET /notes/hello-heroes as image/png: {r.status}")
+    return ok()
+
+# The notes of a tag.
+#
+# - `s`: the session.
+# - `name`: the tag.
+function tag_page(@s: http.Session, name: str) -> ()?
+    r = browse.get(@s, target: f"/tags/{name}", accept: "application/json")?
+    print(f"GET /tags/{name}: {r.status}, {browse.each_of(browse.json_body(r), list_key: "notes", key: "slug")}")
+    return ok()
+
+# A search of the pages, as JSON.
+#
+# - `s`: the session.
+# - `words`: what is searched.
+function search_page(@s: http.Session, words: str) -> ()?
+    r = browse.get(@s, target: f"/search?q={words}", accept: "application/json")?
+    print(f"GET /search?q={words}: {r.status}, {browse.each_of(browse.json_body(r), list_key: "notes", key: "slug")}")
+    return ok()
+
+# A search of the API.
+#
+# - `s`: the session.
+# - `token`: a token.
+# - `words`: what is searched.
+function search_api(@s: http.Session, token: str, words: str) -> ()?
+    r = browse.call(@s, method: "GET", target: f"/api/search?q={words}", token: token, body: .null_value)?
+    print(
+        f"GET /api/search?q={words}: {r.status}, {browse.each_of(browse.json_body(r), list_key: "notes", key: "slug")}"
+    )
+    return ok()

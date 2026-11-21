@@ -1,0 +1,147 @@
+# Everything a running server holds, in one record every handler is lent by
+# `@`: the language has no closure and no global, so the router finds a
+# route by name and the program calls its own function with this state
+# (`web`'s opening comment says why). It is made once at start, from the
+# settings, and closed once at the stop.
+
+use <rebel>/crypto
+use <rebel>/log
+use <rebel>/metrics
+use <rebel>/openapi
+use <rebel>/search
+use <rebel>/sql/sqlite
+use <rebel>/template
+use <rebel>/web
+
+use api/api_doc
+use auth/passwords
+use config/settings
+use domain/clock
+use http/routes
+use ops/ops
+use realtime/realtime
+use store/database
+use store/finder
+use store/note_store
+use views/locales
+use views/templates
+
+## The state
+
+# A running server's state.
+record App
+    # The settings it was started with.
+    settings: settings.Settings
+    # The database.
+    db: sqlite.Db
+    # Every route.
+    router: web.Router
+    # The pages' templates.
+    views: template.Template
+    # The API's document.
+    api: openapi.Document
+    # The document compiled to check requests.
+    validator: openapi.Validator
+    # The document and its pages, served.
+    site: openapi.Site
+    # The languages and the zone pages are written in.
+    locales: locales.Locales
+    # The notes' search index.
+    index: search.Index
+    # The open WebSockets.
+    hub: realtime.Hub
+    # The counters `/metrics` serves.
+    registry: metrics.Registry
+    # Where log lines go.
+    logger: log.Logger
+    # The requests each client may make.
+    limiter: web.Limiter
+    # The sign-ins each client may try.
+    login_limiter: web.Limiter
+    # The business clock.
+    clock: clock.Clock
+    # How the session cookie is written and read.
+    cookies: web.CookieOptions
+    # Where `/static/` answers from.
+    folder: web.Folder
+    # The costs a new password hash is made with.
+    costs: crypto.Argon2Params
+    # The migrations applied at this start, by name, in order.
+    migrated: [str]
+    # The `poll` keys of sockets the hub let go while a request was handled,
+    # which the server's loop takes out of its set after the request.
+    gone: [i64]
+    # Whether a stop was asked by the API; the loop then ends as at a signal.
+    stopping: bool
+    # Requests answered since the start.
+    answered: i64
+
+# The most clients the rate limits hold at once.
+constant MOST_CLIENTS: i64
+    10_000
+
+# The server `s` describes, its database migrated and its index built.
+#
+# - `s`: the settings.
+# - `business`: the clock notes and sessions are stamped with.
+#
+# Fails as opening the database, a migration, the log's file, the zone or
+# the limits fail; a failure of this program's own text (a template, the
+# API's document) fails too, and a test reads both.
+function open(s: settings.Settings, business: clock.Clock) -> App?
+    db @= database.open(s.database)?
+    steps = database.migrate_up(@db)?
+    migrated: [str] @= []
+
+    for step in steps
+        migrated @ migrated.push(step.name)
+
+    doc = api_doc.document()
+    site = openapi.new_site(doc, title: "Notes API")?
+    index @= finder.new_finder()
+
+    for n in note_store.every(@db)?
+        finder.put(@index, n: n)?
+
+    cookies: web.CookieOptions @= web.default_cookie_options(s.cookie_name, ring: [s.cookie_key])
+    cookies.secure @ s.cookie_secure
+    cookies.domain @ s.cookie_domain
+    cookies.max_age @ s.session_ttl
+    cookies.same_site @ "Lax"
+
+    app = App(
+        settings: s,
+        db: db,
+        router: routes.router_of(doc, site: site)?,
+        views: templates.templates()?,
+        api: doc,
+        validator: openapi.new_validator(doc)?,
+        site: site,
+        locales: locales.load(fallback: s.locale, zone: s.zone)?,
+        index: index,
+        hub: realtime.new_hub(),
+        registry: ops.new_registry(),
+        logger: ops.logger_of(s)?,
+        limiter: web.new_limiter(rate: s.rate, burst: s.burst, most_keys: MOST_CLIENTS)?,
+        login_limiter: web.new_limiter(rate: s.login_rate, burst: s.login_burst, most_keys: MOST_CLIENTS)?,
+        clock: business,
+        cookies: cookies,
+        folder: web.default_folder(s.static_dir),
+        costs: passwords.costs(memory_kib: s.password_memory_kib, passes: s.password_passes),
+        migrated: migrated,
+        gone: [],
+        stopping: false,
+        answered: 0
+    )
+
+    return ok(app)
+
+# Closes the database and the log's file.
+#
+# - `app`: the state, unusable after.
+#
+# Fails as `sqlite.close` and closing the log fail, the database closed
+# first.
+function close(@app: App) -> ()?
+    sqlite.close(@app.db)?
+    return ops.close_log(@app.logger, s: app.settings)

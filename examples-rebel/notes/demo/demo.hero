@@ -1,0 +1,153 @@
+# The demo: a whole server and a client driving it, in one process and on
+# loopback, so it needs no network and no service outside it. It makes a
+# fresh folder under `build/`, writes the settings file `notes init` writes
+# with the demo's few changes (a fixed clock, so every moment it stamps is
+# the same on every run; the cheapest password hashes; logs to a file), opens
+# the server on port 0, and runs `client.run` on a thread while the server's
+# loop runs here. The client's last step stops the server through the API;
+# then this side says how the server stopped, reads back what the database
+# and the log hold, and removes the folder.
+
+use <rebel>/config
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/net
+use <rebel>/sql
+use <rebel>/sql/sqlite
+use <rebel>/strings
+use <rebel>/threads
+
+use app/state
+use config/settings
+use demo/client
+use domain/clock
+use http/server
+use store/database
+use views/assets
+
+# The demo's folder, made fresh and removed at its end.
+constant FOLDER: str
+    "build/notes-demo"
+
+# The demo's session key: sixty-four hexadecimal digits anybody can read,
+# fine for a demo that never leaves loopback and never for a server.
+constant DEMO_COOKIE_KEY: str
+    "6e6f7465732d64656d6f2d636f6f6b69652d6b65792d6e6f742d612d73656372"
+
+# The demo's token key, as public as the session key.
+constant DEMO_TOKEN_KEY: str
+    "6e6f7465732d64656d6f2d746f6b656e2d6b65792d6e6f742d612d7365637265"
+
+# The demo's changes to the sample settings.
+#
+# - `folder`: the demo's folder.
+function changes(folder: str) -> [settings.Change]
+    return [
+        settings.Change(path: ["server", "port"], value: .integer(v: 0))
+        settings.Change(path: ["server", "base_url"], value: .text(v: "https://notes.example"))
+        settings.Change(path: ["storage", "database"], value: .text(v: folder + "/notes.db"))
+        settings.Change(path: ["storage", "static_dir"], value: .text(v: folder + "/static"))
+        settings.Change(path: ["site", "zone"], value: .text(v: "Europe/Rome"))
+        settings.Change(path: ["site", "page_size"], value: .integer(v: 2))
+        settings.Change(path: ["security", "cookie_secure"], value: .boolean(v: false))
+        settings.Change(path: ["security", "password_memory_kib"], value: .integer(v: 64))
+        settings.Change(path: ["security", "password_passes"], value: .integer(v: 1))
+        settings.Change(path: ["limits", "login_rate"], value: .float(v: 0.05))
+        settings.Change(path: ["limits", "login_burst"], value: .integer(v: 4))
+        settings.Change(path: ["log", "file"], value: .text(v: folder + "/notes.log"))
+        settings.Change(path: ["demo", "clock"], value: .text(v: "2026-11-21T09:00:00Z"))
+        settings.Change(path: ["demo", "clock_step"], value: .text(v: "1s"))
+    ]
+
+# Runs the demo and answers the program's exit code: 0 where every step went
+# as written, 1 where one failed, which a line says.
+function run() -> i64
+    return match demo()
+        .ok code => code
+        .err e =>
+            print(f"demo: failed: {e.code}: {e.msg}")
+            _ = fs.remove_all(FOLDER).is_err()
+            1
+
+# The demo's steps.
+function demo() -> i64?
+    _ = fs.remove_all(FOLDER).is_err()
+    fs.make_dir_all(FOLDER)?
+    assets.write_static(FOLDER + "/static")?
+    text = settings.sample_config(cookie_key: DEMO_COOKIE_KEY, token_key: DEMO_TOKEN_KEY, changes: changes(FOLDER))?
+    write_file(path: FOLDER + "/notes.toml", text: text)?
+    s = settings.settings_of([config.read_layer(FOLDER + "/notes.toml")?])?
+    business = clock.fixed_from(start: s.fixed_clock?, step: s.clock_step)?
+    app @= state.open(s, business: business)?
+    print(f"notes demo: a fresh database, its migrations applied: {app.migrated.join(", ")}")
+    print(f"the server: {app.router.routes.len()} routes, listening on loopback")
+    l @= net.listen(host: s.host, port: s.port)?
+    driver @= threads.spawn_text(body: client.run, arg: to_str(l.address.port))?
+    served = server.run(@app, l: l)
+    answer = threads.wait_text(@driver)
+    net.close_listener(@l)?
+    state.close(@app)?
+
+    match served
+        .ok sv => print(
+            f"the server stopped, asked by the {sv.by}: {sv.requests} requests answered, {sv.sockets_told} WebSocket told 1001"
+        )
+        .err e => print(f"the server failed: {e.code}: {e.msg}")
+
+    stored(FOLDER + "/notes.db")?
+    logged(FOLDER + "/notes.log")?
+    fs.remove_all(FOLDER)?
+    print("the demo's folder removed")
+
+    if answer == "ok" && !served.is_err()
+        return ok(0)
+
+    return ok(1)
+
+# What the database holds once the server has stopped, read by a connection
+# of its own that only reads.
+#
+# - `path`: the database's file.
+function stored(path: str) -> ()?
+    db @= sqlite.open_read_only(path)?
+    counts: [str] @= []
+
+    for table in ["users", "notes", "tags", "comments"]
+        row = sqlite.query_one(@db, statement: f"SELECT count(*) FROM {table}", params: [])?
+        counts @ counts.push(f"{sql.integer_at(row, index: 0)?} {table}")
+
+    version = database.version_of(@db)?
+    sqlite.close(@db)?
+    print(f"the database holds {counts.join(", ")}, at schema version {version}")
+    return ok()
+
+# What the log file holds: one JSON line a request, and the lines of the
+# service's own events, by their messages.
+#
+# - `path`: the log's file.
+function logged(path: str) -> ()?
+    lines = strings.lines(read_file(path)?)
+    requests: i64 @= 0
+    errors: i64 @= 0
+    events: {str: i64} @= {}
+
+    for line in lines
+        if line != ""
+            v = json.parse(line)?
+            msg = json.text_of(json.member(v, key: "msg")?)?
+
+            if json.text_of(json.member(v, key: "level")?)? == "ERROR"
+                errors @ errors + 1
+
+            if msg == "request"
+                requests @ requests + 1
+            else
+                events[msg] @ events[msg].default(0) + 1
+
+    told: [str] @= []
+
+    for msg in keys(events)
+        told @ told.push(f"{msg} {events[msg].must()}")
+
+    print(f"the log holds {requests} request lines, {errors} errors, and {told.join(", ")}")
+    return ok()

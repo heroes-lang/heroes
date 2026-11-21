@@ -1,0 +1,161 @@
+# What each of the program's commands does, once `main` has read its
+# command line: serving until a signal, writing a settings file with fresh
+# keys, migrating a database, printing the routes. Each answers the
+# program's exit code, and says why on the standard error where it fails.
+
+use <rebel>/bytes
+use <rebel>/config
+use <rebel>/flags
+use <rebel>/io
+use <rebel>/log
+use <rebel>/net
+use <rebel>/openapi
+use <rebel>/os
+use <rebel>/sql/sqlite
+use <rebel>/web
+
+use api/api_doc
+use app/state
+use config/settings
+use http/routes
+use http/server
+use store/database
+use views/assets
+
+## Settings
+
+# The flags that set a setting, each with the path it sets.
+function bindings() -> [config.FlagBinding]
+    return [
+        config.FlagBinding(path: "server.host", name: "host", kind: .text)
+        config.FlagBinding(path: "server.port", name: "port", kind: .integer)
+        config.FlagBinding(path: "log.level", name: "log-level", kind: .text)
+    ]
+
+# The settings of the file `path`, the environment's `NOTES_` variables and
+# the command line, each over the one before.
+#
+# - `path`: the settings file.
+# - `found`: what the command line gave.
+function settings_from(path: str, found: flags.Found) -> settings.Settings?
+    file = config.read_layer(path)?
+    env = config.read_env(config.env_options("NOTES_"))?
+    given = config.from_flags(name: "flags", found: found, bindings: bindings())?
+    return settings.settings_of([file, env, given])
+
+# `msg` on the standard error, and the exit code 1.
+#
+# - `msg`: what failed.
+function failed(msg: str) -> i64
+    _ = io.write_line(io.stderr(), line: f"notes: {msg}").is_err()
+    return 1
+
+## serve
+
+# Serves until SIGTERM or Ctrl-C, or the API's stop, then stops gracefully.
+#
+# - `path`: the settings file.
+# - `found`: what the command line gave.
+function serve(path: str, found: flags.Found) -> i64
+    return match serving(path, found: found)
+        .ok _  => 0
+        .err e => failed(f"{e.code}: {e.msg}")
+
+# The steps of `serve`.
+#
+# - `path`: the settings file.
+# - `found`: what the command line gave.
+function serving(path: str, found: flags.Found) -> ()?
+    s = settings_from(path, found: found)?
+    os.catch_stop()?
+    assets.write_static(s.static_dir)?
+    app @= state.open(s, business: .wall)?
+    l @= net.listen(host: s.host, port: s.port)?
+    address = net.format_address(l.address)
+    _ = log.info(
+        app.logger,
+        msg: "listening",
+        fields: [log.text(key: "address", value: address), log.text(key: "migrated", value: app.migrated.join(","))]
+    ).is_err()
+    print(f"notes: serving on http://{address}; Ctrl-C stops it")
+    served = server.run(@app, l: l)
+    net.close_listener(@l)?
+    state.close(@app)?
+    sv = served?
+    print(f"notes: stopped by the {sv.by}, {sv.requests} requests answered, {sv.sockets_told} WebSockets told 1001")
+    return ok()
+
+## init
+
+# Writes a settings file at `path` with two fresh keys, and the static folder
+# beside it, refusing to replace a file that is there.
+#
+# - `path`: where the file goes.
+function init(path: str) -> i64
+    return match initing(path)
+        .ok _ =>
+            print(f"notes: wrote {path}; `notes serve --config {path}` serves it")
+            0
+        .err e => failed(f"{e.code}: {e.msg}")
+
+# The steps of `init`.
+#
+# - `path`: where the file goes.
+function initing(path: str) -> ()?
+    if read_file(path).is_ok_text()
+        return fail(code: "exists", msg: f"{path} is there already; it is never replaced")
+
+    cookie = bytes.format_hex(os.random_bytes(32)?)
+    token = bytes.format_hex(os.random_bytes(32)?)
+    text = settings.sample_config(cookie_key: cookie, token_key: token, changes: [])?
+    return write_file(path: path, text: text)
+
+# Whether reading a file answered its text.
+#
+# - `read`: what `read_file` answered.
+function is_ok_text(read: str?) -> bool
+    return !read.is_err()
+
+## migrate
+
+# Applies the migrations a database lacks and says which.
+#
+# - `path`: the settings file.
+# - `found`: what the command line gave.
+function migrate(path: str, found: flags.Found) -> i64
+    return match migrating(path, found: found)
+        .ok _  => 0
+        .err e => failed(f"{e.code}: {e.msg}")
+
+# The steps of `migrate`.
+#
+# - `path`: the settings file.
+# - `found`: what the command line gave.
+function migrating(path: str, found: flags.Found) -> ()?
+    s = settings_from(path, found: found)?
+    db @= database.open(s.database)?
+    steps = database.migrate_up(@db)?
+
+    for step in steps
+        print(f"applied {step.version} {step.name}")
+
+    print(f"the database stands at version {database.version_of(@db)?}")
+    return sqlite.close(@db)
+
+## routes
+
+# Prints every route: its method, its pattern and its name.
+function print_routes() -> i64
+    doc = api_doc.document()
+
+    r: web.Router? = match openapi.new_site(doc, title: "Notes API")
+        .ok site => routes.router_of(doc, site: site)
+        .err e   => fail(code: e.code, msg: e.msg)
+
+    return match r
+        .ok router =>
+            for row in routes.table_of(router)
+                print(row)
+
+            0
+        .err e => failed(f"{e.code}: {e.msg}")

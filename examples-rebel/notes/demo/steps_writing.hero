@@ -1,0 +1,104 @@
+# The demo session's steps that write: notes by the API and by the form, a
+# body of the wrong kind and one whose fields are each wrong, a reader's note
+# refused, a role given, and another's note that may not be removed.
+
+use <rebel>/http
+use <rebel>/json
+
+use demo/browse
+use domain/jsonv
+
+# A note written by the API.
+#
+# - `s`: the session.
+# - `token`: the author's token.
+# - `title`: the title.
+# - `body`: the body in Markdown.
+# - `tags`: the tags as written.
+function write_api(@s: http.Session, token: str, title: str, body: str, tags: [str]) -> ()?
+    sent = jsonv.object({"title": jsonv.text(title), "body": jsonv.text(body), "tags": jsonv.texts(tags)})
+    r = browse.call(@s, method: "POST", target: "/api/notes", token: token, body: sent)?
+    v = browse.json_body(r)
+
+    tagged = if browse.listed(v, key: "tags") == ""
+        "no tags"
+    else
+        f"tags {browse.listed(v, key: "tags")}"
+
+    if r.status == http.STATUS_CREATED
+        print(
+            f"POST /api/notes \"{title}\": {r.status}, slug {browse.shown(v, key: "slug")}, {tagged}, Location {http.value_of(r.headers, name: "Location").default("")}"
+        )
+    else
+        print(f"POST /api/notes \"{title}\": {r.status} {browse.shown(v, key: "error")}")
+
+    return ok()
+
+# A note whose title is a number: the document's check answers 400.
+#
+# - `s`: the session.
+# - `token`: the author's token.
+function write_wrong_kind(@s: http.Session, token: str) -> ()?
+    sent = jsonv.object({"title": jsonv.number(7), "body": jsonv.text("x")})
+    r = browse.call(@s, method: "POST", target: "/api/notes", token: token, body: sent)?
+    v = http.json_of(r).default(.null_value)
+    first = json.element(json.member(v, key: "errors").default(.null_value), index: 0).default(.null_value)
+    print(
+        f"POST /api/notes with a title of the wrong kind: {r.status} {http.value_of(r.headers, name: "Content-Type").default("")}, at {browse.shown(first, key: "pointer")}, {browse.shown(first, key: "keyword")}"
+    )
+    return ok()
+
+# A note whose title is blank and body empty: each field's problem.
+#
+# - `s`: the session.
+# - `token`: the author's token.
+function write_empty(@s: http.Session, token: str) -> ()?
+    sent = jsonv.object({"title": jsonv.text(" "), "body": jsonv.text(""), "tags": jsonv.texts(["ok", "not/ok"])})
+    r = browse.call(@s, method: "POST", target: "/api/notes", token: token, body: sent)?
+    print(f"POST /api/notes with a blank title, no body and a bad tag: {r.status}")
+
+    for line in browse.field_errors(r)
+        print(f"  {line}")
+
+    return ok()
+
+# An account given a role by the API.
+#
+# - `s`: the session.
+# - `token`: the admin's token.
+# - `name`: the account.
+# - `role`: the role.
+function give_role(@s: http.Session, token: str, name: str, role: str) -> ()?
+    r = browse.call(@s, method: "PATCH", target: f"/api/users/{name}", token: token, body: jsonv.object({"role": jsonv.text(role)}))?
+    v = browse.json_body(r)
+    print(
+        f"PATCH /api/users/{name} role {role}: {r.status}, {browse.shown(v, key: "name")} is {browse.shown(v, key: "role")}"
+    )
+    return ok()
+
+# A note written by the form, as a browser writes it.
+#
+# - `s`: the browser, signed in.
+# - `title`: the title.
+# - `body`: the body.
+# - `tags`: the tags field's text.
+function write_form(@s: http.Session, title: str, body: str, tags: str) -> ()?
+    token = browse.csrf_from(@s, target: "/new")?
+    fields = [
+        browse.field(key: "csrf_token", value: token)
+        browse.field(key: "title", value: title)
+        browse.field(key: "tags", value: tags)
+        browse.field(key: "body", value: body)
+    ]
+    r = browse.post_form(@s, target: "/notes", pairs: fields, accept: "text/html")?
+    print(f"bob writes \"{title}\" by the form: {r.status} -> {browse.redirect_of(r)}")
+    return ok()
+
+# Another's note removed: refused.
+#
+# - `s`: the session.
+# - `token`: bob's token.
+function delete_other(@s: http.Session, token: str) -> ()?
+    r = browse.call(@s, method: "DELETE", target: "/api/notes/notes-on-rebel", token: token, body: .null_value)?
+    print(f"bob deletes alice's note: {r.status} {browse.shown(browse.json_body(r), key: "error")}")
+    return ok()
