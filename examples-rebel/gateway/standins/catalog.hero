@@ -1,0 +1,265 @@
+# The catalog service, the demo's HTTP upstream: a small REST API in JSON
+# over HTTP/1.1 in plain text. `GET /v1/items` and `GET /v1/items/{sku}`
+# answer the items, cacheable by a shared cache for a minute; `POST
+# /v1/orders` takes an order and answers it created, numbered in the order
+# they came. Every answer says, in `X-Seen-Forwarded`, the `Forwarded` field
+# the request carried, so a client behind the gateway can see what the
+# gateway told the service about it. It runs on a thread of its own, told
+# its supervisor's control port, and serves one connection after another
+# until the program is asked to stop.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/io
+use <rebel>/json
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/strings
+
+use demo/notify
+
+## The service
+
+# The name it notifies its supervisor with.
+constant NAME: str
+    "catalog"
+
+# How long a connection may last, in milliseconds.
+constant CONNECTION_MS: i64
+    10_000
+
+# One item of the catalog.
+record Item
+    # Its code.
+    sku: str
+    # Its name.
+    name: str
+    # Its price, in cents.
+    price_cents: i64
+
+# What the service holds between requests.
+record Catalog
+    # The items, in the catalog's order.
+    items: [Item]
+    # The orders taken so far.
+    orders: i64
+    # The requests answered.
+    answered: i64
+
+# The demo's catalog, no order taken yet.
+function new() -> Catalog
+    return Catalog(
+        items: [Item(sku: "A-100", name: "Desk lamp", price_cents: 3900), Item(sku: "B-200", name: "Notebook", price_cents: 450), Item(sku: "C-300", name: "Pencil set", price_cents: 1200)],
+        orders: 0,
+        answered: 0
+    )
+
+## Serving
+
+# The service's thread: listens on a port the system chooses, tells the
+# supervisor at the control port `arg` holds, and serves until stopped.
+# Answers how many requests it answered, as a line.
+#
+# - `arg`: the supervisor's control port, in decimal.
+function run(arg: str) -> str
+    match numbers.parse_int(arg)
+        .err e => return "catalog: no control port: " + e.msg
+        .ok control =>
+            match served(control)
+                .ok c  => return f"catalog: requests answered {c.answered}, orders taken {c.orders}"
+                .err e => return "catalog: " + e.msg
+
+# Every connection accepted served until the program is asked to stop.
+#
+# - `control`: the supervisor's control port.
+#
+# Fails as `net.listen` and `notify.ready` fail.
+function served(control: i64) -> Catalog?
+    listener @= net.listen(host: "127.0.0.1", port: 0)?
+
+    match notify.ready(control_port: control, service: NAME, port: listener.address.port)
+        .err e =>
+            _ = net.close_listener(@listener).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => _ = 0
+
+    catalog @= new()
+
+    while true
+        match net.accept(listener, deadline_ms: net.FOREVER)
+            .err _ => break
+            .ok made =>
+                conn @= made
+                conversation(@catalog, conn: conn)
+                _ = io.close(@conn.stream).is_err()
+
+    _ = net.close_listener(@listener).is_err()
+    return ok(catalog)
+
+# The requests of one connection answered until the client closes it.
+#
+# - `catalog`: the service's state.
+# - `conn`: the connection; its owner closes it.
+function conversation(@catalog: Catalog, conn: net.Conn)
+    reader @= io.reader(conn.stream)
+
+    while true
+        match http.next_request(@reader, limits: http.default_limits())
+            .err _ => break
+            .ok r =>
+                response = handled(@catalog, r: r)
+
+                if http.write_answer(conn.stream, r: r, response: response).is_err()
+                    break
+
+                if r.closing
+                    break
+
+# The answer to `r`, saying the `Forwarded` field it carried.
+#
+# - `catalog`: the service's state; an order is counted.
+# - `r`: the request.
+function handled(@catalog: Catalog, r: http.Request) -> http.Response
+    catalog.answered @ catalog.answered + 1
+    answer = routed(@catalog, r: r)
+    seen = http.value_of(r.headers, name: "Forwarded").default("none")
+    return http.Response(
+        status: answer.status,
+        reason: answer.reason,
+        headers: http.with_header(answer.headers, name: "X-Seen-Forwarded", value: seen),
+        body: answer.body,
+        closing: answer.closing
+    )
+
+# What the API answers for `r`'s method and path.
+#
+# - `catalog`: the service's state.
+# - `r`: the request.
+function routed(@catalog: Catalog, r: http.Request) -> http.Response
+    path = r.url.path
+
+    if path == "/v1/items" && r.method == http.METHOD_GET
+        list: [json.Value] @= []
+
+        for item in catalog.items
+            list @ list.push(item_json(item))
+
+        return cacheable(json_answer(200, value: .object(members: {"items": .list(items: list)})))
+
+    if strings.has_prefix(s: path, prefix: "/v1/items/") && r.method == http.METHOD_GET
+        sku = path.slice(from: 10, to: path.len())
+
+        for item in catalog.items
+            if item.sku == sku
+                return cacheable(json_answer(200, value: item_json(item)))
+
+        return json_answer(404, value: .object(members: {"error": .text(v: f"no item {sku}")}))
+
+    if path == "/v1/orders" && r.method == http.METHOD_POST
+        return ordered(@catalog, r: r)
+    return json_answer(404, value: .object(members: {"error": .text(v: f"no {r.method} {path}")}))
+
+# An order taken: its body names an item the catalog holds and a quantity
+# from 1.
+#
+# - `catalog`: the service's state; the order is counted.
+# - `r`: the `POST`.
+function ordered(@catalog: Catalog, r: http.Request) -> http.Response
+    match order_of(catalog, r: r)
+        .err e => return json_answer(400, value: .object(members: {"error": .text(v: e.msg)}))
+        .ok asked =>
+            catalog.orders @ catalog.orders + 1
+            id = f"order-{catalog.orders}"
+            body: json.Value = .object(
+                members: {"order": .text(v: id), "sku": .text(v: asked.sku), "quantity": .number(v: to_f64(asked.quantity))}
+            )
+            created = json_answer(201, value: body)
+            return http.Response(
+                status: created.status,
+                reason: created.reason,
+                headers: http.with_header(created.headers, name: "Location", value: "/v1/orders/" + id),
+                body: created.body,
+                closing: created.closing
+            )
+
+# What an order asks for.
+record Asked
+    # The item's code.
+    sku: str
+    # How many.
+    quantity: i64
+
+# The order `r`'s JSON body writes.
+#
+# - `catalog`: the service's state, whose items the order must name.
+# - `r`: the request.
+#
+# Fails `invalid` where the body is no object of an `sku` the catalog holds
+# and a `quantity` from 1 to 100.
+function order_of(catalog: Catalog lent, r: http.Request) -> Asked?
+    body = json.parse(bytes.to_text(r.body)?)?
+    sku = json.text_of(json.member(body, key: "sku")?)?
+    quantity = json.int_of(json.member(body, key: "quantity")?)?
+
+    if quantity < 1 || quantity > 100
+        return fail(code: json.INVALID, msg: f"a quantity is 1 to 100, and the order asks {quantity}")
+
+    for item in catalog.items
+        if item.sku == sku
+            return ok(Asked(sku: sku, quantity: quantity))
+
+    return fail(code: json.INVALID, msg: f"the catalog holds no item {sku}")
+
+# `item` as the API writes it.
+#
+# - `item`: the item.
+function item_json(item: Item) -> json.Value
+    return .object(
+        members: {"sku": .text(v: item.sku), "name": .text(v: item.name), "price_cents": .number(v: to_f64(item.price_cents))}
+    )
+
+# A JSON answer.
+#
+# - `status`: its status.
+# - `value`: its body; never a NaN or an infinity here.
+function json_answer(status: i64, value: json.Value) -> http.Response
+    return http.respond_json(status, value: value).default(http.respond_status(500))
+
+# `response` cacheable by a shared cache for a minute.
+#
+# - `response`: the answer.
+function cacheable(response: http.Response) -> http.Response
+    return http.Response(
+        status: response.status,
+        reason: response.reason,
+        headers: http.with_header(response.headers, name: "Cache-Control", value: "public, max-age=60"),
+        body: response.body,
+        closing: response.closing
+    )
+
+test "routed: the items, one item, a missing one, and an order"
+    c @= new()
+    listed = routed(@c, r: http.request(method: "GET", target: "/v1/items").must())
+    assert listed.status == 200 && http.value_of(listed.headers, name: "Cache-Control").must() == "public, max-age=60"
+    assert routed(@c, r: http.request(method: "GET", target: "/v1/items/B-200").must()).status == 200
+    assert routed(@c, r: http.request(method: "GET", target: "/v1/items/Z-1").must()).status == 404
+    order = http.with_text(
+        http.request(method: "POST", target: "/v1/orders").must(),
+        text: "{\"sku\": \"A-100\", \"quantity\": 2}"
+    )
+    created = routed(@c, r: order)
+    assert created.status == 201 && http.value_of(created.headers, name: "Location").must() == "/v1/orders/order-1"
+    assert c.orders == 1
+
+test "order_of: a quantity of zero and an item not held are refused"
+    c = new()
+    zero = http.with_text(
+        http.request(method: "POST", target: "/v1/orders").must(),
+        text: "{\"sku\": \"A-100\", \"quantity\": 0}"
+    )
+    assert order_of(c, r: zero).is_err()
+    none = http.with_text(
+        http.request(method: "POST", target: "/v1/orders").must(),
+        text: "{\"sku\": \"Q-1\", \"quantity\": 1}"
+    )
+    assert order_of(c, r: none).is_err()

@@ -1,0 +1,175 @@
+# Rate limits per client: a token bucket for each route and client, holding
+# at most the route's `burst` tokens and given one back every `every_ms`,
+# a request taking one or being refused with the time until the next. The
+# tokens are counted in thousandths and the time in nanoseconds of the
+# gateway's clock, so a refill is exact integer arithmetic and the demo's
+# fixed clock refills the same tokens on every run.
+#
+# A full bucket is the same as no bucket, so the buckets of clients that
+# went quiet are forgotten once there are many, and a gateway's memory does
+# not grow with every client it ever saw.
+
+use <rebel>/maps
+use <rebel>/time
+
+use config/settings
+
+## Bounds
+
+# The thousandths of a token: a bucket's count is held in these.
+constant MILLI: i64
+    1000
+
+# How many buckets are held before the full ones are forgotten.
+constant MOST_BUCKETS: i64
+    10_000
+
+## The limiter
+
+# One client's bucket on one route.
+record Bucket
+    # Its tokens, in thousandths, from 0 to the route's burst times `MILLI`.
+    milli: i64
+    # The moment its count was last brought up to date.
+    at: time.Instant
+
+# Every bucket, by `key_of` route and client. Made empty by `new`.
+record Limiter
+    # The buckets.
+    buckets: {str: Bucket}
+
+# What a request was told.
+record Verdict
+    # Whether it may go on.
+    allowed: bool
+    # The whole tokens left after it.
+    remaining: i64
+    # Where refused, the milliseconds until a token comes back; 0 where it
+    # was allowed.
+    retry_ms: i64
+
+# An empty limiter.
+function new() -> Limiter
+    return Limiter(buckets: {})
+
+# The key of `client`'s bucket on `route`.
+#
+# - `route`: the route's name.
+# - `client`: the client's name: its key header's value, or its address.
+function key_of(route: str, client: str) -> str
+    return route + "\n" + client
+
+# Takes a token from `key`'s bucket at `now` if one is there, refilling it
+# first by the time gone since its last count; a bucket never seen starts
+# full.
+#
+# - `limiter`: the buckets; the one of `key` is updated.
+# - `key`: the bucket's key, as `key_of` makes it.
+# - `rate`: the route's limit, its burst from 1 and its pace from 1 ms, as
+#   `loader.parse` checks them.
+# - `now`: the gateway clock's reading; one before the bucket's last count
+#   refills nothing.
+function take(@limiter: Limiter, key: str, rate: settings.Rate, now: time.Instant) -> Verdict
+    full = rate.burst * MILLI
+    before = limiter.buckets[key].default(Bucket(milli: full, at: now))
+    milli = refilled(before, rate: rate, now: now)
+
+    if milli >= MILLI
+        limiter.buckets[key] @ Bucket(milli: milli - MILLI, at: now)
+        forget_full(@limiter, rate: rate, now: now)
+        return Verdict(allowed: true, remaining: (milli - MILLI) / MILLI, retry_ms: 0)
+    limiter.buckets[key] @ Bucket(milli: milli, at: now)
+    return Verdict(allowed: false, remaining: 0, retry_ms: wait_ms(milli: milli, rate: rate))
+
+# `bucket`'s count at `now`: its count, and a thousandth for every
+# `every_ms` thousandths of a millisecond gone since, never past the burst.
+#
+# - `bucket`: the bucket as last counted.
+# - `rate`: the route's limit.
+# - `now`: the moment.
+function refilled(bucket: Bucket, rate: settings.Rate, now: time.Instant) -> i64
+    full = rate.burst * MILLI
+
+    if !time.is_after(a: now, b: bucket.at) || bucket.milli >= full
+        return bucket.milli
+
+    # A thousandth of a token comes back every `every_ms` microseconds.
+    per_milli_ns = rate.every_ms * 1000
+    missing_ns = (full - bucket.milli) * per_milli_ns
+
+    match time.between(from: bucket.at, to: now)
+        .err _ => return full
+        .ok gone =>
+            if gone.nanoseconds >= missing_ns
+                return full
+            return bucket.milli + gone.nanoseconds / per_milli_ns
+
+# The milliseconds until a bucket holding `milli` thousandths holds a whole
+# token, rounded up.
+#
+# - `milli`: the bucket's count, below `MILLI`.
+# - `rate`: the route's limit.
+function wait_ms(milli: i64, rate: settings.Rate) -> i64
+    missing = MILLI - milli
+    return (missing * rate.every_ms + MILLI - 1) / MILLI
+
+# Forgets every bucket that would be full by now, once more than
+# `MOST_BUCKETS` are held: a full bucket answers as an absent one does.
+#
+# - `limiter`: the buckets.
+# - `rate`: the limit of the route just served, a bound on how full one is.
+# - `now`: the moment.
+function forget_full(@limiter: Limiter, rate: settings.Rate, now: time.Instant)
+    if limiter.buckets.len() <= MOST_BUCKETS
+        return
+    gone: [str] @= []
+
+    for key in keys(limiter.buckets)
+        b = limiter.buckets[key].must()
+
+        if refilled(b, rate: rate, now: now) >= rate.burst * MILLI
+            gone @ gone.push(key)
+
+    limiter.buckets @ maps.remove_all(limiter.buckets, key_list: gone)
+
+# The seconds a `Retry-After` field says for a wait of `ms`, rounded up so a
+# client that waits them finds a token (RFC 9110 § 10.2.3).
+#
+# - `ms`: the wait, in milliseconds, 0 or more.
+function retry_after_seconds(ms: i64) -> i64
+    return (ms + 999) / 1000
+
+test "take: a fresh bucket allows its burst, then refuses with the wait"
+    rate = settings.Rate(burst: 2, every_ms: 10_000)
+    at = time.epoch()
+    l @= new()
+    first = take(@l, key: "a", rate: rate, now: at)
+    assert first.allowed && first.remaining == 1
+    assert take(@l, key: "a", rate: rate, now: at).allowed
+    third = take(@l, key: "a", rate: rate, now: at)
+    assert !third.allowed
+    assert third.retry_ms == 10_000
+
+test "take: time gone refills a token, never past the burst"
+    rate = settings.Rate(burst: 1, every_ms: 1000)
+    l @= new()
+    assert take(@l, key: "a", rate: rate, now: time.epoch()).allowed
+    half = time.add(time.epoch(), d: time.milliseconds(500).must()).must()
+    refused = take(@l, key: "a", rate: rate, now: half)
+    assert !refused.allowed && refused.retry_ms == 500
+    later = time.add(time.epoch(), d: time.hours(10).must()).must()
+    allowed = take(@l, key: "a", rate: rate, now: later)
+    assert allowed.allowed && allowed.remaining == 0
+
+test "take: each client and route has a bucket of its own"
+    rate = settings.Rate(burst: 1, every_ms: 60_000)
+    l @= new()
+    assert take(@l, key: key_of(route: "r", client: "a"), rate: rate, now: time.epoch()).allowed
+    assert take(@l, key: key_of(route: "r", client: "b"), rate: rate, now: time.epoch()).allowed
+    assert !take(@l, key: key_of(route: "r", client: "a"), rate: rate, now: time.epoch()).allowed
+
+test "retry_after_seconds: a part of a second is a whole one"
+    assert retry_after_seconds(0) == 0
+    assert retry_after_seconds(1) == 1
+    assert retry_after_seconds(1000) == 1
+    assert retry_after_seconds(1001) == 2

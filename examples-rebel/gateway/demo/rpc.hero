@@ -1,0 +1,205 @@
+# The demo client's calls that are not plain HTTP, made on its HTTP/2
+# connection to the gateway: gRPC calls through a channel over that
+# connection, their messages read through the inventory's `.proto`, a
+# stream's messages written as they arrive; and GraphQL over HTTP, one query
+# the gateway answers from two upstreams and one it refuses as invalid.
+
+use <rebel>/bytes
+use <rebel>/graphql
+use <rebel>/grpc
+use <rebel>/http
+use <rebel>/http2
+use <rebel>/json
+use <rebel>/protobuf
+use <rebel>/strings
+use <rebel>/time
+
+use standins/inventory
+
+## The channel
+
+# The gRPC methods the session calls.
+constant GET_STOCK: str
+    "/shop.inventory.v1.Inventory/GetStock"
+
+# The server-streaming method the session calls.
+constant WATCH: str
+    "/shop.inventory.v1.Inventory/WatchMovements"
+
+# A method the inventory's `.proto` does not declare.
+constant MISSING: str
+    "/shop.inventory.v1.Inventory/DeleteStock"
+
+# A channel over the client's HTTP/2 connection, sending `authority`.
+#
+# - `conn`: the connection; it passes to the channel, which closes it.
+# - `authority`: the host each call names.
+function channel_over(conn: http2.Conn, authority: str) -> grpc.Channel
+    return grpc.new_channel(conn, authority: authority, scheme: "https", options: grpc.default_options())
+
+# The channel closed, and its connection with it.
+#
+# - `channel`: the channel.
+function closed(@channel: grpc.Channel)
+    _ = grpc.close(@channel).is_err()
+
+## The calls
+
+# The gRPC and GraphQL calls of the session, each written as its lines.
+#
+# - `lines`: the transcript, which gains the calls' lines.
+# - `channel`: the channel over the client's HTTP/2 connection.
+function calls(@lines: [str], @channel: grpc.Channel)
+    match protobuf.parse_schema_text(name: "inventory.proto", text: inventory.PROTO)
+        .err e => lines @ lines.push("the inventory's .proto does not read: " + e.msg)
+        .ok schema =>
+            unary(@lines, @channel, schema: schema)
+            streamed(@lines, @channel, schema: schema)
+            refused(@lines, @channel, schema: schema)
+
+    asked_graphql(
+        @lines,
+        @channel.conn,
+        query: "{ stock(sku: \"A-100\") { count warehouse } reviews(sku: \"A-100\") { author stars } }"
+    )
+    asked_graphql(@lines, @channel.conn, query: "{ stock(sku: \"A-100\") { count price } }")
+
+# `GetStock` called once through the gateway.
+#
+# - `lines`: the transcript.
+# - `channel`: the channel.
+# - `schema`: the inventory's schema.
+function unary(@lines: [str], @channel: grpc.Channel, schema: protobuf.Schema)
+    match grpc.call(@channel, path: GET_STOCK, request: request_of(schema, sku: "A-100"), metadata: [], timeout: seconds())
+        .err e => lines @ lines.push(f"gRPC {GET_STOCK} -> failed: {e.msg}")
+        .ok reply =>
+            shown = if reply.messages.len() == 1
+                message_json(schema, type_name: "shop.inventory.v1.Stock", data: reply.messages[0])
+            else
+                f"{reply.messages.len()} messages"
+
+            lines @ lines.push(
+                f"gRPC {GET_STOCK} -> {status_text(reply.status)}, from {upstream_of(reply.headers)}: {shown}"
+            )
+
+# `WatchMovements` called through the gateway, each message written as it
+# arrives.
+#
+# - `lines`: the transcript.
+# - `channel`: the channel.
+# - `schema`: the inventory's schema.
+function streamed(@lines: [str], @channel: grpc.Channel, schema: protobuf.Schema)
+    match grpc.start_call(@channel, path: WATCH, metadata: [], timeout: seconds())
+        .err e => lines @ lines.push(f"gRPC {WATCH} -> failed: {e.msg}")
+        .ok started =>
+            call @= started
+            lines @ lines.push(f"gRPC {WATCH} (a stream from the server)")
+
+            if grpc.send(@channel, @call, message: request_of(schema, sku: "A-100")).is_err() || grpc.close_send(@channel, c: call).is_err()
+                lines @ lines.push("  the request could not be sent")
+                return
+            count @= 0
+
+            while true
+                match grpc.receive(@channel, @call)
+                    .err e =>
+                        lines @ lines.push("  failed: " + e.msg)
+                        break
+                    .ok incoming =>
+                        match incoming
+                            .message m =>
+                                count @ count + 1
+                                lines @ lines.push(
+                                    f"  message {count}: " + message_json(schema, type_name: "shop.inventory.v1.Movement", data: m.data)
+                                )
+                            .end finish =>
+                                lines @ lines.push(f"  end: {status_text(finish.status)} after {count} messages")
+                                break
+
+# A method the inventory does not declare, refused by the gateway before
+# any upstream is asked.
+#
+# - `lines`: the transcript.
+# - `channel`: the channel.
+# - `schema`: the inventory's schema.
+function refused(@lines: [str], @channel: grpc.Channel, schema: protobuf.Schema)
+    match grpc.call(@channel, path: MISSING, request: request_of(schema, sku: "A-100"), metadata: [], timeout: seconds())
+        .err e    => lines @ lines.push(f"gRPC {MISSING} -> failed: {e.msg}")
+        .ok reply => lines @ lines.push(f"gRPC {MISSING} -> {status_text(reply.status)}: {reply.status.message}")
+
+# One GraphQL query sent to the gateway's endpoint, and its answer's JSON.
+#
+# - `lines`: the transcript.
+# - `conn`: the client's HTTP/2 connection.
+# - `query`: the query.
+function asked_graphql(@lines: [str], @conn: http2.Conn, query: str)
+    lines @ lines.push("GraphQL " + query)
+    body = graphql.format_request(graphql.Request(query: query, operation_name: "", variables: .null_value, extensions: .null_value)).default(
+        ""
+    )
+
+    match http.request(method: http.METHOD_POST, target: "https://api.shop.test/graphql")
+        .err e => lines @ lines.push("  failed: " + e.msg)
+        .ok made =>
+            r = http.with_body(
+                made,
+                content_type: "application/json",
+                body: bytes.from_text(body)
+            )
+            sent = http.Request(
+                method: r.method,
+                url: r.url,
+                headers: http.with_header(http.with_header(r.headers, name: "Accept", value: "application/json"), name: "x-api-key", value: "demo-client"),
+                body: r.body,
+                closing: false,
+                remote: ""
+            )
+
+            match http.round_trip_h2(@conn, r: sent, limits: http.default_limits())
+                .err e => lines @ lines.push("  failed: " + e.msg)
+                .ok a  => lines @ lines.push(f"  -> {a.status}: " + strings.trim(http.text_of(a).default("")))
+
+## Messages
+
+# A `StockRequest` for `sku`, encoded.
+#
+# - `schema`: the inventory's schema.
+# - `sku`: the item.
+function request_of(schema: protobuf.Schema, sku: str) -> [u8]
+    match protobuf.from_json(schema, type_name: "shop.inventory.v1.StockRequest", v: .object(members: {"sku": .text(v: sku)}))
+        .err _ => return []
+        .ok m  => return protobuf.encode(schema, m: m).default([])
+
+# A message's bytes read as `type_name` and written as compact JSON with
+# the `.proto`'s own field names.
+#
+# - `schema`: the inventory's schema.
+# - `type_name`: the message's type.
+# - `data`: its bytes.
+function message_json(schema: protobuf.Schema, type_name: str, data: [u8]) -> str
+    match protobuf.decode(schema, type_name: type_name, data: data)
+        .err e => return "unreadable: " + e.msg
+        .ok m =>
+            options = protobuf.JsonOptions(use_proto_names: true, use_enum_numbers: false, emit_defaults: true)
+
+            match protobuf.to_json_with(schema, m: m, options: options)
+                .err e => return "unwritable: " + e.msg
+                .ok v  => return json.format(v).default("")
+
+# A status as its name, `OK` or `UNIMPLEMENTED`.
+#
+# - `s`: the status.
+function status_text(s: grpc.Status) -> str
+    return grpc.status_name(s.code).default(f"status {s.code}")
+
+# The instance the gateway names in a reply's first metadata.
+#
+# - `headers`: the reply's first metadata.
+function upstream_of(headers: [grpc.Entry]) -> str
+    return match grpc.value_of(headers, key: "x-gateway-upstream")
+        .ok v  => bytes.to_text(v).default("?")
+        .err _ => "no upstream named"
+
+# How long a call may take.
+function seconds() -> time.Duration
+    return time.seconds(10).default(time.max_duration())

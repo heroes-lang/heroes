@@ -1,0 +1,84 @@
+# The gateway's listener: TLS connections accepted one after another, each
+# served in the protocol ALPN chose for it (`h2` or `http/1.1`) on the
+# thread that holds the gateway's state, until the program is asked to stop
+# (Ctrl-C, SIGTERM, or `os.ask_stop` from the demo's client), which ends the
+# wait for the next connection and the one served.
+
+use <rebel>/io
+use <rebel>/net
+use <rebel>/time
+use <rebel>/tls
+
+use core/state
+use core/telemetry
+use listen/h1
+use listen/h2
+
+## Bounds
+
+# How long a client's TLS handshake may take once it has connected.
+constant HANDSHAKE_SECONDS: i64
+    10
+
+## Serving
+
+# What the listener served before it stopped.
+record Served
+    # The connections accepted.
+    connections: i64
+    # The requests answered on them.
+    requests: i64
+    # The clients whose handshake failed.
+    failed: i64
+
+# The protocols the listener offers by ALPN, HTTP/2 preferred.
+function protocols() -> [str]
+    return ["h2", "http/1.1"]
+
+# Serves every connection `listener` accepts until the program is asked to
+# stop or the listener is closed.
+#
+# - `gw`: the state, which every request reads and changes.
+# - `listener`: the TLS listener, offering `protocols()`; its owner closes
+#   it.
+function serve(@gw: state.Gateway, listener: tls.Listener) -> Served
+    done @= Served(connections: 0, requests: 0, failed: 0)
+    handshake = time.seconds(HANDSHAKE_SECONDS).default(time.max_duration())
+
+    while true
+        match tls.accept(listener, deadline: handshake)
+            .err e =>
+                if e.code == tls.STOPPED || e.code == tls.CLOSED
+                    break
+                done.failed @ done.failed + 1
+            .ok accepted =>
+                conn @= accepted
+                protocol = tls.protocol_of(conn.stream).default("http/1.1")
+                telemetry.connected(@gw.registry, protocol: protocol)
+                done.connections @ done.connections + 1
+
+                if protocol == "h2"
+                    done.requests @ done.requests + h2.serve(@gw, @conn)
+                else
+                    done.requests @ done.requests + h1.serve(@gw, conn: conn)
+                    _ = io.close(@conn.stream).is_err()
+
+    return done
+
+# A TLS listener on `host` at `port` presenting `chain` and `key`.
+#
+# - `host`: the address listened on, or "" for every address.
+# - `port`: the port, 0 for one the system chooses.
+# - `chain`: the PEM of the certificate chain, the server's first.
+# - `key`: the PEM of its private key.
+#
+# Fails as `tls.listen` fails.
+function listening(host: str, port: i64, chain: str, key: str) -> tls.Listener?
+    return tls.listen(host: host, port: port, server: tls.Server(chain: chain, key: key, protocols: protocols()))
+
+# The address of `listener` as a client dials it.
+#
+# - `host`: the host it listens on.
+# - `listener`: the listener.
+function address_of(host: str, listener: tls.Listener) -> str
+    return net.join_host_port(host: host, port: listener.port)

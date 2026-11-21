@@ -1,0 +1,119 @@
+# The gateway's sources of time and chance: the moment its cache, its rate
+# limits and its circuit breakers read, and the fraction its retry waits are
+# spread by. Serving, they are the wall clock and the system's generator; in
+# the demo, a clock that moves a fixed step at each reading and a fixed
+# fraction, so one scripted session refills the same tokens, ages the same
+# cached answers and waits the same retries on every run. TLS's own check of
+# a certificate's dates never reads this clock.
+
+use <rebel>/retries
+use <rebel>/time
+
+## Codes
+
+# The code of a fixed clock whose step is not above zero, or a fraction
+# outside 0 to 1.
+constant INVALID: str
+    "invalid"
+
+## The clock
+
+# Where the time comes from.
+variant Clock
+    # The system's clock, read at each call.
+    wall
+    # A clock that answers `start` at its first reading and moves `step`
+    # at each one after.
+    fixed
+        # The first moment it answers.
+        start: time.Instant
+        # How far each reading moves it, above zero, so two readings never
+        # tie.
+        step: time.Duration
+        # How many readings it has answered.
+        readings: i64
+
+# A fixed clock from `start`, moving `step` at each reading.
+#
+# - `start`: its first moment.
+# - `step`: how far each reading moves it, above zero.
+#
+# Fails `invalid` where `step` is not above zero.
+function fixed_from(start: time.Instant, step: time.Duration) -> Clock?
+    if step.nanoseconds <= 0
+        return fail(code: INVALID, msg: f"a fixed clock's step of {time.format_duration(step)} is not above zero")
+    return ok(.fixed(start: start, step: step, readings: 0))
+
+# The time now by `clock`; a fixed clock counts the reading.
+#
+# - `clock`: the clock.
+#
+# Fails as `time.now` fails for the wall clock, and `does_not_fit` where a
+# fixed clock would pass the last instant.
+function now(@clock: Clock) -> time.Instant?
+    match clock
+        .wall => return time.now()
+        .fixed f =>
+            at = time.add(f.start, d: time.scale(f.step, by: f.readings)?)?
+            clock @ .fixed(start: f.start, step: f.step, readings: f.readings + 1)
+            return ok(at)
+
+# `at` in whole milliseconds since the epoch: the unit the response cache's
+# `now` is given in.
+#
+# - `at`: a moment.
+function millis(at: time.Instant) -> i64
+    return time.unix_milliseconds(at)
+
+## Chance
+
+# Where a retry wait's spread comes from.
+variant Chance
+    # The system's generator, drawn at each wait.
+    drawn
+    # One fraction, from 0 to 1, at every wait.
+    fixed
+        # The fraction.
+        fraction: f64
+
+# A fixed chance of `fraction`.
+#
+# - `fraction`: from 0 to 1.
+#
+# Fails `invalid` outside that range or for a NaN.
+function fixed_chance(fraction: f64) -> Chance?
+    if fraction != fraction || fraction < 0.0 || fraction > 1.0
+        return fail(code: INVALID, msg: f"a fraction is 0 to 1, and {fraction} was given")
+    return ok(.fixed(fraction: fraction))
+
+# The fraction of the next wait.
+#
+# - `chance`: where it comes from.
+#
+# Fails as `retries.random_fraction` fails.
+function next_fraction(chance: Chance) -> f64?
+    return match chance
+        .drawn   => retries.random_fraction()
+        .fixed f => ok(f.fraction)
+
+test "now: a fixed clock answers its start, then a step later at each reading"
+    start = time.from_unix(whole_seconds: 1_800_000_000, extra_nanoseconds: 0).must()
+    c @= fixed_from(start: start, step: time.milliseconds(5).must()).must()
+    assert now(@c).must() == start
+    assert millis(now(@c).must()) == 1_800_000_000_005
+    assert millis(now(@c).must()) == 1_800_000_000_010
+
+test "fixed_from: a step of zero and below is refused"
+    assert fixed_from(start: time.epoch(), step: time.nanoseconds(0)).is_err()
+    assert fixed_from(start: time.epoch(), step: time.nanoseconds(-1)).is_err()
+
+test "fixed_chance: the ends are taken, outside them and a NaN refused"
+    assert next_fraction(fixed_chance(0.0).must()).must() == 0.0
+    assert next_fraction(fixed_chance(1.0).must()).must() == 1.0
+    assert fixed_chance(1.5).is_err()
+    assert fixed_chance(-0.1).is_err()
+    assert fixed_chance(0.0 / 0.0).is_err()
+
+test "next_fraction: the system's generator answers within 0 to 1"
+    f = next_fraction(.drawn).must()
+    assert f >= 0.0 && f <= 1.0

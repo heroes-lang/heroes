@@ -1,0 +1,139 @@
+# The gateway as a service: `gateway serve <routes.toml>` reads the routing
+# file and the certificate it names, checks the certificate with `x509`
+# before presenting it, and serves on the wall clock until Ctrl-C or
+# SIGTERM, then says what it served; `gateway check <routes.toml>` reads the
+# file, its `.proto` texts and its GraphQL schema, and prints the route
+# table without listening.
+
+use <rebel>/os
+use <rebel>/time
+use <rebel>/tls
+use <rebel>/x509
+
+use config/loader
+use config/settings
+use core/state
+use listen/accept
+
+## Commands
+
+# Serves the routing file at `path` until the program is asked to stop, and
+# answers the exit code: 0 after a clean stop, 1 where it could not start.
+#
+# - `path`: the routing file; the certificate's and key's paths in it are
+#   read from the folder it stands in where they are not absolute.
+function serve(path: str) -> i64
+    match started(path)
+        .err e =>
+            print("gateway: " + e.msg)
+            return 1
+        .ok code => return code
+
+# `serve`'s work, every failure before listening answered.
+#
+# - `path`: the routing file.
+#
+# Fails as `read_file`, `loader.parse`, `certificate_checked`,
+# `state.new`, `os.catch_stop` and `tls.listen` fail.
+function started(path: str) -> i64?
+    s = loader.parse(read_file(path)?)?
+
+    if s.listener.certificate == "" || s.listener.key == ""
+        return fail(code: settings.INVALID, msg: "the routing file's [listener] names no certificate and key")
+    chain = read_file(beside(path: path, name: s.listener.certificate))?
+    key = read_file(beside(path: path, name: s.listener.key))?
+    subject = certificate_checked(chain)?
+    os.catch_stop()?
+    gw @= state.new(s, ticks: .wall, spread: .drawn)?
+    listener @= accept.listening(host: s.listener.host, port: s.listener.port, chain: chain, key: key)?
+    print(
+        f"gateway: {s.routes.len()} routes, presenting {subject}, listening on {accept.address_of(host: s.listener.host, listener: listener)} until Ctrl-C"
+    )
+    done = accept.serve(@gw, listener: listener)
+    _ = tls.close_listener(@listener).is_err()
+    print(
+        f"gateway: stopped after {done.connections} connections and {done.requests} requests, {done.failed} handshakes failed"
+    )
+    return ok(0)
+
+# Prints the route table of the routing file at `path`, every part of it
+# read, and answers the exit code: 0 where it reads, 1 where it does not.
+#
+# - `path`: the routing file.
+function check(path: str) -> i64
+    match checked(path)
+        .err e =>
+            print("gateway: " + e.msg)
+            return 1
+        .ok lines =>
+            for line in lines
+                print(line)
+
+            return 0
+
+# The route table's lines, once the routing file and its schemas read.
+#
+# - `path`: the routing file.
+#
+# Fails as `read_file`, `loader.parse` and `state.new` fail.
+function checked(path: str) -> [str]?
+    s = loader.parse(read_file(path)?)?
+    _ = state.new(s, ticks: .wall, spread: .drawn)?
+    return ok(table_lines(s))
+
+# One line per route: what it takes and what it does.
+#
+# - `s`: the routing file.
+function table_lines(s: settings.Settings) -> [str]
+    out: [str] @= []
+
+    for r in s.routes
+        upstream = if r.upstream == ""
+            "the gateway itself"
+        else
+            r.upstream
+
+        out @ out.push(f"{r.name}: {r.host}{r.prefix} -> {settings.kind_name(r.kind)} by {upstream}")
+
+    return out
+
+## Helpers
+
+# The subject of the server certificate `chain` begins with, once it is
+# found valid now.
+#
+# - `chain`: the PEM of the chain.
+#
+# Fails `invalid` where it holds no certificate or the first is not valid
+# now, and as `x509.parse_certificate` and `time.now` fail.
+function certificate_checked(chain: str) -> str?
+    leaf = x509.parse_certificate(chain)?
+
+    if !x509.is_valid_at(leaf, at: time.now()?)
+        return fail(
+            code: settings.INVALID,
+            msg: f"the certificate of {x509.format_name(leaf.subject)} is not valid now"
+        )
+    return ok(x509.format_name(leaf.subject))
+
+# `name` read beside the file at `path`: as it is where absolute, else in
+# the folder `path` stands in.
+#
+# - `path`: the routing file's path.
+# - `name`: a path the routing file names.
+function beside(path: str, name: str) -> str
+    if name.len() > 0 && name[0] == '/'
+        return name
+    at @= path.len() - 1
+
+    while at >= 0 && path[at] != '/'
+        at @ at - 1
+
+    if at < 0
+        return name
+    return path.slice(from: 0, to: at + 1) + name
+
+test "beside: a relative name in the routing file's folder, an absolute one as it is"
+    assert beside(path: "conf/routes.toml", name: "cert.pem") == "conf/cert.pem"
+    assert beside(path: "routes.toml", name: "cert.pem") == "cert.pem"
+    assert beside(path: "conf/routes.toml", name: "/etc/cert.pem") == "/etc/cert.pem"

@@ -1,0 +1,342 @@
+# Where an upstream's instances are: its SRV records (RFC 2782) asked of the
+# routing file's DNS servers, each target's address taken from the answer's
+# additional section or asked after, kept for the records' time to live; the
+# order a client's request tries them in, by priority and then by weighted
+# rendezvous hashing of the client's name (FNV-1a), so one client keeps to
+# one instance while the instances stand and a weight shares them out; and a
+# circuit breaker per instance (`retries`), so an instance that refused is
+# skipped for a while rather than tried by every request, as Envoy's outlier
+# detection does.
+
+use <rebel>/dns
+use <rebel>/hash
+use <rebel>/math
+use <rebel>/net
+use <rebel>/retries
+use <rebel>/strings
+use <rebel>/time
+
+## Codes
+
+# The code of a service with no instance.
+constant NOT_FOUND: str
+    "not_found"
+
+## Bounds
+
+# The shortest time an SRV answer is kept, in seconds, whatever its TTL: a
+# TTL of 0 would ask the DNS at every request.
+constant LEAST_TTL_SECONDS: i64
+    1
+
+# The longest time an SRV answer is kept, in seconds, so an instance moved
+# is found within it.
+constant MOST_TTL_SECONDS: i64
+    300
+
+## Instances
+
+# One instance of a service, as its SRV record and its target's address say.
+record Endpoint
+    # The SRV record's target, without its last dot: `catalog-1.shop.internal`.
+    target: str
+    # The target's address, as `net.format_host` writes it.
+    address: str
+    # The port.
+    port: i64
+    # The SRV priority: the lowest is tried first.
+    priority: i64
+    # The SRV weight among the instances of one priority.
+    weight: i64
+
+# A service's instances, as last asked.
+record Known
+    # The instances, by priority then weight then target.
+    endpoints: [Endpoint]
+    # When the answer is to be asked again.
+    until: time.Instant
+
+# The instances found so far and the breakers of each. Made by `new`.
+record Directory
+    # The DNS servers asked.
+    resolver: dns.Resolver
+    # The answers kept, by service name.
+    known: {str: Known}
+    # Each instance's breaker, by `key_of`.
+    breakers: {str: retries.Breaker}
+    # How a breaker opens and closes.
+    policy: retries.BreakerPolicy
+
+# A directory asking `servers`, or the system's resolver where there is
+# none, whose breakers open after one failure for `open_for`.
+#
+# - `servers`: DNS servers, `host:port` or a host on port 53.
+# - `open_for`: how long an instance that failed is skipped.
+#
+# Fails as `dns.resolver`, `dns.system` and `retries.breaker_policy` fail.
+function new(servers: [str], open_for: time.Duration) -> Directory?
+    resolver = if servers.len() == 0
+        dns.system()?
+    else
+        dns.resolver(servers)?
+
+    return ok(
+        Directory(resolver: resolver, known: {}, breakers: {}, policy: retries.breaker_policy(failures: 1, open_for: open_for)?)
+    )
+
+# The key of `e`'s breaker: its target and port.
+#
+# - `e`: the instance.
+function key_of(e: Endpoint) -> str
+    return f"{e.target}:{e.port}"
+
+## Finding
+
+# The instances of `service`, from the answer kept where it is still good,
+# else asked of the DNS and kept for its time to live.
+#
+# - `directory`: the directory; gains the answer.
+# - `service`: the SRV name, `_http._tcp.catalog.shop.internal`.
+# - `now`: the gateway clock's reading.
+#
+# Fails `not_found` where the service has no instance, and as `dns.lookup`
+# fails.
+function endpoints_of(@directory: Directory, service: str, now: time.Instant) -> [Endpoint]?
+    match directory.known[service]
+        .ok kept =>
+            if time.is_before(a: now, b: kept.until)
+                return ok(kept.endpoints)
+        .err _ => _ = 0
+
+    answer = dns.lookup(directory.resolver, name: service, type_code: dns.TYPE_SRV)?
+    found: [Endpoint] @= []
+    ttl: i64 @= MOST_TTL_SECONDS
+
+    for found_record in answer.records
+        match found_record.data
+            .srv s =>
+                if s.target != "." && s.target != ""
+                    target = trim_dot(s.target)
+                    address = address_of(directory.resolver, answer: answer.message, target: target)?
+                    found @ found.push(
+                        Endpoint(target: target, address: address, port: s.port, priority: s.priority, weight: s.weight)
+                    )
+                    ttl @ math.min_i64(a: ttl, b: found_record.ttl)
+            .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .txt _ => _ = 0
+            .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _     => _ = 0
+            .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _       => _ = 0
+
+    if found.len() == 0
+        return fail(code: NOT_FOUND, msg: f"{service} names no instance")
+    sorted = sorted_endpoints(found)
+    kept_for = time.seconds(math.clamp_i64(x: ttl, low: LEAST_TTL_SECONDS, high: MOST_TTL_SECONDS))?
+    directory.known[service] @ Known(endpoints: sorted, until: time.add(now, d: kept_for)?)
+    return ok(sorted)
+
+# The address of `target`: its first A or AAAA record in `answer`'s
+# additional section, where the DNS server put it beside the SRV records as
+# RFC 2782 suggests, else asked of `resolver`.
+#
+# - `resolver`: the resolver, asked where the answer holds no address.
+# - `answer`: the SRV answer.
+# - `target`: the target, without its last dot.
+#
+# Fails as `dns.lookup_addresses` fails.
+function address_of(resolver: dns.Resolver, answer: dns.Message, target: str) -> str?
+    for extra in answer.additionals
+        if trim_dot(extra.name) == target
+            match extra.data
+                .a a => return ok(net.format_host(a.address))
+                .aaaa a => return ok(net.format_host(a.address))
+                .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .txt _ | .srv _ | .soa _ => _ = 0
+                .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ => _ = 0
+                .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => _ = 0
+
+    hosts = dns.lookup_addresses(resolver, name: target)?
+    return ok(net.format_host(hosts[0]))
+
+# `name` without its last dot.
+#
+# - `name`: a domain name, absolute or not.
+function trim_dot(name: str) -> str
+    if name.len() > 0 && name[name.len() - 1] == '.'
+        return name.slice(from: 0, to: name.len() - 1)
+    return name
+
+# `list` ordered by priority from the lowest, then weight from the largest,
+# then target and port, so two answers in another order give one order.
+#
+# - `list`: the instances.
+function sorted_endpoints(list: [Endpoint]) -> [Endpoint]
+    out: [Endpoint] @= list
+
+    for i in range(from: 1, to: out.len())
+        j @= i
+
+        while j > 0 && is_before(a: out[j], b: out[j - 1])
+            held = out[j]
+            out[j] @ out[j - 1]
+            out[j - 1] @ held
+            j @ j - 1
+
+    return out
+
+# Whether `a` stands before `b` in `sorted_endpoints`' order.
+#
+# - `a`: an instance.
+# - `b`: another.
+function is_before(a: Endpoint, b: Endpoint) -> bool
+    if a.priority != b.priority
+        return a.priority < b.priority
+
+    if a.weight != b.weight
+        return a.weight > b.weight
+
+    if a.target != b.target
+        return strings.compare(a: a.target, b: b.target) < 0
+    return a.port < b.port
+
+## Choosing
+
+# The order a request from `client` tries `endpoints` in: each priority in
+# turn from the lowest, and within one the instances by weighted
+# rendezvous hashing of `client` and the instance, highest score first, so
+# a client keeps to one instance while it stands and the weights share the
+# clients out (an instance of weight 0 last).
+#
+# - `endpoints`: the instances, as `endpoints_of` orders them.
+# - `client`: the client's name.
+function plan(endpoints: [Endpoint], client: str) -> [Endpoint]
+    out: [Endpoint] @= []
+    at @= 0
+
+    while at < endpoints.len()
+        group: [Endpoint] @= []
+        priority = endpoints[at].priority
+
+        while at < endpoints.len() && endpoints[at].priority == priority
+            group @ group.push(endpoints[at])
+            at @ at + 1
+
+        for e in by_score(group, client: client)
+            out @ out.push(e)
+
+    return out
+
+# `group` ordered by `score` from the highest, ties kept in their order.
+#
+# - `group`: instances of one priority.
+# - `client`: the client's name.
+function by_score(group: [Endpoint], client: str) -> [Endpoint]
+    out: [Endpoint] @= group
+
+    for i in range(from: 1, to: out.len())
+        j @= i
+
+        while j > 0 && score(out[j], client: client) > score(out[j - 1], client: client)
+            held = out[j]
+            out[j] @ out[j - 1]
+            out[j - 1] @ held
+            j @ j - 1
+
+    return out
+
+# The weighted rendezvous score of `e` for `client`: `-weight / ln(u)`, `u`
+# the FNV-1a hash of the two names as a fraction of 2^64 in (0, 1), so each
+# instance wins a client with a chance its weight's share of the group's.
+#
+# - `e`: the instance.
+# - `client`: the client's name.
+function score(e: Endpoint, client: str) -> f64
+    h = hash.fnv1a_64_text(client + "\n" + key_of(e))
+    u = (to_f64(h) + 0.5) / 18_446_744_073_709_551_616.0
+    held = math.min(a: u, b: 0.999_999_999)
+    return -to_f64(e.weight) / math.ln(held)
+
+## Breakers
+
+# Whether `e` may be tried at `now`: its breaker is closed, or open long
+# enough to let a trial through.
+#
+# - `directory`: the breakers; a half-open one counts the trial.
+# - `e`: the instance.
+# - `now`: the gateway clock's reading.
+function allows(@directory: Directory, e: Endpoint, now: time.Instant) -> bool
+    key = key_of(e)
+    breaker @= directory.breakers[key].default(retries.new_breaker(directory.policy))
+    allowed = retries.allow_call(@breaker, at: now)
+    directory.breakers[key] @ breaker
+    return allowed
+
+# Records that `e` answered at `now`.
+#
+# - `directory`: the breakers.
+# - `e`: the instance.
+# - `now`: the gateway clock's reading.
+function succeeded(@directory: Directory, e: Endpoint, now: time.Instant)
+    key = key_of(e)
+    breaker @= directory.breakers[key].default(retries.new_breaker(directory.policy))
+    retries.record_success(@breaker, at: now)
+    directory.breakers[key] @ breaker
+
+# Records that `e` refused or failed at `now`, which opens its breaker.
+#
+# - `directory`: the breakers.
+# - `e`: the instance.
+# - `now`: the gateway clock's reading.
+function failed(@directory: Directory, e: Endpoint, now: time.Instant)
+    key = key_of(e)
+    breaker @= directory.breakers[key].default(retries.new_breaker(directory.policy))
+    retries.record_failure(@breaker, at: now)
+    directory.breakers[key] @ breaker
+
+## Tests
+
+# An instance of `target` at `priority` and `weight`, on port 1000.
+#
+# - `target`: its name.
+# - `priority`: its priority.
+# - `weight`: its weight.
+function sample(target: str, priority: i64, weight: i64) -> Endpoint
+    return Endpoint(target: target, address: "127.0.0.1", port: 1000, priority: priority, weight: weight)
+
+test "sorted_endpoints: priority up, then weight down, then name"
+    list = [
+        sample(target: "c", priority: 20, weight: 1)
+        sample(target: "b", priority: 10, weight: 1)
+        sample(target: "a", priority: 10, weight: 5)
+    ]
+    sorted = sorted_endpoints(list)
+    assert sorted[0].target == "a" && sorted[1].target == "b" && sorted[2].target == "c"
+
+test "plan: a lower priority is always tried first, whatever the client"
+    list = sorted_endpoints(
+        [sample(target: "late", priority: 20, weight: 100), sample(target: "early", priority: 10, weight: 1)]
+    )
+
+    for client in ["a", "b", "c", "d"]
+        assert plan(list, client: client)[0].target == "early"
+
+test "plan: one client keeps to one instance, and weight 0 goes last"
+    list = [
+        sample(target: "x", priority: 10, weight: 50)
+        sample(target: "y", priority: 10, weight: 50)
+        sample(target: "z", priority: 10, weight: 0)
+    ]
+    first = plan(list, client: "client-1")[0].target
+    assert plan(list, client: "client-1")[0].target == first
+    assert plan(list, client: "client-1")[2].target == "z"
+
+test "allows: a breaker opens on a failure and lets a trial through once its time is spent"
+    d @= new(servers: ["127.0.0.1:53"], open_for: time.seconds(30).must()).must()
+    e = sample(target: "a", priority: 1, weight: 1)
+    start = time.epoch()
+    assert allows(@d, e: e, now: start)
+    failed(@d, e: e, now: start)
+    assert !allows(@d, e: e, now: time.add(start, d: time.seconds(10).must()).must())
+    assert allows(@d, e: e, now: time.add(start, d: time.seconds(31).must()).must())
+
+test "trim_dot: an absolute name loses its last dot, a relative one nothing"
+    assert trim_dot("a.test.") == "a.test"
+    assert trim_dot("a.test") == "a.test"
+    assert trim_dot("") == ""

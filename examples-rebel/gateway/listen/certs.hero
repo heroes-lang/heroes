@@ -1,0 +1,319 @@
+# The demo's own certificate authority and the gateway's TLS certificate,
+# made at start: two ECDSA keys on P-256 from `crypto/keypairs`, two
+# TBSCertificates written from `der`'s pieces and signed, each written as
+# PEM by `pem`, then read back by `x509` and its chain verified before the
+# gateway presents it. A real gateway is handed its certificate in files
+# (the routing file's `[listener]` names them); the demo makes one so it
+# needs no file and trusts no authority but its own.
+
+use <rebel>/asn1
+use <rebel>/crypto
+use <rebel>/crypto/keypairs
+use <rebel>/net
+use <rebel>/pem
+use <rebel>/time
+use <rebel>/x509
+
+use listen/der
+
+## Codes
+
+# The code of a certificate that does not read back or does not verify.
+constant INVALID: str
+    "invalid"
+
+## What is made
+
+# What a TLS server presents and what its clients trust: built only by
+# `make_identity`, each field PEM text.
+record Identity
+    # The server's certificate, then the authority's, as `tls.Server.chain`
+    # takes them.
+    chain: str
+    # The server's private key, PKCS #8, unencrypted, as `tls.Server.key`
+    # takes it.
+    key: str
+    # The authority's certificate alone, as `tls.Client.roots` takes it.
+    roots: str
+
+# What `make_identity` says of the certificate it made once `x509` has read
+# it back: the lines the demo prints, none of which holds a date, a serial
+# or a key, which change at every run.
+record Checked
+    # The server certificate's subject, as RFC 4514 writes it.
+    subject: str
+    # Its issuer, as RFC 4514 writes it.
+    issuer: str
+    # The DNS names and addresses it is for, in its own order.
+    names: [str]
+    # Whether the chain verified for a TLS server at `host` at the moment
+    # it was made.
+    verified: bool
+
+# An identity and what was checked of it.
+record Made
+    # The PEM texts.
+    identity: Identity
+    # What `x509` read back.
+    checked: Checked
+
+# What a certificate is made for: its subject and the names it covers.
+record Subject
+    # The common name.
+    common_name: str
+    # The organization.
+    organization: str
+    # The DNS names it is for.
+    names: [str]
+    # The addresses it is for.
+    addresses: [net.Host]
+
+# A certificate signed, and the identifier of the key in it.
+record Signed
+    # The certificate's DER.
+    der: [u8]
+    # Its subjectKeyIdentifier, which a certificate it signs names.
+    key_id: [u8]
+
+## Making
+
+# A fresh authority and a server certificate it signed for `server`, valid
+# from an hour before `now` to `days` after it, checked by `x509` for
+# `host` before it is answered.
+#
+# - `server`: the server certificate's subject and names.
+# - `host`: the host a client will dial, which the chain must verify for.
+# - `now`: the wall clock's reading; TLS checks the dates against the
+#   system's clock, so this is never the demo's fixed clock.
+# - `days`: how many days it stays valid after `now`, from 1.
+#
+# Both keys are made, used and closed here; only their PEM leaves. Fails
+# `invalid` where the certificate does not read back or does not verify,
+# and as `keypairs.generate`, `keypairs.sign` and `asn1.encode_der` fail.
+function make_identity(server: Subject, host: str, now: time.Instant, days: i64) -> Made?
+    ca_key: keypairs.PrivateKey @= keypairs.generate(.p256)?
+    made = with_authority_key(ca_key, server: server, host: host, now: now, days: days)
+    _ = keypairs.close_private(@ca_key).is_err()
+    return made
+
+# `make_identity`'s work once the authority's key is made, so its caller
+# closes that key on every path.
+#
+# - `ca_key`: the authority's key, which stays open.
+# - `server`: the server certificate's subject.
+# - `host`: the host the chain must verify for.
+# - `now`: the wall clock's reading.
+# - `days`: the days of validity after `now`.
+#
+# Fails as `make_identity` fails.
+function with_authority_key(ca_key: keypairs.PrivateKey, server: Subject, host: str, now: time.Instant, days: i64) -> Made?
+    not_before = time.add(now, d: time.hours(-1)?)?
+    not_after = time.add(now, d: time.days(days)?)?
+    validity = der.validity(not_before: not_before, not_after: not_after)?
+    ca_name = der.name(common_name: "Gateway Demo Root", organization: server.organization)
+    ca_spki = public_der(ca_key)?
+    ca_extensions = [
+        der.basic_constraints(true)?
+        der.key_usage(.authority)?
+        der.subject_key_id(key_id(ca_spki)?)?
+    ]
+    ca = sign_tbs(signer: ca_key, issuer: ca_name, subject: ca_name, spki: ca_spki, validity: validity, extensions: ca_extensions)?
+    leaf_key: keypairs.PrivateKey @= keypairs.generate(.p256)?
+    leaf = with_leaf_key(
+        leaf_key: leaf_key,
+        ca_key: ca_key,
+        ca_name: ca_name,
+        ca_id: ca.key_id,
+        server: server,
+        validity: validity
+    )
+    key_pem = keypairs.format_private_pem(leaf_key)
+    _ = keypairs.close_private(@leaf_key).is_err()
+    leaf_der = leaf?
+    leaf_pem = pem_of(leaf_der)?
+    ca_pem = pem_of(ca.der)?
+    identity = Identity(chain: leaf_pem + ca_pem, key: key_pem?, roots: ca_pem)
+    return ok(Made(identity: identity, checked: check(identity, host: host, at: now)?))
+
+# The server's certificate, signed by the authority's key.
+#
+# - `leaf_key`: the server's key, which stays open.
+# - `ca_key`: the authority's key, which signs.
+# - `ca_name`: the authority's name, the certificate's issuer.
+# - `ca_id`: the authority's key identifier, its authorityKeyIdentifier.
+# - `server`: the subject and its names.
+# - `validity`: the dates, the authority's own.
+#
+# Fails as `sign_tbs` fails.
+function with_leaf_key(leaf_key: keypairs.PrivateKey, ca_key: keypairs.PrivateKey, ca_name: asn1.Value, ca_id: [u8], server: Subject, validity: asn1.Value) -> [u8]?
+    spki = public_der(leaf_key)?
+    extensions = [
+        der.basic_constraints(false)?
+        der.key_usage(.server)?
+        der.server_auth()?
+        der.alt_names(names: server.names, addresses: server.addresses)?
+        der.subject_key_id(key_id(spki)?)?
+        der.authority_key_id(ca_id)?
+    ]
+    return ok(
+        sign_tbs(signer: ca_key, issuer: ca_name, subject: der.name(common_name: server.common_name, organization: server.organization), spki: spki, validity: validity, extensions: extensions)?.der
+    )
+
+# A certificate: its TBSCertificate written, signed by `signer` with ECDSA
+# over SHA-256, and the three wrapped in the Certificate SEQUENCE
+# (RFC 5280 § 4.1).
+#
+# - `signer`: the issuer's key, which stays open.
+# - `issuer`: the issuer's name.
+# - `subject`: the subject's name; the issuer's own for an authority that
+#   signs itself.
+# - `spki`: the subject's public key as SubjectPublicKeyInfo DER.
+# - `validity`: the dates.
+# - `extensions`: the extensions, each made by `der`.
+#
+# The serial number is drawn from the SHA-256 of `spki`, positive and of
+# eight bytes, so two keys never share one. Fails as `keypairs.sign` and
+# `asn1.encode_der` fail, and `invalid` where `spki` is no DER.
+function sign_tbs(signer: keypairs.PrivateKey, issuer: asn1.Value, subject: asn1.Value, spki: [u8], validity: asn1.Value, extensions: [asn1.Value]) -> Signed?
+    tbs: asn1.Value = .sequence(
+        items: [der.version_3(), .integer(v: serial_of(spki)), der.ecdsa_sha256(), issuer, validity, subject, asn1.decode_der(spki)?, der.extensions(extensions)]
+    )
+    tbs_der = asn1.encode_der(tbs)?
+    signature = keypairs.sign(signer, scheme: .ecdsa_sha256, message: tbs_der)?
+    certificate: asn1.Value = .sequence(
+        items: [tbs, der.ecdsa_sha256(), .bit_string(v: asn1.BitString(bytes: signature, bit_len: signature.len() * 8))]
+    )
+    return ok(Signed(der: asn1.encode_der(certificate)?, key_id: key_id(spki)?))
+
+# A positive serial number of up to 63 bits from the SHA-256 of `spki`: RFC
+# 5280 § 4.1.2.2 asks for a positive integer unique per issuer, and two
+# distinct keys hash apart.
+#
+# - `spki`: the subject's public key, DER.
+function serial_of(spki: [u8]) -> i64
+    digest = crypto.sha256(spki)
+    n: i64 @= 0
+
+    for i in range(from: 0, to: 7)
+        n @ n * 256 + to_i64(digest[i]).must()
+
+    return n + 1
+
+# The SubjectPublicKeyInfo DER of `key`'s public half.
+#
+# - `key`: the private key, which stays open; its public half is made and
+#   closed here.
+#
+# Fails as `keypairs.public_of` and `keypairs.encode_public_der` fail.
+function public_der(key: keypairs.PrivateKey) -> [u8]?
+    public: keypairs.PublicKey @= keypairs.public_of(key)?
+    spki = keypairs.encode_public_der(public)
+    _ = keypairs.close_public(@public).is_err()
+    return spki
+
+# The key identifier of RFC 5280 § 4.2.1.2's first method: the SHA-1 of the
+# BIT STRING subjectPublicKey, its tag, length and unused-bits byte left out.
+#
+# - `spki`: the SubjectPublicKeyInfo DER.
+#
+# Fails `invalid` where `spki` is not a SEQUENCE of an algorithm and a BIT
+# STRING.
+function key_id(spki: [u8]) -> [u8]?
+    items = asn1.items_of(asn1.decode_der(spki)?)?
+
+    if items.len() != 2
+        return fail(code: INVALID, msg: f"a SubjectPublicKeyInfo holds two elements, and this one {items.len()}")
+    return ok(crypto.sha1(asn1.bits_of(items[1])?.bytes))
+
+# `der` as a PEM `CERTIFICATE` block.
+#
+# - `data`: the certificate's DER.
+#
+# Fails as `pem.format` fails.
+function pem_of(data: [u8]) -> str?
+    return pem.format(pem.Block(label: "CERTIFICATE", headers: [], data: data))
+
+## Checking
+
+# What `x509` reads of `identity`: the server certificate read back from
+# its PEM, its authority beside it, the signature checked and the whole
+# chain verified for a TLS server at `host` at `at`.
+#
+# - `identity`: the PEM texts made.
+# - `host`: the host a client dials.
+# - `at`: the moment the chain must hold at.
+#
+# Fails `invalid` where the chain is not the two certificates, the
+# authority did not sign the server's, or the chain does not verify, and
+# as `x509.parse_certificates` fails.
+function check(identity: Identity, host: str, at: time.Instant) -> Checked?
+    chain = x509.parse_certificates(identity.chain)?
+
+    if chain.len() != 2
+        return fail(
+            code: INVALID,
+            msg: f"a chain of the server and its authority holds two certificates, and this one {chain.len()}"
+        )
+
+    if !x509.is_signed_by(certificate: chain[0], issuer: chain[1])?
+        return fail(code: INVALID, msg: "the authority's key did not sign the server's certificate")
+
+    if !x509.is_self_issued(chain[1])
+        return fail(code: INVALID, msg: "the authority's certificate is not self-issued")
+    options = x509.Verification(roots: [chain[1]], at: at, purpose: x509.SERVER_AUTH, host: host)
+    x509.verify_chain(chain, options: options)?
+    return ok(
+        Checked(subject: x509.format_name(chain[0].subject), issuer: x509.format_name(chain[0].issuer), names: names_of(chain[0]), verified: true)
+    )
+
+# The DNS names and addresses a certificate's subjectAltName holds, in its
+# order, each as text.
+#
+# - `certificate`: the certificate read.
+function names_of(certificate: x509.Certificate) -> [str]
+    out: [str] @= []
+
+    match certificate.extensions.alt_names
+        .err _ => _ = 0
+        .ok list =>
+            for general in list
+                match general
+                    .dns d           => out @ out.push(d.name)
+                    .ip a            => out @ out.push(net.format_host(a.address))
+                    .other_name _    => _ = 0
+                    .email _         => _ = 0
+                    .x400_address _  => _ = 0
+                    .directory _     => _ = 0
+                    .edi_party _     => _ = 0
+                    .uri _           => _ = 0
+                    .ip_network _    => _ = 0
+                    .registered_id _ => _ = 0
+
+    return out
+
+test "make_identity: a chain that verifies for its host and names it"
+    subject = Subject(
+        common_name: "gateway.test",
+        organization: "Shop Demo",
+        names: ["localhost"],
+        addresses: [net.loopback_v4()]
+    )
+    now = time.now().must()
+    made = make_identity(subject, host: "127.0.0.1", now: now, days: 2).must()
+    assert made.checked.subject == "CN=gateway.test,O=Shop Demo"
+    assert made.checked.issuer == "CN=Gateway Demo Root,O=Shop Demo"
+    assert made.checked.names == ["localhost", "127.0.0.1"]
+    assert made.checked.verified
+    assert pem.parse_all(made.identity.chain).must().len() == 2
+
+test "check: a chain verified for another host is refused"
+    subject = Subject(common_name: "gateway.test", organization: "Shop Demo", names: ["localhost"], addresses: [])
+    made = make_identity(subject, host: "localhost", now: time.now().must(), days: 1).must()
+    assert check(made.identity, host: "example.org", at: time.now().must()).is_err()
+
+test "serial_of: positive, and apart for two keys"
+    assert serial_of([1, 2, 3]) > 0
+    assert serial_of([1, 2, 3]) != serial_of([1, 2, 4])
+
+test "key_id: a value that is no SubjectPublicKeyInfo is refused"
+    assert key_id([0x30, 0x00]).is_err()

@@ -1,0 +1,179 @@
+# The gateway's own metrics: the families it records into one `metrics`
+# registry as it serves, and the recorders the pipeline calls by what
+# happened rather than by a family's name, so a family's name and its
+# labels' order are written once, here. Every family counts or measures
+# what a request did (its route, its status, the cache's answer, the
+# upstream's), never how long it took: a duration would make the demo's
+# transcript change at every run, and the gateway's clock is the place to
+# add one.
+#
+# A recorder fails only where a family is unknown or given another count of
+# labels, which `new` and this module's tests rule out, so each one asserts
+# that with `must`.
+
+use <rebel>/http
+use <rebel>/metrics
+
+## Families
+
+# Requests answered, by route and status.
+constant REQUESTS: str
+    "gateway_requests_total"
+
+# The response cache's answers, by route and result: `hit`, `miss`,
+# `not_modified`.
+constant CACHE: str
+    "gateway_cache_lookups_total"
+
+# Answers held in the response cache.
+constant CACHE_ENTRIES: str
+    "gateway_cache_entries"
+
+# Requests refused by a rate limit, by route.
+constant RATE_LIMITED: str
+    "gateway_rate_limited_total"
+
+# Tries of an upstream's instance, by upstream and outcome: `ok`,
+# `refused`, `failed`, `skipped` (its circuit open).
+constant ATTEMPTS: str
+    "gateway_upstream_attempts_total"
+
+# Forwards tried again after a failed try, by route.
+constant RETRIES: str
+    "gateway_retries_total"
+
+# gRPC messages relayed from an upstream to a client, by method.
+constant GRPC_MESSAGES: str
+    "gateway_grpc_messages_total"
+
+# gRPC calls answered, by method and status name: `OK`, `UNIMPLEMENTED`.
+constant GRPC_CALLS: str
+    "gateway_grpc_calls_total"
+
+# GraphQL operations, by result: `executed`, `invalid`.
+constant GRAPHQL: str
+    "gateway_graphql_operations_total"
+
+# Client connections accepted, by protocol: `h2`, `http/1.1`.
+constant CONNECTIONS: str
+    "gateway_connections_total"
+
+# The size of the bodies answered, by route, in bytes.
+constant RESPONSE_BYTES: str
+    "gateway_response_bytes"
+
+## The registry
+
+# A registry holding every family above, none recorded yet.
+function new() -> metrics.Registry
+    r @= metrics.new_registry()
+    descriptions = [
+        metrics.counter(name: REQUESTS, help: "Requests answered, by route and status.", labels: ["route", "code"])
+        metrics.counter(name: CACHE, help: "Response cache lookups, by route and result.", labels: ["route", "result"])
+        metrics.gauge(name: CACHE_ENTRIES, help: "Answers held in the response cache.", labels: [])
+        metrics.counter(name: RATE_LIMITED, help: "Requests refused by a rate limit, by route.", labels: ["route"])
+        metrics.counter(name: ATTEMPTS, help: "Tries of an upstream instance, by upstream and outcome.", labels: ["upstream", "outcome"])
+        metrics.counter(name: RETRIES, help: "Forwards tried again after a failed try, by route.", labels: ["route"])
+        metrics.counter(name: GRPC_MESSAGES, help: "gRPC messages relayed to clients, by method.", labels: ["method"])
+        metrics.counter(name: GRPC_CALLS, help: "gRPC calls answered, by method and status.", labels: ["method", "status"])
+        metrics.counter(name: GRAPHQL, help: "GraphQL operations, by result.", labels: ["result"])
+        metrics.counter(name: CONNECTIONS, help: "Client connections accepted, by protocol.", labels: ["protocol"])
+        metrics.histogram(name: RESPONSE_BYTES, help: "Bytes of the bodies answered, by route.", labels: ["route"], buckets: [64.0, 256.0, 1024.0, 4096.0, 16384.0])
+    ]
+
+    for d in descriptions
+        metrics.register(@r, d: d).must()
+
+    return r
+
+## Recorders
+
+# A request answered.
+#
+# - `registry`: the gateway's registry.
+# - `route`: the route's name, `-` where no route took it.
+# - `response`: what was answered.
+function answered(@registry: metrics.Registry, route: str, response: http.Response)
+    answered_bytes(@registry, route: route, status: response.status, size: response.body.len())
+
+# A request answered with `size` bytes of body, the ones a relayed gRPC call
+# streamed among them.
+#
+# - `registry`: the gateway's registry.
+# - `route`: the route's name, `-` where no route took it.
+# - `status`: the HTTP status answered.
+# - `size`: the body's bytes.
+function answered_bytes(@registry: metrics.Registry, route: str, status: i64, size: i64)
+    metrics.inc(@registry, name: REQUESTS, labels: [route, f"{status}"]).must()
+    metrics.observe(@registry, name: RESPONSE_BYTES, labels: [route], value: to_f64(size)).must()
+
+# The response cache's answer to a request.
+#
+# - `registry`: the gateway's registry.
+# - `route`: the route's name.
+# - `result`: `hit`, `miss` or `not_modified`.
+# - `entries`: how many answers the cache holds after it.
+function cache_looked_up(@registry: metrics.Registry, route: str, result: str, entries: i64)
+    metrics.inc(@registry, name: CACHE, labels: [route, result]).must()
+    metrics.set(@registry, name: CACHE_ENTRIES, labels: [], value: to_f64(entries)).must()
+
+# A request a rate limit refused.
+#
+# - `registry`: the gateway's registry.
+# - `route`: the route's name.
+function rate_limited(@registry: metrics.Registry, route: str)
+    metrics.inc(@registry, name: RATE_LIMITED, labels: [route]).must()
+
+# One try of an upstream's instance.
+#
+# - `registry`: the gateway's registry.
+# - `upstream`: the upstream's name.
+# - `outcome`: `ok`, `refused`, `failed` or `skipped`.
+function attempted(@registry: metrics.Registry, upstream: str, outcome: str)
+    metrics.inc(@registry, name: ATTEMPTS, labels: [upstream, outcome]).must()
+
+# A forward tried again.
+#
+# - `registry`: the gateway's registry.
+# - `route`: the route's name.
+function retried(@registry: metrics.Registry, route: str)
+    metrics.inc(@registry, name: RETRIES, labels: [route]).must()
+
+# A gRPC call answered, and the messages relayed in it.
+#
+# - `registry`: the gateway's registry.
+# - `method`: the call's path, `/package.Service/Method`.
+# - `status`: the status's name, as `grpc.status_name` writes it.
+# - `count`: the messages relayed.
+function relayed(@registry: metrics.Registry, method: str, status: str, count: i64)
+    metrics.inc(@registry, name: GRPC_CALLS, labels: [method, status]).must()
+    metrics.add(@registry, name: GRPC_MESSAGES, labels: [method], amount: to_f64(count)).must()
+
+# A GraphQL operation run or refused.
+#
+# - `registry`: the gateway's registry.
+# - `result`: `executed` or `invalid`.
+function graphql_ran(@registry: metrics.Registry, result: str)
+    metrics.inc(@registry, name: GRAPHQL, labels: [result]).must()
+
+# A client connection accepted.
+#
+# - `registry`: the gateway's registry.
+# - `protocol`: what ALPN chose, `h2` or `http/1.1`.
+function connected(@registry: metrics.Registry, protocol: str)
+    metrics.inc(@registry, name: CONNECTIONS, labels: [protocol]).must()
+
+test "new: every family registered, and each recorder takes its labels"
+    r @= new()
+    answered(@r, route: "catalog", response: http.respond_text(200, text: "hi"))
+    cache_looked_up(@r, route: "catalog", result: "hit", entries: 3)
+    rate_limited(@r, route: "orders")
+    attempted(@r, upstream: "catalog", outcome: "refused")
+    retried(@r, route: "catalog")
+    relayed(@r, method: "/a.B/C", status: "OK", count: 3)
+    graphql_ran(@r, result: "executed")
+    connected(@r, protocol: "h2")
+    assert metrics.value_of(r, name: REQUESTS, labels: ["catalog", "200"]).must() == 1.0
+    assert metrics.value_of(r, name: CACHE_ENTRIES, labels: []).must() == 3.0
+    assert metrics.value_of(r, name: GRPC_MESSAGES, labels: ["/a.B/C"]).must() == 3.0
+    assert metrics.count_of(r, name: RESPONSE_BYTES, labels: ["catalog"]).must() == 1

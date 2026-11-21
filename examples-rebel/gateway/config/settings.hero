@@ -1,0 +1,223 @@
+# The routing file's records: what the gateway listens on, where it finds
+# its upstreams, how much it caches, and its routes, as `loader` reads them
+# from TOML and checks them.
+#
+# A routing file, every table but `[[routes]]` optional:
+#
+#     [listener]   host, port, certificate (a PEM file), key (a PEM file)
+#     [discovery]  servers: the DNS servers asked for SRV records
+#     [cache]      entries, longest_seconds
+#     [clients]    key: the request header naming a client, for rate limits
+#     [[upstreams]] name, service (an SRV name), protocol ("http" or "grpc"),
+#                  proto (the `.proto` text a gRPC upstream serves)
+#     [[routes]]   name, host, prefix, kind, upstream, rewrite, cache,
+#                  retry = { attempts, first_ms, longest_ms },
+#                  rate = { burst, every_ms }, method, field
+#     [graphql]    schema (SDL), and [[graphql.fields]] naming which upstream
+#                  answers each root field
+
+## Codes
+
+# The code of a routing file that is not what the gateway reads.
+constant INVALID: str
+    "invalid"
+
+# The code of a part the file leaves out: a route with no rate limit, a kind
+# that needs no upstream.
+constant NOT_FOUND: str
+    "not_found"
+
+## The file
+
+# Where the gateway listens and the certificate it presents.
+record Listener
+    # The address listened on: `127.0.0.1`, `::1`, or "" for every address.
+    host: str
+    # The port, 0 for one the system chooses.
+    port: i64
+    # The path of the PEM file of the certificate chain, the server's first.
+    certificate: str
+    # The path of the PEM file of its private key.
+    key: str
+
+# Where the gateway's upstreams are found.
+record Discovery
+    # The DNS servers asked for SRV records, `host:port` or a host on port
+    # 53; none asks the system's resolver.
+    servers: [str]
+
+# The response cache's bounds.
+record CacheBounds
+    # The most responses held, from 1; the one used least recently is
+    # forgotten first.
+    entries: i64
+    # The longest any response is kept, in seconds, whatever its
+    # `Cache-Control` allows.
+    longest_seconds: i64
+
+# The protocol an upstream speaks.
+variant Protocol
+    # HTTP/1.1 in plain text.
+    http
+    # gRPC over HTTP/2 in plain text (h2c, prior knowledge).
+    grpc
+
+# A service the gateway forwards to, found by its SRV records.
+record Upstream
+    # Its name, as routes and GraphQL fields name it.
+    name: str
+    # The SRV name its instances are registered under:
+    # `_http._tcp.catalog.shop.internal`.
+    service: str
+    # What it speaks.
+    protocol: Protocol
+    # The `.proto` text of what a gRPC upstream serves, "" for an HTTP one;
+    # the gateway checks a call's method against it, and transcodes JSON
+    # with it.
+    proto: str
+    # How long a connection to one of its instances may take, in
+    # milliseconds.
+    connect_ms: i64
+
+# What a route does with a request it matched.
+variant Kind
+    # Forwards it to an HTTP upstream.
+    proxy
+    # Relays a gRPC call, unary or streaming, to a gRPC upstream.
+    grpc
+    # Turns a `GET` into a unary gRPC call and its answer into JSON.
+    transcode
+        # The method called, `/package.Service/Method`.
+        method: str
+        # The request message's string field the path after the prefix fills.
+        field: str
+    # Answers GraphQL from the gateway's composed schema.
+    graphql
+    # Answers the gateway's own metrics in Prometheus's text format.
+    metrics
+
+# How a failed forward is tried again on another instance.
+record Retry
+    # The most tries, the first included; 1 never tries again.
+    attempts: i64
+    # The wait before the first retry, in milliseconds.
+    first_ms: i64
+    # The longest wait between two tries, in milliseconds.
+    longest_ms: i64
+
+# A token bucket's size and pace, per client.
+record Rate
+    # The most requests a client may make at once: the bucket's tokens.
+    burst: i64
+    # How often one token comes back, in milliseconds.
+    every_ms: i64
+
+# One route: which requests it takes and what it does with them.
+record Route
+    # Its name, in metrics and in the gateway's answers.
+    name: str
+    # The host it takes, as the request's `Host` or `:authority` names it
+    # without a port, or `*` for any host.
+    host: str
+    # The path prefix it takes, matched at a segment's end.
+    prefix: str
+    # What it does.
+    kind: Kind
+    # The upstream it forwards to, "" for a kind that needs none.
+    upstream: str
+    # What replaces `prefix` in the path forwarded; `prefix` itself where the
+    # file writes none.
+    rewrite: str
+    # Whether its `GET` answers are kept in the response cache.
+    cache: bool
+    # How a failed forward is tried again.
+    retry: Retry
+    # Its rate limit per client; none where the route has none.
+    rate: Rate?
+
+# A root field of the composed GraphQL schema and the upstream answering it.
+record GraphField
+    # The root field's name.
+    field: str
+    # The upstream answering it.
+    upstream: str
+    # For a gRPC upstream, the unary method called with the field's
+    # arguments; "" for an upstream speaking GraphQL itself.
+    method: str
+    # For a GraphQL upstream, the path its endpoint answers on.
+    path: str
+
+# The GraphQL endpoint's composed schema.
+record GraphSettings
+    # The schema, in the GraphQL SDL.
+    schema: str
+    # Which upstream answers each root field of `Query`.
+    fields: [GraphField]
+
+# The whole routing file. Made by `loader.parse`, which checks that every
+# name a route or a field gives stands among the upstreams; a copy that
+# changes only where the gateway listens and which DNS servers it asks, as
+# the demo makes, keeps that true.
+record Settings
+    # Where the gateway listens.
+    listener: Listener
+    # Where it finds its upstreams.
+    discovery: Discovery
+    # The response cache's bounds.
+    cache: CacheBounds
+    # The request header naming a client for its rate limits; the client's
+    # address is its name where a request has none.
+    client_header: str
+    # The upstreams.
+    upstreams: [Upstream]
+    # The routes, in the file's order.
+    routes: [Route]
+    # The GraphQL endpoint's schema; empty where no route is of kind
+    # `graphql`.
+    graphql: GraphSettings
+
+# The protocol a route of `kind` forwards over; none for a kind the gateway
+# answers itself.
+#
+# - `kind`: the route's kind.
+#
+# Fails `not_found` for `graphql` and `metrics`, which need no upstream of
+# their own.
+function needed_protocol(kind: Kind) -> Protocol?
+    return match kind
+        .proxy               => ok(.http)
+        .grpc | .transcode _ => ok(.grpc)
+        .graphql | .metrics  => fail(code: NOT_FOUND, msg: "the gateway answers this kind itself")
+
+# The upstream of `upstreams` named `name`.
+#
+# - `upstreams`: the upstreams declared.
+# - `name`: the name sought.
+#
+# Fails `invalid` where none is named so.
+function upstream_named(upstreams: [Upstream], name: str) -> Upstream?
+    for u in upstreams
+        if u.name == name
+            return ok(u)
+
+    return fail(code: INVALID, msg: f"no [[upstreams]] is named \"{name}\"")
+
+# A protocol as the routing file writes it.
+#
+# - `p`: the protocol.
+function protocol_name(p: Protocol) -> str
+    return match p
+        .http => "http"
+        .grpc => "grpc"
+
+# What a route's kind is called in the routing file and the gateway's own
+# answers.
+#
+# - `kind`: the kind.
+function kind_name(kind: Kind) -> str
+    return match kind
+        .proxy       => "proxy"
+        .grpc        => "grpc"
+        .transcode _ => "transcode"
+        .graphql     => "graphql"
+        .metrics     => "metrics"

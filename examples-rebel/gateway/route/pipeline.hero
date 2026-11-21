@@ -1,0 +1,338 @@
+# What the gateway does with one HTTP request, whichever protocol brought
+# it: route it by host and path, name its client, take a token from the
+# client's bucket, then do what the route's kind says (forward it through
+# the response cache, transcode it into a gRPC call, answer it from the
+# composed GraphQL schema, or answer the gateway's own metrics), and count
+# what was answered. A gRPC call over HTTP/2 is relayed by `relay` instead,
+# after the same routing and the same rate limit, which `admitted` makes
+# one step both paths share.
+#
+# The steps run in Kong's order: a rate limit before the cache, so a client
+# past its limit is refused even what the cache holds.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/metrics
+use <rebel>/time
+
+use cache/responses
+use core/clock
+use core/state
+use core/telemetry
+use graph/compose
+use limits/tokens
+use proxy/channels
+use proxy/forwarding
+use proxy/replies
+use route/routes
+
+## Admission
+
+# A request routed and let through, or the answer refusing it.
+variant Admission
+    # It goes on.
+    admitted
+        # The route that took it.
+        routed: routes.Routed
+        # The client's name.
+        client: str
+        # The tokens left in the client's bucket, -1 where the route has no
+        # limit.
+        remaining: i64
+    # It was refused, and this is the answer.
+    refused
+        # The route's name, `-` where no route took it.
+        route: str
+        # The gateway's refusal.
+        response: http.Response
+
+# The route that takes a request for `host` and `target` from `client`, and
+# a token from the client's bucket on it where the route has a limit.
+#
+# - `gw`: the state; the bucket and the metrics change.
+# - `host`: the request's host, from `Host` or `:authority`.
+# - `target`: its path and query.
+# - `client`: the client's name.
+function admit(@gw: state.Gateway, host: str, target: str, client: str) -> Admission
+    match routes.route(gw.table, host: host, target: target)
+        .err e => return .refused(route: "-", response: replies.problem(404, route: "-", message: e.msg))
+        .ok routed =>
+            match routed.route.rate
+                .err _ => return .admitted(routed: routed, client: client, remaining: -1)
+                .ok rate =>
+                    now = state.now(@gw).default(time.epoch())
+                    verdict = tokens.take(
+                        @gw.limiter,
+                        key: tokens.key_of(route: routed.route.name, client: client),
+                        rate: rate,
+                        now: now
+                    )
+
+                    if verdict.allowed
+                        return .admitted(routed: routed, client: client, remaining: verdict.remaining)
+                    telemetry.rate_limited(@gw.registry, route: routed.route.name)
+                    wait = tokens.retry_after_seconds(verdict.retry_ms)
+                    refusal = replies.problem(
+                        429,
+                        route: routed.route.name,
+                        message: f"the client is past the rate limit of {routed.route.name}: {rate.burst} requests, one more every {rate.every_ms} ms"
+                    )
+                    headers = http.with_header(refusal.headers, name: "Retry-After", value: f"{wait}")
+                    return .refused(
+                        route: routed.route.name,
+                        response: with_headers(refusal, headers: http.with_header(headers, name: "X-RateLimit-Remaining", value: "0"))
+                    )
+
+# The name of the client of `r`: the routing file's client header where the
+# request carries it, else its address without the port.
+#
+# - `client_header`: the header naming a client, `x-api-key`.
+# - `r`: the request.
+function client_of(client_header: str, r: http.Request) -> str
+    return client_named(key: http.value_of(r.headers, name: client_header), remote: r.remote)
+
+# A client's name from the key it sent, else from its address: `key:` and
+# the key, or `addr:` and the address without its port, so a key never
+# takes an address's bucket.
+#
+# - `key`: the client header's value, a failure where the request has none.
+# - `remote`: the client's address and port.
+function client_named(key: str?, remote: str) -> str
+    return match key
+        .ok k  => "key:" + k
+        .err _ => "addr:" + replies.host_of_remote(remote)
+
+# The path and query of `r`, as its first line wrote them.
+#
+# - `r`: the request a server read.
+function target_of(r: http.Request) -> str
+    if r.url.query == ""
+        return r.url.path
+    return r.url.path + "?" + r.url.query
+
+## Handling
+
+# The answer to `r`, which came over `protocol`.
+#
+# - `gw`: the state.
+# - `r`: the request, read whole.
+# - `protocol`: `h2` or `http/1.1`.
+function handle(@gw: state.Gateway, r: http.Request, protocol: str) -> http.Response
+    host = http.value_of(r.headers, name: "Host").default("")
+    client = client_of(gw.settings.client_header, r: r)
+
+    match admit(@gw, host: host, target: target_of(r), client: client)
+        .refused refusal =>
+            telemetry.answered(@gw.registry, route: refusal.route, response: refusal.response)
+            return refusal.response
+        .admitted a =>
+            response = dispatched(@gw, r: r, routed: a.routed, client: a.client, protocol: protocol)
+            headers = http.with_header(response.headers, name: "X-Gateway-Route", value: a.routed.route.name)
+
+            told = if a.remaining >= 0
+                http.with_header(headers, name: "X-RateLimit-Remaining", value: f"{a.remaining}")
+            else
+                headers
+
+            answered = with_headers(response, headers: told)
+            telemetry.answered(@gw.registry, route: a.routed.route.name, response: answered)
+            return answered
+
+# What the route's kind does with `r`.
+#
+# - `gw`: the state.
+# - `r`: the request.
+# - `routed`: the route that took it.
+# - `client`: the client's name.
+# - `protocol`: `h2` or `http/1.1`.
+function dispatched(@gw: state.Gateway, r: http.Request, routed: routes.Routed, client: str, protocol: str) -> http.Response
+    return match routed.route.kind
+        .metrics     => metrics.respond(gw.registry, r: r)
+        .graphql     => compose.answer(@gw, r: r, routed: routed, client: client)
+        .proxy       => proxied(@gw, r: r, routed: routed, client: client, protocol: protocol)
+        .transcode t => transcoded(@gw, r: r, routed: routed, method: t.method, field: t.field, client: client)
+        .grpc => replies.problem(
+            415,
+            route: routed.route.name,
+            message: "a gRPC route takes gRPC calls over HTTP/2, content-type application/grpc"
+        )
+
+## Proxying through the cache
+
+# `r` answered from the response cache where the route caches and a fresh
+# answer is held, else forwarded and its answer kept where it may be.
+#
+# - `gw`: the state.
+# - `r`: the request.
+# - `routed`: the route, of kind `proxy`.
+# - `client`: the client's name.
+# - `protocol`: `h2` or `http/1.1`.
+function proxied(@gw: state.Gateway, r: http.Request, routed: routes.Routed, client: str, protocol: str) -> http.Response
+    route = routed.route
+    cacheable = route.cache && (r.method == http.METHOD_GET || r.method == http.METHOD_HEAD)
+    key = responses.key_of(
+        method: http.METHOD_GET,
+        host: http.value_of(r.headers, name: "Host").default(""),
+        target: target_of(r)
+    )
+
+    if cacheable
+        now_ms = clock.millis(state.now(@gw).default(time.epoch()))
+
+        match responses.lookup(@gw.store, key: key, now_ms: now_ms)
+            .err _ => _ = 0
+            .ok held =>
+                if http.is_not_modified(r, response: held)
+                    telemetry.cache_looked_up(
+                        @gw.registry,
+                        route: route.name,
+                        result: "not_modified",
+                        entries: responses.size(gw.store)
+                    )
+                    return cached(http.respond_not_modified(held), result: "hit")
+                telemetry.cache_looked_up(
+                    @gw.registry,
+                    route: route.name,
+                    result: "hit",
+                    entries: responses.size(gw.store)
+                )
+                return cached(held, result: "hit")
+
+    match state.upstream_named(gw, name: route.upstream)
+        .err e => return replies.problem(502, route: route.name, message: e.msg)
+        .ok upstream =>
+            outgoing = outgoing_request(r, protocol: protocol)
+            forwarded = forwarding.forward(
+                @gw,
+                upstream: upstream,
+                route: route,
+                r: outgoing,
+                target: routed.forward,
+                client: client
+            )
+            response = incoming_response(forwarded, protocol: protocol)
+
+            if !cacheable
+                return response
+            now_ms = clock.millis(state.now(@gw).default(time.epoch()))
+            kept = responses.admit(@gw.store, key: key, response: response, now_ms: now_ms)
+            telemetry.cache_looked_up(
+                @gw.registry,
+                route: route.name,
+                result: "miss",
+                entries: responses.size(gw.store)
+            )
+            return cached(kept, result: "miss")
+
+# `r` as it is forwarded: its end-to-end fields, `Forwarded` and `Via` added.
+#
+# - `r`: the client's request; `Forwarded` names the address it came from,
+#   whatever key the client sent.
+# - `protocol`: what the client spoke.
+function outgoing_request(r: http.Request, protocol: str) -> http.Request
+    host = http.value_of(r.headers, name: "Host").default("")
+    headers = replies.with_via(
+        replies.with_forwarded(replies.end_to_end(r.headers), client: replies.host_of_remote(r.remote), host: host),
+        protocol: protocol
+    )
+    return http.Request(method: r.method, url: r.url, headers: headers, body: r.body, closing: true, remote: r.remote)
+
+# The upstream's answer as the client is sent it: its end-to-end fields,
+# `Via`, and which instance answered after how many tries, never closing
+# the client's connection because the upstream's closed.
+#
+# - `forwarded`: what the forward came to.
+# - `protocol`: what the client spoke.
+function incoming_response(forwarded: forwarding.Forwarded, protocol: str) -> http.Response
+    response = forwarded.response
+    headers @= replies.with_via(replies.end_to_end(response.headers), protocol: protocol)
+
+    if forwarded.instance != ""
+        headers @ http.with_header(headers, name: "X-Gateway-Upstream", value: forwarded.instance)
+    headers @ http.with_header(headers, name: "X-Gateway-Attempts", value: f"{forwarded.attempts}")
+
+    # The upstream's connection closes after every exchange; the client's
+    # stays open for its next request.
+    return http.Response(
+        status: response.status,
+        reason: response.reason,
+        headers: headers,
+        body: response.body,
+        closing: false
+    )
+
+# `response` saying how the cache answered. A hit is the gateway's own
+# answer, so the instance and the tries the kept answer was fetched with are
+# taken out of it: no instance was asked for this one.
+#
+# - `response`: the answer.
+# - `result`: `hit` or `miss`.
+function cached(response: http.Response, result: str) -> http.Response
+    headers @= http.with_header(response.headers, name: "X-Cache", value: result)
+
+    if result == "hit"
+        headers @ http.without_header(
+            http.without_header(headers, name: "X-Gateway-Upstream"),
+            name: "X-Gateway-Attempts"
+        )
+    return with_headers(response, headers: headers)
+
+## Transcoding
+
+# A `GET` turned into a unary gRPC call: the path after the route's prefix
+# fills the request message's field `field`, and the answer message is
+# written as JSON, a status other than OK as its HTTP status.
+#
+# - `gw`: the state.
+# - `r`: the request.
+# - `routed`: the route, of kind `transcode`.
+# - `method`: the gRPC method's path.
+# - `field`: the request message's field the path fills.
+# - `client`: the client's name.
+function transcoded(@gw: state.Gateway, r: http.Request, routed: routes.Routed, method: str, field: str, client: str) -> http.Response
+    name = routed.route.name
+
+    if r.method != http.METHOD_GET
+        return replies.problem(
+            405,
+            route: name,
+            message: f"a transcoded route takes GET, and the request is {r.method}"
+        )
+
+    if routed.rest == ""
+        return replies.problem(400, route: name, message: f"the path names no {field} after {routed.route.prefix}")
+
+    match state.upstream_named(gw, name: routed.route.upstream)
+        .err e => return replies.problem(502, route: name, message: e.msg)
+        .ok upstream =>
+            request: json.Value = .object(members: {field: .text(v: routed.rest)})
+
+            match channels.call_json(@gw, upstream: upstream, path: method, request: request, client: client)
+                .err e => return replies.problem(502, route: name, message: e.msg)
+                .ok reply =>
+                    status = channels.http_status_of(reply.status.code)
+
+                    if status != 200
+                        return replies.problem(status, route: name, message: reply.status.message)
+
+                    match http.respond_json(200, value: reply.value)
+                        .err e => return replies.problem(502, route: name, message: e.msg)
+                        .ok answer => return with_headers(
+                            answer,
+                            headers: http.with_header(answer.headers, name: "X-Gateway-Upstream", value: reply.instance)
+                        )
+
+## Helpers
+
+# `response` with `headers` in place of its own.
+#
+# - `response`: the answer.
+# - `headers`: its new fields.
+function with_headers(response: http.Response, headers: [http.Header]) -> http.Response
+    return http.Response(
+        status: response.status,
+        reason: response.reason,
+        headers: headers,
+        body: response.body,
+        closing: response.closing
+    )

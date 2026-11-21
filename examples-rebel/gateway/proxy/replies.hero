@@ -1,0 +1,160 @@
+# What the gateway writes into a message it passes on, and the answers it
+# makes itself: the hop-by-hop fields a proxy must not forward (RFC 9110
+# § 7.6.1), the `Forwarded` and `Via` fields it adds (RFC 7239, RFC 9110
+# § 7.6.3), and its own refusals as a small JSON document naming what was
+# refused and why, the same shape on every route.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/strings
+
+## Names
+
+# The name the gateway gives itself in `Via`.
+constant VIA_NAME: str
+    "gateway"
+
+# The fields that belong to one connection and never cross a proxy (RFC
+# 9110 § 7.6.1), `Proxy-Connection` with them as browsers still send it.
+constant HOP_BY_HOP: [str]
+    ["connection", "keep-alive", "proxy-connection", "te", "trailer", "transfer-encoding", "upgrade"]
+
+## Fields
+
+# `headers` without the hop-by-hop fields, nor the ones a `Connection` field
+# among them names.
+#
+# - `headers`: the message's fields.
+function end_to_end(headers: [http.Header]) -> [http.Header]
+    named: [str] @= HOP_BY_HOP
+
+    for value in http.values_of(headers, name: "Connection")
+        for token in strings.split(s: value, sep: ",")
+            named @ named.push(strings.to_lower_ascii(strings.trim(token)))
+
+    out: [http.Header] @= []
+
+    for h in headers
+        if !contains(named, name: strings.to_lower_ascii(h.name))
+            out @ out.push(h)
+
+    return out
+
+# Whether `list` holds `name`.
+#
+# - `list`: the names, in lower case.
+# - `name`: the name, in lower case.
+function contains(list: [str], name: str) -> bool
+    for item in list
+        if item == name
+            return true
+
+    return false
+
+# `headers` with the gateway's `Via` entry added after any already there,
+# naming the protocol the message came in: `1.1 gateway`, `2 gateway`.
+#
+# - `headers`: the message's fields.
+# - `protocol`: `h2` or `http/1.1`, as ALPN chose it.
+function with_via(headers: [http.Header], protocol: str) -> [http.Header]
+    version = if protocol == "h2"
+        "2"
+    else
+        "1.1"
+
+    entry = f"{version} {VIA_NAME}"
+
+    return match http.value_of(headers, name: "Via")
+        .ok before => http.with_header(headers, name: "Via", value: before + ", " + entry)
+        .err _     => http.with_header(headers, name: "Via", value: entry)
+
+# `headers` with the gateway's `Forwarded` element added (RFC 7239 § 4):
+# who asked, over what, and for which host.
+#
+# - `headers`: the request's fields.
+# - `client`: the client's address, without its port.
+# - `host`: the host the client asked for.
+function with_forwarded(headers: [http.Header], client: str, host: str) -> [http.Header]
+    element = f"for={forwarded_node(client)};proto=https;host=\"{host}\""
+
+    return match http.value_of(headers, name: "Forwarded")
+        .ok before => http.with_header(headers, name: "Forwarded", value: before + ", " + element)
+        .err _     => http.with_header(headers, name: "Forwarded", value: element)
+
+# A node of `Forwarded` (RFC 7239 § 6): an IPv4 address as it is, an IPv6
+# one in brackets and quotes.
+#
+# - `address`: the address, as text, without brackets or port.
+function forwarded_node(address: str) -> str
+    if strings.contains(s: address, substr: ":")
+        return "\"[" + address + "]\""
+    return address
+
+# The client's address without its port: `127.0.0.1:51234` gives
+# `127.0.0.1`, `[::1]:51234` gives `::1`.
+#
+# - `remote`: the request's `remote`, as `net.format_address` writes it.
+function host_of_remote(remote: str) -> str
+    if remote.len() > 0 && remote[0] == '['
+        close = strings.index_of(s: remote, substr: "]").default(remote.len())
+        return remote.slice(from: 1, to: close)
+
+    return match strings.index_of_last(s: remote, substr: ":")
+        .ok at => remote.slice(from: 0, to: at)
+        .err _ => remote
+
+## The gateway's own answers
+
+# A refusal of the gateway's own: `status`, and a JSON body naming the
+# route and why.
+#
+# - `status`: the status, 400 to 599.
+# - `route`: the route's name, `-` where none took the request.
+# - `message`: why, in words a client's author can act on.
+function problem(status: i64, route: str, message: str) -> http.Response
+    body: json.Value = .object(members: {"error": .text(v: message), "route": .text(v: route)})
+    return http.respond_json(status, value: body).default(http.respond_text(status, text: message))
+
+# The error a refusal's JSON body names, "" where the body is not one.
+#
+# - `response`: an answer the gateway made with `problem`.
+function problem_of(response: http.Response) -> str
+    return match http.json_of(response)
+        .err _ => ""
+        .ok v =>
+            match json.member(v, key: "error")
+                .err _ => ""
+                .ok m  => json.text_of(m).default("")
+
+test "end_to_end: hop-by-hop fields and those Connection names are dropped"
+    headers = [
+        http.Header(name: "Connection", value: "close, X-Secret")
+        http.Header(name: "Keep-Alive", value: "timeout=5")
+        http.Header(name: "x-secret", value: "1")
+        http.Header(name: "Accept", value: "*/*")
+    ]
+    kept = end_to_end(headers)
+    assert kept.len() == 1
+    assert kept[0].name == "Accept"
+
+test "with_via: added, then appended after the one before"
+    once = with_via([], protocol: "h2")
+    assert http.value_of(once, name: "Via").must() == "2 gateway"
+    twice = with_via(once, protocol: "http/1.1")
+    assert http.value_of(twice, name: "Via").must() == "2 gateway, 1.1 gateway"
+
+test "with_forwarded: an IPv4 client as it is, an IPv6 one quoted in brackets"
+    v4 = with_forwarded([], client: "127.0.0.1", host: "api.test")
+    assert http.value_of(v4, name: "Forwarded").must() == "for=127.0.0.1;proto=https;host=\"api.test\""
+    v6 = with_forwarded([], client: "::1", host: "api.test")
+    assert http.value_of(v6, name: "Forwarded").must() == "for=\"[::1]\";proto=https;host=\"api.test\""
+
+test "host_of_remote: an IPv4 address and port, an IPv6 one, and none"
+    assert host_of_remote("127.0.0.1:51234") == "127.0.0.1"
+    assert host_of_remote("[::1]:51234") == "::1"
+    assert host_of_remote("") == ""
+
+test "problem: a JSON body naming the error and the route"
+    p = problem(503, route: "catalog", message: "no instance")
+    assert p.status == 503
+    assert problem_of(p) == "no instance"

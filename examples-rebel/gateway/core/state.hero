@@ -1,0 +1,106 @@
+# Everything the gateway keeps between two requests, in one record the
+# serving thread holds and lends with `@` to each step of the pipeline:
+# its routes, its response cache, its rate limiters, its directory of
+# upstream instances and their breakers, its metrics, its clock, and the
+# `.proto` and GraphQL schemas read from the routing file at start.
+#
+# One thread owns it. The language shares no value between threads (spec
+# § 13: a thread is handed one `i64` or one `str`), so a cache, a limiter
+# and a registry that every request must see live where the requests are
+# answered, and the gateway answers its clients' connections one at a time
+# on that thread; HTTP/2's streams are what let one client's calls overlap.
+
+use <rebel>/graphql
+use <rebel>/metrics
+use <rebel>/protobuf
+use <rebel>/time
+
+use cache/responses
+use config/settings
+use core/clock
+use core/telemetry
+use discovery/instances
+use limits/tokens
+use route/routes
+
+## Codes
+
+# The code of a routing file whose `.proto` or GraphQL schema does not read.
+constant INVALID: str
+    "invalid"
+
+## The state
+
+# The gateway's whole state. Made only by `new`.
+record Gateway
+    # The routing file, as read.
+    settings: settings.Settings
+    # The routes' prefix tree.
+    table: routes.Table
+    # The response cache.
+    store: responses.Store
+    # The rate limiters' buckets.
+    limiter: tokens.Limiter
+    # The upstreams' instances and their breakers.
+    directory: instances.Directory
+    # The gateway's own metrics.
+    registry: metrics.Registry
+    # The clock the cache, the limits and the breakers read.
+    clock: clock.Clock
+    # Where a retry wait's spread comes from.
+    chance: clock.Chance
+    # Each gRPC upstream's schema, by upstream name.
+    protos: {str: protobuf.Schema}
+    # The GraphQL endpoint's composed schema; a failure where the routing
+    # file writes none.
+    graph: graphql.Schema?
+
+# The state the routing file `s` asks for, with `ticks` and `spread` as its
+# sources of time and chance.
+#
+# - `s`: the routing file, read and checked.
+# - `ticks`: the wall clock serving, a fixed one in the demo.
+# - `spread`: the system's generator serving, a fixed fraction in the demo.
+#
+# Fails `invalid` where a gRPC upstream's `.proto` or the GraphQL schema
+# does not read, the message naming which; and as `instances.new` fails.
+function new(s: settings.Settings, ticks: clock.Clock, spread: clock.Chance) -> Gateway?
+    protos: {str: protobuf.Schema} @= {}
+
+    for u in s.upstreams
+        if u.proto != ""
+            match protobuf.parse_schema_text(name: u.name + ".proto", text: u.proto)
+                .ok schema => protos[u.name] @ schema
+                .err e => return fail(
+                    code: INVALID,
+                    msg: f"the .proto of the upstream \"{u.name}\" does not read: {e.msg}"
+                )
+
+    graph: graphql.Schema? = if s.graphql.schema == ""
+        fail(code: settings.NOT_FOUND, msg: "the routing file writes no [graphql] schema")
+    else
+        match graphql.parse_schema(s.graphql.schema, limits: graphql.default_limits())
+            .ok schema => ok(schema)
+            .err e     => return fail(code: INVALID, msg: f"the [graphql] schema does not read: {e.msg}")
+
+    return ok(
+        Gateway(settings: s, table: routes.table_of(s.routes), store: responses.new(s.cache), limiter: tokens.new(), directory: instances.new(servers: s.discovery.servers, open_for: time.seconds(30)?)?, registry: telemetry.new(), clock: ticks, chance: spread, protos: protos, graph: graph)
+    )
+
+# The time now by the gateway's clock.
+#
+# - `gw`: the state; a fixed clock counts the reading.
+#
+# Fails as `clock.now` fails.
+function now(@gw: Gateway) -> time.Instant?
+    return clock.now(@gw.clock)
+
+# The upstream named `name`.
+#
+# - `gw`: the state.
+# - `name`: the upstream's name, one the routing file declares, as
+#   `loader.parse` checked of every route and field.
+#
+# Fails `invalid` where none is named so.
+function upstream_named(gw: Gateway lent, name: str) -> settings.Upstream?
+    return settings.upstream_named(gw.settings.upstreams, name: name)

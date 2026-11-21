@@ -1,0 +1,56 @@
+# A client connection that chose HTTP/1.1: its requests read one after
+# another (RFC 9112), each handed to the pipeline and its answer written,
+# until the client closes the connection, asks it closed, or goes quiet
+# past the idle limit.
+
+use <rebel>/http
+use <rebel>/io
+use <rebel>/net
+use <rebel>/time
+use <rebel>/tls
+
+use core/state
+use route/pipeline
+
+## Bounds
+
+# How long a kept-alive connection may wait for its next request, in
+# seconds: the gateway answers one connection at a time, so a client that
+# goes quiet holds the others back no longer than this.
+constant IDLE_SECONDS: i64
+    5
+
+## Serving
+
+# Answers every request of `conn` and answers how many were answered.
+#
+# - `gw`: the state.
+# - `conn`: the client's connection, TLS with `http/1.1` chosen; its owner
+#   closes it.
+function serve(@gw: state.Gateway, conn: net.Conn) -> i64
+    reader @= io.reader(conn.stream)
+    remote = net.format_address(conn.remote)
+    answered @= 0
+
+    while true
+        match time.seconds(IDLE_SECONDS)
+            .err _ => break
+            .ok idle =>
+                if tls.set_deadline(conn.stream, deadline: idle).is_err()
+                    break
+
+        match http.next_request(@reader, limits: http.default_limits())
+            .err _ => break
+            .ok read =>
+                r: http.Request @= read
+                r.remote @ remote
+                response = pipeline.handle(@gw, r: r, protocol: "http/1.1")
+
+                if http.write_answer(conn.stream, r: r, response: response).is_err()
+                    break
+                answered @ answered + 1
+
+                if r.closing || response.closing
+                    break
+
+    return answered

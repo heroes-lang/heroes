@@ -1,0 +1,212 @@
+# The route table: every route's host and path prefix held in one prefix
+# tree (`containers/trie`) as `host + prefix`, so a request is routed by
+# the longest prefix of its host and path that ends a path segment, as
+# Envoy's and Kong's prefix routes do, at a cost of the path's length
+# whatever the number of routes. A route for the host `*` takes any host
+# that no route names.
+
+use <rebel>/containers/trie
+use <rebel>/strings
+
+use config/settings
+
+## Codes
+
+# The code of a request no route takes.
+constant NOT_FOUND: str
+    "not_found"
+
+## The table
+
+# The routes, and the tree that finds one. Made only by `table_of`.
+record Table
+    # The tree of `host + prefix` keys.
+    tree: trie.Trie
+    # The tree's values: at each slot, the index in `routes` of the route
+    # whose key stands there.
+    indices: [i64]
+    # The routes, in the routing file's order.
+    routes: [settings.Route]
+
+# A request routed: the route, and the path it forwards.
+record Routed
+    # The route that took the request.
+    route: settings.Route
+    # The route's index in the table, in the routing file's order.
+    index: i64
+    # The path after the route's prefix, `""` where the path is the prefix.
+    rest: str
+    # The path forwarded: the route's rewrite, then `rest`, then the query.
+    forward: str
+
+# The table of `routes`.
+#
+# - `routes`: the routes, whose host and prefix pairs are distinct, as
+#   `loader.parse` checks.
+function table_of(routes: [settings.Route]) -> Table
+    tree: trie.Trie @= trie.new_map()
+    indices: [i64] @= []
+
+    for i in range(from: 0, to: routes.len())
+        trie.put(@tree, @indices, key: key_of(host: routes[i].host, prefix: routes[i].prefix), value: i)
+
+    return Table(tree: tree, indices: indices, routes: routes)
+
+# The tree's key of a route: its host in lower case, then its prefix.
+#
+# - `host`: the route's host, or `*`.
+# - `prefix`: the route's prefix, beginning with `/`.
+function key_of(host: str, prefix: str) -> str
+    return strings.to_lower_ascii(host) + prefix
+
+## Routing
+
+# The route that takes a request for `host` and `target`: the longest prefix
+# among the routes of `host`, else among those of `*`, that ends where a
+# path segment does.
+#
+# - `table`: the routes.
+# - `host`: the request's host, from its `Host` field or `:authority`; a
+#   port after it is dropped and its case ignored.
+# - `target`: the request's path, and its query after a `?`.
+#
+# Fails `not_found` where no route takes it, the message naming the host
+# and the path.
+function route(table: Table lent, host: str, target: str) -> Routed?
+    bare = strings.to_lower_ascii(without_port(host))
+    path_end = strings.index_of(s: target, substr: "?").default(target.len())
+    path = target.slice(from: 0, to: path_end)
+    query = target.slice(from: path_end, to: target.len())
+
+    for candidate in [bare, "*"]
+        match longest(table, host: candidate, path: path)
+            .err _ => _ = 0
+            .ok index =>
+                r = table.routes[index]
+                rest = path.slice(from: r.prefix.len(), to: path.len())
+                return ok(
+                    Routed(route: r, index: index, rest: rest, forward: joined_path(rewrite: r.rewrite, rest: rest) + query)
+                )
+
+    return fail(code: NOT_FOUND, msg: f"no route takes {bare}{path}")
+
+# The index of the route of `host` whose prefix is the longest one of `path`
+# ending at a segment's end: the prefix ends in `/`, or `path` ends or goes
+# on with `/` right after it.
+#
+# - `table`: the routes.
+# - `host`: the host, in lower case, or `*`.
+# - `path`: the request's path, no query.
+#
+# Fails `not_found` where none does.
+function longest(table: Table lent, host: str, path: str) -> i64?
+    text = host + path
+    slots = trie.prefix_slots(table.tree, text: text, from: 0)
+    found: i64 @= -1
+
+    for slot in slots
+        key = trie.key_at(table.tree, at: slot)
+
+        if key.len() > host.len() && ends_segment(key: key, text: text)
+            found @ table.indices[slot]
+
+    if found < 0
+        return fail(code: NOT_FOUND, msg: f"no route of {host} takes {path}")
+    return ok(found)
+
+# Whether `key`, a prefix of `text`, ends where a path segment ends.
+#
+# - `key`: the route's key, a prefix of `text`.
+# - `text`: the host and the path asked for.
+function ends_segment(key: str, text: str) -> bool
+    if key[key.len() - 1] == '/' || key.len() == text.len()
+        return true
+    return text[key.len()] == '/'
+
+# `rewrite` and `rest` joined with one `/` between them where both have or
+# both lack it, so `/v1/` and `items` give `/v1/items` and `/v1` and
+# `/items` give `/v1/items`.
+#
+# - `rewrite`: the route's rewrite, beginning with `/`.
+# - `rest`: the path after the route's prefix.
+function joined_path(rewrite: str, rest: str) -> str
+    if rest == ""
+        return rewrite
+    slash_end = rewrite[rewrite.len() - 1] == '/'
+    slash_start = rest[0] == '/'
+
+    if slash_end && slash_start
+        return rewrite + rest.slice(from: 1, to: rest.len())
+
+    if !slash_end && !slash_start
+        return rewrite + "/" + rest
+    return rewrite + rest
+
+# `host` without the port after it: `api.test:8443` gives `api.test`, and a
+# bracketed IPv6 address its address with its brackets.
+#
+# - `host`: a `Host` field's value.
+function without_port(host: str) -> str
+    if host.len() > 0 && host[0] == '['
+        close = strings.index_of(s: host, substr: "]").default(host.len() - 1)
+        return host.slice(from: 0, to: close + 1)
+
+    return match strings.index_of_last(s: host, substr: ":")
+        .ok at => host.slice(from: 0, to: at)
+        .err _ => host
+
+## Tests
+
+# A route of `host` and `prefix` forwarding to `rewrite`, every other field
+# at the routing file's default.
+#
+# - `name`: the route's name.
+# - `host`: its host.
+# - `prefix`: its prefix.
+# - `rewrite`: its rewrite.
+function sample(name: str, host: str, prefix: str, rewrite: str) -> settings.Route
+    return settings.Route(
+        name: name,
+        host: host,
+        prefix: prefix,
+        kind: .proxy,
+        upstream: "u",
+        rewrite: rewrite,
+        cache: false,
+        retry: settings.Retry(attempts: 1, first_ms: 1, longest_ms: 1),
+        rate: fail(code: NOT_FOUND, msg: "none")
+    )
+
+test "route: the longest prefix ending a segment wins, and the rewrite takes its place"
+    t = table_of(
+        [sample(name: "all", host: "api.test", prefix: "/", rewrite: "/"), sample(name: "catalog", host: "api.test", prefix: "/catalog/", rewrite: "/v1/"), sample(name: "cat", host: "api.test", prefix: "/cat", rewrite: "/animals")]
+    )
+    assert route(t, host: "api.test", target: "/catalog/items?x=1").must().route.name == "catalog"
+    assert route(t, host: "api.test", target: "/catalog/items?x=1").must().forward == "/v1/items?x=1"
+    assert route(t, host: "API.test:8443", target: "/cat/7").must().forward == "/animals/7"
+    assert route(t, host: "api.test", target: "/catalogue").must().route.name == "all"
+    assert route(t, host: "api.test", target: "/cat").must().route.name == "cat"
+
+test "route: a host no route names falls to `*`, and none at all is not found"
+    t = table_of(
+        [sample(name: "admin", host: "admin.test", prefix: "/metrics", rewrite: "/metrics"), sample(name: "any", host: "*", prefix: "/health", rewrite: "/health")]
+    )
+    assert route(t, host: "other.test", target: "/health").must().route.name == "any"
+    assert route(t, host: "admin.test", target: "/metrics").must().route.name == "admin"
+
+    match route(t, host: "other.test", target: "/metrics")
+        .ok _  => assert false
+        .err e => assert e.msg == "no route takes other.test/metrics"
+
+test "without_port: a name, a name and a port, and a bracketed IPv6 address"
+    assert without_port("api.test") == "api.test"
+    assert without_port("api.test:8443") == "api.test"
+    assert without_port("[::1]:8443") == "[::1]"
+    assert without_port("") == ""
+
+test "joined_path: one slash between the rewrite and the rest, however each is written"
+    assert joined_path(rewrite: "/v1/", rest: "items") == "/v1/items"
+    assert joined_path(rewrite: "/v1", rest: "/items") == "/v1/items"
+    assert joined_path(rewrite: "/v1/", rest: "/items") == "/v1/items"
+    assert joined_path(rewrite: "/v1", rest: "items") == "/v1/items"
+    assert joined_path(rewrite: "/v1", rest: "") == "/v1"

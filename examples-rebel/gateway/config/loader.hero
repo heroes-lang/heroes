@@ -1,0 +1,299 @@
+# Reading the routing file: its TOML read with `fields`, every table turned
+# into `settings`' records, and the whole checked before anything listens,
+# so a mistake is told at start with the key that holds it and never met by
+# a request: a route naming no declared upstream or one of the wrong
+# protocol, two routes taking one host and prefix, a rate limit out of its
+# bounds, a GraphQL route with no schema.
+
+use <rebel>/toml
+
+use config/fields
+use config/settings
+
+## Reading
+
+# The routing file `text`, read and checked.
+#
+# - `text`: the TOML text.
+#
+# Fails `invalid` where it is not TOML, a member is of the wrong type or
+# range, a route names an upstream the file does not declare, two routes
+# take the same host and prefix, or a route of kind `graphql` stands with
+# no `[graphql]` schema; the message names the key.
+function parse(text: str) -> settings.Settings?
+    doc = fields.table_of(toml.parse(text)?, place: "the file")?
+    upstreams = read_upstreams(doc)?
+    routes = read_routes(doc)?
+    graph = read_graph(doc)?
+    read = settings.Settings(
+        listener: read_listener(doc)?,
+        discovery: settings.Discovery(servers: fields.texts_of(fields.section_of(doc, key: "discovery", place: "")?, key: "servers", place: "discovery")?),
+        cache: read_cache(doc)?,
+        client_header: fields.text_or(fields.section_of(doc, key: "clients", place: "")?, key: "key", place: "clients", fallback: "x-api-key")?,
+        upstreams: upstreams,
+        routes: routes,
+        graphql: graph
+    )
+    check_names(read)?
+    return ok(read)
+
+# The `[listener]` table.
+#
+# - `doc`: the document's members.
+#
+# Fails as `fields.int_or` and `fields.text_or` fail.
+function read_listener(doc: {str: toml.Value}) -> settings.Listener?
+    t = fields.section_of(doc, key: "listener", place: "")?
+    return ok(
+        settings.Listener(host: fields.text_or(t, key: "host", place: "listener", fallback: "127.0.0.1")?, port: fields.int_or(t, key: "port", place: "listener", fallback: 8443, least: 0, most: 65535)?, certificate: fields.text_or(t, key: "certificate", place: "listener", fallback: "")?, key: fields.text_or(t, key: "key", place: "listener", fallback: "")?)
+    )
+
+# The `[cache]` table.
+#
+# - `doc`: the document's members.
+#
+# Fails as `fields.int_or` fails.
+function read_cache(doc: {str: toml.Value}) -> settings.CacheBounds?
+    t = fields.section_of(doc, key: "cache", place: "")?
+    return ok(
+        settings.CacheBounds(entries: fields.int_or(t, key: "entries", place: "cache", fallback: 256, least: 1, most: 1_000_000)?, longest_seconds: fields.int_or(t, key: "longest_seconds", place: "cache", fallback: 300, least: 1, most: 86_400)?)
+    )
+
+# The `[[upstreams]]` tables.
+#
+# - `doc`: the document's members.
+#
+# Fails `invalid` where a protocol is neither `http` nor `grpc`, or two
+# upstreams share a name.
+function read_upstreams(doc: {str: toml.Value}) -> [settings.Upstream]?
+    out: [settings.Upstream] @= []
+    tables = fields.tables_of(doc, key: "upstreams")?
+
+    for i in range(from: 0, to: tables.len())
+        t = tables[i]
+        place = f"upstreams[{i}]"
+        name = fields.text_of(t, key: "name", place: place)?
+        written = fields.text_or(t, key: "protocol", place: place, fallback: "http")?
+
+        protocol: settings.Protocol = match written
+            "http" => .http
+            "grpc" => .grpc
+            _ => return fail(
+                code: settings.INVALID,
+                msg: f"{place}.protocol is \"http\" or \"grpc\", and the file writes \"{written}\""
+            )
+
+        for earlier in out
+            if earlier.name == name
+                return fail(
+                    code: settings.INVALID,
+                    msg: f"{place}.name \"{name}\" names an upstream declared before it"
+                )
+
+        out @ out.push(
+            settings.Upstream(name: name, service: fields.text_of(t, key: "service", place: place)?, protocol: protocol, proto: fields.text_or(t, key: "proto", place: place, fallback: "")?, connect_ms: fields.int_or(t, key: "connect_ms", place: place, fallback: 1000, least: 1, most: 60_000)?)
+        )
+
+    return ok(out)
+
+# The `[[routes]]` tables.
+#
+# - `doc`: the document's members.
+#
+# Fails `invalid` where the file holds no route, a kind is unknown, a prefix
+# does not begin with `/`, or two routes take one host and prefix.
+function read_routes(doc: {str: toml.Value}) -> [settings.Route]?
+    out: [settings.Route] @= []
+    tables = fields.tables_of(doc, key: "routes")?
+
+    if tables.len() == 0
+        return fail(
+            code: settings.INVALID,
+            msg: "the file declares no [[routes]], and a gateway with none answers nothing"
+        )
+
+    for i in range(from: 0, to: tables.len())
+        route = read_route(tables[i], place: f"routes[{i}]")?
+
+        for earlier in out
+            if earlier.host == route.host && earlier.prefix == route.prefix
+                return fail(
+                    code: settings.INVALID,
+                    msg: f"routes[{i}] takes {route.host}{route.prefix}, which the route \"{earlier.name}\" takes already"
+                )
+
+        out @ out.push(route)
+
+    return ok(out)
+
+# One `[[routes]]` table.
+#
+# - `t`: its members.
+# - `place`: where it stands, `routes[2]`.
+#
+# Fails as `read_routes` fails.
+function read_route(t: {str: toml.Value}, place: str) -> settings.Route?
+    prefix = fields.text_of(t, key: "prefix", place: place)?
+
+    if prefix[0] != '/'
+        return fail(code: settings.INVALID, msg: f"{place}.prefix begins with /, and the file writes \"{prefix}\"")
+    written = fields.text_or(t, key: "kind", place: place, fallback: "proxy")?
+
+    kind: settings.Kind = match written
+        "proxy"   => .proxy
+        "grpc"    => .grpc
+        "graphql" => .graphql
+        "metrics" => .metrics
+        "transcode" =>
+            .transcode(
+                method: fields.text_of(t, key: "method", place: place)?,
+                field: fields.text_of(t, key: "field", place: place)?
+            )
+        _ =>
+            return fail(
+                code: settings.INVALID,
+                msg: f"{place}.kind is proxy, grpc, transcode, graphql or metrics, and the file writes \"{written}\""
+            )
+
+    return ok(
+        settings.Route(name: fields.text_of(t, key: "name", place: place)?, host: fields.text_or(t, key: "host", place: place, fallback: "*")?, prefix: prefix, kind: kind, upstream: fields.text_or(t, key: "upstream", place: place, fallback: "")?, rewrite: fields.text_or(t, key: "rewrite", place: place, fallback: prefix)?, cache: fields.bool_or(t, key: "cache", place: place, fallback: false)?, retry: read_retry(t, place: place)?, rate: read_rate(t, place: place))
+    )
+
+# A route's `retry` table; one try alone where the file writes none.
+#
+# - `t`: the route's members.
+# - `place`: where the route stands.
+#
+# Fails as `fields.int_or` fails.
+function read_retry(t: {str: toml.Value}, place: str) -> settings.Retry?
+    r = fields.section_of(t, key: "retry", place: place)?
+    at = f"{place}.retry"
+    return ok(
+        settings.Retry(attempts: fields.int_or(r, key: "attempts", place: at, fallback: 1, least: 1, most: 10)?, first_ms: fields.int_or(r, key: "first_ms", place: at, fallback: 25, least: 1, most: 60_000)?, longest_ms: fields.int_or(r, key: "longest_ms", place: at, fallback: 1000, least: 1, most: 600_000)?)
+    )
+
+# A route's `rate` table: a failure where the file writes none, so the field
+# holding it says the route has no limit, and a failure carrying the
+# message where it is wrong, which `check_rate` reads.
+#
+# - `t`: the route's members.
+# - `place`: where the route stands.
+function read_rate(t: {str: toml.Value}, place: str) -> settings.Rate?
+    match t["rate"]
+        .err _ => return fail(code: settings.NOT_FOUND, msg: f"{place} has no rate limit")
+        .ok _ =>
+            r = fields.section_of(t, key: "rate", place: place)?
+            at = f"{place}.rate"
+            return ok(
+                settings.Rate(burst: fields.int_or(r, key: "burst", place: at, fallback: 0, least: 1, most: 100_000)?, every_ms: fields.int_or(r, key: "every_ms", place: at, fallback: 0, least: 1, most: 3_600_000)?)
+            )
+
+# The `[graphql]` table, empty where the file writes none.
+#
+# - `doc`: the document's members.
+#
+# Fails as `fields.tables_of` fails.
+function read_graph(doc: {str: toml.Value}) -> settings.GraphSettings?
+    g = fields.section_of(doc, key: "graphql", place: "")?
+    out: [settings.GraphField] @= []
+    tables = fields.tables_of(g, key: "fields")?
+
+    for i in range(from: 0, to: tables.len())
+        place = f"graphql.fields[{i}]"
+        out @ out.push(
+            settings.GraphField(field: fields.text_of(tables[i], key: "field", place: place)?, upstream: fields.text_of(tables[i], key: "upstream", place: place)?, method: fields.text_or(tables[i], key: "method", place: place, fallback: "")?, path: fields.text_or(tables[i], key: "path", place: place, fallback: "/graphql")?)
+        )
+
+    return ok(
+        settings.GraphSettings(schema: fields.text_or(g, key: "schema", place: "graphql", fallback: "")?, fields: out)
+    )
+
+## Checking
+
+# Every name `s` gives found where it must stand: a route's upstream among
+# the upstreams and of the protocol its kind needs, a rate limit read
+# whole, and a `graphql` route with a schema to answer from.
+#
+# - `s`: the settings read.
+#
+# Fails `invalid` at the first name that stands nowhere, saying where.
+function check_names(s: settings.Settings) -> ()?
+    for route in s.routes
+        check_rate(route)?
+        needs = settings.needed_protocol(route.kind)
+
+        match needs
+            .err _ => _ = 0
+            .ok protocol =>
+                found = settings.upstream_named(s.upstreams, name: route.upstream)?
+
+                if found.protocol != protocol
+                    return fail(
+                        code: settings.INVALID,
+                        msg: f"the route \"{route.name}\" is of a kind that forwards over {settings.protocol_name(protocol)}, and its upstream \"{found.name}\" speaks {settings.protocol_name(found.protocol)}"
+                    )
+
+        match route.kind
+            .graphql =>
+                if s.graphql.schema == ""
+                    return fail(
+                        code: settings.INVALID,
+                        msg: f"the route \"{route.name}\" answers GraphQL, and the file writes no [graphql] schema"
+                    )
+            .proxy | .grpc | .metrics => _ = 0
+            .transcode _              => _ = 0
+
+    for field in s.graphql.fields
+        _ = settings.upstream_named(s.upstreams, name: field.upstream)?
+
+    return ok()
+
+# A route's rate limit, where it has one, read whole: what `read_rate`
+# failed with handed on, but the failure that says there is none.
+#
+# - `route`: the route.
+#
+# Fails as `read_rate` failed.
+function check_rate(route: settings.Route) -> ()?
+    match route.rate
+        .ok _ => return ok()
+        .err e =>
+            if e.code == settings.NOT_FOUND
+                return ok()
+            return fail(code: e.code, msg: e.msg)
+
+test "parse: the smallest file, one route and its upstream"
+    text = "[[upstreams]]\nname = \"a\"\nservice = \"_http._tcp.a.test\"\n[[routes]]\nname = \"r\"\nprefix = \"/a/\"\nupstream = \"a\""
+    s = parse(text).must()
+    assert s.routes.len() == 1
+    assert s.routes[0].host == "*"
+    assert s.routes[0].rewrite == "/a/"
+    assert s.routes[0].retry.attempts == 1
+    assert s.routes[0].rate.is_err()
+    assert s.cache.entries == 256
+    assert s.client_header == "x-api-key"
+
+test "parse: no route, an unknown upstream and a protocol mismatch are refused"
+    assert parse("").is_err()
+    assert parse("[[routes]]\nname = \"r\"\nprefix = \"/a\"\nupstream = \"none\"").is_err()
+    grpc_route = "[[upstreams]]\nname = \"a\"\nservice = \"s\"\n[[routes]]\nname = \"r\"\nprefix = \"/a\"\nkind = \"grpc\"\nupstream = \"a\""
+
+    match parse(grpc_route)
+        .ok _  => assert false
+        .err e => assert e.msg == "the route \"r\" is of a kind that forwards over grpc, and its upstream \"a\" speaks http"
+
+test "parse: a rate limit read, and one with a burst of zero refused"
+    head = "[[upstreams]]\nname = \"a\"\nservice = \"s\"\n[[routes]]\nname = \"r\"\nprefix = \"/a\"\nupstream = \"a\"\n"
+    s = parse(head + "rate = { burst = 2, every_ms = 500 }").must()
+    assert s.routes[0].rate.must().burst == 2
+    assert parse(head + "rate = { burst = 0, every_ms = 500 }").is_err()
+
+test "parse: two routes taking one host and prefix are refused"
+    head = "[[upstreams]]\nname = \"a\"\nservice = \"s\"\n"
+    route = "[[routes]]\nname = \"r\"\nprefix = \"/a\"\nupstream = \"a\"\n"
+    assert parse(head + route + route).is_err()
+
+test "parse: a prefix without its slash and an unknown kind are refused"
+    head = "[[upstreams]]\nname = \"a\"\nservice = \"s\"\n"
+    assert parse(head + "[[routes]]\nname = \"r\"\nprefix = \"a\"\nupstream = \"a\"").is_err()
+    assert parse(head + "[[routes]]\nname = \"r\"\nprefix = \"/a\"\nkind = \"x\"\nupstream = \"a\"").is_err()

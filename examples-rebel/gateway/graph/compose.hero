@@ -1,0 +1,275 @@
+# The GraphQL endpoint: one schema composed of what several upstreams
+# answer, written in the routing file's `[graphql]` table, each root field
+# of `Query` given to the upstream that answers it. A query is parsed and
+# validated against the whole schema at the gateway, so a query no upstream
+# could answer is refused before any upstream is asked; then it is executed
+# a level at a time (`graphql.next_step`), each root field sent to its own
+# upstream, and the fields below it read from what that upstream answered.
+#
+# An upstream speaking GraphQL is sent the root field again as a query of
+# its own, its arguments written as literals and its selection the names
+# `graphql.selected_of` gives, which reaches one level of fields below the
+# root: the composed schema keeps an upstream's types flat, scalars under
+# each root field's type. An upstream speaking gRPC is sent the field's
+# arguments as its method's request message, through the `.proto`'s JSON
+# mapping, and its answer stands for the field.
+
+use <rebel>/bytes
+use <rebel>/graphql
+use <rebel>/grpc
+use <rebel>/http
+use <rebel>/json
+
+use config/settings
+use core/state
+use core/telemetry
+use proxy/channels
+use proxy/forwarding
+use proxy/replies
+use route/routes
+
+## Answering
+
+# The answer to the GraphQL request `r` carries, from the composed schema.
+#
+# - `gw`: the state; its upstreams are asked and its metrics change.
+# - `r`: the HTTP request, a `GET` with a query or a `POST` with a JSON body.
+# - `routed`: the route that took it, whose retry policy the upstream calls
+#   follow.
+# - `client`: the client's name, which orders the instances.
+function answer(@gw: state.Gateway, r: http.Request, routed: routes.Routed, client: str) -> http.Response
+    limits = graphql.default_limits()
+
+    match gw.graph
+        .err e => return replies.problem(500, route: routed.route.name, message: e.msg)
+        .ok schema =>
+            match graphql.read_http(r, limits: limits)
+                .err e => return graphql.refusal_http(r, code: e.code, msg: e.msg)
+                .ok request =>
+                    match graphql.parse(request.query, limits: limits)
+                        .err e =>
+                            telemetry.graphql_ran(@gw.registry, result: "invalid")
+                            return graphql.refusal_http(r, code: e.code, msg: e.msg)
+                        .ok document =>
+                            errors = graphql.validate(schema, document: document, limits: limits)
+
+                            if errors.len() > 0
+                                telemetry.graphql_ran(@gw.registry, result: "invalid")
+                                refused = graphql.Response(
+                                    data: fail(code: graphql.INVALID, msg: "invalid"),
+                                    errors: errors,
+                                    extensions: .null_value
+                                )
+                                return graphql.respond_http(r, response: refused)
+                            telemetry.graphql_ran(@gw.registry, result: "executed")
+                            return graphql.respond_http(
+                                r,
+                                response: executed(@gw, schema: schema, request: request, routed: routed, client: client)
+                            )
+
+# The response to `request`, every field it selects resolved a level at a
+# time.
+#
+# - `gw`: the state.
+# - `schema`: the composed schema.
+# - `request`: the request, valid against `schema`.
+# - `routed`: the route that took it.
+# - `client`: the client's name.
+function executed(@gw: state.Gateway, schema: graphql.Schema, request: graphql.Request, routed: routes.Routed, client: str) -> graphql.Response
+    e @= graphql.start(schema, r: request, root: .object(members: {}), limits: graphql.default_limits())
+
+    while true
+        match graphql.next_step(@e)
+            .done d => return d.response
+            .resolve step =>
+                answers: [json.Value?] @= []
+
+                for field in step.fields
+                    selected = graphql.selected_of(e, field: field)
+                    answers @ answers.push(
+                        resolved(@gw, field: field, selected: selected, routed: routed, client: client)
+                    )
+
+                graphql.answer(@e, answers: answers)
+
+    return graphql.Response(data: fail(code: graphql.FAILED, msg: "unreached"), errors: [], extensions: .null_value)
+
+# The value of one field: a root field of `Query` from its upstream, and any
+# other from its parent's member of the same name.
+#
+# - `gw`: the state.
+# - `field`: the field handed out.
+# - `selected`: the names selected below it.
+# - `routed`: the route that took the request.
+# - `client`: the client's name.
+#
+# Fails with the upstream's error where a root field's upstream fails, which
+# is the field's error in the response.
+function resolved(@gw: state.Gateway, field: graphql.Field, selected: [str], routed: routes.Routed, client: str) -> json.Value?
+    if field.type_name != "Query"
+        return ok(json.member(field.parent, key: field.field_name).default(.null_value))
+    owner = owner_of(gw.settings.graphql, name: field.field_name)?
+    upstream = state.upstream_named(gw, name: owner.upstream)?
+
+    if owner.method != ""
+        return from_grpc(@gw, upstream: upstream, owner: owner, field: field, client: client)
+    return from_graphql(
+        @gw,
+        upstream: upstream,
+        owner: owner,
+        field: field,
+        selected: selected,
+        routed: routed,
+        client: client
+    )
+
+# The configured owner of the root field `name`.
+#
+# - `g`: the routing file's `[graphql]` table.
+# - `name`: the root field's name.
+#
+# Fails `not_found` where the routing file gives the field to no upstream.
+function owner_of(g: settings.GraphSettings, name: str) -> settings.GraphField?
+    for f in g.fields
+        if f.field == name
+            return ok(f)
+
+    return fail(code: settings.NOT_FOUND, msg: f"the routing file gives the field {name} to no upstream")
+
+# A root field answered by a gRPC method: its arguments as the request
+# message, the answer message as its value.
+#
+# - `gw`: the state.
+# - `upstream`: the gRPC upstream.
+# - `owner`: the field's owner, naming the method.
+# - `field`: the field.
+# - `client`: the client's name.
+#
+# Fails where the call fails or its status is not OK, the message naming the
+# status.
+function from_grpc(@gw: state.Gateway, upstream: settings.Upstream, owner: settings.GraphField, field: graphql.Field, client: str) -> json.Value?
+    reply = channels.call_json(@gw, upstream: upstream, path: owner.method, request: .object(members: field.arguments), client: client)?
+
+    if reply.status.code != grpc.STATUS_OK
+        name = grpc.status_name(reply.status.code).default(f"{reply.status.code}")
+        return fail(code: settings.NOT_FOUND, msg: f"{upstream.name} answered {name}: {reply.status.message}")
+    return ok(reply.value)
+
+# A root field answered by an upstream speaking GraphQL: the field asked
+# again as a query of its own, and its member of the answer's `data`.
+#
+# - `gw`: the state.
+# - `upstream`: the HTTP upstream.
+# - `owner`: the field's owner, naming the upstream's path.
+# - `field`: the field.
+# - `selected`: the names selected below it.
+# - `routed`: the route, whose retry policy the call follows.
+# - `client`: the client's name.
+#
+# Fails where the upstream does not answer 200 with a GraphQL response, or
+# answers errors, the first error's message carried.
+function from_graphql(@gw: state.Gateway, upstream: settings.Upstream, owner: settings.GraphField, field: graphql.Field, selected: [str], routed: routes.Routed, client: str) -> json.Value?
+    query = sub_query(field_name: field.field_name, arguments: field.arguments, selected: selected)
+    body = graphql.format_request(graphql.Request(query: query, operation_name: "", variables: .null_value, extensions: .null_value))?
+    r: http.Request @= http.request(method: http.METHOD_POST, target: owner.path)?
+    r.headers @ [
+        http.Header(name: "Host", value: upstream.name)
+        http.Header(name: "Content-Type", value: "application/json")
+        http.Header(name: "Accept", value: "application/json")
+    ]
+    r.body @ bytes.from_text(body)
+    forwarded = forwarding.forward(
+        @gw,
+        upstream: upstream,
+        route: routed.route,
+        r: r,
+        target: owner.path,
+        client: client
+    )
+
+    if forwarded.response.status != http.STATUS_OK
+        return fail(
+            code: settings.NOT_FOUND,
+            msg: f"{upstream.name} answered {forwarded.response.status}: {replies.problem_of(forwarded.response)}"
+        )
+    answered = graphql.parse_response(http.text_of(forwarded.response)?)?
+
+    if answered.errors.len() > 0
+        return fail(code: settings.NOT_FOUND, msg: f"{upstream.name}: {answered.errors[0].message}")
+    return json.member(answered.data?, key: field.field_name)
+
+# The query asking an upstream for one root field: `{ name(args) { a b } }`.
+#
+# - `field_name`: the root field.
+# - `arguments`: its arguments, coerced, written as literals.
+# - `selected`: the names selected below it; none for a field of a scalar.
+function sub_query(field_name: str, arguments: {str: json.Value}, selected: [str]) -> str
+    parts: [str] @= ["{ ", field_name]
+    names = sort(keys(arguments))
+
+    if names.len() > 0
+        written: [str] @= []
+
+        for name in names
+            written @ written.push(name + ": " + literal_of(arguments[name].must()))
+
+        parts @ parts.push("(" + written.join(", ") + ")")
+
+    if selected.len() > 0
+        parts @ parts.push(" { " + selected.join(" ") + " }")
+    parts @ parts.push(" }")
+    return parts.join("")
+
+# `v` as a GraphQL literal: a string in JSON's quotes, whose escapes GraphQL
+# reads alike (GraphQL § 2.9.4), a number, a boolean, `null`, a list or an
+# object whose keys are names.
+#
+# - `v`: the value, as `graphql.Field.arguments` holds it.
+function literal_of(v: json.Value) -> str
+    return match v
+        .null_value => "null"
+        .boolean b =>
+            if b.v
+                "true"
+            else
+                "false"
+        .number _ => json.format(v).default("null")
+        .text t   => json.quote(t.v)
+        .list l =>
+            items: [str] @= []
+
+            for item in l.items
+                items @ items.push(literal_of(item))
+
+            "[" + items.join(", ") + "]"
+        .object o =>
+            members: [str] @= []
+
+            for k in sort(keys(o.members))
+                members @ members.push(k + ": " + literal_of(o.members[k].must()))
+
+            "{" + members.join(", ") + "}"
+
+test "sub_query: a field with its arguments sorted and its selection"
+    q = sub_query(
+        field_name: "reviews",
+        arguments: {"sku": .text(v: "A-100"), "first": .number(v: 2.0)},
+        selected: ["author", "stars"]
+    )
+    assert q == "{ reviews(first: 2, sku: \"A-100\") { author stars } }"
+    assert sub_query(field_name: "count", arguments: {}, selected: []) == "{ count }"
+
+test "literal_of: every kind of value, an escape in a string"
+    assert literal_of(.null_value) == "null"
+    assert literal_of(.boolean(v: true)) == "true"
+    assert literal_of(.text(v: "a\"b")) == "\"a\\\"b\""
+    assert literal_of(.list(items: [.number(v: 1.0), .text(v: "x")])) == "[1, \"x\"]"
+    assert literal_of(.object(members: {"b": .boolean(v: false), "a": .null_value})) == "{a: null, b: false}"
+
+test "owner_of: a field the routing file gives, and one it does not"
+    g = settings.GraphSettings(
+        schema: "",
+        fields: [settings.GraphField(field: "stock", upstream: "inventory", method: "/a.B/C", path: "")]
+    )
+    assert owner_of(g, name: "stock").must().upstream == "inventory"
+    assert owner_of(g, name: "price").is_err()

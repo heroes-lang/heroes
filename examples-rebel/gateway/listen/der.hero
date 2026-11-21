@@ -1,0 +1,270 @@
+# The pieces of an X.509 certificate written as ASN.1 values, ready for
+# `asn1.encode_der`: names, validity, algorithm identifiers and the five
+# extensions a TLS server's certificate and its authority need (RFC 5280
+# § 4.1 and § 4.2.1). `x509` reads certificates and writes none, so the
+# gateway's demo writes the few it needs from these pieces, and `certs`
+# signs them.
+
+use <rebel>/asn1
+use <rebel>/bytes
+use <rebel>/net
+use <rebel>/time
+
+## Identifiers
+
+# ecdsa-with-SHA256 (RFC 5758 § 3.2): the signature every certificate made
+# here carries, ECDSA on P-256 over SHA-256.
+constant ECDSA_WITH_SHA256: str
+    "1.2.840.10045.4.3.2"
+
+# id-at-commonName (RFC 5280 § 4.1.2.4, X.520).
+constant COMMON_NAME: str
+    "2.5.4.3"
+
+# id-at-organizationName (X.520).
+constant ORGANIZATION: str
+    "2.5.4.10"
+
+# id-ce-basicConstraints (RFC 5280 § 4.2.1.9).
+constant BASIC_CONSTRAINTS: str
+    "2.5.29.19"
+
+# id-ce-keyUsage (RFC 5280 § 4.2.1.3).
+constant KEY_USAGE: str
+    "2.5.29.15"
+
+# id-ce-extKeyUsage (RFC 5280 § 4.2.1.12).
+constant EXTENDED_KEY_USAGE: str
+    "2.5.29.37"
+
+# id-kp-serverAuth (RFC 5280 § 4.2.1.12): a TLS server's certificate.
+constant SERVER_AUTH: str
+    "1.3.6.1.5.5.7.3.1"
+
+# id-ce-subjectAltName (RFC 5280 § 4.2.1.6).
+constant SUBJECT_ALT_NAME: str
+    "2.5.29.17"
+
+# id-ce-subjectKeyIdentifier (RFC 5280 § 4.2.1.2).
+constant SUBJECT_KEY_ID: str
+    "2.5.29.14"
+
+# id-ce-authorityKeyIdentifier (RFC 5280 § 4.2.1.1).
+constant AUTHORITY_KEY_ID: str
+    "2.5.29.35"
+
+## Key usages
+
+# What a key may be used for, as the bits of RFC 5280 § 4.2.1.3's KeyUsage.
+variant Usage
+    # A server's key: digitalSignature (bit 0), what an ECDSA key signs a
+    # TLS handshake with.
+    server
+    # An authority's key: keyCertSign (bit 5) and cRLSign (bit 6).
+    authority
+
+## Pieces
+
+# The algorithm identifier of ecdsa-with-SHA256, whose parameters RFC 5758
+# § 3.2 says are absent rather than NULL.
+function ecdsa_sha256() -> asn1.Value
+    return .sequence(items: [.oid(v: asn1.Oid(dotted: ECDSA_WITH_SHA256))])
+
+# A distinguished name of one common name and one organization, each in its
+# own relative distinguished name, organization first, as RFC 5280's
+# examples order them.
+#
+# - `common_name`: the subject's name, UTF-8.
+# - `organization`: the organization's name, UTF-8.
+function name(common_name: str, organization: str) -> asn1.Value
+    return .sequence(
+        items: [rdn(oid: ORGANIZATION, value: organization), rdn(oid: COMMON_NAME, value: common_name)]
+    )
+
+# One relative distinguished name of one attribute, a UTF8String as RFC 5280
+# § 4.1.2.4 asks of a certificate made today.
+#
+# - `oid`: the attribute's identifier, dotted.
+# - `value`: the attribute's text.
+function rdn(oid: str, value: str) -> asn1.Value
+    attribute: asn1.Value = .sequence(items: [.oid(v: asn1.Oid(dotted: oid)), .text(kind: .utf8, v: value)])
+    return .set(items: [attribute])
+
+# The validity of a certificate: from `not_before` to `not_after`, each a
+# UTCTime as RFC 5280 § 4.1.2.5 asks for a year before 2050, a
+# GeneralizedTime after.
+#
+# - `not_before`: the first moment it is valid; its fraction of a second is
+#   dropped.
+# - `not_after`: the last moment it is valid; its fraction is dropped too.
+#
+# Fails as `time.truncate` fails, past the last instant.
+function validity(not_before: time.Instant, not_after: time.Instant) -> asn1.Value?
+    return ok(.sequence(items: [moment(not_before)?, moment(not_after)?]))
+
+# One end of a validity, by RFC 5280 § 4.1.2.5's rule of the year 2050.
+#
+# - `at`: the moment, its fraction of a second dropped.
+#
+# Fails as `time.truncate` fails.
+function moment(at: time.Instant) -> asn1.Value?
+    whole = time.to_date_time(time.truncate(at, unit: time.seconds(1)?)?)
+
+    if whole.year < 2050
+        return ok(.utc_time(v: whole))
+    return ok(.generalized_time(v: whole))
+
+# The `[0] EXPLICIT` version of a TBSCertificate saying v3, the version
+# whose extensions every TLS client asks for.
+function version_3() -> asn1.Value
+    return asn1.tagged(.integer(v: 2), number: 0)
+
+## Extensions
+
+# One extension: its identifier, its criticality where it is critical (DER
+# leaves out a BOOLEAN at its DEFAULT FALSE), and its value's DER in an OCTET
+# STRING (RFC 5280 § 4.1).
+#
+# - `oid`: the extension's identifier, dotted.
+# - `critical`: whether a reader that does not know it must refuse the
+#   certificate.
+# - `value`: the extension's value, encoded here.
+#
+# Fails as `asn1.encode_der` fails for `value`.
+function extension(oid: str, critical: bool, value: asn1.Value) -> asn1.Value?
+    inner = asn1.encode_der(value)?
+    items: [asn1.Value] @= [.oid(v: asn1.Oid(dotted: oid))]
+
+    if critical
+        items @ items.push(.boolean(v: true))
+    items @ items.push(.octet_string(v: inner))
+    return ok(.sequence(items: items))
+
+# The basicConstraints of an authority (`cA` TRUE, no path length) or of an
+# end entity (an empty SEQUENCE, `cA` at its DEFAULT FALSE), always critical
+# as RFC 5280 § 4.2.1.9 asks of an authority's.
+#
+# - `is_authority`: whether the certificate may sign others.
+#
+# Fails as `extension` fails.
+function basic_constraints(is_authority: bool) -> asn1.Value?
+    items: [asn1.Value] @= []
+
+    if is_authority
+        items @ items.push(.boolean(v: true))
+    return extension(oid: BASIC_CONSTRAINTS, critical: true, value: .sequence(items: items))
+
+# The keyUsage of `usage`, critical, its BIT STRING with no trailing zero bit
+# as DER's named bit lists ask (X.690 § 11.2.2).
+#
+# - `usage`: what the key may do.
+#
+# Fails as `extension` fails.
+function key_usage(usage: Usage) -> asn1.Value?
+    bits = match usage
+        .server    => asn1.BitString(bytes: [0x80], bit_len: 1)
+        .authority => asn1.BitString(bytes: [0x06], bit_len: 7)
+
+    return extension(oid: KEY_USAGE, critical: true, value: .bit_string(v: bits))
+
+# The extendedKeyUsage of a TLS server's certificate: serverAuth alone, not
+# critical.
+#
+# Fails as `extension` fails.
+function server_auth() -> asn1.Value?
+    return extension(
+        oid: EXTENDED_KEY_USAGE,
+        critical: false,
+        value: .sequence(items: [.oid(v: asn1.Oid(dotted: SERVER_AUTH))])
+    )
+
+# The subjectAltName naming `names` as dNSName (`[2] IA5String`) and
+# `addresses` as iPAddress (`[7] OCTET STRING`), the names a TLS client
+# checks the host it dialled against (RFC 6125 § 6.4).
+#
+# - `names`: host names, ASCII; none for a certificate of addresses alone.
+# - `addresses`: IP addresses, four bytes or sixteen each.
+#
+# Fails `invalid` where both lists are empty, which RFC 5280 § 4.2.1.6
+# refuses, and as `extension` fails.
+function alt_names(names: [str], addresses: [net.Host]) -> asn1.Value?
+    general: [asn1.Value] @= []
+
+    for host in names
+        general @ general.push(.primitive(tag: context(2), content: bytes.from_text(host)))
+
+    for address in addresses
+        general @ general.push(.primitive(tag: context(7), content: address.bytes))
+
+    if general.len() == 0
+        return fail(code: asn1.INVALID, msg: "a subjectAltName names one host or address at least")
+    return extension(oid: SUBJECT_ALT_NAME, critical: false, value: .sequence(items: general))
+
+# The subjectKeyIdentifier `key_id`, not critical.
+#
+# - `key_id`: the identifier, by RFC 5280 § 4.2.1.2's first method the
+#   SHA-1 of the subject's public key bits.
+#
+# Fails as `extension` fails.
+function subject_key_id(key_id: [u8]) -> asn1.Value?
+    return extension(oid: SUBJECT_KEY_ID, critical: false, value: .octet_string(v: key_id))
+
+# The authorityKeyIdentifier naming the signer's key by `key_id`, its
+# `[0] keyIdentifier` alone, not critical.
+#
+# - `key_id`: the signer's subjectKeyIdentifier.
+#
+# Fails as `extension` fails.
+function authority_key_id(key_id: [u8]) -> asn1.Value?
+    return extension(
+        oid: AUTHORITY_KEY_ID,
+        critical: false,
+        value: .sequence(items: [.primitive(tag: context(0), content: key_id)])
+    )
+
+# The `[3] EXPLICIT` list of a TBSCertificate's extensions.
+#
+# - `list`: the extensions, each made by `extension`.
+function extensions(list: [asn1.Value]) -> asn1.Value
+    return asn1.tagged(.sequence(items: list), number: 3)
+
+## Helpers
+
+# A context-specific primitive tag `[number]`, as IMPLICIT tagging writes
+# the alternatives of a GeneralName.
+#
+# - `number`: the tag's number.
+function context(number: i64) -> asn1.Tag
+    return asn1.Tag(kind: .context_specific, number: number, constructed: false)
+
+test "key_usage: a server's is digitalSignature alone, an authority's keyCertSign and cRLSign"
+    server = asn1.encode_der(key_usage(.server).must()).must()
+    authority = asn1.encode_der(key_usage(.authority).must()).must()
+
+    # The BIT STRING's last three bytes: its length, its unused bits and its byte.
+    assert server.slice(from: server.len() - 3, to: server.len()) == [0x02, 0x07, 0x80]
+    assert authority.slice(from: authority.len() - 3, to: authority.len()) == [0x02, 0x01, 0x06]
+
+test "basic_constraints: an authority says cA, an end entity an empty sequence"
+    leaf = asn1.encode_der(basic_constraints(false).must()).must()
+
+    # The OCTET STRING holding an empty SEQUENCE ends the extension.
+    assert leaf.slice(from: leaf.len() - 4, to: leaf.len()) == [0x04, 0x02, 0x30, 0x00]
+    ca = asn1.encode_der(basic_constraints(true).must()).must()
+    assert ca.slice(from: ca.len() - 5, to: ca.len()) == [0x30, 0x03, 0x01, 0x01, 0xff]
+
+test "alt_names: nothing to name is refused, one address is written as four bytes"
+    assert alt_names(names: [], addresses: []).is_err()
+    one = asn1.encode_der(alt_names(names: [], addresses: [net.loopback_v4()]).must()).must()
+    assert one.slice(from: one.len() - 6, to: one.len()) == [0x87, 0x04, 127, 0, 0, 1]
+
+test "moment: a year before 2050 is a UTCTime, from 2050 a GeneralizedTime"
+    before = moment(time.date(year: 2049, month: 12, day: 31).must()).must()
+    after = moment(time.date(year: 2050, month: 1, day: 1).must()).must()
+    assert asn1.tag_of(before).number == asn1.UTC_TIME
+    assert asn1.tag_of(after).number == asn1.GENERALIZED_TIME
+
+test "name: the organization stands before the common name"
+    der = asn1.encode_der(name(common_name: "api", organization: "Shop")).must()
+    decoded = asn1.items_of(asn1.decode_der(der).must()).must()
+    assert decoded.len() == 2
