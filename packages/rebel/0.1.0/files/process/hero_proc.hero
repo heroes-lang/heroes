@@ -64,6 +64,8 @@ extern "hero_proc.h"
     # `hero_stream.h`'s own, which this header includes: the call that ends
     # the stream `hero_proc_pipe` begins, declared here because a mark names
     # a call of its own module. A program closes one through `io/hero_stream`.
+    #
+    # - `s`: the stream ended and given back.
     function hero_stream_close(s: hero_stream.Stream consumes) -> i64
 
 # The process `program` started as, or `nullptr`; no process was started
@@ -76,6 +78,41 @@ extern "hero_proc.h"
 # `HERO_PROC_STDIO_*`, its stream read only for `HERO_PROC_STDIO_STREAM`. A
 # program that is not there is `HERO_PROC_NOT_FOUND`, told here. It aborts
 # where `program` or `folder` holds a zero byte, which C cannot read.
+#
+# - `program`: a path where it holds a separator (`/`, or `\` on Windows),
+#   read in this process's folder where relative; else a name looked for in
+#   this process's `PATH`, and on Windows the system's own search, `.exe`
+#   tried for a name with none. It aborts where it holds a zero byte.
+# - `arguments`: each argument's bytes followed by one zero byte, in order,
+#   any bytes but a zero, an empty argument included; no shell reads them. On
+#   Windows they must be UTF-8. At most 4,096, more `HERO_PROC_LIMIT`. Left
+#   as it was handed.
+# - `arguments_count`: the bytes of `arguments` read; 0 is no argument, any
+#   other count must end on a zero byte, else `HERO_PROC_INVALID`.
+# - `environment_kind`: `HERO_PROC_ENV_PARENT`, this process's environment as
+#   it stands, or `HERO_PROC_ENV_GIVEN`, exactly `environment`.
+# - `environment`: each variable as `NAME=value` followed by one zero byte,
+#   read only for `HERO_PROC_ENV_GIVEN`; at most 4,096, more
+#   `HERO_PROC_LIMIT`. Left as it was handed.
+# - `environment_count`: the bytes of `environment` read; 0 with
+#   `HERO_PROC_ENV_GIVEN` is a child with no variable.
+# - `folder`: the child's working folder, "" for this process's own; one the
+#   child cannot start in is `HERO_PROC_NOT_A_DIRECTORY`. It aborts where it
+#   holds a zero byte.
+# - `in_kind`: what the child's input is: `HERO_PROC_STDIO_PARENT`,
+#   `HERO_PROC_STDIO_NOTHING` (the null device), `HERO_PROC_STDIO_PIPE` (taken
+#   by `pipe`) or `HERO_PROC_STDIO_STREAM`.
+# - `in_stream`: the stream the child reads, for `HERO_PROC_STDIO_STREAM`
+#   alone; it stays the program's, which closes it. One on no descriptor is
+#   `HERO_PROC_UNSUPPORTED`.
+# - `out_kind`: what the child's output is, one of the four
+#   `HERO_PROC_STDIO_*`.
+# - `out_stream`: the stream the child writes its output to, for
+#   `HERO_PROC_STDIO_STREAM` alone; it stays the program's.
+# - `err_kind`: what the child's error output is, one of the four
+#   `HERO_PROC_STDIO_*`.
+# - `err_stream`: the stream the child writes its errors to, for
+#   `HERO_PROC_STDIO_STREAM` alone; it stays the program's.
 function start(program: str, @arguments: [u8], arguments_count: u64, environment_kind: i64, @environment: [u8], environment_count: u64, folder: str, in_kind: i64, in_stream: hero_stream.Stream, out_kind: i64, out_stream: hero_stream.Stream, err_kind: i64, err_stream: hero_stream.Stream) -> Proc
     return hero_proc_start(
         program: program.cstr(),
@@ -98,16 +135,29 @@ function start(program: str, @arguments: [u8], arguments_count: u64, environment
 # end is taken once and is the program's from then, closed by
 # `hero_stream.close`. It is `nullptr` with `HERO_PROC_INVALID` where that
 # stream was not started as a pipe or its end was taken already.
+#
+# - `p`: the process; it stays the program's.
+# - `which`: `HERO_PROC_INPUT` (written to; its close is the child's end of
+#   input), `HERO_PROC_OUTPUT` or `HERO_PROC_ERROR` (read from).
 function pipe(p: Proc, which: i64) -> hero_stream.Stream
     return hero_proc_pipe(p, which)
 
 # 0 once `p` has ended, waiting for it, or -1. `code` is then its exit code
 # and `by_signal` 0, or `code` -1 and `by_signal` the signal that ended it;
 # on Windows `by_signal` is always 0. Asked again it answers the same.
+#
+# - `p`: the process waited for; it stays the program's. The answer is kept
+#   with it, so a second wait answers at once.
+# - `code`: set to the exit code, or -1 where a signal ended it; -1 on a
+#   failure. On Windows 0 to 4,294,967,295, 1 for a process `kill` ended.
+# - `by_signal`: set to 0 where the process ended itself, else the signal's
+#   number (POSIX); 0 on a failure, and always 0 on Windows.
 function wait(p: Proc, @code: i64, @by_signal: i64) -> i64
     return hero_proc_wait(p, code: @code, by_signal: @by_signal)
 
 # 1 where `p` has ended, 0 where it still runs, or -1. It never waits.
+#
+# - `p`: the process asked about; it stays the program's.
 function ended(p: Proc) -> i64
     return hero_proc_ended(p)
 
@@ -115,28 +165,45 @@ function ended(p: Proc) -> i64
 # process that has ended already; on Windows it answers -1 with
 # `HERO_PROC_UNSUPPORTED` and touches nothing, since Windows has no such
 # request.
+#
+# - `p`: the process asked to end; it stays the program's, and is waited for
+#   and released as before.
 function terminate(p: Proc) -> i64
     return hero_proc_terminate(p)
 
 # 0 once `p` is ended at once, or -1. It sends SIGKILL, or on Windows ends
 # the process with the exit code 1, and nothing to one that has ended already.
+#
+# - `p`: the process ended; it stays the program's. It has ended once `wait`
+#   returns, which may be a moment later; the processes it started are not
+#   ended.
 function kill(p: Proc) -> i64
     return hero_proc_kill(p)
 
 # The system's own number for `p`, or -1. It is a number to show: the handle
 # names the process, never the number.
+#
+# - `p`: the process asked about; it stays the program's.
 function id(p: Proc) -> i64
     return hero_proc_id(p)
 
 # 0 with the CPU time `p` used in `user_ns` and `system_ns`, in nanoseconds,
 # or -1 with both -1. It answers only once `p` has ended, and
 # `HERO_PROC_RUNNING` before.
+#
+# - `p`: the process asked about, ended; it stays the program's.
+# - `user_ns`: set to the nanoseconds it ran its own code; -1 on a failure.
+# - `system_ns`: set to the nanoseconds the system ran on its behalf; -1 on a
+#   failure. On POSIX the children it waited for count with it.
 function cpu(p: Proc, @user_ns: i64, @system_ns: i64) -> i64
     return hero_proc_cpu(p, user_ns: @user_ns, system_ns: @system_ns)
 
 # 0, or -1 where `p` named no process; `p` is given back either way. A
 # process that still runs keeps running and leaves no zombie, and the ends of
 # its pipes never taken are closed.
+#
+# - `p`: the handle given back; a process that still runs keeps running, and a
+#   call another thread is still in on it answers `HERO_PROC_NOT_OPEN`.
 function release(@p: Proc) -> i64
     return hero_proc_release(p)
 
@@ -154,6 +221,9 @@ function last_os_error() -> i64
 # closed through `ptr`, and a stream's door bound with `ptr`, so a test can
 # hand one table's handle to another's, which no typed binding lets a
 # program do.
+#
+# - `address`: a number to bind to, or "" for every address of the machine.
+# - `port`: 0 to 65535, 0 asking the system for a free one.
 extern "hero_net.h"
     function hero_net_udp(address: cstr lent, port: i64) -> ptr
     function hero_net_close(s: ptr) -> i64

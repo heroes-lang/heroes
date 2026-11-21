@@ -98,48 +98,81 @@ extern "hero_net.h"
 # `127.0.0.1`, `::1`, or "" for every address of the machine, and port 0 asks
 # the system for a free one. It aborts where `address` holds a zero byte, which
 # C cannot read.
+#
+# - `address`: `127.0.0.1`, `::1`, or "" for every address of the machine; it
+#   aborts where it holds a zero byte.
+# - `port`: 0 to 65535, 0 asking the system for a free one, which `port_of`
+#   reads back; outside that range is `HERO_NET_INVALID`.
 function listen(address: str, port: i64) -> Socket
     return hero_net_listen(address: address.cstr(), port: port)
 
 # A connection to `address` at `port`, or `nullptr`. The address is a number
 # or a name, and it aborts where it holds a zero byte.
+#
+# - `address`: a number or a name, which the system's resolver looks up first,
+#   with no deadline; a name it does not know is `HERO_NET_NOT_FOUND`. It
+#   aborts where it holds a zero byte.
+# - `port`: 0 to 65535, else `HERO_NET_INVALID`.
 function connect(address: str, port: i64) -> Socket
     return hero_net_connect(address: address.cstr(), port: port)
 
 # The next connection `listener` holds, waiting for one, or `nullptr`.
+#
+# - `listener`: a socket `listen` made; it stays open. Closed by another
+#   thread while the call waits, it answers `nullptr` with
+#   `HERO_NET_NOT_OPEN`.
 function accept(listener: Socket) -> Socket
     return hero_net_accept(listener)
 
 # The port `s` stands on, or -1.
+#
+# - `s`: the socket asked about; it stays open.
 function port_of(s: Socket) -> i64
     return hero_net_port(s)
 
 # How many of the first `n` bytes of `data` were sent, or -1. It may be fewer,
 # as many as the system had room for, and it waits only while there is no room
 # at all; `data` is left as it was handed, `n` bytes long.
+#
+# - `s`: a connection; it stays open. A datagram socket is `HERO_NET_INVALID`.
+# - `data`: the bytes sent, from its first; left as it was handed.
+# - `n`: the most bytes of `data` to send; the caller sends the rest.
 function send(s: Socket, @data: [u8], n: u64) -> i64
     return hero_net_send(s, @data, n: n)
 
 # How many bytes were received into `buffer`, 0 where the peer closed, or -1.
 # It waits for one, and leaves `buffer` `n` bytes long, the received ones
 # first.
+#
+# - `s`: a connection; it stays open. A datagram socket is `HERO_NET_INVALID`.
+# - `buffer`: filled from its first byte with what was received; left `n`
+#   long.
+# - `n`: the most bytes to receive.
 function recv(s: Socket, @buffer: [u8], n: u64) -> i64
     return hero_net_recv(s, @buffer, n: n)
 
 # 0, or -1 where the system failed; `s` is given back either way. A call
 # another thread waits in on it ends at once, failing `HERO_NET_NOT_OPEN`.
+#
+# - `s`: the socket ended and given back; no connection made after the close
+#   is accepted, and no later call reaches it.
 function close(@s: Socket) -> i64
     return hero_net_close(s)
 
 # The number `s` is given up for, or -1. Another thread takes it back with
 # `of`, and from this call no handle names the socket. It is large, above
 # 2^62, so it is carried whole to `of` and never computed with.
+#
+# - `s`: the socket given up; from this call no handle names it, and a call
+#   already waiting on it goes on.
 function number(@s: Socket) -> i64
     return hero_net_number(s)
 
 # The socket number `n` names, taken back once, or `nullptr`. It has a handle
 # of its own; `n` names none where it was taken back already, its socket
 # closed, or the layer never gave it.
+#
+# - `n`: a number `number` gave, taken back once.
 function of(n: i64) -> Socket
     return hero_net_of(n)
 
@@ -190,12 +223,25 @@ function last_os_error() -> i64
 # system for a free one; a name fails `HERO_NET_ADDRESS`. `send`, `recv` and
 # `accept` refuse it `HERO_NET_INVALID`, and it aborts where `address` holds a
 # zero byte.
+#
+# - `address`: a number, or "" for every address of the machine; it aborts
+#   where it holds a zero byte.
+# - `port`: 0 to 65535, 0 asking the system for a free one.
 function udp(address: str, port: i64) -> Socket
     return hero_net_udp(address: address.cstr(), port: port)
 
 # `n` where the first `n` bytes of `data` went as one datagram to `address`
 # at `port`, or -1. The address is a number of the socket's own family, and a
 # datagram goes whole or not at all: one too long fails `HERO_NET_TOO_LONG`.
+#
+# - `s`: a datagram socket `udp` made; it stays open. A connection or a
+#   listener is `HERO_NET_INVALID`.
+# - `data`: the datagram's bytes, from its first; left as it was handed.
+# - `n`: how many of `data`'s first bytes the datagram is, 0 or more; past
+#   what the system sends as one, 65,507 over IPv4, `HERO_NET_TOO_LONG`.
+# - `address`: a number of the socket's own family, never a name, else
+#   `HERO_NET_ADDRESS`; it aborts where it holds a zero byte.
+# - `port`: 1 to 65535, else `HERO_NET_INVALID`.
 function send_to(s: Socket, @data: [u8], n: u64, address: str, port: i64) -> i64
     return hero_net_send_to(s, @data, n: n, address: address.cstr(), port: port)
 
@@ -205,6 +251,15 @@ function send_to(s: Socket, @data: [u8], n: u64, address: str, port: i64) -> i64
 # `HERO_NET_ADDRESS_MOST`. A datagram longer than `n` fails
 # `HERO_NET_TOO_LONG`: `buffer` holds its first `n` bytes, the sender is told,
 # and the rest is gone.
+#
+# - `s`: a datagram socket `udp` made; it stays open.
+# - `buffer`: filled from its first byte with the datagram; left `n` long.
+# - `n`: the most bytes of a datagram to take; 65,535 hold any.
+# - `address`: set to the sender's address as text, a zero byte after it, ""
+#   where the system did not say; left `m` long.
+# - `m`: the bytes `address` holds, at least `HERO_NET_ADDRESS_MOST`, else
+#   `HERO_NET_INVALID` before any datagram is taken.
+# - `port`: set to the sender's port, 0 where the system did not say.
 function recv_from(s: Socket, @buffer: [u8], n: u64, @address: [u8], m: u64, @port: i64) -> i64
     return hero_net_recv_from(s, buffer: @buffer, n: n, address: @address, m: m, port: @port)
 
@@ -214,6 +269,14 @@ function recv_from(s: Socket, @buffer: [u8], n: u64, @address: [u8], m: u64, @po
 # last address written. It may wait in the system's resolver, which no
 # deadline and no stop ends; a name it does not know fails
 # `HERO_NET_NOT_FOUND`.
+#
+# - `name`: a name or a number, UTF-8, 1 to 1,024 bytes, else
+#   `HERO_NET_INVALID`; a number answers itself. It aborts where it holds a
+#   zero byte.
+# - `buffer`: filled with the addresses, each whole, as many as fit before the
+#   zero byte; left `n` long.
+# - `n`: the bytes `buffer` holds; one more than the answer holds the whole
+#   list.
 function lookup(name: str, @buffer: [u8], n: u64) -> i64
     return hero_net_lookup(name: name.cstr(), @buffer, n: n)
 
@@ -221,17 +284,39 @@ function lookup(name: str, @buffer: [u8], n: u64) -> i64
 # name is written, a zero byte after it, where `n` is more than the answer;
 # it may wait as `lookup` does, and an address with no name fails
 # `HERO_NET_NOT_FOUND`.
+#
+# - `address`: a number; what is no number is `HERO_NET_ADDRESS`. It aborts
+#   where it holds a zero byte.
+# - `buffer`: filled with the name and a zero byte where it fits, else nothing
+#   written; left `n` long.
+# - `n`: the bytes `buffer` holds; 1,025 hold any name.
 function name_of(address: str, @buffer: [u8], n: u64) -> i64
     return hero_net_name_of(address: address.cstr(), @buffer, n: n)
 
 # The bytes of the address `s` stands on, or -1. The text goes into
 # `address`, a zero byte after it, and the port into `port`; `m` is
 # `address`'s bytes, at least `HERO_NET_ADDRESS_MOST`.
+#
+# - `s`: the socket asked about; it stays open. One bound to every address
+#   says `0.0.0.0` or `::` until it is connected.
+# - `address`: set to its address as text, a zero byte after it; left `m`
+#   long.
+# - `m`: the bytes `address` holds, at least `HERO_NET_ADDRESS_MOST`, else
+#   `HERO_NET_INVALID`.
+# - `port`: set to its port; left as it was on -1.
 function local(s: Socket, @address: [u8], m: u64, @port: i64) -> i64
     return hero_net_local(s, @address, m: m, @port)
 
 # The bytes of the address of the peer `s` is connected to, or -1. It is
 # written as `local` writes; a socket with no peer fails `HERO_NET_RESET`.
+#
+# - `s`: a connection; it stays open. A listener, a datagram socket or a
+#   connection never made is `HERO_NET_RESET`.
+# - `address`: set to the peer's address as text, a zero byte after it; left
+#   `m` long.
+# - `m`: the bytes `address` holds, at least `HERO_NET_ADDRESS_MOST`, else
+#   `HERO_NET_INVALID`.
+# - `port`: set to the peer's port; left as it was on -1.
 function remote(s: Socket, @address: [u8], m: u64, @port: i64) -> i64
     return hero_net_remote(s, @address, m: m, @port)
 
@@ -253,6 +338,10 @@ function connect_within(address: str, port: i64, ms: i64) -> Socket
 # `HERO_NET_INVALID` for a datagram socket or another `how`,
 # `HERO_NET_RESET` for one with no connection. A `recv` after READ answers 0;
 # a `send` after WRITE fails `HERO_NET_RESET`, and the peer reads its end.
+#
+# - `s`: a connection; it stays open, and `close` still gives it back.
+# - `how`: `HERO_NET_SHUT_READ`, `HERO_NET_SHUT_WRITE` or
+#   `HERO_NET_SHUT_BOTH`; any other value is `HERO_NET_INVALID`.
 function shutdown(s: Socket, how: i64) -> i64
     return hero_net_shutdown(s, how: how)
 
@@ -262,11 +351,20 @@ function shutdown(s: Socket, how: i64) -> i64
 # multicast options a datagram socket's) or a value out of its range: 1 on
 # and 0 off, an interface's index for `HERO_NET_OPTION_MULTICAST_INTERFACE`
 # (0 the system's choice), 0 to 255 for `HERO_NET_OPTION_MULTICAST_HOPS`.
+#
+# - `s`: the socket set; it stays open. Neither call waits.
+# - `option`: one of the six `HERO_NET_OPTION_...`, of the socket's kind.
+# - `value`: 1 on and 0 off; an interface's index for
+#   `HERO_NET_OPTION_MULTICAST_INTERFACE`; 0 to 255 for
+#   `HERO_NET_OPTION_MULTICAST_HOPS`.
 function set_option(s: Socket, option: i64, value: i64) -> i64
     return hero_net_set_option(s, option: option, value: value)
 
 # The value of `option`, 1 on and 0 off or the number it holds, or -1 as
 # `set_option` fails.
+#
+# - `s`: the socket asked about; it stays open.
+# - `option`: one of the six `HERO_NET_OPTION_...`, of the socket's kind.
 function option_of(s: Socket, option: i64) -> i64
     return hero_net_option(s, option: option)
 
@@ -275,11 +373,23 @@ function option_of(s: Socket, option: i64) -> i64
 # the system's choice, or -1: `HERO_NET_ADDRESS` where `group` is no
 # multicast number of that family, `HERO_NET_INVALID` for a connection or an
 # index outside 0 to 2^32 - 1. It aborts where `group` holds a zero byte.
+#
+# - `s`: a datagram socket, which from then receives the group's datagrams at
+#   the port it is bound to; it stays open.
+# - `group`: a multicast number of the socket's own family; it aborts where it
+#   holds a zero byte.
+# - `interface_index`: an interface's index as `interfaces` lists it, 0 to
+#   2^32 - 1; 0 lets the system choose by its routes.
 function join_group(s: Socket, group: str, interface_index: i64) -> i64
     return hero_net_join_group(s, group: group.cstr(), interface_index: interface_index)
 
 # 0 once `s` has left the group `join_group` joined, or -1: a group not
 # joined is the system's own refusal.
+#
+# - `s`: the datagram socket that joined; it stays open.
+# - `group`: the group joined, as `join_group` was handed it; it aborts where
+#   it holds a zero byte.
+# - `interface_index`: the index `join_group` was handed.
 function leave_group(s: Socket, group: str, interface_index: i64) -> i64
     return hero_net_leave_group(s, group: group.cstr(), interface_index: interface_index)
 
@@ -290,6 +400,11 @@ function leave_group(s: Socket, group: str, interface_index: i64) -> i64
 # text ("" for none) and its prefix length, the three numbers in decimal
 # digits. An answer above `n` says the buffer was short, nothing in it then
 # to be read; `buffer` is left `n` long.
+#
+# - `buffer`: filled with the entries, in the system's order; left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was short,
+#   and interfaces may come between two calls. Windows' list past 64 KiB is
+#   `HERO_NET_LIMIT`.
 function interfaces(@buffer: [u8], n: u64) -> i64
     return hero_net_interfaces(@buffer, n: n)
 
@@ -305,6 +420,24 @@ function interfaces(@buffer: [u8], n: u64) -> i64
 # with none `HERO_NET_UNSUPPORTED`; an ICMP error naming the echo
 # `HERO_NET_UNREACHABLE`. `data` is left `n` long and `from` `m` long; it
 # aborts where `address` holds a zero byte.
+#
+# - `address`: a number, never a name, else `HERO_NET_ADDRESS`; it aborts
+#   where it holds a zero byte.
+# - `sequence`: the echo's sequence number, 0 to 65535; Windows chooses its
+#   own.
+# - `data`: the bytes the echo carries; left `n` long.
+# - `n`: how many of `data`'s first bytes, at most `HERO_NET_PING_MOST`; a
+#   system may refuse fewer, `HERO_NET_TOO_LONG`.
+# - `ms`: milliseconds to wait for the reply, 1 to 2,147,483,647; a ping
+#   always has a limit, and 0 or below is `HERO_NET_INVALID`.
+# - `from`: set to the address that replied as text, a zero byte after it;
+#   nothing to read on -1. Left `m` long.
+# - `m`: the bytes `from` holds, at least `HERO_NET_ADDRESS_MOST`, else
+#   `HERO_NET_INVALID`.
+# - `ttl`: set to the reply's time to live or hop limit, 0 to 255, or -1 where
+#   the system did not say; -1 on a failure.
+# - `nanoseconds`: set to the round trip on the clock a deadline is read on; 0
+#   on a failure.
 function ping(address: str, sequence: i64, @data: [u8], n: u64, ms: i64, @from: [u8], m: u64, @ttl: i64, @nanoseconds: i64) -> i64
     return hero_net_ping(
         address: address.cstr(),
@@ -632,6 +765,10 @@ test "local and remote tell a connection's two addresses, and a listener has no 
 
 # The fields of the first `used` bytes of an interface list, each ended by a
 # zero byte, as text.
+#
+# - `buffer`: a list as `interfaces` fills it.
+# - `used`: how many of `buffer`'s first bytes the list takes, as `interfaces`
+#   answered.
 function test_fields(buffer: [u8], used: i64) -> [str]
     fields: [str] @= []
     from: i64 @= 0
@@ -663,6 +800,8 @@ function test_loopback_index() -> i64
 
 # The number the decimal digits of `text` write, -1 for a text that holds
 # anything else or none.
+#
+# - `text`: the digits read.
 function test_number(text: str) -> i64
     if text.len() == 0
         return -1
@@ -952,6 +1091,8 @@ test "of: a number carrying another table's tag is one never given, not open, as
 ## Tests of round 4: an echo asked by ICMP
 
 # The text of an address the layer wrote into `buffer`, up to its zero byte.
+#
+# - `buffer`: bytes the layer wrote an address into, a zero byte after it.
 function test_text(buffer: [u8]) -> str
     end: i64 @= 0
 

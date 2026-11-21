@@ -73,6 +73,8 @@ extern "hero_tls.h"
     constant HERO_TLS_ADDRESS_MOST: u64
     # The two calls the marks below name: the one that ends a stream's life,
     # which the header declares through `hero_stream.h`, and the listener's.
+    #
+    # - `s`: the stream ended and given back.
     function hero_stream_close(s: hero_stream.Stream consumes) -> i64
     function hero_tls_available() -> i64
     function hero_tls_connect(host: cstr lent, port: i64, ms: i64, @roots: [u8] counted_by roots_count lent, roots_count: u64, protocols: cstr lent, checks: i64) -> hero_stream.Stream acquires hero_stream_close
@@ -131,6 +133,20 @@ function connect(host: str, port: i64, ms: i64, @roots: [u8], roots_count: u64, 
 # `nullptr`; every connection it accepts presents the PEM chain of the first
 # `chain_count` bytes of `chain` and proves it holds the PEM key of the first
 # `key_count` bytes of `key`. `protocols` is the ALPN list it takes.
+#
+# - `address`: `127.0.0.1`, `::1`, or "" for every address of the machine; it
+#   aborts where it holds a zero byte.
+# - `port`: 0 to 65535, 0 asking the system for a free one, which `port_of`
+#   reads back.
+# - `chain`: PEM, the certificate first and the authorities that signed it
+#   after; left as it was handed.
+# - `chain_count`: the bytes of `chain` read.
+# - `key`: PEM of the certificate's private key, PKCS #8 or RSA's or EC's own
+#   form, RSA or ECDSA on P-256 or P-384; left as it was handed.
+# - `key_count`: the bytes of `key` read.
+# - `protocols`: the ALPN list taken, the names joined by `,`, the first of it
+#   the client also offers chosen; "" takes none. It aborts where it holds a
+#   zero byte.
 function listen(address: str, port: i64, @chain: [u8], chain_count: u64, @key: [u8], key_count: u64, protocols: str) -> Listener
     return hero_tls_listen(
         address: address.cstr(),
@@ -145,15 +161,22 @@ function listen(address: str, port: i64, @chain: [u8], chain_count: u64, @key: [
 # `connect`, with the exchange of the first `steps_count` bytes of `steps`
 # run on the connection before TLS begins, or `nullptr`.
 #
-# - `host`, `port`, `roots`, `roots_count`, `protocols`, `checks`: as
-#   `connect` takes them.
+# - `host`: a name or an address, as `connect` takes it; it aborts where it
+#   holds a zero byte.
+# - `port`: 1 to 65535, else `HERO_TLS_INVALID`.
 # - `ms`: milliseconds for the connection, the exchange and the handshake
 #   together, as `connect`'s: `HERO_TLS_FOREVER` no limit, 0 not waiting at
 #   all, below -1 `HERO_TLS_INVALID`.
+# - `roots`: PEM, the only authorities trusted; left as it was handed.
+# - `roots_count`: the bytes of `roots` read; 0 trusts the system's store.
+# - `protocols`: the ALPN list offered, the names joined by `,`; "" offers
+#   none. It aborts where it holds a zero byte.
+# - `checks`: one of `HERO_TLS_CHECK_*`.
 # - `steps`: the exchange in the header's form, each step a kind byte, four
 #   bytes of length, most significant first, and its bytes; left as it was
 #   handed.
-# - `steps_count`: the bytes of `steps` read.
+# - `steps_count`: the bytes of `steps` read; steps not in the form or past
+#   a bound are `HERO_TLS_INVALID`, a step not met `HERO_TLS_PREAMBLE`.
 function connect_after(host: str, port: i64, ms: i64, @roots: [u8], roots_count: u64, protocols: str, checks: i64, @steps: [u8], steps_count: u64) -> hero_stream.Stream
     return hero_tls_connect_after(
         host: host.cstr(),
@@ -169,6 +192,22 @@ function connect_after(host: str, port: i64, ms: i64, @roots: [u8], roots_count:
 
 # `listen`, every connection it accepts running the exchange of `steps`
 # from the server's side before TLS begins, within `accept`'s time.
+#
+# - `address`: `127.0.0.1`, `::1`, or "" for every address of the machine; it
+#   aborts where it holds a zero byte.
+# - `port`: 0 to 65535, 0 asking the system for a free one.
+# - `chain`: PEM, the certificate first and the authorities that signed it
+#   after; left as it was handed.
+# - `chain_count`: the bytes of `chain` read.
+# - `key`: PEM of the certificate's private key; left as it was handed.
+# - `key_count`: the bytes of `key` read.
+# - `protocols`: the ALPN list taken, as `listen`'s; it aborts where it holds
+#   a zero byte.
+# - `steps`: the exchange run from the server's side, in the header's form; a
+#   connection whose exchange fails is closed and its failure answered by
+#   `accept`. Left as it was handed.
+# - `steps_count`: the bytes of `steps` read; steps not in the form or past a
+#   bound are `HERO_TLS_INVALID`.
 function listen_after(address: str, port: i64, @chain: [u8], chain_count: u64, @key: [u8], key_count: u64, protocols: str, @steps: [u8], steps_count: u64) -> Listener
     return hero_tls_listen_after(
         address: address.cstr(),
@@ -183,6 +222,8 @@ function listen_after(address: str, port: i64, @chain: [u8], chain_count: u64, @
     )
 
 # The port `l` listens on, or -1.
+#
+# - `l`: the listener asked about; it stays open.
 function port_of(l: Listener) -> i64
     return hero_tls_port(l)
 
@@ -201,6 +242,9 @@ function accept(l: Listener, ms: i64) -> hero_stream.Stream
 
 # 0, or -1 where `l` was not open; `l` is given back either way, and the
 # streams accepted from it stay open.
+#
+# - `l`: the listener ended and given back; a wait another thread is in on it
+#   ends, `HERO_TLS_NOT_OPEN`.
 function close_listener(@l: Listener) -> i64
     return hero_tls_close_listener(l)
 
@@ -208,6 +252,18 @@ function close_listener(@l: Listener) -> i64
 # From this call `inner` is closed by the TLS stream's close; where no TLS
 # stream is made it stays the caller's, to close. On macOS it answers
 # `nullptr` with `HERO_TLS_UNSUPPORTED` and leaves `inner` untouched.
+#
+# - `inner`: a stream already connected to `host`; from this call the TLS
+#   stream's close closes it. Where `nullptr` is answered it stays the
+#   caller's, open, to close.
+# - `host`: the name or the address `inner` reached, sent to the peer and
+#   checked against its certificate; it aborts where it holds a zero byte.
+# - `roots`: PEM, the only authorities trusted; left as it was handed.
+# - `roots_count`: the bytes of `roots` read; 0 trusts the system's store.
+# - `protocols`: the ALPN list offered, the names joined by `,`; "" offers
+#   none. It aborts where it holds a zero byte.
+# - `checks`: one of `HERO_TLS_CHECK_*`; `HERO_TLS_CHECK_NOTHING_FOR_TESTS` in
+#   a test alone.
 function client(@inner: hero_stream.Stream, host: str, @roots: [u8], roots_count: u64, protocols: str, checks: i64) -> hero_stream.Stream
     return hero_tls_client(
         inner,
@@ -221,6 +277,16 @@ function client(@inner: hero_stream.Stream, host: str, @roots: [u8], roots_count
 # TLS as the server over `inner`, a stream connected to a client, presenting
 # `chain` and `key` as `listen`'s connections do, or `nullptr`; `inner`'s
 # life passes as `client`'s does, and macOS answers as it does there.
+#
+# - `inner`: a stream already connected to a client; its life passes as
+#   `client`'s `inner` does.
+# - `chain`: PEM, the certificate first and the authorities that signed it
+#   after; left as it was handed.
+# - `chain_count`: the bytes of `chain` read.
+# - `key`: PEM of the certificate's private key; left as it was handed.
+# - `key_count`: the bytes of `key` read.
+# - `protocols`: the ALPN list taken, as `listen`'s; it aborts where it holds
+#   a zero byte.
 function server(@inner: hero_stream.Stream, @chain: [u8], chain_count: u64, @key: [u8], key_count: u64, protocols: str) -> hero_stream.Stream
     return hero_tls_server(
         inner,
@@ -233,6 +299,8 @@ function server(@inner: hero_stream.Stream, @chain: [u8], chain_count: u64, @key
 
 # The version of TLS `s` speaks, 12 or 13, or -1 where `s` is no open TLS
 # stream.
+#
+# - `s`: the TLS stream asked about; it stays open.
 function version(s: hero_stream.Stream) -> i64
     return hero_tls_version(s)
 
@@ -240,6 +308,12 @@ function version(s: hero_stream.Stream) -> i64
 # `buffer`'s first bytes with a zero after it: 0 where none was chosen, -1
 # where `s` is no open TLS stream or `count` is below
 # `HERO_TLS_PROTOCOL_MOST`.
+#
+# - `s`: the TLS stream asked about; it stays open.
+# - `buffer`: where the protocol's name is written, a zero byte after it; left
+#   `count` long.
+# - `count`: the bytes `buffer` holds, at least `HERO_TLS_PROTOCOL_MOST`, else
+#   `HERO_TLS_INVALID`.
 function protocol(s: hero_stream.Stream, @buffer: [u8], count: u64) -> i64
     return hero_tls_protocol(s, @buffer, count: count)
 
@@ -302,6 +376,10 @@ function last_os_error() -> i64
 # The length of the last failure's words, written into `buffer`'s first
 # bytes with a zero after them and cut where a character ends, or -1 where
 # `count` is 0.
+#
+# - `buffer`: where the words are written, a zero byte after them, cut where a
+#   character ends; left `count` long.
+# - `count`: the bytes `buffer` holds, 1 or more; 0 answers -1.
 function last_message(@buffer: [u8], count: u64) -> i64
     return hero_tls_last_message(@buffer, count: count)
 

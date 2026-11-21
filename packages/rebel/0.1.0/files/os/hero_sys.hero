@@ -68,6 +68,11 @@ extern "hero_sys.h"
 # How many bytes the machine's host name has, or -1. The name is written into
 # `buffer` where `n` bytes hold it: the kernel's name on POSIX, the computer's
 # DNS name on Windows.
+#
+# - `buffer`: where the host name is written, where `n` bytes hold it; left
+#   `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
 function host_name(@buffer: [u8], n: u64) -> i64
     return hero_sys_host_name(@buffer, n: n)
 
@@ -99,6 +104,10 @@ function effective_group_id() -> i64
 # How many other groups the process belongs to, or -1 with
 # `HERO_SYS_UNSUPPORTED` on Windows. Their ids are written into `ids` where
 # `n` of them fit, and `ids` is left `n` long.
+#
+# - `ids`: where the groups' ids are written, where `n` of them fit; left `n`
+#   long. Darwin tells at most sixteen.
+# - `n`: the ids `ids` holds; an answer above it says `ids` was too short.
 function groups(@ids: [i64], n: u64) -> i64
     return hero_sys_groups(@ids, n: n)
 
@@ -113,6 +122,11 @@ function processor_count() -> i64
 # How many bytes the path of the user's home folder has, or -1 with
 # `HERO_SYS_NOT_FOUND` where the machine names none. The path is written into
 # `buffer` where `n` bytes hold it.
+#
+# - `buffer`: where the home folder's path is written, where `n` bytes hold
+#   it; left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
 function home_folder(@buffer: [u8], n: u64) -> i64
     return hero_sys_home_folder(@buffer, n: n)
 
@@ -120,6 +134,11 @@ function home_folder(@buffer: [u8], n: u64) -> i64
 # or -1. It is the platform's own: `Library/Caches` on Darwin,
 # `$XDG_CACHE_HOME` or `.cache` on Linux, the local application data on
 # Windows.
+#
+# - `buffer`: where the folder's path is written, where `n` bytes hold it;
+#   left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
 function cache_folder(@buffer: [u8], n: u64) -> i64
     return hero_sys_cache_folder(@buffer, n: n)
 
@@ -127,6 +146,11 @@ function cache_folder(@buffer: [u8], n: u64) -> i64
 # It is the platform's own: `Library/Application Support` on Darwin,
 # `$XDG_CONFIG_HOME` or `.config` on Linux, the roaming application data on
 # Windows.
+#
+# - `buffer`: where the folder's path is written, where `n` bytes hold it;
+#   left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
 function settings_folder(@buffer: [u8], n: u64) -> i64
     return hero_sys_settings_folder(@buffer, n: n)
 
@@ -134,12 +158,22 @@ function settings_folder(@buffer: [u8], n: u64) -> i64
 # reads again has, or -1. It is the platform's own: `Library/Application
 # Support` on Darwin, `$XDG_DATA_HOME` or `.local/share` on Linux, the roaming
 # application data on Windows.
+#
+# - `buffer`: where the folder's path is written, where `n` bytes hold it;
+#   left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
 function data_folder(@buffer: [u8], n: u64) -> i64
     return hero_sys_data_folder(@buffer, n: n)
 
 # How many bytes the path of the folder for a program's state has, or -1:
 # `Library/Application Support` on Darwin, `$XDG_STATE_HOME` or
 # `.local/state` on Linux, the local application data on Windows.
+#
+# - `buffer`: where the folder's path is written, where `n` bytes hold it;
+#   left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
 function state_folder(@buffer: [u8], n: u64) -> i64
     return hero_sys_state_folder(@buffer, n: n)
 
@@ -147,6 +181,11 @@ function state_folder(@buffer: [u8], n: u64) -> i64
 # -1: the user's own temporary folder on Darwin, `$XDG_RUNTIME_DIR` on Linux,
 # where it is unset -1 with `HERO_SYS_NOT_FOUND`, and on Windows -1 with
 # `HERO_SYS_UNSUPPORTED`.
+#
+# - `buffer`: where the folder's path is written, where `n` bytes hold it;
+#   left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
 function runtime_folder(@buffer: [u8], n: u64) -> i64
     return hero_sys_runtime_folder(@buffer, n: n)
 
@@ -155,21 +194,40 @@ function runtime_folder(@buffer: [u8], n: u64) -> i64
 # run with `target` as their one argument and waited for, `ShellExecuteW` on
 # Windows. A target that begins with `-` is read as an option: the caller
 # never hands one.
+#
+# - `target`: a URL or a path, never beginning with `-`, which both launchers
+#   read as an option; the empty target is `HERO_SYS_INVALID`. It aborts where
+#   it holds a zero byte.
 function open(target: str) -> i64
     return hero_sys_open(target.cstr())
 
 # How many bytes every variable of the environment takes, or -1. Each is
 # written into `buffer` as its name, `=` and its value, then one zero byte.
+#
+# - `buffer`: where the variables, in the system's order is written, where `n`
+#   bytes hold it; left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
 function environment(@buffer: [u8], n: u64) -> i64
     return hero_sys_environment(@buffer, n: n)
 
 # `n`, once `buffer` holds `n` random bytes fit for a key, or -1.
+#
+# - `buffer`: where the random bytes are written, from the system's generator
+#   for keys; left `n` long, and not to be used on -1.
+# - `n`: how many random bytes to write, every one; on Linux the call may
+#   wait, early in the machine's start, until the system can give them.
 function random(@buffer: [u8], n: u64) -> i64
     return hero_sys_random(@buffer, n: n)
 
 # 0, once `columns` and `rows` hold the size of the terminal the program
 # writes to, or -1 with `HERO_SYS_UNSUPPORTED` where its output is not one.
 # The two are then left as they were.
+#
+# - `columns`: set to the terminal's width in characters, above 0; left as it
+#   was on -1.
+# - `rows`: set to the terminal's height in lines, above 0; left as it was on
+#   -1.
 function terminal_size(@columns: i64, @rows: i64) -> i64
     return hero_sys_terminal_size(columns: @columns, rows: @rows)
 
@@ -187,6 +245,11 @@ function architecture() -> i64
 # How many bytes the system's version has, or -1. It is written into `buffer`
 # where `n` bytes hold it: the kernel's release `uname` answers on POSIX,
 # `major.minor.build` on Windows.
+#
+# - `buffer`: where the version, as the system writes it is written, where `n`
+#   bytes hold it; left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
 function system_version(@buffer: [u8], n: u64) -> i64
     return hero_sys_system_version(@buffer, n: n)
 
@@ -194,18 +257,35 @@ function system_version(@buffer: [u8], n: u64) -> i64
 # `HERO_SYS_NOT_FOUND` where the machine names none. It is written into
 # `buffer` where `n` bytes hold it: the system's record of the effective user,
 # or `USER`, on POSIX; the thread's user on Windows.
+#
+# - `buffer`: where the user's name is written, where `n` bytes hold it; left
+#   `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
 function user_name(@buffer: [u8], n: u64) -> i64
     return hero_sys_user_name(@buffer, n: n)
 
 # 0, once `user_ns` and `system_ns` hold the processor time the process has
 # spent in its own code and in the system's, in nanoseconds, or -1 with the
 # two left as they were.
+#
+# - `user_ns`: set to the nanoseconds every thread of the process spent in its
+#   own code; left as it was on -1.
+# - `system_ns`: set to the nanoseconds the system spent on its behalf; left
+#   as it was on -1.
 function process_times(@user_ns: i64, @system_ns: i64) -> i64
     return hero_sys_process_times(user_ns: @user_ns, system_ns: @system_ns)
 
 # 0, once `one`, `five` and `fifteen` hold the system's load averages over that
 # many minutes, each multiplied by 1000, or -1 with `HERO_SYS_UNSUPPORTED` on
 # Windows. The three are left as they were where it fails.
+#
+# - `one`: set to the load over the last minute, times 1000 and rounded, so
+#   1.5 processes waiting is 1500; left as it was on -1.
+# - `five`: set to the load over the last five minutes, in the same unit; left
+#   as it was on -1.
+# - `fifteen`: set to the load over the last fifteen minutes, in the same
+#   unit; left as it was on -1.
 function load_average(@one: i64, @five: i64, @fifteen: i64) -> i64
     return hero_sys_load_average(one: @one, five: @five, fifteen: @fifteen)
 
@@ -213,6 +293,12 @@ function load_average(@one: i64, @five: i64, @fifteen: i64) -> i64
 # the bytes it could give programs now without writing anything out, never
 # above `total`, or -1 with the two left as they were: `HERO_SYS_UNSUPPORTED`
 # on a POSIX system neither Darwin nor Linux.
+#
+# - `total`: set to the bytes of memory the system manages; left as it was on
+#   -1.
+# - `available`: set to the bytes it could give programs now without writing
+#   anything out, never above `total`; a container's limit is not read. Left
+#   as it was on -1.
 function memory(@total: i64, @available: i64) -> i64
     return hero_sys_memory(total: @total, available: @available)
 
@@ -221,6 +307,18 @@ function memory(@total: i64, @available: i64) -> i64
 # system's, idle, idle while a read or a write was waited for, and taken by a
 # hypervisor; or -1 with the five left as they were, `HERO_SYS_UNSUPPORTED` on
 # a POSIX system neither Darwin nor Linux.
+#
+# - `user_us`: set to the microseconds every processor ran programs' own code,
+#   niced ones included; left as it was on -1.
+# - `system_us`: set to the microseconds every processor ran the system's
+#   code, interrupts included; left as it was on -1.
+# - `idle_us`: set to the microseconds every processor was idle; left as it
+#   was on -1.
+# - `waiting_us`: set to the microseconds idle while a read or a write was
+#   waited for; 0 on Darwin and Windows, which do not tell it apart.
+# - `stolen_us`: set to the microseconds a hypervisor took for another
+#   machine; 0 on Darwin and Windows. Darwin counts each processor in 32 bits,
+#   so a later reading may hold less.
 function cpu_times(@user_us: i64, @system_us: i64, @idle_us: i64, @waiting_us: i64, @stolen_us: i64) -> i64
     return hero_sys_cpu_times(
         user_us: @user_us,
@@ -236,6 +334,18 @@ function cpu_times(@user_us: i64, @system_us: i64, @idle_us: i64, @waiting_us: i
 # `HERO_SYS_INVALID` for an id below 1, `HERO_SYS_NOT_FOUND` where no process
 # has it, `HERO_SYS_DENIED` where the system does not let this process read
 # that one.
+#
+# - `pid`: the process's id, 1 or more; below 1 or past what the platform's
+#   ids hold is `HERO_SYS_INVALID`, one no process has `HERO_SYS_NOT_FOUND`.
+# - `resident`: set to its resident memory in bytes, the working set on
+#   Windows; left as it was on -1.
+# - `virtual_bytes`: set to its virtual memory in bytes, the address space's
+#   size on Darwin and Linux and the bytes committed for it on Windows; left
+#   as it was on -1.
+# - `user_ns`: set to the nanoseconds every thread of it spent in its own
+#   code; left as it was on -1.
+# - `system_ns`: set to the nanoseconds the system spent on its behalf; left
+#   as it was on -1.
 function process_usage(pid: i64, @resident: i64, @virtual_bytes: i64, @user_ns: i64, @system_ns: i64) -> i64
     return hero_sys_process_usage(
         pid: pid,
@@ -248,6 +358,11 @@ function process_usage(pid: i64, @resident: i64, @virtual_bytes: i64, @user_ns: 
 # How many bytes the counters of every network interface take, or -1. They are
 # written into `buffer` where `n` bytes hold them: each interface's name and a
 # zero byte, then eight counters, each its decimal digits and a zero byte.
+#
+# - `buffer`: where the counters, interface by interface, in the system's
+#   order is written, where `n` bytes hold it; left `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
 function network_counters(@buffer: [u8], n: u64) -> i64
     return hero_sys_network_counters(@buffer, n: n)
 
