@@ -192,10 +192,10 @@ variant Status
 # The CPU time a child used once it has ended: its own, and on POSIX that of
 # the children it waited for.
 record CpuTime
-    # Nanoseconds spent running its own code.
-    user_nanoseconds: i64
-    # Nanoseconds the system spent working for it.
-    system_nanoseconds: i64
+    # The time spent running its own code.
+    user: time.Duration
+    # The time the system spent working for it.
+    system: time.Duration
 
 # What `run` answers: how the child ended, what it wrote where its command
 # asked for a pipe, and the CPU time it used.
@@ -652,7 +652,7 @@ function wait(@child: Child) -> Status?
             .exited(code: seen.code)
         child.state @ .ended(
             status: status,
-            cpu: CpuTime(user_nanoseconds: seen.user_ns, system_nanoseconds: seen.system_ns)
+            cpu: CpuTime(user: time.nanoseconds(seen.user_ns), system: time.nanoseconds(seen.system_ns))
         )
     launch.dropped(@child.input)
     launch.dropped(@child.output)
@@ -699,7 +699,7 @@ function has_ended(@child: Child) -> bool?
         .exited(code: seen.code)
     child.state @ .ended(
         status: status,
-        cpu: CpuTime(user_nanoseconds: seen.user_ns, system_nanoseconds: seen.system_ns)
+        cpu: CpuTime(user: time.nanoseconds(seen.user_ns), system: time.nanoseconds(seen.system_ns))
     )
     return ok(true)
 
@@ -974,7 +974,7 @@ test "run: an exit code of 0 and of 3, nothing captured where no pipe was asked 
     zero = run(with_output(shell(fixture.exit_script(0)).must(), to: .nothing)).must()
     assert zero.status == .exited(code: 0)
     assert zero.output.len() == 0 && zero.error.len() == 0
-    assert zero.cpu.user_nanoseconds >= 0 && zero.cpu.system_nanoseconds >= 0
+    assert zero.cpu.user.nanoseconds >= 0 && zero.cpu.system.nanoseconds >= 0
     three = run(shell(fixture.exit_script(3)).must()).must()
     assert three.status == .exited(code: 3)
 
@@ -1157,7 +1157,7 @@ test "start: text written to a child's input comes back from its output, and wai
     assert child.handle == nullptr
     assert io.is_closed(child.output)
     assert wait(@child).must() == .exited(code: 0)
-    assert cpu_of(child).must().user_nanoseconds >= 0
+    assert cpu_of(child).must().user.nanoseconds >= 0
     release(@child).must()
 
 test "start: wait closes the input first, so a child reading to its end goes on, and every end after"
@@ -1476,7 +1476,7 @@ test "cpu_of: the time a short child used"
     child @= start(shell(fixture.exit_script(0)).must()).must()
     assert wait(@child).must() == .exited(code: 0)
     used = cpu_of(child).must()
-    assert used.user_nanoseconds >= 0 && used.system_nanoseconds >= 0
+    assert used.user.nanoseconds >= 0 && used.system.nanoseconds >= 0
 
 # Whether a child succeeded.
 test "is_success: exit code 0 and exit code 1"
