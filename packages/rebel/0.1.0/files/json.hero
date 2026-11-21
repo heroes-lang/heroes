@@ -136,7 +136,7 @@ function equals(a: Value, b: Value) -> bool
 
     return true
 
-## Codes and limits
+## Codes
 
 # The code of a text that is not JSON, of a value that is not of the kind
 # asked for, and of a pointer that is not one.
@@ -157,6 +157,8 @@ constant NOT_FOUND: str
 # `f64` reaches, an integer past `MAX_EXACT_INT` where an exact one was asked.
 constant DOES_NOT_FIT: str
     "does_not_fit"
+
+## Limits
 
 # The deepest nesting `parse` reads: `1` is 0 deep, `[]` is 1, `[[]]` is 2.
 # Measured on arm64 macOS on 2026-11-15, `==` on two objects nested 5,800 deep

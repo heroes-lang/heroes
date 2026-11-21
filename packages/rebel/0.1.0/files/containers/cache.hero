@@ -25,7 +25,7 @@
 use containers/cache/internal/lru
 use containers/internal/codes
 
-## The codes
+## Codes
 
 # The code of a search that found nothing, which every function of this
 # package whose `Fails` names `not_found` answers.

@@ -38,6 +38,13 @@
 # absent), `does_not_fit` (a time past what `time.Instant` holds),
 # `unsupported` (an algorithm this platform or Rebel lacks), and, from
 # `crypto/keypairs` and `crypto/seal`, `limit` and `failed`.
+#
+# Not written yet, each a `pending` block of its ledger: ES512 over P-521;
+# ES256K (RFC 8812); EdDSA over Ed448; the general and flattened JSON
+# serializations, several recipients; `RSA-OAEP`, OAEP over SHA-1; `A128KW`,
+# `A192KW`, `A256KW`, `ECDH-ES+A128KW` and the others, and `PBES2-*` (RFC 3394
+# key wrap); `A128CBC-HS256`, `A192CBC-HS384`, `A256CBC-HS512` and `A192GCM`;
+# `zip: DEF`, the plaintext compressed before it is sealed.
 
 use bytes
 use crypto

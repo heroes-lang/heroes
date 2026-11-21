@@ -22,6 +22,8 @@ use maps/internal/gather
 use maps/internal/rank
 use maps/internal/samples
 
+## Codes
+
 # The code of a failure on input that is not what the function reads: here,
 # two lists of different lengths given to `from_lists`.
 constant INVALID: str

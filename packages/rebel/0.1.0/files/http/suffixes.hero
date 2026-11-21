@@ -19,12 +19,7 @@ use http/suffixes/internal/cases
 use http/suffixes/internal/lookup
 use http/suffixes/internal/rules
 
-## The list
-
-# The version of the list the rules are made from, as it writes it: the
-# instant it was cut.
-constant VERSION: str
-    rules.VERSION
+## Codes
 
 # The code of a name that is no domain name.
 constant INVALID: str
@@ -33,6 +28,13 @@ constant INVALID: str
 # The code of a name with no registrable domain.
 constant NOT_FOUND: str
     "not_found"
+
+## The list
+
+# The version of the list the rules are made from, as it writes it: the
+# instant it was cut.
+constant VERSION: str
+    rules.VERSION
 
 # A name's public suffix, and whether the list's ICANN section says it.
 record Suffix

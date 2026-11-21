@@ -21,6 +21,10 @@
 # `unsupported`, where the directory offers no `newAuthz` or `renewalInfo`;
 # `failed`, where the server refused for another reason, the problem's type
 # and detail in the message; and the codes of `http` and `jose`, handed on.
+#
+# Not written yet, each a `pending` block of its ledger: the certificate of a
+# TLS-ALPN-01 challenge (RFC 8737); the certificate request made from a key and
+# the names.
 
 use acme/internal/fields
 use acme/internal/sample
@@ -35,7 +39,7 @@ use pem
 use time
 use x509
 
-## The codes
+## Codes
 
 # The code of an answer of the server that is not what RFC 8555 writes, and
 # of an argument refused.

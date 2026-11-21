@@ -18,10 +18,16 @@
 #
 # It fails with `invalid`, for data a statistic cannot read (too few values,
 # a nan to order, lists of different lengths), and `does_not_fit`.
+#
+# Not written yet, each a `pending` block of its ledger: the harmonic mean with
+# a weight for each value; a normal distribution: its density, cumulative
+# probability, inverse, overlap, z-score, samples, and arithmetic on two.
 
 use stats/internal/exact
 use stats/internal/order
 use stats/internal/pairs
+
+## Codes
 
 # The code of data a statistic cannot read: too few values, a nan where the
 # values are ordered, two lists of different lengths, a constant input. Every

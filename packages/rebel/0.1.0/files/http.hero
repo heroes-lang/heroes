@@ -67,6 +67,14 @@
 # The codes it fails with: `invalid`, `limit`, `unsupported`, `not_found`,
 # `not_text`, `does_not_fit`, and, from the connection, `closed`, `timeout`,
 # `stopped` and `failed`.
+#
+# Not written yet, each a `pending` block of its ledger: Digest authentication,
+# and a proxy's; the URL a response came from after redirects, and the redirects
+# before it; the Link field's links; a chunked body's trailer fields kept; a
+# time limit on making a connection; a client certificate presented to the
+# server; a Brotli or Zstandard response undone; the proxies the system's own
+# settings name, macOS's and Windows'; a request's body sent as it is made, not
+# held whole.
 
 use bytes
 use compress

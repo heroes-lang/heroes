@@ -57,7 +57,7 @@ use lists/internal/samples
 use lists/internal/searching
 use lists/internal/selecting
 
-## The codes
+## Codes
 
 # The code of a search that found nothing: an empty list asked for an element,
 # an index that names none, a value or an accepted element that is not there.

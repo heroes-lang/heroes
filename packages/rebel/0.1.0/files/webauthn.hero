@@ -20,6 +20,12 @@
 # verify, the message saying which check; `unsupported`, where a key's
 # algorithm is one the system's cryptography lacks; and the codes of
 # `crypto/keypairs` and `os`, handed on.
+#
+# Not written yet, each a `pending` block of its ledger: the format "apple" of
+# Apple's anonymous attestation; the format "tpm" of a Trusted Platform Module;
+# the formats "android-key" and "android-safetynet"; the FIDO AppID extension: a
+# credential registered for U2F, its RP ID hash the AppID's; the authenticator's
+# extension outputs, and the client's results.
 
 use bytes
 use cbor
@@ -37,7 +43,7 @@ use webauthn/internal/options as writer
 use webauthn/internal/recorded
 use webauthn/internal/response as reply
 
-## The codes
+## Codes
 
 # The code of a response that is not well formed or does not verify: every
 # `verify_*` and `decode_*` function answers it, the message naming the

@@ -15,6 +15,18 @@
 # allowed. A broken file fails `invalid`, never a memory fault.
 #
 # It fails with `invalid`, `limit` and `unsupported`.
+#
+# Not written yet, each a `pending` block of its ledger: images made from a
+# formula: gradients, noise, a Mandelbrot set; CMYK, YCbCr, Lab, HSV and other
+# colour spaces; ICC profiles applied: one colour space into another; affine,
+# perspective and mesh transforms; one image laid over another through a third,
+# a mask; polygons, arcs, chords, pie slices, rounded rectangles, wide lines,
+# flood fill; text drawn with a font; extrema, colours, bounding box, means,
+# entropy; Plan 9's palette and other made palettes; convolution filters: blur,
+# sharpen, edges; levels changed: invert, contrast, brightness, equalize,
+# posterize; an image split into channels and put back together; two images
+# combined sample by sample; a colour from its CSS name or text; TIFF, WebP,
+# ICO, AVIF, HEIF, TGA, PSD, PCX and Pillow's other formats.
 
 use image/internal/compose
 use image/internal/convert as recode
@@ -25,7 +37,7 @@ use image/internal/quantize
 use image/internal/resample
 use image/internal/warp
 
-## Codes and limits
+## Codes
 
 # The code of an input that is not what the call reads: a file that is not
 # its format, a pixel buffer of the wrong length, a rectangle outside an
@@ -48,6 +60,8 @@ constant LIMIT: str
 # and encoders of the formats fail with it.
 constant UNSUPPORTED: str
     "unsupported"
+
+## Limits
 
 # The widest image `default_limits` allows, in pixels.
 constant DEFAULT_MAX_WIDTH: i64

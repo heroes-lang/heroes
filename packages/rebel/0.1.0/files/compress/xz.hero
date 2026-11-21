@@ -21,6 +21,13 @@
 # call abort, loop without end, or read past the input.
 #
 # It fails with `invalid`, `limit` and `unsupported`.
+#
+# Not written yet, each a `pending` block of its ledger: the slower presets that
+# search harder for a smaller output; the filters that turn an executable's call
+# addresses relative; a chain of filters and the encoder's own options named by
+# the caller; LZMA or LZMA2 data with no container, its filters named by the
+# caller, as zip and 7z hold it; bytes compressed piece by piece; a stream
+# decompressed piece by piece, or through a stream.
 
 use compress/internal/codes
 use compress/xz/internal/container

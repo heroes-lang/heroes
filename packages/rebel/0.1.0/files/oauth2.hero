@@ -32,6 +32,10 @@
 # the message), `permission` (the user denied the device), `timeout` (a
 # device code expired), `unsupported`, and as `http.send` fails: `closed`,
 # `limit`, `stopped`.
+#
+# Not written yet, each a `pending` block of its ledger: a client registered at
+# the server (RFC 7591); a pushed authorization request (RFC 9126); tokens bound
+# to a key by DPoP proofs (RFC 9449).
 
 use bytes
 use http

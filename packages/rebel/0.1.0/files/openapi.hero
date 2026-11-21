@@ -42,6 +42,15 @@
 # nothing), `exists` (an operation or a component added twice), and
 # `unsupported` (an OpenAPI version other than 3.1, a reference to another
 # document).
+#
+# Not written yet, each a `pending` block of its ledger: references into other
+# documents, read from files or URLs or given by the program; a document of
+# OpenAPI 3.0 read, its schemas made 3.1's (`nullable`, boolean exclusive
+# bounds); Swagger 2.0 converted to OpenAPI 3 and back; examples and defaults
+# validated against their schemas; a webhook's request and response validated;
+# `format` asserted while a request or a response is validated; a `readOnly`
+# property refused in a request and a `writeOnly` one in a response; Scalar's
+# page of the document.
 
 use bytes
 use http

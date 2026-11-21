@@ -26,6 +26,34 @@
 #
 # It fails with `invalid`, `limit`, `not_found` and `unsupported`, and with
 # the codes of `io`, `fs` and `archive` where they fail.
+#
+# Not written yet, each a `pending` block of its ledger: sheets removed, copied,
+# moved; rows and columns inserted, removed, duplicated, an area moved, the
+# references of formulas moved with them; the rest of a cell's format: diagonal
+# borders, rotation, indent, shrinking to fit, reading order, sub- and
+# superscript, a font's family, scheme and character set, gradient fills, named
+# styles, a row's and a column's own style; a value written as text the way its
+# number format shows it, `3.14159` under `0.00` as `3.14`; a column's width
+# fitted to its widest text; the application's properties: company, manager,
+# status, hyperlink base, the application and its version, the revision;
+# properties a program names itself, kept in the document; a text of several
+# runs, each with its own font, read and written; notes attached to cells, read
+# and written; data validation: lists to choose from, numbers and dates within
+# bounds, messages; conditional formats: colour scales, data bars, icon sets,
+# rules by value, text, date, formula; tables over an area: a name, a header
+# row, a style, totals; a filter over an area's header, with its criteria;
+# charts drawn from a sheet's areas, in a sheet or a sheet of their own;
+# pictures placed over cells, read and written; a sheet's background; shapes,
+# buttons, checkboxes, form controls, slicers, sparklines, embedded objects;
+# pivot tables made and read; a sheet or a workbook protected, with or without a
+# password; cells locked and hidden; printing: paper, orientation, margins,
+# scale, headers and footers, page breaks, print options; how a sheet is shown:
+# zoom, grid lines, right to left, the tab's colour, the cells selected, the
+# view mode; rows and columns grouped into levels that fold; Excel's green
+# warnings switched off over an area; a sheet written row by row, or read cell
+# by cell, without the whole sheet in memory; the theme's colours read and a
+# theme chosen; colours by theme and tint, HSL; a workbook protected by a
+# password to open: encrypted and decrypted.
 
 use bytes
 use fs
@@ -44,7 +72,7 @@ use xlsx/internal/numfmt
 use xlsx/internal/samples
 use xlsx/internal/styles_write
 
-## Codes and limits
+## Codes
 
 # The code of a file that is not a workbook, the message naming the part and
 # what was wrong there; of a name, a cell, an area or a value a sheet cannot
@@ -68,6 +96,8 @@ constant NOT_FOUND: str
 # encrypted with a password, or a binary `.xlsb`.
 constant UNSUPPORTED: str
     "unsupported"
+
+## Limits
 
 # The rows a sheet holds: 1,048,576, so the last row is 1,048,575.
 constant MAX_ROWS: i64

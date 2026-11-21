@@ -33,7 +33,7 @@ use yaml/internal/composer
 use yaml/internal/reading
 use yaml/internal/writer
 
-## Codes and limits
+## Codes
 
 # The code of a text that is not YAML, of a key that is not text, and of a
 # tag on a node it cannot describe.
@@ -55,6 +55,8 @@ constant LIMIT: str
 # The code of a number past what an `f64` holds, as `1e400` is.
 constant DOES_NOT_FIT: str
     "does_not_fit"
+
+## Limits
 
 # The deepest nesting `parse` reads: `1` is 0 deep, `[]` is 1, `[[]]` is 2, as
 # `json.DEFAULT_MAX_DEPTH` counts it and for its reason: `==` on two values

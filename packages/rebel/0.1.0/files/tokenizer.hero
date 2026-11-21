@@ -29,6 +29,10 @@
 # caller did not allow it, a file of ranks that is not one; `not_found` where
 # what it looks for is not there; `unsupported` where a pattern holds what
 # `regex` cannot match.
+#
+# Not written yet, each a `pending` block of its ledger: GPT-2's `vocab.bpe` and
+# `encoder.json` read into a vocabulary; a tokenizer of Hugging Face read from
+# its `tokenizer.json`, and written.
 
 use bytes
 use tokenizer/internal/assemble

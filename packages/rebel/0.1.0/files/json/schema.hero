@@ -30,6 +30,12 @@
 # documents given and where a format is not one of the dialects', and
 # `unsupported` where a schema names another dialect, needs a vocabulary this
 # package does not know, or writes a pattern `regex` does not read.
+#
+# Not written yet, each a `pending` block of its ledger: the standard output
+# nested as the schema is: detailed and verbose; the annotations a valid
+# instance collects: titles, defaults, formats, the members evaluated; a keyword
+# of the program's own, checked by its function; a schema and every document it
+# references made one document.
 
 use json
 use json/schema/internal/formats

@@ -61,6 +61,12 @@
 # `limit` (a cookie too long), `unsupported` (a cookie sealed on a Linux
 # machine with no `libcrypto.so.3`), and, from the connection, `closed`,
 # `timeout`, `stopped`, `limit` and `failed`.
+#
+# Not written yet, each a `pending` block of its ledger: a parameter matched by
+# its kind or an expression, `/posts/{id:[0-9]+}`; HTTP sent to HTTPS, or a host
+# to its `www.` form and back; requests passed to another server; webhooks
+# signed and verified with Ed25519, the specification's `v1a`, `whsk_` and
+# `whpk_` keys.
 
 use bytes
 use compress

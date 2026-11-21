@@ -24,6 +24,9 @@
 # bytes an encoding cannot read where the call is strict, and `unsupported`
 # for a character an encoding has no bytes for where the call is strict, and
 # for writing in the encoding `replacement`, which has no bytes for anything.
+#
+# Not written yet, each a `pending` block of its ledger: the encoding a browser
+# assumes for a page with none declared, by the reader's language.
 
 use bytes
 use unicode

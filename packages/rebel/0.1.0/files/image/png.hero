@@ -14,6 +14,10 @@
 # or hostile file fails `invalid` or `limit` and never reads past its end.
 #
 # It fails with `invalid`, `limit` and `unsupported`.
+#
+# Not written yet, each a `pending` block of its ledger: an image written
+# interlaced; a text chunk written compressed; gamma, chromaticities, sRGB and
+# ICC applied to the pixels; animated PNG read and written.
 
 use bytes
 use image

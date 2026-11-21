@@ -40,6 +40,15 @@
 # stream or listener closed), `not_found` (a host name with no address),
 # `timeout`, `stopped`, `exists` (a port in use), `permission`, `limit`,
 # `unsupported` and `failed` (a handshake the peer broke off, no route).
+#
+# Not written yet, each a `pending` block of its ledger: an identity read from a
+# PKCS #12 file; a program asking for TLS 1.3 at the least; a server choosing
+# its certificate by the name the client sent; a client presenting a
+# certificate, and a server asking for one (mutual TLS); the peer's certificate
+# and the chain that vouched for it, as bytes; what binds an authentication to
+# this TLS connection (tls-server-end-point, tls-exporter); TLS's end sent while
+# the other way is still read; a certificate's revocation asked (OCSP, CRL,
+# stapling, timestamps); the client's hello encrypted (ECH).
 
 use bytes
 use io

@@ -34,6 +34,15 @@
 #
 # It fails with `not_found`, `unsupported`, `invalid`, `timeout`, `closed` and
 # `failed` (README § A4).
+#
+# Not written yet, each a `pending` block of its ledger: where text stands in an
+# area's height; the colour of an underline apart from the text's; a program
+# drawn in a few rows below the shell's lines, and lines printed above it;
+# borders of blocks that touch merged into one line; a shadow or a dimmed area
+# under a block; bars with values and labels, grouped, upright or lying; lines
+# and points of data sets on two axes, with a legend; shapes drawn in cells of
+# braille dots, half blocks or characters; a month drawn, days styled by the
+# program; many lines of text edited; a tree of nodes, folded and unfolded.
 
 use io
 use os

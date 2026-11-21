@@ -29,6 +29,15 @@
 # operator or a type that could carry a value; `unsupported` for what
 # PostgreSQL writes and SQLite does not; and `limit` for more parameters than
 # PostgreSQL's protocol carries.
+#
+# Not written yet, each a `pending` block of its ledger: PostgreSQL's DISTINCT
+# ON; a value compared with ANY or ALL of an array or a subquery; window
+# functions: OVER, PARTITION BY, frames; a text compared by a named collation; a
+# subquery that reads the tables before it, LATERAL; named subqueries before the
+# statement, WITH and WITH RECURSIVE; rows locked as they are read: FOR UPDATE,
+# FOR SHARE, SKIP LOCKED, NOWAIT; rows changed by what another table holds,
+# UPDATE ... FROM; rows deleted by what another table holds, DELETE ... USING;
+# MySQL's and MariaDB's text: backquoted names, bare `?`.
 
 use sql
 use sql/build/internal/clauses

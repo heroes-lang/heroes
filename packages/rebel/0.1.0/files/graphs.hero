@@ -29,7 +29,7 @@ use graphs/internal/paths
 use graphs/internal/stages
 use graphs/internal/walks
 
-## The codes
+## Codes
 
 # The code of a search that found nothing, which every function of this
 # package whose `Fails` names `not_found` answers.

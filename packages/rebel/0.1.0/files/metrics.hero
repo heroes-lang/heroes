@@ -34,6 +34,17 @@
 # family or no series of that name), `failed` (a Pushgateway that
 # refused), and, from the network, the codes of `http.send` and of
 # `net.send_to`.
+#
+# Not written yet, each a `pending` block of its ledger: a summary's quantiles
+# over a sliding window of age; OpenMetrics 2.0 and the formats that escape
+# UTF-8 names; the OpenMetrics text format read; the protobuf exposition format,
+# and native histograms; an exemplar beside a counter's or a histogram's
+# observation; the grouping key of this machine's address; the process's own CPU
+# time, memory, open files and start, and the runtime's; several lines a
+# datagram, flushed by size or by time, aggregated on the client; a gauge or a
+# count sent with the moment it was taken; delta temporality, the counts since
+# the last export; OpenTelemetry's base-2 exponential histogram; OTLP over gRPC,
+# and OTLP/HTTP's JSON.
 
 use bytes
 use http

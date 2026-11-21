@@ -31,6 +31,9 @@
 # codes of `fs` where a file cannot be opened, renamed, compressed or removed,
 # and of `io` where a line cannot be written: `file_not_found`, `permission`,
 # `not_a_directory`, `is_a_directory`, `closed`, `failed`.
+#
+# Not written yet, each a `pending` block of its ledger: old files named and
+# days counted by the local zone.
 
 use fs
 use io

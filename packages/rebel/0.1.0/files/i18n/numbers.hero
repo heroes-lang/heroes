@@ -20,6 +20,10 @@
 # fails `invalid` where a number, a pattern or a text to read is not what the
 # function reads, and `not_found` where a numbering system or a currency is
 # unknown.
+#
+# Not written yet, each a `pending` block of its ledger: a currency named in
+# words, "US dollars"; a number spelled out in words, "one hundred"; a range of
+# numbers, "3–5".
 
 use i18n
 use i18n/numbers/internal/data

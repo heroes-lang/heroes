@@ -13,6 +13,9 @@
 # It fails with `invalid`, where a segment holds a character its mode cannot
 # write, a version, a mask or a colour is out of its range; and
 # `unsupported`, where no symbol of the versions allowed holds the data.
+#
+# Not written yet, each a `pending` block of its ledger: Micro QR codes, in
+# their four sizes.
 
 use qr/internal/bits
 use qr/internal/build
@@ -21,7 +24,7 @@ use qr/internal/matrix
 use qr/internal/render
 use qr/internal/tables
 
-## The codes
+## Codes
 
 # The code of an input the function does not read: a character a segment's
 # mode cannot write, a version outside 1 to 40, a mask outside 0 to 7, a

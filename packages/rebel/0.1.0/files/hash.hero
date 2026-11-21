@@ -16,6 +16,9 @@
 # Nothing here fails. These algorithms wrap their words by design and Heroes
 # aborts on an overflow, so every sum and product is written modulo 2^32 or
 # 2^64, and none wraps.
+#
+# Not written yet, each a `pending` block of its ledger: FNV-1 and FNV-1a in 128
+# bits; CRC-16 by the CCITT polynomial, from a value of the caller's.
 
 use hash/internal/adler
 use hash/internal/crc

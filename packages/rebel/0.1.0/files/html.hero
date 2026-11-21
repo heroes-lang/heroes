@@ -25,6 +25,10 @@
 # would put a node inside itself; `not_found` on a search that finds nothing, a
 # node with no parent or sibling, and an attribute an element does not hold;
 # `limit` on a text longer than the reading allows.
+#
+# Not written yet, each a `pending` block of its ledger: text nodes side by side
+# made one, after changes; a `<template for>` streaming its contents between
+# processing instruction markers.
 
 use html/internal/ascii
 use html/internal/dom
@@ -173,7 +177,7 @@ record ParseError
     # The column, counted from 1 in characters.
     column: i64
 
-## Codes and limits
+## Codes
 
 # The code of a selector that cannot be read, and of a change that would put a
 # node inside itself: `select`, `select_all`, `is_match`, `closest`,
@@ -193,6 +197,8 @@ constant NOT_FOUND: str
 # it.
 constant LIMIT: str
     "limit"
+
+## The root and the depth
 
 # The number of the document node of a tree `parse` reads, and of the fragment
 # node of one `parse_fragment` reads: 0.

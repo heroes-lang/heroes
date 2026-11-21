@@ -47,6 +47,9 @@
 # `\1`, look-around `(?=x)`, a possessive `x*+` or `(?>x)`, a condition, a
 # comment, an octal escape, `\Q`, `\Z`, `\u`, the flags `U` and `x`, and a
 # `{` that opens no count, which is written `\{`.
+#
+# Not written yet, each a `pending` block of its ledger: a class of characters
+# named by a script; a character written by its Unicode name.
 
 use regex/internal/capture
 use regex/internal/escapes
@@ -58,7 +61,7 @@ use regex/internal/simulate
 use regex/internal/template as filling
 use unicode
 
-## The codes and the bounds
+## Codes
 
 # The code of a pattern or a template this package does not read.
 constant INVALID: str
@@ -71,6 +74,8 @@ constant LIMIT: str
 # The code of a search that found no match, and of a group that took no part.
 constant NOT_FOUND: str
     "not_found"
+
+## Bounds
 
 # The largest count a pattern may write: `x{1000}` compiles, `x{1001}` fails
 # `limit`.

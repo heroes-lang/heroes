@@ -23,13 +23,27 @@
 # looking at itself. A quaternion is read as the rotation of its normalized
 # self, and the zero quaternion, which is no rotation, answers nans, as a
 # float function of `math` answers a nan.
+#
+# Not written yet, each a `pending` block of its ledger: a vector refracted
+# through a surface, and a normal turned to face a vector; a vector's part along
+# another, and its part across it; a set of vectors made orthonormal; the
+# smaller, the larger and the clamped of two vectors part by part, a part's
+# size, a vector's length held below a bound; the scalar and the vector triple
+# products, and the outer product; a point of the plane or of space by its
+# distance and angles, and back; a direction turned along a sphere, and the
+# curves of Catmull and Rom and of Hermite; the adjugate, the cofactors, the
+# minors, the trace, the inverse transpose; a matrix's columns made orthonormal;
+# a transform made of a translation, a rotation and a scaling, and taken back
+# apart; the normalized linear blend of two rotations, and the spherical spline
+# of four; the angle between two rotations; the rotation that looks along a
+# direction with an up.
 
 use math
 use math/linear/internal/rotations
 use math/linear/internal/scalars
 use math/linear/internal/solve
 
-## The code `math/linear` fails with
+## Codes
 
 # The input has no answer: a zero vector or axis, a singular matrix, an empty
 # view; the message says what was given. `normalize_vec2` and its kin,
