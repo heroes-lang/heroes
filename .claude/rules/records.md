@@ -587,6 +587,57 @@ Five things a lane needs that this tree has and a fresh worktree does not:
   same session. A worktree left behind is a second tree a later check can walk,
   which is what § Working in lanes' first bullet is about.
 
+**And what lanes leave behind is swept, every so often, by a hook** (author
+instruction 2026-11-21, meant as: *put these cleanups as a rule: every so often
+the system must clean the worktrees and the agents, because I do not want to
+waste these things any more*). Given the day the coordinator found 4 abandoned
+worktrees, 38 merged branches, 25 scratch folders of finished lanes (about 23 GB
+with its own panel copies) and 7 background shell loops waiting 7 to 11 hours on
+runs long finished, every one removed by hand. The executor is
+`.claude/hooks/sweep.py`, its Heroes twin `sweep.hero` held to the same report
+by the twin check (`test_twins.py`). **When**: at every session's start and, at
+most once an hour by the stamp `.claude/worktrees/.sweep-stamp`, on a submitted
+prompt, both `async` in `.claude/settings.json`, so no prompt waits on it and no
+timeout cuts a removal in half; two sweeps never run at once (the lock
+`.claude/worktrees/.sweep-lock`). By hand, `python3 .claude/hooks/sweep.py
+--dry-run` says what it would do and does nothing, `--sweep` does it. **What it
+removes**, each only where every condition holds, a question the system does not
+answer keeping the thing:
+
+- a **worktree** directly under `.claude/worktrees/`: no process works inside it
+  or names it on its command line (`lsof -a -d cwd`, `ps`), nothing in it
+  outside `build/` changed within 6 hours, it is not locked, `git status
+  --porcelain` is empty, and its HEAD is reachable from another local branch's
+  head or from `origin/main`; then `git worktree remove`, never `--force`. A
+  lane just opened is clean and holds no commit of its own, so its age and its
+  processes are what keep it;
+- a **folder** there that is no worktree, a lane's `<x>-scratch/` or a panel's
+  copies: no worktree `<x>` stands, no process is inside it or names it, nothing
+  in it changed within 6 hours, it holds no `.git` of its own, and no tracked
+  file names it (`git grep -F` over every local branch's head, `origin/main` and
+  the main checkout's tracked files); then `rm -rf`;
+- a local **branch** no worktree holds, but `main`, its reflog unmoved for 6
+  hours: `git branch -d`, never `-D`, run in a checkout whose HEAD holds it, so
+  git refuses an unmerged one itself;
+- a **wait loop**: a shell under Claude Code (its parent's command line names
+  `claude`), working inside this repository, over 3 hours old, whose script is
+  one `until` or `while` loop whose body only sleeps and prints, sleeping in it
+  now, whose condition reads files and watches no process, and whose watched
+  path, or where it is not there yet the folder that would hold it, changed
+  nothing within the hour; then `SIGTERM`, to it and its `sleep`.
+
+**What it never touches**: the main checkout, a worktree with uncommitted work or
+commits of its own, anything outside `.claude/worktrees/` but local branches and
+those loops, a remote, a compiler, a test, a harness run, an agent. Before acting
+it asks the processes again, and what came into use since it was judged is kept.
+**What it says**, one short report the session reads as its context: what it
+removed, what it kept and why (a worktree's uncommitted paths or the commits only
+it holds, the first tracked file citing a folder, a loop's reason), and the disk
+freed. Its removals are the author's standing ask under CLAUDE.md § Hard stops'
+*destructive operations are asked for*, within these conditions and no others.
+The sweep is the net under the bullet above, never its replacement: a lane's
+session still removes its own worktree and branch when it is done.
+
 And the ordering that makes it safe: **merge the lane before opening the next
 one on the same files**, so the second starts from the first's result rather than
 from a base that is already behind.

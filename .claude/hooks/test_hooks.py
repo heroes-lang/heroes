@@ -44,6 +44,7 @@ import guard_bash  # noqa: E402
 import marks  # noqa: E402
 import provenance  # noqa: E402
 import runs as what_runs  # noqa: E402
+import sweep  # noqa: E402
 import tagged  # noqa: E402
 import twins  # noqa: E402
 
@@ -2900,6 +2901,587 @@ class TaggedPush(unittest.TestCase):
             held = re.search(r'^constant TAG_CHECK: str\n    "([^"]+)"$', handle.read(), re.MULTILINE)
         self.assertIsNotNone(held, "suite_records.hero no longer holds `constant TAG_CHECK: str`")
         self.assertEqual(held.group(1), tagged.TAG_CHECK)
+
+
+# ---------------------------------------------------------------- the sweep
+
+def aged(path, hours=7):
+    """Everything at and under `path` dated `hours` ago, links themselves."""
+    import time
+
+    then = time.time() - hours * 3600
+    if os.path.isfile(path) or os.path.islink(path):
+        os.utime(path, (then, then), follow_symlinks=False)
+        return path
+    for base, _dirs, files in os.walk(path, topdown=False):
+        for name in files:
+            os.utime(os.path.join(base, name), (then, then), follow_symlinks=False)
+        os.utime(base, (then, then))
+    return path
+
+
+def sweep_repository(prefix):
+    """A repository that is a tree of this project, its main checkout on
+    `main`, with `.claude/worktrees/` made: (its root, that folder)."""
+    root = make_tree(os.path.join(fresh(prefix), "repo"), compiler=False, repo=True)
+    # What the repository's own `.gitignore` leaves out of a lane's status.
+    commit_in(root, ".gitignore", "/build\n/heroes\n/heroes-next\n.claude/worktrees/\n")
+    folder = os.path.join(root, ".claude", "worktrees")
+    os.makedirs(folder)
+    return root, folder
+
+
+def sweep_lane(root, name, branch=None):
+    """A worktree under `.claude/worktrees/<name>` on a new branch, as the
+    lanes are made: clean and holding no commit of its own."""
+    path = os.path.join(root, ".claude", "worktrees", name)
+    git(root, "worktree", "add", "-q", "-b", branch or name, path)
+    return path
+
+
+def quiet_branch(root, branch):
+    """The branch's reflog dated seven hours ago, as a branch nothing moved."""
+    aged(os.path.join(root, ".git", "logs", "refs", "heads", branch))
+
+
+def commit_in(tree, rel, text):
+    write(os.path.join(tree, rel), text)
+    git(tree, "add", "--", rel)
+    git(tree, "commit", "-q", "-m", "x", "--", rel)
+
+
+def branch_names(root):
+    return git(root, "for-each-ref", "--format=%(refname:short)", "refs/heads").stdout.split()
+
+
+def sweep_scenario(prefix):
+    """One repository holding every shape the sweep judges at once, so the
+    twin check asks both sweeps of all of them: a lane just made, a quiet
+    merged one, a dirty one, one ahead, a locked one, a record whose folder
+    is gone; a quiet scratch folder, the scratch of a standing lane, a cited
+    one, one holding a repository, a fresh one; a quiet merged branch, a quiet
+    unmerged one, one just made. (its root, its `.claude/worktrees/`)."""
+    root, folder = sweep_repository(prefix)
+    sweep_lane(root, "lane-new")
+    for name in ("lane-done", "lane-dirty", "lane-ahead", "lane-locked"):
+        sweep_lane(root, name)
+    write(os.path.join(folder, "lane-dirty", "selfhost", "main.hero"), "function main()\n    return 1\n")
+    commit_in(os.path.join(folder, "lane-ahead"), "a.txt", "1\n")
+    git(root, "worktree", "lock", os.path.join(folder, "lane-locked"))
+    sweep_lane(root, "lane-gone")
+    subprocess.run(["rm", "-rf", os.path.join(folder, "lane-gone")], check=True)
+    write(os.path.join(folder, "old-scratch", "logs", "run.log"), "x" * 4096)
+    write(os.path.join(folder, "lane-new-scratch", "a"), "a\n")
+    commit_in(root, "docs/panel/999-x.md", "the copies stand in .claude/worktrees/p999-scratch/\n")
+    write(os.path.join(folder, "p999-scratch", "copy.md"), "x\n")
+    git(fresh(prefix + "init-"), "init", "-q", os.path.join(folder, "clone-scratch", "inner"))
+    git(root, "branch", "merged-one")
+    git(root, "checkout", "-q", "-b", "unmerged-one")
+    commit_in(root, "u.txt", "u\n")
+    git(root, "checkout", "-q", "main")
+    for name in ("lane-done", "lane-dirty", "lane-ahead", "lane-locked", "old-scratch", "lane-new-scratch",
+                 "p999-scratch", "clone-scratch"):
+        aged(os.path.join(folder, name))
+    for name in ("lane-done", "lane-dirty", "lane-ahead", "lane-locked", "lane-gone", "merged-one", "unmerged-one"):
+        quiet_branch(root, name)
+    git(root, "branch", "just-made")
+    write(os.path.join(folder, "fresh-scratch", "a"), "a\n")
+    return root, folder
+
+
+class Sweep(unittest.TestCase):
+    """The author's instruction of 2026-11-21: what finished lanes leave under
+    `.claude/worktrees/` is swept, each thing only where every condition of
+    `sweep.py`'s docstring holds."""
+
+    def setUp(self):
+        self.root, self.folder = sweep_repository("hooks-sweep-")
+
+    def run_sweep(self, dry=False):
+        return sweep.sweep(self.root, dry=dry)
+
+    def test_a_lane_just_made_survives(self):
+        """Clean and holding no commit of its own, a fresh lane is "merged":
+        the age is what keeps it."""
+        lane = sweep_lane(self.root, "lane-new")
+        said = self.run_sweep()
+        self.assertTrue(os.path.isdir(lane), said)
+        self.assertIn("lane-new", branch_names(self.root))
+        self.assertIn("in use", said)
+        self.assertIn("lane-new", said.split("in use")[1])
+        self.assertIn("removed 0 worktrees", said)
+
+    def test_a_quiet_merged_clean_lane_goes_with_its_branch(self):
+        lane = aged(sweep_lane(self.root, "lane-done"))
+        quiet_branch(self.root, "lane-done")
+        dry = self.run_sweep(dry=True)
+        self.assertIn("would remove worktree lane-done", dry)
+        self.assertIn("would delete branch lane-done", dry)
+        self.assertTrue(os.path.isdir(lane))
+        said = self.run_sweep()
+        self.assertFalse(os.path.lexists(lane), said)
+        self.assertNotIn("lane-done", branch_names(self.root))
+        self.assertIn("removed worktree lane-done", said)
+        self.assertIn("deleted branch lane-done", said)
+        self.assertIn("removed 1 worktree and 0 folders, deleted 1 branch", said)
+
+    def test_a_change_in_build_alone_does_not_keep_it_and_one_elsewhere_does(self):
+        """`build/` made by the lane's first build, long ago, then written
+        again now: the folder's own date moved when `build/` was made, never
+        since."""
+        lane = sweep_lane(self.root, "lane-built")
+        write(os.path.join(lane, "build", "old.o"), "object\n")
+        aged(lane)
+        quiet_branch(self.root, "lane-built")
+        write(os.path.join(lane, "build", "x.o"), "object\n")
+        self.assertIn("would remove worktree lane-built", self.run_sweep(dry=True))
+        write(os.path.join(lane, "selfhost", "notes.txt"), "fresh\n")
+        git(lane, "update-index", "--refresh", check=False)
+        said = self.run_sweep(dry=True)
+        self.assertNotIn("would remove worktree lane-built", said)
+
+    def test_a_process_working_inside_keeps_it(self):
+        lane = aged(sweep_lane(self.root, "lane-busy"))
+        quiet_branch(self.root, "lane-busy")
+        inside = subprocess.Popen(["sleep", "60"], cwd=os.path.join(lane, "selfhost"))
+        try:
+            said = self.run_sweep()
+        finally:
+            inside.kill()
+            inside.wait()
+        self.assertTrue(os.path.isdir(lane), said)
+        self.assertIn("lane-busy", said.split("in use")[1])
+
+    def test_a_process_naming_it_keeps_it(self):
+        lane = aged(sweep_lane(self.root, "lane-named"))
+        quiet_branch(self.root, "lane-named")
+        naming = subprocess.Popen(["/bin/sh", "-c", "sleep 60; : " + lane + "/log"], cwd=fresh("hooks-sweep-elsewhere-"))
+        try:
+            said = self.run_sweep()
+        finally:
+            naming.kill()
+            naming.wait()
+        self.assertTrue(os.path.isdir(lane), said)
+
+    def test_a_dirty_worktree_is_kept_and_says_what_it_holds(self):
+        lane = sweep_lane(self.root, "lane-dirty")
+        write(os.path.join(lane, "selfhost", "main.hero"), "function main()\n    return 1\n")
+        write(os.path.join(lane, "new.txt"), "untracked\n")
+        aged(lane)
+        quiet_branch(self.root, "lane-dirty")
+        said = self.run_sweep()
+        self.assertTrue(os.path.isdir(lane))
+        self.assertIn("worktree lane-dirty: uncommitted work in 2 paths (selfhost/main.hero, new.txt)", said)
+        self.assertIn("lane-dirty", branch_names(self.root))
+
+    def test_a_worktree_with_commits_of_its_own_is_kept_and_counts_them(self):
+        lane = sweep_lane(self.root, "lane-ahead")
+        commit_in(lane, "a.txt", "1\n")
+        commit_in(lane, "b.txt", "2\n")
+        aged(lane)
+        quiet_branch(self.root, "lane-ahead")
+        said = self.run_sweep()
+        self.assertTrue(os.path.isdir(lane))
+        self.assertIn("worktree lane-ahead: 2 commits on no other local branch nor origin/main", said)
+        self.assertIn("lane-ahead", branch_names(self.root))
+
+    def test_a_worktree_merged_into_another_branch_goes_its_branch_with_it(self):
+        lane = sweep_lane(self.root, "lane-merged")
+        commit_in(lane, "a.txt", "1\n")
+        git(self.root, "branch", "round", "lane-merged")
+        holder = sweep_lane(self.root, "round-tree", branch="round-holder")
+        git(holder, "merge", "-q", "--ff-only", "round")
+        aged(lane)
+        quiet_branch(self.root, "lane-merged")
+        said = self.run_sweep()
+        self.assertFalse(os.path.lexists(lane), said)
+        # `round` holds it and no checkout's HEAD but `round-tree`'s does.
+        self.assertIn("deleted branch lane-merged", said)
+        self.assertTrue(os.path.isdir(holder))
+
+    def test_a_locked_worktree_is_kept(self):
+        lane = sweep_lane(self.root, "lane-locked")
+        git(self.root, "worktree", "lock", lane)
+        aged(lane)
+        quiet_branch(self.root, "lane-locked")
+        said = self.run_sweep()
+        self.assertTrue(os.path.isdir(lane))
+        self.assertIn("worktree lane-locked: it is locked", said)
+
+    def test_a_worktree_elsewhere_and_the_main_checkout_are_never_judged(self):
+        elsewhere = os.path.join(os.path.dirname(self.root), "beside")
+        git(self.root, "worktree", "add", "-q", "-b", "beside", elsewhere)
+        aged(elsewhere)
+        quiet_branch(self.root, "beside")
+        said = self.run_sweep()
+        self.assertTrue(os.path.isdir(elsewhere))
+        self.assertTrue(os.path.isfile(os.path.join(self.root, "seed", "heroes.c")))
+        self.assertNotIn("beside", said)
+        self.assertIn("beside", branch_names(self.root))
+
+    def test_a_record_whose_folder_is_gone_is_reported(self):
+        lane = sweep_lane(self.root, "lane-gone")
+        subprocess.run(["rm", "-rf", lane], check=True)
+        said = self.run_sweep()
+        self.assertIn("worktree record lane-gone: its folder is gone", said)
+        self.assertIn("lane-gone", branch_names(self.root))
+
+    def test_a_quiet_scratch_folder_goes(self):
+        scratch = os.path.join(self.folder, "lane-old-scratch")
+        write(os.path.join(scratch, "logs", "run.log"), "x" * 4096)
+        aged(scratch)
+        dry = self.run_sweep(dry=True)
+        self.assertIn("would remove folder lane-old-scratch", dry)
+        self.assertTrue(os.path.isdir(scratch))
+        said = self.run_sweep()
+        self.assertFalse(os.path.lexists(scratch), said)
+        self.assertIn("removed folder lane-old-scratch", said)
+
+    def test_the_scratch_of_a_standing_lane_is_kept(self):
+        sweep_lane(self.root, "lane-live")
+        scratch = aged(write(os.path.join(self.folder, "lane-live-scratch", "a"), "a\n"))
+        aged(os.path.dirname(scratch))
+        said = self.run_sweep()
+        self.assertTrue(os.path.isdir(os.path.dirname(scratch)))
+        self.assertIn("lane-live-scratch", said.split("in use")[1])
+
+    def test_a_recent_scratch_folder_is_kept(self):
+        scratch = os.path.join(self.folder, "fresh-scratch")
+        write(os.path.join(scratch, "a"), "a\n")
+        said = self.run_sweep()
+        self.assertTrue(os.path.isdir(scratch))
+        self.assertIn("fresh-scratch", said.split("in use")[1])
+
+    def test_a_scratch_folder_a_tracked_file_names_is_kept_and_reported(self):
+        commit_in(self.root, "docs/panel/999-x.md", "the copies stand in .claude/worktrees/p999-scratch/\n")
+        scratch = aged(os.path.dirname(write(os.path.join(self.folder, "p999-scratch", "copy.md"), "x\n")))
+        said = self.run_sweep()
+        self.assertTrue(os.path.isdir(scratch))
+        self.assertIn("folder p999-scratch: a tracked file names it (docs/panel/999-x.md)", said)
+
+    def test_a_name_held_only_by_another_branch_keeps_the_folder(self):
+        lane = sweep_lane(self.root, "lane-cites")
+        commit_in(lane, "docs/note.md", "see p77-scratch\n")
+        scratch = aged(os.path.dirname(write(os.path.join(self.folder, "p77-scratch", "a"), "a\n")))
+        said = self.run_sweep()
+        self.assertTrue(os.path.isdir(scratch))
+        self.assertIn("folder p77-scratch: a tracked file names it (docs/note.md)", said)
+
+    def test_a_scratch_folder_holding_a_repository_is_kept(self):
+        scratch = os.path.join(self.folder, "clone-scratch")
+        git(fresh("hooks-sweep-init-"), "init", "-q", os.path.join(scratch, "inner"))
+        aged(scratch)
+        said = self.run_sweep()
+        self.assertTrue(os.path.isdir(scratch))
+        self.assertIn("folder clone-scratch: it holds a git repository of its own (inner/.git)", said)
+
+    def test_a_process_inside_a_scratch_folder_keeps_it(self):
+        scratch = os.path.join(self.folder, "held-scratch")
+        write(os.path.join(scratch, "a"), "a\n")
+        aged(scratch)
+        inside = subprocess.Popen(["sleep", "60"], cwd=scratch)
+        try:
+            said = self.run_sweep()
+        finally:
+            inside.kill()
+            inside.wait()
+        self.assertTrue(os.path.isdir(scratch), said)
+
+    def test_a_merged_branch_with_no_worktree_is_deleted_and_an_unmerged_one_kept(self):
+        git(self.root, "branch", "merged-one")
+        git(self.root, "checkout", "-q", "-b", "unmerged-one")
+        commit_in(self.root, "u.txt", "u\n")
+        git(self.root, "checkout", "-q", "main")
+        for name in ("merged-one", "unmerged-one"):
+            quiet_branch(self.root, name)
+        said = self.run_sweep()
+        self.assertIn("deleted branch merged-one", said)
+        self.assertIn("branch unmerged-one: no checkout's HEAD holds it", said)
+        self.assertEqual(sorted(branch_names(self.root)), ["main", "unmerged-one"])
+
+    def test_a_branch_moved_within_six_hours_is_kept_and_main_never_goes(self):
+        git(self.root, "branch", "just-made")
+        said = self.run_sweep()
+        self.assertIn("just-made", branch_names(self.root))
+        self.assertIn("branch just-made", said.split("in use")[1])
+        self.assertIn("main", branch_names(self.root))
+
+    def test_an_unmerged_branch_git_refuses_is_reported_never_forced(self):
+        """The dry run's judgement is git's own: an unmerged branch is not even
+        put to `git branch -d`, and nothing runs `-D`."""
+        git(self.root, "checkout", "-q", "-b", "own-work")
+        commit_in(self.root, "w.txt", "w\n")
+        git(self.root, "checkout", "-q", "main")
+        quiet_branch(self.root, "own-work")
+        with open(os.path.join(HOOKS, "sweep.py"), encoding="utf-8") as handle:
+            source = handle.read()
+        self.assertNotIn('"-D"', source)
+        self.assertNotIn('"--force"', source)
+        self.run_sweep()
+        self.assertIn("own-work", branch_names(self.root))
+
+    def test_a_held_lock_stops_a_second_sweep_and_a_dead_one_is_taken(self):
+        lock = os.path.join(self.folder, sweep.LOCK)
+        os.mkdir(lock)
+        lane = aged(sweep_lane(self.root, "lane-wait"))
+        quiet_branch(self.root, "lane-wait")
+        self.assertEqual(self.run_sweep(), sweep.HELD)
+        self.assertIn("another sweep holds", sweep.by_hand(self.root, dry=True))
+        self.assertTrue(os.path.isdir(lane))
+        aged(lock, hours=1)
+        said = self.run_sweep()
+        self.assertFalse(os.path.lexists(lane), said)
+        self.assertFalse(os.path.lexists(lock))
+
+    def test_outside_every_tree_nothing_is_judged(self):
+        self.assertIsNone(sweep.sweep(fresh("hooks-sweep-none-"), dry=True))
+        self.assertIn("nothing was judged", sweep.by_hand(fresh("hooks-sweep-none-"), dry=True))
+
+    def test_a_session_in_a_lane_sweeps_the_main_checkouts_folder(self):
+        lane = sweep_lane(self.root, "lane-here")
+        self.assertEqual(sweep.repository_root(lane), self.root)
+        self.assertEqual(sweep.repository_root(os.path.join(lane, "selfhost")), self.root)
+        self.assertEqual(sweep.repository_root(self.root), self.root)
+        said = sweep.sweep(os.path.join(lane, "selfhost"), dry=True)
+        self.assertTrue(said.startswith("sweep, dry run, of " + self.folder + ":"), said)
+
+
+class SweepHook(unittest.TestCase):
+    """The hook's two events: a session's start sweeps, a prompt sweeps once
+    an hour by the stamp, and the answer is the session's context."""
+
+    def setUp(self):
+        self.root, self.folder = sweep_repository("hooks-sweep-hook-")
+        self.stamp = os.path.join(self.folder, sweep.STAMP)
+
+    def event(self, name):
+        return json.dumps({"hook_event_name": name, "cwd": self.root, "session_id": "s"})
+
+    def test_a_session_start_sweeps_and_answers_with_context(self):
+        out = sweep.as_hook(self.event("SessionStart"))
+        answer = json.loads(out)
+        self.assertEqual(answer["hookSpecificOutput"]["hookEventName"], "SessionStart")
+        self.assertIn("sweep of " + self.folder, answer["hookSpecificOutput"]["additionalContext"])
+        self.assertTrue(os.path.isfile(self.stamp))
+
+    def test_a_prompt_sweeps_once_an_hour(self):
+        out = sweep.as_hook(self.event("UserPromptSubmit"))
+        self.assertIn("UserPromptSubmit", out)
+        self.assertEqual(sweep.as_hook(self.event("UserPromptSubmit")), "")
+        aged(self.stamp, hours=2)
+        self.assertIn("additionalContext", sweep.as_hook(self.event("UserPromptSubmit")))
+
+    def test_another_event_and_a_folder_outside_every_tree_say_nothing(self):
+        self.assertEqual(sweep.as_hook(json.dumps({"hook_event_name": "Stop", "cwd": self.root})), "")
+        self.assertEqual(sweep.as_hook(json.dumps({"hook_event_name": "SessionStart",
+                                                   "cwd": fresh("hooks-sweep-out-")})), "")
+        self.assertEqual(sweep.as_hook("not json"), "")
+        self.assertEqual(sweep.as_hook("[1]"), "")
+
+    def test_the_hook_runs_under_an_isolated_python_and_exits_zero(self):
+        done = subprocess.run([sys.executable, "-I", os.path.join(HOOKS, "sweep.py")],
+                              input=self.event("SessionStart"), capture_output=True, text=True, timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn("additionalContext", done.stdout)
+        by_hand = subprocess.run([sys.executable, "-I", os.path.join(HOOKS, "sweep.py"), "--dry-run"],
+                                 cwd=self.root, capture_output=True, text=True, timeout=120)
+        self.assertEqual(by_hand.returncode, 0, by_hand.stderr)
+        self.assertTrue(by_hand.stdout.startswith("sweep, dry run, of " + self.folder), by_hand.stdout)
+        wrong = subprocess.run([sys.executable, "-I", os.path.join(HOOKS, "sweep.py"), "--bogus"],
+                               cwd=self.root, capture_output=True, text=True, timeout=120)
+        self.assertEqual(wrong.returncode, 2)
+
+    def test_the_settings_run_it_async_on_both_events(self):
+        with open(os.path.join(os.path.dirname(HOOKS), "settings.json"), encoding="utf-8") as f:
+            hooks = json.load(f)["hooks"]
+        for event_name in ("SessionStart", "UserPromptSubmit"):
+            entries = [h for group in hooks[event_name] for h in group["hooks"]]
+            ran = [h for h in entries if h.get("command", "").endswith("run.sh\" sweep.py")]
+            self.assertEqual(len(ran), 1, event_name)
+            self.assertIs(ran[0].get("async"), True, event_name)
+
+
+# A wait loop's script as Claude Code's Bash tool runs it, read off `ps`.
+CLAUDE_SHELL = ("/bin/zsh -c source /Users/u/.claude/shell-snapshots/snapshot-zsh-1-x.sh 2>/dev/null || true "
+                "&& \\builtin setopt NO_EXTENDED_GLOB 2>/dev/null || true && eval '{}' < /dev/null "
+                "&& pwd -P >| /tmp/claude-a9f7-cwd")
+
+
+class SweepLoops(unittest.TestCase):
+    """Which processes are wait loops, and what keeps one: read on the text
+    `ps` prints, then on a loop running under a stand-in Claude Code."""
+
+    def loop(self, script):
+        return sweep.wait_loop(sweep.shell_script(CLAUDE_SHELL.format(script.replace("'", "'\\''"))))
+
+    def test_the_elapsed_times_and_lines_ps_prints(self):
+        self.assertEqual(sweep.elapsed("00:05"), 5)
+        self.assertEqual(sweep.elapsed("01:02:03"), 3723)
+        self.assertEqual(sweep.elapsed("11-04:38:17"), 11 * 86400 + 4 * 3600 + 38 * 60 + 17)
+        for bad in ("", "5", "a:b", "1-", "1:2:3:4"):
+            self.assertEqual(sweep.elapsed(bad), -1, bad)
+        one = sweep.ps_line(" 9337  9120       08:10 sh -c x y")
+        self.assertEqual((one.pid, one.ppid, one.age, one.command), (9337, 9120, 490, "sh -c x y"))
+        self.assertIsNone(sweep.ps_line("  12"))
+        self.assertEqual(sweep.hours(7 * 3600 + 5 * 60), "7h05m")
+
+    def test_claude_and_the_names_of_a_command(self):
+        self.assertTrue(sweep.names_claude("/x/native-binary/claude --output-format stream-json"))
+        self.assertTrue(sweep.names_claude("node /usr/lib/node_modules/@anthropic-ai/claude-code/cli.js"))
+        self.assertFalse(sweep.names_claude("/Applications/Claude.app/Contents/MacOS/Claude"))
+        self.assertFalse(sweep.names_claude("bash claude.sh"))
+        self.assertTrue(sweep.names("tail ../rebel-scratch/logs/a.log", "rebel-scratch"))
+        self.assertTrue(sweep.names("cd /r/.claude/worktrees/lane-a", "lane-a"))
+        self.assertFalse(sweep.names("tail ../logs/lane-apps-build.log", "lane-apps"))
+        self.assertFalse(sweep.names("make lane-a", "lane-a"))
+
+    def test_the_shapes_that_are_wait_loops(self):
+        found = self.loop("until [ -f /w/done ]; do sleep 30; done; tail -3 /w/log")
+        self.assertIsNotNone(found)
+        self.assertEqual(found.condition, [["[", "-f", "/w/done", "]"]])
+        self.assertEqual(found.text, "until [ -f /w/done ]; do sleep 30; done")
+        self.assertEqual(self.loop("until [ -f /w/done ]; do sleep 30; done").text,
+                         "until [ -f /w/done ]; do sleep 30; done < /dev/null")
+        self.assertIsNotNone(self.loop("S=/w; while ! grep -q 'harness:' \"$S/log\"\ndo\n  echo waiting\n  sleep 20\ndone"))
+        self.assertIsNotNone(sweep.wait_loop(sweep.shell_script("/bin/sh -c X=1\\012until [ -f x ]; do sleep 3; done")))
+        self.assertIsNotNone(sweep.wait_loop(sweep.shell_script("bash -lc while true; do sleep 60; done")))
+
+    def test_the_shapes_that_are_not(self):
+        for script in ("while true; do ./heroes test x.hero; sleep 60; done",
+                       "until [ -f a ]; do echo no; done",
+                       "for i in 1 2; do sleep 1; done",
+                       "until [ -f a ]; do sleep 1; done; until [ -f b ]; do sleep 1; done",
+                       "while [ -f a ]; do if true; then sleep 1; fi; done",
+                       "until [ -f a ]; do sleep 1",
+                       "sleep 600"):
+            self.assertIsNone(self.loop(script), script)
+        runtime_reaper = ("sh -c trap '' INT HUP QUIT PIPE\\012held=' '\\012while read -r op pid; do\\012  case $op in"
+                          "\\012    h) held=x ;;\\012  esac\\012done\\012for pid in $held; do kill -KILL $pid; done\\012")
+        self.assertIsNone(sweep.wait_loop(sweep.shell_script(runtime_reaper)))
+        self.assertIsNone(sweep.shell_script("/usr/bin/python3 -c while True: pass"))
+        self.assertIsNone(sweep.shell_script("bash script.sh"))
+
+    def test_what_a_condition_keeps(self):
+        home = "/h"
+        quiet = fresh("hooks-sweep-quiet-")
+        write(os.path.join(quiet, "log"), "running\n")
+        aged(quiet, hours=2)
+        busy = fresh("hooks-sweep-busy-")
+        write(os.path.join(busy, "log"), "running\n")
+
+        def why(script, cwd=quiet):
+            return sweep.watch(self.loop(script), cwd, home)
+
+        self.assertEqual(why("until [ -f " + quiet + "/done ]; do sleep 30; done"), "")
+        self.assertEqual(why("until grep -q 'harness:' log; do sleep 30; done"), "")
+        self.assertEqual(why("L=" + quiet + "/log; until grep -q passed \"$L\" 2>/dev/null; do sleep 9; done"), "")
+        self.assertEqual(why("while true; do sleep 60; done"), "")
+        self.assertIn("changed within the hour", why("until grep -q x " + busy + "/log; do sleep 9; done"))
+        self.assertIn("which would hold", why("until [ -f " + busy + "/done ]; do sleep 9; done"))
+        self.assertIn("watches a process", why("while kill -0 123; do sleep 30; done"))
+        self.assertIn("watches a process", why("while pgrep -f heroes >/dev/null; do sleep 30; done"))
+        self.assertIn("runs `heroes`", why("until ./heroes run x | grep -q ok; do sleep 30; done"))
+        self.assertIn("through a variable", why("until [ -f \"$OUT/done\" ]; do sleep 30; done"))
+        self.assertIn("through a variable", why("until [ \"$(cat x)\" = done ]; do sleep 30; done"))
+        self.assertIn("folder is unknown", why("until [ -f done ]; do sleep 30; done", cwd=""))
+        self.assertEqual(sweep.expanded("~/x", {}, home), "/h/x")
+        self.assertEqual(sweep.expanded("$HOME/x${A}", {"A": "y"}, home), "/h/xy")
+        self.assertIsNone(sweep.expanded("$AB", {"A": "y"}, home))
+        self.assertEqual(sweep.known_values([("A", "/a"), ("B", "$A/b"), ("C", "$Z")], home),
+                         {"A": "/a", "B": "/a/b", "C": None})
+        self.assertEqual(sweep.operands(["grep", "-q", "-e", "pat", "f", "2>/dev/null"]), ["f"])
+        self.assertEqual(sweep.operands(["grep", "-f", "pats", "f", ">", "out"]), ["pats", "f"])
+        self.assertEqual(sweep.operands(["[", "-f", "a", "]", "&&", "[", "1", "-lt", "2", "]"]), ["a", "["])
+
+    def test_a_long_text_is_cut_on_a_character(self):
+        self.assertEqual(sweep.quoted("a" * 160), "a" * 160)
+        cut = sweep.quoted("a" * 159 + "é" + "b")
+        self.assertEqual(cut, "a" * 159 + "...")
+        self.assertEqual(sweep.decoded("a\\012b\\\\c\\101"), "a\nb\\\\c\\101")
+
+
+def stand_in_claude(cwd, script):
+    """A process whose command line names `claude`, running `script` in a
+    shell of its own beside it, both in `cwd`: (the stand-in, the loop's pid)."""
+    import time
+
+    parent = subprocess.Popen(["claude", "-c", "/bin/sh -c '" + script + "' & echo $! ; wait"],
+                              executable="/bin/sh", cwd=cwd, stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL, text=True)
+    pid = int(parent.stdout.readline())
+    parent.stdout.close()
+    time.sleep(0.5)
+    return parent, pid
+
+
+def alive(pid):
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    done = subprocess.run(["ps", "-o", "stat=", "-p", str(pid)], capture_output=True, text=True)
+    return done.returncode == 0 and not done.stdout.strip().startswith("Z")
+
+
+class SweepStopsALoop(unittest.TestCase):
+    """A wait loop under a stand-in Claude Code, inside the repository, its
+    age bar lowered to none for the test: stopped where what it watches is
+    quiet, kept where it is not, never one working outside the repository."""
+
+    def setUp(self):
+        self.root, self.folder = sweep_repository("hooks-sweep-loop-")
+        self.watched = os.path.join(self.root, "watched")
+        write(os.path.join(self.watched, "log"), "x\n")
+        self.started = []
+
+    def tearDown(self):
+        for parent, pid in self.started:
+            for one in (pid, parent.pid):
+                try:
+                    os.kill(one, 9)
+                except OSError:
+                    pass
+            parent.wait()
+
+    def loop(self, cwd, script):
+        got = stand_in_claude(cwd, script)
+        self.started.append(got)
+        return got[1]
+
+    def test_a_quiet_loop_is_stopped(self):
+        aged(self.watched, hours=2)
+        pid = self.loop(self.root, "until [ -f " + self.watched + "/done ]; do sleep 1; done")
+        with mock.patch.object(sweep, "LOOP_AGE", 0):
+            dry = sweep.sweep(self.root, dry=True)
+            self.assertIn("would stop wait loop " + str(pid), dry)
+            self.assertTrue(alive(pid))
+            said = sweep.sweep(self.root, dry=False)
+        self.assertIn("stopped wait loop " + str(pid), said)
+        import time
+
+        time.sleep(0.3)
+        self.assertFalse(alive(pid))
+
+    def test_a_loop_whose_folder_moves_is_kept_and_said(self):
+        pid = self.loop(self.root, "until [ -f " + self.watched + "/done ]; do sleep 1; done")
+        with mock.patch.object(sweep, "LOOP_AGE", 0):
+            said = sweep.sweep(self.root, dry=False)
+        self.assertIn("wait loop " + str(pid), said)
+        self.assertIn("changed within the hour", said)
+        self.assertTrue(alive(pid))
+
+    def test_a_young_loop_and_one_outside_the_repository_are_not_touched(self):
+        aged(self.watched, hours=2)
+        young = self.loop(self.root, "until [ -f " + self.watched + "/done ]; do sleep 1; done")
+        said = sweep.sweep(self.root, dry=False)
+        self.assertNotIn(str(young), said)
+        self.assertTrue(alive(young))
+        outside = fresh("hooks-sweep-outside-")
+        far = self.loop(outside, "until [ -f " + self.watched + "/done ]; do sleep 1; done")
+        with mock.patch.object(sweep, "LOOP_AGE", 0):
+            said = sweep.sweep(self.root, dry=False)
+        self.assertNotIn("wait loop " + str(far), said)
+        self.assertTrue(alive(far))
 
 
 if __name__ == "__main__":

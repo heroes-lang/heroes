@@ -1,0 +1,207 @@
+# Asking a program, as the Python sweep's `ask` asks it (`sweep.py`): its
+# words, the first the program found on the PATH, a stream that is not UTF-8
+# an answer not given. Every question the sweep asks of the system goes
+# through here, `git`, `find`, `ps`, `lsof`, `du`, `mkdir`, `rm` and `kill`,
+# so the twin reads what the Python hook reads and compares no time itself:
+# `find -mmin` and `ps`'s elapsed time compare it.
+#
+# The runtime's process door writes a program's streams into files, and the
+# sweep writes nothing outside the repository (CLAUDE.md § Hard stops), so
+# the files are `out` and `err` in the sweep's own lock folder, which only the
+# sweep holding it writes; a program asked before the lock is held, `mkdir`
+# and the `find` that removes a dead lock, has its streams thrown away and is
+# read by its exit alone.
+
+use pystr
+
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_discard_path() -> str
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+
+# Seconds any one question may take before it counts as unanswered.
+constant LIMIT: i64
+    120
+
+# What a program answered: whether it started, its exit, its two streams.
+record Asked
+    started: bool
+    code: i64
+    out: str
+    err: str
+
+# Whether the program started and exited 0.
+function answered(a: Asked) -> bool
+    return a.started && a.code == 0
+
+# `words` run, the first naming the program; with a `place` its streams are
+# read back from `<place>/out` and `<place>/err`, with "" they are thrown
+# away.
+function ask(words: [str], place: str) -> Asked
+    none = Asked(started: false, code: -1, out: "", err: "")
+
+    if words.len() == 0
+        return none
+    hero_run_reset()
+
+    for word in words
+        hero_run_arg(word: word)
+
+    hero_run_limit(seconds: LIMIT)
+
+    out_path = if place.len() == 0
+        hero_run_discard_path()
+    else
+        place + "/out"
+
+    err_path = if place.len() == 0
+        hero_run_discard_path()
+    else
+        place + "/err"
+    status: i64 @= 0
+    code = hero_run_go(
+        program: words[0].cstr(),
+        in_path: "".cstr(),
+        out_path: out_path.cstr(),
+        err_path: err_path.cstr(),
+        @status
+    )
+    hero_run_reset()
+
+    if status != HERO_OS_OK
+        return none
+
+    if place.len() == 0
+        return Asked(started: true, code: code, out: "", err: "")
+
+    out = match read_file(out_path)
+        .ok t  => t
+        .err _ => return none
+
+    err = match read_file(err_path)
+        .ok t  => t
+        .err _ => return none
+
+    return Asked(started: true, code: code, out: out, err: err)
+
+# `git --no-optional-locks -C <where> <args>`: the optional locks left
+# alone, so a sweep never holds a lane's index while its agent stages.
+function git(where: str, rest: [str], place: str) -> Asked
+    words: [str] @= ["git", "--no-optional-locks", "-C", where]
+
+    for word in rest
+        words @ words.push(word)
+
+    return ask(words: words, place: place)
+
+# The lines of `text`, an empty last one dropped: cut at a new line alone.
+function lines(text: str) -> [str]
+    out = pystr.split_at(text, '\n')
+
+    if out.len() > 0 && out[out.len() - 1] == ""
+        return out.slice(from: 0, to: out.len() - 1)
+    return out
+
+# `s` without spaces and tabs at either end: Python's `strip(" \t")`.
+function trimmed(s: str) -> str
+    from: i64 @= 0
+    to: i64 @= s.len()
+
+    while from < to && (s[from] == ' ' || s[from] == '\t')
+        from @ from + 1
+
+    while to > from && (s[to - 1] == ' ' || s[to - 1] == '\t')
+        to @ to - 1
+
+    return s.slice(from: from, to: to)
+
+# `s` without the new lines at its end: Python's `rstrip("\n")`.
+function unended(s: str) -> str
+    to: i64 @= s.len()
+
+    while to > 0 && s[to - 1] == '\n'
+        to @ to - 1
+
+    return s.slice(from: 0, to: to)
+
+# The first line of `text` that is not blank, trimmed, or a phrase saying
+# there was none.
+function first_line(text: str) -> str
+    for line in lines(text)
+        if trimmed(line).len() > 0
+            return trimmed(line)
+
+    return "no reason given"
+
+# `text` as a count where it is ASCII digits alone, at most 18 of them; -1
+# otherwise.
+function number(text: str) -> i64
+    if text.len() == 0 || text.len() > 18
+        return -1
+    out: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        c = text[at]
+
+        if c < '0' || c > '9'
+            return -1
+        out @ out * 10 + to_i64(c - '0').must()
+
+    return out
+
+# What `find` answers of the time something at or under `path` changed: 1
+# where it changed within `minutes` (`find -mmin`, `build/` left out where
+# `skip_build`, `path` and what stands directly in it alone where
+# `shallow`), 0 where nothing did, -1 where `find` could not say.
+function changed_within(path: str, minutes: i64, skip_build: bool, shallow: bool, place: str) -> i64
+    words: [str] @= ["find", path]
+
+    if shallow
+        words @ words.push("-maxdepth")
+        words @ words.push("1")
+
+    if skip_build
+        for word in ["-path", path + "/build", "-prune", "-o"]
+            words @ words.push(word)
+
+    for word in ["-mmin", "-" + minutes.to_str(), "-print", "-quit"]
+        words @ words.push(word)
+
+    asked = ask(words: words, place: place)
+
+    if !asked.started
+        return -1
+
+    if asked.out != ""
+        return 1
+
+    if asked.code == 0
+        return 0
+    return -1
+
+# How many kilobytes `du -sk` counts under `path`, 0 where it cannot say.
+function kilobytes(path: str, place: str) -> i64
+    asked = ask(words: ["du", "-sk", path], place: place)
+
+    if !answered(asked)
+        return 0
+    head = pystr.split_at(asked.out, '\t')[0]
+    found = number(unended(trimmed(head)))
+
+    if found >= 0
+        return found
+    return 0
+
+## Tests
+
+test "sweep_ask: lines, a count, a first line, and a program asked"
+    assert lines("a\nb\n") == ["a", "b"] && lines("") == [] && lines("a\n\nb") == ["a", "", "b"]
+    assert number("0042") == 42 && number("") == -1 && number("4a") == -1 && number("1234567890123456789") == -1
+    assert first_line("\n  \n\t why \nnext") == "why" && first_line("") == "no reason given"
+    assert unended("x\n\n") == "x" && trimmed(" \t") == ""
+    thrown = ask(words: ["sh", "-c", "exit 3"], place: "")
+    assert thrown.started && thrown.code == 3 && thrown.out == "" && !answered(thrown)
+    assert !ask(words: ["heroes-hooks-never-a-program"], place: "").started && !ask(words: [], place: "").started

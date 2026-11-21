@@ -1,0 +1,579 @@
+# The processes the sweep reads, and which of them are wait loops: the
+# Python sweep's reading of `ps`'s lines and of a shell's script
+# (`sweep.py`), held to it by the twin check (`test_twins.py`).
+#
+# A WAIT LOOP is a shell whose script, through Claude Code's `eval '...'`, is
+# one `until` or `while` loop whose body only sleeps and prints (`WAITERS`,
+# one of them `sleep`). What keeps one is read off its condition: a process
+# watched (`WATCHERS`), a command that is no reader of files (`READERS`), a
+# path named through a variable the script did not set, a relative path where
+# the loop's folder is unknown, or a watched path, or where it is not there
+# yet the folder that would hold it, changed within the hour.
+
+use command_line
+use pypath
+use pystr
+use shell_text
+use sweep_ask
+use trees
+
+# Minutes a loop's watched path must have been quiet.
+constant WATCHED: i64
+    60
+
+# The longest loop text a report quotes, in bytes.
+constant QUOTED: i64
+    160
+
+# A line of `ps -o pid=,ppid=,etime=,command=`.
+record Process
+    pid: i64
+    ppid: i64
+    age: i64
+    command: str
+
+# One piece a shell runs: its text, and its words.
+record Segment
+    text: str
+    words: [str]
+
+# A name a script sets before its loop, and the text it sets.
+record Assigned
+    name: str
+    value: str
+
+# A wait loop: its condition's commands, its body's, its text as a report
+# quotes it, and what the script set before it.
+record Loop
+    condition: [[str]]
+    body: [[str]]
+    text: str
+    assigned: [Assigned]
+
+# A value the script set: `readable` false where it named what is not known.
+record Known
+    readable: bool
+    value: str
+
+# `ps`'s elapsed time, `[[dd-]hh:]mm:ss`, in seconds, or -1.
+function elapsed(text: str) -> i64
+    days: i64 @= 0
+    rest: str @= text
+    dash = pystr.index_from(s: text, piece: "-", from: 0)
+
+    if dash >= 0
+        days @ sweep_ask.number(text.slice(from: 0, to: dash))
+        rest @ text.slice(from: dash + 1, to: text.len())
+
+        if days < 0
+            return -1
+    parts = pystr.split_at(rest, ':')
+
+    if parts.len() < 2 || parts.len() > 3
+        return -1
+    seconds: i64 @= 0
+
+    for part in parts
+        value = sweep_ask.number(part)
+
+        if value < 0
+            return -1
+        seconds @ seconds * 60 + value
+
+    return days * 86400 + seconds
+
+# A line of `ps`, or a failure where it is none.
+function ps_line(line: str) -> Process?
+    fields: [str] @= []
+    at: i64 @= 0
+
+    for _ in range(from: 0, to: 3)
+        while at < line.len() && line[at] == ' '
+            at @ at + 1
+
+        start = at
+
+        while at < line.len() && line[at] != ' '
+            at @ at + 1
+
+        if start == at
+            return fail(code: "not_a_line", msg: "a line of ps holds three fields and a command")
+        fields @ fields.push(line.slice(from: start, to: at))
+
+    if at < line.len()
+        at @ at + 1
+    pid = sweep_ask.number(fields[0])
+    ppid = sweep_ask.number(fields[1])
+    age = elapsed(fields[2])
+
+    if pid < 0 || ppid < 0 || age < 0
+        return fail(code: "not_a_line", msg: "a field of the ps line is no number")
+    return ok(Process(pid: pid, ppid: ppid, age: age, command: line.slice(from: at, to: line.len())))
+
+# Whether `path` is `folder` or stands under it.
+function under(path: str, folder: str) -> bool
+    return path == folder || pystr.opens(s: path, prefix: folder + "/")
+
+# Whether `c` is a byte a lane's name holds.
+function name_char(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '.' || c == '_' || c == '-'
+
+# Whether `command` names a path whose component is `name`: `/<name>`
+# followed by an end, a `/` or a byte no name holds.
+function names(command: str, name: str) -> bool
+    piece = "/" + name
+    at: i64 @= pystr.index_from(s: command, piece: piece, from: 0)
+
+    while at >= 0
+        end = at + piece.len()
+
+        if end == command.len() || !name_char(command[end])
+            return true
+        at @ pystr.index_from(s: command, piece: piece, from: at + 1)
+
+    return false
+
+# `ps`'s text with its octal escapes of control bytes, `\012` for a new
+# line, read back.
+function decoded(command: str) -> str
+    out: str @= ""
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < command.len()
+        if command[at] == '\\' && at + 4 <= command.len() && octal(command[at + 1]) && octal(command[at + 2]) && octal(command[at + 3])
+            value = to_i64(command[at + 1] - '0').must() * 64 + to_i64(command[at + 2] - '0').must() * 8 + to_i64(command[at + 3] - '0').must()
+
+            if value < 32 || value == 127
+                byte: [u8] = [to_u8(value).must()]
+                out @ out + command.slice(from: start, to: at) + byte.validated_bytes().must()
+                at @ at + 4
+                start @ at
+                continue
+        at @ at + 1
+
+    return out + command.slice(from: start, to: command.len())
+
+# Whether `c` is an octal digit.
+function octal(c: u8) -> bool
+    return c >= '0' && c <= '7'
+
+# The script a shell's `-c` runs, read off `ps`'s line, or a failure where
+# the line is no such shell's.
+function shell_script(command: str) -> str?
+    words = pystr.split_at(command, ' ')
+
+    if !command_line.shell(pypath.basename(words[0]))
+        return fail(code: "no_script", msg: "not a shell")
+    at: i64 @= 1
+
+    while at < words.len() && (pystr.opens(s: words[at], prefix: "-") || pystr.opens(s: words[at], prefix: "+")) && words[at] != "--"
+        word = words[at]
+
+        if word == "-o" || word == "+o" || word == "-O" || word == "+O"
+            at @ at + 2
+            continue
+
+        if !pystr.opens(s: word, prefix: "--") && pystr.holds(s: word.slice(from: 1, to: word.len()), piece: "c")
+            return ok(decoded(join(words.slice(from: at + 1, to: words.len()), " ")))
+        at @ at + 1
+
+    return fail(code: "no_script", msg: "no -c")
+
+# The segments `script` runs, an `eval`'s script read in its place, four
+# deep at most.
+function flat(script: str, depth: i64) -> [Segment]
+    out: [Segment] @= []
+
+    for segment in shell_text.segments(script)
+        words = command_line.bare(command_line.words(segment))
+
+        if words.len() > 0 && pypath.basename(words[0]) == "eval" && depth < 4
+            for inner in flat(script: join(words.slice(from: 1, to: words.len()), " "), depth: depth + 1)
+                out @ out.push(inner)
+        else if words.len() > 0
+            out @ out.push(Segment(text: segment, words: words))
+
+    return out
+
+# Whether `word` is an assignment, `NAME=value`.
+function assignment(word: str) -> bool
+    eq = pystr.index_from(s: word, piece: "=", from: 0)
+
+    if eq <= 0
+        return false
+    first = word[0]
+
+    if !(first >= 'a' && first <= 'z' || first >= 'A' && first <= 'Z' || first == '_')
+        return false
+
+    for at in range(from: 0, to: eq)
+        c = word[at]
+
+        if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_')
+            return false
+
+    return true
+
+# Whether a wait loop's body may run `command`.
+function waiter(command: str) -> bool
+    return command == "sleep" || command == "true" || command == ":" || command == "echo" || command == "printf" || command == "date"
+
+# The one `while` or `until` loop of `script` whose body only sleeps and
+# prints, or a failure where there is none, or more than one loop.
+function wait_loop(script: str) -> Loop?
+    none: Loop? = fail(code: "no_loop", msg: "no wait loop")
+    segments = flat(script: script, depth: 0)
+    begin: i64 @= -1
+    count: i64 @= 0
+
+    for at in range(from: 0, to: segments.len())
+        first = segments[at].words[0]
+
+        if first == "while" || first == "until" || first == "for"
+            count @ count + 1
+            begin @ at
+
+    if count != 1 || segments[begin].words[0] == "for"
+        return none
+    opening = segments[begin].words
+    condition: [[str]] @= [opening.slice(from: 1, to: opening.len())]
+    at: i64 @= begin + 1
+
+    while at < segments.len() && segments[at].words[0] != "do"
+        condition @ condition.push(segments[at].words)
+        at @ at + 1
+
+    if at == segments.len()
+        return none
+    doing = segments[at].words
+    body: [[str]] @= []
+
+    if doing.len() > 1
+        body @ body.push(doing.slice(from: 1, to: doing.len()))
+    at @ at + 1
+
+    while at < segments.len() && segments[at].words[0] != "done"
+        body @ body.push(segments[at].words)
+        at @ at + 1
+
+    if at == segments.len()
+        return none
+    slept: bool @= false
+
+    for words in body
+        command = pypath.basename(words[0])
+
+        if !waiter(command)
+            return none
+        slept @ slept || command == "sleep"
+
+    if !slept
+        return none
+    assigned: [Assigned] @= []
+
+    for segment in segments.slice(from: 0, to: begin)
+        all_set: bool @= true
+
+        for word in segment.words
+            all_set @ all_set && assignment(word)
+
+        if all_set
+            for word in segment.words
+                eq = pystr.index_from(s: word, piece: "=", from: 0)
+                assigned @ assigned.push(
+                    Assigned(name: word.slice(from: 0, to: eq), value: word.slice(from: eq + 1, to: word.len()))
+                )
+
+    texts: [str] @= []
+
+    for segment in segments.slice(from: begin, to: at + 1)
+        texts @ texts.push(segment.text)
+
+    return ok(Loop(condition: condition, body: body, text: quoted(join(texts, "; ")), assigned: assigned))
+
+# `text` cut to `QUOTED` bytes at a character's edge, `...` after a cut.
+function quoted(text: str) -> str
+    if text.len() <= QUOTED
+        return text
+    cut: i64 @= QUOTED
+
+    while cut > 0 && to_i64(text[cut]).must() & 0xc0 == 0x80
+        cut @ cut - 1
+
+    return text.slice(from: 0, to: cut) + "..."
+
+# 0 where `word` is no redirection, 1 where it carries its target, 2 where
+# its target is the next word.
+function redirection(word: str) -> i64
+    at: i64 @= 0
+
+    while at < word.len() && word[at] >= '0' && word[at] <= '9'
+        at @ at + 1
+
+    for op in ["&>>", "&>", ">>", ">&", "<&", ">|", "<<", ">", "<"]
+        if pystr.same_at(s: word, piece: op, at: at)
+            if word.len() > at + op.len()
+                return 1
+            return 2
+
+    return 0
+
+# Whether `command` is one of grep's names.
+function greps(command: str) -> bool
+    return command == "grep" || command == "egrep" || command == "fgrep"
+
+# Whether `word` of a condition is no path.
+function operator(word: str) -> bool
+    return match word
+        "]" | "]]" | "!" | "=" | "==" | "!=" | "<" | ">" | "(" | ")" | "&&" | "||" => true
+        _                                                                          => false
+
+# The words of one condition command that may be paths.
+function operands(words: [str]) -> [str]
+    command = pypath.basename(words[0])
+    out: [str] @= []
+    pattern_given: bool @= false
+    pattern_skipped: bool @= false
+    at: i64 @= 1
+
+    while at < words.len()
+        word = words[at]
+        kind = redirection(word)
+
+        if kind > 0
+            at @ at + kind
+            continue
+
+        if greps(command) && (word == "-e" || word == "--regexp")
+            pattern_given @ true
+            at @ at + 2
+            continue
+
+        if greps(command) && (word == "-f" || word == "--file")
+            pattern_given @ true
+
+            if at + 1 < words.len()
+                out @ out.push(words[at + 1])
+            at @ at + 2
+            continue
+
+        if operator(word) || word == "" || sweep_ask.number(word) >= 0 || pystr.opens(s: word, prefix: "-") && word.len() > 1
+            at @ at + 1
+            continue
+
+        if greps(command) && !pattern_given && !pattern_skipped
+            pattern_skipped @ true
+            at @ at + 1
+            continue
+        out @ out.push(word)
+        at @ at + 1
+
+    return out
+
+# The script's assignments before its loop, each value read with the ones
+# before it.
+function known_values(assigned: [Assigned], home: str) -> {str: Known}
+    known: {str: Known} @= {}
+
+    for one in assigned
+        known[one.name] @ match expanded(word: one.value, known: known, home: home)
+            .ok v  => Known(readable: true, value: v)
+            .err _ => Known(readable: false, value: "")
+
+    return known
+
+# `word` with a leading `~` and each `$name` or `${name}` read from `known`,
+# `$HOME` being `home` where the script set none; a failure where a `$` names
+# what is not known.
+function expanded(word: str, known: {str: Known}, home: str) -> str?
+    unknown: str? = fail(code: "unread", msg: "a variable the script did not set")
+
+    text = if word == "~" || pystr.opens(s: word, prefix: "~/")
+        home + word.slice(from: 1, to: word.len())
+    else
+        word
+    out: str @= ""
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] != '$'
+            at @ at + 1
+            continue
+        name: str @= ""
+        after: i64 @= 0
+
+        if pystr.same_at(s: text, piece: "${", at: at)
+            end = pystr.index_from(s: text, piece: "}", from: at + 2)
+
+            if end < 0
+                return unknown
+            name @ text.slice(from: at + 2, to: end)
+            after @ end + 1
+        else
+            end: i64 @= at + 1
+
+            while end < text.len() && name_byte(text[end])
+                end @ end + 1
+
+            name @ text.slice(from: at + 1, to: end)
+            after @ end
+
+        if name.len() == 0
+            return unknown
+
+        value = match known[name]
+            .ok k =>
+                if !k.readable
+                    return unknown
+                k.value
+            .err _ =>
+                if name != "HOME"
+                    return unknown
+                home
+
+        out @ out + text.slice(from: start, to: at) + value
+        at @ after
+        start @ after
+
+    return ok(out + text.slice(from: start, to: text.len()))
+
+# Whether `c` is a byte a variable's name holds.
+function name_byte(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_'
+
+# Whether a condition running `command` watches a process, alive while the
+# loop runs.
+function watcher(command: str) -> bool
+    return match command
+        "kill" | "pgrep" | "ps" | "pidof" | "jobs" | "wait" | "lsof" | "fuser" => true
+        _                                                                      => false
+
+# Whether a condition may run `command`, a reader of files.
+function reader(command: str) -> bool
+    return match command
+        "[" | "[[" | "test" | "true" | "false" | ":" | "grep" | "egrep" | "fgrep" | "tail" | "head" | "cat" | "ls" | "stat" | "wc" | "find" => true
+        _ => false
+
+# Why the loop is kept on its condition, "" where nothing keeps it.
+function watch(loop: Loop, cwd: str, home: str, place: str) -> str
+    known = known_values(assigned: loop.assigned, home: home)
+
+    for words in loop.condition
+        start: i64 @= 0
+
+        while start < words.len() && words[start] == "!"
+            start @ start + 1
+
+        if start == words.len()
+            continue
+        rest = words.slice(from: start, to: words.len())
+        command = pypath.basename(rest[0])
+
+        if watcher(command)
+            return "its condition watches a process (`" + command + "`)"
+
+        if !reader(command)
+            return "its condition runs `" + command + "`"
+
+        for word in operands(rest)
+            written = match expanded(word: word, known: known, home: home)
+                .ok p  => p
+                .err _ => return "its condition names a path through a variable (`" + word + "`)"
+
+            if !pystr.opens(s: written, prefix: "/") && cwd == ""
+                return "its working folder is unknown"
+
+            path = if pystr.opens(s: written, prefix: "/")
+                pypath.normpath(written)
+            else
+                pypath.normpath(pypath.join_two(a: cwd, b: written))
+            seen: str @= path
+
+            while !trees.lexists(seen) && seen != "/"
+                seen @ pypath.dirname(seen)
+
+            fresh = sweep_ask.changed_within(
+                path: seen,
+                minutes: WATCHED,
+                skip_build: false,
+                shallow: true,
+                place: place
+            )
+
+            if fresh < 0
+                return "`" + seen + "` could not be read"
+
+            if fresh > 0
+                if seen == path
+                    return "`" + path + "` changed within the hour"
+                return "`" + seen + "`, which would hold `" + path + "`, changed within the hour"
+
+    return ""
+
+# Whether a parent's command line names Claude Code: its program `claude`,
+# or `node` or `bun` running a file whose path names it.
+function names_claude(command: str) -> bool
+    words = pystr.split_at(command, ' ')
+    program = pypath.basename(words[0])
+
+    if program == "claude"
+        return true
+    return (program == "node" || program == "bun") && words.len() > 1 && pystr.holds(s: words[1], piece: "claude")
+
+# `seconds` as hours and minutes, `7h05m`.
+function hours(seconds: i64) -> str
+    minutes = seconds / 60 % 60
+
+    padded = if minutes < 10
+        "0" + minutes.to_str()
+    else
+        minutes.to_str()
+    return (seconds / 3600).to_str() + "h" + padded + "m"
+
+## Tests
+
+# A wait loop's script as Claude Code's Bash tool runs it, read off `ps`.
+function claude_shell(script: str) -> str
+    return "/bin/zsh -c source /Users/u/.claude/shell-snapshots/snapshot-zsh-1-x.sh 2>/dev/null || true && eval '" + script + "' < /dev/null && pwd -P >| /tmp/claude-a9f7-cwd"
+
+test "sweep_loops: the times and lines ps prints"
+    assert elapsed("00:05") == 5 && elapsed("01:02:03") == 3723 && elapsed("11-04:38:17") == 967097
+    assert elapsed("") == -1 && elapsed("5") == -1 && elapsed("a:b") == -1 && elapsed("1-") == -1 && elapsed("1:2:3:4") == -1
+    assert ps_line(" 9337  9120       08:10 sh -c x y").must() == Process(pid: 9337, ppid: 9120, age: 490, command: "sh -c x y")
+    assert ps_line("  12").is_err() && hours(25500) == "7h05m"
+    assert names_claude("/x/native-binary/claude --output-format stream-json") && names_claude("node /n/@anthropic-ai/claude-code/cli.js")
+    assert !names_claude("/Applications/Claude.app/Contents/MacOS/Claude") && !names_claude("bash claude.sh")
+    assert names(command: "tail ../rebel-scratch/logs/a.log", name: "rebel-scratch") && !names(command: "tail ../logs/lane-apps-build.log", name: "lane-apps")
+    assert under(path: "/a/b", folder: "/a") && !under(path: "/ab", folder: "/a")
+
+test "sweep_loops: the shapes that are wait loops, and those that are not"
+    found = wait_loop(
+        shell_script(claude_shell("until [ -f /w/done ]; do sleep 30; done; tail -3 /w/log")).must()
+    ).must()
+    assert found.condition == [["[", "-f", "/w/done", "]"]] && found.text == "until [ -f /w/done ]; do sleep 30; done"
+    assert wait_loop(shell_script("/bin/sh -c X=1\\012until [ -f x ]; do sleep 3; done").must()).must().assigned == [Assigned(name: "X", value: "1")]
+    assert !wait_loop(shell_script("bash -lc while true; do sleep 60; done").must()).is_err()
+    assert wait_loop("while true; do ./heroes test x.hero; sleep 60; done").is_err() && wait_loop("until [ -f a ]; do echo no; done").is_err()
+    assert wait_loop("for i in 1 2; do sleep 1; done").is_err() && wait_loop("until [ -f a ]; do sleep 1; done; until [ -f b ]; do sleep 1; done").is_err()
+    assert wait_loop("until [ -f a ]; do sleep 1").is_err() && wait_loop("sleep 600").is_err()
+    assert shell_script("/usr/bin/python3 -c while True: pass").is_err() && shell_script("bash script.sh").is_err()
+    assert decoded("a\\012b\\\\c\\101") == "a\nb\\\\c\\101" && quoted(repeat("a", 161)) == repeat("a", 160) + "..."
+
+test "sweep_loops: what a condition names, and what it reads"
+    known = known_values(
+        assigned: [Assigned(name: "A", value: "/a"), Assigned(name: "B", value: "$A/b"), Assigned(name: "C", value: "$Z")],
+        home: "/h"
+    )
+    assert known["B"].must() == Known(readable: true, value: "/a/b") && !known["C"].must().readable
+    assert expanded(word: "~/x", known: known, home: "/h").must() == "/h/x" && expanded(word: "$HOME/x${A}", known: known, home: "/h").must() == "/h/x/a"
+    assert expanded(word: "$AB", known: known, home: "/h").is_err() && expanded(word: "${A", known: known, home: "/h").is_err()
+    assert operands(["grep", "-q", "-e", "pat", "f", "2>/dev/null"]) == ["f"] && operands(["grep", "-f", "pats", "f", ">", "out"]) == ["pats", "f"]
+    assert operands(["[", "-f", "a", "]", "&&", "[", "1", "-lt", "2", "]"]) == ["a", "["]
+    process = wait_loop("while kill -0 123; do sleep 30; done").must()
+    assert watch(loop: process, cwd: "/", home: "/h", place: "") == "its condition watches a process (`kill`)"
+    variable = wait_loop("until [ -f \"$OUT/done\" ]; do sleep 30; done").must()
+    assert watch(loop: variable, cwd: "/", home: "/h", place: "") == "its condition names a path through a variable (`$OUT/done`)"
+    unknown_folder = wait_loop("until [ -f done ]; do sleep 30; done").must()
+    assert watch(loop: unknown_folder, cwd: "", home: "/h", place: "") == "its working folder is unknown"
