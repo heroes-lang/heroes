@@ -357,19 +357,52 @@ record Started
 function start_after(mode: str) -> Started
     control @= net.listen(host: "127.0.0.1", port: 0).must()
     t = threads.spawn_text(body: serve_after, arg: f"{control.address.port} {mode}").must()
-    told = net.accept(control, deadline_ms: 10000).must()
-    r @= io.reader(told.stream)
-    said = io.read_rest_text(@r).must()
-    io.close(@r.stream).must()
+    said = told(control)
     net.close_listener(@control).must()
     return Started(port: port_told(said).must(), thread: t)
 
 # Tells `text`, the port a server listens on or why it listens on none, to
-# the listener of `start_after` at `control`, and closes.
+# the listener of `start_after` at `control` after the word `told` that
+# marks it as the server's (`told`), and closes.
 function tell(control: i64, text: str)
     c @= net.connect("127.0.0.1", port: control, deadline_ms: 10000).must()
-    io.write_text(c.stream, text: text).must()
+    io.write_text(c.stream, text: "told " + text).must()
     io.close(@c.stream).must()
+
+# What a server tells `control`, the listener its starter holds: the text
+# after `told ` of the first connection that says it within five seconds of
+# its accept, ten connections at most and thirty seconds in all, or why none
+# did. Any other connection is closed and passed over, as one another
+# program makes to a port it did not choose: beside a test of `tls` that
+# steers its connect to the port the system gives next, such a connection
+# reached this listener and held its read to its deadline in 62 rounds of
+# 3,000 (defect 2633).
+function told(control: net.Listener) -> str
+    net.set_accept_deadline(control, deadline_ms: 30000).must()
+    tries @= 0
+
+    while tries < 10
+        tries @ tries + 1
+
+        match net.accept(control, deadline_ms: 5000)
+            .err e =>
+                if e.code == net.TIMEOUT
+                    return e.code + ": " + e.msg
+            .ok c =>
+                r @= io.reader(c.stream)
+                said = io.read_rest_text(@r)
+
+                match io.close(@r.stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+                match said
+                    .ok text =>
+                        if strings.has_prefix(s: text, prefix: "told ")
+                            return text.slice(from: 5, to: text.len())
+                    .err _ => _ = 0
+
+    return "none of ten connections told a port"
 
 # The port `said` names, or a failure carrying the server's words where it
 # told why it listens on none.

@@ -12,6 +12,7 @@ use http2
 use io
 use net
 use numbers
+use strings
 use threads
 use time
 use tls
@@ -32,19 +33,59 @@ record Started
 function start(body: (function(str) -> str)) -> Started
     control @= net.listen(host: "127.0.0.1", port: 0).must()
     t = threads.spawn_text(body: body, arg: to_str(control.address.port)).must()
-    told = net.accept(control, deadline_ms: 10000).must()
-    r @= io.reader(told.stream)
-    port = numbers.parse_int(io.read_rest_text(@r).must()).must()
-    io.close(@r.stream).must()
+    said = told(control)
     net.close_listener(@control).must()
-    return Started(port: port, thread: t)
+    return Started(port: port_told(said).must(), thread: t)
 
 # Tells `port`, the one a server listens on, to the listener of `start` at
-# `control`, and closes.
+# `control` after the word `told` that marks it as the server's (`told`),
+# and closes.
 function tell(control: i64, port: i64)
     c @= net.connect("127.0.0.1", port: control, deadline_ms: 10000).must()
-    io.write_text(c.stream, text: to_str(port)).must()
+    io.write_text(c.stream, text: "told " + to_str(port)).must()
     io.close(@c.stream).must()
+
+# What a server tells `control`, the listener its starter holds: the text
+# after `told ` of the first connection that says it within five seconds of
+# its accept, ten connections at most and thirty seconds in all, or why none
+# did. Any other connection is closed and passed over, as one another
+# program makes to a port it did not choose: beside a test of `tls` that
+# steers its connect to the port the system gives next, such a connection
+# reached this listener and held its read to its deadline in 62 rounds of
+# 3,000 (defect 2633).
+function told(control: net.Listener) -> str
+    net.set_accept_deadline(control, deadline_ms: 30000).must()
+    tries @= 0
+
+    while tries < 10
+        tries @ tries + 1
+
+        match net.accept(control, deadline_ms: 5000)
+            .err e =>
+                if e.code == net.TIMEOUT
+                    return e.code + ": " + e.msg
+            .ok c =>
+                r @= io.reader(c.stream)
+                said = io.read_rest_text(@r)
+
+                match io.close(@r.stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+                match said
+                    .ok text =>
+                        if strings.has_prefix(s: text, prefix: "told ")
+                            return text.slice(from: 5, to: text.len())
+                    .err _ => _ = 0
+
+    return "none of ten connections told a port"
+
+# The port `said` names, or a failure carrying the server's words where it
+# told why it listens on none.
+function port_told(said: str) -> i64?
+    match numbers.parse_int(said)
+        .ok port => return ok(port)
+        .err _   => return fail(code: "failed", msg: "the server listens on no port: " + said)
 
 # Every request message of `stream`, read until the client's last.
 function requests_of(@c: http2.Conn, stream: i64) -> [[u8]]
