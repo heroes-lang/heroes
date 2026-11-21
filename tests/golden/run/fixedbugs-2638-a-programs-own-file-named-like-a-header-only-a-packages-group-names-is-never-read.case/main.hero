@@ -1,0 +1,11 @@
+# fixedbugs, defect 2638, lane lane-pkgshadow, 2026-11-21.
+#
+# The issue's shape (a), no defect: only the fetched package `fq`'s group
+# names `fq2636.h`, and the program's own `fq2636.h` beside `main.hero` is
+# no header of a group of the program's. Both units read the library's file,
+# found first, and the build runs; the program's file is never read.
+use <fq>/fq
+
+function main()
+    p: fq.Pair = fq.make(a: 3, b: 4)
+    print(fq.scaled(p))

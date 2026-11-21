@@ -1,0 +1,19 @@
+# fixedbugs, defect 2638, lane lane-pkgshadow, 2026-11-21.
+#
+# The issue's shape (b1): the program holds the fetched package `fq`'s
+# record, whose group names `fq2636.h` with the library `fq2636`, and binds
+# `FQ_SCALE` from its own `fq2636.h`, beside `main.hero`. The package's
+# answer reaches this program's unit by the header's text, so its folder is
+# searched before the program's own: until the repair the library's file was
+# read for the program's group and the build printed `10` for the program's
+# `100` at exit 0. Refused at the program's group, the package's `fq2636`
+# named as the library whose answer named the folder.
+use <fq>/fq
+
+extern "fq2636.h"  #~ shadowed_header
+    constant FQ_SCALE: i64
+
+function main()
+    p: fq.Pair = fq.make(a: 3, b: 4)
+    print(FQ_SCALE)
+    print(fq.scaled(p))

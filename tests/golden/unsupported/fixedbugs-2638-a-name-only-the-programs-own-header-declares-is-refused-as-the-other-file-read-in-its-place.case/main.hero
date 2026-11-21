@@ -1,0 +1,16 @@
+# fixedbugs, defect 2638, lane lane-pkgshadow, 2026-11-21.
+#
+# The issue's shape (b1o): as (b1), the program binding `OWN_ONLY`, which
+# only its own `fq2636.h` declares. Until the repair the library's file was
+# read in its place and the build was refused `ffi_unknown_name`, *`fq2636.h`
+# declares no `OWN_ONLY`*, of a header that does declare it, no note naming
+# the file clang read. Refused as the other file read, both files named.
+use <fq>/fq
+
+extern "fq2636.h"  #~ shadowed_header
+    constant OWN_ONLY: i64
+
+function main()
+    p: fq.Pair = fq.make(a: 3, b: 4)
+    print(OWN_ONLY)
+    print(fq.scaled(p))

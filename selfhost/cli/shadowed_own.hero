@@ -1,0 +1,424 @@
+# A header a module's own group names is read from where its program put it,
+# never from a folder a `pkg-config` answer names before that place (design.md
+# §4.19, §1.12; defect 2638, 2026-11-21, the coordinator's ruling).
+#
+# **What it closes, measured on this Mac.** A unit searches the runtime's
+# folder, each `--include`, the folders the `pkg-config` answers of its
+# headers' libraries name, and only then the program's own folder
+# (`compiling.search_words`), so a library's file named like a header the
+# program put beside `main.hero` is read in its place: `extern "fq2636.h"`
+# beside `extern "aa2636.h" pkgconfig "aa2636"`, whose folder holds another
+# `fq2636.h`, printed that file's `7` for the program's `100` at exit 0, and
+# a name only the program's file defines was refused `ffi_unknown_name`, of
+# a header that defines it. A fetched package's group naming the same header
+# hands its answer to the program's unit by the header's text
+# (`pkgconfig_headers.of`) and did the same; so did a `path` entry's header
+# beside its modules and a fetched package's beside its own, each read from
+# its own `pkg-config` answer's folder.
+#
+# **Refused, never reordered**: which folder a unit searches first decides
+# what every build reads, a ruling the panel owns; robustness decides that
+# the class closes, and a refusal closes it at once (CLAUDE.md § Precedence,
+# panel 215). `--include` stays before the program's folder on purpose, a
+# folder the author names for the build.
+#
+# **The rule.** For each module of the program's, of a `path` entry's or of
+# a fetched package's, and each header one of its own groups names and its
+# unit reads: where a folder of the module's own holds a file of that name
+# (`own_folders`), and a folder the unit searches before it that one of its
+# `pkg-config` answers names holds another, which clang's listing of the
+# unit says it reads, the build is refused `shadowed_header` before any unit
+# compiles, at the group's header (`cli/shadowed_own_words.hero`). Two names
+# of one file, a link or a `.pc` naming the program's own folder, are one
+# file (`one_file`). A header only another package's group names (defect
+# 2636's `fq`, its record held by value) is no group of the module's own; its
+# package's search is judged by `cli/package_stand_in.hero`.
+#
+# **Asked of the file system as clang's search asks a folder, then of
+# clang**: whether a folder holds the header is `stat`'s, as
+# `package_stand_in.shipping` asks it, so a directory of that name is no file,
+# a link is followed and the Mac's folding of case is the file system's own;
+# where it finds a pair, the unit's own `-M` listing says whether clang read
+# the library's file, so a folder clang searches elsewhere than its word's
+# place (an `-I` naming a system folder goes after every other) refuses
+# nothing it does not read. A build with no pair asks clang nothing more.
+
+use ast
+use cli/compile
+use cli/compiling
+use cli/files
+use cli/libraries
+use cli/package_reads
+use cli/package_stand_in
+use cli/package_units
+use cli/probing
+use cli/process
+use cli/settled
+use cli/shadowed_own_words
+use cli/shadowed_words
+use cli/strings
+use cli/system_paths
+use cli/toolchain
+use diag
+use emit/externs as emit_externs
+use emit/pkgconfig_headers
+use source
+
+# A folder a unit searches, read lexically, as its words name it (`shown`),
+# and who named it here: the module's own (`own`, its kind not ""), an
+# `--include` (`included`), a `pkg-config` answer of the unit's (`library`,
+# the first in the unit's order naming it), or none of them, the runtime's
+# or a reached package's.
+record Folder
+    dir: str
+    shown: str
+    own: shadowed_words.Origin
+    included: bool
+    library: str
+
+# The build stopped, its refusals told, where a header a module's own group
+# names is read from a library's folder in place of the module's own file;
+# ok where none is. `cli/agreed.hero` asks it before any unit compiles.
+function stopped(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl], site: settled.Site) -> ()?
+    found = told(t, probings, s: s, decls: decls, site: site)
+
+    if found.len() == 0
+        return ok()
+    _ = compile.stage(found, s, permissive: false).is_err()
+    return fail(code: "diagnostics", msg: "a library's folder holds a file named like a module's own header")
+
+# Every refusal of the build, one per module and header, at the first of the
+# module's groups naming it.
+function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl], site: settled.Site) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    memo: {str: str} @= {}
+    groups = own_groups(s, decls)
+
+    for one in probings
+        answers = answered_by(
+            pkgconfig_headers.of(site.by_header, listed: one.headers),
+            pkgconfigs: site.pkgconfig_words
+        )
+
+        for module in one.modules
+            search = folders(
+                one.under,
+                owns: own_folders(s, module: module, program: site.source_dir),
+                answers: answers
+            )
+
+            for at in read_by(s, decls, groups: groups[module].default([]), listed: one.headers)
+                span = emit_externs.header_at(decls, at: at).must()
+                pairs = pairs_of(search, header: emit_externs.unquoted(s, span: span))
+
+                if pairs.len() > 0
+                    found = read_of(t, one: one, pairs: pairs, @memo)
+
+                    if !found.is_err()
+                        out @ out.push(shadowed_own_words.refusal(found.must(), span: span))
+
+    return out
+
+# **The folders of a module's own**, each by whose it is: the program's
+# folder for a module of the program's own and for a `path` entry's, whose
+# units keep the program's words (panel 235's R6), the entry's own folder
+# beside it; a fetched package's root alone, which its units search in the
+# program's folder's place (`compiling.of_package`). A module of the
+# library has no group this refusal reads (`own_groups`).
+function own_folders(s: source.Source, module: str, program: str) -> {str: shadowed_words.Origin}
+    place = package_units.place_of(s, module)
+    out: {str: shadowed_words.Origin} @= {}
+
+    if place.fetched
+        out[package_reads.lexical(place.folder)] @ shadowed_words.Origin(
+            kind: shadowed_words.FETCHED,
+            name: place.alias
+        )
+        return out
+    out[package_reads.lexical(program)] @ shadowed_words.Origin(kind: shadowed_words.PROGRAM, name: "")
+
+    if place.folder.len() > 0 && out[package_reads.lexical(place.folder)].is_err()
+        out[package_reads.lexical(place.folder)] @ shadowed_words.Origin(kind: shadowed_words.PATH, name: place.alias)
+    return out
+
+# Each folder of the unit's search, in its order, once each, a later name of
+# a folder dropped as clang drops it: the runtime's, each `--include`, each
+# `-I` of its words (the libraries' answers, then the program's folder and
+# the packages' a search after them names, `package_units.searching_after`),
+# and its own folder. A `-F` names a framework's folder, where `<a/b.h>` is
+# `a.framework/Headers/b.h`, no file of a module's own, so it is left out.
+function folders(under: compiling.Compiling, owns: {str: shadowed_words.Origin}, answers: {str: str}) -> [Folder]
+    includes: {str: bool} @= {}
+    named: [str] @= [under.runtime]
+
+    for one in under.search_include
+        includes[package_reads.lexical(one)] @ true
+        named @ named.push(one)
+
+    for flag in libraries.compile_flags(under.pkgconfig_flags)
+        if strings.starts_with(text: flag, prefix: "-I")
+            named @ named.push(flag.slice(from: 2, to: flag.len()))
+
+    if under.source_dir.len() > 0
+        named @ named.push(under.source_dir)
+    out: [Folder] @= []
+    seen: {str: bool} @= {}
+
+    # A folder is shown as its words name it, its closing separator dropped,
+    # since the program's own arrives with one (`modules.open_directory`) and
+    # a file in it is named by a `/` of its own (`joined`).
+    for written in named
+        shown = package_units.without_slash(written)
+        dir = package_reads.lexical(shown)
+
+        if seen[dir].is_err()
+            seen[dir] @ true
+            out @ out.push(
+                Folder(dir: dir, shown: shown, own: owns[dir].default(shadowed_words.Origin(kind: "", name: "")), included: !includes[dir].is_err(), library: answers[dir].default(""))
+            )
+
+    return out
+
+# Which library's answer names each folder, read lexically: the first of
+# `names`, the unit's order (`pkgconfig_headers.of`), that names it.
+function answered_by(names: [str], pkgconfigs: {str: [str]}) -> {str: str}
+    out: {str: str} @= {}
+
+    for name in names
+        for flag in libraries.compile_flags(pkgconfigs[name].default([]))
+            if strings.starts_with(text: flag, prefix: "-I")
+                dir = package_reads.lexical(flag.slice(from: 2, to: flag.len()))
+
+                if out[dir].is_err()
+                    out[dir] @ name
+
+    return out
+
+# **The groups of each module's own**, by its module: the first declaration
+# of each header its groups name, in the order they are written, a group's
+# function, constant or record, read in one pass over the declarations. A
+# module of the library has none here. A name written from the file
+# system's root is read from there and searched in no folder, so it is none
+# of them.
+function own_groups(s: source.Source, decls: [ast.Decl]) -> {str: [i64]}
+    out: {str: [i64]} @= {}
+    taken: {str: bool} @= {}
+    at: i64 @= 0
+
+    for decl in decls
+        header = emit_externs.header_at(decls, at: at)
+
+        if !header.is_err() && !source.is_library(s, decl.name.start)
+            module = source.component_at(s, decl.name.start)
+            name = emit_externs.unquoted(s, span: header.must())
+            key = module + "\n" + name
+
+            if taken[key].is_err() && !system_paths.absolute(name)
+                taken[key] @ true
+                out[module] @ out[module].default([]).push(at)
+        at @ at + 1
+
+    return out
+
+# The groups of `groups` whose header the unit reads (`listed`).
+function read_by(s: source.Source, decls: [ast.Decl], groups: [i64], listed: [str]) -> [i64]
+    out: [i64] @= []
+
+    for at in groups
+        if holds_name(listed, name: emit_externs.unquoted(s, span: emit_externs.header_at(decls, at: at).must()))
+            out @ out.push(at)
+
+    return out
+
+function holds_name(list: [str], name: str) -> bool
+    for one in list
+        if one == name
+            return true
+
+    return false
+
+# **Each library's file of `header` standing before the module's own file in
+# `search`**, another file than it: a folder one of the unit's `pkg-config`
+# answers names, and no `--include`, holding a file of that name before the
+# first own folder that holds one, which is each pair's second half. None
+# where no own folder holds the header, or none before it is a library's.
+function pairs_of(search: [Folder], header: str) -> [shadowed_own_words.Read]
+    out: [shadowed_own_words.Read] @= []
+
+    for folder in search
+        path = joined(dir: folder.shown, name: header)
+
+        if holds_file(path)
+            if folder.own.kind.len() > 0
+                kept: [shadowed_own_words.Read] @= []
+
+                for one in out
+                    if !one_file(a: one.read, b: path)
+                        kept @ kept.push(
+                            shadowed_own_words.Read(header: one.header, read: one.read, folder: one.folder, library: one.library, own: path, home: folder.shown, owner: folder.own)
+                        )
+
+                return kept
+
+            if !folder.included && folder.library.len() > 0
+                out @ out.push(
+                    shadowed_own_words.Read(header: header, read: path, folder: folder.dir, library: folder.library, own: "", home: "", owner: folder.own)
+                )
+
+    return []
+
+# **The pair whose library's file the unit reads**: clang's `-M` listing of
+# the unit's own header list under its own probe words, the first pair whose
+# file it lists. A listing clang could not make is no verdict, and the
+# compile says what it says.
+function read_of(t: toolchain.Toolchain, one: probing.Probing, pairs: [shadowed_own_words.Read], @memo: {str: str}) -> shadowed_own_words.Read?
+    listing = compiling.reads(t.build, words: compiling.probe_words(one.under), headers: one.headers, @memo)
+
+    if listing.is_err()
+        return fail(code: "unread", msg: "clang listed nothing")
+    paths = package_stand_in.rows(listing.must())
+
+    for pair in pairs
+        if package_stand_in.listed(paths, path: package_reads.lexical(pair.read))
+            return ok(pair)
+
+    return fail(code: "own", msg: "the unit reads none of the libraries' files")
+
+# Whether `path` names a file clang's search reads for an include: a file or
+# a link to one; a link to nothing and a directory of the name are passed
+# over (measured with clang on this Mac, 2026-11-21, `shipping`'s question).
+function holds_file(path: str) -> bool
+    return process.path_exists(path) && !process.is_directory(path)
+
+# Whether `a` and `b` name one file as the file system resolves each, every
+# link followed and the Mac's case folded to the file's own; a place that
+# cannot be resolved is another file, the loud direction.
+function one_file(a: str, b: str) -> bool
+    left = files.resolved(a)
+    right = files.resolved(b)
+    return !left.is_err() && !right.is_err() && left.must() == right.must()
+
+# `name` in the folder `dir`, the current folder's spelt `./`.
+function joined(dir: str, name: str) -> str
+    if dir == "." || dir == ""
+        return "./" + name
+    return dir + "/" + name
+
+## Tests
+
+# **The search is the unit's, once each, every folder told by who named it**
+# (defect 2638): the runtime's, `--include`'s, each `-I` of the words, the
+# libraries' by the first that names it, a `-F` left out, and the program's
+# own folder, which the words may name too.
+test "a unit's folders are read in its order, once each, each told by who named it (defect 2638)"
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: ["inc"],
+        pkgconfig_flags: ["-Ipc/../lib", "-Fframes", "-DX=1", "-I./src", "-Ilib"],
+        runtime: "rt",
+        source_dir: "src/"
+    )
+    owns: {str: shadowed_words.Origin} @= {}
+    owns["src"] @ shadowed_words.Origin(kind: shadowed_words.PROGRAM, name: "")
+    got = folders(
+        under,
+        owns: owns,
+        answers: answered_by(["a", "b"], pkgconfigs: {"a": ["-Ilib", "-DA"], "b": ["-I/opt/b", "-Ilib"]})
+    )
+    assert got.len() == 4
+    assert got[0].dir == "rt" && got[0].own.kind == "" && !got[0].included && got[0].library == ""
+    assert got[1].dir == "inc" && got[1].included
+    assert got[2].dir == "lib" && got[2].shown == "pc/../lib" && got[2].library == "a"
+    assert got[3].dir == "src" && got[3].shown == "./src" && got[3].own.kind == shadowed_words.PROGRAM
+    last = folders(
+        compiling.Compiling(level: "-O0", sanitize: false, search_include: [], pkgconfig_flags: [], runtime: "rt", source_dir: "case/"),
+        owns: owns,
+        answers: {}
+    )
+    assert last.len() == 2 && last[1].shown == "case" && joined(dir: last[1].shown, name: "x.h") == "case/x.h"
+
+# **A pair is a library's file before the module's own, judged as clang's
+# search opens a folder** (defect 2638): a library's file of the header's
+# name, nested or not, before the program's; a directory of that name is no
+# file; an `--include` folder's file is never a library's; and where no own
+# folder holds the header there is no pair.
+test "a library's file before the module's own is a pair, and a directory of its name or an include's file is not (defect 2638)"
+    dir = "build/selftest-shadowed-own"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/lib/sub").is_err()
+    assert !process.mkdir_all(dir + "/lib/folder.h").is_err()
+    assert !process.mkdir_all(dir + "/inc").is_err()
+    assert !process.mkdir_all(dir + "/own/sub").is_err()
+
+    for name in ["lib/x.h", "lib/sub/x.h", "inc/i.h", "own/x.h", "own/sub/x.h", "own/folder.h", "own/i.h", "lib/only.h"]
+        assert !write_file(path: dir + "/" + name, text: "#define V 1\n").is_err()
+
+    no_one = shadowed_words.Origin(kind: "", name: "")
+    program = shadowed_words.Origin(kind: shadowed_words.PROGRAM, name: "")
+    search = [
+        Folder(dir: dir + "/inc", shown: dir + "/inc", own: no_one, included: true, library: "lb")
+        Folder(dir: dir + "/lib", shown: dir + "/lib", own: no_one, included: false, library: "lb")
+        Folder(dir: dir + "/own", shown: dir + "/own", own: program, included: false, library: "")
+    ]
+    plain = pairs_of(search, header: "x.h")
+    assert plain.len() == 1 && plain[0].read == dir + "/lib/x.h" && plain[0].own == dir + "/own/x.h"
+    assert plain[0].library == "lb" && plain[0].folder == dir + "/lib" && plain[0].home == dir + "/own" && plain[0].owner.kind == shadowed_words.PROGRAM
+    nested = pairs_of(search, header: "sub/x.h")
+    assert nested.len() == 1 && nested[0].read == dir + "/lib/sub/x.h"
+    assert pairs_of(search, header: "folder.h").len() == 0
+    assert pairs_of(search, header: "only.h").len() == 0
+    assert pairs_of(search, header: "i.h").len() == 0
+    assert !process.remove_tree(dir).is_err()
+
+# **Two names of one file are one file** (defect 2638): a folder named once
+# by its path from here and once from the file system's root is one, and a
+# pair whose two halves are one file is none.
+test "a library's folder naming the program's own by another spelling holds one file, never a pair (defect 2638)"
+    dir = "build/selftest-shadowed-own-one"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/x.h", text: "#define V 1\n").is_err()
+    whole = files.resolved(dir)
+    assert !whole.is_err()
+    assert one_file(a: dir + "/x.h", b: whole.must() + "/x.h")
+    assert !one_file(a: dir + "/x.h", b: dir + "/missing.h")
+    no_one = shadowed_words.Origin(kind: "", name: "")
+    search = [
+        Folder(dir: whole.must(), shown: whole.must(), own: no_one, included: false, library: "lb")
+        Folder(dir: dir, shown: dir, own: shadowed_words.Origin(kind: shadowed_words.PROGRAM, name: ""), included: false, library: "")
+    ]
+    assert pairs_of(search, header: "x.h").len() == 0
+    assert joined(dir: ".", name: "x.h") == "./x.h" && joined(dir: "a", name: "x.h") == "a/x.h"
+    assert !process.remove_tree(dir).is_err()
+
+# **A library's link to the module's own file is that file, and a link to
+# nothing is no file** (defect 2638): measured with clang on this Mac,
+# 2026-11-21, the library's folder holding `own2638.h` as a link to the
+# program's printed the program's `100`; a folder of links is the folder it
+# names. Where this platform makes no link the test holds nothing, as the
+# compiler's other tests of links do.
+test "a library's link to the module's own file is one file, and a link to nothing no file (defect 2638)"
+    dir = "build/selftest-shadowed-own-link"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/lib").is_err()
+    assert !process.mkdir_all(dir + "/own").is_err()
+    assert !write_file(path: dir + "/own/x.h", text: "#define V 1\n").is_err()
+    assert !write_file(path: dir + "/own/y.h", text: "#define V 1\n").is_err()
+    no_one = shadowed_words.Origin(kind: "", name: "")
+    program = shadowed_words.Origin(kind: shadowed_words.PROGRAM, name: "")
+    search = [
+        Folder(dir: dir + "/lib", shown: dir + "/lib", own: no_one, included: false, library: "lb")
+        Folder(dir: dir + "/linked", shown: dir + "/linked", own: no_one, included: false, library: "lb")
+        Folder(dir: dir + "/own", shown: dir + "/own", own: program, included: false, library: "")
+    ]
+
+    if !files.symbolic_link(target: "../own/x.h", name: dir + "/lib/x.h").is_err()
+        assert pairs_of(search, header: "x.h").len() == 0
+
+    if !files.symbolic_link(target: "own", name: dir + "/linked").is_err()
+        assert pairs_of(search, header: "y.h").len() == 0
+
+    if !files.symbolic_link(target: "nowhere.h", name: dir + "/lib/z.h").is_err()
+        assert !holds_file(dir + "/lib/z.h")
+    assert !process.remove_tree(dir).is_err()

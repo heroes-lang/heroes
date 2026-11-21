@@ -1,0 +1,11 @@
+# The package `pk` of defect 2638's case two folders up, as `heroes fetch`
+# places it: a group naming the library `lib2638`, and one naming the header
+# the package ships beside this module.
+extern "lib2638.h" pkgconfig "lib2638"
+    constant LIB_V: i64
+
+extern "pk2638.h"  #~ shadowed_header
+    constant PK_SCALE: i64
+
+function scaled() -> i64
+    return PK_SCALE + LIB_V

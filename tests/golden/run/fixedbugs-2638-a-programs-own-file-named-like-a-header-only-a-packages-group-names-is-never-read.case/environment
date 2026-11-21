@@ -1,0 +1,3 @@
+# The case's own library, found by pkg-config alone.
+PKG_CONFIG_PATH=tests/golden/run/fixedbugs-2638-a-programs-own-file-named-like-a-header-only-a-packages-group-names-is-never-read.case/pc
+PKG_CONFIG_LIBDIR=tests/golden/run/fixedbugs-2638-a-programs-own-file-named-like-a-header-only-a-packages-group-names-is-never-read.case/pc
