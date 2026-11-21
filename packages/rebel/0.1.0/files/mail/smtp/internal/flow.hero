@@ -10,6 +10,7 @@ use mail/smtp/internal/protocol
 use mail/smtp/internal/wire
 use net
 use strings
+use time
 use tls
 
 # The code of an argument refused, and of a reply that is not SMTP.
@@ -35,17 +36,17 @@ constant CHUNK: i64
 # A session with `host` at `port`, protected as `security` says, greeted and
 # answered EHLO. Fails as the connection, the greeting or EHLO fail; the
 # connection is closed where one of the last two fails.
-function open(host: str, port: i64, security: i64, roots: str, local_name: str, deadline_ms: i64) -> wire.Session?
+function open(host: str, port: i64, security: i64, roots: str, local_name: str, deadline: time.Duration) -> wire.Session?
     if host == "" || strings.contains_any(s: host, set: " \r\n\t")
         return fail(
             code: INVALID,
             msg: f"the host \"{protocol.escaped(host)}\" is empty or holds a space or a line break"
         )
 
-    if port < 1 || port > 65535 || deadline_ms < 0
+    if port < 1 || port > 65535 || deadline.nanoseconds < 0
         return fail(
             code: INVALID,
-            msg: f"the port {port} is outside 1 to 65535, or the deadline {deadline_ms} is below 0"
+            msg: f"the port {port} is outside 1 to 65535, or the deadline {time.format_duration(deadline)} is below zero"
         )
 
     if local_name == "" || strings.contains_any(s: local_name, set: " \r\n\t") || !strings.is_ascii(local_name)
@@ -55,27 +56,22 @@ function open(host: str, port: i64, security: i64, roots: str, local_name: str, 
         )
     client = tls.Client(roots: roots, protocols: [])
 
-    plain_ms = if deadline_ms == 0
-        net.FOREVER
-    else
-        deadline_ms
-
     s @= if security == PLAIN
         wire.over_plain(
-            net.connect(host: host, port: port, deadline_ms: plain_ms)?,
-            deadline_ms: deadline_ms,
+            net.connect(host: host, port: port, deadline_ms: wire.net_ms(deadline))?,
+            deadline: deadline,
             local_name: local_name
         )
     else if security == IMPLICIT
         wire.over_tls(
-            tls.connect(host: host, port: port, deadline: wire.tls_deadline(deadline_ms)?, client: client)?.stream,
-            deadline_ms: deadline_ms,
+            tls.connect(host: host, port: port, deadline: deadline, client: client)?.stream,
+            deadline: deadline,
             local_name: local_name
         )
     else
         wire.over_tls(
-            starttls(host: host, port: port, deadline_ms: deadline_ms, client: client, local_name: local_name)?,
-            deadline_ms: deadline_ms,
+            starttls(host: host, port: port, deadline: deadline, client: client, local_name: local_name)?,
+            deadline: deadline,
             local_name: local_name
         )
 
@@ -93,7 +89,7 @@ function open(host: str, port: i64, security: i64, roots: str, local_name: str, 
 
 # A TLS stream to `host` begun by STARTTLS, `tls` reading the greeting and
 # the first EHLO's reply in plain text.
-function starttls(host: str, port: i64, deadline_ms: i64, client: tls.Client, local_name: str) -> io.Stream?
+function starttls(host: str, port: i64, deadline: time.Duration, client: tls.Client, local_name: str) -> io.Stream?
     steps: [tls.Step] = [
         .expect_line(prefix: "220")
         .send(data: bytes.from_text("EHLO " + local_name + "\r\n"))
@@ -102,14 +98,14 @@ function starttls(host: str, port: i64, deadline_ms: i64, client: tls.Client, lo
         .expect_line(prefix: "220")
     ]
 
-    return match tls.connect_after(host: host, port: port, deadline: wire.tls_deadline(deadline_ms)?, client: client, steps: steps)
+    return match tls.connect_after(host: host, port: port, deadline: deadline, client: client, steps: steps)
         .ok made => ok(made.stream)
         .err e   => fail(code: e.code, msg: "STARTTLS with " + host + ": " + e.msg)
 
 # Reads the greeting where `tls` did not, and says EHLO.
 function greeted(@s: wire.Session, security: i64) -> ()?
     if security != STARTTLS
-        wire.set_deadline(s, ms: s.deadline_ms)?
+        wire.set_deadline(s, deadline: s.deadline)?
         greeting = wire.read_reply(@s)?
         s.greeting @ greeting
         protocol.expect(greeting, want: [220], asked: "this client: its greeting")?
@@ -134,7 +130,7 @@ function hello(@s: wire.Session, may_helo: bool) -> ()?
 # Sends `line` under the session's deadline and answers the reply, whatever
 # its code.
 function step(@s: wire.Session, line: str) -> wire.Answer?
-    wire.set_deadline(s, ms: s.deadline_ms)?
+    wire.set_deadline(s, deadline: s.deadline)?
     wire.write_line(s, line: line)?
     return wire.read_reply(@s)
 
@@ -315,7 +311,7 @@ function send(@s: wire.Session, from: str, to: [str], message: [u8]) -> Done?
             lines @ lines.push(rcpt_line(t))
 
         lines @ lines.push("DATA")
-        wire.set_deadline(s, ms: s.deadline_ms)?
+        wire.set_deadline(s, deadline: s.deadline)?
         wire.write(s, data: bytes.from_text(lines.join("\r\n") + "\r\n"))?
 
         while answers.len() < to.len() + 2
@@ -388,11 +384,11 @@ function body(@s: wire.Session, message: [u8]) -> wire.Answer?
             at + CHUNK
         else
             stuffed.len()
-        wire.set_deadline(s, ms: s.deadline_ms)?
+        wire.set_deadline(s, deadline: s.deadline)?
         wire.write(s, data: stuffed.slice(from: at, to: end))?
         at @ end
 
-    wire.set_deadline(s, ms: s.deadline_ms)?
+    wire.set_deadline(s, deadline: s.deadline)?
     wire.write(s, data: bytes.from_text(".\r\n"))?
     answer = wire.read_reply(@s)?
     protocol.expect(answer, want: [250], asked: "the message")?
@@ -462,7 +458,7 @@ test "to_i64_or_zero: a number, none, letters"
     assert to_i64_or_zero("35882577") == 35882577 && to_i64_or_zero("") == 0 && to_i64_or_zero("1k") == 0
 
 test "mail_params: SIZE, 8BITMIME, SMTPUTF8 asked and refused"
-    s @= wire.over_tls(io.stdin(), deadline_ms: 0, local_name: "x")
+    s @= wire.over_tls(io.stdin(), deadline: time.max_duration(), local_name: "x")
     s.extensions @ {"SIZE": "100", "8BITMIME": "", "SMTPUTF8": ""}
     assert mail_params(s, from: "a@x", to: ["b@y"], message: bytes.from_text("A: 1\r\n\r\nbody")).must() == " SIZE=12"
     assert mail_params(s, from: "a@x", to: ["b@y"], message: bytes.from_text("A: 1\r\n\r\nbodé")).must() == " SIZE=13 BODY=8BITMIME"
@@ -472,7 +468,7 @@ test "mail_params: SIZE, 8BITMIME, SMTPUTF8 asked and refused"
         .ok _  => assert false
         .err e => assert e.code == "limit"
 
-    bare = wire.over_tls(io.stdin(), deadline_ms: 0, local_name: "x")
+    bare = wire.over_tls(io.stdin(), deadline: time.max_duration(), local_name: "x")
 
     match mail_params(bare, from: "a@x", to: ["b@y"], message: bytes.from_text("A: 1\r\n\r\nbodé"))
         .ok _  => assert false
@@ -483,7 +479,7 @@ test "mail_params: SIZE, 8BITMIME, SMTPUTF8 asked and refused"
 
 test "check_protected: a plain connection to another host refused, to this machine taken"
     two = net.pair(deadline_ms: 5000).must()
-    s @= wire.over_plain(two.first, deadline_ms: 5000, local_name: "x")
+    s @= wire.over_plain(two.first, deadline: time.seconds(5).must(), local_name: "x")
     server @= two.second.stream
 
     match check_protected(s, host: "smtp.example.org")
@@ -501,8 +497,29 @@ test "check_protected: a plain connection to another host refused, to this machi
     io.close(@server).must()
 
 test "open: arguments refused before any connection"
-    assert open(host: "", port: 25, security: PLAIN, roots: "", local_name: "x", deadline_ms: 0).is_err()
-    assert open(host: "a b", port: 25, security: PLAIN, roots: "", local_name: "x", deadline_ms: 0).is_err()
-    assert open(host: "x", port: 0, security: PLAIN, roots: "", local_name: "x", deadline_ms: 0).is_err()
-    assert open(host: "x", port: 25, security: PLAIN, roots: "", local_name: "a\r\nb", deadline_ms: 0).is_err()
-    assert open(host: "x", port: 25, security: PLAIN, roots: "", local_name: "x", deadline_ms: -1).is_err()
+    assert open(host: "", port: 25, security: PLAIN, roots: "", local_name: "x", deadline: time.max_duration()).is_err()
+    assert open(
+        host: "a b",
+        port: 25,
+        security: PLAIN,
+        roots: "",
+        local_name: "x",
+        deadline: time.max_duration()
+    ).is_err()
+    assert open(host: "x", port: 0, security: PLAIN, roots: "", local_name: "x", deadline: time.max_duration()).is_err()
+    assert open(
+        host: "x",
+        port: 25,
+        security: PLAIN,
+        roots: "",
+        local_name: "a\r\nb",
+        deadline: time.max_duration()
+    ).is_err()
+    assert open(
+        host: "x",
+        port: 25,
+        security: PLAIN,
+        roots: "",
+        local_name: "x",
+        deadline: time.milliseconds(-1).must()
+    ).is_err()

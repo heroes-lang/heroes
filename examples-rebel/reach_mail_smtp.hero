@@ -4,6 +4,7 @@
 # where none answers.
 
 use <rebel>/mail/smtp
+use <rebel>/time
 
 function main()
     o = smtp.options(host: "localhost", security: .plain)
@@ -13,7 +14,7 @@ function main()
         security: o.security,
         roots: o.roots,
         local_name: o.local_name,
-        deadline_ms: 2000
+        deadline: time.seconds(2).must()
     )
 
     match smtp.connect(quick)

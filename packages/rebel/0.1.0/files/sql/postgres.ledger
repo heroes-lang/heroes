@@ -205,7 +205,7 @@ capability sql-postgres/deadline  a time after which a connection's waits fail
   go      DB.ExecContext, DB.QueryContext (their context's deadline)
   rust    -
   python  -
-  note    `deadline_ms`, a time from the connection on, as `net` gives it; a statement's own limit is PostgreSQL's `SET statement_timeout`, which fails `stopped`
+  note    `deadline`, a time from the connection on, as `net` gives it; a statement's own limit is PostgreSQL's `SET statement_timeout`, which fails `stopped`
 
 capability sql-postgres/cancel  a running statement cancelled from another thread
   heroes  pending

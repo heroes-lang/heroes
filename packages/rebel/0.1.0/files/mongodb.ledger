@@ -100,7 +100,7 @@ capability mongodb/close  a client closed, its session ended
   python  MongoClient.close
 
 capability mongodb/timeouts  the time a connection and each reply may take
-  heroes  mongodb.Options.connect_timeout_ms, mongodb.Options.socket_timeout_ms, mongodb.set_timeout
+  heroes  mongodb.Options.connect_timeout, mongodb.Options.socket_timeout, mongodb.set_timeout
   go      ClientOptions.SetConnectTimeout, ClientOptions.SetTimeout, SetServerSelectionTimeout
   rust    ClientOptions::connect_timeout, ClientOptions::server_selection_timeout
   python  connectTimeoutMS, socketTimeoutMS, timeoutMS, pymongo.timeout

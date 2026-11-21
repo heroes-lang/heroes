@@ -40,6 +40,37 @@ record Conn
     # The most bytes a reply may hold.
     most: i64
 
+# MongoDB's milliseconds for `d`, as its URI and its commands carry a
+# time: `time.max_duration()` is 0, MongoDB's own no limit; any other is
+# rounded up to a whole millisecond and is 1 at least, since MongoDB cannot
+# be asked not to wait; below zero is -1, which `connect`,
+# `start_transaction` and `set_timeout` refuse before.
+#
+# - `d`: a time the face was handed.
+function ms_of(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return 0
+
+    if d.nanoseconds < 0
+        return -1
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+
+    if whole == 0
+        return 1
+    return whole
+
+# The time MongoDB's `ms` stands for: 0, its no limit, is
+# `time.max_duration()`.
+#
+# - `ms`: milliseconds a URI or a setting carries, 0 or more.
+function time_of(ms: i64) -> time.Duration
+    if ms == 0
+        return time.max_duration()
+    return time.milliseconds(ms).default(time.max_duration())
+
 # A connection to `host` at `port`, over TLS checked against `roots` (the
 # system's store where "") where `secure`, the TCP connection given up after
 # `timeout_ms`. Fails as `net.connect_timeout` and `tls.connect` fail.
@@ -55,7 +86,7 @@ function open(host: str, port: i64, secure: bool, roots: str, timeout_ms: i64) -
     wait = if timeout_ms > 0
         timeout_ms
     else
-        10000
+        net.FOREVER
     c = net.connect_timeout(host, port: port, timeout_ms: wait, deadline_ms: net.FOREVER)?
     return ok(
         Conn(out: c.stream, input: c.stream, link: .network, target: target, ended: false, most: wire.DEFAULT_MOST)

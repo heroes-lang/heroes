@@ -33,7 +33,7 @@ capability ldap/open  a connection to a directory server opened, in plain text, 
   note    one connection, which the program owes a `close`; LDAPv3 alone
 
 capability ldap/options  where a server is and how a connection is secured, as a value with defaults
-  heroes  ldap.options, ldap.Options, ldap.DEFAULT_PORT, ldap.DEFAULT_TLS_PORT, ldap.DEFAULT_DEADLINE_MS, ldap.DEFAULT_MAX_MESSAGE
+  heroes  ldap.options, ldap.Options, ldap.DEFAULT_PORT, ldap.DEFAULT_TLS_PORT, ldap.DEFAULT_MAX_MESSAGE
   java    Context.PROVIDER_URL, Context.SECURITY_PROTOCOL (environment entries)
   dotnet  LdapSessionOptions.HostName, LdapSessionOptions.DomainName, LdapConnection.Timeout, LdapSessionOptions.SendTimeout
   go      DialContext, Conn.SetTimeout

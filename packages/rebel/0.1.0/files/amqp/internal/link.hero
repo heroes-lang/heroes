@@ -26,15 +26,40 @@ variant Link
     # Nothing: closed, or not connected yet.
     gone
 
-# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
-# being `time.max_duration()` (until this package's own step of D07; `tls`
-# takes a `time.Duration` since M-rebel-library step 88c).
+# The time `ms` milliseconds stand for as `tls` takes it, a count past what
+# a `time.Duration` holds being `time.max_duration()`.
 #
-# - `ms`: milliseconds, 0 for no limit.
+# - `ms`: milliseconds, 1 or more here.
 function tls_deadline(ms: i64) -> time.Duration?
-    if ms == 0
-        return ok(time.max_duration())
-    return time.milliseconds(ms)
+    return ok(time.milliseconds(ms).default(time.max_duration()))
+
+# The whole milliseconds of `d`, a part of one counting as a whole one, as
+# the session counts its waits; `d` below zero is -1, which the session
+# refuses as below 1 millisecond.
+#
+# - `d`: a time the face was handed.
+function ms_of(d: time.Duration) -> i64
+    if d.nanoseconds < 0
+        return -1
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+    return whole
+
+# The whole seconds of `d`, a part of one counting as a whole one, as
+# AMQP's heartbeat counts them; `d` below zero is -1, which the session
+# refuses.
+#
+# - `d`: the heartbeat the face was handed.
+function seconds_of(d: time.Duration) -> i64
+    if d.nanoseconds < 0
+        return -1
+    whole = d.nanoseconds / 1_000_000_000
+
+    if d.nanoseconds % 1_000_000_000 != 0
+        return whole + 1
+    return whole
 
 # A TCP connection to `host` at `port`, made within `ms`.
 #

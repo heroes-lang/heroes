@@ -54,6 +54,7 @@ use mongodb/internal/session
 use mongodb/internal/uri
 use mongodb/internal/writes
 use os
+use time
 
 ## Codes
 
@@ -179,9 +180,10 @@ record WriteConcern
     w: str
     # Whether the journal is waited for.
     journal: Journal
-    # How long a write waits for its members, in milliseconds; 0 for no
-    # limit.
-    timeout_ms: i64
+    # How long a write waits for its members, sent in whole milliseconds:
+    # `time.max_duration()` for no limit (MongoDB's 0); zero and a part of a
+    # millisecond are 1 ms, MongoDB having no time that waits not at all.
+    timeout: time.Duration
 
 # One server's name and port.
 record Host
@@ -224,11 +226,12 @@ record Options
     security: Security
     # The application's name the server logs, "" for none.
     app_name: str
-    # How long a TCP connection may take to be made, in milliseconds.
-    connect_timeout_ms: i64
-    # How long each command may wait for its reply, in milliseconds; 0 for
-    # no limit.
-    socket_timeout_ms: i64
+    # How long a TCP connection may take to be made, `time.max_duration()`
+    # for no limit; zero and a part of a millisecond are 1 ms.
+    connect_timeout: time.Duration
+    # How long each command may wait for its reply, as `connect_timeout`
+    # counts it; `time.max_duration()` for no limit.
+    socket_timeout: time.Duration
     # Which server the client connects to and reads from.
     read_preference: ReadPreference
     # The read concern's level of reads: "" for the server's default,
@@ -267,11 +270,11 @@ function options(host: str) -> Options
         direct: false,
         security: .plain,
         app_name: "",
-        connect_timeout_ms: 10000,
-        socket_timeout_ms: 0,
+        connect_timeout: time.seconds(10).must(),
+        socket_timeout: time.max_duration(),
         read_preference: .primary,
         read_concern: "",
-        write_concern: WriteConcern(w: "", journal: .server_default, timeout_ms: 0),
+        write_concern: WriteConcern(w: "", journal: .server_default, timeout: time.max_duration()),
         retry_writes: true,
         retry_reads: true,
         server_api: ""
@@ -339,7 +342,7 @@ function parse_url(text: str) -> Options?
     else
         .plain
     return ok(
-        Options(hosts: hosts, srv_name: s.srv_name, srv_service_name: s.srv_service_name, srv_max_hosts: s.srv_max_hosts, username: s.username, password: s.password, auth_source: s.auth_source, mechanism: mechanism, database: s.database, replica_set: s.replica_set, direct: s.direct, security: security, app_name: s.app_name, connect_timeout_ms: s.connect_timeout_ms, socket_timeout_ms: s.socket_timeout_ms, read_preference: preference, read_concern: s.read_concern, write_concern: WriteConcern(w: s.w, journal: journal, timeout_ms: s.wtimeout_ms), retry_writes: s.retry_writes, retry_reads: s.retry_reads, server_api: s.server_api)
+        Options(hosts: hosts, srv_name: s.srv_name, srv_service_name: s.srv_service_name, srv_max_hosts: s.srv_max_hosts, username: s.username, password: s.password, auth_source: s.auth_source, mechanism: mechanism, database: s.database, replica_set: s.replica_set, direct: s.direct, security: security, app_name: s.app_name, connect_timeout: conn.time_of(s.connect_timeout_ms), socket_timeout: conn.time_of(s.socket_timeout_ms), read_preference: preference, read_concern: s.read_concern, write_concern: WriteConcern(w: s.w, journal: journal, timeout: conn.time_of(s.wtimeout_ms)), retry_writes: s.retry_writes, retry_reads: s.retry_reads, server_api: s.server_api)
     )
 
 # A connection to a MongoDB server, which `connect` makes and `close` ends.
@@ -358,8 +361,8 @@ record Client
 #
 # - `opts`: where the servers are and how to log in.
 #
-# Fails `invalid` where `opts` names no host or a port outside 1 to 65535;
-# `not_found` where no server suits the read preference or the replica set's
+# Fails `invalid` where `opts` names no host, a port outside 1 to 65535 or a
+# time below zero; `not_found` where no server suits the read preference or the replica set's
 # name; `permission` where the login is refused; and with the code of the
 # last server's failure where none answers (`closed`, `timeout`,
 # `not_found` for a name with no address, a TLS failure of `tls`). The
@@ -367,6 +370,9 @@ record Client
 function connect(opts: Options) -> Client?
     if opts.hosts.len() == 0 && opts.srv_name == ""
         return fail(code: INVALID, msg: "the options name no host")
+
+    if opts.connect_timeout.nanoseconds < 0 || opts.socket_timeout.nanoseconds < 0 || opts.write_concern.timeout.nanoseconds < 0
+        return fail(code: INVALID, msg: "a time of the options is below zero")
     addresses: [uri.Address] @= []
 
     for h in opts.hosts
@@ -415,13 +421,13 @@ function connect(opts: Options) -> Client?
         tls: secure,
         tls_roots: roots,
         app_name: opts.app_name,
-        connect_timeout_ms: opts.connect_timeout_ms,
-        socket_timeout_ms: opts.socket_timeout_ms,
+        connect_timeout_ms: conn.ms_of(opts.connect_timeout),
+        socket_timeout_ms: conn.ms_of(opts.socket_timeout),
         read_preference: preference,
         read_concern: opts.read_concern,
         w: opts.write_concern.w,
         journal: journal,
-        wtimeout_ms: opts.write_concern.timeout_ms,
+        wtimeout_ms: conn.ms_of(opts.write_concern.timeout),
         retry_writes: opts.retry_writes,
         retry_reads: opts.retry_reads,
         server_api: opts.server_api
@@ -451,18 +457,18 @@ function close(@client: Client) -> ()?
 function is_closed(client: Client) -> bool
     return client.state.conn.ended
 
-# Makes every later command of `client` wait at most `ms` milliseconds for
-# its reply, failing `timeout`; 0 takes the limit away.
+# Makes every later command of `client` wait at most `timeout` for its
+# reply, failing `timeout`; `time.max_duration()` takes the limit away.
 #
-# - `client`: the client, whose `socket_timeout_ms` this changes.
-# - `ms`: the milliseconds, 0 or more.
+# - `client`: the client, whose `socket_timeout` this changes.
+# - `timeout`: zero or more, as `Options.socket_timeout` takes it.
 #
-# Fails `invalid` where `ms` is below 0. A command whose time runs out ends
-# the client, since its reply may still come. See also `Options`.
-function set_timeout(@client: Client, ms: i64) -> ()?
-    if ms < 0
-        return fail(code: INVALID, msg: f"a timeout of {ms} ms")
-    client.state.settings.socket_timeout_ms @ ms
+# Fails `invalid` where `timeout` is below zero. A command whose time runs
+# out ends the client, since its reply may still come. See also `Options`.
+function set_timeout(@client: Client, timeout: time.Duration) -> ()?
+    if timeout.nanoseconds < 0
+        return fail(code: INVALID, msg: f"a timeout of {time.format_duration(timeout)}, below zero")
+    client.state.settings.socket_timeout_ms @ conn.ms_of(timeout)
     return ok()
 
 # What `server_of` answers: what the server the client stands on said of
@@ -1539,16 +1545,23 @@ record WatchOptions
     # The token of an event the stream starts after, even an invalidating
     # one; empty for none.
     start_after: bson.Document
-    # How long each wait for a change lasts, in milliseconds; 0 for the
-    # server's second.
-    max_await_ms: i64
+    # How long each wait for a change lasts, sent in whole milliseconds:
+    # `time.max_duration()` for the server's second; zero and a part of a
+    # millisecond are 1 ms.
+    max_await: time.Duration
     # The events each batch holds, 0 for the server's choice.
     batch_size: i64
 
 # The options of a stream that begins now.
 function default_watch_options() -> WatchOptions
     empty = bson.Document(fields: [])
-    return WatchOptions(full_document: "", resume_after: empty, start_after: empty, max_await_ms: 0, batch_size: 0)
+    return WatchOptions(
+        full_document: "",
+        resume_after: empty,
+        start_after: empty,
+        max_await: time.max_duration(),
+        batch_size: 0
+    )
 
 # A change stream of `collection`, of `database`, or of the whole server: a
 # cursor whose `next_document` answers each change as it comes, a document of
@@ -1605,8 +1618,10 @@ function watch(@client: Client, database: str, collection: str, pipeline: [bson.
     )
     reply = ops.read(@client.state, database: on, body: body)?
 
-    wait = if opts.max_await_ms > 0
-        opts.max_await_ms
+    asked_ms = conn.ms_of(opts.max_await)
+
+    wait = if asked_ms > 0
+        asked_ms
     else
         1000
     return ok(
@@ -1636,15 +1651,17 @@ record TransactionOptions
     read_concern: str
     # The write concern of its commit; `w` "" for the client's.
     write_concern: WriteConcern
-    # The longest its commit may take, in milliseconds; 0 for no limit.
-    max_commit_time_ms: i64
+    # The longest its commit may take, sent in whole milliseconds:
+    # `time.max_duration()` for no limit; zero and a part of a millisecond
+    # are 1 ms.
+    max_commit_time: time.Duration
 
 # The options of a transaction run with the client's concerns.
 function default_transaction_options() -> TransactionOptions
     return TransactionOptions(
         read_concern: "",
-        write_concern: WriteConcern(w: "", journal: .server_default, timeout_ms: 0),
-        max_commit_time_ms: 0
+        write_concern: WriteConcern(w: "", journal: .server_default, timeout: time.max_duration()),
+        max_commit_time: time.max_duration()
     )
 
 # Starts a transaction on `client`'s session: every later command of the
@@ -1653,15 +1670,18 @@ function default_transaction_options() -> TransactionOptions
 # - `client`: the client; the transaction needs a replica set or a mongos.
 # - `opts`: its read concern, its commit's write concern and time.
 #
-# Fails `invalid` where a transaction is in progress already, `unsupported`
-# where the server keeps no session or is a standalone server. No command is
-# sent until the first operation in it. The program retries the whole
+# Fails `invalid` where a transaction is in progress already or a time of
+# `opts` is below zero, `unsupported` where the server keeps no session or
+# is a standalone server. No command is sent until the first operation in
+# it. The program retries the whole
 # transaction where a failure has `LABEL_TRANSIENT_TRANSACTION_ERROR`, and
 # commits again where the commit's has
 # `LABEL_UNKNOWN_TRANSACTION_COMMIT_RESULT`: a function given as a callback
 # could not take the client by `@`. See also `commit_transaction`.
 function start_transaction(@client: Client, opts: TransactionOptions) -> ()?
-    if session.in_transaction(client.state)
+    if opts.write_concern.timeout.nanoseconds < 0 || opts.max_commit_time.nanoseconds < 0
+        return fail(code: INVALID, msg: "a time of the transaction's options is below zero")
+    else if session.in_transaction(client.state)
         return fail(code: INVALID, msg: "a transaction is in progress already")
     else if !session.can_retry_writes(client.state)
         return fail(
@@ -1677,7 +1697,7 @@ function start_transaction(@client: Client, opts: TransactionOptions) -> ()?
     concern @= client.state.settings
     concern.w @ opts.write_concern.w
     concern.journal @ journal
-    concern.wtimeout_ms @ opts.write_concern.timeout_ms
+    concern.wtimeout_ms @ conn.ms_of(opts.write_concern.timeout)
     client.state.txn_number @ client.state.txn_number + 1
     client.state.transaction @ session.STARTING
 
@@ -1686,7 +1706,7 @@ function start_transaction(@client: Client, opts: TransactionOptions) -> ()?
     else
         client.state.settings.read_concern
     client.state.txn_write_concern @ session.write_concern_of(concern)
-    client.state.txn_max_commit_ms @ opts.max_commit_time_ms
+    client.state.txn_max_commit_ms @ conn.ms_of(opts.max_commit_time)
     return ok()
 
 # Commits the transaction in progress: its writes become visible together.
@@ -1786,18 +1806,18 @@ function has_label(message: str, label: str) -> bool
 
 test "options and parse_url: the defaults, a string of every option this client reads, and the refusals"
     opts = options("db.example.com")
-    assert opts.retry_writes && opts.retry_reads && opts.connect_timeout_ms == 10000 && opts.mechanism == .negotiated
+    assert opts.retry_writes && opts.retry_reads && opts.connect_timeout == time.seconds(10).must() && opts.mechanism == .negotiated
     full = parse_url(
         "mongodb://u:p@h:1/app?authSource=admin&authMechanism=SCRAM-SHA-1&appName=x&connectTimeoutMS=5&socketTimeoutMS=6&readPreference=nearest&readConcernLevel=majority&w=2&journal=false&wtimeoutMS=7&retryWrites=false&retryReads=false&maxPoolSize=10"
     ).must()
     assert full.mechanism == .scram_sha_1 && full.read_preference == .nearest && full.read_concern == "majority"
-    assert full.write_concern == WriteConcern(w: "2", journal: .not_required, timeout_ms: 7)
-    assert !full.retry_writes && !full.retry_reads && full.connect_timeout_ms == 5 && full.socket_timeout_ms == 6
+    assert full.write_concern == WriteConcern(w: "2", journal: .not_required, timeout: time.milliseconds(7).must())
+    assert !full.retry_writes && !full.retry_reads && full.connect_timeout == time.milliseconds(5).must() && full.socket_timeout == time.milliseconds(6).must()
     srv = parse_url("mongodb+srv://cluster0.example.com/").must()
     assert srv.srv_name == "cluster0.example.com" && srv.security == .checked(roots: "") && srv.hosts.len() == 0
     assert parse_url("mongodb://h/?authMechanism=GSSAPI").is_err()
     assert connect(
-        Options(hosts: [], srv_name: "", srv_service_name: "mongodb", srv_max_hosts: 0, username: "", password: "", auth_source: "", mechanism: .negotiated, database: "", replica_set: "", direct: false, security: .plain, app_name: "", connect_timeout_ms: 1, socket_timeout_ms: 0, read_preference: .primary, read_concern: "", write_concern: WriteConcern(w: "", journal: .server_default, timeout_ms: 0), retry_writes: true, retry_reads: true, server_api: "")
+        Options(hosts: [], srv_name: "", srv_service_name: "mongodb", srv_max_hosts: 0, username: "", password: "", auth_source: "", mechanism: .negotiated, database: "", replica_set: "", direct: false, security: .plain, app_name: "", connect_timeout: time.milliseconds(1).must(), socket_timeout: time.max_duration(), read_preference: .primary, read_concern: "", write_concern: WriteConcern(w: "", journal: .server_default, timeout: time.max_duration()), retry_writes: true, retry_reads: true, server_api: "")
     ).is_err()
 
 test "connect: a port where nothing listens fails closed, and a port out of range invalid"
@@ -2253,7 +2273,7 @@ test "live: a change stream's insert and update, and a stream resumed after its 
                     drop_collection(@c, database: db, collection: "events").must()
                     create_collection(@c, database: db, collection: "events", opts: bson.Document(fields: [])).must()
                     wait @= default_watch_options()
-                    wait.max_await_ms @ 300
+                    wait.max_await @ time.milliseconds(300).must()
                     wait.full_document @ "updateLookup"
                     stream @= watch(@c, database: db, collection: "events", pipeline: [], opts: wait).must()
 
@@ -2408,7 +2428,7 @@ test "set_timeout: five seconds for each reply"
         .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
-            set_timeout(@c, ms: 5000).must()
+            set_timeout(@c, timeout: time.seconds(5).must()).must()
             ping(@c).must()
             close(@c).must()
 
@@ -3056,7 +3076,7 @@ test "drop_indexes: every index but _id_ removed"
 test "default_watch_options: the full document of each update"
     opts @= default_watch_options()
     opts.full_document @ "updateLookup"
-    assert opts.max_await_ms == 0
+    assert opts.max_await == time.max_duration()
 
 # A change stream opened, a change made, and the change read.
 test "watch: the next change of a collection"

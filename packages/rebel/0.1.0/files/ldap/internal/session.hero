@@ -59,8 +59,8 @@ record Session
     target: str
     # The number the next request takes.
     next_id: i64
-    # The milliseconds each operation may take, 0 for no limit.
-    deadline_ms: i64
+    # How long each operation may take, `time.max_duration()` for no limit.
+    deadline: time.Duration
     # The bytes a message may hold.
     max_message: i64
     # Whether the session is over.
@@ -81,7 +81,7 @@ record Session
     last_controls: [wire.Ctl]
 
 # A session over `stream`, carried by `link`, before any request.
-function made(stream: io.Stream, link: Link, host: str, port: i64, deadline_ms: i64, max_message: i64) -> Session
+function made(stream: io.Stream, link: Link, host: str, port: i64, deadline: time.Duration, max_message: i64) -> Session
     return Session(
         stream: stream,
         reader: io.reader(stream),
@@ -89,7 +89,7 @@ function made(stream: io.Stream, link: Link, host: str, port: i64, deadline_ms: 
         host: host,
         target: host + ":" + to_str(port),
         next_id: 1,
-        deadline_ms: deadline_ms,
+        deadline: deadline,
         max_message: max_message,
         ended: false,
         why: "",
@@ -101,35 +101,33 @@ function made(stream: io.Stream, link: Link, host: str, port: i64, deadline_ms: 
         last_controls: []
     )
 
-# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
-# being `time.max_duration()` (until this package's own step of D07; `tls`
-# takes a `time.Duration` since M-rebel-library step 88c).
+# The milliseconds of `d` as `net` takes them: `time.max_duration()` is
+# `net.FOREVER`, any other rounded up to a whole millisecond, so zero alone
+# waits not at all.
 #
-# - `ms`: milliseconds, 0 for no limit.
-function tls_deadline(ms: i64) -> time.Duration?
-    if ms == 0
-        return ok(time.max_duration())
-    return time.milliseconds(ms)
+# - `d`: zero or more, which the face checked.
+function net_ms(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return net.FOREVER
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+    return whole
 
 # A session over a plain TCP connection to `host` at `port`.
 #
 # Fails as `net.connect_timeout` fails.
-function connect_plain(host: str, port: i64, deadline_ms: i64, max_message: i64) -> Session?
-    connect_ms = if deadline_ms == 0
-        net.FOREVER
-    else
-        deadline_ms
-    conn = net.connect_timeout(host, port: port, timeout_ms: connect_ms, deadline_ms: net.FOREVER)?
-    return ok(
-        made(conn.stream, link: .plain, host: host, port: port, deadline_ms: deadline_ms, max_message: max_message)
-    )
+function connect_plain(host: str, port: i64, deadline: time.Duration, max_message: i64) -> Session?
+    conn = net.connect_timeout(host, port: port, timeout_ms: net_ms(deadline), deadline_ms: net.FOREVER)?
+    return ok(made(conn.stream, link: .plain, host: host, port: port, deadline: deadline, max_message: max_message))
 
 # A session over TLS from the first byte to `host` at `port`.
 #
 # Fails as `tls.connect` fails.
-function connect_direct(host: str, port: i64, deadline_ms: i64, roots: str, max_message: i64) -> Session?
-    stream = tls.connect(host, port: port, deadline: tls_deadline(deadline_ms)?, client: tls.Client(roots: roots, protocols: []))?.stream
-    return ok(made(stream, link: .secured, host: host, port: port, deadline_ms: deadline_ms, max_message: max_message))
+function connect_direct(host: str, port: i64, deadline: time.Duration, roots: str, max_message: i64) -> Session?
+    stream = tls.connect(host, port: port, deadline: deadline, client: tls.Client(roots: roots, protocols: []))?.stream
+    return ok(made(stream, link: .secured, host: host, port: port, deadline: deadline, max_message: max_message))
 
 # The bytes of the StartTLS request numbered `id`.
 function start_tls_request(id: i64) -> [u8]
@@ -168,9 +166,9 @@ function start_tls_answered(answer: wire.Message, id: i64, target: str) -> ()?
 #
 # Fails as `connect_plain` and `start_tls` fail, and as
 # `tls.connect_after` fails.
-function connect_start_tls(host: str, port: i64, deadline_ms: i64, roots: str, max_message: i64) -> Session?
+function connect_start_tls(host: str, port: i64, deadline: time.Duration, roots: str, max_message: i64) -> Session?
     if os.system() != .darwin
-        s @= connect_plain(host, port: port, deadline_ms: deadline_ms, max_message: max_message)?
+        s @= connect_plain(host, port: port, deadline: deadline, max_message: max_message)?
 
         match start_tls(@s, roots: roots)
             .ok _ => return ok(s)
@@ -178,7 +176,7 @@ function connect_start_tls(host: str, port: i64, deadline_ms: i64, roots: str, m
                 end(@s, why: e.msg)
                 return fail(code: e.code, msg: e.msg)
 
-    probe @= connect_plain(host, port: port, deadline_ms: deadline_ms, max_message: max_message)?
+    probe @= connect_plain(host, port: port, deadline: deadline, max_message: max_message)?
     request = start_tls_request(1)
     asked = request_raw(@probe, data: request)
     end(@probe, why: "the connection that asked for StartTLS")
@@ -186,8 +184,8 @@ function connect_start_tls(host: str, port: i64, deadline_ms: i64, roots: str, m
     answer = wire.decode(raw)?
     start_tls_answered(answer, id: 1, target: probe.target)?
     steps: [tls.Step] = [.send(data: request), .expect(answer: raw)]
-    stream = tls.connect_after(host, port: port, deadline: tls_deadline(deadline_ms)?, client: tls.Client(roots: roots, protocols: []), steps: steps)?.stream
-    s @= made(stream, link: .secured, host: host, port: port, deadline_ms: deadline_ms, max_message: max_message)
+    stream = tls.connect_after(host, port: port, deadline: deadline, client: tls.Client(roots: roots, protocols: []), steps: steps)?.stream
+    s @= made(stream, link: .secured, host: host, port: port, deadline: deadline, max_message: max_message)
     s.next_id @ 2
     return ok(s)
 
@@ -232,9 +230,9 @@ function start_tls(@s: Session, roots: str) -> ()?
             end(@s, why: e.msg)
             return fail(code: e.code, msg: e.msg)
 
-# Sets the deadline of `s`'s next operation, `s.deadline_ms` from now.
+# Sets the deadline of `s`'s next operation, `s.deadline` from now.
 function set_deadline(s: Session) -> ()?
-    return tls.set_deadline(s.stream, deadline: tls_deadline(s.deadline_ms)?)
+    return tls.set_deadline(s.stream, deadline: s.deadline)
 
 # Fails `closed` with the reason `s` ended.
 function ended_failure<T>(s: Session) -> T?

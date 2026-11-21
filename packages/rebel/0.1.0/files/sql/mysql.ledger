@@ -251,7 +251,7 @@ capability sql-mysql/deadline  every wait on a connection bounded in time
   go      Config.Timeout, Config.ReadTimeout, Config.WriteTimeout
   rust    -
   python  Connection (connect_timeout, read_timeout, write_timeout)
-  note    one deadline, `deadline_ms`, from the connection on, as `net.connect` gives it
+  note    one deadline, `deadline`, from the connection on, as `net.connect` gives it
 
 capability sql-mysql/attributes  the connection's attributes told to the server
   heroes  mysql.Options

@@ -14,7 +14,7 @@
 # group, which gives its partitions to others.
 #
 # **Every wait has a deadline and every read is bounded**: a call waits
-# `Options.wait_ms`, a fetch also the time it asks the broker to wait, and an
+# `Options.wait`, a fetch also the time it asks the broker to wait, and an
 # answer is read up to `Options.most_response_bytes`.
 #
 # It speaks the versions of each request that Kafka 2.4 to 4.x all read, so a
@@ -40,6 +40,7 @@ use kafka/internal/consuming
 use kafka/internal/errors
 use kafka/internal/fetching
 use kafka/internal/groups
+use kafka/internal/link
 use kafka/internal/live
 use kafka/internal/membership
 use kafka/internal/model
@@ -52,6 +53,7 @@ use numbers
 use os
 use strings
 use threads
+use time
 
 ## Codes
 
@@ -137,10 +139,11 @@ record Message
     # The offset in its partition: where it was written, as `send` answers
     # it; -1 before.
     offset: i64
-    # The time it was made, in milliseconds since 1970: -1 for the broker's
-    # or the producer's clock at the moment it is sent; where it was read,
-    # the batch's time where the topic keeps the broker's.
-    timestamp_ms: i64
+    # The moment it was made, to the millisecond: a failure, `not_found`, for
+    # the broker's or the producer's clock at the moment it is sent, as
+    # `message` makes it; where it was read, the batch's time where the topic
+    # keeps the broker's.
+    timestamp: time.Instant?
     # The key, any bytes, the partition chosen by it; it fails `not_found`
     # where the key is null, as `message` makes it until `with_key`.
     key: [u8]?
@@ -156,9 +159,9 @@ record Produced
     # The offset the batch's first message took; -1 where `Acks` asked no
     # answer.
     base_offset: i64
-    # The broker's time the batch was appended at, in milliseconds since
-    # 1970, where the topic keeps the broker's time; -1 elsewhere.
-    log_append_time_ms: i64
+    # The broker's moment the batch was appended at, where the topic keeps
+    # the broker's time; a failure, `not_found`, elsewhere.
+    log_append_time: time.Instant?
     # The partition's first offset after the append.
     log_start_offset: i64
 
@@ -343,10 +346,12 @@ record Options
     security: Security
     # How the client logs in.
     sasl: Sasl
-    # Milliseconds a connection may take, its login included, 1 or more.
-    connect_ms: i64
-    # Milliseconds a request may take, its retries included, 1 or more.
-    wait_ms: i64
+    # How long a connection may take, its login included, 1 ms to
+    # 2,147,483,647 ms, a part of a millisecond counting as a whole one.
+    connect_timeout: time.Duration
+    # How long a request may take, its retries included, 1 ms to
+    # 2,147,483,647 ms, the most a request of Kafka carries.
+    wait: time.Duration
     # The largest answer read, in bytes, 1,024 or more.
     most_response_bytes: i64
     # The acknowledgement a produce waits for.
@@ -369,20 +374,23 @@ record GroupOptions
     group_id: str
     # The topics the consumer reads, one or more.
     topics: [str]
-    # Milliseconds the coordinator waits for a heartbeat before it counts the
-    # consumer gone, within the broker's bounds (6,000 to 300,000 by default).
-    session_ms: i64
-    # Milliseconds the coordinator waits for every member to join again when
-    # the group changes, 1 or more.
-    rebalance_ms: i64
-    # Milliseconds between two heartbeats, 1 or more, below `session_ms`.
-    heartbeat_ms: i64
+    # How long the coordinator waits for a heartbeat before it counts the
+    # consumer gone, within the broker's bounds (6 s to 300 s by default) and
+    # 2,147,483,647 ms at most.
+    session_timeout: time.Duration
+    # How long the coordinator waits for every member to join again when the
+    # group changes, 1 ms to 2,147,483,647 ms.
+    rebalance_timeout: time.Duration
+    # The time between two heartbeats, 1 ms or more, below
+    # `session_timeout`.
+    heartbeat_interval: time.Duration
     # Where a partition the group kept no offset for begins.
     start: Start
-    # Milliseconds between two commits `poll` makes of the offsets it
-    # answered; 0 for none, the program calling `commit`.
-    auto_commit_ms: i64
-    # The consumer's static identifier, so a restart within `session_ms`
+    # The time between two commits `poll` makes of the offsets it answered:
+    # zero commits at every `poll`, `time.max_duration()` never, the program
+    # calling `commit`.
+    auto_commit_interval: time.Duration
+    # The consumer's static identifier, so a restart within `session_timeout`
     # keeps its partitions; "" for none.
     instance_id: str
 
@@ -415,8 +423,8 @@ function options(brokers: [str]) -> Options
         client_id: "rebel",
         security: .plain,
         sasl: .none,
-        connect_ms: 10000,
-        wait_ms: 10000,
+        connect_timeout: time.seconds(10).must(),
+        wait: time.seconds(10).must(),
         most_response_bytes: 104857600,
         acks: .leader,
         compression: .none,
@@ -467,8 +475,8 @@ function connect(opts: Options) -> Client?
         tls: opts.security != .plain,
         roots: roots,
         sasl: sasl,
-        connect_ms: opts.connect_ms,
-        wait_ms: opts.wait_ms,
+        connect_ms: link.ms_of(opts.connect_timeout),
+        wait_ms: link.ms_of(opts.wait),
         most_response_bytes: opts.most_response_bytes,
         acks: acks,
         compression: compression,
@@ -716,7 +724,7 @@ function message(value: [u8]) -> Message
         topic: "",
         partition: -1,
         offset: -1,
-        timestamp_ms: -1,
+        timestamp: fail(code: NOT_FOUND, msg: "the message carries no time of its own"),
         key: fail(code: NOT_FOUND, msg: "the message has a null key"),
         value: ok(value),
         headers: []
@@ -781,7 +789,7 @@ function partition_of(key: [u8], partitions: i64) -> i64
 # - `messages`: the messages, one or more; their `topic`, `partition` and
 #   `offset` are not read.
 #
-# Retries where the leader moved or was not ready, within `Options.wait_ms`.
+# Retries where the leader moved or was not ready, within `Options.wait`.
 # Fails `limit` where the batch is too large for the broker, `not_found`
 # where the topic or the partition does not exist, `invalid` where a message
 # is refused, `permission`, and as every call that talks to a broker fails.
@@ -796,12 +804,12 @@ function produce(@c: Client, topic: str, partition: i64, messages: [Message]) ->
             headers @ headers.push(model.Header(key: h.key, value: h.value))
 
         inner @ inner.push(
-            model.Message(topic: topic, partition: partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
+            model.Message(topic: topic, partition: partition, offset: -1, timestamp_ms: link.ms_of_instant(m.timestamp), key: m.key, value: m.value, headers: headers)
         )
 
     p = producing.produce(@c.session, topic: topic, partition: partition, messages: inner)?
     return ok(
-        Produced(base_offset: p.base_offset, log_append_time_ms: p.log_append_time_ms, log_start_offset: p.log_start_offset)
+        Produced(base_offset: p.base_offset, log_append_time: link.instant_of(p.log_append_time_ms, what: "the answer"), log_start_offset: p.log_start_offset)
     )
 
 # Writes each message of `messages` to its topic and partition, a batch for
@@ -826,7 +834,7 @@ function send(@c: Client, messages: [Message]) -> [Message]?
             headers @ headers.push(model.Header(key: h.key, value: h.value))
 
         inner @ inner.push(
-            model.Message(topic: m.topic, partition: m.partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
+            model.Message(topic: m.topic, partition: m.partition, offset: -1, timestamp_ms: link.ms_of_instant(m.timestamp), key: m.key, value: m.value, headers: headers)
         )
 
     sent = producing.send(@c.session, messages: inner)?
@@ -841,20 +849,25 @@ function send(@c: Client, messages: [Message]) -> [Message]?
 ## Fetching
 
 # The messages of `partition` of `topic` from the offset `offset`, the
-# broker waiting up to `wait_ms` for one to come.
+# broker waiting up to `wait` for one to come.
 #
 # - `c`: the client.
 # - `topic`: the topic.
 # - `partition`: the partition.
 # - `offset`: the first offset read, 0 or more.
-# - `wait_ms`: milliseconds the broker waits where nothing is there yet, 0
-#   or more.
+# - `wait`: how long the broker waits where nothing is there yet, zero to
+#   2,147,483,647 ms, a part of a millisecond counting as a whole one.
 #
-# Fails `invalid` where `offset` is outside the log, `not_found` where the
+# Fails `invalid` where `offset` is outside the log or `wait` outside its
+# range, `not_found` where the
 # topic or the partition does not exist, `unsupported` where a batch is
 # compressed other than by gzip or in a format before 2, and as every call
 # that talks to a broker fails. See also `list_offset`, `poll`.
-function fetch(@c: Client, topic: str, partition: i64, offset: i64, wait_ms: i64) -> Fetched?
+function fetch(@c: Client, topic: str, partition: i64, offset: i64, wait: time.Duration) -> Fetched?
+    wait_ms = link.ms_of(wait)
+
+    if wait_ms < 0 || wait_ms > 2147483647
+        return fail(code: INVALID, msg: f"the wait {time.format_duration(wait)} is outside zero to 2,147,483,647 ms")
     f = fetching.fetch(@c.session, topic: topic, partition: partition, offset: offset, wait_ms: wait_ms)?
     out: [Message] @= []
 
@@ -865,7 +878,7 @@ function fetch(@c: Client, topic: str, partition: i64, offset: i64, wait_ms: i64
             headers @ headers.push(Header(key: h.key, value: h.value))
 
         out @ out.push(
-            Message(topic: m.topic, partition: m.partition, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
+            Message(topic: m.topic, partition: m.partition, offset: m.offset, timestamp: link.instant_of(m.timestamp_ms, what: "the message"), key: m.key, value: m.value, headers: headers)
         )
 
     return ok(
@@ -897,7 +910,7 @@ function list_offset(@c: Client, topic: str, partition: i64, at: i64) -> i64?
 #
 # Fails `permission` where the group is refused this client, and as every
 # call that talks to a broker fails; the coordinator not yet ready is waited
-# for within `Options.wait_ms`. See also `commit_offsets`.
+# for within `Options.wait`. See also `commit_offsets`.
 function find_coordinator(@c: Client, group_id: str) -> Broker?
     b = groups.find_coordinator(@c.session, group_id: group_id)?
     return ok(Broker(id: b.id, host: b.host, port: b.port, rack: b.rack))
@@ -1015,11 +1028,11 @@ function group_options(group_id: str, topics: [str]) -> GroupOptions
     return GroupOptions(
         group_id: group_id,
         topics: topics,
-        session_ms: 45000,
-        rebalance_ms: 300000,
-        heartbeat_ms: 3000,
+        session_timeout: time.seconds(45).must(),
+        rebalance_timeout: time.minutes(5).must(),
+        heartbeat_interval: time.seconds(3).must(),
         start: .earliest,
-        auto_commit_ms: 5000,
+        auto_commit_interval: time.seconds(5).must(),
         instance_id: ""
     )
 
@@ -1033,7 +1046,7 @@ function group_options(group_id: str, topics: [str]) -> GroupOptions
 # The program owes the consumer a `close_consumer`. Fails `invalid` where an
 # option is out of range or the coordinator refuses the session's time,
 # `not_found` where a topic does not exist, `permission`, and as `connect`
-# fails; joining waits up to `GroupOptions.rebalance_ms` for the other
+# fails; joining waits up to `GroupOptions.rebalance_timeout` for the other
 # members. See also `poll`, `close_consumer`.
 function subscribe(opts: Options, group: GroupOptions) -> Consumer?
     sasl: model.Sasl = match opts.sasl
@@ -1070,8 +1083,8 @@ function subscribe(opts: Options, group: GroupOptions) -> Consumer?
         tls: opts.security != .plain,
         roots: roots,
         sasl: sasl,
-        connect_ms: opts.connect_ms,
-        wait_ms: opts.wait_ms,
+        connect_ms: link.ms_of(opts.connect_timeout),
+        wait_ms: link.ms_of(opts.wait),
         most_response_bytes: opts.most_response_bytes,
         acks: acks,
         compression: compression,
@@ -1079,31 +1092,39 @@ function subscribe(opts: Options, group: GroupOptions) -> Consumer?
         most_fetch_bytes: opts.most_fetch_bytes,
         auto_create_topics: opts.auto_create_topics
     )
+
+    commit_ms = if group.auto_commit_interval == time.max_duration()
+        0
+    else if group.auto_commit_interval.nanoseconds == 0
+        1
+    else
+        link.ms_of(group.auto_commit_interval)
     g = model.GroupOptions(
         group_id: group.group_id,
         topics: group.topics,
-        session_ms: group.session_ms,
-        rebalance_ms: group.rebalance_ms,
-        heartbeat_ms: group.heartbeat_ms,
+        session_ms: link.ms_of(group.session_timeout),
+        rebalance_ms: link.ms_of(group.rebalance_timeout),
+        heartbeat_ms: link.ms_of(group.heartbeat_interval),
         start: start,
-        auto_commit_ms: group.auto_commit_ms,
+        auto_commit_ms: commit_ms,
         instance_id: group.instance_id
     )
     return ok(Consumer(group: membership.subscribe(inner, g: g)?))
 
 # The messages of the consumer's partitions from its positions, waiting up
-# to `wait_ms` for one, its positions moved past them; the heartbeat and the
+# to `wait` for one, its positions moved past them; the heartbeat and the
 # commit sent where they fall due, the group joined again where it changed.
 #
 # - `k`: the consumer.
-# - `wait_ms`: milliseconds to wait where nothing is there yet, 0 or more.
+# - `wait`: how long to wait where nothing is there yet, zero or more, a
+#   part of a millisecond counting as a whole one.
 #
 # An empty list where nothing came in time. Fails `not_found` where a
 # partition has no offset and `GroupOptions.start` is `none`, `unsupported`
 # where a batch is compressed other than by gzip, and as `fetch` fails. See
 # also `commit`.
-function poll(@k: Consumer, wait_ms: i64) -> [Message]?
-    got = consuming.poll(@k.group, wait_ms: wait_ms)?
+function poll(@k: Consumer, wait: time.Duration) -> [Message]?
+    got = consuming.poll(@k.group, wait_ms: link.ms_of(wait))?
     out: [Message] @= []
 
     for m in got
@@ -1113,7 +1134,7 @@ function poll(@k: Consumer, wait_ms: i64) -> [Message]?
             headers @ headers.push(Header(key: h.key, value: h.value))
 
         out @ out.push(
-            Message(topic: m.topic, partition: m.partition, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
+            Message(topic: m.topic, partition: m.partition, offset: m.offset, timestamp: link.instant_of(m.timestamp_ms, what: "the message"), key: m.key, value: m.value, headers: headers)
         )
 
     return ok(out)
@@ -1211,7 +1232,7 @@ function resume(@k: Consumer, topic: str, partition: i64) -> ()?
     k.group.owned[i].paused @ false
     return ok()
 
-# Commits where `GroupOptions.auto_commit_ms` asks it, leaves the group so
+# Commits where `GroupOptions.auto_commit_interval` asks it, leaves the group so
 # its partitions go to others at once, and closes the consumer's
 # connections.
 #
@@ -1271,7 +1292,7 @@ function encode_batch(messages: [Message], compression: Compression) -> [u8]?
             headers @ headers.push(model.Header(key: h.key, value: h.value))
 
         inner @ inner.push(
-            model.Message(topic: m.topic, partition: m.partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
+            model.Message(topic: m.topic, partition: m.partition, offset: -1, timestamp_ms: link.ms_of_instant(m.timestamp), key: m.key, value: m.value, headers: headers)
         )
 
     how: model.Compression = match compression
@@ -1300,7 +1321,7 @@ function decode_batches(data: [u8]) -> [Message]?
             headers @ headers.push(Header(key: h.key, value: h.value))
 
         out @ out.push(
-            Message(topic: "", partition: -1, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, value: m.value, headers: headers)
+            Message(topic: "", partition: -1, offset: m.offset, timestamp: link.instant_of(m.timestamp_ms, what: "the message"), key: m.key, value: m.value, headers: headers)
         )
 
     return ok(out)
@@ -1319,22 +1340,22 @@ test "options, group_options, message, with_key, with_header: the defaults and a
     o = options(["localhost:9092"])
     assert o.client_id == "rebel" && o.acks == .leader && o.compression == .none && o.most_fetch_bytes == 1048576 && !o.auto_create_topics
     g = group_options("g", topics: ["t"])
-    assert g.session_ms == 45000 && g.heartbeat_ms == 3000 && g.start == .earliest && g.auto_commit_ms == 5000
+    assert g.session_timeout == time.seconds(45).must() && g.heartbeat_interval == time.seconds(3).must() && g.start == .earliest && g.auto_commit_interval == time.seconds(5).must()
     m = message([1]).with_key([]).with_header(key: "h", value: [2])
-    assert m.key.must() == [] && m.headers == [Header(key: "h", value: [2])] && m.partition == -1 && m.timestamp_ms == -1
+    assert m.key.must() == [] && m.headers == [Header(key: "h", value: [2])] && m.partition == -1 && m.timestamp.is_err()
 
 test "encode_batch, decode_batches: messages written and read back, gzip, an empty list refused"
     m1 @= message([1, 2]).with_key([9])
-    m1.timestamp_ms @ 1700000000000
+    m1.timestamp @ time.from_unix_milliseconds(1700000000000)
     m2 @= message([])
     m2.value @ fail(code: NOT_FOUND, msg: "a tombstone")
-    m2.timestamp_ms @ 1700000000009
+    m2.timestamp @ time.from_unix_milliseconds(1700000000009)
     hows: [Compression] = [.none, .gzip]
 
     for how in hows
         data = encode_batch([m1, m2], compression: how).must()
         back = decode_batches(data).must()
-        assert back.len() == 2 && back[0].key.must() == [9] && back[0].offset == 0 && back[1].value.is_err() && back[1].timestamp_ms == 1700000000009
+        assert back.len() == 2 && back[0].key.must() == [9] && back[0].offset == 0 && back[1].value.is_err() && time.unix_milliseconds(back[1].timestamp.must()) == 1700000000009
 
     assert encode_batch([], compression: .none).is_err()
     assert decode_batches([1, 2, 3]).must() == []
@@ -1346,13 +1367,13 @@ test "connect: an option out of range refused before anything is sent, a broker 
     o @= options(["localhost"])
     assert connect(o).is_err()
     o.brokers @ ["127.0.0.1:1"]
-    o.connect_ms @ 2000
+    o.connect_timeout @ time.seconds(2).must()
 
     match connect(o)
         .ok _  => assert false
         .err e => assert e.code == "closed" || e.code == "timeout" || e.code == "failed"
 
-    o.wait_ms @ 0
+    o.wait @ time.nanoseconds(0)
     assert connect(o).is_err()
 
 test "connect live, against the brokers REBEL_KAFKA_BROKERS names: topics made and deleted, keyed messages where Java's client puts them, batches with headers and nulls, offsets by time, gzip, a large message, records deleted, partitions added, a group's offsets"
@@ -1395,12 +1416,18 @@ test "connect live, against the brokers REBEL_KAFKA_BROKERS names: topics made a
 
             assert counts[0] + counts[1] + counts[2] == 300
             plain @= message([7]).with_header(key: "h", value: [1, 2]).with_header(key: "e", value: [])
-            plain.timestamp_ms @ 1700000000000
+            plain.timestamp @ time.from_unix_milliseconds(1700000000000)
             tomb = tombstone([3])
             produced = produce(@c, topic: topic, partition: 0, messages: [plain, tomb]).must()
             assert produced.base_offset == counts[0]
-            got = fetch(@c, topic: topic, partition: 0, offset: produced.base_offset, wait_ms: 1000).must()
-            assert got.messages.len() == 2 && got.messages[0].headers == plain.headers && got.messages[0].timestamp_ms == 1700000000000
+            got = fetch(
+                @c,
+                topic: topic,
+                partition: 0,
+                offset: produced.base_offset,
+                wait: time.seconds(1).must()
+            ).must()
+            assert got.messages.len() == 2 && got.messages[0].headers == plain.headers && time.unix_milliseconds(got.messages[0].timestamp.must()) == 1700000000000
             assert got.messages[1].value.is_err() && got.messages[1].key.must() == [3] && got.next_offset == produced.base_offset + 2 && got.high_watermark == produced.base_offset + 2
             assert list_offset(@c, topic: topic, partition: 0, at: EARLIEST).must() == 0
             assert list_offset(@c, topic: topic, partition: 0, at: LATEST).must() == counts[0] + 2
@@ -1410,11 +1437,11 @@ test "connect live, against the brokers REBEL_KAFKA_BROKERS names: topics made a
                 .ok _  => assert false
                 .err e => assert e.code == "not_found"
 
-            match fetch(@c, topic: topic, partition: 0, offset: 1000000, wait_ms: 0)
+            match fetch(@c, topic: topic, partition: 0, offset: 1000000, wait: time.nanoseconds(0))
                 .ok _  => assert false
                 .err e => assert e.code == "invalid"
 
-            assert fetch(@c, topic: topic, partition: 7, offset: 0, wait_ms: 0).is_err()
+            assert fetch(@c, topic: topic, partition: 7, offset: 0, wait: time.nanoseconds(0)).is_err()
             zipped @= options([text])
             zipped.compression @ .gzip
             z @= connect(zipped).must()
@@ -1430,7 +1457,7 @@ test "connect live, against the brokers REBEL_KAFKA_BROKERS names: topics made a
 
             many @ many.push(message(big))
             put = produce(@z, topic: other, partition: 0, messages: many).must()
-            back = fetch(@z, topic: other, partition: 0, offset: put.base_offset, wait_ms: 1000).must()
+            back = fetch(@z, topic: other, partition: 0, offset: put.base_offset, wait: time.seconds(1).must()).must()
             assert back.messages.len() == 51 && back.messages[50].value.must() == big && back.messages[3].value.must() == bytes.from_text("zipped 3")
             close(@z).must()
             assert delete_records(@c, topic: topic, partition: 0, before: 5).must() == 5
@@ -1478,10 +1505,10 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
 
             _ = send(@c, messages: first).must()
             g @= group_options(group, topics: [topic])
-            g.session_ms @ 6000
-            g.rebalance_ms @ 6000
-            g.heartbeat_ms @ 500
-            g.auto_commit_ms @ 0
+            g.session_timeout @ time.seconds(6).must()
+            g.rebalance_timeout @ time.seconds(6).must()
+            g.heartbeat_interval @ time.milliseconds(500).must()
+            g.auto_commit_interval @ time.max_duration()
             k @= subscribe(o, group: g).must()
             assert assignment_of(k) == [TopicPartition(topic: topic, partition: 0), TopicPartition(topic: topic, partition: 1)]
             assert member_of(k).leader && member_of(k).generation_id >= 1 && member_of(k).group_id == group
@@ -1489,7 +1516,7 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
             rounds: i64 @= 0
 
             while read < 100 && rounds < 50
-                read @ read + poll(@k, wait_ms: 500).must().len()
+                read @ read + poll(@k, wait: time.milliseconds(500).must()).must().len()
                 rounds @ rounds + 1
 
             assert read == 100
@@ -1508,12 +1535,12 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
             seek(@k, topic: topic, partition: 0, offset: 0).must()
             assert position_of(k, topic: topic, partition: 0).must() == 0
             pause(@k, topic: topic, partition: 1).must()
-            again = poll(@k, wait_ms: 500).must()
+            again = poll(@k, wait: time.milliseconds(500).must()).must()
             assert again.len() == p0 && again[0].partition == 0
             resume(@k, topic: topic, partition: 1).must()
             assert pause(@k, topic: "nowhere", partition: 0).is_err() && seek(@k, topic: topic, partition: 9, offset: 0).is_err()
             close_consumer(@k).must()
-            assert close_consumer(@k).is_err() && poll(@k, wait_ms: 0).is_err()
+            assert close_consumer(@k).is_err() && poll(@k, wait: time.nanoseconds(0)).is_err()
             later: [Message] @= []
 
             for i in range(from: 0, to: 10)
@@ -1527,7 +1554,7 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
             tries: i64 @= 0
 
             while fresh < 10 && tries < 30
-                fresh @ fresh + poll(@j, wait_ms: 500).must().len()
+                fresh @ fresh + poll(@j, wait: time.milliseconds(500).must()).must().len()
                 tries @ tries + 1
 
             assert fresh == 10
@@ -1547,7 +1574,7 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
 
             while spins < 80
                 spins @ spins + 1
-                mine @ mine + poll(@j, wait_ms: 200).must().len()
+                mine @ mine + poll(@j, wait: time.milliseconds(200).must()).must().len()
 
                 if assignment_of(j).len() == 1
                     shared @ true
@@ -1603,7 +1630,7 @@ test "connect live over TLS, against the brokers REBEL_KAFKA_TLS_BROKERS names, 
             topic = f"rebel-tls-{os.pid()}"
             create_topics(@c, topics: [new_topic(topic, partitions: 1)]).must()
             p = produce(@c, topic: topic, partition: 0, messages: [message([42])]).must()
-            assert fetch(@c, topic: topic, partition: 0, offset: p.base_offset, wait_ms: 1000).must().messages[0].value.must() == [42]
+            assert fetch(@c, topic: topic, partition: 0, offset: p.base_offset, wait: time.seconds(1).must()).must().messages[0].value.must() == [42]
             delete_topics(@c, names: [topic]).must()
             close(@c).must()
             untrusted @= options([text])
@@ -1794,7 +1821,7 @@ test "fetch: from the offset 0"
             name = f"rebel-example-{os.pid()}-h"
             create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
             _ = produce(@c, topic: name, partition: 0, messages: [message([1])]).must()
-            assert fetch(@c, topic: name, partition: 0, offset: 0, wait_ms: 500).must().messages[0].value.must() == [1]
+            assert fetch(@c, topic: name, partition: 0, offset: 0, wait: time.milliseconds(500).must()).must().messages[0].value.must() == [1]
             delete_topics(@c, names: [name]).must()
             close(@c).must()
 
@@ -1883,8 +1910,8 @@ test "delete_groups: a group that kept an offset"
 # The options of a consumer that commits by hand.
 test "group_options: commits by hand"
     g @= group_options("billing", topics: ["orders"])
-    g.auto_commit_ms @ 0
-    assert g.topics == ["orders"] && g.auto_commit_ms == 0
+    g.auto_commit_interval @ time.max_duration()
+    assert g.topics == ["orders"] && g.auto_commit_interval == time.max_duration()
 
 # A consumer joined to its group.
 test "subscribe: a group of one"
@@ -1909,7 +1936,7 @@ test "poll: what the partitions hold"
             create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
             _ = produce(@c, topic: name, partition: 0, messages: [message([1])]).must()
             k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
-            assert poll(@k, wait_ms: 1000).must().len() == 1
+            assert poll(@k, wait: time.seconds(1).must()).must().len() == 1
             close_consumer(@k).must()
             delete_topics(@c, names: [name]).must()
             close(@c).must()
@@ -1923,7 +1950,7 @@ test "commit: after a poll"
             name = f"rebel-example-{os.pid()}-n"
             create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
             k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
-            _ = poll(@k, wait_ms: 100).must()
+            _ = poll(@k, wait: time.milliseconds(100).must()).must()
             commit(@k).must()
             close_consumer(@k).must()
             delete_topics(@c, names: [name]).must()

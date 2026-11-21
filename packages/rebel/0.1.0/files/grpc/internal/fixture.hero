@@ -165,7 +165,12 @@ function serve_tls(arg: str) -> str
 function call(arg: str) -> str
     words = split_words(arg)
     port = numbers.parse_int(words[0]).must()
-    c @= http2.connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: http2.default_options()).must()
+    c @= http2.connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: http2.default_options()
+    ).must()
     head = calls.call_head(
         scheme: "http",
         authority: "localhost",

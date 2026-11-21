@@ -69,7 +69,7 @@ capability connect/state  whether TLS protects the session, and its version and 
   note    the version and the peer's certificate are not handed out: the stream is the session's own; `tls.version_of` reads them of a stream a program holds
 
 capability connect/deadline  a time limit on every step
-  heroes  smtp.Options.deadline_ms
+  heroes  smtp.Options.deadline
   go      -
   rust    lettre::transport::smtp::SmtpTransportBuilder
   python  smtplib.SMTP

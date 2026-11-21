@@ -143,10 +143,11 @@ record Options
     # `performance_schema.session_connect_attrs` as `program_name`, "" for
     # none.
     application_name: str
-    # Milliseconds from when the connection is made by which every later
-    # wait on it ends, failing `timeout`: a time, not a span, as
-    # `net.connect` takes it. 0, the default, for none.
-    deadline_ms: i64
+    # How long from when the connection is made every later wait on it may
+    # last, failing `timeout`: a time, not a span, as `net.connect` takes
+    # it, a part of a millisecond counting as a whole one. Zero ends at once
+    # every wait, `time.max_duration()`, the default, sets none.
+    deadline: time.Duration
     # How the connection is secured: `.checked(roots: "")`, TLS checked
     # against the system's store, unless the program asks for another.
     security: Security
@@ -168,7 +169,7 @@ function options(host: str, user: str, database: str) -> Options
         password: "",
         database: database,
         application_name: "",
-        deadline_ms: 0,
+        deadline: time.max_duration(),
         security: .checked(roots: "")
     )
 
@@ -202,7 +203,7 @@ function parse_url(url: str) -> Options?
     else
         .plain
     return ok(
-        Options(host: t.host, port: t.port, user: t.user, password: t.password, database: t.database, application_name: "", deadline_ms: 0, security: security)
+        Options(host: t.host, port: t.port, user: t.user, password: t.password, database: t.database, application_name: "", deadline: time.max_duration(), security: security)
     )
 
 # A connection to the database `opts` names, logged in and ready for a
@@ -237,10 +238,19 @@ function open(opts: Options) -> Db?
             msg: f"connecting to {opts.host}: the user, the database or the application name holds a zero byte"
         )
 
-    plain_ms = if opts.deadline_ms == 0
+    if opts.deadline.nanoseconds < 0
+        return fail(
+            code: sql.INVALID,
+            msg: f"connecting to {opts.host}: the deadline {time.format_duration(opts.deadline)} is below zero"
+        )
+    whole = opts.deadline.nanoseconds / 1_000_000
+
+    plain_ms = if opts.deadline == time.max_duration()
         net.FOREVER
+    else if opts.deadline.nanoseconds % 1_000_000 != 0
+        whole + 1
     else
-        opts.deadline_ms
+        whole
     conn = net.connect(opts.host, port: opts.port, deadline_ms: plain_ms)?
     s @= session.over(out: conn.stream, input: conn.stream, target: f"{opts.host}:{opts.port}/{opts.database}")
 

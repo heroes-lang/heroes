@@ -298,30 +298,34 @@ function changed(names: [str], target: str, adding: bool) -> [str]
         out @ out.push(target)
     return out
 
-# Moves the deadline of `s`'s connection to `ms` milliseconds from now.
+# Moves the deadline of `s`'s connection to `deadline` from now, as
+# `tls.set_deadline` takes it.
 #
 # - `s`: the session.
-# - `ms`: milliseconds, 0 for none.
+# - `deadline`: zero ends at once a wait, `time.max_duration()` for none.
 #
 # Fails as `net.set_deadline` and `tls.set_deadline` fail, and
 # `unsupported` for a test's scripted server.
-function set_deadline(s: Session, ms: i64) -> ()?
+function set_deadline(s: Session, deadline: time.Duration) -> ()?
     if s.ended
         return closed_failure(s)
 
     match s.link
-        .network  => return tls.set_deadline(s.out, deadline: tls_deadline(ms)?)
+        .network  => return tls.set_deadline(s.out, deadline: deadline)
         .scripted => return fail(code: UNSUPPORTED, msg: "a scripted server has no deadline")
 
-# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
-# being `time.max_duration()` (until this package's own step of D07; `tls`
-# takes a `time.Duration` since M-rebel-library step 88c).
+# The whole milliseconds of `d`, a part of one counting as a whole one, as
+# a command carries a time; below zero, -1.
 #
-# - `ms`: milliseconds, 0 for no limit.
-function tls_deadline(ms: i64) -> time.Duration?
-    if ms == 0
-        return ok(time.max_duration())
-    return time.milliseconds(ms)
+# - `d`: a time the face was handed.
+function whole_ms(d: time.Duration) -> i64
+    if d.nanoseconds < 0
+        return -1
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+    return whole
 
 # Closes the connection's stream and ends the session.
 #

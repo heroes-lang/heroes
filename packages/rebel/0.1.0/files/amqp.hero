@@ -16,7 +16,8 @@
 # is readable, and reads what `held_of` says is held.
 #
 # **Every wait has a deadline and every read is bounded**: a call waits
-# `Options.wait_ms` or its own `wait_ms`, a frame is read up to the size the
+# `Options.wait` or its own `wait`, a `time.Duration` whose part of a
+# millisecond counts as a whole one, a frame is read up to the size the
 # server agreed, a body up to `Options.most_body_bytes`, and the values held
 # unread up to `Options.most_held`, past which the connection is closed
 # failing `limit`: a consumer sets a prefetch with `qos` so the server never
@@ -231,9 +232,10 @@ record Options
     password: str
     # How the login is sent.
     mechanism: Mechanism
-    # The heartbeat asked, in seconds, 0 to 65535: the server's own where it
-    # is 0, the smaller of the two where neither is.
-    heartbeat_s: i64
+    # The heartbeat asked, 0 to 65535 seconds in whole seconds, a part of
+    # one counting as a whole one: the server's own where it is zero, the
+    # smaller of the two where neither is.
+    heartbeat: time.Duration
     # The largest frame asked, in bytes, 4096 to 4294967295, or 0 for the
     # server's own: the smaller of the two where neither is 0.
     frame_max: i64
@@ -247,10 +249,11 @@ record Options
     properties: [Field]
     # The locale asked, `en_US`.
     locale: str
-    # Milliseconds a connection may take, its login included, 1 or more.
-    connect_ms: i64
-    # Milliseconds a write, and an answer of the server, may take, 1 or more.
-    wait_ms: i64
+    # How long a connection may take, its login included, 1 ms or more;
+    # `time.max_duration()` waits as long as the server takes.
+    connect_timeout: time.Duration
+    # How long a write, and an answer of the server, may take, 1 ms or more.
+    wait: time.Duration
     # The largest body read, in bytes, 0 or more; past it the connection is
     # closed failing `limit`.
     most_body_bytes: i64
@@ -275,8 +278,8 @@ record Server
     channel_max: i64
     # The largest frame agreed, in bytes.
     frame_max: i64
-    # The heartbeat agreed, in seconds, 0 for none.
-    heartbeat_s: i64
+    # The heartbeat agreed, in whole seconds, zero for none.
+    heartbeat: time.Duration
 
 # Why the server closed a connection or a channel.
 record Closing
@@ -328,14 +331,14 @@ function options(host: str) -> Options
         username: "guest",
         password: "guest",
         mechanism: .plain,
-        heartbeat_s: 60,
+        heartbeat: time.minutes(1).must(),
         frame_max: 131072,
         channel_max: 2047,
         connection_name: "",
         properties: [],
         locale: "en_US",
-        connect_ms: 10000,
-        wait_ms: 10000,
+        connect_timeout: time.seconds(10).must(),
+        wait: time.seconds(10).must(),
         most_body_bytes: 134217728,
         most_held: 65536
     )
@@ -420,13 +423,13 @@ function parse_url(text: str) -> Options?
                     .err _  => return fail(code: INVALID, msg: f"the value of \"{p.key}\" in \"{text}\" is no number")
 
                 if p.key == "heartbeat" && n >= 0 && n <= 65535
-                    opts.heartbeat_s @ n
+                    opts.heartbeat @ time.seconds(n).must()
                 else if p.key == "frame_max" && (n == 0 || n >= 4096 && n <= 4294967295)
                     opts.frame_max @ n
                 else if p.key == "channel_max" && n >= 0 && n <= 65535
                     opts.channel_max @ n
-                else if p.key == "connection_timeout" && n >= 1
-                    opts.connect_ms @ n
+                else if p.key == "connection_timeout" && n >= 1 && n <= 9223372036854
+                    opts.connect_timeout @ time.milliseconds(n).must()
                 else if p.key == "heartbeat" || p.key == "frame_max" || p.key == "channel_max" || p.key == "connection_timeout"
                     return fail(code: INVALID, msg: f"the value {n} of \"{p.key}\" in \"{text}\" is out of its range")
                 else
@@ -471,14 +474,14 @@ function connect(opts: Options) -> Connection?
         username: opts.username,
         password: opts.password,
         mechanism: mechanism,
-        heartbeat_s: opts.heartbeat_s,
+        heartbeat_s: link.seconds_of(opts.heartbeat),
         frame_max: opts.frame_max,
         channel_max: opts.channel_max,
         connection_name: opts.connection_name,
         properties: extra,
         locale: opts.locale,
-        connect_ms: opts.connect_ms,
-        wait_ms: opts.wait_ms,
+        connect_ms: link.ms_of(opts.connect_timeout),
+        wait_ms: link.ms_of(opts.wait),
         most_body_bytes: opts.most_body_bytes,
         most_held: opts.most_held
     )
@@ -529,7 +532,7 @@ function server_of(c: Connection) -> Server
         version_minor: v.version_minor,
         channel_max: v.channel_max,
         frame_max: v.frame_max,
-        heartbeat_s: v.heartbeat_s
+        heartbeat: time.seconds(v.heartbeat_s).must()
     )
 
 # Whether the server holds the connection's publishes back now, and why.
@@ -550,18 +553,18 @@ function blocked_of(c: Connection) -> Blocked
 function update_secret(@c: Connection, secret: str, reason: str) -> ()?
     return session.update_secret(@c.session, secret: secret, reason: reason)
 
-# Waits `wait_ms` milliseconds doing nothing but what the connection needs:
-# the heartbeat sent and read, and what the server sends held.
+# Waits `wait` doing nothing but what the connection needs: the heartbeat
+# sent and read, and what the server sends held.
 #
 # - `c`: the connection.
-# - `wait_ms`: milliseconds, 0 or more.
+# - `wait`: how long, zero or more.
 #
-# Fails `closed` where the connection is lost meanwhile, `stopped`. See also
-# `read_ready`.
-function idle(@c: Connection, wait_ms: i64) -> ()?
-    if wait_ms < 0
-        return fail(code: INVALID, msg: f"the wait {wait_ms} is below 0")
-    until = waiting.deadline(wait_ms)
+# Fails `closed` where the connection is lost meanwhile, `stopped`,
+# `invalid` where `wait` is below zero. See also `read_ready`.
+function idle(@c: Connection, wait: time.Duration) -> ()?
+    if wait.nanoseconds < 0
+        return fail(code: INVALID, msg: f"the wait {time.format_duration(wait)} is below zero")
+    until = waiting.deadline(link.ms_of(wait))
 
     while true
         match waiting.step(@c.session, until: until)
@@ -1017,14 +1020,18 @@ function select_confirms(@c: Connection, channel: Channel) -> ()?
 #
 # - `c`: the connection.
 # - `channel`: the channel, in confirm mode.
-# - `wait_ms`: milliseconds to wait, 0 to answer only what is held.
+# - `wait`: how long to wait, zero to answer only what is held.
 #
-# Fails `not_found` where nothing is held and `wait_ms` is 0, `invalid`
-# where `channel` is not in confirm mode, and as every call that waits fails. See
-# also `wait_confirms`.
-function next_confirmation(@c: Connection, channel: Channel, wait_ms: i64) -> Confirmation?
+# Fails `not_found` where nothing is held and `wait` is zero, `invalid`
+# where `channel` is not in confirm mode or `wait` is below zero, and as
+# every call that waits fails. See also `wait_confirms`.
+function next_confirmation(@c: Connection, channel: Channel, wait: time.Duration) -> Confirmation?
+    if wait.nanoseconds < 0
+        return fail(code: INVALID, msg: f"the wait {time.format_duration(wait)} is below zero")
+
     if state.is_open(c.session, channel: channel.id) && !c.session.chans[channel.id].confirming
         return fail(code: INVALID, msg: f"channel {channel.id} is not in confirm mode")
+    wait_ms = link.ms_of(wait)
 
     if wait_ms == 0
         waiting.drain(@c.session)?
@@ -1039,14 +1046,16 @@ function next_confirmation(@c: Connection, channel: Channel, wait_ms: i64) -> Co
 #
 # - `c`: the connection.
 # - `channel`: the channel, in confirm mode.
-# - `wait_ms`: milliseconds to wait, 1 or more.
+# - `wait`: how long to wait, above zero.
 #
 # Fails `failed` where the server refused any of them, the message naming
-# their sequence numbers; `invalid` where `channel` is not in confirm mode; and as
-# every call that waits fails. See also `next_confirmation`, `publish`.
-function wait_confirms(@c: Connection, channel: Channel, wait_ms: i64) -> ()?
-    if wait_ms < 1
-        return fail(code: INVALID, msg: f"the wait {wait_ms} is below 1 millisecond")
+# their sequence numbers; `invalid` where `channel` is not in confirm mode
+# or `wait` is not above zero; and as every call that waits fails. See also
+# `next_confirmation`, `publish`.
+function wait_confirms(@c: Connection, channel: Channel, wait: time.Duration) -> ()?
+    if wait.nanoseconds < 1
+        return fail(code: INVALID, msg: f"the wait {time.format_duration(wait)} is not above zero")
+    wait_ms = link.ms_of(wait)
 
     if state.is_open(c.session, channel: channel.id) && !c.session.chans[channel.id].confirming
         return fail(code: INVALID, msg: f"channel {channel.id} is not in confirm mode")
@@ -1067,11 +1076,16 @@ function wait_confirms(@c: Connection, channel: Channel, wait_ms: i64) -> ()?
 # The next mandatory message the server handed back, waiting for one.
 #
 # - `c`: the connection.
-# - `wait_ms`: milliseconds to wait, 0 to answer only what is held.
+# - `wait`: how long to wait, zero to answer only what is held.
 #
-# Fails `not_found` where nothing is held and `wait_ms` is 0, and as every
-# call that waits fails. See also `publish`.
-function next_return(@c: Connection, wait_ms: i64) -> Return?
+# Fails `not_found` where nothing is held and `wait` is zero, `invalid`
+# where it is below zero, and as every call that waits fails. See also
+# `publish`.
+function next_return(@c: Connection, wait: time.Duration) -> Return?
+    if wait.nanoseconds < 0
+        return fail(code: INVALID, msg: f"the wait {time.format_duration(wait)} is below zero")
+    wait_ms = link.ms_of(wait)
+
     if wait_ms == 0
         waiting.drain(@c.session)?
 
@@ -1124,14 +1138,15 @@ function cancel(@c: Connection, channel: Channel, tag: str) -> ()?
 # one; those held come first, in the order they came.
 #
 # - `c`: the connection.
-# - `wait_ms`: milliseconds to wait, 0 to answer only what is held.
+# - `wait`: how long to wait, zero to answer only what is held.
 #
 # Fails `timeout` where none comes in time, `closed` where the connection is
-# lost, `stopped`. See also `ack`, `consume`.
-function next_delivery(@c: Connection, wait_ms: i64) -> Delivery?
-    if wait_ms < 0
-        return fail(code: INVALID, msg: f"the wait {wait_ms} is below 0")
-    d = waiting.next_delivery(@c.session, until: waiting.deadline(wait_ms))?
+# lost, `stopped`, `invalid` where `wait` is below zero. See also `ack`,
+# `consume`.
+function next_delivery(@c: Connection, wait: time.Duration) -> Delivery?
+    if wait.nanoseconds < 0
+        return fail(code: INVALID, msg: f"the wait {time.format_duration(wait)} is below zero")
+    d = waiting.next_delivery(@c.session, until: waiting.deadline(link.ms_of(wait)))?
     v = d.message
     return ok(
         Delivery(channel: Channel(id: d.channel), consumer_tag: d.consumer_tag, tag: d.tag, redelivered: d.redelivered, exchange: d.exchange, routing_key: d.routing_key, remaining: d.remaining, message: Message(content_type: v.content_type, content_encoding: v.content_encoding, headers: decode_table(v.headers).default([]), delivery_mode: v.delivery_mode, priority: v.priority, correlation_id: v.correlation_id, reply_to: v.reply_to, expiration: v.expiration, message_id: v.message_id, timestamp: v.timestamp, message_type: v.message_type, user_id: v.user_id, app_id: v.app_id, body: v.body))
@@ -1884,7 +1899,7 @@ test "parse_url: RabbitMQ's defaults, a login, a virtual host escaped, the query
         "amqps://u:p@h:1234/vh?heartbeat=5&channel_max=9&frame_max=4096&connection_timeout=300&auth_mechanism=amqplain"
     ).must()
     assert full.security == .checked(roots: "") && full.host == "h" && full.port == 1234 && full.username == "u" && full.password == "p" && full.vhost == "vh"
-    assert full.heartbeat_s == 5 && full.channel_max == 9 && full.frame_max == 4096 && full.connect_ms == 300 && full.mechanism == .amqplain
+    assert full.heartbeat == time.seconds(5).must() && full.channel_max == 9 && full.frame_max == 4096 && full.connect_timeout == time.milliseconds(300).must() && full.mechanism == .amqplain
     escaped = parse_url("amqp://u%40x:p%3a@h").must()
     assert escaped.username == "u@x" && escaped.password == "p:"
     assert parse_url("amqp://[::1]:99/x").must().host == "::1"
@@ -1901,11 +1916,11 @@ test "parse_url: another scheme, a port of 0, a path of two segments, a fragment
 
 test "connect: an option out of range is refused before anything is sent, and nothing listening is closed"
     o @= options("127.0.0.1")
-    o.heartbeat_s @ 70000
+    o.heartbeat @ time.seconds(70000).must()
     assert connect(o).is_err()
     o @ options("127.0.0.1")
     o.port @ 1
-    o.connect_ms @ 2000
+    o.connect_timeout @ time.seconds(2).must()
 
     match connect(o)
         .ok _  => assert false
@@ -1926,7 +1941,7 @@ test "connect live, against the server REBEL_AMQP_URL names: the handshake, a qu
             c @= connect(o).must()
             info = server_of(c)
             assert value_of(info.properties, name: "product").must() == .text(v: "RabbitMQ")
-            assert info.version_major == 0 && info.version_minor == 9 && info.frame_max == 131072 && info.heartbeat_s == 60
+            assert info.version_major == 0 && info.version_minor == 9 && info.frame_max == 131072 && info.heartbeat == time.minutes(1).must()
             assert !is_closed(c) && !blocked_of(c).active && closing_of(c).is_err()
             ch = open_channel(@c).must()
             assert ch.id == 1 && is_channel_open(c, channel: ch)
@@ -1987,13 +2002,13 @@ test "connect live, against the server REBEL_AMQP_URL names: the handshake, a qu
                 ).must()
 
             for n in range(from: 0, to: 2000)
-                d = next_delivery(@c, wait_ms: 5000).must()
+                d = next_delivery(@c, wait: time.seconds(5).must()).must()
                 assert d.message.body == [to_u8(n % 256).must()] && d.consumer_tag == "rebel-consumer"
 
                 if n % 100 == 99
                     ack(@c, d: d, multiple: true).must()
 
-            match next_delivery(@c, wait_ms: 200)
+            match next_delivery(@c, wait: time.milliseconds(200).must())
                 .ok _  => assert false
                 .err e => assert e.code == "timeout"
 
@@ -2004,7 +2019,7 @@ test "connect live, against the server REBEL_AMQP_URL names: the handshake, a qu
             assert delete_queue(@c, ch, name: declared.name, if_unused: false, if_empty: false).must() == 0
             close_channel(@c, channel: ch).must()
             assert !is_channel_open(c, channel: ch) && close_channel(@c, channel: ch).is_err()
-            idle(@c, wait_ms: 50).must()
+            idle(@c, wait: time.milliseconds(50).must()).must()
             close(@c).must()
             assert is_closed(c) && close(@c).is_err() && open_channel(@c).is_err()
 
@@ -2023,12 +2038,12 @@ test "connect live, confirms, returns, a channel the server closes, exchanges of
             for n in range(from: 1, to: 501)
                 assert publish(@c, ch, exchange_name: "", routing_key: name, m: message([1]), mandatory: false).must() == n
 
-            wait_confirms(@c, ch, wait_ms: 10000).must()
+            wait_confirms(@c, ch, wait: time.seconds(10).must()).must()
             assert publish(@c, ch, exchange_name: "", routing_key: name, m: message([2]), mandatory: false).must() == 501
-            first = next_confirmation(@c, ch, wait_ms: 5000).must()
+            first = next_confirmation(@c, ch, wait: time.seconds(5).must()).must()
             assert first.tag == 501 && first.ack && first.channel == ch
 
-            match next_confirmation(@c, ch, wait_ms: 0)
+            match next_confirmation(@c, ch, wait: time.nanoseconds(0))
                 .ok _  => assert false
                 .err e => assert e.code == "not_found"
 
@@ -2041,10 +2056,10 @@ test "connect live, confirms, returns, a channel the server closes, exchanges of
                 m: message([3]),
                 mandatory: true
             ).must()
-            back = next_return(@c, wait_ms: 5000).must()
+            back = next_return(@c, wait: time.seconds(5).must()).must()
             assert back.code == REPLY_NO_ROUTE && back.text == "NO_ROUTE" && back.routing_key == "rebel-nowhere" && back.message.body == [3]
-            wait_confirms(@c, ch, wait_ms: 5000).must()
-            assert next_return(@c, wait_ms: 0).is_err()
+            wait_confirms(@c, ch, wait: time.seconds(5).must()).must()
+            assert next_return(@c, wait: time.nanoseconds(0)).is_err()
             x = open_channel(@c).must()
             declare_exchange(@c, x, e: exchange(name: "rebel-topic", kind: TOPIC)).must()
             declare_exchange(@c, x, e: exchange(name: "rebel-fan", kind: FANOUT)).must()
@@ -2168,7 +2183,7 @@ test "connect live, confirms, returns, a channel the server closes, exchanges of
             _ = declare_queue(@c, u, q: doomed).must()
             _ = consume(@c, u, k: consumer("rebel-doomed")).must()
             _ = delete_queue(@c, ch, name: "rebel-doomed", if_unused: false, if_empty: false).must()
-            idle(@c, wait_ms: 300).must()
+            idle(@c, wait: time.milliseconds(300).must()).must()
             gone = cancellations_of(c)
             assert gone.len() == 1 && gone[0].channel == u
             flow(@c, u, active: true).must()
@@ -2229,10 +2244,10 @@ test "connect live, many connections waited on by poll, each read when ready"
                         read_ready(@b).must()
 
                 while held_of(a) > 0
-                    seen @ seen.push(next_delivery(@a, wait_ms: 0).must().message.body[0])
+                    seen @ seen.push(next_delivery(@a, wait: time.nanoseconds(0)).must().message.body[0])
 
                 while held_of(b) > 0
-                    seen @ seen.push(next_delivery(@b, wait_ms: 0).must().message.body[0])
+                    seen @ seen.push(next_delivery(@b, wait: time.nanoseconds(0)).must().message.body[0])
 
             assert sort(seen) == [1, 2]
             poll.close(@set).must()
@@ -2300,7 +2315,7 @@ test "connect live over TLS, against the server REBEL_AMQP_TLS_URL names, its ce
 # The options of a local server, with a heartbeat of 10 seconds.
 test "options: a local server"
     o @= options("localhost")
-    o.heartbeat_s @ 10
+    o.heartbeat @ time.seconds(10).must()
     assert o.port == 5672 && o.vhost == "/" && o.username == "guest"
 
 # The options a URL names.
@@ -2378,7 +2393,7 @@ test "idle: a tenth of a second"
         .err e => skip_test(reason: f"no AMQP server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            idle(@c, wait_ms: 100).must()
+            idle(@c, wait: time.milliseconds(100).must()).must()
             close(@c).must()
 
 # The stream a program gives `poll`.
@@ -2661,7 +2676,7 @@ test "next_confirmation: the first publish taken"
             ch = open_channel(@c).must()
             select_confirms(@c, ch).must()
             _ = publish(@c, ch, exchange_name: "amq.fanout", routing_key: "", m: message([1]), mandatory: false).must()
-            assert next_confirmation(@c, ch, wait_ms: 5000).must().ack
+            assert next_confirmation(@c, ch, wait: time.seconds(5).must()).must().ack
             close(@c).must()
 
 # Every publish confirmed.
@@ -2683,7 +2698,7 @@ test "wait_confirms: three publishes taken"
                     mandatory: false
                 ).must()
 
-            wait_confirms(@c, ch, wait_ms: 5000).must()
+            wait_confirms(@c, ch, wait: time.seconds(5).must()).must()
             close(@c).must()
 
 # A mandatory message no queue took, handed back.
@@ -2701,7 +2716,7 @@ test "next_return: a key no queue is bound by"
                 m: message([1]),
                 mandatory: true
             ).must()
-            assert next_return(@c, wait_ms: 5000).must().code == REPLY_NO_ROUTE
+            assert next_return(@c, wait: time.seconds(5).must()).must().code == REPLY_NO_ROUTE
             close(@c).must()
 
 # A consumer that acknowledges by itself.
@@ -2749,7 +2764,7 @@ test "next_delivery: one message read and acknowledged"
             name = declare_queue(@c, ch, q: q).must().name
             _ = consume(@c, ch, k: consumer(name)).must()
             _ = publish(@c, ch, exchange_name: "", routing_key: name, m: message([1]), mandatory: false).must()
-            d = next_delivery(@c, wait_ms: 5000).must()
+            d = next_delivery(@c, wait: time.seconds(5).must()).must()
             ack(@c, d: d, multiple: false).must()
             close(@c).must()
 

@@ -107,7 +107,7 @@ capability kafka/produce  messages written to one partition in one batch, the le
   go      Conn.WriteMessages, Conn.WriteCompressedMessages, Conn.WriteCompressedMessagesAt, Conn.Write, Conn.SetRequiredAcks, DialLeader, Dialer.DialLeader, Client.Produce, Client.RawProduce, kgo.Client.ProduceSync, kgo.ProduceResult, kgo.ProduceResults, kgo.ProduceResults.First, kgo.ProduceResults.FirstErr
   rust    producer::BaseProducer, producer::BaseRecord, producer::Producer
   python  -
-  note    a leader moved or not ready is retried within `Options.wait_ms`; without idempotence a batch whose answer was lost may be written twice
+  note    a leader moved or not ready is retried within `Options.wait`; without idempotence a batch whose answer was lost may be written twice
 
 capability kafka/send  messages written to their topics and partitions, a batch for each partition and a request for each leader, their offsets answered
   heroes  kafka.send, kafka.message, kafka.with_key, kafka.with_header, kafka.tombstone, kafka.Message

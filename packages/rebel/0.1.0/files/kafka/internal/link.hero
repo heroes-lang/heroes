@@ -26,15 +26,47 @@ variant Link
     # Nothing: closed, or not connected yet.
     gone
 
-# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
-# being `time.max_duration()` (until this package's own step of D07; `tls`
-# takes a `time.Duration` since M-rebel-library step 88c).
+# The time `ms` milliseconds stand for as `tls` takes it, 1 or more here.
 #
-# - `ms`: milliseconds, 0 for no limit.
+# - `ms`: milliseconds, the session's bound of 2,147,483,647 at most.
 function tls_deadline(ms: i64) -> time.Duration?
-    if ms == 0
-        return ok(time.max_duration())
     return time.milliseconds(ms)
+
+# The whole milliseconds of `d`, a part of one counting as a whole one, as
+# the session counts its waits and Kafka's requests carry them: `d` below
+# zero is -1, and one past 2,147,483,647 ms is 2,147,483,648, both of which
+# the session refuses.
+#
+# - `d`: a time the face was handed.
+function ms_of(d: time.Duration) -> i64
+    if d.nanoseconds < 0
+        return -1
+
+    if d.nanoseconds > 2_147_483_647_000_000
+        return 2_147_483_648
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+    return whole
+
+# The moment Kafka's `ms`, milliseconds since 1970, names: -1 is none, a
+# message's time left to the producer's or the broker's clock.
+#
+# - `ms`: the milliseconds a record or an answer carries.
+# - `what`: what holds no time, for the failure's message.
+function instant_of(ms: i64, what: str) -> time.Instant?
+    if ms == -1
+        return fail(code: model.NOT_FOUND, msg: what + " carries no time of its own")
+    return time.from_unix_milliseconds(ms)
+
+# Kafka's milliseconds since 1970 for `t`, -1 where it holds none.
+#
+# - `t`: the moment, or a failure for none.
+function ms_of_instant(t: time.Instant?) -> i64
+    return match t
+        .ok moment => time.unix_milliseconds(moment)
+        .err _     => -1
 
 # A TCP connection to `host` at `port`, made within `ms`.
 #

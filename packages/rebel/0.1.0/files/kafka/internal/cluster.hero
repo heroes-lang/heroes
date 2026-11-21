@@ -39,8 +39,8 @@ function check(o: model.Options) -> ()?
     for b in o.brokers
         _ = address_of(b)?
 
-    if o.connect_ms < 1 || o.wait_ms < 1
-        return fail(code: model.INVALID, msg: "a time to connect or to wait is below 1 millisecond")
+    if o.connect_ms < 1 || o.wait_ms < 1 || o.connect_ms > 2147483647 || o.wait_ms > 2147483647
+        return fail(code: model.INVALID, msg: "a time to connect or to wait is outside 1 to 2,147,483,647 milliseconds")
 
     if o.most_response_bytes < 1024 || o.most_fetch_bytes < 1
         return fail(code: model.INVALID, msg: "the largest answer is below 1024 bytes or the fetch's below 1")

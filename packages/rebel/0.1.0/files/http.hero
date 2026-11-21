@@ -4874,7 +4874,12 @@ test "round_trip_h2: two requests on one connection"
     port = h2bridge.free_port()
     t @= threads.spawn_text(body: h2bridge.serve_h2_plain, arg: to_str(port)).must()
     h2bridge.until_listening(port)
-    c @= http2.connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: http2.default_options()).must()
+    c @= http2.connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: http2.default_options()
+    ).must()
     first = round_trip_h2(
         @c,
         r: request(method: METHOD_GET, target: f"http://127.0.0.1:{port}/a").must(),

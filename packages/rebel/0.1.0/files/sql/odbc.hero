@@ -87,11 +87,6 @@ use time
 
 ## Connecting
 
-# How long `open` waits to log in unless `Options` says another, in
-# seconds: fifteen, .NET's `OdbcConnection`'s default.
-constant DEFAULT_LOGIN_TIMEOUT_SECONDS: i64
-    15
-
 # What names the database a connection is made to.
 variant Target
     # A connection string, `Driver={SQLite3};Database=shop.db` or
@@ -115,16 +110,19 @@ variant Target
 record Options
     # What names the database.
     target: Target
-    # How long to wait to log in, in seconds; 0 waits as long as the driver
-    # does.
-    login_timeout_seconds: i64
-    # How long a statement runs before the driver stops it, in seconds,
-    # failing `timeout`; 0 for no limit.
-    query_timeout_seconds: i64
+    # How long to wait to log in, handed to the driver in whole seconds, a
+    # part of one counting as a whole one and zero as one, up to
+    # 4,294,967,295 s; `time.max_duration()` waits as long as the driver
+    # does (ODBC's 0).
+    login_timeout: time.Duration
+    # How long a statement runs before the driver stops it, failing
+    # `timeout`, as `login_timeout` counts it; `time.max_duration()` for no
+    # limit.
+    query_timeout: time.Duration
 
 # The options of a connection made from the connection string `connection`,
-# waiting `DEFAULT_LOGIN_TIMEOUT_SECONDS` to log in and with no limit on a
-# statement.
+# waiting fifteen seconds to log in, .NET's `OdbcConnection`'s default, and
+# with no limit on a statement.
 #
 # - `connection`: the connection string, `key=value` pairs separated by `;`;
 #   a value holding `;`, `{` or `}` is written inside braces, as
@@ -134,8 +132,8 @@ record Options
 function options(connection: str) -> Options
     return Options(
         target: .connection_string(text: connection),
-        login_timeout_seconds: DEFAULT_LOGIN_TIMEOUT_SECONDS,
-        query_timeout_seconds: 0
+        login_timeout: time.seconds(15).must(),
+        query_timeout: time.max_duration()
     )
 
 # The options of a connection to the data source `dsn`, as `options` sets
@@ -149,8 +147,8 @@ function options(connection: str) -> Options
 function dsn_options(dsn: str, user: str, password: str) -> Options
     return Options(
         target: .data_source(name: dsn, user: user, password: password),
-        login_timeout_seconds: DEFAULT_LOGIN_TIMEOUT_SECONDS,
-        query_timeout_seconds: 0
+        login_timeout: time.seconds(15).must(),
+        query_timeout: time.max_duration()
     )
 
 # A connection to the database `opts` names, ready for a statement, each
@@ -161,35 +159,38 @@ function dsn_options(dsn: str, user: str, password: str) -> Options
 # The program owes the connection a `close`.
 #
 # Fails `invalid` where the connection string, the data source's name, the
-# user or the password holds a zero byte, or a timeout is below 0 or past
-# 4,294,967,295; `unsupported` where no driver manager is installed;
+# user or the password holds a zero byte, or a timeout is below zero or past
+# 4,294,967,295 s; `unsupported` where no driver manager is installed;
 # `not_found` where the manager knows no such driver or data source
 # (IM002); `timeout` where the login took longer than allowed; and as the
 # driver reports its own refusal (the module's comment), a password refused
 # `permission` where the driver says 28000. See also `close`, `options`.
 function open(opts: Options) -> Db?
-    if opts.login_timeout_seconds < 0 || opts.login_timeout_seconds > 4294967295
+    login_seconds = running.seconds_of(opts.login_timeout)
+    query_seconds = running.seconds_of(opts.query_timeout)
+
+    if login_seconds < 0 || login_seconds > 4294967295
         return fail(
             code: sql.INVALID,
-            msg: f"a login timeout of {opts.login_timeout_seconds} seconds is outside 0 to 4294967295"
+            msg: f"a login timeout of {time.format_duration(opts.login_timeout)} is outside zero to 4294967295 s"
         )
 
-    if opts.query_timeout_seconds < 0 || opts.query_timeout_seconds > 4294967295
+    if query_seconds < 0 || query_seconds > 4294967295
         return fail(
             code: sql.INVALID,
-            msg: f"a query timeout of {opts.query_timeout_seconds} seconds is outside 0 to 4294967295"
+            msg: f"a query timeout of {time.format_duration(opts.query_timeout)} is outside zero to 4294967295 s"
         )
 
     match opts.target
         .connection_string t =>
             if !values.zero_at(t.text).is_err()
                 return fail(code: sql.INVALID, msg: "the connection string holds a zero byte")
-            c = hero_odbc.connect(t.text, login_seconds: opts.login_timeout_seconds)
+            c = hero_odbc.connect(t.text, login_seconds: login_seconds)
 
             if c == nullptr
                 return failure.last()
             return ok(
-                Db(connection: c, name: connection_text.hidden(t.text), transaction_open: false, query_timeout_seconds: opts.query_timeout_seconds, prepared: 0)
+                Db(connection: c, name: connection_text.hidden(t.text), transaction_open: false, query_timeout: opts.query_timeout, prepared: 0)
             )
         .data_source d =>
             if !values.zero_at(d.name).is_err() || !values.zero_at(d.user).is_err() || !values.zero_at(d.password).is_err()
@@ -201,13 +202,13 @@ function open(opts: Options) -> Db?
                 dsn: d.name,
                 user: d.user,
                 password: d.password,
-                login_seconds: opts.login_timeout_seconds
+                login_seconds: login_seconds
             )
 
             if c == nullptr
                 return failure.last()
             return ok(
-                Db(connection: c, name: d.name, transaction_open: false, query_timeout_seconds: opts.query_timeout_seconds, prepared: 0)
+                Db(connection: c, name: d.name, transaction_open: false, query_timeout: opts.query_timeout, prepared: 0)
             )
 
 # Ends the connection: a transaction still open is rolled back and the
@@ -284,9 +285,9 @@ record Db
     # Whether `begin` opened a transaction that `commit` or `rollback` has
     # not ended.
     transaction_open: bool
-    # How long a statement runs before the driver stops it, in seconds, 0 for
-    # no limit.
-    query_timeout_seconds: i64
+    # How long a statement runs before the driver stops it,
+    # `time.max_duration()` for no limit.
+    query_timeout: time.Duration
     # How many statements `prepare` made on it that `close_statement` has not
     # ended; `close` refuses while one is.
     prepared: i64
@@ -303,17 +304,22 @@ function in_transaction(db: Db) -> bool
 # it, failing `timeout`.
 #
 # - `db`: the connection.
-# - `seconds`: from 0, no limit, to 4,294,967,295.
+# - `timeout`: as `Options.query_timeout` takes it, `time.max_duration()`
+#   for no limit.
 #
 # A driver that has no such limit fails the next statement `unsupported`.
-# Fails `invalid` where `seconds` is outside its range, and `closed` where
-# the connection is closed. See also `Options`.
-function set_query_timeout(@db: Db, seconds: i64) -> ()?
+# Fails `invalid` where `timeout` is below zero or past 4,294,967,295 s, and
+# `closed` where the connection is closed. See also `Options`.
+function set_query_timeout(@db: Db, timeout: time.Duration) -> ()?
     running.live(db.connection, name: db.name)?
+    seconds = running.seconds_of(timeout)
 
     if seconds < 0 || seconds > 4294967295
-        return fail(code: sql.INVALID, msg: f"a query timeout of {seconds} seconds is outside 0 to 4294967295")
-    db.query_timeout_seconds @ seconds
+        return fail(
+            code: sql.INVALID,
+            msg: f"a query timeout of {time.format_duration(timeout)} is outside zero to 4294967295 s"
+        )
+    db.query_timeout @ timeout
     return ok()
 
 # How far the transactions of a connection are kept from each other's
@@ -475,7 +481,12 @@ function info_of(db: Db) -> Info?
 function exec(@db: Db, statement: str, params: [sql.Value]) -> sql.Result?
     running.live(db.connection, name: db.name)?
     text = splitting.one_statement(statement)?
-    answer = running.exec_on(db.connection, timeout_seconds: db.query_timeout_seconds, text: text, params: params)
+    answer = running.exec_on(
+        db.connection,
+        timeout_seconds: running.seconds_of(db.query_timeout),
+        text: text,
+        params: params
+    )
     db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
     return answer
 
@@ -495,7 +506,12 @@ function exec(@db: Db, statement: str, params: [sql.Value]) -> sql.Result?
 function query(@db: Db, statement: str, params: [sql.Value]) -> sql.Rows?
     running.live(db.connection, name: db.name)?
     text = splitting.one_statement(statement)?
-    answer = running.query_on(db.connection, timeout_seconds: db.query_timeout_seconds, text: text, params: params)
+    answer = running.query_on(
+        db.connection,
+        timeout_seconds: running.seconds_of(db.query_timeout),
+        text: text,
+        params: params
+    )
     db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
     return answer
 
@@ -513,7 +529,12 @@ function query(@db: Db, statement: str, params: [sql.Value]) -> sql.Rows?
 function query_one(@db: Db, statement: str, params: [sql.Value]) -> sql.Row?
     running.live(db.connection, name: db.name)?
     text = splitting.one_statement(statement)?
-    answer = running.query_one_on(db.connection, timeout_seconds: db.query_timeout_seconds, text: text, params: params)
+    answer = running.query_one_on(
+        db.connection,
+        timeout_seconds: running.seconds_of(db.query_timeout),
+        text: text,
+        params: params
+    )
     db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
     return answer
 
@@ -538,7 +559,12 @@ function query_sets(@db: Db, statement: str, params: [sql.Value]) -> [sql.Rows]?
         .ok at => return fail(code: sql.INVALID, msg: f"the statement holds a zero byte at byte {at}")
         .err _ => _ = 0
 
-    answer = running.sets_on(db.connection, timeout_seconds: db.query_timeout_seconds, text: statement, params: params)
+    answer = running.sets_on(
+        db.connection,
+        timeout_seconds: running.seconds_of(db.query_timeout),
+        text: statement,
+        params: params
+    )
     db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
     return answer
 
@@ -567,7 +593,7 @@ function exec_script(@db: Db, script: str) -> ()?
 
     answer = running.script_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         pieces: splitting.statements(script)
     )
     db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
@@ -615,7 +641,7 @@ record Statement
 function prepare(@db: Db, statement: str) -> Statement?
     running.live(db.connection, name: db.name)?
     text = splitting.one_statement(statement)?
-    s @= running.opened(db.connection, timeout_seconds: db.query_timeout_seconds)?
+    s @= running.opened(db.connection, timeout_seconds: running.seconds_of(db.query_timeout))?
 
     if hero_odbc.prepare(s, text) < 0
         refused: Statement? = failure.last()
@@ -768,7 +794,7 @@ function tables(db: Db, catalog: str, schema: str, table: str, kinds: str) -> sq
     running.live(db.connection, name: db.name)?
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: hero_odbc.HERO_ODBC_CATALOG_TABLES,
         names: [catalog, schema, table, kinds, "", ""]
     )
@@ -788,7 +814,7 @@ function table_columns(db: Db, catalog: str, schema: str, table: str, column: st
     running.live(db.connection, name: db.name)?
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: hero_odbc.HERO_ODBC_CATALOG_COLUMNS,
         names: [catalog, schema, table, column, "", ""]
     )
@@ -806,7 +832,7 @@ function primary_keys(db: Db, catalog: str, schema: str, table: str) -> sql.Rows
     running.live(db.connection, name: db.name)?
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: hero_odbc.HERO_ODBC_CATALOG_PRIMARY_KEYS,
         names: [catalog, schema, table, "", "", ""]
     )
@@ -837,7 +863,7 @@ function foreign_keys(db: Db, catalog: str, schema: str, table: str, foreign_cat
         )
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: hero_odbc.HERO_ODBC_CATALOG_FOREIGN_KEYS,
         names: [catalog, schema, table, foreign_catalog, foreign_schema, foreign_table]
     )
@@ -863,7 +889,7 @@ function indexes(db: Db, catalog: str, schema: str, table: str, unique_only: boo
 
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: which,
         names: [catalog, schema, table, "", "", ""]
     )
@@ -881,7 +907,7 @@ function procedures(db: Db, catalog: str, schema: str, procedure: str) -> sql.Ro
     running.live(db.connection, name: db.name)?
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: hero_odbc.HERO_ODBC_CATALOG_PROCEDURES,
         names: [catalog, schema, procedure, "", "", ""]
     )
@@ -900,7 +926,7 @@ function procedure_columns(db: Db, catalog: str, schema: str, procedure: str, co
     running.live(db.connection, name: db.name)?
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: hero_odbc.HERO_ODBC_CATALOG_PROCEDURE_COLUMNS,
         names: [catalog, schema, procedure, column, "", ""]
     )
@@ -915,7 +941,7 @@ function data_types(db: Db) -> sql.Rows?
     running.live(db.connection, name: db.name)?
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: hero_odbc.HERO_ODBC_CATALOG_TYPES,
         names: ["", "", "", "", "", ""]
     )
@@ -933,7 +959,7 @@ function row_id_columns(db: Db, catalog: str, schema: str, table: str) -> sql.Ro
     running.live(db.connection, name: db.name)?
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: hero_odbc.HERO_ODBC_CATALOG_ROW_ID_COLUMNS,
         names: [catalog, schema, table, "", "", ""]
     )
@@ -951,7 +977,7 @@ function row_version_columns(db: Db, catalog: str, schema: str, table: str) -> s
     running.live(db.connection, name: db.name)?
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: hero_odbc.HERO_ODBC_CATALOG_ROW_VERSION_COLUMNS,
         names: [catalog, schema, table, "", "", ""]
     )
@@ -969,7 +995,7 @@ function table_privileges(db: Db, catalog: str, schema: str, table: str) -> sql.
     running.live(db.connection, name: db.name)?
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: hero_odbc.HERO_ODBC_CATALOG_TABLE_PRIVILEGES,
         names: [catalog, schema, table, "", "", ""]
     )
@@ -987,7 +1013,7 @@ function column_privileges(db: Db, catalog: str, schema: str, table: str, column
     running.live(db.connection, name: db.name)?
     return running.catalog_on(
         db.connection,
-        timeout_seconds: db.query_timeout_seconds,
+        timeout_seconds: running.seconds_of(db.query_timeout),
         which: hero_odbc.HERO_ODBC_CATALOG_COLUMN_PRIVILEGES,
         names: [catalog, schema, table, column, "", ""]
     )
@@ -1125,21 +1151,21 @@ function format_connection(attributes: [Attribute]) -> str?
 test "options and dsn_options: the target, the default login timeout, no query timeout"
     o = options("Driver={SQLite3};Database=:memory:")
     assert o.target == .connection_string(text: "Driver={SQLite3};Database=:memory:")
-    assert o.login_timeout_seconds == 15 && o.query_timeout_seconds == 0
+    assert o.login_timeout == time.seconds(15).must() && o.query_timeout == time.max_duration()
     d = dsn_options(dsn: "shop", user: "ana", password: "s3cret")
     assert d.target == .data_source(name: "shop", user: "ana", password: "s3cret")
-    assert d.login_timeout_seconds == DEFAULT_LOGIN_TIMEOUT_SECONDS
+    assert d.login_timeout == time.seconds(15).must()
 
 test "open: timeouts out of range and a zero byte refused before the manager is asked"
     o @= options("DSN=x")
-    o.login_timeout_seconds @ -1
+    o.login_timeout @ time.nanoseconds(-1)
 
     match open(o)
         .ok _  => assert false
         .err e => assert e.code == sql.INVALID && e.msg == "a login timeout of -1 seconds is outside 0 to 4294967295"
 
-    o.login_timeout_seconds @ 1
-    o.query_timeout_seconds @ 4294967296
+    o.login_timeout @ time.seconds(1).must()
+    o.query_timeout @ time.seconds(4294967296).must()
     assert open(o).is_err()
     zero: [u8] = [0]
 
@@ -1416,7 +1442,7 @@ test "close: twice fails closed, and every call on a closed connection fails clo
         .err e => assert e.code == sql.CLOSED && e.msg == f"the connection to \"{db.name}\" is closed"
 
     assert exec(@db, "SELECT 1", []).is_err() && query(@db, "SELECT 1", []).is_err() && query_one(@db, "SELECT 1", []).is_err()
-    assert exec_script(@db, "SELECT 1").is_err() && prepare(@db, "SELECT 1").is_err() && set_query_timeout(@db, 1).is_err()
+    assert exec_script(@db, "SELECT 1").is_err() && prepare(@db, "SELECT 1").is_err() && set_query_timeout(@db, timeout: time.seconds(1).must()).is_err()
     assert begin(@db).is_err() && commit(@db).is_err() && rollback(@db).is_err() && ping(db).is_err() && info_of(db).is_err()
     assert tables(db, catalog: "", schema: "", table: "", kinds: "").is_err() && isolation_of(db).is_err()
 
@@ -1424,9 +1450,9 @@ test "the connection's settings: a query timeout in and out of range, the isolat
     if !fixture.has_sqlite()
         skip_test(reason: "no SQLite ODBC driver is installed here")
     db @= open(options(fixture.sqlite_memory())).must()
-    set_query_timeout(@db, 30).must()
-    assert db.query_timeout_seconds == 30
-    assert set_query_timeout(@db, -1).is_err() && set_query_timeout(@db, 4294967296).is_err()
+    set_query_timeout(@db, timeout: time.seconds(30).must()).must()
+    assert db.query_timeout == time.seconds(30).must()
+    assert set_query_timeout(@db, timeout: time.nanoseconds(-1)).is_err() && set_query_timeout(@db, timeout: time.seconds(4294967296).must()).is_err()
     assert sql.integer_at(query_one(@db, "SELECT 1", []).must(), 0).must() == 1
     assert isolation_of(db).must() == .serializable
     set_read_only(db, read_only: false).must()
@@ -1527,8 +1553,8 @@ test "open live against the PostgreSQL server REBEL_ODBC_POSTGRES names, through
 # changed.
 test "options: SQLite's ODBC driver and a file, with a statement's limit"
     opts @= options("Driver={SQLite3};Database=shop.db")
-    opts.query_timeout_seconds @ 30
-    assert opts.login_timeout_seconds == DEFAULT_LOGIN_TIMEOUT_SECONDS
+    opts.query_timeout @ time.seconds(30).must()
+    assert opts.login_timeout == time.seconds(15).must()
 
 # The options of a connection to a data source the manager knows.
 test "dsn_options: a data source, a user and a password"
@@ -1590,7 +1616,7 @@ test "set_query_timeout: ten seconds"
         .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
-            set_query_timeout(@db, 10).must()
+            set_query_timeout(@db, timeout: time.seconds(10).must()).must()
             close(@db).must()
 
 # Transactions that behave as if they ran one after another.

@@ -176,10 +176,12 @@ record Options
     # The name the server shows for this connection in `CLIENT LIST`, "" for
     # none.
     client_name: str
-    # Milliseconds from when the connection is made by which every later
-    # wait on it ends, failing `timeout`, as `net.connect` takes it; 0, the
-    # default, for none. `set_deadline` moves it.
-    deadline_ms: i64
+    # How long from when the connection is made every later wait on it may
+    # last, failing `timeout`, as `net.connect` takes it, a part of a
+    # millisecond counting as a whole one: zero ends at once every wait,
+    # `time.max_duration()`, the default, sets none. `set_deadline` moves
+    # it.
+    deadline: time.Duration
     # How the connection is secured: `.checked(roots: "")` unless the
     # program asks for `.plain`.
     security: Security
@@ -200,7 +202,7 @@ function options(host: str) -> Options
         database: 0,
         protocol: 3,
         client_name: "",
-        deadline_ms: 0,
+        deadline: time.max_duration(),
         security: .checked(roots: "")
     )
 
@@ -288,7 +290,8 @@ function parse_url(text: str) -> Options?
 # over TLS (`invalid` where the certificate is refused); `permission` where
 # the server refuses the login, or asks for one and none was given;
 # `invalid` where `opts.port`, `opts.database` or `opts.protocol` is out of
-# range, or the database is past the server's count; `closed` where the
+# range, `opts.deadline` below zero, or the database is past the server's
+# count; `closed` where the
 # server ends the connection. See also `close`, `options`.
 function connect(opts: Options) -> Client?
     if opts.port < 1 || opts.port > 65535
@@ -297,20 +300,27 @@ function connect(opts: Options) -> Client?
     if opts.database < 0
         return fail(code: INVALID, msg: f"the database {opts.database} is below 0")
 
+    if opts.deadline.nanoseconds < 0
+        return fail(code: INVALID, msg: f"the deadline {time.format_duration(opts.deadline)} is below zero")
+
     if opts.protocol != 2 && opts.protocol != 3
         return fail(code: INVALID, msg: f"the protocol {opts.protocol} is neither 2 nor 3")
     target = f"{opts.host}:{opts.port}"
 
     s = match opts.security
         .plain =>
-            plain_ms = if opts.deadline_ms == 0
+            whole = opts.deadline.nanoseconds / 1_000_000
+
+            plain_ms = if opts.deadline == time.max_duration()
                 net.FOREVER
+            else if opts.deadline.nanoseconds % 1_000_000 != 0
+                whole + 1
             else
-                opts.deadline_ms
+                whole
             conn = net.connect(opts.host, port: opts.port, deadline_ms: plain_ms)?
             session.over(out: conn.stream, input: conn.stream, link: .network, target: target)
         .checked k =>
-            stream = tls.connect(host: opts.host, port: opts.port, deadline: session.tls_deadline(opts.deadline_ms)?, client: tls.Client(roots: k.roots, protocols: []))?.stream
+            stream = tls.connect(host: opts.host, port: opts.port, deadline: opts.deadline, client: tls.Client(roots: k.roots, protocols: []))?.stream
             session.over(out: stream, input: stream, link: .network, target: target)
 
     c @= Client(session: s)
@@ -318,8 +328,8 @@ function connect(opts: Options) -> Client?
     match opts.security
         .plain => _ = 0
         .checked _ =>
-            if opts.deadline_ms > 0
-                match session.set_deadline(c.session, ms: opts.deadline_ms)
+            if opts.deadline != time.max_duration()
+                match session.set_deadline(c.session, deadline: opts.deadline)
                     .ok _ => _ = 0
                     .err e =>
                         _ = session.close(@c.session).is_err()
@@ -399,18 +409,18 @@ function protocol_of(c: Client) -> i64
     return c.session.protocol
 
 # Moves the deadline of `c`'s connection: every later wait on it, a
-# `receive` among them, ends by `ms` milliseconds from now, failing
-# `timeout`.
+# `receive` among them, ends by `deadline` from now, failing `timeout`.
 #
 # - `c`: the client.
-# - `ms`: milliseconds from now; 0 takes the deadline away, below 0 fails
+# - `deadline`: how long from now; zero ends at once a wait,
+#   `time.max_duration()` takes the deadline away, below zero fails
 #   `invalid`.
 #
 # A wait that ends `timeout` leaves the client in step only where no reply
 # was owed: after `receive`, never in the middle of a command's reply, which
 # ends the client. Fails `closed` where `c` is closed. See also `receive`.
-function set_deadline(c: Client, ms: i64) -> ()?
-    return session.set_deadline(c.session, ms: ms)
+function set_deadline(c: Client, deadline: time.Duration) -> ()?
+    return session.set_deadline(c.session, deadline: deadline)
 
 ## The client
 
@@ -958,18 +968,21 @@ function set(@c: Client, key: str, value: str) -> ()?
     _ = call(@c, ["SET", key, value])?
     return ok()
 
-# Sets `key` to `value` for `ttl_ms` milliseconds, after which it is gone
+# Sets `key` to `value` for `ttl`, after which it is gone
 # (`SET key value PX ttl`).
 #
 # - `c`: the client.
 # - `key`: the key.
 # - `value`: the text.
-# - `ttl_ms`: milliseconds, 1 or more.
+# - `ttl`: how long it lives, 1 ms or more, sent in whole milliseconds, a
+#   part of one counting as a whole one.
 #
-# Fails `invalid` where `ttl_ms` is below 1, and as `call` does.
-function set_for(@c: Client, key: str, value: str, ttl_ms: i64) -> ()?
+# Fails `invalid` where `ttl` is below 1 ms, and as `call` does.
+function set_for(@c: Client, key: str, value: str, ttl: time.Duration) -> ()?
+    ttl_ms = session.whole_ms(ttl)
+
     if ttl_ms < 1
-        return fail(code: INVALID, msg: f"the time to live {ttl_ms} is below 1 millisecond")
+        return fail(code: INVALID, msg: f"the time to live {time.format_duration(ttl)} is below 1 millisecond")
     _ = call(@c, ["SET", key, value, "PX", to_str(ttl_ms)])?
     return ok()
 
@@ -1251,55 +1264,57 @@ record Lock
     # bytes.
     token: str
     # The time to live it was taken for, and `renew` extends it by, in
-    # milliseconds.
-    ttl_ms: i64
+    # whole milliseconds.
+    ttl: time.Duration
     # The fencing number: it grows with every acquisition of the key, so
     # the resource refuses a holder whose number is below the highest it
     # has seen (the module's comment).
     fence: i64
 
-# Takes the lock `key` where nobody holds it, for `ttl_ms` milliseconds,
-# trying once.
+# Takes the lock `key` where nobody holds it, for `ttl`, trying once.
 #
 # - `c`: the client.
 # - `key`: the key that holds the lock; the key `key` followed by `:fence`
 #   counts its acquisitions.
-# - `ttl_ms`: milliseconds after which the lock is gone unless `renew`
-#   extends it, 1 or more: longer than the work it guards, by a margin.
+# - `ttl`: how long after which the lock is gone unless `renew` extends
+#   it, 1 ms or more, a part of a millisecond counting as a whole one:
+#   longer than the work it guards, by a margin.
 #
-# Fails `exists` where another holds it, `invalid` where `ttl_ms` is below
-# 1, and as `call` does; `failed` where the system gives no random bytes
+# Fails `exists` where another holds it, `invalid` where `ttl` is below 1
+# ms, and as `call` does; `failed` where the system gives no random bytes
 # for the token. See also `lock`, `unlock`, and the module's comment for
 # what a lock does not promise.
-function try_lock(@c: Client, key: str, ttl_ms: i64) -> Lock?
+function try_lock(@c: Client, key: str, ttl: time.Duration) -> Lock?
+    ttl_ms = session.whole_ms(ttl)
+
     if ttl_ms < 1
-        return fail(code: INVALID, msg: f"the time to live {ttl_ms} is below 1 millisecond")
+        return fail(code: INVALID, msg: f"the time to live {time.format_duration(ttl)} is below 1 millisecond")
     token = bytes.format_hex(os.random_bytes(20)?)
     r = call(@c, ["EVAL", lock_scripts.ACQUIRE, "2", key, key + ":fence", token, to_str(ttl_ms)])?
 
     if is_null(r) || r == .boolean(v: false)
         return fail(code: EXISTS, msg: f"the lock \"{key}\" is held by another")
-    return ok(Lock(key: key, token: token, ttl_ms: ttl_ms, fence: int_of(r)?))
+    return ok(Lock(key: key, token: token, ttl: ttl, fence: int_of(r)?))
 
-# Takes the lock `key`, trying again until `wait_ms` milliseconds have
-# passed, each wait after a refusal longer than the one before, from 10 to
+# Takes the lock `key`, trying again until `wait` has passed, each wait after a refusal longer than the one before, from 10 to
 # 250 milliseconds, with a random part so two waiters do not try together.
 #
 # - `c`: the client.
 # - `key`: the key that holds the lock.
-# - `ttl_ms`: as `try_lock` takes it.
-# - `wait_ms`: milliseconds to keep trying, 0 or more; 0 tries once.
+# - `ttl`: as `try_lock` takes it.
+# - `wait`: how long to keep trying, zero or more; zero tries once.
 #
-# Fails `timeout` where another holds the lock all that time, and as
-# `try_lock` does. See also `try_lock`.
-function lock(@c: Client, key: str, ttl_ms: i64, wait_ms: i64) -> Lock?
-    if wait_ms < 0
-        return fail(code: INVALID, msg: f"the wait {wait_ms} is below 0")
+# Fails `timeout` where another holds the lock all that time, `invalid`
+# where `wait` is below zero, and as `try_lock` does. See also `try_lock`.
+function lock(@c: Client, key: str, ttl: time.Duration, wait: time.Duration) -> Lock?
+    if wait.nanoseconds < 0
+        return fail(code: INVALID, msg: f"the wait {time.format_duration(wait)} is below zero")
+    wait_ms = session.whole_ms(wait)
     start = time.mark()?
     pause: i64 @= 10
 
     while true
-        match try_lock(@c, key, ttl_ms: ttl_ms)
+        match try_lock(@c, key, ttl: ttl)
             .ok held => return ok(held)
             .err e =>
                 if e.code != EXISTS
@@ -1310,7 +1325,7 @@ function lock(@c: Client, key: str, ttl_ms: i64, wait_ms: i64) -> Lock?
         if waited >= wait_ms
             return fail(
                 code: TIMEOUT,
-                msg: f"the lock \"{key}\" was held by another for the {wait_ms} milliseconds waited"
+                msg: f"the lock \"{key}\" was held by another for the {time.format_duration(wait)} waited"
             )
         jitter = to_i64(os.random_bytes(1)?[0]).must() % (pause / 2 + 1)
         left = wait_ms - waited
@@ -1350,7 +1365,7 @@ function unlock(@c: Client, held: Lock) -> ()?
 # Fails `not_found` where the lock had expired, and as `call` does. See also
 # `unlock`.
 function renew(@c: Client, held: Lock) -> ()?
-    r = call(@c, ["EVAL", lock_scripts.RENEW, "1", held.key, held.token, to_str(held.ttl_ms)])?
+    r = call(@c, ["EVAL", lock_scripts.RENEW, "1", held.key, held.token, to_str(session.whole_ms(held.ttl))])?
 
     if int_of(r)? == 0
         return fail(code: NOT_FOUND, msg: f"the lock \"{held.key}\" had expired and is no longer this holder's")
@@ -1532,10 +1547,10 @@ test "read_reply over RESP3: a push that comes before a reply is kept for receiv
 test "try_lock, unlock and renew: the scripts sent, a lock taken, held by another, lost, given back"
     t @= server.scripted(":1\r\n_\r\n:1\r\n:0\r\n:0\r\n", protocol: 3)
     c @= Client(session: t.session)
-    held = try_lock(@c, "job", ttl_ms: 30000).must()
-    assert held.key == "job" && held.token.len() == 40 && held.fence == 1 && held.ttl_ms == 30000
+    held = try_lock(@c, "job", ttl: time.seconds(30).must()).must()
+    assert held.key == "job" && held.token.len() == 40 && held.fence == 1 && held.ttl == time.seconds(30).must()
 
-    match try_lock(@c, "job", ttl_ms: 30000)
+    match try_lock(@c, "job", ttl: time.seconds(30).must())
         .ok _  => assert false
         .err e => assert e.code == "exists"
 
@@ -1549,7 +1564,7 @@ test "try_lock, unlock and renew: the scripts sent, a lock taken, held by anothe
         .ok _  => assert false
         .err e => assert e.code == "not_found"
 
-    assert try_lock(@c, "job", ttl_ms: 0).is_err()
+    assert try_lock(@c, "job", ttl: time.nanoseconds(0)).is_err()
     t.session @ c.session
     written = server.finish(@t)
     assert strings.has_prefix(
@@ -1616,7 +1631,7 @@ test "connect live, against the server REBEL_REDIS_URL names: both protocols, va
             assert float_of(call(@c, ["ZSCORE", "live:z", "a"]).must()).must() == 1.5
             assert float_of(call(@old, ["ZSCORE", "live:z", "a"]).must()).must() == 1.5
             assert bool_of(call(@c, ["EXISTS", "live:z"]).must()).must()
-            set_for(@c, key: "live:t", value: "x", ttl_ms: 60000).must()
+            set_for(@c, key: "live:t", value: "x", ttl: time.minutes(1).must()).must()
             assert int_of(call(@c, ["PTTL", "live:t"]).must()).must() > 0
             big: [str] @= ["RPUSH", "live:l"]
 
@@ -1658,7 +1673,7 @@ test "connect live, against the server REBEL_REDIS_URL names: both protocols, va
             assert receive(@listener).must() == Message(kind: "message", pattern: "", channel: "live-chat", payload: bytes.from_text("hi"))
             assert receive(@old_listener).must() == Message(kind: "pmessage", pattern: "live-*", channel: "live-chat", payload: bytes.from_text("hi"))
             assert text_of(call(@listener, ["GET", "live:s"]).must()).must() == "città 🎸"
-            set_deadline(listener, ms: 200).must()
+            set_deadline(listener, deadline: time.milliseconds(200).must()).must()
 
             match receive(@listener)
                 .ok _  => assert false
@@ -1668,15 +1683,15 @@ test "connect live, against the server REBEL_REDIS_URL names: both protocols, va
             punsubscribe(@old_listener, []).must()
             close(@old_listener).must()
             _ = delete(@c, ["live:lock"]).must()
-            first = try_lock(@c, "live:lock", ttl_ms: 300).must()
+            first = try_lock(@c, "live:lock", ttl: time.milliseconds(300).must()).must()
             assert is_held(@c, first).must()
 
-            match try_lock(@old, "live:lock", ttl_ms: 300)
+            match try_lock(@old, "live:lock", ttl: time.milliseconds(300).must())
                 .ok _  => assert false
                 .err e => assert e.code == "exists"
 
             renew(@c, first).must()
-            second = lock(@old, "live:lock", ttl_ms: 5000, wait_ms: 3000).must()
+            second = lock(@old, "live:lock", ttl: time.seconds(5).must(), wait: time.seconds(3).must()).must()
             assert second.fence == first.fence + 1 && !is_held(@c, first).must()
 
             match unlock(@c, first)
@@ -1806,7 +1821,7 @@ test "set_deadline: a receive that times out"
         .ok first =>
             c @= first
             subscribe(@c, ["rebel-quiet"]).must()
-            set_deadline(c, ms: 100).must()
+            set_deadline(c, deadline: time.milliseconds(100).must()).must()
             assert receive(@c).is_err()
             close(@c).must()
 
@@ -1960,7 +1975,7 @@ test "set_for: a key that expires"
         .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            set_for(@c, key: "rebel:session", value: "z", ttl_ms: 60000).must()
+            set_for(@c, key: "rebel:session", value: "z", ttl: time.minutes(1).must()).must()
             close(@c).must()
 
 # Keys deleted.
@@ -2140,7 +2155,7 @@ test "try_lock: a job run by one worker"
         .ok first =>
             c @= first
 
-            match try_lock(@c, "rebel:job", ttl_ms: 30000)
+            match try_lock(@c, "rebel:job", ttl: time.seconds(30).must())
                 .err _   => _ = 0
                 .ok held => unlock(@c, held).must()
 
@@ -2155,7 +2170,7 @@ test "lock: waiting a second at most"
         .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            held = lock(@c, "rebel:report", ttl_ms: 10000, wait_ms: 1000).must()
+            held = lock(@c, "rebel:report", ttl: time.seconds(10).must(), wait: time.seconds(1).must()).must()
             unlock(@c, held).must()
             close(@c).must()
 
@@ -2168,7 +2183,7 @@ test "unlock: the end of the work"
         .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            held = lock(@c, "rebel:unlock", ttl_ms: 10000, wait_ms: 1000).must()
+            held = lock(@c, "rebel:unlock", ttl: time.seconds(10).must(), wait: time.seconds(1).must()).must()
             unlock(@c, held).must()
             assert !is_held(@c, held).must()
             close(@c).must()
@@ -2182,7 +2197,7 @@ test "renew: a lock kept"
         .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            held = lock(@c, "rebel:renew", ttl_ms: 10000, wait_ms: 1000).must()
+            held = lock(@c, "rebel:renew", ttl: time.seconds(10).must(), wait: time.seconds(1).must()).must()
             renew(@c, held).must()
             unlock(@c, held).must()
             close(@c).must()
@@ -2196,7 +2211,7 @@ test "is_held: a lock before and after it is given back"
         .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            held = lock(@c, "rebel:held", ttl_ms: 10000, wait_ms: 1000).must()
+            held = lock(@c, "rebel:held", ttl: time.seconds(10).must(), wait: time.seconds(1).must()).must()
             assert is_held(@c, held).must()
             unlock(@c, held).must()
             close(@c).must()

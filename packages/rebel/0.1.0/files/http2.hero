@@ -913,8 +913,8 @@ function server_session(options: Options) -> Session
 #
 # - `s`: the session; its streams, windows and output change.
 # - `data`: bytes read from the connection, any count; empty reads nothing.
-# - `now_ms`: a monotonic clock in milliseconds, which counts the resets and
-#   frames a second.
+# - `now`: a reading of the monotonic clock (`time.mark`), which counts the
+#   resets and frames a second.
 #
 # A PING and a SETTINGS are answered and a stream's queued data sent as
 # windows open, in the output. A stream error ends that stream alone, with
@@ -925,8 +925,8 @@ function server_session(options: Options) -> Session
 # waiting in the output, after which the session is closed; `closed` where
 # the session is closed already. The events before the failure are lost.
 # See also `take_output`.
-function receive(@s: Session, data: [u8], now_ms: i64) -> [Event]?
-    events = receiving.receive(@s.state, data: data, now_ms: now_ms)?
+function receive(@s: Session, data: [u8], now: time.Mark) -> [Event]?
+    events = receiving.receive(@s.state, data: data, now_ms: now.nanoseconds / 1_000_000)?
     out: [Event] @= []
 
     for e in events
@@ -1240,8 +1240,9 @@ record Conn
 # - `host`: a name or an address, as `tls.connect` takes it; the
 #   certificate must name it.
 # - `port`: 1 to 65535.
-# - `deadline_ms`: the milliseconds the connection and its handshake may
-#   take; 0 for no limit. Reads wait as long as the server takes.
+# - `deadline`: how long the connection and its handshake may take, as
+#   `tls.connect` takes it: `time.max_duration()` for no limit, zero failing
+#   `timeout` at once. Reads wait as long as the server takes.
 # - `roots`: the PEM of the only authorities trusted, "" for the system's
 #   own store, as `tls.Client` takes it.
 # - `options`: what this end advertises and its bounds.
@@ -1249,12 +1250,8 @@ record Conn
 # The connection is the caller's to close. Fails `unsupported` where the
 # server's TLS chose no `h2`, the connection closed; and as `tls.connect`
 # fails. See also `connect_plain`, `client`.
-function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Options) -> Conn?
-    handshake = if deadline_ms == 0
-        time.max_duration()
-    else
-        time.milliseconds(deadline_ms)?
-    stream @= tls.connect(host: host, port: port, deadline: handshake, client: tls.Client(roots: roots, protocols: [ALPN]))?.stream
+function connect(host: str, port: i64, deadline: time.Duration, roots: str, options: Options) -> Conn?
+    stream @= tls.connect(host: host, port: port, deadline: deadline, client: tls.Client(roots: roots, protocols: [ALPN]))?.stream
     chosen = tls.protocol_of(stream).default("")
 
     if chosen != ALPN
@@ -1281,17 +1278,28 @@ function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Op
 #
 # - `host`: a name or an address without brackets.
 # - `port`: 1 to 65535.
-# - `deadline_ms`: the milliseconds every read and write may take from the
-#   connection's making, as `net.connect` counts them; 0 for no limit.
+# - `deadline`: how long from the connection's making every read and write
+#   may wait, as `net.connect` counts it, a part of a millisecond counting
+#   as a whole one: zero ends at once every one that would wait,
+#   `time.max_duration()` sets no limit.
 # - `options`: what this end advertises and its bounds.
 #
-# The connection is the caller's to close. Fails as `net.connect` fails. See
-# also `connect`.
-function connect_plain(host: str, port: i64, deadline_ms: i64, options: Options) -> Conn?
-    plain_ms = if deadline_ms == 0
+# The connection is the caller's to close. Fails `invalid` where `deadline`
+# is below zero, and as `net.connect` fails. See also `connect`.
+function connect_plain(host: str, port: i64, deadline: time.Duration, options: Options) -> Conn?
+    if deadline.nanoseconds < 0
+        return fail(
+            code: INVALID,
+            msg: f"connecting to {host}: the deadline {time.format_duration(deadline)} is below zero"
+        )
+    whole = deadline.nanoseconds / 1_000_000
+
+    plain_ms = if deadline == time.max_duration()
         net.FOREVER
+    else if deadline.nanoseconds % 1_000_000 != 0
+        whole + 1
     else
-        deadline_ms
+        whole
     c = net.connect(host, port: port, deadline_ms: plain_ms)?
     stream @= c.stream
 
@@ -2022,7 +2030,7 @@ test "client_session: the preface first in its output"
 test "server_session: the client's settings read"
     c @= client_session(default_options())
     s @= server_session(default_options())
-    events = receive(@s, data: take_output(@c), now_ms: 0).must()
+    events = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
     assert events.len() > 0
     assert peer_settings_of(s).max_concurrent_streams == 100
 
@@ -2030,14 +2038,14 @@ test "server_session: the client's settings read"
 test "receive: a GET read by a server"
     c @= client_session(default_options())
     s @= server_session(default_options())
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
-    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
+    _ = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     id = open_stream(
         @c,
         headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
         end_stream: true
     ).must()
-    events = receive(@s, data: take_output(@c), now_ms: 0).must()
+    events = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
     assert events[events.len() - 1] == .request(stream: id, method: "GET", scheme: "https", authority: "", path: "/", protocol: "", headers: [], end_stream: true)
 
 # The output emptied once taken.
@@ -2061,51 +2069,51 @@ test "open_stream: streams 1 and 3"
 test "send_headers: a 204 that ends its stream"
     c @= client_session(default_options())
     s @= server_session(default_options())
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
-    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
+    _ = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     id = open_stream(
         @c,
         headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
         end_stream: true
     ).must()
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
     send_headers(
         @s,
         stream: id,
         headers: [Field(name: ":status", value: "204", sensitive: false)],
         end_stream: true
     ).must()
-    events = receive(@c, data: take_output(@s), now_ms: 0).must()
+    events = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     assert events[events.len() - 1] == .response(stream: id, status: 204, headers: [], end_stream: true)
 
 # A body sent within the windows: every byte taken at once.
 test "send_data: a body of five bytes, taken whole"
     c @= client_session(default_options())
     s @= server_session(default_options())
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
-    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
+    _ = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     id = open_stream(
         @c,
         headers: [Field(name: ":method", value: "POST", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
         end_stream: false
     ).must()
     assert send_data(@c, stream: id, data: bytes.from_text("hello"), end_stream: true).must() == 5
-    events = receive(@s, data: take_output(@c), now_ms: 0).must()
+    events = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
     assert events[events.len() - 1] == .data(stream: id, data: bytes.from_text("hello"), end_stream: true)
 
 # Bytes taken by the program given back, and no more than were given.
 test "acknowledge: five bytes given back, a sixth refused"
     c @= client_session(default_options())
     s @= server_session(default_options())
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
-    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
+    _ = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     id = open_stream(
         @c,
         headers: [Field(name: ":method", value: "POST", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
         end_stream: false
     ).must()
     _ = send_data(@c, stream: id, data: bytes.from_text("hello"), end_stream: true).must()
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
     acknowledge(@s, stream: id, count: 5).must()
     assert acknowledge(@s, stream: id, count: 1).is_err()
 
@@ -2113,49 +2121,49 @@ test "acknowledge: five bytes given back, a sixth refused"
 test "reset_stream: a client cancels its request"
     c @= client_session(default_options())
     s @= server_session(default_options())
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
-    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
+    _ = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     id = open_stream(
         @c,
         headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
         end_stream: true
     ).must()
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
     reset_stream(@c, stream: id, error: CANCEL).must()
-    assert receive(@s, data: take_output(@c), now_ms: 0).must() == [.reset(stream: id, error: CANCEL, remote: true)]
+    assert receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must() == [.reset(stream: id, error: CANCEL, remote: true)]
 
 # A PING and its answer.
 test "send_ping: the server answers, the client is told"
     c @= client_session(default_options())
     s @= server_session(default_options())
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
-    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
+    _ = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     send_ping(@c, data: [1, 1, 2, 3, 5, 8, 13, 21]).must()
-    heard = receive(@s, data: take_output(@c), now_ms: 0).must()
+    heard = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
     assert heard[heard.len() - 1] == .ping(data: [1, 1, 2, 3, 5, 8, 13, 21])
-    assert receive(@c, data: take_output(@s), now_ms: 0).must() == [.pong(data: [1, 1, 2, 3, 5, 8, 13, 21])]
+    assert receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must() == [.pong(data: [1, 1, 2, 3, 5, 8, 13, 21])]
 
 # New settings, read by the peer and acknowledged.
 test "change_settings: a client allows 10 streams"
     c @= client_session(default_options())
     s @= server_session(default_options())
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
-    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
+    _ = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     o @= default_options().settings
     o.max_concurrent_streams @ 10
     change_settings(@c, settings: o).must()
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
     assert peer_settings_of(s).max_concurrent_streams == 10
-    assert receive(@c, data: take_output(@s), now_ms: 0).must().len() >= 1
+    assert receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must().len() >= 1
 
 # A graceful end: the client told no new stream will be processed.
 test "send_goaway: a server's graceful end"
     c @= client_session(default_options())
     s @= server_session(default_options())
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
-    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
+    _ = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     send_goaway(@s, error: NO_ERROR, debug: "maintenance").must()
-    assert receive(@c, data: take_output(@s), now_ms: 0).must() == [.goaway(last_stream: 0, error: NO_ERROR, debug: bytes.from_text("maintenance"))]
+    assert receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must() == [.goaway(last_stream: 0, error: NO_ERROR, debug: bytes.from_text("maintenance"))]
     assert !has_room(c)
 
 # A request with no body leaves its stream half closed by the client.
@@ -2174,8 +2182,8 @@ test "window_of: the connection's window before and after the server's"
     c @= client_session(default_options())
     s @= server_session(default_options())
     assert window_of(c, stream: 0) == 65535
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
-    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
+    _ = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     assert window_of(c, stream: 0) == 16777216
 
 # What a client holds the server to, from its SETTINGS.
@@ -2183,8 +2191,8 @@ test "peer_settings_of: the server's 100 streams"
     c @= client_session(default_options())
     s @= server_session(default_options())
     assert peer_settings_of(c).max_concurrent_streams == NO_LIMIT
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
-    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
+    _ = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     assert peer_settings_of(c).max_concurrent_streams == 100
 
 # A session ended by an error is no longer open.
@@ -2200,8 +2208,8 @@ test "has_room: one stream allowed, then none"
     o.settings.max_concurrent_streams @ 1
     c @= client_session(default_options())
     s @= server_session(o)
-    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
-    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    _ = receive(@s, data: take_output(@c), now: time.Mark(nanoseconds: 0)).must()
+    _ = receive(@c, data: take_output(@s), now: time.Mark(nanoseconds: 0)).must()
     assert has_room(c)
     _ = open_stream(
         @c,
@@ -2221,7 +2229,7 @@ test "connect: a GET over TLS, ALPN choosing h2"
     c @= connect(
         host: "localhost",
         port: port,
-        deadline_ms: 10000,
+        deadline: time.seconds(10).must(),
         roots: tls.TEST_ROOT,
         options: default_options()
     ).must()
@@ -2238,7 +2246,12 @@ test "connect_plain: a GET over h2c"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
-    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    c @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
     r = round_trip(
         @c,
         r: Request(method: "GET", scheme: "http", authority: "localhost", path: "/a", protocol: "", headers: [], body: [], trailers: [], stream: 0)
@@ -2304,7 +2317,12 @@ test "read_event: a response read event by event"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
-    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    c @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
     id = start_stream(
         @c,
         headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "http", sensitive: false), Field(name: ":path", value: "/e", sensitive: false)],
@@ -2321,7 +2339,12 @@ test "read_event_of: the second request's answer read before the first's"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 2").must()
     fixture.until_listening(port)
-    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    c @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
     get = [
         Field(name: ":method", value: "GET", sensitive: false)
         Field(name: ":scheme", value: "http", sensitive: false)
@@ -2342,7 +2365,12 @@ test "start_stream: a POST whose body follows"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
-    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    c @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
     id = start_stream(
         @c,
         headers: [Field(name: ":method", value: "POST", sensitive: false), Field(name: ":scheme", value: "http", sensitive: false), Field(name: ":path", value: "/s", sensitive: false)],
@@ -2359,7 +2387,12 @@ test "write_headers: trailers end a request"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
-    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    c @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
     id = start_stream(
         @c,
         headers: [Field(name: ":method", value: "POST", sensitive: false), Field(name: ":scheme", value: "http", sensitive: false), Field(name: ":path", value: "/t", sensitive: false)],
@@ -2382,7 +2415,12 @@ test "write_data: a body past the server's bound, answered 413"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
-    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 30000, options: default_options()).must()
+    c @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(30).must(),
+        options: default_options()
+    ).must()
     id = start_stream(
         @c,
         headers: [Field(name: ":method", value: "PUT", sensitive: false), Field(name: ":scheme", value: "http", sensitive: false), Field(name: ":path", value: "/big", sensitive: false)],
@@ -2407,7 +2445,12 @@ test "write_reset: a request cancelled"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 1").must()
     fixture.until_listening(port)
-    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    c @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
     id = start_stream(
         @c,
         headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "http", sensitive: false), Field(name: ":path", value: "/r", sensitive: false)],
@@ -2423,7 +2466,12 @@ test "ping: answered before any request"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
-    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    c @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
     ping(@c, data: [7, 7, 7, 7, 7, 7, 7, 7]).must()
     _ = round_trip(
         @c,
@@ -2438,7 +2486,12 @@ test "start: two requests on one connection at once"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 2").must()
     fixture.until_listening(port)
-    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    c @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
     a = start(
         @c,
         r: Request(method: "GET", scheme: "http", authority: "h", path: "/one", protocol: "", headers: [], body: [], trailers: [], stream: 0)
@@ -2457,7 +2510,12 @@ test "finish: a response's body and trailers"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
-    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    c @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
     id = start(
         @c,
         r: Request(method: "GET", scheme: "http", authority: "h", path: "/f", protocol: "", headers: [], body: [], trailers: [], stream: 0)
@@ -2472,7 +2530,12 @@ test "round_trip: a POST and its answer"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
-    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    c @= connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.seconds(10).must(),
+        options: default_options()
+    ).must()
     r = round_trip(
         @c,
         r: Request(method: "POST", scheme: "http", authority: "h", path: "/rt", protocol: "", headers: [Field(name: "content-type", value: "text/plain", sensitive: false)], body: bytes.from_text("hi"), trailers: [], stream: 0)

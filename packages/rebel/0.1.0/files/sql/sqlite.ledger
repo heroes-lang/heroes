@@ -44,7 +44,7 @@ capability sqlite/close  a connection ended, and asked whether it is
   note    a close SQLite refuses (a statement `prepare` made still open) leaves the connection open, as SQLite's own `sqlite3_close` does; Python's closes it anyway. The binding marks the close `when 0` (spec § 13), so the program owes the connection until SQLite has ended it
 
 capability sqlite/busy-timeout  how long a statement waits for another connection's lock
-  heroes  sql/sqlite.set_busy_timeout, sql/sqlite.DEFAULT_BUSY_TIMEOUT_MS
+  heroes  sql/sqlite.set_busy_timeout
   go      -
   rust    -
   python  connect timeout

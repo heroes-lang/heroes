@@ -137,12 +137,13 @@ record Options
     # The name the server shows for this connection in `pg_stat_activity`, ""
     # for none.
     application_name: str
-    # Milliseconds from when the connection is made by which every later wait
-    # on it ends, failing `timeout`: a time, not a span, as `net.connect`
-    # takes it. 0, the default, for none. Over TLS it bounds the connection,
-    # the request for TLS and the handshake together, and then every later
-    # wait, as over plain TCP.
-    deadline_ms: i64
+    # How long from when the connection is made every later wait on it may
+    # last, failing `timeout`: a time, not a span, as `net.connect` takes
+    # it, a part of a millisecond counting as a whole one. Zero ends at once
+    # every wait, `time.max_duration()`, the default, sets none. Over TLS it
+    # bounds the connection, the request for TLS and the handshake together,
+    # and then every later wait, as over plain TCP.
+    deadline: time.Duration
     # How the connection is secured: `.checked(roots: "")`, TLS checked
     # against the system's store, unless the program asks for another.
     security: Security
@@ -164,7 +165,7 @@ function options(host: str, user: str, database: str) -> Options
         password: "",
         database: database,
         application_name: "",
-        deadline_ms: 0,
+        deadline: time.max_duration(),
         security: .checked(roots: "")
     )
 
@@ -186,7 +187,7 @@ function options(host: str, user: str, database: str) -> Options
 # where `sslmode` is `allow`, `prefer`, `require` or `verify-ca`, each
 # refused with its reason (the module's comment), where the URL names
 # several hosts or a Unix socket's folder, and where it names
-# `connect_timeout`, which bounds the connecting alone where `deadline_ms`
+# `connect_timeout`, which bounds the connecting alone where `deadline`
 # bounds the session. See also `options`.
 function parse_url(url: str) -> Options?
     t = target.read(url)?
@@ -197,7 +198,7 @@ function parse_url(url: str) -> Options?
     else if t.negotiation == "direct"
         security @ .direct(roots: t.roots)
     return ok(
-        Options(host: t.host, port: t.port, user: t.user, password: t.password, database: t.database, application_name: t.application_name, deadline_ms: 0, security: security)
+        Options(host: t.host, port: t.port, user: t.user, password: t.password, database: t.database, application_name: t.application_name, deadline: time.max_duration(), security: security)
     )
 
 # A connection to the database `opts` names, logged in and ready for a
@@ -232,15 +233,19 @@ function open(opts: Options) -> Db?
         opts.database
     nonce = scram.new_nonce()?
 
-    plain_ms = if opts.deadline_ms == 0
-        net.FOREVER
-    else
-        opts.deadline_ms
+    if opts.deadline.nanoseconds < 0
+        return fail(
+            code: sql.INVALID,
+            msg: f"connecting to {opts.host}: the deadline {time.format_duration(opts.deadline)} is below zero"
+        )
+    whole = opts.deadline.nanoseconds / 1_000_000
 
-    handshake = if opts.deadline_ms == 0
-        time.max_duration()
+    plain_ms = if opts.deadline == time.max_duration()
+        net.FOREVER
+    else if opts.deadline.nanoseconds % 1_000_000 != 0
+        whole + 1
     else
-        time.milliseconds(opts.deadline_ms)?
+        whole
 
     made: net.Conn? = match opts.security
         .plain => net.connect(opts.host, port: opts.port, deadline_ms: plain_ms)
@@ -248,14 +253,14 @@ function open(opts: Options) -> Db?
             tls.connect_after(
                 host: opts.host,
                 port: opts.port,
-                deadline: handshake,
+                deadline: opts.deadline,
                 client: tls.Client(roots: c.roots, protocols: []),
                 steps: [.send(data: [0, 0, 0, 8, 4, 210, 22, 47]), .expect(answer: [83])]
             )
         .direct d => tls.connect(
             host: opts.host,
             port: opts.port,
-            deadline: handshake,
+            deadline: opts.deadline,
             client: tls.Client(roots: d.roots, protocols: ["postgresql"])
         )
 
@@ -275,8 +280,8 @@ function open(opts: Options) -> Db?
     match opts.security
         .plain => _ = 0
         .checked _ | .direct _ =>
-            if opts.deadline_ms > 0
-                timed = tls.set_deadline(stream, deadline: handshake)
+            if opts.deadline != time.max_duration()
+                timed = tls.set_deadline(stream, deadline: opts.deadline)
 
                 match timed
                     .ok _ => _ = 0
@@ -757,7 +762,7 @@ test "open over TLS: a server answering N to the request for TLS fails unsupport
     peer @= threads.spawn_text(body: tls_peer.serve, arg: "n " + to_str(port)).must()
     tls_peer.until_listening(port)
     made = open(
-        Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
+        Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline: time.seconds(10).must(), security: .checked(roots: tls.TEST_ROOT))
     )
     _ = threads.wait_text(@peer)
 
@@ -777,7 +782,7 @@ test "open over TLS: a server whose certificate names another host is refused in
     peer @= threads.spawn_text(body: tls_peer.serve, arg: "wrong " + to_str(port)).must()
     tls_peer.until_listening(port)
     made = open(
-        Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
+        Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline: time.seconds(10).must(), security: .checked(roots: tls.TEST_ROOT))
     )
     _ = threads.wait_text(@peer)
 
@@ -797,7 +802,7 @@ test "open over TLS: the request answered S, the handshake checked, and the serv
     peer @= threads.spawn_text(body: tls_peer.serve, arg: "fatal " + to_str(port)).must()
     tls_peer.until_listening(port)
     made = open(
-        Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
+        Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline: time.seconds(10).must(), security: .checked(roots: tls.TEST_ROOT))
     )
     did = threads.wait_text(@peer)
     assert strings.has_suffix(s: did, suffix: " bytes, answered FATAL")

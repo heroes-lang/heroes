@@ -56,7 +56,7 @@ capability amqp/login-token  a login by a token that expires, renewed on an open
   python  BlockingConnection.update_secret
 
 capability amqp/tune  the heartbeat, the largest frame and the channels agreed, and what the server said of itself
-  heroes  amqp.Options (heartbeat_s, frame_max, channel_max), amqp.server_of, amqp.Server
+  heroes  amqp.Options (heartbeat, frame_max, channel_max), amqp.server_of, amqp.Server
   go      Config.Heartbeat, Config.FrameSize, Config.ChannelMax, FrameSizeUnlimited, Connection.Properties, Connection.Major, Connection.Minor, Connection.Locales, Connection.Config
   rust    Configuration
   python  ConnectionParameters.heartbeat, ConnectionParameters.frame_max, ConnectionParameters.channel_max, BlockingConnection.publisher_confirms_supported, BlockingConnection.basic_nack_supported, BlockingConnection.consumer_cancel_notify_supported, BlockingConnection.exchange_exchange_bindings_supported, BlockingConnection.publisher_confirms, BlockingConnection.basic_nack, BlockingConnection.consumer_cancel_notify, BlockingConnection.exchange_exchange_bindings
@@ -73,7 +73,7 @@ capability amqp/close  a connection closed, by the program or the server, and wh
   go      Connection.Close, Connection.CloseDeadline, Connection.IsClosed, Connection.NotifyClose, Error, Error.Code, Error.Reason, Error.Server
   rust    Connection::close, Connection::status, ConnectionStatus, ConnectionState, Error, ErrorKind
   python  BlockingConnection.close, BlockingConnection.is_closed, BlockingConnection.is_open, ConnectionClosed, ConnectionClosedByBroker, ConnectionClosedByClient, AMQPConnectionError
-  note    `close` waits `Options.wait_ms` for the answer, as CloseDeadline's deadline
+  note    `close` waits `Options.wait` for the answer, as CloseDeadline's deadline
 
 capability amqp/blocked  whether the server holds the connection's publishes back, as RabbitMQ does when its memory or disk runs short
   heroes  amqp.blocked_of, amqp.Blocked

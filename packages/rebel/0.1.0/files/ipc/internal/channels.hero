@@ -9,6 +9,7 @@ use ipc/hero_ipc
 use ipc/internal/failure
 use ipc/internal/names
 use os
+use time
 
 # What a process at the other end is, as the system told it.
 record Ends
@@ -46,16 +47,32 @@ function checked_name(name: str, space: i64, asked: str) -> ()?
         return ok()
     return names.checked(name: name, asked: asked)
 
-# Nothing where `within_ms` is 0 or more or `hero_ipc.HERO_IPC_FOREVER`, else
-# `invalid`.
-function checked_bound(within_ms: i64, asked: str) -> ()?
-    if within_ms < 0 && within_ms != hero_ipc.HERO_IPC_FOREVER
+# The milliseconds of `d`, a bound or a deadline the face was handed, as
+# the floor takes them: `time.max_duration()` is no bound,
+# `hero_ipc.HERO_IPC_FOREVER`; any other is rounded up to a whole
+# millisecond, so a wait of a nanosecond still waits and zero alone waits
+# not at all (since 2026-11-21, M-rebel-library step 88d: the face took
+# milliseconds and its own `FOREVER`).
+#
+# - `d`: the time the face was handed.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where `d` is below zero.
+function bound_ms(d: time.Duration, asked: str) -> i64?
+    if d == time.max_duration()
+        return ok(hero_ipc.HERO_IPC_FOREVER)
+
+    if d.nanoseconds < 0
         return failure.of(
             code: failure.INVALID,
             asked: asked,
-            why: f"a bound is 0 or more milliseconds, or FOREVER, and {within_ms} is neither"
+            why: f"a time is zero or more, and {time.format_duration(d)} is not"
         )
-    return ok()
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return ok(whole + 1)
+    return ok(whole)
 
 # The floor's listener on `name` in `space`, its socket file made with
 # `permission` where `space` is a path, or the failure.
@@ -78,10 +95,10 @@ function listen(name: str, space: i64, permission: i64) -> hero_ipc.Listener?
     return ok(l)
 
 # The next connection on the listener `handle`, named `where` in messages, as
-# a stream, waiting at most `within_ms`.
-function accept(handle: hero_ipc.Listener, within_ms: i64, where: str) -> io.Stream?
+# a stream, waiting at most `within`.
+function accept(handle: hero_ipc.Listener, within: time.Duration, where: str) -> io.Stream?
     asked = "accepting a connection on " + where
-    checked_bound(within_ms, asked: asked)?
+    within_ms = bound_ms(within, asked: asked)?
     s = hero_ipc.accept(handle, within_ms: within_ms)
 
     if s == nullptr
@@ -89,12 +106,12 @@ function accept(handle: hero_ipc.Listener, within_ms: i64, where: str) -> io.Str
     return ok(io.of_handle(s, name: "a channel accepted on " + where))
 
 # A connection to the listener on `name` in `space` as a stream, waiting at
-# most `within_ms` while it has no room.
-function connect(name: str, space: i64, within_ms: i64) -> io.Stream?
+# most `within` while it has no room.
+function connect(name: str, space: i64, within: time.Duration) -> io.Stream?
     where = label(name, space: space)
     asked = "connecting to " + where
     checked_name(name: name, space: space, asked: asked)?
-    checked_bound(within_ms, asked: asked)?
+    within_ms = bound_ms(within, asked: asked)?
     s = hero_ipc.connect(name, space: space, within_ms: within_ms)
 
     if s == nullptr
@@ -113,23 +130,15 @@ function close(@handle: hero_ipc.Listener, where: str) -> ()?
     handle @ nullptr
     return failure.done(answer, asked: asked)
 
-# Makes every read and write of the channel `s` end by `ms` from now, the
-# face's 0 taking the deadline away: the floor's `HERO_IPC_FOREVER`, since
-# the floor's 0 is a deadline already passed (2026-11-21, M-rebel-library
-# step 88a).
-function set_deadline(s: io.Stream, ms: i64) -> ()?
-    asked = f"setting a deadline of {ms} ms on {s.name}"
-
-    if ms < 0
-        return failure.of(code: failure.INVALID, asked: asked, why: "a deadline is 0 or more milliseconds")
+# Makes every read and write of the channel `s` end by `deadline` from now:
+# zero a deadline already passed, `time.max_duration()` taking it away.
+function set_deadline(s: io.Stream, deadline: time.Duration) -> ()?
+    asked = f"setting a deadline of {time.format_duration(deadline)} on {s.name}"
+    ms = bound_ms(deadline, asked: asked)?
 
     if s.handle == nullptr
         return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
-    floor_ms: i64 @= ms
-
-    if ms == 0
-        floor_ms @ hero_ipc.HERO_IPC_FOREVER
-    return failure.done(hero_ipc.set_deadline(s.handle, ms: floor_ms), asked: asked)
+    return failure.done(hero_ipc.set_deadline(s.handle, ms: ms), asked: asked)
 
 # Closes the writing side of the channel `s`.
 function close_write(s: io.Stream) -> ()?
@@ -168,12 +177,18 @@ test "label and listener_label: a path in quotes, an abstract name and a pipe na
     assert label("x", space: hero_ipc.HERO_IPC_SPACE_ABSTRACT) == "the abstract name \"x\""
     assert label("x", space: hero_ipc.HERO_IPC_SPACE_PIPE) == "the pipe \"x\""
 
-test "checked_bound: 0, a large bound and FOREVER pass, -2 and the smallest i64 are invalid"
-    assert checked_bound(0, asked: "x") == ok()
-    assert checked_bound(9223372036854775807, asked: "x") == ok()
-    assert checked_bound(hero_ipc.HERO_IPC_FOREVER, asked: "x") == ok()
-    assert checked_bound(-2, asked: "x").is_err()
-    assert checked_bound(-9223372036854775807 - 1, asked: "x").is_err()
+test "bound_ms: zero, a nanosecond rounded up, the longest and max_duration, and below zero invalid"
+    assert bound_ms(time.nanoseconds(0), asked: "x") == ok(0)
+    assert bound_ms(time.nanoseconds(1), asked: "x") == ok(1)
+    assert bound_ms(time.milliseconds(1500).must(), asked: "x") == ok(1500)
+    assert bound_ms(time.nanoseconds(9223372036854775806), asked: "x") == ok(9223372036855)
+    assert bound_ms(time.max_duration(), asked: "x") == ok(hero_ipc.HERO_IPC_FOREVER)
+
+    match bound_ms(time.nanoseconds(-1), asked: "x")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "x: a time is zero or more, and -1ns is not"
 
 test "listen: an empty path, a permission past 0o777 and a pipe's bad name are told before the floor, a path taken is exists"
     match listen("", space: hero_ipc.HERO_IPC_SPACE_PATH, permission: 0o600)
@@ -207,23 +222,23 @@ test "listen: an empty path, a permission past 0o777 and a pipe's bad name are t
 test "connect: nothing at the path is file_not_found, a bound of -5 is invalid, and accept, peer, close_write and set_deadline answer on a channel"
     path = test_path("conn")
 
-    match connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within_ms: 0)
+    match connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within: time.nanoseconds(0))
         .ok _ => assert false
         .err e =>
             assert e.code == failure.FILE_NOT_FOUND
             assert e.msg == "connecting to \"" + path + "\": nothing is at the path"
 
-    match connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within_ms: -5)
+    match connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within: time.milliseconds(-5).must())
         .ok _  => assert false
         .err e => assert e.code == failure.INVALID
 
     l @= listen(path, space: hero_ipc.HERO_IPC_SPACE_PATH, permission: 0o600).must()
     where = label(path, space: hero_ipc.HERO_IPC_SPACE_PATH)
-    client @= connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within_ms: 1000).must()
-    server @= accept(l, within_ms: 1000, where: where).must()
+    client @= connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within: time.seconds(1).must()).must()
+    server @= accept(l, within: time.seconds(1).must(), where: where).must()
     assert peer(server).must().pid == os.pid()
-    assert set_deadline(client, ms: 20) == ok()
-    assert set_deadline(client, ms: -1).is_err()
+    assert set_deadline(client, deadline: time.milliseconds(20).must()) == ok()
+    assert set_deadline(client, deadline: time.nanoseconds(-1)).is_err()
 
     match io.read(client, n: 1)
         .ok _  => assert false
@@ -233,9 +248,9 @@ test "connect: nothing at the path is file_not_found, a bound of -5 is invalid, 
     assert io.read(client, n: 1).must().len() == 0
     assert io.close(@client) == ok()
     assert io.close(@server) == ok()
-    assert set_deadline(server, ms: 5).is_err()
+    assert set_deadline(server, deadline: time.milliseconds(5).must()).is_err()
 
-    match accept(l, within_ms: 0, where: where)
+    match accept(l, within: time.nanoseconds(0), where: where)
         .ok _  => assert false
         .err e => assert e.code == failure.TIMEOUT
 

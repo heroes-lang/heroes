@@ -4,6 +4,7 @@
 # it back; where none answers it says why.
 
 use <rebel>/kafka
+use <rebel>/time
 
 function main()
     match kafka.connect(kafka.options(["localhost:9092"]))
@@ -21,7 +22,7 @@ function main()
                         topic: "reach-kafka",
                         partition: sent[0].partition,
                         offset: sent[0].offset,
-                        wait_ms: 1000
+                        wait: time.seconds(1).must()
                     )
                     print(got.is_err())
 

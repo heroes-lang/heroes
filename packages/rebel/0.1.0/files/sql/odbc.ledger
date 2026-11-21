@@ -53,7 +53,7 @@ capability odbc/open  a connection made from a connection string, or to a data s
   note    `SQLDriverConnect` with no prompt for a connection string, `SQLConnect` for a data source with its user and password, as .NET and pyodbc connect; pyodbc's keywords are pairs of the connection string, written by `format_connection`. A message names a connection string with every password written `***`
 
 capability odbc/login-timeout  how long a connection waits to log in
-  heroes  sql/odbc.Options, sql/odbc.DEFAULT_LOGIN_TIMEOUT_SECONDS
+  heroes  sql/odbc.Options
   go      -
   rust    -
   python  connect timeout, SQL_ATTR_LOGIN_TIMEOUT, SQL_LOGIN_TIMEOUT

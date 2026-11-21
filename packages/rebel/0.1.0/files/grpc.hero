@@ -354,7 +354,7 @@ variant Incoming
 #
 # Fails as `http2.connect` fails. See also `connect_plain`.
 function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Options) -> Channel?
-    conn = http2.connect(host: host, port: port, deadline_ms: deadline_ms, roots: roots, options: options.http2)?
+    conn = http2.connect(host: host, port: port, deadline: clock.tls_deadline(deadline_ms)?, roots: roots, options: options.http2)?
 
     authority = if port == 443
         host
@@ -372,7 +372,7 @@ function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Op
 #
 # Fails as `http2.connect_plain` fails. See also `connect`.
 function connect_plain(host: str, port: i64, deadline_ms: i64, options: Options) -> Channel?
-    conn = http2.connect_plain(host: host, port: port, deadline_ms: deadline_ms, options: options.http2)?
+    conn = http2.connect_plain(host: host, port: port, deadline: clock.tls_deadline(deadline_ms)?, options: options.http2)?
     return ok(Channel(conn: conn, authority: f"{host}:{port}", scheme: "http", options: options))
 
 # A channel over an HTTP/2 connection the program made.
@@ -1386,7 +1386,12 @@ test "new_channel: over http2.connect_plain"
     port = fixture.free_port()
     serving @= threads.spawn_text(body: fixture.serve, arg: to_str(port)).must()
     fixture.until_listening(port)
-    conn = http2.connect_plain(host: "127.0.0.1", port: port, deadline_ms: 0, options: http2.default_options()).must()
+    conn = http2.connect_plain(
+        host: "127.0.0.1",
+        port: port,
+        deadline: time.max_duration(),
+        options: http2.default_options()
+    ).must()
     ch @= new_channel(conn, authority: "localhost", scheme: "http", options: default_options())
     assert call(@ch, path: "/test.Echo/Echo", request: [1], metadata: [], timeout_ms: 0).must().messages == [[1]]
     close(@ch).must()

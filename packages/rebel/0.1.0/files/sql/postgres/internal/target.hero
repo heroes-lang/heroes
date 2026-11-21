@@ -197,7 +197,7 @@ function keyed(@t: Target, pair: str) -> ()?
     else if key == "connect_timeout"
         return fail(
             code: UNSUPPORTED,
-            msg: "connect_timeout bounds the connecting alone, and a connection here takes as long as the system allows; Options.deadline_ms bounds the session"
+            msg: "connect_timeout bounds the connecting alone, and a connection here takes as long as the system allows; Options.deadline bounds the session"
         )
     else
         return fail(

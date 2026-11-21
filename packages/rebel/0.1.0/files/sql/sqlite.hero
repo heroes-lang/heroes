@@ -76,12 +76,6 @@ use time
 
 ## Opening
 
-# How long a statement waits for a lock another connection holds before it
-# fails `timeout`, in milliseconds, unless `set_busy_timeout` says another:
-# five seconds, as Python's `sqlite3` waits.
-constant DEFAULT_BUSY_TIMEOUT_MS: i64
-    5000
-
 # A connection to the database in the file at `path`, made where it is not
 # there yet, ready for a statement.
 #
@@ -91,7 +85,8 @@ constant DEFAULT_BUSY_TIMEOUT_MS: i64
 #   those two; `open_memory` says the second by its name.
 #
 # The program owes the connection a `close`. It waits for another
-# connection's lock up to `DEFAULT_BUSY_TIMEOUT_MS`.
+# connection's lock up to five seconds, as Python's `sqlite3` waits, until
+# `set_busy_timeout` says another.
 #
 # Fails `invalid` where `path` holds a zero byte; `not_found` where its
 # folder is not there; `permission` where the system refuses the file;
@@ -101,9 +96,9 @@ constant DEFAULT_BUSY_TIMEOUT_MS: i64
 # `open_read_only`, `open_memory`, `close`.
 function open(path: str) -> Db?
     flags = hero_sqlite3.SQLITE_OPEN_READWRITE | hero_sqlite3.SQLITE_OPEN_CREATE | hero_sqlite3.SQLITE_OPEN_EXRESCODE
-    made = connections.open_connection(path, flags: flags, wait_ms: DEFAULT_BUSY_TIMEOUT_MS)?
+    made = connections.open_connection(path, flags: flags, wait_ms: 5000)?
     return ok(
-        Db(connection: made.connection, path: path, transaction_open: false, busy_timeout_ms: DEFAULT_BUSY_TIMEOUT_MS, cached: [], prepared: 0)
+        Db(connection: made.connection, path: path, transaction_open: false, busy_timeout: time.seconds(5).must(), cached: [], prepared: 0)
     )
 
 # A connection to the database in the file at `path` that reads and never
@@ -117,9 +112,9 @@ function open(path: str) -> Db?
 # `open`.
 function open_read_only(path: str) -> Db?
     flags = hero_sqlite3.SQLITE_OPEN_READONLY | hero_sqlite3.SQLITE_OPEN_EXRESCODE
-    made = connections.open_connection(path, flags: flags, wait_ms: DEFAULT_BUSY_TIMEOUT_MS)?
+    made = connections.open_connection(path, flags: flags, wait_ms: 5000)?
     return ok(
-        Db(connection: made.connection, path: path, transaction_open: false, busy_timeout_ms: DEFAULT_BUSY_TIMEOUT_MS, cached: [], prepared: 0)
+        Db(connection: made.connection, path: path, transaction_open: false, busy_timeout: time.seconds(5).must(), cached: [], prepared: 0)
     )
 
 # A connection to a new database in memory, empty, which no other connection
@@ -171,17 +166,30 @@ function is_closed(db: Db) -> bool
 # holds before it fails `timeout`.
 #
 # - `db`: the connection.
-# - `ms`: the milliseconds, from 0, which fails at once, to 2,147,483,647.
+# - `timeout`: from zero, which fails at once, to 2,147,483,647 ms, the
+#   most SQLite takes, a part of a millisecond counting as a whole one;
+#   `time.max_duration()` is that most.
 #
-# Fails `invalid` where `ms` is below 0 or past 2,147,483,647, and `closed`
-# where the connection is closed. See also `DEFAULT_BUSY_TIMEOUT_MS`.
-function set_busy_timeout(@db: Db, ms: i64) -> ()?
+# Fails `invalid` where `timeout` is below zero or past 2,147,483,647 ms,
+# and `closed` where the connection is closed. See also `open`.
+function set_busy_timeout(@db: Db, timeout: time.Duration) -> ()?
     connections.live(db.connection, path: db.path)?
+    whole = timeout.nanoseconds / 1_000_000
 
-    if ms < 0 || ms > 2147483647
-        return fail(code: sql.INVALID, msg: f"a busy timeout of {ms} ms is outside 0 to 2147483647")
+    ms = if timeout == time.max_duration()
+        2147483647
+    else if timeout.nanoseconds % 1_000_000 != 0
+        whole + 1
+    else
+        whole
+
+    if timeout.nanoseconds < 0 || ms > 2147483647
+        return fail(
+            code: sql.INVALID,
+            msg: f"a busy timeout of {time.format_duration(timeout)} is outside zero to 2147483647 ms"
+        )
     _ = hero_sqlite3.busy_timeout(db.connection, ms)
-    db.busy_timeout_ms @ ms
+    db.busy_timeout @ timeout
     return ok()
 
 ## The connection
@@ -201,9 +209,9 @@ record Db
     # Whether a transaction is open, as SQLite said after the last call that
     # ran a statement.
     transaction_open: bool
-    # The milliseconds a statement waits for another connection's lock,
-    # `DEFAULT_BUSY_TIMEOUT_MS` until `set_busy_timeout` sets another.
-    busy_timeout_ms: i64
+    # How long a statement waits for another connection's lock, five
+    # seconds until `set_busy_timeout` sets another.
+    busy_timeout: time.Duration
     # The statements `exec`, `query` and `query_one` compiled, kept by their
     # text and run again without compiling: the 64 last compiled, at most.
     # `close` and `exec_script` give them back.
@@ -595,7 +603,7 @@ test "close: refused while a prepared statement is open, twice fails closed, and
         .err e => assert e.code == sql.CLOSED && e.msg == "the connection to \":memory:\" is closed"
 
     assert exec(@db, "SELECT 1", []).is_err() && query(@db, "SELECT 1", []).is_err() && query_one(@db, "SELECT 1", []).is_err()
-    assert exec_script(@db, "SELECT 1").is_err() && prepare(@db, "SELECT 1").is_err() && set_busy_timeout(@db, 1).is_err()
+    assert exec_script(@db, "SELECT 1").is_err() && prepare(@db, "SELECT 1").is_err() && set_busy_timeout(@db, time.milliseconds(1).must()).is_err()
     assert begin(@db).is_err() && commit(@db).is_err() && rollback(@db).is_err() && total_changes(db).is_err()
     assert !in_transaction(db)
 
@@ -817,8 +825,8 @@ test "set_busy_timeout: a write lock another connection holds, waited for 0 ms, 
     a @= open(path).must()
     b @= open(path).must()
     exec_script(@a, "CREATE TABLE IF NOT EXISTS t(x)").must()
-    set_busy_timeout(@b, 0).must()
-    assert b.busy_timeout_ms == 0
+    set_busy_timeout(@b, time.nanoseconds(0)).must()
+    assert b.busy_timeout == time.nanoseconds(0)
     _ = exec(@a, "BEGIN IMMEDIATE", []).must()
 
     match exec(@b, "INSERT INTO t VALUES (1)", [])
@@ -827,11 +835,11 @@ test "set_busy_timeout: a write lock another connection holds, waited for 0 ms, 
 
     rollback(@a).must()
 
-    match set_busy_timeout(@b, -1)
+    match set_busy_timeout(@b, time.milliseconds(-1).must())
         .ok _  => assert false
         .err e => assert e.code == sql.INVALID && e.msg == "a busy timeout of -1 ms is outside 0 to 2147483647"
 
-    assert set_busy_timeout(@b, 2147483648).is_err()
+    assert set_busy_timeout(@b, time.milliseconds(2147483648).must()).is_err()
     close(@a).must()
     close(@b).must()
 
@@ -913,7 +921,7 @@ test "ping: open, then closed"
 # A connection that gives up on a lock after a second.
 test "set_busy_timeout: one second"
     db @= open_memory().must()
-    set_busy_timeout(@db, 1000).must()
+    set_busy_timeout(@db, time.seconds(1).must()).must()
     close(@db).must()
 
 # Whether a transaction is open.

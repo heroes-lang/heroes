@@ -24,8 +24,9 @@
 # `/tmp/heroes-lock-<name>` for a lock, and the object `<name>` on Windows,
 # where one name names one object of any kind.
 #
-# **Every wait has a bound**, `within_ms`: the milliseconds a call may wait,
-# 0 to try once without waiting, and `FOREVER` for no bound. A channel's
+# **Every wait has a bound**, `within`: how long a call may wait, zero to try
+# once without waiting, and `time.max_duration()` for no bound, a part of a
+# millisecond counting as a whole one. A channel's
 # reads and writes end by the deadline `set_deadline` gives. And every wait
 # here, a channel's read and write among them, fails `stopped` within about
 # 50 ms once the program is asked to stop (`os.catch_stop`, `os.ask_stop`).
@@ -48,6 +49,7 @@ use ipc/internal/shared
 use ipc/internal/waits
 use os
 use process
+use time
 
 ## Codes
 
@@ -75,8 +77,8 @@ constant PERMISSION: str
 # An argument outside what the function reads: a name outside the rule, a
 # path longer than a socket's address holds, a path a connect is given where
 # something stands that is no socket and no folder (a file, a FIFO, a
-# device), a size or an offset outside the memory, a `within_ms` below 0 that
-# is not `FOREVER`, a message past its most, a lock asked again or released
+# device), a size or an offset outside the memory, a time below zero, a
+# message past its most, a lock asked again or released
 # by a thread that does not hold it.
 constant INVALID: str
     "invalid"
@@ -114,12 +116,6 @@ constant UNSUPPORTED: str
 # carries the system's own number.
 constant FAILED: str
     "failed"
-
-## Waiting
-
-# What `within_ms` takes for a wait with no bound.
-constant FOREVER: i64
-    -1
 
 ## Names
 
@@ -205,19 +201,19 @@ function listen_pipe(name: str) -> Listener?
 # The next connection on `l`, as a stream the caller closes with `io.close`.
 #
 # - `l`: the listener, which stays open.
-# - `within_ms`: the milliseconds to wait for a connection, 0 to take one
-#   waiting already, `FOREVER` for no bound.
+# - `within`: how long to wait for a connection, zero to take one waiting
+#   already, `time.max_duration()` for no bound.
 #
 # Fails `timeout` where none comes in time, `closed` where `l` is closed (or
 # is closed by another thread while the call waits), `stopped` where the
-# program is asked to stop, `invalid` for a negative bound that is not
-# `FOREVER` or a second `accept` on a pipe at once.
+# program is asked to stop, `invalid` for a bound below zero or a second
+# `accept` on a pipe at once.
 #
 # See also `listen`, `connect`, `read_message`.
-function accept(l: Listener, within_ms: i64) -> io.Stream?
+function accept(l: Listener, within: time.Duration) -> io.Stream?
     return channels.accept(
         l.handle,
-        within_ms: within_ms,
+        within: within,
         where: channels.listener_label(l.name, abstract: l.space == .abstract, pipe: l.space == .pipe)
     )
 
@@ -225,8 +221,8 @@ function accept(l: Listener, within_ms: i64) -> io.Stream?
 # `io.close`.
 #
 # - `path`: the listener's socket file.
-# - `within_ms`: the milliseconds to wait while the listener has no room for
-#   another connection, 0 not to wait, `FOREVER` for no bound.
+# - `within`: how long to wait while the listener has no room for another
+#   connection, zero not to wait, `time.max_duration()` for no bound.
 #
 # Fails `file_not_found` where nothing is at the path, `closed` where a
 # socket file is there and nothing listens on it, `is_a_directory` where a
@@ -238,36 +234,36 @@ function accept(l: Listener, within_ms: i64) -> io.Stream?
 # the system answered (a link is followed, as the connect follows it).
 #
 # See also `listen`, `write_message`.
-function connect(path: str, within_ms: i64) -> io.Stream?
-    return channels.connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within_ms: within_ms)
+function connect(path: str, within: time.Duration) -> io.Stream?
+    return channels.connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within: within)
 
 # A connection to the listener on `name` in Linux's abstract space, as
 # `connect` answers one.
 #
 # - `name`: a name by `is_name`'s rule.
-# - `within_ms`: as for `connect`.
+# - `within`: as for `connect`.
 #
 # Fails `unsupported` off Linux, `closed` where nothing listens on the name,
 # and as `connect` does.
 #
 # See also `listen_abstract`.
-function connect_abstract(name: str, within_ms: i64) -> io.Stream?
-    return channels.connect(name, space: hero_ipc.HERO_IPC_SPACE_ABSTRACT, within_ms: within_ms)
+function connect_abstract(name: str, within: time.Duration) -> io.Stream?
+    return channels.connect(name, space: hero_ipc.HERO_IPC_SPACE_ABSTRACT, within: within)
 
 # A connection to the Windows named pipe `\\.\pipe\` and `name`, as
 # `connect` answers one. The listener may learn who connects and never act
 # as this process.
 #
 # - `name`: a name by `is_name`'s rule.
-# - `within_ms`: the milliseconds to wait while every instance of the pipe
-#   serves a client, 0 not to wait, `FOREVER` for no bound.
+# - `within`: how long to wait while every instance of the pipe serves a
+#   client, zero not to wait, `time.max_duration()` for no bound.
 #
 # Fails `unsupported` off Windows, `not_found` where no listener has the
 # name, and as `connect` does.
 #
 # See also `listen_pipe`.
-function connect_pipe(name: str, within_ms: i64) -> io.Stream?
-    return channels.connect(name, space: hero_ipc.HERO_IPC_SPACE_PIPE, within_ms: within_ms)
+function connect_pipe(name: str, within: time.Duration) -> io.Stream?
+    return channels.connect(name, space: hero_ipc.HERO_IPC_SPACE_PIPE, within: within)
 
 # Closes `l` and empties the place, so every later call through it fails
 # `closed`; an `accept` another thread waits in ends within about 50 ms,
@@ -286,17 +282,19 @@ function close_listener(@l: Listener) -> ()?
     )
 
 # Makes every later and waiting read and write of the channel `s` end by
-# `deadline_ms` milliseconds from now, failing `timeout`: a time, not a span.
+# `deadline` from now, failing `timeout`: a time, not a span.
 #
 # - `s`: a stream `accept` or a `connect` answered.
-# - `deadline_ms`: milliseconds from now, 0 taking the deadline away.
+# - `deadline`: how long from now; zero ends at once a read or a write that
+#   would wait and spares one that need not, `time.max_duration()` takes
+#   the deadline away.
 #
-# Fails `invalid` where `deadline_ms` is below 0 or `s` is no channel of this
+# Fails `invalid` where `deadline` is below zero or `s` is no channel of this
 # package, `closed` where `s` is closed.
 #
 # See also `accept`, `connect`.
-function set_deadline(s: io.Stream, deadline_ms: i64) -> ()?
-    return channels.set_deadline(s, ms: deadline_ms)
+function set_deadline(s: io.Stream, deadline: time.Duration) -> ()?
+    return channels.set_deadline(s, deadline: deadline)
 
 # Closes the writing side of the channel `s`, so its peer reads its end once
 # the bytes written are read, while `s` still reads what the peer writes.
@@ -572,8 +570,8 @@ function open_semaphore(name: str) -> Semaphore?
 # Takes one from the count of `s`, waiting while it is 0.
 #
 # - `s`: the semaphore.
-# - `within_ms`: the milliseconds to wait, 0 to try once, `FOREVER` for no
-#   bound.
+# - `within`: how long to wait, zero to try once, `time.max_duration()` for
+#   no bound.
 #
 # On macOS, which has no wait with a bound on a semaphore, the wait tries
 # again in steps growing from 0.1 ms to 2 ms: a release is seen within about
@@ -581,12 +579,11 @@ function open_semaphore(name: str) -> Semaphore?
 # 2026-11-17); Linux and Windows wait on the system's own.
 #
 # Fails `timeout` past the bound, `stopped` where the program is asked to
-# stop, `closed` where `s` is closed, `invalid` for a negative bound that is
-# not `FOREVER`.
+# stop, `closed` where `s` is closed, `invalid` for a bound below zero.
 #
 # See also `release_semaphore`.
-function acquire_semaphore(s: Semaphore, within_ms: i64) -> ()?
-    return waits.acquire_semaphore(s.handle, name: s.name, within_ms: within_ms)
+function acquire_semaphore(s: Semaphore, within: time.Duration) -> ()?
+    return waits.acquire_semaphore(s.handle, name: s.name, within: within)
 
 # Adds one to the count of `s`, letting one waiter through.
 #
@@ -667,8 +664,8 @@ function open_lock(name: str, permission: i64) -> Lock?
 # answers how.
 #
 # - `l`: the lock.
-# - `within_ms`: the milliseconds to wait, 0 to try once, `FOREVER` for no
-#   bound.
+# - `within`: how long to wait, zero to try once, `time.max_duration()` for
+#   no bound.
 #
 # On POSIX the wait tries again in steps growing from 0.1 ms to 2 ms, the
 # system's lock taking no bound: a release is seen within about 3 ms
@@ -676,12 +673,12 @@ function open_lock(name: str, permission: i64) -> Lock?
 #
 # Fails `timeout` past the bound, `invalid` where the calling thread holds
 # it already through this or another `Lock` (it would wait for itself) or
-# for a negative bound that is not `FOREVER`, `stopped` where the program is
+# for a bound below zero, `stopped` where the program is
 # asked to stop, `closed` where `l` is closed.
 #
 # See also `release_lock`.
-function acquire_lock(l: Lock, within_ms: i64) -> Acquired?
-    if waits.acquire_lock(l.handle, name: l.name, within_ms: within_ms)?
+function acquire_lock(l: Lock, within: time.Duration) -> Acquired?
+    if waits.acquire_lock(l.handle, name: l.name, within: within)?
         return ok(.abandoned)
     return ok(.clean)
 
@@ -733,7 +730,7 @@ test "two processes: a child connects to a listener, and a message goes there an
     path = f"build/ipc-two-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
     child @= across.start("echo", words: [path]).must()
-    s @= accept(l, within_ms: 20000).must()
+    s @= accept(l, within: time.seconds(20).must()).must()
     assert write_message(s, data: [104, 105]) == ok()
     assert read_message(s, most: 100).must() == [104, 105, 33]
     assert peer_of(s).must().pid != os.pid()
@@ -770,14 +767,14 @@ test "two processes: a lock a child holds is waited on with a bound and timed ou
     go @= create_semaphore(go_name, count: 0, permission: 0o600).must()
     l @= open_lock(lock_name, permission: 0o600).must()
     child @= across.start("hold", words: [lock_name, ready_name, go_name]).must()
-    assert acquire_semaphore(ready, within_ms: 20000) == ok()
+    assert acquire_semaphore(ready, within: time.seconds(20).must()) == ok()
 
-    match acquire_lock(l, within_ms: 100)
+    match acquire_lock(l, within: time.milliseconds(100).must())
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
     assert release_semaphore(go) == ok()
-    assert acquire_lock(l, within_ms: 20000).must() == .clean
+    assert acquire_lock(l, within: time.seconds(20).must()).must() == .clean
     assert release_lock(l) == ok()
     assert process.is_success(process.wait(@child).must())
     assert remove_lock(lock_name) == ok()
@@ -798,12 +795,12 @@ test "two processes: a child killed while it holds a lock leaves it to the next 
     go @= create_semaphore(go_name, count: 0, permission: 0o600).must()
     l @= open_lock(lock_name, permission: 0o600).must()
     child @= across.start("hold", words: [lock_name, ready_name, go_name]).must()
-    assert acquire_semaphore(ready, within_ms: 20000) == ok()
+    assert acquire_semaphore(ready, within: time.seconds(20).must()) == ok()
     assert process.kill(child) == ok()
     assert !process.is_success(process.wait(@child).must())
-    assert acquire_lock(l, within_ms: 5000).must() == .abandoned
+    assert acquire_lock(l, within: time.seconds(5).must()).must() == .abandoned
     assert release_lock(l) == ok()
-    assert acquire_lock(l, within_ms: 0).must() == .clean
+    assert acquire_lock(l, within: time.nanoseconds(0)).must() == .clean
     assert remove_lock(lock_name) == ok()
     assert remove_semaphore(go_name) == ok()
     assert remove_semaphore(ready_name) == ok()
@@ -814,7 +811,7 @@ test "two processes: a child killed while it holds a lock leaves it to the next 
 test "two threads of one process: a lock one holds is refused to the other until it is released"
     name = f"ix-th-{os.pid()}"
     l @= open_lock(name, permission: 0o600).must()
-    assert acquire_lock(l, within_ms: 0).must() == .clean
+    assert acquire_lock(l, within: time.nanoseconds(0)).must() == .clean
     assert across.try_from_another_thread(name) == "refused"
     assert release_lock(l) == ok()
     assert across.try_from_another_thread(name) == "taken"
@@ -863,7 +860,7 @@ test "remove_memory, remove_semaphore and remove_lock after the last close: kept
         assert close_memory(@again) == ok()
         assert remove_memory(memory_name) == ok()
         opened @= open_semaphore(semaphore_name).must()
-        assert acquire_semaphore(opened, within_ms: 0) == ok()
+        assert acquire_semaphore(opened, within: time.nanoseconds(0)) == ok()
         assert close_semaphore(@opened) == ok()
         assert remove_semaphore(semaphore_name) == ok()
         assert remove_lock(lock_name) == ok()
@@ -874,7 +871,7 @@ test "remove_memory, remove_semaphore and remove_lock after the last close: kept
 # as for a socket file nothing listens on. A file is `invalid`, the words
 # `failure`'s own test holds; the floor's test asks each shape of the disk.
 test "connect: a folder at the path is is_a_directory, told what is there, on every platform (defect 2609)"
-    match connect(".", within_ms: 0)
+    match connect(".", within: time.nanoseconds(0))
         .ok _ => assert false
         .err e =>
             assert e.code == IS_A_DIRECTORY
@@ -917,10 +914,10 @@ test "listen_pipe: a named pipe on Windows, unsupported elsewhere"
 test "accept: a connection, then a bound of 10 ms passed"
     path = f"build/example-accept-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
-    client @= connect(path, within_ms: 1000).must()
-    server @= accept(l, within_ms: 1000).must()
+    client @= connect(path, within: time.seconds(1).must()).must()
+    server @= accept(l, within: time.seconds(1).must()).must()
 
-    match accept(l, within_ms: 10)
+    match accept(l, within: time.milliseconds(10).must())
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -932,29 +929,29 @@ test "accept: a connection, then a bound of 10 ms passed"
 test "connect: bytes through a channel, and nothing at the path"
     path = f"build/example-connect-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
-    client @= connect(path, within_ms: 1000).must()
-    server @= accept(l, within_ms: 1000).must()
+    client @= connect(path, within: time.seconds(1).must()).must()
+    server @= accept(l, within: time.seconds(1).must()).must()
     assert io.write_text(client, text: "ping") == ok()
     assert io.read_exact(server, n: 4).must() == [112, 105, 110, 103]
     assert io.close(@client) == ok()
     assert io.close(@server) == ok()
     assert close_listener(@l) == ok()
 
-    match connect(path, within_ms: 0)
+    match connect(path, within: time.nanoseconds(0))
         .ok _  => assert false
         .err e => assert e.code == FILE_NOT_FOUND
 
 # A connection to an abstract name on Linux; every other platform answers
 # `unsupported`.
 test "connect_abstract: on Linux, unsupported elsewhere"
-    match connect_abstract(f"example-none-{os.pid()}", within_ms: 0)
+    match connect_abstract(f"example-none-{os.pid()}", within: time.nanoseconds(0))
         .ok _  => assert false
         .err e => assert e.code == CLOSED || e.code == UNSUPPORTED
 
 # A connection to a Windows named pipe; every other platform answers
 # `unsupported`.
 test "connect_pipe: on Windows, unsupported elsewhere"
-    match connect_pipe(f"example-none-{os.pid()}", within_ms: 0)
+    match connect_pipe(f"example-none-{os.pid()}", within: time.nanoseconds(0))
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND || e.code == UNSUPPORTED
 
@@ -971,9 +968,9 @@ test "close_listener: once, then closed already"
 test "set_deadline: a read past 20 ms"
     path = f"build/example-deadline-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
-    client @= connect(path, within_ms: 1000).must()
-    server @= accept(l, within_ms: 1000).must()
-    assert set_deadline(server, deadline_ms: 20) == ok()
+    client @= connect(path, within: time.seconds(1).must()).must()
+    server @= accept(l, within: time.seconds(1).must()).must()
+    assert set_deadline(server, deadline: time.milliseconds(20).must()) == ok()
 
     match io.read(server, n: 1)
         .ok _  => assert false
@@ -987,8 +984,8 @@ test "set_deadline: a read past 20 ms"
 test "close_write: the peer reads its end"
     path = f"build/example-half-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
-    client @= connect(path, within_ms: 1000).must()
-    server @= accept(l, within_ms: 1000).must()
+    client @= connect(path, within: time.seconds(1).must()).must()
+    server @= accept(l, within: time.seconds(1).must()).must()
     assert io.write_text(client, text: "last") == ok()
     assert close_write(client) == ok()
     assert io.read_all_text(server).must() == "last"
@@ -1000,8 +997,8 @@ test "close_write: the peer reads its end"
 test "peer_of: the process at the other end"
     path = f"build/example-peer-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
-    client @= connect(path, within_ms: 1000).must()
-    server @= accept(l, within_ms: 1000).must()
+    client @= connect(path, within: time.seconds(1).must()).must()
+    server @= accept(l, within: time.seconds(1).must()).must()
     assert peer_of(server).must().pid == os.pid()
     assert io.close(@client) == ok()
     assert io.close(@server) == ok()
@@ -1144,9 +1141,9 @@ test "remove_memory: then nothing to open"
 test "create_semaphore: a count of 2"
     name = f"ix-sc-{os.pid()}"
     s @= create_semaphore(name, count: 2, permission: 0o600).must()
-    assert acquire_semaphore(s, within_ms: 0) == ok()
-    assert acquire_semaphore(s, within_ms: 0) == ok()
-    assert acquire_semaphore(s, within_ms: 0).is_err()
+    assert acquire_semaphore(s, within: time.nanoseconds(0)) == ok()
+    assert acquire_semaphore(s, within: time.nanoseconds(0)) == ok()
+    assert acquire_semaphore(s, within: time.nanoseconds(0)).is_err()
     assert remove_semaphore(name) == ok()
     assert close_semaphore(@s) == ok()
 
@@ -1155,8 +1152,8 @@ test "open_semaphore: one count seen through two handles"
     name = f"ix-so-{os.pid()}"
     s @= create_semaphore(name, count: 1, permission: 0o600).must()
     o @= open_semaphore(name).must()
-    assert acquire_semaphore(o, within_ms: 0) == ok()
-    assert acquire_semaphore(s, within_ms: 0).is_err()
+    assert acquire_semaphore(o, within: time.nanoseconds(0)) == ok()
+    assert acquire_semaphore(s, within: time.nanoseconds(0)).is_err()
     assert remove_semaphore(name) == ok()
     assert close_semaphore(@o) == ok()
     assert close_semaphore(@s) == ok()
@@ -1166,7 +1163,7 @@ test "acquire_semaphore: a bound passed"
     name = f"ix-sa-{os.pid()}"
     s @= create_semaphore(name, count: 0, permission: 0o600).must()
 
-    match acquire_semaphore(s, within_ms: 20)
+    match acquire_semaphore(s, within: time.milliseconds(20).must())
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -1178,7 +1175,7 @@ test "release_semaphore: then a take passes"
     name = f"ix-sr-{os.pid()}"
     s @= create_semaphore(name, count: 0, permission: 0o600).must()
     assert release_semaphore(s) == ok()
-    assert acquire_semaphore(s, within_ms: 0) == ok()
+    assert acquire_semaphore(s, within: time.nanoseconds(0)) == ok()
     assert remove_semaphore(name) == ok()
     assert close_semaphore(@s) == ok()
 
@@ -1202,7 +1199,7 @@ test "remove_semaphore: then nothing to open"
 test "open_lock: opened, taken, released"
     name = f"ix-lo-{os.pid()}"
     l @= open_lock(name, permission: 0o600).must()
-    assert acquire_lock(l, within_ms: 0).must() == .clean
+    assert acquire_lock(l, within: time.nanoseconds(0)).must() == .clean
     assert release_lock(l) == ok()
     assert remove_lock(name) == ok()
     assert close_lock(@l) == ok()
@@ -1212,9 +1209,9 @@ test "open_lock: opened, taken, released"
 test "acquire_lock: taken, then asked again by its holder"
     name = f"ix-la-{os.pid()}"
     l @= open_lock(name, permission: 0o600).must()
-    assert acquire_lock(l, within_ms: FOREVER).must() == .clean
+    assert acquire_lock(l, within: time.max_duration()).must() == .clean
 
-    match acquire_lock(l, within_ms: 10)
+    match acquire_lock(l, within: time.milliseconds(10).must())
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -1226,7 +1223,7 @@ test "acquire_lock: taken, then asked again by its holder"
 test "release_lock: held, then not held"
     name = f"ix-lr-{os.pid()}"
     l @= open_lock(name, permission: 0o600).must()
-    assert acquire_lock(l, within_ms: 0).must() == .clean
+    assert acquire_lock(l, within: time.nanoseconds(0)).must() == .clean
     assert release_lock(l) == ok()
 
     match release_lock(l)
@@ -1240,10 +1237,10 @@ test "release_lock: held, then not held"
 test "close_lock: held, closed, taken clean again"
     name = f"ix-lk-{os.pid()}"
     l @= open_lock(name, permission: 0o600).must()
-    assert acquire_lock(l, within_ms: 0).must() == .clean
+    assert acquire_lock(l, within: time.nanoseconds(0)).must() == .clean
     assert close_lock(@l) == ok()
     again @= open_lock(name, permission: 0o600).must()
-    assert acquire_lock(again, within_ms: 0).must() == .clean
+    assert acquire_lock(again, within: time.nanoseconds(0)).must() == .clean
     assert remove_lock(name) == ok()
     assert close_lock(@again) == ok()
 

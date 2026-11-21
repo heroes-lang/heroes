@@ -8,6 +8,7 @@ use sql/odbc/hero_odbc
 use sql/odbc/internal/failure
 use sql/odbc/internal/fill
 use sql/odbc/internal/values
+use time
 
 # What a statement's current result says of its columns.
 record Described
@@ -15,6 +16,27 @@ record Described
     columns: [sql.Column]
     # Each column's SQL type, as its driver describes it.
     types: [i64]
+
+# ODBC's whole seconds for `d`, as a driver takes a timeout:
+# `time.max_duration()` is 0, ODBC's no limit; any other is rounded up to a
+# whole second and is 1 at least, since a driver cannot be asked not to
+# wait; below zero is -1, which the face refuses.
+#
+# - `d`: a time the face was handed.
+function seconds_of(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return 0
+
+    if d.nanoseconds < 0
+        return -1
+    whole = d.nanoseconds / 1_000_000_000
+
+    if d.nanoseconds % 1_000_000_000 != 0
+        return whole + 1
+
+    if whole == 0
+        return 1
+    return whole
 
 # A new statement of `c`, stopped by its driver after `timeout_seconds`
 # where that is above 0.

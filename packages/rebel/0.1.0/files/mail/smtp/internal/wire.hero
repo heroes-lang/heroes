@@ -45,8 +45,8 @@ record Session
     link: Link
     # The reader, and through `reader.stream` the stream itself.
     reader: io.Reader
-    # The milliseconds each step may take, 0 for no limit.
-    deadline_ms: i64
+    # How long each step may take, `time.max_duration()` for no limit.
+    deadline: time.Duration
     # The name the client gives itself in EHLO.
     local_name: str
     # The server's greeting.
@@ -70,11 +70,11 @@ function nothing() -> Answer
     return Answer(code: 0, enhanced: "", lines: [])
 
 # A session over a plain connection.
-function over_plain(conn: net.Conn, deadline_ms: i64, local_name: str) -> Session
+function over_plain(conn: net.Conn, deadline: time.Duration, local_name: str) -> Session
     return Session(
         link: .plain,
         reader: io.reader(conn.stream),
-        deadline_ms: deadline_ms,
+        deadline: deadline,
         local_name: local_name,
         greeting: nothing(),
         extensions: {},
@@ -82,11 +82,11 @@ function over_plain(conn: net.Conn, deadline_ms: i64, local_name: str) -> Sessio
     )
 
 # A session over a TLS stream.
-function over_tls(stream: io.Stream, deadline_ms: i64, local_name: str) -> Session
+function over_tls(stream: io.Stream, deadline: time.Duration, local_name: str) -> Session
     return Session(
         link: .secure,
         reader: io.reader(stream),
-        deadline_ms: deadline_ms,
+        deadline: deadline,
         local_name: local_name,
         greeting: nothing(),
         extensions: {},
@@ -97,22 +97,27 @@ function over_tls(stream: io.Stream, deadline_ms: i64, local_name: str) -> Sessi
 function is_closed(s: Session lent) -> bool
     return io.is_closed(s.reader.stream)
 
-# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
-# being `time.max_duration()` (until this package's own step of D07; `tls`
-# takes a `time.Duration` since M-rebel-library step 88c).
+# The milliseconds of `d` as `net` takes them: `time.max_duration()` is
+# `net.FOREVER`, any other rounded up to a whole millisecond, so zero alone
+# waits not at all.
 #
-# - `ms`: milliseconds, 0 for no limit.
-function tls_deadline(ms: i64) -> time.Duration?
-    if ms == 0
-        return ok(time.max_duration())
-    return time.milliseconds(ms)
+# - `d`: zero or more, which the flow checked.
+function net_ms(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return net.FOREVER
+    whole = d.nanoseconds / 1_000_000
 
-# Makes the next steps end by `ms` milliseconds from now, 0 for no limit.
-function set_deadline(s: Session lent, ms: i64) -> ()?
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+    return whole
+
+# Makes the next steps end by `deadline` from now, `time.max_duration()`
+# for no limit.
+function set_deadline(s: Session lent, deadline: time.Duration) -> ()?
     if is_closed(s)
         return fail(code: CLOSED, msg: "the SMTP connection is closed")
 
-    return tls.set_deadline(s.reader.stream, deadline: tls_deadline(ms)?)
+    return tls.set_deadline(s.reader.stream, deadline: deadline)
 
 # Writes `data` to the server.
 function write(s: Session lent, data: [u8]) -> ()?
@@ -275,7 +280,7 @@ test "split_enhanced: a code, none, one of another class, a code with no text"
 
 test "read_reply: one line, several with an enhanced code, kept as the last"
     two = net.pair(deadline_ms: 5000).must()
-    s @= over_plain(two.first, deadline_ms: 5000, local_name: "x")
+    s @= over_plain(two.first, deadline: time.seconds(5).must(), local_name: "x")
     server @= two.second.stream
     io.write_text(server, text: "250-mx.test\r\n250-SIZE 10\r\n250 HELP\r\n550 5.1.1 no such user\r\n").must()
     a = read_reply(@s).must()
@@ -287,7 +292,7 @@ test "read_reply: one line, several with an enhanced code, kept as the last"
 
 test "read_reply: two codes in one reply, a line that is no reply, the end in a line, a line too long"
     two = net.pair(deadline_ms: 5000).must()
-    s @= over_plain(two.first, deadline_ms: 5000, local_name: "x")
+    s @= over_plain(two.first, deadline: time.seconds(5).must(), local_name: "x")
     server @= two.second.stream
     io.write_text(server, text: "250-a\r\n251 b\r\nhello\r\n").must()
 
@@ -316,14 +321,14 @@ test "read_reply: two codes in one reply, a line that is no reply, the end in a 
 
 test "set_deadline: a reply that never comes ends by its deadline, then a closed session refuses"
     two = net.pair(deadline_ms: net.FOREVER).must()
-    s @= over_plain(two.first, deadline_ms: 200, local_name: "x")
+    s @= over_plain(two.first, deadline: time.milliseconds(200).must(), local_name: "x")
     server @= two.second.stream
-    set_deadline(s, ms: 200).must()
+    set_deadline(s, deadline: time.milliseconds(200).must()).must()
 
     match read_reply(@s)
         .ok _  => assert false
         .err e => assert e.code == "timeout"
 
     close(@s).must()
-    assert set_deadline(s, ms: 10).is_err() && write_line(s, line: "NOOP").is_err() && read_reply(@s).is_err()
+    assert set_deadline(s, deadline: time.milliseconds(10).must()).is_err() && write_line(s, line: "NOOP").is_err() && read_reply(@s).is_err()
     io.close(@server).must()

@@ -36,7 +36,7 @@ function check(g: model.GroupOptions) -> ()?
     if g.topics.len() == 0
         return fail(code: model.INVALID, msg: "the consumer names no topic")
 
-    if g.session_ms < 1 || g.rebalance_ms < 1 || g.heartbeat_ms < 1 || g.heartbeat_ms >= g.session_ms
+    if g.session_ms < 1 || g.rebalance_ms < 1 || g.heartbeat_ms < 1 || g.heartbeat_ms >= g.session_ms || g.session_ms > 2147483647 || g.rebalance_ms > 2147483647
         return fail(
             code: model.INVALID,
             msg: f"the session of {g.session_ms} ms, the rebalance of {g.rebalance_ms} ms and the heartbeat of {g.heartbeat_ms} ms are not each 1 or more with the heartbeat below the session"

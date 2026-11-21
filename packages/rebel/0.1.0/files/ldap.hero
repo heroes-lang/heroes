@@ -33,7 +33,7 @@
 # **Every message is bounded**: one larger than `Options.max_message` is
 # refused before its bytes are read, a filter nests at most
 # `MAX_FILTER_DEPTH` deep and is read with a stack of its own, and each
-# operation ends by `Options.deadline_ms`. A deadline that passes, bytes that
+# operation ends by `Options.deadline`. A deadline that passes, bytes that
 # are no LDAP, or a notice of disconnection end the connection: every later
 # call fails `closed`.
 #
@@ -59,6 +59,7 @@ use numbers
 use os
 use strings
 use threads
+use time
 use tls
 
 ## Codes
@@ -372,10 +373,6 @@ constant DEFAULT_PORT: i64
 constant DEFAULT_TLS_PORT: i64
     636
 
-# The milliseconds an operation may take unless told otherwise: a minute.
-constant DEFAULT_DEADLINE_MS: i64
-    60000
-
 # The bytes a message may hold unless told otherwise: 16 MiB.
 constant DEFAULT_MAX_MESSAGE: i64
     16777216
@@ -409,15 +406,16 @@ record Options
     port: i64
     # How the connection is secured.
     security: Security
-    # The milliseconds each operation may take, its answer read whole
-    # included; 0 for no limit.
-    deadline_ms: i64
+    # How long each operation may take, its answer read whole included,
+    # zero or more, a part of a millisecond counting as a whole one: zero
+    # ends at once every wait, `time.max_duration()` sets no limit.
+    deadline: time.Duration
     # The bytes one message from the server may hold, 64 or more; a larger
     # one fails `invalid` before its bytes are read.
     max_message: i64
 
 # The options of a connection to `host` on `DEFAULT_PORT` with StartTLS,
-# the system's authorities trusted, `DEFAULT_DEADLINE_MS` and
+# the system's authorities trusted, a minute for each operation and
 # `DEFAULT_MAX_MESSAGE`.
 #
 # - `host`: the server's name or address.
@@ -428,7 +426,7 @@ function options(host: str) -> Options
         host: host,
         port: DEFAULT_PORT,
         security: .start_tls(roots: ""),
-        deadline_ms: DEFAULT_DEADLINE_MS,
+        deadline: time.minutes(1).must(),
         max_message: DEFAULT_MAX_MESSAGE
     )
 
@@ -465,8 +463,11 @@ function connect(opts: Options) -> Conn?
             msg: f"opening a connection to {opts.host}: the port {opts.port}, outside 1 to 65535"
         )
 
-    if opts.deadline_ms < 0
-        return fail(code: INVALID, msg: f"opening a connection to {opts.host}: a deadline of {opts.deadline_ms} ms")
+    if opts.deadline.nanoseconds < 0
+        return fail(
+            code: INVALID,
+            msg: f"opening a connection to {opts.host}: a deadline of {time.format_duration(opts.deadline)}, below zero"
+        )
 
     if opts.max_message < 64
         return fail(
@@ -475,9 +476,9 @@ function connect(opts: Options) -> Conn?
         )
 
     s = match opts.security
-        .plain => session.connect_plain(opts.host, port: opts.port, deadline_ms: opts.deadline_ms, max_message: opts.max_message)?
-        .direct d => session.connect_direct(host: opts.host, port: opts.port, deadline_ms: opts.deadline_ms, roots: d.roots, max_message: opts.max_message)?
-        .start_tls t => session.connect_start_tls(host: opts.host, port: opts.port, deadline_ms: opts.deadline_ms, roots: t.roots, max_message: opts.max_message)?
+        .plain => session.connect_plain(opts.host, port: opts.port, deadline: opts.deadline, max_message: opts.max_message)?
+        .direct d => session.connect_direct(host: opts.host, port: opts.port, deadline: opts.deadline, roots: d.roots, max_message: opts.max_message)?
+        .start_tls t => session.connect_start_tls(host: opts.host, port: opts.port, deadline: opts.deadline, roots: t.roots, max_message: opts.max_message)?
 
     return ok(Conn(session: s))
 
@@ -525,16 +526,16 @@ function start_tls(@c: Conn, roots: str) -> ()?
         return fail(code: INVALID, msg: f"StartTLS on {c.session.target}: a search is running")
     return session.start_tls(@c.session, roots: roots)
 
-# Sets the milliseconds each later operation on `c` may take.
+# Sets how long each later operation on `c` may take.
 #
 # - `c`: the connection.
-# - `ms`: milliseconds, 0 for no limit.
+# - `deadline`: zero or more, as `Options.deadline` takes it.
 #
-# Fails `invalid` where `ms` is below 0. See also `Options`.
-function set_deadline(@c: Conn, ms: i64) -> ()?
-    if ms < 0
-        return fail(code: INVALID, msg: f"a deadline of {ms} ms, below 0")
-    c.session.deadline_ms @ ms
+# Fails `invalid` where `deadline` is below zero. See also `Options`.
+function set_deadline(@c: Conn, deadline: time.Duration) -> ()?
+    if deadline.nanoseconds < 0
+        return fail(code: INVALID, msg: f"a deadline of {time.format_duration(deadline)}, below zero")
+    c.session.deadline @ deadline
     return ok()
 
 ## Binding
@@ -723,8 +724,10 @@ record Query
     attributes: [str]
     # The entries answered at most, 0 for the server's own limit alone.
     size_limit: i64
-    # The seconds the server may search, 0 for its own limit alone.
-    time_limit_s: i64
+    # How long the server may search, sent in whole seconds, a part of one
+    # counting as a whole one, above zero and 2,147,483,647 s at most;
+    # `time.max_duration()` for its own limit alone (LDAP's 0).
+    time_limit: time.Duration
     # Whether attributes are answered without their values.
     types_only: bool
     # When aliases are followed.
@@ -746,7 +749,7 @@ function query(base: str, f: Filter) -> Query
         filter: f,
         attributes: [],
         size_limit: 0,
-        time_limit_s: 0,
+        time_limit: time.max_duration(),
         types_only: false,
         deref: .never,
         controls: []
@@ -882,8 +885,20 @@ function start_search(@c: Conn, q: Query) -> ()?
     if q.size_limit < 0 || q.size_limit > 2147483647
         return fail(code: INVALID, msg: f"{asked}: a size limit of {q.size_limit}, outside 0 to 2147483647")
 
-    if q.time_limit_s < 0 || q.time_limit_s > 2147483647
-        return fail(code: INVALID, msg: f"{asked}: a time limit of {q.time_limit_s} s, outside 0 to 2147483647")
+    whole_seconds = q.time_limit.nanoseconds / 1_000_000_000
+
+    time_limit_s = if q.time_limit == time.max_duration()
+        0
+    else if q.time_limit.nanoseconds % 1_000_000_000 != 0
+        whole_seconds + 1
+    else
+        whole_seconds
+
+    if q.time_limit.nanoseconds < 1 || time_limit_s > 2147483647
+        return fail(
+            code: INVALID,
+            msg: f"{asked}: a time limit of {time.format_duration(q.time_limit)}, outside 1 ns to 2147483647 s"
+        )
     encoded = encode_filter(q.filter)?
 
     matching = match asn1.decode_with(data: encoded, options: asn1.Options(encoding: .ber, max_depth: wire.MAX_NESTING))
@@ -912,7 +927,7 @@ function start_search(@c: Conn, q: Query) -> ()?
         scope: scope,
         deref: deref,
         size_limit: q.size_limit,
-        time_limit: q.time_limit_s,
+        time_limit: time_limit_s,
         types_only: q.types_only,
         matching: matching,
         attributes: q.attributes
@@ -920,7 +935,7 @@ function start_search(@c: Conn, q: Query) -> ()?
     id = session.send(@c.session, op: op, controls: sent)?
     c.session.searching @ id
     c.session.asked_size @ q.size_limit
-    c.session.asked_time @ q.time_limit_s
+    c.session.asked_time @ time_limit_s
     return ok()
 
 # The next message of the search running on `c`: an entry, a reference, or
@@ -2111,9 +2126,9 @@ test "options and connect: arguments refused before any connection is made"
             .err e => assert e.code == "invalid"
 
     opts @= options("127.0.0.1")
-    opts.deadline_ms @ -1
+    opts.deadline @ time.nanoseconds(-1)
     assert connect(opts).is_err()
-    opts.deadline_ms @ 0
+    opts.deadline @ time.nanoseconds(0)
     opts.max_message @ 63
     assert connect(opts).is_err()
 
@@ -2228,7 +2243,7 @@ test "search: a size limit, a time limit and types only the query asks, answered
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     q @= query(base: "dc=example,dc=org", f: .present(attribute: "cn"))
     q.size_limit @ 1
-    q.time_limit_s @ 5
+    q.time_limit @ time.seconds(5).must()
     q.types_only @ true
     q.attributes @ ["1.1"]
     found = search(@c, q).must()
@@ -2314,7 +2329,7 @@ test "a notice of disconnection, bytes that are no LDAP, a message past its boun
         opts @= options("127.0.0.1")
         opts.port @ port
         opts.security @ .plain
-        opts.deadline_ms @ 300
+        opts.deadline @ time.milliseconds(300).must()
         opts.max_message @ 1000
         c @= connect(opts).must()
         bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
@@ -2883,7 +2898,7 @@ test "set_deadline: five seconds"
     opts.port @ port
     opts.security @ .plain
     c @= connect(opts).must()
-    set_deadline(@c, ms: 5000).must()
+    set_deadline(@c, deadline: time.seconds(5).must()).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     close(@c).must()
     assert threads.wait_text(@server) == "ok"
