@@ -159,7 +159,7 @@ function quit(@s: wire.Session) -> ()?
 function check_protected(s: wire.Session lent, host: str) -> ()?
     match s.link
         .secure => return ok()
-        .plain _ =>
+        .plain =>
             if protocol.is_loopback(host)
                 return ok()
             return fail(

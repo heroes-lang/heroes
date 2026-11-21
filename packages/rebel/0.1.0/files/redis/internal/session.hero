@@ -6,7 +6,6 @@
 # then fails `closed`.
 
 use io
-use net
 use redis/internal/resp
 use tls
 
@@ -37,12 +36,9 @@ constant CHUNK: i64
 
 # What carries the conversation.
 variant Link
-    # A TCP connection of `net`, whose deadline `net` moves.
-    plain
-        # The connection.
-        conn: net.Conn
-    # A TLS stream of `tls`, whose deadline `tls` moves.
-    secured
+    # A connection of `net` or `tls`, plain or over TLS, whose deadline
+    # `tls.set_deadline` moves either way.
+    network
     # Two pipes of a test's scripted server, with no deadline.
     scripted
 
@@ -313,8 +309,7 @@ function set_deadline(s: Session, ms: i64) -> ()?
         return closed_failure(s)
 
     match s.link
-        .plain p  => return net.set_deadline(p.conn.stream, deadline_ms: ms)
-        .secured  => return tls.set_deadline(s.out, deadline_ms: ms)
+        .network  => return tls.set_deadline(s.out, deadline_ms: ms)
         .scripted => return fail(code: UNSUPPORTED, msg: "a scripted server has no deadline")
 
 # Closes the connection's stream and ends the session.
