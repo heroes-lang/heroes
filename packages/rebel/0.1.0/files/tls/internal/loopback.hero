@@ -18,6 +18,7 @@ use os
 use strings
 use threads
 use time
+use tls
 use tls/hero_tls
 use tls/internal/connections
 use tls/internal/fixture
@@ -347,6 +348,55 @@ function held_elsewhere(port: i64) -> bool
             net.close_listener(@held).must()
             return false
         .err e => return e.code == net.EXISTS
+
+# One connect over TLS to the port the system gives next, where nothing of
+# this test listens, and what it answered, for defect 2623's test: `closed`
+# where it was refused as nothing listening there; `itself` where it was
+# handed back connected to its own port; `elsewhere` where a socket of
+# another program held the port before the connect or after a wrong answer,
+# or where the connection made reached one from a port of its own; else the
+# code and words of the wrong answer.
+#
+# A plain listener on port 0 shows the port the system gave last, and on
+# macOS, which gives ports in order, the connect is given the next, the
+# very port it connects to. A program that takes that port in the moment
+# before the connect and lets it go before the witness after it leaves a
+# wrong answer nothing explains: a starter's control listener, which lives a
+# few milliseconds, did so in 81 tests of 300 beside two loops of
+# `connect_after`'s Postgres round (2026-11-21), so the test asks again on
+# such an answer, and tells the defect, which answered wrong on 495 tries of
+# 500 before step 89a, by three in a row.
+function steered() -> str
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    target = l.address.port + 1
+    net.close_listener(@l).must()
+
+    if target > 65535 || held_elsewhere(target)
+        return "elsewhere"
+    secured = tls.connect(
+        host: "127.0.0.1",
+        port: target,
+        deadline: time.seconds(10).must(),
+        client: tls.Client(roots: "", protocols: [])
+    )
+
+    match secured
+        .ok s =>
+            stream @= s.stream
+            closed_or_given(@stream)
+
+            if s.local.port == s.remote.port
+                return "itself"
+            return "elsewhere"
+        .err e =>
+            said = "connecting over TLS to 127.0.0.1 port " + to_str(target) + ": nothing listens there"
+
+            if e.code == tls.CLOSED && strings.has_prefix(s: e.msg, prefix: said)
+                return "closed"
+
+            if held_elsewhere(target)
+                return "elsewhere"
+            return e.code + ": " + e.msg
 
 # A server running on a thread of its own, and the port it listens on.
 record Started

@@ -689,35 +689,24 @@ test "close_listener: the port listens no more once it returns"
 # (`loopback.held_elsewhere`), and one another program takes in the moment
 # before the connect is told apart by the same witness after it, which a
 # connect the system refused leaves free (296 rounds of 296 before the
-# repair).
+# repair). One another program takes and lets go before that witness leaves
+# a wrong answer nothing explains, so a round asks again on one, three tries
+# at most (`loopback.steered`), and a connection handed back connected to
+# itself fails it at once.
 test "connect: the very port the system gives the connect, nothing listening there, fails closed"
     if is_available()
         rounds @= 0
 
         while rounds < 20
             rounds @ rounds + 1
-            l @= net.listen(host: "127.0.0.1", port: 0).must()
-            target = l.address.port + 1
-            net.close_listener(@l).must()
+            answer @= loopback.steered()
+            tries @= 1
 
-            if target <= 65535 && !loopback.held_elsewhere(target)
-                secured = connect(
-                    host: "127.0.0.1",
-                    port: target,
-                    deadline: time.seconds(10).must(),
-                    client: Client(roots: "", protocols: [])
-                )
+            while answer != "closed" && answer != "elsewhere" && answer != "itself" && tries < 3
+                tries @ tries + 1
+                answer @ loopback.steered()
 
-                match secured
-                    .ok s =>
-                        stream @= s.stream
-                        loopback.closed_or_given(@stream)
-                        assert s.local.port != s.remote.port && loopback.held_elsewhere(target)
-                    .err e =>
-                        said = "connecting over TLS to 127.0.0.1 port " + to_str(target) + ": nothing listens there"
-
-                        if e.code != CLOSED || e.msg.len() < said.len() || e.msg.slice(from: 0, to: said.len()) != said
-                            assert loopback.held_elsewhere(target)
+            assert answer == "closed" || answer == "elsewhere"
 
 # A connection made whose handshake nobody answers is told `timeout` when
 # its deadline passes, never `failed` nor `closed`: the listener is plain
