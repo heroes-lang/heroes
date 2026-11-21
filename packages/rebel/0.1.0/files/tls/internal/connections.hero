@@ -506,9 +506,7 @@ test "connect: a port nothing listens on fails closed"
     assert held.is_err()
 
     if hero_tls.available() == 1
-        free @= listen(host: "127.0.0.1", port: 0, chain: fixture_chain(), key: fixture_key(), protocols: []).must()
-        port = free.port
-        close_listener(@free.handle, asked: "t").must()
+        port = hero_tls.test_silent_port()
         gone = connect(
             host: "127.0.0.1",
             port: port,

@@ -9,6 +9,7 @@ use io
 use net/hero_net
 use net/hero_stream_net
 use net/internal/failure
+use net/internal/fixture
 use net/internal/format
 use net/internal/hosts
 use net/internal/names
@@ -399,9 +400,7 @@ test "connect: IPv6 loopback, and a name looked up first"
     close(@v4.socket, asked: "closing").must()
 
 test "connect: nothing listening is closed, and an empty host, a zero byte, a port and a deadline out of range are invalid"
-    gone @= listen("127.0.0.1", port: 0).must()
-    port = gone.address.port
-    close(@gone.socket, asked: "closing").must()
+    port = fixture.silent_port()
 
     match connect(host: "127.0.0.1", port: port, deadline_ms: 0)
         .ok _  => assert false

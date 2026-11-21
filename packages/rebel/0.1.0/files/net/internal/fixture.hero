@@ -1,11 +1,12 @@
 # What the face's tests share and a program never calls: the index of the
-# machine's loopback interface, whether another program holds a port, and
-# the connect defect 2623's test steers to the port the system gives next,
-# each through the face itself, which a private module may use since panel
-# 252's R1.
+# machine's loopback interface, whether another program holds a port, a
+# port where nothing listens, and the connect defect 2623's test steers to
+# the port the system gives next, each through the face itself, which a
+# private module may use since panel 252's R1.
 
 use io
 use net
+use os
 
 # The index of the interface holding 127.0.0.1, the machine's loopback, 0
 # where none is listed: what the tests join and send on, since it holds on
@@ -30,6 +31,38 @@ function held_elsewhere(port: i64) -> bool
             net.close_listener(@held).must()
             return false
         .err e => return e.code == net.EXISTS
+
+# A port of the loopback address where nothing listens, for a test of what
+# a connect there answers. A port a listener chose and let go is any
+# program's at once, a connect's or a listener's, before the test's connect
+# reaches it; this one is drawn by the system's generator from 20000 to
+# 31999, below Linux's 32768 to 60999 and macOS's and Windows' 49152 to
+# 65535, so no system gives it to a socket of its own choosing, and kept
+# where a connect there is refused, so a listener of another program is
+# passed over, on that address or on every address, which a listen on
+# 127.0.0.1 does not see on macOS when the program is the same user's
+# (measured 2026-11-21); a hundred draws at most.
+function silent_port() -> i64
+    tries @= 0
+
+    while tries < 100
+        tries @ tries + 1
+        drawn = os.random_bytes(2).must()
+        port = 20000 + (drawn[0].to_i64().must() * 256 + drawn[1].to_i64().must()) % 12000
+
+        match net.connect("127.0.0.1", port: port, deadline_ms: 10000)
+            .ok c =>
+                s @= c.stream
+
+                match io.close(@s)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+            .err e =>
+                if e.code == net.CLOSED
+                    return port
+
+    assert false
+    return 0
 
 # One connect to the port the system gives next, where nothing of this test
 # listens, and what it answered, for defect 2623's test: `closed` where it

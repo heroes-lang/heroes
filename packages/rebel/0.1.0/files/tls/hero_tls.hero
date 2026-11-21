@@ -20,6 +20,7 @@
 use bytes
 use io/hero_stream
 use net/hero_net
+use os/hero_sys
 use threads/hero_os as threads_floor
 use time/hero_time
 use tls/internal/fixture
@@ -385,6 +386,42 @@ function last_message(@buffer: [u8], count: u64) -> i64
 
 ## Tests
 
+# A port of the loopback address drawn by the system's generator from 20000
+# to 31999, below Linux's 32768 to 60999 and macOS's and Windows' 49152 to
+# 65535: no system gives it to a socket of its own choosing, so another
+# program is handed it neither for a listener nor for a connect, and no
+# test that steers its connect to the port the system gives next reaches
+# it.
+function test_drawn_port() -> i64
+    drawn: [u8] @= []
+    assert hero_sys.random(@drawn, n: 2) == 2
+    return 20000 + (drawn[0].to_i64().must() * 256 + drawn[1].to_i64().must()) % 12000
+
+# A port of the loopback address where nothing listens, for a test of what
+# a connect there answers. A port a listener chose and let go is any
+# program's at once, a connect's or a listener's, before the test's connect
+# reaches it; this one is drawn (`test_drawn_port`) and kept where a plain
+# connect there is refused, so a listener of another program is passed
+# over, on that address or on every address, which a listen on 127.0.0.1
+# does not see on macOS when the program is the same user's (measured
+# 2026-11-21); a hundred draws at most.
+function test_silent_port() -> i64
+    tries @= 0
+
+    while tries < 100
+        tries @ tries + 1
+        port = test_drawn_port()
+        probe @= hero_net.connect_within(address: "127.0.0.1", port: port, ms: 10000)
+
+        if probe == nullptr
+            if hero_net.last_error() == hero_net.HERO_NET_REFUSED
+                return port
+        else
+            assert hero_net.close(@probe) == 0
+
+    assert false
+    return 0
+
 test "available answers 1 or 0, and 1 on a machine with the platform's TLS"
     assert available() == 1 || available() == 0
 
@@ -434,9 +471,7 @@ test "connect refuses what it cannot read before any connection: no host, a port
     assert last_error() == HERO_TLS_INVALID
 
 test "connect to a port nothing listens on fails refused, and roots that hold no certificate fail invalid"
-    probe @= hero_net.listen(address: "127.0.0.1", port: 0)
-    port = hero_net.port_of(probe)
-    assert hero_net.close(@probe) == 0
+    port = test_silent_port()
     roots: [u8] @= []
     gone = connect(
         host: "127.0.0.1",
@@ -602,9 +637,7 @@ test "connect_after refuses steps not in the header's form before any connection
     assert last_message(@words, count: 640) > 0
 
 test "connect_after with steps in their form to a port nothing listens on fails refused, as connect does"
-    probe @= hero_net.listen(address: "127.0.0.1", port: 0)
-    port = hero_net.port_of(probe)
-    assert hero_net.close(@probe) == 0
+    port = test_silent_port()
     roots: [u8] @= []
     steps: [u8] @= [1, 0, 0, 0, 1, 65, 2, 0, 0, 0, 1, 83]
     gone = connect_after(
