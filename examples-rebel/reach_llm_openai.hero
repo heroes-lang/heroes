@@ -8,4 +8,4 @@ use <rebel>/llm/openai
 
 function main()
     r = openai.chat_request(model: "gpt-test", messages: [openai.user_message("Hello")])
-    print(json.format(openai.chat_to_json(r).must()).must())
+    print(json.format(openai.chat_request_json(r).must()).must())

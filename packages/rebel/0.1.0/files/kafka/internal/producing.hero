@@ -261,8 +261,10 @@ function choose(@s: state.Session, m: model.Message lent, count: i64) -> i64?
     if m.partition != -1
         return fail(code: model.INVALID, msg: f"the partition {m.partition} is below -1")
 
-    if !m.null_key
-        return ok(murmur.partition_of(m.key, partitions: count))
+    match m.key
+        .ok key => return ok(murmur.partition_of(key, partitions: count))
+        .err _  => _ = 0
+
     next = s.round_robin[m.topic].default(0)
     s.round_robin[m.topic] @ (next + 1) % count
     return ok(next % count)

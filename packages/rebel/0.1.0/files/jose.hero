@@ -26,7 +26,7 @@
 #
 # **What it does not do.** It fetches no key set (`oauth2.fetch_key_set`
 # does), checks no certificate chain (`x509` does, and a certificate's key is
-# read by `key_from_public_der` from `x509`'s `public_key.der`), keeps no
+# read by `decode_public_der` from `x509`'s `public_key.der`), keeps no
 # record of the `jti` already seen, and writes no JWE in the JSON
 # serialization. A JWT's times are `time`'s, so a program using this package
 # carries `time` (about 2 MB a program, the coordinator's measure of
@@ -425,26 +425,26 @@ function key_from_secret(secret: [u8]) -> Key
 
 # The public key a SubjectPublicKeyInfo holds (RFC 5280), as a JWK.
 #
-# - `der`: the DER: `crypto/keypairs.format_public_der`'s, a PEM `PUBLIC
+# - `der`: the DER: `crypto/keypairs.encode_public_der`'s, a PEM `PUBLIC
 #   KEY`'s bytes, or a certificate's `x509` `public_key.der`.
 #
 # Fails `invalid` where `der` is no SubjectPublicKeyInfo of RSA, EC on P-256,
 # P-384 or P-521, Ed25519 or X25519; `unsupported` for another algorithm or
-# curve. See also `format_public_der`, `key_from_pem`.
-function key_from_public_der(der: [u8]) -> Key?
+# curve. See also `encode_public_der`, `key_from_pem`.
+function decode_public_der(der: [u8]) -> Key?
     return to_key(jwk.write(forms.read_public(der)?))
 
 # The private key a PKCS #8 holds (RFC 5208), unencrypted, as a JWK with its
 # public members.
 #
-# - `der`: the DER, as `crypto/keypairs.format_private_der` writes it.
+# - `der`: the DER, as `crypto/keypairs.encode_private_der` writes it.
 #
 # An EC key that does not hold its public point has it computed by the
 # system, and Ed25519's public key is computed too, so both fail
 # `unsupported` where `crypto/keypairs` lacks the kind. Fails `invalid` where
 # `der` is no PKCS #8 of RSA, EC, Ed25519 or X25519. See also
-# `format_private_der`.
-function key_from_private_der(der: [u8]) -> Key?
+# `encode_private_der`.
+function decode_private_der(der: [u8]) -> Key?
     return to_key(jwk.write(forms.read_private(der)?))
 
 # The key of the first `PUBLIC KEY` or `PRIVATE KEY` block of PEM in `text`.
@@ -452,30 +452,30 @@ function key_from_private_der(der: [u8]) -> Key?
 # - `text`: PEM, other text before and after the block passed over.
 #
 # Fails `not_found` where `text` holds neither block, and as `pem.parse_all`,
-# `key_from_public_der` and `key_from_private_der` do. See also
+# `decode_public_der` and `decode_private_der` do. See also
 # `format_public_pem`, `format_private_pem`.
 function key_from_pem(text: str) -> Key?
     found = pem.parse_all(text)?
 
     for block in found
         if block.label == "PUBLIC KEY"
-            return key_from_public_der(block.data)
+            return decode_public_der(block.data)
 
         if block.label == "PRIVATE KEY"
-            return key_from_private_der(block.data)
+            return decode_private_der(block.data)
 
     return fail(code: NOT_FOUND, msg: "no PEM block labelled PUBLIC KEY or PRIVATE KEY")
 
 # `key`'s public half as SubjectPublicKeyInfo DER, which
-# `crypto/keypairs.parse_public_der` reads.
+# `crypto/keypairs.decode_public_der` reads.
 #
 # - `key`: an `RSA`, `EC` or `OKP` key, public or private.
 #
 # Fails `invalid` for `oct`, which has no public half, and for a key missing
 # a member or whose point is of the wrong length; `unsupported` for a curve
 # other than P-256, P-384, P-521, Ed25519 and X25519. See also
-# `key_from_public_der`.
-function format_public_der(key: Key) -> [u8]?
+# `decode_public_der`.
+function encode_public_der(key: Key) -> [u8]?
     return forms.public_der(jwk.read(to_json(key))?)
 
 # `key` as PKCS #8 DER, unencrypted: the secret, handed to the caller.
@@ -484,9 +484,9 @@ function format_public_der(key: Key) -> [u8]?
 #
 # An EC key's public point is written inside it, as `crypto/keypairs` on
 # macOS needs. Fails `invalid` for `oct`, for a public key and for a key
-# missing a member; `unsupported` as `format_public_der` does. See also
-# `key_from_private_der`.
-function format_private_der(key: Key) -> [u8]?
+# missing a member; `unsupported` as `encode_public_der` does. See also
+# `decode_private_der`.
+function encode_private_der(key: Key) -> [u8]?
     return forms.private_der(jwk.read(to_json(key))?)
 
 # `key`'s public half as PEM's `PUBLIC KEY`, lines of 64 characters each
@@ -494,17 +494,17 @@ function format_private_der(key: Key) -> [u8]?
 #
 # - `key`: an `RSA`, `EC` or `OKP` key.
 #
-# Fails as `format_public_der` does. See also `key_from_pem`.
+# Fails as `encode_public_der` does. See also `key_from_pem`.
 function format_public_pem(key: Key) -> str?
-    return pem.format(pem.Block(label: "PUBLIC KEY", headers: [], data: format_public_der(key)?))
+    return pem.format(pem.Block(label: "PUBLIC KEY", headers: [], data: encode_public_der(key)?))
 
 # `key` as PEM's `PRIVATE KEY`: the secret, handed to the caller.
 #
 # - `key`: an `RSA`, `EC` or `OKP` private key.
 #
-# Fails as `format_private_der` does. See also `key_from_pem`.
+# Fails as `encode_private_der` does. See also `key_from_pem`.
 function format_private_pem(key: Key) -> str?
-    return pem.format(pem.Block(label: "PRIVATE KEY", headers: [], data: format_private_der(key)?))
+    return pem.format(pem.Block(label: "PRIVATE KEY", headers: [], data: encode_private_der(key)?))
 
 # A new private key of `kind`, drawn by the system's generator, as a JWK.
 #
@@ -515,9 +515,9 @@ function format_private_pem(key: Key) -> str?
 # `key_from_secret`, `public_of`.
 function generate_key(kind: keypairs.Kind) -> Key?
     made @= keypairs.generate(kind)?
-    der = keypairs.format_private_der(made)
+    der = keypairs.encode_private_der(made)
     keypairs.close_private(@made)?
-    return key_from_private_der(der?)
+    return decode_private_der(der?)
 
 # `key` with its private members taken out: what may be published.
 #
@@ -921,20 +921,20 @@ test "verify_compact and sign_compact: RFC 7520 § 4.1's RS256 through the face,
 
 test "verify_compact: an RSA key's public bytes taken for an HMAC secret are refused, the confusion of RFC 8725 § 2.1"
     public = parse_key(vectors.rsa_public()).must()
-    secret = key_from_secret(format_public_der(public).must())
+    secret = key_from_secret(encode_public_der(public).must())
     none: {str: json.Value} = {}
     forged = sign_compact(bytes.from_text("{\"sub\":\"admin\"}"), key: secret, algorithm: .hs256, header: none).must()
     assert verify_compact(forged, trusted: [public], algorithms: [.rs256, .hs256]).is_err()
 
-test "key_from_private_der and format_private_der: RFC 7520's RSA key through PKCS #8, and crypto/keypairs reads it"
+test "decode_private_der and encode_private_der: RFC 7520's RSA key through PKCS #8, and crypto/keypairs reads it"
     key = parse_key(vectors.rsa_private()).must()
-    der = format_private_der(key).must()
-    back = key_from_private_der(der).must()
+    der = encode_private_der(key).must()
+    back = decode_private_der(der).must()
     assert back.material == key.material
-    handle @= keypairs.parse_private_der(der).must()
+    handle @= keypairs.decode_private_der(der).must()
     assert handle.kind == .rsa(bits: 2048)
     keypairs.close_private(@handle).must()
-    assert key_from_public_der(format_public_der(key).must()).must().material == public_of(key).must().material
+    assert decode_public_der(encode_public_der(key).must()).must().material == public_of(key).must().material
 
 test "generate_key: P-256 and P-384 made, signed with and verified, their public halves alone verifying"
     kinds: [keypairs.Kind] = [.p256, .p384]
@@ -1112,14 +1112,14 @@ test "key_from_secret: a secret of 32 bytes"
     assert key.key_type == "oct" && key.material["k"].must().len() == 32
 
 # A public key read from SubjectPublicKeyInfo, as a certificate holds it.
-test "key_from_public_der: an RSA key back from its DER"
+test "decode_public_der: an RSA key back from its DER"
     key = parse_key(vectors.rsa_public()).must()
-    assert key_from_public_der(format_public_der(key).must()).must().material == key.material
+    assert decode_public_der(encode_public_der(key).must()).must().material == key.material
 
 # A private key read from PKCS #8.
-test "key_from_private_der: an RSA private key back from its DER"
+test "decode_private_der: an RSA private key back from its DER"
     key = parse_key(vectors.rsa_private()).must()
-    assert key_from_private_der(format_private_der(key).must()).must().material == key.material
+    assert decode_private_der(encode_private_der(key).must()).must().material == key.material
 
 # A key read from PEM.
 test "key_from_pem: a public key's PEM"
@@ -1127,13 +1127,13 @@ test "key_from_pem: a public key's PEM"
     assert key_from_pem(format_public_pem(key).must()).must().material == key.material
 
 # A key written as SubjectPublicKeyInfo DER.
-test "format_public_der: an RSA key, 294 bytes"
-    assert format_public_der(parse_key(vectors.rsa_public()).must()).must().len() == 294
+test "encode_public_der: an RSA key, 294 bytes"
+    assert encode_public_der(parse_key(vectors.rsa_public()).must()).must().len() == 294
 
 # A private key written as PKCS #8 DER, which `crypto/keypairs` reads.
-test "format_private_der: an EC private key read by crypto/keypairs"
+test "encode_private_der: an EC private key read by crypto/keypairs"
     key = generate_key(.p256).must()
-    handle @= keypairs.parse_private_der(format_private_der(key).must()).must()
+    handle @= keypairs.decode_private_der(encode_private_der(key).must()).must()
     assert handle.kind == .p256
     keypairs.close_private(@handle).must()
 

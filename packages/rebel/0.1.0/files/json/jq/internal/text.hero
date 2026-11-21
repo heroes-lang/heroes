@@ -70,7 +70,7 @@ function read_json(text: str) -> json.Value?
 
     if start < text.len()
         pieces @ pieces.push(text.slice(from: start, to: text.len()))
-    options: json.ParseOptions @= json.strict()
+    options: json.ParseOptions @= json.strict_parse_options()
     options.max_depth @ MAX_PARSE_DEPTH
     options.non_finite @ true
     options.duplicate_keys @ true

@@ -13,9 +13,12 @@
 # storage, read through this package's functions: its slots past the items
 # hold copies of live ones, kept as room, so nothing taken out stays alive.
 #
-# It fails with `not_found`, where a place or an end is not there, and
-# `invalid`, where an item is put into a full bounded deque. A call aborts
-# where a bound is below 1, or where the item list is not as long as this
+# It fails with `not_found`, where `get` is asked a place that is not there
+# or an end is not there, and `invalid`, where an item is put into a full
+# bounded deque. A call aborts where a place it is given to write, insert at
+# or take out is outside the deque, as an index past a list's end does (a
+# place is the program's own; `get` is the checked reader), where a bound is
+# below 1, or where the item list is not as long as this
 # package left the deque's own, which a list of another deque mostly is: one
 # just as long is not told apart, since the shape holds none of the items, so
 # a program keeps each deque's shape beside its own list.
@@ -184,19 +187,16 @@ function get<T>(deque: Deque, items: [T] lent, at: i64) -> T?
 #
 # - `deque`: the shape, left as it was.
 # - `items`: the item list; one slot changes.
-# - `at`: the place, 0 at the front.
+# - `at`: the place, 0 at the front, to the size less one.
 # - `value`: the new item.
 #
-# Fails `not_found` where `at` is below zero or at or past the size, and
-# writes nothing. See also `get`.
-function put<T>(deque: Deque, @items: [T], at: i64, value: T) -> ()?
+# Aborts where `at` is below zero or at or past the size, as an index past a
+# list's end does. See also `get`.
+function put<T>(deque: Deque, @items: [T], at: i64, value: T)
     ring.require_items(deque.ring, items.len())
-
-    if at < 0 || at >= deque.ring.count
-        return fail(code: NOT_FOUND, msg: f"place {at} is outside a deque of {deque.ring.count} items")
+    ring.require_place(deque.ring, at: at, most: deque.ring.count - 1)
     slot = ring.slot_of(deque.ring, capacity: items.len(), index: at)
     items[slot] @ value
-    return ok()
 
 # Puts `value` at place `at` of a deque, counted from the front, the items
 # from there on moving one place back.
@@ -207,17 +207,12 @@ function put<T>(deque: Deque, @items: [T], at: i64, value: T) -> ()?
 # - `value`: the item to put.
 #
 # It moves the items on the nearer side of `at`, at most half of them.
-# Fails `not_found` where `at` is below zero or past the size, and
-# `invalid` where a bounded deque is full, as Python's `deque.insert` refuses;
-# either way it changes nothing. See also `remove_at`.
+# Fails `invalid` where a bounded deque is full, as Python's `deque.insert`
+# refuses, and changes nothing. Aborts where `at` is below zero or past the
+# size, as an index past a list's end does. See also `remove_at`.
 function insert<T>(@deque: Deque, @items: [T], at: i64, value: T) -> ()?
     ring.require_items(deque.ring, items.len())
-
-    if at < 0 || at > deque.ring.count
-        return fail(
-            code: NOT_FOUND,
-            msg: f"place {at} is outside 0 to {deque.ring.count}, where a deque of {deque.ring.count} items takes one"
-        )
+    ring.require_place(deque.ring, at: at, most: deque.ring.count)
 
     if deque.ring.limit > 0 && deque.ring.count == deque.ring.limit
         return fail(code: INVALID, msg: f"the deque holds its limit of {deque.ring.limit} items")
@@ -229,17 +224,15 @@ function insert<T>(@deque: Deque, @items: [T], at: i64, value: T) -> ()?
 #
 # - `deque`: the shape; it shrinks by one.
 # - `items`: the item list.
-# - `at`: the place, 0 at the front.
+# - `at`: the place, 0 at the front, to the size less one.
 #
 # It moves the items on the nearer side of `at`, at most half of them.
-# Fails `not_found` where `at` is below zero or at or past the size. See
-# also `insert`.
-function remove_at<T>(@deque: Deque, @items: [T], at: i64) -> T?
+# Aborts where `at` is below zero or at or past the size, as an index past a
+# list's end does. See also `insert`.
+function remove_at<T>(@deque: Deque, @items: [T], at: i64) -> T
     ring.require_items(deque.ring, items.len())
-
-    if at < 0 || at >= deque.ring.count
-        return fail(code: NOT_FOUND, msg: f"place {at} is outside a deque of {deque.ring.count} items")
-    return ok(ring.remove_at(@deque.ring, @items, at))
+    ring.require_place(deque.ring, at: at, most: deque.ring.count - 1)
+    return ring.remove_at(@deque.ring, @items, at)
 
 # Moves the first `by` items of a deque to its back, in their order.
 #
@@ -405,7 +398,7 @@ test "put: a queued job given a new name"
     queue @= new()
     jobs: [str] @= []
     push_back(@queue, @jobs, "draft")
-    put(queue, @jobs, 0, "final").must()
+    put(queue, @jobs, 0, "final")
     assert first(queue, jobs).must() == "final"
 
 # An item put in the middle.
@@ -425,7 +418,7 @@ test "remove_at: a guest who left the row"
     for guest in ["ann", "bob", "cy"]
         push_back(@row, @guests, guest)
 
-    assert remove_at(@row, @guests, 1).must() == "bob"
+    assert remove_at(@row, @guests, 1) == "bob"
     assert to_list(row, guests) == ["ann", "cy"]
 
 # Turns of a round, the first player moved to the back.

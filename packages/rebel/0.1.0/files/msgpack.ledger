@@ -17,18 +17,18 @@ capability msgpack/decode  one encoded object read into a value a program matche
   note    every format of the specification's table is read; `0xc1`, which it never uses, is refused, and a count or a length the remaining bytes could not hold fails before anything is held for it
 
 capability msgpack/decode-options  how strictly bytes are read: depth, a key twice
-  heroes  msgpack.decode_with, msgpack.strict, msgpack.DecodeOptions
+  heroes  msgpack.decode_with, msgpack.strict_decode_options, msgpack.DecodeOptions
   go      -
   rust    -
   python  -
-  note    the specification says nothing of a key twice; `strict` refuses it, as CBOR calls such a map not valid, two keys being one where their smallest encodings are, so `0xd001` and `0x01` are the same key
+  note    the specification says nothing of a key twice; `strict_decode_options` refuses it, as CBOR calls such a map not valid, two keys being one where their smallest encodings are, so `0xd001` and `0x01` are the same key
 
 capability msgpack/raw-text  a string whose bytes are not UTF-8 handed back as its bytes
   heroes  msgpack.DecodeOptions
   go      -
   rust    -
   python  -
-  note    the specification asks a deserializer to make the original bytes reachable; `invalid_text` reads such a string as a `.binary`, and `strict` refuses it `not_text`
+  note    the specification asks a deserializer to make the original bytes reachable; `invalid_text` reads such a string as a `.binary`, and `strict_decode_options` refuses it `not_text`
 
 capability msgpack/sequence  objects written one after another, read in turn
   heroes  msgpack.decode_next, msgpack.Decoded

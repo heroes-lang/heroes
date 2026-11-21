@@ -138,7 +138,7 @@ function body_of(data: [u8], request_id: i64) -> bson.Document?
         kind = data[at]
 
         if kind == 0
-            got = bson.decode_next(data.slice(from: 0, to: end), from: at + 1, options: bson.strict())?
+            got = bson.decode_next(data.slice(from: 0, to: end), from: at + 1, options: bson.strict_decode_options())?
             body @ got.doc
             bodies @ bodies + 1
             at @ got.next

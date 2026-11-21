@@ -127,7 +127,7 @@ function flate(data: [u8], limit: i64) -> [u8]?
 
         input @ []
 
-        if compress.is_done(d)
+        if compress.is_decompressor_ended(d)
             break
 
     if got.len() == 0 && data.len() > 0
@@ -511,7 +511,7 @@ test "predict: PNG's up and sub rows, TIFF's, none, a filter type past 4"
     assert predict([9, 1, 1], params: params, limit: 100).is_err()
 
 test "flate and decode: zlib, cut short, after ASCIIHex, an image filter refused, the limit"
-    packed = compress.compress([0x61, 0x62, 0x63], options: compress.defaults(.zlib)).must()
+    packed = compress.compress([0x61, 0x62, 0x63], options: compress.default_options(.zlib)).must()
     assert flate(packed, limit: 100).must() == [0x61, 0x62, 0x63]
     assert flate(packed.slice(from: 0, to: packed.len() - 2), limit: 100).must() == [0x61, 0x62, 0x63]
     assert flate([1, 2, 3], limit: 100).is_err()

@@ -42,7 +42,7 @@ capability xz/checks  what an xz stream checks its blocks with
   note    every check is supported, so `is_check_supported` has nothing to answer. A check id the format reserves is skipped unverified when decompressing, as the `xz` tool does, and fails `unsupported` where `check_of` is asked
 
 capability xz/levels  how hard the compressor works, and its dictionary
-  heroes  compress/xz.Options, compress/xz.defaults, compress/xz.MIN_LEVEL, compress/xz.DEFAULT_LEVEL, compress/xz.MAX_LEVEL
+  heroes  compress/xz.Options, compress/xz.default_options, compress/xz.MIN_LEVEL, compress/xz.DEFAULT_LEVEL, compress/xz.MAX_LEVEL
   go      -
   rust    -
   python  lzma.compress(preset=), lzma.PRESET_DEFAULT, LZMACompressor(preset=)

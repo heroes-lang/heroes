@@ -154,7 +154,7 @@ record Document
 constant INVALID: str
     "invalid"
 
-# The code of bytes that are not UTF-8: `parse_bytes` fails with it.
+# The code of bytes that are not UTF-8: `decode` fails with it.
 constant NOT_TEXT: str
     "not_text"
 
@@ -225,7 +225,7 @@ function default_options() -> ParseOptions
 # attribute list, or names a parameter entity, is `invalid`: no DTD is read,
 # and nothing it names is fetched.
 #
-# See also `parse_with`, `parse_bytes`.
+# See also `parse_with`, `decode`.
 function parse(text: str) -> Document?
     return parse_with(text, default_options())
 
@@ -318,7 +318,7 @@ function parse_with(text: str, options: ParseOptions) -> Document?
 # Fails `not_text` where `bytes` are not UTF-8, and the message says the line
 # and column of the first byte that is not; otherwise fails as `parse_with`
 # does.
-function parse_bytes(bytes: [u8], options: ParseOptions) -> Document?
+function decode(bytes: [u8], options: ParseOptions) -> Document?
     if bytes.len() > options.max_bytes
         return fail(
             code: LIMIT,
@@ -343,7 +343,7 @@ function is_well_formed(text: str) -> bool
 
 ## Writing a tree
 
-# How a tree is written. `compact` answers the options of the shortest text; a
+# How a tree is written. `compact_format_options` answers the options of the shortest text; a
 # program changes the fields it needs.
 record FormatOptions
     # Whether each element whose children are elements, comments and
@@ -360,7 +360,7 @@ record FormatOptions
 
 # The options of the shortest text: one line, no white space added, and an
 # element with no children written `<a/>`.
-function compact() -> FormatOptions
+function compact_format_options() -> FormatOptions
     return FormatOptions(multiline: false, indent: "", self_closing: true)
 
 # `doc` as XML on one line, with no white space added.
@@ -381,7 +381,7 @@ function compact() -> FormatOptions
 #
 # See also `format_indented`, `format_with`, `format_element`.
 function format(doc: Document) -> str?
-    return format_with(doc, compact())
+    return format_with(doc, compact_format_options())
 
 # `doc` as XML over several lines, each element of element content on its own
 # line.
@@ -398,7 +398,7 @@ function format(doc: Document) -> str?
 function format_indented(doc: Document, width: i64) -> str?
     if width < 0
         return fail(code: INVALID, msg: f"an indent of {width} spaces: the width is 0 or more")
-    options: FormatOptions @= compact()
+    options: FormatOptions @= compact_format_options()
     options.multiline @ true
     options.indent @ repeat(" ", width.to_u64().must())
     return format_with(doc, options)
@@ -406,7 +406,7 @@ function format_indented(doc: Document, width: i64) -> str?
 # `doc` as XML, written as `options` say.
 #
 # - `doc`: the document.
-# - `options`: how it is written; `compact()` writes the shortest text.
+# - `options`: how it is written; `compact_format_options()` writes the shortest text.
 #
 # Fails `invalid` where `format` fails, and where `options.indent` holds
 # anything but spaces and tabs.
@@ -491,7 +491,7 @@ function format_with(doc: Document, options: FormatOptions) -> str?
 #
 # - `e`: the element; every prefix it and its descendants use must be declared
 #   on them, since nothing above it is written.
-# - `options`: how it is written; `compact()` writes the shortest text.
+# - `options`: how it is written; `compact_format_options()` writes the shortest text.
 #
 # Fails `invalid` where `format_with` fails on a document of it, a prefix
 # declared only above `e` included.
@@ -1144,27 +1144,27 @@ test "parse_with: a hundred thousand deep when asked, read and written on the pa
     wide: ParseOptions @= default_options()
     wide.max_depth @ 100000
     doc = parse_with(deep, wide).must()
-    assert format_element(doc.root, compact()).must() == repeat("<a>", 99999) + "<a/>" + repeat("</a>", 99999)
+    assert format_element(doc.root, compact_format_options()).must() == repeat("<a>", 99999) + "<a/>" + repeat("</a>", 99999)
     assert descendants(doc.root).len() == 99999
     assert text_of(doc.root) == ""
 
-test "parse_bytes: UTF-8 with a byte order mark, and a byte that is not UTF-8 with its line and column"
+test "decode: UTF-8 with a byte order mark, and a byte that is not UTF-8 with its line and column"
     good: [u8] = [0xef, 0xbb, 0xbf, '<', 'a', '>', 0xc3, 0xa9, '<', '/', 'a', '>']
-    assert text_of(parse_bytes(good, default_options()).must().root) == "é"
+    assert text_of(decode(good, default_options()).must().root) == "é"
     bad: [u8] = ['<', 'a', '>', '\n', 0xff, '<', '/', 'a', '>']
 
-    match parse_bytes(bad, default_options())
+    match decode(bad, default_options())
         .ok _  => assert false
         .err e => assert e.code == "not_text" && e.msg == "line 2, column 1: expected UTF-8, found the byte 0xFF"
 
     cut: [u8] = ['<', 'a', '>', 0xe2, 0x82]
-    assert parse_bytes(cut, default_options()).is_err()
+    assert decode(cut, default_options()).is_err()
     nothing: [u8] = []
-    assert parse_bytes(nothing, default_options()).is_err()
+    assert decode(nothing, default_options()).is_err()
     small: ParseOptions @= default_options()
     small.max_bytes @ 3
 
-    match parse_bytes(good, small)
+    match decode(good, small)
         .ok _  => assert false
         .err e => assert e.code == "limit"
 
@@ -1189,7 +1189,7 @@ test "format: the same tree gives the same bytes, and reading them gives back th
 test "format: text and values escaped so that they read back, where ElementTree writes a carriage return raw"
     s = "a<b>&c\"d'e\r\nf\tg]]>h"
     e = element("x").with_attribute(name: "k", value: s).with_text(s)
-    written = format_element(e, compact()).must()
+    written = format_element(e, compact_format_options()).must()
     assert written == "<x k=\"a&lt;b&gt;&amp;c&quot;d'e&#13;&#10;f&#9;g]]&gt;h\">a&lt;b&gt;&amp;c\"d'e&#13;\nf\tg]]&gt;h</x>"
     assert parse(written).must().root == e
 
@@ -1221,7 +1221,7 @@ test "format: a tree that would not read back as itself, refused where ElementTr
             .ok _  => assert false
             .err e => assert e.code == "invalid"
 
-    match format_element(bad_space, compact())
+    match format_element(bad_space, compact_format_options())
         .ok _  => assert false
         .err e => assert e.msg == "/p:a: the prefix `p` of <p:a> is not declared where it stands: declare it for \"u\" with `with_namespace`"
 
@@ -1240,10 +1240,10 @@ test "format_indented: the declaration and each comment around the root on their
 
 test "format_with: an empty element opened and closed as Go writes it, a tab, and an indent of other characters refused"
     doc = parse("<a><b/></a>").must()
-    open_close: FormatOptions @= compact()
+    open_close: FormatOptions @= compact_format_options()
     open_close.self_closing @ false
     assert format_with(doc, open_close).must() == "<a><b></b></a>"
-    tabbed: FormatOptions @= compact()
+    tabbed: FormatOptions @= compact_format_options()
     tabbed.multiline @ true
     tabbed.indent @ "\t"
     assert format_with(doc, tabbed).must() == "<a>\n\t<b/>\n</a>"
@@ -1254,9 +1254,9 @@ test "format_with: an empty element opened and closed as Go writes it, a tab, an
 test "format_element: an element alone, and one whose namespace is declared only above it"
     doc = parse("<r xmlns=\"d\"><a x=\"1\"/></r>").must()
     inner = child_elements(doc.root)[0]
-    assert format_element(doc.root, compact()).must() == "<r xmlns=\"d\"><a x=\"1\"/></r>"
-    assert format_element(inner, compact()).is_err()
-    assert format_element(inner.with_namespace(prefix: "", space: "d"), compact()).must() == "<a x=\"1\" xmlns=\"d\"/>"
+    assert format_element(doc.root, compact_format_options()).must() == "<r xmlns=\"d\"><a x=\"1\"/></r>"
+    assert format_element(inner, compact_format_options()).is_err()
+    assert format_element(inner.with_namespace(prefix: "", space: "d"), compact_format_options()).must() == "<a x=\"1\" xmlns=\"d\"/>"
 
 test "format_name: no prefix, a prefix, and the namespace never written"
     assert format_name(Name(prefix: "", local: "a", space: "")) == "a"
@@ -1293,8 +1293,8 @@ test "with_attribute and without_attribute: appended, replaced in its place, rem
         name: "x",
         value: "3"
     )
-    assert format_element(e, compact()).must() == "<a x=\"3\" y=\"2\"/>"
-    assert format_element(e.without_attribute("x"), compact()).must() == "<a y=\"2\"/>"
+    assert format_element(e, compact_format_options()).must() == "<a x=\"3\" y=\"2\"/>"
+    assert format_element(e.without_attribute("x"), compact_format_options()).must() == "<a y=\"2\"/>"
     assert e.without_attribute("z") == e
 
 test "with_attribute_in and with_namespace: a namespaced attribute, a declaration replaced, and the default namespace"
@@ -1303,15 +1303,15 @@ test "with_attribute_in and with_namespace: a namespaced attribute, a declaratio
         name: "p:x",
         value: "1"
     )
-    assert format_element(e, compact()).must() == "<a xmlns:p=\"u\" p:x=\"1\"/>"
+    assert format_element(e, compact_format_options()).must() == "<a xmlns:p=\"u\" p:x=\"1\"/>"
     assert attribute_in(e, space: "u", local: "x").must() == "1"
     d = element_in(space: "d", name: "a").with_namespace(prefix: "", space: "d")
-    assert format_element(d, compact()).must() == "<a xmlns=\"d\"/>"
-    assert parse(format_element(d, compact()).must()).must().root == d
+    assert format_element(d, compact_format_options()).must() == "<a xmlns=\"d\"/>"
+    assert parse(format_element(d, compact_format_options()).must()).must().root == d
 
 test "with_text and with_child: appended in order"
     e = element("a").with_text("x").with_child(inner: element("b")).with_text("y")
-    assert format_element(e, compact()).must() == "<a>x<b/>y</a>"
+    assert format_element(e, compact_format_options()).must() == "<a>x<b/>y</a>"
 
 test "with_child: a tree a hundred thousand deep, written and walked on the package's own stack"
     deep: Element @= element("a")
@@ -1319,7 +1319,7 @@ test "with_child: a tree a hundred thousand deep, written and walked on the pack
     for _ in range(from: 0, to: 100000)
         deep @ element("a").with_child(inner: deep)
 
-    assert format_element(deep, compact()).must() == repeat("<a>", 100000) + "<a/>" + repeat("</a>", 100000)
+    assert format_element(deep, compact_format_options()).must() == repeat("<a>", 100000) + "<a/>" + repeat("</a>", 100000)
     assert descendants(deep).len() == 100000
     assert text_of(deep.with_text("t")) == "t"
 
@@ -1402,9 +1402,9 @@ test "text_of: as ElementTree's itertext joined, comments and instructions left 
     assert text_of(element("a")) == ""
     assert text_of(parse("<a><![CDATA[x]]>&amp;</a>").must().root) == "x&"
 
-test "default_options and compact: their fields"
+test "default_options and compact_format_options: their fields"
     assert default_options() == ParseOptions(max_depth: 512, max_bytes: 67108864)
-    assert compact() == FormatOptions(multiline: false, indent: "", self_closing: true)
+    assert compact_format_options() == FormatOptions(multiline: false, indent: "", self_closing: true)
 
 ## Examples
 
@@ -1425,9 +1425,9 @@ test "parse_with: a limit of the caller's"
     assert !parse_with(repeat("<a>", 600) + repeat("</a>", 600), options).is_err()
 
 # Bytes read from outside, checked as UTF-8 first.
-test "parse_bytes: bytes from outside"
+test "decode: bytes from outside"
     bytes: [u8] = ['<', 'a', '/', '>']
-    assert parse_bytes(bytes, default_options()).must().root == element("a")
+    assert decode(bytes, default_options()).must().root == element("a")
 
 # A text asked whether it is XML.
 test "is_well_formed: one document, and two roots"
@@ -1435,8 +1435,8 @@ test "is_well_formed: one document, and two roots"
     assert !is_well_formed("<a/><b/>")
 
 # The options of the shortest text, one field changed.
-test "compact: the options changed"
-    options: FormatOptions @= compact()
+test "compact_format_options: the options changed"
+    options: FormatOptions @= compact_format_options()
     options.self_closing @ false
     assert format_element(element("a"), options).must() == "<a></a>"
 
@@ -1450,14 +1450,14 @@ test "format_indented: two spaces a level"
 
 # A document written with a tab for each level.
 test "format_with: a tab a level"
-    options: FormatOptions @= compact()
+    options: FormatOptions @= compact_format_options()
     options.multiline @ true
     options.indent @ "\t"
     assert format_with(parse("<a><b/></a>").must(), options).must() == "<a>\n\t<b/>\n</a>"
 
 # One element written alone, with no declaration.
 test "format_element: an element built"
-    assert format_element(element("a").with_text("x"), compact()).must() == "<a>x</a>"
+    assert format_element(element("a").with_text("x"), compact_format_options()).must() == "<a>x</a>"
 
 # A name as a document writes it.
 test "format_name: a prefixed name"
@@ -1481,12 +1481,12 @@ test "document: a root wrapped"
 
 # An element built, then given an attribute and text.
 test "element: built and written"
-    assert format_element(element("p").with_attribute(name: "id", value: "1").with_text("hi"), compact()).must() == "<p id=\"1\">hi</p>"
+    assert format_element(element("p").with_attribute(name: "id", value: "1").with_text("hi"), compact_format_options()).must() == "<p id=\"1\">hi</p>"
 
 # An element of a namespace, its prefix declared on it.
 test "element_in: a prefixed element"
     e = element_in(space: "urn:x", name: "x:item").with_namespace(prefix: "x", space: "urn:x")
-    assert format_element(e, compact()).must() == "<x:item xmlns:x=\"urn:x\"/>"
+    assert format_element(e, compact_format_options()).must() == "<x:item xmlns:x=\"urn:x\"/>"
 
 # An attribute set, then set again in its place.
 test "with_attribute: set twice"
@@ -1500,7 +1500,7 @@ test "with_attribute_in: a namespaced attribute"
         name: "p:k",
         value: "1"
     )
-    assert format_element(e, compact()).must() == "<a xmlns:p=\"urn:p\" p:k=\"1\"/>"
+    assert format_element(e, compact_format_options()).must() == "<a xmlns:p=\"urn:p\" p:k=\"1\"/>"
 
 # An attribute taken off.
 test "without_attribute: one taken off"
@@ -1509,7 +1509,7 @@ test "without_attribute: one taken off"
 # The default namespace declared on a root of that namespace.
 test "with_namespace: the default namespace"
     e = element_in(space: "urn:d", name: "feed").with_namespace(prefix: "", space: "urn:d")
-    assert format_element(e, compact()).must() == "<feed xmlns=\"urn:d\"/>"
+    assert format_element(e, compact_format_options()).must() == "<feed xmlns=\"urn:d\"/>"
 
 # Text added after the children.
 test "with_text: text added"
@@ -1517,7 +1517,7 @@ test "with_text: text added"
 
 # A child added after the others.
 test "with_child: a child added"
-    assert format_element(element("ul").with_child(inner: element("li")), compact()).must() == "<ul><li/></ul>"
+    assert format_element(element("ul").with_child(inner: element("li")), compact_format_options()).must() == "<ul><li/></ul>"
 
 # The first child element of a name.
 test "child: the first of a name"

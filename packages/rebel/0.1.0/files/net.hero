@@ -19,10 +19,10 @@
 # `set_deadline`, and `connect_timeout` bounds the time a connection takes to
 # be made.
 #
-# **The stop**: after `catch_stop`, Ctrl-C and SIGTERM, or `ask_stop` from any
-# thread, make every call here or on a connection's stream that waits fail
-# `stopped`, so a server ends its loops and closes what it holds. A name being
-# looked up is not ended by it.
+# **The stop** is `os`'s: after `os.catch_stop`, Ctrl-C and SIGTERM, or
+# `os.ask_stop` from any thread, make every call here or on a connection's
+# stream that waits fail `stopped`, so a server ends its loops and closes what
+# it holds. A name being looked up is not ended by it.
 #
 # **A port** is an `i64` from 0 to 65535 everywhere; one outside it fails
 # `invalid`. A text port is digits alone.
@@ -84,7 +84,8 @@ constant CLOSED: str
 constant TIMEOUT: str
     failure.TIMEOUT
 
-# The program was asked to stop while a call waited.
+# The program was asked to stop while a call waited (`os.catch_stop`,
+# `os.ask_stop`).
 constant STOPPED: str
     failure.STOPPED
 
@@ -1527,27 +1528,6 @@ function ping(host: str, sequence: i64, size: i64, timeout_ms: i64) -> Echo?
         Echo(from: Address(bytes: a.from.bytes, zone: a.from.zone, has_port: false, port: 0), nanoseconds: a.nanoseconds, ttl: a.ttl, bytes: a.bytes, sequence: a.sequence)
     )
 
-## The stop
-
-# Makes Ctrl-C and SIGTERM, on Windows Ctrl-C, Ctrl-Break and the console
-# closing, ask the stop instead of ending the program; a second one still
-# ends it. Fails `failed` where the system refuses. It changes the whole
-# process, and a second call changes nothing.
-function catch_stop() -> ()?
-    if hero_net.catch_stop() != 0
-        return fail(code: FAILED, msg: f"catching the stop: the system refused, its error {hero_net.last_os_error()}")
-    return ok()
-
-# Asks the program's own stop, from any thread: from this call every call
-# that waits fails `stopped`, as after a signal `catch_stop` caught.
-function ask_stop()
-    hero_net.ask_stop()
-
-# Whether the stop was asked, by a signal after `catch_stop` or by
-# `ask_stop`.
-function is_stop_asked() -> bool
-    return hero_net.stop_asked() == 1
-
 ## Tests
 
 test "parse_address and format_address: text read and written back as Go and Python write it"
@@ -1800,12 +1780,13 @@ test "open_udp, send_to, receive, set_udp_deadline, close_udp: datagrams both wa
     close_udp(@b).must()
     assert close_udp(@a).is_err()
 
-test "catch_stop, ask_stop, is_stop_asked: the stop asked ends a waiting receive stopped"
-    catch_stop().must()
+# The stop is `os`'s; the floor's own doors ask it here, as `os.ask_stop` does.
+test "receive: the stop asked ends a waiting receive stopped"
+    assert hero_net.catch_stop() == 0
     s @= open_udp("127.0.0.1", port: 0).must()
-    assert !is_stop_asked()
-    ask_stop()
-    assert is_stop_asked()
+    assert hero_net.stop_asked() == 0
+    hero_net.ask_stop()
+    assert hero_net.stop_asked() == 1
 
     match receive(s)
         .ok _  => assert false
@@ -2422,29 +2403,6 @@ test "parse_mac: six pairs separated by colons"
 # A hardware address written as text.
 test "format_mac: six bytes as pairs with colons"
     assert format_mac([0, 0, 94, 0, 83, 1]) == "00:00:5e:00:53:01"
-
-# A server that ends its loops on Ctrl-C instead of dying in the middle of a
-# write.
-test "catch_stop: Ctrl-C asks the stop from now on"
-    catch_stop().must()
-    assert !is_stop_asked()
-
-# The stop asked from inside the program, which ends every wait.
-test "ask_stop: a waiting receive ends stopped"
-    s @= open_udp("127.0.0.1", port: 0).must()
-    ask_stop()
-
-    match receive(s)
-        .ok _  => assert false
-        .err e => assert e.code == STOPPED
-
-    close_udp(@s).must()
-
-# Whether the stop was asked, as a loop asks it between two pieces of work.
-test "is_stop_asked: not before the stop, yes after"
-    assert !is_stop_asked()
-    ask_stop()
-    assert is_stop_asked()
 
 # A connection that gives up where the server does not answer in time.
 test "connect_timeout: a local server reached within two seconds"

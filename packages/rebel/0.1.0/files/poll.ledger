@@ -135,7 +135,7 @@ capability poll/stop  a wait ended when the program is asked to stop
   go      os/signal.NotifyContext (with a select)
   rust    tokio::signal::ctrl_c (with tokio::select!)
   python  -
-  note    every wait fails `stopped` once `net`'s stop is asked, a signal caught by `net.catch_stop` or `net.ask_stop` from any thread, even with entries ready, so a loop ends under load as `net.accept` does
+  note    every wait fails `stopped` once the program's stop is asked, a signal caught by `os.catch_stop` or `os.ask_stop` from any thread, even with entries ready, so a loop ends under load as `net.accept` does
 
 capability poll/wake  a wait woken by another thread of the program, for a reason of its own
   heroes  pending
@@ -145,7 +145,7 @@ capability poll/wake  a wait woken by another thread of the program, for a reaso
   note    a set crosses to no thread, a thread being handed one `i64` (spec § 13): a waker needs a number another thread rings, as `net`'s socket numbers are, and a channel of its own per set (`EVFILT_USER`, an `eventfd`, a loopback socket on Windows); the stop, which wakes every wait, is what crosses today
 
 capability poll/process-and-signal-filters  waiting on a process's end, a signal or a file's change in the same call
-  heroes  refused: each is another package's (`process` waits for a child, `net`'s stop is the one signal a wait hears, a file's change has no package yet), and kqueue has them where epoll and Windows have none to match
+  heroes  refused: each is another package's (`process` waits for a child, `os`'s stop is the one signal a wait hears, a file's change has no package yet), and kqueue has them where epoll and Windows have none to match
   go      -
   rust    tokio::process::Child::wait, tokio::signal::unix::signal
   python  select.KQ_FILTER_PROC, select.KQ_FILTER_SIGNAL, select.KQ_FILTER_VNODE, select.KQ_FILTER_AIO, select.KQ_NOTE_ATTRIB, select.KQ_NOTE_CHILD, select.KQ_NOTE_DELETE, select.KQ_NOTE_EXEC, select.KQ_NOTE_EXIT, select.KQ_NOTE_EXTEND, select.KQ_NOTE_FORK, select.KQ_NOTE_LINK, select.KQ_NOTE_LOWAT, select.KQ_NOTE_PCTRLMASK, select.KQ_NOTE_PDATAMASK, select.KQ_NOTE_RENAME, select.KQ_NOTE_REVOKE, select.KQ_NOTE_TRACK, select.KQ_NOTE_TRACKERR, select.KQ_NOTE_WRITE

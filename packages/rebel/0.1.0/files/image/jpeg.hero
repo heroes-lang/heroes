@@ -159,14 +159,14 @@ record EncodeOptions
 # Options of quality 75 and 4:2:0, Go's default quality and sampling.
 #
 # See also `encode`.
-function encoding() -> EncodeOptions
+function default_encode_options() -> EncodeOptions
     return EncodeOptions(quality: 75, subsampling: .quarter)
 
 # `img` as a baseline JPEG file in JFIF: one component for gray, three for
 # RGB as YCbCr, Huffman-coded with the tables of Annex K.
 #
 # - `img`: a gray or RGB image of 8 bits, 1 to 65,535 pixels a side.
-# - `options`: the quality and the sampling; `encoding` makes the usual
+# - `options`: the quality and the sampling; `default_encode_options` makes the usual
 #   ones.
 #
 # The same image and options answer the same bytes every time. Fails
@@ -322,16 +322,16 @@ test "encode: every quality makes a file read back, the same bytes twice"
         file = encode(img, EncodeOptions(quality: q, subsampling: .quarter)).must()
         assert decode(file, image.default_limits()).must().image.width == 17
 
-    assert encode(img, encoding()).must() == encode(img, encoding()).must()
+    assert encode(img, default_encode_options()).must() == encode(img, default_encode_options()).must()
 
 test "encode: alpha, 16 bits, a quality outside 1 to 100 and an empty image refused"
     rgba = image.blank(width: 2, height: 2, format: .rgba).must()
 
-    match encode(rgba, encoding())
+    match encode(rgba, default_encode_options())
         .ok _  => assert false
         .err e => assert e.code == image.UNSUPPORTED
 
-    assert encode(image.blank(width: 2, height: 2, format: .gray16).must(), encoding()).is_err()
+    assert encode(image.blank(width: 2, height: 2, format: .gray16).must(), default_encode_options()).is_err()
     assert encode(
         image.blank(width: 2, height: 2, format: .rgb).must(),
         EncodeOptions(quality: 0, subsampling: .full)
@@ -340,7 +340,7 @@ test "encode: alpha, 16 bits, a quality outside 1 to 100 and an empty image refu
         image.blank(width: 2, height: 2, format: .rgb).must(),
         EncodeOptions(quality: 101, subsampling: .full)
     ).is_err()
-    assert encode(image.blank(width: 0, height: 2, format: .rgb).must(), encoding()).is_err()
+    assert encode(image.blank(width: 0, height: 2, format: .rgb).must(), default_encode_options()).is_err()
 
 ## Examples
 
@@ -359,7 +359,7 @@ test "decode: a gray gradient written and read back"
 
 # The size of a file read without its scans.
 test "info_of: the size of a file before it is decoded"
-    file = encode(image.blank(width: 40, height: 30, format: .rgb).must(), encoding()).must()
+    file = encode(image.blank(width: 40, height: 30, format: .rgb).must(), default_encode_options()).must()
     info = info_of(file).must()
     assert info.width == 40
     assert info.components == 3
@@ -370,9 +370,9 @@ test "orientation_of: a camera held turned a quarter"
     assert orientation_of(exif).must() == 6
 
 # The usual options of writing.
-test "encoding: quality 75 and 4:2:0"
-    assert encoding().quality == 75
-    assert encoding().subsampling == .quarter
+test "default_encode_options: quality 75 and 4:2:0"
+    assert default_encode_options().quality == 75
+    assert default_encode_options().subsampling == .quarter
 
 # A colour image written at a high quality, every colour sample kept.
 test "encode: RGB at quality 90 and 4:4:4"
@@ -384,5 +384,5 @@ test "encode: RGB at quality 90 and 4:4:4"
 # The pixels alone, as every format answers them.
 test "decode_image: a gray image read back as gray"
     img = image.from_pixels(width: 2, height: 2, format: .gray, pixels: [128, 128, 128, 128]).must()
-    back = decode_image(encode(img, encoding()).must(), limits: image.default_limits()).must()
+    back = decode_image(encode(img, default_encode_options()).must(), limits: image.default_limits()).must()
     assert back.width == 2 && back.height == 2 && back.format == .gray

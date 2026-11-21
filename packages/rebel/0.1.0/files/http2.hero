@@ -141,10 +141,9 @@ variant Frame
         end_headers: bool
         # How many bytes of zero pad the frame, 0 to 255.
         padding: i64
-        # Whether the frame carries a priority (the flag PRIORITY).
-        has_priority: bool
-        # The priority, where `has_priority`; ignored otherwise.
-        priority: Priority
+        # The priority the frame carries (the flag PRIORITY); it fails
+        # `not_found` where it carries none.
+        priority: Priority?
     # PRIORITY: a stream's priority, read and ignored.
     priority
         # The stream, 1 or more.
@@ -235,8 +234,7 @@ function encode_frame(f: Frame) -> [u8]?
             end_stream: h.end_stream,
             end_headers: h.end_headers,
             padding: h.padding,
-            has_priority: h.has_priority,
-            priority: Priority(exclusive: h.priority.exclusive, depends_on: h.priority.depends_on, weight: h.priority.weight)
+            priority: h.priority
         )
         .priority p => .priority(
             stream: p.stream,
@@ -300,8 +298,7 @@ function decode_frame(data: [u8], max_size: i64) -> Frame?
             end_stream: h.end_stream,
             end_headers: h.end_headers,
             padding: h.padding,
-            has_priority: h.has_priority,
-            priority: Priority(exclusive: h.priority.exclusive, depends_on: h.priority.depends_on, weight: h.priority.weight)
+            priority: h.priority
         )
         .priority p => .priority(
             stream: p.stream,
@@ -1227,7 +1224,7 @@ record Response
 
 # An HTTP/2 connection over a stream: a session, the stream it reads and
 # writes, and the events read for streams nobody has asked for yet. Made by
-# `connect`, `connect_plain`, `client_of` or `server_of`; it owns its
+# `connect`, `connect_plain`, `client` or `server`; it owns its
 # stream, which `close` closes.
 record Conn
     # The stream the frames travel on, owned by the connection; a program
@@ -1250,9 +1247,9 @@ record Conn
 #
 # The connection is the caller's to close. Fails `unsupported` where the
 # server's TLS chose no `h2`, the connection closed; and as `tls.connect`
-# fails. See also `connect_plain`, `client_of`.
+# fails. See also `connect_plain`, `client`.
 function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Options) -> Conn?
-    stream @= tls.connect(host: host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: [ALPN]))?
+    stream @= tls.connect(host: host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: [ALPN]))?.stream
     chosen = tls.protocol_of(stream).default("")
 
     if chosen != ALPN
@@ -1265,7 +1262,7 @@ function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Op
             msg: f"connecting to {host} at port {port} for HTTP/2: its TLS chose \"{chosen}\", not h2"
         )
 
-    match client_of(@stream, options: options)
+    match client(@stream, options: options)
         .ok made => return ok(made)
         .err e =>
             match io.close(@stream)
@@ -1289,7 +1286,7 @@ function connect_plain(host: str, port: i64, deadline_ms: i64, options: Options)
     c = net.connect(host, port: port, deadline_ms: deadline_ms)?
     stream @= c.stream
 
-    match client_of(@stream, options: options)
+    match client(@stream, options: options)
         .ok made => return ok(made)
         .err e =>
             match io.close(@stream)
@@ -1307,8 +1304,8 @@ function connect_plain(host: str, port: i64, deadline_ms: i64, options: Options)
 #
 # Its preface and settings are written before it answers. Fails as
 # `io.write` does, `stream` then given back to the caller's place, open, to
-# close. See also `server_of`.
-function client_of(@stream: io.Stream, options: Options) -> Conn?
+# close. See also `server`.
+function client(@stream: io.Stream, options: Options) -> Conn?
     s = client_session(options)
     owned = stream
     stream.handle @ nullptr
@@ -1329,7 +1326,7 @@ function client_of(@stream: io.Stream, options: Options) -> Conn?
 # Its settings are written before it answers; the client's preface is read
 # by the first read. Fails as `io.write` does, `stream` then given back to
 # the caller's place, open, to close. See also `next_request`, `serve_with`.
-function server_of(@stream: io.Stream, options: Options) -> Conn?
+function server(@stream: io.Stream, options: Options) -> Conn?
     s = server_session(options)
     owned = stream
     stream.handle @ nullptr
@@ -2210,7 +2207,7 @@ test "connect: a GET over TLS, ALPN choosing h2"
     if !tls.is_available()
         skip_test(reason: "this platform offers no TLS library to tls")
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port)).must()
     fixture.until_listening(port)
     c @= connect(
         host: "localhost",
@@ -2225,12 +2222,12 @@ test "connect: a GET over TLS, ALPN choosing h2"
     ).must()
     assert r.status == 200 && r.body == bytes.from_text("hello /tls")
     close(@c).must()
-    assert threads.wait_text(@server) == "GET /tls 0"
+    assert threads.wait_text(@serving) == "GET /tls 0"
 
 # HTTP/2 in plain text by prior knowledge, with a server of this process.
 test "connect_plain: a GET over h2c"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
     c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     r = round_trip(
@@ -2239,16 +2236,16 @@ test "connect_plain: a GET over h2c"
     ).must()
     assert r.status == 200 && r.trailers == [Field(name: "x-length", value: "0", sensitive: false)]
     close(@c).must()
-    assert threads.wait_text(@server) == "GET /a 0"
+    assert threads.wait_text(@serving) == "GET /a 0"
 
 # A connection of `net` made a client's HTTP/2 connection.
-test "client_of: over a connection net made"
+test "client: over a connection net made"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
     made = net.connect("127.0.0.1", port: port, deadline_ms: 10000).must()
     stream @= made.stream
-    c @= client_of(@stream, options: default_options()).must()
+    c @= client(@stream, options: default_options()).must()
     assert io.is_closed(stream)
     r = round_trip(
         @c,
@@ -2256,35 +2253,35 @@ test "client_of: over a connection net made"
     ).must()
     assert r.status == 200
     close(@c).must()
-    assert threads.wait_text(@server) == "POST /up 3"
+    assert threads.wait_text(@serving) == "POST /up 3"
 
 # A server's connection over what `net` accepted, a client of this process
 # asking on a thread of its own.
-test "server_of: one request read and answered"
+test "server: one request read and answered"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /x").must()
+    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    c @= server_of(@stream, options: default_options()).must()
+    c @= server(@stream, options: default_options()).must()
     r = next_request(@c).must()
     answer(
         @c,
         stream: r.stream,
         response: Response(status: 200, headers: [], body: bytes.from_text("seen " + r.path), trailers: [])
     ).must()
-    assert threads.wait_text(@client) == "200 seen /x"
+    assert threads.wait_text(@calling) == "200 seen /x"
     close(@c).must()
     net.close_listener(@l).must()
 
 # A connection closed once: the second close fails.
 test "close: GOAWAY sent, the stream closed, a second close refused"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /c").must()
+    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /c").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    c @= server_of(@stream, options: default_options()).must()
+    c @= server(@stream, options: default_options()).must()
     assert serve(@c, handler: fixture.echo) == 1
-    _ = threads.wait_text(@client)
+    _ = threads.wait_text(@calling)
     close(@c).must()
 
     match close(@c)
@@ -2296,7 +2293,7 @@ test "close: GOAWAY sent, the stream closed, a second close refused"
 # Events as they come: the response's head, then its data.
 test "read_event: a response read event by event"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
     c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     id = start_stream(
@@ -2308,12 +2305,12 @@ test "read_event: a response read event by event"
     assert first == .response(stream: id, status: 200, headers: [Field(name: "content-type", value: "text/plain", sensitive: false)], end_stream: false)
     assert read_event(@c).must() == .data(stream: id, data: bytes.from_text("hello /e"), end_stream: false)
     close(@c).must()
-    assert threads.wait_text(@server) == "GET /e 0"
+    assert threads.wait_text(@serving) == "GET /e 0"
 
 # One stream's events while another's are held.
 test "read_event_of: the second request's answer read before the first's"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 2").must()
+    serving @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 2").must()
     fixture.until_listening(port)
     c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     get = [
@@ -2329,12 +2326,12 @@ test "read_event_of: the second request's answer read before the first's"
     assert read_event_of(@c, stream: b).must() == .response(stream: b, status: 200, headers: [], end_stream: false)
     assert read_event_of(@c, stream: a).must() == .response(stream: a, status: 200, headers: [], end_stream: false)
     close(@c).must()
-    assert threads.wait_text(@server) == "2"
+    assert threads.wait_text(@serving) == "2"
 
 # A stream opened with its head alone, its body written after.
 test "start_stream: a POST whose body follows"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
     c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     id = start_stream(
@@ -2346,12 +2343,12 @@ test "start_stream: a POST whose body follows"
     r = finish(@c, stream: id).must()
     assert r.status == 200
     close(@c).must()
-    assert threads.wait_text(@server) == "POST /s 5"
+    assert threads.wait_text(@serving) == "POST /s 5"
 
 # Trailers written after a body, as gRPC's client ends its stream.
 test "write_headers: trailers end a request"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
     c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     id = start_stream(
@@ -2368,13 +2365,13 @@ test "write_headers: trailers end a request"
     ).must()
     assert finish(@c, stream: id).must().status == 200
     close(@c).must()
-    assert threads.wait_text(@server) == "POST /t 2"
+    assert threads.wait_text(@serving) == "POST /t 2"
 
 # A body of 3 MiB written as the windows open, to a server whose bound is
 # 1 MiB: it answers 413 and resets the stream, so the rest is not sent.
 test "write_data: a body past the server's bound, answered 413"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
     c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 30000, options: default_options()).must()
     id = start_stream(
@@ -2394,12 +2391,12 @@ test "write_data: a body past the server's bound, answered 413"
     ).must()
     assert after.status == 200
     close(@c).must()
-    assert threads.wait_text(@server) == "GET /after 0"
+    assert threads.wait_text(@serving) == "GET /after 0"
 
 # A request cancelled before its answer is read.
 test "write_reset: a request cancelled"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 1").must()
+    serving @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 1").must()
     fixture.until_listening(port)
     c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     id = start_stream(
@@ -2410,12 +2407,12 @@ test "write_reset: a request cancelled"
     write_reset(@c, stream: id, error: CANCEL).must()
     assert finish(@c, stream: id).is_err()
     close(@c).must()
-    _ = threads.wait_text(@server)
+    _ = threads.wait_text(@serving)
 
 # A PING answered by a server of this process.
 test "ping: answered before any request"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
     c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     ping(@c, data: [7, 7, 7, 7, 7, 7, 7, 7]).must()
@@ -2424,13 +2421,13 @@ test "ping: answered before any request"
         r: Request(method: "GET", scheme: "http", authority: "h", path: "/p", protocol: "", headers: [], body: [], trailers: [], stream: 0)
     ).must()
     close(@c).must()
-    assert threads.wait_text(@server) == "GET /p 0"
+    assert threads.wait_text(@serving) == "GET /p 0"
 
 # Two requests started before either is finished: one connection, two
 # streams.
 test "start: two requests on one connection at once"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 2").must()
+    serving @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 2").must()
     fixture.until_listening(port)
     c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     a = start(
@@ -2444,12 +2441,12 @@ test "start: two requests on one connection at once"
     assert finish(@c, stream: b).must().body == bytes.from_text("hello /two")
     assert finish(@c, stream: a).must().body == bytes.from_text("hello /one")
     close(@c).must()
-    assert threads.wait_text(@server) == "2"
+    assert threads.wait_text(@serving) == "2"
 
 # A response read whole: head, body and trailers.
 test "finish: a response's body and trailers"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
     c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     id = start(
@@ -2459,12 +2456,12 @@ test "finish: a response's body and trailers"
     r = finish(@c, stream: id).must()
     assert r.body == bytes.from_text("hello /f") && r.trailers.len() == 1
     close(@c).must()
-    assert threads.wait_text(@server) == "GET /f 0"
+    assert threads.wait_text(@serving) == "GET /f 0"
 
 # One request and its response, the ordinary call of a client.
 test "round_trip: a POST and its answer"
     port = fixture.free_port()
-    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
+    serving @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port)).must()
     fixture.until_listening(port)
     c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
     r = round_trip(
@@ -2473,37 +2470,37 @@ test "round_trip: a POST and its answer"
     ).must()
     assert r.status == 200 && r.body == bytes.from_text("hello /rt")
     close(@c).must()
-    assert threads.wait_text(@server) == "POST /rt 2"
+    assert threads.wait_text(@serving) == "POST /rt 2"
 
 # A server's loop step by step: the request read whole, the program's own
 # answer written.
 test "next_request: a request read whole"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /n?q=1").must()
+    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /n?q=1").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    c @= server_of(@stream, options: default_options()).must()
+    c @= server(@stream, options: default_options()).must()
     r = next_request(@c).must()
     assert r.method == "GET" && r.path == "/n?q=1" && r.authority == "localhost"
     answer(@c, stream: r.stream, response: fixture.respond_text(text: "ok", r: r)).must()
-    assert threads.wait_text(@client) == "200 ok"
+    assert threads.wait_text(@calling) == "200 ok"
     close(@c).must()
     net.close_listener(@l).must()
 
 # A response with trailers written by a server.
 test "answer: a response with trailers"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /a").must()
+    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /a").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    c @= server_of(@stream, options: default_options()).must()
+    c @= server(@stream, options: default_options()).must()
     r = next_request(@c).must()
     answer(
         @c,
         stream: r.stream,
         response: Response(status: 200, headers: [], body: bytes.from_text("body"), trailers: [Field(name: "x-done", value: "1", sensitive: false)])
     ).must()
-    assert threads.wait_text(@client) == "200 body"
+    assert threads.wait_text(@calling) == "200 body"
     close(@c).must()
     net.close_listener(@l).must()
 
@@ -2511,12 +2508,12 @@ test "answer: a response with trailers"
 # that sends each request's body back.
 test "serve: one request echoed"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /s").must()
+    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /s").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    c @= server_of(@stream, options: default_options()).must()
+    c @= server(@stream, options: default_options()).must()
     assert serve(@c, handler: fixture.echo) == 1
-    assert threads.wait_text(@client) == "200 "
+    assert threads.wait_text(@calling) == "200 "
     close(@c).must()
     net.close_listener(@l).must()
 
@@ -2524,22 +2521,22 @@ test "serve: one request echoed"
 # of the tests' answers to every request.
 test "serve_with: a health check's text"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /health").must()
+    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /health").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    c @= server_of(@stream, options: default_options()).must()
+    c @= server(@stream, options: default_options()).must()
     assert serve_with(@c, state: "SERVING", handler: fixture.respond_text) == 1
-    assert threads.wait_text(@client) == "200 SERVING"
+    assert threads.wait_text(@calling) == "200 SERVING"
     close(@c).must()
     net.close_listener(@l).must()
 
 # The next stream a client opens, while another's events wait.
 test "accept_stream: the second request's head, the first's held"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /h").must()
+    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /h").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    c @= server_of(@stream, options: default_options()).must()
+    c @= server(@stream, options: default_options()).must()
 
     match accept_stream(@c).must()
         .request r =>
@@ -2551,6 +2548,6 @@ test "accept_stream: the second request's head, the first's held"
             ).must()
         .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => assert false
 
-    assert threads.wait_text(@client) == "200 seen"
+    assert threads.wait_text(@calling) == "200 seen"
     close(@c).must()
     net.close_listener(@l).must()

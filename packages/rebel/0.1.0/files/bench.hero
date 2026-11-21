@@ -47,7 +47,7 @@ constant INVALID: str
 
 ## Settings
 
-# How a measurement is made. Built by `defaults`, a field changed by the
+# How a measurement is made. Built by `default_settings`, a field changed by the
 # `with_` functions, or built directly within the bounds each field states.
 record Settings
     # Rounds run and discarded after the calls of a round are settled and
@@ -80,7 +80,7 @@ record Settings
 # waiting past a tenth, and a floor of effect of 0.5 %, the project's own.
 #
 # See also `with_rounds` and `with_round`.
-function defaults() -> Settings
+function default_settings() -> Settings
     return Settings(
         warmups: 1,
         rounds: 20,
@@ -493,38 +493,38 @@ function throughput(summary: Summary, per_call: f64) -> f64
 ## Examples
 
 # The settings of a measurement no program changed.
-test "defaults: 20 rounds of 100 milliseconds"
-    s = defaults()
+test "default_settings: 20 rounds of 100 milliseconds"
+    s = default_settings()
     assert s.warmups == 1 && s.rounds == 20 && s.round.nanoseconds == 100000000 && s.floor == 0.005
 
 # Three warm-up rounds for a work that warms slowly.
 test "with_warmups: three warm-ups"
-    assert with_warmups(defaults(), warmups: 3).warmups == 3
+    assert with_warmups(default_settings(), warmups: 3).warmups == 3
 
 # Five rounds, for a quick look.
 test "with_rounds: five rounds"
-    assert with_rounds(defaults(), rounds: 5).rounds == 5
+    assert with_rounds(default_settings(), rounds: 5).rounds == 5
 
 # A measurement for two seconds: many rounds, stopped by the time.
 test "with_time: two seconds"
-    s = with_time(with_rounds(defaults(), rounds: 1000000), most: time.seconds(2).must())
+    s = with_time(with_rounds(default_settings(), rounds: 1000000), most: time.seconds(2).must())
     assert s.most.nanoseconds == 2000000000
 
 # Rounds of a millisecond, for a work that is cheap.
 test "with_round: rounds of a millisecond"
-    assert with_round(defaults(), round: time.milliseconds(1).must()).round.nanoseconds == 1000000
+    assert with_round(default_settings(), round: time.milliseconds(1).must()).round.nanoseconds == 1000000
 
 # Every round kept, for a work that waits on a disk by nature.
 test "with_waiting: every round kept"
-    assert with_waiting(defaults(), share: math.INF).waiting == math.INF
+    assert with_waiting(default_settings(), share: math.INF).waiting == math.INF
 
 # A floor of 1 %, for a machine that is never still.
 test "with_floor: a floor of 1 %"
-    assert with_floor(defaults(), share: 0.01).floor == 0.01
+    assert with_floor(default_settings(), share: 0.01).floor == 0.01
 
 # A sum of a thousand numbers, measured over five short rounds.
 test "measure: a sum of a thousand numbers"
-    settings = with_rounds(with_round(defaults(), round: time.milliseconds(1).must()), rounds: 5)
+    settings = with_rounds(with_round(default_settings(), round: time.milliseconds(1).must()), rounds: 5)
     report = measure(work: samples.sum_to, input: 1000, settings: settings).must()
     assert report.summary.count >= 1
     assert report.summary.best <= report.summary.median
@@ -532,7 +532,7 @@ test "measure: a sum of a thousand numbers"
 
 # A loop against Gauss's formula: the formula is faster.
 test "compare_versions: a loop against a formula"
-    settings = with_rounds(with_round(defaults(), round: time.milliseconds(1).must()), rounds: 8)
+    settings = with_rounds(with_round(default_settings(), round: time.milliseconds(1).must()), rounds: 8)
     comparison = compare_versions(
         before: samples.sum_to,
         after: samples.sum_by_formula,

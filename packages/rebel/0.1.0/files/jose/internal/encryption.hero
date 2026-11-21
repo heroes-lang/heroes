@@ -106,9 +106,9 @@ function kind_of(curve: str) -> keypairs.Kind?
 
 # The secret `mine`, a private JWK, agrees with `theirs`, a public one.
 function agreed(mine: jose.Key, theirs: jose.Key) -> [u8]?
-    private @= keypairs.parse_private_der(forms.private_der(mine)?)?
+    private @= keypairs.decode_private_der(forms.private_der(mine)?)?
 
-    match keypairs.parse_public_der(forms.public_der(theirs)?)
+    match keypairs.decode_public_der(forms.public_der(theirs)?)
         .err e =>
             keypairs.close_private(@private)?
             return fail(code: e.code, msg: e.msg)
@@ -196,7 +196,7 @@ function encrypt(plaintext: [u8], key: json.Value, alg: str, enc: str, header: {
         content_key @ k.material["k"].must()
     else if alg == "ECDH-ES"
         own @= keypairs.generate(kind_of(k.curve)?)?
-        own_der = keypairs.format_private_der(own)
+        own_der = keypairs.encode_private_der(own)
         keypairs.close_private(@own)?
         mine = forms.read_private(own_der?)?
         z = agreed(mine: mine, theirs: jwk.public_of(k)?)?
@@ -209,7 +209,7 @@ function encrypt(plaintext: [u8], key: json.Value, alg: str, enc: str, header: {
         content_key @ os.random_bytes(size)?
 
         if alg == "RSA-OAEP-256"
-            public @= keypairs.parse_public_der(forms.public_der(k)?)?
+            public @= keypairs.decode_public_der(forms.public_der(k)?)?
             made = keypairs.encrypt(public, text: content_key)
             keypairs.close_public(@public)?
             wrapped @ made?
@@ -253,7 +253,7 @@ function content_key_of(k: jose.Key, alg: str, enc: str, size: i64, protected: {
         return ok(concat_kdf(z: z, algorithm_id: enc, party_u: party_u, party_v: party_v, bits: size * 8))
 
     if alg == "RSA-OAEP-256"
-        private @= keypairs.parse_private_der(forms.private_der(k)?)?
+        private @= keypairs.decode_private_der(forms.private_der(k)?)?
         got = keypairs.decrypt(private, data: wrapped)
         keypairs.close_private(@private)?
 

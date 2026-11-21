@@ -15,7 +15,7 @@
 # observed from them the same day.
 
 capability message/read  a message read from bytes: its header fields in order, its body
-  heroes  mail.parse_message
+  heroes  mail.decode_message
   go      net/mail.ReadMessage, Message, Message.Header, Message.Body
   rust    mail_parser::MessageParser, mail_parser::Message, mail_parser::MessageRef
   python  email.message_from_bytes, email.message_from_string, email.parser.BytesParser, email.parser.Parser, email.parser.FeedParser, email.parser.BytesFeedParser, email.message.EmailMessage, email.message.Message, email.message.MIMEPart
@@ -36,7 +36,7 @@ capability message/defects  what was wrong in a message read, told and not raise
   note    a sentence each; a strict reader is a program that refuses a message whose `defects` is not empty, where Python's `raise_on_defect` raises
 
 capability message/write  a message written as bytes, its header folded, its parts with boundaries
-  heroes  mail.format_message, mail.write_message
+  heroes  mail.encode_message, mail.write_message
   go      -
   rust    lettre::Message, lettre::message::Message
   python  email.message.EmailMessage.as_bytes, email.message.EmailMessage.as_string, email.generator.BytesGenerator, email.generator.Generator, email.policy.EmailPolicy.linesep, email.policy.EmailPolicy.max_line_length, email.policy.EmailPolicy.verify_generated_headers, email.errors.HeaderWriteError
@@ -50,14 +50,14 @@ capability message/write-options  the line end, the fold length and UTF-8 in the
   note    Python's `HTTP` policy is `line_length: 0`; `cte_type` is the builders' choice, always 7-bit (below); Python's compat32 behaviour, the old API kept for old programs, has no counterpart
 
 capability header/read  the header fields alone, unfolded
-  heroes  mail.parse_header
+  heroes  mail.decode_fields
   go      -
   rust    mail_parser::Headers, mail_parser::Header, mail_parser::HeaderIter, mail_parser::HeaderForm, mail_parser::HeaderName, mail_parser::HeaderKey, mail_parser::NamedHeaders
   python  email.parser.BytesHeaderParser, email.parser.HeaderParser, email.message.EmailMessage.raw_items, email.policy.EmailPolicy.header_source_parse
   note    a value is kept as written, unfolded, and never decoded: decoding is asked (`decode_header`, `parse_address_list`, `parse_date`), where Python's default policy decodes on reading
 
 capability header/write  a header field folded to a line length, the header written
-  heroes  mail.format_field, mail.format_header
+  heroes  mail.format_field, mail.encode_fields
   go      -
   rust    lettre::message::header::Headers, lettre::message::header::HeaderName, lettre::message::header::HeaderValue, lettre::message::header::InvalidHeaderName
   python  email.policy.EmailPolicy.fold, email.policy.EmailPolicy.fold_binary, email.headerregistry.BaseHeader.fold, email.policy.EmailPolicy.refold_source
@@ -120,7 +120,7 @@ capability address/utf8  an address above ASCII (RFC 6532), read, written, and t
   note    a local part or a domain above ASCII is read and written as UTF-8; with `standard_options` a domain is written as its A-labels (address/idna) and a local part fails `unsupported`, where Python writes it raw and only the server refuses
 
 capability address/idna  a domain above ASCII written in ASCII (IDNA's A-labels)
-  heroes  mail.format_message, mail.format_header, mail.format_field, url/idna.to_ascii
+  heroes  mail.encode_message, mail.encode_fields, mail.format_field, url/idna.to_ascii
   go      -
   rust    lettre::Address
   python  -
@@ -202,7 +202,7 @@ capability mime/disposition  a disposition read and written, a part's file name,
   note    the file name is the disposition's `filename`, else the content type's `name`, as Python looks; encoded words in it are decoded, as mail readers do for the many writers that put them there against RFC 2047
 
 capability mime/tree  a multipart read as a tree, its preamble and epilogue kept
-  heroes  mail.parse_message, mail.Message.parts, mail.Message.preamble, mail.Message.epilogue, mail.is_multipart, mail.MAX_DEPTH
+  heroes  mail.decode_message, mail.Message.parts, mail.Message.preamble, mail.Message.epilogue, mail.is_multipart, mail.MAX_DEPTH
   go      mime/multipart.NewReader, mime/multipart.Reader, mime/multipart.Reader.NextPart, mime/multipart.Reader.NextRawPart, mime/multipart.Part, mime/multipart.Part.Header, mime/multipart.Part.Read, mime/multipart.Part.Close
   rust    mail_parser::MessagePart, mail_parser::PartKind, mail_parser::PartId, mail_parser::Message
   python  email.message.EmailMessage.is_multipart, email.message.EmailMessage.iter_parts, email.message.EmailMessage.get_payload, email.message.EmailMessage.preamble, email.message.EmailMessage.epilogue, email.message.EmailMessage.attach, email.message.EmailMessage.set_payload
@@ -262,7 +262,7 @@ capability mime/forward  a message put whole inside another
   go      -
   rust    -
   python  email.mime.message.MIMEMessage, email.contentmanager.set_message_content
-  note    its body is the message's bytes, read again with `parse_message`
+  note    its body is the message's bytes, read again with `decode_message`
 
 capability mime/compose  a message of text, HTML and files in the structure readers expect
   heroes  mail.compose
@@ -339,10 +339,10 @@ capability fields/known  the well-known fields set by name
   go      -
   rust    lettre::message::header::From, lettre::message::header::To, lettre::message::header::Cc, lettre::message::header::Bcc, lettre::message::header::ReplyTo, lettre::message::header::Sender, lettre::message::header::Subject, lettre::message::header::Comments, lettre::message::header::Keywords, lettre::message::header::UserAgent, lettre::message::header::MimeVersion, lettre::message::header::MIME_VERSION_1_0, lettre::message::header::Header
   python  -
-  note    a field is a name and a value: one function sets any, and a value is made by the function of its kind; `MIME-Version: 1.0` is written by `format_message` and `compose` where it is owed
+  note    a field is a name and a value: one function sets any, and a value is made by the function of its kind; `MIME-Version: 1.0` is written by `encode_message` and `compose` where it is owed
 
 capability utf8/header  header text above ASCII written as UTF-8 (RFC 6532) or as encoded words
-  heroes  mail.WriteOptions.utf8, mail.format_message
+  heroes  mail.WriteOptions.utf8, mail.encode_message
   go      -
   rust    -
   python  email.policy.SMTPUTF8, email.policy.EmailPolicy.utf8
@@ -362,7 +362,7 @@ capability mbox/envelope  the `From ` envelope line of an mbox message kept on t
   python  email.message.EmailMessage.get_unixfrom, email.message.EmailMessage.set_unixfrom, email.policy.EmailPolicy.mangle_from_, email.errors.MisplacedEnvelopeHeaderDefect
 
 capability maildir  the messages of a maildir folder, and their flags
-  heroes  refused: walking a folder is `fs`'s, of `mail`'s own layer, which `mail` may not use (README § A1); `fs` reads each file and `parse_message` reads it, and a flag is the file name's own text after `:2,`
+  heroes  refused: walking a folder is `fs`'s, of `mail`'s own layer, which `mail` may not use (README § A1); `fs` reads each file and `decode_message` reads it, and a flag is the file name's own text after `:2,`
   go      -
   rust    mail_parser::mailbox::maildir::FolderIterator, mail_parser::mailbox::maildir::MessageIterator, mail_parser::mailbox::maildir::Message, mail_parser::mailbox::maildir::Flag
   python  -

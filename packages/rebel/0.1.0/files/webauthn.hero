@@ -39,16 +39,21 @@ use webauthn/internal/response as reply
 ## The codes
 
 # The code of a response that is not well formed or does not verify: every
-# `verify_*` and `parse_*` function answers it, the message naming the
+# `verify_*` and `decode_*` function answers it, the message naming the
 # check.
 constant INVALID: str
     codes.INVALID
 
 # The code of a key whose algorithm or curve this system's cryptography
-# lacks: EdDSA on Windows, ES512 everywhere; `parse_public_key`,
+# lacks: EdDSA on Windows, ES512 everywhere; `decode_public_key`,
 # `verify_signature` and the `verify_*` functions answer it.
 constant UNSUPPORTED: str
     codes.UNSUPPORTED
+
+# The code an `AuthenticatorData`'s `extensions` answers where its flags say
+# no extension outputs follow.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
 
 ## Algorithms
 
@@ -563,7 +568,7 @@ record ClientData
 # Fails `invalid` where it is not a JSON object with a string `type`,
 # `challenge` and `origin`, or the challenge is not base 64 for URLs. See
 # also `verify_registration`.
-function parse_client_data(data: [u8]) -> ClientData?
+function decode_client_data(data: [u8]) -> ClientData?
     c = client.read(data)?
     return ok(
         ClientData(kind: c.kind, challenge: c.challenge, origin: c.origin, cross_origin: c.cross_origin, top_origin: c.top_origin)
@@ -584,8 +589,6 @@ record AuthenticatorData
     backed_up: bool
     # AT: a credential follows.
     attested: bool
-    # ED: extension outputs follow.
-    has_extensions: bool
     # The signature counter, 0 to 2^32 - 1.
     sign_count: i64
     # The authenticator's model, 16 bytes; empty where no credential
@@ -596,8 +599,9 @@ record AuthenticatorData
     # The credential's COSE key, its bytes as written; empty where none
     # follows.
     public_key: [u8]
-    # The extension outputs, one CBOR map's bytes; empty where none.
-    extensions: [u8]
+    # The extension outputs, one CBOR map's bytes; it fails `not_found` where
+    # the flag ED says none follow.
+    extensions: [u8]?
 
 # The authenticator data `data` holds.
 #
@@ -605,11 +609,11 @@ record AuthenticatorData
 #
 # Fails `invalid` where it is shorter than its flags say, a COSE key or the
 # extensions are not one CBOR map, or bytes follow them. See also
-# `parse_attestation_object`.
-function parse_authenticator_data(data: [u8]) -> AuthenticatorData?
+# `decode_attestation_object`.
+function decode_authenticator_data(data: [u8]) -> AuthenticatorData?
     a = authdata.read(data)?
     return ok(
-        AuthenticatorData(rp_id_hash: a.rp_id_hash, user_present: a.user_present, user_verified: a.user_verified, backup_eligible: a.backup_eligible, backed_up: a.backed_up, attested: a.attested, has_extensions: a.has_extensions, sign_count: a.sign_count, aaguid: a.aaguid, credential_id: a.credential_id, public_key: a.public_key, extensions: a.extensions)
+        AuthenticatorData(rp_id_hash: a.rp_id_hash, user_present: a.user_present, user_verified: a.user_verified, backup_eligible: a.backup_eligible, backed_up: a.backed_up, attested: a.attested, sign_count: a.sign_count, aaguid: a.aaguid, credential_id: a.credential_id, public_key: a.public_key, extensions: authdata.extensions_of(a))
     )
 
 # An attestation object: what an authenticator answers a registration.
@@ -627,8 +631,8 @@ record AttestationObject
 # - `data`: the bytes, `attestationObject` decoded from base 64.
 #
 # Fails `invalid` where it is not such a map. See also
-# `parse_authenticator_data`.
-function parse_attestation_object(data: [u8]) -> AttestationObject?
+# `decode_authenticator_data`.
+function decode_attestation_object(data: [u8]) -> AttestationObject?
     o = flow.object(data)?
     return ok(AttestationObject(format: o.format, statement: o.statement, auth_data: o.auth_data))
 
@@ -641,7 +645,7 @@ record PublicKey
     # How its signatures are checked.
     scheme: keypairs.Scheme
     # The key as SubjectPublicKeyInfo DER, which `keypairs.verify_der` and
-    # `keypairs.parse_public_der` read.
+    # `keypairs.decode_public_der` read.
     der: [u8]
 
 # The public key the COSE key `cose` holds.
@@ -652,7 +656,7 @@ record PublicKey
 # Fails `invalid` where it is not a COSE key of an algorithm this package
 # reads, or its members disagree with its algorithm; `unsupported` for ES512
 # and, where the system lacks Ed25519, EdDSA. See also `verify_signature`.
-function parse_public_key(cose: [u8]) -> PublicKey?
+function decode_public_key(cose: [u8]) -> PublicKey?
     k = cose_key.read(cose)?
     return ok(PublicKey(algorithm: k.algorithm, kind: k.kind, scheme: k.scheme, der: k.der))
 
@@ -664,8 +668,8 @@ function parse_public_key(cose: [u8]) -> PublicKey?
 #   it.
 #
 # False, never a failure, for a signature that does not hold. Fails as
-# `parse_public_key` fails, and with `keypairs.verify_der`'s codes. See also
-# `parse_public_key`.
+# `decode_public_key` fails, and with `keypairs.verify_der`'s codes. See also
+# `decode_public_key`.
 function verify_signature(cose: [u8], data: [u8], signature: [u8]) -> bool?
     k = cose_key.read(cose)?
     return keypairs.verify_der(public_der: k.der, scheme: k.scheme, message: data, signature: signature)
@@ -758,34 +762,34 @@ test "user_handle_of: the handle user-1, and an assertion with none"
     assert user_handle_of(recorded.AUTH_ES256_ZERO).is_err()
 
 # The client data a browser signs.
-test "parse_client_data: a registration's type, challenge and origin"
+test "decode_client_data: a registration's type, challenge and origin"
     data: [u8] @= []
     text = "{\"type\":\"webauthn.create\",\"challenge\":\"AAEC\",\"origin\":\"https://example.org\"}"
 
     for at in range(from: 0, to: text.len())
         data @ data.push(text[at])
 
-    c = parse_client_data(data).must()
+    c = decode_client_data(data).must()
     assert c.kind == "webauthn.create" && c.challenge == [0, 1, 2] && c.origin == "https://example.org"
 
 # Authenticator data of an assertion: the RP ID's hash, the flags, the
 # counter.
-test "parse_authenticator_data: user present and verified, counter 7"
-    a = parse_authenticator_data(
+test "decode_authenticator_data: user present and verified, counter 7"
+    a = decode_authenticator_data(
         [0xbf, 0xab, 0xc3, 0x74, 0x32, 0x95, 0x8b, 0x06, 0x33, 0x60, 0xd3, 0xad, 0x64, 0x61, 0xc9, 0xc4, 0x73, 0x5a, 0xe7, 0xf8, 0xed, 0xd4, 0x65, 0x92, 0xa5, 0xe0, 0xf0, 0x14, 0x52, 0xb2, 0xe4, 0xb5, 0x05, 0x00, 0x00, 0x00, 0x07]
     ).must()
     assert a.user_present && a.user_verified && !a.attested && a.sign_count == 7
     assert a.rp_id_hash == crypto.sha256_text("example.org")
 
 # An attestation object of the format "none".
-test "parse_attestation_object: none, an empty statement, 37 bytes of authenticator data"
-    o = parse_attestation_object(
+test "decode_attestation_object: none, an empty statement, 37 bytes of authenticator data"
+    o = decode_attestation_object(
         [0xa3, 0x63, 0x66, 0x6d, 0x74, 0x64, 0x6e, 0x6f, 0x6e, 0x65, 0x67, 0x61, 0x74, 0x74, 0x53, 0x74, 0x6d, 0x74, 0xa0, 0x68, 0x61, 0x75, 0x74, 0x68, 0x44, 0x61, 0x74, 0x61, 0x58, 0x25, 0xbf, 0xab, 0xc3, 0x74, 0x32, 0x95, 0x8b, 0x06, 0x33, 0x60, 0xd3, 0xad, 0x64, 0x61, 0xc9, 0xc4, 0x73, 0x5a, 0xe7, 0xf8, 0xed, 0xd4, 0x65, 0x92, 0xa5, 0xe0, 0xf0, 0x14, 0x52, 0xb2, 0xe4, 0xb5, 0x05, 0x00, 0x00, 0x00, 0x07]
     ).must()
     assert o.format == "none" && o.auth_data.len() == 37
 
 # A registered key read: its algorithm and its key for `crypto/keypairs`.
-test "parse_public_key: the ES256 key of a registration"
+test "decode_public_key: the ES256 key of a registration"
     rp = RelyingParty(id: "example.org", name: "Example", origins: ["https://example.org"])
     challenge: [u8] @= []
 
@@ -796,7 +800,7 @@ test "parse_public_key: the ES256 key of a registration"
         response: recorded.PACKED_SELF_ES256,
         expected: expect(rp: rp, challenge: challenge)
     ).must()
-    key = parse_public_key(registration.credential.public_key).must()
+    key = decode_public_key(registration.credential.public_key).must()
     assert key.algorithm == ES256 && key.kind == .p256 && key.der[0] == 0x30
 
 # A signature checked against a COSE key: what an assertion signs.

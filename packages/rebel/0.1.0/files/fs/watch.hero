@@ -70,7 +70,7 @@ constant LIMIT: str
 constant CLOSED: str
     "closed"
 
-# The program was asked to stop (`net.catch_stop`, `net.ask_stop`), before the
+# The program was asked to stop (`os.catch_stop`, `os.ask_stop`), before the
 # call or while it waited. `wait` and `wait_forever` fail with it.
 constant STOPPED: str
     "stopped"

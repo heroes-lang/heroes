@@ -126,7 +126,7 @@ capability serial/settings  every setting at once, and the settings read back fr
   note    set all at once and read back after the set: a value the port did not keep is `unsupported` and the port put back as it was (POSIX's `tcsetattr` succeeds where any change was made)
 
 capability serial/defaults  a port's usual settings, 9600 or another speed with 8 bits, no parity, one stop and no flow
-  heroes  serial.defaults
+  heroes  serial.default_settings
   dotnet  SerialPort()
   go      -
   rust    -
@@ -283,7 +283,7 @@ capability serial/cancel  a read or a write another thread waits in ended
   go      -
   rust    -
   python  Serial.cancel_read, Serial.cancel_write
-  note    the stop ends every wait (`net.ask_stop`), and a timeout bounds it; a close on another thread does not end a wait already begun (`hero_stream.h` runs it to its end), so a cancel of one stream alone is not written
+  note    the stop ends every wait (`os.ask_stop`), and a timeout bounds it; a close on another thread does not end a wait already begun (`hero_stream.h` runs it to its end), so a cancel of one stream alone is not written
 
 capability serial/remote  a port reached over the network, RFC 2217
   heroes  pending

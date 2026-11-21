@@ -76,7 +76,7 @@ record Document
 
 ## Reading
 
-# How a text is read. `strict` answers Python's defaults; a program changes
+# How a text is read. `strict_read_options` answers Python's defaults; a program changes
 # the fields it needs.
 record ReadOptions
     # The texts that separate a key from its value, the first standing in
@@ -108,7 +108,7 @@ record ReadOptions
 # Python's defaults, but keys kept as written: `=` and `:`, `#` and `;`
 # comment lines and no inline ones, nothing given twice, no bare key, no key
 # before a header, comments dropped, empty lines kept inside a value.
-function strict() -> ReadOptions
+function strict_read_options() -> ReadOptions
     return ReadOptions(
         delimiters: ["=", ":"],
         comment_prefixes: ["#", ";"],
@@ -121,7 +121,7 @@ function strict() -> ReadOptions
         empty_lines_in_values: true
     )
 
-# The document `text` holds, read as `strict` reads.
+# The document `text` holds, read as `strict_read_options` reads.
 #
 # - `text`: the INI text, line feeds or CR LF; empty for no section.
 #
@@ -130,7 +130,7 @@ function strict() -> ReadOptions
 # has no name, no closing bracket or text after it, or a section or a key is
 # given twice. See also `parse_with`.
 function parse(text: str) -> Document?
-    return parse_with(text, strict())
+    return parse_with(text, strict_read_options())
 
 # The document `text` holds, read as `options` say.
 #
@@ -404,7 +404,7 @@ function remove_key(@doc: Document, section: str, key: str) -> ()?
 
 ## Writing
 
-# How a document is written. `spaced` answers Python's layout.
+# How a document is written. `spaced_write_options` answers Python's layout.
 record WriteOptions
     # What stands between a key and its value: "=" or ":".
     delimiter: str
@@ -412,10 +412,10 @@ record WriteOptions
     spaced: bool
 
 # Python's layout: `key = value`.
-function spaced() -> WriteOptions
+function spaced_write_options() -> WriteOptions
     return WriteOptions(delimiter: "=", spaced: true)
 
-# `doc` written as `spaced` writes it.
+# `doc` written as `spaced_write_options` writes it.
 #
 # - `doc`: the document.
 #
@@ -424,12 +424,12 @@ function spaced() -> WriteOptions
 # section of no name, first, has no header. Fails `invalid` where a section of
 # no name is not the first, a name holds a line end or a `]`, a comment is not
 # one line opening with `#` or `;`, or a key or a value would be read back
-# otherwise by `strict`: a key empty, holding a delimiter or a line end, or
+# otherwise by `strict_read_options`: a key empty, holding a delimiter or a line end, or
 # opening like a header or a comment; a value holding a carriage return, a
 # line with white space at an end, a later line opening like a comment, or an
 # empty last line. See also `format_with`.
 function format(doc: Document) -> str?
-    return format_with(doc, spaced())
+    return format_with(doc, spaced_write_options())
 
 # `doc` written as `options` say.
 #
@@ -455,8 +455,8 @@ function format_with(doc: Document, options: WriteOptions) -> str?
 ## Examples
 
 # Python's defaults, a key with a colon.
-test "strict: a key and its value split at a colon"
-    doc = parse_with("[server]\nport: 8080\n", strict()).must()
+test "strict_read_options: a key and its value split at a colon"
+    doc = parse_with("[server]\nport: 8080\n", strict_read_options()).must()
     assert value_of(doc, section: "server", key: "port").must() == "8080"
 
 # A document read, two sections in order.
@@ -466,7 +466,7 @@ test "parse: two sections"
 
 # Comments kept and keys read in lower case.
 test "parse_with: comments kept, keys lowered"
-    options @= strict()
+    options @= strict_read_options()
     options.keep_comments @ true
     options.lower_keys @ true
     doc = parse_with("[a]\n# the user\nName = Ana\n", options).must()
@@ -536,8 +536,8 @@ test "remove_key: one of two"
     assert format(doc).must() == "[a]\nj = 2\n\n"
 
 # Python's layout.
-test "spaced: a space either side"
-    assert format_with(from_map({"a": {"k": "v"}}), spaced()).must() == "[a]\nk = v\n\n"
+test "spaced_write_options: a space either side"
+    assert format_with(from_map({"a": {"k": "v"}}), spaced_write_options()).must() == "[a]\nk = v\n\n"
 
 # A document read and written back, a value of two lines.
 test "format: a value across two lines"
@@ -545,7 +545,7 @@ test "format: a value across two lines"
 
 # A colon and no spaces.
 test "format_with: key:value"
-    options @= spaced()
+    options @= spaced_write_options()
     options.delimiter @ ":"
     options.spaced @ false
     assert format_with(from_map({"a": {"k": "v"}}), options).must() == "[a]\nk:v\n\n"

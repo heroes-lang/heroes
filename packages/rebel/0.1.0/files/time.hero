@@ -27,7 +27,7 @@
 # (`i18n/dates.format_pattern`, `i18n/dates.parse_pattern`,
 # `i18n/dates.month_names`): a text here is one of the fixed `Layout`s, and
 # the names of days and months are English. Nor does it wait on more than one
-# thing at once, or end a wait at the program's stop (`net.catch_stop`):
+# thing at once, or end a wait at the program's stop (`os.catch_stop`):
 # `poll` does both.
 #
 # It fails `invalid` where a text or a value is not what the function reads,
@@ -278,10 +278,10 @@ function between_marks(from: Mark, to: Mark) -> Duration?
 #
 # It may wait longer, as long as the system takes to run the program again; a
 # signal does not cut it short, and it does not count the time the machine
-# itself sleeps. The program's stop (`net.catch_stop`, `net.ask_stop`) does
+# itself sleeps. The program's stop (`os.catch_stop`, `os.ask_stop`) does
 # not end it either, where every wait of `io`, `poll`, `serial` and `net` ends
 # at a stop: a loop that must end on Ctrl-C waits in slices short enough to
-# ask `net.is_stop_asked` between them, or waits on a `poll.add_timer`.
+# ask `os.is_stop_asked` between them, or waits on a `poll.add_timer`.
 function sleep(d: Duration)
     if d.nanoseconds > 0
         _ = hero_time.sleep_ns(d.nanoseconds)

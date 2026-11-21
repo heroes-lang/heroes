@@ -17,7 +17,7 @@ constant HEX_CAPITAL: str
 # a space on each side, so that it joins no token beside it. Fails `invalid`
 # where `v` holds a `nan` or an infinity.
 function value(v: json.Value) -> str?
-    options: json.FormatOptions @= json.compact()
+    options: json.FormatOptions @= json.compact_format_options()
     options.escape_html @ true
     options.escape_js @ true
     written = json.format_with(v, options)?

@@ -112,7 +112,7 @@ variant Segment
         # Shift JIS.
         assignment: i64
 
-# How `make_segments` chooses a symbol. Built directly, or by `defaults`.
+# How `make_segments` chooses a symbol. Built directly, or by `default_options`.
 record Options
     # The level of error correction, the least the symbol has.
     level: Level
@@ -130,7 +130,7 @@ record Options
 # - `level`: the level of error correction.
 #
 # See also `make_segments`.
-function defaults(level: Level) -> Options
+function default_options(level: Level) -> Options
     return Options(level: level, min_version: 1, max_version: 40, boost: false)
 
 ## Making a code
@@ -194,7 +194,7 @@ function make_bytes(data: [u8], level: Level) -> Code?
 # assignment is outside 0 to 999999, or a version of `options` is outside 1
 # to 40 or the two are out of order; `unsupported` where no version allowed
 # holds the data. Costs the versions tried, each a sum over the segments, and
-# eight masks scored over the symbol. See also `make`, `defaults`.
+# eight masks scored over the symbol. See also `make`, `default_options`.
 function make_segments(segments: [Segment], options: Options) -> Code?
     pieces: [bits.Piece] @= []
 
@@ -403,7 +403,7 @@ function to_compact_text(code: Code, border: i64, invert: bool) -> str
 function to_terminal(code: Code, border: i64) -> str
     return render.colours(code.modules, border)
 
-# How `to_svg` draws a code. Built directly, or by `svg_defaults`.
+# How `to_svg` draws a code. Built directly, or by `default_svg_options`.
 record SvgOptions
     # The width and the height of one module in pixels, 1 or more.
     scale: i64
@@ -417,7 +417,7 @@ record SvgOptions
 
 # The SVG options of an ordinary code: one pixel a module, four modules of
 # quiet zone, black on white. See also `to_svg`.
-function svg_defaults() -> SvgOptions
+function default_svg_options() -> SvgOptions
     return SvgOptions(scale: 1, border: 4, dark: "#000", light: "#fff")
 
 # `code` as an SVG document: one path for the dark modules over a rectangle
@@ -429,7 +429,7 @@ function svg_defaults() -> SvgOptions
 # The document is one line ending with "\n", with no XML declaration. Fails
 # `invalid` where the scale is below 1, the border below 0, or a colour holds
 # a character outside letters, digits, space and `#(),.%-`. See also
-# `svg_defaults`.
+# `default_svg_options`.
 function to_svg(code: Code, options: SvgOptions) -> str?
     return render.svg(
         modules: code.modules,
@@ -505,8 +505,8 @@ test "make_segments: digits and text, the level boosted"
     assert code.level == .high
 
 # The options of the smallest code at a level.
-test "defaults: every version tried"
-    options = defaults(.quartile)
+test "default_options: every version tried"
+    options = default_options(.quartile)
     assert options.min_version == 1 && options.max_version == 40
 
 # A text split into the modes that write it shortest.
@@ -570,12 +570,12 @@ test "to_terminal: black and white grounds"
 
 # A code as SVG for a page.
 test "to_svg: black on white, four modules of border"
-    svg = to_svg(code: make(text: "1", level: .low).must(), options: svg_defaults()).must()
+    svg = to_svg(code: make(text: "1", level: .low).must(), options: default_svg_options()).must()
     assert svg.slice(from: 0, to: 4) == "<svg"
 
 # The ordinary SVG options.
-test "svg_defaults: one pixel a module, black on white"
-    assert svg_defaults().border == 4
+test "default_svg_options: one pixel a module, black on white"
+    assert default_svg_options().border == 4
 
 # Pixels for `image`.
 test "to_pixels: a version 1 code, two pixels a module, no border"

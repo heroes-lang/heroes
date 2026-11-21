@@ -1,4 +1,4 @@
-# A zip member's data read from the archive's stream, in chunks: stored or
+# A zip member's data read from the archive's stream or its held bytes, in chunks: stored or
 # deflated, decompressed to no more than the size the directory states, its
 # CRC-32 and size checked at its end. `zip_read` finds the member.
 
@@ -10,9 +10,9 @@ use io
 
 # A member's data being read.
 record Reading
-    # The archive's stream.
-    s: io.Stream
-    # The stream's size.
+    # Where the archive's bytes are read from.
+    src: zip_read.Source
+    # The archive's size.
     size: i64
     # The member.
     m: zip_read.Member
@@ -29,11 +29,11 @@ record Reading
     # Whether the data has ended and been checked.
     ended: bool
 
-# A reading of `m`'s data in `s`, a stream of `size` bytes. Fails
+# A reading of `m`'s data in `src`, an archive of `size` bytes. Fails
 # `unsupported` on an encrypted member or a method other than stored and
 # deflated, `limit` where its size passes `limit`, and `invalid` where its
 # local header is not one or its data passes the stream's end.
-function start_reading(s: io.Stream, size: i64, m: zip_read.Member, limit: i64) -> Reading?
+function start_reading(src: zip_read.Source, size: i64, m: zip_read.Member, limit: i64) -> Reading?
     if m.flags & zip_read.FLAG_ENCRYPTED != 0
         return fail(
             code: codes.UNSUPPORTED,
@@ -48,7 +48,7 @@ function start_reading(s: io.Stream, size: i64, m: zip_read.Member, limit: i64) 
 
     if m.size > limit
         return fail(code: codes.LIMIT, msg: f"the member \"{m.name}\" holds {m.size} bytes, past the limit of {limit}")
-    local = zip_read.bytes_at(s, at: m.offset, count: 30, size: size, what: f"the local header of \"{m.name}\"")?
+    local = zip_read.bytes_at(src, at: m.offset, count: 30, size: size, what: f"the local header of \"{m.name}\"")?
 
     if zip_read.le(local, at: 0, width: 4) != zip_read.LOCAL
         return codes.invalid_at(at: m.offset, why: f"the local header of \"{m.name}\" is not one")
@@ -63,7 +63,7 @@ function start_reading(s: io.Stream, size: i64, m: zip_read.Member, limit: i64) 
             why: f"the stored member \"{m.name}\" states {m.compressed} bytes stored and {m.size} bytes of data"
         )
     return ok(
-        Reading(s: s, size: size, m: m, at: start, left: m.compressed, d: compress.decompressor(.raw, limit: m.size), check: hash.start32(.crc32), made: 0, ended: false)
+        Reading(src: src, size: size, m: m, at: start, left: m.compressed, d: compress.decompressor(.raw, limit: m.size), check: hash.start32(.crc32), made: 0, ended: false)
     )
 
 # The next chunk of the member's data, none at its end, where its CRC-32
@@ -78,8 +78,7 @@ function next_chunk(@r: Reading) -> [u8]?
 
             if ask > 65536
                 ask @ 65536
-            _ = io.seek(r.s, offset: r.at, from: .start)?
-            got = io.read(r.s, n: ask)?
+            got = zip_read.chunk_at(r.src, at: r.at, most: ask)?
 
             if got.len() == 0
                 return codes.invalid_at(at: r.at, why: f"the archive ends inside the data of \"{r.m.name}\"")
@@ -94,7 +93,7 @@ function next_chunk(@r: Reading) -> [u8]?
             if r.m.method == zip_read.DEFLATED
                 out @ compress.decompress_part(@r.d, data: [], most: r.m.size + 1)?
 
-                if out.len() == 0 && !compress.is_done(r.d)
+                if out.len() == 0 && !compress.is_decompressor_ended(r.d)
                     return codes.invalid_at(
                         at: r.at,
                         why: f"the deflated data of \"{r.m.name}\" ends before its stream does"

@@ -1119,7 +1119,7 @@ function fetch_key_set(transport: http.Client, jwks_uri: str) -> [jose.Key]?
 # Fails `invalid` where the answer is not a JSON object or its `sub` is
 # another; `unsupported` for a signed answer (`application/jwt`); `failed`
 # for a status of 400 or more. See also `verify_id_token`.
-function userinfo(transport: http.Client, endpoint: str, token: Token, subject: str) -> {str: json.Value}?
+function fetch_userinfo(transport: http.Client, endpoint: str, token: Token, subject: str) -> {str: json.Value}?
     asked = authorize(http.request(method: http.METHOD_GET, target: endpoint)?, token: token)
     response = http.require_success(http.send(transport, r: asked)?)?
     kind = http.value_of(response.headers, name: "Content-Type").default("")
@@ -1171,9 +1171,9 @@ test "the authorization code grant on the loopback: metadata, the URL, the redir
     wrong_nonce @= rules
     wrong_nonce.nonce @ "other"
     assert verify_id_token(t.id_token, trusted: provider_keys, rules: wrong_nonce).is_err()
-    info = userinfo(transport, endpoint: m.userinfo_endpoint, token: t, subject: loopback.SUBJECT).must()
+    info = fetch_userinfo(transport, endpoint: m.userinfo_endpoint, token: t, subject: loopback.SUBJECT).must()
     assert info["name"].must() == .text(v: "Jane Doe")
-    assert userinfo(transport, endpoint: m.userinfo_endpoint, token: t, subject: "someone else").is_err()
+    assert fetch_userinfo(transport, endpoint: m.userinfo_endpoint, token: t, subject: "someone else").is_err()
     again = refresh(c, token: t).must()
     assert again.access_token == "access-2" && again.refresh_token == "refresh-1"
     revoke(c, token: again.access_token, hint: "access_token").must()
@@ -1643,7 +1643,7 @@ test "fetch_key_set: one P-256 key"
     _ = loopback.stop(s)
 
 # The user's claims, on the loopback.
-test "userinfo: the user's name"
+test "fetch_userinfo: the user's name"
     s = loopback.start()
     t = Token(
         access_token: "access-1",
@@ -1654,7 +1654,7 @@ test "userinfo: the user's name"
         id_token: "",
         members: {}
     )
-    info = userinfo(
+    info = fetch_userinfo(
         http.default_client(),
         endpoint: f"http://127.0.0.1:{s.port}/userinfo",
         token: t,

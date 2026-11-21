@@ -69,7 +69,7 @@ constant DEFAULT_MAX_EXPANDED: i64
 
 ## Reading a text
 
-# How a stream is read. `strict` answers the options of YAML 1.2 and nothing
+# How a stream is read. `strict_parse_options` answers the options of YAML 1.2 and nothing
 # wider; a program changes the fields it needs.
 record ParseOptions
     # The deepest nesting accepted, counted as `DEFAULT_MAX_DEPTH` counts it. A
@@ -88,10 +88,10 @@ record ParseOptions
 # The options that read YAML 1.2 and nothing wider: nesting no deeper than
 # `DEFAULT_MAX_DEPTH`, aliases copying no more than `DEFAULT_MAX_EXPANDED`, and
 # a key written twice refused.
-function strict() -> ParseOptions
+function strict_parse_options() -> ParseOptions
     return ParseOptions(max_depth: DEFAULT_MAX_DEPTH, max_expanded: DEFAULT_MAX_EXPANDED, duplicate_keys: false)
 
-# The value of the one document `text` holds, read as `strict` reads.
+# The value of the one document `text` holds, read as `strict_parse_options` reads.
 #
 # - `text`: a YAML stream in UTF-8, a byte order mark allowed at its start;
 #   `\r\n` and `\r` are line breaks as `\n` is.
@@ -109,12 +109,12 @@ function strict() -> ParseOptions
 #
 # See also `parse_all`, `json.member`.
 function parse(text: str) -> json.Value?
-    return parse_with(text, strict())
+    return parse_with(text, strict_parse_options())
 
 # The value of the one document `text` holds, read as `options` say.
 #
 # - `text`: a YAML stream in UTF-8, a byte order mark allowed at its start.
-# - `options`: how it is read; `strict()` reads YAML 1.2 and nothing wider.
+# - `options`: how it is read; `strict_parse_options()` reads YAML 1.2 and nothing wider.
 #
 # A stream holding no document answers `null`.
 #
@@ -140,7 +140,7 @@ function parse_with(text: str, options: ParseOptions) -> json.Value?
 #
 # See also `format_all`.
 function parse_all(text: str) -> [json.Value]?
-    return parse_all_with(text, strict())
+    return parse_all_with(text, strict_parse_options())
 
 # The values of every document `text` holds, read as `options` say.
 #
@@ -270,7 +270,7 @@ test "parse_with: the nesting allowed, one past it, an alias nesting past it, an
         .ok _  => assert false
         .err e => assert e.code == INVALID && e.msg == "line 1, column 513: nested deeper than 512 levels, the most this reading allows"
 
-    shallow: ParseOptions @= strict()
+    shallow: ParseOptions @= strict_parse_options()
     shallow.max_depth @ 3
 
     match parse_with("a: &a [[1]]\nb: [*a]\n", shallow)
@@ -278,7 +278,7 @@ test "parse_with: the nesting allowed, one past it, an alias nesting past it, an
         .err e => assert e.code == LIMIT
 
     deep = repeat("- ", 10000) + "x\n"
-    wide: ParseOptions @= strict()
+    wide: ParseOptions @= strict_parse_options()
     wide.max_depth @ 10000
     value = parse_with(deep, wide).must()
     assert parse_with(format(value).must(), wide).must() == value
@@ -448,8 +448,8 @@ test "format_all: none, one, and documents whose roots are scalars and blocks"
 ## Examples
 
 # The options read YAML 1.2, and a program widens one field of them.
-test "strict: the defaults, and a key written twice accepted when asked"
-    options: ParseOptions @= strict()
+test "strict_parse_options: the defaults, and a key written twice accepted when asked"
+    options: ParseOptions @= strict_parse_options()
     assert options.max_depth == DEFAULT_MAX_DEPTH && !options.duplicate_keys
     options.duplicate_keys @ true
     assert parse_with("a: 1\na: 2\n", options).must() == .object(members: {"a": .number(v: 2.0)})
@@ -463,7 +463,7 @@ test "parse: a map holding a text, a list of numbers and a word that is no boole
 
 # A document whose aliases would copy more than the program allows.
 test "parse_with: an alias limit set low, and the stream refused past it"
-    options: ParseOptions @= strict()
+    options: ParseOptions @= strict_parse_options()
     options.max_expanded @ 10
     text = "a: &x [1, 2, 3, 4, 5, 6]\nb: *x\nc: *x\n"
 
@@ -478,7 +478,7 @@ test "parse_all: two documents begun by ---"
 
 # Every document of a stream read with a key written twice accepted.
 test "parse_all_with: a key written twice in each of two documents"
-    options: ParseOptions @= strict()
+    options: ParseOptions @= strict_parse_options()
     options.duplicate_keys @ true
     docs = parse_all_with("k: 1\nk: 2\n---\nk: 3\nk: 4\n", options).must()
     assert docs == [.object(members: {"k": .number(v: 2.0)}), .object(members: {"k": .number(v: 4.0)})]

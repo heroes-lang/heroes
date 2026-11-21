@@ -80,7 +80,7 @@ function sign(input: [u8], key: jose.Key, facts: algorithms.Facts) -> [u8]?
     if facts.family == "hmac"
         return ok(crypto.hmac(facts.digest, key: key.material["k"].must(), data: input))
     der = forms.private_der(key)?
-    private @= keypairs.parse_private_der(der)?
+    private @= keypairs.decode_private_der(der)?
     made = keypairs.sign(key: private, scheme: facts.scheme, message: input)
     keypairs.close_private(@private)?
     signature = made?

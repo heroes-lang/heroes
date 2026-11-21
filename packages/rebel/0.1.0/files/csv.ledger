@@ -126,7 +126,7 @@ capability csv/line-end  the line end written after each row
   note    CR LF by default, RFC 4180's and Python's; Go writes LF unless asked. A field's own line ends are written as they are, as Python writes them; Go turns them into CR LF with `UseCRLF`
 
 capability csv/quoting  which fields are quoted when written
-  heroes  csv.WriteOptions.quote_all, csv.minimal
+  heroes  csv.WriteOptions.quote_all, csv.minimal_write_options
   go      -
   rust    -
   python  QUOTE_MINIMAL, QUOTE_ALL, Dialect.quoting
@@ -147,11 +147,11 @@ capability csv/escape  a field escaped with a character instead of quoted
   note    -
 
 capability csv/dialects  a set of options kept and reused
-  heroes  csv.ReadOptions, csv.WriteOptions, csv.strict, csv.minimal
+  heroes  csv.ReadOptions, csv.WriteOptions, csv.strict_read_options, csv.minimal_write_options
   go      -
   rust    -
   python  Dialect, excel, excel_tab, unix_dialect, register_dialect, get_dialect, list_dialects, unregister_dialect, reader.dialect, writer.dialect
-  note    the options are records a program keeps in a binding or makes with a function of its own; no registry of names is kept, which would be a global. `strict` and `minimal` are Python's `excel`; `excel_tab` is the separator `"\t"`; `unix_dialect` is `quote_all` and `"\n"`
+  note    the options are records a program keeps in a binding or makes with a function of its own; no registry of names is kept, which would be a global. `strict_read_options` and `minimal_write_options` are Python's `excel`; `excel_tab` is the separator `"\t"`; `unix_dialect` is `quote_all` and `"\n"`
 
 capability csv/sniff  the options of a text guessed from a sample of it
   heroes  refused: a guess can read a text as another format without a word; a program states the format it reads

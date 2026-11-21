@@ -82,7 +82,7 @@ constant CLOSED: str
 constant TIMEOUT: str
     "timeout"
 
-# The program was asked to stop while the call waited (`net.ask_stop`).
+# The program was asked to stop while the call waited (`os.ask_stop`).
 constant STOPPED: str
     "stopped"
 
@@ -439,14 +439,12 @@ variant Packet
         clean_start: bool
         # The keep-alive, in seconds.
         keep_alive: i64
-        # The user's name.
-        username: str
-        # Whether a user's name is sent, empty or not.
-        has_username: bool
-        # The password.
-        password: [u8]
-        # Whether a password is sent, empty or not.
-        has_password: bool
+        # The user's name, empty or not; it fails `not_found` where none is
+        # sent.
+        username: str?
+        # The password, empty or not; it fails `not_found` where none is
+        # sent.
+        password: [u8]?
         # The will.
         will: Will
         # The properties.
@@ -1327,10 +1325,10 @@ function encode(p: Packet, version: i64) -> [u8]?
                 client_id: c.client_id,
                 clean_start: c.clean_start,
                 keep_alive: c.keep_alive,
-                username: c.username,
-                has_username: c.has_username,
-                password: c.password,
-                has_password: c.has_password,
+                username: c.username.default(""),
+                has_username: !c.username.is_err(),
+                password: c.password.default([]),
+                has_password: !c.password.is_err(),
                 will: will,
                 properties: list
             )
@@ -1566,7 +1564,7 @@ function decode(data: [u8], version: i64) -> Packet?
                     .message(message: wm)
 
             return ok(
-                .connect(version: c.version, client_id: c.client_id, clean_start: c.clean_start, keep_alive: c.keep_alive, username: c.username, has_username: c.has_username, password: c.password, has_password: c.has_password, will: will, properties: list)
+                .connect(version: c.version, client_id: c.client_id, clean_start: c.clean_start, keep_alive: c.keep_alive, username: model.present(c.username, sent: c.has_username, what: "user's name"), password: model.present(c.password, sent: c.has_password, what: "password"), will: will, properties: list)
             )
         .connack a =>
             list: [Property] @= []
@@ -1803,7 +1801,7 @@ test "encode and decode through the face: every kind of packet written and read 
     sub = Subscription(filter: "t/#", qos: 1, no_local: true, retain_as_published: true, retain_handling: 2)
     reason = [Property(id: REASON_STRING, value: .text(v: "why"))]
     five: [Packet] = [
-        .connect(version: 5, client_id: "id", clean_start: false, keep_alive: 10, username: "", has_username: true, password: [], has_password: true, will: .message(message: will), properties: [Property(id: SESSION_EXPIRY_INTERVAL, value: .number(v: 60))])
+        .connect(version: 5, client_id: "id", clean_start: false, keep_alive: 10, username: ok(""), password: ok([]), will: .message(message: will), properties: [Property(id: SESSION_EXPIRY_INTERVAL, value: .number(v: 60))])
         .connack(session_present: true, reason: 0, properties: [Property(id: ASSIGNED_CLIENT_IDENTIFIER, value: .text(v: "a"))])
         .publish(message: m)
         .puback(packet_id: 1, reason: 16, properties: reason)
@@ -1824,7 +1822,7 @@ test "encode and decode through the face: every kind of packet written and read 
         assert decode(encode(p, version: 5).must(), version: 5).must() == p
 
     four: [Packet] = [
-        .connect(version: 4, client_id: "id", clean_start: true, keep_alive: 0, username: "u", has_username: true, password: [0], has_password: true, will: .none, properties: [])
+        .connect(version: 4, client_id: "id", clean_start: true, keep_alive: 0, username: ok("u"), password: ok([0]), will: .none, properties: [])
         .publish(message: Message(topic: "a", payload: [], qos: 1, retain: true, dup: false, packet_id: 65535, properties: []))
         .subscribe(packet_id: 1, subscriptions: [subscription("a/+", qos: 2)], properties: [])
         .suback(packet_id: 1, reasons: [128], properties: [])

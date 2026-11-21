@@ -57,7 +57,7 @@ capability zstd/skippable  a skippable frame written, and read past
   note    libzstd's `ZSTD_writeSkippableFrame`, which Python does not offer; its reader passes such frames over
 
 capability zstd/levels  how hard the compressor works
-  heroes  compress/zstd.Options, compress/zstd.defaults, compress/zstd.MIN_LEVEL, compress/zstd.DEFAULT_LEVEL, compress/zstd.MAX_LEVEL
+  heroes  compress/zstd.Options, compress/zstd.default_options, compress/zstd.MIN_LEVEL, compress/zstd.DEFAULT_LEVEL, compress/zstd.MAX_LEVEL
   go      -
   rust    -
   python  compression.zstd.COMPRESSION_LEVEL_DEFAULT, compress(level=), ZstdCompressor(level=), CompressionParameter.compression_level
@@ -85,11 +85,11 @@ capability zstd/window-limit  a bound on the window a reader accepts
   note    -
 
 capability zstd/dictionaries  a dictionary read, its id and content, frames written and read with it
-  heroes  compress/zstd.Dictionary, compress/zstd.dictionary, compress/zstd.raw_dictionary, compress/zstd.id_of, compress/zstd.content_of, compress/zstd.compress_with, compress/zstd.decompress_with
+  heroes  compress/zstd.Dictionary, compress/zstd.new_dictionary, compress/zstd.new_raw_dictionary, compress/zstd.id_of, compress/zstd.content_of, compress/zstd.compress_with, compress/zstd.decompress_with
   go      -
   rust    -
   python  compression.zstd.ZstdDict, ZstdDict.dict_id, ZstdDict.dict_content, ZstdDict.as_digested_dict, ZstdDict.as_undigested_dict, ZstdDict.as_prefix, ZstdDict(is_raw=), compress(zstd_dict=), decompress(zstd_dict=)
-  note    a dictionary `zstd --train` wrote gives its tables and offsets to the frames read with it; the compressor reaches back into its content and names its id, its own tables staying the predefined ones. Python's digested and undigested forms are libzstd's caches of the same dictionary, and its prefix is `raw_dictionary`. A frame that names a dictionary other than the one given fails `invalid`
+  note    a dictionary `zstd --train` wrote gives its tables and offsets to the frames read with it; the compressor reaches back into its content and names its id, its own tables staying the predefined ones. Python's digested and undigested forms are libzstd's caches of the same dictionary, and its prefix is `new_raw_dictionary`. A frame that names a dictionary other than the one given fails `invalid`
 
 capability zstd/train  a dictionary trained from samples, or finished from content
   heroes  pending

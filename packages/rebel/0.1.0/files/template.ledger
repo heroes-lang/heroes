@@ -1,5 +1,5 @@
 # The ledger of `template`: what Go's `text/template` and `html/template`
-# (1.27) and Python's `string.Template` and `html` (3.15) let a program do,
+# (1.27) and Python's `string.Template` and `html_options` (3.15) let a program do,
 # one block per capability, and what Rebel answers. Rust's standard library
 # holds no template, so its lines are `-` in every block. The lists are this
 # machine's, 2026-11-16: `go doc -all text/template` and `go doc -all
@@ -10,7 +10,7 @@
 # mode's from a Go program run over the same template and JSON value.
 
 capability template/parse  a template read from its text, errors with their line and column
-  heroes  template.parse, template.parse_with, template.Options, template.plain
+  heroes  template.parse, template.parse_with, template.Options, template.plain_options
   go      New, Template.New, Template.Parse, Template.Name
   rust    -
   python  Template, Template.is_valid
@@ -178,7 +178,7 @@ capability template/errors  what went wrong, and where
   note    two codes, `invalid` and `not_found`, the message saying what Go's codes name
 
 capability html/contextual  values escaped by the place they land in an HTML page
-  heroes  template.parse_html, template.html, template.UNSAFE
+  heroes  template.parse_html, template.html_options, template.UNSAFE
   go      html/template
   rust    -
   python  -
@@ -196,14 +196,14 @@ capability html/escape  a text escaped as HTML
   go      HTMLEscape, HTMLEscapeString, HTMLEscaper, html
   rust    -
   python  html.escape
-  note    `html`'s, which writes `&quot;` and `&#39;`; Go writes `&#34;` and `&#39;`, Python `&quot;` and `&#x27;`; all escape the quotes always, so the text stands in an attribute too. Until 2026-11-20 `template` kept a copy of its own writing Go's references; the coherence review's X01 took it out
+  note    `html_options`'s, which writes `&quot;` and `&#39;`; Go writes `&#34;` and `&#39;`, Python `&quot;` and `&#x27;`; all escape the quotes always, so the text stands in an attribute too. Until 2026-11-20 `template` kept a copy of its own writing Go's references; the coherence review's X01 took it out
 
 capability html/unescape  HTML's character references read
   heroes  html.unescape, html.unescape_attribute
   go      -
   rust    -
   python  html.unescape, html.entities
-  note    `html`'s, by the HTML standard's reading and its table of names, which `template` reads an attribute's value by (`html.unescape_attribute`, so `?a=1&copy=2` keeps its `&copy`). Until 2026-11-20 `template` carried a second table and Python's rules, a control or a noncharacter dropped; the coherence review's X01 took them out
+  note    `html_options`'s, by the HTML standard's reading and its table of names, which `template` reads an attribute's value by (`html.unescape_attribute`, so `?a=1&copy=2` keeps its `&copy`). Until 2026-11-20 `template` carried a second table and Python's rules, a control or a noncharacter dropped; the coherence review's X01 took them out
 
 capability js/escape  a text escaped for a JavaScript string
   heroes  template.escape_js

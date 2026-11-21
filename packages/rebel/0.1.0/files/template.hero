@@ -126,11 +126,11 @@ record Template
     compiled: program.Program
 
 # The options of the text mode, with `{{` and `}}` around an action.
-function plain() -> Options
+function plain_options() -> Options
     return Options(html: false, left: "{{", right: "}}")
 
 # The options of the HTML mode, with `{{` and `}}` around an action.
-function html() -> Options
+function html_options() -> Options
     return Options(html: true, left: "{{", right: "}}")
 
 # The template `text` writes, in the text mode.
@@ -141,7 +141,7 @@ function html() -> Options
 # column C:`, counted from 1 and the column in characters, then saying what was
 # expected and what was found. See also `parse_html`, `parse_with`.
 function parse(text: str) -> Template?
-    return parse_with(text, plain())
+    return parse_with(text, plain_options())
 
 # The template `text` writes, in the HTML mode.
 #
@@ -154,12 +154,12 @@ function parse(text: str) -> Template?
 # text, a quote or `=` in an unquoted attribute value. Every template of the
 # set begins and ends in text when run by its name. See also `parse`.
 function parse_html(text: str) -> Template?
-    return parse_with(text, html())
+    return parse_with(text, html_options())
 
 # The template `text` writes, read as `options` say.
 #
 # - `text`: the template.
-# - `options`: the mode and the delimiters; `plain()` and `html()` are the
+# - `options`: the mode and the delimiters; `plain_options()` and `html_options()` are the
 #   usual ones.
 #
 # Fails as `parse` and `parse_html` do, and `invalid` where a delimiter is
@@ -346,15 +346,15 @@ test "parse_all: a text's name before its message, an include of no template, an
     texts: {str: str} @= {}
     texts["page"] @ "{{ include \"nav\" . }}"
 
-    match parse_all(texts, plain())
+    match parse_all(texts, plain_options())
         .ok _  => assert false
         .err e => assert e.msg == "\"page\", line 1, column 1: no template \"nav\" in the set, which holds \"page\""
 
     empty: {str: str} = {}
-    assert parse_all(empty, plain()).is_err()
+    assert parse_all(empty, plain_options()).is_err()
 
 test "parse_with: a delimiter empty or holding white space"
-    options: Options @= plain()
+    options: Options @= plain_options()
     options.left @ "{ {"
     assert parse_with("x", options).is_err()
     options.left @ ""
@@ -398,12 +398,12 @@ test "parse_html: escape, a value in a tag's or an attribute's name, and a scrip
 ## Examples
 
 # Two options, the text mode's and the HTML mode's.
-test "plain: the text mode, between braces"
-    assert !plain().html && plain().left == "{{" && plain().right == "}}"
+test "plain_options: the text mode, between braces"
+    assert !plain_options().html && plain_options().left == "{{" && plain_options().right == "}}"
 
 # The HTML mode's options.
-test "html: the HTML mode, between braces"
-    assert html().html && html().left == "{{"
+test "html_options: the HTML mode, between braces"
+    assert html_options().html && html_options().left == "{{"
 
 # A greeting, a value by its path.
 test "parse: a value by its path"
@@ -418,7 +418,7 @@ test "parse_html: a URL refused and a title escaped"
 
 # Square brackets for a text whose braces are its own.
 test "parse_with: other delimiters"
-    options: Options @= plain()
+    options: Options @= plain_options()
     options.left @ "[["
     options.right @ "]]"
     t = parse_with("{ \"n\": [[ .n ]] }", options).must()
@@ -429,7 +429,7 @@ test "parse_all: a page and the list it includes"
     texts: {str: str} @= {}
     texts["page"] @ "<h1>{{ .title }}</h1><ul>{{ include \"list\" .items }}</ul>"
     texts["list"] @ "{{ for $item in . }}<li>{{ $item }}</li>{{ end }}"
-    t = parse_all(texts, html()).must()
+    t = parse_all(texts, html_options()).must()
     value = json.parse("{\"title\": \"Fruit\", \"items\": [\"fig\", \"<pear>\"]}").must()
     assert render(t, value).must() == "<h1>Fruit</h1><ul><li>fig</li><li>&lt;pear&gt;</li></ul>"
 

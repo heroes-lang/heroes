@@ -57,13 +57,13 @@ use time
 
 # The code of a file that is not what PDF says, the message naming the
 # byte; of a value a writer is given that PDF has no form for; and of an
-# object asked for as a kind it is not. `parse`, `text_of`, `pieces_of`,
-# `parse_date`, `parse_color`, `add_jpeg`, `add_png`, `to_bytes` and the
+# object asked for as a kind it is not. `decode`, `text_of`, `pieces_of`,
+# `parse_date`, `parse_color`, `add_jpeg`, `add_png`, `encode` and the
 # readers of objects fail with it.
 constant INVALID: str
     "invalid"
 
-# The code of a file that would pass the caller's `Limits`. `parse`,
+# The code of a file that would pass the caller's `Limits`. `decode`,
 # `text_of`, `pieces_of` and `stream_data_of` fail with it.
 constant LIMIT: str
     "limit"
@@ -75,7 +75,7 @@ constant NOT_FOUND: str
 
 # The code of what this package does not do: a character a standard font
 # has no glyph for (`width_of`, `draw_text`), an image it does not embed
-# (`add_png`), a file encrypted with AES (`parse`), a stream of an image
+# (`add_png`), a file encrypted with AES (`decode`), a stream of an image
 # filter (`stream_data_of`).
 constant UNSUPPORTED: str
     "unsupported"
@@ -406,7 +406,7 @@ function has_glyphs(font: Font, text: str) -> bool
 
 # A document being written: its pages and what is drawn on them, the pen
 # that draws, its images, links, bookmarks and information. Made by
-# `document`; `to_bytes` writes it as a file.
+# `document`; `encode` writes it as a file.
 record Document
     # Everything written so far.
     state: compose.Doc
@@ -414,7 +414,7 @@ record Document
 # A document of no page, its content compressed, its pen Helvetica at 12
 # points in black, lines 1 point wide.
 #
-# See also `add_page` and `to_bytes`.
+# See also `add_page` and `encode`.
 function document() -> Document
     return Document(state: compose.start())
 
@@ -455,7 +455,7 @@ function format_date(t: time.Instant) -> str
 # - `doc`: the document.
 # - `on`: `true` to compress with DEFLATE, `false` to write it as text.
 #
-# See also `to_bytes`.
+# See also `encode`.
 function set_compression(@doc: Document, on: bool)
     doc.state.compress @ on
 
@@ -1434,7 +1434,7 @@ function add_link(@doc: Document, x: f64, y: f64, width: f64, height: f64, url: 
 # - `page`: the page it goes to, by index from 0; it may be added later.
 # - `top`: the height on that page shown at the top of the window.
 #
-# `to_bytes` fails where `page` is not a page of the document then.
+# `encode` fails where `page` is not a page of the document then.
 #
 # Aborts where no page has been added.
 #
@@ -1471,8 +1471,8 @@ function add_bookmark(@doc: Document, title: str, level: i64, top: f64)
 # Fails `invalid` where `doc` has no page or a link goes to a page it does
 # not have.
 #
-# See also `document` and `parse`.
-function to_bytes(doc: Document lent) -> [u8]?
+# See also `document` and `decode`.
+function encode(doc: Document lent) -> [u8]?
     return assemble.write(doc.state)
 
 ## Reading a file
@@ -1498,7 +1498,7 @@ record Limits
 # The usual limits: a million objects, streams of 256 MiB, 1 GiB decoded by
 # one call, values nested 256 deep, 100,000 pages and 1,000 revisions.
 #
-# See also `parse`.
+# See also `decode`.
 function default_limits() -> Limits
     return Limits(
         objects: 1000000,
@@ -1509,7 +1509,7 @@ function default_limits() -> Limits
         revisions: 1000
     )
 
-# A PDF file read: its objects, its trailer and its pages. Made by `parse`.
+# A PDF file read: its objects, its trailer and its pages. Made by `decode`.
 record File
     # Everything read.
     state: store.Store
@@ -1648,7 +1648,7 @@ record Link
 # by a handler other than the standard one.
 #
 # See also `pages_of`, `text_of` and `info_of`.
-function parse(data: [u8], password: str, limits: Limits) -> File?
+function decode(data: [u8], password: str, limits: Limits) -> File?
     bounds = store.Bounds(
         objects: limits.objects,
         stream_bytes: limits.stream_bytes,
@@ -1664,15 +1664,15 @@ function parse(data: [u8], password: str, limits: Limits) -> File?
 #
 # - `f`: the file.
 #
-# See also `parse`.
+# See also `decode`.
 function version_of(f: File) -> str
     return f.state.version
 
-# Whether `f` was encrypted; `parse` has decrypted it.
+# Whether `f` was encrypted; `decode` has decrypted it.
 #
 # - `f`: the file.
 #
-# See also `parse`.
+# See also `decode`.
 function is_encrypted(f: File) -> bool
     return f.state.encrypted
 
@@ -2137,56 +2137,56 @@ function raw_stream_of(o: Object) -> [u8]?
 ## Tests
 
 # A document of one A4 page, its content left uncompressed, for the tests.
-test "to_bytes and parse: a page written is read back with its size, text and information"
+test "encode and decode: a page written is read back with its size, text and information"
     doc @= document()
     set_info(@doc, key: "Title", value: "Zoë – a test")
     add_page(@doc, size: size_of(.a4))
     set_font(@doc, font: .times_roman, size: 12.0)
     draw_text(@doc, x: 72.0, y: 700.0, text: "Grüße, €5", align: .left).must()
     draw_text(@doc, x: 72.0, y: 680.0, text: "second line", align: .left).must()
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     pages = pages_of(f)
     assert pages.len() == 1 && pages[0].media_box.right > 595.27 && pages[0].media_box.right < 595.28
     assert text_of(f, page: pages[0]).must() == "Grüße, €5\nsecond line"
     assert info_of(f)["Title"].must() == "Zoë – a test"
     assert version_of(f) == "1.7" && !is_encrypted(f)
 
-test "parse: ReportLab's file, its text, its information and its date as pdfinfo reads them"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+test "decode: ReportLab's file, its text, its information and its date as pdfinfo reads them"
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     page = pages_of(f)[0]
     assert text_of(f, page: page).must() == "Hello from reportlab\nSecond line, café €5"
     info = info_of(f)
     assert info["Title"].must() == "Small title" && info["Author"].must() == "Ana" && info["Producer"].must() == "ReportLab PDF Library - (opensource)"
     assert time.unix_seconds(parse_date(info["CreationDate"].must()).must()) == 1795021679
 
-test "parse: RC4 of 40 bits opened by the user's and the owner's password, refused by another"
+test "decode: RC4 of 40 bits opened by the user's and the owner's password, refused by another"
     data = samples.of(samples.RC4_40)
-    by_user = parse(data, password: "user", limits: default_limits()).must()
+    by_user = decode(data, password: "user", limits: default_limits()).must()
     assert is_encrypted(by_user) && text_of(by_user, page: pages_of(by_user)[0]).must() == "Opened with a password\nSecond line, café €5"
-    by_owner = parse(data, password: "owner", limits: default_limits()).must()
+    by_owner = decode(data, password: "owner", limits: default_limits()).must()
     assert info_of(by_owner)["Title"].must() == "Small title"
 
-    match parse(data, password: "", limits: default_limits())
+    match decode(data, password: "", limits: default_limits())
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-test "parse: RC4 of 128 bits with no user password, AES refused as unsupported"
-    f = parse(samples.of(samples.RC4_128), password: "", limits: default_limits()).must()
+test "decode: RC4 of 128 bits with no user password, AES refused as unsupported"
+    f = decode(samples.of(samples.RC4_128), password: "", limits: default_limits()).must()
     assert text_of(f, page: pages_of(f)[0]).must() == "RC4 of 128 bits\nSecond line, café €5"
 
-    match parse(samples.of(samples.AES_128), password: "", limits: default_limits())
+    match decode(samples.of(samples.AES_128), password: "", limits: default_limits())
         .ok _  => assert false
         .err e => assert e.code == UNSUPPORTED
 
-test "parse: an incremental update's title and rotation, object streams and a cross-reference stream"
-    f = parse(samples.of(samples.INCREMENTAL), password: "", limits: default_limits()).must()
+test "decode: an incremental update's title and rotation, object streams and a cross-reference stream"
+    f = decode(samples.of(samples.INCREMENTAL), password: "", limits: default_limits()).must()
     assert info_of(f)["Title"].must() == "Changed in an update" && pages_of(f)[0].rotation == 90
-    g = parse(samples.of(samples.OBJECT_STREAMS), password: "", limits: default_limits()).must()
+    g = decode(samples.of(samples.OBJECT_STREAMS), password: "", limits: default_limits()).must()
     assert text_of(g, page: pages_of(g)[0]).must() == "Hello from reportlab\nSecond line, café €5"
     assert kind_of(entry_of(trailer_of(g), key: "Root").must()) == .reference
 
 test "outline_of and links_of: pypdf's bookmarks, a named destination, a link to an address"
-    f = parse(samples.of(samples.OUTLINE), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.OUTLINE), password: "", limits: default_limits()).must()
     marks = outline_of(f).must()
     assert marks.len() == 3 && marks[0].title == "First" && marks[1].title == "Inside" && marks[1].level == 1 && marks[2].level == 0
     assert marks[1].target == .page(index: 1, top: 200.0)
@@ -2195,30 +2195,30 @@ test "outline_of and links_of: pypdf's bookmarks, a named destination, a link to
     assert links.len() == 1 && links[0].target == .url(address: "https://example.org/") && links[0].area.right == 100.0
     assert links_of(f, page: pages[1]).must().len() == 0
 
-test "parse: a damaged startxref rebuilt, a file cut short, no header, the limits"
+test "decode: a damaged startxref rebuilt, a file cut short, no header, the limits"
     data = samples.of(samples.SMALL)
     at = bytes.index_of_last(s: data, substr: bytes.from_text("startxref")).must()
     broken @= data.slice(from: 0, to: at)
     bytes.push_text(@broken, s: "startxref\n99999\n%%EOF\n")
-    f = parse(broken, password: "", limits: default_limits()).must()
+    f = decode(broken, password: "", limits: default_limits()).must()
     assert text_of(f, page: pages_of(f)[0]).must() == "Hello from reportlab\nSecond line, café €5"
-    assert parse(data.slice(from: 0, to: data.len() / 2), password: "", limits: default_limits()).is_err() || true
-    assert parse(bytes.from_text("not a pdf"), password: "", limits: default_limits()).is_err()
+    assert decode(data.slice(from: 0, to: data.len() / 2), password: "", limits: default_limits()).is_err() || true
+    assert decode(bytes.from_text("not a pdf"), password: "", limits: default_limits()).is_err()
     tight = Limits(objects: 3, stream_bytes: 1000000, total_bytes: 1000000, depth: 64, pages: 10, revisions: 10)
 
-    match parse(data, password: "", limits: tight)
+    match decode(data, password: "", limits: tight)
         .ok _  => assert false
         .err e => assert e.code == LIMIT
 
     no_pages = Limits(objects: 1000, stream_bytes: 1000000, total_bytes: 1000000, depth: 64, pages: 0, revisions: 10)
-    assert parse(data, password: "", limits: no_pages).is_err()
+    assert decode(data, password: "", limits: no_pages).is_err()
 
-test "parse: every prefix of a small file fails or reads, and never aborts"
+test "decode: every prefix of a small file fails or reads, and never aborts"
     data = samples.of(samples.OBJECT_STREAMS)
     n @= 0
 
     while n < data.len()
-        _ = parse(data.slice(from: 0, to: n), password: "", limits: default_limits()).is_err()
+        _ = decode(data.slice(from: 0, to: n), password: "", limits: default_limits()).is_err()
         n @ n + 97
 
 test "add_png and add_jpeg: Ghostscript's images embedded, the PNG's alpha as a soft mask, read back"
@@ -2229,7 +2229,7 @@ test "add_png and add_jpeg: Ghostscript's images embedded, the PNG's alpha as a 
     assert png_id.width == 3 && png_id.height == 2 && jpeg_id.width == 8 && jpeg_id.height == 6
     draw_image(@doc, id: png_id, x: 0.0, y: 0.0, width: 30.0, height: 20.0)
     draw_image(@doc, id: jpeg_id, x: 40.0, y: 0.0, width: 40.0, height: 30.0)
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     resources = resolve(f, o: entry_of(pages_of(f)[0].object, key: "Resources").must())
     placed = resolve(f, o: entry_of(resources, key: "XObject").must())
     assert keys_of(placed).must() == ["Im0", "Im1", "Im2"]
@@ -2250,7 +2250,7 @@ test "draw_table: a long table goes on to a second page with its header, read ba
 
     end = draw_table(@doc, x: 20.0, top: 180.0, bottom: 20.0, t: table([120.0, 60.0], rows: rows)).must()
     assert page_count(doc) == 2 && end > 20.0
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     second = text_of(f, page: pages_of(f)[1]).must()
     assert bytes.has_prefix(s: bytes.from_text(second), prefix: bytes.from_text("Name Qty\nitem"))
 
@@ -2267,7 +2267,7 @@ test "set_page, save_state and the pen: a footer added after every page, the sta
         draw_text(@doc, x: 150.0, y: 20.0, text: f"{k + 1} of {page_count(doc)}", align: .center).must()
         k @ k + 1
 
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     assert text_of(f, page: pages_of(f)[1]).must() == "2 of 2"
 
 ## Examples
@@ -2328,7 +2328,7 @@ test "set_info: a title read back"
     doc @= document()
     set_info(@doc, key: "Title", value: "Annual report")
     add_page(@doc, size: size_of(.a5))
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     assert info_of(f)["Title"].must() == "Annual report"
 
 # A moment written as PDF writes a date.
@@ -2341,7 +2341,7 @@ test "set_compression: a file whose content can be read as text"
     set_compression(@doc, on: false)
     add_page(@doc, size: size_of(.a6))
     draw_line(@doc, from_x: 0.0, from_y: 0.0, to_x: 10.0, to_y: 10.0)
-    assert bytes.contains(s: to_bytes(doc).must(), substr: bytes.from_text("0 0 m 10 10 l S"))
+    assert bytes.contains(s: encode(doc).must(), substr: bytes.from_text("0 0 m 10 10 l S"))
 
 # Two pages of different sizes.
 test "add_page: an A4 page, then one on its side"
@@ -2365,7 +2365,7 @@ test "set_page: back to the first page"
     add_page(@doc, size: size_of(.a6))
     set_page(@doc, index: 0)
     draw_text(@doc, x: 10.0, y: 10.0, text: "first", align: .left).must()
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     assert text_of(f, page: pages_of(f)[0]).must() == "first"
 
 # Text drawn in Courier.
@@ -2374,7 +2374,7 @@ test "set_font: Courier at 10 points"
     add_page(@doc, size: size_of(.a6))
     set_font(@doc, font: .courier, size: 10.0)
     draw_text(@doc, x: 10.0, y: 10.0, text: "code", align: .left).must()
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     assert pieces_of(f, page: pages_of(f)[0]).must()[0].font == "Courier"
 
 # A red rectangle.
@@ -2399,7 +2399,7 @@ test "set_line_width: a line three points wide"
     set_compression(@doc, on: false)
     add_page(@doc, size: size_of(.a6))
     set_line_width(@doc, width: 3.0)
-    assert bytes.contains(s: to_bytes(doc).must(), substr: bytes.from_text("3 w"))
+    assert bytes.contains(s: encode(doc).must(), substr: bytes.from_text("3 w"))
 
 # Rounded ends.
 test "set_line_cap: round ends"
@@ -2423,7 +2423,7 @@ test "set_miter_limit: a limit of 4"
     set_compression(@doc, on: false)
     add_page(@doc, size: size_of(.a6))
     set_miter_limit(@doc, limit: 4.0)
-    assert bytes.contains(s: to_bytes(doc).must(), substr: bytes.from_text("4 M"))
+    assert bytes.contains(s: encode(doc).must(), substr: bytes.from_text("4 M"))
 
 # A dashed line.
 test "set_dash: dashes of 3 and gaps of 2"
@@ -2431,7 +2431,7 @@ test "set_dash: dashes of 3 and gaps of 2"
     set_compression(@doc, on: false)
     add_page(@doc, size: size_of(.a6))
     set_dash(@doc, lengths: [3.0, 2.0], phase: 0.0)
-    assert bytes.contains(s: to_bytes(doc).must(), substr: bytes.from_text("[3 2] 0 d"))
+    assert bytes.contains(s: encode(doc).must(), substr: bytes.from_text("[3 2] 0 d"))
 
 # A shape seen through.
 test "set_opacity: a half transparent fill"
@@ -2439,7 +2439,7 @@ test "set_opacity: a half transparent fill"
     add_page(@doc, size: size_of(.a6))
     set_opacity(@doc, fill: 0.5, stroke: 1.0)
     draw_rect(@doc, x: 0.0, y: 0.0, width: 20.0, height: 20.0, paint: .fill)
-    assert bytes.contains(s: to_bytes(doc).must(), substr: bytes.from_text("/ca 0.5 /CA 1"))
+    assert bytes.contains(s: encode(doc).must(), substr: bytes.from_text("/ca 0.5 /CA 1"))
 
 # The usual text state, changed in one field.
 test "text_style: no spacing, a scale of 100"
@@ -2474,7 +2474,7 @@ test "restore_state: the font as it was"
     set_font(@doc, font: .times_bold, size: 30.0)
     restore_state(@doc)
     draw_text(@doc, x: 10.0, y: 10.0, text: "plain", align: .left).must()
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     assert pieces_of(f, page: pages_of(f)[0]).must()[0].size == 12.0
 
 # The transform that changes nothing.
@@ -2505,7 +2505,7 @@ test "transform: a line of text turned half a turn"
     add_page(@doc, size: Size(width: 200.0, height: 200.0))
     transform(@doc, matrix: multiply(first: rotation(180.0), then: translation(x: 200.0, y: 200.0)))
     draw_text(@doc, x: 10.0, y: 10.0, text: "turned", align: .left).must()
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     piece = pieces_of(f, page: pages_of(f)[0]).must()[0]
     assert piece.x > 189.99 && piece.x < 190.01 && piece.y > 189.99
 
@@ -2622,7 +2622,7 @@ test "draw_text: a centred title"
     add_page(@doc, size: size_of(.a4))
     set_font(@doc, font: .helvetica_bold, size: 20.0)
     draw_text(@doc, x: 297.6, y: 780.0, text: "Title", align: .center).must()
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     assert text_of(f, page: pages_of(f)[0]).must() == "Title"
 
 # A paragraph broken into lines.
@@ -2658,7 +2658,7 @@ test "draw_table: prices in a table"
     t.columns[1].align @ .right
     end = draw_table(@doc, x: 72.0, top: 770.0, bottom: 72.0, t: t).must()
     assert end < 770.0
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     assert text_of(f, page: pages_of(f)[0]).must() == "Item Price\nTea 3.50\nCoffee 2.80"
 
 # A photograph placed on a page.
@@ -2694,7 +2694,7 @@ test "add_link: a rectangle that opens an address"
     doc @= document()
     add_page(@doc, size: size_of(.a6))
     add_link(@doc, x: 10.0, y: 10.0, width: 80.0, height: 12.0, url: "https://example.org/")
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     assert links_of(f, page: pages_of(f)[0]).must()[0].target == .url(address: "https://example.org/")
 
 # A link to another page of the document.
@@ -2703,7 +2703,7 @@ test "add_page_link: a link to the second page"
     add_page(@doc, size: size_of(.a6))
     add_page_link(@doc, x: 10.0, y: 10.0, width: 80.0, height: 12.0, page: 1, top: 400.0)
     add_page(@doc, size: size_of(.a6))
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     assert links_of(f, page: pages_of(f)[0]).must()[0].target == .page(index: 1, top: 400.0)
 
 # An outline of two chapters, the second with a section.
@@ -2714,15 +2714,15 @@ test "add_bookmark: chapters and a section"
     add_page(@doc, size: size_of(.a6))
     add_bookmark(@doc, title: "Chapter 2", level: 0, top: 400.0)
     add_bookmark(@doc, title: "Section 2.1", level: 1, top: 200.0)
-    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
     marks = outline_of(f).must()
     assert marks.len() == 3 && marks[2].title == "Section 2.1" && marks[2].level == 1 && marks[2].target == .page(index: 1, top: 200.0)
 
 # The bytes of a file, ready to be written.
-test "to_bytes: a file that begins with its header"
+test "encode: a file that begins with its header"
     doc @= document()
     add_page(@doc, size: size_of(.a4))
-    data = to_bytes(doc).must()
+    data = encode(doc).must()
     assert bytes.has_prefix(s: data, prefix: bytes.from_text("%PDF-1.7"))
 
 # The usual limits.
@@ -2730,39 +2730,39 @@ test "default_limits: a million objects"
     assert default_limits().objects == 1000000 && default_limits().depth == 256
 
 # A file read from its bytes.
-test "parse: ReportLab's one page"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+test "decode: ReportLab's one page"
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert pages_of(f).len() == 1
 
 # The version a file says it follows.
 test "version_of: ReportLab's 1.3"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert version_of(f) == "1.3"
 
 # Whether a file was encrypted.
 test "is_encrypted: RC4, opened"
-    f = parse(samples.of(samples.RC4_128), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.RC4_128), password: "", limits: default_limits()).must()
     assert is_encrypted(f)
 
 # The pages of a file, with their sizes.
 test "pages_of: the size of the first page"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert pages_of(f)[0].media_box == Box(left: 0.0, bottom: 0.0, right: 595.2756, top: 841.8898)
 
 # The text of a page, as pdftotext reads it.
 test "text_of: two lines of ReportLab's"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert text_of(f, page: pages_of(f)[0]).must() == "Hello from reportlab\nSecond line, café €5"
 
 # Where each run of text stands.
 test "pieces_of: the first run, where it begins"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     first = pieces_of(f, page: pages_of(f)[0]).must()[0]
     assert first.text == "Hello from reportlab" && first.x == 72.0 && first.y == 700.0 && first.size == 14.0 && first.font == "Helvetica"
 
 # The title and author of a file.
 test "info_of: ReportLab's title and author"
-    info = info_of(parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must())
+    info = info_of(decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must())
     assert info["Title"].must() == "Small title" && info["Author"].must() == "Ana"
 
 # A date with an offset, as an instant.
@@ -2772,12 +2772,12 @@ test "parse_date: noon an hour east of Greenwich"
 
 # The outline of a file.
 test "outline_of: pypdf's three bookmarks"
-    f = parse(samples.of(samples.OUTLINE), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.OUTLINE), password: "", limits: default_limits()).must()
     assert outline_of(f).must()[0].title == "First"
 
 # The links of a page.
 test "links_of: a link to an address"
-    f = parse(samples.of(samples.OUTLINE), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.OUTLINE), password: "", limits: default_limits()).must()
     assert links_of(f, page: pages_of(f)[0]).must().len() == 1
 
 # A title stored as UTF-16.
@@ -2791,28 +2791,28 @@ test "encode_text: Latin-1 stays one byte, Greek needs UTF-16"
 
 # An object by its number.
 test "object_of: the catalogue's object"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     root = reference_of(entry_of(trailer_of(f), key: "Root").must()).must()
     assert name_of(entry_of(object_of(f, number: root.number), key: "Type").must()).must() == "Catalog"
 
 # A reference followed.
 test "resolve: the trailer's Root"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert kind_of(resolve(f, o: entry_of(trailer_of(f), key: "Root").must())) == .dictionary
 
 # The trailer of a file.
 test "trailer_of: its Size"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert int_of(entry_of(trailer_of(f), key: "Size").must()).must() > 5
 
 # The catalogue of a file.
 test "catalog_of: its page tree"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert kind_of(entry_of(catalog_of(f), key: "Pages").must()) == .reference
 
 # What kind an object is.
 test "kind_of: a page's MediaBox is an array"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert kind_of(entry_of(pages_of(f)[0].object, key: "MediaBox").must()) == .array
 
 # A boolean of a file.
@@ -2822,34 +2822,34 @@ test "bool_of: a boolean, and a name that is none"
 
 # An integer of a file.
 test "int_of: the page count"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert int_of(entry_of(resolve(f, o: entry_of(catalog_of(f), key: "Pages").must()), key: "Count").must()).must() == 1
 
 # A number, whole or not.
 test "number_of: the width of an A4 page"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     box = items_of(entry_of(pages_of(f)[0].object, key: "MediaBox").must()).must()
     assert number_of(box[2]).must() > 595.27
 
 # The bytes of a string.
 test "bytes_of: the producer's bytes"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     info = resolve(f, o: entry_of(trailer_of(f), key: "Info").must())
     assert decode_text(bytes_of(entry_of(info, key: "Author").must()).must()) == "Ana"
 
 # A name's text.
 test "name_of: a page's type"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert name_of(entry_of(pages_of(f)[0].object, key: "Type").must()).must() == "Page"
 
 # The items of an array.
 test "items_of: the four numbers of a box"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert items_of(entry_of(pages_of(f)[0].object, key: "MediaBox").must()).must().len() == 4
 
 # An entry of a dictionary.
 test "entry_of: a key held and one absent"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
 
     match entry_of(catalog_of(f), key: "Absent")
         .ok _  => assert false
@@ -2857,23 +2857,23 @@ test "entry_of: a key held and one absent"
 
 # The keys of a dictionary.
 test "keys_of: the catalogue's keys"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     names = keys_of(catalog_of(f)).must()
     assert names == ["PageMode", "Pages", "Type"]
 
 # A reference's number.
 test "reference_of: the trailer's Root"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     assert reference_of(entry_of(trailer_of(f), key: "Root").must()).must().number > 0
 
 # A page's content, decompressed.
 test "stream_data_of: the operators of a page"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     content = resolve(f, o: entry_of(pages_of(f)[0].object, key: "Contents").must())
     assert bytes.contains(s: stream_data_of(f, o: content).must(), substr: bytes.from_text("Tj"))
 
 # A page's content as the file holds it.
 test "raw_stream_of: compressed bytes"
-    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     content = resolve(f, o: entry_of(pages_of(f)[0].object, key: "Contents").must())
     assert raw_stream_of(content).must().len() > 0

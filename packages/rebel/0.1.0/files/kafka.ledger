@@ -110,7 +110,7 @@ capability kafka/produce  messages written to one partition in one batch, the le
   note    a leader moved or not ready is retried within `Options.wait_ms`; without idempotence a batch whose answer was lost may be written twice
 
 capability kafka/send  messages written to their topics and partitions, a batch for each partition and a request for each leader, their offsets answered
-  heroes  kafka.send, kafka.message, kafka.with_key, kafka.with_header, kafka.Message
+  heroes  kafka.send, kafka.message, kafka.with_key, kafka.with_header, kafka.tombstone, kafka.Message
   go      Writer, NewWriter, WriterConfig, WriterConfig.Validate, Writer.WriteMessages, Writer.Close, Message, WriteErrors, WriteErrors.Count, WriteErrors.Error, MessageTooLargeError, kgo.Client.Produce, kgo.Client.TryProduce, kgo.Record, kgo.KeySliceRecord, kgo.KeyStringRecord, kgo.SliceRecord, kgo.StringRecord, kgo.DefaultProduceTopic, kgo.DefaultProduceTopicAlways, kgo.ProducerBatchMaxBytes, kgo.ProduceRequestTimeout, kgo.RecordRetries, kgo.RecordDeliveryTimeout, kgo.UnknownTopicRetries
   rust    producer::FutureProducer, producer::FutureRecord, producer::ThreadedProducer, producer::future_producer::Delivery, producer::DeliveryFuture, producer::DeliveryResult
   python  KafkaProducer.send, confluent_kafka.Producer.produce, confluent_kafka.Producer.produce_batch, confluent_kafka.Message
@@ -179,7 +179,7 @@ capability kafka/offsets-by-time  a partition's offset at a time, or at either e
   python  KafkaConsumer.beginning_offsets, KafkaConsumer.end_offsets, KafkaConsumer.offsets_for_times, KafkaAdminClient.list_partition_offsets, OffsetSpec, confluent_kafka.Consumer.offsets_for_times, confluent_kafka.admin.AdminClient.list_offsets, confluent_kafka.OFFSET_BEGINNING, confluent_kafka.OFFSET_END
   note    a time after every message is `not_found`, where the broker answers -1
 
-capability kafka/batches  record batches (format 2) written and read as bytes: offsets, times, keys and values null or not, headers, CRC-32C, gzip, control batches
+capability kafka/batches  record batches (format 2) written and read as bytes: offsets, times, keys and values null or not (a `T?`, `not_found` for null), headers, CRC-32C, gzip, control batches
   heroes  kafka.encode_batch, kafka.decode_batches, kafka.Header
   go      RecordReader, NewRecordReader, Record, Header, Bytes, NewBytes, Marshal, Unmarshal, ReadAll, kgo.RecordReader, kgo.NewRecordReader, kgo.RecordFormatter, kgo.NewRecordFormatter, kgo.RecordAttrs, kgo.NewRecordAttrs, kgo.RecordHeader, kgo.KeepControlRecords, kgo.DisableFetchCRCValidation
   rust    message::Headers, message::OwnedHeaders, message::BorrowedHeaders, message::Header, message::HeadersIter, message::ToBytes, message::FromBytes, message::Timestamp

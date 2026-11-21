@@ -14,7 +14,7 @@ function main()
     match image.from_pixels(width: 4, height: 4, format: .gray, pixels: pixels)
         .err e => print(e.code, ": ", e.msg)
         .ok img =>
-            match png.encode(img, png.encoding())
+            match png.encode(img, png.default_encode_options())
                 .err e => print(e.code, ": ", e.msg)
                 .ok file =>
                     match png.decode_with(file, png.decoding())

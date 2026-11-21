@@ -352,7 +352,7 @@ function serve(arg: str) -> str
                 if e.code == "timeout"
                     break
             .ok taken =>
-                s @= taken
+                s @= taken.stream
                 heard @ play(stream: s, turns: turns)
 
                 if !io.is_closed(s)

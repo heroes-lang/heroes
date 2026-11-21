@@ -58,7 +58,7 @@ constant UNSUPPORTED: str
 constant MIN_LEVEL: i64
     0
 
-# The level `defaults` sets, as the `xz` tool's and Python's: a dictionary
+# The level `default_options` sets, as the `xz` tool's and Python's: a dictionary
 # of 8 MiB.
 constant DEFAULT_LEVEL: i64
     6
@@ -79,7 +79,7 @@ variant Check
     # SHA-256, 32 bytes.
     sha256
 
-# How `compress` writes an xz stream. `defaults` makes the usual one.
+# How `compress` writes an xz stream. `default_options` makes the usual one.
 record Options
     # 0 (`MIN_LEVEL`) to 9 (`MAX_LEVEL`): the dictionary, from 256 KiB to 64
     # MiB as the `xz` tool's presets, and how many earlier places are tried.
@@ -91,7 +91,7 @@ record Options
 # usual.
 #
 # See also `compress`.
-function defaults() -> Options
+function default_options() -> Options
     return Options(level: DEFAULT_LEVEL, check: .crc64)
 
 ## All at once
@@ -100,7 +100,7 @@ function defaults() -> Options
 # where `data` is empty.
 #
 # - `data`: the bytes to compress.
-# - `options`: the level and the check; `defaults` makes the usual ones.
+# - `options`: the level and the check; `default_options` makes the usual ones.
 #
 # The same `data` and `options` answer the same bytes every time.
 #
@@ -236,8 +236,8 @@ function decompress_lzma_leading(data: [u8], limit: i64) -> Leading?
 ## Examples
 
 # The usual options, with the check changed.
-test "defaults: level 6 and CRC-64, then SHA-256"
-    o @= defaults()
+test "default_options: level 6 and CRC-64, then SHA-256"
+    o @= default_options()
     assert o.level == DEFAULT_LEVEL && o.check == .crc64
     o.check @ .sha256
     assert check_of(compress([0x61], o).must()).must() == .sha256
@@ -245,12 +245,12 @@ test "defaults: level 6 and CRC-64, then SHA-256"
 # A line compressed as xz and read back.
 test "compress: a line, and back"
     line: [u8] = [0x6c, 0x6f, 0x77, 0x20, 0x6c, 0x6f, 0x77, 0x20, 0x6c, 0x6f, 0x77]
-    packed = compress(line, defaults()).must()
+    packed = compress(line, default_options()).must()
     assert decompress(packed, limit: 100).must() == line
 
 # A stream read whole, under a limit on what it may expand to.
 test "decompress: under a limit"
-    packed = compress([0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a], defaults()).must()
+    packed = compress([0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a], default_options()).must()
     assert decompress(packed, limit: 8).must().len() == 8
 
     match decompress(packed, limit: 7)
@@ -259,7 +259,7 @@ test "decompress: under a limit"
 
 # A stream followed by bytes of the caller's own.
 test "decompress_leading: a stream, then other bytes"
-    packed @= compress([0x6b, 0x6f, 0x6f, 0x6b, 0x73], defaults()).must()
+    packed @= compress([0x6b, 0x6f, 0x6f, 0x6b, 0x73], default_options()).must()
     size = packed.len()
     packed @ packed.push(0x21)
     led = decompress_leading(packed, limit: 100).must()
@@ -267,7 +267,7 @@ test "decompress_leading: a stream, then other bytes"
 
 # The check a stream was written with.
 test "check_of: CRC-32"
-    o @= defaults()
+    o @= default_options()
     o.check @ .crc32
     assert check_of(compress([], o).must()).must() == .crc32
 

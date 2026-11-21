@@ -79,6 +79,16 @@ function props_of(root: xml.Element) -> model.Props
 # The workbook in `from`, read within `max_bytes` and `max_cells`.
 function read(from: io.Stream, max_bytes: i64, max_cells: i64) -> model.Book?
     p @= parts.open(from, budget: max_bytes)?
+    return book_in(@p, max_cells: max_cells)
+
+# The workbook whose file's bytes are `data`, read within `max_bytes` and
+# `max_cells`.
+function decode(data: [u8], max_bytes: i64, max_cells: i64) -> model.Book?
+    p @= parts.open_bytes(data, budget: max_bytes)?
+    return book_in(@p, max_cells: max_cells)
+
+# The workbook `p` holds, its cells within `max_cells`.
+function book_in(@p: parts.Package, max_cells: i64) -> model.Book?
     book_part = workbook_part(@p)?
     package_rels = parts.rels_of(@p, part: "")?
     props @= model.no_props()

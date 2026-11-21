@@ -63,7 +63,7 @@ function open(host: str, port: i64, security: i64, roots: str, local_name: str, 
         )
     else if security == IMPLICIT
         wire.over_tls(
-            tls.connect(host: host, port: port, deadline_ms: deadline_ms, client: client)?,
+            tls.connect(host: host, port: port, deadline_ms: deadline_ms, client: client)?.stream,
             deadline_ms: deadline_ms,
             local_name: local_name
         )
@@ -98,8 +98,8 @@ function starttls(host: str, port: i64, deadline_ms: i64, client: tls.Client, lo
     ]
 
     return match tls.connect_after(host: host, port: port, deadline_ms: deadline_ms, client: client, steps: steps)
-        .ok stream => ok(stream)
-        .err e     => fail(code: e.code, msg: "STARTTLS with " + host + ": " + e.msg)
+        .ok made => ok(made.stream)
+        .err e   => fail(code: e.code, msg: "STARTTLS with " + host + ": " + e.msg)
 
 # Reads the greeting where `tls` did not, and says EHLO.
 function greeted(@s: wire.Session, security: i64) -> ()?
@@ -159,7 +159,7 @@ function quit(@s: wire.Session) -> ()?
 function check_protected(s: wire.Session lent, host: str) -> ()?
     match s.link
         .secure => return ok()
-        .plain _ =>
+        .plain =>
             if protocol.is_loopback(host)
                 return ok()
             return fail(

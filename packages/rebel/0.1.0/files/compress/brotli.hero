@@ -35,7 +35,7 @@ use compress/internal/codes
 # that is not complete, a distance before the start, a count past the
 # meta-block, fill bits that are not zeros, a stream cut short, bytes after
 # its end), the message naming the byte; and of options out of their range.
-# Every function fails with it but `defaults`.
+# Every function fails with it but `default_options`.
 constant INVALID: str
     codes.INVALID
 
@@ -54,7 +54,7 @@ constant MIN_QUALITY: i64
 constant MAX_QUALITY: i64
     11
 
-# The quality `defaults` sets, the `brotli` tool's usual and the highest.
+# The quality `default_options` sets, the `brotli` tool's usual and the highest.
 constant DEFAULT_QUALITY: i64
     11
 
@@ -66,7 +66,7 @@ constant MIN_WINDOW_BITS: i64
 constant MAX_WINDOW_BITS: i64
     24
 
-# How `compress` writes a stream. `defaults` makes the usual one.
+# How `compress` writes a stream. `default_options` makes the usual one.
 record Options
     # 0 (`MIN_QUALITY`) to 11 (`MAX_QUALITY`): 0 stores the bytes as they
     # are; 1 to 11 try from 4 to 512 earlier places for each byte.
@@ -79,7 +79,7 @@ record Options
 # usual.
 #
 # See also `compress`.
-function defaults() -> Options
+function default_options() -> Options
     return Options(quality: DEFAULT_QUALITY, window_bits: 22)
 
 ## All at once
@@ -87,7 +87,7 @@ function defaults() -> Options
 # `data` compressed whole into one Brotli stream.
 #
 # - `data`: the bytes to compress; none make a stream of one byte.
-# - `options`: the quality and the window; `defaults` makes the usual ones.
+# - `options`: the quality and the window; `default_options` makes the usual ones.
 #
 # The same `data` and `options` answer the same bytes every time.
 #
@@ -144,8 +144,8 @@ function decompress_leading(data: [u8], limit: i64) -> Leading?
 ## Examples
 
 # The usual options, with a narrower window.
-test "defaults: quality 11 and 22 bits, then 16"
-    o @= defaults()
+test "default_options: quality 11 and 22 bits, then 16"
+    o @= default_options()
     assert o.quality == DEFAULT_QUALITY && DEFAULT_QUALITY == MAX_QUALITY && o.window_bits == 22
     o.window_bits @ 16
     assert decompress(compress([0x61, 0x62], o).must(), limit: 2).must() == [0x61, 0x62]
@@ -153,11 +153,11 @@ test "defaults: quality 11 and 22 bits, then 16"
 # A line compressed and read back.
 test "compress: a line, and back"
     line: [u8] = [0x72, 0x65, 0x62, 0x65, 0x6c, 0x20, 0x72, 0x65, 0x62, 0x65, 0x6c, 0x20, 0x72, 0x65, 0x62, 0x65, 0x6c]
-    assert decompress(compress(line, defaults()).must(), limit: 100).must() == line
+    assert decompress(compress(line, default_options()).must(), limit: 100).must() == line
 
 # A stream read whole, under a limit on what it may expand to.
 test "decompress: under a limit"
-    packed = compress([0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a], defaults()).must()
+    packed = compress([0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a], default_options()).must()
     assert decompress(packed, limit: 6).must().len() == 6
 
     match decompress(packed, limit: 5)
@@ -166,7 +166,7 @@ test "decompress: under a limit"
 
 # A stream followed by bytes of the caller's own.
 test "decompress_leading: a stream, then other bytes"
-    packed @= compress([0x6b, 0x6f, 0x6f, 0x6b, 0x73], defaults()).must()
+    packed @= compress([0x6b, 0x6f, 0x6f, 0x6b, 0x73], default_options()).must()
     size = packed.len()
     packed @ packed.push(0x21)
     led = decompress_leading(packed, limit: 100).must()

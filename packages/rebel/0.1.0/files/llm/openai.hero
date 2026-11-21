@@ -516,7 +516,7 @@ function tool_message(tool_call_id: str, content: str) -> json.Value
 # - `value`: its value.
 #
 # A name the request types itself (`model`, `messages`, `stream`, and
-# `tools` where the record sets them) is refused by `chat_to_json`.
+# `tools` where the record sets them) is refused by `chat_request_json`.
 function with_chat_field(r: ChatRequest, name: str, value: json.Value) -> ChatRequest
     out @= r
     out.fields[name] @ value
@@ -563,7 +563,7 @@ function with_tool_messages(r: ChatRequest, reply: Completion, results: [json.Va
 # - `r`: the request.
 #
 # Fails `invalid` where a field names what the record types.
-function chat_to_json(r: ChatRequest) -> json.Value?
+function chat_request_json(r: ChatRequest) -> json.Value?
     names: [str] @= ["model", "messages"]
     values: [json.Value] @= [fields.text(r.model), .list(items: r.messages)]
 
@@ -596,7 +596,7 @@ function chat_to_json(r: ChatRequest) -> json.Value?
 #
 # Fails `invalid` where its `choices` is no list. See also
 # `parse_completion`.
-function to_completion(v: json.Value) -> Completion?
+function completion_of(v: json.Value) -> Completion?
     choices: [Choice] @= []
 
     for c in json.items_of(json.member(v, key: "choices")?)?
@@ -624,7 +624,7 @@ function to_completion(v: json.Value) -> Completion?
 #
 # Fails `invalid` where `text` is not JSON or no completion.
 function parse_completion(text: str) -> Completion?
-    return to_completion(json.parse(text)?)
+    return completion_of(json.parse(text)?)
 
 # The text of the first choice of `done`, "" where it has none.
 #
@@ -675,11 +675,11 @@ function require_finished(done: Completion) -> Completion?
 # - `c`: the client.
 # - `r`: the request.
 #
-# Fails as `chat_to_json` fails on `r`, as `send_raw` fails, and `invalid`
+# Fails as `chat_request_json` fails on `r`, as `send_raw` fails, and `invalid`
 # where the answer is no completion. See also `chat_stream`.
 function chat(c: Client, r: ChatRequest) -> Completion?
-    answer = send_raw(c, method: http.METHOD_POST, path: "/chat/completions", body: chat_to_json(r)?)?
-    return to_completion(http.json_of(answer)?)
+    answer = send_raw(c, method: http.METHOD_POST, path: "/chat/completions", body: chat_request_json(r)?)?
+    return completion_of(http.json_of(answer)?)
 
 ## Chat Completions streamed
 
@@ -735,7 +735,7 @@ record Chunk
 # `chat` fails before the first chunk, and `invalid` where the answer is no
 # event stream. See also `next_chunk`, `final_completion`.
 function chat_stream(c: Client, r: ChatRequest) -> ChatStream?
-    body @= fields.with_member(v: chat_to_json(r)?, key: "stream", value: .boolean(v: true))
+    body @= fields.with_member(v: chat_request_json(r)?, key: "stream", value: .boolean(v: true))
 
     if r.fields["stream_options"].is_err()
         body @ fields.with_member(
@@ -801,15 +801,15 @@ function next_chunk(@s: ChatStream) -> Chunk?
 #
 # Fails `invalid` only where a chunk was not of the API's shape. See also
 # `final_completion`.
-function completion_of(s: ChatStream) -> Completion?
-    return to_completion(chat_chunks.completion_json(s.state))
+function completion_so_far(s: ChatStream) -> Completion?
+    return completion_of(chat_chunks.completion_json(s.state))
 
 # The whole completion of `s`, its remaining chunks read.
 #
 # - `s`: the stream, read to its `[DONE]`.
 #
 # Fails as `next_chunk` fails before the completion is whole, and `closed`
-# where the stream ended cut. See also `completion_of`.
+# where the stream ended cut. See also `completion_so_far`.
 function final_completion(@s: ChatStream) -> Completion?
     while !s.state.ended
         match next_chunk(@s)
@@ -820,7 +820,7 @@ function final_completion(@s: ChatStream) -> Completion?
 
     if !s.state.finished
         return fail(code: CLOSED, msg: "the stream ended before its [DONE]")
-    return completion_of(s)
+    return completion_so_far(s)
 
 # Closes the connection of `s`; a stream not read to its end is cut there.
 #
@@ -910,7 +910,7 @@ function function_output(call_id: str, output: str) -> json.Value
 # - `name`: the parameter's name in the API.
 # - `value`: its value.
 #
-# A name the request types itself is refused by `response_to_json`.
+# A name the request types itself is refused by `response_request_json`.
 function with_response_field(r: ResponseRequest, name: str, value: json.Value) -> ResponseRequest
     out @= r
     out.fields[name] @ value
@@ -945,7 +945,7 @@ function with_function_outputs(r: ResponseRequest, reply: Response, outputs: [js
 # - `r`: the request.
 #
 # Fails `invalid` where a field names what the record types.
-function response_to_json(r: ResponseRequest) -> json.Value?
+function response_request_json(r: ResponseRequest) -> json.Value?
     names: [str] @= ["model", "input"]
     values: [json.Value] @= [fields.text(r.model), .list(items: r.input)]
 
@@ -995,7 +995,7 @@ function response_to_json(r: ResponseRequest) -> json.Value?
 # - `v`: an object whose `object` is `response`.
 #
 # Fails `invalid` where it is not one. See also `parse_response`.
-function to_response(v: json.Value) -> Response?
+function response_of(v: json.Value) -> Response?
     if fields.text_at(v, key: "object") != "response"
         return fail(
             code: INVALID,
@@ -1012,7 +1012,7 @@ function to_response(v: json.Value) -> Response?
 #
 # Fails `invalid` where `text` is not JSON or no response.
 function parse_response(text: str) -> Response?
-    return to_response(json.parse(text)?)
+    return response_of(json.parse(text)?)
 
 # The text of `r`'s messages: every `output_text` part, joined with nothing
 # between them, what the SDKs call `output_text`.
@@ -1082,11 +1082,11 @@ function require_complete(r: Response) -> Response?
 # - `c`: the client.
 # - `r`: the request.
 #
-# Fails as `response_to_json` fails on `r`, as `send_raw` fails, and
+# Fails as `response_request_json` fails on `r`, as `send_raw` fails, and
 # `invalid` where the answer is no response. See also `response_stream`.
 function create_response(c: Client, r: ResponseRequest) -> Response?
-    answer = send_raw(c, method: http.METHOD_POST, path: "/responses", body: response_to_json(r)?)?
-    return to_response(http.json_of(answer)?)
+    answer = send_raw(c, method: http.METHOD_POST, path: "/responses", body: response_request_json(r)?)?
+    return response_of(http.json_of(answer)?)
 
 # The response `id` as the server keeps it: one made in the background
 # polled until it ends.
@@ -1095,26 +1095,26 @@ function create_response(c: Client, r: ResponseRequest) -> Response?
 # - `id`: the response's id.
 #
 # Fails `not_found` where the server keeps none, and as `send_raw` fails.
-function retrieve_response(c: Client, id: str) -> Response?
+function fetch_response(c: Client, id: str) -> Response?
     answer = send_raw(c, method: http.METHOD_GET, path: "/responses/" + url.escape_segment(id), body: .null_value)?
-    return to_response(http.json_of(answer)?)
+    return response_of(http.json_of(answer)?)
 
 # Cancels the response `id`, made in the background.
 #
 # - `c`: the client.
 # - `id`: the response's id.
 #
-# Fails as `retrieve_response` fails.
+# Fails as `fetch_response` fails.
 function cancel_response(c: Client, id: str) -> Response?
     answer = send_raw(c, method: http.METHOD_POST, path: "/responses/" + url.escape_segment(id) + "/cancel", body: .null_value)?
-    return to_response(http.json_of(answer)?)
+    return response_of(http.json_of(answer)?)
 
 # Deletes the response `id` the server keeps.
 #
 # - `c`: the client.
 # - `id`: the response's id.
 #
-# Fails as `retrieve_response` fails.
+# Fails as `fetch_response` fails.
 function delete_response(c: Client, id: str) -> ()?
     _ = send_raw(c, method: http.METHOD_DELETE, path: "/responses/" + url.escape_segment(id), body: .null_value)?
     return ok()
@@ -1129,7 +1129,7 @@ function delete_response(c: Client, id: str) -> ()?
 # Fails as `create_response` fails. See also `create_response`.
 function count_input_tokens(c: Client, r: ResponseRequest) -> i64?
     body = fields.only(
-        response_to_json(r)?,
+        response_request_json(r)?,
         names: ["model", "input", "instructions", "tools", "tool_choice", "parallel_tool_calls", "previous_response_id", "conversation", "reasoning", "text", "truncation", "personality"]
     )
     counted = http.json_of(send_raw(c, method: http.METHOD_POST, path: "/responses/input_tokens", body: body)?)?
@@ -1235,7 +1235,7 @@ variant ResponseEvent
 # as `create_response` fails before the first event, and `invalid` where
 # the answer is no event stream. See also `next_response_event`.
 function response_stream(c: Client, r: ResponseRequest) -> ResponseStream?
-    body = fields.with_member(v: response_to_json(r)?, key: "stream", value: .boolean(v: true))
+    body = fields.with_member(v: response_request_json(r)?, key: "stream", value: .boolean(v: true))
     s = transport.settings(
         base_url: c.base_url,
         api_key: c.api_key,
@@ -1272,7 +1272,7 @@ function next_response_event(@s: ResponseStream) -> ResponseEvent?
     item_id = fields.text_at(d, key: "item_id")
 
     if n == "response.created" || n == "response.in_progress" || n == "response.queued"
-        return ok(.created(response: to_response(fields.value_at_key(d, key: "response"))?))
+        return ok(.created(response: response_of(fields.value_at_key(d, key: "response"))?))
 
     if n == "response.output_item.added"
         return ok(.item_added(output_index: index, item: fields.value_at_key(d, key: "item")))
@@ -1302,13 +1302,13 @@ function next_response_event(@s: ResponseStream) -> ResponseEvent?
         return ok(.refusal_delta(item_id: item_id, output_index: index, delta: fields.text_at(d, key: "delta")))
 
     if n == "response.completed"
-        return ok(.completed(response: to_response(fields.value_at_key(d, key: "response"))?))
+        return ok(.completed(response: response_of(fields.value_at_key(d, key: "response"))?))
 
     if n == "response.incomplete"
-        return ok(.incomplete(response: to_response(fields.value_at_key(d, key: "response"))?))
+        return ok(.incomplete(response: response_of(fields.value_at_key(d, key: "response"))?))
 
     if n == "response.failed"
-        return ok(.failed(response: to_response(fields.value_at_key(d, key: "response"))?))
+        return ok(.failed(response: response_of(fields.value_at_key(d, key: "response"))?))
     return ok(.other(name: n, data: d))
 
 # The response of `s` as far as it has arrived: whole after its last event,
@@ -1317,8 +1317,8 @@ function next_response_event(@s: ResponseStream) -> ResponseEvent?
 # - `s`: the stream.
 #
 # Fails `invalid` before `response.created`. See also `final_response`.
-function response_of(s: ResponseStream) -> Response?
-    return to_response(response_events.response_json(s.state))
+function response_so_far(s: ResponseStream) -> Response?
+    return response_of(response_events.response_json(s.state))
 
 # The response of `s` as its last event holds it, its remaining events read.
 #
@@ -1326,14 +1326,14 @@ function response_of(s: ResponseStream) -> Response?
 #   or `response.failed`.
 #
 # Fails as `next_response_event` fails before the last event. See also
-# `response_of`, `require_complete`.
+# `response_so_far`, `require_complete`.
 function final_response(@s: ResponseStream) -> Response?
     while !s.state.ended
         _ = next_response_event(@s)?
 
     if !s.state.finished
         return fail(code: CLOSED, msg: "the stream ended before its last event")
-    return response_of(s)
+    return response_so_far(s)
 
 # Closes the connection of `s`; a stream not read to its end is cut there.
 #
@@ -1433,7 +1433,7 @@ record Model
 # - `c`: the client.
 #
 # Fails as `send_raw` fails, and `invalid` where the answer is not a list.
-# See also `model_of`.
+# See also `fetch_model`.
 function list_models(c: Client) -> [Model]?
     answer = http.json_of(send_raw(c, method: http.METHOD_GET, path: "/models", body: .null_value)?)?
     out: [Model] @= []
@@ -1452,7 +1452,7 @@ function list_models(c: Client) -> [Model]?
 #
 # Fails `not_found` where the server knows none, `invalid` where the answer
 # holds no id, and as `send_raw` fails.
-function model_of(c: Client, id: str) -> Model?
+function fetch_model(c: Client, id: str) -> Model?
     v = http.json_of(send_raw(c, method: http.METHOD_GET, path: "/models/" + url.escape_segment(id), body: .null_value)?)?
 
     if fields.text_at(v, key: "id") == ""
@@ -1463,16 +1463,16 @@ function model_of(c: Client, id: str) -> Model?
 
 ## Tests
 
-test "chat_to_json: a field the record types, stream, a function of no parameter, and the order of the rest"
+test "chat_request_json: a field the record types, stream, a function of no parameter, and the order of the rest"
     clash = with_chat_field(chat_request(model: "m", messages: []), name: "messages", value: .list(items: []))
 
-    match chat_to_json(clash)
+    match chat_request_json(clash)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
     streamed = with_chat_field(chat_request(model: "m", messages: []), name: "stream", value: .boolean(v: true))
 
-    match chat_to_json(streamed)
+    match chat_request_json(streamed)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -1482,7 +1482,7 @@ test "chat_to_json: a field the record types, stream, a function of no parameter
         value: json.from_int(16).must()
     )
     r.tools @ [Function(name: "now", description: "", parameters: .null_value, strict: false)]
-    assert json.format(chat_to_json(r).must()).must() == "{\"model\":\"m\",\"messages\":[],\"tools\":[{\"type\":\"function\",\"function\":{\"name\":\"now\"}}],\"max_completion_tokens\":16}"
+    assert json.format(chat_request_json(r).must()).must() == "{\"model\":\"m\",\"messages\":[],\"tools\":[{\"type\":\"function\",\"function\":{\"name\":\"now\"}}],\"max_completion_tokens\":16}"
 
 test "arguments_of: none written, a list, and a text cut short"
     assert arguments_of(ToolCall(id: "1", name: "n", arguments: "")).must() == .object(members: {})
@@ -1551,8 +1551,8 @@ test "require_complete: failed, incomplete by tokens and by a filter, in progres
         .ok _  => assert false
         .err e => assert e.code == PERMISSION && e.msg == "the model refused: No."
 
-test "to_response and to_completion: an object of another kind, and choices that are no list"
-    match to_response(json.parse("{\"object\":\"chat.completion\"}").must())
+test "response_of and completion_of: an object of another kind, and choices that are no list"
+    match response_of(json.parse("{\"object\":\"chat.completion\"}").must())
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -1803,7 +1803,7 @@ test "tool_message: the call it answers"
 # A parameter set by its name.
 test "with_chat_field: reasoning_effort"
     r = with_chat_field(chat_request(model: "m", messages: []), name: "reasoning_effort", value: .text(v: "low"))
-    assert json.format(chat_to_json(r).must()).must() == "{\"model\":\"m\",\"messages\":[],\"reasoning_effort\":\"low\"}"
+    assert json.format(chat_request_json(r).must()).must() == "{\"model\":\"m\",\"messages\":[],\"reasoning_effort\":\"low\"}"
 
 # A conversation carried on by hand.
 test "with_message: a second user message"
@@ -1811,7 +1811,7 @@ test "with_message: a second user message"
     assert r.messages.len() == 2
 
 # The body a request sends.
-test "chat_to_json: a function and a field"
+test "chat_request_json: a function and a field"
     r @= with_chat_field(
         chat_request(model: "gpt-test", messages: [user_message("Hi")]),
         name: "temperature",
@@ -1821,11 +1821,11 @@ test "chat_to_json: a function and a field"
         Function(name: "get_weather", description: "The weather.", parameters: json.parse("{\"type\":\"object\"}").must(), strict: true)
     ]
     expected = "{\"model\":\"gpt-test\",\"messages\":[{\"role\":\"user\",\"content\":\"Hi\"}],\"tools\":[{\"type\":\"function\",\"function\":{\"name\":\"get_weather\",\"description\":\"The weather.\",\"parameters\":{\"type\":\"object\"},\"strict\":true}}],\"temperature\":0.5}"
-    assert json.format(chat_to_json(r).must()).must() == expected
+    assert json.format(chat_request_json(r).must()).must() == expected
 
 # A completion read from its JSON.
-test "to_completion: the reference's example"
-    done = to_completion(
+test "completion_of: the reference's example"
+    done = completion_of(
         json.parse(canned.completion(message: "{\"role\":\"assistant\",\"content\":\"Hi\"}", finish_reason: "stop")).must()
     ).must()
     assert done.id == "chatcmpl-1" && done.usage.input_tokens == 9 && done.usage.cached_tokens == 4 && done.usage.reasoning_tokens == 2
@@ -1960,7 +1960,7 @@ test "next_chunk: the first chunk"
     assert chunk.id == "chatcmpl-2" && chunk.choices.len() == 1 && chunk.choices[0].content == ""
 
 # What has arrived of a completion, while it arrives.
-test "completion_of: the text so far and a call's arguments cut"
+test "completion_so_far: the text so far and a call's arguments cut"
     t @= canned.start([canned.stream_answer(content_type: "text/event-stream", body: canned.every_chunk())])
     c @= default_client("k")
     c.base_url @ canned.base(t.port)
@@ -1971,7 +1971,7 @@ test "completion_of: the text so far and a call's arguments cut"
         _ = next_chunk(@s).must()
         step @ step + 1
 
-    so_far = completion_of(s).must()
+    so_far = completion_so_far(s).must()
     close_chat_stream(@s)
     _ = canned.requests_of(@t)
     assert text_of(so_far) == "Checking Zürich." && tool_calls_of(so_far)[0].arguments == "{\"city\":"
@@ -2021,20 +2021,20 @@ test "with_response_field: max_output_tokens"
         name: "max_output_tokens",
         value: json.from_int(64).must()
     )
-    assert json.format(response_to_json(r).must()).must() == "{\"model\":\"m\",\"input\":[],\"max_output_tokens\":64}"
+    assert json.format(response_request_json(r).must()).must() == "{\"model\":\"m\",\"input\":[],\"max_output_tokens\":64}"
 
 # The body a response request sends.
-test "response_to_json: instructions, a function and a previous response"
+test "response_request_json: instructions, a function and a previous response"
     r @= response_request(model: "gpt-test", input: [input_message(role: "user", text: "Hi")])
     r.instructions @ "Be brief."
     r.tools @ [Function(name: "f", description: "", parameters: .null_value, strict: false)]
     r.previous_response_id @ "resp_0"
     expected = "{\"model\":\"gpt-test\",\"input\":[{\"role\":\"user\",\"content\":\"Hi\"}],\"instructions\":\"Be brief.\",\"tools\":[{\"type\":\"function\",\"name\":\"f\",\"strict\":false}],\"previous_response_id\":\"resp_0\"}"
-    assert json.format(response_to_json(r).must()).must() == expected
+    assert json.format(response_request_json(r).must()).must() == expected
 
 # A response read from its JSON.
-test "to_response: a response's usage"
-    r = to_response(json.parse(canned.response(output: "[]", status: "completed")).must()).must()
+test "response_of: a response's usage"
+    r = response_of(json.parse(canned.response(output: "[]", status: "completed")).must()).must()
     assert r.status == STATUS_COMPLETED && r.usage.input_tokens == 36 && r.usage.reasoning_tokens == 5
 
 # A response read from its text.
@@ -2105,13 +2105,13 @@ test "create_response: a request and its response"
     assert r.id == "resp_1" && strings.has_prefix(s: seen[0], prefix: "POST /responses\n")
 
 # A response the server keeps, read again.
-test "retrieve_response: by its id"
+test "fetch_response: by its id"
     t @= canned.start(
         [canned.json_answer(status: 200, body: canned.response(output: "[]", status: "in_progress"), fields: [])]
     )
     c @= default_client("k")
     c.base_url @ canned.base(t.port)
-    r = retrieve_response(c, id: "resp_1").must()
+    r = fetch_response(c, id: "resp_1").must()
     seen = canned.requests_of(@t)
     assert r.status == STATUS_IN_PROGRESS && strings.has_prefix(s: seen[0], prefix: "GET /responses/resp_1\n")
 
@@ -2211,7 +2211,7 @@ test "next_response_event: response.created"
     _ = canned.requests_of(@t)
 
 # What has arrived of a response, while it arrives.
-test "response_of: a message's text as far as it came"
+test "response_so_far: a message's text as far as it came"
     t @= canned.start([canned.stream_answer(content_type: "text/event-stream", body: canned.response_events())])
     c @= default_client("k")
     c.base_url @ canned.base(t.port)
@@ -2219,7 +2219,7 @@ test "response_of: a message's text as far as it came"
     _ = next_response_event(@s).must()
     _ = next_response_event(@s).must()
     _ = next_response_event(@s).must()
-    r = response_of(s).must()
+    r = response_so_far(s).must()
     close_response_stream(@s)
     _ = canned.requests_of(@t)
     assert output_text_of(r) == "Hi" && r.status == STATUS_IN_PROGRESS
@@ -2278,12 +2278,12 @@ test "list_models: two models"
     assert models.len() == 2 && models[1].owned_by == "library" && strings.has_prefix(s: seen[0], prefix: "GET /models\n")
 
 # One model by its id.
-test "model_of: gpt-test"
+test "fetch_model: gpt-test"
     t @= canned.start(
         [canned.json_answer(status: 200, body: "{\"id\":\"gpt-test\",\"object\":\"model\",\"created\":1686935002,\"owned_by\":\"openai\"}", fields: [])]
     )
     c @= default_client("k")
     c.base_url @ canned.base(t.port)
-    m = model_of(c, id: "gpt-test").must()
+    m = fetch_model(c, id: "gpt-test").must()
     seen = canned.requests_of(@t)
     assert m.created == 1686935002 && strings.has_prefix(s: seen[0], prefix: "GET /models/gpt-test\n")

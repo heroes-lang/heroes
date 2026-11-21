@@ -825,7 +825,7 @@ variant Flex
     # Evenly before, between and after the parts.
     space_evenly
 
-# How an area is cut into parts. Made by `layout_of`, then changed field by
+# How an area is cut into parts. Made by `new_layout`, then changed field by
 # field.
 record Layout
     # Side by side or one under another.
@@ -851,7 +851,7 @@ record Layout
 # - `constraints`: what each part asks.
 #
 # See also `split`.
-function layout_of(direction: Direction, constraints: [Constraint]) -> Layout
+function new_layout(direction: Direction, constraints: [Constraint]) -> Layout
     return Layout(
         direction: direction,
         constraints: constraints,
@@ -960,7 +960,7 @@ record Span
     style: term.Style
 
 # One line of text: spans drawn one after another, a style under them all,
-# and where the line stands. Built directly, or by `line_of`.
+# and where the line stands. Built directly, or by `new_line`.
 record Line
     # The spans, in order.
     spans: [Span]
@@ -973,8 +973,8 @@ record Line
 #
 # - `text`: the text, one line.
 #
-# See also `styled_line`, `lines_of`.
-function line_of(text: str) -> Line
+# See also `styled_line`, `new_lines`.
+function new_line(text: str) -> Line
     return Line(spans: [Span(text: text, style: term.plain())], style: term.plain(), alignment: .left)
 
 # `text` as one line of one span drawn in `style`, against the left.
@@ -982,7 +982,7 @@ function line_of(text: str) -> Line
 # - `text`: the text, one line.
 # - `style`: how it is drawn.
 #
-# See also `line_of`.
+# See also `new_line`.
 function styled_line(text: str, style: term.Style) -> Line
     return Line(spans: [Span(text: text, style: style)], style: term.plain(), alignment: .left)
 
@@ -992,8 +992,8 @@ function styled_line(text: str, style: term.Style) -> Line
 # - `text`: the text; the empty text is one empty line, and a text ending in a
 #   line feed has an empty line after it.
 #
-# See also `line_of`, `paragraph_of`.
-function lines_of(text: str) -> [Line]
+# See also `new_line`, `new_paragraph`.
+function new_lines(text: str) -> [Line]
     out: [Line] @= []
     begins @= 0
 
@@ -1004,10 +1004,10 @@ function lines_of(text: str) -> [Line]
             else
                 i
 
-            out @ out.push(line_of(text.slice(from: begins, to: end)))
+            out @ out.push(new_line(text.slice(from: begins, to: end)))
             begins @ i + 1
 
-    out @ out.push(line_of(text.slice(from: begins, to: text.len())))
+    out @ out.push(new_line(text.slice(from: begins, to: text.len())))
     return out
 
 # How many cells `line` takes when drawn: each grapheme as `unicode/segment`'s
@@ -1072,7 +1072,7 @@ record Change
 #
 # - `area`: where it stands; a rectangle of no cell makes a buffer of none.
 #
-# See also `frame_of`, `buffer_of`.
+# See also `frame_of`, `new_buffer`.
 function blank(area: Rect) -> Buffer
     return Buffer(area: area, grid: grid.new(x: area.x, y: area.y, width: area.width, height: area.height))
 
@@ -1082,11 +1082,11 @@ function blank(area: Rect) -> Buffer
 # - `lines`: the rows, the top one first; a shorter row is blank to its end.
 #
 # See also `to_lines`.
-function buffer_of(lines: [str]) -> Buffer
+function new_buffer(lines: [str]) -> Buffer
     widest @= 0
 
     for l in lines
-        w = width_of(line_of(l))
+        w = width_of(new_line(l))
 
         if w > widest
             widest @ w
@@ -1116,7 +1116,7 @@ function cell_at(buffer: Buffer, x: i64, y: i64) -> Cell
 #
 # - `buffer`: the buffer.
 #
-# See also `buffer_of`, `cell_at`.
+# See also `new_buffer`, `cell_at`.
 function to_lines(buffer: Buffer) -> [str]
     out: [str] @= []
 
@@ -1386,7 +1386,7 @@ function borderless() -> Block
 # See also `Title`.
 function with_title(block: Block, title: str) -> Block
     titles: [Title] @= block.titles
-    titles @ titles.push(Title(line: line_of(title), position: .top))
+    titles @ titles.push(Title(line: new_line(title), position: .top))
     titled @= block
     titled.titles @ titles
     return titled
@@ -1541,7 +1541,7 @@ function draw_block(@buffer: Buffer, area: Rect, block: Block)
 ## Paragraphs
 
 # Lines of text drawn in an area, wrapped at its width or cut at it, and
-# scrolled. Made by `paragraph_of`, then changed field by field.
+# scrolled. Made by `new_paragraph`, then changed field by field.
 record Paragraph
     # The lines, each standing where its alignment says.
     lines: [Line]
@@ -1561,11 +1561,11 @@ record Paragraph
 # A paragraph of the lines of `text`, plain, cut at the area's edge, not
 # scrolled; `wrap` and `trim` may be set after.
 #
-# - `text`: the text, cut at each line feed as `lines_of` cuts it.
+# - `text`: the text, cut at each line feed as `new_lines` cuts it.
 #
 # See also `draw_paragraph`.
-function paragraph_of(text: str) -> Paragraph
-    return Paragraph(lines: lines_of(text), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
+function new_paragraph(text: str) -> Paragraph
+    return Paragraph(lines: new_lines(text), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
 
 # Draws `paragraph` in `area` of `buffer`.
 #
@@ -1829,7 +1829,7 @@ record ListItem
     # The style laid over its rows.
     style: term.Style
 
-# Items one under another, one of them selected. Made by `list_of`, then
+# Items one under another, one of them selected. Made by `new_list`, then
 # changed field by field; drawn with a `Selection` the program keeps.
 record List
     # The items.
@@ -1855,14 +1855,14 @@ record List
 # A list of `items`, each a plain item of the lines of its text, the selected
 # one drawn reversed with no symbol before it.
 #
-# - `items`: each item's text, cut at line feeds as `lines_of` cuts it.
+# - `items`: each item's text, cut at line feeds as `new_lines` cuts it.
 #
 # See also `draw_list`.
-function list_of(items: [str]) -> List
+function new_list(items: [str]) -> List
     made: [ListItem] @= []
 
     for text in items
-        made @ made.push(ListItem(lines: lines_of(text), style: term.plain()))
+        made @ made.push(ListItem(lines: new_lines(text), style: term.plain()))
 
     return List(
         items: made,
@@ -1964,7 +1964,7 @@ record Row
     style: term.Style
 
 # Rows of cells in columns, under a header, one row selected. Made by
-# `table_of`, then changed field by field; drawn with a `Selection`.
+# `new_table`, then changed field by field; drawn with a `Selection`.
 record Table
     # The rows drawn at the top, above every row, never scrolled; empty for
     # none.
@@ -2001,12 +2001,12 @@ record Table
 #   lines.
 # - `widths`: what each column asks.
 #
-# See also `row_of`, `draw_table`.
-function table_of(rows: [[str]], widths: [Constraint]) -> Table
+# See also `new_row`, `draw_table`.
+function new_table(rows: [[str]], widths: [Constraint]) -> Table
     made: [Row] @= []
 
     for cells in rows
-        made @ made.push(row_of(cells))
+        made @ made.push(new_row(cells))
 
     return Table(
         header: [],
@@ -2025,15 +2025,15 @@ function table_of(rows: [[str]], widths: [Constraint]) -> Table
 
 # A row of plain cells holding `cells`, as tall as its tallest cell.
 #
-# - `cells`: each cell's text, cut at line feeds as `lines_of` cuts it.
+# - `cells`: each cell's text, cut at line feeds as `new_lines` cuts it.
 #
-# See also `table_of`.
-function row_of(cells: [str]) -> Row
+# See also `new_table`.
+function new_row(cells: [str]) -> Row
     made: [TableCell] @= []
     tallest @= 1
 
     for text in cells
-        lines = lines_of(text)
+        lines = new_lines(text)
 
         if lines.len() > tallest
             tallest @ lines.len()
@@ -2163,7 +2163,7 @@ function draw_table(@buffer: Buffer, area: Rect, table: Table, @state: Selection
 
 ## Tabs
 
-# A row of titles, one of them selected. Made by `tabs_of`, then changed field
+# A row of titles, one of them selected. Made by `new_tabs`, then changed field
 # by field.
 record Tabs
     # The titles, left to right.
@@ -2188,11 +2188,11 @@ record Tabs
 # - `selected`: the title selected, from 0.
 #
 # See also `draw_tabs`.
-function tabs_of(titles: [str], selected: i64) -> Tabs
+function new_tabs(titles: [str], selected: i64) -> Tabs
     lines: [Line] @= []
 
     for t in titles
-        lines @ lines.push(line_of(t))
+        lines @ lines.push(new_line(t))
 
     return Tabs(
         titles: lines,
@@ -2210,7 +2210,7 @@ function tabs_of(titles: [str], selected: i64) -> Tabs
 # - `area`: where it is drawn.
 # - `tabs`: the tabs.
 #
-# See also `tabs_of`.
+# See also `new_tabs`.
 function draw_tabs(@buffer: Buffer, area: Rect, tabs: Tabs)
     plain = term.plain()
     titles: [[runs.Piece]] @= []
@@ -2241,7 +2241,7 @@ function draw_tabs(@buffer: Buffer, area: Rect, tabs: Tabs)
 ## Gauges
 
 # How far something has gone, as a bar filling its area with a label in its
-# middle. Made by `gauge_of`, then changed field by field.
+# middle. Made by `new_gauge`, then changed field by field.
 record Gauge
     # The part done, from 0 to 1; outside taken as the nearer end, NaN as 0.
     ratio: f64
@@ -2262,7 +2262,7 @@ record Gauge
 # - `ratio`: the part done, from 0 to 1.
 #
 # See also `draw_gauge`.
-function gauge_of(ratio: f64) -> Gauge
+function new_gauge(ratio: f64) -> Gauge
     return Gauge(
         ratio: ratio,
         label: f"{meters.percent_of(ratio)}%",
@@ -2278,7 +2278,7 @@ function gauge_of(ratio: f64) -> Gauge
 # - `area`: where it is drawn.
 # - `gauge`: the gauge.
 #
-# See also `gauge_of`.
+# See also `new_gauge`.
 function draw_gauge(@buffer: Buffer, area: Rect, gauge: Gauge)
     meters.gauge(
         @buffer.grid,
@@ -2294,7 +2294,7 @@ function draw_gauge(@buffer: Buffer, area: Rect, gauge: Gauge)
     )
 
 # How far something has gone, as a label and a line on one row. Made by
-# `line_gauge_of`, then changed field by field.
+# `new_line_gauge`, then changed field by field.
 record LineGauge
     # The part done, from 0 to 1; outside taken as the nearer end, NaN as 0.
     ratio: f64
@@ -2317,7 +2317,7 @@ record LineGauge
 # - `ratio`: the part done, from 0 to 1.
 #
 # See also `draw_line_gauge`.
-function line_gauge_of(ratio: f64) -> LineGauge
+function new_line_gauge(ratio: f64) -> LineGauge
     percent = meters.percent_of(ratio)
 
     label = if percent < 10
@@ -2343,7 +2343,7 @@ function line_gauge_of(ratio: f64) -> LineGauge
 # - `area`: where it is drawn.
 # - `gauge`: the gauge.
 #
-# See also `line_gauge_of`.
+# See also `new_line_gauge`.
 function draw_line_gauge(@buffer: Buffer, area: Rect, gauge: LineGauge)
     meters.line_gauge(
         @buffer.grid,
@@ -2370,7 +2370,7 @@ variant SparklineDirection
     right_to_left
 
 # Values drawn as bars one cell wide, their heights in eighths of a cell. Made
-# by `sparkline_of`, then changed field by field.
+# by `new_sparkline`, then changed field by field.
 record Sparkline
     # The values, 0 or more; one below 0 is drawn as 0. Values past the
     # area's width are not drawn.
@@ -2391,7 +2391,7 @@ record Sparkline
 # - `data`: the values.
 #
 # See also `draw_sparkline`.
-function sparkline_of(data: [i64]) -> Sparkline
+function new_sparkline(data: [i64]) -> Sparkline
     return Sparkline(data: data, max: 0, style: term.plain(), direction: .left_to_right, symbols: meters.bars())
 
 # Draws `sparkline` in `area` of `buffer`, each value a bar from the bottom.
@@ -2401,7 +2401,7 @@ function sparkline_of(data: [i64]) -> Sparkline
 # - `sparkline`: the sparkline.
 #
 # A bar's height is its value's share of `max`, in eighths of the area's
-# rows, rounded down. See also `sparkline_of`.
+# rows, rounded down. See also `new_sparkline`.
 function draw_sparkline(@buffer: Buffer, area: Rect, sparkline: Sparkline)
     symbols: [str] @= []
 
@@ -2435,7 +2435,7 @@ variant ScrollbarOrientation
     horizontal_top
 
 # A bar telling how much of a content is shown and where: a track, a thumb in
-# it, and an arrow at each end. Made by `scrollbar_of`, then changed field by
+# it, and an arrow at each end. Made by `new_scrollbar`, then changed field by
 # field.
 record Scrollbar
     # Which edge it stands on.
@@ -2468,7 +2468,7 @@ record Scrollbar
 # - `position`: the first row shown.
 #
 # See also `draw_scrollbar`.
-function scrollbar_of(orientation: ScrollbarOrientation, content_length: i64, position: i64) -> Scrollbar
+function new_scrollbar(orientation: ScrollbarOrientation, content_length: i64, position: i64) -> Scrollbar
     vertical = orientation == .vertical_right || orientation == .vertical_left
 
     track = if vertical
@@ -2506,7 +2506,7 @@ function scrollbar_of(orientation: ScrollbarOrientation, content_length: i64, po
 #
 # The thumb's length is the share of the content shown, at least one cell;
 # its place is the share scrolled, as `ratatui` places it; nothing is drawn
-# for a content of no row. See also `scrollbar_of`.
+# for a content of no row. See also `new_scrollbar`.
 function draw_scrollbar(@buffer: Buffer, area: Rect, scrollbar: Scrollbar)
     o = scrollbar.orientation
 
@@ -2538,7 +2538,7 @@ function draw_scrollbar(@buffer: Buffer, area: Rect, scrollbar: Scrollbar)
 ## Text input
 
 # One line of text being typed, and where its cursor stands. Made by
-# `input_of`, changed by `press_input`, drawn by `draw_input`.
+# `new_input`, changed by `press_input`, drawn by `draw_input`.
 record Input
     # The text typed.
     text: str
@@ -2562,7 +2562,7 @@ record Input
 # - `text`: the text to begin with.
 #
 # See also `press_input`.
-function input_of(text: str) -> Input
+function new_input(text: str) -> Input
     return Input(
         text: text,
         cursor: text.len(),
@@ -2656,7 +2656,7 @@ test "inner_of: borders, padding, a title with no border on its edge, one cell"
     assert inner_of(padded, area: Rect(x: 0, y: 0, width: 10, height: 8)) == Rect(x: 2, y: 1, width: 5, height: 5)
     assert inner_of(with_title(borderless(), title: "T"), area: Rect(x: 0, y: 0, width: 10, height: 8)) == Rect(x: 0, y: 1, width: 10, height: 7)
     bottom_titled @= borderless()
-    bottom_titled.titles @ [Title(line: line_of("T"), position: .bottom)]
+    bottom_titled.titles @ [Title(line: new_line("T"), position: .bottom)]
     assert inner_of(bottom_titled, area: Rect(x: 0, y: 0, width: 10, height: 8)) == Rect(x: 0, y: 0, width: 10, height: 7)
     left_only @= borderless()
     left_only.borders @ Borders(top: false, right: false, bottom: false, left: true)
@@ -2678,9 +2678,9 @@ test "draw_block: the block's style under all, the border's over it, the title's
 test "draw_paragraph: cut at the edge, wrapped, wrapped without trim"
     text = "Hello world, this is a long text"
     cut @= blank(Rect(x: 0, y: 0, width: 10, height: 3))
-    draw_paragraph(@cut, area: cut.area, paragraph: paragraph_of(text))
+    draw_paragraph(@cut, area: cut.area, paragraph: new_paragraph(text))
     assert to_lines(cut) == ["Hello worl", "          ", "          "]
-    wrapped @= paragraph_of(text)
+    wrapped @= new_paragraph(text)
     wrapped.wrap @ true
     w @= blank(Rect(x: 0, y: 0, width: 10, height: 5))
     draw_paragraph(@w, area: w.area, paragraph: wrapped)
@@ -2691,16 +2691,16 @@ test "draw_paragraph: cut at the edge, wrapped, wrapped without trim"
     assert to_lines(u) == to_lines(w)
 
 test "draw_paragraph: wide characters wrapped and cut, a wide character that does not fit the edge"
-    cjk @= paragraph_of("日本語のテキスト")
+    cjk @= new_paragraph("日本語のテキスト")
     cjk.wrap @ true
     a @= blank(Rect(x: 0, y: 0, width: 5, height: 4))
     draw_paragraph(@a, area: a.area, paragraph: cjk)
     assert to_lines(a) == ["日本 ", "語の ", "テキ ", "スト "]
     b @= blank(Rect(x: 0, y: 0, width: 5, height: 1))
-    draw_paragraph(@b, area: b.area, paragraph: paragraph_of("ab日本語"))
+    draw_paragraph(@b, area: b.area, paragraph: new_paragraph("ab日本語"))
     assert to_lines(b) == ["ab日 "]
     c @= blank(Rect(x: 0, y: 0, width: 4, height: 1))
-    draw_paragraph(@c, area: c.area, paragraph: paragraph_of("a日本"))
+    draw_paragraph(@c, area: c.area, paragraph: new_paragraph("a日本"))
     assert to_lines(c) == ["a日 "]
 
 test "draw_paragraph: centred with the odd cell before, right, each line's own alignment"
@@ -2708,14 +2708,14 @@ test "draw_paragraph: centred with the odd cell before, right, each line's own a
     draw_paragraph(
         @a,
         area: a.area,
-        paragraph: Paragraph(lines: with_alignment(lines_of("ab\ncde\nf"), alignment: .center), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
+        paragraph: Paragraph(lines: with_alignment(new_lines("ab\ncde\nf"), alignment: .center), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
     )
     assert to_lines(a) == ["  ab  ", "  cde ", "   f  "]
     b @= blank(Rect(x: 0, y: 0, width: 6, height: 2))
     draw_paragraph(
         @b,
         area: b.area,
-        paragraph: Paragraph(lines: with_alignment(lines_of("ab\ncde"), alignment: .right), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
+        paragraph: Paragraph(lines: with_alignment(new_lines("ab\ncde"), alignment: .right), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
     )
     assert to_lines(b) == ["    ab", "   cde"]
     mixed = [
@@ -2733,11 +2733,11 @@ test "draw_paragraph: centred with the odd cell before, right, each line's own a
     draw_paragraph(
         @d,
         area: d.area,
-        paragraph: Paragraph(lines: with_alignment(lines_of("abcdefgh"), alignment: .right), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
+        paragraph: Paragraph(lines: with_alignment(new_lines("abcdefgh"), alignment: .right), style: term.plain(), wrap: false, trim: true, scroll_x: 0, scroll_y: 0)
     )
     assert to_lines(d) == ["abcde"]
     centered_wrap = Paragraph(
-        lines: with_alignment(lines_of("aa bb cc"), alignment: .center),
+        lines: with_alignment(new_lines("aa bb cc"), alignment: .center),
         style: term.plain(),
         wrap: true,
         trim: true,
@@ -2749,13 +2749,13 @@ test "draw_paragraph: centred with the odd cell before, right, each line's own a
     assert to_lines(e) == [" aa bb", "  cc  "]
 
 test "draw_paragraph: scrolled both ways, scrolled after wrapping"
-    p @= paragraph_of("l1\nl2\nl3\nl4")
+    p @= new_paragraph("l1\nl2\nl3\nl4")
     p.scroll_x @ 1
     p.scroll_y @ 1
     a @= blank(Rect(x: 0, y: 0, width: 4, height: 2))
     draw_paragraph(@a, area: a.area, paragraph: p)
     assert to_lines(a) == ["2   ", "3   "]
-    q @= paragraph_of("aa bb cc dd")
+    q @= new_paragraph("aa bb cc dd")
     q.wrap @ true
     q.scroll_y @ 1
     b @= blank(Rect(x: 0, y: 0, width: 5, height: 2))
@@ -2763,7 +2763,7 @@ test "draw_paragraph: scrolled both ways, scrolled after wrapping"
     assert to_lines(b) == ["cc dd", "     "]
 
 test "draw_paragraph: a horizontal scroll through a wide character, where ratatui did not scroll"
-    p @= paragraph_of("日本語")
+    p @= new_paragraph("日本語")
     p.scroll_x @ 1
     a @= blank(Rect(x: 0, y: 0, width: 6, height: 1))
     draw_paragraph(@a, area: a.area, paragraph: p)
@@ -2771,16 +2771,16 @@ test "draw_paragraph: a horizontal scroll through a wide character, where ratatu
 
 test "draw_paragraph: controls drawn as nothing, a mark with its letter, an emoji, line breaks, empty lines"
     a @= blank(Rect(x: 0, y: 0, width: 8, height: 1))
-    draw_paragraph(@a, area: a.area, paragraph: paragraph_of("a\tb\u{1}c\u{7f}d"))
+    draw_paragraph(@a, area: a.area, paragraph: new_paragraph("a\tb\u{1}c\u{7f}d"))
     assert to_lines(a) == ["abcd    "]
     b @= blank(Rect(x: 0, y: 0, width: 5, height: 1))
-    draw_paragraph(@b, area: b.area, paragraph: paragraph_of("a😀b"))
+    draw_paragraph(@b, area: b.area, paragraph: new_paragraph("a😀b"))
     assert to_lines(b) == ["a😀b "]
     c @= blank(Rect(x: 0, y: 0, width: 4, height: 3))
-    draw_paragraph(@c, area: c.area, paragraph: paragraph_of("a\r\nb\rc"))
+    draw_paragraph(@c, area: c.area, paragraph: new_paragraph("a\r\nb\rc"))
     assert to_lines(c) == ["a   ", "bc  ", "    "]
     d @= blank(Rect(x: 0, y: 0, width: 3, height: 3))
-    draw_paragraph(@d, area: d.area, paragraph: paragraph_of("\n\nx"))
+    draw_paragraph(@d, area: d.area, paragraph: new_paragraph("\n\nx"))
     assert to_lines(d) == ["   ", "   ", "x  "]
 
 test "draw_paragraph: the paragraph's style under the spans', an area of no cell"
@@ -2798,23 +2798,23 @@ test "draw_paragraph: the paragraph's style under the spans', an area of no cell
     draw_paragraph(@a, area: a.area, paragraph: p)
     assert cell_at(a, x: 0, y: 0).style == term.Style(foreground: .red, background: .blue, attributes: [])
     assert cell_at(a, x: 2, y: 0).style == blue && cell_at(a, x: 4, y: 1).style == blue
-    draw_paragraph(@a, area: Rect(x: 0, y: 0, width: 0, height: 9), paragraph: paragraph_of("zz"))
+    draw_paragraph(@a, area: Rect(x: 0, y: 0, width: 0, height: 9), paragraph: new_paragraph("zz"))
     assert to_lines(a) == ["abcd ", "     "]
 
 test "height_of: wrapped and not, a width of none"
-    p @= paragraph_of("Hello world, this is a long text")
+    p @= new_paragraph("Hello world, this is a long text")
     assert height_of(p, width: 10) == 1
     p.wrap @ true
     assert height_of(p, width: 10) == 4
     assert height_of(p, width: 0) == 0
 
-test "lines_of and width_of: an empty text, a line feed at the end, wide characters"
-    assert lines_of("").len() == 1
-    assert lines_of("a\n").len() == 2
-    assert width_of(line_of("ab")) == 2 && width_of(line_of("日本語")) == 6 && width_of(line_of("")) == 0
+test "new_lines and width_of: an empty text, a line feed at the end, wide characters"
+    assert new_lines("").len() == 1
+    assert new_lines("a\n").len() == 2
+    assert width_of(new_line("ab")) == 2 && width_of(new_line("日本語")) == 6 && width_of(new_line("")) == 0
 
 test "draw_list: through the face, a selection past the last moved to the last"
-    l @= list_of(["Item 0", "Item 1", "Item 2", "Item 3", "Item 4"])
+    l @= new_list(["Item 0", "Item 1", "Item 2", "Item 3", "Item 4"])
     l.highlight_symbol @ ">> "
     state @= selection()
     select(@state, index: 9)
@@ -2825,7 +2825,7 @@ test "draw_list: through the face, a selection past the last moved to the last"
     assert cell_at(frame, x: 9, y: 2).style == term.with_attribute(term.plain(), a: .reverse)
 
 test "draw_table: widths cut a column apart, no widths, a cell to the right, a symbol of three"
-    t = table_of(
+    t = new_table(
         [["a1", "b1", "c1"], ["a2", "bb2", "c2"], ["a3", "b3", "cccccc3"]],
         widths: [.length(n: 3), .length(n: 4), .min(n: 2)]
     )
@@ -2833,7 +2833,7 @@ test "draw_table: widths cut a column apart, no widths, a cell to the right, a s
     frame @= blank(Rect(x: 0, y: 0, width: 16, height: 3))
     draw_table(@frame, area: frame.area, table: t, @state)
     assert to_lines(frame) == ["a1  b1   c1     ", "a2  bb2  c2     ", "a3  b3   cccccc3"]
-    loose = table_of([["a", "b", "c"], ["d"]], widths: [])
+    loose = new_table([["a", "b", "c"], ["d"]], widths: [])
     g @= blank(Rect(x: 0, y: 0, width: 10, height: 2))
     draw_table(@g, area: g.area, table: loose, @state)
     assert to_lines(g) == ["a   b  c  ", "d         "]
@@ -2841,14 +2841,14 @@ test "draw_table: widths cut a column apart, no widths, a cell to the right, a s
         lines: [Line(spans: [Span(text: "r", style: term.plain())], style: term.plain(), alignment: .right)],
         style: term.plain()
     )
-    aligned @= table_of([], widths: [.length(n: 4), .length(n: 4)])
+    aligned @= new_table([], widths: [.length(n: 4), .length(n: 4)])
     aligned.rows @ [
-        Row(cells: [right_cell, TableCell(lines: lines_of("x"), style: term.plain())], height: 1, top_margin: 0, bottom_margin: 0, style: term.plain())
+        Row(cells: [right_cell, TableCell(lines: new_lines("x"), style: term.plain())], height: 1, top_margin: 0, bottom_margin: 0, style: term.plain())
     ]
     h @= blank(Rect(x: 0, y: 0, width: 10, height: 2))
     draw_table(@h, area: h.area, table: aligned, @state)
     assert to_lines(h) == ["   r x    ", "          "]
-    marked @= table_of([["a"], ["b"]], widths: [.length(n: 3)])
+    marked @= new_table([["a"], ["b"]], widths: [.length(n: 3)])
     marked.highlight_symbol @ ">> "
     marked.row_highlight_style @ term.with_foreground(term.plain(), color: .red)
     chosen @= selection()
@@ -2858,9 +2858,9 @@ test "draw_table: widths cut a column apart, no widths, a cell to the right, a s
     assert to_lines(k) == [">> a      ", "   b      "]
     assert cell_at(k, x: 9, y: 0).style == term.with_foreground(term.plain(), color: .red) && cell_at(k, x: 9, y: 1).style == term.plain()
 
-test "gauge_of and line_gauge_of: labels rounded a half up, padded to three for the line"
-    assert gauge_of(0.555).label == "56%" && gauge_of(0.0).label == "0%" && gauge_of(1.0).label == "100%"
-    assert line_gauge_of(0.5).label == " 50%" && line_gauge_of(0.0).label == "  0%" && line_gauge_of(0.999).label == "100%"
+test "new_gauge and new_line_gauge: labels rounded a half up, padded to three for the line"
+    assert new_gauge(0.555).label == "56%" && new_gauge(0.0).label == "0%" && new_gauge(1.0).label == "100%"
+    assert new_line_gauge(0.5).label == " 50%" && new_line_gauge(0.0).label == "  0%" && new_line_gauge(0.999).label == "100%"
 
 test "paste: a drawing laid at its own place, cut at the frame's edge"
     frame @= blank(Rect(x: 0, y: 0, width: 8, height: 1))
@@ -2870,12 +2870,12 @@ test "paste: a drawing laid at its own place, cut at the frame's edge"
     paste(buffer: @frame, from: part)
     assert to_lines(frame) == ["axyz    "]
 
-test "buffer_of and cell_at: the widest line, a wide character and its covered cell"
-    b = buffer_of(["日b", "c"])
+test "new_buffer and cell_at: the widest line, a wide character and its covered cell"
+    b = new_buffer(["日b", "c"])
     assert b.area == Rect(x: 0, y: 0, width: 3, height: 2)
     assert to_lines(b) == ["日b", "c  "]
     assert cell_at(b, x: 1, y: 0).symbol == "" && cell_at(b, x: 2, y: 0).symbol == "b"
-    assert buffer_of([]).area == Rect(x: 0, y: 0, width: 0, height: 0)
+    assert new_buffer([]).area == Rect(x: 0, y: 0, width: 0, height: 0)
 
 test "fill: a symbol of two cells or of two graphemes fills with spaces"
     b @= blank(Rect(x: 0, y: 0, width: 3, height: 1))
@@ -2885,7 +2885,7 @@ test "fill: a symbol of two cells or of two graphemes fills with spaces"
     assert to_lines(b) == ["   "]
 
 test "input: the cursor kept in view as the text grows past the width, then moved home"
-    i @= input_of("")
+    i @= new_input("")
 
     for c in ["a", "b", "c", "d", "e", "f"]
         _ = press_input(@i, key: .character(text: c))
@@ -2901,17 +2901,17 @@ test "input: the cursor kept in view as the text grows past the width, then move
     assert draw_input(@hidden, area: hidden.area, @i) == .hidden
 
 test "input: a mask, a placeholder, wide characters"
-    secret @= input_of("pw")
+    secret @= new_input("pw")
     secret.mask @ "*"
     a @= blank(Rect(x: 0, y: 0, width: 4, height: 1))
     assert draw_input(@a, area: a.area, @secret) == .at(x: 2, y: 0)
     assert to_lines(a) == ["**  "]
-    empty @= input_of("")
+    empty @= new_input("")
     empty.placeholder @ "name"
     b @= blank(Rect(x: 0, y: 0, width: 6, height: 1))
     assert draw_input(@b, area: b.area, @empty) == .at(x: 0, y: 0)
     assert to_lines(b) == ["name  "]
-    wide @= input_of("日本語")
+    wide @= new_input("日本語")
     c @= blank(Rect(x: 0, y: 0, width: 4, height: 1))
     assert draw_input(@c, area: c.area, @wide) == .at(x: 3, y: 0)
     assert to_lines(c) == [" 語 "]
@@ -2953,7 +2953,7 @@ test "split: an area built with a negative width or a negative height cuts into 
     directions: [Direction] = [.horizontal, .vertical]
 
     for direction in directions
-        layout = layout_of(direction, constraints: [.length(n: 3), .fill(weight: 1), .percentage(n: 50)])
+        layout = new_layout(direction, constraints: [.length(n: 3), .fill(weight: 1), .percentage(n: 50)])
 
         for area in [Rect(x: 0, y: 0, width: -5, height: 3), Rect(x: 2, y: 2, width: 3, height: -5)]
             for part in split(area, layout: layout)
@@ -3015,10 +3015,10 @@ test "is_empty: no row, and one cell"
     assert !is_empty(Rect(x: 0, y: 0, width: 1, height: 1))
 
 # A screen cut into a header, a body and a status line.
-test "layout_of: a header, a body and a status line"
+test "new_layout: a header, a body and a status line"
     parts = split(
         Rect(x: 0, y: 0, width: 80, height: 24),
-        layout: layout_of(.vertical, constraints: [.length(n: 3), .min(n: 0), .length(n: 1)])
+        layout: new_layout(.vertical, constraints: [.length(n: 3), .min(n: 0), .length(n: 1)])
     )
     assert parts == [Rect(x: 0, y: 0, width: 80, height: 3), Rect(x: 0, y: 3, width: 80, height: 20), Rect(x: 0, y: 23, width: 80, height: 1)]
 
@@ -3026,21 +3026,21 @@ test "layout_of: a header, a body and a status line"
 test "split: two panes"
     panes = split(
         Rect(x: 0, y: 0, width: 90, height: 10),
-        layout: layout_of(.horizontal, constraints: [.ratio(numerator: 1, denominator: 3), .fill(weight: 1)])
+        layout: new_layout(.horizontal, constraints: [.ratio(numerator: 1, denominator: 3), .fill(weight: 1)])
     )
     assert panes == [Rect(x: 0, y: 0, width: 30, height: 10), Rect(x: 30, y: 0, width: 60, height: 10)]
 
 # The gaps around two buttons centred in a row, two cells apart.
 test "spacers_of: around two centred parts"
-    l @= layout_of(.horizontal, constraints: [.length(n: 5), .length(n: 5)])
+    l @= new_layout(.horizontal, constraints: [.length(n: 5), .length(n: 5)])
     l.flex @ .center
     l.spacing @ 2
     gaps = spacers_of(Rect(x: 0, y: 0, width: 30, height: 1), layout: l)
     assert gaps == [Rect(x: 0, y: 0, width: 9, height: 1), Rect(x: 14, y: 0, width: 2, height: 1), Rect(x: 21, y: 0, width: 9, height: 1)]
 
 # A plain line.
-test "line_of: a plain line"
-    assert line_of("hi") == Line(spans: [Span(text: "hi", style: term.plain())], style: term.plain(), alignment: .left)
+test "new_line: a plain line"
+    assert new_line("hi") == Line(spans: [Span(text: "hi", style: term.plain())], style: term.plain(), alignment: .left)
 
 # A line in red.
 test "styled_line: a red line"
@@ -3048,16 +3048,16 @@ test "styled_line: a red line"
     assert styled_line("stop", style: red).spans == [Span(text: "stop", style: red)]
 
 # A text cut into lines.
-test "lines_of: three lines, one ended by a carriage return and a line feed"
-    assert lines_of("a\r\nb\nc") == [line_of("a"), line_of("b"), line_of("c")]
+test "new_lines: three lines, one ended by a carriage return and a line feed"
+    assert new_lines("a\r\nb\nc") == [new_line("a"), new_line("b"), new_line("c")]
 
 # How wide a line is drawn, a wide character taking two cells.
 test "width_of: a word and a wide character"
-    assert width_of(line_of("ab日")) == 4
+    assert width_of(new_line("ab日")) == 4
 
 # Every line of a text centred.
 test "with_alignment: centred lines"
-    centred = with_alignment(lines_of("a\nb"), alignment: .center)
+    centred = with_alignment(new_lines("a\nb"), alignment: .center)
     assert centred[0].alignment == .center && centred[1].alignment == .center
 
 # A blank buffer of two rows.
@@ -3065,8 +3065,8 @@ test "blank: two rows of three blank cells"
     assert to_lines(blank(Rect(x: 0, y: 0, width: 3, height: 2))) == ["   ", "   "]
 
 # The buffer a test compares a drawing with.
-test "buffer_of: two rows"
-    assert to_lines(buffer_of(["ab", "c"])) == ["ab", "c "]
+test "new_buffer: two rows"
+    assert to_lines(new_buffer(["ab", "c"])) == ["ab", "c "]
 
 # One cell read back.
 test "cell_at: a cell drawn in red"
@@ -3100,7 +3100,7 @@ test "draw_line: a line of two spans"
 
 # A row made bold, its text kept.
 test "set_style: a row made bold"
-    b @= buffer_of(["ab"])
+    b @= new_buffer(["ab"])
     set_style(@b, area: Rect(x: 0, y: 0, width: 2, height: 1), style: term.with_attribute(term.plain(), a: .bold))
     assert to_lines(b) == ["ab"] && cell_at(b, x: 1, y: 0).style.attributes == [.bold]
 
@@ -3112,7 +3112,7 @@ test "fill: dots"
 
 # The place of a dialog cleared before it is drawn.
 test "clear: a part of a buffer cleared"
-    b @= buffer_of(["abc"])
+    b @= new_buffer(["abc"])
     set_style(@b, area: b.area, style: term.with_background(term.plain(), color: .blue))
     clear(@b, area: Rect(x: 1, y: 0, width: 1, height: 1))
     assert to_lines(b) == ["a c"] && cell_at(b, x: 1, y: 0).style == term.plain()
@@ -3120,18 +3120,18 @@ test "clear: a part of a buffer cleared"
 # A drawing made apart laid on a frame.
 test "paste: a part laid on a frame"
     frame @= blank(Rect(x: 0, y: 0, width: 4, height: 1))
-    part = buffer_of(["xy"])
+    part = new_buffer(["xy"])
     paste(buffer: @frame, from: part)
     assert to_lines(frame) == ["xy  "]
 
 # The cells that changed between two frames.
 test "diff: one cell changed"
-    changes = diff(before: buffer_of(["abc"]), after: buffer_of(["abd"]))
+    changes = diff(before: new_buffer(["abc"]), after: new_buffer(["abd"]))
     assert changes == [Change(x: 2, y: 0, cell: Cell(symbol: "d", style: term.plain()))]
 
 # The bytes that write a change: the cursor moved, then the cell.
 test "format_changes: one cell written"
-    changes = diff(before: buffer_of(["abc"]), after: buffer_of(["abd"]))
+    changes = diff(before: new_buffer(["abc"]), after: new_buffer(["abd"]))
     assert format_changes(changes) == "\u{1b}[1;3Hd"
 
 # A block with a border all around.
@@ -3168,8 +3168,8 @@ test "draw_block: rounded, titled in the middle"
     assert to_lines(frame) == ["╭──Ab──╮", "│      │", "╰──────╯"]
 
 # A paragraph wrapped between words.
-test "paragraph_of: wrapped"
-    p @= paragraph_of("one two three")
+test "new_paragraph: wrapped"
+    p @= new_paragraph("one two three")
     p.wrap @ true
     frame @= blank(Rect(x: 0, y: 0, width: 8, height: 2))
     draw_paragraph(@frame, area: frame.area, paragraph: p)
@@ -3180,12 +3180,12 @@ test "draw_paragraph: text in a box"
     frame @= blank(Rect(x: 0, y: 0, width: 7, height: 3))
     box = bordered()
     draw_block(@frame, area: frame.area, block: box)
-    draw_paragraph(@frame, area: inner_of(box, area: frame.area), paragraph: paragraph_of("hello!"))
+    draw_paragraph(@frame, area: inner_of(box, area: frame.area), paragraph: new_paragraph("hello!"))
     assert to_lines(frame) == ["┌─────┐", "│hello│", "└─────┘"]
 
 # How many rows a wrapped paragraph takes.
 test "height_of: a paragraph wrapped in ten cells"
-    p @= paragraph_of("Hello world, this is a long text")
+    p @= new_paragraph("Hello world, this is a long text")
     p.wrap @ true
     assert height_of(p, width: 10) == 4
 
@@ -3269,7 +3269,7 @@ test "move_column: right, then left at the first"
 
 # The first row shown moves as the selection goes down.
 test "offset_of: the list scrolled to keep its selection"
-    l = list_of(["a", "b", "c", "d"])
+    l = new_list(["a", "b", "c", "d"])
     s @= selection()
     select(@s, index: 3)
     frame @= blank(Rect(x: 0, y: 0, width: 3, height: 2))
@@ -3277,12 +3277,12 @@ test "offset_of: the list scrolled to keep its selection"
     assert offset_of(s) == 2
 
 # A list of three words.
-test "list_of: three items"
-    assert list_of(["a", "b", "c"]).items.len() == 3
+test "new_list: three items"
+    assert new_list(["a", "b", "c"]).items.len() == 3
 
 # A list with a symbol before its selected item, kept in view.
 test "draw_list: the fourth of five in three rows"
-    l @= list_of(["Item 0", "Item 1", "Item 2", "Item 3", "Item 4"])
+    l @= new_list(["Item 0", "Item 1", "Item 2", "Item 3", "Item 4"])
     l.highlight_symbol @ ">> "
     s @= selection()
     select(@s, index: 3)
@@ -3291,21 +3291,21 @@ test "draw_list: the fourth of five in three rows"
     assert to_lines(frame) == ["   Item 1 ", "   Item 2 ", ">> Item 3 "]
 
 # A table of two columns.
-test "table_of: two rows of two cells"
-    t = table_of([["a", "b"], ["c", "d"]], widths: [.length(n: 2), .length(n: 2)])
+test "new_table: two rows of two cells"
+    t = new_table([["a", "b"], ["c", "d"]], widths: [.length(n: 2), .length(n: 2)])
     assert t.rows.len() == 2 && t.rows[1].cells.len() == 2
 
 # A row as tall as its tallest cell.
-test "row_of: a cell of two lines"
-    assert row_of(["a\nb", "c"]).height == 2
+test "new_row: a cell of two lines"
+    assert new_row(["a\nb", "c"]).height == 2
 
 # A table under a header, its second row selected.
 test "draw_table: a header and a selected row"
-    t @= table_of(
+    t @= new_table(
         [["a1", "b1", "c1"], ["a2", "bb2", "c2"], ["a3", "b3", "cccccc3"]],
         widths: [.length(n: 3), .length(n: 4), .min(n: 2)]
     )
-    header @= row_of(["A", "B", "C"])
+    header @= new_row(["A", "B", "C"])
     header.bottom_margin @ 1
     t.header @ [header]
     t.highlight_symbol @ ">"
@@ -3316,33 +3316,33 @@ test "draw_table: a header and a selected row"
     assert to_lines(frame) == [" A   B    C     ", "                ", " a1  b1   c1    ", ">a2  bb2  c2    "]
 
 # Three tabs, the second selected.
-test "tabs_of: three tabs"
-    assert tabs_of(["One", "Two", "Three"], selected: 1).titles.len() == 3
+test "new_tabs: three tabs"
+    assert new_tabs(["One", "Two", "Three"], selected: 1).titles.len() == 3
 
 # Tabs drawn, the selected title reversed.
 test "draw_tabs: three tabs"
     frame @= blank(Rect(x: 0, y: 0, width: 20, height: 1))
-    draw_tabs(@frame, area: frame.area, tabs: tabs_of(["One", "Two", "Three"], selected: 1))
+    draw_tabs(@frame, area: frame.area, tabs: new_tabs(["One", "Two", "Three"], selected: 1))
     assert to_lines(frame) == [" One │ Two │ Three  "]
     assert cell_at(frame, x: 7, y: 0).style == term.with_attribute(term.plain(), a: .reverse)
 
 # A gauge half full.
-test "gauge_of: half"
-    assert gauge_of(0.5).label == "50%"
+test "new_gauge: half"
+    assert new_gauge(0.5).label == "50%"
 
 # A gauge drawn.
 test "draw_gauge: half of ten cells"
     frame @= blank(Rect(x: 0, y: 0, width: 10, height: 1))
-    draw_gauge(@frame, area: frame.area, gauge: gauge_of(0.5))
+    draw_gauge(@frame, area: frame.area, gauge: new_gauge(0.5))
     assert to_lines(frame) == ["███50%    "]
 
 # A line gauge at a quarter.
-test "line_gauge_of: a quarter"
-    assert line_gauge_of(0.25).label == " 25%"
+test "new_line_gauge: a quarter"
+    assert new_line_gauge(0.25).label == " 25%"
 
 # A line gauge drawn with its own symbols.
 test "draw_line_gauge: forty percent"
-    g @= line_gauge_of(0.4)
+    g @= new_line_gauge(0.4)
     g.filled_symbol @ "#"
     g.unfilled_symbol @ "."
     frame @= blank(Rect(x: 0, y: 0, width: 12, height: 1))
@@ -3350,34 +3350,34 @@ test "draw_line_gauge: forty percent"
     assert to_lines(frame) == [" 40% ##....."]
 
 # A sparkline of nine values.
-test "sparkline_of: nine values"
-    assert sparkline_of([0, 1, 2]).max == 0
+test "new_sparkline: nine values"
+    assert new_sparkline([0, 1, 2]).max == 0
 
 # A sparkline drawn on one row.
 test "draw_sparkline: nine values in nine cells"
     frame @= blank(Rect(x: 0, y: 0, width: 9, height: 1))
-    draw_sparkline(@frame, area: frame.area, sparkline: sparkline_of([0, 1, 2, 3, 4, 5, 6, 7, 8]))
+    draw_sparkline(@frame, area: frame.area, sparkline: new_sparkline([0, 1, 2, 3, 4, 5, 6, 7, 8]))
     assert to_lines(frame) == [" ▁▂▃▄▅▆▇█"]
 
 # A scrollbar on the right of a list of twenty rows.
-test "scrollbar_of: on the right"
-    assert scrollbar_of(.vertical_right, content_length: 20, position: 5).begin_symbol == "▲"
+test "new_scrollbar: on the right"
+    assert new_scrollbar(.vertical_right, content_length: 20, position: 5).begin_symbol == "▲"
 
 # A scrollbar drawn on the right edge.
 test "draw_scrollbar: twenty rows shown five at a time from the sixth"
-    bar @= scrollbar_of(.vertical_right, content_length: 20, position: 5)
+    bar @= new_scrollbar(.vertical_right, content_length: 20, position: 5)
     bar.viewport_length @ 5
     frame @= blank(Rect(x: 0, y: 0, width: 2, height: 10))
     draw_scrollbar(@frame, area: frame.area, scrollbar: bar)
     assert to_lines(frame) == [" ▲", " ║", " ║", " █", " █", " ║", " ║", " ║", " ║", " ▼"]
 
 # An input holding a name.
-test "input_of: the cursor at the end"
-    assert input_of("ana").cursor == 3
+test "new_input: the cursor at the end"
+    assert new_input("ana").cursor == 3
 
 # A word typed, a letter taken back.
 test "press_input: typed and corrected"
-    i @= input_of("")
+    i @= new_input("")
     assert press_input(@i, key: .character(text: "h"))
     assert press_input(@i, key: .character(text: "x"))
     assert press_input(@i, key: .backspace)
@@ -3386,7 +3386,7 @@ test "press_input: typed and corrected"
 
 # An input drawn, the cursor where the next character goes.
 test "draw_input: the cursor after the text"
-    i @= input_of("hi")
+    i @= new_input("hi")
     frame @= blank(Rect(x: 0, y: 0, width: 5, height: 1))
     assert draw_input(@frame, area: frame.area, @i) == .at(x: 2, y: 0)
     assert to_lines(frame) == ["hi   "]

@@ -64,14 +64,10 @@ record Message
     offset: i64
     # Milliseconds since 1970, -1 for now.
     timestamp_ms: i64
-    # The key.
-    key: [u8]
-    # Whether the key is null.
-    null_key: bool
-    # The value.
-    value: [u8]
-    # Whether the value is null.
-    null_value: bool
+    # The key, `not_found` where it is null.
+    key: [u8]?
+    # The value, `not_found` where it is null.
+    value: [u8]?
     # The headers.
     headers: [Header]
 

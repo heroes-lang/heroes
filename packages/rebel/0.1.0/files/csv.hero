@@ -44,7 +44,7 @@ constant DEFAULT_MAX_FIELD_LEN: i64
 
 ## Reading
 
-# How rows are read. `strict` answers RFC 4180's; a program changes the
+# How rows are read. `strict_read_options` answers RFC 4180's; a program changes the
 # fields it needs.
 record ReadOptions
     # The one ASCII character between two fields: `","`, `";"`, `"\t"`; not a
@@ -73,7 +73,7 @@ record ReadOptions
 # The options of RFC 4180: a comma, a double quote, no comment, nothing
 # trimmed, quotes strict, every row as long as the first, and fields of at most
 # `DEFAULT_MAX_FIELD_LEN` bytes.
-function strict() -> ReadOptions
+function strict_read_options() -> ReadOptions
     return ReadOptions(
         separator: ",",
         quote: "\"",
@@ -84,7 +84,7 @@ function strict() -> ReadOptions
         max_field_len: DEFAULT_MAX_FIELD_LEN
     )
 
-# Every row of `text`, read as `strict` reads.
+# Every row of `text`, read as `strict_read_options` reads.
 #
 # - `text`: the CSV text; empty for no row.
 #
@@ -93,12 +93,12 @@ function strict() -> ReadOptions
 # passes `DEFAULT_MAX_FIELD_LEN` bytes, or a row holds another number of fields
 # than the first. See also `parse_with`, `parse_records`.
 function parse(text: str) -> [[str]]?
-    return parse_with(text, strict())
+    return parse_with(text, strict_read_options())
 
 # Every row of `text`, read as `options` say.
 #
 # - `text`: the CSV text; empty for no row.
-# - `options`: how it is read; `strict()` for RFC 4180.
+# - `options`: how it is read; `strict_read_options()` for RFC 4180.
 #
 # Fails `invalid` as `parse` does, where `options` refuse it. Aborts where a
 # character of `options` is not one ASCII character, the separator or the
@@ -174,7 +174,7 @@ function record_of(header: [str], row: [str]) -> {str: str}?
 
 ## Writing
 
-# How rows are written. `minimal` answers RFC 4180's; a program changes the
+# How rows are written. `minimal_write_options` answers RFC 4180's; a program changes the
 # fields it needs.
 record WriteOptions
     # The one ASCII character between two fields; not a line end and not
@@ -190,10 +190,10 @@ record WriteOptions
 
 # The options of RFC 4180: a comma, a double quote, a field quoted only where
 # it must be, and CR LF after each row.
-function minimal() -> WriteOptions
+function minimal_write_options() -> WriteOptions
     return WriteOptions(separator: ",", quote: "\"", quote_all: false, line_end: "\r\n")
 
-# `rows` written as `minimal` writes them.
+# `rows` written as `minimal_write_options` writes them.
 #
 # - `rows`: the rows, each a list of fields; empty for the empty text.
 #
@@ -201,12 +201,12 @@ function minimal() -> WriteOptions
 # it is read back; a row of no field is an empty line, which a reader skips.
 # See also `format_with`.
 function format(rows: [[str]]) -> str
-    return format_with(rows, minimal())
+    return format_with(rows, minimal_write_options())
 
 # `rows` written as `options` say.
 #
 # - `rows`: the rows; empty for the empty text.
-# - `options`: how they are written; `minimal()` for RFC 4180.
+# - `options`: how they are written; `minimal_write_options()` for RFC 4180.
 #
 # Aborts where a character of `options` is not one ASCII character, the
 # separator or the quote is a line end, the two are one character, or
@@ -331,8 +331,8 @@ function write_rows(s: io.Stream, rows: [[str]], options: WriteOptions) -> ()?
 ## Examples
 
 # The options of RFC 4180, a field with a comma inside quotes.
-test "strict: a quoted comma"
-    assert parse_with("\"a,b\",c\n", strict()).must() == [["a,b", "c"]]
+test "strict_read_options: a quoted comma"
+    assert parse_with("\"a,b\",c\n", strict_read_options()).must() == [["a,b", "c"]]
 
 # The rows of a text, a quote doubled inside a field.
 test "parse: two rows, one with a quote"
@@ -340,14 +340,14 @@ test "parse: two rows, one with a quote"
 
 # A semicolon between fields, rows of different lengths allowed.
 test "parse_with: semicolons and a short row"
-    options @= strict()
+    options @= strict_read_options()
     options.separator @ ";"
     options.ragged @ true
     assert parse_with("a;b\nc\n", options).must() == [["a", "b"], ["c"]]
 
 # Rows keyed by the header's names.
 test "parse_records: a table of two columns"
-    records = parse_records("name,year\nLow,1977\nLodger,1979\n", strict()).must()
+    records = parse_records("name,year\nLow,1977\nLodger,1979\n", strict_read_options()).must()
     assert records[1]["year"].must() == "1979"
 
 # One row keyed by a header read before it.
@@ -355,8 +355,8 @@ test "record_of: a row under its header"
     assert record_of(header: ["name", "year"], row: ["Heroes", "1977"]).must()["name"].must() == "Heroes"
 
 # The options of RFC 4180 for writing, every field quoted.
-test "minimal: every field quoted"
-    options @= minimal()
+test "minimal_write_options: every field quoted"
+    options @= minimal_write_options()
     options.quote_all @ true
     assert format_row(["a", "b"], options) == "\"a\",\"b\"\r\n"
 
@@ -366,25 +366,25 @@ test "format: a field with a comma"
 
 # Rows written with tabs and line feeds.
 test "format_with: tab-separated, LF"
-    options @= minimal()
+    options @= minimal_write_options()
     options.separator @ "\t"
     options.line_end @ "\n"
     assert format_with([["a", "b"]], options) == "a\tb\n"
 
 # One row written, a line end inside a field.
 test "format_row: a field across two lines"
-    assert format_row(["a", "b\nc"], minimal()) == "a,\"b\nc\"\r\n"
+    assert format_row(["a", "b\nc"], minimal_write_options()) == "a,\"b\nc\"\r\n"
 
 # A header and its records written.
 test "format_records: two columns, one left empty"
-    assert format_records(["name", "year"], [{"name": "Low"}], minimal()).must() == "name,year\r\nLow,\r\n"
+    assert format_records(["name", "year"], [{"name": "Low"}], minimal_write_options()).must() == "name,year\r\nLow,\r\n"
 
 # A reader made over a stream.
 test "reader: rows of a pipe"
     p @= io.pipe().must()
     io.write_text(p.writer, "a,b\n").must()
     io.close(@p.writer).must()
-    r @= reader(p.reader, strict())
+    r @= reader(p.reader, strict_read_options())
     assert read_row(@r).must() == ["a", "b"]
     io.close(@p.reader).must()
 
@@ -393,7 +393,7 @@ test "read_row: every row of a stream, then []"
     p @= io.pipe().must()
     io.write_text(p.writer, "x,1\ny,2\n").must()
     io.close(@p.writer).must()
-    r @= reader(p.reader, strict())
+    r @= reader(p.reader, strict_read_options())
     total @= 0
 
     while true
@@ -411,7 +411,7 @@ test "read_rows: a stream of two rows"
     p @= io.pipe().must()
     io.write_text(p.writer, "a\nb\n").must()
     io.close(@p.writer).must()
-    r @= reader(p.reader, strict())
+    r @= reader(p.reader, strict_read_options())
     assert read_rows(@r).must() == [["a"], ["b"]]
     io.close(@p.reader).must()
 
@@ -420,7 +420,7 @@ test "at_end: an empty stream"
     p @= io.pipe().must()
     io.write_text(p.writer, "\n").must()
     io.close(@p.writer).must()
-    r @= reader(p.reader, strict())
+    r @= reader(p.reader, strict_read_options())
     assert at_end(@r).must()
     io.close(@p.reader).must()
 
@@ -429,7 +429,7 @@ test "line_of: the second row began on line 3"
     p @= io.pipe().must()
     io.write_text(p.writer, "a\n\"b\nc\"\nd\n").must()
     io.close(@p.writer).must()
-    r @= reader(p.reader, strict())
+    r @= reader(p.reader, strict_read_options())
     _ = read_row(@r).must()
     _ = read_row(@r).must()
     assert line_of(r) == 2
@@ -440,7 +440,7 @@ test "line_of: the second row began on line 3"
 # A row written to a stream and read back.
 test "write_row: one row through a pipe"
     p @= io.pipe().must()
-    write_row(p.writer, ["a", "b c"], minimal()).must()
+    write_row(p.writer, ["a", "b c"], minimal_write_options()).must()
     io.close(@p.writer).must()
     assert io.read_all_text(p.reader).must() == "a,b c\r\n"
     io.close(@p.reader).must()
@@ -448,7 +448,7 @@ test "write_row: one row through a pipe"
 # Rows written to a stream in one write.
 test "write_rows: two rows through a pipe"
     p @= io.pipe().must()
-    write_rows(p.writer, [["a"], ["b"]], minimal()).must()
+    write_rows(p.writer, [["a"], ["b"]], minimal_write_options()).must()
     io.close(@p.writer).must()
     assert io.read_all_text(p.reader).must() == "a\r\nb\r\n"
     io.close(@p.reader).must()

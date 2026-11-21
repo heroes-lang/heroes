@@ -21,7 +21,7 @@ function named_failure(name: str, code: str, msg: str) -> json.Value?
 # top, then each section an object of texts, its own keys then the `DEFAULT`
 # section's it lacks.
 function ini_value(name: str, text: str) -> json.Value?
-    options: ini.ReadOptions @= ini.strict()
+    options: ini.ReadOptions @= ini.strict_read_options()
     options.unnamed_section @ true
     members: {str: json.Value} @= {}
 

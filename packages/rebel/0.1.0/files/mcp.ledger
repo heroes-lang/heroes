@@ -148,7 +148,7 @@ capability mrtr/state  a server's `requestState` signed and bound to its request
   note    It is `web.sign_value`'s HMAC-SHA256, bound to what the program names: the method, the tool and the user, as the revision advises
 
 capability progress  a request's progress told against its token, only where it asked
-  heroes  mcp.progress_of
+  heroes  mcp.progress_notification
   go      go-sdk mcp.ProgressNotificationParams, mcp-go mcp.ProgressNotification
   rust    -
   python  mcp.ProgressNotification, mcp.client.Client.send_progress_notification
@@ -161,7 +161,7 @@ capability cancellation  `notifications/cancelled` read by a server on standard 
   note    A server is single-threaded unless the program makes it otherwise, so a cancellation of the request it is answering arrives after its answer, a race the revision allows
 
 capability subscriptions  `subscriptions/listen` acknowledged with what the server agrees to, list changes and resource updates told only where asked, the subscription ended gracefully; a client that opens one and reads its notifications
-  heroes  mcp.Listen, mcp.Filter, mcp.honored_of, mcp.acknowledge, mcp.changed_of, mcp.updated_of, mcp.end_listen, mcp.filter_of, mcp.filter_json, mcp.subscribe, mcp.next_notification, mcp.Notification
+  heroes  mcp.Listen, mcp.Filter, mcp.honored_filter, mcp.acknowledge, mcp.changed_notification, mcp.updated_notification, mcp.end_listen, mcp.filter_of, mcp.filter_json, mcp.subscribe, mcp.next_notification, mcp.Notification
   go      go-sdk mcp.Server.ResourceUpdated, mcp-go server.SubscriptionIDFromContext, server.WithSubscriptionID, server.OnAfterSubscriptionsListenFunc
   rust    -
   python  mcp.server.subscriptions, mcp.client.subscriptions, mcp.client.Client.listen, NotificationBinding

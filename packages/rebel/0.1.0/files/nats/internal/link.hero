@@ -56,7 +56,7 @@ function open_plain(host: str, port: i64, ms: i64) -> Link?
 # - `ms`: milliseconds the connection and its handshake may take.
 # - `roots`: the authorities trusted, "" for the system's.
 function open_tls(host: str, port: i64, ms: i64, roots: str) -> Link?
-    s = tls.connect(host: host, port: port, deadline_ms: ms, client: tls.Client(roots: roots, protocols: []))?
+    s = tls.connect(host: host, port: port, deadline_ms: ms, client: tls.Client(roots: roots, protocols: []))?.stream
     return ok(.connected(stream: s, secured: true))
 
 # A TLS connection to `host` at `port` begun after the server's first line,
@@ -67,7 +67,7 @@ function open_tls(host: str, port: i64, ms: i64, roots: str) -> Link?
 # - `ms`: milliseconds the whole may take.
 # - `roots`: the authorities trusted.
 function open_after_info(host: str, port: i64, ms: i64, roots: str) -> Link?
-    s = tls.connect_after(host: host, port: port, deadline_ms: ms, client: tls.Client(roots: roots, protocols: []), steps: [.expect_line(prefix: "INFO")])?
+    s = tls.connect_after(host: host, port: port, deadline_ms: ms, client: tls.Client(roots: roots, protocols: []), steps: [.expect_line(prefix: "INFO")])?.stream
     return ok(.connected(stream: s, secured: true))
 
 # A WebSocket to `target`.

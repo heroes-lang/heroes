@@ -37,7 +37,7 @@ capability message/parse  a text read as one message or a batch, each element th
   note    A member the specification does not name is passed over, as Go's decoders pass it over; Python refuses it, and the specification lists the members without refusing others. Parameters that are a string are refused, as Python refuses them and the specification asks; the Go SDK keeps them
 
 capability message/format  a message and a batch written as text, members in the specification's order
-  heroes  jsonrpc.format, jsonrpc.format_batch, jsonrpc.to_value
+  heroes  jsonrpc.format, jsonrpc.format_batch, jsonrpc.message_json
   go      go-sdk jsonrpc.EncodeMessage, jsonrpc2.Request.MarshalJSON, jsonrpc2.Response.MarshalJSON
   rust    -
   python  jsonrpcserver.response.to_dict, to_serializable, to_serializable_one, serialize_success, serialize_error, to_success_dict, to_error_dict, jsonrpcserver.main.default_serializer, serialize, serialize_one, dispatch_to_serializable
@@ -49,7 +49,7 @@ capability errors/codes  the specification's error codes and the range left to s
   python  jsonrpcserver.codes, jsonrpcserver.response.ERROR_PARSE_ERROR, ERROR_INVALID_REQUEST, ERROR_METHOD_NOT_FOUND, ERROR_SERVER_ERROR, jsonrpcserver.result.ERROR_INTERNAL_ERROR, ERROR_INVALID_PARAMS
 
 capability errors/answers  the answers a server writes: a result, an error of its own, a parse error, an invalid request, a method not found, invalid parameters, an internal error that tells the client nothing of the server
-  heroes  jsonrpc.result_of, jsonrpc.error_of, jsonrpc.answer_of, jsonrpc.refusal_of, jsonrpc.parse_error_of, jsonrpc.invalid_request_of
+  heroes  jsonrpc.answer_result, jsonrpc.answer_error, jsonrpc.answer_outcome, jsonrpc.answer_refusal, jsonrpc.answer_parse_error, jsonrpc.answer_invalid_request
   go      jsonrpc2.Conn.Reply, jsonrpc2.Conn.ReplyWithError, jsonrpc2.Conn.SendResponse, jsonrpc2.Error, jsonrpc2.Error.SetError, jsonrpc2.Error.Error, go-sdk jsonrpc.Error
   rust    -
   python  jsonrpcserver.Success, jsonrpcserver.Error, jsonrpcserver.InvalidParams, jsonrpcserver.Result, jsonrpcserver.result.SuccessResult, ErrorResult, InvalidParamsResult, InternalErrorResult, MethodNotFoundResult, jsonrpcserver.response.ParseErrorResponse, InvalidRequestResponse, MethodNotFoundResponse, ServerErrorResponse, jsonrpcserver.JsonRpcError, jsonrpcserver.exceptions
@@ -162,7 +162,7 @@ capability rpc/version-1  JSON-RPC 1.0
   python  -
 
 capability rpc/extra-members  members outside the specification written on a request (sourcegraph's `meta`, any extra field)
-  heroes  refused: no peer reads them as JSON-RPC; a program that needs them writes the value with `to_value` and adds the member itself
+  heroes  refused: no peer reads them as JSON-RPC; a program that needs them writes the value with `message_json` and adds the member itself
   go      jsonrpc2.ExtraField, jsonrpc2.Meta, jsonrpc2.Request.Meta, jsonrpc2.Request.ExtraFields, jsonrpc2.RequestField
   rust    -
   python  -

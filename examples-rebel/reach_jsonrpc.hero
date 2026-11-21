@@ -6,4 +6,4 @@
 use <rebel>/jsonrpc
 
 function main()
-    print(jsonrpc.format(jsonrpc.result_of(.number(v: 1.0), value: .number(v: 19.0))).must())
+    print(jsonrpc.format(jsonrpc.answer_result(.number(v: 1.0), value: .number(v: 19.0))).must())

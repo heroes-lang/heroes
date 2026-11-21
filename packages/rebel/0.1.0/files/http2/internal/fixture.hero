@@ -98,7 +98,7 @@ function serve_tls(arg: str) -> str
     for _ in range(from: 0, to: 20)
         match tls.accept(l, deadline_ms: 10000)
             .ok accepted =>
-                stream @= accepted
+                stream @= accepted.stream
                 tls.set_deadline(stream, deadline_ms: 10000).must()
                 got = answer_one(stream)
 
@@ -154,12 +154,7 @@ function get_plain(arg: str) -> str
 function get_tls(arg: str) -> str
     cut = index_of_space_last(arg)
     port = numbers.parse_int(arg.slice(from: 0, to: cut)).must()
-    stream @= tls.connect(
-        host: "localhost",
-        port: port,
-        deadline_ms: 10000,
-        client: tls.Client(roots: tls.TEST_ROOT, protocols: ["h2"])
-    ).must()
+    stream @= tls.connect(host: "localhost", port: port, deadline_ms: 10000, client: tls.Client(roots: tls.TEST_ROOT, protocols: ["h2"])).must().stream
     tls.set_deadline(stream, deadline_ms: 10000).must()
     got = get_on(stream, path: arg.slice(from: cut + 1, to: arg.len()))
     io.close(@stream).must()

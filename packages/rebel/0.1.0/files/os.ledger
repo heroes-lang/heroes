@@ -384,6 +384,19 @@ capability process/umask  the mask of permissions a new file is made without
   python  os.umask
   note    no floor door; POSIX reads it only by changing it, process-wide, the shape refused for the environment
 
+capability stop/catch  Ctrl-C and SIGTERM made a stop the program asks about
+  heroes  os.catch_stop
+  go      -
+  rust    -
+  python  -
+  note    The platform layer's stop (spec § 13): every call of the library that waits on the system, a socket's, a serial port's, a poller's, a watcher's or a channel's, fails `stopped`. Its C is `hero_net.h`'s, bound by the floor `os/hero_stop`; it stood in `net` until the coherence review's D18 (2026-11-21), so a program that reads a serial port now ends on Ctrl-C without naming `net`
+
+capability stop/ask  the program's own stop asked, and whether it was
+  heroes  os.ask_stop, os.is_stop_asked
+  go      -
+  rust    -
+  python  -
+
 dropped plumbing  a type a value is carried in, where here it is a list, a map, a record or a code
   go      -
   rust    env::Args, env::ArgsOs, env::Vars, env::VarsOs, env::SplitPaths, env::JoinPathsError, env::VarError

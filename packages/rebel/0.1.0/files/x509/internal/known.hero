@@ -240,6 +240,17 @@ function key_facts(dotted: str, has_parameters: bool, parameters: asn1.Value, ke
         return ok(KeyFacts(name: "rsa", bits: big.bit_len(modulus)))
     return fail(code: UNSUPPORTED, msg: f"a key of the algorithm {algorithm_name(dotted)}, which crypto/keypairs lacks")
 
+# `value` where a certificate or a list writes it, `has`, else `not_found`
+# naming `what`: a field the format may leave out.
+#
+# - `value`: what was read, or its kind's empty value where nothing was.
+# - `has`: whether it is written.
+# - `what`: the field's name, for the message.
+function given<T>(value: T, has: bool, what: str) -> T?
+    if has
+        return ok(value)
+    return fail(code: "not_found", msg: f"no {what} is written")
+
 test "short_name and algorithm_name: the nine of RFC 4514, one it lacks, and a name of no algorithm"
     assert short_name("2.5.4.3") == "CN"
     assert short_name("0.9.2342.19200300.100.1.1") == "UID"

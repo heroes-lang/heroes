@@ -287,10 +287,8 @@ record Algorithm
     # The algorithm's identifier: `1.2.840.113549.1.1.11` for
     # sha256WithRSAEncryption.
     oid: asn1.Oid
-    # Whether the parameters are written.
-    has_parameters: bool
-    # The parameters where they are written, NULL otherwise.
-    parameters: asn1.Value
+    # The parameters; they fail `not_found` where they are not written.
+    parameters: asn1.Value?
 
 # A subject's public key as a certificate holds it: SubjectPublicKeyInfo.
 record PublicKey
@@ -313,8 +311,8 @@ function to_algorithm(v: asn1.Value) -> Algorithm?
     oid = shapes.within(r: asn1.oid_of(items[0]), what: "an AlgorithmIdentifier")?
 
     if items.len() == 2
-        return ok(Algorithm(oid: oid, has_parameters: true, parameters: items[1]))
-    return ok(Algorithm(oid: oid, has_parameters: false, parameters: .null_value))
+        return ok(Algorithm(oid: oid, parameters: known.given(items[1], has: true, what: "parameters")))
+    return ok(Algorithm(oid: oid, parameters: known.given(.null_value, has: false, what: "parameters")))
 
 # The scheme of `crypto/keypairs` that checks a signature of `algorithm`.
 #
@@ -325,7 +323,7 @@ function to_algorithm(v: asn1.Value) -> Algorithm?
 # DSA, Ed448, RSA-PSS with another salt or mask), naming it; `invalid` for
 # parameters its RFC forbids. See also `verify_signature`.
 function scheme_of(algorithm: Algorithm) -> keypairs.Scheme?
-    name = known.scheme_name(dotted: algorithm.oid.dotted, has_parameters: algorithm.has_parameters, parameters: algorithm.parameters)?
+    name = known.scheme_name(dotted: algorithm.oid.dotted, has_parameters: !algorithm.parameters.is_err(), parameters: algorithm.parameters.default(.null_value))?
     return keypairs.parse_scheme(name)
 
 # The public key DER `der` holds, a SubjectPublicKeyInfo.
@@ -352,9 +350,9 @@ function decode_public_key(der: [u8]) -> PublicKey?
 #
 # Fails `unsupported` for a kind `crypto/keypairs` lacks (P-521, Ed448, DSA),
 # `invalid` for a key that is not its algorithm's form. See also
-# `keypairs.parse_public_der`.
+# `keypairs.decode_public_der`.
 function kind_of(key: PublicKey) -> keypairs.Kind?
-    facts = known.key_facts(dotted: key.algorithm.oid.dotted, has_parameters: key.algorithm.has_parameters, parameters: key.algorithm.parameters, key: key.key)?
+    facts = known.key_facts(dotted: key.algorithm.oid.dotted, has_parameters: !key.algorithm.parameters.is_err(), parameters: key.algorithm.parameters.default(.null_value), key: key.key)?
 
     kind: keypairs.Kind = match facts.name
         "ed25519" => .ed25519
@@ -419,23 +417,19 @@ record KeyUsage
 record BasicConstraints
     # Whether the subject is a certificate authority.
     is_ca: bool
-    # Whether a path length is set.
-    has_path_len: bool
-    # The most intermediates that may follow it, 0 or more; 0 where unset.
-    path_len: i64
+    # The most intermediates that may follow it, 0 or more; it fails `not_found`
+    # where it is not written.
+    path_len: i64?
 
 # `authorityKeyIdentifier` (RFC 5280 § 4.2.1.1).
 record AuthorityKeyId
-    # Whether the issuer's key identifier is written.
-    has_key_id: bool
-    # The identifier of the issuer's key; empty where unwritten.
-    key_id: [u8]
+    # The identifier of the issuer's key; it fails `not_found` where it is not
+    # written.
+    key_id: [u8]?
     # The issuer's issuer's names, empty where unwritten.
     issuer: [GeneralName]
-    # Whether the issuer's serial is written.
-    has_serial: bool
-    # The issuer's serial; 0 where unwritten.
-    serial: big.Integer
+    # The issuer's serial; it fails `not_found` where it is not written.
+    serial: big.Integer?
 
 # Why a certificate was revoked (RFC 5280 § 5.3.1), and the reasons a list
 # covers.
@@ -469,10 +463,8 @@ record DistributionPoint
     # A name relative to the list's issuer, its attributes; empty where
     # unwritten.
     relative_name: [Attribute]
-    # Whether the point covers some reasons alone.
-    has_reasons: bool
-    # The reasons it covers where `has_reasons`.
-    reasons: [Reason]
+    # The reasons it covers; it fails `not_found` where it is not written.
+    reasons: [Reason]?
     # The list's issuer where it is not the certificate's; empty otherwise.
     crl_issuer: [GeneralName]
 
@@ -515,14 +507,12 @@ record PolicyMapping
 
 # `policyConstraints` (RFC 5280 § 4.2.1.11).
 record PolicyConstraints
-    # Whether `requireExplicitPolicy` is written.
-    has_require_explicit: bool
-    # How many certificates may follow before a policy is required.
-    require_explicit: i64
-    # Whether `inhibitPolicyMapping` is written.
-    has_inhibit_mapping: bool
-    # How many certificates may follow before mappings stop.
-    inhibit_mapping: i64
+    # How many certificates may follow before a policy is required; it fails
+    # `not_found` where it is not written.
+    require_explicit: i64?
+    # How many certificates may follow before mappings stop; it fails
+    # `not_found` where it is not written.
+    inhibit_mapping: i64?
 
 # A subtree of a name constraint: a base name and the distances it covers.
 record Subtree
@@ -531,10 +521,8 @@ record Subtree
     base: GeneralName
     # `minimum`, 0 by RFC 5280.
     minimum: i64
-    # Whether `maximum` is written; RFC 5280 says it is not.
-    has_maximum: bool
-    # `maximum` where written.
-    maximum: i64
+    # `maximum`; it fails `not_found` where it is not written.
+    maximum: i64?
 
 # `nameConstraints` (RFC 5280 § 4.2.1.10).
 record NameConstraints
@@ -553,111 +541,80 @@ record IssuingDistributionPoint
     only_user_certs: bool
     # Whether it holds authorities' alone.
     only_ca_certs: bool
-    # Whether it covers some reasons alone.
-    has_only_some_reasons: bool
-    # Those reasons.
-    only_some_reasons: [Reason]
+    # Those reasons; it fails `not_found` where it is not written.
+    only_some_reasons: [Reason]?
     # Whether it lists certificates of other issuers too.
     indirect_crl: bool
     # Whether it holds attribute certificates alone.
     only_attribute_certs: bool
 
 # The extensions of a certificate, a request, a list or a revoked entry:
-# every one as written, the ones this package knows decoded, each with
-# whether it was there. Made by `to_extensions`.
+# every one as written, and the ones this package knows decoded, each failing
+# `not_found` where it is not there. Made by `to_extensions`.
 record Extensions
     # Every extension, in order.
     list: [Extension]
     # The extensions not decoded below, with their criticality.
     unknown: [Extension]
-    # Whether `subjectAltName` is there.
-    has_alt_names: bool
-    # The subject's alternative names.
-    alt_names: [GeneralName]
-    # Whether `issuerAltName` is there.
-    has_issuer_alt_names: bool
-    # The issuer's alternative names.
-    issuer_alt_names: [GeneralName]
-    # Whether `keyUsage` is there.
-    has_key_usage: bool
-    # The key's usages; every one false where absent.
-    key_usage: KeyUsage
-    # Whether `extKeyUsage` is there.
-    has_extended_key_usage: bool
-    # The purposes: `SERVER_AUTH` and the others.
-    extended_key_usage: [asn1.Oid]
-    # Whether `basicConstraints` is there.
-    has_basic_constraints: bool
-    # The constraints; not a CA where absent.
-    basic_constraints: BasicConstraints
-    # Whether `subjectKeyIdentifier` is there.
-    has_subject_key_id: bool
-    # The subject's key identifier.
-    subject_key_id: [u8]
-    # Whether `authorityKeyIdentifier` is there.
-    has_authority_key_id: bool
-    # The issuer's key identifier and more.
-    authority_key_id: AuthorityKeyId
-    # Whether `cRLDistributionPoints` is there.
-    has_crl_distribution_points: bool
-    # Where the revocation lists are.
-    crl_distribution_points: [DistributionPoint]
-    # Whether `freshestCRL` is there.
-    has_freshest_crl: bool
-    # Where the delta lists are.
-    freshest_crl: [DistributionPoint]
-    # Whether `authorityInfoAccess` is there.
-    has_authority_info_access: bool
-    # Where OCSP answers and the issuer's certificate is.
-    authority_info_access: [AccessDescription]
-    # Whether `subjectInfoAccess` is there.
-    has_subject_info_access: bool
-    # The subject's own services.
-    subject_info_access: [AccessDescription]
-    # Whether `certificatePolicies` is there.
-    has_policies: bool
-    # The policies.
-    policies: [Policy]
-    # Whether `policyMappings` is there.
-    has_policy_mappings: bool
-    # The mappings.
-    policy_mappings: [PolicyMapping]
-    # Whether `policyConstraints` is there.
-    has_policy_constraints: bool
-    # The constraints.
-    policy_constraints: PolicyConstraints
-    # Whether `inhibitAnyPolicy` is there.
-    has_inhibit_any_policy: bool
-    # How many certificates may follow before `anyPolicy` stops counting.
-    inhibit_any_policy: i64
-    # Whether `nameConstraints` is there.
-    has_name_constraints: bool
-    # The constraints on the names below.
-    name_constraints: NameConstraints
-    # Whether a list's `cRLNumber` is there.
-    has_crl_number: bool
-    # The list's number.
-    crl_number: big.Integer
-    # Whether a list's `deltaCRLIndicator` is there.
-    has_delta_crl_indicator: bool
-    # The number of the base list a delta list completes.
-    delta_crl_indicator: big.Integer
-    # Whether a list's `issuingDistributionPoint` is there.
-    has_issuing_distribution_point: bool
-    # What the list covers.
-    issuing_distribution_point: IssuingDistributionPoint
-    # Whether a revoked entry's `reasonCode` is there.
-    has_reason: bool
-    # Why it was revoked; `unspecified` where absent.
-    reason: Reason
-    # Whether a revoked entry's `invalidityDate` is there.
-    has_invalidity_date: bool
-    # When its key is known or suspected to have been compromised.
-    invalidity_date: time.DateTime
-    # Whether a revoked entry's `certificateIssuer` is there.
-    has_certificate_issuer: bool
-    # The issuer of the revoked certificate, in an indirect list.
-    certificate_issuer: [GeneralName]
+    # The subject's alternative names; it fails `not_found` where it is not
+    # written.
+    alt_names: [GeneralName]?
+    # The issuer's alternative names; it fails `not_found` where it is not
+    # written.
+    issuer_alt_names: [GeneralName]?
+    # The key's usages; it fails `not_found` where
+    # it is not written.
+    key_usage: KeyUsage?
+    # The purposes: `SERVER_AUTH` and the others; it fails `not_found` where it
+    # is not written.
+    extended_key_usage: [asn1.Oid]?
+    # The constraints; it fails `not_found` where it is
+    # not written.
+    basic_constraints: BasicConstraints?
+    # The subject's key identifier; it fails `not_found` where it is not
+    # written.
+    subject_key_id: [u8]?
+    # The issuer's key identifier and more; it fails `not_found` where it is not
+    # written.
+    authority_key_id: AuthorityKeyId?
+    # Where the revocation lists are; it fails `not_found` where it is not
+    # written.
+    crl_distribution_points: [DistributionPoint]?
+    # Where the delta lists are; it fails `not_found` where it is not written.
+    freshest_crl: [DistributionPoint]?
+    # Where OCSP answers and the issuer's certificate is; it fails `not_found`
+    # where it is not written.
+    authority_info_access: [AccessDescription]?
+    # The subject's own services; it fails `not_found` where it is not written.
+    subject_info_access: [AccessDescription]?
+    # The policies; it fails `not_found` where it is not written.
+    policies: [Policy]?
+    # The mappings; it fails `not_found` where it is not written.
+    policy_mappings: [PolicyMapping]?
+    # The constraints; it fails `not_found` where it is not written.
+    policy_constraints: PolicyConstraints?
+    # How many certificates may follow before `anyPolicy` stops counting; it
+    # fails `not_found` where it is not written.
+    inhibit_any_policy: i64?
+    # The constraints on the names below; it fails `not_found` where it is not
+    # written.
+    name_constraints: NameConstraints?
+    # The list's number; it fails `not_found` where it is not written.
+    crl_number: big.Integer?
+    # The number of the base list a delta list completes; it fails `not_found`
+    # where it is not written.
+    delta_crl_indicator: big.Integer?
+    # What the list covers; it fails `not_found` where it is not written.
+    issuing_distribution_point: IssuingDistributionPoint?
+    # Why it was revoked; it fails `not_found` where
+    # it is not written.
+    reason: Reason?
+    # When its key is known or suspected to have been compromised; it fails
+    # `not_found` where it is not written.
+    invalidity_date: time.DateTime?
+    # The issuer of the revoked certificate, in an indirect list; it fails
+    # `not_found` where it is not written.
+    certificate_issuer: [GeneralName]?
 
 # The extension `v` holds, as written, undecoded.
 #
@@ -739,16 +696,14 @@ function to_extensions(list: [Extension]) -> Extensions?
     has_extended_key_usage @= false
     extended_key_usage @= no_oids
     has_basic_constraints @= false
-    basic_constraints @= BasicConstraints(is_ca: false, has_path_len: false, path_len: 0)
+    basic_constraints @= BasicConstraints(is_ca: false, path_len: known.given(0, has: false, what: "path len"))
     has_subject_key_id @= false
     subject_key_id @= no_bytes
     has_authority_key_id @= false
     authority_key_id @= AuthorityKeyId(
-        has_key_id: false,
-        key_id: no_bytes,
+        key_id: known.given(no_bytes, has: false, what: "key id"),
         issuer: no_names,
-        has_serial: false,
-        serial: big.from_int(0)
+        serial: known.given(big.from_int(0), has: false, what: "serial")
     )
     has_crl_distribution_points @= false
     crl_distribution_points @= no_points
@@ -764,10 +719,8 @@ function to_extensions(list: [Extension]) -> Extensions?
     policy_mappings @= no_mappings
     has_policy_constraints @= false
     policy_constraints @= PolicyConstraints(
-        has_require_explicit: false,
-        require_explicit: 0,
-        has_inhibit_mapping: false,
-        inhibit_mapping: 0
+        require_explicit: known.given(0, has: false, what: "require explicit"),
+        inhibit_mapping: known.given(0, has: false, what: "inhibit mapping")
     )
     has_inhibit_any_policy @= false
     inhibit_any_policy @= 0
@@ -783,8 +736,7 @@ function to_extensions(list: [Extension]) -> Extensions?
         relative_name: no_attributes,
         only_user_certs: false,
         only_ca_certs: false,
-        has_only_some_reasons: false,
-        only_some_reasons: no_reasons,
+        only_some_reasons: known.given(no_reasons, has: false, what: "only some reasons"),
         indirect_crl: false,
         only_attribute_certs: false
     )
@@ -885,7 +837,10 @@ function to_extensions(list: [Extension]) -> Extensions?
                     length @ shapes.count_of(v: item, what: what)?
 
             has_basic_constraints @ true
-            basic_constraints @ BasicConstraints(is_ca: is_ca, has_path_len: has_length, path_len: length)
+            basic_constraints @ BasicConstraints(
+                is_ca: is_ca,
+                path_len: known.given(length, has: has_length, what: "path len")
+            )
         else if id == SUBJECT_KEY_ID
             has_subject_key_id @ true
             subject_key_id @ shapes.within(r: asn1.bytes_of(v), what: what)?
@@ -913,11 +868,9 @@ function to_extensions(list: [Extension]) -> Extensions?
 
             has_authority_key_id @ true
             authority_key_id @ AuthorityKeyId(
-                has_key_id: has_key_id,
-                key_id: key_id,
+                key_id: known.given(key_id, has: has_key_id, what: "key id"),
                 issuer: issuer_names,
-                has_serial: has_serial,
-                serial: serial
+                serial: known.given(serial, has: has_serial, what: "serial")
             )
         else if id == CRL_DISTRIBUTION_POINTS || id == FRESHEST_CRL
             points: [DistributionPoint] @= []
@@ -961,7 +914,7 @@ function to_extensions(list: [Extension]) -> Extensions?
                         return fail(code: INVALID, msg: f"{what}: an element of no tag 0 to 2")
 
                 points @ points.push(
-                    DistributionPoint(full_name: full, relative_name: relative, has_reasons: has_reasons, reasons: reasons, crl_issuer: crl_issuer)
+                    DistributionPoint(full_name: full, relative_name: relative, reasons: known.given(reasons, has: has_reasons, what: "reasons"), crl_issuer: crl_issuer)
                 )
 
             if id == CRL_DISTRIBUTION_POINTS
@@ -1062,10 +1015,8 @@ function to_extensions(list: [Extension]) -> Extensions?
 
             has_policy_constraints @ true
             policy_constraints @ PolicyConstraints(
-                has_require_explicit: has_require,
-                require_explicit: require,
-                has_inhibit_mapping: has_inhibit,
-                inhibit_mapping: inhibit
+                require_explicit: known.given(require, has: has_require, what: "require explicit"),
+                inhibit_mapping: known.given(inhibit, has: has_inhibit, what: "inhibit mapping")
             )
         else if id == INHIBIT_ANY_POLICY
             has_inhibit_any_policy @ true
@@ -1101,7 +1052,7 @@ function to_extensions(list: [Extension]) -> Extensions?
                             return fail(code: INVALID, msg: f"{what}: a subtree's distance of no tag 0 or 1")
 
                     trees @ trees.push(
-                        Subtree(base: base, minimum: minimum, has_maximum: has_maximum, maximum: maximum)
+                        Subtree(base: base, minimum: minimum, maximum: known.given(maximum, has: has_maximum, what: "maximum"))
                     )
 
                 if n == 0
@@ -1166,8 +1117,7 @@ function to_extensions(list: [Extension]) -> Extensions?
                 relative_name: relative,
                 only_user_certs: switches[1],
                 only_ca_certs: switches[2],
-                has_only_some_reasons: has_some,
-                only_some_reasons: some,
+                only_some_reasons: known.given(some, has: has_some, what: "only some reasons"),
                 indirect_crl: switches[4],
                 only_attribute_certs: switches[5]
             )
@@ -1185,7 +1135,7 @@ function to_extensions(list: [Extension]) -> Extensions?
             invalidity_date @ shapes.time_of(v: v, what: what)?
 
     return ok(
-        Extensions(list: list, unknown: unknown, has_alt_names: has_alt_names, alt_names: alt_names, has_issuer_alt_names: has_issuer_alt_names, issuer_alt_names: issuer_alt_names, has_key_usage: has_key_usage, key_usage: key_usage, has_extended_key_usage: has_extended_key_usage, extended_key_usage: extended_key_usage, has_basic_constraints: has_basic_constraints, basic_constraints: basic_constraints, has_subject_key_id: has_subject_key_id, subject_key_id: subject_key_id, has_authority_key_id: has_authority_key_id, authority_key_id: authority_key_id, has_crl_distribution_points: has_crl_distribution_points, crl_distribution_points: crl_distribution_points, has_freshest_crl: has_freshest_crl, freshest_crl: freshest_crl, has_authority_info_access: has_authority_info_access, authority_info_access: authority_info_access, has_subject_info_access: has_subject_info_access, subject_info_access: subject_info_access, has_policies: has_policies, policies: policies, has_policy_mappings: has_policy_mappings, policy_mappings: policy_mappings, has_policy_constraints: has_policy_constraints, policy_constraints: policy_constraints, has_inhibit_any_policy: has_inhibit_any_policy, inhibit_any_policy: inhibit_any_policy, has_name_constraints: has_name_constraints, name_constraints: name_constraints, has_crl_number: has_crl_number, crl_number: crl_number, has_delta_crl_indicator: has_delta_crl_indicator, delta_crl_indicator: delta_crl_indicator, has_issuing_distribution_point: has_issuing_distribution_point, issuing_distribution_point: issuing_distribution_point, has_reason: has_reason, reason: reason, has_invalidity_date: has_invalidity_date, invalidity_date: invalidity_date, has_certificate_issuer: has_certificate_issuer, certificate_issuer: certificate_issuer)
+        Extensions(list: list, unknown: unknown, alt_names: known.given(alt_names, has: has_alt_names, what: "alt names"), issuer_alt_names: known.given(issuer_alt_names, has: has_issuer_alt_names, what: "issuer alt names"), key_usage: known.given(key_usage, has: has_key_usage, what: "key usage"), extended_key_usage: known.given(extended_key_usage, has: has_extended_key_usage, what: "extended key usage"), basic_constraints: known.given(basic_constraints, has: has_basic_constraints, what: "basic constraints"), subject_key_id: known.given(subject_key_id, has: has_subject_key_id, what: "subject key id"), authority_key_id: known.given(authority_key_id, has: has_authority_key_id, what: "authority key id"), crl_distribution_points: known.given(crl_distribution_points, has: has_crl_distribution_points, what: "crl distribution points"), freshest_crl: known.given(freshest_crl, has: has_freshest_crl, what: "freshest crl"), authority_info_access: known.given(authority_info_access, has: has_authority_info_access, what: "authority info access"), subject_info_access: known.given(subject_info_access, has: has_subject_info_access, what: "subject info access"), policies: known.given(policies, has: has_policies, what: "policies"), policy_mappings: known.given(policy_mappings, has: has_policy_mappings, what: "policy mappings"), policy_constraints: known.given(policy_constraints, has: has_policy_constraints, what: "policy constraints"), inhibit_any_policy: known.given(inhibit_any_policy, has: has_inhibit_any_policy, what: "inhibit any policy"), name_constraints: known.given(name_constraints, has: has_name_constraints, what: "name constraints"), crl_number: known.given(crl_number, has: has_crl_number, what: "crl number"), delta_crl_indicator: known.given(delta_crl_indicator, has: has_delta_crl_indicator, what: "delta crl indicator"), issuing_distribution_point: known.given(issuing_distribution_point, has: has_issuing_distribution_point, what: "issuing distribution point"), reason: known.given(reason, has: has_reason, what: "reason"), invalidity_date: known.given(invalidity_date, has: has_invalidity_date, what: "invalidity date"), certificate_issuer: known.given(certificate_issuer, has: has_certificate_issuer, what: "certificate issuer"))
     )
 
 # The extension of `extensions` whose identifier is `oid`, known or not.
@@ -1228,14 +1178,12 @@ record Certificate
     subject: Name
     # The subject's public key.
     public_key: PublicKey
-    # Whether `issuerUniqueID` is written, in a version 2 or 3.
-    has_issuer_unique_id: bool
-    # The issuer's unique identifier where written.
-    issuer_unique_id: asn1.BitString
-    # Whether `subjectUniqueID` is written.
-    has_subject_unique_id: bool
-    # The subject's unique identifier where written.
-    subject_unique_id: asn1.BitString
+    # The issuer's unique identifier; it fails `not_found` where
+    # it is not written.
+    issuer_unique_id: asn1.BitString?
+    # The subject's unique identifier; it fails `not_found` where
+    # it is not written.
+    subject_unique_id: asn1.BitString?
     # The extensions, every one as written and the known ones decoded.
     extensions: Extensions
     # The signature's bytes.
@@ -1333,7 +1281,7 @@ function decode_certificate(der: [u8]) -> Certificate?
     if signature.bit_len % 8 != 0
         return fail(code: INVALID, msg: "a certificate's signature of bits that are not whole bytes")
     return ok(
-        Certificate(der: der, tbs: signed, version: version, serial: serial, signature_algorithm: inner, issuer: issuer, not_before: not_before, not_after: not_after, subject: subject, public_key: public_key, has_issuer_unique_id: has_issuer_id, issuer_unique_id: issuer_id, has_subject_unique_id: has_subject_id, subject_unique_id: subject_id, extensions: extensions, signature: signature.bytes)
+        Certificate(der: der, tbs: signed, version: version, serial: serial, signature_algorithm: inner, issuer: issuer, not_before: not_before, not_after: not_after, subject: subject, public_key: public_key, issuer_unique_id: known.given(issuer_id, has: has_issuer_id, what: "issuer unique id"), subject_unique_id: known.given(subject_id, has: has_subject_id, what: "subject unique id"), extensions: extensions, signature: signature.bytes)
     )
 
 # Every certificate of `der`, certificates' DER written one after another,
@@ -1566,10 +1514,9 @@ record RevocationList
     issuer: Name
     # When it was issued, in UTC.
     this_update: time.DateTime
-    # Whether the next issue's date is written.
-    has_next_update: bool
-    # When the next one will be, in UTC.
-    next_update: time.DateTime
+    # When the next one will be, in UTC; it fails `not_found` where it is not
+    # written.
+    next_update: time.DateTime?
     # The certificates revoked, in order.
     revoked: [Revoked]
     # The list's extensions: its number, its issuer's key, its scope.
@@ -1660,7 +1607,7 @@ function decode_crl(der: [u8]) -> RevocationList?
     if signature.bit_len % 8 != 0
         return fail(code: INVALID, msg: "a list's signature of bits that are not whole bytes")
     return ok(
-        RevocationList(der: der, tbs: signed, version: version, signature_algorithm: inner, issuer: issuer, this_update: this_update, has_next_update: has_next, next_update: next_update, revoked: revoked, extensions: extensions, signature: signature.bytes)
+        RevocationList(der: der, tbs: signed, version: version, signature_algorithm: inner, issuer: issuer, this_update: this_update, next_update: known.given(next_update, has: has_next, what: "next update"), revoked: revoked, extensions: extensions, signature: signature.bytes)
     )
 
 # The list of the first `X509 CRL` block of PEM in `text`.
@@ -1748,9 +1695,11 @@ function chain_of(leaf: Certificate, pool: [Certificate]) -> [Certificate]
                 if held.der == candidate.der
                     fits @ false
 
-            asked = current.extensions.authority_key_id
+            asked: [u8]? = match current.extensions.authority_key_id
+                .ok a  => a.key_id
+                .err e => fail(code: e.code, msg: e.msg)
 
-            if fits && asked.has_key_id && candidate.extensions.has_subject_key_id && asked.key_id != candidate.extensions.subject_key_id
+            if fits && !asked.is_err() && !candidate.extensions.subject_key_id.is_err() && asked != candidate.extensions.subject_key_id
                 fits @ false
 
             if fits
@@ -1845,141 +1794,156 @@ function verify_chain(chain: [Certificate], options: Verification) -> ()?
         if i > 0
             ext = c.extensions
 
-            if (c.version == 3 || i < count - 1) && !(ext.has_basic_constraints && ext.basic_constraints.is_ca)
+            is_ca = match ext.basic_constraints
+                .ok b  => b.is_ca
+                .err _ => false
+
+            if (c.version == 3 || i < count - 1) && !is_ca
                 return fail(code: INVALID, msg: f"{label} issues a certificate and is no certificate authority")
 
-            if ext.has_key_usage && !ext.key_usage.key_cert_sign
-                return fail(code: INVALID, msg: f"{label}'s key may not sign certificates")
+            match ext.key_usage
+                .ok usage =>
+                    if !usage.key_cert_sign
+                        return fail(code: INVALID, msg: f"{label}'s key may not sign certificates")
+                .err _ => _ = 0
 
-            if ext.has_basic_constraints && ext.basic_constraints.has_path_len
-                below @= 0
+            most: i64? = match ext.basic_constraints
+                .ok b  => b.path_len
+                .err e => fail(code: e.code, msg: e.msg)
 
-                for j in range(from: 1, to: i)
-                    if !is_self_issued(path[j])
-                        below @ below + 1
+            match most
+                .err _ => _ = 0
+                .ok allowed =>
+                    below @= 0
 
-                if below > ext.basic_constraints.path_len
-                    return fail(
-                        code: INVALID,
-                        msg: f"{label} allows {ext.basic_constraints.path_len} intermediates after it, and {below} follow"
-                    )
+                    for j in range(from: 1, to: i)
+                        if !is_self_issued(path[j])
+                            below @ below + 1
 
-            if ext.has_name_constraints
-                permitted_kinds: [i64] @= []
-                permitted_texts: [str] @= []
-                excluded_kinds: [i64] @= []
-                excluded_texts: [str] @= []
+                    if below > allowed
+                        return fail(
+                            code: INVALID,
+                            msg: f"{label} allows {allowed} intermediates after it, and {below} follow"
+                        )
 
-                for tree in ext.name_constraints.permitted
-                    base_kind @= -1
-                    base_text @= ""
+            match ext.name_constraints
+                .err _ => _ = 0
+                .ok constraints =>
+                    permitted_kinds: [i64] @= []
+                    permitted_texts: [str] @= []
+                    excluded_kinds: [i64] @= []
+                    excluded_texts: [str] @= []
 
-                    match tree.base
-                        .email m =>
-                            base_kind @ 1
-                            base_text @ m.address
-                        .dns d =>
-                            base_kind @ 2
-                            base_text @ d.name
-                        .directory d =>
-                            base_kind @ 4
-                            base_text @ bytes.format_hex(
-                                d.name.der.slice(from: asn1.element_at(data: d.name.der, at: 0, options: options_der).must().content_start, to: d.name.der.len())
-                            )
-                        .uri u =>
-                            base_kind @ 6
-                            base_text @ u.uri
-                        .ip a =>
-                            base_kind @ 7
-                            base_text @ net.format_address(a.address)
-                        .ip_network n =>
-                            base_kind @ 7
-                            base_text @ net.format_network(n.network)
-                        .other_name _ | .x400_address _ | .edi_party _ | .registered_id _ => _ = 0
+                    for tree in constraints.permitted
+                        base_kind @= -1
+                        base_text @= ""
 
-                    permitted_kinds @ permitted_kinds.push(base_kind)
-                    permitted_texts @ permitted_texts.push(base_text)
-
-                for tree in ext.name_constraints.excluded
-                    base_kind @= -1
-                    base_text @= ""
-
-                    match tree.base
-                        .email m =>
-                            base_kind @ 1
-                            base_text @ m.address
-                        .dns d =>
-                            base_kind @ 2
-                            base_text @ d.name
-                        .directory d =>
-                            base_kind @ 4
-                            base_text @ bytes.format_hex(
-                                d.name.der.slice(from: asn1.element_at(data: d.name.der, at: 0, options: options_der).must().content_start, to: d.name.der.len())
-                            )
-                        .uri u =>
-                            base_kind @ 6
-                            base_text @ u.uri
-                        .ip a =>
-                            base_kind @ 7
-                            base_text @ net.format_address(a.address)
-                        .ip_network n =>
-                            base_kind @ 7
-                            base_text @ net.format_network(n.network)
-                        .other_name _ | .x400_address _ | .edi_party _ | .registered_id _ => _ = 0
-
-                    excluded_kinds @ excluded_kinds.push(base_kind)
-                    excluded_texts @ excluded_texts.push(base_text)
-
-                for j in range(from: 0, to: i)
-                    below_cert = path[j]
-                    names: [GeneralName] @= below_cert.extensions.alt_names
-
-                    if below_cert.subject.rdns.len() > 0 && !(j > 0 && is_self_issued(below_cert))
-                        names @ names.push(.directory(name: below_cert.subject))
-
-                    for name in names
-                        name_kind @= -1
-                        name_text @= ""
-
-                        match name
+                        match tree.base
                             .email m =>
-                                name_kind @ 1
-                                name_text @ m.address
+                                base_kind @ 1
+                                base_text @ m.address
                             .dns d =>
-                                name_kind @ 2
-                                name_text @ d.name
+                                base_kind @ 2
+                                base_text @ d.name
                             .directory d =>
-                                name_kind @ 4
-                                name_text @ bytes.format_hex(
+                                base_kind @ 4
+                                base_text @ bytes.format_hex(
                                     d.name.der.slice(from: asn1.element_at(data: d.name.der, at: 0, options: options_der).must().content_start, to: d.name.der.len())
                                 )
                             .uri u =>
-                                name_kind @ 6
-                                name_text @ u.uri
+                                base_kind @ 6
+                                base_text @ u.uri
                             .ip a =>
-                                name_kind @ 7
-                                name_text @ net.format_address(a.address)
+                                base_kind @ 7
+                                base_text @ net.format_address(a.address)
                             .ip_network n =>
-                                name_kind @ 7
-                                name_text @ net.format_network(n.network)
+                                base_kind @ 7
+                                base_text @ net.format_network(n.network)
                             .other_name _ | .x400_address _ | .edi_party _ | .registered_id _ => _ = 0
 
-                        if name_kind >= 0
-                            checked = hosts.check_constraint(
-                                kind: name_kind,
-                                name: name_text,
-                                permitted_kinds: permitted_kinds,
-                                permitted_texts: permitted_texts,
-                                excluded_kinds: excluded_kinds,
-                                excluded_texts: excluded_texts
-                            )
+                        permitted_kinds @ permitted_kinds.push(base_kind)
+                        permitted_texts @ permitted_texts.push(base_text)
 
-                            match checked
-                                .ok _ => _ = 0
-                                .err e => return fail(
-                                    code: INVALID,
-                                    msg: f"certificate {j} of the chain: {e.msg}, under the name constraints of {label}"
+                    for tree in constraints.excluded
+                        base_kind @= -1
+                        base_text @= ""
+
+                        match tree.base
+                            .email m =>
+                                base_kind @ 1
+                                base_text @ m.address
+                            .dns d =>
+                                base_kind @ 2
+                                base_text @ d.name
+                            .directory d =>
+                                base_kind @ 4
+                                base_text @ bytes.format_hex(
+                                    d.name.der.slice(from: asn1.element_at(data: d.name.der, at: 0, options: options_der).must().content_start, to: d.name.der.len())
                                 )
+                            .uri u =>
+                                base_kind @ 6
+                                base_text @ u.uri
+                            .ip a =>
+                                base_kind @ 7
+                                base_text @ net.format_address(a.address)
+                            .ip_network n =>
+                                base_kind @ 7
+                                base_text @ net.format_network(n.network)
+                            .other_name _ | .x400_address _ | .edi_party _ | .registered_id _ => _ = 0
+
+                        excluded_kinds @ excluded_kinds.push(base_kind)
+                        excluded_texts @ excluded_texts.push(base_text)
+
+                    for j in range(from: 0, to: i)
+                        below_cert = path[j]
+                        names: [GeneralName] @= below_cert.extensions.alt_names.default([])
+
+                        if below_cert.subject.rdns.len() > 0 && !(j > 0 && is_self_issued(below_cert))
+                            names @ names.push(.directory(name: below_cert.subject))
+
+                        for name in names
+                            name_kind @= -1
+                            name_text @= ""
+
+                            match name
+                                .email m =>
+                                    name_kind @ 1
+                                    name_text @ m.address
+                                .dns d =>
+                                    name_kind @ 2
+                                    name_text @ d.name
+                                .directory d =>
+                                    name_kind @ 4
+                                    name_text @ bytes.format_hex(
+                                        d.name.der.slice(from: asn1.element_at(data: d.name.der, at: 0, options: options_der).must().content_start, to: d.name.der.len())
+                                    )
+                                .uri u =>
+                                    name_kind @ 6
+                                    name_text @ u.uri
+                                .ip a =>
+                                    name_kind @ 7
+                                    name_text @ net.format_address(a.address)
+                                .ip_network n =>
+                                    name_kind @ 7
+                                    name_text @ net.format_network(n.network)
+                                .other_name _ | .x400_address _ | .edi_party _ | .registered_id _ => _ = 0
+
+                            if name_kind >= 0
+                                checked = hosts.check_constraint(
+                                    kind: name_kind,
+                                    name: name_text,
+                                    permitted_kinds: permitted_kinds,
+                                    permitted_texts: permitted_texts,
+                                    excluded_kinds: excluded_kinds,
+                                    excluded_texts: excluded_texts
+                                )
+
+                                match checked
+                                    .ok _ => _ = 0
+                                    .err e => return fail(
+                                        code: INVALID,
+                                        msg: f"certificate {j} of the chain: {e.msg}, under the name constraints of {label}"
+                                    )
 
     leaf = path[0]
 
@@ -1987,18 +1951,20 @@ function verify_chain(chain: [Certificate], options: Verification) -> ()?
         for i in range(from: 0, to: count - 1)
             ext = path[i].extensions
 
-            if ext.has_extended_key_usage
-                allowed @= false
+            match ext.extended_key_usage
+                .err _ => _ = 0
+                .ok purposes =>
+                    allowed @= false
 
-                for p in ext.extended_key_usage
-                    if p.dotted == options.purpose || p.dotted == ANY_EXTENDED_KEY_USAGE
-                        allowed @ true
+                    for p in purposes
+                        if p.dotted == options.purpose || p.dotted == ANY_EXTENDED_KEY_USAGE
+                            allowed @ true
 
-                if !allowed
-                    return fail(
-                        code: INVALID,
-                        msg: f"certificate {i} of the chain is not for the purpose {options.purpose}"
-                    )
+                    if !allowed
+                        return fail(
+                            code: INVALID,
+                            msg: f"certificate {i} of the chain is not for the purpose {options.purpose}"
+                        )
 
     if options.host != "" && !is_for_host(certificate: leaf, host: options.host)
         return fail(code: INVALID, msg: f"the leaf is not for the host \"{options.host}\"")
@@ -2022,7 +1988,7 @@ function is_for_host(certificate: Certificate, host: str) -> bool
         .ok address => return is_for_address(certificate: certificate, address: address)
         .err _      => _ = 0
 
-    for g in certificate.extensions.alt_names
+    for g in certificate.extensions.alt_names.default([])
         match g
             .dns d =>
                 if hosts.host_matches(pattern: d.name, host: host)
@@ -2039,7 +2005,7 @@ function is_for_host(certificate: Certificate, host: str) -> bool
 #
 # See also `is_for_host`.
 function is_for_address(certificate: Certificate, address: net.Address) -> bool
-    for g in certificate.extensions.alt_names
+    for g in certificate.extensions.alt_names.default([])
         match g
             .ip a =>
                 if hosts.same_address(a: a.address, b: address)
@@ -2253,52 +2219,52 @@ test "decode_certificate: the chain's three certificates, their names, serials, 
     assert [root.signature.len(), inter.signature.len(), leaf.signature.len()] == [103, 103, 256]
     assert root.signature_algorithm.oid.dotted == "1.2.840.10045.4.3.3"
     assert leaf.signature_algorithm.oid.dotted == "1.2.840.113549.1.1.11"
-    assert leaf.signature_algorithm.has_parameters
-    assert !root.signature_algorithm.has_parameters
+    assert !leaf.signature_algorithm.parameters.is_err()
+    assert root.signature_algorithm.parameters.is_err()
     assert leaf.not_before == time.DateTime(year: 2026, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
     assert leaf.not_after.year == 2027
-    assert !leaf.has_issuer_unique_id && !leaf.has_subject_unique_id
+    assert leaf.issuer_unique_id.is_err() && leaf.subject_unique_id.is_err()
 
 test "decode_certificate: the extensions of the root and the leaf, an unknown one kept"
     root = parse_certificate(samples.root()).must()
     leaf = parse_certificate(samples.leaf()).must()
-    assert root.extensions.has_basic_constraints && root.extensions.basic_constraints.is_ca
-    assert root.extensions.basic_constraints.path_len == 1
-    assert root.extensions.key_usage.key_cert_sign && root.extensions.key_usage.crl_sign
-    assert !root.extensions.key_usage.digital_signature
-    assert bytes.format_hex(root.extensions.subject_key_id) == "0c0981435940ee87770f300619d3d100cf3c39ef"
+    assert !root.extensions.basic_constraints.is_err() && root.extensions.basic_constraints.must().is_ca
+    assert root.extensions.basic_constraints.must().path_len.must() == 1
+    assert root.extensions.key_usage.must().key_cert_sign && root.extensions.key_usage.must().crl_sign
+    assert !root.extensions.key_usage.must().digital_signature
+    assert bytes.format_hex(root.extensions.subject_key_id.must()) == "0c0981435940ee87770f300619d3d100cf3c39ef"
     ext = leaf.extensions
-    assert ext.has_basic_constraints && !ext.basic_constraints.is_ca && !ext.basic_constraints.has_path_len
-    assert ext.key_usage.digital_signature && !ext.key_usage.key_cert_sign
-    assert ext.extended_key_usage == [asn1.Oid(dotted: SERVER_AUTH), asn1.Oid(dotted: CLIENT_AUTH)]
-    assert bytes.format_hex(ext.authority_key_id.key_id) == "a3228554f157035feca224e54a38ebd49579c98b"
-    assert ext.alt_names.len() == 6
-    assert ext.alt_names[0] == .dns(name: "example.com")
-    assert ext.alt_names[1] == .dns(name: "*.app.example.com")
-    assert ext.alt_names[2] == .ip(address: net.parse_address("192.0.2.1").must())
-    assert ext.alt_names[4] == .email(address: "ops@example.com")
-    assert ext.alt_names[5] == .uri(uri: "https://example.com/")
+    assert !ext.basic_constraints.is_err() && !ext.basic_constraints.must().is_ca && ext.basic_constraints.must().path_len.is_err()
+    assert ext.key_usage.must().digital_signature && !ext.key_usage.must().key_cert_sign
+    assert ext.extended_key_usage.must() == [asn1.Oid(dotted: SERVER_AUTH), asn1.Oid(dotted: CLIENT_AUTH)]
+    assert bytes.format_hex(ext.authority_key_id.must().key_id.must()) == "a3228554f157035feca224e54a38ebd49579c98b"
+    assert ext.alt_names.must().len() == 6
+    assert ext.alt_names.must()[0] == .dns(name: "example.com")
+    assert ext.alt_names.must()[1] == .dns(name: "*.app.example.com")
+    assert ext.alt_names.must()[2] == .ip(address: net.parse_address("192.0.2.1").must())
+    assert ext.alt_names.must()[4] == .email(address: "ops@example.com")
+    assert ext.alt_names.must()[5] == .uri(uri: "https://example.com/")
     assert ext.unknown.len() == 1
     assert ext.unknown[0].oid.dotted == "1.3.6.1.4.1.55555.1" && !ext.unknown[0].critical
     assert ext.list.len() == 7
 
 test "decode_certificate: the intermediate's points, access, policies and name constraints"
     ext = parse_certificate(samples.intermediate()).must().extensions
-    assert ext.basic_constraints.path_len == 0
-    assert ext.crl_distribution_points[0].full_name == [.uri(uri: "http://crl.example.com/root.crl")]
-    assert !ext.crl_distribution_points[0].has_reasons
-    assert ext.authority_info_access.len() == 2
-    assert ext.authority_info_access[0].method.dotted == OCSP
-    assert ext.authority_info_access[1].location == .uri(uri: "http://ca.example.com/root.der")
-    policy = ext.policies[0]
+    assert ext.basic_constraints.must().path_len.must() == 0
+    assert ext.crl_distribution_points.must()[0].full_name == [.uri(uri: "http://crl.example.com/root.crl")]
+    assert ext.crl_distribution_points.must()[0].reasons.is_err()
+    assert ext.authority_info_access.must().len() == 2
+    assert ext.authority_info_access.must()[0].method.dotted == OCSP
+    assert ext.authority_info_access.must()[1].location == .uri(uri: "http://ca.example.com/root.der")
+    policy = ext.policies.must()[0]
     assert policy.oid.dotted == "2.23.140.1.2.1"
     assert policy.qualifiers[0].cps_uri == "https://cps.example.com"
     assert policy.qualifiers[1].organization == "Heroes"
     assert policy.qualifiers[1].notice_numbers == [1, 2]
     assert policy.qualifiers[1].explicit_text == "Explicit text"
-    assert ext.name_constraints.permitted.len() == 3
-    assert ext.name_constraints.permitted[1].base == .ip_network(network: net.parse_network("192.0.2.0/24").must())
-    assert ext.name_constraints.excluded[0].base == .dns(name: "bad.example.com")
+    assert ext.name_constraints.must().permitted.len() == 3
+    assert ext.name_constraints.must().permitted[1].base == .ip_network(network: net.parse_network("192.0.2.0/24").must())
+    assert ext.name_constraints.must().excluded[0].base == .dns(name: "bad.example.com")
     assert ext.unknown.len() == 0
 
 test "decode_certificate: every cut of the leaf fails, every byte changed reads or fails, never aborts"
@@ -2454,7 +2420,7 @@ test "decode_request: the request's subject, attributes, extensions and signatur
     assert request.attributes.len() == 2
     assert request.attributes[0].oid.dotted == CHALLENGE_PASSWORD
     assert request.attributes[1].oid.dotted == EXTENSION_REQUEST
-    assert request.extensions.alt_names == [.dns(name: "request.example.com")]
+    assert request.extensions.alt_names.must() == [.dns(name: "request.example.com")]
     assert is_request_signed(request).must()
     assert parse_request("no request").is_err()
 
@@ -2464,16 +2430,16 @@ test "decode_crl: the list's dates, number, entries and signature"
     assert crl.version == 2
     assert crl.issuer.der == inter.subject.der
     assert crl.this_update.year == 2026 && crl.this_update.month == 1
-    assert crl.has_next_update && crl.next_update.month == 2
-    assert crl.extensions.has_crl_number && big.int_of(crl.extensions.crl_number).must() == 42
-    assert crl.extensions.has_authority_key_id
+    assert !crl.next_update.is_err() && crl.next_update.must().month == 2
+    assert !crl.extensions.crl_number.is_err() && big.int_of(crl.extensions.crl_number.must()).must() == 42
+    assert !crl.extensions.authority_key_id.is_err()
     assert crl.revoked.len() == 2
     first = crl.revoked[0]
     assert big.int_of(first.serial).must() == 0x1001
     assert first.date.day == 2
-    assert first.extensions.has_reason && first.extensions.reason == .key_compromise
-    assert first.extensions.invalidity_date == time.DateTime(year: 2025, month: 12, day: 31, hour: 0, minute: 0, second: 0, nanosecond: 0)
-    assert !crl.revoked[1].extensions.has_reason
+    assert !first.extensions.reason.is_err() && first.extensions.reason.must() == .key_compromise
+    assert first.extensions.invalidity_date.must() == time.DateTime(year: 2025, month: 12, day: 31, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert crl.revoked[1].extensions.reason.is_err()
     assert is_crl_signed_by(crl: crl, issuer: inter).must()
     assert revoked_of(crl: crl, serial: big.from_int(0x1002)).must().date.day == 3
 
@@ -2547,7 +2513,7 @@ test "to_algorithm: sha256WithRSAEncryption"
         asn1.encode_der(.sequence(items: [.oid(v: asn1.Oid(dotted: "1.2.840.113549.1.1.11")), .null_value])).must()
     ).must()
     algorithm = to_algorithm(v).must()
-    assert algorithm.oid.dotted == "1.2.840.113549.1.1.11" && algorithm.has_parameters
+    assert algorithm.oid.dotted == "1.2.840.113549.1.1.11" && !algorithm.parameters.is_err()
 
 # The scheme `crypto/keypairs` checks a certificate's signature with.
 test "scheme_of: a leaf's RSA signature"
@@ -2584,7 +2550,7 @@ test "to_extension: a critical basic constraints"
 # Extensions decoded from what was written.
 test "to_extensions: a CA's basic constraints"
     e = Extension(oid: asn1.Oid(dotted: BASIC_CONSTRAINTS), critical: true, value: [0x30, 0x03, 0x01, 0x01, 0xff])
-    assert to_extensions([e]).must().basic_constraints.is_ca
+    assert to_extensions([e]).must().basic_constraints.must().is_ca
 
 # An extension this package does not decode, found by its identifier.
 test "extension_of: an extension nobody knows"
@@ -2663,7 +2629,7 @@ test "is_crl_signed_by: a list and its issuer"
 # Whether a serial is revoked, and why.
 test "revoked_of: a serial revoked for a key compromised"
     entry = revoked_of(crl: parse_crl(samples.crl()).must(), serial: big.from_int(0x1001)).must()
-    assert entry.extensions.reason == .key_compromise
+    assert entry.extensions.reason.must() == .key_compromise
 
 # A leaf's chain put in order from the certificates a server sent.
 test "chain_of: a leaf and its issuers"

@@ -113,11 +113,11 @@ capability ini/from-map  a document built from maps
   note    -
 
 capability ini/write  a document written back as text
-  heroes  ini.format, ini.format_with, ini.spaced, ini.WriteOptions
+  heroes  ini.format, ini.format_with, ini.spaced_write_options, ini.WriteOptions
   go      -
   rust    -
   python  write, write(space_around_delimiters=), InvalidWriteError
-  note    Python's layout: `key = value`, a value's later lines after a tab, an empty line after each section. What `strict` would read back otherwise fails `invalid` (a key holding a delimiter, a value line with white space at an end, a later line opening like a comment, an empty last line), where Python refuses only a key opening like a header and writes the rest to be read back changed
+  note    Python's layout: `key = value`, a value's later lines after a tab, an empty line after each section. What `strict_read_options` would read back otherwise fails `invalid` (a key holding a delimiter, a value line with white space at an end, a later line opening like a comment, an empty last line), where Python refuses only a key opening like a header and writes the rest to be read back changed
 
 capability ini/errors  a text that is not INI, with its line
   heroes  ini.INVALID

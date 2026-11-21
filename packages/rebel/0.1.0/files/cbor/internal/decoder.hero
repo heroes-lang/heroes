@@ -328,7 +328,7 @@ function failure_of(hex: str, reading: Reading) -> str
         .ok _  => ""
         .err e => f"{e.code}: {e.msg}"
 
-# The reading of `strict`: a key once, any encoding, nesting to 512.
+# The reading of `strict_decode_options`: a key once, any encoding, nesting to 512.
 function strictly() -> Reading
     return Reading(max_depth: 512, duplicate_keys: false, deterministic: false)
 

@@ -12,21 +12,10 @@ use time
 use tls
 use url
 
-# How a connection is reached, for its deadline.
-variant Link
-    # A plain TCP connection, `http://`.
-    plain
-        # The connection, whose stream the reader holds.
-        conn: net.Conn
-    # A TLS connection, `https://`, whose stream the reader holds.
-    secure
-
 # A connection opened for one request.
 record Opened
     # The reader of the connection; `close` closes it.
     reader: io.Reader
-    # How the connection is reached.
-    link: Link
     # The head of the answer, once read: its status and fields, no body.
     head: http.Response
 
@@ -42,19 +31,17 @@ function open(target: url.Url, deadline_ms: i64, roots: str) -> Opened?
     port = url.port_of(target)?
 
     if target.scheme == "https"
-        stream = tls.connect(target.host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: ["http/1.1"]))?
-        return ok(Opened(reader: io.reader(stream), link: .secure, head: http.respond_status(200)))
+        stream = tls.connect(target.host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: ["http/1.1"]))?.stream
+        return ok(Opened(reader: io.reader(stream), head: http.respond_status(200)))
 
     if target.scheme == "http"
         conn = net.connect(target.host, port: port, deadline_ms: deadline_ms)?
-        return ok(Opened(reader: io.reader(conn.stream), link: .plain(conn: conn), head: http.respond_status(200)))
+        return ok(Opened(reader: io.reader(conn.stream), head: http.respond_status(200)))
     return fail(code: "unsupported", msg: f"the scheme \"{target.scheme}\" is neither http nor https")
 
 # Moves the deadline of `o`'s connection to `ms` from now; 0 takes it away.
 function set_deadline(o: Opened lent, ms: i64) -> ()?
-    match o.link
-        .plain p => return net.set_deadline(p.conn.stream, deadline_ms: ms)
-        .secure  => return tls.set_deadline(o.reader.stream, deadline_ms: ms)
+    return tls.set_deadline(o.reader.stream, deadline_ms: ms)
 
 # Closes `o`'s connection; a failure closing is no news to its caller.
 function close(@o: Opened)

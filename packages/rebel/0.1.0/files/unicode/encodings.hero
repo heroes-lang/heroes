@@ -226,7 +226,7 @@ function valid_prefix_len(data: [u8], encoding: str) -> i64?
 
 # A text read from bytes that come in pieces, a file read a block at a time or
 # a body read from a socket: what is cut at the end of one piece is held and
-# read with the next. Made by `decoder` or `decoder_without_bom` and read by
+# read with the next. Made by `new_decoder` or `new_decoder_without_bom` and read by
 # `decode_chunk`; it holds no handle.
 record Decoder
     # The name of the encoding the decoder reads: the label's, or the one the
@@ -242,7 +242,7 @@ record Decoder
 # - `encoding`: a label or a name.
 #
 # Fails `not_found` where `encoding` names none. See also `decode_chunk`.
-function decoder(encoding: str) -> Decoder?
+function new_decoder(encoding: str) -> Decoder?
     n = registry.number_of(encoding)?
     return ok(Decoder(encoding: registry.name(n), state: machine.start(n: n, sniffs: true)))
 
@@ -252,13 +252,13 @@ function decoder(encoding: str) -> Decoder?
 # - `encoding`: a label or a name.
 #
 # Fails `not_found` where `encoding` names none. See also `decode_chunk`.
-function decoder_without_bom(encoding: str) -> Decoder?
+function new_decoder_without_bom(encoding: str) -> Decoder?
     n = registry.number_of(encoding)?
     return ok(Decoder(encoding: registry.name(n), state: machine.start(n: n, sniffs: false)))
 
 # The text the next piece of the bytes writes, what cannot be read U+FFFD.
 #
-# - `reader`: the caller's decoder, which keeps what the piece leaves cut
+# - `decoder`: the caller's decoder, which keeps what the piece leaves cut
 #   short, and the state of a stateful encoding, for the next call.
 # - `data`: the next bytes, of any length; none add nothing.
 # - `last`: true for the last piece, so that a character cut short at its end
@@ -266,16 +266,16 @@ function decoder_without_bom(encoding: str) -> Decoder?
 #
 # The pieces' texts joined are what `decode` answers for the bytes joined,
 # wherever they were cut. See also `decode_chunk_strict`.
-function decode_chunk(@reader: Decoder, data: [u8], last: bool) -> str
-    read = machine.chunk(state: reader.state, data: data, last: last, strict: false)
-    reader.state @ read.state
-    reader.encoding @ registry.name(read.state.reading)
+function decode_chunk(@decoder: Decoder, data: [u8], last: bool) -> str
+    read = machine.chunk(state: decoder.state, data: data, last: last, strict: false)
+    decoder.state @ read.state
+    decoder.encoding @ registry.name(read.state.reading)
     return read.text
 
 # The text the next piece of the bytes writes, failing where a byte cannot be
 # read.
 #
-# - `reader`: the caller's decoder; it moves on past the piece only where the
+# - `decoder`: the caller's decoder; it moves on past the piece only where the
 #   call succeeds, and is left as it was where it fails.
 # - `data`: the next bytes.
 # - `last`: true for the last piece: a character cut short at its end fails.
@@ -283,16 +283,16 @@ function decode_chunk(@reader: Decoder, data: [u8], last: bool) -> str
 # Fails `invalid` at the first sequence the encoding cannot read, the message
 # saying its index in the whole of the bytes given so far. See also
 # `decode_strict`.
-function decode_chunk_strict(@reader: Decoder, data: [u8], last: bool) -> str?
-    read = machine.chunk(state: reader.state, data: data, last: last, strict: true)
+function decode_chunk_strict(@decoder: Decoder, data: [u8], last: bool) -> str?
+    read = machine.chunk(state: decoder.state, data: data, last: last, strict: true)
 
     if read.failed_at >= 0
         return fail(
             code: INVALID,
-            msg: f"{registry.name(reader.state.reading)} cannot read the bytes from index {read.failed_at} of the stream"
+            msg: f"{registry.name(decoder.state.reading)} cannot read the bytes from index {read.failed_at} of the stream"
         )
-    reader.state @ read.state
-    reader.encoding @ registry.name(read.state.reading)
+    decoder.state @ read.state
+    decoder.encoding @ registry.name(read.state.reading)
     return ok(read.text)
 
 ## Encoding
@@ -334,7 +334,7 @@ function encode_html(s: str, encoding: str) -> [u8]?
 ## Encoding a piece at a time
 
 # A text written as bytes in pieces, the state of ISO-2022-JP kept between
-# them. Made by `encoder`, written by `encode_chunk`; it holds no handle.
+# them. Made by `new_encoder`, written by `encode_chunk`; it holds no handle.
 record Encoder
     # The name of the encoding written.
     encoding: str
@@ -348,7 +348,7 @@ record Encoder
 #
 # Fails `not_found` where `encoding` names none, and `unsupported` for
 # `replacement`. See also `encode_chunk`.
-function encoder(encoding: str) -> Encoder?
+function new_encoder(encoding: str) -> Encoder?
     n = registry.number_of(encoding)?
     state = machine.writable(n)?
     return ok(Encoder(encoding: registry.name(n), state: state))
@@ -356,7 +356,7 @@ function encoder(encoding: str) -> Encoder?
 # The bytes the next piece of the text writes, failing at the first character
 # the encoding has no bytes for.
 #
-# - `writer`: the caller's encoder; it moves on past the piece only where the
+# - `encoder`: the caller's encoder; it moves on past the piece only where the
 #   call succeeds.
 # - `s`: the next piece of the text.
 # - `last`: true for the last piece, after which ISO-2022-JP writes its escape
@@ -366,29 +366,29 @@ function encoder(encoding: str) -> Encoder?
 # Fails `unsupported` at the first character the encoding has no bytes for,
 # the message saying which and its byte index in `s`. See also
 # `encode_chunk_html`.
-function encode_chunk(@writer: Encoder, s: str, last: bool) -> [u8]?
-    state @= writer.state
+function encode_chunk(@encoder: Encoder, s: str, last: bool) -> [u8]?
+    state @= encoder.state
     out: [u8] @= []
     at = machine.encode_run(n: state.number, s: s, out: @out, html: false, last: last, set: @state.set)
 
     if at >= 0
         return fail(code: UNSUPPORTED, msg: machine.no_bytes(s: s, at: at, n: state.number))
-    writer.state @ state
+    encoder.state @ state
     return ok(out)
 
 # The bytes the next piece of the text writes, a character the encoding has no
 # bytes for written as an HTML numeric reference, as `encode_html` does.
 #
-# - `writer`: the caller's encoder.
+# - `encoder`: the caller's encoder.
 # - `s`: the next piece of the text.
 # - `last`: true for the last piece.
 #
 # See also `encode_chunk`.
-function encode_chunk_html(@writer: Encoder, s: str, last: bool) -> [u8]
-    state @= writer.state
+function encode_chunk_html(@encoder: Encoder, s: str, last: bool) -> [u8]
+    state @= encoder.state
     out: [u8] @= []
     _ = machine.encode_run(n: state.number, s: s, out: @out, html: true, last: last, set: @state.set)
-    writer.state @ state
+    encoder.state @ state
     return out
 
 ## Bytes as their own numbers
@@ -725,18 +725,18 @@ test "valid_prefix_len: gb18030 with a broken four-byte sequence"
     assert valid_prefix_len([0x61, 0x62], encoding: "gb18030").must() == 2
 
 # A decoder made for a body in pieces.
-test "decoder: Shift_JIS's"
-    reader = decoder("sjis").must()
+test "new_decoder: Shift_JIS's"
+    reader = new_decoder("sjis").must()
     assert reader.encoding == SHIFT_JIS
 
 # A decoder that reads the mark as a character.
-test "decoder_without_bom: UTF-8's"
-    reader @= decoder_without_bom("utf-8").must()
+test "new_decoder_without_bom: UTF-8's"
+    reader @= new_decoder_without_bom("utf-8").must()
     assert unicode.code_points(decode_chunk(@reader, [0xef, 0xbb, 0xbf], true)) == [0xfeff]
 
 # A character cut between two pieces of a socket's reads comes out whole.
 test "decode_chunk: 日本 in Shift_JIS, cut inside each character"
-    reader @= decoder("shift_jis").must()
+    reader @= new_decoder("shift_jis").must()
     first = decode_chunk(@reader, [0x93], false)
     second = decode_chunk(@reader, [0xfa, 0x96], false)
     third = decode_chunk(@reader, [0x7b], true)
@@ -744,7 +744,7 @@ test "decode_chunk: 日本 in Shift_JIS, cut inside each character"
 
 # A strict decoder refuses a wrong byte and is left where it was.
 test "decode_chunk_strict: a wrong byte in the second piece"
-    reader @= decoder("utf-8").must()
+    reader @= new_decoder("utf-8").must()
     assert decode_chunk_strict(@reader, [0x61, 0xe2], false).must() == "a"
     assert decode_chunk_strict(@reader, [0x41], true).is_err()
     assert decode_chunk_strict(@reader, [0x82, 0xac], true).must() == "€"
@@ -762,21 +762,21 @@ test "encode_html: windows-1252 and a letter it has no byte for"
     assert encode_html(s: "ж€", encoding: "windows-1252").must() == bytes.concat([bytes.from_text("&#1078;"), [0x80]])
 
 # An encoder for a text written in pieces.
-test "encoder: ISO-2022-JP's, and replacement's refused"
-    writer = encoder("iso-2022-jp").must()
+test "new_encoder: ISO-2022-JP's, and replacement's refused"
+    writer = new_encoder("iso-2022-jp").must()
     assert writer.encoding == ISO_2022_JP
-    assert encoder("replacement").is_err()
+    assert new_encoder("replacement").is_err()
 
 # ISO-2022-JP keeps its escape between pieces and ends in ASCII.
 test "encode_chunk: 亜 in two pieces of ISO-2022-JP"
-    writer @= encoder("iso-2022-jp").must()
+    writer @= new_encoder("iso-2022-jp").must()
     first = encode_chunk(@writer, "亜", false).must()
     last = encode_chunk(@writer, "a", true).must()
     assert first == [0x1b, 0x24, 0x42, 0x30, 0x21] && last == [0x1b, 0x28, 0x42, 0x61]
 
 # A piece with a character the encoding lacks becomes a reference.
 test "encode_chunk_html: a euro sign in ISO-8859-5"
-    writer @= encoder("iso-8859-5").must()
+    writer @= new_encoder("iso-8859-5").must()
     assert encode_chunk_html(@writer, "€ж", true) == bytes.concat([bytes.from_text("&#8364;"), [0xd6]])
 
 # An HTTP header's bytes, each its own number.

@@ -78,7 +78,7 @@ capability x509/public-key  the subject's public key read, its kind and an RSA m
   go      x509.ParsePKIXPublicKey, x509.PublicKeyAlgorithm, x509.PublicKeyAlgorithm.String, x509.Certificate (PublicKey, PublicKeyAlgorithm, RawSubjectPublicKeyInfo)
   rust    webpki::EndEntityCert::subject_public_key_info, rustls_pki_types::SubjectPublicKeyInfoDer
   python  x509.Certificate.public_key, x509.Certificate.public_key_algorithm_oid, x509.PublicKeyAlgorithmOID
-  note    the key's kinds are `crypto/keypairs`' (RSA, P-256, P-384, Ed25519, X25519), another `unsupported`; a key a program uses is `keypairs.parse_public_der` of `der`
+  note    the key's kinds are `crypto/keypairs`' (RSA, P-256, P-384, Ed25519, X25519), another `unsupported`; a key a program uses is `keypairs.decode_public_der` of `der`
 
 capability x509/signature-algorithm  a signature's algorithm and its parameters read, and the scheme that checks it
   heroes  x509.Algorithm, x509.to_algorithm, x509.scheme_of
@@ -275,7 +275,7 @@ capability x509/equal  two certificates compared
   note    `a.der == b.der`, as Go's `Equal` compares them
 
 capability x509/private-keys  private and public keys read and written in their forms
-  heroes  keypairs.parse_private_der
+  heroes  keypairs.decode_private_der
   go      x509.ParsePKCS8PrivateKey, x509.MarshalPKCS8PrivateKey, x509.MarshalPKIXPublicKey, x509.ParsePKCS1PrivateKey, x509.MarshalPKCS1PrivateKey, x509.ParsePKCS1PublicKey, x509.MarshalPKCS1PublicKey, x509.ParseECPrivateKey, x509.MarshalECPrivateKey
   rust    rustls_pki_types::PrivateKeyDer, rustls_pki_types::PrivatePkcs8KeyDer, rustls_pki_types::PrivatePkcs1KeyDer, rustls_pki_types::PrivateSec1KeyDer
   python  -

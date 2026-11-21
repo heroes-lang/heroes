@@ -150,12 +150,13 @@ test "add_whole, add_streamed and finish: ZIP64 where sizes, offsets and the dir
     finish(@sink, comment: "").must()
     io.close(@out).must()
     s @= fs.open(file).must()
-    dir = zip_read.read_directory(s).must()
+    src: zip_read.Source = .stream(s: s)
+    dir = zip_read.read_directory(src).must()
     assert dir.members.len() == 2
     assert dir.members[1].offset > 10
 
     for m in dir.members
-        r @= zip_member.start_reading(s, size: io.size(s).must(), m: m, limit: 1000).must()
+        r @= zip_member.start_reading(src, size: io.size(s).must(), m: m, limit: 1000).must()
         assert zip_member.read_member(@r).must() == data
 
     io.close(@s).must()

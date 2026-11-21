@@ -12,7 +12,7 @@
 # draft 7 or to 2020-12, run under each.
 
 capability schema/compile  a schema read once, its references resolved, and used for many instances
-  heroes  json/schema.compile, json/schema.compile_with, json/schema.Schema, json/schema.Options, json/schema.defaults
+  heroes  json/schema.compile, json/schema.compile_with, json/schema.Schema, json/schema.Options, json/schema.default_options
   go      Compiler, NewCompiler, Compiler.Compile, Compiler.MustCompile, Schema, Compiler.DefaultDraft
   rust    validator_for, options, options_for, ValidationOptions, ValidationOptions::build, Validator, draft7::new, draft7::options, draft202012::new, draft202012::options, attr validator
   python  Draft7Validator, Draft202012Validator, validators.validator_for, Validator.schema, Validator.evolve

@@ -255,14 +255,14 @@ capability gettext/po  a .po file read and written, comments, flags and obsolete
   note    strings with C's escapes; a string with a line break inside is written across lines as msgcat writes it, every string otherwise on one line (msgcat wraps at 79 columns)
 
 capability gettext/catalog  a catalog built and changed in memory
-  heroes  i18n.catalog_of, i18n.add_message, i18n.message_of, i18n.Catalog, i18n.Message
+  heroes  i18n.new_catalog, i18n.add_message, i18n.new_message, i18n.Catalog, i18n.Message
   go      catalog.NewBuilder, catalog.NewFromMap, catalog.Dictionary, catalog.Fallback, message.DefaultCatalog, message.Catalog, message.NewPrinter
   rust    -
   python  NullTranslations, NullTranslations.info, NullTranslations.charset
   java    ListResourceBundle, ListResourceBundle.getContents, PropertyResourceBundle
   dotnet  ResourceSet, ResourceReader, ResourceWriter
   odin    i18n.Translation, i18n.destroy
-  note    `add_message` copies the catalog's list; a large catalog is built by `catalog_of`
+  note    `add_message` copies the catalog's list; a large catalog is built by `new_catalog`
 
 capability gettext/plural-forms  a header's Plural-Forms read and run safely
   heroes  i18n.parse_plural_forms, i18n.plural_index, i18n.PluralForms

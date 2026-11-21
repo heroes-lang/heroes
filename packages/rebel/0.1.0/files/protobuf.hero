@@ -1525,7 +1525,7 @@ function entry_value(v: Value, key: Value) -> Value?
 
 ## Encoding and decoding
 
-# How bytes are decoded. `strict` answers the protocol's own reading.
+# How bytes are decoded. `strict_decode_options` answers the protocol's own reading.
 record DecodeOptions
     # The deepest nesting read, a message, a group and a map entry each
     # counting a level; deeper fails `invalid`.
@@ -1544,7 +1544,7 @@ record Decoded
 
 # The options of the protocol's own reading: nesting to `DEFAULT_MAX_DEPTH`,
 # required fields checked, unknown fields kept.
-function strict() -> DecodeOptions
+function strict_decode_options() -> DecodeOptions
     return DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, allow_partial: false, discard_unknown: false)
 
 # `m` encoded, its fields in the order of their numbers.
@@ -1671,7 +1671,7 @@ function encode_partial(schema: Schema, m: Message) -> [u8]?
 
     return encoder.write(schema.compiled, events: events)
 
-# The message of the type `type_name` that `data` encodes, read as `strict`
+# The message of the type `type_name` that `data` encodes, read as `strict_decode_options`
 # reads.
 #
 # - `schema`: the schema holding the type.
@@ -1686,7 +1686,7 @@ function encode_partial(schema: Schema, m: Message) -> [u8]?
 # string that must be UTF-8 is not; `not_found` where the type is not in the
 # schema. Each message names the byte. See also `decode_with`, `encode`.
 function decode(schema: Schema, type_name: str, data: [u8]) -> Message?
-    return decode_with(schema, type_name: type_name, data: data, options: strict())
+    return decode_with(schema, type_name: type_name, data: data, options: strict_decode_options())
 
 # The message `data` encodes, read as `options` say.
 #
@@ -1831,7 +1831,7 @@ function decode_delimited(schema: Schema, type_name: str, data: [u8], at: i64) -
 
 ## JSON
 
-# How a message is written as JSON. `json_options` answers the mapping's own.
+# How a message is written as JSON. `default_json_options` answers the mapping's own.
 record JsonOptions
     # Whether a field is named as declared, `order_id`, instead of by its
     # JSON name, `orderId`.
@@ -1842,7 +1842,7 @@ record JsonOptions
     # empty repeated or map field as `[]` or `{}`.
     emit_defaults: bool
 
-# How JSON is read. `json_read_options` answers the mapping's own.
+# How JSON is read. `default_json_read_options` answers the mapping's own.
 record JsonReadOptions
     # Whether a member that names no field is passed over instead of refused,
     # and an enum name the enum does not hold read as unset.
@@ -1852,12 +1852,12 @@ record JsonReadOptions
 
 # The options of the mapping's own writing: JSON names, enum names, defaults
 # left out.
-function json_options() -> JsonOptions
+function default_json_options() -> JsonOptions
     return JsonOptions(use_proto_names: false, use_enum_numbers: false, emit_defaults: false)
 
 # The options of the mapping's own reading: an unknown member refused, nesting
 # to `DEFAULT_MAX_DEPTH`.
-function json_read_options() -> JsonReadOptions
+function default_json_read_options() -> JsonReadOptions
     return JsonReadOptions(ignore_unknown: false, max_depth: DEFAULT_MAX_DEPTH)
 
 # `m` as the proto3 JSON mapping writes it.
@@ -1880,7 +1880,7 @@ function json_read_options() -> JsonReadOptions
 # `Any`'s type is not in the schema. `json.format` writes the text. See also
 # `to_json_with`, `from_json`.
 function to_json(schema: Schema, m: Message) -> json.Value?
-    return to_json_with(schema, m: m, options: json_options())
+    return to_json_with(schema, m: m, options: default_json_options())
 
 # `m` as JSON, written as `options` say.
 #
@@ -1921,7 +1921,7 @@ function to_json_with(schema: Schema, m: Message, options: JsonOptions) -> json.
 # `json.ParseOptions.exact_integers`, which refuses it. See also
 # `from_json_with`, `to_json`.
 function from_json(schema: Schema, type_name: str, v: json.Value) -> Message?
-    return from_json_with(schema, type_name: type_name, v: v, options: json_read_options())
+    return from_json_with(schema, type_name: type_name, v: v, options: default_json_read_options())
 
 # The message `v` writes, read as `options` say.
 #
@@ -3315,8 +3315,8 @@ test "entry_value: the value under a"
     assert entry_value(v: v, key: .text(v: "a")).must() == .int32(v: 1)
 
 # The options of the protocol's own reading.
-test "strict: a hundred levels"
-    assert strict().max_depth == 100 && !strict().allow_partial
+test "strict_decode_options: a hundred levels"
+    assert strict_decode_options().max_depth == 100 && !strict_decode_options().allow_partial
 
 # A message encoded as Go's and Python's runtimes encode it.
 test "encode: an order"
@@ -3360,12 +3360,12 @@ test "decode_delimited: two people"
     assert int_of(get(schema, m: second.message, field: "id").must()).must() == 2 && second.next == 6
 
 # The mapping's own writing options.
-test "json_options: JSON names"
-    assert !json_options().use_proto_names
+test "default_json_options: JSON names"
+    assert !default_json_options().use_proto_names
 
 # The mapping's own reading options.
-test "json_read_options: unknown members refused"
-    assert !json_read_options().ignore_unknown
+test "default_json_read_options: unknown members refused"
+    assert !default_json_read_options().ignore_unknown
 
 # An order as JSON, as Go's protojson writes it.
 test "to_json: an order"

@@ -271,7 +271,7 @@ function read_scalar(text: str, at: i64, @out: [event.Event], reading: Reading) 
 
 ## Tests
 
-# The reading of RFC 8259 and nothing wider, as `json.strict` answers it.
+# The reading of RFC 8259 and nothing wider, as `json.strict_parse_options` answers it.
 function strictly() -> Reading
     return Reading(
         max_depth: 512,

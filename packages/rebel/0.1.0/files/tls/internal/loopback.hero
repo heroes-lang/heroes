@@ -129,6 +129,13 @@ function answer_once(s: io.Stream) -> str?
         return fail(code: "failed", msg: "the version read is " + to_str(version))
     return bytes.to_text(heard)
 
+# What `heard_on` tells of the connection `taken`, a `net.Conn` a face's
+# accept answered.
+function heard_on_conn(taken: net.Conn?) -> str
+    match taken
+        .err e => return e.code + ": " + e.msg
+        .ok c  => return heard_on(ok(c.stream))
+
 # What the server heard on one stream accepted, the stream then closed.
 function heard_on(taken: io.Stream?) -> str
     match taken

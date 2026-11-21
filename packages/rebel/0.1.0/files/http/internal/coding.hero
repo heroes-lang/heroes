@@ -105,12 +105,12 @@ test "codings_of and is_decodable: a list in order, lower case, an unknown codin
 
 test "decode: gzip, zlib, raw DEFLATE, two codings, none"
     text: [u8] = [104, 101, 108, 108, 111]
-    assert decode(compress.compress(text, options: compress.defaults(.gzip)).must(), codings: ["gzip"], limit: 5).must() == text
-    assert decode(compress.compress(text, options: compress.defaults(.zlib)).must(), codings: ["deflate"], limit: 5).must() == text
-    assert decode(compress.compress(text, options: compress.defaults(.raw)).must(), codings: ["deflate"], limit: 5).must() == text
+    assert decode(compress.compress(text, options: compress.default_options(.gzip)).must(), codings: ["gzip"], limit: 5).must() == text
+    assert decode(compress.compress(text, options: compress.default_options(.zlib)).must(), codings: ["deflate"], limit: 5).must() == text
+    assert decode(compress.compress(text, options: compress.default_options(.raw)).must(), codings: ["deflate"], limit: 5).must() == text
     twice = compress.compress(
-        compress.compress(text, options: compress.defaults(.zlib)).must(),
-        options: compress.defaults(.gzip)
+        compress.compress(text, options: compress.default_options(.zlib)).must(),
+        options: compress.default_options(.gzip)
     ).must()
     assert decode(twice, codings: ["deflate", "gzip"], limit: 100).must() == text
     assert decode(text, codings: [], limit: 0).must() == text && decode(text, codings: ["identity"], limit: 0).must() == text
@@ -121,14 +121,14 @@ test "decode: a bomb past the limit, a gzip cut short, bytes that are no coding"
     while zeros.len() < 1_048_576
         zeros @ zeros.push(0)
 
-    bomb = compress.compress(zeros, options: compress.defaults(.gzip)).must()
+    bomb = compress.compress(zeros, options: compress.default_options(.gzip)).must()
     assert bomb.len() < 4_096
 
     match decode(bomb, codings: ["gzip"], limit: 65_536)
         .ok _  => assert false
         .err e => assert e.code == compress.LIMIT
 
-    whole = compress.compress([104, 105], options: compress.defaults(.gzip)).must()
+    whole = compress.compress([104, 105], options: compress.default_options(.gzip)).must()
 
     match decode(whole.slice(from: 0, to: whole.len() - 3), codings: ["gzip"], limit: 100)
         .ok _  => assert false

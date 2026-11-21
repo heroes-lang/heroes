@@ -75,7 +75,7 @@ capability qr/boost  the level raised as far as the chosen version still holds t
   go      -
   rust    -
   python  segno.make (boost_error=)
-  note    `boost`, false by `defaults` as go-qrcode and python-qrcode do; segno raises it by default
+  note    `boost`, false by `default_options` as go-qrcode and python-qrcode do; segno raises it by default
 
 capability qr/mask  the mask chosen by the standard's penalty rules, or the one asked
   heroes  qr.make, qr.with_mask
@@ -143,7 +143,7 @@ capability qr/regions  which pattern a module belongs to: finder, timing, alignm
 ## Written out
 
 capability qr/svg  a code as SVG text: scale, quiet zone, colours
-  heroes  qr.to_svg, qr.SvgOptions, qr.svg_defaults
+  heroes  qr.to_svg, qr.SvgOptions, qr.default_svg_options
   go      -
   rust    -
   python  segno.QRCode.save (kind="svg"), segno.QRCode.svg_inline, qrcode.image.svg.SvgImage, qrcode.image.svg.SvgPathImage, qrcode.image.svg.SvgFragmentImage

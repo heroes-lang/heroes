@@ -82,7 +82,7 @@ function first(data: [u8] lent, most: i64) -> One
 
 # `data` compressed by gzip.
 function gzip(data: [u8]) -> [u8]?
-    return compress.compress(data, options: compress.defaults(.gzip))
+    return compress.compress(data, options: compress.default_options(.gzip))
 
 # `data` undone from gzip, at most `limit` bytes.
 function gunzip(data: [u8], limit: i64) -> [u8]?

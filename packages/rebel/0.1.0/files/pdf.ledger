@@ -176,7 +176,7 @@ capability pdf/links  links to an address and to a page
   go      Fpdf.Link, Fpdf.LinkString, Fpdf.WriteLinkString, Fpdf.WriteLinkID, Fpdf.AddLink, Fpdf.SetLink
   rust    Op::LinkAnnotation, printpdf::annotation::LinkAnnotation, Actions, Destination, BorderArray, ColorArray, DashPhase, HighlightingMode, PageAnnotation, PageAnnotId, PageAnnotMap
   python  Canvas.linkURL, Canvas.linkAbsolute, Canvas.linkRect, Canvas.bookmarkPage, bookmarkHorizontal, bookmarkHorizontalAbsolute; PdfWriter.add_uri, PdfWriter.add_annotation (a link)
-  note    a link to a page names it by index and may be added before the page exists; `to_bytes` fails `invalid` where it never does
+  note    a link to a page names it by index and may be added before the page exists; `encode` fails `invalid` where it never does
 
 capability pdf/bookmarks-write  an outline of bookmarks, nested
   heroes  pdf.add_bookmark
@@ -207,7 +207,7 @@ capability pdf/compression  content streams compressed or not
   note    DEFLATE through `compress`, on by default
 
 capability pdf/output  the document written as a file's bytes
-  heroes  pdf.to_bytes
+  heroes  pdf.encode
   go      Fpdf.Output, Fpdf.OutputAndClose, Fpdf.OutputFileAndClose, Fpdf.Close, Fpdf.Err, Fpdf.Error, Fpdf.Ok, Fpdf.ClearError, Fpdf.SetError, Fpdf.SetErrorf
   rust    PdfDocument::save, save_writer, save_async, printpdf::serialize module, lopdf::Document::save, save_to, save_with_options, save_modern, lopdf::SaveOptions, SaveOptionsBuilder, lopdf::Writer
   python  Canvas.save, Canvas.getpdfdata, PdfWriter.write, PdfWriter.write_stream
@@ -291,14 +291,14 @@ capability pdf/svg-html  SVG paths and HTML laid out into a document, a page ren
   note    -
 
 capability pdf/read-open  a file read whole, under limits
-  heroes  pdf.parse, pdf.File, pdf.Limits, pdf.default_limits
+  heroes  pdf.decode, pdf.File, pdf.Limits, pdf.default_limits
   go      pdfcpu ReadContext, ReadAndValidate, ReadValidateAndOptimize, PDFInfo, pdfcpu.ReadSeekerAt
   rust    lopdf::Document::load, load_mem, load_from, load_with_options, load_mem_with_options, load_filtered, lopdf::LoadOptions, lopdf::Reader, lopdf::DEFAULT_MAX_DECOMPRESSED_SIZE, PdfDocument::parse, parse_async
   python  pypdf.PdfReader, PdfReader.read, PdfReader.strict, PdfReader.pdf_header, PdfReader.close, PdfReader.flattened_pages, pypdf.generic.StreamParsingBudget
   note    the whole file is given as bytes and every object is read at once, as lopdf loads it; limits bound the objects, the bytes streams decode to, the nesting of values and of the page tree, the pages and the revisions
 
 capability pdf/read-structure  cross-reference tables and streams, object streams, incremental updates, a damaged table rebuilt
-  heroes  pdf.parse, pdf.version_of
+  heroes  pdf.decode, pdf.version_of
   go      pdfcpu Validate, ValidateContext, ValidateWithReport, ValidateContextWithReport, ValidateFileWithReport, ValidateFiles
   rust    lopdf::xref module, lopdf::ObjectStream, ObjectStreamBuilder, ObjectStreamConfig, lopdf::IncrementalDocument, Document::revision_count, lopdf::Linearization, lopdf::parser, lopdf::parser_aux
   python  PdfWriter.list_objects_in_increment, PdfReader.read_object_header, pypdf.errors
@@ -368,7 +368,7 @@ capability pdf/read-links  the links of a page
   note    -
 
 capability pdf/read-encrypted  files encrypted by the standard handler, opened with a password
-  heroes  pdf.parse, pdf.is_encrypted
+  heroes  pdf.decode, pdf.is_encrypted
   go      pdfcpu Decrypt
   rust    lopdf::Document::decrypt, decrypt_raw, authenticate_password, authenticate_user_password, authenticate_owner_password, authenticate_raw_password, authenticate_raw_user_password, authenticate_raw_owner_password, is_encrypted, was_encrypted, load_with_password, load_mem_with_password, get_crypt_filters, lopdf::encryption::decrypt_object, DecryptionError
   python  PdfReader.decrypt, is_encrypted, user_access_permissions, are_permissions_valid, pypdf.PasswordType, pypdf.crypt_provider

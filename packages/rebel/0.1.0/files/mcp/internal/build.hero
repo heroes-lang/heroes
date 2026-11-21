@@ -191,7 +191,7 @@ function status_of(m: jsonrpc.Message) -> i64
 
 # The answer `-32602 Invalid params` to `id`, `message` saying why.
 function invalid_params(id: jsonrpc.Id, message: str) -> jsonrpc.Message
-    return jsonrpc.error_of(id, code: jsonrpc.INVALID_PARAMS, message: message)
+    return jsonrpc.answer_error(id, code: jsonrpc.INVALID_PARAMS, message: message)
 
 # The `_meta` of every message of the subscription `id`, naming it.
 function subscription_meta(id: jsonrpc.Id) -> json.Value
@@ -222,6 +222,6 @@ test "result: complete, its cache's fields, and the server named in `_meta` besi
 
 test "unsupported_version, missing_capability, status_of: the protocol's errors and their statuses"
     answer = unsupported_version(.number(v: 1.0), requested: "1900-01-01")
-    assert json.format(jsonrpc.to_value(answer)).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version: this server speaks 2026-07-28\",\"data\":{\"supported\":[\"2026-07-28\"],\"requested\":\"1900-01-01\"}}}"
+    assert json.format(jsonrpc.message_json(answer)).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version: this server speaks 2026-07-28\",\"data\":{\"supported\":[\"2026-07-28\"],\"requested\":\"1900-01-01\"}}}"
     assert status_of(answer) == 400 && status_of(missing_capability(.number(v: 1.0), required: .null_value)) == 400
-    assert status_of(jsonrpc.error_of(.null_id, code: -32601, message: "x")) == 404 && status_of(jsonrpc.result_of(.null_id, value: .null_value)) == 200
+    assert status_of(jsonrpc.answer_error(.null_id, code: -32601, message: "x")) == 404 && status_of(jsonrpc.answer_result(.null_id, value: .null_value)) == 200

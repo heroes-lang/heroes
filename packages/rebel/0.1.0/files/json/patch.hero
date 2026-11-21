@@ -25,7 +25,7 @@ use json/patch/internal/ops as kinds
 ## Codes
 
 # The code of a patch that is not one, of a `test` that finds another value,
-# and of an operation on a value it cannot change: `parse`, `from_value`,
+# and of an operation on a value it cannot change: `parse`, `operations_of`,
 # `apply` and `apply_with` fail with it.
 constant INVALID: str
     "invalid"
@@ -94,9 +94,9 @@ variant Operation
 # - `text`: the patch as JSON, read by `json.parse`.
 #
 # Fails `invalid` where `text` is not JSON, with `json.parse`'s message, or
-# is not a patch, as `from_value` says.
+# is not a patch, as `operations_of` says.
 function parse(text: str) -> [Operation]?
-    return from_value(json.parse(text)?)
+    return operations_of(json.parse(text)?)
 
 # The patch the value `v` holds.
 #
@@ -108,7 +108,7 @@ function parse(text: str) -> [Operation]?
 # `op` is missing or names no operation, a member an operation needs is
 # missing or is not a text, or a path is not a JSON pointer; the message names
 # the element by its index.
-function from_value(v: json.Value) -> [Operation]?
+function operations_of(v: json.Value) -> [Operation]?
     read = kinds.read(v)?
     out: [Operation] @= []
 
@@ -133,7 +133,7 @@ function from_value(v: json.Value) -> [Operation]?
 # `path`, and `value` or `from`, in that order.
 #
 # - `operations`: the patch, in order; none gives an empty list.
-function to_value(operations: [Operation]) -> json.Value
+function operations_json(operations: [Operation]) -> json.Value
     out: [kinds.Op] @= []
 
     for operation in operations
@@ -156,11 +156,11 @@ function to_value(operations: [Operation]) -> json.Value
 # Fails `invalid` where a value holds a `nan` or an infinity, which no JSON
 # says.
 function format(operations: [Operation]) -> str?
-    return json.format(to_value(operations))
+    return json.format(operations_json(operations))
 
 ## Applying a patch
 
-# What RFC 6902 refuses, done because the caller asks. `strict` answers the
+# What RFC 6902 refuses, done because the caller asks. `strict_apply_options` answers the
 # RFC; Go's `evanphx/json-patch` offers the three fields.
 record ApplyOptions
     # Whether an index below 0 counts from a list's end, `-1` naming the last
@@ -174,7 +174,7 @@ record ApplyOptions
     create_parents: bool
 
 # The options of RFC 6902 and nothing wider: every field `false`.
-function strict() -> ApplyOptions
+function strict_apply_options() -> ApplyOptions
     return ApplyOptions(negative_indices: false, missing_remove: false, create_parents: false)
 
 # `doc` with every operation of `operations` applied in order, or a failure
@@ -193,14 +193,14 @@ function strict() -> ApplyOptions
 # Each operation copies the containers its path walks through, not the whole
 # value, since a value shares what a change leaves alone.
 function apply(doc: json.Value, operations: [Operation]) -> json.Value?
-    return apply_with(doc, operations, strict())
+    return apply_with(doc, operations, strict_apply_options())
 
 # `doc` with every operation of `operations` applied in order, read as
 # `options` say, or a failure and no change at all.
 #
 # - `doc`: the value patched.
 # - `operations`: the patch, in order.
-# - `options`: what RFC 6902 refuses and is done all the same; `strict()`
+# - `options`: what RFC 6902 refuses and is done all the same; `strict_apply_options()`
 #   reads the RFC.
 #
 # Fails as `apply` does, but where `options` ask otherwise.
@@ -213,7 +213,7 @@ function apply_with(doc: json.Value, operations: [Operation], options: ApplyOpti
 
     # The face's operations reach the package's modules as the value they
     # write, which they read back without fail.
-    return applying.run(doc, operations: kinds.read(to_value(operations)).must(), loose: loose)
+    return applying.run(doc, operations: kinds.read(operations_json(operations)).must(), loose: loose)
 
 ## Making a patch
 
@@ -228,7 +228,7 @@ function apply_with(doc: json.Value, operations: [Operation], options: ApplyOpti
 # middle is changed element by element, then grown or cut. A value of another
 # kind is replaced whole.
 function diff(from: json.Value, to: json.Value) -> [Operation]
-    return from_value(kinds.write(diffing.make(from: from, to: to, tests: false))).must()
+    return operations_of(kinds.write(diffing.make(from: from, to: to, tests: false))).must()
 
 # The patch `diff` makes, with a `test_value` of the old value before each
 # `remove` and `replace`, so that it fails on a value that changed since.
@@ -236,7 +236,7 @@ function diff(from: json.Value, to: json.Value) -> [Operation]
 # - `from`: the value the patch starts from.
 # - `to`: the value it makes.
 function diff_with_tests(from: json.Value, to: json.Value) -> [Operation]
-    return from_value(kinds.write(diffing.make(from: from, to: to, tests: true))).must()
+    return operations_of(kinds.write(diffing.make(from: from, to: to, tests: true))).must()
 
 ## Merge patches
 
@@ -290,13 +290,13 @@ test "parse: the first example of RFC 6902"
     assert ops == [.add(path: "/baz", value: .text(v: "qux"))]
 
 # A patch made of values and read back.
-test "from_value: one remove"
+test "operations_of: one remove"
     v = json.parse("[{\"op\": \"remove\", \"path\": \"/a\"}]").must()
-    assert from_value(v).must() == [.remove(path: "/a")]
+    assert operations_of(v).must() == [.remove(path: "/a")]
 
 # A patch as a value.
-test "to_value: a move"
-    assert json.format(to_value([.move(from: "/a", path: "/b")])).must() == "[{\"op\":\"move\",\"from\":\"/a\",\"path\":\"/b\"}]"
+test "operations_json: a move"
+    assert json.format(operations_json([.move(from: "/a", path: "/b")])).must() == "[{\"op\":\"move\",\"from\":\"/a\",\"path\":\"/b\"}]"
 
 # A patch written as JSON.
 test "format: a test and a replace"
@@ -304,8 +304,8 @@ test "format: a test and a replace"
     assert format(ops).must() == "[{\"op\":\"test\",\"path\":\"/n\",\"value\":1},{\"op\":\"replace\",\"path\":\"/n\",\"value\":2}]"
 
 # The options of the RFC.
-test "strict: nothing loosened"
-    assert !strict().negative_indices && !strict().create_parents
+test "strict_apply_options: nothing loosened"
+    assert !strict_apply_options().negative_indices && !strict_apply_options().create_parents
 
 # A member added to an object.
 test "apply: RFC 6902's add of a member"
@@ -315,7 +315,7 @@ test "apply: RFC 6902's add of a member"
 
 # The last element taken out by a negative index, as Go's library allows.
 test "apply_with: a negative index"
-    loose: ApplyOptions @= strict()
+    loose: ApplyOptions @= strict_apply_options()
     loose.negative_indices @ true
     done = apply_with(json.parse("[1, 2, 3]").must(), [.remove(path: "/-1")], loose).must()
     assert json.format(done).must() == "[1,2]"

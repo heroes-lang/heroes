@@ -16,7 +16,10 @@ function sum_to(n: i64) -> i64
     return total
 
 function main()
-    settings = bench.with_rounds(bench.with_round(bench.defaults(), round: time.milliseconds(1).must()), rounds: 5)
+    settings = bench.with_rounds(
+        bench.with_round(bench.default_settings(), round: time.milliseconds(1).must()),
+        rounds: 5
+    )
 
     match bench.measure(work: sum_to, input: 1000, settings: settings)
         .ok report => print(report.text)

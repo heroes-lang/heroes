@@ -14,6 +14,7 @@ use nats/internal/reading
 use nats/internal/servers
 use nats/internal/state
 use net
+use os
 use random
 use strings
 use threads
@@ -269,7 +270,7 @@ function recover(@s: state.Session, code: str, msg: str) -> ()?
     last: str @= msg
 
     for n in range(from: 1, to: r.attempts + 1)
-        if net.is_stop_asked()
+        if os.is_stop_asked()
             return fail(code: model.STOPPED, msg: f"the stop was asked while the client reconnected to {s.target}")
         wait = wait_before(n: n, r: r)
 
@@ -420,7 +421,7 @@ test "dial: TLS begun after the INFO line, over the connection where tls can, on
         match tls.accept(l, deadline_ms: 10000)
             .err _ => _ = 0
             .ok got =>
-                c @= got
+                c @= got.stream
                 r @= io.reader(c)
                 line = io.read_line(@r).must()
                 assert strings.has_prefix(s: line, prefix: "CONNECT {") && strings.contains(s: line, substr: "\"tls_required\":true")

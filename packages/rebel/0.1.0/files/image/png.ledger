@@ -48,7 +48,7 @@ capability png/limits  a file that claims a huge image refused before it is allo
   note    the image data is inflated to exactly the size the header implies, a text's compression to the limit the caller gives `texts_of`
 
 capability png/encode  an image written as PNG
-  heroes  image/png.encode, image/png.encoding, image/png.EncodeOptions
+  heroes  image/png.encode, image/png.default_encode_options, image/png.EncodeOptions
   go      Encode, Encoder, Encoder.Encode, Encoder.CompressionLevel
   rust    -
   python  Image.save(format="PNG"), PngImagePlugin._save

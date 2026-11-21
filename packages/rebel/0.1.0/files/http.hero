@@ -93,6 +93,7 @@ use http2
 use io
 use json
 use net
+use os
 use retries
 use strings
 use threads
@@ -131,7 +132,7 @@ constant CLOSED: str
 constant TIMEOUT: str
     "timeout"
 
-# The program asked to stop (`net.catch_stop`, `net.ask_stop`) while a call
+# The program asked to stop (`os.catch_stop`, `os.ask_stop`) while a call
 # waited.
 constant STOPPED: str
     "stopped"
@@ -761,7 +762,7 @@ function with_compression(response: Response, r: Request) -> Response
     else
         .zlib
 
-    match compress.compress(response.body, options: compress.defaults(format))
+    match compress.compress(response.body, options: compress.default_options(format))
         .ok packed =>
             out.body @ packed
             out.headers @ out.headers.push(Header(name: "Content-Encoding", value: chosen))
@@ -1809,8 +1810,8 @@ function default_server() -> Server
 # It serves ONE CONNECTION AT A TIME: the next waits in the listener's queue
 # until the one served ends. A program that serves several at once accepts
 # with `net.accept_number`, hands each number to a thread, and calls
-# `serve_conn` there. It answers once the stop is asked (`net.catch_stop`,
-# `net.ask_stop`). Fails `timeout` where the listener's deadline passes
+# `serve_conn` there. It answers once the stop is asked (`os.catch_stop`,
+# `os.ask_stop`). Fails `timeout` where the listener's deadline passes
 # (`net.set_accept_deadline`), `closed` where `l` is closed. Where the system
 # has no descriptor left it waits and tries again, from 5 ms to 1 s, as Go
 # does.
@@ -1875,11 +1876,11 @@ function serve_tls(s: Server, l: tls.Listener, handler: (function(Request) -> Re
         match tls.accept(l, deadline_ms: s.deadline_ms)
             .ok accepted =>
                 wait_ms @ 5
-                stream @= accepted
+                stream @= accepted.stream
                 timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline_ms: s.deadline_ms).is_err()
 
                 if timed
-                    _ = serve_stream(s, stream: stream, remote: "", handler: handler)
+                    _ = serve_stream(s, stream: stream, remote: net.format_address(accepted.remote), handler: handler)
 
                 match io.close(@stream)
                     .ok _  => _ = 0
@@ -1937,7 +1938,7 @@ function serve_stream(s: Server, stream: io.Stream, remote: str, handler: (funct
     if tls.protocol_of(stream).default("") == http2.ALPN
         inner @= stream
 
-        match http2.server_of(@inner, options: h2bridge.options_for(wire.Bounds(head_bytes: s.limits.head_bytes, field_count: s.limits.field_count, body_bytes: s.limits.body_bytes)))
+        match http2.server(@inner, options: h2bridge.options_for(wire.Bounds(head_bytes: s.limits.head_bytes, field_count: s.limits.field_count, body_bytes: s.limits.body_bytes)))
             .ok made =>
                 conn @= made
                 return serve_h2(s, @conn, remote: remote, handler: handler)
@@ -2026,11 +2027,17 @@ function serve_tls_with<S>(s: Server, l: tls.Listener, state: S, handler: (funct
         match tls.accept(l, deadline_ms: s.deadline_ms)
             .ok accepted =>
                 wait_ms @ 5
-                stream @= accepted
+                stream @= accepted.stream
                 timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline_ms: s.deadline_ms).is_err()
 
                 if timed
-                    _ = serve_stream_with(s, stream: stream, remote: "", state: state, handler: handler)
+                    _ = serve_stream_with(
+                        s,
+                        stream: stream,
+                        remote: net.format_address(accepted.remote),
+                        state: state,
+                        handler: handler
+                    )
 
                 match io.close(@stream)
                     .ok _  => _ = 0
@@ -2063,7 +2070,7 @@ function serve_stream_with<S>(s: Server, stream: io.Stream, remote: str, state: 
     if tls.protocol_of(stream).default("") == http2.ALPN
         inner @= stream
 
-        match http2.server_of(@inner, options: h2bridge.options_for(wire.Bounds(head_bytes: s.limits.head_bytes, field_count: s.limits.field_count, body_bytes: s.limits.body_bytes)))
+        match http2.server(@inner, options: h2bridge.options_for(wire.Bounds(head_bytes: s.limits.head_bytes, field_count: s.limits.field_count, body_bytes: s.limits.body_bytes)))
             .ok made =>
                 conn @= made
                 return serve_h2_with(s, @conn, remote: remote, state: state, handler: handler)
@@ -2405,7 +2412,7 @@ function round_trip_h2(@c: http2.Conn, r: Request, limits: Limits) -> Response?
 #
 # - `s`: how it serves; its `limits` are the connection's own, given when it
 #   was made, and `s.deadline_ms` is not read.
-# - `c`: the connection, made by `http2.server_of`; its owner closes it.
+# - `c`: the connection, made by `http2.server`; its owner closes it.
 # - `remote`: what each request's `remote` holds, "" where unknown.
 # - `handler`: called once for each request, read whole, on this thread.
 #
@@ -2433,7 +2440,7 @@ function serve_h2(s: Server, @c: http2.Conn, remote: str, handler: (function(Req
 # `serve_h2` with `state` handed to `handler` beside each request.
 #
 # - `s`: how it serves, as `serve_h2` reads it.
-# - `c`: the connection, made by `http2.server_of`; its owner closes it.
+# - `c`: the connection, made by `http2.server`; its owner closes it.
 # - `remote`: what each request's `remote` holds.
 # - `state`: the program's value, handed to each call as it is.
 # - `handler`: called once for each request with `state`.
@@ -2461,7 +2468,7 @@ function serve_h2_with<S>(s: Server, @c: http2.Conn, remote: str, state: S, hand
 ## Multipart bodies read
 
 # One part of a `multipart/form-data` body as a server reads it, RFC 7578: a
-# form's field, or a file. Made by `parts_of` and `parse_multipart`; a
+# form's field, or a file. Made by `parts_of` and `decode_multipart`; a
 # client writes a part as a `Part`.
 record FormPart
     # The form field's name, from `Content-Disposition`, its `%22`, `%0D` and
@@ -2511,7 +2518,7 @@ function default_part_limits() -> PartLimits
 # - `limits`: what the body may hold.
 #
 # Fails `not_found` where `r` holds no such form, by its `Content-Type`; and
-# as `parse_multipart` does. See also `with_multipart`, `part_of`.
+# as `decode_multipart` does. See also `with_multipart`, `part_of`.
 function parts_of(r: Request, limits: PartLimits) -> [FormPart]?
     content_type = value_of(r.headers, name: "Content-Type").default("")
     kind = charset.media_type(content_type)
@@ -2521,7 +2528,7 @@ function parts_of(r: Request, limits: PartLimits) -> [FormPart]?
             code: NOT_FOUND,
             msg: f"reading a multipart form: the request's body is typed {syntax.shown(kind)}, not as one"
         )
-    return parse_multipart(r.body, content_type: content_type, limits: limits)
+    return decode_multipart(r.body, content_type: content_type, limits: limits)
 
 # The parts of `body`, a multipart body, RFC 2046 § 5.1, in their order.
 #
@@ -2537,7 +2544,7 @@ function parts_of(r: Request, limits: PartLimits) -> [FormPart]?
 # `Content-Disposition: form-data` naming a field, as werkzeug refuses it;
 # `limit` past `limits`; `not_text` where a part's head is not UTF-8. See
 # also `parts_of`.
-function parse_multipart(body: [u8], content_type: str, limits: PartLimits) -> [FormPart]?
+function decode_multipart(body: [u8], content_type: str, limits: PartLimits) -> [FormPart]?
     typed = params.read(content_type)?
 
     if !strings.has_prefix(s: strings.to_lower_ascii(typed.first), prefix: "multipart/")
@@ -2963,8 +2970,8 @@ record Served
 # - `grace_ms`: the milliseconds after the stop during which a request may
 #   still begin to be answered, 0 or more; one waiting past it is cut.
 #
-# The counts of what it served. The stop is `net`'s (`net.catch_stop`,
-# `net.ask_stop`): from it every call that would wait answers `stopped`, so
+# The counts of what it served. The stop is `os`'s (`os.catch_stop`,
+# `os.ask_stop`): from it every call that would wait answers `stopped`, so
 # a request's bytes that have not come by then are never read, and are
 # counted cut, as is a response the system could not take without waiting;
 # a handler cannot be stopped midway, so one running at the stop runs to its
@@ -2977,7 +2984,7 @@ function serve_until_stopped<S>(s: Server, l: net.Listener, state: S, handler: (
     wait_ms: i64 @= 5
 
     while true
-        if net.is_stop_asked()
+        if os.is_stop_asked()
             return ok(out)
 
         match net.accept(l, deadline_ms: s.deadline_ms)
@@ -3035,7 +3042,7 @@ function serve_stream_until_stopped<S>(s: Server, stream: io.Stream, remote: str
     stop_mark @= since
 
     while true
-        if !seen && net.is_stop_asked()
+        if !seen && os.is_stop_asked()
             seen @ true
             stop_mark @ time.mark()
 
@@ -3056,13 +3063,13 @@ function serve_stream_until_stopped<S>(s: Server, stream: io.Stream, remote: str
         r.remote @ remote
         answer @= handler(state, r)
 
-        if net.is_stop_asked()
+        if os.is_stop_asked()
             answer.closing @ true
 
         match write_answer(reader.stream, r: r, response: answer)
             .ok _ => answered @ answered + 1
             .err _ =>
-                if net.is_stop_asked()
+                if os.is_stop_asked()
                     cut @ cut + 1
                 return Served(connections: 1, answered: answered, cut: cut)
 
@@ -3729,7 +3736,7 @@ test "serve_stream: a request over TLS from a client of the test authority"
         body: canned.ask_tls,
         arg: f"{l.port}" + canned.SEPARATOR + "TRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
     ).must()
-    stream @= tls.accept(l, deadline_ms: 10_000).must()
+    stream @= tls.accept(l, deadline_ms: 10_000).must().stream
     assert serve_stream(default_server(), stream: stream, remote: "", handler: respond_trace) == 1
     io.close(@stream).must()
     said = threads.wait_text(@t)
@@ -3748,9 +3755,9 @@ test "get: https://example.com where the network answers, skipped where it does 
 
 test "send: gzip, zlib and raw deflate bodies undone, a chunked one too, Accept-Encoding sent"
     text: [u8] = [104, 101, 108, 108, 111]
-    gz = compress.compress(text, options: compress.defaults(.gzip)).must()
-    zl = compress.compress(text, options: compress.defaults(.zlib)).must()
-    raw = compress.compress(text, options: compress.defaults(.raw)).must()
+    gz = compress.compress(text, options: compress.default_options(.gzip)).must()
+    zl = compress.compress(text, options: compress.default_options(.zlib)).must()
+    raw = compress.compress(text, options: compress.default_options(.raw)).must()
     responses = [
         canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {gz.len()}\r\n\r\n", body: gz)
         canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: deflate\r\nContent-Length: {zl.len()}\r\n\r\n", body: zl)
@@ -3776,8 +3783,8 @@ test "send: a compression bomb fails limit, a gzip cut short fails invalid"
     while zeros.len() < 1_048_576
         zeros @ zeros.push(0)
 
-    bomb = compress.compress(zeros, options: compress.defaults(.gzip)).must()
-    whole = compress.compress([104, 105], options: compress.defaults(.gzip)).must()
+    bomb = compress.compress(zeros, options: compress.default_options(.gzip)).must()
+    whole = compress.compress([104, 105], options: compress.default_options(.gzip)).must()
     cut = whole.slice(from: 0, to: whole.len() - 3)
     t @= canned.start(
         canned.script(responses: [canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {bomb.len()}\r\n\r\n", body: bomb), canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {cut.len()}\r\n\r\n", body: cut)])
@@ -4369,7 +4376,7 @@ test "decode_body: a gzip body"
     r @= respond(
         STATUS_OK,
         content_type: "text/plain",
-        body: compress.compress(bytes.from_text("hello"), options: compress.defaults(.gzip)).must()
+        body: compress.compress(bytes.from_text("hello"), options: compress.default_options(.gzip)).must()
     )
     r.headers @ r.headers.push(Header(name: "Content-Encoding", value: "gzip"))
     got = decode_body(r, limit: 1_024).must()
@@ -4647,9 +4654,9 @@ test "parts_of: a field and a file of a form"
     assert parts[1].filename == "a.txt" && parts[1].content_type == "text/plain" && bytes.to_text(parts[1].data).must() == "hello"
 
 # A multipart body read by its type's boundary.
-test "parse_multipart: one field, the boundary quoted"
+test "decode_multipart: one field, the boundary quoted"
     body = bytes.from_text("--a b\r\nContent-Disposition: form-data; name=\"q\"\r\n\r\nx\r\n--a b--\r\n")
-    parts = parse_multipart(
+    parts = decode_multipart(
         body,
         content_type: "multipart/form-data; boundary=\"a b\"",
         limits: default_part_limits()
@@ -4873,7 +4880,7 @@ test "serve_h2: one request answered 404 by respond_not_found"
     t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    c @= http2.server_of(@stream, options: http2.default_options()).must()
+    c @= http2.server(@stream, options: http2.default_options()).must()
     assert serve_h2(default_server(), @c, remote: "", handler: respond_not_found) == 1
     assert strings.has_prefix(s: threads.wait_text(@t), prefix: "404 ")
     http2.close(@c).must()
@@ -4885,7 +4892,7 @@ test "serve_h2_with: a redirector over HTTP/2"
     t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
-    c @= http2.server_of(@stream, options: http2.default_options()).must()
+    c @= http2.server(@stream, options: http2.default_options()).must()
     assert serve_h2_with(default_server(), @c, remote: "", state: "https://example.com", handler: respond_moved_to) == 1
     assert strings.has_prefix(s: threads.wait_text(@t), prefix: "30")
     http2.close(@c).must()

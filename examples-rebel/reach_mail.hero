@@ -11,10 +11,10 @@ function main()
             m = mail.with_field(body, name: "To", value: "Ana Lima <ana@example.org>")
             dated = mail.with_field(m, name: "Subject", value: "Grüße")
 
-            match mail.format_message(dated, mail.standard_options())
+            match mail.encode_message(dated, mail.standard_options())
                 .err e => print(e.code, ": ", e.msg)
                 .ok data =>
-                    back = mail.parse_message(data)
+                    back = mail.decode_message(data)
                     print(mail.decoded_value_of(back, name: "Subject").default("?"))
 
                     for a in mail.addresses_of(back, name: "To").default([])

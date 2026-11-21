@@ -368,6 +368,18 @@ function write(to: io.Stream, book: model.Book) -> ()?
     archive.finish_zip(@w, comment: "")?
     return ok()
 
+# `book` as the bytes of a zip of its parts, the bytes `write` writes.
+function encode(book: model.Book) -> [u8]?
+    found_parts = parts_of(book)?
+    members: [archive.ZipMember] @= []
+
+    for p in found_parts
+        members @ members.push(
+            archive.ZipMember(entry: archive.zip_entry(p.name, kind: .file), data: bytes.from_text(p.body))
+        )
+
+    return archive.encode_zip(members, comment: "")
+
 test "content_types and workbook_rels: two sheets, with the shared strings and without"
     types = content_types(2, shared: true)
     assert types.len() > 0

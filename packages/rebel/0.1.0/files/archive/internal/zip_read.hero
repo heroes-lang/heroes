@@ -86,6 +86,41 @@ record Directory
     # The archive's comment.
     comment: str
 
+# Where a zip archive's bytes are read from: a stream that can seek, or the
+# bytes themselves, held. A copy of it reads the same archive.
+variant Source
+    # A stream that can seek, a file; its owner closes it.
+    stream
+        # The stream.
+        s: io.Stream
+    # The archive's bytes, every one, held in memory.
+    held
+        # The bytes.
+        data: [u8]
+
+# The size of the archive `src` reads, in bytes. Fails as `io.size` does,
+# for a stream that cannot seek among others.
+function size_of(src: Source lent) -> i64?
+    match src
+        .stream x => return io.size(x.s)
+        .held h   => return ok(h.data.len())
+
+# Up to `most` bytes of `src` from `at`, fewer where the archive ends
+# first, none at its end. Fails as the stream fails.
+function chunk_at(src: Source lent, at: i64, most: i64) -> [u8]?
+    match src
+        .stream x =>
+            _ = io.seek(x.s, offset: at, from: .start)?
+            return io.read(x.s, n: most)
+        .held h =>
+            if at >= h.data.len()
+                return ok([])
+            end: i64 @= at + most
+
+            if end > h.data.len()
+                end @ h.data.len()
+            return ok(h.data.slice(from: at, to: end))
+
 # The number of `width` bytes at `at` of `data`, the lowest first.
 function le(data: [u8] lent, at: i64, width: i64) -> i64
     value: i64 @= 0
@@ -95,19 +130,23 @@ function le(data: [u8] lent, at: i64, width: i64) -> i64
 
     return value
 
-# `count` bytes of `s` from `at`. Fails `invalid` where they pass `size`.
-function bytes_at(s: io.Stream, at: i64, count: i64, size: i64, what: str) -> [u8]?
+# `count` bytes of `src` from `at`. Fails `invalid` where they pass `size`.
+function bytes_at(src: Source lent, at: i64, count: i64, size: i64, what: str) -> [u8]?
     if at < 0 || count < 0 || at + count > size
         return codes.invalid_at(at: at, why: f"{what} reaches past the end of the archive, at {size} bytes")
-    _ = io.seek(s, offset: at, from: .start)?
-    return io.read_exact(s, n: count)
 
-# The central directory of the zip archive `s` holds. Fails `invalid` where
-# no end record is found or a record is not one, `unsupported` on an
+    match src
+        .stream x =>
+            _ = io.seek(x.s, offset: at, from: .start)?
+            return io.read_exact(x.s, n: count)
+        .held h => return ok(h.data.slice(from: at, to: at + count))
+
+# The central directory of the zip archive `src` holds. Fails `invalid`
+# where no end record is found or a record is not one, `unsupported` on an
 # archive split over several disks, and as the stream fails; a stream that
 # cannot seek fails as `io.size` does.
-function read_directory(s: io.Stream) -> Directory?
-    size = io.size(s)?
+function read_directory(src: Source lent) -> Directory?
+    size = size_of(src)?
 
     if size < 22
         return codes.invalid_at(at: 0, why: f"{size} bytes are too few for a zip archive's end record")
@@ -116,7 +155,7 @@ function read_directory(s: io.Stream) -> Directory?
     if size < tail_len
         tail_len @ size
     tail_at = size - tail_len
-    tail = bytes_at(s, at: tail_at, count: tail_len, size: size, what: "the end record")?
+    tail = bytes_at(src, at: tail_at, count: tail_len, size: size, what: "the end record")?
     found: i64 @= -1
     i: i64 @= tail_len - 22
 
@@ -143,11 +182,11 @@ function read_directory(s: io.Stream) -> Directory?
         )
 
     if (count == 0xffff || dir_size == 0xffff_ffff || dir_offset == 0xffff_ffff) && end_at >= 20
-        locator = bytes_at(s, at: end_at - 20, count: 20, size: size, what: "ZIP64's locator")?
+        locator = bytes_at(src, at: end_at - 20, count: 20, size: size, what: "ZIP64's locator")?
 
         if le(locator, at: 0, width: 4) == LOCATOR64
             end64_at = le(locator, at: 8, width: 8)
-            end64 = bytes_at(s, at: end64_at, count: 56, size: end_at, what: "ZIP64's end record")?
+            end64 = bytes_at(src, at: end64_at, count: 56, size: end_at, what: "ZIP64's end record")?
 
             if le(end64, at: 0, width: 4) != END64
                 return codes.invalid_at(at: end64_at, why: "ZIP64's locator points at no ZIP64 end record")
@@ -165,7 +204,7 @@ function read_directory(s: io.Stream) -> Directory?
             at: end_at,
             why: f"a central directory at {dir_offset}, past where the end record stands"
         )
-    data = bytes_at(s, at: base + dir_offset, count: dir_size, size: size, what: "the central directory")?
+    data = bytes_at(src, at: base + dir_offset, count: dir_size, size: size, what: "the central directory")?
     members: [Member] @= []
     pos: i64 @= 0
 

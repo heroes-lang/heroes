@@ -244,14 +244,14 @@ capability codec/encode  a message encoded, its fields in the order of their num
   note    always deterministic, a map's entries by key; fields by number, extensions among them, as C++ and Python write them (Go writes extensions first and oneofs last; observed). A message's size is `encode(...).len()`
 
 capability codec/decode  bytes decoded by a type, as strictly as a program asks
-  heroes  protobuf.decode, protobuf.decode_with, protobuf.strict, protobuf.DecodeOptions, protobuf.DEFAULT_MAX_DEPTH
+  heroes  protobuf.decode, protobuf.decode_with, protobuf.strict_decode_options, protobuf.DecodeOptions, protobuf.DEFAULT_MAX_DEPTH
   go      proto.Unmarshal, proto.UnmarshalOptions, proto.UnmarshalOptions.Unmarshal
   rust    prost::Message::decode, prost::Message::merge, protobuf::Message::parse_from_bytes, protobuf::Message::merge_from_bytes, protobuf::CodedInputStream
   python  message.Message.ParseFromString, message.Message.FromString, proto.parse
   note    the last of a scalar written twice, a message written twice merged, packed and unpacked lists both read, a field of a wire type its kind does not take kept as unknown (Go the same, observed), a string that must be UTF-8 and is not `not_text`; nesting stops at 100 as C++ and Python stop, Go at 10,000
 
 capability json/write  a message written in the proto3 JSON mapping
-  heroes  protobuf.to_json, protobuf.to_json_with, protobuf.json_options, protobuf.JsonOptions
+  heroes  protobuf.to_json, protobuf.to_json_with, protobuf.default_json_options, protobuf.JsonOptions
   go      protojson.Marshal, protojson.Format, protojson.MarshalOptions, protojson.MarshalOptions.Marshal, protojson.MarshalOptions.MarshalAppend, protojson.MarshalOptions.Format
   rust    -
   python  json_format.MessageToJson, json_format.MessageToDict, proto_json.serialize
@@ -264,7 +264,7 @@ capability json/emit-unpopulated  unset message and oneof fields written as `nul
   python  -
 
 capability json/read  a message read from the proto3 JSON mapping
-  heroes  protobuf.from_json, protobuf.from_json_with, protobuf.json_read_options, protobuf.JsonReadOptions
+  heroes  protobuf.from_json, protobuf.from_json_with, protobuf.default_json_read_options, protobuf.JsonReadOptions
   go      protojson.Unmarshal, protojson.UnmarshalOptions, protojson.UnmarshalOptions.Unmarshal
   rust    -
   python  json_format.Parse, json_format.ParseDict, json_format.ParseError, proto_json.parse

@@ -14,7 +14,7 @@ function main()
     match image.from_pixels(width: 16, height: 16, format: .gray, pixels: pixels)
         .err e => print(e.code, ": ", e.msg)
         .ok img =>
-            options @= jpeg.encoding()
+            options @= jpeg.default_encode_options()
             options.quality @ 90
 
             match jpeg.encode(img, options)

@@ -325,6 +325,17 @@ variant Packet
 function message(topic: str, payload: [u8]) -> Message
     return Message(topic: topic, payload: payload, qos: 0, retain: false, dup: false, packet_id: 0, properties: [])
 
+# `value` where a CONNECT sent it, `sent`, else `not_found`: a user's name
+# or a password, which may be sent empty.
+#
+# - `value`: what was read.
+# - `sent`: whether its flag was set.
+# - `what`: its name, for the message.
+function present<T>(value: T, sent: bool, what: str) -> T?
+    if sent
+        return ok(value)
+    return fail(code: NOT_FOUND, msg: f"the CONNECT sends no {what}")
+
 test "message: QoS 0, not retained, no identifier, no properties"
     m = message("a/b", payload: [1])
     assert m.qos == 0 && !m.retain && !m.dup && m.packet_id == 0 && m.properties == []

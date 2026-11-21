@@ -337,7 +337,7 @@ function read_private(der: [u8]) -> jose.Key?
 function computed_public(der: [u8], curve: str) -> [u8]?
     if curve == "Ed448" || curve == "X448"
         return fail(code: UNSUPPORTED, msg: f"an {curve} key, which `crypto/keypairs` lacks")
-    key @= keypairs.parse_private_der(der)?
+    key @= keypairs.decode_private_der(der)?
     public_r = keypairs.public_of(key)
 
     match public_r
@@ -349,7 +349,7 @@ function computed_public(der: [u8], curve: str) -> [u8]?
             return fail(code: e.code, msg: e.msg)
         .ok p =>
             public @= p
-            raw = keypairs.format_public_raw(public)
+            raw = keypairs.encode_public_raw(public)
             keypairs.close_public(@public)?
             keypairs.close_private(@key)?
             return raw

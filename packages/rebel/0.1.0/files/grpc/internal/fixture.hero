@@ -112,7 +112,7 @@ function serve(arg: str) -> str
                 .ok accepted =>
                     stream @= accepted.stream
 
-                    match http2.server_of(@stream, options: http2.default_options())
+                    match http2.server(@stream, options: http2.default_options())
                         .ok made =>
                             c @= made
                             answered @ serve_on(@c)
@@ -142,10 +142,10 @@ function serve_tls(arg: str) -> str
         if answered == 0
             match tls.accept(l, deadline_ms: 10000)
                 .ok accepted =>
-                    stream @= accepted
+                    stream @= accepted.stream
                     tls.set_deadline(stream, deadline_ms: 15000).must()
 
-                    match http2.server_of(@stream, options: http2.default_options())
+                    match http2.server(@stream, options: http2.default_options())
                         .ok made =>
                             c @= made
                             answered @ serve_on(@c)

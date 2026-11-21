@@ -34,7 +34,7 @@ capability brotli/leading  a stream at the start of other bytes, and where it en
   note    Brotli has no length in a header; the last meta-block ends it
 
 capability brotli/quality  how hard the compressor works
-  heroes  compress/brotli.Options, compress/brotli.defaults, compress/brotli.MIN_QUALITY, compress/brotli.DEFAULT_QUALITY, compress/brotli.MAX_QUALITY
+  heroes  compress/brotli.Options, compress/brotli.default_options, compress/brotli.MIN_QUALITY, compress/brotli.DEFAULT_QUALITY, compress/brotli.MAX_QUALITY
   go      -
   rust    -
   python  -

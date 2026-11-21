@@ -28,14 +28,12 @@ constant MAX_LINE: i64
 constant MAX_LINES: i64
     512
 
-# What carries the session: a TCP connection of `net`, whose deadline `net`
-# sets, or a TLS stream, whose deadline `tls` sets.
+# What carries the session: a TCP connection of `net` in plain text, or a
+# TLS stream; `tls.set_deadline` sets either's deadline, the reader's stream.
 variant Link
     # Plain text.
     plain
-        # The connection; its stream is the reader's, never used apart.
-        conn: net.Conn
-    # TLS, the stream the reader's.
+    # TLS.
     secure
 
 # The connection and what the session knows of the server: its link, the
@@ -73,7 +71,7 @@ function nothing() -> Answer
 # A session over a plain connection.
 function over_plain(conn: net.Conn, deadline_ms: i64, local_name: str) -> Session
     return Session(
-        link: .plain(conn: conn),
+        link: .plain,
         reader: io.reader(conn.stream),
         deadline_ms: deadline_ms,
         local_name: local_name,
@@ -103,9 +101,7 @@ function set_deadline(s: Session lent, ms: i64) -> ()?
     if is_closed(s)
         return fail(code: CLOSED, msg: "the SMTP connection is closed")
 
-    return match s.link
-        .plain p => net.set_deadline(p.conn.stream, deadline_ms: ms)
-        .secure  => tls.set_deadline(s.reader.stream, deadline_ms: ms)
+    return tls.set_deadline(s.reader.stream, deadline_ms: ms)
 
 # Writes `data` to the server.
 function write(s: Session lent, data: [u8]) -> ()?

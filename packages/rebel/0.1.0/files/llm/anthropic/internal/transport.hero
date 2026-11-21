@@ -34,22 +34,11 @@ record Settings
     # What an answer may hold.
     limits: http.Limits
 
-# How a held connection is reached, for its deadline.
-variant Link
-    # A plain TCP connection, `http://`.
-    plain
-        # The connection, whose stream the reader holds.
-        conn: net.Conn
-    # A TLS connection, `https://`, whose stream the reader holds.
-    secure
-
 # A connection held open after the head of its answer was read.
 record Opened
     # The reader of the connection, holding the bytes read past the head;
     # `close` closes it.
     reader: io.Reader
-    # How the connection is reached.
-    link: Link
     # The head of the answer: its status and fields, no body.
     head: http.Response
 
@@ -187,9 +176,7 @@ function send(s: Settings, method: str, path: str, body: str) -> http.Response?
 
 # Moves the deadline of `o`'s connection to `ms` from now; 0 takes it away.
 function set_deadline(o: Opened lent, ms: i64) -> ()?
-    match o.link
-        .plain p => return net.set_deadline(p.conn.stream, deadline_ms: ms)
-        .secure  => return tls.set_deadline(o.reader.stream, deadline_ms: ms)
+    return tls.set_deadline(o.reader.stream, deadline_ms: ms)
 
 # Closes `o`'s connection; a failure closing is no news to its caller.
 function close(@o: Opened)
@@ -222,13 +209,13 @@ function attempt_open(s: Settings, r: http.Request) -> Opened?
     port = url.port_of(u)?
 
     if u.scheme == "https"
-        stream = tls.connect(u.host, port: port, deadline_ms: s.deadline_ms, client: tls.Client(roots: s.roots, protocols: ["http/1.1"]))?
-        o @= Opened(reader: io.reader(stream), link: .secure, head: http.respond_status(200))
+        stream = tls.connect(u.host, port: port, deadline_ms: s.deadline_ms, client: tls.Client(roots: s.roots, protocols: ["http/1.1"]))?.stream
+        o @= Opened(reader: io.reader(stream), head: http.respond_status(200))
         return headed(@o, r: r, s: s)
 
     if u.scheme == "http"
         conn = net.connect(u.host, port: port, deadline_ms: 0)?
-        o @= Opened(reader: io.reader(conn.stream), link: .plain(conn: conn), head: http.respond_status(200))
+        o @= Opened(reader: io.reader(conn.stream), head: http.respond_status(200))
         return headed(@o, r: r, s: s)
     return fail(code: "unsupported", msg: f"the scheme \"{u.scheme}\" is neither http nor https")
 

@@ -15,7 +15,7 @@
 # are, nothing echoed or translated. A read waits for one byte at most the
 # read timeout, then answers every byte there; a read or a write past its
 # timeout fails `timeout`, and one waiting when the program is asked to stop
-# (`net.catch_stop`, `net.ask_stop`) fails `stopped` within about 50 ms. A
+# (`os.catch_stop`, `os.ask_stop`) fails `stopped` within about 50 ms. A
 # port whose device is gone reads its end and refuses a write `closed`.
 #
 # **Platforms**: POSIX ports by `termios`, Windows ports by their `DCB`. Mark
@@ -108,7 +108,7 @@ record Flow
     dsr_dtr: bool
 
 # The settings of a port, set at once by `open` and `configure` and read back
-# by `settings_of`. Built directly, or by `defaults`.
+# by `settings_of`. Built directly, or by `default_settings`.
 record Settings
     # The speed in bits a second, 1 or more.
     baud: i64
@@ -127,7 +127,7 @@ record Settings
 # - `baud`: the speed in bits a second; 9600 and 115200 are the common ones.
 #
 # See also `open`, `configure`.
-function defaults(baud: i64) -> Settings
+function default_settings(baud: i64) -> Settings
     return Settings(
         baud: baud,
         data_bits: 8,
@@ -502,8 +502,8 @@ function open_pseudo() -> Pseudo?
 ## Examples
 
 # The usual settings at 115200 bits a second.
-test "defaults: 8 data bits, no parity, one stop bit, no flow"
-    s = defaults(baud: 115200)
+test "default_settings: 8 data bits, no parity, one stop bit, no flow"
+    s = default_settings(baud: 115200)
     assert s.baud == 115200 && s.data_bits == 8
     assert s.parity == .none && s.stop_bits == .one
     assert !s.flow.rts_cts && !s.flow.xon_xoff && !s.flow.dsr_dtr
@@ -520,7 +520,7 @@ test "open_pseudo: a port and a device without hardware"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
             io.write_text(port, text: "AT\r").must()
             assert io.read(pair.controller, n: 16).must() == [65, 84, 13]
             io.close(@port).must()
@@ -532,7 +532,7 @@ test "open: a port set and written to, its answer read"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
             set_timeouts(port, timeouts: Timeouts(read_ms: 2000, write_ms: 2000, gap_ms: 0)).must()
             io.write_text(pair.controller, text: "OK\n").must()
             assert io.read(port, n: 16).must() == [79, 75, 10]
@@ -546,8 +546,8 @@ test "configure: new settings, read back"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
-            wanted @= defaults(baud: 19200)
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
+            wanted @= default_settings(baud: 19200)
             wanted.stop_bits @ .two
             wanted.flow.rts_cts @ true
             configure(port, settings: wanted).must()
@@ -561,8 +561,8 @@ test "settings_of: what open set"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 115200)).must()
-            assert settings_of(port).must() == defaults(baud: 115200)
+            port @= open(pair.path, settings: default_settings(baud: 115200)).must()
+            assert settings_of(port).must() == default_settings(baud: 115200)
             io.close(@port).must()
             io.close(@pair.controller).must()
 
@@ -573,7 +573,7 @@ test "set_timeouts: a read bounded to 100 ms"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
             set_timeouts(port, timeouts: Timeouts(read_ms: 100, write_ms: FOREVER, gap_ms: 0)).must()
 
             match io.read(port, n: 16)
@@ -589,7 +589,7 @@ test "timeouts_of: FOREVER and no gap after an open"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
             assert timeouts_of(port).must() == Timeouts(read_ms: FOREVER, write_ms: FOREVER, gap_ms: 0)
             io.close(@port).must()
             io.close(@pair.controller).must()
@@ -600,7 +600,7 @@ test "modem_lines_of: a pseudo-terminal has no modem lines"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
 
             match modem_lines_of(port)
                 .ok l  => assert l.dtr || !l.dtr
@@ -615,7 +615,7 @@ test "set_dtr: dropped and raised where the port has the line"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
 
             match set_dtr(port, on: false)
                 .ok _  => set_dtr(port, on: true).must()
@@ -630,7 +630,7 @@ test "set_rts: dropped and raised where the port has the line"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
 
             match set_rts(port, on: false)
                 .ok _  => set_rts(port, on: true).must()
@@ -645,7 +645,7 @@ test "send_break: a break of 250 ms"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
             send_break(port, ms: 250).must()
             io.close(@port).must()
             io.close(@pair.controller).must()
@@ -656,7 +656,7 @@ test "set_break: held and let go"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
             set_break(port, on: true).must()
             set_break(port, on: false).must()
             io.close(@port).must()
@@ -668,7 +668,7 @@ test "discard_input: stale bytes thrown away"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
             discard_input(port).must()
             assert unread_count(port).must() == 0
             io.close(@port).must()
@@ -680,7 +680,7 @@ test "discard_output: unsent bytes thrown away"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
             io.write_text(port, text: "stale").must()
             discard_output(port).must()
             io.close(@port).must()
@@ -692,7 +692,7 @@ test "drain: written bytes sent before going on"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
             set_timeouts(port, timeouts: Timeouts(read_ms: 2000, write_ms: 2000, gap_ms: 0)).must()
             io.write_text(port, text: "go").must()
             assert io.read(pair.controller, n: 8).must() == [103, 111]
@@ -706,7 +706,7 @@ test "unread_count: bytes received and not read"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
             assert unread_count(port).must() >= 0
             io.close(@port).must()
             io.close(@pair.controller).must()
@@ -717,7 +717,7 @@ test "unsent_count: bytes written and not sent"
         .err e => assert e.code == UNSUPPORTED
         .ok pty =>
             pair @= pty
-            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            port @= open(pair.path, settings: default_settings(baud: 9600)).must()
             assert unsent_count(port).must() >= 0
             io.close(@port).must()
             io.close(@pair.controller).must()

@@ -206,10 +206,9 @@ function no_capabilities() -> ClientCapabilities
 record Annotations
     # Who it is for: `user`, `assistant`; empty for no hint.
     audience: [str]
-    # How much it matters, 0.0 to 1.0, read only where `has_priority`.
-    priority: f64
-    # Whether `priority` is given.
-    has_priority: bool
+    # How much it matters, 0.0 to 1.0; it fails `not_found` where no
+    # priority is given.
+    priority: f64?
     # When it last changed, ISO 8601, "" for no hint.
     last_modified: str
 
@@ -269,7 +268,7 @@ variant Contents
 
 # Hints of none.
 function no_annotations() -> Annotations
-    return Annotations(audience: [], priority: 0.0, has_priority: false, last_modified: "")
+    return Annotations(audience: [], priority: fail(code: NOT_FOUND, msg: "no priority is given"), last_modified: "")
 
 # A block of `text`, with no hint.
 #
@@ -386,10 +385,8 @@ record Resource
     description: str
     # Its media type, "" for none.
     mime_type: str
-    # Its size in bytes, read only where `has_size`.
-    size: i64
-    # Whether `size` is given.
-    has_size: bool
+    # Its size in bytes; it fails `not_found` where no size is given.
+    size: i64?
     # Its hints.
     annotations: Annotations
     # Its icons.
@@ -428,8 +425,7 @@ function new_resource(uri: str, name: str) -> Resource
         title: "",
         description: "",
         mime_type: "",
-        size: 0,
-        has_size: false,
+        size: fail(code: NOT_FOUND, msg: "no size is given"),
         annotations: no_annotations(),
         icons: [],
         meta: {}
@@ -909,7 +905,7 @@ function handle(s: Server, m: jsonrpc.Message) -> Request
         .response _ => return .ignored
         .request r =>
             if r.id == .null_id
-                return .answered(answer: jsonrpc.invalid_request_of("an MCP request's id is never null"))
+                return .answered(answer: jsonrpc.answer_invalid_request("an MCP request's id is never null"))
 
             if r.method == "initialize"
                 return .answered(
@@ -981,24 +977,24 @@ function read_request(@reader: io.Reader, s: Server) -> Request?
         .ok got => got
         .err e =>
             if e.code == jsonrpc.NOT_TEXT
-                return ok(.answered(answer: jsonrpc.parse_error_of(e.msg)))
+                return ok(.answered(answer: jsonrpc.answer_parse_error(e.msg)))
             return fail(code: e.code, msg: e.msg)
 
     received = match jsonrpc.parse(text, limits: limits)
         .ok got => got
         .err e =>
             if e.code == jsonrpc.LIMIT
-                return ok(.answered(answer: jsonrpc.invalid_request_of(e.msg)))
-            return ok(.answered(answer: jsonrpc.parse_error_of(e.msg)))
+                return ok(.answered(answer: jsonrpc.answer_invalid_request(e.msg)))
+            return ok(.answered(answer: jsonrpc.answer_parse_error(e.msg)))
 
     if received.batch
         return ok(
-            .answered(answer: jsonrpc.invalid_request_of(f"MCP sends no batch since 2025-06-18, and this is a batch of {received.messages.len()}"))
+            .answered(answer: jsonrpc.answer_invalid_request(f"MCP sends no batch since 2025-06-18, and this is a batch of {received.messages.len()}"))
         )
 
     match received.messages[0]
         .ok m  => return ok(handle(s, m: m))
-        .err e => return ok(.answered(answer: jsonrpc.invalid_request_of(e.msg)))
+        .err e => return ok(.answered(answer: jsonrpc.answer_invalid_request(e.msg)))
 
 ## Answers
 
@@ -1020,19 +1016,19 @@ function answer_tool(s: Server, call: ToolCall, result: ToolResult) -> jsonrpc.M
                     .ok compiled =>
                         match schemas.validate(compiled, instance: result.structured)
                             .ok _ => _ = 0
-                            .err e => return jsonrpc.error_of(
+                            .err e => return jsonrpc.answer_error(
                                 call.id,
                                 code: jsonrpc.INTERNAL_ERROR,
                                 message: f"the result of \"{call.name}\" does not conform to its output schema: {e.msg}"
                             )
-                    .err e => return jsonrpc.error_of(
+                    .err e => return jsonrpc.answer_error(
                         call.id,
                         code: jsonrpc.INTERNAL_ERROR,
                         message: f"the output schema of \"{call.name}\" does not compile: {e.msg}"
                     )
         .err _ => _ = 0
 
-    return jsonrpc.result_of(
+    return jsonrpc.answer_result(
         call.id,
         value: build.result(build.members_of(tool_result_json(result)), server: implementation_json(s.info), cacheable: false, ttl_ms: 0, private: s.private)
     )
@@ -1044,7 +1040,7 @@ function answer_tool(s: Server, call: ToolCall, result: ToolResult) -> jsonrpc.M
 # - `read`: the read answered.
 # - `contents`: what the resource holds; empty only for a resource that
 #   holds nothing, a resource that is not there being answered with
-#   `jsonrpc.error_of` and `jsonrpc.INVALID_PARAMS`.
+#   `jsonrpc.answer_error` and `jsonrpc.INVALID_PARAMS`.
 function answer_resource(s: Server, read: ResourceRead, contents: [Contents]) -> jsonrpc.Message
     items: [json.Value] @= []
 
@@ -1059,7 +1055,7 @@ function answer_resource(s: Server, read: ResourceRead, contents: [Contents]) ->
         0
     else
         s.ttl_ms
-    return jsonrpc.result_of(
+    return jsonrpc.answer_result(
         read.id,
         value: build.result(members, server: implementation_json(s.info), cacheable: true, ttl_ms: ttl, private: s.private)
     )
@@ -1081,7 +1077,7 @@ function answer_prompt(s: Server, get: PromptGet, result: PromptResult) -> jsonr
     members: {str: json.Value} @= {}
     build.put_text(@members, key: "description", value: result.description)
     members["messages"] @ .list(items: items)
-    return jsonrpc.result_of(
+    return jsonrpc.answer_result(
         get.id,
         value: build.result(members, server: implementation_json(s.info), cacheable: false, ttl_ms: 0, private: s.private)
     )
@@ -1106,7 +1102,7 @@ function answer_completion(s: Server, completion: Completion, values: [str]) -> 
     inner["hasMore"] @ .boolean(v: values.len() > 100)
     members: {str: json.Value} @= {}
     members["completion"] @ .object(members: inner)
-    return jsonrpc.result_of(
+    return jsonrpc.answer_result(
         completion.id,
         value: build.result(members, server: implementation_json(s.info), cacheable: false, ttl_ms: 0, private: s.private)
     )
@@ -1145,7 +1141,7 @@ function answer_input_required(s: Server, id: jsonrpc.Id, meta: RequestMeta, inp
     named: {str: json.Value} @= {}
     named["io.modelcontextprotocol/serverInfo"] @ implementation_json(s.info)
     written["_meta"] @ .object(members: named)
-    return jsonrpc.result_of(id, value: .object(members: written))
+    return jsonrpc.answer_result(id, value: .object(members: written))
 
 # The notification that tells the request `meta` came with how far it has
 # gone.
@@ -1157,7 +1153,7 @@ function answer_input_required(s: Server, id: jsonrpc.Id, meta: RequestMeta, inp
 #
 # Fails `not_found` where the request asked for no progress, as the revision
 # allows only tokens a request gave.
-function progress_of(meta: RequestMeta, progress: f64, total: f64, message: str) -> jsonrpc.Message?
+function progress_notification(meta: RequestMeta, progress: f64, total: f64, message: str) -> jsonrpc.Message?
     if meta.progress_token == .absent
         return fail(code: NOT_FOUND, msg: "the request gave no progress token")
     params: {str: json.Value} @= {}
@@ -1176,7 +1172,7 @@ function progress_of(meta: RequestMeta, progress: f64, total: f64, message: str)
 #
 # - `s`: the server.
 # - `asked`: what a subscription asks for.
-function honored_of(s: Server, asked: Filter) -> Filter
+function honored_filter(s: Server, asked: Filter) -> Filter
     capabilities = capabilities_of(s)
 
     none: [str] = []
@@ -1193,14 +1189,14 @@ function honored_of(s: Server, asked: Filter) -> Filter
     )
 
 # The first message of the subscription `listen`: its acknowledgment, which
-# says what `s` agrees to send, as `honored_of` answers.
+# says what `s` agrees to send, as `honored_filter` answers.
 #
 # - `s`: the server.
 # - `listen`: the subscription.
 function acknowledge(s: Server, listen: Listen) -> jsonrpc.Message
     params: {str: json.Value} @= {}
     params["_meta"] @ build.subscription_meta(listen.id)
-    params["notifications"] @ filter_json(honored_of(s, asked: listen.filter))
+    params["notifications"] @ filter_json(honored_filter(s, asked: listen.filter))
     return .notification(method: "notifications/subscriptions/acknowledged", params: .object(members: params))
 
 # The notification that tells `listen` a list of `s` changed.
@@ -1212,8 +1208,8 @@ function acknowledge(s: Server, listen: Listen) -> jsonrpc.Message
 # Fails `not_found` where `listen` did not ask for it or `s` does not tell
 # it, since the revision forbids sending what was not asked; `invalid` for
 # another word.
-function changed_of(s: Server, listen: Listen, list: str) -> jsonrpc.Message?
-    honored = honored_of(s, asked: listen.filter)
+function changed_notification(s: Server, listen: Listen, list: str) -> jsonrpc.Message?
+    honored = honored_filter(s, asked: listen.filter)
 
     asked = if list == "tools"
         honored.tools
@@ -1238,8 +1234,8 @@ function changed_of(s: Server, listen: Listen, list: str) -> jsonrpc.Message?
 #
 # Fails `not_found` where it did not ask for `uri`, or `s` does not tell a
 # resource's changes.
-function updated_of(s: Server, listen: Listen, uri: str) -> jsonrpc.Message?
-    if !reserved.has(honored_of(s, asked: listen.filter).resource_uris, name: uri)
+function updated_notification(s: Server, listen: Listen, uri: str) -> jsonrpc.Message?
+    if !reserved.has(honored_filter(s, asked: listen.filter).resource_uris, name: uri)
         return fail(code: NOT_FOUND, msg: f"the subscription did not ask for \"{uri}\"")
     params: {str: json.Value} @= {}
     params["_meta"] @ build.subscription_meta(listen.id)
@@ -1254,7 +1250,7 @@ function updated_of(s: Server, listen: Listen, uri: str) -> jsonrpc.Message?
 function end_listen(s: Server, listen: Listen) -> jsonrpc.Message
     members: {str: json.Value} @= {}
     members["_meta"] @ build.subscription_meta(listen.id)
-    return jsonrpc.result_of(
+    return jsonrpc.answer_result(
         listen.id,
         value: build.result(members, server: implementation_json(s.info), cacheable: false, ttl_ms: 0, private: s.private)
     )
@@ -1290,7 +1286,7 @@ function read_http(r: http.Request, s: Server) -> Request
         .ok origin =>
             if !reserved.has(s.origins, name: origin)
                 forbidden @= respond_http(
-                    jsonrpc.error_of(.null_id, code: jsonrpc.INVALID_REQUEST, message: f"the origin \"{origin}\" is not allowed")
+                    jsonrpc.answer_error(.null_id, code: jsonrpc.INVALID_REQUEST, message: f"the origin \"{origin}\" is not allowed")
                 )
                 forbidden.status @ http.STATUS_FORBIDDEN
                 forbidden.reason @ "Forbidden"
@@ -1303,17 +1299,17 @@ function read_http(r: http.Request, s: Server) -> Request
 
     if received.batch
         return .respond(
-            response: respond_http(jsonrpc.invalid_request_of("a POST to the MCP endpoint holds one message, never a batch"))
+            response: respond_http(jsonrpc.answer_invalid_request("a POST to the MCP endpoint holds one message, never a batch"))
         )
 
     m = match received.messages[0]
         .ok got => got
-        .err e  => return .respond(response: respond_http(jsonrpc.invalid_request_of(e.msg)))
+        .err e  => return .respond(response: respond_http(jsonrpc.answer_invalid_request(e.msg)))
 
     match m
         .notification _ => return .respond(response: http.respond_status(http.STATUS_ACCEPTED))
         .response _ => return .respond(
-            response: respond_http(jsonrpc.invalid_request_of("a client sends no answer to a server"))
+            response: respond_http(jsonrpc.answer_invalid_request("a client sends no answer to a server"))
         )
         .request q =>
             match dispatch.check_fields(s, r: r, method: q.method, params: q.params)
@@ -2190,8 +2186,10 @@ function annotations_json(a: Annotations) -> json.Value
     members: {str: json.Value} @= {}
     build.put_texts(@members, key: "audience", values: a.audience)
 
-    if a.has_priority
-        members["priority"] @ .number(v: a.priority)
+    match a.priority
+        .ok priority => members["priority"] @ .number(v: priority)
+        .err _       => _ = 0
+
     build.put_text(@members, key: "lastModified", value: a.last_modified)
     return .object(members: members)
 
@@ -2207,10 +2205,8 @@ function annotations_of(v: json.Value) -> Annotations?
     out.last_modified @ build.text_at(v, key: "lastModified")?
 
     match build.members_of(v)["priority"]
-        .ok got =>
-            out.priority @ json.number_of(got)?
-            out.has_priority @ true
-        .err _ => _ = 0
+        .ok got => out.priority @ ok(json.number_of(got)?)
+        .err _  => _ = 0
 
     return ok(out)
 
@@ -2446,8 +2442,9 @@ function resource_json(r: Resource) -> json.Value
     build.put_text(@members, key: "mimeType", value: r.mime_type)
     dispatch.put_annotations(@members, a: r.annotations)
 
-    if r.has_size
-        members["size"] @ .number(v: to_f64(r.size))
+    match r.size
+        .ok size => members["size"] @ .number(v: to_f64(size))
+        .err _   => _ = 0
 
     if r.icons.len() > 0
         members["icons"] @ icons_json(r.icons)
@@ -2473,10 +2470,8 @@ function resource_of(v: json.Value) -> Resource?
     out.meta @ build.object_at(v, key: "_meta")?
 
     match written["size"]
-        .ok size =>
-            out.size @ json.int_of(size)?
-            out.has_size @ true
-        .err _ => _ = 0
+        .ok size => out.size @ ok(json.int_of(size)?)
+        .err _   => _ = 0
 
     return ok(out)
 
@@ -2681,7 +2676,7 @@ function input_required_of(v: json.Value) -> InputRequired?
 test "handle: discover, a list on pages, the refusals the revision names, and what goes to the program"
     s = fixture.test_server()
     discovered = handle(s, m: fixture.test_request(1.0, method: "server/discover", extra: ""))
-    assert discovered == .answered(answer: jsonrpc.result_of(.number(v: 1.0), value: build.result({"supportedVersions": build.texts([PROTOCOL_VERSION]), "capabilities": server_capabilities_json(capabilities_of(s))}, server: implementation_json(s.info), cacheable: true, ttl_ms: 0, private: false)))
+    assert discovered == .answered(answer: jsonrpc.answer_result(.number(v: 1.0), value: build.result({"supportedVersions": build.texts([PROTOCOL_VERSION]), "capabilities": server_capabilities_json(capabilities_of(s))}, server: implementation_json(s.info), cacheable: true, ttl_ms: 0, private: false)))
     page = handle(s, m: fixture.test_request(2.0, method: "tools/list", extra: ""))
 
     match page
@@ -2720,7 +2715,7 @@ test "handle: discover, a list on pages, the refusals the revision names, and wh
 
     assert handle(s, m: .notification(method: "notifications/cancelled", params: json.parse("{\"requestId\": 3, \"reason\": \"late\"}").must())) == .cancelled(request_id: .number(v: 3.0), reason: "late")
     assert handle(s, m: .notification(method: "notifications/initialized", params: .null_value)) == .ignored
-    assert handle(s, m: jsonrpc.result_of(.number(v: 1.0), value: .null_value)) == .ignored
+    assert handle(s, m: jsonrpc.answer_result(.number(v: 1.0), value: .null_value)) == .ignored
 
 test "handle: arguments the input schema refuses are a tool execution error, and a template's values read"
     s = fixture.test_server()
@@ -2745,11 +2740,11 @@ test "answer_input_required, answer_tool: a capability not declared, and a resul
     call = ToolCall(id: .number(v: 2.0), name: "add", arguments: .null_value, meta: meta, inputs: no_inputs())
     assert jsonrpc.format(answer_tool(s, call: call, result: text_result("no sum"))).must() == "{\"jsonrpc\":\"2.0\",\"id\":2,\"error\":{\"code\":-32603,\"message\":\"the result of \\\"add\\\" does not conform to its output schema: at the instance: null, where the type is object (type at /type); 1 error in all\"}}"
 
-test "progress_of, acknowledge, changed_of, updated_of: what a request and a subscription may be told, and nothing else"
+test "progress_notification, acknowledge, changed_notification, updated_notification: what a request and a subscription may be told, and nothing else"
     s = fixture.test_server()
     no_token = meta_of(json.parse("{" + fixture.TEST_META + "}").must()).must()
 
-    match progress_of(no_token, progress: 1.0, total: 0.0, message: "")
+    match progress_notification(no_token, progress: 1.0, total: 0.0, message: "")
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND
 
@@ -2760,15 +2755,15 @@ test "progress_of, acknowledge, changed_of, updated_of: what a request and a sub
     )
     assert jsonrpc.format(acknowledge(s, listen: listening)).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/subscriptions/acknowledged\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/subscriptionId\":9},\"notifications\":{\"toolsListChanged\":true,\"resourceSubscriptions\":[\"notes://readme\"]}}}"
 
-    match changed_of(s, listen: listening, list: "prompts")
+    match changed_notification(s, listen: listening, list: "prompts")
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND
 
-    match updated_of(s, listen: listening, uri: "notes://other")
+    match updated_notification(s, listen: listening, uri: "notes://other")
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND
 
-    assert changed_of(s, listen: listening, list: "pages").is_err()
+    assert changed_notification(s, listen: listening, list: "pages").is_err()
 
 test "read_http: a GET, an origin, a notification, each field missing or not matching, and a call handed on"
     s @= fixture.test_server()
@@ -2941,12 +2936,10 @@ test "the JSON forms: each type written and read back"
     tool.icons @ [Icon(src: "https://x/i.png", mime_type: "image/png", sizes: ["48x48"], theme: "dark")]
     assert tool_of(tool_json(tool)).must() == tool
     resource @= new_resource(uri: "file:///a", name: "a")
-    resource.size @ 7
-    resource.has_size @ true
+    resource.size @ ok(7)
     resource.annotations @ Annotations(
         audience: ["user"],
-        priority: 0.5,
-        has_priority: true,
+        priority: ok(0.5),
         last_modified: "2025-01-12T15:00:58Z"
     )
     assert resource_of(resource_json(resource)).must() == resource
@@ -3151,12 +3144,12 @@ test "server_capabilities_of: tools"
 
 # Hints written.
 test "annotations_json: for the user, important"
-    a = Annotations(audience: ["user"], priority: 0.9, has_priority: true, last_modified: "")
+    a = Annotations(audience: ["user"], priority: ok(0.9), last_modified: "")
     assert json.format(annotations_json(a)).must() == "{\"audience\":[\"user\"],\"priority\":0.9}"
 
 # Hints read.
 test "annotations_of: a priority"
-    assert annotations_of(json.parse("{\"priority\": 0.7}").must()).must().priority == 0.7
+    assert annotations_of(json.parse("{\"priority\": 0.7}").must()).must().priority.must() == 0.7
 
 # An image block written.
 test "content_json: an image"
@@ -3198,7 +3191,7 @@ test "resource_json: a file"
 
 # A resource read.
 test "resource_of: a file read"
-    assert resource_of(json.parse("{\"uri\": \"file:///a\", \"name\": \"a\", \"size\": 3}").must()).must().size == 3
+    assert resource_of(json.parse("{\"uri\": \"file:///a\", \"name\": \"a\", \"size\": 3}").must()).must().size.must() == 3
 
 # A template written.
 test "template_json: a template"
@@ -3357,17 +3350,17 @@ test "answer_input_required: a form"
     )
 
 # Progress told to a request that asked for it.
-test "progress_of: halfway"
+test "progress_notification: halfway"
     meta = meta_of(
         json.parse("{\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\", \"io.modelcontextprotocol/clientCapabilities\": {}, \"progressToken\": \"abc123\"}}").must()
     ).must()
-    assert jsonrpc.format(progress_of(meta, progress: 50.0, total: 100.0, message: "Reticulating splines...").must()).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/progress\",\"params\":{\"progressToken\":\"abc123\",\"progress\":50,\"total\":100,\"message\":\"Reticulating splines...\"}}"
+    assert jsonrpc.format(progress_notification(meta, progress: 50.0, total: 100.0, message: "Reticulating splines...").must()).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/progress\",\"params\":{\"progressToken\":\"abc123\",\"progress\":50,\"total\":100,\"message\":\"Reticulating splines...\"}}"
 
 # What a server agrees to tell.
-test "honored_of: prompts not told by a server that has none"
+test "honored_filter: prompts not told by a server that has none"
     s @= new_server(implementation(name: "s", version: "1"))
     s.list_changed @ true
-    assert !honored_of(s, asked: Filter(tools: false, prompts: true, resources: false, resource_uris: [])).prompts
+    assert !honored_filter(s, asked: Filter(tools: false, prompts: true, resources: false, resource_uris: [])).prompts
 
 # A subscription acknowledged.
 test "acknowledge: tools' changes agreed"
@@ -3383,17 +3376,17 @@ test "acknowledge: tools' changes agreed"
     )
 
 # The tools' list changed, told to a subscription.
-test "changed_of: tools"
+test "changed_notification: tools"
     meta = meta_of(json.parse("{" + fixture.TEST_META + "}").must()).must()
     listening = Listen(
         id: .number(v: 1.0),
         filter: Filter(tools: true, prompts: false, resources: false, resource_uris: []),
         meta: meta
     )
-    assert jsonrpc.format(changed_of(fixture.test_server(), listen: listening, list: "tools").must()).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/tools/list_changed\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/subscriptionId\":1}}}"
+    assert jsonrpc.format(changed_notification(fixture.test_server(), listen: listening, list: "tools").must()).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/tools/list_changed\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/subscriptionId\":1}}}"
 
 # A resource's change told.
-test "updated_of: the readme"
+test "updated_notification: the readme"
     meta = meta_of(json.parse("{" + fixture.TEST_META + "}").must()).must()
     listening = Listen(
         id: .text(v: "s"),
@@ -3401,7 +3394,7 @@ test "updated_of: the readme"
         meta: meta
     )
     assert strings.contains(
-        s: jsonrpc.format(updated_of(fixture.test_server(), listen: listening, uri: "notes://readme").must()).must(),
+        s: jsonrpc.format(updated_notification(fixture.test_server(), listen: listening, uri: "notes://readme").must()).must(),
         substr: "\"uri\":\"notes://readme\""
     )
 
@@ -3426,7 +3419,7 @@ test "read_http: a GET refused"
 
 # An answer as an HTTP response.
 test "respond_http: a method not found is 404"
-    assert respond_http(jsonrpc.error_of(.number(v: 1.0), code: jsonrpc.METHOD_NOT_FOUND, message: "Method not found")).status == 404
+    assert respond_http(jsonrpc.answer_error(.number(v: 1.0), code: jsonrpc.METHOD_NOT_FOUND, message: "Method not found")).status == 404
 
 # An event stream begun on a connection.
 test "start_stream: the head of a stream"

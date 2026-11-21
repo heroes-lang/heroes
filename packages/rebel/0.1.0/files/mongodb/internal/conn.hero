@@ -18,12 +18,9 @@ constant CLOSED: str
 
 # What carries the connection.
 variant Link
-    # A TCP connection of `net`, whose deadline `net` moves.
-    plain
-        # The connection.
-        conn: net.Conn
-    # A TLS stream of `tls`, whose deadline `tls` moves.
-    secured
+    # A connection of `net` or `tls`, plain or over TLS, whose deadline
+    # `tls.set_deadline` moves either way.
+    network
     # Two pipes of a test's scripted server, with no deadline.
     scripted
 
@@ -49,9 +46,9 @@ function open(host: str, port: i64, secure: bool, roots: str, timeout_ms: i64) -
     target = net.join_host_port(host, port: port)
 
     if secure
-        stream = tls.connect(host: host, port: port, deadline_ms: 0, client: tls.Client(roots: roots, protocols: []))?
+        stream = tls.connect(host: host, port: port, deadline_ms: 0, client: tls.Client(roots: roots, protocols: []))?.stream
         return ok(
-            Conn(out: stream, input: stream, link: .secured, target: target, ended: false, most: wire.DEFAULT_MOST)
+            Conn(out: stream, input: stream, link: .network, target: target, ended: false, most: wire.DEFAULT_MOST)
         )
 
     wait = if timeout_ms > 0
@@ -60,7 +57,7 @@ function open(host: str, port: i64, secure: bool, roots: str, timeout_ms: i64) -
         10000
     c = net.connect_timeout(host, port: port, timeout_ms: wait, deadline_ms: 0)?
     return ok(
-        Conn(out: c.stream, input: c.stream, link: .plain(conn: c), target: target, ended: false, most: wire.DEFAULT_MOST)
+        Conn(out: c.stream, input: c.stream, link: .network, target: target, ended: false, most: wire.DEFAULT_MOST)
     )
 
 # A connection over two pipes of a test: requests to `out`, replies from
@@ -73,8 +70,7 @@ function scripted(out: io.Stream, input: io.Stream) -> Conn
 # fail.
 function set_deadline(c: Conn lent, ms: i64) -> ()?
     return match c.link
-        .plain p  => net.set_deadline(p.conn.stream, deadline_ms: ms)
-        .secured  => tls.set_deadline(c.out, deadline_ms: ms)
+        .network  => tls.set_deadline(c.out, deadline_ms: ms)
         .scripted => ok()
 
 # A failure of `c` with `code`, after which `c` has ended.

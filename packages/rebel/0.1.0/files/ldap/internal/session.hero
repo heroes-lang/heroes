@@ -36,13 +36,12 @@ constant NOTICE_OID: str
 constant MOST_ID: i64
     2147483647
 
-# What carries the conversation.
+# What carries the conversation: a connection in plain text, which StartTLS
+# may secure, or one over TLS. `tls.set_deadline` moves either's deadline.
 variant Link
-    # A TCP connection of `net`, whose deadline `net` moves.
+    # A TCP connection of `net`, in plain text.
     plain
-        # The connection.
-        conn: net.Conn
-    # A TLS stream of `tls`, whose deadline `tls` moves.
+    # A connection over TLS.
     secured
 
 # A session's state, which the face's `Conn` holds.
@@ -107,14 +106,14 @@ function made(stream: io.Stream, link: Link, host: str, port: i64, deadline_ms: 
 function connect_plain(host: str, port: i64, deadline_ms: i64, max_message: i64) -> Session?
     conn = net.connect_timeout(host, port: port, timeout_ms: deadline_ms, deadline_ms: 0)?
     return ok(
-        made(conn.stream, link: .plain(conn: conn), host: host, port: port, deadline_ms: deadline_ms, max_message: max_message)
+        made(conn.stream, link: .plain, host: host, port: port, deadline_ms: deadline_ms, max_message: max_message)
     )
 
 # A session over TLS from the first byte to `host` at `port`.
 #
 # Fails as `tls.connect` fails.
 function connect_direct(host: str, port: i64, deadline_ms: i64, roots: str, max_message: i64) -> Session?
-    stream = tls.connect(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: []))?
+    stream = tls.connect(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: []))?.stream
     return ok(made(stream, link: .secured, host: host, port: port, deadline_ms: deadline_ms, max_message: max_message))
 
 # The bytes of the StartTLS request numbered `id`.
@@ -172,7 +171,7 @@ function connect_start_tls(host: str, port: i64, deadline_ms: i64, roots: str, m
     answer = wire.decode(raw)?
     start_tls_answered(answer, id: 1, target: probe.target)?
     steps: [tls.Step] = [.send(data: request), .expect(answer: raw)]
-    stream = tls.connect_after(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: []), steps: steps)?
+    stream = tls.connect_after(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: []), steps: steps)?.stream
     s @= made(stream, link: .secured, host: host, port: port, deadline_ms: deadline_ms, max_message: max_message)
     s.next_id @ 2
     return ok(s)
@@ -193,7 +192,7 @@ function request_raw(@s: Session, data: [u8]) -> [u8]?
 function start_tls(@s: Session, roots: str) -> ()?
     match s.link
         .secured => return fail(code: INVALID, msg: f"StartTLS on {s.target}: the connection is over TLS already")
-        .plain _ => _ = 0
+        .plain   => _ = 0
 
     if os.system() == .darwin
         return fail(
@@ -220,9 +219,7 @@ function start_tls(@s: Session, roots: str) -> ()?
 
 # Sets the deadline of `s`'s next operation, `s.deadline_ms` from now.
 function set_deadline(s: Session) -> ()?
-    match s.link
-        .plain p => return net.set_deadline(p.conn.stream, deadline_ms: s.deadline_ms)
-        .secured => return tls.set_deadline(s.stream, deadline_ms: s.deadline_ms)
+    return tls.set_deadline(s.stream, deadline_ms: s.deadline_ms)
 
 # Fails `closed` with the reason `s` ended.
 function ended_failure<T>(s: Session) -> T?

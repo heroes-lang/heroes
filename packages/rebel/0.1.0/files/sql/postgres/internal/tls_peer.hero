@@ -91,7 +91,7 @@ function serve(arg: str) -> str
                 match taken
                     .err _ => _ = 0
                     .ok s =>
-                        stream @= s
+                        stream @= s.stream
                         did @ answered(stream)
                         closing = io.close(@stream)
 

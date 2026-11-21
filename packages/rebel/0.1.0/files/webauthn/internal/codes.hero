@@ -11,6 +11,11 @@ constant INVALID: str
 constant UNSUPPORTED: str
     "unsupported"
 
+# The code of extension outputs the flags say are not there, which the face
+# names as `webauthn.NOT_FOUND`.
+constant NOT_FOUND: str
+    "not_found"
+
 ## Tests
 
 test "codes: the two codes are the library's words"

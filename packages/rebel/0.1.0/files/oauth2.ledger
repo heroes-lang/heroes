@@ -192,7 +192,7 @@ capability oidc/keys  a provider's JWK set fetched from its `jwks_uri`
   note    No cache: a program keeps the keys and fetches again where a token names a `kid` none has, which `jose`'s `not_found` tells
 
 capability oidc/userinfo  the UserInfo endpoint asked with the access token, its `sub` held to the ID token's
-  heroes  oauth2.userinfo
+  heroes  oauth2.fetch_userinfo
   go      -
   rust    openidconnect::UserInfoRequest
   python  authlib.oidc.core.UserInfo, authlib.oidc.core.UserInfoEndpoint

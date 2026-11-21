@@ -76,9 +76,9 @@ function accepted_tls(told: str) -> io.Stream?
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
     ).must()
     tell(told: told, port: l.port)
-    stream = tls.accept(l, deadline_ms: 10_000)
+    accepted = tls.accept(l, deadline_ms: 10_000)
     tls.close_listener(@l).must()
-    return stream
+    return ok(accepted?.stream)
 
 # The echo of `echo_server` on the accepted `given`.
 function echoed_on(given: io.Stream, mode: str) -> str

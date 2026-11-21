@@ -7,7 +7,7 @@
 # addresses (RFC 6532).
 #
 # It does not send a message (`mail/smtp`), read a mailbox folder from disk
-# (`fs` reads each file, `parse_message` each message), turn HTML into text
+# (`fs` reads each file, `decode_message` each message), turn HTML into text
 # (`html`) or sign a message (DKIM is not written). Of the charsets an encoded
 # word, a parameter or a part may name it reads UTF-8, US-ASCII and
 # ISO-8859-1 itself, ISO-8859-1 as Latin-1, and every other encoding of the
@@ -64,7 +64,7 @@ constant NOT_TEXT: str
 
 # A charset or a transfer encoding this package does not read, or a header
 # that needs UTF-8 written where the options forbid it: `text_of`,
-# `content_of`, `decode_header`, `format_message`.
+# `content_of`, `decode_header`, `encode_message`.
 constant UNSUPPORTED: str
     "unsupported"
 
@@ -96,7 +96,7 @@ record Field
 
 # A message, or one part of a MIME message, which has the same shape: header
 # fields, then a body, or parts where it is a multipart. Built directly, or by
-# `parse_message` and the functions under `## Building`.
+# `decode_message` and the functions under `## Building`.
 record Message
     # The header fields in the order they stand.
     fields: [Field]
@@ -111,7 +111,7 @@ record Message
     # The bytes of a multipart after its closing boundary; [] for any other
     # part.
     epilogue: [u8]
-    # What `parse_message` found wrong and read anyway, one sentence each, in
+    # What `decode_message` found wrong and read anyway, one sentence each, in
     # the order found: a line that is no field, a closing boundary missing.
     # Writing ignores it.
     defects: [str]
@@ -133,7 +133,7 @@ record WriteOptions
 # The options a message is sent with: header text above ASCII as encoded
 # words, lines folded at 78 bytes, every line ending `"\r\n"`.
 #
-# See also `utf8_options`, `format_message`.
+# See also `utf8_options`, `encode_message`.
 function standard_options() -> WriteOptions
     return WriteOptions(utf8: false, line_length: 78, line_end: "\r\n")
 
@@ -155,8 +155,8 @@ function utf8_options() -> WriteOptions
 # multipart whose boundary is missing or never closed keeps what was read and
 # says so in `defects`, and one nested deeper than `MAX_DEPTH` is kept as one
 # part. A `message/rfc822` part keeps its message as its body, read by a
-# second call. See also `read_message`, `format_message`.
-function parse_message(data: [u8]) -> Message
+# second call. See also `read_message`, `encode_message`.
+function decode_message(data: [u8]) -> Message
     nodes = tree.read(data: data, max_depth: MAX_DEPTH)
     empty = Message(fields: [], body: [], parts: [], preamble: [], epilogue: [], defects: [])
     sizes: [i64] @= []
@@ -197,13 +197,13 @@ function parse_message(data: [u8]) -> Message
     return built[0]
 
 # The message `s` holds from where it stands to its end, read as
-# `parse_message` reads it.
+# `decode_message` reads it.
 #
 # - `s`: the stream, read to its end and left open: its owner closes it.
 #
-# Fails where `s` fails, with its code. See also `parse_message`.
+# Fails where `s` fails, with its code. See also `decode_message`.
 function read_message(s: io.Stream) -> Message?
-    return ok(parse_message(io.read_all(s)?))
+    return ok(decode_message(io.read_all(s)?))
 
 # The bytes of `m`, its header fields folded and its parts written with a
 # boundary none of them holds.
@@ -225,8 +225,8 @@ function read_message(s: io.Stream) -> Message?
 # field of its own, or where an address's domain is no name IDNA writes;
 # `unsupported` where an address's local part is above ASCII and `options`
 # asks no UTF-8, since a local part has no ASCII form. See also
-# `parse_message`, `write_message`.
-function format_message(m: Message, options: WriteOptions) -> [u8]?
+# `decode_message`, `write_message`.
+function encode_message(m: Message, options: WriteOptions) -> [u8]?
     nodes: [tree.Node] @= []
     pending: [Message] @= [m]
     top: i64 @= 1
@@ -255,18 +255,18 @@ function format_message(m: Message, options: WriteOptions) -> [u8]?
     style = write.Style(utf8: options.utf8, line_length: options.line_length, line_end: options.line_end)
     return write.message(nodes: nodes, style: style)
 
-# Writes `m` to `s`, as `format_message` writes it.
+# Writes `m` to `s`, as `encode_message` writes it.
 #
 # - `s`: the stream, left open.
 # - `m`: the message.
 # - `options`: the line ends, the fold and whether UTF-8 is written.
 #
-# Fails as `format_message` fails, and where `s` fails, with its code. See
-# also `format_message`.
+# Fails as `encode_message` fails, and where `s` fails, with its code. See
+# also `encode_message`.
 function write_message(s: io.Stream, m: Message, options: WriteOptions) -> ()?
-    return io.write(s, data: format_message(m, options)?)
+    return io.write(s, data: encode_message(m, options)?)
 
-# The messages of an mbox file, each as bytes `parse_message` reads.
+# The messages of an mbox file, each as bytes `decode_message` reads.
 #
 # - `data`: the file; a message begins at a line opening `From ` that
 #   stands first or after an empty line.
@@ -274,7 +274,7 @@ function write_message(s: io.Stream, m: Message, options: WriteOptions) -> ()?
 # The `From ` line of each is left out, and one `>` is taken off a line of
 # `>` signs followed by `From ` (mboxrd's quoting, which reads mboxo's as
 # well); [] where `data` holds no `From ` line at its start. See also
-# `parse_message`.
+# `decode_message`.
 function split_mbox(data: [u8]) -> [[u8]]
     return mbox.split(data)
 
@@ -285,9 +285,9 @@ function split_mbox(data: [u8]) -> [[u8]]
 #
 # - `data`: a message or its header alone; empty answers [].
 #
-# It reads as `parse_message` reads a header, and never fails. See also
-# `format_header`, `parse_message`.
-function parse_header(data: [u8]) -> [Field]
+# It reads as `decode_message` reads a header, and never fails. See also
+# `encode_fields`, `decode_message`.
+function decode_fields(data: [u8]) -> [Field]
     head = field_lines.read(data: data, from: 0, to: data.len())
     out: [Field] @= []
 
@@ -302,8 +302,8 @@ function parse_header(data: [u8]) -> [Field]
 # - `fields`: the fields, in order.
 # - `options`: the line ends, the fold and whether UTF-8 is written.
 #
-# Fails as `format_message` fails for a field. See also `format_field`.
-function format_header(fields: [Field], options: WriteOptions) -> [u8]?
+# Fails as `encode_message` fails for a field. See also `format_field`.
+function encode_fields(fields: [Field], options: WriteOptions) -> [u8]?
     out: [str] @= []
 
     for f in fields
@@ -322,7 +322,7 @@ function format_header(fields: [Field], options: WriteOptions) -> [u8]?
 # where the name is empty or holds a byte other than printable ASCII but `:`,
 # the value holds a line break, or an address's domain is no name IDNA
 # writes; `unsupported` where an address's local part is above ASCII and
-# `options` asks no UTF-8. See also `format_header`, `unfold`.
+# `options` asks no UTF-8. See also `encode_fields`, `unfold`.
 function format_field(field: Field, options: WriteOptions) -> str?
     value = write.prepared(name: field.name, value: field.value, utf8: options.utf8)?
     return field_lines.folded(name: field.name, value: value, limit: options.line_length, line_end: options.line_end)
@@ -842,9 +842,9 @@ function multipart(subtype: str, parts: [Message]) -> Message?
 #
 # - `m`: the message, written with `standard_options`.
 #
-# Fails as `format_message` fails. See also `multipart`.
+# Fails as `encode_message` fails. See also `multipart`.
 function message_part(m: Message) -> Message?
-    data = format_message(m, standard_options())?
+    data = encode_message(m, standard_options())?
     header: [Field] @= [Field(name: "Content-Type", value: "message/rfc822")]
 
     if !bytes.is_ascii(data)
@@ -1337,11 +1337,11 @@ function parse_message_ids(s: str) -> [str]?
 
 ## Tests
 
-test "parse_message: a message Python's email wrote, read as Python reads it, and written back the same tree"
+test "decode_message: a message Python's email wrote, read as Python reads it, and written back the same tree"
     data = bytes.from_text(
         "From: Ana <ana@example.org>\r\nTo: =?utf-8?q?J=C3=B6rg?= <j@example.org>, b@example.org\r\nSubject: =?utf-8?q?Gr=C3=BC=C3=9Fe?=\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"=====B1=\"\r\n\r\n--=====B1=\r\nContent-Type: multipart/alternative;\r\n boundary=\"=====B2=\"\r\n\r\n--=====B2=\r\nContent-Type: text/plain; charset=\"utf-8\"\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\nHallo J=C3=B6rg\r\n\r\n--=====B2=\r\nContent-Type: text/html; charset=\"utf-8\"\r\nContent-Transfer-Encoding: 7bit\r\nMIME-Version: 1.0\r\n\r\n<p>Hallo</p>\r\n\r\n--=====B2=--\r\n\r\n--=====B1=\r\nContent-Type: application/octet-stream\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename*=utf-8''na%C3%AFve.bin\r\nMIME-Version: 1.0\r\n\r\nAAEC\r\n\r\n--=====B1=--\r\n"
     )
-    m = parse_message(data)
+    m = decode_message(data)
     kinds: [str] @= []
 
     for p in walk(m)
@@ -1355,18 +1355,18 @@ test "parse_message: a message Python's email wrote, read as Python reads it, an
     assert decoded_value_of(m, name: "Subject").must() == "Grüße"
     to = addresses_of(m, name: "To").must()
     assert to.len() == 2 && to[0].name == "Jörg" && m.defects.len() == 0
-    assert parse_message(format_message(m, standard_options()).must()) == m
+    assert decode_message(encode_message(m, standard_options()).must()) == m
 
-test "parse_message: empty, a header with no body, bytes that are no message"
-    assert parse_message([]) == Message(fields: [], body: [], parts: [], preamble: [], epilogue: [], defects: [])
-    assert parse_message(bytes.from_text("A: 1")).fields == [Field(name: "A", value: "1")]
-    noise = parse_message([0, 255, 10, 13])
+test "decode_message: empty, a header with no body, bytes that are no message"
+    assert decode_message([]) == Message(fields: [], body: [], parts: [], preamble: [], epilogue: [], defects: [])
+    assert decode_message(bytes.from_text("A: 1")).fields == [Field(name: "A", value: "1")]
+    noise = decode_message([0, 255, 10, 13])
     assert noise.fields.len() == 0 && noise.body == [0, 255, 10, 13] && noise.defects.len() == 1
 
-test "format_message: a message read and written with LF line ends"
-    m = parse_message(bytes.from_text("Subject: x\r\n\r\na\r\nb\r\n"))
+test "encode_message: a message read and written with LF line ends"
+    m = decode_message(bytes.from_text("Subject: x\r\n\r\na\r\nb\r\n"))
     lf = WriteOptions(utf8: false, line_length: 78, line_end: "\n")
-    assert format_message(m, lf).must() == bytes.from_text("Subject: x\n\na\nb\n")
+    assert encode_message(m, lf).must() == bytes.from_text("Subject: x\n\na\nb\n")
 
 test "body_of and attachments_of: a related HTML body and its inline image"
     logo = Attachment(filename: "logo.png", media_type: "image/png", data: [1, 2], content_id: "logo@x")
@@ -1396,8 +1396,8 @@ test "utf8_options: UTF-8 in the header"
     assert utf8_options().utf8 && utf8_options().line_end == "\r\n"
 
 # A message read: two fields and a body.
-test "parse_message: a header and a body"
-    m = parse_message(bytes.from_text("From: ana@example.org\r\nSubject: Hello\r\n\r\nHi there.\r\n"))
+test "decode_message: a header and a body"
+    m = decode_message(bytes.from_text("From: ana@example.org\r\nSubject: Hello\r\n\r\nHi there.\r\n"))
     assert value_of(m, name: "subject").must() == "Hello" && m.body == bytes.from_text("Hi there.\r\n")
 
 # A message read from a stream, here a pipe a test writes into.
@@ -1411,9 +1411,9 @@ test "read_message: from a pipe"
     io.close(@reader).must()
 
 # A message written with a text body and two fields.
-test "format_message: a text part with a subject"
+test "encode_message: a text part with a subject"
     m = with_field(text_part(text: "Hi.", subtype: "plain").must(), name: "Subject", value: "Hello")
-    written = bytes.to_text(format_message(m, standard_options()).must()).must()
+    written = bytes.to_text(encode_message(m, standard_options()).must()).must()
     assert written == "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 7bit\r\nSubject: Hello\r\n\r\nHi."
 
 # A message written to a pipe and read back.
@@ -1442,12 +1442,12 @@ test "split_mbox: two messages"
     assert split_mbox(data).len() == 2
 
 # The fields of a header alone.
-test "parse_header: two fields, one folded"
-    assert parse_header(bytes.from_text("To: a@x.org\r\nSubject: a\r\n b\r\n\r\n")) == [Field(name: "To", value: "a@x.org"), Field(name: "Subject", value: "a b")]
+test "decode_fields: two fields, one folded"
+    assert decode_fields(bytes.from_text("To: a@x.org\r\nSubject: a\r\n b\r\n\r\n")) == [Field(name: "To", value: "a@x.org"), Field(name: "Subject", value: "a b")]
 
 # A header written from its fields.
-test "format_header: two fields"
-    assert format_header([Field(name: "To", value: "a@x.org"), Field(name: "Subject", value: "Grüße")], options: standard_options()).must() == bytes.from_text("To: a@x.org\r\nSubject: =?utf-8?q?Gr=C3=BC=C3=9Fe?=\r\n")
+test "encode_fields: two fields"
+    assert encode_fields([Field(name: "To", value: "a@x.org"), Field(name: "Subject", value: "Grüße")], options: standard_options()).must() == bytes.from_text("To: a@x.org\r\nSubject: =?utf-8?q?Gr=C3=BC=C3=9Fe?=\r\n")
 
 # A long subject folded before a space.
 test "format_field: a long value folded"
@@ -1460,33 +1460,33 @@ test "unfold: a folded value"
 
 # The first field of a name, its case ignored.
 test "value_of: a subject"
-    m = parse_message(bytes.from_text("Subject: Hello\r\n\r\n"))
+    m = decode_message(bytes.from_text("Subject: Hello\r\n\r\n"))
     assert value_of(m, name: "SUBJECT").must() == "Hello" && value_of(m, name: "To").is_err()
 
 # Every `Received` field, in order.
 test "values_of: two received fields"
-    m = parse_message(bytes.from_text("Received: one\r\nReceived: two\r\n\r\n"))
+    m = decode_message(bytes.from_text("Received: one\r\nReceived: two\r\n\r\n"))
     assert values_of(m, name: "received") == ["one", "two"]
 
 # A subject written as encoded words, read as text.
 test "decoded_value_of: an encoded subject"
-    m = parse_message(bytes.from_text("Subject: =?utf-8?q?caf=C3=A9?=\r\n\r\n"))
+    m = decode_message(bytes.from_text("Subject: =?utf-8?q?caf=C3=A9?=\r\n\r\n"))
     assert decoded_value_of(m, name: "Subject").must() == "café"
 
 # Whether a message has a date.
 test "has_field: a date there and not"
-    m = parse_message(bytes.from_text("Date: Mon, 02 Jan 2006 15:04:05 -0700\r\n\r\n"))
+    m = decode_message(bytes.from_text("Date: Mon, 02 Jan 2006 15:04:05 -0700\r\n\r\n"))
     assert has_field(m, name: "date") && !has_field(m, name: "to")
 
 # A subject set, then changed.
 test "with_field: set and replaced"
-    m = with_field(with_field(parse_message([]), name: "Subject", value: "a"), name: "subject", value: "b")
+    m = with_field(with_field(decode_message([]), name: "Subject", value: "a"), name: "subject", value: "b")
     assert m.fields == [Field(name: "Subject", value: "b")]
 
 # A second field of a name added.
 test "with_field_added: two comments"
     m = with_field_added(
-        with_field_added(parse_message([]), name: "Comments", value: "a"),
+        with_field_added(decode_message([]), name: "Comments", value: "a"),
         name: "Comments",
         value: "b"
     )
@@ -1494,24 +1494,24 @@ test "with_field_added: two comments"
 
 # A field taken out.
 test "without_field: Bcc removed"
-    m = without_field(parse_message(bytes.from_text("To: a@x\r\nBcc: b@x\r\n\r\n")), name: "bcc")
+    m = without_field(decode_message(bytes.from_text("To: a@x\r\nBcc: b@x\r\n\r\n")), name: "bcc")
     assert m.fields == [Field(name: "To", value: "a@x")]
 
 # The content type of a part, and the default of one with none.
 test "content_type_of: written and the default"
-    m = parse_message(bytes.from_text("Content-Type: text/HTML; charset=UTF-8\r\n\r\n"))
+    m = decode_message(bytes.from_text("Content-Type: text/HTML; charset=UTF-8\r\n\r\n"))
     assert content_type_of(m).media_type == "text/html" && content_type_of(m).params["charset"].must() == "UTF-8"
-    assert content_type_of(parse_message([])).media_type == "text/plain"
+    assert content_type_of(decode_message([])).media_type == "text/plain"
 
 # The disposition of an attachment.
 test "disposition_of: an attachment"
-    m = parse_message(bytes.from_text("Content-Disposition: attachment; filename=a.pdf\r\n\r\n"))
+    m = decode_message(bytes.from_text("Content-Disposition: attachment; filename=a.pdf\r\n\r\n"))
     assert disposition_of(m).must() == Disposition(kind: "attachment", params: {"filename": "a.pdf"})
 
 # The transfer encoding of a part.
 test "transfer_encoding_of: base64 and the default"
-    assert transfer_encoding_of(parse_message(bytes.from_text("Content-Transfer-Encoding: Base64\r\n\r\n"))) == "base64"
-    assert transfer_encoding_of(parse_message([])) == "7bit"
+    assert transfer_encoding_of(decode_message(bytes.from_text("Content-Transfer-Encoding: Base64\r\n\r\n"))) == "base64"
+    assert transfer_encoding_of(decode_message([])) == "7bit"
 
 # The name of an attached file, by RFC 2231.
 test "filename_of: a name above ASCII"
@@ -1585,13 +1585,13 @@ test "multipart: an alternative of two"
 test "message_part: a message inside a message"
     inner = with_field(text_part(text: "inner", subtype: "plain").must(), name: "Subject", value: "forwarded")
     part = message_part(inner).must()
-    assert content_type_of(part).media_type == "message/rfc822" && value_of(parse_message(part.body), name: "Subject").must() == "forwarded"
+    assert content_type_of(part).media_type == "message/rfc822" && value_of(decode_message(part.body), name: "Subject").must() == "forwarded"
 
 # A message of text, HTML and a file, written and read back.
 test "compose: text, HTML and a file"
     file = Attachment(filename: "a.txt", media_type: "text/plain", data: bytes.from_text("file"), content_id: "")
     m = compose(text: "Hello", html: "<p>Hello</p>", attachments: [file]).must()
-    back = parse_message(format_message(m, standard_options()).must())
+    back = decode_message(encode_message(m, standard_options()).must())
     assert content_type_of(back).media_type == "multipart/mixed" && content_type_of(back.parts[0]).media_type == "multipart/alternative"
     assert content_of(back.parts[1]).must() == bytes.from_text("file")
 
@@ -1630,7 +1630,7 @@ test "format_addr_spec: a quoted local part"
 
 # The mailboxes of `To`.
 test "addresses_of: the To field"
-    m = parse_message(bytes.from_text("To: a@x.org, B <b@x.org>\r\n\r\n"))
+    m = decode_message(bytes.from_text("To: a@x.org, B <b@x.org>\r\n\r\n"))
     assert addresses_of(m, name: "to").must().len() == 2
 
 # An address above ASCII needs SMTPUTF8.
@@ -1703,7 +1703,7 @@ test "date_at: the epoch in UTC"
 
 # The date of a message.
 test "date_of: a Date field"
-    m = parse_message(bytes.from_text("Date: Thu, 01 Jan 1970 00:00:00 +0000\r\n\r\n"))
+    m = decode_message(bytes.from_text("Date: Thu, 01 Jan 1970 00:00:00 +0000\r\n\r\n"))
     assert date_of(m).must().instant == time.epoch()
 
 # A new identifier on a domain.
