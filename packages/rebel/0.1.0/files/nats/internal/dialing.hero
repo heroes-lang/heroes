@@ -410,7 +410,7 @@ test "dial: TLS begun after the INFO line, over the connection where tls can, on
     # refused connection takes 2 s and the client's 1,000 ms ran out there
     # (measured on the box, 2026-11-19). A client that fails ends the wait for
     # it, and the test fails with the client's words.
-    tls.set_accept_deadline(l, deadline_ms: 30000).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(30).must()).must()
     t @= threads.spawn_text(body: dial_tls_for_test, arg: f"tls://127.0.0.1:{l.port}").must()
     tries: i64 @= 0
     done: bool @= false
@@ -418,7 +418,7 @@ test "dial: TLS begun after the INFO line, over the connection where tls can, on
     while !done && tries < 3
         tries @ tries + 1
 
-        match tls.accept(l, deadline_ms: 10000)
+        match tls.accept(l, deadline: time.seconds(10).must())
             .err _ => _ = 0
             .ok got =>
                 c @= got.stream

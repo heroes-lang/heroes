@@ -50,6 +50,7 @@ use http2/internal/wire
 use io
 use net
 use threads
+use time
 use tls
 
 ## Codes
@@ -1249,7 +1250,11 @@ record Conn
 # server's TLS chose no `h2`, the connection closed; and as `tls.connect`
 # fails. See also `connect_plain`, `client`.
 function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Options) -> Conn?
-    stream @= tls.connect(host: host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: [ALPN]))?.stream
+    handshake = if deadline_ms == 0
+        time.max_duration()
+    else
+        time.milliseconds(deadline_ms)?
+    stream @= tls.connect(host: host, port: port, deadline: handshake, client: tls.Client(roots: roots, protocols: [ALPN]))?.stream
     chosen = tls.protocol_of(stream).default("")
 
     if chosen != ALPN

@@ -12,6 +12,7 @@ use io
 use net
 use strings
 use threads
+use time
 use tls
 
 # What parts the pieces of `script` and of `serve`'s answer.
@@ -156,7 +157,7 @@ function serve_tls(arg: str) -> str
     while taken < accepts
         taken @ taken + 1
 
-        match tls.accept(l, deadline_ms: 10_000)
+        match tls.accept(l, deadline: time.seconds(10).must())
             .err _ => _ = 0
             .ok conn =>
                 s = conn.stream
@@ -194,7 +195,7 @@ function ask_tls(arg: str) -> str
     halves = strings.split_once(s: arg, sep: SEPARATOR).must()
     port = syntax.decimal(s: halves.before, what: "the port").must()
 
-    match tls.connect("localhost", port: port, deadline_ms: 10_000, client: tls.Client(roots: tls.TEST_ROOT, protocols: ["http/1.1"]))
+    match tls.connect("localhost", port: port, deadline: time.seconds(10).must(), client: tls.Client(roots: tls.TEST_ROOT, protocols: ["http/1.1"]))
         .err e => return e.code + ": " + e.msg
         .ok made =>
             stream @= made.stream

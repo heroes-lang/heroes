@@ -38,6 +38,7 @@
 use io
 use os
 use term
+use time
 use tui/internal/borders
 use tui/internal/changes as delta
 use tui/internal/editing
@@ -66,7 +67,7 @@ constant NOT_FOUND: str
 constant UNSUPPORTED: str
     "unsupported"
 
-# An argument out of its range: a time below 0. `read_event_within` fails with
+# An argument out of its range: a time below zero. `read_event_within` fails with
 # it.
 constant INVALID: str
     "invalid"
@@ -335,22 +336,29 @@ function redraw(@terminal: Terminal)
 # Fails `closed` where the terminal is gone, `unsupported` where the program
 # has none, `failed` where the system refuses. See also `read_event_within`.
 function read_event(@terminal: Terminal) -> Event?
-    return read_event_within(@terminal, limit_ms: 9223372036854775807)
+    return read_event_within(@terminal, limit: time.max_duration())
 
-# The next event at the terminal, waiting at most `limit_ms` milliseconds: the
-# reader of a program that also moves on its own, a clock or an animation.
+# The next event at the terminal, waiting at most `limit`: the reader of a
+# program that also moves on its own, a clock or an animation.
 #
 # - `terminal`: the terminal, as `read_event` keeps it.
-# - `limit_ms`: the longest to wait, in milliseconds; 0 answers an event
-#   already there and waits not at all.
+# - `limit`: the longest to wait, a part of a millisecond counting as a
+#   whole one; zero answers an event already there and waits not at all,
+#   and `time.max_duration()` waits as long as `read_event` does.
 #
-# Fails `timeout` where none came in time, `invalid` where `limit_ms` is below
-# 0, and as `read_event` does. A pasted text is read whole, however long it
-# takes. See also `read_event`.
-function read_event_within(@terminal: Terminal, limit_ms: i64) -> Event?
-    if limit_ms < 0
-        return fail(code: INVALID, msg: f"reading an event: a time is 0 or more, and {limit_ms} ms was asked")
-    left @= limit_ms
+# Fails `timeout` where none came in time, `invalid` where `limit` is below
+# zero, and as `read_event` does. A pasted text is read whole, however long
+# it takes. See also `read_event`.
+function read_event_within(@terminal: Terminal, limit: time.Duration) -> Event?
+    if limit.nanoseconds < 0
+        return fail(
+            code: INVALID,
+            msg: f"reading an event: a time is zero or more, and {time.format_duration(limit)} was asked"
+        )
+    left @= limit.nanoseconds / 1_000_000
+
+    if limit.nanoseconds % 1_000_000 != 0
+        left @ left + 1
 
     while true
         match os.terminal_size()
@@ -422,7 +430,7 @@ function read_event_within(@terminal: Terminal, limit_ms: i64) -> Event?
                     return fail(code: e.code, msg: e.msg)
 
                 if left <= 0
-                    return fail(code: TIMEOUT, msg: f"reading an event: none came in {limit_ms} ms")
+                    return fail(code: TIMEOUT, msg: f"reading an event: none came in {time.format_duration(limit)}")
                 left @ left - wait_ms
 
 # Gives the terminal back to the person for a while, as `stop` does, so
@@ -2935,14 +2943,14 @@ test "flush: a frame of another size written whole, a cursor outside the screen 
     assert io.read_all_text(p.reader).must() == "\u{1b}[0m\u{1b}[2J\u{1b}[H\u{1b}[1;1Habc\u{1b}[?25l"
     io.close(@p.reader).must()
 
-test "read_event_within: a time below 0 refused, no terminal or no event"
+test "read_event_within: a time below zero refused, no terminal or no event"
     p @= io.pipe().must()
     t @= Terminal(
         output: p.writer,
         screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
     )
 
-    match read_event_within(@t, limit_ms: -1)
+    match read_event_within(@t, limit: time.nanoseconds(-1))
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -3502,7 +3510,7 @@ test "read_event_within: a tenth of a second"
         screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
     )
 
-    match read_event_within(@t, limit_ms: 100)
+    match read_event_within(@t, limit: time.milliseconds(100).must())
         .ok _  => _ = 0
         .err e => assert e.code == TIMEOUT || e.code == UNSUPPORTED || e.code == CLOSED
 

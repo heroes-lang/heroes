@@ -247,14 +247,14 @@ function serve(arg: str) -> str
         .ok made => made
         .err e   => return "listen failed: " + e.code + ": " + e.msg
 
-    tls.set_accept_deadline(l, deadline_ms: 15000).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(15).must()).must()
     heard: str @= "closed: no client finished its handshake"
     tries @= 0
 
     while tries < 5
         tries @ tries + 1
 
-        match tls.accept(l, deadline_ms: 10000)
+        match tls.accept(l, deadline: time.seconds(10).must())
             .err e =>
                 heard @ e.code + ": " + e.msg
 

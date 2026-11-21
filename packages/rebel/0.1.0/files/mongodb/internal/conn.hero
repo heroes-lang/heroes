@@ -10,6 +10,7 @@ use bytes
 use io
 use mongodb/internal/wire
 use net
+use time
 use tls
 
 # The code of a connection that is closed or that the server closed.
@@ -46,7 +47,7 @@ function open(host: str, port: i64, secure: bool, roots: str, timeout_ms: i64) -
     target = net.join_host_port(host, port: port)
 
     if secure
-        stream = tls.connect(host: host, port: port, deadline_ms: 0, client: tls.Client(roots: roots, protocols: []))?.stream
+        stream = tls.connect(host: host, port: port, deadline: time.max_duration(), client: tls.Client(roots: roots, protocols: []))?.stream
         return ok(
             Conn(out: stream, input: stream, link: .network, target: target, ended: false, most: wire.DEFAULT_MOST)
         )
@@ -65,12 +66,22 @@ function open(host: str, port: i64, secure: bool, roots: str, timeout_ms: i64) -
 function scripted(out: io.Stream, input: io.Stream) -> Conn
     return Conn(out: out, input: input, link: .scripted, target: "scripted:0", ended: false, most: wire.DEFAULT_MOST)
 
+# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
+# being `time.max_duration()` (until this package's own step of D07; `tls`
+# takes a `time.Duration` since M-rebel-library step 88c).
+#
+# - `ms`: milliseconds, 0 for no limit.
+function tls_deadline(ms: i64) -> time.Duration?
+    if ms == 0
+        return ok(time.max_duration())
+    return time.milliseconds(ms)
+
 # Makes every read and write of `c` end by `ms` milliseconds from now; 0
 # takes the deadline away. Fails as `net.set_deadline` and `tls.set_deadline`
 # fail.
 function set_deadline(c: Conn lent, ms: i64) -> ()?
     return match c.link
-        .network  => tls.set_deadline(c.out, deadline_ms: ms)
+        .network  => tls.set_deadline(c.out, deadline: tls_deadline(ms)?)
         .scripted => ok()
 
 # A failure of `c` with `code`, after which `c` has ended.

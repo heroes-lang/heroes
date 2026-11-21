@@ -6,6 +6,7 @@
 
 use bytes
 use json
+use time
 use webauthn/internal/codes
 
 # A credential named in the options, made plain.
@@ -30,8 +31,8 @@ record Creation
     display_name: str
     # The challenge.
     challenge: [u8]
-    # Milliseconds.
-    timeout_ms: i64
+    # How long the browser waits.
+    timeout: time.Duration
     # COSE algorithms.
     algorithms: [i64]
     # Credentials excluded.
@@ -104,7 +105,7 @@ function creation(c: Creation) -> str?
         "user": .object(members: {"id": .text(v: bytes.format_base64_url_unpadded(c.user_id)), "name": .text(v: c.user_name), "displayName": .text(v: c.display_name)})
         "challenge": .text(v: bytes.format_base64_url_unpadded(c.challenge))
         "pubKeyCredParams": .list(items: params)
-        "timeout": .number(v: to_f64(c.timeout_ms))
+        "timeout": .number(v: to_f64(ms_of(c.timeout)?))
     }
 
     if c.exclude.len() > 0
@@ -117,13 +118,28 @@ function creation(c: Creation) -> str?
     members["extensions"] @ .object(members: {"credProps": .boolean(v: true)})
     return json.format(.object(members: members))
 
+# The whole milliseconds of `d`, as WebAuthn's `timeout` member counts
+# them, a part of one counting as a whole one.
+#
+# - `d`: the time the browser waits.
+#
+# Fails `invalid` where `d` is below zero.
+function ms_of(d: time.Duration) -> i64?
+    if d.nanoseconds < 0
+        return fail(code: codes.INVALID, msg: f"a timeout is zero or more, not {time.format_duration(d)}")
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return ok(whole + 1)
+    return ok(whole)
+
 # The JSON of an authentication's options.
-function request(rp_id: str, challenge: [u8], timeout_ms: i64, allow: [Named], user_verification: str, hints: [str]) -> str?
+function request(rp_id: str, challenge: [u8], timeout: time.Duration, allow: [Named], user_verification: str, hints: [str]) -> str?
     if challenge.len() < 16
         return fail(code: codes.INVALID, msg: f"a challenge is 16 bytes or more, not {challenge.len()}")
     members: {str: json.Value} @= {
         "challenge": .text(v: bytes.format_base64_url_unpadded(challenge))
-        "timeout": .number(v: to_f64(timeout_ms))
+        "timeout": .number(v: to_f64(ms_of(timeout)?))
         "rpId": .text(v: rp_id)
     }
 
@@ -147,7 +163,7 @@ test "creation: the JSON a browser parses, and the refusals"
         user_name: "ada",
         display_name: "Ada",
         challenge: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        timeout_ms: 60000,
+        timeout: time.minutes(1).must(),
         algorithms: [-7, -257],
         exclude: [Named(id: [9], transports: ["usb"])],
         attestation: "none",
@@ -160,17 +176,17 @@ test "creation: the JSON a browser parses, and the refusals"
     assert text == "{\"rp\":{\"name\":\"Example\",\"id\":\"example.org\"},\"user\":{\"id\":\"AQID\",\"name\":\"ada\",\"displayName\":\"Ada\"},\"challenge\":\"AAAAAAAAAAAAAAAAAAAAAA\",\"pubKeyCredParams\":[{\"type\":\"public-key\",\"alg\":-7},{\"type\":\"public-key\",\"alg\":-257}],\"timeout\":60000,\"excludeCredentials\":[{\"type\":\"public-key\",\"id\":\"CQ\",\"transports\":[\"usb\"]}],\"authenticatorSelection\":{\"residentKey\":\"preferred\",\"requireResidentKey\":false,\"userVerification\":\"preferred\"},\"attestation\":\"none\",\"extensions\":{\"credProps\":true}}"
     empty: [u8] = []
     assert creation(
-        Creation(rp_id: "a", rp_name: "a", user_id: empty, user_name: "a", display_name: "a", challenge: c.challenge, timeout_ms: 1, algorithms: [-7], exclude: nothing, attestation: "none", attachment: "", resident_key: "preferred", user_verification: "preferred", hints: none)
+        Creation(rp_id: "a", rp_name: "a", user_id: empty, user_name: "a", display_name: "a", challenge: c.challenge, timeout: time.milliseconds(1).must(), algorithms: [-7], exclude: nothing, attestation: "none", attachment: "", resident_key: "preferred", user_verification: "preferred", hints: none)
     ).is_err()
     assert creation(
-        Creation(rp_id: "a", rp_name: "a", user_id: [1], user_name: "a", display_name: "a", challenge: [1], timeout_ms: 1, algorithms: [-7], exclude: nothing, attestation: "none", attachment: "", resident_key: "preferred", user_verification: "preferred", hints: none)
+        Creation(rp_id: "a", rp_name: "a", user_id: [1], user_name: "a", display_name: "a", challenge: [1], timeout: time.milliseconds(1).must(), algorithms: [-7], exclude: nothing, attestation: "none", attachment: "", resident_key: "preferred", user_verification: "preferred", hints: none)
     ).is_err()
 
 test "request: the JSON a browser parses, allowed credentials and hints"
     text = request(
         rp_id: "example.org",
         challenge: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        timeout_ms: 60000,
+        timeout: time.minutes(1).must(),
         allow: [Named(id: [1, 2], transports: [])],
         user_verification: "required",
         hints: ["security-key"]
@@ -180,7 +196,7 @@ test "request: the JSON a browser parses, allowed credentials and hints"
     assert request(
         rp_id: "a",
         challenge: [1, 2],
-        timeout_ms: 1,
+        timeout: time.milliseconds(1).must(),
         allow: none,
         user_verification: "preferred",
         hints: []

@@ -7,6 +7,7 @@
 use io
 use kafka/internal/model
 use net
+use time
 use tls
 
 # The bytes asked of a stream at a time.
@@ -25,6 +26,16 @@ variant Link
     # Nothing: closed, or not connected yet.
     gone
 
+# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
+# being `time.max_duration()` (until this package's own step of D07; `tls`
+# takes a `time.Duration` since M-rebel-library step 88c).
+#
+# - `ms`: milliseconds, 0 for no limit.
+function tls_deadline(ms: i64) -> time.Duration?
+    if ms == 0
+        return ok(time.max_duration())
+    return time.milliseconds(ms)
+
 # A TCP connection to `host` at `port`, made within `ms`.
 #
 # - `host`: the host.
@@ -42,7 +53,7 @@ function open_plain(host: str, port: i64, ms: i64) -> Link?
 # - `ms`: milliseconds the connection and its handshake may take.
 # - `roots`: the authorities trusted, "" for the system's.
 function open_tls(host: str, port: i64, ms: i64, roots: str) -> Link?
-    s = tls.connect(host: host, port: port, deadline_ms: ms, client: tls.Client(roots: roots, protocols: []))?.stream
+    s = tls.connect(host: host, port: port, deadline: tls_deadline(ms)?, client: tls.Client(roots: roots, protocols: []))?.stream
     return ok(.connected(stream: s, secured: true))
 
 # Whether `l` is TLS.
@@ -60,7 +71,7 @@ function is_secured(l: Link) -> bool
 # - `ms`: milliseconds, 0 or more.
 function arm(l: Link, ms: i64) -> ()?
     return match l
-        .connected c => tls.set_deadline(c.stream, deadline_ms: ms)
+        .connected c => tls.set_deadline(c.stream, deadline: tls_deadline(ms)?)
         .gone        => fail(code: model.CLOSED, msg: "the connection is closed")
 
 # The bytes one read of `l` brings, at least one.

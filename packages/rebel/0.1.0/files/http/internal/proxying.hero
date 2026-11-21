@@ -254,7 +254,7 @@ function exchange(proxy: str, scheme: str, host: str, port: str, deadline_ms: i6
                 msg: f"sending a request to {host} through a proxy: its {deadline_ms} ms ran out before the request"
             )
 
-        match tls.set_deadline(secured, deadline_ms: left)
+        match tls.set_deadline(secured, deadline: policy.tls_deadline(left)?)
             .ok _ => _ = 0
             .err e =>
                 shut(@secured)

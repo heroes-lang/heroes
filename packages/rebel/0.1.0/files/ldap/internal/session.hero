@@ -13,6 +13,7 @@ use ldap/internal/requests
 use ldap/internal/wire
 use net
 use os
+use time
 use tls
 
 constant CLOSED: str
@@ -100,6 +101,16 @@ function made(stream: io.Stream, link: Link, host: str, port: i64, deadline_ms: 
         last_controls: []
     )
 
+# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
+# being `time.max_duration()` (until this package's own step of D07; `tls`
+# takes a `time.Duration` since M-rebel-library step 88c).
+#
+# - `ms`: milliseconds, 0 for no limit.
+function tls_deadline(ms: i64) -> time.Duration?
+    if ms == 0
+        return ok(time.max_duration())
+    return time.milliseconds(ms)
+
 # A session over a plain TCP connection to `host` at `port`.
 #
 # Fails as `net.connect_timeout` fails.
@@ -117,7 +128,7 @@ function connect_plain(host: str, port: i64, deadline_ms: i64, max_message: i64)
 #
 # Fails as `tls.connect` fails.
 function connect_direct(host: str, port: i64, deadline_ms: i64, roots: str, max_message: i64) -> Session?
-    stream = tls.connect(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: []))?.stream
+    stream = tls.connect(host, port: port, deadline: tls_deadline(deadline_ms)?, client: tls.Client(roots: roots, protocols: []))?.stream
     return ok(made(stream, link: .secured, host: host, port: port, deadline_ms: deadline_ms, max_message: max_message))
 
 # The bytes of the StartTLS request numbered `id`.
@@ -175,7 +186,7 @@ function connect_start_tls(host: str, port: i64, deadline_ms: i64, roots: str, m
     answer = wire.decode(raw)?
     start_tls_answered(answer, id: 1, target: probe.target)?
     steps: [tls.Step] = [.send(data: request), .expect(answer: raw)]
-    stream = tls.connect_after(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: []), steps: steps)?.stream
+    stream = tls.connect_after(host, port: port, deadline: tls_deadline(deadline_ms)?, client: tls.Client(roots: roots, protocols: []), steps: steps)?.stream
     s @= made(stream, link: .secured, host: host, port: port, deadline_ms: deadline_ms, max_message: max_message)
     s.next_id @ 2
     return ok(s)
@@ -223,7 +234,7 @@ function start_tls(@s: Session, roots: str) -> ()?
 
 # Sets the deadline of `s`'s next operation, `s.deadline_ms` from now.
 function set_deadline(s: Session) -> ()?
-    return tls.set_deadline(s.stream, deadline_ms: s.deadline_ms)
+    return tls.set_deadline(s.stream, deadline: tls_deadline(s.deadline_ms)?)
 
 # Fails `closed` with the reason `s` ended.
 function ended_failure<T>(s: Session) -> T?

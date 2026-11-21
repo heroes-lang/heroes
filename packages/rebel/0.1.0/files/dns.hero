@@ -16,9 +16,9 @@
 # `http` (a package of a layer above this one) as the body of a POST of type
 # `application/dns-message`, its answer read by `decode` (RFC 8484).
 #
-# **A deadline on every try**: a resolver's `timeout_ms` bounds each try of
+# **A deadline on every try**: a resolver's `timeout` bounds each try of
 # each server, a datagram awaited or a connection made and read, so a lookup
-# takes at most `attempts` times its servers times three times `timeout_ms`.
+# takes at most `attempts` times its servers times three times `timeout`.
 #
 # **Nothing a server sends can end the program**: a message is read within
 # its bytes, a name within 255 bytes and 127 compression pointers each
@@ -47,6 +47,7 @@ use net
 use os
 use strings
 use threads
+use time
 
 ## Codes
 
@@ -108,10 +109,11 @@ record Resolver
     # The count of dots from which a name is tried as it is before the
     # search list, 1 by default, 0 to 15.
     ndots: i64
-    # Milliseconds each try of each server may take, 1 or more: a datagram
-    # awaited, or a connection made, and its answer read within as much
-    # again.
-    timeout_ms: i64
+    # How long each try of each server may take, above zero, a part of a
+    # millisecond counting as a whole one: a datagram awaited, or a
+    # connection made, and its answer read within as much again;
+    # `time.max_duration()` waits as long as the server takes.
+    timeout: time.Duration
     # How many times the servers are tried in turn, 1 or more.
     attempts: i64
     # Whether each lookup begins at a server drawn at random, rather than at
@@ -197,7 +199,7 @@ function parse_resolv_conf(text: str) -> Resolver
         servers: servers,
         search: c.search,
         ndots: c.ndots,
-        timeout_ms: c.timeout_s * 1000,
+        timeout: time.seconds(c.timeout_s).must(),
         attempts: c.attempts,
         rotate: c.rotate,
         tcp: c.tcp,
@@ -230,7 +232,7 @@ function resolver(servers: [str]) -> Resolver?
                     .err _ => return fail(code: INVALID, msg: f"\"{s}\" is no address, with or without a port")
 
     return ok(
-        Resolver(servers: out, search: [], ndots: 1, timeout_ms: 5000, attempts: 2, rotate: false, tcp: false, udp_size: DEFAULT_UDP_SIZE, dnssec_ok: false, recursion: true)
+        Resolver(servers: out, search: [], ndots: 1, timeout: time.seconds(5).must(), attempts: 2, rotate: false, tcp: false, udp_size: DEFAULT_UDP_SIZE, dnssec_ok: false, recursion: true)
     )
 
 ## Asking
@@ -238,7 +240,7 @@ function resolver(servers: [str]) -> Resolver?
 # The answer to `m` from the servers of `r`: sent over UDP, and again over
 # TCP where the answer comes truncated, or over TCP alone where `r.tcp`
 # says so, each server tried in turn `r.attempts` times, each try within
-# `r.timeout_ms`.
+# `r.timeout`.
 #
 # - `r`: the resolver whose servers and limits are used; its search list,
 #   `udp_size`, `dnssec_ok` and `recursion` are not, since `m` is sent as it
@@ -256,10 +258,10 @@ function resolver(servers: [str]) -> Resolver?
 # written, `stopped` and `limit` as `net` fails, at once. See also `query`,
 # `exchange_stream`.
 function exchange(r: Resolver, m: Message) -> Message?
-    if r.servers.len() == 0 || r.timeout_ms < 1 || r.attempts < 1
+    if r.servers.len() == 0 || r.timeout.nanoseconds < 1 || r.attempts < 1
         return fail(
             code: INVALID,
-            msg: f"a resolver asks one server or more, 1 ms or more a try, 1 attempt or more: not {r.servers.len()} servers, {r.timeout_ms} ms, {r.attempts} attempts"
+            msg: f"a resolver asks one server or more, a time above zero a try, 1 attempt or more: not {r.servers.len()} servers, {time.format_duration(r.timeout)}, {r.attempts} attempts"
         )
 
     for a in r.servers
@@ -272,7 +274,13 @@ function exchange(r: Resolver, m: Message) -> Message?
     if r.rotate
         draw = os.random_bytes(2)?
         first @ (to_i64(draw[0]).must() << 8 | to_i64(draw[1]).must()) % r.servers.len()
-    plan = transport.Plan(servers: r.servers, timeout_ms: r.timeout_ms, attempts: r.attempts, first: first, tcp: r.tcp)
+    plan = transport.Plan(
+        servers: r.servers,
+        timeout_ms: transport.try_ms(r.timeout),
+        attempts: r.attempts,
+        first: first,
+        tcp: r.tcp
+    )
     return decode(transport.exchange(asked, plan: plan)?)
 
 # The answer to `m` over `s`, a stream the program opened to a server and
@@ -629,8 +637,8 @@ function lookup_reverse(r: Resolver, a: net.Address) -> [str]?
 # first and last.
 #
 # - `r`: the resolver; its first server is asked, and the connection is made
-#   within `r.timeout_ms` and the whole zone read within `r.timeout_ms`
-#   times `r.attempts`.
+#   within `r.timeout` and the whole zone read within `r.timeout` times
+#   `r.attempts`.
 # - `zone`: the zone's name, taken as absolute.
 #
 # Fails `failed` where the server refuses (most refuse a transfer to anyone
@@ -639,10 +647,10 @@ function lookup_reverse(r: Resolver, a: net.Address) -> [str]?
 # than 100,000 messages come, `timeout` where the time passes, and as
 # `exchange` fails. See also `lookup`.
 function transfer(r: Resolver, zone: str) -> [Record]?
-    if r.servers.len() == 0 || r.timeout_ms < 1 || r.attempts < 1
+    if r.servers.len() == 0 || r.timeout.nanoseconds < 1 || r.attempts < 1
         return fail(
             code: INVALID,
-            msg: "a zone transfer asks a resolver of one server or more, 1 ms or more, 1 attempt or more"
+            msg: "a zone transfer asks a resolver of one server or more, a time above zero, 1 attempt or more"
         )
     q @= new_query(zone, type_code: TYPE_AXFR)?
     q.recursion_desired @ false
@@ -652,7 +660,8 @@ function transfer(r: Resolver, zone: str) -> [Record]?
     asked = encode(q)?
     server = r.servers[0]
     host = net.format_address(net.without_port(server))
-    c @= net.connect_timeout(host, port: server.port, timeout_ms: r.timeout_ms, deadline_ms: r.timeout_ms * r.attempts)?
+    each_ms = transport.try_ms(r.timeout)
+    c @= net.connect_timeout(host, port: server.port, timeout_ms: each_ms, deadline_ms: transport.times_ms(ms: each_ms, count: r.attempts))?
     got = transport.transfer(c.stream, query: asked)
 
     match io.close(@c.stream)
@@ -2024,7 +2033,7 @@ test "exchange: a datagram answered, a truncated answer asked again over TCP, a 
         [canned.udp(encode(full).must()), canned.udp(encode(cut).must()), canned.tcp(encode(full).must()), canned.dropped(), canned.udp(encode(full).must()), canned.spoofed(encode(full).must())]
     )
     r @= resolver([f"127.0.0.1:{server.port}"]).must()
-    r.timeout_ms @ 400
+    r.timeout @ time.milliseconds(400).must()
     first = exchange(r, m: q).must()
     assert first.response && first.answers == full.answers && first.id != 0
     assert exchange(r, m: q).must().answers == full.answers
@@ -2045,7 +2054,7 @@ test "exchange: SERVFAIL passed for the next server, every try lost, and a resol
         [canned.udp(encode(failed).must()), canned.udp(encode(full).must()), canned.udp(encode(failed).must()), canned.udp(encode(failed).must()), canned.dropped(), canned.dropped()]
     )
     two @= resolver([f"127.0.0.1:{server.port}", f"127.0.0.1:{server.port}"]).must()
-    two.timeout_ms @ 300
+    two.timeout @ time.milliseconds(300).must()
     two.attempts @ 1
     assert exchange(two, m: q).must().answers == full.answers
     assert exchange(two, m: q).must().rcode == RCODE_SERVER_FAILURE
@@ -2076,7 +2085,7 @@ test "lookup: the search list tried in order past a name that names nothing, a n
     )
     r @= resolver([f"127.0.0.1:{server.port}"]).must()
     r.search @ ["a.example.", "b.example"]
-    r.timeout_ms @ 2000
+    r.timeout @ time.seconds(2).must()
     r.attempts @ 1
     got = lookup(r, name: "host", type_code: TYPE_A).must()
     assert got.name == "host.b.example." && got.canonical == "host.b.example." && got.records == found.answers
@@ -2137,7 +2146,7 @@ test "key_tag_of: the tags dig 9.10.6 gave three keys, one of RSA/MD5, and data 
 
 test "query: a public resolver asked, or a line saying it was skipped where the network is down"
     r @= resolver(["1.1.1.1"]).must()
-    r.timeout_ms @ 1500
+    r.timeout @ time.milliseconds(1500).must()
     r.attempts @ 1
 
     match query(r, name: "example.com.", type_code: TYPE_A)
@@ -2175,7 +2184,7 @@ test "transfer: a zone in two messages, a refusal, and a transfer that does not 
         [canned.tcp_all([encode(first).must(), encode(last).must()]), canned.tcp(encode(refused).must()), canned.tcp(encode(wrong).must())]
     )
     r @= resolver([f"127.0.0.1:{server.port}"]).must()
-    r.timeout_ms @ 2000
+    r.timeout @ time.seconds(2).must()
     zone = transfer(r, zone: "example.").must()
     assert zone.len() == 4 && zone[0] == soa && zone[3] == soa && zone[1] == host
 
@@ -2313,7 +2322,7 @@ test "parse_resolv_conf: two servers and a search list"
 # A resolver asking a server the program names, on a port of its own.
 test "resolver: a server on port 5353"
     r = resolver(["[::1]:5353", "192.0.2.53"]).must()
-    assert r.servers[0].port == 5353 && r.servers[1].port == PORT && r.timeout_ms == 5000
+    assert r.servers[0].port == 5353 && r.servers[1].port == PORT && r.timeout == time.seconds(5).must()
 
 # A query sent and its answer read.
 test "exchange: an address asked of a local server"

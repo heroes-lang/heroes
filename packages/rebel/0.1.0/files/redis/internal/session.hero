@@ -7,6 +7,7 @@
 
 use io
 use redis/internal/resp
+use time
 use tls
 
 constant CLOSED: str
@@ -309,8 +310,18 @@ function set_deadline(s: Session, ms: i64) -> ()?
         return closed_failure(s)
 
     match s.link
-        .network  => return tls.set_deadline(s.out, deadline_ms: ms)
+        .network  => return tls.set_deadline(s.out, deadline: tls_deadline(ms)?)
         .scripted => return fail(code: UNSUPPORTED, msg: "a scripted server has no deadline")
+
+# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
+# being `time.max_duration()` (until this package's own step of D07; `tls`
+# takes a `time.Duration` since M-rebel-library step 88c).
+#
+# - `ms`: milliseconds, 0 for no limit.
+function tls_deadline(ms: i64) -> time.Duration?
+    if ms == 0
+        return ok(time.max_duration())
+    return time.milliseconds(ms)
 
 # Closes the connection's stream and ends the session.
 #

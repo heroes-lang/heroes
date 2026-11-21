@@ -11,12 +11,13 @@ use dns/internal/present
 use io
 use net
 use os
+use time
 
 # How a set of servers is asked.
 record Plan
     # The servers, each an address with a port.
     servers: [net.Address]
-    # Milliseconds a try may take.
+    # Milliseconds a try may take, as `net` takes them: `try_ms`'s.
     timeout_ms: i64
     # How many times the servers are tried in turn.
     attempts: i64
@@ -24,6 +25,30 @@ record Plan
     first: i64
     # Whether every try goes over TCP.
     tcp: bool
+
+# The milliseconds of `d`, a resolver's time for one try, as `net` takes
+# them: `time.max_duration()` is `net.FOREVER`, any other rounded up to a
+# whole millisecond, so a try of a nanosecond still waits.
+#
+# - `d`: a time above zero, which the face checked.
+function try_ms(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return net.FOREVER
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+    return whole
+
+# `ms` times `count` in the milliseconds `net` takes, `net.FOREVER` where
+# `ms` is or the product passes an `i64`.
+#
+# - `ms`: a try's milliseconds, `try_ms`'s.
+# - `count`: how many tries, 1 or more.
+function times_ms(ms: i64, count: i64) -> i64
+    if ms == net.FOREVER || ms > 9223372036854775807 / count
+        return net.FOREVER
+    return ms * count
 
 # The answer of `plan`'s servers to `query`, a message's bytes whose ID is
 # replaced on each try. An answer whose code is SERVFAIL, NOTIMP or REFUSED

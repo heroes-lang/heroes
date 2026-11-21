@@ -7,6 +7,7 @@
 use io
 use net
 use os
+use time
 use tls
 use websocket/internal/deflating
 use websocket/internal/frames
@@ -281,8 +282,13 @@ function deadline(stream: io.Stream, ms: i64) -> ()?
     if ms < 0
         return fail(code: INVALID, msg: f"placing a deadline {ms} ms from now on {stream.name}, where it is 0 or more")
 
+    span = if ms == 0
+        time.max_duration()
+    else
+        time.milliseconds(ms)?
+
     # `tls.set_deadline` moves a TLS stream's deadline and a socket's alike.
-    match tls.set_deadline(stream, deadline_ms: ms)
+    match tls.set_deadline(stream, deadline: span)
         .ok _ => return ok()
         .err e =>
             if io.is_closed(stream)

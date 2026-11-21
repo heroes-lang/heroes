@@ -135,15 +135,15 @@ function serve_tls(arg: str) -> str
         port: port,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2"])
     ).must()
-    tls.set_accept_deadline(l, deadline_ms: 10000).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(10).must()).must()
     answered: i64 @= 0
 
     for _ in range(from: 0, to: 10)
         if answered == 0
-            match tls.accept(l, deadline_ms: 10000)
+            match tls.accept(l, deadline: time.seconds(10).must())
                 .ok accepted =>
                     stream @= accepted.stream
-                    tls.set_deadline(stream, deadline_ms: 15000).must()
+                    tls.set_deadline(stream, deadline: time.seconds(15).must()).must()
 
                     match http2.server(@stream, options: http2.default_options())
                         .ok made =>

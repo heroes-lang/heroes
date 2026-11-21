@@ -27,6 +27,7 @@ use crypto
 use crypto/keypairs
 use json
 use os
+use time
 use webauthn/internal/authdata
 use webauthn/internal/client
 use webauthn/internal/codes
@@ -176,8 +177,9 @@ record RegistrationOptions
     # The challenge, 16 bytes or more of random, kept by the program until
     # the response comes back.
     challenge: [u8]
-    # How long the browser waits, in milliseconds.
-    timeout_ms: i64
+    # How long the browser waits, zero or more, written in whole
+    # milliseconds, a part of one counting as a whole one.
+    timeout: time.Duration
     # The COSE algorithms accepted, the preferred first.
     algorithms: [i64]
     # The credentials the account has already, so none is registered twice
@@ -213,7 +215,7 @@ function registration_options(challenge: [u8]) -> RegistrationOptions
     hints: [Hint] = []
     return RegistrationOptions(
         challenge: challenge,
-        timeout_ms: 60000,
+        timeout: time.minutes(1).must(),
         algorithms: algorithms,
         exclude: none,
         attestation: .none,
@@ -231,7 +233,8 @@ function registration_options(challenge: [u8]) -> RegistrationOptions
 # - `user`: the account the credential is for.
 # - `options`: the challenge and the choices.
 #
-# Fails `invalid` where `user.id` is empty or past 64 bytes, the challenge
+# Fails `invalid` where `user.id` is empty or past 64 bytes, the timeout is
+# below zero, the challenge
 # is shorter than 16 bytes, or no algorithm is given. See also
 # `verify_registration`.
 function format_registration_options(rp: RelyingParty, user: User, options: RegistrationOptions) -> str?
@@ -272,7 +275,7 @@ function format_registration_options(rp: RelyingParty, user: User, options: Regi
         hints @ hints.push(word)
 
     return writer.creation(
-        writer.Creation(rp_id: rp.id, rp_name: rp.name, user_id: user.id, user_name: user.name, display_name: user.display_name, challenge: options.challenge, timeout_ms: options.timeout_ms, algorithms: options.algorithms, exclude: exclude, attestation: attestation, attachment: attachment, resident_key: resident, user_verification: verification, hints: hints)
+        writer.Creation(rp_id: rp.id, rp_name: rp.name, user_id: user.id, user_name: user.name, display_name: user.display_name, challenge: options.challenge, timeout: options.timeout, algorithms: options.algorithms, exclude: exclude, attestation: attestation, attachment: attachment, resident_key: resident, user_verification: verification, hints: hints)
     )
 
 # The options of an authentication. Built directly, or by
@@ -280,8 +283,9 @@ function format_registration_options(rp: RelyingParty, user: User, options: Regi
 record AuthenticationOptions
     # The challenge, 16 bytes or more of random, kept by the program.
     challenge: [u8]
-    # How long the browser waits, in milliseconds.
-    timeout_ms: i64
+    # How long the browser waits, zero or more, written in whole
+    # milliseconds, a part of one counting as a whole one.
+    timeout: time.Duration
     # The credentials that may answer; empty lets the authenticator choose a
     # discoverable one, and the response names the user.
     allow: [Descriptor]
@@ -301,7 +305,7 @@ function authentication_options(challenge: [u8]) -> AuthenticationOptions
     hints: [Hint] = []
     return AuthenticationOptions(
         challenge: challenge,
-        timeout_ms: 60000,
+        timeout: time.minutes(1).must(),
         allow: none,
         user_verification: .preferred,
         hints: hints
@@ -314,7 +318,8 @@ function authentication_options(challenge: [u8]) -> AuthenticationOptions
 # - `rp_id`: the relying party's ID.
 # - `options`: the challenge and the choices.
 #
-# Fails `invalid` where the challenge is shorter than 16 bytes. See also
+# Fails `invalid` where the challenge is shorter than 16 bytes or the
+# timeout below zero. See also
 # `verify_authentication`.
 function format_authentication_options(rp_id: str, options: AuthenticationOptions) -> str?
     allow: [writer.Named] @= []
@@ -340,7 +345,7 @@ function format_authentication_options(rp_id: str, options: AuthenticationOption
     return writer.request(
         rp_id: rp_id,
         challenge: options.challenge,
-        timeout_ms: options.timeout_ms,
+        timeout: options.timeout,
         allow: allow,
         user_verification: verification,
         hints: hints
@@ -679,7 +684,7 @@ function verify_signature(cose: [u8], data: [u8], signature: [u8]) -> bool?
 # The options of a registration, as JSON for the page.
 test "registration_options: the ordinary options, written for the browser"
     options = registration_options([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
-    assert options.timeout_ms == 60000
+    assert options.timeout == time.minutes(1).must()
     assert options.algorithms[0] == ES256
 
 # Registration options written as JSON.

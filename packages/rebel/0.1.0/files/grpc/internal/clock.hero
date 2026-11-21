@@ -12,12 +12,22 @@ function now_ms() -> i64
         .ok m  => return m.nanoseconds / 1000000
         .err _ => return 0
 
+# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
+# being `time.max_duration()` (until this package's own step of D07; `tls`
+# takes a `time.Duration` since M-rebel-library step 88c).
+#
+# - `ms`: milliseconds, 0 for no limit.
+function tls_deadline(ms: i64) -> time.Duration?
+    if ms == 0
+        return ok(time.max_duration())
+    return time.milliseconds(ms)
+
 # Makes every read and write of `stream` end by `ms` milliseconds from now,
 # 0 for no end, a TLS stream's or a socket's alike (`tls.set_deadline`).
 # Fails `closed` where `stream` is closed and `unsupported` where it takes no
 # deadline.
 function set_wait(stream: io.Stream, ms: i64) -> ()?
-    return tls.set_deadline(stream, deadline_ms: ms)
+    return tls.set_deadline(stream, deadline: tls_deadline(ms)?)
 
 # The milliseconds left before `deadline_at`, -1 where there is none, 0
 # where it has passed.

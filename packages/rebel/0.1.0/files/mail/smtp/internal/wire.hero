@@ -10,6 +10,7 @@ use io
 use net
 use numbers
 use strings
+use time
 use tls
 
 # The code of a reply that is not SMTP, and of an argument refused.
@@ -96,12 +97,22 @@ function over_tls(stream: io.Stream, deadline_ms: i64, local_name: str) -> Sessi
 function is_closed(s: Session lent) -> bool
     return io.is_closed(s.reader.stream)
 
+# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
+# being `time.max_duration()` (until this package's own step of D07; `tls`
+# takes a `time.Duration` since M-rebel-library step 88c).
+#
+# - `ms`: milliseconds, 0 for no limit.
+function tls_deadline(ms: i64) -> time.Duration?
+    if ms == 0
+        return ok(time.max_duration())
+    return time.milliseconds(ms)
+
 # Makes the next steps end by `ms` milliseconds from now, 0 for no limit.
 function set_deadline(s: Session lent, ms: i64) -> ()?
     if is_closed(s)
         return fail(code: CLOSED, msg: "the SMTP connection is closed")
 
-    return tls.set_deadline(s.reader.stream, deadline_ms: ms)
+    return tls.set_deadline(s.reader.stream, deadline: tls_deadline(ms)?)
 
 # Writes `data` to the server.
 function write(s: Session lent, data: [u8]) -> ()?

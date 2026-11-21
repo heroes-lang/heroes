@@ -31,7 +31,7 @@ function open(target: url.Url, deadline_ms: i64, roots: str) -> Opened?
     port = url.port_of(target)?
 
     if target.scheme == "https"
-        stream = tls.connect(target.host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: ["http/1.1"]))?.stream
+        stream = tls.connect(target.host, port: port, deadline: tls_deadline(deadline_ms)?, client: tls.Client(roots: roots, protocols: ["http/1.1"]))?.stream
         return ok(Opened(reader: io.reader(stream), head: http.respond_status(200)))
 
     if target.scheme == "http"
@@ -43,9 +43,19 @@ function open(target: url.Url, deadline_ms: i64, roots: str) -> Opened?
         return ok(Opened(reader: io.reader(conn.stream), head: http.respond_status(200)))
     return fail(code: "unsupported", msg: f"the scheme \"{target.scheme}\" is neither http nor https")
 
+# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
+# being `time.max_duration()` (until this package's own step of D07; `tls`
+# takes a `time.Duration` since M-rebel-library step 88c).
+#
+# - `ms`: milliseconds, 0 for no limit.
+function tls_deadline(ms: i64) -> time.Duration?
+    if ms == 0
+        return ok(time.max_duration())
+    return time.milliseconds(ms)
+
 # Moves the deadline of `o`'s connection to `ms` from now; 0 takes it away.
 function set_deadline(o: Opened lent, ms: i64) -> ()?
-    return tls.set_deadline(o.reader.stream, deadline_ms: ms)
+    return tls.set_deadline(o.reader.stream, deadline: tls_deadline(ms)?)
 
 # Closes `o`'s connection; a failure closing is no news to its caller.
 function close(@o: Opened)

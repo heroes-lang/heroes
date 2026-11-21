@@ -38,6 +38,7 @@ use process/internal/quoting
 use process/internal/search
 use process/internal/temporary
 use strings
+use time
 
 ## Codes
 
@@ -131,14 +132,14 @@ variant Output
         # The stream, open to write; the program still closes it.
         stream: io.Stream
 
-# How long a child may run: without end, or a number of nanoseconds.
+# How long a child may run: without end, or a time from its start.
 variant Limit
     # As long as it runs.
     none
-    # This many nanoseconds from its start; past them it is ended at once.
+    # This long from its start; past it the child is ended at once.
     after
-        # The nanoseconds it may run, above 0.
-        nanoseconds: i64
+        # How long it may run, above zero.
+        limit: time.Duration
 
 # A program to run, with its arguments, its environment, its working folder,
 # what each of its three standard streams is and how long it may run.
@@ -445,20 +446,21 @@ function with_error_to_output(c: Command) -> Command
     changed.error_to_output @ true
     return changed
 
-# `c` whose child may run `nanoseconds` from its start, and is ended at
-# once past them.
+# `c` whose child may run `limit` from its start, and is ended at once past
+# it.
 #
 # - `c`: the command to copy.
-# - `nanoseconds`: how long, on the monotonic clock; one of 0 or below fails
-#   `invalid` when the command starts.
+# - `limit`: how long, on the monotonic clock, above zero; zero or below
+#   fails `invalid` when the command starts, since a child given no time
+#   cannot run. A command given no limit runs as long as its child does.
 #
 # `run`, `capture`, `wait` and `has_ended` keep the limit, and a child ended
 # for it reports `.timed_out`. A read of a started child's pipe waits as long
 # as the child keeps the pipe open, past the limit too: read through `run`,
 # or ask `has_ended` between reads.
-function with_time_limit(c: Command, nanoseconds: i64) -> Command
+function with_time_limit(c: Command, limit: time.Duration) -> Command
     changed @= c
-    changed.time_limit @ .after(nanoseconds: nanoseconds)
+    changed.time_limit @ .after(limit: limit)
     return changed
 
 ## Running a command to its end
@@ -570,12 +572,12 @@ function start(c: Command) -> Child?
 
     match c.time_limit
         .none => _ = 0
-        .after limit =>
-            if limit.nanoseconds <= 0
+        .after given =>
+            if given.limit.nanoseconds <= 0
                 return codes.of(
                     code: codes.INVALID,
                     asked: asked,
-                    why: f"its time limit is {limit.nanoseconds} nanoseconds, where a limit is above 0"
+                    why: f"its time limit is {time.format_duration(given.limit)}, where a limit is above zero"
                 )
 
     env = environment.given(inherited: c.env_inherited, set: c.env_set, removed: c.env_removed, asked: asked)?
@@ -638,7 +640,7 @@ function wait(@child: Child) -> Status?
 
         limit = match child.command.time_limit
             .none        => 0
-            .after given => given.nanoseconds
+            .after given => given.limit.nanoseconds
 
         seen = ending.waited(child.handle, started: child.started, limit: limit, asked: asked, program: child.command.program)?
 
@@ -682,7 +684,7 @@ function has_ended(@child: Child) -> bool?
 
     limit = match child.command.time_limit
         .none        => 0
-        .after given => given.nanoseconds
+        .after given => given.limit.nanoseconds
 
     seen = ending.looked(child.handle, started: child.started, limit: limit, asked: asked, program: child.command.program)?
 
@@ -944,7 +946,7 @@ test "the with_ functions: each changes one thing, and with_error parts what wit
     joined = with_error_to_output(c)
     assert joined.error_to_output
     assert !with_error(joined, to: .pipe).error_to_output
-    assert with_time_limit(c, nanoseconds: 5).time_limit == .after(nanoseconds: 5)
+    assert with_time_limit(c, limit: time.nanoseconds(5)).time_limit == .after(limit: time.nanoseconds(5))
     assert c.dir == "" && c.output == .parent
 
 test "with_env, with_env_all, with_env_removed and with_env_cleared, read back by env_of"
@@ -1064,24 +1066,27 @@ test "run: a program that is not there, a zero byte, an empty program, and a var
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-test "run: a time limit of 0, of -1, and one a quick child never meets"
+test "run: a time limit of zero, one below, and one a quick child never meets"
     quick = shell(fixture.exit_script(0)).must()
 
-    match run(with_time_limit(quick, nanoseconds: 0))
+    match run(with_time_limit(quick, limit: time.nanoseconds(0)))
         .ok _ => assert false
         .err e =>
             assert e.code == INVALID
-            assert e.msg == f"starting \"{fixture.shell_program()}\": its time limit is 0 nanoseconds, where a limit is above 0"
+            assert e.msg == f"starting \"{fixture.shell_program()}\": its time limit is 0s, where a limit is above zero"
 
-    match run(with_time_limit(quick, nanoseconds: -1))
+    match run(with_time_limit(quick, limit: time.nanoseconds(-1)))
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-    assert run(with_time_limit(quick, nanoseconds: 60_000_000_000)).must().status == .exited(code: 0)
-    assert run(with_time_limit(quick, nanoseconds: 9_223_372_036_854_775_807)).must().status == .exited(code: 0)
+    assert run(with_time_limit(quick, limit: time.seconds(60).must())).must().status == .exited(code: 0)
+    assert run(with_time_limit(quick, limit: time.max_duration())).must().status == .exited(code: 0)
 
 test "run: a child past its time limit of 200 ms is ended, and its status says so"
-    sleepy = with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(30)), nanoseconds: 200_000_000)
+    sleepy = with_time_limit(
+        command(fixture.sleeper(), fixture.sleeper_arguments(30)),
+        limit: time.milliseconds(200).must()
+    )
     ended = run(with_output(sleepy, to: .nothing)).must()
     assert ended.status == .timed_out
 
@@ -1131,7 +1136,7 @@ test "capture: the output as text, a failure holding the error's text, a time li
             assert e.code == FAILED
             assert e.msg == f"capturing the output of \"{fixture.shell_program()}\": it exited with code 2; its error ends: broken"
 
-    match capture(with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(30)), nanoseconds: 100_000_000))
+    match capture(with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(30)), limit: time.milliseconds(100).must()))
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -1200,7 +1205,10 @@ test "start: has_ended answers false while the child runs, true once it ended, a
     assert child.handle == nullptr
 
 test "start: has_ended and wait past a time limit end the child, and its status says so"
-    sleepy = with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(30)), nanoseconds: 100_000_000)
+    sleepy = with_time_limit(
+        command(fixture.sleeper(), fixture.sleeper_arguments(30)),
+        limit: time.milliseconds(100).must()
+    )
     polled @= start(sleepy).must()
 
     while !has_ended(@polled).must()
@@ -1240,7 +1248,7 @@ test "start: input as text through a temporary file, a program that is not there
     assert fixture.line(io.read_all(child.output).must()) == "fed"
     assert wait(@child).must() == .exited(code: 0)
     assert start(command("rebel-no-such-program", none)).is_err()
-    assert start(with_time_limit(command("cat", none), nanoseconds: 0)).is_err()
+    assert start(with_time_limit(command("cat", none), limit: time.nanoseconds(0))).is_err()
 
 test "release: a child that still runs is given up and runs on unseen; wait, kill and terminate then refuse it"
     none: [str] = []
@@ -1414,7 +1422,7 @@ test "with_error_to_output: both streams in one"
 
 # A child ended at once when it runs too long.
 test "with_time_limit: a sleep of five seconds cut at a tenth of one"
-    c = with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(5)), nanoseconds: 100_000_000)
+    c = with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(5)), limit: time.milliseconds(100).must())
     assert run(c).must().status == .timed_out
 
 # What a child prints, as text, where it must succeed.

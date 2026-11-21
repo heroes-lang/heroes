@@ -76,7 +76,7 @@ function serve(arg: str) -> str
         .ok l =>
             listener @= l
             did @= "no client went through TLS"
-            bounded = tls.set_accept_deadline(listener, deadline_ms: 15000)
+            bounded = tls.set_accept_deadline(listener, deadline: time.seconds(15).must())
 
             match bounded
                 .ok _  => _ = 0
@@ -86,7 +86,7 @@ function serve(arg: str) -> str
 
             while tries < 2
                 tries @ tries + 1
-                taken = tls.accept(listener, deadline_ms: 10000)
+                taken = tls.accept(listener, deadline: time.seconds(10).must())
 
                 match taken
                     .err _ => _ = 0

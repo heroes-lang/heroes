@@ -201,6 +201,16 @@ function exchange(scheme: str, host: str, port: str, deadline_ms: i64, roots: st
 
     return answer
 
+# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
+# being `time.max_duration()` (until this package's own step of D07; `tls`
+# takes a `time.Duration` since M-rebel-library step 88c).
+#
+# - `ms`: milliseconds, 0 for no limit.
+function tls_deadline(ms: i64) -> time.Duration?
+    if ms == 0
+        return ok(time.max_duration())
+    return time.milliseconds(ms)
+
 # A connection to `host` at `port`: TLS where `secure`, the certificate
 # checked against `roots` ("" the system's store) and HTTP/2 then HTTP/1.1
 # offered, the server choosing by ALPN, its
@@ -215,7 +225,7 @@ function connected(secure: bool, host: str, port: i64, deadline_ms: i64, roots: 
             deadline_ms
         return ok(net.connect(host, port: port, deadline_ms: plain_ms)?.stream)
     began = time.mark()
-    stream @= tls.connect(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: [http2.ALPN, "http/1.1"]))?.stream
+    stream @= tls.connect(host, port: port, deadline: tls_deadline(deadline_ms)?, client: tls.Client(roots: roots, protocols: [http2.ALPN, "http/1.1"]))?.stream
 
     if deadline_ms <= 0
         return ok(stream)
@@ -231,7 +241,7 @@ function connected(secure: bool, host: str, port: i64, deadline_ms: i64, roots: 
             msg: f"sending a request to {host}: its {deadline_ms} ms ran out in the TLS handshake"
         )
 
-    match tls.set_deadline(stream, deadline_ms: left)
+    match tls.set_deadline(stream, deadline: tls_deadline(left)?)
         .ok _ => return ok(stream)
         .err e =>
             match io.close(@stream)

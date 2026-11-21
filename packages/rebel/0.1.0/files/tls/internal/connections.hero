@@ -10,6 +10,7 @@ use bytes
 use io
 use net
 use strings
+use time
 use tls/hero_tls
 use tls/internal/failure
 use tls/internal/fixture
@@ -28,21 +29,26 @@ function place(host: str, port: i64) -> str
         return "every address port " + to_str(port)
     return host + " port " + to_str(port)
 
-# The floor's time for `ms`, a time the face takes: the face's 0, no limit,
-# is the floor's `HERO_TLS_FOREVER`, since the floor's 0 is a time already
-# passed (2026-11-20, M-rebel-library step 83a), and a time above 0 is
-# itself. Below 0 fails `invalid` here, before the floor is asked, whose -1
-# is no limit.
+# The floor's milliseconds for `d`, a time the face takes:
+# `time.max_duration()` is no limit, the floor's `HERO_TLS_FOREVER`; any
+# other is rounded up to a whole millisecond, so a wait of a nanosecond
+# still waits and zero alone is the floor's 0, a time already passed (since
+# 2026-11-21, M-rebel-library step 88c: the face took milliseconds, its 0
+# no limit). Below zero fails `invalid` here, before the floor is asked.
 #
-# - `ms`: the face's milliseconds.
+# - `d`: the face's time.
 # - `asked`: what the message of a failure begins with.
-function floor_ms(ms: i64, asked: str) -> i64?
-    if ms < 0
-        return failure.of(code: failure.INVALID, asked: asked, why: f"the time {ms} ms is below 0")
-
-    if ms == 0
+function floor_ms(d: time.Duration, asked: str) -> i64?
+    if d == time.max_duration()
         return ok(hero_tls.HERO_TLS_FOREVER)
-    return ok(ms)
+
+    if d.nanoseconds < 0
+        return failure.of(code: failure.INVALID, asked: asked, why: f"the time {time.format_duration(d)} is below zero")
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return ok(whole + 1)
+    return ok(whole)
 
 # `s`, a TLS stream a call has just made or accepted, as a connection with
 # its two ends' addresses, which the floor reads from the socket under it
@@ -118,14 +124,14 @@ function count_of(b: [u8]) -> u64
     return to_u64(b.len()).must()
 
 # A TLS stream to `host` at `port`, its connection and handshake within
-# `deadline_ms` milliseconds (0 for no limit), trusting the PEM `roots` alone
+# `deadline` (`time.max_duration()` for no limit), trusting the PEM `roots` alone
 # where it is not "" and the system's store where it is, offering
 # `protocols`, with `checks` one of the floor's two.
-function connect(host: str, port: i64, deadline_ms: i64, roots: str, protocols: [str], checks: i64) -> io.Stream?
+function connect(host: str, port: i64, deadline: time.Duration, roots: str, protocols: [str], checks: i64) -> io.Stream?
     asked = "connecting over TLS to " + place(host: host, port: port)
     text.no_zero(s: host, what: "the host", asked: asked)?
     offered = text.protocols_text(protocols, asked: asked)?
-    limit = floor_ms(deadline_ms, asked: asked)?
+    limit = floor_ms(deadline, asked: asked)?
     pem: [u8] @= bytes.from_text(roots)
     handle = hero_tls.connect(
         host: host,
@@ -170,11 +176,11 @@ function listen(host: str, port: i64, chain: str, key: str, protocols: [str]) ->
     return ok(Bound(handle: handle, port: found))
 
 # The next connection `l` holds, once its handshake ends within
-# `deadline_ms` milliseconds of the connection (0 for no limit).
-function accept(l: hero_tls.Listener, deadline_ms: i64, asked: str) -> io.Stream?
+# `deadline` of the connection (`time.max_duration()` for no limit).
+function accept(l: hero_tls.Listener, deadline: time.Duration, asked: str) -> io.Stream?
     if l == nullptr
         return failure.of(code: failure.CLOSED, asked: asked, why: "the listener is closed")
-    limit = floor_ms(deadline_ms, asked: asked)?
+    limit = floor_ms(deadline, asked: asked)?
     handle = hero_tls.accept(l, ms: limit)
 
     if handle == nullptr
@@ -325,13 +331,13 @@ function steps_bytes(steps: [Plain], asked: str) -> [u8]?
     return ok(out)
 
 # `connect`, with `steps` run on the connection before TLS begins, all
-# within `deadline_ms`.
-function connect_after(host: str, port: i64, deadline_ms: i64, roots: str, protocols: [str], checks: i64, steps: [Plain]) -> io.Stream?
+# within `deadline`.
+function connect_after(host: str, port: i64, deadline: time.Duration, roots: str, protocols: [str], checks: i64, steps: [Plain]) -> io.Stream?
     asked = "connecting over TLS to " + place(host: host, port: port)
     text.no_zero(s: host, what: "the host", asked: asked)?
     offered = text.protocols_text(protocols, asked: asked)?
     encoded @= steps_bytes(steps, asked: asked)?
-    limit = floor_ms(deadline_ms, asked: asked)?
+    limit = floor_ms(deadline, asked: asked)?
     pem: [u8] @= bytes.from_text(roots)
     handle = hero_tls.connect_after(
         host: host,
@@ -380,13 +386,13 @@ function listen_after(host: str, port: i64, chain: str, key: str, protocols: [st
         return lost
     return ok(Bound(handle: handle, port: found))
 
-# Makes every later and waiting read and write of `s` end by `ms`
-# milliseconds from now: by the TLS layer where `s` is a TLS stream, by
-# `net` where it is a connection's own stream.
-function set_deadline(s: io.Stream, ms: i64, asked: str) -> ()?
+# Makes every later and waiting read and write of `s` end by `deadline`
+# from now: by the TLS layer where `s` is a TLS stream, by `net` where it is
+# a connection's own stream.
+function set_deadline(s: io.Stream, deadline: time.Duration, asked: str) -> ()?
     if s.handle == nullptr
         return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
-    limit = floor_ms(ms, asked: asked)?
+    limit = floor_ms(deadline, asked: asked)?
 
     if hero_tls.set_deadline(s.handle, ms: limit) == 0
         return ok()
@@ -398,12 +404,11 @@ function set_deadline(s: io.Stream, ms: i64, asked: str) -> ()?
     # whose `FOREVER` is the floor's (`hero_tls.h` holds them equal).
     return net.set_deadline(s, deadline_ms: limit)
 
-# Makes every later and waiting accept on `l` end by `ms` milliseconds from
-# now.
-function set_accept_deadline(l: hero_tls.Listener, ms: i64, asked: str) -> ()?
+# Makes every later and waiting accept on `l` end by `deadline` from now.
+function set_accept_deadline(l: hero_tls.Listener, deadline: time.Duration, asked: str) -> ()?
     if l == nullptr
         return failure.of(code: failure.CLOSED, asked: asked, why: "the listener is closed")
-    limit = floor_ms(ms, asked: asked)?
+    limit = floor_ms(deadline, asked: asked)?
 
     if hero_tls.set_accept_deadline(l, ms: limit) != 0
         return failure.last(asked: asked)
@@ -415,7 +420,7 @@ test "connect: a host with a zero byte, an empty protocol and a protocol with a 
     zero = connect(
         host: bytes.to_text([108, 0]).must(),
         port: 443,
-        deadline_ms: 0,
+        deadline: time.max_duration(),
         roots: "",
         protocols: [],
         checks: hero_tls.HERO_TLS_CHECK_ALL
@@ -431,7 +436,7 @@ test "connect: a host with a zero byte, an empty protocol and a protocol with a 
         made = connect(
             host: "localhost",
             port: 443,
-            deadline_ms: 0,
+            deadline: time.max_duration(),
             roots: "",
             protocols: offered,
             checks: hero_tls.HERO_TLS_CHECK_ALL
@@ -445,7 +450,7 @@ test "connect: no host, port 0, port 65536 and a time below 0 fail invalid; root
     assert connect(
         host: "",
         port: 443,
-        deadline_ms: 0,
+        deadline: time.max_duration(),
         roots: "",
         protocols: [],
         checks: hero_tls.HERO_TLS_CHECK_ALL
@@ -455,7 +460,7 @@ test "connect: no host, port 0, port 65536 and a time below 0 fail invalid; root
         made = connect(
             host: "localhost",
             port: port,
-            deadline_ms: 0,
+            deadline: time.max_duration(),
             roots: "",
             protocols: [],
             checks: hero_tls.HERO_TLS_CHECK_ALL
@@ -468,7 +473,7 @@ test "connect: no host, port 0, port 65536 and a time below 0 fail invalid; root
     late = connect(
         host: "localhost",
         port: 443,
-        deadline_ms: -1,
+        deadline: time.nanoseconds(-1),
         roots: "",
         protocols: [],
         checks: hero_tls.HERO_TLS_CHECK_ALL
@@ -478,13 +483,13 @@ test "connect: no host, port 0, port 65536 and a time below 0 fail invalid; root
         .ok _ => assert false
         .err e =>
             assert e.code == failure.INVALID
-            assert e.msg == "connecting over TLS to localhost port 443: the time -1 ms is below 0"
+            assert e.msg == "connecting over TLS to localhost port 443: the time -1ns is below zero"
 
     if hero_tls.available() == 1
         junk = connect(
             host: "localhost",
             port: 443,
-            deadline_ms: 0,
+            deadline: time.max_duration(),
             roots: "no PEM here",
             protocols: [],
             checks: hero_tls.HERO_TLS_CHECK_ALL
@@ -507,7 +512,7 @@ test "connect: a port nothing listens on fails closed"
         gone = connect(
             host: "127.0.0.1",
             port: port,
-            deadline_ms: 15000,
+            deadline: time.seconds(15).must(),
             roots: "",
             protocols: [],
             checks: hero_tls.HERO_TLS_CHECK_ALL
@@ -543,7 +548,7 @@ test "listen: PEM with no certificate, PEM with no key, a key that is not the ce
 
 test "accept and close_listener: a listener emptied fails closed, and a second close fails closed"
     empty: hero_tls.Listener = nullptr
-    taken = accept(empty, deadline_ms: 0, asked: "accepting")
+    taken = accept(empty, deadline: time.max_duration(), asked: "accepting")
 
     match taken
         .ok _ => assert false
@@ -603,7 +608,7 @@ test "connect: example.com at port 443, its certificate checked by the system's 
     made = connect(
         host: "example.com",
         port: 443,
-        deadline_ms: 10000,
+        deadline: time.seconds(10).must(),
         roots: "",
         protocols: ["http/1.1"],
         checks: hero_tls.HERO_TLS_CHECK_ALL

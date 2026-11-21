@@ -26,11 +26,11 @@ function opened(u: url.Url, deadline_ms: i64, secure: tls.Client) -> io.Stream?
     began = time.mark()?
 
     if u.scheme == "wss"
-        stream @= tls.connect(host: u.host, port: port, deadline_ms: deadline_ms, client: secure)?.stream
+        stream @= tls.connect(host: u.host, port: port, deadline: tls_deadline(deadline_ms)?, client: secure)?.stream
 
         if deadline_ms > 0
             match left_of(began, deadline_ms: deadline_ms)
-                .ok left => tls.set_deadline(stream, deadline_ms: left).must()
+                .ok left => tls.set_deadline(stream, deadline: time.milliseconds(left).must()).must()
                 .err e =>
                     ended(@stream)
                     return fail(code: e.code, msg: e.msg)
@@ -49,6 +49,16 @@ function opened(u: url.Url, deadline_ms: i64, secure: tls.Client) -> io.Stream?
                 ended(@conn.stream)
                 return fail(code: e.code, msg: e.msg)
     return ok(conn.stream)
+
+# The time `ms` milliseconds stand for as `tls` takes it, 0, no limit here,
+# being `time.max_duration()` (until this package's own step of D07; `tls`
+# takes a `time.Duration` since M-rebel-library step 88c).
+#
+# - `ms`: milliseconds, 0 for no limit.
+function tls_deadline(ms: i64) -> time.Duration?
+    if ms == 0
+        return ok(time.max_duration())
+    return time.milliseconds(ms)
 
 # The milliseconds left of `deadline_ms` since `began`, 1 at least.
 #

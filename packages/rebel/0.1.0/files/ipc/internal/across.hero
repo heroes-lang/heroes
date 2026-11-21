@@ -15,6 +15,7 @@ use ipc/internal/waits
 use os
 use process
 use threads
+use time
 
 # The argument that makes a run a child of a test.
 constant ROLE: str
@@ -39,7 +40,7 @@ function start(role: str, words: [str]) -> process.Child?
     for w in words
         arguments @ arguments.push(w)
 
-    c = process.with_time_limit(process.command(program, arguments: arguments), nanoseconds: CHILD_LIMIT_NS)
+    c = process.with_time_limit(process.command(program, arguments: arguments), limit: time.nanoseconds(CHILD_LIMIT_NS))
     return process.start(c)
 
 # The child's part, by its role: 0 where it went as the test expects, 1

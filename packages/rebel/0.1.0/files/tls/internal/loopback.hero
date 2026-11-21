@@ -62,7 +62,7 @@ function named_client(mode: str, port: i64) -> str
         roots @ ""
         checks @ hero_tls.HERO_TLS_CHECK_NOTHING_FOR_TESTS
     return spoken(
-        connections.connect(host: host, port: port, deadline_ms: 10000, roots: roots, protocols: ["http/1.1"], checks: checks)
+        connections.connect(host: host, port: port, deadline: time.seconds(10).must(), roots: roots, protocols: ["http/1.1"], checks: checks)
     )
 
 # The client of `over`: a TCP connection made by `net`, then TLS over it.
@@ -161,8 +161,12 @@ function round(chain: str, key: str, mode: str) -> str
     client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.port)).must()
 
     # Bounded, so a client that never connects fails the test, never hangs it.
-    connections.set_accept_deadline(l.handle, ms: 15000, asked: "bounding the test's wait").must()
-    heard = heard_on(connections.accept(l.handle, deadline_ms: 10000, asked: "accepting"))
+    connections.set_accept_deadline(
+        l.handle,
+        deadline: time.seconds(15).must(),
+        asked: "bounding the test's wait"
+    ).must()
+    heard = heard_on(connections.accept(l.handle, deadline: time.seconds(10).must(), asked: "accepting"))
     said = threads.wait_text(@client)
     connections.close_listener(@l.handle, asked: "closing the test's listener").must()
     return said + " | " + heard
@@ -198,7 +202,7 @@ function round_over() -> str
 # `endless` expect a line beginning `220`, `silent` within half a second.
 function after_client(mode: str, port: i64) -> str
     steps @= postgres_client()
-    deadline @= 10000
+    deadline @= time.seconds(10).must()
     host @= "localhost"
 
     if mode == "smtp"
@@ -210,9 +214,9 @@ function after_client(mode: str, port: i64) -> str
         host @ "127.0.0.1"
 
     if mode == "silent"
-        deadline @ 500
+        deadline @ time.milliseconds(500).must()
     return spoken(
-        connections.connect_after(host: host, port: port, deadline_ms: deadline, roots: fixture.ROOT, protocols: ["http/1.1"], checks: hero_tls.HERO_TLS_CHECK_ALL, steps: steps)
+        connections.connect_after(host: host, port: port, deadline: deadline, roots: fixture.ROOT, protocols: ["http/1.1"], checks: hero_tls.HERO_TLS_CHECK_ALL, steps: steps)
     )
 
 # A step that sends `text`.
@@ -272,8 +276,12 @@ function round_after(server_steps: [connections.Plain], mode: str) -> str
     client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.port)).must()
 
     # Bounded, so a client that never connects fails the test, never hangs it.
-    connections.set_accept_deadline(l.handle, ms: 15000, asked: "bounding the test's wait").must()
-    heard = heard_on(connections.accept(l.handle, deadline_ms: 10000, asked: "accepting"))
+    connections.set_accept_deadline(
+        l.handle,
+        deadline: time.seconds(15).must(),
+        asked: "bounding the test's wait"
+    ).must()
+    heard = heard_on(connections.accept(l.handle, deadline: time.seconds(10).must(), asked: "accepting"))
     said = threads.wait_text(@client)
     connections.close_listener(@l.handle, asked: "closing the test's listener").must()
     return said + " | " + heard
@@ -350,12 +358,16 @@ function serve_after(arg: str) -> str
         .ok b =>
             l @= b
             heard @= "closed: no client's exchange succeeded"
-            connections.set_accept_deadline(l.handle, ms: 15000, asked: "bounding the test's wait").must()
+            connections.set_accept_deadline(
+                l.handle,
+                deadline: time.seconds(15).must(),
+                asked: "bounding the test's wait"
+            ).must()
             tries @= 0
 
             while tries < 5
                 tries @ tries + 1
-                taken = connections.accept(l.handle, deadline_ms: 10000, asked: "accepting")
+                taken = connections.accept(l.handle, deadline: time.seconds(10).must(), asked: "accepting")
 
                 if !taken.is_err()
                     heard @ heard_on(taken)
@@ -374,7 +386,7 @@ function timed_client(mode: str, port: i64) -> str
     made = connections.connect(
         host: "localhost",
         port: port,
-        deadline_ms: 10000,
+        deadline: time.seconds(10).must(),
         roots: fixture.ROOT,
         protocols: [],
         checks: hero_tls.HERO_TLS_CHECK_ALL
@@ -403,7 +415,7 @@ function answer_of(said: str?) -> str
 # A read ended by a deadline, then the deadline taken away and the bytes
 # read that came after it.
 function patient(s: io.Stream) -> str?
-    connections.set_deadline(s, ms: 300, asked: "setting a deadline")?
+    connections.set_deadline(s, deadline: time.milliseconds(300).must(), asked: "setting a deadline")?
     first = io.read(s, n: 4)
     ended @= "no failure"
 
@@ -411,7 +423,7 @@ function patient(s: io.Stream) -> str?
         .ok _  => ended @ "bytes before the deadline"
         .err e => ended @ e.code
 
-    connections.set_deadline(s, ms: 0, asked: "taking the deadline away")?
+    connections.set_deadline(s, deadline: time.max_duration(), asked: "taking the deadline away")?
     late = io.read_exact(s, n: 4)?
     return ok("first " + ended + ", then " + bytes.to_text(late)?)
 
@@ -510,7 +522,7 @@ test "set_deadline: a read the deadline ends fails timeout and loses nothing, th
             protocols: []
         ).must()
         client @= threads.spawn_text(body: client_side, arg: "patient " + to_str(l.port)).must()
-        s @= connections.accept(l.handle, deadline_ms: 10000, asked: "accepting").must()
+        s @= connections.accept(l.handle, deadline: time.seconds(10).must(), asked: "accepting").must()
         time.sleep(time.Duration(nanoseconds: 800000000))
         io.write_text(s, text: "late").must()
         said = threads.wait_text(@client)
@@ -527,8 +539,8 @@ test "set_accept_deadline: an accept with no client coming ends at its deadline,
             key: fixture.LOCALHOST_KEY,
             protocols: []
         ).must()
-        connections.set_accept_deadline(l.handle, ms: 200, asked: "t").must()
-        taken = connections.accept(l.handle, deadline_ms: 0, asked: "accepting")
+        connections.set_accept_deadline(l.handle, deadline: time.milliseconds(200).must(), asked: "t").must()
+        taken = connections.accept(l.handle, deadline: time.max_duration(), asked: "accepting")
 
         match taken
             .ok s =>

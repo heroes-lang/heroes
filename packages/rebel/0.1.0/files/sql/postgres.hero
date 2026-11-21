@@ -87,6 +87,7 @@ use sql/postgres/internal/target
 use sql/postgres/internal/tls_peer
 use strings
 use threads
+use time
 use tls
 
 ## Connecting
@@ -236,20 +237,25 @@ function open(opts: Options) -> Db?
     else
         opts.deadline_ms
 
+    handshake = if opts.deadline_ms == 0
+        time.max_duration()
+    else
+        time.milliseconds(opts.deadline_ms)?
+
     made: net.Conn? = match opts.security
         .plain => net.connect(opts.host, port: opts.port, deadline_ms: plain_ms)
         .checked c =>
             tls.connect_after(
                 host: opts.host,
                 port: opts.port,
-                deadline_ms: opts.deadline_ms,
+                deadline: handshake,
                 client: tls.Client(roots: c.roots, protocols: []),
                 steps: [.send(data: [0, 0, 0, 8, 4, 210, 22, 47]), .expect(answer: [83])]
             )
         .direct d => tls.connect(
             host: opts.host,
             port: opts.port,
-            deadline_ms: opts.deadline_ms,
+            deadline: handshake,
             client: tls.Client(roots: d.roots, protocols: ["postgresql"])
         )
 
@@ -270,7 +276,7 @@ function open(opts: Options) -> Db?
         .plain => _ = 0
         .checked _ | .direct _ =>
             if opts.deadline_ms > 0
-                timed = tls.set_deadline(stream, deadline_ms: opts.deadline_ms)
+                timed = tls.set_deadline(stream, deadline: handshake)
 
                 match timed
                     .ok _ => _ = 0

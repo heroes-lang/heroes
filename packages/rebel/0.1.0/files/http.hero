@@ -1878,11 +1878,11 @@ function serve_tls(s: Server, l: tls.Listener, handler: (function(Request) -> Re
     while true
         began = time.mark()
 
-        match tls.accept(l, deadline_ms: s.deadline_ms)
+        match tls.accept(l, deadline: policy.tls_deadline(s.deadline_ms)?)
             .ok accepted =>
                 wait_ms @ 5
                 stream @= accepted.stream
-                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline_ms: s.deadline_ms).is_err()
+                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline: policy.tls_deadline(s.deadline_ms)?).is_err()
 
                 if timed
                     _ = serve_stream(s, stream: stream, remote: net.format_address(accepted.remote), handler: handler)
@@ -2034,11 +2034,11 @@ function serve_tls_with<S>(s: Server, l: tls.Listener, state: S, handler: (funct
     while true
         began = time.mark()
 
-        match tls.accept(l, deadline_ms: s.deadline_ms)
+        match tls.accept(l, deadline: policy.tls_deadline(s.deadline_ms)?)
             .ok accepted =>
                 wait_ms @ 5
                 stream @= accepted.stream
-                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline_ms: s.deadline_ms).is_err()
+                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, deadline: policy.tls_deadline(s.deadline_ms)?).is_err()
 
                 if timed
                     _ = serve_stream_with(
@@ -3751,7 +3751,7 @@ test "serve_stream: a request over TLS from a client of the test authority"
         body: canned.ask_tls,
         arg: f"{l.port}" + canned.SEPARATOR + "TRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
     ).must()
-    stream @= tls.accept(l, deadline_ms: 10_000).must().stream
+    stream @= tls.accept(l, deadline: time.seconds(10).must()).must().stream
     assert serve_stream(default_server(), stream: stream, remote: "", handler: respond_trace) == 1
     io.close(@stream).must()
     said = threads.wait_text(@t)
@@ -3880,7 +3880,7 @@ test "serve_tls: a client silent after its handshake dropped at the deadline, th
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["http/1.1"])
     ).must()
     t @= threads.spawn_text(body: canned.ask_tls, arg: f"{l.port}" + canned.SEPARATOR).must()
-    tls.set_accept_deadline(l, deadline_ms: 3_000).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(3).must()).must()
     s @= default_server()
     s.deadline_ms @ 300
     began = time.mark().must()
@@ -4860,7 +4860,7 @@ test "serve_tls: an HTTP/2 client answered over HTTP/2"
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2", "http/1.1"])
     ).must()
     t @= threads.spawn_text(body: h2bridge.ask_h2_tls, arg: to_str(l.port)).must()
-    tls.set_accept_deadline(l, deadline_ms: 5000).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(5).must()).must()
 
     match serve_tls(default_server(), l: l, handler: respond_not_found)
         .ok _  => assert false
