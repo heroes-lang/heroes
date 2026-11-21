@@ -53,7 +53,7 @@ constant NOT_FOUND: str
 constant TIMEOUT: str
     "timeout"
 
-# The program was asked to stop while a step waited (`net.ask_stop`).
+# The program was asked to stop while a step waited (`os.ask_stop`).
 constant STOPPED: str
     "stopped"
 

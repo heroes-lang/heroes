@@ -13,6 +13,7 @@
 
 use os/hero_disk
 use os/hero_os
+use os/hero_stop
 use os/hero_sys
 use os/internal/codes
 use os/internal/counters
@@ -764,6 +765,38 @@ function terminal_size() -> TerminalSize?
         return codes.sys_failed(asked: "the terminal's size")
     return ok(TerminalSize(columns: columns, rows: rows))
 
+## The program's stop
+
+# Makes Ctrl-C and SIGTERM, on Windows Ctrl-C, Ctrl-Break and the console
+# closing, ask the program's stop instead of ending it; a second one still
+# ends it. From the first, every call of the library that waits on the system
+# (a socket's, a TLS stream's, a serial port's, a poller's, a watcher's, a
+# channel's) fails `stopped`, on every thread, so a program ends its loops and
+# closes what it holds.
+#
+# Fails `failed` where the system refuses. It changes the whole process, and a
+# second call changes nothing. See also `ask_stop`, `is_stop_asked`.
+function catch_stop() -> ()?
+    if hero_stop.catch_stop() != 0
+        return fail(
+            code: codes.FAILED,
+            msg: f"catching the stop: the system refused, its error {hero_stop.last_os_error()}"
+        )
+    return ok()
+
+# Asks the program's own stop, from any thread: from this call every call
+# that waits fails `stopped`, as after a signal `catch_stop` caught. A stop
+# once asked stays asked for the rest of the process. See also
+# `is_stop_asked`.
+function ask_stop()
+    hero_stop.ask_stop()
+
+# Whether the stop was asked, by a signal after `catch_stop` or by
+# `ask_stop`: a loop that works between its waits asks it between two pieces
+# of work.
+function is_stop_asked() -> bool
+    return hero_stop.stop_asked() == 1
+
 ## Tests
 
 test "env: a set variable, one never set, the empty name, names holding = at either end, and a zero byte"
@@ -1332,3 +1365,20 @@ test "open_path: a file that is not there"
     match open_path("/rebel-no-such-folder/report.pdf")
         .ok _  => assert false
         .err e => assert e.code == FILE_NOT_FOUND
+
+# A server that ends its loops on Ctrl-C instead of dying in the middle of a
+# write.
+test "catch_stop: Ctrl-C asks the stop from now on"
+    catch_stop().must()
+    assert !is_stop_asked()
+
+# The stop asked from inside the program, which every wait then ends on.
+test "ask_stop: the stop asked from the program itself"
+    ask_stop()
+    assert is_stop_asked()
+
+# Whether the stop was asked, as a loop asks it between two pieces of work.
+test "is_stop_asked: not before the stop, yes after"
+    assert !is_stop_asked()
+    ask_stop()
+    assert is_stop_asked()

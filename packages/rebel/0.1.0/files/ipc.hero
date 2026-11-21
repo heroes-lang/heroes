@@ -28,7 +28,7 @@
 # 0 to try once without waiting, and `FOREVER` for no bound. A channel's
 # reads and writes end by the deadline `set_deadline` gives. And every wait
 # here, a channel's read and write among them, fails `stopped` within about
-# 50 ms once the program is asked to stop (`net.catch_stop`, `net.ask_stop`).
+# 50 ms once the program is asked to stop (`os.catch_stop`, `os.ask_stop`).
 #
 # **Who closes what**: a listener, memory, a semaphore and a lock are each
 # closed by its own `close_` function, once, through the place that will be

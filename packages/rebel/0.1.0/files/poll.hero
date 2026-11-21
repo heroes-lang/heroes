@@ -9,7 +9,7 @@
 #
 # What it does NOT do: read, write or accept (`io`, `net`); sleep (`time`); run
 # a function on another thread (`threads`); ask a program to stop
-# (`net.catch_stop`, `net.ask_stop`), though every wait here ends at a stop.
+# (`os.catch_stop`, `os.ask_stop`), though every wait here ends at a stop.
 #
 # **Level-triggered**: what stays ready is told again at every wait until the
 # program reads it, writes it or removes it, so a loop that reads once per
@@ -56,7 +56,7 @@ constant LIMIT: str
 constant UNSUPPORTED: str
     "unsupported"
 
-# The program was asked to stop (`net.catch_stop`, `net.ask_stop`). `wait` and
+# The program was asked to stop (`os.catch_stop`, `os.ask_stop`). `wait` and
 # `wait_forever` fail with it.
 constant STOPPED: str
     "stopped"

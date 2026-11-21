@@ -283,7 +283,7 @@ capability serial/cancel  a read or a write another thread waits in ended
   go      -
   rust    -
   python  Serial.cancel_read, Serial.cancel_write
-  note    the stop ends every wait (`net.ask_stop`), and a timeout bounds it; a close on another thread does not end a wait already begun (`hero_stream.h` runs it to its end), so a cancel of one stream alone is not written
+  note    the stop ends every wait (`os.ask_stop`), and a timeout bounds it; a close on another thread does not end a wait already begun (`hero_stream.h` runs it to its end), so a cancel of one stream alone is not written
 
 capability serial/remote  a port reached over the network, RFC 2217
   heroes  pending

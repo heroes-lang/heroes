@@ -8,7 +8,7 @@ use mqtt/internal/link
 use mqtt/internal/model
 use mqtt/internal/reading
 use mqtt/internal/state
-use net
+use os
 use random
 use time
 use url
@@ -223,7 +223,7 @@ function recover(@s: state.Session, code: str, msg: str) -> ()?
     last: str @= msg
 
     for n in range(from: 1, to: r.attempts + 1)
-        if net.is_stop_asked()
+        if os.is_stop_asked()
             return fail(code: model.STOPPED, msg: f"the stop was asked while the client reconnected to {s.target}")
         wait = wait_before(n: n, r: r)
 

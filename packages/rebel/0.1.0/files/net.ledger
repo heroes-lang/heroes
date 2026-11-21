@@ -606,19 +606,6 @@ capability udp/multicast-send  the interface a datagram to a group leaves by, wh
   python  socket.IP_MULTICAST_IF, socket.IP_MULTICAST_LOOP, socket.IP_MULTICAST_TTL, socket.IPV6_MULTICAST_IF, socket.IPV6_MULTICAST_LOOP, socket.IPV6_MULTICAST_HOPS, socket.IP_DEFAULT_MULTICAST_LOOP, socket.IP_DEFAULT_MULTICAST_TTL
   note    one option each for IPv4 and IPv6, the socket's own family read (Rust's `_v4` and `_v6` pairs, Python's two levels); the interface by its index, as `join_group` takes it, where Python's IPv4 takes an address; Rust's standard library sets no interface (measured 2026-11-16 in its documentation on this Mac), and Go's standard library reaches one only through `ListenMulticastUDP`'s interface, in `udp/broadcast-multicast`. Added after a VPN gave this Mac a second route for multicast (the coordinator's finding of 2026-11-16 11:58)
 
-capability stop/catch  Ctrl-C and SIGTERM made a stop the program asks about
-  heroes  net.catch_stop
-  go      -
-  rust    -
-  python  -
-  note    The platform layer's stop (spec § 13): every call that waits on a socket fails `stopped`
-
-capability stop/ask  the program's own stop asked, and whether it was
-  heroes  net.ask_stop, net.is_stop_asked
-  go      -
-  rust    -
-  python  -
-
 capability interface/list  the machine's network interfaces and their addresses
   heroes  net.interfaces
   go      net.Interfaces, net.InterfaceByIndex, net.InterfaceByName, net.InterfaceAddrs, net.Interface, net.Interface.Addrs, net.Flags, net.Flags.String, net.FlagUp, net.FlagBroadcast, net.FlagLoopback, net.FlagPointToPoint, net.FlagMulticast, net.FlagRunning

@@ -15,7 +15,7 @@
 # are, nothing echoed or translated. A read waits for one byte at most the
 # read timeout, then answers every byte there; a read or a write past its
 # timeout fails `timeout`, and one waiting when the program is asked to stop
-# (`net.catch_stop`, `net.ask_stop`) fails `stopped` within about 50 ms. A
+# (`os.catch_stop`, `os.ask_stop`) fails `stopped` within about 50 ms. A
 # port whose device is gone reads its end and refuses a write `closed`.
 #
 # **Platforms**: POSIX ports by `termios`, Windows ports by their `DCB`. Mark

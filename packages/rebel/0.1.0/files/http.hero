@@ -93,6 +93,7 @@ use http2
 use io
 use json
 use net
+use os
 use retries
 use strings
 use threads
@@ -131,7 +132,7 @@ constant CLOSED: str
 constant TIMEOUT: str
     "timeout"
 
-# The program asked to stop (`net.catch_stop`, `net.ask_stop`) while a call
+# The program asked to stop (`os.catch_stop`, `os.ask_stop`) while a call
 # waited.
 constant STOPPED: str
     "stopped"
@@ -1809,8 +1810,8 @@ function default_server() -> Server
 # It serves ONE CONNECTION AT A TIME: the next waits in the listener's queue
 # until the one served ends. A program that serves several at once accepts
 # with `net.accept_number`, hands each number to a thread, and calls
-# `serve_conn` there. It answers once the stop is asked (`net.catch_stop`,
-# `net.ask_stop`). Fails `timeout` where the listener's deadline passes
+# `serve_conn` there. It answers once the stop is asked (`os.catch_stop`,
+# `os.ask_stop`). Fails `timeout` where the listener's deadline passes
 # (`net.set_accept_deadline`), `closed` where `l` is closed. Where the system
 # has no descriptor left it waits and tries again, from 5 ms to 1 s, as Go
 # does.
@@ -2963,8 +2964,8 @@ record Served
 # - `grace_ms`: the milliseconds after the stop during which a request may
 #   still begin to be answered, 0 or more; one waiting past it is cut.
 #
-# The counts of what it served. The stop is `net`'s (`net.catch_stop`,
-# `net.ask_stop`): from it every call that would wait answers `stopped`, so
+# The counts of what it served. The stop is `os`'s (`os.catch_stop`,
+# `os.ask_stop`): from it every call that would wait answers `stopped`, so
 # a request's bytes that have not come by then are never read, and are
 # counted cut, as is a response the system could not take without waiting;
 # a handler cannot be stopped midway, so one running at the stop runs to its
@@ -2977,7 +2978,7 @@ function serve_until_stopped<S>(s: Server, l: net.Listener, state: S, handler: (
     wait_ms: i64 @= 5
 
     while true
-        if net.is_stop_asked()
+        if os.is_stop_asked()
             return ok(out)
 
         match net.accept(l, deadline_ms: s.deadline_ms)
@@ -3035,7 +3036,7 @@ function serve_stream_until_stopped<S>(s: Server, stream: io.Stream, remote: str
     stop_mark @= since
 
     while true
-        if !seen && net.is_stop_asked()
+        if !seen && os.is_stop_asked()
             seen @ true
             stop_mark @ time.mark()
 
@@ -3056,13 +3057,13 @@ function serve_stream_until_stopped<S>(s: Server, stream: io.Stream, remote: str
         r.remote @ remote
         answer @= handler(state, r)
 
-        if net.is_stop_asked()
+        if os.is_stop_asked()
             answer.closing @ true
 
         match write_answer(reader.stream, r: r, response: answer)
             .ok _ => answered @ answered + 1
             .err _ =>
-                if net.is_stop_asked()
+                if os.is_stop_asked()
                     cut @ cut + 1
                 return Served(connections: 1, answered: answered, cut: cut)
 

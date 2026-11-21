@@ -82,7 +82,7 @@ constant CLOSED: str
 constant TIMEOUT: str
     "timeout"
 
-# The program was asked to stop while the call waited (`net.ask_stop`).
+# The program was asked to stop while the call waited (`os.ask_stop`).
 constant STOPPED: str
     "stopped"
 

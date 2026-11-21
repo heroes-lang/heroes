@@ -1,0 +1,60 @@
+# The platform layer's program stop, the three doors of `hero_net.h` that ask
+# it and catch it, bound thin: one function per C function, each answering
+# what C answers. The floor of `os`'s stop (`catch_stop`, `ask_stop`,
+# `is_stop_asked`), which the program asks whatever it waits on: every wait of
+# the platform layer, a socket's, a serial port's, a poller's, a watcher's or
+# a channel's, fails stopped once it is asked, so a program that reads a
+# serial port ends on Ctrl-C without naming `net`.
+#
+# The stop's C stands in `hero_net.h` (spec § 13), the header that holds the
+# flag the waits read; this group binds those three doors and the system's
+# number of the last failure, and `net`'s own floor binds them again for its
+# waits and its tests. The layer is C of the language's own beside the
+# runtime, so the group names its header and no `link`.
+
+extern "hero_net.h"
+    function hero_net_catch_stop() -> i64
+    function hero_net_stop_asked() -> i64
+    function hero_net_ask_stop()
+    function hero_net_last_os_error() -> i64
+
+# 0 once SIGINT and SIGTERM ask a stop instead of ending the program, or -1.
+# On Windows Ctrl-C, Ctrl-Break and the console closing do; from the first of
+# them every call of the layer that would wait fails stopped, on every thread,
+# and a second one ends the program.
+function catch_stop() -> i64
+    return hero_net_catch_stop()
+
+# 1 once a stop was asked, else 0. A signal after `catch_stop` asks it, and so
+# does `ask_stop`.
+function stop_asked() -> i64
+    return hero_net_stop_asked()
+
+# Asks the program's own stop, from any thread. From this call every call of
+# the layer that would wait fails stopped, on every thread, as after the first
+# signal `catch_stop` catches, which it is kept apart from: a first Ctrl-C
+# after it does not end the program, a second does.
+function ask_stop()
+    hero_net_ask_stop()
+
+# The platform's own number for the last call's failure on this thread, 0
+# where the layer refused before asking the system.
+function last_os_error() -> i64
+    return hero_net_last_os_error()
+
+## Tests
+
+# This changes the process that runs the tests as it would a server: SIGINT and
+# SIGTERM ask a stop from here on, and a second one still ends it at once.
+test "catch_stop answers 0, the second time too"
+    assert catch_stop() == 0
+    assert catch_stop() == 0
+
+# Each `test` runs as a process of its own, so the stop this one asks ends no
+# other test's waits.
+test "ask_stop asks the stop, and stop_asked reads it"
+    assert stop_asked() == 0
+    ask_stop()
+    assert stop_asked() == 1
+    ask_stop()
+    assert stop_asked() == 1

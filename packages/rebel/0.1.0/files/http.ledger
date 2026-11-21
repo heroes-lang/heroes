@@ -496,7 +496,7 @@ capability server/serve  connections accepted and served with a handler until th
   go      net/http.Serve, net/http.ListenAndServe, net/http.Server.Serve, net/http.Server.ListenAndServe, net/http.Server.Close, net/http.ErrServerClosed, net/http.Handler, net/http.HandlerFunc
   rust    -
   python  http.server.HTTPServer.serve_forever, server_close, http.server.test
-  note    ONE CONNECTION AT A TIME, a fact the face states; the stop is `net`'s (`catch_stop`, `ask_stop`); a handler is a top-level function value
+  note    ONE CONNECTION AT A TIME, a fact the face states; the stop is `os`'s (`os.catch_stop`, `os.ask_stop`); a handler is a top-level function value
 
 capability server/state  a handler that reads a value of the program, beside each request
   heroes  http.serve_with, http.serve_tls_with, http.serve_stream_with, http.respond_moved_to
@@ -573,7 +573,7 @@ capability server/graceful  a server ended at the stop without cutting the reque
   go      net/http.Server.Shutdown, net/http.Server.RegisterOnShutdown
   rust    -
   python  socketserver.BaseServer.shutdown as http.server.HTTPServer has it
-  note    Go's `Shutdown` closes the listeners, closes the idle connections and waits for the active ones to become idle; here the stop is `net`'s, after which no call waits, so a request whose bytes have come by then is read and answered with `Connection: close` within `grace_ms`, and one whose bytes are still coming, or whose answer the system cannot take at once, is cut and counted; a handler runs to its end, as Go's does (it has no way to stop one either); a deadline that holds the reads open after the stop would need a door of `hero_net` that waits past it, which no member offers (2026-11-17): the in-flight request still arriving is the part of Go's behaviour not reached; the stop is never asked in a test, since it cannot be taken back in the process that asks it
+  note    Go's `Shutdown` closes the listeners, closes the idle connections and waits for the active ones to become idle; here the stop is `os`'s, after which no call waits, so a request whose bytes have come by then is read and answered with `Connection: close` within `grace_ms`, and one whose bytes are still coming, or whose answer the system cannot take at once, is cut and counted; a handler runs to its end, as Go's does (it has no way to stop one either); a deadline that holds the reads open after the stop would need a door of `hero_net` that waits past it, which no member offers (2026-11-17): the in-flight request still arriving is the part of Go's behaviour not reached; the stop is never asked in a test, since it cannot be taken back in the process that asks it
 
 capability negotiate/type  the media type a server answers chosen from Accept
   heroes  http.negotiate_type

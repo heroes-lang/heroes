@@ -86,7 +86,7 @@ constant TIMEOUT: str
 constant CLOSED: str
     failure.CLOSED
 
-# The program was asked to stop while a call waited (`net.catch_stop`).
+# The program was asked to stop while a call waited (`os.catch_stop`).
 constant STOPPED: str
     failure.STOPPED
 
