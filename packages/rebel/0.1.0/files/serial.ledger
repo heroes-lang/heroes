@@ -126,7 +126,7 @@ capability serial/settings  every setting at once, and the settings read back fr
   note    set all at once and read back after the set: a value the port did not keep is `unsupported` and the port put back as it was (POSIX's `tcsetattr` succeeds where any change was made)
 
 capability serial/defaults  a port's usual settings, 9600 or another speed with 8 bits, no parity, one stop and no flow
-  heroes  serial.defaults
+  heroes  serial.default_settings
   dotnet  SerialPort()
   go      -
   rust    -

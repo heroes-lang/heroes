@@ -52,7 +52,7 @@ constant LIMIT: str
 constant MIN_LEVEL: i64
     1
 
-# The level `defaults` sets, as the `zstd` tool's and Python's.
+# The level `default_options` sets, as the `zstd` tool's and Python's.
 constant DEFAULT_LEVEL: i64
     3
 
@@ -60,7 +60,7 @@ constant DEFAULT_LEVEL: i64
 constant MAX_LEVEL: i64
     22
 
-# How `compress` and `compress_with` write a frame. `defaults` makes the
+# How `compress` and `compress_with` write a frame. `default_options` makes the
 # usual one.
 record Options
     # 1 (`MIN_LEVEL`) to 22 (`MAX_LEVEL`): how many earlier places are
@@ -75,7 +75,7 @@ record Options
 # Options at level 3, the size said and no checksum, as Python's usual.
 #
 # See also `compress`.
-function defaults() -> Options
+function default_options() -> Options
     return Options(level: DEFAULT_LEVEL, checksum: false, content_size: true)
 
 ## All at once
@@ -83,7 +83,7 @@ function defaults() -> Options
 # `data` compressed whole into one Zstandard frame.
 #
 # - `data`: the bytes to compress; none make a frame of one empty block.
-# - `options`: the level, the checksum and the size; `defaults` makes the
+# - `options`: the level, the checksum and the size; `default_options` makes the
 #   usual ones.
 #
 # The same `data` and `options` answer the same bytes every time.
@@ -312,8 +312,8 @@ function compress_with(data: [u8], dictionary: Dictionary, options: Options) -> 
 ## Examples
 
 # The usual options, with a checksum asked for.
-test "defaults: level 3, then a checksum"
-    o @= defaults()
+test "default_options: level 3, then a checksum"
+    o @= default_options()
     assert o.level == DEFAULT_LEVEL
     o.checksum @ true
     assert frame_info(compress([0x61], o).must()).must().has_checksum
@@ -321,11 +321,11 @@ test "defaults: level 3, then a checksum"
 # A line compressed and read back.
 test "compress: a line, and back"
     line: [u8] = [0x6c, 0x6f, 0x77, 0x20, 0x6c, 0x6f, 0x77, 0x20, 0x6c, 0x6f, 0x77, 0x20, 0x6c, 0x6f, 0x77]
-    assert decompress(compress(line, defaults()).must(), limit: 100).must() == line
+    assert decompress(compress(line, default_options()).must(), limit: 100).must() == line
 
 # A frame read whole, under a limit on what it may expand to.
 test "decompress: under a limit"
-    packed = compress([0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a], defaults()).must()
+    packed = compress([0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a], default_options()).must()
     assert decompress(packed, limit: 6).must().len() == 6
 
     match decompress(packed, limit: 5)
@@ -334,7 +334,7 @@ test "decompress: under a limit"
 
 # A frame followed by bytes of the caller's own.
 test "decompress_leading: a frame, then other bytes"
-    packed @= compress([0x6b, 0x6f, 0x6f, 0x6b, 0x73], defaults()).must()
+    packed @= compress([0x6b, 0x6f, 0x6f, 0x6b, 0x73], default_options()).must()
     size = packed.len()
     packed @ packed.push(0x21)
     led = decompress_leading(packed, limit: 100).must()
@@ -342,16 +342,16 @@ test "decompress_leading: a frame, then other bytes"
 
 # The size a frame says it holds.
 test "frame_info: the content size"
-    info = frame_info(compress([1, 2, 3], defaults()).must()).must()
+    info = frame_info(compress([1, 2, 3], default_options()).must()).must()
     assert info.content_size == .known(bytes: 3)
     assert !info.is_skippable
 
 # Where one frame ends and the next begins.
 test "frame_size: two frames, one after the other"
-    first = compress([1, 2, 3], defaults()).must()
+    first = compress([1, 2, 3], default_options()).must()
     two @= first
 
-    for b in compress([4, 5], defaults()).must()
+    for b in compress([4, 5], default_options()).must()
         two @ two.push(b)
 
     assert frame_size(two).must() == first.len()
@@ -360,7 +360,7 @@ test "frame_size: two frames, one after the other"
 test "skippable_frame: bytes a reader skips"
     skipped @= skippable_frame([9, 9, 9], magic: 0).must()
 
-    for b in compress([1], defaults()).must()
+    for b in compress([1], default_options()).must()
         skipped @ skipped.push(b)
 
     assert decompress(skipped, limit: 10).must() == [1]
@@ -386,11 +386,11 @@ test "content_of: the bytes given"
 # A frame made with a dictionary and read with it.
 test "decompress_with: the dictionary the frame was made with"
     d = new_raw_dictionary([0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x20, 0x68, 0x65, 0x72, 0x6f, 0x65, 0x73])
-    packed = compress_with([0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x21], dictionary: d, options: defaults()).must()
+    packed = compress_with([0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x21], dictionary: d, options: default_options()).must()
     assert decompress_with(packed, dictionary: d, limit: 100).must() == [0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x21]
 
 # Data compressed against a dictionary's content.
 test "compress_with: a line that repeats the dictionary"
     d = new_raw_dictionary([0x6d, 0x61, 0x6a, 0x6f, 0x72, 0x20, 0x74, 0x6f, 0x6d, 0x20, 0x6d, 0x61, 0x6a, 0x6f, 0x72])
     line: [u8] = [0x6d, 0x61, 0x6a, 0x6f, 0x72, 0x20, 0x74, 0x6f, 0x6d]
-    assert decompress_with(compress_with(line, dictionary: d, options: defaults()).must(), dictionary: d, limit: 100).must() == line
+    assert decompress_with(compress_with(line, dictionary: d, options: default_options()).must(), dictionary: d, limit: 100).must() == line

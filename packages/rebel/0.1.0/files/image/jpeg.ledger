@@ -68,7 +68,7 @@ capability jpeg/icc  the ICC profile read
   note    put back together from its APP2 segments; not applied
 
 capability jpeg/encode  an image written as baseline JPEG at a quality
-  heroes  image/jpeg.encode, image/jpeg.encoding, image/jpeg.EncodeOptions, image/jpeg.Subsampling
+  heroes  image/jpeg.encode, image/jpeg.default_encode_options, image/jpeg.EncodeOptions, image/jpeg.Subsampling
   go      Encode, Options, Options.Quality, DefaultQuality
   rust    -
   python  Image.save(format="JPEG", quality=, subsampling=)

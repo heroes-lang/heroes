@@ -72,7 +72,7 @@ constant NO_COMPRESSION: i64
 constant BEST_SPEED: i64
     1
 
-# The level `defaults` sets, as zlib's and Go's default is: a balance of size
+# The level `default_options` sets, as zlib's and Go's default is: a balance of size
 # and time.
 constant DEFAULT_LEVEL: i64
     6
@@ -134,7 +134,7 @@ variant Flush
     full
 
 # The gzip header (RFC 1952): what a gzip member says of the file it holds.
-# `defaults` makes one that says nothing; change a field before compressing.
+# `default_options` makes one that says nothing; change a field before compressing.
 record Header
     # The original file's name without its folder, "" for none. It is
     # written in Latin-1, so it holds only characters U+0001 to U+00FF; a
@@ -157,7 +157,7 @@ record Header
     is_text: bool
 
 # How `compress`, `compressor`, `writer` and `compress_stream` compress.
-# `defaults` makes one with every field at its usual value; a field out of
+# `default_options` makes one with every field at its usual value; a field out of
 # its range fails `invalid` at the call that reads it.
 record Options
     # What wraps the data.
@@ -188,7 +188,7 @@ record Options
 # - `format`: what wraps the data.
 #
 # See also `compress` and `writer`.
-function defaults(format: Format) -> Options
+function default_options(format: Format) -> Options
     g = wrapping.empty_gzip()
     header = Header(
         name: g.name,
@@ -215,7 +215,7 @@ function defaults(format: Format) -> Options
 # - `data`: the bytes to compress; none make a stream that decompresses to
 #   none.
 # - `options`: the format, level, strategy, window, dictionary and gzip
-#   header; `defaults` makes the usual ones.
+#   header; `default_options` makes the usual ones.
 #
 # The same `data` and `options` answer the same bytes every time.
 #
@@ -761,7 +761,7 @@ test "compress and decompress: every format and level, on nothing, one byte and 
     for data in [bytes.from_text(""), bytes.from_text("a"), samples.text()]
         for format in formats
             for level in range(from: 0, to: 10)
-                o @= defaults(format)
+                o @= default_options(format)
                 o.level @ level
                 assert decompress(compress(data, o).must(), format: o.format, limit: data.len()).must() == data
 
@@ -775,21 +775,21 @@ test "compress and decompress: every strategy, a narrow window, and runs"
 
     for data in [samples.text(), runs]
         for strategy in strategies
-            o @= defaults(.zlib)
+            o @= default_options(.zlib)
             o.strategy @ strategy
             assert decompress(compress(data, o).must(), format: o.format, limit: data.len()).must() == data
 
-        narrow @= defaults(.raw)
+        narrow @= default_options(.raw)
         narrow.window_bits @ MIN_WINDOW_BITS
         assert decompress(compress(data, narrow).must(), format: .raw, limit: data.len()).must() == data
 
 test "compress: the same input and options answer the same bytes, smaller at higher levels"
     text = samples.text()
-    fast @= defaults(.zlib)
+    fast @= default_options(.zlib)
     fast.level @ BEST_SPEED
-    best @= defaults(.zlib)
+    best @= default_options(.zlib)
     best.level @ BEST_COMPRESSION
-    stored @= defaults(.zlib)
+    stored @= default_options(.zlib)
     stored.level @ NO_COMPRESSION
     assert compress(text, best).must() == compress(text, best).must()
     assert compress(text, best).must().len() <= compress(text, fast).must().len()
@@ -798,7 +798,7 @@ test "compress: the same input and options answer the same bytes, smaller at hig
 
 test "compress: options out of their range"
     for level in [-1, 10]
-        o @= defaults(.zlib)
+        o @= default_options(.zlib)
         o.level @ level
 
         match compress([], o)
@@ -806,21 +806,21 @@ test "compress: options out of their range"
             .err e => assert e.code == "invalid"
 
     for bits in [8, 16]
-        o @= defaults(.raw)
+        o @= default_options(.raw)
         o.window_bits @ bits
 
         match compress([], o)
             .ok _  => assert false
             .err e => assert e.code == "invalid"
 
-    g @= defaults(.gzip)
+    g @= default_options(.gzip)
     g.dictionary @ bytes.from_text("abc")
 
     match compress([], g)
         .ok _  => assert false
         .err e => assert e.msg == "a dictionary for gzip, whose header has no place to name one"
 
-    named @= defaults(.gzip)
+    named @= default_options(.gzip)
     named.header.name @ "snow ☃"
 
     match compress([], named)
@@ -839,10 +839,10 @@ test "compress: a dictionary written, then read by with_dictionary, raw and zlib
     two: [Format] = [.raw, .zlib]
 
     for format in two
-        o @= defaults(format)
+        o @= default_options(format)
         o.dictionary @ samples.dictionary()
         packed = compress(text, o).must()
-        plain = compress(text, defaults(format)).must()
+        plain = compress(text, default_options(format)).must()
         assert packed.len() < plain.len()
         d @= with_dictionary(decompressor(format, limit: text.len()), dictionary: samples.dictionary()).must()
         assert decompress_part(@d, data: packed, most: text.len()).must() == text
@@ -880,7 +880,7 @@ test "header_of: Python's named member, a zlib stream, and a header cut short"
     assert h.modified == 1700000000
     assert h.os == 255
     assert h.comment == "" && h.extra.len() == 0 && !h.is_text
-    assert header_of(compress([], defaults(.gzip)).must()).must() == defaults(.gzip).header
+    assert header_of(compress([], default_options(.gzip)).must()).must() == default_options(.gzip).header
 
     match header_of(samples.of(samples.ZLIB_6))
         .ok _  => assert false
@@ -917,7 +917,7 @@ test "compress_flush: what was fed so far decompresses from the bytes so far"
     hows: [Flush] = [.sync, .full]
 
     for how in hows
-        c @= compressor(defaults(.raw)).must()
+        c @= compressor(default_options(.raw)).must()
         so_far: [u8] @= compress_part(@c, data: text.slice(from: 0, to: 1000))
 
         for b in compress_flush(@c, how: how)
@@ -937,7 +937,7 @@ test "compress_flush: what was fed so far decompresses from the bytes so far"
 
 test "writer and reader: gzip with a header through a pipe, and the end read twice"
     p @= io.pipe().must()
-    o @= defaults(.gzip)
+    o @= default_options(.gzip)
     o.header.name @ "notes.txt"
     o.header.modified @ 86400
     w @= writer(p.writer, o).must()
@@ -965,7 +965,7 @@ test "writer and reader: gzip with a header through a pipe, and the end read twi
 
 test "reader: a stream that ends inside, a limit passed, and a header asked of zlib"
     p @= io.pipe().must()
-    packed = compress(samples.text(), defaults(.zlib)).must()
+    packed = compress(samples.text(), default_options(.zlib)).must()
     io.write(p.writer, data: packed.slice(from: 0, to: packed.len() - 3)).must()
     io.close(@p.writer).must()
     r @= reader(p.reader, format: .zlib, limit: 100000)
@@ -996,7 +996,7 @@ test "compress_stream and decompress_stream: a text through two pipes and back"
     io.write(source.writer, data: text).must()
     io.close(@source.writer).must()
     packed @= io.pipe().must()
-    written = compress_stream(from: source.reader, to: packed.writer, options: defaults(.gzip)).must()
+    written = compress_stream(from: source.reader, to: packed.writer, options: default_options(.gzip)).must()
     io.close(@packed.writer).must()
     io.close(@source.reader).must()
     back @= io.pipe().must()
@@ -1008,7 +1008,7 @@ test "compress_stream and decompress_stream: a text through two pipes and back"
     assert written > 0
 
 test "decompress_leading and unused: a stream followed by other bytes"
-    stream = compress(samples.text(), defaults(.zlib)).must()
+    stream = compress(samples.text(), default_options(.zlib)).must()
     followed @= stream
 
     for b in bytes.from_text("next")
@@ -1030,8 +1030,8 @@ test "decompress_leading and unused: a stream followed by other bytes"
 ## Examples
 
 # The options of gzip at the usual level, with the level raised.
-test "defaults: gzip at the usual level, then at the best"
-    o @= defaults(.gzip)
+test "default_options: gzip at the usual level, then at the best"
+    o @= default_options(.gzip)
     assert o.level == DEFAULT_LEVEL
     o.level @ BEST_COMPRESSION
     assert compress(bytes.from_text("ziggy"), o).must().len() > 0
@@ -1039,12 +1039,12 @@ test "defaults: gzip at the usual level, then at the best"
 # A line compressed as gzip and read back.
 test "compress: a line as gzip, and back"
     line = bytes.from_text("hello hello hello hello")
-    packed = compress(line, defaults(.gzip)).must()
+    packed = compress(line, default_options(.gzip)).must()
     assert decompress(packed, format: .gzip, limit: 100).must() == line
 
 # A zlib stream read whole, with a limit on what it may expand to.
 test "decompress: a zlib stream, under a limit"
-    packed = compress(bytes.from_text("ground control"), defaults(.zlib)).must()
+    packed = compress(bytes.from_text("ground control"), default_options(.zlib)).must()
     assert decompress(packed, format: .zlib, limit: 1000).must() == bytes.from_text("ground control")
 
     match decompress(packed, format: .zlib, limit: 5)
@@ -1053,7 +1053,7 @@ test "decompress: a zlib stream, under a limit"
 
 # A raw stream followed by a trailer of the caller's own, as zip lays out a member.
 test "decompress_leading: a raw stream, then other bytes"
-    packed @= compress(bytes.from_text("major tom"), defaults(.raw)).must()
+    packed @= compress(bytes.from_text("major tom"), default_options(.raw)).must()
     size = packed.len()
 
     for b in bytes.from_text("TRAILER")
@@ -1065,26 +1065,26 @@ test "decompress_leading: a raw stream, then other bytes"
 
 # Telling zlib from gzip by the first bytes.
 test "format_of: gzip told from zlib"
-    assert format_of(compress([], defaults(.gzip)).must()).must() == .gzip
-    assert format_of(compress([], defaults(.zlib)).must()).must() == .zlib
+    assert format_of(compress([], default_options(.gzip)).must()).must() == .gzip
+    assert format_of(compress([], default_options(.zlib)).must()).must() == .zlib
 
 # The name a gzip member carries, read without decompressing it.
 test "header_of: the name of a gzip member"
-    o @= defaults(.gzip)
+    o @= default_options(.gzip)
     o.header.name @ "starman.txt"
     packed = compress(bytes.from_text("there's a starman"), o).must()
     assert header_of(packed).must().name == "starman.txt"
 
 # A compressor made for zlib at the fastest level.
 test "compressor: zlib at the fastest level"
-    o @= defaults(.zlib)
+    o @= default_options(.zlib)
     o.level @ BEST_SPEED
     c = compressor(o).must()
     assert !is_compressor_ended(c)
 
 # Pieces fed one after another; what is ready comes out as it is.
 test "compress_part: two pieces, then the end"
-    c @= compressor(defaults(.zlib)).must()
+    c @= compressor(default_options(.zlib)).must()
     out: [u8] @= compress_part(@c, data: bytes.from_text("ground control "))
 
     for b in compress_part(@c, data: bytes.from_text("to major tom"))
@@ -1097,7 +1097,7 @@ test "compress_part: two pieces, then the end"
 
 # A flush makes everything fed so far readable before the stream ends.
 test "compress_flush: what was fed is readable at once"
-    c @= compressor(defaults(.raw)).must()
+    c @= compressor(default_options(.raw)).must()
     so_far: [u8] @= compress_part(@c, data: bytes.from_text("ashes to ashes"))
 
     for b in compress_flush(@c, how: .sync)
@@ -1108,7 +1108,7 @@ test "compress_flush: what was fed is readable at once"
 
 # The end of a stream: the last block and the checksum.
 test "compress_end: a stream of nothing"
-    c @= compressor(defaults(.gzip)).must()
+    c @= compressor(default_options(.gzip)).must()
     whole_stream: [u8] @= compress_part(@c, data: [])
 
     for b in compress_end(@c)
@@ -1118,7 +1118,7 @@ test "compress_end: a stream of nothing"
 
 # Whether a compressor has been ended.
 test "is_compressor_ended: before and after the end"
-    c @= compressor(defaults(.zlib)).must()
+    c @= compressor(default_options(.zlib)).must()
     assert !is_compressor_ended(c)
     _ = compress_end(@c)
     assert is_compressor_ended(c)
@@ -1126,12 +1126,12 @@ test "is_compressor_ended: before and after the end"
 # A decompressor for one gzip member of at most a kilobyte.
 test "decompressor: one gzip member, at most a kilobyte"
     d @= decompressor(.gzip, limit: 1024)
-    packed = compress(bytes.from_text("changes"), defaults(.gzip)).must()
+    packed = compress(bytes.from_text("changes"), default_options(.gzip)).must()
     assert decompress_part(@d, data: packed, most: 1024).must() == bytes.from_text("changes")
 
 # A stream made with a preset dictionary, read with the same one.
 test "with_dictionary: the dictionary the stream was made with"
-    o @= defaults(.zlib)
+    o @= default_options(.zlib)
     o.dictionary @ bytes.from_text("space oddity")
     packed = compress(bytes.from_text("oddity in space"), o).must()
     d @= with_dictionary(decompressor(.zlib, limit: 100), dictionary: bytes.from_text("space oddity")).must()
@@ -1139,7 +1139,7 @@ test "with_dictionary: the dictionary the stream was made with"
 
 # A stream fed in two pieces, its bytes taken as they come.
 test "decompress_part: a stream fed in two pieces"
-    packed = compress(bytes.from_text("heroes, just for one day"), defaults(.zlib)).must()
+    packed = compress(bytes.from_text("heroes, just for one day"), default_options(.zlib)).must()
     half = packed.len() / 2
     d @= decompressor(.zlib, limit: 100)
     out: [u8] @= decompress_part(@d, data: packed.slice(from: 0, to: half), most: 100).must()
@@ -1151,7 +1151,7 @@ test "decompress_part: a stream fed in two pieces"
 
 # Whether a stream has been read to its end.
 test "is_decompressor_ended: before and after the stream's end"
-    packed = compress(bytes.from_text("life on mars"), defaults(.zlib)).must()
+    packed = compress(bytes.from_text("life on mars"), default_options(.zlib)).must()
     d @= decompressor(.zlib, limit: 100)
     assert !is_decompressor_ended(d)
     _ = decompress_part(@d, data: packed, most: 100).must()
@@ -1159,7 +1159,7 @@ test "is_decompressor_ended: before and after the stream's end"
 
 # The bytes that followed a stream in the input.
 test "unused: what came after the stream"
-    packed @= compress(bytes.from_text("kooks"), defaults(.zlib)).must()
+    packed @= compress(bytes.from_text("kooks"), default_options(.zlib)).must()
 
     for b in bytes.from_text("rest")
         packed @ packed.push(b)
@@ -1171,7 +1171,7 @@ test "unused: what came after the stream"
 # A gzip writer over one end of a pipe, read back from the other.
 test "writer: gzip into a pipe"
     p @= io.pipe().must()
-    w @= writer(p.writer, defaults(.gzip)).must()
+    w @= writer(p.writer, default_options(.gzip)).must()
     write(@w, data: bytes.from_text("rebel rebel")).must()
     finish(@w).must()
     io.close(@p.writer).must()
@@ -1181,7 +1181,7 @@ test "writer: gzip into a pipe"
 # Bytes written in two calls reach the stream as one compressed stream.
 test "write: two writes, one stream"
     p @= io.pipe().must()
-    w @= writer(p.writer, defaults(.zlib)).must()
+    w @= writer(p.writer, default_options(.zlib)).must()
     write(@w, data: bytes.from_text("fame, ")).must()
     write(@w, data: bytes.from_text("fame")).must()
     finish(@w).must()
@@ -1192,7 +1192,7 @@ test "write: two writes, one stream"
 # A flush pushes what was written so far into the stream.
 test "flush: written so far, readable so far"
     p @= io.pipe().must()
-    w @= writer(p.writer, defaults(.raw)).must()
+    w @= writer(p.writer, default_options(.raw)).must()
     write(@w, data: bytes.from_text("under pressure")).must()
     flush(@w, how: .sync).must()
     d @= decompressor(.raw, limit: 100)
@@ -1204,7 +1204,7 @@ test "flush: written so far, readable so far"
 # The end of a writer's stream; the stream itself stays open for its owner.
 test "finish: the end written, the stream still open"
     p @= io.pipe().must()
-    w @= writer(p.writer, defaults(.gzip)).must()
+    w @= writer(p.writer, default_options(.gzip)).must()
     finish(@w).must()
     assert !io.is_closed(p.writer)
     io.close(@p.writer).must()
@@ -1214,7 +1214,7 @@ test "finish: the end written, the stream still open"
 # A reader over a pipe that holds a gzip stream.
 test "reader: a gzip stream from a pipe"
     p @= io.pipe().must()
-    io.write(p.writer, data: compress(bytes.from_text("station to station"), defaults(.gzip)).must()).must()
+    io.write(p.writer, data: compress(bytes.from_text("station to station"), default_options(.gzip)).must()).must()
     io.close(@p.writer).must()
     r @= reader(p.reader, format: .gzip, limit: 100)
     assert read_rest(@r).must() == bytes.from_text("station to station")
@@ -1223,7 +1223,7 @@ test "reader: a gzip stream from a pipe"
 # Decompressed bytes taken a few at a time.
 test "read: five bytes at a time"
     p @= io.pipe().must()
-    io.write(p.writer, data: compress(bytes.from_text("young americans"), defaults(.zlib)).must()).must()
+    io.write(p.writer, data: compress(bytes.from_text("young americans"), default_options(.zlib)).must()).must()
     io.close(@p.writer).must()
     r @= reader(p.reader, format: .zlib, limit: 100)
     assert read(@r, most: 5).must() == bytes.from_text("young")
@@ -1232,7 +1232,7 @@ test "read: five bytes at a time"
 # Everything a reader has left, to the stream's end.
 test "read_rest: the whole stream"
     p @= io.pipe().must()
-    io.write(p.writer, data: compress(bytes.from_text("low"), defaults(.raw)).must()).must()
+    io.write(p.writer, data: compress(bytes.from_text("low"), default_options(.raw)).must()).must()
     io.close(@p.writer).must()
     r @= reader(p.reader, format: .raw, limit: 100)
     assert read_rest(@r).must() == bytes.from_text("low")
@@ -1240,7 +1240,7 @@ test "read_rest: the whole stream"
 
 # The header of a gzip stream, read before its data.
 test "read_header: the name, then the data"
-    o @= defaults(.gzip)
+    o @= default_options(.gzip)
     o.header.name @ "heroes.txt"
     p @= io.pipe().must()
     io.write(p.writer, data: compress(bytes.from_text("we can be heroes"), o).must()).must()
@@ -1256,7 +1256,7 @@ test "compress_stream: a pipe compressed into a pipe"
     io.write(source.writer, data: bytes.from_text("let's dance")).must()
     io.close(@source.writer).must()
     packed @= io.pipe().must()
-    written = compress_stream(from: source.reader, to: packed.writer, options: defaults(.zlib)).must()
+    written = compress_stream(from: source.reader, to: packed.writer, options: default_options(.zlib)).must()
     io.close(@packed.writer).must()
     assert io.read_all(packed.reader).must().len() == written
     io.close(@source.reader).must()
@@ -1265,7 +1265,7 @@ test "compress_stream: a pipe compressed into a pipe"
 # One compressed stream decompressed into another.
 test "decompress_stream: a pipe decompressed into a pipe"
     packed @= io.pipe().must()
-    io.write(packed.writer, data: compress(bytes.from_text("modern love"), defaults(.gzip)).must()).must()
+    io.write(packed.writer, data: compress(bytes.from_text("modern love"), default_options(.gzip)).must()).must()
     io.close(@packed.writer).must()
     out @= io.pipe().must()
     assert decompress_stream(from: packed.reader, to: out.writer, format: .gzip, limit: 100).must() == 11

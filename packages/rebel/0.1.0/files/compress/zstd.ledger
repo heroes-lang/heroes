@@ -57,7 +57,7 @@ capability zstd/skippable  a skippable frame written, and read past
   note    libzstd's `ZSTD_writeSkippableFrame`, which Python does not offer; its reader passes such frames over
 
 capability zstd/levels  how hard the compressor works
-  heroes  compress/zstd.Options, compress/zstd.defaults, compress/zstd.MIN_LEVEL, compress/zstd.DEFAULT_LEVEL, compress/zstd.MAX_LEVEL
+  heroes  compress/zstd.Options, compress/zstd.default_options, compress/zstd.MIN_LEVEL, compress/zstd.DEFAULT_LEVEL, compress/zstd.MAX_LEVEL
   go      -
   rust    -
   python  compression.zstd.COMPRESSION_LEVEL_DEFAULT, compress(level=), ZstdCompressor(level=), CompressionParameter.compression_level

@@ -132,7 +132,7 @@ test "from_latin: ASCII and Latin-1 letters"
 
 test "text_of: tEXt, zTXt and iTXt, and a keyword with no end"
     assert text_of("tEXt", data: [0x41, 0, 0xe9], limit: 10).must() == ["A", "é"]
-    packed = compress.compress(bytes.from_text("hello"), compress.defaults(.zlib)).must()
+    packed = compress.compress(bytes.from_text("hello"), compress.default_options(.zlib)).must()
     z: [u8] @= [0x4b, 0, 0]
 
     for b in packed

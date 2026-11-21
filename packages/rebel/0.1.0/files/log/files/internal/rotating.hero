@@ -128,7 +128,7 @@ function compressed(at: str) -> ()?
             return fail(code: e.code, msg: e.msg)
         .ok opened_to =>
             to @= opened_to
-            done = compress.compress_stream(from: from, to: to, options: compress.defaults(.gzip))
+            done = compress.compress_stream(from: from, to: to, options: compress.default_options(.gzip))
             closed_from = io.close(@from)
             closed_to = io.close(@to)
 

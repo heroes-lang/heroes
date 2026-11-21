@@ -211,14 +211,14 @@ record EncodeOptions
 # Options of level 6, the adaptive filter, and no chunk.
 #
 # See also `encode`.
-function encoding() -> EncodeOptions
+function default_encode_options() -> EncodeOptions
     return EncodeOptions(level: 6, filter: .adaptive, chunks: [])
 
 # `img` as a PNG file: colour type 0, 2, 4 or 6 as its format has gray or
 # colour and alpha or not, 8 or 16 bits as it holds them, not interlaced.
 #
 # - `img`: the image written.
-# - `options`: the level, the filter and the chunks; `encoding` makes the
+# - `options`: the level, the filter and the chunks; `default_encode_options` makes the
 #   usual ones.
 #
 # The same image and options answer the same bytes every time. Fails
@@ -448,28 +448,28 @@ test "encode and decode: every format, every filter and every level, back as wri
         img = image.from_pixels(width: 7, height: 5, format: format, pixels: pixels).must()
 
         for f in filters
-            o @= encoding()
+            o @= default_encode_options()
             o.filter @ f
             back = decode_with(encode(img, o).must(), decoding()).must()
             assert back.image == img
             assert back.bit_depth == image.bits_of(format)
 
         for level in range(from: 0, to: 10)
-            o @= encoding()
+            o @= default_encode_options()
             o.level @ level
             assert decode_with(encode(img, o).must(), decoding()).must().image == img
 
 test "encode: the same image answers the same bytes, an empty image and a bad level refused"
     img = image.from_pixels(width: 2, height: 1, format: .rgb, pixels: [1, 2, 3, 4, 5, 6]).must()
-    assert encode(img, encoding()).must() == encode(img, encoding()).must()
-    assert encode(image.blank(width: 0, height: 3, format: .gray).must(), encoding()).is_err()
-    o @= encoding()
+    assert encode(img, default_encode_options()).must() == encode(img, default_encode_options()).must()
+    assert encode(image.blank(width: 0, height: 3, format: .gray).must(), default_encode_options()).is_err()
+    o @= default_encode_options()
     o.level @ -1
     assert encode(img, o).is_err()
 
 test "encode: chunks written where they belong and read back, and chunks refused"
     img = image.blank(width: 2, height: 2, format: .rgba).must()
-    o @= encoding()
+    o @= default_encode_options()
     o.chunks @ [
         Chunk(kind: "tEXt", data: [0x61, 0, 0x62], after_image: true)
         Chunk(kind: "gAMA", data: [0, 0, 0xb1, 0x8f], after_image: false)
@@ -484,7 +484,7 @@ test "encode: chunks written where they belong and read back, and chunks refused
     assert texts_of(kept, limit: 100).must().len() == 2
 
     for bad in ["IDAT", "tRNS", "ab1c", "abc"]
-        o2 @= encoding()
+        o2 @= default_encode_options()
         o2.chunks @ [Chunk(kind: bad, data: [], after_image: false)]
         assert encode(img, o2).is_err()
 
@@ -507,7 +507,7 @@ test "encode_indexed: 2, 4, 16 and 256 colours, alpha in tRNS, back to the same 
             indices @ indices.push(to_u8(i * 7 % count).must())
 
         ix = image.Indexed(width: 11, height: 3, palette: palette, indices: indices)
-        back = decode_with(encode_indexed(ix, encoding()).must(), decoding()).must()
+        back = decode_with(encode_indexed(ix, default_encode_options()).must(), decoding()).must()
         assert back.color_type == 3
         assert back.bit_depth == writing.index_depth(count)
         assert back.palette == palette
@@ -515,8 +515,14 @@ test "encode_indexed: 2, 4, 16 and 256 colours, alpha in tRNS, back to the same 
 
 test "encode_indexed: an index past the palette and no palette refused"
     red = image.Color(r: 255, g: 0, b: 0, a: 255)
-    assert encode_indexed(image.Indexed(width: 1, height: 1, palette: [red], indices: [1]), encoding()).is_err()
-    assert encode_indexed(image.Indexed(width: 1, height: 1, palette: [], indices: [0]), encoding()).is_err()
+    assert encode_indexed(
+        image.Indexed(width: 1, height: 1, palette: [red], indices: [1]),
+        default_encode_options()
+    ).is_err()
+    assert encode_indexed(
+        image.Indexed(width: 1, height: 1, palette: [], indices: [0]),
+        default_encode_options()
+    ).is_err()
 
 test "texts_of: the texts of the writer's file, Latin-1, compressed and UTF-8"
     rich = bytes.parse_hex(samples.readable()[samples.readable().len() - 1].file).must()
@@ -542,25 +548,25 @@ test "decoding: the default limits, no chunk kept"
 # A file written and read back.
 test "decode: an image written as PNG comes back the same"
     img = image.from_pixels(width: 2, height: 1, format: .rgba, pixels: [255, 0, 0, 255, 0, 0, 255, 128]).must()
-    back = decode(encode(img, encoding()).must(), limits: image.default_limits()).must()
+    back = decode(encode(img, default_encode_options()).must(), limits: image.default_limits()).must()
     assert back.image == img
     assert back.color_type == 6
 
 # A file's size read without its pixels.
 test "info_of: the size and format of a file"
-    file = encode(image.blank(width: 30, height: 20, format: .gray16).must(), encoding()).must()
+    file = encode(image.blank(width: 30, height: 20, format: .gray16).must(), default_encode_options()).must()
     info = info_of(file).must()
     assert info.width == 30
     assert info.format == .gray16
 
 # The usual options of writing.
-test "encoding: level 6 and the adaptive filter"
-    assert encoding().level == 6
-    assert encoding().filter == .adaptive
+test "default_encode_options: level 6 and the adaptive filter"
+    assert default_encode_options().level == 6
+    assert default_encode_options().filter == .adaptive
 
 # An image written at the highest level.
 test "encode: a gray image at level 9"
-    o @= encoding()
+    o @= default_encode_options()
     o.level @ 9
     file = encode(image.blank(width: 64, height: 64, format: .gray).must(), o).must()
     assert file.len() < 100
@@ -569,13 +575,13 @@ test "encode: a gray image at level 9"
 test "encode_indexed: black and white in 1 bit"
     bw = [image.Color(r: 0, g: 0, b: 0, a: 255), image.Color(r: 255, g: 255, b: 255, a: 255)]
     ix = image.Indexed(width: 8, height: 1, palette: bw, indices: [0, 1, 0, 1, 0, 1, 0, 1])
-    back = decode_with(encode_indexed(ix, encoding()).must(), decoding()).must()
+    back = decode_with(encode_indexed(ix, default_encode_options()).must(), decoding()).must()
     assert back.bit_depth == 1
     assert back.image.pixels.slice(from: 0, to: 6) == [0, 0, 0, 255, 255, 255]
 
 # The texts of a file, written and read.
 test "texts_of: a title written and read back"
-    o @= encoding()
+    o @= default_encode_options()
     o.chunks @ [text_chunk(keyword: "Title", text: "Station to Station").must()]
     file = encode(image.blank(width: 1, height: 1, format: .gray).must(), o).must()
     kept = decode_with(file, DecodeOptions(limits: image.default_limits(), keep: .only(kinds: ["tEXt"]))).must().chunks
@@ -589,10 +595,10 @@ test "text_chunk: ASCII as tEXt, other text as iTXt"
 # A file's chunks kept as it is read.
 test "decode_with: the text chunks kept"
     img = image.from_pixels(width: 1, height: 1, format: .gray, pixels: [7]).must()
-    file = encode(img, encoding()).must()
+    file = encode(img, default_encode_options()).must()
     assert decode_with(file, DecodeOptions(limits: image.default_limits(), keep: .all)).must().image == img
 
 # The pixels alone, as every format answers them.
 test "decode_image: the image alone"
     img = image.from_pixels(width: 1, height: 1, format: .gray, pixels: [200]).must()
-    assert decode_image(encode(img, encoding()).must(), limits: image.default_limits()).must() == img
+    assert decode_image(encode(img, default_encode_options()).must(), limits: image.default_limits()).must() == img

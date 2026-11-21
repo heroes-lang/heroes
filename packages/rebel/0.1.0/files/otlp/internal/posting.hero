@@ -67,7 +67,7 @@ function post(client: http.Client, target: str, headers: [http.Header], gzip: bo
         r @ http.with_body(
             r,
             content_type: "application/x-protobuf",
-            body: compress.compress(body, options: compress.defaults(.gzip))?
+            body: compress.compress(body, options: compress.default_options(.gzip))?
         )
         r.headers @ http.with_header(r.headers, name: "Content-Encoding", value: "gzip")
     else

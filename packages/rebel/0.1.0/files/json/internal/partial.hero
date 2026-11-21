@@ -79,7 +79,7 @@ record Keyed
     # Where the member's value begins, after the `:` and white space.
     next: i64
 
-# The reading of RFC 8259 and nothing wider, as `json.strict` reads, with each
+# The reading of RFC 8259 and nothing wider, as `json.strict_parse_options` reads, with each
 # token kept as written so that the events write the same text back.
 function strict(max_depth: i64) -> reader.Reading
     return reader.Reading(

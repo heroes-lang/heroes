@@ -134,7 +134,7 @@ capability mongodb/insert  documents inserted, an ObjectId made for one without 
   note    the `_id`s are answered directly; a batch past the server's most writes is cut in two, run live with 100,001 documents
 
 capability mongodb/update  documents updated by operators or a pipeline, replaced, upserted
-  heroes  mongodb.update_one, mongodb.update_many, mongodb.replace_one, mongodb.WriteOptions, mongodb.write_options, mongodb.UpdateResult
+  heroes  mongodb.update_one, mongodb.update_many, mongodb.replace_one, mongodb.WriteOptions, mongodb.default_write_options, mongodb.UpdateResult
   go      Collection.UpdateOne, Collection.UpdateMany, Collection.UpdateByID, Collection.ReplaceOne, UpdateResult
   rust    Collection::update_one, Collection::update_many, Collection::replace_one
   python  Collection.update_one, Collection.update_many, Collection.replace_one, UpdateResult
@@ -147,7 +147,7 @@ capability mongodb/delete  documents deleted
   python  Collection.delete_one, Collection.delete_many, DeleteResult
 
 capability mongodb/find  documents queried with a filter, a projection, an order, a skip and a limit
-  heroes  mongodb.find_many, mongodb.find_one, mongodb.FindOptions, mongodb.find_options
+  heroes  mongodb.find_many, mongodb.find_one, mongodb.FindOptions, mongodb.default_find_options
   go      Collection.Find, Collection.FindOne, SingleResult, options.Find
   rust    Collection::find, Collection::find_one
   python  Collection.find, Collection.find_one, Collection.find_raw_batches, Cursor.sort, Cursor.limit, Cursor.skip, Cursor.batch_size, Cursor.hint, Cursor.max_time_ms, Cursor.comment, Cursor.collation, Cursor.allow_disk_use, Cursor.min, Cursor.max, Cursor.where, Cursor.add_option, Cursor.remove_option
@@ -161,7 +161,7 @@ capability mongodb/cursor  a cursor read across batches, read whole, closed
   note    a tailable cursor's empty batch is `timeout`; rewind and clone are a new query
 
 capability mongodb/find-and-modify  one document changed or deleted and answered in one command
-  heroes  mongodb.find_one_and_update, mongodb.find_one_and_replace, mongodb.find_one_and_delete, mongodb.FindAndModifyOptions, mongodb.find_and_modify_options, mongodb.ReturnDocument
+  heroes  mongodb.find_one_and_update, mongodb.find_one_and_replace, mongodb.find_one_and_delete, mongodb.FindAndModifyOptions, mongodb.default_find_and_modify_options, mongodb.ReturnDocument
   go      Collection.FindOneAndUpdate, Collection.FindOneAndReplace, Collection.FindOneAndDelete, options.ReturnDocument
   rust    Collection::find_one_and_update, Collection::find_one_and_replace, Collection::find_one_and_delete, ReturnDocument
   python  Collection.find_one_and_update, Collection.find_one_and_replace, Collection.find_one_and_delete, ReturnDocument
@@ -192,7 +192,7 @@ capability mongodb/distinct  a field's distinct values
   python  Collection.distinct, Cursor.distinct
 
 capability mongodb/aggregate  a pipeline run on a collection or a database, writing ones included
-  heroes  mongodb.aggregate, mongodb.AggregateOptions, mongodb.aggregate_options
+  heroes  mongodb.aggregate, mongodb.AggregateOptions, mongodb.default_aggregate_options
   go      Collection.Aggregate, Database.Aggregate, Pipeline
   rust    Collection::aggregate, Database::aggregate
   python  Collection.aggregate, Collection.aggregate_raw_batches, Database.aggregate
@@ -213,7 +213,7 @@ capability mongodb/search-indexes  Atlas Search indexes created, listed, updated
   note    `createSearchIndexes`, `updateSearchIndex`, `dropSearchIndex` and `$listSearchIndexes` are commands and a stage of Atlas alone; unrun, no Atlas here
 
 capability mongodb/change-streams  changes of a collection, a database or the server followed, resumed by a token
-  heroes  mongodb.watch, mongodb.WatchOptions, mongodb.watch_options, mongodb.resume_token_of
+  heroes  mongodb.watch, mongodb.WatchOptions, mongodb.default_watch_options, mongodb.resume_token_of
   go      Collection.Watch, Database.Watch, Client.Watch, ChangeStream.Next, ChangeStream.TryNext, ChangeStream.Decode, ChangeStream.ResumeToken, ChangeStream.Close, ChangeStream.ID, ChangeStream.Err, ChangeStream.RemainingBatchLength, ChangeStream.SetBatchSize
   rust    Collection::watch, Database::watch, Client::watch, change_stream::ChangeStream
   python  Collection.watch, Database.watch, MongoClient.watch, ChangeStream
@@ -239,7 +239,7 @@ capability mongodb/causal-consistency  reads that see a session's earlier writes
   python  ClientSession.operation_time, ClientSession.advance_operation_time, ClientSession.cluster_time, ClientSession.advance_cluster_time
 
 capability mongodb/transactions  transactions started, committed and aborted on a replica set
-  heroes  mongodb.start_transaction, mongodb.commit_transaction, mongodb.abort_transaction, mongodb.is_in_transaction, mongodb.TransactionOptions, mongodb.transaction_options
+  heroes  mongodb.start_transaction, mongodb.commit_transaction, mongodb.abort_transaction, mongodb.is_in_transaction, mongodb.TransactionOptions, mongodb.default_transaction_options
   go      Session.StartTransaction, Session.CommitTransaction, Session.AbortTransaction, Session.TransactionRunning, Session.SnapshotTime
   rust    ClientSession::start_transaction, ClientSession::commit_transaction, ClientSession::abort_transaction, ClientSession::snapshot_time
   python  ClientSession.start_transaction, ClientSession.commit_transaction, ClientSession.abort_transaction, ClientSession.in_transaction

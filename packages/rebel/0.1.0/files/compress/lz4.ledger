@@ -70,7 +70,7 @@ capability lz4/frame-compress  bytes compressed whole into one LZ4 frame
   rust    frame::FrameEncoder, FrameEncoder::new, FrameEncoder::with_frame_info, FrameEncoder::write, FrameEncoder::finish
   python  lz4.frame.compress
   odin    compress_frame, compress_frame_to_slice, compress_frame_to_dynamic, compress_frame_bound, FRAME_MAGIC, FRAME_HEADER_MAX, FRAME_DESCRIPTOR_MAX, FRAME_FOOTER_MAX, DEFAULT_FRAME_FLAGS
-  note    `defaults` is the `lz4` tool's (level 1, blocks of 4 MiB that stand alone, a content checksum), where Python's are blocks of 64 KiB linked, no content checksum and the size said; the tool lowers its block size for a file smaller than a block (observed: 64 KiB for 17 bytes), `defaults` keeps 4 MiB. Measured against the tool on 300,000 bytes of words and 5,000,000 of words, noise and zeros: level 1 writes 152,585 and 1,769,805 bytes where `lz4 -1` writes 158,867 and 1,823,537; level 3, 130,549 and 1,584,329 against 133,053 and 1,606,579; level 9, 110,223 and 1,400,846 against 110,491 and 1,406,180; level 12, 2.6% and 1.6% more than `lz4 -12`, which parses optimally
+  note    `default_options` is the `lz4` tool's (level 1, blocks of 4 MiB that stand alone, a content checksum), where Python's are blocks of 64 KiB linked, no content checksum and the size said; the tool lowers its block size for a file smaller than a block (observed: 64 KiB for 17 bytes), `default_options` keeps 4 MiB. Measured against the tool on 300,000 bytes of words and 5,000,000 of words, noise and zeros: level 1 writes 152,585 and 1,769,805 bytes where `lz4 -1` writes 158,867 and 1,823,537; level 3, 130,549 and 1,584,329 against 133,053 and 1,606,579; level 9, 110,223 and 1,400,846 against 110,491 and 1,406,180; level 12, 2.6% and 1.6% more than `lz4 -12`, which parses optimally
 
 capability lz4/frame-decompress  frames decompressed whole, under a limit
   heroes  compress/lz4.decompress
@@ -277,7 +277,7 @@ dropped
   go      Writer.Apply, Reader.Apply, Option, Option.String: options applied as functions after the object is made; Heroes's are a record given at once
   go      Writer.Reset, Reader.Reset, CompressingReader.Reset, LZ4FrameCompressor.reset, LZ4FrameDecompressor.reset, lz4.frame.reset_decompression_context: an object reused for another stream; a Heroes program makes a new value
   rust    block::CompressTable, CompressTable::Small, CompressTable::Large, CompressTable::small, CompressTable::large, block::compress_into_with_table: the size of the compressor's hash table, a memory knob
-  rust    FrameInfo::new, FrameInfo::default and the builder setters: how Rust makes an options value; `defaults` and a record's fields here
+  rust    FrameInfo::new, FrameInfo::default and the builder setters: how Rust makes an options value; `default_options` and a record's fields here
   python  return_bytearray: which Python type the bytes come back as
   python  lz4.VERSION, lz4.version, lz4.library_version_number, lz4.library_version_string: which C library Python links; Rebel stands on none
   python  lz4.frame.builtins, lz4.frame.io, lz4.frame.lz4, lz4.frame.os, lz4.frame.sys: modules Python's `lz4.frame` imports

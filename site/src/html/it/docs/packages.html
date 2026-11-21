@@ -18,7 +18,7 @@
 <pre><code>use &lt;rebel&gt;/csv
 
 function main()
-    match csv.parse_records("album,year\nLow,1977\n\"Heroes\",1977\n", csv.strict())
+    match csv.parse_records("album,year\nLow,1977\n\"Heroes\",1977\n", csv.strict_read_options())
         .err e =&gt; print(e.msg)
         .ok records =&gt;
             rows: [[str]] @= []

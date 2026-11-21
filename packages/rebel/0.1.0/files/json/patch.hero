@@ -160,7 +160,7 @@ function format(operations: [Operation]) -> str?
 
 ## Applying a patch
 
-# What RFC 6902 refuses, done because the caller asks. `strict` answers the
+# What RFC 6902 refuses, done because the caller asks. `strict_apply_options` answers the
 # RFC; Go's `evanphx/json-patch` offers the three fields.
 record ApplyOptions
     # Whether an index below 0 counts from a list's end, `-1` naming the last
@@ -174,7 +174,7 @@ record ApplyOptions
     create_parents: bool
 
 # The options of RFC 6902 and nothing wider: every field `false`.
-function strict() -> ApplyOptions
+function strict_apply_options() -> ApplyOptions
     return ApplyOptions(negative_indices: false, missing_remove: false, create_parents: false)
 
 # `doc` with every operation of `operations` applied in order, or a failure
@@ -193,14 +193,14 @@ function strict() -> ApplyOptions
 # Each operation copies the containers its path walks through, not the whole
 # value, since a value shares what a change leaves alone.
 function apply(doc: json.Value, operations: [Operation]) -> json.Value?
-    return apply_with(doc, operations, strict())
+    return apply_with(doc, operations, strict_apply_options())
 
 # `doc` with every operation of `operations` applied in order, read as
 # `options` say, or a failure and no change at all.
 #
 # - `doc`: the value patched.
 # - `operations`: the patch, in order.
-# - `options`: what RFC 6902 refuses and is done all the same; `strict()`
+# - `options`: what RFC 6902 refuses and is done all the same; `strict_apply_options()`
 #   reads the RFC.
 #
 # Fails as `apply` does, but where `options` ask otherwise.
@@ -304,8 +304,8 @@ test "format: a test and a replace"
     assert format(ops).must() == "[{\"op\":\"test\",\"path\":\"/n\",\"value\":1},{\"op\":\"replace\",\"path\":\"/n\",\"value\":2}]"
 
 # The options of the RFC.
-test "strict: nothing loosened"
-    assert !strict().negative_indices && !strict().create_parents
+test "strict_apply_options: nothing loosened"
+    assert !strict_apply_options().negative_indices && !strict_apply_options().create_parents
 
 # A member added to an object.
 test "apply: RFC 6902's add of a member"
@@ -315,7 +315,7 @@ test "apply: RFC 6902's add of a member"
 
 # The last element taken out by a negative index, as Go's library allows.
 test "apply_with: a negative index"
-    loose: ApplyOptions @= strict()
+    loose: ApplyOptions @= strict_apply_options()
     loose.negative_indices @ true
     done = apply_with(json.parse("[1, 2, 3]").must(), [.remove(path: "/-1")], loose).must()
     assert json.format(done).must() == "[1,2]"

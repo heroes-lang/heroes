@@ -178,14 +178,14 @@ capability client/raw  any operation of the API signed and sent, or signed and h
   note    rust-s3 add_header, add_query, extra_headers, extra_headers_mut, extra_query, extra_query_mut, with_extra_headers, with_extra_query, http_client
 
 capability objects/put  an object put with its type, fields, metadata, tags, storage class, ACL, encryption and conditions
-  heroes  s3.put_object, s3.put_options, s3.PutOptions, s3.headers_of, s3.Stored, s3.Meta, s3.Tag
+  heroes  s3.put_object, s3.default_put_options, s3.PutOptions, s3.headers_of, s3.Stored, s3.Meta, s3.Tag
   go      s3.Client.PutObject, s3.PutObjectInput
   rust    aws_sdk_s3::Client::put_object
   python  S3.Client.put_object
   note    `if_none_match` `*` refused is `exists`; a CRC-32 is sent by default, as botocore 1.44.6 sends `x-amz-checksum-crc32` (its `request_checksum_calculation` `when_supported`, measured against MinIO); minio-go PutObject, PutObjectOptions; rust-s3 put_object, put_object_with_content_type, put_object_with_headers, put_object_with_content_type_and_headers, put_object_builder
 
 capability objects/get  an object read whole, by a range, by version, by part and on conditions
-  heroes  s3.get_object, s3.get_object_with, s3.get_options, s3.GetOptions, s3.Range, s3.range_header, s3.get_operation, s3.Object, s3.Info
+  heroes  s3.get_object, s3.get_object_with, s3.default_get_options, s3.GetOptions, s3.Range, s3.range_header, s3.get_operation, s3.Object, s3.Info
   go      s3.Client.GetObject, s3.GetObjectInput
   rust    aws_sdk_s3::Client::get_object
   python  S3.Client.get_object
@@ -289,7 +289,7 @@ capability objects/amazon-only  operations of Amazon's alone: torrents, annotati
   note    minio-go GetObjectAnnotation, PutObjectAnnotation, RemoveObjectAnnotation, ListObjectAnnotations; rust-s3 get_object_torrent
 
 capability listing/objects  the objects of a bucket listed by prefix and delimiter, page by page or whole
-  heroes  s3.list_objects, s3.list_all_objects, s3.list_options, s3.ListOptions, s3.Listing, s3.Summary
+  heroes  s3.list_objects, s3.list_all_objects, s3.default_list_options, s3.ListOptions, s3.Listing, s3.Summary
   go      s3.Client.ListObjectsV2, s3.NewListObjectsV2Paginator
   rust    aws_sdk_s3::Client::list_objects_v2
   python  S3.Client.list_objects_v2, S3.Client.get_paginator('list_objects_v2')

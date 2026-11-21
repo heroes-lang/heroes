@@ -240,7 +240,7 @@ constant SUBTYPE_USER_DEFINED: u8
 
 ## Decoding
 
-# How bytes are decoded. `strict` answers the defaults; a program changes the
+# How bytes are decoded. `strict_decode_options` answers the defaults; a program changes the
 # field it needs.
 record DecodeOptions
     # The deepest nesting accepted, counted as `DEFAULT_MAX_DEPTH` counts it.
@@ -262,7 +262,7 @@ record Decoded
 
 # The options `decode` uses: nesting no deeper than `DEFAULT_MAX_DEPTH`, and
 # text that must be UTF-8.
-function strict() -> DecodeOptions
+function strict_decode_options() -> DecodeOptions
     return DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, lossy_text: false)
 
 # The one document `data` holds.
@@ -277,7 +277,7 @@ function strict() -> DecodeOptions
 # UTF-8. Each message opens `byte B:`, the index counted from 0. See also
 # `decode_with`, `decode_next`, `encode`.
 function decode(data: [u8]) -> Document?
-    return decode_with(data: data, options: strict())
+    return decode_with(data: data, options: strict_decode_options())
 
 # The one document `data` holds, decoded as `options` asks.
 #
@@ -394,7 +394,7 @@ function decode_all(data: [u8]) -> [Document]?
     at: i64 @= 0
 
     while at < data.len()
-        got = decode_next(data: data, from: at, options: strict())?
+        got = decode_next(data: data, from: at, options: strict_decode_options())?
         docs @ docs.push(got.doc)
         at @ got.next
 
@@ -1341,7 +1341,7 @@ function format_json(doc: Document, mode: JsonMode) -> str?
 # Fails where `json.parse` fails, with its code, and as `from_json` fails.
 # See also `from_json`, `format_json`.
 function parse_json(text: str) -> Document?
-    options @= json.strict()
+    options @= json.strict_parse_options()
     options.exact_integers @ true
     return from_json(json.parse_with(text, options: options)?)
 
@@ -1659,7 +1659,7 @@ test "decode_with: nesting limited to one level"
 
 # The documents of a stream read one after another.
 test "decode_next: the first of two documents and where the second begins"
-    got = decode_next([5, 0, 0, 0, 0, 5, 0, 0, 0, 0], from: 0, options: strict()).must()
+    got = decode_next([5, 0, 0, 0, 0, 5, 0, 0, 0, 0], from: 0, options: strict_decode_options()).must()
     assert got.next == 5
 
 # Every document of a dump read at once.
@@ -1671,8 +1671,8 @@ test "is_valid: the empty document and a truncated one"
     assert is_valid([5, 0, 0, 0, 0]) && !is_valid([5, 0, 0])
 
 # The decoding options a program starts from.
-test "strict: the default depth"
-    assert strict().max_depth == DEFAULT_MAX_DEPTH
+test "strict_decode_options: the default depth"
+    assert strict_decode_options().max_depth == DEFAULT_MAX_DEPTH
 
 # A document built in code and encoded.
 test "encode: a document of an int32"

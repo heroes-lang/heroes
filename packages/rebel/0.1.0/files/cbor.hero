@@ -151,7 +151,7 @@ constant DEFAULT_MAX_DEPTH: i64
 
 ## Decoding
 
-# How bytes are decoded. `strict` answers the options of RFC 8949's
+# How bytes are decoded. `strict_decode_options` answers the options of RFC 8949's
 # well-formed and valid items; a program changes the fields it needs.
 record DecodeOptions
     # The deepest nesting accepted, counted as `DEFAULT_MAX_DEPTH` counts it.
@@ -177,10 +177,10 @@ record Decoded
 
 # The options of RFC 8949's well-formed and valid items: nesting no deeper
 # than `DEFAULT_MAX_DEPTH`, no key twice in a map, any encoding accepted.
-function strict() -> DecodeOptions
+function strict_decode_options() -> DecodeOptions
     return DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, duplicate_keys: false, deterministic: false)
 
-# The one item `data` holds, decoded as `strict` decodes.
+# The one item `data` holds, decoded as `strict_decode_options` decodes.
 #
 # - `data`: the encoded item, and nothing after it; the empty list holds no
 #   item and fails.
@@ -194,7 +194,7 @@ function strict() -> DecodeOptions
 # not kept, and a length no remaining byte could fill fails before anything
 # is held for it. See also `decode_with`, `decode_next`, `encode`.
 function decode(data: [u8]) -> Value?
-    return decode_with(data: data, options: strict())
+    return decode_with(data: data, options: strict_decode_options())
 
 # The one item `data` holds, decoded as `options` asks.
 #
@@ -204,7 +204,7 @@ function decode(data: [u8]) -> Value?
 #
 # Fails as `decode` fails, and `invalid` where `options.deterministic` asks
 # for the deterministic encoding and the bytes differ from it, the message
-# naming the first byte that does. See also `decode`, `strict`.
+# naming the first byte that does. See also `decode`, `strict_decode_options`.
 function decode_with(data: [u8], options: DecodeOptions) -> Value?
     got = decode_next(data: data, from: 0, options: options)?
 
@@ -319,7 +319,7 @@ function encode(v: Value) -> [u8]?
 # - `order`: where each map's keys stand; `.bytewise` is `encode`.
 #
 # Fails as `encode` fails, but that `.as_written` writes a map's entries as
-# they stand, a key twice included, which `strict` then refuses. See also
+# they stand, a key twice included, which `strict_decode_options` then refuses. See also
 # `encode`.
 function encode_with(v: Value, order: KeyOrder) -> [u8]?
     # Each item waiting to be written, the next on top: a container's items
@@ -742,9 +742,9 @@ test "decode_with: a deeper nesting allowed"
 # Two items of a CBOR sequence read one after the other.
 test "decode_next: a sequence of two items"
     data: [u8] = [0x01, 0x61, 0x61]
-    first = decode_next(data: data, from: 0, options: strict()).must()
+    first = decode_next(data: data, from: 0, options: strict_decode_options()).must()
     assert first.value == .unsigned(v: 1)
-    second = decode_next(data: data, from: first.next, options: strict()).must()
+    second = decode_next(data: data, from: first.next, options: strict_decode_options()).must()
     assert second.value == .text(v: "a")
     assert second.next == 3
 
@@ -846,9 +846,9 @@ test "format_diagnostic: a tag, a byte string and a float"
     assert format_diagnostic(v).must() == "[1(-2.5), h'00ff']"
 
 # The options that refuse a key twice.
-test "strict: a map holding one key twice is refused"
+test "strict_decode_options: a map holding one key twice is refused"
     data: [u8] = [0xa2, 0x01, 0x02, 0x01, 0x03]
-    assert decode_with(data: data, options: strict()).is_err()
+    assert decode_with(data: data, options: strict_decode_options()).is_err()
 
 test "decode, encode and format_diagnostic: every example of RFC 8949 appendix A through a value"
     for row in appendix.rows()

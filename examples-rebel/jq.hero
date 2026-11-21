@@ -118,7 +118,7 @@ function values_of(text: str, format: str) -> [json.Value]?
         return ok([toml.to_json(toml.parse(text)?)?])
     out: [json.Value] @= []
     at: i64 @= 0
-    options: json.ParseOptions @= json.strict()
+    options: json.ParseOptions @= json.strict_parse_options()
     options.max_depth @ 10000
     options.duplicate_keys @ true
 
@@ -183,7 +183,7 @@ function shown(v: json.Value, a: Asked) -> str
 # `input`, or on `first` alone with every value given to `input` where
 # `once`; writes every output and answers the exit code.
 function run_all(program: jq.Program, runs: [json.Value], once: bool, first: json.Value, a: Asked) -> i64
-    options: jq.Options @= jq.defaults()
+    options: jq.Options @= jq.default_options()
     options.variables @ a.variables
     options.environment @ environment()
 

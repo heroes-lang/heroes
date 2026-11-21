@@ -5,4 +5,4 @@
 use <rebel>/serial
 
 function main()
-    print(serial.defaults(baud: 9600).baud)
+    print(serial.default_settings(baud: 9600).baud)

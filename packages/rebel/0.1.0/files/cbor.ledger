@@ -19,11 +19,11 @@ capability cbor/decode  one encoded item read into a value a program matches on
   note    the value keeps every item of the generic data model: integers from -2^64 to 2^64 - 1 exactly, byte strings, texts, arrays, maps with keys of any kind, tags, floats, `false`, `true`, `null`, `undefined` and the unnamed simple values
 
 capability cbor/decode-options  how strictly bytes are read: depth, a key twice, the deterministic encoding
-  heroes  cbor.decode_with, cbor.strict, cbor.DecodeOptions
+  heroes  cbor.decode_with, cbor.strict_decode_options, cbor.DecodeOptions
   go      -
   rust    -
   python  -
-  note    `strict` reads well-formed and valid items (RFC 8949 sections 3 and 5.3.1), nesting to `DEFAULT_MAX_DEPTH`; a key twice is refused by default because a map holding one is not valid, and two keys are one where their deterministic encodings are, so `1` and `0x1801` are the same key and `0.0` and `-0.0` are not
+  note    `strict_decode_options` reads well-formed and valid items (RFC 8949 sections 3 and 5.3.1), nesting to `DEFAULT_MAX_DEPTH`; a key twice is refused by default because a map holding one is not valid, and two keys are one where their deterministic encodings are, so `1` and `0x1801` are the same key and `0.0` and `-0.0` are not
 
 capability cbor/sequence  the items of a CBOR sequence read one after another
   heroes  cbor.decode_next, cbor.Decoded

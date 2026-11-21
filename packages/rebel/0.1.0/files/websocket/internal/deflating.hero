@@ -62,7 +62,7 @@ function compressing(d: Deflating lent, size: i64) -> bool
 # DEFLATE's compressors do not write, is honoured by looking for no repeat
 # at all.
 function new_writer(d: Deflating lent) -> compress.Compressor
-    options @= compress.defaults(.raw)
+    options @= compress.default_options(.raw)
     options.level @ d.level
 
     if d.agreed.our_window_bits < compress.MIN_WINDOW_BITS

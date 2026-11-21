@@ -131,7 +131,7 @@ function encode(messages: [model.Message], compression: model.Compression, now_m
     codec = codec_of(compression)
 
     stored = if codec == 1
-        compress.compress(records, options: compress.defaults(.gzip))?
+        compress.compress(records, options: compress.default_options(.gzip))?
     else
         records
 

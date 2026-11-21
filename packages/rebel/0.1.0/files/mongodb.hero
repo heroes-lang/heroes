@@ -761,7 +761,7 @@ function insert_many(@client: Client, database: str, collection: str, docs: [bso
     _ = writes.send(@client.state, database: database, command: "insert", collection: collection, identifier: "documents", items: stored, ordered: ordered, retryable: true, extra: bson.Document(fields: []))?
     return ok(ids)
 
-# How an update, a replacement or a delete is done. `write_options` answers
+# How an update, a replacement or a delete is done. `default_write_options` answers
 # the defaults; a program changes the fields it needs.
 record WriteOptions
     # Whether a document is inserted where the filter matches none: an
@@ -777,7 +777,7 @@ record WriteOptions
     command: bson.Document
 
 # The options of a plain write: no upsert, no array filter, no field more.
-function write_options() -> WriteOptions
+function default_write_options() -> WriteOptions
     return WriteOptions(
         upsert: false,
         array_filters: [],
@@ -1062,7 +1062,7 @@ function bulk_write(@client: Client, database: str, collection: str, models: [Wr
 
 ## Reading
 
-# How a query is run. `find_options` answers the defaults; a program changes
+# How a query is run. `default_find_options` answers the defaults; a program changes
 # the fields it needs.
 record FindOptions
     # The fields returned, `{"name": 1, "_id": 0}`; empty for all.
@@ -1083,7 +1083,7 @@ record FindOptions
 
 # The options of a plain query: every field, the server's order, no skip, no
 # limit, its batches.
-function find_options() -> FindOptions
+function default_find_options() -> FindOptions
     empty = bson.Document(fields: [])
     return FindOptions(projection: empty, sort: empty, skip: 0, limit: 0, batch_size: 0, command: empty)
 
@@ -1203,7 +1203,7 @@ function is_exhausted(cursor: Cursor) -> bool
 function count_documents(@client: Client, database: str, collection: str, query: bson.Document) -> i64?
     group = bson.parse_json("{\"$group\": {\"_id\": 1, \"n\": {\"$sum\": 1}}}").must()
     match_stage = bson.Document(fields: [bson.Field(name: "$match", value: .document(doc: query))])
-    c @= aggregate(@client, database: database, collection: collection, pipeline: [match_stage, group], opts: aggregate_options())?
+    c @= aggregate(@client, database: database, collection: collection, pipeline: [match_stage, group], opts: default_aggregate_options())?
 
     return match next_document(@client, @c)
         .ok d => bson.int_of(bson.member(d, name: "n")?)
@@ -1242,7 +1242,7 @@ function distinct(@client: Client, database: str, collection: str, field: str, q
     reply = ops.read(@client.state, database: database, body: body)?
     return bson.items_of(bson.member(reply, name: "values")?)
 
-# How a pipeline is run. `aggregate_options` answers the defaults.
+# How a pipeline is run. `default_aggregate_options` answers the defaults.
 record AggregateOptions
     # The documents each batch holds, 0 for the server's choice.
     batch_size: i64
@@ -1252,7 +1252,7 @@ record AggregateOptions
     command: bson.Document
 
 # The options of a plain pipeline.
-function aggregate_options() -> AggregateOptions
+function default_aggregate_options() -> AggregateOptions
     return AggregateOptions(batch_size: 0, command: bson.Document(fields: []))
 
 # The documents `pipeline` makes of `collection`, as a cursor.
@@ -1298,7 +1298,7 @@ variant ReturnDocument
     # As the change left it.
     after
 
-# How a find-and-modify is done. `find_and_modify_options` answers the
+# How a find-and-modify is done. `default_find_and_modify_options` answers the
 # defaults.
 record FindAndModifyOptions
     # Which of the matches is taken, `{"age": -1}`; empty for the server's.
@@ -1316,7 +1316,7 @@ record FindAndModifyOptions
     command: bson.Document
 
 # The options of a plain find-and-modify: the document before the change.
-function find_and_modify_options() -> FindAndModifyOptions
+function default_find_and_modify_options() -> FindAndModifyOptions
     empty = bson.Document(fields: [])
     return FindAndModifyOptions(
         sort: empty,
@@ -1529,7 +1529,7 @@ function drop_indexes(@client: Client, database: str, collection: str) -> ()?
 
 ## Change streams
 
-# How a change stream is opened. `watch_options` answers the defaults.
+# How a change stream is opened. `default_watch_options` answers the defaults.
 record WatchOptions
     # Whether an update's event holds the document: "" for the server's
     # default, `updateLookup`, `whenAvailable`, `required`.
@@ -1546,7 +1546,7 @@ record WatchOptions
     batch_size: i64
 
 # The options of a stream that begins now.
-function watch_options() -> WatchOptions
+function default_watch_options() -> WatchOptions
     empty = bson.Document(fields: [])
     return WatchOptions(full_document: "", resume_after: empty, start_after: empty, max_await_ms: 0, batch_size: 0)
 
@@ -1629,7 +1629,7 @@ function resume_token_of(cursor: Cursor) -> bson.Document?
 
 ## Transactions
 
-# How a transaction is run. `transaction_options` answers the defaults.
+# How a transaction is run. `default_transaction_options` answers the defaults.
 record TransactionOptions
     # The read concern's level of its reads: "" for the client's, `local`,
     # `majority`, `snapshot`.
@@ -1640,7 +1640,7 @@ record TransactionOptions
     max_commit_time_ms: i64
 
 # The options of a transaction run with the client's concerns.
-function transaction_options() -> TransactionOptions
+function default_transaction_options() -> TransactionOptions
     return TransactionOptions(
         read_concern: "",
         write_concern: WriteConcern(w: "", journal: .server_default, timeout_ms: 0),
@@ -1853,7 +1853,7 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         ordered: false
                     ).is_err()
                     assert count_documents(@c, database: db, collection: "unordered", query: none).must() == 2
-                    by_age @= find_options()
+                    by_age @= default_find_options()
                     by_age.sort @ bson.parse_json("{\"age\": 1}").must()
                     by_age.batch_size @ 2
                     by_age.projection @ bson.parse_json("{\"name\": 1, \"_id\": 0}").must()
@@ -1874,11 +1874,11 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         database: db,
                         collection: "people",
                         query: bson.parse_json("{\"name\": \"Ada\"}").must(),
-                        opts: find_options()
+                        opts: default_find_options()
                     ).must()
                     assert bson.member(ada, name: "age").must() == .int32(v: 36)
 
-                    match find_one(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Nobody\"}").must(), opts: find_options())
+                    match find_one(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Nobody\"}").must(), opts: default_find_options())
                         .ok _  => assert false
                         .err e => assert e.code == NOT_FOUND
 
@@ -1888,7 +1888,7 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         collection: "people",
                         query: bson.parse_json("{\"name\": \"Ada\"}").must(),
                         update: .document(doc: bson.parse_json("{\"$inc\": {\"age\": 1}}").must()),
-                        opts: write_options()
+                        opts: default_write_options()
                     ).must()
                     assert raised == UpdateResult(matched: 1, modified: 1, upserted_ids: [])
                     marked = update_many(
@@ -1897,7 +1897,7 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         collection: "people",
                         query: adults,
                         update: .document(doc: bson.parse_json("{\"$set\": {\"adult\": true}}").must()),
-                        opts: write_options()
+                        opts: default_write_options()
                     ).must()
                     assert marked.matched == 4 && marked.modified == 4
                     piped = update_one(
@@ -1906,7 +1906,7 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         collection: "people",
                         query: bson.parse_json("{\"name\": \"Alan\"}").must(),
                         update: .array(items: [.document(doc: bson.parse_json("{\"$set\": {\"twice\": {\"$multiply\": [\"$age\", 2]}}}").must())]),
-                        opts: write_options()
+                        opts: default_write_options()
                     ).must()
                     assert piped.modified == 1
                     assert update_one(
@@ -1915,9 +1915,9 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         collection: "people",
                         query: none,
                         update: .document(doc: bson.parse_json("{\"age\": 1}").must()),
-                        opts: write_options()
+                        opts: default_write_options()
                     ).is_err()
-                    upsert @= write_options()
+                    upsert @= default_write_options()
                     upsert.upsert @ true
                     made = update_one(
                         @c,
@@ -1934,7 +1934,7 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         collection: "people",
                         query: bson.parse_json("{\"name\": \"Linus\"}").must(),
                         replacement: bson.parse_json("{\"name\": \"Linus\", \"age\": 56}").must(),
-                        opts: write_options()
+                        opts: default_write_options()
                     ).must()
                     assert replaced.matched == 1 && replaced.modified == 1
                     assert replace_one(
@@ -1943,11 +1943,11 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         collection: "people",
                         query: none,
                         replacement: bson.parse_json("{\"$set\": {}}").must(),
-                        opts: write_options()
+                        opts: default_write_options()
                     ).is_err()
-                    assert delete_one(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Linus\"}").must(), opts: write_options()).must() == 1
-                    assert delete_one(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Linus\"}").must(), opts: write_options()).must() == 0
-                    after @= find_and_modify_options()
+                    assert delete_one(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Linus\"}").must(), opts: default_write_options()).must() == 1
+                    assert delete_one(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Linus\"}").must(), opts: default_write_options()).must() == 0
+                    after @= default_find_and_modify_options()
                     after.returned @ .after
                     older = find_one_and_update(
                         @c,
@@ -1964,7 +1964,7 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         collection: "people",
                         query: bson.parse_json("{\"name\": \"Grace\"}").must(),
                         update: .document(doc: bson.parse_json("{\"$inc\": {\"age\": 1}}").must()),
-                        opts: find_and_modify_options()
+                        opts: default_find_and_modify_options()
                     ).must()
                     assert bson.member(before, name: "age").must() == .int32(v: 86)
                     swapped = find_one_and_replace(
@@ -1981,11 +1981,11 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         database: db,
                         collection: "people",
                         query: bson.parse_json("{\"name\": \"Barbara\"}").must(),
-                        opts: find_and_modify_options()
+                        opts: default_find_and_modify_options()
                     ).must()
                     assert bson.member(gone, name: "age").must() == .int32(v: 17)
 
-                    match find_one_and_delete(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Barbara\"}").must(), opts: find_and_modify_options())
+                    match find_one_and_delete(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Barbara\"}").must(), opts: default_find_and_modify_options())
                         .ok _  => assert false
                         .err e => assert e.code == NOT_FOUND
 
@@ -2008,7 +2008,7 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         database: db,
                         collection: "people",
                         pipeline: grouped,
-                        opts: aggregate_options()
+                        opts: default_aggregate_options()
                     ).must()
                     first_group = next_document(@c, @groups).must()
 
@@ -2064,7 +2064,7 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         database: db,
                         collection: "people",
                         pipeline: copied,
-                        opts: aggregate_options()
+                        opts: default_aggregate_options()
                     ).must()
                     assert read_all(@c, @out).must().len() == 0
                     assert count_documents(@c, database: db, collection: "people_copy", query: none).must() == 4
@@ -2102,11 +2102,11 @@ test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-an
                         .ok _  => assert false
                         .err e => assert e.code == UNSUPPORTED && server_code_of(e.msg).must() == 59
 
-                    match find_many(@c, database: db, collection: "people", query: bson.parse_json("{\"$nonsense\": 1}").must(), opts: find_options())
+                    match find_many(@c, database: db, collection: "people", query: bson.parse_json("{\"$nonsense\": 1}").must(), opts: default_find_options())
                         .ok _  => assert false
                         .err e => assert e.code == INVALID
 
-                    killed_opts @= find_options()
+                    killed_opts @= default_find_options()
                     killed_opts.batch_size @ 1
                     killed @= find_many(@c, database: db, collection: "people", query: none, opts: killed_opts).must()
                     _ = next_document(@c, @killed).must()
@@ -2168,7 +2168,7 @@ test "live: transactions committed and aborted as a second client sees them, and
                     none = bson.Document(fields: [])
                     drop_collection(@c, database: db, collection: "ledger").must()
                     create_collection(@c, database: db, collection: "ledger", opts: none).must()
-                    majority @= transaction_options()
+                    majority @= default_transaction_options()
                     majority.write_concern.w @ "majority"
                     majority.read_concern @ "snapshot"
                     start_transaction(@c, opts: majority).must()
@@ -2195,7 +2195,7 @@ test "live: transactions committed and aborted as a second client sees them, and
                     commit_transaction(@c).must()
                     assert !is_in_transaction(c)
                     assert count_documents(@other, database: db, collection: "ledger", query: none).must() == 2
-                    start_transaction(@c, opts: transaction_options()).must()
+                    start_transaction(@c, opts: default_transaction_options()).must()
                     _ = insert_one(
                         @c,
                         database: db,
@@ -2204,21 +2204,21 @@ test "live: transactions committed and aborted as a second client sees them, and
                     ).must()
                     abort_transaction(@c).must()
                     assert count_documents(@other, database: db, collection: "ledger", query: none).must() == 2
-                    start_transaction(@c, opts: transaction_options()).must()
+                    start_transaction(@c, opts: default_transaction_options()).must()
 
                     match insert_one(@c, database: db, collection: "ledger", doc: bson.parse_json("{\"_id\": 1}").must())
                         .ok _  => assert false
                         .err e => assert e.code == EXISTS
 
                     abort_transaction(@c).must()
-                    start_transaction(@c, opts: transaction_options()).must()
+                    start_transaction(@c, opts: default_transaction_options()).must()
                     commit_transaction(@c).must()
 
                     match commit_transaction(@c)
                         .ok _  => assert false
                         .err e => assert e.code == INVALID
 
-                    start_transaction(@c, opts: transaction_options()).must()
+                    start_transaction(@c, opts: default_transaction_options()).must()
                     _ = insert_one(
                         @other,
                         database: db,
@@ -2252,7 +2252,7 @@ test "live: a change stream's insert and update, and a stream resumed after its 
                     db = "rebel_test_streams"
                     drop_collection(@c, database: db, collection: "events").must()
                     create_collection(@c, database: db, collection: "events", opts: bson.Document(fields: [])).must()
-                    wait @= watch_options()
+                    wait @= default_watch_options()
                     wait.max_await_ms @ 300
                     wait.full_document @ "updateLookup"
                     stream @= watch(@c, database: db, collection: "events", pipeline: [], opts: wait).must()
@@ -2277,7 +2277,7 @@ test "live: a change stream's insert and update, and a stream resumed after its 
                         collection: "events",
                         query: bson.parse_json("{\"_id\": 1}").must(),
                         update: .document(doc: bson.parse_json("{\"$set\": {\"kind\": \"b\"}}").must()),
-                        opts: write_options()
+                        opts: default_write_options()
                     ).must()
                     updated = next_document(@c, @stream).must()
                     assert bson.member(updated, name: "operationType").must() == .text(v: "update")
@@ -2616,8 +2616,8 @@ test "insert_many: three documents at once"
             close(@c).must()
 
 # The options of an update that inserts where nothing matches.
-test "write_options: an upsert"
-    opts @= write_options()
+test "default_write_options: an upsert"
+    opts @= default_write_options()
     opts.upsert @ true
     assert opts.upsert && opts.array_filters.len() == 0
 
@@ -2639,7 +2639,7 @@ test "update_one: a field raised by one"
                 collection: "counters",
                 query: bson.parse_json("{\"_id\": \"visits\"}").must(),
                 update: .document(doc: bson.parse_json("{\"$inc\": {\"n\": 1}}").must()),
-                opts: write_options()
+                opts: default_write_options()
             ).must()
             assert r.matched == 1
             close(@c).must()
@@ -2656,7 +2656,7 @@ test "update_many: every match changed"
                 collection: "people",
                 query: bson.Document(fields: []),
                 update: .document(doc: bson.parse_json("{\"$set\": {\"seen\": true}}").must()),
-                opts: write_options()
+                opts: default_write_options()
             ).must()
             assert r.matched >= 0
             close(@c).must()
@@ -2667,7 +2667,7 @@ test "replace_one: a document replaced, its _id kept"
         .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
-            opts @= write_options()
+            opts @= default_write_options()
             opts.upsert @ true
             r = replace_one(
                 @c,
@@ -2692,7 +2692,7 @@ test "delete_one: one document deleted"
                 collection: "trash_one",
                 doc: bson.parse_json("{\"kind\": \"old\"}").must()
             ).must()
-            assert delete_one(@c, database: "rebel_examples", collection: "trash_one", query: bson.parse_json("{\"kind\": \"old\"}").must(), opts: write_options()).must() == 1
+            assert delete_one(@c, database: "rebel_examples", collection: "trash_one", query: bson.parse_json("{\"kind\": \"old\"}").must(), opts: default_write_options()).must() == 1
             close(@c).must()
 
 # Every matching document deleted.
@@ -2706,7 +2706,7 @@ test "delete_many: every match deleted"
                 database: "rebel_examples",
                 collection: "trash",
                 query: bson.Document(fields: []),
-                opts: write_options()
+                opts: default_write_options()
             ).must()
             close(@c).must()
 
@@ -2726,8 +2726,8 @@ test "bulk_write: an insert, an update and a delete in order"
             close(@c).must()
 
 # The options of a sorted, limited query of some fields.
-test "find_options: the five youngest, their names alone"
-    opts @= find_options()
+test "default_find_options: the five youngest, their names alone"
+    opts @= default_find_options()
     opts.sort @ bson.parse_json("{\"age\": 1}").must()
     opts.limit @ 5
     opts.projection @ bson.parse_json("{\"name\": 1, \"_id\": 0}").must()
@@ -2744,7 +2744,7 @@ test "find_many: the adults, read one at a time"
                 database: "rebel_examples",
                 collection: "people",
                 query: bson.parse_json("{\"age\": {\"$gte\": 18}}").must(),
-                opts: find_options()
+                opts: default_find_options()
             ).must()
 
             while true
@@ -2771,7 +2771,7 @@ test "find_one: one document by its name"
                 database: "rebel_examples",
                 collection: "people",
                 query: bson.parse_json("{\"name\": \"Grace\"}").must(),
-                opts: find_options()
+                opts: default_find_options()
             ).must()
             assert bson.member(doc, name: "name").must() == .text(v: "Grace")
             close(@c).must()
@@ -2787,7 +2787,7 @@ test "next_document: the documents of a cursor until its end"
                 database: "rebel_examples",
                 collection: "numbers",
                 query: bson.Document(fields: []),
-                opts: find_options()
+                opts: default_find_options()
             ).must()
             seen: i64 @= 0
 
@@ -2812,7 +2812,7 @@ test "read_all: every document of a cursor at once"
                 database: "rebel_examples",
                 collection: "numbers",
                 query: bson.Document(fields: []),
-                opts: find_options()
+                opts: default_find_options()
             ).must()
             _ = read_all(@c, @cursor).must()
             assert is_exhausted(cursor)
@@ -2824,7 +2824,7 @@ test "close_cursor: a cursor given up before its end"
         .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
-            opts @= find_options()
+            opts @= default_find_options()
             opts.batch_size @ 1
             cursor @= find_many(
                 @c,
@@ -2848,7 +2848,7 @@ test "is_exhausted: a cursor read to its end"
                 database: "rebel_examples",
                 collection: "nothing_here",
                 query: bson.Document(fields: []),
-                opts: find_options()
+                opts: default_find_options()
             ).must()
             assert is_exhausted(cursor)
             close(@c).must()
@@ -2887,8 +2887,8 @@ test "distinct: the names of the people"
             close(@c).must()
 
 # The options of a large pipeline.
-test "aggregate_options: batches of a hundred, spilled to disk"
-    opts @= aggregate_options()
+test "default_aggregate_options: batches of a hundred, spilled to disk"
+    opts @= default_aggregate_options()
     opts.batch_size @ 100
     opts.command @ bson.parse_json("{\"allowDiskUse\": true}").must()
     assert opts.batch_size == 100
@@ -2905,14 +2905,14 @@ test "aggregate: the people counted by age"
                 database: "rebel_examples",
                 collection: "people",
                 pipeline: pipeline,
-                opts: aggregate_options()
+                opts: default_aggregate_options()
             ).must()
             _ = read_all(@c, @cursor).must()
             close(@c).must()
 
 # The options of a find-and-modify that answers the new version.
-test "find_and_modify_options: the document after the change"
-    opts @= find_and_modify_options()
+test "default_find_and_modify_options: the document after the change"
+    opts @= default_find_and_modify_options()
     opts.returned @ .after
     assert opts.returned == .after
 
@@ -2922,7 +2922,7 @@ test "find_one_and_update: a counter raised and read in one step"
         .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
-            opts @= find_and_modify_options()
+            opts @= default_find_and_modify_options()
             opts.returned @ .after
             opts.upsert @ true
             doc = find_one_and_update(
@@ -2942,7 +2942,7 @@ test "find_one_and_replace: a document replaced and its old version answered"
         .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
-            opts @= find_and_modify_options()
+            opts @= default_find_and_modify_options()
             opts.upsert @ true
 
             match find_one_and_replace(@c, database: "rebel_examples", collection: "settings", query: bson.parse_json("{\"_id\": \"lang\"}").must(), replacement: bson.parse_json("{\"value\": \"it\"}").must(), opts: opts)
@@ -2963,7 +2963,7 @@ test "find_one_and_delete: the oldest job taken off a queue"
                 collection: "jobs",
                 doc: bson.parse_json("{\"task\": \"mail\"}").must()
             ).must()
-            opts @= find_and_modify_options()
+            opts @= default_find_and_modify_options()
             opts.sort @ bson.parse_json("{\"_id\": 1}").must()
             job = find_one_and_delete(
                 @c,
@@ -3053,8 +3053,8 @@ test "drop_indexes: every index but _id_ removed"
             close(@c).must()
 
 # The options of a stream that carries updated documents whole.
-test "watch_options: the full document of each update"
-    opts @= watch_options()
+test "default_watch_options: the full document of each update"
+    opts @= default_watch_options()
     opts.full_document @ "updateLookup"
     assert opts.max_await_ms == 0
 
@@ -3071,7 +3071,7 @@ test "watch: the next change of a collection"
                     database: "rebel_examples",
                     collection: "events",
                     pipeline: [],
-                    opts: watch_options()
+                    opts: default_watch_options()
                 ).must()
                 _ = insert_one(
                     @c,
@@ -3097,7 +3097,7 @@ test "resume_token_of: where a stream stood"
                     database: "rebel_examples",
                     collection: "events",
                     pipeline: [],
-                    opts: watch_options()
+                    opts: default_watch_options()
                 ).must()
                 _ = insert_one(
                     @c,
@@ -3111,8 +3111,8 @@ test "resume_token_of: where a stream stood"
             close(@c).must()
 
 # The options of a transaction.
-test "transaction_options: a snapshot read and a majority commit"
-    opts @= transaction_options()
+test "default_transaction_options: a snapshot read and a majority commit"
+    opts @= default_transaction_options()
     opts.read_concern @ "snapshot"
     opts.write_concern.w @ "majority"
     assert opts.write_concern.w == "majority"
@@ -3131,14 +3131,14 @@ test "start_transaction: two writes made visible together"
                     collection: "accounts",
                     doc: bson.parse_json("{\"_id\": \"x\", \"balance\": 0}").must()
                 ).is_err()
-                start_transaction(@c, opts: transaction_options()).must()
+                start_transaction(@c, opts: default_transaction_options()).must()
                 _ = update_one(
                     @c,
                     database: "rebel_examples_txn",
                     collection: "accounts",
                     query: bson.parse_json("{\"_id\": \"x\"}").must(),
                     update: .document(doc: bson.parse_json("{\"$inc\": {\"balance\": 5}}").must()),
-                    opts: write_options()
+                    opts: default_write_options()
                 ).must()
                 commit_transaction(@c).must()
             close(@c).must()
@@ -3151,7 +3151,7 @@ test "commit_transaction: an insert made visible"
             c @= connect(parse_url(url).must()).must()
 
             if server_of(c).replica_set != ""
-                start_transaction(@c, opts: transaction_options()).must()
+                start_transaction(@c, opts: default_transaction_options()).must()
                 _ = insert_one(
                     @c,
                     database: "rebel_examples_txn",
@@ -3170,7 +3170,7 @@ test "abort_transaction: an insert undone"
             c @= connect(parse_url(url).must()).must()
 
             if server_of(c).replica_set != ""
-                start_transaction(@c, opts: transaction_options()).must()
+                start_transaction(@c, opts: default_transaction_options()).must()
                 _ = insert_one(
                     @c,
                     database: "rebel_examples_txn",

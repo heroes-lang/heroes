@@ -138,7 +138,7 @@ function pixels(width: i64, height: i64, channels: i64, bits: i64, alpha: bool, 
         "/DeviceGray"
     else
         "/DeviceRGB"
-    level = compress.defaults(.zlib)
+    level = compress.default_options(.zlib)
 
     packed = if alpha
         compress.compress(colour, options: level)?

@@ -132,7 +132,7 @@ test "read_exact, read_some and skip: a plain stream, its end, and the limit"
 
 test "read_exact: an archive that ends early, through gzip"
     p @= io.pipe().must()
-    io.write(p.writer, data: compress.compress([7, 8], compress.defaults(.gzip)).must()).must()
+    io.write(p.writer, data: compress.compress([7, 8], compress.default_options(.gzip)).must()).must()
     io.close(@p.writer).must()
     src @= start(p.reader, gzip: true, limit: 100)
 

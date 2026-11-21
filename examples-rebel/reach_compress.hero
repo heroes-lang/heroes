@@ -7,7 +7,7 @@ use <rebel>/compress
 function main()
     line: [u8] = [0x5a, 0x69, 0x67, 0x67, 0x79, 0x20, 0x5a, 0x69, 0x67, 0x67, 0x79, 0x20, 0x5a, 0x69, 0x67, 0x67, 0x79]
 
-    match compress.compress(line, compress.defaults(.gzip))
+    match compress.compress(line, compress.default_options(.gzip))
         .err e => print(e.code, ": ", e.msg)
         .ok packed =>
             back = compress.decompress(packed, format: .gzip, limit: 1000).default([])

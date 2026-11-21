@@ -43,7 +43,7 @@ use io
 # offset of 0, a checksum or size that does not match, a block or frame cut
 # short, bytes after the last frame), the message naming the byte; and of
 # options and arguments out of their range. Every function fails with it but
-# `defaults`, `compress_part`, `compress_flush`, `is_compressor_ended`, `decompressor`,
+# `default_options`, `compress_part`, `compress_flush`, `is_compressor_ended`, `decompressor`,
 # `is_decompressor_ended`, `unused` and `reader`.
 constant INVALID: str
     codes.INVALID
@@ -65,7 +65,7 @@ constant CLOSED: str
 constant MIN_LEVEL: i64
     -65536
 
-# The level `defaults` sets, as the `lz4` tool's: the fast compressor, one
+# The level `default_options` sets, as the `lz4` tool's: the fast compressor, one
 # earlier place tried for each byte.
 constant DEFAULT_LEVEL: i64
     1
@@ -93,7 +93,7 @@ variant BlockSize
     max_4_mib
 
 # How `compress`, `compressor`, `writer` and `compress_stream` write a frame.
-# `defaults` makes the `lz4` tool's; a field out of its range fails
+# `default_options` makes the `lz4` tool's; a field out of its range fails
 # `invalid` at the call that reads it.
 record Options
     # -65,536 (`MIN_LEVEL`) to 12 (`MAX_LEVEL`). 1 and 2 are the fast
@@ -129,7 +129,7 @@ record Options
 # content checksum, no block checksum, no size, no dictionary.
 #
 # See also `compress` and `writer`.
-function defaults() -> Options
+function default_options() -> Options
     return Options(
         level: DEFAULT_LEVEL,
         block_size: .max_4_mib,
@@ -147,7 +147,7 @@ function defaults() -> Options
 #
 # - `data`: the bytes to compress; none make a frame of no block.
 # - `options`: the level, the blocks, the checksums, the size and the
-#   dictionary; `defaults` makes the `lz4` tool's.
+#   dictionary; `default_options` makes the `lz4` tool's.
 #
 # The same `data` and `options` answer the same bytes every time.
 #
@@ -906,7 +906,7 @@ test "compress and decompress: nothing, a text and noise, at every kind of level
         for level in [MIN_LEVEL, -3, 1, 3, 9]
             for size in sizes
                 for linked in [false, true]
-                    o @= defaults()
+                    o @= default_options()
                     o.level @ level
                     o.block_size @ size
                     o.linked @ linked
@@ -915,7 +915,7 @@ test "compress and decompress: nothing, a text and noise, at every kind of level
                     assert decompress(compress(data, o).must(), limit: data.len()).must() == data
 
 test "compress: a dictionary written into the frame's id, and read back"
-    o @= defaults()
+    o @= default_options()
     o.dictionary @ samples.text(samples.DICTIONARY_TEXT)
     o.dictionary_id @ 77
     o.linked @ true
@@ -923,7 +923,7 @@ test "compress: a dictionary written into the frame's id, and read back"
     packed = compress(text, o).must()
     assert frame_info(packed).must().dictionary_id == 77
     assert decompress_with(data: packed, dictionary: o.dictionary, limit: 1000).must() == text
-    plain = compress(text, defaults()).must()
+    plain = compress(text, default_options()).must()
     assert packed.len() < plain.len()
 
 test "frame_info: the tool's flags, a size said, a legacy frame and a skippable one"
@@ -933,7 +933,7 @@ test "frame_info: the tool's flags, a size said, a legacy frame and a skippable 
     assert frame_info(samples.of(samples.NOISE_LINKED)).must().linked
     assert frame_info(samples.of(samples.SHORT_LEGACY)).must().kind == .legacy
     assert frame_info(skippable_frame([1], magic: 9).must()).must().kind == .skippable(magic: 9)
-    assert frame_info(compress([], defaults()).must()).must().content_size == .unknown
+    assert frame_info(compress([], default_options()).must()).must().content_size == .unknown
 
 test "frame_size and decompress_leading: every sample measured whole, then followed by another frame"
     for hex in [samples.SHORT_TOOL, samples.SHORT_HIGH, samples.SHORT_LEGACY, samples.SHORT_PYTHON, samples.NOISE_LINKED]
@@ -1055,7 +1055,7 @@ test "decompress_part: a failure kept, and a count below 0"
 
 test "compressor: pieces of every length, flushes between them, and the frame the tool would read"
     noise = samples.noise(70000)
-    o @= defaults()
+    o @= default_options()
     o.block_size @ .max_64_kib
     o.linked @ true
     o.block_checksum @ true
@@ -1081,7 +1081,7 @@ test "compressor: pieces of every length, flushes between them, and the frame th
     assert decompress(packed, limit: 70000).must() == noise
 
 test "with_size: a size not fed, fed then; a size after bytes; content_size refused by compressor"
-    c @= with_size(compressor(defaults()).must(), size: 5).must()
+    c @= with_size(compressor(default_options()).must(), size: 5).must()
     first = compress_part(@c, data: [1, 2, 3])
     assert compress_end(@c).is_err()
     assert !is_compressor_ended(c)
@@ -1091,7 +1091,7 @@ test "with_size: a size not fed, fed then; a size after bytes; content_size refu
     assert decompress(whole, limit: 5).must() == [1, 2, 3, 4, 5]
     assert frame_info(whole).must().content_size == .known(bytes: 5)
     assert with_size(c, size: 5).is_err()
-    o @= defaults()
+    o @= default_options()
     o.content_size @ true
     assert compressor(o).is_err()
     o.content_size @ false
@@ -1101,7 +1101,7 @@ test "with_size: a size not fed, fed then; a size after bytes; content_size refu
 test "writer and reader: frames through a pipe, written in pieces, read a few bytes at a time"
     text = samples.text(samples.SHORT_TEXT)
     p @= io.pipe().must()
-    w @= writer(p.writer, defaults()).must()
+    w @= writer(p.writer, default_options()).must()
     write(@w, data: text.slice(from: 0, to: 50)).must()
     flush(@w).must()
     write(@w, data: text.slice(from: 50, to: text.len())).must()
@@ -1151,7 +1151,7 @@ test "compress_stream and decompress_stream: a text through two pipes and back"
     io.write(source.writer, data: text).must()
     io.close(@source.writer).must()
     packed @= io.pipe().must()
-    written = compress_stream(from: source.reader, to: packed.writer, options: defaults()).must()
+    written = compress_stream(from: source.reader, to: packed.writer, options: default_options()).must()
     io.close(@packed.writer).must()
     io.close(@source.reader).must()
     back @= io.pipe().must()
@@ -1178,8 +1178,8 @@ test "compress_block and compress_sized: every level, a dictionary, and a length
 ## Examples
 
 # The `lz4` tool's options, with the blocks linked for a smaller frame.
-test "defaults: the lz4 tool's, then linked blocks"
-    o @= defaults()
+test "default_options: the lz4 tool's, then linked blocks"
+    o @= default_options()
     assert o.level == DEFAULT_LEVEL && o.content_checksum && !o.linked
     o.linked @ true
     assert frame_info(compress(bytes.from_text("ashes to ashes"), o).must()).must().linked
@@ -1187,12 +1187,12 @@ test "defaults: the lz4 tool's, then linked blocks"
 # A line compressed into a frame and read back.
 test "compress: a line, and back"
     line = bytes.from_text("we can be heroes, we can be heroes, just for one day")
-    packed = compress(line, defaults()).must()
+    packed = compress(line, default_options()).must()
     assert decompress(packed, limit: 100).must() == line
 
 # A frame read whole, under a limit on what it may expand to.
 test "decompress: under a limit"
-    packed = compress(bytes.from_text("zzzzzzzzzzzzzzzzzzzz"), defaults()).must()
+    packed = compress(bytes.from_text("zzzzzzzzzzzzzzzzzzzz"), default_options()).must()
     assert decompress(packed, limit: 20).must().len() == 20
 
     match decompress(packed, limit: 19)
@@ -1201,14 +1201,14 @@ test "decompress: under a limit"
 
 # A frame made with a dictionary, read with the same one.
 test "decompress_with: the dictionary the frame was made with"
-    o @= defaults()
+    o @= default_options()
     o.dictionary @ bytes.from_text("ground control to major tom")
     packed = compress(bytes.from_text("major tom to ground control"), o).must()
     assert decompress_with(data: packed, dictionary: o.dictionary, limit: 100).must() == bytes.from_text("major tom to ground control")
 
 # A frame followed by bytes of the caller's own.
 test "decompress_leading: a frame, then other bytes"
-    packed @= compress(bytes.from_text("kooks"), defaults()).must()
+    packed @= compress(bytes.from_text("kooks"), default_options()).must()
     size = packed.len()
     packed @ packed.push(0x21)
     led = decompress_leading(packed, limit: 100).must()
@@ -1216,7 +1216,7 @@ test "decompress_leading: a frame, then other bytes"
 
 # The size a frame says it holds, asked of its header.
 test "frame_info: the content size"
-    o @= defaults()
+    o @= default_options()
     o.content_size @ true
     info = frame_info(compress([1, 2, 3], o).must()).must()
     assert info.content_size == .known(bytes: 3)
@@ -1224,13 +1224,13 @@ test "frame_info: the content size"
 
 # Where one frame ends and the next begins.
 test "frame_size: two frames, one after the other"
-    first = compress([1, 2, 3], defaults()).must()
-    two = bytes.concat([first, compress([4, 5], defaults()).must()])
+    first = compress([1, 2, 3], default_options()).must()
+    two = bytes.concat([first, compress([4, 5], default_options()).must()])
     assert frame_size(two).must() == first.len()
 
 # The program's own bytes in a frame every reader passes over.
 test "skippable_frame: bytes a reader skips"
-    both = bytes.concat([skippable_frame([9, 9, 9], magic: 0).must(), compress([1], defaults()).must()])
+    both = bytes.concat([skippable_frame([9, 9, 9], magic: 0).must(), compress([1], default_options()).must()])
     assert decompress(both, limit: 10).must() == [1]
 
 # A legacy frame, as the Linux kernel reads it.
@@ -1283,21 +1283,21 @@ test "block_bound: a kilobyte"
 
 # A compressor at the highest level, ended at once.
 test "compressor: the highest level"
-    o @= defaults()
+    o @= default_options()
     o.level @ MAX_LEVEL
     c @= compressor(o).must()
     assert decompress(compress_end(@c).must(), limit: 0).must().len() == 0
 
 # A size given to a compressor, which its header then says.
 test "with_size: a header that says the size"
-    c @= with_size(compressor(defaults()).must(), size: 2).must()
+    c @= with_size(compressor(default_options()).must(), size: 2).must()
     head = compress_part(@c, data: [7, 7])
     packed = bytes.concat([head, compress_end(@c).must()])
     assert frame_info(packed).must().content_size == .known(bytes: 2)
 
 # A frame compressed from two pieces.
 test "compress_part: two pieces, then the end"
-    c @= compressor(defaults()).must()
+    c @= compressor(default_options()).must()
     first = compress_part(@c, data: bytes.from_text("fame, "))
     second = compress_part(@c, data: bytes.from_text("fame"))
     packed = bytes.concat([first, second, compress_end(@c).must()])
@@ -1305,19 +1305,19 @@ test "compress_part: two pieces, then the end"
 
 # What was fed is readable at once after a flush.
 test "compress_flush: what was fed is readable at once"
-    c @= compressor(defaults()).must()
+    c @= compressor(default_options()).must()
     sent = bytes.concat([compress_part(@c, data: bytes.from_text("under pressure")), compress_flush(@c)])
     d @= decompressor(100)
     assert decompress_part(@d, data: sent, most: 100).must() == bytes.from_text("under pressure")
 
 # The end of a frame of nothing.
 test "compress_end: a frame of nothing"
-    c @= compressor(defaults()).must()
+    c @= compressor(default_options()).must()
     assert decompress(compress_end(@c).must(), limit: 0).must().len() == 0
 
 # A compressor before and after its end.
 test "is_compressor_ended: before and after the end"
-    c @= compressor(defaults()).must()
+    c @= compressor(default_options()).must()
     assert !is_compressor_ended(c)
     _ = compress_end(@c).must()
     assert is_compressor_ended(c)
@@ -1325,18 +1325,18 @@ test "is_compressor_ended: before and after the end"
 # A decompressor of one frame, at most a kilobyte.
 test "decompressor: one frame, at most a kilobyte"
     d @= decompressor(1024)
-    assert decompress_part(@d, data: compress([1, 2], defaults()).must(), most: 1024).must() == [1, 2]
+    assert decompress_part(@d, data: compress([1, 2], default_options()).must(), most: 1024).must() == [1, 2]
 
 # A decompressor given the dictionary a frame was made with.
 test "with_dictionary: the dictionary the frame was made with"
-    o @= defaults()
+    o @= default_options()
     o.dictionary @ bytes.from_text("life on mars")
     d @= with_dictionary(decompressor(100), dictionary: o.dictionary).must()
     assert decompress_part(@d, data: compress(bytes.from_text("life on mars?"), o).must(), most: 100).must() == bytes.from_text("life on mars?")
 
 # A frame fed in two pieces.
 test "decompress_part: a frame fed in two pieces"
-    packed = compress(bytes.from_text("starman"), defaults()).must()
+    packed = compress(bytes.from_text("starman"), default_options()).must()
     d @= decompressor(100)
     first = decompress_part(@d, data: packed.slice(from: 0, to: 9), most: 100).must()
     second = decompress_part(@d, data: packed.slice(from: 9, to: packed.len()), most: 100).must()
@@ -1346,7 +1346,7 @@ test "decompress_part: a frame fed in two pieces"
 test "is_decompressor_ended: before and after the frame's end"
     d @= decompressor(100)
     assert !is_decompressor_ended(d)
-    _ = decompress_part(@d, data: compress([1], defaults()).must(), most: 100).must()
+    _ = decompress_part(@d, data: compress([1], default_options()).must(), most: 100).must()
     assert is_decompressor_ended(d)
 
 # What came after the frame.
@@ -1354,7 +1354,7 @@ test "unused: what came after the frame"
     d @= decompressor(100)
     _ = decompress_part(
         @d,
-        data: bytes.concat([compress([1], defaults()).must(), bytes.from_text("rest")]),
+        data: bytes.concat([compress([1], default_options()).must(), bytes.from_text("rest")]),
         most: 100
     ).must()
     assert unused(d) == bytes.from_text("rest")
@@ -1362,7 +1362,7 @@ test "unused: what came after the frame"
 # A writer over one end of a pipe, read back from the other.
 test "writer: a frame into a pipe"
     p @= io.pipe().must()
-    w @= writer(p.writer, defaults()).must()
+    w @= writer(p.writer, default_options()).must()
     write(@w, data: bytes.from_text("rebel rebel")).must()
     finish(@w).must()
     io.close(@p.writer).must()
@@ -1372,7 +1372,7 @@ test "writer: a frame into a pipe"
 # Bytes written in two calls reach the stream as one frame.
 test "write: two writes, one frame"
     p @= io.pipe().must()
-    w @= writer(p.writer, defaults()).must()
+    w @= writer(p.writer, default_options()).must()
     write(@w, data: bytes.from_text("golden ")).must()
     write(@w, data: bytes.from_text("years")).must()
     finish(@w).must()
@@ -1383,7 +1383,7 @@ test "write: two writes, one frame"
 # A flush pushes what was written so far into the stream.
 test "flush: written so far, readable so far"
     p @= io.pipe().must()
-    w @= writer(p.writer, defaults()).must()
+    w @= writer(p.writer, default_options()).must()
     write(@w, data: bytes.from_text("heroes")).must()
     flush(@w).must()
     d @= decompressor(100)
@@ -1395,7 +1395,7 @@ test "flush: written so far, readable so far"
 # The end of a writer's frame; the stream itself stays open for its owner.
 test "finish: the end written, the stream still open"
     p @= io.pipe().must()
-    w @= writer(p.writer, defaults()).must()
+    w @= writer(p.writer, default_options()).must()
     finish(@w).must()
     assert !io.is_closed(p.writer)
     io.close(@p.writer).must()
@@ -1405,7 +1405,7 @@ test "finish: the end written, the stream still open"
 # A reader over a pipe that holds a frame.
 test "reader: a frame from a pipe"
     p @= io.pipe().must()
-    io.write(p.writer, data: compress(bytes.from_text("station to station"), defaults()).must()).must()
+    io.write(p.writer, data: compress(bytes.from_text("station to station"), default_options()).must()).must()
     io.close(@p.writer).must()
     r @= reader(p.reader, limit: 100)
     assert read_rest(@r).must() == bytes.from_text("station to station")
@@ -1414,7 +1414,7 @@ test "reader: a frame from a pipe"
 # Decompressed bytes taken a few at a time.
 test "read: five bytes at a time"
     p @= io.pipe().must()
-    io.write(p.writer, data: compress(bytes.from_text("young americans"), defaults()).must()).must()
+    io.write(p.writer, data: compress(bytes.from_text("young americans"), default_options()).must()).must()
     io.close(@p.writer).must()
     r @= reader(p.reader, limit: 100)
     assert read(@r, most: 5).must() == bytes.from_text("young")
@@ -1423,7 +1423,7 @@ test "read: five bytes at a time"
 # Everything a reader has left, to the stream's end.
 test "read_rest: the whole stream"
     p @= io.pipe().must()
-    io.write(p.writer, data: compress(bytes.from_text("low"), defaults()).must()).must()
+    io.write(p.writer, data: compress(bytes.from_text("low"), default_options()).must()).must()
     io.close(@p.writer).must()
     r @= reader(p.reader, limit: 100)
     assert read_rest(@r).must() == bytes.from_text("low")
@@ -1435,7 +1435,7 @@ test "compress_stream: a pipe compressed into a pipe"
     io.write(source.writer, data: bytes.from_text("let's dance")).must()
     io.close(@source.writer).must()
     packed @= io.pipe().must()
-    written = compress_stream(from: source.reader, to: packed.writer, options: defaults()).must()
+    written = compress_stream(from: source.reader, to: packed.writer, options: default_options()).must()
     io.close(@packed.writer).must()
     assert io.read_all(packed.reader).must().len() == written
     io.close(@source.reader).must()
@@ -1444,7 +1444,7 @@ test "compress_stream: a pipe compressed into a pipe"
 # One compressed stream decompressed into another.
 test "decompress_stream: a pipe decompressed into a pipe"
     packed @= io.pipe().must()
-    io.write(packed.writer, data: compress(bytes.from_text("modern love"), defaults()).must()).must()
+    io.write(packed.writer, data: compress(bytes.from_text("modern love"), default_options()).must()).must()
     io.close(@packed.writer).must()
     out @= io.pipe().must()
     assert decompress_stream(from: packed.reader, to: out.writer, limit: 100).must() == 11

@@ -762,7 +762,7 @@ function with_compression(response: Response, r: Request) -> Response
     else
         .zlib
 
-    match compress.compress(response.body, options: compress.defaults(format))
+    match compress.compress(response.body, options: compress.default_options(format))
         .ok packed =>
             out.body @ packed
             out.headers @ out.headers.push(Header(name: "Content-Encoding", value: chosen))
@@ -3749,9 +3749,9 @@ test "get: https://example.com where the network answers, skipped where it does 
 
 test "send: gzip, zlib and raw deflate bodies undone, a chunked one too, Accept-Encoding sent"
     text: [u8] = [104, 101, 108, 108, 111]
-    gz = compress.compress(text, options: compress.defaults(.gzip)).must()
-    zl = compress.compress(text, options: compress.defaults(.zlib)).must()
-    raw = compress.compress(text, options: compress.defaults(.raw)).must()
+    gz = compress.compress(text, options: compress.default_options(.gzip)).must()
+    zl = compress.compress(text, options: compress.default_options(.zlib)).must()
+    raw = compress.compress(text, options: compress.default_options(.raw)).must()
     responses = [
         canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {gz.len()}\r\n\r\n", body: gz)
         canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: deflate\r\nContent-Length: {zl.len()}\r\n\r\n", body: zl)
@@ -3777,8 +3777,8 @@ test "send: a compression bomb fails limit, a gzip cut short fails invalid"
     while zeros.len() < 1_048_576
         zeros @ zeros.push(0)
 
-    bomb = compress.compress(zeros, options: compress.defaults(.gzip)).must()
-    whole = compress.compress([104, 105], options: compress.defaults(.gzip)).must()
+    bomb = compress.compress(zeros, options: compress.default_options(.gzip)).must()
+    whole = compress.compress([104, 105], options: compress.default_options(.gzip)).must()
     cut = whole.slice(from: 0, to: whole.len() - 3)
     t @= canned.start(
         canned.script(responses: [canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {bomb.len()}\r\n\r\n", body: bomb), canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {cut.len()}\r\n\r\n", body: cut)])
@@ -4370,7 +4370,7 @@ test "decode_body: a gzip body"
     r @= respond(
         STATUS_OK,
         content_type: "text/plain",
-        body: compress.compress(bytes.from_text("hello"), options: compress.defaults(.gzip)).must()
+        body: compress.compress(bytes.from_text("hello"), options: compress.default_options(.gzip)).must()
     )
     r.headers @ r.headers.push(Header(name: "Content-Encoding", value: "gzip"))
     got = decode_body(r, limit: 1_024).must()

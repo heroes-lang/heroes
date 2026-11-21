@@ -31,7 +31,7 @@ record Settings
 # in lower case, and a section or a key given twice read as one, the last
 # value winning, as Go's SDK reads it rather than failing.
 function options() -> ini.ReadOptions
-    out @= ini.strict()
+    out @= ini.strict_read_options()
     out.lower_keys @ true
     out.duplicates @ true
     return out

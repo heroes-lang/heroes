@@ -82,7 +82,7 @@ function encoded(width: i64, height: i64, depth: i64, color_type: i64, rows: [u8
         add(out: @raw, more: done)
         above @ row
 
-    o @= compress.defaults(.zlib)
+    o @= compress.default_options(.zlib)
     o.level @ level
     packed = compress.compress(raw, o)?
     out: [u8] @= chunks.signature()

@@ -30,7 +30,7 @@ record Sink
 # A sink writing to `stream`, through gzip at `level` where `gzip`. Fails
 # `invalid` where the level is out of 0 to 9.
 function start(stream: io.Stream, gzip: bool, level: i64) -> Sink?
-    o @= compress.defaults(.gzip)
+    o @= compress.default_options(.gzip)
     o.level @ level
     w = compress.writer(stream, o)?
     return ok(Sink(gzip: gzip, holding: false, stream: stream, held: [], writer: w, written: 0, ended: false))
@@ -42,7 +42,7 @@ function start_held() -> Sink
 
     # The writer over no stream is made but never written: the bytes are
     # held. Level 6 is in range, so it is always made.
-    w = compress.writer(none, compress.defaults(.gzip)).must()
+    w = compress.writer(none, compress.default_options(.gzip)).must()
     return Sink(gzip: false, holding: true, stream: none, held: [], writer: w, written: 0, ended: false)
 
 # Writes `data` to the archive. Fails as the stream or gzip fail.

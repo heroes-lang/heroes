@@ -354,7 +354,7 @@ function default_limits() -> Limits
 function parse(text: str, limits: Limits) -> Received?
     if text.len() > limits.message_bytes
         return fail(code: LIMIT, msg: f"a text of {text.len()} bytes is past {limits.message_bytes}")
-    options @= json.strict()
+    options @= json.strict_parse_options()
     options.max_depth @ limits.depth
 
     value = match json.parse_with(text, options: options)

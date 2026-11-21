@@ -2643,7 +2643,7 @@ test "gzip: compressed where accepted, Vary alone where not, a short body, 204, 
     assert gzip(accepting, response: coded, min_bytes: 0) == coded
 
 test "gunzip_body: decompressed, past the limit, no gzip, another coding, identity"
-    data = compress.compress(bytes.from_text("hello"), options: compress.defaults(.gzip)).must()
+    data = compress.compress(bytes.from_text("hello"), options: compress.default_options(.gzip)).must()
     sent @= http.with_body(
         fixture.request_of(method: "POST", target: "/", headers: []),
         content_type: "text/plain",
@@ -3404,7 +3404,7 @@ test "gzip: a long text compressed"
 
 # A gzip body read as the bytes it holds.
 test "gunzip_body: a compressed body read"
-    data = compress.compress(bytes.from_text("hi"), options: compress.defaults(.gzip)).must()
+    data = compress.compress(bytes.from_text("hi"), options: compress.default_options(.gzip)).must()
     r = fixture.request_of(method: "POST", target: "/", headers: [http.Header(name: "Content-Encoding", value: "gzip")])
 
     match gunzip_body(http.with_body(r, content_type: "text/plain", body: data), most_bytes: 1_000)

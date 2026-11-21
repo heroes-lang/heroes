@@ -55,13 +55,13 @@ constant MIN_LEVEL: i64
 constant MAX_LEVEL: i64
     9
 
-# The level `defaults` sets, the `bzip2` tool's usual and Python's, the
+# The level `default_options` sets, the `bzip2` tool's usual and Python's, the
 # largest.
 constant DEFAULT_LEVEL: i64
     9
 
 # How `compress` writes a stream, as its siblings' `Options` say it of
-# theirs. `defaults` makes the usual one.
+# theirs. `default_options` makes the usual one.
 record Options
     # 1 (`MIN_LEVEL`) to 9 (`MAX_LEVEL`): the block size in hundreds of
     # thousands of bytes. A larger block finds more repeats and takes more
@@ -71,7 +71,7 @@ record Options
 # Options at level 9, as the `bzip2` tool's and Python's usual.
 #
 # See also `compress`.
-function defaults() -> Options
+function default_options() -> Options
     return Options(level: DEFAULT_LEVEL)
 
 ## All at once
@@ -81,7 +81,7 @@ function defaults() -> Options
 #
 # - `data`: the bytes to compress; none make a stream of 14 bytes that
 #   decompresses to none.
-# - `options`: the level, from `defaults` or built directly.
+# - `options`: the level, from `default_options` or built directly.
 #
 # The same `data` and `options` answer the same bytes every time.
 #
@@ -136,14 +136,14 @@ function decompress_leading(data: [u8], limit: i64) -> Leading?
 
 ## Tests
 
-test "compress and defaults: the usual level is the largest, every level from 1 to 9 read back, and 0, 10 and a negative level refused"
-    assert defaults() == Options(level: DEFAULT_LEVEL) && DEFAULT_LEVEL == MAX_LEVEL
+test "compress and default_options: the usual level is the largest, every level from 1 to 9 read back, and 0, 10 and a negative level refused"
+    assert default_options() == Options(level: DEFAULT_LEVEL) && DEFAULT_LEVEL == MAX_LEVEL
     data: [u8] = [0x61, 0x62, 0x61, 0x62, 0x61, 0x62, 0x63]
 
     for level in range(from: MIN_LEVEL, to: MAX_LEVEL + 1)
         assert decompress(compress(data, Options(level: level)).must(), limit: 7).must() == data
 
-    assert compress(data, defaults()).must() == compress(data, Options(level: 9)).must()
+    assert compress(data, default_options()).must() == compress(data, Options(level: 9)).must()
 
     for level in [0, 10, -1]
         match compress(data, Options(level: level))
@@ -154,14 +154,14 @@ test "compress and defaults: the usual level is the largest, every level from 1 
 
 # The options of the usual stream, the level changed where a program wants
 # less memory.
-test "defaults: level 9, and a smaller block"
+test "default_options: level 9, and a smaller block"
     small = Options(level: MIN_LEVEL)
-    assert defaults().level == 9 && small.level == 1
+    assert default_options().level == 9 && small.level == 1
 
 # A line compressed at the usual level and read back.
 test "compress: a line, and back"
     line: [u8] = [0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x20, 0x68, 0x65, 0x72, 0x6f, 0x65, 0x73]
-    packed = compress(line, defaults()).must()
+    packed = compress(line, default_options()).must()
     assert decompress(packed, limit: 100).must() == line
 
 # A stream read whole, under a limit on what it may expand to.

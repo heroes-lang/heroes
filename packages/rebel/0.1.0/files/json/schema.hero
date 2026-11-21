@@ -142,7 +142,7 @@ record Format
     # asserts nothing of any other kind of value.
     check: (function(str) -> bool)
 
-# How a schema is compiled and its instances validated. `defaults` answers the
+# How a schema is compiled and its instances validated. `default_options` answers the
 # defaults; a program changes the fields it needs.
 record Options
     # The dialect of a schema whose `$schema` names none.
@@ -161,7 +161,7 @@ record Options
 
 # The default options: 2020-12, `format` and the `content` keywords as
 # annotations, no other document and no format of the program's own.
-function defaults() -> Options
+function default_options() -> Options
     return Options(draft: .draft_2020_12, formats: false, content: false, resources: [], custom_formats: [])
 
 ## Compiling
@@ -179,7 +179,7 @@ record Schema
 #
 # Fails as `compile_with` does.
 function compile(schema: json.Value) -> Schema?
-    return compile_with(schema, defaults())
+    return compile_with(schema, default_options())
 
 # `schema` compiled with `options`.
 #
@@ -427,8 +427,8 @@ test "meta_schema: 2020-12's $id"
     assert json.member(meta_schema(.draft_2020_12), "$id").must() == .text(v: DRAFT_2020_12_URI)
 
 # The default options.
-test "defaults: 2020-12, formats as annotations"
-    assert defaults().draft == .draft_2020_12 && !defaults().formats
+test "default_options: 2020-12, formats as annotations"
+    assert default_options().draft == .draft_2020_12 && !default_options().formats
 
 # A schema compiled and an instance validated.
 test "compile: a positive integer"
@@ -437,7 +437,7 @@ test "compile: a positive integer"
 
 # A reference to a document the program gives.
 test "compile_with: a reference to another document"
-    o: Options @= defaults()
+    o: Options @= default_options()
     o.resources @ [
         Resource(uri: "https://example.com/name.json", document: json.parse("{\"type\": \"string\"}").must())
     ]
@@ -446,7 +446,7 @@ test "compile_with: a reference to another document"
 
 # A schema inside a document, named by its URI and a pointer.
 test "compile_at: a definition inside a document"
-    o: Options @= defaults()
+    o: Options @= default_options()
     o.resources @ [
         Resource(uri: "https://example.com/defs.json", document: json.parse("{\"$defs\": {\"year\": {\"minimum\": 1947}}}").must())
     ]
@@ -490,7 +490,7 @@ test "to_output: valid"
 
 # A schema checked against its meta-schema.
 test "schema_errors_of: a minimum that is not a number"
-    found = schema_errors_of(json.parse("{\"minimum\": \"1\"}").must(), defaults()).must()
+    found = schema_errors_of(json.parse("{\"minimum\": \"1\"}").must(), default_options()).must()
     assert found.len() > 0
 
 # A text checked against a format.

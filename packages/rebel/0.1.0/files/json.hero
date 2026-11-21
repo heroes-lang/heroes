@@ -173,7 +173,7 @@ constant MAX_EXACT_INT: i64
 
 ## Reading a text
 
-# How a text is read. `strict` answers the options of RFC 8259 and nothing
+# How a text is read. `strict_parse_options` answers the options of RFC 8259 and nothing
 # wider; a program widens the fields it needs.
 record ParseOptions
     # The deepest nesting accepted, counted as `DEFAULT_MAX_DEPTH` counts it. A
@@ -208,7 +208,7 @@ record Parsed
 
 # The options that read RFC 8259 and nothing wider: nesting no deeper than
 # `DEFAULT_MAX_DEPTH`, and every other field `false`.
-function strict() -> ParseOptions
+function strict_parse_options() -> ParseOptions
     return ParseOptions(
         max_depth: DEFAULT_MAX_DEPTH,
         duplicate_keys: false,
@@ -218,7 +218,7 @@ function strict() -> ParseOptions
         exact_integers: false
     )
 
-# The value `text` writes, read as `strict` reads.
+# The value `text` writes, read as `strict_parse_options` reads.
 #
 # - `text`: the JSON text, white space allowed before and after the value; a
 #   byte order mark is not white space.
@@ -232,12 +232,12 @@ function strict() -> ParseOptions
 # object, a number with a leading zero, a raw control character in a string,
 # half a surrogate pair, `NaN` and a byte order mark are all `invalid`.
 function parse(text: str) -> Value?
-    return parse_with(text, strict())
+    return parse_with(text, strict_parse_options())
 
 # The value `text` writes, read as `options` say.
 #
 # - `text`: the JSON text, white space allowed before and after the value.
-# - `options`: how it is read; `strict()` reads RFC 8259 and nothing wider.
+# - `options`: how it is read; `strict_parse_options()` reads RFC 8259 and nothing wider.
 #
 # Fails `invalid` where `text` is not JSON as `options` read it, with the
 # message `parse` gives. Fails `does_not_fit` where a number is past what an
@@ -431,7 +431,7 @@ function parse_partial(text: str) -> Partial?
 
 ## Writing a value
 
-# How a value is written. `compact` answers the options of the shortest text;
+# How a value is written. `compact_format_options` answers the options of the shortest text;
 # a program changes the fields it needs.
 record FormatOptions
     # Whether each element and each member stands on its own line, indented by
@@ -464,7 +464,7 @@ record FormatOptions
 
 # The options of the shortest text: one line, no white space, the members in
 # the order the object holds them, and no escape RFC 8259 does not oblige.
-function compact() -> FormatOptions
+function compact_format_options() -> FormatOptions
     return FormatOptions(
         multiline: false,
         indent: "",
@@ -490,7 +490,7 @@ function compact() -> FormatOptions
 # `1e+21` up and from `1e-7` down. It holds its own stack, so no nesting is too
 # deep for it.
 function format(v: Value) -> str?
-    return format_with(v, compact())
+    return format_with(v, compact_format_options())
 
 # `v` as JSON over several lines, one element or member a line and `": "` after
 # a key.
@@ -507,7 +507,7 @@ function format(v: Value) -> str?
 function format_indented(v: Value, width: i64) -> str?
     if width < 0
         return fail(code: INVALID, msg: f"an indent of {width} spaces: the width is 0 or more")
-    options: FormatOptions @= compact()
+    options: FormatOptions @= compact_format_options()
     options.multiline @ true
     options.indent @ repeat(" ", width.to_u64().must())
     return format_with(v, options)
@@ -515,7 +515,7 @@ function format_indented(v: Value, width: i64) -> str?
 # `v` as JSON, written as `options` say.
 #
 # - `v`: the value to write.
-# - `options`: how it is written; `compact()` writes the shortest text.
+# - `options`: how it is written; `compact_format_options()` writes the shortest text.
 #
 # Fails `unsupported` where `v` holds a `nan` or an infinity and
 # `options.non_finite` does not ask for them.
@@ -958,7 +958,7 @@ test "parse: a raw control character in a string, refused as both refuse it, rea
     for text in ["\"a\tb\"", "\"a\nb\""]
         assert parse(text).is_err()
 
-    wide: ParseOptions @= strict()
+    wide: ParseOptions @= strict_parse_options()
     wide.control_characters @ true
     assert parse_with("\"a\tb\"", wide).must() == .text(v: "a\tb")
 
@@ -974,7 +974,7 @@ test "parse: escapes, a pair above U+FFFF, U+0000, and the escaped slash"
 test "parse: half a surrogate pair, refused, and read as U+FFFD as Go's Unmarshal reads it"
     assert parse("\"\\ud800\"").is_err()
     assert parse("\"\\udc00\"").is_err()
-    wide: ParseOptions @= strict()
+    wide: ParseOptions @= strict_parse_options()
     wide.lone_surrogates @ true
     assert parse_with("\"\\ud800\"", wide).must() == .text(v: "�")
 
@@ -983,7 +983,7 @@ test "parse: a key written twice, refused as jsontext refuses it, the last kept 
         .ok _  => assert false
         .err e => assert e.code == "invalid" && e.msg == "line 1, column 14: the key \"a\" is written twice in one object, first at line 1, column 2"
 
-    wide: ParseOptions @= strict()
+    wide: ParseOptions @= strict_parse_options()
     wide.duplicate_keys @ true
     doc = parse_with("{\"a\":1,\"b\":2,\"a\":3}", wide).must()
     assert keys(members_of(doc).must()) == ["a", "b"]
@@ -1001,7 +1001,7 @@ test "parse: numbers as Go reads them, past an f64, below its least, and past 2 
             .ok _  => assert false
             .err e => assert e.code == "does_not_fit"
 
-    exact: ParseOptions @= strict()
+    exact: ParseOptions @= strict_parse_options()
     exact.exact_integers @ true
 
     match parse_with("9007199254740993", exact)
@@ -1011,7 +1011,7 @@ test "parse: numbers as Go reads them, past an f64, below its least, and past 2 
     assert int_of(parse_with("-9007199254740991", exact).must()).must() == -9007199254740991
 
 test "parse: NaN and the infinities, refused, and read as Python reads them when asked"
-    wide: ParseOptions @= strict()
+    wide: ParseOptions @= strict_parse_options()
     wide.non_finite @ true
     nan = number_of(parse_with("NaN", wide).must()).must()
     assert nan != nan
@@ -1026,7 +1026,7 @@ test "parse: the nesting allowed, one level past it, and a hundred thousand when
         .err e => assert e.msg == "line 1, column 513: nested deeper than 512 levels, the most this reading allows"
 
     deep = repeat("[", 100000) + repeat("]", 100000)
-    wide: ParseOptions @= strict()
+    wide: ParseOptions @= strict_parse_options()
     wide.max_depth @ 100000
     value = parse_with(deep, wide).must()
     assert kind_of(value) == "list"
@@ -1034,13 +1034,13 @@ test "parse: the nesting allowed, one level past it, and a hundred thousand when
 
 test "parse_next: values one after another, white space between, and nothing left"
     text = "1 [2]{\"a\":3}  "
-    first = parse_next(text: text, from: 0, options: strict()).must()
+    first = parse_next(text: text, from: 0, options: strict_parse_options()).must()
     assert first.value == .number(v: 1.0) && first.next == 2
-    second = parse_next(text: text, from: first.next, options: strict()).must()
+    second = parse_next(text: text, from: first.next, options: strict_parse_options()).must()
     assert second.value == .list(items: [.number(v: 2.0)]) && second.next == 5
-    third = parse_next(text: text, from: second.next, options: strict()).must()
+    third = parse_next(text: text, from: second.next, options: strict_parse_options()).must()
     assert third.next == text.len()
-    assert parse_next(text: text, from: third.next, options: strict()).is_err()
+    assert parse_next(text: text, from: third.next, options: strict_parse_options()).is_err()
 
 test "is_valid: JSON, a key twice as jsontext answers, and a value with more after it"
     assert is_valid("{\"a\":[1,2]}")
@@ -1049,7 +1049,7 @@ test "is_valid: JSON, a key twice as jsontext answers, and a value with more aft
     assert !is_valid("[1] x")
     assert !is_valid("")
 
-test "format: compact, every kind, as Python writes with separators (',', ':')"
+test "format: compact_format_options, every kind, as Python writes with separators (',', ':')"
     doc = parse("{\"b\": [1, 2, {\"c\": null}], \"a\": {}, \"e\": [], \"t\": true, \"s\": \"x\"}").must()
     assert format(doc).must() == "{\"b\":[1,2,{\"c\":null}],\"a\":{},\"e\":[],\"t\":true,\"s\":\"x\"}"
     assert format(.null_value).must() == "null"
@@ -1066,7 +1066,7 @@ test "format: nan and the infinities fail, where Python's default writes them"
         .ok _  => assert false
         .err e => assert e.code == UNSUPPORTED
 
-    python: FormatOptions @= compact()
+    python: FormatOptions @= compact_format_options()
     python.non_finite @ true
     assert format_with(.list(items: [.number(v: nan)]), python).must() == "[NaN]"
 
@@ -1083,13 +1083,13 @@ test "format_indented: by 2 and by 0, and empty containers, as Python's indent w
 
 test "format_with: sorted keys as Python's sort_keys and Go's Marshal write them, spaced, and a prefix"
     doc = parse("{\"b\": [1, 2, {\"c\": null}], \"a\": {}, \"e\": [], \"t\": true, \"s\": \"x\"}").must()
-    sorted: FormatOptions @= compact()
+    sorted: FormatOptions @= compact_format_options()
     sorted.sort_keys @ true
     assert format_with(doc, sorted).must() == "{\"a\":{},\"b\":[1,2,{\"c\":null}],\"e\":[],\"s\":\"x\",\"t\":true}"
-    spaced: FormatOptions @= compact()
+    spaced: FormatOptions @= compact_format_options()
     spaced.spaced @ true
     assert format_with(doc, spaced).must() == "{\"b\": [1, 2, {\"c\": null}], \"a\": {}, \"e\": [], \"t\": true, \"s\": \"x\"}"
-    prefixed: FormatOptions @= compact()
+    prefixed: FormatOptions @= compact_format_options()
     prefixed.multiline @ true
     prefixed.indent @ "\t"
     prefixed.prefix @ ">"
@@ -1097,10 +1097,10 @@ test "format_with: sorted keys as Python's sort_keys and Go's Marshal write them
 
 test "format_with: the escapes of Python's ensure_ascii and of Go's Marshal"
     s: Value = .text(v: "é \u{2028} 😀 <>&")
-    ascii: FormatOptions @= compact()
+    ascii: FormatOptions @= compact_format_options()
     ascii.ascii_only @ true
     assert format_with(s, ascii).must() == "\"\\u00e9 \\u2028 \\ud83d\\ude00 <>&\""
-    go: FormatOptions @= compact()
+    go: FormatOptions @= compact_format_options()
     go.escape_html @ true
     go.escape_js @ true
     assert format_with(s, go).must() == "\"é \\u2028 😀 \\u003c\\u003e\\u0026\""
@@ -1388,8 +1388,8 @@ test "equals: one object written in two orders"
     assert equals(a: one, b: two)
 
 # The options of RFC 8259, widened to read what Python writes for a NaN.
-test "strict: widened by one field"
-    options @= strict()
+test "strict_parse_options: widened by one field"
+    options @= strict_parse_options()
     options.non_finite @ true
     assert is_null(parse_with("null", options).must()) && !parse_with("NaN", options).is_err()
 
@@ -1400,7 +1400,7 @@ test "parse: an object read"
 
 # A text whose key is written twice, read where the options allow it.
 test "parse_with: a key written twice, the last value kept"
-    options @= strict()
+    options @= strict_parse_options()
     options.duplicate_keys @ true
     v = parse_with("{\"a\": 1, \"a\": 2}", options).must()
     assert int_of(member(v, "a").must()).must() == 2
@@ -1412,7 +1412,7 @@ test "parse_next: three values one after another"
     count: i64 @= 0
 
     while at < text.len()
-        got = parse_next(text: text, from: at, options: strict()).must()
+        got = parse_next(text: text, from: at, options: strict_parse_options()).must()
         at @ got.next
         count @ count + 1
 
@@ -1423,8 +1423,8 @@ test "is_valid: JSON and a trailing comma"
     assert is_valid("[1, 2]") && !is_valid("[1, 2,]")
 
 # The shortest text, changed to sort its keys.
-test "compact: its keys sorted"
-    options @= compact()
+test "compact_format_options: its keys sorted"
+    options @= compact_format_options()
     options.sort_keys @ true
     assert format_with(parse("{\"b\":1,\"a\":2}").must(), options).must() == "{\"a\":2,\"b\":1}"
 
@@ -1439,7 +1439,7 @@ test "format_indented: two spaces"
 # A value written with its keys sorted and a space after each separator, as
 # Python's `sort_keys=True` writes it.
 test "format_with: keys sorted and spaced"
-    options @= compact()
+    options @= compact_format_options()
     options.sort_keys @ true
     options.spaced @ true
     assert format_with(parse("{\"b\":1,\"a\":[2,3]}").must(), options).must() == "{\"a\": [2, 3], \"b\": 1}"

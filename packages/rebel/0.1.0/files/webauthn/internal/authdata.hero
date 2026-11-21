@@ -74,7 +74,7 @@ function read(data: [u8]) -> Parsed?
         id @ der.part(data: data, from: at, to: at + length)
         at @ at + length
 
-        match cbor.decode_next(data: data, from: at, options: cbor.strict())
+        match cbor.decode_next(data: data, from: at, options: cbor.strict_decode_options())
             .ok got =>
                 key @ der.part(data: data, from: at, to: got.next)
                 at @ got.next
@@ -84,7 +84,7 @@ function read(data: [u8]) -> Parsed?
         if at >= data.len()
             return fail(code: codes.INVALID, msg: "the flags say extensions follow, and none do")
 
-        match cbor.decode_next(data: data, from: at, options: cbor.strict())
+        match cbor.decode_next(data: data, from: at, options: cbor.strict_decode_options())
             .ok got =>
                 extensions @ der.part(data: data, from: at, to: got.next)
                 at @ got.next

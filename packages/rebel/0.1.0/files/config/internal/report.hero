@@ -38,7 +38,7 @@ function from_top(h: held.Held lent, parts: [str]) -> [str]
 # layer and origin.
 function sources_text(h: held.Held lent) -> str
     lines: [str] @= []
-    written: json.FormatOptions @= json.compact()
+    written: json.FormatOptions @= json.compact_format_options()
     written.non_finite @ true
 
     for parts in leaves(h)

@@ -210,7 +210,7 @@ capability xml/format-empty  an element with no content written `<a/>` or `<a></
   go      -
   rust    -
   python  tostring(short_empty_elements=), ElementTree.write(short_empty_elements=)
-  note    `self_closing`, true in `compact`; `<a/>` as minidom writes it, where ElementTree writes `<a />` and Go `<a></a>`
+  note    `self_closing`, true in `compact_format_options`; `<a/>` as minidom writes it, where ElementTree writes `<a />` and Go `<a></a>`
 
 capability xml/escape  a text escaped to stand as content or as an attribute's value, and read back
   heroes  xml.escape_text, xml.quote_attribute, xml.unescape

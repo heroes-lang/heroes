@@ -207,7 +207,7 @@ function add_whole(@sink: Sink, name: str, comment: str, method: i64, level: i64
     stored @= data
 
     if method == zip_read.DEFLATED
-        o @= compress.defaults(.raw)
+        o @= compress.default_options(.raw)
         o.level @ level
         stored @ compress.compress(data, o)?
     w = Written(
@@ -258,7 +258,7 @@ function add_streamed(@sink: Sink, name: str, comment: str, method: i64, level: 
         external: external
     )
     put(@sink, data: local_header(w, known: false, zip64: zip64))?
-    o @= compress.defaults(.raw)
+    o @= compress.default_options(.raw)
     o.level @ level
     c @= compress.compressor(o)?
     check @= hash.start32(.crc32)

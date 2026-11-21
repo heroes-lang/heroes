@@ -111,7 +111,7 @@ function is_valid(text: str) -> bool
 
 ## Running
 
-# What a run may use and how far it may go. `defaults` answers the options of
+# What a run may use and how far it may go. `default_options` answers the options of
 # a run with no variable, no input past the one given, and the default
 # bounds; a program changes the fields it needs.
 record Options
@@ -139,7 +139,7 @@ record Options
 
 # The options of a run with no variable, no further input, an empty `$ENV`,
 # `now` at 0, and the default bounds.
-function defaults() -> Options
+function default_options() -> Options
     return Options(
         max_steps: DEFAULT_MAX_STEPS,
         max_outputs: DEFAULT_MAX_OUTPUTS,
@@ -187,14 +187,14 @@ record Outcome
     # How many of `Options.inputs` the run read.
     read: i64
 
-# Every value `program` outputs for `input`, run with `defaults()`.
+# Every value `program` outputs for `input`, run with `default_options()`.
 #
 # - `program`: a filter `parse` made.
 # - `input`: the value the filter reads as `.`.
 #
 # Fails `invalid` where the run raises an error nothing catches, the message
 # jq prints for it, and where it halts with an exit code other than 0. Fails
-# `limit` where it reaches a bound of `defaults()`.
+# `limit` where it reaches a bound of `default_options()`.
 #
 # A filter that outputs nothing answers the empty list.
 function run(program: Program, input: json.Value) -> [json.Value]?
@@ -243,7 +243,7 @@ function run_with(program: Program, input: json.Value, options: Options) -> Outc
 #
 # Fails `invalid` where `text` is not such a sequence, or where a run raises
 # an error nothing catches; `limit` where a run reaches a bound of
-# `defaults()`. Every value read is given to `input` and `inputs` too, as jq
+# `default_options()`. Every value read is given to `input` and `inputs` too, as jq
 # gives a file's values.
 function run_text(program: Program, text: str) -> [json.Value]?
     read: [json.Value] @= []
@@ -380,8 +380,8 @@ test "is_valid: a filter and a stray bracket"
     assert is_valid("[.[] | select(. > 1)]") && !is_valid(".a]")
 
 # The options of a run, one changed.
-test "defaults: the bounds, and a variable given"
-    options: Options @= defaults()
+test "default_options: the bounds, and a variable given"
+    options: Options @= default_options()
     options.variables["name"] @ .text(v: "Low")
     assert options.max_steps == DEFAULT_MAX_STEPS && options.variables.len() == 1
 
@@ -393,7 +393,7 @@ test "run: the titles of the albums of 1977"
 
 # A run with a variable, ending in an error caught by nothing.
 test "run_with: a variable read and an error raised"
-    options: Options @= defaults()
+    options: Options @= default_options()
     options.variables["n"] @ .number(v: 2.0)
     outcome = run_with(parse("$n, error(\"stop\")").must(), input: .null_value, options: options)
     assert outcome.outputs.len() == 1 && format_value(outcome.outputs[0]) == "2"

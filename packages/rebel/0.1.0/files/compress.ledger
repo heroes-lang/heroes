@@ -15,7 +15,7 @@ capability compress/at-once  bytes compressed whole into one stream
   go      flate.NewWriter, zlib.NewWriter, gzip.NewWriter, Writer.Write, Writer.Close (into a bytes.Buffer)
   rust    -
   python  zlib.compress, gzip.compress
-  note    Go has no call that compresses a `[]byte` whole; a writer over a buffer does it. Python's `gzip.compress` writes an mtime of 0 by default since 3.15, as `defaults` does, so the same bytes give the same stream
+  note    Go has no call that compresses a `[]byte` whole; a writer over a buffer does it. Python's `gzip.compress` writes an mtime of 0 by default since 3.15, as `default_options` does, so the same bytes give the same stream
 
 capability compress/decompress-at-once  a stream decompressed whole, under a limit
   heroes  compress.decompress

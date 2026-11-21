@@ -659,7 +659,7 @@ function encode_tar(members: [TarMember], compression: Compression) -> [u8]?
     match compression
         .none => return ok(w.sink.held)
         .gzip =>
-            o @= compress.defaults(.gzip)
+            o @= compress.default_options(.gzip)
             o.level @ 6
             return compress.compress(w.sink.held, o)
 

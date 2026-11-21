@@ -825,7 +825,7 @@ record Tag
     value: str
 
 # How an object is put: its fields, its metadata, its checksum and its
-# conditions. `put_options` makes one with none; the program sets the
+# conditions. `default_put_options` makes one with none; the program sets the
 # fields it needs.
 record PutOptions
     # The `Content-Type`; "" sends none, and S3 keeps
@@ -865,7 +865,7 @@ record PutOptions
 
 # Put options with no field, no metadata, no tag and no condition, the
 # checksum CRC-32 as botocore sends by default.
-function put_options() -> PutOptions
+function default_put_options() -> PutOptions
     return PutOptions(
         content_type: "",
         cache_control: "",
@@ -998,7 +998,7 @@ variant Range
         count: i64
 
 # How an object is read: which bytes, which version, on which conditions.
-# `get_options` makes one asking for the whole of the newest version.
+# `default_get_options` makes one asking for the whole of the newest version.
 record GetOptions
     # The bytes asked for.
     span: Range
@@ -1025,7 +1025,7 @@ record GetOptions
 
 # Get options for the whole of the newest version, no condition, no part,
 # no check.
-function get_options() -> GetOptions
+function default_get_options() -> GetOptions
     return GetOptions(
         span: .whole,
         version_id: "",
@@ -1221,7 +1221,7 @@ function info_of(r: http.Response, key: str) -> Info?
 # the object passes `c.limits.body_bytes`, and as `send` fails. See also
 # `get_object_with`, `get_object_to`.
 function get_object(c: Client, bucket: str, key: str) -> Object?
-    return get_object_with(c, bucket: bucket, key: key, options: get_options())
+    return get_object_with(c, bucket: bucket, key: key, options: default_get_options())
 
 # The object `key` of `bucket`, read as `options` say.
 #
@@ -1518,7 +1518,7 @@ function put_object_tags(c: Client, bucket: str, key: str, tags: [Tag]) -> ()?
 
 ## Listing objects
 
-# How a page of objects is asked for. `list_options` makes one asking for
+# How a page of objects is asked for. `default_list_options` makes one asking for
 # every key.
 record ListOptions
     # Only keys that begin with it; "" for all.
@@ -1536,7 +1536,7 @@ record ListOptions
     max_keys: i64
 
 # List options for every key, the first page, the server's page size.
-function list_options() -> ListOptions
+function default_list_options() -> ListOptions
     return ListOptions(prefix: "", delimiter: "", start_after: "", continuation_token: "", max_keys: 0)
 
 # One object of a listing.
@@ -1619,7 +1619,7 @@ function list_objects(c: Client, bucket: str, options: ListOptions) -> Listing?
 # where a page says more follow and gives no token.
 function list_all_objects(c: Client, bucket: str, prefix: str) -> [Summary]?
     every: [Summary] @= []
-    options @= list_options()
+    options @= default_list_options()
     options.prefix @ prefix
 
     while true
@@ -2524,8 +2524,8 @@ test "presign_request: another service's GET, its payload the SHA-256 of no byte
     )
 
 test "headers_of: none, every field, metadata in lower case, tags, and a value with a line end"
-    assert headers_of(put_options()).must().len() == 0
-    o @= put_options()
+    assert headers_of(default_put_options()).must().len() == 0
+    o @= default_put_options()
     o.content_type @ "text/plain"
     o.metadata @ [Meta(name: "Colour", value: "blue")]
     o.tags @ [Tag(key: "a b", value: "1")]
@@ -2537,7 +2537,7 @@ test "headers_of: none, every field, metadata in lower case, tags, and a value w
     assert h[3] == http.Header(name: "x-amz-storage-class", value: "STANDARD_IA") && h[4] == http.Header(name: "If-None-Match", value: "*")
     o.cache_control @ "a\nb"
     assert headers_of(o).is_err()
-    m @= put_options()
+    m @= default_put_options()
     m.metadata @ [Meta(name: "a b", value: "x")]
     assert headers_of(m).is_err()
 
@@ -2545,7 +2545,7 @@ test "range_header and get_operation: the four ranges, each refusal, a version, 
     assert range_header(.from(first: 0)).must() == "bytes=0-" && range_header(.between(first: 0, last: 9)).must() == "bytes=0-9"
     assert range_header(.suffix(count: 10)).must() == "bytes=-10" && range_header(.whole).is_err()
     assert range_header(.from(first: -1)).is_err() && range_header(.between(first: 5, last: 4)).is_err() && range_header(.suffix(count: 0)).is_err()
-    o @= get_options()
+    o @= default_get_options()
     o.span @ .between(first: 0, last: 9_223_372_036_854_775_806)
     o.version_id @ "v1"
     o.part_number @ 2
@@ -2557,7 +2557,7 @@ test "range_header and get_operation: the four ranges, each refusal, a version, 
     assert http.value_of(op.headers, name: "If-None-Match").must() == "\"e\"" && http.has_header(op.headers, name: "x-amz-checksum-mode")
     o.part_number @ 10_001
     assert get_operation(bucket: "b1b", key: "k", options: o).is_err()
-    assert get_operation(bucket: "b1b", key: "", options: get_options()).is_err()
+    assert get_operation(bucket: "b1b", key: "", options: default_get_options()).is_err()
 
 test "info_of: a ranged answer's fields, metadata and checksum, an answer with no length, and dates that are none"
     r = http.Response(
@@ -2690,7 +2690,7 @@ test "live: objects put, read whole and by range, asked about, copied, tagged, d
                 .ok _  => assert false
                 .err e => assert e.code == EXISTS
 
-            o @= put_options()
+            o @= default_put_options()
             o.content_type @ "text/plain"
             o.metadata @ [Meta(name: "Colour", value: "blue")]
             o.checksum @ .sha256
@@ -2705,7 +2705,7 @@ test "live: objects put, read whole and by range, asked about, copied, tagged, d
             assert stored.etag == "\"" + bytes.format_hex(crypto.md5_text("hello, world")) + "\"" && stored.checksum == checksum_of(bytes.from_text("hello, world"), algorithm: .sha256)
             whole = get_object(c, bucket: bucket, key: key).must()
             assert whole.data == bytes.from_text("hello, world") && whole.info.content_type == "text/plain" && whole.info.metadata == [Meta(name: "colour", value: "blue")]
-            g @= get_options()
+            g @= default_get_options()
             g.span @ .between(first: 7, last: 11)
             g.verify_checksum @ true
             part = get_object_with(c, bucket: bucket, key: key, options: g).must()
@@ -2721,7 +2721,7 @@ test "live: objects put, read whole and by range, asked about, copied, tagged, d
                 .ok _  => assert false
                 .err e => assert e.code == INVALID && strings.has_prefix(s: e.msg, prefix: "InvalidRange")
 
-            n @= get_options()
+            n @= default_get_options()
             n.if_none_match @ stored.etag
 
             match get_object_with(c, bucket: bucket, key: key, options: n)
@@ -2736,7 +2736,7 @@ test "live: objects put, read whole and by range, asked about, copied, tagged, d
                 .ok _  => assert false
                 .err e => assert e.code == NOT_FOUND && strings.has_prefix(s: e.msg, prefix: "NoSuchKey")
 
-            only @= put_options()
+            only @= default_put_options()
             only.if_none_match @ "*"
 
             match put_object(c, bucket: bucket, key: key, data: [1], options: only)
@@ -2751,7 +2751,7 @@ test "live: objects put, read whole and by range, asked about, copied, tagged, d
                 to_key: "copy.txt"
             ).must()
             assert copied.etag == stored.etag
-            r @= put_options()
+            r @= default_put_options()
             r.content_type @ "application/x-rebel"
             _ = copy_object_with(
                 c,
@@ -2776,17 +2776,17 @@ test "live: objects put, read whole and by range, asked about, copied, tagged, d
 
             while i < 7
                 name = f"page/{i}"
-                _ = put_object(c, bucket: bucket, key: name, data: [], options: put_options()).must()
+                _ = put_object(c, bucket: bucket, key: name, data: [], options: default_put_options()).must()
                 every @ every.push(name)
                 i @ i + 1
 
-            l @= list_options()
+            l @= default_list_options()
             l.prefix @ "page/"
             l.max_keys @ 3
             first = list_objects(c, bucket: bucket, options: l).must()
             assert first.objects.len() == 3 && first.truncated && first.next_token != ""
             assert list_all_objects(c, bucket: bucket, prefix: "page/").must().len() == 7
-            d @= list_options()
+            d @= default_list_options()
             d.delimiter @ "/"
             top = list_objects(c, bucket: bucket, options: d).must()
             assert top.prefixes == ["dir/", "page/"] && top.objects.len() == 2
@@ -2832,7 +2832,7 @@ test "live: an upload in parts, from data and from a stream, a part copied, an u
                 data @ data.push(to_u8(i % 251).must())
                 i @ i + 1
 
-            o @= put_options()
+            o @= default_put_options()
             o.checksum @ .crc32c
             stored = put_object_in_parts(
                 c,
@@ -2856,12 +2856,12 @@ test "live: an upload in parts, from data and from a stream, a part copied, an u
                 key: "streamed",
                 s: reader,
                 part_size: MIN_PART_SIZE,
-                options: put_options()
+                options: default_put_options()
             ).must()
             io.close(@reader).must()
             assert get_object(c, bucket: bucket, key: "streamed").must().data == bytes.from_text("from a stream")
             out = io.pipe().must()
-            g @= get_options()
+            g @= default_get_options()
             g.span @ .between(first: 0, last: 3)
             info = get_object_to(c, bucket: bucket, key: "streamed", options: g, s: out.writer).must()
             assert info.size == 4
@@ -2870,7 +2870,7 @@ test "live: an upload in parts, from data and from a stream, a part copied, an u
             rd @= out.reader
             assert io.read_all(rd).must() == bytes.from_text("from")
             io.close(@rd).must()
-            plain @= put_options()
+            plain @= default_put_options()
             plain.checksum @ .none
             upload = create_multipart_upload(c, bucket: bucket, key: "copied", options: plain).must()
             p1 = upload_part_copy(
@@ -2886,7 +2886,7 @@ test "live: an upload in parts, from data and from a stream, a part copied, an u
             assert list_multipart_uploads(c, bucket: bucket, prefix: "copied").must().len() == 1
             _ = complete_multipart_upload(c, upload: upload, parts: [p2, p1]).must()
             assert head_object(c, bucket: bucket, key: "copied").must().size == MIN_PART_SIZE + 4
-            dropped = create_multipart_upload(c, bucket: bucket, key: "dropped", options: put_options()).must()
+            dropped = create_multipart_upload(c, bucket: bucket, key: "dropped", options: default_put_options()).must()
             abort_multipart_upload(c, upload: dropped).must()
             assert list_multipart_uploads(c, bucket: bucket, prefix: "").must().len() == 0
 
@@ -2944,9 +2944,9 @@ test "live: an upload in parts, from data and from a stream, a part copied, an u
                 s: get_bucket_config(c, bucket: kept, name: "versioning").must(),
                 substr: "<Status>Enabled</Status>"
             )
-            versioned = put_object(c, bucket: kept, key: "v", data: [1, 2, 3], options: put_options()).must()
+            versioned = put_object(c, bucket: kept, key: "v", data: [1, 2, 3], options: default_put_options()).must()
             assert versioned.version_id != ""
-            second = put_object(c, bucket: kept, key: "v", data: [4], options: put_options()).must()
+            second = put_object(c, bucket: kept, key: "v", data: [4], options: default_put_options()).must()
             delete_object(c, bucket: kept, key: "v").must()
             versions = list_object_versions(c, bucket: kept, prefix: "").must()
             assert versions.len() == 3 && versions[0].delete_marker && versions[0].is_latest
@@ -3171,15 +3171,15 @@ test "send: the buckets listed by hand"
         .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Options for a page of text kept a day by caches.
-test "put_options: a type and a cache's lifetime"
-    o @= put_options()
+test "default_put_options: a type and a cache's lifetime"
+    o @= default_put_options()
     o.content_type @ "text/html; charset=utf-8"
     o.cache_control @ "max-age=86400"
     assert o.checksum == .crc32 && o.if_none_match == ""
 
 # The fields a presigned PUT's sender must send.
 test "headers_of: a type and a piece of metadata"
-    o @= put_options()
+    o @= default_put_options()
     o.content_type @ "image/png"
     o.metadata @ [Meta(name: "author", value: "ana")]
     assert headers_of(o).must() == [http.Header(name: "Content-Type", value: "image/png"), http.Header(name: "x-amz-meta-author", value: "ana")]
@@ -3192,13 +3192,13 @@ test "put_object: a text"
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
 
-    match put_object(c, bucket: "rebel-examples", key: "hello.txt", data: bytes.from_text("hello"), options: put_options())
+    match put_object(c, bucket: "rebel-examples", key: "hello.txt", data: bytes.from_text("hello"), options: default_put_options())
         .ok s  => assert s.etag == "\"5d41402abc4b2a76b9719d911017c592\""
         .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Options asking for the first ten bytes.
-test "get_options: a range"
-    o @= get_options()
+test "default_get_options: a range"
+    o @= default_get_options()
     o.span @ .between(first: 0, last: 9)
     assert range_header(o.span).must() == "bytes=0-9"
 
@@ -3208,7 +3208,7 @@ test "range_header: a suffix"
 
 # The operation of a read of a version, for a program that sends it itself.
 test "get_operation: a version"
-    o @= get_options()
+    o @= default_get_options()
     o.version_id @ "3HL4kqtJlcpXroDTDmJ"
     assert get_operation(bucket: "b1b", key: "k", options: o).must().query == [url.Pair(key: "versionId", value: "3HL4kqtJlcpXroDTDmJ")]
 
@@ -3243,7 +3243,7 @@ test "get_object_with: a range of one byte"
         endpoint: "http://127.0.0.1:9000",
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
-    o @= get_options()
+    o @= default_get_options()
     o.span @ .between(first: 0, last: 0)
 
     match get_object_with(c, bucket: "rebel-examples", key: "hello.txt", options: o)
@@ -3258,7 +3258,7 @@ test "get_object_to: an object to a stream"
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
     p = io.pipe().must()
-    got = get_object_to(c, bucket: "rebel-examples", key: "hello.txt", options: get_options(), s: p.writer)
+    got = get_object_to(c, bucket: "rebel-examples", key: "hello.txt", options: default_get_options(), s: p.writer)
     w @= p.writer
     io.close(@w).must()
     r @= p.reader
@@ -3347,7 +3347,7 @@ test "copy_object_with: a new type"
         endpoint: "http://127.0.0.1:9000",
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
-    o @= put_options()
+    o @= default_put_options()
     o.content_type @ "text/markdown"
 
     match copy_object_with(c, from_bucket: "rebel-examples", from_key: "hello.txt", to_bucket: "rebel-examples", to_key: "hello.txt", options: o)
@@ -3379,8 +3379,8 @@ test "put_object_tags: one tag"
         .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
 # Options for the folders at the top of a bucket.
-test "list_options: a delimiter"
-    o @= list_options()
+test "default_list_options: a delimiter"
+    o @= default_list_options()
     o.delimiter @ "/"
     assert o.prefix == "" && o.max_keys == 0
 
@@ -3391,7 +3391,7 @@ test "list_objects: ten keys a page"
         endpoint: "http://127.0.0.1:9000",
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
-    o @= list_options()
+    o @= default_list_options()
     o.max_keys @ 10
 
     match list_objects(c, bucket: "rebel-examples", options: o)
@@ -3544,7 +3544,7 @@ test "create_multipart_upload: an upload begun"
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
 
-    match create_multipart_upload(c, bucket: "rebel-examples", key: "video.mp4", options: put_options())
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "video.mp4", options: default_put_options())
         .ok u =>
             assert u.upload_id != ""
             abort_multipart_upload(c, upload: u).must()
@@ -3558,7 +3558,7 @@ test "upload_part: one small part"
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
 
-    match create_multipart_upload(c, bucket: "rebel-examples", key: "parts.bin", options: put_options())
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "parts.bin", options: default_put_options())
         .ok u =>
             p = upload_part(c, upload: u, number: 1, data: [1, 2, 3]).must()
             assert p.number == 1 && p.etag != ""
@@ -3573,7 +3573,7 @@ test "upload_part_copy: a whole object as one part"
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
 
-    match create_multipart_upload(c, bucket: "rebel-examples", key: "joined.txt", options: put_options())
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "joined.txt", options: default_put_options())
         .ok u =>
             match upload_part_copy(c, upload: u, number: 1, from_bucket: "rebel-examples", from_key: "hello.txt", span: .whole)
                 .ok p  => assert p.etag != ""
@@ -3590,7 +3590,7 @@ test "complete_multipart_upload: one part"
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
 
-    match create_multipart_upload(c, bucket: "rebel-examples", key: "one-part.txt", options: put_options())
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "one-part.txt", options: default_put_options())
         .ok u =>
             p = upload_part(c, upload: u, number: 1, data: bytes.from_text("one")).must()
             assert complete_multipart_upload(c, upload: u, parts: [p]).must().etag != ""
@@ -3604,7 +3604,7 @@ test "abort_multipart_upload: an upload nobody finishes"
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
 
-    match create_multipart_upload(c, bucket: "rebel-examples", key: "abandoned.bin", options: put_options())
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "abandoned.bin", options: default_put_options())
         .ok u  => abort_multipart_upload(c, upload: u).must()
         .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
@@ -3616,7 +3616,7 @@ test "list_parts: one part listed"
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
 
-    match create_multipart_upload(c, bucket: "rebel-examples", key: "listed.bin", options: put_options())
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "listed.bin", options: default_put_options())
         .ok u =>
             _ = upload_part(c, upload: u, number: 1, data: [7]).must()
             assert list_parts(c, upload: u).must().len() == 1
@@ -3643,7 +3643,7 @@ test "put_object_in_parts: parts of 5 MiB"
         credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
     )
 
-    match put_object_in_parts(c, bucket: "rebel-examples", key: "small.bin", data: [1, 2, 3], part_size: MIN_PART_SIZE, options: put_options())
+    match put_object_in_parts(c, bucket: "rebel-examples", key: "small.bin", data: [1, 2, 3], part_size: MIN_PART_SIZE, options: default_put_options())
         .ok s  => assert s.etag != ""
         .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 
@@ -3659,7 +3659,7 @@ test "put_object_from: a stream's bytes"
     w @= p.writer
     io.close(@w).must()
 
-    match put_object_from(c, bucket: "rebel-examples", key: "streamed.txt", s: p.reader, part_size: MIN_PART_SIZE, options: put_options())
+    match put_object_from(c, bucket: "rebel-examples", key: "streamed.txt", s: p.reader, part_size: MIN_PART_SIZE, options: default_put_options())
         .ok s  => assert s.etag != ""
         .err e => skip_test(reason: f"no S3 server holding the bucket rebel-examples answered on this machine: {e.msg}")
 

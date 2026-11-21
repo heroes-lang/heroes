@@ -370,7 +370,7 @@ function write(d: compose.Doc lent) -> [u8]?
         plain = bytes.from_text(text)
 
         if d.compress
-            packed = compress.compress(plain, options: compress.defaults(.zlib))?
+            packed = compress.compress(plain, options: compress.default_options(.zlib))?
             put_stream(@out, n: numbers.contents[i], entries: "/Filter /FlateDecode", data: packed)
         else
             put_stream(@out, n: numbers.contents[i], entries: "", data: plain)
