@@ -799,9 +799,9 @@ constant REPLY_PARAMETERS_NOT_RECOGNIZED: i64
 ## Tests
 
 test "connect: a greeting of 554 refused, its reply in the message"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} refused-greeting").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "refused-greeting")
+    port = started.port
+    server @= started.thread
 
     match connect(Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000))
         .ok _  => assert false
@@ -810,9 +810,9 @@ test "connect: a greeting of 554 refused, its reply in the message"
     assert threads.wait_text(@server) == ""
 
 test "connect: EHLO refused on a plain connection, then HELO, and no extension"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} helo").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "helo")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -821,9 +821,9 @@ test "connect: EHLO refused on a plain connection, then HELO, and no extension"
     assert threads.wait_text(@server) == "EHLO client.test|HELO client.test|QUIT"
 
 test "connect: a server that never answers EHLO ends by the deadline"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} silent").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "silent")
+    port = started.port
+    server @= started.thread
 
     match connect(Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 300))
         .ok _  => assert false
@@ -832,9 +832,9 @@ test "connect: a server that never answers EHLO ends by the deadline"
     assert threads.wait_text(@server) == "EHLO client.test|closed by the script"
 
 test "connect: TLS refused where the server's certificate is no authority's the client trusts"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"implicit {port} handshake").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "implicit", name: "handshake")
+    port = started.port
+    server @= started.thread
 
     match connect(Options(host: "localhost", port: port, security: .implicit, roots: "", local_name: "client.test", deadline_ms: 10000))
         .ok _  => assert false
@@ -843,9 +843,9 @@ test "connect: TLS refused where the server's certificate is no authority's the 
     _ = threads.wait_text(@server)
 
 test "send: every recipient refused, the transaction reset, the reply kept as the last"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} all-refused").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "all-refused")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -859,9 +859,9 @@ test "send: every recipient refused, the transaction reset, the reply kept as th
     assert threads.wait_text(@server) == "EHLO client.test|MAIL FROM:<ana@example.org> SIZE=15|RCPT TO:<x@example.org>|RCPT TO:<y@example.org>|RSET|QUIT"
 
 test "send: larger than SIZE refused before a byte, 8-bit and UTF-8 asked of the server"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -886,9 +886,9 @@ test "send: larger than SIZE refused before a byte, 8-bit and UTF-8 asked of the
     )
 
 test "mail_from: a server closing with 421, told closed"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} closing").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "closing")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -901,9 +901,9 @@ test "mail_from: a server closing with 421, told closed"
     _ = threads.wait_text(@server)
 
 test "login: credentials refused, told permission"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} wrong-password").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "wrong-password")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -916,9 +916,9 @@ test "login: credentials refused, told permission"
     assert threads.wait_text(@server) == "EHLO client.test|AUTH PLAIN AGFuYQB3cm9uZw==|QUIT"
 
 test "auth_xoauth2: a token refused, the server's explanation in the message"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"starttls {port} token-refused").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "starttls", name: "token-refused")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "localhost", port: port, security: .starttls, roots: tls.TEST_ROOT, local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -932,9 +932,9 @@ test "auth_xoauth2: a token refused, the server's explanation in the message"
     assert strings.has_suffix(s: threads.wait_text(@server), suffix: "||QUIT")
 
 test "connect: a plain session with the responder, every extension read"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -970,9 +970,9 @@ test "options: port 587 for STARTTLS"
 
 # A session with a server on this machine, its greeting read and EHLO said.
 test "connect: a plain server on the loopback address"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -982,9 +982,9 @@ test "connect: a plain server on the loopback address"
 
 # The greeting a server opened with.
 test "greeting_of: 220"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -994,9 +994,9 @@ test "greeting_of: 220"
 
 # The reply a command the server does not know was given.
 test "last_reply_of: a command refused"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1007,9 +1007,9 @@ test "last_reply_of: a command refused"
 
 # The extensions a server named.
 test "extensions_of: SIZE and its limit"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1019,9 +1019,9 @@ test "extensions_of: SIZE and its limit"
 
 # EHLO said again.
 test "hello: the extensions read anew"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1031,9 +1031,9 @@ test "hello: the extensions read anew"
 
 # A session ended politely.
 test "quit: QUIT, then closed"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1043,9 +1043,9 @@ test "quit: QUIT, then closed"
 
 # A session ended without a word.
 test "close: the server sees the connection end"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1055,9 +1055,9 @@ test "close: the server sees the connection end"
 
 # Whether the server offers PIPELINING.
 test "has_extension: PIPELINING, in any case"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1067,9 +1067,9 @@ test "has_extension: PIPELINING, in any case"
 
 # The parameters of AUTH.
 test "extension_of: AUTH's mechanisms"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1079,9 +1079,9 @@ test "extension_of: AUTH's mechanisms"
 
 # The largest message the server takes.
 test "max_size_of: 1000 bytes"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1091,9 +1091,9 @@ test "max_size_of: 1000 bytes"
 
 # The login mechanisms offered.
 test "auth_mechanisms_of: PLAIN and LOGIN"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1103,9 +1103,9 @@ test "auth_mechanisms_of: PLAIN and LOGIN"
 
 # A login by the best mechanism offered, PLAIN here.
 test "login: PLAIN on the loopback host"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1115,9 +1115,9 @@ test "login: PLAIN on the loopback host"
 
 # A login acting as another user.
 test "auth_plain: an identity apart from the user"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1127,9 +1127,9 @@ test "auth_plain: an identity apart from the user"
 
 # A login by AUTH LOGIN over TLS from the first byte.
 test "auth_login: over implicit TLS"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"implicit {port} implicit").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "implicit", name: "implicit")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "localhost", port: port, security: .implicit, roots: tls.TEST_ROOT, local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1139,9 +1139,9 @@ test "auth_login: over implicit TLS"
 
 # A login by CRAM-MD5, RFC 2195's challenge answered.
 test "auth_cram_md5: a challenge answered"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} cram").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "cram")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1151,9 +1151,9 @@ test "auth_cram_md5: a challenge answered"
 
 # A token logged in after STARTTLS, and a message sent.
 test "auth_xoauth2: after STARTTLS, then a message"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"starttls {port} starttls").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "starttls", name: "starttls")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "localhost", port: port, security: .starttls, roots: tls.TEST_ROOT, local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1171,9 +1171,9 @@ test "auth_xoauth2: after STARTTLS, then a message"
 
 # A transaction begun.
 test "mail_from: with a parameter"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1184,9 +1184,9 @@ test "mail_from: with a parameter"
 
 # A recipient added, and one refused.
 test "rcpt_to: one taken, one refused"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1202,9 +1202,9 @@ test "rcpt_to: one taken, one refused"
 
 # A message sent after MAIL and RCPT, its dot doubled.
 test "data: a line beginning with a dot"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1216,9 +1216,9 @@ test "data: a line beginning with a dot"
 
 # A transaction abandoned.
 test "reset: RSET"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1228,9 +1228,9 @@ test "reset: RSET"
 
 # The connection kept alive.
 test "noop: NOOP"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1240,9 +1240,9 @@ test "noop: NOOP"
 
 # A mailbox asked about, the server unwilling to say.
 test "verify: 252"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1252,9 +1252,9 @@ test "verify: 252"
 
 # The members of a list.
 test "expand: two members"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1264,9 +1264,9 @@ test "expand: two members"
 
 # The server's help.
 test "help: 214"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1276,9 +1276,9 @@ test "help: 214"
 
 # Any command, its refusal a reply rather than a failure.
 test "command: a command the server does not know"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1288,9 +1288,9 @@ test "command: a command the server does not know"
 
 # A message to two recipients, one refused, the other taken.
 test "send: one recipient refused, one taken"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} basic").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "basic")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1304,9 +1304,9 @@ test "send: one recipient refused, one taken"
 
 # A message of `mail` sent to its To, Cc and Bcc, its Bcc left out of it.
 test "send_message: To, Cc and Bcc"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     c @= connect(
         Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline_ms: 10000)
     ).must()
@@ -1328,9 +1328,9 @@ test "send_message: To, Cc and Bcc"
 
 # A message sent in one call, logged in by password.
 test "send_mail: connect, log in, send, quit"
-    port = fake.free_port()
-    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} responder").must()
-    fake.until_listening(port)
+    started = fake.start(mode: "plain", name: "responder")
+    port = started.port
+    server @= started.thread
     o = Options(
         host: "127.0.0.1",
         port: port,
