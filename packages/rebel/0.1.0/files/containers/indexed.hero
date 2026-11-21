@@ -130,31 +130,29 @@ function contains<K>(indexed: Indexed, lookup: {K: i64} lent, key: K) -> bool
 #
 # - `indexed`: the shape.
 # - `key_list`: the map's keys.
-# - `at`: the position, from 0.
+# - `at`: the position, from 0 to the size less one.
 #
-# Fails `not_found` where `at` is below zero or at or past the size. See also
-# `value_at`.
-function key_at<K>(indexed: Indexed, key_list: [K] lent, at: i64) -> K?
+# Aborts where `at` names no position, as an index past a list's end does: a
+# position is the program's own, and `get` reads by a key and fails instead.
+# See also `value_at`.
+function key_at<K>(indexed: Indexed, key_list: [K] lent, at: i64) -> K
     codes.require_kept(held: key_list.len(), kept: indexed.table.room, what: "key list")
-
-    if at < 0 || at >= indexed.table.count
-        return fail(code: NOT_FOUND, msg: f"position {at} is outside a map of {indexed.table.count} entries")
-    return ok(key_list[at])
+    table.require_position(indexed.table, at)
+    return key_list[at]
 
 # The value at position `at`.
 #
 # - `indexed`: the shape.
 # - `value_list`: the map's values.
-# - `at`: the position, from 0.
+# - `at`: the position, from 0 to the size less one.
 #
-# Fails `not_found` where `at` is below zero or at or past the size. See also
-# `key_at`.
-function value_at<V>(indexed: Indexed, value_list: [V] lent, at: i64) -> V?
+# Aborts where `at` names no position, as an index past a list's end does: a
+# position is the program's own, and `get` reads by a key and fails instead.
+# See also `key_at`.
+function value_at<V>(indexed: Indexed, value_list: [V] lent, at: i64) -> V
     codes.require_kept(held: value_list.len(), kept: indexed.table.room, what: "value list")
-
-    if at < 0 || at >= indexed.table.count
-        return fail(code: NOT_FOUND, msg: f"position {at} is outside a map of {indexed.table.count} entries")
-    return ok(value_list[at])
+    table.require_position(indexed.table, at)
+    return value_list[at]
 
 # Takes `key` out and answers its value, the last entry moving into its
 # position: the order changes, and it costs a constant.
@@ -396,8 +394,7 @@ test "key_at: the name of the second column"
     for name in ["id", "name"]
         _ = put(@columns, @names, @widths, @lookup, key: name, value: 8)
 
-    assert key_at(columns, names, 1).must() == "name"
-    assert key_at(columns, names, 2).is_err()
+    assert key_at(columns, names, 1) == "name"
 
 # A value by its position.
 test "value_at: the width of the first column"
@@ -406,7 +403,7 @@ test "value_at: the width of the first column"
     widths: [i64] @= []
     lookup: {str: i64} @= {}
     _ = put(@columns, @names, @widths, @lookup, key: "id", value: 4)
-    assert value_at(columns, widths, 0).must() == 4
+    assert value_at(columns, widths, 0) == 4
 
 # A key taken out, the last entry moving into its place.
 test "swap_remove: the first column taken out, the last moved in"

@@ -50,14 +50,14 @@ capability deque/index  an item read or written by its place from the front
   go      ring.Next, ring.Prev, ring.Move
   rust    VecDeque::get, VecDeque::get_mut, VecDeque::index, VecDeque::index_mut, VecDeque::swap
   python  deque.__getitem__, deque.__setitem__
-  note    a place is from 0 and never below it, where Python counts from the end with a negative one; Go's `Move(n)` is a place n further, and a swap two reads and two writes
+  note    a place is from 0 and never below it, where Python counts from the end with a negative one; Go's `Move(n)` is a place n further, and a swap two reads and two writes. `get` is the checked reader, failing `not_found` past the ends; `put` past them aborts, as Rust's `index_mut` and an index past a list's end do (the coherence review's D09, 2026-11-21)
 
 capability deque/insert-remove  an item put at or taken from a place inside
   heroes  deque.insert, deque.remove_at
   go      ring.Link, ring.Unlink
   rust    VecDeque::insert, VecDeque::insert_mut, VecDeque::remove, VecDeque::swap_remove_back, VecDeque::swap_remove_front
   python  deque.insert, deque.__delitem__, deque.remove
-  note    each moves the items on the nearer side, at most half; Rust's swap removes are `deque.get` of the end, `deque.put` over the place and a pop. Go's `Link` and `Unlink` splice links of two rings, which is items put in or taken out at a place here. Python's `remove` by value is `lists.index_of` over `deque.to_list`, then this
+  note    each moves the items on the nearer side, at most half; Rust's swap removes are `deque.get` of the end, `deque.put` over the place and a pop. Go's `Link` and `Unlink` splice links of two rings, which is items put in or taken out at a place here. Python's `remove` by value is `lists.index_of` over `deque.to_list`, then this. A place outside the deque aborts, as Rust's `insert` and `remove` past the end do; a full bounded deque is `insert`'s one failure (D09)
 
 capability deque/rotate  the items turned round
   heroes  deque.rotate_left, deque.rotate_right

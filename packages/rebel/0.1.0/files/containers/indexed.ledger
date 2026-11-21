@@ -28,7 +28,7 @@ capability indexed/by-position  the key and the value at a position
   go      -
   rust    -
   python  -
-  note    indexmap's `get_index`; positions run 0 to the size less one
+  note    indexmap's `get_index`; positions run 0 to the size less one, and one outside aborts, as indexmap's `[]` by position and an index past a list's end do: a position is the program's own, and `get` by a key is the checked reader (the coherence review's D09, 2026-11-21)
 
 capability indexed/remove  a key taken out swapping the last entry in, or shifting the rest forward
   heroes  indexed.swap_remove, indexed.shift_remove, indexed.swap_remove_at, indexed.shift_remove_at

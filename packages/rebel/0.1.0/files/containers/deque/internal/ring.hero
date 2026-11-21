@@ -41,6 +41,13 @@ function slot_of(ring: Ring lent, capacity: i64, index: i64) -> i64
 function require_items(ring: Ring lent, held: i64)
     codes.require_kept(held: held, kept: ring.room, what: "item list")
 
+# Aborts where `at` is below zero or past `most`, the last place the call
+# takes, naming the deque's size: a place is the program's own, as an index
+# of a list is.
+function require_place(ring: Ring lent, at: i64, most: i64)
+    if at < 0 || at > most
+        codes.abort_with(f"place {at} is outside a deque of {ring.count} items")
+
 # Whether an item list of `held` items is as long as this package left the
 # deque's own: what `require_items` asks.
 function holds_own(ring: Ring lent, held: i64) -> bool
