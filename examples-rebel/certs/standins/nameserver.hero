@@ -1,0 +1,127 @@
+# The DNS stand-in: the authority of the demo's zone (`standins/zone`) on a
+# UDP socket of 127.0.0.1, on a thread of its own. The stand-in CA asks it
+# the addresses an HTTP-01 answer is fetched from, the TXT records of
+# DNS-01 and the CAA records that say which CA may issue; the program's
+# DNS-01 hook writes the TXT records into it by signed RFC 2136 updates.
+# Every answer here fits one datagram, so the stand-in answers over UDP
+# alone, which every question of the demo is asked over; a real authority
+# answers over TCP too (RFC 7766). It serves until the program is asked to
+# stop.
+
+use <rebel>/bytes
+use <rebel>/dns
+use <rebel>/net
+use <rebel>/time
+
+use challenges/tsig
+use core/fields
+use core/ready
+use standins/zone
+
+## Serving
+
+# How many receives in a row may fail before the stand-in stops: a single
+# failure (a refusal a datagram sent earlier brought back) is passed over,
+# and a socket that only fails ends the loop rather than spinning.
+constant MOST_FAILURES: i64
+    100
+
+# The stand-in's thread. Its named values: `CONTROL`, the starter's control
+# port; `ORIGIN`, the zone; `IDENTITY`, the CA's CAA identity the zone
+# names; `TSIG_NAME` and `TSIG_SECRET`, the update key, its secret in base
+# 64. Answers its last line: what it answered, or why it could not serve.
+#
+# - `arg`: the named values, `core/fields`' text.
+function run(arg: str) -> str
+    match configured(arg)
+        .err e => return "dns: " + e.msg
+        .ok z =>
+            match served(z, control: control_of(arg))
+                .ok done => return f"dns: queries answered {done.queries}, updates applied {done.applied}, updates refused {done.refused}"
+                .err e => return "dns: " + e.msg
+
+# The zone `arg`'s named values describe.
+#
+# - `arg`: the thread's named values.
+#
+# Fails as `fields.parse_fields` fails, and `invalid` where a value is
+# missing or the secret is not base 64.
+function configured(arg: str) -> zone.Zone?
+    named = fields.parse_fields(arg)?
+    origin = fields.text_of(named, name: "ORIGIN")?
+    identity = fields.text_of(named, name: "IDENTITY")?
+    secret = bytes.parse_base64(fields.text_of(named, name: "TSIG_SECRET")?)?
+    key = tsig.Key(name: fields.text_of(named, name: "TSIG_NAME")?, secret: secret)
+    return zone.new(
+        origin,
+        records: zone.demo_records(origin: origin, address: net.loopback_v4(), identity: identity),
+        known: [key]
+    )
+
+# The control port `arg` names, 0 where it names none.
+#
+# - `arg`: the thread's named values.
+function control_of(arg: str) -> i64
+    match fields.parse_fields(arg)
+        .ok named => return fields.int_of(named, name: "CONTROL").default(0)
+        .err _    => return 0
+
+# `z` served on a UDP socket of 127.0.0.1 until the stop, the starter told
+# its port first.
+#
+# - `z`: the zone.
+# - `control`: the starter's control port.
+#
+# The zone as the updates left it, with its counts. Fails as `net.open_udp`
+# and `ready.tell` fail.
+function served(z: zone.Zone, control: i64) -> zone.Zone?
+    socket @= net.open_udp(host: "127.0.0.1", port: 0)?
+
+    match ready.tell(control, facts: {"SERVICE": "dns", "PORT": to_str(socket.address.port)})
+        .err e =>
+            _ = net.close_udp(@socket).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => _ = 0
+
+    held @= z
+    failures @= 0
+
+    while failures < MOST_FAILURES
+        match net.receive(socket)
+            .err e =>
+                if e.code == "stopped" || e.code == "closed"
+                    break
+                failures @ failures + 1
+            .ok d =>
+                failures @ 0
+                datagram(@held, socket: socket, d: d)
+
+    _ = net.close_udp(@socket).is_err()
+    return ok(held)
+
+# One datagram answered; one that is no message, or no query, is dropped as
+# an authority drops one.
+#
+# - `z`: the zone.
+# - `socket`: the socket it came on.
+# - `d`: the datagram.
+function datagram(@z: zone.Zone, socket: net.UdpSocket, d: net.Datagram)
+    match dns.decode(d.data)
+        .err _ => return
+        .ok m =>
+            if m.response
+                return
+            reply = zone.answer(@z, m: m, at: time.now().default(time.epoch()))
+
+            match dns.encode(reply)
+                .ok data => _ = net.send_to(socket, data: data, to: d.sender).is_err()
+                .err _   => return
+
+test "configured: a zone from named values, and a secret that is not base 64 refused"
+    good = fields.format_fields(
+        {"ORIGIN": "certs.test", "IDENTITY": "standin.certs.test", "TSIG_NAME": "k.", "TSIG_SECRET": "AAAA"}
+    )
+    z = configured(good).must()
+    assert z.origin == "certs.test." && z.records.len() == 6
+    bad = fields.format_fields({"ORIGIN": "certs.test", "IDENTITY": "x", "TSIG_NAME": "k.", "TSIG_SECRET": "***"})
+    assert configured(bad).is_err()

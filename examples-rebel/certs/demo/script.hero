@@ -1,0 +1,228 @@
+# The demo, `certs demo` with a configuration on its standard input: a
+# certificate manager's two months, run in a few seconds against stand-ins
+# on 127.0.0.1, the transcript the same at every run.
+#
+# The stand-ins are a DNS authority for the zone (`standins/nameserver`),
+# this program's HTTP-01 responder (`challenges/responder`) and an ACME CA
+# (`standins/ca`) whose clock the demo sets. The demo's clock is fixed and
+# moved by whole days: day 0 is 61 days before the moment the demo starts,
+# so the renewal of day 61 is today, and its certificate is valid by the
+# system's clock, which the TLS of the last step checks it against. Day 0
+# makes the account and obtains two certificates, one by HTTP-01 (two names
+# and an address), one wildcard by DNS-01 through signed updates; then the
+# stand-ins are shown refusing what a CA and an authority refuse. Day 30
+# revokes the wildcard, as after a key's compromise, and the renewal run
+# replaces it because the CA's renewal window says so, while the other is
+# not due. Day 61 renews the other, then serves HTTPS with it, and a client
+# trusting the stand-in's root alone fetches a page.
+#
+# Nothing printed holds a port, a path, a key, a time of day or a value of
+# chance: the stand-in CA's tokens, nonces and serials come from a seeded
+# generator, its keys are made fresh and never printed.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/io
+use <rebel>/net
+use <rebel>/os
+use <rebel>/path
+use <rebel>/time
+use <rebel>/x509
+
+use challenges/responder
+use challenges/solve
+use config/loader
+use config/settings
+use core/fields
+use demo/days
+use demo/stage
+use standins/ca
+use standins/nameserver
+use store/vault
+
+## The demo's constants
+
+# The seed of the stand-in CA's generator: 32 bytes in hexadecimal, the
+# ASCII of "certs demo seed, RFC 8555 + 9773", chosen to be read.
+constant SEED_HEX: str
+    "63657274732064656d6f20736565642c205246432038353535202b2039373733"
+
+# The CAA identity of the stand-in CA, which the zone's CAA names.
+constant IDENTITY: str
+    "standin.certs.test"
+
+## Running
+
+# The demo, its exit code: 0 where every step went as the transcript says.
+function run() -> i64
+    match os.catch_stop()
+        .err e =>
+            print("demo: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    text = match io.read_all_text(io.stdin())
+        .ok t => t
+        .err e =>
+            print("demo: the configuration could not be read from the standard input: " + e.msg)
+            return 1
+
+    place = match stage.place()
+        .ok p => p
+        .err e =>
+            print("demo: its folder could not be made: " + e.msg)
+            return 1
+
+    code = with_place(text, place: place)
+
+    match stage.cleared(place)
+        .ok _ => _ = 0
+        .err e =>
+            print("demo: what it made could not all be removed: " + e.msg)
+            return 1
+
+    return code
+
+# The demo once its folder is made: the services started, the session run,
+# every service stopped and its last line printed.
+#
+# - `text`: the configuration.
+# - `place`: the folder and the key store.
+function with_place(text: str, place: stage.Place) -> i64
+    control @= match net.listen(host: "127.0.0.1", port: 0)
+        .ok l => l
+        .err e =>
+            print("demo: the control port: " + e.msg)
+            return 1
+
+    started: [stage.Service] @= []
+    code = staged(text, place: place, control: control, @started)
+    lines = stage.stopped(@started)
+    print("== what each stand-in served")
+
+    for line in lines
+        print(line)
+
+    _ = net.close_listener(@control).is_err()
+    return code
+
+# The configuration read, the stand-ins started and the session run.
+#
+# - `text`: the configuration.
+# - `place`: the folder and the key store.
+# - `control`: the control listener.
+# - `started`: the services started, each added as it starts.
+function staged(text: str, place: stage.Place, control: net.Listener, @started: [stage.Service]) -> i64
+    written = match loader.parse(text)
+        .ok s => s
+        .err e =>
+            print("demo: the configuration: " + e.msg)
+            return 1
+
+    print("== the configuration, read from the standard input")
+    print(
+        f"account: {settings.contacts_of(written).join(", ")}, the CA's terms {agreed_or_not(written.account.agree_terms)}"
+    )
+
+    for l in written.certificates
+        print(f"certificate {l.name}: {l.domains.join(", ")}, proved by {l.challenge}")
+
+    print(
+        f"renewal: once {written.renewal.days_before_expiry} days or fewer are left, or once the CA's renewal window opens"
+    )
+    print("keys: kept in " + vault.describe(place.store))
+
+    origin = match day_zero()
+        .ok t => t
+        .err e =>
+            print("demo: the clock: " + e.msg)
+            return 1
+
+    match stood(text, written: written, place: place, origin: origin, control: control, @started)
+        .err e =>
+            print("demo: " + e.msg)
+            return 1
+        .ok loaded => return days.session(
+            days.Stand(loaded: loaded, store: place.store, origin: origin, control: control),
+            @started
+        )
+
+# How the configuration's `agree_terms` reads in the transcript.
+#
+# - `agreed`: whether the person agreed to the CA's terms.
+function agreed_or_not(agreed: bool) -> str
+    if agreed
+        return "agreed to"
+    return "not agreed to"
+
+# Day 0: the system's clock now, to the second, less `days.TODAY` days.
+#
+# Fails as `time.now` fails.
+function day_zero() -> time.Instant?
+    now = time.truncate(time.now()?, unit: time.seconds(1)?)?
+    return time.add(now, d: time.days(-days.TODAY)?)
+
+# The stand-ins started, their roots fetched, the configuration pointed at
+# them, written into the folder and read back.
+#
+# - `text`: the configuration's text as the person wrote it.
+# - `written`: what it says.
+# - `place`: the folder and the key store.
+# - `origin`: day 0.
+# - `control`: the control listener.
+# - `started`: the services started.
+#
+# The configuration file as the demo runs it. Fails where a service does
+# not start or a root cannot be fetched or written.
+function stood(text: str, written: settings.Settings, place: stage.Place, origin: time.Instant, control: net.Listener, @started: [stage.Service]) -> stage.Loaded?
+    print("== the stand-ins, started on 127.0.0.1")
+    secret = os.random_bytes(32)?
+    vault.put(place.store, name: solve.tsig_name(written.dns01.tsig_key), secret: bytes.format_base64(secret))?
+    dns = stage.start(nameserver.run, arg: {"ORIGIN": written.dns01.zone, "IDENTITY": IDENTITY, "TSIG_NAME": written.dns01.tsig_key + ".", "TSIG_SECRET": bytes.format_base64(secret)}, control: control, @started)?
+    print(
+        f"dns: ready, the authority of {written.dns01.zone}, taking updates signed with the TSIG key {written.dns01.tsig_key}"
+    )
+    webroot = path.join_all([place.folder, "webroot"])
+    answering = stage.start(responder.run, arg: {"WEBROOT": fields.encoded(webroot)}, control: control, @started)?
+    print("http-01 responder: ready, serving the webroot")
+    seconds = time.unix_seconds(origin)
+    acme_told = stage.start(ca.run, arg: {"DNS_PORT": to_str(stage.port_of(dns)), "HTTP01_PORT": to_str(stage.port_of(answering)), "START": to_str(seconds), "SEED": SEED_HEX, "IDENTITY": IDENTITY, "ORIGIN": written.dns01.zone}, control: control, @started)?
+    base = f"https://127.0.0.1:{stage.port_of(acme_told)}"
+    roots_file = path.join_all([place.folder, "acme-https-root.pem"])
+    write_file(path: roots_file, text: fields.decoded_of(acme_told, name: "HTTPS_ROOT")?)?
+    print("acme: ready, the root of its own HTTPS handed to the client")
+    trust = fetched(url: base + "/roots/0", roots: read_file(roots_file)?)?
+    trust_file = path.join_all([place.folder, "trust.pem"])
+    write_file(path: trust_file, text: trust)?
+    print("acme: its issuing root fetched from /roots/0: " + x509.format_name(x509.parse_certificate(trust)?.subject))
+
+    service = match place.store
+        .keyring k => k.service
+        .files _   => ""
+
+    pointers = stage.Pointers(
+        directory: base + "/directory",
+        roots: roots_file,
+        trust: trust_file,
+        dns: f"127.0.0.1:{stage.port_of(dns)}",
+        folder: place.folder,
+        keyring_service: service
+    )
+    loaded = stage.written(folder: place.folder, text: stage.pointed(text, p: pointers)?)?
+    print("the configuration pointed at the stand-ins and the demo's folder, edited in place, its other lines kept")
+    return ok(loaded)
+
+# The text at `url`, fetched over HTTPS trusting `roots` alone.
+#
+# - `url`: the URL.
+# - `roots`: the PEM of the authorities trusted.
+#
+# Fails as `http.get` fails, and `failed` where the answer is not 200.
+function fetched(url: str, roots: str) -> str?
+    client @= http.default_client()
+    client.roots @ roots
+    response = http.get(client, target: url)?
+
+    if response.status != 200
+        return fail(code: "failed", msg: f"{url} answered {response.status}")
+    return http.text_of(response)

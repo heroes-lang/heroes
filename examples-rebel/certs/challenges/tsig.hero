@@ -1,0 +1,409 @@
+# TSIG (RFC 8945): a DNS message signed with a secret its two ends share,
+# by HMAC-SHA256, as an authority asks of an RFC 2136 update before it
+# changes its zone, and as certbot's `dns-rfc2136` plugin signs. `dns`
+# reads and writes messages and signs none, so the TSIG record is written
+# here as a record of a type `dns` keeps byte for byte (RFC 3597), and the
+# message is signed over `dns.encode`'s bytes: a message `dns.decode` read
+# writes back as the same bytes, so the receiving end recomputes the MAC
+# over what it decoded.
+#
+# The MAC covers the message with its original ID (RFC 8945 § 4.3.1), so a
+# resolver that gives the query a fresh ID on the wire, as `dns.exchange`
+# does, leaves it verifiable: the verifier puts the original ID back.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/dns
+use <rebel>/strings
+use <rebel>/time
+
+## Codes
+
+# The code of a TSIG record that is not of RFC 8945's form, or of a message
+# with none where one was asked.
+constant INVALID: str
+    "invalid"
+
+# The code of a message that carries no TSIG record, and of a key not held.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a key or an algorithm the verifier does not hold: TSIG's
+# BADKEY.
+constant BADKEY: str
+    "badkey"
+
+# The code of a MAC that does not hold: TSIG's BADSIG.
+constant BADSIG: str
+    "badsig"
+
+# The code of a time signed outside the fudge: TSIG's BADTIME.
+constant BADTIME: str
+    "badtime"
+
+## Numbers of the protocol
+
+# The type of a TSIG record (RFC 8945 § 4.2).
+constant TYPE_TSIG: i64
+    250
+
+# The error field's BADSIG.
+constant ERROR_BADSIG: i64
+    16
+
+# The error field's BADKEY.
+constant ERROR_BADKEY: i64
+    17
+
+# The error field's BADTIME.
+constant ERROR_BADTIME: i64
+    18
+
+# The algorithm every signature here is made with (RFC 8945 § 6).
+constant ALGORITHM: str
+    "hmac-sha256."
+
+# The seconds a signature's time may stand from the verifier's clock, the
+# value RFC 8945 § 10 recommends.
+constant FUDGE_SECONDS: i64
+    300
+
+## Keys and signatures
+
+# A key two ends share: its name, which both know it by, and its secret.
+record Key
+    # The key's name, absolute, as `certs-update.`.
+    name: str
+    # The secret, 32 bytes or more for HMAC-SHA256 (RFC 8945 § 6.1).
+    secret: [u8]
+
+# What a TSIG record says.
+record Signature
+    # The key's name, absolute and lowercase.
+    key_name: str
+    # The algorithm's name, absolute and lowercase.
+    algorithm: str
+    # The seconds since 1970 the message was signed at.
+    time_signed: i64
+    # The seconds the time may be off.
+    fudge: i64
+    # The MAC.
+    mac: [u8]
+    # The ID the message had when it was signed.
+    original_id: i64
+    # 0, or `ERROR_BADSIG`, `ERROR_BADKEY`, `ERROR_BADTIME`.
+    error: i64
+    # The other data: BADTIME's server time, else empty.
+    other: [u8]
+
+# A message signed, and the MAC that signed it, which the answer's MAC
+# covers.
+record Signed
+    # The message with its TSIG record last.
+    message: dns.Message
+    # The MAC.
+    mac: [u8]
+
+# A message's signature verified.
+record Verified
+    # The key that signed it.
+    key_name: str
+    # Its MAC, which a signed answer to it covers.
+    mac: [u8]
+    # The message without its TSIG record, its ID the original one.
+    message: dns.Message
+
+## Signing
+
+# `m` signed with `key` at `at`, a TSIG record appended to its additional
+# section.
+#
+# - `m`: the message, its ID the one signed, no TSIG record in it.
+# - `key`: the key.
+# - `at`: the moment signed at, the wall clock's.
+# - `request_mac`: the request's MAC where `m` answers a signed request,
+#   empty for a request.
+#
+# Fails as `dns.encode` fails on `m` and `dns.labels_of` on the key's name.
+function sign(m: dns.Message, key: Key, at: time.Instant, request_mac: [u8]) -> Signed?
+    seconds = time.unix_seconds(at)
+    body = dns.encode(m)?
+    variables = variables_of(key_name: key.name, time_signed: seconds, error: 0, other: [])?
+    mac = crypto.hmac(algorithm: .sha256, key: key.secret, data: bytes.concat([prior(request_mac), body, variables]))
+    signature = Signature(
+        key_name: key.name,
+        algorithm: ALGORITHM,
+        time_signed: seconds,
+        fudge: FUDGE_SECONDS,
+        mac: mac,
+        original_id: m.id,
+        error: 0,
+        other: []
+    )
+    return ok(Signed(message: with_signature(m, signature: signature)?, mac: mac))
+
+# `m` with an unsigned TSIG record saying `error`: the answer to a request
+# whose key the verifier lacks or whose MAC failed (RFC 8945 § 5.3.2).
+#
+# - `m`: the answer.
+# - `key_name`: the request's key name.
+# - `error`: `ERROR_BADKEY` or `ERROR_BADSIG`.
+# - `at`: the answer's time.
+#
+# Fails as `dns.labels_of` fails on the key's name.
+function refusal(m: dns.Message, key_name: str, error: i64, at: time.Instant) -> dns.Message?
+    signature = Signature(
+        key_name: key_name,
+        algorithm: ALGORITHM,
+        time_signed: time.unix_seconds(at),
+        fudge: FUDGE_SECONDS,
+        mac: [],
+        original_id: m.id,
+        error: error,
+        other: []
+    )
+    return with_signature(m, signature: signature)
+
+# `m` with `signature`'s record last in its additional section.
+#
+# - `m`: the message.
+# - `signature`: the record's fields.
+#
+# Fails as `dns.labels_of` fails on a name.
+function with_signature(m: dns.Message, signature: Signature) -> dns.Message?
+    data = bytes.concat(
+        [wire_name(signature.algorithm)?, u48(signature.time_signed), u16(signature.fudge), u16(signature.mac.len()), signature.mac, u16(signature.original_id), u16(signature.error), u16(signature.other.len()), signature.other]
+    )
+    out @= m
+    out.additionals @ out.additionals.push(
+        dns.Record(name: signature.key_name, class_code: dns.CLASS_ANY, ttl: 0, data: .unknown(type_code: TYPE_TSIG, data: data))
+    )
+    return ok(out)
+
+## Verifying
+
+# The signature `m` carries, its last additional record.
+#
+# - `m`: a message received.
+#
+# Fails `not_found` where its last additional record is no TSIG, `invalid`
+# where the record's data is not of its form.
+function signature_of(m: dns.Message) -> Signature?
+    if m.additionals.len() == 0
+        return fail(code: NOT_FOUND, msg: "the message carries no TSIG record")
+    last = m.additionals[m.additionals.len() - 1]
+
+    match last.data
+        .unknown u =>
+            if u.type_code != TYPE_TSIG
+                return fail(code: NOT_FOUND, msg: "the message carries no TSIG record")
+            return parsed(key_name: last.name, data: u.data)
+        .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .txt _ | .srv _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ =>
+            return fail(code: NOT_FOUND, msg: "the message carries no TSIG record")
+
+# `m`'s signature checked with the key of `known` it names, at `at`.
+#
+# - `m`: a message received, its TSIG record last.
+# - `known`: the keys the verifier holds.
+# - `at`: the verifier's clock, the wall clock's.
+# - `request_mac`: the request's MAC where `m` answers a signed request,
+#   empty for a request.
+#
+# Fails `not_found` where `m` carries no signature, `invalid` where it is not
+# of its form, `badkey` where no key of `known` has its name or its
+# algorithm is not HMAC-SHA256, `badsig` where its MAC does not hold, and
+# `badtime` where it was signed more than its fudge away from `at`.
+function verify(m: dns.Message, known: [Key], at: time.Instant, request_mac: [u8]) -> Verified?
+    signature = signature_of(m)?
+
+    key = match key_named(known, name: signature.key_name)
+        .ok k  => k
+        .err _ => return fail(code: BADKEY, msg: f"no key is named {signature.key_name}")
+
+    if signature.algorithm != ALGORITHM
+        return fail(code: BADKEY, msg: f"the algorithm {signature.algorithm} is not hmac-sha256")
+    stripped @= m
+    stripped.additionals @ m.additionals.slice(from: 0, to: m.additionals.len() - 1)
+    stripped.id @ signature.original_id
+    variables = variables_of(key_name: signature.key_name, time_signed: signature.time_signed, error: signature.error, other: signature.other)?
+    expected = crypto.hmac(
+        algorithm: .sha256,
+        key: key.secret,
+        data: bytes.concat([prior(request_mac), dns.encode(stripped)?, variables])
+    )
+
+    if !crypto.equals_constant_time(a: expected, b: signature.mac)
+        return fail(code: BADSIG, msg: f"the MAC of the key {signature.key_name} does not hold")
+    off = time.unix_seconds(at) - signature.time_signed
+
+    if off > signature.fudge || -off > signature.fudge
+        return fail(code: BADTIME, msg: f"signed {off} seconds from this clock, past the fudge of {signature.fudge}")
+    return ok(Verified(key_name: signature.key_name, mac: signature.mac, message: stripped))
+
+# The key of `known` named `name`, names compared without case.
+#
+# - `known`: the keys.
+# - `name`: the name, absolute.
+#
+# Fails `not_found` where none has it.
+function key_named(known: [Key], name: str) -> Key?
+    for k in known
+        if strings.to_lower_ascii(k.name) == strings.to_lower_ascii(name)
+            return ok(k)
+
+    return fail(code: NOT_FOUND, msg: f"no key {name}")
+
+## Wire
+
+# The TSIG variables of RFC 8945 § 4.3.3, which the MAC covers after the
+# message: the key's name and the algorithm's in canonical form, the class
+# ANY, a TTL of 0, the time, the fudge, the error and the other data.
+#
+# - `key_name`: the key's name.
+# - `time_signed`: the seconds since 1970.
+# - `error`: the error field.
+# - `other`: the other data.
+#
+# Fails as `wire_name` fails.
+function variables_of(key_name: str, time_signed: i64, error: i64, other: [u8]) -> [u8]?
+    return ok(
+        bytes.concat([wire_name(key_name)?, u16(dns.CLASS_ANY), bytes.encode_u32_be(0), wire_name(ALGORITHM)?, u48(time_signed), u16(FUDGE_SECONDS), u16(error), u16(other.len()), other])
+    )
+
+# The MAC of a request as an answer's MAC covers it first: its length in
+# two bytes, then itself; nothing for a request.
+#
+# - `request_mac`: the request's MAC, or empty.
+function prior(request_mac: [u8]) -> [u8]
+    if request_mac.len() == 0
+        return []
+    return bytes.concat([u16(request_mac.len()), request_mac])
+
+# `name` in its canonical wire form: each label lowercase after its length,
+# and the root's zero byte, never compressed (RFC 4034 § 6.2).
+#
+# - `name`: a name, absolute or not.
+#
+# Fails as `dns.labels_of` fails.
+function wire_name(name: str) -> [u8]?
+    out: [u8] @= []
+
+    for label in dns.labels_of(name)?
+        lowered = bytes.from_text(strings.to_lower_ascii(label))
+        out @ out.push(to_u8(lowered.len()).must())
+
+        for b in lowered
+            out @ out.push(b)
+
+    out @ out.push(0)
+    return ok(out)
+
+# The record's data read: the algorithm's name, then the fixed fields.
+#
+# - `key_name`: the record's owner name.
+# - `data`: its data's bytes.
+#
+# Fails `invalid` where the bytes end early or run past the fields.
+function parsed(key_name: str, data: [u8]) -> Signature?
+    at @= 0
+    labels: [str] @= []
+
+    while true
+        if at >= data.len()
+            return fail(code: INVALID, msg: "a TSIG record whose algorithm name runs past its data")
+        size = to_i64(data[at]).must()
+
+        if size == 0
+            at @ at + 1
+            break
+
+        if size > 63 || at + 1 + size > data.len()
+            return fail(code: INVALID, msg: "a TSIG record's algorithm name holds a label of no form")
+
+        match bytes.to_text(data.slice(from: at + 1, to: at + 1 + size))
+            .ok label => labels @ labels.push(strings.to_lower_ascii(label))
+            .err _    => return fail(code: INVALID, msg: "a TSIG record's algorithm name is not text")
+
+        at @ at + 1 + size
+
+    if at + 10 > data.len()
+        return fail(code: INVALID, msg: "a TSIG record cut short after its algorithm")
+    signed = number(data, at: at, width: 6)
+    fudge = number(data, at: at + 6, width: 2)
+    mac_size = number(data, at: at + 8, width: 2)
+    after_mac = at + 10 + mac_size
+
+    if after_mac + 6 > data.len()
+        return fail(code: INVALID, msg: "a TSIG record's MAC runs past its data")
+    other_size = number(data, at: after_mac + 4, width: 2)
+
+    if after_mac + 6 + other_size != data.len()
+        return fail(code: INVALID, msg: "a TSIG record whose other data is not its last bytes")
+    return ok(
+        Signature(key_name: strings.to_lower_ascii(key_name), algorithm: labels.join(".") + ".", time_signed: signed, fudge: fudge, mac: data.slice(from: at + 10, to: after_mac), original_id: number(data, at: after_mac, width: 2), error: number(data, at: after_mac + 2, width: 2), other: data.slice(from: after_mac + 6, to: after_mac + 6 + other_size))
+    )
+
+# The big-endian number of `width` bytes of `data` from `at`.
+#
+# - `data`: the bytes, holding `width` from `at`.
+# - `at`: the first byte's index.
+# - `width`: 1 to 7 bytes.
+function number(data: [u8], at: i64, width: i64) -> i64
+    n @= 0
+
+    for i in range(from: at, to: at + width)
+        n @ n * 256 + to_i64(data[i]).must()
+
+    return n
+
+# `n` in two bytes, big-endian; 0 to 65535.
+#
+# - `n`: the number.
+function u16(n: i64) -> [u8]
+    return bytes.encode_u16_be(to_u16(n).must())
+
+# `n` in six bytes, big-endian, as TSIG writes its time; 0 to 2^48 - 1.
+#
+# - `n`: the number.
+function u48(n: i64) -> [u8]
+    return bytes.concat([u16(n >> 32), bytes.encode_u32_be(to_u32(n & 0xffffffff).must())])
+
+test "verify: what sign signs holds, through an encoding and a decoding"
+    key = Key(name: "certs-update.", secret: bytes.from_text(repeat("k", to_u64(32).must())))
+    m @= dns.new_query("certs.test", type_code: dns.TYPE_SOA).must()
+    m.opcode @ dns.OPCODE_UPDATE
+    m.edns @ fail(code: NOT_FOUND, msg: "none")
+    m.id @ 4321
+    at = time.from_unix(whole_seconds: 1_800_000_000, extra_nanoseconds: 0).must()
+    signed = sign(m, key: key, at: at, request_mac: []).must()
+    received @= dns.decode(dns.encode(signed.message).must()).must()
+    received.id @ 77
+    verified = verify(received, known: [key], at: at, request_mac: []).must()
+    assert verified.mac == signed.mac
+    assert verified.message.id == 4321
+
+test "verify: another secret, an unknown key and a stale time are each refused"
+    key = Key(name: "certs-update.", secret: bytes.from_text(repeat("k", to_u64(32).must())))
+    other = Key(name: "certs-update.", secret: bytes.from_text(repeat("x", to_u64(32).must())))
+    m @= dns.new_query("certs.test", type_code: dns.TYPE_SOA).must()
+    m.edns @ fail(code: NOT_FOUND, msg: "none")
+    at = time.from_unix(whole_seconds: 1_800_000_000, extra_nanoseconds: 0).must()
+    signed = sign(m, key: other, at: at, request_mac: []).must().message
+
+    match verify(signed, known: [key], at: at, request_mac: [])
+        .ok _  => assert false
+        .err e => assert e.code == BADSIG
+
+    match verify(signed, known: [Key(name: "another.", secret: key.secret)], at: at, request_mac: [])
+        .ok _  => assert false
+        .err e => assert e.code == BADKEY
+
+    late = time.add(at, d: time.minutes(6).must()).must()
+
+    match verify(sign(m, key: key, at: at, request_mac: []).must().message, known: [key], at: late, request_mac: [])
+        .ok _  => assert false
+        .err e => assert e.code == BADTIME
+
+test "parsed: data cut short is refused"
+    assert parsed(key_name: "k.", data: [11]).is_err()
+    assert parsed(key_name: "k.", data: [0, 0, 0]).is_err()

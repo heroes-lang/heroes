@@ -1,0 +1,115 @@
+# The program's own HTTP responder for HTTP-01, certbot's `standalone`: an
+# HTTP/1.1 server answering `GET /.well-known/acme-challenge/<token>` from
+# the webroot (`challenges/webroot`) and nothing else, with the key
+# authorization as `text/plain`. A token's file is read at each request, so
+# the program writing answers and the responder serving them share only
+# the folder; the responder runs on a thread of its own in the demo, and as
+# `certs respond` where no web server serves the webroot.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/net
+use <rebel>/os
+use <rebel>/strings
+use <rebel>/time
+
+use challenges/webroot
+use core/fields
+use core/ready
+
+## Serving
+
+# Serves the webroot `folder` on `host` at `port` until the program is asked to stop,
+# telling the starter at `control_port` once it listens.
+#
+# - `folder`: the webroot, whose answers are served.
+# - `host`: the address listened on, `127.0.0.1` or "" for every one.
+# - `port`: the port, 0 for one the system chooses.
+# - `control_port`: the starter's control port, 0 for none.
+#
+# The counts of what it served. Fails as `net.listen`, `ready.tell` and
+# `http.serve_until_stopped` fail.
+function serve(folder: str, host: str, port: i64, control_port: i64) -> http.Served?
+    listener @= net.listen(host: host, port: port)?
+
+    match ready.tell(control_port, facts: {"SERVICE": "responder", "PORT": to_str(listener.address.port)})
+        .ok _ => _ = 0
+        .err e =>
+            _ = net.close_listener(@listener).is_err()
+            return fail(code: e.code, msg: "the starter could not be told: " + e.msg)
+
+    served = http.serve_until_stopped(
+        http.default_server(),
+        l: listener,
+        state: folder,
+        handler: answer,
+        grace: time.seconds(1)?
+    )
+    _ = net.close_listener(@listener).is_err()
+    return served
+
+# The responder's thread: its named values say `CONTROL`, the starter's
+# control port, and `WEBROOT`, the folder. Answers its last line, what it
+# served or why it could not.
+#
+# - `arg`: the named values, `core/fields`' text.
+function run(arg: str) -> str
+    match fields.parse_fields(arg)
+        .err e => return "responder: " + e.msg
+        .ok named =>
+            control = fields.int_of(named, name: "CONTROL").default(0)
+            folder = fields.decoded_of(named, name: "WEBROOT").default("")
+
+            match serve(folder: folder, host: "127.0.0.1", port: 0, control_port: control)
+                .ok served => return f"http-01 responder: requests answered {served.answered}"
+                .err e     => return "http-01 responder: " + e.msg
+
+# The answer to `r`: the key authorization a token's file holds, 404 for any
+# other path or a token with no file, 405 for a method other than GET and
+# HEAD.
+#
+# - `folder`: the webroot.
+# - `r`: the request.
+function answer(folder: str, r: http.Request) -> http.Response
+    if r.method != http.METHOD_GET && r.method != http.METHOD_HEAD
+        out @= http.respond_text(405, text: "an ACME responder answers GET and HEAD\n")
+        out.headers @ http.with_header(headers: out.headers, name: "Allow", value: "GET, HEAD")
+        return out
+    asked = r.url.path
+
+    if !strings.has_prefix(s: asked, prefix: webroot.WELL_KNOWN)
+        return http.respond_not_found(r)
+    token = asked.slice(from: webroot.WELL_KNOWN.len(), to: asked.len())
+
+    match webroot.answer_of(webroot: folder, token: token)
+        .ok body => return http.respond(200, content_type: "text/plain", body: bytes.from_text(body))
+        .err _   => return http.respond_not_found(r)
+
+test "answer: an answer written is served, any other path and an unknown token are 404, a POST 405"
+    folder = os.temp_dir().must()
+    webroot.put(webroot: folder, token: "tok-1", body: "tok-1.thumb").must()
+    got = http.exchange_with(
+        http.request(method: "GET", target: "http://a.test/.well-known/acme-challenge/tok-1").must(),
+        state: folder,
+        handler: answer
+    ).must()
+    assert got.status == 200 && got.body == bytes.from_text("tok-1.thumb")
+    other = http.exchange_with(
+        http.request(method: "GET", target: "http://a.test/index.html").must(),
+        state: folder,
+        handler: answer
+    ).must()
+    assert other.status == 404
+    missing = http.exchange_with(
+        http.request(method: "GET", target: "http://a.test/.well-known/acme-challenge/none").must(),
+        state: folder,
+        handler: answer
+    ).must()
+    assert missing.status == 404
+    posted = http.exchange_with(
+        http.request(method: "POST", target: "http://a.test/.well-known/acme-challenge/tok-1").must(),
+        state: folder,
+        handler: answer
+    ).must()
+    assert posted.status == 405
+    webroot.take_back(webroot: folder, token: "tok-1").must()

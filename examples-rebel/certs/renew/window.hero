@@ -1,0 +1,108 @@
+# Whether a certificate is due for renewal, and the reason a person is
+# told, decided at the injected clock's moment by two rules, either one
+# enough: the CA's suggested window (ACME Renewal Information, RFC 9773)
+# has opened, which is how a CA asks a certificate it revoked or must
+# replace to be renewed at once; or no more days are left than the
+# configuration's `days_before_expiry`, certbot's rule, which holds where
+# the CA offers no window or cannot be asked.
+
+use <rebel>/acme
+use <rebel>/time
+
+use core/clock
+use pki/facts
+
+## Windows
+
+# A window the CA suggested.
+record Window
+    # Its first moment.
+    start: time.Instant
+    # Its last moment.
+    end: time.Instant
+
+# The window `info` says, its RFC 3339 texts read.
+#
+# - `info`: the CA's renewal information.
+#
+# Fails as `time.parse` fails on either end.
+function window_of(info: acme.RenewalInfo) -> Window?
+    return ok(Window(start: time.parse(info.start, layout: .rfc3339)?, end: time.parse(info.end, layout: .rfc3339)?))
+
+## Deciding
+
+# A decision, with what it rests on.
+record Decision
+    # Whether the certificate is renewed now.
+    due: bool
+    # The whole days it has left.
+    days_left: i64
+    # Why, as a person reads it: "59 days left; the CA's window opens in 29
+    # days".
+    reason: str
+
+# Whether a certificate of `f` is due at `at`.
+#
+# - `f`: the certificate's facts.
+# - `at`: the clock's moment.
+# - `days_before`: renewed once this many whole days or fewer are left.
+# - `window`: the CA's window; it fails where none was asked or could be.
+function decide(f: facts.Facts, at: time.Instant, days_before: i64, window: Window?) -> Decision
+    left = facts.days_left(f, at: at)
+    leftover = f"{clock.format_days(left)} left"
+
+    if left < 0
+        return Decision(due: true, days_left: left, reason: "expired")
+
+    match window
+        .ok w =>
+            if !time.is_before(a: at, b: w.start)
+                return Decision(due: true, days_left: left, reason: f"{leftover}; the CA's renewal window is open")
+
+            if left <= days_before
+                return Decision(due: true, days_left: left, reason: f"{leftover}, {days_before} or fewer")
+            opens = clock.days_between(from: at, to: w.start)
+            return Decision(
+                due: false,
+                days_left: left,
+                reason: f"{leftover}; the CA's renewal window opens in {clock.format_days(opens)}"
+            )
+        .err _ =>
+            if left <= days_before
+                return Decision(due: true, days_left: left, reason: f"{leftover}, {days_before} or fewer")
+            return Decision(due: false, days_left: left, reason: f"{leftover}, more than {days_before}")
+
+test "decide: a window not open and days to spare, a window open, no window and few days left"
+    start = time.date(year: 2026, month: 1, day: 1).must()
+    f = facts.Facts(
+        subject: "",
+        issuer: "",
+        names: [],
+        serial: "",
+        not_before: start,
+        not_after: time.add(start, d: time.days(90).must()).must()
+    )
+    w = Window(
+        start: time.add(start, d: time.days(60).must()).must(),
+        end: time.add(start, d: time.days(70).must()).must()
+    )
+    day30 = time.add(start, d: time.days(30).must()).must()
+    early = decide(f, at: day30, days_before: 30, window: ok(w))
+    assert !early.due && early.days_left == 60
+    assert early.reason == "60 days left; the CA's renewal window opens in 30 days"
+    day61 = time.add(start, d: time.days(61).must()).must()
+    assert decide(f, at: day61, days_before: 30, window: ok(w)).due
+    bare = decide(f, at: day61, days_before: 30, window: fail(code: "not_found", msg: "none"))
+    assert bare.due && bare.reason == "29 days left, 30 or fewer"
+
+test "decide: expired, whatever the window"
+    start = time.date(year: 2026, month: 1, day: 1).must()
+    f = facts.Facts(
+        subject: "",
+        issuer: "",
+        names: [],
+        serial: "",
+        not_before: start,
+        not_after: time.add(start, d: time.days(1).must()).must()
+    )
+    assert decide(f, at: time.add(start, d: time.days(3).must()).must(), days_before: 30, window: fail(code: "not_found", msg: "none")).reason == "expired"

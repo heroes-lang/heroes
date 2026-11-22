@@ -1,0 +1,325 @@
+# The demo's session, day by day, each day a run of the program as a timer
+# would start it: its own session with the CA, its clock fixed at that day
+# and the stand-in CA's clock set to the same moment. Day 0 makes the
+# account and obtains every certificate, then shows the refusals; day 30
+# revokes the wildcard and runs the renewal; day 61, today, runs it again,
+# serves HTTPS with the renewed certificate and lists what is kept. Each
+# step prints what it did; the answer is how many steps did not go as
+# written, so the demo fails where one did not.
+
+use <rebel>/acme
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/net
+use <rebel>/strings
+use <rebel>/time
+
+use config/settings
+use core/clock
+use core/fields
+use demo/probes
+use demo/stage
+use issue/account
+use renew/runner
+use serve/https
+use store/lineage as history
+use store/vault
+
+## The days
+
+# The days from day 0 to today.
+constant TODAY: i64
+    61
+
+# The day the wildcard is revoked and renewed.
+constant MIDWAY: i64
+    30
+
+# A name the zone's CAA forbids to the stand-in CA.
+constant FORBIDDEN: str
+    "other.certs.test"
+
+# A name outside the zone the stand-in CA issues under.
+constant OUTSIDE: str
+    "example.org"
+
+# The CRL reason the wildcard is revoked for (RFC 5280 § 5.3.1).
+constant KEY_COMPROMISE: i64
+    1
+
+# What the session needs of the stage.
+record Stand
+    # The configuration file as the demo runs it.
+    loaded: stage.Loaded
+    # The key store.
+    store: vault.Store
+    # Day 0.
+    origin: time.Instant
+    # The control listener, for the HTTPS server's start.
+    control: net.Listener
+
+# The whole session; the steps that did not go as written, counted.
+#
+# - `stand`: the configuration, the store, day 0 and the control listener.
+# - `started`: the services started, the HTTPS server added.
+function session(stand: Stand, @started: [stage.Service]) -> i64
+    s = stand.loaded.s
+    failures @= day_zero(stand)
+    failures @ failures + midway(stand)
+    failures @ failures + today(stand)
+    failures @ failures + served(stand, @started)
+    print("== what is kept, as `certs show` lists it")
+    shown = runner.show(s, store: stand.store, c: on_day(stand.origin, day: TODAY))
+    printed(shown.lines)
+    return failures + shown.failures
+
+# Day 0: the account made, then found again; every certificate obtained;
+# the refusals tried.
+#
+# - `stand`: the stage.
+function day_zero(stand: Stand) -> i64
+    s = stand.loaded.s
+    c = on_day(stand.origin, day: 0)
+    print("== day 0")
+
+    match opened(stand, c: c)
+        .err e =>
+            print("day 0: " + e.msg)
+            return 1
+        .ok first =>
+            sess @= first
+
+            made = if sess.account_made && sess.key_made
+                "made, its key made and kept"
+            else
+                "found"
+
+            print(f"account: {made}, {sess.account.status}, contact {sess.account.contacts.join(", ")}")
+            again = account.open(s, store: stand.store)
+
+            same = match again
+                .ok a  => a.account.url == sess.account.url && !a.account_made
+                .err _ => false
+
+            print(f"account: the same key asked again finds the same account, none made: {same}")
+
+            failures @= if same
+                0
+            else
+                1
+
+            for l in s.certificates
+                report = runner.issue_now(@sess, s: s, store: stand.store, l: l, c: c)
+                printed(report.lines)
+                failures @ failures + report.failures
+
+            return failures + refusals(stand, @sess, c: c)
+
+# The refusals, each a line; those that did not come counted.
+#
+# - `stand`: the stage.
+# - `sess`: day 0's session.
+# - `c`: day 0's clock.
+function refusals(stand: Stand, @sess: account.Session, c: clock.Clock) -> i64
+    s = stand.loaded.s
+    print("== what the stand-ins refuse, as a CA and an authority must")
+    tried: [probes.Probed] @= []
+    sent = account.transport(s)
+
+    match account.account_key(stand.store)
+        .err e => tried @ tried.push(probes.Probed(line: "the account's key cannot be read: " + e.msg, held: false))
+        .ok keyed =>
+            match sent
+                .err e => tried @ tried.push(probes.Probed(line: "the transport: " + e.msg, held: false))
+                .ok transport =>
+                    tried @ tried.push(
+                        probes.replayed(transport, directory: sess.client.directory, key: keyed.key, account_url: sess.account.url)
+                    )
+                    tried @ tried.push(
+                        probes.tampered(transport, directory: sess.client.directory, key: keyed.key, account_url: sess.account.url)
+                    )
+
+    match net.parse_address_port(s.dns01.server)
+        .err e => tried @ tried.push(probes.Probed(line: "dns01.server: " + e.msg, held: false))
+        .ok server =>
+            for p in probes.forged_updates(s, server: server)
+                tried @ tried.push(p)
+
+    tried @ tried.push(probes.forbidden_by_caa(@sess.client, s: s, store: stand.store, c: c, name: FORBIDDEN))
+    tried @ tried.push(probes.wrong_answer(@sess.client, s: s, name: "www." + s.dns01.zone))
+    tried @ tried.push(probes.outside(@sess.client, name: OUTSIDE))
+    missed @= 0
+
+    for p in tried
+        print(p.line)
+
+        if !p.held
+            missed @ missed + 1
+
+    return missed
+
+# Day 30: the wildcard revoked for its key's compromise, then the renewal
+# run, which the CA's renewal window sends to renew it.
+#
+# - `stand`: the stage.
+function midway(stand: Stand) -> i64
+    s = stand.loaded.s
+    c = on_day(stand.origin, day: MIDWAY)
+    print(f"== day {MIDWAY}")
+
+    match opened(stand, c: c)
+        .err e =>
+            print(f"day {MIDWAY}: " + e.msg)
+            return 1
+        .ok first =>
+            sess @= first
+            failures @= 0
+
+            for l in s.certificates
+                if settings.is_wildcard(l.domains[0])
+                    match revoked(@sess, s: s, name: l.name)
+                        .ok _ => print(
+                            f"{l.name}: revoked by its account, for its key's compromise (reason {KEY_COMPROMISE})"
+                        )
+                        .err e =>
+                            print(f"{l.name}: not revoked: {e.msg}")
+                            failures @ failures + 1
+
+            report = runner.renew_all(@sess, s: s, store: stand.store, c: c)
+            printed(report.lines)
+            return failures + report.failures
+
+# Day 61, today: the renewal run, which renews what was issued on day 0.
+#
+# - `stand`: the stage.
+function today(stand: Stand) -> i64
+    c = on_day(stand.origin, day: TODAY)
+    print(f"== day {TODAY}, today")
+
+    match opened(stand, c: c)
+        .err e =>
+            print(f"day {TODAY}: " + e.msg)
+            return 1
+        .ok first =>
+            sess @= first
+            report = runner.renew_all(@sess, s: stand.loaded.s, store: stand.store, c: c)
+            printed(report.lines)
+            return report.failures
+
+# HTTPS served with the certificate `[serve]` names, on its own thread, and
+# fetched by a client trusting the stand-in CA's root alone; the chain
+# checked by `x509` at today's moment too; and fetched again by a client
+# trusting the system's authorities alone, which must refuse it.
+#
+# - `stand`: the stage.
+# - `started`: the services started, the server added.
+function served(stand: Stand, @started: [stage.Service]) -> i64
+    s = stand.loaded.s
+    name = s.serve.certificate
+    print(f"== HTTPS served with the certificate {name}, renewed today")
+
+    told = match stage.start(https.run, arg: {"CONFIG": fields.encoded(stand.loaded.file), "KEYS": vault.format_store(stand.store), "NAME": name}, control: stand.control, @started)
+        .ok t => t
+        .err e =>
+            print("https: " + e.msg)
+            return 1
+
+    port = stage.port_of(told)
+    trust = read_file(s.acme.trust).default("")
+    failures @= 0
+
+    match https.visit(host: "127.0.0.1", port: port, roots: trust)
+        .ok v => print(
+            f"GET https://127.0.0.1/ trusting the stand-in CA's root alone: {v.status}, {strings.trim(v.body)}"
+        )
+        .err e =>
+            print("GET https://127.0.0.1/ trusting the stand-in CA's root alone: " + e.msg)
+            failures @ failures + 1
+
+    kept = history.current(folder: s.store.folder, name: name)
+    at = clock.now(on_day(stand.origin, day: TODAY)).default(stand.origin)
+
+    match kept
+        .err e =>
+            print("the chain served: " + e.msg)
+            failures @ failures + 1
+        .ok k =>
+            hosts = ["certs.test", "127.0.0.1"]
+            checked @= 0
+
+            for host in hosts
+                if !https.verified(chain: k.fullchain, roots: trust, at: at, host: host).is_err()
+                    checked @ checked + 1
+
+            print(f"its chain verified by x509 at the demo's clock for {hosts.join(" and ")}: {checked == hosts.len()}")
+
+            if checked != hosts.len()
+                failures @ failures + 1
+
+    match https.visit(host: "127.0.0.1", port: port, roots: "")
+        .ok _ =>
+            print("GET https://127.0.0.1/ trusting the system's own authorities alone: ACCEPTED")
+            failures @ failures + 1
+        .err _ => print(
+            "GET https://127.0.0.1/ trusting the system's own authorities alone: refused, the stand-in's root being no authority of the system"
+        )
+
+    return failures
+
+## Helpers
+
+# A fixed clock `day` whole days after `origin`.
+#
+# - `origin`: day 0.
+# - `day`: the day.
+function on_day(origin: time.Instant, day: i64) -> clock.Clock
+    return clock.after_days(.fixed(at: origin), days: day).default(.fixed(at: origin))
+
+# A day's session: the stand-in CA's clock set to the day, then the
+# account's session opened.
+#
+# - `stand`: the stage.
+# - `c`: the day's clock.
+#
+# Fails as `clock_set` and `account.open` fail.
+function opened(stand: Stand, c: clock.Clock) -> account.Session?
+    clock_set(stand.loaded.s, at: clock.now(c)?)?
+    return account.open(stand.loaded.s, store: stand.store)
+
+# The stand-in CA's clock set to `at` through its management resource.
+#
+# - `s`: the settings, whose directory is the stand-in's.
+# - `at`: the moment.
+#
+# Fails as `account.transport` and `http.send` fail, and `failed` where it
+# is not answered 204.
+function clock_set(s: settings.Settings, at: time.Instant) -> ()?
+    base = strings.trim_suffix(s: s.acme.directory, suffix: "/directory")
+    r = http.with_body(
+        http.request(method: http.METHOD_POST, target: base + "/manage/clock")?,
+        content_type: "text/plain",
+        body: bytes.from_text(to_str(time.unix_seconds(at)))
+    )
+    answer = http.send(c: account.transport(s)?, r: r)?
+
+    if answer.status != 204
+        return fail(code: "failed", msg: f"the stand-in's clock was not set: {answer.status}")
+    return ok()
+
+# The certificate `name` revoked by the account, for its key's compromise.
+#
+# - `sess`: the session.
+# - `s`: the settings.
+# - `name`: the certificate's name.
+#
+# Fails as `history.current` and `acme.revoke` fail.
+function revoked(@sess: account.Session, s: settings.Settings, name: str) -> ()?
+    kept = history.current(folder: s.store.folder, name: name)?
+    return acme.revoke(@sess.client, certificate: kept.chain[0].der, reason: KEY_COMPROMISE)
+
+# Each of `lines` printed.
+#
+# - `lines`: the lines.
+function printed(lines: [str])
+    for line in lines
+        print(line)

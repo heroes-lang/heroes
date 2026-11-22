@@ -1,0 +1,112 @@
+# The program's account at the CA: its key read from the key store, or made
+# once and kept there (P-256, signing ES256, the algorithm every ACME
+# server takes); a client of the CA's directory made with it, over HTTPS
+# trusting the configuration's roots; and the account the key has found,
+# or made where it has none, agreeing to the terms where the person said
+# so. The account's URL is written beside the certificates too, so a person
+# can tell which account issued them.
+
+use <rebel>/acme
+use <rebel>/http
+use <rebel>/jose
+
+use config/settings
+use store/records
+use store/vault
+
+## Codes
+
+# The code of a configuration that names a roots file not there.
+constant INVALID: str
+    "invalid"
+
+## Names
+
+# The key store's name of the account's key.
+constant ACCOUNT_KEY: str
+    "account"
+
+# This program's name and version, before Rebel's own in its `User-Agent`,
+# as RFC 8555 § 6.1 asks of a client.
+constant PRODUCT: str
+    "certs/0.1.0"
+
+## The session
+
+# A client of the CA with its account.
+record Session
+    # The client, its nonce and account URL kept.
+    client: acme.Client
+    # The account.
+    account: acme.Account
+    # Whether this run made the account's key.
+    key_made: bool
+    # Whether this run made the account, rather than finding it.
+    account_made: bool
+
+# How requests reach the CA: Rebel's client, this program's name in its
+# `User-Agent`, and the configuration's roots trusted where it names some.
+#
+# - `s`: the settings.
+#
+# Fails `invalid` where the roots file cannot be read.
+function transport(s: settings.Settings) -> http.Client?
+    out @= http.default_client()
+    out.user_agent @ PRODUCT + " " + http.USER_AGENT
+
+    if s.acme.roots != ""
+        match read_file(s.acme.roots)
+            .ok pem => out.roots @ pem
+            .err e => return fail(code: INVALID, msg: f"acme.roots names {s.acme.roots}, which cannot be read: {e.msg}")
+    return ok(out)
+
+# The account's key: the one the store keeps, or a new P-256 key, kept.
+#
+# - `store`: the key store.
+#
+# The key, and whether it was made now. Fails as `vault.get` fails for a
+# reason other than absence, and as `jose.key_from_pem`, `jose.generate_key`
+# and `vault.put` fail.
+function account_key(store: vault.Store) -> Keyed?
+    match vault.get(store, name: ACCOUNT_KEY)
+        .ok pem => return ok(Keyed(key: jose.key_from_pem(pem)?, made: false))
+        .err e =>
+            if e.code != vault.NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+
+    key = jose.generate_key(.p256)?
+    vault.put(store, name: ACCOUNT_KEY, secret: jose.format_private_pem(key)?)?
+    return ok(Keyed(key: key, made: true))
+
+# A key, and whether it was made now.
+record Keyed
+    # The private key.
+    key: jose.Key
+    # Whether it was made by this call.
+    made: bool
+
+# The session of `s`'s account: the directory read, the account found, or
+# made where the key has none.
+#
+# - `s`: the settings.
+# - `store`: the key store.
+#
+# Fails as `transport`, `account_key`, `acme.connect`, `acme.find_account`
+# and `acme.new_account` fail; `acme.find_account`'s `not_found` makes the
+# account instead.
+function open(s: settings.Settings, store: vault.Store) -> Session?
+    sent = transport(s)?
+    keyed = account_key(store)?
+    client @= acme.connect(directory_url: s.acme.directory, key: keyed.key, transport: sent)?
+
+    match acme.find_account(@client)
+        .ok found =>
+            records.remember_account(folder: s.store.folder, directory: s.acme.directory, url: found.url)?
+            return ok(Session(client: client, account: found, key_made: keyed.made, account_made: false))
+        .err e =>
+            if e.code != acme.NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+
+    made = acme.new_account(@client, contacts: settings.contacts_of(s), agree_terms: s.account.agree_terms)?
+    records.remember_account(folder: s.store.folder, directory: s.acme.directory, url: made.url)?
+    return ok(Session(client: client, account: made, key_made: keyed.made, account_made: true))

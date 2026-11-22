@@ -1,0 +1,192 @@
+# One authorization proved: its challenge chosen by the certificate's
+# configuration (HTTP-01, or DNS-01, which a wildcard needs; HTTP-01 for an
+# address), its answer put in place (`challenges/webroot` or
+# `challenges/rfc2136`), the CA told to check it, the authorization waited
+# for, and the answer taken back on every path, valid or not, as certbot's
+# cleanup hooks take theirs back.
+
+use <rebel>/acme
+use <rebel>/bytes
+use <rebel>/net
+use <rebel>/strings
+use <rebel>/time
+
+use challenges/rfc2136
+use challenges/tsig
+use challenges/webroot
+use config/settings
+use store/vault
+
+## Codes
+
+# The code of a configuration that cannot answer a challenge: no webroot,
+# no TSIG secret, a DNS server of no form.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# How long the CA may take to check an answer, in seconds.
+constant WAIT_SECONDS: i64
+    30
+
+# The TTL of a DNS-01 record, in seconds: short, since it stands for
+# minutes.
+constant TXT_TTL: i64
+    60
+
+## Proving
+
+# `authorization` proved, or found valid already: a line saying how.
+#
+# - `client`: the client with an account.
+# - `s`: the settings.
+# - `store`: the key store, which holds the TSIG secret.
+# - `lineage`: the certificate the order is for.
+# - `authorization`: the authorization.
+#
+# Fails as `acme.wait_authorization` fails where the CA finds the answer
+# wrong (`failed`, the CA's problem in the message), and `invalid` where the
+# configuration cannot answer.
+function prove(@client: acme.Client, s: settings.Settings, store: vault.Store, lineage: settings.Lineage, authorization: acme.Authorization) -> str?
+    name = shown(authorization)
+
+    if authorization.status == "valid"
+        return ok(f"{name}: valid already, from an earlier order")
+    kind = kind_for(authorization, lineage: lineage)
+    c = acme.challenge_of(authorization, kind: kind)?
+
+    if kind == settings.HTTP_01
+        return by_http(@client, s: s, url: authorization.url, c: c, name: name)
+    return by_dns(@client, s: s, store: store, a: authorization, c: c, name: name)
+
+# The challenge type `lineage` asks for `authorization`: DNS-01 for a
+# wildcard, HTTP-01 for an address, the configuration's otherwise.
+#
+# - `authorization`: the authorization.
+# - `lineage`: the certificate.
+function kind_for(authorization: acme.Authorization, lineage: settings.Lineage) -> str
+    if authorization.wildcard
+        return settings.DNS_01
+
+    if authorization.identifier.kind == "ip"
+        return settings.HTTP_01
+    return lineage.challenge
+
+# HTTP-01: the key authorization written to the webroot, checked, removed.
+#
+# - `client`: the client.
+# - `s`: the settings.
+# - `url`: the authorization's URL.
+# - `c`: the challenge.
+# - `name`: the identifier as shown.
+#
+# Fails `invalid` with no webroot, and as `prove` fails.
+function by_http(@client: acme.Client, s: settings.Settings, url: str, c: acme.Challenge, name: str) -> str?
+    if s.http01.webroot == ""
+        return fail(code: INVALID, msg: "http-01 needs http01.webroot")
+    body = acme.http01_body(client, token: c.token)?
+    webroot.put(webroot: s.http01.webroot, token: c.token, body: body)?
+    checked = accepted_and_waited(@client, c: c, url: url)
+    taken = webroot.take_back(webroot: s.http01.webroot, token: c.token)
+    checked?
+    taken?
+    return ok(
+        f"{name}: http-01, the answer served from the webroot at {webroot.WELL_KNOWN}<token>, fetched and found by the CA: valid"
+    )
+
+# DNS-01: the record published by a signed update, checked, withdrawn.
+#
+# - `client`: the client.
+# - `s`: the settings.
+# - `store`: the key store.
+# - `a`: the authorization.
+# - `c`: the challenge.
+# - `name`: the identifier as shown.
+#
+# Fails `invalid` where `[dns01]` cannot be used, and as `rfc2136.publish`
+# and `prove` fail.
+function by_dns(@client: acme.Client, s: settings.Settings, store: vault.Store, a: acme.Authorization, c: acme.Challenge, name: str) -> str?
+    target = target_of(s, store: store)?
+    owner = acme.dns01_name(a.identifier.value) + "."
+    value = acme.dns01_value(client, token: c.token)?
+    rfc2136.publish(target, name: owner, value: value, ttl: TXT_TTL)?
+    checked = accepted_and_waited(@client, c: c, url: a.url)
+    taken = rfc2136.withdraw(target, name: owner, value: value)
+    checked?
+    taken?
+
+    signed = if target.key.is_err()
+        "an update"
+    else
+        "an update signed with TSIG"
+
+    return ok(
+        f"{name}: dns-01, TXT {strings.trim_suffix(s: owner, suffix: ".")} published by {signed}, seen by the CA, then withdrawn: valid"
+    )
+
+# The CA told the answer is in place, and the authorization waited for.
+#
+# - `client`: the client.
+# - `c`: the challenge.
+# - `url`: the authorization's URL.
+#
+# Fails as `acme.accept_challenge` and `acme.wait_authorization` fail.
+function accepted_and_waited(@client: acme.Client, c: acme.Challenge, url: str) -> ()?
+    _ = acme.accept_challenge(@client, challenge: c)?
+    _ = acme.wait_authorization(@client, url: url, timeout: time.seconds(WAIT_SECONDS)?)?
+    return ok()
+
+# Where DNS-01's updates go and the key they are signed with, from
+# `[dns01]` and the key store's `tsig <name>`, its secret in base 64.
+#
+# - `s`: the settings.
+# - `store`: the key store.
+#
+# Fails `invalid` where the server is no address and port or the secret is
+# missing or not base 64.
+function target_of(s: settings.Settings, store: vault.Store) -> rfc2136.Target?
+    server = match net.parse_address_port(s.dns01.server)
+        .ok a  => a
+        .err _ => return fail(code: INVALID, msg: f"dns01.server is \"{s.dns01.server}\", no address and port")
+
+    if s.dns01.tsig_key == ""
+        return ok(
+            rfc2136.Target(server: server, zone: s.dns01.zone, key: fail(code: "not_found", msg: "updates go unsigned"))
+        )
+
+    secret = match vault.get(store, name: tsig_name(s.dns01.tsig_key))
+        .ok text => text
+        .err e   => return fail(code: INVALID, msg: f"the TSIG key {s.dns01.tsig_key} has no secret kept: {e.msg}")
+
+    match bytes.parse_base64(strings.trim(secret))
+        .err _ => return fail(code: INVALID, msg: f"the secret of the TSIG key {s.dns01.tsig_key} is not base 64")
+        .ok raw => return ok(
+            rfc2136.Target(server: server, zone: s.dns01.zone, key: ok(tsig.Key(name: absolute(s.dns01.tsig_key), secret: raw)))
+        )
+
+# The key store's name of a TSIG key's secret.
+#
+# - `key_name`: the key's name.
+function tsig_name(key_name: str) -> str
+    return "tsig " + strings.trim_suffix(s: key_name, suffix: ".")
+
+# `name` with its last dot.
+#
+# - `name`: a name.
+function absolute(name: str) -> str
+    if strings.has_suffix(s: name, suffix: ".")
+        return name
+    return name + "."
+
+# The identifier as a person reads it, a wildcard's `*.` given back.
+#
+# - `a`: the authorization.
+function shown(a: acme.Authorization) -> str
+    if a.wildcard
+        return "*." + a.identifier.value
+    return a.identifier.value
+
+test "tsig_name: the key's name without its last dot"
+    assert tsig_name("certs-update.") == "tsig certs-update"
+    assert tsig_name("certs-update") == "tsig certs-update"

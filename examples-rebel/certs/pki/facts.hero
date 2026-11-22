@@ -1,0 +1,101 @@
+# What the program tells of a certificate, read by `x509`: its subject's
+# and issuer's common names, the names and addresses it is for, its serial
+# number in hexadecimal, its validity as instants, and the whole days it
+# has left at a moment; and whether it holds a given key. Nothing here
+# judges a chain: `x509.verify_chain` does.
+
+use <rebel>/big
+use <rebel>/bytes
+use <rebel>/net
+use <rebel>/time
+use <rebel>/x509
+
+use core/clock
+
+## Reading
+
+# The facts of one certificate that the program prints and decides by.
+record Facts
+    # The subject's common name; "" where it has none.
+    subject: str
+    # The issuer's common name; "" where it has none.
+    issuer: str
+    # The names and addresses of its subjectAltName, in its order.
+    names: [str]
+    # The serial number, lowercase hexadecimal of its bytes.
+    serial: str
+    # The first moment it is valid.
+    not_before: time.Instant
+    # The last moment it is valid.
+    not_after: time.Instant
+
+# The facts of `cert`.
+#
+# - `cert`: a certificate `x509` read.
+#
+# Fails `does_not_fit` where a date of it is past what a `time.Instant`
+# holds (1677 to 2262).
+function facts_of(cert: x509.Certificate) -> Facts?
+    return ok(
+        Facts(subject: x509.text_of(cert.subject, oid: x509.COMMON_NAME).default(""), issuer: x509.text_of(cert.issuer, oid: x509.COMMON_NAME).default(""), names: names_of(cert), serial: serial_of(cert), not_before: time.from_date_time(cert.not_before)?, not_after: time.from_date_time(cert.not_after)?)
+    )
+
+# The names and addresses `cert`'s subjectAltName holds, as text, in its
+# order; none where it has none.
+#
+# - `cert`: the certificate.
+function names_of(cert: x509.Certificate) -> [str]
+    out: [str] @= []
+
+    match cert.extensions.alt_names
+        .err _ => _ = 0
+        .ok list =>
+            for general in list
+                match general
+                    .dns d => out @ out.push(d.name)
+                    .ip a  => out @ out.push(net.format_host(a.address))
+                    .other_name _ | .email _ | .x400_address _ | .directory _ | .edi_party _ | .uri _ | .ip_network _ | .registered_id _ =>
+                        _ = 0
+
+    return out
+
+# `cert`'s serial number as lowercase hexadecimal of its big-endian bytes.
+#
+# - `cert`: the certificate.
+function serial_of(cert: x509.Certificate) -> str
+    return bytes.format_hex(big.to_bytes_signed(n: cert.serial, order: .big_endian))
+
+## Time
+
+# The whole days `cert` has left at `at`: from `at` to its last moment,
+# a part of a day left out; negative once it has expired.
+#
+# - `f`: the certificate's facts.
+# - `at`: the moment asked about.
+function days_left(f: Facts, at: time.Instant) -> i64
+    return clock.days_between(from: at, to: f.not_after)
+
+# The whole days `f`'s certificate is valid for, its first moment to its
+# last, rounded to the nearest day so that RFC 5280's inclusive last second
+# counts the day it ends.
+#
+# - `f`: the certificate's facts.
+function lifetime_days(f: Facts) -> i64
+    span = time.between(from: f.not_before, to: f.not_after).default(time.nanoseconds(0))
+    return time.to_units(time.round_duration(d: span, unit: time.hours(12).must()).default(span), unit: .day)
+
+## Keys
+
+# Whether `cert` holds the public key whose SubjectPublicKeyInfo is `spki`.
+#
+# - `cert`: the certificate.
+# - `spki`: the key's SubjectPublicKeyInfo DER.
+function holds_key(cert: x509.Certificate, spki: [u8]) -> bool
+    return cert.public_key.der == spki
+
+test "lifetime_days: ninety days less a second counts ninety"
+    start = time.date(year: 2026, month: 1, day: 1).must()
+    end = time.add(start, d: time.difference(a: time.days(90).must(), b: time.seconds(1).must()).must()).must()
+    f = Facts(subject: "", issuer: "", names: [], serial: "", not_before: start, not_after: end)
+    assert lifetime_days(f) == 90
+    assert days_left(f, at: start) == 89

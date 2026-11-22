@@ -1,0 +1,125 @@
+# DNS-01's answer published and withdrawn by dynamic update (RFC 2136): a
+# TXT record added to the zone's authority, and the same record deleted once
+# the CA has seen it, each update signed with TSIG (`challenges/tsig`) and
+# its signed answer checked, as certbot's `dns-rfc2136` plugin does with
+# BIND, Knot or PowerDNS. `dns` asks and reads; the update message is
+# built here, its zone, prerequisite and update sections being the
+# question, answer and authority sections of RFC 1035's layout
+# (RFC 2136 § 2).
+
+use <rebel>/bytes
+use <rebel>/dns
+use <rebel>/net
+use <rebel>/time
+
+use challenges/tsig
+
+## Codes
+
+# The code of an update the authority refused, its response code named.
+constant FAILED: str
+    "failed"
+
+## Updates
+
+# Where updates go and how they are signed.
+record Target
+    # The authority, an address and a port.
+    server: net.Address
+    # The zone the records are written in, absolute.
+    zone: str
+    # The key the updates are signed with; it fails `not_found` where they
+    # go unsigned.
+    key: tsig.Key?
+
+# Adds a TXT record of `value` at `name`, for `ttl` seconds.
+#
+# - `target`: the authority, the zone and the key.
+# - `name`: the record's owner, inside the zone.
+# - `value`: the TXT string, ASCII, at most 255 bytes.
+# - `ttl`: the seconds it may be cached, 0 or more.
+#
+# Fails `failed` where the authority answers another code than success, the
+# code named; as `tsig.verify` fails where its signed answer does not hold;
+# and as `dns.exchange` fails.
+function publish(target: Target, name: str, value: str, ttl: i64) -> ()?
+    added = dns.Record(name: name, class_code: dns.CLASS_IN, ttl: ttl, data: .txt(texts: [bytes.from_text(value)]))
+    return updated(target, change: added)
+
+# Deletes the TXT record of `value` at `name`, every other record kept
+# (RFC 2136 § 2.5.4: class NONE, TTL 0).
+#
+# - `target`: the authority, the zone and the key.
+# - `name`: the record's owner.
+# - `value`: the TXT string published.
+#
+# Fails as `publish` fails.
+function withdraw(target: Target, name: str, value: str) -> ()?
+    removed = dns.Record(name: name, class_code: dns.CLASS_NONE, ttl: 0, data: .txt(texts: [bytes.from_text(value)]))
+    return updated(target, change: removed)
+
+# One update holding `change` alone, sent, its answer checked.
+#
+# - `target`: the authority, the zone and the key.
+# - `change`: the record added or deleted.
+#
+# Fails as `publish` fails.
+function updated(target: Target, change: dns.Record) -> ()?
+    m = update_of(zone: target.zone, changes: [change])?
+    r @= dns.resolver([net.format_address(target.server)])?
+    r.timeout @ time.seconds(3)?
+    r.attempts @ 2
+
+    match target.key
+        .err _ =>
+            answer = dns.exchange(r, m: m)?
+            return answered(answer)
+        .ok key =>
+            signed = tsig.sign(m, key: key, at: time.now()?, request_mac: [])?
+            answer = dns.exchange(r, m: signed.message)?
+
+            match tsig.verify(answer, known: [key], at: time.now()?, request_mac: signed.mac)
+                .ok _ => return answered(answer)
+                .err e =>
+                    if answer.rcode != dns.RCODE_NO_ERROR
+                        return answered(answer)
+                    return fail(code: e.code, msg: "the authority's answer is not signed by the key: " + e.msg)
+
+# An update message of `changes` to `zone`: its zone section the zone's SOA
+# question, no prerequisite, no EDNS (the TSIG record must stand last), and
+# no recursion asked.
+#
+# - `zone`: the zone, absolute or not.
+# - `changes`: the update section's records.
+#
+# Fails as `dns.new_query` fails on the zone's name.
+function update_of(zone: str, changes: [dns.Record]) -> dns.Message?
+    m @= dns.new_query(zone, type_code: dns.TYPE_SOA)?
+    m.opcode @ dns.OPCODE_UPDATE
+    m.recursion_desired @ false
+    m.edns @ fail(code: "not_found", msg: "an update carries no OPT record here")
+    m.authorities @ changes
+    return ok(m)
+
+# Success, or the response code `answer` said.
+#
+# - `answer`: the authority's answer.
+#
+# Fails `failed` with the code's name where it is not NOERROR.
+function answered(answer: dns.Message) -> ()?
+    if answer.rcode == dns.RCODE_NO_ERROR
+        return ok()
+    return fail(code: FAILED, msg: f"the authority answered {dns.rcode_name(answer.rcode)}")
+
+test "update_of: the zone's SOA question, the change in the update section, no EDNS"
+    change = dns.Record(
+        name: "_acme-challenge.example.org.",
+        class_code: dns.CLASS_IN,
+        ttl: 60,
+        data: .txt(texts: [bytes.from_text("v")])
+    )
+    m = update_of(zone: "example.org", changes: [change]).must()
+    assert m.opcode == dns.OPCODE_UPDATE
+    assert m.questions[0].type_code == dns.TYPE_SOA && m.questions[0].name == "example.org."
+    assert m.authorities.len() == 1 && m.edns.is_err()
+    assert dns.decode(dns.encode(m).must()).must().authorities.len() == 1
