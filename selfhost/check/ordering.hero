@@ -34,10 +34,10 @@ use source
 # The twelve. Total on Ty by construction: every other case falls through.
 function is_ordered(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
-        .int_ty | .float_ty | .str | .bool            => true
-        .ptr | .cstr | .unit | .array | .fixed | .map => false
-        .fallible | .function_ty | .named | .case_ty  => false
-        .failure | .generic | .error                  => false
+        .int_ty | .float_ty | .str | .bool                      => true
+        .ptr | .cstr | .unit | .array | .fixed | .map           => false
+        .fallible | .function_ty | .named | .case_ty            => false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # Whether this element type is one the checker may REFUSE — narrower than
 # whether it is ordered: an error's diagnostic was already reported (one
@@ -54,10 +54,10 @@ function is_refusable(c: state.Checker, ty: i64) -> bool
 # name and cannot see what is inside it.
 function why_unordered(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64) -> str?
     is_named = match table.get(c.out.types, ty)
-        .named                                                    => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .fallible | .function_ty         => false
-        .case_ty | .failure | .generic | .error                   => false
+        .named                                                             => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .fixed | .map | .fallible | .function_ty                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
     if !is_named
         return fail(code: "absent", msg: "the type's own name is the whole answer")
@@ -79,6 +79,8 @@ function within(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, 
         .map         => return ok("a map")
         .function_ty => return ok("a function value")
         .ptr | .cstr => return ok("a pointer")
+        .thread_ty   => return ok("a thread")
+        .mailbox_ty  => return ok("a mailbox")
         .named n =>
             name = source.span_text(s, decls[n.decl].name)
             return dotted_path(c, s, decls, prefix: name, decl: n.decl, depth: depth)
@@ -136,10 +138,10 @@ function first_unordered(c: state.Checker, s: source.Source, decls: [ast.Decl], 
         inner_decl: i64 @= -1
 
         match table.get(c.out.types, field_ty)
-            .named inner                                              => inner_decl @ inner.decl
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => inner_decl @ -1
-            .array | .fixed | .map | .fallible | .function_ty         => inner_decl @ -1
-            .case_ty | .failure | .generic | .error                   => inner_decl @ -1
+            .named inner                                                       => inner_decl @ inner.decl
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => inner_decl @ -1
+            .array | .fixed | .map | .fallible | .function_ty                  => inner_decl @ -1
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => inner_decl @ -1
 
         if inner_decl >= 0
             deeper = dotted_path(c, s, decls, prefix: here, decl: inner_decl, depth: depth + 1)

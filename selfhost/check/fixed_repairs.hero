@@ -60,6 +60,7 @@ function growable_twin(@c: state.Checker, ty: i64) -> i64
             labels = table.labels_of(c.out.types, f.labels)
             return table.intern_function(@c.out.types, params: params, labels: labels, result: result)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .named => return ty
+        .thread_ty | .mailbox_ty                                           => return ty
         .case_ty | .failure | .generic | .error                            => return ty
 
     return ty
@@ -75,7 +76,7 @@ function fills_a_field(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
         .fixed x                                                           => element @ x.element
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .array => return false
         .map | .fallible | .function_ty | .named | .case_ty | .failure     => return false
-        .generic | .error                                                  => return false
+        .generic | .error | .thread_ty | .mailbox_ty                       => return false
 
     match table.get(c.out.types, element)
         .int_ty | .float_ty | .bool | .ptr | .cstr => return true
@@ -84,6 +85,7 @@ function fills_a_field(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
                 .record_decl                                                 => return true
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return false
         .str | .unit | .array | .fixed | .map | .fallible | .function_ty => return false
+        .thread_ty | .mailbox_ty                                         => return false
         .case_ty | .failure | .generic | .error                          => return false
 
     return false

@@ -77,9 +77,9 @@ function after(@c: state.Checker, a: ast.Ast, s: source.Source, @seen: Seen, sub
 
 function takes_literals(ty: table.Ty) -> bool
     return match ty
-        .int_ty | .str                                                              => true
-        .float_ty | .bool | .ptr | .cstr | .unit | .array | .fixed | .map           => false
-        .named | .fallible | .function_ty | .case_ty | .failure | .generic | .error => false
+        .int_ty | .str                                                                               => true
+        .float_ty | .bool | .ptr | .cstr | .unit | .array | .fixed | .map | .thread_ty | .mailbox_ty => false
+        .named | .fallible | .function_ty | .case_ty | .failure | .generic | .error                  => false
 
 # The value a literal pattern takes, as a key two spellings of one value
 # share: a number by its sign and magnitude, `-0` as `0`, and a string by
@@ -171,7 +171,7 @@ function case_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl], su
                 data_errors.no_such_case(holder: "a fallible value", case_name: case_name, known: known, span: name)
             )
             return state.error_ty_of(c)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty =>
             got = state.show(c, s, decls, subject)
             state.push_diagnostic(@c, data_errors.case_on_non_variant(got: got, case_name: case_name, span: span))
             return state.error_ty_of(c)
@@ -192,9 +192,9 @@ function wildcard_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl]
             match decls[n.decl].kind
                 .variant_decl                                               => true
                 .constant_decl | .function_decl | .record_decl | .test_decl => false
-        .fallible | .bool                                                      => true
-        .int_ty | .float_ty | .str | .ptr | .cstr | .unit | .array             => false
-        .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error => false
+        .fallible | .bool                                                                     => true
+        .int_ty | .float_ty | .str | .ptr | .cstr | .unit | .array | .thread_ty | .mailbox_ty => false
+        .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error                => false
 
     if countable
         got = state.show(c, s, decls, subject)
@@ -240,6 +240,7 @@ function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subj
 
         .int_ty | .str => state.push_diagnostic(@c, data_errors.needs_wildcard(span))
         .float_ty | .bool | .ptr | .cstr | .unit | .array => return
+        .thread_ty | .mailbox_ty => return
         .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error => return
 
 # A variant's case by name: its index, or -1 where it has none of that name.

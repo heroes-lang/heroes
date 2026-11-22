@@ -140,11 +140,11 @@ function pointee_check(c: state.Checked, names: ctype.Names, s: source.Source, d
             else
                 candidates @ ["unsigned char", "unsigned short", "unsigned int", "unsigned long", "unsigned long long"]
                 void_too @ ik.kind == .u8
-        .float_ty                                         => candidates @ ["float", "double", "long double"]
-        .named                                            => candidates @ [spelled.must()]
-        .bool | .str | .ptr | .cstr | .unit | .error      => candidates @ candidates
-        .array | .fixed | .map | .fallible | .function_ty => candidates @ candidates
-        .case_ty | .failure | .generic                    => candidates @ candidates
+        .float_ty                                                 => candidates @ ["float", "double", "long double"]
+        .named                                                    => candidates @ [spelled.must()]
+        .bool | .str | .ptr | .cstr | .unit | .error              => candidates @ candidates
+        .array | .fixed | .map | .fallible | .function_ty         => candidates @ candidates
+        .case_ty | .failure | .generic | .thread_ty | .mailbox_ty => candidates @ candidates
 
     alternatives: [str] @= []
 
@@ -169,7 +169,7 @@ function pointee_check(c: state.Checked, names: ctype.Names, s: source.Source, d
                 )
         .float_ty | .bool | .str | .ptr | .cstr | .unit | .error   => _ = 0
         .array | .fixed | .map | .fallible | .function_ty | .named => _ = 0
-        .case_ty | .failure | .generic                             => _ = 0
+        .case_ty | .failure | .generic | .thread_ty | .mailbox_ty  => _ = 0
 
     if void_too
         alternatives @ alternatives.push("__builtin_types_compatible_p(" + pointee + ", void)")
@@ -184,12 +184,12 @@ function pointee_check(c: state.Checked, names: ctype.Names, s: source.Source, d
 # name or the record's.
 function heroes_name(c: state.Checked, s: source.Source, decls: [ast.Decl], element: i64) -> str
     match table.get(c.types, element)
-        .int_ty ik                                        => return widths.int_name(ik.kind)
-        .float_ty fk                                      => return widths.float_name(fk.kind)
-        .named n                                          => return source.span_text(s, decls[n.decl].name)
-        .bool | .str | .ptr | .cstr | .unit | .error      => return "?"
-        .array | .fixed | .map | .fallible | .function_ty => return "?"
-        .case_ty | .failure | .generic                    => return "?"
+        .int_ty ik                                                => return widths.int_name(ik.kind)
+        .float_ty fk                                              => return widths.float_name(fk.kind)
+        .named n                                                  => return source.span_text(s, decls[n.decl].name)
+        .bool | .str | .ptr | .cstr | .unit | .error              => return "?"
+        .array | .fixed | .map | .fallible | .function_ty         => return "?"
+        .case_ty | .failure | .generic | .thread_ty | .mailbox_ty => return "?"
 
     return "?"
 

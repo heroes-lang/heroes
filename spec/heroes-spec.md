@@ -107,19 +107,23 @@ packages = ["csv", "json"]
 | `()` | nothing: what a function with no `->` returns |
 | `ptr` `cstr` | an opaque pointer and a C string; `nullptr` is the null of both |
 | `(function(A) -> B)` | a function value, of any arity; the parentheses are mandatory |
+| `(thread T)` | a running thread whose function answers a `T`; a handle (section 13) with no null, which its `wait` ends |
+| `(mailbox T)` | a queue of `T`s, which every copy of it reaches (section 11) |
 
 - No implicit conversions, widths included: `1 + 2.0` is an error.
 - Every value behaves as an independent copy: after `b = a`, mutating `b`
-  never changes `a`. No aliasing exists among the values this language owns.
-  A `ptr` or a `cstr` is a copied ADDRESS, wherever it sits: two copies reach
-  one foreign thing, so a function taking one without `@` may still change, or
-  free, what C holds.
+  never changes `a`. No aliasing exists among the values this language owns
+  but a mailbox's queue.
+  A `ptr`, a `cstr` or a `(mailbox T)` is a copied ADDRESS, wherever it sits: two copies reach
+  one foreign thing, or one queue, so a function taking one without `@` may still change, or
+  free, what it reaches.
 - A record or variant holds its fields **by value**, so it may contain itself only
   through `[T]` or `{K: V}`: `children: [Node]` is a tree, `child: Node` has no size.
 
     Type     = Prefix { "[" integer "]" } [ "?" ] .
     Prefix   = ident [ "." ident ] | "[" Type "]" | "{" Type ":" Type "}"
-             | "(" ")" | "(" "function" TypeArgs "->" Type ")" .
+             | "(" ")" | "(" "function" TypeArgs "->" Type ")"
+             | "(" ( "thread" | "mailbox" ) Type ")" .
     TypeArgs = "(" [ TypeArg { "," TypeArg } ] ")" .
     TypeArg  = Type | ident ":" Type .
 
@@ -179,7 +183,7 @@ which a `()` line refuses: it stands alone. A `_` never drops a `T?`: not
 `_ = e`, and not a `_` parameter written one. Answer the error. Both read the
 OUTERMOST type, so a `[T?]`, a record holding one, or a type parameter that
 arrived fallible is still dropped.
-Shadowing is a compile error: a `use` binds its name for the whole file, so nothing else in the file may take it.
+Shadowing is a compile error: a `use` binds its name for the whole file, so nothing else in the file may take it, and a built-in's name (section 11) is taken in every file, a field's or a case's aside.
 
     Block     = INDENT { Statement } DEDENT .
     Statement = ident Binding | Simple .
@@ -228,7 +232,7 @@ Precedence, strongest first: call, `.` and `::` → unary `-` `!` `~` → `* / %
 → `<<` `>>` → `&` → `^` → `|` → comparisons → `&&` → `||`.
 
 `==` is structural equality on any two values of one type, recursively; a map's
-insertion order does not affect it. A `ptr`, a `cstr` and a function value compare
+insertion order does not affect it. A `ptr`, a `cstr`, a `(thread T)`, a `(mailbox T)` and a function value compare
 as an address and not as an identity — free one and the next allocation may reuse
 that address. `nan` equals nothing, itself included, so `x != x` asks whether it is one;
 ordering one aborts, in `< <= > >=` and in `sort`.
@@ -303,7 +307,8 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
   the same two, `(function(from: str, to: str) -> ())`. The names are part of the
   type: the other order is another type, and a call through a value names each in
   its own position. A function that has such a pair names it as the type does.
-- `x.f(y)` is sugar for `f(x, y)` (UFCS). There are no methods, no
+- `x.f(y)` is sugar for `f(x, y)` (UFCS), except a thread's `wait` and a mailbox's `send`,
+  `receive` and `close` (section 11), written only after a dot and taking no name, though no function so named may take a thread or a mailbox first. There are no other methods, no
   inheritance, no overloading, no default values, no user variadics, no
   anonymous functions.
 - Mutable parameters are marked `@` in the signature and at the call site:
@@ -356,7 +361,7 @@ value or the call's other arguments, and so does a slice that splits a character
 Built-ins: `print(...)` · `len` · `push` · `xs.slice(from:, to:)` ·
 `chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` (`n` a `u64`) · `sort` (ascending: a number by value, a `str` by bytes, `false` before `true`; never a type parameter) ·
 `to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
-`to_u32` `to_u64` — and, written in Heroes, calling the function in order: `map` · `filter`, keeping what
+`to_u32` `to_u64` · `spawn` · `spawn_sized` · `mailbox` — and, written in Heroes, calling the function in order: `map` · `filter`, keeping what
 the function accepts · `fold` (its function names them `acc` then `item`) · `find` (the first it accepts, else `not_found`) ·
 `any` · `all` (with `find`, stopping at the first that decides) · `range`.
 `slice` and `range(from: a, to: b) -> [i64]` exclude `to`.
@@ -375,6 +380,7 @@ Files and the process, also provided: `read_file(path: str) -> str?` (failing
 str) -> ()?` (`write_failed`) · `args() -> [str]` (the arguments after the
 program name; one that is not UTF-8 aborts) · `args_checked() -> [str?]` (which
 does not) · `exit(code: i64)` (ends the program; a code outside 0 to 255 aborts, one written as a number is refused).
+Threads, also provided: `spawn(f, x)` runs `f(x)` on a thread of its own and gives a `(thread T)?`, `T` being `f`'s answer, failing `limit` where the system or the runtime has no thread to give, its message saying why; `spawn_sized(f, x, bytes: n)` does the same on a stack of at least `n` bytes, and an `n` below 0 aborts. `t.wait()` waits for the thread and gives its answer, and ends the thread's life as a call marked `consumes` ends a handle's (section 13). A copy of a `(thread T)`, bound, kept in a list or a map, or a `for` loop's variable, is that one thread, and a wait through any copy is its one wait: a second, through any copy, aborts, naming it, and is a compile error where one place, a name or an element at a written index, was waited for on every path before. `mailbox()` gives a new, empty `(mailbox T)`, typed as an empty `[]` is (section 10): `m: (mailbox Job) = mailbox()`. `m.send(v)` adds a copy of `v` and never waits, failing `closed` once the mailbox is closed, or `stopped` once it has answered `stopped`, `v` then left as it was; `m.receive(within_ms: n)` takes the oldest value, waiting at most `n` milliseconds, `-1` for no limit and below that an abort; on an empty mailbox it fails `closed` once it is closed, `stopped` once a stop is asked (section 13) and from then on, and `timeout` else, and a value that arrives after a `timeout` is the next receive's. `m.close()` closes it for every copy, and closing it again does nothing; the values still in it are received, or dropped with its last copy, a handle among them told when `main` returns as one nobody consumes. Every value crosses a thread whole, as a copy, through `spawn`, `wait` and a mailbox, so threads share nothing but a mailbox, which crosses as itself whatever it carries; a `ptr` or a `cstr`, or a value holding one, never crosses, and a handle, or a value holding one, crosses only through a mailbox, written `m.send(@v)`, which empties it, its life going with it, or as the answer `wait` gives, and is then that thread's: reaching C through it on a thread that does not hold it aborts, naming the call. Anything else is a compile error, and so is a `(mailbox T)` whose `T` holds a `ptr`, a `cstr` or that mailbox's own type, in a field, an element, a payload, a thread's answer or another mailbox's `T`, so no queue ever holds itself, and a `(thread T)` or a `(mailbox T)` in an `extern` signature, a callback's parameter or a group's record.
 
 ## 12. Tests and holes
 ```
@@ -392,7 +398,7 @@ reports what belongs there (the expected type, what is in scope). A program
 with holes type-checks everything else but produces no binary.
 
 ## 13. FFI
-Anything beyond this document comes from packages or C libraries; threads, processes and files from the language's `hero_os.h`, and sockets and clocks from its platform layer's `hero_net.h` and `hero_time.h`, linked where a group names one. A thread runs a function of one `i64` or one `str` and gives back one of the same, a `str` copied each way, and nothing else crosses: `hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64` or `hero_thread_spawn_str(body: (function(str) -> str), arg: str) -> i64` starts it, and `hero_thread_join(handle: i64) -> i64` or `hero_thread_join_str(handle: i64) -> str`, as it was started, waits for its answer. A group names its header, and `link` a library when the symbols need one; C
+Anything beyond this document comes from packages or C libraries; processes and files from the language's `hero_os.h`, and sockets and clocks from its platform layer's `hero_net.h` and `hero_time.h`, linked where a group names one. A group names its header, and `link` a library when the symbols need one; C
 reads a module's headers in the order its groups are written: one that needs
 another's names comes after it, and one defining `_GNU_SOURCE` first. clang
 checks every result type, constant and record field against that header, and a result may be
@@ -419,7 +425,7 @@ tells C how many, a constant of the group or a number. C reaching past them
 aborts, or fails the call where the kernel writes, and so past a local lent with
 `@`, which C receives itself; past a field or an element it is the binding's word.
 A callback is a **parameter**, never a result or a signal handler, nor called by one; its parameters follow the same rule
-and `()` is `void`: `atexit(f: (function() -> ())) -> i32`. No function of the program is a signal handler: after `hero_net_catch_stop() -> i64` (`hero_net.h`), Ctrl-C, SIGTERM and `hero_net_ask_stop() -> ()` only make `hero_net_stop_asked() -> i64` answer 1 and a waiting call of that layer answer stopped; `hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) counts any other signal, and `hero_signal_take(sig: i32) -> i64` gives the count since its last call
+and `()` is `void`: `atexit(f: (function() -> ())) -> i32`. No function of the program is a signal handler: after `hero_net_catch_stop() -> i64` (`hero_net.h`), Ctrl-C, SIGTERM and `hero_net_ask_stop() -> ()` only make `hero_net_stop_asked() -> i64` answer 1 and a waiting call of that layer, or a mailbox's `receive` that finds it empty, answer stopped; `hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) counts any other signal, and `hero_signal_take(sig: i32) -> i64` gives the count since its last call
 
 A group's `record` is the header's struct: all its fields, and the same name
 unless the header writes it after the word struct, which `tag` gives:
@@ -464,7 +470,7 @@ reads and never writes.
 `x: cstr @= s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
 lease name stand only as an argument of a call, nothing else writes a lease's
-cell, and a lease nobody ends, like a handle nobody consumes or a thread nobody joins, aborts when
+cell, and a lease nobody ends, like a handle nobody consumes or a thread nobody waits for, aborts when
 `main` returns, saying how many. No word says C frees what it is handed; one
 that frees a lease kills the process, naming the leases live. Bytes C owns come
 from its own allocator, with their disposer.

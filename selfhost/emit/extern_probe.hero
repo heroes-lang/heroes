@@ -248,9 +248,9 @@ function is_cast_out(c: state.Checked, slot: containers.Slot) -> bool
 
     # An array is the buffer C fills, its pointee asked by `emit/lend_buffer.hero` (panel 196's R4).
     return match table.get(c.types, slot.ty)
-        .ptr | .int_ty | .float_ty | .bool | .array                        => true
-        .cstr | .str | .named | .unit | .fixed | .map                      => false
-        .fallible | .function_ty | .case_ty | .failure | .generic | .error => false
+        .ptr | .int_ty | .float_ty | .bool | .array | .thread_ty | .mailbox_ty => true
+        .cstr | .str | .named | .unit | .fixed | .map                          => false
+        .fallible | .function_ty | .case_ty | .failure | .generic | .error     => false
 
 # The names a probe gives its arguments: positional, so nothing about
 # the author's own parameter names can change the generated line.

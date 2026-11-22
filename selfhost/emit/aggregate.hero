@@ -189,10 +189,10 @@ function written_as(c: state.Checked, value: str, ty: i64, foreign: bool, holder
     is_cstr: bool @= false
 
     match table.get(c.types, written.must())
-        .cstr                                                      => is_cstr @ true
-        .int_ty | .float_ty | .bool | .str | .ptr | .unit          => is_cstr @ is_cstr
-        .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
-        .case_ty | .failure | .generic | .error                    => is_cstr @ is_cstr
+        .cstr                                                              => is_cstr @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .unit                  => is_cstr @ is_cstr
+        .array | .fixed | .map | .fallible | .function_ty | .named         => is_cstr @ is_cstr
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_cstr @ is_cstr
 
     if !is_cstr
         return value
@@ -210,7 +210,7 @@ function payload_member(c: state.Checked, names: ctype.Names, s: source.Source, 
         .named n                                                     => decl @ n.decl
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit    => decl @ decl
         .array | .fixed | .map | .fallible | .function_ty | .case_ty => decl @ decl
-        .failure | .generic | .error                                 => decl @ decl
+        .failure | .generic | .error | .thread_ty | .mailbox_ty      => decl @ decl
 
     if decl < 0
         return fail(code: "none", msg: "not a variant value")

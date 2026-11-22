@@ -520,7 +520,7 @@ capability server/connection  one connection's requests served, keep-alive and p
   note    400, 431, 413, 417, 501 and 505 answered for what cannot be read, then the connection ends; 100 Continue written before a body; a `Date` field where the handler gives none
 
 capability server/concurrent  connections served side by side
-  heroes  net.accept_number, net.conn_of, threads.spawn, http.serve_conn
+  heroes  net.accept_number, net.conn_of, threads.start, http.serve_conn
   go      net/http.Server's goroutine for each connection
   rust    -
   python  http.server.ThreadingHTTPServer

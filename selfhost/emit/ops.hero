@@ -37,6 +37,7 @@ use emit/padding
 use emit/printing
 use emit/shadowed
 use emit/stop_place
+use emit/threads
 use emit/writer
 use inventory
 use ir
@@ -50,7 +51,7 @@ use token
 # `p` is the program held with its index, built once per program
 # (`instances.Held`, defect 492): every lookup below reads it. `site` is where
 # the call stands, the place a check before it names (panel 230's R1).
-function call(@w: writer.Writer, p: instances.Held, f: containers.Function, sites: defined.Sites, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, run: ir.Run, arguments: [str], target: str?, instance: [i64], site: i64)
+function call(@w: writer.Writer, p: instances.Held, f: containers.Function, sites: defined.Sites, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, run: ir.Run, arguments: [str], target: str?, result: i64, instance: [i64], site: i64)
     assign: str @= ""
 
     if !target.is_err()
@@ -75,6 +76,25 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, site
 
             if builtin_name == "print"
                 printing.print_call(@w, f, c, run: run, arguments: arguments)
+                return
+
+            # A thread's and a mailbox's calls, each a block of its own around
+            # the runtime's (feature 2647).
+            if threads.writes(builtin_name)
+                threads.call(
+                    @w,
+                    c,
+                    names,
+                    s,
+                    decls,
+                    f,
+                    site: site,
+                    name: builtin_name,
+                    run: run,
+                    arguments: arguments,
+                    result: result,
+                    target: target
+                )
                 return
 
             # to_<width> is not a call: it builds a T? generated for
@@ -248,6 +268,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, site
                     .ptr                                                       => cast @ "(void *)"
                     .cstr                                                      => cast @ "(const char *)"
                     .int_ty | .float_ty | .bool | .str | .unit                 => cast @ cast
+                    .thread_ty | .mailbox_ty                                   => cast @ cast
                     .array | .fixed | .map | .fallible | .function_ty | .named => cast @ cast
                     .case_ty | .failure | .generic | .error                    => cast @ cast
 
@@ -395,6 +416,7 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
         run: ir.Run(start: 0, length: 0),
         arguments: ["t1"],
         target: ok("t2"),
+        result: 0,
         instance: empty_instance,
         site: 0
     )
@@ -411,6 +433,7 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
         run: ir.Run(start: 0, length: 0),
         arguments: ["t3", "t4"],
         target: ok("t5"),
+        result: 0,
         instance: empty_instance,
         site: 0
     )

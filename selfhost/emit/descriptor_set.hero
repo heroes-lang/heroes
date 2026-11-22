@@ -70,9 +70,13 @@ use source
 #
 # `kinds` is `phases.type_kinds`, found once per build (defect 229): this
 # walked every type id as deep as it goes, in every translation unit.
-function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: synth.Wanted, kinds: [i64]) -> [i64]
+function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: synth.Wanted, kinds: [i64], crossed: [i64]) -> [i64]
     wanted: {i64: bool} @= {}
-    queue: [i64] @= []
+
+    # A FOURTH SOURCE since feature 2647: the types whose descriptor a take
+    # of `emit/crossing_bodies.hero` or a `mailbox()` names, an array's
+    # element, a map's key and value, a mailbox's element.
+    queue: [i64] @= crossed
     id: i64 @= 0
 
     while id < kinds.len()
@@ -119,7 +123,7 @@ function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, 
                     .fallible o                                               => queue @ queue.push(o.payload)
                     .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => id @ id
                     .fixed | .function_ty | .named | .case_ty                 => id @ id
-                    .failure | .generic | .error                              => id @ id
+                    .failure | .generic | .error | .thread_ty | .mailbox_ty   => id @ id
         id @ id + 1
 
     # Only a T? field: hash_call sends named and case types straight to
@@ -149,10 +153,10 @@ function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, 
                 continue
 
             match table.get(c.types, found.must())
-                .fallible                                                 => queue @ queue.push(found.must())
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-                .array | .fixed | .map | .function_ty | .named            => continue
-                .case_ty | .failure | .generic | .error                   => continue
+                .fallible                                                          => queue @ queue.push(found.must())
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => continue
+                .array | .fixed | .map | .function_ty | .named                     => continue
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => continue
 
     seen: {i64: bool} @= {}
 
@@ -187,6 +191,7 @@ function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, 
                 worklist.put(@queue, size: @size, value: m.key)
                 worklist.put(@queue, size: @size, value: m.value)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .thread_ty | .mailbox_ty                                  => continue
             .fixed | .function_ty | .failure | .generic | .error      => continue
 
     out: [i64] @= []
@@ -238,7 +243,8 @@ test "the worklist reaches an element, a payload, and expands as it drains"
         reachable: reachable,
         constructed: constructed,
         want: synth.everything(),
-        kinds: phases.type_kinds(c)
+        kinds: phases.type_kinds(c),
+        crossed: []
     )
     saw_point: bool @= false
     saw_option: bool @= false
@@ -248,10 +254,10 @@ test "the worklist reaches an element, a payload, and expands as it drains"
             saw_point @ true
 
         match table.get(c.types, one)
-            .fallible                                                 => saw_option @ true
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .array | .fixed | .map | .function_ty | .named            => continue
-            .case_ty | .failure | .generic | .error                   => continue
+            .fallible                                                          => saw_option @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => continue
+            .array | .fixed | .map | .function_ty | .named                     => continue
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => continue
 
     # Point is [Point]'s element AND Point?'s payload. The OPTION
     # descriptor exists only where a T? is an element or a field —
@@ -291,7 +297,7 @@ test "an array a signature interned and nobody builds gets no descriptor"
 
     # Nothing constructed: the empty map is the whole point of the case.
     nothing: {i64: bool} = {}
-    assert generated(c, p.decls, reachable: reachable, constructed: nothing, want: synth.everything(), kinds: phases.type_kinds(c)).len() == 0
+    assert generated(c, p.decls, reachable: reachable, constructed: nothing, want: synth.everything(), kinds: phases.type_kinds(c), crossed: []).len() == 0
 
     # And the same program WITH the array built asks for Row's
     # descriptor, which is what keeps this from passing for the wrong
@@ -305,7 +311,8 @@ test "an array a signature interned and nobody builds gets no descriptor"
         reachable: reachable,
         constructed: built,
         want: synth.everything(),
-        kinds: phases.type_kinds(c)
+        kinds: phases.type_kinds(c),
+        crossed: []
     )
     assert got.len() == 1
     assert got[0] == row

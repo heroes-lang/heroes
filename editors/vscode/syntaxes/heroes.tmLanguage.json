@@ -15,6 +15,7 @@
     { "include": "#declaration" },
     { "include": "#keyword" },
     { "include": "#builtin-type" },
+    { "include": "#thread-type" },
     { "include": "#hole" },
     { "include": "#interpolated" },
     { "include": "#string" },
@@ -141,6 +142,13 @@
       "comment": "spec/heroes-spec.md § Types, the whole table. This read `int|f64|bool|str|ptr|cstr` and so coloured a word the language does not have while leaving every sized integer plain: `i64` is what a program actually writes, and it was the one type never highlighted. `[T]`, `{K: V}` and `T?` are shapes rather than words and are built out of these. Since 2026-10-12 not after `.` or `::`, where the word is a field's name.",
       "match": "(?<!\\.)(?<!::)\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|str|ptr|cstr)\\b",
       "name": "support.type.hero"
+    },
+    "thread-type": {
+      "comment": "spec § 3: `(thread T)` and `(mailbox T)`, a thread's and a mailbox's types (feature 2647; panel 254). The two words are contextual, `keywords.hero`'s `WORD_THREAD` and `WORD_MAILBOX`, names everywhere else, so each is painted only where the parser reads it as a type's: right after the `(` a type opens and before the type it carries, a name, a `[`, a `{` or a `(`. A parenthesised name in an expression, `(mailbox)`, stays a name.",
+      "match": "(?<=\\()\\s*\\b(thread|mailbox)\\b(?=\\s+[A-Za-z_\\[{(])",
+      "captures": {
+        "1": { "name": "keyword.other.contextual.hero" }
+      }
     },
     "hole": {
       "comment": "`???` is a valid expression, not an error (§4.16)",

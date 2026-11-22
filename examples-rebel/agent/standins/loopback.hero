@@ -8,7 +8,7 @@
 # `Connection: close`, which HTTP/1.1 allows a server to do whenever it
 # likes; so a client that keeps a connection open between requests can never
 # hold the stand-in on it. What crosses between the threads is text: the
-# stand-in's settings in, its report out (`threads.spawn_text`).
+# stand-in's settings in, its report out (`threads.start_text`).
 
 use <rebel>/bytes
 use <rebel>/http
@@ -67,7 +67,7 @@ record Exchange
 # waited for, so nothing is owed.
 function start(body: (function(str) -> str), settings: str) -> Started?
     control @= net.listen(host: "127.0.0.1", port: 0)?
-    t @= threads.spawn_text(body: body, arg: f"{control.address.port}" + SEPARATOR + settings)?
+    t @= threads.start_text(body: body, arg: f"{control.address.port}" + SEPARATOR + settings)?
 
     match told_port(control)
         .ok port =>

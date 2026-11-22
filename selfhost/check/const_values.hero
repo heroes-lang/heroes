@@ -67,10 +67,10 @@ function fits(kind: widths.IntKind, v: contextual.LitValue) -> bool
 # the emitted C computes that expression at.
 function width_of(c: state.Checker, id: i64) -> widths.IntKind?
     return match table.get(c.out.types, c.out.expr_types[id])
-        .int_ty k                                                         => ok(k.kind)
-        .float_ty | .bool | .str | .ptr | .cstr | .unit | .array | .fixed => fail(code: "none", msg: "not an integer")
-        .map | .fallible | .function_ty | .named                          => fail(code: "none", msg: "not an integer")
-        .case_ty | .failure | .generic | .error                           => fail(code: "none", msg: "not an integer")
+        .int_ty k                                                          => ok(k.kind)
+        .float_ty | .bool | .str | .ptr | .cstr | .unit | .array | .fixed  => fail(code: "none", msg: "not an integer")
+        .map | .fallible | .function_ty | .named                           => fail(code: "none", msg: "not an integer")
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => fail(code: "none", msg: "not an integer")
 
 # A number literal's value at its width. One that does not fit is told where
 # it stands (`check/walk.hero`), and has none here.

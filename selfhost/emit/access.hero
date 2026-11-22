@@ -41,12 +41,12 @@ function len_read(@w: writer.Writer, c: state.Checked, f: containers.Function, v
     counter: str @= ""
 
     match table.get(c.types, containers.value_type(f, value))
-        .str                                               => counter @ "hero_str_len"
-        .map                                               => counter @ "hero_map_len"
-        .array                                             => counter @ "hero_array_len"
-        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => counter @ counter
-        .fixed | .fallible | .function_ty | .named         => counter @ counter
-        .case_ty | .failure | .generic | .error            => counter @ counter
+        .str                                                               => counter @ "hero_str_len"
+        .map                                                               => counter @ "hero_map_len"
+        .array                                                             => counter @ "hero_array_len"
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit                 => counter @ counter
+        .fixed | .fallible | .function_ty | .named                         => counter @ counter
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => counter @ counter
 
     if counter == ""
         writer.line(@w, text: "    hero_unreachable(); /* len counts a str, an array or a map */")
@@ -99,10 +99,10 @@ function tag_read(@w: writer.Writer, c: state.Checked, f: containers.Function, b
     is_fallible: bool @= false
 
     match table.get(c.types, containers.value_type(f, base))
-        .fallible                                                 => is_fallible @ true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fallible @ is_fallible
-        .array | .fixed | .map | .function_ty | .named            => is_fallible @ is_fallible
-        .case_ty | .failure | .generic | .error                   => is_fallible @ is_fallible
+        .fallible                                                          => is_fallible @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => is_fallible @ is_fallible
+        .array | .fixed | .map | .function_ty | .named                     => is_fallible @ is_fallible
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_fallible @ is_fallible
 
     text: str @= aggregate.tag(base: base)
 
@@ -123,9 +123,9 @@ function payload_read(@w: writer.Writer, c: state.Checked, names: ctype.Names, s
         .fallible o =>
             is_fallible @ true
             owned @ at == 0 && byte_copy.own_struct(c, decls, ty: o.payload)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fallible @ is_fallible
-        .array | .fixed | .map | .function_ty | .named            => is_fallible @ is_fallible
-        .case_ty | .failure | .generic | .error                   => is_fallible @ is_fallible
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => is_fallible @ is_fallible
+        .array | .fixed | .map | .function_ty | .named                     => is_fallible @ is_fallible
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_fallible @ is_fallible
 
     if is_fallible
         writer.line(
@@ -168,6 +168,7 @@ function field_read(@w: writer.Writer, c: state.Checked, s: source.Source, decls
         match table.get(c.types, found.must().ty)
             .ptr                                                       => cast @ "(void *)"
             .int_ty | .float_ty | .bool | .str | .cstr | .unit         => cast @ cast
+            .thread_ty | .mailbox_ty                                   => cast @ cast
             .array | .fixed | .map | .fallible | .function_ty | .named => cast @ cast
             .case_ty | .failure | .generic | .error                    => cast @ cast
     writer.line(

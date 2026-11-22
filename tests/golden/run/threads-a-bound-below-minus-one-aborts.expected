@@ -1,0 +1,3 @@
+closed, at once
+!at: threads-a-bound-below-minus-one-aborts.hero:11:11
+!panic: a mailbox's receive was given a time below -1 — `within_ms` is how many milliseconds it may wait, 0 for none and -1 for no limit

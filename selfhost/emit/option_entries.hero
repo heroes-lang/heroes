@@ -35,11 +35,11 @@ function of(names: ctype.Names, c: state.Checked) -> [Entry]
     # now checked by an instrument rather than remembered (§4.9).
     for id in sort(keys(names.options))
         match table.get(c.types, id)
-            .fallible o                                               => out @ out.push(
+            .fallible o                                                        => out @ out.push(
                 Entry(name: names.options[id].must(), payload: o.payload, at: id)
             )
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .array | .fixed | .map | .function_ty | .named            => continue
-            .case_ty | .failure | .generic | .error                   => continue
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => continue
+            .array | .fixed | .map | .function_ty | .named                     => continue
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => continue
 
     return out

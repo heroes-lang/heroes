@@ -1,0 +1,4 @@
+tests/golden/check/threads-a-mailbox-takes-its-type-from-the-context.hero:11:13: error[mailbox_needs_type]: `mailbox()` takes what it carries from the type the context asks for, and nothing here asks for a `(mailbox T)`
+tests/golden/check/threads-a-mailbox-takes-its-type-from-the-context.hero:13:15: error[thread_body]: a thread runs a function of one parameter, `spawn(f, x)` calling `f(x)`, and the `f` given has type `(function(a: i64, b: i64) -> i64)`
+tests/golden/check/threads-a-mailbox-takes-its-type-from-the-context.hero:15:15: error[thread_body]: a thread runs a function of one parameter, `spawn(f, x)` calling `f(x)`, and the `f` given has type `i64`
+tests/golden/check/threads-a-mailbox-takes-its-type-from-the-context.hero:17:9: error[wrong_arity]: `spawn` takes 2 argument(s), found 1

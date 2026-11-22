@@ -120,6 +120,7 @@ function is_ptr(a: ast.Ast, s: source.Source, decls: [ast.Decl], ty: i64) -> boo
     return match node.kind
         .named => is_handle_name(s, decls, written: source.span_text(s, node.span))
         .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error => false
+        .thread_of | .mailbox_of => false
 
 # `ptr`, or the name of a handle declared in this file.
 #

@@ -76,4 +76,5 @@ function reach(@out: {i64: bool}, @seen: {i64: bool}, c: state.Checked, decls: [
                 queue @ queue.push(m.key)
                 queue @ queue.push(m.value)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .thread_ty | .mailbox_ty                                  => continue
             .function_ty | .case_ty | .failure | .generic | .error    => continue

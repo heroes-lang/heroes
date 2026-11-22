@@ -44,7 +44,7 @@ function start_tls(text: str) -> Started
 # `text`, and the port it tells back read.
 function started(body: (function(str) -> str), text: str) -> Started
     control @= net.listen(host: "127.0.0.1", port: 0).must()
-    t = threads.spawn_text(body: body, arg: f"{control.address.port}" + SEPARATOR + text).must()
+    t = threads.start_text(body: body, arg: f"{control.address.port}" + SEPARATOR + text).must()
     said = told(control)
     net.close_listener(@control).must()
     port = syntax.decimal(s: said, what: "the port told").must()
