@@ -3,7 +3,7 @@ capability thread/start  a function run on a thread of its own, on one value
   go      WaitGroup.Go
   rust    thread::spawn, Builder::new, Builder::spawn, Builder::spawn_unchecked
   python  threading.Thread, Thread.start, Thread.run
-  note    the language's `spawn(f, x)` carries any value whole, as a copy (spec § 11), where Go's `go` statement and Python's and Rust's closures carry anything by sharing it; this face keeps one `i64` in and one back for the callers written for it. A refusal, the system's or the runtime's bound of threads running, is `limit` here and `refused` from `spawn`, where Rust's Builder answers an error and the others raise or panic
+  note    the language's `spawn(f, x)` carries any value whole, as a copy (spec § 11), where Go's `go` statement and Python's and Rust's closures carry anything by sharing it; this face keeps one `i64` in and one back for the callers written for it. A refusal, the system's or the runtime's bound of 256 threads running, is `limit` here as it is from `spawn`, its message saying why, where Rust's Builder answers an error and the others raise or panic
 
 capability thread/start-sized  a thread with a stack of a chosen size
   heroes  threads.start_sized, built-in spawn_sized
@@ -24,7 +24,7 @@ capability thread/text  a function run on a thread on one text, a copy each way
   go      -
   rust    -
   python  -
-  note    `threads.wait_text` waits for it; its own record, `TextThread`, so a wait for the other kind is a compile error. The language's `spawn` carries the text, and any other value, as a copy each way; a refusal is `limit``
+  note    `threads.wait_text` waits for it; its own record, `TextThread`, so a wait for the other kind is a compile error. The language's `spawn` carries the text, and any other value, as a copy each way; a refusal is `limit`
 
 capability thread/run-many  a function run over a list of values on several threads, the answers in order
   heroes  threads.run_all
@@ -45,7 +45,7 @@ capability thread/ceiling  how many threads may run at once
   go      -
   rust    -
   python  -
-  note    the runtime's own ceiling, the same on every platform; past it a start aborts, which Python and Go leave to the system
+  note    the runtime's own ceiling, the same on every platform; past it a start fails `limit` (spec § 11), which Python and Go leave to the system
 
 capability thread/processors  how many processors the program may run on, the usual number of workers
   heroes  os.processor_count
@@ -69,17 +69,10 @@ capability thread/is-finished  whether a thread has ended, asked without waiting
   note    the runtime's doors answer nothing about a thread but its wait, which blocks without a limit; it needs a door of the runtime that asks a thread's state, which this package cannot write. Answers in the order threads end, Python's `as_completed`, wait for the same door
 
 capability thread/cancel  a running thread asked to stop
-  heroes  built-in mailbox
+  heroes  refused: a thread is never stopped from outside, whatever it is doing, so nothing it holds is left half written; a running thread is asked to stop by a value on a mailbox it receives from, or by the program's stop, which ends its waits `stopped` (spec § 11, § 13)
   go      -
   rust    -
   python  Future.cancel, Future.cancelled
-  note    a running thread is asked by a message on a mailbox it receives from, a value the program chooses, and ends where its body reads it; the program's own stop reaches every receive that waits, which fails `stopped` (spec § 11, § 13). Until feature 2647 this was refused: nothing crossed into a running thread
-
-capability thread/cancel-forced  a running thread stopped from outside, whatever it is doing
-  heroes  refused: a thread ends only where its body returns, so nothing it holds is left half written; a body that must end early receives the request on a mailbox
-  go      -
-  rust    -
-  python  -
 
 capability thread/identity  which thread this is, its name or number, the threads running
   heroes  refused: a body is given one value and nothing else, so a thread that needs to know which it is is given that as its value
@@ -93,15 +86,15 @@ capability thread/detach  a thread the program need not wait for
   rust    -
   python  Thread.daemon, Thread.isDaemon, Thread.setDaemon
 
-capability thread/channel  values sent between running threads, received in order, a wait bounded in time
+capability thread/mailbox  values sent to a running thread and received from it, copied whole
   heroes  built-in mailbox, m.send(v), m.receive(within_ms:), m.close()
   go      -
   rust    -
   python  -
-  note    Go's channels, Rust's `std::sync::mpsc` and Python's `queue.Queue` are its kin, none of them in this ledger's three references. The language's mailbox (spec § 3, § 11; feature 2647): every copy reaches one queue, a value sent crosses whole, as a copy, so no value is held by two threads; a receive waits at most its bound and fails `timeout`, `stopped` once the program's stop is asked, `closed` once the mailbox is closed and empty. Unbounded, where Go's and Rust's `sync_channel` bound theirs: a send never waits
+  note    the language's `(mailbox T)` (spec § 3, § 11; panel 254), beside Go's `chan`, Rust's `mpsc` and Python's `queue.Queue`, none of them in this ledger's three references: every copy reaches one queue, a value sent crosses whole, as a copy, and a C handle or a thread only by `m.send(@v)`, the receiving thread holding it; a receive waits at most its bound, `-1` for none, and fails `timeout`, `closed` once the mailbox is closed and empty, or `stopped` once the stop is asked and it is found empty; a send never waits, unbounded where Go's and Rust's `sync_channel` bound theirs, and fails `closed` or `stopped` with its value left as it was
 
 capability thread/shared-state  locks, conditions, once-only values and memory several threads reach
-  heroes  refused: threads share nothing in Heroes but a mailbox, which shares no value: what two threads must both see lives on one thread, and the others ask it by mailbox (`examples-rebel/gateway`'s owner), so no value is held by two threads and nothing needs a lock
+  heroes  refused: threads share nothing but a mailbox's queue, whose values cross as copies, so no value is held by two threads and nothing needs a lock; what two threads must both see lives on one, and the others ask it by mailbox
   go      Mutex, Mutex.Lock, Mutex.TryLock, Mutex.Unlock, RWMutex, RWMutex.Lock, RWMutex.RLock, RWMutex.RLocker, RWMutex.RUnlock, RWMutex.TryLock, RWMutex.TryRLock, RWMutex.Unlock, Locker, Cond, NewCond, Cond.Broadcast, Cond.Signal, Cond.Wait, Once, Once.Do, OnceFunc, OnceValue, OnceValues, Map and its Clear, CompareAndDelete, CompareAndSwap, Delete, Load, LoadAndDelete, LoadOrStore, Range, Store and Swap, Pool, Pool.Get, Pool.Put
   rust    thread::park, Thread::unpark, thread::yield_now, LocalKey, AccessError
   python  threading.Lock, threading.RLock, threading.Condition, threading.Semaphore, threading.BoundedSemaphore, threading.Event, threading.Barrier, threading.BrokenBarrierError, threading.local, threading.WeakSet, threading.concurrent_tee, threading.serialize_iterator, threading.synchronized_iterator, threading.ThreadError
